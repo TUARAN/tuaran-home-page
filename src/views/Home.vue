@@ -102,15 +102,15 @@
           </p>
           
           <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button class="btn-primary flex items-center">
+            <button @click="goToProjects" class="btn-primary flex items-center">
               <span class="mr-2">🚀</span>
               看看项目
             </button>
-            <button class="btn-secondary flex items-center">
+            <button @click="goToBlog" class="btn-secondary flex items-center">
               <span class="mr-2">📝</span>
               读读文章
             </button>
-            <button class="btn-secondary flex items-center">
+            <button @click="goToAbout" class="btn-secondary flex items-center">
               <span class="mr-2">👤</span>
               了解更多
             </button>
@@ -118,51 +118,27 @@
         </div>
       </div>
 
-      <!-- Code blocks -->
-      <div class="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl">
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-dot bg-red-500"></span>
-            <span class="code-dot bg-yellow-500"></span>
-            <span class="code-dot bg-green-500"></span>
-            <span class="text-zinc-400 text-sm ml-2">个人宣言.js</span>
-          </div>
-          <pre class="code-content"><code class="text-green-400">const 掘金安东尼 = {
-  标签: "无",
-  追求: "不追求长期价值",
-  深度: "判断不出来",
-  动机: "不是用爱发电",
-  目标: "个人技术IP之路"
-};
 
-// 标签不重要，重要的是在做什么
-console.log("开始编码，开始写作，开始分享");</code></pre>
-        </div>
-
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-dot bg-red-500"></span>
-            <span class="code-dot bg-yellow-500"></span>
-            <span class="code-dot bg-green-500"></span>
-            <span class="text-zinc-400 text-sm ml-2">价值观.js</span>
-          </div>
-          <pre class="code-content"><code class="text-green-400">const 价值观 = {
-  不追求: ["长期价值", "深度价值", "帮助别人"],
-  追求: ["个人成长", "技术分享", "真实表达"],
-  态度: "不装逼，不割韭菜",
-  原则: "做自己，写真实"
-};
-
-// 简单直接，不绕弯子
-export default 价值观;</code></pre>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-// 主页组件逻辑
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const goToProjects = () => {
+  router.push('/projects')
+}
+
+const goToBlog = () => {
+  router.push('/blog')
+}
+
+const goToAbout = () => {
+  router.push('/about')
+}
 </script>
 
 <style scoped>

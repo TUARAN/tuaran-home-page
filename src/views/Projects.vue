@@ -105,9 +105,8 @@ import { ref, computed } from 'vue'
 const categories = [
   { id: 'all', name: '全部' },
   { id: 'vue', name: 'Vue.js' },
-  { id: 'react', name: 'React' },
-  { id: 'node', name: 'Node.js' },
-  { id: 'python', name: 'Python' },
+  { id: 'typescript', name: 'TypeScript' },
+  { id: 'javascript', name: 'JavaScript' },
   { id: 'other', name: '其他' }
 ]
 
@@ -115,75 +114,111 @@ const categories = [
 const projects = [
   {
     id: 1,
-    name: 'TUARAN Blog',
-    description: '基于 Vue 3 + Tailwind CSS 的现代化个人博客',
-    language: 'Vue',
-    category: 'vue',
-    stars: 128,
-    forks: 32,
-    updatedAt: '2024-01-15',
-    url: 'https://github.com/tuaran/tuaran-blog',
-    demo: 'https://tuaran.github.io'
+    name: '与大模型共舞',
+    description: 'AI交易记录与优化平台，展示人与大模型在股市、期货、加密市场的交互过程',
+    language: 'TypeScript',
+    category: 'typescript',
+    stars: 15,
+    forks: 3,
+    updatedAt: '2025-01-23',
+    url: 'https://github.com/TUARAN/ai-trading-journal',
+    demo: null
   },
   {
     id: 2,
-    name: 'AI Code Assistant',
-    description: '智能代码助手，支持多种编程语言',
-    language: 'Python',
-    category: 'python',
-    stars: 256,
-    forks: 89,
-    updatedAt: '2024-01-10',
-    url: 'https://github.com/tuaran/ai-code-assistant',
+    name: '博主联盟',
+    description: 'Vue 3 + Tailwind CSS 博主联盟平台',
+    language: 'Vue',
+    category: 'vue',
+    stars: 3,
+    forks: 5,
+    updatedAt: '2025-01-07',
+    url: 'https://github.com/TUARAN/blogger-alliance',
     demo: null
   },
   {
     id: 3,
-    name: 'React Dashboard',
-    description: '现代化的 React 管理后台模板',
-    language: 'React',
-    category: 'react',
-    stars: 89,
-    forks: 23,
-    updatedAt: '2024-01-08',
-    url: 'https://github.com/tuaran/react-dashboard',
-    demo: 'https://react-dashboard-demo.vercel.app'
+    name: '前端周刊',
+    description: '《Frontend Weekly Digest》中文翻译项目，精选全球前端开发趋势、工具与实战经验',
+    language: 'JavaScript',
+    category: 'javascript',
+    stars: 3,
+    forks: 0,
+    updatedAt: '2025-01-07',
+    url: 'https://github.com/TUARAN/frontend-weekly-digest-cn',
+    demo: null
   },
   {
     id: 4,
-    name: 'Node.js API',
-    description: '高性能的 Node.js RESTful API 框架',
+    name: '开发工具推荐',
+    description: '持续更新的开发工具推荐平台，精选最实用的开发工具、服务和资源',
     language: 'JavaScript',
-    category: 'node',
-    stars: 156,
-    forks: 45,
-    updatedAt: '2024-01-05',
-    url: 'https://github.com/tuaran/node-api',
+    category: 'javascript',
+    stars: 2,
+    forks: 1,
+    updatedAt: '2025-01-19',
+    url: 'https://github.com/TUARAN/TreasureToolHub',
     demo: null
   },
   {
     id: 5,
-    name: 'Trading Bot',
-    description: '基于 Python 的量化交易机器人',
-    language: 'Python',
-    category: 'python',
-    stars: 67,
-    forks: 18,
-    updatedAt: '2024-01-03',
-    url: 'https://github.com/tuaran/trading-bot',
+    name: 'AI学习路径-奥德赛',
+    description: 'AI学习路径探索项目',
+    language: 'TypeScript',
+    category: 'typescript',
+    stars: 0,
+    forks: 0,
+    updatedAt: '2025-01-26',
+    url: 'https://github.com/TUARAN/dev-odyssey',
     demo: null
   },
   {
     id: 6,
-    name: 'Dev Tools',
-    description: '开发者工具集合，提升开发效率',
+    name: '干烂这家公司',
+    description: '打工人反击联盟 - 干烂这破公司',
+    language: 'Vue',
+    category: 'vue',
+    stars: 0,
+    forks: 0,
+    updatedAt: '2025-01-30',
+    url: 'https://github.com/TUARAN/FuckWork',
+    demo: null
+  },
+  {
+    id: 7,
+    name: '代码矿工-工具集合',
+    description: '实用的开发工具集合，包含多种常用工具，提升开发效率',
+    language: 'Vue',
+    category: 'vue',
+    stars: 0,
+    forks: 0,
+    updatedAt: '2025-01-01',
+    url: 'https://github.com/TUARAN/toolkit-hub',
+    demo: null
+  },
+  {
+    id: 8,
+    name: '宝妈省钱神器',
+    description: '专为母婴群体设计的优惠券领取H5网页应用，提供精选的母婴用品优惠券信息',
+    language: 'Vue',
+    category: 'vue',
+    stars: 0,
+    forks: 0,
+    updatedAt: '2025-01-01',
+    url: 'https://github.com/TUARAN/mom-coupon-h5',
+    demo: null
+  },
+  {
+    id: 9,
+    name: '时光拾语',
+    description: 'A beautiful soul quotes website',
     language: 'TypeScript',
-    category: 'other',
-    stars: 42,
-    forks: 12,
-    updatedAt: '2024-01-01',
-    url: 'https://github.com/tuaran/dev-tools',
-    demo: 'https://dev-tools-demo.netlify.app'
+    category: 'typescript',
+    stars: 0,
+    forks: 0,
+    updatedAt: '2025-01-05',
+    url: 'https://github.com/TUARAN/jianren-vite',
+    demo: null
   }
 ]
 
@@ -201,10 +236,8 @@ const filteredProjects = computed(() => {
 const getLanguageColor = (language) => {
   const colors = {
     'Vue': 'bg-green-500/20 text-green-400',
-    'React': 'bg-blue-500/20 text-blue-400',
-    'Python': 'bg-yellow-500/20 text-yellow-400',
-    'JavaScript': 'bg-yellow-500/20 text-yellow-400',
-    'TypeScript': 'bg-blue-500/20 text-blue-400'
+    'TypeScript': 'bg-blue-500/20 text-blue-400',
+    'JavaScript': 'bg-yellow-500/20 text-yellow-400'
   }
   return colors[language] || 'bg-gray-500/20 text-gray-400'
 }

@@ -24,15 +24,24 @@
             class="nav-link"
             :class="{ 'nav-link-active': $route.path === '/projects' }"
           >
-            项目
+            开源项目
           </router-link>
-          <router-link 
-            to="/blog" 
+          <a 
+            href="https://tuaran.github.io/auto-sync-blog/sort/all.html#%E7%BB%9F%E8%AE%A1" 
+            target="_blank" 
+            rel="noopener noreferrer"
             class="nav-link"
-            :class="{ 'nav-link-active': $route.path === '/blog' }"
           >
-            博客
-          </router-link>
+            技术博客
+          </a>
+          <a 
+            href="https://blogger-alliance.pages.dev/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="nav-link"
+          >
+            博主联盟
+          </a>
           <router-link 
             to="/about" 
             class="nav-link"
@@ -70,16 +79,26 @@
             :class="{ 'nav-link-mobile-active': $route.path === '/projects' }"
             @click="closeMobileMenu"
           >
-            项目
+            开源项目
           </router-link>
-          <router-link 
-            to="/blog" 
+          <a 
+            href="https://tuaran.github.io/auto-sync-blog/sort/all.html#%E7%BB%9F%E8%AE%A1" 
+            target="_blank" 
+            rel="noopener noreferrer"
             class="nav-link-mobile"
-            :class="{ 'nav-link-mobile-active': $route.path === '/blog' }"
             @click="closeMobileMenu"
           >
-            博客
-          </router-link>
+            技术博客
+          </a>
+          <a 
+            href="https://blogger-alliance.pages.dev/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="nav-link-mobile"
+            @click="closeMobileMenu"
+          >
+            博主联盟
+          </a>
           <router-link 
             to="/about" 
             class="nav-link-mobile"

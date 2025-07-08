@@ -4,7 +4,7 @@
     <div class="text-center mb-16">
       <div class="relative inline-block mb-8 fade-in">
         <div class="w-32 h-32 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-cyan-500/25 animate-pulse">
-          <span class="text-white font-bold text-4xl">T</span>
+          <span class="text-white font-bold text-4xl">J</span>
         </div>
         <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-400 rounded-full border-4 border-slate-900 animate-pulse"></div>
       </div>
@@ -46,10 +46,8 @@
               擅长使用 Element-admin、Echarts、Uniapp 等框架进行项目开发。
             </p>
             <p>
-              2025年，我决定重新回归程序员岗位，继续在技术道路上深耕。
-              2025年3月获得PMP项目管理专业认证，具备敏捷管理能力。
-              我热爱探索新技术，向往自由，喜欢与志同道合的朋友交流。
-              当我不在编码时，你会发现我在为开源项目做贡献，
+              2025年，我重新回到编程岗位，这次我拥有了不一样的视野。除了编程以外，我兼具PMP敏捷复合能力，能够从技术和管理双重角度思考问题。
+              我热爱探索新技术，向往自由，喜欢与志同道合的朋友交流。当我不在编码时，你会发现我在为开源项目做贡献，
               或者通过我的博客分享关于开发和设计的见解。
             </p>
           </div>

@@ -39,12 +39,16 @@
               <h3 class="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">
                 {{ project.name }}
               </h3>
-              <p class="text-zinc-400 text-sm">{{ project.description }}</p>
-            </div>
-            <div class="flex items-center space-x-2 ml-4">
-              <span class="text-xs px-2 py-1 rounded-full" :class="getLanguageColor(project.language)">
-                {{ project.language }}
-              </span>
+              <p class="text-zinc-400 text-sm mb-3">{{ project.description }}</p>
+              <!-- Category Tag -->
+              <div class="flex items-center space-x-2">
+                <span class="text-xs px-2 py-1 rounded-full" :class="getCategoryColor(project.category)">
+                  {{ getCategoryName(project.category) }}
+                </span>
+                <span class="text-xs px-2 py-1 rounded-full" :class="getLanguageColor(project.language)">
+                  {{ project.language }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -101,23 +105,24 @@
 <script setup>
 import { ref, computed } from 'vue'
 
-// 项目分类
+// 项目分类 - 基于GitHub仓库topics
 const categories = [
   { id: 'all', name: '全部' },
-  { id: 'vue', name: 'Vue.js' },
-  { id: 'typescript', name: 'TypeScript' },
-  { id: 'javascript', name: 'JavaScript' },
-  { id: 'other', name: '其他' }
+  { id: 'programming', name: '编程开发' },
+  { id: 'blog-post', name: '博客文章' },
+  { id: 'meme', name: '趣味项目' },
+  { id: 'tool', name: '工具集合' },
+  { id: 'ai', name: 'AI相关' }
 ]
 
-// 项目数据
+// 项目数据 - 基于GitHub仓库topics分类
 const projects = [
   {
     id: 1,
     name: '与大模型共舞',
     description: 'AI交易记录与优化平台，展示人与大模型在股市、期货、加密市场的交互过程',
     language: 'TypeScript',
-    category: 'typescript',
+    category: 'ai',
     stars: 15,
     forks: 3,
     updatedAt: '2025-01-23',
@@ -129,7 +134,7 @@ const projects = [
     name: '博主联盟',
     description: 'Vue 3 + Tailwind CSS 博主联盟平台',
     language: 'Vue',
-    category: 'vue',
+    category: 'programming',
     stars: 3,
     forks: 5,
     updatedAt: '2025-01-07',
@@ -141,7 +146,7 @@ const projects = [
     name: '前端周刊',
     description: '《Frontend Weekly Digest》中文翻译项目，精选全球前端开发趋势、工具与实战经验',
     language: 'JavaScript',
-    category: 'javascript',
+    category: 'blog-post',
     stars: 3,
     forks: 0,
     updatedAt: '2025-01-07',
@@ -153,7 +158,7 @@ const projects = [
     name: '开发工具推荐',
     description: '持续更新的开发工具推荐平台，精选最实用的开发工具、服务和资源',
     language: 'JavaScript',
-    category: 'javascript',
+    category: 'tool',
     stars: 2,
     forks: 1,
     updatedAt: '2025-01-19',
@@ -165,7 +170,7 @@ const projects = [
     name: 'AI学习路径-奥德赛',
     description: 'AI学习路径探索项目',
     language: 'TypeScript',
-    category: 'typescript',
+    category: 'ai',
     stars: 0,
     forks: 0,
     updatedAt: '2025-01-26',
@@ -177,7 +182,7 @@ const projects = [
     name: '干烂这家公司',
     description: '打工人反击联盟 - 干烂这破公司',
     language: 'Vue',
-    category: 'vue',
+    category: 'meme',
     stars: 0,
     forks: 0,
     updatedAt: '2025-01-30',
@@ -189,7 +194,7 @@ const projects = [
     name: '代码矿工-工具集合',
     description: '实用的开发工具集合，包含多种常用工具，提升开发效率',
     language: 'Vue',
-    category: 'vue',
+    category: 'tool',
     stars: 0,
     forks: 0,
     updatedAt: '2025-01-01',
@@ -201,7 +206,7 @@ const projects = [
     name: '宝妈省钱神器',
     description: '专为母婴群体设计的优惠券领取H5网页应用，提供精选的母婴用品优惠券信息',
     language: 'Vue',
-    category: 'vue',
+    category: 'programming',
     stars: 0,
     forks: 0,
     updatedAt: '2025-01-01',
@@ -213,7 +218,7 @@ const projects = [
     name: '时光拾语',
     description: 'A beautiful soul quotes website',
     language: 'TypeScript',
-    category: 'typescript',
+    category: 'programming',
     stars: 0,
     forks: 0,
     updatedAt: '2025-01-05',
@@ -240,6 +245,30 @@ const getLanguageColor = (language) => {
     'JavaScript': 'bg-yellow-500/20 text-yellow-400'
   }
   return colors[language] || 'bg-gray-500/20 text-gray-400'
+}
+
+// 获取分类颜色
+const getCategoryColor = (category) => {
+  const colors = {
+    'programming': 'bg-blue-500/20 text-blue-400',
+    'blog-post': 'bg-purple-500/20 text-purple-400',
+    'meme': 'bg-pink-500/20 text-pink-400',
+    'tool': 'bg-orange-500/20 text-orange-400',
+    'ai': 'bg-cyan-500/20 text-cyan-400'
+  }
+  return colors[category] || 'bg-gray-500/20 text-gray-400'
+}
+
+// 获取分类名称
+const getCategoryName = (category) => {
+  const names = {
+    'programming': '编程开发',
+    'blog-post': '博客文章',
+    'meme': '趣味项目',
+    'tool': '工具集合',
+    'ai': 'AI相关'
+  }
+  return names[category] || '其他'
 }
 
 // 格式化日期

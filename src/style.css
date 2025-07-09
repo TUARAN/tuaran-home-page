@@ -24,8 +24,25 @@
       radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
     background-size: 60px 60px, 60px 60px, 100% 100%;
     pointer-events: none;
-    z-index: -1;
-    animation: gridMove 30s linear infinite;
+    z-index: -3;
+    animation: gridMove 30s linear infinite, gridBreath 8s ease-in-out infinite;
+  }
+
+  /* 第二层网格 - 更细的网格线，不同的呼吸节奏 */
+  html::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      linear-gradient(rgba(6, 182, 212, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(6, 182, 212, 0.08) 1px, transparent 1px);
+    background-size: 30px 30px, 30px 30px;
+    pointer-events: none;
+    z-index: -4;
+    animation: gridMove 20s linear infinite reverse, gridBreath 12s ease-in-out infinite;
   }
 
   /* 动态粒子系统 */
@@ -46,12 +63,47 @@
       radial-gradient(2px 2px at 240px 90px, rgba(6, 182, 212, 0.8), transparent),
       radial-gradient(1px 1px at 280px 20px, rgba(59, 130, 246, 0.8), transparent),
       radial-gradient(2px 2px at 320px 50px, rgba(139, 92, 246, 0.8), transparent),
-      radial-gradient(1px 1px at 360px 80px, rgba(6, 182, 212, 0.8), transparent);
+      radial-gradient(1px 1px at 360px 80px, rgba(6, 182, 212, 0.8), transparent),
+      radial-gradient(1.5px 1.5px at 50px 120px, rgba(6, 182, 212, 0.6), transparent),
+      radial-gradient(1px 1px at 120px 150px, rgba(59, 130, 246, 0.7), transparent),
+      radial-gradient(2px 2px at 180px 180px, rgba(139, 92, 246, 0.6), transparent),
+      radial-gradient(1px 1px at 250px 200px, rgba(6, 182, 212, 0.7), transparent),
+      radial-gradient(1.5px 1.5px at 300px 250px, rgba(59, 130, 246, 0.6), transparent),
+      radial-gradient(1px 1px at 350px 300px, rgba(139, 92, 246, 0.7), transparent),
+      radial-gradient(2px 2px at 400px 350px, rgba(6, 182, 212, 0.6), transparent),
+      radial-gradient(1px 1px at 450px 400px, rgba(59, 130, 246, 0.7), transparent),
+      radial-gradient(1.5px 1.5px at 500px 450px, rgba(139, 92, 246, 0.6), transparent);
     background-repeat: repeat;
-    background-size: 400px 100px;
+    background-size: 600px 500px;
     pointer-events: none;
     z-index: -1;
-    animation: particleFloat 20s linear infinite;
+    animation: particleFloat 25s ease-in-out infinite;
+  }
+
+  /* 第二层粒子系统 - 更小的粒子 */
+  html::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(1px 1px at 10px 20px, rgba(6, 182, 212, 0.4), transparent),
+      radial-gradient(0.5px 0.5px at 30px 50px, rgba(59, 130, 246, 0.5), transparent),
+      radial-gradient(1px 1px at 60px 80px, rgba(139, 92, 246, 0.4), transparent),
+      radial-gradient(0.5px 0.5px at 100px 120px, rgba(6, 182, 212, 0.5), transparent),
+      radial-gradient(1px 1px at 140px 160px, rgba(59, 130, 246, 0.4), transparent),
+      radial-gradient(0.5px 0.5px at 180px 200px, rgba(139, 92, 246, 0.5), transparent),
+      radial-gradient(1px 1px at 220px 240px, rgba(6, 182, 212, 0.4), transparent),
+      radial-gradient(0.5px 0.5px at 260px 280px, rgba(59, 130, 246, 0.5), transparent),
+      radial-gradient(1px 1px at 300px 320px, rgba(139, 92, 246, 0.4), transparent),
+      radial-gradient(0.5px 0.5px at 340px 360px, rgba(6, 182, 212, 0.5), transparent);
+    background-repeat: repeat;
+    background-size: 400px 400px;
+    pointer-events: none;
+    z-index: -2;
+    animation: particleFloat 30s ease-in-out infinite reverse;
   }
   
   html {
@@ -114,6 +166,48 @@
   }
   100% {
     transform: translate(50px, 50px);
+  }
+}
+
+@keyframes gridBreath {
+  0%, 100% {
+    opacity: 0.3;
+    filter: brightness(0.8) hue-rotate(0deg);
+  }
+  25% {
+    opacity: 0.5;
+    filter: brightness(1.1) hue-rotate(5deg);
+  }
+  50% {
+    opacity: 0.6;
+    filter: brightness(1.2) hue-rotate(10deg);
+  }
+  75% {
+    opacity: 0.4;
+    filter: brightness(0.9) hue-rotate(5deg);
+  }
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translate(20px, -15px) scale(1.1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-10px, 25px) scale(0.9);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translate(15px, -5px) scale(1.05);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
   }
 }
 

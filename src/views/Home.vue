@@ -76,7 +76,7 @@
             <div class="border-l-4 border-zinc-600 pl-6 py-2">
               <p class="text-lg">
                 <span class="text-green-400 font-semibold">社区共建者、1w+粉丝量、200w+阅读量，</span>
-                又怎样？不过是早点玩了社区，有事没事就哔哔几句、然后发了一些文章吗？
+                又怎样？不过是早点玩了社区，有事没事就哔哔几句？
               </p>
             </div>
             
@@ -89,15 +89,15 @@
             
             <div class="border-l-4 border-zinc-600 pl-6 py-2">
               <p class="text-lg">
-                <span class="text-blue-400 font-semibold">Fine,</span>
-                所以我想说，我不想追求什么长期价值，不想追求什么深度价值，你怎么能够自诩自己追求的一定是长期的、深度的呢？我也不期望用爱发电，要帮助别人，也许大家都很好，也没主动寻求帮助啊......
+                <span class="text-blue-400 font-semibold">所以我想说，</span>
+                我不追求什么长期价值，不追求什么深度价值，你怎么能够自诩自己追求的一定是长期的、深度的呢？我也不期望用爱发电，或者帮助别人，也没人说要寻求帮助啊......
               </p>
             </div>
           </div>
 
           <div class="border-l-4 border-zinc-600 pl-6 py-2">
               <p class="text-lg">
-                <span class="text-yellow-400 font-semibold">在这样的背景下，</span>
+                <span class="text-yellow-400 font-semibold">在这样的认知背景下，</span>
                 我开始自己的个人技术ip之路🚀
               </p>
             </div>
@@ -105,7 +105,7 @@
       </div>
 
       <!-- Call to action section -->
-      <div class="max-w-5xl mx-auto mb-12">
+      <div class="max-w-5xl mx-auto mb-0">
         <div class="text-center">
           <h2 class="text-4xl font-bold text-white mb-6">那么，你想了解什么？</h2>
           <p class="text-xl text-zinc-400 mb-8">
@@ -150,7 +150,7 @@ const goToProjects = () => {
 }
 
 const goToBlog = () => {
-  router.push('/blog')
+  window.open('https://tuaran.github.io/auto-sync-blog/sort/all.html#%E7%BB%9F%E8%AE%A1', '_blank')
 }
 
 const goToAbout = () => {

@@ -30,17 +30,23 @@
             href="https://tuaran.github.io/auto-sync-blog/sort/all.html#%E7%BB%9F%E8%AE%A1" 
             target="_blank" 
             rel="noopener noreferrer"
-            class="nav-link"
+            class="nav-link flex items-center space-x-1 group"
           >
-            技术博客
+            <span>技术博客</span>
+            <svg class="w-4 h-4 text-zinc-400 group-hover:text-zinc-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
           </a>
           <a 
             href="https://blogger-alliance.pages.dev/" 
             target="_blank" 
             rel="noopener noreferrer"
-            class="nav-link"
+            class="nav-link flex items-center space-x-1 group"
           >
-            博主联盟
+            <span>博主联盟</span>
+            <svg class="w-4 h-4 text-zinc-400 group-hover:text-zinc-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
           </a>
           <router-link 
             to="/about" 
@@ -85,19 +91,25 @@
             href="https://tuaran.github.io/auto-sync-blog/sort/all.html#%E7%BB%9F%E8%AE%A1" 
             target="_blank" 
             rel="noopener noreferrer"
-            class="nav-link-mobile"
+            class="nav-link-mobile flex items-center space-x-1 group"
             @click="closeMobileMenu"
           >
-            技术博客
+            <span>技术博客</span>
+            <svg class="w-4 h-4 text-zinc-400 group-hover:text-zinc-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
           </a>
           <a 
             href="https://blogger-alliance.pages.dev/" 
             target="_blank" 
             rel="noopener noreferrer"
-            class="nav-link-mobile"
+            class="nav-link-mobile flex items-center space-x-1 group"
             @click="closeMobileMenu"
           >
-            博主联盟
+            <span>博主联盟</span>
+            <svg class="w-4 h-4 text-zinc-400 group-hover:text-zinc-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
           </a>
           <router-link 
             to="/about" 

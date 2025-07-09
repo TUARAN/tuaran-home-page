@@ -4,7 +4,7 @@
     <div class="text-center mb-16">
       <div class="relative inline-block mb-8 fade-in">
         <div class="w-32 h-32 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-cyan-500/25 animate-pulse">
-          <span class="text-white font-bold text-4xl">J</span>
+          <span class="text-white font-bold text-4xl">掘</span>
         </div>
         <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-400 rounded-full border-4 border-slate-900 animate-pulse"></div>
       </div>
@@ -12,7 +12,7 @@
         掘金安东尼
       </h1>
       <p class="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed mb-8 slide-up">
-        计算机科学与技术专业 | 前端架构师 | 技术博主 | TUARAN
+        CS专业 | 全栈开发 | 技术博主
       </p>
       
       <!-- Personal Belief -->
@@ -160,24 +160,7 @@
           </div>
         </div>
 
-        <!-- Contact -->
-        <div class="contact-card card-animated slide-up">
-          <h2 class="section-title">联系我</h2>
-          <p class="text-gray-300 text-sm mb-6">
-            我热爱探索新技术，向往自由，喜欢与志同道合的朋友交流。欢迎互关交友！
-          </p>
-          <div class="space-y-3">
-            <a 
-              v-for="contact in contacts" 
-              :key="contact.name"
-              :href="contact.url"
-              class="contact-link hover-lift"
-            >
-              <component :is="contact.icon" class="w-4 h-4" />
-              <span>{{ contact.name }}</span>
-            </a>
-          </div>
-        </div>
+
       </div>
     </div>
   </div>
@@ -186,7 +169,6 @@
 <script setup>
 import { 
   Mail, 
-  Github, 
   Linkedin, 
   Twitter, 
   Globe 
@@ -287,11 +269,7 @@ const stats = [
   { value: 'PMP认证', label: '项目管理' }
 ];
 
-const contacts = [
-  { name: 'GitHub', icon: Github, url: 'https://github.com/tuaran' },
-  { name: '个人博客', icon: Globe, url: 'https://tuaran.github.io' },
-  { name: '掘金', icon: Linkedin, url: 'https://juejin.cn/user/5bcd67a8e51d457947022910' }
-];
+
 </script>
 
 <style scoped>
@@ -387,9 +365,7 @@ const contacts = [
   @apply text-xs text-gray-400;
 }
 
-.contact-link {
-  @apply flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-300;
-}
+
 
 .achievement-item {
   @apply text-center p-4 bg-white/5 rounded-xl border border-white/10;

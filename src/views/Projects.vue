@@ -118,18 +118,6 @@ const categories = [
 // 项目数据 - 基于GitHub仓库topics分类
 const projects = [
   {
-    id: 1,
-    name: '大模型赋能交易',
-    description: 'AI交易记录与优化平台，展示人与大模型在股市、期货、加密市场的交互过程',
-    language: 'TypeScript',
-    category: 'ai',
-    stars: 0,
-    forks: 0,
-    updatedAt: '2025-01-23',
-    url: 'https://github.com/TUARAN/ai-trading-journal',
-    demo: null
-  },
-  {
     id: 2,
     name: '博主联盟',
     description: 'Vue 3 + Tailwind CSS 博主联盟平台',
@@ -175,6 +163,18 @@ const projects = [
     forks: 0,
     updatedAt: '2025-01-26',
     url: 'https://github.com/TUARAN/dev-odyssey',
+    demo: null
+  },
+  {
+    id: 1,
+    name: '大模型赋能交易',
+    description: 'AI交易记录与优化平台，展示人与大模型在股市、期货、加密市场的交互过程',
+    language: 'TypeScript',
+    category: 'ai',
+    stars: 0,
+    forks: 0,
+    updatedAt: '2025-01-23',
+    url: 'https://github.com/TUARAN/ai-trading-journal',
     demo: null
   },
   {

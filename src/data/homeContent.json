@@ -1,0 +1,71 @@
+{
+  "hero": {
+    "title": "掘金安东尼",
+    "subtitle": "TUARAN",
+    "philosophy": "我想给自己打一些标签，好让你迅速的认识我，但是我个人又很反感标签。"
+  },
+  "manifesto": {
+    "title": "关于标签这件事",
+    "sections": [
+      {
+        "id": "experience",
+        "highlight": "5年程序员，还是2年项目经理？",
+        "content": "只有一事无成的人才会把年限当 title。",
+        "color": "red"
+      },
+      {
+        "id": "expert",
+        "highlight": "专家博主、签约博主？",
+        "content": "那又怎么样？技术很好吗、有做出什么贡献吗？不过是标题党、堆砌面经。",
+        "color": "red"
+      },
+      {
+        "id": "community",
+        "highlight": "社区共建者、1w+粉丝量、200w+阅读量，",
+        "content": "又怎样？不过是早点玩了社区，有事没事就哔哔几句？",
+        "color": "green"
+      },
+      {
+        "id": "books",
+        "highlight": "写过小册，出过书，",
+        "content": "那又怎样，有几个人看？评价就是一般。",
+        "color": "green"
+      },
+      {
+        "id": "conclusion",
+        "highlight": "所以我想说，",
+        "content": "我不追求什么长期价值，不追求什么深度价值，你怎么能够自诩自己追求的一定是长期的、深度的呢？我也不期望用爱发电，或者帮助别人，也没人说要寻求帮助啊......",
+        "color": "blue"
+      },
+      {
+        "id": "future",
+        "highlight": "在这样的认知背景下，",
+        "content": "我开始自己的个人技术ip之路🚀",
+        "color": "yellow"
+      }
+    ]
+  },
+  "callToAction": {
+    "title": "不如，来看看我在做什么！",
+    "buttons": [
+      {
+        "id": "projects",
+        "text": "看看项目",
+        "icon": "🚀",
+        "type": "primary"
+      },
+      {
+        "id": "blog",
+        "text": "读读文章",
+        "icon": "📝",
+        "type": "secondary"
+      },
+      {
+        "id": "about",
+        "text": "了解更多",
+        "icon": "👤",
+        "type": "secondary"
+      }
+    ]
+  }
+} 

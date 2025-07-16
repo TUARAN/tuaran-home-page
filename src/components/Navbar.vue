@@ -1,10 +1,10 @@
 <template>
-  <nav class="fixed top-0 left-0 right-0 z-50 glass-dark backdrop-blur-md border-b border-zinc-700/50">
+  <nav class="fixed top-0 left-0 right-0 z-50 glass-dark backdrop-blur-md border-b border-amber-300/50">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
         <router-link to="/" class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
+          <div class="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg flex items-center justify-center">
             <span class="text-white font-bold text-sm">掘</span>
           </div>
           <span class="text-xl font-bold gradient-text">掘金安东尼</span>
@@ -74,7 +74,7 @@
         <!-- Mobile menu button -->
         <button 
           @click="toggleMobileMenu"
-          class="md:hidden p-2 rounded-lg hover:bg-zinc-800/50 transition-colors"
+          class="md:hidden p-2 rounded-lg hover:bg-amber-200/50 transition-colors"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -83,7 +83,7 @@
       </div>
 
       <!-- Mobile menu -->
-      <div v-if="mobileMenuOpen" class="md:hidden py-4 border-t border-zinc-700/50">
+      <div v-if="mobileMenuOpen" class="md:hidden py-4 border-t border-amber-300/50">
         <div class="flex flex-col space-y-4">
           <router-link 
             to="/" 
@@ -170,18 +170,18 @@ const closeMobileMenu = () => {
 
 <style scoped>
 .nav-link {
-  @apply text-zinc-300 hover:text-white transition-colors duration-200 font-medium;
+  @apply text-amber-700 hover:text-amber-900 transition-colors duration-200 font-medium;
 }
 
 .nav-link-active {
-  @apply text-cyan-400;
+  @apply text-amber-600;
 }
 
 .nav-link-mobile {
-  @apply text-zinc-300 hover:text-white transition-colors duration-200 font-medium py-2 px-4 rounded-lg hover:bg-zinc-800/50;
+  @apply text-amber-700 hover:text-amber-900 transition-colors duration-200 font-medium py-2 px-4 rounded-lg hover:bg-amber-200/50;
 }
 
 .nav-link-mobile-active {
-  @apply text-cyan-400 bg-zinc-800/50;
+  @apply text-amber-600 bg-amber-200/50;
 }
 </style> 

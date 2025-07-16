@@ -1,16 +1,16 @@
 <template>
-  <footer class="mt-8 py-8 border-t border-zinc-700/30 bg-gradient-to-r from-zinc-900/50 to-black/50 backdrop-blur-sm">
+  <footer class="mt-8 py-8 border-t border-amber-300/30 bg-gradient-to-r from-amber-50/50 to-orange-50/50 backdrop-blur-sm">
     <div class="max-w-6xl mx-auto px-4">
       <!-- 主要内容区域 -->
       <div class="flex flex-col md:flex-row items-center justify-between mb-6">
         <!-- 品牌信息 -->
         <div class="flex items-center space-x-3 mb-4 md:mb-0">
-          <div class="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center shadow-lg">
+          <div class="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg flex items-center justify-center shadow-lg">
             <span class="text-white font-bold text-sm">掘</span>
           </div>
           <div>
             <div class="text-lg font-bold gradient-text">掘金安东尼</div>
-            <div class="text-xs text-zinc-500">TUARAN</div>
+            <div class="text-xs text-amber-600">TUARAN</div>
           </div>
         </div>
 
@@ -53,7 +53,7 @@
 
       <!-- 版权信息 -->
       <div class="text-center">
-        <p class="text-zinc-500 text-sm">
+        <p class="text-amber-600 text-sm">
           © {{ new Date().getFullYear() }} TUARAN. 用代码构建美好世界 ✨
         </p>
       </div>
@@ -67,10 +67,10 @@
 
 <style scoped>
 .social-link {
-  @apply text-zinc-400 hover:text-cyan-400 transition-all duration-300 p-2 rounded-lg hover:bg-zinc-800/50 hover:scale-110;
+  @apply text-amber-600 hover:text-amber-700 transition-all duration-300 p-2 rounded-lg hover:bg-amber-200/50 hover:scale-110;
 }
 
 .social-link:hover {
-  @apply shadow-lg shadow-cyan-500/20;
+  @apply shadow-lg shadow-amber-500/20;
 }
 </style> 

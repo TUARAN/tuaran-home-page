@@ -6,7 +6,7 @@
         <h1 class="text-5xl md:text-6xl font-black tracking-tight gradient-text mb-4">
           我的项目
         </h1>
-        <p class="text-xl text-zinc-400 max-w-3xl mx-auto">
+        <p class="text-xl text-amber-700 max-w-3xl mx-auto">
           这里展示了我的一些开源项目和技术实践，每个项目都承载着不同的学习收获。
         </p>
       </div>
@@ -19,8 +19,8 @@
           @click="activeCategory = category.id"
           class="px-6 py-3 rounded-lg font-medium transition-all duration-300"
           :class="activeCategory === category.id 
-            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg' 
-            : 'bg-zinc-800/50 border border-zinc-700 text-zinc-300 hover:bg-zinc-700/50'"
+            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg' 
+            : 'bg-amber-100/50 border border-amber-300 text-amber-700 hover:bg-amber-200/50'"
         >
           {{ category.name }}
         </button>
@@ -36,10 +36,10 @@
           <!-- Project Header -->
           <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
-              <h3 class="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">
+              <h3 class="text-xl font-bold text-amber-900 mb-2 group-hover:text-amber-600 transition-colors">
                 {{ project.name }}
               </h3>
-              <p class="text-zinc-400 text-sm mb-3">{{ project.description }}</p>
+              <p class="text-amber-700 text-sm mb-3">{{ project.description }}</p>
               <!-- Category Tag -->
               <div class="flex items-center space-x-2">
                 <span class="text-xs px-2 py-1 rounded-full" :class="getCategoryColor(project.category)">
@@ -53,7 +53,7 @@
           </div>
 
           <!-- Project Stats -->
-          <div class="flex items-center justify-between text-sm text-zinc-500 mb-4">
+          <div class="flex items-center justify-between text-sm text-amber-600 mb-4">
             <div class="flex items-center space-x-4">
               <span class="flex items-center">
                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
@@ -95,8 +95,8 @@
       <!-- Empty State -->
       <div v-if="filteredProjects.length === 0" class="text-center py-12">
         <div class="text-6xl mb-4">🚀</div>
-        <h3 class="text-2xl font-bold text-white mb-2">暂无项目</h3>
-        <p class="text-zinc-400">该分类下暂时没有项目，请选择其他分类查看。</p>
+        <h3 class="text-2xl font-bold text-amber-900 mb-2">暂无项目</h3>
+        <p class="text-amber-700">该分类下暂时没有项目，请选择其他分类查看。</p>
       </div>
     </div>
   </div>
@@ -240,23 +240,23 @@ const filteredProjects = computed(() => {
 // 获取语言颜色
 const getLanguageColor = (language) => {
   const colors = {
-    'Vue': 'bg-green-500/20 text-green-400',
-    'TypeScript': 'bg-blue-500/20 text-blue-400',
-    'JavaScript': 'bg-yellow-500/20 text-yellow-400'
+    'Vue': 'bg-green-600/20 text-green-700',
+    'TypeScript': 'bg-blue-600/20 text-blue-700',
+    'JavaScript': 'bg-yellow-600/20 text-yellow-700'
   }
-  return colors[language] || 'bg-gray-500/20 text-gray-400'
+  return colors[language] || 'bg-amber-600/20 text-amber-700'
 }
 
 // 获取分类颜色
 const getCategoryColor = (category) => {
   const colors = {
-    'programming': 'bg-blue-500/20 text-blue-400',
-    'blog-post': 'bg-purple-500/20 text-purple-400',
-    'meme': 'bg-pink-500/20 text-pink-400',
-    'tool': 'bg-orange-500/20 text-orange-400',
-    'ai': 'bg-cyan-500/20 text-cyan-400'
+    'programming': 'bg-blue-600/20 text-blue-700',
+    'blog-post': 'bg-purple-600/20 text-purple-700',
+    'meme': 'bg-pink-600/20 text-pink-700',
+    'tool': 'bg-orange-600/20 text-orange-700',
+    'ai': 'bg-amber-600/20 text-amber-700'
   }
-  return colors[category] || 'bg-gray-500/20 text-gray-400'
+  return colors[category] || 'bg-amber-600/20 text-amber-700'
 }
 
 // 获取分类名称

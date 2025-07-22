@@ -1,25 +1,10 @@
 <template>
   <div class="min-h-screen p-5 relative">
     <!-- WeChat Contact -->
-    <div class="fixed top-20 left-5 z-40">
-      <div 
-        @click="toggleWeChat"
-        class="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-md border border-amber-400/30 rounded-xl shadow-lg hover:shadow-amber-500/25 transition-all duration-300 cursor-pointer overflow-hidden"
-        :class="isWeChatCollapsed ? 'w-12 h-12 p-2' : 'p-4'"
-      >
-        <div class="text-center" :class="isWeChatCollapsed ? 'flex items-center justify-center' : ''">
-          <div class="text-2xl" :class="isWeChatCollapsed ? 'text-lg' : 'mb-2'">💬</div>
-          <div v-if="!isWeChatCollapsed" class="text-amber-700 font-bold text-sm mb-1">加博主微信</div>
-          <div v-if="!isWeChatCollapsed" class="text-amber-600 text-xs mb-2">进核心抽奖群、技术交流群、兼职创业群</div>
-          <div v-if="!isWeChatCollapsed" class="bg-amber-500/20 border border-amber-400/30 rounded-lg px-3 py-1">
-            <span class="text-amber-700 font-mono text-sm">atar24</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- 已移除浮窗/小泡泡相关代码 -->
 
     <!-- Main content -->
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto px-2 sm:px-4">
       <!-- Hero section -->
       <div class="text-center mb-12 pt-20">
         <!-- 头像 -->
@@ -41,7 +26,7 @@
         <!-- 副标题 -->
         <div class="mb-6">
           <p class="text-lg text-amber-800 font-semibold text-center">
-            全栈开发者 / 技术博主
+            一位专注于 AI 编程、前端架构与数字产品打造的技术创作者。
           </p>
         </div>
 
@@ -79,19 +64,12 @@
         </div>
 
         <!-- 紧凑型信念语录 -->
-        <div class="glass-dark rounded-2xl p-6 border border-amber-300/30 shadow-xl max-w-6xl mx-auto mb-8">
-          <div class="text-center mb-4">
-            <p class="text-lg text-amber-700 font-medium leading-relaxed">
-              "技术驱动创新，代码改变世界。在技术与人文的交叉路口，用优雅的代码构建有温度的数字体验。"
-            </p>
-            <p class="text-sm text-amber-600 mt-2">—— 追求技术卓越，创造用户价值</p>
-          </div>
-        </div>
+        <!-- 已删除信念语录区块 -->
       </div>
 
       <!-- 我的足迹 -->
       <div class="text-center mb-8">
-        <h2 class="text-3xl font-bold text-amber-900 mb-2">我的足迹</h2>
+        <h2 class="text-3xl font-bold text-amber-900 mb-2">凡事过往 皆为序章</h2>
         <p class="text-amber-700">技术成长路上的点点滴滴</p>
       </div>
 
@@ -164,55 +142,73 @@
           <!-- 时间线主干 - 在节点下方 -->
           <div class="timeline-line absolute top-2 left-0 right-0 h-1 bg-gradient-to-r from-amber-300 to-orange-300"></div>
 
-          <!-- 详细信息展示区 -->
-          <div class="mt-12 p-6 bg-amber-50/50 rounded-xl border border-amber-200/30">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <!-- 当前重点 -->
-              <div class="current-focus bg-gradient-to-br from-amber-100 to-orange-100 p-4 rounded-lg border border-amber-300/50">
-                <h3 class="text-lg font-bold text-amber-900 mb-2">🚀 当前重点</h3>
-                <div class="space-y-2">
-                  <div class="flex items-center text-sm text-amber-800">
-                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
-                    开源项目开发
-                  </div>
-                  <div class="flex items-center text-sm text-amber-800">
-                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
-                    大模型书籍撰写
-                  </div>
-                  <div class="flex items-center text-sm text-amber-800">
-                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
-                    技术社区建设
-                  </div>
+          <!-- 成就徽章区 -->
+          <div class="flex flex-wrap justify-center gap-3 my-8">
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.27l-4.77 2.51.91-5.33-3.87-3.77 5.34-.78L10 2z"/></svg>
+              400+ 技术文章
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zm1-4a1 1 0 100 2h14a1 1 0 100-2H3zm-1 8a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1z"/></svg>
+              200w+ 阅读
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
+              2本书
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 7H7v6h6V7z"/></svg>
+              开源项目
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-pink-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
+              项目经理
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
+              AI 应用实践
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-red-100 text-red-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 4a2 2 0 110 4 2 2 0 010-4zm0 6a6 6 0 100-12 6 6 0 000 12z"/></svg>
+              1.5w 粉丝
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-pink-200 text-pink-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-pink-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 6.707a1 1 0 011.414 0L10 11l4.293-4.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414z"/></svg>
+              抽奖社群
+            </span>
+          </div>
+
+          <!-- 介绍+二维码整体卡片区块 -->
+          <div class="bg-gradient-to-br from-amber-50/90 to-orange-50/80 rounded-2xl shadow-lg border border-amber-200/60 px-6 py-10 flex flex-col md:flex-row items-center md:items-center justify-between gap-8 md:gap-12 my-8 max-w-none w-full">
+            <!-- 左侧高格局宣言 -->
+            <div class="w-full md:w-2/3 flex flex-col justify-center h-full">
+              <div class="mb-3">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-amber-900 mb-2 tracking-tight">让技术创造更多可能</h2>
+                <div class="text-base md:text-lg text-amber-800 font-medium leading-relaxed mb-2">聚焦前沿技术与工程实践，致力于推动开发者成长与行业进步。</div>
+                <div class="text-sm md:text-base text-amber-700 leading-relaxed mb-2">持续分享高质量内容，涵盖 Vue3 / Python / 大模型落地 / 工程化提升 / 技术创业等领域。</div>
+              </div>
+              <div class="border-t border-amber-200/70 my-4"></div>
+              <div class="text-base md:text-lg text-amber-800 font-semibold mb-1 flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
+                开放社群，链接多元可能
+              </div>
+              <div class="text-sm md:text-base text-amber-700 mb-2">抽奖群、技术群、成长副业群，欢迎扫码加入，共创价值。</div>
+              <div class="mt-4 text-amber-600 font-bold text-base md:text-lg tracking-wide">探索 · 连接 · 共赢</div>
+            </div>
+            <!-- 右侧二维码区块 -->
+            <div class="flex flex-row gap-2 md:gap-4 mt-6 md:mt-0">
+              <div class="flex flex-col items-center">
+                <img src="/qrcode-wechat.jpg" alt="微信二维码" class="w-40 h-40 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-xl shadow-md border border-amber-100 bg-white" />
+                <div class="text-xs text-amber-700 mt-2 flex items-center gap-1">
+                  <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.031-.967-.273-.099-.471-.148-.67.15-.198.297-.767.967-.941 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.151-.174.2-.298.3-.497.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51-.173-.007-.372-.009-.571-.009-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.099 3.205 5.077 4.372.71.306 1.263.489 1.694.626.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.288.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                  微信二维码
                 </div>
               </div>
-
-              <!-- 技术栈 -->
-              <div class="tech-stack bg-gradient-to-br from-orange-100 to-yellow-100 p-4 rounded-lg border border-orange-300/50">
-                <h3 class="text-lg font-bold text-amber-900 mb-2">🛠️ 技术栈</h3>
-                <div class="flex flex-wrap gap-2">
-                  <span class="text-xs px-2 py-1 bg-amber-200/70 text-amber-800 rounded">Vue</span>
-                  <span class="text-xs px-2 py-1 bg-amber-200/70 text-amber-800 rounded">TypeScript</span>
-                  <span class="text-xs px-2 py-1 bg-amber-200/70 text-amber-800 rounded">Node.js</span>
-                  <span class="text-xs px-2 py-1 bg-amber-200/70 text-amber-800 rounded">AI/ML</span>
-                </div>
-              </div>
-
-              <!-- 成就数据 -->
-              <div class="achievements bg-gradient-to-br from-yellow-100 to-amber-100 p-4 rounded-lg border border-yellow-300/50">
-                <h3 class="text-lg font-bold text-amber-900 mb-2">📊 成就数据</h3>
-                <div class="space-y-2">
-                  <div class="flex justify-between text-sm">
-                    <span class="text-amber-700">技术文章</span>
-                    <span class="font-bold text-amber-900">400+</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-amber-700">阅读量</span>
-                    <span class="font-bold text-amber-900">200w+</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-amber-700">出版书籍</span>
-                    <span class="font-bold text-amber-900">2本</span>
-                  </div>
+              <div class="flex flex-col items-center">
+                <img src="/qrcode-group.jpg" alt="加群二维码" class="w-40 h-40 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-xl shadow-md border border-amber-100 bg-white" />
+                <div class="text-xs text-amber-700 mt-2 flex items-center gap-1">
+                  <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#3b82f6"/><text x="12" y="16" text-anchor="middle" font-size="10" fill="white">群</text></svg>
+                  加群二维码
                 </div>
               </div>
             </div>
@@ -232,6 +228,8 @@ const router = useRouter()
 const isWeChatCollapsed = ref(false)
 const showAbout = ref(false)
 const activeTab = ref('manifesto')
+const showWeChat = ref(false)
+const showGroup = ref(false)
 
 const toggleWeChat = () => {
   isWeChatCollapsed.value = !isWeChatCollapsed.value
@@ -269,7 +267,7 @@ const goToDashboard = () => {
 }
 
 const goToBloggerAlliance = () => {
-  window.open('https://tuaran.github.io/blogger-alliance', '_blank')
+  window.open('https://blogger-alliance.pages.dev/', '_blank')
 }
 
 const experiences = [

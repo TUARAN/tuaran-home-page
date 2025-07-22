@@ -49,6 +49,32 @@
             <span class="sr-only">邮箱</span>
           </a>
         </div>
+
+        <!-- 联系方式二维码区块介绍 -->
+        <div class="text-amber-800 text-sm sm:text-base leading-relaxed text-center mb-4 px-2">
+          <div class="mb-1">👨‍💻 大家好，我是掘金安东尼，一位专注于 AI 编程、前端架构与数字产品打造的技术创作者。</div>
+          <div class="mb-1">🚀 我已经正式开启个人 IP 之路，网站上线 👉 <a href="https://tuaran.pages.dev" target="_blank" class="text-blue-600 underline hover:text-blue-800">tuaran.pages.dev</a></div>
+          <div class="mb-1">🧠 我会持续发布高质量干货内容，覆盖 Vue3 / Python / 大模型落地 / 工程化提升 / 技术创业 等方向。</div>
+          <div class="mb-1">🎁 如果你想进 抽奖群 / 技术群 / 副业群 一起交流成长，欢迎加我微信：<span class="font-bold text-amber-700">atar24</span></div>
+          <div>🪐 欢迎关注 + 收藏，一起探索程序员进阶的多维可能！</div>
+        </div>
+        <!-- 联系方式二维码区块 -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-2 mt-8">
+          <div class="flex flex-col items-center">
+            <img src="/qrcode-wechat.jpg" alt="微信二维码" class="w-28 h-28 sm:w-32 sm:h-32 rounded-xl shadow-md border border-amber-100 bg-white" />
+            <div class="text-xs text-amber-700 mt-2 flex items-center gap-1">
+              <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.031-.967-.273-.099-.471-.148-.67.15-.198.297-.767.967-.941 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.151-.174.2-.298.3-.497.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51-.173-.007-.372-.009-.571-.009-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.099 3.205 5.077 4.372.71.306 1.263.489 1.694.626.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.288.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+              微信二维码
+            </div>
+          </div>
+          <div class="flex flex-col items-center">
+            <img src="/qrcode-group.jpg" alt="加群二维码" class="w-28 h-28 sm:w-32 sm:h-32 rounded-xl shadow-md border border-amber-100 bg-white" />
+            <div class="text-xs text-amber-700 mt-2 flex items-center gap-1">
+              <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#3b82f6"/><text x="12" y="16" text-anchor="middle" font-size="10" fill="white">群</text></svg>
+              加群二维码
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 版权信息 -->

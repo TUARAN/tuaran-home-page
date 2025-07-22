@@ -21,204 +21,224 @@
     <!-- Main content -->
     <div class="max-w-4xl mx-auto">
       <!-- Hero section -->
-      <div class="text-center mb-16 pt-20">
+      <div class="text-center mb-12 pt-20">
         <!-- 头像 -->
-        <div class="flex justify-center mb-8">
+        <div class="flex justify-center mb-6">
           <div class="relative group">
             <img 
               src="/avator.jpg" 
               alt="掘金安东尼头像" 
-              class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-amber-300/50 shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 hover:scale-105 object-cover"
+              class="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-amber-300/50 shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 hover:scale-105 object-cover"
             />
           </div>
         </div>
         
         <!-- 主标题 -->
-        <h1 class="text-4xl md:text-5xl font-black tracking-tight gradient-text mb-6">
+        <h1 class="text-3xl md:text-4xl font-black tracking-tight gradient-text mb-4">
           {{ content.hero.title }}
         </h1>
         
         <!-- 副标题 -->
-        <div class="mb-8 px-8">
-          <p class="text-lg text-amber-700 font-light text-center leading-relaxed mb-4">
-            我想给自己打上标签，好让你快速认识我，但是我个人又很反感标签，
-          </p>
-          <p class="text-lg text-amber-700 font-light text-center leading-relaxed flex items-center justify-center gap-3">
-            所以，请求你给我的主页：
-            <span 
-              @click="toggleMusic"
-              class="group relative inline-flex items-center gap-2 text-amber-600 hover:text-amber-500 cursor-pointer transition-all duration-300 hover:scale-105"
-            >
-              <span class="font-medium">一首歌的时间</span>
-              
-              <!-- 播放图标 -->
-              <div class="relative">
-                <div v-if="!isPlaying" class="text-amber-600 group-hover:text-amber-500 transition-colors">
-                  ▶
-                </div>
-                <div v-else class="text-amber-600 group-hover:text-amber-500 transition-colors">
-                  ⏸
-                </div>
-                
-                <!-- 播放时的脉冲效果 -->
-                <div v-if="isPlaying" class="absolute inset-0 w-full h-full rounded-full bg-amber-500/20 animate-ping"></div>
-              </div>
-              
-              <!-- 进度条 -->
-              <div class="w-16 h-0.5 bg-amber-300/50 rounded-full overflow-hidden">
-                <div 
-                  class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-300"
-                  :style="{ width: audioProgress + '%' }"
-                ></div>
-              </div>
-            </span>
+        <div class="mb-6">
+          <p class="text-lg text-amber-800 font-semibold text-center">
+            全栈开发者 / 技术博主
           </p>
         </div>
 
         <!-- 操作按钮区域 -->
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-          <!-- 社区看板按钮 -->
-          <button 
-            @click="goToDashboard" 
-            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-600/20 via-orange-600/20 to-yellow-500/20 border border-amber-500/30 text-amber-700 font-medium rounded-lg hover:from-amber-600/30 hover:via-orange-600/30 hover:to-yellow-500/30 hover:border-amber-500/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-amber-500/25 overflow-hidden"
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+          <button
+            @click="goToDashboard"
+            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-500 border border-amber-700 text-white font-bold rounded-lg hover:from-orange-600 hover:to-amber-600 hover:border-orange-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-amber-500/25 overflow-hidden"
           >
             <div class="flex items-center space-x-2">
               <div class="text-sm">📊</div>
-              <span class="text-sm font-medium">社区看板</span>
+              <span class="text-sm font-bold">社区看板</span>
             </div>
           </button>
-          
-          <!-- GitHub 链接 -->
-          <a 
-            href="https://github.com/tuaran" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            class="group relative inline-flex items-center px-6 py-3 bg-amber-100/30 border border-amber-300/50 rounded-lg hover:bg-amber-200/30 hover:border-amber-400/50 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          <button
+            @click="goToBloggerAlliance"
+            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-500 border border-blue-700 text-white font-bold rounded-lg hover:from-indigo-600 hover:to-blue-600 hover:border-indigo-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 overflow-hidden"
           >
-            <svg class="w-4 h-4 text-amber-700 group-hover:text-amber-800 transition-colors mr-2" fill="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center space-x-2">
+              <div class="text-sm">🤝</div>
+              <span class="text-sm font-bold">博主联盟</span>
+            </div>
+          </button>
+          <a
+            href="https://github.com/tuaran"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-600 border border-gray-700 text-white font-bold rounded-lg hover:from-gray-700 hover:to-gray-800 hover:border-amber-700 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          >
+            <svg class="w-4 h-4 text-white group-hover:text-amber-300 transition-colors mr-2" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
             </svg>
-            <span class="text-sm font-medium text-amber-700 group-hover:text-amber-800 transition-colors">GitHub</span>
+            <span class="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">GitHub</span>
           </a>
+        </div>
+
+        <!-- 紧凑型信念语录 -->
+        <div class="glass-dark rounded-2xl p-6 border border-amber-300/30 shadow-xl max-w-6xl mx-auto mb-8">
+          <div class="text-center mb-4">
+            <p class="text-lg text-amber-700 font-medium leading-relaxed">
+              "技术驱动创新，代码改变世界。在技术与人文的交叉路口，用优雅的代码构建有温度的数字体验。"
+            </p>
+            <p class="text-sm text-amber-600 mt-2">—— 追求技术卓越，创造用户价值</p>
+          </div>
         </div>
       </div>
 
-      <!-- Content Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Personal manifesto section -->
-        <div class="glass-dark rounded-2xl p-8 border border-amber-300/30 shadow-xl">
-          <h2 class="text-2xl font-bold text-center mb-8">
-            <span class="gradient-text">{{ content.manifesto.title }}</span>
-          </h2>
-          
-          <div class="space-y-6">
-            <div 
-              v-for="(section, index) in content.manifesto.sections" 
-              :key="section.id"
-              class="group relative p-4 rounded-xl bg-amber-100/30 border border-amber-300/50 hover:border-amber-400/70 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/10"
-            >
-              <p class="text-base leading-relaxed">
-                <span 
-                  class="font-bold transition-colors duration-300"
-                  :class="getHighlightColor(section.color)"
-                >
-                  {{ section.highlight }}
-                </span>
-                <span class="text-amber-800 ml-2">{{ section.content }}</span>
-              </p>
+      <!-- 我的足迹 -->
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-amber-900 mb-2">我的足迹</h2>
+        <p class="text-amber-700">技术成长路上的点点滴滴</p>
+      </div>
+
+      <!-- 横向时间线 -->
+      <div class="glass-dark rounded-2xl border border-amber-300/30 shadow-xl p-8">
+        <div class="timeline-container relative">
+          <!-- 时间节点 -->
+          <div class="timeline-events flex justify-between items-center relative z-10">
+            <!-- 2018年 - 技术博主开始 -->
+            <div class="timeline-event flex flex-col items-center relative">
+              <div class="timeline-dot w-4 h-4 bg-amber-500 rounded-full border-4 border-amber-100 shadow-lg"></div>
+              <div class="timeline-content text-center max-w-32 mt-4">
+                <div class="text-xs text-amber-600 font-medium mb-1">2018</div>
+                <div class="text-sm font-semibold text-amber-900 mb-1">技术博主</div>
+                <div class="text-xs text-amber-700">开始技术写作</div>
+              </div>
+            </div>
+
+            <!-- 2019年 - 前端开发 -->
+            <div class="timeline-event flex flex-col items-center relative">
+              <div class="timeline-dot w-4 h-4 bg-amber-500 rounded-full border-4 border-amber-100 shadow-lg"></div>
+              <div class="timeline-content text-center max-w-32 mt-4">
+                <div class="text-xs text-amber-600 font-medium mb-1">2019</div>
+                <div class="text-sm font-semibold text-amber-900 mb-1">前端开发</div>
+                <div class="text-xs text-amber-700">电商B2B开发</div>
+              </div>
+            </div>
+
+            <!-- 2020年 - 央企技术 -->
+            <div class="timeline-event flex flex-col items-center relative">
+              <div class="timeline-dot w-4 h-4 bg-amber-500 rounded-full border-4 border-amber-100 shadow-lg"></div>
+              <div class="timeline-content text-center max-w-32 mt-4">
+                <div class="text-xs text-amber-600 font-medium mb-1">2020</div>
+                <div class="text-sm font-semibold text-amber-900 mb-1">央企技术</div>
+                <div class="text-xs text-amber-700">加入央企技术团队</div>
+              </div>
+            </div>
+
+            <!-- 2023年 - 出书 -->
+            <div class="timeline-event flex flex-col items-center relative">
+              <div class="timeline-dot w-4 h-4 bg-orange-500 rounded-full border-4 border-orange-100 shadow-lg"></div>
+              <div class="timeline-content text-center max-w-32 mt-4">
+                <div class="text-xs text-amber-600 font-medium mb-1">2023</div>
+                <div class="text-sm font-semibold text-amber-900 mb-1">出版书籍</div>
+                <div class="text-xs text-amber-700">《程序员成长手记》</div>
+              </div>
+            </div>
+
+            <!-- 2024年 - 项目经理 -->
+            <div class="timeline-event flex flex-col items-center relative">
+              <div class="timeline-dot w-4 h-4 bg-orange-500 rounded-full border-4 border-orange-100 shadow-lg"></div>
+              <div class="timeline-content text-center max-w-32 mt-4">
+                <div class="text-xs text-amber-600 font-medium mb-1">2024</div>
+                <div class="text-sm font-semibold text-amber-900 mb-1">项目经理</div>
+                <div class="text-xs text-amber-700">《扣子通关指南》</div>
+              </div>
+            </div>
+
+            <!-- 2025年 - 开源项目 -->
+            <div class="timeline-event flex flex-col items-center relative">
+              <div class="timeline-dot w-4 h-4 bg-yellow-500 rounded-full border-4 border-yellow-100 shadow-lg animate-pulse"></div>
+              <div class="timeline-content text-center max-w-32 mt-4">
+                <div class="text-xs text-amber-600 font-medium mb-1">2025</div>
+                <div class="text-sm font-semibold text-amber-900 mb-1">开源项目</div>
+                <div class="text-xs text-amber-700">6月开始开源之路</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Quick Actions section -->
-        <div class="glass-dark rounded-2xl p-8 border border-amber-300/30 shadow-xl">
-          <h2 class="text-2xl font-bold text-amber-900 mb-8 text-center">
-            {{ content.callToAction.title }}
-          </h2>
+          <!-- 时间线主干 - 在节点下方 -->
+          <div class="timeline-line absolute top-2 left-0 right-0 h-1 bg-gradient-to-r from-amber-300 to-orange-300"></div>
 
-          <div class="space-y-6">
-            <!-- 开源项目 -->
-            <div class="bg-amber-100/30 rounded-xl p-6 border border-amber-300/50 hover:border-amber-400/70 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-amber-500/10" @click="handleButtonClick('projects')">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-bold text-amber-700 flex items-center">
-                  🚀 热门项目
-                </h3>
-                <span class="text-xs text-amber-600">AI相关</span>
+          <!-- 详细信息展示区 -->
+          <div class="mt-12 p-6 bg-amber-50/50 rounded-xl border border-amber-200/30">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <!-- 当前重点 -->
+              <div class="current-focus bg-gradient-to-br from-amber-100 to-orange-100 p-4 rounded-lg border border-amber-300/50">
+                <h3 class="text-lg font-bold text-amber-900 mb-2">🚀 当前重点</h3>
+                <div class="space-y-2">
+                  <div class="flex items-center text-sm text-amber-800">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+                    开源项目开发
+                  </div>
+                  <div class="flex items-center text-sm text-amber-800">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+                    大模型书籍撰写
+                  </div>
+                  <div class="flex items-center text-sm text-amber-800">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+                    技术社区建设
+                  </div>
+                </div>
               </div>
-              <p class="text-sm text-amber-800 mb-3">博主联盟、代码矿工工具集合、大模型赋能交易</p>
-              <div class="flex gap-2">
-                <span class="text-xs px-2 py-1 bg-amber-200/50 text-amber-700 rounded">Vue</span>
-                <span class="text-xs px-2 py-1 bg-amber-200/50 text-amber-700 rounded">TypeScript</span>
-              </div>
-            </div>
 
-            <!-- 技术文章 -->
-            <div class="bg-amber-100/30 rounded-xl p-6 border border-amber-300/50 hover:border-amber-400/70 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-orange-500/10" @click="handleButtonClick('blog')">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-bold text-orange-700 flex items-center">
-                  📝 精选文章
-                </h3>
-                <span class="text-xs text-amber-600">技术分享</span>
+              <!-- 技术栈 -->
+              <div class="tech-stack bg-gradient-to-br from-orange-100 to-yellow-100 p-4 rounded-lg border border-orange-300/50">
+                <h3 class="text-lg font-bold text-amber-900 mb-2">🛠️ 技术栈</h3>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs px-2 py-1 bg-amber-200/70 text-amber-800 rounded">Vue</span>
+                  <span class="text-xs px-2 py-1 bg-amber-200/70 text-amber-800 rounded">TypeScript</span>
+                  <span class="text-xs px-2 py-1 bg-amber-200/70 text-amber-800 rounded">Node.js</span>
+                  <span class="text-xs px-2 py-1 bg-amber-200/70 text-amber-800 rounded">AI/ML</span>
+                </div>
               </div>
-              <p class="text-sm text-amber-800 mb-3">前端周刊、AI学习路径、开发工具推荐</p>
-              <div class="flex gap-2">
-                <span class="text-xs px-2 py-1 bg-orange-200/50 text-orange-700 rounded">翻译</span>
-                <span class="text-xs px-2 py-1 bg-orange-200/50 text-orange-700 rounded">探索</span>
-              </div>
-            </div>
 
-            <!-- 个人介绍 -->
-            <div class="bg-amber-100/30 rounded-xl p-6 border border-amber-300/50 hover:border-amber-400/70 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-yellow-500/10" @click="handleButtonClick('about')">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-bold text-yellow-700 flex items-center">
-                  👤 关于我
-                </h3>
-                <span class="text-xs text-amber-600">个人</span>
-              </div>
-              <p class="text-sm text-amber-800 mb-3">掘金7级作者、400+ 技术文章、200w+ 阅读量</p>
-              <div class="flex gap-2">
-                <span class="text-xs px-2 py-1 bg-yellow-200/50 text-yellow-700 rounded">认证</span>
-                <span class="text-xs px-2 py-1 bg-yellow-200/50 text-yellow-700 rounded">影响力</span>
+              <!-- 成就数据 -->
+              <div class="achievements bg-gradient-to-br from-yellow-100 to-amber-100 p-4 rounded-lg border border-yellow-300/50">
+                <h3 class="text-lg font-bold text-amber-900 mb-2">📊 成就数据</h3>
+                <div class="space-y-2">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-amber-700">技术文章</span>
+                    <span class="font-bold text-amber-900">400+</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-amber-700">阅读量</span>
+                    <span class="font-bold text-amber-900">200w+</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-amber-700">出版书籍</span>
+                    <span class="font-bold text-amber-900">2本</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- 音频元素 -->
-    <audio ref="audioPlayer" preload="auto" class="hidden">
-      <source src="/audio/1158032808.mp3" type="audio/mpeg">
-      您的浏览器不支持音频播放。
-    </audio>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import content from '../data/homeContent.json'
 
 const router = useRouter()
 const isWeChatCollapsed = ref(false)
-const isPlaying = ref(false)
-const audioPlayer = ref(null)
-const audioProgress = ref(0)
+const showAbout = ref(false)
+const activeTab = ref('manifesto')
 
 const toggleWeChat = () => {
   isWeChatCollapsed.value = !isWeChatCollapsed.value
 }
 
-const toggleMusic = () => {
-  if (!audioPlayer.value) return
-  
-  if (isPlaying.value) {
-    audioPlayer.value.pause()
-    isPlaying.value = false
-  } else {
-    audioPlayer.value.play()
-    isPlaying.value = true
-  }
+const toggleAbout = () => {
+  showAbout.value = !showAbout.value
 }
 
 const getHighlightColor = (color) => {
@@ -234,13 +254,12 @@ const getHighlightColor = (color) => {
 const handleButtonClick = (buttonId) => {
   switch (buttonId) {
     case 'projects':
-      router.push('/projects')
+      router.push('/projects').then(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      })
       break
     case 'blog':
       window.open('https://tuaran.github.io/auto-sync-blog/sort/all.html#%E7%BB%9F%E8%AE%A1', '_blank')
-      break
-    case 'about':
-      router.push('/about')
       break
   }
 }
@@ -249,28 +268,63 @@ const goToDashboard = () => {
   window.open('https://csdn-fans-tracker.pages.dev/dashboard', '_blank')
 }
 
-// 音频事件监听
-onMounted(() => {
-  if (audioPlayer.value) {
-    audioPlayer.value.addEventListener('ended', () => {
-      isPlaying.value = false
-      audioProgress.value = 0
-    })
-    
-    audioPlayer.value.addEventListener('error', () => {
-      console.log('音频加载失败，请确保音频文件存在')
-      isPlaying.value = false
-      audioProgress.value = 0
-    })
-    
-    // 监听播放进度
-    audioPlayer.value.addEventListener('timeupdate', () => {
-      if (audioPlayer.value.duration) {
-        audioProgress.value = (audioPlayer.value.currentTime / audioPlayer.value.duration) * 100
-      }
-    })
+const goToBloggerAlliance = () => {
+  window.open('https://tuaran.github.io/blogger-alliance', '_blank')
+}
+
+const experiences = [
+  {
+    title: '技术工作者',
+    company: '某央企',
+    period: '2020.10 - 至今',
+    description: '2020年10月加入某央企，2023年1月转岗至项目经理，2025年决定重新回归程序员岗位。'
+  },
+  {
+    title: '前端开发工程师',
+    company: '某游戏公司',
+    period: '2019.10 - 2020.10',
+    description: '负责日志文件平台、安全展示平台、梯控系统等项目的开发，使用Vue全家桶、Echarts、Uniapp等技术栈。'
+  },
+  {
+    title: '前端开发工程师',
+    company: '某电商',
+    period: '2018.6 - 2019.9',
+    description: '负责B2B商城web端和小程序开发，使用velocity模板引擎、Uniapp框架等技术。'
+  },
+  {
+    title: '技术博主 & 签约作者',
+    company: '自由职业',
+    period: '2018 - 至今',
+    description: '发表技术文章400余篇，累计阅读量200余万，掘金翻译管理团队成员，掘金7级作者。'
   }
-})
+]
+
+const writings = [
+  {
+    title: '大模型赋能开发（书稿撰写中）',
+    period: '2025年',
+    publisher: '待出版',
+    description: '聚焦AI大模型与开发实践，分享前沿技术与实战经验。'
+  },
+  {
+    title: '《扣子通关指南》',
+    period: '2024年',
+    publisher: '机械工业出版社',
+    description: '面向前端开发者的小册，系统梳理知识点，助力技术成长。'
+  },
+  {
+    title: '《程序员成长手记》',
+    period: '2023年',
+    publisher: '机械工业出版社',
+    description: '记录成长与思考，分享编程经验与职业感悟。'
+  },
+  {
+    title: '技术博客写作',
+    period: '2018年至今',
+    publisher: '掘金/个人博客',
+    description: '持续输出400+技术文章，累计阅读量200w+，专注前端、AI与开发工具。'
+  }
+]
 </script>
 
 <style scoped>
@@ -283,11 +337,138 @@ onMounted(() => {
   @apply bg-gradient-to-r from-amber-600 via-orange-600 to-yellow-600 bg-clip-text text-transparent;
 }
 
+/* 时间线样式 */
+.timeline-container {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.timeline-container::-webkit-scrollbar {
+  display: none;
+}
+
+.timeline-line {
+  background: linear-gradient(90deg, #f59e0b 0%, #ea580c 50%, #eab308 100%);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  z-index: 1;
+}
+
+.timeline-dot {
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  z-index: 10;
+  position: relative;
+}
+
+.timeline-dot:hover {
+  transform: scale(1.2);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.6);
+}
+
+.timeline-event {
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.timeline-event:hover .timeline-content {
+  transform: translateY(-2px);
+}
+
+.timeline-content {
+  transition: all 0.3s ease;
+}
+
+/* 响应式时间线 */
+@media (max-width: 768px) {
+  .timeline-events {
+    flex-direction: column;
+    gap: 2rem;
+    padding-top: 0;
+  }
+  
+  .timeline-line {
+    width: 1px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, #f59e0b 0%, #ea580c 50%, #eab308 100%);
+  }
+  
+  .timeline-event {
+    flex-direction: row;
+    gap: 1rem;
+    min-width: auto;
+    position: relative;
+  }
+  
+  .timeline-dot {
+    position: absolute !important;
+    left: -2px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+  
+  .timeline-content {
+    text-align: left;
+    max-width: none;
+    margin-left: 2rem;
+    margin-top: 0 !important;
+  }
+}
+
+/* 紧凑型工作经历样式 */
+.experience-item-compact {
+  @apply border-l-4 border-amber-500 pl-4 pb-4 last:pb-0 relative;
+}
+
+.experience-item-compact::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  border-radius: 50%;
+  border: 2px solid #fef3c7;
+}
+
+.experience-header-compact {
+  @apply flex items-center justify-between mb-2;
+}
+
+.experience-title-compact {
+  @apply text-lg font-semibold text-amber-900;
+}
+
+.experience-period-compact {
+  @apply text-sm text-amber-600 bg-amber-100/50 px-2 py-1 rounded-full;
+}
+
+.experience-company-compact {
+  @apply text-amber-700 font-medium mb-2 text-base;
+}
+
+.experience-description-compact {
+  @apply text-amber-800 text-sm leading-relaxed;
+}
+
 /* 动画效果 */
 .group {
   animation: fadeInUp 0.6s ease-out forwards;
   opacity: 0;
   transform: translateY(20px);
+}
+
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.1);
 }
 
 @keyframes fadeInUp {
@@ -309,5 +490,62 @@ onMounted(() => {
 
 button:has(.text-amber-600) {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* 合并About样式 */
+.about-card {
+  @apply bg-amber-50/80 backdrop-blur-lg rounded-2xl p-8 border border-amber-200/50 shadow-xl;
+}
+.section-title {
+  @apply text-2xl font-bold text-amber-900 mb-8;
+}
+.experience-item {
+  @apply border-l-4 border-amber-500 pl-8 pb-8 last:pb-0 relative;
+}
+.experience-item::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  border-radius: 50%;
+  border: 3px solid #fef3c7;
+}
+.experience-header {
+  @apply flex items-center justify-between mb-3;
+}
+.experience-title {
+  @apply text-xl font-semibold text-amber-900;
+}
+.experience-period {
+  @apply text-sm text-amber-600 bg-amber-100/50 px-3 py-1 rounded-full;
+}
+.experience-company {
+  @apply text-amber-700 font-medium mb-3 text-lg;
+}
+.experience-description {
+  @apply text-amber-800 text-base leading-relaxed;
+}
+.card-animated {
+  animation: cardSlideUp 0.8s ease-out;
+}
+@keyframes cardSlideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(50px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.experience-card-carousel {
+  min-width: 260px;
+  max-width: 350px;
+  margin: 0 auto;
+  transition: box-shadow 0.3s;
 }
 </style> 

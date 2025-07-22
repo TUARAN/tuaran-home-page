@@ -62,13 +62,6 @@
           >
             开源项目
           </router-link>
-          <router-link 
-            to="/about" 
-            class="nav-link"
-            :class="{ 'nav-link-active': $route.path === '/about' }"
-          >
-            关于
-          </router-link>
         </div>
 
         <!-- Mobile menu button -->
@@ -139,14 +132,6 @@
             @click="closeMobileMenu"
           >
             开源项目
-          </router-link>
-          <router-link 
-            to="/about" 
-            class="nav-link-mobile"
-            :class="{ 'nav-link-mobile-active': $route.path === '/about' }"
-            @click="closeMobileMenu"
-          >
-            关于
           </router-link>
         </div>
       </div>

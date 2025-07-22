@@ -224,6 +224,13 @@ const websites = [
     description: 'A beautiful soul quotes website',
     category: 'fun',
     url: 'https://jianren-vite.vercel.app/'
+  },
+  {
+    id: 10,
+    name: '大模型赋能交易',
+    description: '大模型赋能交易平台，AI驱动的金融与交易创新',
+    category: 'tech',
+    url: 'https://aiabs.pages.dev/'
   }
 ]
 

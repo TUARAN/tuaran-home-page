@@ -162,13 +162,14 @@ import { ref, computed } from 'vue'
 
 // 已上线网站数据
 const websites = [
-  {
-    id: 1,
-    name: '个人主页',
-    description: '掘金安东尼的个人主页，展示技术文章和项目作品',
-    category: 'ip',
-    url: 'https://tuaran.pages.dev/'
-  },
+  // 删除 id:1 个人主页
+  // {
+  //   id: 1,
+  //   name: '个人主页',
+  //   description: '掘金安东尼的个人主页，展示技术文章和项目作品',
+  //   category: 'ip',
+  //   url: 'https://tuaran.pages.dev/'
+  // },
   {
     id: 2,
     name: '博主联盟',

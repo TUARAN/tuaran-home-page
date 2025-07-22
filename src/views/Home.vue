@@ -32,8 +32,8 @@
 
         <!-- 操作按钮区域 -->
         <div class="flex flex-wrap justify-center gap-4 mb-8">
-          <button
-            @click="goToDashboard"
+          <button 
+            @click="goToDashboard" 
             class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-500 border border-amber-700 text-white font-bold rounded-lg hover:from-orange-600 hover:to-amber-600 hover:border-orange-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-amber-500/25 overflow-hidden"
           >
             <div class="flex items-center space-x-2">
@@ -50,10 +50,19 @@
               <span class="text-sm font-bold">博主联盟</span>
             </div>
           </button>
-          <a
-            href="https://github.com/tuaran"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            @click="goToAiabs"
+            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 border border-green-700 text-white font-bold rounded-lg hover:from-emerald-600 hover:to-green-600 hover:border-emerald-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/25 overflow-hidden"
+          >
+            <div class="flex items-center space-x-2">
+              <div class="text-sm">🧠</div>
+              <span class="text-sm font-bold">大模型赋能交易</span>
+            </div>
+          </button>
+          <a 
+            href="https://github.com/tuaran" 
+            target="_blank" 
+            rel="noopener noreferrer" 
             class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-600 border border-gray-700 text-white font-bold rounded-lg hover:from-gray-700 hover:to-gray-800 hover:border-amber-700 transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
             <svg class="w-4 h-4 text-white group-hover:text-amber-300 transition-colors mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -95,8 +104,8 @@
                 <div class="text-xs text-amber-600 font-medium mb-1">2019</div>
                 <div class="text-sm font-semibold text-amber-900 mb-1">前端开发</div>
                 <div class="text-xs text-amber-700">电商B2B开发</div>
-              </div>
-            </div>
+          </div>
+        </div>
 
             <!-- 2020年 - 央企技术 -->
             <div class="timeline-event flex flex-col items-center relative">
@@ -176,7 +185,7 @@
               <svg class="w-4 h-4 mr-1 text-pink-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 6.707a1 1 0 011.414 0L10 11l4.293-4.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414z"/></svg>
               抽奖社群
             </span>
-          </div>
+            </div>
 
           <!-- 介绍+二维码整体卡片区块 -->
           <div class="bg-gradient-to-br from-amber-50/90 to-orange-50/80 rounded-2xl shadow-lg border border-amber-200/60 px-6 py-10 flex flex-col md:flex-row items-center md:items-center justify-between gap-8 md:gap-12 my-8 max-w-none w-full">
@@ -268,6 +277,10 @@ const goToDashboard = () => {
 
 const goToBloggerAlliance = () => {
   window.open('https://blogger-alliance.pages.dev/', '_blank')
+}
+
+const goToAiabs = () => {
+  window.open('https://aiabs.pages.dev/', '_blank')
 }
 
 const experiences = [

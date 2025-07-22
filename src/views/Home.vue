@@ -50,15 +50,6 @@
               <span class="text-sm font-bold">博主联盟</span>
             </div>
           </button>
-          <button
-            @click="goToAiabs"
-            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 border border-green-700 text-white font-bold rounded-lg hover:from-emerald-600 hover:to-green-600 hover:border-emerald-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/25 overflow-hidden"
-          >
-            <div class="flex items-center space-x-2">
-              <div class="text-sm">🧠</div>
-              <span class="text-sm font-bold">大模型赋能交易</span>
-            </div>
-          </button>
           <a 
             href="https://github.com/tuaran" 
             target="_blank" 
@@ -277,10 +268,6 @@ const goToDashboard = () => {
 
 const goToBloggerAlliance = () => {
   window.open('https://blogger-alliance.pages.dev/', '_blank')
-}
-
-const goToAiabs = () => {
-  window.open('https://aiabs.pages.dev/', '_blank')
 }
 
 const experiences = [

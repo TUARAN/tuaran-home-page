@@ -1,6 +1,6 @@
 # TUARAN Blog - 掘金安东尼的个人博客
 
-一个现代化的开发者主页，采用 Vue 3 + Tailwind CSS + Glassmorphism 设计风格。
+一个现代化的开发者主页，采用 Vue 3 + Tailwind CSS + Glassmorphism 设计风格，专注于 AI 编程、前端架构与数字产品打造。
 
 ## 🌐 在线预览
 
@@ -10,18 +10,24 @@
 ## 🚀 项目结构
 
 ```
-tuaran-blog/
+tar/
 ├── index.html              # 主入口文件
 ├── src/
 │   ├── views/              # 页面组件
-│   │   ├── Home.vue        # 主页
-│   │   ├── Projects.vue    # 项目展示
-│   │   └── About.vue       # 关于页面
+│   │   ├── Home.vue        # 主页（集成个人介绍、成就展示、联系方式）
+│   │   └── Projects.vue    # 项目展示（开源项目、网站合集）
 │   ├── components/         # 通用组件
 │   │   ├── Navbar.vue      # 导航栏
 │   │   └── Footer.vue      # 页脚
+│   ├── data/               # 数据文件
+│   │   └── homeContent.json # 主页内容配置
 │   ├── main.js             # 应用入口
 │   └── style.css           # 全局样式
+├── public/                 # 静态资源
+│   ├── audio/              # 音频文件
+│   ├── avator.jpg          # 头像
+│   ├── qrcode-wechat.jpg   # 微信二维码
+│   └── qrcode-group.jpg    # 群聊二维码
 ├── package.json            # 项目依赖
 ├── vite.config.js          # Vite 配置
 ├── tailwind.config.js      # Tailwind CSS 配置
@@ -36,25 +42,21 @@ tuaran-blog/
 - **Tailwind CSS** - 实用优先的 CSS 框架
 - **Vite** - 下一代前端构建工具
 - **Glassmorphism** - 玻璃质感设计风格
+- **响应式设计** - 移动优先的设计理念
 
 ## 📦 功能模块
 
 ### 🏠 主页 (Home)
-- 个人介绍和价值观展示
-- 现代化的渐变文字效果
-- 代码块展示个人宣言
-- 响应式设计，完美适配各种设备
+- **个人介绍** - 高格局品牌定位，专注于 AI 编程、前端架构与数字产品
+- **成就展示** - 400+ 技术文章、200w+ 阅读、2本书、开源项目等成就徽章
+- **水平时间轴** - 交互式时间轴展示工作经验和写作经历
+- **联系方式** - 集成微信二维码和群聊二维码，支持社群连接
+- **响应式设计** - 完美适配桌面端和移动端
 
 ### 🚀 项目展示 (Projects)
-- 项目卡片网格布局
-- 支持按技术栈分类筛选
-- 显示 Star/Fork/更新日期
-- 项目演示链接
-
-### 📝 技术博客
-- 外链到个人技术博客
-- 分享技术心得和学习笔记
-- 记录成长路上的点点滴滴
+- **开源项目** - 展示 GitHub 开源项目，包含技术栈标签和项目描述
+- **网站合集** - 精选网站推荐，涵盖技术、工具、学习资源等
+- **卡片布局** - 现代化的卡片设计，支持悬停效果和外部链接
 
 ### 🎨 通用组件
 - **Navbar** - 半透明玻璃质感背景 + 响应式菜单
@@ -67,8 +69,8 @@ tuaran-blog/
 
 1. 克隆项目：
 ```bash
-git clone https://github.com/tuaran/tuaran-blog.git
-cd tuaran-blog
+git clone https://github.com/tuaran/tar.git
+cd tar
 ```
 
 2. 安装依赖：
@@ -99,20 +101,24 @@ npm run preview
 
 - **Glassmorphism 风格** - 半透明玻璃质感背景
 - **响应式设计** - 移动优先，完美适配各种设备
-- **暗色主题** - 护眼的深色配色方案
+- **渐变色彩** - 琥珀色主题，温暖而专业
 - **流畅动画** - 页面切换和交互动效
 - **现代化 UI** - 参考最新设计趋势
+- **成就展示** - 徽章式成就展示，增强个人品牌
+- **时间轴设计** - 水平时间轴展示经历，直观易懂
 
 ## 📁 文件说明
 
 ### 页面组件 (`src/views/`)
-- `Home.vue` - 主页，展示个人介绍和价值观
-- `Projects.vue` - 项目展示页面
-- `About.vue` - 关于页面
+- `Home.vue` - 主页，集成个人介绍、成就展示、时间轴和联系方式
+- `Projects.vue` - 项目展示页面，包含开源项目和网站合集
 
 ### 通用组件 (`src/components/`)
 - `Navbar.vue` - 导航栏组件
 - `Footer.vue` - 页脚组件
+
+### 数据文件 (`src/data/`)
+- `homeContent.json` - 主页内容配置，支持动态内容管理
 
 ### 配置文件
 - `vite.config.js` - Vite 构建工具配置
@@ -127,7 +133,7 @@ npm run preview
 - 开发服务器端口 3000
 
 ### Tailwind CSS 配置
-- 自定义颜色主题
+- 自定义琥珀色主题
 - 集成 Glassmorphism 样式
 - 响应式断点配置
 
@@ -150,11 +156,15 @@ npm run preview
 - [x] 路由配置和页面骨架
 - [x] 主页设计和实现
 - [x] 项目展示页面
-- [x] 技术博客外链
-- [ ] 关于页面完善
-- [ ] 添加更多交互动画
+- [x] 成就展示系统
+- [x] 水平时间轴设计
+- [x] 响应式设计优化
+- [x] 联系方式集成
+- [x] 开源项目展示
+- [x] 网站合集功能
 - [ ] 性能优化
 - [ ] SEO 优化
+- [ ] 更多交互动画
 
 ## 🤝 贡献
 
@@ -166,4 +176,4 @@ MIT License
 
 ---
 
-**TUARAN** - 用代码构建美好世界 ✨ 
+**TUARAN** - 让技术创造更多可能 ✨ 

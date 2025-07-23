@@ -6,7 +6,7 @@
     <!-- Main content -->
     <div class="max-w-6xl mx-auto px-2 sm:px-4">
       <!-- Hero section -->
-      <div class="text-center mb-12 pt-20">
+      <div class="text-center mb-12 pt-8">
         <!-- 头像 -->
         <div class="flex justify-center mb-6">
           <div class="relative group">

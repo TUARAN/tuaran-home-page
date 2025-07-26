@@ -9,12 +9,18 @@
       </router-view>
     </main>
     <Footer />
+    <StagewiseToolbar v-if="isDev" :config="{ plugins: [VuePlugin] }" />
   </div>
 </template>
 
 <script setup>
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
+import { StagewiseToolbar } from '@stagewise/toolbar-vue'
+import VuePlugin from '@stagewise-plugins/vue'
+
+// Only show toolbar in development mode
+const isDev = import.meta.env.DEV
 </script>
 
 <style>

@@ -1,5 +1,27 @@
 <template>
   <div class="min-h-screen p-5 relative">
+    <!-- Left QR Code -->
+    <div class="fixed left-4 top-1/2 transform -translate-y-1/2 z-10 hidden lg:block">
+      <div class="flex flex-col items-center">
+        <img src="/qrcode-wechat.jpg" alt="微信二维码" class="w-40 h-56 rounded-xl shadow-lg border border-amber-100 bg-white" />
+        <div class="text-sm text-amber-800 font-semibold mt-2 text-center max-w-32">
+          <div>加博主好友，</div>
+          <div>让技术创造更多可能</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right QR Code -->
+    <div class="fixed right-4 top-1/2 transform -translate-y-1/2 z-10 hidden lg:block">
+      <div class="flex flex-col items-center">
+        <img src="/qrcode-group.jpg" alt="加群二维码" class="w-40 h-56 rounded-xl shadow-lg border border-amber-100 bg-white" />
+        <div class="text-sm text-amber-800 font-semibold mt-2 text-center max-w-32">
+          <div>加开放社群，</div>
+          <div>让链接激发多元可能</div>
+        </div>
+      </div>
+    </div>
+
     <!-- WeChat Contact -->
     <!-- 已移除浮窗/小泡泡相关代码 -->
 
@@ -177,42 +199,6 @@
               抽奖社群
             </span>
             </div>
-
-          <!-- 介绍+二维码整体卡片区块 -->
-          <div class="bg-gradient-to-br from-amber-50/90 to-orange-50/80 rounded-2xl shadow-lg border border-amber-200/60 px-6 py-10 flex flex-col md:flex-row items-center md:items-center justify-between gap-8 md:gap-12 my-8 max-w-none w-full">
-            <!-- 左侧高格局宣言 -->
-            <div class="w-full md:w-2/3 flex flex-col justify-center h-full">
-              <div class="mb-3">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-amber-900 mb-2 tracking-tight">让技术创造更多可能</h2>
-                <div class="text-base md:text-lg text-amber-800 font-medium leading-relaxed mb-2">聚焦前沿技术与工程实践，致力于推动开发者成长与行业进步。</div>
-                <div class="text-sm md:text-base text-amber-700 leading-relaxed mb-2">持续分享高质量内容，涵盖 Vue3 / Python / 大模型落地 / 工程化提升 / 技术创业等领域。</div>
-              </div>
-              <div class="border-t border-amber-200/70 my-4"></div>
-              <div class="text-base md:text-lg text-amber-800 font-semibold mb-1 flex items-center gap-2">
-                <svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
-                开放社群，链接多元可能
-              </div>
-              <div class="text-sm md:text-base text-amber-700 mb-2">抽奖群、技术群、成长副业群，欢迎扫码加入，共创价值。</div>
-              <div class="mt-4 text-amber-600 font-bold text-base md:text-lg tracking-wide">探索 · 连接 · 共赢</div>
-            </div>
-            <!-- 右侧二维码区块 -->
-            <div class="flex flex-row gap-2 md:gap-4 mt-6 md:mt-0">
-              <div class="flex flex-col items-center">
-                <img src="/qrcode-wechat.jpg" alt="微信二维码" class="w-40 h-40 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-xl shadow-md border border-amber-100 bg-white" />
-                <div class="text-xs text-amber-700 mt-2 flex items-center gap-1">
-                  <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.031-.967-.273-.099-.471-.148-.67.15-.198.297-.767.967-.941 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.151-.174.2-.298.3-.497.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51-.173-.007-.372-.009-.571-.009-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.099 3.205 5.077 4.372.71.306 1.263.489 1.694.626.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.288.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-                  微信二维码
-                </div>
-              </div>
-              <div class="flex flex-col items-center">
-                <img src="/qrcode-group.jpg" alt="加群二维码" class="w-40 h-40 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-xl shadow-md border border-amber-100 bg-white" />
-                <div class="text-xs text-amber-700 mt-2 flex items-center gap-1">
-                  <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#3b82f6"/><text x="12" y="16" text-anchor="middle" font-size="10" fill="white">群</text></svg>
-                  加群二维码
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

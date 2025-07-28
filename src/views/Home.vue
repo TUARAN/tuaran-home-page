@@ -98,13 +98,23 @@
       <!-- 横向时间线 -->
       <div class="glass-dark rounded-2xl border border-amber-300/30 shadow-xl p-8">
         <div class="timeline-container relative">
+          <!-- 时间线主干 -->
+          <div class="timeline-line absolute top-[70px] left-0 right-0 h-1 bg-gradient-to-r from-amber-300 to-orange-300 z-10 transform -translate-y-1/2"></div>
+          
           <!-- 时间节点 -->
           <div class="timeline-events flex justify-between items-center relative z-10">
             <!-- 2018年 - 技术博主开始 -->
             <div class="timeline-event flex flex-col items-center relative">
-              <div class="timeline-dot w-4 h-4 bg-amber-500 rounded-full border-4 border-amber-100 shadow-lg"></div>
-              <div class="timeline-content text-center max-w-32 mt-4">
-                <div class="text-xs text-amber-600 font-medium mb-1">2018</div>
+              <!-- 年份 -->
+              <div class="text-base text-amber-600 font-bold mb-4 relative z-20">2018</div>
+              <!-- 图标 -->
+              <div class="timeline-icon w-12 h-12 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg border-2 border-amber-200 flex items-center justify-center mb-3 shadow-md relative z-5">
+                <svg class="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </div>
+              <!-- 文字内容 -->
+              <div class="text-center max-w-32">
                 <div class="text-sm font-semibold text-amber-900 mb-1">技术博主</div>
                 <div class="text-xs text-amber-700">开始技术写作</div>
               </div>
@@ -112,19 +122,33 @@
 
             <!-- 2019年 - 前端开发 -->
             <div class="timeline-event flex flex-col items-center relative">
-              <div class="timeline-dot w-4 h-4 bg-amber-500 rounded-full border-4 border-amber-100 shadow-lg"></div>
-              <div class="timeline-content text-center max-w-32 mt-4">
-                <div class="text-xs text-amber-600 font-medium mb-1">2019</div>
+              <!-- 年份 -->
+              <div class="text-base text-amber-600 font-bold mb-4 relative z-20">2019</div>
+              <!-- 图标 -->
+              <div class="timeline-icon w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg border-2 border-blue-200 flex items-center justify-center mb-3 shadow-md relative z-5">
+                <svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                </svg>
+              </div>
+              <!-- 文字内容 -->
+              <div class="text-center max-w-32">
                 <div class="text-sm font-semibold text-amber-900 mb-1">前端开发</div>
                 <div class="text-xs text-amber-700">电商B2B开发</div>
-          </div>
-        </div>
+              </div>
+            </div>
 
             <!-- 2020年 - 央企技术 -->
             <div class="timeline-event flex flex-col items-center relative">
-              <div class="timeline-dot w-4 h-4 bg-amber-500 rounded-full border-4 border-amber-100 shadow-lg"></div>
-              <div class="timeline-content text-center max-w-32 mt-4">
-                <div class="text-xs text-amber-600 font-medium mb-1">2020</div>
+              <!-- 年份 -->
+              <div class="text-base text-amber-600 font-bold mb-4 relative z-20">2020</div>
+              <!-- 图标 -->
+              <div class="timeline-icon w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg border-2 border-green-200 flex items-center justify-center mb-3 shadow-md relative z-5">
+                <svg class="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                </svg>
+              </div>
+              <!-- 文字内容 -->
+              <div class="text-center max-w-32">
                 <div class="text-sm font-semibold text-amber-900 mb-1">央企技术</div>
                 <div class="text-xs text-amber-700">加入央企技术团队</div>
               </div>
@@ -132,9 +156,16 @@
 
             <!-- 2023年 - 出书 -->
             <div class="timeline-event flex flex-col items-center relative">
-              <div class="timeline-dot w-4 h-4 bg-orange-500 rounded-full border-4 border-orange-100 shadow-lg"></div>
-              <div class="timeline-content text-center max-w-32 mt-4">
-                <div class="text-xs text-amber-600 font-medium mb-1">2023</div>
+              <!-- 年份 -->
+              <div class="text-base text-amber-600 font-bold mb-4 relative z-20">2023</div>
+              <!-- 图标 -->
+              <div class="timeline-icon w-12 h-12 bg-gradient-to-br from-purple-100 to-violet-100 rounded-lg border-2 border-purple-200 flex items-center justify-center mb-3 shadow-md relative z-5">
+                <svg class="w-6 h-6 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+                </svg>
+              </div>
+              <!-- 文字内容 -->
+              <div class="text-center max-w-32">
                 <div class="text-sm font-semibold text-amber-900 mb-1">出版书籍</div>
                 <div class="text-xs text-amber-700">《程序员成长手记》</div>
               </div>
@@ -142,60 +173,71 @@
 
             <!-- 2024年 - 项目经理 -->
             <div class="timeline-event flex flex-col items-center relative">
-              <div class="timeline-dot w-4 h-4 bg-orange-500 rounded-full border-4 border-orange-100 shadow-lg"></div>
-              <div class="timeline-content text-center max-w-32 mt-4">
-                <div class="text-xs text-amber-600 font-medium mb-1">2024</div>
+              <!-- 年份 -->
+              <div class="text-base text-amber-600 font-bold mb-4 relative z-20">2024</div>
+              <!-- 图标 -->
+              <div class="timeline-icon w-12 h-12 bg-gradient-to-br from-pink-100 to-rose-100 rounded-lg border-2 border-pink-200 flex items-center justify-center mb-3 shadow-md relative z-5">
+                <svg class="w-6 h-6 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              </div>
+              <!-- 文字内容 -->
+              <div class="text-center max-w-32">
                 <div class="text-sm font-semibold text-amber-900 mb-1">项目经理</div>
-                <div class="text-xs text-amber-700">《扣子通关指南》</div>
+                <div class="text-xs text-amber-700 whitespace-nowrap">《扣子AI Bots通关指南》</div>
               </div>
             </div>
 
-            <!-- 2025年 - 开源项目 -->
+            <!-- 2025年 - 个人IP之路 -->
             <div class="timeline-event flex flex-col items-center relative">
-              <div class="timeline-dot w-4 h-4 bg-yellow-500 rounded-full border-4 border-yellow-100 shadow-lg animate-pulse"></div>
-              <div class="timeline-content text-center max-w-32 mt-4">
-                <div class="text-xs text-amber-600 font-medium mb-1">2025</div>
-                <div class="text-sm font-semibold text-amber-900 mb-1">开源项目</div>
-                <div class="text-xs text-amber-700">6月开始开源之路</div>
+              <!-- 年份 -->
+              <div class="text-base text-amber-600 font-bold mb-4 relative z-20">2025</div>
+              <!-- 图标 -->
+              <div class="timeline-icon w-12 h-12 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-lg border-2 border-yellow-200 flex items-center justify-center mb-3 shadow-md relative z-5">
+                <svg class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2zm0 15l-4.18-2.2L7 14.14l5-4.87L12 4.27l3.09 5.01L17 9.27l-5 4.87 1.18 6.88L12 17z"/>
+                </svg>
+              </div>
+              <!-- 文字内容 -->
+              <div class="text-center max-w-32">
+                <div class="text-sm font-semibold text-amber-900 mb-1">个人IP之路</div>
+                <div class="text-xs text-amber-700">与大模型共舞</div>
               </div>
             </div>
           </div>
 
-          <!-- 时间线主干 - 在节点下方 -->
-          <div class="timeline-line absolute top-2 left-0 right-0 h-1 bg-gradient-to-r from-amber-300 to-orange-300"></div>
-
           <!-- 成就徽章区 -->
           <div class="flex flex-wrap justify-center gap-3 my-8">
             <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
-              <svg class="w-4 h-4 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.27l-4.77 2.51.91-5.33-3.87-3.77 5.34-.78L10 2z"/></svg>
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.27l-4.77 2.51.91-5.33-3.87-3.77 5.34-.78L10 2z"/></svg>
               400+ 技术文章
             </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-semibold">
-              <svg class="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zm1-4a1 1 0 100 2h14a1 1 0 100-2H3zm-1 8a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1z"/></svg>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zm1-4a1 1 0 100 2h14a1 1 0 100-2H3zm-1 8a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1z"/></svg>
               200w+ 阅读
             </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
-              <svg class="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
               2本书
             </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold">
-              <svg class="w-4 h-4 mr-1 text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 7H7v6h6V7z"/></svg>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M13 7H7v6h6V7z"/></svg>
               开源项目
             </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-sm font-semibold">
-              <svg class="w-4 h-4 mr-1 text-pink-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
               项目经理
             </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-semibold">
-              <svg class="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12H9v-2h2v2zm0-4H9V7h2v3z"/></svg>
               AI 应用实践
             </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-red-100 text-red-800 text-sm font-semibold">
-              <svg class="w-4 h-4 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 4a2 2 0 110 4 2 2 0 010-4zm0 6a6 6 0 100-12 6 6 0 000 12z"/></svg>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 4a2 2 0 110 4 2 2 0 010-4zm0 6a6 6 0 100-12 6 6 0 000 12z"/></svg>
               1.5w 粉丝
             </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-pink-200 text-pink-800 text-sm font-semibold">
-              <svg class="w-4 h-4 mr-1 text-pink-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 6.707a1 1 0 011.414 0L10 11l4.293-4.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414z"/></svg>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 6.707a1 1 0 011.414 0L10 11l4.293-4.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414z"/></svg>
               抽奖社群
             </span>
             </div>
@@ -327,6 +369,29 @@ const writings = [
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
+/* 图标样式 */
+.timeline-icon {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.timeline-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.timeline-icon svg {
+  transition: all 0.3s ease;
+}
+
+.timeline-icon:hover svg {
+  transform: scale(1.1);
+}
+
+
+
+
 
 .timeline-container::-webkit-scrollbar {
   display: none;

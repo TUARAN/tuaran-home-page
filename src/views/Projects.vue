@@ -7,7 +7,7 @@
           我的项目
         </h1>
         <p class="text-xl text-amber-700 max-w-3xl mx-auto">
-          这里展示了我的一些开源项目和技术实践，每个项目都承载着不同的学习收获。
+          这里展示了我的一些开源项目和技术实践，每个项目都承载着不同的创意想法和学习收获。
         </p>
       </div>
 
@@ -143,7 +143,7 @@ const projects = [
   {
     id: 1,
     name: '博主联盟',
-    description: 'Vue 3 + Tailwind CSS 博主联盟平台，链接影响力！',
+    description: '开发者博主联盟平台，链接创作与推广影响力！',
     language: 'Vue',
     category: 'programming',
     stars: 3,

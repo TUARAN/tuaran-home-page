@@ -173,7 +173,7 @@ const websites = [
   {
     id: 2,
     name: '博主联盟',
-    description: 'Vue 3 + Tailwind CSS 博主联盟平台',
+    description: '开发者博主联盟平台，链接影响力！',
     category: 'ip',
     url: 'https://blogger-alliance.pages.dev/'
   },

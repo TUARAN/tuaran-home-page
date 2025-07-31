@@ -1,5 +1,5 @@
 <template>
-  <footer class="mt-4 py-8 border-t border-amber-300/30 bg-gradient-to-r from-amber-50/50 to-orange-50/50 backdrop-blur-sm">
+  <footer class="mt-8 py-8 border-t border-amber-300/30 bg-gradient-to-r from-amber-50/50 to-orange-50/50 backdrop-blur-sm">
     <div class="max-w-6xl mx-auto px-4">
       <div class="text-center">
         <p class="text-amber-600 text-sm">

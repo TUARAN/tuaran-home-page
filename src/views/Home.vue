@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen p-5 relative">
     <!-- Left QR Code -->
-    <div class="fixed left-4 top-1/2 transform -translate-y-1/2 z-10 hidden lg:block">
+    <div class="fixed left-4 top-1/2 transform -translate-y-1/2 z-10 hidden xl:block">
       <div class="flex flex-col items-center">
         <img src="/qrcode-wechat.jpg" alt="微信二维码" class="w-40 h-56 rounded-xl shadow-lg border border-amber-100 bg-white" />
         <div class="text-sm text-amber-800 font-semibold mt-2 text-center max-w-32">
@@ -12,7 +12,7 @@
     </div>
 
     <!-- Right QR Code -->
-    <div class="fixed right-4 top-1/2 transform -translate-y-1/2 z-10 hidden lg:block">
+    <div class="fixed right-4 top-1/2 transform -translate-y-1/2 z-10 hidden xl:block">
       <div class="flex flex-col items-center">
         <img src="/qrcode-group.jpg" alt="加群二维码" class="w-40 h-56 rounded-xl shadow-lg border border-amber-100 bg-white" />
         <div class="text-sm text-amber-800 font-semibold mt-2 text-center max-w-32">
@@ -22,11 +22,91 @@
       </div>
     </div>
 
+    <!-- 浮动二维码按钮 - 只在非xl屏幕显示 -->
+    <div class="fixed bottom-6 right-6 z-50 xl:hidden">
+      <button 
+        @click="showQRModal = true"
+        class="qr-button group relative bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border-2 border-amber-300"
+      >
+        <div class="flex items-center space-x-2">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 4h4v4H3V4zm0 6h4v4H3v-4zm6-6h4v4H9V4zm0 6h4v4H9v-4zm6-6h4v4h-4V4zm0 6h4v4h-4v-4z"/>
+          </svg>
+          <span class="text-sm font-semibold">联系我</span>
+        </div>
+        <!-- 脉冲动画效果 -->
+        <div class="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-20"></div>
+      </button>
+    </div>
+
+    <!-- 二维码弹窗 -->
+    <transition name="modal">
+      <div v-if="showQRModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="showQRModal = false">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-amber-200 relative" @click.stop>
+          <!-- 关闭图标 -->
+          <button 
+            @click="showQRModal = false"
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+          
+          <div class="text-center">
+            <h3 class="text-2xl font-bold text-amber-900 mb-6">扫码联系</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- 微信二维码 -->
+              <div class="flex flex-col items-center">
+                <div class="relative group">
+                  <img 
+                    src="/qrcode-wechat.jpg" 
+                    alt="微信二维码" 
+                    class="qr-image-hover w-32 h-44 rounded-xl shadow-lg border border-amber-100 bg-white"
+                  />
+                  <div class="absolute inset-0 bg-amber-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                <div class="text-sm text-amber-800 font-semibold mt-3 text-center">
+                  <div>加博主好友</div>
+                  <div class="text-xs text-amber-600">让技术创造更多可能</div>
+                </div>
+              </div>
+
+              <!-- 群二维码 -->
+              <div class="flex flex-col items-center">
+                <div class="relative group">
+                  <img 
+                    src="/qrcode-group.jpg" 
+                    alt="加群二维码" 
+                    class="qr-image-hover w-32 h-44 rounded-xl shadow-lg border border-amber-100 bg-white"
+                  />
+                  <div class="absolute inset-0 bg-amber-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                <div class="text-sm text-amber-800 font-semibold mt-3 text-center">
+                  <div>加开放社群</div>
+                  <div class="text-xs text-amber-600">让链接激发多元可能</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 关闭按钮 -->
+            <button 
+              @click="showQRModal = false"
+              class="mt-6 px-6 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors duration-200 font-semibold"
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- WeChat Contact -->
     <!-- 已移除浮窗/小泡泡相关代码 -->
 
     <!-- Main content -->
-    <div class="max-w-6xl mx-auto px-2 sm:px-4">
+    <div class="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 xl:px-16 pb-8">
       <!-- Hero section -->
       <div class="text-center mb-12 pt-8">
         <!-- 头像 -->
@@ -96,13 +176,13 @@
       </div>
 
       <!-- 横向时间线 -->
-      <div class="glass-dark rounded-2xl border border-amber-300/30 shadow-xl p-8">
+      <div class="glass-dark rounded-2xl border border-amber-300/30 shadow-xl p-4 sm:p-6 lg:p-8 relative z-20">
         <div class="timeline-container relative">
           <!-- 时间线主干 -->
           <div class="timeline-line absolute top-[70px] left-0 right-0 h-1 bg-gradient-to-r from-amber-300 to-orange-300 z-10 transform -translate-y-1/2"></div>
           
           <!-- 时间节点 -->
-          <div class="timeline-events flex justify-between items-center relative z-10">
+          <div class="timeline-events flex justify-between items-center relative z-10 gap-2 lg:gap-4">
             <!-- 2018年 - 技术博主开始 -->
             <div class="timeline-event flex flex-col items-center relative">
               <!-- 年份 -->
@@ -240,6 +320,10 @@
               <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 6.707a1 1 0 011.414 0L10 11l4.293-4.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414z"/></svg>
               抽奖社群
             </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
+              <svg class="w-4 h-4 mr-1 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2zm0 15l-4.18-2.2L7 14.14l5-4.87L12 4.27l3.09 5.01L17 9.27l-5 4.87 1.18 6.88L12 17z"/></svg>
+              AI 提示词
+            </span>
             </div>
         </div>
       </div>
@@ -249,7 +333,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import content from '../data/homeContent.json'
 
 const router = useRouter()
@@ -258,6 +342,22 @@ const showAbout = ref(false)
 const activeTab = ref('manifesto')
 const showWeChat = ref(false)
 const showGroup = ref(false)
+const showQRModal = ref(false)
+
+// 键盘事件处理
+const handleKeydown = (event) => {
+  if (event.key === 'Escape' && showQRModal.value) {
+    showQRModal.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
+})
 
 const toggleWeChat = () => {
   isWeChatCollapsed.value = !isWeChatCollapsed.value
@@ -467,6 +567,21 @@ const writings = [
   }
 }
 
+/* 中等屏幕优化 */
+@media (min-width: 769px) and (max-width: 1279px) {
+  .timeline-events {
+    gap: 1rem;
+  }
+  
+  .timeline-event {
+    min-width: 100px;
+  }
+  
+  .timeline-event .text-center {
+    font-size: 0.75rem;
+  }
+}
+
 /* 紧凑型工作经历样式 */
 .experience-item-compact {
   @apply border-l-4 border-amber-500 pl-4 pb-4 last:pb-0 relative;
@@ -596,5 +711,61 @@ button:has(.text-amber-600) {
   max-width: 350px;
   margin: 0 auto;
   transition: box-shadow 0.3s;
+}
+
+/* 二维码按钮动画 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.qr-button {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 弹窗动画 */
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.modal-enter-to,
+.modal-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 脉冲动画优化 */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+  }
+}
+
+.qr-button {
+  animation: float 3s ease-in-out infinite, pulse-glow 2s ease-in-out infinite;
+}
+
+/* 二维码图片悬停效果 */
+.qr-image-hover {
+  transition: all 0.3s ease;
+}
+
+.qr-image-hover:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);
 }
 </style> 

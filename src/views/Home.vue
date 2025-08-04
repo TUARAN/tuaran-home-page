@@ -107,66 +107,491 @@
 
     <!-- Main content -->
     <div class="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 xl:px-16 pb-8">
-      <!-- Hero section -->
-      <div class="text-center mb-12 pt-8">
-        <!-- 头像 -->
-        <div class="flex justify-center mb-6">
-          <div class="relative group">
-            <img 
-              src="/avator.jpg" 
-              alt="掘金安东尼头像" 
-              class="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-amber-300/50 shadow-2xl hover:shadow-amber-500/30 transition-all duration-500 hover:scale-105 object-cover"
-            />
+
+
+      <!-- 我的网站项目 -->
+      <div class="mb-16 pt-8">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold text-amber-900 mb-2">我的网站作品</h2>
+          <p class="text-amber-700">用代码构建数字世界，每个项目都是创意的实现</p>
+        </div>
+        
+        <!-- 项目展示区域 -->
+        <div class="relative">
+          <!-- 滚动容器 -->
+          <div class="overflow-hidden rounded-2xl">
+            <div 
+              class="flex transition-transform duration-500 ease-in-out"
+              :style="{ transform: `translateX(-${scrollPosition}px)` }"
+            >
+                              <!-- 所有项目卡片 - 复制两组实现无限循环 -->
+                <div class="flex gap-6 min-w-max">
+                  <!-- 社区看板 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w1.png" alt="社区看板缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-green-900 mb-1 group-hover:text-green-800 transition-colors duration-300">社区看板</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-green-700 text-xs leading-tight">CSDN粉丝数据追踪看板，实时监控社区影响力数据</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://csdn-fans-tracker.pages.dev/dashboard" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 group-hover/btn:from-emerald-500 group-hover/btn:to-green-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 博主联盟 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w2.png" alt="博主联盟缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-blue-900 mb-1 group-hover:text-blue-800 transition-colors duration-300">博主联盟</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-blue-700 text-xs leading-tight">开发者博主联盟平台，链接创作与推广影响力！</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://blogger-alliance.pages.dev/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 group-hover/btn:from-indigo-500 group-hover/btn:to-blue-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 超棒提示词 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w3.png" alt="超棒提示词缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-yellow-900 mb-1 group-hover:text-yellow-800 transition-colors duration-300">超棒提示词</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-yellow-700 text-xs leading-tight">掌握 AI 提示词的第一性原则，学习如何与人工智能进行有效对话</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://awesome-prompt-seven.vercel.app/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 group-hover/btn:from-amber-500 group-hover/btn:to-yellow-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- AI学习路径-奥德赛 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w4.png" alt="AI学习路径-奥德赛缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-purple-900 mb-1 group-hover:text-purple-800 transition-colors duration-300">AI学习路径-奥德赛</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-purple-500 to-violet-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-purple-700 text-xs leading-tight">AI学习路径探索项目，引导开发者进入AI世界</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://dev-odyssey.pages.dev/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-violet-500 group-hover/btn:from-violet-500 group-hover/btn:to-purple-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 大模型赋能交易 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w5.png" alt="大模型赋能交易缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-green-900 mb-1 group-hover:text-green-800 transition-colors duration-300">大模型赋能交易</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-green-700 text-xs leading-tight">AI交易记录与优化平台，展示人与大模型在金融市场的交互</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://aiabs.pages.dev/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 group-hover/btn:from-emerald-500 group-hover/btn:to-green-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 代码矿工-工具集合 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w6.png" alt="代码矿工-工具集合缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-orange-900 mb-1 group-hover:text-orange-800 transition-colors duration-300">代码矿工-工具集合</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-orange-700 text-xs leading-tight">实用的开发工具集合，包含多种常用工具，提升开发效率</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://toolkit-hub.pages.dev/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 group-hover/btn:from-amber-500 group-hover/btn:to-orange-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 第二组卡片 - 用于无限循环 -->
+                <div class="flex gap-6 ml-12">
+                  <!-- 社区看板 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w1.png" alt="社区看板缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-green-900 mb-1 group-hover:text-green-800 transition-colors duration-300">社区看板</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-green-700 text-xs leading-tight">CSDN粉丝数据追踪看板，实时监控社区影响力数据</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://csdn-fans-tracker.pages.dev/dashboard" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 group-hover/btn:from-emerald-500 group-hover/btn:to-green-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 博主联盟 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w2.png" alt="博主联盟缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-blue-900 mb-1 group-hover:text-blue-800 transition-colors duration-300">博主联盟</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-blue-700 text-xs leading-tight">开发者博主联盟平台，链接创作与推广影响力！</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://blogger-alliance.pages.dev/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 group-hover/btn:from-indigo-500 group-hover/btn:to-blue-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 超棒提示词 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w3.png" alt="超棒提示词缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-yellow-900 mb-1 group-hover:text-yellow-800 transition-colors duration-300">超棒提示词</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-yellow-700 text-xs leading-tight">掌握 AI 提示词的第一性原则，学习如何与人工智能进行有效对话</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://awesome-prompt-seven.vercel.app/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 group-hover/btn:from-amber-500 group-hover/btn:to-yellow-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- AI学习路径-奥德赛 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w4.png" alt="AI学习路径-奥德赛缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-purple-900 mb-1 group-hover:text-purple-800 transition-colors duration-300">AI学习路径-奥德赛</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-purple-500 to-violet-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-purple-700 text-xs leading-tight">AI学习路径探索项目，引导开发者进入AI世界</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://dev-odyssey.pages.dev/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-violet-500 group-hover/btn:from-violet-500 group-hover/btn:to-purple-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 大模型赋能交易 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w5.png" alt="大模型赋能交易缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-green-900 mb-1 group-hover:text-green-800 transition-colors duration-300">大模型赋能交易</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-green-700 text-xs leading-tight">AI交易记录与优化平台，展示人与大模型在金融市场的交互</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://aiabs.pages.dev/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 group-hover/btn:from-emerald-500 group-hover/btn:to-green-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 代码矿工-工具集合 -->
+                  <div class="project-card-hover group relative w-80">
+                    <div class="card-inner relative w-full h-72 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105">
+                      <!-- 悬停时的灰色遮罩 -->
+                      <div class="absolute inset-0 bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
+                      
+                      <!-- 网站缩略图 -->
+                      <div class="relative w-full h-44 overflow-hidden bg-white/30 rounded-t-xl">
+                        <img src="/images/thumbnails/w6.png" alt="代码矿工-工具集合缩略图" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                      </div>
+                      
+                      <!-- 内容区域 -->
+                      <div class="relative p-4 flex flex-col h-28">
+                        <!-- 标题区域 -->
+                        <div class="mb-2">
+                          <h3 class="text-lg font-bold text-orange-900 mb-1 group-hover:text-orange-800 transition-colors duration-300">代码矿工-工具集合</h3>
+                          <div class="w-8 h-0.5 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transform origin-left transition-transform duration-500 group-hover:scale-x-150"></div>
+                        </div>
+                        
+                        <!-- 描述 -->
+                        <p class="text-orange-700 text-xs leading-tight">实用的开发工具集合，包含多种常用工具，提升开发效率</p>
+                      </div>
+                      
+                      <!-- 悬停时显示的访问按钮 - 居中 -->
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                        <a href="https://toolkit-hub.pages.dev/" target="_blank" class="website-btn-hover group/btn relative overflow-hidden text-center py-3 px-6 rounded-lg font-bold transition-all duration-300 hover:scale-110 block bg-white/10 backdrop-blur-sm border border-white/20">
+                          <div class="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 group-hover/btn:from-amber-500 group-hover/btn:to-orange-500 transition-all duration-300"></div>
+                          <div class="relative flex items-center justify-center space-x-2 text-white">
+                            <svg class="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            <span class="font-bold text-sm">访问网站</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
           </div>
-        </div>
-        
-        <!-- 主标题 -->
-        <h1 class="text-3xl md:text-4xl font-black tracking-tight gradient-text mb-4">
-          {{ content.hero.title }}
-        </h1>
-        
-        <!-- 副标题 -->
-        <div class="mb-6">
-          <p class="text-lg text-amber-800 font-semibold text-center">
-            一位专注于 AI 编程、前端架构与数字产品打造的技术创作者。
-          </p>
-        </div>
 
-        <!-- 操作按钮区域 -->
-        <div class="flex flex-wrap justify-center gap-4 mb-8">
-          <button 
-            @click="goToDashboard" 
-            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-500 border border-amber-700 text-white font-bold rounded-lg hover:from-orange-600 hover:to-amber-600 hover:border-orange-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-amber-500/25 overflow-hidden"
-          >
-            <div class="flex items-center space-x-2">
-              <div class="text-sm">📊</div>
-              <span class="text-sm font-bold">社区看板</span>
-            </div>
-          </button>
-          <button
-            @click="goToBloggerAlliance"
-            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-500 border border-blue-700 text-white font-bold rounded-lg hover:from-indigo-600 hover:to-blue-600 hover:border-indigo-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 overflow-hidden"
-          >
-            <div class="flex items-center space-x-2">
-              <div class="text-sm">🤝</div>
-              <span class="text-sm font-bold">博主联盟</span>
-            </div>
-          </button>
-          <a 
-            href="https://github.com/tuaran" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            class="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-600 border border-gray-700 text-white font-bold rounded-lg hover:from-gray-700 hover:to-gray-800 hover:border-amber-700 transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            <svg class="w-4 h-4 text-white group-hover:text-amber-300 transition-colors mr-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
-            <span class="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">GitHub</span>
-          </a>
-        </div>
 
-        <!-- 紧凑型信念语录 -->
-        <!-- 已删除信念语录区块 -->
+
+
+        </div>
       </div>
 
       <!-- 我的足迹 -->
@@ -344,6 +769,49 @@ const showWeChat = ref(false)
 const showGroup = ref(false)
 const showQRModal = ref(false)
 
+// 滚动相关状态
+const scrollPosition = ref(0)
+const autoScrollTimer = ref(null)
+const isHovered = ref(false)
+const cardWidth = 320 // 卡片宽度 + 间距
+const groupSpacing = 48 // 两组卡片之间的额外间距 (ml-12 = 48px)
+const totalCards = 6 // 总卡片数量
+const currentCardIndex = ref(0) // 当前显示的卡片索引
+
+// 滚动控制函数
+const startAutoScroll = () => {
+  if (autoScrollTimer.value) {
+    clearInterval(autoScrollTimer.value)
+  }
+  
+  autoScrollTimer.value = setInterval(() => {
+    if (!isHovered.value) {
+      scrollPosition.value += 1.5 // 每次移动1.5px，更流畅
+      
+      // 当滚动到第一组卡片结束时，重置到第二组卡片的开始，形成无限循环
+      if (scrollPosition.value >= totalCards * cardWidth + groupSpacing) {
+        scrollPosition.value = 0
+      }
+    }
+  }, 30) // 每30ms移动一次，实现更流畅的滚动
+}
+
+const stopAutoScroll = () => {
+  if (autoScrollTimer.value) {
+    clearInterval(autoScrollTimer.value)
+    autoScrollTimer.value = null
+  }
+}
+
+// 鼠标悬停控制
+const handleMouseEnter = () => {
+  isHovered.value = true
+}
+
+const handleMouseLeave = () => {
+  isHovered.value = false
+}
+
 // 键盘事件处理
 const handleKeydown = (event) => {
   if (event.key === 'Escape' && showQRModal.value) {
@@ -353,10 +821,12 @@ const handleKeydown = (event) => {
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
+  startAutoScroll() // 启动自动滚动
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
+  stopAutoScroll() // 停止自动滚动
 })
 
 const toggleWeChat = () => {
@@ -768,4 +1238,132 @@ button:has(.text-amber-600) {
   transform: scale(1.05);
   box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);
 }
-</style> 
+
+/* 项目卡片悬停效果 */
+.project-card-hover {
+  perspective: 1000px;
+}
+
+.card-inner {
+  transform-style: preserve-3d;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-card-hover:hover .card-inner {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* 网站按钮悬停效果 */
+.website-btn-hover {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.website-btn-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease-in-out;
+}
+
+.website-btn-hover:hover::before {
+  left: 100%;
+}
+
+.website-btn-hover:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* 卡片光效动画 */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(100%) skewX(-12deg);
+  }
+}
+
+/* 响应式卡片调整 */
+@media (max-width: 768px) {
+  .project-card-hover:hover .card-inner {
+    transform: translateY(-4px) scale(1.02);
+  }
+  
+  .card-inner {
+    height: auto !important;
+    min-height: 320px;
+  }
+}
+
+/* 卡片内容区域优化 */
+.card-inner .relative.p-6 {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 1rem 1rem;
+}
+
+/* 标题下划线动画 */
+.card-inner .w-12.h-1 {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 图片缩放效果优化 */
+.card-inner img {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 按钮图标动画 */
+.website-btn-hover svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 卡片背景渐变优化 */
+.card-inner {
+  background: linear-gradient(135deg, var(--tw-gradient-from), var(--tw-gradient-to));
+  position: relative;
+}
+
+.card-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.project-card-hover:hover .card-inner::before {
+  opacity: 1;
+}
+
+/* 悬停时文字颜色调整 */
+.project-card-hover:hover .card-inner h3,
+.project-card-hover:hover .card-inner p {
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: color 0.3s ease;
+}
+
+/* 按钮容器动画 */
+.project-card-hover .absolute.inset-0.flex {
+  transform: scale(0.9);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-card-hover:hover .absolute.inset-0.flex {
+  transform: scale(1);
+}
+</style>

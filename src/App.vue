@@ -8,14 +8,12 @@
         </transition>
       </router-view>
     </main>
-    <Footer />
     <StagewiseToolbar v-if="isDev" :config="{ plugins: [VuePlugin] }" />
   </div>
 </template>
 
 <script setup>
 import Navbar from './components/Navbar.vue'
-import Footer from './components/Footer.vue'
 import { StagewiseToolbar } from '@stagewise/toolbar-vue'
 import VuePlugin from '@stagewise-plugins/vue'
 
@@ -33,4 +31,4 @@ const isDev = import.meta.env.DEV
 .fade-leave-to {
   opacity: 0;
 }
-</style> 
+</style>

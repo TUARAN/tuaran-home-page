@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
+  <div id="app" class="min-h-screen bg-gradient-to-br from-black via-purple-900 via-pink-900 to-orange-900 text-white">
 
 
 

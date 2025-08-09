@@ -18,7 +18,7 @@
                 <img 
                   src="/avator.jpg" 
                   alt="掘金安东尼" 
-                  class="w-16 h-16 rounded-full border-4 border-white shadow-xl object-cover hover:scale-110 transition-transform duration-300 mx-auto mb-4"
+                  class="w-20 h-20 rounded-full border-4 border-white shadow-xl object-cover hover:scale-110 transition-transform duration-300 mx-auto mb-4"
                 />
                 
                 <h3 class="text-lg font-bold text-white mb-4 sparkle-text">👨‍💻 掘金安东尼</h3>
@@ -135,27 +135,27 @@
             </div>
 
             <!-- 中卡片：技术成就展示 -->
-            <div class="masonry-item medium bg-gradient-to-r from-purple-500 to-pink-600 p-5 rounded-xl shadow-lg border-4 border-pink-700">
-              <h3 class="text-lg font-bold text-white mb-3 text-center">🏆 技术影响力，开源贡献，社区建设！</h3>
+            <div class="masonry-item medium bg-gradient-to-r from-purple-500 to-pink-600 p-5 rounded-xl shadow-lg border-4 border-pink-700 floating-card strong-breathing">
+              <h3 class="text-lg font-bold text-white mb-3 text-center sparkle-text">🏆 技术影响力，开源贡献，社区建设！</h3>
               <div class="bg-black text-white p-2 rounded-lg mb-3">
                 <p class="text-xs font-bold text-center text-white">有创新奖励开源项目、奖励技术社区！</p>
               </div>
-              <div class="grid grid-cols-2 gap-2 text-white text-xs">
-                <div class="flex items-center justify-between bg-white/20 p-2 rounded">
-                  <span class="font-bold">技术文章</span>
-                  <span class="bg-white text-purple-600 px-2 py-1 rounded font-bold">500+</span>
+              <div class="grid grid-cols-2 gap-3 text-white text-xs">
+                <div class="flex items-center justify-between bg-white/20 p-3 rounded-lg hover:bg-white/30 transition-all duration-300 hover:scale-105">
+                  <span class="font-bold text-sm">📝 技术文章</span>
+                  <span class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full font-bold text-sm shadow-lg pulse-effect">500+</span>
                 </div>
-                <div class="flex items-center justify-between bg-white/20 p-2 rounded">
-                  <span class="font-bold">技术粉丝</span>
-                  <span class="bg-white text-purple-600 px-2 py-1 rounded font-bold">1.5w+</span>
+                <div class="flex items-center justify-between bg-white/20 p-3 rounded-lg hover:bg-white/30 transition-all duration-300 hover:scale-105">
+                  <span class="font-bold text-sm">👥 技术粉丝</span>
+                  <span class="bg-gradient-to-r from-green-400 to-emerald-500 text-white px-3 py-1 rounded-full font-bold text-sm shadow-lg pulse-effect">1.5w+</span>
                 </div>
-                <div class="flex items-center justify-between bg-white/20 p-2 rounded">
-                  <span class="font-bold">开源项目</span>
-                  <span class="bg-white text-purple-600 px-2 py-1 rounded font-bold">20+</span>
+                <div class="flex items-center justify-between bg-white/20 p-3 rounded-lg hover:bg-white/30 transition-all duration-300 hover:scale-105">
+                  <span class="font-bold text-sm">🚀 开源项目</span>
+                  <span class="bg-gradient-to-r from-blue-400 to-indigo-500 text-white px-3 py-1 rounded-full font-bold text-sm shadow-lg pulse-effect">20+</span>
                 </div>
-                <div class="flex items-center justify-between bg-white/20 p-2 rounded">
-                  <span class="font-bold">帮助开发者</span>
-                  <span class="bg-white text-purple-600 px-2 py-1 rounded font-bold">200w+</span>
+                <div class="flex items-center justify-between bg-white/20 p-3 rounded-lg hover:bg-white/30 transition-all duration-300 hover:scale-105">
+                  <span class="font-bold text-sm">🎯 帮助开发者</span>
+                  <span class="bg-gradient-to-r from-red-400 to-pink-500 text-white px-3 py-1 rounded-full font-bold text-sm shadow-lg pulse-effect">200w+</span>
                 </div>
               </div>
             </div>
@@ -313,6 +313,31 @@
                 <div>GitHub Actions</div>
               </div>
               <a href="https://toolkit-hub.pages.dev/" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
+                <span>🔥 立即访问</span>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+              </a>
+            </div>
+
+            <!-- 小卡片：数据库范式教学平台 -->
+            <div class="masonry-item small bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-4 border-4 border-cyan-700 floating-card pulse-effect">
+              <div class="flex items-center justify-between mb-2">
+                <div class="bg-white text-cyan-600 px-2 py-1 rounded font-bold text-xs">📚 技术突破</div>
+                <div class="bg-white text-cyan-600 px-2 py-1 rounded font-bold text-xs">教学平台</div>
+              </div>
+              <h3 class="text-sm font-bold text-white mb-2 sparkle-text">🗄️ 数据库范式教学平台 - 交互式学习</h3>
+              <p class="text-xs text-white/90 mb-3">数据库范式理论可视化教学，交互式演示1NF到BCNF，技术教育创新！</p>
+              <div class="bg-black text-white p-2 rounded mb-3">
+                <p class="text-xs font-bold text-center text-white">可视化教学</p>
+              </div>
+              <div class="grid grid-cols-2 gap-1 text-xs text-white/80 mb-3">
+                <div>Vue3 + TypeScript</div>
+                <div>可视化 + 交互式</div>
+                <div>算法演示 + 动画</div>
+                <div>教育技术 + 创新</div>
+              </div>
+              <a href="https://dnp-beta.vercel.app/" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
                 <span>🔥 立即访问</span>
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>

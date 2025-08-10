@@ -187,11 +187,13 @@
                 <div>Docker + K8s</div>
                 <div>Prometheus + Grafana</div>
               </div>
-              <a href="https://csdn-fans-tracker.pages.dev/dashboard" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
-                <span>🔥 立即访问</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="https://csdn-fans-tracker.pages.dev/dashboard" target="_blank" class="data-viz-btn px-3 py-2 rounded-lg text-xs inline-flex items-center space-x-1 w-full justify-center relative overflow-hidden">
+                <span class="relative z-10">📊 立即访问</span>
+                <svg class="w-3 h-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
+                <div class="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 animate-pulse"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
               </a>
             </div>
 
@@ -212,11 +214,13 @@
                 <div>MongoDB + Redis</div>
                 <div>JWT + OAuth2.0</div>
               </div>
-              <a href="https://blogger-alliance.pages.dev/" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
-                <span>🔥 立即访问</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="https://blogger-alliance.pages.dev/" target="_blank" class="alliance-btn px-3 py-2 rounded-lg text-xs inline-flex items-center space-x-1 w-full justify-center relative overflow-hidden">
+                <span class="relative z-10">🌟 立即访问</span>
+                <svg class="w-3 h-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
+                <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 opacity-0 hover:opacity-100 transition-opacity duration-300 animate-ping"></div>
               </a>
             </div>
 
@@ -237,11 +241,13 @@
                 <div>GPT-4 + Claude</div>
                 <div>Prompt Engineering</div>
               </div>
-              <a href="https://awesome-prompt-seven.vercel.app/" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
-                <span>🔥 立即访问</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="https://awesome-prompt-seven.vercel.app/" target="_blank" class="ai-prompt-btn px-3 py-2 rounded-lg text-xs inline-flex items-center space-x-1 w-full justify-center relative overflow-hidden">
+                <span class="relative z-10">🤖 立即访问</span>
+                <svg class="w-3 h-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-500 opacity-0 hover:opacity-100 transition-opacity duration-300 animate-bounce"></div>
               </a>
             </div>
 
@@ -262,11 +268,13 @@
                 <div>TensorFlow + PyTorch</div>
                 <div>Vercel + Railway</div>
               </div>
-              <a href="https://dev-odyssey.pages.dev/" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
-                <span>🔥 立即访问</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="https://dev-odyssey.pages.dev/" target="_blank" class="learning-path-btn px-3 py-2 rounded-lg text-xs inline-flex items-center space-x-1 w-full justify-center relative overflow-hidden">
+                <span class="relative z-10">🎯 立即访问</span>
+                <svg class="w-3 h-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
+                <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-500 opacity-0 hover:opacity-100 transition-opacity duration-300 animate-spin"></div>
               </a>
             </div>
 
@@ -287,11 +295,13 @@
                 <div>LSTM + Transformer</div>
                 <div>实时流处理</div>
               </div>
-              <a href="https://aiabs.pages.dev/" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
-                <span>🔥 立即访问</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="https://aiabs.pages.dev/" target="_blank" class="trading-btn px-3 py-2 rounded-lg text-xs inline-flex items-center space-x-1 w-full justify-center relative overflow-hidden">
+                <span class="relative z-10">💰 立即访问</span>
+                <svg class="w-3 h-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
+                <div class="absolute inset-0 bg-gradient-to-r from-red-400 to-pink-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-red-400 to-pink-500 opacity-0 hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
               </a>
             </div>
 
@@ -312,11 +322,13 @@
                 <div>Webpack + Vite</div>
                 <div>GitHub Actions</div>
               </div>
-              <a href="https://toolkit-hub.pages.dev/" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
-                <span>🔥 立即访问</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="https://toolkit-hub.pages.dev/" target="_blank" class="toolkit-btn px-3 py-2 rounded-lg text-xs inline-flex items-center space-x-1 w-full justify-center relative overflow-hidden">
+                <span class="relative z-10">⚙️ 立即访问</span>
+                <svg class="w-3 h-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500 opacity-0 hover:opacity-100 transition-opacity duration-300 animate-ping"></div>
               </a>
             </div>
 
@@ -337,11 +349,13 @@
                 <div>算法演示 + 动画</div>
                 <div>教育技术 + 创新</div>
               </div>
-              <a href="https://dnp-beta.vercel.app/" target="_blank" class="marquee-btn px-3 py-2 rounded text-xs inline-flex items-center space-x-1 w-full justify-center">
-                <span>🔥 立即访问</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a href="https://dnp-beta.vercel.app/" target="_blank" class="database-btn px-3 py-2 rounded-lg text-xs inline-flex items-center space-x-1 w-full justify-center relative overflow-hidden">
+                <span class="relative z-10">🗄️ 立即访问</span>
+                <svg class="w-3 h-3 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
+                <div class="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 hover:opacity-100 transition-opacity duration-300 animate-bounce"></div>
               </a>
             </div>
 
@@ -478,5 +492,131 @@ const showQRModal = ref(false)
   .masonry-item.large {
     min-height: 300px;
   }
+}
+
+/* 独特的按钮样式和动效 */
+
+/* 1. 数据可视化按钮 - 脉冲效果 */
+.data-viz-btn {
+  @apply text-white font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg;
+  background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706);
+  background-size: 200% 200%;
+  animation: data-viz-pulse 2s ease-in-out infinite;
+}
+
+.data-viz-btn:hover {
+  background-size: 150% 150%;
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(251, 191, 36, 0.4);
+}
+
+@keyframes data-viz-pulse {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* 2. 博主联盟按钮 - 呼吸效果 */
+.alliance-btn {
+  @apply text-white font-semibold transition-all duration-300 hover:scale-105;
+  background: linear-gradient(45deg, #4ade80, #22c55e, #16a34a);
+  animation: alliance-breathe 3s ease-in-out infinite;
+}
+
+.alliance-btn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(74, 222, 128, 0.4);
+}
+
+@keyframes alliance-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* 3. AI提示词按钮 - 弹跳效果 */
+.ai-prompt-btn {
+  @apply text-white font-semibold transition-all duration-300 hover:scale-105;
+  background: linear-gradient(45deg, #a855f7, #ec4899, #be185d);
+  animation: ai-prompt-bounce 2.5s ease-in-out infinite;
+}
+
+.ai-prompt-btn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4);
+}
+
+@keyframes ai-prompt-bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-3px); }
+  60% { transform: translateY(-1px); }
+}
+
+/* 4. 学习路径按钮 - 渐变流动效果 */
+.learning-path-btn {
+  @apply text-white font-semibold transition-all duration-300 hover:scale-105;
+  background: linear-gradient(45deg, #fb923c, #f97316, #ea580c);
+  background-size: 200% 200%;
+  animation: learning-path-flow 3s ease-in-out infinite;
+}
+
+.learning-path-btn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(251, 146, 60, 0.4);
+}
+
+@keyframes learning-path-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* 5. 交易按钮 - 闪烁效果 */
+.trading-btn {
+  @apply text-white font-semibold transition-all duration-300 hover:scale-105;
+  background: linear-gradient(45deg, #f87171, #ef4444, #dc2626);
+  animation: trading-flicker 1.5s ease-in-out infinite;
+}
+
+.trading-btn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(248, 113, 113, 0.4);
+}
+
+@keyframes trading-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* 6. 工具包按钮 - 脉冲效果 */
+.toolkit-btn {
+  @apply text-white font-semibold transition-all duration-300 hover:scale-105;
+  background: linear-gradient(45deg, #818cf8, #6366f1, #4f46e5);
+  animation: toolkit-ping 2s ease-in-out infinite;
+}
+
+.toolkit-btn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(129, 140, 248, 0.4);
+}
+
+@keyframes toolkit-ping {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* 7. 数据库按钮 - 波浪效果 */
+.database-btn {
+  @apply text-white font-semibold transition-all duration-300 hover:scale-105;
+  background: linear-gradient(45deg, #22d3ee, #06b6d4, #0891b2);
+  animation: database-wave 3s ease-in-out infinite;
+}
+
+.database-btn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 10px 25px rgba(34, 211, 238, 0.4);
+}
+
+@keyframes database-wave {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(2px); }
+  75% { transform: translateX(-2px); }
 }
 </style>

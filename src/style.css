@@ -4,38 +4,23 @@
 
 @layer base {
   body {
-    @apply bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 text-slate-800 font-sans;
+    @apply bg-white text-gray-900 font-sans;
     min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
-    line-height: 1.7;
-    letter-spacing: 0.01em;
-  }
-
-  /* 精致的背景纹理 */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: 
-      radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 40% 60%, rgba(139, 92, 246, 0.02) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: -1;
+    line-height: 1.6;
   }
   
   html {
     scroll-behavior: smooth;
   }
 
+  /* 导航链接平滑滚动 */
+  html {
+    scroll-padding-top: 4rem;
+  }
+
   /* 统一字体设置 */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold text-slate-900 leading-tight;
-    letter-spacing: -0.025em;
+    @apply font-semibold text-gray-900 leading-tight;
   }
 
   h1 { @apply text-4xl md:text-5xl lg:text-6xl; }
@@ -46,8 +31,7 @@
   h6 { @apply text-base md:text-lg; }
 
   p {
-    @apply text-slate-700 leading-relaxed;
-    letter-spacing: 0.01em;
+    @apply text-gray-700 leading-relaxed;
   }
 
   a {
@@ -56,491 +40,16 @@
 }
 
 @layer components {
-  .glass {
-    @apply bg-white/90 backdrop-blur-md border border-white/60 shadow-lg;
-  }
-  
-  .glass-dark {
-    @apply bg-white/95 backdrop-blur-md border border-white/70 shadow-xl;
-  }
-  
-  .gradient-text {
-    @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent;
+  .card {
+    @apply bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-200;
   }
   
   .btn-primary {
-    @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-blue-500/25;
+    @apply bg-blue-600 text-white font-medium px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200;
   }
   
   .btn-secondary {
-    @apply bg-white border border-slate-200 text-slate-700 font-medium px-6 py-3 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md;
-  }
-  
-  .card {
-    @apply glass-dark rounded-2xl p-8 hover:shadow-2xl transition-all duration-300;
-  }
-  
-  .code-block {
-    @apply bg-slate-100 border border-slate-200 rounded-xl overflow-hidden;
-  }
-  
-  .code-header {
-    @apply bg-slate-200 px-4 py-3 flex items-center gap-2;
-  }
-  
-  .code-dot {
-    @apply w-3 h-3 rounded-full;
-  }
-  
-  .code-content {
-    @apply p-4 text-sm font-mono text-slate-800;
-  }
-  
-  .skill-card {
-    @apply relative overflow-hidden bg-white border border-slate-200 rounded-2xl p-8 hover:shadow-xl transition-all duration-300;
-  }
-  
-  /* 项目卡片样式 */
-  .project-card {
-    @apply bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300;
-  }
-
-  .project-card:hover {
-    @apply shadow-2xl border-blue-200;
-    transform: translateY(-4px);
-  }
-
-  /* 网站访问按钮样式 */
-  .website-btn {
-    @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium px-4 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 inline-flex items-center gap-2 shadow-md hover:shadow-lg;
-  }
-
-  .website-btn:hover {
-    @apply shadow-xl;
-    transform: translateY(-1px);
-  }
-
-  /* 特殊效果 */
-  .glow {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
-  }
-
-  .glow:hover {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
-  }
-
-  /* 跑马灯效果 */
-  .marquee-btn {
-    position: relative;
-    overflow: hidden;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd, #ff9ff3, #54a0ff);
-    background-size: 300% 300%;
-    animation: marquee-bg 3s ease infinite, pulse-glow 2s ease-in-out infinite alternate;
-    border: none;
-    color: white;
-    font-weight: bold;
-    text-shadow: 0 0 10px rgba(0,0,0,0.5);
-    transition: all 0.3s ease;
-  }
-
-  .marquee-btn:hover {
-    transform: scale(1.05) translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3), 0 0 30px rgba(255,255,255,0.3);
-    animation-duration: 1.5s;
-  }
-
-  /* 优雅显眼的加群按钮 */
-  .elegant-highlight-btn {
-    position: relative;
-    overflow: hidden;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    background-size: 200% 200%;
-    animation: elegant-gradient 4s ease infinite;
-    border: 2px solid rgba(255,255,255,0.3);
-    color: white;
-    font-weight: 700;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 
-      0 8px 25px rgba(102, 126, 234, 0.3),
-      0 4px 15px rgba(118, 75, 162, 0.2),
-      inset 0 1px 0 rgba(255,255,255,0.1);
-    transform: translateY(0);
-  }
-
-  .elegant-highlight-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 
-      0 15px 35px rgba(102, 126, 234, 0.4),
-      0 8px 25px rgba(118, 75, 162, 0.3),
-      inset 0 1px 0 rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.5);
-  }
-
-  .elegant-highlight-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: elegant-shine 3s infinite;
-    transition: all 0.3s ease;
-  }
-
-  .elegant-highlight-btn:hover::before {
-    animation-duration: 1.5s;
-  }
-
-  @keyframes elegant-gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  @keyframes elegant-shine {
-    0% { left: -100%; }
-    100% { left: 100%; }
-  }
-
-  .marquee-btn::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd, #ff9ff3, #54a0ff);
-    background-size: 300% 300%;
-    animation: marquee-border 3s ease infinite reverse;
-    z-index: -1;
-    border-radius: inherit;
-    filter: blur(1px);
-  }
-
-  .marquee-btn::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: shine 2.5s infinite;
-  }
-
-  @keyframes marquee-bg {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  @keyframes marquee-border {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  @keyframes shine {
-    0% { left: -100%; }
-    100% { left: 100%; }
-  }
-
-  @keyframes pulse-glow {
-    from { box-shadow: 0 0 10px rgba(255,255,255,0.3); }
-    to { box-shadow: 0 0 20px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.3); }
-  }
-
-  /* 彩虹按钮效果 */
-  .rainbow-btn {
-    position: relative;
-    background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD);
-    background-size: 300% 300%;
-    animation: rainbow-shift 4s ease infinite;
-    border: 2px solid transparent;
-    color: white;
-    font-weight: bold;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    transition: all 0.3s ease;
-    overflow: hidden;
-  }
-
-  .rainbow-btn:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-    animation-duration: 2s;
-  }
-
-  .rainbow-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    animation: rainbow-shine 3s infinite;
-  }
-
-  @keyframes rainbow-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  @keyframes rainbow-shine {
-    0% { left: -100%; }
-    100% { left: 100%; }
-  }
-
-  /* 霓虹灯效果 */
-  .neon-btn {
-    background: transparent;
-    border: 2px solid #00ff41;
-    color: #00ff41;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    transition: all 0.3s ease;
-    box-shadow: 
-      0 0 5px #00ff41,
-      0 0 10px #00ff41,
-      0 0 15px #00ff41,
-      inset 0 0 5px rgba(0,255,65,0.1);
-    animation: neon-flicker 2s infinite alternate;
-  }
-
-  .neon-btn:hover {
-    background: rgba(0,255,65,0.1);
-    color: #fff;
-    box-shadow: 
-      0 0 10px #00ff41,
-      0 0 20px #00ff41,
-      0 0 30px #00ff41,
-      0 0 40px #00ff41,
-      inset 0 0 10px rgba(0,255,65,0.2);
-    transform: scale(1.05);
-  }
-
-  @keyframes neon-flicker {
-    0%, 100% {
-      opacity: 1;
-      box-shadow: 
-        0 0 5px #00ff41,
-        0 0 10px #00ff41,
-        0 0 15px #00ff41,
-        inset 0 0 5px rgba(0,255,65,0.1);
-    }
-    50% {
-      opacity: 0.8;
-      box-shadow: 
-        0 0 2px #00ff41,
-        0 0 5px #00ff41,
-        0 0 8px #00ff41,
-        inset 0 0 2px rgba(0,255,65,0.1);
-    }
-  }
-
-  /* 3D按钮效果 */
-  .btn-3d {
-    background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    color: white;
-    font-weight: bold;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    box-shadow: 
-      0 8px 15px rgba(0,0,0,0.3),
-      0 4px 6px rgba(0,0,0,0.1),
-      inset 0 1px 0 rgba(255,255,255,0.2);
-    transition: all 0.3s ease;
-    transform-style: preserve-3d;
-  }
-
-  .btn-3d:hover {
-    transform: translateY(-3px) rotateX(10deg);
-    box-shadow: 
-      0 12px 20px rgba(0,0,0,0.4),
-      0 6px 8px rgba(0,0,0,0.15),
-      inset 0 1px 0 rgba(255,255,255,0.3);
-  }
-
-  .btn-3d:active {
-    transform: translateY(-1px);
-    box-shadow: 
-      0 4px 8px rgba(0,0,0,0.3),
-      0 2px 4px rgba(0,0,0,0.1),
-      inset 0 1px 0 rgba(255,255,255,0.2);
-  }
-
-  /* 液态按钮效果 */
-  .liquid-btn {
-    position: relative;
-    background: linear-gradient(45deg, #1e3c72, #2a5298);
-    border: none;
-    color: white;
-    font-weight: bold;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-
-  .liquid-btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-    transition: all 0.5s ease;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  .liquid-btn:hover::before {
-    width: 300px;
-    height: 300px;
-  }
-
-  .liquid-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  }
-
-  /* 卡片浮动动画 */
-  .floating-card {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .floating-card:nth-child(even) {
-    animation-delay: -3s;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
-
-  /* 渐变动画背景 */
-  .animated-gradient {
-    background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe);
-    background-size: 400% 400%;
-    animation: gradient-shift 15s ease infinite;
-  }
-
-  @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  /* 闪烁文字效果 */
-  .sparkle-text {
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #ffd93d);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: sparkle 3s ease-in-out infinite;
-  }
-
-  @keyframes sparkle {
-    0%, 100% { 
-      background-position: 0% 50%;
-      filter: brightness(1);
-    }
-    50% { 
-      background-position: 100% 50%;
-      filter: brightness(1.2);
-    }
-  }
-
-  /* 脉冲效果 */
-  .pulse-effect {
-    animation: pulse-scale 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse-scale {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-  }
-
-  /* 强呼吸感效果 */
-  .strong-breathing {
-    animation: strong-breath 3s ease-in-out infinite;
-  }
-
-  @keyframes strong-breath {
-    0%, 100% { 
-      transform: scale(1);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-    50% { 
-      transform: scale(1.08);
-      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-    }
-  }
-
-  /* 轻呼吸感效果 */
-  .light-breathing {
-    animation: light-breath 4s ease-in-out infinite;
-  }
-
-  @keyframes light-breath {
-    0%, 100% { 
-      transform: scale(1);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-    50% { 
-      transform: scale(1.02);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-    }
-  }
-
-  /* 静态光环效果 */
-  .halo-effect {
-    position: relative;
-    box-shadow: 0 0 20px rgba(255, 107, 107, 0.3), 0 0 40px rgba(78, 205, 196, 0.2);
-  }
-
-  /* 发光边框效果 */
-  .glow-border {
-    border: 2px solid transparent;
-    background: linear-gradient(45deg, #667eea, #764ba2) border-box;
-    box-shadow: 
-      0 0 20px rgba(102, 126, 234, 0.4),
-      inset 0 0 20px rgba(118, 75, 162, 0.1);
-    animation: glow-pulse 2s ease-in-out infinite alternate;
-  }
-
-  @keyframes glow-pulse {
-    from {
-      box-shadow: 
-        0 0 20px rgba(102, 126, 234, 0.4),
-        inset 0 0 20px rgba(118, 75, 162, 0.1);
-    }
-    to {
-      box-shadow: 
-        0 0 30px rgba(102, 126, 234, 0.6),
-        inset 0 0 30px rgba(118, 75, 162, 0.2);
-    }
-  }
-
-  /* 文字打字机效果 */
-  .typewriter {
-    overflow: hidden;
-    border-right: 2px solid #fff;
-    white-space: nowrap;
-    animation: typewriter 4s steps(40) 1s 1 normal both, blink-cursor 0.75s step-end infinite;
-  }
-
-  @keyframes typewriter {
-    from { width: 0; }
-    to { width: 100%; }
-  }
-
-  @keyframes blink-cursor {
-    from, to { border-color: transparent; }
-    50% { border-color: #fff; }
+    @apply bg-gray-800 text-white font-medium px-6 py-3 rounded-lg hover:bg-gray-900 transition-colors duration-200;
   }
 }
 
@@ -550,16 +59,10 @@
   }
   
   .section-spacing {
-    @apply pt-8 md:pt-12 pb-20 md:pb-32;
+    @apply py-16;
   }
   
   .container-padding {
     @apply px-4 sm:px-6 lg:px-8;
-  }
-
-  .gradient-border {
-    background: linear-gradient(white, white) padding-box,
-                linear-gradient(135deg, #3b82f6, #6366f1) border-box;
-    border: 2px solid transparent;
   }
 }

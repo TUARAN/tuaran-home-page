@@ -1,3 +1,5 @@
+import { articles } from './articles/articlesData'
+
 const posts = [
   {
     date: '2025年12月05日',
@@ -18,24 +20,6 @@ const posts = [
   },
 ]
 
-const articles = [
-  {
-    date: '2025-12-22',
-    title: '⏰前端周刊第445期（2025年12月15日–12月21日）',
-    href: '#',
-  },
-  {
-    date: '2025-10-22',
-    title: 'OCR的新高度？PaddleOCR-VL 与 DeepSeek-OCR 的技术与应用横评',
-    href: 'https://juejin.cn/post/7563860666349862962',
-  },
-  {
-    date: '2025-07-23',
-    title: '技术社区已死？博主何去何从？',
-    href: 'https://juejin.cn/post/7529964429057622067',
-  },
-]
-
 function wrapTitle(title) {
   if (!title) return ''
   if (title.includes('《') || title.includes('》')) return title
@@ -45,6 +29,8 @@ function wrapTitle(title) {
 export const dynamic = 'force-static'
 
 export default function HomePage() {
+  const featuredArticles = articles.slice(0, 3)
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] pb-4 mb-8">
@@ -98,10 +84,13 @@ export default function HomePage() {
           <section className="mb-10">
             <h2>推荐阅读</h2>
             <ul className="space-y-3">
-              {articles.map((a) => (
-                <li key={`${a.date}-${a.title}`} className="flex items-start gap-2">
+              {featuredArticles.map((a, index) => (
+                <li
+                  key={`${a.date}-${a.title}`}
+                  className="flex items-start gap-2"
+                >
                   <span className="text-[#999] text-sm mt-1">▪</span>
-                  <div className="text-sm">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="text-[#666] mr-2">{a.date} »</span>
                     <a
                       href={a.href}
@@ -111,6 +100,17 @@ export default function HomePage() {
                     >
                       {wrapTitle(a.title)}
                     </a>
+                    {index === featuredArticles.length - 1 ? (
+                      <a
+                        href="/articles"
+                        className="group ml-3 inline-flex items-center gap-1 text-xs text-[#666] opacity-70 transition-all hover:opacity-100 hover:no-underline"
+                      >
+                        <span className="transition-colors group-hover:underline group-hover:underline-offset-4">
+                          更多文章
+                        </span>
+                        <span className="animate-arrow">→</span>
+                      </a>
+                    ) : null}
                   </div>
                 </li>
               ))}

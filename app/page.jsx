@@ -305,6 +305,23 @@ export default function HomePage() {
               </li>
             </ul>
           </section>
+
+          <section className="border border-[#eee] bg-white p-4 mt-6">
+            <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3">公众号</h3>
+            <div className="text-sm text-[#666] space-y-3">
+              <p>扫码关注公众号「前端周看」，每周获取最新前沿科技资讯🚀</p>
+              <img
+                src="/qrcode_for_gh.jpg"
+                alt="公众号二维码"
+                width="80"
+                height="80"
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+                className="w-20 max-w-full border border-[#eee] bg-white"
+              />
+            </div>
+          </section>
         </aside>
       </div>
 

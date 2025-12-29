@@ -2,28 +2,22 @@
   "name": "tuaran-blog",
   "version": "1.0.0",
   "description": "TUARAN's personal blog homepage with modern design",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@stagewise-plugins/vue": "^0.6.2",
-    "@stagewise/toolbar-vue": "^0.6.2",
-    "@vueuse/core": "^10.7.0",
-    "lucide-vue-next": "^0.525.0",
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5"
+    "next": "^15.1.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.0",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.56.0",
-    "eslint-plugin-vue": "^9.19.2",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
-    "vite": "^5.0.0"
+    "eslint-config-next": "^15.1.3"
   }
 }

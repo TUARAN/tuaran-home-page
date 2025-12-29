@@ -1,6 +1,6 @@
-# 掘金安东尼 - 个人网站
+# 涂阿燃的网络日志
 
-一个极简风格的个人技术博客网站，展示技术栈、项目作品和个人理念。
+一个极简风格的个人网站与网络日志，记录编程、创作与生活。
 
 ## 设计理念
 
@@ -11,9 +11,8 @@
 
 ## 技术栈
 
-- **前端框架**: Vue 3
+- **前端框架**: Next.js (App Router) + React
 - **样式框架**: Tailwind CSS
-- **构建工具**: Vite
 - **开发语言**: JavaScript
 
 ## 功能特性
@@ -61,9 +60,14 @@ npm run dev
 npm run build
 ```
 
-### 预览生产版本
+构建完成后会生成静态目录 `out/`，用于 Cloudflare Pages 静态部署：
 ```bash
-npm run preview
+wrangler pages deploy out
+```
+
+### 运行生产服务器
+```bash
+npm run start
 ```
 
 ## 项目结构
@@ -92,7 +96,7 @@ src/
 
 ## 访问地址
 
-开发环境: http://localhost:5173
+开发环境: http://localhost:3000
 
 ## 作者
 

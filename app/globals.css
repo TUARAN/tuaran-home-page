@@ -44,20 +44,3 @@
   }
 }
 
-@layer utilities {
-  .animate-arrow {
-    animation: arrow-slide 1.6s ease-in-out infinite;
-    display: inline-block;
-  }
-}
-
-@keyframes arrow-slide {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(0.25rem);
-  }
-}
-

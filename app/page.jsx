@@ -56,6 +56,9 @@ export default function HomePage() {
               安东尼404
             </a>
           </p>
+          <p className="text-sm text-[#666] mt-1">
+            涂阿燃（掘金安东尼 / 安东尼404）专注前端工程化、AI 智能体与技术社区共建，记录长期主义的创作者成长。
+          </p>
         </div>
         <nav className="flex items-center gap-4 text-sm">
           <a
@@ -103,12 +106,9 @@ export default function HomePage() {
                     {index === featuredArticles.length - 1 ? (
                       <a
                         href="/articles"
-                        className="group ml-3 inline-flex items-center gap-1 text-xs text-[#666] opacity-70 transition-all hover:opacity-100 hover:no-underline"
+                        className="ml-3 text-xs text-[#666] underline underline-offset-4 opacity-80 hover:opacity-100"
                       >
-                        <span className="transition-colors group-hover:underline group-hover:underline-offset-4">
-                          更多文章
-                        </span>
-                        <span className="animate-arrow">→</span>
+                        更多文章
                       </a>
                     ) : null}
                   </div>
@@ -158,8 +158,11 @@ export default function HomePage() {
           </section>
 
           <section className="mt-10">
-            <h2>介绍</h2>
+            <h2>个人介绍</h2>
             <div className="text-sm text-[#666]">
+              <p>
+                ▪ 涂阿燃（掘金安东尼 / 安东尼404）是一名前端架构师与技术社区共建者，关注在 AI 时代帮助开发者与创作者获得持续影响力。
+              </p>
               <p>
                 ▪ 已出版：
                 <a
@@ -286,21 +289,6 @@ export default function HomePage() {
                   className="opacity-80 hover:opacity-100"
                 >
                   banana-gallery
-                </a>
-              </li>
-              <li>
-                ▪{' '}
-                <a
-                  href="https://aiabs.pages.dev/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group !text-[#666] hover:!text-[#333]"
-                >
-                  大模型交易
-                  <span className="text-xs text-[#999] opacity-0 group-hover:opacity-100">
-                    {' '}
-                    -开发中
-                  </span>
                 </a>
               </li>
             </ul>

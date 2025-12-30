@@ -161,9 +161,6 @@ export default function HomePage() {
             <h2>个人介绍</h2>
             <div className="text-sm text-[#666]">
               <p>
-                ▪ 涂阿燃（掘金安东尼 / 安东尼404）是一名前端架构师与技术社区共建者，关注在 AI 时代帮助开发者与创作者获得持续影响力。
-              </p>
-              <p>
                 ▪ 已出版：
                 <a
                   href="https://item.jd.com/14356664.html"

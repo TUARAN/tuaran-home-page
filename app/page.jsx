@@ -278,7 +278,24 @@ export default function HomePage() {
                   rel="noreferrer"
                   className="opacity-80 hover:opacity-100"
                 >
-                  安东尼学AI
+                  <span className="inline-flex items-center gap-1">
+                    安东尼学AI
+                    <span aria-hidden="true">🔥</span>
+                  </span>
+                </a>
+              </li>
+              <li>
+                ▪{' '}
+                <a
+                  href="https://banana-gallery.pages.dev/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="opacity-80 hover:opacity-100"
+                >
+                  <span className="inline-flex items-center gap-1">
+                    banana-gallery
+                    <span aria-hidden="true">🔥</span>
+                  </span>
                 </a>
               </li>
               <li>
@@ -301,17 +318,6 @@ export default function HomePage() {
                   className="opacity-80 hover:opacity-100"
                 >
                   代码矿工
-                </a>
-              </li>
-              <li>
-                ▪{' '}
-                <a
-                  href="https://banana-gallery.pages.dev/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="opacity-80 hover:opacity-100"
-                >
-                  banana-gallery
                 </a>
               </li>
             </ul>

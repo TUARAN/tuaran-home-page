@@ -8,7 +8,7 @@ export default function ArticlesPage() {
       <header className="mb-10 border-b border-[#eee] pb-4">
         <h1 className="text-[#555]">文章列表</h1>
         <p className="text-sm text-[#666] mt-2">
-          精选技术观察、实践复盘与周刊内容，保持与首页一致的阅读体验。
+          精选技术观察、实践复盘与周刊内容。
         </p>
       </header>
 

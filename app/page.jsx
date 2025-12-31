@@ -6,17 +6,20 @@ const posts = [
     title: '前端周刊：每周更新国外论坛的前端热门文章',
     href: 'https://fwdc.pages.dev/',
     githubHref: 'https://github.com/TUARAN/frontend-weekly-digest-cn',
+    showExternalIcon: true,
   },
   {
     date: '2025年12月19日',
     title: '博主联盟：开发者博主联盟平台，链接创作与推广',
     href: 'https://blogger-alliance.pages.dev/',
     githubHref: 'https://github.com/TUARAN/blogger-alliance',
+    showExternalIcon: true,
   },
   {
     date: '2025年12月23日',
     title: '矩阵先锋：多平台内容创作者数据追踪与展示平台',
     href: 'https://csdn-fans-tracker.pages.dev/dashboard',
+    showExternalIcon: true,
   },
 ]
 
@@ -57,7 +60,7 @@ export default function HomePage() {
             </a>
           </p>
           <p className="text-sm text-[#666] mt-1">
-            涂阿燃（掘金安东尼 / 安东尼404）专注前端工程化、AI 智能体与技术社区共建，记录长期主义的创作者成长。
+            专注前端工程化、AI 智能体与技术社区共建，记录长期主义的创作者成长。
           </p>
         </div>
         <nav className="flex items-center gap-4 text-sm">
@@ -131,7 +134,30 @@ export default function HomePage() {
                       rel="noreferrer"
                       className="opacity-80 hover:opacity-100"
                     >
-                      {p.title}
+                      <span className="inline-flex items-center gap-1">
+                        {p.title}
+                        {p.showExternalIcon ? (
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 16 16"
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 3.5h10c.69 0 1.25.56 1.25 1.25v7.5c0 .69-.56 1.25-1.25 1.25H3c-.69 0-1.25-.56-1.25-1.25v-7.5C1.75 4.06 2.31 3.5 3 3.5Z" />
+                            <path d="M1.75 5.75h12.5" />
+                            <circle cx="9.75" cy="9.25" r="2" />
+                            <path d="M9.75 7.5v3.5" />
+                            <path d="M8 9.25h3.5" />
+                            <path d="M4.25 4.75h.01" />
+                            <path d="M5.75 4.75h.01" />
+                            <path d="M7.25 4.75h.01" />
+                          </svg>
+                        ) : null}
+                      </span>
                     </a>
                     {p.githubHref ? (
                       <a
@@ -294,7 +320,7 @@ export default function HomePage() {
           <section className="border border-[#eee] bg-white p-4 mt-6">
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3">公众号</h3>
             <div className="text-sm text-[#666] space-y-3">
-              <p>扫码关注公众号「前端周看」，每周获取最新前沿科技资讯🚀</p>
+              <p>扫码关注「前端周看」，获取最新前沿科技资讯🚀</p>
               <img
                 src="/qrcode_for_gh.jpg"
                 alt="公众号二维码"

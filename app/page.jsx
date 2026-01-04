@@ -343,7 +343,12 @@ export default function HomePage() {
       </div>
 
       <footer className="mt-16 pt-8 border-t border-[#eee] text-center text-[#999] text-xs">
-        <p>© 2025 涂阿燃的网络日志</p>
+        <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+          <span>© 2025 涂阿燃的网络日志</span>
+          <a href="/traffic" className="opacity-80 hover:opacity-100">
+            流量统计
+          </a>
+        </p>
       </footer>
     </div>
   )

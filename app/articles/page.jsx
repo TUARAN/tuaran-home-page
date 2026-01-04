@@ -9,6 +9,25 @@ export default function ArticlesPage() {
         <h1 className="text-[#555]">文章列表</h1>
         <p className="text-sm text-[#666] mt-2">
           精选技术观察、实践复盘与周刊内容。
+          <span className="ml-2 inline-flex items-center gap-2">
+            <a
+              href="https://juejin.cn/user/1521379823340792/posts"
+              target="_blank"
+              rel="noreferrer"
+              className="opacity-80 hover:opacity-100 underline underline-offset-4"
+            >
+              掘金历史文章
+            </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href="https://juejin.cn/user/1521379823340792/columns"
+              target="_blank"
+              rel="noreferrer"
+              className="opacity-80 hover:opacity-100 underline underline-offset-4"
+            >
+              掘金历史专栏
+            </a>
+          </span>
         </p>
       </header>
 

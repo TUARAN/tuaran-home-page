@@ -19,6 +19,7 @@ const posts = [
     date: '2025年12月23日',
     title: '矩阵先锋：多平台内容创作者数据追踪与展示平台',
     href: 'https://csdn-fans-tracker.pages.dev/dashboard',
+    githubHref: 'https://github.com/TUARAN/fans-tracker',
     showExternalIcon: true,
   },
 ]

@@ -59,6 +59,15 @@ export default function HomePage() {
             >
               安东尼404
             </a>
+            {' '}/{' '}
+            <a
+              href="https://blog.csdn.net/aifs2025"
+              target="_blank"
+              rel="noreferrer"
+              className="opacity-80 hover:opacity-100"
+            >
+              安东尼与AI
+            </a>
           </p>
           <p className="text-sm text-[#666] mt-1">
             专注前端工程化、AI 智能体与技术社区共建，记录长期主义的创作者成长。

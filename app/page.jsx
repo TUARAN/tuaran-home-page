@@ -207,6 +207,40 @@ export default function HomePage() {
                 </a>
                 ，出版中：大模型/智能体/具身智能相关书籍
               </p>
+              <div className="my-4 flex flex-wrap items-center gap-3">
+                <a
+                  href="https://item.jd.com/14356664.html"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block opacity-80 hover:opacity-100"
+                >
+                  <img
+                    src="/20260104094558_496.png"
+                    alt="程序员成长手记二维码"
+                    width="100"
+                    height="100"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-24 h-24 object-contain border border-[#eee] bg-white"
+                  />
+                </a>
+                <a
+                  href="https://juejin.cn/book/7351709145294176282"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block opacity-80 hover:opacity-100"
+                >
+                  <img
+                    src="/20260104094842_497.png"
+                    alt="AI Bots 通关指南二维码"
+                    width="100"
+                    height="100"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-24 h-24 object-contain border border-[#eee] bg-white"
+                  />
+                </a>
+              </div>
               <p>
                 ▪ 发起
                 <a

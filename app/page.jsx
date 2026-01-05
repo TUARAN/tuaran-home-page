@@ -3,9 +3,9 @@ import SettingsButton from './components/SettingsButton'
 
 const posts = [
   {
-    date: '2025年12月05日',
+    date: '2026年01月05日',
     title: '前端周刊：每周更新国外论坛的前端热门文章',
-    href: 'https://fwdc.pages.dev/',
+    href: 'https://fwdc.pages.dev/weekly/447',
     githubHref: 'https://github.com/TUARAN/frontend-weekly-digest-cn',
     showExternalIcon: true,
   },
@@ -154,30 +154,35 @@ export default function HomePage() {
                       href={p.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="opacity-80 hover:opacity-100"
+                      className="group opacity-80 hover:opacity-100"
                     >
                       <span className="inline-flex items-center gap-1">
                         {p.title}
                         {p.showExternalIcon ? (
-                          <svg
-                            aria-hidden="true"
-                            viewBox="0 0 16 16"
-                            className="w-3.5 h-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M3 3.5h10c.69 0 1.25.56 1.25 1.25v7.5c0 .69-.56 1.25-1.25 1.25H3c-.69 0-1.25-.56-1.25-1.25v-7.5C1.75 4.06 2.31 3.5 3 3.5Z" />
-                            <path d="M1.75 5.75h12.5" />
-                            <circle cx="9.75" cy="9.25" r="2" />
-                            <path d="M9.75 7.5v3.5" />
-                            <path d="M8 9.25h3.5" />
-                            <path d="M4.25 4.75h.01" />
-                            <path d="M5.75 4.75h.01" />
-                            <path d="M7.25 4.75h.01" />
-                          </svg>
+                          <>
+                            <span className="ml-0.5 text-xs text-[#999] group-hover:underline underline-offset-4">
+                              网址
+                            </span>
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 16 16"
+                              className="w-4 h-4 !text-black"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 3.5h10c.69 0 1.25.56 1.25 1.25v7.5c0 .69-.56 1.25-1.25 1.25H3c-.69 0-1.25-.56-1.25-1.25v-7.5C1.75 4.06 2.31 3.5 3 3.5Z" />
+                              <path d="M1.75 5.75h12.5" />
+                              <circle cx="9.75" cy="9.25" r="2" />
+                              <path d="M9.75 7.5v3.5" />
+                              <path d="M8 9.25h3.5" />
+                              <path d="M4.25 4.75h.01" />
+                              <path d="M5.75 4.75h.01" />
+                              <path d="M7.25 4.75h.01" />
+                            </svg>
+                          </>
                         ) : null}
                       </span>
                     </a>
@@ -187,8 +192,11 @@ export default function HomePage() {
                         target="_blank"
                         rel="noreferrer"
                         aria-label="GitHub"
-                        className="ml-2 inline-flex items-center !text-black opacity-100 hover:opacity-100"
+                        className="group ml-2 inline-flex items-center !text-black opacity-100 hover:opacity-100"
                       >
+                        <span className="mr-1 text-xs text-[#999] group-hover:underline underline-offset-4">
+                          仓库
+                        </span>
                         <svg
                           aria-hidden="true"
                           viewBox="0 0 16 16"

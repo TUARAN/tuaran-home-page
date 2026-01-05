@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { articles } from '../articlesData'
+import SettingsButton from '../../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
@@ -16,25 +17,30 @@ export default function ArticleDetailPage({ params }) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <header className="mb-8 border-b border-[#eee] pb-4">
-        <div className="text-xs text-[#999]">{article.date}</div>
-        <h1 className="mt-2 text-2xl text-[#444] leading-snug">{article.title}</h1>
-        <p className="text-sm text-[#666] mt-3 leading-relaxed">{article.summary}</p>
-        <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666]">
-          <a
-            href="/articles"
-            className="opacity-80 hover:opacity-100 underline underline-offset-4"
-          >
-            返回列表
-          </a>
-          <a
-            href={article.href}
-            target="_blank"
-            rel="noreferrer"
-            className="opacity-80 hover:opacity-100 underline underline-offset-4"
-          >
-            原文阅读
-          </a>
+      <header className="mb-8 border-b border-[#eee] pb-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="text-xs text-[#999]">{article.date}</div>
+            <h1 className="mt-2 text-2xl text-[#444] leading-snug">{article.title}</h1>
+            <p className="text-sm text-[#666] mt-3 leading-relaxed">{article.summary}</p>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666]">
+              <a
+                href="/articles"
+                className="opacity-80 hover:opacity-100 underline underline-offset-4"
+              >
+                返回列表
+              </a>
+              <a
+                href={article.href}
+                target="_blank"
+                rel="noreferrer"
+                className="opacity-80 hover:opacity-100 underline underline-offset-4"
+              >
+                原文阅读
+              </a>
+            </div>
+          </div>
+          <SettingsButton />
         </div>
       </header>
 

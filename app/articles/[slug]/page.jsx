@@ -4,6 +4,10 @@ import SettingsButton from '../../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
+function isExternalHref(href) {
+  return typeof href === 'string' && href.startsWith('http')
+}
+
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }))
 }
@@ -30,14 +34,16 @@ export default function ArticleDetailPage({ params }) {
               >
                 返回列表
               </a>
-              <a
-                href={article.href}
-                target="_blank"
-                rel="noreferrer"
-                className="opacity-80 hover:opacity-100 underline underline-offset-4"
-              >
-                原文阅读
-              </a>
+              {isExternalHref(article.href) ? (
+                <a
+                  href={article.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                >
+                  原文阅读
+                </a>
+              ) : null}
             </div>
           </div>
           <SettingsButton />

@@ -33,6 +33,14 @@ function wrapTitle(title) {
 
 export const dynamic = 'force-static'
 
+function isExternalHref(href) {
+  return typeof href === 'string' && href.startsWith('http')
+}
+
+function getArticleLink(article) {
+  return isExternalHref(article?.href) ? article.href : `/articles/${article.slug}`
+}
+
 export default function HomePage() {
   const featuredArticles = articles.slice(0, 3)
 
@@ -113,9 +121,9 @@ export default function HomePage() {
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="text-[#666] mr-2">{a.date} »</span>
                     <a
-                      href={a.href}
-                      target="_blank"
-                      rel="noreferrer"
+                      href={getArticleLink(a)}
+                      target={isExternalHref(a.href) ? '_blank' : undefined}
+                      rel={isExternalHref(a.href) ? 'noreferrer' : undefined}
                       className="opacity-80 hover:opacity-100"
                     >
                       {wrapTitle(a.title)}

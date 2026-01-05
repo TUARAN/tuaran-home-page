@@ -5,7 +5,7 @@ const posts = [
   {
     date: '2026年01月05日',
     title: '前端周刊：每周更新国外论坛的前端热门文章',
-    href: 'https://fwdc.pages.dev/weekly/447',
+    href: 'https://fwdc.pages.dev/',
     githubHref: 'https://github.com/TUARAN/frontend-weekly-digest-cn',
     showExternalIcon: true,
   },

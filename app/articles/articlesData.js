@@ -3,8 +3,23 @@
  */
 export const articles = [
   {
+    slug: 'frontend-weekly-447',
+    title: '⏰前端周刊第447期（2025年12月28日–2026年1月3日）',
+    date: '2025-12-28',
+    href: 'https://juejin.cn/spost/7591703562134519842',
+    summary:
+      '精选一周前端热议：生态更新、工程化实践与工具动态，帮助你快速掌握值得关注的变化。',
+    cover:
+      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=60',
+    content: [
+      '本期整理了 2025年12月28日–2026年1月3日 这一周值得关注的前端内容与讨论要点。',
+      '重点覆盖框架生态演进、性能与工程化实践，以及多个实用工具/资源更新。',
+      '点击“原文阅读”可直达掘金外链阅读完整版。',
+    ],
+  },
+  {
     slug: 'diary-self-reflection',
-    title: '《日记——阶段自省》',
+    title: '《浮生日记——阶段自省》',
     date: '2026-01-05',
     href: '',
     summary:

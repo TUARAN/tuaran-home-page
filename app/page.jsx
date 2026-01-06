@@ -5,14 +5,14 @@ const posts = [
   {
     date: '2026年01月05日',
     title: '前端周刊：每周更新国外论坛的前端热门文章',
-    href: 'https://fwdc.pages.dev/',
+    href: 'https://frontendweekly.cn/',
     githubHref: 'https://github.com/TUARAN/frontend-weekly-digest-cn',
     showExternalIcon: true,
   },
   {
     date: '2025年12月19日',
     title: '博主联盟：开发者博主联盟平台，链接创作与推广',
-    href: 'https://blogger-alliance.pages.dev/',
+    href: 'https://blogger-alliance.cn',
     githubHref: 'https://github.com/TUARAN/blogger-alliance',
     showExternalIcon: true,
   },
@@ -274,7 +274,7 @@ export default function HomePage() {
               <p>
                 ▪ 发起
                 <a
-                  href="https://fwdc.pages.dev/"
+                  href="https://frontendweekly.cn/"
                   target="_blank"
                   rel="noreferrer"
                   className="opacity-80 hover:opacity-100"
@@ -283,7 +283,7 @@ export default function HomePage() {
                 </a>
                 、
                 <a
-                  href="https://blogger-alliance.pages.dev/"
+                  href="https://blogger-alliance.cn"
                   target="_blank"
                   rel="noreferrer"
                   className="opacity-80 hover:opacity-100"

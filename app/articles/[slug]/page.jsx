@@ -64,9 +64,18 @@ export default function ArticleDetailPage({ params }) {
       ) : null}
 
       <div className="space-y-5 text-sm leading-relaxed text-[#555]">
-        {article.content.map((paragraph) => (
-          <p key={paragraph}>{paragraph}</p>
-        ))}
+        {article.content.map((paragraph, idx) => {
+          const isDateHeading = typeof paragraph === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(paragraph.trim())
+          if (isDateHeading) {
+            return (
+              <div key={`${idx}-${paragraph}`} className="text-xs text-[#999]">
+                {paragraph}
+              </div>
+            )
+          }
+
+          return <p key={`${idx}-${paragraph}`}>{paragraph}</p>
+        })}
       </div>
     </div>
   )

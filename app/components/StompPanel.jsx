@@ -109,7 +109,7 @@ export default function StompPanel() {
           <button
             type="button"
             onClick={refresh}
-            className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-1 text-[12px] text-gray-700 shadow-sm hover:bg-white dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
+            className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-0.5 text-[12px] text-gray-700 hover:bg-white dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
           >
             刷新
           </button>
@@ -118,7 +118,7 @@ export default function StompPanel() {
             <button
               type="button"
               onClick={logout}
-              className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-1 text-[12px] text-gray-700 shadow-sm hover:bg-white dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
+              className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-0.5 text-[12px] text-gray-700 hover:bg-white dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
             >
               退出
             </button>
@@ -127,7 +127,7 @@ export default function StompPanel() {
               type="button"
               disabled={userLoading}
               onClick={login}
-              className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-1 text-[12px] text-gray-700 shadow-sm hover:bg-white disabled:opacity-60 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
+              className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-0.5 text-[12px] text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
             >
               GitHub 登录
             </button>

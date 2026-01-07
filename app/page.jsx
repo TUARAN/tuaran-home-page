@@ -1,5 +1,6 @@
 import { articles } from './articles/articlesData'
 import SettingsButton from './components/SettingsButton'
+import StompPanel from './components/StompPanel'
 
 const posts = [
   {
@@ -109,6 +110,8 @@ export default function HomePage() {
 
       <div className="flex flex-col md:flex-row gap-8">
         <main className="flex-1">
+          <StompPanel />
+
           <section className="mb-10">
             <h2>推荐阅读</h2>
             <ul className="space-y-3">

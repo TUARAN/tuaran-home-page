@@ -1,0 +1,102 @@
+import {
+  cookieNames,
+  cookiesConfig,
+  getSecrets,
+  parseCookies,
+  serializeCookie,
+  signSession,
+} from '../../../../../lib/edgeSession'
+
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+export async function GET(req) {
+  const { githubId, githubSecret, appUrl, sessionSecret } = getSecrets()
+  if (!githubId || !githubSecret || !appUrl || !sessionSecret) {
+    return Response.json({ error: 'MISSING_AUTH_CONFIG' }, { status: 500 })
+  }
+
+  const url = new URL(req.url)
+  const code = url.searchParams.get('code')
+  const state = url.searchParams.get('state')
+
+  if (!code || !state) {
+    return Response.json({ error: 'MISSING_CODE_OR_STATE' }, { status: 400 })
+  }
+
+  const cookies = parseCookies(req)
+  const expectedState = cookies[cookieNames.oauthState]
+  const returnTo = cookies[cookieNames.returnTo] || '/'
+
+  if (!expectedState || expectedState !== state) {
+    return Response.json({ error: 'INVALID_STATE' }, { status: 400 })
+  }
+
+  const redirectUri = `${appUrl.replace(/\/$/, '')}/api/auth/callback/github`
+
+  const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: githubId,
+      client_secret: githubSecret,
+      code,
+      redirect_uri: redirectUri,
+      state,
+    }),
+  })
+
+  const tokenJson = await tokenRes.json()
+  const accessToken = tokenJson?.access_token
+  if (!tokenRes.ok || !accessToken) {
+    return Response.json({ error: 'OAUTH_TOKEN_EXCHANGE_FAILED', detail: tokenJson }, { status: 400 })
+  }
+
+  const userRes = await fetch('https://api.github.com/user', {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${accessToken}`,
+      'User-Agent': 'tuaran-me',
+    },
+  })
+  const ghUser = await userRes.json()
+  if (!userRes.ok || !ghUser?.id) {
+    return Response.json({ error: 'GITHUB_USER_FETCH_FAILED', detail: ghUser }, { status: 400 })
+  }
+
+  const user = {
+    id: String(ghUser.id),
+    login: String(ghUser.login || ''),
+    name: String(ghUser.name || ghUser.login || 'GitHub User'),
+    image: ghUser.avatar_url ? String(ghUser.avatar_url) : null,
+  }
+
+  const payload = {
+    user,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
+  }
+
+  const jwt = await signSession(payload, sessionSecret)
+  const { secure } = cookiesConfig()
+
+  const headers = new Headers()
+  headers.append(
+    'Set-Cookie',
+    serializeCookie(cookieNames.session, jwt, { maxAge: 7 * 24 * 60 * 60, secure })
+  )
+  headers.append(
+    'Set-Cookie',
+    serializeCookie(cookieNames.oauthState, '', { maxAge: 0, secure })
+  )
+  headers.append(
+    'Set-Cookie',
+    serializeCookie(cookieNames.returnTo, '', { maxAge: 0, secure })
+  )
+
+  headers.set('Location', returnTo.startsWith('/') ? returnTo : '/')
+  return new Response(null, { status: 302, headers })
+}

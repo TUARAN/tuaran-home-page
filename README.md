@@ -60,10 +60,86 @@ npm run dev
 npm run build
 ```
 
-Cloudflare Pages 部署（需要 SSR/Functions）：
+## Cloudflare Pages 部署（GitHub 登录 + 踩一踩留言）
 
-- Build command：`npx @cloudflare/next-on-pages@1`
-- Output directory：`.vercel/output/static`
+本项目在 Cloudflare Pages 上以 **SSR/Functions** 方式运行（不是纯静态导出）。
+
+### 1) Pages 构建配置
+
+在 Cloudflare Pages 项目设置中配置：
+
+- Build command：`npm run pages:build`（等价于 `npx @cloudflare/next-on-pages@1`）
+- Build output directory：`.vercel/output/static`
+
+> 常见报错：`Error: Output directory "out" not found`
+>
+> 这是因为旧的纯静态方案会生成 `out/`，但现在使用 next-on-pages 产物在 `.vercel/output/static`。
+
+### 2) 环境变量（Pages）
+
+在 Cloudflare Pages 项目里添加环境变量（Production / Preview 视情况都加）：
+
+- `GITHUB_ID`（Text）
+- `GITHUB_SECRET`（Secret）
+- `NEXTAUTH_URL`（Text）：例如 `https://tuaran.me`
+- `NEXTAUTH_SECRET`（Secret）：使用 `openssl rand -base64 32` 生成
+
+### 3) GitHub OAuth App（回调地址）
+
+在 GitHub 创建/配置 OAuth App：
+
+- Homepage URL：`https://tuaran.me`
+- Authorization callback URL：`https://tuaran.me/api/auth/callback/github`
+
+### 4) D1（踩一踩留言存储）
+
+留言存储使用 Cloudflare D1，并通过 `DB` binding 注入到 Functions（代码读取 `env.DB`）。
+
+#### 4.1 在 Cloudflare Pages 项目里绑定 D1
+
+Cloudflare Dashboard → Pages → 你的项目 → Settings → Bindings：
+
+- Binding type：D1 database
+- Binding name：`DB`
+- Database：选择你创建的 D1 数据库（云端的，不是本地的）
+
+#### 4.2 迁移建表（wrangler）
+
+迁移文件在 `migrations/0001_init.sql`。
+
+```bash
+# 1) 创建数据库（如果还没创建）
+wrangler d1 create tuaran-me
+
+# 2) 把输出的 database_id 写进 wrangler.toml
+
+# 3) 执行迁移（建表）
+wrangler d1 migrations apply tuaran-me
+```
+
+> 常见报错：`Error 8000022: Invalid database UUID ()`
+>
+> 这表示你用 `wrangler pages deploy` 发布 Functions 时，`wrangler.toml` 的 D1 `database_id` 为空或不合法。
+> 解决：到 Cloudflare D1 控制台复制正确的 Database ID（UUID），填进 `wrangler.toml` 再重新部署。
+
+### 5) nodejs_compat 警告
+
+如果你在构建/上传时看到：
+
+`The package "node:async_hooks" wasn't found... enable the "nodejs_compat" compatibility flag`
+
+请在 `wrangler.toml` 里开启：
+
+```toml
+compatibility_flags = ["nodejs_compat"]
+```
+
+### 6) 部署方式说明（两种不要混淆）
+
+- 方式 A（推荐）：Cloudflare Pages 连接 Git 仓库
+	- 你只需要 `git push`，Pages 会自动拉代码、执行 Build command、发布。
+- 方式 B：本地手动 `wrangler pages deploy`
+	- 你需要在本地有正确的 `wrangler.toml`（尤其是 D1 `database_id`），否则会出现 UUID 相关发布失败。
 
 ### D1（踩一踩留言存储）
 

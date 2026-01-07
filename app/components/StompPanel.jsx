@@ -2,6 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
+async function safeJson(res) {
+  const text = await res.text()
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return { error: 'NON_JSON_RESPONSE', detail: text.slice(0, 120) }
+  }
+}
+
 function formatTime(ts) {
   try {
     return new Date(ts).toLocaleString('zh-CN', {
@@ -32,8 +42,8 @@ export default function StompPanel() {
     setError('')
     try {
       const res = await fetch('/api/stomp?limit=30', { cache: 'no-store' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'FETCH_FAILED')
+      const data = await safeJson(res)
+      if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
       setItems(Array.isArray(data?.items) ? data.items : [])
     } catch (e) {
       setError(e?.message || 'FETCH_FAILED')
@@ -44,7 +54,7 @@ export default function StompPanel() {
     ;(async () => {
       try {
         const res = await fetch('/api/me', { cache: 'no-store' })
-        const data = await res.json()
+        const data = await safeJson(res)
         setUser(data?.user || null)
       } catch {
         setUser(null)
@@ -78,8 +88,8 @@ export default function StompPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: trimmed }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'POST_FAILED')
+      const data = await safeJson(res)
+      if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
 
       setMessage('')
       await refresh()

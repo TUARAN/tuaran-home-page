@@ -12,8 +12,12 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req) {
   const { githubId, githubSecret, appUrl, sessionSecret } = getSecrets()
-  if (!githubId || !githubSecret || !appUrl || !sessionSecret) {
-    return Response.json({ error: 'MISSING_AUTH_CONFIG' }, { status: 500 })
+  const missing = []
+  if (!githubId) missing.push('GITHUB_ID')
+  if (!githubSecret) missing.push('GITHUB_SECRET')
+  if (!sessionSecret) missing.push('NEXTAUTH_SECRET')
+  if (missing.length) {
+    return Response.json({ error: 'MISSING_AUTH_CONFIG', missing }, { status: 500 })
   }
 
   const url = new URL(req.url)
@@ -32,7 +36,8 @@ export async function GET(req) {
     return Response.json({ error: 'INVALID_STATE' }, { status: 400 })
   }
 
-  const redirectUri = `${appUrl.replace(/\/$/, '')}/api/auth/callback/github`
+  const origin = (appUrl || new URL(req.url).origin).replace(/\/$/, '')
+  const redirectUri = `${origin}/api/auth/callback/github`
 
   const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',

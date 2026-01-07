@@ -110,8 +110,6 @@ export default function HomePage() {
 
       <div className="flex flex-col md:flex-row gap-8">
         <main className="flex-1">
-          <StompPanel />
-
           <section className="mb-10">
             <h2>推荐阅读</h2>
             <ul className="space-y-3">
@@ -309,6 +307,8 @@ export default function HomePage() {
               <p>▪ 具备程序员与科创项目经理的复合背景，关注前端工程化、智能体系统与大语言模型应用</p>
             </div>
           </section>
+
+          <StompPanel />
         </main>
 
         <aside className="w-full md:w-64">

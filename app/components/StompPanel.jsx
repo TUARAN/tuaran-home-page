@@ -102,10 +102,10 @@ export default function StompPanel() {
 
   return (
     <section className="mt-8 rounded-xl border border-gray-200/70 bg-white/80 p-4 text-sm shadow-sm backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900/70">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="m-0 text-base text-gray-700 dark:text-gray-200">踩一踩</h2>
+      <h2 className="flex items-center justify-between gap-3">
+        <span>踩一踩</span>
 
-        <div className="flex items-center gap-2">
+        <span className="flex items-center gap-2">
           <button
             type="button"
             onClick={refresh}
@@ -132,8 +132,8 @@ export default function StompPanel() {
               GitHub 登录
             </button>
           )}
-        </div>
-      </div>
+        </span>
+      </h2>
 
       {isAuthed ? (
         <form onSubmit={submit} className="mt-3 flex flex-col gap-2">

@@ -12,15 +12,19 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req) {
   const { githubId, appUrl } = getSecrets()
-  if (!githubId || !appUrl) {
-    return Response.json({ error: 'MISSING_GITHUB_OAUTH_CONFIG' }, { status: 500 })
+  if (!githubId) {
+    return Response.json(
+      { error: 'MISSING_GITHUB_OAUTH_CONFIG', missing: ['GITHUB_ID'] },
+      { status: 500 }
+    )
   }
 
   const url = new URL(req.url)
   const returnTo = url.searchParams.get('returnTo') || '/'
   const state = randomState()
 
-  const redirectUri = `${appUrl.replace(/\/$/, '')}/api/auth/callback/github`
+  const origin = (appUrl || new URL(req.url).origin).replace(/\/$/, '')
+  const redirectUri = `${origin}/api/auth/callback/github`
   const githubAuth = new URL('https://github.com/login/oauth/authorize')
   githubAuth.searchParams.set('client_id', githubId)
   githubAuth.searchParams.set('redirect_uri', redirectUri)

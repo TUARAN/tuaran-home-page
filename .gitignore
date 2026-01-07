@@ -108,3 +108,7 @@ temp/
 
 # Local Netlify folder
 .netlify 
+
+# Local sqlite data
+data/
+*.sqlite

@@ -60,10 +60,23 @@ npm run dev
 npm run build
 ```
 
-构建完成后会生成静态目录 `out/`，用于 Cloudflare Pages 静态部署：
-```bash
-wrangler pages deploy out
-```
+Cloudflare Pages 部署（需要 SSR/Functions）：
+
+- Build command：`npx @cloudflare/next-on-pages@1`
+- Output directory：`.vercel/output/static`
+
+### D1（踩一踩留言存储）
+
+需要绑定一个 D1 数据库到 `DB`：
+
+1) 创建 D1：`wrangler d1 create tuaran-me`
+2) 把返回的 `database_id` 填进 [wrangler.toml](wrangler.toml) 的 `database_id`
+3) 执行迁移：`wrangler d1 migrations apply tuaran-me`
+
+然后在 Cloudflare Pages 项目里添加 D1 binding：
+
+- Binding name：`DB`
+- 选择你创建的 D1 数据库
 
 ### 运行生产服务器
 ```bash

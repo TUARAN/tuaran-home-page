@@ -1,0 +1,10 @@
+name = "tuaran-me"
+compatibility_date = "2026-01-07"
+
+# Used for D1 migrations / local development.
+# In Cloudflare Pages, you can also set the D1 binding in the dashboard.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tuaran-me"
+database_id = ""

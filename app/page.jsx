@@ -347,7 +347,7 @@ export default function HomePage() {
                 >
                   <span className="inline-flex items-center gap-1">
                     安东尼学AI
-                    <span aria-hidden="true">🔥</span>
+                    <span aria-hidden="true">🔥🔥🔥</span>
                   </span>
                 </a>
               </li>

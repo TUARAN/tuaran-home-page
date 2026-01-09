@@ -12,8 +12,9 @@ export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }))
 }
 
-export default function ArticleDetailPage({ params }) {
-  const article = articles.find((item) => item.slug === params.slug)
+export default async function ArticleDetailPage({ params }) {
+  const resolvedParams = await params
+  const article = articles.find((item) => item.slug === resolvedParams.slug)
 
   if (!article) {
     notFound()

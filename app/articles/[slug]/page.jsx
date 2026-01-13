@@ -66,11 +66,25 @@ export default async function ArticleDetailPage({ params }) {
 
       <div className="space-y-5 text-sm leading-relaxed text-[#555]">
         {article.content.map((paragraph, idx) => {
-          const isDateHeading = typeof paragraph === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(paragraph.trim())
-          if (isDateHeading) {
+          // 支持两种日期写法：
+          // 1）纯字符串日期：'2026-01-05'
+          // 2）对象：{ date: '2026-01-05', label: '小标题' }
+          const isDateString =
+            typeof paragraph === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(paragraph.trim())
+          const isDateObject = paragraph && typeof paragraph === 'object' && paragraph.date
+
+          if (isDateString || isDateObject) {
+            const date = isDateObject ? paragraph.date : paragraph.trim()
+            const label = isDateObject ? paragraph.label : ''
+
             return (
-              <div key={`${idx}-${paragraph}`} className="text-xs text-[#999]">
-                {paragraph}
+              <div
+                key={`${idx}-${date}-${label || 'no-label'}`}
+                className="mt-8 mb-2 flex items-center gap-2 text-[11px] text-[#999]"
+              >
+                <span>{date}</span>
+                <span className="inline-block w-1 h-1 rounded-full bg-[#111]" aria-hidden="true" />
+                {label ? <span className="text-[#444] font-medium">{label}</span> : null}
               </div>
             )
           }

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { articles } from './articles/articlesData'
 import SettingsButton from './components/SettingsButton'
 import StompPanel from './components/StompPanel'
@@ -404,6 +405,71 @@ export default function HomePage() {
                 fetchPriority="low"
                 className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
               />
+            </div>
+          </section>
+
+          <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
+            <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">读无用书</h3>
+            <div className="text-sm text-[#666] space-y-4 dark:text-gray-300">
+              <p className="m-0">
+                至三十，方知读书当有章法，以此观世，不为功利，只求心静自满。
+              </p>
+              <ul className="flex flex-wrap gap-x-4 gap-y-2">
+                <li className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">📚</span>
+                  <Link
+                    href="/reading/biography"
+                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                  >
+                    传记
+                  </Link>
+                </li>
+                <li className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">📚</span>
+                  <Link
+                    href="/reading/xinxue"
+                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                  >
+                    心学
+                  </Link>
+                </li>
+                <li className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">📚</span>
+                  <Link
+                    href="/reading/society"
+                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                  >
+                    社会
+                  </Link>
+                </li>
+                <li className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">📚</span>
+                  <Link
+                    href="/reading/wealth"
+                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                  >
+                    财富
+                  </Link>
+                </li>
+                <li className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">📚</span>
+                  <Link
+                    href="/reading/history"
+                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                  >
+                    历史
+                  </Link>
+                </li>
+                <li className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">📚</span>
+                  <Link
+                    href="/reading/philosophy"
+                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                  >
+                    哲学
+                  </Link>
+                </li>
+              </ul>
             </div>
           </section>
         </aside>

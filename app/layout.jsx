@@ -2,7 +2,6 @@ import Script from 'next/script'
 
 import './globals.css'
 import { ThemeProvider } from './components/ThemeProvider'
-import { LanguageProvider } from './components/LanguageContext'
 
 const SITE_URL = 'https://tuaran.me'
 const SITE_TITLE = '涂阿燃的网络日志'
@@ -99,7 +98,7 @@ export default function RootLayout({ children }) {
           {JSON.stringify(structuredData)}
         </Script>
         <ThemeProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>

@@ -152,6 +152,489 @@ const ZHANG_JUZHENG_TIMELINE = [
   },
 ]
 
+const ZHU_YUANZHANG_TIMELINE = [
+  {
+    ad: '1328-10-29',
+    era: '元天历元年',
+    age: '0',
+    stage: '出生',
+    event: '濠州钟离（今安徽凤阳一带）贫农家庭出生；原名朱重八/朱兴宗，后名元璋',
+    nature: '身世',
+    impact: '“底层出身”成为其统治合法性叙事之一（布衣天子）',
+  },
+  {
+    ad: '1344',
+    era: '至正四年',
+    age: '16',
+    stage: '断裂',
+    event: '淮北大旱饥荒疫病，父兄母相继去世；入皇觉寺为行童，后寺散僧云游',
+    nature: '生存危机',
+    impact: '形成强烈的秩序感与“对乱世/贪腐的仇恨底色”',
+  },
+  {
+    ad: '1344–1348',
+    era: '—',
+    age: '16–20',
+    stage: '漂泊',
+    event: '游方僧经历，化缘流浪；返寺后渐识字读书',
+    nature: '个人积累',
+    impact: '“从无到有”的社会阅历与基本文化补课',
+  },
+  {
+    ad: '1352',
+    era: '至正十二年',
+    age: '24',
+    stage: '起事',
+    event: '汤和来信劝从军；投郭子兴红巾军；赐名“元璋”字国瑞；娶马氏（马皇后）',
+    nature: '政治进入',
+    impact: '从“个人求生”转为“军政集团成员”，完成身份跃迁',
+  },
+  {
+    ad: '1353',
+    era: '至正十三年',
+    age: '25',
+    stage: '建军',
+    event: '请求回乡募兵，徐达等旧友随行；攻滁州成首个据点；李善长加入成为核心幕僚',
+    nature: '组织建设',
+    impact: '淮西集团雏形出现（后“淮西二十四将”等）',
+  },
+  {
+    ad: '1354–1355',
+    era: '至正十四–十五',
+    age: '26–27',
+    stage: '扩张',
+    event: '援六合、取和州；郭子兴病故后，朱渐掌旧部',
+    nature: '军事/权力',
+    impact: '在红巾系统内由“部将”走向“实际掌兵者”',
+  },
+  {
+    ad: '1356',
+    era: '至正十六年',
+    age: '28',
+    stage: '定都基',
+    event: '攻克集庆，改为应天府（南京），作为统一根据地',
+    nature: '战略节点',
+    impact: '“以应天为根”决定其后统一路径与政治中心',
+  },
+  {
+    ad: '1356–1362',
+    era: '至正十六–二十二',
+    age: '28–34',
+    stage: '一统江左',
+    event: '徐达、常遇春等四出攻城：镇江、常州、徽州、池州、扬州等；控制江左浙右',
+    nature: '扩张/治理',
+    impact: '形成稳定腹地与财政粮源，为决战陈友谅、张士诚做准备',
+  },
+  {
+    ad: '1360',
+    era: '至正二十年',
+    age: '32',
+    stage: '对手成型',
+    event: '陈友谅弑主称帝建“汉”，倾全军攻应天；朱元璋龙湾设伏大败之',
+    nature: '军事决策',
+    impact: '验证“先破强敌”的战略判断（为后续鄱阳湖决战铺垫）',
+  },
+  {
+    ad: '1362',
+    era: '至正二十二年',
+    age: '34',
+    stage: '制军',
+    event: '改枢密院为大都督府，整军制；扩展对江西控制',
+    nature: '制度/军政',
+    impact: '组织化、官僚化的军事体系开始成形',
+  },
+  {
+    ad: '1363',
+    era: '至正二十三年',
+    age: '35',
+    stage: '天下转折',
+    event: '先北上救安丰（救韩林儿）；后回援洪都，引发鄱阳湖之战，陈友谅中箭亡',
+    nature: '决战',
+    impact: '夺取决定性胜利：南方大势定，统一进入快车道',
+  },
+  {
+    ad: '1364',
+    era: '至正二十四年',
+    age: '36',
+    stage: '王号',
+    event: '自立为吴王；立朱标为世子；进一步建百官体系',
+    nature: '政权化',
+    impact: '从“军阀割据”转为“准国家机器”',
+  },
+  {
+    ad: '1365–1366',
+    era: '至正二十五–二十六',
+    age: '37–38',
+    stage: '清场',
+    event: '继续扫荡；命讨张士诚；平江之战前奏；韩林儿迎接途中覆舟遇难（史议）',
+    nature: '统一前夜',
+    impact: '清除“名义主君”后，称帝障碍被移除（亦留下道德争议）',
+  },
+  {
+    ad: '1367',
+    era: '吴元年',
+    age: '39',
+    stage: '北伐启动',
+    event: '制定北伐路线；命徐达为征虏大将军、常遇春副将军北伐；同时南线收方国珍等',
+    nature: '战略总攻',
+    impact: '从“南方统一”转向“全国统一”',
+  },
+  {
+    ad: '1368-01-23',
+    era: '洪武元年',
+    age: '39',
+    stage: '建国',
+    event: '应天登基：国号大明，年号洪武',
+    nature: '建制',
+    impact: '明朝正式建立；皇帝合法性完成“形式化落地”',
+  },
+  {
+    ad: '1368-09-14',
+    era: '洪武元年秋',
+    age: '39',
+    stage: '统一',
+    event: '徐达克元大都，元顺帝北遁；朱成为全国皇帝',
+    nature: '统一战争',
+    impact: '元朝退出中原统治，明朝完成“全国政权”地位',
+  },
+  {
+    ad: '1368–1376',
+    era: '洪武初',
+    age: '40s',
+    stage: '恢复生产',
+    event: '奖励垦荒、屯田军屯、水利、丈量土地清户口、减免赋税、解放奴婢等',
+    nature: '经济/社会',
+    impact: '战后修复：形成“洪武之治”叙事基础',
+  },
+  {
+    ad: '1368–1370s',
+    era: '洪武初',
+    age: '40s',
+    stage: '基层治理',
+    event: '建立里甲制、黄册户籍、鱼鳞图册；限制迁徙（路引）',
+    nature: '治理技术',
+    impact: '强国家能力：税役可控、治安可控，但社会流动性被压缩',
+  },
+  {
+    ad: '1370–1380',
+    era: '洪武3–13',
+    age: '42–52',
+    stage: '集权升级',
+    event: '以整肃为线索逐步收权，为“废相”做铺垫',
+    nature: '权力结构',
+    impact: '皇权直达六部的路径逐渐清晰',
+  },
+  {
+    ad: '1380',
+    era: '洪武13',
+    age: '52',
+    stage: '结构巨变',
+    event: '胡惟庸案后罢中书省，权归六部，皇帝直领庶政',
+    nature: '制度革命',
+    impact: '宰相制度实质终结，君主专制进一步定型（后世影响深远）',
+  },
+  {
+    ad: '1382',
+    era: '洪武15',
+    age: '54',
+    stage: '特务国家',
+    event: '设锦衣卫（后亦有废置变化）；加强侦缉、诏狱、廷杖等',
+    nature: '控制工具',
+    impact: '建立“皇权情报-抓捕-审判”的直控链条',
+  },
+  {
+    ad: '1380s–1390s',
+    era: '洪武中后期',
+    age: '50s–60s',
+    stage: '四大案肃清',
+    event: '空印案、郭桓案、胡惟庸案、蓝玉案等连环整肃，株连极广',
+    nature: '政治清洗',
+    impact: '“反腐+清权”双目标：抑制功臣集团，但造成恐怖政治与人才萎缩',
+  },
+  {
+    ad: '1370s–1390s',
+    era: '洪武期',
+    age: '40s–60s',
+    stage: '分封藩王',
+    event: '大封诸子为藩王，令守边/镇要地，藩屏皇室',
+    nature: '安全设计',
+    impact: '以宗室军权做“外部防火墙”，但埋下削藩与靖难的制度炸点',
+  },
+  {
+    ad: '1370s–1397',
+    era: '洪武期',
+    age: '40s–60s',
+    stage: '法治工程',
+    event: '制《大明律》、编《明大诰》、重典治吏治民',
+    nature: '法律/威慑',
+    impact: '国家秩序快速成型，但以酷烈刑罚换服从，社会心理成本高',
+  },
+  {
+    ad: '1370s–1390s',
+    era: '洪武期',
+    age: '40s–60s',
+    stage: '军制定型',
+    event: '五军都督府 + 卫所制，军户世袭；兵部调兵、都督府统兵制衡',
+    nature: '军政制度',
+    impact: '明代兵制基础确立：平时屯田、战时征调，长期亦致军户僵化',
+  },
+  {
+    ad: '1370s–1390s',
+    era: '洪武期',
+    age: '40s–60s',
+    stage: '对外与海禁',
+    event: '对倭寇与海上势力采取高压；撤市舶司、严海禁；列“不征之国”入祖训',
+    nature: '海疆策略',
+    impact: '以安全优先压制贸易活力，成为明清海禁传统的开端之一',
+  },
+  {
+    ad: '1392–1395',
+    era: '洪武25–28',
+    age: '64–67',
+    stage: '东亚秩序',
+    event: '高丽政权更替，明廷以册封/名号处理东亚朝贡秩序',
+    nature: '外交体系',
+    impact: '明朝东亚宗藩秩序的“规则输出”',
+  },
+  {
+    ad: '1398-06-24',
+    era: '洪武31闰五月',
+    age: '69–71（记载有差）',
+    stage: '去世',
+    event: '崩于南京皇宫；遗诏：薄葬、哭临三日、诸王不得至京等；葬孝陵',
+    nature: '终局',
+    impact: '传位皇太孙朱允炆；遗诏意在防宗室军权集结，但未能阻止靖难走向',
+  },
+  {
+    ad: '身后（建文/永乐/嘉靖）',
+    era: '—',
+    age: '—',
+    stage: '追尊与再定谥号',
+    event: '建文初谥，永乐加谥，嘉靖改谥；后世不断重塑其形象',
+    nature: '叙事重写',
+    impact: '开国皇帝成为后代合法性资源：既被敬畏，也被反思',
+  },
+]
+
+const ZHU_DI_TIMELINE = [
+  {
+    ad: '1360-05-02',
+    era: '元至正二十年',
+    age: '0',
+    stage: '出生',
+    event: '生于应天府（南京）',
+    nature: '身世',
+    impact: '洪武集团“开国二代”',
+  },
+  {
+    ad: '1370',
+    era: '洪武三年',
+    age: '10',
+    stage: '封王',
+    event: '受封燕王',
+    nature: '宗藩布局',
+    impact: '成为北方关键藩王（幽燕重地）',
+  },
+  {
+    ad: '1380',
+    era: '洪武十三年',
+    age: '20',
+    stage: '就藩北平',
+    event: '就藩北平府，长期经营北方',
+    nature: '军政历练',
+    impact: '与北方军队绑定，形成军事影响力',
+  },
+  {
+    ad: '1380s–1390s',
+    era: '洪武中后期',
+    age: '20s–30s',
+    stage: '北方军功',
+    event: '参与北方军事活动；招降乃儿不花；生擒索林帖木儿等',
+    nature: '军事',
+    impact: '燕王集团坐实“北方强藩”',
+  },
+  {
+    ad: '1392前后',
+    era: '洪武末',
+    age: '30s',
+    stage: '太子之议',
+    event: '朱标死后，太祖一度欲立燕王为太子，群臣反对作罢',
+    nature: '继承格局',
+    impact: '埋下“皇位想象空间”，也强化建文戒心',
+  },
+  {
+    ad: '1398',
+    era: '洪武三十一年',
+    age: '38',
+    stage: '结构变化',
+    event: '朱元璋崩，建文即位；朱棣在军力与宗室排序上成诸王之首',
+    nature: '权力结构',
+    impact: '“藩王—中央”矛盾进入倒计时',
+  },
+  {
+    ad: '1399',
+    era: '建文元年',
+    age: '39',
+    stage: '危机',
+    event: '建文削藩；燕王装病/装疯以脱钩；朝廷准备逮捕燕王',
+    nature: '政治对抗',
+    impact: '走向开战的不可逆拐点',
+  },
+  {
+    ad: '1399-07',
+    era: '建文元年七月',
+    age: '39',
+    stage: '起兵',
+    event: '北平王府设伏：擒杀张昺、谢贵等；夺北平九门',
+    nature: '政变/动员',
+    impact: '燕军掌控北平，战争正式启动',
+  },
+  {
+    ad: '1399–1402',
+    era: '靖难之役',
+    age: '39–42',
+    stage: '内战',
+    event: '以“清君侧”名义起兵；先后击败耿炳文、李景隆等；多次关键会战',
+    nature: '军事',
+    impact: '用机动、奇袭、心理战打穿“倾国之兵”',
+  },
+  {
+    ad: '1399-10',
+    era: '建文元年',
+    age: '39',
+    stage: '扩军',
+    event: '夺取大宁、收编朵颜三卫等精锐',
+    nature: '战略资源',
+    impact: '兵源结构升级：燕军战力跃迁',
+  },
+  {
+    ad: '1402-06',
+    era: '建文四年六月',
+    age: '42',
+    stage: '夺京',
+    event: '燕军渡江，南京金川门开门；宫城大火，建文帝下落成谜',
+    nature: '政权更替',
+    impact: '合法性与史叙从此撕裂（“清君侧”→“篡位”）',
+  },
+  {
+    ad: '1402-07-17',
+    era: '建文四年七月十七',
+    age: '42',
+    stage: '登基',
+    event: '在孝陵谒陵后登基，改元永乐',
+    nature: '合法化工程',
+    impact: '通过“谒陵—劝进—改纪年”构建正当性',
+  },
+  {
+    ad: '1402–1403',
+    era: '永乐初',
+    age: '42–43',
+    stage: '清算',
+    event: '大规模诛杀建文旧臣（方孝孺等），牵连极广',
+    nature: '高压统治',
+    impact: '以恐惧完成“新秩序上线”，但社会裂痕长期化',
+  },
+  {
+    ad: '1402起',
+    era: '永乐初',
+    age: '42+',
+    stage: '政策回拨',
+    event: '否认建文年号，回到洪武法统；建文改革多被废',
+    nature: '制度路线',
+    impact: '宣示“我继承太祖”，同时切断建文合法性',
+  },
+  {
+    ad: '1404–1408',
+    era: '永乐2–6',
+    age: '44–48',
+    stage: '文化工程',
+    event: '编修《永乐大典》：扩编到两千余人，1407定稿，1408成书',
+    nature: '国家项目',
+    impact: '“知识总库”式权力象征（但只抄一部、不刊刻）',
+  },
+  {
+    ad: '1405起',
+    era: '永乐3起',
+    age: '45+',
+    stage: '海洋扩张',
+    event: '郑和下西洋（永乐年间多次）',
+    nature: '外交/贸易',
+    impact: '扩大朝贡网络与海上影响力，提升帝国声望',
+  },
+  {
+    ad: '1406–1407',
+    era: '永乐4–5',
+    age: '46–47',
+    stage: '南征安南',
+    event: '以“复陈讨胡”为名出兵，设交趾等机构直接管辖',
+    nature: '扩张/殖民',
+    impact: '短期得地，长期陷入反抗与高成本泥潭',
+  },
+  {
+    ad: '1409',
+    era: '永乐7',
+    age: '49',
+    stage: '东北经营',
+    event: '设奴儿干都司，经营黑龙江下游与库页岛方向（亦失哈等）',
+    nature: '边疆治理',
+    impact: '北东疆治理外推，形成羁縻—卫所体系',
+  },
+  {
+    ad: '1410–1424',
+    era: '永乐8–22',
+    age: '50–64',
+    stage: '亲征漠北',
+    event: '五次亲率大军北征鞑靼/瓦剌等',
+    nature: '军事/财政',
+    impact: '边防威慑并存，但军费与民力消耗巨大',
+  },
+  {
+    ad: '1407–1421',
+    era: '永乐中期',
+    age: '47–61',
+    stage: '迁都工程',
+    event: '营建北京宫殿（紫禁城）与北京体系；1421正式迁都北京',
+    nature: '国家重构',
+    impact: '北京成为明清两朝政治中心，战略重心北移',
+  },
+  {
+    ad: '1411–1415',
+    era: '永乐9–13',
+    age: '51–55',
+    stage: '漕运与水利',
+    event: '疏浚会通河、凿清江浦，确立漕运体系；逐步终止海运',
+    nature: '基建/财政',
+    impact: '解决“迁都后的供给链”，维持北方大都运转',
+  },
+  {
+    ad: '1420',
+    era: '永乐18',
+    age: '60',
+    stage: '厂卫升级',
+    event: '设立东厂（与锦衣卫形成厂卫体系）',
+    nature: '统治工具',
+    impact: '专制监控体系完成形态化，对后世宦官政治影响深',
+  },
+  {
+    ad: '1424-08-12',
+    era: '永乐22',
+    age: '64',
+    stage: '终局',
+    event: '北征回师途中榆木川病逝；秘不发丧，传位朱高炽',
+    nature: '终结/交接',
+    impact: '永乐强人周期结束，帝国进入“修复型”洪熙短政',
+  },
+  {
+    ad: '身后（1538）',
+    era: '嘉靖十七',
+    age: '—',
+    stage: '名号重写',
+    event: '嘉靖改庙号“成祖”，改谥',
+    nature: '叙事再造',
+    impact: '后世为“合法性与祖统”再次塑形',
+  },
+]
+
 const JIAJING_TIMELINE = [
   {
     ad: '1507',
@@ -368,6 +851,305 @@ const JIAJING_TIMELINE = [
     event: '改元隆庆',
     nature: '传承',
     impact: '短暂修复，难挽大势',
+  },
+]
+
+const WANLI_TIMELINE = [
+  {
+    ad: '1563-09-04',
+    era: '嘉靖四十二',
+    age: '0',
+    stage: '出生',
+    event: '生于顺天府；穆宗三子，母李氏（后李太后）',
+    nature: '身世',
+    impact: '“非嫡而实长”的身份结构，为后续国本之争埋伏笔',
+  },
+  {
+    ad: '1567',
+    era: '隆庆元',
+    age: '3–4',
+    stage: '立名与早慧',
+    event: '裕王登基后赐名“翊钧”，寓“制驭天下如转钧”；幼年聪敏',
+    nature: '教育/形象',
+    impact: '被塑造成“可成圣君”的继承者',
+  },
+  {
+    ad: '1568',
+    era: '隆庆二',
+    age: '4–5',
+    stage: '立储',
+    event: '立为皇太子',
+    nature: '继承',
+    impact: '正式进入国家权力序列',
+  },
+  {
+    ad: '1572-07-05',
+    era: '隆庆六',
+    age: '9',
+    stage: '登基',
+    event: '穆宗崩，九岁即位；改元万历',
+    nature: '皇权交接',
+    impact: '幼主登基，政权实际落到太后+辅臣体系',
+  },
+  {
+    ad: '1572–1582',
+    era: '万历前十年',
+    age: '9–19',
+    stage: '摄政/中兴起点',
+    event: '李太后听政；冯保掌内廷；张居正独揽军政，推改革（考成、清丈、一条鞭等）',
+    nature: '改革治理',
+    impact: '财政充盈、行政效率上升，形成“万历中兴”框架',
+  },
+  {
+    ad: '1580',
+    era: '万历八',
+    age: '17',
+    stage: '宫廷裂痕',
+    event: '出游轻浮被太后训斥；张居正代写罪己诏；经筵被严厉纠错',
+    nature: '心理转折',
+    impact: '皇帝尊严受损，“对相权/师道的屈辱记忆”加深',
+  },
+  {
+    ad: '1582',
+    era: '万历十',
+    age: '19',
+    stage: '权力转折',
+    event: '张居正去世',
+    nature: '结构变化',
+    impact: '皇权从“被塑造”转向“自我意志释放”',
+  },
+  {
+    ad: '1582–1584',
+    era: '万历初亲政',
+    age: '19–21',
+    stage: '亲政良好期',
+    event: '史料称曾励精图治、蠲赋赈灾、节俭自持；步行祈雨等',
+    nature: '治理风格',
+    impact: '证明并非天生怠政，“亲政有过短暂上升段”',
+  },
+  {
+    ad: '1582（或此前后）',
+    era: '万历九左右',
+    age: '19–20',
+    stage: '继承隐患',
+    event: '与宫女生长子朱常洛（出身低，帝不喜）',
+    nature: '宫廷/继承',
+    impact: '“长子不合意”导致国本之争成为核心冲突',
+  },
+  {
+    ad: '1588起',
+    era: '万历十七',
+    age: '25',
+    stage: '怠政启动',
+    event: '自称“奏对数多，不耐劳剧”；不再频繁接见群臣；官缺难补、政务滞留',
+    nature: '体制失灵',
+    impact: '国家机器开始“空转化”，文官系统失去皇帝接口',
+  },
+  {
+    ad: '1590s–1600s',
+    era: '万历中后期',
+    age: '30s–40s',
+    stage: '国本之争',
+    event: '长期拖延立太子；欲立郑妃子朱常洵；最终1601（万历二十九）立朱常洛为太子',
+    nature: '政治消耗',
+    impact: '皇帝与文官集团彻底对立，怠政演化为制度性对抗',
+  },
+  {
+    ad: '1592–1600',
+    era: '万历中期',
+    age: '29–37',
+    stage: '万历三大征',
+    event: '宁夏哱拜之乱、播州杨应龙之乱、援朝抗倭（对日战争）',
+    nature: '军事动员',
+    impact: '维护藩属与边疆秩序，但军费巨大，财政压力上升',
+  },
+  {
+    ad: '1590s–1610s',
+    era: '万历中后期',
+    age: '30s–40s',
+    stage: '矿税之弊',
+    event: '征矿税、增织造烧造等，充内库；民怨与官场冲突加剧',
+    nature: '财政/社会',
+    impact: '在“怠政”背景下变成压榨工具，成为晚明乱源之一',
+  },
+  {
+    ad: '1601',
+    era: '万历二十九',
+    age: '37–38',
+    stage: '西学东渐',
+    event: '利玛窦觐见，呈《万国图志》、自鸣钟等；西学传播与徐光启等互动',
+    nature: '文化/技术',
+    impact: '西学进入中枢叙事，但未转化为系统性制度变革',
+  },
+  {
+    ad: '1618',
+    era: '万历四十六',
+    age: '54–55',
+    stage: '女真崛起',
+    event: '努尔哈赤“七大恨”，后金起兵；抚顺等失陷',
+    nature: '战略危机',
+    impact: '明朝东北防线崩解，进入“亡国链条”的前段',
+  },
+  {
+    ad: '1618–1619',
+    era: '万历末',
+    age: '55–56',
+    stage: '三饷开端',
+    event: '为辽东战事加派“辽饷”（后成明末三饷之始）；颁旨禁革火耗加剥',
+    nature: '财政—社会',
+    impact: '以战争财政撬动全国税负结构，基层承压上升',
+  },
+  {
+    ad: '1619',
+    era: '万历四十七',
+    age: '55–56',
+    stage: '萨尔浒大败',
+    event: '杨镐四路出兵失利；明军折损惨重，开原铁岭等失陷',
+    nature: '军事崩塌',
+    impact: '明朝在东北由攻转守，燕京震动',
+  },
+  {
+    ad: '1619–1620',
+    era: '万历末',
+    age: '56',
+    stage: '局部补救',
+    event: '拨内帑、任熊廷弼经略辽东、屯兵筑城，局势略有扭转',
+    nature: '危机管理',
+    impact: '说明“深宫不朝≠完全不决策”，但窗口已很窄',
+  },
+  {
+    ad: '1620-08-18',
+    era: '万历四十八',
+    age: '56（材料亦称58）',
+    stage: '去世',
+    event: '弘德殿崩；遗诏反省怠政、命停矿税、起用被废官员、强调发帑助辽等',
+    nature: '终局/自我否定',
+    impact: '临终试图“改辙维新”，但制度修复窗口已关闭',
+  },
+  {
+    ad: '1620-09',
+    era: '泰昌元',
+    age: '—',
+    stage: '余波',
+    event: '光宗即位不足一月死（红丸案），朝局进入“三案”漩涡',
+    nature: '政治崩坏',
+    impact: '继承短促动荡，加速党争与宦官问题',
+  },
+  {
+    ad: '1956–1959（后世）',
+    era: '—',
+    age: '—',
+    stage: '定陵发掘',
+    event: '定陵发掘出土大量文物；后因技术与政治原因造成重大损失',
+    nature: '史料命运',
+    impact: '万历在现代史中又一次成为“权力与叙事”的样本',
+  },
+]
+
+const WANLI_GUOBEN_TABLE = [
+  {
+    stage: '前置阶段',
+    time: '万历初年（1573–1582）',
+    feature: '皇帝尚配合制度',
+    scholarType: '制度设计派',
+    scholarTypeEmph: true,
+    representative: '张居正',
+    representativeEmph: true,
+    identity: '内阁首辅',
+    stance: '稳定继承秩序',
+    method: '政策推进、制度收束',
+    role: '为“争国本”奠定制度前提',
+  },
+  {
+    stage: '过渡阶段',
+    time: '万历十年前后（1582–1586）',
+    feature: '张居正死后权力松动',
+    scholarType: '缓冲型文官',
+    scholarTypeEmph: true,
+    representative: '申时行',
+    representativeEmph: true,
+    identity: '内阁首辅',
+    stance: '立嫡立长，但不激化',
+    method: '温和劝谏、内部协调',
+    role: '尝试避免皇权正面冲突',
+  },
+  {
+    stage: '爆发阶段',
+    time: '万历十四年（1586）',
+    feature: '郑贵妃生子',
+    scholarType: '原则宣示派',
+    scholarTypeEmph: true,
+    representative: '邹元标',
+    representativeEmph: true,
+    identity: '给事中',
+    stance: '必须立长子',
+    method: '上疏直言',
+    role: '首次将“国本”推至公开议题',
+  },
+  {
+    stage: '拉锯初期',
+    time: '万历十五—十八年（1587–1590）',
+    feature: '皇帝长期留中',
+    scholarType: '制度死磕派',
+    scholarTypeEmph: true,
+    representative: '赵用贤',
+    representativeEmph: true,
+    identity: '御史',
+    stance: '祖制不可破',
+    method: '反复上疏',
+    role: '把“立太子”制度化为底线',
+  },
+  {
+    stage: '拉锯中期',
+    time: '万历中期（1591–1597）',
+    feature: '皇帝明显对抗',
+    scholarType: '牺牲型言官',
+    scholarTypeEmph: true,
+    representative: '王之寀',
+    representativeEmph: true,
+    identity: '给事中',
+    stance: '立储即国安',
+    method: '不计贬谪',
+    role: '用个人代价维持制度压力',
+  },
+  {
+    stage: '拉锯后期',
+    time: '万历后期（1598–1601）',
+    feature: '皇帝被迫妥协',
+    scholarType: '集体意志派',
+    scholarTypeEmph: true,
+    representative: '内阁群臣',
+    representativeEmph: false,
+    identity: '内阁',
+    stance: '制度必须落地',
+    method: '集体进谏',
+    role: '逼出立太子的制度结果',
+  },
+  {
+    stage: '立储后',
+    time: '万历二十九年后（1601–1610）',
+    feature: '太子被冷处理',
+    scholarType: '清议转向派',
+    scholarTypeEmph: true,
+    representative: '顾宪成',
+    representativeEmph: true,
+    identity: '士林领袖',
+    stance: '皇权需受道德约束',
+    method: '书院讲学',
+    role: '从“制度”转向“道德政治”',
+  },
+  {
+    stage: '余波阶段',
+    time: '万历晚年',
+    feature: '皇权彻底疏离',
+    scholarType: '殉道型文官',
+    scholarTypeEmph: true,
+    representative: '高攀龙',
+    representativeEmph: true,
+    identity: '东林党人',
+    stance: '名节高于仕途',
+    method: '以身殉道',
+    role: '文官从治理者退化为道德象征',
   },
 ]
 
@@ -984,13 +1766,28 @@ export default function HistoryReadingPage() {
                     </a>
                   </li>
                   <li>
+                    <a href="#zhuyuanzhang" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      朱元璋
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#zhudi" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      朱棣
+                    </a>
+                  </li>
+                  <li>
                     <a href="#jiajing" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      嘉靖
+                      朱厚熜（嘉靖）
                     </a>
                   </li>
                   <li>
                     <a href="#zhangjuzheng" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                       张居正
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#wanli" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      朱翊钧（万历）
                     </a>
                   </li>
                   <li>
@@ -1074,7 +1871,69 @@ export default function HistoryReadingPage() {
               </div>
             </div>
 
-        <h3 id="jiajing" className="mt-12 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">嘉靖</h3>
+            <h3 id="zhuyuanzhang" className="mt-12 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">朱元璋</h3>
+            <p className="text-sm text-[#666] mt-2 mb-0 dark:text-gray-300">横向时间线（可左右滑动）。</p>
+
+            <div className="mt-4 overflow-x-auto">
+              <div className="flex items-stretch gap-4 min-w-max pb-2">
+                {ZHU_YUANZHANG_TIMELINE.map((item, index) => (
+                  <div key={`${item.ad}-${item.stage}-${item.event}`} className="flex items-stretch">
+                    <div className="w-[260px] sm:w-[320px] border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <div className="text-xs text-[#999] dark:text-gray-400">
+                          {item.ad} · {item.era}
+                        </div>
+                        <div className="text-xs text-[#999] dark:text-gray-400">{item.age}</div>
+                      </div>
+
+                      <div className="mt-2 text-sm text-[#444] font-bold dark:text-gray-200">
+                        {item.stage}：{item.event}
+                      </div>
+
+                      <div className="mt-3 text-sm text-[#666] space-y-2 dark:text-gray-300">
+                        <p className="m-0">{item.nature}</p>
+                        <p className="m-0">{item.impact}</p>
+                      </div>
+                    </div>
+
+                    {index < ZHU_YUANZHANG_TIMELINE.length - 1 ? <ElbowConnector /> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <h3 id="zhudi" className="mt-12 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">朱棣</h3>
+            <p className="text-sm text-[#666] mt-2 mb-0 dark:text-gray-300">横向时间线（可左右滑动）。</p>
+
+            <div className="mt-4 overflow-x-auto">
+              <div className="flex items-stretch gap-4 min-w-max pb-2">
+                {ZHU_DI_TIMELINE.map((item, index) => (
+                  <div key={`${item.ad}-${item.stage}-${item.event}`} className="flex items-stretch">
+                    <div className="w-[260px] sm:w-[320px] border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <div className="text-xs text-[#999] dark:text-gray-400">
+                          {item.ad} · {item.era}
+                        </div>
+                        <div className="text-xs text-[#999] dark:text-gray-400">{item.age}</div>
+                      </div>
+
+                      <div className="mt-2 text-sm text-[#444] font-bold dark:text-gray-200">
+                        {item.stage}：{item.event}
+                      </div>
+
+                      <div className="mt-3 text-sm text-[#666] space-y-2 dark:text-gray-300">
+                        <p className="m-0">{item.nature}</p>
+                        <p className="m-0">{item.impact}</p>
+                      </div>
+                    </div>
+
+                    {index < ZHU_DI_TIMELINE.length - 1 ? <ElbowConnector /> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+        <h3 id="jiajing" className="mt-12 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">朱厚熜（嘉靖）</h3>
         <p className="text-sm text-[#666] mt-2 mb-0 dark:text-gray-300">横向时间线（可左右滑动）。</p>
 
         <div className="mt-4 overflow-x-auto">
@@ -1131,6 +1990,83 @@ export default function HistoryReadingPage() {
             ))}
           </div>
         </div>
+
+        <h3 id="wanli" className="mt-12 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">朱翊钧（万历）</h3>
+        <p className="text-sm text-[#666] mt-2 mb-0 dark:text-gray-300">横向时间线（可左右滑动）。</p>
+
+        <div className="mt-4 overflow-x-auto">
+          <div className="flex items-stretch gap-4 min-w-max pb-2">
+            {WANLI_TIMELINE.map((item, index) => (
+              <div key={`${item.ad}-${item.stage}-${item.event}`} className="flex items-stretch">
+                <div className="w-[260px] sm:w-[320px] border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <div className="text-xs text-[#999] dark:text-gray-400">
+                      {item.ad} · {item.era}
+                    </div>
+                    <div className="text-xs text-[#999] dark:text-gray-400">{item.age}</div>
+                  </div>
+
+                  <div className="mt-2 text-sm text-[#444] font-bold dark:text-gray-200">
+                    {item.stage}：{item.event}
+                  </div>
+
+                  <div className="mt-3 text-sm text-[#666] space-y-2 dark:text-gray-300">
+                    <p className="m-0">{item.nature}</p>
+                    <p className="m-0">{item.impact}</p>
+                  </div>
+                </div>
+
+                {index < WANLI_TIMELINE.length - 1 ? <ElbowConnector /> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <details open className="mt-8 border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+          <summary className="text-sm font-bold text-[#444] dark:text-gray-200 cursor-pointer select-none">
+            争国本事件
+          </summary>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+              <thead className="bg-white dark:bg-gray-900">
+                <tr className="text-xs text-[#999] dark:text-gray-400">
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">阶段</th>
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">时间</th>
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">阶段特征</th>
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">文官群体类型</th>
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">代表人物</th>
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">官职 / 身份</th>
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">核心立场</th>
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">行动方式</th>
+                  <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">这一阶段文官的历史角色</th>
+                </tr>
+              </thead>
+              <tbody>
+                {WANLI_GUOBEN_TABLE.map((row) => (
+                  <tr key={`${row.stage}-${row.time}`} className="align-top">
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">{row.stage}</td>
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">{row.time}</td>
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.feature}</td>
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800">
+                      <span className={row.scholarTypeEmph ? 'font-bold text-[#444] dark:text-gray-200' : undefined}>
+                        {row.scholarType}
+                      </span>
+                    </td>
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">
+                      <span className={row.representativeEmph ? 'font-bold text-[#444] dark:text-gray-200' : undefined}>
+                        {row.representative}
+                      </span>
+                    </td>
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">{row.identity}</td>
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.stance}</td>
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.method}</td>
+                    <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.role}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
 
         <h3 id="kangxi" className="mt-12 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">康熙</h3>
         <p className="text-sm text-[#666] mt-2 mb-0 dark:text-gray-300">横向时间线（可左右滑动）。</p>

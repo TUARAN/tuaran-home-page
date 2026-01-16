@@ -2455,6 +2455,18 @@ export default function HistoryReadingPage() {
                 >
                   诗词巅峰
                 </a>
+                <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                  {POETRY_PEAK_WORKS.map((item, index) => (
+                    <li key={`${item.title}-${item.author}-${index}`}>
+                      <a
+                        href={`#poetry-peak-${index + 1}`}
+                        className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                      >
+                        {item.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </li>
             </ul>
           </nav>
@@ -2829,8 +2841,12 @@ export default function HistoryReadingPage() {
               </tr>
             </thead>
             <tbody>
-              {POETRY_PEAK_WORKS.map((item) => (
-                <tr key={`${item.title}-${item.author}`} className="border-b border-[#eee] dark:border-gray-800">
+              {POETRY_PEAK_WORKS.map((item, index) => (
+                <tr
+                  key={`${item.title}-${item.author}`}
+                  id={`poetry-peak-${index + 1}`}
+                  className="border-b border-[#eee] dark:border-gray-800 scroll-mt-24"
+                >
                   <td className="align-top py-3 pr-4 whitespace-nowrap text-sm text-[#444] font-bold dark:text-gray-200">
                     {item.title}
                   </td>

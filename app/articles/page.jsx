@@ -1,7 +1,17 @@
+import Link from 'next/link'
 import { articles } from './articlesData'
 import SettingsButton from '../components/SettingsButton'
 
 export const dynamic = 'force-static'
+
+export const metadata = {
+  title: '文章列表',
+  description: '涂阿燃（tuaran）的文章列表：技术观察、实践复盘、SEO、AI 智能体与工程化内容。',
+  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', 'SEO', '文章列表', '个人博客'],
+  alternates: {
+    canonical: '/articles',
+  },
+}
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -52,12 +62,12 @@ export default function ArticlesPage() {
               <h2 className="text-lg text-[#444]">{article.title}</h2>
               <p className="text-sm text-[#666] leading-relaxed">{article.summary}</p>
               <div className="text-sm text-[#666] flex flex-wrap gap-4 pt-2">
-                <a
+                <Link
                   href={`/articles/${article.slug}`}
                   className="opacity-80 hover:opacity-100 underline underline-offset-4"
                 >
                   阅读全文
-                </a>
+                </Link>
                 {isExternalHref(article.href) ? (
                   <a
                     href={article.href}

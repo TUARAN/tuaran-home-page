@@ -1,8 +1,20 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import Script from 'next/script'
 import { articles } from '../articlesData'
 import SettingsButton from '../../components/SettingsButton'
 
 export const dynamic = 'force-static'
+
+const SITE_URL = 'https://tuaran.me'
+const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
+
+function toIsoDate(dateString) {
+  const parsed = Date.parse(dateString)
+  if (Number.isNaN(parsed)) return null
+  return new Date(parsed).toISOString()
+}
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -10,6 +22,50 @@ function isExternalHref(href) {
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }))
+}
+
+export async function generateMetadata({ params }) {
+  const resolvedParams = await params
+  const article = articles.find((item) => item.slug === resolvedParams.slug)
+
+  if (!article) {
+    return {
+      title: `文章未找到 · ${SITE_TITLE}`,
+      robots: { index: false, follow: false },
+    }
+  }
+
+  const url = `${SITE_URL}/articles/${article.slug}`
+  const title = article.title
+  const description = article.summary
+  const publishedTime = toIsoDate(article.date)
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', 'SEO', '个人博客', title],
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: SITE_TITLE,
+      locale: 'zh_CN',
+      type: 'article',
+      publishedTime: publishedTime || undefined,
+      images: article.cover
+        ? [{ url: article.cover, alt: `${article.title} 封面` }]
+        : [{ url: `${SITE_URL}/tuaranme.png`, width: 512, height: 512, alt: '涂阿燃（掘金安东尼）头像' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [article.cover || `${SITE_URL}/tuaranme.png`],
+    },
+  }
 }
 
 export default async function ArticleDetailPage({ params }) {
@@ -20,8 +76,38 @@ export default async function ArticleDetailPage({ params }) {
     notFound()
   }
 
+  const articleUrl = `${SITE_URL}/articles/${article.slug}`
+  const publishedTime = toIsoDate(article.date)
+  const articleStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.summary,
+    image: article.cover ? [article.cover] : undefined,
+    datePublished: publishedTime || undefined,
+    dateModified: publishedTime || undefined,
+    author: {
+      '@type': 'Person',
+      name: '涂阿燃',
+      alternateName: ['tuaran', '掘金安东尼', '安东尼404'],
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Person',
+      name: '涂阿燃',
+      url: SITE_URL,
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': articleUrl,
+    },
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <Script id={`article-jsonld-${article.slug}`} type="application/ld+json" strategy="beforeInteractive">
+        {JSON.stringify(articleStructuredData)}
+      </Script>
       <header className="mb-8 border-b border-[#eee] pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -29,12 +115,12 @@ export default async function ArticleDetailPage({ params }) {
             <h1 className="mt-2 text-2xl text-[#444] leading-snug">{article.title}</h1>
             <p className="text-sm text-[#666] mt-3 leading-relaxed">{article.summary}</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666]">
-              <a
+              <Link
                 href="/articles"
                 className="opacity-80 hover:opacity-100 underline underline-offset-4"
               >
                 返回列表
-              </a>
+              </Link>
               {isExternalHref(article.href) ? (
                 <a
                   href={article.href}
@@ -53,13 +139,13 @@ export default async function ArticleDetailPage({ params }) {
 
       {article.cover ? (
         <div className="mb-8">
-          <img
+          <Image
             src={article.cover}
             alt={`${article.title} 封面`}
-            loading="lazy"
-            decoding="async"
-            fetchPriority="low"
-            className="w-full border border-[#eee] bg-white"
+            width={800}
+            height={533}
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="w-full h-auto border border-[#eee] bg-white"
           />
         </div>
       ) : null}

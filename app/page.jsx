@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { articles } from './articles/articlesData'
 import SettingsButton from './components/SettingsButton'
 import StompPanel from './components/StompPanel'
@@ -60,7 +61,14 @@ export default function HomePage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] pb-2 mb-8">
         <div>
-          <h1 className="text-[#555]">涂阿燃的网络日志</h1>
+          <h1 className="text-[#111] leading-tight inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="text-xl sm:text-2xl font-semibold">涂阿燃</span>
+            <span className="text-base sm:text-lg text-[#777] font-normal tracking-wide uppercase">tuaran</span>
+            <span className="text-[#999]" aria-hidden="true">·</span>
+            <span className="text-xl sm:text-2xl text-[#555] font-semibold tracking-wide">
+              网络日志
+            </span>
+          </h1>
           <p className="text-sm text-[#666] mt-1">
             AKA{' '}
             <a
@@ -141,12 +149,12 @@ export default function HomePage() {
                       {wrapTitle(a.title)}
                     </a>
                     {index === featuredArticles.length - 1 ? (
-                      <a
+                      <Link
                         href="/articles"
                         className="ml-3 text-xs text-[#666] underline underline-offset-4 opacity-80 hover:opacity-100"
                       >
                         更多文章
-                      </a>
+                      </Link>
                     ) : null}
                   </div>
                 </li>
@@ -258,13 +266,11 @@ export default function HomePage() {
                   rel="noreferrer"
                   className="no-external-arrow block opacity-80 hover:opacity-100"
                 >
-                  <img
+                  <Image
                     src="/20260104094558_496.png"
                     alt="程序员成长手记二维码"
-                    width="100"
-                    height="100"
-                    loading="lazy"
-                    decoding="async"
+                    width={100}
+                    height={100}
                     className="w-24 h-24 object-contain border border-[#eee] bg-white"
                   />
                 </a>
@@ -274,13 +280,11 @@ export default function HomePage() {
                   rel="noreferrer"
                   className="no-external-arrow block opacity-80 hover:opacity-100"
                 >
-                  <img
+                  <Image
                     src="/20260104094842_497.png"
                     alt="AI Bots 通关指南二维码"
-                    width="100"
-                    height="100"
-                    loading="lazy"
-                    decoding="async"
+                    width={100}
+                    height={100}
                     className="w-24 h-24 object-contain border border-[#eee] bg-white"
                   />
                 </a>
@@ -334,14 +338,11 @@ export default function HomePage() {
               </p>
             </div>
             <div className="mt-4">
-              <img
+              <Image
                 src="/tuaranme.png"
                 alt="涂阿燃"
-                width="80"
-                height="80"
-                loading="lazy"
-                decoding="async"
-                fetchPriority="low"
+                width={80}
+                height={80}
                 className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
               />
             </div>
@@ -407,14 +408,11 @@ export default function HomePage() {
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">公众号</h3>
             <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
               <p>扫码关注「前端周看」，获取最新前沿科技资讯🚀</p>
-              <img
+              <Image
                 src="/qrcode_for_gh.jpg"
                 alt="公众号二维码"
-                width="80"
-                height="80"
-                loading="lazy"
-                decoding="async"
-                fetchPriority="low"
+                width={80}
+                height={80}
                 className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
               />
             </div>

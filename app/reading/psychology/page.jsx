@@ -2,6 +2,15 @@ import SettingsButton from '../../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
+export const metadata = {
+  title: '读无用书 · 心理学',
+  description: '涂阿燃（tuaran）的读书笔记：心理学类阅读记录与整理。',
+  keywords: ['涂阿燃', 'tuaran', '读书笔记', '心理学', '阅读记录', '网络日志'],
+  alternates: {
+    canonical: '/reading/psychology',
+  },
+}
+
 export default function PsychologyReadingPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">

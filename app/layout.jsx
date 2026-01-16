@@ -82,6 +82,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head suppressHydrationWarning>
+        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
         <Script
           src="https://analytics.umami.is/script.js"
           data-website-id="8bb48b09-3e10-4ec1-9bbe-c55c87418fa9"

@@ -427,19 +427,19 @@ export default function HomePage() {
                 <li className="inline-flex items-center gap-1">
                   <span aria-hidden="true">📚</span>
                   <Link
-                    href="/reading/xinxue"
+                    href="/reading/psychology"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"
                   >
-                    心学
+                    心理学
                   </Link>
                 </li>
                 <li className="inline-flex items-center gap-1">
                   <span aria-hidden="true">📚</span>
                   <Link
-                    href="/reading/society"
+                    href="/reading/sociology"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"
                   >
-                    社会
+                    社会学
                   </Link>
                 </li>
                 <li className="inline-flex items-center gap-1">

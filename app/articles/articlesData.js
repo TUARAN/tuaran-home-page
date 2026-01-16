@@ -8,7 +8,7 @@ export const articles = [
     date: '2026-01-08',
     href: '',
     summary:
-      '当个人创作卷到“个体极限”，真正可持续的不是灵感与爆款，而是一套让内容可生产、可分发、可复用、可结算的 Content OS。',
+      '今之创作，非乏才也，乏其制耳。有才而无制，则劳而不继；有制而能协，则文自生，利自分，业自成。',
     cover:
       'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=60',
     content: [

@@ -70,7 +70,7 @@ export default function HomePage() {
             </span>
           </h1>
           <p className="text-sm text-[#666] mt-1">
-            AKA{' '}
+            ID{' '}
             <a
               href="https://juejin.cn/user/1521379823340792"
               target="_blank"
@@ -79,7 +79,7 @@ export default function HomePage() {
             >
               掘金安东尼
             </a>
-            {' '}、{' '}
+            {' '}｜{' '}
             <a
               href="https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e"
               target="_blank"
@@ -88,7 +88,7 @@ export default function HomePage() {
             >
               安东尼404
             </a>
-            {' '}、{' '}
+            {' '}｜{' '}
             <a
               href="https://blog.csdn.net/aifs2025"
               target="_blank"
@@ -407,7 +407,7 @@ export default function HomePage() {
           <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">公众号</h3>
             <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
-              <p>扫码关注「前端周看」，获取最新前沿科技资讯🚀</p>
+              <p>扫码关注「前端周看」，获取最新前沿科技资讯🌍</p>
               <Image
                 src="/qrcode_for_gh.jpg"
                 alt="公众号二维码"
@@ -426,7 +426,7 @@ export default function HomePage() {
               </p>
               <ul className="flex flex-wrap gap-x-4 gap-y-2">
                 <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true">📚</span>
+                  <span aria-hidden="true" className="text-[#999]">▪</span>
                   <Link
                     href="/reading/biography"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"
@@ -435,7 +435,7 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true">📚</span>
+                  <span aria-hidden="true" className="text-[#999]">▪</span>
                   <Link
                     href="/reading/psychology"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"
@@ -444,7 +444,7 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true">📚</span>
+                  <span aria-hidden="true" className="text-[#999]">▪</span>
                   <Link
                     href="/reading/sociology"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"
@@ -453,7 +453,7 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true">📚</span>
+                  <span aria-hidden="true" className="text-[#999]">▪</span>
                   <Link
                     href="/reading/wealth"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"
@@ -462,7 +462,7 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true">📚</span>
+                  <span aria-hidden="true" className="text-[#999]">▪</span>
                   <Link
                     href="/reading/history"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"
@@ -471,7 +471,7 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true">📚</span>
+                  <span aria-hidden="true" className="text-[#999]">▪</span>
                   <Link
                     href="/reading/philosophy"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"

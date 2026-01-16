@@ -25,6 +25,34 @@ export default function sitemap() {
       url: `${SITE_URL}/articles`,
       lastModified: now,
     },
+    {
+      url: `${SITE_URL}/reading/biography`,
+      lastModified: now,
+    },
+    {
+      url: `${SITE_URL}/reading/history`,
+      lastModified: now,
+    },
+    {
+      url: `${SITE_URL}/reading/philosophy`,
+      lastModified: now,
+    },
+    {
+      url: `${SITE_URL}/reading/psychology`,
+      lastModified: now,
+    },
+    {
+      url: `${SITE_URL}/reading/sociology`,
+      lastModified: now,
+    },
+    {
+      url: `${SITE_URL}/reading/wealth`,
+      lastModified: now,
+    },
+    {
+      url: `${SITE_URL}/traffic`,
+      lastModified: now,
+    },
     ...articleEntries,
   ]
 }

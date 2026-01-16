@@ -4,14 +4,14 @@ import './globals.css'
 import { ThemeProvider } from './components/ThemeProvider'
 
 const SITE_URL = 'https://tuaran.me'
-const SITE_TITLE = '涂阿燃的网络日志'
-const SITE_DESCRIPTION = '涂阿燃（掘金安东尼、安东尼404）的个人网络日志，聚焦前端工程化、AI 智能体与创作者成长。'
+const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
+const SITE_DESCRIPTION = '涂阿燃（tuaran｜掘金安东尼｜安东尼404）的个人网络日志，聚焦前端工程化、SEO、AI 智能体与创作者成长。'
 
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: '涂阿燃',
-  alternateName: ['掘金安东尼', '安东尼404'],
+  alternateName: ['tuaran', '掘金安东尼', '安东尼404'],
   url: SITE_URL,
   headline: SITE_TITLE,
   description: SITE_DESCRIPTION,
@@ -26,13 +26,16 @@ export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_TITLE,
-    template: `%s · ${SITE_TITLE}`,
+    template: `%s - ${SITE_TITLE}`,
   },
   description: SITE_DESCRIPTION,
   keywords: [
     '涂阿燃',
+    'tuaran',
+    'TUARAN',
     '掘金安东尼',
     '安东尼404',
+    'SEO',
     '前端博客',
     '前端周刊',
     '前端工程化',
@@ -41,9 +44,6 @@ export const metadata = {
   authors: [{ name: '涂阿燃', url: SITE_URL }],
   creator: '涂阿燃',
   publisher: '涂阿燃',
-  alternates: {
-    canonical: '/',
-  },
   openGraph: {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,

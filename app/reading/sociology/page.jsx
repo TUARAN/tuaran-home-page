@@ -2,6 +2,15 @@ import SettingsButton from '../../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
+export const metadata = {
+  title: '读无用书 · 社会学',
+  description: '涂阿燃（tuaran）的读书笔记：社会学/社会观察类阅读记录与摘抄整理。',
+  keywords: ['涂阿燃', 'tuaran', '读书笔记', '社会学', '社会观察', '阅读记录', '网络日志'],
+  alternates: {
+    canonical: '/reading/sociology',
+  },
+}
+
 const APHORISM_GROUPS = [
   {
     title: '生活',

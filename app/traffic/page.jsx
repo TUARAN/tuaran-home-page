@@ -2,6 +2,19 @@ import SettingsButton from '../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
+export const metadata = {
+  title: '流量统计',
+  description: '涂阿燃（tuaran）的站点流量统计面板（Umami）。',
+  keywords: ['涂阿燃', 'tuaran', '流量统计', 'Umami', '网站分析', '网络日志'],
+  alternates: {
+    canonical: '/traffic',
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
+
 export default function TrafficPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">

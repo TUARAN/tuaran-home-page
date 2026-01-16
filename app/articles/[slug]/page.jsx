@@ -20,6 +20,16 @@ function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
 
+function parseMarkdownImage(text) {
+  if (typeof text !== 'string') return null
+  const trimmed = text.trim()
+  const match = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/.exec(trimmed)
+  if (!match) return null
+  const alt = match[1] || ''
+  const src = match[2]
+  return { alt, src }
+}
+
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }))
 }
@@ -172,6 +182,23 @@ export default async function ArticleDetailPage({ params }) {
                 <span className="inline-block w-1 h-1 rounded-full bg-[#111]" aria-hidden="true" />
                 {label ? <span className="text-[#444] font-medium">{label}</span> : null}
               </div>
+            )
+          }
+
+          const image = parseMarkdownImage(paragraph)
+          if (image) {
+            return (
+              <figure key={`${idx}-${image.src}`} className="my-6">
+                <Image
+                  src={image.src}
+                  alt={image.alt || `${article.title} 配图`}
+                  width={1200}
+                  height={675}
+                  sizes="(max-width: 768px) 100vw, 768px"
+                  unoptimized
+                  className="w-full h-auto border border-[#eee] bg-white"
+                />
+              </figure>
             )
           }
 

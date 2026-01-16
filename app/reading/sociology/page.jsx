@@ -1,6 +1,58 @@
 import SettingsButton from '../../components/SettingsButton'
 
 export const dynamic = 'force-static'
+
+const APHORISM_GROUPS = [
+  {
+    title: '生活',
+    items: [
+      '赚钱三阶段：打工换时薪 → 创作让作品替你赚钱 → 创造会学习进化的“系统”替你赚钱。',
+      '年幼的很多念头会散在时间里，只有极少数会陪你长大。',
+      '给自己留更多选择权，就是幸福。',
+      '自建博客：先写给自己看得舒服，再谈分享带来的快乐；步履不停。',
+      '生活是无边舞台，百态尽在其中；接纳不同，别走极端，也别太极式不作为。',
+      '时间残忍又奇妙：人会遗忘；尊重过去，才能过好现在。',
+      '路不知道通向哪里，但“向前”常是面对迷茫最好的答案。',
+      '人皆慕强，不分职业。',
+      '起点很重要：起点高则增速快上限高；起点低就得破釜沉舟、厚积薄发。',
+      '不要把球留在脚底下：压力往往来自“本可以做但没做”的拖延。',
+      '有些话不说你是主人；说出口你就成了它的奴隶。',
+      '要做幸存者，不做受害者。',
+      '性格写在唇边，幸福露在眼角；表情是近来心境，眉宇是过往岁月。',
+    ],
+  },
+  {
+    title: '哲理',
+    items: [
+      '人在社会，少不了比较；比较里总会埋下得意与失意，也可能悄悄种下嫉妒。',
+      '想驯服原始情绪，就得不断驯服自己；身边的人都更强，你也会被带着更强。',
+      '兴，百姓苦；亡，百姓更苦。',
+      '天地不仁：不偏不倚，万物随其自然；主观判断常会遮住对规律的洞察。',
+      '世界不黑不白，而是一道精致的灰。',
+      '欲望是动力，也是深渊；人欲与生俱来，但贪得无厌最危险。',
+      '风浪越大鱼越贵：舞台很大，敢不敢上台，信心最重要。',
+      '从最坏处着眼，向最好处努力。',
+      '信念产生行动，行为养成习惯，习惯生成性格，性格决定命运。',
+      '慎独。',
+      '生命的力量在于不顺从。',
+      '不与夏虫语冰。',
+      '顶级的猎手都是以猎物的方式出现。',
+      '今日之蜜饯、他日之砒霜。',
+    ],
+  },
+  {
+    title: '随笔',
+    items: [
+      '活着为了讲述：不同身份的人，用不同方式把生活讲成故事。',
+      '资本往往以资本为中心而非以人为中心；历史在摇摆中前进，理想是资本与劳动彼此尊敬、趋于平衡。',
+      '生活即魔幻与现实的结合：浪漫者看魔幻，现实者看现实。',
+      '简单，如此迷人。',
+      '让朋友低估你的优点，让敌人高估你的缺点。',
+      '认真地活在今天；珍惜今日，是对黎明最好的问候。',
+    ],
+  },
+]
+
 export default function SociologyReadingPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -53,6 +105,23 @@ export default function SociologyReadingPage() {
                 >
                   格言致知
                 </a>
+                <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                  <li>
+                    <a href="#aphorisms-life" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      生活
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#aphorisms-philosophy" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      哲理
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#aphorisms-essay" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      随笔
+                    </a>
+                  </li>
+                </ul>
               </li>
             </ul>
           </nav>
@@ -99,10 +168,26 @@ export default function SociologyReadingPage() {
               格言致知
             </h2>
 
-            <div className="mt-6 text-sm text-[#666] space-y-4 dark:text-gray-300">
-              <p className="m-0">1、顶级的猎手都是以猎物的方式出现。</p>
-              <p className="m-0">2、今日之蜜饯、他日之砒霜。</p>
-            </div>          </section>
+            <div className="mt-6 text-sm text-[#666] space-y-6 dark:text-gray-300">
+              {APHORISM_GROUPS.map((group) => (
+                <div key={group.title} className="space-y-3">
+                  <h3
+                    id={`aphorisms-${group.title === '生活' ? 'life' : group.title === '哲理' ? 'philosophy' : 'essay'}`}
+                    className="text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24"
+                  >
+                    {group.title}
+                  </h3>
+                  <div className="space-y-2">
+                    {group.items.map((text, index) => (
+                      <p key={`${group.title}-${index}`} className="m-0">
+                        {index + 1}、{text}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </main>
       </div>
     </div>

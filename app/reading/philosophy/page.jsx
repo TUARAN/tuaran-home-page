@@ -14,11 +14,11 @@ export const metadata = {
 export default function PhilosophyReadingPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
-      <header className="mb-8 border-b border-[#eee] pb-2">
+      <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555]">读无用书 · 哲学</h1>
-            <p className="text-sm text-[#666] mt-2">这里会整理哲学类的阅读记录。</p>
+            <h1 className="text-[#555] dark:text-gray-200">读无用书 · 哲学</h1>
+            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">这里会整理哲学类的阅读记录。</p>
           </div>
           <SettingsButton />
         </div>
@@ -44,6 +44,7 @@ export default function PhilosophyReadingPage() {
         </aside>
 
         <main className="flex-1 min-w-0">
+          <div className="prose-tuaran">
           <section className="border border-[#eee] bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
             <h2 id="schools" className="text-[#444] text-lg scroll-mt-24 dark:text-gray-200">
               哲学派系
@@ -240,6 +241,7 @@ export default function PhilosophyReadingPage() {
               </table>
             </div>
           </section>
+          </div>
         </main>
       </div>
     </div>

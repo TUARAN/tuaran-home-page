@@ -26,6 +26,10 @@ export default function sitemap() {
       lastModified: now,
     },
     {
+      url: `${SITE_URL}/reading`,
+      lastModified: now,
+    },
+    {
       url: `${SITE_URL}/reading/biography`,
       lastModified: now,
     },

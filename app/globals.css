@@ -46,6 +46,20 @@
     transition: color 0.3s ease;
   }
 
+  a:visited {
+    color: #004276;
+  }
+
+  .dark a:visited {
+    color: #60a5fa;
+  }
+
+  a:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   /* 外部链接添加箭头图标 */
   a[href^="http"]:not([href*="tuaran.me"]):not([href*="localhost"]):not([href*="github.com"])::after,
   a[href^="//"]:not([href*="tuaran.me"]):not([href*="github.com"])::after {
@@ -92,6 +106,33 @@
   a.external-arrow-before-emoji[href^="http"]:not([href*="tuaran.me"]):not([href*="localhost"]):hover .external-emoji::before,
   a.external-arrow-before-emoji[href^="//"]:not([href*="tuaran.me"]):hover .external-emoji::before {
     opacity: 1;
+  }
+}
+
+@layer components {
+  .prose-tuaran {
+    @apply prose prose-neutral dark:prose-invert w-full max-w-[72ch] mx-auto;
+    @apply prose-p:leading-7 prose-p:my-4;
+    @apply prose-headings:scroll-mt-24;
+    @apply prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b-0 prose-h2:pb-0;
+    @apply prose-h3:mt-8 prose-h3:mb-3;
+    @apply prose-li:my-1;
+    @apply prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-[#eee] dark:prose-blockquote:border-gray-800;
+    @apply prose-blockquote:pl-4 prose-blockquote:text-[#666] dark:prose-blockquote:text-gray-300;
+
+    @apply prose-hr:border-[#eee] dark:prose-hr:border-gray-800;
+    @apply prose-a:break-words;
+
+    @apply prose-code:px-1 prose-code:py-0.5 prose-code:rounded;
+    @apply prose-code:bg-black/5 dark:prose-code:bg-white/10;
+
+    @apply prose-pre:bg-white dark:prose-pre:bg-gray-950;
+    @apply prose-pre:border prose-pre:border-[#eee] dark:prose-pre:border-gray-800;
+    @apply prose-pre:rounded-md;
+
+    @apply prose-table:text-sm;
+    @apply prose-th:text-[#444] dark:prose-th:text-gray-200;
+    @apply prose-td:text-[#666] dark:prose-td:text-gray-300;
   }
 }
 

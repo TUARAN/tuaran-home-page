@@ -59,7 +59,7 @@ export default function HomePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] pb-2 mb-8">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] dark:border-gray-800 pb-2 mb-8">
         <div>
           <h1 className="text-[#111] leading-tight inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span className="text-xl sm:text-2xl font-semibold">涂阿燃</span>
@@ -69,8 +69,8 @@ export default function HomePage() {
               网络日志
             </span>
           </h1>
-          <p className="text-sm text-[#666] mt-1">
-            ID{' '}
+          <p className="text-sm text-[#666] dark:text-gray-300 mt-1">
+            IP Set：{' '}
             <a
               href="https://juejin.cn/user/1521379823340792"
               target="_blank"
@@ -98,7 +98,7 @@ export default function HomePage() {
               安东尼与AI
             </a>
           </p>
-          <div className="text-sm text-[#666] mt-2 flex flex-col gap-3">
+          <div className="text-sm text-[#666] dark:text-gray-300 mt-2 flex flex-col gap-4">
             <div>具备程序员与科创项目经理的复合背景～</div>
             <div>专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。</div>
           </div>

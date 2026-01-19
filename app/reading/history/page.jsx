@@ -2369,11 +2369,11 @@ export const metadata = {
 export default function HistoryReadingPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
-      <header className="mb-8 border-b border-[#eee] pb-2">
+      <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555]">读无用书 · 历史</h1>
-            <p className="text-sm text-[#666] mt-2">这里会整理历史类的阅读记录。</p>
+            <h1 className="text-[#555] dark:text-gray-200">读无用书 · 历史</h1>
+            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">这里会整理历史类的阅读记录。</p>
           </div>
           <SettingsButton />
         </div>
@@ -2481,7 +2481,8 @@ export default function HistoryReadingPage() {
         </aside>
 
         <main className="flex-1 min-w-0">
-          <section className="border border-[#eee] bg-white p-5">
+          <div className="prose-tuaran">
+          <section className="border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-5">
             <h2 id="mingqing" className="text-[#444] text-lg scroll-mt-24">
               明清史
             </h2>
@@ -2885,6 +2886,7 @@ export default function HistoryReadingPage() {
           </table>
         </div>
           </section>
+          </div>
         </main>
       </div>
     </div>

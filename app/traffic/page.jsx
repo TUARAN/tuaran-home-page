@@ -3,9 +3,9 @@ import SettingsButton from '../components/SettingsButton'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '流量统计',
-  description: '涂阿燃（tuaran）的站点流量统计面板（Umami）。',
-  keywords: ['涂阿燃', 'tuaran', '流量统计', 'Umami', '网站分析', '网络日志'],
+  title: '访问统计',
+  description: '涂阿燃（tuaran）的站点访问统计面板（Umami）。',
+  keywords: ['涂阿燃', 'tuaran', '访问统计', 'Umami', '网站分析', '网络日志'],
   alternates: {
     canonical: '/traffic',
   },
@@ -18,11 +18,11 @@ export const metadata = {
 export default function TrafficPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
-      <header className="mb-8 border-b border-[#eee] pb-2">
+      <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555]">流量统计</h1>
-            <p className="text-sm text-[#666] mt-2">实时查看网站的访问数据。</p>
+            <h1 className="text-[#555] dark:text-gray-200">访问统计</h1>
+            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">实时查看网站的访问数据。</p>
           </div>
           <SettingsButton />
         </div>

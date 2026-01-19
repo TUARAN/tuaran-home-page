@@ -6,6 +6,14 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
+      typography: {
+        DEFAULT: {
+          css: {
+            'code::before': { content: '""' },
+            'code::after': { content: '""' },
+          },
+        },
+      },
       colors: {
         primary: {
           50: '#f0f9ff',
@@ -77,5 +85,5 @@ module.exports = {
       }
     },
   },
-  plugins: [],
+  plugins: [require('@tailwindcss/typography')],
 }

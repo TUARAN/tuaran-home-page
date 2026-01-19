@@ -118,13 +118,13 @@ export default async function ArticleDetailPage({ params }) {
       <Script id={`article-jsonld-${article.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(articleStructuredData)}
       </Script>
-      <header className="mb-8 border-b border-[#eee] pb-2">
+      <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xs text-[#999]">{article.date}</div>
-            <h1 className="mt-2 text-2xl text-[#444] leading-snug">{article.title}</h1>
-            <p className="text-sm text-[#666] mt-3 leading-relaxed">{article.summary}</p>
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666]">
+            <div className="text-xs text-[#999] dark:text-gray-400">{article.date}</div>
+            <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
+            <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
               <Link
                 href="/articles"
                 className="opacity-80 hover:opacity-100 underline underline-offset-4"
@@ -155,12 +155,12 @@ export default async function ArticleDetailPage({ params }) {
             width={800}
             height={533}
             sizes="(max-width: 768px) 100vw, 768px"
-            className="w-full h-auto border border-[#eee] bg-white"
+            className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
           />
         </div>
       ) : null}
 
-      <div className="space-y-5 text-sm leading-relaxed text-[#555]">
+      <article className="prose-tuaran">
         {article.content.map((paragraph, idx) => {
           // 支持两种日期写法：
           // 1）纯字符串日期：'2026-01-05'
@@ -174,13 +174,16 @@ export default async function ArticleDetailPage({ params }) {
             const label = isDateObject ? paragraph.label : ''
 
             return (
-              <div
-                key={`${idx}-${date}-${label || 'no-label'}`}
-                className="mt-8 mb-2 flex items-center gap-2 text-[11px] text-[#999]"
-              >
-                <span>{date}</span>
-                <span className="inline-block w-1 h-1 rounded-full bg-[#111]" aria-hidden="true" />
-                {label ? <span className="text-[#444] font-medium">{label}</span> : null}
+              <div key={`${idx}-${date}-${label || 'no-label'}`} className="mt-10 mb-4">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <time className="text-sm text-[#999] dark:text-gray-400" dateTime={date}>
+                    {date}
+                  </time>
+                  <span className="text-[#999] dark:text-gray-500" aria-hidden="true">·</span>
+                  <h2 className="m-0 text-xl sm:text-2xl font-semibold text-[#444] dark:text-gray-200 leading-snug scroll-mt-24">
+                    {label || date}
+                  </h2>
+                </div>
               </div>
             )
           }
@@ -196,7 +199,7 @@ export default async function ArticleDetailPage({ params }) {
                   height={675}
                   sizes="(max-width: 768px) 100vw, 768px"
                   unoptimized
-                  className="w-full h-auto border border-[#eee] bg-white"
+                  className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
                 />
               </figure>
             )
@@ -204,7 +207,7 @@ export default async function ArticleDetailPage({ params }) {
 
           return <p key={`${idx}-${paragraph}`}>{paragraph}</p>
         })}
-      </div>
+      </article>
     </div>
   )
 }

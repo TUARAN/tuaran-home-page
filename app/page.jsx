@@ -98,9 +98,10 @@ export default function HomePage() {
               安东尼与AI
             </a>
           </p>
-          <p className="text-sm text-[#666] mt-1">
-            专注前端工程化、AI 智能体与技术社区共建，记录长期主义的创作者成长。
-          </p>
+          <div className="text-sm text-[#666] mt-2 flex flex-col gap-3">
+            <div>具备程序员与科创项目经理的复合背景～</div>
+            <div>专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。</div>
+          </div>
         </div>
         <div className="flex flex-col items-end gap-4 text-sm sm:self-stretch sm:justify-between sm:py-1">
           <SettingsButton />
@@ -418,70 +419,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">读无用书</h3>
-            <div className="text-sm text-[#666] space-y-4 dark:text-gray-300">
-              <p className="m-0">
-                至三十，方知读书当有章法，以此观世，不为功利，只求心静自满。
-              </p>
-              <ul className="flex flex-wrap gap-x-4 gap-y-2">
-                <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" className="text-[#999]">▪</span>
-                  <Link
-                    href="/reading/biography"
-                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                  >
-                    传记
-                  </Link>
-                </li>
-                <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" className="text-[#999]">▪</span>
-                  <Link
-                    href="/reading/psychology"
-                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                  >
-                    心理学
-                  </Link>
-                </li>
-                <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" className="text-[#999]">▪</span>
-                  <Link
-                    href="/reading/sociology"
-                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                  >
-                    社会学
-                  </Link>
-                </li>
-                <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" className="text-[#999]">▪</span>
-                  <Link
-                    href="/reading/wealth"
-                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                  >
-                    财富
-                  </Link>
-                </li>
-                <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" className="text-[#999]">▪</span>
-                  <Link
-                    href="/reading/history"
-                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                  >
-                    历史
-                  </Link>
-                </li>
-                <li className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" className="text-[#999]">▪</span>
-                  <Link
-                    href="/reading/philosophy"
-                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                  >
-                    哲学
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </section>
+
         </aside>
       </div>
 

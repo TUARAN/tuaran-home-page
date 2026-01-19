@@ -38,7 +38,7 @@ export const articles = [
   },
   {
     slug: 'diary-self-reflection',
-    title: '《浮生日记📓阶段自省-连载中》',
+    title: '《浮生日记之阶段自省-连载中📓》',
     date: '2026-01-13',
     href: '',
     summary:

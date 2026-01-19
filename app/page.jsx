@@ -61,14 +61,6 @@ export default function HomePage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] dark:border-gray-800 pb-2 mb-8">
         <div>
-          <h1 className="text-[#111] leading-tight inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="text-xl sm:text-2xl font-semibold">涂阿燃</span>
-            <span className="text-base sm:text-lg text-[#777] font-normal tracking-wide uppercase">tuaran</span>
-            <span className="text-[#999]" aria-hidden="true">·</span>
-            <span className="text-xl sm:text-2xl text-[#555] font-semibold tracking-wide">
-              网络日志
-            </span>
-          </h1>
           <p className="text-sm text-[#666] dark:text-gray-300 mt-1">
             IP Set：{' '}
             <a

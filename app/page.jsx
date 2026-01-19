@@ -304,17 +304,17 @@ export default function HomePage() {
                 等内容共创项目
               </p>
               <p>
-                ▪ 作为掘金社区共建者/签约作者、51CTO 社区专家博主，
-                <a
+                ▪ 掘金社区共建者/签约作者、CSDN 7级博主、头条作者、小红书万粉博主、51CTO 社区专家博主
+               
+              </p>
+              <p> <a
                   href="https://csdn-fans-tracker.pages.dev/"
                   target="_blank"
                   rel="noreferrer"
                   className="no-external-arrow opacity-80 hover:opacity-100"
                 >
-                  全网累计发布技术文章 500 篇+，阅读量超 300 万+
-                </a>
-              </p>
-              <p>▪ 具备程序员与科创项目经理的复合背景，关注前端工程化、智能体系统与大语言模型应用</p>
+                  ▪ 全网累计发布技术文章 500 篇+，阅读量超 400 万+
+                </a></p>
             </div>
           </section>
 

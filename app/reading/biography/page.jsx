@@ -682,8 +682,8 @@ export default function BiographyReadingPage() {
               <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见</h4>
               <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
                 <li>• <span className="font-medium">长期主义</span>：ImageNet从构思（2006）到引爆革命（2012）历时6年，坚持愿景换来历史性突破</li>
-                <li>• <span className="font-medium">基础工作价值</span>：数据集不如算法"性感"，但改变了整个AI领域的范式</li>
-                <li>• <span className="font-medium">数据驱动</span>："好的数据是AI成功的70%"，数据质量比算法更重要</li>
+                <li>• <span className="font-medium">基础工作价值</span>：数据集不如算法&quot;性感&quot;，但改变了整个AI领域的范式</li>
+                <li>• <span className="font-medium">数据驱动</span>：&quot;好的数据是AI成功的70%&quot;，数据质量比算法更重要</li>
                 <li>• <span className="font-medium">以人为本</span>：技术进步必须伴随人文关怀，AI的目的是增强而非取代人类</li>
                 <li>• <span className="font-medium">多样性与包容</span>：移民背景带来独特视角，通过AI4ALL推动女性和少数族裔参与</li>
                 <li>• <span className="font-medium">跨学科思维</span>：物理学+计算机+神经科学+人文关怀，交叉领域产生创新</li>

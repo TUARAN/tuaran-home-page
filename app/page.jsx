@@ -313,7 +313,7 @@ export default function HomePage() {
                   rel="noreferrer"
                   className="no-external-arrow opacity-80 hover:opacity-100"
                 >
-                  ▪ 全网累计发布技术文章 500 篇+，阅读量超 400 万+
+                  ▪ 全网累计发布技术文章 500 篇+，阅读量超 400 万+ 📊
                 </a></p>
             </div>
           </section>

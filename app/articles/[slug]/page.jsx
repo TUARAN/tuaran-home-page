@@ -30,6 +30,35 @@ function parseMarkdownImage(text) {
   return { alt, src }
 }
 
+function renderInlineBold(text) {
+  if (typeof text !== 'string' || !text.includes('**')) return text
+
+  const nodes = []
+  let lastIndex = 0
+  const regex = /\*\*([^*]+)\*\*/g
+  let match
+
+  while ((match = regex.exec(text)) !== null) {
+    const matchIndex = match.index
+    const before = text.slice(lastIndex, matchIndex)
+    if (before) nodes.push(before)
+
+    const boldText = match[1]
+    nodes.push(
+      <strong key={`b-${matchIndex}`} className="font-semibold">
+        {boldText}
+      </strong>
+    )
+
+    lastIndex = matchIndex + match[0].length
+  }
+
+  const after = text.slice(lastIndex)
+  if (after) nodes.push(after)
+
+  return nodes.length ? nodes : text
+}
+
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }))
 }
@@ -205,7 +234,7 @@ export default async function ArticleDetailPage({ params }) {
             )
           }
 
-          return <p key={`${idx}-${paragraph}`}>{paragraph}</p>
+          return <p key={`${idx}-${paragraph}`}>{renderInlineBold(paragraph)}</p>
         })}
       </article>
     </div>

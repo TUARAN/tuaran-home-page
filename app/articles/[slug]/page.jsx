@@ -117,6 +117,23 @@ export default async function ArticleDetailPage({ params }) {
 
   const articleUrl = `${SITE_URL}/articles/${article.slug}`
   const publishedTime = toIsoDate(article.date)
+  const enableDiaryToc = article.slug === 'diary-self-reflection'
+  const tocItems = []
+
+  if (enableDiaryToc) {
+    article.content.forEach((paragraph, idx) => {
+      const isDateString = typeof paragraph === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(paragraph.trim())
+      const isDateObject = paragraph && typeof paragraph === 'object' && paragraph.date
+
+      if (isDateString || isDateObject) {
+        const date = isDateObject ? paragraph.date : paragraph.trim()
+        const label = isDateObject ? paragraph.label : ''
+        const id = `section-${date}-${idx}`
+        tocItems.push({ date, label: label || date, id })
+      }
+    })
+  }
+
   const articleStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -143,54 +160,98 @@ export default async function ArticleDetailPage({ params }) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className={`${enableDiaryToc ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-8`}>
       <Script id={`article-jsonld-${article.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(articleStructuredData)}
       </Script>
-      <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="text-xs text-[#999] dark:text-gray-400">{article.date}</div>
-            <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
-            <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
-              <Link
-                href="/articles"
-                className="opacity-80 hover:opacity-100 underline underline-offset-4"
-              >
-                返回列表
-              </Link>
-              {isExternalHref(article.href) ? (
-                <a
-                  href={article.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                >
-                  原文阅读
-                </a>
+
+      {enableDiaryToc ? (
+        <div className="lg:flex lg:gap-10">
+          {/* 左侧悬浮目录（桌面端） */}
+          {tocItems.length > 1 ? (
+            <aside className="hidden lg:block lg:w-56 lg:shrink-0">
+              <nav className="sticky top-24 p-4 bg-gray-50 dark:bg-gray-900 border border-[#eee] dark:border-gray-800 rounded">
+                <h2 className="text-base font-semibold text-[#444] dark:text-gray-200 mb-3">📑 目录</h2>
+                <ul className="space-y-2 list-none pl-0">
+                  {tocItems.map((item) => (
+                    <li key={item.id} className="text-sm">
+                      <a
+                        href={`#${item.id}`}
+                        className="text-[#666] dark:text-gray-300 hover:text-[#333] dark:hover:text-gray-100 no-underline hover:underline underline-offset-4 flex items-baseline gap-2"
+                      >
+                        <span className="text-[#999] dark:text-gray-500 text-xs shrink-0">{item.date}</span>
+                        <span>{item.label}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </aside>
+          ) : null}
+
+          <div className="min-w-0 flex-1">
+            <div className="max-w-3xl mx-auto">
+              <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="text-xs text-[#999] dark:text-gray-400">{article.date}</div>
+                    <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
+                    <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
+                    <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
+                      <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                        返回列表
+                      </Link>
+                      {isExternalHref(article.href) ? (
+                        <a
+                          href={article.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                        >
+                          原文阅读
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                  <SettingsButton />
+                </div>
+              </header>
+
+              {article.cover ? (
+                <div className="mb-8">
+                  <Image
+                    src={article.cover}
+                    alt={`${article.title} 封面`}
+                    width={800}
+                    height={533}
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
+                  />
+                </div>
               ) : null}
-            </div>
-          </div>
-          <SettingsButton />
-        </div>
-      </header>
 
-      {article.cover ? (
-        <div className="mb-8">
-          <Image
-            src={article.cover}
-            alt={`${article.title} 封面`}
-            width={800}
-            height={533}
-            sizes="(max-width: 768px) 100vw, 768px"
-            className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
-          />
-        </div>
-      ) : null}
+              {/* 顶部目录（移动端） */}
+              {tocItems.length > 1 ? (
+                <nav className="lg:hidden mb-8 p-4 bg-gray-50 dark:bg-gray-900 border border-[#eee] dark:border-gray-800 rounded">
+                  <h2 className="text-lg font-semibold text-[#444] dark:text-gray-200 mb-3">📑 目录</h2>
+                  <ul className="space-y-2 list-none pl-0">
+                    {tocItems.map((item) => (
+                      <li key={item.id} className="text-sm">
+                        <a
+                          href={`#${item.id}`}
+                          className="text-[#666] dark:text-gray-300 hover:text-[#333] dark:hover:text-gray-100 no-underline hover:underline underline-offset-4 flex items-baseline gap-2"
+                        >
+                          <span className="text-[#999] dark:text-gray-500 text-xs shrink-0">{item.date}</span>
+                          <span>{item.label}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              ) : null}
 
-      <article className="prose-tuaran">
-        {article.content.map((paragraph, idx) => {
+              <article className="prose-tuaran">
+                {article.content.map((paragraph, idx) => {
           // 支持两种日期写法：
           // 1）纯字符串日期：'2026-01-05'
           // 2）对象：{ date: '2026-01-05', label: '小标题' }
@@ -201,9 +262,10 @@ export default async function ArticleDetailPage({ params }) {
           if (isDateString || isDateObject) {
             const date = isDateObject ? paragraph.date : paragraph.trim()
             const label = isDateObject ? paragraph.label : ''
+            const id = `section-${date}-${idx}`
 
             return (
-              <div key={`${idx}-${date}-${label || 'no-label'}`} className="mt-10 mb-4">
+              <div key={`${idx}-${date}-${label || 'no-label'}`} id={id} className="mt-10 mb-4">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <time className="text-sm text-[#999] dark:text-gray-400" dateTime={date}>
                     {date}
@@ -235,8 +297,104 @@ export default async function ArticleDetailPage({ params }) {
           }
 
           return <p key={`${idx}-${paragraph}`}>{renderInlineBold(paragraph)}</p>
-        })}
-      </article>
+                })}
+              </article>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-xs text-[#999] dark:text-gray-400">{article.date}</div>
+                <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
+                <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
+                <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
+                  <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                    返回列表
+                  </Link>
+                  {isExternalHref(article.href) ? (
+                    <a
+                      href={article.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                    >
+                      原文阅读
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+              <SettingsButton />
+            </div>
+          </header>
+
+          {article.cover ? (
+            <div className="mb-8">
+              <Image
+                src={article.cover}
+                alt={`${article.title} 封面`}
+                width={800}
+                height={533}
+                sizes="(max-width: 768px) 100vw, 768px"
+                className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
+              />
+            </div>
+          ) : null}
+
+          <article className="prose-tuaran">
+            {article.content.map((paragraph, idx) => {
+              // 支持两种日期写法：
+              // 1）纯字符串日期：'2026-01-05'
+              // 2）对象：{ date: '2026-01-05', label: '小标题' }
+              const isDateString =
+                typeof paragraph === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(paragraph.trim())
+              const isDateObject = paragraph && typeof paragraph === 'object' && paragraph.date
+
+              if (isDateString || isDateObject) {
+                const date = isDateObject ? paragraph.date : paragraph.trim()
+                const label = isDateObject ? paragraph.label : ''
+
+                return (
+                  <div key={`${idx}-${date}-${label || 'no-label'}`} className="mt-10 mb-4">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <time className="text-sm text-[#999] dark:text-gray-400" dateTime={date}>
+                        {date}
+                      </time>
+                      <span className="text-[#999] dark:text-gray-500" aria-hidden="true">
+                        ·
+                      </span>
+                      <h2 className="m-0 text-xl sm:text-2xl font-semibold text-[#444] dark:text-gray-200 leading-snug scroll-mt-24">
+                        {label || date}
+                      </h2>
+                    </div>
+                  </div>
+                )
+              }
+
+              const image = parseMarkdownImage(paragraph)
+              if (image) {
+                return (
+                  <figure key={`${idx}-${image.src}`} className="my-6">
+                    <Image
+                      src={image.src}
+                      alt={image.alt || `${article.title} 配图`}
+                      width={1200}
+                      height={675}
+                      sizes="(max-width: 768px) 100vw, 768px"
+                      unoptimized
+                      className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
+                    />
+                  </figure>
+                )
+              }
+
+              return <p key={`${idx}`}>{renderInlineBold(paragraph)}</p>
+            })}
+          </article>
+        </>
+      )}
     </div>
   )
 }

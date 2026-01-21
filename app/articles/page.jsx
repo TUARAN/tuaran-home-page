@@ -75,7 +75,7 @@ export default function ArticlesPage() {
                     rel="noreferrer"
                     className="opacity-80 hover:opacity-100 underline underline-offset-4"
                   >
-                    原文链接
+                    阅读原文
                   </a>
                 ) : null}
               </div>

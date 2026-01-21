@@ -62,12 +62,14 @@ export default function ArticlesPage() {
               <h2 className="text-lg text-[#444] dark:text-gray-200">{article.title}</h2>
               <p className="text-sm text-[#666] dark:text-gray-300 leading-relaxed">{article.summary}</p>
               <div className="text-sm text-[#666] dark:text-gray-300 flex flex-wrap gap-4 pt-2">
-                <Link
-                  href={`/articles/${article.slug}`}
-                  className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                >
-                  阅读全文
-                </Link>
+                {!isExternalHref(article.href) ? (
+                  <Link
+                    href={`/articles/${article.slug}`}
+                    className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                  >
+                    阅读全文
+                  </Link>
+                ) : null}
                 {isExternalHref(article.href) ? (
                   <a
                     href={article.href}

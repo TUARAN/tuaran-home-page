@@ -71,6 +71,96 @@ export default function BiographyReadingPage() {
                   </li>
                 </ul>
               </li>
+              <li>
+                <a
+                  href="#ai-biography"
+                  className="font-bold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
+                >
+                  人工智能人物传记
+                </a>
+                <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                  <li>
+                    <a href="#li-feifei" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      李飞飞（已收录）
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-turing" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Alan Turing
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-mccarthy" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      John McCarthy
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-minsky" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Marvin Minsky
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-vapnik" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Vladimir Vapnik
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-pearl" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Judea Pearl
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-hinton" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Geoffrey Hinton
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-lecun" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Yann LeCun
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-bengio" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Yoshua Bengio
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-krizhevsky" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Alex Krizhevsky
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-sutton" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Richard Sutton
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-hassabis" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Demis Hassabis
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-sutskever" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Ilya Sutskever
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-amodei" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Dario Amodei
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-jensen-huang" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Jensen Huang
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#ai-andrew-ng" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      Andrew Ng
+                    </a>
+                  </li>
+                </ul>
+              </li>
             </ul>
           </nav>
         </aside>
@@ -689,6 +779,166 @@ export default function BiographyReadingPage() {
                 <li>• <span className="font-medium">跨学科思维</span>：物理学+计算机+神经科学+人文关怀，交叉领域产生创新</li>
               </ul>
             </div>
+          </section>
+
+          <section className="border border-[#eee] bg-white p-5 dark:border-gray-800 dark:bg-gray-900 mt-6">
+            <h2 id="ai-biography" className="text-[#444] text-lg dark:text-gray-200 scroll-mt-24">
+              人工智能人物传记
+            </h2>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
+              以“人物画像”的方式梳理 AI 发展的关键推手：他们在什么时代解决了什么问题、形成了什么方法论、留下了哪些长期影响。
+              （先搭骨架，后续逐个补全。）
+            </p>
+
+            <h3 id="ai-turing" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Alan Turing
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：提出可操作的“智能判别”问题，为计算与智能讨论定了起点。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：关键论文 / 图灵测试 / 时代背景</li>
+              <li>• 贡献与影响（待补）：把哲学问题工程化</li>
+              <li>• 对我的启发（待补）：如何把宏大命题降维成可验证指标</li>
+            </ul>
+
+            <h3 id="ai-mccarthy" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              John McCarthy
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：提出“Artificial Intelligence”概念，奠定早期研究议程与方法边界。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：达特茅斯会议 / 早期实验室与系统</li>
+              <li>• 贡献与影响（待补）：把学科命名=把问题域框定</li>
+              <li>• 对我的启发（待补）：命名与议程设置的力量</li>
+            </ul>
+
+            <h3 id="ai-minsky" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Marvin Minsky
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：符号主义代表人物之一，推动早期 AI 社群与研究范式成形。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：黄金期 / 寒冬前后的路线选择</li>
+              <li>• 贡献与影响（待补）：问题分解与“心智模块化”的思路</li>
+              <li>• 对我的启发（待补）：范式之争背后是资源与可计算性</li>
+            </ul>
+
+            <h3 id="ai-vapnik" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Vladimir Vapnik
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：统计学习理论代表人物，把“泛化能力”变成可讨论的数学语言。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：VC 理论 / SVM / 统计学习浪潮</li>
+              <li>• 贡献与影响（待补）：用理论约束经验主义</li>
+              <li>• 对我的启发（待补）：指标不是结果，指标是边界</li>
+            </ul>
+
+            <h3 id="ai-pearl" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Judea Pearl
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：因果推断体系化，把“因果”从直觉变成可计算与可表达。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：贝叶斯网络 / 因果图 / do-演算</li>
+              <li>• 贡献与影响（待补）：从相关走向干预与反事实</li>
+              <li>• 对我的启发（待补）：解释与决策需要不同的模型语言</li>
+            </ul>
+
+            <h3 id="ai-hinton" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Geoffrey Hinton
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：表示学习与深度学习复兴的关键推动者之一，长期押注神经网络路线。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：反向传播 / 深度信念网络 / 2012 之后</li>
+              <li>• 贡献与影响（待补）：把“表征”当作核心资产</li>
+              <li>• 对我的启发（待补）：长期下注 + 关键时刻的范式跃迁</li>
+            </ul>
+
+            <h3 id="ai-lecun" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Yann LeCun
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：CNN 路线代表人物，擅长把研究压成可用系统与工程路径。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：LeNet / 工业落地 / 现代 AI 基础设施</li>
+              <li>• 贡献与影响（待补）：把局部归纳偏置写进网络结构</li>
+              <li>• 对我的启发（待补）：结构设计=把先验注入学习</li>
+            </ul>
+
+            <h3 id="ai-bengio" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Yoshua Bengio
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：深度学习学术共同体的重要推动者之一，强调理论化与可持续研究生态。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：深度学习早期 / 表征学习 / 安全与治理</li>
+              <li>• 贡献与影响（待补）：把研究变成共同体工程</li>
+              <li>• 对我的启发（待补）：生态建设与单点突破同等重要</li>
+            </ul>
+
+            <h3 id="ai-krizhevsky" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Alex Krizhevsky
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：AlexNet 关键作者之一，代表“工程+算力+数据”共同触发的拐点事件。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：AlexNet / GPU 加速 / 视觉革命</li>
+              <li>• 贡献与影响（待补）：让深度学习从“可行”变成“碾压”</li>
+              <li>• 对我的启发（待补）：拐点往往来自系统变量的同向叠加</li>
+            </ul>
+
+            <h3 id="ai-sutton" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Richard Sutton
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：强化学习理论骨架的奠基者之一，强调规模化与通用方法的长期主义。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：TD 学习 / RL 教科书 / “The Bitter Lesson”</li>
+              <li>• 贡献与影响（待补）：用学习代替手工规则</li>
+              <li>• 对我的启发（待补）：把能规模化的路径当作第一原则</li>
+            </ul>
+
+            <h3 id="ai-hassabis" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Demis Hassabis
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：DeepMind 路线代表人物，把“研究 + 工程 + 组织”打成一体化能力。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：AlphaGo / AlphaFold / 研究组织范式</li>
+              <li>• 贡献与影响（待补）：系统集成能力决定上限</li>
+              <li>• 对我的启发（待补）：大问题需要组织能力配套</li>
+            </ul>
+
+            <h3 id="ai-sutskever" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Ilya Sutskever
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：大模型路线的关键推动者之一，代表“训练范式 + 直觉驱动”的研究风格。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：序列模型 / GPT 路线 / 规模化训练</li>
+              <li>• 贡献与影响（待补）：把“规模”作为能力来源</li>
+              <li>• 对我的启发（待补）：押注范式时要盯住可扩展性</li>
+            </ul>
+
+            <h3 id="ai-amodei" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Dario Amodei
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：以对齐与安全为核心视角的公司路线代表，把研究议题变成工程与组织机制。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：对齐研究 / 模型治理 / 组织化落地</li>
+              <li>• 贡献与影响（待补）：把“安全”写进研发流程</li>
+              <li>• 对我的启发（待补）：工程化=把价值观变成约束条件</li>
+            </ul>
+
+            <h3 id="ai-jensen-huang" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Jensen Huang
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：算力时代关键推手之一，GPU 生态使许多“可学的东西”变得可训练。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：CUDA / GPU 通用计算 / AI 基础设施</li>
+              <li>• 贡献与影响（待补）：把研究的上限变成可购买的资源</li>
+              <li>• 对我的启发（待补）：底层基础设施决定创新的速度</li>
+            </ul>
+
+            <h3 id="ai-andrew-ng" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Andrew Ng
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：把机器学习工程化、产品化、教育化的人，擅长把前沿方法沉淀为可复制路径。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：在线教育 / 工程落地 / 产业化方法论</li>
+              <li>• 贡献与影响（待补）：把“学会”变成“能用”</li>
+              <li>• 对我的启发（待补）：规模化传播也是一种技术影响力</li>
+            </ul>
           </section>
           </div>
         </main>

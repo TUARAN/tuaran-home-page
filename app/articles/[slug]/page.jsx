@@ -160,65 +160,65 @@ export default async function ArticleDetailPage({ params }) {
   }
 
   return (
-    <div className={`${enableDiaryToc ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-8`}>
+    <div className="max-w-5xl mx-auto px-4 py-8">
       <Script id={`article-jsonld-${article.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(articleStructuredData)}
       </Script>
 
       {enableDiaryToc ? (
-        <div className="lg:flex lg:gap-10">
-          {/* 左侧悬浮目录（桌面端） */}
-          {tocItems.length > 1 ? (
-            <aside className="hidden lg:block lg:w-56 lg:shrink-0">
-              <nav className="sticky top-24 p-4 bg-gray-50 dark:bg-gray-900 border border-[#eee] dark:border-gray-800 rounded">
-                <h2 className="text-base font-semibold text-[#444] dark:text-gray-200 mb-3">📑 目录</h2>
-                <ul className="space-y-2 list-none pl-0">
-                  {tocItems.map((item) => (
-                    <li key={item.id} className="text-sm">
-                      <a
-                        href={`#${item.id}`}
-                        className="text-[#666] dark:text-gray-300 hover:text-[#333] dark:hover:text-gray-100 no-underline hover:underline underline-offset-4 flex items-baseline gap-2"
-                      >
-                        <span className="text-[#999] dark:text-gray-500 text-xs shrink-0">{item.date}</span>
-                        <span>{item.label}</span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            </aside>
-          ) : null}
-
-          <div className="min-w-0 flex-1">
-            <div className="max-w-3xl mx-auto">
-              <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="text-xs text-[#999] dark:text-gray-400">{article.date}</div>
-                    <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
-                    <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
-                    <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
-                      <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                        返回列表
-                      </Link>
-                      {isExternalHref(article.href) ? (
-                        <a
-                          href={article.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                        >
-                          原文阅读
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                  <SettingsButton />
+        <>
+          <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-xs text-[#999] dark:text-gray-400">{article.date}</div>
+                <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
+                <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
+                <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
+                  <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                    返回列表
+                  </Link>
+                  {isExternalHref(article.href) ? (
+                    <a
+                      href={article.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                    >
+                      原文阅读
+                    </a>
+                  ) : null}
                 </div>
-              </header>
+              </div>
+              <SettingsButton />
+            </div>
+          </header>
 
+          <div className="flex flex-col gap-6 md:flex-row">
+            {tocItems.length > 1 ? (
+              <aside className="hidden md:block md:w-52 shrink-0">
+                <nav className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900 md:sticky md:top-6">
+                  <div className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">
+                    目录
+                  </div>
+                  <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">
+                    {tocItems.map((item) => (
+                      <li key={item.id}>
+                        <a
+                          href={`#${item.id}`}
+                          className="font-bold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
+                        >
+                          {item.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </aside>
+            ) : null}
+
+            <main className="flex-1 min-w-0">
               {article.cover ? (
-                <div className="mb-8">
+                <div className="mb-8 max-w-3xl mx-auto">
                   <Image
                     src={article.cover}
                     alt={`${article.title} 封面`}
@@ -228,26 +228,6 @@ export default async function ArticleDetailPage({ params }) {
                     className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
                   />
                 </div>
-              ) : null}
-
-              {/* 顶部目录（移动端） */}
-              {tocItems.length > 1 ? (
-                <nav className="lg:hidden mb-8 p-4 bg-gray-50 dark:bg-gray-900 border border-[#eee] dark:border-gray-800 rounded">
-                  <h2 className="text-lg font-semibold text-[#444] dark:text-gray-200 mb-3">📑 目录</h2>
-                  <ul className="space-y-2 list-none pl-0">
-                    {tocItems.map((item) => (
-                      <li key={item.id} className="text-sm">
-                        <a
-                          href={`#${item.id}`}
-                          className="text-[#666] dark:text-gray-300 hover:text-[#333] dark:hover:text-gray-100 no-underline hover:underline underline-offset-4 flex items-baseline gap-2"
-                        >
-                          <span className="text-[#999] dark:text-gray-500 text-xs shrink-0">{item.date}</span>
-                          <span>{item.label}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
               ) : null}
 
               <article className="prose-tuaran">
@@ -299,9 +279,9 @@ export default async function ArticleDetailPage({ params }) {
           return <p key={`${idx}-${paragraph}`}>{renderInlineBold(paragraph)}</p>
                 })}
               </article>
-            </div>
+            </main>
           </div>
-        </div>
+        </>
       ) : (
         <>
           <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
@@ -331,7 +311,7 @@ export default async function ArticleDetailPage({ params }) {
           </header>
 
           {article.cover ? (
-            <div className="mb-8">
+            <div className="mb-8 max-w-3xl mx-auto">
               <Image
                 src={article.cover}
                 alt={`${article.title} 封面`}

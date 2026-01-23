@@ -53,26 +53,6 @@ export default function BiographyReadingPage() {
               </li>
               <li>
                 <a
-                  href="#li-feifei"
-                  className="font-bold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
-                >
-                  李飞飞
-                </a>
-                <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
-                  <li>
-                    <a href="#li-feifei-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      自传时间线
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#ai-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      人工智能时间线
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <a
                   href="#ai-biography"
                   className="font-bold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
                 >
@@ -80,9 +60,33 @@ export default function BiographyReadingPage() {
                 </a>
                 <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
                   <li>
-                    <a href="#li-feifei" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      李飞飞（已收录）
+                    <a href="#ai-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      人工智能时间线
                     </a>
+                  </li>
+                  <li>
+                    <a href="#li-feifei" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      李飞飞
+                    </a>
+                    <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                      <li>
+                        <a href="#li-feifei-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                          人物时间线
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#ai-lecun" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      杨立昆
+                    </a>
+                    <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                      <li>
+                        <a href="#ai-lecun-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                          人物时间线
+                        </a>
+                      </li>
+                    </ul>
                   </li>
                   <li>
                     <a href="#ai-turing" className="opacity-80 hover:opacity-100 underline underline-offset-4">
@@ -112,11 +116,6 @@ export default function BiographyReadingPage() {
                   <li>
                     <a href="#ai-hinton" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                       Geoffrey Hinton
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#ai-lecun" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      Yann LeCun
                     </a>
                   </li>
                   <li>
@@ -465,152 +464,13 @@ export default function BiographyReadingPage() {
           </section>
 
           <section className="border border-[#eee] bg-white p-5 dark:border-gray-800 dark:bg-gray-900 mt-6">
-            <h2 id="li-feifei" className="text-[#444] text-lg dark:text-gray-200 scroll-mt-24">
-              李飞飞
+            <h2 id="ai-biography" className="text-[#444] text-lg dark:text-gray-200 scroll-mt-24">
+              人工智能人物传记
             </h2>
             <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
-              华裔女科学家，计算机视觉教母，ImageNet创始人，推动了现代人工智能的视觉革命。
-              通过对照自传时间线和AI发展时间线，理解个人贡献如何嵌入历史进程。
+              以“人物画像”的方式梳理 AI 发展的关键推手：他们在什么时代解决了什么问题、形成了什么方法论、留下了哪些长期影响。
+              （先搭骨架，后续逐个补全。）
             </p>
-
-            <h3 id="li-feifei-timeline" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              自传时间线
-            </h3>
-
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
-                <thead className="bg-white dark:bg-gray-900">
-                  <tr className="text-xs text-[#999] dark:text-gray-400">
-                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
-                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
-                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
-                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
-                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    {
-                      time: '1976年',
-                      age: 0,
-                      event: '出生于北京知识分子家庭',
-                      state: '童年在成都度过',
-                      contribution: '—',
-                    },
-                    {
-                      time: '1993年',
-                      age: 16,
-                      event: '随父母移民美国新泽西，语言障碍，餐馆打工',
-                      state: '移民适应期，艰难奋斗',
-                      contribution: '—',
-                    },
-                    {
-                      time: '1995-1999',
-                      age: '19-22',
-                      event: '普林斯顿大学物理学和计算机科学双学位',
-                      state: '学术基础建立',
-                      contribution: '开始对计算机视觉产生兴趣',
-                    },
-                    {
-                      time: '1999-2000',
-                      age: 23,
-                      event: '前往西藏研究藏医药一年',
-                      state: '技术与人文交融',
-                      contribution: '形成对科技与人文关系的思考',
-                    },
-                    {
-                      time: '2000-2005',
-                      age: '24-29',
-                      event: '加州理工攻读电气工程博士，导师Pietro Perona',
-                      state: '计算机视觉专业研究',
-                      contribution: '物体识别的认知和计算模型研究',
-                    },
-                    {
-                      time: '2005-2009',
-                      age: '29-33',
-                      event: 'UIUC和普林斯顿助理教授',
-                      state: '早期教职和研究',
-                      contribution: '构思和启动ImageNet项目',
-                    },
-                    {
-                      time: '2009',
-                      age: 33,
-                      event: '加入斯坦福大学，ImageNet首次发布',
-                      state: '学界反应冷淡，坚持愿景',
-                      contribution: '1400万图像，2万类别，开创数据驱动AI',
-                    },
-                    {
-                      time: '2010-2012',
-                      age: '34-36',
-                      event: '主办ImageNet挑战赛（ILSVRC）',
-                      state: '持续推进，等待突破',
-                      contribution: '2012年AlexNet验证大数据价值',
-                    },
-                    {
-                      time: '2013-2015',
-                      age: '37-39',
-                      event: '深度学习爆发期，计算机视觉研究深化',
-                      state: '学术影响力扩大',
-                      contribution: '2015年ResNet超越人类，创立AI4ALL',
-                    },
-                    {
-                      time: '2016-2017',
-                      age: '40-41',
-                      event: '启动智能医院项目，加入Google Cloud任首席科学家',
-                      state: 'AI应用与产业化',
-                      contribution: '推动AI民主化和伦理应用',
-                    },
-                    {
-                      time: '2018',
-                      age: 42,
-                      event: '离开Google，回归斯坦福',
-                      state: '重回学术和教育',
-                      contribution: '专注AI伦理和政策研究',
-                    },
-                    {
-                      time: '2019',
-                      age: 43,
-                      event: '联合创立斯坦福以人为本人工智能研究院（HAI）',
-                      state: '推动负责任的AI发展',
-                      contribution: '跨学科研究：技术+人文+社会',
-                    },
-                    {
-                      time: '2020',
-                      age: 44,
-                      event: '入选美国国家工程院院士',
-                      state: '学术地位确立',
-                      contribution: 'AI伦理、医疗AI、教育推广',
-                    },
-                    {
-                      time: '2021-2023',
-                      age: '45-47',
-                      event: '入选国家医学院院士，出版回忆录《The Worlds I See》',
-                      state: 'AI伦理领袖',
-                      contribution: 'HAI引领负责任AI讨论',
-                    },
-                    {
-                      time: '2024-2026',
-                      age: '48-50',
-                      event: '继续领导HAI，推动AI政策和监管',
-                      state: 'AI时代的思想领袖',
-                      contribution: 'AI安全、伦理、教育普及',
-                    },
-                  ].map((row) => (
-                    <tr key={row.time} className="align-top">
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
-                        {row.time}
-                      </td>
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
-                        {row.age}
-                      </td>
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
 
             <h3 id="ai-timeline" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
               人工智能时间线
@@ -768,27 +628,164 @@ export default function BiographyReadingPage() {
               </table>
             </div>
 
+            <h3 id="li-feifei" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              李飞飞
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
+              华裔女科学家，计算机视觉教母，ImageNet 创始人，推动了现代人工智能的视觉革命。
+              通过对照人物时间线和 AI 发展时间线，理解个人贡献如何嵌入历史进程。
+            </p>
+
+            <h4 id="li-feifei-timeline" className="mt-8 text-[#444] text-sm font-bold dark:text-gray-200 scroll-mt-24">
+              人物时间线
+            </h4>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+                <thead className="bg-white dark:bg-gray-900">
+                  <tr className="text-xs text-[#999] dark:text-gray-400">
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
+                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      time: '1976年',
+                      age: 0,
+                      event: '出生于北京知识分子家庭',
+                      state: '童年在成都度过',
+                      contribution: '—',
+                    },
+                    {
+                      time: '1993年',
+                      age: 16,
+                      event: '随父母移民美国新泽西，语言障碍，餐馆打工',
+                      state: '移民适应期，艰难奋斗',
+                      contribution: '—',
+                    },
+                    {
+                      time: '1995-1999',
+                      age: '19-22',
+                      event: '普林斯顿大学物理学和计算机科学双学位',
+                      state: '学术基础建立',
+                      contribution: '开始对计算机视觉产生兴趣',
+                    },
+                    {
+                      time: '1999-2000',
+                      age: 23,
+                      event: '前往西藏研究藏医药一年',
+                      state: '技术与人文交融',
+                      contribution: '形成对科技与人文关系的思考',
+                    },
+                    {
+                      time: '2000-2005',
+                      age: '24-29',
+                      event: '加州理工攻读电气工程博士，导师 Pietro Perona',
+                      state: '计算机视觉专业研究',
+                      contribution: '物体识别的认知和计算模型研究',
+                    },
+                    {
+                      time: '2005-2009',
+                      age: '29-33',
+                      event: 'UIUC 和普林斯顿助理教授',
+                      state: '早期教职和研究',
+                      contribution: '构思和启动 ImageNet 项目',
+                    },
+                    {
+                      time: '2009',
+                      age: 33,
+                      event: '加入斯坦福大学，ImageNet 首次发布',
+                      state: '学界反应冷淡，坚持愿景',
+                      contribution: '1400万图像，2万类别，开创数据驱动 AI',
+                    },
+                    {
+                      time: '2010-2012',
+                      age: '34-36',
+                      event: '主办 ImageNet 挑战赛（ILSVRC）',
+                      state: '持续推进，等待突破',
+                      contribution: '2012 年 AlexNet 验证大数据价值',
+                    },
+                    {
+                      time: '2013-2015',
+                      age: '37-39',
+                      event: '深度学习爆发期，计算机视觉研究深化',
+                      state: '学术影响力扩大',
+                      contribution: '2015 年 ResNet 超越人类，创立 AI4ALL',
+                    },
+                    {
+                      time: '2016-2017',
+                      age: '40-41',
+                      event: '启动智能医院项目，加入 Google Cloud 任首席科学家',
+                      state: 'AI 应用与产业化',
+                      contribution: '推动 AI 民主化和伦理应用',
+                    },
+                    {
+                      time: '2018',
+                      age: 42,
+                      event: '离开 Google，回归斯坦福',
+                      state: '重回学术和教育',
+                      contribution: '专注 AI 伦理和政策研究',
+                    },
+                    {
+                      time: '2019',
+                      age: 43,
+                      event: '联合创立斯坦福以人为本人工智能研究院（HAI）',
+                      state: '推动负责任的 AI 发展',
+                      contribution: '跨学科研究：技术 + 人文 + 社会',
+                    },
+                    {
+                      time: '2020',
+                      age: 44,
+                      event: '入选美国国家工程院院士',
+                      state: '学术地位确立',
+                      contribution: 'AI 伦理、医疗 AI、教育推广',
+                    },
+                    {
+                      time: '2021-2023',
+                      age: '45-47',
+                      event: '入选国家医学院院士，出版回忆录《The Worlds I See》',
+                      state: 'AI 伦理领袖',
+                      contribution: 'HAI 引领负责任 AI 讨论',
+                    },
+                    {
+                      time: '2024-2026',
+                      age: '48-50',
+                      event: '继续领导 HAI，推动 AI 政策和监管',
+                      state: 'AI 时代的思想领袖',
+                      contribution: 'AI 安全、伦理、教育普及',
+                    },
+                  ].map((row) => (
+                    <tr key={row.time} className="align-top">
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
+                        {row.time}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
+                        {row.age}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
             <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
               <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见</h4>
               <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-                <li>• <span className="font-medium">长期主义</span>：ImageNet从构思（2006）到引爆革命（2012）历时6年，坚持愿景换来历史性突破</li>
-                <li>• <span className="font-medium">基础工作价值</span>：数据集不如算法&quot;性感&quot;，但改变了整个AI领域的范式</li>
-                <li>• <span className="font-medium">数据驱动</span>：&quot;好的数据是AI成功的70%&quot;，数据质量比算法更重要</li>
-                <li>• <span className="font-medium">以人为本</span>：技术进步必须伴随人文关怀，AI的目的是增强而非取代人类</li>
-                <li>• <span className="font-medium">多样性与包容</span>：移民背景带来独特视角，通过AI4ALL推动女性和少数族裔参与</li>
-                <li>• <span className="font-medium">跨学科思维</span>：物理学+计算机+神经科学+人文关怀，交叉领域产生创新</li>
+                <li>• <span className="font-medium">长期主义</span>：ImageNet 从构思（2006）到引爆革命（2012）历时 6 年，坚持愿景换来历史性突破</li>
+                <li>• <span className="font-medium">基础工作价值</span>：数据集不如算法“性感”，但改变了整个 AI 领域的范式</li>
+                <li>• <span className="font-medium">数据驱动</span>：“好的数据是 AI 成功的重要前提”，数据质量往往比小幅算法改进更关键</li>
+                <li>• <span className="font-medium">以人为本</span>：技术进步必须伴随人文关怀，AI 的目的是增强而非取代人类</li>
+                <li>• <span className="font-medium">多样性与包容</span>：移民背景带来独特视角，通过 AI4ALL 推动女性和少数族裔参与</li>
+                <li>• <span className="font-medium">跨学科思维</span>：物理学 + 计算机 + 神经科学 + 人文关怀，交叉领域产生创新</li>
               </ul>
             </div>
-          </section>
-
-          <section className="border border-[#eee] bg-white p-5 dark:border-gray-800 dark:bg-gray-900 mt-6">
-            <h2 id="ai-biography" className="text-[#444] text-lg dark:text-gray-200 scroll-mt-24">
-              人工智能人物传记
-            </h2>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
-              以“人物画像”的方式梳理 AI 发展的关键推手：他们在什么时代解决了什么问题、形成了什么方法论、留下了哪些长期影响。
-              （先搭骨架，后续逐个补全。）
-            </p>
 
             <h3 id="ai-turing" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
               Alan Turing
@@ -851,14 +848,184 @@ export default function BiographyReadingPage() {
             </ul>
 
             <h3 id="ai-lecun" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Yann LeCun
+              杨立昆（Yann LeCun）
             </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：CNN 路线代表人物，擅长把研究压成可用系统与工程路径。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：LeNet / 工业落地 / 现代 AI 基础设施</li>
-              <li>• 贡献与影响（待补）：把局部归纳偏置写进网络结构</li>
-              <li>• 对我的启发（待补）：结构设计=把先验注入学习</li>
-            </ul>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
+              法裔美籍计算机科学家，长期工作于机器学习、计算机视觉、机器人与图像压缩等领域。
+              他最为人所知的是卷积神经网络在 OCR / 视觉中的开创性应用（LeNet 路线），以及把研究推进到可部署系统；同时也参与了 DjVu 图像压缩技术等工程化成果。
+              职业路径上，他的主线非常清晰：Bell Labs 的工业场景锻造了“端到端可用系统”的审美；NYU/Meta 阶段则把这种审美扩展为研究平台与组织能力。
+            </p>
+
+            <h4 id="ai-lecun-timeline" className="mt-8 text-[#444] text-sm font-bold dark:text-gray-200 scroll-mt-24">
+              人物时间线
+            </h4>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+                <thead className="bg-white dark:bg-gray-900">
+                  <tr className="text-xs text-[#999] dark:text-gray-400">
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
+                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献 / 关键词</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      time: '1960-07-08',
+                      age: 0,
+                      event: '出生于法国巴黎郊区 Soisy-sous-Montmorency',
+                      state: '法国成长背景，后来成为法裔美籍科学家',
+                      contribution: '—',
+                    },
+                    {
+                      time: '1983',
+                      age: 23,
+                      event: '获 ESIEE Paris 工程师文凭（DipIng）',
+                      state: '工程背景打底',
+                      contribution: '工程训练',
+                    },
+                    {
+                      time: '1987',
+                      age: 27,
+                      event: '获 Université Pierre et Marie Curie（现 Sorbonne University）计算机博士学位',
+                      state: '在博士阶段提出早期反向传播形式之一（连接主义学习模型）',
+                      contribution: 'Backprop（早期形式）/ 连接主义',
+                    },
+                    {
+                      time: '1987-1988',
+                      age: '27-28',
+                      event: '多伦多大学做博士后研究（导师 Geoffrey Hinton）',
+                      state: '与深度学习共同体核心人物形成学术连接',
+                      contribution: '研究共同体 / 路线延续',
+                    },
+                    {
+                      time: '1988-1996',
+                      age: '28-36',
+                      event: '加入 AT&T Bell Labs（Adaptive Systems Research）',
+                      state: '把卷积网络等方法用于手写识别与 OCR，并走向大规模部署',
+                      contribution: 'LeNet / OCR / “可部署”机器学习',
+                    },
+                    {
+                      time: '1989-1990',
+                      age: '29-30',
+                      event: '提出并应用于手写识别的一系列工作（如 ZIP code 识别、Optimal Brain Damage）',
+                      state: '把“训练—正则—部署”作为一体化问题处理',
+                      contribution: '手写识别 / OBD 正则 / 工程闭环',
+                    },
+                    {
+                      time: '1996',
+                      age: 36,
+                      event: '转入 AT&T Labs-Research，负责图像处理方向团队',
+                      state: '从识别系统延伸到压缩与分发链路',
+                      contribution: 'DjVu 图像压缩（参与）',
+                    },
+                    {
+                      time: '1998',
+                      age: 38,
+                      event: '发表文档识别的经典综述（Gradient-based learning applied to document recognition）',
+                      state: '把端到端学习方法系统化总结',
+                      contribution: 'LeNet 体系化 / 文档识别',
+                    },
+                    {
+                      time: '2003',
+                      age: 43,
+                      event: '加入纽约大学 NYU（Courant Institute），任 Jacob T. Schwartz 讲席教授',
+                      state: '在学术体系内推进能量模型、表征学习与机器人方向',
+                      contribution: 'Energy-based models / 视觉表征 / 机器人',
+                    },
+                    {
+                      time: '2012',
+                      age: 52,
+                      event: '担任 NYU Center for Data Science 创始主任（后卸任）',
+                      state: '把数据科学与机器学习研究组织化',
+                      contribution: '研究组织与平台建设',
+                    },
+                    {
+                      time: '2013年',
+                      age: 53,
+                      event: '加入 Facebook（现 Meta），领导 FAIR（AI Research）并担任 Chief AI Scientist',
+                      state: '把研究实验室做成长期运转的组织能力',
+                      contribution: 'FAIR / 研究平台化',
+                    },
+                    {
+                      time: '2013',
+                      age: 53,
+                      event: '与 Yoshua Bengio 共同发起 ICLR（International Conference on Learning Representations）',
+                      state: '推动开放评审与新兴学术共同体',
+                      contribution: 'ICLR / 共同体建设',
+                    },
+                    {
+                      time: '2018年',
+                      age: 58,
+                      event: '与 Geoffrey Hinton、Yoshua Bengio 共同获得 ACM 图灵奖',
+                      state: '深度学习成为主流范式的标志性事件',
+                      contribution: '深度学习范式确立（里程碑）',
+                    },
+                    {
+                      time: '2021',
+                      age: 61,
+                      event: '当选美国国家科学院成员（NAS）',
+                      state: '学术荣誉与影响力进一步确认',
+                      contribution: '—',
+                    },
+                    {
+                      time: '2023',
+                      age: 63,
+                      event: '获法国荣誉军团勋章（Legion of Honour）',
+                      state: '跨国学术与产业影响的认可',
+                      contribution: '—',
+                    },
+                    {
+                      time: '2024-2025',
+                      age: '64-65',
+                      event: '获 VinFuture Prize（2024）、Queen Elizabeth Prize for Engineering（2025）等',
+                      state: '作为深度学习时代关键人物被持续表彰',
+                      contribution: '学术与工程影响力',
+                    },
+                    {
+                      time: '2025',
+                      age: 65,
+                      event: '离开 Meta，转向个人创业（世界模型/类人智能方向）',
+                      state: '把研究议程延伸为新的组织与产品形态',
+                      contribution: 'World-model architectures（路线选择）',
+                    },
+                    {
+                      time: '2020年代',
+                      age: '60+ ',
+                      event: '持续推动自监督学习与“世界模型”式表征范式（如 JEPA 思路）',
+                      state: '把重点从“纯监督规模化”转向“可建模世界”的表征与规划',
+                      contribution: '自监督 / 表征 / 世界模型',
+                    },
+                  ].map((row) => (
+                    <tr key={row.time} className="align-top">
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
+                        {row.time}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
+                        {row.age}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
+              <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见（我想抓住的 5 件事）</h4>
+              <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+                <li>• <span className="font-medium">结构=先验</span>：CNN 的价值不是“更深”，而是把局部性与平移不变性写进了模型，使学习更高效、更稳定。</li>
+                <li>• <span className="font-medium">端到端</span>：尽量减少手工特征与规则，把优化目标交给数据与梯度，这是一种工程哲学。</li>
+                <li>• <span className="font-medium">可落地才算数</span>：Bell Labs 的 OCR/支票识别是典型样本：研究价值最终要穿过部署与规模化的门槛。</li>
+                <li>• <span className="font-medium">范式不是一次胜利</span>：从 CNN 到自监督/世界模型，他始终在做同一件事：寻找更通用的表征学习机制。</li>
+                <li>• <span className="font-medium">研究平台化</span>：从 NYU 到 FAIR，再到创业，贯穿的是“把议程做成组织能力”，而不是只做一次性成果。</li>
+              </ul>
+            </div>
 
             <h3 id="ai-bengio" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
               Yoshua Bengio

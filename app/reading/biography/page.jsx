@@ -1,4 +1,10 @@
+import Image from 'next/image'
+
 import SettingsButton from '../../components/SettingsButton'
+
+import ilyaAvatar from './avatar/伊利亚.jpeg'
+import liFeifeiAvatar from './avatar/李飞飞.jpeg'
+import leCunAvatar from './avatar/杨立昆.jpeg'
 
 export const dynamic = 'force-static'
 
@@ -628,8 +634,18 @@ export default function BiographyReadingPage() {
               </table>
             </div>
 
-            <h3 id="li-feifei" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              李飞飞
+            <h3
+              id="li-feifei"
+              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
+            >
+              <Image
+                src={liFeifeiAvatar}
+                alt="李飞飞"
+                width={48}
+                height={48}
+                className="rounded-full border border-[#eee] dark:border-gray-800"
+              />
+              <span>李飞飞</span>
             </h3>
             <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
               华裔女科学家，计算机视觉教母，ImageNet 创始人，推动了现代人工智能的视觉革命。
@@ -847,8 +863,18 @@ export default function BiographyReadingPage() {
               <li>• 对我的启发（待补）：长期下注 + 关键时刻的范式跃迁</li>
             </ul>
 
-            <h3 id="ai-lecun" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              杨立昆（Yann LeCun）
+            <h3
+              id="ai-lecun"
+              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
+            >
+              <Image
+                src={leCunAvatar}
+                alt="杨立昆"
+                width={48}
+                height={48}
+                className="rounded-full border border-[#eee] dark:border-gray-800"
+              />
+              <span>杨立昆（Yann LeCun）</span>
             </h3>
             <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
               法裔美籍计算机科学家，长期工作于机器学习、计算机视觉、机器人与图像压缩等领域。
@@ -1067,8 +1093,18 @@ export default function BiographyReadingPage() {
               <li>• 对我的启发（待补）：大问题需要组织能力配套</li>
             </ul>
 
-            <h3 id="ai-sutskever" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Ilya Sutskever
+            <h3
+              id="ai-sutskever"
+              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
+            >
+              <Image
+                src={ilyaAvatar}
+                alt="Ilya Sutskever"
+                width={48}
+                height={48}
+                className="rounded-full border border-[#eee] dark:border-gray-800"
+              />
+              <span>Ilya Sutskever</span>
             </h3>
             <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：大模型路线的关键推动者之一，代表“训练范式 + 直觉驱动”的研究风格。</p>
             <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">

@@ -7,6 +7,7 @@ import liFeifeiAvatar from './avatar/李飞飞.jpeg'
 import leCunAvatar from './avatar/杨立昆.jpeg'
 import hintonAvatar from './avatar/Hinton.jpeg'
 import krizhevskyAvatar from './avatar/alex.jpeg'
+import bengioAvatar from './avatar/bengio.jpeg'
 
 export const dynamic = 'force-static'
 
@@ -92,12 +93,12 @@ export default function BiographyReadingPage() {
                     </ul>
                   </li>
                   <li>
-                    <a href="#ai-sutskever" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      伊尔亚·苏茨克维
+                    <a href="#ai-bengio" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      约书亚·本吉奥
                     </a>
                     <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
                       <li>
-                        <a href="#ai-sutskever-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                        <a href="#ai-bengio-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                           人物时间线
                         </a>
                       </li>
@@ -110,6 +111,18 @@ export default function BiographyReadingPage() {
                     <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
                       <li>
                         <a href="#ai-hinton-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                          人物时间线
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#ai-sutskever" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      伊尔亚·苏茨克维
+                    </a>
+                    <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                      <li>
+                        <a href="#ai-sutskever-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                           人物时间线
                         </a>
                       </li>
@@ -153,11 +166,6 @@ export default function BiographyReadingPage() {
                   <li>
                     <a href="#ai-pearl" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                       Judea Pearl
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#ai-bengio" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      Yoshua Bengio
                     </a>
                   </li>
                   <li>
@@ -629,7 +637,7 @@ export default function BiographyReadingPage() {
                       alex: '—',
                     },
                   ].map((row) => (
-                    <tr key={row.time} className="align-top">
+                    <tr key={`${row.time}-${row.event}`} className="align-top">
                       <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
                         {row.time}
                       </td>
@@ -816,8 +824,8 @@ export default function BiographyReadingPage() {
                       state: 'AI 时代的思想领袖',
                       contribution: 'AI 安全、伦理、教育普及',
                     },
-                  ].map((row) => (
-                    <tr key={row.time} className="align-top">
+                  ].map((row, idx) => (
+                    <tr key={`${row.time}-${idx}`} className="align-top">
                       <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
                         {row.time}
                       </td>
@@ -1007,8 +1015,8 @@ export default function BiographyReadingPage() {
                       state: '把重点从“纯监督规模化”转向“可建模世界”的表征与规划',
                       contribution: '自监督 / 表征 / 世界模型',
                     },
-                  ].map((row) => (
-                    <tr key={row.time} className="align-top">
+                  ].map((row, idx) => (
+                    <tr key={`${row.time}-${idx}`} className="align-top">
                       <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
                         {row.time}
                       </td>
@@ -1032,6 +1040,325 @@ export default function BiographyReadingPage() {
                 <li>• <span className="font-medium">可落地才算数</span>：Bell Labs 的 OCR/支票识别是典型样本：研究价值最终要穿过部署与规模化的门槛。</li>
                 <li>• <span className="font-medium">范式不是一次胜利</span>：从 CNN 到自监督/世界模型，他始终在做同一件事：寻找更通用的表征学习机制。</li>
                 <li>• <span className="font-medium">研究平台化</span>：从 NYU 到 FAIR，再到创业，贯穿的是“把议程做成组织能力”，而不是只做一次性成果。</li>
+              </ul>
+            </div>
+
+            <h3
+              id="ai-bengio"
+              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
+            >
+              <Image
+                src={bengioAvatar}
+                alt="约书亚·本吉奥"
+                width={48}
+                height={48}
+                className="rounded-full border border-[#eee] dark:border-gray-800"
+              />
+              <span>约书亚·本吉奥（Yoshua Bengio）</span>
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
+              加拿大计算机科学家，深度学习三巨头之一，因其在人工神经网络和深度学习领域的开创性研究而闻名。1964 年生于法国巴黎，现为蒙特利尔大学教授、蒙特利尔学习算法研究所（Mila）科学主任。2018 年与杰弗里·辛顿、杨立昆共同获得图灵奖，被誉为“深度学习教父”。其代表性工作包括神经概率语言模型、ReLU 激活函数、注意力机制、词嵌入和去噪自编码器等，奠定了现代自然语言处理和深度学习的理论基础。同时积极推动 AI 安全与伦理研究，致力于构建负责任的 AI 生态。
+            </p>
+
+            <h4 id="ai-bengio-timeline" className="mt-8 text-[#444] text-sm font-bold dark:text-gray-200 scroll-mt-24">
+              人物时间线
+            </h4>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+                <thead className="bg-white dark:bg-gray-900">
+                  <tr className="text-xs text-[#999] dark:text-gray-400">
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
+                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献 / 关键词</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      time: '1964',
+                      age: 0,
+                      event: '出生于法国巴黎，米兹拉希犹太人家庭',
+                      state: '童年在巴黎度过',
+                      contribution: '—',
+                    },
+                    {
+                      time: '1970s',
+                      age: '6-15',
+                      event: '随家人移居加拿大魁北克',
+                      state: '成长于蒙特利尔，法语和英语双语环境',
+                      contribution: '—',
+                    },
+                    {
+                      time: '1982-1986',
+                      age: '18-22',
+                      event: '在麦吉尔大学攻读本科',
+                      state: '计算机科学基础训练',
+                      contribution: '—',
+                    },
+                    {
+                      time: '1988-1991',
+                      age: '24-27',
+                      event: '麦吉尔大学攻读博士，导师 Renato de Mori',
+                      state: '专注人工神经网络与序列识别',
+                      contribution: '博士论文：人工神经网络及其在序列识别中的应用',
+                    },
+                    {
+                      time: '1991-1992',
+                      age: '27-28',
+                      event: 'MIT 博士后，师从 Michael Jordan',
+                      state: '学习概率图模型与贝叶斯方法',
+                      contribution: '拓展统计机器学习理论视野',
+                    },
+                    {
+                      time: '1993',
+                      age: 29,
+                      event: '加入蒙特利尔大学任教',
+                      state: '开始建立独立研究组',
+                      contribution: '扎根蒙特利尔，打造学术根据地',
+                    },
+                    {
+                      time: '2000-2003',
+                      age: '36-39',
+                      event: '发表神经概率语言模型（Neural Probabilistic Language Model）',
+                      state: '突破传统 n-gram 局限，开启神经语言模型时代',
+                      contribution: '词嵌入（Word Embeddings），现代 NLP 的奠基工作',
+                    },
+                    {
+                      time: '2006',
+                      age: 42,
+                      event: '与 Hinton、LeCun 推动深度学习复兴',
+                      state: '在 AI 寒冬后重新点燃神经网络希望',
+                      contribution: '深度信念网络、无监督预训练策略',
+                    },
+                    {
+                      time: '2011',
+                      age: 47,
+                      event: '提出 ReLU（Rectified Linear Unit）激活函数',
+                      state: '解决梯度消失问题，成为深度网络标配',
+                      contribution: 'ReLU 简单高效，加速深度学习训练',
+                    },
+                    {
+                      time: '2012-2015',
+                      age: '48-51',
+                      event: 'AlexNet 引爆深度学习革命，注意力机制等成果涌现',
+                      state: '深度学习进入黄金时代',
+                      contribution: '去噪自编码器、注意力机制（Attention）雏形',
+                    },
+                    {
+                      time: '2014',
+                      age: 50,
+                      event: '学生 Ian Goodfellow 提出生成对抗网络（GAN）',
+                      state: 'GAN 成为生成模型的里程碑',
+                      contribution: '培养出 Goodfellow 等明星学者',
+                    },
+                    {
+                      time: '2017',
+                      age: 53,
+                      event: '获魁北克最高科学荣誉玛丽-维克托林奖',
+                      state: '学术地位得到官方认可',
+                      contribution: '魁北克 AI 生态崛起',
+                    },
+                    {
+                      time: '2018',
+                      age: 54,
+                      event: '与 Hinton、LeCun 共同获得图灵奖',
+                      state: '深度学习"三巨头"正式确立',
+                      contribution: '表彰其在深度学习领域的概念性和工程性突破',
+                    },
+                    {
+                      time: '2019',
+                      age: 55,
+                      event: '当选美国人工智能协会会士（AAAI Fellow）',
+                      state: '国际学术影响力持续扩大',
+                      contribution: '—',
+                    },
+                    {
+                      time: '2020-2023',
+                      age: '56-59',
+                      event: '积极参与 AI 安全、伦理与治理讨论',
+                      state: '从技术推动者转向责任倡导者',
+                      contribution: '呼吁 AI 监管、军事化警惕、伦理准则',
+                    },
+                    {
+                      time: '2024-至今',
+                      age: '60+',
+                      event: '继续领导 Mila，推动因果推理与 AI 安全研究',
+                      state: '学术共同体建设者与思想领袖',
+                      contribution: '构建可持续的 AI 研究生态与人才体系',
+                    },
+                  ].map((row, idx) => (
+                    <tr key={`${row.time}-${idx}`} className="align-top">
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
+                        {row.time}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
+                        {row.age}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
+              <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见</h4>
+              <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+                <li>• <span className="font-medium">理论奠基者</span>：神经概率语言模型、ReLU、注意力机制等工作为现代深度学习和 NLP 提供了核心工具</li>
+                <li>• <span className="font-medium">长期主义</span>：在 AI 寒冬期坚守神经网络路线，数十年如一日推动深度学习理论化</li>
+                <li>• <span className="font-medium">生态建设</span>：通过 Mila 构建全球领先的 AI 研究社区，培养大量顶尖学者（如 Goodfellow），证明学术共同体的力量</li>
+                <li>• <span className="font-medium">开放与合作</span>：推崇开放研究文化，与 Hinton、LeCun 形成“铁三角”，共同推动深度学习革命</li>
+                <li>• <span className="font-medium">责任与伦理</span>：在技术快速发展的同时，积极呼吁 AI 安全、监管与伦理，展现科学家的社会责任感</li>
+                <li>• <span className="font-medium">跨领域思维</span>：融合神经科学、统计学、认知科学，形成独特的深度学习理论视角</li>
+              </ul>
+            </div>
+
+            <h3
+              id="ai-hinton"
+              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
+            >
+              <Image
+                src={hintonAvatar}
+                alt="杰弗里·辛顿"
+                width={48}
+                height={48}
+                className="rounded-full border border-[#eee] dark:border-gray-800"
+              />
+              <span>杰弗里·辛顿（Geoffrey Hinton）</span>
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
+              英国出生的加拿大计算机科学家与心理学家，多伦多大学教授。
+              以神经网络与深度学习的关键贡献闻名（反向传播在多层网络训练中的推广、玻尔兹曼机、对比散度等），常被称为“深度学习教父”。
+            </p>
+
+            <h4 id="ai-hinton-timeline" className="mt-8 text-[#444] text-sm font-bold dark:text-gray-200 scroll-mt-24">
+              人物时间线
+            </h4>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+                <thead className="bg-white dark:bg-gray-900">
+                  <tr className="text-xs text-[#999] dark:text-gray-400">
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
+                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献 / 关键词</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      time: '1947-12-06',
+                      age: 0,
+                      event: '出生于英国英格兰伦敦温布尔登（Wimbledon）',
+                      state: '英国出生；后为加拿大籍学者',
+                      contribution: '—',
+                    },
+                    {
+                      time: '1970',
+                      age: 22,
+                      event: '剑桥大学获实验心理学学士（BA）',
+                      state: '心理学与认知科学背景打底',
+                      contribution: '认知 / 表征兴趣',
+                    },
+                    {
+                      time: '1978',
+                      age: 30,
+                      event: '爱丁堡大学获人工智能博士（PhD）',
+                      state: '进入 AI/神经网络研究路径',
+                      contribution: '神经网络 / 学习理论',
+                    },
+                    {
+                      time: '1970s-1990s',
+                      age: '—',
+                      event: '先后在多所高校/研究机构工作（如 Sussex、UCSD、Cambridge、CMU、UCL 等）',
+                      state: '形成“学习 + 表征”研究主线',
+                      contribution: '连接主义 / 机器学习',
+                    },
+                    {
+                      time: '1990',
+                      age: 42,
+                      event: '当选美国人工智能协会会士（AAAI Fellow）',
+                      state: '学界认可',
+                      contribution: '神经网络路线推动',
+                    },
+                    {
+                      time: '1998',
+                      age: 50,
+                      event: '当选英国皇家学会会士（FRS）',
+                      state: '重要学术荣誉',
+                      contribution: '表征学习 / 统计学习',
+                    },
+                    {
+                      time: '2001',
+                      age: 53,
+                      event: '获鲁梅尔哈特奖（Rumelhart Prize）',
+                      state: '神经网络与认知科学交叉认可',
+                      contribution: '学习算法 / 表征',
+                    },
+                    {
+                      time: '2005',
+                      age: 57,
+                      event: '获 IJCAI 优秀研究奖',
+                      state: '终生成就类认可',
+                      contribution: '机器学习 / AI 方向贡献',
+                    },
+                    {
+                      time: '2013-03',
+                      age: 65,
+                      event: '加入 Google（并购 DNNresearch 后加入）',
+                      state: '产业研究与规模化训练时代',
+                      contribution: '深度学习工程化 / 训练范式',
+                    },
+                    {
+                      time: '2018',
+                      age: 70,
+                      event: '与 Yoshua Bengio、杨立昆共同获图灵奖',
+                      state: '深度学习成为主流范式的里程碑',
+                      contribution: '深度学习范式确立',
+                    },
+                    {
+                      time: '2022',
+                      age: 74,
+                      event: '获阿斯图里亚斯亲王奖、皇家奖章等',
+                      state: '持续荣誉与影响力',
+                      contribution: '深度学习影响扩散',
+                    },
+                    {
+                      time: '2024',
+                      age: 76,
+                      event: '与 John Hopfield 共同获诺贝尔物理学奖',
+                      state: '跨学科最高级别认可',
+                      contribution: '机器学习与 AI 的基础发明与创新',
+                    },
+                  ].map((row, idx) => (
+                    <tr key={`${row.time}-${idx}`} className="align-top">
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
+                        {row.time}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
+                        {row.age}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
+              <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见</h4>
+              <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+                <li>• 把“可训练”当作第一性问题：优化/表示/规模化是同一条链路</li>
+                <li>• 学术谱系 = 方法论传播路径：Hinton → Ilya（训练范式），Hinton → LeCun（可部署系统审美）</li>
               </ul>
             </div>
 
@@ -1186,8 +1513,8 @@ export default function BiographyReadingPage() {
                       state: '资本与市场认可',
                       contribution: '安全 AI 研发资源',
                     },
-                  ].map((row) => (
-                    <tr key={row.time} className="align-top">
+                  ].map((row, idx) => (
+                    <tr key={`${row.time}-${idx}`} className="align-top">
                       <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
                         {row.time}
                       </td>
@@ -1207,150 +1534,6 @@ export default function BiographyReadingPage() {
               <li>• 贡献与影响：AlexNet、Seq2Seq、以及在 OpenAI 推动大规模训练范式与研究组织化。</li>
               <li>• 对我的启发：把“可规模化”当作第一原则，同时把安全问题视为主线而不是附属条件。</li>
             </ul>
-
-            <h3
-              id="ai-hinton"
-              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
-            >
-              <Image
-                src={hintonAvatar}
-                alt="杰弗里·辛顿"
-                width={48}
-                height={48}
-                className="rounded-full border border-[#eee] dark:border-gray-800"
-              />
-              <span>杰弗里·辛顿（Geoffrey Hinton）</span>
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
-              英国出生的加拿大计算机科学家与心理学家，多伦多大学教授。
-              以神经网络与深度学习的关键贡献闻名（反向传播在多层网络训练中的推广、玻尔兹曼机、对比散度等），常被称为“深度学习教父”。
-            </p>
-
-            <h4 id="ai-hinton-timeline" className="mt-8 text-[#444] text-sm font-bold dark:text-gray-200 scroll-mt-24">
-              人物时间线
-            </h4>
-
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
-                <thead className="bg-white dark:bg-gray-900">
-                  <tr className="text-xs text-[#999] dark:text-gray-400">
-                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
-                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
-                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
-                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
-                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献 / 关键词</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    {
-                      time: '1947-12-06',
-                      age: 0,
-                      event: '出生于英国英格兰伦敦温布尔登（Wimbledon）',
-                      state: '英国出生；后为加拿大籍学者',
-                      contribution: '—',
-                    },
-                    {
-                      time: '1970',
-                      age: 22,
-                      event: '剑桥大学获实验心理学学士（BA）',
-                      state: '心理学与认知科学背景打底',
-                      contribution: '认知 / 表征兴趣',
-                    },
-                    {
-                      time: '1978',
-                      age: 30,
-                      event: '爱丁堡大学获人工智能博士（PhD）',
-                      state: '进入 AI/神经网络研究路径',
-                      contribution: '神经网络 / 学习理论',
-                    },
-                    {
-                      time: '1970s-1990s',
-                      age: '—',
-                      event: '先后在多所高校/研究机构工作（如 Sussex、UCSD、Cambridge、CMU、UCL 等）',
-                      state: '形成“学习 + 表征”研究主线',
-                      contribution: '连接主义 / 机器学习',
-                    },
-                    {
-                      time: '1990',
-                      age: 42,
-                      event: '当选美国人工智能协会会士（AAAI Fellow）',
-                      state: '学界认可',
-                      contribution: '神经网络路线推动',
-                    },
-                    {
-                      time: '1998',
-                      age: 50,
-                      event: '当选英国皇家学会会士（FRS）',
-                      state: '重要学术荣誉',
-                      contribution: '表征学习 / 统计学习',
-                    },
-                    {
-                      time: '2001',
-                      age: 53,
-                      event: '获鲁梅尔哈特奖（Rumelhart Prize）',
-                      state: '神经网络与认知科学交叉认可',
-                      contribution: '学习算法 / 表征',
-                    },
-                    {
-                      time: '2005',
-                      age: 57,
-                      event: '获 IJCAI 优秀研究奖',
-                      state: '终生成就类认可',
-                      contribution: '机器学习 / AI 方向贡献',
-                    },
-                    {
-                      time: '2013-03',
-                      age: 65,
-                      event: '加入 Google（并购 DNNresearch 后加入）',
-                      state: '产业研究与规模化训练时代',
-                      contribution: '深度学习工程化 / 训练范式',
-                    },
-                    {
-                      time: '2018',
-                      age: 70,
-                      event: '与 Yoshua Bengio、杨立昆共同获图灵奖',
-                      state: '深度学习成为主流范式的里程碑',
-                      contribution: '深度学习范式确立',
-                    },
-                    {
-                      time: '2022',
-                      age: 74,
-                      event: '获阿斯图里亚斯亲王奖、皇家奖章等',
-                      state: '持续荣誉与影响力',
-                      contribution: '深度学习影响扩散',
-                    },
-                    {
-                      time: '2024',
-                      age: 76,
-                      event: '与 John Hopfield 共同获诺贝尔物理学奖',
-                      state: '跨学科最高级别认可',
-                      contribution: '机器学习与 AI 的基础发明与创新',
-                    },
-                  ].map((row) => (
-                    <tr key={row.time} className="align-top">
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
-                        {row.time}
-                      </td>
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
-                        {row.age}
-                      </td>
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
-                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
-              <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见</h4>
-              <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-                <li>• 把“可训练”当作第一性问题：优化/表示/规模化是同一条链路</li>
-                <li>• 学术谱系 = 方法论传播路径：Hinton → Ilya（训练范式），Hinton → LeCun（可部署系统审美）</li>
-              </ul>
-            </div>
 
             <h3
               id="ai-alex-krizhevsky"
@@ -1461,8 +1644,8 @@ export default function BiographyReadingPage() {
                       state: '其价值不止于结构，更在于把系统要素（数据/算力/训练技巧）拼成闭环。',
                       contribution: '系统闭环、规模效应、范式跃迁',
                     },
-                  ].map((row) => (
-                    <tr key={row.time} className="align-top">
+                  ].map((row, idx) => (
+                    <tr key={`${row.time}-${idx}`} className="align-top">
                       <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
                         {row.time}
                       </td>
@@ -1547,16 +1730,6 @@ export default function BiographyReadingPage() {
               <li>• 时间线（待补）：贝叶斯网络 / 因果图 / do-演算</li>
               <li>• 贡献与影响（待补）：从相关走向干预与反事实</li>
               <li>• 对我的启发（待补）：解释与决策需要不同的模型语言</li>
-            </ul>
-
-            <h3 id="ai-bengio" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Yoshua Bengio
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：深度学习学术共同体的重要推动者之一，强调理论化与可持续研究生态。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：深度学习早期 / 表征学习 / 安全与治理</li>
-              <li>• 贡献与影响（待补）：把研究变成共同体工程</li>
-              <li>• 对我的启发（待补）：生态建设与单点突破同等重要</li>
             </ul>
 
             <h3 id="ai-sutton" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">

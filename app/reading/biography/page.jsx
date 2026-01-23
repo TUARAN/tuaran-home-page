@@ -1052,7 +1052,7 @@ export default function BiographyReadingPage() {
             <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
               <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见（我想抓住的 5 件事）</h4>
               <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-                <li>• <span className="font-medium">结构=先验</span>：CNN 的价值不是“更深”，而是把局部性与平移不变性写进了模型，使学习更高效、更稳定。</li>
+                <li>• <span className="font-medium">结构=先验</span>：CNN 的价值在于把局部性与平移不变性写进模型，让学习更高效、更稳定；不靠单纯把网络堆得更深。</li>
                 <li>• <span className="font-medium">端到端</span>：尽量减少手工特征与规则，把优化目标交给数据与梯度，这是一种工程哲学。</li>
                 <li>• <span className="font-medium">可落地才算数</span>：Bell Labs 的 OCR/支票识别是典型样本：研究价值最终要穿过部署与规模化的门槛。</li>
                 <li>• <span className="font-medium">范式不是一次胜利</span>：从 CNN 到自监督/世界模型，他始终在做同一件事：寻找更通用的表征学习机制。</li>

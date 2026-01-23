@@ -95,6 +95,18 @@ export default function BiographyReadingPage() {
                     </ul>
                   </li>
                   <li>
+                    <a href="#ai-sutskever" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      伊尔亚
+                    </a>
+                    <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                      <li>
+                        <a href="#ai-sutskever-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                          人物时间线
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
                     <a href="#ai-turing" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                       Alan Turing
                     </a>
@@ -142,11 +154,6 @@ export default function BiographyReadingPage() {
                   <li>
                     <a href="#ai-hassabis" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                       Demis Hassabis
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#ai-sutskever" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      Ilya Sutskever
                     </a>
                   </li>
                   <li>
@@ -1053,6 +1060,179 @@ export default function BiographyReadingPage() {
               </ul>
             </div>
 
+            <h3
+              id="ai-sutskever"
+              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
+            >
+              <Image
+                src={ilyaAvatar}
+                alt="伊尔亚"
+                width={48}
+                height={48}
+                className="rounded-full border border-[#eee] dark:border-gray-800"
+              />
+              <span>伊尔亚</span>
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：大模型路线的关键推动者之一，代表“训练范式 + 直觉驱动”的研究风格。</p>
+
+            <h4 id="ai-sutskever-timeline" className="mt-8 text-[#444] text-sm font-bold dark:text-gray-200 scroll-mt-24">
+              人物时间线
+            </h4>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+                <thead className="bg-white dark:bg-gray-900">
+                  <tr className="text-xs text-[#999] dark:text-gray-400">
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
+                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献 / 关键词</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      time: '1986-12-08',
+                      age: 0,
+                      event: '出生于苏联俄罗斯高尔基（今下诺夫哥罗德）',
+                      state: '后成为加拿大 / 以色列公民',
+                      contribution: '—',
+                    },
+                    {
+                      time: '2000-2002',
+                      age: '13-15',
+                      event: '就读以色列开放大学',
+                      state: '早期学习阶段',
+                      contribution: '数学 / 计算机基础',
+                    },
+                    {
+                      time: '2002',
+                      age: 15,
+                      event: '与家人移居加拿大，转入多伦多大学',
+                      state: '进入北美学术体系',
+                      contribution: '—',
+                    },
+                    {
+                      time: '2005',
+                      age: 18,
+                      event: '获多伦多大学数学学士学位（BSc）',
+                      state: '本科毕业',
+                      contribution: '数学训练',
+                    },
+                    {
+                      time: '2007',
+                      age: 20,
+                      event: '获多伦多大学计算机科学硕士学位（MSc）',
+                      state: '研究训练深化',
+                      contribution: '序列模型研究积累',
+                    },
+                    {
+                      time: '2012',
+                      age: 25,
+                      event: '在 Geoffrey Hinton 指导下获多伦多大学博士学位（PhD）',
+                      state: '深度学习学派核心梯队',
+                      contribution: '深度学习训练与优化（论文/学位工作）',
+                    },
+                    {
+                      time: '2012',
+                      age: 25,
+                      event: '在斯坦福大学师从吴恩达做了约两个月博士后',
+                      state: '短期博士后经历',
+                      contribution: '研究网络扩展',
+                    },
+                    {
+                      time: '2012-2013',
+                      age: '25-26',
+                      event: '加入 DNNResearch（Hinton 团队衍生公司）',
+                      state: '产业化前沿研究团队',
+                      contribution: '深度学习工程化',
+                    },
+                    {
+                      time: '2013-03',
+                      age: 26,
+                      event: 'Google 收购 DNNResearch，加入 Google Brain',
+                      state: '成为研究科学家',
+                      contribution: '规模化训练与系统化研究',
+                    },
+                    {
+                      time: '2013-2014',
+                      age: '26-27',
+                      event: '与 O. Vinyals、Quoc V. Le 合作创建 Seq2Seq 学习算法',
+                      state: '序列学习范式扩张',
+                      contribution: 'Seq2Seq / 编码器-解码器',
+                    },
+                    {
+                      time: '2015',
+                      age: 28,
+                      event: '与 Alex Krizhevsky、Geoffrey Hinton 共同提出 AlexNet（相关工作）',
+                      state: '深度学习拐点事件的关键作者之一',
+                      contribution: 'AlexNet / CNN 视觉革命',
+                    },
+                    {
+                      time: '2015-12',
+                      age: 29,
+                      event: '离开 Google，加入新成立的 OpenAI（负责人/领导层）',
+                      state: 'OpenAI 联合创始人、首席科学家',
+                      contribution: '大模型研究路线与组织推动',
+                    },
+                    {
+                      time: '2015',
+                      age: 28,
+                      event: '入选《麻省理工科技评论》35 岁以下创新者（TR35）',
+                      state: '早期学术影响力确认',
+                      contribution: '—',
+                    },
+                    {
+                      time: '2022',
+                      age: 35,
+                      event: '当选英国皇家学会院士（FRS）',
+                      state: '学术荣誉',
+                      contribution: '—',
+                    },
+                    {
+                      time: '2024-05',
+                      age: 37,
+                      event: '宣布离开 OpenAI',
+                      state: '从组织内关键岗位退出',
+                      contribution: '—',
+                    },
+                    {
+                      time: '2024-06',
+                      age: 37,
+                      event: '与 Daniel Gross、Daniel Levy 共同创立 Safe Superintelligence（SSI）',
+                      state: '以 AI 安全为重点的新公司',
+                      contribution: 'AI 安全 / 对齐 / 超级智能',
+                    },
+                    {
+                      time: '2024-09',
+                      age: 37,
+                      event: 'SSI 宣布融资 10 亿美元，估值约 50 亿美元（维基条目描述）',
+                      state: '资本与市场认可',
+                      contribution: '安全 AI 研发资源',
+                    },
+                  ].map((row) => (
+                    <tr key={row.time} className="align-top">
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
+                        {row.time}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
+                        {row.age}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <ul className="mt-6 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 贡献与影响（摘要）：AlexNet、Seq2Seq、以及在 OpenAI 推动大规模训练范式与研究组织化。</li>
+              <li>• 对我的启发（摘要）：把“可规模化”当作第一原则，同时把安全问题视为主线而不是附属条件。</li>
+            </ul>
+
             <h3 id="ai-bengio" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
               Yoshua Bengio
             </h3>
@@ -1091,26 +1271,6 @@ export default function BiographyReadingPage() {
               <li>• 时间线（待补）：AlphaGo / AlphaFold / 研究组织范式</li>
               <li>• 贡献与影响（待补）：系统集成能力决定上限</li>
               <li>• 对我的启发（待补）：大问题需要组织能力配套</li>
-            </ul>
-
-            <h3
-              id="ai-sutskever"
-              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
-            >
-              <Image
-                src={ilyaAvatar}
-                alt="Ilya Sutskever"
-                width={48}
-                height={48}
-                className="rounded-full border border-[#eee] dark:border-gray-800"
-              />
-              <span>Ilya Sutskever</span>
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：大模型路线的关键推动者之一，代表“训练范式 + 直觉驱动”的研究风格。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：序列模型 / GPT 路线 / 规模化训练</li>
-              <li>• 贡献与影响（待补）：把“规模”作为能力来源</li>
-              <li>• 对我的启发（待补）：押注范式时要盯住可扩展性</li>
             </ul>
 
             <h3 id="ai-amodei" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">

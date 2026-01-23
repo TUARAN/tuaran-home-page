@@ -508,13 +508,17 @@ export default function BiographyReadingPage() {
             </h3>
 
             <div className="mt-4 overflow-x-auto">
-              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+              <table className="min-w-[1280px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
                 <thead className="bg-white dark:bg-gray-900">
                   <tr className="text-xs text-[#999] dark:text-gray-400">
                     <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
                     <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">AI发展</th>
                     <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">技术突破</th>
                     <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">李飞飞节点</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">Yann LeCun 节点</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">Ilya Sutskever 节点</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">Geoffrey Hinton 节点</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">Alex Krizhevsky 节点</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -524,120 +528,200 @@ export default function BiographyReadingPage() {
                       ai: '图灵测试、达特茅斯会议，AI诞生',
                       tech: '符号主义，早期专家系统',
                       li: '—',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '1957-1974',
                       ai: '感知机、ELIZA聊天机器人，黄金期',
                       tech: '神经网络雏形，过度乐观',
                       li: '—',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '1974-1980',
                       ai: '第一次AI寒冬，资金削减',
                       tech: '计算能力受限，承诺落空',
                       li: '李飞飞出生（1976）',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '1980-1987',
                       ai: '专家系统繁荣，商业化尝试',
                       tech: 'MYCIN医疗系统，日本第五代计算机',
                       li: '在成都成长',
+                      lecun: '卷积网络早期研究路线成形（LeNet 前夜）',
+                      ilya: '—',
+                      hinton: '反向传播在多层网络训练中被推广与应用（连接主义再兴）',
+                      alex: '—',
                     },
                     {
                       time: '1987-1993',
                       ai: '第二次AI寒冬，专家系统衰落',
                       tech: '知识工程瓶颈，成本过高',
                       li: '1993年移民美国（16岁）',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '1997-1998',
                       ai: '深蓝战胜卡斯帕罗夫，MNIST数据集',
                       tech: '蛮力计算，机器学习范式转变',
                       li: '普林斯顿大学就读',
+                      lecun: 'LeNet-5 在手写数字识别等任务中成为经典范式',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2000-2005',
                       ai: 'SVM、集成学习、贝叶斯网络',
                       tech: '从符号主义到统计学习',
-                      li: '加州理工读博，研究物体识别',
+                      li: 'Caltech 博士',
+                      lecun: '在工业界推进可落地的机器学习系统与视觉方向',
+                      ilya: '—',
+                      hinton: '持续深耕表征学习与神经网络路线',
+                      alex: '—',
                     },
                     {
                       time: '2006',
                       ai: 'Hinton提出深度信念网络',
                       tech: '深度学习复兴，解决训练问题',
                       li: '构思ImageNet项目',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '深度信念网络（DBN）与无监督预训练，推动“深度可训练”',
+                      alex: '—',
                     },
                     {
                       time: '2009',
                       ai: 'ImageNet数据集发布',
                       tech: '大规模标注数据，1400万图像',
-                      li: '加入斯坦福，发布ImageNet',
+                      li: 'Stanford / ImageNet',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '发布《Learning multiple layers of features from tiny images》技术报告',
                     },
                     {
                       time: '2012',
                       ai: 'AlexNet引爆深度学习革命',
                       tech: 'CNN+GPU，错误率从26%降至15%',
                       li: 'ImageNet验证大数据价值',
+                      lecun: 'CNN 路线被再次验证并进入主流视觉系统',
+                      ilya: '—',
+                      hinton: 'DNN Research 团队成果被产业界快速吸收',
+                      alex: 'AlexNet（ILSVRC 2012）成为拐点事件',
                     },
                     {
                       time: '2014-2015',
                       ai: 'GoogLeNet、VGG、ResNet，超越人类',
                       tech: '网络更深，计算机视觉成熟',
-                      li: '创立AI4ALL，推动教育多样性',
+                      li: 'AI4ALL',
+                      lecun: '—',
+                      ilya: 'Seq2Seq（序列到序列）方法兴起，NLP 端到端学习范式加速',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2016',
                       ai: 'AlphaGo击败李世石',
                       tech: '深度强化学习，复杂策略游戏突破',
                       li: '启动智能医院项目',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2017',
                       ai: 'Transformer架构（Attention Is All You Need）',
                       tech: '改变NLP，奠定大语言模型基础',
-                      li: '加入Google Cloud任首席科学家',
+                      li: 'Google Cloud 首席科学家',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2018',
                       ai: 'BERT、GPT发布',
                       tech: '预训练模型，迁移学习',
                       li: '回归斯坦福',
+                      lecun: '与 Bengio、Hinton 共同获图灵奖，深度学习范式确立',
+                      ilya: '—',
+                      hinton: '与 Bengio、LeCun 共同获图灵奖',
+                      alex: '—',
                     },
                     {
                       time: '2019',
                       ai: 'GPT-2，深度伪造技术',
                       tech: '生成能力惊人，伦理担忧',
-                      li: '联合创立HAI（以人为本AI研究院）',
+                      li: 'HAI',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2020',
                       ai: 'GPT-3（1750亿参数），AlphaFold 2',
                       tech: '大模型时代，蛋白质结构预测',
                       li: '入选美国国家工程院院士',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2021-2022',
                       ai: 'DALL-E、GitHub Copilot、ChatGPT',
                       tech: '多模态生成，AI进入大众视野',
-                      li: '入选国家医学院院士，AI伦理研究',
+                      li: '国家医学院院士 / 伦理',
+                      lecun: '—',
+                      ilya: '在 OpenAI 推动大规模训练与对齐研究（ChatGPT 等产品化浪潮）',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2023',
                       ai: 'GPT-4，大模型竞赛（Claude、Gemini）',
                       tech: 'AI安全和监管成全球议题',
                       li: '出版回忆录《The Worlds I See》',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2024-2025',
                       ai: 'AI Agent崛起，多模态模型成熟',
                       tech: 'AI在科学研究中深度应用',
-                      li: 'HAI推动负责任AI发展',
+                      li: 'HAI / 负责任AI',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                     {
                       time: '2026',
                       ai: 'AI无处不在，从工具到基础设施',
                       tech: '伦理、安全、监管成核心议题',
-                      li: '继续领导HAI，AI政策和教育',
+                      li: '政策与教育',
+                      lecun: '—',
+                      ilya: '—',
+                      hinton: '—',
+                      alex: '—',
                     },
                   ].map((row) => (
                     <tr key={row.time} className="align-top">
@@ -651,6 +735,34 @@ export default function BiographyReadingPage() {
                           <span className="font-medium text-[#444] dark:text-gray-200">{row.li}</span>
                         ) : (
                           row.li
+                        )}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">
+                        {row.lecun !== '—' ? (
+                          <span className="font-medium text-[#444] dark:text-gray-200">{row.lecun}</span>
+                        ) : (
+                          row.lecun
+                        )}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">
+                        {row.ilya !== '—' ? (
+                          <span className="font-medium text-[#444] dark:text-gray-200">{row.ilya}</span>
+                        ) : (
+                          row.ilya
+                        )}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">
+                        {row.hinton !== '—' ? (
+                          <span className="font-medium text-[#444] dark:text-gray-200">{row.hinton}</span>
+                        ) : (
+                          row.hinton
+                        )}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">
+                        {row.alex !== '—' ? (
+                          <span className="font-medium text-[#444] dark:text-gray-200">{row.alex}</span>
+                        ) : (
+                          row.alex
                         )}
                       </td>
                     </tr>

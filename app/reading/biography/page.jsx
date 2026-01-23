@@ -5,6 +5,8 @@ import SettingsButton from '../../components/SettingsButton'
 import ilyaAvatar from './avatar/伊利亚.jpeg'
 import liFeifeiAvatar from './avatar/李飞飞.jpeg'
 import leCunAvatar from './avatar/杨立昆.jpeg'
+import hintonAvatar from './avatar/Hinton.jpeg'
+import krizhevskyAvatar from './avatar/alex.jpeg'
 
 export const dynamic = 'force-static'
 
@@ -96,11 +98,38 @@ export default function BiographyReadingPage() {
                   </li>
                   <li>
                     <a href="#ai-sutskever" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      伊尔亚
+                      伊尔亚·苏茨克维
                     </a>
                     <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
                       <li>
                         <a href="#ai-sutskever-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                          人物时间线
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#ai-hinton" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      杰弗里·辛顿
+                    </a>
+                    <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                      <li>
+                        <a href="#ai-hinton-timeline" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                          人物时间线
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="#ai-alex-krizhevsky" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      亚历克斯·克里泽夫斯基
+                    </a>
+                    <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
+                      <li>
+                        <a
+                          href="#ai-alex-krizhevsky-timeline"
+                          className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                        >
                           人物时间线
                         </a>
                       </li>
@@ -132,18 +161,8 @@ export default function BiographyReadingPage() {
                     </a>
                   </li>
                   <li>
-                    <a href="#ai-hinton" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      Geoffrey Hinton
-                    </a>
-                  </li>
-                  <li>
                     <a href="#ai-bengio" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                       Yoshua Bengio
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#ai-krizhevsky" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                      Alex Krizhevsky
                     </a>
                   </li>
                   <li>
@@ -482,7 +501,6 @@ export default function BiographyReadingPage() {
             </h2>
             <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
               以“人物画像”的方式梳理 AI 发展的关键推手：他们在什么时代解决了什么问题、形成了什么方法论、留下了哪些长期影响。
-              （先搭骨架，后续逐个补全。）
             </p>
 
             <h3 id="ai-timeline" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
@@ -810,66 +828,6 @@ export default function BiographyReadingPage() {
               </ul>
             </div>
 
-            <h3 id="ai-turing" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Alan Turing
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：提出可操作的“智能判别”问题，为计算与智能讨论定了起点。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：关键论文 / 图灵测试 / 时代背景</li>
-              <li>• 贡献与影响（待补）：把哲学问题工程化</li>
-              <li>• 对我的启发（待补）：如何把宏大命题降维成可验证指标</li>
-            </ul>
-
-            <h3 id="ai-mccarthy" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              John McCarthy
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：提出“Artificial Intelligence”概念，奠定早期研究议程与方法边界。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：达特茅斯会议 / 早期实验室与系统</li>
-              <li>• 贡献与影响（待补）：把学科命名=把问题域框定</li>
-              <li>• 对我的启发（待补）：命名与议程设置的力量</li>
-            </ul>
-
-            <h3 id="ai-minsky" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Marvin Minsky
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：符号主义代表人物之一，推动早期 AI 社群与研究范式成形。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：黄金期 / 寒冬前后的路线选择</li>
-              <li>• 贡献与影响（待补）：问题分解与“心智模块化”的思路</li>
-              <li>• 对我的启发（待补）：范式之争背后是资源与可计算性</li>
-            </ul>
-
-            <h3 id="ai-vapnik" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Vladimir Vapnik
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：统计学习理论代表人物，把“泛化能力”变成可讨论的数学语言。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：VC 理论 / SVM / 统计学习浪潮</li>
-              <li>• 贡献与影响（待补）：用理论约束经验主义</li>
-              <li>• 对我的启发（待补）：指标不是结果，指标是边界</li>
-            </ul>
-
-            <h3 id="ai-pearl" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Judea Pearl
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：因果推断体系化，把“因果”从直觉变成可计算与可表达。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：贝叶斯网络 / 因果图 / do-演算</li>
-              <li>• 贡献与影响（待补）：从相关走向干预与反事实</li>
-              <li>• 对我的启发（待补）：解释与决策需要不同的模型语言</li>
-            </ul>
-
-            <h3 id="ai-hinton" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Geoffrey Hinton
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：表示学习与深度学习复兴的关键推动者之一，长期押注神经网络路线。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：反向传播 / 深度信念网络 / 2012 之后</li>
-              <li>• 贡献与影响（待补）：把“表征”当作核心资产</li>
-              <li>• 对我的启发（待补）：长期下注 + 关键时刻的范式跃迁</li>
-            </ul>
-
             <h3
               id="ai-lecun"
               className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
@@ -1050,7 +1008,7 @@ export default function BiographyReadingPage() {
             </div>
 
             <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
-              <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见（我想抓住的 5 件事）</h4>
+              <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见</h4>
               <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
                 <li>• <span className="font-medium">结构=先验</span>：CNN 的价值在于把局部性与平移不变性写进模型，让学习更高效、更稳定；不靠单纯把网络堆得更深。</li>
                 <li>• <span className="font-medium">端到端</span>：尽量减少手工特征与规则，把优化目标交给数据与梯度，这是一种工程哲学。</li>
@@ -1066,12 +1024,12 @@ export default function BiographyReadingPage() {
             >
               <Image
                 src={ilyaAvatar}
-                alt="伊尔亚"
+                alt="伊尔亚·苏茨克维"
                 width={48}
                 height={48}
                 className="rounded-full border border-[#eee] dark:border-gray-800"
               />
-              <span>伊尔亚</span>
+              <span>伊尔亚·苏茨克维（Ilya Sutskever）</span>
             </h3>
             <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：大模型路线的关键推动者之一，代表“训练范式 + 直觉驱动”的研究风格。</p>
 
@@ -1207,7 +1165,7 @@ export default function BiographyReadingPage() {
                     {
                       time: '2024-09',
                       age: 37,
-                      event: 'SSI 宣布融资 10 亿美元，估值约 50 亿美元（维基条目描述）',
+                      event: 'SSI 宣布融资 10 亿美元，估值约 50 亿美元',
                       state: '资本与市场认可',
                       contribution: '安全 AI 研发资源',
                     },
@@ -1229,8 +1187,349 @@ export default function BiographyReadingPage() {
             </div>
 
             <ul className="mt-6 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 贡献与影响（摘要）：AlexNet、Seq2Seq、以及在 OpenAI 推动大规模训练范式与研究组织化。</li>
-              <li>• 对我的启发（摘要）：把“可规模化”当作第一原则，同时把安全问题视为主线而不是附属条件。</li>
+              <li>• 贡献与影响：AlexNet、Seq2Seq、以及在 OpenAI 推动大规模训练范式与研究组织化。</li>
+              <li>• 对我的启发：把“可规模化”当作第一原则，同时把安全问题视为主线而不是附属条件。</li>
+            </ul>
+
+            <h3
+              id="ai-hinton"
+              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
+            >
+              <Image
+                src={hintonAvatar}
+                alt="杰弗里·辛顿"
+                width={48}
+                height={48}
+                className="rounded-full border border-[#eee] dark:border-gray-800"
+              />
+              <span>杰弗里·辛顿（Geoffrey Hinton）</span>
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
+              英国出生的加拿大计算机科学家与心理学家，多伦多大学教授。
+              以神经网络与深度学习的关键贡献闻名（反向传播在多层网络训练中的推广、玻尔兹曼机、对比散度等），常被称为“深度学习教父”。
+            </p>
+
+            <h4 id="ai-hinton-timeline" className="mt-8 text-[#444] text-sm font-bold dark:text-gray-200 scroll-mt-24">
+              人物时间线
+            </h4>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+                <thead className="bg-white dark:bg-gray-900">
+                  <tr className="text-xs text-[#999] dark:text-gray-400">
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
+                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献 / 关键词</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      time: '1947-12-06',
+                      age: 0,
+                      event: '出生于英国英格兰伦敦温布尔登（Wimbledon）',
+                      state: '英国出生；后为加拿大籍学者',
+                      contribution: '—',
+                    },
+                    {
+                      time: '1970',
+                      age: 22,
+                      event: '剑桥大学获实验心理学学士（BA）',
+                      state: '心理学与认知科学背景打底',
+                      contribution: '认知 / 表征兴趣',
+                    },
+                    {
+                      time: '1978',
+                      age: 30,
+                      event: '爱丁堡大学获人工智能博士（PhD）',
+                      state: '进入 AI/神经网络研究路径',
+                      contribution: '神经网络 / 学习理论',
+                    },
+                    {
+                      time: '1970s-1990s',
+                      age: '—',
+                      event: '先后在多所高校/研究机构工作（如 Sussex、UCSD、Cambridge、CMU、UCL 等）',
+                      state: '形成“学习 + 表征”研究主线',
+                      contribution: '连接主义 / 机器学习',
+                    },
+                    {
+                      time: '1990',
+                      age: 42,
+                      event: '当选美国人工智能协会会士（AAAI Fellow）',
+                      state: '学界认可',
+                      contribution: '神经网络路线推动',
+                    },
+                    {
+                      time: '1998',
+                      age: 50,
+                      event: '当选英国皇家学会会士（FRS）',
+                      state: '重要学术荣誉',
+                      contribution: '表征学习 / 统计学习',
+                    },
+                    {
+                      time: '2001',
+                      age: 53,
+                      event: '获鲁梅尔哈特奖（Rumelhart Prize）',
+                      state: '神经网络与认知科学交叉认可',
+                      contribution: '学习算法 / 表征',
+                    },
+                    {
+                      time: '2005',
+                      age: 57,
+                      event: '获 IJCAI 优秀研究奖',
+                      state: '终生成就类认可',
+                      contribution: '机器学习 / AI 方向贡献',
+                    },
+                    {
+                      time: '2013-03',
+                      age: 65,
+                      event: '加入 Google（并购 DNNresearch 后加入）',
+                      state: '产业研究与规模化训练时代',
+                      contribution: '深度学习工程化 / 训练范式',
+                    },
+                    {
+                      time: '2018',
+                      age: 70,
+                      event: '与 Yoshua Bengio、杨立昆共同获图灵奖',
+                      state: '深度学习成为主流范式的里程碑',
+                      contribution: '深度学习范式确立',
+                    },
+                    {
+                      time: '2022',
+                      age: 74,
+                      event: '获阿斯图里亚斯亲王奖、皇家奖章等',
+                      state: '持续荣誉与影响力',
+                      contribution: '深度学习影响扩散',
+                    },
+                    {
+                      time: '2024',
+                      age: 76,
+                      event: '与 John Hopfield 共同获诺贝尔物理学奖',
+                      state: '跨学科最高级别认可',
+                      contribution: '机器学习与 AI 的基础发明与创新',
+                    },
+                  ].map((row) => (
+                    <tr key={row.time} className="align-top">
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
+                        {row.time}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
+                        {row.age}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
+              <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见</h4>
+              <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+                <li>• 把“可训练”当作第一性问题：优化/表示/规模化是同一条链路</li>
+                <li>• 学术谱系 = 方法论传播路径：Hinton → Ilya（训练范式），Hinton → LeCun（可部署系统审美）</li>
+              </ul>
+            </div>
+
+            <h3
+              id="ai-alex-krizhevsky"
+              className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24 flex items-center gap-3"
+            >
+              <Image
+                src={krizhevskyAvatar}
+                alt="亚历克斯·克里泽夫斯基"
+                width={48}
+                height={48}
+                className="rounded-full border border-[#eee] dark:border-gray-800"
+              />
+              <span>亚历克斯·克里泽夫斯基（Alex Krizhevsky）</span>
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
+              乌克兰裔加拿大计算机科学家，以深度卷积神经网络在视觉任务上的突破性工作闻名；他与合作者在 2012 年以
+              AlexNet 显著刷新 ImageNet 竞赛成绩，推动深度学习在工业界“从可行到必选”的拐点，同时也是 CIFAR-10 与 CIFAR-100
+              数据集的创建者之一。
+            </p>
+
+            <h4
+              id="ai-alex-krizhevsky-timeline"
+              className="mt-8 text-[#444] text-sm font-bold dark:text-gray-200 scroll-mt-24"
+            >
+              人物时间线
+            </h4>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-[980px] w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
+                <thead className="bg-white dark:bg-gray-900">
+                  <tr className="text-xs text-[#999] dark:text-gray-400">
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">时间</th>
+                    <th className="text-right font-bold p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap">年龄</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">事件描述</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">状态与成就</th>
+                    <th className="text-left font-bold p-2 border-b border-[#eee] dark:border-gray-800">关键贡献 / 关键词</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      time: '2009',
+                      age: '23',
+                      event: '发布技术报告《Learning multiple layers of features from tiny images》。',
+                      state: '以“从小图像学习多层特征”为主线，系统化沉淀训练与特征学习经验。',
+                      contribution: '小图像特征学习、训练细节、可复现实验范式',
+                    },
+                    {
+                      time: '2009-2011',
+                      age: '23-25',
+                      event: '围绕计算机视觉与神经网络训练做持续迭代，逐步聚焦卷积网络的可训练性与规模化。',
+                      state: '从“能训练”走向“能训大”，为后续大规模视觉竞赛奠定工程基础。',
+                      contribution: '工程化训练、GPU 加速、数据与算力驱动',
+                    },
+                    {
+                      time: '2012',
+                      age: '26',
+                      event: '以 AlexNet 赢得 ImageNet（ILSVRC）挑战赛，显著领先传统方法。',
+                      state: '成为深度学习进入主流视觉系统的标志性拐点事件。',
+                      contribution: '卷积网络 + ReLU + Dropout + GPU 训练、AlexNet',
+                    },
+                    {
+                      time: '2012',
+                      age: '26',
+                      event: 'AlexNet 论文与相关实现被广泛引用与复用，成为后续视觉网络设计的“起点模板”。',
+                      state: '在学术与工业界形成范式迁移：更深、更大、更数据驱动。',
+                      contribution: '可迁移架构思路、基准驱动迭代、引用与复用',
+                    },
+                    {
+                      time: '2012-2013',
+                      age: '26-27',
+                      event: '与同事共同推进创业公司 DNN Research Inc.，并在 AlexNet 成功后不久出售给 Google。',
+                      state: '从学术突破转向工业化落地，将研究影响力直接导入产品线。',
+                      contribution: '研究到产品的转译、商业化并购、工程落地',
+                    },
+                    {
+                      time: '2013-2016',
+                      age: '27-30',
+                      event: '在 Google 继续参与深度学习相关研究与实践，探索更高效的训练与表示学习路径。',
+                      state: '把“论文级效果”变成“可持续迭代的系统能力”。',
+                      contribution: '深度学习系统化、训练策略、表示学习',
+                    },
+                    {
+                      time: '2017-09',
+                      age: '31',
+                      event: '离开 Google，转入 D. E. Shaw & Co.（德劭）从事工作，支持新的深度学习技术探索。',
+                      state: '从大厂研发节奏切换到更强调长期研究与应用结合的环境。',
+                      contribution: '研究节奏重塑、长期主义、跨领域应用',
+                    },
+                    {
+                      time: '长期贡献',
+                      age: '未知',
+                      event: '创建并推广 CIFAR-10 与 CIFAR-100 数据集，成为小图像分类研究的经典基准。',
+                      state: '以“统一数据基准”推动社区形成可对比、可复现、可迭代的研究文化。',
+                      contribution: 'CIFAR-10/100、基准测试、可复现与对齐',
+                    },
+                    {
+                      time: '长期影响',
+                      age: '未知',
+                      event: '多篇论文与工程实践被视觉与机器学习社区高频引用，影响后续网络结构与训练范式演进。',
+                      state: '以“能跑起来、能复现、能扩大”的工程路径塑造研究风格。',
+                      contribution: '工程优先、训练细节决定上限、可扩展性',
+                    },
+                    {
+                      time: '当代语境',
+                      age: '未知',
+                      event: 'AlexNet 被持续作为“深度学习产业化起点”反复回顾与复盘，成为理解视觉革命的关键案例。',
+                      state: '其价值不止于结构，更在于把系统要素（数据/算力/训练技巧）拼成闭环。',
+                      contribution: '系统闭环、规模效应、范式跃迁',
+                    },
+                  ].map((row) => (
+                    <tr key={row.time} className="align-top">
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 whitespace-nowrap text-[#999] dark:text-gray-400">
+                        {row.time}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800 text-right text-[#999] dark:text-gray-400 whitespace-nowrap">
+                        {row.age}
+                      </td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.event}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.state}</td>
+                      <td className="p-2 border-b border-[#eee] dark:border-gray-800">{row.contribution}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 p-4 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
+              <h4 className="text-sm font-bold text-[#444] dark:text-gray-200 mb-2">核心洞见</h4>
+              <ul className="text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+                <li>
+                  • <span className="font-medium">工程闭环</span>：真正的突破往往来自把模型、数据、算力与训练技巧拼成可复制的系统，而不是某个单点“灵感结构”。
+                </li>
+                <li>
+                  • <span className="font-medium">基准驱动</span>：用公开基准（如 CIFAR、ImageNet）把讨论从“讲故事”拉回“可对比结果”，让社区迭代速度指数级提升。
+                </li>
+                <li>
+                  • <span className="font-medium">训练细节主义</span>：性能上限常被优化器、激活函数、正则化、初始化与数据增强等“细节”锁死，细节决定模型能否规模化。
+                </li>
+                <li>
+                  • <span className="font-medium">规模效应</span>：当数据与算力足够，正确的架构与训练配方会出现“质变拐点”，把实验室效果推到产业可用。
+                </li>
+                <li>
+                  • <span className="font-medium">研究到产品的翻译</span>：把论文影响力变成真实产品能力，需要组织与工程路径（部署、维护、迭代节奏）的二次设计。
+                </li>
+              </ul>
+            </div>
+
+            <h3 id="ai-turing" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Alan Turing
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：提出可操作的“智能判别”问题，为计算与智能讨论定了起点。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：关键论文 / 图灵测试 / 时代背景</li>
+              <li>• 贡献与影响（待补）：把哲学问题工程化</li>
+              <li>• 对我的启发（待补）：如何把宏大命题降维成可验证指标</li>
+            </ul>
+
+            <h3 id="ai-mccarthy" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              John McCarthy
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：提出“Artificial Intelligence”概念，奠定早期研究议程与方法边界。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：达特茅斯会议 / 早期实验室与系统</li>
+              <li>• 贡献与影响（待补）：把学科命名=把问题域框定</li>
+              <li>• 对我的启发（待补）：命名与议程设置的力量</li>
+            </ul>
+
+            <h3 id="ai-minsky" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Marvin Minsky
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：符号主义代表人物之一，推动早期 AI 社群与研究范式成形。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：黄金期 / 寒冬前后的路线选择</li>
+              <li>• 贡献与影响（待补）：问题分解与“心智模块化”的思路</li>
+              <li>• 对我的启发（待补）：范式之争背后是资源与可计算性</li>
+            </ul>
+
+            <h3 id="ai-vapnik" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Vladimir Vapnik
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：统计学习理论代表人物，把“泛化能力”变成可讨论的数学语言。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：VC 理论 / SVM / 统计学习浪潮</li>
+              <li>• 贡献与影响（待补）：用理论约束经验主义</li>
+              <li>• 对我的启发（待补）：指标不是结果，指标是边界</li>
+            </ul>
+
+            <h3 id="ai-pearl" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              Judea Pearl
+            </h3>
+            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：因果推断体系化，把“因果”从直觉变成可计算与可表达。</p>
+            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
+              <li>• 时间线（待补）：贝叶斯网络 / 因果图 / do-演算</li>
+              <li>• 贡献与影响（待补）：从相关走向干预与反事实</li>
+              <li>• 对我的启发（待补）：解释与决策需要不同的模型语言</li>
             </ul>
 
             <h3 id="ai-bengio" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
@@ -1241,16 +1540,6 @@ export default function BiographyReadingPage() {
               <li>• 时间线（待补）：深度学习早期 / 表征学习 / 安全与治理</li>
               <li>• 贡献与影响（待补）：把研究变成共同体工程</li>
               <li>• 对我的启发（待补）：生态建设与单点突破同等重要</li>
-            </ul>
-
-            <h3 id="ai-krizhevsky" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
-              Alex Krizhevsky
-            </h3>
-            <p className="mt-3 text-sm text-[#666] dark:text-gray-300">画像骨架：AlexNet 关键作者之一，代表“工程+算力+数据”共同触发的拐点事件。</p>
-            <ul className="mt-3 text-xs text-[#666] dark:text-gray-400 space-y-2 leading-relaxed">
-              <li>• 时间线（待补）：AlexNet / GPU 加速 / 视觉革命</li>
-              <li>• 贡献与影响（待补）：让深度学习从“可行”变成“碾压”</li>
-              <li>• 对我的启发（待补）：拐点往往来自系统变量的同向叠加</li>
             </ul>
 
             <h3 id="ai-sutton" className="mt-8 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">

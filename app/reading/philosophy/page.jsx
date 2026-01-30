@@ -9,6 +9,10 @@ export const metadata = {
   alternates: {
     canonical: '/reading/philosophy',
   },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function PhilosophyReadingPage() {

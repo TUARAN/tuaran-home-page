@@ -9,6 +9,10 @@ export const metadata = {
   alternates: {
     canonical: '/reading/sociology',
   },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 const APHORISM_GROUPS = [

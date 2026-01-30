@@ -9,6 +9,10 @@ export const metadata = {
   alternates: {
     canonical: '/reading/psychology',
   },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function PsychologyReadingPage() {

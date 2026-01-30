@@ -11,6 +11,14 @@ export const metadata = {
   alternates: {
     canonical: '/articles',
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
 }
 
 function isExternalHref(href) {

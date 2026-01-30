@@ -11,6 +11,14 @@ export const metadata = {
   alternates: {
     canonical: '/reading',
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
 }
 
 const categories = [

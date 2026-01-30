@@ -83,33 +83,32 @@ export default function HomePage() {
               安东尼与AI
             </a>
           </p>
-          <div className="text-sm text-[#666] dark:text-gray-300 mt-2 flex flex-col gap-4">
-            <div>具备程序员与科创项目经理的复合背景～</div>
-            <div>专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。</div>
+          <div className="mt-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+              <span className="text-xs text-[#777] dark:text-gray-400 font-medium">身份标签：</span>
+              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
+                程序员
+              </span>
+              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
+                技术博主
+              </span>
+              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
+                项目经理
+              </span>
+              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
+                出版作者
+              </span>
+              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
+                茉莉奶爸
+              </span>
+            </div>
+            <div className="text-sm text-[#666] dark:text-gray-300 mt-2">
+              专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。
+            </div>
           </div>
         </div>
         <div className="flex flex-col items-end gap-4 text-sm sm:self-stretch sm:justify-between sm:py-1">
           <SettingsButton />
-          <nav className="mt-2 sm:mt-0">
-            <a
-              href="https://github.com/TUARAN"
-              target="_blank"
-              rel="noreferrer"
-              className=""
-            >
-              <span className="inline-flex items-center gap-1">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 16 16"
-                  className="w-4 h-4 !text-black"
-                  fill="currentColor"
-                >
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.58 7.58 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-                </svg>
-                  <span className="sr-only">GitHub</span>
-              </span>
-            </a>
-          </nav>
         </div>
       </header>
 

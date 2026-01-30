@@ -6,14 +6,14 @@ import StompPanel from './components/StompPanel'
 
 const posts = [
   {
-    date: '2025年12月19日',
+    date: '',
     title: '博主联盟：开发者博主联盟平台，链接创作与推广',
     href: 'https://blogger-alliance.cn',
     githubHref: 'https://github.com/TUARAN/blogger-alliance',
     showExternalIcon: true,
   },
   {
-    date: '2026年01月05日',
+    date: '',
     title: '前端周刊：每周更新国外论坛的前端热门文章',
     href: 'https://frontendweekly.cn/',
     githubHref: 'https://github.com/TUARAN/frontend-weekly-digest-cn',
@@ -149,13 +149,13 @@ export default function HomePage() {
           </section>
 
           <section>
-            <h2>项目更新</h2>
+            <h2>发起项目</h2>
             <ul className="space-y-3">
               {posts.map((p) => (
                 <li key={p.href} className="flex items-start gap-2">
                   <span className="text-[#999] text-sm mt-1">▪</span>
                   <div className="text-sm">
-                    <span className="text-[#666] mr-2">{p.date} »</span>
+                    {p.date ? <span className="text-[#666] mr-2">{p.date} »</span> : null}
                     {p.githubHref ? (
                       (() => {
                         const { name, rest } = splitProjectTitle(p.title)
@@ -165,7 +165,7 @@ export default function HomePage() {
                               href={p.githubHref}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 !text-black opacity-80 hover:opacity-100 no-underline hover:no-underline border-b border-transparent hover:border-current"
+                              className="inline-flex items-center gap-1 !text-black opacity-80 hover:opacity-100 underline underline-offset-4"
                               aria-label={`${name || p.title} GitHub`}
                             >
                               <span>{name || p.title}</span>
@@ -190,7 +190,7 @@ export default function HomePage() {
                         href={p.href}
                         target="_blank"
                         rel="noreferrer"
-                        aria-label="网址"
+                        aria-label="站点"
                         className="ml-2 inline-flex items-center gap-1 !text-black opacity-80 hover:opacity-100 no-underline hover:no-underline border-b border-transparent hover:border-current"
                       >
                         <svg
@@ -212,7 +212,7 @@ export default function HomePage() {
                           <path d="M5.75 4.75h.01" />
                           <path d="M7.25 4.75h.01" />
                         </svg>
-                        <span className="text-xs text-[#999] leading-none">网址</span>
+                        <span className="text-xs !text-[#004276] dark:!text-blue-400 leading-none">站点</span>
                       </a>
                     ) : null}
                   </div>
@@ -275,27 +275,6 @@ export default function HomePage() {
                   />
                 </a>
               </div>
-              <p>
-                ▪ 发起
-                <a
-                  href="https://blogger-alliance.cn"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow opacity-80 hover:opacity-100"
-                >
-                  「博主联盟」
-                </a>
-                、
-                <a
-                  href="https://frontendweekly.cn/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow opacity-80 hover:opacity-100"
-                >
-                  「前端周刊」
-                </a>
-                等内容共创项目
-              </p>
               <p>
                 ▪ 掘金社区共建者/签约作者、CSDN 7级博主、头条作者、小红书万粉博主、51CTO 社区专家博主
                

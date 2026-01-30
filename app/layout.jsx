@@ -131,6 +131,7 @@ export default function RootLayout({ children }) {
                 <Link href="/" className="opacity-80 hover:opacity-100 underline underline-offset-4">首页</Link>
                 <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">文章</Link>
                 <Link href="/reading" className="opacity-80 hover:opacity-100 underline underline-offset-4">读书</Link>
+                <Link href="/bookmarks" className="opacity-80 hover:opacity-100 underline underline-offset-4">收藏</Link>
                 <a
                   href="https://github.com/TUARAN"
                   target="_blank"

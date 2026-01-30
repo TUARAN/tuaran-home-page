@@ -86,6 +86,17 @@ export async function generateMetadata({ params }) {
       canonical: url,
     },
     keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', 'SEO', '个人博客', title],
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
     openGraph: {
       title,
       description,

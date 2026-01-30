@@ -2364,6 +2364,10 @@ export const metadata = {
   alternates: {
     canonical: '/reading/history',
   },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function HistoryReadingPage() {

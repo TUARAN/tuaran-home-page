@@ -71,8 +71,16 @@ export const metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   verification: {
+    google: 'google-site-verification-code-if-needed',
     other: {
       'baidu-site-verification': 'codeva-RnbvKColnM',
     },

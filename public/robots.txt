@@ -1,4 +1,9 @@
+# Allow all crawlers
 User-agent: *
 Allow: /
+
+# Disallow admin and API routes
+Disallow: /api/
+Disallow: /admin/
 
 Sitemap: https://tuaran.me/sitemap.xml

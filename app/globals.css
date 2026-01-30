@@ -60,53 +60,7 @@
     border-radius: 2px;
   }
 
-  /* 外部链接添加箭头图标 */
-  a[href^="http"]:not([href*="tuaran.me"]):not([href*="localhost"]):not([href*="github.com"])::after,
-  a[href^="//"]:not([href*="tuaran.me"]):not([href*="github.com"])::after {
-    content: "↗";
-    display: inline-block;
-    margin-left: 0.25rem;
-    font-size: 0.9em;
-    line-height: 1;
-    vertical-align: middle;
-    font-weight: bold;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-  }
-
-  a[href^="http"]:not([href*="tuaran.me"]):not([href*="localhost"]):not([href*="github.com"]):hover::after,
-  a[href^="//"]:not([href*="tuaran.me"]):not([href*="github.com"]):hover::after {
-    opacity: 1;
-  }
-
-  /* 指定链接不显示外链箭头（例如：图片链接、已自带标识的链接） */
-  a.no-external-arrow::after {
-    content: none !important;
-  }
-
-  /* 工具箱：箭头放在 emoji(🔥) 前面 */
-  a.external-arrow-before-emoji[href^="http"]:not([href*="tuaran.me"]):not([href*="localhost"])::after,
-  a.external-arrow-before-emoji[href^="//"]:not([href*="tuaran.me"])::after {
-    content: none;
-  }
-
-  a.external-arrow-before-emoji[href^="http"]:not([href*="tuaran.me"]):not([href*="localhost"]) .external-emoji::before,
-  a.external-arrow-before-emoji[href^="//"]:not([href*="tuaran.me"]) .external-emoji::before {
-    content: "↗";
-    display: inline-block;
-    margin-right: 0.15rem;
-    font-size: 0.9em;
-    line-height: 1;
-    vertical-align: middle;
-    font-weight: bold;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-  }
-
-  a.external-arrow-before-emoji[href^="http"]:not([href*="tuaran.me"]):not([href*="localhost"]):hover .external-emoji::before,
-  a.external-arrow-before-emoji[href^="//"]:not([href*="tuaran.me"]):hover .external-emoji::before {
-    opacity: 1;
-  }
+  /* 外部链接箭头已禁用：避免网址后自动跟随 ↗ */
 }
 
 @layer components {

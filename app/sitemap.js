@@ -2,12 +2,18 @@ import { articles } from './articles/articlesData'
 
 const SITE_URL = 'https://tuaran.me'
 
+function isExternalHref(href) {
+  return typeof href === 'string' && href.startsWith('http')
+}
+
 export const revalidate = 3600
 
 export default function sitemap() {
   const now = new Date()
 
-  const articleEntries = articles.map((article) => {
+  const articleEntries = articles
+    .filter((article) => !isExternalHref(article.href))
+    .map((article) => {
     const parsedDate = Number.isNaN(Date.parse(article.date)) ? now : new Date(article.date)
 
     return {

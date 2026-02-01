@@ -49,8 +49,8 @@ const categories = [
 
 export default function BookmarksIndexPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-[#555] dark:text-gray-200">收藏夹</h1>

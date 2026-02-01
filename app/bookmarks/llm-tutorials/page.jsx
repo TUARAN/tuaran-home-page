@@ -53,18 +53,15 @@ export default function LLMTutorialsPage() {
       <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Link
-                href="/bookmarks"
-                className="text-sm text-[#666] dark:text-gray-400 hover:text-[#333] dark:hover:text-gray-200"
-              >
-                ← 返回收藏夹
-              </Link>
-            </div>
             <h1 className="text-[#555] dark:text-gray-200">大模型教程</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">
               大语言模型（LLM）相关的优质教程、实践指南与技术文档。
             </p>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
+              <Link href="/bookmarks" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                返回收藏夹
+              </Link>
+            </div>
           </div>
           <SettingsButton />
         </div>

@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 import SettingsButton from '../../components/SettingsButton'
 
@@ -32,6 +33,11 @@ export default function BiographyReadingPage() {
           <div>
             <h1 className="text-[#555] dark:text-gray-200">读无用书 · 传记</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">这里会整理传记类的阅读记录。</p>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
+              <Link href="/reading" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                返回读书
+              </Link>
+            </div>
           </div>
           <SettingsButton />
         </div>

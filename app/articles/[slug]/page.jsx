@@ -181,8 +181,7 @@ export default async function ArticleDetailPage({ params }) {
           <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="text-xs text-[#999] dark:text-gray-400">{article.date}</div>
-                <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
+                <h1 className="text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
                 <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
                 <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
                   <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">

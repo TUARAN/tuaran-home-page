@@ -55,7 +55,7 @@ export default function HomePage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] dark:border-gray-800 pb-2 mb-8">
         <div>
           <p className="text-sm text-[#666] dark:text-gray-300 mt-1">
-            账号：{' '}
+            账号集：{' '}
             <a
               href="https://juejin.cn/user/1521379823340792"
               target="_blank"
@@ -85,7 +85,7 @@ export default function HomePage() {
           </p>
           <div className="mt-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-              <span className="text-xs text-[#777] dark:text-gray-400 font-medium">身份标签：</span>
+              <span className="text-sm text-[#777] dark:text-gray-400 font-medium">身份标签：</span>
               <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
                 程序员
               </span>

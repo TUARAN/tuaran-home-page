@@ -85,7 +85,7 @@ export default function HomePage() {
           </p>
           <div className="mt-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-              <span className="text-sm text-[#777] dark:text-gray-400 font-medium">身份标签：</span>
+              <span className="text-sm text-[#777] dark:text-gray-400">身份标签：</span>
               <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
                 程序员
               </span>

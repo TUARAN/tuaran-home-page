@@ -54,7 +54,7 @@ export default function HomePage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] dark:border-gray-800 pb-2 mb-8">
         <div>
-          <p className="text-sm text-[#666] dark:text-gray-300 mt-1">
+          <p className="text-sm text-[#666] dark:text-gray-300 my-1">
             账号集：{' '}
             <a
               href="https://juejin.cn/user/1521379823340792"
@@ -83,8 +83,8 @@ export default function HomePage() {
               安东尼与AI
             </a>
           </p>
-          <div className="mt-2">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          <div>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
               <span className="text-sm text-[#777] dark:text-gray-400">身份标签：</span>
               <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
                 程序员

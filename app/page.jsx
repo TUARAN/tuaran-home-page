@@ -55,7 +55,7 @@ export default function HomePage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] dark:border-gray-800 pb-2 mb-8">
         <div>
           <p className="text-sm text-[#666] dark:text-gray-300 mt-1">
-            IP Set：{' '}
+            账号：{' '}
             <a
               href="https://juejin.cn/user/1521379823340792"
               target="_blank"

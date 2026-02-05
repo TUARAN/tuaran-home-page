@@ -43,7 +43,30 @@ const columns = [
   },
 ]
 
-const weeklyPosts = []
+const weeklyPosts = [
+  {
+    title: '2026年第6周｜写给自己的周报',
+    week: '2026年第6周',
+    date: '2026-02-05',
+    sections: [
+      {
+        title: '生活',
+        paragraphs: [
+          '这一周，生活最大的感受仍然是带娃难。上周周一请假一天，这周周二又请了一上午。',
+          '连续3天宝宝都在夜晚醒，醒了不睡，不同程度的闹到1-2小时；宝宝妈妈也几度崩溃。',
+          '宝宝鼻子堵、又还有点咳嗽，天呐，怎么这么难啊。',
+        ],
+      },
+      {
+        title: '感悟',
+        paragraphs: [
+          '上班的时候，在摄像头看到宝宝哭、宝妈哭，真的很绝望。',
+          '不知道这个班上的还有什么意义？钱也没赚到，仍然维持“整体体系在空转”的观点不变。',
+        ],
+      },
+    ],
+  },
+]
 
 export default function WeeklyPage() {
   return (
@@ -95,18 +118,37 @@ export default function WeeklyPage() {
             还没有发布周报。先立个 flag：每周更新一篇。
           </div>
         ) : (
-          <ul className="mt-4 space-y-3">
+          <div className="mt-4 space-y-6">
             {weeklyPosts.map((post) => (
-              <li key={post.href}>
-                <Link
-                  href={post.href}
-                  className="text-sm text-[#004276] dark:text-blue-400 underline underline-offset-4 opacity-80 hover:opacity-100"
-                >
-                  {post.title}
-                </Link>
-              </li>
+              <article
+                key={post.title}
+                className="rounded-lg border border-[#eee] bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
+              >
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <h3 className="text-base font-semibold text-[#111] dark:text-gray-100">
+                    {post.title}
+                  </h3>
+                  <span className="text-xs text-[#999] dark:text-gray-400">
+                    {post.week} · {post.date}
+                  </span>
+                </div>
+                <div className="mt-4 space-y-4 text-sm text-[#666] dark:text-gray-300">
+                  {post.sections.map((section) => (
+                    <section key={section.title} className="space-y-2">
+                      <h4 className="text-sm font-semibold text-[#222] dark:text-gray-200">
+                        {section.title}
+                      </h4>
+                      {section.paragraphs.map((text, index) => (
+                        <p key={`${section.title}-${index}`} className="m-0">
+                          {text}
+                        </p>
+                      ))}
+                    </section>
+                  ))}
+                </div>
+              </article>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

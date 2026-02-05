@@ -53,7 +53,7 @@ export default function WeeklyPage() {
           Weekly Review
         </p>
         <h1 className="mt-2 text-2xl font-semibold text-[#111] dark:text-white">
-          周报 · TUARAN ｜ 涂阿燃 Weekly
+          周报 · 涂阿燃 ｜ TUARAN WEEKLY
         </h1>
         <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
           每周都要为工作写周报，但更重要的是写给自己。这是一个长期记录：

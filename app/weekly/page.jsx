@@ -20,28 +20,6 @@ export const metadata = {
   },
 }
 
-const columns = [
-  {
-    title: '生活',
-    description: '记录一周的日常、家庭、运动与微小的改变。',
-  },
-  {
-    title: '技术学习',
-    description: '总结本周技术输入与输出，沉淀可复用的知识点。',
-  },
-  {
-    title: '综合学习',
-    description: '跨学科阅读与知识联结，建立更完整的认知网络。',
-  },
-  {
-    title: '感悟',
-    description: '阶段性反思与思考，用文字校准方向。',
-  },
-  {
-    title: '工作小结',
-    description: '本周交付、协作与改进点，为下一周留痕。',
-  },
-]
 
 const weeklyPosts = [
   {
@@ -79,8 +57,7 @@ export default function WeeklyPage() {
           周报 · 涂阿燃 ｜ TUARAN WEEKLY
         </h1>
         <p className="mt-3 text-sm text-[#666] dark:text-gray-300">
-          每周都要为工作写周报，但更重要的是写给自己。这是一个长期记录：
-          生活、技术学习、综合学习、感悟与工作小结。
+          每周都要为工作写周报，但更重要的是写给自己。
         </p>
         <div className="mt-4">
           <Link
@@ -91,25 +68,6 @@ export default function WeeklyPage() {
           </Link>
         </div>
       </header>
-
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold">专栏方向</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {columns.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-lg border border-[#eee] bg-white p-4 text-sm dark:border-gray-800 dark:bg-gray-900"
-            >
-              <h3 className="text-base font-semibold text-[#111] dark:text-gray-100">
-                {item.title}
-              </h3>
-              <p className="mt-2 text-[#666] dark:text-gray-300">
-                {item.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       <section>
         <h2 className="text-lg font-semibold">最新周报</h2>

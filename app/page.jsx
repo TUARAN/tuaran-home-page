@@ -312,6 +312,27 @@ export default function HomePage() {
             </div>
           </section>
 
+          <Link
+            href="/weekly"
+            className="block mt-6 rounded-xl border border-[#e9e9e9] bg-gradient-to-b from-white to-[#fafafa] px-4 py-3 shadow-sm hover:border-[#dcdcdc] hover:-translate-y-0.5 hover:shadow-md transition-all dark:border-gray-800 dark:from-gray-900 dark:to-gray-950 no-underline hover:no-underline"
+            aria-label="进入周报专栏"
+          >
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#f2c14e]" aria-hidden="true" />
+              <span className="h-2 w-2 rounded-full bg-[#e07a5f]" aria-hidden="true" />
+              <span className="h-2 w-2 rounded-full bg-[#81b29a]" aria-hidden="true" />
+              <span className="ml-1 text-[11px] text-[#999] dark:text-gray-500">WEEKLY</span>
+            </div>
+            <div className="mt-2 border-t border-dashed border-[#eee] pt-2 dark:border-gray-800">
+              <h3 className="text-xs font-semibold text-[#222] dark:text-gray-200 leading-snug">
+                周报 · TUARAN ｜ 涂阿燃 Weekly
+              </h3>
+              <p className="mt-1 text-xs text-[#666] dark:text-gray-300 whitespace-nowrap">
+                为工作写周报？不！最应该写给自己！
+              </p>
+            </div>
+          </Link>
+
           <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">工具箱</h3>
             <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">

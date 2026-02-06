@@ -1,5 +1,4 @@
-import Link from 'next/link'
-import SettingsButton from '../../components/SettingsButton'
+import BookmarksTocLayout from '../../components/BookmarksTocLayout'
 
 export const dynamic = 'force-static'
 
@@ -35,66 +34,61 @@ const resources = [
   },
 ]
 
+const tocItems = resources.map((item, idx) => ({
+  id: `resource-${idx}`,
+  title: item.title,
+  subItems: [{ id: `resource-${idx}-link`, label: '链接' }],
+}))
+
 export default function DevResourcesPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-[#555] dark:text-gray-200">开发资源</h1>
-            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">
-              前端、后端、DevOps 等开发相关的优质资源与工具链。
-            </p>
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
-              <Link href="/bookmarks" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                返回收藏夹
-              </Link>
-            </div>
-          </div>
-          <SettingsButton />
-        </div>
-      </header>
+    <BookmarksTocLayout
+      title="开发资源"
+      description="前端、后端、DevOps 等开发相关的优质资源与工具链。"
+      tocItems={tocItems}
+      footer={<p>这里会持续补充：优质文档、工具链与工程实践参考。</p>}
+    >
+      <div className="grid grid-cols-1 gap-4 sm:gap-6">
+        {resources.map((item, idx) => (
+          <section
+            key={item.url}
+            className="border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4"
+          >
+            <h2
+              id={`resource-${idx}`}
+              className="text-base font-semibold text-[#333] dark:text-gray-100 scroll-mt-24"
+            >
+              {item.title}
+            </h2>
+            <div className="text-sm text-[#666] dark:text-gray-300 mt-2">{item.description}</div>
 
-      <main>
-        <section className="border border-[#eee] bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {resources.map((item) => (
+            <div id={`resource-${idx}-link`} className="mt-4 text-sm text-[#666] dark:text-gray-300 scroll-mt-24">
               <a
-                key={item.url}
                 href={item.url}
                 target="_blank"
                 rel="noreferrer"
-                className="group border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4 no-underline hover:no-underline opacity-90 hover:opacity-100 transition-all"
+                className="font-semibold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
               >
-                <div className="text-base font-semibold text-[#333] dark:text-gray-100 group-hover:text-[#111] dark:group-hover:text-white transition-colors">
-                  {item.title}
-                </div>
-                <div className="text-sm text-[#666] dark:text-gray-300 mt-2 group-hover:text-[#333] dark:group-hover:text-gray-200 transition-colors">
-                  {item.description}
-                </div>
-                {item.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {item.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs text-gray-600 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-300"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                打开链接
               </a>
-            ))}
-          </div>
-        </section>
+              <div className="mt-1 text-xs text-[#999] dark:text-gray-400 break-all">{item.url}</div>
+            </div>
 
-        <footer className="mt-12 text-sm text-[#666] dark:text-gray-300 border-t border-[#eee] dark:border-gray-800 pt-6">
-          <p>
-            这里会持续补充：优质文档、工具链与工程实践参考。
-          </p>
-        </footer>
-      </main>
-    </div>
+            {item.tags && item.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {item.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs text-gray-600 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-300"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ))}
+      </div>
+    </BookmarksTocLayout>
   )
 }

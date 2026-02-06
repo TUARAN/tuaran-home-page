@@ -104,7 +104,7 @@ const pyramidLevels = [
     no: '5',
     slug: 'history',
     centerTitle: '历史',
-    leftTitle: '接着研究\n历史\n不然你搞到钱也没用',
+    leftTitle: '接着研究\n历史',
     rightTitle: '以史为鉴',
     books: ['典籍里的中国', '资治通鉴', '中国近代史', '中国通史', '历史的温度', '西南联大文学课'],
   },
@@ -149,9 +149,10 @@ export default function ReadingIndexPage() {
 
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#666] dark:text-gray-300">
               {pyramidLevels.map((lv) => (
-                <div
+                <Link
                   key={`books-${lv.no}`}
-                  className="border border-[#eee] dark:border-gray-800 bg-[#fafafa] dark:bg-gray-800/50 p-3"
+                  href={`/reading/${lv.slug}`}
+                  className="group border border-[#eee] dark:border-gray-800 bg-[#fafafa] dark:bg-gray-800/50 p-3 no-underline hover:no-underline hover:bg-white dark:hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#999]/40"
                 >
                   <div className="flex items-start gap-2">
                     <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-medium text-white bg-[#555] dark:bg-gray-600 rounded-full flex-shrink-0">
@@ -166,7 +167,7 @@ export default function ReadingIndexPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

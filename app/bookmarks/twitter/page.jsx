@@ -1,5 +1,4 @@
-import Link from 'next/link'
-import SettingsButton from '../../components/SettingsButton'
+import BookmarksTocLayout from '../../components/BookmarksTocLayout'
 import ImageLightbox from '../../components/ImageLightbox'
 
 export const dynamic = 'force-static'
@@ -268,118 +267,61 @@ function KnowledgeTable({ table }) {
 }
 
 export default function TwitterBookmarksPage() {
+  const tocItems = knowledgeBookmarks.map((item, idx) => ({
+    id: `bookmark-${idx}`,
+    title: item.title,
+    subItems: [{ id: `bookmark-${idx}-table`, label: item.tocLabel || '表格' }],
+  }))
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-[#555] dark:text-gray-200">推特收藏</h1>
-            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">
-              不为别的，只是为了更好的认识这个世界🌍
-            </p>
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
-              <Link href="/bookmarks" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                返回收藏夹
-              </Link>
+    <BookmarksTocLayout
+      title="推特收藏"
+      description="不为别的，只是为了更好的认识这个世界🌍"
+      tocItems={tocItems}
+      footer={<p>这里记录适合“收藏”的知识型推文/卡片，方便回看。</p>}
+    >
+      <div className="grid grid-cols-1 gap-4 sm:gap-6">
+        {knowledgeBookmarks.map((item, idx) => (
+          <div
+            key={item.title}
+            className={
+              item.featured
+                ? 'border border-[#eee] bg-[#fafafa] dark:border-gray-800 dark:bg-gray-800/50 p-4'
+                : 'border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4'
+            }
+          >
+            <h2 id={`bookmark-${idx}`} className="text-base font-semibold text-[#333] dark:text-gray-100 scroll-mt-24">
+              {item.title}
+            </h2>
+            {item.description ? (
+              <div className="text-sm text-[#666] dark:text-gray-300 mt-2">{item.description}</div>
+            ) : null}
+
+            <div id={`bookmark-${idx}-table`} className="mt-4 max-h-[70vh] overflow-y-auto pr-1 scroll-mt-24">
+              {item.table && <KnowledgeTable table={item.table} />}
+              {item.image && <ImageLightbox images={[item.image]} columns={1} />}
+              {item.gallery && <ImageLightbox images={item.gallery} columns={2} />}
+              {item.content ? (
+                <div className="text-sm text-[#666] dark:text-gray-300">
+                  {item.content.meta && item.content.meta.length > 0 ? (
+                    <div className="text-xs text-[#999] dark:text-gray-400 space-y-1">
+                      {item.content.meta.map((line) => (
+                        <div key={line}>{line}</div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {item.content.quote ? (
+                    <blockquote className="mt-3 border-l border-[#eee] dark:border-gray-800 pl-4 leading-relaxed">
+                      {item.content.quote}
+                    </blockquote>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
-          <SettingsButton />
-        </div>
-      </header>
-
-      <main>
-        <div className="flex flex-col gap-6 md:flex-row">
-          <aside className="hidden md:block md:w-52 shrink-0">
-            <nav className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900 md:sticky md:top-6">
-              <div className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">
-                目录
-              </div>
-              <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">
-                {knowledgeBookmarks.map((item, idx) => (
-                  <li key={item.title} className="pb-2 border-b border-[#eee] dark:border-gray-800 last:border-b-0 last:pb-0">
-                    <a
-                      href={`#bookmark-${idx}`}
-                      className="font-bold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
-                    >
-                      {item.title}
-                    </a>
-
-                    <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
-                      <li>
-                        <a
-                          href={`#bookmark-${idx}-table`}
-                          className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                        >
-                          {item.tocLabel || '表格'}
-                        </a>
-                      </li>
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </aside>
-
-          <main className="flex-1 min-w-0">
-            <div className="grid grid-cols-1 gap-4 sm:gap-6">
-              {knowledgeBookmarks.map((item, idx) => (
-                <div
-                  key={item.title}
-                  className={
-                    item.featured
-                      ? 'border border-[#eee] bg-[#fafafa] dark:border-gray-800 dark:bg-gray-800/50 p-4'
-                      : 'border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4'
-                  }
-                >
-                  <h2
-                    id={`bookmark-${idx}`}
-                    className="text-base font-semibold text-[#333] dark:text-gray-100 scroll-mt-24"
-                  >
-                    {item.title}
-                  </h2>
-                  {item.description && (
-                    <div className="text-sm text-[#666] dark:text-gray-300 mt-2">
-                      {item.description}
-                    </div>
-                  )}
-
-                  <div
-                    id={`bookmark-${idx}-table`}
-                    className="mt-4 max-h-[70vh] overflow-y-auto pr-1 scroll-mt-24"
-                  >
-                    {item.table && <KnowledgeTable table={item.table} />}
-                    {item.image && <ImageLightbox images={[item.image]} columns={1} />}
-                    {item.gallery && <ImageLightbox images={item.gallery} columns={2} />}
-                    {item.content && (
-                      <div className="text-sm text-[#666] dark:text-gray-300">
-                        {item.content.meta && item.content.meta.length > 0 && (
-                          <div className="text-xs text-[#999] dark:text-gray-400 space-y-1">
-                            {item.content.meta.map((line) => (
-                              <div key={line}>{line}</div>
-                            ))}
-                          </div>
-                        )}
-
-                        {item.content.quote && (
-                          <blockquote className="mt-3 border-l border-[#eee] dark:border-gray-800 pl-4 leading-relaxed">
-                            {item.content.quote}
-                          </blockquote>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </main>
-        </div>
-
-        <footer className="mt-12 text-sm text-[#666] dark:text-gray-300 border-t border-[#eee] dark:border-gray-800 pt-6">
-          <p>
-            💡 这里记录适合“收藏”的知识型推文/卡片，方便回看。
-          </p>
-        </footer>
-      </main>
-    </div>
+        ))}
+      </div>
+    </BookmarksTocLayout>
   )
 }

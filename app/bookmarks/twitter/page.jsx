@@ -213,6 +213,15 @@ const knowledgeBookmarks = [
     },
   },
   {
+    title: '近10年资产表现排名',
+    description: '图片速览',
+    tocLabel: '图片',
+    image: {
+      src: '/bookmarks/twitter/assets-performance-10y.jpeg',
+      alt: '近10年资产表现排名',
+    },
+  },
+  {
     title: '一图了解美元体系',
     description: '图片速览',
     tocLabel: '图片',

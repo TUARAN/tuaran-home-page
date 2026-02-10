@@ -72,6 +72,14 @@ export default function HomePage() {
     },
   ]
 
+  const identityItems = identityGroups.flatMap((group) =>
+    group.items.map((item) => ({
+      key: `${group.label}-${item}`,
+      label: item,
+      tone: group.tone,
+    }))
+  )
+
   const getIdentityTagClassName = (tone) => {
     const base = 'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium'
     switch (tone) {
@@ -92,49 +100,55 @@ export default function HomePage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] dark:border-gray-800 pb-2 mb-8">
         <div>
-          <p className="text-sm text-[#666] dark:text-gray-300 my-1">
-            账号集：{' '}
-            <a
-              href="https://juejin.cn/user/1521379823340792"
-              target="_blank"
-              rel="noreferrer"
-              className="opacity-80 hover:opacity-100"
-            >
-              掘金安东尼
-            </a>
-            {' '}｜{' '}
-            <a
-              href="https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e"
-              target="_blank"
-              rel="noreferrer"
-              className="opacity-80 hover:opacity-100"
-            >
-              安东尼404
-            </a>
-            {' '}｜{' '}
-            <a
-              href="https://blog.csdn.net/aifs2025"
-              target="_blank"
-              rel="noreferrer"
-              className="opacity-80 hover:opacity-100"
-            >
-              安东尼与AI
-            </a>
-          </p>
           <div>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
-              <span className="text-sm text-[#777] dark:text-gray-400">身份标签：</span>
-              {identityGroups.map((group) => (
-                <div key={group.label} className="flex flex-wrap items-center gap-x-2 gap-y-2">
-                  {group.items.map((item) => (
-                    <span key={`${group.label}-${item}`} className={getIdentityTagClassName(group.tone)}>
-                      {item}
+            <div className="flex items-center gap-3 mt-1 min-w-0">
+              <div className="text-sm text-[#666] dark:text-gray-300 shrink-0">
+                <span className="text-sm text-[#777] dark:text-gray-400">账号集：</span>{' '}
+                <a
+                  href="https://juejin.cn/user/1521379823340792"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="opacity-80 hover:opacity-100"
+                >
+                  掘金安东尼
+                </a>
+                {' '}｜{' '}
+                <a
+                  href="https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="opacity-80 hover:opacity-100"
+                >
+                  安东尼404
+                </a>
+                {' '}｜{' '}
+                <a
+                  href="https://blog.csdn.net/aifs2025"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="opacity-80 hover:opacity-100"
+                >
+                  安东尼与AI
+                </a>
+              </div>
+
+              <span className="text-sm text-[#777] dark:text-gray-400 shrink-0">身份标签：</span>
+              <div className="identity-scroll relative overflow-hidden w-[180px] sm:w-[220px] lg:w-[260px] min-w-0">
+                <div className="identity-scroll-track">
+                  {identityItems.map((item) => (
+                    <span key={item.key} className={getIdentityTagClassName(item.tone)}>
+                      {item.label}
+                    </span>
+                  ))}
+                  {identityItems.map((item) => (
+                    <span key={`${item.key}-clone`} className={getIdentityTagClassName(item.tone)}>
+                      {item.label}
                     </span>
                   ))}
                 </div>
-              ))}
+              </div>
             </div>
-            <div className="text-sm text-[#666] dark:text-gray-300 mt-2">
+            <div className="text-sm text-[#666] dark:text-gray-300 mt-4">
               专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。
             </div>
           </div>

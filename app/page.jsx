@@ -341,25 +341,46 @@ export default function HomePage() {
         <aside className="w-full md:w-64">
           <section className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">关于</h3>
-            <div className="text-sm text-[#666] space-y-2 dark:text-gray-300">
+            <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
+              <p>
+                主要写：编程 / 创作 / 生活记录。
+              </p>
               <p>
                 联系：微信号 <span className="font-semibold text-[#222] dark:text-gray-100">atar24</span>
               </p>
               <p>
-                周报：
-                <Link href="/weekly" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                  写给自己的周报
+                <Link href="/weekly" className="opacity-80 hover:opacity-100 no-underline hover:underline">
+                  <span className="inline-flex items-center gap-1">
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M8 3v2" />
+                      <path d="M16 3v2" />
+                      <path d="M4 7h16" />
+                      <path d="M6 5h12a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
+                      <path d="M8 11h8" />
+                      <path d="M8 15h6" />
+                    </svg>
+                    写给自己的周报
+                  </span>
                 </Link>
               </p>
-            </div>
-            <div className="mt-4">
-              <Image
-                src="/tuaranme.png"
-                alt="涂阿燃"
-                width={80}
-                height={80}
-                className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
-              />
+              <div>
+                <Image
+                  src="/tuaranme.png"
+                  alt="涂阿燃"
+                  width={80}
+                  height={80}
+                  className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
+                />
+              </div>
             </div>
           </section>
 

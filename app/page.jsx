@@ -49,6 +49,44 @@ function getArticleLink(article) {
 
 export default function HomePage() {
   const featuredArticles = articles.slice(0, 3)
+  const identityGroups = [
+    {
+      label: '职业',
+      tone: 'blue',
+      items: ['程序员', '项目经理'],
+    },
+    {
+      label: '创作',
+      tone: 'purple',
+      items: ['技术博主', '出版作者'],
+    },
+    {
+      label: '家庭',
+      tone: 'amber',
+      items: ['茉莉奶爸'],
+    },
+    {
+      label: '创业',
+      tone: 'emerald',
+      items: ['矩联科技 创始人'],
+    },
+  ]
+
+  const getIdentityTagClassName = (tone) => {
+    const base = 'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium'
+    switch (tone) {
+      case 'blue':
+        return `${base} border-blue-200/70 bg-blue-50/80 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200`
+      case 'purple':
+        return `${base} border-purple-200/70 bg-purple-50/80 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200`
+      case 'amber':
+        return `${base} border-amber-200/70 bg-amber-50/80 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200`
+      case 'emerald':
+        return `${base} border-emerald-200/70 bg-emerald-50/80 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200`
+      default:
+        return `${base} border-gray-200/70 bg-white/80 text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200`
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -86,21 +124,15 @@ export default function HomePage() {
           <div>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
               <span className="text-sm text-[#777] dark:text-gray-400">身份标签：</span>
-              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
-                程序员
-              </span>
-              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
-                技术博主
-              </span>
-              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
-                项目经理
-              </span>
-              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
-                出版作者
-              </span>
-              <span className="inline-flex items-center rounded-full border border-gray-200/70 bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200">
-                茉莉奶爸
-              </span>
+              {identityGroups.map((group) => (
+                <div key={group.label} className="flex flex-wrap items-center gap-x-2 gap-y-2">
+                  {group.items.map((item) => (
+                    <span key={`${group.label}-${item}`} className={getIdentityTagClassName(group.tone)}>
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              ))}
             </div>
             <div className="text-sm text-[#666] dark:text-gray-300 mt-2">
               专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。
@@ -296,9 +328,14 @@ export default function HomePage() {
           <section className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">关于</h3>
             <div className="text-sm text-[#666] space-y-2 dark:text-gray-300">
-              <p>主要写：编程 / 创作 / 生活记录。</p>
               <p>
-                联系：微信号：atar24
+                联系：微信号 <span className="font-semibold text-[#222] dark:text-gray-100">atar24</span>
+              </p>
+              <p>
+                周报：
+                <Link href="/weekly" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                  写给自己的周报
+                </Link>
               </p>
             </div>
             <div className="mt-4">
@@ -310,29 +347,6 @@ export default function HomePage() {
                 className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
               />
             </div>
-          </section>
-
-          <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900 transition-all hover:-translate-y-0.5 hover:shadow-sm hover:border-[#ddd] dark:hover:border-gray-700">
-            <div className="flex items-center justify-between border-b border-[#eee] pb-2 mb-3 dark:border-gray-800">
-              <h3 className="text-sm font-bold dark:text-gray-200">专栏</h3>
-              <span className="inline-flex items-center gap-1" aria-hidden="true">
-                <span className="h-2 w-2 rounded-full bg-[#f2c14e]" />
-                <span className="h-2 w-2 rounded-full bg-[#e07a5f]" />
-                <span className="h-2 w-2 rounded-full bg-[#81b29a]" />
-              </span>
-            </div>
-            <Link
-              href="/weekly"
-              className="block no-underline hover:no-underline"
-              aria-label="进入周报专栏"
-            >
-              <div className="inline-block max-w-full text-xs font-semibold text-[#222] dark:text-gray-100 truncate">
-                「周报 · 涂阿燃 ｜ TUARAN WEEKLY」
-              </div>
-              <p className="mt-2 text-xs text-[#666] dark:text-gray-300">
-                “为工作写周报？不！最应该写给自己！”
-              </p>
-            </Link>
           </section>
 
           <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">

@@ -28,22 +28,28 @@ const categories = [
     order: 1,
   },
   {
+    slug: 'people',
+    title: '人物志',
+    description: '值得长期跟踪的人物、访谈与一手资料入口（持续补充）。',
+    order: 2,
+  },
+  {
     slug: 'llm-tutorials',
     title: '大模型教程',
     description: '大语言模型（LLM）相关的优质教程、实践指南与技术文档。',
-    order: 2,
+    order: 3,
   },
   {
     slug: 'ai-tools',
     title: 'AI 工具',
     description: '实用的 AI 工具、产品与服务推荐。',
-    order: 3,
+    order: 4,
   },
   {
     slug: 'dev-resources',
     title: '开发资源',
     description: '前端、后端、DevOps 等开发相关的优质资源与工具链。',
-    order: 4,
+    order: 5,
   },
 ]
 

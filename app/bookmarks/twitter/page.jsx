@@ -369,12 +369,12 @@ const knowledgeBookmarks = [
     },
   },
   {
-    title: '李敏',
+    title: '普通人如何翻身',
     description: '图片速览',
     tocLabel: '图片',
     image: {
-      src: '/bookmarks/twitter/li-min.jpeg',
-      alt: '李敏',
+      src: '/bookmarks/twitter/how-ordinary-people-turn-their-lives-around.jpeg',
+      alt: '普通人如何翻身',
     },
   },
   {

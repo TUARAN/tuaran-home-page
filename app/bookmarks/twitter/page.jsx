@@ -360,6 +360,15 @@ const knowledgeBookmarks = [
     },
   },
   {
+    title: '中国必爬名山',
+    description: '图片速览',
+    tocLabel: '图片',
+    image: {
+      src: '/bookmarks/twitter/china-must-climb-famous-mountains.jpeg',
+      alt: '中国必爬名山',
+    },
+  },
+  {
     title: '国家机构图解',
     description: '两图并排（支持点击全屏查看）',
     tocLabel: '图解',

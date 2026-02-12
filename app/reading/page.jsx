@@ -87,46 +87,39 @@ export default function ReadingIndexPage() {
         </div>
       </header>
 
-      <section className="mb-8 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
-        <div className="px-4 py-3 text-xs text-[#888] dark:text-gray-400">
-          推荐阅读路径
+      <div className="mb-8 border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4">
+        <div className="text-center font-black text-2xl sm:text-3xl tracking-wide text-[#333] dark:text-gray-100">
+          构建世界观的阅读顺序
         </div>
-        <div className="px-4 pb-3">
-          <div className="border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4">
-            <div className="text-center font-black text-2xl sm:text-3xl tracking-wide text-[#333] dark:text-gray-100">
-              构建世界观的阅读顺序
-            </div>
 
-            <div className="mt-4 mx-auto max-w-3xl">
-              <ReadingPyramid levels={pyramidLevels} />
-            </div>
+        <div className="mt-4 mx-auto max-w-3xl">
+          <ReadingPyramid levels={pyramidLevels} />
+        </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#666] dark:text-gray-300">
-              {pyramidLevels.map((lv) => (
-                <Link
-                  key={`books-${lv.no}`}
-                  href={`/reading/${lv.slug}`}
-                  className="group border border-[#eee] dark:border-gray-800 bg-[#fafafa] dark:bg-gray-800/50 p-3 no-underline hover:no-underline hover:bg-white dark:hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#999]/40"
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-medium text-white bg-[#555] dark:bg-gray-600 rounded-full flex-shrink-0">
-                      {lv.no}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-sm text-[#333] dark:text-gray-200">
-                        {lv.leftTitle.replace(/\n/g, ' / ')}
-                      </div>
-                      <div className="mt-1 leading-relaxed">
-                        {lv.books.map((b) => `《${b}》`).join(' ')}
-                      </div>
-                    </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#666] dark:text-gray-300">
+          {pyramidLevels.map((lv) => (
+            <Link
+              key={`books-${lv.no}`}
+              href={`/reading/${lv.slug}`}
+              className="group border border-[#eee] dark:border-gray-800 bg-[#fafafa] dark:bg-gray-800/50 p-3 no-underline hover:no-underline hover:bg-white dark:hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#999]/40"
+            >
+              <div className="flex items-start gap-2">
+                <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-medium text-white bg-[#555] dark:bg-gray-600 rounded-full flex-shrink-0">
+                  {lv.no}
+                </span>
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm text-[#333] dark:text-gray-200">
+                    {lv.leftTitle.replace(/\n/g, ' / ')}
                   </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+                  <div className="mt-1 leading-relaxed">
+                    {lv.books.map((b) => `《${b}》`).join(' ')}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
-      </section>
+      </div>
     </div>
   )
 }

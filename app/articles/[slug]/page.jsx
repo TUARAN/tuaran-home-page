@@ -257,13 +257,13 @@ export default async function ArticleDetailPage({ params }) {
             return (
               <div key={`${idx}-${date}-${label || 'no-label'}`} id={id} className="mt-10 mb-4">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <time className="text-sm text-[#999] dark:text-gray-400" dateTime={date}>
-                    {date}
-                  </time>
-                  <span className="text-[#999] dark:text-gray-500" aria-hidden="true">·</span>
-                  <h2 className="m-0 text-xl sm:text-2xl font-semibold text-[#444] dark:text-gray-200 leading-snug scroll-mt-24">
+                  <h2 className="m-0 text-lg sm:text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug scroll-mt-24">
                     {label || date}
                   </h2>
+                  <span className="text-[#999] dark:text-gray-500" aria-hidden="true">·</span>
+                  <time className="text-base text-[#999] dark:text-gray-400" dateTime={date}>
+                    {date}
+                  </time>
                 </div>
               </div>
             )
@@ -297,8 +297,8 @@ export default async function ArticleDetailPage({ params }) {
           <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="text-xs text-[#999] dark:text-gray-400">{article.date}</div>
                 <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
+                <div className="mt-2 text-sm text-[#999] dark:text-gray-400">{article.date}</div>
                 <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
                 <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
                   <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
@@ -349,15 +349,15 @@ export default async function ArticleDetailPage({ params }) {
                 return (
                   <div key={`${idx}-${date}-${label || 'no-label'}`} className="mt-10 mb-4">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <time className="text-sm text-[#999] dark:text-gray-400" dateTime={date}>
-                        {date}
-                      </time>
+                      <h2 className="m-0 text-lg sm:text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug scroll-mt-24">
+                        {label || date}
+                      </h2>
                       <span className="text-[#999] dark:text-gray-500" aria-hidden="true">
                         ·
                       </span>
-                      <h2 className="m-0 text-xl sm:text-2xl font-semibold text-[#444] dark:text-gray-200 leading-snug scroll-mt-24">
-                        {label || date}
-                      </h2>
+                      <time className="text-base text-[#999] dark:text-gray-400" dateTime={date}>
+                        {date}
+                      </time>
                     </div>
                   </div>
                 )

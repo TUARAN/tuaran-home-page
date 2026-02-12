@@ -369,6 +369,15 @@ const knowledgeBookmarks = [
     },
   },
   {
+    title: '李敏',
+    description: '图片速览',
+    tocLabel: '图片',
+    image: {
+      src: '/bookmarks/twitter/li-min.jpeg',
+      alt: '李敏',
+    },
+  },
+  {
     title: '国家机构图解',
     description: '两图并排（支持点击全屏查看）',
     tocLabel: '图解',

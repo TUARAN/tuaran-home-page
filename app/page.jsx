@@ -443,14 +443,33 @@ export default function HomePage() {
           <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">公众号</h3>
             <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
-              <p>扫码关注「前端周看」，获取最新前沿科技资讯🌍</p>
-              <Image
-                src="/qrcode_for_gh.jpg"
-                alt="公众号二维码"
-                width={80}
-                height={80}
-                className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
-              />
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-xs text-[#666] dark:text-gray-300">扫码交个朋友🤝</span>
+                  <Image
+                    src="/qrcodewechat2.png"
+                    alt="扫码加好友二维码"
+                    width={100}
+                    height={100}
+                    className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-xs text-[#666] dark:text-gray-300">关注公众号👀</span>
+                  <Image
+                    src="/qrcode_for_gh.jpg"
+                    alt="公众号二维码"
+                    width={100}
+                    height={100}
+                    className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
+                  />
+                </div>
+              </div>
+              <div className="text-xs font-semibold tracking-wide">
+                <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 bg-clip-text text-transparent">
+                  ✨ 高山流水觅知音，邀君并肩共前行。
+                </span>
+              </div>
             </div>
           </section>
 

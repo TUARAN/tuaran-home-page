@@ -447,7 +447,7 @@ export default function HomePage() {
                 <div className="flex flex-col items-center gap-2">
                   <span className="text-xs text-[#666] dark:text-gray-300">扫码交个朋友🤝</span>
                   <Image
-                    src="/qrcodewechat2.png"
+                    src="/qrcodewechat3.png"
                     alt="扫码加好友二维码"
                     width={100}
                     height={100}

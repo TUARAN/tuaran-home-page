@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import SettingsButton from '../components/SettingsButton'
 import ReadingPyramid from '../components/ReadingPyramid'
 
@@ -21,51 +20,6 @@ export const metadata = {
     },
   },
 }
-
-const categories = [
-  {
-    slug: 'biography',
-    title: '传记',
-    description: '人物与时代：用时间线理解选择与命运。',
-    order: 1,
-    reason: '从具体的人物故事开始，最容易代入和理解'
-  },
-  {
-    slug: 'psychology',
-    title: '心理学',
-    description: '认知与行为：理解自己与他人的决策机制。',
-    order: 2,
-    reason: '理解个体的思维模式和行为动机'
-  },
-  {
-    slug: 'sociology',
-    title: '社会学',
-    description: '关系与制度：个体、群体与系统如何运作。',
-    order: 3,
-    reason: '从个体扩展到群体，理解社会结构'
-  },
-  {
-    slug: 'wealth',
-    title: '财富',
-    description: '商业与资产：复利、风险与配置的常识。',
-    order: 4,
-    reason: '掌握经济规律，理解资源配置'
-  },
-  {
-    slug: 'history',
-    title: '历史',
-    description: '以史为镜：结构、周期与长期变量。',
-    order: 5,
-    reason: '在时间维度上验证前面的认知'
-  },
-  {
-    slug: 'philosophy',
-    title: '哲学',
-    description: '概念与方法：用更清晰的框架看世界。',
-    order: 6,
-    reason: '最后抽象思考，建立自己的认知体系'
-  },
-]
 
 const pyramidLevels = [
   {
@@ -133,10 +87,10 @@ export default function ReadingIndexPage() {
         </div>
       </header>
 
-      <details open className="mb-8 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
-        <summary className="px-4 py-3 text-xs text-[#888] dark:text-gray-400 cursor-pointer select-none">
+      <section className="mb-8 bg-[#fafafa] dark:bg-gray-800/50 border border-[#eee] dark:border-gray-800">
+        <div className="px-4 py-3 text-xs text-[#888] dark:text-gray-400">
           推荐阅读路径
-        </summary>
+        </div>
         <div className="px-4 pb-3">
           <div className="border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4">
             <div className="text-center font-black text-2xl sm:text-3xl tracking-wide text-[#333] dark:text-gray-100">
@@ -171,44 +125,6 @@ export default function ReadingIndexPage() {
               ))}
             </div>
           </div>
-        </div>
-      </details>
-
-      <section className="space-y-4">
-        <div className="text-sm text-[#666] dark:text-gray-300">
-          主题导航：
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
-          {categories.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/reading/${c.slug}`}
-              className="group border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:opacity-100 transition-all overflow-hidden"
-            >
-              <div className="relative aspect-[3/4] w-full">
-                <Image
-                  src={`/reading/${c.slug}.png`}
-                  alt={c.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 50vw, 33vw"
-                />
-              </div>
-              <div className="px-3 py-3 border-t border-[#eee] dark:border-gray-800">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-[#444] dark:bg-gray-600 rounded-full">
-                    {c.order}
-                  </span>
-                  <div className="text-sm font-medium text-[#444] dark:text-gray-200">
-                    {c.title}
-                  </div>
-                </div>
-                <div className="text-xs text-[#666] dark:text-gray-400">
-                  {c.description}
-                </div>
-              </div>
-            </Link>
-          ))}
         </div>
       </section>
     </div>

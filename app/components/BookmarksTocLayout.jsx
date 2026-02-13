@@ -43,10 +43,12 @@ export default function BookmarksTocLayout({
                   <li
                     key={item.id}
                     className="pb-2 border-b border-[#eee] dark:border-gray-800 last:border-b-0 last:pb-0"
+                    data-toc-item-id={item.id}
                   >
                     <a
                       href={`#${item.id}`}
                       className="font-bold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
+                      data-toc-link-id={item.id}
                     >
                       {item.title}
                     </a>
@@ -54,10 +56,11 @@ export default function BookmarksTocLayout({
                     {item.subItems && item.subItems.length > 0 ? (
                       <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
                         {item.subItems.map((sub) => (
-                          <li key={sub.id}>
+                          <li key={sub.id} data-toc-subitem-id={sub.id}>
                             <a
                               href={`#${sub.id}`}
                               className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                              data-toc-sublink-id={sub.id}
                             >
                               {sub.label}
                             </a>

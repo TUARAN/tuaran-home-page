@@ -1,5 +1,6 @@
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
 import ImageLightbox from '../../components/ImageLightbox'
+import TwitterBookmarksFilterClient from './TwitterBookmarksFilterClient'
 
 export const dynamic = 'force-static'
 
@@ -11,6 +12,7 @@ export const metadata = {
 const knowledgeBookmarks = [
   {
     title: '你人生中太晚明白的道理是什么？',
+    category: '人生/成长',
     description: '',
     tocLabel: '摘录',
     featured: true,
@@ -22,6 +24,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '什么是最大的杠杆？',
+    category: '人生/成长',
     description: '',
     tocLabel: '摘录',
     featured: false,
@@ -38,6 +41,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '《明朝那些事》浓缩 16 句话',
+    category: '历史',
     description: '金句摘录',
     tocLabel: '摘录',
     featured: false,
@@ -78,6 +82,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '建议收藏：一张表读懂中国传统文化核心常识',
+    category: '文化常识',
     description: '编号 / 分类（关键词）/ 内容（速查表）',
     tocLabel: '速查表',
     table: {
@@ -168,6 +173,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '富人 VS 穷人 思维对照表',
+    category: '财富/投资',
     description: '序号 / 富人思维 / 穷人思维',
     tocLabel: '对照表',
     table: {
@@ -201,6 +207,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '改变世界的 17 个方程',
+    category: '科学/数学',
     description: '序号 / 名称 / 核心公式 / 提出者 / 年代（去除调侃项）',
     tocLabel: '方程表',
     table: {
@@ -234,6 +241,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '计算机知识树',
+    category: '计算机/技术',
     description: '结构化速览',
     tocLabel: '树形图',
     content: {
@@ -314,6 +322,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '中国行政干部层级与人数分布',
+    category: '政治/治理',
     description: '序号 / 行政级别 / 约人数',
     tocLabel: '人数表',
     table: {
@@ -334,6 +343,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '近10年资产表现排名',
+    category: '财富/投资',
     description: '图片速览',
     tocLabel: '图片',
     image: {
@@ -343,6 +353,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '一图了解美元体系',
+    category: '财富/投资',
     description: '图片速览',
     tocLabel: '图片',
     image: {
@@ -352,6 +363,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '世界历史朝代图谱',
+    category: '历史',
     description: '图片速览',
     tocLabel: '图片',
     image: {
@@ -361,6 +373,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '中国必爬名山',
+    category: '地理/旅行',
     description: '图片速览',
     tocLabel: '图片',
     image: {
@@ -370,6 +383,7 @@ const knowledgeBookmarks = [
   },
   {
     title: '普通人如何翻身',
+    category: '财富/投资',
     description: '图片速览',
     tocLabel: '图片',
     image: {
@@ -378,7 +392,18 @@ const knowledgeBookmarks = [
     },
   },
   {
+    title: '禅宗启示',
+    category: '哲学/禅',
+    description: '图片速览',
+    tocLabel: '图片',
+    image: {
+      src: '/bookmarks/twitter/zen-koan.jpeg',
+      alt: '禅宗启示',
+    },
+  },
+  {
     title: '国家机构图解',
+    category: '政治/治理',
     description: '两图并排（支持点击全屏查看）',
     tocLabel: '图解',
     gallery: [
@@ -446,11 +471,70 @@ function KnowledgeTable({ table }) {
   )
 }
 
-export default function TwitterBookmarksPage() {
-  const tocItems = knowledgeBookmarks.map((item, idx) => ({
-    id: `bookmark-${idx}`,
-    title: item.title,
-    subItems: [{ id: `bookmark-${idx}-table`, label: item.tocLabel || '表格' }],
+export default function TwitterBookmarksPage({ searchParams } = {}) {
+  const CATEGORY_ORDER = [
+    '哲学/禅',
+    '人生/成长',
+    '财富/投资',
+    '历史',
+    '文化常识',
+    '科学/数学',
+    '计算机/技术',
+    '政治/治理',
+    '地理/旅行',
+  ]
+  const FORMAT_ORDER = ['摘录', '速查表', '对照表', '方程表', '树形图', '人数表', '图片', '图解']
+
+  const allBookmarks = knowledgeBookmarks.map((item, idx) => ({
+    ...item,
+    _id: `bookmark-${idx}`,
+    _contentId: `bookmark-${idx}-table`,
+    _format: item.tocLabel || '其他',
+  }))
+
+  const unique = (arr) => Array.from(new Set(arr))
+
+  const sortByOrder = (values, order) => {
+    const orderIndex = new Map(order.map((v, i) => [v, i]))
+    return [...values].sort((a, b) => {
+      const ai = orderIndex.has(a) ? orderIndex.get(a) : Number.POSITIVE_INFINITY
+      const bi = orderIndex.has(b) ? orderIndex.get(b) : Number.POSITIVE_INFINITY
+      if (ai !== bi) return ai - bi
+      return String(a).localeCompare(String(b), 'zh-Hans-CN')
+    })
+  }
+
+  const allCategories = sortByOrder(unique(allBookmarks.map((b) => b.category).filter(Boolean)), CATEGORY_ORDER)
+  const allFormats = sortByOrder(unique(allBookmarks.map((b) => b.tocLabel || '其他')), FORMAT_ORDER)
+
+  const categoriesInView = allCategories
+  const categoryIdMap = new Map(categoriesInView.map((cat, idx) => [cat, `category-${idx}`]))
+
+  const tocItems = categoriesInView.map((category) => ({
+    id: categoryIdMap.get(category),
+    title: category,
+    subItems: allBookmarks
+      .filter((b) => b.category === category)
+      .map((b) => ({
+        id: b._id,
+        label: b.title,
+      })),
+  }))
+
+  const initialSelectedCategories = (() => {
+    if (!searchParams?.category) return []
+    return Array.isArray(searchParams.category) ? searchParams.category : [searchParams.category]
+  })()
+  const initialSelectedFormats = (() => {
+    if (!searchParams?.format) return []
+    return Array.isArray(searchParams.format) ? searchParams.format : [searchParams.format]
+  })()
+
+  const itemsMeta = allBookmarks.map((b) => ({
+    id: b._id,
+    category: b.category,
+    format: b._format,
+    categorySectionId: categoryIdMap.get(b.category),
   }))
 
   return (
@@ -460,47 +544,89 @@ export default function TwitterBookmarksPage() {
       tocItems={tocItems}
       footer={<p>这里记录适合“收藏”的知识型推文/卡片，方便回看。</p>}
     >
-      <div className="grid grid-cols-1 gap-4 sm:gap-6">
-        {knowledgeBookmarks.map((item, idx) => (
-          <div
-            key={item.title}
-            className={
-              item.featured
-                ? 'border border-[#eee] bg-[#fafafa] dark:border-gray-800 dark:bg-gray-800/50 p-4'
-                : 'border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4'
-            }
-          >
-            <h2 id={`bookmark-${idx}`} className="text-base font-semibold text-[#333] dark:text-gray-100 scroll-mt-24">
-              {item.title}
-            </h2>
-            {item.description ? (
-              <div className="text-sm text-[#666] dark:text-gray-300 mt-2">{item.description}</div>
-            ) : null}
+      <TwitterBookmarksFilterClient
+        categories={allCategories}
+        formats={allFormats}
+        itemsMeta={itemsMeta}
+        initialSelectedCategories={initialSelectedCategories}
+        initialSelectedFormats={initialSelectedFormats}
+      />
 
-            <div id={`bookmark-${idx}-table`} className="mt-4 max-h-[70vh] overflow-y-auto pr-1 scroll-mt-24">
-              {item.table && <KnowledgeTable table={item.table} />}
-              {item.image && <ImageLightbox images={[item.image]} columns={1} />}
-              {item.gallery && <ImageLightbox images={item.gallery} columns={2} />}
-              {item.content ? (
-                <div className="text-sm text-[#666] dark:text-gray-300">
-                  {item.content.meta && item.content.meta.length > 0 ? (
-                    <div className="text-xs text-[#999] dark:text-gray-400 space-y-1">
-                      {item.content.meta.map((line) => (
-                        <div key={line}>{line}</div>
-                      ))}
+      <div className="space-y-10">
+        {categoriesInView.map((category) => {
+          const items = allBookmarks.filter((b) => b.category === category)
+          if (items.length === 0) return null
+
+          const categoryId = categoryIdMap.get(category)
+          return (
+            <section
+              key={category}
+              data-bookmark-category-section-id={categoryId}
+              aria-hidden="false"
+            >
+              <h2 id={categoryId} className="text-lg font-semibold text-[#333] dark:text-gray-100 scroll-mt-24">
+                {category}
+              </h2>
+
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:gap-6">
+                {items.map((item) => (
+                  <div
+                    key={item.title}
+                    data-bookmark-id={item._id}
+                    data-bookmark-category={item.category}
+                    data-bookmark-format={item._format}
+                    aria-hidden="false"
+                    className={
+                      item.featured
+                        ? 'border border-[#eee] bg-[#fafafa] dark:border-gray-800 dark:bg-gray-800/50 p-4'
+                        : 'border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-4'
+                    }
+                  >
+                    <h3 id={item._id} className="text-base font-semibold text-[#333] dark:text-gray-100 scroll-mt-24">
+                      {item.title}
+                    </h3>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#999] dark:text-gray-400">
+                      <span className="rounded-full border border-[#eee] dark:border-gray-800 px-2 py-0.5">
+                        {item.category}
+                      </span>
+                      <span className="rounded-full border border-[#eee] dark:border-gray-800 px-2 py-0.5">
+                        {item.tocLabel || '其他'}
+                      </span>
                     </div>
-                  ) : null}
 
-                  {item.content.quote ? (
-                    <blockquote className="mt-3 border-l border-[#eee] dark:border-gray-800 pl-4 leading-relaxed">
-                      {item.content.quote}
-                    </blockquote>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ))}
+                    {item.description ? (
+                      <div className="text-sm text-[#666] dark:text-gray-300 mt-2">{item.description}</div>
+                    ) : null}
+
+                    <div id={item._contentId} className="mt-4 max-h-[70vh] overflow-y-auto pr-1 scroll-mt-24">
+                      {item.table && <KnowledgeTable table={item.table} />}
+                      {item.image && <ImageLightbox images={[item.image]} columns={1} />}
+                      {item.gallery && <ImageLightbox images={item.gallery} columns={2} />}
+                      {item.content ? (
+                        <div className="text-sm text-[#666] dark:text-gray-300">
+                          {item.content.meta && item.content.meta.length > 0 ? (
+                            <div className="text-xs text-[#999] dark:text-gray-400 space-y-1">
+                              {item.content.meta.map((line) => (
+                                <div key={line}>{line}</div>
+                              ))}
+                            </div>
+                          ) : null}
+
+                          {item.content.quote ? (
+                            <blockquote className="mt-3 border-l border-[#eee] dark:border-gray-800 pl-4 leading-relaxed">
+                              {item.content.quote}
+                            </blockquote>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )
+        })}
       </div>
     </BookmarksTocLayout>
   )

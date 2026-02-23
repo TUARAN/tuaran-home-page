@@ -653,14 +653,6 @@ export default function MuskExperienceClient() {
                   </ul>
                 </div>
               </div>
-
-              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
-                <div className="text-sm font-semibold text-slate-900">阅读提示</div>
-                <div className="mt-2 text-sm text-slate-700 leading-relaxed">
-                  你贴的维基内容信息量很大，但不适合直接“搬运”。我会用自己的话重写成结构化要点，并尽量提供可追溯的外链。
-                  若你希望我覆盖你贴出来的某一段（比如“政治参与/争议”的具体小节），告诉我你最关心的 3 个点，我会优先补全。
-                </div>
-              </div>
             </section>
 
             <section id="profile" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white/70 p-5 shadow-sm">

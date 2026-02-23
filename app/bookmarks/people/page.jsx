@@ -1,4 +1,5 @@
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
+import Link from 'next/link'
 
 export const dynamic = 'force-static'
 
@@ -8,6 +9,41 @@ export const metadata = {
 }
 
 const people = [
+  {
+    name: '埃隆·马斯克（Elon Musk）',
+    description:
+      '以“第一性原理 + 工程迭代 + 资本市场叙事”驱动的超级企业家样本：把极难的硬科技项目（火箭、汽车、能源、脑机接口）变成可持续的组织与产品。',
+    route: '/people/elon-musk',
+    url: 'https://x.com/elonmusk',
+    tags: ['Hard Tech', 'Engineering', 'Founder', 'Execution', 'Narrative'],
+    summary:
+      '我更关注他在“把不可能工程化”上的方法：拆解问题、缩短反馈回路、用组织能力把原型推成规模化系统。同时也要直面风险：高杠杆决策、强个性管理、公众舆论与治理结构带来的波动。',
+    facts: [
+      { label: '关键词', value: '第一性原理 / 迭代 / 规模化 / 组织战' },
+      { label: '关注点', value: '工程体系、产品路径、资本与叙事、组织治理' },
+      { label: '入口', value: '“我所了解到的马斯克”单页（站内）' },
+    ],
+    timeline: [
+      { year: '2002', text: 'SpaceX 成立（公开信息）。' },
+      { year: '2004', text: '加入特斯拉早期并长期担任核心领导角色（公开信息）。' },
+      { year: '2015-2016', text: 'Neuralink / The Boring Company 等项目陆续启动（公开信息）。' },
+      { year: '2022', text: '收购 Twitter 并改名为 X（公开信息）。' },
+    ],
+    angles: [
+      {
+        title: '适合怎么读他？',
+        bullets: [
+          '把他当作“硬科技公司如何从 0→1→规模化”的连续案例库，而不是只看热点观点。',
+          '关注工程指标与组织机制：成本曲线、供应链、制造、测试、发射/交付节奏。',
+          '把叙事和执行分开看：叙事影响融资与人才，执行决定兑现与护城河。',
+        ],
+      },
+      {
+        title: '需要保持的认知边界',
+        bullets: ['观点输出常有戏剧性；尽量用事实与可验证信息校准', '个人崇拜/反感都容易遮蔽真正可学习的方法论'],
+      },
+    ],
+  },
   {
     name: '赵长鹏（CZ）',
     description:
@@ -50,7 +86,10 @@ const people = [
 const tocItems = people.map((item, idx) => ({
   id: `person-${idx}`,
   title: item.name,
-  subItems: [{ id: `person-${idx}-link`, label: '链接' }],
+  subItems: [
+    ...(item.route ? [{ id: `person-${idx}-entry`, label: '入口' }] : []),
+    { id: `person-${idx}-link`, label: '链接' },
+  ],
 }))
 
 export default function PeopleBookmarksPage() {
@@ -123,6 +162,18 @@ export default function PeopleBookmarksPage() {
             ) : null}
 
             <div id={`person-${idx}-link`} className="mt-4 text-sm text-[#666] dark:text-gray-300 scroll-mt-24">
+              {item.route ? (
+                <div id={`person-${idx}-entry`} className="mb-3 scroll-mt-24">
+                  <Link
+                    href={item.route}
+                    className="inline-flex items-center gap-2 rounded-md bg-[#111] text-white dark:bg-white dark:text-[#111] px-3 py-2 no-underline hover:no-underline"
+                  >
+                    进入站内页面
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  <div className="mt-1 text-xs text-[#999] dark:text-gray-400 break-all">{item.route}</div>
+                </div>
+              ) : null}
               <a
                 href={item.url}
                 target="_blank"

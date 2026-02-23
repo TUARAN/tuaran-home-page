@@ -206,6 +206,53 @@ const knowledgeBookmarks = [
     },
   },
   {
+    title: '如果我能回到2008年，我一定会这样做',
+    category: '财富/投资',
+    description: '投资时间线（2008–2026）',
+    tocLabel: '时间线',
+    featured: true,
+    content: {
+      quote: (
+        <ol className="list-decimal pl-5 space-y-2">
+          <li>
+            <span className="font-semibold">2008.10</span> 美股暴跌底：抄底苹果、亚马逊、谷歌
+          </li>
+          <li>
+            <span className="font-semibold">2009.01.03</span> 比特币诞生：无脑挖矿，一分钱成本，亿倍收益
+          </li>
+          <li>
+            <span className="font-semibold">2010</span> 比特币极低位：能买多少买多少，拿死不动
+          </li>
+          <li>
+            <span className="font-semibold">2013</span> 比特币第一次大牛市：轻松百万倍收益
+          </li>
+          <li>
+            <span className="font-semibold">2016 年初</span> 比特币 + 特斯拉低位：重仓这两个，人生直接起飞
+          </li>
+          <li>
+            <span className="font-semibold">2017 年底</span> 加密货币大牛市：资产再翻 10–20 倍
+          </li>
+          <li>
+            <span className="font-semibold">2020.03</span> 疫情暴跌黄金坑：抄底美股、比特币
+          </li>
+          <li>
+            <span className="font-semibold">2021.11</span> 比特币历史高位：大幅减仓，落袋为安
+          </li>
+          <li>
+            <span className="font-semibold">2022.09</span> 白银 4.15 元/克：重仓买入白银
+          </li>
+          <li>
+            <span className="font-semibold">2023.03</span> 黄金约 410 元/克：重仓买入黄金
+          </li>
+          <li>
+            <span className="font-semibold">2026 年初</span> 黄金、白银历史高位：全部卖出，落袋为安
+          </li>
+          <li>原来这十几年来，机会有那么多……</li>
+        </ol>
+      ),
+    },
+  },
+  {
     title: '改变世界的 17 个方程',
     category: '科学/数学',
     description: '序号 / 名称 / 核心公式 / 提出者 / 年代（去除调侃项）',
@@ -483,7 +530,7 @@ export default function TwitterBookmarksPage({ searchParams } = {}) {
     '政治/治理',
     '地理/旅行',
   ]
-  const FORMAT_ORDER = ['摘录', '速查表', '对照表', '方程表', '树形图', '人数表', '图片', '图解']
+  const FORMAT_ORDER = ['摘录', '时间线', '速查表', '对照表', '方程表', '树形图', '人数表', '图片', '图解']
 
   const allBookmarks = knowledgeBookmarks.map((item, idx) => ({
     ...item,

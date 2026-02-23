@@ -2,18 +2,31 @@
 
 一个极简风格的个人网站与网络日志，记录编程、创作与生活。
 
+🌐 线上地址：[https://tuaran.me](https://tuaran.me)
+
+---
+
 ## 设计理念
 
-- **极简主义**: 去除复杂的动画效果和视觉干扰，专注于内容本身
-- **清晰布局**: 使用简洁的卡片布局和网格系统
-- **响应式设计**: 适配各种设备尺寸
-- **快速加载**: 最小化CSS和JavaScript，提升性能
+- **极简主义**：去除复杂的动画效果和视觉干扰，专注于内容本身
+- **清晰布局**：使用简洁的卡片布局和网格系统
+- **响应式设计**：适配各种设备尺寸
+- **快速加载**：最小化 CSS 和 JavaScript，提升性能
+
+---
 
 ## 技术栈
 
-- **前端框架**: Next.js (App Router) + React
-- **样式框架**: Tailwind CSS
-- **开发语言**: JavaScript
+| 类别 | 技术 |
+|------|------|
+| 前端框架 | Next.js (App Router) + React |
+| 样式框架 | Tailwind CSS |
+| 开发语言 | JavaScript |
+| 身份认证 | NextAuth.js（GitHub OAuth） |
+| 数据存储 | Cloudflare D1（SQLite） |
+| 部署平台 | Cloudflare Pages |
+
+---
 
 ## 功能特性
 
@@ -23,8 +36,8 @@
 - 加入技术群功能
 
 ### 技术栈展示
-- 前端技术 (Vue.js / React)
-- 后端技术 (Node.js / Python)
+- 前端技术（Vue.js / React）
+- 后端技术（Node.js / Python）
 - AI/ML 技术
 - 云原生架构
 
@@ -35,141 +48,156 @@
 - 帮助开发者数量
 
 ### 项目展示
-- 社区看板 - 数据可视化项目
-- 博主联盟 - 技术生态平台
-- 超棒提示词 - AI对话优化
-- AI学习路径 - 技术能力提升
-- 大模型交易 - 智能金融决策
-- 代码矿工 - 开发工具集合
-- 数据库范式教学平台 - 交互式学习
+- 社区看板 — 数据可视化项目
+- 博主联盟 — 技术生态平台
+- 超棒提示词 — AI 对话优化
+- AI 学习路径 — 技术能力提升
+- 大模型交易 — 智能金融决策
+- 代码矿工 — 开发工具集合
+- 数据库范式教学平台 — 交互式学习
+
+### 互动功能
+- GitHub 账号登录
+- 踩一踩留言（基于 Cloudflare D1 存储）
+
+---
+
+## 项目结构
+
+```
+tuaran-home-page/
+├── app/                    # Next.js App Router 页面目录
+│   ├── api/                # API 路由（NextAuth、留言等）
+│   ├── reading/            # 阅读相关页面
+│   └── ...
+├── components/             # 公共组件
+├── migrations/             # D1 数据库迁移文件
+│   └── 0001_init.sql
+├── public/                 # 静态资源
+├── wrangler.toml           # Cloudflare Workers/Pages 配置
+├── next.config.js          # Next.js 配置
+└── package.json
+```
+
+---
 
 ## 开发指南
 
 ### 安装依赖
+
 ```bash
 npm install
 ```
 
 ### 启动开发服务器
+
 ```bash
 npm run dev
 ```
 
 ### 构建生产版本
+
 ```bash
 npm run build
 ```
 
-## Cloudflare Pages 部署（GitHub 登录 + 踩一踩留言）
+### 运行生产服务器
 
-本项目在 Cloudflare Pages 上以 **SSR/Functions** 方式运行（不是纯静态导出）。
+```bash
+npm run start
+```
 
-### 1) Pages 构建配置
+---
+
+## Cloudflare Pages 部署
+
+本项目在 Cloudflare Pages 上以 **SSR/Functions** 方式运行（非纯静态导出）。
+
+### 1. Pages 构建配置
 
 在 Cloudflare Pages 项目设置中配置：
 
-- Build command：`npm run pages:build`（等价于 `npx @cloudflare/next-on-pages@1`）
-- Build output directory：`.vercel/output/static`
+| 配置项 | 值 |
+|--------|-----|
+| Build command | `npm run pages:build`（等价于 `npx @cloudflare/next-on-pages@1`） |
+| Build output directory | `.vercel/output/static` |
 
-> 常见报错：`Error: Output directory "out" not found`
+> ⚠️ **常见报错**：`Error: Output directory "out" not found`
 >
-> 这是因为旧的纯静态方案会生成 `out/`，但现在使用 next-on-pages 产物在 `.vercel/output/static`。
+> 原因：旧的纯静态方案产物在 `out/`，而 next-on-pages 产物在 `.vercel/output/static`，请确认构建配置正确。
 
-### 2) 环境变量（Pages）
+### 2. 环境变量
 
-在 Cloudflare Pages 项目里添加环境变量（Production / Preview 视情况都加）：
+在 Cloudflare Pages 项目里添加以下环境变量（Production / Preview 均需配置）：
 
-- `GITHUB_ID`（Text）
-- `GITHUB_SECRET`（Secret）
-- `NEXTAUTH_URL`（Text）：例如 `https://tuaran.me`
-- `NEXTAUTH_SECRET`（Secret）：使用 `openssl rand -base64 32` 生成
+| 变量名 | 类型 | 说明 |
+|--------|------|------|
+| `GITHUB_ID` | Text | GitHub OAuth App Client ID |
+| `GITHUB_SECRET` | Secret | GitHub OAuth App Client Secret |
+| `NEXTAUTH_URL` | Text | 例如 `https://tuaran.me` |
+| `NEXTAUTH_SECRET` | Secret | 使用 `openssl rand -base64 32` 生成 |
 
-### 3) GitHub OAuth App（回调地址）
+### 3. GitHub OAuth App 配置
 
 在 GitHub 创建/配置 OAuth App：
 
-- Homepage URL：`https://tuaran.me`
-- Authorization callback URL：`https://tuaran.me/api/auth/callback/github`
+- **Homepage URL**：`https://tuaran.me`
+- **Authorization callback URL**：`https://tuaran.me/api/auth/callback/github`
 
-### 4) D1（踩一踩留言存储）
+### 4. D1 数据库配置（踩一踩留言存储）
 
-留言存储使用 Cloudflare D1，并通过 `DB` binding 注入到 Functions（代码读取 `env.DB`）。
+留言存储使用 Cloudflare D1，通过 `DB` binding 注入到 Functions。
 
-#### 4.1 在 Cloudflare Pages 项目里绑定 D1
-
-Cloudflare Dashboard → Pages → 你的项目 → Settings → Bindings：
-
-- Binding type：D1 database
-- Binding name：`DB`
-- Database：选择你创建的 D1 数据库（云端的，不是本地的）
-
-#### 4.2 迁移建表（wrangler）
-
-迁移文件在 `migrations/0001_init.sql`。
+#### 4.1 创建并迁移数据库
 
 ```bash
-# 1) 创建数据库（如果还没创建）
+# 1) 创建数据库
 wrangler d1 create tuaran-me
 
-# 2) 把输出的 database_id 写进 wrangler.toml
+# 2) 将输出的 database_id 填入 wrangler.toml
 
-# 3) 执行迁移（建表）
+# 3) 执行迁移建表
 wrangler d1 migrations apply tuaran-me
 ```
 
-> 常见报错：`Error 8000022: Invalid database UUID ()`
+> ⚠️ **常见报错**：`Error 8000022: Invalid database UUID ()`
 >
-> 这表示你用 `wrangler pages deploy` 发布 Functions 时，`wrangler.toml` 的 D1 `database_id` 为空或不合法。
-> 解决：到 Cloudflare D1 控制台复制正确的 Database ID（UUID），填进 `wrangler.toml` 再重新部署。
+> 解决：到 Cloudflare D1 控制台复制正确的 Database ID（UUID），填入 `wrangler.toml` 后重新部署。
 
-### 5) nodejs_compat 警告
+#### 4.2 在 Pages 项目中绑定 D1
 
-如果你在构建/上传时看到：
+Cloudflare Dashboard → Pages → 你的项目 → Settings → Bindings：
 
-`The package "node:async_hooks" wasn't found... enable the "nodejs_compat" compatibility flag`
+| 配置项 | 值 |
+|--------|-----|
+| Binding type | D1 database |
+| Binding name | `DB` |
+| Database | 选择你创建的 D1 数据库（云端） |
 
-请在 `wrangler.toml` 里开启：
+### 5. nodejs_compat 兼容性标志
+
+如果构建时出现以下警告：
+
+```
+The package "node:async_hooks" wasn't found... enable the "nodejs_compat" compatibility flag
+```
+
+请在 `wrangler.toml` 中开启：
 
 ```toml
 compatibility_flags = ["nodejs_compat"]
 ```
 
-### 6) 部署方式说明（两种不要混淆）
+### 6. 部署方式说明
 
-- 方式 A（推荐）：Cloudflare Pages 连接 Git 仓库
-	- 你只需要 `git push`，Pages 会自动拉代码、执行 Build command、发布。
-- 方式 B：本地手动 `wrangler pages deploy`
-	- 你需要在本地有正确的 `wrangler.toml`（尤其是 D1 `database_id`），否则会出现 UUID 相关发布失败。
+| 方式 | 说明 |
+|------|------|
+| **方式 A（推荐）** | Cloudflare Pages 连接 Git 仓库，`git push` 后自动构建发布 |
+| **方式 B** | 本地手动执行 `wrangler pages deploy`，需确保 `wrangler.toml` 中 `database_id` 正确 |
 
-### D1（踩一踩留言存储）
+---
 
-需要绑定一个 D1 数据库到 `DB`：
-
-1) 创建 D1：`wrangler d1 create tuaran-me`
-2) 把返回的 `database_id` 填进 [wrangler.toml](wrangler.toml) 的 `database_id`
-3) 执行迁移：`wrangler d1 migrations apply tuaran-me`
-
-然后在 Cloudflare Pages 项目里添加 D1 binding：
-
-- Binding name：`DB`
-- 选择你创建的 D1 数据库
-
-### 运行生产服务器
-```bash
-npm run start
-```
-
-## 项目结构
-
-```
-src/
-├── App.vue          # 主应用组件
-├── main.js          # 应用入口
-├── style.css        # 全局样式
-└── components/      # 组件目录
-```
-
-## 设计变更
+## 设计变更记录
 
 ### 重构前
 - 复杂的瀑布流布局
@@ -183,10 +211,11 @@ src/
 - 最小化的过渡效果
 - 专注于内容可读性
 
-## 访问地址
-
-开发环境: http://localhost:3000
+---
 
 ## 作者
 
-掘金安东尼 - 全栈开发专家 / AI技术博主 
+**掘金安东尼** — 全栈开发专家 / AI 技术博主
+
+- 🌐 网站：[tuaran.me](https://tuaran.me)
+- 📝 掘金：[掘金主页](https://juejin.cn/user/3544481219674541)

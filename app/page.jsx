@@ -49,6 +49,38 @@ function getArticleLink(article) {
 
 export default function HomePage() {
   const featuredArticles = articles.slice(0, 3)
+  const siteNetworkLinks = [
+    {
+      name: '🚀 MatrixLink',
+      href: 'https://matrixlink.tech',
+      tagline: 'AI Native 技术平台 · 数字员工与智能体基础设施',
+      description: '矩联科技官方技术入口，聚焦 AI 应用工程、Agent 架构与智能系统连接能力。',
+    },
+    {
+      name: '🤖 I Am Vibe Coder',
+      href: 'https://iamvibecoder.cn',
+      tagline: 'AI 编程实践与开发者实验场',
+      description: '围绕 AI Coding、Agent 编程范式与个人开发者效率体系的探索站点。',
+    },
+    {
+      name: '🤝 Blogger Alliance',
+      href: 'https://blogger-alliance.cn',
+      tagline: '技术博主协作与内容联盟平台',
+      description: '连接开发者内容创作者，构建技术分发、合作与商业化网络。',
+    },
+    {
+      name: '🧭 Frontend Weekly',
+      href: 'https://frontendweekly.cn',
+      tagline: '前端技术周刊与全球技术资讯翻译',
+      description: '持续同步国外前端与 Web 技术动态的中文技术周刊项目。',
+    },
+    {
+      name: '🧑‍💻 TUARAN',
+      href: 'https://tuaran.me',
+      tagline: '个人技术主页 · AI × 工程 × 思考',
+      description: '个人品牌站点，汇集技术文章、项目实践与长期创作内容。',
+    },
+  ]
   const identityGroups = [
     {
       label: '职业',
@@ -477,8 +509,52 @@ export default function HomePage() {
         </aside>
       </div>
 
-      <footer className="mt-16 pt-8 border-t border-[#eee] text-center text-[#999] text-xs">
-        <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+      <footer className="mt-16 pt-8 border-t border-[#eee] dark:border-gray-800 text-[#999] text-xs">
+        <section className="max-w-5xl mx-auto text-left mb-8">
+          <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200 mb-3">🔗 友链</h3>
+          <div className="friend-links-scroll overflow-hidden pb-2">
+            <ul className="friend-links-scroll-track">
+              {siteNetworkLinks.map((link) => (
+                <li
+                  key={link.href}
+                  className="shrink-0 w-[260px] rounded-lg border border-[#eee] bg-white/80 p-3 text-sm text-[#666] whitespace-normal dark:border-gray-800 dark:bg-gray-900/80 dark:text-gray-300"
+                >
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow font-medium opacity-80 hover:opacity-100 underline underline-offset-4 break-all"
+                  >
+                    {link.href.replace(/\/$/, '')}
+                  </a>
+                  <p className="mt-2 text-xs leading-5 break-words">{link.name}</p>
+                  <p className="mt-1 text-xs leading-5 break-words">{link.description}</p>
+                </li>
+              ))}
+              {siteNetworkLinks.map((link) => (
+                <li
+                  key={`${link.href}-clone`}
+                  aria-hidden="true"
+                  className="shrink-0 w-[260px] rounded-lg border border-[#eee] bg-white/80 p-3 text-sm text-[#666] whitespace-normal dark:border-gray-800 dark:bg-gray-900/80 dark:text-gray-300"
+                >
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow font-medium opacity-80 hover:opacity-100 underline underline-offset-4 break-all"
+                    tabIndex={-1}
+                  >
+                    {link.href.replace(/\/$/, '')}
+                  </a>
+                  <p className="mt-2 text-xs leading-5 break-words">{link.name}</p>
+                  <p className="mt-1 text-xs leading-5 break-words">{link.description}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center text-center">
           <span>© 2025 涂阿燃的网络日志</span>
           <a href="/traffic" className="opacity-80 hover:opacity-100">
             流量统计

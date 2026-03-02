@@ -477,7 +477,13 @@ export default function HomePage() {
             <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-[#666] dark:text-gray-300">扫码交个朋友🤝</span>
+                  <span className="text-xs text-[#666] dark:text-gray-300">
+                   扫码交友 /{' '}
+                    <Link href="/community" className="text-[#004276] dark:text-blue-400 underline underline-offset-2 opacity-80 hover:opacity-100">
+                      进社群
+                    </Link>
+                    🤝
+                  </span>
                   <Image
                     src="/qrcodewechat3.png"
                     alt="扫码加好友二维码"

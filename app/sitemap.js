@@ -12,7 +12,7 @@ export default function sitemap() {
   const now = new Date()
 
   const articleEntries = articles
-    .filter((article) => !isExternalHref(article.href))
+    .filter((article) => !isExternalHref(article.href) && article.slug !== 'diary-self-reflection')
     .map((article) => {
     const parsedDate = Number.isNaN(Date.parse(article.date)) ? now : new Date(article.date)
 
@@ -29,6 +29,10 @@ export default function sitemap() {
     },
     {
       url: `${SITE_URL}/articles`,
+      lastModified: now,
+    },
+    {
+      url: `${SITE_URL}/diary`,
       lastModified: now,
     },
     {

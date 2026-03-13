@@ -357,7 +357,7 @@ export default function HomePage() {
                
               </p>
               <p> <a
-                  href="https://csdn-fans-tracker.pages.dev/"
+                  href="https://blogger-alliance.cn/matrix"
                   target="_blank"
                   rel="noreferrer"
                   className="no-external-arrow opacity-80 hover:opacity-100"
@@ -379,30 +379,6 @@ export default function HomePage() {
               </p>
               <p>
                 联系：微信号 <span className="font-semibold text-[#222] dark:text-gray-100">atar24</span>
-              </p>
-              <p>
-                <Link href="/weekly" className="opacity-80 hover:opacity-100 no-underline hover:underline">
-                  <span className="inline-flex items-center gap-1">
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M8 3v2" />
-                      <path d="M16 3v2" />
-                      <path d="M4 7h16" />
-                      <path d="M6 5h12a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
-                      <path d="M8 11h8" />
-                      <path d="M8 15h6" />
-                    </svg>
-                    写给自己的周报
-                  </span>
-                </Link>
               </p>
               <div>
                 <Image
@@ -477,13 +453,7 @@ export default function HomePage() {
             <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-[#666] dark:text-gray-300">
-                   扫码交友 /{' '}
-                    <Link href="/community" className="text-[#004276] dark:text-blue-400 underline underline-offset-2 opacity-80 hover:opacity-100">
-                      进社群
-                    </Link>
-                    🤝
-                  </span>
+                  <span className="text-xs text-[#666] dark:text-gray-300">扫码交个朋友🤝</span>
                   <Image
                     src="/qrcodewechat3.png"
                     alt="扫码加好友二维码"

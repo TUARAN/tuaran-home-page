@@ -56,11 +56,6 @@ export default function HomePage() {
       tagline: '广州矩联科技有限公司官网',
     },
     {
-      name: '🧑‍💻 TUARAN',
-      href: 'https://tuaran.me',
-      tagline: '个人技术主页 · AI × 工程 × 思考',
-    },
-    {
       name: '🤝 Blogger Alliance',
       href: 'https://blogger-alliance.cn',
       tagline: '技术博主协作与内容联盟平台',

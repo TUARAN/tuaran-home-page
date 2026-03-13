@@ -100,14 +100,15 @@ export default function HomePage() {
     {
       label: '创业',
       tone: 'emerald',
-      items: ['矩联科技 创始人'],
+      items: [{ label: '矩联科技CEO', href: 'https://matrixlink.tech/' }],
     },
   ]
 
   const identityItems = identityGroups.flatMap((group) =>
     group.items.map((item) => ({
-      key: `${group.label}-${item}`,
-      label: item,
+      key: `${group.label}-${typeof item === 'string' ? item : item.label}`,
+      label: typeof item === 'string' ? item : item.label,
+      href: typeof item === 'string' ? undefined : item.href,
       tone: group.tone,
     }))
   )
@@ -168,14 +169,38 @@ export default function HomePage() {
               <div className="identity-scroll relative overflow-hidden w-[180px] sm:w-[220px] lg:w-[260px] min-w-0">
                 <div className="identity-scroll-track">
                   {identityItems.map((item) => (
-                    <span key={item.key} className={getIdentityTagClassName(item.tone)}>
-                      {item.label}
-                    </span>
+                    item.href ? (
+                      <a
+                        key={item.key}
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`${getIdentityTagClassName(item.tone)} opacity-90 hover:opacity-100`}
+                      >
+                        {item.label}
+                      </a>
+                    ) : (
+                      <span key={item.key} className={getIdentityTagClassName(item.tone)}>
+                        {item.label}
+                      </span>
+                    )
                   ))}
                   {identityItems.map((item) => (
-                    <span key={`${item.key}-clone`} className={getIdentityTagClassName(item.tone)}>
-                      {item.label}
-                    </span>
+                    item.href ? (
+                      <a
+                        key={`${item.key}-clone`}
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`${getIdentityTagClassName(item.tone)} opacity-90 hover:opacity-100`}
+                      >
+                        {item.label}
+                      </a>
+                    ) : (
+                      <span key={`${item.key}-clone`} className={getIdentityTagClassName(item.tone)}>
+                        {item.label}
+                      </span>
+                    )
                   ))}
                 </div>
               </div>

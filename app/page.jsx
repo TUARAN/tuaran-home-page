@@ -394,11 +394,21 @@ export default function HomePage() {
           <section className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">关于</h3>
             <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
-              <p>
-                主要写：编程 / 创作 / 生活记录。
-              </p>
+              <p>主要写：编程 / 创作 / 生活记录。</p>
               <p>
                 联系：微信号 <span className="font-semibold text-[#222] dark:text-gray-100">atar24</span>
+              </p>
+              <p>
+                担任：
+                <a
+                  href="http://matrixlink.tech/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="no-external-arrow text-[#004276] dark:text-blue-400 underline underline-offset-2 opacity-80 hover:opacity-100"
+                >
+                  广州矩联科技
+                </a>{' '}
+                CEO
               </p>
               <div>
                 <Image

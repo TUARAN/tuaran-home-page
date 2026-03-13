@@ -393,6 +393,39 @@ export default function HomePage() {
           </section>
 
           <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
+            <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">公众号</h3>
+            <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-xs text-[#666] dark:text-gray-300">扫码交个朋友🤝</span>
+                  <Image
+                    src="/qrcodewechat3.png"
+                    alt="扫码加好友二维码"
+                    width={100}
+                    height={100}
+                    className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-xs text-[#666] dark:text-gray-300">关注公众号👀</span>
+                  <Image
+                    src="/qrcode_for_gh.jpg"
+                    alt="公众号二维码"
+                    width={100}
+                    height={100}
+                    className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
+                  />
+                </div>
+              </div>
+              <div className="text-xs font-semibold tracking-wide">
+                <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 bg-clip-text text-transparent">
+                  ✨ 高山流水觅知音，邀君并肩共前行。
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
             <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">工具箱</h3>
             <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">
               <li>
@@ -446,39 +479,6 @@ export default function HomePage() {
                 </a>
               </li>
             </ul>
-          </section>
-
-          <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">公众号</h3>
-            <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-[#666] dark:text-gray-300">扫码交个朋友🤝</span>
-                  <Image
-                    src="/qrcodewechat3.png"
-                    alt="扫码加好友二维码"
-                    width={100}
-                    height={100}
-                    className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
-                  />
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-[#666] dark:text-gray-300">关注公众号👀</span>
-                  <Image
-                    src="/qrcode_for_gh.jpg"
-                    alt="公众号二维码"
-                    width={100}
-                    height={100}
-                    className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
-                  />
-                </div>
-              </div>
-              <div className="text-xs font-semibold tracking-wide">
-                <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 bg-clip-text text-transparent">
-                  ✨ 高山流水觅知音，邀君并肩共前行。
-                </span>
-              </div>
-            </div>
           </section>
 
 

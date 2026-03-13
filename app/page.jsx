@@ -53,32 +53,32 @@ export default function HomePage() {
     {
       name: '🚀 MatrixLink',
       href: 'https://matrixlink.tech',
-      tagline: 'AI Native 技术平台 · 数字员工与智能体基础设施',
-      description: '矩联科技官方技术入口，聚焦 AI 应用工程、Agent 架构与智能系统连接能力。',
-    },
-    {
-      name: '🤖 I Am Vibe Coder',
-      href: 'https://iamvibecoder.cn',
-      tagline: 'AI 编程实践与开发者实验场',
-      description: '围绕 AI Coding、Agent 编程范式与个人开发者效率体系的探索站点。',
-    },
-    {
-      name: '🤝 Blogger Alliance',
-      href: 'https://blogger-alliance.cn',
-      tagline: '技术博主协作与内容联盟平台',
-      description: '连接开发者内容创作者，构建技术分发、合作与商业化网络。',
-    },
-    {
-      name: '🧭 Frontend Weekly',
-      href: 'https://frontendweekly.cn',
-      tagline: '前端技术周刊与全球技术资讯翻译',
-      description: '持续同步国外前端与 Web 技术动态的中文技术周刊项目。',
+      tagline: '广州矩联科技有限公司官网',
     },
     {
       name: '🧑‍💻 TUARAN',
       href: 'https://tuaran.me',
       tagline: '个人技术主页 · AI × 工程 × 思考',
-      description: '个人品牌站点，汇集技术文章、项目实践与长期创作内容。',
+    },
+    {
+      name: '🤝 Blogger Alliance',
+      href: 'https://blogger-alliance.cn',
+      tagline: '技术博主协作与内容联盟平台',
+    },
+    {
+      name: '🧭 Frontend Weekly',
+      href: 'https://frontendweekly.cn',
+      tagline: '前端技术周刊与全球技术资讯翻译',
+    },
+    {
+      name: '🤖 I Am Vibe Coder',
+      href: 'https://iamvibecoder.cn',
+      tagline: 'AI 编程实践与开发者实验场',
+    },
+    {
+      name: '✍️ PublishLab',
+      href: 'https://publishlab.cc',
+      tagline: 'AI 写作、内容创作与数字出版实验室',
     },
   ]
   const identityGroups = [
@@ -513,46 +513,31 @@ export default function HomePage() {
       <footer className="mt-16 pt-8 border-t border-[#eee] dark:border-gray-800 text-[#999] text-xs">
         <section className="max-w-5xl mx-auto text-left mb-8">
           <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200 mb-3">🔗 友链</h3>
-          <div className="friend-links-scroll overflow-hidden pb-2">
-            <ul className="friend-links-scroll-track">
+          <ul className="grid grid-cols-2 gap-2 pb-2 sm:grid-cols-3 lg:grid-cols-6">
               {siteNetworkLinks.map((link) => (
                 <li
                   key={link.href}
-                  className="shrink-0 w-[260px] rounded-lg border border-[#eee] bg-white/80 p-3 text-sm text-[#666] whitespace-normal dark:border-gray-800 dark:bg-gray-900/80 dark:text-gray-300"
+                  className="group rounded-md border border-[#eee] bg-white/70 text-[11px] text-[#666] dark:border-gray-800 dark:bg-gray-900/70 dark:text-gray-300"
                 >
                   <a
                     href={link.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="no-external-arrow font-medium opacity-80 hover:opacity-100 underline underline-offset-4 break-all"
+                    className="no-external-arrow relative block h-[88px] overflow-hidden px-2.5 py-2 opacity-90 transition-colors duration-200 hover:bg-slate-50/60 hover:opacity-100 dark:hover:bg-white/5"
                   >
-                    {link.href.replace(/\/$/, '')}
+                    <div className="absolute inset-0 px-2.5 py-2 transition-opacity duration-200 group-hover:opacity-0">
+                      <p className="font-medium leading-4 text-[#333] dark:text-gray-100">{link.name}</p>
+                      <p className="mt-1 text-[10px] leading-4 break-words text-[#777] dark:text-gray-400">{link.tagline}</p>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center px-2 py-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <p className="text-center font-medium leading-4 text-slate-700 underline underline-offset-2 dark:text-slate-200">
+                        {link.href.replace(/\/$/, '')}
+                      </p>
+                    </div>
                   </a>
-                  <p className="mt-2 text-xs leading-5 break-words">{link.name}</p>
-                  <p className="mt-1 text-xs leading-5 break-words">{link.description}</p>
                 </li>
               ))}
-              {siteNetworkLinks.map((link) => (
-                <li
-                  key={`${link.href}-clone`}
-                  aria-hidden="true"
-                  className="shrink-0 w-[260px] rounded-lg border border-[#eee] bg-white/80 p-3 text-sm text-[#666] whitespace-normal dark:border-gray-800 dark:bg-gray-900/80 dark:text-gray-300"
-                >
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow font-medium opacity-80 hover:opacity-100 underline underline-offset-4 break-all"
-                    tabIndex={-1}
-                  >
-                    {link.href.replace(/\/$/, '')}
-                  </a>
-                  <p className="mt-2 text-xs leading-5 break-words">{link.name}</p>
-                  <p className="mt-1 text-xs leading-5 break-words">{link.description}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
+          </ul>
         </section>
 
         <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center text-center">

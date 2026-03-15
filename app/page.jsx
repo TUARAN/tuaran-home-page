@@ -95,7 +95,7 @@ export default function HomePage() {
     {
       label: '创业',
       tone: 'emerald',
-      items: [{ label: '矩联科技CEO', href: 'https://matrixlink.tech/' }],
+      items: [{ label: '广州矩联科技创始人', href: 'https://matrixlink.tech/' }],
     },
   ]
 
@@ -399,16 +399,15 @@ export default function HomePage() {
                 联系：微信号 <span className="font-semibold text-[#222] dark:text-gray-100">atar24</span>
               </p>
               <p>
-                担任：
+                Founder of{' '}
                 <a
                   href="http://matrixlink.tech/"
                   target="_blank"
                   rel="noreferrer"
                   className="no-external-arrow text-[#004276] dark:text-blue-400 underline underline-offset-2 opacity-80 hover:opacity-100"
                 >
-                  广州矩联科技
-                </a>{' '}
-                CEO
+                  MatrixLinkTech
+                </a>
               </p>
               <div>
                 <Image

@@ -16,13 +16,21 @@ export const articles = [
   {
     slug: 'diary-self-reflection',
     title: '浮生日记（连载中）📓',
-    date: '2026-01-13',
+    date: '2026-03-11',
     href: '',
     summary:
       '人生碌碌，竞短论长，却不道枯荣有数，得失难量。',
     cover:
       'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
     content: [
+      {
+        date: '2026-03-11',
+        label: '26年第11周｜周记',
+      },
+      '**本周**',
+      '梳理了博主联盟 2～3 月的合作情况；更新了矩联科技的官网，也初步搭建了「人人都是程序员」的官网。',
+      '**下一步**',
+      '未来一定要投入到智能体的建设当中去。计划着重用 Codex——目前主要还是靠 VSCode 和 Cursor，想逐渐摆脱编程 IDE；CLI、小龙虾这一套对普通人也不友好，眼下 Codex 可能是更优解。',
       {
         date: '2026-03-04',
         label: '26年第10周｜周记',

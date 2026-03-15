@@ -399,14 +399,14 @@ export default function HomePage() {
                 联系：微信号 <span className="font-semibold text-[#222] dark:text-gray-100">atar24</span>
               </p>
               <p>
-                Founder of{' '}
+                创立：{' '}
                 <a
                   href="http://matrixlink.tech/"
                   target="_blank"
                   rel="noreferrer"
                   className="no-external-arrow text-[#004276] dark:text-blue-400 underline underline-offset-2 opacity-80 hover:opacity-100"
                 >
-                  MatrixLinkTech
+                  矩联科技
                 </a>
               </p>
               <div>

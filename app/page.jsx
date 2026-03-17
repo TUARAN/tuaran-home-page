@@ -49,7 +49,7 @@ function getArticleLink(article) {
 
 export default function HomePage() {
   const featuredArticles = articles.slice(0, 3)
-  const siteNetworkLinks = [
+  const maintainedDomains = [
     {
       name: '🚀 MatrixLink',
       href: 'https://matrixlink.tech',
@@ -516,31 +516,27 @@ export default function HomePage() {
 
       <footer className="mt-16 pt-8 border-t border-[#eee] dark:border-gray-800 text-[#999] text-xs">
         <section className="max-w-5xl mx-auto text-left mb-8">
-          <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200 mb-3">🔗 友链</h3>
-          <ul className="grid grid-cols-2 gap-2 pb-2 sm:grid-cols-3 lg:grid-cols-6">
-              {siteNetworkLinks.map((link) => (
-                <li
-                  key={link.href}
-                  className="group rounded-md border border-[#eee] bg-white/70 text-[11px] text-[#666] dark:border-gray-800 dark:bg-gray-900/70 dark:text-gray-300"
-                >
+          <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200 mb-3">🌐 我维护的域名</h3>
+          <ul className="space-y-2 pb-2 text-sm text-[#666] dark:text-gray-300">
+            {maintainedDomains.map((link) => (
+              <li
+                key={link.href}
+                className="rounded-md border border-[#eee] bg-white/70 px-3 py-2 dark:border-gray-800 dark:bg-gray-900/70"
+              >
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                   <a
                     href={link.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="no-external-arrow relative block h-[88px] overflow-hidden px-2.5 py-2 opacity-90 transition-colors duration-200 hover:bg-slate-50/60 hover:opacity-100 dark:hover:bg-white/5"
+                    className="no-external-arrow font-medium text-[#333] opacity-90 hover:opacity-100 dark:text-gray-100"
                   >
-                    <div className="absolute inset-0 px-2.5 py-2 transition-opacity duration-200 group-hover:opacity-0">
-                      <p className="font-medium leading-4 text-[#333] dark:text-gray-100">{link.name}</p>
-                      <p className="mt-1 text-[10px] leading-4 break-words text-[#777] dark:text-gray-400">{link.tagline}</p>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center px-2 py-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                      <p className="text-center font-medium leading-4 text-slate-700 underline underline-offset-2 dark:text-slate-200">
-                        {link.href.replace(/\/$/, '')}
-                      </p>
-                    </div>
+                    {link.name}
                   </a>
-                </li>
-              ))}
+                  <span className="text-xs text-[#999] dark:text-gray-500">{link.href.replace(/\/$/, '')}</span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-[#777] dark:text-gray-400">{link.tagline}</p>
+              </li>
+            ))}
           </ul>
         </section>
 

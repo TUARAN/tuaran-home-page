@@ -53,27 +53,42 @@ export default function HomePage() {
     {
       name: '🚀 MatrixLink',
       href: 'https://matrixlink.tech',
-      tagline: '广州矩联科技有限公司官网',
+      domain: 'matrixlink.tech',
+      category: '公司官网',
+      focus: '企业品牌展示与技术服务介绍',
+      status: '运营中',
     },
     {
       name: '🤝 Blogger Alliance',
       href: 'https://blogger-alliance.cn',
-      tagline: '技术博主协作与内容联盟平台',
+      domain: 'blogger-alliance.cn',
+      category: '社区平台',
+      focus: '技术博主协作与内容联盟',
+      status: '运营中',
     },
     {
       name: '🧭 Frontend Weekly',
       href: 'https://frontendweekly.cn',
-      tagline: '前端技术周刊与全球技术资讯翻译',
+      domain: 'frontendweekly.cn',
+      category: '内容周刊',
+      focus: '前端热点整理与海外文章翻译',
+      status: '持续更新',
     },
     {
       name: '🤖 I Am Vibe Coder',
       href: 'https://iamvibecoder.cn',
-      tagline: 'AI 编程实践与开发者实验场',
+      domain: 'iamvibecoder.cn',
+      category: 'AI 编程',
+      focus: 'AI 编程实践与开发者实验场',
+      status: '运营中',
     },
     {
       name: '✍️ PublishLab',
       href: 'https://publishlab.cc',
-      tagline: 'AI 写作、内容创作与数字出版实验室',
+      domain: 'publishlab.cc',
+      category: '创作实验室',
+      focus: 'AI 写作、内容创作与数字出版',
+      status: '打磨中',
     },
   ]
   const identityGroups = [
@@ -121,6 +136,18 @@ export default function HomePage() {
         return `${base} border-emerald-200/70 bg-emerald-50/80 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200`
       default:
         return `${base} border-gray-200/70 bg-white/80 text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200`
+    }
+  }
+
+  const getDomainStatusClassName = (status) => {
+    const base = 'inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium'
+    switch (status) {
+      case '持续更新':
+        return `${base} border-blue-200/70 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200`
+      case '打磨中':
+        return `${base} border-amber-200/70 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200`
+      default:
+        return `${base} border-emerald-200/70 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200`
     }
   }
 
@@ -517,27 +544,50 @@ export default function HomePage() {
       <footer className="mt-16 pt-8 border-t border-[#eee] dark:border-gray-800 text-[#999] text-xs">
         <section className="max-w-5xl mx-auto text-left mb-8">
           <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200 mb-3">🌐 我维护的域名</h3>
-          <ul className="space-y-2 pb-2 text-sm text-[#666] dark:text-gray-300">
-            {maintainedDomains.map((link) => (
-              <li
-                key={link.href}
-                className="rounded-md border border-[#eee] bg-white/70 px-3 py-2 dark:border-gray-800 dark:bg-gray-900/70"
-              >
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow font-medium text-[#333] opacity-90 hover:opacity-100 dark:text-gray-100"
+          <div className="overflow-x-auto rounded-lg border border-[#eee] bg-white/70 dark:border-gray-800 dark:bg-gray-900/70">
+            <table className="min-w-full border-collapse text-left text-sm text-[#666] dark:text-gray-300">
+              <thead className="bg-[#f8f8f8] text-xs uppercase tracking-wide text-[#888] dark:bg-gray-900 dark:text-gray-400">
+                <tr>
+                  <th className="px-3 py-3 font-medium">项目</th>
+                  <th className="px-3 py-3 font-medium">域名</th>
+                  <th className="px-3 py-3 font-medium">类型</th>
+                  <th className="px-3 py-3 font-medium">定位</th>
+                  <th className="px-3 py-3 font-medium">状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                {maintainedDomains.map((link) => (
+                  <tr
+                    key={link.href}
+                    className="border-t border-[#eee] align-top dark:border-gray-800"
                   >
-                    {link.name}
-                  </a>
-                  <span className="text-xs text-[#999] dark:text-gray-500">{link.href.replace(/\/$/, '')}</span>
-                </div>
-                <p className="mt-1 text-xs leading-5 text-[#777] dark:text-gray-400">{link.tagline}</p>
-              </li>
-            ))}
-          </ul>
+                    <td className="px-3 py-3 font-medium text-[#333] dark:text-gray-100">
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="no-external-arrow opacity-90 hover:opacity-100"
+                      >
+                        {link.name}
+                      </a>
+                    </td>
+                    <td className="px-3 py-3 text-xs text-[#777] dark:text-gray-400">
+                      {link.domain}
+                    </td>
+                    <td className="px-3 py-3">{link.category}</td>
+                    <td className="px-3 py-3 text-xs leading-5 text-[#777] dark:text-gray-400">
+                      {link.focus}
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className={getDomainStatusClassName(link.status)}>
+                        {link.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center text-center">

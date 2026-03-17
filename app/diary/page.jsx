@@ -27,6 +27,14 @@ function parseMarkdownImage(text) {
   return { alt, src }
 }
 
+function parseMarkdownBlockquote(text) {
+  if (typeof text !== 'string') return null
+  const trimmed = text.trim()
+  const match = /^>\s?(.*)$/.exec(trimmed)
+  if (!match) return null
+  return match[1]
+}
+
 function renderInlineBold(text) {
   if (typeof text !== 'string' || !text.includes('**')) return text
 
@@ -245,6 +253,11 @@ export default function DiaryPage() {
                     />
                   </figure>
                 )
+              }
+
+              const blockquote = parseMarkdownBlockquote(paragraph)
+              if (blockquote) {
+                return <blockquote key={`${idx}-${blockquote}`}>{renderInlineBold(blockquote)}</blockquote>
               }
 
               return <p key={`${idx}-${paragraph}`}>{renderInlineBold(paragraph)}</p>

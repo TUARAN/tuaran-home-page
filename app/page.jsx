@@ -91,35 +91,11 @@ export default function HomePage() {
       status: '打磨中',
     },
   ]
-  const domainStrategySteps = [
-    {
-      title: '先把域名分层，每个域名都绑定一个明确角色，而不是闲置',
-      detail:
-        '有的做产品入口（一个可访问的 AI 工具或页面），有的做内容阵地（文章、周刊、聚合页），有的做跳转分发（承接不同平台流量），这样每一个域名都在产生行为数据。',
-    },
-    {
-      title: '然后让域名承载真实使用场景',
-      detail:
-        '比如你做一个简单的 AI 工具页、一个 prompt 工厂、一个博客聚合站，哪怕很轻，也要让用户能“访问、停留、使用”，一旦有 UV、有停留时长，这个域名就从“字符串”变成“资产”。',
-    },
-    {
-      title: '再做流量绑定，而不是只做注册',
-      detail:
-        '把现在已有的内容矩阵（掘金、公众号、知乎）全部统一指向某几个核心域名，让所有分发最终回流到域名，这一步决定了域名的长期价值。',
-    },
-    {
-      title: '接着做结构化扩展，而不是盲目增加数量',
-      detail:
-        '围绕一个主域名做子域或路径扩展，比如 tools.xxx、ai.xxx、weekly.xxx，让域名变成一个“平台结构”，而不是一个孤立入口。',
-    },
-    {
-      title: '最后才是商业化',
-      detail:
-        '当域名上已经有稳定访问、内容沉淀、甚至工具使用时，它天然具备三种变现能力：广告位、工具收费、品牌合作，这时候域名本身就变成了一个可定价资产。',
-    },
+  const domainStrategyParagraphs = [
+    '域名的价值开始于运转，在“人人都能 vibe 编程”的背景下，这一点会被进一步放大。自然语言正在把软件生成这件事变成即时行为，应用可以随需求生成，但不管 AI 怎么演进，底层这一套始终稳定存在——TCP/IP、DNS、域名体系依然是整个网络的基础结构，应用形态在变化，承载与访问的方式并没有被替代。于是，每一个被生成的工具、页面、能力，都需要一个可访问、可复用的地址来承接，域名天然成为这些“即时应用”的落点。',
+    '为域名划分角色，有的作为 AI 工具入口，有的承接内容与教程，有的负责分发与跳转，让每一个域名都有实际功能；再通过轻量应用激活场景，比如 prompt 工厂、即用即走的小工具、聚合页，让访问、停留和使用不断发生。随着小红书、掘金、公众号、知乎等内容持续回流到核心域名，流量逐渐集中，再通过子域或路径扩展出 tools、ai、weekly 等结构，一个“随时生成、随时访问”的应用网络会逐步长出来。',
+    '当访问、使用与内容沉淀开始稳定积累，域名就从一个静态标识，演化为承载应用与行为的基础节点，广告、工具付费、品牌合作等能力会自然出现。整个逻辑其实很清晰：应用层在被 AI 重写，底层基础设施保持稳定，域名正好处在两者之间，成为连接变化与稳定的关键锚点。',
   ]
-  const domainStrategySummary =
-    '域名的价值不来自“你买了它”，而来自有没有持续的用户行为在这个地址上发生。'
   const identityGroups = [
     {
       label: '职业',
@@ -588,25 +564,16 @@ export default function HomePage() {
                 </span>
                 <span>让域名“长出业务”，而不是“躺着等人买”</span>
               </button>
-              <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-[90vw] max-w-[36rem] translate-y-1 rounded-xl border border-[#e8e8e8] bg-white p-4 text-left text-sm text-[#555] opacity-0 shadow-xl transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+              <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-[90vw] max-w-[42rem] translate-y-1 rounded-xl border border-[#e8e8e8] bg-white p-4 text-left text-sm text-[#555] opacity-0 shadow-xl transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
                 <div className="text-sm font-semibold text-[#333] dark:text-gray-100">
                   让域名“长出业务”，而不是“躺着等人买”
                 </div>
-                <ol className="mt-3 space-y-3 pl-5 text-sm leading-6 text-[#666] dark:text-gray-300">
-                  {domainStrategySteps.map((step, index) => (
-                    <li key={step.title}>
-                      <span className="font-medium text-[#333] dark:text-gray-100">
-                        {index + 1}、{step.title}
-                      </span>
-                      <p className="mb-0 mt-1 text-sm leading-6 text-[#666] dark:text-gray-300">
-                        {step.detail}
-                      </p>
-                    </li>
+                <div className="mt-3 space-y-3 text-sm leading-6 text-[#666] dark:text-gray-300">
+                  {domainStrategyParagraphs.map((paragraph) => (
+                    <p key={paragraph} className="mb-0 text-sm leading-6 text-[#666] dark:text-gray-300">
+                      {paragraph}
+                    </p>
                   ))}
-                </ol>
-                <div className="mt-4 rounded-lg bg-[#f8f8f8] px-3 py-2 text-sm leading-6 text-[#444] dark:bg-gray-800 dark:text-gray-200">
-                  <span className="font-semibold">一句话总结：</span>
-                  {domainStrategySummary}
                 </div>
               </div>
             </div>

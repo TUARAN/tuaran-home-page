@@ -564,11 +564,11 @@ export default function HomePage() {
                 >
                   i
                 </span>
-                <span>让域名“长出业务”，而不是“躺着等人买”</span>
+                <span>人人都能编程，让域名“长出业务”</span>
               </button>
               <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-[90vw] max-w-[42rem] translate-y-1 rounded-xl border border-[#e8e8e8] bg-white p-4 text-left text-sm text-[#555] opacity-0 shadow-xl transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
                 <div className="text-sm font-semibold text-[#333] dark:text-gray-100">
-                  让域名“长出业务”，而不是“躺着等人买”
+                  人人都能编程，让域名“长出业务”
                 </div>
                 <div className="mt-3 space-y-3 text-sm leading-6 text-[#666] dark:text-gray-300">
                   {domainStrategyParagraphs.map((paragraph) => (

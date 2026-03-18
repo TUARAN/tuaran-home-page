@@ -96,6 +96,7 @@ export default function HomePage() {
     '为域名划分角色，有的作为 AI 工具入口，有的承接内容与教程，有的负责分发与跳转，让每一个域名都有实际功能；再通过轻量应用激活场景，比如 prompt 工厂、即用即走的小工具、聚合页，让访问、停留和使用不断发生。随着小红书、掘金、公众号、知乎等内容持续回流到核心域名，流量逐渐集中，再通过子域或路径扩展出 tools、ai、weekly 等结构，一个“随时生成、随时访问”的应用网络会逐步长出来。',
     '当访问、使用与内容沉淀开始稳定积累，域名就从一个静态标识，演化为承载应用与行为的基础节点，广告、工具付费、品牌合作等能力会自然出现。整个逻辑其实很清晰：应用层在被 AI 重写，底层基础设施保持稳定，域名正好处在两者之间，成为连接变化与稳定的关键锚点。',
   ]
+  const maintainedDomainCountLabel = '目前维护中共 6 个'
   const identityGroups = [
     {
       label: '职业',
@@ -550,6 +551,9 @@ export default function HomePage() {
         <section className="max-w-5xl mx-auto text-left mb-8">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">🌐 我维护的域名</h3>
+            <span className="inline-flex items-center rounded-full border border-[#e6e6e6] bg-white px-2.5 py-1 text-xs font-medium text-[#666] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+              {maintainedDomainCountLabel}
+            </span>
             <div className="group relative inline-flex">
               <button
                 type="button"

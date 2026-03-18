@@ -551,9 +551,7 @@ export default function HomePage() {
         <section className="max-w-5xl mx-auto text-left mb-8">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">🌐 我维护的域名</h3>
-            <span className="inline-flex items-center rounded-full border border-[#e6e6e6] bg-white px-2.5 py-1 text-xs font-medium text-[#666] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-              {maintainedDomainCountLabel}
-            </span>
+            <span className="text-xs text-[#888] dark:text-gray-400">{maintainedDomainCountLabel}</span>
             <div className="group relative inline-flex">
               <button
                 type="button"

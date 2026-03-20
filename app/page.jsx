@@ -53,7 +53,7 @@ export default function HomePage() {
     {
       name: '🚀 MatrixLink',
       href: 'https://matrixlink.tech',
-      domain: 'matrixlink.tech',
+      domains: ['matrixlink.tech'],
       category: '公司官网',
       focus: '企业品牌展示与技术服务介绍',
       status: '运营中',
@@ -61,7 +61,7 @@ export default function HomePage() {
     {
       name: '🤝 Blogger Alliance',
       href: 'https://blogger-alliance.cn',
-      domain: 'blogger-alliance.cn',
+      domains: ['blogger-alliance.cn', 'bzlm.net'],
       category: '社区平台',
       focus: '技术博主协作与内容联盟',
       status: '运营中',
@@ -69,7 +69,7 @@ export default function HomePage() {
     {
       name: '🧭 Frontend Weekly',
       href: 'https://frontendweekly.cn',
-      domain: 'frontendweekly.cn',
+      domains: ['frontendweekly.cn'],
       category: '内容周刊',
       focus: '前端热点整理与海外文章翻译',
       status: '持续更新',
@@ -77,26 +77,36 @@ export default function HomePage() {
     {
       name: '🤖 I Am Vibe Coder',
       href: 'https://iamvibecoder.cn',
-      domain: 'iamvibecoder.cn',
+      domains: ['iamvibecoder.cn'],
       category: 'AI 编程',
       focus: 'AI 编程实践与开发者实验场',
-      status: '运营中',
+      status: '打磨中',
     },
     {
       name: '✍️ PublishLab',
       href: 'https://publishlab.cc',
-      domain: 'publishlab.cc',
+      domains: ['publishlab.cc'],
       category: '创作实验室',
       focus: 'AI 写作、内容创作与数字出版',
       status: '打磨中',
     },
+    {
+      name: '⚡ Frontend 2 AI Agent',
+      href: 'https://frontend2aiagent.com',
+      domains: ['frontend2aiagent.com'],
+      category: '转型平台',
+      focus: '前端工程师转向 AI Agent 工程师的知识体系与成长路径。',
+      status: '打磨中',
+    },
   ]
   const domainStrategyParagraphs = [
-    '域名的价值开始于运转，在“人人都能 vibe 编程”的背景下，这一点会被进一步放大。自然语言正在把软件生成这件事变成即时行为，应用可以随需求生成，但不管 AI 怎么演进，底层这一套始终稳定存在——TCP/IP、DNS、域名体系依然是整个网络的基础结构，应用形态在变化，承载与访问的方式并没有被替代。于是，每一个被生成的工具、页面、能力，都需要一个可访问、可复用的地址来承接，域名天然成为这些“即时应用”的落点。',
-    '为域名划分角色，有的作为 AI 工具入口，有的承接内容与教程，有的负责分发与跳转，让每一个域名都有实际功能；再通过轻量应用激活场景，比如 prompt 工厂、即用即走的小工具、聚合页，让访问、停留和使用不断发生。随着小红书、掘金、公众号、知乎等内容持续回流到核心域名，流量逐渐集中，再通过子域或路径扩展出 tools、ai、weekly 等结构，一个“随时生成、随时访问”的应用网络会逐步长出来。',
-    '当访问、使用与内容沉淀开始稳定积累，域名就从一个静态标识，演化为承载应用与行为的基础节点，广告、工具付费、品牌合作等能力会自然出现。整个逻辑其实很清晰：应用层在被 AI 重写，底层基础设施保持稳定，域名正好处在两者之间，成为连接变化与稳定的关键锚点。',
+    'AI 正在降低做产品和做网站的门槛，但无论应用形态怎么变，域名依然是访问、承接与沉淀的基础入口。',
+    '让每个域名对应清晰场景并持续运转，它就不只是一个名字，而会慢慢长出内容、流量与业务价值。',
   ]
-  const maintainedDomainCountLabel = '目前维护中共 6 个'
+  const maintainedDomainCountLabel = `目前维护中共 ${maintainedDomains.reduce(
+    (sum, item) => sum + item.domains.length,
+    0
+  )} 个`
   const identityGroups = [
     {
       label: '职业',
@@ -154,6 +164,19 @@ export default function HomePage() {
         return `${base} border-amber-200/70 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200`
       default:
         return `${base} border-emerald-200/70 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200`
+    }
+  }
+
+  const getDomainCardClassName = (status) => {
+    const base =
+      'group rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] dark:hover:shadow-none'
+    switch (status) {
+      case '持续更新':
+        return `${base} border-blue-100 bg-gradient-to-br from-blue-50/80 via-white to-white dark:border-blue-900/50 dark:bg-gradient-to-br dark:from-blue-950/20 dark:via-gray-950 dark:to-gray-950`
+      case '打磨中':
+        return `${base} border-amber-100 bg-gradient-to-br from-amber-50/80 via-white to-white dark:border-amber-900/50 dark:bg-gradient-to-br dark:from-amber-950/20 dark:via-gray-950 dark:to-gray-950`
+      default:
+        return `${base} border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-white dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-emerald-950/20 dark:via-gray-950 dark:to-gray-950`
     }
   }
 
@@ -549,7 +572,7 @@ export default function HomePage() {
 
       <footer className="mt-16 pt-8 border-t border-[#eee] dark:border-gray-800 text-[#999] text-xs">
         <section className="max-w-5xl mx-auto text-left mb-8">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2.5">
             <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">🌐 我维护的域名</h3>
             <span className="text-xs text-[#888] dark:text-gray-400">{maintainedDomainCountLabel}</span>
             <div className="group relative inline-flex">
@@ -580,49 +603,50 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <div className="overflow-x-auto rounded-lg border border-[#eee] bg-white/70 dark:border-gray-800 dark:bg-gray-900/70">
-            <table className="min-w-full border-collapse text-left text-sm text-[#666] dark:text-gray-300">
-              <thead className="bg-[#f8f8f8] text-xs uppercase tracking-wide text-[#888] dark:bg-gray-900 dark:text-gray-400">
-                <tr>
-                  <th className="px-3 py-3 font-medium">项目</th>
-                  <th className="px-3 py-3 font-medium">域名</th>
-                  <th className="px-3 py-3 font-medium">类型</th>
-                  <th className="px-3 py-3 font-medium">定位</th>
-                  <th className="px-3 py-3 font-medium">状态</th>
-                </tr>
-              </thead>
-              <tbody>
-                {maintainedDomains.map((link) => (
-                  <tr
-                    key={link.href}
-                    className="border-t border-[#eee] align-top dark:border-gray-800"
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {maintainedDomains.map((link) => (
+              <article key={link.href} className={getDomainCardClassName(link.status)}>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="inline-flex rounded-full border border-black/5 bg-white/70 px-2.5 py-1 text-[11px] font-medium text-[#666] dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
+                    {link.category}
+                  </span>
+                  <span className={getDomainStatusClassName(link.status)}>{link.status}</span>
+                </div>
+
+                <div className="mt-4">
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow inline-flex items-center text-[15px] font-semibold tracking-tight text-[#222] transition hover:text-black dark:text-gray-100 dark:hover:text-white"
                   >
-                    <td className="px-3 py-3 font-medium text-[#333] dark:text-gray-100">
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="no-external-arrow opacity-90 hover:opacity-100"
-                      >
-                        {link.name}
-                      </a>
-                    </td>
-                    <td className="px-3 py-3 text-xs text-[#777] dark:text-gray-400">
-                      {link.domain}
-                    </td>
-                    <td className="px-3 py-3">{link.category}</td>
-                    <td className="px-3 py-3 text-xs leading-5 text-[#777] dark:text-gray-400">
-                      {link.focus}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className={getDomainStatusClassName(link.status)}>
-                        {link.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    {link.name}
+                  </a>
+                  <p className="mt-2 text-[13px] leading-6 text-[#666] dark:text-gray-400">
+                    {link.focus}
+                  </p>
+                  {link.summary ? (
+                    <p className="mt-2 text-[12px] leading-5 text-[#7a7a7a] dark:text-gray-500">
+                      {link.summary}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {link.domains.map((domain) => (
+                    <a
+                      key={domain}
+                      href={`https://${domain}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-[#e8e8e8] bg-white px-2.5 py-1 text-[11px] font-medium text-[#555] transition hover:border-[#d5d5d5] hover:text-[#111] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+                    >
+                      {domain}
+                    </a>
+                  ))}
+                </div>
+              </article>
+            ))}
           </div>
         </section>
 

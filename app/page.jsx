@@ -69,7 +69,7 @@ export default function HomePage() {
     {
       name: '🧭 Frontend Weekly',
       href: 'https://frontendweekly.cn',
-      domains: ['frontendweekly.cn'],
+      domains: ['frontendweekly.cn', 'qdzk.site'],
       category: '内容周刊',
       focus: '前端热点整理与海外文章翻译',
       status: '持续更新',
@@ -102,6 +102,15 @@ export default function HomePage() {
   const domainStrategyParagraphs = [
     'AI 正在降低做产品和做网站的门槛，但无论应用形态怎么变，域名依然是访问、承接与沉淀的基础入口。',
     '让每个域名对应清晰场景并持续运转，它就不只是一个名字，而会慢慢长出内容、流量与业务价值。',
+  ]
+  const opcVibeProjects = [
+    {
+      name: 'webllm',
+      href: 'https://83945df5.webllm-8rp.pages.dev',
+      category: '实验项目',
+      focus: '基于 WebGPU 的浏览器侧大模型实验，属于 OPC-VIBE 项目集合中的第一个产品。',
+      stack: 'WebGPU · Browser LLM',
+    },
   ]
   const maintainedDomainCountLabel = `目前维护中共 ${maintainedDomains.reduce(
     (sum, item) => sum + item.domains.length,
@@ -644,6 +653,61 @@ export default function HomePage() {
                       {domain}
                     </a>
                   ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="max-w-5xl mx-auto text-left mb-8">
+          <div className="mb-3 flex flex-wrap items-center gap-2.5">
+            <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">🧪 OPC-VIBE 项目集合</h3>
+            <span className="text-xs text-[#888] dark:text-gray-400">一个人公司 Vibe Coding 互联网产品实验</span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {opcVibeProjects.map((project) => (
+              <article
+                key={project.href}
+                className="group relative flex h-full flex-col rounded-2xl border border-[#d8e3ee] bg-[linear-gradient(180deg,#f8fbfe_0%,#eef5fb_100%)] p-4 transition duration-200 hover:border-[#c0d3e5] hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-[linear-gradient(180deg,#101826_0%,#0d1420_100%)]"
+              >
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/70 to-transparent"
+                />
+
+                <div className="pt-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="inline-flex rounded-full border border-sky-200/80 bg-white/80 px-2 py-0.5 text-[11px] font-medium text-sky-700 dark:border-sky-900/60 dark:bg-slate-900/70 dark:text-sky-200">
+                      {project.category}
+                    </span>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#6b7a90] dark:text-slate-400">
+                      {project.stack}
+                    </span>
+                  </div>
+
+                  <a
+                    href={project.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow mt-4 inline-flex items-center text-[15px] font-semibold tracking-tight text-[#17324d] transition hover:text-[#0b5cab] dark:text-slate-100 dark:hover:text-sky-300"
+                  >
+                    {project.name}
+                  </a>
+                  <p className="mt-2 text-[13px] leading-6 text-[#58687a] dark:text-slate-300">
+                    {project.focus}
+                  </p>
+
+                  <div className="mt-4 pt-1">
+                    <a
+                      href={project.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center rounded-full border border-[#bfd3e5] bg-white/90 px-3 py-1.5 text-[11px] font-medium text-[#17324d] transition hover:border-[#9fc0de] hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:border-slate-600"
+                    >
+                      打开实验
+                    </a>
+                  </div>
                 </div>
               </article>
             ))}

@@ -108,7 +108,7 @@ export default function HomePage() {
       name: 'webllm',
       href: 'https://83945df5.webllm-8rp.pages.dev',
       category: '实验项目',
-      focus: '基于 WebGPU 的浏览器侧大模型实验，属于 OPC-VIBE 项目集合中的第一个产品。',
+      focus: '基于 WebGPU 的浏览器侧大模型实验。',
       stack: 'WebGPU · Browser LLM',
     },
   ]
@@ -715,7 +715,7 @@ export default function HomePage() {
         </section>
 
         <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center text-center">
-          <span>© 2025 涂阿燃的网络日志</span>
+          <span>© 2025—2026 涂阿燃的网络日志</span>
           <a href="/traffic" className="opacity-80 hover:opacity-100">
             流量统计
           </a>

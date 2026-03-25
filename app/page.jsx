@@ -111,6 +111,34 @@ export default function HomePage() {
       focus: '基于 WebGPU 的浏览器侧大模型实验。',
       stack: 'WebGPU · Browser LLM',
     },
+    {
+      name: '安东尼学AI',
+      href: 'https://matrix-ai-pdfs.pages.dev/',
+      category: '学习工具',
+      focus: 'AI 学习资料整理与阅读入口，面向系统化学习与持续积累。',
+      stack: 'AI Learning',
+    },
+    {
+      name: 'banana-gallery',
+      href: 'https://banana-gallery.pages.dev/',
+      category: '创意工具',
+      focus: '轻量化的图片与内容展示实验，用于验证视觉内容产品的交互形态。',
+      stack: 'Gallery · Visual',
+    },
+    {
+      name: '提示词工程',
+      href: 'https://awesome-prompt-seven.vercel.app/',
+      category: '效率工具',
+      focus: '围绕提示词整理、沉淀与复用的轻量产品实验。',
+      stack: 'Prompt · Workflow',
+    },
+    {
+      name: '代码矿工',
+      href: 'https://toolkit-hub.pages.dev/',
+      category: '开发工具',
+      focus: '面向开发者的工具集合与能力聚合入口。',
+      stack: 'Dev Tools',
+    },
   ]
   const maintainedDomainCountLabel = `目前维护中共 ${maintainedDomains.reduce(
     (sum, item) => sum + item.domains.length,
@@ -383,7 +411,7 @@ export default function HomePage() {
             </ul>
           </section>
 
-          <section className="mt-10">
+          <section className="mt-6">
             <h2>个人介绍</h2>
             <div className="text-sm text-[#666]">
               <p>
@@ -452,7 +480,6 @@ export default function HomePage() {
             </div>
           </section>
 
-          <StompPanel />
         </main>
 
         <aside className="w-full md:w-64">
@@ -518,63 +545,6 @@ export default function HomePage() {
               </div>
             </div>
           </section>
-
-          <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">工具箱</h3>
-            <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">
-              <li>
-                ▪{' '}
-                <a
-                  href="https://matrix-ai-pdfs.pages.dev/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow opacity-80 hover:opacity-100"
-                >
-                  <span className="inline-flex items-center gap-1">
-                    安东尼学AI
-                    <span aria-hidden="true">🔥🔥🔥</span>
-                  </span>
-                </a>
-              </li>
-              <li>
-                ▪{' '}
-                <a
-                  href="https://banana-gallery.pages.dev/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow opacity-80 hover:opacity-100"
-                >
-                  <span className="inline-flex items-center gap-1">
-                    banana-gallery
-                    <span aria-hidden="true">🔥</span>
-                  </span>
-                </a>
-              </li>
-              <li>
-                ▪{' '}
-                <a
-                  href="https://awesome-prompt-seven.vercel.app/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow opacity-80 hover:opacity-100"
-                >
-                  提示词工程
-                </a>
-              </li>
-              <li>
-                ▪{' '}
-                <a
-                  href="https://toolkit-hub.pages.dev/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow opacity-80 hover:opacity-100"
-                >
-                  代码矿工
-                </a>
-              </li>
-            </ul>
-          </section>
-
 
         </aside>
       </div>
@@ -665,53 +635,60 @@ export default function HomePage() {
             <span className="text-xs text-[#888] dark:text-gray-400">一个人公司 Vibe Coding 互联网产品实验</span>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {opcVibeProjects.map((project) => (
-              <article
-                key={project.href}
-                className="group relative flex h-full flex-col rounded-2xl border border-[#d8e3ee] bg-[linear-gradient(180deg,#f8fbfe_0%,#eef5fb_100%)] p-4 transition duration-200 hover:border-[#c0d3e5] hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-[linear-gradient(180deg,#101826_0%,#0d1420_100%)]"
-              >
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/70 to-transparent"
-                />
-
-                <div className="pt-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="inline-flex rounded-full border border-sky-200/80 bg-white/80 px-2 py-0.5 text-[11px] font-medium text-sky-700 dark:border-sky-900/60 dark:bg-slate-900/70 dark:text-sky-200">
-                      {project.category}
-                    </span>
-                    <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#6b7a90] dark:text-slate-400">
-                      {project.stack}
-                    </span>
-                  </div>
-
-                  <a
-                    href={project.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow mt-4 inline-flex items-center text-[15px] font-semibold tracking-tight text-[#17324d] transition hover:text-[#0b5cab] dark:text-slate-100 dark:hover:text-sky-300"
+          <div className="overflow-x-auto rounded-xl border border-[#d8e3ee] bg-[linear-gradient(180deg,#f8fbfe_0%,#eef5fb_100%)] dark:border-slate-800 dark:bg-[linear-gradient(180deg,#101826_0%,#0d1420_100%)]">
+            <table className="min-w-full border-collapse text-left text-[12px] text-[#58687a] dark:text-slate-300">
+              <thead className="bg-white/70 text-[11px] uppercase tracking-[0.12em] text-[#6b7a90] dark:bg-slate-900/40 dark:text-slate-400">
+                <tr>
+                  <th className="px-3 py-2.5 font-medium">项目</th>
+                  <th className="px-3 py-2.5 font-medium">类型</th>
+                  <th className="px-3 py-2.5 font-medium">方向</th>
+                  <th className="px-3 py-2.5 font-medium">访问</th>
+                </tr>
+              </thead>
+              <tbody>
+                {opcVibeProjects.map((project) => (
+                  <tr
+                    key={project.href}
+                    className="border-t border-[#d8e3ee] align-top dark:border-slate-800"
                   >
-                    {project.name}
-                  </a>
-                  <p className="mt-2 text-[13px] leading-6 text-[#58687a] dark:text-slate-300">
-                    {project.focus}
-                  </p>
-
-                  <div className="mt-4 pt-1">
-                    <a
-                      href={project.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center rounded-full border border-[#bfd3e5] bg-white/90 px-3 py-1.5 text-[11px] font-medium text-[#17324d] transition hover:border-[#9fc0de] hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:border-slate-600"
-                    >
-                      打开实验
-                    </a>
-                  </div>
-                </div>
-              </article>
-            ))}
+                    <td className="px-3 py-3">
+                      <div className="font-semibold tracking-tight text-[#17324d] dark:text-slate-100">
+                        {project.name}
+                      </div>
+                      <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#6b7a90] dark:text-slate-400">
+                        {project.stack}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className="inline-flex rounded-full border border-sky-200/80 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:border-sky-900/60 dark:bg-slate-900/70 dark:text-sky-200">
+                        {project.category}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 leading-5">
+                      {project.focus}
+                    </td>
+                    <td className="px-3 py-3">
+                      <a
+                        href={project.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center rounded-full border border-[#bfd3e5] bg-white/90 px-2.5 py-1 text-[10px] font-medium text-[#17324d] transition hover:border-[#9fc0de] hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:border-slate-600"
+                      >
+                        打开实验
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        </section>
+
+        <section className="mb-12">
+          <div className="mb-2 flex flex-wrap items-center gap-2.5">
+            <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">💬 留言板</h3>
+          </div>
+          <StompPanel />
         </section>
 
         <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center text-center">

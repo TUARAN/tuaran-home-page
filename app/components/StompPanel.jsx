@@ -101,11 +101,8 @@ export default function StompPanel() {
   }
 
   return (
-    <section className="mt-8 rounded-xl border border-gray-200/70 bg-white/80 p-4 text-sm shadow-sm backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900/70">
-      <h2 className="flex items-center justify-between gap-3">
-        <span>踩一踩</span>
-
-        <span className="flex items-center gap-2">
+    <section className="rounded-xl border border-gray-200/70 bg-white/80 p-4 text-sm shadow-sm backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900/70">
+      <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={refresh}
@@ -132,8 +129,7 @@ export default function StompPanel() {
               GitHub 登录
             </button>
           )}
-        </span>
-      </h2>
+      </div>
 
       {isAuthed ? (
         <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
@@ -150,7 +146,7 @@ export default function StompPanel() {
             onChange={(e) => setMessage(e.target.value)}
             rows={3}
             maxLength={280}
-            placeholder="登录后可以留言踩一踩（最多 280 字）"
+            placeholder="登录后可以留言（最多 280 字）"
             className="w-full rounded-lg border border-gray-200/70 bg-white/80 p-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-gray-200 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200 dark:focus:ring-gray-700"
           />
 
@@ -163,7 +159,7 @@ export default function StompPanel() {
               disabled={loading || !message.trim() || remaining < 0}
               className="rounded-full border border-gray-200/70 bg-white/80 px-4 py-1 text-[12px] text-gray-700 shadow-sm hover:bg-white disabled:opacity-60 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
             >
-              {loading ? '发送中…' : '踩一踩'}
+              {loading ? '发送中…' : '留言'}
             </button>
           </div>
         </form>
@@ -200,7 +196,7 @@ export default function StompPanel() {
             ))}
           </ul>
         ) : (
-          <div className="text-[12px] text-gray-500 dark:text-gray-400">还没有留言，来第一个踩一踩。</div>
+          <div className="text-[12px] text-gray-500 dark:text-gray-400">还没有留言，来留下第一条吧。</div>
         )}
       </div>
     </section>

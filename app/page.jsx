@@ -51,6 +51,14 @@ export default function HomePage() {
   const featuredArticles = articles.slice(0, 3)
   const maintainedDomains = [
     {
+      name: '🏠 WebHP',
+      href: 'https://tuaran.me',
+      domains: ['tuaran.me', '2aran.com'],
+      category: '个人主页',
+      focus: '个人网络日志、项目总览与长期创作内容沉淀。',
+      status: '运营中',
+    },
+    {
       name: '🚀 MatrixLink',
       href: 'https://matrixlink.tech',
       domains: ['matrixlink.tech'],
@@ -693,6 +701,9 @@ export default function HomePage() {
 
         <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center text-center">
           <span>© 2025—2026 涂阿燃的网络日志</span>
+          <a href="/donate" className="opacity-80 hover:opacity-100">
+            Buy Me a Coffee
+          </a>
           <a href="/traffic" className="opacity-80 hover:opacity-100">
             流量统计
           </a>

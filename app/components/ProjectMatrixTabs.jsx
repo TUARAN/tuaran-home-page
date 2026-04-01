@@ -51,14 +51,14 @@ export default function ProjectMatrixTabs({ launchedProjects, devProjects, domai
 
   return (
     <section id="project-matrix" className="max-w-5xl mx-auto scroll-mt-24 text-left mb-8">
+      <div className="mb-2">
+        <h2 className="text-[#555] dark:text-gray-200">🗂 项目矩阵</h2>
+      </div>
+
       <div className="rounded-[28px] border border-[#e9edf2] bg-[linear-gradient(180deg,#ffffff_0%,#fafbfd_100%)] p-4 shadow-sm dark:border-gray-800 dark:bg-[linear-gradient(180deg,#0f1115_0%,#11151c_100%)] sm:p-5">
-        <div className="flex flex-col gap-4 border-b border-[#eef1f4] pb-4 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">🗂 项目矩阵</h3>
-              <span className="text-xs text-[#888] dark:text-gray-400">{panelCopy.eyebrow}</span>
-            </div>
-            <div className="mt-3 max-w-2xl space-y-2 text-[13px] leading-6 text-[#666] dark:text-gray-300">
+            <div className="max-w-2xl space-y-2 text-[13px] leading-6 text-[#666] dark:text-gray-300">
               {(activeTab === 'launched' ? domainStrategyParagraphs : panelCopy.paragraphs).map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
@@ -88,6 +88,8 @@ export default function ProjectMatrixTabs({ launchedProjects, devProjects, domai
             })}
           </div>
         </div>
+
+        <div className="mb-5 w-16 border-b border-[#eef1f4] dark:border-gray-800" />
 
         {activeTab === 'launched' ? (
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

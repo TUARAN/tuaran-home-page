@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { articles } from './articles/articlesData'
 import SettingsButton from './components/SettingsButton'
 import StompPanel from './components/StompPanel'
+import ProjectMatrixTabs from './components/ProjectMatrixTabs'
 
 const posts = [
   {
@@ -148,10 +149,6 @@ export default function HomePage() {
       stack: 'Dev Tools',
     },
   ]
-  const maintainedDomainCountLabel = `目前维护中共 ${maintainedDomains.reduce(
-    (sum, item) => sum + item.domains.length,
-    0
-  )} 个`
   const identityGroups = [
     {
       label: '职业',
@@ -197,31 +194,6 @@ export default function HomePage() {
         return `${base} border-emerald-200/70 bg-emerald-50/80 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200`
       default:
         return `${base} border-gray-200/70 bg-white/80 text-gray-700 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200`
-    }
-  }
-
-  const getDomainStatusClassName = (status) => {
-    const base = 'inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium'
-    switch (status) {
-      case '持续更新':
-        return `${base} border-blue-200/70 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200`
-      case '打磨中':
-        return `${base} border-amber-200/70 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200`
-      default:
-        return `${base} border-emerald-200/70 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200`
-    }
-  }
-
-  const getDomainCardClassName = (status) => {
-    const base =
-      'group rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] dark:hover:shadow-none'
-    switch (status) {
-      case '持续更新':
-        return `${base} border-blue-100 bg-gradient-to-br from-blue-50/80 via-white to-white dark:border-blue-900/50 dark:bg-gradient-to-br dark:from-blue-950/20 dark:via-gray-950 dark:to-gray-950`
-      case '打磨中':
-        return `${base} border-amber-100 bg-gradient-to-br from-amber-50/80 via-white to-white dark:border-amber-900/50 dark:bg-gradient-to-br dark:from-amber-950/20 dark:via-gray-950 dark:to-gray-950`
-      default:
-        return `${base} border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-white dark:border-emerald-900/50 dark:bg-gradient-to-br dark:from-emerald-950/20 dark:via-gray-950 dark:to-gray-950`
     }
   }
 
@@ -558,139 +530,11 @@ export default function HomePage() {
       </div>
 
       <footer className="mt-16 pt-8 border-t border-[#eee] dark:border-gray-800 text-[#999] text-xs">
-        <section className="max-w-5xl mx-auto text-left mb-8">
-          <div className="mb-3 flex flex-wrap items-center gap-2.5">
-            <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">🌐 我维护的域名</h3>
-            <span className="text-xs text-[#888] dark:text-gray-400">{maintainedDomainCountLabel}</span>
-            <div className="group relative inline-flex">
-              <button
-                type="button"
-                aria-label="查看域名价值经营说明"
-                className="inline-flex items-center gap-1 rounded-full border border-[#e6e6e6] bg-white px-2.5 py-1 text-xs font-medium text-[#666] opacity-90 transition hover:opacity-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-              >
-                <span
-                  aria-hidden="true"
-                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] leading-none"
-                >
-                  i
-                </span>
-                <span>人人都能编程，让域名“长出业务”</span>
-              </button>
-              <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-[90vw] max-w-[42rem] translate-y-1 rounded-xl border border-[#e8e8e8] bg-white p-4 text-left text-sm text-[#555] opacity-0 shadow-xl transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                <div className="text-sm font-semibold text-[#333] dark:text-gray-100">
-                  人人都能编程，让域名“长出业务”
-                </div>
-                <div className="mt-3 space-y-3 text-sm leading-6 text-[#666] dark:text-gray-300">
-                  {domainStrategyParagraphs.map((paragraph) => (
-                    <p key={paragraph} className="mb-0 text-sm leading-6 text-[#666] dark:text-gray-300">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {maintainedDomains.map((link) => (
-              <article key={link.href} className={getDomainCardClassName(link.status)}>
-                <div className="flex items-start justify-between gap-3">
-                  <span className="inline-flex rounded-full border border-black/5 bg-white/70 px-2.5 py-1 text-[11px] font-medium text-[#666] dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
-                    {link.category}
-                  </span>
-                  <span className={getDomainStatusClassName(link.status)}>{link.status}</span>
-                </div>
-
-                <div className="mt-4">
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow inline-flex items-center text-[15px] font-semibold tracking-tight text-[#222] transition hover:text-black dark:text-gray-100 dark:hover:text-white"
-                  >
-                    {link.name}
-                  </a>
-                  <p className="mt-2 text-[13px] leading-6 text-[#666] dark:text-gray-400">
-                    {link.focus}
-                  </p>
-                  {link.summary ? (
-                    <p className="mt-2 text-[12px] leading-5 text-[#7a7a7a] dark:text-gray-500">
-                      {link.summary}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {link.domains.map((domain) => (
-                    <a
-                      key={domain}
-                      href={`https://${domain}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full border border-[#e8e8e8] bg-white px-2.5 py-1 text-[11px] font-medium text-[#555] transition hover:border-[#d5d5d5] hover:text-[#111] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-                    >
-                      {domain}
-                    </a>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="max-w-5xl mx-auto text-left mb-8">
-          <div className="mb-3 flex flex-wrap items-center gap-2.5">
-            <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">🧪 OPC-VIBE 项目集合</h3>
-            <span className="text-xs text-[#888] dark:text-gray-400">一个人公司 Vibe Coding 互联网产品实验</span>
-          </div>
-
-          <div className="overflow-x-auto rounded-xl border border-[#d8e3ee] bg-[linear-gradient(180deg,#f8fbfe_0%,#eef5fb_100%)] dark:border-slate-800 dark:bg-[linear-gradient(180deg,#101826_0%,#0d1420_100%)]">
-            <table className="min-w-full border-collapse text-left text-[12px] text-[#58687a] dark:text-slate-300">
-              <thead className="bg-white/70 text-[11px] uppercase tracking-[0.12em] text-[#6b7a90] dark:bg-slate-900/40 dark:text-slate-400">
-                <tr>
-                  <th className="px-3 py-2.5 font-medium">项目</th>
-                  <th className="px-3 py-2.5 font-medium">类型</th>
-                  <th className="px-3 py-2.5 font-medium">方向</th>
-                  <th className="px-3 py-2.5 font-medium">访问</th>
-                </tr>
-              </thead>
-              <tbody>
-                {opcVibeProjects.map((project) => (
-                  <tr
-                    key={project.href}
-                    className="border-t border-[#d8e3ee] align-top dark:border-slate-800"
-                  >
-                    <td className="px-3 py-3">
-                      <div className="font-semibold tracking-tight text-[#17324d] dark:text-slate-100">
-                        {project.name}
-                      </div>
-                      <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#6b7a90] dark:text-slate-400">
-                        {project.stack}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="inline-flex rounded-full border border-sky-200/80 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:border-sky-900/60 dark:bg-slate-900/70 dark:text-sky-200">
-                        {project.category}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 leading-5">
-                      {project.focus}
-                    </td>
-                    <td className="px-3 py-3">
-                      <a
-                        href={project.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center rounded-full border border-[#bfd3e5] bg-white/90 px-2.5 py-1 text-[10px] font-medium text-[#17324d] transition hover:border-[#9fc0de] hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:border-slate-600"
-                      >
-                        打开实验
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <ProjectMatrixTabs
+          launchedProjects={maintainedDomains}
+          devProjects={opcVibeProjects}
+          domainStrategyParagraphs={domainStrategyParagraphs}
+        />
 
         <section className="mb-12">
           <div className="mb-2 flex flex-wrap items-center gap-2.5">

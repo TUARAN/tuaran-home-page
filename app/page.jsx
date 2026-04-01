@@ -4,6 +4,7 @@ import { articles } from './articles/articlesData'
 import SettingsButton from './components/SettingsButton'
 import StompPanel from './components/StompPanel'
 import ProjectMatrixTabs from './components/ProjectMatrixTabs'
+import HomeScrollSnap from './components/HomeScrollSnap'
 
 const posts = [
   {
@@ -109,7 +110,7 @@ export default function HomePage() {
     },
   ]
   const domainStrategyParagraphs = [
-    'AI 正在降低做产品和做网站的门槛，但无论应用形态怎么变，域名依然是访问、承接与沉淀的基础入口。',
+    'AI 正在“巨幅”降低做产品和做网站的门槛，但无论应用形态怎么变，域名依然是访问、承接与沉淀的基础入口。',
     '让每个域名对应清晰场景并持续运转，它就不只是一个名字，而会慢慢长出内容、流量与业务价值。',
   ]
   const opcVibeProjects = [
@@ -199,93 +200,96 @@ export default function HomePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] dark:border-gray-800 pb-2 mb-8">
-        <div>
-          <div>
-            <div className="flex items-center gap-3 mt-1 min-w-0">
-              <div className="text-sm text-[#666] dark:text-gray-300 shrink-0">
-                <span className="text-sm text-[#777] dark:text-gray-400">账号集：</span>{' '}
-                <a
-                  href="https://juejin.cn/user/1521379823340792"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="opacity-80 hover:opacity-100"
-                >
-                  掘金安东尼
-                </a>
-                {' '}｜{' '}
-                <a
-                  href="https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="opacity-80 hover:opacity-100"
-                >
-                  安东尼404
-                </a>
-                {' '}｜{' '}
-                <a
-                  href="https://blog.csdn.net/aifs2025"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="opacity-80 hover:opacity-100"
-                >
-                  安东尼与AI
-                </a>
-              </div>
+      <HomeScrollSnap />
 
-              <span className="text-sm text-[#777] dark:text-gray-400 shrink-0">身份标签：</span>
-              <div className="identity-scroll relative overflow-hidden w-[180px] sm:w-[220px] lg:w-[260px] min-w-0">
-                <div className="identity-scroll-track">
-                  {identityItems.map((item) => (
-                    item.href ? (
-                      <a
-                        key={item.key}
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`${getIdentityTagClassName(item.tone)} opacity-90 hover:opacity-100`}
-                      >
-                        {item.label}
-                      </a>
-                    ) : (
-                      <span key={item.key} className={getIdentityTagClassName(item.tone)}>
-                        {item.label}
-                      </span>
-                    )
-                  ))}
-                  {identityItems.map((item) => (
-                    item.href ? (
-                      <a
-                        key={`${item.key}-clone`}
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`${getIdentityTagClassName(item.tone)} opacity-90 hover:opacity-100`}
-                      >
-                        {item.label}
-                      </a>
-                    ) : (
-                      <span key={`${item.key}-clone`} className={getIdentityTagClassName(item.tone)}>
-                        {item.label}
-                      </span>
-                    )
-                  ))}
+      <section className="lg:min-h-[calc(100vh-72px)] lg:snap-start lg:flex lg:flex-col lg:justify-start">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-[#eee] dark:border-gray-800 pb-2 mb-8">
+          <div>
+            <div>
+              <div className="flex items-center gap-3 mt-1 min-w-0">
+                <div className="text-sm text-[#666] dark:text-gray-300 shrink-0">
+                  <span className="text-sm text-[#777] dark:text-gray-400">账号集：</span>{' '}
+                  <a
+                    href="https://juejin.cn/user/1521379823340792"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="opacity-80 hover:opacity-100"
+                  >
+                    掘金安东尼
+                  </a>
+                  {' '}｜{' '}
+                  <a
+                    href="https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="opacity-80 hover:opacity-100"
+                  >
+                    安东尼404
+                  </a>
+                  {' '}｜{' '}
+                  <a
+                    href="https://blog.csdn.net/aifs2025"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="opacity-80 hover:opacity-100"
+                  >
+                    安东尼与AI
+                  </a>
+                </div>
+
+                <span className="text-sm text-[#777] dark:text-gray-400 shrink-0">身份标签：</span>
+                <div className="identity-scroll relative overflow-hidden w-[180px] sm:w-[220px] lg:w-[260px] min-w-0">
+                  <div className="identity-scroll-track">
+                    {identityItems.map((item) => (
+                      item.href ? (
+                        <a
+                          key={item.key}
+                          href={item.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`${getIdentityTagClassName(item.tone)} opacity-90 hover:opacity-100`}
+                        >
+                          {item.label}
+                        </a>
+                      ) : (
+                        <span key={item.key} className={getIdentityTagClassName(item.tone)}>
+                          {item.label}
+                        </span>
+                      )
+                    ))}
+                    {identityItems.map((item) => (
+                      item.href ? (
+                        <a
+                          key={`${item.key}-clone`}
+                          href={item.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`${getIdentityTagClassName(item.tone)} opacity-90 hover:opacity-100`}
+                        >
+                          {item.label}
+                        </a>
+                      ) : (
+                        <span key={`${item.key}-clone`} className={getIdentityTagClassName(item.tone)}>
+                          {item.label}
+                        </span>
+                      )
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="text-sm text-[#666] dark:text-gray-300 mt-4">
-              专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。
+              <div className="text-sm text-[#666] dark:text-gray-300 mt-4">
+                专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex flex-col items-end gap-4 text-sm sm:self-stretch sm:justify-between sm:py-1">
-          <SettingsButton />
-        </div>
-      </header>
+          <div className="flex flex-col items-end gap-4 text-sm sm:self-stretch sm:justify-between sm:py-1">
+            <SettingsButton />
+          </div>
+        </header>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <main className="flex-1">
-          <section className="mb-10">
+        <div className="flex flex-col md:flex-row gap-8">
+          <main className="flex-1">
+            <section className="mb-10">
             <h2>推荐阅读</h2>
             <ul className="space-y-3">
               {featuredArticles.map((a, index) => (
@@ -318,82 +322,82 @@ export default function HomePage() {
             </ul>
           </section>
 
-          <section>
-            <h2>发起项目</h2>
-            <ul className="space-y-3">
-              {posts.map((p) => (
-                <li key={p.href} className="flex items-start gap-2">
-                  <span className="text-[#999] text-sm mt-1">▪</span>
-                  <div className="text-sm">
-                    {p.date ? <span className="text-[#666] mr-2">{p.date} »</span> : null}
-                    {p.githubHref ? (
-                      (() => {
-                        const { name, rest } = splitProjectTitle(p.title)
-                        return (
-                          <>
-                            <a
-                              href={p.githubHref}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 !text-black opacity-80 hover:opacity-100 underline underline-offset-4"
-                              aria-label={`${name || p.title} GitHub`}
-                            >
-                              <span>{name || p.title}</span>
-                              <svg
-                                aria-hidden="true"
-                                viewBox="0 0 16 16"
-                                className="w-4 h-4 shrink-0"
-                                fill="currentColor"
+            <section>
+              <h2>发起项目</h2>
+              <ul className="space-y-3">
+                {posts.map((p) => (
+                  <li key={p.href} className="flex items-start gap-2">
+                    <span className="text-[#999] text-sm mt-1">▪</span>
+                    <div className="text-sm">
+                      {p.date ? <span className="text-[#666] mr-2">{p.date} »</span> : null}
+                      {p.githubHref ? (
+                        (() => {
+                          const { name, rest } = splitProjectTitle(p.title)
+                          return (
+                            <>
+                              <a
+                                href={p.githubHref}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 !text-black opacity-80 hover:opacity-100 underline underline-offset-4"
+                                aria-label={`${name || p.title} GitHub`}
                               >
-                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.58 7.58 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-                              </svg>
-                            </a>
-                            {rest ? <span className="text-[#666]">{rest}</span> : null}
-                          </>
-                        )
-                      })()
-                    ) : (
-                      <span className="opacity-80">{p.title}</span>
-                    )}
-                    {p.showExternalIcon ? (
-                      <a
-                        href={p.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label="站点"
-                        className="ml-2 inline-flex items-center gap-1 !text-black opacity-80 hover:opacity-100 no-underline hover:no-underline border-b border-transparent hover:border-current"
-                      >
-                        <svg
-                          aria-hidden="true"
-                          viewBox="0 0 16 16"
-                          className="w-4 h-4 shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                                <span>{name || p.title}</span>
+                                <svg
+                                  aria-hidden="true"
+                                  viewBox="0 0 16 16"
+                                  className="w-4 h-4 shrink-0"
+                                  fill="currentColor"
+                                >
+                                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.58 7.58 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+                                </svg>
+                              </a>
+                              {rest ? <span className="text-[#666]">{rest}</span> : null}
+                            </>
+                          )
+                        })()
+                      ) : (
+                        <span className="opacity-80">{p.title}</span>
+                      )}
+                      {p.showExternalIcon ? (
+                        <a
+                          href={p.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label="站点"
+                          className="ml-2 inline-flex items-center gap-1 !text-black opacity-80 hover:opacity-100 no-underline hover:no-underline border-b border-transparent hover:border-current"
                         >
-                          <path d="M3 3.5h10c.69 0 1.25.56 1.25 1.25v7.5c0 .69-.56 1.25-1.25 1.25H3c-.69 0-1.25-.56-1.25-1.25v-7.5C1.75 4.06 2.31 3.5 3 3.5Z" />
-                          <path d="M1.75 5.75h12.5" />
-                          <circle cx="9.75" cy="9.25" r="2" />
-                          <path d="M9.75 7.5v3.5" />
-                          <path d="M8 9.25h3.5" />
-                          <path d="M4.25 4.75h.01" />
-                          <path d="M5.75 4.75h.01" />
-                          <path d="M7.25 4.75h.01" />
-                        </svg>
-                        <span className="text-xs !text-[#004276] dark:!text-blue-400 leading-none">站点</span>
-                      </a>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 16 16"
+                            className="w-4 h-4 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 3.5h10c.69 0 1.25.56 1.25 1.25v7.5c0 .69-.56 1.25-1.25 1.25H3c-.69 0-1.25-.56-1.25-1.25v-7.5C1.75 4.06 2.31 3.5 3 3.5Z" />
+                            <path d="M1.75 5.75h12.5" />
+                            <circle cx="9.75" cy="9.25" r="2" />
+                            <path d="M9.75 7.5v3.5" />
+                            <path d="M8 9.25h3.5" />
+                            <path d="M4.25 4.75h.01" />
+                            <path d="M5.75 4.75h.01" />
+                            <path d="M7.25 4.75h.01" />
+                          </svg>
+                          <span className="text-xs !text-[#004276] dark:!text-blue-400 leading-none">站点</span>
+                        </a>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
 
-          <section className="mt-6">
-            <h2>个人介绍</h2>
-            <div className="text-sm text-[#666]">
+            <section className="mt-6">
+              <h2>个人介绍</h2>
+              <div className="text-sm text-[#666]">
               <p>
                 ▪ 已出版：
                 <a
@@ -457,102 +461,105 @@ export default function HomePage() {
                 >
                   ▪ 全网累计发布技术文章 500 篇+，阅读量超 400 万+ 📊
                 </a></p>
-            </div>
-          </section>
-
-        </main>
-
-        <aside className="w-full md:w-64">
-          <section className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">关于</h3>
-            <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
-              <p>主要写：编程 / 创作 / 生活记录。</p>
-              <p>
-                联系：微信号 <span className="font-semibold text-[#222] dark:text-gray-100">atar24</span>
-              </p>
-              <p>
-                创立：{' '}
-                <a
-                  href="http://matrixlink.tech/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow text-[#004276] dark:text-blue-400 underline underline-offset-2 opacity-80 hover:opacity-100"
-                >
-                  矩联科技
-                </a>
-              </p>
-              <div>
-                <Image
-                  src="/tuaranme.png"
-                  alt="涂阿燃"
-                  width={80}
-                  height={80}
-                  className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
-                />
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">公众号</h3>
-            <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-[#666] dark:text-gray-300">扫码交个朋友🤝</span>
+          </main>
+
+          <aside className="w-full md:w-64">
+            <section className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">关于</h3>
+              <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
+                <p>主要写：编程 / 创作 / 生活记录。</p>
+                <p>
+                  联系：微信号 <span className="font-semibold text-[#222] dark:text-gray-100">atar24</span>
+                </p>
+                <p>
+                  创立：{' '}
+                  <a
+                    href="http://matrixlink.tech/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow text-[#004276] dark:text-blue-400 underline underline-offset-2 opacity-80 hover:opacity-100"
+                  >
+                    矩联科技
+                  </a>
+                </p>
+                <div>
                   <Image
-                    src="/qrcodewechat3.png"
-                    alt="扫码加好友二维码"
-                    width={100}
-                    height={100}
-                    className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
-                  />
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-[#666] dark:text-gray-300">关注公众号👀</span>
-                  <Image
-                    src="/qrcode_for_gh.jpg"
-                    alt="公众号二维码"
-                    width={100}
-                    height={100}
-                    className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
+                    src="/tuaranme.png"
+                    alt="涂阿燃"
+                    width={80}
+                    height={80}
+                    className="w-20 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
                   />
                 </div>
               </div>
-              <div className="text-xs font-semibold tracking-wide">
-                <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 bg-clip-text text-transparent">
-                  ✨ 高山流水觅知音，邀君并肩共前行。
-                </span>
+            </section>
+
+            <section className="border border-[#eee] bg-white p-4 mt-6 dark:border-gray-800 dark:bg-gray-900">
+              <h3 className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">公众号</h3>
+              <div className="text-sm text-[#666] space-y-3 dark:text-gray-300">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-xs text-[#666] dark:text-gray-300">扫码交个朋友🤝</span>
+                    <Image
+                      src="/qrcodewechat3.png"
+                      alt="扫码加好友二维码"
+                      width={100}
+                      height={100}
+                      className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
+                    />
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-xs text-[#666] dark:text-gray-300">关注公众号👀</span>
+                    <Image
+                      src="/qrcode_for_gh.jpg"
+                      alt="公众号二维码"
+                      width={100}
+                      height={100}
+                      className="w-24 max-w-full border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-950"
+                    />
+                  </div>
+                </div>
+                <div className="text-xs font-semibold tracking-wide">
+                  <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 bg-clip-text text-transparent">
+                    ✨ 高山流水觅知音，邀君并肩共前行。
+                  </span>
+                </div>
               </div>
+            </section>
+
+          </aside>
+        </div>
+      </section>
+
+      <section className="lg:min-h-[calc(100vh-72px)] lg:snap-start lg:flex lg:flex-col">
+        <footer className="mt-4 pt-2 text-[#999] text-xs lg:mt-0 lg:flex-1">
+          <ProjectMatrixTabs
+            launchedProjects={maintainedDomains}
+            devProjects={opcVibeProjects}
+            domainStrategyParagraphs={domainStrategyParagraphs}
+          />
+
+          <section className="mb-12">
+            <div className="mb-2 flex flex-wrap items-center gap-2.5">
+              <h2 className="text-[#555] dark:text-gray-200">💬 留言板</h2>
             </div>
+            <StompPanel />
           </section>
 
-        </aside>
-      </div>
-
-      <footer className="mt-16 pt-8 border-t border-[#eee] dark:border-gray-800 text-[#999] text-xs">
-        <ProjectMatrixTabs
-          launchedProjects={maintainedDomains}
-          devProjects={opcVibeProjects}
-          domainStrategyParagraphs={domainStrategyParagraphs}
-        />
-
-        <section className="mb-12">
-          <div className="mb-2 flex flex-wrap items-center gap-2.5">
-            <h3 className="text-sm font-semibold text-[#333] dark:text-gray-200">💬 留言板</h3>
-          </div>
-          <StompPanel />
-        </section>
-
-        <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center text-center">
-          <span>© 2025—2026 涂阿燃的网络日志</span>
-          <a href="/donate" className="opacity-80 hover:opacity-100">
-            Buy Me a Coffee
-          </a>
-          <a href="/traffic" className="opacity-80 hover:opacity-100">
-            流量统计
-          </a>
-        </p>
-      </footer>
+          <p className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center text-center">
+            <span>© 2025—2026 涂阿燃的网络日志</span>
+            <a href="/donate" className="opacity-80 hover:opacity-100">
+              Buy Me a Coffee
+            </a>
+            <a href="/traffic" className="opacity-80 hover:opacity-100">
+              流量统计
+            </a>
+          </p>
+        </footer>
+      </section>
     </div>
   )
 }

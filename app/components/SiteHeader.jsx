@@ -10,7 +10,7 @@ export default function SiteHeader() {
   if (pathname?.startsWith('/people/elon-musk')) return null
 
   return (
-    <header className="border-b border-[#eee] dark:border-gray-800">
+    <header className="sticky top-0 z-40 border-b border-[#eee] bg-[#fdfdf0]/92 backdrop-blur dark:border-gray-800 dark:bg-gray-900/88">
       <div className="max-w-5xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/" className="no-underline hover:no-underline opacity-90 hover:opacity-100" aria-label="返回首页">
           <div className="text-[#111] dark:text-gray-100 leading-tight inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">

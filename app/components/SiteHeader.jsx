@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 
 export default function SiteHeader() {
   const pathname = usePathname()
+  const isWebLlmActive = pathname === '/web-llm'
 
   // Hide global header on special immersive pages.
   if (pathname?.startsWith('/people/elon-musk')) return null
@@ -27,7 +28,7 @@ export default function SiteHeader() {
           </div>
         </Link>
 
-        <nav aria-label="主导航" className="text-sm text-[#666] dark:text-gray-300 flex flex-wrap gap-x-4 gap-y-2">
+        <nav aria-label="主导航" className="text-sm text-[#666] dark:text-gray-300 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link href="/" className="opacity-80 hover:opacity-100 underline underline-offset-4">
             首页
           </Link>
@@ -39,6 +40,33 @@ export default function SiteHeader() {
           </Link>
           <Link href="/bookmarks" className="opacity-80 hover:opacity-100 underline underline-offset-4">
             收藏
+          </Link>
+          <Link
+            href="/web-llm"
+            className={[
+              'web-llm-nav no-underline hover:no-underline',
+              isWebLlmActive ? 'web-llm-nav-active' : '',
+            ].join(' ')}
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="web-llm-nav-icon shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3v2.2" />
+              <path d="M8.2 8.2h7.6a2.8 2.8 0 0 1 2.8 2.8v4.6a2.8 2.8 0 0 1-2.8 2.8H8.2a2.8 2.8 0 0 1-2.8-2.8V11a2.8 2.8 0 0 1 2.8-2.8Z" />
+              <path d="M9.5 12.7h.01" />
+              <path d="M14.5 12.7h.01" />
+              <path d="M9 16h6" />
+              <path d="M7 8.7 5.4 7.5" />
+              <path d="M17 8.7l1.6-1.2" />
+            </svg>
+            <span className="web-llm-nav-label">大模型问答</span>
           </Link>
           <a
             href="https://github.com/TUARAN"

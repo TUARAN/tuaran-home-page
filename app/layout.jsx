@@ -1,6 +1,7 @@
 import Script from 'next/script'
 
 import './globals.css'
+import AnalyticsScripts from './components/AnalyticsScripts'
 import { ThemeProvider } from './components/ThemeProvider'
 import SiteHeader from './components/SiteHeader'
 
@@ -96,21 +97,12 @@ export default function RootLayout({ children }) {
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <Script
-          src="https://analytics.umami.is/script.js"
-          data-website-id="8bb48b09-3e10-4ec1-9bbe-c55c87418fa9"
-          strategy="afterInteractive"
-        />
-        <Script
-          src="https://cloud.umami.is/script.js"
-          data-website-id="8bb48b09-3e10-4ec1-9bbe-c55c87418fa9"
-          strategy="afterInteractive"
-        />
       </head>
       <body suppressHydrationWarning>
         <Script id="tuaran-structured-data" type="application/ld+json" strategy="beforeInteractive">
           {JSON.stringify(structuredData)}
         </Script>
+        <AnalyticsScripts />
         <ThemeProvider>
           <SiteHeader />
 

@@ -13,6 +13,7 @@ const SUGGESTED_QUESTIONS = [
   '站内现在有哪些代表性项目？',
   '我第一次来，建议先看哪些内容？',
 ]
+const ISOLATION_RELOAD_KEY = 'web-llm-isolation-reload-once'
 
 function createId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -106,6 +107,24 @@ export default function WebLlmPageClient() {
 
   useEffect(() => {
     setDiagnostics(getRuntimeDiagnostics())
+  }, [])
+
+  useEffect(() => {
+    const snapshot = getRuntimeDiagnostics()
+    setDiagnostics(snapshot)
+
+    if (typeof window === 'undefined') return
+
+    if (snapshot.crossOriginIsolated) {
+      window.sessionStorage.removeItem(ISOLATION_RELOAD_KEY)
+      return
+    }
+
+    const hasReloaded = window.sessionStorage.getItem(ISOLATION_RELOAD_KEY) === '1'
+    if (!hasReloaded) {
+      window.sessionStorage.setItem(ISOLATION_RELOAD_KEY, '1')
+      window.location.replace('/web-llm')
+    }
   }, [])
 
   useEffect(() => {

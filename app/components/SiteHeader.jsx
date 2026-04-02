@@ -41,7 +41,7 @@ export default function SiteHeader() {
           <Link href="/bookmarks" className="opacity-80 hover:opacity-100 underline underline-offset-4">
             收藏
           </Link>
-          <Link
+          <a
             href="/web-llm"
             className={[
               'web-llm-nav no-underline hover:no-underline',
@@ -67,7 +67,7 @@ export default function SiteHeader() {
               <path d="M17 8.7l1.6-1.2" />
             </svg>
             <span className="web-llm-nav-label">大模型问答</span>
-          </Link>
+          </a>
           <a
             href="https://github.com/TUARAN"
             target="_blank"

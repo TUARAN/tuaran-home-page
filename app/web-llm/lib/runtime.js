@@ -43,12 +43,14 @@ function aggregateProgress(items) {
 }
 
 class DomTextStreamer {
-  constructor(tokenizer, onUpdate) {
+  constructor(tokenizer, onUpdate, onFirstToken) {
     this.text = ''
     this.decodeTokens = 0
     this.firstTokenAt = 0
     this.lastTps = 0
     this.onUpdate = onUpdate
+    this.onFirstToken = onFirstToken
+    this.hasSeenFirstPut = false
     this.textStreamer = new runtimeModule.TextStreamer(tokenizer, {
       skip_prompt: true,
       callback_function: (chunk) => {
@@ -66,6 +68,10 @@ class DomTextStreamer {
   }
 
   put(value) {
+    if (!this.hasSeenFirstPut) {
+      this.hasSeenFirstPut = true
+      this.onFirstToken?.()
+    }
     this.textStreamer.put(value)
   }
 
@@ -86,6 +92,21 @@ class DomTextStreamer {
       tps: this.lastTps,
       isDone,
     })
+  }
+}
+
+function createStagePayload(stage, timings = {}, extras = {}) {
+  return {
+    stage,
+    timings: {
+      contextMs: timings.contextMs || 0,
+      promptMs: timings.promptMs || 0,
+      preprocessMs: timings.preprocessMs || 0,
+      firstTokenMs: timings.firstTokenMs || 0,
+      decodeMs: timings.decodeMs || 0,
+      totalMs: timings.totalMs || 0,
+    },
+    ...extras,
   }
 }
 
@@ -199,7 +220,18 @@ async function dataUrlToRawImage(dataUrl) {
 
 export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNewTokens, onUpdate }) {
   const { processor: activeProcessor, model: activeModel } = await loadModel(modelId)
+  const startedAt = performance.now()
+  const timings = {
+    contextMs: 0,
+    promptMs: 0,
+    preprocessMs: 0,
+    firstTokenMs: 0,
+    decodeMs: 0,
+    totalMs: 0,
+  }
+  onUpdate?.(createStagePayload('整理上下文'))
 
+  const contextStartedAt = performance.now()
   const images = []
   const conversation = [
     {
@@ -250,12 +282,42 @@ export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNe
       content,
     })
   }
+  timings.contextMs = Math.round(performance.now() - contextStartedAt)
+  onUpdate?.(createStagePayload('构建提示词', timings))
 
+  const promptStartedAt = performance.now()
   const prompt = activeProcessor.apply_chat_template(conversation, {
     add_generation_prompt: true,
   })
+  timings.promptMs = Math.round(performance.now() - promptStartedAt)
+  onUpdate?.(createStagePayload('处理输入', timings))
+
+  const preprocessStartedAt = performance.now()
   const inputs = await activeProcessor(prompt, images.length ? images : null)
-  const streamer = new DomTextStreamer(activeProcessor.tokenizer, onUpdate)
+  timings.preprocessMs = Math.round(performance.now() - preprocessStartedAt)
+  onUpdate?.(createStagePayload('等待首个 token', timings))
+
+  const generateStartedAt = performance.now()
+  let firstTokenAt = 0
+  const streamer = new DomTextStreamer(
+    activeProcessor.tokenizer,
+    (update) => {
+      timings.decodeMs = firstTokenAt ? Math.round(performance.now() - firstTokenAt) : 0
+      timings.totalMs = Math.round(performance.now() - startedAt)
+      onUpdate?.(
+        createStagePayload(update.isDone ? '完成' : '流式生成', timings, {
+          text: update.text,
+          tokenCount: update.tokenCount,
+          tps: update.tps,
+          isDone: update.isDone,
+        })
+      )
+    },
+    () => {
+      firstTokenAt = performance.now()
+      timings.firstTokenMs = Math.round(firstTokenAt - generateStartedAt)
+    }
+  )
 
   await activeModel.generate({
     ...inputs,
@@ -263,9 +325,14 @@ export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNe
     streamer,
   })
 
+  timings.decodeMs = firstTokenAt ? Math.round(performance.now() - firstTokenAt) : 0
+  timings.totalMs = Math.round(performance.now() - startedAt)
+
   return {
     text: streamer.text,
     tps: streamer.lastTps,
+    stage: '完成',
+    timings,
     diagnostics: getDiagnostics(),
   }
 }

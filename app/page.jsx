@@ -115,6 +115,13 @@ export default function HomePage() {
   ]
   const opcVibeProjects = [
     {
+      name: 'Claude Code Unpacked',
+      href: 'https://ccunpacked-zh.pages.dev/',
+      category: 'AI Agent',
+      focus: '用交互式页面和动画拆解 Claude Code 的 agent loop、工具系统与多 Agent 编排。',
+      stack: 'Agent Loop · Visualization',
+    },
+    {
       name: 'webllm',
       href: 'https://83945df5.webllm-8rp.pages.dev',
       category: '实验项目',

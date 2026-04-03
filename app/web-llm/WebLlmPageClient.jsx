@@ -60,6 +60,29 @@ function formatBytes(value) {
   return `${next.toFixed(next >= 10 || index === 0 ? 0 : 1)} ${units[index]}`
 }
 
+function formatMs(value) {
+  if (!value) return '0ms'
+  if (value < 1000) return `${value}ms`
+  return `${(value / 1000).toFixed(value >= 10000 ? 1 : 2)}s`
+}
+
+function formatGenerationMeta(message) {
+  if (!message?.generation) return []
+
+  const { stage, timings } = message.generation
+  const items = []
+
+  if (stage) items.push(`阶段：${stage}`)
+  if (timings?.contextMs) items.push(`上下文 ${formatMs(timings.contextMs)}`)
+  if (timings?.promptMs) items.push(`提示词 ${formatMs(timings.promptMs)}`)
+  if (timings?.preprocessMs) items.push(`输入处理 ${formatMs(timings.preprocessMs)}`)
+  if (timings?.firstTokenMs) items.push(`首 token ${formatMs(timings.firstTokenMs)}`)
+  if (timings?.decodeMs) items.push(`生成 ${formatMs(timings.decodeMs)}`)
+  if (timings?.totalMs) items.push(`总耗时 ${formatMs(timings.totalMs)}`)
+
+  return items
+}
+
 function StatusPill({ ok, label }) {
   return (
     <span
@@ -307,6 +330,17 @@ export default function WebLlmPageClient() {
       text: '',
       image: '',
       tps: 0,
+      generation: {
+        stage: '准备中',
+        timings: {
+          contextMs: 0,
+          promptMs: 0,
+          preprocessMs: 0,
+          firstTokenMs: 0,
+          decodeMs: 0,
+          totalMs: 0,
+        },
+      },
     }
 
     const nextSession = {
@@ -334,8 +368,14 @@ export default function WebLlmPageClient() {
               message.id === assistantMessageId
                 ? {
                     ...message,
-                    text: update.text,
-                    tps: update.tps,
+                    text: update.text ?? message.text,
+                    tps: update.tps ?? message.tps,
+                    generation: update.stage
+                      ? {
+                          stage: update.stage,
+                          timings: update.timings || message.generation?.timings,
+                        }
+                      : message.generation,
                   }
                 : message
             ),
@@ -353,6 +393,10 @@ export default function WebLlmPageClient() {
                   ...message,
                   text: result.text || '模型未返回内容。',
                   tps: result.tps || 0,
+                  generation: {
+                    stage: result.stage || '完成',
+                    timings: result.timings || message.generation?.timings,
+                  },
                 }
               : message
           ),
@@ -370,6 +414,17 @@ export default function WebLlmPageClient() {
                   ...message,
                   text: `推理失败：${error?.message || 'UNKNOWN_ERROR'}`,
                   tps: 0,
+                  generation: {
+                    stage: '失败',
+                    timings: message.generation?.timings || {
+                      contextMs: 0,
+                      promptMs: 0,
+                      preprocessMs: 0,
+                      firstTokenMs: 0,
+                      decodeMs: 0,
+                      totalMs: 0,
+                    },
+                  },
                 }
               : message
           ),
@@ -542,6 +597,7 @@ export default function WebLlmPageClient() {
                 <div className="space-y-4">
                   {activeSession.messages.map((message) => {
                     const isUser = message.role === 'user'
+                    const generationMeta = formatGenerationMeta(message)
                     return (
                       <article
                         key={message.id}
@@ -571,6 +627,14 @@ export default function WebLlmPageClient() {
                         <div className="whitespace-pre-wrap break-words text-sm leading-7">
                           {message.text || (isUser ? '已上传图片' : '...')}
                         </div>
+
+                        {!isUser && generationMeta.length ? (
+                          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-[#8a816d] dark:text-gray-400">
+                            {generationMeta.map((item) => (
+                              <span key={item}>{item}</span>
+                            ))}
+                          </div>
+                        ) : null}
                       </article>
                     )
                   })}

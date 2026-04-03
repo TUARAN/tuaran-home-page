@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL_ID, MAX_IMAGE_EDGE } from './constants'
+import { DEFAULT_MODEL_ID, MAX_HISTORY_TURNS, MAX_IMAGE_EDGE } from './constants'
 import { SITE_CONTEXT } from './siteContext'
 
 let runtimePromise = null
@@ -192,13 +192,43 @@ export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
     mod.Qwen3_5ForConditionalGeneration.from_pretrained(modelId, {
       ...sharedOptions,
       device: 'webgpu',
-      dtype: 'q4',
+      dtype: {
+        embed_tokens: 'q4',
+        vision_encoder: 'fp16',
+        decoder_model_merged: 'q4',
+      },
     }),
   ])
 
   processor = nextProcessor
   model = nextModel
   loadedModelId = modelId
+
+  onProgress?.({
+    status: 'warming_up',
+    percent: 100,
+    message: '模型已加载，正在预热首轮推理…',
+    diagnostics,
+  })
+
+  try {
+    const warmupConversation = [
+      {
+        role: 'user',
+        content: [{ type: 'text', text: '你好' }],
+      },
+    ]
+    const warmupPrompt = nextProcessor.apply_chat_template(warmupConversation, {
+      add_generation_prompt: true,
+    })
+    const warmupInputs = await nextProcessor(warmupPrompt)
+    await nextModel.generate({
+      ...warmupInputs,
+      max_new_tokens: 1,
+    })
+  } catch {
+    // Ignore warmup failures and let real inference surface runtime errors.
+  }
 
   onProgress?.({
     status: 'ready',
@@ -232,6 +262,7 @@ export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNe
   onUpdate?.(createStagePayload('整理上下文'))
 
   const contextStartedAt = performance.now()
+  const recentMessages = messages.slice(-MAX_HISTORY_TURNS * 2)
   const images = []
   const conversation = [
     {
@@ -243,8 +274,9 @@ export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNe
             '你是 tuaran.me 里的网页大模型助手。',
             '请优先根据提供的站点固定上下文回答与本站、tuaran、本地项目相关的问题。',
             '如果上下文没有明确提到，就直接说“这个上下文里没有提到”，不要编造。',
+            `只参考最近 ${MAX_HISTORY_TURNS} 轮对话，不要被更早的历史内容干扰。`,
             '',
-            '固定上下文：',
+            '站点摘要：',
             SITE_CONTEXT,
           ].join('\n'),
         },
@@ -252,7 +284,7 @@ export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNe
     },
   ]
 
-  for (const message of messages) {
+  for (const message of recentMessages) {
     if (message.role === 'system') {
       conversation.push({
         role: 'system',

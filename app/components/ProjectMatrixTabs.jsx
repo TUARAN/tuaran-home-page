@@ -51,7 +51,7 @@ export default function ProjectMatrixTabs({ launchedProjects, devProjects, domai
 
   return (
     <section id="project-matrix" className="max-w-5xl mx-auto scroll-mt-24 text-left mb-8">
-      <div className="mb-2">
+      <div className="mb-2 flex flex-wrap items-center gap-2.5">
         <h2 className="text-[#555] dark:text-gray-200">🗂 项目矩阵</h2>
       </div>
 
@@ -89,7 +89,7 @@ export default function ProjectMatrixTabs({ launchedProjects, devProjects, domai
           </div>
         </div>
 
-        <div className="mb-5 w-16 border-b border-[#eef1f4] dark:border-gray-800" />
+        <div className="mb-5 w-8 border-b border-[#eef1f4] dark:border-gray-800" />
 
         {activeTab === 'launched' ? (
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

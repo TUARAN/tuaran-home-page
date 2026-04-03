@@ -83,11 +83,30 @@ function formatGenerationMeta(message) {
   return items
 }
 
+function getStagePlaceholder(stage) {
+  if (!stage) return '思考中...'
+  if (stage === '完成') return ''
+  if (stage === '失败') return '推理失败。'
+  return `正在${stage}…`
+}
+
+function getAssistantDisplayText(message) {
+  if (message?.text?.trim()) return message.text
+  return getStagePlaceholder(message?.generation?.stage) || '思考中...'
+}
+
+function isAssistantPending(message) {
+  if (message?.role !== 'assistant') return false
+  const stage = message?.generation?.stage
+  if (!stage || stage === '完成' || stage === '失败') return false
+  return !message?.text?.trim()
+}
+
 function StatusPill({ ok, label }) {
   return (
     <span
       className={[
-        'inline-flex items-center rounded-full border px-2.5 py-1 text-[12px]',
+        'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none',
         ok
           ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-200'
           : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/40 dark:text-amber-200',
@@ -115,7 +134,6 @@ export default function WebLlmPageClient() {
   const [loadProgress, setLoadProgress] = useState({ percent: 0, message: '', file: '', loaded: 0, total: 0 })
   const [loadError, setLoadError] = useState('')
   const [storageError, setStorageError] = useState('')
-  const [contextStatus] = useState(() => `已接入固定上下文，约 ${getSiteContextPreview().length} 字。`)
   const [diagnostics, setDiagnostics] = useState({
     hasWebGPU: false,
     isSecureContext: false,
@@ -368,7 +386,7 @@ export default function WebLlmPageClient() {
               message.id === assistantMessageId
                 ? {
                     ...message,
-                    text: update.text ?? message.text,
+                    text: typeof update.text === 'string' && update.text.length > 0 ? update.text : '',
                     tps: update.tps ?? message.tps,
                     generation: update.stage
                       ? {
@@ -461,17 +479,82 @@ export default function WebLlmPageClient() {
               把浏览器端 WebGPU + ONNX 模型运行能力接进当前网站。默认不自动加载，用户手动初始化后即可进行本地会话与流式问答。
             </p>
           </div>
-
-          <div className="rounded-2xl border border-[#e9e2cf] bg-[#faf5e8] px-4 py-3 text-sm text-[#665f4e] dark:border-gray-700 dark:bg-gray-900/70 dark:text-gray-200">
-            <div>当前模型：{loadedModelId || '尚未加载'}</div>
-            <div>生成上限：{MAX_NEW_TOKENS} tokens</div>
-            <div className="mt-1 text-[12px] text-[#80745c] dark:text-gray-400">{contextStatus}</div>
-          </div>
         </div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="space-y-4">
+          <section className="rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/60 dark:bg-gray-900/70">
+            <div className="flex flex-col gap-3">
+              <div>
+                <label htmlFor="model-select" className="mb-2 block text-sm text-[#585241] dark:text-gray-300">
+                  模型控制区
+                </label>
+                <select
+                  id="model-select"
+                  value={selectedModelId}
+                  onChange={(event) => setSelectedModelId(event.target.value)}
+                  disabled={isModelLoading || isSending}
+                  className="w-full rounded-xl border border-gray-200/80 bg-white px-3 py-2 text-sm text-[#2d2a21] outline-none focus:ring-2 focus:ring-[#d7c6a0] disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:focus:ring-gray-600"
+                >
+                  {MODEL_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label} · {option.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLoadModel}
+                disabled={isModelLoading || isSending || !environmentReady}
+                className="rounded-full border border-[#d7c6a0] bg-[#f5ebd2] px-5 py-2 text-sm text-[#5f5030] shadow-sm transition hover:bg-[#f1e3c2] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+              >
+                {isModelLoading ? '加载中…' : isModelReady && loadedModelId === selectedModelId ? '重新加载模型' : '加载模型'}
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-[#ece6d6] bg-[#fcfaf4] p-3.5 dark:border-gray-800 dark:bg-gray-950/50">
+              <div className="mb-2.5 flex items-center justify-between gap-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a9076] dark:text-gray-500">
+                  运行环境
+                </div>
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#b1a78f] dark:text-gray-600">Browser</div>
+              </div>
+
+              <div className="flex flex-wrap gap-2.5">
+                <StatusPill ok={diagnostics.hasWebGPU} label={`WebGPU ${diagnostics.hasWebGPU ? '可用' : '不可用'}`} />
+                <StatusPill ok={diagnostics.isSecureContext} label={`安全上下文 ${diagnostics.isSecureContext ? '满足' : '不满足'}`} />
+                <StatusPill
+                  ok={diagnostics.crossOriginIsolated}
+                  label={`cross-origin isolation ${diagnostics.crossOriginIsolated ? '已启用' : '未启用'}`}
+                />
+              </div>
+
+              <p className="mt-3.5 mb-0 text-[12px] leading-6 text-[#716852] dark:text-gray-300">
+                {environmentReady
+                  ? '当前页面已满足 WebGPU 运行前提，可以手动加载模型。'
+                  : '当前环境存在缺项，页面会继续显示错误原因，不会静默失败。'}
+              </p>
+
+              <div
+                title={diagnostics.userAgent}
+                className="mt-3.5 truncate rounded-xl border border-[#ebe5d6] bg-white/80 px-3 py-2 text-[11px] leading-none text-[#8b826d] dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-400"
+              >
+                {diagnostics.userAgent}
+              </div>
+            </div>
+
+            {loadError ? (
+              <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-200">
+                {loadError}
+              </pre>
+            ) : (
+              isModelReady ? <div className="mt-3 text-[12px] text-[#716852] dark:text-gray-300">模型已加载完成，可以发送消息。</div> : null
+            )}
+          </section>
+
           <section className="rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/60 dark:bg-gray-900/70">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="mb-0 border-0 pb-0 text-base">本地会话</h2>
@@ -521,72 +604,9 @@ export default function WebLlmPageClient() {
               })}
             </div>
           </section>
-
-          <section className="rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/60 dark:bg-gray-900/70">
-            <h2 className="mb-3 border-0 pb-0 text-base">运行状态</h2>
-            <div className="flex flex-wrap gap-2">
-              <StatusPill ok={diagnostics.hasWebGPU} label={`WebGPU ${diagnostics.hasWebGPU ? '可用' : '不可用'}`} />
-              <StatusPill ok={diagnostics.isSecureContext} label={`安全上下文 ${diagnostics.isSecureContext ? '满足' : '不满足'}`} />
-              <StatusPill
-                ok={diagnostics.crossOriginIsolated}
-                label={`cross-origin isolation ${diagnostics.crossOriginIsolated ? '已启用' : '未启用'}`}
-              />
-            </div>
-
-            <div className="mt-3 space-y-2 text-[13px] text-[#625c4d] dark:text-gray-300">
-              <p className="mb-0">
-                {environmentReady
-                  ? '当前页面已满足 WebGPU 运行前提，可以手动加载模型。'
-                  : '当前环境存在缺项，页面会继续显示错误原因，不会静默失败。'}
-              </p>
-              <p className="mb-0 break-all text-[12px] text-[#8b826d] dark:text-gray-400">{diagnostics.userAgent}</p>
-            </div>
-          </section>
         </aside>
 
         <main className="space-y-4">
-          <section className="rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/60 dark:bg-gray-900/70">
-            <div className="mb-3 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-              <div className="flex-1">
-                <label htmlFor="model-select" className="mb-2 block text-sm text-[#585241] dark:text-gray-300">
-                  模型控制区
-                </label>
-                <select
-                  id="model-select"
-                  value={selectedModelId}
-                  onChange={(event) => setSelectedModelId(event.target.value)}
-                  disabled={isModelLoading || isSending}
-                  className="w-full rounded-xl border border-gray-200/80 bg-white px-3 py-2 text-sm text-[#2d2a21] outline-none focus:ring-2 focus:ring-[#d7c6a0] disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:focus:ring-gray-600"
-                >
-                  {MODEL_OPTIONS.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label} · {option.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleLoadModel}
-                disabled={isModelLoading || isSending || !environmentReady}
-                className="rounded-full border border-[#d7c6a0] bg-[#f5ebd2] px-5 py-2 text-sm text-[#5f5030] shadow-sm transition hover:bg-[#f1e3c2] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-              >
-                {isModelLoading ? '加载中…' : isModelReady && loadedModelId === selectedModelId ? '重新加载模型' : '加载模型'}
-              </button>
-            </div>
-
-            {loadError ? (
-              <pre className="whitespace-pre-wrap rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-200">
-                {loadError}
-              </pre>
-            ) : (
-              <div className="rounded-xl border border-dashed border-gray-200/80 bg-[#fcfaf4] px-3 py-2 text-[13px] text-[#716852] dark:border-gray-700 dark:bg-gray-950/50 dark:text-gray-300">
-                {isModelReady ? '模型已加载完成，可以发送消息。问站点内容时会优先参考固定上下文文件。' : '页面默认不自动加载模型，请手动点击“加载模型”。'}
-              </div>
-            )}
-          </section>
-
           <section className="rounded-2xl border border-gray-200/70 bg-white/80 shadow-sm dark:border-gray-700/60 dark:bg-gray-900/70">
             <div className="border-b border-gray-200/70 px-4 py-3 dark:border-gray-700/60">
               <h2 className="mb-0 border-0 pb-0 text-base">聊天展示区</h2>
@@ -597,6 +617,7 @@ export default function WebLlmPageClient() {
                 <div className="space-y-4">
                   {activeSession.messages.map((message) => {
                     const isUser = message.role === 'user'
+                    const isPending = isAssistantPending(message)
                     const generationMeta = formatGenerationMeta(message)
                     return (
                       <article
@@ -625,8 +646,22 @@ export default function WebLlmPageClient() {
                         ) : null}
 
                         <div className="whitespace-pre-wrap break-words text-sm leading-7">
-                          {message.text || (isUser ? '已上传图片' : '...')}
+                          {isUser ? message.text || '已上传图片' : getAssistantDisplayText(message)}
                         </div>
+
+                        {!isUser && isPending ? (
+                          <div className="mt-3 rounded-xl border border-[#eee5cf] bg-[#fcf8ef] px-3 py-2.5 dark:border-gray-800 dark:bg-gray-900/60">
+                            <div className="flex items-center gap-1.5 text-[#b19148] dark:text-amber-200">
+                              <span className="h-2 w-2 animate-pulse rounded-full bg-current [animation-delay:-0.2s]" />
+                              <span className="h-2 w-2 animate-pulse rounded-full bg-current [animation-delay:-0.1s]" />
+                              <span className="h-2 w-2 animate-pulse rounded-full bg-current" />
+                            </div>
+                            <div className="mt-2 space-y-2">
+                              <div className="h-2.5 w-3/4 animate-pulse rounded-full bg-[#eadfbf] dark:bg-gray-700" />
+                              <div className="h-2.5 w-1/2 animate-pulse rounded-full bg-[#f1e8cf] dark:bg-gray-800" />
+                            </div>
+                          </div>
+                        ) : null}
 
                         {!isUser && generationMeta.length ? (
                           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-[#8a816d] dark:text-gray-400">

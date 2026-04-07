@@ -93,6 +93,14 @@ export default function HomePage() {
       status: '打磨中',
     },
     {
+      name: '🧠 Open Claude Code',
+      href: 'https://openclaudecode.site/',
+      domains: ['openclaudecode.site'],
+      category: '学习站',
+      focus: '系统拆解 Claude Code 的 Agent 循环、工具系统与多智能体协作。',
+      status: '运营中',
+    },
+    {
       name: '✍️ PublishLab',
       href: 'https://publishlab.cc',
       domains: ['publishlab.cc'],
@@ -110,8 +118,7 @@ export default function HomePage() {
     },
   ]
   const domainStrategyParagraphs = [
-    'AI 正在“巨幅”降低做产品和做网站的门槛，但无论应用形态怎么变，域名依然是访问、承接与沉淀的基础入口。',
-    '让每个域名对应清晰场景并持续运转，它就不只是一个名字，而会慢慢长出内容、流量与业务价值。',
+    'AI 正在大幅降低做产品和网站的门槛，但域名仍是访问、承接与沉淀的基础入口，只有让每个域名对应清晰场景并持续运转，才能持续长出内容、流量与业务价值。',
   ]
   const opcVibeProjects = [
     {

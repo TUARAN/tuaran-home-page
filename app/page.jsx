@@ -549,13 +549,17 @@ export default function HomePage() {
       </section>
 
       <section className="lg:min-h-[calc(100vh-72px)] lg:snap-start lg:flex lg:flex-col">
-        <footer className="mt-4 pt-2 text-[#999] text-xs lg:mt-0 lg:flex-1">
+        <div className="pt-2 lg:flex-1">
           <ProjectMatrixTabs
             launchedProjects={maintainedDomains}
             devProjects={opcVibeProjects}
             domainStrategyParagraphs={domainStrategyParagraphs}
           />
+        </div>
+      </section>
 
+      <section className="lg:min-h-[calc(100vh-72px)] lg:snap-start lg:flex lg:flex-col">
+        <footer className="pt-2 text-[#999] text-xs lg:flex-1">
           <section className="mb-12">
             <div className="mb-2 flex flex-wrap items-center gap-2.5">
               <h2 className="text-[#555] dark:text-gray-200">💬 留言板</h2>

@@ -1,192 +1,185 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+function getProjectByKeyword(projects, keyword) {
+  return projects.find((item) => item.name.includes(keyword))
+}
 
-function getStatusClassName(status) {
-  const base = 'inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium'
-  switch (status) {
-    case '持续更新':
-      return `${base} border-blue-200/70 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200`
-    case '打磨中':
-      return `${base} border-amber-200/70 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200`
-    default:
-      return `${base} border-emerald-200/70 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200`
-  }
+const laneConfigs = [
+  {
+    id: 'brand',
+    title: '① 入口与品牌层',
+    description: '承载身份展示、能力说明、对外合作与总入口导航。',
+    accent: 'blue',
+    keywords: ['WebHP', 'MatrixLink'],
+  },
+  {
+    id: 'community',
+    title: '② 内容与社区层',
+    description: '承担流量获取、内容分发、协作网络与社区影响力扩散。',
+    accent: 'purple',
+    keywords: ['Blogger Alliance', 'Frontend Weekly'],
+  },
+  {
+    id: 'tech',
+    title: '③ 技术能力层',
+    description: '沉淀方法论、实验能力、技术研究与职业升级路径，是体系的核心护城河。',
+    accent: 'orange',
+    keywords: ['I Am Vibe Coder', 'Open Claude Code'],
+  },
+  {
+    id: 'transformation',
+    title: '④ 创作与转型层',
+    description: '面向未来产品化与职业转型，承接创作工具、出版能力与成长路径设计。',
+    accent: 'emerald',
+    keywords: ['PublishLab', 'Frontend 2 AI Agent'],
+  },
+]
+
+const accentClass = {
+  blue: {
+    dot: 'bg-blue-600',
+    lane: 'border-blue-100/80 dark:border-blue-900/60',
+    cardBar: 'before:bg-blue-600',
+    status: 'text-blue-700 bg-blue-100 dark:text-blue-200 dark:bg-blue-950/50',
+  },
+  purple: {
+    dot: 'bg-violet-600',
+    lane: 'border-violet-100/80 dark:border-violet-900/60',
+    cardBar: 'before:bg-violet-600',
+    status: 'text-violet-700 bg-violet-100 dark:text-violet-200 dark:bg-violet-950/50',
+  },
+  orange: {
+    dot: 'bg-orange-600',
+    lane: 'border-orange-100/80 dark:border-orange-900/60',
+    cardBar: 'before:bg-orange-600',
+    status: 'text-orange-700 bg-orange-100 dark:text-orange-200 dark:bg-orange-950/50',
+  },
+  emerald: {
+    dot: 'bg-emerald-600',
+    lane: 'border-emerald-100/80 dark:border-emerald-900/60',
+    cardBar: 'before:bg-emerald-600',
+    status: 'text-emerald-700 bg-emerald-100 dark:text-emerald-200 dark:bg-emerald-950/50',
+  },
+}
+
+function ProjectCard({ project, accent }) {
+  if (!project) return null
+  return (
+    <article
+      className={`relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 ${accent.cardBar} dark:border-slate-700/70 dark:bg-slate-900`}
+    >
+      <div className={`mb-2 inline-flex rounded-full px-2 py-1 text-xs font-bold ${accent.status}`}>
+        {project.status}
+      </div>
+      <a
+        href={project.href}
+        target="_blank"
+        rel="noreferrer"
+        className="no-external-arrow block text-base font-extrabold text-slate-900 hover:opacity-80 dark:text-white"
+      >
+        {project.name}
+      </a>
+      <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">{project.focus}</p>
+      <div className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
+        {project.domains.map((domain) => (
+          <div key={domain}>{domain}</div>
+        ))}
+      </div>
+    </article>
+  )
 }
 
 export default function ProjectMatrixTabs({ launchedProjects, devProjects, domainStrategyParagraphs }) {
-  const tabs = useMemo(
-    () => [
-      {
-        id: 'launched',
-        label: '已上线',
-      },
-      {
-        id: 'dev',
-        label: '实验中',
-      },
-    ],
-    []
-  )
-
-  const [activeTab, setActiveTab] = useState('launched')
-  const panelCopy =
-    activeTab === 'launched'
-      ? {
-          eyebrow: '对外可访问、持续运转的正式项目',
-          paragraphs: [
-            '这一栏放的是已经对外上线、具备明确入口和持续维护节奏的项目。它们承接内容、品牌、社区或工具能力，是当前对外可见的产品矩阵。',
-            '这里不只是域名清单，更是已经开始承载访问、认知与实际使用行为的线上资产。',
-          ],
-        }
-      : {
-          eyebrow: '一个人公司 Vibe Coding 的产品实验场',
-          paragraphs: [
-            '这里集中展示正在推进的工具、实验项目与产品方向，用于验证场景、交互与可用性。',
-          ],
-        }
+  const laneData = laneConfigs.map((lane) => ({
+    ...lane,
+    projects: lane.keywords.map((keyword) => getProjectByKeyword(launchedProjects, keyword)).filter(Boolean),
+  }))
 
   return (
-    <section id="project-matrix" className="max-w-5xl mx-auto scroll-mt-24 text-left mb-8">
-      <div className="mb-2 flex flex-wrap items-center gap-2.5">
-        <h2 className="text-[#555] dark:text-gray-200">🗂 项目矩阵</h2>
-      </div>
+    <section id="project-matrix" className="scroll-mt-24 text-left mb-8">
+      <div className="rounded-[28px] border border-slate-200/70 bg-gradient-to-b from-slate-50 to-indigo-50/60 p-5 shadow-sm dark:border-slate-800 dark:from-slate-950 dark:to-slate-900 sm:p-6">
+        <h2 className="text-center text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+          AI Native 项目图谱
+        </h2>
+        <p className="mx-auto mt-2 max-w-3xl text-center text-sm leading-6 text-slate-600 dark:text-slate-300">
+          {domainStrategyParagraphs[0] || '围绕个人品牌、内容分发、技术沉淀与工具产品化形成站点矩阵。'}
+        </p>
 
-      <div className="rounded-[28px] border border-[#e9edf2] bg-[linear-gradient(180deg,#ffffff_0%,#fafbfd_100%)] p-3 shadow-sm dark:border-gray-800 dark:bg-[linear-gradient(180deg,#0f1115_0%,#11151c_100%)] sm:p-3.5">
-        <div className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="max-w-2xl space-y-1 text-[12px] leading-5 text-[#666] dark:text-gray-300">
-              {(activeTab === 'launched' ? domainStrategyParagraphs : panelCopy.paragraphs).map((paragraph) => (
-                <p key={paragraph} className="pt-1 sm:pt-1.5">{paragraph}</p>
-              ))}
-            </div>
-          </div>
-
-          <div className="inline-flex rounded-xl border border-[#e8ebef] bg-white/90 p-0.5 dark:border-gray-700 dark:bg-gray-900/80">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`rounded-lg px-2.5 py-1.5 text-left transition ${
-                    isActive
-                      ? 'bg-[#111827] text-white dark:bg-white dark:text-gray-900'
-                      : 'text-[#667085] hover:bg-[#f4f6f8] dark:text-gray-300 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  <div className="text-[11px] font-semibold leading-4">{tab.label}</div>
-                </button>
-              )
-            })}
-          </div>
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          {laneData.map((lane) => (
+            <span
+              key={lane.id}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/80 px-3 py-1.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200"
+            >
+              <i className={`h-2.5 w-2.5 rounded-full ${accentClass[lane.accent].dot}`} />
+              {lane.title.replace(/^.\s*/, '')}
+            </span>
+          ))}
         </div>
 
-        <div className="mb-3 w-8 border-b border-[#eef1f4] dark:border-gray-800" />
+        <div className="mt-6 grid gap-4 xl:grid-cols-4">
+          {laneData.map((lane) => (
+            <section
+              key={lane.id}
+              className={`rounded-3xl border bg-white/70 p-4 shadow-sm backdrop-blur ${accentClass[lane.accent].lane} dark:bg-slate-900/70`}
+            >
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{lane.title}</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">{lane.description}</p>
+              <div className="mt-3 space-y-3">
+                {lane.projects.map((project) => (
+                  <ProjectCard key={project.href} project={project} accent={accentClass[lane.accent]} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
 
-        {activeTab === 'launched' ? (
-          <div className="mt-4 max-h-[26rem] overflow-y-auto pr-1 sm:pr-2">
-            <div className="grid gap-3 sm:grid-cols-2 sm:auto-rows-fr lg:grid-cols-3">
-              {launchedProjects.map((item) => (
-                <article
-                  key={item.href}
-                  className="flex h-full min-h-[9.75rem] flex-col rounded-2xl border border-[#e8ebef] bg-white/90 p-2.5 transition hover:border-[#d8dfe7] dark:border-gray-800 dark:bg-gray-900/80 dark:hover:border-gray-700"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="inline-flex rounded-full border border-black/5 bg-[#fafafa] px-2 py-0.5 text-[10px] font-medium text-[#666] dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
-                      {item.category}
-                    </span>
-                    <span className={getStatusClassName(item.status)}>{item.status}</span>
-                  </div>
-
-                  <div className="mt-2 flex-1">
-                    <a
-                      href={item.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="no-external-arrow inline-flex items-center text-[13px] font-semibold tracking-tight text-[#1f2937] transition hover:text-black dark:text-gray-100 dark:hover:text-white"
-                    >
-                      {item.name}
-                    </a>
-                    <p
-                      className="mt-1 overflow-hidden whitespace-nowrap text-ellipsis text-[12px] leading-5 text-[#667085] dark:text-gray-400"
-                      style={{
-                        display: 'block',
-                      }}
-                    >
-                      {item.focus}
-                    </p>
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {item.domains.map((domain) => (
-                      <a
-                        key={domain}
-                        href={`https://${domain}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full border border-[#e8e8e8] bg-white px-2 py-0.5 text-[11px] font-medium text-[#555] transition hover:border-[#d5d5d5] hover:text-[#111] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-                      >
-                        {domain}
-                      </a>
-                    ))}
-                  </div>
-                </article>
-              ))}
+        <section className="mt-6 rounded-3xl bg-slate-900 p-5 text-slate-200 shadow-lg dark:bg-slate-950">
+          <h3 className="text-lg font-extrabold text-white">整体闭环</h3>
+          <p className="mt-2 text-sm leading-7 text-slate-300">
+            这套项目不是散点，而是从品牌入口、内容传播、技术沉淀到工具产品化与职业转型的连续链路：用内容吸引人，用研究建立专业度，用实验站验证能力，再用品牌站完成对外表达与商业承接。
+          </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center text-xs leading-5">
+              <strong className="block text-sm text-white">入口</strong>
+              WebHP / MatrixLink
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center text-xs leading-5">
+              <strong className="block text-sm text-white">流量</strong>
+              Weekly / Alliance
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center text-xs leading-5">
+              <strong className="block text-sm text-white">能力</strong>
+              Vibe Coder / Open Claude Code
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center text-xs leading-5">
+              <strong className="block text-sm text-white">产品</strong>
+              PublishLab
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center text-xs leading-5">
+              <strong className="block text-sm text-white">升级</strong>
+              Frontend 2 AI Agent
             </div>
           </div>
-        ) : (
-          <div className="mt-4 max-h-[26rem] overflow-y-auto rounded-2xl border border-[#d8e3ee] bg-[linear-gradient(180deg,#f8fbfe_0%,#eef5fb_100%)] dark:border-slate-800 dark:bg-[linear-gradient(180deg,#101826_0%,#0d1420_100%)]">
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse text-left text-[12px] text-[#58687a] dark:text-slate-300">
-              <thead className="bg-white/70 text-[11px] uppercase tracking-[0.12em] text-[#6b7a90] dark:bg-slate-900/40 dark:text-slate-400">
-                <tr>
-                  <th className="px-3 py-2.5 font-medium">项目</th>
-                  <th className="px-3 py-2.5 font-medium">类型</th>
-                  <th className="px-3 py-2.5 font-medium">方向</th>
-                  <th className="px-3 py-2.5 font-medium">访问</th>
-                </tr>
-              </thead>
-                <tbody>
-                  {devProjects.map((project) => (
-                    <tr
-                      key={project.href}
-                      className="border-t border-[#d8e3ee] align-top dark:border-slate-800"
-                    >
-                      <td className="px-3 py-3">
-                        <div className="font-semibold tracking-tight text-[#17324d] dark:text-slate-100">
-                          {project.name}
-                        </div>
-                        <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#6b7a90] dark:text-slate-400">
-                          {project.stack}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className="inline-flex rounded-full border border-sky-200/80 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:border-sky-900/60 dark:bg-slate-900/70 dark:text-sky-200">
-                          {project.category}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 leading-5">
-                        {project.focus}
-                      </td>
-                      <td className="px-3 py-3">
-                        <a
-                          href={project.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center rounded-full border border-[#bfd3e5] bg-white/90 px-2.5 py-1 text-[10px] font-medium text-[#17324d] transition hover:border-[#9fc0de] hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:border-slate-600"
-                        >
-                          打开实验
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {devProjects?.length ? (
+            <div className="mt-4 border-t border-white/10 pt-3">
+              <p className="text-xs text-slate-400">并行实验项目：{devProjects.length} 个。</p>
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                {devProjects.map((project) => (
+                  <a
+                    key={project.href}
+                    href={project.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="whitespace-nowrap rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs !text-white visited:!text-white transition hover:bg-white/10"
+                  >
+                    {project.name}
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          ) : null}
+        </section>
       </div>
     </section>
   )

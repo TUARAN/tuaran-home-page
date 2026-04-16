@@ -3,17 +3,6 @@
  */
 export const articles = [
   {
-    slug: 'content-os-blogger-matrix-alliance',
-    title: '向大家介绍「开发者博主联盟」🚀',
-    date: '2026-01-08',
-    href: 'https://juejin.cn/post/7595425302968696873',
-    summary:
-      '今之创作，非乏才也，乏其制耳。有才而无制，则劳而不继；有制而能协，则文自生，利自分，业自成。',
-    cover:
-      'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=60',
-    content: ['阅读原文：https://juejin.cn/post/7595425302968696873'],
-  },
-  {
     slug: 'diary-self-reflection',
     title: '浮生日记（连载中）📓',
     date: '2026-03-23',
@@ -151,6 +140,17 @@ export const articles = [
       '如果非要给现在的自己一句定义，我大概会写下这样一句话：我是在系统性思考中，努力为自己保留尊严感的工程型创作者。这条路未必热闹，也不一定被很多人理解，但一旦走通，大概也很难被替代。',
       '写到这里，我反而没那么焦虑了。也许下一步可以把我现在正在做的所有事情，慢慢压缩成一条更清晰、更聚焦的主线。至少，让自己看得更清楚一点。',
     ],
+  },
+  {
+    slug: 'content-os-blogger-matrix-alliance',
+    title: '向大家介绍「开发者博主联盟」🚀',
+    date: '2026-01-08',
+    href: 'https://juejin.cn/post/7595425302968696873',
+    summary:
+      '今之创作，非乏才也，乏其制耳。有才而无制，则劳而不继；有制而能协，则文自生，利自分，业自成。',
+    cover:
+      'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=60',
+    content: ['阅读原文：https://juejin.cn/post/7595425302968696873'],
   },
   {
     slug: 'ocr-comparison-paddleocr-vl',

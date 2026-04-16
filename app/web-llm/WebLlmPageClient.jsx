@@ -476,7 +476,7 @@ export default function WebLlmPageClient() {
             </p>
             <h1 className="mb-3 text-3xl text-[#222] dark:text-gray-100">大模型问答</h1>
             <p className="mb-0 text-sm text-[#5f5a4b] dark:text-gray-300">
-              把浏览器端 WebGPU + ONNX 模型运行能力接进当前网站。默认不自动加载，用户手动初始化后即可进行本地会话与流式问答。
+              把浏览器端 WebGPU + ONNX 模型运行能力接进当前网站，初始化后即可进行本地会话与流式问答。
             </p>
           </div>
         </div>

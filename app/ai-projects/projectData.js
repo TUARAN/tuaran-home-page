@@ -1,0 +1,115 @@
+export const maintainedDomains = [
+  {
+    name: '🏠 WebHP',
+    href: 'https://tuaran.me',
+    domains: ['tuaran.me', '2aran.com'],
+    category: '个人主页',
+    focus: '个人网络日志、项目总览与长期创作内容沉淀。',
+    status: '运营中',
+  },
+  {
+    name: '🚀 MatrixLink',
+    href: 'https://matrixlink.tech',
+    domains: ['matrixlink.tech'],
+    category: '公司官网',
+    focus: '企业品牌展示与技术服务介绍',
+    status: '运营中',
+  },
+  {
+    name: '🤝 Blogger Alliance',
+    href: 'https://blogger-alliance.cn',
+    domains: ['blogger-alliance.cn', 'bzlm.net'],
+    category: '社区平台',
+    focus: '技术博主协作与内容联盟',
+    status: '运营中',
+  },
+  {
+    name: '🧭 Frontend Weekly',
+    href: 'https://frontendweekly.cn',
+    domains: ['frontendweekly.cn', 'qdzk.site'],
+    category: '内容周刊',
+    focus: '前端热点整理与海外文章翻译',
+    status: '持续更新',
+  },
+  {
+    name: '🤖 I Am Vibe Coder',
+    href: 'https://iamvibecoder.cn',
+    domains: ['iamvibecoder.cn'],
+    category: 'AI 编程',
+    focus: 'AI 编程实践与开发者实验场',
+    status: '打磨中',
+  },
+  {
+    name: '🧠 Open Claude Code',
+    href: 'https://openclaudecode.site/',
+    domains: ['openclaudecode.site'],
+    category: '学习站',
+    focus: '系统拆解 Claude Code 的 Agent 循环、工具系统与多智能体协作。',
+    status: '运营中',
+  },
+  {
+    name: '✍️ PublishLab',
+    href: 'https://publishlab.cc',
+    domains: ['publishlab.cc'],
+    category: '创作实验室',
+    focus: 'AI 写作、内容创作与数字出版',
+    status: '打磨中',
+  },
+  {
+    name: '⚡ Frontend 2 AI Agent',
+    href: 'https://frontend2aiagent.com',
+    domains: ['frontend2aiagent.com'],
+    category: '转型平台',
+    focus: '前端工程师转向 AI Agent 工程师的知识体系与成长路径。',
+    status: '打磨中',
+  },
+]
+
+export const domainStrategyParagraphs = [
+  'AI 正在大幅降低做产品和网站的门槛，但域名仍是访问、承接与沉淀的基础入口，只有让每个域名对应清晰场景并持续运转，才能持续长出内容、流量与业务价值。',
+]
+
+export const opcVibeProjects = [
+  {
+    name: 'Claude Code Unpacked',
+    href: 'https://ccunpacked-zh.pages.dev/',
+    category: 'AI Agent',
+    focus: '用交互式页面和动画拆解 Claude Code 的 agent loop、工具系统与多 Agent 编排。',
+    stack: 'Agent Loop · Visualization',
+  },
+  {
+    name: 'webllm',
+    href: 'https://83945df5.webllm-8rp.pages.dev',
+    category: '实验项目',
+    focus: '基于 WebGPU 的浏览器侧大模型实验。',
+    stack: 'WebGPU · Browser LLM',
+  },
+  {
+    name: '安东尼学AI',
+    href: 'https://matrix-ai-pdfs.pages.dev/',
+    category: '学习工具',
+    focus: 'AI 学习资料整理与阅读入口，面向系统化学习与持续积累。',
+    stack: 'AI Learning',
+  },
+  {
+    name: 'banana-gallery',
+    href: 'https://banana-gallery.pages.dev/',
+    category: '创意工具',
+    focus: '轻量化的图片与内容展示实验，用于验证视觉内容产品的交互形态。',
+    stack: 'Gallery · Visual',
+  },
+  {
+    name: '提示词工程',
+    href: 'https://awesome-prompt-seven.vercel.app/',
+    category: '效率工具',
+    focus: '围绕提示词整理、沉淀与复用的轻量产品实验。',
+    stack: 'Prompt · Workflow',
+  },
+  {
+    name: '代码矿工',
+    href: 'https://toolkit-hub.pages.dev/',
+    category: '开发工具',
+    focus: '面向开发者的工具集合与能力聚合入口。',
+    stack: 'Dev Tools',
+  },
+]

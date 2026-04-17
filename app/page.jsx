@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { articles } from './articles/articlesData'
-import SettingsButton from './components/SettingsButton'
 
 function wrapTitle(title) {
   if (!title) return ''
@@ -134,28 +133,27 @@ export default function HomePage() {
                 <p className="mb-0 text-sm leading-7 text-[#777] dark:text-gray-400">
                   专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。
                 </p>
-                <div className="mt-4 rounded-lg border border-[#eee] bg-white/70 p-3 dark:border-gray-800 dark:bg-gray-900/70">
-                  <p className="mb-2 text-xs font-medium text-[#666] dark:text-gray-300">Vibe 7日使用量</p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
-                      <img src="https://vibecafe.ai/@tuaran/badge" alt="VibeUsage 总使用量" />
-                    </a>
-                    <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
-                      <img src="https://vibecafe.ai/@tuaran/badge/token" alt="VibeUsage Token 使用量" />
-                    </a>
-                    <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
-                      <img src="https://vibecafe.ai/@tuaran/badge/cost" alt="VibeUsage 成本使用量" />
-                    </a>
-                    <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
-                      <img src="https://vibecafe.ai/@tuaran/badge/hours" alt="VibeUsage 时长使用量" />
-                    </a>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
           <div className="flex flex-col items-end gap-4 text-sm sm:self-stretch sm:justify-between sm:py-1">
-            <SettingsButton />
+            <div className="rounded-lg border border-[#eee] bg-white/70 p-3 dark:border-gray-800 dark:bg-gray-900/70">
+              <p className="mb-2 text-xs font-medium text-[#666] dark:text-gray-300">Vibe 7日使用量</p>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
+                  <img src="https://vibecafe.ai/@tuaran/badge" alt="VibeUsage 总使用量" />
+                </a>
+                <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
+                  <img src="https://vibecafe.ai/@tuaran/badge/token" alt="VibeUsage Token 使用量" />
+                </a>
+                <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
+                  <img src="https://vibecafe.ai/@tuaran/badge/cost" alt="VibeUsage 成本使用量" />
+                </a>
+                <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
+                  <img src="https://vibecafe.ai/@tuaran/badge/hours" alt="VibeUsage 时长使用量" />
+                </a>
+              </div>
+            </div>
           </div>
         </header>
 

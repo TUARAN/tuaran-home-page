@@ -16,34 +16,17 @@ export default function SettingsButton() {
     return null
   }
 
+  const isDark = theme === 'dark'
+
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-gray-200/70 bg-white/80 px-2 py-1 text-[11px] font-medium text-gray-600 shadow-sm backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-300">
-      <button
-        type="button"
-        onClick={() => setTheme('light')}
-        aria-pressed={theme === 'light'}
-        aria-label="主题 · 浅色"
-        className={`rounded-full px-2 py-1 transition-colors ${
-          theme === 'light'
-            ? 'bg-gray-200/80 text-gray-900 dark:bg-gray-700 dark:text-gray-100'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-        }`}
-      >
-        ☀️
-      </button>
-      <button
-        type="button"
-        onClick={() => setTheme('dark')}
-        aria-pressed={theme === 'dark'}
-        aria-label="主题 · 深色"
-        className={`rounded-full px-2 py-1 transition-colors ${
-          theme === 'dark'
-            ? 'bg-gray-200/80 text-gray-900 dark:bg-gray-700 dark:text-gray-100'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-        }`}
-      >
-        🌙
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      aria-label={isDark ? '切换到浅色主题' : '切换到深色主题'}
+      title={isDark ? '切换到浅色主题' : '切换到深色主题'}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/70 bg-white/80 text-base text-gray-700 shadow-sm transition-colors hover:bg-gray-100 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200 dark:hover:bg-gray-800"
+    >
+      {isDark ? '🌙' : '☀️'}
+    </button>
   )
 }

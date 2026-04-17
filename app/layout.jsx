@@ -2,8 +2,8 @@ import Script from 'next/script'
 
 import './globals.css'
 import AnalyticsScripts from './components/AnalyticsScripts'
+import LayoutChrome from './components/LayoutChrome'
 import { ThemeProvider } from './components/ThemeProvider'
-import SiteHeader from './components/SiteHeader'
 
 const SITE_URL = 'https://tuaran.me'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -104,9 +104,7 @@ export default function RootLayout({ children }) {
         </Script>
         <AnalyticsScripts />
         <ThemeProvider>
-          <SiteHeader />
-
-          {children}
+          <LayoutChrome>{children}</LayoutChrome>
         </ThemeProvider>
       </body>
     </html>

@@ -87,7 +87,7 @@ export default function WebLlmModal() {
             </div>
             <iframe
               title="大模型问答"
-              src="/web-llm?embed=1"
+              src="/web-llm/embed"
               className="min-h-0 w-full flex-1 border-0 bg-[#fdfdf0] dark:bg-gray-900"
             />
           </div>

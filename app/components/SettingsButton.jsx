@@ -24,9 +24,9 @@ export default function SettingsButton() {
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       aria-label={isDark ? '切换到浅色主题' : '切换到深色主题'}
       title={isDark ? '切换到浅色主题' : '切换到深色主题'}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/70 bg-white/80 text-base text-gray-700 shadow-sm transition-colors hover:bg-gray-100 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200 dark:hover:bg-gray-800"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-base text-gray-700 opacity-85 transition-opacity hover:opacity-100 dark:text-gray-200"
     >
-      {isDark ? '🌙' : '☀️'}
+      {isDark ? '☀️' : '🌙'}
     </button>
   )
 }

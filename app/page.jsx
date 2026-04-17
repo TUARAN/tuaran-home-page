@@ -137,20 +137,10 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex flex-col items-end gap-4 text-sm sm:self-stretch sm:justify-between sm:py-1">
-            <div className="rounded-lg border border-[#eee] bg-white/70 p-3 dark:border-gray-800 dark:bg-gray-900/70">
-              <p className="mb-2 text-xs font-medium text-[#666] dark:text-gray-300">Vibe 7日使用量</p>
+            <div className="w-full py-3 pr-0">
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
                   <img src="https://vibecafe.ai/@tuaran/badge" alt="VibeUsage 总使用量" />
-                </a>
-                <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
-                  <img src="https://vibecafe.ai/@tuaran/badge/token" alt="VibeUsage Token 使用量" />
-                </a>
-                <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
-                  <img src="https://vibecafe.ai/@tuaran/badge/cost" alt="VibeUsage 成本使用量" />
-                </a>
-                <a href="https://vibecafe.ai/@tuaran" target="_blank" rel="noreferrer" className="opacity-90 hover:opacity-100">
-                  <img src="https://vibecafe.ai/@tuaran/badge/hours" alt="VibeUsage 时长使用量" />
                 </a>
               </div>
             </div>

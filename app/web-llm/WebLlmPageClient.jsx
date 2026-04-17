@@ -164,7 +164,7 @@ export default function WebLlmPageClient() {
     const hasReloaded = window.sessionStorage.getItem(ISOLATION_RELOAD_KEY) === '1'
     if (!hasReloaded) {
       window.sessionStorage.setItem(ISOLATION_RELOAD_KEY, '1')
-      window.location.replace('/web-llm')
+      window.location.replace(`${window.location.pathname}${window.location.search}`)
     }
   }, [])
 

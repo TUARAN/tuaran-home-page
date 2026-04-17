@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import WebLlmModal from './WebLlmModal'
+import SettingsButton from './SettingsButton'
 
 export default function SiteHeader() {
   const pathname = usePathname()
@@ -31,7 +32,8 @@ export default function SiteHeader() {
           </div>
         </Link>
 
-        <nav aria-label="主导航" className="text-sm text-[#666] dark:text-gray-300 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex items-start gap-3 sm:items-center">
+          <nav aria-label="主导航" className="text-sm text-[#666] dark:text-gray-300 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link
             href="/ai-projects"
             className={[
@@ -67,7 +69,9 @@ export default function SiteHeader() {
           <Link href="/messages" className="opacity-80 hover:opacity-100 underline underline-offset-4">
             留言板
           </Link>
-        </nav>
+          </nav>
+          <SettingsButton />
+        </div>
       </div>
     </header>
     <WebLlmModal />

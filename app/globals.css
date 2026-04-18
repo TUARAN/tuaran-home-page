@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-[#fdfdf0] dark:bg-gray-900 text-[#333] dark:text-gray-100 font-sans;
+    @apply bg-[#f5f1e8] dark:bg-[#0b1016] text-[#333] dark:text-gray-100 font-sans;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -66,6 +66,20 @@
 }
 
 @layer components {
+  .home-section-title {
+    @apply mb-0 border-b-0 pb-0 font-serif text-[1.45rem] font-semibold tracking-[0.04em] text-[#221f19] dark:text-gray-100;
+  }
+
+  .header-icon-link {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ddd3c4] text-[#6c604d] no-underline transition-all hover:-translate-y-0.5 hover:text-[#2d261d] dark:border-[#2a3440] dark:text-[#c1cad6] dark:hover:text-white;
+    background-color: rgba(255, 255, 255, 0.72);
+  }
+
+  .back-to-top-button {
+    @apply fixed bottom-5 right-5 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ddd3c4] text-[#5d503f] shadow-[0_12px_28px_rgba(93,80,63,0.16)] backdrop-blur transition-all hover:-translate-y-0.5 hover:text-[#2d261d] dark:border-[#2a3440] dark:text-[#d3d8df] dark:hover:text-white;
+    background-color: rgba(255, 255, 255, 0.88);
+  }
+
   .prose-tuaran {
     @apply prose prose-neutral dark:prose-invert w-full max-w-[72ch] mx-auto;
     @apply prose-p:leading-7 prose-p:my-4;
@@ -273,6 +287,23 @@
   .dark .ai-projects-nav:hover .ai-projects-nav-label,
   .dark .ai-projects-nav-active .ai-projects-nav-label {
     color: #fecdd3;
+  }
+
+  .dark .header-icon-link {
+    background-color: #121821;
+  }
+
+  .dark .back-to-top-button {
+    background-color: rgba(18, 24, 33, 0.9);
+  }
+
+  @media (max-width: 640px) {
+    .back-to-top-button {
+      right: 1rem;
+      bottom: 1rem;
+      width: 2.75rem;
+      height: 2.75rem;
+    }
   }
 }
 

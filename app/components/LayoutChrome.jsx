@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 
+import BackToTopButton from './BackToTopButton'
 import SiteHeader from './SiteHeader'
 
 export default function LayoutChrome({ children }) {
@@ -12,6 +13,7 @@ export default function LayoutChrome({ children }) {
     <>
       {!hideChrome ? <SiteHeader /> : null}
       <div className="flex-1 flex flex-col">{children}</div>
+      {!hideChrome ? <BackToTopButton /> : null}
     </>
   )
 }

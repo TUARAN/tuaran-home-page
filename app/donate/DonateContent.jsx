@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import SettingsButton from '../components/SettingsButton'
 
 const copy = {
   zh: {
@@ -49,11 +48,11 @@ export default function DonateContent() {
   const t = copy[lang]
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <header className="mb-10 border-b border-[#eee] pb-2 dark:border-gray-800">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555] dark:text-gray-200">{t.title}</h1>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">{t.title}</h1>
             <p className="mt-2 text-sm leading-relaxed text-[#666] dark:text-gray-300">
               {t.intro}
             </p>
@@ -74,7 +73,6 @@ export default function DonateContent() {
             >
               {t.lang}
             </button>
-            <SettingsButton />
           </div>
         </div>
       </header>

@@ -3,7 +3,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { articles } from '../articlesData'
-import SettingsButton from '../../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
@@ -171,7 +170,7 @@ export default async function ArticleDetailPage({ params }) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <Script id={`article-jsonld-${article.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(articleStructuredData)}
       </Script>
@@ -199,7 +198,6 @@ export default async function ArticleDetailPage({ params }) {
                   ) : null}
                 </div>
               </div>
-              <SettingsButton />
             </div>
           </header>
 
@@ -316,7 +314,6 @@ export default async function ArticleDetailPage({ params }) {
                   ) : null}
                 </div>
               </div>
-              <SettingsButton />
             </div>
           </header>
 

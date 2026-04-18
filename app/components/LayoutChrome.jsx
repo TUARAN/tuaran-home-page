@@ -11,7 +11,7 @@ export default function LayoutChrome({ children }) {
   return (
     <>
       {!hideChrome ? <SiteHeader /> : null}
-      {children}
+      <div className="flex-1 flex flex-col">{children}</div>
     </>
   )
 }

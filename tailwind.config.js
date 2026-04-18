@@ -43,6 +43,14 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        serif: [
+          '"Source Han Serif SC"',
+          '"Noto Serif SC"',
+          '"Songti SC"',
+          '"STSong"',
+          'Georgia',
+          'serif',
+        ],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

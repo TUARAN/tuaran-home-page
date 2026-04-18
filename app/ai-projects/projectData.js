@@ -66,7 +66,7 @@ export const maintainedDomains = [
 ]
 
 export const domainStrategyParagraphs = [
-  'AI 正在大幅降低做产品和网站的门槛，但域名仍是访问、承接与沉淀的基础入口，只有让每个域名对应清晰场景并持续运转，才能持续长出内容、流量与业务价值。',
+  '「真正的壁垒，建立在对 Token 成本的极致抠门（Prompt Cache 优化）、对多状态机协同的流式调度（Coordinator 与 Fork 机制）、对用户意图容错与安全干预的平衡（YOLO Classifier），以及对宿主操作系统深度的文件流集成上。」',
 ]
 
 export const opcVibeProjects = [

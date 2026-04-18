@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import SettingsButton from '../components/SettingsButton'
 import ReadingPyramid from '../components/ReadingPyramid'
 
 export const dynamic = 'force-static'
@@ -74,16 +73,15 @@ const pyramidLevels = [
 
 export default function ReadingIndexPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
+    <main className="w-full max-w-4xl mx-auto px-4 py-10">
+      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555] dark:text-gray-200">读无用书</h1>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">读无用书</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">
               不为功利，只求心静自满。入口收敛为少数主类，其余内容沉到栏目页内。
             </p>
           </div>
-          <SettingsButton />
         </div>
       </header>
 
@@ -120,6 +118,6 @@ export default function ReadingIndexPage() {
           ))}
         </div>
       </div>
-    </div>
+    </main>
   )
 }

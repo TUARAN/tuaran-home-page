@@ -14,8 +14,8 @@ export default function SiteHeader() {
 
   return (
     <>
-    <header className="sticky top-0 z-40 border-b border-[#eee] bg-[#fdfdf0]/92 backdrop-blur dark:border-gray-800 dark:bg-gray-900/88">
-      <div className="max-w-5xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <header className="sticky top-0 z-40 border-b border-[#e8dfd0] bg-[#f5f1e8]/90 backdrop-blur dark:border-gray-800 dark:bg-[#0f141b]/88">
+      <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/" className="no-underline hover:no-underline group" aria-label="返回首页">
           <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
             <span className="font-serif text-xl sm:text-2xl font-semibold tracking-wide text-[#111] dark:text-gray-100">
@@ -27,7 +27,7 @@ export default function SiteHeader() {
           </div>
         </Link>
 
-        <div className="flex items-start gap-5 sm:items-center">
+        <div className="flex items-start gap-3 sm:items-center">
           <nav aria-label="主导航" className="text-sm flex flex-wrap items-center gap-x-5 gap-y-2">
             {[
               { href: '/ai-projects', label: 'AI 项目', match: (p) => p === '/ai-projects' },
@@ -53,6 +53,22 @@ export default function SiteHeader() {
               )
             })}
           </nav>
+          <Link
+            href="/articles"
+            aria-label="搜索文章"
+            title="搜索文章"
+            className="header-icon-link"
+          >
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-[18px] w-[18px]">
+              <path
+                d="M13.75 13.75L17 17M15.5 9a6.5 6.5 0 11-13 0a6.5 6.5 0 0113 0z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Link>
           <SettingsButton />
         </div>
       </div>

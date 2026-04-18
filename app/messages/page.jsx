@@ -1,4 +1,3 @@
-import SettingsButton from '../components/SettingsButton'
 import StompPanel from '../components/StompPanel'
 
 export const dynamic = 'force-static'
@@ -13,13 +12,14 @@ export const metadata = {
 
 export default function MessagesPage() {
   return (
-    <main className="max-w-5xl mx-auto px-4 py-12 md:py-14">
-      <header className="mb-8 flex flex-col gap-3 border-b border-[#eee] pb-2 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-[#555] dark:text-gray-200">留言板</h1>
-          <p className="mt-2 text-sm text-[#666] dark:text-gray-300">写几句近况、建议或合作想法。</p>
+    <main className="w-full max-w-4xl mx-auto px-4 py-10">
+      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">留言板</h1>
+            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">写几句近况、建议或合作想法。</p>
+          </div>
         </div>
-        <SettingsButton />
       </header>
 
       <StompPanel />

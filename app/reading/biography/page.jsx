@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import SettingsButton from '../../components/SettingsButton'
 
 import ilyaAvatar from './avatar/伊利亚.jpeg'
 import liFeifeiAvatar from './avatar/李飞飞.jpeg'
@@ -27,11 +26,11 @@ export const metadata = {
 
 export default function BiographyReadingPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555] dark:text-gray-200">读无用书 · 传记</h1>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">读无用书 · 传记</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">这里会整理传记类的阅读记录。</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
               <Link href="/reading" className="opacity-80 hover:opacity-100 underline underline-offset-4">
@@ -39,7 +38,6 @@ export default function BiographyReadingPage() {
               </Link>
             </div>
           </div>
-          <SettingsButton />
         </div>
       </header>
 

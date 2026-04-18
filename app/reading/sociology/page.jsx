@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import SettingsButton from '../../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
@@ -69,11 +68,11 @@ const APHORISM_GROUPS = [
 
 export default function SociologyReadingPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555] dark:text-gray-200">读无用书 · 社会学</h1>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">读无用书 · 社会学</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">这里会整理社会学相关的阅读记录。</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
               <Link href="/reading" className="opacity-80 hover:opacity-100 underline underline-offset-4">
@@ -81,7 +80,6 @@ export default function SociologyReadingPage() {
               </Link>
             </div>
           </div>
-          <SettingsButton />
         </div>
       </header>
 

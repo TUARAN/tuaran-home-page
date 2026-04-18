@@ -1,6 +1,5 @@
 import Link from 'next/link'
 
-import SettingsButton from './SettingsButton'
 
 export default function BookmarksTocLayout({
   title,
@@ -27,7 +26,6 @@ export default function BookmarksTocLayout({
               </Link>
             </div>
           </div>
-          <SettingsButton />
         </div>
       </header>
 

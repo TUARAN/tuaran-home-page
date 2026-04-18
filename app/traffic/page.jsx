@@ -1,4 +1,3 @@
-import SettingsButton from '../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
@@ -17,14 +16,13 @@ export const metadata = {
 
 export default function TrafficPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
+    <div className="max-w-4xl mx-auto px-4 py-12">
       <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555] dark:text-gray-200">访问统计</h1>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">访问统计</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">实时查看网站的访问数据。</p>
           </div>
-          <SettingsButton />
         </div>
       </header>
 

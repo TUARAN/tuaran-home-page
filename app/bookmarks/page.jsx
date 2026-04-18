@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import SettingsButton from '../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
@@ -55,20 +54,19 @@ const categories = [
 
 export default function BookmarksIndexPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
+    <main className="w-full max-w-4xl mx-auto px-4 py-10">
+      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-[#555] dark:text-gray-200">收藏夹</h1>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">收藏夹</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">
               精选资讯、教程与工具，按主题分类整理，持续更新中。
             </p>
           </div>
-          <SettingsButton />
         </div>
       </header>
 
-      <main>
+      <div>
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {categories.map((cat) => (
             <Link
@@ -91,12 +89,12 @@ export default function BookmarksIndexPage() {
           ))}
         </section>
 
-        <footer className="mt-12 text-sm text-[#666] dark:text-gray-300 border-t border-[#eee] dark:border-gray-800 pt-6">
+        <div className="mt-12 text-sm text-[#666] dark:text-gray-300 border-t border-[#eee] dark:border-gray-800 pt-6">
           <p>
             💡 这里整理了日常浏览中发现的优质内容，不定期更新。
           </p>
-        </footer>
-      </main>
-    </div>
+        </div>
+      </div>
+    </main>
   )
 }

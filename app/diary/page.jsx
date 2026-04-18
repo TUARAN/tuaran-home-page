@@ -3,7 +3,6 @@ import Image from 'next/image'
 import Script from 'next/script'
 import { notFound } from 'next/navigation'
 import { articles } from '../articles/articlesData'
-import SettingsButton from '../components/SettingsButton'
 
 export const dynamic = 'force-static'
 
@@ -156,7 +155,7 @@ export default function DiaryPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <Script id="diary-jsonld" type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(articleStructuredData)}
       </Script>
@@ -172,7 +171,6 @@ export default function DiaryPage() {
               </Link>
             </div>
           </div>
-          <SettingsButton />
         </div>
       </header>
 

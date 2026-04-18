@@ -70,6 +70,11 @@
     @apply mb-0 border-b-0 pb-0 font-serif text-[1.45rem] font-semibold tracking-[0.04em] text-[#221f19] dark:text-gray-100;
   }
 
+  .slogan-serif {
+    font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+    letter-spacing: 0.02em;
+  }
+
   .header-icon-link {
     @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ddd3c4] text-[#6c604d] no-underline transition-all hover:-translate-y-0.5 hover:text-[#2d261d] dark:border-[#2a3440] dark:text-[#c1cad6] dark:hover:text-white;
     background-color: rgba(255, 255, 255, 0.72);

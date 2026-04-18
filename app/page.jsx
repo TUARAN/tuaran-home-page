@@ -19,6 +19,14 @@ function getArticleLink(article) {
   return isExternalHref(article?.href) ? article.href : `/articles/${article.slug}`
 }
 
+function getArticleCategory(article) {
+  if (article?.slug === 'ocr-comparison-paddleocr-vl') return 'AI'
+  if (article?.slug === 'content-os-blogger-matrix-alliance') return '创作'
+  if (article?.slug === 'blogger-future-community') return '社区'
+  if (article?.slug === 'diary-self-reflection') return '随笔'
+  return '工程化'
+}
+
 export default function HomePage() {
   const featuredArticles = articles.slice(0, 3)
   const communities = [
@@ -67,10 +75,10 @@ export default function HomePage() {
   )
 
   const identityTagClassName =
-    'inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/78 px-3 py-1 text-[13px] text-[#5f5a4d] backdrop-blur-sm dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300'
+    'inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/88 px-3 py-1 text-[13px] text-[#5f5a4d] backdrop-blur-sm dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300'
 
   return (
-    <div className="max-w-6xl w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
+    <div className="max-w-[1120px] w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
       <section className="flex-1 mb-14">
         <header className="mb-8 rounded-[28px] border border-[#e6dfd2] bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(245,241,232,0.88))] px-5 py-6 shadow-[0_18px_60px_rgba(91,78,53,0.08)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-8 md:py-8">
           <div className="space-y-6">
@@ -82,7 +90,7 @@ export default function HomePage() {
                 <h1 className="font-serif text-[2rem] font-semibold tracking-[0.04em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[2.6rem]">
                   涂阿燃
                 </h1>
-                <p className="font-serif text-[16px] leading-8 text-[#6a5d46] dark:text-[#d6c3a0] mb-0">
+                <p className="slogan-serif mb-0 text-[17px] leading-8 text-[#6a5d46] dark:text-[#d6c3a0]">
                   高山流水觅知音，邀君并肩共前行。
                 </p>
               </div>
@@ -105,7 +113,7 @@ export default function HomePage() {
                         href={item.href}
                         target="_blank"
                         rel="noreferrer"
-                        className={`${identityTagClassName} no-external-arrow opacity-85 hover:opacity-100 hover:-translate-y-0.5 transition-all`}
+                        className={`${identityTagClassName} no-external-arrow opacity-85 transition-all hover:-translate-y-0.5 hover:border-[#cfc4ae] hover:bg-[#f3ede3] hover:opacity-100 dark:hover:border-[#3a4757] dark:hover:bg-[#19212b]`}
                       >
                         {item.label}
                       </a>
@@ -145,19 +153,22 @@ export default function HomePage() {
                     href={getArticleLink(a)}
                     target={isExternalHref(a.href) ? '_blank' : undefined}
                     rel={isExternalHref(a.href) ? 'noreferrer' : undefined}
-                    className="group no-external-arrow grid gap-4 rounded-2xl border border-[#ebe4d8] bg-white/92 p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_14px_30px_rgba(100,79,47,0.10)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d] md:grid-cols-[168px_minmax(0,1fr)]"
+                    className="group no-external-arrow grid gap-4 rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline shadow-[0_18px_48px_rgba(112,96,68,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_20px_54px_rgba(100,79,47,0.10)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d] md:grid-cols-[188px_minmax(0,1fr)]"
                   >
-                    <div className="overflow-hidden rounded-xl border border-[#efe7db] bg-[#f6f1e7] dark:border-[#2a3440] dark:bg-[#10151d]">
+                    <div className="aspect-[16/9] overflow-hidden rounded-xl border border-[#efe7db] bg-[#f6f1e7] dark:border-[#2a3440] dark:bg-[#10151d]">
                       <Image
                         src={a.cover}
                         alt={a.title}
                         width={336}
-                        height={196}
-                        className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] md:h-full"
+                        height={189}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                       />
                     </div>
                     <div className="min-w-0">
                       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
+                          #{getArticleCategory(a)}
+                        </span>
                         <span className="font-mono text-[12px] tracking-[0.08em] text-[#9d9078] dark:text-[#94a0b1]">
                           {a.date}
                         </span>
@@ -168,7 +179,7 @@ export default function HomePage() {
                       <h3 className="mb-2 font-serif text-[20px] font-semibold leading-8 text-[#201d19] transition-colors group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">
                         {wrapTitle(a.title)}
                       </h3>
-                      <p className="mb-0 line-clamp-3 text-[14px] leading-7 text-[#625b51] dark:text-gray-300">
+                      <p className="mb-0 line-clamp-3 text-[14px] leading-[1.82] text-[#625b51] dark:text-gray-300">
                         {a.summary}
                       </p>
                     </div>
@@ -195,7 +206,7 @@ export default function HomePage() {
                       '--brand': c.color,
                       '--brand-soft': `${c.color}16`,
                     }}
-                    className="no-external-arrow group relative flex items-center gap-3 rounded-2xl border border-[#ebe5d8] bg-white/88 px-3 py-3 transition-all hover:-translate-y-0.5 hover:border-[#d9cfbd] hover:shadow-[0_10px_24px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+                    className="no-external-arrow group relative flex items-center gap-3 rounded-2xl border border-[#ebe5d8] bg-white px-3 py-3 shadow-[0_14px_40px_rgba(112,96,68,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#d9cfbd] hover:shadow-[0_14px_34px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
                   >
                     <span
                       className="absolute right-3 top-2 font-mono text-[10px] font-semibold tracking-[0.18em] text-[#c2b7a2] dark:text-[#556070]"
@@ -212,12 +223,12 @@ export default function HomePage() {
                     <span className="flex flex-col min-w-0">
                       <span className="text-[14px] font-semibold leading-tight text-[#24211d] dark:text-gray-100">{c.name}</span>
                       <span
-                        className="mt-1 whitespace-nowrap font-mono text-[11px] leading-tight text-[#8b836f] dark:text-gray-400"
+                        className="mt-1 whitespace-nowrap font-mono text-[10px] leading-tight text-[#9d9687] dark:text-[#7f8794]"
                         title={`阅读 ${c.reads} · 粉丝 ${c.fans}`}
                       >
-                        <span className="font-semibold text-[#34302a] dark:text-gray-200">{c.reads}</span>
-                        <span className="mx-1 text-[#c8beaa] dark:text-gray-600">·</span>
-                        <span className="text-[#635a4c] dark:text-gray-300">{c.fans} 粉</span>
+                        <span className="font-medium text-[#756d61] dark:text-[#9da4b2]">{c.reads}</span>
+                        <span className="mx-1 text-[#d1c7b2] dark:text-gray-600">·</span>
+                        <span className="text-[#8b826f] dark:text-[#808997]">{c.fans} 粉</span>
                       </span>
                     </span>
                   </a>
@@ -257,7 +268,7 @@ export default function HomePage() {
                     href={book.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="no-external-arrow group flex items-center gap-4 rounded-2xl border border-[#ebe4d8] bg-white/92 p-4 transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_12px_28px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+                    className="no-external-arrow group flex items-center gap-4 rounded-2xl border border-[#ebe4d8] bg-white p-4 shadow-[0_18px_48px_rgba(112,96,68,0.05)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_16px_34px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
                   >
                     <Image
                       src={book.cover}

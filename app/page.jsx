@@ -89,7 +89,7 @@ export default function HomePage() {
               </p>
               <div className="space-y-2">
                 <h1 className="font-serif text-[2rem] font-semibold tracking-[0.04em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[2.6rem]">
-                  涂阿燃
+                  矩联科技 · 数字员工实践者
                 </h1>
                 <p className="slogan-serif mb-0 text-[17px] leading-8 text-[#6a5d46] dark:text-[#d6c3a0]">
                   高山流水觅知音，邀君并肩共前行。
@@ -305,11 +305,8 @@ export default function HomePage() {
                   height={160}
                   className="mx-auto h-32 w-32 rounded-2xl border border-[#e5ddd0] bg-white object-contain shadow-sm dark:border-gray-800 dark:bg-gray-950"
                 />
-                <p className="font-serif text-[15px] font-semibold text-[#222] dark:text-gray-100 mt-3">
-                  涂阿燃
-                </p>
-                <p className="text-[12px] text-[#888] dark:text-gray-400 mt-0.5 tracking-wide">
-                  TUARAN · 独立开发者
+                <p className="mt-3 text-[12px] tracking-[0.14em] text-[#888] dark:text-gray-400">
+                  Founder of @矩联科技
                 </p>
               </div>
               <LatestMoments />

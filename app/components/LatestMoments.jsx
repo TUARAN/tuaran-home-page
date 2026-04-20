@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useMemo, useState } from 'react'
 
 const MOMENTS = [
@@ -10,7 +9,7 @@ const MOMENTS = [
     moodLabel: '正在 Coding',
     relativeTime: '2 小时前',
     text:
-      '正在推进“数字员工”建设。核心思路参考 OpenCode 模式，致力于打造“本地私有业务 + 通用大模型”的深度应用，继续探索 AI 智能体在垂直业务场景中的工程化落地。',
+      '正在建设“数字员工”。核心思路参考 OpenCode 模式，致力于打造“本地私有业务 + 通用大模型”的应用闭环，探索 AI Agent 的工程化落地。',
   },
   {
     id: 'moment-snippet',
@@ -18,13 +17,8 @@ const MOMENTS = [
     moodLabel: '摸鱼思考中',
     relativeTime: '昨天',
     text:
-      '深度思辨 B/C 端逻辑：toB 锚定组织规律，toC 侧重个体情绪。相比零散卖课，更看好规模化、批量化的内容产出模式。接下来会以 toB 逻辑对接出版社，尝试在三年内完成多本著作的持续迭代，目前主轴已经收束为博主联盟（toB）与前端周刊（toC）。',
-    code: [
-      'const note = {',
-      "  toB: 'Blogger Alliance',",
-      "  toC: 'Frontend Weekly',",
-      '}',
-    ].join('\n'),
+      '深度认知 B/C 端差异：toB 锚定组织规律，toC 侧重个体情绪。不看好零散卖课，认可规模化产出。',
+    emphasis: '落地重心：toB 做博主联盟，toC 做前端周刊。',
   },
 ]
 
@@ -52,8 +46,6 @@ function MomentBody({ text }) {
 }
 
 export default function LatestMoments() {
-  const [activeImage, setActiveImage] = useState(null)
-
   const items = useMemo(() => MOMENTS.slice(0, 2), [])
 
   return (
@@ -98,69 +90,16 @@ export default function LatestMoments() {
                 </div>
 
                 <MomentBody text={moment.text} />
-
-                {moment.code ? (
-                  <pre className="mt-3 overflow-x-auto rounded-2xl border border-[#ece4d8] bg-[#faf7f1] px-3 py-2 text-[12px] leading-6 text-[#5a5449] dark:border-[#2b3440] dark:bg-[#0d1218] dark:text-gray-300">
-                    <code>{moment.code}</code>
-                  </pre>
-                ) : null}
-
-                {moment.image ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveImage(moment.image)}
-                    className="mt-3 block w-full overflow-hidden rounded-2xl border border-[#ece4d8] bg-[#faf7f1] transition-transform hover:-translate-y-0.5 dark:border-[#2b3440] dark:bg-[#0d1218]"
-                  >
-                    <div className="relative aspect-[16/10]">
-                      <Image
-                        src={moment.image.src}
-                        alt={moment.image.alt}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 1024px) 100vw, 280px"
-                      />
-                    </div>
-                  </button>
+                {moment.emphasis ? (
+                  <p className="mb-0 mt-3 rounded-2xl border border-[#ece4d8] bg-[#faf7f1] px-3 py-2 text-[12px] leading-6 text-[#62594d] dark:border-[#2b3440] dark:bg-[#0d1218] dark:text-gray-300">
+                    {moment.emphasis}
+                  </p>
                 ) : null}
               </article>
             ))}
           </div>
         </div>
       </section>
-
-      {activeImage ? (
-        <div
-          className="fixed inset-0 z-50 bg-[rgba(9,12,16,0.82)] p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setActiveImage(null)}
-        >
-          <div className="flex h-full items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <div className="w-full max-w-4xl">
-              <div className="mb-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setActiveImage(null)}
-                  className="rounded-full border border-[#d8dce2] bg-white/92 px-3 py-1 text-sm text-[#222] dark:border-[#2c3642] dark:bg-[#121821] dark:text-gray-100"
-                >
-                  关闭
-                </button>
-              </div>
-              <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-black/20">
-                <div className="relative aspect-[16/10]">
-                  <Image
-                    src={activeImage.src}
-                    alt={activeImage.alt}
-                    fill
-                    className="object-contain"
-                    sizes="100vw"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   )
 }

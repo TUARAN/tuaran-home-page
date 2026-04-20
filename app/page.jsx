@@ -35,7 +35,16 @@ export default function HomePage() {
     { name: '小红书', reads: '100 万', fans: '1.1 万', href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e', color: '#2563EB', char: '红' },
     { name: '知乎', reads: '35 万', fans: '350', href: 'https://www.zhihu.com/', color: '#14B8A6', char: '知' },
     { name: '51CTO', reads: '16 万', fans: '276', href: 'https://blog.51cto.com/u_15298598', color: '#F97316', char: '51' },
-    { name: 'CSDN', reads: '15 万', fans: '1,735', href: 'https://blog.csdn.net/aifs2025', color: '#8B5CF6', char: 'C' },
+    {
+      name: 'CSDN',
+      reads: '15 万',
+      fans: '1,735',
+      href: 'https://blog.csdn.net/aifs2025',
+      color: '#8B5CF6',
+      char: 'C',
+      detail: '主号：架构 / 数字员工',
+      hoverDetail: '副号：前端 / 笔记',
+    },
     { name: '头条', reads: '12 万', fans: '692', href: 'https://www.toutiao.com/', color: '#EF4444', char: '头' },
     { name: '公众号', reads: '1 万', fans: '2,676', href: '#qrcode-wechat-mp', color: '#22C55E', char: '信' },
     { name: '微博', reads: '6,000', fans: '400', href: 'https://weibo.com/', color: '#F59E0B', char: '微' },
@@ -88,10 +97,13 @@ export default function HomePage() {
                 TUARAN / Personal Log
               </p>
               <div className="space-y-2">
-                <h1 className="font-serif text-[2rem] font-semibold tracking-[0.04em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[2.6rem]">
-                  矩联科技 · 数字员工实践者
+                <h1 className="font-serif text-[1.9rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[2.4rem]">
+                  数字员工、内容系统与长期主义实验
                 </h1>
-                <p className="slogan-serif mb-0 text-[17px] leading-8 text-[#6a5d46] dark:text-[#d6c3a0]">
+                <p className="mb-0 text-[14px] font-normal tracking-[0.18em] text-[#888] dark:text-[#8f98a7]">
+                  矩联科技 · 数字员工实践者
+                </p>
+                <p className="slogan-serif mb-0 text-[16px] leading-8 text-[#6a5d46] dark:text-[#d6c3a0]">
                   高山流水觅知音，邀君并肩共前行。
                 </p>
               </div>
@@ -231,6 +243,14 @@ export default function HomePage() {
                         <span className="mx-1 text-[#d1c7b2] dark:text-gray-600">·</span>
                         <span className="text-[#8b826f] dark:text-[#808997]">{c.fans} 粉</span>
                       </span>
+                      {c.detail ? (
+                        <span className="mt-1 text-[10px] leading-4 text-[#aaa18f] transition-colors group-hover:text-[#7f7667] dark:text-[#66707d] dark:group-hover:text-[#a5afbc]">
+                          {c.detail}
+                          {c.hoverDetail ? (
+                            <span className="hidden group-hover:inline"> · {c.hoverDetail}</span>
+                          ) : null}
+                        </span>
+                      ) : null}
                     </span>
                   </a>
                 ))}
@@ -305,7 +325,7 @@ export default function HomePage() {
                   height={160}
                   className="mx-auto h-32 w-32 rounded-2xl border border-[#e5ddd0] bg-white object-contain shadow-sm dark:border-gray-800 dark:bg-gray-950"
                 />
-                <p className="mt-3 text-[12px] tracking-[0.14em] text-[#888] dark:text-gray-400">
+                <p className="mt-3 text-[12px] tracking-[0.12em] text-[#888] dark:text-gray-400">
                   Founder of @矩联科技
                 </p>
               </div>
@@ -345,7 +365,7 @@ export default function HomePage() {
       <section>
         <footer className="border-t border-[#e8dfd0] pt-4 text-xs text-[#999] dark:border-gray-800">
           <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
-            <span>© 2025—2026 涂阿燃的网络日志</span>
+            <span>© 2025—2026 网络日志</span>
             <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
             <a href="/donate" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
               Buy Me a Coffee

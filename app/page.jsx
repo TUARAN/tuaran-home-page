@@ -40,10 +40,10 @@ export default function HomePage() {
       reads: '15 万',
       fans: '1,735',
       href: 'https://blog.csdn.net/aifs2025',
-      color: '#8B5CF6',
+      color: '#DC2626',
       char: 'C',
-      detail: '主号：架构 / 数字员工',
-      hoverDetail: '副号：前端 / 笔记',
+      detail: '主号：AI 架构 / 数字员工',
+      hoverDetail: '副号：前端周刊 / 笔记',
     },
     { name: '头条', reads: '12 万', fans: '692', href: 'https://www.toutiao.com/', color: '#EF4444', char: '头' },
     { name: '公众号', reads: '1 万', fans: '2,676', href: '#qrcode-wechat-mp', color: '#22C55E', char: '信' },
@@ -97,8 +97,8 @@ export default function HomePage() {
                 TUARAN / Personal Log
               </p>
               <div className="space-y-2">
-                <h1 className="font-serif text-[1.9rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[2.4rem]">
-                  数字员工、内容系统与长期主义实验
+                <h1 className="font-serif text-[1.95rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[2.45rem]">
+                  数字员工 · 内容系统 · 长期主义实验
                 </h1>
                 <p className="mb-0 text-[14px] font-normal tracking-[0.18em] text-[#888] dark:text-[#8f98a7]">
                   矩联科技 · 数字员工实践者
@@ -109,11 +109,6 @@ export default function HomePage() {
               </div>
             </div>
             <div className="space-y-5">
-              <div className="max-w-3xl">
-                <p className="mb-0 text-[15px] leading-[1.9] text-[#5c564d] dark:text-gray-300">
-                  专注前端工程化与 AI 智能体系统，参与技术社区共建，记录长期主义的创作者成长。
-                </p>
-              </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0">
                 <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-[#998d76] dark:text-[#93a0b3] shrink-0">
                   Identity
@@ -318,15 +313,20 @@ export default function HomePage() {
           <aside className="w-full">
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#f6f2ea] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#10151d] md:p-6 lg:sticky lg:top-24">
               <div className="mb-5 border-b border-[#e8dfd0] pb-5 text-center dark:border-gray-800">
-                <Image
-                  src="/tuaranme.png"
-                  alt="涂阿燃"
-                  width={160}
-                  height={160}
-                  className="mx-auto h-32 w-32 rounded-2xl border border-[#e5ddd0] bg-white object-contain shadow-sm dark:border-gray-800 dark:bg-gray-950"
-                />
+                <div className="mx-auto w-[148px] overflow-hidden rounded-[8px]">
+                  <Image
+                    src="/tuaranme.png"
+                    alt="涂阿燃"
+                    width={160}
+                    height={200}
+                    className="h-auto w-full object-cover"
+                  />
+                </div>
                 <p className="mt-3 text-[12px] tracking-[0.12em] text-[#888] dark:text-gray-400">
                   Founder of @矩联科技
+                </p>
+                <p className="mx-auto mt-2 max-w-[220px] text-[13px] leading-6 text-[#6d665a] dark:text-gray-300">
+                  专注前端工程化与 AI 智能体，致力技术社区共建。
                 </p>
               </div>
               <LatestMoments />

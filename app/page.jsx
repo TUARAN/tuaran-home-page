@@ -97,12 +97,9 @@ export default function HomePage() {
                 TUARAN / Personal Log
               </p>
               <div className="space-y-2">
-                <h1 className="font-serif text-[1.95rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[2.45rem]">
+                <h1 className="font-serif text-[1.55rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.9rem]">
                   数字员工 · 内容系统 · 长期主义实验
                 </h1>
-                <p className="mb-0 text-[14px] font-normal tracking-[0.18em] text-[#888] dark:text-[#8f98a7]">
-                  矩联科技 · 数字员工实践者
-                </p>
                 <p className="slogan-serif mb-0 text-[16px] leading-8 text-[#6a5d46] dark:text-[#d6c3a0]">
                   高山流水觅知音，邀君并肩共前行。
                 </p>

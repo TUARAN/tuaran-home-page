@@ -48,9 +48,9 @@ export default function SiteHeader() {
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
-                    className={[
-                      'no-underline hover:no-underline transition-colors',
+                  href={item.href}
+                  className={[
+                      'no-underline hover:no-underline transition-colors visited:text-inherit',
                       active
                         ? 'text-[#111] dark:text-gray-100 font-medium'
                         : 'text-[#666] dark:text-gray-400 hover:text-[#111] dark:hover:text-gray-100',
@@ -155,7 +155,7 @@ export default function SiteHeader() {
                 key={item.href}
                 href={item.href}
                 className={[
-                  'rounded-2xl border px-4 py-3 text-[15px] no-underline transition-colors',
+                  'rounded-2xl border px-4 py-3 text-[15px] no-underline transition-colors visited:text-inherit',
                   active
                     ? 'border-[#d8ccb8] bg-white text-[#191611] dark:border-[#33404d] dark:bg-[#151c25] dark:text-gray-100'
                     : 'border-transparent bg-transparent text-[#615845] hover:border-[#e4dac8] hover:bg-white dark:text-gray-300 dark:hover:border-[#2d3744] dark:hover:bg-[#151c25]',

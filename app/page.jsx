@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { articles } from './articles/articlesData'
+import LatestMoments from './components/LatestMoments'
 
 function wrapTitle(title) {
   if (!title) return ''
@@ -311,6 +312,7 @@ export default function HomePage() {
                   TUARAN · 独立开发者
                 </p>
               </div>
+              <LatestMoments />
               <div className="space-y-3 text-[14px] leading-7 text-[#666] dark:text-gray-300">
                 <p className="flex items-baseline justify-between gap-2">
                   <span className="text-[#888] dark:text-gray-400">微信</span>

@@ -10,11 +10,7 @@ const MOMENTS = [
     moodLabel: '正在 Coding',
     relativeTime: '2 小时前',
     text:
-      '把首页继续往“轻一点、活一点”推了一步。最近越来越确定，个人站不该只是作品陈列柜，更像一块持续发热的桌面，能看到代码、生活和判断同时发生。',
-    image: {
-      src: '/banner/IMG_9693.jpg',
-      alt: '桌面与电脑屏幕',
-    },
+      '正在推进“数字员工”建设。核心思路参考 OpenCode 模式，致力于打造“本地私有业务 + 通用大模型”的深度应用，继续探索 AI 智能体在垂直业务场景中的工程化落地。',
   },
   {
     id: 'moment-snippet',
@@ -22,11 +18,11 @@ const MOMENTS = [
     moodLabel: '摸鱼思考中',
     relativeTime: '昨天',
     text:
-      '这两天在反复想一件事：工程化不是把一切都做重，而是把真正会重复出现的问题压成稳定结构。剩下那些还不确定、还在生长的部分，应该允许它先以碎片的形式存在。',
+      '深度思辨 B/C 端逻辑：toB 锚定组织规律，toC 侧重个体情绪。相比零散卖课，更看好规模化、批量化的内容产出模式。接下来会以 toB 逻辑对接出版社，尝试在三年内完成多本著作的持续迭代，目前主轴已经收束为博主联盟（toB）与前端周刊（toC）。',
     code: [
       'const note = {',
-      "  mode: 'build in public',",
-      "  bias: 'ship before polish',",
+      "  toB: 'Blogger Alliance',",
+      "  toC: 'Frontend Weekly',",
       '}',
     ].join('\n'),
   },

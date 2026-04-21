@@ -66,7 +66,7 @@ export default function HomePage() {
     {
       label: '家庭',
       tone: 'amber',
-      items: ['茉莉奶爸'],
+      items: [{ label: '茉莉奶爸', href: '/xiaomoli-dad-todo' }],
     },
     {
       label: '创业',
@@ -111,23 +111,33 @@ export default function HomePage() {
                   Identity
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {identityItems.map((item) => (
+                  {identityItems.map((item) =>
                     item.href ? (
-                      <a
-                        key={item.key}
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`${identityTagClassName} no-external-arrow opacity-85 transition-all hover:-translate-y-0.5 hover:border-[#cfc4ae] hover:bg-[#f3ede3] hover:opacity-100 dark:hover:border-[#3a4757] dark:hover:bg-[#19212b]`}
-                      >
-                        {item.label}
-                      </a>
+                      isExternalHref(item.href) ? (
+                        <a
+                          key={item.key}
+                          href={item.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`${identityTagClassName} no-external-arrow opacity-85 transition-all hover:-translate-y-0.5 hover:border-[#cfc4ae] hover:bg-[#f3ede3] hover:opacity-100 dark:hover:border-[#3a4757] dark:hover:bg-[#19212b]`}
+                        >
+                          {item.label}
+                        </a>
+                      ) : (
+                        <Link
+                          key={item.key}
+                          href={item.href}
+                          className={`${identityTagClassName} no-external-arrow opacity-85 transition-all hover:-translate-y-0.5 hover:border-[#cfc4ae] hover:bg-[#f3ede3] hover:opacity-100 dark:hover:border-[#3a4757] dark:hover:bg-[#19212b]`}
+                        >
+                          {item.label}
+                        </Link>
+                      )
                     ) : (
                       <span key={item.key} className={identityTagClassName}>
                         {item.label}
                       </span>
                     )
-                  ))}
+                  )}
                 </div>
               </div>
             </div>

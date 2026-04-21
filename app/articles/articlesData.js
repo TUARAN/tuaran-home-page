@@ -5,13 +5,20 @@ export const articles = [
   {
     slug: 'diary-self-reflection',
     title: '浮生日记（连载中）📓',
-    date: '2026-03-23',
+    date: '2026-04-21',
     href: '',
     summary:
       '人生碌碌，竞短论长，却不道枯荣有数，得失难量。',
     cover:
       'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
     content: [
+      {
+        date: '2026-04-21',
+        label: 'toB 与 toC',
+      },
+      'toB 与 toC，本质是两类客户结构：一侧是有界面、有流程的组织需求；另一侧是分散的个体与当下冲动。先认清分野，很多选择就只是路线问题。',
+      '我更信可规模化的、叠在机构侧的供给，而不是零敲碎打的终端收割。',
+      '内容落地同样分叉：进体系是一路，直连读者是另一路。以并行项目换迭代；最后收束成两头：一头啃协作网络，一头守住固定节奏的周更式触点。',
       {
         date: '2026-03-23',
         label: '同路人的重要性',

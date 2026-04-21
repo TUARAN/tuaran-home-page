@@ -61,7 +61,10 @@ export default function HomePage() {
     {
       label: '创作',
       tone: 'purple',
-      items: [{ label: '技术博主', href: 'https://blogger-alliance.cn/matrix' }, '出版作者'],
+      items: [
+        { label: '技术博主', href: 'https://blogger-alliance.cn/matrix' },
+        { label: '出版作者', href: 'https://publishlab.cc' },
+      ],
     },
     {
       label: '家庭',

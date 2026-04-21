@@ -7,7 +7,7 @@ import SiteHeader from './SiteHeader'
 
 export default function LayoutChrome({ children }) {
   const pathname = usePathname()
-  const hideChrome = pathname === '/web-llm/embed'
+  const hideChrome = pathname === '/web-llm/embed' || pathname === '/xiaomoli-dad-todo'
 
   return (
     <>

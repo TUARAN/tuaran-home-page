@@ -41,6 +41,10 @@ export default function DadTodoClient() {
   const [todoRemoteNote, setTodoRemoteNote] = useState('')
   const [pendingId, setPendingId] = useState(null)
 
+  const [boardRange, setBoardRange] = useState(() => ({ start: '', end: '', days: 30 }))
+  const [boardItemCounts, setBoardItemCounts] = useState(null)
+  const [loadingBoard, setLoadingBoard] = useState(false)
+
   useEffect(() => {
     try {
       localStorage.removeItem(LEGACY_TODO_KEY)
@@ -82,9 +86,48 @@ export default function DadTodoClient() {
     [user, useRemote]
   )
 
+  const loadBoard30 = useCallback(async () => {
+    if (!user || !useRemote) {
+      setBoardItemCounts(null)
+      return
+    }
+    setLoadingBoard(true)
+    const end = localYmd()
+    try {
+      const res = await fetch(
+        `/api/dad-todo?end=${encodeURIComponent(end)}&rangeDays=30`,
+        { cache: 'no-store' }
+      )
+      const data = await safeJson(res)
+      if (res.status === 503) {
+        setBoardItemCounts({})
+        return
+      }
+      if (res.ok && data?.itemCounts && typeof data.itemCounts === 'object') {
+        setBoardItemCounts(data.itemCounts)
+        const days = Number(data.rangeDays) || 30
+        setBoardRange({
+          start: data.start || '',
+          end: data.end || end,
+          days: days >= 1 && days <= 90 ? days : 30,
+        })
+      } else {
+        setBoardItemCounts({})
+      }
+    } catch {
+      setBoardItemCounts({})
+    } finally {
+      setLoadingBoard(false)
+    }
+  }, [user, useRemote])
+
   useEffect(() => {
     loadMonthCounts(calView.year, calView.month)
   }, [calView.year, calView.month, loadMonthCounts])
+
+  useEffect(() => {
+    loadBoard30()
+  }, [loadBoard30])
 
   useEffect(() => {
     let cancelled = false
@@ -202,6 +245,7 @@ export default function DadTodoClient() {
           })
         } else {
           await loadMonthCounts(calView.year, calView.month)
+          await loadBoard30()
         }
       } catch {
         setCompleted((prev) => {
@@ -214,7 +258,7 @@ export default function DadTodoClient() {
         setPendingId(null)
       }
     },
-    [user, useRemote, completed, pendingId, selectedYmd, calView.year, calView.month, loadMonthCounts]
+    [user, useRemote, completed, pendingId, selectedYmd, calView.year, calView.month, loadMonthCounts, loadBoard30]
   )
 
   const doneCount = completed.size
@@ -226,20 +270,29 @@ export default function DadTodoClient() {
       ? '当前无法连接待办数据库。'
       : `对清单打勾会记在「${selectedYmd}」这一天的完成记录里。`
 
+  const windowDays = boardRange.days
+  const counts = boardItemCounts
+  const sumSection = (itemIds) =>
+    itemIds.reduce((acc, iid) => acc + (counts && typeof counts[iid] === 'number' ? counts[iid] : 0), 0)
+  const sumAll =
+    counts == null
+      ? 0
+      : DAD_TODO_SECTIONS.reduce((a, s) => a + sumSection(s.items.map((i) => i.id)), 0)
+
   const barBoardRows = [
     ...DAD_TODO_SECTIONS.map((s) => ({
       key: s.id,
       label: s.title,
       short: s.id === 'focus' ? '重点' : s.id === 'habits' ? '习惯' : s.title.slice(0, 2),
-      done: s.items.filter((i) => completed.has(i.id)).length,
-      total: s.items.length,
+      done: sumSection(s.items.map((i) => i.id)),
+      total: windowDays * s.items.length,
     })),
     {
       key: 'all',
       label: '全部',
       short: '合计',
-      done: doneCount,
-      total: DAD_TODO_TOTAL,
+      done: sumAll,
+      total: windowDays * DAD_TODO_TOTAL,
     },
   ]
 
@@ -259,16 +312,27 @@ export default function DadTodoClient() {
             </p>
           ) : null}
           <div className="rounded-xl border border-[#ddd3c4] bg-white/80 px-4 py-3 dark:border-[#2a3440] dark:bg-[#121820]/90">
-            <div className="mb-3 flex items-baseline justify-between gap-2">
+            <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
               <p className="text-xs font-medium tracking-wide text-[#8a7f6f] dark:text-gray-500">进度看板</p>
-              <p className="font-mono text-[11px] text-[#9a8f7f] dark:text-gray-500">
-                查看日 <span className="text-[#5c5348] dark:text-gray-400">{selectedYmd}</span>
-              </p>
+              {boardRange.start && boardRange.end ? (
+                <p className="text-[11px] leading-relaxed text-[#9a8f7f] dark:text-gray-500">
+                  最近 {windowDays} 天
+                  <span className="ml-1.5 font-mono text-[#5c5348] dark:text-gray-400">
+                    {boardRange.start} ～ {boardRange.end}
+                  </span>
+                </p>
+              ) : loadingBoard && user && useRemote ? (
+                <p className="text-[11px] text-[#9a8f7f]">统计加载中…</p>
+              ) : null}
             </div>
             <div
               className="flex items-end justify-between gap-1.5 sm:gap-3"
               role="img"
-              aria-label={`${selectedYmd} 完成 ${doneCount} 条，共 ${DAD_TODO_TOTAL} 条`}
+              aria-label={
+                user && useRemote && boardItemCounts
+                  ? `最近 ${windowDays} 天 合计勾选 ${sumAll} 次，满额 ${windowDays * DAD_TODO_TOTAL} 人次数`
+                  : '进度看板'
+              }
             >
               {barBoardRows.map((row) => {
                 const pct = row.total > 0 ? Math.round((row.done / row.total) * 100) : 0
@@ -282,7 +346,7 @@ export default function DadTodoClient() {
                       className={`relative w-full max-w-[3.5rem] overflow-hidden rounded-t-md border border-[#e8dfd2] bg-[#f0e9de] dark:border-[#2f3a45] dark:bg-[#1a222c] ${
                         isAll ? 'h-36 sm:h-40' : 'h-28 sm:h-32'
                       }`}
-                      title={`${row.label}：${row.done} / ${row.total}`}
+                      title={`${row.label}：${row.done} / ${row.total}（近 ${windowDays} 天累计人次数 / 满额）`}
                     >
                       <div
                         className="absolute bottom-0 left-0 right-0 rounded-t-[5px] bg-gradient-to-t from-[#3d6ba8] to-[#5a8cc9] transition-[height] duration-300 dark:from-[#3d5a8a] dark:to-[#5a7ab0]"

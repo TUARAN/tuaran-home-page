@@ -224,7 +224,24 @@ export default function DadTodoClient() {
     ? '请先用上方 GitHub 登录；点日历选「当日」，再对下方清单勾选（按日保存到服务器）。'
     : !useRemote
       ? '当前无法连接待办数据库。'
-      : `日历选择日期后，对同一套任务打勾，数据只记在「${selectedYmd}」；不会单独给日期记一条「已打卡」记录。`
+      : `对清单打勾会记在「${selectedYmd}」这一天的完成记录里。`
+
+  const barBoardRows = [
+    ...DAD_TODO_SECTIONS.map((s) => ({
+      key: s.id,
+      label: s.title,
+      short: s.id === 'focus' ? '重点' : s.id === 'habits' ? '习惯' : s.title.slice(0, 2),
+      done: s.items.filter((i) => completed.has(i.id)).length,
+      total: s.items.length,
+    })),
+    {
+      key: 'all',
+      label: '全部',
+      short: '合计',
+      done: doneCount,
+      total: DAD_TODO_TOTAL,
+    },
+  ]
 
   return (
     <main className="min-h-[100dvh] bg-[#f8f5f0] px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))] dark:bg-[#0b1016]">
@@ -242,17 +259,48 @@ export default function DadTodoClient() {
             </p>
           ) : null}
           <div className="rounded-xl border border-[#ddd3c4] bg-white/80 px-4 py-3 dark:border-[#2a3440] dark:bg-[#121820]/90">
-            <p className="text-xs font-medium tracking-wide text-[#8a7f6f] dark:text-gray-500">当日进度</p>
-            <p className="mt-0.5 font-mono text-[11px] text-[#9a8f7f] dark:text-gray-500">查看日：{selectedYmd}</p>
-            <p className="mt-1 text-lg font-semibold tabular-nums text-[#2d261d] dark:text-gray-100">
-              <span className="text-sm font-normal text-[#8a7f6f] dark:text-gray-500">已勾选</span>{' '}
-              {doneCount}
-              <span className="text-sm font-normal text-[#8a7f6f] dark:text-gray-500"> 条</span>
-              <span className="mx-1.5 text-[#c4b8a8] dark:text-gray-600">/</span>
-              <span className="text-sm font-normal text-[#8a7f6f] dark:text-gray-500">共</span> {DAD_TODO_TOTAL}
-              <span className="text-sm font-normal text-[#8a7f6f] dark:text-gray-500"> 条</span>
-            </p>
-            <p className="mt-2 text-xs leading-relaxed text-[#8a7f6f] dark:text-gray-500">{persistHint}</p>
+            <div className="mb-3 flex items-baseline justify-between gap-2">
+              <p className="text-xs font-medium tracking-wide text-[#8a7f6f] dark:text-gray-500">进度看板</p>
+              <p className="font-mono text-[11px] text-[#9a8f7f] dark:text-gray-500">
+                查看日 <span className="text-[#5c5348] dark:text-gray-400">{selectedYmd}</span>
+              </p>
+            </div>
+            <div
+              className="flex items-end justify-between gap-1.5 sm:gap-3"
+              role="img"
+              aria-label={`${selectedYmd} 完成 ${doneCount} 条，共 ${DAD_TODO_TOTAL} 条`}
+            >
+              {barBoardRows.map((row) => {
+                const pct = row.total > 0 ? Math.round((row.done / row.total) * 100) : 0
+                const isAll = row.key === 'all'
+                return (
+                  <div
+                    key={row.key}
+                    className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
+                  >
+                    <div
+                      className={`relative w-full max-w-[3.5rem] overflow-hidden rounded-t-md border border-[#e8dfd2] bg-[#f0e9de] dark:border-[#2f3a45] dark:bg-[#1a222c] ${
+                        isAll ? 'h-36 sm:h-40' : 'h-28 sm:h-32'
+                      }`}
+                      title={`${row.label}：${row.done} / ${row.total}`}
+                    >
+                      <div
+                        className="absolute bottom-0 left-0 right-0 rounded-t-[5px] bg-gradient-to-t from-[#3d6ba8] to-[#5a8cc9] transition-[height] duration-300 dark:from-[#3d5a8a] dark:to-[#5a7ab0]"
+                        style={{ height: `${pct}%` }}
+                      />
+                    </div>
+                    <p className="w-full text-center text-[0.65rem] font-medium leading-tight text-[#6b6258] dark:text-gray-500">
+                      {row.short}
+                    </p>
+                    <p className="text-[0.7rem] tabular-nums text-[#2d261d] dark:text-gray-200">
+                      <span className="font-semibold">{row.done}</span>
+                      <span className="text-[#b0a99c] dark:text-gray-500"> / {row.total}</span>
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-[#8a7f6f] dark:text-gray-500">{persistHint}</p>
           </div>
         </header>
 

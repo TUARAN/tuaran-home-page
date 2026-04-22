@@ -160,7 +160,7 @@ export default function DadTodoClient() {
       : '每条勾选/取消会立即提交到当前账号，仅保存在服务器。'
 
   return (
-    <main className="min-h-[100dvh] bg-[#f5f1e8] px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))] dark:bg-[#0b1016]">
+    <main className="min-h-[100dvh] bg-[#f8f5f0] px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))] dark:bg-[#0b1016]">
       <div className="mx-auto flex min-h-[100dvh] max-w-lg flex-col">
         <header className="pt-6 pb-5">
           <h1 className="mb-2 text-[1.35rem] font-semibold leading-snug tracking-tight text-[#221f19] dark:text-gray-100">
@@ -215,7 +215,7 @@ export default function DadTodoClient() {
                     <li key={item.id}>
                       <label
                         className={`flex items-start gap-3 rounded-lg px-1 py-1 transition-colors ${
-                          canCheck ? 'cursor-pointer hover:bg-[#f5f1e8]/80 dark:hover:bg-[#1a222c]' : 'cursor-not-allowed opacity-60'
+                          canCheck ? 'cursor-pointer hover:bg-[#f8f5f0]/80 dark:hover:bg-[#1a222c]' : 'cursor-not-allowed opacity-60'
                         } ${isDone ? 'opacity-60' : ''}`}
                       >
                         <input

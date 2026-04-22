@@ -93,7 +93,7 @@ export default function HomePage() {
   return (
     <div className="max-w-[1120px] w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
       <section className="flex-1 mb-14">
-        <header className="mb-8 rounded-[28px] border border-[#e6dfd2] bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(245,241,232,0.88))] px-5 py-6 shadow-[0_18px_60px_rgba(91,78,53,0.08)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-8 md:py-8">
+        <header className="mb-8 rounded-[28px] border border-[#e6dfd2] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,245,240,0.92))] px-5 py-6 shadow-[0_16px_48px_rgba(91,78,53,0.06)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-8 md:py-8">
           <div className="space-y-6">
             <div className="space-y-3">
               <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#9c8f79] dark:text-[#9ca5b5] mb-0">
@@ -103,8 +103,8 @@ export default function HomePage() {
                 <h1 className="font-serif text-[1.55rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.9rem]">
                   数字员工 · 内容系统 · 长期主义
                 </h1>
-                <p className="slogan-serif mb-0 text-[16px] leading-8 text-[#6a5d46] dark:text-[#d6c3a0]">
-                  高山流水觅知音，邀君并肩共前行。
+                <p className="mb-0 max-w-[40rem] text-[15px] font-normal leading-7 text-[#5a5248] dark:text-[#a89f90]">
+                  在 AI 时代，探索个体规模化创作的极限。
                 </p>
               </div>
             </div>
@@ -224,16 +224,16 @@ export default function HomePage() {
                       '--brand': c.color,
                       '--brand-soft': `${c.color}16`,
                     }}
-                    className="no-external-arrow group relative flex items-center gap-3 rounded-2xl border border-[#ebe5d8] bg-white px-3 py-3 shadow-[0_14px_40px_rgba(112,96,68,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#d9cfbd] hover:shadow-[0_14px_34px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+                    className="no-external-arrow group relative flex items-center gap-3 rounded-2xl border border-[#ebe5d8] bg-white/90 px-3 py-3 shadow-[0_4px_20px_rgba(82,69,45,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#d9cfbd] hover:shadow-[0_8px_28px_rgba(96,80,53,0.07)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
                   >
                     <span
-                      className="absolute right-3 top-2 font-mono text-[10px] font-semibold tracking-[0.18em] text-[#c2b7a2] dark:text-[#556070]"
+                      className="absolute right-3 top-2 font-mono text-[10px] font-medium tracking-[0.18em] text-[#d1cac0] dark:text-[#4a525c]"
                       aria-hidden="true"
                     >
                       {String(idx + 1).padStart(2, '0')}
                     </span>
                     <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#efebe2] font-mono text-[13px] font-bold tracking-tight text-[#7a6f5b] transition-all group-hover:bg-[color:var(--brand-soft)] group-hover:text-[color:var(--brand)] dark:bg-[#1a212b] dark:text-[#b5becb]"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#e5e0d8] bg-[#ebe7df] font-mono text-[13px] font-bold tracking-tight text-[#6a6560] transition-all group-hover:border-transparent group-hover:bg-[color:var(--brand-soft)] group-hover:text-[color:var(--brand)] dark:border-[#2a3038] dark:bg-[#1a1f27] dark:text-[#7d8590] dark:group-hover:text-[color:var(--brand)]"
                       aria-hidden="true"
                     >
                       {c.char}
@@ -241,12 +241,12 @@ export default function HomePage() {
                     <span className="flex flex-col min-w-0">
                       <span className="text-[14px] font-semibold leading-tight text-[#24211d] dark:text-gray-100">{c.name}</span>
                       <span
-                        className="mt-1 whitespace-nowrap font-mono text-[10px] leading-tight text-[#9d9687] dark:text-[#7f8794]"
+                        className="mt-1 whitespace-nowrap font-mono text-[10px] leading-tight text-[#b0a99e] dark:text-[#5c6370]"
                         title={`阅读 ${c.reads} · 粉丝 ${c.fans}`}
                       >
-                        <span className="font-medium text-[#756d61] dark:text-[#9da4b2]">{c.reads}</span>
-                        <span className="mx-1 text-[#d1c7b2] dark:text-gray-600">·</span>
-                        <span className="text-[#8b826f] dark:text-[#808997]">{c.fans} 粉</span>
+                        <span className="font-normal text-[#9c9488] dark:text-[#6d737d]">{c.reads}</span>
+                        <span className="mx-1 text-[#ddd8cf] dark:text-gray-600">·</span>
+                        <span className="text-[#a8a199] dark:text-[#5f6670]">{c.fans} 粉</span>
                       </span>
                       {c.detail ? (
                         <span className="mt-1 text-[10px] leading-4 text-[#aaa18f] transition-colors group-hover:text-[#7f7667] dark:text-[#66707d] dark:group-hover:text-[#a5afbc]">
@@ -321,15 +321,15 @@ export default function HomePage() {
           </main>
 
           <aside className="w-full">
-            <section className="rounded-[24px] border border-[#e8e2d6] bg-[#f6f2ea] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#10151d] md:p-6 lg:sticky lg:top-24">
-              <div className="mb-5 border-b border-[#e8dfd0] pb-5 text-center dark:border-gray-800">
-                <div className="mx-auto w-[148px] overflow-hidden rounded-[8px]">
+            <section className="rounded-[24px] border border-[#e6e0d6] bg-[#f8f5f0] p-5 shadow-[0_8px_32px_rgba(82,69,45,0.04)] dark:border-[#252d36] dark:bg-[#10151d] dark:shadow-none md:p-6 lg:sticky lg:top-24">
+              <div className="mb-5 border-b border-[#e8e4dc] pb-5 text-center dark:border-gray-800/80">
+                <div className="mx-auto w-[148px] overflow-hidden bg-[#f8f5f0] dark:bg-[#0f1318]">
                   <Image
                     src="/tuaranme.png"
                     alt="涂阿燃"
                     width={160}
                     height={200}
-                    className="h-auto w-full object-cover"
+                    className="h-auto w-full object-cover shadow-none"
                   />
                 </div>
                 <p className="mt-3 text-[12px] tracking-[0.12em] text-[#888] dark:text-gray-400">

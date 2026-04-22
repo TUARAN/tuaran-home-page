@@ -74,7 +74,7 @@ export default function LatestMoments() {
               >
                 <span
                   aria-hidden="true"
-                  className="absolute left-[-17px] top-4 h-3 w-3 rounded-full border border-[#d6c7ae] bg-[#f9f5ed] shadow-[0_0_0_4px_rgba(245,241,232,1)] dark:border-[#49566a] dark:bg-[#19212b] dark:shadow-[0_0_0_4px_rgba(16,21,29,1)]"
+                  className="absolute left-[-17px] top-4 h-3 w-3 rounded-full border border-[#d6c7ae] bg-[#f9f5ed] shadow-[0_0_0_4px_rgba(248,245,240,1)] dark:border-[#49566a] dark:bg-[#19212b] dark:shadow-[0_0_0_4px_rgba(16,21,29,1)]"
                 />
 
                 <div className="mb-2 flex items-start justify-between gap-3">

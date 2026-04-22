@@ -45,9 +45,10 @@ export default function DadCheckinCalendar() {
     const n = new Date()
     return { year: n.getFullYear(), month: n.getMonth() + 1 }
   })
-  const [checkedSet, setCheckedSet] = useState(() => new Set())
+  const [selectedYmd, setSelectedYmd] = useState(() => localYmd())
+  const [dayHasRecord, setDayHasRecord] = useState(() => new Set())
   const [loadingMonth, setLoadingMonth] = useState(false)
-  const [mutating, setMutating] = useState(false)
+  const [actionPending, setActionPending] = useState(false)
   const [error, setError] = useState('')
   const [dbNote, setDbNote] = useState('')
 
@@ -65,7 +66,7 @@ export default function DadCheckinCalendar() {
 
   const refreshMonth = useCallback(async () => {
     if (!user) {
-      setCheckedSet(new Set())
+      setDayHasRecord(new Set())
       return
     }
     setLoadingMonth(true)
@@ -78,16 +79,26 @@ export default function DadCheckinCalendar() {
       )
       const data = await safeJson(res)
       if (res.status === 503) {
-        setCheckedSet(new Set())
+        setDayHasRecord(new Set())
         setDbNote(data?.message || '当前环境无法连接打卡数据库。')
         return
       }
       if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
       const dates = Array.isArray(data?.dates) ? data.dates : []
-      setCheckedSet(new Set(dates.filter((x) => typeof x === 'string')))
+      const monthPrefix = `${view.year}-${pad2(view.month)}-`
+      setDayHasRecord((prev) => {
+        const next = new Set(prev)
+        for (const k of next) {
+          if (k.startsWith(monthPrefix)) next.delete(k)
+        }
+        for (const d of dates) {
+          if (typeof d === 'string') next.add(d)
+        }
+        return next
+      })
     } catch (e) {
       setError(e?.message || 'LOAD_FAILED')
-      setCheckedSet(new Set())
+      setDayHasRecord(new Set())
     } finally {
       setLoadingMonth(false)
     }
@@ -102,53 +113,27 @@ export default function DadCheckinCalendar() {
   }, [refreshMonth])
 
   const cells = useMemo(() => monthGrid(view.year, view.month), [view.year, view.month])
-
-  const monthCheckedCount = checkedSet.size
   const todayYmd = localYmd()
 
-  async function onDayClick(day) {
-    if (!user || !day || mutating) return
-    const ymd = `${view.year}-${pad2(view.month)}-${pad2(day)}`
-    if (ymd > localYmd()) return
-
-    setMutating(true)
-    setError('')
-    try {
-      const isOn = checkedSet.has(ymd)
-      if (isOn) {
-        const res = await fetch(`/api/dad-checkin?date=${encodeURIComponent(ymd)}`, {
-          method: 'DELETE',
-        })
-        const data = await safeJson(res)
-        if (res.status === 503) {
-          setDbNote(data?.message || '当前环境无法连接打卡数据库。')
-          return
-        }
-        if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
-        setCheckedSet((prev) => {
-          const next = new Set(prev)
-          next.delete(ymd)
-          return next
-        })
-      } else {
-        const res = await fetch('/api/dad-checkin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date: ymd }),
-        })
-        const data = await safeJson(res)
-        if (res.status === 503) {
-          setDbNote(data?.message || '当前环境无法连接打卡数据库。')
-          return
-        }
-        if (!res.ok && res.status !== 201) throw new Error(data?.error || `HTTP_${res.status}`)
-        setCheckedSet((prev) => new Set(prev).add(ymd))
-      }
-    } catch (e) {
-      setError(e?.message || 'UPDATE_FAILED')
-    } finally {
-      setMutating(false)
+  const monthHasRecordCount = useMemo(() => {
+    if (!user) return 0
+    const p = `${view.year}-${pad2(view.month)}-`
+    let n = 0
+    for (const d of dayHasRecord) {
+      if (d.startsWith(p)) n += 1
     }
+    return n
+  }, [user, dayHasRecord, view.year, view.month])
+
+  const selectedHasRecord = user ? dayHasRecord.has(selectedYmd) : false
+  const isSelectedFuture = selectedYmd > todayYmd
+  const canActOnSelected = user && !isSelectedFuture && !dbNote
+
+  function onSelectDay(day) {
+    if (!user || !day) return
+    const ymd = `${view.year}-${pad2(view.month)}-${pad2(day)}`
+    if (ymd > todayYmd) return
+    setSelectedYmd(ymd)
   }
 
   function shiftMonth(delta) {
@@ -166,6 +151,62 @@ export default function DadCheckinCalendar() {
     })
   }
 
+  async function onRecordThisDay() {
+    if (!canActOnSelected || actionPending) return
+    if (dayHasRecord.has(selectedYmd)) return
+    setActionPending(true)
+    setError('')
+    try {
+      const res = await fetch('/api/dad-checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: selectedYmd }),
+        credentials: 'same-origin',
+      })
+      const data = await safeJson(res)
+      if (res.status === 503) {
+        setDbNote(data?.message || '当前环境无法连接打卡数据库。')
+        return
+      }
+      if (!res.ok && res.status !== 201) throw new Error(data?.error || `HTTP_${res.status}`)
+      setDayHasRecord((prev) => new Set(prev).add(selectedYmd))
+      await refreshMonth()
+    } catch (e) {
+      setError(e?.message || 'UPDATE_FAILED')
+    } finally {
+      setActionPending(false)
+    }
+  }
+
+  async function onCancelThisDay() {
+    if (!canActOnSelected || actionPending) return
+    if (!dayHasRecord.has(selectedYmd)) return
+    setActionPending(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/dad-checkin?date=${encodeURIComponent(selectedYmd)}`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      })
+      const data = await safeJson(res)
+      if (res.status === 503) {
+        setDbNote(data?.message || '当前环境无法连接打卡数据库。')
+        return
+      }
+      if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
+      setDayHasRecord((prev) => {
+        const n = new Set(prev)
+        n.delete(selectedYmd)
+        return n
+      })
+      await refreshMonth()
+    } catch (e) {
+      setError(e?.message || 'UPDATE_FAILED')
+    } finally {
+      setActionPending(false)
+    }
+  }
+
   const title = `${view.year} 年 ${view.month} 月`
 
   return (
@@ -176,7 +217,7 @@ export default function DadCheckinCalendar() {
           {user ? (
             <a
               href={logoutHref}
-              className="inline-flex items-center rounded-lg border border-[#ddd3c4] bg-white/80 px-3 py-1 text-xs text-[#5c5348] no-underline hover:bg-[#f5f1e8] dark:border-[#3d4a5c] dark:bg-[#1a222c] dark:text-gray-300 dark:hover:bg-[#243040]"
+              className="inline-flex items-center rounded-lg border border-[#ddd3c4] bg-white/80 px-3 py-1 text-xs text-[#5c5348] no-underline hover:bg-[#f0ebe3] dark:border-[#3d4a5c] dark:bg-[#1a222c] dark:text-gray-300 dark:hover:bg-[#243040]"
             >
               退出
             </a>
@@ -201,7 +242,7 @@ export default function DadCheckinCalendar() {
         </div>
       ) : (
         <p className="mb-3 text-xs leading-relaxed text-[#8a7f6f] dark:text-gray-500">
-          使用 GitHub 登录后，可在日历上记录每日打卡；数据保存在服务器，仅与当前账号关联。
+          使用 GitHub 登录后，点击日历中的日期可切换「当前查看的日期」；有打卡的日期在格子上有标记。打卡/取消在日历下方对所选日操作。
         </p>
       )}
 
@@ -238,15 +279,15 @@ export default function DadCheckinCalendar() {
       </div>
 
       <p className="mb-2 text-xs text-[#8a7f6f] dark:text-gray-500">
-        本月已打卡{' '}
+        本月有打卡记录{' '}
         <span className="font-semibold tabular-nums text-[#2d261d] dark:text-gray-200">
-          {user ? monthCheckedCount : '—'}
+          {user ? monthHasRecordCount : '—'}
         </span>{' '}
-        天 · 点击日期可勾选 / 取消（不含未来日期）
+        天 · 点击日期切换当前查看的日期（不直接打卡）
       </p>
 
       <div
-        className={`grid grid-cols-7 gap-1 text-center text-xs ${!user ? 'pointer-events-none opacity-50' : ''}`}
+        className={`mb-4 grid grid-cols-7 gap-1 text-center text-xs ${!user ? 'pointer-events-none opacity-50' : ''}`}
       >
         {WEEK_LABELS.map((w) => (
           <div key={w} className="py-1 font-medium text-[#8a7f6f] dark:text-gray-500">
@@ -260,29 +301,74 @@ export default function DadCheckinCalendar() {
           const ymd = `${view.year}-${pad2(view.month)}-${pad2(day)}`
           const isToday = ymd === todayYmd
           const isFuture = ymd > todayYmd
-          const isOn = checkedSet.has(ymd)
+          const isSelected = ymd === selectedYmd
+          const hasRec = dayHasRecord.has(ymd)
           return (
             <button
               key={ymd}
               type="button"
-              disabled={!user || isFuture || mutating || loadingMonth}
-              onClick={() => onDayClick(day)}
+              disabled={!user || isFuture || loadingMonth}
+              onClick={() => onSelectDay(day)}
               className={`relative flex aspect-square items-center justify-center rounded-lg text-[13px] font-medium transition-colors ${
-                isOn
-                  ? 'bg-[#6b9b7a] text-white shadow-sm dark:bg-[#5a8f6a]'
-                  : 'bg-[#f5f1e8] text-[#2d261d] hover:bg-[#ebe4d6] dark:bg-[#1a222c] dark:text-gray-200 dark:hover:bg-[#243040]'
-              } ${isToday ? 'ring-2 ring-[#4a6fa5] ring-offset-1 ring-offset-[#f5f1e8] dark:ring-offset-[#0b1016]' : ''} ${
-                isFuture ? 'cursor-not-allowed opacity-35' : ''
-              } disabled:cursor-not-allowed`}
+                hasRec
+                  ? 'bg-[#6b9b7a]/35 text-[#1a3d24] dark:bg-[#5a8f6a]/40 dark:text-gray-100'
+                  : 'bg-[#f0ede6] text-[#2d261d] hover:bg-[#ebe4d6] dark:bg-[#1a222c] dark:text-gray-200 dark:hover:bg-[#243040]'
+              } ${isSelected ? 'ring-2 ring-[#4a6fa5] ring-offset-1 ring-offset-[#f8f5f0] dark:ring-offset-[#0b1016]' : ''} ${
+                isToday && !isSelected ? 'ring-1 ring-[#c4b8a8] dark:ring-gray-600' : ''
+              } ${isFuture ? 'cursor-not-allowed opacity-35' : ''} ${!isFuture && user ? 'cursor-pointer' : ''} disabled:cursor-not-allowed`}
             >
               {day}
-              {isOn ? (
-                <span className="absolute bottom-0.5 text-[9px] font-normal opacity-90">✓</span>
+              {hasRec ? (
+                <span className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-[#3d6b4a] dark:bg-[#8fdf9f]" title="有打卡" />
               ) : null}
             </button>
           )
         })}
       </div>
+
+      {user && !userLoading && (
+        <div className="rounded-xl border border-[#e5ddd0] bg-[#f9f6f0] px-3 py-3 text-sm dark:border-[#2a3440] dark:bg-[#151c24]">
+          <p className="text-xs text-[#5c5348] dark:text-gray-400">当前查看</p>
+          <p className="mt-0.5 font-mono text-[0.9rem] font-semibold tabular-nums text-[#2d261d] dark:text-gray-100">
+            {selectedYmd}
+            {isSelectedFuture ? <span className="ml-2 text-xs font-normal text-amber-800 dark:text-amber-200">（未来日仅可查看，不可选）</span> : null}
+            {!isSelectedFuture && !dbNote ? (
+              <span
+                className={`ml-2 text-xs font-normal ${
+                  selectedHasRecord
+                    ? 'text-[#2d5a3d] dark:text-green-300'
+                    : 'text-[#8a7f6f] dark:text-gray-500'
+                }`}
+              >
+                {selectedHasRecord ? '· 本日有打卡' : '· 本日无打卡'}
+              </span>
+            ) : null}
+          </p>
+          {canActOnSelected ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {!selectedHasRecord ? (
+                <button
+                  type="button"
+                  disabled={actionPending}
+                  onClick={onRecordThisDay}
+                  className="rounded-lg border border-[#5a8f6a] bg-[#6b9b7a] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#5a8a68] disabled:opacity-50 dark:border-[#4a7c59] dark:bg-[#4f7a5c]"
+                >
+                  {actionPending ? '处理中…' : '为所选日期记「已打卡」'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={actionPending}
+                  onClick={onCancelThisDay}
+                  className="rounded-lg border border-[#c9bfb0] bg-white/90 px-3 py-1.5 text-xs text-[#5c4f42] dark:border-[#3d4a5c] dark:bg-[#1a222c] dark:text-gray-300"
+                >
+                  {actionPending ? '处理中…' : '取消本日打卡记录'}
+                </button>
+              )}
+            </div>
+          ) : null}
+        </div>
+      )}
     </section>
   )
 }

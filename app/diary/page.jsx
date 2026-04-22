@@ -222,9 +222,13 @@ export default function DiaryPage() {
                 const id = `section-${date}-${idx}`
 
                 return (
-                  <div key={`${idx}-${date}-${label || 'no-label'}`} id={id} className="mt-10 mb-4">
+                  <div
+                    key={`${idx}-${date}-${label || 'no-label'}`}
+                    id={id}
+                    className="mt-10 mb-4"
+                  >
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <h2 className="m-0 text-lg sm:text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug scroll-mt-24">
+                      <h2 className="m-0 text-lg sm:text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug">
                         {label || date}
                       </h2>
                       <span className="text-[#999] dark:text-gray-500" aria-hidden="true">·</span>

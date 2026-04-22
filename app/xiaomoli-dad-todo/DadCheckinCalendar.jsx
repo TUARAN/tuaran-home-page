@@ -27,7 +27,7 @@ function monthGrid(year, month) {
 const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
 /**
- * 仅作日期切换与当月进度展示；不调用 dad_checkin。
+ * 仅作日期切换与当月进度展示（由 dad_todo 日维度统计画点）。
  * dayCountByYmd: 某日在 dad_todo 中已勾选的条数 0~TOTAL
  */
 export default function DadCheckinCalendar({

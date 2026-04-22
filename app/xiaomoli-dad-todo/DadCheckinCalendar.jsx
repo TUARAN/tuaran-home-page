@@ -1,5 +1,6 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 async function safeJson(res) {
@@ -34,6 +35,10 @@ function monthGrid(year, month) {
 const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
 export default function DadCheckinCalendar() {
+  const pathname = usePathname() || '/'
+  const loginHref = `/api/auth/login?returnTo=${encodeURIComponent(pathname)}`
+  const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(pathname)}`
+
   const [user, setUser] = useState(null)
   const [userLoading, setUserLoading] = useState(true)
   const [view, setView] = useState(() => {
@@ -95,16 +100,6 @@ export default function DadCheckinCalendar() {
   useEffect(() => {
     refreshMonth()
   }, [refreshMonth])
-
-  function login() {
-    const returnTo = typeof window !== 'undefined' ? window.location.pathname || '/' : '/'
-    window.location.href = `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`
-  }
-
-  function logout() {
-    const returnTo = typeof window !== 'undefined' ? window.location.pathname || '/' : '/'
-    window.location.href = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  }
 
   const cells = useMemo(() => monthGrid(view.year, view.month), [view.year, view.month])
 
@@ -179,22 +174,19 @@ export default function DadCheckinCalendar() {
         <h2 className="text-base font-semibold text-[#2d261d] dark:text-gray-100">习惯打卡</h2>
         <div className="flex items-center gap-2">
           {user ? (
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-lg border border-[#ddd3c4] bg-white/80 px-3 py-1 text-xs text-[#5c5348] hover:bg-[#f5f1e8] dark:border-[#3d4a5c] dark:bg-[#1a222c] dark:text-gray-300 dark:hover:bg-[#243040]"
+            <a
+              href={logoutHref}
+              className="inline-flex items-center rounded-lg border border-[#ddd3c4] bg-white/80 px-3 py-1 text-xs text-[#5c5348] no-underline hover:bg-[#f5f1e8] dark:border-[#3d4a5c] dark:bg-[#1a222c] dark:text-gray-300 dark:hover:bg-[#243040]"
             >
               退出
-            </button>
+            </a>
           ) : (
-            <button
-              type="button"
-              disabled={userLoading}
-              onClick={login}
-              className="rounded-lg border border-[#4a6fa5] bg-[#4a6fa5]/10 px-3 py-1 text-xs font-medium text-[#3d5a80] hover:bg-[#4a6fa5]/20 disabled:opacity-60 dark:border-[#6b8cbc] dark:bg-[#2a3f5c]/40 dark:text-[#a8c4e8]"
+            <a
+              href={loginHref}
+              className="inline-flex items-center rounded-lg border border-[#4a6fa5] bg-[#4a6fa5]/10 px-3 py-1 text-xs font-medium text-[#3d5a80] no-underline hover:bg-[#4a6fa5]/20 dark:border-[#6b8cbc] dark:bg-[#2a3f5c]/40 dark:text-[#a8c4e8]"
             >
-              GitHub 登录
-            </button>
+              {userLoading ? '检测登录…' : 'GitHub 登录'}
+            </a>
           )}
         </div>
       </div>

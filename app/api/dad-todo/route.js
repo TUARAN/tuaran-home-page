@@ -29,6 +29,18 @@ function monthRange(year, month) {
   return { start, end }
 }
 
+/** 含首尾：end 起往前共 rangeDays 个日历日。 */
+function ymdAddDays(ymd, delta) {
+  const m = YMD_RE.exec(ymd)
+  if (!m) return null
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+  d.setUTCDate(d.getUTCDate() + delta)
+  const y = d.getUTCFullYear()
+  const mo = d.getUTCMonth() + 1
+  const day = d.getUTCDate()
+  return `${String(y).padStart(4, '0')}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
 function dbUnavailableResponse() {
   return Response.json(
     { error: 'DB_UNAVAILABLE', message: '待办需要部署环境（Cloudflare D1）与登录后使用。' },
@@ -39,6 +51,7 @@ function dbUnavailableResponse() {
 /**
  * GET ?date=YYYY-MM-DD  → { completed, date }
  * GET ?year=&month=   → { byDate, year, month }
+ * GET ?end=YYYY-MM-DD&rangeDays=30 → { itemCounts, start, end, rangeDays } 进度看板用
  */
 export async function GET(req) {
   try {
@@ -51,6 +64,8 @@ export async function GET(req) {
     const date = parseYmd(searchParams.get('date'))
     const year = Number(searchParams.get('year'))
     const month = Number(searchParams.get('month'))
+    const endParam = parseYmd(searchParams.get('end'))
+    const rangeDays = Number(searchParams.get('rangeDays'))
 
     let db
     try {
@@ -60,6 +75,36 @@ export async function GET(req) {
     }
 
     const userId = String(user.id)
+
+    if (endParam && Number.isFinite(rangeDays)) {
+      const n = Math.min(90, Math.max(1, Math.floor(rangeDays)))
+      const startYmd = ymdAddDays(endParam, -(n - 1))
+      if (!startYmd) {
+        return Response.json({ error: 'INVALID_END_OR_RANGE' }, { status: 400 })
+      }
+      const result = await db
+        .prepare(
+          `SELECT item_id, COUNT(*) as c FROM dad_todo_completions
+           WHERE user_id = ?1 AND check_date >= ?2 AND check_date <= ?3
+           GROUP BY item_id`
+        )
+        .bind(userId, startYmd, endParam)
+        .all()
+      const rows = result?.results || []
+      const itemCounts = {}
+      for (const row of rows) {
+        const id = row?.item_id
+        if (id && validSet.has(String(id))) {
+          itemCounts[String(id)] = Math.min(4000, Number(row.c) || 0)
+        }
+      }
+      return Response.json({
+        start: startYmd,
+        end: endParam,
+        rangeDays: n,
+        itemCounts,
+      })
+    }
 
     if (date) {
       const result = await db

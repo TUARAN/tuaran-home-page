@@ -7,18 +7,9 @@ export const dynamic = 'force-dynamic'
 
 const validSet = new Set(getValidDadTodoItemIds())
 
-function filterValidIds(arr) {
-  if (!Array.isArray(arr)) return []
-  const out = []
-  for (const x of arr) {
-    if (typeof x === 'string' && isValidDadTodoItemId(x) && !out.includes(x)) out.push(x)
-  }
-  return out
-}
-
 function dbUnavailableResponse() {
   return Response.json(
-    { error: 'DB_UNAVAILABLE', message: '待办同步需要在部署环境（Cloudflare D1）下使用。' },
+    { error: 'DB_UNAVAILABLE', message: '待办需要部署环境（Cloudflare D1）与登录后使用。' },
     { status: 503 }
   )
 }
@@ -52,7 +43,7 @@ export async function GET(req) {
   }
 }
 
-export async function PUT(req) {
+export async function POST(req) {
   try {
     const user = await getUserFromRequest(req)
     if (!user) {
@@ -66,7 +57,11 @@ export async function PUT(req) {
       return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
     }
 
-    const completed = filterValidIds(body?.completed)
+    const itemId = body?.itemId
+    if (!isValidDadTodoItemId(itemId)) {
+      return Response.json({ error: 'INVALID_ITEM_ID' }, { status: 400 })
+    }
+
     const userId = String(user.id)
     const now = Date.now()
 
@@ -78,20 +73,47 @@ export async function PUT(req) {
     }
 
     await db
-      .prepare(`DELETE FROM dad_todo_completions WHERE user_id = ?1`)
-      .bind(userId)
+      .prepare(
+        `INSERT INTO dad_todo_completions (user_id, item_id, updated_at) VALUES (?1, ?2, ?3)
+         ON CONFLICT(user_id, item_id) DO UPDATE SET updated_at = excluded.updated_at`
+      )
+      .bind(userId, itemId, now)
       .run()
 
-    for (const itemId of completed) {
-      await db
-        .prepare(
-          `INSERT INTO dad_todo_completions (user_id, item_id, updated_at) VALUES (?1, ?2, ?3)`
-        )
-        .bind(userId, itemId, now)
-        .run()
+    return Response.json({ ok: true, itemId }, { status: 200 })
+  } catch {
+    return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const user = await getUserFromRequest(req)
+    if (!user) {
+      return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 })
     }
 
-    return Response.json({ ok: true, completed })
+    const { searchParams } = new URL(req.url)
+    const itemId = searchParams.get('itemId') || searchParams.get('id')
+    if (!isValidDadTodoItemId(itemId)) {
+      return Response.json({ error: 'INVALID_ITEM_ID' }, { status: 400 })
+    }
+
+    let db
+    try {
+      db = getD1()
+    } catch {
+      return dbUnavailableResponse()
+    }
+
+    await db
+      .prepare(
+        `DELETE FROM dad_todo_completions WHERE user_id = ?1 AND item_id = ?2`
+      )
+      .bind(String(user.id), itemId)
+      .run()
+
+    return Response.json({ ok: true, itemId }, { status: 200 })
   } catch {
     return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }

@@ -1,13 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-import {
-  DAD_TODO_SECTIONS,
-  DAD_TODO_STORAGE_KEY,
-  DAD_TODO_TOTAL,
-  isValidDadTodoItemId,
-} from '../../lib/dadTodoData'
+import { DAD_TODO_SECTIONS, DAD_TODO_TOTAL, isValidDadTodoItemId } from '../../lib/dadTodoData'
 import DadCheckinCalendar from './DadCheckinCalendar'
 
 async function safeJson(res) {
@@ -20,39 +15,22 @@ async function safeJson(res) {
   }
 }
 
-function loadCompleted() {
-  if (typeof window === 'undefined') return new Set()
-  try {
-    const raw = window.localStorage.getItem(DAD_TODO_STORAGE_KEY)
-    if (!raw) return new Set()
-    const parsed = JSON.parse(raw)
-    const ids = Array.isArray(parsed?.completed) ? parsed.completed : []
-    return new Set(ids.filter((x) => typeof x === 'string' && isValidDadTodoItemId(x)))
-  } catch {
-    return new Set()
-  }
-}
-
-function saveCompletedLocal(set) {
-  try {
-    window.localStorage.setItem(DAD_TODO_STORAGE_KEY, JSON.stringify({ completed: [...set] }))
-  } catch {
-    /* ignore */
-  }
-}
-
-function setToArray(set) {
-  return [...set].filter((id) => isValidDadTodoItemId(id)).sort()
-}
+const LEGACY_TODO_KEY = 'xiaomoli-dad-todo-v1'
 
 export default function DadTodoClient() {
   const [completed, setCompleted] = useState(() => new Set())
-  const [ready, setReady] = useState(false)
   const [user, setUser] = useState(null)
   const [useRemote, setUseRemote] = useState(false)
   const [todoRemoteNote, setTodoRemoteNote] = useState('')
+  const [pendingId, setPendingId] = useState(null)
 
-  const allowSaveRef = useRef(false)
+  useEffect(() => {
+    try {
+      localStorage.removeItem(LEGACY_TODO_KEY)
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -65,13 +43,9 @@ export default function DadTodoClient() {
         setUser(u)
 
         if (!u) {
-          setCompleted(loadCompleted())
+          setCompleted(new Set())
           setUseRemote(false)
           setTodoRemoteNote('')
-          setReady(true)
-          setTimeout(() => {
-            allowSaveRef.current = true
-          }, 0)
           return
         }
 
@@ -81,25 +55,17 @@ export default function DadTodoClient() {
 
         if (tRes.status === 503) {
           setTodoRemoteNote(
-            tData?.message || '待办无法同步到服务器（无数据库绑定）。勾选暂仅保存在本机。'
+            tData?.message || '待办需数据库。当前环境不可用，请稍后在已部署站点使用。'
           )
-          setCompleted(loadCompleted())
+          setCompleted(new Set())
           setUseRemote(false)
-          setReady(true)
-          setTimeout(() => {
-            allowSaveRef.current = true
-          }, 0)
           return
         }
 
         if (tRes.status === 401 || !tRes.ok) {
-          setCompleted(loadCompleted())
+          setCompleted(new Set())
           setUseRemote(false)
           setTodoRemoteNote('')
-          setReady(true)
-          setTimeout(() => {
-            allowSaveRef.current = true
-          }, 0)
           return
         }
 
@@ -111,35 +77,11 @@ export default function DadTodoClient() {
             (x) => typeof x === 'string' && isValidDadTodoItemId(x)
           )
         )
-        const local = loadCompleted()
-
-        if (fromServer.size === 0 && local.size > 0) {
-          const arr = setToArray(local)
-          setCompleted(new Set(arr))
-          saveCompletedLocal(new Set(arr))
-          await fetch('/api/dad-todo', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ completed: arr }),
-            credentials: 'same-origin',
-          })
-        } else {
-          setCompleted(fromServer)
-          saveCompletedLocal(fromServer)
-        }
-
-        setReady(true)
-        setTimeout(() => {
-          allowSaveRef.current = true
-        }, 0)
+        setCompleted(fromServer)
       } catch {
         if (!cancelled) {
-          setCompleted(loadCompleted())
+          setCompleted(new Set())
           setUseRemote(false)
-          setReady(true)
-          setTimeout(() => {
-            allowSaveRef.current = true
-          }, 0)
         }
       }
     })()
@@ -148,82 +90,74 @@ export default function DadTodoClient() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!ready || !allowSaveRef.current) return
-    if (!user) {
-      saveCompletedLocal(completed)
-      return
-    }
-    if (!useRemote) {
-      saveCompletedLocal(completed)
-      return
-    }
-    const arr = setToArray(completed)
-    const t = setTimeout(() => {
-      fetch('/api/dad-todo', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: arr }),
-        credentials: 'same-origin',
+  const toggle = useCallback(
+    async (id) => {
+      if (!isValidDadTodoItemId(id) || !user || !useRemote || pendingId) return
+      const wasDone = completed.has(id)
+      setPendingId(id)
+
+      setCompleted((prev) => {
+        const next = new Set(prev)
+        if (wasDone) next.delete(id)
+        else next.add(id)
+        return next
       })
-        .then((res) => {
-          if (res.status === 503) {
-            return res.json().then((d) => {
-              setTodoRemoteNote(
-                d?.message || '待办无法同步到服务器。已改存本机。'
-              )
-              setUseRemote(false)
-            })
-          }
-        })
-        .catch(() => {})
-    }, 450)
-    return () => clearTimeout(t)
-  }, [completed, user, useRemote, ready])
 
-  const toggle = useCallback((id) => {
-    if (!isValidDadTodoItemId(id)) return
-    setCompleted((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }, [])
-
-  const clearAll = useCallback(async () => {
-    setCompleted(new Set())
-    try {
-      window.localStorage.removeItem(DAD_TODO_STORAGE_KEY)
-    } catch {
-      /* ignore */
-    }
-    if (user && useRemote) {
       try {
-        const res = await fetch('/api/dad-todo', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ completed: [] }),
-          credentials: 'same-origin',
-        })
+        const res = wasDone
+          ? await fetch(`/api/dad-todo?itemId=${encodeURIComponent(id)}`, {
+              method: 'DELETE',
+              credentials: 'same-origin',
+            })
+          : await fetch('/api/dad-todo', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ itemId: id }),
+              credentials: 'same-origin',
+            })
+
         if (res.status === 503) {
           const d = await safeJson(res)
-          setTodoRemoteNote(d?.message || '已清除本机；远程暂不可写。')
+          setTodoRemoteNote(d?.message || '数据库不可用，已恢复勾选状态。')
           setUseRemote(false)
+          setCompleted((prev) => {
+            const next = new Set(prev)
+            if (wasDone) next.add(id)
+            else next.delete(id)
+            return next
+          })
+          return
+        }
+
+        if (!res.ok) {
+          setCompleted((prev) => {
+            const next = new Set(prev)
+            if (wasDone) next.add(id)
+            else next.delete(id)
+            return next
+          })
         }
       } catch {
-        /* ignore */
+        setCompleted((prev) => {
+          const next = new Set(prev)
+          if (wasDone) next.add(id)
+          else next.delete(id)
+          return next
+        })
+      } finally {
+        setPendingId(null)
       }
-    }
-  }, [user, useRemote])
+    },
+    [user, useRemote, completed, pendingId]
+  )
 
   const doneCount = completed.size
-
-  const persistHint = user
-    ? useRemote
-      ? '已登录：勾选会同步到账号（数据库），并备份在本浏览器。'
-      : '已登录，但当前环境无法连库：勾选先存在本机；上线后可再同步。'
-    : '未登录：勾选仅在本机浏览器，换设备不会同步。登录后可写入数据库。'
+  const canCheck = user && useRemote
+  const persistHint = !user
+    ? '请先通过上方「GitHub 登录」后勾选；每条会即时写入服务器。'
+    : !useRemote
+      ? '当前无法连接待办数据库，请稍后再试或检查是否已部署 D1。'
+      : '每条勾选/取消会立即提交到当前账号，仅保存在服务器。'
 
   return (
     <main className="min-h-[100dvh] bg-[#f5f1e8] px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))] dark:bg-[#0b1016]">
@@ -276,18 +210,20 @@ export default function DadTodoClient() {
               <ul className="space-y-3">
                 {section.items.map((item) => {
                   const isDone = completed.has(item.id)
+                  const isBusy = pendingId === item.id
                   return (
                     <li key={item.id}>
                       <label
-                        className={`flex cursor-pointer items-start gap-3 rounded-lg px-1 py-1 transition-colors hover:bg-[#f5f1e8]/80 dark:hover:bg-[#1a222c] ${
-                          isDone ? 'opacity-60' : ''
-                        }`}
+                        className={`flex items-start gap-3 rounded-lg px-1 py-1 transition-colors ${
+                          canCheck ? 'cursor-pointer hover:bg-[#f5f1e8]/80 dark:hover:bg-[#1a222c]' : 'cursor-not-allowed opacity-60'
+                        } ${isDone ? 'opacity-60' : ''}`}
                       >
                         <input
                           type="checkbox"
                           checked={isDone}
+                          disabled={!canCheck || isBusy}
                           onChange={() => toggle(item.id)}
-                          className="mt-1 h-4 w-4 shrink-0 rounded border-[#c4b8a8] text-[#4a6fa5] focus:ring-[#4a6fa5] dark:border-[#4a5568] dark:bg-[#1a222c]"
+                          className="mt-1 h-4 w-4 shrink-0 rounded border-[#c4b8a8] text-[#4a6fa5] focus:ring-[#4a6fa5] disabled:cursor-not-allowed dark:border-[#4a5568] dark:bg-[#1a222c]"
                         />
                         <span
                           className={`text-[0.95rem] leading-relaxed text-[#333] dark:text-gray-200 ${
@@ -304,21 +240,6 @@ export default function DadTodoClient() {
             </section>
           ))}
         </div>
-
-        <footer className="mt-10 border-t border-[#e5ddd0] pt-6 dark:border-[#2a3440]">
-          <p className="mb-3 text-xs leading-relaxed text-[#8a7f6f] dark:text-gray-500">
-            {user && useRemote
-              ? '清除将同时清空本机备份与服务器上的待办勾选（当前账号）。'
-              : '未登录或离线时，清除仅影响本机；登录且云端可用时，也会清空服务器记录。'}
-          </p>
-          <button
-            type="button"
-            onClick={clearAll}
-            className="w-full rounded-xl border border-[#c9bfb0] bg-white/90 px-4 py-3 text-sm font-medium text-[#5c4f42] transition-colors hover:bg-[#f5f1e8] dark:border-[#3d4a5c] dark:bg-[#121820] dark:text-gray-300 dark:hover:bg-[#1a222c]"
-          >
-            清除勾选记录
-          </button>
-        </footer>
       </div>
     </main>
   )

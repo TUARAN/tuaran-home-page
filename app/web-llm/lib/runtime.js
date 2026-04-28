@@ -1,5 +1,5 @@
 import { DEFAULT_MODEL_ID, MAX_HISTORY_TURNS, MAX_IMAGE_EDGE } from './constants'
-import { SITE_CONTEXT } from './siteContext'
+import { SITE_CONTEXT_PREVIEW, getSiteContextFor } from './siteContext'
 
 let runtimePromise = null
 let runtimeModule = null
@@ -264,25 +264,27 @@ export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNe
   const contextStartedAt = performance.now()
   const recentMessages = messages.slice(-MAX_HISTORY_TURNS * 2)
   const images = []
-  const conversation = [
-    {
+  const conversation = []
+
+  // 只有在最近一条用户问题命中站点关键词时，才注入对应分片作为 system prompt；
+  // 否则完全跳过 system 消息，与 standalone 快版的轻量行为一致。
+  const lastUserText = [...recentMessages].reverse().find((m) => m.role !== 'assistant' && m.role !== 'system')?.text || ''
+  const siteContextSnippet = getSiteContextFor(lastUserText)
+  if (siteContextSnippet) {
+    conversation.push({
       role: 'system',
       content: [
         {
           type: 'text',
           text: [
-            '你是 tuaran.me 里的网页大模型助手。',
-            '请优先根据提供的站点固定上下文回答与本站、tuaran、本地项目相关的问题。',
-            '如果上下文没有明确提到，就直接说“这个上下文里没有提到”，不要编造。',
-            `只参考最近 ${MAX_HISTORY_TURNS} 轮对话，不要被更早的历史内容干扰。`,
+            '你是 tuaran.me 的网页助手。请基于下面的站点摘要回答相关问题；摘要里没提到的，就直接说“这个上下文里没有提到”，不要编造。',
             '',
-            '站点摘要：',
-            SITE_CONTEXT,
+            siteContextSnippet,
           ].join('\n'),
         },
       ],
-    },
-  ]
+    })
+  }
 
   for (const message of recentMessages) {
     if (message.role === 'system') {
@@ -374,5 +376,5 @@ export function getRuntimeDiagnostics() {
 }
 
 export function getSiteContextPreview() {
-  return SITE_CONTEXT
+  return SITE_CONTEXT_PREVIEW
 }

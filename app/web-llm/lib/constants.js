@@ -19,7 +19,7 @@ export const MODEL_OPTIONS = [
 ]
 
 export const MAX_NEW_TOKENS = 384
-export const MAX_IMAGE_EDGE = 1280
-export const MAX_HISTORY_TURNS = 4
+export const MAX_IMAGE_EDGE = 448
+export const MAX_HISTORY_TURNS = 2
 export const SESSION_DB_NAME = 'tuaran-web-llm'
 export const SESSION_STORE_NAME = 'sessions'

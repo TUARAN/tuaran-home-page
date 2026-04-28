@@ -1,11 +1,14 @@
 import { getD1 } from '../../../lib/d1'
-import { getUserFromRequest } from '../../../lib/edgeSession'
+import { getSecrets, getUserFromRequest } from '../../../lib/edgeSession'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const ORIGINAL_MAX = 2000
 const LIST_LIMIT = 100
+const CODE_LENGTH = 7
+const CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+const INSERT_RETRY = 4
 
 function dbUnavailableResponse() {
   return Response.json(
@@ -27,19 +30,19 @@ function validateUrl(raw) {
   }
 }
 
-async function shortenViaTinyUrl(url) {
-  const upstream = await fetch(
-    `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`,
-    { method: 'GET' }
-  )
-  if (!upstream.ok) {
-    return { error: 'UPSTREAM_FAILED' }
+function genCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH))
+  let s = ''
+  for (let i = 0; i < CODE_LENGTH; i += 1) {
+    s += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length]
   }
-  const text = (await upstream.text()).trim()
-  if (!/^https?:\/\//.test(text)) {
-    return { error: 'UPSTREAM_INVALID', detail: text.slice(0, 200) }
-  }
-  return { short: text }
+  return s
+}
+
+function getShortBase(req) {
+  const { appUrl } = getSecrets()
+  const base = appUrl || new URL(req.url).origin
+  return base.replace(/\/+$/, '')
 }
 
 export async function GET(req) {
@@ -58,7 +61,7 @@ export async function GET(req) {
 
     const result = await db
       .prepare(
-        `SELECT id, original, short, created_at
+        `SELECT id, original, short, code, created_at
          FROM short_links
          WHERE user_id = ?1
          ORDER BY created_at DESC
@@ -92,11 +95,6 @@ export async function POST(req) {
       return Response.json({ error: 'INVALID_URL' }, { status: 400 })
     }
 
-    const result = await shortenViaTinyUrl(original)
-    if (result.error) {
-      return Response.json({ error: result.error, detail: result.detail }, { status: 502 })
-    }
-
     let db
     try {
       db = getD1()
@@ -104,15 +102,38 @@ export async function POST(req) {
       return dbUnavailableResponse()
     }
 
+    const userId = String(user.id)
     const createdAt = Date.now()
-    const inserted = await db
-      .prepare(
-        `INSERT INTO short_links (user_id, original, short, created_at)
-         VALUES (?1, ?2, ?3, ?4)
-         RETURNING id, original, short, created_at`
+    const base = getShortBase(req)
+
+    let inserted = null
+    let lastError = null
+    for (let attempt = 0; attempt < INSERT_RETRY && !inserted; attempt += 1) {
+      const code = genCode()
+      const shortUrl = `${base}/${code}`
+      try {
+        inserted = await db
+          .prepare(
+            `INSERT INTO short_links (user_id, original, short, code, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             RETURNING id, original, short, code, created_at`
+          )
+          .bind(userId, original, shortUrl, code, createdAt)
+          .first()
+      } catch (e) {
+        lastError = e
+        // D1 抛 UNIQUE 时重试，其它错误立即抛出
+        const msg = String(e?.message || '')
+        if (!msg.includes('UNIQUE')) throw e
+      }
+    }
+
+    if (!inserted) {
+      return Response.json(
+        { error: 'CODE_COLLISION', detail: String(lastError?.message || '') },
+        { status: 500 }
       )
-      .bind(String(user.id), original, result.short, createdAt)
-      .first()
+    }
 
     return Response.json({ item: inserted }, { status: 201 })
   } catch {

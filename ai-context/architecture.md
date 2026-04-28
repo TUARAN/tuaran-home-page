@@ -218,7 +218,7 @@ SEO 相关能力比较完整：
 
 对应头包括：
 
-- `Cross-Origin-Embedder-Policy: require-corp`
+- `Cross-Origin-Embedder-Policy: credentialless`
 - `Cross-Origin-Opener-Policy: same-origin`
 
 这是为了满足浏览器侧模型运行环境要求。
@@ -235,6 +235,11 @@ SEO 相关能力比较完整：
 - 把站点上下文拼入对话，形成“站内问答”体验
 
 这说明 `web-llm` 不是调用服务端 OpenAI/第三方 API，而是本地模型推理页面。
+
+补充说明：
+
+- 更细的迁移对照和维护原则见 `ai-context/web-llm-integration-notes.md`
+- 当前项目的 `/web-llm` 是对本地参考项目 `/Users/tuaran/Documents/GitHub/webllm` 的站内集成版，不应简单按独立 demo 心智维护
 
 ## 7. 运行时模型
 

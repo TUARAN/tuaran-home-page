@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL_ID, MAX_HISTORY_TURNS, MAX_IMAGE_EDGE } from './constants'
+import { DEFAULT_MODEL_ID, MAX_HISTORY_TURNS, MAX_IMAGE_EDGE, MODEL_OPTIONS_BY_ID } from './constants'
 import { SITE_CONTEXT_PREVIEW, getSiteContextFor } from './siteContext'
 
 let runtimePromise = null
@@ -6,6 +6,8 @@ let runtimeModule = null
 let loadedModelId = null
 let processor = null
 let model = null
+let tokenizer = null
+let runtimeType = null
 
 function getDiagnostics() {
   if (typeof window === 'undefined') {
@@ -124,6 +126,60 @@ async function ensureRuntimeModule() {
   return runtimePromise
 }
 
+function getModelOption(modelId) {
+  return MODEL_OPTIONS_BY_ID[modelId] || MODEL_OPTIONS_BY_ID[DEFAULT_MODEL_ID]
+}
+
+function resetLoadedArtifacts() {
+  processor = null
+  model = null
+  tokenizer = null
+  loadedModelId = null
+  runtimeType = null
+}
+
+async function warmupVisionModel(activeProcessor, activeModel) {
+  try {
+    const warmupConversation = [
+      {
+        role: 'user',
+        content: [{ type: 'text', text: '你好' }],
+      },
+    ]
+    const warmupPrompt = activeProcessor.apply_chat_template(warmupConversation, {
+      add_generation_prompt: true,
+    })
+    const warmupInputs = await activeProcessor(warmupPrompt)
+    await activeModel.generate({
+      ...warmupInputs,
+      max_new_tokens: 1,
+    })
+  } catch {
+    // Ignore warmup failures and let real inference surface runtime errors.
+  }
+}
+
+async function warmupTextModel(activeTokenizer, activeModel) {
+  try {
+    const warmupPrompt = activeTokenizer.apply_chat_template(
+      [{ role: 'user', content: '你好' }],
+      {
+        tokenize: false,
+        add_generation_prompt: true,
+      }
+    )
+    const warmupInputs = activeTokenizer(warmupPrompt, {
+      add_special_tokens: false,
+    })
+    await activeModel.generate({
+      ...warmupInputs,
+      max_new_tokens: 1,
+    })
+  } catch {
+    // Ignore warmup failures and let real inference surface runtime errors.
+  }
+}
+
 export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
   const diagnostics = getDiagnostics()
   if (!diagnostics.hasWebGPU || !diagnostics.isSecureContext) {
@@ -131,7 +187,13 @@ export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
   }
 
   const mod = await ensureRuntimeModule()
-  if (loadedModelId === modelId && processor && model) {
+  const modelOption = getModelOption(modelId)
+
+  if (
+    loadedModelId === modelId &&
+    ((modelOption.runtimeType === 'vision' && processor && model) ||
+      (modelOption.runtimeType === 'text' && tokenizer && model))
+  ) {
     onProgress?.({
       status: 'ready',
       percent: 100,
@@ -187,22 +249,41 @@ export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
     progress_callback: handleProgress,
   }
 
-  const [nextProcessor, nextModel] = await Promise.all([
-    mod.AutoProcessor.from_pretrained(modelId, sharedOptions),
-    mod.Qwen3_5ForConditionalGeneration.from_pretrained(modelId, {
-      ...sharedOptions,
-      device: 'webgpu',
-      dtype: {
-        embed_tokens: 'q4',
-        vision_encoder: 'fp16',
-        decoder_model_merged: 'q4',
-      },
-    }),
-  ])
+  resetLoadedArtifacts()
 
-  processor = nextProcessor
-  model = nextModel
-  loadedModelId = modelId
+  if (modelOption.runtimeType === 'text') {
+    const [nextTokenizer, nextModel] = await Promise.all([
+      mod.AutoTokenizer.from_pretrained(modelId, sharedOptions),
+      mod.AutoModelForCausalLM.from_pretrained(modelId, {
+        ...sharedOptions,
+        device: 'webgpu',
+        dtype: 'q4',
+      }),
+    ])
+
+    tokenizer = nextTokenizer
+    model = nextModel
+    loadedModelId = modelId
+    runtimeType = modelOption.runtimeType
+  } else {
+    const [nextProcessor, nextModel] = await Promise.all([
+      mod.AutoProcessor.from_pretrained(modelId, sharedOptions),
+      mod.Qwen3_5ForConditionalGeneration.from_pretrained(modelId, {
+        ...sharedOptions,
+        device: 'webgpu',
+        dtype: {
+          embed_tokens: 'q4',
+          vision_encoder: 'fp16',
+          decoder_model_merged: 'q4',
+        },
+      }),
+    ])
+
+    processor = nextProcessor
+    model = nextModel
+    loadedModelId = modelId
+    runtimeType = modelOption.runtimeType
+  }
 
   onProgress?.({
     status: 'warming_up',
@@ -211,23 +292,10 @@ export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
     diagnostics,
   })
 
-  try {
-    const warmupConversation = [
-      {
-        role: 'user',
-        content: [{ type: 'text', text: '你好' }],
-      },
-    ]
-    const warmupPrompt = nextProcessor.apply_chat_template(warmupConversation, {
-      add_generation_prompt: true,
-    })
-    const warmupInputs = await nextProcessor(warmupPrompt)
-    await nextModel.generate({
-      ...warmupInputs,
-      max_new_tokens: 1,
-    })
-  } catch {
-    // Ignore warmup failures and let real inference surface runtime errors.
+  if (modelOption.runtimeType === 'text') {
+    await warmupTextModel(tokenizer, model)
+  } else {
+    await warmupVisionModel(processor, model)
   }
 
   onProgress?.({
@@ -249,7 +317,11 @@ async function dataUrlToRawImage(dataUrl) {
 }
 
 export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNewTokens, onUpdate }) {
-  const { processor: activeProcessor, model: activeModel } = await loadModel(modelId)
+  const modelOption = getModelOption(modelId)
+  await loadModel(modelId)
+  const activeProcessor = processor
+  const activeTokenizer = tokenizer
+  const activeModel = model
   const startedAt = performance.now()
   const timings = {
     contextMs: 0,
@@ -271,70 +343,107 @@ export async function runInference({ modelId = DEFAULT_MODEL_ID, messages, maxNe
   const lastUserText = [...recentMessages].reverse().find((m) => m.role !== 'assistant' && m.role !== 'system')?.text || ''
   const siteContextSnippet = getSiteContextFor(lastUserText)
   if (siteContextSnippet) {
-    conversation.push({
-      role: 'system',
-      content: [
-        {
-          type: 'text',
-          text: [
-            '你是 tuaran.me 的网页助手。请基于下面的站点摘要回答相关问题；摘要里没提到的，就直接说“这个上下文里没有提到”，不要编造。',
-            '',
-            siteContextSnippet,
-          ].join('\n'),
-        },
-      ],
-    })
+    const siteContextText = [
+      '你是 tuaran.me 的网页助手。请基于下面的站点摘要回答相关问题；摘要里没提到的，就直接说“这个上下文里没有提到”，不要编造。',
+      '',
+      siteContextSnippet,
+    ].join('\n')
+
+    if (modelOption.runtimeType === 'text') {
+      conversation.push({
+        role: 'system',
+        content: siteContextText,
+      })
+    } else {
+      conversation.push({
+        role: 'system',
+        content: [
+          {
+            type: 'text',
+            text: siteContextText,
+          },
+        ],
+      })
+    }
   }
 
   for (const message of recentMessages) {
     if (message.role === 'system') {
-      conversation.push({
-        role: 'system',
-        content: [{ type: 'text', text: message.text || '' }],
-      })
+      if (modelOption.runtimeType === 'text') {
+        conversation.push({ role: 'system', content: message.text || '' })
+      } else {
+        conversation.push({
+          role: 'system',
+          content: [{ type: 'text', text: message.text || '' }],
+        })
+      }
       continue
     }
 
     if (message.role === 'assistant') {
-      conversation.push({
-        role: 'assistant',
-        content: [{ type: 'text', text: message.text || '' }],
-      })
+      if (modelOption.runtimeType === 'text') {
+        conversation.push({ role: 'assistant', content: message.text || '' })
+      } else {
+        conversation.push({
+          role: 'assistant',
+          content: [{ type: 'text', text: message.text || '' }],
+        })
+      }
       continue
     }
 
-    const content = []
-    if (message.image) {
-      images.push(await dataUrlToRawImage(message.image))
-      content.push({ type: 'image' })
+    if (modelOption.runtimeType === 'text') {
+      conversation.push({
+        role: 'user',
+        content: message.text || '请基于刚刚上传的图片给出说明。',
+      })
+    } else {
+      const content = []
+      if (message.image) {
+        images.push(await dataUrlToRawImage(message.image))
+        content.push({ type: 'image' })
+      }
+      if (message.text) {
+        content.push({ type: 'text', text: message.text })
+      }
+      conversation.push({
+        role: 'user',
+        content,
+      })
     }
-    if (message.text) {
-      content.push({ type: 'text', text: message.text })
-    }
-    conversation.push({
-      role: 'user',
-      content,
-    })
   }
   timings.contextMs = Math.round(performance.now() - contextStartedAt)
   onUpdate?.(createStagePayload('构建提示词', timings))
 
   const promptStartedAt = performance.now()
-  const prompt = activeProcessor.apply_chat_template(conversation, {
-    add_generation_prompt: true,
-  })
+  const prompt =
+    modelOption.runtimeType === 'text'
+      ? activeTokenizer.apply_chat_template(conversation, {
+          tokenize: false,
+          add_generation_prompt: true,
+        })
+      : activeProcessor.apply_chat_template(conversation, {
+          add_generation_prompt: true,
+        })
   timings.promptMs = Math.round(performance.now() - promptStartedAt)
   onUpdate?.(createStagePayload('处理输入', timings))
 
   const preprocessStartedAt = performance.now()
-  const inputs = await activeProcessor(prompt, images.length ? images : null)
+  const inputs =
+    modelOption.runtimeType === 'text'
+      ? activeTokenizer(prompt, {
+          add_special_tokens: false,
+          padding: true,
+          truncation: true,
+        })
+      : await activeProcessor(prompt, images.length ? images : null)
   timings.preprocessMs = Math.round(performance.now() - preprocessStartedAt)
   onUpdate?.(createStagePayload('等待首个 token', timings))
 
   const generateStartedAt = performance.now()
   let firstTokenAt = 0
   const streamer = new DomTextStreamer(
-    activeProcessor.tokenizer,
+    modelOption.runtimeType === 'text' ? activeTokenizer : activeProcessor.tokenizer,
     (update) => {
       timings.decodeMs = firstTokenAt ? Math.round(performance.now() - firstTokenAt) : 0
       timings.totalMs = Math.round(performance.now() - startedAt)

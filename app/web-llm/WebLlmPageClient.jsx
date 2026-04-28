@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { DEFAULT_MODEL_ID, MAX_NEW_TOKENS, MODEL_OPTIONS } from './lib/constants'
+import { DEFAULT_MODEL_ID, MAX_NEW_TOKENS, MODEL_OPTIONS, MODEL_OPTIONS_BY_ID } from './lib/constants'
 import { getRuntimeDiagnostics, getSiteContextPreview, loadModel, runInference } from './lib/runtime'
 import { deleteSessionById, listSessions, saveSession } from './lib/sessionStore'
 
@@ -64,6 +64,39 @@ function formatMs(value) {
   if (!value) return '0ms'
   if (value < 1000) return `${value}ms`
   return `${(value / 1000).toFixed(value >= 10000 ? 1 : 2)}s`
+}
+
+function formatDuration(value) {
+  if (!value) return '0s'
+  const totalSeconds = Math.max(0, Math.floor(value / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  if (minutes <= 0) return `${seconds}s`
+  return `${minutes}m ${seconds}s`
+}
+
+function getLoadHint(file, loaded, total, stalledMs) {
+  const stalled = stalledMs >= 12000
+  const isVisionEncoder = typeof file === 'string' && file.includes('vision_encoder_fp16.onnx_data')
+
+  if (isVisionEncoder) {
+    if (stalled) {
+      return '当前在下载或写入视觉编码器权重文件。这是默认多模态模型里最大的一段，浏览器可能在继续拉取、校验或写入缓存，短时间停在同一百分比通常不代表失败。'
+    }
+    if (total >= 800 * 1024 * 1024) {
+      return '当前是视觉编码器权重下载阶段，文件体积接近 833 MB。0.8B 默认模型虽然是最小档，但多模态版本仍会拉取这段大文件。'
+    }
+  }
+
+  if (stalled) {
+    return '进度暂时没有刷新，通常是浏览器在处理大文件下载、校验或缓存写入。若长时间无变化，再查看控制台或刷新后重试。'
+  }
+
+  if (loaded > 0 && total > 0) {
+    return '首次加载会把模型文件写入浏览器缓存，后续同模型再次进入通常会快很多。'
+  }
+
+  return '正在准备浏览器端模型运行时，首次初始化可能需要一些时间。'
 }
 
 function formatGenerationMeta(message) {
@@ -132,6 +165,9 @@ export default function WebLlmPageClient() {
   const [isModelReady, setIsModelReady] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [loadProgress, setLoadProgress] = useState({ percent: 0, message: '', file: '', loaded: 0, total: 0 })
+  const [loadStartedAt, setLoadStartedAt] = useState(0)
+  const [lastProgressAt, setLastProgressAt] = useState(0)
+  const [loadingNow, setLoadingNow] = useState(0)
   const [loadError, setLoadError] = useState('')
   const [storageError, setStorageError] = useState('')
   const [diagnostics, setDiagnostics] = useState({
@@ -145,6 +181,10 @@ export default function WebLlmPageClient() {
     () => sessions.find((session) => session.id === activeSessionId) || null,
     [sessions, activeSessionId]
   )
+  const selectedModelOption = MODEL_OPTIONS_BY_ID[selectedModelId] || MODEL_OPTIONS[0]
+  const loadedModelOption = MODEL_OPTIONS_BY_ID[loadedModelId] || null
+  const isSelectedModelReady = isModelReady && loadedModelId === selectedModelId
+  const supportsImageForSelectedModel = selectedModelOption?.supportsImage === true
 
   useEffect(() => {
     setDiagnostics(getRuntimeDiagnostics())
@@ -211,6 +251,18 @@ export default function WebLlmPageClient() {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [activeSession?.messages, isSending, imagePreview])
 
+  useEffect(() => {
+    if (!isModelLoading) return undefined
+
+    const timer = window.setInterval(() => {
+      setLoadingNow(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [isModelLoading])
+
   function updateSessionState(sessionId, updater) {
     let nextSession = null
     setSessions((prev) =>
@@ -264,10 +316,15 @@ export default function WebLlmPageClient() {
   async function handleLoadModel() {
     setIsModelLoading(true)
     setLoadError('')
+    const now = Date.now()
+    setLoadStartedAt(now)
+    setLastProgressAt(now)
+    setLoadingNow(now)
     setLoadProgress({ percent: 0, message: '正在初始化模型加载…', file: '', loaded: 0, total: 0 })
 
     try {
       const result = await loadModel(selectedModelId, (event) => {
+        setLastProgressAt(Date.now())
         setLoadProgress({
           percent: event.percent || 0,
           message: event.message || event.status || '',
@@ -461,9 +518,23 @@ export default function WebLlmPageClient() {
     }
   }
 
+  useEffect(() => {
+    if (supportsImageForSelectedModel) return
+    if (imagePreview) {
+      setImagePreview('')
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }, [supportsImageForSelectedModel, imagePreview])
+
   const canLoadModel = diagnostics.hasWebGPU && diagnostics.isSecureContext
 
-  const canSend = isModelReady && !isSending && (inputValue.trim() || imagePreview)
+  const canSend = isSelectedModelReady && !isSending && (inputValue.trim() || imagePreview)
+  const stalledMs = isModelLoading && lastProgressAt ? loadingNow - lastProgressAt : 0
+  const loadingElapsedMs = isModelLoading && loadStartedAt ? loadingNow - loadStartedAt : 0
+  const loadHint = getLoadHint(loadProgress.file, loadProgress.loaded, loadProgress.total, stalledMs)
+  const isLoadStalled = stalledMs >= 12000
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -502,6 +573,11 @@ export default function WebLlmPageClient() {
                     </option>
                   ))}
                 </select>
+                <div className="mt-2 text-[12px] leading-6 text-[#7b725f] dark:text-gray-400">
+                  {selectedModelOption.runtimeType === 'text'
+                    ? '当前选择的是纯文本轻量模式：不会加载视觉权重，图片上传会被关闭。'
+                    : '当前选择的是多模态模式：支持图片输入，但首次会额外下载视觉编码器权重。'}
+                </div>
               </div>
 
               <button
@@ -510,7 +586,7 @@ export default function WebLlmPageClient() {
                 disabled={isModelLoading || isSending || !canLoadModel}
                 className="rounded-full border border-[#d7c6a0] bg-[#f5ebd2] px-5 py-2 text-sm text-[#5f5030] shadow-sm transition hover:bg-[#f1e3c2] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
               >
-                {isModelLoading ? '加载中…' : isModelReady && loadedModelId === selectedModelId ? '重新加载模型' : '加载模型'}
+                {isModelLoading ? '加载中…' : isSelectedModelReady ? '重新加载模型' : '加载模型'}
               </button>
             </div>
 
@@ -552,7 +628,15 @@ export default function WebLlmPageClient() {
                 {loadError}
               </pre>
             ) : (
-              isModelReady ? <div className="mt-3 text-[12px] text-[#716852] dark:text-gray-300">模型已加载完成，可以发送消息。</div> : null
+              isSelectedModelReady ? (
+                <div className="mt-3 text-[12px] text-[#716852] dark:text-gray-300">
+                  模型已加载完成，可以发送消息。
+                </div>
+              ) : loadedModelOption ? (
+                <div className="mt-3 text-[12px] text-[#716852] dark:text-gray-300">
+                  当前已加载的是 {loadedModelOption.label}，如果要使用 {selectedModelOption.label}，请先点击“加载模型”。
+                </div>
+              ) : null
             )}
           </section>
 
@@ -687,7 +771,7 @@ export default function WebLlmPageClient() {
               <div className="mb-3 flex flex-wrap gap-3 text-[12px] text-[#7c745f] dark:text-gray-400">
                 <span>Enter 发送</span>
                 <span>Shift + Enter 换行</span>
-                <span>{isSending ? '发送中，输入暂时禁用。' : isModelReady ? '模型已就绪。' : '模型尚未加载。'}</span>
+                <span>{isSending ? '发送中，输入暂时禁用。' : isSelectedModelReady ? '模型已就绪。' : '当前所选模型尚未加载。'}</span>
               </div>
 
               {imagePreview ? (
@@ -735,9 +819,9 @@ export default function WebLlmPageClient() {
                   value={inputValue}
                   onChange={(event) => setInputValue(event.target.value)}
                   onKeyDown={handleTextareaKeyDown}
-                  disabled={!isModelReady || isSending}
+                  disabled={!isSelectedModelReady || isSending}
                   rows={1}
-                  placeholder={isModelReady ? '输入消息，按 Enter 发送…' : '请先加载模型'}
+                  placeholder={isSelectedModelReady ? '输入消息，按 Enter 发送…' : '请先加载当前所选模型'}
                   className="min-h-[48px] w-full resize-none rounded-2xl border border-gray-200/80 bg-white px-4 py-3 text-sm text-[#2d2a21] outline-none focus:ring-2 focus:ring-[#d7c6a0] disabled:cursor-not-allowed disabled:bg-gray-100/80 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:focus:ring-gray-600 dark:disabled:bg-gray-900"
                 />
 
@@ -748,16 +832,16 @@ export default function WebLlmPageClient() {
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
-                      disabled={!isModelReady || isSending}
+                      disabled={!isSelectedModelReady || isSending || !supportsImageForSelectedModel}
                       className="hidden"
                     />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={!isModelReady || isSending}
+                      disabled={!isSelectedModelReady || isSending || !supportsImageForSelectedModel}
                       className="rounded-full border border-gray-200/80 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                     >
-                      上传图片
+                      {supportsImageForSelectedModel ? '上传图片' : '文本模式不支持图片'}
                     </button>
                   </div>
 
@@ -791,12 +875,32 @@ export default function WebLlmPageClient() {
               {loadProgress.message || '正在准备 WebGPU 运行时…'}
             </p>
 
+            <div className="mb-4 flex items-center gap-2 text-[12px] text-[#8a7a58] dark:text-gray-400">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-[#9e7b36] dark:bg-amber-300" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-[#c8ab6a] [animation-delay:0.15s] dark:bg-amber-200" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-[#ead3a3] [animation-delay:0.3s] dark:bg-amber-100" />
+              </span>
+              <span>{isLoadStalled ? '大文件处理中' : '下载管线活跃中'}</span>
+              <span>已耗时 {formatDuration(loadingElapsedMs)}</span>
+              {isLoadStalled ? <span>连续未刷新 {formatDuration(stalledMs)}</span> : null}
+            </div>
+
             <div className="mb-3 h-2 overflow-hidden rounded-full bg-[#eadfc3] dark:bg-gray-800">
               <div
-                className="h-full rounded-full bg-[#9e7b36] transition-[width] duration-300 dark:bg-amber-300"
+                className={[
+                  'h-full rounded-full bg-[#9e7b36] transition-[width] duration-300 dark:bg-amber-300',
+                  isLoadStalled ? 'animate-pulse' : '',
+                ].join(' ')}
                 style={{ width: `${loadProgress.percent || 0}%` }}
               />
             </div>
+
+            {isLoadStalled ? (
+              <div className="mb-3 h-1 overflow-hidden rounded-full bg-[#efe6d0] dark:bg-gray-800">
+                <div className="h-full w-1/3 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-[#d3ba84] dark:bg-amber-200" />
+              </div>
+            ) : null}
 
             <div className="flex items-center justify-between text-[12px] text-[#7a715f] dark:text-gray-400">
               <span>{loadProgress.percent || 0}%</span>
@@ -808,6 +912,10 @@ export default function WebLlmPageClient() {
             {loadProgress.file ? (
               <div className="mt-3 break-all text-[12px] text-[#8b826d] dark:text-gray-500">{loadProgress.file}</div>
             ) : null}
+
+            <div className="mt-3 rounded-2xl border border-[#ebe1cd] bg-white/70 px-3 py-2.5 text-[12px] leading-6 text-[#746b57] dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-300">
+              {loadHint}
+            </div>
           </div>
         </div>
       ) : null}

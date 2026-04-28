@@ -17,7 +17,7 @@ const laneConfigs = [
     title: '内容与社区',
     description: '流量获取、分发与协作网络。',
     accent: 'purple',
-    keywords: ['Blogger Alliance', 'Frontend Weekly'],
+    keywords: ['Blogger Alliance', 'Frontend Next'],
   },
   {
     id: 'tech',

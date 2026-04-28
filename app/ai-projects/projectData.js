@@ -24,11 +24,11 @@ export const maintainedDomains = [
     status: '运营中',
   },
   {
-    name: '🧭 Frontend Weekly',
-    href: 'https://frontendweekly.cn',
-    domains: ['frontendweekly.cn', 'qdzk.site'],
-    category: '内容周刊',
-    focus: '前端热点整理与海外文章翻译',
+    name: '🧭 前端下一步 Frontend Next',
+    href: 'https://frontendnext.com',
+    domains: ['frontendnext.com', 'frontendweekly.cn', 'qdzk.site'],
+    category: '转型决策',
+    focus: '帮前端在 AI 时代做转型决策（原 Frontend Weekly，旧域名 301 跳转）',
     status: '持续更新',
   },
   {

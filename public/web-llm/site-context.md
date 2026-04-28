@@ -29,7 +29,7 @@ tuaran 是干嘛的：
 - tuaran.me / 2aran.com：个人主页与网络日志。
 - matrixlink.tech：公司官网。
 - blogger-alliance.cn / bzlm.net：社区平台。
-- frontendweekly.cn / qdzk.site：前端周刊。
+- frontendnext.com（前端下一步，原 frontendweekly.cn / qdzk.site，旧域名跳转）：帮前端在 AI 时代做转型决策。
 - iamvibecoder.cn：AI 编程实验。
 - publishlab.cc：创作实验室。
 - frontend2aiagent.com：转型平台。

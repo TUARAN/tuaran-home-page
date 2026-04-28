@@ -1,33 +1,26 @@
 /** @type {import('next').NextConfig} */
+const webLlmHeaders = [
+  {
+    key: 'Cross-Origin-Embedder-Policy',
+    value: 'credentialless',
+  },
+  {
+    key: 'Cross-Origin-Opener-Policy',
+    value: 'same-origin',
+  },
+]
+
 const nextConfig = {
   reactStrictMode: true,
   async headers() {
     return [
       {
-        source: '/web-llm',
-        headers: [
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-        ],
+        source: '/web-llm/:path*',
+        headers: webLlmHeaders,
       },
       {
-        source: '/web-llm/embed',
-        headers: [
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-        ],
+        source: '/web-llm/embed/:path*',
+        headers: webLlmHeaders,
       },
     ]
   },

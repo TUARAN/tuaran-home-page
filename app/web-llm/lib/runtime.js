@@ -126,7 +126,7 @@ async function ensureRuntimeModule() {
 
 export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
   const diagnostics = getDiagnostics()
-  if (!diagnostics.hasWebGPU || !diagnostics.isSecureContext || !diagnostics.crossOriginIsolated) {
+  if (!diagnostics.hasWebGPU || !diagnostics.isSecureContext) {
     throw new Error('当前环境不满足 WebGPU 推理条件，请先查看页面中的运行状态提示。')
   }
 

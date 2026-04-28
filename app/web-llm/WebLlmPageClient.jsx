@@ -461,8 +461,7 @@ export default function WebLlmPageClient() {
     }
   }
 
-  const environmentReady =
-    diagnostics.hasWebGPU && diagnostics.isSecureContext && diagnostics.crossOriginIsolated
+  const canLoadModel = diagnostics.hasWebGPU && diagnostics.isSecureContext
 
   const canSend = isModelReady && !isSending && (inputValue.trim() || imagePreview)
 
@@ -508,7 +507,7 @@ export default function WebLlmPageClient() {
               <button
                 type="button"
                 onClick={handleLoadModel}
-                disabled={isModelLoading || isSending || !environmentReady}
+                disabled={isModelLoading || isSending || !canLoadModel}
                 className="rounded-full border border-[#d7c6a0] bg-[#f5ebd2] px-5 py-2 text-sm text-[#5f5030] shadow-sm transition hover:bg-[#f1e3c2] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
               >
                 {isModelLoading ? '加载中…' : isModelReady && loadedModelId === selectedModelId ? '重新加载模型' : '加载模型'}
@@ -533,8 +532,10 @@ export default function WebLlmPageClient() {
               </div>
 
               <p className="mt-3.5 mb-0 text-[12px] leading-6 text-[#716852] dark:text-gray-300">
-                {environmentReady
-                  ? '当前页面已满足 WebGPU 运行前提，可以手动加载模型。'
+                {canLoadModel
+                  ? diagnostics.crossOriginIsolated
+                    ? '当前页面已满足 WebGPU 运行前提，可以手动加载模型。'
+                    : '当前页面已具备基础 WebGPU 运行条件，未启用 cross-origin isolation 只会影响部分优化，不再阻止手动加载。'
                   : '当前环境存在缺项，页面会继续显示错误原因，不会静默失败。'}
               </p>
 

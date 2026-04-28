@@ -138,48 +138,6 @@ function resetLoadedArtifacts() {
   runtimeType = null
 }
 
-async function warmupVisionModel(activeProcessor, activeModel) {
-  try {
-    const warmupConversation = [
-      {
-        role: 'user',
-        content: [{ type: 'text', text: '你好' }],
-      },
-    ]
-    const warmupPrompt = activeProcessor.apply_chat_template(warmupConversation, {
-      add_generation_prompt: true,
-    })
-    const warmupInputs = await activeProcessor(warmupPrompt)
-    await activeModel.generate({
-      ...warmupInputs,
-      max_new_tokens: 1,
-    })
-  } catch {
-    // Ignore warmup failures and let real inference surface runtime errors.
-  }
-}
-
-async function warmupTextModel(activeTokenizer, activeModel) {
-  try {
-    const warmupPrompt = activeTokenizer.apply_chat_template(
-      [{ role: 'user', content: '你好' }],
-      {
-        tokenize: false,
-        add_generation_prompt: true,
-      }
-    )
-    const warmupInputs = activeTokenizer(warmupPrompt, {
-      add_special_tokens: false,
-    })
-    await activeModel.generate({
-      ...warmupInputs,
-      max_new_tokens: 1,
-    })
-  } catch {
-    // Ignore warmup failures and let real inference surface runtime errors.
-  }
-}
-
 export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
   const diagnostics = getDiagnostics()
   if (!diagnostics.hasWebGPU || !diagnostics.isSecureContext) {
@@ -286,22 +244,9 @@ export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
   }
 
   onProgress?.({
-    status: 'warming_up',
-    percent: 100,
-    message: '模型已加载，正在预热首轮推理…',
-    diagnostics,
-  })
-
-  if (modelOption.runtimeType === 'text') {
-    await warmupTextModel(tokenizer, model)
-  } else {
-    await warmupVisionModel(processor, model)
-  }
-
-  onProgress?.({
     status: 'ready',
     percent: 100,
-    message: '模型加载完成',
+    message: '模型加载完成，首次回复可能会稍慢一些',
     diagnostics,
   })
 

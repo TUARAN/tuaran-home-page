@@ -77,6 +77,11 @@ export default function SiteToolsPanel() {
     window.location.href = `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`
   }
 
+  function logout() {
+    const returnTo = window.location.pathname || '/'
+    window.location.href = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
+  }
+
   async function handleAdd(e) {
     e.preventDefault()
     const url = input.trim()
@@ -136,23 +141,42 @@ export default function SiteToolsPanel() {
       <article className="mt-4 border-l-2 border-sky-500 py-2 pl-4">
         <div className="flex flex-wrap items-baseline gap-x-2">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">转短</h3>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">长链接 → 短链接，记录持久化到 D1</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">长链接 → tuaran.me/xxxxxxx</span>
+          <div className="ml-auto flex items-center gap-2">
+            {userLoading ? (
+              <span className="text-[11px] text-slate-400">…</span>
+            ) : isAuthed ? (
+              <>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {user?.name || user?.login || '已登录'}
+                </span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="rounded border border-slate-200 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  退出
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={login}
+                className="rounded bg-sky-600 px-3 py-1 text-[11px] font-medium text-white hover:bg-sky-700"
+              >
+                GitHub 登录
+              </button>
+            )}
+          </div>
         </div>
         <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">
-          调用 TinyURL 生成短链，记录按账号写入 Cloudflare D1。需要先登录。
+          自建短链：随机生成 7 位 code，命中 D1 后 302 直跳原链接，不做安全审核。记录按账号写入 Cloudflare D1，需先登录。
         </p>
 
         {!userLoading && !isAuthed ? (
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={login}
-              className="rounded bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700"
-            >
-              GitHub 登录
-            </button>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">登录后可记录与查看历史</span>
-          </div>
+          <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">
+            点右上角「GitHub 登录」后即可记录与查看历史。
+          </p>
         ) : null}
 
         {isAuthed ? (

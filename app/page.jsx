@@ -377,13 +377,13 @@ export default function HomePage() {
           <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
             <span>© 2025—2026 网络日志</span>
             <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <a href="/donate" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
+            <Link href="/donate" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
               Buy Me a Coffee
-            </a>
+            </Link>
             <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <a href="/traffic" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
+            <Link href="/traffic" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
               流量统计
-            </a>
+            </Link>
             <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
             <a
               href="https://vibecafe.ai/@tuaran"

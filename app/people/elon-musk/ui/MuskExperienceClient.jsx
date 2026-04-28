@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 const SECTIONS = [
@@ -613,12 +614,12 @@ export default function MuskExperienceClient() {
               </div>
 
               <div className="mt-4 border-t border-slate-200 pt-4">
-                <a
+                <Link
                   href="/bookmarks/people"
                   className="block rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 no-underline hover:no-underline hover:text-slate-900"
                 >
                   ← 返回人物志
-                </a>
+                </Link>
               </div>
             </nav>
           </aside>

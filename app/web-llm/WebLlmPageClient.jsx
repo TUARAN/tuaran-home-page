@@ -75,9 +75,14 @@ function formatDuration(value) {
   return `${minutes}m ${seconds}s`
 }
 
-function getLoadHint(file, loaded, total, stalledMs) {
+function getLoadHint(file, loaded, total, stalledMs, percent) {
   const stalled = stalledMs >= 12000
+  const isCompiling = percent >= 100 && stalledMs >= 4000
   const isVisionEncoder = typeof file === 'string' && file.includes('vision_encoder_fp16.onnx_data')
+
+  if (isCompiling) {
+    return '权重已下载完成，浏览器正在编译 WebGPU 着色器并把权重上传到 GPU。这一阶段 transformers.js 不会再回调进度，0.8B 模型通常会停留 1–3 分钟，2B/4B 更久。属于正常等待，请不要刷新页面。'
+  }
 
   if (isVisionEncoder) {
     if (stalled) {
@@ -248,7 +253,9 @@ export default function WebLlmPageClient() {
   }, [inputValue])
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    // 流式生成时每个 token 都会修改 messages 引用 → 这个 effect 会被反复触发。
+    // 用 'auto'（即时）滚动，避免 'smooth' 动画在 30+ tps 下排队堆积、阻塞主线程。
+    chatBottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' })
   }, [activeSession?.messages, isSending, imagePreview])
 
   useEffect(() => {
@@ -533,8 +540,15 @@ export default function WebLlmPageClient() {
   const canSend = isSelectedModelReady && !isSending && (inputValue.trim() || imagePreview)
   const stalledMs = isModelLoading && lastProgressAt ? loadingNow - lastProgressAt : 0
   const loadingElapsedMs = isModelLoading && loadStartedAt ? loadingNow - loadStartedAt : 0
-  const loadHint = getLoadHint(loadProgress.file, loadProgress.loaded, loadProgress.total, stalledMs)
-  const isLoadStalled = stalledMs >= 12000
+  const loadHint = getLoadHint(
+    loadProgress.file,
+    loadProgress.loaded,
+    loadProgress.total,
+    stalledMs,
+    loadProgress.percent
+  )
+  const isCompilingPhase = loadProgress.percent >= 100 && stalledMs >= 4000
+  const isLoadStalled = stalledMs >= 12000 && !isCompilingPhase
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -881,22 +895,32 @@ export default function WebLlmPageClient() {
                 <span className="h-2 w-2 animate-pulse rounded-full bg-[#c8ab6a] [animation-delay:0.15s] dark:bg-amber-200" />
                 <span className="h-2 w-2 animate-pulse rounded-full bg-[#ead3a3] [animation-delay:0.3s] dark:bg-amber-100" />
               </span>
-              <span>{isLoadStalled ? '大文件处理中' : '下载管线活跃中'}</span>
+              <span>
+                {isCompilingPhase
+                  ? 'WebGPU 编译与权重上传中'
+                  : isLoadStalled
+                    ? '大文件处理中'
+                    : '下载管线活跃中'}
+              </span>
               <span>已耗时 {formatDuration(loadingElapsedMs)}</span>
-              {isLoadStalled ? <span>连续未刷新 {formatDuration(stalledMs)}</span> : null}
+              {isCompilingPhase ? (
+                <span>编译已等待 {formatDuration(stalledMs)}</span>
+              ) : isLoadStalled ? (
+                <span>连续未刷新 {formatDuration(stalledMs)}</span>
+              ) : null}
             </div>
 
             <div className="mb-3 h-2 overflow-hidden rounded-full bg-[#eadfc3] dark:bg-gray-800">
               <div
                 className={[
                   'h-full rounded-full bg-[#9e7b36] transition-[width] duration-300 dark:bg-amber-300',
-                  isLoadStalled ? 'animate-pulse' : '',
+                  isLoadStalled || isCompilingPhase ? 'animate-pulse' : '',
                 ].join(' ')}
                 style={{ width: `${loadProgress.percent || 0}%` }}
               />
             </div>
 
-            {isLoadStalled ? (
+            {isLoadStalled || isCompilingPhase ? (
               <div className="mb-3 h-1 overflow-hidden rounded-full bg-[#efe6d0] dark:bg-gray-800">
                 <div className="h-full w-1/3 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-[#d3ba84] dark:bg-amber-200" />
               </div>

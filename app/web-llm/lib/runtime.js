@@ -53,18 +53,24 @@ class DomTextStreamer {
     this.onUpdate = onUpdate
     this.onFirstToken = onFirstToken
     this.hasSeenFirstPut = false
+    // 用 rAF 把 onUpdate 收敛到每帧最多 1 次。流式生成时每 token 都触发
+    // setState 会让 React reconcile 整个会话列表 + 聊天区，0.8B 在 30+ tps
+    // 下主线程被打满，肉眼上比直接 DOM mutate 慢一个量级。批量后只在下一帧
+    // 把「截至当前的最新文本」交给 React。
+    this.pendingFrame = 0
+    this.pendingDone = false
     this.textStreamer = new runtimeModule.TextStreamer(tokenizer, {
       skip_prompt: true,
       callback_function: (chunk) => {
         this.text += chunk
-        this.emit()
+        this.scheduleEmit()
       },
       token_callback_function: (tokens) => {
         if (!this.firstTokenAt) {
           this.firstTokenAt = performance.now()
         }
         this.decodeTokens += Array.isArray(tokens) ? tokens.length : 0
-        this.emit()
+        this.scheduleEmit()
       },
     })
   }
@@ -79,10 +85,29 @@ class DomTextStreamer {
 
   end() {
     this.textStreamer.end()
-    this.emit(true)
+    // 结束时绕过 rAF 立即 flush，保证最终文本和 isDone 一定送达。
+    this.cancelPendingFrame()
+    this.emitNow(true)
   }
 
-  emit(isDone = false) {
+  scheduleEmit() {
+    if (this.pendingFrame || typeof window === 'undefined') {
+      return
+    }
+    this.pendingFrame = window.requestAnimationFrame(() => {
+      this.pendingFrame = 0
+      this.emitNow(false)
+    })
+  }
+
+  cancelPendingFrame() {
+    if (this.pendingFrame && typeof window !== 'undefined') {
+      window.cancelAnimationFrame(this.pendingFrame)
+    }
+    this.pendingFrame = 0
+  }
+
+  emitNow(isDone) {
     if (this.firstTokenAt && this.decodeTokens > 0) {
       const elapsed = Math.max((performance.now() - this.firstTokenAt) / 1000, 0.001)
       this.lastTps = Number((this.decodeTokens / elapsed).toFixed(2))
@@ -182,9 +207,23 @@ export async function loadModel(modelId = DEFAULT_MODEL_ID, onProgress) {
     }
 
     if (event?.status === 'done') {
+      // 把当前文件标记为已下载完成（loaded == total），这样聚合后的字节数不会
+      // 因为 done 事件缺字段而被外层重置成 0；同时把聚合后的 loaded/total 一起抛出。
+      if (event.file) {
+        const previous = progressItems[event.file]
+        if (previous && previous.total > 0) {
+          progressItems[event.file] = {
+            loaded: previous.total,
+            total: previous.total,
+          }
+        }
+      }
+      const aggregate = aggregateProgress(progressItems)
       onProgress?.({
         status: 'done',
-        percent: 100,
+        percent: aggregate.total > 0 ? aggregate.percent : 100,
+        loaded: aggregate.loaded,
+        total: aggregate.total,
         file: event.file,
         message: `已完成 ${event.file}`,
         diagnostics,

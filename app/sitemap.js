@@ -35,6 +35,7 @@ export default function sitemap() {
     '/community',
     '/diary',
     '/donate',
+    '/eatwhat',
     '/messages',
     '/people',
     '/people/elon-musk',

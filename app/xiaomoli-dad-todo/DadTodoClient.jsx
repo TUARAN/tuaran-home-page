@@ -283,7 +283,7 @@ export default function DadTodoClient() {
     ...DAD_TODO_SECTIONS.map((s) => ({
       key: s.id,
       label: s.title,
-      short: s.id === 'focus' ? '重点' : s.id === 'habits' ? '习惯' : s.title.slice(0, 2),
+      short: s.short || s.title.slice(0, 2),
       done: sumSection(s.items.map((i) => i.id)),
       total: windowDays * s.items.length,
     })),

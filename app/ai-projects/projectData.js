@@ -28,7 +28,7 @@ export const maintainedDomains = [
     href: 'https://frontendnext.com',
     domains: ['frontendnext.com', 'frontendweekly.cn', 'qdzk.site'],
     category: '转型决策',
-    focus: '帮前端在 AI 时代做转型决策（原 Frontend Weekly，旧域名 301 跳转）',
+    focus: '帮前端在 AI 时代做转型决策（原 Frontend Weekly）',
     status: '持续更新',
   },
   {

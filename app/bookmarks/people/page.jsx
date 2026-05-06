@@ -6,6 +6,9 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '人物志',
   description: '值得长期跟踪的人物、访谈与一手资料入口（持续补充）。',
+  alternates: {
+    canonical: '/bookmarks/people',
+  },
 }
 
 const people = [

@@ -5,6 +5,9 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: 'AI 工具',
   description: '实用的 AI 工具、产品与服务推荐。',
+  alternates: {
+    canonical: '/bookmarks/ai-tools',
+  },
 }
 
 const tools = [

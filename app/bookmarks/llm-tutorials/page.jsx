@@ -5,6 +5,9 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '大模型教程',
   description: '大语言模型（LLM）相关的优质教程、实践指南与技术文档。',
+  alternates: {
+    canonical: '/bookmarks/llm-tutorials',
+  },
 }
 
 const tutorials = [

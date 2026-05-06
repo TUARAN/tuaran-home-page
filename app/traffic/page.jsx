@@ -16,7 +16,7 @@ export const metadata = {
 
 export default function TrafficPage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
+    <div className="max-w-6xl mx-auto px-4 py-12">
       <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -31,7 +31,7 @@ export default function TrafficPage() {
           src="https://cloud.umami.is/share/3mOsBgzrmb9wY8bI"
           title="TUARAN 网站访问统计"
           loading="lazy"
-          style={{ width: '100%', height: '620px', border: 0 }}
+          className="block w-full border-0 h-[80vh] min-h-[640px]"
         />
       </section>
     </div>

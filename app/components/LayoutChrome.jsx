@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import BackToTopButton from './BackToTopButton'
 import SiteHeader from './SiteHeader'
 
-const HIDE_CHROME_PATHS = new Set(['/web-llm/embed', '/xiaomoli-dad-todo'])
+const HIDE_CHROME_PATHS = new Set(['/web-llm/embed', '/xiaomoli-dad-todo', '/eatwhat'])
 
 export default function LayoutChrome({ children }) {
   const pathname = usePathname()

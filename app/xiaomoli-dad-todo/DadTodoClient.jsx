@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 import { DAD_TODO_SECTIONS, DAD_TODO_TOTAL, isValidDadTodoItemId } from '../../lib/dadTodoData'
@@ -283,7 +284,7 @@ export default function DadTodoClient() {
     ...DAD_TODO_SECTIONS.map((s) => ({
       key: s.id,
       label: s.title,
-      short: s.id === 'focus' ? '重点' : s.id === 'habits' ? '习惯' : s.title.slice(0, 2),
+      short: s.short || s.title.slice(0, 2),
       done: sumSection(s.items.map((i) => i.id)),
       total: windowDays * s.items.length,
     })),
@@ -303,9 +304,16 @@ export default function DadTodoClient() {
           <h1 className="mb-2 text-[1.35rem] font-semibold leading-snug tracking-tight text-[#221f19] dark:text-gray-100">
             小茉莉的爸爸带娃清单
           </h1>
-          <p className="mb-4 text-[0.95rem] leading-relaxed text-[#5c5348] dark:text-gray-400">
+          <p className="mb-3 text-[0.95rem] leading-relaxed text-[#5c5348] dark:text-gray-400">
             好习惯，增强动线，让琐碎生活少点折磨。
           </p>
+          <Link
+            href="/eatwhat"
+            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#cfe6d8] bg-gradient-to-br from-[#edf8f1] to-[#e7f3ff] px-4 py-2 text-sm font-semibold text-[#42957f] shadow-sm transition-transform active:scale-[0.985] dark:border-[#2a3f3a] dark:from-[#1a2e26] dark:to-[#1a2532] dark:text-[#7fc7b0]"
+          >
+            <span>今天吃什么</span>
+            <span aria-hidden="true">→</span>
+          </Link>
           {todoRemoteNote ? (
             <p className="mb-3 rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-xs text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
               {todoRemoteNote}

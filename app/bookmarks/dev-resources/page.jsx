@@ -5,6 +5,9 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '开发资源',
   description: '前端、后端、DevOps 等开发相关的优质资源与工具链。',
+  alternates: {
+    canonical: '/bookmarks/dev-resources',
+  },
 }
 
 const resources = [

@@ -234,7 +234,7 @@ export default function ReadingPyramid({ levels }) {
       >
         {hovered?.slug ? (
           <img
-            src={`/reading/${hovered.slug}.png`}
+            src={`/reading/${hovered.slug}.webp`}
             alt={hovered.title || ''}
             className="block w-auto h-auto max-w-[240px] max-h-[320px] object-contain"
             onLoad={() => {

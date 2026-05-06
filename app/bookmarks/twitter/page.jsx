@@ -7,6 +7,9 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '推特收藏',
   description: '不为别的，只是为了更好的认识这个世界🌍',
+  alternates: {
+    canonical: '/bookmarks/twitter',
+  },
 }
 
 const knowledgeBookmarks = [

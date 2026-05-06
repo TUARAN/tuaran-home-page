@@ -22,51 +22,40 @@ export default function sitemap() {
     }
   })
 
+  const staticRoutes = [
+    '',
+    '/articles',
+    '/ai-projects',
+    '/bookmarks',
+    '/bookmarks/twitter',
+    '/bookmarks/llm-tutorials',
+    '/bookmarks/dev-resources',
+    '/bookmarks/ai-tools',
+    '/bookmarks/people',
+    '/community',
+    '/diary',
+    '/donate',
+    '/messages',
+    '/people',
+    '/people/elon-musk',
+    '/reading',
+    '/reading/biography',
+    '/reading/history',
+    '/reading/philosophy',
+    '/reading/psychology',
+    '/reading/sociology',
+    '/reading/wealth',
+    '/traffic',
+    '/web-llm',
+    '/weekly',
+    '/xiaomoli-dad-todo',
+  ]
+
   return [
-    {
-      url: SITE_URL,
+    ...staticRoutes.map((path) => ({
+      url: `${SITE_URL}${path}`,
       lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/articles`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/diary`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/reading`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/reading/biography`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/reading/history`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/reading/philosophy`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/reading/psychology`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/reading/sociology`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/reading/wealth`,
-      lastModified: now,
-    },
-    {
-      url: `${SITE_URL}/traffic`,
-      lastModified: now,
-    },
+    })),
     ...articleEntries,
   ]
 }

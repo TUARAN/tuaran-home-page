@@ -81,7 +81,6 @@ export const metadata = {
     },
   },
   verification: {
-    google: 'google-site-verification-code-if-needed',
     other: {
       'baidu-site-verification': 'codeva-RnbvKColnM',
     },

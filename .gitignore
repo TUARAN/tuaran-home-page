@@ -115,3 +115,6 @@ temp/
 # Local sqlite data
 data/
 *.sqlite
+
+# Claude Code 本地状态（settings + session 自建的 worktrees）
+.claude/

@@ -126,10 +126,10 @@ export default function HomePage() {
               </p>
               <div className="space-y-2">
                 <h1 className="font-serif text-[1.55rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.9rem]">
-                  数字员工 · 内容系统 · 长期主义
+                  前端工程化 · AI Agent · 创作者系统
                 </h1>
                 <p className="mb-0 max-w-[40rem] text-[15px] font-normal leading-7 text-[#5a5248] dark:text-[#a89f90]">
-                  专注前端工程化与 AI 智能体，致力技术社区共建。
+                  写技术、做产品、搭社群，把 AI 时代的工程能力和个人创作系统沉淀下来。
                 </p>
               </div>
             </div>

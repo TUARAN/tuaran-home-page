@@ -72,6 +72,17 @@
     @apply mb-0 border-b-0 pb-0 font-serif text-[1.45rem] font-semibold tracking-[0.04em] text-[#221f19] dark:text-gray-100;
   }
 
+  .context-memory-page h1,
+  .context-memory-page h2,
+  .context-memory-page h3,
+  .context-memory-page h4 {
+    @apply mb-0 border-b-0 pb-0;
+  }
+
+  .context-memory-page p {
+    @apply mb-0;
+  }
+
   .slogan-serif {
     font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
     letter-spacing: 0.02em;

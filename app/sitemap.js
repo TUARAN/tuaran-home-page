@@ -26,6 +26,7 @@ export default function sitemap() {
     '',
     '/articles',
     '/ai-projects',
+    '/context-memory',
     '/bookmarks',
     '/bookmarks/twitter',
     '/bookmarks/llm-tutorials',

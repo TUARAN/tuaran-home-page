@@ -382,6 +382,12 @@ export default function HomePage() {
                 <p className="mx-auto mt-2 max-w-[220px] text-[13px] leading-6 text-[#6d665a] dark:text-gray-300">
                   在 AI 时代，探索个体规模化创作的极限。
                 </p>
+                <Link
+                  href="/context-memory"
+                  className="mt-4 inline-flex items-center rounded-full border border-[#ded6c8] bg-white/78 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#5f5a4d] no-underline transition hover:border-[#c9bea9] hover:text-[#222] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
+                >
+                  我的上下文记忆
+                </Link>
               </div>
               <LatestMoments />
               <div className="space-y-3 text-[14px] leading-7 text-[#666] dark:text-gray-300">

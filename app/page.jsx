@@ -104,7 +104,7 @@ export default function HomePage() {
                   数字员工 · 内容系统 · 长期主义
                 </h1>
                 <p className="mb-0 max-w-[40rem] text-[15px] font-normal leading-7 text-[#5a5248] dark:text-[#a89f90]">
-                  在 AI 时代，探索个体规模化创作的极限。
+                  专注前端工程化与 AI 智能体，致力技术社区共建。
                 </p>
               </div>
             </div>
@@ -380,7 +380,7 @@ export default function HomePage() {
                   Founder of @矩联科技
                 </p>
                 <p className="mx-auto mt-2 max-w-[220px] text-[13px] leading-6 text-[#6d665a] dark:text-gray-300">
-                  专注前端工程化与 AI 智能体，致力技术社区共建。
+                  在 AI 时代，探索个体规模化创作的极限。
                 </p>
               </div>
               <LatestMoments />

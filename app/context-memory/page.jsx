@@ -1,9 +1,8 @@
-import { Fragment } from 'react'
-
 const memoryLayers = [
   {
     level: 'L1',
     title: '常驻核心提示语',
+    shortTitle: '核心提示',
     agentTerm: 'Prompt Memory / 核心指令层',
     personalTerm: '人生底层定位、不变人设、终身原则',
     purpose: '每次做事前先锚定“我是谁、我要往哪走、哪些原则不能被短期事务冲掉”。',
@@ -14,14 +13,14 @@ const memoryLayers = [
     ],
     rule: '每次会话必加载，容量小、优先级最高、长期不变。',
     standard: '行业对应：Hermes Prompt Memory；MemGPT Core Memory。',
-    personalClassName: 'border-[#e8dcc8] bg-[#fffaf2] dark:border-[#3a342a] dark:bg-[#171410]',
-    personalBadgeClassName: 'bg-[#f2e5cc] text-[#8a5a14] dark:bg-[#2b2418] dark:text-[#e5c487]',
-    agentClassName: 'border-[#e1d2b8] bg-[#fff8ea] dark:border-[#3b3325] dark:bg-[#19150d]',
-    agentBadgeClassName: 'bg-[#eddcb8] text-[#7a4e0c] dark:bg-[#302717] dark:text-[#e7c06e]',
+    accentClassName: 'border-l-[#b7791f] dark:border-l-[#d69e4a]',
+    badgeClassName: 'bg-[#f7efe0] text-[#8a5a14] dark:bg-[#2a2115] dark:text-[#e2bd75]',
+    dotClassName: 'bg-[#b7791f] dark:bg-[#d69e4a]',
   },
   {
     level: 'L2',
     title: '当前上下文 Context',
+    shortTitle: '当前任务',
     agentTerm: 'Working Memory / 当前会话窗口',
     personalTerm: '今天当下正在推进的事、手头紧急任务、临时输入',
     purpose: '只装当前几天要落地的具体事务，帮助智能体判断现在应该先处理什么。',
@@ -33,14 +32,14 @@ const memoryLayers = [
     ],
     rule: '滑动窗口滚动更新，过期就清理，不把临时任务伪装成长期方向。',
     standard: '行业对应：MemGPT Working Memory；实时上下文窗口。',
-    personalClassName: 'border-[#cfe4dd] bg-[#f3fbf7] dark:border-[#263a34] dark:bg-[#0f1916]',
-    personalBadgeClassName: 'bg-[#d9eee6] text-[#22715c] dark:bg-[#17342c] dark:text-[#88d1bd]',
-    agentClassName: 'border-[#bddbd2] bg-[#edf8f4] dark:border-[#254139] dark:bg-[#0d1d19]',
-    agentBadgeClassName: 'bg-[#cce6de] text-[#17624f] dark:bg-[#163d33] dark:text-[#79c8b2]',
+    accentClassName: 'border-l-[#2f7d68] dark:border-l-[#65b69f]',
+    badgeClassName: 'bg-[#e2f1ec] text-[#22715c] dark:bg-[#14332b] dark:text-[#83d0bb]',
+    dotClassName: 'bg-[#2f7d68] dark:bg-[#65b69f]',
   },
   {
     level: 'L3',
     title: 'Session 会话级总结',
+    shortTitle: '阶段沉淀',
     agentTerm: 'Session Summary / 短期情景记忆',
     personalTerm: '本周、本月、项目周期的阶段性沉淀',
     purpose: '每开启一个新周期，都能自动承接上一段进度，不用每天从零开始内耗。',
@@ -53,14 +52,14 @@ const memoryLayers = [
     ],
     rule: '每个会话周期压缩成摘要，跨天、跨周、跨项目复用。',
     standard: '行业对应：Hermes Session Search；MemGPT Recall Memory。',
-    personalClassName: 'border-[#d9d8ec] bg-[#f7f7ff] dark:border-[#32324a] dark:bg-[#121323]',
-    personalBadgeClassName: 'bg-[#e3e1f5] text-[#5550a0] dark:bg-[#26264a] dark:text-[#b8b5f0]',
-    agentClassName: 'border-[#c9c8e5] bg-[#f1f2ff] dark:border-[#34345a] dark:bg-[#11152b]',
-    agentBadgeClassName: 'bg-[#d6d5f0] text-[#474294] dark:bg-[#28295a] dark:text-[#aaa7ea]',
+    accentClassName: 'border-l-[#5366a6] dark:border-l-[#91a4df]',
+    badgeClassName: 'bg-[#e7ebf7] text-[#465992] dark:bg-[#1c2744] dark:text-[#aebdec]',
+    dotClassName: 'bg-[#5366a6] dark:bg-[#91a4df]',
   },
   {
     level: 'L4',
     title: '长期用户画像 Memory',
+    shortTitle: '长期画像',
     agentTerm: 'User Profile / Archival Memory / 长期记忆',
     personalTerm: '个人终身成长档案、能力栈、资源圈、家庭结构、性格特质',
     purpose: '把会长期影响决策的稳定信息结构化保存，越积越厚，越用越懂你。',
@@ -72,10 +71,9 @@ const memoryLayers = [
     ],
     rule: '结构化存储，长期有效，动态更新，用来支撑个性化判断。',
     standard: '行业对应：Hermes User Profile；MemGPT Archival Memory。',
-    personalClassName: 'border-[#ead2d8] bg-[#fff6f7] dark:border-[#4a2e36] dark:bg-[#1e1015]',
-    personalBadgeClassName: 'bg-[#f2dde2] text-[#9a4558] dark:bg-[#3b202a] dark:text-[#e8a6b5]',
-    agentClassName: 'border-[#e0c2ca] bg-[#fff0f3] dark:border-[#56313c] dark:bg-[#241018]',
-    agentBadgeClassName: 'bg-[#ebcbd4] text-[#87364b] dark:bg-[#47212d] dark:text-[#e496a8]',
+    accentClassName: 'border-l-[#9a4558] dark:border-l-[#dd8fa1]',
+    badgeClassName: 'bg-[#f3e3e7] text-[#9a4558] dark:bg-[#3a2028] dark:text-[#eba6b5]',
+    dotClassName: 'bg-[#9a4558] dark:bg-[#dd8fa1]',
   },
 ]
 
@@ -91,112 +89,87 @@ export const metadata = {
 
 export default function ContextMemoryPage() {
   return (
-    <main className="context-memory-page w-full max-w-6xl mx-auto px-4 py-10">
-      <header className="mb-10 border-b border-[#eee] pb-6 dark:border-gray-800">
-        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#9c8f79] dark:text-[#9ca5b5]">
-          Agent Readable Personal Memory
-        </p>
-        <h1 className="mt-3 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
-          我的 4 层上下文记忆：把自己当成一个高级个人智能体来运营
-        </h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-[#666] dark:text-gray-300">
-          这个页面写给智能体，也写给每天醒来要重新定位自己的我。它把个人的职业、创作、社区、家庭与成长系统，直接对齐到智能体的四层记忆模型：常驻提示语、当前上下文、会话总结、长期画像。
-        </p>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#666] dark:text-gray-300">
-          新开一天，就是新开一个 Session，读取长期画像，加载常驻提示语，接上上一段会话总结，再进入当前上下文直接推进。
-        </p>
+    <main className="context-memory-page w-full max-w-[1120px] mx-auto px-4 py-10">
+      <header className="mb-8 border-b border-[#e5dccd] pb-8 dark:border-[#253140]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#9ca5b5]">
+              Agent Readable Personal Memory
+            </p>
+            <h1 className="mt-3 max-w-3xl font-serif text-2xl font-semibold tracking-wide text-[#221f19] dark:text-gray-100 md:text-3xl">
+              我的 4 层上下文记忆
+            </h1>
+            <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#5d554a] dark:text-gray-300">
+              把职业、创作、社区、家庭与成长系统整理成一套可复用的个人记忆结构。它既给智能体读取，也给自己每天重新校准方向。
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 lg:grid-cols-2">
+            {memoryLayers.map((layer) => (
+              <div
+                key={`${layer.level}-summary`}
+                className="rounded-lg border border-[#e5dccd] bg-white/70 px-3 py-3 dark:border-[#253140] dark:bg-[#111820]"
+              >
+                <div className="font-mono text-[11px] font-semibold text-[#8f8069] dark:text-[#8ea0b7]">{layer.level}</div>
+                <div className="mt-1 font-medium text-[#2d261d] dark:text-gray-100">{layer.shortTitle}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </header>
 
-      <section>
-        <div>
-          <div className="grid gap-3 lg:grid-cols-[1fr_3.5rem_1fr]">
-            <div className="rounded-lg border border-[#e5d8c2] bg-[#f7f1e7] px-4 py-4 lg:px-5 dark:border-[#352f25] dark:bg-[#171410]">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#998d76] dark:text-[#93a0b3]">
-                Personal Layer
-              </p>
-              <h3 className="mt-2 text-lg font-semibold text-[#222] dark:text-gray-100">
-                左边：我的个人四层结构
-              </h3>
-            </div>
-            <div className="hidden items-center justify-center lg:flex">
-              <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#9b9488] dark:text-gray-600">
-                Map
-              </span>
-            </div>
-            <div className="rounded-lg border border-[#d6e4ef] bg-[#eef5fb] px-4 py-4 lg:px-5 dark:border-[#243444] dark:bg-[#101a24]">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#668198] dark:text-[#93a0b3]">
-                Agent Layer
-              </p>
-              <h3 className="mt-2 text-lg font-semibold text-[#222] dark:text-gray-100">
-                右边：智能体的四层结构
-              </h3>
-            </div>
-          </div>
+      <section aria-label="上下文记忆层级" className="space-y-4">
+        {memoryLayers.map((layer) => (
+          <article
+            key={layer.level}
+            className={`rounded-lg border border-[#e6dfd2] border-l-4 bg-white/80 p-4 shadow-[0_10px_34px_rgba(82,69,45,0.04)] dark:border-[#253140] dark:bg-[#111820]/90 ${layer.accentClassName}`}
+          >
+            <div className="grid gap-4 lg:grid-cols-[12rem_minmax(0,1fr)]">
+              <div>
+                <span className={`inline-flex rounded-md px-2 py-1 font-mono text-[11px] font-semibold ${layer.badgeClassName}`}>
+                  {layer.level}
+                </span>
+                <h2 className="mt-3 text-lg font-semibold text-[#221f19] dark:text-gray-100">{layer.title}</h2>
+                <p className="mt-2 text-sm leading-7 text-[#665e53] dark:text-gray-300">{layer.personalTerm}</p>
+              </div>
 
-          <div className="mt-4 grid gap-x-3 lg:grid-cols-[1fr_3.5rem_1fr]">
-            {memoryLayers.map((layer, index) => (
-              <Fragment key={layer.level}>
-                <section
-                  key={`${layer.level}-personal`}
-                  className={[
-                    'border-x px-4 py-5',
-                    index === 0 ? 'rounded-t-xl border-t' : 'border-t',
-                    index === memoryLayers.length - 1 ? 'rounded-b-xl border-b' : '',
-                    layer.personalClassName,
-                  ].join(' ')}
-                >
-                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className={`rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${layer.personalBadgeClassName}`}>
-                      {layer.level}
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-px flex-1 bg-[#ebe5d8] dark:bg-[#253140]" />
+                    <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8f8069] dark:text-[#8ea0b7]">
+                      个人侧
                     </span>
-                    <h4 className="text-base font-semibold text-[#222] dark:text-gray-100">{layer.title}</h4>
                   </div>
-                  <p className="mt-1 text-sm font-medium text-[#5f5a4d] dark:text-gray-300">
-                    {layer.personalTerm}
-                  </p>
                   <ul className="mt-3 space-y-2">
                     {layer.items.map((item) => (
-                      <li key={item} className="flex gap-3 text-sm leading-7 text-[#666] dark:text-gray-300">
-                        <span className="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />
+                      <li key={item} className="flex gap-2 text-sm leading-7 text-[#5f5a4d] dark:text-gray-300">
+                        <span className={`mt-3 h-1.5 w-1.5 shrink-0 rounded-full ${layer.dotClassName}`} />
                         <span>{item}</span>
                       </li>
                     ))}
                   </ul>
-                </section>
-
-                <div key={`${layer.level}-arrow`} className="flex items-center justify-center py-2">
-                  <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-[#ded6c8] bg-white/80 px-2 font-mono text-sm font-semibold text-[#8a8172] shadow-sm dark:border-gray-700 dark:bg-[#121821] dark:text-gray-400">
-                    →
-                  </span>
                 </div>
 
-                <section
-                  key={`${layer.level}-agent`}
-                  className={[
-                    'border-x px-4 py-5',
-                    index === 0 ? 'rounded-t-xl border-t' : 'border-t',
-                    index === memoryLayers.length - 1 ? 'rounded-b-xl border-b' : '',
-                    layer.agentClassName,
-                  ].join(' ')}
-                >
-                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className={`rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${layer.agentBadgeClassName}`}>
-                      {layer.level}
+                <div className="border-t border-[#ebe5d8] pt-4 dark:border-[#253140] md:border-l md:border-t-0 md:pl-4 md:pt-0">
+                  <div className="flex items-center gap-2">
+                    <span className="h-px flex-1 bg-[#ebe5d8] dark:bg-[#253140]" />
+                    <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#61748a] dark:text-[#8ea0b7]">
+                      智能体侧
                     </span>
-                    <h4 className="text-base font-semibold text-[#222] dark:text-gray-100">{layer.agentTerm}</h4>
                   </div>
-                  <p className="mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
+                  <h3 className="mt-3 text-sm font-semibold text-[#27384b] dark:text-gray-100">{layer.agentTerm}</h3>
+                  <p className="mt-2 text-sm leading-7 text-[#5d6875] dark:text-gray-300">
                     {layer.purpose}
                   </p>
-                  <div className="mt-3 space-y-2 text-xs leading-6 text-[#516274] dark:text-gray-400">
+                  <div className="mt-3 space-y-1 border-l border-[#d8e0e7] pl-3 text-xs leading-6 text-[#667789] dark:border-[#2a3a4a] dark:text-gray-400">
                     <p>{layer.rule}</p>
                     <p>{layer.standard}</p>
                   </div>
-                </section>
-              </Fragment>
-            ))}
-          </div>
-        </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
       </section>
     </main>
   )

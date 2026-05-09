@@ -12,7 +12,7 @@ export default function BookmarksTocLayout({
   footer,
 }) {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="w-full max-w-[1120px] mx-auto px-4 py-8">
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>

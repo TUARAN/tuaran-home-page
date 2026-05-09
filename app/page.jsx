@@ -90,6 +90,31 @@ export default function HomePage() {
   const identityTagClassName =
     'inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/88 px-3 py-1 text-[13px] text-[#5f5a4d] backdrop-blur-sm dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300'
 
+  const remarkableThings = [
+    {
+      title: 'James Webb Space Telescope',
+      href: 'https://science.nasa.gov/mission/webb/',
+      domain: 'science.nasa.gov',
+      label: '人类深空之眼',
+      kicker: 'NASA · ESA · CSA · L2 Observatory',
+      summary:
+        '詹姆斯·韦伯空间望远镜是人类把复杂工程推到极限的代表：巨型红外望远镜折叠发射，在距离地球约 150 万公里的 L2 工作，回看早期宇宙、恒星和行星系统的形成。',
+      tags: ['红外宇宙', 'L2 深空观测', 'NASA / ESA / CSA'],
+      barClassName: 'bg-[linear-gradient(90deg,#0f766e_0%,#2563eb_48%,#7c3aed_100%)]',
+    },
+    {
+      title: 'TeraFab · Tesla × xAI × SpaceX',
+      href: 'https://terafab.ai/',
+      domain: 'terafab.ai',
+      label: '马斯克体系',
+      kicker: 'Energy · Compute · Manufacturing · Space',
+      summary:
+        '把电动车、自动驾驶、机器人、AI 算力、先进制造和航天放在一起推进，这件事本身就很硬核。马斯克厉害的地方，是把疯狂目标拆成工程、产线、供应链和发射节奏。',
+      tags: ['制造规模化', 'AI + 机器人', '地球到太空'],
+      barClassName: 'bg-[linear-gradient(90deg,#f59e0b_0%,#dc2626_45%,#1e3a8a_100%)]',
+    },
+  ]
+
   return (
     <div className="max-w-[1120px] w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
       <section className="flex-1 mb-14">
@@ -321,45 +346,52 @@ export default function HomePage() {
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
               <div className="mb-5">
                 <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                  Vision
+                  Remarkable
                 </p>
-                <h2 className="home-section-title">值得关注的事</h2>
+                <h2 className="home-section-title">我认为牛逼的事</h2>
               </div>
-              <a
-                href="https://terafab.ai/"
-                target="_blank"
-                rel="noreferrer"
-                className="no-external-arrow group relative block overflow-hidden rounded-2xl border border-[#ece5d8] bg-white p-5 no-underline shadow-[0_18px_48px_rgba(112,96,68,0.05)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_20px_54px_rgba(100,79,47,0.10)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
-              >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-[linear-gradient(90deg,#f59e0b_0%,#dc2626_45%,#1e3a8a_100%)]"
-                />
-                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <span className="font-serif text-[18px] font-semibold tracking-[0.02em] text-[#1d1a16] dark:text-gray-100">
-                    TeraFab · Tesla × xAI × SpaceX
-                  </span>
-                  <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#9d9078] dark:text-[#94a0b1]">
-                    terafab.ai ↗
-                  </span>
-                </div>
-                <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
-                  Kardashev I · Earth → Space
-                </p>
-                <p className="mb-3 text-[14px] leading-7 text-[#5f5a4d] dark:text-gray-300">
-                  Tesla / xAI / SpaceX 三家把 logic、memory 与先进封装并到同一条产线上——当代规模最大的芯片制造押注。AI5 / AI6 驱动 FSD 与 Optimus，D3 走向太空；目标产能 1 TW/年，把「行星级算力」从口号推进到产线。
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {['Logic + Memory + Packaging 一体', '1 TW/年 产能', '为地球与太空同时供给'].map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </a>
+              <div className="grid gap-4">
+                {remarkableThings.map((thing) => (
+                  <a
+                    key={thing.href}
+                    href={thing.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow group relative block overflow-hidden rounded-2xl border border-[#ece5d8] bg-white p-5 no-underline shadow-[0_18px_48px_rgba(112,96,68,0.05)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_20px_54px_rgba(100,79,47,0.10)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+                  >
+                    <span aria-hidden="true" className={`pointer-events-none absolute inset-x-0 top-0 h-[3px] ${thing.barClassName}`} />
+                    <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                      <span className="font-serif text-[18px] font-semibold tracking-[0.02em] text-[#1d1a16] dark:text-gray-100">
+                        {thing.title}
+                      </span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#9d9078] dark:text-[#94a0b1]">
+                        {thing.domain} ↗
+                      </span>
+                    </div>
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
+                        {thing.label}
+                      </span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#a09176] dark:text-[#8e9ab0]">
+                        {thing.kicker}
+                      </span>
+                    </div>
+                    <p className="mb-3 text-[14px] leading-7 text-[#5f5a4d] dark:text-gray-300">
+                      {thing.summary}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {thing.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </a>
+                ))}
+              </div>
             </section>
 
           </main>

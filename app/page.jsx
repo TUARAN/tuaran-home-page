@@ -475,16 +475,6 @@ export default function HomePage() {
             >
               VibeUsage
             </a>
-            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <a
-              href="https://terafab.ai/"
-              target="_blank"
-              rel="noreferrer"
-              title="Tesla × xAI × SpaceX 联合做的史上最大芯片厂"
-              className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors"
-            >
-              TeraFab
-            </a>
           </p>
         </footer>
       </section>

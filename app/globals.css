@@ -127,7 +127,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    color: #666;
+    color: #6c604d;
     opacity: 0.88;
     line-height: 1;
     transition: color 0.2s ease, opacity 0.2s ease;
@@ -136,14 +136,14 @@
   .web-llm-nav-icon {
     width: 20px;
     height: 20px;
-    color: #9a6a12;
+    color: #5d503f;
     animation: web-llm-bot-wiggle 2.6s ease-in-out infinite;
     transform-origin: 50% 58%;
     transition: color 0.2s ease, transform 0.2s ease;
   }
 
   .web-llm-nav-label {
-    color: #7b4e0b;
+    color: #5a5042;
     font-weight: 600;
     letter-spacing: 0.01em;
     transition: color 0.2s ease;
@@ -155,12 +155,12 @@
   }
 
   .web-llm-nav:hover .web-llm-nav-icon {
-    color: #b77911;
+    color: #2d261d;
     transform: translateY(-0.5px);
   }
 
   .web-llm-nav:hover .web-llm-nav-label {
-    color: #9a5c06;
+    color: #3d362b;
   }
 
   .web-llm-nav-active {
@@ -170,11 +170,11 @@
   }
 
   .web-llm-nav-active .web-llm-nav-icon {
-    color: #c97f00;
+    color: #2d261d;
   }
 
   .web-llm-nav-active .web-llm-nav-label {
-    color: #b45309;
+    color: #3d362b;
   }
 
   .web-llm-float {
@@ -260,15 +260,15 @@
   }
 
   .dark .web-llm-nav {
-    color: #d1d5db;
+    color: #c1cad6;
   }
 
   .dark .web-llm-nav-icon {
-    color: #f4c76a;
+    color: #bdae94;
   }
 
   .dark .web-llm-nav-label {
-    color: #f3d089;
+    color: #d4c4a3;
   }
 
   .dark .web-llm-float {
@@ -277,12 +277,12 @@
 
   .dark .web-llm-nav:hover .web-llm-nav-icon,
   .dark .web-llm-nav-active .web-llm-nav-icon {
-    color: #ffd36e;
+    color: #e8dcc4;
   }
 
   .dark .web-llm-nav:hover .web-llm-nav-label,
   .dark .web-llm-nav-active .web-llm-nav-label {
-    color: #ffe2a0;
+    color: #eed8b5;
   }
 
   .dark .ai-projects-nav {

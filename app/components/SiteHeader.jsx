@@ -61,42 +61,10 @@ export default function SiteHeader() {
                 )
               })}
             </nav>
-            <Link
-              href="/articles"
-              aria-label="搜索文章"
-              title="搜索文章"
-              className="header-icon-link"
-            >
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-[18px] w-[18px]">
-                <path
-                  d="M13.75 13.75L17 17M15.5 9a6.5 6.5 0 11-13 0a6.5 6.5 0 0113 0z"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Link>
             <SettingsButton />
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
-            <Link
-              href="/articles"
-              aria-label="搜索文章"
-              title="搜索文章"
-              className="header-icon-link"
-            >
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-[18px] w-[18px]">
-                <path
-                  d="M13.75 13.75L17 17M15.5 9a6.5 6.5 0 11-13 0a6.5 6.5 0 0113 0z"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Link>
             <SettingsButton />
             <button
               type="button"

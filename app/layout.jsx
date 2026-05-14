@@ -7,7 +7,8 @@ import { ThemeProvider } from './components/ThemeProvider'
 
 const SITE_URL = 'https://tuaran.me'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
-const SITE_DESCRIPTION = '涂阿燃（tuaran｜掘金安东尼｜安东尼404）的个人网络日志，聚焦前端工程化、SEO、AI 智能体与创作者成长。'
+const SITE_DESCRIPTION =
+  '涂阿燃（安东尼）：前端与 AI 工程化独立开发者；主理博主联盟与前端下一步。个人网络日志，记录工程实践、技术情报与创作者增长。'
 
 const structuredData = {
   '@context': 'https://schema.org',

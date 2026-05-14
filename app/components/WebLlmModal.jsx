@@ -60,7 +60,7 @@ export default function WebLlmModal() {
 
       {open ? (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#1f1a12]/55 px-3 py-6 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#1d1a16]/45 px-3 py-6 backdrop-blur-sm dark:bg-black/55"
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
@@ -68,18 +68,18 @@ export default function WebLlmModal() {
             if (event.target === event.currentTarget) setOpen(false)
           }}
         >
-          <div className="flex h-[min(88vh,920px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[#e8e0cc] bg-[#fdfdf0] shadow-2xl dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#eee] px-4 py-3 dark:border-gray-800">
+          <div className="flex h-[min(88vh,920px)] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-[#e6dfd2] bg-[#f8f5f0] shadow-[0_24px_60px_rgba(91,78,53,0.12)] dark:border-[#27303a] dark:bg-[#0b1016] dark:shadow-[0_24px_60px_rgba(0,0,0,0.4)]">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#e8e4dc] px-4 py-3 dark:border-[#252d36]">
               <h2
                 id={titleId}
-                className="mb-0 border-0 pb-0 text-lg font-normal text-[#222] dark:text-gray-100"
+                className="mb-0 border-0 pb-0 font-serif text-lg font-semibold tracking-[0.02em] text-[#1d1a16] dark:text-[#f3f4f6]"
               >
                 大模型问答
               </h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-gray-200/90 bg-white text-lg leading-none text-[#555] transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-[#ddd3c4] bg-white/88 text-lg leading-none text-[#6c604d] transition hover:-translate-y-0.5 hover:text-[#2d261d] dark:border-[#2a3440] dark:bg-[#121821] dark:text-[#c1cad6] dark:hover:text-white"
                 aria-label="关闭"
               >
                 ×
@@ -88,7 +88,7 @@ export default function WebLlmModal() {
             <iframe
               title="大模型问答"
               src="/web-llm/embed"
-              className="min-h-0 w-full flex-1 border-0 bg-[#fdfdf0] dark:bg-gray-900"
+              className="min-h-0 w-full flex-1 border-0 bg-[#f8f5f0] dark:bg-[#0b1016]"
             />
           </div>
         </div>

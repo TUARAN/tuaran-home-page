@@ -18,7 +18,7 @@ const MOMENTS = [
     relativeTime: '昨天',
     text:
       '深度认知 B/C 端差异：toB 锚定组织规律，toC 侧重个体情绪。不看好零散卖课，认可规模化产出。',
-    emphasis: '落地重心：toB 做博主联盟，toC 做前端周刊。',
+    emphasis: '落地重心：toB 做博主联盟，toC 做前端下一步。',
   },
 ]
 

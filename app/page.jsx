@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { articles } from './articles/articlesData'
+import CopyIntroButton from './components/CopyIntroButton'
 import LatestMoments from './components/LatestMoments'
+import { SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_INTRO_COPY } from '../lib/siteIntro'
 
 function wrapTitle(title) {
   if (!title) return ''
@@ -120,16 +122,30 @@ export default function HomePage() {
       <section className="flex-1 mb-14">
         <header className="mb-8 rounded-[28px] border border-[#e6dfd2] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,245,240,0.92))] px-5 py-6 shadow-[0_16px_48px_rgba(91,78,53,0.06)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-8 md:py-8">
           <div className="space-y-6">
-            <div className="space-y-3">
-              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#9c8f79] dark:text-[#9ca5b5] mb-0">
-                TUARAN / Personal Log
-              </p>
-              <div className="space-y-2">
-                <h1 className="font-serif text-[1.55rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.9rem]">
-                  前端工程化 · AI Agent · 创作者系统
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#9c8f79] dark:text-[#9ca5b5] mb-0">
+                  涂阿燃｜安东尼 · 独立开发者
+                </p>
+                <CopyIntroButton text={SITE_INTRO_COPY} />
+              </div>
+              <div className="space-y-3">
+                <h1 className="mb-0 font-serif text-[1.55rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.9rem]">
+                  {SITE_HERO_TAGLINE}
                 </h1>
-                <p className="mb-0 max-w-[40rem] text-[15px] font-normal leading-7 text-[#5a5248] dark:text-[#a89f90]">
-                  写技术、做产品、搭社群，把 AI 时代的工程能力和个人创作系统沉淀下来。
+                <p className="mb-0 max-w-[44rem] font-serif text-[1.05rem] font-medium leading-[1.75] tracking-[0.02em] text-[#2d281f] dark:text-[#ebe6dc] md:text-[1.12rem]">
+                  {SITE_HERO_GOAL_PARTS.map((part, i) =>
+                    typeof part === 'string' ? (
+                      <span key={i}>{part}</span>
+                    ) : (
+                      <span
+                        key={i}
+                        className="font-semibold tracking-[0.06em] bg-gradient-to-br from-[#7a5638] via-[#355c6d] to-[#0d4a63] bg-clip-text text-transparent dark:from-[#e8d4b4] dark:via-[#93b8d4] dark:to-[#7eb0ef]"
+                      >
+                        {part.emphasis}
+                      </span>
+                    )
+                  )}
                 </p>
               </div>
             </div>
@@ -412,7 +428,7 @@ export default function HomePage() {
                   Founder of @矩联科技
                 </p>
                 <p className="mx-auto mt-2 max-w-[220px] text-[13px] leading-6 text-[#6d665a] dark:text-gray-300">
-                  在 AI 时代，探索个体规模化创作的极限。
+                  主理「博主联盟」与「前端下一步」——工程、资讯与品牌增长并行。
                 </p>
                 <Link
                   href="/context-memory"

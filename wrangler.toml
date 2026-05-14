@@ -2,12 +2,12 @@ name = "tuaran-me"
 compatibility_date = "2026-01-07"
 compatibility_flags = ["nodejs_compat"]
 
+# Cloudflare Pages expects the built static assets here when using next-on-pages.
+pages_build_output_dir = ".vercel/output/static"
+
 [vars]
 GITHUB_ID = "Ov23li1wLMVXeIzcprTU"
 NEXTAUTH_URL = "https://tuaran.me"
-
-# Cloudflare Pages expects the built static assets here when using next-on-pages.
-pages_build_output_dir = ".vercel/output/static"
 
 # Used for D1 migrations / local development.
 # In Cloudflare Pages, you can also set the D1 binding in the dashboard.

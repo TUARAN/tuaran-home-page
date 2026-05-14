@@ -5,6 +5,7 @@ import Script from 'next/script'
 import { articles } from '../articlesData'
 
 export const dynamic = 'force-static'
+export const dynamicParams = false
 
 const SITE_URL = 'https://tuaran.me'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'

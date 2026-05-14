@@ -119,7 +119,7 @@ npm run start
 
 | 配置项 | 值 |
 |--------|-----|
-| Build command | `npm run pages:build`（等价于 `npx @cloudflare/next-on-pages@1`） |
+| Build command | `npm run pages:build` |
 | Build output directory | `.vercel/output/static` |
 
 > ⚠️ **常见报错**：`Error: Output directory "out" not found`
@@ -132,6 +132,7 @@ npm run start
 
 | 变量名 | 类型 | 说明 |
 |--------|------|------|
+| `NODE_VERSION` | Text | `20`（与 `.nvmrc` 一致；Next 15 建议在 Cloudflare 显式指定，避免默认 Node 过旧） |
 | `GITHUB_ID` | Text | GitHub OAuth App Client ID |
 | `GITHUB_SECRET` | Secret | GitHub OAuth App Client Secret |
 | `NEXTAUTH_URL` | Text | 例如 `https://tuaran.me` |

@@ -130,7 +130,7 @@ export default function HomePage() {
                 <CopyIntroButton text={SITE_INTRO_COPY} />
               </div>
               <div className="space-y-3">
-                <h1 className="mb-0 font-serif text-[1.55rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.9rem]">
+                <h1 className="mb-0 font-serif text-[1.38rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.72rem]">
                   {SITE_HERO_TAGLINE}
                 </h1>
                 <p className="mb-0 max-w-[44rem] font-serif text-[1.05rem] font-medium leading-[1.75] tracking-[0.02em] text-[#2d281f] dark:text-[#ebe6dc] md:text-[1.12rem]">
@@ -428,7 +428,7 @@ export default function HomePage() {
                   Founder of @矩联科技
                 </p>
                 <p className="mx-auto mt-2 max-w-[220px] text-[13px] leading-6 text-[#6d665a] dark:text-gray-300">
-                  主理「博主联盟」与「前端下一步」——工程、资讯与品牌增长并行。
+                  投身一项可以奋斗20年的事业
                 </p>
                 <Link
                   href="/context-memory"

@@ -427,8 +427,8 @@ export default function HomePage() {
                 <p className="mt-3 text-[12px] tracking-[0.12em] text-[#888] dark:text-gray-400">
                   Founder of @矩联科技
                 </p>
-                <p className="mx-auto mt-2 max-w-[220px] text-[13px] leading-6 text-[#6d665a] dark:text-gray-300">
-                  投身一项可以奋斗20年的事业
+                <p className="mx-auto mt-2 max-w-[min(280px,100%)] text-[13px] leading-7 text-[#6d665a] dark:text-gray-300">
+                  选择一项伟大的事业，投身建设20年，每日高频迭代。不可以？不！现在你有 LLM 了！！
                 </p>
                 <Link
                   href="/context-memory"

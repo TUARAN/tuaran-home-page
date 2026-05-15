@@ -114,9 +114,12 @@
     @apply prose-code:px-1 prose-code:py-0.5 prose-code:rounded;
     @apply prose-code:bg-black/5 dark:prose-code:bg-white/10;
 
-    @apply prose-pre:bg-white dark:prose-pre:bg-gray-950;
-    @apply prose-pre:border prose-pre:border-[#eee] dark:prose-pre:border-gray-800;
-    @apply prose-pre:rounded-md;
+    @apply prose-pre:bg-[#f6f8fa] dark:prose-pre:bg-[#0d1117];
+    @apply prose-pre:text-[#1f2328] dark:prose-pre:text-[#c9d1d9];
+    @apply prose-pre:border prose-pre:border-[#e5e7eb] dark:prose-pre:border-gray-800;
+    @apply prose-pre:rounded-md prose-pre:p-4;
+    /* fenced code block 内的 <code> 继承 <pre> 颜色，避免白底白字 */
+    @apply [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit;
 
     @apply prose-table:text-sm;
     @apply prose-th:text-[#444] dark:prose-th:text-gray-200;

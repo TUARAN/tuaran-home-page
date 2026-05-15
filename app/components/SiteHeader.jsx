@@ -9,7 +9,7 @@ import SettingsButton from './SettingsButton'
 
 const navItems = [
   { href: '/ai-projects', label: 'AI 项目', match: (p) => p === '/ai-projects' },
-  { href: '/articles', label: '文章', match: (p) => p?.startsWith('/articles') },
+  { href: '/articles', label: '知识库', match: (p) => p?.startsWith('/articles') },
   { href: '/reading', label: '读书', match: (p) => p?.startsWith('/reading') },
   { href: '/bookmarks', label: '收藏', match: (p) => p?.startsWith('/bookmarks') },
   { href: '/messages', label: '留言板', match: (p) => p?.startsWith('/messages') },

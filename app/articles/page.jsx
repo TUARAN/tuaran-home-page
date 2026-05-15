@@ -1,12 +1,16 @@
-import Link from 'next/link'
+import { Suspense } from 'react'
+
 import { articles } from './articlesData'
+import ArticlesIndexClient from './ArticlesIndexClient'
+import { CATEGORY_META, listResearch } from '../../lib/research/loader'
 
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '文章列表',
-  description: '涂阿燃（tuaran）的文章列表：技术观察、实践复盘、SEO、AI 智能体与工程化内容。',
-  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', 'SEO', '文章列表', '个人博客'],
+  title: '知识库',
+  description:
+    '涂阿燃（tuaran）的知识库：精选文章、公司调研与事项调研。所有调研以 Markdown 归档在 GitHub 仓库，自动渲染上线。',
+  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '知识库', '调研', '公司调研', '事项调研', 'AI'],
   alternates: {
     canonical: '/articles',
   },
@@ -24,74 +28,56 @@ function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
 
+function buildItems() {
+  const postItems = articles.map((article) => {
+    const path = article.slug === 'diary-self-reflection' ? '/diary' : `/articles/${article.slug}`
+    return {
+      kind: 'posts',
+      tagLabel: '文章',
+      title: article.title,
+      summary: article.summary,
+      date: article.date || '',
+      href: isExternalHref(article.href) ? article.href : path,
+    }
+  })
+
+  const researchItems = listResearch().map((entry) => ({
+    kind: entry.category, // 'companies' | 'topics'
+    tagLabel: CATEGORY_META[entry.category]?.label || entry.category,
+    title: entry.title,
+    summary: entry.summary,
+    date: entry.date,
+    href: `/articles/research/${entry.category}/${entry.slug}`,
+  }))
+
+  return [...postItems, ...researchItems].sort((a, b) => {
+    if (!a.date) return 1
+    if (!b.date) return -1
+    return a.date < b.date ? 1 : a.date > b.date ? -1 : 0
+  })
+}
+
 export default function ArticlesPage() {
+  const items = buildItems()
+
   return (
     <main className="w-full max-w-4xl mx-auto px-4 py-10">
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">文章列表</h1>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
+              知识库
+            </h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">
-              精选技术观察、实践复盘与连载日记内容。
-              <span className="ml-2 inline-flex items-center gap-2">
-                <a
-                  href="https://juejin.cn/user/1521379823340792/posts"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                >
-                  掘金历史文章
-                </a>
-                <span aria-hidden="true">·</span>
-                <a
-                  href="https://juejin.cn/user/1521379823340792/columns"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                >
-                  掘金历史专栏
-                </a>
-              </span>
+              我读到、研究过、想反复回看的东西，都沉淀在这里——长文观察、公司画像、事项专题，按主题持续累积。
             </p>
           </div>
         </div>
       </header>
 
-      <div className="space-y-4">
-        {articles.map((article) => {
-          const articlePath = article.slug === 'diary-self-reflection'
-            ? '/diary'
-            : `/articles/${article.slug}`
-          const external = isExternalHref(article.href)
-          const href = external ? article.href : articlePath
-
-          return (
-            <Link
-              key={article.slug}
-              href={href}
-              {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-              className="group block border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:opacity-100 transition-all"
-            >
-              <div className="p-4">
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-[#999] text-sm">▪</span>
-                  <span className="text-xs text-[#999] dark:text-gray-400">{article.date}</span>
-                  <span aria-hidden="true" className="text-[#ddd] text-xs">·</span>
-                  <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100 group-hover:text-[#111] dark:group-hover:text-white transition-colors">
-                    {article.title}
-                  </h2>
-                </div>
-                <p className="text-sm text-[#666] dark:text-gray-300 ml-5 leading-relaxed group-hover:text-[#333] dark:group-hover:text-gray-200 transition-colors">
-                  {article.summary}
-                </p>
-                <div className="ml-5 mt-2 text-sm text-[#999] dark:text-gray-400">
-                  {external ? '阅读原文 →' : '阅读全文 →'}
-                </div>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+      <Suspense fallback={<div className="text-sm text-[#666] dark:text-gray-400">加载中…</div>}>
+        <ArticlesIndexClient items={items} />
+      </Suspense>
     </main>
   )
 }

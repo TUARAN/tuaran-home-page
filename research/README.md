@@ -1,0 +1,151 @@
+# 调研知识库（写作约定）
+
+本目录是「大模型调研知识库」的存储源头。所有调研报告都以 Markdown 文件落到这里，
+随主站仓库一起 `git push`，Cloudflare Pages 自动重新构建后即在 `tuaran.me/articles` 上线。
+
+> 网站不调用任何大模型。调研内容统一由 **本地的 Claude Code / CodeX 等终端工具** 生成
+> （它们底层调云端模型），输出符合本约定的 MD，落到这里即可。
+
+---
+
+## 目录结构
+
+```
+research/
+├── companies/                # 公司调研
+│   └── 2026-05-15-anthropic.md
+├── topics/                   # 其他事项调研（技术、产品、行业、概念……）
+│   └── 2026-05-15-mcp-protocol.md
+└── README.md                 # 本文件
+```
+
+- `companies/` 用于公司类调研（创业公司、大厂、被投企业等）
+- `topics/` 用于其他事项调研（一项技术、一个标准、一个赛道、一份白皮书……）
+
+## 文件命名
+
+```
+YYYY-MM-DD-<slug>.md
+```
+
+- 日期使用调研发起当日（北京时间），方便按时间排序
+- `<slug>` 全小写英文/数字/连字符；公司名建议用域名主干（`anthropic`、`openai`、`bytedance`）
+
+## Frontmatter（必填）
+
+每篇 MD **必须**以 YAML frontmatter 开头：
+
+```yaml
+---
+title: Anthropic 公司调研
+category: companies          # companies | topics
+date: 2026-05-15
+tags: [AI, 大模型, 公司]
+summary: 一句话概述本篇调研要回答的问题与结论。
+source: claude-code          # claude-code | codex | manual
+model: claude-opus-4-7       # 实际使用的模型 ID（可选）
+---
+```
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `title` | ✅ | 列表页与详情页标题 |
+| `category` | ✅ | `companies` 或 `topics`，必须与所在子目录一致 |
+| `date` | ✅ | `YYYY-MM-DD` |
+| `tags` | ⭕ | 字符串数组，用于检索与归档 |
+| `summary` | ⭕ | 一句话摘要，列表页展示 |
+| `source` | ⭕ | 生成来源：`claude-code` / `codex` / `manual` |
+| `model` | ⭕ | 实际模型 ID |
+
+## 正文章节模板
+
+### 公司调研（`companies/`）
+
+```markdown
+## 一、基本信息
+- 成立时间：
+- 总部 / 主要团队：
+- 创始团队 / 核心人物：
+- 融资历史：
+- 主营业务 / 核心产品：
+
+## 二、产品与技术
+- 核心产品矩阵
+- 技术路线 / 模型 / 架构亮点
+- 与竞争对手的差异点
+
+## 三、商业化
+- 收入模型
+- 关键客户 / 行业落地
+- 公开披露的营收 / 用户规模
+
+## 四、近期动作（按时间倒序）
+- 2026-04-xx：……
+- 2026-03-xx：……
+
+## 五、值得关注的点
+- 个人视角的观察、风险、机会
+
+## 六、信息来源
+- [官网](https://...)
+- [关键报道 / 文章](https://...)
+```
+
+### 事项调研（`topics/`）
+
+```markdown
+## 一、是什么
+- 概念定义、提出背景、当前共识
+
+## 二、为什么重要
+- 解决的问题、影响范围、与已有方案对比
+
+## 三、关键玩家与生态
+- 主要参与公司、开源项目、标准组织
+
+## 四、技术 / 实施细节
+- 核心机制 / 工作原理
+- 关键能力边界
+- 现状成熟度
+
+## 五、争议与风险
+- 反对意见、未解决的问题、潜在风险
+
+## 六、个人结论
+- 一句话定性
+- 是否值得跟进 / 接入 / 学习
+- 下一步行动
+
+## 七、信息来源
+- [官方 / 一手资料](https://...)
+- [关键文章 / 论文](https://...)
+```
+
+> 模板是建议而非强约束，可按调研主题灵活增删章节。
+
+---
+
+## 一键生成（Claude Code）
+
+仓库内已配置 slash command，可直接：
+
+```
+/research-company anthropic
+/research-topic mcp-protocol
+```
+
+让 Claude Code 按本约定生成 frontmatter 完整、章节齐备的 MD 并落到正确目录。
+
+## 上线流程
+
+```bash
+git add research/
+git commit -m "research: add <你的 slug>"
+git push
+```
+
+Cloudflare Pages 自动重 build 后访问：
+
+- 列表页：<https://tuaran.me/articles>（顶部「公司调研 / 事项调研」Tab）
+- 详情页：`https://tuaran.me/articles/research/<category>/<slug>`
+  - 例：`/articles/research/companies/anthropic`（slug 为去掉日期前缀后的部分）

@@ -1,4 +1,5 @@
 import { articles } from './articles/articlesData'
+import { listResearch } from '../lib/research/loader'
 
 const SITE_URL = 'https://tuaran.me'
 
@@ -19,6 +20,14 @@ export default function sitemap() {
     return {
       url: `${SITE_URL}/articles/${article.slug}`,
       lastModified: parsedDate,
+    }
+  })
+
+  const researchEntries = listResearch().map((entry) => {
+    const parsed = entry.date ? Date.parse(entry.date) : NaN
+    return {
+      url: `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`,
+      lastModified: Number.isNaN(parsed) ? now : new Date(parsed),
     }
   })
 
@@ -59,5 +68,6 @@ export default function sitemap() {
       lastModified: now,
     })),
     ...articleEntries,
+    ...researchEntries,
   ]
 }

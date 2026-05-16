@@ -427,9 +427,17 @@ export default function HomePage() {
                 <p className="mt-3 text-[12px] tracking-[0.12em] text-[#888] dark:text-gray-400">
                   Founder of @矩联科技
                 </p>
-                <p className="mx-auto mt-2 max-w-[min(280px,100%)] text-[13px] leading-7 text-[#6d665a] dark:text-gray-300">
-                  选择一项伟大的事业，投身建设20年，每日高频迭代。不可以吗？不！现在你有 LLM 了！！
-                </p>
+                <blockquote className="mx-auto mt-3 max-w-[min(280px,100%)]">
+                  <p className="font-serif text-[15px] leading-[1.9] tracking-wide text-[#3d362b] dark:text-gray-200">
+                    选一件值得投入 <span className="font-semibold">二十年</span> 的事，
+                    <span className="mt-0.5 block">每日复利，高频迭代。</span>
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#9a8f7a] dark:text-gray-500">
+                    <span aria-hidden="true" className="h-px flex-1 bg-[#d8cfbf] dark:bg-gray-700" />
+                    <span>This time · with LLM</span>
+                    <span aria-hidden="true" className="h-px flex-1 bg-[#d8cfbf] dark:bg-gray-700" />
+                  </div>
+                </blockquote>
                 <Link
                   href="/context-memory"
                   className="mt-2 inline-flex items-center rounded-full border border-[#ded6c8] bg-white/78 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#5f5a4d] no-underline transition hover:border-[#c9bea9] hover:text-[#222] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"

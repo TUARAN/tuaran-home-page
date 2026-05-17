@@ -33,6 +33,8 @@ export default function sitemap() {
 
   const staticRoutes = [
     '',
+    '/about',
+    '/services',
     '/articles',
     '/ai-projects',
     '/context-memory',

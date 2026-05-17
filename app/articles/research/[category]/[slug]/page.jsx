@@ -7,8 +7,10 @@ import {
   RESEARCH_CATEGORIES,
   getAllResearchParams,
   getResearchEntry,
+  listResearchByCategory,
 } from '../../../../../lib/research/loader'
 import { extractToc, renderMarkdown } from '../../../../../lib/research/markdown'
+import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 
 const SITE_URL = 'https://tuaran.me'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -67,6 +69,11 @@ export default async function ResearchDetailPage({ params }) {
   const toc = extractToc(entry.content)
   const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
+
+  // 相关阅读：同 category 其它条目，最近 3 篇
+  const related = listResearchByCategory(entry.category)
+    .filter((e) => e.slug !== entry.slug)
+    .slice(0, 3)
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -152,6 +159,33 @@ export default async function ResearchDetailPage({ params }) {
 
         <main className="flex-1 min-w-0">
           <article className="prose-tuaran" dangerouslySetInnerHTML={{ __html: html }} />
+
+          {related.length ? (
+            <section className="mx-auto mt-12 max-w-[72ch] border-t border-[#e8dfd0] pt-8 dark:border-gray-800">
+              <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+                Related · 同类调研
+              </p>
+              <ul className="space-y-2">
+                {related.map((r) => (
+                  <li key={r.slug}>
+                    <Link
+                      href={`/articles/research/${r.category}/${r.slug}`}
+                      className="group flex items-baseline gap-3 rounded-lg border border-transparent px-3 py-2 no-underline transition hover:border-[#e8dfd0] hover:bg-white dark:hover:border-gray-800 dark:hover:bg-gray-900"
+                    >
+                      {r.date ? (
+                        <time className="font-mono text-[11px] text-[#999] dark:text-gray-500">{r.date}</time>
+                      ) : null}
+                      <span className="text-[15px] text-[#333] group-hover:text-[#111] dark:text-gray-200 dark:group-hover:text-white">
+                        {r.title}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          <ArticleFooterCta />
         </main>
       </div>
     </div>

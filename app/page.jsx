@@ -424,8 +424,11 @@ export default function HomePage() {
                     className="h-auto w-full object-cover shadow-none"
                   />
                 </div>
-                <p className="mt-3 text-[12px] tracking-[0.12em] text-[#888] dark:text-gray-400">
-                  Founder of @矩联科技
+                <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-gray-400">
+                  前端 · AI Agent · 奶爸
+                </p>
+                <p className="mt-1 text-[12px] tracking-[0.06em] text-[#888] dark:text-gray-500">
+                  Founder @矩联科技 · 博主联盟
                 </p>
                 <blockquote className="mx-auto mt-3 max-w-[min(280px,100%)]">
                   <p className="font-serif text-[15px] leading-[1.9] tracking-wide text-[#3d362b] dark:text-gray-200">
@@ -530,6 +533,18 @@ export default function HomePage() {
           <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
             <span>© 2025—2026 网络日志</span>
             <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
+            <Link href="/about" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
+              关于我
+            </Link>
+            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
+            <Link href="/services" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
+              商务合作
+            </Link>
+            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
+            <a href="/rss.xml" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
+              RSS
+            </a>
+            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
             <Link href="/donate" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
               Buy Me a Coffee
             </Link>
@@ -537,15 +552,6 @@ export default function HomePage() {
             <Link href="/traffic" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
               流量统计
             </Link>
-            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <a
-              href="https://vibecafe.ai/@tuaran"
-              target="_blank"
-              rel="noreferrer"
-              className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors"
-            >
-              VibeUsage
-            </a>
           </p>
         </footer>
       </section>

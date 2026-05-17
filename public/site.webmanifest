@@ -1,7 +1,21 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "涂阿燃 · 网络日志",
+  "short_name": "涂阿燃",
+  "description": "涂阿燃（tuaran / 掘金安东尼）的个人网络日志：技术观察、AI 工程化、知识库与调研。",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#f8f5f0",
+  "background_color": "#f8f5f0",
   "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
@@ -12,10 +26,39 @@
       "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "shortcuts": [
+    {
+      "name": "知识库",
+      "short_name": "知识库",
+      "url": "/articles",
+      "description": "精选文章 + 公司调研 + 事项调研"
+    },
+    {
+      "name": "AI 项目",
+      "short_name": "AI",
+      "url": "/ai-projects",
+      "description": "正在做的 AI 项目集合"
+    },
+    {
+      "name": "上下文记忆",
+      "short_name": "记忆",
+      "url": "/context-memory",
+      "description": "我的 4 层上下文记忆"
+    }
+  ]
 }

@@ -397,7 +397,7 @@ const knowledgeBookmarks = [
     description: '图片速览',
     tocLabel: '图片',
     image: {
-      src: '/bookmarks/twitter/assets-performance-10y.jpeg',
+      src: '/bookmarks/twitter/assets-performance-10y.webp',
       alt: '近10年资产表现排名',
     },
   },
@@ -407,7 +407,7 @@ const knowledgeBookmarks = [
     description: '图片速览',
     tocLabel: '图片',
     image: {
-      src: '/bookmarks/twitter/usd-system.png',
+      src: '/bookmarks/twitter/usd-system.webp',
       alt: '一图了解美元体系',
     },
   },
@@ -417,7 +417,7 @@ const knowledgeBookmarks = [
     description: '图片速览',
     tocLabel: '图片',
     image: {
-      src: '/bookmarks/twitter/world-history-dynasties.png',
+      src: '/bookmarks/twitter/world-history-dynasties.webp',
       alt: '世界历史朝代图谱',
     },
   },
@@ -427,7 +427,7 @@ const knowledgeBookmarks = [
     description: '图片速览',
     tocLabel: '图片',
     image: {
-      src: '/bookmarks/twitter/china-must-climb-famous-mountains.jpeg',
+      src: '/bookmarks/twitter/china-must-climb-famous-mountains.webp',
       alt: '中国必爬名山',
     },
   },
@@ -437,7 +437,7 @@ const knowledgeBookmarks = [
     description: '图片速览',
     tocLabel: '图片',
     image: {
-      src: '/bookmarks/twitter/how-ordinary-people-turn-their-lives-around.jpeg',
+      src: '/bookmarks/twitter/how-ordinary-people-turn-their-lives-around.webp',
       alt: '普通人如何翻身',
     },
   },
@@ -447,7 +447,7 @@ const knowledgeBookmarks = [
     description: '图片速览',
     tocLabel: '图片',
     image: {
-      src: '/bookmarks/twitter/zen-koan.jpeg',
+      src: '/bookmarks/twitter/zen-koan.webp',
       alt: '禅宗启示',
     },
   },
@@ -458,11 +458,11 @@ const knowledgeBookmarks = [
     tocLabel: '图解',
     gallery: [
       {
-        src: '/bookmarks/twitter/state-org-1.jpeg',
+        src: '/bookmarks/twitter/state-org-1.webp',
         alt: '国家机构图解（1）',
       },
       {
-        src: '/bookmarks/twitter/state-org-2.jpeg',
+        src: '/bookmarks/twitter/state-org-2.webp',
         alt: '国家机构图解（2）',
       },
     ],

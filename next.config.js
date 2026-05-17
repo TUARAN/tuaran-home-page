@@ -43,6 +43,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'p0-xtjj-private.juejin.cn',
       },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
     ],
   },
 }

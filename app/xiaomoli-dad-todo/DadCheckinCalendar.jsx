@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
 
@@ -99,8 +100,7 @@ export default function DadCheckinCalendar({
       {user ? (
         <div className="mb-3 flex items-center gap-2 text-xs text-[#5c5348] dark:text-gray-400">
           {user.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.image} alt="" className="h-6 w-6 rounded-full" />
+            <Image src={user.image} alt="" width={24} height={24} unoptimized className="h-6 w-6 rounded-full" />
           ) : null}
           <span>{user.name || user.login || '已登录'}</span>
         </div>

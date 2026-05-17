@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
 async function safeJson(res) {
@@ -135,8 +136,7 @@ export default function StompPanel() {
         <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-[12px] text-gray-600 dark:text-gray-300">
             {user?.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.image} alt="avatar" className="h-5 w-5 rounded-full" />
+              <Image src={user.image} alt="avatar" width={20} height={20} unoptimized className="h-5 w-5 rounded-full" />
             ) : null}
             <span>{user?.name || user?.login || '已登录'}</span>
           </div>
@@ -182,8 +182,7 @@ export default function StompPanel() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     {it.user_image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.user_image} alt="avatar" className="h-5 w-5 rounded-full" />
+                      <Image src={it.user_image} alt="avatar" width={20} height={20} unoptimized className="h-5 w-5 rounded-full" />
                     ) : (
                       <span className="inline-block h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700" />
                     )}

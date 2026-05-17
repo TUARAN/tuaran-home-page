@@ -9,6 +9,7 @@ const TAB_DEFS = [
   { key: 'posts', label: '精选文章' },
   { key: 'companies', label: '公司调研' },
   { key: 'topics', label: '事项调研' },
+  { key: 'people', label: '人物调研' },
 ]
 
 const TAB_KEYS = TAB_DEFS.map((t) => t.key)
@@ -141,7 +142,9 @@ function ArticleRow({ item }) {
                 ? 'border-[#dadada] text-[#666] dark:border-gray-700 dark:text-gray-300'
                 : item.kind === 'companies'
                   ? 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]'
-                  : 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
+                  : item.kind === 'topics'
+                    ? 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]'
+                    : 'border-[#e9d5b8] bg-[#fbf3e3] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]',
             ].join(' ')}
           >
             {item.tagLabel}

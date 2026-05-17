@@ -31,6 +31,12 @@ const nextConfig = {
         destination: 'https://juejin.cn/post/7595425302968696873',
         permanent: false,
       },
+      {
+        // /weekly 是历史路由，统一归入 /diary 持续更新
+        source: '/weekly',
+        destination: '/diary',
+        permanent: true,
+      },
     ]
   },
   images: {

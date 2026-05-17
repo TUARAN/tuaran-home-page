@@ -12,6 +12,7 @@ const navItems = [
   { href: '/articles', label: '知识库', match: (p) => p?.startsWith('/articles') },
   { href: '/reading', label: '读书', match: (p) => p?.startsWith('/reading') },
   { href: '/bookmarks', label: '收藏', match: (p) => p?.startsWith('/bookmarks') },
+  { href: '/web-llm', label: '对话', match: (p) => p?.startsWith('/web-llm') },
   { href: '/messages', label: '留言板', match: (p) => p?.startsWith('/messages') },
 ]
 

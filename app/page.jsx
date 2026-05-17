@@ -478,6 +478,53 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="mt-12 mb-10">
+        <div className="mb-5 flex items-baseline justify-between border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
+          <h2 className="font-serif text-[1.45rem] font-semibold tracking-[0.04em] text-[#221f19] dark:text-gray-100">小工具</h2>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">Tools</p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/eatwhat"
+            className="group block rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+          >
+            <div className="mb-1 flex items-baseline gap-2">
+              <span className="text-[18px]" aria-hidden="true">🥢</span>
+              <span className="font-semibold text-[#1d1a16] dark:text-gray-100">吃什么</span>
+            </div>
+            <p className="text-[13px] leading-6 text-[#666] dark:text-gray-400">
+              帮你决定下一顿，分大人和宝宝两套清单。
+            </p>
+          </Link>
+
+          <Link
+            href="/xiaomoli-dad-todo"
+            className="group block rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+          >
+            <div className="mb-1 flex items-baseline gap-2">
+              <span className="text-[18px]" aria-hidden="true">📋</span>
+              <span className="font-semibold text-[#1d1a16] dark:text-gray-100">茉莉奶爸待办</span>
+            </div>
+            <p className="text-[13px] leading-6 text-[#666] dark:text-gray-400">
+              日常 + 习惯 + 家庭节奏的多维勾选，按日期沉淀。
+            </p>
+          </Link>
+
+          <Link
+            href="/web-llm"
+            className="group block rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+          >
+            <div className="mb-1 flex items-baseline gap-2">
+              <span className="text-[18px]" aria-hidden="true">🤖</span>
+              <span className="font-semibold text-[#1d1a16] dark:text-gray-100">浏览器跑大模型</span>
+            </div>
+            <p className="text-[13px] leading-6 text-[#666] dark:text-gray-400">
+              WebGPU 直接在浏览器内加载 Qwen 系列 ONNX 模型对话。
+            </p>
+          </Link>
+        </div>
+      </section>
+
       <section>
         <footer className="border-t border-[#e8dfd0] pt-4 text-xs text-[#999] dark:border-gray-800">
           <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">

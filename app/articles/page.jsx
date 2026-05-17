@@ -28,6 +28,16 @@ function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
 
+// 人物调研：暂时硬编码（数量少），将来如 research/people/ 目录扩展可改为 loader 驱动
+const PEOPLE_RESEARCH = [
+  {
+    title: '埃隆·马斯克（Elon Musk）',
+    summary: '工程、产品、组织、叙事——以第一性原理 + 工程迭代 + 资本市场叙事驱动的超级企业家样本。',
+    date: '2024-09-01',
+    href: '/people/elon-musk',
+  },
+]
+
 function buildItems() {
   const postItems = articles.map((article) => {
     const path = article.slug === 'diary-self-reflection' ? '/diary' : `/articles/${article.slug}`
@@ -50,7 +60,16 @@ function buildItems() {
     href: `/articles/research/${entry.category}/${entry.slug}`,
   }))
 
-  return [...postItems, ...researchItems].sort((a, b) => {
+  const peopleItems = PEOPLE_RESEARCH.map((p) => ({
+    kind: 'people',
+    tagLabel: '人物调研',
+    title: p.title,
+    summary: p.summary,
+    date: p.date,
+    href: p.href,
+  }))
+
+  return [...postItems, ...researchItems, ...peopleItems].sort((a, b) => {
     if (!a.date) return 1
     if (!b.date) return -1
     return a.date < b.date ? 1 : a.date > b.date ? -1 : 0

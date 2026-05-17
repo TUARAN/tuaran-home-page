@@ -58,7 +58,6 @@ export default function sitemap() {
     '/reading/wealth',
     '/traffic',
     '/web-llm',
-    '/weekly',
     '/xiaomoli-dad-todo',
   ]
 

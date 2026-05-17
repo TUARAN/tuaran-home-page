@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { articles } from '../articlesData'
+import ArticleFooterCta from '../../components/ArticleFooterCta'
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
@@ -383,6 +384,8 @@ export default async function ArticleDetailPage({ params }) {
           </article>
         </>
       )}
+
+      <ArticleFooterCta />
     </div>
   )
 }

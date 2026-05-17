@@ -47,8 +47,11 @@ export default function ArticlesIndexClient({ items }) {
   }
 
   const counts = useMemo(() => {
-    const base = { all: items.length, posts: 0, companies: 0, topics: 0 }
-    for (const item of items) base[item.kind] += 1
+    const base = Object.fromEntries(TAB_KEYS.map((k) => [k, 0]))
+    base.all = items.length
+    for (const item of items) {
+      if (typeof base[item.kind] === 'number') base[item.kind] += 1
+    }
     return base
   }, [items])
 

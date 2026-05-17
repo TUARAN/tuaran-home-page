@@ -556,7 +556,7 @@ export default function MuskExperienceClient() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-[11px] text-slate-700 shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-              人物志 · 单页
+              人物调研 · 单页
             </div>
             <h1 className="mt-4 text-3xl md:text-5xl font-semibold tracking-tight text-slate-900">
               我所了解到的马斯克
@@ -615,10 +615,10 @@ export default function MuskExperienceClient() {
 
               <div className="mt-4 border-t border-slate-200 pt-4">
                 <Link
-                  href="/bookmarks/people"
+                  href="/articles?tab=people"
                   className="block rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 no-underline hover:no-underline hover:text-slate-900"
                 >
-                  ← 返回人物志
+                  ← 返回人物调研
                 </Link>
               </div>
             </nav>

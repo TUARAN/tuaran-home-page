@@ -27,12 +27,6 @@ const categories = [
     order: 1,
   },
   {
-    slug: 'people',
-    title: '人物志',
-    description: '值得长期跟踪的人物、访谈与一手资料入口（持续补充）。',
-    order: 2,
-  },
-  {
     slug: 'llm-tutorials',
     title: '大模型教程',
     description: '大语言模型（LLM）相关的优质教程、实践指南与技术文档。',

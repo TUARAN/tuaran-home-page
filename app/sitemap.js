@@ -41,7 +41,6 @@ export default function sitemap() {
     '/bookmarks/llm-tutorials',
     '/bookmarks/dev-resources',
     '/bookmarks/ai-tools',
-    '/bookmarks/people',
     '/community',
     '/diary',
     '/donate',

@@ -37,6 +37,12 @@ const nextConfig = {
         destination: '/diary',
         permanent: true,
       },
+      {
+        // /bookmarks/people 已收敛为 /articles?tab=people 的人物调研
+        source: '/bookmarks/people',
+        destination: '/articles?tab=people',
+        permanent: true,
+      },
     ]
   },
   images: {

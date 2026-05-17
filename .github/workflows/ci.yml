@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# 并发：同分支后续 push 取消前一次未完成的 run
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-lint:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # 用 ci 而非 install，强制按 lockfile 精确还原，避免漂移
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          # build 期间不需要真实 NextAuth 凭证，给占位值避免 NextAuth 报错
+          NEXTAUTH_SECRET: ci-placeholder-not-for-runtime
+          NEXTAUTH_URL: https://tuaran.me

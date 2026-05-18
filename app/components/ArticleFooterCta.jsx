@@ -69,7 +69,7 @@ export default function ArticleFooterCta() {
       </div>
 
       <p className="mt-6 text-center text-[12px] text-[#999] dark:text-gray-500">
-        合作 / 咨询 / 调研定制 → 加微信 <span className="font-mono">atar24</span> · 注明"从 tuaran.me 来"
+        合作 / 咨询 / 调研定制 → 加微信 <span className="font-mono">atar24</span> · 注明「从 tuaran.me 来」
       </p>
     </aside>
   )

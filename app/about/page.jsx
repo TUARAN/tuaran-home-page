@@ -149,7 +149,7 @@ export default function AboutPage() {
       </section>
 
       <footer className="mt-12 border-t border-[#e8dfd0] pt-6 text-center text-[13px] text-[#888] dark:border-gray-800 dark:text-gray-500">
-        <p>欢迎加我微信 <span className="font-mono">atar24</span>，注明"从 tuaran.me 来"。</p>
+        <p>欢迎加我微信 <span className="font-mono">atar24</span>，注明「从 tuaran.me 来」。</p>
       </footer>
     </main>
   )

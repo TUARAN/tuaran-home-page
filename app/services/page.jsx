@@ -20,40 +20,44 @@ export const metadata = {
   alternates: { canonical: '/services' },
 }
 
-// ⚠️ 价格 placeholder：由站长拍板后填实数
+// 定价基于 2026-05 市场调研：独立 AI 顾问 ¥1k-3k/h、央国企 RPA 单流程 ¥10-30 万、独立调研 ¥3-15k/篇
+// 价格仅为"参考门槛"，复杂项目按工作量重新报价
 const services = [
   {
     icon: '🤝',
     title: 'AI 落地咨询（1v1）',
-    summary: '帮企业 / 团队厘清"AI 该不该用、用在哪、怎么落地"。',
+    summary: '帮企业 / 团队厘清"AI 该不该用、用在哪、怎么落地"，避免无效投入。',
     bullets: [
       '面向角色：CTO / CIO / 产品负责人 / 技术经理',
       '产出：可执行的 AI 切入点清单 + 工程化路径图',
       '形式：1-2 小时 视频会议（可加书面方案）',
+      '首次咨询特价 ¥1,000 / 小时（限 1 次）',
     ],
-    price: '¥X,XXX / 小时',
+    price: '¥1,500 / 小时',
   },
   {
     icon: '🏛',
     title: '央国企数字员工方案',
-    summary: '基于矩联科技实战经验，为政企客户定制 AI 数字员工。',
+    summary: '基于矩联科技实战经验，为政企客户定制 AI 数字员工 + 信创适配。',
     bullets: [
       '覆盖：流程梳理 / 模型选型 / 信创适配 / 落地培训',
       '客户：央国企 / 事业单位 / 大型集团',
-      '形式：定制项目，按需排期',
+      '形式：单流程 PoC ¥80,000 起，多流程 ¥200,000-500,000',
+      '排期：通常 2-3 个月起，复杂方案 6 个月+',
     ],
-    price: '¥XX,XXX 起 / 项目',
+    price: '¥80,000 起 / 项目',
   },
   {
     icon: '📊',
     title: '深度调研定制',
-    summary: '按企业 / 投资机构需求出 9 章节调研报告，含不常见洞见。',
+    summary: '按企业 / 投资机构需求出 9 章节调研报告，含独家"不常见洞见"。',
     bullets: [
       '示例：参考站内 公司调研 / 事项调研 系列',
-      '交付：Markdown + PDF + 信息来源附录',
+      '交付：Markdown + PDF + 信息来源附录 + 推断置信度标注',
       '周期：5-10 个工作日 / 篇',
+      '系列包：3-5 篇主题包 ¥20,000-80,000',
     ],
-    price: '¥X,XXX 起 / 篇',
+    price: '¥5,000 起 / 篇',
   },
   {
     icon: '✍️',
@@ -61,10 +65,11 @@ const services = [
     summary: '通过博主联盟（blogger-alliance.cn）触达 50+ 技术博主矩阵。',
     bullets: [
       '面向：AI 产品方 / 云厂商 / 开发者工具',
-      '形式：单博主软文 / 多博主矩阵 / 主题 campaign',
-      '量级：根据预算分级',
+      '单平台软文：¥3,000 起 / 条（掘金 / 小红书 / CSDN / 51CTO 等）',
+      '矩阵打包：¥15,000 起（5-8 个博主同步发布）',
+      '年框合作：¥50,000+ （季度复盘 + 内容共创）',
     ],
-    price: '面议',
+    price: '¥3,000 起',
   },
   {
     icon: '📚',
@@ -72,19 +77,39 @@ const services = [
     summary: '出版社约稿、技术课程录制、企业内训。',
     bullets: [
       '方向：AI Agent / 前端工程化 / 大模型应用',
-      '形式：约稿 / 共著 / 课程录制 / 内训',
+      '形式：约稿 / 共著 / 课程录制 / 企业内训',
+      '已合作：人民邮电出版社、机械工业出版社等',
     ],
     price: '面议',
   },
   {
     icon: '💼',
     title: '矩联科技产品合作',
-    summary: '矩联科技（matrixlink.tech）已有产品的代理 / 集成。',
+    summary: '矩联科技（matrixlink.tech）已有产品的代理 / 集成 / OEM。',
     bullets: [
       '可对接：自有产品矩阵 + 合作方资源',
       '形式：渠道分销 / 项目集成 / OEM',
+      '建议直接联系 matrixlink.tech',
     ],
     price: '面议',
+  },
+]
+
+const pricingPrinciples = [
+  {
+    icon: '🎯',
+    title: '不卖时间，卖确定性',
+    desc: '价格反映的是"少踩坑"——你买的是别人踩过的路。',
+  },
+  {
+    icon: '📐',
+    title: '不卖名头，卖结果',
+    desc: '每个方向都附可参考案例 / 站内调研 / 已合作客户。',
+  },
+  {
+    icon: '⚖️',
+    title: '不接低于门槛的项目',
+    desc: '不是傲气，是机会成本。门槛价帮你判断是否值得对话。',
   },
 ]
 
@@ -104,6 +129,28 @@ export default function ServicesPage() {
           价格仅作为参考区间，复杂项目按工作量重新报价。
         </p>
       </header>
+
+      <section className="mb-10">
+        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+          Pricing Philosophy · 定价三条
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {pricingPrinciples.map((p) => (
+            <div
+              key={p.title}
+              className="rounded-xl border border-[#e8dfd0] bg-[#fcfbf7] p-4 dark:border-gray-800 dark:bg-gray-900/60"
+            >
+              <div className="flex items-baseline gap-2">
+                <span className="text-[18px]" aria-hidden="true">
+                  {p.icon}
+                </span>
+                <span className="text-[14px] font-semibold text-[#221f19] dark:text-gray-100">{p.title}</span>
+              </div>
+              <p className="mt-2 text-[12px] leading-6 text-[#666] dark:text-gray-400">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {services.map((s) => (

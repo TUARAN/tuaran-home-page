@@ -42,6 +42,8 @@ category: companies          # companies | topics
 date: 2026-05-15
 tags: [AI, 大模型, 公司]
 summary: 一句话概述本篇调研要回答的问题与结论。
+tldr: 不写则回退用 summary；想突出与 summary 不同的一句话总结时填这里。
+topic_type: market           # 仅 topics 用：industry | tech | product | market | thesis
 source: claude-code          # claude-code | codex | manual
 model: claude-opus-4-7       # 实际使用的模型 ID（可选）
 ---
@@ -54,8 +56,12 @@ model: claude-opus-4-7       # 实际使用的模型 ID（可选）
 | `date` | ✅ | `YYYY-MM-DD` |
 | `tags` | ⭕ | 字符串数组，用于检索与归档 |
 | `summary` | ⭕ | 一句话摘要，列表页展示 |
+| `tldr` | ⭕ | 详情页顶部 TL;DR 框使用；不写则回退 `summary` 或正文首段 |
+| `topic_type` | ⭕ | 仅 `topics` 用，二级类型：`industry` 行业 / `tech` 技术 / `product` 产品 / `market` 市场 / `thesis` 观点 |
 | `source` | ⭕ | 生成来源：`claude-code` / `codex` / `manual` |
 | `model` | ⭕ | 实际模型 ID |
+
+> 📐 **阅读时长**由 loader 自动按字数估算（中文 ~300 字/分钟），不需要在 frontmatter 写。
 
 ## 正文章节模板
 

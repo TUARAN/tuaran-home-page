@@ -5,6 +5,7 @@ import Script from 'next/script'
 import {
   CATEGORY_META,
   RESEARCH_CATEGORIES,
+  TOPIC_TYPE_META,
   getAllResearchParams,
   getResearchEntry,
   listResearchByCategory,
@@ -103,10 +104,24 @@ export default async function ResearchDetailPage({ params }) {
           >
             {categoryLabel}
           </Link>
+          {entry.topicType && TOPIC_TYPE_META[entry.topicType] ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center rounded-full border border-[#e9d5b8] bg-[#fbf3e3] px-2 py-[1px] text-[10px] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
+                {TOPIC_TYPE_META[entry.topicType].label}
+              </span>
+            </>
+          ) : null}
           {entry.date ? (
             <>
               <span aria-hidden="true">·</span>
               <time dateTime={entry.date}>{entry.date}</time>
+            </>
+          ) : null}
+          {entry.readingMinutes ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{entry.readingMinutes} min read</span>
             </>
           ) : null}
           {entry.source ? (
@@ -117,7 +132,14 @@ export default async function ResearchDetailPage({ params }) {
           ) : null}
         </div>
         <h1 className="mt-3 text-2xl text-[#444] dark:text-gray-200 leading-snug">{entry.title}</h1>
-        {entry.summary ? (
+        {entry.tldr ? (
+          <aside className="mt-4 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 text-sm leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:bg-[#2a2115] dark:text-gray-200">
+            <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#e2bd75]">
+              TL;DR
+            </span>
+            {entry.tldr}
+          </aside>
+        ) : entry.summary ? (
           <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{entry.summary}</p>
         ) : null}
         {entry.tags?.length ? (

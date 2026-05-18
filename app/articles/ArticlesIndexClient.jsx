@@ -161,8 +161,13 @@ function ArticleRow({ item }) {
             {item.summary}
           </p>
         ) : null}
-        <div className="ml-5 mt-2 text-sm text-[#999] dark:text-gray-400">
-          {external ? '阅读原文 →' : '阅读全文 →'}
+        <div className="ml-5 mt-2 flex items-center gap-3 text-sm text-[#999] dark:text-gray-400">
+          <span>{external ? '阅读原文 →' : '阅读全文 →'}</span>
+          {item.readingMinutes ? (
+            <span className="font-mono text-[11px] text-[#bbb] dark:text-gray-500">
+              · {item.readingMinutes} min
+            </span>
+          ) : null}
         </div>
       </div>
     </Link>

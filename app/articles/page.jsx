@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 
 import { articles } from './articlesData'
 import ArticlesIndexClient from './ArticlesIndexClient'
-import { CATEGORY_META, listResearch } from '../../lib/research/loader'
+import { CATEGORY_META, TOPIC_TYPE_META, listResearch } from '../../lib/research/loader'
 
 export const dynamic = 'force-static'
 
@@ -51,14 +51,19 @@ function buildItems() {
     }
   })
 
-  const researchItems = listResearch().map((entry) => ({
-    kind: entry.category, // 'companies' | 'topics'
-    tagLabel: CATEGORY_META[entry.category]?.label || entry.category,
-    title: entry.title,
-    summary: entry.summary,
-    date: entry.date,
-    href: `/articles/research/${entry.category}/${entry.slug}`,
-  }))
+  const researchItems = listResearch().map((entry) => {
+    const baseLabel = CATEGORY_META[entry.category]?.label || entry.category
+    const subLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
+    return {
+      kind: entry.category, // 'companies' | 'topics'
+      tagLabel: subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
+      title: entry.title,
+      summary: entry.tldr || entry.summary,
+      date: entry.date,
+      readingMinutes: entry.readingMinutes,
+      href: `/articles/research/${entry.category}/${entry.slug}`,
+    }
+  })
 
   const peopleItems = PEOPLE_RESEARCH.map((p) => ({
     kind: 'people',

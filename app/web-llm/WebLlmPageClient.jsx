@@ -333,7 +333,10 @@ export default function WebLlmPageClient() {
       const progressMap = {}
 
       try {
-        setRuntimeNotice('info', `开始加载 ${MODEL_OPTIONS[modelId]?.label || modelId}。首次下载会较慢。`)
+        setRuntimeNotice(
+          'info',
+          `开始从 hf-mirror.com 下载 ${MODEL_OPTIONS[modelId]?.label || modelId}。0.8B 约 600MB / 2B 约 1.5GB / 4B 约 3GB，首次加载请耐心等待，加载完成后会缓存在浏览器（IndexedDB）下次秒开。`
+        )
 
         const { AutoProcessor, Qwen3_5ForConditionalGeneration } = await import('@huggingface/transformers')
 
@@ -589,6 +592,9 @@ export default function WebLlmPageClient() {
       // 在 effect 内部 import，确保仅在浏览器执行；同时把 env 设置一次性收敛在这里。
       const { env } = await import('@huggingface/transformers')
       env.allowLocalModels = false
+      // 国内默认不可直连 huggingface.co，走社区镜像 hf-mirror.com（URL 1:1 兼容）
+      // 海外用户也可正常使用（hf-mirror 是 hf.co 的反向代理）
+      env.remoteHost = 'https://hf-mirror.com'
 
       await initDB()
       if (disposed) return

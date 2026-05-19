@@ -32,6 +32,14 @@ const MODEL_OPTIONS = {
 const DB_NAME = 'QwenChatDB'
 const STORE_NAME = 'chats'
 
+// transformers.js 会把 remoteHost 与 "{model}/resolve/{revision}/" 直接拼接，末尾必须有 /
+const HF_REMOTE_HOST = 'https://hf-mirror.com/'
+
+function configureTransformersEnv(env) {
+  env.allowLocalModels = false
+  env.remoteHost = HF_REMOTE_HOST
+}
+
 export default function WebLlmPageClient() {
   const initializedRef = useRef(false)
 
@@ -338,7 +346,8 @@ export default function WebLlmPageClient() {
           `开始从 hf-mirror.com 下载 ${MODEL_OPTIONS[modelId]?.label || modelId}。0.8B 约 600MB / 2B 约 1.5GB / 4B 约 3GB，首次加载请耐心等待，加载完成后会缓存在浏览器（IndexedDB）下次秒开。`
         )
 
-        const { AutoProcessor, Qwen3_5ForConditionalGeneration } = await import('@huggingface/transformers')
+        const { AutoProcessor, Qwen3_5ForConditionalGeneration, env } = await import('@huggingface/transformers')
+        configureTransformersEnv(env)
 
         const progressCallback = (info) => {
           if (info.status === 'progress') {
@@ -591,10 +600,7 @@ export default function WebLlmPageClient() {
     async function init() {
       // 在 effect 内部 import，确保仅在浏览器执行；同时把 env 设置一次性收敛在这里。
       const { env } = await import('@huggingface/transformers')
-      env.allowLocalModels = false
-      // 国内默认不可直连 huggingface.co，走社区镜像 hf-mirror.com（URL 1:1 兼容）
-      // 海外用户也可正常使用（hf-mirror 是 hf.co 的反向代理）
-      env.remoteHost = 'https://hf-mirror.com'
+      configureTransformersEnv(env)
 
       await initDB()
       if (disposed) return

@@ -1,13 +1,8 @@
 'use client'
 
 /*
- * 1:1 移植自独立项目 /Users/tuaran/Documents/GitHub/webllm
- *   - index.html  → 下方 JSX 结构
- *   - src/main.js → 下方 useEffect 逻辑
- *   - src/styles.css → ./webllm.css（仅以 #web-llm-app-shell 作根级前缀，避免污染站点其它路由）
- *
- * 不引入额外抽象层，所有交互都通过 getElementById 访问 JSX 渲染出来的固定 ID。
- * 维护时优先与参考项目对齐，不要把 React 状态/分层重新塞进来。
+ * 运行逻辑对齐 blogger-alliance/src/pages/workspace/web-llm/index.vue
+ * 样式保留本站 webllm.css
  */
 
 import { useEffect, useRef } from 'react'
@@ -29,423 +24,30 @@ const MODEL_OPTIONS = {
   },
 }
 
-const DB_NAME = 'QwenChatDB'
-const STORE_NAME = 'chats'
-
-// transformers.js 会把 remoteHost 与 "{model}/resolve/{revision}/" 直接拼接，末尾必须有 /
-const HF_REMOTE_HOST = 'https://hf-mirror.com/'
-
-function configureTransformersEnv(env) {
-  env.allowLocalModels = false
-  env.remoteHost = HF_REMOTE_HOST
-}
-
 export default function WebLlmPageClient() {
   const initializedRef = useRef(false)
 
   useEffect(() => {
-    // React StrictMode / dev fast refresh 会让 effect 双跑，加 ref 守卫避免重复绑定。
     if (initializedRef.current) return
     initializedRef.current = true
 
     let disposed = false
-
-    let db
-    let currentChatId = null
-    let chatHistory = []
-    let processor = null
-    let model = null
-    let isLoading = false
-    let currentImageBase64 = null
-
-    const chatListEl = document.getElementById('chat-list')
-    const chatContainerEl = document.getElementById('chat-container')
-    const textInput = document.getElementById('text-input')
-    const sendBtn = document.getElementById('send-btn')
-    const loadModelBtn = document.getElementById('load-model-btn')
-    const modelSelect = document.getElementById('model-select')
-    const attachBtn = document.getElementById('attach-btn')
-    const fileInput = document.getElementById('file-input')
-    const previewContainer = document.getElementById('preview-container')
-    const previewImg = document.getElementById('preview-img')
-    const removeImgBtn = document.getElementById('remove-img-btn')
-    const loadingModal = document.getElementById('loading-modal')
-    const progressBar = document.getElementById('progress-bar')
-    const progressText = document.getElementById('progress-text')
-    const newChatBtn = document.getElementById('new-chat-btn')
-    const inputForm = document.getElementById('input-form')
-    const runtimeNoticeEl = document.getElementById('runtime-notice')
-
-    let DOMTextStreamerCtor = null
-
-    function setRuntimeNotice(kind, message) {
-      runtimeNoticeEl.className = kind ? `notice notice-${kind}` : ''
-      runtimeNoticeEl.textContent = message || ''
-    }
-
-    function getBrowserDiagnostics() {
-      const notices = []
-
-      if (!('gpu' in navigator)) {
-        notices.push('当前浏览器未暴露 WebGPU，模型无法在 GPU 上加载。建议使用新版 Chrome/Edge。')
-      }
-
-      if (!window.isSecureContext) {
-        notices.push('当前页面不是安全上下文，部分浏览器特性可能受限。请通过 localhost 或 HTTPS 访问。')
-      }
-
-      if (!window.crossOriginIsolated) {
-        notices.push('当前页面未启用 cross-origin isolation，某些 ONNX/WebAssembly 优化可能不可用。')
-      }
-
-      return notices
-    }
-
-    function initDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1)
-
-        request.onupgradeneeded = (event) => {
-          const instance = event.target.result
-          if (!instance.objectStoreNames.contains(STORE_NAME)) {
-            instance.createObjectStore(STORE_NAME, { keyPath: 'id' })
-          }
-        }
-
-        request.onsuccess = (event) => {
-          db = event.target.result
-          resolve()
-        }
-
-        request.onerror = (event) => reject(event.target.error)
-      })
-    }
-
-    function saveChat(chat) {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite')
-        tx.objectStore(STORE_NAME).put(chat)
-        tx.oncomplete = () => resolve()
-        tx.onerror = (event) => reject(event.target.error)
-      })
-    }
-
-    function getAllChats() {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readonly')
-        const request = tx.objectStore(STORE_NAME).getAll()
-        request.onsuccess = () => resolve(request.result || [])
-        request.onerror = (event) => reject(event.target.error)
-      })
-    }
-
-    function removeChat(id) {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite')
-        tx.objectStore(STORE_NAME).delete(id)
-        tx.oncomplete = () => resolve()
-        tx.onerror = (event) => reject(event.target.error)
-      })
-    }
-
-    function scrollChatToBottom() {
-      chatContainerEl.scrollTop = chatContainerEl.scrollHeight
-    }
-
-    function autoResizeTextarea() {
-      textInput.style.height = 'auto'
-      textInput.style.height = `${Math.min(textInput.scrollHeight, 180)}px`
-    }
-
-    function setLoadingModal(visible) {
-      loadingModal.style.display = visible ? 'flex' : 'none'
-      loadingModal.setAttribute('aria-hidden', String(!visible))
-    }
-
-    function toggleComposer(disabled) {
-      sendBtn.disabled = disabled || !model || !processor
-      textInput.disabled = disabled
-      attachBtn.disabled = disabled
-    }
-
-    function resetPreview() {
-      currentImageBase64 = null
-      previewContainer.style.display = 'none'
-      previewImg.removeAttribute('src')
-    }
-
-    function updateModelNotice() {
-      const details = MODEL_OPTIONS[modelSelect.value]
-      if (!details) {
-        setRuntimeNotice('', '')
-        return
-      }
-
-      const diagnostics = getBrowserDiagnostics()
-      const baseMessage = `${details.label}: ${details.notes}`
-      setRuntimeNotice(
-        diagnostics.length > 0 ? 'warn' : 'info',
-        diagnostics.length > 0 ? `${baseMessage} ${diagnostics.join(' ')}` : baseMessage,
-      )
-    }
-
-    function buildChatTitle(messages) {
-      if (messages.length === 0) {
-        return '新对话'
-      }
-
-      const firstText = messages[0].text?.trim()
-      if (firstText) {
-        return firstText.slice(0, 15)
-      }
-
-      return '图片对话'
-    }
-
-    async function updateDB() {
-      await saveChat({
-        id: currentChatId,
-        title: buildChatTitle(chatHistory),
-        messages: chatHistory,
-      })
-      await loadSidebar()
-    }
-
-    async function loadSidebar() {
-      const chats = await getAllChats()
-      chats.sort((a, b) => b.id - a.id)
-      chatListEl.innerHTML = ''
-
-      chats.forEach((chat) => {
-        const item = document.createElement('div')
-        item.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`
-        item.onclick = () => selectChat(chat)
-
-        const title = document.createElement('div')
-        title.className = 'chat-title'
-        title.innerText = chat.title || '新对话'
-
-        const delBtn = document.createElement('button')
-        delBtn.className = 'delete-btn'
-        delBtn.type = 'button'
-        delBtn.innerText = '删除'
-        delBtn.onclick = async (event) => {
-          event.stopPropagation()
-          await removeChat(chat.id)
-
-          if (currentChatId === chat.id) {
-            createNewChat()
-          } else {
-            await loadSidebar()
-          }
-        }
-
-        item.appendChild(title)
-        item.appendChild(delBtn)
-        chatListEl.appendChild(item)
-      })
-    }
-
-    function appendEmptyState() {
-      if (chatHistory.length > 0 || chatContainerEl.children.length > 0) {
-        return
-      }
-
-      const hint = document.createElement('div')
-      hint.className = 'message ai-msg'
-      hint.innerHTML = '<strong>准备就绪</strong><br />先加载模型，然后输入文字或上传图片开始对话。'
-      chatContainerEl.appendChild(hint)
-    }
-
-    function clearChatView() {
-      chatContainerEl.innerHTML = ''
-      appendEmptyState()
-    }
-
-    function createNewChat() {
-      currentChatId = Date.now()
-      chatHistory = []
-      clearChatView()
-      loadSidebar()
-    }
-
-    function appendMessageUI(role, text, imageBase64 = null, msgId = null) {
-      const isAssistant = role === 'assistant'
-      const msgDiv = document.createElement('div')
-      msgDiv.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`
-
-      if (msgId) {
-        msgDiv.id = msgId
-      }
-
-      if (imageBase64) {
-        const img = document.createElement('img')
-        img.src = imageBase64
-        img.alt = '用户上传图片'
-        msgDiv.appendChild(img)
-      }
-
-      const textSpan = document.createElement('span')
-      textSpan.innerText = text
-      msgDiv.appendChild(textSpan)
-
-      let statsDiv = null
-      if (isAssistant) {
-        statsDiv = document.createElement('div')
-        statsDiv.className = 'msg-stats'
-        msgDiv.appendChild(statsDiv)
-      }
-
-      if (chatContainerEl.children.length === 1 && chatHistory.length === 0) {
-        const firstChild = chatContainerEl.firstElementChild
-        if (firstChild && firstChild.innerText.includes('准备就绪')) {
-          chatContainerEl.innerHTML = ''
-        }
-      }
-
-      chatContainerEl.appendChild(msgDiv)
-      scrollChatToBottom()
-
-      return { textSpan, statsDiv }
-    }
-
-    async function selectChat(chat) {
-      currentChatId = chat.id
-      chatHistory = chat.messages || []
-      chatContainerEl.innerHTML = ''
-
-      chatHistory.forEach((msg) => {
-        const { statsDiv } = appendMessageUI(msg.role, msg.text, msg.image)
-        if (msg.tps && statsDiv) {
-          statsDiv.innerText = `速度: ${msg.tps} tokens/s`
-        }
-      })
-
-      appendEmptyState()
-      await loadSidebar()
-    }
-
-    async function loadModel() {
-      if (isLoading) {
-        return
-      }
-
-      const modelId = modelSelect.value
-      isLoading = true
-      loadModelBtn.disabled = true
-      modelSelect.disabled = true
-      progressBar.value = 0
-      progressText.innerText = '正在初始化...'
-      setLoadingModal(true)
-
-      const progressMap = {}
-
-      try {
-        setRuntimeNotice(
-          'info',
-          `开始从 hf-mirror.com 下载 ${MODEL_OPTIONS[modelId]?.label || modelId}。0.8B 约 600MB / 2B 约 1.5GB / 4B 约 3GB，首次加载请耐心等待，加载完成后会缓存在浏览器（IndexedDB）下次秒开。`
-        )
-
-        const { AutoProcessor, Qwen3_5ForConditionalGeneration, env } = await import('@huggingface/transformers')
-        configureTransformersEnv(env)
-
-        const progressCallback = (info) => {
-          if (info.status === 'progress') {
-            progressMap[info.file] = {
-              loaded: info.loaded,
-              total: info.total,
-            }
-
-            let totalLoaded = 0
-            let totalSize = 0
-            Object.values(progressMap).forEach((entry) => {
-              totalLoaded += entry.loaded
-              totalSize += entry.total
-            })
-
-            const percent = totalSize > 0 ? (totalLoaded / totalSize) * 100 : 0
-            progressBar.value = percent
-            progressText.innerText = `下载中... ${Math.round(percent)}%`
-          } else if (info.status === 'ready') {
-            progressText.innerText = '加载至 WebGPU... 这可能会需要一段时间'
-          }
-        }
-
-        processor = await AutoProcessor.from_pretrained(modelId, {
-          progress_callback: progressCallback,
-        })
-
-        model = await Qwen3_5ForConditionalGeneration.from_pretrained(modelId, {
-          dtype: {
-            embed_tokens: 'q4',
-            vision_encoder: 'fp16',
-            decoder_model_merged: 'q4',
-          },
-          device: 'webgpu',
-          progress_callback: progressCallback,
-        })
-
-        loadModelBtn.innerText = '模型已加载'
-        setRuntimeNotice('success', `${MODEL_OPTIONS[modelId]?.label || modelId} 已加载，可以开始对话。`)
-        toggleComposer(false)
-      } catch (error) {
-        console.error(error)
-        const diagnostics = getBrowserDiagnostics()
-        const diagnosticText = diagnostics.length > 0 ? `\n\n环境诊断：${diagnostics.join(' ')}` : ''
-
-        alert(
-          '模型加载失败。请确认浏览器支持 WebGPU，并查看控制台错误信息。\n' +
-            error.message +
-            diagnosticText,
-        )
-        setRuntimeNotice(
-          'error',
-          `模型加载失败: ${error.message}${diagnostics.length > 0 ? ` ${diagnostics.join(' ')}` : ''}`,
-        )
-        loadModelBtn.disabled = false
-        modelSelect.disabled = false
-      } finally {
-        isLoading = false
-        setLoadingModal(false)
-      }
-    }
-
-    async function buildConversationAndImages() {
-      const { RawImage } = await import('@huggingface/transformers')
-      const conversation = []
-      const rawImages = []
-
-      for (const msg of chatHistory) {
-        if (msg.role === 'user') {
-          const content = []
-          if (msg.image) {
-            content.push({ type: 'image' })
-            const rawImage = await RawImage.read(msg.image)
-            const resized = await rawImage.resize(448, 448)
-            rawImages.push(resized)
-          }
-          content.push({ type: 'text', text: msg.text || '' })
-          conversation.push({ role: 'user', content })
-          continue
-        }
-
-        conversation.push({
-          role: 'assistant',
-          content: [{ type: 'text', text: msg.text }],
-        })
-      }
-
-      return { conversation, rawImages }
-    }
-
-    async function ensureStreamerCtor() {
-      if (DOMTextStreamerCtor) return DOMTextStreamerCtor
-
-      const { TextStreamer } = await import('@huggingface/transformers')
+    const cleanupFns = []
+
+    ;(async () => {
+      const {
+        AutoProcessor,
+        Qwen3_5ForConditionalGeneration,
+        RawImage,
+        TextStreamer,
+        env,
+      } = await import(/* webpackChunkName: "transformers-web" */ './transformers-browser.js')
+
+      if (disposed) return
 
       class DOMTextStreamer extends TextStreamer {
-        constructor(tok, callback) {
-          super(tok, { skip_prompt: true, skip_special_tokens: true })
+        constructor(tokenizer, callback) {
+          super(tokenizer, { skip_prompt: true, skip_special_tokens: true })
           this.callback = callback
           this.generatedText = ''
           this.tokenCount = 0
@@ -481,138 +83,531 @@ export default function WebLlmPageClient() {
         }
       }
 
-      DOMTextStreamerCtor = DOMTextStreamer
-      return DOMTextStreamer
-    }
+      const DB_NAME = 'QwenChatDB'
+      const STORE_NAME = 'chats'
 
-    async function handleSubmit(event) {
-      event.preventDefault()
+      env.allowLocalModels = false
 
-      const text = textInput.value.trim()
-      if (!text && !currentImageBase64) {
-        return
+      let db
+      let currentChatId = null
+      let chatHistory = []
+      let processor = null
+      let model = null
+      let isLoading = false
+      let currentImageBase64 = null
+
+      const chatListEl = document.getElementById('chat-list')
+      const chatContainerEl = document.getElementById('chat-container')
+      const textInput = document.getElementById('text-input')
+      const sendBtn = document.getElementById('send-btn')
+      const loadModelBtn = document.getElementById('load-model-btn')
+      const modelSelect = document.getElementById('model-select')
+      const attachBtn = document.getElementById('attach-btn')
+      const fileInput = document.getElementById('file-input')
+      const previewContainer = document.getElementById('preview-container')
+      const previewImg = document.getElementById('preview-img')
+      const removeImgBtn = document.getElementById('remove-img-btn')
+      const loadingModal = document.getElementById('loading-modal')
+      const progressBar = document.getElementById('progress-bar')
+      const progressText = document.getElementById('progress-text')
+      const newChatBtn = document.getElementById('new-chat-btn')
+      const inputForm = document.getElementById('input-form')
+      const runtimeNoticeEl = document.getElementById('runtime-notice')
+
+      function setRuntimeNotice(kind, message) {
+        runtimeNoticeEl.className = kind ? `notice notice-${kind}` : ''
+        runtimeNoticeEl.textContent = message || ''
       }
 
-      if (!model || !processor) {
-        alert('请先加载模型。')
-        return
+      function getBrowserDiagnostics() {
+        const notices = []
+
+        if (!('gpu' in navigator)) {
+          notices.push('当前浏览器未暴露 WebGPU，模型无法在 GPU 上加载。建议使用新版 Chrome/Edge。')
+        }
+
+        if (!window.isSecureContext) {
+          notices.push('当前页面不是安全上下文，部分浏览器特性可能受限。请通过 localhost 或 HTTPS 访问。')
+        }
+
+        if (!crossOriginIsolated) {
+          notices.push('当前页面未启用 cross-origin isolation，某些 ONNX/WebAssembly 优化可能不可用。')
+        }
+
+        return notices
       }
 
-      const userText = text
-      const userImg = currentImageBase64
+      function initDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(DB_NAME, 1)
 
-      textInput.value = ''
-      autoResizeTextarea()
-      resetPreview()
-
-      appendMessageUI('user', userText, userImg)
-      chatHistory.push({ role: 'user', text: userText, image: userImg })
-      await updateDB()
-
-      toggleComposer(true)
-
-      const aiMsgId = `ai-msg-${Date.now()}`
-      const { textSpan: aiTextSpan, statsDiv: aiStatsDiv } = appendMessageUI(
-        'assistant',
-        '思考中...',
-        null,
-        aiMsgId,
-      )
-
-      try {
-        const StreamerCtor = await ensureStreamerCtor()
-        const { conversation, rawImages } = await buildConversationAndImages()
-        const promptText = processor.apply_chat_template(conversation, {
-          add_generation_prompt: true,
-        })
-
-        const inputs =
-          rawImages.length > 0
-            ? await processor(promptText, rawImages.length === 1 ? rawImages[0] : rawImages)
-            : await processor(promptText)
-
-        aiTextSpan.innerText = ''
-
-        const streamer = new StreamerCtor(processor.tokenizer, (newText, _isEnd, tps) => {
-          aiTextSpan.innerText = newText
-          if (tps > 0 && aiStatsDiv) {
-            aiStatsDiv.innerText = `速度: ${tps} tokens/s`
+          request.onupgradeneeded = (event) => {
+            const instance = event.target.result
+            if (!instance.objectStoreNames.contains(STORE_NAME)) {
+              instance.createObjectStore(STORE_NAME, { keyPath: 'id' })
+            }
           }
-          scrollChatToBottom()
-        })
 
-        await model.generate({
-          ...inputs,
-          max_new_tokens: 512,
-          streamer,
-        })
+          request.onsuccess = (event) => {
+            db = event.target.result
+            resolve()
+          }
 
-        chatHistory.push({
-          role: 'assistant',
-          text: aiTextSpan.innerText,
-          tps: streamer.finalTps,
+          request.onerror = (event) => reject(event.target.error)
         })
-        await updateDB()
-      } catch (error) {
-        console.error('生成报错:', error)
-        aiTextSpan.innerText = `生成出错: ${error.message}`
-      } finally {
-        toggleComposer(false)
-        textInput.focus()
       }
-    }
 
-    function bindEvents() {
-      newChatBtn.addEventListener('click', createNewChat)
-      loadModelBtn.addEventListener('click', loadModel)
-      inputForm.addEventListener('submit', handleSubmit)
-      modelSelect.addEventListener('change', updateModelNotice)
+      function saveChat(chat) {
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite')
+          tx.objectStore(STORE_NAME).put(chat)
+          tx.oncomplete = () => resolve()
+          tx.onerror = (event) => reject(event.target.error)
+        })
+      }
 
-      attachBtn.onclick = () => fileInput.click()
+      function getAllChats() {
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readonly')
+          const request = tx.objectStore(STORE_NAME).getAll()
+          request.onsuccess = () => resolve(request.result || [])
+          request.onerror = (event) => reject(event.target.error)
+        })
+      }
 
-      fileInput.onchange = (event) => {
-        const file = event.target.files?.[0]
-        if (!file) {
+      function removeChat(id) {
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite')
+          tx.objectStore(STORE_NAME).delete(id)
+          tx.oncomplete = () => resolve()
+          tx.onerror = (event) => reject(event.target.error)
+        })
+      }
+
+      function scrollChatToBottom() {
+        chatContainerEl.scrollTop = chatContainerEl.scrollHeight
+      }
+
+      function autoResizeTextarea() {
+        textInput.style.height = 'auto'
+        textInput.style.height = `${Math.min(textInput.scrollHeight, 180)}px`
+      }
+
+      function setLoadingModal(visible) {
+        loadingModal.style.display = visible ? 'flex' : 'none'
+        loadingModal.setAttribute('aria-hidden', String(!visible))
+      }
+
+      function toggleComposer(disabled) {
+        sendBtn.disabled = disabled || !model || !processor
+        textInput.disabled = disabled
+        attachBtn.disabled = disabled
+      }
+
+      function resetPreview() {
+        currentImageBase64 = null
+        previewContainer.style.display = 'none'
+        previewImg.removeAttribute('src')
+      }
+
+      function updateModelNotice() {
+        const details = MODEL_OPTIONS[modelSelect.value]
+        if (!details) {
+          setRuntimeNotice('', '')
           return
         }
 
-        const reader = new FileReader()
-        reader.onload = (loadEvent) => {
-          currentImageBase64 = loadEvent.target.result
-          previewImg.src = currentImageBase64
-          previewContainer.style.display = 'block'
-        }
-        reader.readAsDataURL(file)
-        fileInput.value = ''
+        const diagnostics = getBrowserDiagnostics()
+        const baseMessage = `${details.label}: ${details.notes}`
+        setRuntimeNotice(
+          diagnostics.length > 0 ? 'warn' : 'info',
+          diagnostics.length > 0 ? `${baseMessage} ${diagnostics.join(' ')}` : baseMessage,
+        )
       }
 
-      removeImgBtn.onclick = resetPreview
-
-      textInput.addEventListener('input', autoResizeTextarea)
-      textInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-          event.preventDefault()
-          inputForm.requestSubmit()
+      function buildChatTitle(messages) {
+        if (messages.length === 0) {
+          return '新对话'
         }
-      })
-    }
 
-    async function init() {
-      // 在 effect 内部 import，确保仅在浏览器执行；同时把 env 设置一次性收敛在这里。
-      const { env } = await import('@huggingface/transformers')
-      configureTransformersEnv(env)
+        const firstText = messages[0].text?.trim()
+        if (firstText) {
+          return firstText.slice(0, 15)
+        }
 
-      await initDB()
-      if (disposed) return
-      bindEvents()
-      autoResizeTextarea()
-      updateModelNotice()
-      await loadSidebar()
-      if (disposed) return
-      createNewChat()
-    }
+        return '图片对话'
+      }
 
-    init().catch((error) => {
+      async function updateDB() {
+        await saveChat({
+          id: currentChatId,
+          title: buildChatTitle(chatHistory),
+          messages: chatHistory,
+        })
+        await loadSidebar()
+      }
+
+      async function loadSidebar() {
+        const chats = await getAllChats()
+        chats.sort((a, b) => b.id - a.id)
+        chatListEl.innerHTML = ''
+
+        chats.forEach((chat) => {
+          const item = document.createElement('div')
+          item.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`
+          item.onclick = () => selectChat(chat)
+
+          const title = document.createElement('div')
+          title.className = 'chat-title'
+          title.innerText = chat.title || '新对话'
+
+          const delBtn = document.createElement('button')
+          delBtn.className = 'delete-btn'
+          delBtn.type = 'button'
+          delBtn.innerText = '删除'
+          delBtn.onclick = async (event) => {
+            event.stopPropagation()
+            await removeChat(chat.id)
+
+            if (currentChatId === chat.id) {
+              createNewChat()
+            } else {
+              await loadSidebar()
+            }
+          }
+
+          item.appendChild(title)
+          item.appendChild(delBtn)
+          chatListEl.appendChild(item)
+        })
+      }
+
+      function appendEmptyState() {
+        if (chatHistory.length > 0 || chatContainerEl.children.length > 0) {
+          return
+        }
+
+        const hint = document.createElement('div')
+        hint.className = 'message ai-msg'
+        hint.innerHTML = '<strong>准备就绪</strong><br />先加载模型，然后输入文字或上传图片开始对话。'
+        chatContainerEl.appendChild(hint)
+      }
+
+      function clearChatView() {
+        chatContainerEl.innerHTML = ''
+        appendEmptyState()
+      }
+
+      function createNewChat() {
+        currentChatId = Date.now()
+        chatHistory = []
+        clearChatView()
+        loadSidebar()
+      }
+
+      function appendMessageUI(role, text, imageBase64 = null, msgId = null) {
+        const isAssistant = role === 'assistant'
+        const msgDiv = document.createElement('div')
+        msgDiv.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`
+
+        if (msgId) {
+          msgDiv.id = msgId
+        }
+
+        if (imageBase64) {
+          const img = document.createElement('img')
+          img.src = imageBase64
+          img.alt = '用户上传图片'
+          msgDiv.appendChild(img)
+        }
+
+        const textSpan = document.createElement('span')
+        textSpan.innerText = text
+        msgDiv.appendChild(textSpan)
+
+        let statsDiv = null
+        if (isAssistant) {
+          statsDiv = document.createElement('div')
+          statsDiv.className = 'msg-stats'
+          msgDiv.appendChild(statsDiv)
+        }
+
+        if (chatContainerEl.children.length === 1 && chatHistory.length === 0) {
+          const firstChild = chatContainerEl.firstElementChild
+          if (firstChild && firstChild.innerText.includes('准备就绪')) {
+            chatContainerEl.innerHTML = ''
+          }
+        }
+
+        chatContainerEl.appendChild(msgDiv)
+        scrollChatToBottom()
+
+        return { textSpan, statsDiv }
+      }
+
+      async function selectChat(chat) {
+        currentChatId = chat.id
+        chatHistory = chat.messages || []
+        chatContainerEl.innerHTML = ''
+
+        chatHistory.forEach((msg) => {
+          const { statsDiv } = appendMessageUI(msg.role, msg.text, msg.image)
+          if (msg.tps && statsDiv) {
+            statsDiv.innerText = `速度: ${msg.tps} tokens/s`
+          }
+        })
+
+        appendEmptyState()
+        await loadSidebar()
+      }
+
+      async function loadModel() {
+        if (isLoading) {
+          return
+        }
+
+        const modelId = modelSelect.value
+        isLoading = true
+        loadModelBtn.disabled = true
+        modelSelect.disabled = true
+        progressBar.value = 0
+        progressText.innerText = '正在初始化...'
+        setLoadingModal(true)
+
+        const progressMap = {}
+
+        try {
+          setRuntimeNotice('info', `开始加载 ${MODEL_OPTIONS[modelId]?.label || modelId}。首次下载会较慢。`)
+
+          const progressCallback = (info) => {
+            if (info.status === 'progress') {
+              progressMap[info.file] = {
+                loaded: info.loaded,
+                total: info.total,
+              }
+
+              let totalLoaded = 0
+              let totalSize = 0
+              Object.values(progressMap).forEach((entry) => {
+                totalLoaded += entry.loaded
+                totalSize += entry.total
+              })
+
+              const percent = totalSize > 0 ? (totalLoaded / totalSize) * 100 : 0
+              progressBar.value = percent
+              progressText.innerText = `下载中... ${Math.round(percent)}%`
+            } else if (info.status === 'ready') {
+              progressText.innerText = '加载至 WebGPU... 这可能会需要一段时间'
+            }
+          }
+
+          processor = await AutoProcessor.from_pretrained(modelId, {
+            progress_callback: progressCallback,
+          })
+
+          model = await Qwen3_5ForConditionalGeneration.from_pretrained(modelId, {
+            dtype: {
+              embed_tokens: 'q4',
+              vision_encoder: 'fp16',
+              decoder_model_merged: 'q4',
+            },
+            device: 'webgpu',
+            progress_callback: progressCallback,
+          })
+
+          loadModelBtn.innerText = '模型已加载'
+          setRuntimeNotice('success', `${MODEL_OPTIONS[modelId]?.label || modelId} 已加载，可以开始对话。`)
+          toggleComposer(false)
+        } catch (error) {
+          console.error(error)
+          const diagnostics = getBrowserDiagnostics()
+          const diagnosticText = diagnostics.length > 0 ? `\n\n环境诊断：${diagnostics.join(' ')}` : ''
+
+          alert(
+            '模型加载失败。请确认浏览器支持 WebGPU，并查看控制台错误信息。\n' +
+              error.message +
+              diagnosticText,
+          )
+          setRuntimeNotice(
+            'error',
+            `模型加载失败: ${error.message}${diagnostics.length > 0 ? ` ${diagnostics.join(' ')}` : ''}`,
+          )
+          loadModelBtn.disabled = false
+          modelSelect.disabled = false
+        } finally {
+          isLoading = false
+          setLoadingModal(false)
+        }
+      }
+
+      async function buildConversationAndImages() {
+        const conversation = []
+        const rawImages = []
+
+        for (const msg of chatHistory) {
+          if (msg.role === 'user') {
+            const content = []
+            if (msg.image) {
+              content.push({ type: 'image' })
+              const rawImage = await RawImage.read(msg.image)
+              const resized = await rawImage.resize(448, 448)
+              rawImages.push(resized)
+            }
+            content.push({ type: 'text', text: msg.text || '' })
+            conversation.push({ role: 'user', content })
+            continue
+          }
+
+          conversation.push({
+            role: 'assistant',
+            content: [{ type: 'text', text: msg.text }],
+          })
+        }
+
+        return { conversation, rawImages }
+      }
+
+      async function handleSubmit(event) {
+        event.preventDefault()
+
+        const text = textInput.value.trim()
+        if (!text && !currentImageBase64) {
+          return
+        }
+
+        if (!model || !processor) {
+          alert('请先加载模型。')
+          return
+        }
+
+        const userText = text
+        const userImg = currentImageBase64
+
+        textInput.value = ''
+        autoResizeTextarea()
+        resetPreview()
+
+        appendMessageUI('user', userText, userImg)
+        chatHistory.push({ role: 'user', text: userText, image: userImg })
+        await updateDB()
+
+        toggleComposer(true)
+
+        const aiMsgId = `ai-msg-${Date.now()}`
+        const { textSpan: aiTextSpan, statsDiv: aiStatsDiv } = appendMessageUI(
+          'assistant',
+          '思考中...',
+          null,
+          aiMsgId,
+        )
+
+        try {
+          const { conversation, rawImages } = await buildConversationAndImages()
+          const promptText = processor.apply_chat_template(conversation, {
+            add_generation_prompt: true,
+          })
+
+          const inputs =
+            rawImages.length > 0
+              ? await processor(promptText, rawImages.length === 1 ? rawImages[0] : rawImages)
+              : await processor(promptText)
+
+          aiTextSpan.innerText = ''
+
+          const streamer = new DOMTextStreamer(processor.tokenizer, (newText, _isEnd, tps) => {
+            aiTextSpan.innerText = newText
+            if (tps > 0 && aiStatsDiv) {
+              aiStatsDiv.innerText = `速度: ${tps} tokens/s`
+            }
+            scrollChatToBottom()
+          })
+
+          await model.generate({
+            ...inputs,
+            max_new_tokens: 512,
+            streamer,
+          })
+
+          chatHistory.push({
+            role: 'assistant',
+            text: aiTextSpan.innerText,
+            tps: streamer.finalTps,
+          })
+          await updateDB()
+        } catch (error) {
+          console.error('生成报错:', error)
+          aiTextSpan.innerText = `生成出错: ${error.message}`
+        } finally {
+          toggleComposer(false)
+          textInput.focus()
+        }
+      }
+
+      function bindEvents() {
+        const onNewChat = () => createNewChat()
+        const onLoadModel = () => loadModel()
+        const onModelChange = () => updateModelNotice()
+        const onAttach = () => fileInput.click()
+        const onFileChange = (event) => {
+          const file = event.target.files?.[0]
+          if (!file) {
+            return
+          }
+
+          const reader = new FileReader()
+          reader.onload = (loadEvent) => {
+            currentImageBase64 = loadEvent.target.result
+            previewImg.src = currentImageBase64
+            previewContainer.style.display = 'block'
+          }
+          reader.readAsDataURL(file)
+          fileInput.value = ''
+        }
+        const onRemoveImg = () => resetPreview()
+        const onTextInput = () => autoResizeTextarea()
+        const onTextKeydown = (event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault()
+            inputForm.requestSubmit()
+          }
+        }
+
+        newChatBtn.addEventListener('click', onNewChat)
+        loadModelBtn.addEventListener('click', onLoadModel)
+        inputForm.addEventListener('submit', handleSubmit)
+        modelSelect.addEventListener('change', onModelChange)
+        attachBtn.addEventListener('click', onAttach)
+        fileInput.addEventListener('change', onFileChange)
+        removeImgBtn.addEventListener('click', onRemoveImg)
+        textInput.addEventListener('input', onTextInput)
+        textInput.addEventListener('keydown', onTextKeydown)
+
+        cleanupFns.push(() => {
+          newChatBtn.removeEventListener('click', onNewChat)
+          loadModelBtn.removeEventListener('click', onLoadModel)
+          inputForm.removeEventListener('submit', handleSubmit)
+          modelSelect.removeEventListener('change', onModelChange)
+          attachBtn.removeEventListener('click', onAttach)
+          fileInput.removeEventListener('change', onFileChange)
+          removeImgBtn.removeEventListener('click', onRemoveImg)
+          textInput.removeEventListener('input', onTextInput)
+          textInput.removeEventListener('keydown', onTextKeydown)
+        })
+      }
+
+      async function init() {
+        await initDB()
+        if (disposed) return
+        bindEvents()
+        autoResizeTextarea()
+        updateModelNotice()
+        await loadSidebar()
+        if (disposed) return
+        createNewChat()
+      }
+
+      await init()
+    })().catch((error) => {
       console.error('初始化失败:', error)
       if (typeof window !== 'undefined') {
         alert(`应用初始化失败: ${error.message}`)
@@ -621,6 +616,14 @@ export default function WebLlmPageClient() {
 
     return () => {
       disposed = true
+      cleanupFns.forEach((fn) => {
+        try {
+          fn()
+        } catch (error) {
+          console.error('cleanup failed:', error)
+        }
+      })
+      cleanupFns.length = 0
     }
   }, [])
 
@@ -659,7 +662,6 @@ export default function WebLlmPageClient() {
 
         <section id="input-wrapper">
           <div id="preview-container">
-            {/* 初始不渲染 src，避免 Next dev 的空字符串警告；用户选图后由 JS 直接 .src = ... */}
             {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
             <img id="preview-img" alt="图片预览" />
             <button id="remove-img-btn" type="button" aria-label="移除图片">
@@ -671,11 +673,7 @@ export default function WebLlmPageClient() {
             <button type="button" className="icon-btn" id="attach-btn" title="上传图片" aria-label="上传图片">
               📷
             </button>
-            <textarea
-              id="text-input"
-              placeholder="输入消息 (Shift + Enter 换行)..."
-              rows={1}
-            />
+            <textarea id="text-input" placeholder="输入消息 (Shift + Enter 换行)..." rows={1} />
             <button type="submit" id="send-btn" disabled>
               发送
             </button>

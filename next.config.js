@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path')
+
 const webLlmHeaders = [
   {
     key: 'Cross-Origin-Embedder-Policy',
@@ -12,6 +14,35 @@ const webLlmHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['@huggingface/transformers'],
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Next 默认会解析到 transformers.node.mjs，浏览器端必须用 web 构建
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@huggingface/transformers$': path.resolve(
+          __dirname,
+          'node_modules/@huggingface/transformers/dist/transformers.web.js',
+        ),
+      }
+      config.resolve.conditionNames = ['browser', 'import', 'require', 'default']
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      }
+      config.experiments = {
+        ...config.experiments,
+        asyncWebAssembly: true,
+      }
+      config.module.rules.push({
+        test: /\.wasm$/,
+        type: 'asset/resource',
+      })
+    }
+    return config
+  },
   async headers() {
     return [
       {

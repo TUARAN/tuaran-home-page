@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@huggingface/transformers": "4.0.0-next.11",
+    "@huggingface/transformers": "^4.0.0",
     "@tailwindcss/typography": "^0.5.10",
     "marked": "^14.1.4",
     "next": "^15.1.3",

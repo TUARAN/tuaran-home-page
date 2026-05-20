@@ -180,6 +180,11 @@
   background: rgba(255, 255, 255, 0.92);
 }
 
+/* 下载源选择器比模型选择器窄一些，两个下拉框并排不挤 */
+#web-llm-app-shell #source-select {
+  min-width: 0;
+}
+
 #web-llm-app-shell #load-model-btn,
 #web-llm-app-shell #send-btn {
   border: none;

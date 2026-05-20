@@ -24,6 +24,24 @@ const MODEL_OPTIONS = {
   },
 }
 
+// 模型下载源：官方 Hub 与国内镜像（URL 1:1 兼容，末尾保留 / 供 transformers.js 拼接）
+const MODEL_SOURCES = {
+  official: { label: '官方源 huggingface.co', host: 'https://huggingface.co/' },
+  mirror: { label: '国内镜像 hf-mirror.com', host: 'https://hf-mirror.com/' },
+}
+
+// 用 no-cors 探针测试某个下载源能否直连：连得上 → true，连不上 / 超时 → false
+function probeHost(host, timeoutMs = 4000) {
+  return new Promise((resolve) => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    fetch(`${host}favicon.ico`, { mode: 'no-cors', cache: 'no-store', signal: controller.signal })
+      .then(() => resolve(true))
+      .catch(() => resolve(false))
+      .finally(() => clearTimeout(timer))
+  })
+}
+
 export default function WebLlmPageClient() {
   const initializedRef = useRef(false)
 
@@ -102,6 +120,7 @@ export default function WebLlmPageClient() {
       const sendBtn = document.getElementById('send-btn')
       const loadModelBtn = document.getElementById('load-model-btn')
       const modelSelect = document.getElementById('model-select')
+      const sourceSelect = document.getElementById('source-select')
       const attachBtn = document.getElementById('attach-btn')
       const fileInput = document.getElementById('file-input')
       const previewContainer = document.getElementById('preview-container')
@@ -223,6 +242,42 @@ export default function WebLlmPageClient() {
           diagnostics.length > 0 ? 'warn' : 'info',
           diagnostics.length > 0 ? `${baseMessage} ${diagnostics.join(' ')}` : baseMessage,
         )
+      }
+
+      // 把当前选中的下载源写入 transformers.js 的 env.remoteHost
+      function applySource() {
+        const source = MODEL_SOURCES[sourceSelect.value] || MODEL_SOURCES.mirror
+        env.remoteHost = source.host
+        return source
+      }
+
+      // 启动时自动探测：官方源能直连就用官方，否则回退镜像
+      async function detectBestSource() {
+        sourceSelect.disabled = true
+        setRuntimeNotice('info', '正在检测可用的模型下载源...')
+
+        const [officialOK, mirrorOK] = await Promise.all([
+          probeHost(MODEL_SOURCES.official.host),
+          probeHost(MODEL_SOURCES.mirror.host),
+        ])
+        if (disposed) return
+
+        const chosen = officialOK ? 'official' : 'mirror'
+        sourceSelect.value = chosen
+        applySource()
+        sourceSelect.disabled = false
+
+        if (!officialOK && !mirrorOK) {
+          setRuntimeNotice(
+            'warn',
+            '官方源与镜像均无法直连，请检查网络 / 代理后重试。已默认选择镜像，仍可手动切换。',
+          )
+        } else {
+          setRuntimeNotice(
+            'success',
+            `已自动选择「${MODEL_SOURCES[chosen].label}」作为模型下载源，可在右上角手动切换。`,
+          )
+        }
       }
 
       function buildChatTitle(messages) {
@@ -367,9 +422,11 @@ export default function WebLlmPageClient() {
         }
 
         const modelId = modelSelect.value
+        const source = applySource()
         isLoading = true
         loadModelBtn.disabled = true
         modelSelect.disabled = true
+        sourceSelect.disabled = true
         progressBar.value = 0
         progressText.innerText = '正在初始化...'
         setLoadingModal(true)
@@ -377,7 +434,10 @@ export default function WebLlmPageClient() {
         const progressMap = {}
 
         try {
-          setRuntimeNotice('info', `开始加载 ${MODEL_OPTIONS[modelId]?.label || modelId}。首次下载会较慢。`)
+          setRuntimeNotice(
+            'info',
+            `正在从「${source.label}」加载 ${MODEL_OPTIONS[modelId]?.label || modelId}。首次下载较慢，完成后会缓存在浏览器，下次秒开。`,
+          )
 
           const progressCallback = (info) => {
             if (info.status === 'progress') {
@@ -430,10 +490,11 @@ export default function WebLlmPageClient() {
           )
           setRuntimeNotice(
             'error',
-            `模型加载失败: ${error.message}${diagnostics.length > 0 ? ` ${diagnostics.join(' ')}` : ''}`,
+            `模型加载失败：${error.message}。可在右上角切换下载源后重试。${diagnostics.length > 0 ? ` ${diagnostics.join(' ')}` : ''}`,
           )
           loadModelBtn.disabled = false
           modelSelect.disabled = false
+          sourceSelect.disabled = false
         } finally {
           isLoading = false
           setLoadingModal(false)
@@ -547,6 +608,10 @@ export default function WebLlmPageClient() {
         const onNewChat = () => createNewChat()
         const onLoadModel = () => loadModel()
         const onModelChange = () => updateModelNotice()
+        const onSourceChange = () => {
+          const source = applySource()
+          setRuntimeNotice('info', `下载源已切换为「${source.label}」。`)
+        }
         const onAttach = () => fileInput.click()
         const onFileChange = (event) => {
           const file = event.target.files?.[0]
@@ -576,6 +641,7 @@ export default function WebLlmPageClient() {
         loadModelBtn.addEventListener('click', onLoadModel)
         inputForm.addEventListener('submit', handleSubmit)
         modelSelect.addEventListener('change', onModelChange)
+        sourceSelect.addEventListener('change', onSourceChange)
         attachBtn.addEventListener('click', onAttach)
         fileInput.addEventListener('change', onFileChange)
         removeImgBtn.addEventListener('click', onRemoveImg)
@@ -587,6 +653,7 @@ export default function WebLlmPageClient() {
           loadModelBtn.removeEventListener('click', onLoadModel)
           inputForm.removeEventListener('submit', handleSubmit)
           modelSelect.removeEventListener('change', onModelChange)
+          sourceSelect.removeEventListener('change', onSourceChange)
           attachBtn.removeEventListener('click', onAttach)
           fileInput.removeEventListener('change', onFileChange)
           removeImgBtn.removeEventListener('click', onRemoveImg)
@@ -604,6 +671,8 @@ export default function WebLlmPageClient() {
         await loadSidebar()
         if (disposed) return
         createNewChat()
+        // 异步探测下载源，不阻塞页面交互
+        detectBestSource()
       }
 
       await init()
@@ -645,6 +714,10 @@ export default function WebLlmPageClient() {
             <h1>Qwen WebGPU Chat</h1>
           </div>
           <div id="model-controls">
+            <select id="source-select" aria-label="选择下载源" defaultValue="mirror">
+              <option value="official">官方源 huggingface.co</option>
+              <option value="mirror">国内镜像 hf-mirror.com</option>
+            </select>
             <select id="model-select" aria-label="选择模型" defaultValue="onnx-community/Qwen3.5-0.8B-ONNX">
               <option value="onnx-community/Qwen3.5-0.8B-ONNX">Qwen3.5-0.8B-ONNX</option>
               <option value="onnx-community/Qwen3.5-2B-ONNX">Qwen3.5-2B-ONNX</option>

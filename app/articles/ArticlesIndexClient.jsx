@@ -10,7 +10,19 @@ const TAB_DEFS = [
   { key: 'companies', label: '公司调研' },
   { key: 'topics', label: '事项调研' },
   { key: 'people', label: '人物调研' },
+  { key: 'history', label: '历史调研' },
+  { key: 'poetry', label: '诗歌调研' },
 ]
+
+// 各分类标签的配色（浅色 + 暗色）
+const KIND_TAG_CLASS = {
+  posts: 'border-[#dadada] text-[#666] dark:border-gray-700 dark:text-gray-300',
+  companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
+  topics: 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
+  people: 'border-[#e9d5b8] bg-[#fbf3e3] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]',
+  history: 'border-[#e4cdc0] bg-[#f7efe9] text-[#8a4f32] dark:border-[#3a2c22] dark:bg-[#241a13] dark:text-[#d7a98a]',
+  poetry: 'border-[#ddd0e6] bg-[#f4eef8] text-[#6b4a86] dark:border-[#332a3f] dark:bg-[#1f1726] dark:text-[#c3a9d9]',
+}
 
 const TAB_KEYS = TAB_DEFS.map((t) => t.key)
 
@@ -141,13 +153,7 @@ function ArticleRow({ item }) {
           <span
             className={[
               'inline-flex items-center rounded-full border px-2 py-[1px] text-[11px]',
-              item.kind === 'posts'
-                ? 'border-[#dadada] text-[#666] dark:border-gray-700 dark:text-gray-300'
-                : item.kind === 'companies'
-                  ? 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]'
-                  : item.kind === 'topics'
-                    ? 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]'
-                    : 'border-[#e9d5b8] bg-[#fbf3e3] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]',
+              KIND_TAG_CLASS[item.kind] || KIND_TAG_CLASS.people,
             ].join(' ')}
           >
             {item.tagLabel}

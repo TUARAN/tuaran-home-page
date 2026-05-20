@@ -31,10 +31,48 @@ function isExternalHref(href) {
 // 人物调研：暂时硬编码（数量少），将来如 research/people/ 目录扩展可改为 loader 驱动
 const PEOPLE_RESEARCH = [
   {
+    title: '苏轼',
+    summary: '以时间线梳理苏轼的仕途、流放、心境与作品 —— 一个在时代洪流里反复被贬却始终通透的样本。',
+    date: '2026-05-20',
+    href: '/people/su-shi',
+  },
+  {
+    title: '人工智能先驱',
+    summary: '深度学习先驱群像：李飞飞、杨立昆、本吉奥、辛顿、苏茨克维、克里泽夫斯基的关键贡献与时间线。',
+    date: '2026-05-20',
+    href: '/people/ai-pioneers',
+  },
+  {
     title: '埃隆·马斯克（Elon Musk）',
     summary: '工程、产品、组织、叙事——以第一性原理 + 工程迭代 + 资本市场叙事驱动的超级企业家样本。',
     date: '2024-09-01',
     href: '/people/elon-musk',
+  },
+]
+
+// 历史调研：富页面形式（迁移自原读书·历史）
+const HISTORY_RESEARCH = [
+  {
+    title: '明清史',
+    summary: '以皇帝时间线梳理明清两代 —— 朱元璋、朱棣、嘉靖、张居正、万历、康熙、雍正的制度与命运。',
+    date: '2026-05-20',
+    href: '/history/ming-qing',
+  },
+  {
+    title: '三国史',
+    summary: '以时间线梳理曹操的崛起、用人与争议。',
+    date: '2026-05-20',
+    href: '/history/three-kingdoms',
+  },
+]
+
+// 诗歌调研
+const POETRY_RESEARCH = [
+  {
+    title: '诗词巅峰',
+    summary: '历代诗词名篇的整理与原文：短歌行、洛神赋、兰亭集序、春江花月夜、滕王阁序……',
+    date: '2026-05-20',
+    href: '/poetry',
   },
 ]
 
@@ -74,7 +112,25 @@ function buildItems() {
     href: p.href,
   }))
 
-  return [...postItems, ...researchItems, ...peopleItems].sort((a, b) => {
+  const historyItems = HISTORY_RESEARCH.map((p) => ({
+    kind: 'history',
+    tagLabel: '历史调研',
+    title: p.title,
+    summary: p.summary,
+    date: p.date,
+    href: p.href,
+  }))
+
+  const poetryItems = POETRY_RESEARCH.map((p) => ({
+    kind: 'poetry',
+    tagLabel: '诗歌调研',
+    title: p.title,
+    summary: p.summary,
+    date: p.date,
+    href: p.href,
+  }))
+
+  return [...postItems, ...researchItems, ...peopleItems, ...historyItems, ...poetryItems].sort((a, b) => {
     if (!a.date) return 1
     if (!b.date) return -1
     return a.date < b.date ? 1 : a.date > b.date ? -1 : 0

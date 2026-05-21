@@ -27,6 +27,12 @@ const categories = [
     order: 1,
   },
   {
+    slug: 'youtube',
+    title: 'YouTube 收藏',
+    description: '按主题整理的影像收藏：政治、历史、二战、纪录片与延伸资料。',
+    order: 2,
+  },
+  {
     slug: 'llm-tutorials',
     title: '大模型教程',
     description: '大语言模型（LLM）相关的优质教程、实践指南与技术文档。',

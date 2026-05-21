@@ -76,6 +76,22 @@ const POETRY_RESEARCH = [
   },
 ]
 
+// 专题页：富媒体形式的事项调研，归入「事项调研」Tab
+const TOPIC_PAGES = [
+  {
+    title: '儒释道 · 神仙体系',
+    summary: '佛教五层果位、道教十级神格、儒家文庙道统 —— 三教神仙体系结构图。',
+    date: '2026-05-21',
+    href: '/ru-shi-dao',
+  },
+  {
+    title: '中国政治体制',
+    summary: '中央与国务院组织结构、历届三中全会、领导层沿革（1971–至今）。',
+    date: '2026-05-21',
+    href: '/china-politics',
+  },
+]
+
 function buildItems() {
   const postItems = articles.map((article) => {
     const path = article.slug === 'diary-self-reflection' ? '/diary' : `/articles/${article.slug}`
@@ -131,7 +147,23 @@ function buildItems() {
     href: p.href,
   }))
 
-  return [...postItems, ...researchItems, ...peopleItems, ...historyItems, ...poetryItems].sort((a, b) => {
+  const topicPageItems = TOPIC_PAGES.map((p) => ({
+    kind: 'topics',
+    tagLabel: '事项调研 · 专题',
+    title: p.title,
+    summary: p.summary,
+    date: p.date,
+    href: p.href,
+  }))
+
+  return [
+    ...postItems,
+    ...researchItems,
+    ...peopleItems,
+    ...historyItems,
+    ...poetryItems,
+    ...topicPageItems,
+  ].sort((a, b) => {
     if (!a.date) return 1
     if (!b.date) return -1
     return a.date < b.date ? 1 : a.date > b.date ? -1 : 0

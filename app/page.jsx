@@ -482,9 +482,18 @@ export default function HomePage() {
       </section>
 
       <section className="mt-12 mb-10">
-        <div className="mb-5 flex items-baseline justify-between border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
-          <h2 className="font-serif text-[1.45rem] font-semibold tracking-[0.04em] text-[#221f19] dark:text-gray-100">小工具</h2>
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">Tools</p>
+        <div className="mb-5 border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-serif text-[1.45rem] font-semibold tracking-[0.04em] text-[#221f19] dark:text-gray-100">自用应用</h2>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">Apps</p>
+          </div>
+          <p className="mt-2 text-[13px] leading-6 text-[#847a67] dark:text-gray-400">
+            长期维护的页面与应用，不是一次性小脚本；真正的站内小工具在
+            <Link href="/ai-projects#site-tools" className="mx-1 text-[#5a4725] underline-offset-2 hover:underline dark:text-[#c8b99d]">
+              AI 项目页
+            </Link>
+            。
+          </p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Link

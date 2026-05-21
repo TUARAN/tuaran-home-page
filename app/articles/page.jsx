@@ -99,6 +99,7 @@ function buildItems() {
       summary: entry.tldr || entry.summary,
       date: entry.date,
       readingMinutes: entry.readingMinutes,
+      encrypted: entry.encrypted,
       href: `/articles/research/${entry.category}/${entry.slug}`,
     }
   })

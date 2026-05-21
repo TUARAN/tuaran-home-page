@@ -158,6 +158,24 @@ function ArticleRow({ item }) {
           >
             {item.tagLabel}
           </span>
+          {item.encrypted ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#e9d5b8] bg-[#fbf3e3] px-2 py-[1px] text-[11px] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
+              <svg
+                viewBox="0 0 12 12"
+                aria-hidden="true"
+                className="h-2.5 w-2.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="2.5" y="5.5" width="7" height="5" rx="1" />
+                <path d="M4.2 5.5V4a1.8 1.8 0 0 1 3.6 0v1.5" />
+              </svg>
+              加密
+            </span>
+          ) : null}
           <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100 group-hover:text-[#111] dark:group-hover:text-white transition-colors">
             {item.title}
           </h2>

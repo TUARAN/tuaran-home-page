@@ -13,6 +13,7 @@ import {
 import { extractToc, renderMarkdown } from '../../../../../lib/research/markdown'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
+import EncryptedArticle from './EncryptedArticle'
 
 const SITE_URL = 'https://tuaran.me'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -67,10 +68,11 @@ export default async function ResearchDetailPage({ params }) {
   const entry = getResearchEntry(category, slug)
   if (!entry) notFound()
 
-  const html = renderMarkdown(entry.content)
-  const toc = extractToc(entry.content)
-  // 一键复制用的 Markdown：标题 + 正文（不含 YAML frontmatter）
-  const markdownDoc = `# ${entry.title}\n\n${entry.content}`
+  const isEncrypted = entry.encrypted
+  const html = isEncrypted ? '' : renderMarkdown(entry.content)
+  const toc = isEncrypted ? [] : extractToc(entry.content)
+  // 一键复制用的 Markdown：标题 + 正文（不含 YAML frontmatter）；加密文章不提供
+  const markdownDoc = isEncrypted ? '' : `# ${entry.title}\n\n${entry.content}`
   const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
 
@@ -133,7 +135,7 @@ export default async function ResearchDetailPage({ params }) {
               <span>来源：{entry.source}</span>
             </>
           ) : null}
-          <CopyMarkdownButton markdown={markdownDoc} />
+          {isEncrypted ? null : <CopyMarkdownButton markdown={markdownDoc} />}
         </div>
         <h1 className="mt-3 text-2xl text-[#444] dark:text-gray-200 leading-snug">{entry.title}</h1>
         {entry.tldr ? (
@@ -184,7 +186,14 @@ export default async function ResearchDetailPage({ params }) {
         ) : null}
 
         <main className="flex-1 min-w-0">
-          <article className="prose-tuaran" dangerouslySetInnerHTML={{ __html: html }} />
+          {isEncrypted ? (
+            <EncryptedArticle
+              payload={entry.encryptedPayload}
+              storageKey={`research-dec:${entry.category}:${entry.slug}`}
+            />
+          ) : (
+            <article className="prose-tuaran" dangerouslySetInnerHTML={{ __html: html }} />
+          )}
 
           {related.length ? (
             <section className="mx-auto mt-12 max-w-[72ch] border-t border-[#e8dfd0] pt-8 dark:border-gray-800">

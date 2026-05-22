@@ -14,10 +14,11 @@ import {
 import { extractToc, renderMarkdown } from '../../../../../lib/research/markdown'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
+import DistributeMarkdownButton from './DistributeMarkdownButton'
 import EncryptedArticle from './EncryptedArticle'
 import ShareResearchButton from './ShareResearchButton'
 
-const SITE_URL = 'https://tuaran.me'
+const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 
 export const dynamic = 'force-static'
@@ -165,6 +166,15 @@ export default async function ResearchDetailPage({ params }) {
             <div className="ml-auto flex shrink-0 items-center gap-2">
               <ShareResearchButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
               <CopyMarkdownButton markdown={markdownDoc} />
+              <DistributeMarkdownButton
+                title={entry.title}
+                summary={entry.summary || entry.tldr || ''}
+                markdown={markdownDoc}
+                url={url}
+                category={entry.category}
+                slug={entry.slug}
+                tags={entry.tags || []}
+              />
             </div>
           )}
         </div>

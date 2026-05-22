@@ -4,7 +4,7 @@ import { CATEGORY_META, listResearch } from '../../lib/research/loader'
 export const dynamic = 'force-static'
 export const revalidate = 3600
 
-const SITE_URL = 'https://tuaran.me'
+const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const SITE_DESC =
   '涂阿燃（安东尼）：前端与 AI 工程化独立开发者；主理博主联盟与前端下一步。个人网络日志，记录工程实践、技术情报与创作者增长。'

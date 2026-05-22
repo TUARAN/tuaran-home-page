@@ -7,6 +7,6 @@ export default function robots() {
         disallow: ['/api/', '/admin/'],
       },
     ],
-    sitemap: 'https://tuaran.me/sitemap.xml',
+    sitemap: 'https://2aran.com/sitemap.xml',
   }
 }

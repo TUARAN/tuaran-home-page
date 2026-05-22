@@ -1,7 +1,7 @@
 # 调研知识库（写作约定）
 
 本目录是「大模型调研知识库」的存储源头。所有调研报告都以 Markdown 文件落到这里，
-随主站仓库一起 `git push`，Cloudflare Pages 自动重新构建后即在 `tuaran.me/articles` 上线。
+随主站仓库一起 `git push`，Cloudflare Pages 自动重新构建后即在 `2aran.com/articles` 上线。
 
 > 网站不调用任何大模型。调研内容统一由 **本地的 Claude Code / CodeX 等终端工具** 生成
 > （它们底层调云端模型），输出符合本约定的 MD，落到这里即可。
@@ -152,6 +152,6 @@ git push
 
 Cloudflare Pages 自动重 build 后访问：
 
-- 列表页：<https://tuaran.me/articles>（顶部「公司调研 / 事项调研」Tab）
-- 详情页：`https://tuaran.me/articles/research/<category>/<slug>`
+- 列表页：<https://2aran.com/articles>（顶部「公司调研 / 事项调研」Tab）
+- 详情页：`https://2aran.com/articles/research/<category>/<slug>`
   - 例：`/articles/research/companies/anthropic`（slug 为去掉日期前缀后的部分）

@@ -42,7 +42,7 @@ export default async function OgImage() {
               borderRadius: '50%',
             }}
           />
-          tuaran.me
+          2aran.com
         </div>
 
         <div

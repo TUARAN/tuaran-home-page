@@ -6,7 +6,7 @@ import { articles } from '../articles/articlesData'
 
 export const dynamic = 'force-static'
 
-const SITE_URL = 'https://tuaran.me'
+const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const DIARY_SLUG = 'diary-self-reflection'
 const DEFAULT_DIARY_CATEGORY = '未分类'

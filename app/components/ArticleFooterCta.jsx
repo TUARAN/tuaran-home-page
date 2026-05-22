@@ -23,7 +23,7 @@ export default function ArticleFooterCta() {
           <div className="flex-1">
             <div className="text-[15px] font-semibold text-[#221f19] dark:text-gray-100">RSS 订阅 →</div>
             <p className="mt-0.5 text-[12px] leading-5 text-[#666] dark:text-gray-400">
-              tuaran.me/rss.xml · 用你的阅读器订阅，不错过任何一篇
+              2aran.com/rss.xml · 用你的阅读器订阅，不错过任何一篇
             </p>
           </div>
         </a>
@@ -69,7 +69,7 @@ export default function ArticleFooterCta() {
       </div>
 
       <p className="mt-6 text-center text-[12px] text-[#999] dark:text-gray-500">
-        合作 / 咨询 / 调研定制 → 加微信 <span className="font-mono">atar24</span> · 注明「从 tuaran.me 来」
+        合作 / 咨询 / 调研定制 → 加微信 <span className="font-mono">atar24</span> · 注明「从 2aran.com 来」
       </p>
     </aside>
   )

@@ -4,12 +4,29 @@ import { domainStrategyParagraphs, maintainedDomains, opcVibeProjects } from './
 
 export const dynamic = 'force-static'
 
+const STRATEGY_HIGHLIGHTS = ['Prompt Cache 优化', 'Coordinator 与 Fork', 'YOLO Classifier', '文件流集成']
+
 export const metadata = {
   title: 'AI 项目',
   description: '涂阿燃的 AI Native 项目图谱，整理个人入口、内容分发、AI 编程、创作工具与职业转型项目。',
   alternates: {
     canonical: '/ai-projects',
   },
+}
+
+function renderStrategyText(text) {
+  const pattern = new RegExp(`(${STRATEGY_HIGHLIGHTS.join('|')})`, 'g')
+  return text.split(pattern).map((part, index) => {
+    if (!STRATEGY_HIGHLIGHTS.includes(part)) return part
+    return (
+      <span
+        key={`${part}-${index}`}
+        className="font-serif text-[1.08em] font-bold text-[#a16207] dark:text-amber-300"
+      >
+        {part}
+      </span>
+    )
+  })
 }
 
 export default function AiProjectsPage() {
@@ -20,7 +37,7 @@ export default function AiProjectsPage() {
           <div>
             <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">AI Native 项目图谱</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2 max-w-3xl">
-              {domainStrategyParagraphs[0]}
+              {renderStrategyText(domainStrategyParagraphs[0])}
             </p>
           </div>
         </div>

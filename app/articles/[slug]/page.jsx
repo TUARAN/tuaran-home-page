@@ -8,7 +8,7 @@ import ArticleFooterCta from '../../components/ArticleFooterCta'
 export const dynamic = 'force-static'
 export const dynamicParams = false
 
-const SITE_URL = 'https://tuaran.me'
+const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 
 function toIsoDate(dateString) {

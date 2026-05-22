@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
+    "build:check": "NEXT_DIST_DIR=.next-check next build",
     "start": "next start -p 3000",
     "pages:build": "npx @cloudflare/next-on-pages@1.13.16",
     "lint": "next lint"

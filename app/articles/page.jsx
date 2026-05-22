@@ -115,6 +115,7 @@ function buildItems() {
       tagLabel: subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
       companyType: entry.companyType || '',
       topicType: entry.topicType || '',
+      version: entry.version || '',
       title: entry.title,
       summary: entry.tldr || entry.summary,
       date: entry.date,

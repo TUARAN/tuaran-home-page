@@ -199,7 +199,7 @@ export default function AboutPage() {
 
       <footer className="mt-3 shrink-0 border-t border-[#e8dfd0] pt-3 text-center text-[11px] leading-5 text-[#888] dark:border-gray-800 dark:text-gray-500">
         <p>
-          欢迎微信注明「从 tuaran.me 来」·{' '}
+          欢迎微信注明「从 2aran.com 来」·{' '}
           <Link href="/" className="text-[#5a4725] hover:underline dark:text-[#c8b99d]">
             返回首页
           </Link>

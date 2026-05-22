@@ -6,4 +6,4 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-Sitemap: https://tuaran.me/sitemap.xml
+Sitemap: https://2aran.com/sitemap.xml

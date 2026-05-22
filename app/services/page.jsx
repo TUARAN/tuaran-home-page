@@ -184,7 +184,7 @@ export default function ServicesPage() {
         <h2 className="font-serif text-xl font-semibold text-[#221f19] dark:text-gray-100">如何联系</h2>
         <p className="mt-3 text-[14px] leading-7 text-[#5d554a] dark:text-gray-300">
           加微信 <span className="font-mono font-semibold">atar24</span>，注明：<br />
-          <span className="font-mono text-[13px]">「来自 tuaran.me / 合作类型 / 公司或项目」</span>
+          <span className="font-mono text-[13px]">「来自 2aran.com / 合作类型 / 公司或项目」</span>
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <Link

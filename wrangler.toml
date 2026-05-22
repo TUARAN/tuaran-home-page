@@ -7,7 +7,7 @@ pages_build_output_dir = ".vercel/output/static"
 
 [vars]
 GITHUB_ID = "Ov23li1wLMVXeIzcprTU"
-NEXTAUTH_URL = "https://tuaran.me"
+NEXTAUTH_URL = "https://2aran.com"
 
 # Used for D1 migrations / local development.
 # In Cloudflare Pages, you can also set the D1 binding in the dashboard.

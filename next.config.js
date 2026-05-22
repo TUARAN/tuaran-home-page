@@ -14,6 +14,7 @@ const webLlmHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   transpilePackages: ['@huggingface/transformers'],
   webpack: (config, { isServer }) => {
     if (!isServer) {

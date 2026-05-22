@@ -2,7 +2,7 @@
 
 一个极简风格的个人网站与网络日志，记录编程、创作与生活。
 
-🌐 线上地址：[https://tuaran.me](https://tuaran.me)
+🌐 线上地址：[https://2aran.com](https://2aran.com)
 
 ---
 
@@ -135,15 +135,15 @@ npm run start
 | `NODE_VERSION` | Text | `20`（与 `.nvmrc` 一致；Next 15 建议在 Cloudflare 显式指定，避免默认 Node 过旧） |
 | `GITHUB_ID` | Text | GitHub OAuth App Client ID |
 | `GITHUB_SECRET` | Secret | GitHub OAuth App Client Secret |
-| `NEXTAUTH_URL` | Text | 例如 `https://tuaran.me` |
+| `NEXTAUTH_URL` | Text | 例如 `https://2aran.com` |
 | `NEXTAUTH_SECRET` | Secret | 使用 `openssl rand -base64 32` 生成 |
 
 ### 3. GitHub OAuth App 配置
 
 在 GitHub 创建/配置 OAuth App：
 
-- **Homepage URL**：`https://tuaran.me`
-- **Authorization callback URL**：`https://tuaran.me/api/auth/callback/github`
+- **Homepage URL**：`https://2aran.com`
+- **Authorization callback URL**：`https://2aran.com/api/auth/callback/github`
 
 ### 4. D1 数据库配置（踩一踩留言存储）
 
@@ -218,5 +218,5 @@ compatibility_flags = ["nodejs_compat"]
 
 **掘金安东尼** — 全栈开发专家 / AI 技术博主
 
-- 🌐 网站：[tuaran.me](https://tuaran.me)
+- 🌐 网站：[2aran.com](https://2aran.com)
 - 📝 掘金：[掘金主页](https://juejin.cn/user/3544481219674541)

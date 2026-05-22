@@ -141,7 +141,7 @@ export default function SiteToolsPanel() {
       <article className="mt-4 border-l-2 border-sky-500 py-2 pl-4">
         <div className="flex flex-wrap items-baseline gap-x-2">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">转短</h3>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">长链接 → tuaran.me/xxxxxxx</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">长链接 → 2aran.com/xxxxxxx</span>
           <div className="ml-auto flex items-center gap-2">
             {userLoading ? (
               <span className="text-[11px] text-slate-400">…</span>

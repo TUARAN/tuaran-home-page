@@ -1,7 +1,7 @@
 import { articles } from './articles/articlesData'
 import { listResearch } from '../lib/research/loader'
 
-const SITE_URL = 'https://tuaran.me'
+const SITE_URL = 'https://2aran.com'
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')

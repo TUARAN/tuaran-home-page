@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { articles } from './articles/articlesData'
 import CopyIntroButton from './components/CopyIntroButton'
 import LatestMoments from './components/LatestMoments'
+import SiteFooter from './components/SiteFooter'
 import { SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_INTRO_COPY } from '../lib/siteIntro'
 
 function wrapTitle(title) {
@@ -538,31 +539,7 @@ export default function HomePage() {
       </section>
 
       <section>
-        <footer className="border-t border-[#e8dfd0] pt-4 text-xs text-[#999] dark:border-gray-800">
-          <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
-            <span>© 2025—2026 网络日志</span>
-            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <Link href="/about" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
-              关于我
-            </Link>
-            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <Link href="/services" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
-              商务合作
-            </Link>
-            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <a href="/rss.xml" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
-              RSS
-            </a>
-            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <Link href="/donate" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
-              Buy Me a Coffee
-            </Link>
-            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
-            <Link href="/traffic" className="opacity-80 hover:opacity-100 hover:text-[#666] dark:hover:text-gray-300 transition-colors">
-              流量统计
-            </Link>
-          </p>
-        </footer>
+        <SiteFooter />
       </section>
     </div>
   )

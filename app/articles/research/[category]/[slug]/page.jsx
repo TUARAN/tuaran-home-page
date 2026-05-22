@@ -4,6 +4,7 @@ import Script from 'next/script'
 
 import {
   CATEGORY_META,
+  COMPANY_TYPE_META,
   RESEARCH_CATEGORIES,
   TOPIC_TYPE_META,
   getAllResearchParams,
@@ -77,9 +78,14 @@ export default async function ResearchDetailPage({ params }) {
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
 
   // 相关阅读：同 category 其它条目，最近 3 篇
-  const related = listResearchByCategory(entry.category)
-    .filter((e) => e.slug !== entry.slug)
-    .slice(0, 3)
+  const relatedPool = listResearchByCategory(entry.category).filter((e) => e.slug !== entry.slug)
+  const related =
+    entry.category === 'companies' && entry.companyType
+      ? [
+          ...relatedPool.filter((e) => e.companyType === entry.companyType),
+          ...relatedPool.filter((e) => e.companyType !== entry.companyType),
+        ].slice(0, 3)
+      : relatedPool.slice(0, 3)
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -109,6 +115,17 @@ export default async function ResearchDetailPage({ params }) {
           >
             {categoryLabel}
           </Link>
+          {entry.companyType && COMPANY_TYPE_META[entry.companyType] ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <Link
+                href={`/articles?tab=companies&company_type=${entry.companyType}`}
+                className="inline-flex items-center rounded-full border border-[#cbd9ee] bg-[#eff4fc] px-2 py-[1px] text-[10px] text-[#3b5b8a] no-underline hover:border-[#9fb7d8] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]"
+              >
+                {COMPANY_TYPE_META[entry.companyType].label}
+              </Link>
+            </>
+          ) : null}
           {entry.topicType && TOPIC_TYPE_META[entry.topicType] ? (
             <>
               <span aria-hidden="true">·</span>

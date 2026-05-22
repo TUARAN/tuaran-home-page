@@ -1,9 +1,10 @@
 ---
-title: 极星会（GitFund）公司调研
+title: 北京极猫科技有限公司（极星会 / GitFund）公司调研
 category: companies
+company_type: developer_ecosystem
 date: 2026-05-16
 tags: [开发者生态, KOL, 任务撮合, 早期创业, 内容平台]
-summary: 极星会（gitfund.cn）是面向科技企业的开发者生态拓展平台，做"科技企业 ↔ 技术博主"任务撮合，运营主体北京极猫科技有限公司，2024 年正式上线，技术形态显示仍处早期 / 内测状态。
+summary: 北京极猫科技有限公司（极星会 / GitFund）运营面向科技企业的开发者生态拓展平台，做"科技企业 ↔ 技术博主"任务撮合，2024 年正式上线，技术形态显示仍处早期 / 内测状态。
 source: claude-code
 model: claude-opus-4-7
 ---
@@ -18,10 +19,10 @@ model: claude-opus-4-7
 
 ## 一、基本信息
 
-- **品牌名称**：**极星会**（页面 `<title>` 中文）
+- **品牌名称**：**极星会**（GitFund，页面 `<title>` 中文）
 - **官网域名**：<https://gitfund.cn>（生产实际为 `www.gitfund.cn`）
 - **API 后端域名**：`api.itkol.top` / `socket.itkol.top`（Socket.IO 实时通信）
-- **运营主体**：**北京极猫科技有限公司**（页面底部 © 2024 GitFund）
+- **运营主体 / 公司全称**：**北京极猫科技有限公司**（页面底部 © 2024 GitFund）
 - **域名注册人**：**王路敏**（wanglumin79@163.com）
 - **域名注册时间**：**2021-10-08**（2026-10-08 到期）
 - **域名注册商**：阿里云万网

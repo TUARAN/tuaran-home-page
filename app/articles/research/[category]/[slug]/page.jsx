@@ -15,6 +15,7 @@ import { extractToc, renderMarkdown } from '../../../../../lib/research/markdown
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import EncryptedArticle from './EncryptedArticle'
+import ShareResearchButton from './ShareResearchButton'
 
 const SITE_URL = 'https://tuaran.me'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -140,6 +141,14 @@ export default async function ResearchDetailPage({ params }) {
               <time dateTime={entry.date}>{entry.date}</time>
             </>
           ) : null}
+          {entry.version ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[10px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+                {entry.version}
+              </span>
+            </>
+          ) : null}
           {entry.readingMinutes ? (
             <>
               <span aria-hidden="true">·</span>
@@ -152,7 +161,12 @@ export default async function ResearchDetailPage({ params }) {
               <span>来源：{entry.source}</span>
             </>
           ) : null}
-          {isEncrypted ? null : <CopyMarkdownButton markdown={markdownDoc} />}
+          {isEncrypted ? null : (
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <ShareResearchButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
+              <CopyMarkdownButton markdown={markdownDoc} />
+            </div>
+          )}
         </div>
         <h1 className="mt-3 text-2xl text-[#444] dark:text-gray-200 leading-snug">{entry.title}</h1>
         {entry.tldr ? (

@@ -331,6 +331,11 @@ function ArticleRow({ item }) {
               加密
             </span>
           ) : null}
+          {item.version ? (
+            <span className="inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+              {item.version}
+            </span>
+          ) : null}
           <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100 group-hover:text-[#111] dark:group-hover:text-white transition-colors">
             {item.title}
           </h2>

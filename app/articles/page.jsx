@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 
 import { articles } from './articlesData'
 import ArticlesIndexClient from './ArticlesIndexClient'
-import { CATEGORY_META, TOPIC_TYPE_META, listResearch } from '../../lib/research/loader'
+import { CATEGORY_META, COMPANY_TYPE_META, TOPIC_TYPE_META, listResearch } from '../../lib/research/loader'
 
 export const dynamic = 'force-static'
 
@@ -107,10 +107,14 @@ function buildItems() {
 
   const researchItems = listResearch().map((entry) => {
     const baseLabel = CATEGORY_META[entry.category]?.label || entry.category
-    const subLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
+    const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
+    const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
+    const subLabel = companyLabel || topicLabel
     return {
       kind: entry.category, // 'companies' | 'topics'
       tagLabel: subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
+      companyType: entry.companyType || '',
+      topicType: entry.topicType || '',
       title: entry.title,
       summary: entry.tldr || entry.summary,
       date: entry.date,
@@ -150,6 +154,7 @@ function buildItems() {
   const topicPageItems = TOPIC_PAGES.map((p) => ({
     kind: 'topics',
     tagLabel: '事项调研 · 专题',
+    topicType: 'special',
     title: p.title,
     summary: p.summary,
     date: p.date,

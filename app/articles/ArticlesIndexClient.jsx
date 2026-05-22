@@ -31,6 +31,30 @@ const EXTERNAL_TABS = [
   { label: '掘金专栏', href: 'https://juejin.cn/user/1521379823340792/columns' },
 ]
 
+const COMPANY_TYPE_DEFS = [
+  { key: 'all', label: '全部公司' },
+  { key: 'developer_ecosystem', label: '开发者生态' },
+  { key: 'content_community', label: '内容社区' },
+  { key: 'enterprise_software', label: '企业软件' },
+  { key: 'cloud_communications', label: '云通信' },
+  { key: 'new_energy', label: '新能源' },
+  { key: 'devtools', label: '开发工具' },
+]
+
+const COMPANY_TYPE_KEYS = COMPANY_TYPE_DEFS.map((t) => t.key)
+
+const TOPIC_TYPE_DEFS = [
+  { key: 'all', label: '全部事项' },
+  { key: 'industry', label: '行业' },
+  { key: 'tech', label: '技术' },
+  { key: 'product', label: '产品' },
+  { key: 'market', label: '市场' },
+  { key: 'thesis', label: '观点' },
+  { key: 'special', label: '专题' },
+]
+
+const TOPIC_TYPE_KEYS = TOPIC_TYPE_DEFS.map((t) => t.key)
+
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
@@ -42,19 +66,59 @@ export default function ArticlesIndexClient({ items }) {
     const fromUrl = searchParams?.get('tab')
     return TAB_KEYS.includes(fromUrl) ? fromUrl : 'all'
   })()
+  const initialCompanyType = (() => {
+    const fromUrl = searchParams?.get('company_type')
+    return COMPANY_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
+  })()
+  const initialTopicType = (() => {
+    const fromUrl = searchParams?.get('topic_type')
+    return TOPIC_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
+  })()
   const [tab, setTab] = useState(initialTab)
+  const [companyType, setCompanyType] = useState(initialCompanyType)
+  const [topicType, setTopicType] = useState(initialTopicType)
 
   useEffect(() => {
     const fromUrl = searchParams?.get('tab')
     if (fromUrl && TAB_KEYS.includes(fromUrl) && fromUrl !== tab) {
       setTab(fromUrl)
     }
+    const companyTypeFromUrl = searchParams?.get('company_type')
+    const nextCompanyType = COMPANY_TYPE_KEYS.includes(companyTypeFromUrl) ? companyTypeFromUrl : 'all'
+    if (nextCompanyType !== companyType) {
+      setCompanyType(nextCompanyType)
+    }
+    const topicTypeFromUrl = searchParams?.get('topic_type')
+    const nextTopicType = TOPIC_TYPE_KEYS.includes(topicTypeFromUrl) ? topicTypeFromUrl : 'all'
+    if (nextTopicType !== topicType) {
+      setTopicType(nextTopicType)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   function selectTab(next) {
     setTab(next)
+    if (next !== 'companies') {
+      setCompanyType('all')
+    }
+    if (next !== 'topics') {
+      setTopicType('all')
+    }
     const url = next === 'all' ? '/articles' : `/articles?tab=${next}`
+    router.replace(url, { scroll: false })
+  }
+
+  function selectCompanyType(next) {
+    setTab('companies')
+    setCompanyType(next)
+    const url = next === 'all' ? '/articles?tab=companies' : `/articles?tab=companies&company_type=${next}`
+    router.replace(url, { scroll: false })
+  }
+
+  function selectTopicType(next) {
+    setTab('topics')
+    setTopicType(next)
+    const url = next === 'all' ? '/articles?tab=topics' : `/articles?tab=topics&topic_type=${next}`
     router.replace(url, { scroll: false })
   }
 
@@ -68,13 +132,46 @@ export default function ArticlesIndexClient({ items }) {
   }, [items])
 
   const visible = useMemo(() => {
-    if (tab === 'all') return items
-    return items.filter((item) => item.kind === tab)
-  }, [items, tab])
+    const tabItems = tab === 'all' ? items : items.filter((item) => item.kind === tab)
+    if (tab === 'companies' && companyType !== 'all') {
+      return tabItems.filter((item) => item.companyType === companyType)
+    }
+    if (tab === 'topics' && topicType !== 'all') {
+      return tabItems.filter((item) => item.topicType === topicType)
+    }
+    return tabItems
+  }, [items, tab, companyType, topicType])
+
+  const companyTypeCounts = useMemo(() => {
+    const base = Object.fromEntries(COMPANY_TYPE_KEYS.map((k) => [k, 0]))
+    const companyItems = items.filter((item) => item.kind === 'companies')
+    base.all = companyItems.length
+    for (const item of companyItems) {
+      if (item.companyType && typeof base[item.companyType] === 'number') {
+        base[item.companyType] += 1
+      }
+    }
+    return base
+  }, [items])
+
+  const topicTypeCounts = useMemo(() => {
+    const base = Object.fromEntries(TOPIC_TYPE_KEYS.map((k) => [k, 0]))
+    const topicItems = items.filter((item) => item.kind === 'topics')
+    base.all = topicItems.length
+    for (const item of topicItems) {
+      if (item.topicType && typeof base[item.topicType] === 'number') {
+        base[item.topicType] += 1
+      }
+    }
+    return base
+  }, [items])
 
   return (
-    <div className="space-y-6">
-      <nav aria-label="知识库分类" className="flex flex-wrap items-center gap-2">
+    <div className="space-y-4">
+      <nav
+        aria-label="知识库分类"
+        className="flex flex-nowrap items-center gap-5 overflow-x-auto border-b border-[#e8dfd0] text-sm dark:border-gray-800"
+      >
         {TAB_DEFS.map((t) => {
           const active = tab === t.key
           return (
@@ -83,21 +180,21 @@ export default function ArticlesIndexClient({ items }) {
               type="button"
               onClick={() => selectTab(t.key)}
               className={[
-                'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm transition-colors',
+                'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0.5 pb-2 pt-1 transition-colors',
                 active
-                  ? 'border-[#444] bg-[#444] text-white dark:border-gray-200 dark:bg-gray-200 dark:text-[#111]'
-                  : 'border-[#ddd] bg-white text-[#555] hover:border-[#999] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500',
+                  ? 'border-[#333] text-[#222] dark:border-gray-100 dark:text-gray-100'
+                  : 'border-transparent text-[#716958] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
               ].join(' ')}
             >
-              <span>{t.label}</span>
-              <span className={active ? 'text-white/80 dark:text-[#333]' : 'text-[#999] dark:text-gray-500'}>
+              <span className={active ? 'font-semibold' : ''}>{t.label}</span>
+              <span className={active ? 'text-[#777] dark:text-gray-400' : 'text-[#999] dark:text-gray-500'}>
                 {counts[t.key] ?? 0}
               </span>
             </button>
           )
         })}
 
-        <span aria-hidden="true" className="mx-1 h-4 w-px bg-[#e0d8c8] dark:bg-gray-700" />
+        <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[#d8cdbc] dark:bg-gray-700" />
 
         {EXTERNAL_TABS.map((t) => (
           <a
@@ -105,7 +202,7 @@ export default function ArticlesIndexClient({ items }) {
             href={t.href}
             target="_blank"
             rel="noreferrer"
-            className="no-external-arrow inline-flex items-center gap-1.5 rounded-full border border-dashed border-[#d6cdb8] bg-white px-3 py-1 text-sm text-[#6c604d] no-underline hover:border-[#9c8e72] hover:text-[#2d261d] dark:border-[#3a4452] dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:text-gray-100"
+            className="no-external-arrow inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#7a6d58] no-underline hover:text-[#2d261d] dark:text-gray-400 dark:hover:text-gray-100"
           >
             <span>{t.label}</span>
             <svg
@@ -125,6 +222,64 @@ export default function ArticlesIndexClient({ items }) {
           </a>
         ))}
       </nav>
+
+      {tab === 'companies' ? (
+        <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
+          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">公司分类</span>
+          <nav aria-label="公司调研分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
+            {COMPANY_TYPE_DEFS.map((t) => {
+              const active = companyType === t.key
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => selectCompanyType(t.key)}
+                  className={[
+                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
+                    active
+                      ? 'bg-[#eef4fb] font-medium text-[#285a8d] dark:bg-[#152034] dark:text-[#9bb6df]'
+                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                  ].join(' ')}
+                >
+                  <span>{t.label}</span>
+                  <span className={active ? 'text-[#6d8db0] dark:text-[#7899bf]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                    {companyTypeCounts[t.key] ?? 0}
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      ) : null}
+
+      {tab === 'topics' ? (
+        <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
+          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">事项分类</span>
+          <nav aria-label="事项调研分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
+            {TOPIC_TYPE_DEFS.map((t) => {
+              const active = topicType === t.key
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => selectTopicType(t.key)}
+                  className={[
+                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
+                    active
+                      ? 'bg-[#eef6f1] font-medium text-[#386b54] dark:bg-[#13201a] dark:text-[#9dcab1]'
+                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                  ].join(' ')}
+                >
+                  <span>{t.label}</span>
+                  <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                    {topicTypeCounts[t.key] ?? 0}
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      ) : null}
 
       <div className="space-y-4">
         {visible.length === 0 ? (

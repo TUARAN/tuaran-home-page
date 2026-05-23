@@ -36,6 +36,7 @@ const categories = [
     slug: 'llm-tutorials',
     title: '大模型教程',
     description: '大语言模型（LLM）相关的优质教程、实践指南与技术文档。',
+    badge: 'v2026.05',
     order: 3,
   },
   {
@@ -75,11 +76,16 @@ export default function BookmarksIndexPage() {
               className="group border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:opacity-100 transition-all"
             >
               <div className="p-4">
-                <div className="flex items-baseline gap-2 mb-2">
+                <div className="flex flex-wrap items-baseline gap-2 mb-2">
                   <span className="text-[#999] text-sm">▪</span>
                   <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100 group-hover:text-[#111] dark:group-hover:text-white transition-colors">
                     {cat.title}
                   </h2>
+                  {cat.badge ? (
+                    <span className="inline-flex items-center rounded-full border border-[#cbd9ee] bg-[#eff4fc] px-2 py-[1px] text-[11px] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]">
+                      {cat.badge}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="text-sm text-[#666] dark:text-gray-300 ml-5 group-hover:text-[#333] dark:group-hover:text-gray-200 transition-colors">
                   {cat.description}

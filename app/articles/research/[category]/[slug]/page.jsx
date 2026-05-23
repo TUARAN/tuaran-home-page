@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import Script from 'next/script'
 
 import {
@@ -41,6 +42,7 @@ export async function generateMetadata({ params }) {
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
   const title = entry.title
   const description = entry.summary || `${CATEGORY_META[entry.category]?.label || ''}：${entry.title}`
+  const cover = entry.images?.[0]
 
   return {
     title,
@@ -60,8 +62,9 @@ export async function generateMetadata({ params }) {
       locale: 'zh_CN',
       type: 'article',
       publishedTime: entry.date ? new Date(entry.date).toISOString() : undefined,
+      images: cover ? [{ url: cover.src, alt: cover.alt || `${entry.title} 配图` }] : undefined,
     },
-    twitter: { card: 'summary', title, description },
+    twitter: { card: cover ? 'summary_large_image' : 'summary', title, description, images: cover ? [cover.src] : undefined },
   }
 }
 
@@ -97,6 +100,7 @@ export default async function ResearchDetailPage({ params }) {
     datePublished: entry.date ? new Date(entry.date).toISOString() : undefined,
     author: { '@type': 'Person', name: '涂阿燃', url: SITE_URL },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    image: entry.images?.length ? entry.images.map((image) => image.src) : undefined,
   }
 
   return (
@@ -201,6 +205,9 @@ export default async function ResearchDetailPage({ params }) {
             ))}
           </div>
         ) : null}
+        {entry.images?.length ? (
+          <ResearchImageStrip images={entry.images} title={entry.title} />
+        ) : null}
       </header>
 
       <div className="flex flex-col gap-6 md:flex-row">
@@ -264,6 +271,38 @@ export default async function ResearchDetailPage({ params }) {
           <ArticleFooterCta />
         </main>
       </div>
+    </div>
+  )
+}
+
+function ResearchImageStrip({ images, title }) {
+  return (
+    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      {images.map((image, index) => (
+        <figure
+          key={image.src}
+          className={[
+            'group overflow-hidden rounded-md border border-[#e8dfd0] bg-white shadow-[0_10px_26px_rgba(60,48,32,0.08)] dark:border-gray-800 dark:bg-gray-900',
+            images.length === 1 ? 'sm:col-span-3' : '',
+            images.length === 2 && index === 0 ? 'sm:col-span-2' : '',
+          ].join(' ')}
+        >
+          <div className={images.length === 1 ? 'relative aspect-[16/7]' : 'relative aspect-[4/3]'}>
+            <Image
+              src={image.src}
+              alt={image.alt || `${title} 配图 ${index + 1}`}
+              fill
+              sizes={images.length === 1 ? '(min-width: 768px) 896px, 100vw' : '(min-width: 768px) 288px, 100vw'}
+              priority={index === 0}
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            />
+          </div>
+          <figcaption className="flex items-center justify-between gap-3 px-3 py-2 text-[11px] text-[#8d806d] dark:text-gray-400">
+            <span className="truncate">{image.alt || `${title} 配图`}</span>
+            {image.credit ? <span className="shrink-0">{image.credit}</span> : null}
+          </figcaption>
+        </figure>
+      ))}
     </div>
   )
 }

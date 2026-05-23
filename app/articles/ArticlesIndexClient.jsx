@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const TAB_DEFS = [
@@ -300,59 +301,72 @@ function ArticleRow({ item }) {
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
       className="group block border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:opacity-100 transition-all"
     >
-      <div className="p-4">
-        <div className="flex flex-wrap items-baseline gap-2 mb-2">
-          <span className="text-[#999] text-sm">▪</span>
-          {item.date ? <span className="text-xs text-[#999] dark:text-gray-400">{item.date}</span> : null}
-          <span aria-hidden="true" className="text-[#ddd] text-xs">·</span>
-          <span
-            className={[
-              'inline-flex items-center rounded-full border px-2 py-[1px] text-[11px]',
-              KIND_TAG_CLASS[item.kind] || KIND_TAG_CLASS.people,
-            ].join(' ')}
-          >
-            {item.tagLabel}
-          </span>
-          {item.encrypted ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-[#e9d5b8] bg-[#fbf3e3] px-2 py-[1px] text-[11px] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
-              <svg
-                viewBox="0 0 12 12"
-                aria-hidden="true"
-                className="h-2.5 w-2.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="2.5" y="5.5" width="7" height="5" rx="1" />
-                <path d="M4.2 5.5V4a1.8 1.8 0 0 1 3.6 0v1.5" />
-              </svg>
-              加密
+      <div className="grid gap-4 p-4 sm:grid-cols-[1fr_auto]">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-baseline gap-2 mb-2">
+            <span className="text-[#999] text-sm">▪</span>
+            {item.date ? <span className="text-xs text-[#999] dark:text-gray-400">{item.date}</span> : null}
+            <span aria-hidden="true" className="text-[#ddd] text-xs">·</span>
+            <span
+              className={[
+                'inline-flex items-center rounded-full border px-2 py-[1px] text-[11px]',
+                KIND_TAG_CLASS[item.kind] || KIND_TAG_CLASS.people,
+              ].join(' ')}
+            >
+              {item.tagLabel}
             </span>
+            {item.encrypted ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#e9d5b8] bg-[#fbf3e3] px-2 py-[1px] text-[11px] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
+                <svg
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                  className="h-2.5 w-2.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="2.5" y="5.5" width="7" height="5" rx="1" />
+                  <path d="M4.2 5.5V4a1.8 1.8 0 0 1 3.6 0v1.5" />
+                </svg>
+                加密
+              </span>
+            ) : null}
+            {item.version ? (
+              <span className="inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+                {item.version}
+              </span>
+            ) : null}
+            <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100 group-hover:text-[#111] dark:group-hover:text-white transition-colors">
+              {item.title}
+            </h2>
+          </div>
+          {item.summary ? (
+            <p className="text-sm text-[#666] dark:text-gray-300 ml-5 leading-relaxed group-hover:text-[#333] dark:group-hover:text-gray-200 transition-colors">
+              {item.summary}
+            </p>
           ) : null}
-          {item.version ? (
-            <span className="inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
-              {item.version}
-            </span>
-          ) : null}
-          <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100 group-hover:text-[#111] dark:group-hover:text-white transition-colors">
-            {item.title}
-          </h2>
+          <div className="ml-5 mt-2 flex items-center gap-3 text-sm text-[#999] dark:text-gray-400">
+            <span>{external ? '阅读原文 →' : '阅读全文 →'}</span>
+            {item.readingMinutes ? (
+              <span className="font-mono text-[11px] text-[#bbb] dark:text-gray-500">
+                · {item.readingMinutes} min
+              </span>
+            ) : null}
+          </div>
         </div>
-        {item.summary ? (
-          <p className="text-sm text-[#666] dark:text-gray-300 ml-5 leading-relaxed group-hover:text-[#333] dark:group-hover:text-gray-200 transition-colors">
-            {item.summary}
-          </p>
+        {item.image ? (
+          <div className="relative h-32 overflow-hidden rounded-md border border-[#e8dfd0] bg-[#f7f2ea] dark:border-gray-800 dark:bg-gray-950 sm:h-28 sm:w-40">
+            <Image
+              src={item.image.src}
+              alt={item.image.alt || `${item.title} 配图`}
+              fill
+              sizes="(min-width: 640px) 160px, 100vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            />
+          </div>
         ) : null}
-        <div className="ml-5 mt-2 flex items-center gap-3 text-sm text-[#999] dark:text-gray-400">
-          <span>{external ? '阅读原文 →' : '阅读全文 →'}</span>
-          {item.readingMinutes ? (
-            <span className="font-mono text-[11px] text-[#bbb] dark:text-gray-500">
-              · {item.readingMinutes} min
-            </span>
-          ) : null}
-        </div>
       </div>
     </Link>
   )

@@ -121,6 +121,7 @@ function buildItems() {
       date: entry.date,
       readingMinutes: entry.readingMinutes,
       encrypted: entry.encrypted,
+      image: entry.images?.[0] || null,
       href: `/articles/research/${entry.category}/${entry.slug}`,
     }
   })

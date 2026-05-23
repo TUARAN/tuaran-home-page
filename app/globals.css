@@ -124,6 +124,13 @@
     @apply prose-table:text-sm;
     @apply prose-th:text-[#444] dark:prose-th:text-gray-200;
     @apply prose-td:text-[#666] dark:prose-td:text-gray-300;
+
+    @apply [&_.research-inline-image]:my-8 [&_.research-inline-image]:overflow-hidden;
+    @apply [&_.research-inline-image]:rounded-md [&_.research-inline-image]:border [&_.research-inline-image]:border-[#e8dfd0] dark:[&_.research-inline-image]:border-gray-800;
+    @apply [&_.research-inline-image]:bg-white dark:[&_.research-inline-image]:bg-gray-900;
+    @apply [&_.research-inline-image_img]:m-0 [&_.research-inline-image_img]:aspect-[16/9] [&_.research-inline-image_img]:h-auto [&_.research-inline-image_img]:w-full [&_.research-inline-image_img]:object-cover;
+    @apply [&_.research-inline-image_figcaption]:m-0 [&_.research-inline-image_figcaption]:border-t [&_.research-inline-image_figcaption]:border-[#e8dfd0] dark:[&_.research-inline-image_figcaption]:border-gray-800;
+    @apply [&_.research-inline-image_figcaption]:px-3 [&_.research-inline-image_figcaption]:py-2 [&_.research-inline-image_figcaption]:text-[11px] [&_.research-inline-image_figcaption]:text-[#8d806d] dark:[&_.research-inline-image_figcaption]:text-gray-400;
   }
 
   .web-llm-nav {

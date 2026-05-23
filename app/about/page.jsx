@@ -78,15 +78,15 @@ const externalChipClassName = `${chipClassName} no-external-arrow`
 
 export default function AboutPage() {
   return (
-    <main className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col justify-center px-4 py-4 sm:py-5 min-h-[calc(100svh-5.5rem)] max-h-[calc(100svh-5.5rem)] overflow-hidden">
+    <main className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col px-4 py-8 sm:justify-center sm:py-5 sm:min-h-[calc(100svh-5.5rem)] lg:max-h-[calc(100svh-5.5rem)] lg:overflow-hidden">
       <header className="shrink-0 border-b border-[#e8dfd0] pb-4 dark:border-gray-800">
         <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
           About · 关于我
         </p>
-        <h1 className="mt-2 font-serif text-xl font-semibold tracking-wide text-[#221f19] dark:text-gray-100 sm:text-2xl">
+        <h1 className="mt-2 break-words font-serif text-xl font-semibold tracking-wide text-[#221f19] dark:text-gray-100 sm:text-2xl">
           涂阿燃 <span className="text-[#888] dark:text-gray-500">TUARAN</span>
         </h1>
-        <p className="mt-1 font-mono text-[11px] tracking-wide text-[#9d9078] dark:text-[#94a0b1]">
+        <p className="mt-1 break-words font-mono text-[11px] tracking-wide text-[#9d9078] dark:text-[#94a0b1]">
           掘金安东尼 · 安东尼404 · tuaran
         </p>
         <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
@@ -111,7 +111,7 @@ export default function AboutPage() {
             2016 — 2026
           </span>
         </div>
-        <ol className="grid grid-cols-3 gap-x-2 gap-y-2 sm:grid-cols-5 lg:grid-cols-9">
+        <ol className="grid grid-cols-2 gap-x-3 gap-y-3 min-[380px]:grid-cols-3 sm:grid-cols-5 lg:grid-cols-9">
           {timeline.map((item, i) => (
             <li key={item.year} className="relative min-w-0">
               <div className="flex items-center gap-1">
@@ -134,7 +134,7 @@ export default function AboutPage() {
       </section>
 
       <div className="mt-4 grid min-h-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-        <section className="flex min-h-0 flex-col rounded-2xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:p-4">
+        <section className="flex min-h-0 flex-col rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
           <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#221f19] dark:text-gray-100">联系与数据</h2>
           <dl className="space-y-2 text-[12px] leading-5 text-[#5d554a] dark:text-gray-300">
             <div className="flex flex-wrap gap-x-2 gap-y-0.5">
@@ -146,7 +146,7 @@ export default function AboutPage() {
               <dd>
                 <a
                   href="mailto:tuaran666@gmail.com"
-                  className="text-[#5a4725] no-underline hover:underline dark:text-[#c8b99d]"
+                  className="break-all text-[#5a4725] no-underline hover:underline dark:text-[#c8b99d]"
                 >
                   tuaran666@gmail.com
                 </a>
@@ -172,7 +172,7 @@ export default function AboutPage() {
           </dl>
         </section>
 
-        <section className="flex min-h-0 flex-col rounded-2xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:p-4">
+        <section className="flex min-h-0 flex-col rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
           <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#221f19] dark:text-gray-100">站点矩阵</h2>
           <div className="flex flex-wrap gap-1.5">
             {siteLinks.map((c) => (

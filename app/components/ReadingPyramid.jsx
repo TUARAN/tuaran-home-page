@@ -133,7 +133,7 @@ export default function ReadingPyramid({ levels }) {
           const xC = (xL + xR) / 2
 
           const layerPoly = `${leftXAt(yTop)},${yTop} ${rightXAt(yTop)},${yTop} ${rightXAt(yBot)},${yBot} ${leftXAt(yBot)},${yBot}`
-          const href = lv.slug ? `/reading/${lv.slug}` : undefined
+          const href = lv.slug ? `/reading?tab=${lv.slug}` : undefined
 
           const leftLines = String(lv.leftTitle || '').split('\n')
           const rightLines = String(lv.rightTitle || '').split('\n')

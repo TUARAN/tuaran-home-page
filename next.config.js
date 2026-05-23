@@ -75,6 +75,36 @@ const nextConfig = {
         destination: '/articles?tab=people',
         permanent: true,
       },
+      {
+        source: '/reading/biography',
+        destination: '/reading?tab=biography',
+        permanent: true,
+      },
+      {
+        source: '/reading/psychology',
+        destination: '/reading?tab=psychology',
+        permanent: true,
+      },
+      {
+        source: '/reading/sociology',
+        destination: '/reading?tab=sociology',
+        permanent: true,
+      },
+      {
+        source: '/reading/wealth',
+        destination: '/reading?tab=wealth',
+        permanent: true,
+      },
+      {
+        source: '/reading/history',
+        destination: '/reading?tab=history',
+        permanent: true,
+      },
+      {
+        source: '/reading/philosophy',
+        destination: '/reading?tab=philosophy',
+        permanent: true,
+      },
     ]
   },
   images: {

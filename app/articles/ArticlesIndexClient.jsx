@@ -301,22 +301,22 @@ function ArticleRow({ item }) {
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
       className="group block border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:opacity-100 transition-all"
     >
-      <div className="grid gap-4 p-4 sm:grid-cols-[1fr_auto]">
+      <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_160px]">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-baseline gap-2 mb-2">
-            <span className="text-[#999] text-sm">▪</span>
-            {item.date ? <span className="text-xs text-[#999] dark:text-gray-400">{item.date}</span> : null}
-            <span aria-hidden="true" className="text-[#ddd] text-xs">·</span>
+          <div className="mb-2 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap">
+            <span className="shrink-0 text-sm text-[#999]">▪</span>
+            {item.date ? <span className="shrink-0 text-xs text-[#999] dark:text-gray-400">{item.date}</span> : null}
+            <span aria-hidden="true" className="shrink-0 text-xs text-[#ddd]">·</span>
             <span
               className={[
-                'inline-flex items-center rounded-full border px-2 py-[1px] text-[11px]',
+                'inline-flex shrink-0 items-center rounded-full border px-2 py-[1px] text-[11px]',
                 KIND_TAG_CLASS[item.kind] || KIND_TAG_CLASS.people,
               ].join(' ')}
             >
               {item.tagLabel}
             </span>
             {item.encrypted ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-[#e9d5b8] bg-[#fbf3e3] px-2 py-[1px] text-[11px] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#e9d5b8] bg-[#fbf3e3] px-2 py-[1px] text-[11px] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
                 <svg
                   viewBox="0 0 12 12"
                   aria-hidden="true"
@@ -334,16 +334,19 @@ function ArticleRow({ item }) {
               </span>
             ) : null}
             {item.version ? (
-              <span className="inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+              <span className="inline-flex shrink-0 items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
                 {item.version}
               </span>
             ) : null}
-            <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100 group-hover:text-[#111] dark:group-hover:text-white transition-colors">
-              {item.title}
-            </h2>
           </div>
+          <h2
+            title={item.title}
+            className="ml-5 truncate text-lg font-semibold text-[#333] transition-colors group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white"
+          >
+            {item.title}
+          </h2>
           {item.summary ? (
-            <p className="text-sm text-[#666] dark:text-gray-300 ml-5 leading-relaxed group-hover:text-[#333] dark:group-hover:text-gray-200 transition-colors">
+            <p className="ml-5 mt-2 line-clamp-2 text-sm leading-relaxed text-[#666] transition-colors group-hover:text-[#333] dark:text-gray-300 dark:group-hover:text-gray-200">
               {item.summary}
             </p>
           ) : null}

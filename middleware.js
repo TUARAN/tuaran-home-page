@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server'
 
+const CANONICAL_HOST = '2aran.com'
+const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
 const LEGACY_PATHS = new Set(['/weekly', '/articles/diary-self-reflection'])
 
 export function middleware(request) {
   const { pathname } = request.nextUrl
+  const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
+  const shouldCanonicalizeHost = LEGACY_HOSTS.has(host)
+  const shouldRedirectLegacyPath = LEGACY_PATHS.has(pathname)
 
-  if (LEGACY_PATHS.has(pathname)) {
+  if (shouldCanonicalizeHost || shouldRedirectLegacyPath) {
     const url = request.nextUrl.clone()
-    url.pathname = '/diary'
+    if (shouldCanonicalizeHost) {
+      url.protocol = 'https'
+      url.host = CANONICAL_HOST
+    }
+    if (shouldRedirectLegacyPath) {
+      url.pathname = '/diary'
+    }
     return NextResponse.redirect(url, 301)
   }
 
@@ -15,5 +26,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/weekly', '/articles/diary-self-reflection'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|rss.xml).*)'],
 }

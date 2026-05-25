@@ -1,10 +1,11 @@
 'use client'
 
-// Next.js 会错误解析到 transformers.node.mjs，此处固定导出浏览器构建
+// next.config.js 将该 alias 固定到 transformers.web.js，避免解析到 node 构建。
 export {
   AutoProcessor,
   Qwen3_5ForConditionalGeneration,
+  InterruptableStoppingCriteria,
   RawImage,
   TextStreamer,
   env,
-} from '../../node_modules/@huggingface/transformers/dist/transformers.web.js'
+} from 'transformers-web-runtime'

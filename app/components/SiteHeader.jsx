@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 
 import WebLlmModal from './WebLlmModal'
 import SettingsButton from './SettingsButton'
+import { SITE_DOMAIN } from '../../lib/siteIntro'
 
 const navItems = [
   { href: '/ai-projects', label: 'AI 项目', match: (p) => p === '/ai-projects' },
@@ -35,8 +36,8 @@ export default function SiteHeader() {
               <span className="font-serif text-xl sm:text-2xl font-semibold tracking-wide text-[#111] dark:text-gray-100">
                 涂阿燃 · 网络日志
               </span>
-              <span className="text-[11px] sm:text-xs text-[#999] dark:text-gray-500 font-normal tracking-[0.2em] uppercase">
-                tuaran
+              <span className="font-mono text-[11px] sm:text-xs font-semibold tracking-[0.16em] uppercase text-[#8b5a1f] transition-colors group-hover:text-[#5d3a12] dark:text-[#e2bd7a] dark:group-hover:text-[#ffd895]">
+                {SITE_DOMAIN}
               </span>
             </div>
           </Link>

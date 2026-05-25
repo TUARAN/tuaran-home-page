@@ -1,7 +1,7 @@
 {
-  "name": "涂阿燃 · 网络日志",
-  "short_name": "涂阿燃",
-  "description": "涂阿燃（tuaran / 掘金安东尼）的个人网络日志：技术观察、AI 工程化、知识库与调研。",
+  "name": "2aran.com · 涂阿燃网络日志",
+  "short_name": "2aran.com",
+  "description": "2aran.com 是涂阿燃（tuaran / 掘金安东尼）的个人主页与网络日志：技术观察、AI 工程化、知识库与调研。",
   "lang": "zh-CN",
   "start_url": "/",
   "scope": "/",

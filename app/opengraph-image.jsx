@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 // 不加 runtime = 'edge'：让 build 时静态生成 PNG，避免每次 social crawler 抓取都跑 worker
-export const alt = '涂阿燃（tuaran）的网络日志'
+export const alt = '2aran.com｜涂阿燃（tuaran）的网络日志'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 

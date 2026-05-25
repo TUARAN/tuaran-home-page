@@ -6,15 +6,15 @@ import LayoutChrome from './components/LayoutChrome'
 import { ThemeProvider } from './components/ThemeProvider'
 
 const SITE_URL = 'https://2aran.com'
-const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
+const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
 const SITE_DESCRIPTION =
-  '涂阿燃（安东尼）：前端与 AI 工程化独立开发者；主理博主联盟与前端下一步。个人网络日志，记录工程实践、技术情报与创作者增长。'
+  '2aran.com 是涂阿燃（安东尼）的个人主页与网络日志：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
 
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: '涂阿燃',
-  alternateName: ['tuaran', '掘金安东尼', '安东尼404'],
+  alternateName: ['2aran.com', 'tuaran', '掘金安东尼', '安东尼404'],
   url: SITE_URL,
   headline: SITE_TITLE,
   description: SITE_DESCRIPTION,
@@ -34,6 +34,7 @@ export const metadata = {
   description: SITE_DESCRIPTION,
   keywords: [
     '涂阿燃',
+    '2aran.com',
     'tuaran',
     'TUARAN',
     '掘金安东尼',

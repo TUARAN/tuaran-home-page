@@ -2,7 +2,7 @@ export const maintainedDomains = [
   {
     name: '🏠 WebHP',
     href: 'https://2aran.com',
-    domains: ['2aran.com', 'tuaran.me'],
+    domains: ['2aran.com', 'tuaran.me → 2aran.com'],
     category: '个人主页',
     focus: '个人网络日志、项目总览与长期创作内容沉淀。',
     status: '运营中',

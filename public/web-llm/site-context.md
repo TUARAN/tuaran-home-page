@@ -26,7 +26,7 @@ tuaran 是干嘛的：
 - Frontend 2 AI Agent：帮助前端工程师向 AI Agent 工程师转型。
 
 域名与站点布局：
-- 2aran.com：个人主页与网络日志；tuaran.me 为历史域名 / 备用入口。
+- 2aran.com：个人主页与网络日志；tuaran.me 为历史域名，访问时应 301 重定向到 2aran.com。
 - matrixlink.tech：公司官网。
 - blogger-alliance.cn / bzlm.net：社区平台。
 - frontendnext.com（前端下一步，原 frontendweekly.cn / qdzk.site，旧域名跳转）：帮前端在 AI 时代做转型决策。

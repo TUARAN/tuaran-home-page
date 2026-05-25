@@ -15,6 +15,7 @@ import { extractToc, renderMarkdown } from '../../../../../lib/research/markdown
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
+import DownloadPptButton from './DownloadPptButton'
 import EncryptedArticle from './EncryptedArticle'
 import ResearchBody from './ResearchBody'
 import ShareResearchButton from './ShareResearchButton'
@@ -184,6 +185,13 @@ export default async function ResearchDetailPage({ params }) {
             <div className="ml-auto flex shrink-0 items-center gap-2">
               <ShareResearchButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
               <CopyMarkdownButton markdown={markdownDoc} />
+              <DownloadPptButton
+                title={entry.title}
+                subtitle={entry.tldr || entry.summary || ''}
+                fileBaseName={entry.slug}
+                images={entry.images || []}
+                variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
+              />
               <DistributeMarkdownButton
                 title={entry.title}
                 summary={entry.summary || entry.tldr || ''}
@@ -229,13 +237,7 @@ export default async function ResearchDetailPage({ params }) {
           />
         </main>
       ) : (
-        <ResearchBody
-          variants={renderedVariants}
-          title={entry.title}
-          subtitle={entry.tldr || entry.summary || ''}
-          fileBaseName={entry.slug}
-          images={entry.images || []}
-        />
+        <ResearchBody variants={renderedVariants} />
       )}
 
       <div className="flex flex-col gap-6 md:flex-row">

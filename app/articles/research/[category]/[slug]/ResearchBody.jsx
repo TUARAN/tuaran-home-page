@@ -2,29 +2,35 @@
 
 import { useEffect, useState } from 'react'
 
-import DownloadPptButton from './DownloadPptButton'
-
 const QUERY_KEY = 'v'
+const VARIANT_EVENT = 'research:variant'
 
-export default function ResearchBody({ variants, title, subtitle, fileBaseName, images }) {
+function dispatchVariant(id) {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(VARIANT_EVENT, { detail: { id } }))
+}
+
+export default function ResearchBody({ variants }) {
   const list = Array.isArray(variants) && variants.length > 0 ? variants : []
   const [activeId, setActiveId] = useState(list[0]?.id)
   const active = list.find((v) => v.id === activeId) || list[0]
 
-  // 进入时若 URL 带 ?v=xxx 且匹配某个变体，则切到那个变体
+  // 挂载时：若 URL 带 ?v=xxx 且匹配某个变体，则切到那个变体；
+  // 无论是否切换，都广播一次当前 active id，让头部的 PPT 按钮等订阅者同步状态。
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
     const fromUrl = (params.get(QUERY_KEY) || '').toLowerCase()
-    if (fromUrl && list.some((v) => v.id === fromUrl) && fromUrl !== activeId) {
-      setActiveId(fromUrl)
-    }
-    // 仅在挂载时读一次
+    const next = fromUrl && list.some((v) => v.id === fromUrl) ? fromUrl : list[0]?.id
+    if (next && next !== activeId) setActiveId(next)
+    if (next) dispatchVariant(next)
+    // 仅在挂载时执行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function selectVariant(id) {
     setActiveId(id)
+    dispatchVariant(id)
     if (typeof window === 'undefined') return
     const url = new URL(window.location.href)
     // 默认变体（第一个）不写 query，保持链接干净
@@ -39,49 +45,36 @@ export default function ResearchBody({ variants, title, subtitle, fileBaseName, 
 
   if (!active) return null
 
-  const pptFileName = `${fileBaseName || title || 'research'}${active.id && list.length > 1 ? `-${active.id}` : ''}`
-
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-[#666] dark:text-gray-400">
-        {list.length > 1 ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[#999] dark:text-gray-500">
-              version
-            </span>
-            <div className="inline-flex overflow-hidden rounded-full border border-[#ddd8cb] bg-white/70 dark:border-[#2d3440] dark:bg-[#121821]">
-              {list.map((v) => {
-                const isActive = v.id === active.id
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => selectVariant(v.id)}
-                    className={[
-                      'px-3 py-1 text-[12px] transition',
-                      isActive
-                        ? 'bg-[#b7791f] text-white dark:bg-[#e2bd75] dark:text-[#1a1a1a]'
-                        : 'text-[#5f5a4d] hover:bg-[#fbf3e3] dark:text-gray-300 dark:hover:bg-[#1a2230]',
-                    ].join(' ')}
-                    aria-pressed={isActive}
-                  >
-                    {v.label}
-                  </button>
-                )
-              })}
-            </div>
+      {list.length > 1 ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#666] dark:text-gray-400">
+          <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[#999] dark:text-gray-500">
+            version
+          </span>
+          <div className="inline-flex overflow-hidden rounded-full border border-[#ddd8cb] bg-white/70 dark:border-[#2d3440] dark:bg-[#121821]">
+            {list.map((v) => {
+              const isActive = v.id === active.id
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => selectVariant(v.id)}
+                  className={[
+                    'px-3 py-1 text-[12px] transition',
+                    isActive
+                      ? 'bg-[#b7791f] text-white dark:bg-[#e2bd75] dark:text-[#1a1a1a]'
+                      : 'text-[#5f5a4d] hover:bg-[#fbf3e3] dark:text-gray-300 dark:hover:bg-[#1a2230]',
+                  ].join(' ')}
+                  aria-pressed={isActive}
+                >
+                  {v.label}
+                </button>
+              )
+            })}
           </div>
-        ) : null}
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <DownloadPptButton
-            title={title || ''}
-            subtitle={subtitle || ''}
-            markdown={active.content || ''}
-            images={images || []}
-            fileName={pptFileName}
-          />
         </div>
-      </div>
+      ) : null}
 
       <div className="flex flex-col gap-6 md:flex-row">
         {active.toc?.length > 1 ? (

@@ -54,6 +54,25 @@
   border-bottom: 1px solid var(--tint);
 }
 
+#web-llm-app-shell .edge-side-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 14px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 180ms ease, border-color 180ms ease;
+}
+
+#web-llm-app-shell .edge-side-back:hover {
+  color: var(--primary-strong);
+  border-bottom-color: var(--tint-strong);
+}
+
 #web-llm-app-shell .edge-side-brand {
   margin-bottom: 16px;
 }
@@ -195,11 +214,8 @@
 }
 
 #web-llm-app-shell #header {
-  padding: 18px 22px;
+  padding: 24px 26px;
   border: 1px solid var(--panel-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   background: var(--panel-bg);
   backdrop-filter: blur(18px);
   border-radius: 22px;
@@ -215,48 +231,30 @@
 }
 
 #web-llm-app-shell #header h1 {
-  font-size: 34px;
+  font-size: 36px;
   line-height: 1.1;
-  margin: 0;
+  margin: 6px 0 0;
   font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 #web-llm-app-shell .edge-hero-copy {
-  max-width: 620px;
+  max-width: 760px;
 }
 
-#web-llm-app-shell .edge-hero-manifesto {
-  margin: 10px 0 0;
-  color: var(--primary-strong);
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.45;
-}
-
-#web-llm-app-shell .edge-hero-detail {
-  margin: 10px 0 0;
+#web-llm-app-shell .edge-hero-lead {
+  margin: 14px 0 0;
   color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-#web-llm-app-shell #model-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  font-size: 15px;
+  line-height: 1.75;
 }
 
 #web-llm-app-shell select {
   padding: 11px 14px;
   border-radius: 12px;
   border: 1px solid var(--tint);
-  min-width: 250px;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-/* 下载源选择器比模型选择器窄一些，两个下拉框并排不挤 */
-#web-llm-app-shell #source-select {
   min-width: 0;
+  background: rgba(255, 255, 255, 0.92);
 }
 
 #web-llm-app-shell #load-model-btn,
@@ -299,44 +297,376 @@
   gap: 14px;
 }
 
-#web-llm-app-shell .edge-lab-map {
+/* ───── Stats strip ───── */
+
+#web-llm-app-shell .edge-stat-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-top: 14px;
 }
 
-#web-llm-app-shell .edge-lab-map article {
-  min-height: 120px;
+#web-llm-app-shell .edge-stat-strip > div {
+  padding: 16px 18px;
   border: 1px solid var(--panel-border);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.68);
-  padding: 14px;
+  background: var(--panel-bg);
   box-shadow: 0 10px 28px rgba(91, 78, 53, 0.05);
 }
 
-#web-llm-app-shell .edge-lab-map span {
-  display: inline-flex;
-  color: var(--primary);
+#web-llm-app-shell .edge-stat-strip strong {
+  display: block;
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-strong);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+#web-llm-app-shell .edge-stat-strip span {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-muted);
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
 }
 
-#web-llm-app-shell .edge-lab-map h2 {
-  margin: 8px 0 0;
-  border: 0;
+/* ───── Generic section card ───── */
+
+#web-llm-app-shell .edge-section {
+  margin-top: 18px;
+  padding: 22px 24px;
+  border: 1px solid var(--panel-border);
+  border-radius: 22px;
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-soft);
+}
+
+#web-llm-app-shell .edge-section-head {
+  margin-bottom: 18px;
+}
+
+#web-llm-app-shell .edge-section-head h2 {
+  margin: 6px 0 0;
   padding: 0;
+  border: 0;
   color: var(--text-main);
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 800;
+  letter-spacing: -0.005em;
 }
 
-#web-llm-app-shell .edge-lab-map p {
-  margin: 8px 0 0;
+#web-llm-app-shell .edge-section-sub {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.75;
+  max-width: 780px;
+}
+
+#web-llm-app-shell .edge-section-footnote {
+  margin: 14px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* ───── Runtime grid (Section 01) ───── */
+
+#web-llm-app-shell .edge-runtime-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+#web-llm-app-shell .edge-runtime-grid article {
+  padding: 18px 20px;
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+#web-llm-app-shell .edge-runtime-grid article header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#web-llm-app-shell .edge-runtime-tag {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--primary-strong);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#web-llm-app-shell .edge-runtime-grid h3 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+#web-llm-app-shell .edge-runtime-grid p {
+  margin: 0 0 12px;
   color: var(--text-muted);
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.75;
+}
+
+#web-llm-app-shell .edge-runtime-grid dl {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 12.5px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--tint);
+}
+
+#web-llm-app-shell .edge-runtime-grid dl > div {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+#web-llm-app-shell .edge-runtime-grid dt {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+#web-llm-app-shell .edge-runtime-grid dd {
+  margin: 0;
+  color: var(--text-main);
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+/* ───── Model matrix table (Section 02) ───── */
+
+#web-llm-app-shell .edge-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+}
+
+#web-llm-app-shell .edge-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 720px;
+}
+
+#web-llm-app-shell .edge-table thead th {
+  text-align: left;
+  padding: 12px 14px;
+  background: rgba(91, 78, 53, 0.07);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+#web-llm-app-shell .edge-table tbody td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--tint);
+  vertical-align: top;
+  color: var(--text-main);
+  line-height: 1.55;
+}
+
+#web-llm-app-shell .edge-table tbody td:first-child strong {
+  display: block;
+  font-weight: 700;
+}
+
+#web-llm-app-shell .edge-table tbody td:first-child span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+#web-llm-app-shell .edge-table tbody td em {
+  display: inline-block;
+  margin-top: 2px;
+  font-style: normal;
+  font-size: 11px;
+  color: #b08338;
+}
+
+#web-llm-app-shell .edge-table tbody tr:hover {
+  background: rgba(91, 78, 53, 0.04);
+}
+
+/* ───── Arch & bench grids (Section 03, 04) ───── */
+
+#web-llm-app-shell .edge-arch-grid,
+#web-llm-app-shell .edge-bench-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+#web-llm-app-shell .edge-arch-grid article,
+#web-llm-app-shell .edge-bench-grid article {
+  padding: 18px 20px;
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+#web-llm-app-shell .edge-arch-grid h3,
+#web-llm-app-shell .edge-bench-grid h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+#web-llm-app-shell .edge-arch-grid p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+#web-llm-app-shell .edge-bench-grid ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.95;
+}
+
+#web-llm-app-shell .edge-bench-grid li::marker {
+  color: var(--primary);
+}
+
+#web-llm-app-shell .edge-bench-grid li strong {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+#web-llm-app-shell .edge-bench-grid li a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 180ms ease;
+}
+
+#web-llm-app-shell .edge-bench-grid li a strong {
+  color: inherit;
+}
+
+#web-llm-app-shell .edge-bench-grid li a:hover {
+  border-bottom-color: var(--accent);
+}
+
+.dark #web-llm-app-shell .edge-bench-grid li a {
+  color: #93c5fd;
+}
+
+/* ───── Experiment section (Section 05) ───── */
+
+#web-llm-app-shell .edge-section-lab {
+  display: flex;
+  flex-direction: column;
+}
+
+#web-llm-app-shell .edge-controls-panel {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--tint);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+#web-llm-app-shell .edge-controls-label {
+  margin-bottom: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+#web-llm-app-shell .edge-controls-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+#web-llm-app-shell .edge-controls-row select {
+  width: 100%;
+}
+
+#web-llm-app-shell .edge-controls-row #load-model-btn {
+  white-space: nowrap;
+  padding: 11px 22px;
+  justify-self: end;
+  min-width: 120px;
+}
+
+/* ───── Reading list ───── */
+
+#web-llm-app-shell .edge-reading-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+#web-llm-app-shell .edge-reading-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--tint);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+#web-llm-app-shell .edge-reading-tag {
+  flex-shrink: 0;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--primary-strong);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#web-llm-app-shell .edge-reading-list a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid transparent;
+  transition: border-color 180ms ease;
+}
+
+#web-llm-app-shell .edge-reading-list a:hover {
+  border-bottom-color: var(--accent);
+}
+
+#web-llm-app-shell .edge-reading-note {
+  color: var(--text-muted);
+  font-size: 12.5px;
 }
 
 #web-llm-app-shell #runtime-notice {
@@ -580,20 +910,8 @@
     padding: 12px;
   }
 
-  #web-llm-app-shell #header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
-  }
-
   #web-llm-app-shell #header h1 {
     font-size: 30px;
-  }
-
-  #web-llm-app-shell #model-controls {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
   }
 
   #web-llm-app-shell select {
@@ -605,8 +923,22 @@
     max-width: 92%;
   }
 
-  #web-llm-app-shell .edge-lab-map {
+  #web-llm-app-shell .edge-stat-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #web-llm-app-shell .edge-runtime-grid,
+  #web-llm-app-shell .edge-arch-grid,
+  #web-llm-app-shell .edge-bench-grid {
     grid-template-columns: 1fr;
+  }
+
+  #web-llm-app-shell .edge-controls-row {
+    grid-template-columns: 1fr;
+  }
+
+  #web-llm-app-shell .edge-controls-row #load-model-btn {
+    width: 100%;
   }
 }
 
@@ -620,11 +952,19 @@
   }
 
   #web-llm-app-shell #header h1 {
-    font-size: 28px;
+    font-size: 26px;
   }
 
-  #web-llm-app-shell .edge-hero-manifesto {
-    font-size: 18px;
+  #web-llm-app-shell .edge-stat-strip strong {
+    font-size: 22px;
+  }
+
+  #web-llm-app-shell .edge-section {
+    padding: 18px 16px;
+  }
+
+  #web-llm-app-shell .edge-section-head h2 {
+    font-size: 19px;
   }
 
   #web-llm-app-shell #input-form {
@@ -664,12 +1004,38 @@
 }
 
 .dark #web-llm-app-shell .edge-side-note,
-.dark #web-llm-app-shell .edge-lab-map article {
+.dark #web-llm-app-shell .edge-stat-strip > div,
+.dark #web-llm-app-shell .edge-runtime-grid article,
+.dark #web-llm-app-shell .edge-arch-grid article,
+.dark #web-llm-app-shell .edge-bench-grid article,
+.dark #web-llm-app-shell .edge-controls-panel,
+.dark #web-llm-app-shell .edge-reading-list li {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.dark #web-llm-app-shell .edge-hero-manifesto {
+.dark #web-llm-app-shell .edge-stat-strip strong {
   color: #e8dcc4;
+}
+
+.dark #web-llm-app-shell .edge-table thead th {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark #web-llm-app-shell .edge-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dark #web-llm-app-shell .edge-runtime-tag,
+.dark #web-llm-app-shell .edge-reading-tag {
+  color: #e8dcc4;
+}
+
+.dark #web-llm-app-shell .edge-reading-list a {
+  color: #93c5fd;
+}
+
+.dark #web-llm-app-shell .edge-table tbody td em {
+  color: #d6a85a;
 }
 
 .dark #web-llm-app-shell .chat-item:hover {

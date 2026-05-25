@@ -35,7 +35,9 @@ export default function ShareResearchButton({ title, text, url }) {
   }
 
   async function handleShare() {
-    const targetUrl = url || window.location.href
+    // 优先用当前浏览器 URL（会包含 ?v= 之类的变体参数），失败时回退到 SSR 传入的 canonical URL
+    const targetUrl =
+      typeof window !== 'undefined' && window.location?.href ? window.location.href : url
     const payload = {
       title,
       text,

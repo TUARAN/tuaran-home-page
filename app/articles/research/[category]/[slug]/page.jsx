@@ -16,6 +16,7 @@ import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
 import EncryptedArticle from './EncryptedArticle'
+import ResearchBody from './ResearchBody'
 import ShareResearchButton from './ShareResearchButton'
 
 const SITE_URL = 'https://2aran.com'
@@ -74,12 +75,21 @@ export default async function ResearchDetailPage({ params }) {
   if (!entry) notFound()
 
   const isEncrypted = entry.encrypted
-  const html = isEncrypted ? '' : renderMarkdown(entry.content, {
-    images: entry.images || [],
-    seed: `${entry.category}:${entry.slug}`,
-    title: entry.title,
-  })
-  const toc = isEncrypted ? [] : extractToc(entry.content)
+  const variantList = isEncrypted ? [] : Array.isArray(entry.variants) && entry.variants.length > 0
+    ? entry.variants
+    : [{ id: entry.source || 'claude-code', label: '', content: entry.content }]
+  const renderedVariants = isEncrypted
+    ? []
+    : variantList.map((variant, index) => ({
+        id: variant.id,
+        label: variant.label || variant.id,
+        html: renderMarkdown(variant.content, {
+          images: index === 0 ? entry.images || [] : [],
+          seed: `${entry.category}:${entry.slug}:${variant.id}`,
+          title: entry.title,
+        }),
+        toc: extractToc(variant.content),
+      }))
   // 一键复制用的 Markdown：标题 + 正文（不含 YAML frontmatter）；加密文章不提供
   const markdownDoc = isEncrypted ? '' : `# ${entry.title}\n\n${entry.content}`
   const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
@@ -210,39 +220,20 @@ export default async function ResearchDetailPage({ params }) {
         ) : null}
       </header>
 
+      {isEncrypted ? (
+        <main>
+          <EncryptedArticle
+            payload={entry.encryptedPayload}
+            storageKey={`research-dec:${entry.category}:${entry.slug}`}
+          />
+        </main>
+      ) : (
+        <ResearchBody variants={renderedVariants} />
+      )}
+
       <div className="flex flex-col gap-6 md:flex-row">
-        {toc.length > 1 ? (
-          <aside className="hidden md:block md:w-52 shrink-0">
-            <nav className="toc-scroll-panel">
-              <div className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">
-                目录
-              </div>
-              <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">
-                {toc.map((item) => (
-                  <li key={item.id}>
-                    <a
-                      href={`#${item.id}`}
-                      className="text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
-                    >
-                      {item.text}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </aside>
-        ) : null}
-
+        <div className="hidden md:block md:w-52 shrink-0" aria-hidden="true" />
         <main className="flex-1 min-w-0">
-          {isEncrypted ? (
-            <EncryptedArticle
-              payload={entry.encryptedPayload}
-              storageKey={`research-dec:${entry.category}:${entry.slug}`}
-            />
-          ) : (
-            <article className="prose-tuaran" dangerouslySetInnerHTML={{ __html: html }} />
-          )}
-
           {related.length ? (
             <section className="mx-auto mt-12 max-w-[72ch] border-t border-[#e8dfd0] pt-8 dark:border-gray-800">
               <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">

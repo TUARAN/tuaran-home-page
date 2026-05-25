@@ -1,11 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+const QUERY_KEY = 'v'
 
 export default function ResearchBody({ variants }) {
   const list = Array.isArray(variants) && variants.length > 0 ? variants : []
   const [activeId, setActiveId] = useState(list[0]?.id)
   const active = list.find((v) => v.id === activeId) || list[0]
+
+  // 进入时若 URL 带 ?v=xxx 且匹配某个变体，则切到那个变体
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const fromUrl = (params.get(QUERY_KEY) || '').toLowerCase()
+    if (fromUrl && list.some((v) => v.id === fromUrl) && fromUrl !== activeId) {
+      setActiveId(fromUrl)
+    }
+    // 仅在挂载时读一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function selectVariant(id) {
+    setActiveId(id)
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    // 默认变体（第一个）不写 query，保持链接干净
+    if (id === list[0]?.id) {
+      url.searchParams.delete(QUERY_KEY)
+    } else {
+      url.searchParams.set(QUERY_KEY, id)
+    }
+    const next = url.pathname + (url.search || '') + (url.hash || '')
+    window.history.replaceState(null, '', next)
+  }
 
   if (!active) return null
 
@@ -23,7 +51,7 @@ export default function ResearchBody({ variants }) {
                 <button
                   key={v.id}
                   type="button"
-                  onClick={() => setActiveId(v.id)}
+                  onClick={() => selectVariant(v.id)}
                   className={[
                     'px-3 py-1 text-[12px] transition',
                     isActive

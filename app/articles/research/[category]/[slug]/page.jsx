@@ -234,6 +234,7 @@ export default async function ResearchDetailPage({ params }) {
           title={entry.title}
           subtitle={entry.tldr || entry.summary || ''}
           fileBaseName={entry.slug}
+          images={entry.images || []}
         />
       )}
 

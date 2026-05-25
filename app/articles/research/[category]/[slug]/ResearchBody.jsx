@@ -6,7 +6,7 @@ import DownloadPptButton from './DownloadPptButton'
 
 const QUERY_KEY = 'v'
 
-export default function ResearchBody({ variants, title, subtitle, fileBaseName }) {
+export default function ResearchBody({ variants, title, subtitle, fileBaseName, images }) {
   const list = Array.isArray(variants) && variants.length > 0 ? variants : []
   const [activeId, setActiveId] = useState(list[0]?.id)
   const active = list.find((v) => v.id === activeId) || list[0]
@@ -77,6 +77,7 @@ export default function ResearchBody({ variants, title, subtitle, fileBaseName }
             title={title || ''}
             subtitle={subtitle || ''}
             markdown={active.content || ''}
+            images={images || []}
             fileName={pptFileName}
           />
         </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-export default function DownloadPptButton({ title, subtitle, markdown, fileName }) {
+export default function DownloadPptButton({ title, subtitle, markdown, images, fileName }) {
   const [state, setState] = useState('idle') // idle | working | done | failed
 
   function flash(next, ms = 2000) {
@@ -15,7 +15,7 @@ export default function DownloadPptButton({ title, subtitle, markdown, fileName 
     setState('working')
     try {
       const { generateAndDownloadPptx } = await import('../../../../../lib/research/pptx')
-      await generateAndDownloadPptx({ title, subtitle, markdown, fileName })
+      await generateAndDownloadPptx({ title, subtitle, markdown, images, fileName })
       flash('done')
     } catch (err) {
       console.error('[ppt download]', err)

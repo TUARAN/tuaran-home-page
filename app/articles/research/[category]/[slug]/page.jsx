@@ -178,7 +178,7 @@ export default async function ResearchDetailPage({ params }) {
           {entry.source ? (
             <>
               <span aria-hidden="true">·</span>
-              <span>来源：{entry.source}</span>
+              <span>来源：{entry.sourceLabel || 'TUARAN'}</span>
             </>
           ) : null}
           {isEncrypted ? null : (

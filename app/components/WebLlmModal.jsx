@@ -3,9 +3,9 @@ import Link from 'next/link'
 export default function WebLlmModal() {
   return (
     <Link
-      href="/web-llm"
+      href="/voice-tasks"
       className="web-llm-nav web-llm-float no-underline hover:no-underline"
-      aria-label="打开大模型问答页面"
+      aria-label="打开语音记事"
     >
       <svg
         aria-hidden="true"
@@ -17,15 +17,12 @@ export default function WebLlmModal() {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="M12 3v2.2" />
-        <path d="M8.2 8.2h7.6a2.8 2.8 0 0 1 2.8 2.8v4.6a2.8 2.8 0 0 1-2.8 2.8H8.2a2.8 2.8 0 0 1-2.8-2.8V11a2.8 2.8 0 0 1 2.8-2.8Z" />
-        <path d="M9.5 12.7h.01" />
-        <path d="M14.5 12.7h.01" />
-        <path d="M9 16h6" />
-        <path d="M7 8.7 5.4 7.5" />
-        <path d="M17 8.7l1.6-1.2" />
+        <path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z" />
+        <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+        <path d="M12 18v3" />
+        <path d="M8 21h8" />
       </svg>
-      <span className="web-llm-nav-label">大模型问答</span>
+      <span className="web-llm-nav-label">语音记事</span>
     </Link>
   )
 }

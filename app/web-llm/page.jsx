@@ -1,8 +1,10 @@
 import WebLlmPageClient from './WebLlmPageClient'
 
+import './webllm.css'
+
 export const metadata = {
-  title: '大模型问答',
-  description: '在浏览器端通过 WebGPU 加载 ONNX 大模型，并完成本地会话与流式对话。',
+  title: '端侧大模型',
+  description: '记录端侧大模型部署、本地推理运行时、浏览器 WebGPU、Ollama、移动端与边缘设备智能实践。',
   alternates: {
     canonical: '/web-llm',
   },

@@ -12,8 +12,7 @@ const navItems = [
   { href: '/articles', label: '知识库', match: (p) => p?.startsWith('/articles') },
   { href: '/reading', label: '书库', match: (p) => p?.startsWith('/reading') },
   { href: '/bookmarks', label: '资源库', match: (p) => p?.startsWith('/bookmarks') },
-  { href: '/voice-tasks', label: '语音记事', match: (p) => p?.startsWith('/voice-tasks') },
-  { href: '/web-llm', label: '在线大模型', match: (p) => p?.startsWith('/web-llm') },
+  { href: '/web-llm', label: '端侧大模型', match: (p) => p?.startsWith('/web-llm') },
 ]
 
 export default function SiteHeader() {

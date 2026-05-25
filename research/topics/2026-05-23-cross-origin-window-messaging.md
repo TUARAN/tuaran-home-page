@@ -5,7 +5,7 @@ topic_type: tech
 date: 2026-05-23
 tags: [Web 安全, 跨域通信, postMessage, Same-Origin Policy, CORS, 前端工程, 内容分发]
 summary: 围绕浏览器同源策略、CORS、window.open、window.opener、iframe 与 postMessage，系统解释跨域窗口通信的原理、安全边界、常见模式和工程落地方案，并结合 2aran.com 向 syncblog.cn 分发 Markdown 的场景给出实现建议。
-tldr: postMessage 是浏览器为跨源窗口、弹窗和 iframe 提供的标准通信机制。它不是绕过同源策略，而是在双方显式配合、校验 origin 和消息类型的前提下，建立一条受控消息通道。
+tldr: postMessage 是浏览器为跨源窗口、弹窗和 iframe 提供的标准通信机制。它在同源策略之上提供一条受控消息通道，前提是双方显式配合，并校验 origin 和消息类型。
 source: codex
 model: gpt-5
 ---
@@ -58,7 +58,7 @@ model: gpt-5
 | localStorage | 同源本地存储 | 保存草稿、配置 | 跨源不可写 |
 | BroadcastChannel | 同源上下文广播 | 同站多个 tab 同步 | 不能跨源 |
 
-在 2aran.com → syncblog.cn 的案例里，目标不是请求一个 API 返回数据，而是让另一个已经打开的网页把 Markdown 写进自己的编辑器。因此核心不是 CORS，而是跨窗口消息通信。
+在 2aran.com → syncblog.cn 的案例里，目标是让另一个已经打开的网页把 Markdown 写进自己的编辑器，不是请求一个 API 返回数据。因此核心是跨窗口消息通信，不是 CORS。
 
 ## 四、postMessage 的基本机制
 
@@ -219,7 +219,7 @@ window.addEventListener('message', (event) => {
 
 为了防止反向标签劫持，很多链接会加 `rel="noopener"`。但如果用 `noopener` 打开新窗口，新窗口拿不到 `window.opener`，就不能主动回 ready。
 
-这不是说不能用 `noopener`，而是要看通信模式：
+`noopener` 能不能用，取决于通信模式：
 
 | 打开方式 | opener 是否可用 | 适合场景 |
 |---|---|---|
@@ -298,11 +298,11 @@ window.addEventListener('message', (event) => {
 
 ## 十、综合判断
 
-`postMessage` 是前端工程里非常重要但容易被误用的能力。它不是“突破浏览器安全限制”，而是在同源策略之上提供一条受控的协作通道：发送方必须拿到目标窗口引用并指定目标源，接收方必须显式监听、校验来源和消息结构，然后决定是否处理。
+`postMessage` 是前端工程里非常重要但容易被误用的能力。它在同源策略之上提供一条受控的协作通道：发送方必须拿到目标窗口引用并指定目标源，接收方必须显式监听、校验来源和消息结构，然后决定是否处理。
 
 对内容工具而言，这类能力很实用。2aran.com 负责生成和沉淀调研内容，syncblog.cn 负责排版、预览和多平台分发。两者不需要共享数据库，也不需要让一个站点直接控制另一个站点；只要用 `postMessage` 建立一次用户触发的导入动作，就能完成“从知识库到内容分发工作台”的顺滑跳转。
 
-一句话判断：**跨域窗口通信的正确姿势，不是绕过浏览器限制，而是让两个可信应用在浏览器允许的安全边界内明确握手、明确传输、明确校验。**
+一句话判断：**跨域窗口通信的正确姿势，是让两个可信应用在浏览器允许的安全边界内明确握手、明确传输、明确校验。**
 
 ## 十一、信息来源与参考
 

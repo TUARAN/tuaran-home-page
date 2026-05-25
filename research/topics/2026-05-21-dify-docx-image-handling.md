@@ -39,7 +39,7 @@ model: claude-opus-4-7
 | **外链图片**（仅 URL） | `is_external == True` | 经 `core.helper.ssrf_proxy.get(url)` 下载（SSRF 防护）；扩展名由响应 `Content-Type` 猜测；下载失败则 `warning` 并**跳过该图**，不中断整篇 | `rId` |
 
 - 两类最终**都被落地到 Dify 自有存储**，并替换为内联 markdown：`![image]({FILES_URL}/files/{id}/file-preview)` `[源码]`。
-  → 外链图片不会以「裸 URL」留存，而是被**下载并本地化重托管**。
+  → 外链图片不会以「裸 URL」留存，会被**下载并本地化重托管**。
 - v1.11.1 专门修复过「DOCX 外链图片导致抽取失败」的缺陷（PR #29558，`[v1.11.1]` § Document Handling）。
 
 ## 三、底层技术逻辑：解压 / 解析 / 存储 / 与 chunk 关联

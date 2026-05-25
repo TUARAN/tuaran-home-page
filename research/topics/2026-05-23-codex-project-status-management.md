@@ -4,7 +4,7 @@ category: topics
 date: 2026-05-23
 tags: [Codex, 项目管理, 工作流, 知识库]
 summary: 对当前本地 Codex 与 GitHub 项目进行全局梳理，建立 active / maintain / incubate / paused / archive / system 的状态管理框架。
-tldr: 当前不是项目太多，而是项目状态、承诺级别和工作区干净程度缺少统一台账。
+tldr: 当前问题集中在项目状态、承诺级别和工作区干净程度缺少统一台账，并非项目数量本身。
 topic_type: product
 source: codex
 encrypted: true

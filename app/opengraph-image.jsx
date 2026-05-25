@@ -71,7 +71,7 @@ export default async function OgImage() {
               maxWidth: 900,
             }}
           >
-            选一件值得投入二十年的事，每日复利，高频迭代。
+            选一件值得投入 20 年的事，每日复利，高频迭代。
           </div>
         </div>
 

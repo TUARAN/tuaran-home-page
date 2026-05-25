@@ -479,7 +479,7 @@ export default function HomePage() {
                 </p>
                 <blockquote className="mx-auto mt-3 max-w-[min(280px,100%)]">
                   <p className="font-serif text-[15px] leading-[1.9] tracking-wide text-[#3d362b] dark:text-gray-200">
-                    选一件值得投入 <span className="font-semibold">二十年</span> 的事，
+                    选一件值得投入 <span className="font-semibold">20 年</span> 的事，
                     <span className="mt-0.5 block">每日复利，高频迭代。</span>
                   </p>
                   <div className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#9a8f7a] dark:text-gray-500">

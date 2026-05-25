@@ -146,7 +146,7 @@ model: claude-opus-4-7       # 实际使用的模型 ID（可选）
 
 ```bash
 git add research/
-git commit -m "research: add <你的 slug>"
+git commit -m "research: add <slug>"
 git push
 ```
 

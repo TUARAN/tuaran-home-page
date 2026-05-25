@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 
+import DownloadPptButton from './DownloadPptButton'
+
 const QUERY_KEY = 'v'
 
-export default function ResearchBody({ variants }) {
+export default function ResearchBody({ variants, title, subtitle, fileBaseName }) {
   const list = Array.isArray(variants) && variants.length > 0 ? variants : []
   const [activeId, setActiveId] = useState(list[0]?.id)
   const active = list.find((v) => v.id === activeId) || list[0]
@@ -37,36 +39,48 @@ export default function ResearchBody({ variants }) {
 
   if (!active) return null
 
+  const pptFileName = `${fileBaseName || title || 'research'}${active.id && list.length > 1 ? `-${active.id}` : ''}`
+
   return (
     <>
-      {list.length > 1 ? (
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#666] dark:text-gray-400">
-          <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[#999] dark:text-gray-500">
-            version
-          </span>
-          <div className="inline-flex overflow-hidden rounded-full border border-[#ddd8cb] bg-white/70 dark:border-[#2d3440] dark:bg-[#121821]">
-            {list.map((v) => {
-              const isActive = v.id === active.id
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => selectVariant(v.id)}
-                  className={[
-                    'px-3 py-1 text-[12px] transition',
-                    isActive
-                      ? 'bg-[#b7791f] text-white dark:bg-[#e2bd75] dark:text-[#1a1a1a]'
-                      : 'text-[#5f5a4d] hover:bg-[#fbf3e3] dark:text-gray-300 dark:hover:bg-[#1a2230]',
-                  ].join(' ')}
-                  aria-pressed={isActive}
-                >
-                  {v.label}
-                </button>
-              )
-            })}
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-[#666] dark:text-gray-400">
+        {list.length > 1 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[#999] dark:text-gray-500">
+              version
+            </span>
+            <div className="inline-flex overflow-hidden rounded-full border border-[#ddd8cb] bg-white/70 dark:border-[#2d3440] dark:bg-[#121821]">
+              {list.map((v) => {
+                const isActive = v.id === active.id
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => selectVariant(v.id)}
+                    className={[
+                      'px-3 py-1 text-[12px] transition',
+                      isActive
+                        ? 'bg-[#b7791f] text-white dark:bg-[#e2bd75] dark:text-[#1a1a1a]'
+                        : 'text-[#5f5a4d] hover:bg-[#fbf3e3] dark:text-gray-300 dark:hover:bg-[#1a2230]',
+                    ].join(' ')}
+                    aria-pressed={isActive}
+                  >
+                    {v.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
+        ) : null}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <DownloadPptButton
+            title={title || ''}
+            subtitle={subtitle || ''}
+            markdown={active.content || ''}
+            fileName={pptFileName}
+          />
         </div>
-      ) : null}
+      </div>
 
       <div className="flex flex-col gap-6 md:flex-row">
         {active.toc?.length > 1 ? (

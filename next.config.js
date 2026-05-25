@@ -41,6 +41,15 @@ const nextConfig = {
         test: /\.wasm$/,
         type: 'asset/resource',
       })
+      // pptxgenjs 在浏览器构建时仍会出现 import('node:fs') / import('node:https')
+      // 的字面量动态导入；用 NormalModuleReplacementPlugin 把它们重写到空模块。
+      const webpack = require('webpack')
+      config.plugins = config.plugins || []
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^node:(fs|https|os|path)$/, (resource) => {
+          resource.request = path.resolve(__dirname, 'lib/empty-module.js')
+        }),
+      )
     }
     return config
   },

@@ -17,6 +17,13 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   transpilePackages: ['@huggingface/transformers'],
   webpack: (config, { isServer }) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'transformers-web-runtime$': path.resolve(
+        __dirname,
+        'node_modules/@huggingface/transformers/dist/transformers.web.js',
+      ),
+    }
     if (!isServer) {
       // Next 默认会解析到 transformers.node.mjs，浏览器端必须用 web 构建
       config.resolve.alias = {

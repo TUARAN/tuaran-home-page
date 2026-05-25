@@ -213,7 +213,7 @@ export default async function ResearchDetailPage({ params }) {
       <div className="flex flex-col gap-6 md:flex-row">
         {toc.length > 1 ? (
           <aside className="hidden md:block md:w-52 shrink-0">
-            <nav className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900 md:sticky md:top-6">
+            <nav className="toc-scroll-panel">
               <div className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">
                 目录
               </div>

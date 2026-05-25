@@ -1,10 +1,10 @@
 # 调研知识库（写作约定）
 
-本目录是「大模型调研知识库」的存储源头。所有调研报告都以 Markdown 文件落到这里，
+本目录是「TUARAN 调研知识库」的存储源头。所有调研报告都以 Markdown 文件落到这里，
 随主站仓库一起 `git push`，Cloudflare Pages 自动重新构建后即在 `2aran.com/articles` 上线。
 
-> 网站不调用任何大模型。调研内容统一由 **本地的 Claude Code / CodeX 等终端工具** 生成
-> （它们底层调云端模型），输出符合本约定的 MD，落到这里即可。
+> 网站不调用任何大模型。调研内容的作者与来源统一记为 **TUARAN**；
+> Claude Code / Codex / 豆包 / Gemini 等只作为协助工具标注，例如 `TUARAN（Codex 协助）`。
 
 ---
 
@@ -44,8 +44,8 @@ tags: [AI, 大模型, 公司]
 summary: 一句话概述本篇调研要回答的问题与结论。
 tldr: 不写则回退用 summary；想突出与 summary 不同的一句话总结时填这里。
 topic_type: market           # 仅 topics 用：industry | tech | product | market | thesis
-source: claude-code          # claude-code | codex | manual
-model: claude-opus-4-7       # 实际使用的模型 ID（可选）
+source: claude-code          # 协助工具：claude-code | codex | doubao | gemini | gpt | manual
+model: claude-opus-4-7       # 底层模型 ID（可选，仅作内部记录）
 ---
 ```
 
@@ -58,8 +58,8 @@ model: claude-opus-4-7       # 实际使用的模型 ID（可选）
 | `summary` | ⭕ | 一句话摘要，列表页展示 |
 | `tldr` | ⭕ | 详情页顶部 TL;DR 框使用；不写则回退 `summary` 或正文首段 |
 | `topic_type` | ⭕ | 仅 `topics` 用，二级类型：`industry` 行业 / `tech` 技术 / `product` 产品 / `market` 市场 / `thesis` 观点 |
-| `source` | ⭕ | 生成来源：`claude-code` / `codex` / `manual` |
-| `model` | ⭕ | 实际模型 ID |
+| `source` | ⭕ | 协助工具：`claude-code` / `codex` / `doubao` / `gemini` / `gpt` / `manual`；前台统一展示为 `来源：TUARAN（Codex 协助）` 这类口径 |
+| `model` | ⭕ | 底层模型 ID，仅作内部追溯，不作为文章来源 |
 
 > 📐 **阅读时长**由 loader 自动按字数估算（中文 ~300 字/分钟），不需要在 frontmatter 写。
 

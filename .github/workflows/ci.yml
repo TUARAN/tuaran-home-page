@@ -39,4 +39,6 @@ jobs:
         env:
           # build 期间不需要真实 NextAuth 凭证，给占位值避免 NextAuth 报错
           NEXTAUTH_SECRET: ci-placeholder-not-for-runtime
-          NEXTAUTH_URL: https://tuaran.me
+          NEXTAUTH_URL: https://2aran.com
+          # CI 只验证构建链路，加密文章用占位密码生成临时 payload；生产环境使用 Cloudflare Pages 中配置的真实值
+          RESEARCH_ENCRYPTION_PASSWORD: ci-placeholder-not-for-runtime

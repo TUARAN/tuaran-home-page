@@ -7,8 +7,6 @@
 
 import { useEffect, useRef } from 'react'
 
-import './webllm.css'
-
 const MODEL_OPTIONS = {
   'onnx-community/Qwen3.5-0.8B-ONNX': {
     label: 'Qwen3.5-0.8B-ONNX',
@@ -700,18 +698,44 @@ export default function WebLlmPageClient() {
     <div id="web-llm-app-shell">
       <aside id="sidebar">
         <div id="sidebar-header">
+          <div className="edge-side-brand">
+            <p className="eyebrow">On-device AI</p>
+            <h2>端侧大模型</h2>
+            <p>
+              把模型部署到真实设备、本机运行时和边缘节点上。
+            </p>
+          </div>
           <button id="new-chat-btn" type="button">
             + 新建对话
           </button>
         </div>
+        <section className="edge-side-note" aria-label="专题路线">
+          <p className="edge-side-kicker">长期专题</p>
+          <ul>
+            <li>浏览器 WebGPU 与本机推理运行时</li>
+            <li>Ollama、llama.cpp、MLC、ONNX Runtime</li>
+            <li>模型量化、缓存、离线包和私有数据</li>
+            <li>手机、PC、NAS、边缘设备上的智能体</li>
+            <li>端云协同与分布式智能网络</li>
+          </ul>
+        </section>
+        <p className="chat-list-label">本地对话记录</p>
         <div id="chat-list" />
       </aside>
 
       <main id="main">
         <header id="header">
-          <div>
-            <p className="eyebrow">Browser-side Multimodal Chat</p>
-            <h1>Qwen WebGPU Chat</h1>
+          <div className="edge-hero-copy">
+            <p className="eyebrow">Distributed Intelligence Lab</p>
+            <h1>端侧大模型</h1>
+            <p className="edge-hero-manifesto">
+              端侧大模型是分布式的智能，是真正的未来。
+            </p>
+            <p className="edge-hero-detail">
+              这里会持续沉淀端侧模型部署的调研、实验和工程实践，覆盖浏览器 WebGPU、本机 Ollama /
+              llama.cpp、移动端、NAS、边缘设备和端云协同。当前实验台先用 WebGPU 加载 Qwen ONNX
+              模型，作为端侧运行形态的一条验证路径。
+            </p>
           </div>
           <div id="model-controls">
             <select id="source-select" aria-label="选择下载源" defaultValue="mirror">
@@ -728,6 +752,24 @@ export default function WebLlmPageClient() {
             </button>
           </div>
         </header>
+
+        <section className="edge-lab-map" aria-label="端侧大模型规划">
+          <article>
+            <span>01</span>
+            <h2>运行形态</h2>
+            <p>浏览器 WebGPU、本机 Ollama / llama.cpp、ONNX Runtime、MLC、移动端和边缘硬件。</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h2>工程部署</h2>
+            <p>量化、模型缓存、离线包、设备能力探测、私有数据接入和低配机器降级策略。</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h2>连接成网</h2>
+            <p>端侧智能体、隐私数据本地化、端云协同、多设备协作与分布式智能。</p>
+          </article>
+        </section>
 
         <section id="runtime-notice" aria-live="polite" />
 

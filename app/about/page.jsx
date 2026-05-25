@@ -66,7 +66,7 @@ const siteStops = [
   { label: '知识库', href: '/articles' },
   { label: 'AI 项目', href: '/ai-projects' },
   { label: '上下文记忆', href: '/context-memory' },
-  { label: '对话', href: '/web-llm' },
+  { label: '端侧大模型', href: '/web-llm' },
   { label: '待办', href: '/xiaomoli-dad-todo' },
   { label: '请喝咖啡', href: '/donate' },
 ]

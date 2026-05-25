@@ -528,11 +528,11 @@ export default function HomePage() {
             className="group block rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
           >
             <div className="mb-1 flex items-baseline gap-2">
-              <span className="text-[18px]" aria-hidden="true">🤖</span>
-              <span className="font-semibold text-[#1d1a16] dark:text-gray-100">浏览器跑大模型</span>
+              <span className="text-[18px]" aria-hidden="true">▣</span>
+              <span className="font-semibold text-[#1d1a16] dark:text-gray-100">端侧大模型</span>
             </div>
             <p className="text-[13px] leading-6 text-[#666] dark:text-gray-400">
-              WebGPU 直接在浏览器内加载 Qwen 系列 ONNX 模型对话。
+              记录 WebGPU、Ollama、本机运行时、边缘设备与分布式智能实践。
             </p>
           </Link>
         </div>

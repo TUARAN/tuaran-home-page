@@ -4,17 +4,22 @@
 // 不强行画 sidebar/列表/网格，避免在错误布局的页面上闪烁。
 export default function Loading() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
+    <div className="w-full max-w-[1120px] mx-auto px-4 py-12">
       <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-4">
         <div className="h-8 w-40 bg-[#eee] dark:bg-gray-800 animate-pulse" />
-        <div className="mt-3 h-4 w-64 bg-[#eee] dark:bg-gray-800 animate-pulse" />
+        <div className="mt-3 h-4 w-[min(28rem,70%)] bg-[#eee] dark:bg-gray-800 animate-pulse" />
       </header>
 
-      <div className="space-y-3">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="h-28 bg-[#eee] dark:bg-gray-800 animate-pulse" />
+        <div className="h-28 bg-[#eee] dark:bg-gray-800 animate-pulse" />
+        <div className="h-28 bg-[#eee] dark:bg-gray-800 animate-pulse" />
+      </div>
+
+      <div className="mt-8 space-y-3">
         <div className="h-4 w-full bg-[#eee] dark:bg-gray-800 animate-pulse" />
-        <div className="h-4 w-11/12 bg-[#eee] dark:bg-gray-800 animate-pulse" />
-        <div className="h-4 w-10/12 bg-[#eee] dark:bg-gray-800 animate-pulse" />
-        <div className="h-4 w-9/12 bg-[#eee] dark:bg-gray-800 animate-pulse" />
+        <div className="h-4 w-[92%] bg-[#eee] dark:bg-gray-800 animate-pulse" />
+        <div className="h-4 w-[84%] bg-[#eee] dark:bg-gray-800 animate-pulse" />
       </div>
     </div>
   )

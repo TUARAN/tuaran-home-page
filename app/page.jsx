@@ -4,7 +4,8 @@ import { articles } from './articles/articlesData'
 import CopyIntroButton from './components/CopyIntroButton'
 import LatestMoments from './components/LatestMoments'
 import SiteFooter from './components/SiteFooter'
-import { SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_INTRO_COPY } from '../lib/siteIntro'
+import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_INTRO_COPY } from '../lib/siteIntro'
+import { CATEGORY_META, COMPANY_TYPE_META, listResearch, TOPIC_TYPE_META } from '../lib/research/loader'
 
 function wrapTitle(title) {
   if (!title) return ''
@@ -24,6 +25,7 @@ function getArticleLink(article) {
 }
 
 function getArticleCategory(article) {
+  if (article?.homeCategory) return article.homeCategory
   if (article?.slug === 'ocr-comparison-paddleocr-vl') return 'AI'
   if (article?.slug === 'content-os-blogger-matrix-alliance') return '创作'
   if (article?.slug === 'blogger-future-community') return '社区'
@@ -31,8 +33,42 @@ function getArticleCategory(article) {
   return '工程化'
 }
 
+function hashString(input) {
+  let value = 0
+  for (let i = 0; i < input.length; i += 1) {
+    value = (value * 31 + input.charCodeAt(i)) >>> 0
+  }
+  return value
+}
+
+function pickResearchHighlight() {
+  const researchItems = listResearch().filter((entry) => !entry.encrypted)
+  if (!researchItems.length) return null
+
+  const seed = new Date().toISOString().slice(0, 10)
+  const entry = researchItems[hashString(seed) % researchItems.length]
+  const typeMeta = entry.category === 'companies'
+    ? COMPANY_TYPE_META[entry.companyType]
+    : TOPIC_TYPE_META[entry.topicType]
+  const categoryLabel = typeMeta?.label || CATEGORY_META[entry.category]?.short || '调研'
+
+  return {
+    slug: entry.slug,
+    title: entry.title,
+    date: entry.date,
+    href: `/articles/research/${entry.category}/${entry.slug}`,
+    summary: entry.tldr || entry.summary,
+    cover: entry.images?.[0]?.src || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=800&q=60',
+    homeCategory: categoryLabel,
+    badge: 'Research',
+  }
+}
+
 export default function HomePage() {
-  const featuredArticles = articles.slice(0, 3)
+  const researchHighlight = pickResearchHighlight()
+  const featuredArticles = researchHighlight
+    ? [...articles.slice(0, 2), researchHighlight]
+    : articles.slice(0, 3)
   const communities = [
     { name: '掘金', reads: '219 万', fans: '1.3 万', href: 'https://juejin.cn/user/1521379823340792', color: '#111827', char: '掘' },
     { name: '小红书', reads: '100 万', fans: '1.1 万', href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e', color: '#2563EB', char: '红' },
@@ -125,9 +161,19 @@ export default function HomePage() {
           <div className="space-y-6">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#9c8f79] dark:text-[#9ca5b5] mb-0">
-                  涂阿燃｜安东尼 · 独立开发者
-                </p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#9c8f79] dark:text-[#9ca5b5] mb-0">
+                    涂阿燃｜安东尼 · 独立开发者
+                  </p>
+                  <Link
+                    href="/"
+                    aria-label={`${SITE_DOMAIN} 首页`}
+                    className="group inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6f4f28] no-underline transition-colors hover:text-[#3f2d17] dark:text-[#e4c58e] dark:hover:text-[#ffe1a6]"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#b7791f] shadow-[0_0_0_4px_rgba(183,121,31,0.13)] transition-shadow group-hover:shadow-[0_0_0_5px_rgba(183,121,31,0.18)] dark:bg-[#f0c776]" />
+                    {SITE_DOMAIN}
+                  </Link>
+                </div>
                 <CopyIntroButton text={SITE_INTRO_COPY} />
               </div>
               <div className="space-y-3">
@@ -233,7 +279,7 @@ export default function HomePage() {
                           {a.date}
                         </span>
                         <span className="rounded-full bg-[#f4efe5] px-2 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-[#7d6c4f] dark:bg-[#18202a] dark:text-[#c8b99d]">
-                          {isExternalHref(a.href) ? 'Original' : 'Essay'}
+                          {a.badge || (isExternalHref(a.href) ? 'Original' : 'Essay')}
                         </span>
                       </div>
                       <h3 className="mb-2 font-serif text-[20px] font-semibold leading-8 text-[#201d19] transition-colors group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">

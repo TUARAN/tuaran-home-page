@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef } from 'react'
+import Link from 'next/link'
 
 const MODEL_OPTIONS = {
   'onnx-community/Qwen3.5-0.8B-ONNX': {
@@ -698,9 +699,9 @@ export default function WebLlmPageClient() {
     <div id="web-llm-app-shell">
       <aside id="sidebar">
         <div id="sidebar-header">
-          <a href="/" className="edge-side-back" aria-label="返回首页">
+          <Link href="/" className="edge-side-back" aria-label="返回首页">
             ← 返回首页
-          </a>
+          </Link>
           <div className="edge-side-brand">
             <p className="eyebrow">On-device AI</p>
             <h2>端侧大模型</h2>
@@ -905,7 +906,7 @@ export default function WebLlmPageClient() {
             </table>
           </div>
           <p className="edge-section-footnote">
-            旗舰模型不在矩阵内：Qwen3.5-397B-A17B、Llama 3.1-405B、DeepSeek-V3 这类参数级别只能落到数据中心。"满血"与"端侧"在物理上互斥。
+            旗舰模型不在矩阵内：Qwen3.5-397B-A17B、Llama 3.1-405B、DeepSeek-V3 这类参数级别只能落到数据中心。“满血”与“端侧”在物理上互斥。
           </p>
         </section>
 
@@ -927,17 +928,17 @@ export default function WebLlmPageClient() {
             <article>
               <h3>KV 缓存 · 长上下文真正的代价</h3>
               <p>
-                262K 满上下文下，KV 缓存可吃 4-8 GB；端侧实际工作在 4-32K 区间，额外开销 0.5-2 GB。容量规划稳妥的做法：按"Q4 权重 + 1-2 GB"估总占用。
+                262K 满上下文下，KV 缓存可吃 4-8 GB；端侧实际工作在 4-32K 区间，额外开销 0.5-2 GB。容量规划稳妥的做法：按“Q4 权重 + 1-2 GB”估总占用。
               </p>
             </article>
             <article>
               <h3>线性注意力 · 长上下文端侧化的前提</h3>
               <p>
-                Gated DeltaNet、Mamba、RWKV 等架构把"注意力随序列长度二次增长"压回近似线性。这是 0.8B 这种小模型也能扛 100K+ 上下文、且能跑进浏览器的关键。
+                Gated DeltaNet、Mamba、RWKV 等架构把“注意力随序列长度二次增长”压回近似线性。这是 0.8B 这种小模型也能扛 100K+ 上下文、且能跑进浏览器的关键。
               </p>
             </article>
             <article>
-              <h3>MoE · 端侧的"假繁荣"</h3>
+              <h3>MoE · 端侧的“假繁荣”</h3>
               <p>
                 MoE 单次推理只激活一小部分专家，但权重要全量加载。35B-A3B / 122B-A10B 这类对桌面工作站友好，对浏览器和手机不友好——加载体积仍是 35B / 122B。
               </p>
@@ -951,7 +952,7 @@ export default function WebLlmPageClient() {
             <article>
               <h3>NPU · 跟着 Copilot+ / Apple Silicon 起飞</h3>
               <p>
-                2024 年起 PC 与手机的 NPU 算力进入"够跑 3B-7B"的水平。系统级模型（Phi Silica / Apple Foundation / Gemini Nano）通过 NPU 把性能与续航打平，这是第三方端侧模型仍难做到的。
+                2024 年起 PC 与手机的 NPU 算力进入“够跑 3B-7B”的水平。系统级模型（Phi Silica / Apple Foundation / Gemini Nano）通过 NPU 把性能与续航打平，这是第三方端侧模型仍难做到的。
               </p>
             </article>
           </div>
@@ -962,7 +963,7 @@ export default function WebLlmPageClient() {
             <p className="eyebrow">Section 04 · Benchmarks</p>
             <h2>怎么评测</h2>
             <p className="edge-section-sub">
-              端侧评测不是把云端 benchmark 复用一遍——还要叠"硬件代价"的维度。
+              端侧评测不是把云端 benchmark 复用一遍——还要叠“硬件代价”的维度。
             </p>
           </header>
           <div className="edge-bench-grid">
@@ -1080,7 +1081,7 @@ export default function WebLlmPageClient() {
           <ul className="edge-reading-list">
             <li>
               <span className="edge-reading-tag">站内</span>
-              <a href="/articles/2026-05-20-qwen3-5-edge-deployment">Qwen3.5 系列模型端侧部署全维度调研</a>
+              <Link href="/articles/2026-05-20-qwen3-5-edge-deployment">Qwen3.5 系列模型端侧部署全维度调研</Link>
               <span className="edge-reading-note">— 从 0.8B 到 397B-A17B 的端侧大表与成本拆分</span>
             </li>
             <li>

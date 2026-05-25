@@ -83,6 +83,7 @@ export default async function ResearchDetailPage({ params }) {
     : variantList.map((variant, index) => ({
         id: variant.id,
         label: variant.label || variant.id,
+        content: variant.content,
         html: renderMarkdown(variant.content, {
           images: index === 0 ? entry.images || [] : [],
           seed: `${entry.category}:${entry.slug}:${variant.id}`,
@@ -228,7 +229,12 @@ export default async function ResearchDetailPage({ params }) {
           />
         </main>
       ) : (
-        <ResearchBody variants={renderedVariants} />
+        <ResearchBody
+          variants={renderedVariants}
+          title={entry.title}
+          subtitle={entry.tldr || entry.summary || ''}
+          fileBaseName={entry.slug}
+        />
       )}
 
       <div className="flex flex-col gap-6 md:flex-row">

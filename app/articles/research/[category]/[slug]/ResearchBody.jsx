@@ -81,7 +81,7 @@ export default function ResearchBody({ variants }) {
           <aside className="hidden md:block md:w-52 shrink-0">
             <nav className="toc-scroll-panel">
               <div className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">
-                目录
+                文章目录
               </div>
               <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">
                 {active.toc.map((item) => (

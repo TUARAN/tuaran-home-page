@@ -69,6 +69,7 @@ function formatPv(pv) {
 export default function ArticlesIndexClient({ items }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [pvCounts, setPvCounts] = useState({})
   const initialTab = (() => {
     const fromUrl = searchParams?.get('tab')
     return TAB_KEYS.includes(fromUrl) ? fromUrl : 'all'
@@ -148,6 +149,40 @@ export default function ArticlesIndexClient({ items }) {
     }
     return tabItems
   }, [items, tab, companyType, topicType])
+
+  useEffect(() => {
+    const keys = Array.from(
+      new Set(
+        items
+          .filter((item) => item.kind === 'companies' || item.kind === 'topics')
+          .map((item) => {
+            const parts = String(item.href || '').split('/')
+            const category = parts[3]
+            const slug = parts[4]
+            return category && slug ? `${category}/${slug}` : ''
+          })
+          .filter(Boolean),
+      ),
+    )
+    if (!keys.length) return
+
+    let cancelled = false
+    async function loadPv() {
+      try {
+        const res = await fetch(`/api/research-pv?keys=${encodeURIComponent(keys.join(','))}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && data?.counts) setPvCounts(data.counts)
+      } catch {
+        // 统计接口不可用时保留静态 frontmatter 里的 pv。
+      }
+    }
+
+    loadPv()
+    return () => {
+      cancelled = true
+    }
+  }, [items])
 
   const companyTypeCounts = useMemo(() => {
     const base = Object.fromEntries(COMPANY_TYPE_KEYS.map((k) => [k, 0]))
@@ -292,7 +327,13 @@ export default function ArticlesIndexClient({ items }) {
         {visible.length === 0 ? (
           <p className="text-sm text-[#666] dark:text-gray-400">该分类下暂无内容。</p>
         ) : (
-          visible.map((item) => <ArticleRow key={item.kind + ':' + item.href} item={item} />)
+          visible.map((item) => {
+            const parts = String(item.href || '').split('/')
+            const pvKey = parts[3] && parts[4] ? `${parts[3]}/${parts[4]}` : ''
+            const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
+            const nextItem = 'pv' in item ? { ...item, pv: livePv } : item
+            return <ArticleRow key={item.kind + ':' + item.href} item={nextItem} />
+          })
         )}
       </div>
     </div>

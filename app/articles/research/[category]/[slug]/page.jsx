@@ -18,6 +18,7 @@ import DistributeMarkdownButton from './DistributeMarkdownButton'
 import DownloadPptButton from './DownloadPptButton'
 import EncryptedArticle from './EncryptedArticle'
 import ResearchBody from './ResearchBody'
+import ResearchPvCounter from './ResearchPvCounter'
 import ShareResearchButton from './ShareResearchButton'
 
 const SITE_URL = 'https://2aran.com'
@@ -25,12 +26,6 @@ const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
-
-function formatPv(pv) {
-  const n = Number(pv) || 0
-  if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '')} 万`
-  return String(n)
-}
 
 export function generateStaticParams() {
   return getAllResearchParams()
@@ -187,7 +182,7 @@ export default async function ResearchDetailPage({ params }) {
             </>
           ) : null}
           <span aria-hidden="true">·</span>
-          <span>阅读量 {formatPv(entry.pv)}</span>
+          <ResearchPvCounter category={entry.category} slug={entry.slug} initialPv={entry.pv} />
           {entry.source ? (
             <>
               <span aria-hidden="true">·</span>

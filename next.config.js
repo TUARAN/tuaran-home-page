@@ -135,6 +135,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'wsrv.nl',
+      },
+      {
+        protocol: 'https',
         hostname: 'p0-xtjj-private.juejin.cn',
       },
       {

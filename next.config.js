@@ -63,6 +63,10 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/web-llm',
+        headers: webLlmHeaders,
+      },
+      {
         source: '/web-llm/:path*',
         headers: webLlmHeaders,
       },

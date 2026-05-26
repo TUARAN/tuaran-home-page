@@ -1,7 +1,7 @@
 ---
 title: 字节 AI Agent 二面（飞连）面试题与参考解答
 category: topics
-topic_type: thesis
+topic_type: tech
 date: 2026-05-26
 tags: [面经, 字节跳动, 飞连, AI Agent, RAG, LangGraph, Redis, Transformer, 八股]
 summary: 把一份字节飞连 AI Agent 二面的完整题面（10 道项目题 + 6 道八股 + 1 道算法）拆开逐题作答，给出可直接背的简版与可上手聊的展开版，并标明哪些题是"信号题"、哪些是"凑数题"。

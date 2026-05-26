@@ -23,6 +23,8 @@ const MODEL_SOURCES = {
   mirror: { label: '国内镜像 hf-mirror.com', host: 'https://hf-mirror.com/' },
 }
 
+const SOURCE_ORDER = ['mirror', 'official']
+
 const DB_NAME = 'QwenChatDB'
 const STORE_NAME = 'chats'
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -91,15 +93,35 @@ async function clearChats(db) {
   await txRequest(db, 'readwrite', (store) => store.clear())
 }
 
-function probeHost(host, timeoutMs = 4000) {
-  return new Promise((resolve) => {
+async function probeModelSource(source, modelId, timeoutMs = 6000) {
+  const startedAt = performance.now()
+  const target = `${source.host}${modelId}/resolve/main/config.json`
+  let timer = null
+  try {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeoutMs)
-    fetch(`${host}favicon.ico`, { mode: 'no-cors', cache: 'no-store', signal: controller.signal })
-      .then(() => resolve(true))
-      .catch(() => resolve(false))
-      .finally(() => clearTimeout(timer))
-  })
+    timer = setTimeout(() => controller.abort(), timeoutMs)
+    const response = await fetch(target, { mode: 'cors', cache: 'no-store', signal: controller.signal })
+    clearTimeout(timer)
+    if (!response.ok) {
+      return { status: 'fail', latency: 0, error: `HTTP ${response.status}` }
+    }
+    return { status: 'ok', latency: Math.round(performance.now() - startedAt), error: '' }
+  } catch (error) {
+    if (timer) clearTimeout(timer)
+    return {
+      status: 'fail',
+      latency: 0,
+      error: error?.name === 'AbortError' ? '超时' : (error?.message || '无法连接'),
+    }
+  }
+}
+
+function chooseBestSource(results) {
+  const available = SOURCE_ORDER
+    .map((id) => ({ id, ...results[id] }))
+    .filter((item) => item.status === 'ok')
+    .sort((a, b) => a.latency - b.latency)
+  return available[0]?.id || 'mirror'
 }
 
 function buildChatTitle(messages) {
@@ -185,6 +207,10 @@ export default function WebLlmPageClient() {
   const [generationStatus, setGenerationStatus] = useState('idle')
   const [notice, setNotice] = useState({ kind: 'info', text: '正在初始化实验台...' })
   const [progress, setProgress] = useState({ value: 0, text: '' })
+  const [sourceHealth, setSourceHealth] = useState(() => Object.fromEntries(
+    Object.keys(MODEL_SOURCES).map((id) => [id, { status: 'idle', latency: 0, error: '' }]),
+  ))
+  const [isTestingSources, setIsTestingSources] = useState(false)
   const [input, setInput] = useState('')
   const [pendingImage, setPendingImage] = useState(null)
   const [isPreparingImage, setIsPreparingImage] = useState(false)
@@ -195,6 +221,39 @@ export default function WebLlmPageClient() {
   )
   const selectedModel = MODEL_OPTIONS[modelId]
   const canSend = modelStatus === 'ready' && generationStatus !== 'generating' && (input.trim() || pendingImage)
+
+  const testSources = useCallback(async (nextModelId = modelId, options = {}) => {
+    const { autoSelect = true, quiet = false } = options
+    setIsTestingSources(true)
+    setSourceHealth(Object.fromEntries(
+      Object.keys(MODEL_SOURCES).map((id) => [id, { status: 'checking', latency: 0, error: '' }]),
+    ))
+    if (!quiet) {
+      setNotice({ kind: 'info', text: `正在测试 ${MODEL_OPTIONS[nextModelId].label} 的下载源连通性...` })
+    }
+
+    const entries = await Promise.all(
+      Object.entries(MODEL_SOURCES).map(async ([id, source]) => [id, await probeModelSource(source, nextModelId)]),
+    )
+    const results = Object.fromEntries(entries)
+    setSourceHealth(results)
+    setIsTestingSources(false)
+
+    const best = chooseBestSource(results)
+    const okCount = Object.values(results).filter((item) => item.status === 'ok').length
+    if (autoSelect) {
+      setSourceId(best)
+      if (hf) hf.env.remoteHost = MODEL_SOURCES[best].host
+    }
+    if (!quiet) {
+      if (okCount === 0) {
+        setNotice({ kind: 'warn', text: '官方源与国内镜像的模型文件都无法直连。请检查网络、代理或浏览器跨域拦截后重试。' })
+      } else {
+        setNotice({ kind: 'success', text: `网络测试完成，已选择「${MODEL_SOURCES[best].label}」。` })
+      }
+    }
+    return { results, best, okCount }
+  }, [hf, modelId])
 
   const refreshChats = useCallback(async () => {
     if (!dbRef.current) return []
@@ -296,17 +355,7 @@ export default function WebLlmPageClient() {
             : `${MODEL_OPTIONS[modelId].label}: ${MODEL_OPTIONS[modelId].notes}`,
         })
 
-        const [officialOK, mirrorOK] = await Promise.all([
-          probeHost(MODEL_SOURCES.official.host),
-          probeHost(MODEL_SOURCES.mirror.host),
-        ])
-        if (disposed) return
-        const nextSource = officialOK ? 'official' : 'mirror'
-        setSourceId(nextSource)
-        transformers.env.remoteHost = MODEL_SOURCES[nextSource].host
-        if (!officialOK && !mirrorOK) {
-          setNotice({ kind: 'warn', text: '官方源与镜像均无法直连，请检查网络 / 代理后重试。已默认选择镜像。' })
-        }
+        await testSources(modelId, { autoSelect: true, quiet: true })
       } catch (error) {
         console.error(error)
         setNotice({ kind: 'error', text: `实验台初始化失败：${error.message}` })
@@ -320,7 +369,7 @@ export default function WebLlmPageClient() {
       dbRef.current = null
       stopCriteriaRef.current?.interrupt?.()
     }
-    // 初始化只执行一次；后续模型说明由 select 的 change handler 更新。
+    // 初始化只执行一次；后续模型说明和网络测试由 select 的 change handler 更新。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -344,6 +393,14 @@ export default function WebLlmPageClient() {
 
   async function loadModel() {
     if (!hf || modelStatus === 'loading') return
+
+    if (sourceHealth[sourceId]?.status === 'fail') {
+      setNotice({
+        kind: 'warn',
+        text: `当前选择的「${MODEL_SOURCES[sourceId].label}」刚才测试不可达，建议先点“测试网络”或切换下载源。`,
+      })
+      return
+    }
 
     const run = { id: Date.now(), cancelled: false }
     loadRunRef.current = run
@@ -654,8 +711,10 @@ export default function WebLlmPageClient() {
                 <select
                   value={modelId}
                   onChange={(event) => {
-                    setModelId(event.target.value)
-                    updateModelNotice(event.target.value)
+                    const nextModelId = event.target.value
+                    setModelId(nextModelId)
+                    updateModelNotice(nextModelId)
+                    testSources(nextModelId, { autoSelect: true, quiet: true })
                   }}
                   disabled={modelStatus === 'loading' || generationStatus === 'generating'}
                 >
@@ -665,6 +724,14 @@ export default function WebLlmPageClient() {
                 </select>
               </label>
               <div className="model-actions">
+                <button
+                  type="button"
+                  className="secondary-action"
+                  onClick={() => testSources(modelId, { autoSelect: true })}
+                  disabled={!hf || isTestingSources || modelStatus === 'loading' || generationStatus === 'generating'}
+                >
+                  {isTestingSources ? '测试中' : '测试网络'}
+                </button>
                 {modelStatus === 'loading' ? (
                   <button type="button" className="secondary-action" onClick={cancelModelLoad}>取消加载</button>
                 ) : (
@@ -676,6 +743,25 @@ export default function WebLlmPageClient() {
                   卸载
                 </button>
               </div>
+            </div>
+            <div className="source-health-row" aria-live="polite">
+              {Object.entries(MODEL_SOURCES).map(([id, source]) => {
+                const health = sourceHealth[id] || { status: 'idle', latency: 0, error: '' }
+                const statusLabel =
+                  health.status === 'ok'
+                    ? `可用 · ${health.latency}ms`
+                    : health.status === 'fail'
+                      ? `不可用${health.error ? ` · ${health.error}` : ''}`
+                      : health.status === 'checking'
+                        ? '检测中'
+                        : '未检测'
+                return (
+                  <span key={id} className={`source-health source-health-${health.status}${sourceId === id ? ' active' : ''}`}>
+                    <strong>{source.label}</strong>
+                    <span>{statusLabel}</span>
+                  </span>
+                )
+              })}
             </div>
             {modelStatus === 'loading' || progress.text ? (
               <div className="progress-row" aria-live="polite">

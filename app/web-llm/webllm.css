@@ -315,6 +315,7 @@
 
 #web-llm-app-shell .model-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -323,6 +324,67 @@
   min-height: 42px;
   padding: 0 14px;
   white-space: nowrap;
+}
+
+#web-llm-app-shell .source-health-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#web-llm-app-shell .source-health {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.62);
+  padding: 8px 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+#web-llm-app-shell .source-health strong {
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#web-llm-app-shell .source-health span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#web-llm-app-shell .source-health.active {
+  border-color: rgba(0, 66, 118, 0.34);
+  box-shadow: inset 3px 0 0 rgba(0, 66, 118, 0.58);
+}
+
+#web-llm-app-shell .source-health-ok {
+  border-color: rgba(22, 101, 52, 0.24);
+  background: rgba(22, 101, 52, 0.06);
+}
+
+#web-llm-app-shell .source-health-ok span {
+  color: var(--success);
+}
+
+#web-llm-app-shell .source-health-fail {
+  border-color: rgba(180, 35, 24, 0.18);
+  background: rgba(180, 35, 24, 0.06);
+}
+
+#web-llm-app-shell .source-health-fail span {
+  color: var(--danger);
+}
+
+#web-llm-app-shell .source-health-checking span {
+  color: var(--warning);
 }
 
 #web-llm-app-shell .progress-row {
@@ -655,6 +717,7 @@
 .dark #web-llm-app-shell .secondary-action,
 .dark #web-llm-app-shell .icon-btn,
 .dark #web-llm-app-shell .ai-msg,
+.dark #web-llm-app-shell .source-health,
 .dark #web-llm-app-shell #preview-container {
   background: #0f141b;
   color: var(--text-main);
@@ -726,6 +789,7 @@
 
   #web-llm-app-shell .model-actions,
   #web-llm-app-shell .progress-row,
+  #web-llm-app-shell .source-health-row,
   #web-llm-app-shell #input-form {
     grid-template-columns: 1fr;
     display: grid;

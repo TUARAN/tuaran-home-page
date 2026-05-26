@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { articles } from '../articlesData'
+import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 
 export const dynamic = 'force-static'
@@ -385,6 +386,7 @@ export default async function ArticleDetailPage({ params }) {
         </>
       )}
 
+      <ArticleComments articleKey={`article:${article.slug}`} />
       <ArticleFooterCta />
     </div>
   )

@@ -12,6 +12,7 @@ import {
   listResearchByCategory,
 } from '../../../../../lib/research/loader'
 import { extractToc, renderMarkdown } from '../../../../../lib/research/markdown'
+import ArticleComments from '../../../../components/ArticleComments'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
@@ -285,6 +286,7 @@ export default async function ResearchDetailPage({ params }) {
             </section>
           ) : null}
 
+          <ArticleComments articleKey={`research:${entry.category}:${entry.slug}`} />
           <ArticleFooterCta />
         </main>
       </div>

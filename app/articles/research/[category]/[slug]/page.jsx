@@ -9,6 +9,7 @@ import {
   TOPIC_TYPE_META,
   getAllResearchParams,
   getResearchEntry,
+  listResearch,
   listResearchByCategory,
 } from '../../../../../lib/research/loader'
 import { extractToc, renderMarkdown } from '../../../../../lib/research/markdown'
@@ -29,7 +30,14 @@ export const dynamic = 'force-static'
 export const dynamicParams = true
 
 export function generateStaticParams() {
-  return getAllResearchParams()
+  const params = getAllResearchParams()
+  for (const entry of listResearch()) {
+    const legacySlug = entry.filename?.replace(/\.md$/i, '')
+    if (legacySlug && legacySlug !== entry.slug) {
+      params.push({ category: entry.category, slug: legacySlug })
+    }
+  }
+  return params
 }
 
 function resolveResearchEntry(category, slug) {

@@ -46,6 +46,7 @@ tldr: 不写则回退用 summary；想突出与 summary 不同的一句话总结
 topic_type: market           # 仅 topics 用：industry | tech | product | market | thesis
 source: claude-code          # 协助工具：claude-code | codex | doubao | gemini | gpt | manual
 model: claude-opus-4-7       # 底层模型 ID（可选，仅作内部记录）
+pv: 0                        # 阅读量（可选，列表页与详情页展示）
 ---
 ```
 
@@ -60,6 +61,7 @@ model: claude-opus-4-7       # 底层模型 ID（可选，仅作内部记录）
 | `topic_type` | ⭕ | 仅 `topics` 用，二级类型：`industry` 行业 / `tech` 技术 / `product` 产品 / `market` 市场 / `thesis` 观点 |
 | `source` | ⭕ | 协助工具：`claude-code` / `codex` / `doubao` / `gemini` / `gpt` / `manual`；前台统一展示为 `来源：TUARAN（Codex 协助）` 这类口径 |
 | `model` | ⭕ | 底层模型 ID，仅作内部追溯，不作为文章来源 |
+| `pv` | ⭕ | 阅读量，填非负整数；不填时按 `0` 展示 |
 
 > 📐 **阅读时长**由 loader 自动按字数估算（中文 ~300 字/分钟），不需要在 frontmatter 写。
 

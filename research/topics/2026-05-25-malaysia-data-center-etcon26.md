@@ -8,6 +8,7 @@ tldr: Johor 占全国 70%+ 数据中心电力、Cyberjaya 是第二极；TNB 已
 topic_type: industry
 source: claude-code
 model: claude-opus-4-7
+pv: 0
 ---
 
 > 出差背景：领导让我去 6.3–6.5 在吉隆坡 KLCC 召开的 **ETCon26（The Energy Transition Conference 2026）** 看看。会议由马来西亚国家电力公司 **TNB（Tenaga Nasional Berhad）** 主办，与能源科技展 **ENERtec Asia 2026** 同期同地。三大议题之一是"Energy for AI"——为数据中心扩张提供电力底盘，所以"数据中心 + 能源"是绕不开的主线。

@@ -11,10 +11,10 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req) {
-  const { githubId, githubSecret, appUrl, sessionSecret } = getSecrets()
+  const { googleId, googleSecret, appUrl, sessionSecret } = getSecrets()
   const missing = []
-  if (!githubId) missing.push('GITHUB_ID')
-  if (!githubSecret) missing.push('GITHUB_SECRET')
+  if (!googleId) missing.push('GOOGLE_ID')
+  if (!googleSecret) missing.push('GOOGLE_SECRET')
   if (!sessionSecret) missing.push('NEXTAUTH_SECRET')
   if (missing.length) {
     return Response.json({ error: 'MISSING_AUTH_CONFIG', missing }, { status: 500 })
@@ -37,20 +37,20 @@ export async function GET(req) {
   }
 
   const origin = (appUrl || new URL(req.url).origin).replace(/\/$/, '')
-  const redirectUri = `${origin}/api/auth/callback/github`
+  const redirectUri = `${origin}/api/auth/callback/google`
 
-  const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      client_id: githubId,
-      client_secret: githubSecret,
+      client_id: googleId,
+      client_secret: googleSecret,
       code,
+      grant_type: 'authorization_code',
       redirect_uri: redirectUri,
-      state,
     }),
   })
 
@@ -60,24 +60,23 @@ export async function GET(req) {
     return Response.json({ error: 'OAUTH_TOKEN_EXCHANGE_FAILED', detail: tokenJson }, { status: 400 })
   }
 
-  const userRes = await fetch('https://api.github.com/user', {
+  const userRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
     headers: {
-      Accept: 'application/vnd.github+json',
+      Accept: 'application/json',
       Authorization: `Bearer ${accessToken}`,
-      'User-Agent': 'tuaran-me',
     },
   })
-  const ghUser = await userRes.json()
-  if (!userRes.ok || !ghUser?.id) {
-    return Response.json({ error: 'GITHUB_USER_FETCH_FAILED', detail: ghUser }, { status: 400 })
+  const googleUser = await userRes.json()
+  if (!userRes.ok || !googleUser?.sub) {
+    return Response.json({ error: 'GOOGLE_USER_FETCH_FAILED', detail: googleUser }, { status: 400 })
   }
 
   const user = {
-    id: `github:${String(ghUser.id)}`,
-    provider: 'github',
-    login: String(ghUser.login || ''),
-    name: String(ghUser.name || ghUser.login || 'GitHub User'),
-    image: ghUser.avatar_url ? String(ghUser.avatar_url) : null,
+    id: `google:${String(googleUser.sub)}`,
+    provider: 'google',
+    login: String(googleUser.email || ''),
+    name: String(googleUser.name || googleUser.email || 'Google User'),
+    image: googleUser.picture ? String(googleUser.picture) : null,
   }
 
   const payload = {
@@ -94,14 +93,8 @@ export async function GET(req) {
     'Set-Cookie',
     serializeCookie(cookieNames.session, jwt, { maxAge: 7 * 24 * 60 * 60, secure })
   )
-  headers.append(
-    'Set-Cookie',
-    serializeCookie(cookieNames.oauthState, '', { maxAge: 0, secure })
-  )
-  headers.append(
-    'Set-Cookie',
-    serializeCookie(cookieNames.returnTo, '', { maxAge: 0, secure })
-  )
+  headers.append('Set-Cookie', serializeCookie(cookieNames.oauthState, '', { maxAge: 0, secure }))
+  headers.append('Set-Cookie', serializeCookie(cookieNames.returnTo, '', { maxAge: 0, secure }))
 
   headers.set('Location', returnTo.startsWith('/') ? returnTo : '/')
   return new Response(null, { status: 302, headers })

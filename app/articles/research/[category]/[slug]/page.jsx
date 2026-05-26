@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import Script from 'next/script'
 
@@ -25,15 +25,23 @@ const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 
 export const dynamic = 'force-static'
-export const dynamicParams = false
+export const dynamicParams = true
 
 export function generateStaticParams() {
   return getAllResearchParams()
 }
 
+function resolveResearchEntry(category, slug) {
+  const entry = getResearchEntry(category, slug)
+  if (entry) return entry
+  const legacySlug = String(slug || '').replace(/^\d{4}-\d{2}-\d{2}-/, '')
+  if (legacySlug && legacySlug !== slug) return getResearchEntry(category, legacySlug)
+  return null
+}
+
 export async function generateMetadata({ params }) {
   const { category, slug } = await params
-  const entry = getResearchEntry(category, slug)
+  const entry = resolveResearchEntry(category, slug)
   if (!entry) {
     return {
       title: `调研未找到 · ${SITE_TITLE}`,
@@ -73,8 +81,9 @@ export async function generateMetadata({ params }) {
 export default async function ResearchDetailPage({ params }) {
   const { category, slug } = await params
   if (!RESEARCH_CATEGORIES.includes(category)) notFound()
-  const entry = getResearchEntry(category, slug)
+  const entry = resolveResearchEntry(category, slug)
   if (!entry) notFound()
+  if (entry.slug !== slug) redirect(`/articles/research/${entry.category}/${entry.slug}`)
 
   const isEncrypted = entry.encrypted
   const variantList = isEncrypted ? [] : Array.isArray(entry.variants) && entry.variants.length > 0

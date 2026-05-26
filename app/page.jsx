@@ -253,44 +253,60 @@ export default function HomePage() {
                 </Link>
               </div>
               <div className="grid gap-4">
-                {featuredArticles.map((a) => (
-                  <a
-                    key={`${a.date}-${a.title}`}
-                    href={getArticleLink(a)}
-                    target={isExternalHref(a.href) ? '_blank' : undefined}
-                    rel={isExternalHref(a.href) ? 'noreferrer' : undefined}
-                    className="group no-external-arrow grid gap-4 rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline shadow-[0_18px_48px_rgba(112,96,68,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_20px_54px_rgba(100,79,47,0.10)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d] md:grid-cols-[188px_minmax(0,1fr)]"
-                  >
-                    <div className="aspect-[16/9] overflow-hidden rounded-xl border border-[#efe7db] bg-[#f6f1e7] dark:border-[#2a3440] dark:bg-[#10151d]">
-                      <Image
-                        src={a.cover}
-                        alt={a.title}
-                        width={336}
-                        height={189}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <span className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
-                          #{getArticleCategory(a)}
-                        </span>
-                        <span className="font-mono text-[12px] tracking-[0.08em] text-[#9d9078] dark:text-[#94a0b1]">
-                          {a.date}
-                        </span>
-                        <span className="rounded-full bg-[#f4efe5] px-2 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-[#7d6c4f] dark:bg-[#18202a] dark:text-[#c8b99d]">
-                          {a.badge || (isExternalHref(a.href) ? 'Original' : 'Essay')}
-                        </span>
+                {featuredArticles.map((a) => {
+                  const href = getArticleLink(a)
+                  const external = isExternalHref(href)
+                  const card = (
+                    <>
+                      <div className="aspect-[16/9] overflow-hidden rounded-xl border border-[#efe7db] bg-[#f6f1e7] dark:border-[#2a3440] dark:bg-[#10151d]">
+                        <Image
+                          src={a.cover}
+                          alt={a.title}
+                          width={336}
+                          height={189}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                        />
                       </div>
-                      <h3 className="mb-2 font-serif text-[20px] font-semibold leading-8 text-[#201d19] transition-colors group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">
-                        {wrapTitle(a.title)}
-                      </h3>
-                      <p className="mb-0 line-clamp-3 text-[14px] leading-[1.82] text-[#625b51] dark:text-gray-300">
-                        {a.summary}
-                      </p>
-                    </div>
-                  </a>
-                ))}
+                      <div className="min-w-0">
+                        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
+                            #{getArticleCategory(a)}
+                          </span>
+                          <span className="font-mono text-[12px] tracking-[0.08em] text-[#9d9078] dark:text-[#94a0b1]">
+                            {a.date}
+                          </span>
+                          <span className="rounded-full bg-[#f4efe5] px-2 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-[#7d6c4f] dark:bg-[#18202a] dark:text-[#c8b99d]">
+                            {a.badge || (external ? 'Original' : 'Essay')}
+                          </span>
+                        </div>
+                        <h3 className="mb-2 font-serif text-[20px] font-semibold leading-8 text-[#201d19] transition-colors group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">
+                          {wrapTitle(a.title)}
+                        </h3>
+                        <p className="mb-0 line-clamp-3 text-[14px] leading-[1.82] text-[#625b51] dark:text-gray-300">
+                          {a.summary}
+                        </p>
+                      </div>
+                    </>
+                  )
+                  const className =
+                    'group no-external-arrow grid gap-4 rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline shadow-[0_18px_48px_rgba(112,96,68,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_20px_54px_rgba(100,79,47,0.10)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d] md:grid-cols-[188px_minmax(0,1fr)]'
+
+                  return external ? (
+                    <a
+                      key={`${a.date}-${a.title}`}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={className}
+                    >
+                      {card}
+                    </a>
+                  ) : (
+                    <Link key={`${a.date}-${a.title}`} href={href} className={className}>
+                      {card}
+                    </Link>
+                  )
+                })}
               </div>
             </section>
 

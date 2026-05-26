@@ -26,6 +26,12 @@ const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 export const dynamic = 'force-static'
 export const dynamicParams = false
 
+function formatPv(pv) {
+  const n = Number(pv) || 0
+  if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '')} 万`
+  return String(n)
+}
+
 export function generateStaticParams() {
   return getAllResearchParams()
 }
@@ -116,6 +122,11 @@ export default async function ResearchDetailPage({ params }) {
     author: { '@type': 'Person', name: '涂阿燃', url: SITE_URL },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     image: entry.images?.length ? entry.images.map((image) => image.src) : undefined,
+    interactionStatistic: {
+      '@type': 'InteractionCounter',
+      interactionType: { '@type': 'ReadAction' },
+      userInteractionCount: entry.pv || 0,
+    },
   }
 
   return (
@@ -175,6 +186,8 @@ export default async function ResearchDetailPage({ params }) {
               <span>{entry.readingMinutes} min read</span>
             </>
           ) : null}
+          <span aria-hidden="true">·</span>
+          <span>阅读量 {formatPv(entry.pv)}</span>
           {entry.source ? (
             <>
               <span aria-hidden="true">·</span>

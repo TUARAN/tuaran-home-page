@@ -120,6 +120,7 @@ function buildItems() {
       summary: entry.tldr || entry.summary,
       date: entry.date,
       readingMinutes: entry.readingMinutes,
+      pv: entry.pv || 0,
       encrypted: entry.encrypted,
       image: entry.images?.[0] || null,
       href: `/articles/research/${entry.category}/${entry.slug}`,

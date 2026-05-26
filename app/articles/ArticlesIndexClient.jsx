@@ -60,6 +60,12 @@ function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
 
+function formatPv(pv) {
+  const n = Number(pv) || 0
+  if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '')} 万`
+  return String(n)
+}
+
 export default function ArticlesIndexClient({ items }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -350,11 +356,16 @@ function ArticleRow({ item }) {
               {item.summary}
             </p>
           ) : null}
-          <div className="ml-5 mt-2 flex items-center gap-3 text-sm text-[#999] dark:text-gray-400">
+          <div className="ml-5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#999] dark:text-gray-400">
             <span>{external ? '阅读原文 →' : '阅读全文 →'}</span>
             {item.readingMinutes ? (
               <span className="font-mono text-[11px] text-[#bbb] dark:text-gray-500">
                 · {item.readingMinutes} min
+              </span>
+            ) : null}
+            {'pv' in item ? (
+              <span className="font-mono text-[11px] text-[#bbb] dark:text-gray-500">
+                · 阅读量 {formatPv(item.pv)}
               </span>
             ) : null}
           </div>

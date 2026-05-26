@@ -8,6 +8,7 @@ summary: 围绕浏览器同源策略、CORS、window.open、window.opener、ifra
 tldr: postMessage 是浏览器为跨源窗口、弹窗和 iframe 提供的标准通信机制。它在同源策略之上提供一条受控消息通道，前提是双方显式配合，并校验 origin 和消息类型。
 source: codex
 model: gpt-5
+pv: 0
 ---
 
 > **本调研定位**：以 **2aran.com 调研文章一键分发到 syncblog.cn 内容同步页** 为具体案例，解释浏览器跨域窗口通信的技术原理和安全实践。核心技术是 `window.open()` + `window.postMessage()`；相关边界涉及同源策略、CORS、`window.opener`、`targetOrigin`、结构化克隆、弹窗拦截和 COOP / COEP 等浏览器安全机制。

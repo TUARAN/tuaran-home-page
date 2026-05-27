@@ -161,9 +161,8 @@ function buildItems() {
   }))
 
   const topicPageItems = TOPIC_PAGES.map((p) => ({
-    kind: 'topics',
-    tagLabel: '事项调研 · 专题',
-    topicType: 'special',
+    kind: 'special',
+    tagLabel: '专题',
     title: p.title,
     summary: p.summary,
     date: p.date,

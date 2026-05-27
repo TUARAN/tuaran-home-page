@@ -1,10 +1,11 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { articles } from '../articlesData'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
+import { listResearch } from '../../../lib/research/loader'
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
@@ -62,17 +63,32 @@ function renderInlineBold(text) {
 }
 
 export function generateStaticParams() {
-  return articles.map((article) => ({ slug: article.slug }))
+  return [
+    ...articles.map((article) => ({ slug: article.slug })),
+    ...listResearch().map((entry) => ({ slug: entry.slug })),
+  ]
 }
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params
   const article = articles.find((item) => item.slug === resolvedParams.slug)
+  const researchEntry = !article ? listResearch().find((entry) => entry.slug === resolvedParams.slug) : null
 
-  if (!article) {
+  if (!article && !researchEntry) {
     return {
       title: `文章未找到 · ${SITE_TITLE}`,
       robots: { index: false, follow: false },
+    }
+  }
+
+  if (researchEntry) {
+    return {
+      title: researchEntry.title,
+      description: researchEntry.summary || researchEntry.tldr || '',
+      alternates: {
+        canonical: `${SITE_URL}/articles/research/${researchEntry.category}/${researchEntry.slug}`,
+      },
+      robots: { index: false, follow: true },
     }
   }
 
@@ -123,6 +139,11 @@ export async function generateMetadata({ params }) {
 export default async function ArticleDetailPage({ params }) {
   const resolvedParams = await params
   const article = articles.find((item) => item.slug === resolvedParams.slug)
+  const researchEntry = !article ? listResearch().find((entry) => entry.slug === resolvedParams.slug) : null
+
+  if (researchEntry) {
+    redirect(`/articles/research/${researchEntry.category}/${researchEntry.slug}`)
+  }
 
   if (!article) {
     notFound()

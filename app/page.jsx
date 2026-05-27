@@ -21,7 +21,8 @@ function isExternalHref(href) {
 
 function getArticleLink(article) {
   if (article?.slug === 'diary-self-reflection') return '/diary'
-  return isExternalHref(article?.href) ? article.href : `/articles/${article.slug}`
+  if (article?.href) return article.href
+  return `/articles/${article.slug}`
 }
 
 function getArticleCategory(article) {

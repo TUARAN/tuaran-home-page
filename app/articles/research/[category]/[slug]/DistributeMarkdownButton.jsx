@@ -42,6 +42,7 @@ export default function DistributeMarkdownButton({
   title,
   summary,
   markdown,
+  images = [],
   url,
   category,
   slug,
@@ -80,6 +81,8 @@ export default function DistributeMarkdownButton({
       category,
       slug,
       tags,
+      coverImage: images[0] || null,
+      images,
       markdown,
       importedAt: new Date().toISOString(),
     }

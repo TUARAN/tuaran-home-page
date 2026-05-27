@@ -12,7 +12,7 @@ import {
   listResearch,
   listResearchByCategory,
 } from '../../../../../lib/research/loader'
-import { extractToc, renderMarkdown } from '../../../../../lib/research/markdown'
+import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../lib/research/markdown'
 import ArticleComments from '../../../../components/ArticleComments'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
@@ -111,8 +111,12 @@ export default async function ResearchDetailPage({ params }) {
         }),
         toc: extractToc(variant.content),
       }))
-  // 一键复制用的 Markdown：标题 + 正文（不含 YAML frontmatter）；加密文章不提供
-  const markdownDoc = isEncrypted ? '' : `# ${entry.title}\n\n${entry.content}`
+  // 一键复制/分发用的 Markdown：标题 + 正文 + 调研配图（不含 YAML frontmatter）；加密文章不提供
+  const markdownDoc = isEncrypted ? '' : buildResearchMarkdownDocument(entry.content, {
+    images: entry.images || [],
+    seed: `${entry.category}:${entry.slug}:${variantList[0]?.id || entry.source || 'source'}`,
+    title: entry.title,
+  })
   const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
 
@@ -222,6 +226,7 @@ export default async function ResearchDetailPage({ params }) {
                 title={entry.title}
                 summary={entry.summary || entry.tldr || ''}
                 markdown={markdownDoc}
+                images={entry.images || []}
                 url={url}
                 category={entry.category}
                 slug={entry.slug}

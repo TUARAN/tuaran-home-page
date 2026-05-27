@@ -10,7 +10,7 @@ model: gpt-5
 pv: 0
 ---
 
-> **信息来源说明**：本调研基于 Qwen 官方博客 / Alibaba Cloud Community、Hugging Face 官方 Qwen 模型卡、Hugging Face Collection、vLLM recipes、ModelScope / 第三方模型平台索引、TechNode / CnTechPost 等公开资料整理。Qwen3.7 仍处于刚发布阶段，部分信息仅有服务化模型与媒体报道，未公开权重、参数规模和完整模型卡；本文将明确标注“未公开”或“估算”。
+> **信息来源说明**：本调研基于 Qwen 官方博客 / Alibaba Cloud Community、Hugging Face 官方 Qwen 模型卡、Hugging Face Collection、vLLM recipes、ModelScope / 第三方模型平台索引、TechNode / CnTechPost 等公开资料整理。Qwen3.7 仍处于刚发布阶段，部分信息仅有服务化模型与媒体报道，未公开权重、参数规模和完整模型卡；下文出现此类数据时统一标注"未公开"或"估算"。
 
 ## 一、核心结论
 

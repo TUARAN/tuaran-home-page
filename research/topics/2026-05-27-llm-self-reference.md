@@ -1,5 +1,5 @@
 ---
-title: 大模型的自我指涉问题：为什么 AI 写正文总在"本文""我将""作为 AI"里露馅
+title: 大模型的自我指涉问题：为什么 AI 总爱说“不是……而是……”？
 category: topics
 topic_type: tech
 date: 2026-05-27

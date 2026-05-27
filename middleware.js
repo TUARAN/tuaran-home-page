@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { RESEARCH_ARTICLE_REDIRECTS } from './lib/research/catalog'
 
 const CANONICAL_HOST = '2aran.com'
 const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
@@ -9,14 +10,18 @@ export function middleware(request) {
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
   const shouldCanonicalizeHost = LEGACY_HOSTS.has(host)
   const shouldRedirectLegacyPath = LEGACY_PATHS.has(pathname)
+  const articleSlug = /^\/articles\/([^/]+)\/?$/.exec(pathname)?.[1] || ''
+  const researchRedirectPath = RESEARCH_ARTICLE_REDIRECTS[articleSlug] || ''
 
-  if (shouldCanonicalizeHost || shouldRedirectLegacyPath) {
+  if (shouldCanonicalizeHost || shouldRedirectLegacyPath || researchRedirectPath) {
     const url = request.nextUrl.clone()
     if (shouldCanonicalizeHost) {
       url.protocol = 'https'
       url.host = CANONICAL_HOST
     }
-    if (shouldRedirectLegacyPath) {
+    if (researchRedirectPath) {
+      url.pathname = researchRedirectPath
+    } else if (shouldRedirectLegacyPath) {
       url.pathname = '/diary'
     }
     return NextResponse.redirect(url, 301)

@@ -80,7 +80,7 @@ pv: 0
 ## 六、官方文档、链接、版本信息（截至 2026-05-21）
 
 - 多模态知识库自 **v1.11.0** 引入（release 标题 "Your knowledge base just went from mono to full HD"）；**v1.11.1** 修复 DOCX 外链图片抽取失败。
-- 截至 2026-05-21，Dify 最新 release **v1.14.2**（2026-05-19）`[releases]`。本文「抽取层」「`ATTACHMENT_IMAGE_FILE_SIZE_LIMIT`」依据 **main 分支当前源码**，对 v1.14.x 仍成立；v1.12–v1.14 release notes 未见对 DOCX 图片机制的颠覆性改动（未逐版精校，属本文已知边界）。
+- 截至 2026-05-21，Dify 最新 release **v1.14.2**（2026-05-19）`[releases]`。下文关于「抽取层」「`ATTACHMENT_IMAGE_FILE_SIZE_LIMIT`」的判断依据 **main 分支当前源码**，对 v1.14.x 仍成立；v1.12–v1.14 release notes 未见对 DOCX 图片机制的颠覆性改动（未逐版精校，属此调研已知边界）。
 - 关键官方页面见第九节。
 
 ## 七、关键限制汇总
@@ -95,7 +95,7 @@ pv: 0
 | 外链图片 | 经 `ssrf_proxy` 下载、本地化；失败即丢弃该图 | —— | `[源码]` |
 | 普通 embedding | 图片不向量化，仅随 chunk 透传 Vision LLM | —— | `[v1.11.0]` |
 
-**已知问题（社区，非官方结论）**：GitHub issue #11134 反馈「分段时文档图片丢失」、issue #30771 反馈「多模态知识库图片 embedding 不可检索 / 检索结果图片不渲染」——属社区 issue，是否已修复需对照具体版本，本文不据此下定论。`[社区]`
+**已知问题（社区，非官方结论）**：GitHub issue #11134 反馈「分段时文档图片丢失」、issue #30771 反馈「多模态知识库图片 embedding 不可检索 / 检索结果图片不渲染」——属社区 issue，是否已修复需对照具体版本，此处不据此下定论。`[社区]`
 
 ## 八、调研结论与建议
 
@@ -126,4 +126,4 @@ pv: 0
 - [GitHub Issue #11134](https://github.com/langgenius/dify/issues/11134) — 社区反馈：分段时文档图片丢失
 - [GitHub Issue #30771](https://github.com/langgenius/dify/issues/30771) — 社区反馈：多模态知识库图片 embedding 不可检索、检索结果图片不渲染
 
-> 边界说明：本文未逐版精校 v1.12–v1.14 release notes；「抽取层无过滤」「2MB 可配」依据 main 分支当前源码，若官方后续调整以最新源码 / release notes 为准。
+> 边界说明：未逐版精校 v1.12–v1.14 release notes；「抽取层无过滤」「2MB 可配」依据 main 分支当前源码，若官方后续调整以最新源码 / release notes 为准。

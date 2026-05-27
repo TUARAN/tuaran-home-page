@@ -11,9 +11,6 @@ const TAB_DEFS = [
   { key: 'companies', label: '公司调研' },
   { key: 'topics', label: '事项调研' },
   { key: 'special', label: '专题' },
-  { key: 'people', label: '人物调研' },
-  { key: 'history', label: '历史调研' },
-  { key: 'poetry', label: '诗歌调研' },
 ]
 
 // 各分类标签的配色（浅色 + 暗色）
@@ -22,9 +19,6 @@ const KIND_TAG_CLASS = {
   companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   topics: 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
   special: 'border-[#d9d3f0] bg-[#f2eefc] text-[#5b4b8a] dark:border-[#312745] dark:bg-[#191424] dark:text-[#b8a6e8]',
-  people: 'border-[#e9d5b8] bg-[#fbf3e3] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]',
-  history: 'border-[#e4cdc0] bg-[#f7efe9] text-[#8a4f32] dark:border-[#3a2c22] dark:bg-[#241a13] dark:text-[#d7a98a]',
-  poetry: 'border-[#ddd0e6] bg-[#f4eef8] text-[#6b4a86] dark:border-[#332a3f] dark:bg-[#1f1726] dark:text-[#c3a9d9]',
 }
 
 const TAB_KEYS = TAB_DEFS.map((t) => t.key)
@@ -56,6 +50,18 @@ const TOPIC_TYPE_DEFS = [
 
 const TOPIC_TYPE_KEYS = TOPIC_TYPE_DEFS.map((t) => t.key)
 
+const SPECIAL_TYPE_DEFS = [
+  { key: 'all', label: '全部专题' },
+  { key: 'dashboard', label: '数据看板' },
+  { key: 'culture', label: '文化专题' },
+  { key: 'politics', label: '政治专题' },
+  { key: 'people', label: '人物调研' },
+  { key: 'history', label: '历史调研' },
+  { key: 'poetry', label: '诗歌调研' },
+]
+
+const SPECIAL_TYPE_KEYS = SPECIAL_TYPE_DEFS.map((t) => t.key)
+
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
@@ -82,9 +88,14 @@ export default function ArticlesIndexClient({ items }) {
     const fromUrl = searchParams?.get('topic_type')
     return TOPIC_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
   })()
+  const initialSpecialType = (() => {
+    const fromUrl = searchParams?.get('special_type')
+    return SPECIAL_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
+  })()
   const [tab, setTab] = useState(initialTab)
   const [companyType, setCompanyType] = useState(initialCompanyType)
   const [topicType, setTopicType] = useState(initialTopicType)
+  const [specialType, setSpecialType] = useState(initialSpecialType)
 
   useEffect(() => {
     const fromUrl = searchParams?.get('tab')
@@ -101,6 +112,11 @@ export default function ArticlesIndexClient({ items }) {
     if (nextTopicType !== topicType) {
       setTopicType(nextTopicType)
     }
+    const specialTypeFromUrl = searchParams?.get('special_type')
+    const nextSpecialType = SPECIAL_TYPE_KEYS.includes(specialTypeFromUrl) ? specialTypeFromUrl : 'all'
+    if (nextSpecialType !== specialType) {
+      setSpecialType(nextSpecialType)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
@@ -111,6 +127,9 @@ export default function ArticlesIndexClient({ items }) {
     }
     if (next !== 'topics') {
       setTopicType('all')
+    }
+    if (next !== 'special') {
+      setSpecialType('all')
     }
     const url = next === 'all' ? '/articles' : `/articles?tab=${next}`
     router.replace(url, { scroll: false })
@@ -127,6 +146,13 @@ export default function ArticlesIndexClient({ items }) {
     setTab('topics')
     setTopicType(next)
     const url = next === 'all' ? '/articles?tab=topics' : `/articles?tab=topics&topic_type=${next}`
+    router.replace(url, { scroll: false })
+  }
+
+  function selectSpecialType(next) {
+    setTab('special')
+    setSpecialType(next)
+    const url = next === 'all' ? '/articles?tab=special' : `/articles?tab=special&special_type=${next}`
     router.replace(url, { scroll: false })
   }
 
@@ -147,8 +173,11 @@ export default function ArticlesIndexClient({ items }) {
     if (tab === 'topics' && topicType !== 'all') {
       return tabItems.filter((item) => item.topicType === topicType)
     }
+    if (tab === 'special' && specialType !== 'all') {
+      return tabItems.filter((item) => item.specialType === specialType)
+    }
     return tabItems
-  }, [items, tab, companyType, topicType])
+  }, [items, tab, companyType, topicType, specialType])
 
   useEffect(() => {
     const keys = Array.from(
@@ -203,6 +232,18 @@ export default function ArticlesIndexClient({ items }) {
     for (const item of topicItems) {
       if (item.topicType && typeof base[item.topicType] === 'number') {
         base[item.topicType] += 1
+      }
+    }
+    return base
+  }, [items])
+
+  const specialTypeCounts = useMemo(() => {
+    const base = Object.fromEntries(SPECIAL_TYPE_KEYS.map((k) => [k, 0]))
+    const specialItems = items.filter((item) => item.kind === 'special')
+    base.all = specialItems.length
+    for (const item of specialItems) {
+      if (item.specialType && typeof base[item.specialType] === 'number') {
+        base[item.specialType] += 1
       }
     }
     return base
@@ -315,6 +356,35 @@ export default function ArticlesIndexClient({ items }) {
                   <span>{t.label}</span>
                   <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#a99d8a] dark:text-[#667287]'}>
                     {topicTypeCounts[t.key] ?? 0}
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      ) : null}
+
+      {tab === 'special' ? (
+        <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
+          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">专题分类</span>
+          <nav aria-label="专题分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
+            {SPECIAL_TYPE_DEFS.map((t) => {
+              const active = specialType === t.key
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => selectSpecialType(t.key)}
+                  className={[
+                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
+                    active
+                      ? 'bg-[#f2eefc] font-medium text-[#5b4b8a] dark:bg-[#191424] dark:text-[#b8a6e8]'
+                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                  ].join(' ')}
+                >
+                  <span>{t.label}</span>
+                  <span className={active ? 'text-[#8d7eb8] dark:text-[#9e90c8]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                    {specialTypeCounts[t.key] ?? 0}
                   </span>
                 </button>
               )

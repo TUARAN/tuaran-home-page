@@ -83,18 +83,21 @@ const TOPIC_PAGES = [
     summary: '5 种变现机制、8 个内容平台、6 大小说网站、掘金小册样本与传统出版数据的一页式可视化看板。',
     date: '2026-05-27',
     href: '/writing-monetization-2026',
+    specialType: 'dashboard',
   },
   {
     title: '儒释道 · 神仙体系',
     summary: '佛教五层果位、道教十级神格、儒家文庙道统 —— 三教神仙体系结构图。',
     date: '2026-05-21',
     href: '/ru-shi-dao',
+    specialType: 'culture',
   },
   {
     title: '中国政治体制',
     summary: '中央与国务院组织结构、历届三中全会、领导层沿革（1971–至今）。',
     date: '2026-05-21',
     href: '/china-politics',
+    specialType: 'politics',
   },
 ]
 
@@ -134,8 +137,9 @@ function buildItems() {
   })
 
   const peopleItems = PEOPLE_RESEARCH.map((p) => ({
-    kind: 'people',
-    tagLabel: '人物调研',
+    kind: 'special',
+    specialType: 'people',
+    tagLabel: '专题 · 人物调研',
     title: p.title,
     summary: p.summary,
     date: p.date,
@@ -143,8 +147,9 @@ function buildItems() {
   }))
 
   const historyItems = HISTORY_RESEARCH.map((p) => ({
-    kind: 'history',
-    tagLabel: '历史调研',
+    kind: 'special',
+    specialType: 'history',
+    tagLabel: '专题 · 历史调研',
     title: p.title,
     summary: p.summary,
     date: p.date,
@@ -152,8 +157,9 @@ function buildItems() {
   }))
 
   const poetryItems = POETRY_RESEARCH.map((p) => ({
-    kind: 'poetry',
-    tagLabel: '诗歌调研',
+    kind: 'special',
+    specialType: 'poetry',
+    tagLabel: '专题 · 诗歌调研',
     title: p.title,
     summary: p.summary,
     date: p.date,
@@ -163,6 +169,7 @@ function buildItems() {
   const topicPageItems = TOPIC_PAGES.map((p) => ({
     kind: 'special',
     tagLabel: '专题',
+    specialType: p.specialType || 'other',
     title: p.title,
     summary: p.summary,
     date: p.date,

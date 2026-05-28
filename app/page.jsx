@@ -95,15 +95,15 @@ export default function HomePage() {
       tone: 'blue',
       items: [
         { label: '程序员', href: 'https://item.jd.com/14356664.html' },
-        { label: '项目经理', href: '/ai-projects' },
+        { label: '项目经理', href: '/project-manager' },
       ],
     },
     {
       label: '创作',
       tone: 'purple',
       items: [
-        { label: '技术博主', href: 'https://blogger-alliance.cn/matrix' },
-        { label: '出版作者', href: 'https://publishlab.cc' },
+        { label: '技术博主', href: 'https://syncblog.cn/creator-offer/tuaran#content-sync' },
+        { label: '出版作者', href: '/publications' },
       ],
     },
     {
@@ -114,7 +114,7 @@ export default function HomePage() {
     {
       label: '创业',
       tone: 'emerald',
-      items: [{ label: '创立矩联科技', href: 'https://matrixlink.tech/' }],
+      items: [{ label: '创办矩联', href: 'https://matrixlink.tech/' }],
     },
   ]
 
@@ -375,7 +375,15 @@ export default function HomePage() {
                 <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
                   Publications
                 </p>
-                <h2 className="home-section-title">著作出版</h2>
+                <div className="flex items-center justify-between gap-4">
+                  <h2 className="home-section-title">著作出版</h2>
+                  <Link
+                    href="/publications"
+                    className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#7f6f55] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#c8b99d]"
+                  >
+                    进入出版页
+                  </Link>
+                </div>
               </div>
               <div className="space-y-2 text-[15px] leading-7 text-[#666]">
               <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.12em] text-[#958a75] dark:text-gray-400">已出版</p>

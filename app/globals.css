@@ -142,13 +142,28 @@
     @apply [&_.research-inline-image_figcaption]:px-3 [&_.research-inline-image_figcaption]:py-2 [&_.research-inline-image_figcaption]:text-[11px] [&_.research-inline-image_figcaption]:text-[#8d806d] dark:[&_.research-inline-image_figcaption]:text-gray-400;
   }
 
-  /* 宽表格在 H5 下横向滚动，避免溢出挤压正文 */
-  .prose-tuaran :where(table) {
+  /* 宽表格在 H5 下横向滚动：用块级容器承载滚动，切断 table min-content 对父级宽度的传导 */
+  .prose-tuaran .table-scroll {
     display: block;
-    width: fit-content;
+    width: 100%;
     max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .prose-tuaran .table-scroll > table {
+    width: max-content;
+    min-width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  /* H5（flex-col 布局，min-width:0 不约束宽度）下用视口单位锁死宽度，
+     切断「百分比宽度 ↔ 被表格内容撑大的父级」循环依赖 */
+  @media (max-width: 767px) {
+    .prose-tuaran .table-scroll {
+      max-width: calc(100vw - 2rem);
+    }
   }
 
   .ai-projects-nav {

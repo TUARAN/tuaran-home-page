@@ -13,7 +13,6 @@ const navItems = [
   { href: '/articles', label: '知识库', match: (p) => p?.startsWith('/articles') },
   { href: '/reading', label: '书库', match: (p) => p?.startsWith('/reading') },
   { href: '/bookmarks', label: '资源库', match: (p) => p?.startsWith('/bookmarks') },
-  { href: '/web-llm', label: '端侧大模型', match: (p) => p?.startsWith('/web-llm') },
 ]
 
 export default function SiteHeader() {

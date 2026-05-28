@@ -26,18 +26,16 @@ export const maintainedDomains = [
   {
     name: '🧭 前端下一步 Frontend Next',
     href: 'https://frontendnext.com',
-    domains: ['frontendnext.com', 'frontendweekly.cn', 'qdzk.site'],
+    domains: [
+      'frontendnext.com',
+      'frontendweekly.cn',
+      'qdzk.site',
+      'frontend2aiagent.com',
+      'iamvibecoder.cn',
+    ],
     category: '转型决策',
-    focus: '帮前端在 AI 时代做转型决策（原 Frontend Weekly）',
+    focus: '帮前端在 AI 时代做转型决策（矩阵域名统一收敛到 frontendnext.com）。',
     status: '持续更新',
-  },
-  {
-    name: '🤖 I Am Vibe Coder',
-    href: 'https://iamvibecoder.cn',
-    domains: ['iamvibecoder.cn'],
-    category: 'AI 编程',
-    focus: 'AI 编程实践与开发者实验场',
-    status: '打磨中',
   },
   {
     name: '🧠 Open Claude Code',
@@ -53,14 +51,6 @@ export const maintainedDomains = [
     domains: ['publishlab.cc'],
     category: '创作实验室',
     focus: 'AI 写作、内容创作与数字出版',
-    status: '打磨中',
-  },
-  {
-    name: '⚡ Frontend 2 AI Agent',
-    href: 'https://frontend2aiagent.com',
-    domains: ['frontend2aiagent.com'],
-    category: '转型平台',
-    focus: '前端工程师转向 AI Agent 工程师的知识体系与成长路径。',
     status: '打磨中',
   },
 ]

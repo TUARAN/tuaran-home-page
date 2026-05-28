@@ -60,20 +60,6 @@ export default function PublicationsPage() {
           </table>
         </div>
 
-        <div className="rounded-2xl border border-[#e6dfd2] bg-white p-4 dark:border-[#2a3440] dark:bg-[#0f141b]">
-          <p className="mb-3 text-[13px] uppercase tracking-[0.18em] text-[#9b8f79] dark:text-[#9ca5b5]">
-            设计草图（当前参考）
-          </p>
-          <a href="/publications/publishing-roadmap.png" target="_blank" rel="noreferrer" className="no-external-arrow block">
-            <Image
-              src="/publications/publishing-roadmap.png"
-              alt="书籍出版设计草图"
-              width={1024}
-              height={382}
-              className="h-auto w-full rounded-xl border border-[#ece4d7] object-contain dark:border-[#2b3542]"
-            />
-          </a>
-        </div>
       </section>
     </div>
   )

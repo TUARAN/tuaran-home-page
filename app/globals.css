@@ -142,6 +142,15 @@
     @apply [&_.research-inline-image_figcaption]:px-3 [&_.research-inline-image_figcaption]:py-2 [&_.research-inline-image_figcaption]:text-[11px] [&_.research-inline-image_figcaption]:text-[#8d806d] dark:[&_.research-inline-image_figcaption]:text-gray-400;
   }
 
+  /* 宽表格在 H5 下横向滚动，避免溢出挤压正文 */
+  .prose-tuaran :where(table) {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .web-llm-nav {
     display: inline-flex;
     align-items: center;

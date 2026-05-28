@@ -147,7 +147,7 @@ export default async function ResearchDetailPage({ params }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
       <Script id={`research-jsonld-${entry.category}-${entry.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(structuredData)}
       </Script>
@@ -212,7 +212,7 @@ export default async function ResearchDetailPage({ params }) {
             </>
           ) : null}
           {isEncrypted ? null : (
-            <div className="ml-auto flex shrink-0 items-center gap-2">
+            <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto sm:flex-nowrap">
               <ShareResearchButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
               <CopyMarkdownButton markdown={markdownDoc} />
               <DownloadPptButton

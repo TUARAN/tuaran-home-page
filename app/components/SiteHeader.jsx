@@ -62,10 +62,12 @@ export default function SiteHeader() {
                 )
               })}
             </nav>
+            <WebLlmModal />
             <SettingsButton />
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
+            <WebLlmModal />
             <SettingsButton />
             <button
               type="button"
@@ -136,8 +138,6 @@ export default function SiteHeader() {
           })}
         </nav>
       </div>
-
-      <WebLlmModal />
     </>
   )
 }

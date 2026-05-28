@@ -9,6 +9,16 @@ function getDomainHref(domainLabel) {
   return `https://${sourceDomain}`
 }
 
+function getSourceDomain(domainLabel) {
+  return domainLabel.includes('→') ? domainLabel.split('→')[0].trim() : domainLabel.trim()
+}
+
+function isFrontendNextPrimaryDomain(projectName, domainLabel) {
+  if (!projectName.includes('Frontend Next')) return false
+  const sourceDomain = getSourceDomain(domainLabel)
+  return sourceDomain === 'frontendnext.com' || sourceDomain === 'frontendweekly.cn'
+}
+
 const laneConfigs = [
   {
     id: 'brand',
@@ -68,17 +78,24 @@ function ProjectCard({ project, accent }) {
         <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">{project.focus}</p>
       ) : null}
       <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-slate-500 dark:text-slate-500">
-        {project.domains.map((domain) => (
-          <a
-            key={domain}
-            href={getDomainHref(domain)}
-            target="_blank"
-            rel="noreferrer"
-            className="no-external-arrow !text-slate-500 hover:opacity-80 dark:!text-slate-500"
-          >
-            {domain}
-          </a>
-        ))}
+        {project.domains.map((domain) => {
+          const isPrimaryDomain = isFrontendNextPrimaryDomain(project.name, domain)
+          return (
+            <a
+              key={domain}
+              href={getDomainHref(domain)}
+              target="_blank"
+              rel="noreferrer"
+              className={`no-external-arrow hover:opacity-80 ${
+                isPrimaryDomain
+                  ? '!text-slate-700 font-semibold dark:!text-slate-300'
+                  : '!text-slate-500 dark:!text-slate-500'
+              }`}
+            >
+              {isPrimaryDomain ? `主域名 · ${domain}` : domain}
+            </a>
+          )
+        })}
       </div>
     </article>
   )

@@ -34,7 +34,7 @@ export const maintainedDomains = [
       'iamvibecoder.cn',
     ],
     category: '转型决策',
-    focus: '帮前端在 AI 时代做转型决策（矩阵域名统一收敛到 frontendnext.com）。',
+    focus: '帮前端在 AI 时代做转型决策。',
     status: '持续更新',
   },
   {

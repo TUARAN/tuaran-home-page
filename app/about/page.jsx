@@ -72,22 +72,6 @@ const siteLinks = [
   { label: 'PublishLab', href: 'https://publishlab.cc/', desc: 'AI 写作、内容创作与数字出版实验' },
 ]
 
-const siteStops = [
-  { label: '知识库', href: '/articles' },
-  { label: 'AI 项目', href: '/ai-projects' },
-  { label: '上下文记忆', href: '/context-memory' },
-  { label: '端侧大模型', href: '/web-llm' },
-  { label: '阅读', href: '/reading' },
-  { label: '书签导航', href: '/bookmarks' },
-  { label: '社区', href: '/community' },
-  { label: '日记', href: '/diary' },
-  { label: '服务', href: '/services' },
-  { label: '站点数据', href: '/traffic' },
-  { label: '留言板', href: '/messages' },
-  { label: '待办', href: '/xiaomoli-dad-todo' },
-  { label: '请喝咖啡', href: '/donate' },
-]
-
 const chipClassName =
   'inline-flex items-center rounded-full border border-[#ded6c8] bg-white/90 px-2.5 py-1 text-[12px] text-[#5f5a4d] no-underline transition hover:border-[#9c8e72] hover:text-[#221f19] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300 dark:hover:border-[#4a5568]'
 
@@ -201,19 +185,6 @@ export default function AboutPage() {
           </p>
         </section>
       </div>
-
-      <section className="mt-4 rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
-        <h3 className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#a09176] dark:text-[#8e9ab0]">
-          站内入口
-        </h3>
-        <div className="flex flex-wrap gap-1.5">
-          {siteStops.map((s) => (
-            <Link key={s.href} href={s.href} className={chipClassName}>
-              {s.label}
-            </Link>
-          ))}
-        </div>
-      </section>
 
       <footer className="mt-3 shrink-0 border-t border-[#e8dfd0] pt-3 text-center text-[11px] leading-5 text-[#888] dark:border-gray-800 dark:text-gray-500">
         <p>

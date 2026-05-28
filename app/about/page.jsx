@@ -55,11 +55,21 @@ const socialLinks = [
   { label: 'GitHub', href: 'https://github.com/TUARAN' },
 ]
 
+const contactItems = [
+  { label: '主页', value: '2aran.com', href: 'https://2aran.com' },
+  { label: '社区 ID', value: '掘金安东尼 · 安东尼404 · 安东尼与AI' },
+  { label: '微信', value: 'atar24' },
+  { label: '邮箱', value: 'tuaran666@gmail.com', href: 'mailto:tuaran666@gmail.com' },
+  { label: '影响力', value: '全网 500+ 篇 · 阅读 400 万+' },
+]
+
 const siteLinks = [
-  { label: '矩联科技', href: 'https://matrixlink.tech/' },
-  { label: '博主联盟', href: 'https://blogger-alliance.cn/' },
-  { label: '前端周刊', href: 'https://frontendweekly.cn/' },
-  { label: 'Vibe Coder', href: 'https://iamvibecoder.cn/' },
+  { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人技术主页 · AI × 工程 × 思考' },
+  { label: '矩联科技', href: 'https://matrixlink.tech/', desc: '公司官网 · 技术服务与品牌展示' },
+  { label: '博主联盟', href: 'https://blogger-alliance.cn/', desc: '技术博主联盟与推广协作网络' },
+  { label: '前端下一步', href: 'https://frontendnext.com/', desc: '前端工程师在 AI 时代的转向判断' },
+  { label: 'Open Claude Code', href: 'https://openclaudecode.site/', desc: '系统拆解 Claude Code 的 Agent 方法论' },
+  { label: 'PublishLab', href: 'https://publishlab.cc/', desc: 'AI 写作、内容创作与数字出版实验' },
 ]
 
 const siteStops = [
@@ -67,6 +77,13 @@ const siteStops = [
   { label: 'AI 项目', href: '/ai-projects' },
   { label: '上下文记忆', href: '/context-memory' },
   { label: '端侧大模型', href: '/web-llm' },
+  { label: '阅读', href: '/reading' },
+  { label: '书签导航', href: '/bookmarks' },
+  { label: '社区', href: '/community' },
+  { label: '日记', href: '/diary' },
+  { label: '服务', href: '/services' },
+  { label: '站点数据', href: '/traffic' },
+  { label: '留言板', href: '/messages' },
   { label: '待办', href: '/xiaomoli-dad-todo' },
   { label: '请喝咖啡', href: '/donate' },
 ]
@@ -78,7 +95,7 @@ const externalChipClassName = `${chipClassName} no-external-arrow`
 
 export default function AboutPage() {
   return (
-    <main className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col px-4 py-8 sm:justify-center sm:py-5 sm:min-h-[calc(100svh-5.5rem)] lg:max-h-[calc(100svh-5.5rem)] lg:overflow-hidden">
+    <main className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col px-4 py-8 sm:py-5">
       <header className="shrink-0 border-b border-[#e8dfd0] pb-4 dark:border-gray-800">
         <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
           About · 关于我
@@ -133,32 +150,27 @@ export default function AboutPage() {
         </ol>
       </section>
 
-      <div className="mt-4 grid min-h-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-        <section className="flex min-h-0 flex-col rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
+      <div className="mt-4 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4">
+        <section className="flex flex-col self-start rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
           <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#221f19] dark:text-gray-100">联系与数据</h2>
           <dl className="space-y-2 text-[12px] leading-5 text-[#5d554a] dark:text-gray-300">
-            <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-              <dt className="text-[#9d9078] dark:text-gray-500">微信</dt>
-              <dd className="font-mono text-[#221f19] dark:text-gray-100">atar24</dd>
-            </div>
-            <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-              <dt className="text-[#9d9078] dark:text-gray-500">邮箱</dt>
-              <dd>
-                <a
-                  href="mailto:tuaran666@gmail.com"
-                  className="break-all text-[#5a4725] no-underline hover:underline dark:text-[#c8b99d]"
-                >
-                  tuaran666@gmail.com
-                </a>
-              </dd>
-            </div>
-            <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-              <dt className="text-[#9d9078] dark:text-gray-500">影响力</dt>
-              <dd>
-                全网 <span className="font-mono font-semibold text-[#221f19] dark:text-gray-100">500+</span> 篇 · 阅读{' '}
-                <span className="font-mono font-semibold text-[#221f19] dark:text-gray-100">400 万+</span>
-              </dd>
-            </div>
+            {contactItems.map((item) => (
+              <div key={item.label} className="flex flex-wrap gap-x-2 gap-y-0.5">
+                <dt className="text-[#9d9078] dark:text-gray-500">{item.label}</dt>
+                <dd className="min-w-0">
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      className="break-all text-[#5a4725] no-underline hover:underline dark:text-[#c8b99d]"
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    <span className="text-[#221f19] dark:text-gray-100">{item.value}</span>
+                  )}
+                </dd>
+              </div>
+            ))}
             <div>
               <dt className="mb-1.5 text-[#9d9078] dark:text-gray-500">社交平台</dt>
               <dd className="flex flex-wrap gap-1.5">
@@ -172,30 +184,36 @@ export default function AboutPage() {
           </dl>
         </section>
 
-        <section className="flex min-h-0 flex-col rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
+        <section className="flex flex-col self-start rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
           <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#221f19] dark:text-gray-100">站点矩阵</h2>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {siteLinks.map((c) => (
-              <a key={c.href} href={c.href} target="_blank" rel="noreferrer" className={externalChipClassName}>
-                {c.label}
-              </a>
+              <div key={c.href} className="rounded-lg border border-[#e8dfd0] bg-white/70 px-2.5 py-2 dark:border-[#2d3440] dark:bg-[#18202a]/60">
+                <a href={c.href} target="_blank" rel="noreferrer" className={`${externalChipClassName} !px-2 !py-0.5`}>
+                  {c.label}
+                </a>
+                <p className="mt-1 text-[11px] leading-5 text-[#847a67] dark:text-gray-400">{c.desc}</p>
+              </div>
             ))}
           </div>
           <p className="mt-3 text-[11px] leading-5 text-[#847a67] dark:text-gray-400">
             系统优先 · 自动化优先 · 长期可复用 —— 倾向构建能长期稳定运行的系统，而非一次性工具。
           </p>
-          <h3 className="mt-3 mb-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#a09176] dark:text-[#8e9ab0]">
-            站内入口
-          </h3>
-          <div className="flex flex-wrap gap-1.5">
-            {siteStops.map((s) => (
-              <Link key={s.href} href={s.href} className={chipClassName}>
-                {s.label}
-              </Link>
-            ))}
-          </div>
         </section>
       </div>
+
+      <section className="mt-4 rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
+        <h3 className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#a09176] dark:text-[#8e9ab0]">
+          站内入口
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          {siteStops.map((s) => (
+            <Link key={s.href} href={s.href} className={chipClassName}>
+              {s.label}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <footer className="mt-3 shrink-0 border-t border-[#e8dfd0] pt-3 text-center text-[11px] leading-5 text-[#888] dark:border-gray-800 dark:text-gray-500">
         <p>

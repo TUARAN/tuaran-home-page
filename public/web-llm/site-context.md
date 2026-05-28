@@ -20,19 +20,15 @@ tuaran 是干嘛的：
 
 网站里的代表性项目：
 - 博主联盟：开发者博主联盟平台，链接创作与推广。
-- 前端周刊：每周更新国外论坛的前端热门文章。
-- I Am Vibe Coder：AI 编程实践与开发者实验场。
+- 前端下一步：帮助前端在 AI 时代做转型决策。
 - PublishLab：AI 写作、内容创作与数字出版。
-- Frontend 2 AI Agent：帮助前端工程师向 AI Agent 工程师转型。
 
 域名与站点布局：
 - 2aran.com：个人主页与网络日志；tuaran.me 为历史域名，访问时应 301 重定向到 2aran.com。
 - matrixlink.tech：公司官网。
 - blogger-alliance.cn / bzlm.net：社区平台。
-- frontendnext.com（前端下一步，原 frontendweekly.cn / qdzk.site，旧域名跳转）：帮前端在 AI 时代做转型决策。
-- iamvibecoder.cn：AI 编程实验。
+- frontendnext.com（前端下一步）：帮前端在 AI 时代做转型决策。
 - publishlab.cc：创作实验室。
-- frontend2aiagent.com：转型平台。
 
 回答要求：
 - 用户问 tuaran 是做什么的、这个网站是干嘛的、有哪些项目时，优先基于这些上下文总结。

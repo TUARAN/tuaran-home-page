@@ -15,7 +15,7 @@ export default function LayoutChrome({ children }) {
   return (
     <>
       {!hideChrome ? <SiteHeader /> : null}
-      <div className="flex-1 flex flex-col">{children}</div>
+      <div className="flex w-full min-w-0 flex-1 flex-col [&>*]:min-w-0 [&>*]:w-full">{children}</div>
       {!hideChrome && pathname !== '/' ? <SiteFooter className="mx-auto mb-8 mt-12 w-full max-w-[1120px] px-4" /> : null}
       {!hideChrome ? <BackToTopButton /> : null}
     </>

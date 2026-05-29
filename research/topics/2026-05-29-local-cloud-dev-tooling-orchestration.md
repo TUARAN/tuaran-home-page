@@ -157,7 +157,7 @@ GitHub Actions 跑 CI（lint / typecheck / test / build）
 
 ## 六、争议与风险
 
-- **「云端 Agent 全自动」的诱惑**：让 Claude Code 在 Actions 里自动改代码、自动合并听起来很爽，但**无人值守地跨过 PR 闸门，等于把判断权也外包了**。可逆性低的环节（生产、数据写入）坚决保留人工拍板。参见 [[vibe-coding-judgment-structure]]：执行被平权，但判断责任不能外包。
+- **「云端 Agent 全自动」的诱惑**：让 Claude Code 在 Actions 里自动改代码、自动合并听起来很爽，但**无人值守地跨过 PR 闸门，等于把判断权也外包了**。可逆性低的环节（生产、数据写入）坚决保留人工拍板。参见 [AI 时代的判断力结构](/articles/research/topics/vibe-coding-judgment-structure)：执行被平权，但判断责任不能外包。
 - **Vercel vs Cloudflare 的成本/锁定**：Vercel 的 DX 最好，但带宽/函数用量上去后费用陡增，且对 Next.js 有一定生态绑定；Cloudflare 免费额度大、边缘网络强，但全栈能力（尤其非 Next 框架的 SSR）配置更琐碎。选型应按项目形态而非品牌偏好。
 - **本地与云端环境漂移**：「本地能跑，CI 挂了」往往源于 Node 版本、环境变量、依赖锁文件不一致。这不是工具问题，是**纪律问题**——锁版本、把环境差异显式化。
 - **AI 工具把「试错成本低」误导成「不用想」**：本地试错便宜不等于可以不判断方案。便宜的是「改」，不便宜的是「错误方案被一路放行到生产」。
@@ -185,4 +185,4 @@ GitHub Actions 跑 CI（lint / typecheck / test / build）
 - [Cloudflare Workers Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
 - [Vercel 部署文档](https://vercel.com/docs/deployments/overview)
 - [Vercel Preview Deployments](https://vercel.com/docs/deployments/preview-deployments)
-- 站内相关：[[vibe-coding-judgment-structure]]（AI 时代的判断力结构，与本文「闸门由人守」呼应）
+- 站内相关：[Vibe Coding 真香也真险：AI 时代的判断力结构](/articles/research/topics/vibe-coding-judgment-structure)（与本文「闸门由人守」呼应）

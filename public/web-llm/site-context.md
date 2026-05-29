@@ -20,14 +20,14 @@ tuaran 是干嘛的：
 
 网站里的代表性项目：
 - 博主联盟：开发者博主联盟平台，链接创作与推广。
-- 前端下一步：帮助前端在 AI 时代做转型决策。
+- 前端周看：帮助前端在 AI 时代做转型决策。
 - PublishLab：AI 写作、内容创作与数字出版。
 
 域名与站点布局：
 - 2aran.com：个人主页与网络日志；tuaran.me 为历史域名，访问时应 301 重定向到 2aran.com。
 - matrixlink.tech：公司官网。
 - blogger-alliance.cn / bzlm.net：社区平台。
-- frontendnext.com（前端下一步）：帮前端在 AI 时代做转型决策。
+- frontendnext.com（前端周看）：帮前端在 AI 时代做转型决策。
 - publishlab.cc：创作实验室。
 
 回答要求：

@@ -45,6 +45,7 @@ const timeline = [
   { year: '2024', label: '《AI Bots 通关指南》' },
   { year: '2025', label: '博主联盟 · 前端周刊' },
   { year: '2026', label: '矩联科技' },
+  { year: '2026', label: '前端周刊升级前端周看 · 全面拥抱 AI' },
 ]
 
 const socialLinks = [
@@ -67,7 +68,7 @@ const siteLinks = [
   { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人技术主页 · AI × 工程 × 思考' },
   { label: '矩联科技', href: 'https://matrixlink.tech/', desc: '公司官网 · 技术服务与品牌展示' },
   { label: '博主联盟', href: 'https://blogger-alliance.cn/', desc: '技术博主联盟与推广协作网络' },
-  { label: '前端下一步', href: 'https://frontendnext.com/', desc: '前端工程师在 AI 时代的转向判断' },
+  { label: '前端周看', href: 'https://frontendnext.com/', desc: '推动前端工程师向 AI Agent 工程师转型' },
   { label: 'Open Claude Code', href: 'https://openclaudecode.site/', desc: '系统拆解 Claude Code 的 Agent 方法论' },
   { label: 'PublishLab', href: 'https://publishlab.cc/', desc: 'AI 写作、内容创作与数字出版实验' },
 ]
@@ -91,7 +92,7 @@ export default function AboutPage() {
           掘金安东尼 · 安东尼404 · tuaran
         </p>
         <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
-          专注前端工程化与 AI 智能体系统，参与技术社区共建；把混乱编程为系统，把想法变成产品。
+          2026 年将「前端周刊」升级为「前端周看」，全面拥抱 AI，推动前端工程师向 AI Agent 工程师转型；把混乱编程为系统，把想法变成产品。
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {identityTags.map((tag) => (
@@ -114,7 +115,7 @@ export default function AboutPage() {
         </div>
         <ol className="grid grid-cols-2 gap-x-3 gap-y-3 min-[380px]:grid-cols-3 sm:grid-cols-5 lg:grid-cols-9">
           {timeline.map((item, i) => (
-            <li key={item.year} className="relative min-w-0">
+            <li key={`${item.year}-${item.label}`} className="relative min-w-0">
               <div className="flex items-center gap-1">
                 <span className="font-mono text-[11px] font-semibold tabular-nums text-[#b7791f] dark:text-[#e2bd75]">
                   {item.year}

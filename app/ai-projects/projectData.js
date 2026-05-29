@@ -24,7 +24,7 @@ export const maintainedDomains = [
     status: '运营中',
   },
   {
-    name: '🧭 前端下一步 Frontend Next',
+    name: '🧭 前端周看 Frontend Next',
     href: 'https://frontendnext.com',
     domains: [
       'frontendnext.com',

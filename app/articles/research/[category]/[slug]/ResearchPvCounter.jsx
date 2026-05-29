@@ -8,8 +8,10 @@ function formatPv(pv) {
   return String(n)
 }
 
-export default function ResearchPvCounter({ category, slug, initialPv = 0 }) {
-  const [pv, setPv] = useState(Number(initialPv) || 0)
+export default function ResearchPvCounter({ category, slug, initialPv }) {
+  const hasInitialPv = Number.isFinite(initialPv)
+  const [pv, setPv] = useState(hasInitialPv ? Math.max(0, initialPv) : null)
+  const [loading, setLoading] = useState(!hasInitialPv)
   const storageKey = useMemo(() => `research-pv-hit:${category}:${slug}`, [category, slug])
 
   useEffect(() => {
@@ -19,7 +21,10 @@ export default function ResearchPvCounter({ category, slug, initialPv = 0 }) {
       try {
         const now = Date.now()
         const lastHit = Number(window.sessionStorage.getItem(storageKey)) || 0
-        if (now - lastHit < 10_000) return
+        if (now - lastHit < 10_000) {
+          setLoading(false)
+          return
+        }
         window.sessionStorage.setItem(storageKey, String(now))
 
         const res = await fetch('/api/research-pv', {
@@ -35,6 +40,8 @@ export default function ResearchPvCounter({ category, slug, initialPv = 0 }) {
         }
       } catch {
         // 阅读量统计失败不影响正文阅读。
+      } finally {
+        if (!cancelled) setLoading(false)
       }
     }
 
@@ -43,6 +50,23 @@ export default function ResearchPvCounter({ category, slug, initialPv = 0 }) {
       cancelled = true
     }
   }, [category, slug, storageKey])
+
+  if (loading && pv === null) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span>阅读量</span>
+        <span
+          className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#bbb] border-t-transparent dark:border-gray-500 dark:border-t-transparent"
+          aria-hidden="true"
+        />
+        <span className="sr-only">阅读量加载中</span>
+      </span>
+    )
+  }
+
+  if (pv === null) {
+    return <span>阅读量 --</span>
+  }
 
   return <span>阅读量 {formatPv(pv)}</span>
 }

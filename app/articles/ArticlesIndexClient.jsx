@@ -23,8 +23,9 @@ const KIND_TAG_CLASS = {
 
 const TAB_KEYS = TAB_DEFS.map((t) => t.key)
 
-const EXTERNAL_TABS = [
-  { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/' },
+const QUICK_LINKS = [
+  { label: '创作日历', href: '/articles/creation-calendar' },
+  { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/', external: true },
 ]
 
 const COMPANY_TYPE_DEFS = [
@@ -92,10 +93,12 @@ export default function ArticlesIndexClient({ items }) {
     const fromUrl = searchParams?.get('special_type')
     return SPECIAL_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
   })()
+  const initialQuery = searchParams?.get('q') || ''
   const [tab, setTab] = useState(initialTab)
   const [companyType, setCompanyType] = useState(initialCompanyType)
   const [topicType, setTopicType] = useState(initialTopicType)
   const [specialType, setSpecialType] = useState(initialSpecialType)
+  const [query, setQuery] = useState(initialQuery)
 
   useEffect(() => {
     const fromUrl = searchParams?.get('tab')
@@ -117,11 +120,30 @@ export default function ArticlesIndexClient({ items }) {
     if (nextSpecialType !== specialType) {
       setSpecialType(nextSpecialType)
     }
+    const queryFromUrl = searchParams?.get('q') || ''
+    if (queryFromUrl !== query) {
+      setQuery(queryFromUrl)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
+  function buildArticlesUrl(nextTab, nextCompanyType, nextTopicType, nextSpecialType, nextQuery) {
+    const params = new URLSearchParams()
+    if (nextTab !== 'all') params.set('tab', nextTab)
+    if (nextTab === 'companies' && nextCompanyType !== 'all') params.set('company_type', nextCompanyType)
+    if (nextTab === 'topics' && nextTopicType !== 'all') params.set('topic_type', nextTopicType)
+    if (nextTab === 'special' && nextSpecialType !== 'all') params.set('special_type', nextSpecialType)
+    const normalizedQuery = String(nextQuery || '').trim()
+    if (normalizedQuery) params.set('q', normalizedQuery)
+    const queryString = params.toString()
+    return queryString ? `/articles?${queryString}` : '/articles'
+  }
+
   function selectTab(next) {
     setTab(next)
+    const nextCompanyType = next === 'companies' ? companyType : 'all'
+    const nextTopicType = next === 'topics' ? topicType : 'all'
+    const nextSpecialType = next === 'special' ? specialType : 'all'
     if (next !== 'companies') {
       setCompanyType('all')
     }
@@ -131,28 +153,40 @@ export default function ArticlesIndexClient({ items }) {
     if (next !== 'special') {
       setSpecialType('all')
     }
-    const url = next === 'all' ? '/articles' : `/articles?tab=${next}`
+    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextSpecialType, query)
     router.replace(url, { scroll: false })
   }
 
   function selectCompanyType(next) {
     setTab('companies')
     setCompanyType(next)
-    const url = next === 'all' ? '/articles?tab=companies' : `/articles?tab=companies&company_type=${next}`
+    const url = buildArticlesUrl('companies', next, 'all', 'all', query)
     router.replace(url, { scroll: false })
   }
 
   function selectTopicType(next) {
     setTab('topics')
     setTopicType(next)
-    const url = next === 'all' ? '/articles?tab=topics' : `/articles?tab=topics&topic_type=${next}`
+    const url = buildArticlesUrl('topics', 'all', next, 'all', query)
     router.replace(url, { scroll: false })
   }
 
   function selectSpecialType(next) {
     setTab('special')
     setSpecialType(next)
-    const url = next === 'all' ? '/articles?tab=special' : `/articles?tab=special&special_type=${next}`
+    const url = buildArticlesUrl('special', 'all', 'all', next, query)
+    router.replace(url, { scroll: false })
+  }
+
+  function submitSearch(event) {
+    event.preventDefault()
+    const url = buildArticlesUrl(tab, companyType, topicType, specialType, query)
+    router.replace(url, { scroll: false })
+  }
+
+  function clearSearch() {
+    setQuery('')
+    const url = buildArticlesUrl(tab, companyType, topicType, specialType, '')
     router.replace(url, { scroll: false })
   }
 
@@ -167,17 +201,27 @@ export default function ArticlesIndexClient({ items }) {
 
   const visible = useMemo(() => {
     const tabItems = tab === 'all' ? items : items.filter((item) => item.kind === tab)
+    let typeFiltered = tabItems
     if (tab === 'companies' && companyType !== 'all') {
-      return tabItems.filter((item) => item.companyType === companyType)
+      typeFiltered = typeFiltered.filter((item) => item.companyType === companyType)
     }
     if (tab === 'topics' && topicType !== 'all') {
-      return tabItems.filter((item) => item.topicType === topicType)
+      typeFiltered = typeFiltered.filter((item) => item.topicType === topicType)
     }
     if (tab === 'special' && specialType !== 'all') {
-      return tabItems.filter((item) => item.specialType === specialType)
+      typeFiltered = typeFiltered.filter((item) => item.specialType === specialType)
     }
-    return tabItems
-  }, [items, tab, companyType, topicType, specialType])
+    const normalizedQuery = query.trim().toLowerCase()
+    if (!normalizedQuery) return typeFiltered
+
+    return typeFiltered.filter((item) => {
+      const combined = [item.title, item.summary, item.tagLabel, item.date, item.kind]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return combined.includes(normalizedQuery)
+    })
+  }, [items, tab, companyType, topicType, specialType, query])
 
   useEffect(() => {
     const keys = Array.from(
@@ -279,32 +323,67 @@ export default function ArticlesIndexClient({ items }) {
 
         <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[#d8cdbc] dark:bg-gray-700" />
 
-        {EXTERNAL_TABS.map((t) => (
-          <a
-            key={t.href}
-            href={t.href}
-            target="_blank"
-            rel="noreferrer"
-            className="no-external-arrow inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#7a6d58] no-underline hover:text-[#2d261d] dark:text-gray-400 dark:hover:text-gray-100"
-          >
-            <span>{t.label}</span>
-            <svg
-              viewBox="0 0 12 12"
-              aria-hidden="true"
-              className="h-3 w-3 opacity-70"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        {QUICK_LINKS.map((t) =>
+          t.external ? (
+            <a
+              key={t.href}
+              href={t.href}
+              target="_blank"
+              rel="noreferrer"
+              className="no-external-arrow inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#7a6d58] no-underline hover:text-[#2d261d] dark:text-gray-400 dark:hover:text-gray-100"
             >
-              <path d="M4 2h6v6" />
-              <path d="M10 2L4 8" />
-              <path d="M9 8v2H2V3h2" />
-            </svg>
-          </a>
-        ))}
+              <span>{t.label}</span>
+              <svg
+                viewBox="0 0 12 12"
+                aria-hidden="true"
+                className="h-3 w-3 opacity-70"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 2h6v6" />
+                <path d="M10 2L4 8" />
+                <path d="M9 8v2H2V3h2" />
+              </svg>
+            </a>
+          ) : (
+            <Link
+              key={t.href}
+              href={t.href}
+              className="inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#7a6d58] no-underline hover:text-[#2d261d] dark:text-gray-400 dark:hover:text-gray-100"
+            >
+              <span>{t.label}</span>
+            </Link>
+          ),
+        )}
       </nav>
+
+      <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="搜索知识库：标题 / 摘要 / 标签"
+          className="min-w-[220px] flex-1 rounded-md border border-[#ddd3c2] bg-white px-3 py-2 text-sm text-[#2d261d] outline-none transition-colors focus:border-[#a99779] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
+        />
+        <button
+          type="submit"
+          className="rounded-md border border-[#d8cfbf] bg-[#faf6ef] px-3 py-2 text-sm text-[#5b5141] transition-colors hover:border-[#bdae93] hover:text-[#2d261d] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
+        >
+          搜索
+        </button>
+        {query ? (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="rounded-md border border-transparent px-2 py-2 text-sm text-[#8f826c] transition-colors hover:text-[#3d3429] dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            清空
+          </button>
+        ) : null}
+      </form>
 
       {tab === 'companies' ? (
         <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
@@ -395,7 +474,9 @@ export default function ArticlesIndexClient({ items }) {
 
       <div className="space-y-4">
         {visible.length === 0 ? (
-          <p className="text-sm text-[#666] dark:text-gray-400">该分类下暂无内容。</p>
+          <p className="text-sm text-[#666] dark:text-gray-400">
+            {query ? '没有匹配的内容，试试更短关键词或切换分类。' : '该分类下暂无内容。'}
+          </p>
         ) : (
           visible.map((item) => {
             const parts = String(item.href || '').split('/')

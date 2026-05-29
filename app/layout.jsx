@@ -85,6 +85,7 @@ export const metadata = {
   verification: {
     other: {
       'baidu-site-verification': 'codeva-RnbvKColnM',
+      'msvalidate.01': 'D0E13573AD7CC149454EB7427AB531A3',
     },
   },
 }

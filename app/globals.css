@@ -5,14 +5,20 @@
 @layer base {
   body {
     @apply bg-[#f8f5f0] dark:bg-[#0b1016] text-[#333] dark:text-gray-100 font-sans;
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
     scroll-behavior: smooth;
     /* 站点顶部 sticky 主导航；锚点/目录跳转时避免标题被 header 遮挡 */
     scroll-padding-top: 5.5rem;

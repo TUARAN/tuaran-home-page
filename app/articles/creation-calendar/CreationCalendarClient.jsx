@@ -22,27 +22,66 @@ function formatDate(isoDate) {
   return `${year}年${Number(month)}月${Number(day)}日`
 }
 
-function buildMonthCells(year, month, countsByDate) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const firstWeekday = new Date(year, month, 1).getDay()
-  const firstIndex = firstWeekday === 0 ? 6 : firstWeekday - 1
-  const cells = []
+function toIsoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 
-  for (let i = 0; i < firstIndex; i += 1) {
-    cells.push({ empty: true, key: `e-${month}-${i}` })
+function mondayIndex(date) {
+  const day = date.getDay()
+  return day === 0 ? 6 : day - 1
+}
+
+function addDays(date, amount) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + amount)
+  return next
+}
+
+function buildYearWeeks(year, countsByDate) {
+  const yearStart = new Date(year, 0, 1)
+  const yearEnd = new Date(year, 11, 31)
+  const firstWeekStart = addDays(yearStart, -mondayIndex(yearStart))
+  const weeks = []
+  let cursor = firstWeekStart
+
+  while (cursor <= yearEnd || mondayIndex(cursor) !== 0) {
+    const week = []
+    for (let i = 0; i < 7; i += 1) {
+      const inYear = cursor.getFullYear() === year
+      const date = toIsoDate(cursor)
+      week.push({
+        key: date,
+        date,
+        inYear,
+        count: inYear ? countsByDate[date] || 0 : 0,
+        month: cursor.getMonth(),
+      })
+      cursor = addDays(cursor, 1)
+    }
+    weeks.push(week)
   }
 
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    cells.push({
-      empty: false,
-      key: date,
-      date,
-      count: countsByDate[date] || 0,
-      day,
-    })
+  return weeks
+}
+
+function buildWeekMonthLabels(weeks) {
+  const labels = []
+  let prevMonth = -1
+
+  for (const week of weeks) {
+    const firstInYearCell = week.find((cell) => cell.inYear)
+    if (!firstInYearCell) {
+      labels.push('')
+      continue
+    }
+    if (firstInYearCell.month !== prevMonth) {
+      labels.push(MONTH_LABELS[firstInYearCell.month])
+      prevMonth = firstInYearCell.month
+    } else {
+      labels.push('')
+    }
   }
-  return cells
+  return labels
 }
 
 function heatColorClass(value, max) {
@@ -93,6 +132,8 @@ export default function CreationCalendarClient({ items }) {
 
   const activeDays = Object.keys(countsByDate).length
   const maxPerDay = Object.values(countsByDate).reduce((acc, value) => Math.max(acc, value), 0)
+  const yearWeeks = useMemo(() => (selectedYear ? buildYearWeeks(Number(selectedYear), countsByDate) : []), [selectedYear, countsByDate])
+  const weekMonthLabels = useMemo(() => buildWeekMonthLabels(yearWeeks), [yearWeeks])
 
   const visibleItems = useMemo(() => {
     if (selectedDate) return monthItems.filter((item) => item.date === selectedDate)
@@ -193,59 +234,72 @@ export default function CreationCalendarClient({ items }) {
       {selectedYear ? (
         <section className="space-y-4">
           <h2 className="text-base font-semibold text-[#2f2a21] dark:text-gray-100">热力图（{selectedYear}）</h2>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {MONTH_LABELS.map((label, monthIndex) => {
-              const monthKey = String(monthIndex + 1).padStart(2, '0')
-              const cells = buildMonthCells(Number(selectedYear), monthIndex, countsByDate)
-              const monthActive = selectedMonth === 'all' || selectedMonth === monthKey
-              return (
-                <article
-                  key={`${selectedYear}-${monthKey}`}
-                  className={[
-                    'rounded-md border p-3',
-                    monthActive
-                      ? 'border-[#ded5c7] bg-[#fffdf8] dark:border-gray-700 dark:bg-[#0f141b]'
-                      : 'border-[#f0e8db] bg-[#fffefb] opacity-70 dark:border-gray-800 dark:bg-[#0d1117]',
-                  ].join(' ')}
-                >
-                  <header className="mb-2 flex items-center justify-between">
-                    <h3 className="text-sm text-[#5a4e3d] dark:text-gray-200">{label}</h3>
-                    <span className="text-[11px] text-[#9f927d] dark:text-gray-500">
-                      {yearItems.filter((item) => item.date.startsWith(`${selectedYear}-${monthKey}`)).length} 篇
+          <div className="rounded-md border border-[#ded5c7] bg-[#fffdf8] p-3 dark:border-gray-700 dark:bg-[#0f141b]">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-xs text-[#776a57] dark:text-gray-300">{yearItems.length} 篇内容发布</p>
+              <p className="text-[11px] text-[#9f927d] dark:text-gray-500">
+                少
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#f6f1e8] align-middle dark:bg-[#151922]" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#c6e7d0] align-middle" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#8bc79f] align-middle" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#57a06f] align-middle" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#2f855a] align-middle" />
+                多
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <div className="inline-flex min-w-max flex-col gap-1.5">
+                <div className="ml-6 flex gap-[3px]">
+                  {weekMonthLabels.map((label, idx) => (
+                    <span key={`${selectedYear}-month-label-${idx}`} className="w-3 text-[9px] leading-none text-[#ad9f8b] dark:text-gray-600">
+                      {label}
                     </span>
-                  </header>
-                  <div className="mb-1 grid grid-cols-7 gap-1">
-                    {WEEKDAY_LABELS.map((d) => (
-                      <span key={`${label}-${d}`} className="text-center text-[10px] text-[#b3a693] dark:text-gray-600">
-                        {d}
+                  ))}
+                </div>
+
+                <div className="flex gap-1.5">
+                  <div className="grid grid-rows-7 gap-[3px] pt-[1px]">
+                    {WEEKDAY_LABELS.map((d, index) => (
+                      <span key={`weekday-${d}`} className="h-3 text-[9px] leading-3 text-[#b3a693] dark:text-gray-600">
+                        {index % 2 === 0 ? d : ''}
                       </span>
                     ))}
                   </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {cells.map((cell) =>
-                      cell.empty ? (
-                        <span key={cell.key} className="h-5 rounded-sm bg-transparent" />
-                      ) : (
-                        <button
-                          key={cell.key}
-                          type="button"
-                          title={`${cell.date} · ${cell.count} 篇`}
-                          onClick={() => setSelectedDate((prev) => (prev === cell.date ? '' : cell.date))}
-                          className={[
-                            'h-5 rounded-sm text-[10px] transition-opacity',
-                            heatColorClass(cell.count, maxPerDay),
-                            selectedDate === cell.date ? 'ring-2 ring-[#2d261d] dark:ring-gray-200' : '',
-                            cell.count ? 'opacity-100' : 'opacity-80',
-                          ].join(' ')}
-                        >
-                          <span className="sr-only">{cell.day}</span>
-                        </button>
-                      ),
-                    )}
+
+                  <div className="flex gap-[3px]">
+                    {yearWeeks.map((week, weekIndex) => (
+                      <div key={`${selectedYear}-week-${weekIndex}`} className="grid grid-rows-7 gap-[3px]">
+                        {week.map((cell) => {
+                          const monthKey = String(cell.month + 1).padStart(2, '0')
+                          const monthActive = selectedMonth === 'all' || selectedMonth === monthKey
+                          if (!cell.inYear) {
+                            return <span key={cell.key} className="h-3 w-3 rounded-[2px] bg-transparent" />
+                          }
+                          return (
+                            <button
+                              key={cell.key}
+                              type="button"
+                              title={`${cell.date} · ${cell.count} 篇`}
+                              onClick={() => setSelectedDate((prev) => (prev === cell.date ? '' : cell.date))}
+                              className={[
+                                'h-3 w-3 rounded-[2px] text-[0px] transition-opacity',
+                                heatColorClass(cell.count, maxPerDay),
+                                selectedDate === cell.date ? 'ring-2 ring-[#2d261d] dark:ring-gray-200' : '',
+                                cell.count ? 'opacity-100' : 'opacity-80',
+                                monthActive ? '' : 'opacity-30',
+                              ].join(' ')}
+                            >
+                              <span className="sr-only">{cell.date}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ))}
                   </div>
-                </article>
-              )
-            })}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       ) : null}

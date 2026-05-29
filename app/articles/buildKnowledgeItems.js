@@ -60,7 +60,7 @@ const TOPIC_PAGES = [
     summary: '5 种变现机制、8 个内容平台、6 大小说网站、掘金小册样本与传统出版数据的一页式可视化看板。',
     date: '2026-05-27',
     href: '/writing-monetization-2026',
-    specialType: 'dashboard',
+    specialType: 'writing',
   },
   {
     title: '儒释道 · 神仙体系',
@@ -77,6 +77,11 @@ const TOPIC_PAGES = [
     specialType: 'politics',
   },
 ]
+
+const WRITING_SPECIAL_TOPIC_SLUGS = new Set([
+  'isbn-ban-hao-publishing-number-system',
+  'edge-agent-dev-course',
+])
 
 export function buildKnowledgeItems() {
   const postItems = articles.map((article) => {
@@ -96,11 +101,13 @@ export function buildKnowledgeItems() {
     const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
     const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
     const subLabel = companyLabel || topicLabel
+    const isWritingSpecial = entry.category === 'topics' && WRITING_SPECIAL_TOPIC_SLUGS.has(entry.slug)
     return {
-      kind: entry.category, // 'companies' | 'topics'
-      tagLabel: subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
+      kind: isWritingSpecial ? 'special' : entry.category, // 'companies' | 'topics' | 'special'
+      tagLabel: isWritingSpecial ? '专题 · 写作创作' : subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
       companyType: entry.companyType || '',
       topicType: entry.topicType || '',
+      specialType: isWritingSpecial ? 'writing' : '',
       version: entry.version || '',
       title: entry.title,
       summary: entry.tldr || entry.summary,

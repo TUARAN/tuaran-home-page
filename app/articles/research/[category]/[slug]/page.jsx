@@ -130,13 +130,36 @@ export default async function ResearchDetailPage({ params }) {
         ].slice(0, 3)
       : relatedPool.slice(0, 3)
 
+  const publishedISO = entry.date ? new Date(entry.date).toISOString() : undefined
+  const modifiedISO = entry.updated
+    ? new Date(entry.updated).toISOString()
+    : publishedISO
+
   const structuredData = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': 'TechArticle',
     headline: entry.title,
     description: entry.summary || undefined,
-    datePublished: entry.date ? new Date(entry.date).toISOString() : undefined,
-    author: { '@type': 'Person', name: '涂阿燃', url: SITE_URL },
+    inLanguage: 'zh-CN',
+    datePublished: publishedISO,
+    dateModified: modifiedISO,
+    keywords: entry.tags?.length ? entry.tags.join(', ') : undefined,
+    author: {
+      '@type': 'Person',
+      name: '涂阿燃',
+      url: SITE_URL,
+      sameAs: [
+        'https://juejin.cn/user/1521379823340792',
+        'https://github.com/TUARAN',
+        'https://x.com/Anthony404',
+      ],
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'TUARAN',
+      url: SITE_URL,
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/tuaranme.png` },
+    },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     image: entry.images?.length ? entry.images.map((image) => image.src) : undefined,
     interactionStatistic: {
@@ -146,10 +169,28 @@ export default async function ResearchDetailPage({ params }) {
     },
   }
 
+  const breadcrumbData = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '知识库', item: `${SITE_URL}/articles` },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: categoryLabel,
+        item: `${SITE_URL}/articles?tab=${entry.category}`,
+      },
+      { '@type': 'ListItem', position: 3, name: entry.title, item: url },
+    ],
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
       <Script id={`research-jsonld-${entry.category}-${entry.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(structuredData)}
+      </Script>
+      <Script id={`research-breadcrumb-${entry.category}-${entry.slug}`} type="application/ld+json" strategy="beforeInteractive">
+        {JSON.stringify(breadcrumbData)}
       </Script>
 
       <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-4">

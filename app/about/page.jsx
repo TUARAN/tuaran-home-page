@@ -45,7 +45,6 @@ const timeline = [
   { year: '2024', label: '《AI Bots 通关指南》' },
   { year: '2025', label: '博主联盟 · 前端周刊' },
   { year: '2026', label: '矩联科技' },
-  { year: '2026', label: '前端周刊升级前端周看 · 全面拥抱 AI' },
 ]
 
 const socialLinks = [

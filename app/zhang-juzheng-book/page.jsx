@@ -5,7 +5,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '《张居正：一个改革者的成事与代价》· 写作出版工程',
   description:
-    '用输出倒逼输入：把"写一本张居正的书并发布出版"作为一个长期专题项目来运营。包含主线、目录、人物关系、关键事件、写作工程、出版路径、12 个月节奏与进度看板。',
+    '《张居正：一个改革者的成事与代价》写作出版工程：主线、人物关系、关键事件、12 章目录、20 篇连载、写作方法、出版路径与 12 个月节奏。',
   keywords: [
     '涂阿燃',
     'tuaran',
@@ -332,9 +332,9 @@ const PUBLISH_PATHS = [
 
 const PROGRESS_BOARD = [
   { item: '主线判断', status: '✅ 已确认', note: '"成事与代价"双线主线、四段叙事' },
-  { item: '12 章目录', status: '✅ 已完成', note: '本页第六节即为定稿目录' },
+  { item: '12 章目录', status: '✅ 已完成', note: '4 部 12 章 + 附录定稿' },
   { item: '关键事件清单（8 个）', status: '✅ 已完成', note: '每个事件配独立"角度 + 学习点"' },
-  { item: 'timeline.csv', status: '🟡 草稿', note: '本页时间线为初稿，需扩展到 30+ 条' },
+  { item: 'timeline.csv', status: '🟡 草稿', note: '15 条初稿，需扩展到 30+ 条' },
   { item: 'relationship-map.md', status: '🟡 草稿', note: '权力三角 / 文官 / 武将 / 家族四组已列' },
   { item: '试读章 1：考成法', status: '⬜ 未开始', note: 'M3 交付' },
   { item: '试读章 2：三角联盟', status: '⬜ 未开始', note: 'M3 交付' },
@@ -379,12 +379,12 @@ const RISKS = [
 ]
 
 const ACTION_NEXT = [
-  '本周：把本页提到的 12 章母稿目录在仓库里建好骨架（zhang-juzheng-book/01..12 .md 空文件 + 章节模板）。',
+  '本周：在仓库里建好 12 章母稿目录骨架（zhang-juzheng-book/01..12 .md 空文件 + 章节模板）。',
   '本周：写完试读章 1《考成法：张居正如何把大明变成项目管理系统》草稿。',
   '本月内：完成 timeline.csv（30+ 条）与 relationship-map.md（4 组关系完整版）。',
   '下个月：试读章 2《三角联盟》、试读章 3《夺情》发布；启动读者邮件列表。',
   'M4 开始：正式连载，每月 4 篇，节奏卡稳。',
-  'M7 同步：开始接触 2-3 家候选出版方，按本页"出版路径"清单走。',
+  'M7 同步：开始接触 2-3 家候选出版方，按"出版路径"三轨方案落地。',
 ]
 
 function StatusBadge({ status }) {
@@ -415,7 +415,7 @@ export default function ZhangJuzhengBookPage() {
           《张居正：一个改革者的成事与代价》
         </h1>
         <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">
-          一个长期写作出版工程的公开看板。把"写一本张居正的书并发布出版"当成专题项目来运营——主张、目录、人物关系、关键事件、写作工程、出版路径、12 个月节奏与进度，都在这一页上滚动更新。
+          以"写一本张居正的书并发布出版"为长期工程目标，沿主线 → 人物 → 事件 → 写作 → 出版的顺序，把一个改革者的成事与代价拆成可读、可写、可出版的结构。
         </p>
         <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
           <Link href="/articles?tab=writing" className="opacity-80 hover:opacity-100 underline underline-offset-4">
@@ -497,7 +497,7 @@ export default function ZhangJuzhengBookPage() {
                 <li><b>必须可分发</b>——选择题目、装帧、定价、渠道，反过来逼你想清楚"这本书对谁有用"。</li>
               </ul>
               <p>
-                这就是这个专题的本质：<b>不是"写一本书"，而是"用一本书的标准强迫自己彻底搞懂一个人"。</b>书是副产品，理解力才是真正想要的东西。
+                所以核心不是"写一本书"，而是"用一本书的标准强迫自己彻底搞懂一个人"。书是副产品，理解力才是真正想要的东西。
               </p>
             </div>
           </section>
@@ -817,7 +817,7 @@ export default function ZhangJuzhengBookPage() {
 
           {/* 十五、进度看板 */}
           <section id="progress" className="border border-[#eee] bg-white p-5 dark:border-gray-800 dark:bg-gray-900 mb-6 scroll-mt-24">
-            <h2 className="text-[#444] text-lg font-bold dark:text-gray-200">十五、进度看板（持续更新）</h2>
+            <h2 className="text-[#444] text-lg font-bold dark:text-gray-200">十五、进度看板</h2>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-sm text-[#666] dark:text-gray-300 border border-[#eee] dark:border-gray-800">
                 <thead className="bg-[#fafafa] dark:bg-gray-800/40 text-xs text-[#888] dark:text-gray-400">
@@ -886,7 +886,7 @@ export default function ZhangJuzhengBookPage() {
           </section>
 
           <footer className="mt-10 text-xs text-[#888] dark:text-gray-400">
-            <p>本页是一个长期项目看板，随着读书、写作、连载、出版的进展持续更新。立项时间 2026-05-30。</p>
+            <p>立项时间 2026-05-30。</p>
           </footer>
         </main>
       </div>

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "TUARAN's personal blog homepage with modern design",
   "scripts": {
+    "prepare": "node scripts/setup-hooks.mjs",
     "prebuild": "node scripts/generate-research-catalog.mjs",
     "dev": "next dev -p 3000",
     "build": "next build",

@@ -6,7 +6,7 @@ tags: [5g-messaging, rcs, ip-message, telecom-regulation, anti-fraud, mobile-oem
 summary: IP 消息的监管漏洞触发工信部全链条管控，手机厂商以 5G 消息签约为筹码反制，导致技术维护正常但商业推进停滞的行业僵局
 tldr: 一场以「反诈合规」为名、「通道权」为实的产业博弈——5G 消息（RCS）签约被手机厂商扣作筹码，技术维护照常、商业推进停滞，僵局是结构性的而非技术性的。
 topic_type: industry
-source: claude-code
+assistance: claude-code
 slug: ip-messaging-rcs-standoff
 ---
 

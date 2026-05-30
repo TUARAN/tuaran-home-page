@@ -6,7 +6,7 @@ date: 2026-05-29
 tags: [SEO, Sitemap, Google Search Console, Bing Webmaster Tools, 收录, 索引]
 summary: 面向不想投入 SEO/GEO 预算的个人站，给出一套“先内容、再结构、再抓取信号、再监控”的零成本执行路径，并说明 sitemap.xml 在其中的角色、效果与常见误区。
 tldr: 零预算 SEO/GEO 不等于佛系更新，而是把有限精力押在高收益动作：稳定产出可检索内容、统一 URL 与内链结构、提交并维护 sitemap/robots、持续看索引漏斗。sitemap.xml 是必要基础设施，但只是整套免费方法中的一环。
-source: cursor
+assistance: cursor
 pv: 0
 ---
 

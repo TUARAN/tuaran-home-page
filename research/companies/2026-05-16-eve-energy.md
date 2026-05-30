@@ -5,8 +5,7 @@ company_type: new_energy
 date: 2026-05-16
 tags: [锂电池, 储能, 动力电池, A股, 新能源, 固态电池]
 summary: 惠州亿纬锂能股份有限公司（品牌：EVE；简称：亿纬锂能）是国内锂电二线龙头，三大业务（消费 / 动力 / 储能）齐头并进，2026Q1 营收同比 +61.6%，正以"双海外基地 + 港股 IPO + 固态电池"完成下半场卡位。
-source: claude-code
-model: claude-opus-4-7
+assistance: claude-code
 pv: 0
 ---
 

@@ -1,4 +1,4 @@
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019]

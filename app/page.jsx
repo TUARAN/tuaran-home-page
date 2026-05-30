@@ -406,7 +406,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {[
                   { href: '/publications', kicker: 'Books', title: '著作出版', desc: '《程序员成长手记》《AI Bots 通关指南》' },
-                  { href: '/about', kicker: 'About', title: '关于我 / 牛逼的事', desc: '履历、价值观、我认为牛逼的事' },
+                  { href: '/about', kicker: 'About', title: '关于我', desc: '履历、价值观' },
                   { href: '/ai-projects', kicker: 'Apps', title: '自用工具', desc: '吃什么 · 茉莉奶爸 · 端侧大模型 …' },
                 ].map((card) => (
                   <Link

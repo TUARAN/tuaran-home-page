@@ -1,5 +1,3 @@
-import Link from 'next/link'
-
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -72,10 +70,19 @@ const siteLinks = [
   { label: 'PublishLab', href: 'https://publishlab.cc/', desc: 'AI 写作、内容创作与数字出版实验' },
 ]
 
+const badassThings = [
+  '马斯克的第一性原理 + 工程化执行：不是喊口号，而是把“不可能”拆成可交付系统。',
+  '詹姆斯·韦伯望远镜：二十多年、全球协作、长期主义，最终把宇宙看得更深更远。',
+  '把复杂问题抽象成流程、标准和自动化，让个人能力变成可复制系统。',
+  '长期高质量写作与公开复盘：内容是认知资产，不是一次性流量消耗。',
+]
+
 const chipClassName =
   'inline-flex items-center rounded-full border border-[#ded6c8] bg-white/90 px-2.5 py-1 text-[12px] text-[#5f5a4d] no-underline transition hover:border-[#9c8e72] hover:text-[#221f19] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300 dark:hover:border-[#4a5568]'
 
 const externalChipClassName = `${chipClassName} no-external-arrow`
+const socialChipClassName =
+  'no-external-arrow inline-flex items-center rounded-full bg-[#f6f1e7] px-2.5 py-1 text-[12px] text-[#5f5a4d] no-underline transition hover:bg-[#eee4d3] hover:text-[#221f19] dark:bg-[#1a2430] dark:text-gray-300 dark:hover:bg-[#223040]'
 
 export default function AboutPage() {
   return (
@@ -90,9 +97,7 @@ export default function AboutPage() {
         <p className="mt-1 break-words font-mono text-[11px] tracking-wide text-[#9d9078] dark:text-[#94a0b1]">
           掘金安东尼 · 安东尼404 · tuaran
         </p>
-        <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
-          2026 年将「前端周刊」升级为「前端周看」，全面拥抱 AI，推动前端工程师向 AI Agent 工程师转型；把混乱编程为系统，把想法变成产品。
-        </p>
+        <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">把混乱编程为系统，把想法变成产品。</p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {identityTags.map((tag) => (
             <span
@@ -135,7 +140,7 @@ export default function AboutPage() {
       </section>
 
       <div className="mt-4 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4">
-        <section className="flex flex-col self-start rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
+        <section className="flex flex-col self-start rounded-xl bg-white/72 p-3 dark:bg-[#121821]/72 sm:rounded-2xl sm:p-4">
           <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#221f19] dark:text-gray-100">联系与数据</h2>
           <dl className="space-y-2 text-[12px] leading-5 text-[#5d554a] dark:text-gray-300">
             {contactItems.map((item) => (
@@ -159,7 +164,7 @@ export default function AboutPage() {
               <dt className="mb-1.5 text-[#9d9078] dark:text-gray-500">社交平台</dt>
               <dd className="flex flex-wrap gap-1.5">
                 {socialLinks.map((c) => (
-                  <a key={c.href} href={c.href} target="_blank" rel="noreferrer" className={externalChipClassName}>
+                  <a key={c.href} href={c.href} target="_blank" rel="noreferrer" className={socialChipClassName}>
                     {c.label}
                   </a>
                 ))}
@@ -168,11 +173,11 @@ export default function AboutPage() {
           </dl>
         </section>
 
-        <section className="flex flex-col self-start rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-[#121821]/80 sm:rounded-2xl sm:p-4">
+        <section className="flex flex-col self-start rounded-xl bg-white/72 p-3 dark:bg-[#121821]/72 sm:rounded-2xl sm:p-4">
           <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#221f19] dark:text-gray-100">站点矩阵</h2>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {siteLinks.map((c) => (
-              <div key={c.href} className="rounded-lg border border-[#e8dfd0] bg-white/70 px-2.5 py-2 dark:border-[#2d3440] dark:bg-[#18202a]/60">
+              <div key={c.href} className="rounded-lg bg-white/65 px-2.5 py-2 dark:bg-[#18202a]/52">
                 <a href={c.href} target="_blank" rel="noreferrer" className={`${externalChipClassName} !px-2 !py-0.5`}>
                   {c.label}
                 </a>
@@ -186,14 +191,28 @@ export default function AboutPage() {
         </section>
       </div>
 
-      <footer className="mt-3 shrink-0 border-t border-[#e8dfd0] pt-3 text-center text-[11px] leading-5 text-[#888] dark:border-gray-800 dark:text-gray-500">
-        <p>
-          欢迎微信注明「从 2aran.com 来」·{' '}
-          <Link href="/" className="text-[#5a4725] hover:underline dark:text-[#c8b99d]">
-            返回首页
-          </Link>
-        </p>
-      </footer>
+      <section className="mt-4 rounded-xl bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(252,248,240,0.82))] p-3 dark:bg-[linear-gradient(180deg,rgba(18,24,33,0.86),rgba(15,21,30,0.86))] sm:rounded-2xl sm:p-4">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-2 pb-1">
+          <h2 className="mb-0 font-serif text-[15px] font-semibold text-[#221f19] dark:text-gray-100">我认可的硬核范式</h2>
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#9d8c6f] dark:text-[#8e9ab0]">
+            Values / Principles
+          </span>
+        </div>
+        <ul className="space-y-2.5">
+          {badassThings.map((line, idx) => (
+            <li
+              key={line}
+              className="group flex items-start gap-2.5 rounded-xl bg-white/72 px-3 py-2.5 text-[12.5px] leading-6 text-[#5d554a] transition-colors hover:bg-[#fffdf8] dark:bg-[#141b25]/72 dark:text-gray-300 dark:hover:bg-[#17202c]"
+            >
+              <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f1e4cd] px-1.5 font-mono text-[10px] font-semibold text-[#8f6a34] transition-colors group-hover:bg-[#ecd9b8] dark:bg-[#233143] dark:text-[#e0c38f] dark:group-hover:bg-[#2a3a50]">
+                {String(idx + 1).padStart(2, '0')}
+              </span>
+              <span className="flex-1">{line}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
     </main>
   )
 }

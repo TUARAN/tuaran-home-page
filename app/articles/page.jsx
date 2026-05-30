@@ -35,12 +35,9 @@ export default function ArticlesPage() {
             <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
               知识库
             </h1>
-            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">
-              我读到、研究过、想反复回看的东西，都沉淀在这里——长文观察、公司画像、事项专题，按主题持续累积。
-            </p>
           </div>
         </div>
-        <div className="mt-4">
+        <div className="mt-3">
           <KnowledgeHeatmapClient items={items} />
         </div>
       </header>

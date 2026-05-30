@@ -95,9 +95,10 @@ export default async function ResearchDetailPage({ params }) {
   if (entry.slug !== slug) redirect(`/articles/research/${entry.category}/${entry.slug}`)
 
   const isEncrypted = entry.encrypted
+  const assistance = entry.assistance || entry.source || ''
   const variantList = isEncrypted ? [] : Array.isArray(entry.variants) && entry.variants.length > 0
     ? entry.variants
-    : [{ id: entry.source || 'claude-code', label: '', content: entry.content }]
+    : [{ id: assistance || 'claude-code', label: '', content: entry.content }]
   const renderedVariants = isEncrypted
     ? []
     : variantList.map((variant, index) => ({
@@ -114,7 +115,7 @@ export default async function ResearchDetailPage({ params }) {
   // 一键复制/分发用的 Markdown：标题 + 正文 + 调研配图（不含 YAML frontmatter）；加密文章不提供
   const markdownDoc = isEncrypted ? '' : buildResearchMarkdownDocument(entry.content, {
     images: entry.images || [],
-    seed: `${entry.category}:${entry.slug}:${variantList[0]?.id || entry.source || 'source'}`,
+    seed: `${entry.category}:${entry.slug}:${variantList[0]?.id || assistance || 'assistance'}`,
     title: entry.title,
   })
   const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
@@ -246,10 +247,10 @@ export default async function ResearchDetailPage({ params }) {
           ) : null}
           <span aria-hidden="true">·</span>
           <ResearchPvCounter category={entry.category} slug={entry.slug} initialPv={entry.pv} />
-          {entry.source ? (
+          {assistance ? (
             <>
               <span aria-hidden="true">·</span>
-              <span>来源：{entry.sourceLabel || 'TUARAN'}</span>
+              <span>协助：{entry.assistanceLabel || entry.sourceLabel || 'TUARAN'}</span>
             </>
           ) : null}
           {isEncrypted ? null : (

@@ -84,6 +84,12 @@ const nextConfig = {
         permanent: false,
       },
       {
+        // 张居正调研已升级为专题工程页 /zhang-juzheng-book
+        source: '/articles/research/topics/zhang-juzheng-book-project',
+        destination: '/zhang-juzheng-book',
+        permanent: true,
+      },
+      {
         // /weekly 是历史路由，统一归入 /diary 持续更新
         source: '/weekly',
         destination: '/diary',

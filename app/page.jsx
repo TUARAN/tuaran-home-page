@@ -172,7 +172,7 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap items-stretch gap-2.5 border-t border-[#ece4d3] pt-3.5 dark:border-[#262d38]">
+            <div className="mt-1 flex flex-wrap items-stretch gap-2.5">
               <a
                 href="https://blogger-alliance.cn/"
                 target="_blank"

@@ -62,13 +62,7 @@ const TOPIC_PAGES = [
     href: '/zhang-juzheng-book',
     specialType: 'writing',
   },
-  {
-    title: '中国写作变现 · 数据看板 2025-2026',
-    summary: '5 种变现机制、8 个内容平台、6 大小说网站、掘金小册样本与传统出版数据的一页式可视化看板。',
-    date: '2026-05-27',
-    href: '/writing-monetization-2026',
-    specialType: 'writing',
-  },
+  // /writing-monetization-2026 仍可直接访问，但不在知识库卡片列表里露出
   {
     title: '儒释道 · 神仙体系',
     summary: '佛教五层果位、道教十级神格、儒家文庙道统 —— 三教神仙体系结构图。',

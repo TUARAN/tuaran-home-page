@@ -6,8 +6,7 @@ date: 2026-05-23
 tags: [Web 安全, 跨域通信, postMessage, Same-Origin Policy, CORS, 前端工程, 内容分发]
 summary: 围绕浏览器同源策略、CORS、window.open、window.opener、iframe 与 postMessage，系统解释跨域窗口通信的原理、安全边界、常见模式和工程落地方案，并结合 2aran.com 向 syncblog.cn 分发 Markdown 的场景给出实现建议。
 tldr: postMessage 是浏览器为跨源窗口、弹窗和 iframe 提供的标准通信机制。它在同源策略之上提供一条受控消息通道，前提是双方显式配合，并校验 origin 和消息类型。
-source: codex
-model: gpt-5
+assistance: codex
 pv: 0
 ---
 

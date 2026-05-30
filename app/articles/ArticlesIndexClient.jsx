@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+import { getCompanyTypeFilters, getTopicTypeFilters } from '../../lib/research/categories'
+
 const TAB_DEFS = [
   { key: 'all', label: '全部' },
   { key: 'posts', label: '精选文章' },
@@ -28,27 +30,12 @@ const QUICK_LINKS = [
   { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/', external: true },
 ]
 
-const COMPANY_TYPE_DEFS = [
-  { key: 'all', label: '全部公司' },
-  { key: 'developer_ecosystem', label: '开发者生态' },
-  { key: 'content_community', label: '内容社区' },
-  { key: 'enterprise_software', label: '企业软件' },
-  { key: 'cloud_communications', label: '云通信' },
-  { key: 'new_energy', label: '新能源' },
-  { key: 'devtools', label: '开发工具' },
-]
-
+// 公司 / 事项分类的 filter defs 由 lib/research/loader.js 派生，避免双源维护。
+// 新增 / 删除分类只改 loader 一处即可。
+const COMPANY_TYPE_DEFS = getCompanyTypeFilters()
 const COMPANY_TYPE_KEYS = COMPANY_TYPE_DEFS.map((t) => t.key)
 
-const TOPIC_TYPE_DEFS = [
-  { key: 'all', label: '全部事项' },
-  { key: 'industry', label: '行业' },
-  { key: 'tech', label: '技术' },
-  { key: 'product', label: '产品' },
-  { key: 'market', label: '市场' },
-  { key: 'thesis', label: '观点' },
-]
-
+const TOPIC_TYPE_DEFS = getTopicTypeFilters()
 const TOPIC_TYPE_KEYS = TOPIC_TYPE_DEFS.map((t) => t.key)
 
 const SPECIAL_TYPE_DEFS = [

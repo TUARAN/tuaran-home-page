@@ -6,8 +6,7 @@ date: 2026-05-20
 tags: [Qwen, 端侧部署, WebGPU, transformers.js, ONNX, 大模型, 量化, MoE]
 summary: 以端侧部署视角梳理 Qwen3.5 全系列（0.8B → 397B-A17B）：哪些能塞进浏览器 / 手机 / 笔记本，哪些只能上服务器，给出一张可复用的对照大表。
 tldr: 真正能端侧（含浏览器）跑的只有 0.8B / 2B / 4B 三档，9B 是上限且勉强；27B 往上全部是桌面独显到数据中心的范畴，397B-A17B 纯云端。"满血旗舰"和"端侧"基本互斥。
-source: claude-code
-model: claude-opus-4-7
+assistance: claude-code
 pv: 0
 ---
 

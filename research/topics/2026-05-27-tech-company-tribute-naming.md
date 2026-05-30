@@ -6,7 +6,7 @@ date: 2026-05-27
 tags: [品牌, 命名, 科技史, 公司文化, AI 公司, Anthropic, Tesla, 命名学]
 summary: Tesla 致敬尼古拉·特斯拉，Anthropic 致敬人择原理，Claude 致敬香农，Apple Logo 早期致敬牛顿——一批伟大的科技公司把自己挂在历史巨人身上。这是一种叙事工具，也是一种文化资本。
 tldr: 致敬式命名是科技公司的"精神血缘"叙事工具。不是伟大的必要条件，但凡使用此手法的公司，往往把"使命感叙事"做得更好；AI 时代这种命名美学正在复兴，中文世界则走了另一条路。
-source: claude-code
+assistance: claude-code
 pv: 0
 ---
 

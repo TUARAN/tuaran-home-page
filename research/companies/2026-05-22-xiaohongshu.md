@@ -5,8 +5,7 @@ company_type: content_community
 date: 2026-05-22
 tags: [内容社区, 生活方式, 种草经济, 社交电商, 内容营销, RedNote]
 summary: 行吟信息科技（上海）有限公司（品牌：小红书）运营中国最重要的生活方式内容社区之一，海外常用名称为 RedNote。小红书从出境购物攻略和消费分享起家，发展为“内容社区 + 搜索决策 + 种草营销 + 交易闭环 + 本地生活”的平台型公司，其核心价值来自用户在真实生活场景中沉淀的消费、生活和经验型内容。
-source: codex
-model: gpt-5
+assistance: codex
 pv: 0
 ---
 

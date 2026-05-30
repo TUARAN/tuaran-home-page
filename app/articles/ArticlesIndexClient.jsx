@@ -506,31 +506,6 @@ export default function ArticlesIndexClient({ items }) {
         )}
       </nav>
 
-      <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="搜索知识库：标题 / 摘要 / 标签"
-          className="min-w-[220px] flex-1 rounded-md border border-[#ddd3c2] bg-white px-3 py-2 text-sm text-[#2d261d] outline-none transition-colors focus:border-[#a99779] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
-        />
-        <button
-          type="submit"
-          className="rounded-md border border-[#d8cfbf] bg-[#faf6ef] px-3 py-2 text-sm text-[#5b5141] transition-colors hover:border-[#bdae93] hover:text-[#2d261d] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
-        >
-          搜索
-        </button>
-        {query ? (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="rounded-md border border-transparent px-2 py-2 text-sm text-[#8f826c] transition-colors hover:text-[#3d3429] dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            清空
-          </button>
-        ) : null}
-      </form>
-
       {heatmapData ? (
         <section className="space-y-2">
           <h2 className="text-base font-semibold text-[#2f2a21] dark:text-gray-100">热力图（{heatmapData.selectedYear}）</h2>
@@ -615,7 +590,36 @@ export default function ArticlesIndexClient({ items }) {
             </div>
           </div>
         </section>
-      ) : null}
+      ) : (
+        <section className="rounded-md border border-[#ded5c7] bg-[#fffdf8] p-3 text-xs text-[#776a57] dark:border-gray-700 dark:bg-[#0f141b] dark:text-gray-300">
+          热力图加载中…
+        </section>
+      )}
+
+      <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="搜索知识库：标题 / 摘要 / 标签"
+          className="min-w-[220px] flex-1 rounded-md border border-[#ddd3c2] bg-white px-3 py-2 text-sm text-[#2d261d] outline-none transition-colors focus:border-[#a99779] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
+        />
+        <button
+          type="submit"
+          className="rounded-md border border-[#d8cfbf] bg-[#faf6ef] px-3 py-2 text-sm text-[#5b5141] transition-colors hover:border-[#bdae93] hover:text-[#2d261d] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
+        >
+          搜索
+        </button>
+        {query ? (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="rounded-md border border-transparent px-2 py-2 text-sm text-[#8f826c] transition-colors hover:text-[#3d3429] dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            清空
+          </button>
+        ) : null}
+      </form>
 
       {tab === 'companies' ? (
         <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">

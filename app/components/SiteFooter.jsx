@@ -48,18 +48,10 @@ export default function SiteFooter({ className = '' }) {
           href="https://github.com/TUARAN/tuaran-home-page/actions/workflows/ci.yml"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center opacity-80 transition-opacity hover:opacity-100"
+          className="inline-flex items-center rounded border border-[#ddd3c2] px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-[#6f6557] opacity-80 transition-opacity hover:opacity-100 dark:border-gray-700 dark:text-gray-300"
           title="GitHub Actions 构建状态：点击查看最近一次 lint+build 是否通过"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://img.shields.io/github/actions/workflow/status/TUARAN/tuaran-home-page/ci.yml?branch=main&label=CI&style=flat-square"
-            alt="CI status"
-            width={75}
-            height={20}
-            loading="lazy"
-            decoding="async"
-          />
+          CI Status
         </a>
       </p>
     </footer>

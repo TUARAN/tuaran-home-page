@@ -415,7 +415,7 @@ export default function ZhangJuzhengBookPage() {
           《张居正：一个改革者的成事与代价》
         </h1>
         <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">
-          以"写一本张居正的书并发布出版"为长期工程目标，沿主线 → 人物 → 事件 → 写作 → 出版的顺序，把一个改革者的成事与代价拆成可读、可写、可出版的结构。
+          以「写一本张居正的书并发布出版」为长期工程目标，沿主线 → 人物 → 事件 → 写作 → 出版的顺序，把一个改革者的成事与代价拆成可读、可写、可出版的结构。
         </p>
         <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
           <Link href="/articles?tab=writing" className="opacity-80 hover:opacity-100 underline underline-offset-4">
@@ -487,14 +487,14 @@ export default function ZhangJuzhengBookPage() {
             <h2 className="text-[#444] text-lg font-bold dark:text-gray-200">一、为什么要写：用输出倒逼输入</h2>
             <div className="mt-3 text-sm text-[#666] dark:text-gray-300 leading-relaxed space-y-3">
               <p>
-                "读懂张居正"这件事如果停留在"看几本书"，注意力会被工作和生活稀释，半年后只剩模糊印象。但如果给自己定下"写一本张居正的书并发布出版"这个公开承诺，输入就被强制变成系统化的：
+                「读懂张居正」这件事如果停留在「看几本书」，注意力会被工作和生活稀释，半年后只剩模糊印象。但如果给自己定下「写一本张居正的书并发布出版」这个公开承诺，输入就被强制变成系统化的：
               </p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li><b>读完后必须有判断</b>——写下来才知道自己懂没懂；</li>
                 <li><b>必须有结构</b>——目录倒逼读书顺序与边界；</li>
                 <li><b>必须可校验</b>——出版要核对史实，读不细就过不去；</li>
                 <li><b>必须可解释</b>——给陌生读者讲清楚，比给自己讲清楚难十倍；</li>
-                <li><b>必须可分发</b>——选择题目、装帧、定价、渠道，反过来逼你想清楚"这本书对谁有用"。</li>
+                <li><b>必须可分发</b>——选择题目、装帧、定价、渠道，反过来逼你想清楚「这本书对谁有用」。</li>
               </ul>
               <p>
                 所以核心是用一本书的标准强迫自己彻底搞懂一个人。书是副产品，理解力才是真正想要的东西。
@@ -603,7 +603,7 @@ export default function ZhangJuzhengBookPage() {
 
           {/* 六、关键事件 */}
           <section id="events" className="border border-[#eee] bg-white p-5 dark:border-gray-800 dark:bg-gray-900 mb-6 scroll-mt-24">
-            <h2 className="text-[#444] text-lg font-bold dark:text-gray-200">六、关键事件评论（每件事都要有"怎么看 + 学什么"）</h2>
+            <h2 className="text-[#444] text-lg font-bold dark:text-gray-200">六、关键事件评论（每件事都要有「怎么看 + 学什么」）</h2>
             <div className="mt-4 space-y-4">
               {KEY_EVENTS.map((e) => (
                 <div key={e.title} className="border border-[#eee] dark:border-gray-800 p-4 bg-[#fafafa]/50 dark:bg-gray-800/20">
@@ -639,7 +639,7 @@ export default function ZhangJuzhengBookPage() {
                 </div>
               ))}
               <div className="mt-2 text-xs text-[#888] dark:text-gray-400 border-t border-[#eee] dark:border-gray-800 pt-3">
-                <b>附录</b>：张居正年表 · 关系图 · 万历新政关键词 · 著作导读 · "从张居正学组织管理的 20 条"
+                <b>附录</b>：张居正年表 · 关系图 · 万历新政关键词 · 著作导读 · 「从张居正学组织管理的 20 条」
               </div>
             </div>
           </section>

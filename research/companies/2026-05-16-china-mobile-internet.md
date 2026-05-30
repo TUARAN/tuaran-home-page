@@ -5,8 +5,7 @@ company_type: cloud_communications
 date: 2026-05-16
 tags: [中国移动, 5G消息, RCS, 飞信, 央企互联网化, 电信运营商]
 summary: 中移互联网有限公司（品牌：中国移动云盘；简称：CMIC）是中国移动整合九大基地组建的互联网专业子公司，2015 年广州落地、注册资本 30 亿、千人级团队。表面是"5G 消息国家队"，本质是央企互联网化叙事的"标本与遗骸"。
-source: claude-code
-model: claude-opus-4-7
+assistance: claude-code
 pv: 0
 ---
 

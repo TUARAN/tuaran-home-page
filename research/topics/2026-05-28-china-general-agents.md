@@ -6,8 +6,7 @@ tags: [AI, 智能体, Agent, 腾讯, OpenClaw, 国产AI, 桌面智能体]
 summary: 以腾讯 WorkBuddy / QClaw / CodeBuddy 为重点，横向测评 2026 年国产「从对话到执行」的本地操作型通用智能体，覆盖架构、场景、模型自由度、安全风险与商业逻辑。
 tldr: 2026 上半年大厂集体「养虾」，本质是围绕开源框架 OpenClaw（小龙虾）的同质化竞赛。腾讯靠 WorkBuddy（办公零门槛）+ QClaw（开源可换模）双线卡位，工程化与渠道是真壁垒，但安全评测显示「集成越深、攻击面越大」——QClaw 攻击成功率居六款之首。值得跟进，但当前更适合观察而非All in。
 topic_type: product
-source: claude-code
-model: claude-opus-4-7
+assistance: claude-code
 pv: 0
 ---
 

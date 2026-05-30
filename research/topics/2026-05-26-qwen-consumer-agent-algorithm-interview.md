@@ -6,8 +6,7 @@ date: 2026-05-26
 tags: [千问, Qwen, C端Agent, AI Agent, RAG, Memory, ReAct, Workflow, 面经]
 summary: 根据一份「千问 C 端 Agent 算法日常实习一面」题单，逐题整理面试官真正想考察的能力点，并给出可直接口播的参考答案。
 tldr: 这轮面试不是单纯八股，而是在验证你是否真的做过 Agent 工程：Memory 怎么抽取、检索、更新，BM25 和向量检索怎么融合，大规模记忆库怎么提效，ReAct 与 Workflow 如何取舍，以及如何用评测和后训练让 Agent 持续变好。
-source: codex
-model: gpt-5
+assistance: codex
 pv: 0
 ---
 

@@ -6,7 +6,7 @@ date: 2026-05-27
 tags: [大模型, LLM, AI 写作, RLHF, Transformer, Prompt Engineering, 自我指涉]
 summary: AI 写出来的文章一眼能看出"AI 味"，很大一部分来自"自我指涉"——模型不自觉地谈论自己或谈论这篇文章本身。问题不在某一家模型差，而在训练分布、attention 偏置、RLHF 奖励三者叠加形成的结构性"职业病"。
 tldr: 自我指涉是 LLM 的职业病，根因在数据 + 训练目标，模型层根治很难，工程层用 prompt 约束 + 后处理 lint 是当下最现实的缓解路径。
-source: claude-code
+assistance: claude-code
 pv: 0
 ---
 

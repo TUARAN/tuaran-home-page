@@ -5,8 +5,7 @@ company_type: enterprise_software
 date: 2026-05-16
 tags: [政企软件, 信创, 干部人事, AI 政务, 数字化, 党政]
 summary: 武汉维新智云科技有限公司（品牌 / 核心产品：干部信息智能管理平台；简称：维新智云）是武汉本地的政企信息化方案商，专注党政机关 / 事业单位 / 国企的干部、人事、人才、党建系统，主打"安全可控 + 信创 + AI 赋能"四位一体。
-source: claude-code
-model: claude-opus-4-7
+assistance: claude-code
 pv: 0
 ---
 

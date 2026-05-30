@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 export const metadata = {
@@ -15,7 +14,25 @@ const publicationItems = [
   { title: '《具身智能》', type: '技术图书', period: '2025 立项', status: '立项中' },
 ]
 
+const coverStyles = {
+  程序员成长手记: {
+    subtitle: '工程成长与职业进阶',
+    accent: 'from-[#3f2f1a] via-[#6c4a23] to-[#b87a2a]',
+  },
+  'AI Bots 通关指南': {
+    subtitle: '从 0 到 1 的智能体实战',
+    accent: 'from-[#132331] via-[#1f3d53] to-[#3f6f93]',
+  },
+}
+
 export default function PublicationsPage() {
+  const publishedBooks = publicationItems.filter((item) => item.status.includes('已出版') || item.status.includes('已发布'))
+  const placeholderCovers = publishedBooks.map((item) => ({
+    title: item.title.replace(/[《》]/g, ''),
+    subtitle: coverStyles[item.title.replace(/[《》]/g, '')]?.subtitle || item.type,
+    accent: coverStyles[item.title.replace(/[《》]/g, '')]?.accent || 'from-[#2a2f36] via-[#39424d] to-[#566273]',
+  }))
+
   return (
     <div className="mx-auto w-full max-w-[1120px] px-4 py-8">
       <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
@@ -35,6 +52,34 @@ export default function PublicationsPage() {
           >
             返回首页
           </Link>
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-[#e6dfd2] bg-white p-4 dark:border-[#2a3440] dark:bg-[#111923]">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.18em] text-[#9b8f79] dark:text-[#9ca5b5]">
+              已出版作品封面（占位）
+            </p>
+            <span className="font-mono text-[10px] tracking-[0.12em] text-[#9b8f79] dark:text-[#8e9ab0]">
+              共 {placeholderCovers.length} 本 · 可横向滑动
+            </span>
+          </div>
+          <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1">
+            {placeholderCovers.map((book) => (
+              <div
+                key={book.title}
+                className={`w-[min(56vw,230px)] shrink-0 snap-start rounded-xl border border-[#dfd4c0] bg-gradient-to-br ${book.accent} p-2.5 shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}
+              >
+                <div className="flex aspect-[3/4] flex-col justify-between rounded-lg border border-white/18 bg-black/12 p-2.5">
+                  <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/75">Book</span>
+                  <div>
+                    <h3 className="mb-1 font-serif text-[14px] font-semibold leading-[1.35] text-white">{book.title}</h3>
+                    <p className="mb-0 text-[10px] leading-4 text-white/85">{book.subtitle}</p>
+                  </div>
+                  <span className="font-mono text-[9px] tracking-[0.12em] text-white/65">TUARAN</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mb-5 overflow-hidden rounded-2xl border border-[#e6dfd2] bg-white dark:border-[#2a3440] dark:bg-[#111923]">

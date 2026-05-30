@@ -56,6 +56,13 @@ const POETRY_RESEARCH = [
 // 专题页：富媒体形式的事项调研，归入「事项调研」Tab
 const TOPIC_PAGES = [
   {
+    title: '《张居正：一个改革者的成事与代价》· 写作出版工程',
+    summary: '用输出倒逼输入：把"写一本张居正的书并发布出版"作为长期专题项目运营。主线、目录、人物关系、关键事件、12 个月节奏与进度看板。',
+    date: '2026-05-30',
+    href: '/zhang-juzheng-book',
+    specialType: 'writing',
+  },
+  {
     title: '中国写作变现 · 数据看板 2025-2026',
     summary: '5 种变现机制、8 个内容平台、6 大小说网站、掘金小册样本与传统出版数据的一页式可视化看板。',
     date: '2026-05-27',
@@ -81,7 +88,6 @@ const TOPIC_PAGES = [
 const WRITING_SPECIAL_TOPIC_SLUGS = new Set([
   'isbn-ban-hao-publishing-number-system',
   'edge-agent-dev-course',
-  'zhang-juzheng-book-project',
 ])
 
 export function buildKnowledgeItems() {

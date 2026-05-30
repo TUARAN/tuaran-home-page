@@ -41,6 +41,26 @@ export default function SiteFooter({ className = '' }) {
             )}
           </span>
         ))}
+        <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">
+          ·
+        </span>
+        <a
+          href="https://github.com/TUARAN/tuaran-home-page/actions/workflows/ci.yml"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center opacity-80 transition-opacity hover:opacity-100"
+          title="GitHub Actions 构建状态：点击查看最近一次 lint+build 是否通过"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://github.com/TUARAN/tuaran-home-page/actions/workflows/ci.yml/badge.svg?branch=main"
+            alt="CI status"
+            width={92}
+            height={20}
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
       </p>
     </footer>
   )

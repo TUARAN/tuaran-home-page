@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Pre-push: run lint before letting changes leave the laptop.
+# Cloudflare Pages 的构建会跑同样的 lint，与其等三分钟到云上才知道挂了，不如本地拦一道。
+#
+# Bypass: git push --no-verify
+# Disable: git config --unset core.hooksPath
+
+set -e
+
+# 容错：CI 自身在 push 时也会触发，但 CI 跑的是 actions/checkout，没有 hooks，因此不会执行此脚本。
+if [ -n "$SKIP_PRE_PUSH" ]; then
+  echo "[pre-push] SKIP_PRE_PUSH set, skipping checks."
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+echo "[pre-push] npm run lint …"
+if ! npm run --silent lint; then
+  echo
+  echo "✗ Lint failed. Fix the errors above before pushing, or rerun with:"
+  echo "    git push --no-verify"
+  exit 1
+fi
+
+echo "[pre-push] ✓ lint clean — pushing."

@@ -1,7 +1,7 @@
 ---
 title: 写一本关于张居正的书：人物、关系、事件、著作与可学习的方法论
 category: topics
-topic_type: publishing
+topic_type: industry
 date: 2026-05-30
 tags: [张居正, 明史, 万历新政, 改革, 人物写作, 历史写作, 读书计划, Markdown写作]
 summary: 面向“写一本张居正之书”的项目调研：把张居正的一生、性格、关系网络、关键事件、著作和现代人可学习的方法论拆成可写作的章节结构与素材卡片。

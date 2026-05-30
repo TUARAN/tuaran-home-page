@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 
 import ArticlesIndexClient from './ArticlesIndexClient'
+import KnowledgeHeatmapClient from './KnowledgeHeatmapClient'
 import { buildKnowledgeItems } from './buildKnowledgeItems'
 
 export const dynamic = 'force-static'
@@ -38,6 +39,9 @@ export default function ArticlesPage() {
               我读到、研究过、想反复回看的东西，都沉淀在这里——长文观察、公司画像、事项专题，按主题持续累积。
             </p>
           </div>
+        </div>
+        <div className="mt-4">
+          <KnowledgeHeatmapClient items={items} />
         </div>
       </header>
 

@@ -53,9 +53,9 @@ export default function SiteFooter({ className = '' }) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://github.com/TUARAN/tuaran-home-page/actions/workflows/ci.yml/badge.svg?branch=main"
+            src="https://img.shields.io/github/actions/workflow/status/TUARAN/tuaran-home-page/ci.yml?branch=main&label=CI&style=flat-square"
             alt="CI status"
-            width={92}
+            width={75}
             height={20}
             loading="lazy"
             decoding="async"

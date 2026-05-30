@@ -70,7 +70,7 @@ export default function CopyMarkdownButton({ markdown }) {
           <path d="M10.5 4V2.5A1.5 1.5 0 0 0 9 1H2.5A1.5 1.5 0 0 0 1 2.5V9a1.5 1.5 0 0 0 1.5 1.5H4" />
         </svg>
       )}
-      <span>{copied ? '已复制' : '复制 Markdown'}</span>
+      <span>{copied ? '已复制' : '复制'}</span>
     </button>
   )
 }

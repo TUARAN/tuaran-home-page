@@ -130,37 +130,12 @@ export default function HomePage() {
   const identityTagClassName =
     'inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/88 px-3 py-1 text-[13px] text-[#5f5a4d] backdrop-blur-sm dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300'
 
-  const remarkableThings = [
-    {
-      title: 'James Webb Space Telescope',
-      href: 'https://science.nasa.gov/mission/webb/',
-      domain: 'science.nasa.gov',
-      label: '人类深空之眼',
-      kicker: 'NASA · ESA · CSA · L2 Observatory',
-      summary:
-        '詹姆斯·韦伯空间望远镜是人类把复杂工程推到极限的代表：巨型红外望远镜折叠发射，在距离地球约 150 万公里的 L2 工作，回看早期宇宙、恒星和行星系统的形成。',
-      tags: ['红外宇宙', 'L2 深空观测', 'NASA / ESA / CSA'],
-      barClassName: 'bg-[linear-gradient(90deg,#0f766e_0%,#2563eb_48%,#7c3aed_100%)]',
-    },
-    {
-      title: 'TeraFab · Tesla × xAI × SpaceX',
-      href: 'https://terafab.ai/',
-      domain: 'terafab.ai',
-      label: '马斯克体系',
-      kicker: 'Energy · Compute · Manufacturing · Space',
-      summary:
-        '把电动车、自动驾驶、机器人、AI 算力、先进制造和航天放在一起推进，这件事本身就很硬核。马斯克厉害的地方，是把疯狂目标拆成工程、产线、供应链和发射节奏。',
-      tags: ['制造规模化', 'AI + 机器人', '地球到太空'],
-      barClassName: 'bg-[linear-gradient(90deg,#f59e0b_0%,#dc2626_45%,#1e3a8a_100%)]',
-    },
-  ]
-
   return (
     <div className="max-w-[1120px] w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
       <section className="flex-1 mb-14">
-        <header className="mb-8 rounded-[28px] border border-[#e6dfd2] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,245,240,0.92))] px-5 py-6 shadow-[0_16px_48px_rgba(91,78,53,0.06)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-8 md:py-8">
-          <div className="space-y-6">
-            <div className="space-y-4">
+        <header className="mb-8 rounded-[28px] border border-[#e6dfd2] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,245,240,0.92))] px-5 py-4 shadow-[0_16px_48px_rgba(91,78,53,0.06)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-7 md:py-5">
+          <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#9c8f79] dark:text-[#9ca5b5] mb-0">
@@ -177,11 +152,11 @@ export default function HomePage() {
                 </div>
                 <CopyIntroButton text={SITE_INTRO_COPY} />
               </div>
-              <div className="space-y-3">
-                <h1 className="mb-0 font-serif text-[1.38rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.72rem]">
+              <div className="space-y-2">
+                <h1 className="mb-0 font-serif text-[1.28rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.56rem]">
                   {SITE_HERO_TAGLINE}
                 </h1>
-                <p className="mb-0 max-w-[44rem] font-serif text-[1.05rem] font-medium leading-[1.75] tracking-[0.02em] text-[#2d281f] dark:text-[#ebe6dc] md:text-[1.12rem]">
+                <p className="mb-0 max-w-[44rem] font-serif text-[1rem] font-medium leading-[1.65] tracking-[0.02em] text-[#2d281f] dark:text-[#ebe6dc] md:text-[1.06rem]">
                   {SITE_HERO_GOAL_PARTS.map((part, i) =>
                     typeof part === 'string' ? (
                       <span key={i}>{part}</span>
@@ -197,41 +172,49 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0">
-                <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-[#998d76] dark:text-[#93a0b3] shrink-0">
-                  Identity
+            <div className="flex flex-wrap items-stretch gap-2.5 border-t border-[#ece4d3] pt-3.5 dark:border-[#262d38]">
+              <a
+                href="https://blogger-alliance.cn/"
+                target="_blank"
+                rel="noreferrer"
+                className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#3a2c14] bg-[#3a2c14] px-3.5 py-2.5 no-underline shadow-[0_6px_18px_rgba(58,44,20,0.14)] transition-all hover:-translate-y-0.5 hover:bg-[#2a1f0e] hover:shadow-[0_10px_24px_rgba(58,44,20,0.2)] sm:w-auto sm:min-w-[280px] sm:max-w-[360px] dark:border-[#e8d4b4] dark:bg-[#e8d4b4] dark:hover:bg-[#f5e3c4]"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f0c776]/15 text-[#f0c776] dark:bg-[#3a2c14]/15 dark:text-[#3a2c14]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 7h16M4 12h10M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
                 </span>
-                <div className="flex flex-wrap gap-2">
-                  {identityItems.map((item) =>
-                    item.href ? (
-                      isExternalHref(item.href) ? (
-                        <a
-                          key={item.key}
-                          href={item.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`${identityTagClassName} no-external-arrow opacity-85 transition-all hover:-translate-y-0.5 hover:border-[#cfc4ae] hover:bg-[#f3ede3] hover:opacity-100 dark:hover:border-[#3a4757] dark:hover:bg-[#19212b]`}
-                        >
-                          {item.label}
-                        </a>
-                      ) : (
-                        <Link
-                          key={item.key}
-                          href={item.href}
-                          className={`${identityTagClassName} no-external-arrow opacity-85 transition-all hover:-translate-y-0.5 hover:border-[#cfc4ae] hover:bg-[#f3ede3] hover:opacity-100 dark:hover:border-[#3a4757] dark:hover:bg-[#19212b]`}
-                        >
-                          {item.label}
-                        </Link>
-                      )
-                    ) : (
-                      <span key={item.key} className={identityTagClassName}>
-                        {item.label}
-                      </span>
-                    )
-                  )}
-                </div>
-              </div>
+                <span className="flex min-w-0 flex-col text-left">
+                  <span className="flex items-center gap-1 text-[13.5px] font-semibold text-[#fdf9ef] dark:text-[#1d1a16]">
+                    加入博主联盟
+                    <span className="font-mono text-[9px] tracking-[0.08em] opacity-70">→</span>
+                  </span>
+                  <span className="mt-0.5 text-[11px] leading-snug text-[#c8b89a] dark:text-[#5a4725]">
+                    AI 产品方 ↔ 技术博主 · 品牌增长
+                  </span>
+                </span>
+              </a>
+              <a
+                href="https://frontendnext.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#d9d0c2] bg-white/75 px-3.5 py-2.5 no-underline transition-all hover:-translate-y-0.5 hover:border-[#b9ad94] hover:bg-white sm:w-auto sm:min-w-[280px] sm:max-w-[360px] dark:border-[#3a4757] dark:bg-[#151c25] dark:hover:border-[#5a6a7e] dark:hover:bg-[#1a2330]"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f5efe1] text-[#8b5a1f] dark:bg-[#22303f] dark:text-[#e0b572]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 6l8 8 8-8M4 13l8 8 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <span className="flex min-w-0 flex-col text-left">
+                  <span className="flex items-center gap-1 text-[13.5px] font-semibold text-[#1d1a16] dark:text-gray-100">
+                    订阅前端周看
+                    <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
+                  </span>
+                  <span className="mt-0.5 text-[11px] leading-snug text-[#7c7565] dark:text-[#8e98a8]">
+                    前端 / AI Agent / 大模型 · 技术情报站
+                  </span>
+                </span>
+              </a>
             </div>
           </div>
         </header>
@@ -311,12 +294,17 @@ export default function HomePage() {
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-              <div className="mb-5">
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                  Community
-                </p>
-                <h2 className="home-section-title">社区矩阵</h2>
+            <section id="follow-me" className="scroll-mt-20 rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
+              <div className="mb-5 flex items-end justify-between gap-4">
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
+                    Follow Me
+                  </p>
+                  <h2 className="home-section-title">关注我</h2>
+                </div>
+                <span className="font-mono text-[11.5px] text-[#9c8f79] dark:text-[#8e9ab0]">
+                  500+ 篇 · 400 万阅读
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {communities.map((c, idx) => (
@@ -365,119 +353,77 @@ export default function HomePage() {
                   </a>
                 ))}
               </div>
-              <p className="mt-4 text-[13px] leading-7 text-[#847a67] dark:text-gray-400">
-                全网累计发布技术文章 <span className="font-mono font-semibold text-[#28231d] dark:text-gray-100">500+</span>，阅读量超 <span className="font-mono font-semibold text-[#28231d] dark:text-gray-100">400 万</span>。
-              </p>
-            </section>
-
-            <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-              <div className="mb-5">
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                  Publications
-                </p>
-                <div className="flex items-center justify-between gap-4">
-                  <h2 className="home-section-title">著作出版</h2>
-                  <Link
-                    href="/publications"
-                    className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#7f6f55] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#c8b99d]"
-                  >
-                    进入出版页
-                  </Link>
+              <div id="qrcode-wechat-mp" className="mt-5 grid grid-cols-1 gap-4 rounded-2xl border border-[#ece5d8] bg-white/70 p-4 dark:border-[#232c36] dark:bg-[#121821]/60 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                <div className="min-w-0">
+                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#8e9ab0]">Direct</p>
+                  <p className="mb-1 flex items-baseline gap-2 text-[14px] text-[#3d362b] dark:text-gray-200">
+                    <span className="text-[#888] dark:text-gray-400">微信</span>
+                    <span className="font-mono font-semibold text-[#1d1a16] dark:text-gray-100">atar24</span>
+                  </p>
+                  <p className="mb-0 text-[12px] leading-5 text-[#85806f] dark:text-[#8a93a3]">
+                    扫码加好友或关注公众号，往右 →
+                  </p>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <Image
+                    src="/qrcodewechat3.png"
+                    alt="扫码加好友二维码"
+                    width={80}
+                    height={80}
+                    className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
+                  />
+                  <span className="font-mono text-[10px] tracking-[0.14em] text-[#9c8f79] dark:text-[#8e9ab0]">加好友</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <Image
+                    src="/qrcode_for_gh.jpg"
+                    alt="公众号二维码"
+                    width={80}
+                    height={80}
+                    className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
+                  />
+                  <span className="font-mono text-[10px] tracking-[0.14em] text-[#9c8f79] dark:text-[#8e9ab0]">公众号</span>
                 </div>
               </div>
-              <div className="space-y-2 text-[15px] leading-7 text-[#666]">
-              <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.12em] text-[#958a75] dark:text-gray-400">已出版</p>
-              <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {[
-                  {
-                    cover: '/20260104094558_496.png',
-                    title: '程序员成长手记',
-                    meta: '2024 · 电子工业出版社',
-                    href: 'https://item.jd.com/14356664.html',
-                  },
-                  {
-                    cover: '/20260104094842_497.png',
-                    title: 'AI Bots 通关指南',
-                    meta: '2024 · 掘金小册',
-                    href: 'https://juejin.cn/book/7351709145294176282',
-                  },
-                ].map((book) => (
-                  <a
-                    key={book.title}
-                    href={book.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow group flex items-center gap-4 rounded-2xl border border-[#ebe4d8] bg-white p-4 shadow-[0_18px_48px_rgba(112,96,68,0.05)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_16px_34px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
-                  >
-                    <Image
-                      src={book.cover}
-                      alt={book.title}
-                      width={120}
-                      height={160}
-                      className="h-[88px] w-16 rounded-sm border border-[#ece6da] object-cover shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow group-hover:shadow-[0_4px_14px_rgba(0,0,0,0.12)] dark:border-gray-800"
-                    />
-                    <span className="flex flex-col min-w-0">
-                      <span className="font-serif text-[15px] font-semibold text-[#222] dark:text-gray-100 group-hover:text-black dark:group-hover:text-white">
-                        《{book.title}》
-                      </span>
-                      <span className="text-[12px] text-[#888] dark:text-gray-400 mt-1">{book.meta}</span>
-                    </span>
-                  </a>
-                ))}
-              </div>
-              <p className="text-[13px] text-[#888] dark:text-gray-400">
-                出版中：大模型 / 智能体 / 具身智能相关书籍
-              </p>
-              </div>
             </section>
 
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-              <div className="mb-5">
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                  Remarkable
+              <div className="mb-2 flex items-center justify-between gap-4">
+                <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0]">
+                  More
                 </p>
-                <h2 className="home-section-title">我认为牛逼的事</h2>
+                <Link
+                  href="/map"
+                  className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#7f6f55] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#c8b99d]"
+                >
+                  站点地图 →
+                </Link>
               </div>
-              <div className="grid gap-4">
-                {remarkableThings.map((thing) => (
-                  <a
-                    key={thing.href}
-                    href={thing.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow group relative block overflow-hidden rounded-2xl border border-[#ece5d8] bg-white p-5 no-underline shadow-[0_18px_48px_rgba(112,96,68,0.05)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_20px_54px_rgba(100,79,47,0.10)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+              <h2 className="home-section-title">更多入口</h2>
+              <p className="mt-1 mb-4 text-[13px] leading-6 text-[#847a67] dark:text-gray-400">
+                出版作品、自用工具、马斯克与韦伯望远镜笔记，都挪到了下面这些页面。
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  { href: '/publications', kicker: 'Books', title: '著作出版', desc: '《程序员成长手记》《AI Bots 通关指南》' },
+                  { href: '/about', kicker: 'About', title: '关于我 / 牛逼的事', desc: '履历、价值观、我认为牛逼的事' },
+                  { href: '/ai-projects', kicker: 'Apps', title: '自用工具', desc: '吃什么 · 茉莉奶爸 · 端侧大模型 …' },
+                ].map((card) => (
+                  <Link
+                    key={card.href}
+                    href={card.href}
+                    className="no-external-arrow group block rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_12px_30px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
                   >
-                    <span aria-hidden="true" className={`pointer-events-none absolute inset-x-0 top-0 h-[3px] ${thing.barClassName}`} />
-                    <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                      <span className="font-serif text-[18px] font-semibold tracking-[0.02em] text-[#1d1a16] dark:text-gray-100">
-                        {thing.title}
-                      </span>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#9d9078] dark:text-[#94a0b1]">
-                        {thing.domain} ↗
-                      </span>
-                    </div>
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
-                        {thing.label}
-                      </span>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#a09176] dark:text-[#8e9ab0]">
-                        {thing.kicker}
-                      </span>
-                    </div>
-                    <p className="mb-3 text-[14px] leading-7 text-[#5f5a4d] dark:text-gray-300">
-                      {thing.summary}
+                    <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+                      {card.kicker}
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {thing.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </a>
+                    <p className="mb-1 text-[15px] font-semibold text-[#1d1a16] dark:text-gray-100">
+                      {card.title}
+                    </p>
+                    <p className="mb-0 text-[12.5px] leading-5 text-[#7c7565] dark:text-[#8e98a8]">
+                      {card.desc}
+                    </p>
+                  </Link>
                 ))}
               </div>
             </section>
@@ -521,91 +467,15 @@ export default function HomePage() {
                 </Link>
               </div>
               <LatestMoments />
-              <div className="space-y-3 text-[14px] leading-7 text-[#666] dark:text-gray-300">
-                <p className="flex items-baseline justify-between gap-2">
-                  <span className="text-[#888] dark:text-gray-400">微信</span>
-                  <span className="font-mono text-[#222] dark:text-gray-100">atar24</span>
-                </p>
-                <div id="qrcode-wechat-mp" className="scroll-mt-20 flex items-center justify-between gap-2 pt-3 border-t border-[#eee] dark:border-gray-800">
-                  <span className="text-[#888] dark:text-gray-400">扫码加好友</span>
-                  <Image
-                    src="/qrcodewechat3.png"
-                    alt="扫码加好友二维码"
-                    width={80}
-                    height={80}
-                    className="w-16 h-16 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[#888] dark:text-gray-400">关注公众号</span>
-                  <Image
-                    src="/qrcode_for_gh.jpg"
-                    alt="公众号二维码"
-                    width={80}
-                    height={80}
-                    className="w-16 h-16 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
-                  />
-                </div>
-              </div>
+              <a
+                href="#follow-me"
+                className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#ded6c8] bg-white/78 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#5f5a4d] no-underline transition hover:border-[#c9bea9] hover:text-[#222] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
+              >
+                关注我 / 微信 / 公众号 ↓
+              </a>
             </section>
 
           </aside>
-        </div>
-      </section>
-
-      <section className="mt-12 mb-10">
-        <div className="mb-5 border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-serif text-[1.45rem] font-semibold tracking-[0.04em] text-[#221f19] dark:text-gray-100">自用应用</h2>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">Apps</p>
-          </div>
-          <p className="mt-2 text-[13px] leading-6 text-[#847a67] dark:text-gray-400">
-            长期维护的页面与应用，不是一次性小脚本；真正的站内小工具在
-            <Link href="/ai-projects#site-tools" className="mx-1 text-[#5a4725] underline-offset-2 hover:underline dark:text-[#c8b99d]">
-              AI 项目页
-            </Link>
-            。
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Link
-            href="/eatwhat"
-            className="group block rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
-          >
-            <div className="mb-1 flex items-baseline gap-2">
-              <span className="text-[18px]" aria-hidden="true">🥢</span>
-              <span className="font-semibold text-[#1d1a16] dark:text-gray-100">吃什么</span>
-            </div>
-            <p className="text-[13px] leading-6 text-[#666] dark:text-gray-400">
-              帮你决定下一顿，分大人和宝宝两套清单。
-            </p>
-          </Link>
-
-          <Link
-            href="/xiaomoli-dad-todo"
-            className="group block rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
-          >
-            <div className="mb-1 flex items-baseline gap-2">
-              <span className="text-[18px]" aria-hidden="true">📋</span>
-              <span className="font-semibold text-[#1d1a16] dark:text-gray-100">茉莉奶爸待办</span>
-            </div>
-            <p className="text-[13px] leading-6 text-[#666] dark:text-gray-400">
-              日常 + 习惯 + 家庭节奏的多维勾选，按日期沉淀。
-            </p>
-          </Link>
-
-          <Link
-            href="/web-llm"
-            className="group block rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
-          >
-            <div className="mb-1 flex items-baseline gap-2">
-              <span className="text-[18px]" aria-hidden="true">▣</span>
-              <span className="font-semibold text-[#1d1a16] dark:text-gray-100">端侧大模型</span>
-            </div>
-            <p className="text-[13px] leading-6 text-[#666] dark:text-gray-400">
-              记录 WebGPU、Ollama、本机运行时、边缘设备与分布式智能实践。
-            </p>
-          </Link>
         </div>
       </section>
 

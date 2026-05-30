@@ -2,33 +2,189 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import WebLlmModal from './WebLlmModal'
 import SettingsButton from './SettingsButton'
 import { SITE_DOMAIN } from '../../lib/siteIntro'
+import { SITE_CHANNELS } from '../../lib/siteNav'
 
-const navItems = [
-  { href: '/ai-projects', label: 'AI 项目', match: (p) => p === '/ai-projects' },
-  { href: '/articles', label: '知识库', match: (p) => p?.startsWith('/articles') },
-  { href: '/reading', label: '书库', match: (p) => p?.startsWith('/reading') },
-  { href: '/bookmarks', label: '资源库', match: (p) => p?.startsWith('/bookmarks') },
-]
+function ChevronDown() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" className="opacity-60">
+      <path
+        d="M3 4.5L6 7.5L9 4.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function MenuItem({ item, onNavigate }) {
+  const base =
+    'group/menuitem flex items-start gap-3 rounded-xl px-3 py-2 no-underline transition-colors hover:bg-[#f4ede0] dark:hover:bg-[#19212b]'
+  const inner = (
+    <>
+      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#c5b89c] transition-colors group-hover/menuitem:bg-[#8b5a1f] dark:bg-[#475061] dark:group-hover/menuitem:bg-[#e0b572]" />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5 text-[13.5px] font-medium leading-tight text-[#221f19] dark:text-gray-100">
+          {item.label}
+          {item.tag ? (
+            <span className="rounded-full bg-[#fde6c6] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]">
+              {item.tag}
+            </span>
+          ) : null}
+        </span>
+        {item.desc ? (
+          <span className="mt-0.5 block text-[11.5px] leading-snug text-[#85806f] dark:text-[#8a93a3]">
+            {item.desc}
+          </span>
+        ) : null}
+      </span>
+    </>
+  )
+
+  if (item.external) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noreferrer"
+        className={`${base} no-external-arrow`}
+        onClick={onNavigate}
+      >
+        {inner}
+      </a>
+    )
+  }
+  return (
+    <Link href={item.href} className={base} onClick={onNavigate}>
+      {inner}
+    </Link>
+  )
+}
+
+function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerRef, align = 'center' }) {
+  const closeTimerRef = useRef(null)
+  const positionClass =
+    align === 'right'
+      ? 'right-0'
+      : align === 'left'
+      ? 'left-0'
+      : 'left-1/2 -translate-x-1/2'
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
+  function clearCloseTimer() {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }
+
+  function handleMouseEnter() {
+    clearCloseTimer()
+    onToggle.open()
+  }
+
+  function handleMouseLeave() {
+    clearCloseTimer()
+    // Keep a small grace window so moving into the panel never flashes closed.
+    closeTimerRef.current = setTimeout(() => onToggle.close(), 120)
+  }
+
+  function handleToggleClick() {
+    clearCloseTimer()
+    onToggle.toggle()
+  }
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button
+        type="button"
+        ref={triggerRef}
+        onClick={handleToggleClick}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        className={[
+          'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-medium transition-colors',
+          isActive
+            ? 'text-[#111] font-medium dark:text-gray-100'
+            : 'text-[#5b5448] hover:text-[#111] dark:text-[#c7d0df] dark:hover:text-[#f7fbff]',
+        ].join(' ')}
+      >
+        {channel.label}
+        <ChevronDown />
+      </button>
+
+      {isOpen ? (
+        <div
+          role="menu"
+          className={`absolute top-full z-[120] w-[min(calc(100vw-1rem),440px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${positionClass}`}
+        >
+          <div className="rounded-2xl border border-[#e6dfd0] bg-[#fdfaf3] p-3 shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+            {channel.sections.map((section) => (
+              <div key={section.title} className="mb-2 last:mb-0">
+                <p className="mb-1 px-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#93a0b3]">
+                  {section.title}
+                </p>
+                <div className="grid grid-cols-2 gap-1">
+                  {section.items.map((item) => (
+                    <MenuItem key={item.href + item.label} item={item} onNavigate={onClose} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 export default function SiteHeader() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [openChannel, setOpenChannel] = useState(null)
+  const [openMobileChannel, setOpenMobileChannel] = useState(null)
+  const navWrapRef = useRef(null)
 
   useEffect(() => {
     setMobileMenuOpen(false)
+    setOpenChannel(null)
   }, [pathname])
 
-  // Hide global header on special immersive pages.
+  useEffect(() => {
+    if (!openChannel) return
+    function onDocClick(e) {
+      if (navWrapRef.current && !navWrapRef.current.contains(e.target)) setOpenChannel(null)
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') setOpenChannel(null)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [openChannel])
+
   if (pathname?.startsWith('/people/elon-musk')) return null
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full overflow-x-hidden border-b border-[#e8dfd0] bg-[#f8f5f0]/90 backdrop-blur dark:border-gray-800 dark:bg-[#0f141b]/88">
+      <header className="sticky top-0 z-40 w-full overflow-x-hidden border-b border-[#e8dfd0] bg-[#f8f5f0]/92 backdrop-blur dark:border-[#202938] dark:bg-[#0f141b]/96">
         <div className="max-w-[1120px] mx-auto flex items-center justify-between gap-4 px-4 py-4">
           <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label="返回首页">
             <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
@@ -42,31 +198,37 @@ export default function SiteHeader() {
           </Link>
 
           <div className="hidden items-center gap-3 md:flex">
-            <nav aria-label="主导航" className="text-sm flex flex-wrap items-center gap-x-5 gap-y-2">
-              {navItems.map((item) => {
-                const active = item.match(pathname)
+            <nav ref={navWrapRef} aria-label="主导航" className="flex items-center gap-1">
+              {SITE_CHANNELS.map((channel) => {
+                const isActive = channel.match(pathname)
+                const isOpen = openChannel === channel.key
+                const align =
+                  channel.key === 'content'
+                    ? 'left'
+                    : channel.key === 'services' || channel.key === 'about'
+                    ? 'right'
+                    : 'center'
                 return (
-                  <Link
-                    key={item.href}
-                  href={item.href}
-                  className={[
-                      'no-underline hover:no-underline transition-colors visited:text-inherit',
-                      active
-                        ? 'text-[#111] dark:text-gray-100 font-medium'
-                        : 'text-[#666] dark:text-gray-400 hover:text-[#111] dark:hover:text-gray-100',
-                    ].join(' ')}
-                  >
-                    {item.label}
-                  </Link>
+                  <ChannelTrigger
+                    key={channel.key}
+                    channel={channel}
+                    isOpen={isOpen}
+                    isActive={isActive}
+                    onToggle={{
+                      open: () => setOpenChannel(channel.key),
+                      close: () => setOpenChannel((cur) => (cur === channel.key ? null : cur)),
+                      toggle: () => setOpenChannel((cur) => (cur === channel.key ? null : channel.key)),
+                    }}
+                    onClose={() => setOpenChannel(null)}
+                    align={align}
+                  />
                 )
               })}
             </nav>
-            <WebLlmModal />
             <SettingsButton />
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
-            <WebLlmModal />
             <SettingsButton />
             <button
               type="button"
@@ -110,29 +272,50 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'fixed right-0 top-[73px] z-40 w-[min(88vw,320px)] border-l border-[#e5dccd] bg-[#faf7f0] px-5 py-5 shadow-[-18px_0_48px_rgba(77,62,37,0.10)] transition-transform duration-200 dark:border-[#232c36] dark:bg-[#10151d] md:hidden',
+          'fixed right-0 top-[73px] z-40 max-h-[calc(100vh-73px)] w-[min(88vw,340px)] overflow-y-auto border-l border-[#e5dccd] bg-[#faf7f0] px-4 py-5 shadow-[-18px_0_48px_rgba(77,62,37,0.10)] transition-transform duration-200 dark:border-[#232c36] dark:bg-[#10151d] md:hidden',
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
-        <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[#9e8f75] dark:text-[#8e9ab0]">
+        <p className="mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.22em] text-[#9e8f75] dark:text-[#8e9ab0]">
           Menu
         </p>
-        <nav aria-label="移动端主导航" className="flex flex-col gap-2">
-          {navItems.map((item) => {
-            const active = item.match(pathname)
+        <nav aria-label="移动端主导航" className="flex flex-col gap-1.5">
+          {SITE_CHANNELS.map((channel) => {
+            const expanded = openMobileChannel === channel.key
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={[
-                  'rounded-2xl border px-4 py-3 text-[15px] no-underline transition-colors visited:text-inherit',
-                  active
-                    ? 'border-[#d8ccb8] bg-white text-[#191611] dark:border-[#33404d] dark:bg-[#151c25] dark:text-gray-100'
-                    : 'border-transparent bg-transparent text-[#615845] hover:border-[#e4dac8] hover:bg-white dark:text-gray-300 dark:hover:border-[#2d3744] dark:hover:bg-[#151c25]',
-                ].join(' ')}
-              >
-                {item.label}
-              </Link>
+              <div key={channel.key} className="rounded-2xl border border-[#e7decb] bg-white/70 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+                <button
+                  type="button"
+                  onClick={() => setOpenMobileChannel((cur) => (cur === channel.key ? null : channel.key))}
+                  aria-expanded={expanded}
+                  className="flex w-full items-center justify-between px-4 py-3 text-left text-[15px] font-medium text-[#191611] dark:text-gray-100"
+                >
+                  {channel.label}
+                  <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
+                    <ChevronDown />
+                  </span>
+                </button>
+                {expanded ? (
+                  <div className="space-y-2 border-t border-[#ece3d1] px-2 pb-3 pt-2 dark:border-[#2a3340]">
+                    {channel.sections.map((section) => (
+                      <div key={section.title}>
+                        <p className="mb-1 px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9e8f75] dark:text-[#8e9ab0]">
+                          {section.title}
+                        </p>
+                        <div className="flex flex-col">
+                          {section.items.map((item) => (
+                            <MenuItem
+                              key={item.href + item.label}
+                              item={item}
+                              onNavigate={() => setMobileMenuOpen(false)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             )
           })}
         </nav>

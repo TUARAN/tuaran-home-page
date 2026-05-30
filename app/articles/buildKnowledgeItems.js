@@ -81,6 +81,7 @@ const TOPIC_PAGES = [
 const WRITING_SPECIAL_TOPIC_SLUGS = new Set([
   'isbn-ban-hao-publishing-number-system',
   'edge-agent-dev-course',
+  'zhang-juzheng-book-project',
 ])
 
 export function buildKnowledgeItems() {

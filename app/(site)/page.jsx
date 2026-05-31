@@ -410,7 +410,7 @@ export default function HomePage() {
                   前端 · AI Agent · 奶爸
                 </p>
                 <p className="mt-1 text-[12px] tracking-[0.06em] text-[#888] dark:text-gray-500">
-                  Founder @矩联科技 · 博主联盟
+                  Founder @矩联科技
                 </p>
                 <blockquote className="mx-auto mt-3 max-w-[min(280px,100%)]">
                   <p className="font-serif text-[15px] leading-[1.9] tracking-wide text-[#3d362b] dark:text-gray-200">

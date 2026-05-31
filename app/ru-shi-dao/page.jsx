@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import SharePageButton from '../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -522,6 +524,11 @@ export default function RuShiDaoPage() {
               </Link>
             </div>
           </div>
+          <SharePageButton
+            title="儒释道 · 神仙体系调研"
+            text="佛教五层果位、道教十级神格、儒家文庙道统——三教神仙体系结构图。"
+            url="/ru-shi-dao"
+          />
         </div>
       </header>
 

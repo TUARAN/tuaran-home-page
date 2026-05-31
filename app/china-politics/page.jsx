@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import SharePageButton from '../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -482,6 +484,11 @@ export default function ChinaPoliticsPage() {
               </Link>
             </div>
           </div>
+          <SharePageButton
+            title="中国政治体制 · 专题调研"
+            text="中央与国务院组织结构、历届三中全会、领导层 1971 至今沿革。"
+            url="/china-politics"
+          />
         </div>
       </header>
 

@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import SharePageButton from '../../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 const ZHANG_JUZHENG_TIMELINE = [
@@ -1753,6 +1755,7 @@ export default function MingQingPage() {
               </Link>
             </div>
           </div>
+          <SharePageButton title="明清史 · 历史调研" text="以皇帝时间线梳理明清两代的制度、权力与个人命运。" url="/history/ming-qing" />
         </div>
       </header>
 

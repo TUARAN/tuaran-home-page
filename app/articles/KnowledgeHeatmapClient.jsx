@@ -83,7 +83,6 @@ export default function KnowledgeHeatmapClient({ items }) {
   const [expanded, setExpanded] = useState(false)
   const [selectedHeatmapYear, setSelectedHeatmapYear] = useState('')
   const juejinCountsByDate = JUEJIN_ACTIVITY_SNAPSHOT.countsByDate
-  const juejinTopTags = JUEJIN_ACTIVITY_SNAPSHOT.topTags
 
   const heatmapData = useMemo(() => {
     const localCountsByDate = {}
@@ -144,7 +143,7 @@ export default function KnowledgeHeatmapClient({ items }) {
   }, [heatmapData, selectedHeatmapYear])
 
   return (
-    <section className="space-y-2">
+    <section className="space-y-1">
       <button
         type="button"
         aria-expanded={expanded}
@@ -181,7 +180,7 @@ export default function KnowledgeHeatmapClient({ items }) {
               ))}
             </div>
             <div className="rounded-md border border-[#ded5c7] bg-[#fffdf8] p-3 dark:border-gray-700 dark:bg-[#0f141b]">
-              <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="mb-1 flex items-center justify-between gap-3">
                 <p className="text-xs text-[#776a57] dark:text-gray-300">
                   {heatmapData.total} 篇内容发布（站内 {heatmapData.localTotal} + 掘金 {heatmapData.juejinTotal}）
                 </p>
@@ -195,15 +194,6 @@ export default function KnowledgeHeatmapClient({ items }) {
                   多
                 </p>
               </div>
-              {juejinTopTags.length ? (
-                <p className="mb-2 text-[11px] text-[#9f927d] dark:text-gray-500">
-                  掘金高频标签：
-                  {juejinTopTags
-                    .slice(0, 6)
-                    .map((item) => `${item.tag}(${item.count})`)
-                    .join(' · ')}
-                </p>
-              ) : null}
               <div className="overflow-x-auto">
                 <div className="inline-flex min-w-max flex-col gap-1.5">
                   <div className="ml-6 flex gap-[3px]">

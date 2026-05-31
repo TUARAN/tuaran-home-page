@@ -29,7 +29,7 @@ export default function ArticlesPage() {
 
   return (
     <main className="w-full max-w-4xl mx-auto px-4 py-10">
-      <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-5">
+      <header className="mb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">

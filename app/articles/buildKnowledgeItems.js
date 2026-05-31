@@ -56,6 +56,15 @@ const POETRY_RESEARCH = [
 // 专题页：富媒体形式的事项调研，归入「事项调研」Tab
 const TOPIC_PAGES = [
   {
+    title: '日月运行交互可视化专题',
+    summary:
+      '用日心视角探索太阳中心、地球公转与自转、月球绕地运行与月相变化；把日出日落、昼夜分界和月相循环放在一个可交互模型里复盘。',
+    date: '2026-05-31',
+    href: '/sun-moon-motion',
+    specialType: 'science',
+    tagLabel: '专题 · 科学探索',
+  },
+  {
     title: 'AI Token 用量与花费强度调研',
     summary:
       '日耗 1000 万 / 4.5 亿 tokens 对照：对数刻度强度尺 + 文本吞吐换算 + 双画像场景占比 + 真实公开 API 价折算月费 + 效率信号 + 优化抓手 ROI 排序。',
@@ -161,7 +170,7 @@ export function buildKnowledgeItems() {
 
   const topicPageItems = TOPIC_PAGES.map((p) => ({
     kind: 'special',
-    tagLabel: '专题',
+    tagLabel: p.tagLabel || '专题',
     specialType: p.specialType || 'other',
     title: p.title,
     summary: p.summary,

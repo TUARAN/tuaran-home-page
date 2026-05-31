@@ -84,7 +84,6 @@ export default function KnowledgeHeatmapClient({ items }) {
   const [selectedHeatmapYear, setSelectedHeatmapYear] = useState('')
   const juejinCountsByDate = JUEJIN_ACTIVITY_SNAPSHOT.countsByDate
   const juejinTopTags = JUEJIN_ACTIVITY_SNAPSHOT.topTags
-  const juejinSnapshotAt = JUEJIN_ACTIVITY_SNAPSHOT.snapshotAt
 
   const heatmapData = useMemo(() => {
     const localCountsByDate = {}
@@ -203,11 +202,6 @@ export default function KnowledgeHeatmapClient({ items }) {
                     .slice(0, 6)
                     .map((item) => `${item.tag}(${item.count})`)
                     .join(' · ')}
-                </p>
-              ) : null}
-              {juejinSnapshotAt ? (
-                <p className="mb-2 text-[10px] text-[#b0a38f] dark:text-gray-600">
-                  掘金静态快照：{juejinSnapshotAt.slice(0, 10)}
                 </p>
               ) : null}
               <div className="overflow-x-auto">

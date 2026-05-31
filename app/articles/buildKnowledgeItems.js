@@ -56,9 +56,9 @@ const POETRY_RESEARCH = [
 // 专题页：富媒体形式的事项调研，归入「事项调研」Tab
 const TOPIC_PAGES = [
   {
-    title: 'AI Token 用量与花费强度调研（可切换口径）',
+    title: 'AI Token 用量与花费强度调研',
     summary:
-      '围绕日耗 1000 万与 4.5 亿 tokens 两个样本，给出强度分级、场景占比、效率评估、预估花费与趋势预测，并支持保守/基线/输出重口径切换。',
+      '日耗 1000 万 / 4.5 亿 tokens 对照：对数刻度强度尺 + 文本吞吐换算 + 双画像场景占比 + 真实公开 API 价折算月费 + 效率信号 + 优化抓手 ROI 排序。',
     date: '2026-05-31',
     href: '/ai-token-usage-research',
     specialType: 'ai',

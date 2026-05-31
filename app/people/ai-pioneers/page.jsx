@@ -8,6 +8,8 @@ import hintonAvatar from './avatar/Hinton.jpeg'
 import krizhevskyAvatar from './avatar/alex.jpeg'
 import bengioAvatar from './avatar/bengio.jpeg'
 
+import SharePageButton from '../../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -38,6 +40,7 @@ export default function AiPioneersPage() {
               </Link>
             </div>
           </div>
+          <SharePageButton title="人工智能先驱 · 人物调研" text="以时间线梳理深度学习先驱群像与关键贡献。" url="/people/ai-pioneers" />
         </div>
       </header>
 

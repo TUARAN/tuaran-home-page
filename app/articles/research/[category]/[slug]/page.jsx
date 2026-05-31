@@ -21,7 +21,7 @@ import DownloadPptButton from './DownloadPptButton'
 import EncryptedArticle from './EncryptedArticle'
 import ResearchBody from './ResearchBody'
 import ResearchPvCounter from './ResearchPvCounter'
-import ShareResearchButton from './ShareResearchButton'
+import SharePageButton from '../../../../components/SharePageButton'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -255,7 +255,7 @@ export default async function ResearchDetailPage({ params }) {
           ) : null}
           {isEncrypted ? null : (
             <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto sm:flex-nowrap">
-              <ShareResearchButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
+              <SharePageButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
               <CopyMarkdownButton markdown={markdownDoc} />
               <DownloadPptButton
                 title={entry.title}

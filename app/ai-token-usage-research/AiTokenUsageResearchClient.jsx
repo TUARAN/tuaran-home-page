@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
+import SharePageButton from '../components/SharePageButton'
+
 // ============================================================
 // 数据基础
 // ============================================================
@@ -320,7 +322,14 @@ export default function AiTokenUsageResearchClient() {
   return (
     <main className="mx-auto w-full max-w-5xl space-y-10 px-4 py-10">
       <header className="space-y-3 border-b border-[#eadfcd] pb-6 dark:border-gray-800">
-        <p className="text-xs tracking-wide text-[#8c8376] dark:text-gray-500">专题 · AI 调研</p>
+        <div className="flex items-start justify-between gap-4">
+          <p className="text-xs tracking-wide text-[#8c8376] dark:text-gray-500">专题 · AI 调研</p>
+          <SharePageButton
+            title="AI Token 用量与花费强度调研"
+            text="日耗 1000 万 / 4.5 亿 tokens 对照：强度尺、文本吞吐换算、场景画像、月费、效率信号、优化抓手。"
+            url="/ai-token-usage-research"
+          />
+        </div>
         <h1 className="text-3xl font-semibold text-[#222] dark:text-gray-100">
           AI Token 用量与花费强度调研
         </h1>

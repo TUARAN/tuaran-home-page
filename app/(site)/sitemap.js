@@ -45,6 +45,7 @@ export default function sitemap() {
     '/bookmarks/dev-resources',
     '/bookmarks/ai-tools',
     '/community',
+    '/changelog',
     '/diary',
     '/donate',
     '/eatwhat',

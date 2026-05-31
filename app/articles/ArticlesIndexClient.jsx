@@ -41,6 +41,7 @@ const TOPIC_TYPE_KEYS = TOPIC_TYPE_DEFS.map((t) => t.key)
 const SPECIAL_TYPE_DEFS = [
   { key: 'all', label: '全部专题' },
   { key: 'ai', label: 'AI 调研' },
+  { key: 'science', label: '科学探索' },
   { key: 'writing', label: '写作创作' },
   { key: 'culture', label: '文化专题' },
   { key: 'politics', label: '政治专题' },

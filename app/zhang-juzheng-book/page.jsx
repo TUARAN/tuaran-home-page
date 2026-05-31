@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import SharePageButton from '../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -417,7 +419,7 @@ export default function ZhangJuzhengBookPage() {
         <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">
           以「写一本张居正的书并发布出版」为长期工程目标，沿主线 → 人物 → 事件 → 写作 → 出版的顺序，把一个改革者的成事与代价拆成可读、可写、可出版的结构。
         </p>
-        <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-[#666] dark:text-gray-300">
           <Link href="/articles?tab=writing" className="opacity-80 hover:opacity-100 underline underline-offset-4">
             ← 返回写作创作
           </Link>
@@ -427,6 +429,11 @@ export default function ZhangJuzhengBookPage() {
           <Link href="/articles/research/topics/isbn-ban-hao-publishing-number-system" className="opacity-80 hover:opacity-100 underline underline-offset-4">
             相关：ISBN / 书号体系
           </Link>
+          <SharePageButton
+            title="《张居正：一个改革者的成事与代价》· 写作出版工程"
+            text="把『写一本张居正的书并发布出版』作为长期项目运营。"
+            url="/zhang-juzheng-book"
+          />
         </div>
       </header>
 

@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import SharePageButton from '../../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 const CAO_CAO_TIMELINE = [
@@ -517,6 +519,7 @@ export default function ThreeKingdomsPage() {
               </Link>
             </div>
           </div>
+          <SharePageButton title="三国史 · 历史调研" text="以时间线梳理曹操的崛起、用人与争议。" url="/history/three-kingdoms" />
         </div>
       </header>
 

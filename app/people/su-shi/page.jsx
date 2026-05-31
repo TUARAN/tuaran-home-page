@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import SharePageButton from '../../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -29,6 +31,7 @@ export default function SuShiPage() {
               </Link>
             </div>
           </div>
+          <SharePageButton title="苏轼 · 人物调研" text="以时间线梳理苏轼的仕途、流放、心境与作品。" url="/people/su-shi" />
         </div>
       </header>
 

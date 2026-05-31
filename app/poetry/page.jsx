@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import SharePageButton from '../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 const POETRY_PEAK_WORKS = [
@@ -187,6 +189,7 @@ export default function PoetryPage() {
               </Link>
             </div>
           </div>
+          <SharePageButton title="诗词巅峰 · 诗歌调研" text="历代诗词名篇的整理与原文。" url="/poetry" />
         </div>
       </header>
 

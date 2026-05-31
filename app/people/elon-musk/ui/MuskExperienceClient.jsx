@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import SharePageButton from '../../../components/SharePageButton'
+
 const SECTIONS = [
   { id: 'overview', label: '序言/概览' },
   { id: 'profile', label: '个人资料' },
@@ -566,7 +568,7 @@ export default function MuskExperienceClient() {
               我会尽量区分“公开资料可核验的事实”和“我的个人判断”。
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <a
                 href="#overview"
                 className="rounded-md bg-slate-900 text-white px-4 py-2 text-sm font-semibold no-underline hover:no-underline"
@@ -581,6 +583,7 @@ export default function MuskExperienceClient() {
               >
                 X 主页
               </a>
+              <SharePageButton title="我所了解到的马斯克" text="一页式人物笔记：早年 → 商业 → 观点 → 争议。" url="/people/elon-musk" size="md" />
             </div>
           </div>
 

@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import SharePageButton from '../components/SharePageButton'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -209,9 +211,16 @@ export default function WritingMonetizationDashboardPage() {
               按「机制-平台-赛道-路径」拆解写作收入模型，用一页看清进入门槛、分成结构和增长路线。
             </p>
           </div>
-          <Link href="/articles" className="text-sm text-[#5a6b8a] underline underline-offset-4 hover:text-[#33405a] dark:text-gray-400">
-            返回知识库
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/articles" className="text-sm text-[#5a6b8a] underline underline-offset-4 hover:text-[#33405a] dark:text-gray-400">
+              返回知识库
+            </Link>
+            <SharePageButton
+              title="中国写作变现 · 数据看板 2025-2026"
+              text="按机制-平台-赛道-路径拆解写作收入模型。"
+              url="/writing-monetization-2026"
+            />
+          </div>
         </div>
       </header>
 

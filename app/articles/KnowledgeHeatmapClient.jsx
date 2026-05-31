@@ -163,7 +163,6 @@ export default function KnowledgeHeatmapClient({ items }) {
       {expanded ? (
         heatmapData ? (
           <>
-            <h2 className="text-sm font-semibold text-[#2f2a21] dark:text-gray-100">热力图（{heatmapData.selectedYear}）</h2>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-[#8b7f69] dark:text-[#8e9ab0]">年份</span>
               {heatmapData.years.map((year) => (

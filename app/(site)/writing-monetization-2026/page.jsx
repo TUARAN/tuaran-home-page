@@ -146,6 +146,16 @@ const CORE_RULES = [
   'AI 是效率杠杆，不是内容差异化本身。',
 ]
 
+const RECOMMENDED_LINKS = [
+  {
+    label: 'PublishLab',
+    cta: '立即体验 PublishLab',
+    href: 'https://publishlab.cc/',
+    desc: '面向中文创作者的写作变现工作台：把选题、分发、订阅与增长路径串成可执行闭环。',
+    note: '适合想从「持续写作」走到「稳定收入」的创作者与小团队。',
+  },
+]
+
 const SOURCES = [
   ['小报童帮助中心', 'https://help.xiaobot.net/'],
   ['小报童排行榜', 'https://xiaobot.osguider.com/sort/subscriber-count/'],
@@ -223,6 +233,39 @@ export default function WritingMonetizationDashboardPage() {
           </div>
         </div>
       </header>
+
+      <section className="mb-8 rounded-2xl border border-[#d8c7a7] bg-[linear-gradient(135deg,#fff7ea,#f7eddc)] p-5 shadow-[0_10px_30px_rgba(138,90,20,0.10)] dark:border-[#3e3426] dark:bg-[linear-gradient(135deg,#2a2115,#1f180f)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-[#8a5a14] dark:text-[#e2bd75]">
+              推荐工具
+            </p>
+            <p className="mb-0 text-sm text-[#5d503f] dark:text-gray-200">
+              如果你希望把这页「机制-平台-赛道-路径」框架直接落地到日常创作流程，可以优先试试 PublishLab。
+            </p>
+            <p className="mb-0 mt-1 text-xs text-[#7a6a53] dark:text-[#c8b89d]">
+              从内容策略到转化动作，减少试错周期，把写作增长变成可复用系统。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {RECOMMENDED_LINKS.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+                className="no-external-arrow inline-flex items-center rounded-xl border border-[#8a5a14]/45 bg-[#8a5a14] px-4 py-2.5 text-sm font-semibold text-[#fff8ec] no-underline shadow-[0_8px_20px_rgba(138,90,20,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#704710] hover:shadow-[0_12px_24px_rgba(138,90,20,0.30)] dark:border-[#e2bd75]/60 dark:bg-[#e2bd75] dark:text-[#2f210f] dark:hover:bg-[#f0cc87]"
+                title={item.desc}
+              >
+                {item.cta} ↗
+              </a>
+            ))}
+          </div>
+        </div>
+        <div className="mt-3 rounded-xl border border-[#8a5a14]/20 bg-white/65 px-3 py-2 text-xs text-[#6a573d] dark:border-[#e2bd75]/25 dark:bg-[#15110c]/60 dark:text-[#d8c39b]">
+          {RECOMMENDED_LINKS[0].note}
+        </div>
+      </section>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {KPI_CARDS.map((card) => (

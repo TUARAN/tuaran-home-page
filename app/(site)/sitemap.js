@@ -62,6 +62,7 @@ export default function sitemap() {
     '/reading',
     '/traffic',
     '/web-llm',
+    '/writing-monetization-2026',
     '/xiaomoli-dad-todo',
   ]
 

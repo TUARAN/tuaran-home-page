@@ -9,41 +9,47 @@ import SharePageButton from '../components/SharePageButton'
 // 数据基础
 // ============================================================
 
-// 用户提供的两个公开锚点样本
-const BASELINE_DAILY = 10_000_000 // 中重度个人
-const ELITE_DAILY = 450_000_000 // 顶级重度（社交媒体公开自报）
+// 两个公开锚点样本（口径：账单 tokens，含 prompt cache 命中的 cache-read）
+// - 1 亿 / 日：重度编程个人用户（IDE Agent 长上下文反复读取、重构、跨文件检索；非批量自动化）
+// - 4.5 亿 / 日：社交媒体公开自报的极重度个人样本（同样以交互为主，未声明 7×24h 跑批）
+const PERSONAL_DAILY = 100_000_000
+const REPORTED_DAILY = 450_000_000
 
-// 一次交互的常见上下文规模（含 system + 对话历史 + 检索）
-const TOKENS_PER_INTERACTION = 3000
+// 一次交互的常见上下文规模（含 system + 对话历史 + 检索 + 文件片段）
+const TOKENS_PER_INTERACTION = 8000
 
-// 强度分级（经验阈值，不是行业标准）
+// 强度分级（账单口径，含缓存命中）——经验阈值，不是行业标准
 const INTENSITY_TIERS = [
-  { name: '轻度', min: 0, max: 100_000, color: '#cbd5e1', desc: '偶尔问问题、查资料' },
-  { name: '入门', min: 100_000, max: 1_000_000, color: '#a3b8d8', desc: 'AI 当辅助，每天主要还是自己写' },
-  { name: '中度', min: 1_000_000, max: 5_000_000, color: '#7ba0d1', desc: '深度嵌入工作流' },
-  { name: '中重度', min: 5_000_000, max: 20_000_000, color: '#a87b50', desc: '全职 AI 辅助专业流（开发 / 写作 / 研究）' },
-  { name: '重度', min: 20_000_000, max: 100_000_000, color: '#8d5a2c', desc: '多窗口 / 多 agent 并行' },
-  { name: '顶级重度', min: 100_000_000, max: 1_000_000_000, color: '#5a3618', desc: '自动化主导，企业级或全职 AI 驱动开发' },
+  { name: '轻度', min: 0, max: 1_000_000, color: '#cbd5e1', desc: '偶尔问问题、查资料' },
+  { name: '入门', min: 1_000_000, max: 10_000_000, color: '#a3b8d8', desc: 'AI 当辅助，主要还是自己写' },
+  { name: '中度', min: 10_000_000, max: 100_000_000, color: '#7ba0d1', desc: '深度嵌入工作流，每天大段对话' },
+  { name: '重度', min: 100_000_000, max: 500_000_000, color: '#a87b50', desc: 'IDE Agent 长会话 + 多窗口并行（含高缓存命中）' },
+  { name: '极重度', min: 500_000_000, max: 2_000_000_000, color: '#8d5a2c', desc: '多 agent 协作、跨仓库检索、整日不离手' },
+  { name: '自动化跑批', min: 2_000_000_000, max: 50_000_000_000, color: '#5a3618', desc: '后台任务流 / 评测管线主导跑量' },
 ]
 
-// 真实公开 API 定价锚点（2024-Q4 公开价；价格每 12-18 个月约腰斩，使用前请校对）
-// 单位：USD per 1M tokens
+// Prompt-cache 时代的真实公开 API 定价锚点（USD per 1M tokens）
+// 三家头部厂商（Anthropic / OpenAI / Google）均已支持 prompt cache，cache-read 通常 ≈ 输入价的 10%。
+// 价格周期约 12-18 个月腰斩，使用前请校对官网。
 const REAL_PRICING = [
   {
     tier: '经济档',
-    representative: 'GPT-4o mini / Claude Haiku 3.5 / Gemini Flash',
-    input: 0.15,
-    output: 0.60,
+    representative: 'Haiku 4.5 / GPT-mini / Gemini Flash',
+    cacheRead: 0.08,
+    input: 0.8,
+    output: 4.0,
   },
   {
     tier: '主力档',
-    representative: 'GPT-4o / Claude Sonnet 4.5',
+    representative: 'Sonnet 4.6 / GPT-4o / Gemini Pro',
+    cacheRead: 0.3,
     input: 3.0,
     output: 15.0,
   },
   {
     tier: '旗舰档',
-    representative: 'Claude Opus 4 / OpenAI o1',
+    representative: 'Opus 4.7 / o1 / Gemini Ultra',
+    cacheRead: 1.5,
     input: 15.0,
     output: 75.0,
   },
@@ -51,31 +57,51 @@ const REAL_PRICING = [
 
 const USD_TO_CNY = 7.2
 
+// 三段比例：cache-read（命中复用）/ fresh-input（新增上下文）/ output（生成）
+// 大量真实使用统计显示，长会话 IDE Agent 类工作流缓存命中率可达 80-90%。
 const PROFILES = [
-  { value: 'cache-heavy', label: '缓存重 · 输入 90% / 输出 10%', inputShare: 0.9 },
-  { value: 'baseline', label: '基线 · 输入 70% / 输出 30%', inputShare: 0.7 },
-  { value: 'output-heavy', label: '输出重 · 输入 50% / 输出 50%', inputShare: 0.5 },
+  {
+    value: 'ide-agent',
+    label: 'IDE Agent · 缓存读取 85% / 新增输入 10% / 输出 5%',
+    cacheShare: 0.85,
+    freshShare: 0.1,
+    outputShare: 0.05,
+  },
+  {
+    value: 'research',
+    label: '调研写作 · 缓存读取 55% / 新增输入 30% / 输出 15%',
+    cacheShare: 0.55,
+    freshShare: 0.3,
+    outputShare: 0.15,
+  },
+  {
+    value: 'one-shot',
+    label: '一次性脚本 / 翻译 · 缓存读取 15% / 新增输入 60% / 输出 25%',
+    cacheShare: 0.15,
+    freshShare: 0.6,
+    outputShare: 0.25,
+  },
 ]
 
-// 场景结构：标注「典型口径」而不是「权威数据」，让读者知道这是经验值
+// 场景结构：以「典型口径」呈现，不是「权威数据」
 const TYPICAL_SCENARIOS = {
   developer: {
-    label: '全职开发者画像',
+    label: '全职开发者画像（IDE Agent 主导）',
     rows: [
-      { name: '代码生成 / 重构 / 排错', share: 55 },
-      { name: 'IDE Agent 上下文同步', share: 20 },
-      { name: '调研 / 文档查阅', share: 12 },
-      { name: '写作 / 沟通文本', share: 8 },
-      { name: '其他自动化', share: 5 },
+      { name: '仓库上下文反复读取（缓存命中为主）', share: 45 },
+      { name: '代码生成 / 重构 / 排错', share: 25 },
+      { name: '跨文件检索 / 调试日志注入', share: 15 },
+      { name: '调研 / 文档查阅', share: 10 },
+      { name: '写作 / 沟通文本', share: 5 },
     ],
   },
   researcher: {
     label: '研究 / 写作画像',
     rows: [
-      { name: '深度调研 / 长文阅读', share: 40 },
-      { name: '写作起稿 / 改稿', share: 30 },
-      { name: '资料翻译 / 摘要', share: 15 },
-      { name: '编程辅助', share: 10 },
+      { name: '深度调研 / 长文阅读', share: 38 },
+      { name: '写作起稿 / 改稿', share: 28 },
+      { name: '资料翻译 / 摘要', share: 18 },
+      { name: '编程辅助', share: 11 },
       { name: '其他', share: 5 },
     ],
   },
@@ -89,15 +115,20 @@ const fmtCN = (v) => v.toLocaleString('zh-CN')
 const fmtUsd = (v) => `$${v.toLocaleString('en-US', { maximumFractionDigits: v < 10 ? 2 : 0 })}`
 const fmtCny = (v) => `¥${v.toLocaleString('zh-CN', { maximumFractionDigits: v < 10 ? 1 : 0 })}`
 
-function blended(input, output, inputShare) {
-  return input * inputShare + output * (1 - inputShare)
+function blendedRate(p, profile) {
+  return p.cacheRead * profile.cacheShare + p.input * profile.freshShare + p.output * profile.outputShare
 }
 
 function estimateUsd(tokens, usdPerMillion) {
   return (tokens / 1_000_000) * usdPerMillion
 }
 
-// 中文字数：1 token ≈ 0.6 个中文汉字
+// 净处理 tokens（去掉缓存复用部分）：fresh-input + output 才是模型真正"新读 + 新写"的体量
+function netProcessed(tokens, profile) {
+  return tokens * (profile.freshShare + profile.outputShare)
+}
+
+// 中文字数：1 token ≈ 0.6 个中文汉字（用于净处理量换算）
 function tokensToChars(tokens) {
   return Math.round(tokens * 0.6)
 }
@@ -111,22 +142,21 @@ function tokensToBooks(tokens) {
 // 图表组件（零依赖、纯 SVG）
 // ============================================================
 
-/** 水平横条：对数刻度，用于强度分级。token 区间跨 4 个数量级，线性刻度会塌陷。 */
+/** 水平横条：对数刻度，用于强度分级。token 区间跨 5 个数量级，线性刻度会塌陷。 */
 function IntensityChart({ markers = [] }) {
-  const minLog = Math.log10(50_000)
-  const maxLog = Math.log10(1_000_000_000)
+  const minLog = Math.log10(100_000)
+  const maxLog = Math.log10(50_000_000_000)
   const span = maxLog - minLog
-  const w = 100
-  const pos = (v) => ((Math.log10(v) - minLog) / span) * w
+  const pos = (v) => ((Math.log10(v) - minLog) / span) * 100
 
   return (
     <div className="space-y-2">
       {INTENSITY_TIERS.map((tier) => {
-        const left = pos(Math.max(tier.min || 50_000, 50_000))
+        const left = pos(Math.max(tier.min || 100_000, 100_000))
         const right = pos(tier.max)
         return (
           <div key={tier.name} className="flex items-center gap-3 text-xs">
-            <div className="w-16 shrink-0 text-right text-[#5e5548] dark:text-gray-300">{tier.name}</div>
+            <div className="w-20 shrink-0 text-right text-[#5e5548] dark:text-gray-300">{tier.name}</div>
             <div className="relative h-5 flex-1 rounded bg-[#f5efe2] dark:bg-gray-800">
               <div
                 className="absolute top-0 bottom-0 rounded"
@@ -149,14 +179,15 @@ function IntensityChart({ markers = [] }) {
           </div>
         )
       })}
-      <div className="ml-[4.75rem] mt-3 flex justify-between text-[10px] text-[#8c8376] dark:text-gray-500">
+      <div className="ml-[5.75rem] mt-3 flex justify-between text-[10px] text-[#8c8376] dark:text-gray-500">
         <span>10⁵</span>
         <span>10⁶</span>
         <span>10⁷</span>
         <span>10⁸</span>
         <span>10⁹</span>
+        <span>10¹⁰</span>
       </div>
-      <div className="ml-[4.75rem] flex flex-wrap gap-4 pt-1 text-[11px] text-[#5e5548] dark:text-gray-400">
+      <div className="ml-[5.75rem] flex flex-wrap gap-4 pt-1 text-[11px] text-[#5e5548] dark:text-gray-400">
         {markers.map((m) => (
           <span key={m.label} className="inline-flex items-center gap-1">
             <span className="inline-block h-2 w-2 rotate-45 bg-gray-800" />
@@ -174,7 +205,7 @@ function ShareBars({ rows }) {
     <div className="space-y-2">
       {rows.map((r) => (
         <div key={r.name} className="flex items-center gap-3 text-xs">
-          <div className="w-44 shrink-0 truncate text-[#5e5548] dark:text-gray-300">{r.name}</div>
+          <div className="w-60 shrink-0 truncate text-[#5e5548] dark:text-gray-300">{r.name}</div>
           <div className="relative h-5 flex-1 overflow-hidden rounded bg-[#f5efe2] dark:bg-gray-800">
             <div
               className="h-full rounded bg-[#a87b50] transition-all"
@@ -188,18 +219,18 @@ function ShareBars({ rows }) {
   )
 }
 
-/** 分组柱状：3 档定价 × 2 样本（1000 万 / 4.5 亿） */
-function CostColumnChart({ pricing, profile }) {
+/** 分组柱状：3 档定价 × 2 样本（1 亿 / 4.5 亿） */
+function CostColumnChart({ profile }) {
   const data = REAL_PRICING.map((p) => {
-    const blendedRate = blended(p.input, p.output, profile.inputShare)
+    const rate = blendedRate(p, profile)
     return {
       tier: p.tier,
-      monthlyBaseline: estimateUsd(BASELINE_DAILY * 30, blendedRate),
-      monthlyElite: estimateUsd(ELITE_DAILY * 30, blendedRate),
+      monthlyPersonal: estimateUsd(PERSONAL_DAILY * 30, rate),
+      monthlyReported: estimateUsd(REPORTED_DAILY * 30, rate),
     }
   })
 
-  const max = Math.max(...data.map((d) => d.monthlyElite))
+  const max = Math.max(...data.map((d) => d.monthlyReported))
   const h = 180
 
   return (
@@ -210,22 +241,22 @@ function CostColumnChart({ pricing, profile }) {
             <div className="flex h-[180px] w-full items-end justify-center gap-2">
               <div className="flex w-1/2 flex-col items-center justify-end gap-1">
                 <div className="text-[10px] tabular-nums text-[#5e5548] dark:text-gray-300">
-                  {fmtUsd(d.monthlyBaseline)}
+                  {fmtUsd(d.monthlyPersonal)}
                 </div>
                 <div
                   className="w-full rounded-t bg-[#7ba0d1]"
-                  style={{ height: `${(d.monthlyBaseline / max) * h}px`, minHeight: '2px' }}
-                  title={`1000 万/日 · ${d.tier}：${fmtUsd(d.monthlyBaseline)} / 月`}
+                  style={{ height: `${(d.monthlyPersonal / max) * h}px`, minHeight: '2px' }}
+                  title={`1 亿/日 · ${d.tier}：${fmtUsd(d.monthlyPersonal)} / 月`}
                 />
               </div>
               <div className="flex w-1/2 flex-col items-center justify-end gap-1">
                 <div className="text-[10px] tabular-nums text-[#5e5548] dark:text-gray-300">
-                  {fmtUsd(d.monthlyElite)}
+                  {fmtUsd(d.monthlyReported)}
                 </div>
                 <div
                   className="w-full rounded-t bg-[#8d5a2c]"
-                  style={{ height: `${(d.monthlyElite / max) * h}px`, minHeight: '2px' }}
-                  title={`4.5 亿/日 · ${d.tier}：${fmtUsd(d.monthlyElite)} / 月`}
+                  style={{ height: `${(d.monthlyReported / max) * h}px`, minHeight: '2px' }}
+                  title={`4.5 亿/日 · ${d.tier}：${fmtUsd(d.monthlyReported)} / 月`}
                 />
               </div>
             </div>
@@ -236,7 +267,7 @@ function CostColumnChart({ pricing, profile }) {
       <div className="mt-3 flex justify-center gap-6 text-[11px] text-[#5e5548] dark:text-gray-400">
         <span className="inline-flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded-sm bg-[#7ba0d1]" />
-          1000 万 tokens/日（月费）
+          1 亿 tokens/日（月费）
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded-sm bg-[#8d5a2c]" />
@@ -303,21 +334,23 @@ function Section({ id, title, children, judgment }) {
 // ============================================================
 
 export default function AiTokenUsageResearchClient() {
-  const [profileKey, setProfileKey] = useState('baseline')
+  const [profileKey, setProfileKey] = useState('ide-agent')
   const [scenarioKey, setScenarioKey] = useState('developer')
 
-  const profile = PROFILES.find((p) => p.value === profileKey) ?? PROFILES[1]
+  const profile = PROFILES.find((p) => p.value === profileKey) ?? PROFILES[0]
   const scenario = TYPICAL_SCENARIOS[scenarioKey]
 
   const pricing = useMemo(() => {
     return REAL_PRICING.map((p) => ({
       ...p,
-      blended: blended(p.input, p.output, profile.inputShare),
+      blended: blendedRate(p, profile),
     }))
-  }, [profile.inputShare])
+  }, [profile])
 
-  const baselineInteractions = Math.round(BASELINE_DAILY / TOKENS_PER_INTERACTION)
-  const eliteInteractions = Math.round(ELITE_DAILY / TOKENS_PER_INTERACTION)
+  const personalNet = netProcessed(PERSONAL_DAILY, profile)
+  const reportedNet = netProcessed(REPORTED_DAILY, profile)
+  const personalInteractions = Math.round(PERSONAL_DAILY / TOKENS_PER_INTERACTION)
+  const reportedInteractions = Math.round(REPORTED_DAILY / TOKENS_PER_INTERACTION)
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-10 px-4 py-10">
@@ -326,7 +359,7 @@ export default function AiTokenUsageResearchClient() {
           <p className="text-xs tracking-wide text-[#8c8376] dark:text-gray-500">专题 · AI 调研</p>
           <SharePageButton
             title="AI Token 用量与花费强度调研"
-            text="日耗 1000 万 / 4.5 亿 tokens 对照：强度尺、文本吞吐换算、场景画像、月费、效率信号、优化抓手。"
+            text="日耗 1 亿 / 4.5 亿 tokens 对照（账单口径，含缓存命中）：强度尺、净处理换算、场景画像、按 prompt-cache 真实定价折算月费、效率信号、优化抓手。"
             url="/ai-token-usage-research"
           />
         </div>
@@ -334,51 +367,79 @@ export default function AiTokenUsageResearchClient() {
           AI Token 用量与花费强度调研
         </h1>
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          围绕两个公开样本（日耗 1000 万 / 4.5 亿 tokens）回答四件事：处在什么强度档、相当于多大的文本吞吐、按真实公开 API 价折算每月要花多少钱、什么场景下 token 增长 = 生产力增长、什么场景下 = 浪费。
+          围绕两个公开样本（日耗 1 亿 / 4.5 亿 tokens，账单口径含 prompt cache 命中）回答四件事：处在什么强度档、缓存复用之后真正"读了多少新东西"、按当下三家头部厂商的 cache-aware 定价每月要花多少钱、什么场景下 token 增长 = 生产力增长、什么场景下 = 浪费。
         </p>
         <div className="flex flex-wrap gap-3 text-xs text-[#8c8376] dark:text-gray-400">
-          <span>口径：以 2024-Q4 公开 API 价为锚点</span>
+          <span>口径：账单 tokens（含 cache-read）</span>
+          <span>·</span>
+          <span>定价锚点：2026-Q2 三家头部厂商公开 API 价</span>
           <span>·</span>
           <span>价格周期：每 12-18 个月约腰斩，使用前请校对</span>
         </div>
       </header>
 
+      {/* 0. 口径说明 */}
+      <Section
+        id="accounting"
+        title="0) 先把口径讲清楚：账单 tokens ≠ 净处理 tokens"
+        judgment="一旦区分这两本账，多数「骇人听闻的 token 数字」就还原成可理解的工作量——账单 1 亿/日 在长会话编程下，净新增可能只有 1500 万左右。这不是省钱魔法，是 cache pricing 的常态。"
+      >
+        <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
+          2024 年起，Anthropic / OpenAI / Google 都已把 prompt caching 列为头等公民——对反复使用的长前缀（系统提示、仓库结构、文档），第二次起按 <strong>输入价的 10% 左右</strong> 收费（Anthropic cache-read 为 base input 的 10%，OpenAI 是 50%，Gemini 是 25%）。因此同一笔"日耗 1 亿 tokens"在不同口径下含义完全不同：
+        </p>
+        <Table
+          headers={['口径', '含义', '是否含 cache-read', '用途']}
+          rows={[
+            ['账单 tokens', '厂商按账单计费的总 token 数', '含', '判断"花了多少钱、跑了多大流量"'],
+            ['净处理 tokens', 'fresh-input + output，模型真正"新读 + 新写"的量', '不含', '判断"实际吸收 / 产出多少信息"'],
+            ['unique 内容 tokens', '去重后的实际文本量（同一文件多次注入算一份）', '不含', '判断"信息密度 / 噪声比"'],
+          ]}
+        />
+        <p className="text-xs text-[#8c8376] dark:text-gray-500">
+          后文所有"日耗 1 亿 / 4.5 亿"均为账单口径；提到"净处理"或"等效阅读量"时会显式换算。
+        </p>
+      </Section>
+
       {/* 1. 强度尺 */}
       <Section
         id="intensity"
-        title="1) 强度尺：在 6 档对数刻度上找自己"
-        judgment="档位的真正分界不在 token 数量，而在「人是不是还在每条 prompt 上花认知」——5000 万/日以下，token 是认知吞吐的副产物；5000 万/日以上，必然有自动化在主导跑量。"
+        title="1) 强度尺：账单口径下的 6 档对数刻度"
+        judgment="账单 1 亿/日 ≈ 一个全天泡在 IDE Agent 里、跨文件重构 + 反复让模型读同一份仓库的开发者；4.5 亿/日 在这个框架里是 4.5×，不是数量级跨越——重度编程 + 长上下文复用就能撑起来，不必预设 7×24h 跑批。"
       >
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          token 区间跨 5 个数量级，所以横轴用对数刻度。两个钻石标记是你常引的样本：
+          token 区间跨 5 个数量级，横轴用对数刻度。两个钻石标记是常见公开样本：
         </p>
         <div className="rounded-xl border border-[#eee3d2] bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
           <IntensityChart
             markers={[
-              { label: '1000 万/日（中重度个人）', value: BASELINE_DAILY },
-              { label: '4.5 亿/日（顶级重度）', value: ELITE_DAILY },
+              { label: '1 亿/日（重度编程个人）', value: PERSONAL_DAILY },
+              { label: '4.5 亿/日（极重度个人报样）', value: REPORTED_DAILY },
             ]}
           />
         </div>
         <p className="text-xs text-[#8c8376] dark:text-gray-500">
-          经验阈值，不同人对「重度」定义差一个量级。仅作粗略锚点。
+          经验阈值。不同人对"重度"定义差一个量级，仅作粗略锚点。
         </p>
       </Section>
 
       {/* 2. 等价换算 */}
       <Section
         id="equivalence"
-        title="2) 换算尺：1 千万 / 4.5 亿 tokens 到底是多大体量"
-        judgment="读到「日均 4.5 亿」别立刻惊叹——换算下来等于一天读 1080 本书、每秒钟看 4 本。这不是「人在用 AI」，是「人在调度跑批」。"
+        title="2) 换算尺：1 亿 / 4.5 亿 tokens 到底对应多大体量"
+        judgment="账单数字大头是缓存复用——把它扣掉之后，「日均 1 亿」在 IDE Agent 画像下相当于一天净读写 1500 万 tokens、约 60 本中等长度书的内容；「日均 4.5 亿」对应约 6750 万、270 本。仍属极限值，但已经不是科幻。"
       >
+        <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
+          切换上方"输入/输出比例"选择器（默认 IDE Agent 85/10/5），下表的"净处理"与"等效书目"会随画像变化。
+        </p>
         <Table
-          headers={['指标', '1000 万/日', '4.5 亿/日', '解释']}
+          headers={['指标', '1 亿/日', '4.5 亿/日', '解释']}
           rows={[
-            ['日总 tokens', fmtCN(BASELINE_DAILY), fmtCN(ELITE_DAILY), '总算力消耗'],
-            ['等效中文字数', fmtCN(tokensToChars(BASELINE_DAILY)), fmtCN(tokensToChars(ELITE_DAILY)), '1 token ≈ 0.6 汉字'],
-            ['等效中等书目', `~${tokensToBooks(BASELINE_DAILY)} 本/日`, `~${tokensToBooks(ELITE_DAILY)} 本/日`, '1 本 ≈ 25 万 tokens'],
-            ['交互次数（3000 t/次）', fmtCN(baselineInteractions), fmtCN(eliteInteractions), '含上下文 + 历史'],
-            ['月总量（×30）', fmtCN(BASELINE_DAILY * 30), fmtCN(ELITE_DAILY * 30), '月度预算锚点'],
+            ['账单 tokens', fmtCN(PERSONAL_DAILY), fmtCN(REPORTED_DAILY), '含 cache-read'],
+            ['净处理 tokens', fmtCN(Math.round(personalNet)), fmtCN(Math.round(reportedNet)), 'fresh-input + output'],
+            ['等效中文字数（净）', fmtCN(tokensToChars(personalNet)), fmtCN(tokensToChars(reportedNet)), '1 token ≈ 0.6 汉字'],
+            ['等效中等书目（净）', `~${tokensToBooks(personalNet)} 本/日`, `~${tokensToBooks(reportedNet)} 本/日`, '1 本 ≈ 25 万 tokens'],
+            ['交互次数（8000 t/次）', fmtCN(personalInteractions), fmtCN(reportedInteractions), '含上下文 + 历史 + 文件片段'],
+            ['月账单总量（×30）', fmtCN(PERSONAL_DAILY * 30), fmtCN(REPORTED_DAILY * 30), '月度预算锚点（账单口径）'],
           ]}
         />
       </Section>
@@ -386,11 +447,11 @@ export default function AiTokenUsageResearchClient() {
       {/* 3. 场景占比 */}
       <Section
         id="scenarios"
-        title="3) 场景画像：token 主要花在哪"
-        judgment="开发者画像里 75% 是「代码 + IDE 上下文」，研究者画像里 70% 是「读 + 写」——画像决定了优化抓手在哪。开发者最大的杠杆是缩短 IDE 上下文，研究者最大的杠杆是模板化起稿。"
+        title="3) 场景画像：账单 tokens 主要花在哪"
+        judgment="开发者画像里近一半账单 tokens 是仓库上下文的反复读取（缓存命中为主）——这不是浪费，是 IDE Agent 范式的必然结果。真正能拧的水龙头是上下文规模与缓存命中率，不是少问几次。"
       >
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          下方占比是从公开讨论和自身样本归纳的「典型口径」，不是行业统计。切换画像看哪个更接近你。
+          下方占比是从公开讨论归纳的"典型口径"，不是行业统计。切换画像看哪个更接近实际：
         </p>
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-3 dark:border-gray-800 dark:bg-gray-900">
           <label htmlFor="scenario" className="text-sm text-[#5e5548] dark:text-gray-300">
@@ -417,15 +478,15 @@ export default function AiTokenUsageResearchClient() {
       {/* 4. 花费 */}
       <Section
         id="cost"
-        title="4) 月度花费：按真实公开 API 价折算"
-        judgment="日均 1000 万 在主力档大约 $5400/月（≈ 4 万元），可控但绝非零成本；日均 4.5 亿 在主力档要 $24 万/月——这个量级谁付？要么是企业账，要么背后必须有清晰的产品收入对账。"
+        title="4) 月度花费：cache-aware 定价折算"
+        judgment="日均 1 亿在主力档 IDE Agent 画像下大约 $3900/月（≈ ¥2.8 万），日均 4.5 亿对应 $1.76 万/月（≈ ¥12.7 万）。比「按 base input 直算」的老口径低一个数量级——但同样要警告：如果换上旗舰档（Opus 等级），即便走 cache，4.5 亿/日仍逼近 ¥60 万/月，是公司级账单而非个人可持续支出。"
       >
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          单价用 OpenAI / Anthropic / Google 2024-Q4 已知公开 API 价格作锚点。具体模型名仅用于定位档位，价格周期约 12-18 个月腰斩，使用前请校对。
+          三段定价：<strong>cache-read</strong>（命中复用，最便宜）/ <strong>fresh-input</strong>（新增上下文，标准输入价）/ <strong>output</strong>（生成，最贵）。下方计算按 Anthropic 公开比例：cache-read 取 input × 10%；OpenAI / Gemini 比例更高（25-50%），同口径会更贵但不改变量级判断。
         </p>
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-3 dark:border-gray-800 dark:bg-gray-900">
           <label htmlFor="profile" className="text-sm text-[#5e5548] dark:text-gray-300">
-            输入/输出比例
+            使用画像
           </label>
           <select
             id="profile"
@@ -439,38 +500,60 @@ export default function AiTokenUsageResearchClient() {
               </option>
             ))}
           </select>
-          <span className="text-xs text-[#8f826c] dark:text-gray-400">输出比例越高，单价越贵</span>
+          <span className="text-xs text-[#8f826c] dark:text-gray-400">缓存命中率越低、输出占比越高，单价越贵</span>
         </div>
 
         <div className="rounded-xl border border-[#eee3d2] bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
-          <CostColumnChart pricing={pricing} profile={profile} />
+          <CostColumnChart profile={profile} />
         </div>
 
         <Table
           headers={[
             '档位',
             '代表模型',
-            '输入/输出（$/M）',
+            'cache / input / output（$/M）',
             '混合单价（$/M）',
-            '1000 万/日 月费',
+            '1 亿/日 月费',
             '4.5 亿/日 月费',
           ]}
           rows={pricing.map((p) => [
             p.tier,
             p.representative,
-            `${p.input} / ${p.output}`,
+            `${p.cacheRead} / ${p.input} / ${p.output}`,
             p.blended.toFixed(2),
-            `${fmtUsd(estimateUsd(BASELINE_DAILY * 30, p.blended))} ≈ ${fmtCny(estimateUsd(BASELINE_DAILY * 30, p.blended) * USD_TO_CNY)}`,
-            `${fmtUsd(estimateUsd(ELITE_DAILY * 30, p.blended))} ≈ ${fmtCny(estimateUsd(ELITE_DAILY * 30, p.blended) * USD_TO_CNY)}`,
+            `${fmtUsd(estimateUsd(PERSONAL_DAILY * 30, p.blended))} ≈ ${fmtCny(estimateUsd(PERSONAL_DAILY * 30, p.blended) * USD_TO_CNY)}`,
+            `${fmtUsd(estimateUsd(REPORTED_DAILY * 30, p.blended))} ≈ ${fmtCny(estimateUsd(REPORTED_DAILY * 30, p.blended) * USD_TO_CNY)}`,
           ])}
         />
       </Section>
 
-      {/* 5. 效率定位 */}
+      {/* 5. 订阅口径 */}
+      <Section
+        id="subscription"
+        title="5) 市场口径：按 token 计费 vs 订阅制"
+        judgment="账单 4.5 亿/日 听起来像每月 ¥10 万级支出，但相当一部分极重度个人样本走的是固定订阅而非 metered billing——同样的 token 流量在两种口径下账单可能差 20 倍。引用这种数字时一定要先问「是 API 计费还是订阅画像」。"
+      >
+        <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
+          2025 年起头部 IDE Agent 类产品大多提供高位订阅档（Claude Max / GPT Pro / Cursor Ultra 等），月费 $100-$400 级别，对个人重度用户取消了"用得越多花得越多"的弹性账单。多数公开自报"日耗 X 亿 tokens"的样本，其真实支出落在这一档，而不是按上节表格的 metered 价格付费。
+        </p>
+        <Table
+          headers={['计费口径', '典型档位', '对个人重度的实际支出', '何时仍按 metered 算账']}
+          rows={[
+            ['按量（metered API）', 'API key 直连', '由 token 量与画像决定，可见第 4 节', '需要审计、自定义路由、批处理、企业部署'],
+            ['订阅（flat-rate）', 'Max / Pro / Ultra 级别', '月费 $100-$400 锁死', '触发硬性速率限制、需要更高并发或 SLA'],
+            ['企业池（席位 + 池子）', '团队 / 组织计划', '按席位 + 用量阶梯', '部门级集中采购'],
+          ]}
+        />
+        <p className="text-xs text-[#8c8376] dark:text-gray-500">
+          口径选择本身就是优化抓手：如果使用画像稳定在 IDE Agent + 高缓存命中、不需要外部 API 集成，订阅档通常显著优于按量。
+        </p>
+      </Section>
+
+      {/* 6. 效率定位 */}
       <Section
         id="efficiency"
-        title="5) 效率定位：token 多 ≠ 生产力高"
-        judgment="量上去之后真正的指标不是「跑了多少 token」，而是「每百万 token 沉淀了多少可交付物」。判断自己有没有掉进高 token 低产出陷阱，看三个信号："
+        title="6) 效率定位：token 多 ≠ 生产力高"
+        judgment="量上去之后真正的指标不是「跑了多少 token」，而是「每百万账单 token 沉淀了多少可交付物」。判断是否掉进高 token 低产出陷阱，看五个信号："
       >
         <Table
           headers={['信号', '健康', '掉进浪费陷阱的迹象']}
@@ -478,58 +561,65 @@ export default function AiTokenUsageResearchClient() {
             ['会话留存', '能引用、能复用、被归档', '一次性扔掉、没人回看'],
             ['输出收口', '有人验收、能进生产', '生成完没人看 / 直接堆磁盘'],
             ['迭代次数', '收敛到结果（≤ 5 轮）', '反复试错（> 10 轮还没拿到目标）'],
-            ['上下文密度', '指令明确、检索精准', '塞海量文档「让 AI 自己找」'],
+            ['上下文密度', '指令明确、检索精准', '塞海量文档"让 AI 自己找"'],
             ['模型分层', '简单任务用小模型', '一律旗舰、爽就完事'],
           ]}
         />
       </Section>
 
-      {/* 6. 优化抓手 */}
+      {/* 7. 优化抓手 */}
       <Section
         id="optimization"
-        title="6) 优化抓手：按 ROI 排序"
-        judgment="对绝大多数中重度个人，前两条就能砍掉 30-50% 的成本；不需要立刻上 agent。"
+        title="7) 优化抓手：按 ROI 排序"
+        judgment="对绝大多数重度个人用户，前三条就能砍掉 30-50% 的成本，且不需要立刻上 agent 自动化。"
       >
         <Table
           headers={['抓手', '预期降本幅度', '落地难度', '说明']}
           rows={[
-            ['启用 prompt caching', '20-40%', '低', 'Anthropic / OpenAI 都支持，长系统提示和稳定前文必开'],
-            ['模型路由分层', '20-50%', '中', '简单任务用经济档，深度推理才上旗舰'],
-            ['限制输出长度', '5-15%', '低', 'max_tokens + 「不要解释、只给答案」的指令'],
-            ['压缩 IDE 上下文', '10-30%', '中', '只塞相关文件、用 .cursorignore / .codexignore 排除大目录'],
-            ['Agent 步数上限', '不直接降本但防失控', '低', '加上限 + 人工 checkpoint，防止跑飞'],
+            ['切换到订阅档（若画像匹配）', '40-90%', '低', 'IDE Agent 主导 + 高缓存命中场景，订阅档常显著优于 metered'],
+            ['启用 prompt caching 并设计稳定前缀', '20-40%', '低', '把系统提示、仓库结构、常用文档放在前缀；避免动态插值打散缓存'],
+            ['模型路由分层', '20-50%', '中', '简单任务用经济档，深度推理才上旗舰；多数 IDE Agent 已内置'],
+            ['压缩上下文 / 用 .ignore 排除', '10-30%', '中', '只塞相关文件，避免缓存写入开销摊不开'],
+            ['限制输出长度', '5-15%', '低', 'max_tokens + "不要解释、只给答案"的指令'],
+            ['Agent 步数上限 + checkpoint', '不直接降本但防失控', '低', '防止跑飞导致一次性账单爆炸'],
             ['批处理 + 异步', '间接降本', '高', '把可延迟的任务积到 batch API（半价）'],
           ]}
         />
       </Section>
 
-      {/* 7. 快照模板 */}
+      {/* 8. 快照模板 */}
       <Section
         id="snapshot"
-        title="7) 月度快照（持续累积、只增不删）"
-        judgment="模板留三列就够：「日均 tokens、主用模型、本月最大优化点」。强迫自己每月写一行，半年回看就能看出强度爬升曲线和优化效果。"
+        title="8) 月度快照（持续累积、只增不删）"
+        judgment="模板留五列就够：账单 tokens、净处理（估）、主用模型、计费口径、本月最大优化点。每月写一行，半年回看就能看出强度爬升曲线与优化效果。"
       >
         <Table
-          headers={['月份', '日均 tokens（估）', '主用模型', '本月最大优化点', '档位']}
+          headers={['月份', '日均账单 tokens', '日均净处理（估）', '主用模型 / 工具', '计费口径', '本月最大优化点']}
           rows={[
-            ['2026-05', '示例：800 万', 'Claude Code（Opus 4.7） / Cursor', '开启 prompt cache，输入费降 30%', '中重度'],
-            ['填新行', '——', '——', '——', '——'],
+            ['示例行', '~1 亿', '~1500 万', '主力档 IDE Agent', '订阅', '收紧 .ignore，缓存命中率提升至 85%'],
+            ['填新行', '——', '——', '——', '——', '——'],
           ]}
         />
       </Section>
 
-      {/* 8. 来源 */}
+      {/* 9. 来源 */}
       <section className="rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-4 dark:border-gray-800 dark:bg-gray-900">
         <h2 className="mb-2 text-lg font-semibold text-[#2b2419] dark:text-gray-100">来源与校准入口</h2>
         <ul className="space-y-1 text-sm text-[#51493d] dark:text-gray-300">
           <li>
-            · <a href="https://openai.com/api/pricing/" target="_blank" rel="noreferrer" className="underline">OpenAI API Pricing</a>
+            · <a href="https://openai.com/api/pricing/" target="_blank" rel="noreferrer" className="underline">OpenAI API Pricing（含 cached input 折扣比例）</a>
           </li>
           <li>
-            · <a href="https://docs.anthropic.com/en/docs/about-claude/pricing" target="_blank" rel="noreferrer" className="underline">Anthropic API Pricing</a>
+            · <a href="https://docs.anthropic.com/en/docs/about-claude/pricing" target="_blank" rel="noreferrer" className="underline">Anthropic API Pricing（cache-read / cache-write 公开报价）</a>
           </li>
           <li>
-            · <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noreferrer" className="underline">Gemini API Pricing</a>
+            · <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" target="_blank" rel="noreferrer" className="underline">Anthropic Prompt Caching 文档</a>
+          </li>
+          <li>
+            · <a href="https://platform.openai.com/docs/guides/prompt-caching" target="_blank" rel="noreferrer" className="underline">OpenAI Prompt Caching 文档</a>
+          </li>
+          <li>
+            · <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noreferrer" className="underline">Gemini API Pricing（含 context caching）</a>
           </li>
           <li>
             · <a href="https://api-docs.deepseek.com/quick_start/pricing" target="_blank" rel="noreferrer" className="underline">DeepSeek Pricing</a>

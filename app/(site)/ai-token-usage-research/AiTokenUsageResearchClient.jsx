@@ -3,7 +3,160 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
+import DistributeMarkdownButton from '../articles/research/[category]/[slug]/DistributeMarkdownButton'
 import SharePageButton from '../components/SharePageButton'
+
+const SHARE_URL = 'https://2aran.com/ai-token-usage-research'
+
+// 分发用：纯 markdown 版本（同步到 syncblog.cn）。不会在站点上直接渲染，仅供 DistributeMarkdownButton 携带。
+const DISTRIBUTE_MARKDOWN = `# AI Token 用量与花费强度调研
+
+> 围绕两个公开样本（日耗 1 亿 / 4.5 亿 tokens，账单口径含 prompt cache 命中）回答四件事：处在什么强度档、缓存复用之后真正"读了多少新东西"、按当下三家头部厂商的 cache-aware 定价每月要花多少钱、什么场景下 token 增长 = 生产力增长、什么场景下 = 浪费。
+
+口径：账单 tokens（含 cache-read） · 定价锚点：2026-Q2 三家头部厂商公开 API 价 · 价格周期：每 12–18 个月约腰斩，使用前请校对。
+
+## 0. 先把口径讲清楚：账单 tokens ≠ 净处理 tokens
+
+2024 年起，Anthropic / OpenAI / Google 都已把 prompt caching 列为头等公民——对反复使用的长前缀（系统提示、仓库结构、文档），第二次起按 **输入价的 10% 左右** 收费（Anthropic cache-read 为 base input 的 10%，OpenAI 是 50%，Gemini 是 25%）。因此同一笔"日耗 1 亿 tokens"在不同口径下含义完全不同：
+
+| 口径 | 含义 | 是否含 cache-read | 用途 |
+| --- | --- | --- | --- |
+| 账单 tokens | 厂商按账单计费的总 token 数 | 含 | 判断"花了多少钱、跑了多大流量" |
+| 净处理 tokens | fresh-input + output，模型真正"新读 + 新写"的量 | 不含 | 判断"实际吸收 / 产出多少信息" |
+| unique 内容 tokens | 去重后的实际文本量（同一文件多次注入算一份） | 不含 | 判断"信息密度 / 噪声比" |
+
+**判断**：一旦区分这两本账，多数"骇人听闻的 token 数字"就还原成可理解的工作量——账单 1 亿/日 在长会话编程下，净新增可能只有 1500 万左右。这不是省钱魔法，是 cache pricing 的常态。
+
+## 1. 强度尺：账单口径下的 6 档对数刻度
+
+token 区间跨 5 个数量级，横轴用对数刻度。
+
+| 档位 | 账单 tokens / 日 | 画像 |
+| --- | --- | --- |
+| 轻度 | < 100 万 | 偶尔问问题、查资料 |
+| 入门 | 100 万 – 1000 万 | AI 当辅助，主要还是自己写 |
+| 中度 | 1000 万 – 1 亿 | 深度嵌入工作流，每天大段对话 |
+| **重度** | **1 亿 – 5 亿** | **IDE Agent 长会话 + 多窗口并行（含高缓存命中）** |
+| 极重度 | 5 亿 – 20 亿 | 多 agent 协作、跨仓库检索、整日不离手 |
+| 自动化跑批 | > 20 亿 | 后台任务流 / 评测管线主导跑量 |
+
+两个公开样本：
+
+- **1 亿 / 日** — 重度编程个人用户（IDE Agent 长上下文反复读取、重构、跨文件检索；非批量自动化）
+- **4.5 亿 / 日** — 社交媒体公开自报的极重度个人样本（同样以交互为主，未声明 7×24h 跑批）
+
+**判断**：账单 1 亿/日 ≈ 一个全天泡在 IDE Agent 里、跨文件重构 + 反复让模型读同一份仓库的开发者；4.5 亿/日 在这个框架里是 4.5×，不是数量级跨越——重度编程 + 长上下文复用就能撑起来，不必预设 7×24h 跑批。
+
+## 2. 换算尺：1 亿 / 4.5 亿 tokens 对应多大体量
+
+以 IDE Agent 画像（cache-read 85% / fresh-input 10% / output 5%）换算：
+
+| 指标 | 1 亿 / 日 | 4.5 亿 / 日 | 解释 |
+| --- | --- | --- | --- |
+| 账单 tokens | 100,000,000 | 450,000,000 | 含 cache-read |
+| 净处理 tokens | 15,000,000 | 67,500,000 | fresh-input + output |
+| 等效中文字数（净） | ~9,000,000 | ~40,500,000 | 1 token ≈ 0.6 汉字 |
+| 等效中等书目（净） | ~60 本 / 日 | ~270 本 / 日 | 1 本 ≈ 25 万 tokens |
+| 交互次数（8000 t / 次） | 12,500 | 56,250 | 含上下文 + 历史 + 文件片段 |
+| 月账单总量（× 30） | 30 亿 | 135 亿 | 月度预算锚点 |
+
+**判断**：账单数字大头是缓存复用——把它扣掉之后，"日均 1 亿"在 IDE Agent 画像下相当于一天净读写 1500 万 tokens、约 60 本中等长度书的内容；"日均 4.5 亿"对应约 6750 万、270 本。仍属极限值，但已经不是科幻。
+
+## 3. 场景画像：账单 tokens 主要花在哪
+
+### 全职开发者画像（IDE Agent 主导）
+
+| 用途 | 占比 |
+| --- | --- |
+| 仓库上下文反复读取（缓存命中为主） | 45% |
+| 代码生成 / 重构 / 排错 | 25% |
+| 跨文件检索 / 调试日志注入 | 15% |
+| 调研 / 文档查阅 | 10% |
+| 写作 / 沟通文本 | 5% |
+
+### 研究 / 写作画像
+
+| 用途 | 占比 |
+| --- | --- |
+| 深度调研 / 长文阅读 | 38% |
+| 写作起稿 / 改稿 | 28% |
+| 资料翻译 / 摘要 | 18% |
+| 编程辅助 | 11% |
+| 其他 | 5% |
+
+**判断**：开发者画像里近一半账单 tokens 是仓库上下文的反复读取（缓存命中为主）——这不是浪费，是 IDE Agent 范式的必然结果。真正能拧的水龙头是上下文规模与缓存命中率，不是少问几次。
+
+## 4. 月度花费：cache-aware 定价折算
+
+三段定价：**cache-read**（命中复用，最便宜）/ **fresh-input**（新增上下文，标准输入价）/ **output**（生成，最贵）。按 Anthropic 公开比例：cache-read 取 input × 10%；OpenAI / Gemini 比例更高（25–50%），同口径会更贵但不改变量级判断。
+
+**IDE Agent 画像（cache 85% / input 10% / output 5%）：**
+
+| 档位 | 代表模型 | cache / input / output（$/M） | 混合单价（$/M） | 1 亿 / 日 月费 | 4.5 亿 / 日 月费 |
+| --- | --- | --- | --- | --- | --- |
+| 经济档 | Haiku 4.5 / GPT-mini / Gemini Flash | 0.08 / 0.8 / 4.0 | 0.35 | $1,050 ≈ ¥7,560 | $4,725 ≈ ¥34,020 |
+| 主力档 | Sonnet 4.6 / GPT-4o / Gemini Pro | 0.3 / 3.0 / 15.0 | 1.31 | $3,915 ≈ ¥28,188 | $17,617 ≈ ¥126,846 |
+| 旗舰档 | Opus 4.7 / o1 / Gemini Ultra | 1.5 / 15.0 / 75.0 | 6.53 | $19,575 ≈ ¥140,940 | $88,087 ≈ ¥634,230 |
+
+**判断**：日均 1 亿在主力档 IDE Agent 画像下大约 $3900/月（≈ ¥2.8 万），日均 4.5 亿对应 $1.76 万/月（≈ ¥12.7 万）。比"按 base input 直算"的老口径低一个数量级——但同样要警告：如果换上旗舰档（Opus 等级），即便走 cache，4.5 亿/日仍逼近 ¥60 万/月，是公司级账单而非个人可持续支出。
+
+## 5. 市场口径：按 token 计费 vs 订阅制
+
+2025 年起头部 IDE Agent 类产品大多提供高位订阅档（Claude Max / GPT Pro / Cursor Ultra 等），月费 $100–$400 级别，对个人重度用户取消了"用得越多花得越多"的弹性账单。多数公开自报"日耗 X 亿 tokens"的样本，其真实支出落在这一档，而不是按上节表格的 metered 价格付费。
+
+| 计费口径 | 典型档位 | 对个人重度的实际支出 | 何时仍按 metered 算账 |
+| --- | --- | --- | --- |
+| 按量（metered API） | API key 直连 | 由 token 量与画像决定，见第 4 节 | 需要审计、自定义路由、批处理、企业部署 |
+| 订阅（flat-rate） | Max / Pro / Ultra 级别 | 月费 $100–$400 锁死 | 触发硬性速率限制、需要更高并发或 SLA |
+| 企业池（席位 + 池子） | 团队 / 组织计划 | 按席位 + 用量阶梯 | 部门级集中采购 |
+
+**判断**：账单 4.5 亿/日 听起来像每月 ¥10 万级支出，但相当一部分极重度个人样本走的是固定订阅而非 metered billing——同样的 token 流量在两种口径下账单可能差 20 倍。引用这种数字时一定要先问"是 API 计费还是订阅画像"。
+
+## 6. 效率定位：token 多 ≠ 生产力高
+
+| 信号 | 健康 | 掉进浪费陷阱的迹象 |
+| --- | --- | --- |
+| 会话留存 | 能引用、能复用、被归档 | 一次性扔掉、没人回看 |
+| 输出收口 | 有人验收、能进生产 | 生成完没人看 / 直接堆磁盘 |
+| 迭代次数 | 收敛到结果（≤ 5 轮） | 反复试错（> 10 轮还没拿到目标） |
+| 上下文密度 | 指令明确、检索精准 | 塞海量文档"让 AI 自己找" |
+| 模型分层 | 简单任务用小模型 | 一律旗舰、爽就完事 |
+
+**判断**：量上去之后真正的指标不是"跑了多少 token"，而是"每百万账单 token 沉淀了多少可交付物"。
+
+## 7. 优化抓手：按 ROI 排序
+
+| 抓手 | 预期降本幅度 | 落地难度 | 说明 |
+| --- | --- | --- | --- |
+| 切换到订阅档（若画像匹配） | 40–90% | 低 | IDE Agent 主导 + 高缓存命中场景，订阅档常显著优于 metered |
+| 启用 prompt caching 并设计稳定前缀 | 20–40% | 低 | 把系统提示、仓库结构、常用文档放在前缀；避免动态插值打散缓存 |
+| 模型路由分层 | 20–50% | 中 | 简单任务用经济档，深度推理才上旗舰；多数 IDE Agent 已内置 |
+| 压缩上下文 / 用 .ignore 排除 | 10–30% | 中 | 只塞相关文件，避免缓存写入开销摊不开 |
+| 限制输出长度 | 5–15% | 低 | max_tokens + "不要解释、只给答案"的指令 |
+| Agent 步数上限 + checkpoint | 不直接降本但防失控 | 低 | 防止跑飞导致一次性账单爆炸 |
+| 批处理 + 异步 | 间接降本 | 高 | 把可延迟的任务积到 batch API（半价） |
+
+**判断**：对绝大多数重度个人用户，前三条就能砍掉 30–50% 的成本，且不需要立刻上 agent 自动化。
+
+## 8. 月度快照模板
+
+模板留五列就够：账单 tokens、净处理（估）、主用模型、计费口径、本月最大优化点。每月写一行，半年回看就能看出强度爬升曲线与优化效果。
+
+| 月份 | 日均账单 tokens | 日均净处理（估） | 主用模型 / 工具 | 计费口径 | 本月最大优化点 |
+| --- | --- | --- | --- | --- | --- |
+| 示例行 | ~1 亿 | ~1500 万 | 主力档 IDE Agent | 订阅 | 收紧 .ignore，缓存命中率提升至 85% |
+
+## 来源与校准入口
+
+- [OpenAI API Pricing（含 cached input 折扣比例）](https://openai.com/api/pricing/)
+- [Anthropic API Pricing（cache-read / cache-write 公开报价）](https://docs.anthropic.com/en/docs/about-claude/pricing)
+- [Anthropic Prompt Caching 文档](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+- [OpenAI Prompt Caching 文档](https://platform.openai.com/docs/guides/prompt-caching)
+- [Gemini API Pricing（含 context caching）](https://ai.google.dev/gemini-api/docs/pricing)
+- [DeepSeek Pricing](https://api-docs.deepseek.com/quick_start/pricing)
+`
+
+const DISTRIBUTE_TAGS = ['AI', 'Token 用量', 'Prompt Cache', '花费测算', '订阅 vs 按量']
 
 // ============================================================
 // 数据基础
@@ -357,11 +510,22 @@ export default function AiTokenUsageResearchClient() {
       <header className="space-y-3 border-b border-[#eadfcd] pb-6 dark:border-gray-800">
         <div className="flex items-start justify-between gap-4">
           <p className="text-xs tracking-wide text-[#8c8376] dark:text-gray-500">专题 · AI 调研</p>
-          <SharePageButton
-            title="AI Token 用量与花费强度调研"
-            text="日耗 1 亿 / 4.5 亿 tokens 对照（账单口径，含缓存命中）：强度尺、净处理换算、场景画像、按 prompt-cache 真实定价折算月费、效率信号、优化抓手。"
-            url="/ai-token-usage-research"
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            <DistributeMarkdownButton
+              title="AI Token 用量与花费强度调研"
+              summary="日耗 1 亿 / 4.5 亿 tokens（账单口径含缓存命中）对照：账单 vs 净处理双账户、cache-aware 三段定价折算月费、订阅 vs 按量口径、效率信号与优化抓手。"
+              markdown={DISTRIBUTE_MARKDOWN}
+              url={SHARE_URL}
+              category="ai"
+              slug="ai-token-usage-research"
+              tags={DISTRIBUTE_TAGS}
+            />
+            <SharePageButton
+              title="AI Token 用量与花费强度调研"
+              text="日耗 1 亿 / 4.5 亿 tokens 对照（账单口径，含缓存命中）：强度尺、净处理换算、场景画像、按 prompt-cache 真实定价折算月费、效率信号、优化抓手。"
+              url="/ai-token-usage-research"
+            />
+          </div>
         </div>
         <h1 className="text-3xl font-semibold text-[#222] dark:text-gray-100">
           AI Token 用量与花费强度调研

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 import SettingsButton from './SettingsButton'
-import { SITE_CHANNELS } from '../../../lib/siteNav'
+import { SITE_CHANNELS, getChannelNavSections } from '../../../lib/siteNav'
 
 function ChevronDown() {
   return (
@@ -67,6 +67,7 @@ function MenuItem({ item, onNavigate }) {
 
 function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerRef, align = 'center' }) {
   const closeTimerRef = useRef(null)
+  const sections = getChannelNavSections(channel)
   const positionClass =
     align === 'right'
       ? 'right-0'
@@ -132,7 +133,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
           className={`absolute top-full z-[120] w-[min(calc(100vw-1rem),440px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${positionClass}`}
         >
           <div className="rounded-2xl border border-[#e6dfd0] bg-[#fdfaf3] p-3 shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
-            {channel.sections.map((section) => (
+            {sections.map((section) => (
               <div key={section.title} className="mb-2 last:mb-0">
                 <p className="mb-1 px-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#93a0b3]">
                   {section.title}
@@ -278,6 +279,7 @@ export default function SiteHeader() {
         <nav aria-label="移动端主导航" className="flex flex-col gap-1.5">
           {SITE_CHANNELS.map((channel) => {
             const expanded = openMobileChannel === channel.key
+            const sections = getChannelNavSections(channel)
             return (
               <div key={channel.key} className="rounded-2xl border border-[#e7decb] bg-white/70 dark:border-[#2a3340] dark:bg-[#151c25]/70">
                 <button
@@ -293,7 +295,7 @@ export default function SiteHeader() {
                 </button>
                 {expanded ? (
                   <div className="space-y-2 border-t border-[#ece3d1] px-2 pb-3 pt-2 dark:border-[#2a3340]">
-                    {channel.sections.map((section) => (
+                    {sections.map((section) => (
                       <div key={section.title}>
                         <p className="mb-1 px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9e8f75] dark:text-[#8e9ab0]">
                           {section.title}

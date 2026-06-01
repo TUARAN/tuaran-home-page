@@ -21,6 +21,15 @@ function ChevronDown() {
   )
 }
 
+function getTagToneClass(tag) {
+  const normalized = String(tag || '').toLowerCase()
+  if (normalized === 'hot') {
+    // Misty pink — low saturation, not vivid red.
+    return 'bg-[#f8eceb] text-[#a67a76] dark:bg-[#342628] dark:text-[#d9b4b0]'
+  }
+  return 'bg-[#fde6c6] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]'
+}
+
 function MenuItem({ item, onNavigate }) {
   const base =
     'group/menuitem flex items-start gap-3 rounded-xl px-3 py-2 no-underline transition-colors hover:bg-[#f4ede0] dark:hover:bg-[#19212b]'
@@ -31,7 +40,9 @@ function MenuItem({ item, onNavigate }) {
         <span className="flex items-center gap-1.5 text-[13.5px] font-medium leading-tight text-[#221f19] dark:text-gray-100">
           {item.label}
           {item.tag ? (
-            <span className="rounded-full bg-[#fde6c6] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]">
+            <span
+              className={`rounded-full px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] ${getTagToneClass(item.tag)}`}
+            >
               {item.tag}
             </span>
           ) : null}

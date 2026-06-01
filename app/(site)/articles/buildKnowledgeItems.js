@@ -30,26 +30,20 @@ const PEOPLE_RESEARCH = [
 // 历史调研：富页面形式（迁移自原读书·历史）
 const HISTORY_RESEARCH = [
   {
-    title: '明清史',
-    summary: '以皇帝时间线梳理明清两代 —— 朱元璋、朱棣、嘉靖、张居正、万历、康熙、雍正的制度与命运。',
+    title: '历史调研：明清与三国',
+    summary: '以时间线梳理三国、明清 —— 曹操、朱元璋、朱棣、嘉靖、张居正、万历、康熙、雍正的制度、权力与人物命运。',
     date: '2026-05-20',
     href: '/history/ming-qing',
-  },
-  {
-    title: '三国史',
-    summary: '以时间线梳理曹操的崛起、用人与争议。',
-    date: '2026-05-20',
-    href: '/history/three-kingdoms',
   },
 ]
 
 // 诗歌调研
 const POETRY_RESEARCH = [
   {
-    title: '诗词巅峰',
-    summary: '历代诗词名篇的整理与原文：短歌行、洛神赋、兰亭集序、春江花月夜、滕王阁序……',
+    title: '单篇封神的中国古典名篇',
+    summary: '辞赋、诗歌、政论奏疏、古文散文、祭文书信杂文体的古典文学专题，并整合诗词巅峰原文库。',
     date: '2026-05-20',
-    href: '/poetry',
+    href: '/classical-masterpieces',
   },
 ]
 

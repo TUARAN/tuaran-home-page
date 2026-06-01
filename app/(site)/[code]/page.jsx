@@ -5,10 +5,11 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const CODE_RE = /^[A-Za-z0-9]{4,16}$/
+const RESERVED_CODES = new Set(['poetry'])
 
 export default async function ShortRedirectPage({ params }) {
   const { code } = await params
-  if (!code || !CODE_RE.test(code)) {
+  if (!code || RESERVED_CODES.has(code) || !CODE_RE.test(code)) {
     notFound()
   }
 

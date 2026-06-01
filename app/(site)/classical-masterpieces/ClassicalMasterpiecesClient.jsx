@@ -547,20 +547,19 @@ const colorClass = {
 
 function flattenWorks() {
   return CATEGORIES.flatMap((category) =>
-    category.works.map((work, index) => ({
-      ...work,
-      ...legacyOriginalsByTitle.get(cleanTitle(work.title)),
-      key: `${category.id}-${cleanTitle(work.title)}-${work.author}-${index}`,
-      categoryId: category.id,
-      categoryLabel: category.short,
-      categoryColor: category.color,
-      sourceUrl: work.sourceUrl || originalSearchUrl(work.title),
-    }))
+    category.works.map((work, index) => {
+      const original = legacyOriginalsByTitle.get(cleanTitle(work.title))
+      return {
+        ...work,
+        ...original,
+        key: `${category.id}-${cleanTitle(work.title)}-${work.author}-${index}`,
+        categoryId: category.id,
+        categoryLabel: category.short,
+        categoryColor: category.color,
+        sourceUrl: work.sourceUrl || original?.sourceUrl || originalSearchUrl(work.title),
+      }
+    })
   )
-}
-
-function getOriginalHref(work) {
-  return work.originalId ? `#original-${work.originalId}` : work.sourceUrl || originalSearchUrl(work.title)
 }
 
 function WorkCard({ work, selected, onSelect }) {
@@ -570,7 +569,7 @@ function WorkCard({ work, selected, onSelect }) {
       type="button"
       onClick={() => onSelect(work)}
       className={[
-        'group flex h-full min-h-[190px] flex-col rounded-lg border bg-white p-4 text-left shadow-[0_12px_30px_rgba(83,70,45,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(83,70,45,0.12)] dark:bg-[#101820] dark:shadow-none',
+        'group flex h-full min-h-[150px] flex-col rounded-lg border bg-white p-4 text-left shadow-[0_12px_30px_rgba(83,70,45,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(83,70,45,0.12)] dark:bg-[#101820] dark:shadow-none',
         selected ? `${colors.border} ring-2 ${colors.ring}` : 'border-[#e7decf] dark:border-[#273241]',
       ].join(' ')}
     >
@@ -587,9 +586,6 @@ function WorkCard({ work, selected, onSelect }) {
       <p className="mt-4 mb-0 text-[15px] leading-relaxed text-[#3f382e] dark:text-gray-200">{work.line}</p>
 
       <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
-        <span className="rounded-full bg-[#2f2a22] px-2 py-1 text-[11px] text-white dark:bg-white dark:text-[#0b1016]">
-          {work.originalText ? '全文已内置' : '可读原文'}
-        </span>
         {work.tags.slice(0, 3).map((tag) => (
           <span key={tag} className="rounded-full bg-[#f5efe5] px-2 py-1 text-[11px] text-[#736653] dark:bg-[#17212d] dark:text-gray-300">
             {tag}
@@ -723,8 +719,8 @@ export default function ClassicalMasterpiecesClient() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[1fr_320px]">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[390px_1fr]">
+        <div className="grid gap-4 sm:grid-cols-2 lg:max-h-[calc(100dvh-170px)] lg:grid-cols-1 lg:overflow-y-auto lg:pr-1">
           {visibleWorks.map((work) => (
             <WorkCard
               key={work.key}
@@ -735,8 +731,8 @@ export default function ClassicalMasterpiecesClient() {
           ))}
         </div>
 
-        <aside className="lg:sticky lg:top-[150px] lg:self-start">
-          <div className="rounded-lg border border-[#e4d9c8] bg-white p-4 dark:border-[#283443] dark:bg-[#101820]">
+        <article className="min-w-0 lg:sticky lg:top-[150px] lg:max-h-[calc(100dvh-170px)] lg:self-start lg:overflow-y-auto">
+          <div className="rounded-lg border border-[#e4d9c8] bg-white p-5 dark:border-[#283443] dark:bg-[#101820]">
             <p className={`mb-2 text-xs font-medium ${colorClass[selectedCategory.color].text}`}>
               {selectedCategory.label} · {selectedWork.form}
             </p>
@@ -745,14 +741,6 @@ export default function ClassicalMasterpiecesClient() {
             </h2>
             <p className="mb-4 text-sm text-[#756b5d] dark:text-gray-400">{selectedWork.author} · {selectedWork.era}</p>
             <p className="mb-4 text-sm leading-7 text-[#4b4338] dark:text-gray-300">{selectedWork.detail}</p>
-            <a
-              href={getOriginalHref(selectedWork)}
-              target={selectedWork.originalId ? undefined : '_blank'}
-              rel={selectedWork.originalId ? undefined : 'noreferrer'}
-              className="mb-4 inline-flex rounded-md bg-[#2f2a22] px-3 py-2 text-sm text-white no-underline hover:no-underline dark:bg-white dark:text-[#0b1016]"
-            >
-              读原文
-            </a>
             <div className="flex flex-wrap gap-1.5">
               {selectedWork.tags.map((tag) => (
                 <span key={tag} className="rounded-full bg-[#f5efe5] px-2 py-1 text-[11px] text-[#736653] dark:bg-[#17212d] dark:text-gray-300">
@@ -760,54 +748,36 @@ export default function ClassicalMasterpiecesClient() {
                 </span>
               ))}
             </div>
-          </div>
-        </aside>
-      </section>
 
-      <section id="originals" className="mx-auto max-w-6xl px-4 pb-12">
-        <div className="mb-5 flex flex-col gap-2 border-t border-[#e8dfd0] pt-8 dark:border-[#202938] md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="mb-2 font-mono text-xs uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#f0c776]">
-              Primary Texts
-            </p>
-            <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#231f18] dark:text-gray-100">
-              诗词巅峰原文库
-            </h2>
-          </div>
-          <p className="mb-0 max-w-xl text-sm text-[#6b6256] dark:text-gray-400">
-            选入此处的作品以全文阅读为主，适合逐篇展开、慢读、回看名句在整篇中的位置。
-          </p>
-        </div>
-
-        <div className="grid gap-3">
-          {POETRY_PEAK_WORKS.map((item, index) => (
-            <details
-              key={`${item.title}-${item.author}`}
-              id={`original-poetry-peak-${index + 1}`}
-              className="rounded-lg border border-[#e4d9c8] bg-white p-4 dark:border-[#283443] dark:bg-[#101820]"
-            >
-              <summary className="cursor-pointer list-none font-serif text-lg font-semibold text-[#241f18] dark:text-gray-100">
-                {item.title === '《将近酒》' ? '《将进酒》' : item.title}
-                <span className="ml-2 font-sans text-sm font-normal text-[#7a6d5a] dark:text-gray-400">
-                  {item.author} · {item.time}
-                </span>
-              </summary>
-              <div className="mt-4 whitespace-pre-wrap border-t border-[#eee4d5] pt-4 font-serif text-[15px] leading-8 text-[#3c342a] dark:border-[#263241] dark:text-gray-200">
-                {item.content}
+            <div className="mt-6 border-t border-[#eee4d5] pt-5 dark:border-[#263241]">
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="mb-0 border-b-0 pb-0 font-serif text-xl font-semibold text-[#241f18] dark:text-gray-100">
+                  原文
+                </h3>
+                {selectedWork.sourceUrl ? (
+                  <a
+                    href={selectedWork.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm underline underline-offset-4"
+                  >
+                    原文来源
+                  </a>
+                ) : null}
               </div>
-              {item.sourceUrl ? (
-                <a
-                  href={item.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-flex text-sm underline underline-offset-4"
-                >
-                  原文来源
-                </a>
-              ) : null}
-            </details>
-          ))}
-        </div>
+
+              {selectedWork.originalText ? (
+                <div className="whitespace-pre-wrap font-serif text-[16px] leading-9 text-[#352d24] dark:text-gray-200">
+                  {selectedWork.originalText}
+                </div>
+              ) : (
+                <div className="rounded-md border border-[#eadfce] bg-[#fbf6ee] p-4 text-sm leading-7 text-[#584f42] dark:border-[#2b3746] dark:bg-[#121a24] dark:text-gray-300">
+                  这篇暂未内置全文。可先通过原文来源阅读校订文本。
+                </div>
+              )}
+            </div>
+          </div>
+        </article>
       </section>
     </main>
   )

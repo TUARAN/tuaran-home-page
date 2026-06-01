@@ -367,7 +367,7 @@ export default function AiTokenUsageResearchClient() {
           AI Token 用量与花费强度调研
         </h1>
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          围绕两个公开样本（日耗 1 亿 / 4.5 亿 tokens，账单口径含 prompt cache 命中）回答四件事：处在什么强度档、缓存复用之后真正"读了多少新东西"、按当下三家头部厂商的 cache-aware 定价每月要花多少钱、什么场景下 token 增长 = 生产力增长、什么场景下 = 浪费。
+          围绕两个公开样本（日耗 1 亿 / 4.5 亿 tokens，账单口径含 prompt cache 命中）回答四件事：处在什么强度档、缓存复用之后真正「读了多少新东西」、按当下三家头部厂商的 cache-aware 定价每月要花多少钱、什么场景下 token 增长 = 生产力增长、什么场景下 = 浪费。
         </p>
         <div className="flex flex-wrap gap-3 text-xs text-[#8c8376] dark:text-gray-400">
           <span>口径：账单 tokens（含 cache-read）</span>
@@ -385,7 +385,7 @@ export default function AiTokenUsageResearchClient() {
         judgment="一旦区分这两本账，多数「骇人听闻的 token 数字」就还原成可理解的工作量——账单 1 亿/日 在长会话编程下，净新增可能只有 1500 万左右。这不是省钱魔法，是 cache pricing 的常态。"
       >
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          2024 年起，Anthropic / OpenAI / Google 都已把 prompt caching 列为头等公民——对反复使用的长前缀（系统提示、仓库结构、文档），第二次起按 <strong>输入价的 10% 左右</strong> 收费（Anthropic cache-read 为 base input 的 10%，OpenAI 是 50%，Gemini 是 25%）。因此同一笔"日耗 1 亿 tokens"在不同口径下含义完全不同：
+          2024 年起，Anthropic / OpenAI / Google 都已把 prompt caching 列为头等公民——对反复使用的长前缀（系统提示、仓库结构、文档），第二次起按 <strong>输入价的 10% 左右</strong> 收费（Anthropic cache-read 为 base input 的 10%，OpenAI 是 50%，Gemini 是 25%）。因此同一笔「日耗 1 亿 tokens」在不同口径下含义完全不同：
         </p>
         <Table
           headers={['口径', '含义', '是否含 cache-read', '用途']}
@@ -396,7 +396,7 @@ export default function AiTokenUsageResearchClient() {
           ]}
         />
         <p className="text-xs text-[#8c8376] dark:text-gray-500">
-          后文所有"日耗 1 亿 / 4.5 亿"均为账单口径；提到"净处理"或"等效阅读量"时会显式换算。
+          后文所有「日耗 1 亿 / 4.5 亿」均为账单口径；提到「净处理」或「等效阅读量」时会显式换算。
         </p>
       </Section>
 
@@ -418,7 +418,7 @@ export default function AiTokenUsageResearchClient() {
           />
         </div>
         <p className="text-xs text-[#8c8376] dark:text-gray-500">
-          经验阈值。不同人对"重度"定义差一个量级，仅作粗略锚点。
+          经验阈值。不同人对「重度」定义差一个量级，仅作粗略锚点。
         </p>
       </Section>
 
@@ -429,7 +429,7 @@ export default function AiTokenUsageResearchClient() {
         judgment="账单数字大头是缓存复用——把它扣掉之后，「日均 1 亿」在 IDE Agent 画像下相当于一天净读写 1500 万 tokens、约 60 本中等长度书的内容；「日均 4.5 亿」对应约 6750 万、270 本。仍属极限值，但已经不是科幻。"
       >
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          切换上方"输入/输出比例"选择器（默认 IDE Agent 85/10/5），下表的"净处理"与"等效书目"会随画像变化。
+          切换上方「输入/输出比例」选择器（默认 IDE Agent 85/10/5），下表的「净处理」与「等效书目」会随画像变化。
         </p>
         <Table
           headers={['指标', '1 亿/日', '4.5 亿/日', '解释']}
@@ -451,7 +451,7 @@ export default function AiTokenUsageResearchClient() {
         judgment="开发者画像里近一半账单 tokens 是仓库上下文的反复读取（缓存命中为主）——这不是浪费，是 IDE Agent 范式的必然结果。真正能拧的水龙头是上下文规模与缓存命中率，不是少问几次。"
       >
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          下方占比是从公开讨论归纳的"典型口径"，不是行业统计。切换画像看哪个更接近实际：
+          下方占比是从公开讨论归纳的「典型口径」，不是行业统计。切换画像看哪个更接近实际：
         </p>
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-3 dark:border-gray-800 dark:bg-gray-900">
           <label htmlFor="scenario" className="text-sm text-[#5e5548] dark:text-gray-300">
@@ -534,7 +534,7 @@ export default function AiTokenUsageResearchClient() {
         judgment="账单 4.5 亿/日 听起来像每月 ¥10 万级支出，但相当一部分极重度个人样本走的是固定订阅而非 metered billing——同样的 token 流量在两种口径下账单可能差 20 倍。引用这种数字时一定要先问「是 API 计费还是订阅画像」。"
       >
         <p className="text-sm leading-7 text-[#5e5548] dark:text-gray-300">
-          2025 年起头部 IDE Agent 类产品大多提供高位订阅档（Claude Max / GPT Pro / Cursor Ultra 等），月费 $100-$400 级别，对个人重度用户取消了"用得越多花得越多"的弹性账单。多数公开自报"日耗 X 亿 tokens"的样本，其真实支出落在这一档，而不是按上节表格的 metered 价格付费。
+          2025 年起头部 IDE Agent 类产品大多提供高位订阅档（Claude Max / GPT Pro / Cursor Ultra 等），月费 $100-$400 级别，对个人重度用户取消了「用得越多花得越多」的弹性账单。多数公开自报「日耗 X 亿 tokens」的样本，其真实支出落在这一档，而不是按上节表格的 metered 价格付费。
         </p>
         <Table
           headers={['计费口径', '典型档位', '对个人重度的实际支出', '何时仍按 metered 算账']}

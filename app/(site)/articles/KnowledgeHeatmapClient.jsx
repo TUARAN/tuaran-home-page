@@ -143,20 +143,32 @@ export default function KnowledgeHeatmapClient({ items }) {
   }, [heatmapData, selectedHeatmapYear])
 
   return (
-    <section className="space-y-1">
-      <button
-        type="button"
-        aria-expanded={expanded}
-        onClick={() => setExpanded((value) => !value)}
-        className="group flex w-full items-center justify-between gap-3 rounded-md border border-[#e9dcc7] bg-[#fff9ef] px-3 py-2 text-left transition-colors hover:border-[#d8c7ab] hover:bg-[#fff4e3] dark:border-[#36465d] dark:bg-[#121a26] dark:hover:border-[#51627a] dark:hover:bg-[#182335]"
-      >
-        <span className="min-w-0 truncate whitespace-nowrap text-sm font-medium text-[#4d3d25] dark:text-[#d7c5a3]">
+    <section className="space-y-3">
+      <div>
+        <p className="text-sm leading-relaxed text-[#666] dark:text-gray-300">
           我读到、研究过、想反复回看的东西，都沉淀在这里——长文观察、公司画像、事项专题，按主题持续累积。
-        </span>
-        <span className="shrink-0 text-xs font-medium text-[#8a6a35] dark:text-[#9fb8dd]">
+        </p>
+        <button
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-2 inline-flex items-center gap-1 text-sm text-[#716958] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
+        >
+          <svg
+            viewBox="0 0 12 12"
+            aria-hidden="true"
+            className={['h-3 w-3 shrink-0 transition-transform', expanded ? 'rotate-180' : ''].join(' ')}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 4.5 6 7.5 9 4.5" />
+          </svg>
           {expanded ? '收起热力图' : '展开热力图'}
-        </span>
-      </button>
+        </button>
+      </div>
 
       {expanded ? (
         heatmapData ? (
@@ -179,7 +191,7 @@ export default function KnowledgeHeatmapClient({ items }) {
                 </button>
               ))}
             </div>
-            <div className="rounded-md border border-[#ded5c7] bg-[#fffdf8] p-3 dark:border-gray-700 dark:bg-[#0f141b]">
+            <div className="rounded-md border border-[#eee] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
               <div className="mb-1 flex items-center justify-between gap-3">
                 <p className="text-xs text-[#776a57] dark:text-gray-300">
                   {heatmapData.total} 篇内容发布（站内 {heatmapData.localTotal} + 掘金 {heatmapData.juejinTotal}）
@@ -234,7 +246,7 @@ export default function KnowledgeHeatmapClient({ items }) {
             </div>
           </>
         ) : (
-          <section className="rounded-md border border-[#ded5c7] bg-[#fffdf8] p-3 text-xs text-[#776a57] dark:border-gray-700 dark:bg-[#0f141b] dark:text-gray-300">
+          <section className="rounded-md border border-[#eee] bg-white p-3 text-xs text-[#666] dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
             热力图加载中…
           </section>
         )

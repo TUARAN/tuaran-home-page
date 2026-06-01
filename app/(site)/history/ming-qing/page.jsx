@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import SharePageButton from '../../components/SharePageButton'
+import { CAO_CAO_TIMELINE } from './threeKingdomsData'
 
 export const dynamic = 'force-static'
 
@@ -1729,9 +1730,9 @@ function ElbowConnector() {
   )
 }
 export const metadata = {
-  title: '明清史 · 历史调研',
-  description: '涂阿燃（tuaran）的历史调研：以皇帝时间线梳理明清两代的制度、权力与个人命运。',
-  keywords: ['涂阿燃', 'tuaran', '明清史', '历史调研', '明朝', '朱元璋', '康熙'],
+  title: '历史调研 · 明清与三国',
+  description: '涂阿燃（tuaran）的历史调研：以时间线梳理三国、明清的制度、权力与人物命运。',
+  keywords: ['涂阿燃', 'tuaran', '历史调研', '三国史', '曹操', '明清史', '明朝', '朱元璋', '康熙'],
   alternates: {
     canonical: '/history/ming-qing',
   },
@@ -1747,15 +1748,15 @@ export default function MingQingPage() {
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">明清史</h1>
-            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">历史调研：以皇帝时间线梳理明清两代的制度、权力与个人命运。</p>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">历史调研</h1>
+            <p className="text-sm text-[#666] dark:text-gray-300 mt-2">以时间线梳理三国、明清的制度、权力与人物命运。</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
               <Link href="/articles?tab=history" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                 返回知识库
               </Link>
             </div>
           </div>
-          <SharePageButton title="明清史 · 历史调研" text="以皇帝时间线梳理明清两代的制度、权力与个人命运。" url="/history/ming-qing" />
+          <SharePageButton title="历史调研 · 明清与三国" text="以时间线梳理三国、明清的制度、权力与人物命运。" url="/history/ming-qing" />
         </div>
       </header>
 
@@ -1771,12 +1772,22 @@ export default function MingQingPage() {
                   href="#mingqing"
                   className="font-bold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
                 >
-                  明清史
+                  历史调研
                 </a>
                 <ul className="mt-2 space-y-2 pl-3 border-l border-[#eee] dark:border-gray-800 text-xs text-[#666] dark:text-gray-400">
                   <li>
                     <a href="#mingqing-summary" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                       综述
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#sanguo" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      三国史
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#cao-cao" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                      曹操
                     </a>
                   </li>
                   <li>
@@ -1829,7 +1840,7 @@ export default function MingQingPage() {
           <div className="prose-tuaran">
           <section className="border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 p-5">
             <h2 id="mingqing" className="text-[#444] text-lg scroll-mt-24">
-              明清史
+              历史调研
             </h2>
 
             <h3 id="mingqing-summary" className="mt-10 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
@@ -1852,6 +1863,48 @@ export default function MingQingPage() {
             言而总之，我对“权力如何塑造人、制度如何吞没个人”这件事，始终保持着一种无法放下的好奇与敬畏。
           </p>
         </div>
+
+            <h3 id="sanguo" className="mt-12 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              三国史
+            </h3>
+            <div className="text-sm text-[#666] space-y-4 mt-4 dark:text-gray-300">
+              <p className="m-0">
+                三国部分先收敛为曹操时间线：从汉末入仕、讨董、兖州立足，到奉迎天子、官渡翻盘、赤壁受挫、魏国奠基。它和明清部分放在同一页，是为了连续观察一个问题：乱世中的个人能力，如何被制度、军政组织与合法性叙事放大或反噬。
+              </p>
+            </div>
+
+            <h3 id="cao-cao" className="mt-10 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">
+              曹操
+            </h3>
+            <p className="text-sm text-[#666] mt-2 mb-0 dark:text-gray-300">横向时间线（可左右滑动）。</p>
+
+            <div className="mt-4 overflow-x-auto">
+              <div className="flex items-stretch gap-4 min-w-max pb-2">
+                {CAO_CAO_TIMELINE.map((item, index) => (
+                  <div key={`${item.ad}-${item.era}-${item.event}`} className="flex items-stretch">
+                    <div className="w-[300px] sm:w-[380px] border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <div className="text-xs text-[#999] dark:text-gray-400">
+                          {item.ad} · {item.era}
+                        </div>
+                        <div className="text-xs text-[#999] dark:text-gray-400">{item.age}</div>
+                      </div>
+
+                      <div className="mt-2 text-sm text-[#444] font-bold dark:text-gray-200">{item.event}</div>
+
+                      <div className="mt-3 text-sm text-[#666] space-y-2 dark:text-gray-300">
+                        <p className="m-0">{item.identity}</p>
+                        <p className="m-0">{item.people}</p>
+                        <p className="m-0">{item.location}</p>
+                        <p className="m-0">{item.impact}</p>
+                      </div>
+                    </div>
+
+                    {index < CAO_CAO_TIMELINE.length - 1 ? <ElbowConnector /> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <h3 id="ming16" className="mt-12 text-[#444] text-base font-bold dark:text-gray-200 scroll-mt-24">明16帝</h3>
             <p className="text-sm text-[#666] mt-2 mb-0 dark:text-gray-300">横向时间线（可左右滑动）。</p>

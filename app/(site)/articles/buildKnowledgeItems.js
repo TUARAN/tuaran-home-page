@@ -67,7 +67,7 @@ const TOPIC_PAGES = [
   {
     title: 'AI Token 用量与花费强度调研',
     summary:
-      '日耗 1000 万 / 4.5 亿 tokens 对照：对数刻度强度尺 + 文本吞吐换算 + 双画像场景占比 + 真实公开 API 价折算月费 + 效率信号 + 优化抓手 ROI 排序。',
+      '日耗 1 亿 / 4.5 亿 tokens（账单口径，含缓存命中）对照：账单 vs 净处理双账户 + 对数刻度强度尺 + cache-aware 三段定价折算月费 + 订阅 vs 按量口径 + 效率信号 + 优化抓手 ROI 排序。',
     date: '2026-05-31',
     href: '/ai-token-usage-research',
     specialType: 'ai',

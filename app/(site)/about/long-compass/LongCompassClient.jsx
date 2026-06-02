@@ -1,9 +1,7 @@
 'use client'
 
 import { Marked } from 'marked'
-import { useEffect, useMemo, useRef, useState } from 'react'
-
-const PBKDF2_ITERATIONS = 310000
+import { useEffect, useMemo, useState } from 'react'
 
 const markdown = new Marked({ gfm: true, breaks: true })
 
@@ -22,14 +20,6 @@ const KIND_LABELS = {
   review: '阶段复盘',
 }
 
-const VALID_KINDS = new Set(Object.keys(KIND_LABELS))
-
-const EMPTY_FORM = {
-  title: '',
-  summary: '',
-  content: '',
-}
-
 async function safeJson(res) {
   const text = await res.text()
   if (!text) return null
@@ -38,14 +28,6 @@ async function safeJson(res) {
   } catch {
     return { error: 'NON_JSON_RESPONSE', detail: text.slice(0, 120) }
   }
-}
-
-function bytesToBase64(bytes) {
-  let str = ''
-  bytes.forEach((b) => {
-    str += String.fromCharCode(b)
-  })
-  return btoa(str)
 }
 
 function base64ToBytes(b64) {
@@ -72,24 +54,6 @@ async function deriveKey(password, salt, iterations) {
   )
 }
 
-async function encryptRecord(record, password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16))
-  const iv = crypto.getRandomValues(new Uint8Array(12))
-  const key = await deriveKey(password, salt, PBKDF2_ITERATIONS)
-  const plain = new TextEncoder().encode(JSON.stringify(record))
-  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain)
-
-  return {
-    v: 1,
-    alg: 'AES-256-GCM',
-    kdf: 'PBKDF2-SHA256',
-    iter: PBKDF2_ITERATIONS,
-    salt: bytesToBase64(salt),
-    iv: bytesToBase64(iv),
-    data: bytesToBase64(new Uint8Array(encrypted)),
-  }
-}
-
 async function decryptRecord(payload, password) {
   const salt = base64ToBytes(payload.salt)
   const iv = base64ToBytes(payload.iv)
@@ -109,17 +73,11 @@ export default function LongCompassClient() {
   const [user, setUser] = useState(null)
   const [encryptedItems, setEncryptedItems] = useState([])
   const [password, setPassword] = useState('')
-  const [unlockedPassword, setUnlockedPassword] = useState('')
+  const [unlocked, setUnlocked] = useState(false)
   const [records, setRecords] = useState([])
   const [activeKind, setActiveKind] = useState('snapshot')
-  const [editingId, setEditingId] = useState(null)
-  const [form, setForm] = useState(EMPTY_FORM)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [importProgress, setImportProgress] = useState(null)
-  const importInputRef = useRef(null)
-
-  const unlocked = !!unlockedPassword
 
   useEffect(() => {
     ;(async () => {
@@ -176,182 +134,10 @@ export default function LongCompassClient() {
         decrypted.push({ ...item, plain })
       }
       setRecords(decrypted)
-      setUnlockedPassword(value)
+      setUnlocked(true)
       setPassword('')
     } catch {
       setError('口令错误，无法解密资料库。')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  function resetForm(kind = activeKind) {
-    setEditingId(null)
-    setActiveKind(kind)
-    setForm(EMPTY_FORM)
-    setError('')
-  }
-
-  function startEdit(record) {
-    setActiveKind(record.kind)
-    setEditingId(record.id)
-    setForm({
-      title: record.plain?.title || '',
-      summary: record.plain?.summary || '',
-      content: record.plain?.content || '',
-    })
-    setError('')
-  }
-
-  async function handleSave(e) {
-    e.preventDefault()
-    if (!unlocked || busy) return
-    const title = form.title.trim()
-    const summary = form.summary.trim()
-    const content = form.content.trim()
-    if (!title || !content) {
-      setError('标题和正文不能为空。')
-      return
-    }
-
-    setBusy(true)
-    setError('')
-    try {
-      const now = Date.now()
-      const plain = {
-        title,
-        summary,
-        content,
-        updatedAt: now,
-      }
-      const payload = await encryptRecord(plain, unlockedPassword)
-      const res = await fetch('/api/private-records', {
-        method: editingId ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingId,
-          kind: activeKind,
-          payload,
-        }),
-      })
-      const data = await safeJson(res)
-      if (!res.ok || !data?.item) throw new Error(data?.error || `HTTP_${res.status}`)
-
-      const saved = { ...data.item, plain }
-      setEncryptedItems((prev) =>
-        editingId ? prev.map((item) => (item.id === editingId ? data.item : item)) : [data.item, ...prev]
-      )
-      setRecords((prev) =>
-        editingId ? prev.map((item) => (item.id === editingId ? saved : item)) : [saved, ...prev]
-      )
-      resetForm(activeKind)
-    } catch (e) {
-      setError(e?.message || 'SAVE_FAILED')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handleImportFile(e) {
-    const file = e.target.files?.[0]
-    if (importInputRef.current) importInputRef.current.value = ''
-    if (!file || !unlocked || busy) return
-
-    setBusy(true)
-    setError('')
-
-    let parsed
-    try {
-      parsed = JSON.parse(await file.text())
-    } catch {
-      setError('种子文件不是合法 JSON。')
-      setBusy(false)
-      return
-    }
-    if (!Array.isArray(parsed)) {
-      setError('种子文件应为数组：[{ kind, title, summary, content }]。')
-      setBusy(false)
-      return
-    }
-
-    const valid = parsed.filter(
-      (r) =>
-        r &&
-        VALID_KINDS.has(r.kind) &&
-        typeof r.title === 'string' &&
-        r.title.trim() &&
-        typeof r.content === 'string' &&
-        r.content.trim()
-    )
-    if (valid.length === 0) {
-      setError('没有可导入的条目（kind/title/content 校验未通过）。')
-      setBusy(false)
-      return
-    }
-
-    setImportProgress({ done: 0, total: valid.length, skipped: 0, failed: 0 })
-    const newEncrypted = []
-    const newRecords = []
-    let done = 0
-    let skipped = 0
-    let failed = 0
-
-    for (const seed of valid) {
-      const plain = {
-        title: seed.title.trim(),
-        summary: (seed.summary || '').trim(),
-        content: seed.content.trim(),
-        updatedAt: seed.updatedAt || Date.now(),
-      }
-      try {
-        const payload = await encryptRecord(plain, unlockedPassword)
-        const serialized = JSON.stringify(payload)
-        if (serialized.length > 120000) {
-          skipped += 1
-          done += 1
-          setImportProgress({ done, total: valid.length, skipped, failed })
-          continue
-        }
-        const res = await fetch('/api/private-records', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: seed.kind, payload }),
-        })
-        const data = await safeJson(res)
-        if (!res.ok || !data?.item) {
-          failed += 1
-        } else {
-          newEncrypted.push(data.item)
-          newRecords.push({ ...data.item, plain })
-        }
-      } catch {
-        failed += 1
-      }
-      done += 1
-      setImportProgress({ done, total: valid.length, skipped, failed })
-    }
-
-    setEncryptedItems((prev) => [...newEncrypted, ...prev])
-    setRecords((prev) => [...newRecords, ...prev])
-    setBusy(false)
-    if (failed > 0) {
-      setError(`已导入 ${newRecords.length} 条，失败 ${failed} 条，跳过 ${skipped} 条（超长）。`)
-    }
-  }
-
-  async function handleDelete(id) {
-    if (!id || busy) return
-    setBusy(true)
-    setError('')
-    try {
-      const res = await fetch(`/api/private-records?id=${id}`, { method: 'DELETE' })
-      const data = await safeJson(res)
-      if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
-      setEncryptedItems((prev) => prev.filter((item) => item.id !== id))
-      setRecords((prev) => prev.filter((item) => item.id !== id))
-      if (editingId === id) resetForm(activeKind)
-    } catch (e) {
-      setError(e?.message || 'DELETE_FAILED')
     } finally {
       setBusy(false)
     }
@@ -432,167 +218,59 @@ export default function LongCompassClient() {
           {error ? <p className="mt-3 text-sm text-[#b42318] dark:text-red-400">{error}</p> : null}
         </section>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
-          <section>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(KIND_LABELS).map(([kind, label]) => (
-                  <button
-                    key={kind}
-                    type="button"
-                    onClick={() => resetForm(kind)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                      activeKind === kind
-                        ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                        : 'border border-[#e8dfd0] text-[#6b5f4d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
-                    }`}
-                  >
-                    {label} · {counts[kind] || 0}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                {importProgress ? (
-                  <span className="font-mono text-[10px] text-[#a09176] dark:text-[#8e9ab0]">
-                    导入 {importProgress.done}/{importProgress.total}
-                    {importProgress.failed ? ` · 失败 ${importProgress.failed}` : ''}
-                    {importProgress.skipped ? ` · 跳过 ${importProgress.skipped}` : ''}
-                  </span>
-                ) : null}
-                <input
-                  ref={importInputRef}
-                  type="file"
-                  accept="application/json,.json"
-                  onChange={handleImportFile}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => importInputRef.current?.click()}
-                  disabled={busy}
-                  className="rounded-lg border border-dashed border-[#d8cdbb] px-3 py-1.5 text-xs text-[#6b5f4d] hover:bg-white disabled:cursor-not-allowed disabled:opacity-55 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-[#121821]"
-                  title="选择本地 JSON 种子文件，浏览器内加密后逐条写入"
-                >
-                  导入种子
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {currentRecords.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-[#d8cdbb] px-4 py-6 text-sm text-[#847a67] dark:border-gray-700 dark:text-gray-400">
-                  暂无记录。
-                </p>
-              ) : (
-                currentRecords.map((record) => (
-                  <article
-                    key={record.id}
-                    className="rounded-lg border border-[#e8dfd0] bg-white/78 p-4 dark:border-gray-800 dark:bg-[#121821]/78"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <h2 className="font-serif text-base font-semibold text-[#221f19] dark:text-gray-100">
-                          {record.plain?.title || '未命名记录'}
-                        </h2>
-                        {record.plain?.summary ? (
-                          <p className="mt-1 text-xs leading-5 text-[#847a67] dark:text-gray-400">
-                            {record.plain.summary}
-                          </p>
-                        ) : null}
-                      </div>
-                      <span className="font-mono text-[10px] text-[#a09176] dark:text-[#8e9ab0]">
-                        {new Date(record.updatedAt).toLocaleDateString('zh-CN')}
-                      </span>
-                    </div>
-                    <div
-                      className="prose prose-sm mt-3 max-w-none rounded-lg bg-[#faf7f1] px-3 py-2.5 text-[#4d463c] dark:prose-invert dark:bg-[#0d1218] dark:text-gray-300 prose-headings:font-serif prose-headings:text-[#221f19] dark:prose-headings:text-gray-100 prose-p:leading-7 prose-li:leading-7 prose-table:text-xs prose-th:bg-[#f0e9d8] dark:prose-th:bg-[#1a222d] prose-blockquote:border-l-[#c5b89c] prose-blockquote:text-[#5d554a] dark:prose-blockquote:border-l-[#475061] dark:prose-blockquote:text-gray-400 prose-code:text-[#6b4f21] dark:prose-code:text-[#e0c38f]"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(record.plain?.content) }}
-                    />
-                    <div className="mt-3 flex gap-3 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(record)}
-                        className="text-[#6b4f21] hover:underline dark:text-[#e0c38f]"
-                      >
-                        编辑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(record.id)}
-                        disabled={busy}
-                        className="text-[#a33b2f] hover:underline disabled:opacity-50 dark:text-red-400"
-                      >
-                        删除
-                      </button>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </section>
-
-          <aside className="rounded-lg border border-[#e8dfd0] bg-white/82 p-4 dark:border-gray-800 dark:bg-[#121821]/82">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-serif text-base font-semibold text-[#221f19] dark:text-gray-100">
-                {editingId ? '编辑记录' : '新增记录'}
-              </h2>
-              {editingId ? (
-                <button type="button" onClick={() => resetForm(activeKind)} className="text-xs text-[#847a67]">
-                  取消
-                </button>
-              ) : null}
-            </div>
-            <form onSubmit={handleSave} className="mt-4 space-y-3">
-              <label className="block">
-                <span className="mb-1 block text-xs text-[#847a67] dark:text-gray-400">分类</span>
-                <select
-                  value={activeKind}
-                  onChange={(e) => setActiveKind(e.target.value)}
-                  className="w-full rounded-lg border border-[#d8cdbb] bg-white px-3 py-2 text-sm text-[#221f19] outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-                >
-                  {Object.entries(KIND_LABELS).map(([kind, label]) => (
-                    <option key={kind} value={kind}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs text-[#847a67] dark:text-gray-400">标题</span>
-                <input
-                  value={form.title}
-                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full rounded-lg border border-[#d8cdbb] bg-white px-3 py-2 text-sm text-[#221f19] outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs text-[#847a67] dark:text-gray-400">摘要</span>
-                <input
-                  value={form.summary}
-                  onChange={(e) => setForm((prev) => ({ ...prev, summary: e.target.value }))}
-                  className="w-full rounded-lg border border-[#d8cdbb] bg-white px-3 py-2 text-sm text-[#221f19] outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs text-[#847a67] dark:text-gray-400">正文</span>
-                <textarea
-                  value={form.content}
-                  onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
-                  rows={12}
-                  className="w-full resize-y rounded-lg border border-[#d8cdbb] bg-white px-3 py-2 text-sm leading-6 text-[#221f19] outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-                />
-              </label>
+        <section className="mt-6">
+          <div className="flex flex-wrap gap-2 border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
+            {Object.entries(KIND_LABELS).map(([kind, label]) => (
               <button
-                type="submit"
-                disabled={busy}
-                className="w-full rounded-lg bg-[#3f3527] px-4 py-2 text-sm font-medium text-white hover:bg-[#221f19] disabled:cursor-not-allowed disabled:opacity-55 dark:bg-gray-200 dark:text-[#111]"
+                key={kind}
+                type="button"
+                onClick={() => setActiveKind(kind)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  activeKind === kind
+                    ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
+                    : 'border border-[#e8dfd0] text-[#6b5f4d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                }`}
               >
-                {busy ? '保存中...' : '加密保存'}
+                {label} · {counts[kind] || 0}
               </button>
-            </form>
-            {error ? <p className="mt-3 text-sm text-[#b42318] dark:text-red-400">{error}</p> : null}
-          </aside>
-        </div>
+            ))}
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {currentRecords.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-[#d8cdbb] px-4 py-6 text-sm text-[#847a67] dark:border-gray-700 dark:text-gray-400">
+                暂无记录。
+              </p>
+            ) : (
+              currentRecords.map((record) => (
+                <article
+                  key={record.id}
+                  className="rounded-lg border border-[#e8dfd0] bg-white/78 p-4 dark:border-gray-800 dark:bg-[#121821]/78"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="font-serif text-base font-semibold text-[#221f19] dark:text-gray-100">
+                        {record.plain?.title || '未命名记录'}
+                      </h2>
+                      {record.plain?.summary ? (
+                        <p className="mt-1 text-xs leading-5 text-[#847a67] dark:text-gray-400">
+                          {record.plain.summary}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span className="font-mono text-[10px] text-[#a09176] dark:text-[#8e9ab0]">
+                      {new Date(record.updatedAt).toLocaleDateString('zh-CN')}
+                    </span>
+                  </div>
+                  <div
+                    className="prose prose-sm mt-3 max-w-none rounded-lg bg-[#faf7f1] px-3 py-2.5 text-[#4d463c] dark:prose-invert dark:bg-[#0d1218] dark:text-gray-300 prose-headings:font-serif prose-headings:text-[#221f19] dark:prose-headings:text-gray-100 prose-p:leading-7 prose-li:leading-7 prose-table:text-xs prose-th:bg-[#f0e9d8] dark:prose-th:bg-[#1a222d] prose-blockquote:border-l-[#c5b89c] prose-blockquote:text-[#5d554a] dark:prose-blockquote:border-l-[#475061] dark:prose-blockquote:text-gray-400 prose-code:text-[#6b4f21] dark:prose-code:text-[#e0c38f]"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(record.plain?.content) }}
+                  />
+                </article>
+              ))
+            )}
+          </div>
+        </section>
       )}
     </main>
   )

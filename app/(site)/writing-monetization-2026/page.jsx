@@ -254,10 +254,16 @@ export default function WritingMonetizationDashboardPage() {
                 href={item.href}
                 target="_blank"
                 rel="noreferrer"
-                className="no-external-arrow inline-flex items-center rounded-xl border border-[#8a5a14]/45 bg-[#8a5a14] px-4 py-2.5 text-sm font-semibold text-[#fff8ec] no-underline shadow-[0_8px_20px_rgba(138,90,20,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#704710] hover:shadow-[0_12px_24px_rgba(138,90,20,0.30)] dark:border-[#e2bd75]/60 dark:bg-[#e2bd75] dark:text-[#2f210f] dark:hover:bg-[#f0cc87]"
+                className="no-external-arrow group inline-flex min-h-11 items-center gap-2 rounded-full border border-[#b8842f]/35 bg-white/90 px-4 py-2 text-sm font-semibold text-[#6f4611] no-underline shadow-[0_8px_18px_rgba(105,73,24,0.10)] transition-all visited:text-[#6f4611] hover:-translate-y-0.5 hover:border-[#9a681f]/55 hover:bg-white hover:text-[#4f320b] hover:no-underline hover:shadow-[0_12px_24px_rgba(105,73,24,0.16)] dark:border-[#e2bd75]/30 dark:bg-[#20170e]/80 dark:text-[#f6d28c] dark:visited:text-[#f6d28c] dark:hover:border-[#f1cf8c]/55 dark:hover:bg-[#281c10] dark:hover:text-[#ffe4a8]"
                 title={item.desc}
               >
-                {item.cta} ↗
+                <span>{item.cta}</span>
+                <span
+                  aria-hidden="true"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f1d99f] text-[13px] leading-none text-[#6f4611] transition-transform group-hover:-translate-y-px group-hover:translate-x-px dark:bg-[#3a2a15] dark:text-[#f7d894]"
+                >
+                  ↗
+                </span>
               </a>
             ))}
           </div>

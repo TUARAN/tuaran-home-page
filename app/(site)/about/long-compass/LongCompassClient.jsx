@@ -255,38 +255,19 @@ export default function LongCompassClient() {
             ))}
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4">
             {currentRecords.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#d8cdbb] px-4 py-6 text-sm text-[#847a67] dark:border-gray-700 dark:text-gray-400">
                 暂无记录。
               </p>
+            ) : activeKind === 'review' ? (
+              <Timeline records={currentRecords} />
             ) : (
-              currentRecords.map((record) => (
-                <article
-                  key={record.id}
-                  className="rounded-lg border border-[#e8dfd0] bg-white/78 p-4 dark:border-gray-800 dark:bg-[#121821]/78"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h2 className="font-serif text-base font-semibold text-[#221f19] dark:text-gray-100">
-                        {record.plain?.title || '未命名记录'}
-                      </h2>
-                      {record.plain?.summary ? (
-                        <p className="mt-1 text-xs leading-5 text-[#847a67] dark:text-gray-400">
-                          {record.plain.summary}
-                        </p>
-                      ) : null}
-                    </div>
-                    <span className="font-mono text-[10px] text-[#a09176] dark:text-[#8e9ab0]">
-                      {new Date(record.updatedAt).toLocaleDateString('zh-CN')}
-                    </span>
-                  </div>
-                  <div
-                    className="prose prose-sm mt-3 max-w-none rounded-lg bg-[#faf7f1] px-3 py-2.5 text-[#4d463c] dark:prose-invert dark:bg-[#0d1218] dark:text-gray-300 prose-headings:font-serif prose-headings:text-[#221f19] dark:prose-headings:text-gray-100 prose-p:leading-7 prose-li:leading-7 prose-table:text-xs prose-th:bg-[#f0e9d8] dark:prose-th:bg-[#1a222d] prose-blockquote:border-l-[#c5b89c] prose-blockquote:text-[#5d554a] dark:prose-blockquote:border-l-[#475061] dark:prose-blockquote:text-gray-400 prose-code:text-[#6b4f21] dark:prose-code:text-[#e0c38f]"
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(record.plain?.content) }}
-                  />
-                </article>
-              ))
+              <div className="space-y-3">
+                {currentRecords.map((record) => (
+                  <RecordCard key={record.id} record={record} />
+                ))}
+              </div>
             )}
           </div>
         </section>
@@ -303,6 +284,96 @@ export default function LongCompassClient() {
         oldestYear={stats.oldestYear}
       />
     </main>
+  )
+}
+
+function RecordCard({ record, dense = false }) {
+  return (
+    <article
+      className={`rounded-lg border border-[#e8dfd0] bg-white/78 ${dense ? 'p-3' : 'p-4'} dark:border-gray-800 dark:bg-[#121821]/78`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-base font-semibold text-[#221f19] dark:text-gray-100">
+            {record.plain?.title || '未命名记录'}
+          </h2>
+          {record.plain?.summary ? (
+            <p className="mt-1 text-xs leading-5 text-[#847a67] dark:text-gray-400">{record.plain.summary}</p>
+          ) : null}
+        </div>
+        <span className="font-mono text-[10px] text-[#a09176] dark:text-[#8e9ab0]">
+          {new Date(record.updatedAt).toLocaleDateString('zh-CN')}
+        </span>
+      </div>
+      <div
+        className="prose prose-sm mt-3 max-w-none rounded-lg bg-[#faf7f1] px-3 py-2.5 text-[#4d463c] dark:prose-invert dark:bg-[#0d1218] dark:text-gray-300 prose-headings:font-serif prose-headings:text-[#221f19] dark:prose-headings:text-gray-100 prose-p:leading-7 prose-li:leading-7 prose-table:text-xs prose-th:bg-[#f0e9d8] dark:prose-th:bg-[#1a222d] prose-blockquote:border-l-[#c5b89c] prose-blockquote:text-[#5d554a] dark:prose-blockquote:border-l-[#475061] dark:prose-blockquote:text-gray-400 prose-code:text-[#6b4f21] dark:prose-code:text-[#e0c38f]"
+        dangerouslySetInnerHTML={{ __html: renderMarkdown(record.plain?.content) }}
+      />
+    </article>
+  )
+}
+
+function getRecordYear(record) {
+  // 优先从 plain.updatedAt 取年份；fallback 到 row.updatedAt
+  const ts = record.plain?.updatedAt || record.updatedAt
+  if (!ts) return null
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return null
+  return d.getFullYear()
+}
+
+function Timeline({ records }) {
+  // 按年份升序（旧 → 新），未知年份归到「其他」
+  const sorted = [...records].sort((a, b) => {
+    const ya = getRecordYear(a) || 0
+    const yb = getRecordYear(b) || 0
+    if (ya !== yb) return ya - yb
+    return (a.plain?.updatedAt || 0) - (b.plain?.updatedAt || 0)
+  })
+
+  // 按年分组
+  const groups = []
+  let currentYear = null
+  for (const r of sorted) {
+    const y = getRecordYear(r)
+    if (y !== currentYear) {
+      groups.push({ year: y, items: [r] })
+      currentYear = y
+    } else {
+      groups[groups.length - 1].items.push(r)
+    }
+  }
+
+  return (
+    <div className="relative pl-12 sm:pl-16">
+      {/* 竖向时间线 */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-[#d8cdbb] via-[#c5b89c] to-[#d8cdbb] dark:from-[#2d3440] dark:via-[#475061] dark:to-[#2d3440] sm:left-5"
+      />
+      <div className="space-y-8">
+        {groups.map((group, gi) => (
+          <div key={`${group.year ?? 'unknown'}-${gi}`} className="relative">
+            {/* 年份标签 + 节点 */}
+            <div className="absolute -left-12 top-1 flex w-10 flex-col items-center sm:-left-16 sm:w-12">
+              <span className="rounded-full bg-[#3f3527] px-2 py-0.5 font-mono text-[10px] font-semibold text-white shadow-sm dark:bg-gray-200 dark:text-[#111]">
+                {group.year ?? '?'}
+              </span>
+            </div>
+            <span
+              aria-hidden="true"
+              className="absolute -left-[26px] top-[10px] h-2 w-2 rounded-full bg-[#8b5a1f] ring-2 ring-[#faf7f1] dark:bg-[#e0b572] dark:ring-[#121821] sm:-left-[34px]"
+            />
+
+            <div className="space-y-3">
+              {group.items.map((record) => (
+                <RecordCard key={record.id} record={record} dense />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 

@@ -27,6 +27,10 @@ function getTagToneClass(tag) {
     // Misty pink — low saturation, not vivid red.
     return 'bg-[#f8eceb] text-[#a67a76] dark:bg-[#342628] dark:text-[#d9b4b0]'
   }
+  if (normalized === 'lock' || normalized === '登录' || normalized === 'private') {
+    // Cool slate — indicates auth-gated content.
+    return 'bg-[#e9ecf2] text-[#5d6878] dark:bg-[#1f262f] dark:text-[#9aa6b6]'
+  }
   return 'bg-[#fde6c6] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]'
 }
 

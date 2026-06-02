@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -190,6 +192,28 @@ export default function AboutPage() {
           </p>
         </section>
       </div>
+
+      <section className="mt-4 rounded-xl border border-[#e8dfd0] bg-white/68 p-3 dark:border-[#2d3440] dark:bg-[#121821]/68 sm:rounded-2xl sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+              Private
+            </p>
+            <h2 className="mt-1 font-serif text-[15px] font-semibold text-[#221f19] dark:text-gray-100">
+              长期罗盘
+            </h2>
+            <p className="mt-1 text-[12px] leading-5 text-[#847a67] dark:text-gray-400">
+              私人资产、行动框架与阶段复盘入口。
+            </p>
+          </div>
+          <Link
+            href="/about/long-compass"
+            className="inline-flex rounded-lg bg-[#3f3527] px-3 py-1.5 text-xs font-medium text-white no-underline transition hover:bg-[#221f19] dark:bg-gray-200 dark:text-[#111] dark:hover:bg-white"
+          >
+            进入
+          </Link>
+        </div>
+      </section>
 
       <section className="mt-4 rounded-xl bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(252,248,240,0.82))] p-3 dark:bg-[linear-gradient(180deg,rgba(18,24,33,0.86),rgba(15,21,30,0.86))] sm:rounded-2xl sm:p-4">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2 pb-1">

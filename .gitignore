@@ -116,6 +116,7 @@ temp/
 # Local sqlite data
 data/
 *.sqlite
+.wrangler/
 
 # Claude Code 本地状态（settings + session 自建的 worktrees）
 # 但 .claude/commands/ 入库，让 slash commands 跟仓库走

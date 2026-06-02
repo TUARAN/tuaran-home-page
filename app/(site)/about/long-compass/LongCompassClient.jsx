@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const PBKDF2_ITERATIONS = 310000
 
@@ -9,6 +9,8 @@ const KIND_LABELS = {
   strategy: '行动框架',
   review: '阶段复盘',
 }
+
+const VALID_KINDS = new Set(Object.keys(KIND_LABELS))
 
 const EMPTY_FORM = {
   title: '',
@@ -102,6 +104,8 @@ export default function LongCompassClient() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [importProgress, setImportProgress] = useState(null)
+  const importInputRef = useRef(null)
 
   const unlocked = !!unlockedPassword
 
@@ -236,6 +240,93 @@ export default function LongCompassClient() {
     }
   }
 
+  async function handleImportFile(e) {
+    const file = e.target.files?.[0]
+    if (importInputRef.current) importInputRef.current.value = ''
+    if (!file || !unlocked || busy) return
+
+    setBusy(true)
+    setError('')
+
+    let parsed
+    try {
+      parsed = JSON.parse(await file.text())
+    } catch {
+      setError('种子文件不是合法 JSON。')
+      setBusy(false)
+      return
+    }
+    if (!Array.isArray(parsed)) {
+      setError('种子文件应为数组：[{ kind, title, summary, content }]。')
+      setBusy(false)
+      return
+    }
+
+    const valid = parsed.filter(
+      (r) =>
+        r &&
+        VALID_KINDS.has(r.kind) &&
+        typeof r.title === 'string' &&
+        r.title.trim() &&
+        typeof r.content === 'string' &&
+        r.content.trim()
+    )
+    if (valid.length === 0) {
+      setError('没有可导入的条目（kind/title/content 校验未通过）。')
+      setBusy(false)
+      return
+    }
+
+    setImportProgress({ done: 0, total: valid.length, skipped: 0, failed: 0 })
+    const newEncrypted = []
+    const newRecords = []
+    let done = 0
+    let skipped = 0
+    let failed = 0
+
+    for (const seed of valid) {
+      const plain = {
+        title: seed.title.trim(),
+        summary: (seed.summary || '').trim(),
+        content: seed.content.trim(),
+        updatedAt: seed.updatedAt || Date.now(),
+      }
+      try {
+        const payload = await encryptRecord(plain, unlockedPassword)
+        const serialized = JSON.stringify(payload)
+        if (serialized.length > 120000) {
+          skipped += 1
+          done += 1
+          setImportProgress({ done, total: valid.length, skipped, failed })
+          continue
+        }
+        const res = await fetch('/api/private-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: seed.kind, payload }),
+        })
+        const data = await safeJson(res)
+        if (!res.ok || !data?.item) {
+          failed += 1
+        } else {
+          newEncrypted.push(data.item)
+          newRecords.push({ ...data.item, plain })
+        }
+      } catch {
+        failed += 1
+      }
+      done += 1
+      setImportProgress({ done, total: valid.length, skipped, failed })
+    }
+
+    setEncryptedItems((prev) => [...newEncrypted, ...prev])
+    setRecords((prev) => [...newRecords, ...prev])
+    setBusy(false)
+    if (failed > 0) {
+      setError(`已导入 ${newRecords.length} 条，失败 ${failed} 条，跳过 ${skipped} 条（超长）。`)
+    }
+  }
+
   async function handleDelete(id) {
     if (!id || busy) return
     setBusy(true)
@@ -331,21 +422,48 @@ export default function LongCompassClient() {
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
           <section>
-            <div className="flex flex-wrap gap-2 border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
-              {Object.entries(KIND_LABELS).map(([kind, label]) => (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(KIND_LABELS).map(([kind, label]) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    onClick={() => resetForm(kind)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                      activeKind === kind
+                        ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
+                        : 'border border-[#e8dfd0] text-[#6b5f4d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                    }`}
+                  >
+                    {label} · {counts[kind] || 0}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                {importProgress ? (
+                  <span className="font-mono text-[10px] text-[#a09176] dark:text-[#8e9ab0]">
+                    导入 {importProgress.done}/{importProgress.total}
+                    {importProgress.failed ? ` · 失败 ${importProgress.failed}` : ''}
+                    {importProgress.skipped ? ` · 跳过 ${importProgress.skipped}` : ''}
+                  </span>
+                ) : null}
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={handleImportFile}
+                  className="hidden"
+                />
                 <button
-                  key={kind}
                   type="button"
-                  onClick={() => resetForm(kind)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                    activeKind === kind
-                      ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                      : 'border border-[#e8dfd0] text-[#6b5f4d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
-                  }`}
+                  onClick={() => importInputRef.current?.click()}
+                  disabled={busy}
+                  className="rounded-lg border border-dashed border-[#d8cdbb] px-3 py-1.5 text-xs text-[#6b5f4d] hover:bg-white disabled:cursor-not-allowed disabled:opacity-55 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-[#121821]"
+                  title="选择本地 JSON 种子文件，浏览器内加密后逐条写入"
                 >
-                  {label} · {counts[kind] || 0}
+                  导入种子
                 </button>
-              ))}
+              </div>
             </div>
 
             <div className="mt-4 space-y-3">

@@ -45,8 +45,8 @@ export default function StatusPanel({
 
         <SectionBlock title="当前数据">
           <li>· 版本：<strong>v3 · Opus 4.7 High · 2026-06-02</strong></li>
-          <li>· 来源：DV Notion 导出（2018–2026）→ 由 Opus 4.7 High 提炼重写</li>
-          <li>· 策略：26 条精写章节（不再 1:1 复原原文，每条带版本签名）</li>
+          <li>· 来源：DV Notion 导出（2018–2026）→ Opus 4.7 High 重写为 26 条章节</li>
+          <li>· 本地形态：<code className="font-mono text-[12px]">private/seeds/{'{kind}/{id}.md'}</code>（每条一个 markdown 文件 + YAML frontmatter）</li>
           <li>
             · 当前 D1：<strong>{total}</strong> 条 · snapshot {counts.snapshot} / strategy {counts.strategy} / review {counts.review}
           </li>
@@ -59,20 +59,17 @@ export default function StatusPanel({
           {oldestYear ? <li>· 时间跨度：{oldestYear} – 至今</li> : null}
         </SectionBlock>
 
-        <SectionBlock title="写路径状态">
-          <li>
-            · UI 端：✗ 已下线（
-            <CommitLink hash="5235582" />
-            ）
-          </li>
-          <li>
-            · API 端：POST/PATCH/DELETE 一律 405（
-            <CommitLink hash="9f30a41" />
-            ）
-          </li>
-          <li>· 唯一写入通道：本地 wrangler d1 + 自带加密脚本（口令绝不入库）</li>
+        <SectionBlock title="编辑与写入流程">
+          <li>① 改 <code className="font-mono text-[12px]">private/seeds/{'{kind}'}/xxx.md</code> 正文（frontmatter 一般不动）</li>
+          <li>② <code className="font-mono text-[12px]">node private/build-seed.mjs</code> → 装配回 seed.json</li>
+          <li>③ <code className="font-mono text-[12px]">node private/seed-to-d1.mjs --reset</code> → stdin 输口令 → 加密 → wrangler 写 D1</li>
+          <li className="opacity-70">⚠ 当前为「全量重加密」：改 1 条也会重导全部 26 条（密文一次性置换）</li>
           <li>· 模块化：加密 / schema / API 归 <code className="font-mono text-[12px]">lib/longCompass</code></li>
-          <li>· 风险面：仅余 GET / 解密；服务器即便被攻破也只能拿到密文</li>
+          <li>
+            · 写路径：UI ✗{' '}
+            <CommitLink hash="5235582" /> · API POST/PATCH/DELETE → 405{' '}
+            <CommitLink hash="9f30a41" />
+          </li>
         </SectionBlock>
       </div>
 

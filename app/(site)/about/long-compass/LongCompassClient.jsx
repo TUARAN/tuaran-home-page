@@ -6,6 +6,7 @@ import { decryptPayload, fetchEncryptedRecords, KIND_LABELS, migrate } from '../
 
 import RecordCard from './components/RecordCard'
 import StatusPanel from './components/StatusPanel'
+import ThemeFilter from './components/ThemeFilter'
 import Timeline from './components/Timeline'
 import UnlockForm from './components/UnlockForm'
 
@@ -24,6 +25,22 @@ export default function LongCompassClient() {
   const [activeKind, setActiveKind] = useState('snapshot')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [selectedThemes, setSelectedThemes] = useState(() => new Set())
+
+  // 切换 kind 时清空 theme 选择（避免「财务×snapshot 没记录」的尴尬）
+  function handleKindChange(kind) {
+    setActiveKind(kind)
+    setSelectedThemes(new Set())
+  }
+
+  function toggleTheme(theme) {
+    setSelectedThemes((prev) => {
+      const next = new Set(prev)
+      if (next.has(theme)) next.delete(theme)
+      else next.add(theme)
+      return next
+    })
+  }
 
   // ---- 拉密文记录 ----
   useEffect(() => {
@@ -67,11 +84,31 @@ export default function LongCompassClient() {
   }
 
   // ---- 派生数据 ----
-  const currentRecords = useMemo(
-    () =>
-      records.filter((item) => item.kind === activeKind).sort((a, b) => b.updatedAt - a.updatedAt),
+  // 当前 kind 下的所有记录（未按 theme 过滤），用来算 theme 计数
+  const kindRecords = useMemo(
+    () => records.filter((item) => item.kind === activeKind).sort((a, b) => b.updatedAt - a.updatedAt),
     [activeKind, records]
   )
+
+  // 当前 kind + theme 过滤后剩下的记录
+  const currentRecords = useMemo(() => {
+    if (selectedThemes.size === 0) return kindRecords
+    return kindRecords.filter((r) => {
+      const t = r.plain?.theme || []
+      // 交集：必须包含所有被选中的 theme（AND 语义）
+      for (const sel of selectedThemes) if (!t.includes(sel)) return false
+      return true
+    })
+  }, [kindRecords, selectedThemes])
+
+  // 当前 kind 下每个 theme 的记录数（用于 chip 上的 badge）
+  const themeCounts = useMemo(() => {
+    const acc = {}
+    for (const r of kindRecords) {
+      for (const t of r.plain?.theme || []) acc[t] = (acc[t] || 0) + 1
+    }
+    return acc
+  }, [kindRecords])
 
   const counts = useMemo(
     () =>
@@ -160,27 +197,35 @@ export default function LongCompassClient() {
         />
       ) : (
         <section className="mt-6">
-          <div className="flex flex-wrap gap-2 border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
-            {Object.entries(KIND_LABELS).map(([kind, label]) => (
-              <button
-                key={kind}
-                type="button"
-                onClick={() => setActiveKind(kind)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  activeKind === kind
-                    ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                    : 'border border-[#e8dfd0] text-[#6b5f4d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
-                }`}
-              >
-                {label} · {counts[kind] || 0}
-              </button>
-            ))}
+          <div className="border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(KIND_LABELS).map(([kind, label]) => (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() => handleKindChange(kind)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    activeKind === kind
+                      ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
+                      : 'border border-[#e8dfd0] text-[#6b5f4d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                  }`}
+                >
+                  {label} · {counts[kind] || 0}
+                </button>
+              ))}
+            </div>
+            <ThemeFilter
+              selectedThemes={selectedThemes}
+              onToggle={toggleTheme}
+              onClear={() => setSelectedThemes(new Set())}
+              counts={themeCounts}
+            />
           </div>
 
           <div className="mt-4">
             {currentRecords.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#d8cdbb] px-4 py-6 text-sm text-[#847a67] dark:border-gray-700 dark:text-gray-400">
-                暂无记录。
+                {selectedThemes.size > 0 ? '当前主题筛选下没有记录。' : '暂无记录。'}
               </p>
             ) : activeKind === 'review' ? (
               <Timeline records={currentRecords} />

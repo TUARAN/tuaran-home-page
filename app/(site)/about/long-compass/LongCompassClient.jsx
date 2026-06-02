@@ -1,8 +1,20 @@
 'use client'
 
+import { Marked } from 'marked'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 const PBKDF2_ITERATIONS = 310000
+
+const markdown = new Marked({ gfm: true, breaks: true })
+
+function renderMarkdown(text) {
+  if (!text) return ''
+  try {
+    return markdown.parse(text)
+  } catch {
+    return ''
+  }
+}
 
 const KIND_LABELS = {
   snapshot: '资产现状',
@@ -492,9 +504,10 @@ export default function LongCompassClient() {
                         {new Date(record.updatedAt).toLocaleDateString('zh-CN')}
                       </span>
                     </div>
-                    <pre className="mt-3 whitespace-pre-wrap break-words rounded-lg bg-[#faf7f1] p-3 text-xs leading-6 text-[#4d463c] dark:bg-[#0d1218] dark:text-gray-300">
-                      {record.plain?.content}
-                    </pre>
+                    <div
+                      className="prose prose-sm mt-3 max-w-none rounded-lg bg-[#faf7f1] px-3 py-2.5 text-[#4d463c] dark:prose-invert dark:bg-[#0d1218] dark:text-gray-300 prose-headings:font-serif prose-headings:text-[#221f19] dark:prose-headings:text-gray-100 prose-p:leading-7 prose-li:leading-7 prose-table:text-xs prose-th:bg-[#f0e9d8] dark:prose-th:bg-[#1a222d] prose-blockquote:border-l-[#c5b89c] prose-blockquote:text-[#5d554a] dark:prose-blockquote:border-l-[#475061] dark:prose-blockquote:text-gray-400 prose-code:text-[#6b4f21] dark:prose-code:text-[#e0c38f]"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(record.plain?.content) }}
+                    />
                     <div className="mt-3 flex gap-3 text-xs">
                       <button
                         type="button"

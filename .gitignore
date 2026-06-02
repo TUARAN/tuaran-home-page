@@ -118,6 +118,9 @@ data/
 *.sqlite
 .wrangler/
 
+# 本地明文种子（长期罗盘导入用，永远不入库）
+private/
+
 # Claude Code 本地状态（settings + session 自建的 worktrees）
 # 但 .claude/commands/ 入库，让 slash commands 跟仓库走
 .claude/*

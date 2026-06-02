@@ -121,6 +121,25 @@ export default function LongCompassClient() {
     )
   }, [records])
 
+  const stats = useMemo(() => {
+    const cipherSizes = encryptedItems.map((it) => JSON.stringify(it.payload).length)
+    const totalCipher = cipherSizes.reduce((a, b) => a + b, 0)
+    const maxCipher = cipherSizes.length ? Math.max(...cipherSizes) : 0
+    const totalPlain = records.reduce((acc, r) => acc + (r.plain?.content?.length || 0), 0)
+    const maxPlain = records.length
+      ? Math.max(...records.map((r) => r.plain?.content?.length || 0))
+      : 0
+    const oldest = records.reduce((min, r) => Math.min(min, r.plain?.updatedAt || Infinity), Infinity)
+    return {
+      total: encryptedItems.length,
+      totalCipherKB: (totalCipher / 1024).toFixed(1),
+      maxCipherKB: (maxCipher / 1024).toFixed(1),
+      totalPlainKChars: (totalPlain / 1000).toFixed(1),
+      maxPlainKChars: (maxPlain / 1000).toFixed(1),
+      oldestYear: Number.isFinite(oldest) ? new Date(oldest).getFullYear() : null,
+    }
+  }, [encryptedItems, records])
+
   async function handleUnlock(e) {
     e.preventDefault()
     const value = password.trim()
@@ -272,6 +291,132 @@ export default function LongCompassClient() {
           </div>
         </section>
       )}
+
+      <StatusPanel
+        unlocked={unlocked}
+        total={stats.total}
+        counts={counts}
+        totalCipherKB={stats.totalCipherKB}
+        maxCipherKB={stats.maxCipherKB}
+        totalPlainKChars={stats.totalPlainKChars}
+        maxPlainKChars={stats.maxPlainKChars}
+        oldestYear={stats.oldestYear}
+      />
     </main>
+  )
+}
+
+function StatusPanel({
+  unlocked,
+  total,
+  counts,
+  totalCipherKB,
+  maxCipherKB,
+  totalPlainKChars,
+  maxPlainKChars,
+  oldestYear,
+}) {
+  return (
+    <details className="mt-10 rounded-lg border border-[#e8dfd0] bg-white/70 px-4 py-3 text-sm dark:border-gray-800 dark:bg-[#121821]/70">
+      <summary className="cursor-pointer select-none font-serif text-base font-semibold text-[#221f19] dark:text-gray-100">
+        现状梳理 · 架构与数据
+        <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+          read-only · e2ee
+        </span>
+      </summary>
+
+      <div className="mt-4 grid gap-5 md:grid-cols-2">
+        <div>
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+            加密机制
+          </h3>
+          <ul className="mt-2 space-y-1.5 text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
+            <li>· 算法：<code className="font-mono text-[12px]">AES-256-GCM</code></li>
+            <li>· 派生：<code className="font-mono text-[12px]">PBKDF2-SHA256 / 310,000 轮</code></li>
+            <li>· 每条独立 salt（16 字节）+ iv（12 字节），密码学随机</li>
+            <li>
+              · payload 形状：
+              <code className="font-mono text-[12px]">{'{ v, alg, kdf, iter, salt, iv, data }'}</code>
+              （全 base64）
+            </li>
+            <li>· 口令仅存在于浏览器 React state，刷新即丢，从不上行</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+            解锁与渲染流程
+          </h3>
+          <ol className="mt-2 space-y-1.5 text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
+            <li>1. GitHub OAuth 登录，命中 D1 上 user_id 过滤</li>
+            <li>
+              2. <code className="font-mono text-[12px]">GET /api/private-records</code>
+              拉回密文数组（服务端只见 ciphertext）
+            </li>
+            <li>3. 输入口令 → 浏览器 PBKDF2 派生 key</li>
+            <li>4. 每条独立用自带的 salt/iv 解密 → 内存 plain 对象</li>
+            <li>5. marked 渲染 markdown，注入 prose 卡片</li>
+          </ol>
+        </div>
+
+        <div>
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+            当前数据
+          </h3>
+          <ul className="mt-2 space-y-1.5 text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
+            <li>· 来源：DV Notion 导出（2018 至今的个人长期记录）</li>
+            <li>· 切片策略：按年合并 + 专题独立成条</li>
+            <li>
+              · 记录总数：<strong>{total}</strong> 条（snapshot {counts.snapshot} · strategy {counts.strategy} · review {counts.review}）
+            </li>
+            <li>· 密文总体积：约 {totalCipherKB} KB；单条最大 {maxCipherKB} KB（限 ~117 KB）</li>
+            {unlocked ? (
+              <li>· 明文体量：约 {totalPlainKChars} 千字，单条最长 {maxPlainKChars} 千字</li>
+            ) : (
+              <li className="opacity-60">· 明文体量：解锁后显示</li>
+            )}
+            {oldestYear ? <li>· 时间跨度：{oldestYear} – 至今</li> : null}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+            写路径状态
+          </h3>
+          <ul className="mt-2 space-y-1.5 text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
+            <li>
+              · UI 端：✗ 已下线（
+              <a
+                href="https://github.com/TUARAN/tuaran-home-page/commit/5235582"
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-[12px] text-[#6b4f21] hover:underline dark:text-[#e0c38f]"
+              >
+                5235582
+              </a>
+              ）
+            </li>
+            <li>
+              · API 端：POST/PATCH/DELETE 一律 405（
+              <a
+                href="https://github.com/TUARAN/tuaran-home-page/commit/9f30a41"
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-[12px] text-[#6b4f21] hover:underline dark:text-[#e0c38f]"
+              >
+                9f30a41
+              </a>
+              ）
+            </li>
+            <li>· 唯一写入通道：本地 wrangler d1 + 自带加密脚本（口令绝不入库）</li>
+            <li>· 风险面：仅余 GET / 解密；服务器即便被攻破也只能拿到密文</li>
+          </ul>
+        </div>
+      </div>
+
+      <p className="mt-5 border-t border-dashed border-[#e8dfd0] pt-3 text-[11px] leading-5 text-[#847a67] dark:border-gray-700 dark:text-gray-400">
+        本页面只对登录后的 owner 账号开放。即使 GitHub OAuth 被劫持，攻击者拉到的也只是密文 + 不带口令的 schema —— 没有口令派生密钥就解不开。
+      </p>
+    </details>
   )
 }

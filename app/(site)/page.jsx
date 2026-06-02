@@ -93,11 +93,11 @@ export default function HomePage() {
     <div className="max-w-[1120px] w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
       <section className="flex-1 mb-14">
         <header className="relative mb-8 overflow-hidden rounded-[28px] border border-[#e6dfd2] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,245,240,0.92))] px-5 py-4 shadow-[0_16px_48px_rgba(91,78,53,0.06)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-7 md:py-5">
-          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] bg-[radial-gradient(circle_at_72%_50%,rgba(183,121,31,0.11),transparent_31%),linear-gradient(90deg,transparent,rgba(244,238,226,0.54))] dark:bg-[radial-gradient(circle_at_72%_50%,rgba(240,199,118,0.1),transparent_31%),linear-gradient(90deg,transparent,rgba(18,24,33,0.58))] lg:block" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] bg-[radial-gradient(circle_at_72%_50%,rgba(183,121,31,0.18),transparent_36%),linear-gradient(90deg,transparent,rgba(244,238,226,0.72))] dark:bg-[radial-gradient(circle_at_72%_50%,rgba(240,199,118,0.14),transparent_36%),linear-gradient(90deg,transparent,rgba(18,24,33,0.72))] lg:block" />
           <div className="absolute right-5 top-5 z-10">
             <CopyIntroButton text={SITE_INTRO_COPY} />
           </div>
-          <div className="pointer-events-none absolute right-12 top-1/2 hidden -translate-y-1/2 font-mono text-[3.25rem] font-semibold uppercase leading-none tracking-[0.14em] text-[#7c5d34]/[0.055] dark:text-white/[0.05] lg:block xl:right-16">
+          <div className="pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[3.9rem] font-semibold uppercase leading-none tracking-[0.16em] text-[#7c5d34]/[0.13] dark:text-white/[0.1] lg:block xl:right-14">
             2ARAN.COM
           </div>
           <div className="relative max-w-[760px] space-y-4">

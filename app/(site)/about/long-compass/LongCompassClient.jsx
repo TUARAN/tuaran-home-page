@@ -25,21 +25,17 @@ export default function LongCompassClient() {
   const [activeKind, setActiveKind] = useState('snapshot')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [selectedThemes, setSelectedThemes] = useState(() => new Set())
+  // 主题筛选改为单选互斥（null = 全部）：选另一个会自动取消旧的，
+  // 再点同一个取消选择回到「全部」。多选 AND 太严，常常归零。
+  const [selectedTheme, setSelectedTheme] = useState(null)
 
-  // 切换 kind 时清空 theme 选择（避免「财务×snapshot 没记录」的尴尬）
   function handleKindChange(kind) {
     setActiveKind(kind)
-    setSelectedThemes(new Set())
+    setSelectedTheme(null)
   }
 
-  function toggleTheme(theme) {
-    setSelectedThemes((prev) => {
-      const next = new Set(prev)
-      if (next.has(theme)) next.delete(theme)
-      else next.add(theme)
-      return next
-    })
+  function selectTheme(theme) {
+    setSelectedTheme((prev) => (prev === theme ? null : theme))
   }
 
   // ---- 拉密文记录 ----
@@ -90,16 +86,11 @@ export default function LongCompassClient() {
     [activeKind, records]
   )
 
-  // 当前 kind + theme 过滤后剩下的记录
+  // 当前 kind + theme 过滤后剩下的记录（theme 单选）
   const currentRecords = useMemo(() => {
-    if (selectedThemes.size === 0) return kindRecords
-    return kindRecords.filter((r) => {
-      const t = r.plain?.theme || []
-      // 交集：必须包含所有被选中的 theme（AND 语义）
-      for (const sel of selectedThemes) if (!t.includes(sel)) return false
-      return true
-    })
-  }, [kindRecords, selectedThemes])
+    if (!selectedTheme) return kindRecords
+    return kindRecords.filter((r) => (r.plain?.theme || []).includes(selectedTheme))
+  }, [kindRecords, selectedTheme])
 
   // 当前 kind 下每个 theme 的记录数（用于 chip 上的 badge）
   const themeCounts = useMemo(() => {
@@ -215,9 +206,9 @@ export default function LongCompassClient() {
               ))}
             </div>
             <ThemeFilter
-              selectedThemes={selectedThemes}
-              onToggle={toggleTheme}
-              onClear={() => setSelectedThemes(new Set())}
+              selectedTheme={selectedTheme}
+              onSelect={selectTheme}
+              onClear={() => setSelectedTheme(null)}
               counts={themeCounts}
             />
           </div>
@@ -225,7 +216,7 @@ export default function LongCompassClient() {
           <div className="mt-4">
             {currentRecords.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#d8cdbb] px-4 py-6 text-sm text-[#847a67] dark:border-gray-700 dark:text-gray-400">
-                {selectedThemes.size > 0 ? '当前主题筛选下没有记录。' : '暂无记录。'}
+                {selectedTheme ? `「${selectedTheme}」主题下暂无记录。` : '暂无记录。'}
               </p>
             ) : activeKind === 'review' ? (
               <Timeline records={currentRecords} />

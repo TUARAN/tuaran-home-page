@@ -32,24 +32,23 @@ export default function Timeline({ records }) {
   }
 
   return (
-    <div className="relative pl-12 sm:pl-16">
+    <div className="relative pl-16 sm:pl-20">
+      {/* 竖向时间线 */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-3 bottom-2 top-2 w-px bg-gradient-to-b from-[#d8cdbb] via-[#c5b89c] to-[#d8cdbb] dark:from-[#2d3440] dark:via-[#475061] dark:to-[#2d3440] sm:left-5"
+        className="pointer-events-none absolute bottom-2 left-5 top-2 w-px bg-gradient-to-b from-[#d8cdbb] via-[#c5b89c] to-[#d8cdbb] dark:from-[#2d3440] dark:via-[#475061] dark:to-[#2d3440] sm:left-7"
       />
       <div className="space-y-8">
         {groups.map((group, gi) => (
           <div key={`${group.year ?? 'unknown'}-${gi}`} className="relative">
-            <div className="absolute -left-12 top-1 flex w-10 flex-col items-center sm:-left-16 sm:w-12">
-              <span className="rounded-full bg-[#3f3527] px-2 py-0.5 font-mono text-[10px] font-semibold text-white shadow-sm dark:bg-gray-200 dark:text-[#111]">
-                {group.year ?? '?'}
-              </span>
-            </div>
+            {/* 年份 chip 直接当节点用：居中在 thread 上，外圈 ring 与页面 bg 同色，
+                造出"线穿珠子"的视觉效果。不再单独画一个 dot 防止位置重叠。 */}
             <span
-              aria-hidden="true"
-              className="absolute -left-[26px] top-[10px] h-2 w-2 rounded-full bg-[#8b5a1f] ring-2 ring-[#faf7f1] dark:bg-[#e0b572] dark:ring-[#121821] sm:-left-[34px]"
-            />
-            <div className="space-y-3">
+              className="absolute -top-1 left-5 z-10 -translate-x-1/2 rounded-full bg-[#3f3527] px-2 py-0.5 font-mono text-[10px] font-semibold text-white shadow-sm ring-4 ring-[#faf7f1] dark:bg-gray-200 dark:text-[#111] dark:ring-[#121821] sm:left-7"
+            >
+              {group.year ?? '?'}
+            </span>
+            <div className="space-y-3 pt-2">
               {group.items.map((record) => (
                 <RecordCard key={record.id} record={record} dense />
               ))}

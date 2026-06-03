@@ -207,6 +207,10 @@ export default function HomePage() {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_300px]">
           <main className="min-w-0 space-y-6">
+            <div className="rounded-2xl border border-[#e8e2d6] bg-[#fcfbf7] px-4 py-3 text-[13px] leading-6 text-[#756b5a] shadow-[0_10px_30px_rgba(82,69,45,0.04)] dark:border-[#252d36] dark:bg-[#0f141b] dark:text-[#8e98a8]">
+              内容按「<strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">80 / 15 / 5</strong>」分层：
+              80% 资料层，15% 调研层，5% 作品层。
+            </div>
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
               <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
@@ -299,10 +303,6 @@ export default function HomePage() {
                   </span>
                 ) : null}
               </div>
-              <p className="mb-2 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                我把内容按「<strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">80 / 15 / 5</strong>」分层：
-                5% 是作品层，15% 是调研层，80% 是资料层。
-              </p>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
                 专题调研 / 公司调研 / 事项调研。这里属于 <strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">15% 调研层</strong>——AI 协助采集、按模板生成，commodity 性质。
                 它解决快速理解，不冒充原创判断；更基础的原文和谱系沉到下方资料库。

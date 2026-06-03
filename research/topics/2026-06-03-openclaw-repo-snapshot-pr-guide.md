@@ -1,7 +1,7 @@
 ---
 title: OpenClaw 仓库现状快照（2025-11 → 2026-06）与外部贡献者提 PR 经验
 category: topics
-topic_type: product
+topic_type: tech
 date: 2026-06-03
 tags: [OpenClaw, AI Agent, 开源贡献, MCP, 多渠道 Gateway, ClawSweeper]
 summary: 把 OpenClaw 从 warelay 原型到 2026.6.2 的演化拆成七个月度主节点，附一份"外部贡献者怎么稳过一单 PR"的实操清单。

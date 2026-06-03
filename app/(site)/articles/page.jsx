@@ -33,10 +33,10 @@ export default function ArticlesPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
-              作品 & 调研 & 资料
+              原创 & 调研 & 资料
             </h1>
             <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#6e6452] dark:text-[#9aa5b6]">
-              5% 作品层：精选文章 / 工程作品；15% 调研层：专题 / 公司 / 事项；80% 资料层：站内资料 + 资源收藏。
+              5% 原创：精选文章 / 工程作品；15% 调研：专题 / 公司 / 事项；80% 资料：站内资料 + 资源收藏。
             </p>
           </div>
         </div>

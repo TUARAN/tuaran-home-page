@@ -80,6 +80,25 @@ function MenuItem({ item, onNavigate }) {
   )
 }
 
+const TIER_SECTION_STYLES = {
+  '原创 · 5%': {
+    wrap: 'bg-[#fbf2dc]/50 dark:bg-[#2a2113]/40',
+    title: 'text-[#8a6b2e] dark:text-[#d6b87a]',
+  },
+  '调研 · 15%': {
+    wrap: 'bg-[#e6ecf2]/55 dark:bg-[#15202c]/50',
+    title: 'text-[#4d6a85] dark:text-[#8fb0ce]',
+  },
+  '资料 · 80%': {
+    wrap: 'bg-[#eef0e4]/55 dark:bg-[#1a1f17]/50',
+    title: 'text-[#5f6b3b] dark:text-[#b0bd84]',
+  },
+}
+
+function getTierStyle(title) {
+  return TIER_SECTION_STYLES[title] || { wrap: '', title: 'text-[#9c8f79] dark:text-[#93a0b3]' }
+}
+
 function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerRef, align = 'center' }) {
   const closeTimerRef = useRef(null)
   const sections = getChannelNavSections(channel)
@@ -148,18 +167,24 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
           className={`absolute top-full z-[120] w-[min(calc(100vw-1rem),440px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${positionClass}`}
         >
           <div className="rounded-2xl border border-[#e6dfd0] bg-[#fdfaf3] p-3 shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
-            {sections.map((section) => (
-              <div key={section.title} className="mb-2 last:mb-0">
-                <p className="mb-1 px-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#93a0b3]">
-                  {section.title}
-                </p>
-                <div className="grid grid-cols-2 gap-1">
-                  {section.items.map((item) => (
-                    <MenuItem key={item.href + item.label} item={item} onNavigate={onClose} />
-                  ))}
+            {sections.map((section) => {
+              const tier = getTierStyle(section.title)
+              return (
+                <div
+                  key={section.title}
+                  className={`mb-2 rounded-xl px-2 pb-1.5 pt-2 last:mb-0 ${tier.wrap}`}
+                >
+                  <p className={`mb-1 px-2 font-mono text-[10px] uppercase tracking-[0.18em] ${tier.title}`}>
+                    {section.title}
+                  </p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {section.items.map((item) => (
+                      <MenuItem key={item.href + item.label} item={item} onNavigate={onClose} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       ) : null}
@@ -310,22 +335,25 @@ export default function SiteHeader() {
                 </button>
                 {expanded ? (
                   <div className="space-y-2 border-t border-[#ece3d1] px-2 pb-3 pt-2 dark:border-[#2a3340]">
-                    {sections.map((section) => (
-                      <div key={section.title}>
-                        <p className="mb-1 px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9e8f75] dark:text-[#8e9ab0]">
-                          {section.title}
-                        </p>
-                        <div className="flex flex-col">
-                          {section.items.map((item) => (
-                            <MenuItem
-                              key={item.href + item.label}
-                              item={item}
-                              onNavigate={() => setMobileMenuOpen(false)}
-                            />
-                          ))}
+                    {sections.map((section) => {
+                      const tier = getTierStyle(section.title)
+                      return (
+                        <div key={section.title} className={`rounded-xl px-2 pb-1 pt-2 ${tier.wrap}`}>
+                          <p className={`mb-1 px-1 font-mono text-[10px] uppercase tracking-[0.18em] ${tier.title}`}>
+                            {section.title}
+                          </p>
+                          <div className="flex flex-col">
+                            {section.items.map((item) => (
+                              <MenuItem
+                                key={item.href + item.label}
+                                item={item}
+                                onNavigate={() => setMobileMenuOpen(false)}
+                              />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : null}
               </div>

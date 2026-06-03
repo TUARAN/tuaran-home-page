@@ -697,7 +697,7 @@ export default function ClassicalMasterpiecesClient() {
                 文章与调研
               </Link>
               <span>/</span>
-              <span>古典文学专题</span>
+              <span>古典文学资料库</span>
             </div>
             <p className="mb-3 font-mono text-xs uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#f0c776]">
               Classical Chinese Masterpieces
@@ -732,7 +732,7 @@ export default function ClassicalMasterpiecesClient() {
               </div>
               <SharePageButton
                 title="单篇封神的中国古典名篇"
-                text="辞赋、诗歌、政论奏疏、古文散文、祭文书信杂文体的古典文学专题。"
+                text="辞赋、诗歌、政论奏疏、古文散文、祭文书信杂文体的古典文学资料库。"
                 url="/classical-masterpieces"
               />
             </div>

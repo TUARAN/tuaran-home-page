@@ -145,14 +145,11 @@ export default function KnowledgeHeatmapClient({ items }) {
   return (
     <section className="space-y-3">
       <div>
-        <p className="text-sm leading-relaxed text-[#666] dark:text-gray-300">
-          我读到、研究过、想反复回看的东西，都沉淀在这里——长文观察、公司画像、事项专题，按主题持续累积。
-        </p>
         <button
           type="button"
           aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
-          className="mt-2 inline-flex items-center gap-1 text-sm text-[#716958] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
+          className="inline-flex items-center gap-1 text-sm text-[#716958] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
         >
           <svg
             viewBox="0 0 12 12"

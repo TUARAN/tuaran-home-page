@@ -86,7 +86,7 @@ export default function PublicationsPage() {
           <table className="w-full border-collapse text-left text-[14px]">
             <thead>
               <tr className="bg-[#f5f1e8] text-[#4f4536] dark:bg-[#1a2430] dark:text-gray-200">
-                <th className="px-4 py-3 font-semibold">书名 / 专题</th>
+                <th className="px-4 py-3 font-semibold">书名 / 资料</th>
                 <th className="px-4 py-3 font-semibold">分类</th>
                 <th className="px-4 py-3 font-semibold">时间</th>
                 <th className="px-4 py-3 font-semibold">状态</th>

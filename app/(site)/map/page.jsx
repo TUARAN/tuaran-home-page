@@ -217,7 +217,7 @@ export default function SiteMapPage() {
               全站索引
             </h1>
             <p className="mb-0 max-w-[42rem] text-[15px] leading-[1.9] text-[#5f5a4d] dark:text-gray-300">
-              主导航只保留高频入口；完整页面、专题、工具和归档内容在这里按频道展开。把它当成这个站点的信息架构视图，而不是一张普通链接表。
+              主导航只保留高频入口；完整页面、专题调研、工具和归档内容在这里按频道展开。把它当成这个站点的信息架构视图，而不是一张普通链接表。
             </p>
           </div>
 
@@ -279,7 +279,7 @@ export default function SiteMapPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-[#c8c1b3] dark:bg-[#4d5665]" />
-              索引入口：低频、专题、归档、工具
+              索引入口：低频、专题调研、归档、工具
             </div>
           </div>
         </div>

@@ -5,7 +5,7 @@ import CopyIntroButton from './components/CopyIntroButton'
 import LatestMoments from './components/LatestMoments'
 import SiteFooter from './components/SiteFooter'
 import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_INTRO_COPY } from '../../lib/siteIntro'
-import { CATEGORY_META, COMPANY_TYPE_META, listResearch, TOPIC_TYPE_META } from '../../lib/research/loader'
+import { listResearch } from '../../lib/research/loader'
 
 function wrapTitle(title) {
   if (!title) return ''
@@ -34,42 +34,66 @@ function getArticleCategory(article) {
   return '工程化'
 }
 
-function hashString(input) {
-  let value = 0
-  for (let i = 0; i < input.length; i += 1) {
-    value = (value * 31 + input.charCodeAt(i)) >>> 0
-  }
-  return value
-}
-
-function pickResearchHighlight() {
-  const researchItems = listResearch().filter((entry) => !entry.encrypted)
-  if (!researchItems.length) return null
-
-  const seed = new Date().toISOString().slice(0, 10)
-  const entry = researchItems[hashString(seed) % researchItems.length]
-  const typeMeta = entry.category === 'companies'
-    ? COMPANY_TYPE_META[entry.companyType]
-    : TOPIC_TYPE_META[entry.topicType]
-  const categoryLabel = typeMeta?.label || CATEGORY_META[entry.category]?.short || '调研'
-
+function buildResearchPipelineStats() {
+  const entries = listResearch().filter((entry) => !entry.encrypted)
+  const companies = entries.filter((entry) => entry.category === 'companies')
+  const topics = entries.filter((entry) => entry.category === 'topics')
+  const latestDate = entries.length ? entries[0].date : null
   return {
-    slug: entry.slug,
-    title: entry.title,
-    date: entry.date,
-    href: `/articles/research/${entry.category}/${entry.slug}`,
-    summary: entry.tldr || entry.summary,
-    cover: entry.images?.[0]?.src || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=800&q=60',
-    homeCategory: categoryLabel,
-    badge: 'Research',
+    total: entries.length,
+    companies: companies.length,
+    topics: topics.length,
+    latestDate,
   }
 }
 
 export default function HomePage() {
-  const researchHighlight = pickResearchHighlight()
-  const featuredArticles = researchHighlight
-    ? [...articles.slice(0, 2), researchHighlight]
-    : articles.slice(0, 3)
+  const featuredArticles = articles.slice(0, 3)
+  const researchStats = buildResearchPipelineStats()
+  const resourceCards = [
+    {
+      href: '/articles?tab=resources&resource_type=classics',
+      kicker: 'Classics',
+      title: '古典名篇',
+      desc: '辞赋 / 诗歌 / 奏疏 / 古文 / 原文索引',
+      scope: 'internal',
+    },
+    {
+      href: '/articles?tab=resources&resource_type=poetry',
+      kicker: 'Poetry',
+      title: '诗歌原文',
+      desc: '诗词 / 辞赋 / 祭文 / 古文原文',
+      scope: 'internal',
+    },
+    {
+      href: '/articles?tab=resources&resource_type=humanities',
+      kicker: 'Humanities',
+      title: '人文思想',
+      desc: '儒释道体系 / 神仙谱系 / 思想结构',
+      scope: 'internal',
+    },
+    {
+      href: '/articles?tab=resources&resource_type=politics',
+      kicker: 'Politics',
+      title: '政经资料',
+      desc: '组织结构 / 行政级别 / 会议沿革 / 政经资料',
+      scope: 'internal',
+    },
+    {
+      href: '/articles?tab=resources&resource_type=books',
+      kicker: 'Books',
+      title: '书目索引',
+      desc: '正在读 / 想读 / 笔记 / 书单',
+      scope: 'internal',
+    },
+    {
+      href: '/articles?tab=resources&resource_type=bookmarks',
+      kicker: 'Bookmarks',
+      title: '资源收藏',
+      desc: 'AI 工具 / 开发资源 / 教程 / 外部材料',
+      scope: 'bookmarks',
+    },
+  ]
   const communities = [
     { name: '掘金', reads: '219 万', fans: '1.3 万', href: 'https://juejin.cn/user/1521379823340792', color: '#111827', char: '掘' },
     { name: '小红书', reads: '100 万', fans: '1.1 万', href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e', color: '#2563EB', char: '红' },
@@ -185,17 +209,20 @@ export default function HomePage() {
               <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Highlights
+                    Works · 5% 作品层
                   </p>
-                  <h2 className="home-section-title">推荐阅读</h2>
+                  <h2 className="home-section-title">作品层</h2>
                 </div>
                 <Link
                   href="/articles"
                   className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#7f6f55] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#c8b99d]"
                 >
-                  更多文章
+                  更多作品
                 </Link>
               </div>
+              <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
+                精选文章 / 工程作品 / 个人判断。这里放 5% 的原创层，优先呈现亲自写、亲自做、带有个人判断的内容。
+              </p>
               <div className="grid gap-4">
                 {featuredArticles.map((a, index) => {
                   const href = getArticleLink(a)
@@ -253,6 +280,131 @@ export default function HomePage() {
                     </Link>
                   )
                 })}
+              </div>
+            </section>
+
+            <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
+                    Research · 15% 调研层
+                  </p>
+                  <h2 className="home-section-title">调研层</h2>
+                </div>
+                {researchStats.latestDate ? (
+                  <span className="font-mono text-[11.5px] text-[#9c8f79] dark:text-[#8e9ab0]">
+                    累计 {researchStats.total} 篇 · 最近 {researchStats.latestDate}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mb-2 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
+                我把内容按「<strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">80 / 15 / 5</strong>」分层：
+                5% 是作品层，15% 是调研层，80% 是资料层。
+              </p>
+              <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
+                专题调研 / 公司调研 / 事项调研。这里属于 <strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">15% 调研层</strong>——AI 协助采集、按模板生成，commodity 性质。
+                它解决快速理解，不冒充原创判断；更基础的原文和谱系沉到下方资料库。
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  {
+                    href: '/articles?tab=companies',
+                    kicker: 'Companies',
+                    title: '公司调研',
+                    count: researchStats.companies,
+                    desc: '开发者生态 / 内容社区 / 企业软件 / 云通信 / 新能源 / 开发工具',
+                  },
+                  {
+                    href: '/articles?tab=topics',
+                    kicker: 'Topics',
+                    title: '事项调研',
+                    count: researchStats.topics,
+                    desc: '行业 · 技术 · 产品 · 市场 · 观点',
+                  },
+                ].map((card) => (
+                  <Link
+                    key={card.href}
+                    href={card.href}
+                    className="no-external-arrow group flex flex-col gap-2 rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_12px_30px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+                        {card.kicker}
+                      </p>
+                      <span className="font-mono text-[11px] tracking-[0.08em] text-[#9c8f79] dark:text-[#8e9ab0]">
+                        {card.count} 篇 →
+                      </span>
+                    </div>
+                    <p className="mb-0 text-[15px] font-semibold text-[#1d1a16] dark:text-gray-100">
+                      {card.title}
+                    </p>
+                    <p className="mb-0 text-[12.5px] leading-5 text-[#7c7565] dark:text-[#8e98a8]">
+                      {card.desc}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
+                    Library · 80% 资料层
+                  </p>
+                  <h2 className="home-section-title">资料层</h2>
+                </div>
+                <Link
+                  href="/articles?tab=resources"
+                  className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#7f6f55] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#c8b99d]"
+                >
+                  全部资料
+                </Link>
+              </div>
+              <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
+                资料层分成「站内资料」和「资源收藏」。站内资料是整理进站点结构的内容；资源收藏是外部材料入口和工具链接。
+              </p>
+              <div className="space-y-4">
+                {[
+                  {
+                    key: 'internal',
+                    title: '站内资料',
+                    desc: '已经整理进站内结构，可直接阅读、检索、引用。',
+                  },
+                  {
+                    key: 'bookmarks',
+                    title: '资源收藏',
+                    desc: '外部材料、工具和教程入口，价值在指路与快速访问。',
+                  },
+                ].map((group) => (
+                  <div key={group.key}>
+                    <div className="mb-2 flex flex-wrap items-baseline gap-2">
+                      <p className="mb-0 text-[13px] font-semibold text-[#4f4638] dark:text-gray-200">{group.title}</p>
+                      <p className="mb-0 text-[12px] text-[#8b7f69] dark:text-[#7f8aa0]">{group.desc}</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {resourceCards
+                        .filter((card) => card.scope === group.key)
+                        .map((card) => (
+                          <Link
+                            key={card.href}
+                            href={card.href}
+                            className="no-external-arrow group flex flex-col gap-2 rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_12px_30px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+                          >
+                            <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+                              {card.kicker}
+                            </p>
+                            <p className="mb-0 text-[15px] font-semibold text-[#1d1a16] dark:text-gray-100">
+                              {card.title}
+                            </p>
+                            <p className="mb-0 text-[12.5px] leading-5 text-[#7c7565] dark:text-[#8e98a8]">
+                              {card.desc}
+                            </p>
+                          </Link>
+                        ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
 

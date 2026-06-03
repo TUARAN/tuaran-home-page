@@ -9,18 +9,22 @@ import { getCompanyTypeFilters, getTopicTypeFilters } from '../../../lib/researc
 
 const TAB_DEFS = [
   { key: 'all', label: '全部' },
-  { key: 'posts', label: '精选文章' },
-  { key: 'companies', label: '公司调研' },
-  { key: 'topics', label: '事项调研' },
-  { key: 'special', label: '专题' },
+  { key: 'posts', label: '精选文章', tier: 'works' },
+  { key: 'works', label: '工程作品', tier: 'works' },
+  { key: 'special', label: '专题调研', tier: 'research' },
+  { key: 'companies', label: '公司调研', tier: 'research' },
+  { key: 'topics', label: '事项调研', tier: 'research' },
+  { key: 'resources', label: '资料层', tier: 'resources' },
 ]
 
 // 各分类标签的配色（浅色 + 暗色）
 const KIND_TAG_CLASS = {
   posts: 'border-[#dadada] text-[#666] dark:border-gray-700 dark:text-gray-300',
+  works: 'border-[#ead7b5] bg-[#fbf3df] text-[#8b6a2c] dark:border-[#3d3422] dark:bg-[#211b0f] dark:text-[#e6c887]',
   companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   topics: 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
   special: 'border-[#d9d3f0] bg-[#f2eefc] text-[#5b4b8a] dark:border-[#312745] dark:bg-[#191424] dark:text-[#b8a6e8]',
+  resources: 'border-[#ddd8cb] bg-[#f7f4ee] text-[#6b6253] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
 }
 
 const TAB_KEYS = TAB_DEFS.map((t) => t.key)
@@ -39,18 +43,23 @@ const TOPIC_TYPE_DEFS = getTopicTypeFilters()
 const TOPIC_TYPE_KEYS = TOPIC_TYPE_DEFS.map((t) => t.key)
 
 const SPECIAL_TYPE_DEFS = [
-  { key: 'all', label: '全部专题' },
-  { key: 'ai', label: 'AI 调研' },
-  { key: 'science', label: '科学探索' },
+  { key: 'all', label: '全部专题调研' },
   { key: 'writing', label: '写作创作' },
-  { key: 'culture', label: '文化专题' },
-  { key: 'politics', label: '政治专题' },
-  { key: 'people', label: '人物调研' },
-  { key: 'history', label: '历史调研' },
-  { key: 'poetry', label: '诗歌调研' },
 ]
 
 const SPECIAL_TYPE_KEYS = SPECIAL_TYPE_DEFS.map((t) => t.key)
+
+const RESOURCE_TYPE_DEFS = [
+  { key: 'all', label: '全部资料' },
+  { key: 'classics', label: '古典名篇' },
+  { key: 'poetry', label: '诗歌原文' },
+  { key: 'humanities', label: '人文思想' },
+  { key: 'politics', label: '政经资料' },
+  { key: 'books', label: '书目索引' },
+  { key: 'bookmarks', label: '资源收藏' },
+]
+
+const RESOURCE_TYPE_KEYS = RESOURCE_TYPE_DEFS.map((t) => t.key)
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -82,11 +91,16 @@ export default function ArticlesIndexClient({ items }) {
     const fromUrl = searchParams?.get('special_type')
     return SPECIAL_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
   })()
+  const initialResourceType = (() => {
+    const fromUrl = searchParams?.get('resource_type')
+    return RESOURCE_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
+  })()
   const initialQuery = searchParams?.get('q') || ''
   const [tab, setTab] = useState(initialTab)
   const [companyType, setCompanyType] = useState(initialCompanyType)
   const [topicType, setTopicType] = useState(initialTopicType)
   const [specialType, setSpecialType] = useState(initialSpecialType)
+  const [resourceType, setResourceType] = useState(initialResourceType)
   const [query, setQuery] = useState(initialQuery)
 
   useEffect(() => {
@@ -109,6 +123,11 @@ export default function ArticlesIndexClient({ items }) {
     if (nextSpecialType !== specialType) {
       setSpecialType(nextSpecialType)
     }
+    const resourceTypeFromUrl = searchParams?.get('resource_type')
+    const nextResourceType = RESOURCE_TYPE_KEYS.includes(resourceTypeFromUrl) ? resourceTypeFromUrl : 'all'
+    if (nextResourceType !== resourceType) {
+      setResourceType(nextResourceType)
+    }
     const queryFromUrl = searchParams?.get('q') || ''
     if (queryFromUrl !== query) {
       setQuery(queryFromUrl)
@@ -116,12 +135,13 @@ export default function ArticlesIndexClient({ items }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  function buildArticlesUrl(nextTab, nextCompanyType, nextTopicType, nextSpecialType, nextQuery) {
+  function buildArticlesUrl(nextTab, nextCompanyType, nextTopicType, nextSpecialType, nextResourceType, nextQuery) {
     const params = new URLSearchParams()
     if (nextTab !== 'all') params.set('tab', nextTab)
     if (nextTab === 'companies' && nextCompanyType !== 'all') params.set('company_type', nextCompanyType)
     if (nextTab === 'topics' && nextTopicType !== 'all') params.set('topic_type', nextTopicType)
     if (nextTab === 'special' && nextSpecialType !== 'all') params.set('special_type', nextSpecialType)
+    if (nextTab === 'resources' && nextResourceType !== 'all') params.set('resource_type', nextResourceType)
     const normalizedQuery = String(nextQuery || '').trim()
     if (normalizedQuery) params.set('q', normalizedQuery)
     const queryString = params.toString()
@@ -133,6 +153,7 @@ export default function ArticlesIndexClient({ items }) {
     const nextCompanyType = next === 'companies' ? companyType : 'all'
     const nextTopicType = next === 'topics' ? topicType : 'all'
     const nextSpecialType = next === 'special' ? specialType : 'all'
+    const nextResourceType = next === 'resources' ? resourceType : 'all'
     if (next !== 'companies') {
       setCompanyType('all')
     }
@@ -142,40 +163,50 @@ export default function ArticlesIndexClient({ items }) {
     if (next !== 'special') {
       setSpecialType('all')
     }
-    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextSpecialType, query)
+    if (next !== 'resources') {
+      setResourceType('all')
+    }
+    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextSpecialType, nextResourceType, query)
     router.replace(url, { scroll: false })
   }
 
   function selectCompanyType(next) {
     setTab('companies')
     setCompanyType(next)
-    const url = buildArticlesUrl('companies', next, 'all', 'all', query)
+    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', query)
     router.replace(url, { scroll: false })
   }
 
   function selectTopicType(next) {
     setTab('topics')
     setTopicType(next)
-    const url = buildArticlesUrl('topics', 'all', next, 'all', query)
+    const url = buildArticlesUrl('topics', 'all', next, 'all', 'all', query)
     router.replace(url, { scroll: false })
   }
 
   function selectSpecialType(next) {
     setTab('special')
     setSpecialType(next)
-    const url = buildArticlesUrl('special', 'all', 'all', next, query)
+    const url = buildArticlesUrl('special', 'all', 'all', next, 'all', query)
+    router.replace(url, { scroll: false })
+  }
+
+  function selectResourceType(next) {
+    setTab('resources')
+    setResourceType(next)
+    const url = buildArticlesUrl('resources', 'all', 'all', 'all', next, query)
     router.replace(url, { scroll: false })
   }
 
   function submitSearch(event) {
     event.preventDefault()
-    const url = buildArticlesUrl(tab, companyType, topicType, specialType, query)
+    const url = buildArticlesUrl(tab, companyType, topicType, specialType, resourceType, query)
     router.replace(url, { scroll: false })
   }
 
   function clearSearch() {
     setQuery('')
-    const url = buildArticlesUrl(tab, companyType, topicType, specialType, '')
+    const url = buildArticlesUrl(tab, companyType, topicType, specialType, resourceType, '')
     router.replace(url, { scroll: false })
   }
 
@@ -200,6 +231,9 @@ export default function ArticlesIndexClient({ items }) {
     if (tab === 'special' && specialType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.specialType === specialType)
     }
+    if (tab === 'resources' && resourceType !== 'all') {
+      typeFiltered = typeFiltered.filter((item) => item.resourceType === resourceType)
+    }
     const normalizedQuery = query.trim().toLowerCase()
     if (!normalizedQuery) return typeFiltered
 
@@ -210,7 +244,7 @@ export default function ArticlesIndexClient({ items }) {
         .toLowerCase()
       return combined.includes(normalizedQuery)
     })
-  }, [items, tab, companyType, topicType, specialType, query])
+  }, [items, tab, companyType, topicType, specialType, resourceType, query])
 
 
   useEffect(() => {
@@ -283,31 +317,63 @@ export default function ArticlesIndexClient({ items }) {
     return base
   }, [items])
 
+  const resourceTypeCounts = useMemo(() => {
+    const base = Object.fromEntries(RESOURCE_TYPE_KEYS.map((k) => [k, 0]))
+    const resourceItems = items.filter((item) => item.kind === 'resources')
+    base.all = resourceItems.length
+    for (const item of resourceItems) {
+      if (item.resourceType && typeof base[item.resourceType] === 'number') {
+        base[item.resourceType] += 1
+      }
+    }
+    return base
+  }, [items])
+
   return (
     <div className="space-y-4">
       <nav
-        aria-label="知识库分类"
+        aria-label="作品、调研与资料分类"
         className="flex flex-nowrap items-center gap-5 overflow-x-auto border-b border-[#e8dfd0] text-sm dark:border-gray-800"
       >
-        {TAB_DEFS.map((t) => {
+        {TAB_DEFS.map((t, idx) => {
           const active = tab === t.key
+          const prevTier = idx > 0 ? TAB_DEFS[idx - 1].tier : null
+          const showResearchDivider = t.tier === 'research' && prevTier !== 'research'
+          const showResourceDivider = t.tier === 'resources' && prevTier !== 'resources'
+          const isResearchTier = t.tier === 'research'
+          const isResourceTier = t.tier === 'resources'
           return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => selectTab(t.key)}
-              className={[
-                'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0.5 pb-2 pt-1 transition-colors',
-                active
-                  ? 'border-[#333] text-[#222] dark:border-gray-100 dark:text-gray-100'
-                  : 'border-transparent text-[#716958] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
-              ].join(' ')}
-            >
-              <span className={active ? 'font-semibold' : ''}>{t.label}</span>
-              <span className={active ? 'text-[#777] dark:text-gray-400' : 'text-[#999] dark:text-gray-500'}>
-                {counts[t.key] ?? 0}
-              </span>
-            </button>
+            <span key={t.key} className="flex shrink-0 items-center gap-5">
+              {showResearchDivider ? (
+                <span className="flex shrink-0 items-center" aria-hidden="true">
+                  <span aria-hidden="true" className="h-4 w-px bg-[#d8cdbc] dark:bg-gray-700" />
+                </span>
+              ) : null}
+              {showResourceDivider ? (
+                <span className="flex shrink-0 items-center" aria-hidden="true">
+                  <span aria-hidden="true" className="h-4 w-px bg-[#d8cdbc] dark:bg-gray-700" />
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => selectTab(t.key)}
+                className={[
+                  'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0.5 pb-2 pt-1 transition-colors',
+                  active
+                    ? 'border-[#333] text-[#222] dark:border-gray-100 dark:text-gray-100'
+                    : isResearchTier
+                    ? 'border-transparent text-[#9a8e76] hover:text-[#5c5546] dark:text-[#7f8a9c] dark:hover:text-gray-200'
+                    : isResourceTier
+                    ? 'border-transparent text-[#8b8376] hover:text-[#4c463c] dark:text-[#7f8a9c] dark:hover:text-gray-200'
+                    : 'border-transparent text-[#716958] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
+                ].join(' ')}
+              >
+                <span className={active ? 'font-semibold' : ''}>{t.label}</span>
+                <span className={active ? 'text-[#777] dark:text-gray-400' : 'text-[#999] dark:text-gray-500'}>
+                  {counts[t.key] ?? 0}
+                </span>
+              </button>
+            </span>
           )
         })}
 
@@ -436,7 +502,7 @@ export default function ArticlesIndexClient({ items }) {
       {tab === 'special' ? (
         <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
           <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">专题分类</span>
-          <nav aria-label="专题分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
+          <nav aria-label="专题调研分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
             {SPECIAL_TYPE_DEFS.map((t) => {
               const active = specialType === t.key
               return (
@@ -462,6 +528,39 @@ export default function ArticlesIndexClient({ items }) {
         </div>
       ) : null}
 
+      {tab === 'resources' ? (
+        <div className="-mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">资料分类</span>
+          <nav aria-label="资料分类" className="flex min-w-0 flex-wrap items-center gap-2">
+            {RESOURCE_TYPE_DEFS.map((t) => {
+              const active = resourceType === t.key
+              const scopeLabel = t.key === 'bookmarks' ? '资源收藏' : t.key === 'all' ? '' : '站内'
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => selectResourceType(t.key)}
+                  className={[
+                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
+                    active
+                      ? 'bg-[#f1eee7] font-medium text-[#62594b] dark:bg-[#202834] dark:text-[#c6ceda]'
+                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                  ].join(' ')}
+                >
+                  {scopeLabel ? (
+                    <span className="font-mono text-[9px] tracking-[0.1em] text-[#b1a58f] dark:text-[#667287]">{scopeLabel}</span>
+                  ) : null}
+                  <span>{t.label}</span>
+                  <span className={active ? 'text-[#8b8170] dark:text-[#9da7b8]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                    {resourceTypeCounts[t.key] ?? 0}
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      ) : null}
+
       <div className="space-y-4">
         {visible.length === 0 ? (
           <p className="text-sm text-[#666] dark:text-gray-400">
@@ -473,7 +572,7 @@ export default function ArticlesIndexClient({ items }) {
             const pvKey = parts[3] && parts[4] ? `${parts[3]}/${parts[4]}` : ''
             const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
             const nextItem = 'pv' in item ? { ...item, pv: livePv } : item
-            return <ArticleRow key={item.kind + ':' + item.href} item={nextItem} />
+            return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
           })
         )}
       </div>

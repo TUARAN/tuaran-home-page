@@ -16,6 +16,16 @@ fi
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
+echo "[pre-push] snapshot-memory --if-changed …"
+# 缺密码会静默跳过，不阻断 push
+node scripts/snapshot-memory.mjs --if-changed || true
+
+# 如果快照产出了新文件，提示但不阻断（commit 在另一边手动）
+if ! git diff --quiet -- public/data/memory 2>/dev/null; then
+  echo "[pre-push] ⚠ public/data/memory 有未提交变化（新加密快照）。push 不会带上它，"
+  echo "          回头记得 git add public/data/memory && git commit。"
+fi
+
 echo "[pre-push] npm run lint …"
 if ! npm run --silent lint; then
   echo

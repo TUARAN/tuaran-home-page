@@ -3,9 +3,9 @@ import Link from 'next/link'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '收藏夹',
-  description: '涂阿燃（tuaran）的收藏整理：推特资讯、大模型教程、优质资源汇总。',
-  keywords: ['涂阿燃', 'tuaran', '收藏夹', '推特资讯', '大模型教程', 'AI 资源'],
+  title: '资源收藏',
+  description: '涂阿燃（tuaran）的资源收藏：推特资讯、大模型教程、优质工具与外部材料入口。',
+  keywords: ['涂阿燃', 'tuaran', '资源收藏', '推特资讯', '大模型教程', 'AI 资源'],
   alternates: {
     canonical: '/bookmarks',
   },
@@ -59,9 +59,9 @@ export default function BookmarksIndexPage() {
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">收藏夹</h1>
+            <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">资源收藏</h1>
             <p className="text-sm text-[#666] dark:text-gray-300 mt-2">
-              精选资讯、教程与工具，按主题分类整理，持续更新中。
+              外部材料、教程与工具入口，按主题分类整理，持续更新中。
             </p>
           </div>
         </div>
@@ -97,7 +97,7 @@ export default function BookmarksIndexPage() {
 
         <div className="mt-12 text-sm text-[#666] dark:text-gray-300 border-t border-[#eee] dark:border-gray-800 pt-6">
           <p>
-            💡 这里整理了日常浏览中发现的优质内容，不定期更新。
+            💡 这里整理日常浏览中发现的外部材料入口，不定期更新。
           </p>
         </div>
       </div>

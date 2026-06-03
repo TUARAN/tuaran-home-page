@@ -509,7 +509,7 @@ export default function AiTokenUsageResearchClient() {
     <main className="mx-auto w-full max-w-5xl space-y-10 px-4 py-10">
       <header className="space-y-3 border-b border-[#eadfcd] pb-6 dark:border-gray-800">
         <div className="flex items-start justify-between gap-4">
-          <p className="text-xs tracking-wide text-[#8c8376] dark:text-gray-500">专题 · AI 调研</p>
+          <p className="text-xs tracking-wide text-[#8c8376] dark:text-gray-500">专题调研 · AI 调研</p>
           <div className="flex shrink-0 items-center gap-2">
             <DistributeMarkdownButton
               title="AI Token 用量与花费强度调研"
@@ -790,8 +790,8 @@ export default function AiTokenUsageResearchClient() {
           </li>
         </ul>
         <div className="mt-3 flex flex-wrap gap-4 text-sm">
-          <Link href="/articles?tab=special&special_type=ai" className="underline decoration-[#d3b889] underline-offset-2">
-            返回专题列表（AI 调研）
+          <Link href="/articles?tab=works" className="underline decoration-[#d3b889] underline-offset-2">
+            返回工程作品列表
           </Link>
           <Link href="/articles/research/topics/llm-prompt-directives" className="underline decoration-[#d3b889] underline-offset-2">
             相关：LLM Prompt 指令清单

@@ -5,10 +5,10 @@ import SharePageButton from '../components/SharePageButton'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '中国政治体制 · 专题调研',
+  title: '中国政治体制 · 资料库',
   description:
     '中国政治体制结构梳理：中央核心权力机构、国务院组织、行政级别体系、历届三中全会要点与领导层沿革（1971–至今）。',
-  keywords: ['涂阿燃', 'tuaran', '中国政治', '政治体制', '三中全会', '国务院', '行政级别', '专题调研'],
+  keywords: ['涂阿燃', 'tuaran', '中国政治', '政治体制', '三中全会', '国务院', '行政级别', '资料库'],
   alternates: {
     canonical: '/china-politics',
   },
@@ -476,7 +476,7 @@ export default function ChinaPoliticsPage() {
               中国政治体制
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-[#666] dark:text-gray-300">
-              专题调研：梳理中国政治体制的三条线索——中央与国务院的组织结构、历届三中全会的改革主线、以及领导层 1971 年至今的沿革。以公开资料为据，偏结构性描述。
+              资料库：梳理中国政治体制的三条线索——中央与国务院的组织结构、历届三中全会的改革主线、以及领导层 1971 年至今的沿革。以公开资料为据，偏结构性描述。
             </p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
               <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
@@ -485,7 +485,7 @@ export default function ChinaPoliticsPage() {
             </div>
           </div>
           <SharePageButton
-            title="中国政治体制 · 专题调研"
+            title="中国政治体制 · 资料库"
             text="中央与国务院组织结构、历届三中全会、领导层 1971 至今沿革。"
             url="/china-politics"
           />

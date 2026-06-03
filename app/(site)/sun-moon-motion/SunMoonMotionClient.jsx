@@ -268,10 +268,10 @@ export default function SunMoonMotionClient() {
           <div>
             <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.28em] text-[#9d8f76] dark:text-[#94a1b4]">Interactive Research</p>
             <h1 className="mb-3 max-w-[720px] font-serif text-[1.8rem] font-semibold tracking-[0.02em] text-[#1d1a16] dark:text-gray-100 md:text-[2.38rem]">
-              日月运行交互可视化专题
+              日月运行交互可视化
             </h1>
             <p className="mb-0 max-w-[760px] text-[15px] leading-[1.85] text-[#5e5548] dark:text-gray-300">
-              用日心视角把太阳、地球、月球放在同一个可操作模型里：太阳位于系统中心，地球绕太阳公转并自转，月球绕地运行形成月相循环。参数为近似模型，用于我自己的专题探索、现象复盘和长期专研记录。
+              用日心视角把太阳、地球、月球放在同一个可操作模型里：太阳位于系统中心，地球绕太阳公转并自转，月球绕地运行形成月相循环。参数为近似模型，用于我自己的富页面探索、现象复盘和长期专研记录。
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -297,7 +297,7 @@ export default function SunMoonMotionClient() {
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9b8e78] dark:text-[#93a0b3]">Research Controls</p>
-                  <h2 className="mb-0 border-b-0 pb-0 text-[1.15rem] font-semibold text-[#211d17] dark:text-gray-100">专题探索控制台</h2>
+                  <h2 className="mb-0 border-b-0 pb-0 text-[1.15rem] font-semibold text-[#211d17] dark:text-gray-100">富页面探索控制台</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   <IconButton label={playing ? '暂停实时同步' : '实时同步'} active={playing} onClick={() => setPlaying((value) => !value)}>

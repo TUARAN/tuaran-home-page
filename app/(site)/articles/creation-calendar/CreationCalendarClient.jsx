@@ -10,7 +10,8 @@ const KIND_LABELS = {
   posts: '文章',
   companies: '公司调研',
   topics: '事项调研',
-  special: '专题',
+  special: '专题调研',
+  resources: '资料层',
 }
 
 function isValidDate(value) {
@@ -162,7 +163,7 @@ export default function CreationCalendarClient({ items }) {
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="总内容数" value={String(datedItems.length)} note="含文章 / 调研 / 专题" />
+        <StatCard label="总内容数" value={String(datedItems.length)} note="含作品 / 调研 / 资料层" />
         <StatCard label="当前年份" value={selectedYear || '-'} note={`${yearItems.length} 篇`} />
         <StatCard label="活跃天数" value={String(activeDays)} note="该年有内容的日期" />
         <StatCard label="单日最高" value={String(maxPerDay)} note="当天发布条数" />

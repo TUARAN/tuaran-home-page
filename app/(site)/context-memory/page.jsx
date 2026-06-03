@@ -1,3 +1,5 @@
+import MemoryVault from './MemoryVault'
+
 const memoryLayers = [
   {
     level: 'L1',
@@ -170,6 +172,33 @@ export default function ContextMemoryPage() {
             </div>
           </article>
         ))}
+      </section>
+
+      {/* L5：真实运行中的记忆样本（加密 + 版本） */}
+      <section
+        aria-label="L5 实际运行中的记忆样本"
+        className="mt-10 rounded-lg border border-l-4 border-[#e6dfd2] border-l-[#4a5560] bg-white/80 p-4 shadow-[0_10px_34px_rgba(82,69,45,0.04)] dark:border-[#253140] dark:border-l-[#7a8696] dark:bg-[#111820]/90"
+      >
+        <div className="grid gap-4 lg:grid-cols-[12rem_minmax(0,1fr)]">
+          <div>
+            <span className="inline-flex rounded-md bg-[#e8eaec] px-2 py-1 font-mono text-[11px] font-semibold text-[#3a4450] dark:bg-[#1f2935] dark:text-[#aebcce]">
+              L5
+            </span>
+            <h2 className="mt-3 text-lg font-semibold text-[#221f19] dark:text-gray-100">
+              实际运行中的记忆样本
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-[#665e53] dark:text-gray-300">
+              上面四层是理念，这一层是 Claude Code / 仓库 ai-context/ 里真实写下的内容快照。AES-GCM 加密上传，带版本时间线，密码只在我自己的浏览器里解密。
+            </p>
+          </div>
+          <div className="space-y-4">
+            <div className="rounded-md border border-dashed border-[#d6cdb8] bg-[#fbf6ec] px-3 py-2 text-xs leading-6 text-[#7c6643] dark:border-[#33425a] dark:bg-[#0a1119] dark:text-[#a9b3c4]">
+              本板块是「自用 + 透明感」并存：访客能看到「这里有几个记忆文件、各更新过多少版」，但具体内容必须密码解密。
+              密文已随仓库 push，未授权方读到的只是 base64 噪声。
+            </div>
+            <MemoryVault />
+          </div>
+        </div>
       </section>
     </main>
   )

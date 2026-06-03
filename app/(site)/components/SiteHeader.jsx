@@ -81,15 +81,15 @@ function MenuItem({ item, onNavigate }) {
 }
 
 const TIER_SECTION_STYLES = {
-  '原创 · 5%': {
+  '原创': {
     wrap: 'bg-[#fbf2dc]/50 dark:bg-[#2a2113]/40',
     title: 'text-[#8a6b2e] dark:text-[#d6b87a]',
   },
-  '调研 · 15%': {
+  '调研': {
     wrap: 'bg-[#e6ecf2]/55 dark:bg-[#15202c]/50',
     title: 'text-[#4d6a85] dark:text-[#8fb0ce]',
   },
-  '资料 · 80%': {
+  '资料': {
     wrap: 'bg-[#eef0e4]/55 dark:bg-[#1a1f17]/50',
     title: 'text-[#5f6b3b] dark:text-[#b0bd84]',
   },

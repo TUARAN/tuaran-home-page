@@ -210,28 +210,19 @@ export default function HomePage() {
           <main className="min-w-0 space-y-6">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#8a8170] dark:text-[#8e98a8]">
               <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
-                Content Tiers
+                分类
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="font-mono text-[11px] font-semibold text-[#5a4725] dark:text-[#e8d4b4]">5%</span>
-                <span>原创</span>
-              </span>
+              <span className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">原创</span>
               <span className="text-[#cfc6b3] dark:text-[#3a4757]">·</span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="font-mono text-[11px] font-semibold text-[#5a4725] dark:text-[#e8d4b4]">15%</span>
-                <span>调研</span>
-              </span>
+              <span className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">调研</span>
               <span className="text-[#cfc6b3] dark:text-[#3a4757]">·</span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="font-mono text-[11px] font-semibold text-[#5a4725] dark:text-[#e8d4b4]">80%</span>
-                <span>资料</span>
-              </span>
+              <span className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">资料</span>
             </div>
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
               <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Originals · 5%
+                    Originals
                   </p>
                   <h2 className="home-section-title">原创</h2>
                 </div>
@@ -243,7 +234,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                精选文章 / 工程作品 / 个人判断。这里只占 5%，优先呈现亲自写、亲自做、带有个人判断的内容。
+                精选文章 / 工程作品 / 观点输出。带立场的内容，区别于下方 AI 协助的调研与资料整理。
               </p>
               <div className="grid gap-4">
                 {featuredArticles.map((a, index) => {
@@ -309,7 +300,7 @@ export default function HomePage() {
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Research · 15%
+                    Research
                   </p>
                   <h2 className="home-section-title">调研</h2>
                 </div>
@@ -320,8 +311,7 @@ export default function HomePage() {
                 ) : null}
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                专题调研 / 公司调研 / 事项调研。这部分占 <strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">15%</strong>——AI 协助采集、按模板生成，commodity 性质。
-                它解决快速理解，不冒充原创判断；更基础的原文和谱系沉到下方资料库。
+                专题调研 / 公司调研 / 事项调研。AI 协助采集、按模板生成，解决快速理解，不冒充原创判断；更基础的原文和谱系沉到下方资料库。
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
@@ -368,7 +358,7 @@ export default function HomePage() {
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Library · 80%
+                    Library
                   </p>
                   <h2 className="home-section-title">资料</h2>
                 </div>

@@ -97,8 +97,6 @@ export default function HomePage() {
   const communities = [
     { name: '掘金', reads: '219 万', fans: '1.3 万', href: 'https://juejin.cn/user/1521379823340792', color: '#111827', char: '掘' },
     { name: '小红书', reads: '100 万', fans: '1.1 万', href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e', color: '#2563EB', char: '红' },
-    { name: '知乎', reads: '35 万', fans: '350', href: 'https://www.zhihu.com/', color: '#14B8A6', char: '知' },
-    { name: '51CTO', reads: '16 万', fans: '276', href: 'https://blog.51cto.com/u_15298598', color: '#F97316', char: '51' },
     {
       name: 'CSDN',
       reads: '15 万',
@@ -109,6 +107,8 @@ export default function HomePage() {
       detail: '主号：AI 架构 / 数字员工',
       hoverDetail: '副号：前端周刊 / 笔记',
     },
+    { name: '51CTO', reads: '16 万', fans: '276', href: 'https://blog.51cto.com/u_15298598', color: '#F97316', char: '51' },
+    { name: '知乎', reads: '35 万', fans: '350', href: 'https://www.zhihu.com/', color: '#14B8A6', char: '知' },
     { name: '头条', reads: '12 万', fans: '692', href: 'https://www.toutiao.com/', color: '#EF4444', char: '头' },
     { name: '公众号', reads: '1 万', fans: '2,676', href: '#qrcode-wechat-mp', color: '#22C55E', char: '信' },
     { name: '微博', reads: '6,000', fans: '400', href: 'https://weibo.com/', color: '#F59E0B', char: '微' },
@@ -207,17 +207,32 @@ export default function HomePage() {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_300px]">
           <main className="min-w-0 space-y-6">
-            <div className="rounded-2xl border border-[#e8e2d6] bg-[#fcfbf7] px-4 py-3 text-[13px] leading-6 text-[#756b5a] shadow-[0_10px_30px_rgba(82,69,45,0.04)] dark:border-[#252d36] dark:bg-[#0f141b] dark:text-[#8e98a8]">
-              内容按「<strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">80 / 15 / 5</strong>」分层：
-              80% 资料层，15% 调研层，5% 作品层。
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#8a8170] dark:text-[#8e98a8]">
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+                Content Tiers
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="font-mono text-[11px] font-semibold text-[#5a4725] dark:text-[#e8d4b4]">5%</span>
+                <span>原创</span>
+              </span>
+              <span className="text-[#cfc6b3] dark:text-[#3a4757]">·</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="font-mono text-[11px] font-semibold text-[#5a4725] dark:text-[#e8d4b4]">15%</span>
+                <span>调研</span>
+              </span>
+              <span className="text-[#cfc6b3] dark:text-[#3a4757]">·</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="font-mono text-[11px] font-semibold text-[#5a4725] dark:text-[#e8d4b4]">80%</span>
+                <span>资料</span>
+              </span>
             </div>
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
               <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Works · 5% 作品层
+                    Originals · 5%
                   </p>
-                  <h2 className="home-section-title">作品层</h2>
+                  <h2 className="home-section-title">原创</h2>
                 </div>
                 <Link
                   href="/articles"
@@ -227,7 +242,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                精选文章 / 工程作品 / 个人判断。这里放 5% 的原创层，优先呈现亲自写、亲自做、带有个人判断的内容。
+                精选文章 / 工程作品 / 个人判断。这里只占 5%，优先呈现亲自写、亲自做、带有个人判断的内容。
               </p>
               <div className="grid gap-4">
                 {featuredArticles.map((a, index) => {
@@ -293,9 +308,9 @@ export default function HomePage() {
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Research · 15% 调研层
+                    Research · 15%
                   </p>
-                  <h2 className="home-section-title">调研层</h2>
+                  <h2 className="home-section-title">调研</h2>
                 </div>
                 {researchStats.latestDate ? (
                   <span className="font-mono text-[11.5px] text-[#9c8f79] dark:text-[#8e9ab0]">
@@ -304,7 +319,7 @@ export default function HomePage() {
                 ) : null}
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                专题调研 / 公司调研 / 事项调研。这里属于 <strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">15% 调研层</strong>——AI 协助采集、按模板生成，commodity 性质。
+                专题调研 / 公司调研 / 事项调研。这部分占 <strong className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">15%</strong>——AI 协助采集、按模板生成，commodity 性质。
                 它解决快速理解，不冒充原创判断；更基础的原文和谱系沉到下方资料库。
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -352,9 +367,9 @@ export default function HomePage() {
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Library · 80% 资料层
+                    Library · 80%
                   </p>
-                  <h2 className="home-section-title">资料层</h2>
+                  <h2 className="home-section-title">资料</h2>
                 </div>
                 <Link
                   href="/articles?tab=resources"
@@ -364,7 +379,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                资料层分成「站内资料」和「资源收藏」。站内资料是整理进站点结构的内容；资源收藏是外部材料入口和工具链接。
+                资料分成「站内资料」和「资源收藏」。站内资料是整理进站点结构的内容；资源收藏是外部材料入口和工具链接。
               </p>
               <div className="space-y-4">
                 {[

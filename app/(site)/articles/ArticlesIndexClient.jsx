@@ -14,7 +14,7 @@ const TAB_DEFS = [
   { key: 'special', label: '专题调研', tier: 'research' },
   { key: 'companies', label: '公司调研', tier: 'research' },
   { key: 'topics', label: '事项调研', tier: 'research' },
-  { key: 'resources', label: '资料层', tier: 'resources' },
+  { key: 'resources', label: '资料', tier: 'resources' },
 ]
 
 // 各分类标签的配色（浅色 + 暗色）

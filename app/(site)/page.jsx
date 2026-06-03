@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { articles } from './articles/articlesData'
 import CopyIntroButton from './components/CopyIntroButton'
+import DaysSince from './components/DaysSince'
 import LatestMoments from './components/LatestMoments'
 import SiteFooter from './components/SiteFooter'
 import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_INTRO_COPY } from '../../lib/siteIntro'
@@ -456,6 +457,9 @@ export default function HomePage() {
                     <span aria-hidden="true" className="h-px flex-1 bg-[#d8cfbf] dark:bg-gray-700" />
                     <span>This time · with LLM</span>
                     <span aria-hidden="true" className="h-px flex-1 bg-[#d8cfbf] dark:bg-gray-700" />
+                  </div>
+                  <div className="mt-2.5 flex justify-center">
+                    <DaysSince />
                   </div>
                 </blockquote>
                 <Link

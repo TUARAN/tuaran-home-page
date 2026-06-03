@@ -8,7 +8,7 @@ export const metadata = {
   title: '儒释道 · 神仙体系调研',
   description:
     '把儒释道三教的人物 / 神祇体系拉成一张结构图：佛教按果位分五层，道教按神格分十级，儒家则是文庙从祀的圣贤道统。',
-  keywords: ['涂阿燃', 'tuaran', '儒释道', '佛教', '道教', '儒家', '神仙体系', '专题调研'],
+  keywords: ['涂阿燃', 'tuaran', '儒释道', '佛教', '道教', '儒家', '神仙体系', '资料库'],
   alternates: {
     canonical: '/ru-shi-dao',
   },
@@ -516,7 +516,7 @@ export default function RuShiDaoPage() {
               儒释道 · 神仙体系
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-[#666] dark:text-gray-300">
-              专题调研：把儒释道三教的「人物 / 神祇体系」拉成一张结构图——佛教按果位分五层，道教按神格分十级，儒家则是文庙从祀的圣贤道统。三教各成系统，又长期相互融合。
+              资料库：把儒释道三教的「人物 / 神祇体系」拉成一张结构图——佛教按果位分五层，道教按神格分十级，儒家则是文庙从祀的圣贤道统。三教各成系统，又长期相互融合。
             </p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
               <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">

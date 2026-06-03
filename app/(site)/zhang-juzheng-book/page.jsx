@@ -406,7 +406,7 @@ export default function ZhangJuzhengBookPage() {
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#888] dark:text-gray-400">
           <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-2 py-[1px]">
-            专题 · 写作创作
+            专题调研 · 写作创作
           </span>
           <span>·</span>
           <time dateTime="2026-05-30">2026-05-30 立项</time>

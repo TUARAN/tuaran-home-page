@@ -165,7 +165,7 @@ export default function ReadingIndexPage() {
           书库
         </h1>
         <p className="mt-2 text-sm leading-6 text-[#666] dark:text-gray-300">
-          这里统一收敛为书评、读书笔记和待写书单；人物、历史、诗歌类专题调研另归知识库。
+          这里统一收敛为书评、读书笔记和待写书单；人物、历史、诗歌类资料另归知识库。
         </p>
       </header>
 

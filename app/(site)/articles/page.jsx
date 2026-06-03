@@ -7,10 +7,10 @@ import { buildKnowledgeItems } from './buildKnowledgeItems'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '知识库',
+  title: '作品 & 调研 & 资料',
   description:
-    '涂阿燃（tuaran）的知识库：精选文章、公司调研与事项调研。所有调研以 Markdown 归档在 GitHub 仓库，自动渲染上线。',
-  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '知识库', '调研', '公司调研', '事项调研', 'AI'],
+    '涂阿燃（tuaran）的作品、调研与资料库：5% 原创判断、15% AI 协助调研、80% 原文谱系与可检索资料按 80/15/5 框架分层呈现。',
+  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '作品集', '调研', '资料库', '公司调研', '事项调研', 'AI', '80/15/5'],
   alternates: {
     canonical: '/articles',
   },
@@ -33,8 +33,11 @@ export default function ArticlesPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
-              知识库
+              作品 & 调研 & 资料
             </h1>
+            <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#6e6452] dark:text-[#9aa5b6]">
+              5% 作品层：精选文章 / 工程作品；15% 调研层：专题 / 公司 / 事项；80% 资料层：站内资料 + 资源收藏。
+            </p>
           </div>
         </div>
         <div className="mt-3">

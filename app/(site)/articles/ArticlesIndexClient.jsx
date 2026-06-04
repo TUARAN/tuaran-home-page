@@ -11,7 +11,6 @@ const TAB_DEFS = [
   { key: 'all', label: '全部' },
   { key: 'posts', label: '精选文章', tier: 'works' },
   { key: 'works', label: '工程作品', tier: 'works' },
-  { key: 'special', label: '专题调研', tier: 'research' },
   { key: 'companies', label: '公司调研', tier: 'research' },
   { key: 'topics', label: '事项调研', tier: 'research' },
   { key: 'resources', label: '资料', tier: 'resources' },
@@ -23,7 +22,6 @@ const KIND_TAG_CLASS = {
   works: 'border-[#ead7b5] bg-[#fbf3df] text-[#8b6a2c] dark:border-[#3d3422] dark:bg-[#211b0f] dark:text-[#e6c887]',
   companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   topics: 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
-  special: 'border-[#d9d3f0] bg-[#f2eefc] text-[#5b4b8a] dark:border-[#312745] dark:bg-[#191424] dark:text-[#b8a6e8]',
   resources: 'border-[#ddd8cb] bg-[#f7f4ee] text-[#6b6253] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
 }
 
@@ -41,13 +39,6 @@ const COMPANY_TYPE_KEYS = COMPANY_TYPE_DEFS.map((t) => t.key)
 
 const TOPIC_TYPE_DEFS = getTopicTypeFilters()
 const TOPIC_TYPE_KEYS = TOPIC_TYPE_DEFS.map((t) => t.key)
-
-const SPECIAL_TYPE_DEFS = [
-  { key: 'all', label: '全部专题调研' },
-  { key: 'writing', label: '写作创作' },
-]
-
-const SPECIAL_TYPE_KEYS = SPECIAL_TYPE_DEFS.map((t) => t.key)
 
 const RESOURCE_TYPE_DEFS = [
   { key: 'all', label: '全部资料' },
@@ -88,10 +79,6 @@ export default function ArticlesIndexClient({ items }) {
     const fromUrl = searchParams?.get('topic_type')
     return TOPIC_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
   })()
-  const initialSpecialType = (() => {
-    const fromUrl = searchParams?.get('special_type')
-    return SPECIAL_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
-  })()
   const initialResourceType = (() => {
     const fromUrl = searchParams?.get('resource_type')
     return RESOURCE_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
@@ -100,7 +87,6 @@ export default function ArticlesIndexClient({ items }) {
   const [tab, setTab] = useState(initialTab)
   const [companyType, setCompanyType] = useState(initialCompanyType)
   const [topicType, setTopicType] = useState(initialTopicType)
-  const [specialType, setSpecialType] = useState(initialSpecialType)
   const [resourceType, setResourceType] = useState(initialResourceType)
   const [query, setQuery] = useState(initialQuery)
 
@@ -119,11 +105,6 @@ export default function ArticlesIndexClient({ items }) {
     if (nextTopicType !== topicType) {
       setTopicType(nextTopicType)
     }
-    const specialTypeFromUrl = searchParams?.get('special_type')
-    const nextSpecialType = SPECIAL_TYPE_KEYS.includes(specialTypeFromUrl) ? specialTypeFromUrl : 'all'
-    if (nextSpecialType !== specialType) {
-      setSpecialType(nextSpecialType)
-    }
     const resourceTypeFromUrl = searchParams?.get('resource_type')
     const nextResourceType = RESOURCE_TYPE_KEYS.includes(resourceTypeFromUrl) ? resourceTypeFromUrl : 'all'
     if (nextResourceType !== resourceType) {
@@ -136,12 +117,11 @@ export default function ArticlesIndexClient({ items }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  function buildArticlesUrl(nextTab, nextCompanyType, nextTopicType, nextSpecialType, nextResourceType, nextQuery) {
+  function buildArticlesUrl(nextTab, nextCompanyType, nextTopicType, nextResourceType, nextQuery) {
     const params = new URLSearchParams()
     if (nextTab !== 'all') params.set('tab', nextTab)
     if (nextTab === 'companies' && nextCompanyType !== 'all') params.set('company_type', nextCompanyType)
     if (nextTab === 'topics' && nextTopicType !== 'all') params.set('topic_type', nextTopicType)
-    if (nextTab === 'special' && nextSpecialType !== 'all') params.set('special_type', nextSpecialType)
     if (nextTab === 'resources' && nextResourceType !== 'all') params.set('resource_type', nextResourceType)
     const normalizedQuery = String(nextQuery || '').trim()
     if (normalizedQuery) params.set('q', normalizedQuery)
@@ -153,7 +133,6 @@ export default function ArticlesIndexClient({ items }) {
     setTab(next)
     const nextCompanyType = next === 'companies' ? companyType : 'all'
     const nextTopicType = next === 'topics' ? topicType : 'all'
-    const nextSpecialType = next === 'special' ? specialType : 'all'
     const nextResourceType = next === 'resources' ? resourceType : 'all'
     if (next !== 'companies') {
       setCompanyType('all')
@@ -161,53 +140,43 @@ export default function ArticlesIndexClient({ items }) {
     if (next !== 'topics') {
       setTopicType('all')
     }
-    if (next !== 'special') {
-      setSpecialType('all')
-    }
     if (next !== 'resources') {
       setResourceType('all')
     }
-    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextSpecialType, nextResourceType, query)
+    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextResourceType, query)
     router.replace(url, { scroll: false })
   }
 
   function selectCompanyType(next) {
     setTab('companies')
     setCompanyType(next)
-    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', query)
+    const url = buildArticlesUrl('companies', next, 'all', 'all', query)
     router.replace(url, { scroll: false })
   }
 
   function selectTopicType(next) {
     setTab('topics')
     setTopicType(next)
-    const url = buildArticlesUrl('topics', 'all', next, 'all', 'all', query)
-    router.replace(url, { scroll: false })
-  }
-
-  function selectSpecialType(next) {
-    setTab('special')
-    setSpecialType(next)
-    const url = buildArticlesUrl('special', 'all', 'all', next, 'all', query)
+    const url = buildArticlesUrl('topics', 'all', next, 'all', query)
     router.replace(url, { scroll: false })
   }
 
   function selectResourceType(next) {
     setTab('resources')
     setResourceType(next)
-    const url = buildArticlesUrl('resources', 'all', 'all', 'all', next, query)
+    const url = buildArticlesUrl('resources', 'all', 'all', next, query)
     router.replace(url, { scroll: false })
   }
 
   function submitSearch(event) {
     event.preventDefault()
-    const url = buildArticlesUrl(tab, companyType, topicType, specialType, resourceType, query)
+    const url = buildArticlesUrl(tab, companyType, topicType, resourceType, query)
     router.replace(url, { scroll: false })
   }
 
   function clearSearch() {
     setQuery('')
-    const url = buildArticlesUrl(tab, companyType, topicType, specialType, resourceType, '')
+    const url = buildArticlesUrl(tab, companyType, topicType, resourceType, '')
     router.replace(url, { scroll: false })
   }
 
@@ -229,9 +198,6 @@ export default function ArticlesIndexClient({ items }) {
     if (tab === 'topics' && topicType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.topicType === topicType)
     }
-    if (tab === 'special' && specialType !== 'all') {
-      typeFiltered = typeFiltered.filter((item) => item.specialType === specialType)
-    }
     if (tab === 'resources' && resourceType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.resourceType === resourceType)
     }
@@ -245,7 +211,7 @@ export default function ArticlesIndexClient({ items }) {
         .toLowerCase()
       return combined.includes(normalizedQuery)
     })
-  }, [items, tab, companyType, topicType, specialType, resourceType, query])
+  }, [items, tab, companyType, topicType, resourceType, query])
 
 
   useEffect(() => {
@@ -306,18 +272,6 @@ export default function ArticlesIndexClient({ items }) {
     for (const item of topicItems) {
       if (item.topicType && typeof base[item.topicType] === 'number') {
         base[item.topicType] += 1
-      }
-    }
-    return base
-  }, [items])
-
-  const specialTypeCounts = useMemo(() => {
-    const base = Object.fromEntries(SPECIAL_TYPE_KEYS.map((k) => [k, 0]))
-    const specialItems = items.filter((item) => item.kind === 'special')
-    base.all = specialItems.length
-    for (const item of specialItems) {
-      if (item.specialType && typeof base[item.specialType] === 'number') {
-        base[item.specialType] += 1
       }
     }
     return base
@@ -497,35 +451,6 @@ export default function ArticlesIndexClient({ items }) {
                   <span>{t.label}</span>
                   <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#a99d8a] dark:text-[#667287]'}>
                     {topicTypeCounts[t.key] ?? 0}
-                  </span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-      ) : null}
-
-      {tab === 'special' ? (
-        <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
-          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">专题分类</span>
-          <nav aria-label="专题调研分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
-            {SPECIAL_TYPE_DEFS.map((t) => {
-              const active = specialType === t.key
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => selectSpecialType(t.key)}
-                  className={[
-                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
-                    active
-                      ? 'bg-[#f2eefc] font-medium text-[#5b4b8a] dark:bg-[#191424] dark:text-[#b8a6e8]'
-                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
-                  ].join(' ')}
-                >
-                  <span>{t.label}</span>
-                  <span className={active ? 'text-[#8d7eb8] dark:text-[#9e90c8]' : 'text-[#a99d8a] dark:text-[#667287]'}>
-                    {specialTypeCounts[t.key] ?? 0}
                   </span>
                 </button>
               )

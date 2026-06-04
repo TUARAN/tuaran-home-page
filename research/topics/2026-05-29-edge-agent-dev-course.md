@@ -1,7 +1,7 @@
 ---
 title: 做一门「端侧 Agent 开发实践」课程：市场、框架与投放的结构化调研
 category: topics
-topic_type: market
+topic_type: writing
 date: 2026-05-29
 tags: [Agent, 端侧Agent, OpenClaw, Claude Agent SDK, 知识付费, 课程, 框架选型, 掘金小册]
 summary: 围绕「教别人开发端侧 / 本地操作型 Agent（类 OpenClaw / QClaw / Codex）」这门课，从市场需求、竞品空白、要教哪些框架、在哪些平台投放四个维度做结构化测评，并给出选题、定价与渠道组合建议。

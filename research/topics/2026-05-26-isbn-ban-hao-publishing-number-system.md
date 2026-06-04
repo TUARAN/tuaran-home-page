@@ -1,7 +1,7 @@
 ---
 title: ISBN、书号与游戏版号体系调研：前世今生、获取路径与产业影响
 category: topics
-topic_type: industry
+topic_type: writing
 date: 2026-05-26
 tags: [ISBN, 书号, 版号, 游戏版号, 出版监管, 网络出版, 中国出版]
 summary: 从国际 ISBN 到中国标准书号、CIP、电子出版物专用书号和游戏版号，梳理「出版物身份标识」如何演变成内容准入、市场流通与产业调控的基础设施。

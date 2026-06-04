@@ -8,6 +8,9 @@
 //
 // 颜色取自 https://2aran.com 站点色板（暖琥珀 + 灰蓝），便于视觉分组
 
+// 中国 NCC 口径：取自《中国肿瘤登记年报》/ NCC 2024 公布的 2022 年中国本土估算
+// （Zheng RS et al., J Natl Cancer Cent / Chin J Cancer Res 系列）。
+// 中国 5 年生存率取自 CONCORD-3 / CHANCES / NCC 公开数据，部分癌种显著低于 SEER。
 export const CANCERS = [
   {
     id: 'lung',
@@ -16,6 +19,7 @@ export const CANCERS = [
     incidence: 2_480_000,
     mortality: 1_820_000,
     survival5y: 25,
+    cn: { incidence: 1_060_000, mortality: 733_000, survival5y: 20 },
     genderRatio: { male: 63, female: 37 },
     ageDistribution: [0, 0, 1, 2, 5, 12, 22, 28, 20, 10],
     primaryFactor: '吸烟',
@@ -37,6 +41,7 @@ export const CANCERS = [
     incidence: 2_300_000,
     mortality: 666_000,
     survival5y: 91,
+    cn: { incidence: 357_000, mortality: 75_000, survival5y: 82 },
     genderRatio: { male: 1, female: 99 },
     ageDistribution: [0, 0, 1, 3, 10, 20, 24, 22, 14, 6],
     primaryFactor: '雌激素累积暴露',
@@ -59,6 +64,7 @@ export const CANCERS = [
     incidence: 1_930_000,
     mortality: 904_000,
     survival5y: 65,
+    cn: { incidence: 517_000, mortality: 240_000, survival5y: 57 },
     genderRatio: { male: 55, female: 45 },
     ageDistribution: [0, 0, 1, 2, 5, 11, 20, 26, 22, 13],
     primaryFactor: '饮食 + 缺乏运动',
@@ -81,6 +87,7 @@ export const CANCERS = [
     incidence: 1_470_000,
     mortality: 397_000,
     survival5y: 97,
+    cn: { incidence: 134_000, mortality: 47_000, survival5y: 67 },
     genderRatio: { male: 100, female: 0 },
     ageDistribution: [0, 0, 0, 0, 1, 4, 14, 28, 32, 21],
     primaryFactor: '年龄 + 遗传',
@@ -103,6 +110,7 @@ export const CANCERS = [
     incidence: 969_000,
     mortality: 660_000,
     survival5y: 36,
+    cn: { incidence: 359_000, mortality: 260_000, survival5y: 36 },
     genderRatio: { male: 66, female: 34 },
     ageDistribution: [0, 0, 1, 2, 5, 12, 22, 26, 20, 12],
     primaryFactor: '幽门螺杆菌 + 高盐饮食',
@@ -125,6 +133,7 @@ export const CANCERS = [
     incidence: 866_000,
     mortality: 759_000,
     survival5y: 21,
+    cn: { incidence: 367_000, mortality: 316_000, survival5y: 14 },
     genderRatio: { male: 70, female: 30 },
     ageDistribution: [0, 0, 1, 3, 8, 16, 25, 25, 16, 6],
     primaryFactor: '乙肝 + 肝硬化',
@@ -147,6 +156,7 @@ export const CANCERS = [
     incidence: 511_000,
     mortality: 445_000,
     survival5y: 20,
+    cn: { incidence: 224_000, mortality: 187_000, survival5y: 31 },
     genderRatio: { male: 71, female: 29 },
     ageDistribution: [0, 0, 0, 1, 3, 10, 22, 30, 24, 10],
     primaryFactor: '烫食 + 烟酒',
@@ -169,6 +179,7 @@ export const CANCERS = [
     incidence: 511_000,
     mortality: 467_000,
     survival5y: 12,
+    cn: { incidence: 118_000, mortality: 106_000, survival5y: 8 },
     genderRatio: { male: 55, female: 45 },
     ageDistribution: [0, 0, 0, 1, 3, 9, 20, 30, 25, 12],
     primaryFactor: '吸烟 + 糖尿病 / 慢性胰腺炎',
@@ -191,6 +202,7 @@ export const CANCERS = [
     incidence: 660_000,
     mortality: 348_000,
     survival5y: 67,
+    cn: { incidence: 151_000, mortality: 56_000, survival5y: 60 },
     genderRatio: { male: 0, female: 100 },
     ageDistribution: [0, 0, 3, 12, 22, 24, 18, 11, 7, 3],
     primaryFactor: 'HPV 感染',
@@ -213,6 +225,7 @@ export const CANCERS = [
     incidence: 390_000,
     mortality: 189_000,
     survival5y: 68,
+    cn: { incidence: 38_000, mortality: 19_000, survival5y: 56 },
     genderRatio: { male: 68, female: 32 },
     ageDistribution: [0, 0, 1, 3, 7, 14, 22, 24, 18, 11],
     primaryFactor: '烟 + 槟榔 + 酒',
@@ -256,9 +269,44 @@ export const AGE_BUCKETS = ['0–9', '10–19', '20–29', '30–39', '40–49',
 // 注：data 数组有 10 个值对应 0-9 ... 80-89 / 90+，最后一项归入 80+
 export const AGE_BUCKETS_DISPLAY = ['0–9', '10s', '20s', '30s', '40s', '50s', '60s', '70s', '80s', '90+']
 
-// 总览数据（GLOBOCAN 2022 总计）
+// 总览数据
 export const GLOBAL_TOTAL = {
   incidence: 19_976_000,
   mortality: 9_743_000,
   source: 'GLOBOCAN 2022 (IARC / WHO)',
+}
+
+// 中国总计（NCC 2024 公布的 2022 年估算）
+export const CN_TOTAL = {
+  incidence: 4_824_000,
+  mortality: 2_574_000,
+  source: '中国肿瘤登记年报 / NCC 2024（2022 年估算）',
+}
+
+export const REGIONS = {
+  global: {
+    id: 'global',
+    label: '全球',
+    sublabel: 'GLOBOCAN 2022',
+    survivalNote: 'US SEER',
+  },
+  cn: {
+    id: 'cn',
+    label: '中国',
+    sublabel: 'NCC 2024 · 2022 年估算',
+    survivalNote: '中国 CONCORD-3 / NCC',
+  },
+}
+
+// 取出选定 region 的数据
+export function cancerView(c, region = 'global') {
+  if (region === 'cn' && c.cn) {
+    return {
+      ...c,
+      incidence: c.cn.incidence,
+      mortality: c.cn.mortality,
+      survival5y: c.cn.survival5y,
+    }
+  }
+  return c
 }

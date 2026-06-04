@@ -81,7 +81,7 @@ function MenuItem({ item, onNavigate }) {
 }
 
 const TIER_SECTION_STYLES = {
-  '原创': {
+  '专栏': {
     wrap: 'bg-[#fbf2dc]/50 dark:bg-[#2a2113]/40',
     title: 'text-[#8a6b2e] dark:text-[#d6b87a]',
   },

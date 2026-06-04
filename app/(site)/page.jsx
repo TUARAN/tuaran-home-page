@@ -201,9 +201,9 @@ export default function HomePage() {
               <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Originals
+                    Column
                   </p>
-                  <h2 className="home-section-title">原创</h2>
+                  <h2 className="home-section-title">专栏</h2>
                 </div>
                 <Link
                   href="/articles"

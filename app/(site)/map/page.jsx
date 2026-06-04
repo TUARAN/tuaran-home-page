@@ -57,7 +57,7 @@ function itemHrefText(href) {
 function getTagToneClass(tag) {
   const normalized = String(tag || '').toLowerCase()
   if (normalized === 'hot') {
-    return 'bg-[#f8eceb] text-[#a67a76] dark:bg-[#342628] dark:text-[#d9b4b0]'
+    return 'bg-[#f4d4cf] text-[#8b3a36] dark:bg-[#3a1d1c] dark:text-[#ed9d97]'
   }
   if (normalized === 'lock' || normalized === 'private') {
     return 'bg-[#d8dee8] text-[#3f4b5d] dark:bg-[#18202b] dark:text-[#b3c0d1]'

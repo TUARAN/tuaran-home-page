@@ -24,8 +24,8 @@ function ChevronDown() {
 function getTagToneClass(tag) {
   const normalized = String(tag || '').toLowerCase()
   if (normalized === 'hot') {
-    // Misty pink — low saturation, not vivid red.
-    return 'bg-[#f8eceb] text-[#a67a76] dark:bg-[#342628] dark:text-[#d9b4b0]'
+    // Deeper rose — still restrained, but actually reads as "hot".
+    return 'bg-[#f4d4cf] text-[#8b3a36] dark:bg-[#3a1d1c] dark:text-[#ed9d97]'
   }
   if (normalized === 'lock' || normalized === 'private') {
     // Deeper cool slate — indicates restricted content.

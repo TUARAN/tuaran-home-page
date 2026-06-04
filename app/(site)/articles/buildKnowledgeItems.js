@@ -108,11 +108,6 @@ const ENGINEERING_WORKS = [
   },
 ]
 
-const WRITING_SPECIAL_TOPIC_SLUGS = new Set([
-  'isbn-ban-hao-publishing-number-system',
-  'edge-agent-dev-course',
-])
-
 export function buildKnowledgeItems() {
   const postItems = articles.map((article) => {
     const path = article.slug === 'diary-self-reflection' ? '/diary' : `/articles/${article.slug}`
@@ -132,14 +127,12 @@ export function buildKnowledgeItems() {
     const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
     const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
     const subLabel = companyLabel || topicLabel
-    const isWritingSpecial = entry.category === 'topics' && WRITING_SPECIAL_TOPIC_SLUGS.has(entry.slug)
     return {
       id: `research:${entry.category}:${entry.slug}`,
-      kind: isWritingSpecial ? 'special' : entry.category, // 'companies' | 'topics' | 'special'
-      tagLabel: isWritingSpecial ? '专题调研 · 写作创作' : subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
+      kind: entry.category, // 'companies' | 'topics'
+      tagLabel: subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
       companyType: entry.companyType || '',
       topicType: entry.topicType || '',
-      specialType: isWritingSpecial ? 'writing' : '',
       version: entry.version || '',
       title: entry.title,
       summary: entry.tldr || entry.summary,

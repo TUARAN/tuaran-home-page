@@ -12,10 +12,11 @@ export function middleware(request) {
   const shouldRedirectLegacyPath = LEGACY_PATHS.has(pathname)
   const shouldRedirectPoetry = pathname === '/poetry'
   const shouldRedirectThreeKingdoms = pathname === '/history/three-kingdoms'
+  const shouldRedirectLongCompass = pathname === '/about/long-compass' || pathname.startsWith('/about/long-compass/')
   const articleSlug = /^\/articles\/([^/]+)\/?$/.exec(pathname)?.[1] || ''
   const researchRedirectPath = RESEARCH_ARTICLE_REDIRECTS[articleSlug] || ''
 
-  if (shouldCanonicalizeHost || shouldRedirectLegacyPath || shouldRedirectPoetry || shouldRedirectThreeKingdoms || researchRedirectPath) {
+  if (shouldCanonicalizeHost || shouldRedirectLegacyPath || shouldRedirectPoetry || shouldRedirectThreeKingdoms || shouldRedirectLongCompass || researchRedirectPath) {
     const url = request.nextUrl.clone()
     if (shouldCanonicalizeHost) {
       url.protocol = 'https'
@@ -26,6 +27,8 @@ export function middleware(request) {
     } else if (shouldRedirectThreeKingdoms) {
       url.pathname = '/history/ming-qing'
       url.hash = '#sanguo'
+    } else if (shouldRedirectLongCompass) {
+      url.pathname = pathname.replace(/^\/about\/long-compass/, '/long-compass')
     } else if (researchRedirectPath) {
       url.pathname = researchRedirectPath
     } else if (shouldRedirectLegacyPath) {

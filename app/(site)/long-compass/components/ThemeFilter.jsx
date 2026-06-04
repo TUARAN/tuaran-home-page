@@ -1,6 +1,6 @@
 'use client'
 
-import { THEME_COLORS, THEMES } from '../../../../../lib/longCompass/schema'
+import { THEME_COLORS, THEMES } from '../../../../lib/longCompass/schema'
 
 /**
  * theme chip 单选筛选条（互斥，tab 语义）。

@@ -200,7 +200,7 @@ export default function VoiceTasksClient() {
       <div className="rounded-md border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-[#666] dark:text-gray-300">
-            {userLoading ? '检查登录状态…' : isAuthed ? `已登录：${user.name || user.login}` : '需要 GitHub 登录后使用'}
+            {userLoading ? '检查登录状态…' : isAuthed ? `已登录：${user.name || user.login}` : '私域内容 · 仅站长可写入'}
           </div>
           <div className="flex items-center gap-2">
             {isAuthed ? (
@@ -214,7 +214,7 @@ export default function VoiceTasksClient() {
                 onClick={login}
                 className="rounded-full border border-[#ddd] px-3 py-1 text-xs text-[#555] disabled:opacity-60 dark:border-gray-700 dark:text-gray-300"
               >
-                GitHub 登录
+                我是涂阿燃 →
               </button>
             )}
             <button type="button" onClick={() => refresh()} className="rounded-full border border-[#ddd] px-3 py-1 text-xs text-[#555] dark:border-gray-700 dark:text-gray-300">
@@ -355,7 +355,7 @@ export default function VoiceTasksClient() {
           </ul>
         ) : (
           <p className="text-sm text-[#777] dark:text-gray-400">
-            {isAuthed ? '当前分类没有任务。' : '登录后查看任务池。'}
+            {isAuthed ? '当前分类没有任务。' : '私域内容 · 仅站长本人可见。'}
           </p>
         )}
       </div>

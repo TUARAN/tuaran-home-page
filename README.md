@@ -165,6 +165,32 @@ wrangler d1 migrations apply tuaran-me
 >
 > 解决：到 Cloudflare D1 控制台复制正确的 Database ID（UUID），填入 `wrangler.toml` 后重新部署。
 
+### 邮箱验证码注册（Resend）
+
+项目提供 `/register` 注册页，以及以下 Edge API：
+
+```text
+POST /api/auth/email/send-code
+POST /api/auth/register
+POST /api/auth/login
+```
+
+先在 Resend 验证发件域名，再为 Cloudflare Pages / Worker 配置 secrets：
+
+```bash
+npx wrangler secret put NEXTAUTH_SECRET
+npx wrangler secret put EMAIL_CODE_SECRET
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put EMAIL_FROM
+```
+
+`EMAIL_FROM` 示例：`2aran.com <noreply@mail.2aran.com>`。`NEXTAUTH_SECRET` 与
+`EMAIL_CODE_SECRET` 必须使用不同的随机值。然后应用 D1 migration：
+
+```bash
+npx wrangler d1 migrations apply tuaran-me --remote
+```
+
 #### 4.2 在 Pages 项目中绑定 D1
 
 Cloudflare Dashboard → Pages → 你的项目 → Settings → Bindings：

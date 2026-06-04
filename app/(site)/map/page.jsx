@@ -54,6 +54,20 @@ function itemHrefText(href) {
   return href.replace(/^https?:\/\//, '').replace(/\/$/, '')
 }
 
+function getTagToneClass(tag) {
+  const normalized = String(tag || '').toLowerCase()
+  if (normalized === 'hot') {
+    return 'bg-[#f8eceb] text-[#a67a76] dark:bg-[#342628] dark:text-[#d9b4b0]'
+  }
+  if (normalized === 'lock' || normalized === 'private') {
+    return 'bg-[#d8dee8] text-[#3f4b5d] dark:bg-[#18202b] dark:text-[#b3c0d1]'
+  }
+  if (normalized === 'login' || normalized === '登录') {
+    return 'bg-[#e9ecf2] text-[#5d6878] dark:bg-[#1f262f] dark:text-[#9aa6b6]'
+  }
+  return 'bg-[#fde6c6] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]'
+}
+
 function IndexLink({ item, compact = false }) {
   const body = (
     <>
@@ -66,7 +80,9 @@ function IndexLink({ item, compact = false }) {
         />
         <span className="truncate font-medium text-[#211d17] dark:text-gray-100">{item.label}</span>
         {item.tag ? (
-          <span className="shrink-0 rounded-full bg-[#fde6c6] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]">
+          <span
+            className={`shrink-0 rounded-full px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] ${getTagToneClass(item.tag)}`}
+          >
             {item.tag}
           </span>
         ) : null}

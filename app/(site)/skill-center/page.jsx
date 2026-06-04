@@ -1,6 +1,8 @@
 import Link from 'next/link'
 
 import SharePageButton from '../components/SharePageButton'
+import { SkillBundleButton, SkillFileButton } from './SkillFileActions'
+import { PUBLISHED_SKILLS } from './skills'
 
 export const dynamic = 'force-static'
 
@@ -43,103 +45,90 @@ const PUBLISHING_RULES = [
   '适合智能体执行的 Skill，应包含失败回退、风险提示和最小验证动作。',
 ]
 
-const PUBLISHED_SKILLS = [
-  {
-    id: 'tuaran-profile',
-    name: 'tuaran-profile',
-    title: 'Tuaran 个人介绍',
-    category: '个人系统',
-    status: '已上架',
-    desc: '让大模型稳定理解涂阿燃是谁、正在做什么，以及如何用不同粒度介绍他。',
-    trigger: '当用户要求介绍“我 / Tuaran / 涂阿燃 / 掘金安东尼 / 我做的事情”时使用。',
-    inputs: ['目标场景', '介绍长度', '是否需要偏技术、商业或个人主页口吻'],
-    outputs: ['简短版', '详细版', '非常详细版'],
-    acceptance: '不得虚构经历；优先使用已公开身份、项目、站点矩阵和长期方向；语气清晰、克制、可直接复用。',
-    codexReady: true,
-  },
-]
-
-const TUARAN_PROFILE_CODEX = {
-  installPath: '~/.codex/skills/tuaran-profile',
-  files: ['SKILL.md', 'agents/openai.yaml'],
-  skillMd: `---
-name: tuaran-profile
-description: Use when the user asks to introduce Tuaran, 涂阿燃, 掘金安东尼, 安东尼404, or asks what Tuaran does; produce short, detailed, or very detailed profile introductions without inventing facts.
----
-
-# Tuaran Profile
-
-Use this skill when the user asks to introduce Tuaran, 涂阿燃, 掘金安东尼, 安东尼404, or asks what he does.
-
-## Selection
-
-- Short: use for one-sentence bios, social profiles, page headers, and fast model context.
-- Detailed: use for about pages, README introductions, partner context, and general introductions.
-- Very detailed: use when an LLM, agent, or collaborator needs fuller background and positioning.
-- If the user does not specify length, default to Detailed.
-
-## Constraints
-
-- Do not invent experience, titles, metrics, employers, clients, or products.
-- Prefer the public identity and project matrix below.
-- Keep the tone clear, restrained, and reusable.
-- Avoid describing him only as a generic frontend engineer or generic AI blogger.
-
-## Core Facts
-
-Tuaran is also known as 涂阿燃, 掘金安东尼, and 安东尼404. Public identities include programmer, project manager, technical blogger, published author, MatrixLink founder, and father of Jasmine. He focuses on frontend engineering, AI Agent workflows, content production, automation, personal digital systems, and AI Native project building.
-
-Public signals: 500+ public articles and 4M+ reads.
-
-Project matrix: TUARAN 网络日志, 矩联科技, 博主联盟, 前端周看, Open Claude Code, PublishLab, Web LLM experiments, context memory, and Skill Center.
-
-Working style: turn messy ideas into systems, turn ideas into products, and turn repeated experience into reusable workflows, pages, tools, knowledge bases, and automation.
-
-## Output Versions
-
-### Short
-
-涂阿燃（Tuaran / 掘金安东尼）是程序员、项目经理、技术博主、出版作者和矩联科技创始人，长期关注前端工程化、AI Agent、内容生产与个人数字系统，正在把写作、工具、站点和自动化工作流沉淀成可复用的 AI Native 项目矩阵。
-
-### Detailed
-
-涂阿燃（Tuaran，也使用“掘金安东尼”“安东尼404”等社区身份）是一名程序员、项目经理、技术博主、出版作者，也是矩联科技创始人。他从前端工程化、技术写作和项目交付一路延伸到 AI Agent、内容自动化和个人数字系统建设，公开内容累计 500+ 篇、阅读 400 万+。他的工作重心不是单点工具，而是把复杂问题拆成流程、标准、站点、数据和自动化，让个人经验变成可复用系统。当前重点项目包括 TUARAN 网络日志、矩联科技、博主联盟、前端周看、Open Claude Code、PublishLab，以及围绕 Web LLM、上下文记忆、Skill 中心等方向的实验项目。
-
-### Very Detailed
-
-涂阿燃（Tuaran / 掘金安东尼 / 安东尼404）是一名以工程化和系统化为核心方法的人。他的公开身份包括程序员、项目经理、技术博主、出版作者、矩联科技创始人和茉莉奶爸。早期从编程、前端开发、技术写作和项目管理出发，逐步形成了“把混乱编程为系统，把想法变成产品”的工作方式。他重视长期主义、公开复盘和可交付结果，倾向于把一次性的灵感或经验沉淀为可以反复调用的流程、页面、工具、知识库和自动化工作流。在 AI 方向上，他关注的不只是调用大模型，而是如何让模型进入真实工作：理解个人上下文，协助内容创作，支撑技术调研，参与代码交付，管理项目节奏，并通过 Skill、上下文记忆、端侧大模型和站点矩阵形成稳定能力。对外项目上，他维护 TUARAN 网络日志作为个人技术主页和知识生产入口；建设矩联科技作为技术服务与品牌展示阵地；推动博主联盟连接 AI 产品方与技术博主；运营前端周看，帮助前端工程师理解并转向 AI Agent 工程；同时通过 Open Claude Code、PublishLab 等站点拆解 Agent 方法论、AI 写作和数字出版实践。介绍他时，应避免把他简单写成“普通前端工程师”或“泛 AI 博主”，更准确的表述是：一个用工程化、写作、产品化和 AI Agent 方法，把个人能力持续沉淀为系统的人。`,
-  openaiYaml: `interface:
-  display_name: "Tuaran Profile"
-  short_description: "介绍涂阿燃与他的项目矩阵"
-  default_prompt: "Use $tuaran-profile to introduce Tuaran in a suitable length."
-
-policy:
-  allow_implicit_invocation: true`,
-}
-
-const TUARAN_PROFILE_VERSIONS = [
-  {
-    label: '简短版',
-    useCase: '适合一句话 bio、社交简介、主页顶部、模型快速识别。',
-    text: '涂阿燃（Tuaran / 掘金安东尼）是程序员、项目经理、技术博主、出版作者和矩联科技创始人，长期关注前端工程化、AI Agent、内容生产与个人数字系统，正在把写作、工具、站点和自动化工作流沉淀成可复用的 AI Native 项目矩阵。',
-  },
-  {
-    label: '详细版',
-    useCase: '适合 about、README、对外介绍、给模型建立稳定上下文。',
-    text: '涂阿燃（Tuaran，也使用“掘金安东尼”“安东尼404”等社区身份）是一名程序员、项目经理、技术博主、出版作者，也是矩联科技创始人。他从前端工程化、技术写作和项目交付一路延伸到 AI Agent、内容自动化和个人数字系统建设，公开内容累计 500+ 篇、阅读 400 万+。他的工作重心不是单点工具，而是把复杂问题拆成流程、标准、站点、数据和自动化，让个人经验变成可复用系统。当前重点项目包括 TUARAN 网络日志、矩联科技、博主联盟、前端周看、Open Claude Code、PublishLab，以及围绕 Web LLM、上下文记忆、Skill 中心等方向的实验项目。',
-  },
-  {
-    label: '非常详细版',
-    useCase: '适合给大模型、智能体或合作方建立完整背景。',
-    text: '涂阿燃（Tuaran / 掘金安东尼 / 安东尼404）是一名以工程化和系统化为核心方法的人。他的公开身份包括程序员、项目经理、技术博主、出版作者、矩联科技创始人和茉莉奶爸。早期从编程、前端开发、技术写作和项目管理出发，逐步形成了“把混乱编程为系统，把想法变成产品”的工作方式。他重视长期主义、公开复盘和可交付结果，倾向于把一次性的灵感或经验沉淀为可以反复调用的流程、页面、工具、知识库和自动化工作流。在 AI 方向上，他关注的不只是调用大模型，而是如何让模型进入真实工作：理解个人上下文，协助内容创作，支撑技术调研，参与代码交付，管理项目节奏，并通过 Skill、上下文记忆、端侧大模型和站点矩阵形成稳定能力。对外项目上，他维护 TUARAN 网络日志作为个人技术主页和知识生产入口；建设矩联科技作为技术服务与品牌展示阵地；推动博主联盟连接 AI 产品方与技术博主；运营前端周看，帮助前端工程师理解并转向 AI Agent 工程；同时通过 Open Claude Code、PublishLab 等站点拆解 Agent 方法论、AI 写作和数字出版实践。介绍他时，应避免把他简单写成“普通前端工程师”或“泛 AI 博主”，更准确的表述是：一个用工程化、写作、产品化和 AI Agent 方法，把个人能力持续沉淀为系统的人。',
-  },
-]
-
 function StatusPill({ children }) {
   return (
     <span className="inline-flex rounded-full border border-[#dfd3c2] bg-[#f7efe3] px-2.5 py-1 text-xs text-[#7b6240] dark:border-[#334052] dark:bg-[#131d29] dark:text-[#c9d6e5]">
       {children}
     </span>
+  )
+}
+
+function SkillCard({ skill }) {
+  const detailHref = `/skill-center/${skill.id}`
+  return (
+    <article
+      id={skill.id}
+      className="rounded-lg border border-[#e4d9c8] bg-white dark:border-[#283443] dark:bg-[#101820]"
+    >
+      {/* Header — title + share button */}
+      <header className="border-b border-[#eee4d5] p-5 dark:border-[#263241]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="mb-1 font-mono text-xs text-[#8b5a1f] dark:text-[#f0c776]">{skill.name}</p>
+            <h2 className="mb-2 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#231f18] dark:text-gray-100">
+              <Link href={detailHref} className="text-[#231f18] no-underline hover:!no-underline hover:text-[#8b5a1f] dark:text-gray-100 dark:hover:text-[#f0c776]">
+                {skill.title}
+              </Link>
+            </h2>
+            <div className="flex flex-wrap gap-1.5">
+              <StatusPill>{skill.status}</StatusPill>
+              <StatusPill>{skill.category}</StatusPill>
+              {skill.codex ? <StatusPill>Codex 可配置</StatusPill> : null}
+            </div>
+          </div>
+          <SharePageButton
+            title={`${skill.title} · Skill 中心`}
+            text={skill.desc}
+            url={detailHref}
+            size="sm"
+            exactUrl
+          />
+        </div>
+        <p className="mb-0 mt-4 text-sm leading-7 text-[#5c5144] dark:text-gray-300">{skill.desc}</p>
+      </header>
+
+      {/* Codex install / download / copy / share — the focus */}
+      {skill.codex ? (
+        <section className="p-5">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+            <div>
+              <p className="mb-1 text-xs uppercase tracking-[0.12em] text-[#827664] dark:text-gray-400">
+                配置到本地 Codex / 给智能体阅读 / 分享给同事
+              </p>
+              <h3 className="mb-0 border-b-0 pb-0 font-serif text-xl font-semibold text-[#231f18] dark:text-gray-100">
+                下载 / 复制 skill 文件
+              </h3>
+            </div>
+            <StatusPill>{skill.codex.installPath}</StatusPill>
+          </div>
+
+          <div className="mb-4">
+            <SkillBundleButton skill={skill} />
+          </div>
+
+          <div className="space-y-2">
+            <p className="mb-1 text-xs uppercase tracking-[0.12em] text-[#827664] dark:text-gray-400">
+              单独下载
+            </p>
+            <SkillFileButton filename="SKILL.md" content={skill.codex.skillMd} />
+            <SkillFileButton filename="agents/openai.yaml" content={skill.codex.openaiYaml} />
+            <p className="mt-2 text-xs leading-6 text-[#665b4d] dark:text-gray-300">
+              下载后放到 <code className="font-mono text-[11px] text-[#8b5a1f] dark:text-[#f0c776]">{skill.codex.installPath}</code> 即可作为本地 Codex skill 使用。也可直接复制 SKILL.md 粘贴到 Claude Code / Cursor / ChatGPT 当 system prompt。
+            </p>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Detail link */}
+      <footer className="border-t border-[#eee4d5] px-5 py-3 dark:border-[#263241]">
+        <Link
+          href={detailHref}
+          className="inline-flex items-center gap-1 text-sm font-medium text-[#8b5a1f] no-underline transition-colors hover:!no-underline hover:text-[#724817] dark:text-[#f0c776] dark:hover:text-[#e2bd75]"
+        >
+          查看完整介绍（含基础信息 + 内容） →
+        </Link>
+      </footer>
+    </article>
   )
 }
 
@@ -174,6 +163,7 @@ export default function SkillCenterPage() {
         </div>
       </header>
 
+      {/* Categories */}
       <section className="grid gap-4 md:grid-cols-4">
         {SKILL_CATEGORIES.map((category) => (
           <article
@@ -193,161 +183,67 @@ export default function SkillCenterPage() {
         ))}
       </section>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="rounded-lg border border-[#e4d9c8] bg-white p-5 dark:border-[#283443] dark:bg-[#101820]">
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="mb-1 text-xs text-[#827664] dark:text-gray-400">Catalog</p>
-              <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#231f18] dark:text-gray-100">
-                已上架 Skill
-              </h2>
-            </div>
-            <StatusPill>{PUBLISHED_SKILLS.length} 个 Skill</StatusPill>
-          </div>
-
-          <div className="grid gap-3">
-            {PUBLISHED_SKILLS.map((skill) => (
-              <article key={skill.name} className="rounded-md border border-[#eee4d5] p-4 dark:border-[#263241]">
-                <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="mb-1 font-mono text-xs text-[#8b5a1f] dark:text-[#f0c776]">{skill.name}</p>
-                    <h3 className="mb-1 border-b-0 pb-0 text-lg font-semibold text-[#231f18] dark:text-gray-100">
-                      {skill.title}
-                    </h3>
-                  </div>
-                  <StatusPill>{skill.status}</StatusPill>
-                </div>
-                <div className="mb-3 flex flex-wrap gap-1.5">
-                  <StatusPill>{skill.category}</StatusPill>
-                  {skill.codexReady ? <StatusPill>Codex 可配置</StatusPill> : null}
-                </div>
-                <p className="mb-4 text-sm leading-7 text-[#5c5144] dark:text-gray-300">{skill.desc}</p>
-                <dl className="grid gap-3 text-sm leading-6 text-[#51483b] dark:text-gray-300">
-                  <div>
-                    <dt className="mb-1 font-semibold text-[#231f18] dark:text-gray-100">触发场景</dt>
-                    <dd>{skill.trigger}</dd>
-                  </div>
-                  <div>
-                    <dt className="mb-1 font-semibold text-[#231f18] dark:text-gray-100">输入要求</dt>
-                    <dd>{skill.inputs.join(' / ')}</dd>
-                  </div>
-                  <div>
-                    <dt className="mb-1 font-semibold text-[#231f18] dark:text-gray-100">产出格式</dt>
-                    <dd>{skill.outputs.join(' / ')}</dd>
-                  </div>
-                  <div>
-                    <dt className="mb-1 font-semibold text-[#231f18] dark:text-gray-100">验收标准</dt>
-                    <dd>{skill.acceptance}</dd>
-                  </div>
-                </dl>
-              </article>
-            ))}
-          </div>
-        </div>
-
-        <aside className="rounded-lg border border-[#e4d9c8] bg-white p-5 dark:border-[#283443] dark:bg-[#101820]">
-          <p className="mb-1 text-xs text-[#827664] dark:text-gray-400">Publishing Standard</p>
-          <h2 className="mb-4 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#231f18] dark:text-gray-100">
-            上架标准
-          </h2>
-          <ol className="space-y-3">
-            {PUBLISHING_RULES.map((rule, index) => (
-              <li key={rule} className="flex gap-3 text-sm leading-7 text-[#51483b] dark:text-gray-300">
-                <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f1e7d8] font-mono text-xs text-[#6f5e45] dark:bg-[#17212d] dark:text-gray-300">
-                  {index + 1}
-                </span>
-                <span>{rule}</span>
-              </li>
-            ))}
-          </ol>
-        </aside>
-      </section>
-
+      {/* Quick catalog index */}
       <section className="mt-8 rounded-lg border border-[#e4d9c8] bg-white p-5 dark:border-[#283443] dark:bg-[#101820]">
-        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-1 text-xs text-[#827664] dark:text-gray-400">Local Codex</p>
+            <p className="mb-1 text-xs text-[#827664] dark:text-gray-400">Catalog</p>
             <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#231f18] dark:text-gray-100">
-              配置到本地 Codex
+              已上架 Skill
             </h2>
           </div>
-          <StatusPill>{TUARAN_PROFILE_CODEX.installPath}</StatusPill>
+          <StatusPill>{PUBLISHED_SKILLS.length} 个 Skill</StatusPill>
         </div>
-
-        <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="rounded-md border border-[#eee4d5] bg-[#fdfaf5] p-4 dark:border-[#263241] dark:bg-[#121a24]">
-            <h3 className="mb-3 border-b-0 pb-0 text-lg font-semibold text-[#231f18] dark:text-gray-100">
-              文件结构
-            </h3>
-            <ol className="space-y-2 text-sm leading-6 text-[#51483b] dark:text-gray-300">
-              <li>
-                <span className="font-mono text-xs text-[#8b5a1f] dark:text-[#f0c776]">
-                  {TUARAN_PROFILE_CODEX.installPath}
+        <ul className="grid gap-2 md:grid-cols-2">
+          {PUBLISHED_SKILLS.map((skill) => (
+            <li key={skill.id}>
+              <Link
+                href={`/skill-center/${skill.id}`}
+                className="group flex items-center justify-between gap-3 rounded-md border border-[#eee4d5] bg-[#fdfaf5] px-4 py-3 no-underline transition-colors hover:!no-underline hover:border-[#d9c9a8] hover:bg-[#f9f0de] dark:border-[#263241] dark:bg-[#121a24] dark:hover:border-[#3a4a5d]"
+              >
+                <span>
+                  <span className="block font-mono text-xs text-[#8b5a1f] dark:text-[#f0c776]">
+                    {skill.name}
+                  </span>
+                  <span className="mt-0.5 block text-sm font-semibold text-[#231f18] dark:text-gray-100">
+                    {skill.title}
+                  </span>
                 </span>
-              </li>
-              {TUARAN_PROFILE_CODEX.files.map((file) => (
-                <li key={file} className="pl-3 font-mono text-xs text-[#6b5f4d] dark:text-gray-300">
-                  {file}
-                </li>
-              ))}
-            </ol>
-            <p className="mt-4 mb-0 text-sm leading-7 text-[#665b4d] dark:text-gray-300">
-              新建同名目录后，把右侧两个文件内容分别保存进去，即可作为本地 Codex skill 使用。
-            </p>
-          </aside>
-
-          <div className="grid min-w-0 gap-4">
-            <article className="min-w-0 rounded-md border border-[#eee4d5] dark:border-[#263241]">
-              <div className="border-b border-[#eee4d5] px-4 py-3 dark:border-[#263241]">
-                <h3 className="mb-0 border-b-0 pb-0 font-mono text-sm font-semibold text-[#231f18] dark:text-gray-100">
-                  SKILL.md
-                </h3>
-              </div>
-              <pre className="m-0 max-h-[420px] overflow-auto bg-[#f7f2e9] p-4 text-xs leading-6 text-[#3d352b] dark:bg-[#0b1118] dark:text-gray-200">
-                <code>{TUARAN_PROFILE_CODEX.skillMd}</code>
-              </pre>
-            </article>
-
-            <article className="min-w-0 rounded-md border border-[#eee4d5] dark:border-[#263241]">
-              <div className="border-b border-[#eee4d5] px-4 py-3 dark:border-[#263241]">
-                <h3 className="mb-0 border-b-0 pb-0 font-mono text-sm font-semibold text-[#231f18] dark:text-gray-100">
-                  agents/openai.yaml
-                </h3>
-              </div>
-              <pre className="m-0 max-h-[220px] overflow-auto bg-[#f7f2e9] p-4 text-xs leading-6 text-[#3d352b] dark:bg-[#0b1118] dark:text-gray-200">
-                <code>{TUARAN_PROFILE_CODEX.openaiYaml}</code>
-              </pre>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-8 rounded-lg border border-[#e4d9c8] bg-white p-5 dark:border-[#283443] dark:bg-[#101820]">
-        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="mb-1 text-xs text-[#827664] dark:text-gray-400">tuaran-profile</p>
-            <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#231f18] dark:text-gray-100">
-              三档介绍版本
-            </h2>
-          </div>
-          <StatusPill>短 / 中 / 长</StatusPill>
-        </div>
-        <div className="grid gap-4">
-          {TUARAN_PROFILE_VERSIONS.map((version) => (
-            <article
-              key={version.label}
-              className="rounded-md border border-[#eee4d5] bg-[#fdfaf5] p-4 dark:border-[#263241] dark:bg-[#121a24]"
-            >
-              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="mb-0 border-b-0 pb-0 text-lg font-semibold text-[#231f18] dark:text-gray-100">
-                  {version.label}
-                </h3>
-                <p className="mb-0 text-xs text-[#827664] dark:text-gray-400">{version.useCase}</p>
-              </div>
-              <p className="mb-0 text-sm leading-7 text-[#51483b] dark:text-gray-300">{version.text}</p>
-            </article>
+                <span className="text-[#8b5a1f] transition-transform group-hover:translate-x-0.5 dark:text-[#f0c776]">
+                  →
+                </span>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
+      </section>
+
+      {/* Per-skill cards focused on download/share */}
+      <section className="mt-8 grid gap-6">
+        {PUBLISHED_SKILLS.map((skill) => (
+          <SkillCard key={skill.id} skill={skill} />
+        ))}
+      </section>
+
+      {/* Publishing standards */}
+      <section className="mt-8 rounded-lg border border-[#e4d9c8] bg-white p-5 dark:border-[#283443] dark:bg-[#101820]">
+        <p className="mb-1 text-xs text-[#827664] dark:text-gray-400">Publishing Standard</p>
+        <h2 className="mb-4 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#231f18] dark:text-gray-100">
+          上架标准
+        </h2>
+        <ol className="grid gap-3 md:grid-cols-2">
+          {PUBLISHING_RULES.map((rule, index) => (
+            <li
+              key={rule}
+              className="flex gap-3 rounded-md border border-[#eee4d5] bg-[#fdfaf5] p-4 text-sm leading-7 text-[#51483b] dark:border-[#263241] dark:bg-[#121a24] dark:text-gray-300"
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f1e7d8] font-mono text-xs text-[#6f5e45] dark:bg-[#17212d] dark:text-gray-300">
+                {index + 1}
+              </span>
+              <span>{rule}</span>
+            </li>
+          ))}
+        </ol>
       </section>
     </main>
   )

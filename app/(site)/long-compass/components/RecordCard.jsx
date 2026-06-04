@@ -1,6 +1,6 @@
 'use client'
 
-import { THEME_COLORS } from '../../../../../lib/longCompass/schema'
+import { THEME_COLORS } from '../../../../lib/longCompass/schema'
 
 import { PROSE_CLASS, renderMarkdown } from './markdown'
 

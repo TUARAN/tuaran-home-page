@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { articles } from '../articlesData'
-import ArticleAuthorIntro from '../../components/ArticleAuthorIntro'
+import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import { listResearch } from '../../../../lib/research/loader'
@@ -250,7 +250,9 @@ export default async function ArticleDetailPage({ params }) {
             ) : null}
 
             <main className="flex-1 min-w-0">
-              <ArticleAuthorIntro />
+              <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 dark:border-[#e2bd75] dark:bg-[#2a2115]">
+                <AuthorByline />
+              </aside>
               {article.cover ? (
                 <div className="mb-8 max-w-3xl mx-auto">
                   <Image
@@ -343,7 +345,9 @@ export default async function ArticleDetailPage({ params }) {
             </div>
           </header>
 
-          <ArticleAuthorIntro />
+          <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 dark:border-[#e2bd75] dark:bg-[#2a2115]">
+            <AuthorByline />
+          </aside>
 
           {article.cover ? (
             <div className="mb-8 max-w-3xl mx-auto">

@@ -10,8 +10,10 @@ import { useState } from 'react'
  * - title: 页面标题
  * - text:  可选，分享摘要（一句话即可）
  * - url:   SSR 传入的 canonical URL；客户端会优先用 window.location.href（保留 ?v=、#hash 等运行时参数）
+ * - exactUrl: true 时把 url prop 视为权威路径（用 location.origin 拼接），适合 per-anchor 分享场景
+ * - size:  'sm' / 'md'
  */
-export default function SharePageButton({ title, text, url, size = 'sm' }) {
+export default function SharePageButton({ title, text, url, size = 'sm', exactUrl = false }) {
   const [state, setState] = useState('idle')
 
   function flash(next) {
@@ -44,8 +46,14 @@ export default function SharePageButton({ title, text, url, size = 'sm' }) {
   }
 
   async function handleShare() {
-    const targetUrl =
-      typeof window !== 'undefined' && window.location?.href ? window.location.href : url
+    let targetUrl
+    if (exactUrl && typeof window !== 'undefined' && window.location?.origin) {
+      // url 是相对路径（如 "/skill-center#xxx"）或绝对路径，按权威值拼接 origin
+      targetUrl = /^https?:\/\//.test(url) ? url : `${window.location.origin}${url}`
+    } else {
+      targetUrl =
+        typeof window !== 'undefined' && window.location?.href ? window.location.href : url
+    }
     const payload = { title, text, url: targetUrl }
 
     if (typeof navigator.share === 'function') {

@@ -1,4 +1,5 @@
 import { articles } from './articlesData'
+import { ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
 import { CATEGORY_META, COMPANY_TYPE_META, TOPIC_TYPE_META, listResearch } from '../../../lib/research/loader'
 
 function isExternalHref(href) {
@@ -81,33 +82,6 @@ const RESOURCE_ITEMS = [
   },
 ]
 
-// 工程作品（5% 原创层）：自研可视化、亲身实测、长期写作项目。富页面背后是不可被 AI 替代的工程量/原创判断。
-const ENGINEERING_WORKS = [
-  {
-    title: '日月运行交互可视化',
-    summary:
-      '用日心视角探索太阳中心、地球公转与自转、月球绕地运行与月相变化；把日出日落、昼夜分界和月相循环放在一个可交互模型里复盘。',
-    date: '2026-05-31',
-    href: '/sun-moon-motion',
-    tagLabel: '工程作品 · 可视化',
-  },
-  {
-    title: 'AI Token 用量与花费强度调研',
-    summary:
-      '日耗 1 亿 / 4.5 亿 tokens（账单口径，含缓存命中）对照：账单 vs 净处理双账户 + 对数刻度强度尺 + cache-aware 三段定价折算月费 + 订阅 vs 按量口径 + 效率信号 + 优化抓手 ROI 排序。',
-    date: '2026-05-31',
-    href: '/ai-token-usage-research',
-    tagLabel: '工程作品 · 实测数据',
-  },
-  {
-    title: '《张居正：一个改革者的成事与代价》· 写作出版工程',
-    summary: '用输出倒逼输入：把"写一本张居正的书并发布出版"作为长期富页面项目运营。主线、目录、人物关系、关键事件、12 个月节奏与进度看板。',
-    date: '2026-05-30',
-    href: '/zhang-juzheng-book',
-    tagLabel: '工程作品 · 长期项目',
-  },
-]
-
 export function buildKnowledgeItems() {
   const postItems = articles.map((article) => {
     const path = article.slug === 'diary-self-reflection' ? '/diary' : `/articles/${article.slug}`
@@ -159,7 +133,7 @@ export function buildKnowledgeItems() {
   const worksItems = ENGINEERING_WORKS.map((p) => ({
     id: `work:${p.href}`,
     kind: 'works',
-    tagLabel: p.tagLabel || '工程作品',
+    tagLabel: p.kind ? `工程作品 · ${p.kind}` : '工程作品',
     title: p.title,
     summary: p.summary,
     date: p.date,

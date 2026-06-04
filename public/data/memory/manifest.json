@@ -1,0 +1,191 @@
+{
+  "generatedAt": "2026-06-04T00:41:20.930Z",
+  "kdf": {
+    "algorithm": "PBKDF2-SHA256",
+    "iterations": 200000,
+    "keyBits": 256
+  },
+  "cipher": "AES-GCM",
+  "sources": {
+    "claude": {
+      "label": "Claude Code 项目记忆",
+      "description": "~/.claude/projects/…/memory/ 下的跨会话项目级记忆",
+      "files": {
+        "MEMORY": {
+          "title": "MEMORY",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:05.803Z",
+              "hash": "b5ec18c0c5f58a23034511fb0bd78be4e19e82dc0a23e959a9e8dba461d16c9c",
+              "path": "claude/MEMORY/2026-06-03T03-22-05-837Z.enc.json",
+              "bytes": 684
+            }
+          ]
+        },
+        "content-strategy-first-person-pivot": {
+          "title": "content-strategy-first-person-pivot",
+          "description": "站长已认同「2026 年内容杠杆点应从 AI 协助调研转向第一人称叙事」；与其继续生产 AI 味文章，不如帮他识别什么内容只有他能写",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:05.838Z",
+              "hash": "dd8e0e0828f0393e8028d1159ab115a44ad92ded429545b2600d7e81ead2421d",
+              "path": "claude/content-strategy-first-person-pivot/2026-06-03T03-22-05-871Z.enc.json",
+              "bytes": 1004
+            }
+          ]
+        },
+        "research-variant-labels": {
+          "title": "research-variant-labels",
+          "description": "研究文章 variant 切换器的工具标签命名约定 —— Claude Code 标 Opus 4.7、Codex 标 GPT-5.5、Cursor 不带版本号",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:05.872Z",
+              "hash": "a5c70d1b816f298ff3a6397c6dc5a9a84982894eb6e1222f57fa41fbe063911d",
+              "path": "claude/research-variant-labels/2026-06-03T03-22-05-905Z.enc.json",
+              "bytes": 978
+            }
+          ]
+        },
+        "site-review-doc": {
+          "title": "site-review 文档存在性指针",
+          "description": "仓库内 ai-context/site-review-2026-05-17.md 存有一份犀利的站点审查报告（10 大问题诊断 + 一年路线图）",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:05.905Z",
+              "hash": "43b7ddf88656eb968fe5e9dfd2e5b66f8c5df02e216fb57f37c79b50711569bb",
+              "path": "claude/site-review-doc/2026-06-03T03-22-05-938Z.enc.json",
+              "bytes": 595
+            }
+          ]
+        },
+        "user-positioning": {
+          "title": "user-positioning",
+          "description": "站长真实定位与自我审视陷阱——「非精英路径中年技术人」是优势不是包袱；不要套用清北/大厂叙事评价自己",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:05.939Z",
+              "hash": "620058ebd247e93bfec4fb20a3d83a196ebf0036aab2b5fb88b4b729906ac8fe",
+              "path": "claude/user-positioning/2026-06-03T03-22-05-971Z.enc.json",
+              "bytes": 800
+            }
+          ]
+        },
+        "vibe-coding-research-versions": {
+          "title": "vibe-coding-research-versions",
+          "description": "\\\"vibe coding 时代架构师判断力结构\\\"调研采用文章内多版本切换器（同一篇 .md 用 <!-- variant:xxx --> 切分），目前并存 Cursor 版与 Claude Code 版",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:05.972Z",
+              "hash": "223b446099f5dea8a6065abaeb7a55ae0088db2a8e971b604b89cfe40091d284",
+              "path": "claude/vibe-coding-research-versions/2026-06-03T03-22-06-005Z.enc.json",
+              "bytes": 1510
+            }
+          ]
+        }
+      }
+    },
+    "ai-context": {
+      "label": "仓库 ai-context/",
+      "description": "仓库内长期保存的架构 / 规划 / 审查文档",
+      "files": {
+        "architecture": {
+          "title": "architecture",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:06.006Z",
+              "hash": "ccdf20708973081cd6c67c725056977d6d97aea0ab4ba8f64ebeb57924145cfd",
+              "path": "ai-context/architecture/2026-06-03T03-22-06-039Z.enc.json",
+              "bytes": 5873
+            }
+          ]
+        },
+        "content-layer-refactor-plan": {
+          "title": "content-layer-refactor-plan",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:06.039Z",
+              "hash": "77ddc37ae2c4d9c9c1e3f68a2a5a71ef9072909f1bd651451113ed3ca222bfec",
+              "path": "ai-context/content-layer-refactor-plan/2026-06-03T03-22-06-072Z.enc.json",
+              "bytes": 3129
+            }
+          ]
+        },
+        "performance-optimization-report": {
+          "title": "performance-optimization-report",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:06.073Z",
+              "hash": "3803ce556b15e19e64af5c8962c2ba6749db49a31f8465fa71f882233515d36f",
+              "path": "ai-context/performance-optimization-report/2026-06-03T03-22-06-105Z.enc.json",
+              "bytes": 10534
+            }
+          ]
+        },
+        "site-review-2026-05-17": {
+          "title": "site-review-2026-05-17",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:06.106Z",
+              "hash": "ce675df71f20137a4d1cd6f3a5345fa1891d018f0f9c9672c8b89146de7965df",
+              "path": "ai-context/site-review-2026-05-17/2026-06-03T03-22-06-139Z.enc.json",
+              "bytes": 6507
+            }
+          ]
+        },
+        "site-tools-shortener": {
+          "title": "site-tools-shortener",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:06.140Z",
+              "hash": "1d94d1b16e4db88715901f46edd32e96ea98ccdde6627d6ac27b3b6754cd82ab",
+              "path": "ai-context/site-tools-shortener/2026-06-03T03-22-06-173Z.enc.json",
+              "bytes": 5261
+            }
+          ]
+        },
+        "web-llm-1to1-port": {
+          "title": "web-llm-1to1-port",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:06.174Z",
+              "hash": "7eba75a4eb23885d7f6dda0a2b9ad8f564357440c70f318014b8de4dbafc34fb",
+              "path": "ai-context/web-llm-1to1-port/2026-06-03T03-22-06-206Z.enc.json",
+              "bytes": 3927
+            }
+          ]
+        },
+        "web-llm-integration-notes": {
+          "title": "web-llm-integration-notes",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:06.207Z",
+              "hash": "4551a45406a79bb9d080fa17a30c64b50fdfb42a03ae3d3f8c60768f346b9e13",
+              "path": "ai-context/web-llm-integration-notes/2026-06-03T03-22-06-240Z.enc.json",
+              "bytes": 4039
+            }
+          ]
+        },
+        "web-llm-port-handoff": {
+          "title": "web-llm-port-handoff",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-03T03:22:06.240Z",
+              "hash": "b84b59dfb6e43c6f500d4802c67570ea7ac69e8f9f32f9edc6bf3debcdf15948",
+              "path": "ai-context/web-llm-port-handoff/2026-06-03T03-22-06-273Z.enc.json",
+              "bytes": 7913
+            }
+          ]
+        }
+      }
+    }
+  }
+}

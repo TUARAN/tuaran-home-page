@@ -6,7 +6,7 @@ import Link from 'next/link'
  * 同时不把页面包装成「请注册我吧」。
  *
  * 三种状态：
- *  - state="anonymous"   未登录访客 → 私域提示 + 不显眼的「我是涂阿燃」小链接
+ *  - state="anonymous"   未登录访客 → 私域提示 + 不显眼的「登录」小链接
  *  - state="not-owner"   已登录但不是 owner → 私域提示 + 返回 / 退出，不暗示能解锁
  *  - state="loading"     还在确认 session → 简单占位
  *
@@ -67,7 +67,7 @@ export default function PrivateVaultGate({
             href={loginHref}
             className="text-[#8f8069] underline underline-offset-2 hover:text-[#5d503f] dark:text-gray-500 dark:hover:text-gray-300"
           >
-            我是涂阿燃 →
+            登录 →
           </a>
         </div>
       )}

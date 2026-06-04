@@ -214,7 +214,7 @@ export default function VoiceTasksClient() {
                 onClick={login}
                 className="rounded-full border border-[#ddd] px-3 py-1 text-xs text-[#555] disabled:opacity-60 dark:border-gray-700 dark:text-gray-300"
               >
-                我是涂阿燃 →
+                登录 →
               </button>
             )}
             <button type="button" onClick={() => refresh()} className="rounded-full border border-[#ddd] px-3 py-1 text-xs text-[#555] dark:border-gray-700 dark:text-gray-300">

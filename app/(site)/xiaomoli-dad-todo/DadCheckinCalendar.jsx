@@ -91,7 +91,7 @@ export default function DadCheckinCalendar({
               href={loginHref}
               className="inline-flex items-center rounded-lg border border-[#4a6fa5] bg-[#4a6fa5]/10 px-3 py-1 text-xs font-medium text-[#3d5a80] no-underline hover:bg-[#4a6fa5]/20 dark:border-[#6b8cbc] dark:bg-[#2a3f5c]/40 dark:text-[#a8c4e8]"
             >
-              {authLoading ? '检测登录…' : 'GitHub 登录'}
+              {authLoading ? '检测登录…' : '我是涂阿燃 →'}
             </a>
           )}
         </div>
@@ -106,7 +106,7 @@ export default function DadCheckinCalendar({
         </div>
       ) : (
         <p className="mb-3 text-xs leading-relaxed text-[#8a7f6f] dark:text-gray-500">
-          登录后，点选日期会切换下面同一套清单的当日勾选；日历上的圆点表示该日已有完成条数；无需单独「打卡」某日期。
+          这是站长（涂阿燃）家庭打卡的私域记录，仅作者本人可写入。日历上的圆点表示该日已有完成条数。
         </p>
       )}
 

@@ -482,7 +482,7 @@ export default function DadTodoClient() {
                 : 'border-[#4a6fa5] bg-[#4a6fa5]/10 text-[#3d5a80] hover:bg-[#4a6fa5]/15 dark:border-[#6b8cbc] dark:bg-[#2a3f5c]/40 dark:text-[#a8c4e8]'
             }`}
           >
-            <span>{authLoading ? '检测登录…' : '用 GitHub 登录以保存勾选'}</span>
+            <span>{authLoading ? '检测登录…' : '私域内容 · 仅站长可写入 · 我是涂阿燃 →'}</span>
             <span aria-hidden="true">→</span>
           </a>
         )}

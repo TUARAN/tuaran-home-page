@@ -59,7 +59,7 @@ function getTagToneClass(tag) {
   if (normalized === 'hot') {
     return 'bg-[#f8eceb] text-[#a67a76] dark:bg-[#342628] dark:text-[#d9b4b0]'
   }
-  if (normalized === 'lock' || normalized === 'private') {
+  if (normalized === 'lock' || normalized === 'private' || normalized === 'owner') {
     return 'bg-[#d8dee8] text-[#3f4b5d] dark:bg-[#18202b] dark:text-[#b3c0d1]'
   }
   if (normalized === 'login' || normalized === '登录') {

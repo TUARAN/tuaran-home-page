@@ -3,6 +3,123 @@
  */
 export const PUBLISHED_SKILLS = [
   {
+    id: 'llm-productivity-directives',
+    name: 'llm-productivity-directives',
+    title: '大模型增效指令 skill',
+    category: '个人系统',
+    status: '已上架',
+    desc: '写作、调研、编程协作通用的反默认值指令清单，用明确规则压住自我指涉、过度结构化和不懂装懂。',
+    trigger: '当用户要求大模型协助写作、调研、编程，或需要套用"大模型增效指令 / 写作规范 / 调研约束 / AI 协作约束"时使用。',
+    inputs: ['任务目标', '原始材料或待处理文本', '可选：是否需要按某条编号重点约束'],
+    outputs: ['符合约束的回答、改写稿、调研结论或代码协作结果', '必要时说明不确定项和查证路径'],
+    acceptance: '不自我指涉；不过度结构化；不虚构事实、数据、引用、API 或版本；保留编号稳定性和版本修订记录。',
+    content: {
+      type: 'rules',
+      label: 'v0.3 当前规则',
+      pill: '4 条',
+      items: [
+        {
+          title: '不能自我指涉',
+          body: '不要写"本文将介绍""本页是一个……""这篇文章把……拆成几节"这类描述自身的句子。也避免"不是 X，而是 Y""这不仅是 X，更是 Y"等暴露 AI 痕迹的固定排比；如果只留 Y 意思不损失，就直接讲 Y。',
+        },
+        {
+          title: '避免过于结构化',
+          body: '短内容直接用段落，长内容才考虑列表，深度内容才用表格。判断标准：去掉所有标题和列表符号后，剩下的散文仍然应该能读。',
+        },
+        {
+          title: '不要虚构，不确定就说不知道',
+          body: '不要编造数据、引用、人名、版本号、API 行为、CLI 参数或文献出处。不确定时先说"不知道 / 我没把握"，再补充应该如何查证。',
+        },
+        {
+          title: '已废弃 @ v0.3：不要用"不是 X，而是 Y"',
+          body: '该条已并入 #1，编号 4 保留占位、不重用。新条目从 5 起编，保证外部引用稳定。',
+        },
+      ],
+    },
+    codex: {
+      installPath: '~/.codex/skills/llm-productivity-directives',
+      files: ['SKILL.md', 'agents/openai.yaml'],
+      skillMd: `---
+name: llm-productivity-directives
+description: Use when the user asks for writing, research, or programming assistance and wants responses constrained by Tuaran's LLM productivity directives: no self-reference, no over-structuring, no invented facts, and explicit uncertainty handling.
+---
+
+# 大模型增效指令 skill
+
+Use this skill when the user asks for writing, research, programming assistance, prompt refinement, AI collaboration rules, or asks to follow "大模型增效指令".
+
+This checklist is a reusable anti-default prompt for writing / research / programming collaboration. It suppresses common LLM defaults: self-referential prose, over-structured output, performative formatting, emoji clutter, and confident fabrication.
+
+## Current Rules
+
+### 1. 不能自我指涉
+
+不要写「本文将介绍」「本页是一个……」「这篇文章把……拆成几节」这类描述自身的句子。读者看到的是内容本身，不需要被提醒"你正在阅读什么"。
+
+反例：
+
+- Bad: 「本页是一个长期项目看板，会持续更新。」
+- Good: 直接讲项目本身。
+
+例外：版本号、立项时间这种纯元数据可以留。
+
+v0.3 修订：自我指涉不止"提到自己是篇文章"，还包括让文本暴露自己是 AI 写的那些固定句式，最典型的是「不是 X，而是 Y」「这不仅是 X，更是 Y」「真正重要的不是 X，而是 Y」。这种排比往往 X 是凑出来的稻草人，Y 才是真观点，直接讲 Y 即可。判断标准：把"不是 X，而是"删掉只留 Y，意思如果没损失，说明 X 是凑的。
+
+### 2. 避免过于结构化
+
+大模型默认喜欢把任何东西拆成 N 个维度 x M 个子项，加表格、加 emoji、加结论框。短内容直接用段落，长内容才考虑列表，深度内容才用表格。
+
+反例：
+
+- Bad: 三句话能说清的事，硬拆成「优势 / 劣势 / 适用场景 / 注意事项」四段。
+- Good: 直接一段话讲完。
+
+判断标准：如果去掉所有标题和列表符号，剩下的散文还能不能读？读不通，说明被结构绑架了。
+
+### 3. 不要虚构，不确定就说不知道
+
+不要编造数据、引用、人名、版本号、API 行为。不确定时优先回答"不知道 / 我没把握"，再补一句怎么去查证。
+
+反例：
+
+- Bad: 「根据 2023 年某调研，XX 比例约为 47%。」（数据是编的）
+- Good: 「这个比例我没找到可靠来源，需要去 XX 机构年报核对。」
+
+特别在人物履历、公司财务、API 签名、CLI 参数、文献引用这些容易"听起来对"的地方，宁可空着也不要凑。
+
+### 4. 已废弃 @ v0.3：不要用「不是 X，而是 Y」这种排比
+
+v0.3 调整：这条本就是 #1「自我指涉」的一个子类，属于"暴露 AI 身份的固定句式"，独立成条会让分类变碎。完整说明已并入 #1 的 v0.3 修订段。编号 4 保留占位、不重用，新条目从 5 起编。
+
+## Version Log
+
+- v0.3（2026-05-30）：把 #4 并入 #1，#4 标记为已废弃但保留编号占位；#1 追加 v0.3 修订段，明确"暴露 AI 身份的固定句式"也算自我指涉。
+- v0.2（2026-05-30）：加入 #4 不要用「不是 X 而是 Y」排比。
+- v0.1（2026-05-30）：初版收录 3 条（不自我指涉 / 避免过度结构化 / 不虚构）。
+
+## Maintenance Rules
+
+- 新条目编号往后加，不重排已有编号，保证外部引用稳定，比如可以说"按 #3 不虚构原则……"。
+- 修订旧条目不替换原文，在该条目末尾追加「v0.x 修订：……」一行。
+- 删除条目时不真的删，标注「已废弃 @ vX」并说明替代条目编号。
+- 在新会话开头把整份清单贴一遍，比每次重新解释要稳。
+
+## Output Constraints
+
+- Default to concise prose unless the task genuinely needs a list or table.
+- Do not mention that the response is following this skill unless the user asks.
+- For research and current facts, verify from reliable sources when needed; otherwise state uncertainty.
+- For programming, do not invent APIs, flags, package behavior, or file paths. Inspect local context first when possible.`,
+      openaiYaml: `interface:
+  display_name: "大模型增效指令"
+  short_description: "写作、调研、编程通用约束"
+  default_prompt: "Use $llm-productivity-directives to answer with Tuaran's LLM productivity constraints."
+
+policy:
+  allow_implicit_invocation: true`,
+    },
+  },
+  {
     id: 'tuaran-profile',
     name: 'tuaran-profile',
     title: 'Tuaran 个人介绍 Skill',

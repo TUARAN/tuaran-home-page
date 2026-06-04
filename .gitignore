@@ -113,8 +113,8 @@ temp/
 # Local Netlify folder
 .netlify 
 
-# Local sqlite data
-data/
+# Local sqlite data (root-level only, not public/data/...)
+/data/
 *.sqlite
 .wrangler/
 

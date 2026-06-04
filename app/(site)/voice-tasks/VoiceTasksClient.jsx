@@ -84,7 +84,7 @@ export default function VoiceTasksClient() {
   }, [isAuthed, statusFilter])
 
   function login() {
-    window.location.href = `/api/auth/login?returnTo=${encodeURIComponent('/voice-tasks')}`
+    window.location.href = `/login?returnTo=${encodeURIComponent('/voice-tasks')}`
   }
 
   function logout() {

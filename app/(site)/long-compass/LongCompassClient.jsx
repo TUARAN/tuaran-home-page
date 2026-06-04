@@ -11,7 +11,7 @@ import Timeline from './components/Timeline'
 import UnlockForm from './components/UnlockForm'
 
 function login() {
-  window.location.href = `/api/auth/login?returnTo=${encodeURIComponent('/long-compass')}`
+  window.location.href = `/login?returnTo=${encodeURIComponent('/long-compass')}`
 }
 
 export default function LongCompassClient() {

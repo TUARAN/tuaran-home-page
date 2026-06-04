@@ -793,8 +793,8 @@ export default function AiTokenUsageResearchClient() {
           <Link href="/articles?tab=works" className="underline decoration-[#d3b889] underline-offset-2">
             返回工程作品列表
           </Link>
-          <Link href="/articles/research/topics/llm-prompt-directives" className="underline decoration-[#d3b889] underline-offset-2">
-            相关：LLM Prompt 指令清单
+          <Link href="/skill-center/llm-productivity-directives" className="underline decoration-[#d3b889] underline-offset-2">
+            相关：大模型增效指令 skill
           </Link>
         </div>
       </section>

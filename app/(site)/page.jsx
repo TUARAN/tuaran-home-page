@@ -1,11 +1,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { articles } from './articles/articlesData'
-import CopyIntroButton from './components/CopyIntroButton'
 import DaysSince from './components/DaysSince'
 import LatestMoments from './components/LatestMoments'
 import SiteFooter from './components/SiteFooter'
-import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_INTRO_COPY } from '../../lib/siteIntro'
+import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
 import { listResearch } from '../../lib/research/loader'
 
 function wrapTitle(title) {
@@ -121,9 +120,6 @@ export default function HomePage() {
       <section className="flex-1 mb-14">
         <header className="relative mb-8 overflow-hidden rounded-[28px] border border-[#e6dfd2] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,245,240,0.92))] px-5 py-4 shadow-[0_16px_48px_rgba(91,78,53,0.06)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-7 md:py-5">
           <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] bg-[radial-gradient(circle_at_72%_50%,rgba(183,121,31,0.18),transparent_36%),linear-gradient(90deg,transparent,rgba(244,238,226,0.72))] dark:bg-[radial-gradient(circle_at_72%_50%,rgba(240,199,118,0.14),transparent_36%),linear-gradient(90deg,transparent,rgba(18,24,33,0.72))] lg:block" />
-          <div className="absolute right-5 top-5 z-10">
-            <CopyIntroButton text={SITE_INTRO_COPY} />
-          </div>
           <div className="pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[2.6rem] font-semibold uppercase leading-none tracking-[0.16em] text-[#7c5d34]/[0.13] dark:text-white/[0.1] lg:block xl:right-14">
             2ARAN.COM
           </div>

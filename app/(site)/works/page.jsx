@@ -25,7 +25,7 @@ export default function WorksPage() {
       <header className="flex flex-col gap-4 border-b border-[#e8dfd0] pb-6 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
-            Engineering Works · 5% Original Layer
+            Engineering Works
           </p>
           <h1 className="mt-2 font-serif text-[28px] font-semibold leading-tight text-[#221f19] dark:text-gray-100 sm:text-[32px]">
             工程作品
@@ -86,7 +86,7 @@ export default function WorksPage() {
 
       <footer className="mt-12 border-t border-[#e8dfd0] pt-6 text-[12px] leading-6 text-[#7a6f5d] dark:border-gray-800 dark:text-gray-500">
         <p>
-          这一层占整体内容的约 5%，但是站点真正的核心 —— 工程量 + 原创判断 + 数据可视化 + 交互体验组合在一起，是<strong className="text-[#5d503f] dark:text-gray-300"> 不可被 AI 复制 </strong>的部分。
+          站点的核心层 —— 工程量 + 原创判断 + 数据可视化 + 交互体验组合在一起，是<strong className="text-[#5d503f] dark:text-gray-300"> 不可被 AI 复制 </strong>的部分。
         </p>
         <p className="mt-3 text-[11px] text-[#8f8069] dark:text-gray-600">
           如果你只想看 Markdown 形式的文章和调研，请到{' '}

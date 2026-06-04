@@ -30,7 +30,7 @@ const LEGACY_TODO_KEY = 'xiaomoli-dad-todo-v1'
 
 export default function DadTodoClient() {
   const pathname = usePathname() || '/xiaomoli-dad-todo'
-  const loginHref = `/api/auth/login?returnTo=${encodeURIComponent(pathname)}`
+  const loginHref = `/login?returnTo=${encodeURIComponent(pathname)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(pathname)}`
 
   const [calView, setCalView] = useState(() => {

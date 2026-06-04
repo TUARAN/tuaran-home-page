@@ -74,7 +74,7 @@ export default function SiteToolsPanel() {
 
   function login() {
     const returnTo = window.location.pathname || '/'
-    window.location.href = `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`
+    window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`
   }
 
   function logout() {

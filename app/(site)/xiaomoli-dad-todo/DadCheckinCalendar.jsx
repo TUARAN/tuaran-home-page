@@ -42,7 +42,7 @@ export default function DadCheckinCalendar({
   loadingMonth,
 }) {
   const pathname = usePathname() || '/'
-  const loginHref = `/api/auth/login?returnTo=${encodeURIComponent(pathname)}`
+  const loginHref = `/login?returnTo=${encodeURIComponent(pathname)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(pathname)}`
 
   const todayYmd = localYmd()

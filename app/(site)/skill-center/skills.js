@@ -328,6 +328,264 @@ policy:
   allow_implicit_invocation: true`,
     },
   },
+  {
+    id: 'rich-data-research-page',
+    name: 'rich-data-research-page',
+    title: '富数据调研页 skill',
+    category: '研究与分析',
+    status: '已上架',
+    desc: '把多维度公开数据（10 余条实体 × N 维指标）做成一个可比较、可筛选、可分享、可对比的富页面调研，而不是一篇 Markdown。沉淀自 /cancers-overview 与 /ai-token-usage-research 的实际打法。',
+    trigger: '当用户要求做一个"富页面 / 数据可视化 / 专题调研"，需要把多条同类实体（癌症 / 国家 / 行业 / 产品 / 公司）按多维指标对比、筛选和分享时使用。',
+    inputs: [
+      '一份实体清单（5–20 条，同一物种，如「10 种癌症」「10 国教育投入」「8 家云厂商」）',
+      '每条实体的多维指标（至少 3 维：一个主量级 / 一个次量级 / 一个比率类指标）',
+      '可选：可切换的数据口径（如全球 / 中国 / 不同年份）',
+      '可选：每条实体的权重明细（如风险因子、收入构成）',
+    ],
+    outputs: [
+      '一个独立 Next.js 路由（/<topic>-overview）',
+      '一个数据 module（data.js / data.ts），实体数组 + 元数据常量 + region/version 切换 helper',
+      '一个客户端富页面组件，包含：散点图 + 排行条 + 详情面板 + 对比表，所有筛选 URL 化',
+      '强免责声明 + 一手数据来源链接（顶部 + 底部）',
+    ],
+    acceptance: '所有实体一屏可见可比较；散点图清晰分出 4 象限并自带 tooltip；排行条按任意维度排序；至少 ≥3 项可两两对比；筛选状态可通过 URL 完整分享；数据口径标注清楚、不虚构。',
+    content: {
+      type: 'rules',
+      label: '10 条富数据页 pattern',
+      pill: 'v0.1',
+      items: [
+        {
+          title: '实体 schema：把每条实体压成一个对象，至少含 4 类字段',
+          body: '元信息（id / nameZh / nameEn / color / category）+ 主量级指标（如发病率、营收）+ 次量级指标（如死亡率、利润）+ 比率类指标（如生存率、利润率）+ 多维分布数组（如年龄分布 10 档）+ 加权明细数组（如风险因子带 weight + category）+ 叙述字段（主因、预警、筛查建议）。一条实体一对象，所有视图共用同一份数据。',
+        },
+        {
+          title: '口径切换：每条实体可挂多 region/version 子块',
+          body: '在实体上加 cn: {} 或 v2024: {} 等子对象，存储该口径下需要替换的字段（通常是主/次量级和比率类，明细字段共用）。顶部一个 toggle + 一个 cancerView(c, region) helper 把视图层和数据层解耦。换 region 不动主结构。',
+        },
+        {
+          title: '四象限散点图：一张图把所有实体定位完',
+          body: 'X = 主量级（对数刻度 log10，跨数量级时必备）× Y = 比率类指标（0–100% 线性）。气泡半径 = 次量级。气泡颜色 = 类别 / 性别 / 阵营。背景画两条隐线分四象限，每个象限角落写一行小字（如「常见·难治」），让对比一秒成立。pure SVG + viewBox + preserveAspectRatio="xMidYMid meet"，不引图表库。',
+        },
+        {
+          title: '气泡 tooltip：HTML overlay 用百分比定位匹配 SVG viewBox',
+          body: '不要用 SVG <title> 或 foreignObject。chart container 用 relative，tooltip 用 absolute + left/top 百分比（来自 cx/W、cy/H）。这样 SVG 缩放时 tooltip 自动跟随。右半区翻到左侧弹出（leftPct > 65 时 flip）避免出屏。',
+        },
+        {
+          title: '焦点模式：选中后其它实体自动灰化',
+          body: '维护一个 focusIds 数组（单选模式 = [openId]，对比模式 = compareIds）。散点的非 focus 气泡 opacity → 0.18，排行条的非 focus 行 opacity → 0.45。视觉焦点立即出现，不需要额外组件。hover 状态优先级高于 dim。',
+        },
+        {
+          title: '横向排行条：所有实体一屏，按选中维度叠色',
+          body: '每行：序号 + 色块 + 名字 + 性别/类别 chip + 主条（按当前 sort 维度宽度）+ 主数值 + 次维度 chip。按 incidence 排序时，把 mortality 作为同一条上的深色叠加层（width = mortality/incidence × pct），一条条同时读出"多少人得 + 多少人死"。比卡片密度高一个数量级。',
+        },
+        {
+          title: '对比模式：≤3 项 side-by-side 表格',
+          body: '顶部一个「单选 / 对比」mode toggle。对比模式下点击 = 加入 compareIds（上限 3）。详情区换成横向表格：行 = 指标（年新发 / 年死亡 / 5y 生存 / 致死 / 性别 / 主因 / 筛查 / Top 4 风险因子）× 列 = 实体。每列带 × 按钮可移除。tone 着色（绿 / 红）让差异一眼看出。',
+        },
+        {
+          title: '筛选条：搜索 + 类别 pills + 排序 pills',
+          body: '搜索框（同时匹配中英名 + 主因）+ 类别多选 pills（点击切换 activeCategories 数组）+ 排序 pills（4 个，按主/次/比率/反向比率）+ 性别/阵营三档 pills。所有筛选用 useMemo 链式串起来，重置按钮一键归零。不用 <select>，全部用 pill button 视觉一致。',
+        },
+        {
+          title: 'URL 状态：所有筛选可分享',
+          body: 'mount 时 URL → state（一次性 reading），所有 state 变化时 state → URL（用 history.replaceState 不污染历史）。URL 参数：region / q / gender / sort / cats（逗号分隔）/ mode / compare（逗号分隔）/ open。分享一个具体对比直接复制地址栏即可。',
+        },
+        {
+          title: '免责与数据口径：顶部 + 底部双重保险',
+          body: '顶部 header 里一句话点出来源（带 inline 链接）+ 一句 strong 红字免责（如「不构成医学建议」）。底部 footer 用 disc 列表展开完整口径说明：每个数据字段的来源、年份、计算方式、与其它口径的差异、风险因子权重的局限（如不是 PAF）。一手链接（IARC / SEER / NCC）必须可点。涉及健康/金钱/政策的页面强制要有。',
+        },
+      ],
+    },
+    codex: {
+      installPath: '~/.codex/skills/rich-data-research-page',
+      files: ['SKILL.md', 'agents/openai.yaml'],
+      skillMd: `---
+name: rich-data-research-page
+description: Use when the user asks to build a rich data research page or topic dashboard — a single interactive page that compares 5–20 same-kind entities (cancers, countries, companies, products) across multiple metrics with scatter chart, ranking bars, filter, focus, compare, and shareable URL state. Distilled from /cancers-overview and /ai-token-usage-research on 2aran.com.
+---
+
+# Rich Data Research Page Skill
+
+Use this skill when the user wants a topic-research deliverable that is **not a Markdown article** but a **single interactive page** showing multi-dimensional data for a set of comparable entities.
+
+Wrong fit: a 5000-word write-up. Right fit: 10 cancers × 6 metrics, 8 cloud providers × pricing tiers, 12 countries × education spending, 15 LLMs × benchmark scores.
+
+## When to use
+
+Trigger when the user says any of:
+
+- "做一个富页面 / 数据可视化 / 专题调研"
+- "把这些 X 做成一个能筛选 / 对比 / 分享的页面"
+- "我希望可视化做的美观，有各种数据支撑，关键成因分析…，最好还能筛选，可以分享"
+
+Skip if: the user wants a single timeline, a long-form essay, a chat tool, or a personal log.
+
+## Inputs you must collect
+
+1. The entity list — 5 to 20 of the same kind (cancers, countries, companies, products, AI models, etc.).
+2. At least three metrics per entity:
+   - **Primary magnitude** (e.g., annual incidence, revenue, GDP) — used for X axis and main bar
+   - **Secondary magnitude** (e.g., mortality, cost) — used for bubble radius and overlay bar
+   - **Rate / share** (e.g., 5-year survival %, margin %) — used for Y axis and tone coloring
+3. Optional but high-value:
+   - Multi-region / multi-version variants (e.g., global vs China, 2022 vs 2023)
+   - Multi-bucket distribution (e.g., 10 age buckets, 6 revenue source breakdowns)
+   - Weighted breakdown items with category tags (e.g., risk factors with category: lifestyle/genetic/virus/…)
+   - Narrative fields (warnings, screening guidance, primary cause)
+4. Disclaimers and authoritative sources — at minimum 2 first-party data citations.
+
+If the user provides incomplete data, ask precisely which metric is missing rather than guessing.
+
+## File layout (Next.js App Router)
+
+\`\`\`
+app/(site)/<topic>-overview/
+  page.jsx                  # static metadata + dynamic = 'force-static'
+  data.js                   # entities array + helpers + sources
+  <Topic>OverviewClient.jsx # 'use client' rich page
+\`\`\`
+
+Wire it into siteNav under "实验室" with a New tag.
+
+## The 10 patterns
+
+### 1. Entity schema
+
+Every entity is one object with these field groups:
+
+\`\`\`js
+{
+  id, nameZh, nameEn, color, category,            // meta
+  incidence, mortality, survival5y,                // primary / secondary / rate
+  genderRatio: { male, female },                   // share split
+  ageDistribution: [10 numbers summing ≈ 100],     // multi-bucket
+  riskFactors: [{ name, weight, category }],       // weighted breakdown
+  warnings: [...], screening: '...',               // narrative
+  cn: { incidence, mortality, survival5y },        // optional region variant
+}
+\`\`\`
+
+One entity = one object. All views share the same data.
+
+### 2. Region / version toggle
+
+Put variant blocks (\`cn\`, \`v2024\`, …) on each entity. Add a top-level toggle and a view helper:
+
+\`\`\`js
+export function cancerView(c, region = 'global') {
+  if (region === 'cn' && c.cn) return { ...c, ...c.cn }
+  return c
+}
+\`\`\`
+
+Switching region must not touch chart structure — only the swapped fields change.
+
+### 3. Quadrant scatter (the money shot)
+
+Pure SVG, no chart library. X = log10(primary), Y = rate (0–100% inverted), r = secondary scaled to 6–24px, fill = category color, stroke darker on focus.
+
+Background: two faint rectangles split by the median Y, with corner labels like "常见·难治" / "常见·可控" / "少见·难治" / "少见·可控". This makes the four quadrants legible at a glance.
+
+\`\`\`jsx
+const xPos = (v) => padL + ((Math.log10(v) - xMin) / (xMax - xMin)) * innerW
+const yPos = (v) => padT + (1 - v / 100) * innerH
+\`\`\`
+
+Use \`viewBox\` + \`preserveAspectRatio="xMidYMid meet"\` — never set width/height in px. Adjust xMin/xMax when region changes so all bubbles spread out.
+
+### 4. Tooltip overlay
+
+Don't use SVG \`<title>\` or \`<foreignObject>\`. Wrap the SVG in a \`relative\` container, render an absolutely-positioned HTML div whose \`left\` / \`top\` are computed from bubble coords as **percentages of the chart viewBox**. This survives SVG scaling.
+
+Flip right-side tooltips to the left when \`leftPct > 65\` so they don't overflow.
+
+### 5. Focus dimming
+
+Maintain one \`focusIds\` array (= [openId] in single mode, = compareIds in compare mode). Non-focused bubbles → \`opacity 0.18\`. Non-focused ranking rows → \`opacity 0.45\`. Hover state always wins.
+
+This removes the need for a separate "highlight" mechanism — the eye is led automatically.
+
+### 6. Horizontal ranking bars
+
+Below the scatter. All entities, one row each, in selected sort order.
+
+Per row: index + color square + name + gender/category chip + main bar + optional darker overlay (secondary metric) + main number + 2 mini chips (rate + reverse rate).
+
+When sort = incidence, overlay mortality on the same row at \`width = mortality/incidence × pct\`. The viewer reads both magnitudes simultaneously.
+
+### 7. Compare mode
+
+Top-level toggle: 单选详情 / 两两对比. In compare mode, clicking a row/bubble toggles inclusion in \`compareIds\` (cap 3).
+
+Replace the single detail panel with a horizontal table:
+- columns = entities
+- rows = metric labels (年新发 / 年死亡 / 5y / 致死 / 性别 / 主因 / 筛查 / Top 4 风险因子)
+- per cell tone color (good / bad) by threshold
+- each column header has × to remove
+
+This is the most-requested feature on data dashboards. Don't ship the page without it.
+
+### 8. Filter strip
+
+- Search input — match nameZh + nameEn + primary cause
+- Category pills (multi-select, click to toggle)
+- Sort pills (4 options: primary / secondary / rate / inverse rate)
+- Gender / camp toggle (3 options: all / A-dominant / B-dominant)
+- Reset button only appears when any filter is active
+
+All pills, no \`<select>\` — consistent rhythm.
+
+### 9. URL state
+
+On mount: read URL → setState (one-shot). On state change: state → URL via \`history.replaceState\` (so back button isn't polluted).
+
+Parameters: \`region\`, \`q\`, \`gender\`, \`sort\`, \`cats\` (comma), \`mode\`, \`compare\` (comma), \`open\`. Default values are omitted from URL to keep it short.
+
+### 10. Disclaimers + sources, top and bottom
+
+**Top**: one sentence in the header naming the data sources with inline links + one short strong-red disclaimer ("不构成医学建议" / "不构成投资建议" / "数据为公开估算").
+
+**Bottom**: a disc list expanding every source, year, scope, methodology caveat, and the limits of each metric (e.g., risk factor weights are illustrative, not PAF). First-party links must be clickable.
+
+For health / money / policy topics, this is non-negotiable.
+
+## Reuse checklist for a new topic
+
+When building \`/<topic>-overview\` for a new dataset:
+
+1. Pick a topic with 5–20 same-kind entities and 3+ comparable metrics.
+2. Source the data — at least 2 first-party links (org statistics, regulator reports, peer-reviewed papers, official company filings).
+3. Build \`data.js\` with the entity schema above. Add a region/version variant if the data has multiple credible cuts.
+4. Copy the structure of \`/cancers-overview/CancersOverviewClient.jsx\` and rename:
+   - Replace metric field names in the accessor functions (incidence → revenue, survival5y → margin, …).
+   - Adjust scatter X axis log range to fit the data spread.
+   - Update tone thresholds (good / bad) per metric.
+   - Rewrite the four-quadrant corner labels for the new domain.
+   - Rewrite filter copy and source links.
+5. Update siteNav with the new route under "实验室", \`tag: 'New'\`.
+6. Verify URL state round-trips for every filter combination.
+7. Verify mobile: SVG should scale; ranking bars should remain readable; compare table should horizontally scroll.
+
+## Output constraints
+
+- Never invent statistics. If a number is uncertain, use the most reputable source available and cite it inline.
+- Never imply medical / financial / legal advice. Frame everything as data visualization of public sources.
+- Do not introduce a chart library (recharts, nivo, chart.js). The cost in bundle size and styling rigidity is not worth it — pure SVG covers every pattern here.
+- Do not split into multiple routes per entity. The strength is one-page comparison.
+- Do not skip the compare mode or the share URL — they are the two highest-ROI features.
+
+## Version Log
+
+- v0.1（2026-06-04）：初版，从 /cancers-overview 提炼 10 条 pattern 与完整施工清单。`,
+      openaiYaml: `interface:
+  display_name: "Rich Data Research Page"
+  short_description: "把多维度数据做成可比较 / 筛选 / 对比 / 分享的富页面"
+  default_prompt: "Use $rich-data-research-page to build an interactive research dashboard for the given entities."
+
+policy:
+  allow_implicit_invocation: true`,
+    },
+  },
 ]
 
 export function getSkillById(id) {

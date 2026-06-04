@@ -13,7 +13,7 @@ import {
   listResearchByCategory,
 } from '../../../../../../lib/research/loader'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
-import ArticleAuthorIntro from '../../../../components/ArticleAuthorIntro'
+import { AUTHOR_INTRO_MARKDOWN, AuthorByline } from '../../../../components/ArticleAuthorIntro'
 import ArticleComments from '../../../../components/ArticleComments'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
@@ -118,6 +118,7 @@ export default async function ResearchDetailPage({ params }) {
     images: entry.images || [],
     seed: `${entry.category}:${entry.slug}:${variantList[0]?.id || assistance || 'assistance'}`,
     title: entry.title,
+    intro: AUTHOR_INTRO_MARKDOWN,
   })
   const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
@@ -279,16 +280,21 @@ export default async function ResearchDetailPage({ params }) {
           )}
         </div>
         <h1 className="mt-3 text-2xl text-[#444] dark:text-gray-200 leading-snug">{entry.title}</h1>
-        {entry.tldr ? (
-          <aside className="mt-4 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 text-sm leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:bg-[#2a2115] dark:text-gray-200">
-            <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#e2bd75]">
-              TL;DR
-            </span>
-            {entry.tldr}
-          </aside>
-        ) : entry.summary ? (
-          <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{entry.summary}</p>
-        ) : null}
+        <aside className="mt-4 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 text-sm leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:bg-[#2a2115] dark:text-gray-200">
+          <AuthorByline />
+          {entry.tldr ? (
+            <div className="mt-3 border-t border-[#e2cea0]/60 pt-3 dark:border-[#5a4f3a]/50">
+              <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#e2bd75]">
+                TL;DR
+              </span>
+              {entry.tldr}
+            </div>
+          ) : entry.summary ? (
+            <div className="mt-3 border-t border-[#e2cea0]/60 pt-3 dark:border-[#5a4f3a]/50">
+              {entry.summary}
+            </div>
+          ) : null}
+        </aside>
         {entry.tags?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {entry.tags.map((tag) => (
@@ -302,8 +308,6 @@ export default async function ResearchDetailPage({ params }) {
           </div>
         ) : null}
       </header>
-
-      <ArticleAuthorIntro />
 
       {isEncrypted ? (
         <main>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-import { decryptPayload, fetchEncryptedRecords, KIND_LABELS, migrate } from '../../../../lib/longCompass'
+import { decryptPayload, fetchEncryptedRecords, KIND_LABELS, migrate } from '../../../lib/longCompass'
 
 import RecordCard from './components/RecordCard'
 import StatusPanel from './components/StatusPanel'
@@ -11,7 +11,7 @@ import Timeline from './components/Timeline'
 import UnlockForm from './components/UnlockForm'
 
 function login() {
-  window.location.href = `/api/auth/login?returnTo=${encodeURIComponent('/about/long-compass')}`
+  window.location.href = `/api/auth/login?returnTo=${encodeURIComponent('/long-compass')}`
 }
 
 export default function LongCompassClient() {

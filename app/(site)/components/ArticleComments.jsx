@@ -35,6 +35,7 @@ function providerLabel(provider) {
 export default function ArticleComments({ articleKey }) {
   const [user, setUser] = useState(null)
   const [userLoading, setUserLoading] = useState(true)
+  const [loginOpen, setLoginOpen] = useState(false)
   const [items, setItems] = useState([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -75,6 +76,11 @@ export default function ArticleComments({ articleKey }) {
   function login(provider) {
     const returnTo = `${window.location.pathname}${window.location.search || ''}`
     window.location.href = `/api/auth/login?provider=${provider}&returnTo=${encodeURIComponent(returnTo)}`
+  }
+
+  function emailLogin() {
+    const returnTo = `${window.location.pathname}${window.location.search || ''}`
+    window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`
   }
 
   function logout() {
@@ -133,27 +139,64 @@ export default function ArticleComments({ articleKey }) {
               退出
             </button>
           ) : (
-            <>
+            <button
+              type="button"
+              disabled={userLoading}
+              onClick={() => setLoginOpen(true)}
+              className="rounded-full border border-gray-200/80 bg-white/80 px-4 py-1 text-xs text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
+            >
+              登录
+            </button>
+          )}
+        </div>
+      </div>
+
+      {loginOpen ? (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-[#fdfaf3] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] dark:border-gray-700 dark:bg-[#10161f]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="mb-1 text-base font-semibold text-[#221f19] dark:text-gray-100">选择登录方式</h3>
+                <p className="mb-0 text-xs leading-5 text-gray-600 dark:text-gray-400">
+                  登录后可以发表评论，当前页面会自动返回。
+                </p>
+              </div>
               <button
                 type="button"
-                disabled={userLoading}
+                onClick={() => setLoginOpen(false)}
+                className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                aria-label="关闭登录弹窗"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-2">
+              <button
+                type="button"
+                onClick={emailLogin}
+                className="rounded-xl border border-[#ddd2c0] bg-white px-4 py-3 text-left text-sm font-medium text-[#31291d] transition hover:bg-[#f7efe2] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100 dark:hover:bg-[#19212b]"
+              >
+                邮箱登录
+              </button>
+              <button
+                type="button"
                 onClick={() => login('github')}
-                className="rounded-full border border-gray-200/80 bg-white/80 px-3 py-1 text-xs text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
+                className="rounded-xl border border-[#ddd2c0] bg-white px-4 py-3 text-left text-sm font-medium text-[#31291d] transition hover:bg-[#f7efe2] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100 dark:hover:bg-[#19212b]"
               >
                 GitHub 登录
               </button>
               <button
                 type="button"
-                disabled={userLoading}
                 onClick={() => login('google')}
-                className="rounded-full border border-gray-200/80 bg-white/80 px-3 py-1 text-xs text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
+                className="rounded-xl border border-[#ddd2c0] bg-white px-4 py-3 text-left text-sm font-medium text-[#31291d] transition hover:bg-[#f7efe2] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100 dark:hover:bg-[#19212b]"
               >
                 Google 登录
               </button>
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {isAuthed ? (
         <form onSubmit={submit} className="mt-4 flex flex-col gap-2">
@@ -195,7 +238,7 @@ export default function ArticleComments({ articleKey }) {
         </form>
       ) : (
         <p className="mt-4 rounded-lg border border-dashed border-gray-200/80 px-3 py-3 text-sm text-gray-600 dark:border-gray-700/70 dark:text-gray-300">
-          登录后可以评论，支持 GitHub 或 Google。
+          登录后可以评论，支持邮箱、GitHub 或 Google。
         </p>
       )}
 

@@ -13,6 +13,7 @@ import {
   listResearchByCategory,
 } from '../../../../../../lib/research/loader'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
+import ArticleAuthorIntro from '../../../../components/ArticleAuthorIntro'
 import ArticleComments from '../../../../components/ArticleComments'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import CopyMarkdownButton from './CopyMarkdownButton'
@@ -301,6 +302,8 @@ export default async function ResearchDetailPage({ params }) {
           </div>
         ) : null}
       </header>
+
+      <ArticleAuthorIntro />
 
       {isEncrypted ? (
         <main>

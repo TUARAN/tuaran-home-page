@@ -9,19 +9,11 @@ function isExternalHref(href) {
 const RESOURCE_ITEMS = [
   {
     title: '单篇封神的中国古典名篇',
-    summary: '辞赋、诗歌、政论奏疏、古文散文、祭文书信杂文体的古典文学资料索引，并整合诗词巅峰原文库。',
+    summary: '辞赋、唐诗宋词、政论奏疏、古文散文、祭文书信 —— 古典文学高密度原文索引，可检索、可引用。',
     date: '2026-05-20',
     href: '/classical-masterpieces',
     resourceType: 'classics',
     tagLabel: '资料库 · 古典名篇',
-  },
-  {
-    title: '诗歌原文索引',
-    summary: '唐诗、宋词、辞赋、祭文与古文中的高密度原文材料，作为可检索、可引用的文本底座。',
-    date: '2026-05-20',
-    href: '/classical-masterpieces',
-    resourceType: 'poetry',
-    tagLabel: '资料库 · 诗歌原文',
   },
   {
     title: '儒释道 · 神仙体系',

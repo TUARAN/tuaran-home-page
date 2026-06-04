@@ -52,7 +52,6 @@ const SPECIAL_TYPE_KEYS = SPECIAL_TYPE_DEFS.map((t) => t.key)
 const RESOURCE_TYPE_DEFS = [
   { key: 'all', label: '全部资料' },
   { key: 'classics', label: '古典名篇' },
-  { key: 'poetry', label: '诗歌原文' },
   { key: 'humanities', label: '人文思想' },
   { key: 'politics', label: '政经资料' },
   { key: 'books', label: '书目索引' },
@@ -67,6 +66,7 @@ function isExternalHref(href) {
 
 function formatPv(pv) {
   const n = Number(pv) || 0
+  if (n <= 0) return '-'
   if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '')} 万`
   return String(n)
 }
@@ -75,6 +75,7 @@ export default function ArticlesIndexClient({ items }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [pvCounts, setPvCounts] = useState({})
+  const [pvLoaded, setPvLoaded] = useState(false)
   const initialTab = (() => {
     const fromUrl = searchParams?.get('tab')
     return TAB_KEYS.includes(fromUrl) ? fromUrl : 'all'
@@ -261,7 +262,10 @@ export default function ArticlesIndexClient({ items }) {
           .filter(Boolean),
       ),
     )
-    if (!keys.length) return
+    if (!keys.length) {
+      setPvLoaded(true)
+      return
+    }
 
     let cancelled = false
     async function loadPv() {
@@ -272,6 +276,8 @@ export default function ArticlesIndexClient({ items }) {
         if (!cancelled && data?.counts) setPvCounts(data.counts)
       } catch {
         // 统计接口不可用时保留静态 frontmatter 里的 pv。
+      } finally {
+        if (!cancelled) setPvLoaded(true)
       }
     }
 
@@ -571,7 +577,8 @@ export default function ArticlesIndexClient({ items }) {
             const parts = String(item.href || '').split('/')
             const pvKey = parts[3] && parts[4] ? `${parts[3]}/${parts[4]}` : ''
             const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
-            const nextItem = 'pv' in item ? { ...item, pv: livePv } : item
+            const pvLoading = pvKey !== '' && !pvLoaded
+            const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
             return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
           })
         )}
@@ -646,7 +653,7 @@ function ArticleRow({ item }) {
             ) : null}
             {'pv' in item ? (
               <span className="font-mono text-[11px] text-[#bbb] dark:text-gray-500">
-                · 阅读量 {formatPv(item.pv)}
+                · 阅读量 {item.pvLoading ? '-' : formatPv(item.pv)}
               </span>
             ) : null}
           </div>

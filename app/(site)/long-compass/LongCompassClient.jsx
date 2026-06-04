@@ -4,15 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { decryptPayload, fetchEncryptedRecords, KIND_LABELS, migrate } from '../../../lib/longCompass'
 
+import PrivateVaultGate from '../components/PrivateVaultGate'
 import RecordCard from './components/RecordCard'
 import StatusPanel from './components/StatusPanel'
 import ThemeFilter from './components/ThemeFilter'
 import Timeline from './components/Timeline'
 import UnlockForm from './components/UnlockForm'
-
-function login() {
-  window.location.href = `/login?returnTo=${encodeURIComponent('/long-compass')}`
-}
 
 export default function LongCompassClient() {
   const [loading, setLoading] = useState(true)
@@ -130,32 +127,23 @@ export default function LongCompassClient() {
   // ---- 渲染 ----
   if (loading) {
     return (
-      <main className="mx-auto flex min-h-[70vh] w-full max-w-[1080px] items-center px-4 py-8">
-        <p className="font-mono text-xs text-[#8f8069] dark:text-[#8e9ab0]">Loading private workspace...</p>
-      </main>
+      <PrivateVaultGate
+        state="loading"
+        vaultLabel="长期罗盘"
+        returnTo="/long-compass"
+        description="站长的长期资产、行动框架与阶段复盘 —— 加密私域，仅作者本人可见。"
+      />
     )
   }
 
   if (authError) {
     return (
-      <main className="mx-auto flex min-h-[70vh] w-full max-w-[680px] flex-col justify-center px-4 py-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
-          Long Compass
-        </p>
-        <h1 className="mt-2 font-serif text-2xl font-semibold text-[#221f19] dark:text-gray-100">长期罗盘</h1>
-        <p className="mt-3 text-sm leading-7 text-[#5d554a] dark:text-gray-300">
-          {authError === 'UNAUTHORIZED' ? '需要先登录。' : '当前账号没有访问权限。'}
-        </p>
-        {authError === 'UNAUTHORIZED' ? (
-          <button
-            type="button"
-            onClick={login}
-            className="mt-5 w-fit rounded-lg bg-[#3f3527] px-4 py-2 text-sm font-medium text-white hover:bg-[#221f19] dark:bg-gray-200 dark:text-[#111]"
-          >
-            登录
-          </button>
-        ) : null}
-      </main>
+      <PrivateVaultGate
+        state={authError === 'UNAUTHORIZED' ? 'anonymous' : 'not-owner'}
+        vaultLabel="长期罗盘"
+        returnTo="/long-compass"
+        description="站长的长期资产、行动框架与阶段复盘 —— 加密私域，仅作者本人可见。"
+      />
     )
   }
 

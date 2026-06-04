@@ -124,7 +124,7 @@ export default function HomePage() {
           <div className="absolute right-5 top-5 z-10">
             <CopyIntroButton text={SITE_INTRO_COPY} />
           </div>
-          <div className="pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[3.9rem] font-semibold uppercase leading-none tracking-[0.16em] text-[#7c5d34]/[0.13] dark:text-white/[0.1] lg:block xl:right-14">
+          <div className="pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[2.6rem] font-semibold uppercase leading-none tracking-[0.16em] text-[#7c5d34]/[0.13] dark:text-white/[0.1] lg:block xl:right-14">
             2ARAN.COM
           </div>
           <div className="relative max-w-[760px] space-y-4">
@@ -208,16 +208,6 @@ export default function HomePage() {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_300px]">
           <main className="min-w-0 space-y-6">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#8a8170] dark:text-[#8e98a8]">
-              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
-                分类
-              </span>
-              <span className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">原创</span>
-              <span className="text-[#cfc6b3] dark:text-[#3a4757]">·</span>
-              <span className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">调研</span>
-              <span className="text-[#cfc6b3] dark:text-[#3a4757]">·</span>
-              <span className="font-semibold text-[#5a4725] dark:text-[#e8d4b4]">资料</span>
-            </div>
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
               <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
@@ -234,7 +224,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                精选文章 / 工程作品 / 观点输出。带立场的内容，区别于下方 AI 协助的调研与资料整理。
+                精选文章 / 工程作品 / 观点输出。
               </p>
               <div className="grid gap-4">
                 {featuredArticles.map((a, index) => {
@@ -311,7 +301,7 @@ export default function HomePage() {
                 ) : null}
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                专题调研 / 公司调研 / 事项调研。AI 协助采集、按模板生成，解决快速理解，不冒充原创判断；更基础的原文和谱系沉到下方资料库。
+                专题调研 / 公司调研 / 事项调研。
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
@@ -370,7 +360,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                资料分成「站内资料」和「资源收藏」。站内资料是整理进站点结构的内容；资源收藏是外部材料入口和工具链接。
+                资料分成「站内资料」和「资源收藏」。
               </p>
               <div className="space-y-4">
                 {[

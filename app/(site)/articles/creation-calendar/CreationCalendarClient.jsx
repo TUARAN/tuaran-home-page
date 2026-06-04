@@ -163,7 +163,7 @@ export default function CreationCalendarClient({ items }) {
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="总内容数" value={String(datedItems.length)} note="含原创 / 调研 / 资料" />
+        <StatCard label="总内容数" value={String(datedItems.length)} note="含专栏 / 调研 / 资料" />
         <StatCard label="当前年份" value={selectedYear || '-'} note={`${yearItems.length} 篇`} />
         <StatCard label="活跃天数" value={String(activeDays)} note="该年有内容的日期" />
         <StatCard label="单日最高" value={String(maxPerDay)} note="当天发布条数" />

@@ -7,10 +7,10 @@ import { buildKnowledgeItems } from './buildKnowledgeItems'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '原创 & 调研 & 资料',
+  title: '专栏 & 调研 & 资料',
   description:
-    '涂阿燃（tuaran）的原创、调研与资料库：原创判断、AI 协助调研、原文谱系与可检索资料三类内容。',
-  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '原创', '调研', '资料库', '公司调研', '事项调研', 'AI'],
+    '涂阿燃（tuaran）的专栏、调研与资料库：个人判断的专栏长文、AI 协助调研、原文谱系与可检索资料三类内容。',
+  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '专栏', '调研', '资料库', '公司调研', '事项调研', 'AI'],
   alternates: {
     canonical: '/articles',
   },

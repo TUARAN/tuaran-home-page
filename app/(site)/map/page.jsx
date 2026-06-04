@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { SITE_CHANNELS, getChannelNavSections } from '../../../lib/siteNav'
+import { getTagToneClass } from '../../../lib/tagTone'
 
 export const metadata = {
   title: '全站索引 · 2aran.com',
@@ -52,20 +53,6 @@ function navItems(channel) {
 
 function itemHrefText(href) {
   return href.replace(/^https?:\/\//, '').replace(/\/$/, '')
-}
-
-function getTagToneClass(tag) {
-  const normalized = String(tag || '').toLowerCase()
-  if (normalized === 'hot') {
-    return 'bg-[#f4d4cf] text-[#8b3a36] dark:bg-[#3a1d1c] dark:text-[#ed9d97]'
-  }
-  if (normalized === 'lock' || normalized === 'private') {
-    return 'bg-[#d8dee8] text-[#3f4b5d] dark:bg-[#18202b] dark:text-[#b3c0d1]'
-  }
-  if (normalized === 'login' || normalized === '登录') {
-    return 'bg-[#e9ecf2] text-[#5d6878] dark:bg-[#1f262f] dark:text-[#9aa6b6]'
-  }
-  return 'bg-[#fde6c6] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]'
 }
 
 function IndexLink({ item, compact = false }) {

@@ -70,12 +70,12 @@ function buildWeekMonthLabels(weeks) {
   return labels
 }
 
-function heatColorClass(value, max) {
+// 绝对计数分桶（与 GitHub 类似），跨年视觉一致
+function heatColorClass(value) {
   if (!value) return 'bg-[#f6f1e8] dark:bg-[#151922]'
-  const ratio = max > 0 ? value / max : 0
-  if (ratio >= 0.75) return 'bg-[#2f855a]'
-  if (ratio >= 0.5) return 'bg-[#57a06f]'
-  if (ratio >= 0.25) return 'bg-[#8bc79f]'
+  if (value >= 8) return 'bg-[#2f855a]'
+  if (value >= 4) return 'bg-[#57a06f]'
+  if (value >= 2) return 'bg-[#8bc79f]'
   return 'bg-[#c6e7d0]'
 }
 
@@ -134,7 +134,6 @@ export default function KnowledgeHeatmapClient({
       if (date.startsWith(year)) juejinTotal += count
     }
 
-    const maxPerDay = Object.values(yearCountsByDate).reduce((acc, v) => Math.max(acc, v), 0)
     const yearWeeks = buildYearWeeks(Number(year), yearCountsByDate)
     const weekMonthLabels = buildWeekMonthLabels(yearWeeks)
 
@@ -144,7 +143,6 @@ export default function KnowledgeHeatmapClient({
       total,
       localTotal,
       juejinTotal,
-      maxPerDay,
       yearWeeks,
       weekMonthLabels,
     }
@@ -245,7 +243,7 @@ export default function KnowledgeHeatmapClient({
                               <span
                                 key={cell.key}
                                 title={`${cell.key} · ${cell.count} 篇`}
-                                className={['h-3 w-3 rounded-[2px]', heatColorClass(cell.count, heatmapData.maxPerDay)].join(' ')}
+                                className={['h-3 w-3 rounded-[2px]', heatColorClass(cell.count)].join(' ')}
                               />
                             ) : (
                               <span key={cell.key} className="h-3 w-3 rounded-[2px] bg-transparent" />

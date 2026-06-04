@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 function formatPv(pv) {
   const n = Number(pv) || 0
+  if (n <= 0) return '-'
   if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '')} 万`
   return String(n)
 }

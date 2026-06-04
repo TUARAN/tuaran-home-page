@@ -79,8 +79,23 @@ function heatColorClass(value, max) {
   return 'bg-[#c6e7d0]'
 }
 
-export default function KnowledgeHeatmapClient({ items }) {
-  const [expanded, setExpanded] = useState(false)
+export default function KnowledgeHeatmapClient({
+  items,
+  expanded: controlledExpanded,
+  onToggle,
+  hideOwnToggle = false,
+}) {
+  const [internalExpanded, setInternalExpanded] = useState(true)
+  const isControlled = typeof controlledExpanded === 'boolean'
+  const expanded = isControlled ? controlledExpanded : internalExpanded
+  const setExpanded = (next) => {
+    if (isControlled) {
+      const resolved = typeof next === 'function' ? next(expanded) : next
+      onToggle?.(resolved)
+    } else {
+      setInternalExpanded(next)
+    }
+  }
   const [selectedHeatmapYear, setSelectedHeatmapYear] = useState('')
   const juejinCountsByDate = JUEJIN_ACTIVITY_SNAPSHOT.countsByDate
 
@@ -144,28 +159,30 @@ export default function KnowledgeHeatmapClient({ items }) {
 
   return (
     <section className="space-y-3">
-      <div>
-        <button
-          type="button"
-          aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)}
-          className="inline-flex items-center gap-1 text-sm text-[#716958] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
-        >
-          <svg
-            viewBox="0 0 12 12"
-            aria-hidden="true"
-            className={['h-3 w-3 shrink-0 transition-transform', expanded ? 'rotate-180' : ''].join(' ')}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {hideOwnToggle ? null : (
+        <div>
+          <button
+            type="button"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((value) => !value)}
+            className="inline-flex items-center gap-1 text-sm text-[#716958] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
           >
-            <path d="M3 4.5 6 7.5 9 4.5" />
-          </svg>
-          {expanded ? '收起热力图' : '展开热力图'}
-        </button>
-      </div>
+            <svg
+              viewBox="0 0 12 12"
+              aria-hidden="true"
+              className={['h-3 w-3 shrink-0 transition-transform', expanded ? 'rotate-180' : ''].join(' ')}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 4.5 6 7.5 9 4.5" />
+            </svg>
+            {expanded ? '收起热力图' : '展开热力图'}
+          </button>
+        </div>
+      )}
 
       {expanded ? (
         heatmapData ? (

@@ -91,7 +91,7 @@ export default function DadCheckinCalendar({
               href={loginHref}
               className="inline-flex items-center rounded-lg border border-[#4a6fa5] bg-[#4a6fa5]/10 px-3 py-1 text-xs font-medium text-[#3d5a80] no-underline hover:bg-[#4a6fa5]/20 dark:border-[#6b8cbc] dark:bg-[#2a3f5c]/40 dark:text-[#a8c4e8]"
             >
-              {authLoading ? '检测登录…' : '我是涂阿燃 →'}
+              {authLoading ? '检测登录…' : '登录 →'}
             </a>
           )}
         </div>

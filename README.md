@@ -178,10 +178,10 @@ POST /api/auth/login
 先在 Resend 验证发件域名，再为 Cloudflare Pages / Worker 配置 secrets：
 
 ```bash
-npx wrangler secret put NEXTAUTH_SECRET
-npx wrangler secret put EMAIL_CODE_SECRET
-npx wrangler secret put RESEND_API_KEY
-npx wrangler secret put EMAIL_FROM
+npx wrangler pages secret put NEXTAUTH_SECRET --project-name=tuaran
+npx wrangler pages secret put EMAIL_CODE_SECRET --project-name=tuaran
+npx wrangler pages secret put RESEND_API_KEY --project-name=tuaran
+npx wrangler pages secret put EMAIL_FROM --project-name=tuaran
 ```
 
 `EMAIL_FROM` 示例：`2aran.com <noreply@mail.2aran.com>`。`NEXTAUTH_SECRET` 与

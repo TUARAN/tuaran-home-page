@@ -130,6 +130,12 @@ function saveManifest(manifest) {
   )
 }
 
+// 取除 generatedAt 之外的部分作为「实质内容」指纹
+function manifestFingerprint(manifest) {
+  const { generatedAt: _ignored, ...rest } = manifest
+  return JSON.stringify(rest, null, 2)
+}
+
 function main() {
   const ifChanged = process.argv.includes('--if-changed')
   const passphrase = readPassphrase()
@@ -145,6 +151,7 @@ function main() {
   }
 
   const manifest = loadManifest()
+  const fingerprintBefore = manifestFingerprint(manifest)
   let writes = 0
 
   for (const source of SOURCES) {
@@ -215,10 +222,15 @@ function main() {
     }
   }
 
-  saveManifest(manifest)
+  const fingerprintAfter = manifestFingerprint(manifest)
+  if (fingerprintBefore !== fingerprintAfter) {
+    saveManifest(manifest)
+  }
 
-  if (writes === 0) {
-    console.log('[snapshot-memory] no content changed, manifest refreshed only.')
+  if (writes === 0 && fingerprintBefore === fingerprintAfter) {
+    console.log('[snapshot-memory] nothing changed, manifest left untouched.')
+  } else if (writes === 0) {
+    console.log('[snapshot-memory] metadata-only update written.')
   } else {
     console.log(`[snapshot-memory] done. ${writes} new version(s) written.`)
   }

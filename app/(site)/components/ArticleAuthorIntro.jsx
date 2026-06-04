@@ -21,7 +21,7 @@ export default function ArticleAuthorIntro() {
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-[14px] font-semibold text-[#221f19] dark:text-gray-100">涂阿燃 · tuaran</span>
             <span className="text-[11px] text-[#999] dark:text-gray-500">
-              前端 · AI Agent · 政企方案 · 创业 · 奶爸
+              前端 / AI Agent / 政企方案 / 独立开发者
             </span>
           </div>
           <p className="mt-1 text-[12px] leading-5 text-[#666] dark:text-gray-400">
@@ -31,10 +31,10 @@ export default function ArticleAuthorIntro() {
               2aran.com
             </Link>
             {' '}
-            写技术调研、公司观察、独立开发与中年技术人的真实记录。
+            写技术调研、AI 工程实践与独立开发笔记。
             {' '}
             <Link href="/about" className="text-[#8a5a14] underline underline-offset-2 hover:text-[#5d3b08] dark:text-[#e2bd75] dark:hover:text-[#f3d99a]">
-              了解我 →
+              了解更多 →
             </Link>
           </p>
         </div>

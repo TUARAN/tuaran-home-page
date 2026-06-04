@@ -52,42 +52,35 @@ export default function HomePage() {
   const researchStats = buildResearchPipelineStats()
   const resourceCards = [
     {
-      href: '/articles?tab=resources&resource_type=classics',
+      href: '/classical-masterpieces',
       kicker: 'Classics',
       title: '古典名篇',
-      desc: '辞赋 / 诗歌 / 奏疏 / 古文 / 原文索引',
+      desc: '辞赋 / 唐诗宋词 / 奏疏 / 古文 / 祭文 · 原文可检索',
       scope: 'internal',
     },
     {
-      href: '/articles?tab=resources&resource_type=poetry',
-      kicker: 'Poetry',
-      title: '诗歌原文',
-      desc: '诗词 / 辞赋 / 祭文 / 古文原文',
-      scope: 'internal',
-    },
-    {
-      href: '/articles?tab=resources&resource_type=humanities',
+      href: '/ru-shi-dao',
       kicker: 'Humanities',
       title: '人文思想',
       desc: '儒释道体系 / 神仙谱系 / 思想结构',
       scope: 'internal',
     },
     {
-      href: '/articles?tab=resources&resource_type=politics',
+      href: '/china-politics',
       kicker: 'Politics',
       title: '政经资料',
       desc: '组织结构 / 行政级别 / 会议沿革 / 政经资料',
       scope: 'internal',
     },
     {
-      href: '/articles?tab=resources&resource_type=books',
+      href: '/reading',
       kicker: 'Books',
       title: '书目索引',
       desc: '正在读 / 想读 / 笔记 / 书单',
       scope: 'internal',
     },
     {
-      href: '/articles?tab=resources&resource_type=bookmarks',
+      href: '/bookmarks',
       kicker: 'Bookmarks',
       title: '资源收藏',
       desc: 'AI 工具 / 开发资源 / 教程 / 外部材料',

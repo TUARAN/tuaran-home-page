@@ -14,11 +14,35 @@
 //      aiIntegration：0 = 平台无 AI 整合；100 = 框架原生暴露 AI SDK / Agents
 //  - verified：true = 有 CF/SEC/官方公告或一手财报；false = 传闻 / 估算 / 推断
 //  - status：active / forming（关系正在建立）/ historical（绑定已松动）/ neutral（明确不绑）
+//  - pairType（v2 新增）：配对形态分类
+//      'platform-framework'：deployment / cloud 平台 × 前端框架（多数）
+//      'platform-runtime'：deployment 平台 × JS 工具链 / runtime（CF × VoidZero）
+//      'ai-runtime'：AI 模型公司 × runtime（Anthropic × Bun —— 新形态）
 //
 // 所有 ARR / 收入数字均为公开报道与社区估算的范围，非审计数字。
 // 主观打分由作者基于 2024-2026 公开信号判断，请勿作为投资 / 战略决策依据。
 
 export const PAIRS = [
+  {
+    id: 'anthropic-bun',
+    platform: 'Anthropic',
+    framework: 'Bun',
+    color: '#c97651',
+    status: 'active',
+    verified: true,
+    foundedPairing: 2025,
+    pairType: 'ai-runtime',
+    frameworkStars: 82,
+    platformTier: 5,
+    lockIn: 25,
+    backlash: 15,
+    aiIntegration: 100,
+    primaryLockIn: 'Claude Code / Claude Agent SDK 默认在 Bun runtime 上跑；AI 编码工具基础设施',
+    latestSignal: '2025-12-02 Anthropic 收购 Bun（公司首次收购）；Jarred Sumner 团队全员加入；Claude Code 半年 $1B run-rate',
+    developerNote: 'Bun 仍 MIT 开源、GitHub 公开开发；但 AI 编码工作流正在被定向优化，Bun 的演进方向会越来越偏 AI 编码场景',
+    competitorNote: 'AI 公司绕过 platform 层直接拥有 runtime —— 这是新形态。Vercel × CF 都被釜底抽薪，必须重新定位',
+    sourceUrl: 'https://www.anthropic.com/news/anthropic-acquires-bun-as-claude-code-reaches-usd1b-milestone',
+  },
   {
     id: 'vercel-nextjs',
     platform: 'Vercel',
@@ -27,6 +51,7 @@ export const PAIRS = [
     status: 'active',
     verified: true,
     foundedPairing: 2016,
+    pairType: 'platform-framework',
     frameworkStars: 130,
     platformTier: 3,
     lockIn: 88,
@@ -46,6 +71,7 @@ export const PAIRS = [
     status: 'active',
     verified: true,
     foundedPairing: 2026,
+    pairType: 'platform-runtime',
     frameworkStars: 207,
     platformTier: 4,
     lockIn: 30,
@@ -54,7 +80,7 @@ export const PAIRS = [
     primaryLockIn: 'Vite / Vitest / Rolldown / Oxc 原生进 Workers 平台；vite deploy → 全球生产一键',
     latestSignal: '2026-06-04 CF 正式收购 VoidZero，Evan You 团队入 ETI；MIT 开源 + $1M 独立 Vite 生态基金',
     developerNote: '官方承诺 vendor-agnostic + 独立基金；但 deploy 默认体验会自然把流量引向 CF。先观察 12 个月再下结论',
-    competitorNote: 'Vercel 锁 React，CF 直接拿下 JS 工具链上游（每周 1 亿次 Vite 下载）；Vue 只是顺带',
+    competitorNote: 'CF 不只是对冲 Vercel，更是回应 Anthropic × Bun —— deployment 平台必须从工具链上游反包，否则被 AI 公司釜底抽薪',
     sourceUrl: 'https://blog.cloudflare.com/voidzero-joins-cloudflare/',
   },
   {

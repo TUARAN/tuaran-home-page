@@ -96,7 +96,7 @@ function SkillCard({ skill }) {
                 配置到本地 Codex / 给智能体阅读 / 分享给同事
               </p>
               <h3 className="mb-0 border-b-0 pb-0 font-serif text-xl font-semibold text-[#231f18] dark:text-gray-100">
-                下载 / 复制 skill 文件
+                下载 / 复制 Skill 文件
               </h3>
             </div>
             <StatusPill>{skill.codex.installPath}</StatusPill>
@@ -113,7 +113,7 @@ function SkillCard({ skill }) {
             <SkillFileButton filename="SKILL.md" content={skill.codex.skillMd} />
             <SkillFileButton filename="agents/openai.yaml" content={skill.codex.openaiYaml} />
             <p className="mt-2 text-xs leading-6 text-[#665b4d] dark:text-gray-300">
-              下载后放到 <code className="font-mono text-[11px] text-[#8b5a1f] dark:text-[#f0c776]">{skill.codex.installPath}</code> 即可作为本地 Codex skill 使用。也可直接复制 SKILL.md 粘贴到 Claude Code / Cursor / ChatGPT 当 system prompt。
+              下载后放到 <code className="font-mono text-[11px] text-[#8b5a1f] dark:text-[#f0c776]">{skill.codex.installPath}</code> 即可作为本地 Codex Skill 使用。也可直接复制 SKILL.md 粘贴到 Claude Code / Cursor / ChatGPT 当 system prompt。
             </p>
           </div>
         </section>

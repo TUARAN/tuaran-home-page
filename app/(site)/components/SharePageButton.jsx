@@ -4,16 +4,18 @@ import { useState } from 'react'
 
 /**
  * 通用分享按钮：优先调用 navigator.share（移动端会弹原生分享面板），
- * 不可用时退化为复制链接到剪贴板。所有专题内容页 + 调研详情页共用一份实现。
+ * 不可用时退化为复制到剪贴板。
  *
  * props:
- * - title: 页面标题
- * - text:  可选，分享摘要（一句话即可）
- * - url:   SSR 传入的 canonical URL；客户端会优先用 window.location.href（保留 ?v=、#hash 等运行时参数）
- * - exactUrl: true 时把 url prop 视为权威路径（用 location.origin 拼接），适合 per-anchor 分享场景
- * - size:  'sm' / 'md'
+ * - title:    页面标题
+ * - text:     短分享摘要（移动端原生面板的 text 字段）
+ * - fullText: 完整分享文案（桌面端复制时一并塞进剪贴板，给用户粘到 X / 公众号用）
+ *             不传则退化为只复制 URL（旧行为）。
+ * - url:      SSR 传入的 canonical URL；客户端优先用 window.location.href
+ * - exactUrl: true 时 url 视为权威路径（拼 location.origin）
+ * - size:     'sm' / 'md'
  */
-export default function SharePageButton({ title, text, url, size = 'sm', exactUrl = false }) {
+export default function SharePageButton({ title, text, fullText, url, size = 'sm', exactUrl = false }) {
   const [state, setState] = useState('idle')
 
   function flash(next) {
@@ -21,17 +23,17 @@ export default function SharePageButton({ title, text, url, size = 'sm', exactUr
     setTimeout(() => setState('idle'), 2000)
   }
 
-  async function copyUrl(targetUrl) {
+  async function copyToClipboard(payload) {
     try {
-      await navigator.clipboard.writeText(targetUrl)
+      await navigator.clipboard.writeText(payload)
       flash('copied')
       return
     } catch {
-      // navigator.clipboard 不可用时退化到 execCommand
+      // 退化到 execCommand
     }
 
     const input = document.createElement('textarea')
-    input.value = targetUrl
+    input.value = payload
     input.style.position = 'fixed'
     input.style.opacity = '0'
     document.body.appendChild(input)
@@ -48,13 +50,14 @@ export default function SharePageButton({ title, text, url, size = 'sm', exactUr
   async function handleShare() {
     let targetUrl
     if (exactUrl && typeof window !== 'undefined' && window.location?.origin) {
-      // url 是相对路径（如 "/skill-center#xxx"）或绝对路径，按权威值拼接 origin
       targetUrl = /^https?:\/\//.test(url) ? url : `${window.location.origin}${url}`
     } else {
       targetUrl =
         typeof window !== 'undefined' && window.location?.href ? window.location.href : url
     }
-    const payload = { title, text, url: targetUrl }
+
+    // 移动端原生面板：text 字段优先用 fullText（更多场景下系统会把它带出去）
+    const payload = { title, text: fullText || text, url: targetUrl }
 
     if (typeof navigator.share === 'function') {
       try {
@@ -66,14 +69,16 @@ export default function SharePageButton({ title, text, url, size = 'sm', exactUr
       }
     }
 
-    await copyUrl(targetUrl)
+    // 桌面端：fullText 在场则把"文案 + 空行 + URL"一起复制
+    const clipPayload = fullText ? `${fullText}\n\n${targetUrl}` : targetUrl
+    await copyToClipboard(clipPayload)
   }
 
   const label =
     state === 'shared'
       ? '已分享'
       : state === 'copied'
-      ? '已复制链接'
+      ? fullText ? '已复制文案 + 链接' : '已复制链接'
       : state === 'failed'
       ? '分享失败'
       : '分享'

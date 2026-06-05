@@ -1,5 +1,5 @@
 import { getD1 } from '../../../lib/d1'
-import { getUserFromRequest } from '../../../lib/edgeSession'
+import { getOwnerUserFromRequest } from '../../../lib/ownerAuth'
 import { DAD_TODO_TOTAL, getValidDadTodoItemIds, isValidDadTodoItemId } from '../../../lib/dadTodoData'
 
 export const runtime = 'edge'
@@ -55,10 +55,14 @@ function dbUnavailableResponse() {
  */
 export async function GET(req) {
   try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
+    const principal = await getOwnerUserFromRequest(req)
+    if (principal.status === 401) {
       return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 })
     }
+    if (principal.status === 403) {
+      return Response.json({ error: 'FORBIDDEN' }, { status: 403 })
+    }
+    const user = principal.user
 
     const { searchParams } = new URL(req.url)
     const date = parseYmd(searchParams.get('date'))
@@ -150,10 +154,14 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
+    const principal = await getOwnerUserFromRequest(req)
+    if (principal.status === 401) {
       return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 })
     }
+    if (principal.status === 403) {
+      return Response.json({ error: 'FORBIDDEN' }, { status: 403 })
+    }
+    const user = principal.user
 
     let body
     try {
@@ -194,10 +202,14 @@ export async function POST(req) {
 
 export async function DELETE(req) {
   try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
+    const principal = await getOwnerUserFromRequest(req)
+    if (principal.status === 401) {
       return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 })
     }
+    if (principal.status === 403) {
+      return Response.json({ error: 'FORBIDDEN' }, { status: 403 })
+    }
+    const user = principal.user
 
     const { searchParams } = new URL(req.url)
     const itemId = searchParams.get('itemId') || searchParams.get('id')

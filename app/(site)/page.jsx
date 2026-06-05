@@ -38,11 +38,13 @@ function buildResearchPipelineStats() {
   const entries = listResearch().filter((entry) => !entry.encrypted)
   const companies = entries.filter((entry) => entry.category === 'companies')
   const topics = entries.filter((entry) => entry.category === 'topics')
+  const people = entries.filter((entry) => entry.category === 'people')
   const latestDate = entries.length ? entries[0].date : null
   return {
     total: entries.length,
     companies: companies.length,
     topics: topics.length,
+    people: people.length,
     latestDate,
   }
 }
@@ -306,9 +308,9 @@ export default function HomePage() {
                 ) : null}
               </div>
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                专题调研 / 公司调研 / 事项调研。
+                专题调研 / 公司调研 / 事项调研 / 人物调研。
               </p>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   {
                     href: '/articles?tab=companies',
@@ -323,6 +325,13 @@ export default function HomePage() {
                     title: '事项调研',
                     count: researchStats.topics,
                     desc: '行业 · 技术 · 产品 · 市场 · 观点',
+                  },
+                  {
+                    href: '/articles?tab=people',
+                    kicker: 'People',
+                    title: '人物调研',
+                    count: researchStats.people,
+                    desc: '创作者 · 企业家 · 学者 · 公共人物',
                   },
                 ].map((card) => (
                   <Link

@@ -16,11 +16,14 @@ research/
 │   └── 2026-05-15-anthropic.md
 ├── topics/                   # 其他事项调研（技术、产品、行业、概念……）
 │   └── 2026-05-15-mcp-protocol.md
+├── people/                   # 人物调研
+│   └── 2026-06-05-dangnian-mingyue.md
 └── README.md                 # 本文件
 ```
 
 - `companies/` 用于公司类调研（创业公司、大厂、被投企业等）
 - `topics/` 用于其他事项调研（一项技术、一个标准、一个赛道、一份白皮书……）
+- `people/` 用于人物调研（创作者、企业家、学者、公共人物等）
 
 ## 文件命名
 
@@ -38,7 +41,7 @@ YYYY-MM-DD-<slug>.md
 ```yaml
 ---
 title: Anthropic 公司调研
-category: companies          # companies | topics
+category: companies          # companies | topics | people
 date: 2026-05-15
 tags: [AI, 大模型, 公司]
 summary: 一句话概述本篇调研要回答的问题与结论。

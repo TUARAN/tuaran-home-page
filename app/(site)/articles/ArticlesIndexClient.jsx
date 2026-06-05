@@ -13,6 +13,7 @@ const TAB_DEFS = [
   { key: 'works', label: '工程作品', tier: 'works' },
   { key: 'companies', label: '公司调研', tier: 'research' },
   { key: 'topics', label: '事项调研', tier: 'research' },
+  { key: 'people', label: '人物调研', tier: 'research' },
   { key: 'resources', label: '资料', tier: 'resources' },
 ]
 
@@ -22,6 +23,7 @@ const KIND_TAG_CLASS = {
   works: 'border-[#ead7b5] bg-[#fbf3df] text-[#8b6a2c] dark:border-[#3d3422] dark:bg-[#211b0f] dark:text-[#e6c887]',
   companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   topics: 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
+  people: 'border-[#ead4d6] bg-[#fbf0f1] text-[#884c55] dark:border-[#4a2730] dark:bg-[#24151a] dark:text-[#e0a2ad]',
   resources: 'border-[#ddd8cb] bg-[#f7f4ee] text-[#6b6253] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
 }
 
@@ -218,7 +220,7 @@ export default function ArticlesIndexClient({ items }) {
     const keys = Array.from(
       new Set(
         items
-          .filter((item) => item.kind === 'companies' || item.kind === 'topics')
+          .filter((item) => item.kind === 'companies' || item.kind === 'topics' || item.kind === 'people')
           .map((item) => {
             const parts = String(item.href || '').split('/')
             const category = parts[3]

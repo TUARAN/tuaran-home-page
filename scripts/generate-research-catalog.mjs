@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const root = process.cwd()
-const categories = ['companies', 'topics']
+const categories = ['companies', 'topics', 'people']
 const filenameDateRe = /^(\d{4}-\d{2}-\d{2})-(.+)\.md$/i
 
 const keys = []

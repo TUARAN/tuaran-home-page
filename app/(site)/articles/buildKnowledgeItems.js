@@ -103,7 +103,7 @@ export function buildKnowledgeItems() {
     const subLabel = companyLabel || topicLabel
     return {
       id: `research:${entry.category}:${entry.slug}`,
-      kind: entry.category, // 'companies' | 'topics'
+      kind: entry.category, // 'companies' | 'topics' | 'people'
       tagLabel: subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
       companyType: entry.companyType || '',
       topicType: entry.topicType || '',

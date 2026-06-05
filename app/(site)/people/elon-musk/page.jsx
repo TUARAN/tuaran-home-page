@@ -1,4 +1,4 @@
-import MuskExperienceClient from './ui/MuskExperienceClient'
+import { redirect } from 'next/navigation'
 
 export const metadata = {
   title: '我所了解到的马斯克',
@@ -9,5 +9,5 @@ export const metadata = {
 }
 
 export default function ElonMuskPage() {
-  return <MuskExperienceClient />
+  redirect('/articles/research/people/elon-musk')
 }

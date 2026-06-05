@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'Cloudflare 收购 VoidZero vs Vercel 收购 Next：双巨头割据前端、AI 原生 Web 时代产业深度研判'
+export const alt = 'Anthropic × Bun + Cloudflare × VoidZero + Vercel × Next：三极割据，AI 公司直接下场抢 Web Runtime'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -46,7 +46,7 @@ export default function Image() {
               letterSpacing: '0.16em',
             }}
           >
-            2026-06-04 · 已确认
+            三极割据 · 半年时间
           </span>
         </div>
 
@@ -64,36 +64,48 @@ export default function Image() {
         >
           <div
             style={{
-              fontSize: 56,
+              fontSize: 50,
               fontWeight: 700,
-              lineHeight: 1.25,
+              lineHeight: 1.2,
               color: '#1a1813',
               letterSpacing: '-0.01em',
             }}
           >
-            Cloudflare 收购 VoidZero
+            Anthropic × Bun
           </div>
           <div
             style={{
-              fontSize: 56,
+              fontSize: 50,
               fontWeight: 700,
-              lineHeight: 1.25,
+              lineHeight: 1.2,
               color: '#1a1813',
               letterSpacing: '-0.01em',
               marginTop: 4,
             }}
           >
-            vs Vercel 收购 Next
+            Cloudflare × VoidZero
           </div>
           <div
             style={{
-              fontSize: 30,
+              fontSize: 50,
+              fontWeight: 700,
+              lineHeight: 1.2,
+              color: '#1a1813',
+              letterSpacing: '-0.01em',
+              marginTop: 4,
+            }}
+          >
+            Vercel × Next
+          </div>
+          <div
+            style={{
+              fontSize: 26,
               color: '#5d503f',
-              marginTop: 22,
+              marginTop: 20,
               lineHeight: 1.4,
             }}
           >
-            双巨头割据前端 · AI 原生 Web 时代产业深度研判
+            三极割据 · AI 公司直接下场抢 Web Runtime
           </div>
         </div>
 
@@ -111,10 +123,10 @@ export default function Image() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {[
-              { color: '#b7791f', label: '2016' },
-              { color: '#b7791f', label: '2020' },
-              { color: '#b7791f', label: '2024' },
-              { color: '#a05a3c', label: '2026-06' },
+              { color: '#b7791f', label: '2016 Vercel×Next' },
+              { color: '#b7791f', label: '2024 VoidZero' },
+              { color: '#a05a3c', label: '2025-12 Anthropic×Bun' },
+              { color: '#a05a3c', label: '2026-06 CF×VoidZero' },
             ].map((s, i) => (
               <div
                 key={i}
@@ -142,7 +154,7 @@ export default function Image() {
               </div>
             ))}
           </div>
-          <div style={{ fontWeight: 600, color: '#5d503f' }}>10 节框架 + 10 组配对</div>
+          <div style={{ fontWeight: 600, color: '#5d503f' }}>10 节框架 + 11 组配对</div>
         </div>
       </div>
     ),

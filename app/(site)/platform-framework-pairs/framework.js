@@ -7,21 +7,21 @@
 //  - 每节正文控制在 80 字内，留给读者空间，详细展开放到独立调研页
 
 export const FRAMEWORK_META = {
-  title: '《Cloudflare 收购 VoidZero vs Vercel 收购 Next：双巨头割据前端、AI 原生 Web 时代产业深度研判》',
+  title: '《Anthropic × Bun + Cloudflare × VoidZero + Vercel × Next：三极割据，AI 公司直接下场抢 Web Runtime》',
   subtitle: '研报框架 · 不是结论，是结构',
   thesis:
-    '当平台拥有了框架，框架就成为平台分发自身能力的渠道。Vercel × Next 用九年验证了这条路径。2026-06-04 Cloudflare 收购 VoidZero —— Vite 工具链上游被拿下，AI 原生 Web 的"双巨头割据"正式成形。Evan You 团队公开承诺保持 vendor-agnostic + $1M 独立基金，但这套承诺值多少，要看未来 12 个月。',
-  eventBadge: '事件层 · 2026-06-04 已确认',
-  estDate: '2026-06-04 · Cloudflare 正式公告收购 VoidZero',
+    '原来以为是 Vercel × Next 和 Cloudflare × VoidZero 双巨头割据。补上 2025-12-02 Anthropic 收购 Bun（公司首次收购）这一脚，叙事被重塑成三极格局 —— 而 Anthropic 是新形态：AI 模型公司直接拥有 runtime，绕过 deployment 平台层。CF × VoidZero 与其说是对冲 Vercel，不如说是 deployment 平台阵营对 AI 公司釜底抽薪的反击。',
+  eventBadge: '三事件叠加 · 2025-12 起',
+  estDate: '2025-12-02 Anthropic × Bun · 2026-06-04 Cloudflare × VoidZero · 2016 起 Vercel × Next',
 }
 
 export const FRAMEWORK_SECTIONS = [
   {
     id: 'event',
     number: '01',
-    title: '事件层：2026-06-04 已落地',
+    title: '事件层：三起收购，半年时间',
     body:
-      'Cloudflare 正式收购 VoidZero（Vite / Vitest / Rolldown / Oxc 背后的公司）。Vite 每周下载 1 亿+。整套工具链原生进 Workers 平台；vite deploy → 全球生产一键。Evan You 团队整体加入 CF 的 ETI（Emerging Technology & Incubation）。MIT 协议保持开源，CF 同时承诺 100 万美元独立 Vite 生态基金，由 Vite core team 管理。',
+      '2025-12-02 Anthropic 收购 Bun（Jarred Sumner 团队 / Oven Inc，公司首次收购，Bun 月下载 700 万 / 82k stars / MIT 保持开源）—— AI 模型公司直接拿下 runtime + bundler + test runner + package manager。2026-06-04 Cloudflare 收购 VoidZero（Vite / Vitest / Rolldown / Oxc，Evan You 入 ETI，$1M 独立生态基金）。两起新事件叠加 2016 起 Vercel × Next 的存量绑定，三极格局成形。',
     accent: 'highlight',
   },
   {
@@ -41,9 +41,9 @@ export const FRAMEWORK_SECTIONS = [
   {
     id: 'motivation',
     number: '04',
-    title: 'Cloudflare 的动机解构',
+    title: '三家动机解构：先发的是 AI 公司',
     body:
-      'CF 官方原话："统一软件开发生命周期 —— 开发者和自主 AI Agent 都能从 idea 一键到全球生产"。四条逻辑叠加：① Vite 是 JS 工具链上游，拿下它等于拿下下游所有框架（含 React / Svelte / Solid），比 Vercel × Next 单一框架格局大；② 把 Workers AI / Agents SDK 通过工具链分发；③ 对冲 Vercel，从 build / dev / test 这条线上提前卡位；④ 人才并购 —— Evan You + Vitest / Rolldown / Oxc 团队是稀缺资产。',
+      'Anthropic 是先发：Claude Code 6 个月做到 $1B run-rate，AI 编码工具核心依赖 runtime，与其租别家不如自己拿下。Bun 的 all-in-one toolkit 形态本就为快速 dev loop 优化，正好对口 AI agent 工作流。Cloudflare 是回应：deployment 平台层被 AI 公司釜底抽薪后，必须从工具链上游反包 —— Vite 在下游所有框架（含 React / Svelte / Solid）都有立足点。Vercel 是存量：九年 Next.js 绑定已经验证商业模型，问题是接下来怎么不被 Anthropic + CF 夹击。',
     accent: 'highlight',
   },
   {
@@ -64,9 +64,9 @@ export const FRAMEWORK_SECTIONS = [
   {
     id: 'ai',
     number: '07',
-    title: 'AI 大模型背景下的三条演变线',
+    title: 'AI 公司已经下场：从背景变量到直接玩家',
     body:
-      '① 代码生成层：谁的官方文档质量更高、模板更标准，谁就被 LLM 默认推荐 —— 训练集即事实标准；② AI 工程入口层：CF 已有 Workers AI / Vectorize / Agents SDK，框架深度集成后变成"AI 应用前端运行时"，与 Vercel AI SDK 形成两极；③ 端侧 / Edge AI 层：CF 边缘节点 + Vue 客户端响应式 + WebGPU，是 Vercel 暂时弱势的领域。',
+      '原来的叙事把 AI 当背景，争论的是"谁的框架被 LLM 默认推荐"。Anthropic × Bun 改变了游戏：AI 模型公司不再依赖 platform 厂商分发，直接拥有从 runtime 到 agent SDK 的全栈。① 代码生成层：Anthropic 现在可以让 Claude Code 默认推荐 Bun，反向定义"AI 时代 JS 怎么写"；② AI 工程入口层：从 CF × Vercel 两极，变成 Anthropic 直接拥有 + CF / Vercel 防御性扩张的三方博弈；③ 端侧 / Edge AI 层：CF 短期占优，但 Anthropic 一旦把 Claude 推到 Bun runtime 上，端侧本地推理可能从 CF 手里被抽走。',
     accent: 'highlight',
   },
   {
@@ -81,7 +81,7 @@ export const FRAMEWORK_SECTIONS = [
     number: '09',
     title: '个人结论与跟进策略',
     body:
-      '定性：「双巨头割据 + AI 原生 Web」格局正式成立。对 Vue / Nuxt 用户：CF 体验会很快超过其他平台，可以尝试但保留多云能力。对 React / Svelte / Solid 用户：你也在被收购，因为你用 Vite。对独立开发者：在 LLM 默认推荐固化之前，主动建立自己的「框架 + 平台」偏好，别让 AI 替你选。对内容创作者：这事值得做长期跟踪 —— vite deploy 的真实体验、独立基金的实际 grant 流向、12 个月后的 commit 分布，都是后续观察点。',
+      '定性：「三极割据 + AI 公司下场」格局正式成立 —— Anthropic 拥有 runtime，CF 拥有工具链上游，Vercel 拥有最成熟的部署 + 框架捆绑。三家的护城河形态不同，互相不能完全取代，未来 24 个月会持续互相侵入对方阵地。对独立开发者：先想清楚自己的工作流要锚定哪一极 —— 用 Claude Code 做主力就接受 Bun 偏好；用 Vue/Nuxt 就接受 CF 偏好；用 Next.js 就接受 Vercel 偏好。对内容创作者：值得长期跟踪三个信号 —— Bun 在 Anthropic 治下的 commit 方向、Vite 独立基金的真实 grant 流向、Vercel 的反制动作。',
     accent: 'highlight',
   },
   {
@@ -96,25 +96,26 @@ export const FRAMEWORK_SECTIONS = [
 export const SIGNAL_TIMELINE = [
   { year: 2016, label: 'Next.js 由 Zeit (Vercel 前身) 开源' },
   { year: 2020, label: 'ISR / Image Optimization 首发 Vercel，捆绑加深' },
-  { year: 2022, label: 'App Router / Server Components 推出，社区争议升温' },
-  { year: '2024-09', label: 'VoidZero 成立（Vite / Vitest / Rolldown / Oxc 商业化），Accel 领投' },
-  { year: 2025, label: 'Vercel Fluid Compute 公布，仅 Vercel 完整工作' },
-  { year: '2026-06-04', label: 'Cloudflare 收购 VoidZero · "AI 原生 Web 的未来"', highlight: true },
+  { year: '2024-09', label: 'VoidZero 成立（Vite / Vitest / Rolldown / Oxc 商业化）' },
+  { year: '2025-05', label: 'Claude Code 公开发布，半年内做到 $1B run-rate' },
+  { year: '2025-12-02', label: 'Anthropic 收购 Bun · 公司首次收购，AI 公司直接下场抢 runtime', highlight: true },
+  { year: '2026-06-04', label: 'Cloudflare 收购 VoidZero · deployment 平台从工具链上游反包', highlight: true },
 ]
 
 export const PRIMARY_SOURCES = [
-  { label: 'Cloudflare 官方博客', url: 'https://blog.cloudflare.com/voidzero-joins-cloudflare/' },
+  { label: 'Anthropic × Bun 官方公告', url: 'https://www.anthropic.com/news/anthropic-acquires-bun-as-claude-code-reaches-usd1b-milestone' },
+  { label: 'Bun blog: Joining Anthropic', url: 'https://bun.com/blog/bun-joins-anthropic' },
+  { label: 'Cloudflare × VoidZero 官方博客', url: 'https://blog.cloudflare.com/voidzero-joins-cloudflare/' },
   { label: 'VoidZero 公告', url: 'https://voidzero.dev/posts/voidzero-cloudflare' },
-  { label: 'Cloudflare 正式新闻稿', url: 'https://www.cloudflare.com/press/press-releases/2026/cloudflare-acquires-voidzero-to-build-the-future-of-the-ai-native-web/' },
 ]
 
 // 单一分享文案源（meta description / og: / twitter: / SharePageButton / 剪贴板共用）
 export const SHARE_COPY = {
-  // 浏览器 <title> + og:title + twitter:title。完整研报名
-  title: 'Cloudflare 收购 VoidZero vs Vercel 收购 Next：双巨头割据前端、AI 原生 Web 时代产业深度研判',
+  // 浏览器 <title> + og:title + twitter:title
+  title: 'Anthropic × Bun + Cloudflare × VoidZero + Vercel × Next：三极割据，AI 公司直接下场抢 Web Runtime',
   // meta description / og:description / twitter:description（120 字内，平台抓预览用）
-  lead: '6/4 Cloudflare 收购 Evan You 的 VoidZero —— Vite / Vitest / Rolldown / Oxc 全套 JS 工具链上游被拿下，与 Vercel × Next 正式形成「双巨头割据」。10 节研报框架 + 10 组「平台 × 框架」捆绑配对可视化。',
+  lead: '2025-12 Anthropic 收购 Bun + 2026-06 Cloudflare 收购 VoidZero + 2016 起 Vercel × Next：三极割据成形。AI 模型公司直接下场抢 runtime —— 这是新形态。10 节研报框架 + 11 组「平台 × 框架」配对可视化。',
   // 完整分享段（navigator.share text / 桌面复制时一起带出去）
   full:
-    '6/4 Cloudflare 正式收购了 Evan You 的 VoidZero —— Vite / Vitest / Rolldown / Oxc 全套 JS 工具链上游被拿下，与 Vercel × Next 正式形成「双巨头割据」。\n\n顺手做了一份带 10 节研报框架 + 10 组「平台 × 框架」捆绑配对可视化的研判页，能筛、能对比、能分享。AI 原生 Web 时代这件事对 Vue / React / Svelte 用户分别意味着什么，都拆开讲了。',
+    '原以为是双巨头：Vercel × Next 和 Cloudflare × VoidZero。补上 2025-12-02 Anthropic 收购 Bun（公司首次收购），叙事被重塑成三极格局 —— Anthropic 是新形态：AI 模型公司直接拥有 runtime，绕过 deployment 平台层。\n\n做了一份带 10 节研报框架 + 11 组「平台 × 框架」配对可视化的研判页，能筛、能对比、能分享。三家的护城河、动机、互相侵入方式都拆开讲了。',
 }

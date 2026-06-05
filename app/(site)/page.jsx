@@ -202,7 +202,7 @@ export default function HomePage() {
                   最新研判
                 </span>
                 <span className="min-w-0 truncate font-medium text-[#5d554a] dark:text-[#c8d2df]">
-                  6/4 Cloudflare 收购 VoidZero vs Vercel 收购 Next · 双巨头割据
+                  Anthropic × Bun · CF × VoidZero · Vercel × Next 三极割据
                 </span>
                 <span className="font-mono text-[10px] text-[#8a7b65] opacity-70 transition group-hover:opacity-100 dark:text-[#9aa7b8]">
                   →

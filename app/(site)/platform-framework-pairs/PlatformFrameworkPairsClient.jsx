@@ -130,7 +130,7 @@ export default function PlatformFrameworkPairsClient() {
       <header className="border-b border-[#e8dfd0] pb-6 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#e2bd75]">
-            Featured Research · 2026-06-04
+            Featured Research · 三极割据
           </span>
           <span
             className="rounded-full bg-[#f4d4cf] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b3a36] dark:bg-[#3a1d1c] dark:text-[#ed9d97]"
@@ -221,7 +221,7 @@ export default function PlatformFrameworkPairsClient() {
           平台 × 前端框架捆绑配对
         </h2>
         <p className="mt-2 max-w-3xl text-[13px] leading-7 text-[#5d554a] dark:text-gray-400">
-          10 组「平台 × 框架」配对的捆绑深度、社区反弹、AI 整合度与生命周期状态。Vercel × Next 与 Cloudflare × Vite 在图中分占两极，其它平台被推到对应位置。{' '}
+          11 组「平台 × 框架」配对的捆绑深度、社区反弹、AI 整合度与生命周期状态。Anthropic × Bun（AI 公司形态）/ CF × VoidZero（平台 + 工具链）/ Vercel × Next（平台 + 框架）在图中分占三极，其它平台被推到对应位置。{' '}
           <strong className="text-[#a05a3c] dark:text-[#e2a07a]">主观打分仅作分析参考，不构成投资 / 选型决策建议。</strong>
         </p>
       </section>

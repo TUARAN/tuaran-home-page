@@ -5,7 +5,7 @@ export const PUBLISHED_SKILLS = [
   {
     id: 'llm-productivity-directives',
     name: 'llm-productivity-directives',
-    title: '大模型增效指令 skill',
+    title: '大模型增效指令 Skill',
     category: '个人系统',
     status: '已上架',
     desc: '写作、调研、编程协作通用的反默认值指令清单，用明确规则压住自我指涉、过度结构化和不懂装懂。',
@@ -40,7 +40,7 @@ name: llm-productivity-directives
 description: Use when the user asks for writing, research, or programming assistance and wants responses constrained by Tuaran's LLM productivity directives: no self-reference, no over-structuring, no invented facts, and explicit uncertainty handling.
 ---
 
-# 大模型增效指令 skill
+# 大模型增效指令 Skill
 
 Use this skill when the user asks for writing, research, programming assistance, prompt refinement, AI collaboration rules, or asks to follow "大模型增效指令".
 
@@ -331,7 +331,7 @@ policy:
   {
     id: 'rich-data-research-page',
     name: 'rich-data-research-page',
-    title: '富数据调研页 skill',
+    title: '富数据调研页 Skill',
     category: '研究与分析',
     status: '已上架',
     desc: '把多维度公开数据（10 余条实体 × N 维指标）做成一个可比较、可筛选、可分享、可对比的富页面调研，而不是一篇 Markdown。沉淀自 /cancers-overview 与 /ai-token-usage-research 的实际打法。',
@@ -351,8 +351,8 @@ policy:
     acceptance: '所有实体一屏可见可比较；散点图清晰分出 4 象限并自带 tooltip；排行条按任意维度排序；至少 ≥3 项可两两对比；筛选状态可通过 URL 完整分享；数据口径标注清楚、不虚构。',
     content: {
       type: 'rules',
-      label: '10 条富数据页 pattern',
-      pill: 'v0.1',
+      label: '15 条富数据页 pattern',
+      pill: 'v0.2',
       items: [
         {
           title: '实体 schema：把每条实体压成一个对象，至少含 4 类字段',
@@ -393,6 +393,26 @@ policy:
         {
           title: '免责与数据口径：顶部 + 底部双重保险',
           body: '顶部 header 里一句话点出来源（带 inline 链接）+ 一句 strong 红字免责（如「不构成医学建议」）。底部 footer 用 disc 列表展开完整口径说明：每个数据字段的来源、年份、计算方式、与其它口径的差异、风险因子权重的局限（如不是 PAF）。一手链接（IARC / SEER / NCC）必须可点。涉及健康/金钱/政策的页面强制要有。',
+        },
+        {
+          title: '复合实体：每条是 X × Y 配对而不是单一物种',
+          body: '当实体是「平台 × 框架」「公司 × 产品」「国家 × 行业」这种二元配对时，schema 用 sideA / sideB 两个字段（如 platform / framework）而不是塞进一个 name。卡片头：色块 + sideA × sideB；散点上文字标 sideA × sideB 中间用 × 隔开。排序、筛选、搜索三处都要让两侧都能被命中。',
+        },
+        {
+          title: '主观打分：必须暴露评分 rubric',
+          body: '指标里有 lock_in / backlash / 整合度 / 影响力这种 0-100 主观分时，强制三件事：(1) 字段名旁边 chip 标「主观打分」与「实测」区分；(2) 顶部或 footer 写明评分 rubric（如「0=完全可移植；100=离不开该平台」）；(3) 数值取整到 5 或 10，不要 73.4% 这种假精确。compare table 里同样标。',
+        },
+        {
+          title: 'Status 作为一级筛选 + 默认配色维度',
+          body: '当实体处在不同生命周期阶段（active / historical / forming / neutral / deprecated）时，status 用三件事承载：(1) 顶部一级筛选 chip（和性别同等地位）；(2) 散点气泡的默认颜色编码（而不是次要 category）；(3) compare table 里有专门一行用 tone-colored 单元格高亮。color = category 和 color = status 二选一，不要叠。',
+        },
+        {
+          title: '逐实体核实徽章：不确定的事实不要藏在 footer',
+          body: '当某些实体的关键数据来自传闻 / 内部消息 / 估算（而非官方公布）时，schema 加 verified: boolean。verified=false 的实体卡片右上角显示「估算」「待核实」「rumor」徽章，detail panel 顶部也显示，compare table 的实体列头同样标。不要让读者读完整页才在 footer 发现「这些都是估算」—— 在每个数字旁边就要看到。',
+        },
+        {
+          title: '最近信号 line：时间敏感话题的必备字段',
+          body: '每条实体加一个 latest_signal 字段：一句话带年份的最新动向（如「2025-Q2 Fluid Compute 公布」「2024-09 VoidZero 成立」）。detail panel 在 title 下方显示；compare table 单独一行；事件类、行业演变类、新闻驱动类页面强制要有。让读者知道这页数据"截至什么时候"，单点比统一在 footer 写 update date 强。',
         },
       ],
     },
@@ -574,8 +594,51 @@ When building \`/<topic>-overview\` for a new dataset:
 - Do not split into multiple routes per entity. The strength is one-page comparison.
 - Do not skip the compare mode or the share URL — they are the two highest-ROI features.
 
+### 11. Compound entities — X × Y pairs, not single objects
+
+When each row is a pairing — platform × framework, company × product, country × sector — split into \`sideA\` / \`sideB\` fields instead of a single \`name\`. Card header shows both with a × separator. Search must hit both sides. Sort options may target either side.
+
+### 12. Subjective scoring — expose the rubric
+
+When metrics include 0–100 subjective scores (lock-in, backlash, integration quality), three rules:
+
+1. Label the field with a "subjective" chip distinct from measured metrics.
+2. State the rubric somewhere visible: "0 = fully portable; 100 = cannot leave platform".
+3. Round to nearest 5 or 10 — never show 73.4%. Fake precision is worse than honest estimate.
+
+### 13. Status as first-class filter + default color
+
+When entities sit in different lifecycle states (active / historical / forming / neutral / deprecated), status takes over:
+
+- Top-level filter chip, on par with the gender / camp toggle.
+- Default color encoding for bubbles in the scatter (instead of category).
+- Its own row in the compare table with tone-colored cells.
+
+Don't stack \`color = category\` and \`color = status\` — pick one.
+
+### 14. Per-entity verification badge
+
+When some entity facts come from rumors, leaks, or estimates (vs. confirmed sources), add \`verified: boolean\`. For \`verified=false\`:
+
+- Show a "estimate" / "unverified" / "rumor" badge top-right of the card.
+- Show the same badge at the top of the detail panel.
+- Surface in the compare table column header.
+
+Don't bury this in the footer. The reader needs to know which numbers are solid before they read the numbers.
+
+### 15. Latest-signal line
+
+Every entity carries a \`latest_signal\`: one sentence with a year/quarter naming the most recent state change ("2025-Q2 Fluid Compute announced", "2024-09 VoidZero founded").
+
+- Detail panel: under the title.
+- Compare table: dedicated row.
+- Required for event-driven or rapidly evolving topics.
+
+A single global "last updated" date in the footer is not enough when entities evolve at different rates.
+
 ## Version Log
 
+- v0.2（2026-06-04）：加入 5 条新 pattern（11–15），覆盖复合实体、主观打分透明、Status 一级筛选、逐实体核实徽章、最近信号 line。沉淀自 /platform-framework-pairs 的建设过程。
 - v0.1（2026-06-04）：初版，从 /cancers-overview 提炼 10 条 pattern 与完整施工清单。`,
       openaiYaml: `interface:
   display_name: "Rich Data Research Page"

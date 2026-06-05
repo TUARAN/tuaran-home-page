@@ -519,8 +519,8 @@ policy:
     acceptance: '所有实体一屏可见可比较；散点图清晰分出 4 象限并自带 tooltip；排行条按任意维度排序；至少 ≥3 项可两两对比；筛选状态可通过 URL 完整分享；数据口径标注清楚、不虚构。',
     content: {
       type: 'rules',
-      label: '15 条富数据页 pattern',
-      pill: 'v0.2',
+      label: '16 条富数据页 pattern',
+      pill: 'v0.3',
       items: [
         {
           title: '实体 schema：把每条实体压成一个对象，至少含 4 类字段',
@@ -581,6 +581,11 @@ policy:
         {
           title: '最近信号 line：时间敏感话题的必备字段',
           body: '每条实体加一个 latest_signal 字段：一句话带年份的最新动向（如「2025-Q2 Fluid Compute 公布」「2024-09 VoidZero 成立」）。detail panel 在 title 下方显示；compare table 单独一行；事件类、行业演变类、新闻驱动类页面强制要有。让读者知道这页数据"截至什么时候"，单点比统一在 footer 写 update date 强。',
+        },
+        {
+          title: '新事实重塑叙事支点时：从核心 thesis 往下重做，不要只加一条数据',
+          body: '当新事件 / 新事实改变研报的核心叙事结构（不是细节修正，是判断框架被推翻），不能只在数据里 append 一条。判断标准：如果新事实让"先发者是谁 / 谁在防御谁 / 这是什么类型的博弈"任意一条命题反转，就是支点级。处理：① title + thesis + eventBadge 必须重写；② 时间线节点重排（不只是 append）；③ 关键章节（动机 / 影响 / AI 分析）需要重新论证因果链；④ 数据加一条同时要看是不是引入了新 entity type，如果是就加 pairType / category 字段并相应着色；⑤ 所有入口文案、SHARE_COPY、OG image 一次性同步。沉淀自 /platform-framework-pairs 从「双巨头」改写成「三极割据」的教训：漏报 Anthropic × Bun 这件事不是 +1，是把整个 thesis 推翻了。',
+          accent: 'warning',
         },
       ],
     },
@@ -804,8 +809,28 @@ Every entity carries a \`latest_signal\`: one sentence with a year/quarter namin
 
 A single global "last updated" date in the footer is not enough when entities evolve at different rates.
 
+### 16. New facts that reshape the thesis: rewrite top-down, don't just append a row
+
+When a new event or fact changes the **core narrative spine** of the research (not a detail correction — a verdict shift), do NOT just append one more entity to the data array.
+
+Test for thesis-level disruption: if the new fact flips ANY of these claims, you're at a thesis-level change, not an entity-level one:
+- who moved first
+- who is defending against whom
+- what type of game this even is
+
+When the test fires:
+
+1. **Rewrite** title + thesis + eventBadge. The old framing was wrong; band-aiding it confuses readers.
+2. **Rebuild** the signal timeline. Don't append the new event at the end — re-order so the new pivot reads correctly.
+3. **Re-argue** the load-bearing sections (motivation / impact / AI analysis). The causal chain you wrote before assumed the old framing; check each step.
+4. **Check if a new entity type appeared.** A new "kind" of entity (e.g. AI-company × runtime is not the same as deployment-platform × framework) means a new \`pairType\` / \`category\` field is needed, with its own color and filter chip.
+5. **Sync every surface** in one commit: SHARE_COPY (title / lead / full), OG image, page header eyebrow, hero strip, siteNav label, works summary. Mixed-framing pages — half old narrative, half new — are worse than either consistent version.
+
+Distilled from /platform-framework-pairs rewriting from "双巨头割据" to "三极割据" after surfacing Anthropic × Bun (2025-12-02). Adding Bun wasn't +1; it inverted the question from "which deployment platform owns which framework" to "AI companies are bypassing the deployment-platform layer entirely". The old framing positioned Cloudflare as "对冲 Vercel"; the new one positions it as "回应 Anthropic". Every load-bearing sentence had to be checked.
+
 ## Version Log
 
+- v0.3（2026-06-05）：加入 #16 新事实重塑叙事支点时要从核心 thesis 往下重做。沉淀自 /platform-framework-pairs 从「双巨头」改写成「三极割据」的实战教训。
 - v0.2（2026-06-04）：加入 5 条新 pattern（11–15），覆盖复合实体、主观打分透明、Status 一级筛选、逐实体核实徽章、最近信号 line。沉淀自 /platform-framework-pairs 的建设过程。
 - v0.1（2026-06-04）：初版，从 /cancers-overview 提炼 10 条 pattern 与完整施工清单。`,
       openaiYaml: `interface:

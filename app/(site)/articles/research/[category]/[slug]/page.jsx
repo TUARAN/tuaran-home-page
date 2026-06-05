@@ -62,7 +62,9 @@ export async function generateMetadata({ params }) {
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
   const title = entry.title
   const description = entry.summary || `${CATEGORY_META[entry.category]?.label || ''}：${entry.title}`
-  const cover = entry.images?.[0]
+  // 分享卡片：永远走同目录 opengraph-image.jsx 动态生成（头像 + 标题 + 摘要），
+  // 不再依赖文内 cover（多为 Unsplash 经 wsrv.nl 代理，Twitterbot 拉不稳定）。
+  // 文内 cover 保留为页面视觉，与 OG 分工。
 
   return {
     title,
@@ -82,9 +84,12 @@ export async function generateMetadata({ params }) {
       locale: 'zh_CN',
       type: 'article',
       publishedTime: entry.date ? new Date(entry.date).toISOString() : undefined,
-      images: cover ? [{ url: cover.src, alt: cover.alt || `${entry.title} 配图` }] : undefined,
     },
-    twitter: { card: cover ? 'summary_large_image' : 'summary', title, description, images: cover ? [cover.src] : undefined },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   }
 }
 

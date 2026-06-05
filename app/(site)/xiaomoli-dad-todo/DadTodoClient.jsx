@@ -143,7 +143,7 @@ export default function DadTodoClient() {
         const meRes = await fetch('/api/me', { cache: 'no-store' })
         const me = await safeJson(meRes)
         if (cancelled) return
-        setUser(me?.user || null)
+        setUser(me?.isOwner ? me.user : null)
       } catch {
         if (!cancelled) setUser(null)
       } finally {

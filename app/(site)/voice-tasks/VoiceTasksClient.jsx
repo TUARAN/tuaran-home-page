@@ -69,7 +69,7 @@ export default function VoiceTasksClient() {
       try {
         const res = await fetch('/api/me', { cache: 'no-store' })
         const data = await safeJson(res)
-        setUser(data?.user || null)
+        setUser(data?.isOwner ? data.user : null)
       } catch {
         setUser(null)
       } finally {

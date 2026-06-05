@@ -794,7 +794,7 @@ export default function AiTokenUsageResearchClient() {
             返回工程作品列表
           </Link>
           <Link href="/skill-center/llm-productivity-directives" className="underline decoration-[#d3b889] underline-offset-2">
-            相关：大模型增效指令 skill
+            相关：大模型增效指令 Skill
           </Link>
         </div>
       </section>

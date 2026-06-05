@@ -12,7 +12,7 @@ import {
   STATUS_META,
   TOTALS,
 } from './data'
-import { FRAMEWORK_META, FRAMEWORK_SECTIONS, SIGNAL_TIMELINE } from './framework'
+import { FRAMEWORK_META, FRAMEWORK_SECTIONS, PRIMARY_SOURCES, SIGNAL_TIMELINE } from './framework'
 
 const SHARE_URL = 'https://2aran.com/platform-framework-pairs'
 
@@ -138,7 +138,7 @@ export default function PlatformFrameworkPairsClient() {
           <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#5d554a] dark:text-gray-400">
             10 组「平台 × 框架」配对的捆绑深度、社区反弹、AI 整合度与生命周期状态。基于公开新闻、GitHub 数据与社区信号。{' '}
             <strong className="text-[#a05a3c] dark:text-[#e2a07a]">主观打分仅作分析参考，不构成投资 / 选型决策建议。</strong>
-            {' '}部分配对（如 CF × Vue）含未核实细节，在卡片上有「估算」徽章标注。
+            {' '}2026-06-04 Cloudflare 正式收购 VoidZero —— 数据已对应更新。
           </p>
         </div>
         <SharePageButton
@@ -911,8 +911,8 @@ function ResearchFramework() {
               Featured Research · Framework
             </span>
             <span
-              className="rounded-full bg-[#fde6c6] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]"
-              title="部分细节待官方确认"
+              className="rounded-full bg-[#f4d4cf] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b3a36] dark:bg-[#3a1d1c] dark:text-[#ed9d97]"
+              title="官方公告已发布"
             >
               {FRAMEWORK_META.eventBadge}
             </span>
@@ -926,6 +926,22 @@ function ResearchFramework() {
           <p className="mt-3 max-w-3xl border-l-2 border-[#b7791f] pl-3 text-[14px] leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:text-gray-300">
             {FRAMEWORK_META.thesis}
           </p>
+
+          {/* Primary sources */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#8f8069] dark:text-gray-500">
+            <span className="font-mono uppercase tracking-[0.16em]">一手信源</span>
+            {PRIMARY_SOURCES.map((s) => (
+              <a
+                key={s.url}
+                href={s.url}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2 hover:text-[#5d503f] dark:hover:text-gray-300"
+              >
+                {s.label} ↗
+              </a>
+            ))}
+          </div>
 
           {/* Signal timeline */}
           <div className="mt-4 -mb-1 overflow-x-auto">

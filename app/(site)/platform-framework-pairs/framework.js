@@ -10,20 +10,19 @@ export const FRAMEWORK_META = {
   title: '《Cloudflare 收购 VoidZero vs Vercel 收购 Next：双巨头割据前端、AI 原生 Web 时代产业深度研判》',
   subtitle: '研报框架 · 不是结论，是结构',
   thesis:
-    '当平台拥有了框架，框架就成为平台分发自身能力的渠道。Vercel × Next 验证了这条路径；CF × VoidZero 一旦落地，意味着这件事开始有第二条对称力量。AI 大模型既是这场博弈的加速器，也是新的赌注。',
-  eventBadge: '事件层 · 部分细节待官方确认',
-  estDate: '2024-09 起 · CF × VoidZero 整合存在但收购细节未官方确认',
+    '当平台拥有了框架，框架就成为平台分发自身能力的渠道。Vercel × Next 用九年验证了这条路径。2026-06-04 Cloudflare 收购 VoidZero —— Vite 工具链上游被拿下，AI 原生 Web 的"双巨头割据"正式成形。Evan You 团队公开承诺保持 vendor-agnostic + $1M 独立基金，但这套承诺值多少，要看未来 12 个月。',
+  eventBadge: '事件层 · 2026-06-04 已确认',
+  estDate: '2026-06-04 · Cloudflare 正式公告收购 VoidZero',
 }
 
 export const FRAMEWORK_SECTIONS = [
   {
     id: 'event',
     number: '01',
-    title: '事件层：到底发生了什么',
+    title: '事件层：2026-06-04 已落地',
     body:
-      'VoidZero 由 Evan You 于 2024-09 成立，专做 Vite / Rolldown / OXC 的商业化，Accel 领投。Cloudflare 是 Vite 长期赞助方，Workers / Pages 模板里 Vite 已是一等公民。CF 是否实质性收购 / 控股 VoidZero —— 公开信源未明确披露，需以官方公告为准。',
-    accent: 'warning',
-    needsFact: true,
+      'Cloudflare 正式收购 VoidZero（Vite / Vitest / Rolldown / Oxc 背后的公司）。Vite 每周下载 1 亿+。整套工具链原生进 Workers 平台；vite deploy → 全球生产一键。Evan You 团队整体加入 CF 的 ETI（Emerging Technology & Incubation）。MIT 协议保持开源，CF 同时承诺 100 万美元独立 Vite 生态基金，由 Vite core team 管理。',
+    accent: 'highlight',
   },
   {
     id: 'mirror',
@@ -44,7 +43,7 @@ export const FRAMEWORK_SECTIONS = [
     number: '04',
     title: 'Cloudflare 的动机解构',
     body:
-      '四条逻辑叠加：① 把 Vite / Nuxt 默认绑定 Workers / D1 / R2 / KV，复制 Vercel × Next 的捆绑收益；② 用框架做 Workers AI / Agents SDK 的分发渠道；③ 对冲 Vercel —— 它锁了 React 一侧，CF 走 Vue 一侧建立对称力量；④ 人才并购 —— Evan You / Anthony Fu 影响力本身就是稀缺资产。',
+      'CF 官方原话："统一软件开发生命周期 —— 开发者和自主 AI Agent 都能从 idea 一键到全球生产"。四条逻辑叠加：① Vite 是 JS 工具链上游，拿下它等于拿下下游所有框架（含 React / Svelte / Solid），比 Vercel × Next 单一框架格局大；② 把 Workers AI / Agents SDK 通过工具链分发；③ 对冲 Vercel，从 build / dev / test 这条线上提前卡位；④ 人才并购 —— Evan You + Vitest / Rolldown / Oxc 团队是稀缺资产。',
     accent: 'highlight',
   },
   {
@@ -75,22 +74,22 @@ export const FRAMEWORK_SECTIONS = [
     number: '08',
     title: '风险与未解之问',
     body:
-      'Vite 中立性是否能维持（直接影响 React / Svelte / Solid 用户）；开源治理决定权变化（参考 Babel / webpack 衰落教训）；中国 Vue 用户在 CF 可用性受限环境下可能被推向国产替代；CF 同时握有 CDN / DNS / Edge runtime / 框架 / AI infra，是否触及反垄断红线；Evan You 等核心人物的长期承诺；社区分叉风险（独立 Vue / 纯 Vite fork）。',
-    accent: 'warning',
+      'CF / Evan 官方承诺 vendor-agnostic + $1M 独立基金，但「承诺保持中立的收购」最终如何兑现，要看 12 个月后的实际 commit 走向 —— Vite 团队的精力会自然偏向 Workers 集成、CF 用例、CF Demo。其它平台（Vercel / Netlify / AWS）必须重新考虑 Vite 依赖。中国 Vue 用户在 CF 可用性受限环境下可能被推向国产替代（Rspack / 国产 SSR）。CF 同时握有 CDN / DNS / Edge / 框架 / AI infra，反垄断视角值得关注。社区分叉风险存在但门槛高。',
   },
   {
     id: 'conclusion',
     number: '09',
     title: '个人结论与跟进策略',
     body:
-      '事件未官方核实之前，定性留空。对 Vue 用户：保持多云部署能力，不要默认 CF。对 React 用户：开始关注 Vite 中立性这件事。对独立开发者：在 LLM 默认推荐固化之前，主动建立自己的"框架 + 平台"偏好，而不是等 AI 替你选。对内容创作者：这个事件适合做一篇长期跟踪的富页面调研。',
+      '定性：「双巨头割据 + AI 原生 Web」格局正式成立。对 Vue / Nuxt 用户：CF 体验会很快超过其他平台，可以尝试但保留多云能力。对 React / Svelte / Solid 用户：你也在被收购，因为你用 Vite。对独立开发者：在 LLM 默认推荐固化之前，主动建立自己的「框架 + 平台」偏好，别让 AI 替你选。对内容创作者：这事值得做长期跟踪 —— vite deploy 的真实体验、独立基金的实际 grant 流向、12 个月后的 commit 分布，都是后续观察点。',
+    accent: 'highlight',
   },
   {
     id: 'sources',
     number: '10',
     title: '信息来源（一手优先）',
     body:
-      'Cloudflare 官方博客 + S-1 + 财报电话会议；Evan You 个人推特 / VoidZero 官网；Nuxt 团队声明；Vercel 高管推特（Guillermo Rauch / Lee Robinson）；Hacker News 主帖 + TheNewStack + InfoQ；中文一手：Vue 中国社区 / 掘金 / V2EX 相关讨论。',
+      'Cloudflare blog/voidzero-joins-cloudflare（2026-06-04）；VoidZero blog/posts/voidzero-cloudflare；Cloudflare press release "AI-Native Web"；NET 股价新闻 + BusinessWire；SiliconANGLE / InfotechLead 行业评论；Evan You / Anthony Fu 推特表态；Nuxt 团队声明；Vercel 高管反应（Guillermo Rauch / Lee Robinson）；中文一手：Vue 中国社区 + 掘金 + V2EX。',
   },
 ]
 
@@ -98,7 +97,13 @@ export const SIGNAL_TIMELINE = [
   { year: 2016, label: 'Next.js 由 Zeit (Vercel 前身) 开源' },
   { year: 2020, label: 'ISR / Image Optimization 首发 Vercel，捆绑加深' },
   { year: 2022, label: 'App Router / Server Components 推出，社区争议升温' },
-  { year: 2024, label: 'VoidZero 成立（Vite/Rolldown 商业化），Accel 领投' },
-  { year: 2024, label: 'Fluid Compute 公布，仅 Vercel 完整工作' },
-  { year: 2025, label: 'CF × Vue / Vite 整合传闻 · 待官方确认', highlight: true },
+  { year: '2024-09', label: 'VoidZero 成立（Vite / Vitest / Rolldown / Oxc 商业化），Accel 领投' },
+  { year: 2025, label: 'Vercel Fluid Compute 公布，仅 Vercel 完整工作' },
+  { year: '2026-06-04', label: 'Cloudflare 收购 VoidZero · "AI 原生 Web 的未来"', highlight: true },
+]
+
+export const PRIMARY_SOURCES = [
+  { label: 'Cloudflare 官方博客', url: 'https://blog.cloudflare.com/voidzero-joins-cloudflare/' },
+  { label: 'VoidZero 公告', url: 'https://voidzero.dev/posts/voidzero-cloudflare' },
+  { label: 'Cloudflare 正式新闻稿', url: 'https://www.cloudflare.com/press/press-releases/2026/cloudflare-acquires-voidzero-to-build-the-future-of-the-ai-native-web/' },
 ]

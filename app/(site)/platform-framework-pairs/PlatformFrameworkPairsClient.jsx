@@ -999,62 +999,72 @@ function ResearchFramework() {
         ))}
       </nav>
 
-      {/* 10 sections grid */}
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        {FRAMEWORK_SECTIONS.map((s) => (
-          <FrameworkSection key={s.id} section={s} />
+      {/* 10 sections —— 编辑式单栏，左侧数字 rail */}
+      <ol className="mt-5 relative">
+        {FRAMEWORK_SECTIONS.map((s, i) => (
+          <FrameworkSection key={s.id} section={s} isLast={i === FRAMEWORK_SECTIONS.length - 1} />
         ))}
-      </div>
+      </ol>
 
-      <p className="mt-4 text-[11px] leading-5 text-[#8f8069] dark:text-gray-500">
-        研报框架是<strong>判断层</strong>，下面的 10 组配对散点 + 排行 + 对比表是<strong>证据层</strong>。
-        框架里第 02、04、05、07 节的论点，直接在数据视图上有对应可点的实体；点击下方任意配对可看到该实体在框架中的位置。
+      <p className="mt-6 border-t border-dashed border-[#e8dfd0] pt-4 text-[12px] leading-6 text-[#8f8069] dark:border-gray-800 dark:text-gray-500">
+        研报框架是<strong className="text-[#5d503f] dark:text-gray-300">判断层</strong>，下面的 10 组配对散点 + 排行 + 对比表是<strong className="text-[#5d503f] dark:text-gray-300">证据层</strong>。
+        框架里第 02、04、05、07 节的论点，直接在数据视图上有对应可点的实体。
       </p>
     </section>
   )
 }
 
-function FrameworkSection({ section }) {
-  const accentClass =
-    section.accent === 'highlight'
-      ? 'border-[#b7791f] bg-[#fbf3e3]/60 dark:border-[#e2bd75] dark:bg-[#2a2115]/40'
-      : section.accent === 'warning'
-      ? 'border-[#cbb796] bg-[#fdf6ea]/70 dark:border-[#5a4f3a] dark:bg-[#1a1610]/60'
-      : 'border-[#e8dfd0] bg-white/75 dark:border-gray-800 dark:bg-gray-900/60'
+function FrameworkSection({ section, isLast }) {
+  const accent = section.accent
+  const railColor =
+    accent === 'highlight'
+      ? 'bg-[#b7791f] dark:bg-[#e2bd75]'
+      : accent === 'warning'
+      ? 'bg-[#a05a3c] dark:bg-[#e2a07a]'
+      : 'bg-[#cbb796] dark:bg-[#5a4f3a]'
+
+  const numberColor =
+    accent === 'highlight'
+      ? 'text-[#8a5a14] dark:text-[#e2bd75]'
+      : accent === 'warning'
+      ? 'text-[#a05a3c] dark:text-[#e2a07a]'
+      : 'text-[#a09176] dark:text-[#7f8aa0]'
 
   return (
-    <article
-      id={`fwk-${section.id}`}
-      className={`scroll-mt-20 rounded-xl border p-4 transition ${accentClass}`}
-    >
-      <div className="flex items-baseline gap-3">
-        <span
-          className={`font-mono text-[12px] font-semibold tracking-[0.06em] ${
-            section.accent === 'highlight'
-              ? 'text-[#8a5a14] dark:text-[#e2bd75]'
-              : section.accent === 'warning'
-              ? 'text-[#a05a3c] dark:text-[#e2a07a]'
-              : 'text-[#8f8069] dark:text-gray-500'
-          }`}
-        >
+    <li id={`fwk-${section.id}`} className="scroll-mt-20 relative pl-12 sm:pl-16">
+      {/* 数字锚点 */}
+      <div className="absolute left-0 top-0 flex h-9 w-9 items-center justify-center sm:h-10 sm:w-10">
+        <span className={`font-mono text-[18px] font-semibold tabular-nums sm:text-[20px] ${numberColor}`}>
           {section.number}
         </span>
-        <h3 className="flex-1 font-serif text-[15px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[16px]">
-          {section.title}
-        </h3>
-        {section.needsFact ? (
-          <span
-            className="shrink-0 rounded-full bg-[#fde6c6] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]"
-            title="该节包含未官方确认的事实"
-          >
-            待核实
-          </span>
-        ) : null}
       </div>
-      <p className="mt-2 text-[13px] leading-7 text-[#5d503f] dark:text-gray-300">
-        {section.body}
-      </p>
-    </article>
+      {/* 垂直 rail（左对齐数字下方） */}
+      {!isLast ? (
+        <span
+          aria-hidden="true"
+          className={`absolute left-[18px] top-10 bottom-0 w-px sm:left-[20px] ${railColor} opacity-50`}
+        />
+      ) : null}
+
+      <article className="pb-8">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h3 className="font-serif text-[17px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[19px]">
+            {section.title}
+          </h3>
+          {section.needsFact ? (
+            <span
+              className="rounded-full bg-[#fde6c6] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]"
+              title="该节包含未官方确认的事实"
+            >
+              待核实
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-2 max-w-3xl text-[13.5px] leading-7 text-[#5d503f] dark:text-gray-300">
+          {section.body}
+        </p>
+      </article>
+    </li>
   )
 }
 

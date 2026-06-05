@@ -107,3 +107,14 @@ export const PRIMARY_SOURCES = [
   { label: 'VoidZero 公告', url: 'https://voidzero.dev/posts/voidzero-cloudflare' },
   { label: 'Cloudflare 正式新闻稿', url: 'https://www.cloudflare.com/press/press-releases/2026/cloudflare-acquires-voidzero-to-build-the-future-of-the-ai-native-web/' },
 ]
+
+// 单一分享文案源（meta description / og: / twitter: / SharePageButton / 剪贴板共用）
+export const SHARE_COPY = {
+  // 浏览器 <title> + og:title + twitter:title。完整研报名
+  title: 'Cloudflare 收购 VoidZero vs Vercel 收购 Next：双巨头割据前端、AI 原生 Web 时代产业深度研判',
+  // meta description / og:description / twitter:description（120 字内，平台抓预览用）
+  lead: '6/4 Cloudflare 收购 Evan You 的 VoidZero —— Vite / Vitest / Rolldown / Oxc 全套 JS 工具链上游被拿下，与 Vercel × Next 正式形成「双巨头割据」。10 节研报框架 + 10 组「平台 × 框架」捆绑配对可视化。',
+  // 完整分享段（navigator.share text / 桌面复制时一起带出去）
+  full:
+    '6/4 Cloudflare 正式收购了 Evan You 的 VoidZero —— Vite / Vitest / Rolldown / Oxc 全套 JS 工具链上游被拿下，与 Vercel × Next 正式形成「双巨头割据」。\n\n顺手做了一份带 10 节研报框架 + 10 组「平台 × 框架」捆绑配对可视化的研判页，能筛、能对比、能分享。AI 原生 Web 时代这件事对 Vue / React / Svelte 用户分别意味着什么，都拆开讲了。',
+}

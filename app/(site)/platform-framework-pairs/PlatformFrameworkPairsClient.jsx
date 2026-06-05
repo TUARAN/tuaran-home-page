@@ -12,7 +12,7 @@ import {
   STATUS_META,
   TOTALS,
 } from './data'
-import { FRAMEWORK_META, FRAMEWORK_SECTIONS, PRIMARY_SOURCES, SIGNAL_TIMELINE } from './framework'
+import { FRAMEWORK_META, FRAMEWORK_SECTIONS, PRIMARY_SOURCES, SHARE_COPY, SIGNAL_TIMELINE } from './framework'
 
 const SHARE_URL = 'https://2aran.com/platform-framework-pairs'
 
@@ -144,8 +144,9 @@ export default function PlatformFrameworkPairsClient() {
             {FRAMEWORK_META.title}
           </h1>
           <SharePageButton
-            title={FRAMEWORK_META.title}
-            text="2026-06-04 Cloudflare 收购 VoidZero · 研报框架 + 10 组配对数据可视化"
+            title={SHARE_COPY.title}
+            text={SHARE_COPY.lead}
+            fullText={SHARE_COPY.full}
             url={SHARE_URL}
             size="md"
           />

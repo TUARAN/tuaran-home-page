@@ -254,10 +254,10 @@ export default function SiteHeader() {
                 aria-label="站点更新记录"
                 title="站点更新记录"
                 className={[
-                  'inline-flex items-center rounded-full px-2.5 py-1 text-sm font-medium no-underline transition-colors',
+                  'inline-flex items-center rounded-full px-2.5 py-1 text-sm font-medium no-underline transition-colors hover:no-underline',
                   pathname?.startsWith('/changelog')
-                    ? 'text-[#111] dark:text-gray-100'
-                    : 'text-[#5b5448] hover:text-[#111] dark:text-[#c7d0df] dark:hover:text-[#f7fbff]',
+                    ? 'text-[#111] visited:text-[#111] dark:text-gray-100 dark:visited:text-gray-100'
+                    : 'text-[#5b5448] visited:text-[#5b5448] hover:text-[#111] dark:text-[#c7d0df] dark:visited:text-[#c7d0df] dark:hover:text-[#f7fbff]',
                 ].join(' ')}
               >
                 更新

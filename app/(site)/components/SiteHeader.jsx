@@ -22,20 +22,6 @@ function ChevronDown() {
   )
 }
 
-function ChangelogIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-[17px] w-[17px]">
-      <path
-        d="M5.5 3.5h7.2l2.3 2.3v10.7H5.5v-13Z"
-        stroke="currentColor"
-        strokeWidth="1.45"
-        strokeLinejoin="round"
-      />
-      <path d="M12.6 3.8v2.4h2.2M7.7 8.5h4.6M7.7 11.1h5.1M7.7 13.7h3.5" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 function MenuItem({ item, onNavigate }) {
   const base =
     'group/menuitem flex items-start gap-3 rounded-xl px-3 py-2 no-underline transition-colors hover:bg-[#f4ede0] dark:hover:bg-[#19212b]'
@@ -268,13 +254,13 @@ export default function SiteHeader() {
                 aria-label="站点更新记录"
                 title="站点更新记录"
                 className={[
-                  'ml-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full no-underline transition-colors',
+                  'ml-0.5 inline-flex items-center rounded-full px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] no-underline transition-colors',
                   pathname?.startsWith('/changelog')
                     ? 'bg-[#eee7db] text-[#111] dark:bg-[#263241] dark:text-gray-100'
-                    : 'text-[#6a6256] hover:bg-[#eee7db] hover:text-[#111] dark:text-[#c7d0df] dark:hover:bg-[#1b2532] dark:hover:text-[#f7fbff]',
+                    : 'text-[#7b7163] hover:bg-[#eee7db] hover:text-[#111] dark:text-[#aeb8c6] dark:hover:bg-[#1b2532] dark:hover:text-[#f7fbff]',
                 ].join(' ')}
               >
-                <ChangelogIcon />
+                更新
               </Link>
             </nav>
             <SettingsButton />

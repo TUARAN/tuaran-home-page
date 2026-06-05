@@ -126,34 +126,107 @@ export default function PlatformFrameworkPairsClient() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
-      {/* ---- Header ---- */}
-      <header className="flex flex-col gap-4 border-b border-[#e8dfd0] pb-5 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
-            Platform × Framework · 2024–2026
-          </p>
-          <h1 className="mt-2 font-serif text-[26px] font-semibold leading-tight text-[#221f19] dark:text-gray-100 sm:text-[30px]">
-            平台 × 前端框架捆绑配对
-          </h1>
-          <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#5d554a] dark:text-gray-400">
-            10 组「平台 × 框架」配对的捆绑深度、社区反弹、AI 整合度与生命周期状态。基于公开新闻、GitHub 数据与社区信号。{' '}
-            <strong className="text-[#a05a3c] dark:text-[#e2a07a]">主观打分仅作分析参考，不构成投资 / 选型决策建议。</strong>
-            {' '}2026-06-04 Cloudflare 正式收购 VoidZero —— 数据已对应更新。
-          </p>
+      {/* ---- Header：研报主标题 ---- */}
+      <header className="border-b border-[#e8dfd0] pb-6 dark:border-gray-800">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#e2bd75]">
+            Featured Research · 2026-06-04
+          </span>
+          <span
+            className="rounded-full bg-[#f4d4cf] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b3a36] dark:bg-[#3a1d1c] dark:text-[#ed9d97]"
+            title="官方公告已发布"
+          >
+            事件已确认
+          </span>
         </div>
-        <SharePageButton
-          title="平台 × 前端框架捆绑配对调研"
-          text="10 组配对的捆绑深度 / 社区反弹 / AI 整合 / 生命周期可视化"
-          url={SHARE_URL}
-          size="md"
-        />
+        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <h1 className="max-w-4xl font-serif text-[24px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[30px]">
+            {FRAMEWORK_META.title}
+          </h1>
+          <SharePageButton
+            title={FRAMEWORK_META.title}
+            text="2026-06-04 Cloudflare 收购 VoidZero · 研报框架 + 10 组配对数据可视化"
+            url={SHARE_URL}
+            size="md"
+          />
+        </div>
+        <p className="mt-4 max-w-3xl border-l-2 border-[#b7791f] pl-3 text-[14px] leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:text-gray-300">
+          {FRAMEWORK_META.thesis}
+        </p>
+
+        {/* 一手信源 */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#8f8069] dark:text-gray-500">
+          <span className="font-mono uppercase tracking-[0.16em]">一手信源</span>
+          {PRIMARY_SOURCES.map((s) => (
+            <a
+              key={s.url}
+              href={s.url}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:text-[#5d503f] dark:hover:text-gray-300"
+            >
+              {s.label} ↗
+            </a>
+          ))}
+        </div>
+
+        {/* 信号时间线 */}
+        <div className="mt-5 overflow-x-auto">
+          <ol className="flex min-w-max items-stretch gap-0">
+            {SIGNAL_TIMELINE.map((s, i) => {
+              const isLast = i === SIGNAL_TIMELINE.length - 1
+              return (
+                <li key={`${s.year}-${i}`} className="flex items-start gap-2">
+                  <div className="flex flex-col items-center pt-1">
+                    <span
+                      className={`inline-block h-2.5 w-2.5 rounded-full ${
+                        s.highlight ? 'bg-[#a05a3c] dark:bg-[#e2a07a]' : 'bg-[#b7791f] dark:bg-[#e2bd75]'
+                      }`}
+                    />
+                    {!isLast ? (
+                      <span aria-hidden="true" className="mt-1 h-8 w-px bg-[#cbb796] dark:bg-[#5a4f3a]" />
+                    ) : null}
+                  </div>
+                  <div className="min-w-[160px] max-w-[220px] pb-2 pr-4">
+                    <p
+                      className={`font-mono text-[10px] uppercase tracking-[0.14em] ${
+                        s.highlight ? 'text-[#a05a3c] dark:text-[#e2a07a]' : 'text-[#8a5a14] dark:text-[#e2bd75]'
+                      }`}
+                    >
+                      {s.year}
+                    </p>
+                    <p className="mt-0.5 text-[11.5px] leading-5 text-[#5d503f] dark:text-gray-300">
+                      {s.label}
+                    </p>
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
       </header>
 
-      {/* ---- 研报框架（主体判断层） ---- */}
+      {/* ---- 研报框架：10 节判断 ---- */}
       <ResearchFramework />
 
+      {/* ---- 数据视图章节起点：作为研判的延伸 ---- */}
+      <section className="mt-10 border-t-2 border-[#3f3527] pt-6 dark:border-gray-300">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#e2bd75]">
+            配套数据 · 对应研报第 06 节「对竞争对手的连锁反应」
+          </span>
+        </div>
+        <h2 className="mt-2 font-serif text-[22px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[26px]">
+          平台 × 前端框架捆绑配对
+        </h2>
+        <p className="mt-2 max-w-3xl text-[13px] leading-7 text-[#5d554a] dark:text-gray-400">
+          10 组「平台 × 框架」配对的捆绑深度、社区反弹、AI 整合度与生命周期状态。Vercel × Next 与 Cloudflare × Vite 在图中分占两极，其它平台被推到对应位置。{' '}
+          <strong className="text-[#a05a3c] dark:text-[#e2a07a]">主观打分仅作分析参考，不构成投资 / 选型决策建议。</strong>
+        </p>
+      </section>
+
       {/* ---- Mode + status ---- */}
-      <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[#e8dfd0] pt-5 dark:border-gray-800">
+      <div className="mt-5 flex flex-wrap items-center gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
           状态
         </span>
@@ -894,96 +967,20 @@ function PairDetail({ entity, onClose }) {
 
 function ResearchFramework() {
   return (
-    <section className="mt-6">
-      {/* Hero / thesis card */}
-      <div className="relative overflow-hidden rounded-2xl border border-[#cbb796] bg-gradient-to-br from-[#fbf3e3] via-[#f7ecd2] to-[#fbf3e3] p-5 dark:border-[#5a4f3a] dark:from-[#1f1a12] dark:via-[#1a1610] dark:to-[#1f1a12] sm:p-6">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.06] dark:opacity-[0.08]"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 0% 0%, #b7791f 0%, transparent 38%), radial-gradient(circle at 100% 100%, #6b85a6 0%, transparent 40%)',
-          }}
-        />
-        <div className="relative">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#e2bd75]">
-              Featured Research · Framework
-            </span>
-            <span
-              className="rounded-full bg-[#f4d4cf] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b3a36] dark:bg-[#3a1d1c] dark:text-[#ed9d97]"
-              title="官方公告已发布"
-            >
-              {FRAMEWORK_META.eventBadge}
-            </span>
-          </div>
-          <h2 className="mt-2 font-serif text-[20px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[24px]">
-            {FRAMEWORK_META.title}
-          </h2>
-          <p className="mt-1 text-[12px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
-            {FRAMEWORK_META.subtitle}
-          </p>
-          <p className="mt-3 max-w-3xl border-l-2 border-[#b7791f] pl-3 text-[14px] leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:text-gray-300">
-            {FRAMEWORK_META.thesis}
-          </p>
-
-          {/* Primary sources */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#8f8069] dark:text-gray-500">
-            <span className="font-mono uppercase tracking-[0.16em]">一手信源</span>
-            {PRIMARY_SOURCES.map((s) => (
-              <a
-                key={s.url}
-                href={s.url}
-                target="_blank"
-                rel="noreferrer"
-                className="underline underline-offset-2 hover:text-[#5d503f] dark:hover:text-gray-300"
-              >
-                {s.label} ↗
-              </a>
-            ))}
-          </div>
-
-          {/* Signal timeline */}
-          <div className="mt-4 -mb-1 overflow-x-auto">
-            <ol className="flex min-w-max items-stretch gap-0">
-              {SIGNAL_TIMELINE.map((s, i) => {
-                const isLast = i === SIGNAL_TIMELINE.length - 1
-                return (
-                  <li key={`${s.year}-${i}`} className="flex items-start gap-2">
-                    <div className="flex flex-col items-center pt-1">
-                      <span
-                        className={`inline-block h-2.5 w-2.5 rounded-full ${
-                          s.highlight ? 'bg-[#a05a3c] dark:bg-[#e2a07a]' : 'bg-[#b7791f] dark:bg-[#e2bd75]'
-                        }`}
-                      />
-                      {!isLast ? (
-                        <span aria-hidden="true" className="mt-1 h-8 w-px bg-[#cbb796] dark:bg-[#5a4f3a]" />
-                      ) : null}
-                    </div>
-                    <div className="min-w-[160px] max-w-[200px] pb-2 pr-4">
-                      <p
-                        className={`font-mono text-[10px] uppercase tracking-[0.14em] ${
-                          s.highlight ? 'text-[#a05a3c] dark:text-[#e2a07a]' : 'text-[#8a5a14] dark:text-[#e2bd75]'
-                        }`}
-                      >
-                        {s.year}
-                      </p>
-                      <p className="mt-0.5 text-[11.5px] leading-5 text-[#5d503f] dark:text-gray-300">
-                        {s.label}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ol>
-          </div>
-        </div>
+    <section className="mt-8">
+      <div className="flex flex-wrap items-baseline gap-3">
+        <h2 className="font-serif text-[20px] font-semibold text-[#221f19] dark:text-gray-100 sm:text-[22px]">
+          研报框架 · 10 节判断
+        </h2>
+        <p className="text-[12px] text-[#8f8069] dark:text-gray-500">
+          {FRAMEWORK_META.subtitle}
+        </p>
       </div>
 
       {/* TOC quick-jump */}
       <nav
         aria-label="研报章节快速跳转"
-        className="mt-4 -mx-1 flex flex-wrap gap-1"
+        className="mt-3 -mx-1 flex flex-wrap gap-1"
       >
         {FRAMEWORK_SECTIONS.map((s) => (
           <a
@@ -1005,11 +1002,6 @@ function ResearchFramework() {
           <FrameworkSection key={s.id} section={s} isLast={i === FRAMEWORK_SECTIONS.length - 1} />
         ))}
       </ol>
-
-      <p className="mt-6 border-t border-dashed border-[#e8dfd0] pt-4 text-[12px] leading-6 text-[#8f8069] dark:border-gray-800 dark:text-gray-500">
-        研报框架是<strong className="text-[#5d503f] dark:text-gray-300">判断层</strong>，下面的 10 组配对散点 + 排行 + 对比表是<strong className="text-[#5d503f] dark:text-gray-300">证据层</strong>。
-        框架里第 02、04、05、07 节的论点，直接在数据视图上有对应可点的实体。
-      </p>
     </section>
   )
 }

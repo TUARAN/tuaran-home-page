@@ -1086,6 +1086,24 @@ function ResearchFramework() {
           <FrameworkSection key={s.id} section={s} isLast={i === FRAMEWORK_SECTIONS.length - 1} />
         ))}
       </ol>
+
+      {/* 延伸阅读：相关工程实践调研 */}
+      <aside className="mt-6 rounded-xl border border-[#cbb796] bg-[#fbf3e3]/40 p-4 dark:border-[#5a4f3a] dark:bg-[#1f1a12]/40">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#e2bd75]">
+          延伸阅读 · 工程实践
+        </p>
+        <Link
+          href="/articles/research/topics/chat-to-agent-loop-anthropic-practice"
+          className="mt-2 block text-[14px] font-semibold leading-snug text-[#221f19] no-underline hover:text-[#8a5a14] dark:text-gray-100 dark:hover:text-[#e2bd75]"
+        >
+          从 chat 任务到 agent loop：Anthropic 一线工程实践 + 升级路径调研 →
+        </Link>
+        <p className="mt-1 text-[12px] leading-6 text-[#5d503f] dark:text-gray-400">
+          Anthropic 在 runtime 层下场后，「怎么落地 agent loop」成了真问题。从 chat one-shot 到
+          tool-use loop、subagent 分工、Managed Agents 的 4 阶段升级路径，附 Erik Schluntz 的
+          「最小框架」主张 + 多数项目的过度工程化陷阱。
+        </p>
+      </aside>
     </section>
   )
 }

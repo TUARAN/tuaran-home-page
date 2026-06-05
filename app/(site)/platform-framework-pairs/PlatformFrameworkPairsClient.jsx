@@ -489,6 +489,76 @@ function SubjectiveChip({ size = 'xs' }) {
 
 // -------- Scatter chart --------
 
+// 散点用的短标签：把解释性 parens 删掉、长平台名缩写、framework 取首段
+function shortChartLabel(p) {
+  const platform = p.platform
+    .replace(/（无商业平台）|（runtime）/g, '')
+    .replace('Microsoft Azure', 'Azure')
+    .replace('Google Cloud', 'GCP')
+    .replace('Cloudflare', 'CF')
+    .replace('Deno Deploy', 'Deno')
+    .trim()
+  const framework = p.framework
+    .replace('无独占（刻意中立）', '中立')
+    .replace('Amplify (Gen 2)', 'Amplify')
+    .split(' / ')[0]
+    .split(' ')[0]
+    .trim()
+  return `${platform} × ${framework}`
+}
+
+// 估算字符串渲染宽度（CJK ≈ 10px、ASCII ≈ 6.5px，fontSize 10）
+function estLabelWidth(text) {
+  let w = 0
+  for (const ch of text) {
+    w += /[一-鿿]/.test(ch) ? 10 : 6.5
+  }
+  return w
+}
+
+// 给每个气泡的标签算一个不撞的位置：默认下方，撞了试上方 / 再下偏移 / 再上偏移
+function placeLabels(pairs, xPos, yPos, rPos, accessors) {
+  const sorted = [...pairs].sort(
+    (a, b) => (b.frameworkStars || 0) - (a.frameworkStars || 0)
+  )
+  const placed = []
+  const positions = new Map()
+
+  for (const p of sorted) {
+    const stars = p.frameworkStars > 0 ? p.frameworkStars : 1
+    const cx = accessors.xPos(stars)
+    const cy = accessors.yPos(p.lockIn)
+    const r = accessors.rPos(p.platformTier)
+    const text = shortChartLabel(p)
+    const halfW = estLabelWidth(text) / 2 + 2
+    const halfH = 6
+
+    const candidates = [
+      cy + r + 11,
+      cy - r - 5,
+      cy + r + 24,
+      cy - r - 18,
+    ]
+
+    let chosenY = candidates[0]
+    for (const y of candidates) {
+      const overlaps = placed.some(
+        (o) =>
+          Math.abs(o.x - cx) < o.halfW + halfW &&
+          Math.abs(o.y - y) < o.halfH + halfH
+      )
+      if (!overlaps) {
+        chosenY = y
+        break
+      }
+    }
+
+    placed.push({ x: cx, y: chosenY, halfW, halfH })
+    positions.set(p.id, { x: cx, y: chosenY, label: text })
+  }
+  return positions
+}
+
 function QuadrantChart({ pairs, focusIds, hoverId, onHover, onSelect }) {
   const W = 720
   const H = 360
@@ -509,6 +579,13 @@ function QuadrantChart({ pairs, focusIds, hoverId, onHover, onSelect }) {
 
   // bubble radius = platform tier 1-5
   const rPos = (tier) => 6 + (tier / 5) * 18
+
+  // 标签位置（避撞预计算）
+  const labelPositions = useMemo(
+    () => placeLabels(pairs, xPos, yPos, rPos, { xPos, yPos, rPos }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pairs]
+  )
 
   const xTicks = [
     { v: 1, label: '1k' },
@@ -607,18 +684,24 @@ function QuadrantChart({ pairs, focusIds, hoverId, onHover, onSelect }) {
                   stroke={isFocused ? '#221f19' : isHover ? '#3f3527' : 'rgba(255,255,255,0.85)'}
                   strokeWidth={isFocused ? 2 : isHover ? 1.5 : 1}
                 />
-                <text
-                  x={cx}
-                  y={cy + r + 11}
-                  fontSize={isFocused || isHover ? 11 : 10}
-                  fontWeight={isFocused || isHover ? 600 : 500}
-                  fill="#221f19"
-                  textAnchor="middle"
-                  style={{ pointerEvents: 'none' }}
-                  className="dark:!fill-gray-100"
-                >
-                  {p.platform} × {p.framework.split(' ')[0]}
-                </text>
+                {(() => {
+                  const pos = labelPositions.get(p.id)
+                  if (!pos) return null
+                  return (
+                    <text
+                      x={pos.x}
+                      y={pos.y}
+                      fontSize={isFocused || isHover ? 11 : 10}
+                      fontWeight={isFocused || isHover ? 600 : 500}
+                      fill="#221f19"
+                      textAnchor="middle"
+                      style={{ pointerEvents: 'none' }}
+                      className="dark:!fill-gray-100"
+                    >
+                      {pos.label}
+                    </text>
+                  )
+                })()}
               </g>
             )
           })}

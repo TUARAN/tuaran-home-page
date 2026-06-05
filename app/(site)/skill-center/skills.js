@@ -3,6 +3,174 @@
  */
 export const PUBLISHED_SKILLS = [
   {
+    id: 'ruanyifeng-weekly-style',
+    name: 'ruanyifeng-weekly-style',
+    title: '阮一峰周刊风格 Skill',
+    category: '创作与分发',
+    status: '已上架',
+    desc: '把科技素材整理成接近《科技爱好者周刊》的中文写作风格：短句短段、编号观察、事实解释、克制判断和链接精选。',
+    trigger: '当用户要求总结/仿写/改写阮一峰公众号、科技爱好者周刊、中文技术周刊、链接精选或解释性科技短文时使用。',
+    inputs: ['主题或原始素材', '可选：完整周刊 / 单篇主文 / 链接精选', '可选：是否需要活动、工具、资源、文摘、言论等栏目'],
+    outputs: ['阮一峰周刊风格的中文稿件', '可选：主文编号分节', '可选：文章、工具、AI 相关、资源、图片、文摘、言论等栏目'],
+    acceptance: '短句短段；事实先行，判断克制；编号标题清楚；技术概念解释到位；不冒充阮一峰本人，不复制原文句子。',
+    content: {
+      type: 'rules',
+      label: '写作风格规则',
+      pill: '8 组',
+      items: [
+        {
+          title: '核心语气',
+          body: '现代书面中文，接近口头解释但不聊天化。语气冷静、直接、可读，少用口号、修辞和情绪化形容词。',
+        },
+        {
+          title: '句子节奏',
+          body: '短句、短段，一个句子通常只承载一个判断。段落一般 1-3 句，让读者可以快速扫读。',
+        },
+        {
+          title: '主文结构',
+          body: '从一个具体事件、报告、产品、访问或公共讨论切入，再拆成 5-12 个编号观察。每个观察用短标题，例如“1、算力的差距”。',
+        },
+        {
+          title: '解释方式',
+          body: '先讲事实，再讲原因，最后讲影响。常用“原因是”“但是”“结果就是”“这使得”“还有另一个因素”等连接。',
+        },
+        {
+          title: '判断方式',
+          body: '观点要克制、具体、可检验。可以写“我认为”“我的判断是”，但不要喧宾夺主，也不要写成激烈评论。',
+        },
+        {
+          title: '精选条目',
+          body: '推荐文章、工具、资源时，先一句话说明“这是什么”，再一两句话说明“为什么有用 / 有趣 / 值得注意”。',
+        },
+        {
+          title: '完整周刊栏目',
+          body: '需要完整周刊时，可按主题文章、活动、文章、工具、AI 相关、资源、图片、文摘、言论、往年回顾组织。',
+        },
+        {
+          title: '边界',
+          body: '这是风格参考，不是身份模仿。不得声称作者是阮一峰，不要复制原文句子，输出应是原创内容。',
+        },
+      ],
+    },
+    codex: {
+      installPath: '~/.codex/skills/ruanyifeng-weekly-style',
+      files: ['SKILL.md', 'agents/openai.yaml'],
+      skillMd: `---
+name: ruanyifeng-weekly-style
+description: "Use this skill when writing, rewriting, editing, or evaluating Chinese technology newsletter prose in the style of Ruan Yifeng's 科技爱好者周刊: clear explanatory Mandarin, short paragraphs, numbered observations, curated links, restrained opinion, practical technology context, and weekly-column structure."
+---
+
+# Ruan Yifeng Weekly Style
+
+## Purpose
+
+Use this skill to draft or revise Chinese technology newsletter content with the recognizable feel of 阮一峰《科技爱好者周刊》: calm, direct, explanatory, curated, and practical.
+
+Do not imitate personal identity, claim authorship by 阮一峰, or copy source sentences. Treat this as a style guide for original writing.
+
+## Core Voice
+
+- Write in modern written Chinese, close to spoken explanation but not colloquial chat.
+- Prefer short declarative sentences. One sentence usually carries one idea.
+- Keep the tone calm, factual, and lightly opinionated. Avoid hype, slogans, dense rhetoric, and emotional adjectives.
+- Explain technical topics as if the reader is a curious programmer, not a specialist in that exact field.
+- Use concrete facts, examples, dates, product names, company names, numbers, and simple comparisons.
+- Make judgments in plain language: “这说明……”“原因是……”“结果就是……”“更好的做法是……”
+- Keep the authorial presence modest. “我认为”“我发现”“我的看法是” can appear, but do not dominate.
+
+## Structure Patterns
+
+For a full weekly-style article, use this order when appropriate:
+
+1. Opening line: “这里记录每周值得分享的科技内容，周五发布。”
+2. Brief housekeeping: open source, submissions, hiring, contact, or sponsorship if relevant.
+3. Cover image note: one short factual caption.
+4. Main topic essay: a clear title, then 5-12 numbered sections.
+5. Sponsored activity or announcement: practical, concrete, restrained.
+6. Curated sections: “文章”“工具”“AI 相关”“资源”“图片”“文摘”“言论”“往年回顾”.
+7. Closing marker: “（完）” when a complete issue is requested.
+
+For a single essay, use:
+
+1. Short title.
+2. A setup paragraph that names the event, question, or observed phenomenon.
+3. Numbered points, each with a compact subheading.
+4. A final practical conclusion, not a grand ending.
+
+## Main Essay Technique
+
+- Start from a concrete event, report, visit, product, paper, or public discussion.
+- State why it matters in simple terms before giving analysis.
+- Break the topic into numbered observations.
+- Give each numbered observation a short noun phrase title, such as “1、算力的差距” or “3、计算效率”.
+- Within each point, use 2-5 short paragraphs.
+- Move from facts to explanation to implication.
+- Prefer causal connectors: “原因是”“但是”“结果就是”“这使得”“还有另一个因素”.
+- Use contrast often: China vs. US, old vs. new, theory vs. reality, SaaS vs. cloud, training vs. inference.
+- When summarizing outside sources, say that you selected and organized the material for readability.
+
+## Curated Item Technique
+
+For link recommendations, use a compact numbered format:
+
+1、项目名或文章名
+
+一句话说明它是什么。
+
+再用一两句话解释它有什么用，或者为什么值得看。
+
+Rules:
+
+- The item title should be concrete, usually a tool, article, dataset, repository, or resource name.
+- The first sentence answers “这是什么”.
+- The second sentence answers “为什么有用 / 有趣 / 值得注意”.
+- Mention language or platform only when useful: “英文”“Mac 系统”“命令行工具”“开源”.
+- For reader submissions, append attribution only if supplied: “（@name 投稿）”.
+
+## Sentence And Paragraph Habits
+
+- Keep paragraphs short: usually 1-3 sentences.
+- Use many standalone explanatory sentences.
+- Use simple punctuation. Chinese comma and full stop are enough most of the time.
+- Prefer Arabic numerals for data and numbered lists.
+- Put parenthetical clarification after the term: “AGI（通用人工智能）”.
+- Use “比如”“参见”“可以参考”“另可参考” for examples and related links.
+- Avoid long metaphors, ornate transitions, and literary openings.
+- Avoid marketing words unless the source is an ad section; even there, keep it practical.
+
+## Opinion Style
+
+- Make opinions concrete and testable.
+- Avoid absolute claims unless the evidence is strong.
+- Prefer phrases like:
+  - “这种看法只适用于……”
+  - “目前看来，趋势更像是……”
+  - “这既是一种选择，也是一种无奈。”
+  - “我的判断是……”
+  - “这跟……形成鲜明对比。”
+- End with a useful takeaway, not a flourish.
+
+## Editing Checklist
+
+Before finalizing:
+
+- Is the topic explained from first principles enough for a general tech reader?
+- Are paragraphs short and skimmable?
+- Are claims backed by concrete details or framed as opinion?
+- Is the structure visible through numbered sections and plain subheadings?
+- Did you remove hype, dense jargon, and decorative prose?
+- If imitating the weekly format, are curated sections concise and useful?
+- Does the final text feel like an original article in this style, not a copied article?`,
+      openaiYaml: `interface:
+  display_name: "Ruan Yifeng Weekly Style"
+  short_description: "Drafts in Ruan Yifeng weekly style"
+  default_prompt: "Use $ruanyifeng-weekly-style to turn these notes into a Ruan Yifeng-style Chinese weekly column."
+
+policy:
+  allow_implicit_invocation: true`,
+    },
+  },
+  {
     id: 'llm-productivity-directives',
     name: 'llm-productivity-directives',
     title: '大模型增效指令 Skill',

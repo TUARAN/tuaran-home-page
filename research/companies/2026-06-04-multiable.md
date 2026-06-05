@@ -1,6 +1,7 @@
 ---
 title: 万达宝（Multiable）公司调研
 category: companies
+company_type: enterprise_software
 date: 2026-06-04
 tags: [万达宝, Multiable, ERP, CRM, AI Agent, 企业软件, 港资软件, LAIDFU]
 summary: 香港老牌 ERP/CRM 软件商，35 年历史、6000+ 客户，2026 年推 LAIDFU 智能体切入企业 AI Agent，但仍是私域 SMB 玩法、未披露融资。

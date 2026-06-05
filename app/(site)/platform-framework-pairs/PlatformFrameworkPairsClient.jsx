@@ -12,6 +12,7 @@ import {
   STATUS_META,
   TOTALS,
 } from './data'
+import { FRAMEWORK_META, FRAMEWORK_SECTIONS, SIGNAL_TIMELINE } from './framework'
 
 const SHARE_URL = 'https://2aran.com/platform-framework-pairs'
 
@@ -148,8 +149,11 @@ export default function PlatformFrameworkPairsClient() {
         />
       </header>
 
+      {/* ---- 研报框架（主体判断层） ---- */}
+      <ResearchFramework />
+
       {/* ---- Mode + status ---- */}
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[#e8dfd0] pt-5 dark:border-gray-800">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
           状态
         </span>
@@ -883,6 +887,158 @@ function PairDetail({ entity, onClose }) {
         </a>
       </div>
     </div>
+  )
+}
+
+// =================== Research Framework =====================
+
+function ResearchFramework() {
+  return (
+    <section className="mt-6">
+      {/* Hero / thesis card */}
+      <div className="relative overflow-hidden rounded-2xl border border-[#cbb796] bg-gradient-to-br from-[#fbf3e3] via-[#f7ecd2] to-[#fbf3e3] p-5 dark:border-[#5a4f3a] dark:from-[#1f1a12] dark:via-[#1a1610] dark:to-[#1f1a12] sm:p-6">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.06] dark:opacity-[0.08]"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 0% 0%, #b7791f 0%, transparent 38%), radial-gradient(circle at 100% 100%, #6b85a6 0%, transparent 40%)',
+          }}
+        />
+        <div className="relative">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#e2bd75]">
+              Featured Research · Framework
+            </span>
+            <span
+              className="rounded-full bg-[#fde6c6] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]"
+              title="部分细节待官方确认"
+            >
+              {FRAMEWORK_META.eventBadge}
+            </span>
+          </div>
+          <h2 className="mt-2 font-serif text-[20px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[24px]">
+            {FRAMEWORK_META.title}
+          </h2>
+          <p className="mt-1 text-[12px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+            {FRAMEWORK_META.subtitle}
+          </p>
+          <p className="mt-3 max-w-3xl border-l-2 border-[#b7791f] pl-3 text-[14px] leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:text-gray-300">
+            {FRAMEWORK_META.thesis}
+          </p>
+
+          {/* Signal timeline */}
+          <div className="mt-4 -mb-1 overflow-x-auto">
+            <ol className="flex min-w-max items-stretch gap-0">
+              {SIGNAL_TIMELINE.map((s, i) => {
+                const isLast = i === SIGNAL_TIMELINE.length - 1
+                return (
+                  <li key={`${s.year}-${i}`} className="flex items-start gap-2">
+                    <div className="flex flex-col items-center pt-1">
+                      <span
+                        className={`inline-block h-2.5 w-2.5 rounded-full ${
+                          s.highlight ? 'bg-[#a05a3c] dark:bg-[#e2a07a]' : 'bg-[#b7791f] dark:bg-[#e2bd75]'
+                        }`}
+                      />
+                      {!isLast ? (
+                        <span aria-hidden="true" className="mt-1 h-8 w-px bg-[#cbb796] dark:bg-[#5a4f3a]" />
+                      ) : null}
+                    </div>
+                    <div className="min-w-[160px] max-w-[200px] pb-2 pr-4">
+                      <p
+                        className={`font-mono text-[10px] uppercase tracking-[0.14em] ${
+                          s.highlight ? 'text-[#a05a3c] dark:text-[#e2a07a]' : 'text-[#8a5a14] dark:text-[#e2bd75]'
+                        }`}
+                      >
+                        {s.year}
+                      </p>
+                      <p className="mt-0.5 text-[11.5px] leading-5 text-[#5d503f] dark:text-gray-300">
+                        {s.label}
+                      </p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      {/* TOC quick-jump */}
+      <nav
+        aria-label="研报章节快速跳转"
+        className="mt-4 -mx-1 flex flex-wrap gap-1"
+      >
+        {FRAMEWORK_SECTIONS.map((s) => (
+          <a
+            key={s.id}
+            href={`#fwk-${s.id}`}
+            className="inline-flex items-center gap-1 rounded-md border border-[#e8dfd0] bg-white/70 px-2 py-1 text-[11px] text-[#6d614c] no-underline hover:border-[#b7791f] hover:text-[#221f19] dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-400 dark:hover:border-[#e2bd75] dark:hover:text-gray-100"
+          >
+            <span className="font-mono text-[9px] tracking-[0.12em] text-[#8a5a14] dark:text-[#e2bd75]">
+              {s.number}
+            </span>
+            <span>{s.title.split('：')[0]}</span>
+          </a>
+        ))}
+      </nav>
+
+      {/* 10 sections grid */}
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {FRAMEWORK_SECTIONS.map((s) => (
+          <FrameworkSection key={s.id} section={s} />
+        ))}
+      </div>
+
+      <p className="mt-4 text-[11px] leading-5 text-[#8f8069] dark:text-gray-500">
+        研报框架是<strong>判断层</strong>，下面的 10 组配对散点 + 排行 + 对比表是<strong>证据层</strong>。
+        框架里第 02、04、05、07 节的论点，直接在数据视图上有对应可点的实体；点击下方任意配对可看到该实体在框架中的位置。
+      </p>
+    </section>
+  )
+}
+
+function FrameworkSection({ section }) {
+  const accentClass =
+    section.accent === 'highlight'
+      ? 'border-[#b7791f] bg-[#fbf3e3]/60 dark:border-[#e2bd75] dark:bg-[#2a2115]/40'
+      : section.accent === 'warning'
+      ? 'border-[#cbb796] bg-[#fdf6ea]/70 dark:border-[#5a4f3a] dark:bg-[#1a1610]/60'
+      : 'border-[#e8dfd0] bg-white/75 dark:border-gray-800 dark:bg-gray-900/60'
+
+  return (
+    <article
+      id={`fwk-${section.id}`}
+      className={`scroll-mt-20 rounded-xl border p-4 transition ${accentClass}`}
+    >
+      <div className="flex items-baseline gap-3">
+        <span
+          className={`font-mono text-[12px] font-semibold tracking-[0.06em] ${
+            section.accent === 'highlight'
+              ? 'text-[#8a5a14] dark:text-[#e2bd75]'
+              : section.accent === 'warning'
+              ? 'text-[#a05a3c] dark:text-[#e2a07a]'
+              : 'text-[#8f8069] dark:text-gray-500'
+          }`}
+        >
+          {section.number}
+        </span>
+        <h3 className="flex-1 font-serif text-[15px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[16px]">
+          {section.title}
+        </h3>
+        {section.needsFact ? (
+          <span
+            className="shrink-0 rounded-full bg-[#fde6c6] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]"
+            title="该节包含未官方确认的事实"
+          >
+            待核实
+          </span>
+        ) : null}
+      </div>
+      <p className="mt-2 text-[13px] leading-7 text-[#5d503f] dark:text-gray-300">
+        {section.body}
+      </p>
+    </article>
   )
 }
 

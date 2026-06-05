@@ -190,6 +190,22 @@ export default function HomePage() {
                   </span>
                 </a>
               </div>
+
+              {/* 最新研判 strip */}
+              <Link
+                href="/platform-framework-pairs"
+                className="group mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-[#f4d4cf] bg-[#fbece8] px-3 py-1.5 text-[12px] no-underline transition hover:border-[#8b3a36] hover:bg-[#f7dcd6] dark:border-[#3a1d1c] dark:bg-[#241312] dark:hover:border-[#ed9d97] dark:hover:bg-[#2d1817]"
+              >
+                <span className="rounded-full bg-[#8b3a36] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-white dark:bg-[#ed9d97] dark:text-[#241312]">
+                  最新研判
+                </span>
+                <span className="min-w-0 truncate font-medium text-[#5d3431] dark:text-[#ed9d97]">
+                  6/4 Cloudflare 收购 VoidZero vs Vercel 收购 Next · 双巨头割据
+                </span>
+                <span className="font-mono text-[10px] text-[#8b3a36] opacity-70 transition group-hover:opacity-100 dark:text-[#ed9d97]">
+                  →
+                </span>
+              </Link>
             </div>
 
           </div>

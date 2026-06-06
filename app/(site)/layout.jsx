@@ -1,6 +1,7 @@
 import Script from 'next/script'
 
 import LayoutChrome from './components/LayoutChrome'
+import { SessionProvider } from './components/SessionProvider'
 import { ThemeProvider } from './components/ThemeProvider'
 
 const SITE_URL = 'https://2aran.com'
@@ -35,7 +36,9 @@ export default function SiteLayout({ children }) {
         strategy="afterInteractive"
       />
       <ThemeProvider>
-        <LayoutChrome>{children}</LayoutChrome>
+        <SessionProvider>
+          <LayoutChrome>{children}</LayoutChrome>
+        </SessionProvider>
       </ThemeProvider>
     </>
   )

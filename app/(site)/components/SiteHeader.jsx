@@ -194,10 +194,17 @@ function getReturnPath(pathname) {
   return pathname || '/'
 }
 
-function AccountAvatar({ user, isOwner, loading }) {
+function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
+  const isLg = size === 'lg'
+  const sizeCls = isLg ? 'h-10 w-10 text-[16px]' : 'h-7 w-7 text-[13px]'
+  const ringCls = isOwner
+    ? 'ring-2 ring-[#c79347] ring-offset-2 ring-offset-[#faf3e3] dark:ring-[#e0b572] dark:ring-offset-[#141a23]'
+    : ''
+  const baseCls = `relative flex ${sizeCls} shrink-0 items-center justify-center rounded-full border border-[#ddd3c2] dark:border-gray-700 ${ringCls}`
+
   if (loading) {
     return (
-      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#ddd3c2] font-mono text-[10px] text-[#8f8069] dark:border-gray-700 dark:text-gray-400">
+      <span className={`${baseCls} font-mono text-[10px] text-[#8f8069] dark:text-gray-400`}>
         ...
       </span>
     )
@@ -206,42 +213,42 @@ function AccountAvatar({ user, isOwner, loading }) {
   if (user?.image) {
     return (
       <span
-        className="relative flex h-7 w-7 shrink-0 overflow-hidden rounded-full border border-[#ddd3c2] bg-cover bg-center dark:border-gray-700"
+        className={`${baseCls} overflow-hidden bg-cover bg-center`}
         style={{ backgroundImage: `url(${JSON.stringify(user.image)})` }}
         aria-hidden="true"
-      >
-        {isOwner ? (
-          <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border border-white bg-[#9a6a2a] dark:border-[#10161f]" />
-        ) : null}
-      </span>
+      />
     )
   }
 
   return (
-    <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#ddd3c2] bg-[#f7efe2] font-serif text-[13px] font-semibold text-[#6f5f49] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+    <span className={`${baseCls} bg-[#f7efe2] font-serif font-semibold text-[#6f5f49] dark:bg-gray-900 dark:text-gray-200`}>
       {user ? getAccountInitial(user) : '登'}
-      {isOwner ? (
-        <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border border-white bg-[#9a6a2a] dark:border-[#10161f]" />
-      ) : null}
     </span>
   )
 }
 
+function getSecondaryIdentity(user) {
+  if (!user) return ''
+  const name = (user.name || '').trim()
+  const login = (user.login || '').trim()
+  if (login && login.toLowerCase() !== name.toLowerCase()) return `@${login}`
+  if (user.email) return user.email
+  if (user.provider) return `${user.provider} 账号`
+  return ''
+}
+
 function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
   const isLg = size === 'lg'
-  const handle =
-    user?.login ||
-    (user?.email ? user.email.split('@')[0] : null) ||
-    (user?.provider ? `${user.provider} 账号` : '账号')
+  const secondary = loading ? '正在确认身份' : getSecondaryIdentity(user)
   return (
-    <div className="flex min-w-0 items-center gap-3">
-      <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
-      <div className="min-w-0">
+    <div className={`flex min-w-0 items-center ${isLg ? 'gap-3.5' : 'gap-3'}`}>
+      <AccountAvatar user={user} isOwner={isOwner} loading={loading} size={size} />
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <p
             className={[
               'truncate font-semibold text-[#221f19] dark:text-gray-100',
-              isLg ? 'text-[14.5px]' : 'text-[13.5px]',
+              isLg ? 'text-[15px] leading-tight' : 'text-[13.5px] leading-tight',
             ].join(' ')}
           >
             {loading ? '检查登录状态…' : getAccountName(user)}
@@ -256,9 +263,11 @@ function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
             </span>
           ) : null}
         </div>
-        <p className="mt-0.5 truncate text-[11.5px] text-[#85806f] dark:text-[#8a93a3]">
-          {loading ? '正在确认身份' : `@${handle}`}
-        </p>
+        {secondary ? (
+          <p className={`mt-1 truncate text-[#9c8f79] dark:text-[#8a93a3] ${isLg ? 'text-[12px]' : 'text-[11.5px]'}`}>
+            {secondary}
+          </p>
+        ) : null}
       </div>
     </div>
   )

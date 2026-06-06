@@ -232,9 +232,10 @@ function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
 
 function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
   const isLg = size === 'lg'
-  // 极简：头像 + ID（+ 站长 pill）。不再渲染副标题（"github 账号"/邮箱）等多余信息。
+  // items-stretch 让右侧文字容器拉伸到与头像等高（含 border），再用内部 items-center
+  // 居中文字。这样头像内 "T" 和外部 "TUARAN" 的字体度量偏移一致，视觉中线齐平。
   return (
-    <div className={`flex min-w-0 items-center ${isLg ? 'gap-3' : 'gap-2.5'}`}>
+    <div className={`flex min-w-0 items-stretch ${isLg ? 'gap-3' : 'gap-2.5'}`}>
       <AccountAvatar user={user} isOwner={isOwner} loading={loading} size={size} />
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <p

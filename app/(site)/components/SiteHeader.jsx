@@ -230,49 +230,25 @@ function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
   )
 }
 
-function getSecondaryIdentity(user) {
-  if (!user) return ''
-  const name = (user.name || '').trim()
-  const login = (user.login || '').trim()
-  if (login && login.toLowerCase() !== name.toLowerCase()) return `@${login}`
-  if (user.email) return user.email
-  if (user.provider) return `${user.provider} 账号`
-  return ''
-}
-
 function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
   const isLg = size === 'lg'
-  const secondary = loading ? '正在确认身份' : getSecondaryIdentity(user)
-  // 关键：右侧文字块用 flex-col + justify-center，让两行文字的整体盒子高度
-  // 与左侧头像高度对齐。两行都用 leading-none，行间距完全靠 gap 控制，
-  // 这样头像中心 ↔ 文字块中心始终一致，不会出现 "T 比文字低半截" 的错位。
+  // 极简：头像 + ID（+ 站长 pill）。不再渲染副标题（"github 账号"/邮箱）等多余信息。
   return (
     <div className={`flex min-w-0 items-center ${isLg ? 'gap-3' : 'gap-2.5'}`}>
       <AccountAvatar user={user} isOwner={isOwner} loading={loading} size={size} />
-      <div className={`flex min-w-0 flex-1 flex-col justify-center ${isLg ? 'gap-1.5' : 'gap-1'}`}>
-        <div className="flex items-center gap-1.5">
-          <p
-            className={[
-              'truncate font-semibold leading-none text-[#221f19] dark:text-gray-100',
-              isLg ? 'text-[15px]' : 'text-[13.5px]',
-            ].join(' ')}
-          >
-            {loading ? '检查登录状态…' : getAccountName(user)}
-          </p>
-          {isOwner ? (
-            <span className="shrink-0 rounded-full bg-[#fbf2dc] px-1.5 py-[2px] font-mono text-[9.5px] uppercase tracking-[0.12em] leading-none text-[#8a6b2e] dark:bg-[#2a2113] dark:text-[#d6b87a]">
-              站长
-            </span>
-          ) : user ? (
-            <span className="shrink-0 rounded-full bg-[#eef0e4] px-1.5 py-[2px] font-mono text-[9.5px] uppercase tracking-[0.12em] leading-none text-[#5f6b3b] dark:bg-[#1a1f17] dark:text-[#b0bd84]">
-              访客
-            </span>
-          ) : null}
-        </div>
-        {secondary ? (
-          <p className={`truncate leading-none text-[#9c8f79] dark:text-[#8a93a3] ${isLg ? 'text-[12px]' : 'text-[11px]'}`}>
-            {secondary}
-          </p>
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        <p
+          className={[
+            'truncate font-semibold leading-none text-[#221f19] dark:text-gray-100',
+            isLg ? 'text-[15px]' : 'text-[13.5px]',
+          ].join(' ')}
+        >
+          {loading ? '检查登录状态…' : getAccountName(user)}
+        </p>
+        {isOwner ? (
+          <span className="shrink-0 rounded-full bg-[#fbf2dc] px-1.5 py-[2px] font-mono text-[9.5px] uppercase tracking-[0.12em] leading-none text-[#8a6b2e] dark:bg-[#2a2113] dark:text-[#d6b87a]">
+            站长
+          </span>
         ) : null}
       </div>
     </div>

@@ -1,6 +1,15 @@
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 
-import { SITE_CHANNELS, getChannelNavSections } from '../../../lib/siteNav'
+import { cookieNames, getSecrets, verifySession } from '../../../lib/edgeSession'
+import { getNavOverrides } from '../../../lib/navOverrides'
+import { isOwnerUser } from '../../../lib/ownerAuth'
+import {
+  SITE_CHANNELS,
+  getChannelAllSections,
+  getChannelNavSections,
+  isItemVisibleForAccount,
+} from '../../../lib/siteNav'
 import { getTagToneClass } from '../../../lib/tagTone'
 
 export const metadata = {
@@ -8,7 +17,22 @@ export const metadata = {
   description: '按信息架构组织的全站入口：主导航精选、频道结构、归档页面。',
 }
 
-export const dynamic = 'force-static'
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+async function getAccountForRequest() {
+  try {
+    const { sessionSecret } = getSecrets()
+    if (!sessionSecret) return { user: null, isOwner: false }
+    const cookieStore = await cookies()
+    const token = cookieStore.get(cookieNames.session)?.value
+    const payload = await verifySession(token, sessionSecret)
+    const user = payload?.user || null
+    return { user, isOwner: isOwnerUser(user) }
+  } catch {
+    return { user: null, isOwner: false }
+  }
+}
 
 const CHANNEL_STYLES = {
   content: {
@@ -41,12 +65,16 @@ const CHANNEL_STYLES = {
   },
 }
 
-function allItems(channel) {
-  return channel.sections.flatMap((section) => section.items.map((item) => ({ ...item, section: section.title })))
+function allItems(channel, account, overrides) {
+  return channel.sections.flatMap((section) =>
+    section.items
+      .filter((item) => isItemVisibleForAccount(item, account, overrides))
+      .map((item) => ({ ...item, section: section.title }))
+  )
 }
 
-function navItems(channel) {
-  return getChannelNavSections(channel).flatMap((section) =>
+function navItems(channel, account, overrides) {
+  return getChannelNavSections(channel, account, overrides).flatMap((section) =>
     section.items.map((item) => ({ ...item, section: section.title }))
   )
 }
@@ -109,10 +137,10 @@ function IndexLink({ item, compact = false }) {
   )
 }
 
-function ChannelNode({ channel }) {
+function ChannelNode({ channel, account, overrides }) {
   const style = CHANNEL_STYLES[channel.key] || CHANNEL_STYLES.content
-  const total = allItems(channel).length
-  const primary = navItems(channel).length
+  const total = allItems(channel, account, overrides).length
+  const primary = navItems(channel, account, overrides).length
 
   return (
     <Link
@@ -140,10 +168,11 @@ function ChannelNode({ channel }) {
   )
 }
 
-function ChannelSection({ channel }) {
+function ChannelSection({ channel, account, overrides }) {
   const style = CHANNEL_STYLES[channel.key] || CHANNEL_STYLES.content
-  const primary = navItems(channel)
-  const total = allItems(channel).length
+  const primary = navItems(channel, account, overrides)
+  const total = allItems(channel, account, overrides).length
+  const visibleSections = getChannelAllSections(channel, account, overrides)
 
   return (
     <section className="border-t border-[#e4dccc] py-8 dark:border-[#232c36]">
@@ -182,7 +211,7 @@ function ChannelSection({ channel }) {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {channel.sections.map((section) => (
+          {visibleSections.map((section) => (
             <div key={section.title} className="rounded-xl border border-[#ece5d8] bg-white/70 p-4 dark:border-[#232c36] dark:bg-[#10161f]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h3 className="mb-0 text-[15px] font-semibold text-[#221f19] dark:text-gray-100">{section.title}</h3>
@@ -203,9 +232,10 @@ function ChannelSection({ channel }) {
   )
 }
 
-export default function SiteMapPage() {
-  const totalItems = SITE_CHANNELS.reduce((n, channel) => n + allItems(channel).length, 0)
-  const primaryItems = SITE_CHANNELS.reduce((n, channel) => n + navItems(channel).length, 0)
+export default async function SiteMapPage() {
+  const [account, overrides] = await Promise.all([getAccountForRequest(), getNavOverrides()])
+  const totalItems = SITE_CHANNELS.reduce((n, channel) => n + allItems(channel, account, overrides).length, 0)
+  const primaryItems = SITE_CHANNELS.reduce((n, channel) => n + navItems(channel, account, overrides).length, 0)
   const hiddenItems = totalItems - primaryItems
 
   return (
@@ -262,7 +292,7 @@ export default function SiteMapPage() {
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {SITE_CHANNELS.map((channel) => (
-            <ChannelNode key={channel.key} channel={channel} />
+            <ChannelNode key={channel.key} channel={channel} account={account} overrides={overrides} />
           ))}
         </div>
       </section>
@@ -290,7 +320,7 @@ export default function SiteMapPage() {
 
       <div>
         {SITE_CHANNELS.map((channel) => (
-          <ChannelSection key={channel.key} channel={channel} />
+          <ChannelSection key={channel.key} channel={channel} account={account} overrides={overrides} />
         ))}
       </div>
     </div>

@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import ProjectMatrixTabs from '../components/ProjectMatrixTabs'
 import SiteToolsPanel from '../components/SiteToolsPanel'
 import { domainStrategyParagraphs, maintainedDomains, opcVibeProjects } from './projectData'
@@ -40,6 +42,15 @@ export default function AiProjectsPage() {
               {renderStrategyText(domainStrategyParagraphs[0])}
             </p>
           </div>
+          <Link
+            href="/agent-ops/project-portfolio"
+            className="inline-flex shrink-0 items-center gap-2 self-start border border-[#e1d6c5] px-3 py-1.5 text-[12px] font-medium text-[#6f5f49] no-underline transition-colors hover:border-[#b99b6d] hover:text-[#8b5a1f] dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100"
+          >
+            <span>项目管理台</span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#9a6a2a] dark:text-[#f0c776]">
+              Private
+            </span>
+          </Link>
         </div>
       </header>
 

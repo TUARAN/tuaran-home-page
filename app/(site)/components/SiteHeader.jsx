@@ -196,10 +196,9 @@ function getReturnPath(pathname) {
 
 function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
   const isLg = size === 'lg'
+  // 头像里的字与外面的 name 字号保持一致，配合默认 line-height 让 flex items-center
+  // 能稳定居中——之前 leading-none 加上字体度量偏移会让 "T" 偏低，去掉就正常了。
   const sizeCls = isLg ? 'h-10 w-10 text-[15px]' : 'h-7 w-7 text-[12px]'
-  // owner uses a thick gold border as the status indicator;
-  // non-owner uses a normal hairline. ring + ring-offset 会让头像视觉尺寸大出 8px，
-  // 与右侧两行文字高度对不齐——所以直接做粗边而不是 outer ring。
   const borderCls = isOwner
     ? 'border-2 border-[#c79347] dark:border-[#e0b572]'
     : 'border border-[#ddd3c2] dark:border-gray-700'
@@ -224,7 +223,7 @@ function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
   }
 
   return (
-    <span className={`${baseCls} bg-[#f7efe2] font-serif font-semibold leading-none text-[#6f5f49] dark:bg-gray-900 dark:text-gray-200`}>
+    <span className={`${baseCls} bg-[#f7efe2] font-semibold text-[#6f5f49] dark:bg-gray-900 dark:text-gray-200`}>
       {user ? getAccountInitial(user) : '登'}
     </span>
   )
@@ -232,22 +231,23 @@ function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
 
 function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
   const isLg = size === 'lg'
-  // items-stretch 让右侧文字容器拉伸到与头像等高（含 border），再用内部 items-center
-  // 居中文字。这样头像内 "T" 和外部 "TUARAN" 的字体度量偏移一致，视觉中线齐平。
+  // 不用 leading-none、不用 items-stretch——保持自然行高 + items-center 是最稳的方案。
+  // 头像和右侧 name 使用同一字号（15px / 12px），同一字体度量 → flex items-center 能
+  // 让两边字符的视觉中线自然对齐。
   return (
-    <div className={`flex min-w-0 items-stretch ${isLg ? 'gap-3' : 'gap-2.5'}`}>
+    <div className={`flex min-w-0 items-center ${isLg ? 'gap-3' : 'gap-2.5'}`}>
       <AccountAvatar user={user} isOwner={isOwner} loading={loading} size={size} />
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <p
           className={[
-            'truncate font-semibold leading-none text-[#221f19] dark:text-gray-100',
+            'truncate font-semibold text-[#221f19] dark:text-gray-100',
             isLg ? 'text-[15px]' : 'text-[13.5px]',
           ].join(' ')}
         >
           {loading ? '检查登录状态…' : getAccountName(user)}
         </p>
         {isOwner ? (
-          <span className="shrink-0 rounded-full bg-[#fbf2dc] px-1.5 py-[2px] font-mono text-[9.5px] uppercase tracking-[0.12em] leading-none text-[#8a6b2e] dark:bg-[#2a2113] dark:text-[#d6b87a]">
+          <span className="shrink-0 rounded-full bg-[#fbf2dc] px-1.5 py-[2px] font-mono text-[9.5px] uppercase tracking-[0.12em] text-[#8a6b2e] dark:bg-[#2a2113] dark:text-[#d6b87a]">
             站长
           </span>
         ) : null}

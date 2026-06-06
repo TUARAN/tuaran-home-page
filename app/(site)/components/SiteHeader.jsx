@@ -180,17 +180,262 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
   )
 }
 
+function getAccountName(user) {
+  return user?.name || user?.login || user?.email || '已登录'
+}
+
+function getAccountInitial(user) {
+  const name = getAccountName(user)
+  return name.trim().slice(0, 1).toUpperCase() || 'U'
+}
+
+function getReturnPath(pathname) {
+  return pathname || '/'
+}
+
+const OWNER_LINKS = [
+  { href: '/agent-ops/project-portfolio', label: '项目管理台' },
+  { href: '/voice-tasks', label: '语音记事' },
+  { href: '/long-compass', label: '长期罗盘' },
+  { href: 'https://ops.2aran.com/', label: '自动化控制台', external: true },
+]
+
+function AccountAvatar({ user, isOwner, loading }) {
+  if (loading) {
+    return (
+      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#ddd3c2] font-mono text-[10px] text-[#8f8069] dark:border-gray-700 dark:text-gray-400">
+        ...
+      </span>
+    )
+  }
+
+  if (user?.image) {
+    return (
+      <span
+        className="relative flex h-7 w-7 shrink-0 overflow-hidden rounded-full border border-[#ddd3c2] bg-cover bg-center dark:border-gray-700"
+        style={{ backgroundImage: `url(${JSON.stringify(user.image)})` }}
+        aria-hidden="true"
+      >
+        {isOwner ? (
+          <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border border-white bg-[#9a6a2a] dark:border-[#10161f]" />
+        ) : null}
+      </span>
+    )
+  }
+
+  return (
+    <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#ddd3c2] bg-[#f7efe2] font-serif text-[13px] font-semibold text-[#6f5f49] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+      {user ? getAccountInitial(user) : '登'}
+      {isOwner ? (
+        <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border border-white bg-[#9a6a2a] dark:border-[#10161f]" />
+      ) : null}
+    </span>
+  )
+}
+
+function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef }) {
+  const returnTo = getReturnPath(pathname)
+  const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
+  const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
+  const { loading, user, isOwner } = account
+
+  if (!loading && !user) {
+    return (
+      <Link
+        href={loginHref}
+        className="inline-flex items-center gap-2 rounded-full border border-[#ddd3c2] px-2.5 py-1 text-sm font-medium text-[#5b5448] no-underline transition-colors hover:border-[#b99b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
+      >
+        <AccountAvatar loading={false} />
+        登录
+      </Link>
+    )
+  }
+
+  return (
+    <div className="relative" ref={accountRef}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        className="inline-flex items-center gap-2 rounded-full border border-[#ddd3c2] px-2 py-1 text-sm font-medium text-[#5b5448] transition-colors hover:border-[#b99b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
+      >
+        <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
+        <span>{loading ? '检查中' : isOwner ? 'Owner' : '已登录'}</span>
+        <ChevronDown />
+      </button>
+
+      {isOpen ? (
+        <div className="absolute right-0 top-full z-[130] mt-2 w-64 rounded-2xl border border-[#e6dfd0] bg-[#fdfaf3] p-3 shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+          <div className="flex items-center gap-3 border-b border-[#eee5d6] pb-3 dark:border-gray-800">
+            <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-semibold text-[#221f19] dark:text-gray-100">
+                {loading ? '正在检查登录状态' : getAccountName(user)}
+              </p>
+              <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8f8069] dark:text-gray-500">
+                {isOwner ? 'Owner account' : 'Signed in'}
+              </p>
+            </div>
+          </div>
+
+          {isOwner ? (
+            <div className="py-2">
+              {OWNER_LINKS.map((item) =>
+                item.external ? (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-xl px-3 py-2 text-[13px] text-[#5d554a] no-underline transition-colors hover:bg-[#f4ede0] hover:text-[#221f19] dark:text-gray-300 dark:hover:bg-[#19212b] dark:hover:text-gray-100"
+                    onClick={onClose}
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="block rounded-xl px-3 py-2 text-[13px] text-[#5d554a] no-underline transition-colors hover:bg-[#f4ede0] hover:text-[#221f19] dark:text-gray-300 dark:hover:bg-[#19212b] dark:hover:text-gray-100"
+                    onClick={onClose}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              )}
+            </div>
+          ) : (
+            <p className="py-3 text-[12px] leading-5 text-[#7a6f5d] dark:text-gray-500">
+              当前账号可用于评论和登录态功能；私有工具只对 owner 开放。
+            </p>
+          )}
+
+          <div className="border-t border-[#eee5d6] pt-2 dark:border-gray-800">
+            <a
+              href={logoutHref}
+              className="block rounded-xl px-3 py-2 text-[13px] text-[#8b5a1f] no-underline transition-colors hover:bg-[#f4ede0] dark:text-[#f0c776] dark:hover:bg-[#19212b]"
+            >
+              退出登录
+            </a>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function MobileAccountPanel({ account, pathname, onNavigate }) {
+  const returnTo = getReturnPath(pathname)
+  const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
+  const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
+  const { loading, user, isOwner } = account
+
+  if (!loading && !user) {
+    return (
+      <div className="mb-4 rounded-2xl border border-[#e7decb] bg-white/70 p-3 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+        <p className="text-[13px] font-medium text-[#221f19] dark:text-gray-100">未登录</p>
+        <Link
+          href={loginHref}
+          onClick={onNavigate}
+          className="mt-2 inline-flex items-center rounded-full border border-[#ddd3c2] px-3 py-1.5 text-[12px] font-medium text-[#6f5f49] no-underline dark:border-gray-700 dark:text-gray-300"
+        >
+          登录
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-4 rounded-2xl border border-[#e7decb] bg-white/70 p-3 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+      <div className="flex items-center gap-3">
+        <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
+        <div className="min-w-0">
+          <p className="truncate text-[13px] font-semibold text-[#221f19] dark:text-gray-100">
+            {loading ? '检查登录状态...' : getAccountName(user)}
+          </p>
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8f8069] dark:text-gray-500">
+            {isOwner ? 'Owner account' : 'Signed in'}
+          </p>
+        </div>
+      </div>
+      {isOwner ? (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {OWNER_LINKS.map((item) =>
+            item.external ? (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+                onClick={onNavigate}
+                className="rounded-xl border border-[#eee5d6] px-3 py-2 text-[12px] text-[#5d554a] no-underline dark:border-gray-800 dark:text-gray-300"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                className="rounded-xl border border-[#eee5d6] px-3 py-2 text-[12px] text-[#5d554a] no-underline dark:border-gray-800 dark:text-gray-300"
+              >
+                {item.label}
+              </Link>
+            )
+          )}
+        </div>
+      ) : null}
+      {!loading && user ? (
+        <a
+          href={logoutHref}
+          className="mt-3 inline-flex text-[12px] font-medium text-[#8b5a1f] no-underline dark:text-[#f0c776]"
+        >
+          退出登录
+        </a>
+      ) : null}
+    </div>
+  )
+}
+
 export default function SiteHeader() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openChannel, setOpenChannel] = useState(null)
   const [openMobileChannel, setOpenMobileChannel] = useState(null)
+  const [accountOpen, setAccountOpen] = useState(false)
+  const [account, setAccount] = useState({ loading: true, user: null, isOwner: false })
   const navWrapRef = useRef(null)
+  const accountRef = useRef(null)
 
   useEffect(() => {
     setMobileMenuOpen(false)
     setOpenChannel(null)
+    setAccountOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadAccount() {
+      try {
+        const response = await fetch('/api/me', { cache: 'no-store' })
+        const data = await response.json()
+        if (!cancelled) {
+          setAccount({
+            loading: false,
+            user: data?.user || null,
+            isOwner: Boolean(data?.isOwner),
+          })
+        }
+      } catch {
+        if (!cancelled) setAccount({ loading: false, user: null, isOwner: false })
+      }
+    }
+    loadAccount()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!openChannel) return
@@ -207,6 +452,22 @@ export default function SiteHeader() {
       document.removeEventListener('keydown', onKey)
     }
   }, [openChannel])
+
+  useEffect(() => {
+    if (!accountOpen) return
+    function onDocClick(e) {
+      if (accountRef.current && !accountRef.current.contains(e.target)) setAccountOpen(false)
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') setAccountOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [accountOpen])
 
   if (pathname?.startsWith('/people/elon-musk')) return null
 
@@ -264,6 +525,14 @@ export default function SiteHeader() {
               </Link>
             </nav>
             <SettingsButton />
+            <AccountMenu
+              account={account}
+              isOpen={accountOpen}
+              onToggle={() => setAccountOpen((cur) => !cur)}
+              onClose={() => setAccountOpen(false)}
+              pathname={pathname}
+              accountRef={accountRef}
+            />
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
@@ -317,6 +586,11 @@ export default function SiteHeader() {
         <p className="mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.22em] text-[#9e8f75] dark:text-[#8e9ab0]">
           Menu
         </p>
+        <MobileAccountPanel
+          account={account}
+          pathname={pathname}
+          onNavigate={() => setMobileMenuOpen(false)}
+        />
         <nav aria-label="移动端主导航" className="flex flex-col gap-1.5">
           {SITE_CHANNELS.map((channel) => {
             const expanded = openMobileChannel === channel.key

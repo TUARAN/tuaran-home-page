@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import SharePageButton from '../components/SharePageButton'
-import { ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
+import { ENGINEERING_WORK_CATEGORIES, ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
 
 export const dynamic = 'force-static'
 
@@ -19,7 +19,31 @@ function formatDate(iso) {
   return iso.replace(/-/g, ' / ')
 }
 
+function getWorksByCategory(categoryId) {
+  return ENGINEERING_WORKS.filter((work) => work.category === categoryId)
+}
+
 export default function WorksPage() {
+  const uncategorizedWorks = ENGINEERING_WORKS.filter(
+    (work) => !ENGINEERING_WORK_CATEGORIES.some((category) => category.id === work.category)
+  )
+  const sections = [
+    ...ENGINEERING_WORK_CATEGORIES.map((category) => ({
+      ...category,
+      works: getWorksByCategory(category.id),
+    })),
+    ...(uncategorizedWorks.length
+      ? [
+          {
+            id: 'uncategorized',
+            title: '其他作品',
+            description: '尚未归入固定类型的工程页面。',
+            works: uncategorizedWorks,
+          },
+        ]
+      : []),
+  ].filter((section) => section.works.length > 0)
+
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
       <header className="flex flex-col gap-4 border-b border-[#e8dfd0] pb-6 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
@@ -44,43 +68,85 @@ export default function WorksPage() {
         />
       </header>
 
-      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:gap-4">
-        {ENGINEERING_WORKS.map((work, i) => (
-          <article
-            key={work.id}
-            className="group relative flex flex-col rounded-2xl border border-[#e8dfd0] bg-white/80 p-5 transition hover:border-[#cbb796] hover:shadow-[0_6px_24px_rgba(63,53,39,0.08)] dark:border-gray-800 dark:bg-gray-900/70 dark:hover:border-gray-600"
+      <nav
+        aria-label="工程作品分类"
+        className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-b border-[#eee5d6] pb-4 text-[12px] dark:border-gray-800"
+      >
+        {sections.map((section) => (
+          <Link
+            key={section.id}
+            href={`#${section.id}`}
+            className="font-medium text-[#7a6f5d] underline-offset-4 hover:text-[#8b5a1f] hover:underline dark:text-gray-400 dark:hover:text-[#f0c776]"
           >
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
-                {String(i + 1).padStart(2, '0')} · {work.kind || '原创工程'}
+            {section.title}
+            <span className="ml-1 font-mono text-[10px] text-[#a59a86] dark:text-gray-600">
+              {section.works.length}
+            </span>
+          </Link>
+        ))}
+      </nav>
+
+      <section className="mt-8 space-y-10">
+        {sections.map((section, sectionIndex) => (
+          <section
+            key={section.id}
+            id={section.id}
+            className="grid scroll-mt-24 gap-4 border-t border-[#e8dfd0] pt-5 dark:border-gray-800 md:grid-cols-[180px_1fr]"
+          >
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#9d8f76] dark:text-gray-500">
+                {String(sectionIndex + 1).padStart(2, '0')}
               </p>
-              {work.badge ? (
-                <span className="rounded-full bg-[#fde6c6] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]">
-                  {work.badge}
-                </span>
-              ) : null}
+              <h2 className="mt-1 font-serif text-[21px] font-semibold leading-tight text-[#221f19] dark:text-gray-100">
+                {section.title}
+              </h2>
+              <p className="mt-2 text-[12px] leading-6 text-[#7a6f5d] dark:text-gray-500">
+                {section.description}
+              </p>
             </div>
 
-            <h2 className="mt-2 font-serif text-[20px] font-semibold leading-tight text-[#221f19] dark:text-gray-100">
-              <Link href={work.href} className="no-underline transition hover:text-[#8b5a1f] dark:hover:text-[#f0c776]">
-                {work.title}
-              </Link>
-            </h2>
+            <div className="divide-y divide-[#eee5d6] border-y border-[#eee5d6] dark:divide-gray-800 dark:border-gray-800">
+              {section.works.map((work) => (
+                <article
+                  key={work.id}
+                  className="group grid gap-2 py-4 transition-colors hover:bg-[#faf4e8]/70 dark:hover:bg-gray-900/60 sm:grid-cols-[96px_1fr_auto] sm:items-start"
+                >
+                  <div className="font-mono text-[10px] leading-5 text-[#9d8f76] dark:text-gray-500 sm:pt-0.5">
+                    <span className="block tabular-nums">{formatDate(work.date)}</span>
+                    <span className="block">{work.kind || '原创工程'}</span>
+                  </div>
 
-            <p className="mt-3 flex-1 text-[13px] leading-6 text-[#5d554a] dark:text-gray-400">
-              {work.summary}
-            </p>
+                  <div className="min-w-0 sm:pr-4">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <h3 className="font-serif text-[18px] font-semibold leading-snug text-[#221f19] dark:text-gray-100">
+                        <Link
+                          href={work.href}
+                          className="no-underline transition hover:text-[#8b5a1f] dark:hover:text-[#f0c776]"
+                        >
+                          {work.title}
+                        </Link>
+                      </h3>
+                      {work.badge ? (
+                        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#9a6a2a] dark:text-[#f0c776]">
+                          {work.badge}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-[13px] leading-6 text-[#5d554a] dark:text-gray-400">
+                      {work.summary}
+                    </p>
+                  </div>
 
-            <div className="mt-4 flex items-center justify-between text-[11px] text-[#8f8069] dark:text-gray-500">
-              <span className="font-mono tabular-nums">{formatDate(work.date)}</span>
-              <Link
-                href={work.href}
-                className="inline-flex items-center gap-1 font-medium text-[#8b5a1f] no-underline transition hover:gap-2 dark:text-[#f0c776]"
-              >
-                进入 →
-              </Link>
+                  <Link
+                    href={work.href}
+                    className="self-start text-[12px] font-medium text-[#8b5a1f] no-underline underline-offset-4 transition hover:underline dark:text-[#f0c776]"
+                  >
+                    进入 →
+                  </Link>
+                </article>
+              ))}
             </div>
-          </article>
+          </section>
         ))}
       </section>
 

@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 
+import { clamp, getSolarClockOffsetHours, getSolarTime } from './solarMath'
+
 const ThreeSolarSystem = dynamic(() => import('./ThreeSolarSystem'), {
   ssr: false,
   loading: () => (
@@ -18,6 +20,7 @@ const FOCUSED_LOCATION = {
   latitude: 23.13,
   longitude: 113.26,
   timezone: 'Asia/Shanghai',
+  utcOffset: 8,
 }
 const PHASES = [
   { at: 0, name: '朔 / 新月', note: '月球在太阳方向附近，夜空中不易看见' },
@@ -30,15 +33,11 @@ const PHASES = [
   { at: 25.8, name: '残月', note: '黎明前东方低空可见细弯月' },
 ]
 
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value))
-}
-
 function formatTime(hours) {
-  const normalized = ((hours % 24) + 24) % 24
-  const h = Math.floor(normalized)
-  const m = Math.round((normalized - h) * 60)
-  return `${String(h).padStart(2, '0')}:${String(m === 60 ? 0 : m).padStart(2, '0')}`
+  const totalMinutes = Math.round((((hours % 24) + 24) % 24) * 60) % 1440
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
 function formatDateTime(date) {
@@ -95,18 +94,22 @@ function describePhase(day) {
   return { age, phase, illumination, name: current.name, note: current.note }
 }
 
-function solarModel({ time, latitude, season }) {
+function solarModel({ time, latitude, season, location, yearProgress }) {
   const lat = (latitude * Math.PI) / 180
   const declination = ((23.44 * season) * Math.PI) / 180
   const cosHourAngle = clamp(-Math.tan(lat) * Math.tan(declination), -1, 1)
   const dayLength = (2 * Math.acos(cosHourAngle) * 180) / Math.PI / 15
-  const sunrise = 12 - dayLength / 2
-  const sunset = 12 + dayLength / 2
+  const solarTime = getSolarTime({ time, location, yearProgress })
+  const solarClockOffset = getSolarClockOffsetHours({ location, yearProgress })
+  const solarSunrise = 12 - dayLength / 2
+  const solarSunset = 12 + dayLength / 2
+  const sunrise = solarSunrise - solarClockOffset
+  const sunset = solarSunset - solarClockOffset
   const maxAltitude = clamp(90 - Math.abs(latitude - 23.44 * season), 18, 88)
-  const progress = clamp((time - sunrise) / dayLength, 0, 1)
-  const visible = time >= sunrise && time <= sunset
+  const progress = clamp((solarTime - solarSunrise) / dayLength, 0, 1)
+  const visible = solarTime >= solarSunrise && solarTime <= solarSunset
   const altitude = visible ? Math.sin(progress * Math.PI) * maxAltitude : 0
-  return { sunrise, sunset, dayLength, maxAltitude, progress, visible, altitude }
+  return { sunrise, sunset, dayLength, maxAltitude, progress, visible, altitude, solarTime }
 }
 
 function moonSkyModel({ time, phase, maxAltitude }) {
@@ -245,8 +248,13 @@ export default function SunMoonMotionClient() {
     return () => window.clearInterval(id)
   }, [playing, syncToNow])
 
+  const currentDateLabel = currentDate ? formatDateTime(currentDate) : '同步中'
+  const yearProgress = currentDate ? getDayOfYear(currentDate) / 365.24 : 0.42
   const phaseInfo = useMemo(() => describePhase(moonDay), [moonDay])
-  const sun = useMemo(() => solarModel({ time, latitude, season }), [time, latitude, season])
+  const sun = useMemo(
+    () => solarModel({ time, latitude, season, location: FOCUSED_LOCATION, yearProgress }),
+    [time, latitude, season, yearProgress]
+  )
   const moon = useMemo(
     () => moonSkyModel({ time, phase: phaseInfo.phase, maxAltitude: sun.maxAltitude }),
     [time, phaseInfo.phase, sun.maxAltitude]
@@ -258,8 +266,6 @@ export default function SunMoonMotionClient() {
     { label: '下弦', value: 22.1 },
   ]
   const focusedStatus = sun.visible ? '白昼' : '夜晚'
-  const currentDateLabel = currentDate ? formatDateTime(currentDate) : '同步中'
-  const yearProgress = currentDate ? getDayOfYear(currentDate) / 365.24 : 0.42
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#f8f5f0] px-4 py-6 text-[#28231c] dark:bg-[#0b1016] dark:text-gray-100 md:py-9">
@@ -365,6 +371,7 @@ export default function SunMoonMotionClient() {
               <div className="rounded-2xl border border-[#eadfce] bg-white/62 px-3 dark:border-[#263341] dark:bg-[#111923]">
                 <CompactMetric label="时间" value={currentDateLabel} />
                 <CompactMetric label="经纬度" value={`${FOCUSED_LOCATION.latitude.toFixed(2)}°N / ${FOCUSED_LOCATION.longitude.toFixed(2)}°E`} />
+                <CompactMetric label="真太阳时" value={formatTime(sun.solarTime)} />
                 <CompactMetric label="昼夜" value={focusedStatus} />
                 <CompactMetric label="日出日落" value={`${formatTime(sun.sunrise)} / ${formatTime(sun.sunset)}`} />
                 <CompactMetric label="太阳高度" value={sun.visible ? `${Math.round(sun.altitude)}°` : '地平线下'} />

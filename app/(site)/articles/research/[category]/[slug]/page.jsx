@@ -1,5 +1,4 @@
 import { notFound, redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
 import Link from 'next/link'
 import Script from 'next/script'
 
@@ -14,12 +13,9 @@ import {
   listResearchByCategory,
 } from '../../../../../../lib/research/loader'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
-import { cookieNames, getSecrets, verifySession } from '../../../../../../lib/edgeSession'
-import { isOwnerUser } from '../../../../../../lib/ownerAuth'
 import { AUTHOR_INTRO_MARKDOWN, AuthorByline } from '../../../../components/ArticleAuthorIntro'
 import ArticleComments from '../../../../components/ArticleComments'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
-import PrivateVaultGate from '../../../../components/PrivateVaultGate'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
 import DownloadPptButton from './DownloadPptButton'
@@ -31,22 +27,8 @@ import SharePageButton from '../../../../components/SharePageButton'
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
-
-async function getOwnerUserFromSession() {
-  const { sessionSecret } = getSecrets()
-  if (!sessionSecret) return { state: 'anonymous', user: null }
-
-  const cookieStore = await cookies()
-  const token = cookieStore.get(cookieNames.session)?.value
-  const payload = await verifySession(token, sessionSecret)
-  const user = payload?.user || null
-
-  if (!user) return { state: 'anonymous', user: null }
-  if (!isOwnerUser(user)) return { state: 'not-owner', user }
-  return { state: 'owner', user }
-}
+export const dynamic = 'force-static'
+export const dynamicParams = false
 
 export function generateStaticParams() {
   const params = getAllResearchParams()
@@ -120,20 +102,6 @@ export default async function ResearchDetailPage({ params }) {
   if (entry.slug !== slug) redirect(`/articles/research/${entry.category}/${entry.slug}`)
 
   const isEncrypted = entry.encrypted
-  if (isEncrypted) {
-    const { state } = await getOwnerUserFromSession()
-    if (state !== 'owner') {
-      return (
-        <PrivateVaultGate
-          state={state}
-          vaultLabel="加密调研"
-          returnTo={`/articles/research/${entry.category}/${entry.slug}`}
-          description="这篇调研属于站长私域内容，访问层复用 2aran.com 的 owner session；通过后仍需要在浏览器本地输入解密口令。"
-        />
-      )
-    }
-  }
-
   const assistance = entry.assistance || entry.source || ''
   const variantList = isEncrypted ? [] : Array.isArray(entry.variants) && entry.variants.length > 0
     ? entry.variants

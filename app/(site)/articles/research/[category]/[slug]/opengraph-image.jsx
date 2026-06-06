@@ -1,24 +1,14 @@
 import { ImageResponse } from 'next/og'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 
 import { CATEGORY_META, RESEARCH_CATEGORIES } from '../../../../../../lib/research/categories'
-import { getResearchEntry } from '../../../../../../lib/research/loader'
+import { RESEARCH_ENTRY_META } from '../../../../../../lib/research/catalog'
 
-// 不指定 runtime，让 build 时静态生成 PNG —— social crawler 抓取时不跑函数
+const SITE_URL = 'https://2aran.com'
+
 export const alt = '涂阿燃 · 调研'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
-
-// 头像以 base64 嵌入，免去运行时 fetch
-const AVATAR_DATA_URL = (() => {
-  try {
-    const buf = readFileSync(join(process.cwd(), 'public', 'tuaranme.png'))
-    return `data:image/png;base64,${buf.toString('base64')}`
-  } catch {
-    return null
-  }
-})()
+export const runtime = 'edge'
 
 function truncate(text, max) {
   if (!text) return ''
@@ -29,11 +19,12 @@ function truncate(text, max) {
 export default async function ResearchOgImage({ params }) {
   const { category, slug } = await params
   const entry = RESEARCH_CATEGORIES.includes(category)
-    ? getResearchEntry(category, slug)
+    ? RESEARCH_ENTRY_META[`${category}/${slug}`] ||
+      RESEARCH_ENTRY_META[`${category}/${String(slug || '').replace(/^\d{4}-\d{2}-\d{2}-/, '')}`]
     : null
 
   const title = truncate(entry?.title || '调研', 56)
-  const summary = truncate(entry?.tldr || entry?.summary || '', 90)
+  const summary = truncate(entry?.summary || '', 90)
   const categoryLabel = CATEGORY_META[entry?.category]?.label || '调研'
   const dateStr = entry?.date || ''
 
@@ -101,24 +92,22 @@ export default async function ResearchOgImage({ params }) {
             zIndex: 1,
           }}
         >
-          {AVATAR_DATA_URL ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={AVATAR_DATA_URL}
-              width={220}
-              height={220}
-              alt=""
-              style={{
-                width: 220,
-                height: 220,
-                borderRadius: '50%',
-                border: '6px solid #fff',
-                boxShadow: '0 10px 32px rgba(63,53,39,0.22)',
-                objectFit: 'cover',
-                flexShrink: 0,
-              }}
-            />
-          ) : null}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${SITE_URL}/tuaranme.png`}
+            width={220}
+            height={220}
+            alt=""
+            style={{
+              width: 220,
+              height: 220,
+              borderRadius: '50%',
+              border: '6px solid #fff',
+              boxShadow: '0 10px 32px rgba(63,53,39,0.22)',
+              objectFit: 'cover',
+              flexShrink: 0,
+            }}
+          />
           <div
             style={{
               display: 'flex',

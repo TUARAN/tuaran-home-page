@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 
+import { getSolarHourAngleRadians } from './solarMath'
+
 const EARTH_ORBIT_RADIUS = 2.72
 const EARTH_RADIUS = 0.36
 const MOON_ORBIT_RADIUS = 0.58
@@ -376,6 +378,8 @@ export default function ThreeSolarSystem({
       host.addEventListener('sunMoonResetView', resetView)
 
       const clock = new THREE.Clock()
+      const sunDirection = new THREE.Vector3()
+      const inverseAxialQuaternion = new THREE.Quaternion()
       const orbitAnimation = {
         key: stateRef.current.orbitRunKey,
         startedAt: null,
@@ -419,10 +423,22 @@ export default function ThreeSolarSystem({
 
         earthSystem.position.set(earthX, 0, earthZ)
         earthSystem.scale.setScalar(1 + Math.sin(earthAngle) * 0.04)
-        earthAxialGroup.rotation.z = (-23.44 * current.season * Math.PI) / 180
+        earthAxialGroup.rotation.z = (23.44 * current.season * Math.PI) / 180
+        sunDirection.set(-earthX, 0, -earthZ).normalize()
+        inverseAxialQuaternion.copy(earthAxialGroup.quaternion).invert()
+        sunDirection.applyQuaternion(inverseAxialQuaternion)
+
+        const cityLongitudeAngle = -((current.location?.longitude || 0) * Math.PI) / 180
+        const sunLongitudeAngle = Math.atan2(sunDirection.z, sunDirection.x)
+        const solarHourAngle = getSolarHourAngleRadians({
+          time: current.time,
+          location: current.location,
+          yearProgress: current.yearProgress,
+        })
         earthSpinGroup.rotation.y =
-          ((current.time - 12) / 24) * Math.PI * 2 -
-          ((current.location?.longitude || 0) * Math.PI) / 180 +
+          cityLongitudeAngle -
+          sunLongitudeAngle -
+          solarHourAngle +
           (orbitAnimation.startedAt === null ? 0 : ((elapsed - orbitAnimation.startedAt) / 7) * Math.PI * 2 * 18)
         moonPivot.rotation.y = moonAngle
 

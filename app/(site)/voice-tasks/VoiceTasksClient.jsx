@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { useSessionAccount } from '../components/SessionProvider'
+
 const PRIORITIES = [
   { value: 'normal', label: '普通' },
   { value: 'high', label: '高' },
@@ -48,8 +50,9 @@ export default function VoiceTasksClient() {
   const recognitionRef = useRef(null)
   const [speechSupported, setSpeechSupported] = useState(false)
   const [listening, setListening] = useState(false)
-  const [user, setUser] = useState(null)
-  const [userLoading, setUserLoading] = useState(true)
+  const session = useSessionAccount()
+  const user = session.isOwner ? session.user : null
+  const userLoading = session.loading
   const [content, setContent] = useState('')
   const [interimText, setInterimText] = useState('')
   const [priority, setPriority] = useState('normal')
@@ -65,17 +68,6 @@ export default function VoiceTasksClient() {
 
   useEffect(() => {
     setSpeechSupported(!!getSpeechRecognition())
-    ;(async () => {
-      try {
-        const res = await fetch('/api/me', { cache: 'no-store' })
-        const data = await safeJson(res)
-        setUser(data?.isOwner ? data.user : null)
-      } catch {
-        setUser(null)
-      } finally {
-        setUserLoading(false)
-      }
-    })()
   }, [])
 
   useEffect(() => {

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
+import { useSessionAccount } from './SessionProvider'
+
 const SEED_URL = 'http://112.124.37.151:48575/#/register?code=TYbpJVsl'
 
 async function safeJson(res) {
@@ -15,8 +17,7 @@ async function safeJson(res) {
 }
 
 export default function SiteToolsPanel() {
-  const [user, setUser] = useState(null)
-  const [userLoading, setUserLoading] = useState(true)
+  const { user, loading: userLoading } = useSessionAccount()
   const [records, setRecords] = useState([])
   const [listLoading, setListLoading] = useState(false)
   const [input, setInput] = useState('')
@@ -25,20 +26,6 @@ export default function SiteToolsPanel() {
   const [error, setError] = useState('')
 
   const isAuthed = !!user
-
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const res = await fetch('/api/me', { cache: 'no-store' })
-        const data = await safeJson(res)
-        setUser(data?.user || null)
-      } catch {
-        setUser(null)
-      } finally {
-        setUserLoading(false)
-      }
-    })()
-  }, [])
 
   useEffect(() => {
     if (!isAuthed) {

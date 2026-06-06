@@ -3,6 +3,8 @@
 import Image from 'next/image'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { useSessionAccount } from './SessionProvider'
+
 async function safeJson(res) {
   const text = await res.text()
   if (!text) return null
@@ -33,8 +35,7 @@ function providerLabel(provider) {
 }
 
 export default function ArticleComments({ articleKey }) {
-  const [user, setUser] = useState(null)
-  const [userLoading, setUserLoading] = useState(true)
+  const { user, loading: userLoading } = useSessionAccount()
   const [items, setItems] = useState([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -58,17 +59,6 @@ export default function ArticleComments({ articleKey }) {
   }, [articleKey])
 
   useEffect(() => {
-    ;(async () => {
-      try {
-        const res = await fetch('/api/me', { cache: 'no-store' })
-        const data = await safeJson(res)
-        setUser(data?.user || null)
-      } catch {
-        setUser(null)
-      } finally {
-        setUserLoading(false)
-      }
-    })()
     refresh()
   }, [refresh])
 

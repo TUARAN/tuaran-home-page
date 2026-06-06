@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 
 import { DAD_TODO_SECTIONS, DAD_TODO_TOTAL, isValidDadTodoItemId } from '../../../lib/dadTodoData'
+import { useSessionAccount } from '../components/SessionProvider'
 import DadCheckinCalendar from './DadCheckinCalendar'
 
 async function safeJson(res) {
@@ -42,8 +43,9 @@ export default function DadTodoClient() {
   const [loadingMonth, setLoadingMonth] = useState(false)
 
   const [completed, setCompleted] = useState(() => new Set())
-  const [user, setUser] = useState(null)
-  const [authLoading, setAuthLoading] = useState(true)
+  const session = useSessionAccount()
+  const user = session.isOwner ? session.user : null
+  const authLoading = session.loading
   const [useRemote, setUseRemote] = useState(false)
   const [todoRemoteNote, setTodoRemoteNote] = useState('')
   const [pendingId, setPendingId] = useState(null)
@@ -135,25 +137,6 @@ export default function DadTodoClient() {
   useEffect(() => {
     loadBoard30()
   }, [loadBoard30])
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const meRes = await fetch('/api/me', { cache: 'no-store' })
-        const me = await safeJson(meRes)
-        if (cancelled) return
-        setUser(me?.isOwner ? me.user : null)
-      } catch {
-        if (!cancelled) setUser(null)
-      } finally {
-        if (!cancelled) setAuthLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   useEffect(() => {
     let cancelled = false

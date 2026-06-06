@@ -9,8 +9,8 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '项目组合看板',
-  description: '站长的项目归化、整合路线和本地资产治理控制台。',
+  title: '项目中心',
+  description: '站长的项目中心。',
   robots: {
     index: false,
     follow: false,
@@ -39,9 +39,9 @@ export default async function ProjectPortfolioPage() {
     return (
       <PrivateVaultGate
         state={state}
-        vaultLabel="项目组合看板"
+        vaultLabel="项目中心"
         returnTo="/agent-ops/project-portfolio"
-        description="这是和 AI 系统自动化控制台共用身份管控的项目治理页面，仅站长本人可见。"
+        description="这是和 AI 系统自动化控制台共用身份管控的项目中心，仅站长本人可见。"
       />
     )
   }

@@ -1,4 +1,11 @@
 import { getD1 } from '../../../lib/d1'
+import {
+  cleanupRateLimits,
+  enforceRateLimits,
+  getClientIp,
+  rateLimitResponse,
+  validatePublicHttpUrl,
+} from '../../../lib/abuseControls'
 import { getSecrets, getUserFromRequest } from '../../../lib/edgeSession'
 
 export const runtime = 'edge'
@@ -9,25 +16,14 @@ const LIST_LIMIT = 100
 const CODE_LENGTH = 7
 const CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 const INSERT_RETRY = 4
+const HOUR_MS = 60 * 60 * 1000
+const DAY_MS = 24 * HOUR_MS
 
 function dbUnavailableResponse() {
   return Response.json(
     { error: 'DB_UNAVAILABLE', message: '短链工具需要部署环境（Cloudflare D1）与登录后使用。' },
     { status: 503 }
   )
-}
-
-function validateUrl(raw) {
-  if (typeof raw !== 'string') return null
-  const trimmed = raw.trim()
-  if (!trimmed || trimmed.length > ORIGINAL_MAX) return null
-  try {
-    const u = new URL(trimmed)
-    if (!/^https?:$/.test(u.protocol)) return null
-    return trimmed
-  } catch {
-    return null
-  }
 }
 
 function genCode() {
@@ -90,9 +86,9 @@ export async function POST(req) {
       return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
     }
 
-    const original = validateUrl(body?.url ?? body?.original)
-    if (!original) {
-      return Response.json({ error: 'INVALID_URL' }, { status: 400 })
+    const urlResult = validatePublicHttpUrl(body?.url ?? body?.original, { maxLength: ORIGINAL_MAX })
+    if (!urlResult.ok) {
+      return Response.json({ error: urlResult.error }, { status: 400 })
     }
 
     let db
@@ -103,6 +99,16 @@ export async function POST(req) {
     }
 
     const userId = String(user.id)
+    const ip = getClientIp(req)
+    const limit = await enforceRateLimits(db, [
+      { scope: 'short:create:user:hour', subject: userId, limit: 20, windowMs: HOUR_MS },
+      { scope: 'short:create:user:day', subject: userId, limit: 80, windowMs: DAY_MS },
+      { scope: 'short:create:ip:hour', subject: ip, limit: 60, windowMs: HOUR_MS },
+      { scope: 'short:create:ip:day', subject: ip, limit: 160, windowMs: DAY_MS },
+    ])
+    if (!limit.ok) return rateLimitResponse(limit)
+
+    const original = urlResult.url
     const createdAt = Date.now()
     const base = getShortBase(req)
 
@@ -134,6 +140,8 @@ export async function POST(req) {
         { status: 500 }
       )
     }
+
+    await cleanupRateLimits(db).catch(() => {})
 
     return Response.json({ item: inserted }, { status: 201 })
   } catch {

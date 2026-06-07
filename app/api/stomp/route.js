@@ -1,8 +1,17 @@
 import { getD1 } from '../../../lib/d1'
+import {
+  cleanupRateLimits,
+  enforceRateLimits,
+  getClientIp,
+  rateLimitResponse,
+} from '../../../lib/abuseControls'
 import { getUserFromRequest } from '../../../lib/edgeSession'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+
+const FIVE_MINUTES_MS = 5 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
 
 export async function GET(req) {
   try {
@@ -51,11 +60,20 @@ export async function POST(req) {
     }
 
     const userId = String(user.id)
+    const db = getD1()
+    const ip = getClientIp(req)
+    const limit = await enforceRateLimits(db, [
+      { scope: 'stomp:create:user:5m', subject: userId, limit: 5, windowMs: FIVE_MINUTES_MS },
+      { scope: 'stomp:create:user:day', subject: userId, limit: 40, windowMs: DAY_MS },
+      { scope: 'stomp:create:ip:5m', subject: ip, limit: 15, windowMs: FIVE_MINUTES_MS },
+      { scope: 'stomp:create:ip:day', subject: ip, limit: 120, windowMs: DAY_MS },
+    ])
+    if (!limit.ok) return rateLimitResponse(limit)
+
     const userName = String(user.name || user.login || 'GitHub User')
     const userImage = user.image ? String(user.image) : null
     const createdAt = Date.now()
 
-    const db = getD1()
     const insert = await db
       .prepare(
         `INSERT INTO stomps (user_id, user_name, user_image, message, created_at)
@@ -64,6 +82,8 @@ export async function POST(req) {
       )
       .bind(userId, userName, userImage, message, createdAt)
       .first()
+
+    await cleanupRateLimits(db).catch(() => {})
 
     return Response.json({ item: insert }, { status: 201 })
   } catch {

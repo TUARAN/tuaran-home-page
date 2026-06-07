@@ -149,8 +149,10 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="mt-1 flex flex-wrap items-stretch gap-2.5">
-                <Link
-                  href="/services"
+                <a
+                  href="https://blogger-alliance.cn/"
+                  target="_blank"
+                  rel="noreferrer"
                   className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#3a2c14] bg-[#3a2c14] px-3.5 py-2.5 no-underline shadow-[0_6px_18px_rgba(58,44,20,0.14)] transition-all hover:-translate-y-0.5 hover:bg-[#2a1f0e] hover:shadow-[0_10px_24px_rgba(58,44,20,0.2)] sm:w-auto sm:min-w-[280px] sm:max-w-[360px] dark:border-[#e8d4b4] dark:bg-[#e8d4b4] dark:hover:bg-[#f5e3c4]"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f0c776]/15 text-[#f0c776] dark:bg-[#3a2c14]/15 dark:text-[#3a2c14]">
@@ -160,16 +162,18 @@ export default function HomePage() {
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
                     <span className="flex items-center gap-1 text-[13.5px] font-semibold text-[#fdf9ef] dark:text-[#1d1a16]">
-                      商务合作 / AI 咨询
+                      加入博主联盟
                       <span className="font-mono text-[9px] tracking-[0.08em] opacity-70">→</span>
                     </span>
                     <span className="mt-0.5 text-[11px] leading-snug text-[#c8b89a] dark:text-[#5a4725]">
-                      数字员工 · 调研定制 · 内容推广
+                      AI 产品方 ↔ 技术博主 · 品牌增长
                     </span>
                   </span>
-                </Link>
-                <Link
-                  href="/articles?tab=topics"
+                </a>
+                <a
+                  href="https://frontendnext.com/"
+                  target="_blank"
+                  rel="noreferrer"
                   className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#d9d0c2] bg-white/75 px-3.5 py-2.5 no-underline transition-all hover:-translate-y-0.5 hover:border-[#b9ad94] hover:bg-white sm:w-auto sm:min-w-[280px] sm:max-w-[360px] dark:border-[#3a4757] dark:bg-[#151c25] dark:hover:border-[#5a6a7e] dark:hover:bg-[#1a2330]"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f5efe1] text-[#8b5a1f] dark:bg-[#22303f] dark:text-[#e0b572]">
@@ -179,15 +183,29 @@ export default function HomePage() {
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
                     <span className="flex items-center gap-1 text-[13.5px] font-semibold text-[#1d1a16] dark:text-gray-100">
-                      读最新调研
-                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">→</span>
+                      订阅前端周看
+                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
                     <span className="mt-0.5 text-[11px] leading-snug text-[#7c7565] dark:text-[#8e98a8]">
-                      技术 · 市场 · 产品 · 公司画像
+                      前端 / AI Agent / 大模型 · 技术情报站
                     </span>
                   </span>
-                </Link>
+                </a>
               </div>
+              <Link
+                href="/services"
+                className="group mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-[#e4dccf] bg-white/64 px-3 py-1.5 text-[12px] no-underline transition hover:border-[#cbb796] hover:bg-[#faf7f0] dark:border-[#2a3440] dark:bg-[#151c25]/72 dark:hover:border-[#3d4a5c] dark:hover:bg-[#18212c]"
+              >
+                <span className="rounded-full bg-[#eee7db] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-[#6b5d48] dark:bg-[#263241] dark:text-[#c8d2df]">
+                  合作
+                </span>
+                <span className="min-w-0 truncate font-medium text-[#5d554a] dark:text-[#c8d2df]">
+                  AI 咨询、调研定制、内容合作可以从这里看范围
+                </span>
+                <span className="font-mono text-[10px] text-[#8a7b65] opacity-70 transition group-hover:opacity-100 dark:text-[#9aa7b8]">
+                  →
+                </span>
+              </Link>
             </div>
 
           </div>

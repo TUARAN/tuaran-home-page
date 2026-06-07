@@ -113,7 +113,6 @@ export async function POST(req) {
     const base = getShortBase(req)
 
     let inserted = null
-    let lastError = null
     for (let attempt = 0; attempt < INSERT_RETRY && !inserted; attempt += 1) {
       const code = genCode()
       const shortUrl = `${base}/${code}`
@@ -127,7 +126,6 @@ export async function POST(req) {
           .bind(userId, original, shortUrl, code, createdAt)
           .first()
       } catch (e) {
-        lastError = e
         // D1 抛 UNIQUE 时重试，其它错误立即抛出
         const msg = String(e?.message || '')
         if (!msg.includes('UNIQUE')) throw e
@@ -135,10 +133,7 @@ export async function POST(req) {
     }
 
     if (!inserted) {
-      return Response.json(
-        { error: 'CODE_COLLISION', detail: String(lastError?.message || '') },
-        { status: 500 }
-      )
+      return Response.json({ error: 'CODE_COLLISION' }, { status: 500 })
     }
 
     await cleanupRateLimits(db).catch(() => {})

@@ -34,6 +34,8 @@ const QUICK_LINKS = [
   { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/', external: true },
 ]
 
+const RESEARCH_KINDS = new Set(['companies', 'topics', 'people'])
+
 // 公司 / 事项分类的 filter defs 由 lib/research/loader.js 派生，避免双源维护。
 // 新增 / 删除分类只改 loader 一处即可。
 const COMPANY_TYPE_DEFS = getCompanyTypeFilters()
@@ -291,8 +293,39 @@ export default function ArticlesIndexClient({ items }) {
     return base
   }, [items])
 
+  const readingHighlights = useMemo(() => {
+    const publicItems = items.filter((item) => !item.encrypted)
+    const latestItems = publicItems.slice(0, 3)
+    const latestIds = new Set(latestItems.map((item) => item.id || item.href))
+    return [
+      {
+        title: '最新内容',
+        desc: '刚发布的文章、调研与工程记录。',
+        items: latestItems,
+      },
+      {
+        title: '推荐调研',
+        desc: '技术、市场、公司画像的高密度输出。',
+        items: publicItems
+          .filter((item) => !latestIds.has(item.id || item.href) && RESEARCH_KINDS.has(item.kind))
+          .slice(0, 3),
+      },
+      {
+        title: '代表作品',
+        desc: '个人判断、工程作品和长期项目。',
+        items: publicItems
+          .filter((item) => !latestIds.has(item.id || item.href) && (item.kind === 'posts' || item.kind === 'works'))
+          .slice(0, 3),
+      },
+    ].filter((section) => section.items.length > 0)
+  }, [items])
+
+  const showReadingHighlights = tab === 'all' && !query.trim()
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {showReadingHighlights ? <ReadingHighlights sections={readingHighlights} /> : null}
+
       <nav
         aria-label="作品、调研与资料分类"
         className="flex flex-nowrap items-center gap-5 overflow-x-auto border-b border-[#e8dfd0] text-sm dark:border-gray-800"
@@ -562,7 +595,7 @@ function ArticleRow({ item }) {
           </div>
           <h2
             title={item.title}
-            className="ml-5 truncate text-lg font-semibold text-[#333] transition-colors group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white"
+            className="ml-5 line-clamp-2 text-lg font-semibold leading-7 text-[#333] transition-colors group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white"
           >
             {item.title}
           </h2>
@@ -597,6 +630,73 @@ function ArticleRow({ item }) {
           </div>
         ) : null}
       </div>
+    </Link>
+  )
+}
+
+function ReadingHighlights({ sections }) {
+  return (
+    <section className="rounded-2xl border border-[#e8dfd0] bg-[#fcfbf7] p-4 shadow-[0_12px_36px_rgba(82,69,45,0.05)] dark:border-gray-800 dark:bg-[#0f141b]">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+            Start Here
+          </p>
+          <h2 className="mt-1 border-b-0 pb-0 text-[18px] font-semibold text-[#221f19] dark:text-gray-100">
+            阅读起点
+          </h2>
+        </div>
+        <Link
+          href="/services"
+          className="rounded-full border border-[#d8cfbf] bg-white px-3 py-1 text-[12px] text-[#5b5141] no-underline transition hover:border-[#bdae93] hover:text-[#2d261d] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500"
+        >
+          合作 / 咨询 →
+        </Link>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        {sections.map((section) => (
+          <div key={section.title} className="rounded-xl border border-[#eee7da] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-2">
+              <h3 className="text-[14px] font-semibold text-[#2d261d] dark:text-gray-100">{section.title}</h3>
+              <p className="mt-0.5 text-[11px] leading-5 text-[#8b806c] dark:text-gray-400">{section.desc}</p>
+            </div>
+            <div className="space-y-2">
+              {section.items.map((item) => (
+                <HighlightLink key={item.id || item.href} item={item} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function HighlightLink({ item }) {
+  const external = isExternalHref(item.href)
+  return (
+    <Link
+      href={item.href}
+      {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
+      className="group block rounded-lg px-2 py-1.5 no-underline transition hover:bg-[#f8f4ec] dark:hover:bg-[#151d27]"
+    >
+      <div className="mb-0.5 flex min-w-0 items-center gap-2">
+        <span
+          className={[
+            'inline-flex shrink-0 items-center rounded-full border px-1.5 py-px text-[10px]',
+            KIND_TAG_CLASS[item.kind] || KIND_TAG_CLASS.people,
+          ].join(' ')}
+        >
+          {item.tagLabel}
+        </span>
+        {item.date ? (
+          <span className="shrink-0 font-mono text-[10px] text-[#aaa093] dark:text-gray-500">{item.date}</span>
+        ) : null}
+      </div>
+      <p className="mb-0 line-clamp-2 text-[13px] font-medium leading-5 text-[#2d261d] group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white">
+        {item.title}
+      </p>
     </Link>
   )
 }

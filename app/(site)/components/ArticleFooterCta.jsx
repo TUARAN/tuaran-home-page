@@ -55,14 +55,14 @@ export default function ArticleFooterCta() {
         </Link>
 
         <Link
-          href="/about"
+          href="/services"
           className="group flex items-baseline gap-3 rounded-xl border border-[#e8dfd0] bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-600"
         >
-          <span className="text-[18px]" aria-hidden="true">👋</span>
+          <span className="text-[18px]" aria-hidden="true">🤝</span>
           <div className="flex-1">
-            <div className="text-[15px] font-semibold text-[#221f19] dark:text-gray-100">关于我 →</div>
+            <div className="text-[15px] font-semibold text-[#221f19] dark:text-gray-100">商务合作 →</div>
             <p className="mt-0.5 text-[12px] leading-5 text-[#666] dark:text-gray-400">
-              前端 · AI Agent · 政企方案 · 创业 · 奶爸
+              AI 咨询、调研定制、内容推广与数字员工方案
             </p>
           </div>
         </Link>

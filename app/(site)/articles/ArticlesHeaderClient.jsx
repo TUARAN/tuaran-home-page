@@ -4,17 +4,17 @@ import { useState } from 'react'
 import KnowledgeHeatmapClient from './KnowledgeHeatmapClient'
 
 export default function ArticlesHeaderClient({ items }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
 
   return (
     <header className="mb-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
-            专栏 & 调研 & 资料
+            文章 / 调研 / 资料
           </h1>
           <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#6e6452] dark:text-[#9aa5b6]">
-            专栏：精选文章 / 工程作品；调研：专题 / 公司 / 事项；资料：站内资料 + 资源收藏。
+            先从最新内容和代表作开始读；需要精确查找时，再用分类、搜索和创作热力图。
             <button
               type="button"
               aria-expanded={expanded}

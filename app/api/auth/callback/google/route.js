@@ -6,6 +6,11 @@ import {
   serializeCookie,
   signSession,
 } from '../../../../../lib/edgeSession'
+import {
+  logOAuthProviderFailure,
+  oauthProviderError,
+  readProviderJson,
+} from '../../../../../lib/oauthProviderErrors'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -54,10 +59,11 @@ export async function GET(req) {
     }),
   })
 
-  const tokenJson = await tokenRes.json()
+  const tokenJson = await readProviderJson(tokenRes)
   const accessToken = tokenJson?.access_token
   if (!tokenRes.ok || !accessToken) {
-    return Response.json({ error: 'OAUTH_TOKEN_EXCHANGE_FAILED', detail: tokenJson }, { status: 400 })
+    logOAuthProviderFailure('google', 'token', tokenRes, tokenJson)
+    return oauthProviderError('OAUTH_TOKEN_EXCHANGE_FAILED')
   }
 
   const userRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
@@ -66,9 +72,10 @@ export async function GET(req) {
       Authorization: `Bearer ${accessToken}`,
     },
   })
-  const googleUser = await userRes.json()
+  const googleUser = await readProviderJson(userRes)
   if (!userRes.ok || !googleUser?.sub) {
-    return Response.json({ error: 'GOOGLE_USER_FETCH_FAILED', detail: googleUser }, { status: 400 })
+    logOAuthProviderFailure('google', 'userinfo', userRes, googleUser)
+    return oauthProviderError('GOOGLE_USER_FETCH_FAILED')
   }
 
   const user = {

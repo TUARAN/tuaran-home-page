@@ -161,6 +161,8 @@ wrangler d1 create tuaran-me
 wrangler d1 migrations apply tuaran-me
 ```
 
+公开写接口启用限流后，需要确保 `0017_abuse_controls.sql` 已应用到线上 D1；否则短链、评论、踩踏等写接口会因为缺少 `api_rate_limits` 表而返回 500。
+
 > ⚠️ **常见报错**：`Error 8000022: Invalid database UUID ()`
 >
 > 解决：到 Cloudflare D1 控制台复制正确的 Database ID（UUID），填入 `wrangler.toml` 后重新部署。

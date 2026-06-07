@@ -443,7 +443,6 @@ export default function HomePage() {
                   我的上下文记忆
                 </Link>
               </div>
-              <LatestMoments />
               <div className="mt-5 border-t border-[#e8e4dc] pt-4 dark:border-gray-800/80">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9c8f79] dark:text-[#8e9ab0]">
@@ -473,8 +472,10 @@ export default function HomePage() {
                 </div>
               </div>
             </section>
+          </aside>
+        </div>
 
-            <section id="follow-me" className="scroll-mt-20 rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
+        <section id="follow-me" className="mt-6 scroll-mt-20 rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
               <div className="mb-5">
                 <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0]">
                   Follow Me
@@ -486,7 +487,7 @@ export default function HomePage() {
                   </span>
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-2.5">
+              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
                 {primaryCommunities.map((c, idx) => (
                   <a
                     key={c.name}
@@ -585,8 +586,9 @@ export default function HomePage() {
               </div>
             </section>
 
-          </aside>
-        </div>
+        <section className="mt-6 rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
+          <LatestMoments />
+        </section>
       </section>
 
       <section>

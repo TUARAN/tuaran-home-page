@@ -10,10 +10,8 @@ import { getCompanyTypeFilters, getTopicTypeFilters } from '../../../lib/researc
 const TAB_DEFS = [
   { key: 'all', label: '全部' },
   { key: 'posts', label: '精选文章', tier: 'works' },
+  { key: 'research', label: '调研', tier: 'research' },
   { key: 'works', label: '工程作品', tier: 'works' },
-  { key: 'companies', label: '公司调研', tier: 'research' },
-  { key: 'topics', label: '事项调研', tier: 'research' },
-  { key: 'people', label: '人物调研', tier: 'research' },
   { key: 'resources', label: '资料', tier: 'resources' },
 ]
 
@@ -27,14 +25,21 @@ const KIND_TAG_CLASS = {
   resources: 'border-[#ddd8cb] bg-[#f7f4ee] text-[#6b6253] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
 }
 
-const TAB_KEYS = TAB_DEFS.map((t) => t.key)
+const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
+const RESEARCH_KINDS = new Set(RESEARCH_KIND_KEYS)
+const TAB_KEYS = [...TAB_DEFS.map((t) => t.key), ...RESEARCH_KIND_KEYS]
 
 const QUICK_LINKS = [
   { label: '创作日历', href: '/articles/creation-calendar' },
   { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/', external: true },
 ]
 
-const RESEARCH_KINDS = new Set(['companies', 'topics', 'people'])
+const RESEARCH_TYPE_DEFS = [
+  { key: 'research', label: '全部调研' },
+  { key: 'companies', label: '公司调研' },
+  { key: 'topics', label: '事项调研' },
+  { key: 'people', label: '人物调研' },
+]
 
 // 公司 / 事项分类的 filter defs 由 lib/research/loader.js 派生，避免双源维护。
 // 新增 / 删除分类只改 loader 一处即可。
@@ -189,12 +194,18 @@ export default function ArticlesIndexClient({ items }) {
     base.all = items.length
     for (const item of items) {
       if (typeof base[item.kind] === 'number') base[item.kind] += 1
+      if (RESEARCH_KINDS.has(item.kind)) base.research += 1
     }
     return base
   }, [items])
 
   const visible = useMemo(() => {
-    const tabItems = tab === 'all' ? items : items.filter((item) => item.kind === tab)
+    const tabItems =
+      tab === 'all'
+        ? items
+        : tab === 'research'
+        ? items.filter((item) => RESEARCH_KINDS.has(item.kind))
+        : items.filter((item) => item.kind === tab)
     let typeFiltered = tabItems
     if (tab === 'companies' && companyType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.companyType === companyType)
@@ -331,7 +342,7 @@ export default function ArticlesIndexClient({ items }) {
         className="flex flex-nowrap items-center gap-5 overflow-x-auto border-b border-[#e8dfd0] text-sm dark:border-gray-800"
       >
         {TAB_DEFS.map((t, idx) => {
-          const active = tab === t.key
+          const active = tab === t.key || (t.key === 'research' && RESEARCH_KINDS.has(tab))
           const prevTier = idx > 0 ? TAB_DEFS[idx - 1].tier : null
           const showResearchDivider = t.tier === 'research' && prevTier !== 'research'
           const showResourceDivider = t.tier === 'resources' && prevTier !== 'resources'
@@ -410,6 +421,35 @@ export default function ArticlesIndexClient({ items }) {
           ),
         )}
       </nav>
+
+      {tab === 'research' || RESEARCH_KINDS.has(tab) ? (
+        <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
+          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">调研类型</span>
+          <nav aria-label="调研类型" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
+            {RESEARCH_TYPE_DEFS.map((t) => {
+              const active = tab === t.key
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => selectTab(t.key)}
+                  className={[
+                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
+                    active
+                      ? 'bg-[#eef6f1] font-medium text-[#386b54] dark:bg-[#13201a] dark:text-[#9dcab1]'
+                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                  ].join(' ')}
+                >
+                  <span>{t.label}</span>
+                  <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                    {counts[t.key] ?? 0}
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      ) : null}
 
       <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
         <input

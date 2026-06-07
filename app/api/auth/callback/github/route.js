@@ -6,6 +6,11 @@ import {
   serializeCookie,
   signSession,
 } from '../../../../../lib/edgeSession'
+import {
+  logOAuthProviderFailure,
+  oauthProviderError,
+  readProviderJson,
+} from '../../../../../lib/oauthProviderErrors'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -54,10 +59,11 @@ export async function GET(req) {
     }),
   })
 
-  const tokenJson = await tokenRes.json()
+  const tokenJson = await readProviderJson(tokenRes)
   const accessToken = tokenJson?.access_token
   if (!tokenRes.ok || !accessToken) {
-    return Response.json({ error: 'OAUTH_TOKEN_EXCHANGE_FAILED', detail: tokenJson }, { status: 400 })
+    logOAuthProviderFailure('github', 'token', tokenRes, tokenJson)
+    return oauthProviderError('OAUTH_TOKEN_EXCHANGE_FAILED')
   }
 
   const userRes = await fetch('https://api.github.com/user', {
@@ -67,9 +73,10 @@ export async function GET(req) {
       'User-Agent': 'tuaran-me',
     },
   })
-  const ghUser = await userRes.json()
+  const ghUser = await readProviderJson(userRes)
   if (!userRes.ok || !ghUser?.id) {
-    return Response.json({ error: 'GITHUB_USER_FETCH_FAILED', detail: ghUser }, { status: 400 })
+    logOAuthProviderFailure('github', 'userinfo', userRes, ghUser)
+    return oauthProviderError('GITHUB_USER_FETCH_FAILED')
   }
 
   const user = {

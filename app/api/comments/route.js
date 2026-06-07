@@ -1,8 +1,17 @@
 import { getD1 } from '../../../lib/d1'
+import {
+  cleanupRateLimits,
+  enforceRateLimits,
+  getClientIp,
+  rateLimitResponse,
+} from '../../../lib/abuseControls'
 import { getUserFromRequest } from '../../../lib/edgeSession'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+
+const FIVE_MINUTES_MS = 5 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
 
 function normalizeArticleKey(value) {
   const articleKey = typeof value === 'string' ? value.trim() : ''
@@ -66,12 +75,21 @@ export async function POST(req) {
     }
 
     const userId = String(user.id)
+    const db = getD1()
+    const ip = getClientIp(req)
+    const limit = await enforceRateLimits(db, [
+      { scope: 'comments:create:user:5m', subject: userId, limit: 8, windowMs: FIVE_MINUTES_MS },
+      { scope: 'comments:create:user:day', subject: userId, limit: 80, windowMs: DAY_MS },
+      { scope: 'comments:create:ip:5m', subject: ip, limit: 20, windowMs: FIVE_MINUTES_MS },
+      { scope: 'comments:create:ip:day', subject: ip, limit: 160, windowMs: DAY_MS },
+    ])
+    if (!limit.ok) return rateLimitResponse(limit)
+
     const userProvider = String(user.provider || (userId.startsWith('google:') ? 'google' : 'github'))
     const userName = String(user.name || user.login || 'User')
     const userImage = user.image ? String(user.image) : null
     const createdAt = Date.now()
 
-    const db = getD1()
     const insert = await db
       .prepare(
         `INSERT INTO article_comments
@@ -81,6 +99,8 @@ export async function POST(req) {
       )
       .bind(articleKey, userId, userProvider, userName, userImage, message, createdAt)
       .first()
+
+    await cleanupRateLimits(db).catch(() => {})
 
     return Response.json({ item: insert }, { status: 201 })
   } catch {

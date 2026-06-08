@@ -1,7 +1,5 @@
 'use client'
 
-import Image from 'next/image'
-import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
 
 import { DAD_TODO_TOTAL } from '../../../lib/dadTodoData'
@@ -33,7 +31,6 @@ const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
  */
 export default function DadCheckinCalendar({
   user,
-  authLoading,
   view,
   onViewChange,
   selectedYmd,
@@ -41,10 +38,6 @@ export default function DadCheckinCalendar({
   dayCountByYmd = {},
   loadingMonth,
 }) {
-  const pathname = usePathname() || '/'
-  const loginHref = `/login?returnTo=${encodeURIComponent(pathname)}`
-  const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(pathname)}`
-
   const todayYmd = localYmd()
   const cells = useMemo(() => monthGrid(view.year, view.month), [view.year, view.month])
 
@@ -76,40 +69,6 @@ export default function DadCheckinCalendar({
 
   return (
     <section className="rounded-2xl border border-[#e5ddd0] bg-white/90 p-4 shadow-sm dark:border-[#2a3440] dark:bg-[#121820]/95">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-[#2d261d] dark:text-gray-100">选择日期</h2>
-        <div className="flex items-center gap-2">
-          {user ? (
-            <a
-              href={logoutHref}
-              className="inline-flex items-center rounded-lg border border-[#ddd3c4] bg-white/80 px-3 py-1 text-xs text-[#5c5348] no-underline hover:bg-[#f0ebe3] dark:border-[#3d4a5c] dark:bg-[#1a222c] dark:text-gray-300 dark:hover:bg-[#243040]"
-            >
-              退出
-            </a>
-          ) : (
-            <a
-              href={loginHref}
-              className="inline-flex items-center rounded-lg border border-[#4a6fa5] bg-[#4a6fa5]/10 px-3 py-1 text-xs font-medium text-[#3d5a80] no-underline hover:bg-[#4a6fa5]/20 dark:border-[#6b8cbc] dark:bg-[#2a3f5c]/40 dark:text-[#a8c4e8]"
-            >
-              {authLoading ? '检测登录…' : '登录 →'}
-            </a>
-          )}
-        </div>
-      </div>
-
-      {user ? (
-        <div className="mb-3 flex items-center gap-2 text-xs text-[#5c5348] dark:text-gray-400">
-          {user.image ? (
-            <Image src={user.image} alt="" width={24} height={24} unoptimized className="h-6 w-6 rounded-full" />
-          ) : null}
-          <span>{user.name || user.login || '已登录'}</span>
-        </div>
-      ) : (
-        <p className="mb-3 text-xs leading-relaxed text-[#8a7f6f] dark:text-gray-500">
-          这是站长（涂阿燃）家庭打卡的私域记录，仅作者本人可写入。日历上的圆点表示该日已有完成条数。
-        </p>
-      )}
-
       <div className="mb-2 flex items-center justify-between gap-2">
         <button
           type="button"

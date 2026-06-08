@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const pillars = {
   blog: {
@@ -145,10 +145,64 @@ function compactName(name) {
   return name.length > 18 ? `${name.slice(0, 17)}...` : name
 }
 
+const GRAPH_WIDTH = 1060
+const GRAPH_HEIGHT = 760
+const GRAPH_MIN_SCALE = 0.75
+const GRAPH_MAX_SCALE = 2.25
+const GRAPH_SCALE_STEP = 0.25
+
+function clampGraphScale(value) {
+  return Math.min(GRAPH_MAX_SCALE, Math.max(GRAPH_MIN_SCALE, value))
+}
+
+function GraphIcon({ type }) {
+  const paths = {
+    zoomIn: (
+      <>
+        <circle cx="10" cy="10" r="5" />
+        <path d="M10 7v6M7 10h6M14 14l4 4" />
+      </>
+    ),
+    zoomOut: (
+      <>
+        <circle cx="10" cy="10" r="5" />
+        <path d="M7 10h6M14 14l4 4" />
+      </>
+    ),
+    reset: <path d="M5 8a7 7 0 1 1 2 9.8M5 8V4M5 8h4" />,
+    fullscreen: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
+    exitFullscreen: <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />,
+  }
+
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {paths[type]}
+    </svg>
+  )
+}
+
+function GraphControlButton({ label, onClick, disabled = false, icon }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d9dee7] bg-white text-[#344054] transition hover:border-[#98a2b3] hover:text-[#111827] disabled:cursor-not-allowed disabled:opacity-45 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200 dark:hover:border-gray-500"
+    >
+      <GraphIcon type={icon} />
+    </button>
+  )
+}
+
 export default function ProjectPortfolioConsole({ user }) {
   const [selected, setSelected] = useState('blogger-alliance')
   const [actionFilter, setActionFilter] = useState('all')
   const [query, setQuery] = useState('')
+  const [graphScale, setGraphScale] = useState(1)
+  const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
+  const graphFrameRef = useRef(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -170,6 +224,31 @@ export default function ProjectPortfolioConsole({ user }) {
   )
   const selectedProject = projects.find((item) => item.id === selected) || projects[0]
   const selectedPillar = pillars[selectedProject.pillar]
+
+  useEffect(() => {
+    function syncFullscreenState() {
+      setIsGraphFullscreen(document.fullscreenElement === graphFrameRef.current)
+    }
+
+    document.addEventListener('fullscreenchange', syncFullscreenState)
+    return () => document.removeEventListener('fullscreenchange', syncFullscreenState)
+  }, [])
+
+  function updateGraphScale(nextScale) {
+    setGraphScale(clampGraphScale(Math.round(nextScale * 100) / 100))
+  }
+
+  async function toggleGraphFullscreen() {
+    const element = graphFrameRef.current
+    if (!element) return
+
+    if (document.fullscreenElement === element) {
+      await document.exitFullscreen()
+      return
+    }
+
+    await element.requestFullscreen()
+  }
 
   return (
     <main className="mx-auto grid w-full max-w-[1480px] gap-5 px-4 py-6 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -246,13 +325,50 @@ export default function ProjectPortfolioConsole({ user }) {
         </section>
 
         <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-              <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
-              <span className="text-xs text-[#667085] dark:text-gray-400">箭头表示吸收、服务、迁移或归档关系</span>
+          <div
+            ref={graphFrameRef}
+            className={`rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${
+              isGraphFullscreen ? 'flex h-screen flex-col rounded-none border-0' : ''
+            }`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
+              <div>
+                <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
+                <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">箭头表示吸收、服务、迁移或归档关系</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <GraphControlButton
+                  label="缩小关系图"
+                  icon="zoomOut"
+                  onClick={() => updateGraphScale(graphScale - GRAPH_SCALE_STEP)}
+                  disabled={graphScale <= GRAPH_MIN_SCALE}
+                />
+                <span className="inline-flex h-8 min-w-14 items-center justify-center rounded-md border border-[#d9dee7] bg-[#f8fafc] px-2 font-mono text-[11px] text-[#475467] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
+                  {Math.round(graphScale * 100)}%
+                </span>
+                <GraphControlButton
+                  label="放大关系图"
+                  icon="zoomIn"
+                  onClick={() => updateGraphScale(graphScale + GRAPH_SCALE_STEP)}
+                  disabled={graphScale >= GRAPH_MAX_SCALE}
+                />
+                <GraphControlButton label="重置缩放" icon="reset" onClick={() => updateGraphScale(1)} disabled={graphScale === 1} />
+                <GraphControlButton
+                  label={isGraphFullscreen ? '退出全屏' : '全屏查看关系图'}
+                  icon={isGraphFullscreen ? 'exitFullscreen' : 'fullscreen'}
+                  onClick={toggleGraphFullscreen}
+                />
+              </div>
             </div>
-            <div className="overflow-x-auto p-4">
-              <svg className="block min-h-[700px] min-w-[1060px]" viewBox="0 0 1060 760" role="img" aria-label="TUARAN 项目关系图">
+            <div className={`overflow-auto p-4 ${isGraphFullscreen ? 'min-h-0 flex-1' : 'max-h-[760px]'}`}>
+              <svg
+                className="block"
+                width={GRAPH_WIDTH * graphScale}
+                height={GRAPH_HEIGHT * graphScale}
+                viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
+                role="img"
+                aria-label="TUARAN 项目关系图"
+              >
                 <defs>
                   <marker id="portfolio-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="#aab3c2" />

@@ -3,10 +3,12 @@ import Image from 'next/image'
 import Script from 'next/script'
 import { notFound } from 'next/navigation'
 import { articles } from '../articles/articlesData'
+import { avatarAbsoluteUrl } from '../../../lib/avatar'
 
 export const dynamic = 'force-static'
 
 const SITE_URL = 'https://2aran.com'
+const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const DIARY_SLUG = 'diary-self-reflection'
 
@@ -106,13 +108,13 @@ export function generateMetadata() {
       publishedTime: toIsoDate(diary.date) || undefined,
       images: diary.cover
         ? [{ url: diary.cover, alt: `${diary.title} 封面` }]
-        : [{ url: `${SITE_URL}/tuaranme.png`, width: 512, height: 512, alt: '涂阿燃头像' }],
+        : [{ url: AVATAR_URL, width: 512, height: 512, alt: '涂阿燃头像' }],
     },
     twitter: {
       card: 'summary_large_image',
       title: diary.title,
       description: diary.summary,
-      images: [diary.cover || `${SITE_URL}/tuaranme.png`],
+      images: [diary.cover || AVATAR_URL],
     },
   }
 }

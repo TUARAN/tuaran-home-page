@@ -6,12 +6,14 @@ import { articles } from '../articlesData'
 import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
+import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 import { listResearch } from '../../../../lib/research/loader'
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
 
 const SITE_URL = 'https://2aran.com'
+const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 
 function toIsoDate(dateString) {
@@ -126,13 +128,13 @@ export async function generateMetadata({ params }) {
       publishedTime: publishedTime || undefined,
       images: article.cover
         ? [{ url: article.cover, alt: `${article.title} 封面` }]
-        : [{ url: `${SITE_URL}/tuaranme.png`, width: 512, height: 512, alt: '涂阿燃（掘金安东尼）头像' }],
+        : [{ url: AVATAR_URL, width: 512, height: 512, alt: '涂阿燃（掘金安东尼）头像' }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [article.cover || `${SITE_URL}/tuaranme.png`],
+      images: [article.cover || AVATAR_URL],
     },
   }
 }

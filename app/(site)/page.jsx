@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { articles } from './articles/articlesData'
 import DaysSince from './components/DaysSince'
 import SiteFooter from './components/SiteFooter'
+import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
 import { listResearch } from '../../lib/research/loader'
 
@@ -410,7 +411,7 @@ export default function HomePage() {
               <div className="mb-5 border-b border-[#e8e4dc] pb-5 text-center dark:border-gray-800/80">
                 <div className="mx-auto w-[116px] overflow-hidden bg-[#f8f5f0] dark:bg-[#0f1318]">
                   <Image
-                    src="/tuaranme.png"
+                    src={AVATAR_PATH}
                     alt="涂阿燃"
                     width={128}
                     height={160}

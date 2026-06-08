@@ -12,6 +12,7 @@ import {
   listResearch,
   listResearchByCategory,
 } from '../../../../../../lib/research/loader'
+import { avatarAbsoluteUrl } from '../../../../../../lib/avatar'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
 import { AUTHOR_INTRO_MARKDOWN, AuthorByline } from '../../../../components/ArticleAuthorIntro'
 import ArticleComments from '../../../../components/ArticleComments'
@@ -27,6 +28,7 @@ import SharePageButton from '../../../../components/SharePageButton'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
+const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
@@ -232,7 +234,7 @@ export default async function ResearchDetailPage({ params }) {
       '@type': 'Organization',
       name: 'TUARAN',
       url: SITE_URL,
-      logo: { '@type': 'ImageObject', url: `${SITE_URL}/tuaranme.png` },
+      logo: { '@type': 'ImageObject', url: AVATAR_URL },
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     image: entry.images?.length ? entry.images.map((image) => image.src) : undefined,

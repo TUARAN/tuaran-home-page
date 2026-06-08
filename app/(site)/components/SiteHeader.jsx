@@ -185,6 +185,10 @@ function getAccountName(user) {
   return user?.name || user?.login || user?.email || '已登录'
 }
 
+function getAccountId(user) {
+  return user?.login || user?.email || user?.id || '已登录'
+}
+
 function getAccountInitial(user) {
   const name = getAccountName(user)
   return name.trim().slice(0, 1).toUpperCase() || 'U'
@@ -231,26 +235,18 @@ function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
 
 function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
   const isLg = size === 'lg'
-  // 不用 leading-none、不用 items-stretch——保持自然行高 + items-center 是最稳的方案。
-  // 头像和右侧 name 使用同一字号（15px / 12px），同一字体度量 → flex items-center 能
-  // 让两边字符的视觉中线自然对齐。
   return (
     <div className={`flex min-w-0 items-center ${isLg ? 'gap-3' : 'gap-2.5'}`}>
       <AccountAvatar user={user} isOwner={isOwner} loading={loading} size={size} />
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <div className="flex min-w-0 flex-1 items-center">
         <p
           className={[
             'truncate font-semibold text-[#221f19] dark:text-gray-100',
             isLg ? 'text-[15px]' : 'text-[13.5px]',
           ].join(' ')}
         >
-          {loading ? '检查登录状态…' : getAccountName(user)}
+          {loading ? '检查登录状态…' : getAccountId(user)}
         </p>
-        {isOwner ? (
-          <span className="shrink-0 rounded-full bg-[#fbf2dc] px-1.5 py-[2px] font-mono text-[9.5px] uppercase tracking-[0.12em] text-[#8a6b2e] dark:bg-[#2a2113] dark:text-[#d6b87a]">
-            站长
-          </span>
-        ) : null}
       </div>
     </div>
   )
@@ -284,7 +280,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
         className="inline-flex items-center gap-2 rounded-full border border-[#ddd3c2] px-2 py-1 text-sm font-medium text-[#5b5448] transition-colors hover:border-[#b99b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
       >
         <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
-        <span>{loading ? '检查中' : isOwner ? '站长' : '已登录'}</span>
+        <span>{loading ? '检查中' : getAccountId(user)}</span>
         <ChevronDown />
       </button>
 

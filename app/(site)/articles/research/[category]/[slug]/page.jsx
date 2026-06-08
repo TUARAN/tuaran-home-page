@@ -16,6 +16,7 @@ import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../..
 import { AUTHOR_INTRO_MARKDOWN, AuthorByline } from '../../../../components/ArticleAuthorIntro'
 import ArticleComments from '../../../../components/ArticleComments'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
+import ArticleLikeButton from '../../../../components/ArticleLikeButton'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
 import DownloadPptButton from './DownloadPptButton'
@@ -47,6 +48,69 @@ function resolveResearchEntry(category, slug) {
   const legacySlug = String(slug || '').replace(/^\d{4}-\d{2}-\d{2}-/, '')
   if (legacySlug && legacySlug !== slug) return getResearchEntry(category, legacySlug)
   return null
+}
+
+function ResearchEngagementPanel({ articleKey, related }) {
+  return (
+    <aside className="order-1 space-y-4 lg:order-2 lg:sticky lg:top-24">
+      <section className="rounded-lg border border-[#e8dfd0] bg-[#fdfcf9] p-4 dark:border-gray-800 dark:bg-[#0f141b]">
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+          Support
+        </p>
+        <h2 className="mt-2 text-[15px] font-semibold text-[#444] dark:text-gray-200">支持这篇调研</h2>
+        <p className="mt-1 text-[12px] leading-5 text-[#85806f] dark:text-[#8a93a3]">
+          一下点赞、一句评论，都是对继续写下去的支持。
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <ArticleLikeButton articleKey={articleKey} />
+          <a
+            href="#comments"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#dcd3c0] bg-white px-3.5 text-[13.5px] font-medium text-[#5a5142] no-underline transition-all hover:-translate-y-px hover:border-[#b9aa8c] hover:text-[#221f19] hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100"
+          >
+            <svg
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+              className="h-4 w-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4.2 5.4a5.5 5.5 0 0 1 5.6-3.1h.4a5.6 5.6 0 0 1 5.6 5.6v.2a5.6 5.6 0 0 1-5.6 5.6H8l-3.7 2v-3.5a5.6 5.6 0 0 1-.1-6.8Z" />
+            </svg>
+            <span>评论</span>
+          </a>
+        </div>
+      </section>
+
+      {related.length ? (
+        <section className="rounded-lg border border-[#e8dfd0] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+            Related
+          </p>
+          <h2 className="mt-2 text-base font-semibold text-[#444] dark:text-gray-200">同类调研</h2>
+          <ul className="mt-3 space-y-2">
+            {related.map((r) => (
+              <li key={r.slug}>
+                <Link
+                  href={`/articles/research/${r.category}/${r.slug}`}
+                  className="block rounded-md border border-transparent px-2 py-2 no-underline transition hover:border-[#e8dfd0] hover:bg-[#fdfcf9] dark:hover:border-gray-700 dark:hover:bg-gray-900"
+                >
+                  {r.date ? (
+                    <time className="font-mono text-[11px] text-[#999] dark:text-gray-500">{r.date}</time>
+                  ) : null}
+                  <span className="mt-1 block text-sm leading-5 text-[#333] dark:text-gray-200">
+                    {r.title}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </aside>
+  )
 }
 
 export async function generateMetadata({ params }) {
@@ -128,6 +192,7 @@ export default async function ResearchDetailPage({ params }) {
   })
   const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
+  const articleKey = `research:${entry.category}:${entry.slug}`
 
   // 相关阅读：同 category 其它条目，最近 3 篇
   const relatedPool = listResearchByCategory(entry.category).filter((e) => e.slug !== entry.slug)
@@ -194,7 +259,7 @@ export default async function ResearchDetailPage({ params }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
       <Script id={`research-jsonld-${entry.category}-${entry.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(structuredData)}
       </Script>
@@ -315,48 +380,23 @@ export default async function ResearchDetailPage({ params }) {
         ) : null}
       </header>
 
-      {isEncrypted ? (
-        <main>
-          <EncryptedArticle
-            payload={entry.encryptedPayload}
-            storageKey={`research-dec:${entry.category}:${entry.slug}`}
-          />
-        </main>
-      ) : (
-        <ResearchBody variants={renderedVariants} />
-      )}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+        <main className="order-2 min-w-0 lg:order-1">
+          {isEncrypted ? (
+            <EncryptedArticle
+              payload={entry.encryptedPayload}
+              storageKey={`research-dec:${entry.category}:${entry.slug}`}
+            />
+          ) : (
+            <ResearchBody variants={renderedVariants} />
+          )}
 
-      <div className="flex flex-col gap-6 md:flex-row">
-        <div className="hidden md:block md:w-52 shrink-0" aria-hidden="true" />
-        <main className="flex-1 min-w-0">
-          {related.length ? (
-            <section className="mx-auto mt-12 max-w-[72ch] border-t border-[#e8dfd0] pt-8 dark:border-gray-800">
-              <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
-                Related · 同类调研
-              </p>
-              <ul className="space-y-2">
-                {related.map((r) => (
-                  <li key={r.slug}>
-                    <Link
-                      href={`/articles/research/${r.category}/${r.slug}`}
-                      className="group flex items-baseline gap-3 rounded-lg border border-transparent px-3 py-2 no-underline transition hover:border-[#e8dfd0] hover:bg-white dark:hover:border-gray-800 dark:hover:bg-gray-900"
-                    >
-                      {r.date ? (
-                        <time className="font-mono text-[11px] text-[#999] dark:text-gray-500">{r.date}</time>
-                      ) : null}
-                      <span className="text-[15px] text-[#333] group-hover:text-[#111] dark:text-gray-200 dark:group-hover:text-white">
-                        {r.title}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <ArticleComments articleKey={`research:${entry.category}:${entry.slug}`} />
+          <div id="comments" className="scroll-mt-24">
+            <ArticleComments articleKey={articleKey} />
+          </div>
           <ArticleFooterCta />
         </main>
+        <ResearchEngagementPanel articleKey={articleKey} related={related} />
       </div>
     </div>
   )

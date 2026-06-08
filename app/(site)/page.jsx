@@ -2,7 +2,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { articles } from './articles/articlesData'
 import DaysSince from './components/DaysSince'
-import LatestMoments from './components/LatestMoments'
 import SiteFooter from './components/SiteFooter'
 import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
 import { listResearch } from '../../lib/research/loader'
@@ -89,27 +88,6 @@ export default function HomePage() {
       scope: 'bookmarks',
     },
   ]
-  const communities = [
-    { name: '掘金', reads: '219 万', fans: '1.3 万', href: 'https://juejin.cn/user/1521379823340792', color: '#111827', char: '掘' },
-    { name: '小红书', reads: '100 万', fans: '1.1 万', href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e', color: '#2563EB', char: '红' },
-    {
-      name: 'CSDN',
-      reads: '15 万',
-      fans: '1,735',
-      href: 'https://blog.csdn.net/aifs2025',
-      color: '#DC2626',
-      char: 'C',
-      detail: '主号：AI 架构 / 数字员工',
-      hoverDetail: '副号：前端周刊 / 笔记',
-    },
-    { name: '51CTO', reads: '16 万', fans: '276', href: 'https://blog.51cto.com/u_15298598', color: '#F97316', char: '51' },
-    { name: '知乎', reads: '35 万', fans: '350', href: 'https://www.zhihu.com/', color: '#14B8A6', char: '知' },
-    { name: '头条', reads: '12 万', fans: '692', href: 'https://www.toutiao.com/', color: '#EF4444', char: '头' },
-    { name: '公众号', reads: '1 万', fans: '2,676', href: '#qrcode-wechat-mp', color: '#22C55E', char: '信' },
-    { name: '微博', reads: '6,000', fans: '400', href: 'https://weibo.com/', color: '#F59E0B', char: '微' },
-  ]
-  const primaryCommunities = communities.slice(0, 3)
-  const secondaryCommunities = communities.slice(3)
   return (
     <div className="max-w-[1120px] w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
       <section className="flex-1 mb-14">
@@ -153,7 +131,7 @@ export default function HomePage() {
                   href="https://blogger-alliance.cn/"
                   target="_blank"
                   rel="noreferrer"
-                  className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#3a2c14] bg-[#3a2c14] px-3.5 py-2.5 no-underline shadow-[0_6px_18px_rgba(58,44,20,0.14)] transition-all hover:-translate-y-0.5 hover:bg-[#2a1f0e] hover:shadow-[0_10px_24px_rgba(58,44,20,0.2)] sm:w-auto sm:min-w-[280px] sm:max-w-[360px] dark:border-[#e8d4b4] dark:bg-[#e8d4b4] dark:hover:bg-[#f5e3c4]"
+                  className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#3a2c14] bg-[#3a2c14] px-3.5 py-2.5 no-underline shadow-[0_6px_18px_rgba(58,44,20,0.14)] transition-all hover:-translate-y-0.5 hover:bg-[#2a1f0e] hover:shadow-[0_10px_24px_rgba(58,44,20,0.2)] sm:w-auto sm:min-w-[230px] sm:max-w-[245px] dark:border-[#e8d4b4] dark:bg-[#e8d4b4] dark:hover:bg-[#f5e3c4]"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f0c776]/15 text-[#f0c776] dark:bg-[#3a2c14]/15 dark:text-[#3a2c14]">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -174,7 +152,7 @@ export default function HomePage() {
                   href="https://frontendnext.com/"
                   target="_blank"
                   rel="noreferrer"
-                  className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#d9d0c2] bg-white/75 px-3.5 py-2.5 no-underline transition-all hover:-translate-y-0.5 hover:border-[#b9ad94] hover:bg-white sm:w-auto sm:min-w-[280px] sm:max-w-[360px] dark:border-[#3a4757] dark:bg-[#151c25] dark:hover:border-[#5a6a7e] dark:hover:bg-[#1a2330]"
+                  className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#d9d0c2] bg-white/75 px-3.5 py-2.5 no-underline transition-all hover:-translate-y-0.5 hover:border-[#b9ad94] hover:bg-white sm:w-auto sm:min-w-[230px] sm:max-w-[245px] dark:border-[#3a4757] dark:bg-[#151c25] dark:hover:border-[#5a6a7e] dark:hover:bg-[#1a2330]"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f5efe1] text-[#8b5a1f] dark:bg-[#22303f] dark:text-[#e0b572]">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -191,21 +169,28 @@ export default function HomePage() {
                     </span>
                   </span>
                 </a>
+                <a
+                  href="https://publishlab.cc/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#d9d0c2] bg-white/75 px-3.5 py-2.5 no-underline transition-all hover:-translate-y-0.5 hover:border-[#b9ad94] hover:bg-white sm:w-auto sm:min-w-[230px] sm:max-w-[245px] dark:border-[#3a4757] dark:bg-[#151c25] dark:hover:border-[#5a6a7e] dark:hover:bg-[#1a2330]"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f5efe1] text-[#8b5a1f] dark:bg-[#22303f] dark:text-[#e0b572]">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M5 5h14v14H5zM8 9h8M8 13h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="flex min-w-0 flex-col text-left">
+                    <span className="flex items-center gap-1 text-[13.5px] font-semibold text-[#1d1a16] dark:text-gray-100">
+                      使用 PublishLab
+                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
+                    </span>
+                    <span className="mt-0.5 text-[11px] leading-snug text-[#7c7565] dark:text-[#8e98a8]">
+                      AI 写作 / 内容创作 / 数字出版
+                    </span>
+                  </span>
+                </a>
               </div>
-              <Link
-                href="/services"
-                className="group mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-[#e4dccf] bg-white/64 px-3 py-1.5 text-[12px] no-underline transition hover:border-[#cbb796] hover:bg-[#faf7f0] dark:border-[#2a3440] dark:bg-[#151c25]/72 dark:hover:border-[#3d4a5c] dark:hover:bg-[#18212c]"
-              >
-                <span className="rounded-full bg-[#eee7db] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-[#6b5d48] dark:bg-[#263241] dark:text-[#c8d2df]">
-                  合作
-                </span>
-                <span className="min-w-0 truncate font-medium text-[#5d554a] dark:text-[#c8d2df]">
-                  AI 咨询、调研定制、内容合作可以从这里看范围
-                </span>
-                <span className="font-mono text-[10px] text-[#8a7b65] opacity-70 transition group-hover:opacity-100 dark:text-[#9aa7b8]">
-                  →
-                </span>
-              </Link>
             </div>
 
           </div>
@@ -493,120 +478,6 @@ export default function HomePage() {
           </aside>
         </div>
 
-        <section id="follow-me" className="mt-6 scroll-mt-20 rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-              <div className="mb-5">
-                <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0]">
-                  Follow Me
-                </p>
-                <div className="flex flex-wrap items-end justify-between gap-2">
-                  <h2 className="home-section-title">关注我</h2>
-                  <span className="font-mono text-[11.5px] text-[#9c8f79] dark:text-[#8e9ab0]">
-                    500+ 篇 · 400 万阅读
-                  </span>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
-                {primaryCommunities.map((c, idx) => (
-                  <a
-                    key={c.name}
-                    href={c.href}
-                    target={c.href.startsWith('http') ? '_blank' : undefined}
-                    rel={c.href.startsWith('http') ? 'noreferrer' : undefined}
-                    style={{
-                      '--brand': c.color,
-                      '--brand-soft': `${c.color}16`,
-                    }}
-                    className="no-external-arrow group relative flex items-center gap-3 rounded-2xl border border-[#ebe5d8] bg-white/90 px-3 py-2.5 shadow-[0_4px_20px_rgba(82,69,45,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#d9cfbd] hover:shadow-[0_8px_28px_rgba(96,80,53,0.07)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
-                  >
-                    <span
-                      className="absolute right-3 top-2 font-mono text-[10px] font-medium tracking-[0.18em] text-[#d1cac0] dark:text-[#4a525c]"
-                      aria-hidden="true"
-                    >
-                      {String(idx + 1).padStart(2, '0')}
-                    </span>
-                    <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#e5e0d8] bg-[#ebe7df] font-mono text-[13px] font-bold tracking-tight text-[#6a6560] transition-all group-hover:border-transparent group-hover:bg-[color:var(--brand-soft)] group-hover:text-[color:var(--brand)] dark:border-[#2a3038] dark:bg-[#1a1f27] dark:text-[#7d8590] dark:group-hover:text-[color:var(--brand)]"
-                      aria-hidden="true"
-                    >
-                      {c.char}
-                    </span>
-                    <span className="flex min-w-0 flex-col">
-                      <span className="text-[14px] font-semibold leading-tight text-[#24211d] dark:text-gray-100">{c.name}</span>
-                      <span
-                        className="mt-1 whitespace-nowrap font-mono text-[10px] leading-tight text-[#b0a99e] dark:text-[#5c6370]"
-                        title={`阅读 ${c.reads} · 粉丝 ${c.fans}`}
-                      >
-                        <span className="font-normal text-[#9c9488] dark:text-[#6d737d]">{c.reads}</span>
-                        <span className="mx-1 text-[#ddd8cf] dark:text-gray-600">·</span>
-                        <span className="text-[#a8a199] dark:text-[#5f6670]">{c.fans} 粉</span>
-                      </span>
-                      {c.detail ? (
-                        <span className="mt-1 text-[10px] leading-4 text-[#aaa18f] transition-colors group-hover:text-[#7f7667] dark:text-[#66707d] dark:group-hover:text-[#a5afbc]">
-                          {c.detail}
-                          {c.hoverDetail ? (
-                            <span className="hidden group-hover:inline"> · {c.hoverDetail}</span>
-                          ) : null}
-                        </span>
-                      ) : null}
-                    </span>
-                  </a>
-                ))}
-              </div>
-              <div className="mt-3 rounded-2xl border border-[#ece5d8] bg-white/70 p-3 dark:border-[#232c36] dark:bg-[#121821]/60">
-                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#8e9ab0]">
-                  其它平台
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {secondaryCommunities.map((c) => (
-                    <a
-                      key={c.name}
-                      href={c.href}
-                      target={c.href.startsWith('http') ? '_blank' : undefined}
-                      rel={c.href.startsWith('http') ? 'noreferrer' : undefined}
-                      className="no-external-arrow inline-flex items-center rounded-full border border-[#e4dccf] bg-[#faf8f3] px-2.5 py-1 text-[12px] font-medium text-[#5e574c] no-underline transition hover:border-[#cfc2ad] hover:text-[#221d16] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6] dark:hover:border-[#435062] dark:hover:text-gray-100"
-                    >
-                      {c.name}
-                    </a>
-                  ))}
-                </div>
-              </div>
-              <div id="qrcode-wechat-mp" className="mt-3 grid grid-cols-2 gap-3 rounded-2xl border border-[#ece5d8] bg-white/70 p-3 dark:border-[#232c36] dark:bg-[#121821]/60">
-                <div className="col-span-2 min-w-0">
-                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#8e9ab0]">Direct</p>
-                  <p className="mb-1 flex items-baseline gap-2 text-[14px] text-[#3d362b] dark:text-gray-200">
-                    <span className="text-[#888] dark:text-gray-400">微信</span>
-                    <span className="font-mono font-semibold text-[#1d1a16] dark:text-gray-100">atar24</span>
-                  </p>
-                  <p className="mb-0 text-[12px] leading-5 text-[#85806f] dark:text-[#8a93a3]">
-                    微信号与二维码如下。
-                  </p>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <Image
-                    src="/qrcodewechat3.png"
-                    alt="扫码加好友二维码"
-                    width={72}
-                    height={72}
-                    className="h-[72px] w-[72px] rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
-                  />
-                  <span className="font-mono text-[10px] tracking-[0.14em] text-[#9c8f79] dark:text-[#8e9ab0]">加好友</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <Image
-                    src="/qrcode_for_gh.jpg"
-                    alt="公众号二维码"
-                    width={72}
-                    height={72}
-                    className="h-[72px] w-[72px] rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
-                  />
-                  <span className="font-mono text-[10px] tracking-[0.14em] text-[#9c8f79] dark:text-[#8e9ab0]">公众号</span>
-                </div>
-              </div>
-            </section>
-
-        <section className="mt-6 rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-          <LatestMoments />
-        </section>
       </section>
 
       <section>

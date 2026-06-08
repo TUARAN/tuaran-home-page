@@ -1,9 +1,11 @@
 import { ImageResponse } from 'next/og'
 
+import { avatarAbsoluteUrl } from '../../../../../../lib/avatar'
 import { CATEGORY_META, RESEARCH_CATEGORIES } from '../../../../../../lib/research/categories'
 import { RESEARCH_ENTRY_META } from '../../../../../../lib/research/catalog'
 
 const SITE_URL = 'https://2aran.com'
+const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 
 export const alt = '涂阿燃 · 调研'
 export const size = { width: 1200, height: 630 }
@@ -94,7 +96,7 @@ export default async function ResearchOgImage({ params }) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={`${SITE_URL}/tuaranme.png`}
+            src={AVATAR_URL}
             width={220}
             height={220}
             alt=""

@@ -17,6 +17,7 @@ export const metadata = {
     '数字员工',
     '博主联盟',
     '前端周看',
+    'PublishLab',
   ],
   alternates: { canonical: '/services' },
 }
@@ -68,6 +69,11 @@ const productLinks = [
     href: 'https://frontendnext.com/',
     label: '前端周看',
     desc: '前端、AI Agent 与大模型技术情报站',
+  },
+  {
+    href: 'https://publishlab.cc/',
+    label: 'PublishLab',
+    desc: 'AI 写作、内容创作与数字出版实验',
   },
 ]
 
@@ -171,9 +177,9 @@ export default function ServicesPage() {
           Related Products
         </p>
         <h2 className="mb-4 font-serif text-[1.35rem] font-semibold tracking-wide text-[#221f19] dark:text-gray-100">
-          也可以直接看两个长期项目
+          也可以直接看三个长期项目
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-3">
           {productLinks.map((item) => (
             <a
               key={item.href}

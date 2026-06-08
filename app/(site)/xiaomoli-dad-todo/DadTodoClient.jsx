@@ -367,15 +367,18 @@ export default function DadTodoClient() {
               onToggle={toggle}
             />
 
-            <HistoryFold
+            <CalendarFold
               user={user}
-              authLoading={authLoading}
               calView={calView}
               setCalView={setCalView}
               selectedYmd={selectedYmd}
               setSelectedYmd={setSelectedYmd}
               dayCountByYmd={dayCountByYmd}
               loadingMonth={loadingMonth}
+            />
+
+            <StatsFold
+              user={user}
               barBoardRows={barBoardRows}
               boardRange={boardRange}
               loadingBoard={loadingBoard}
@@ -593,28 +596,14 @@ function TodoPill({ item, done, busy, disabled, onToggle }) {
   )
 }
 
-function HistoryFold({
-  user,
-  authLoading,
-  calView,
-  setCalView,
-  selectedYmd,
-  setSelectedYmd,
-  dayCountByYmd,
-  loadingMonth,
-  barBoardRows,
-  boardRange,
-  loadingBoard,
-  useRemote,
-  sumAll,
-  windowDays,
-}) {
+/** 一个可折叠区块的通用外壳，统一 summary 样式。 */
+function FoldShell({ title, accentClass = 'bg-[#b0a99c]', className = 'mt-3', children }) {
   return (
-    <details className="group mt-5 rounded-2xl border border-[#e8e0d0] bg-white/60 dark:border-[#252d38] dark:bg-[#121820]/70">
+    <details className={`group ${className} rounded-2xl border border-[#e8e0d0] bg-white/60 dark:border-[#252d38] dark:bg-[#121820]/70`}>
       <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-[0.85rem] font-medium text-[#5c5348] transition hover:text-[#221f19] dark:text-gray-300 dark:hover:text-gray-100">
         <span className="flex items-center gap-2">
-          <span aria-hidden="true" className="inline-block h-[7px] w-[7px] rounded-full bg-[#b0a99c]" />
-          历史 · 日历与统计
+          <span aria-hidden="true" className={`inline-block h-[7px] w-[7px] rounded-full ${accentClass}`} />
+          {title}
         </span>
         <span
           aria-hidden="true"
@@ -623,73 +612,95 @@ function HistoryFold({
           ▾
         </span>
       </summary>
-      <div className="space-y-4 px-3 pb-4">
-        <DadCheckinCalendar
-          user={user}
-          authLoading={authLoading}
-          view={calView}
-          onViewChange={setCalView}
-          selectedYmd={selectedYmd}
-          onSelectYmd={setSelectedYmd}
-          dayCountByYmd={dayCountByYmd}
-          loadingMonth={loadingMonth}
-        />
-        <div className="rounded-xl border border-[#e8e0d0] bg-white/70 px-3.5 py-3 dark:border-[#252d38] dark:bg-[#121820]/80">
-          <div className="mb-2 flex items-baseline justify-between gap-2">
-            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#9a8f7f] dark:text-gray-500">
-              近 {windowDays} 天
+      <div className="px-3 pb-4">{children}</div>
+    </details>
+  )
+}
+
+/** 折叠区 1：日历（换日期 / 回看哪天打过卡）。 */
+function CalendarFold({
+  user,
+  calView,
+  setCalView,
+  selectedYmd,
+  setSelectedYmd,
+  dayCountByYmd,
+  loadingMonth,
+}) {
+  return (
+    <FoldShell title="翻看日历" className="mt-5">
+      <DadCheckinCalendar
+        user={user}
+        view={calView}
+        onViewChange={setCalView}
+        selectedYmd={selectedYmd}
+        onSelectYmd={setSelectedYmd}
+        dayCountByYmd={dayCountByYmd}
+        loadingMonth={loadingMonth}
+      />
+    </FoldShell>
+  )
+}
+
+/** 折叠区 2：最近 30 天柱状图。 */
+function StatsFold({ user, barBoardRows, boardRange, loadingBoard, useRemote, sumAll, windowDays }) {
+  return (
+    <FoldShell title={`最近 ${windowDays} 天 · 统计`}>
+      <div className="rounded-xl border border-[#e8e0d0] bg-white/70 px-3.5 py-3 dark:border-[#252d38] dark:bg-[#121820]/80">
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#9a8f7f] dark:text-gray-500">
+            近 {windowDays} 天
+          </p>
+          {boardRange.start && boardRange.end ? (
+            <p className="font-mono text-[10.5px] text-[#b0a99c] dark:text-gray-500">
+              {boardRange.start} ～ {boardRange.end}
             </p>
-            {boardRange.start && boardRange.end ? (
-              <p className="font-mono text-[10.5px] text-[#b0a99c] dark:text-gray-500">
-                {boardRange.start} ～ {boardRange.end}
-              </p>
-            ) : loadingBoard && user && useRemote ? (
-              <p className="text-[10.5px] text-[#b0a99c]">加载中…</p>
-            ) : null}
-          </div>
-          <div
-            className="space-y-1.5"
-            role="img"
-            aria-label={
-              user && useRemote
-                ? `最近 ${windowDays} 天合计 ${sumAll} 次，满额 ${windowDays * DAD_TODO_TOTAL} 人次`
-                : '进度看板'
-            }
-          >
-            {barBoardRows.map((row) => {
-              const pct = row.total > 0 ? Math.round((row.done / row.total) * 100) : 0
-              const isAll = row.key === 'all'
-              return (
-                <div key={row.key} className="flex items-center gap-2.5 text-[0.72rem]">
-                  <span
-                    className={`w-10 shrink-0 ${
+          ) : loadingBoard && user && useRemote ? (
+            <p className="text-[10.5px] text-[#b0a99c]">加载中…</p>
+          ) : null}
+        </div>
+        <div
+          className="space-y-1.5"
+          role="img"
+          aria-label={
+            user && useRemote
+              ? `最近 ${windowDays} 天合计 ${sumAll} 次，满额 ${windowDays * DAD_TODO_TOTAL} 人次`
+              : '进度看板'
+          }
+        >
+          {barBoardRows.map((row) => {
+            const pct = row.total > 0 ? Math.round((row.done / row.total) * 100) : 0
+            const isAll = row.key === 'all'
+            return (
+              <div key={row.key} className="flex items-center gap-2.5 text-[0.72rem]">
+                <span
+                  className={`w-10 shrink-0 ${
+                    isAll
+                      ? 'font-semibold text-[#2d261d] dark:text-gray-200'
+                      : 'text-[#8a7f6f] dark:text-gray-400'
+                  }`}
+                >
+                  {row.short}
+                </span>
+                <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[#ece4d6] dark:bg-[#1a222c]">
+                  <div
+                    className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-300 ${
                       isAll
-                        ? 'font-semibold text-[#2d261d] dark:text-gray-200'
-                        : 'text-[#8a7f6f] dark:text-gray-400'
+                        ? 'bg-gradient-to-r from-[#2d4a78] to-[#4a6fa5] dark:from-[#2a4570] dark:to-[#5a7ab0]'
+                        : 'bg-gradient-to-r from-[#5a8cc9] to-[#7fa8d4] dark:from-[#3d5a8a] dark:to-[#5a7ab0]'
                     }`}
-                  >
-                    {row.short}
-                  </span>
-                  <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[#ece4d6] dark:bg-[#1a222c]">
-                    <div
-                      className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-300 ${
-                        isAll
-                          ? 'bg-gradient-to-r from-[#2d4a78] to-[#4a6fa5] dark:from-[#2a4570] dark:to-[#5a7ab0]'
-                          : 'bg-gradient-to-r from-[#5a8cc9] to-[#7fa8d4] dark:from-[#3d5a8a] dark:to-[#5a7ab0]'
-                      }`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="w-14 shrink-0 text-right tabular-nums text-[#2d261d] dark:text-gray-200">
-                    <span className="font-semibold">{row.done}</span>
-                    <span className="text-[#b0a99c] dark:text-gray-500"> / {row.total}</span>
-                  </span>
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
-              )
-            })}
-          </div>
+                <span className="w-14 shrink-0 text-right tabular-nums text-[#2d261d] dark:text-gray-200">
+                  <span className="font-semibold">{row.done}</span>
+                  <span className="text-[#b0a99c] dark:text-gray-500"> / {row.total}</span>
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
-    </details>
+    </FoldShell>
   )
 }

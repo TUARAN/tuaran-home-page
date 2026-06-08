@@ -1,6 +1,9 @@
 import './globals.css'
 
+import { avatarAbsoluteUrl } from '../lib/avatar'
+
 const SITE_URL = 'https://2aran.com'
+const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
 const SITE_DESCRIPTION =
   '2aran.com 是涂阿燃（安东尼）的个人主页与网络日志：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
@@ -37,7 +40,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: `${SITE_URL}/tuaranme.png`,
+        url: AVATAR_URL,
         width: 512,
         height: 512,
         alt: '涂阿燃（掘金安东尼）头像',
@@ -49,7 +52,7 @@ export const metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     creator: '@Anthony404',
-    images: [`${SITE_URL}/tuaranme.png`],
+    images: [AVATAR_URL],
   },
   robots: {
     index: true,

@@ -147,9 +147,10 @@ function compactName(name) {
 
 const GRAPH_WIDTH = 1060
 const GRAPH_HEIGHT = 760
-const GRAPH_MIN_SCALE = 0.75
+const GRAPH_MIN_SCALE = 0.5
 const GRAPH_MAX_SCALE = 2.25
 const GRAPH_SCALE_STEP = 0.25
+const GRAPH_DEFAULT_SCALE = 0.75
 
 function clampGraphScale(value) {
   return Math.min(GRAPH_MAX_SCALE, Math.max(GRAPH_MIN_SCALE, value))
@@ -200,7 +201,7 @@ export default function ProjectPortfolioConsole({ user }) {
   const [selected, setSelected] = useState('blogger-alliance')
   const [actionFilter, setActionFilter] = useState('all')
   const [query, setQuery] = useState('')
-  const [graphScale, setGraphScale] = useState(1)
+  const [graphScale, setGraphScale] = useState(GRAPH_DEFAULT_SCALE)
   const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
   const [isGraphDragging, setIsGraphDragging] = useState(false)
   const graphFrameRef = useRef(null)
@@ -406,7 +407,7 @@ export default function ProjectPortfolioConsole({ user }) {
                   onClick={() => updateGraphScale(graphScale + GRAPH_SCALE_STEP)}
                   disabled={graphScale >= GRAPH_MAX_SCALE}
                 />
-                <GraphControlButton label="重置缩放" icon="reset" onClick={() => updateGraphScale(1)} disabled={graphScale === 1} />
+                <GraphControlButton label="重置缩放" icon="reset" onClick={() => updateGraphScale(GRAPH_DEFAULT_SCALE)} disabled={graphScale === GRAPH_DEFAULT_SCALE} />
                 <GraphControlButton
                   label={isGraphFullscreen ? '退出全屏' : '全屏查看关系图'}
                   icon={isGraphFullscreen ? 'exitFullscreen' : 'fullscreen'}

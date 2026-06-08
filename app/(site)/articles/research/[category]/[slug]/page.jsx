@@ -391,13 +391,14 @@ export default async function ResearchDetailPage({ params }) {
             <ResearchBody variants={renderedVariants} />
           )}
 
-          <div id="comments" className="scroll-mt-24">
-            <ArticleComments articleKey={articleKey} />
-          </div>
-          <ArticleFooterCta />
         </main>
         <ResearchEngagementPanel articleKey={articleKey} related={related} />
       </div>
+
+      <div id="comments" className="scroll-mt-24">
+        <ArticleComments articleKey={articleKey} />
+      </div>
+      <ArticleFooterCta />
     </div>
   )
 }

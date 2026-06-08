@@ -474,6 +474,32 @@ export default function HomePage() {
                     </Link>
                   ))}
                 </div>
+
+                {/* 微信加好友 + 公众号二维码 */}
+                <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-[#e4dccf] bg-white/70 p-3 dark:border-[#303947] dark:bg-[#151c25]">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Image
+                      src="/qrcodewechat3.png"
+                      alt="扫码加好友二维码"
+                      width={80}
+                      height={80}
+                      className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
+                    />
+                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#9c8f79] dark:text-[#8e9ab0]">加好友</span>
+                    <span className="font-mono text-[10px] text-[#3d362b] dark:text-gray-200">atar24</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Image
+                      src="/qrcode_for_gh.jpg"
+                      alt="公众号二维码"
+                      width={80}
+                      height={80}
+                      className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
+                    />
+                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#9c8f79] dark:text-[#8e9ab0]">公众号</span>
+                    <span className="font-mono text-[10px] text-[#3d362b] dark:text-gray-200">2aran</span>
+                  </div>
+                </div>
               </div>
             </section>
           </aside>

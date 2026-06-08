@@ -35,13 +35,20 @@ function getVisitorKey() {
   }
 }
 
-// 把后端错误码翻译成用户能理解的短句；只有「该让用户知道」的才显示。
-// DB 不可用 / 5xx / 后端 internal 这类，对终端用户无意义——静默处理。
+// 把后端错误码翻译成用户能理解的短句。
+// 之前对 5xx / INTERNAL_SERVER_ERROR 完全静默，结果点了没反应又不知道为什么——
+// 现在 5xx 类一律提示"稍后重试"，让用户知道是后端问题不是点没点上。
 function translateError(raw) {
   if (!raw) return ''
   const code = String(raw)
   if (code === 'VISITOR_KEY_UNAVAILABLE') return '请允许浏览器存储后重试'
   if (code === 'RATE_LIMITED') return '操作太频繁，稍后再试'
+  if (code === 'INVALID_ARTICLE_KEY' || code === 'INVALID_VISITOR_KEY') return ''
+  if (/^HTTP_(5|429)/.test(code) || code.includes('INTERNAL') || code.includes('UNAVAILABLE')) {
+    return '服务暂不可用，稍后重试'
+  }
+  if (/^HTTP_4/.test(code)) return '请求被拒绝'
+  if (code === 'FETCH_FAILED' || code === 'LIKE_FAILED') return '网络异常，稍后重试'
   return ''
 }
 

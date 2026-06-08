@@ -244,13 +244,13 @@ export default function ResearchBody({ variants }) {
           </aside>
         ) : null}
 
-        <main className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0">
           <article
             key={active.id}
             className="prose-tuaran"
             dangerouslySetInnerHTML={{ __html: active.html }}
           />
-        </main>
+        </div>
       </div>
     </>
   )

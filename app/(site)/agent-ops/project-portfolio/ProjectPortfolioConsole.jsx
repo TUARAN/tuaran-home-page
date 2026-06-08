@@ -202,7 +202,10 @@ export default function ProjectPortfolioConsole({ user }) {
   const [query, setQuery] = useState('')
   const [graphScale, setGraphScale] = useState(1)
   const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
+  const [isGraphDragging, setIsGraphDragging] = useState(false)
   const graphFrameRef = useRef(null)
+  const graphDragRef = useRef(null)
+  const suppressGraphClickRef = useRef(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -248,6 +251,57 @@ export default function ProjectPortfolioConsole({ user }) {
     }
 
     await element.requestFullscreen()
+  }
+
+  function handleGraphPointerDown(event) {
+    if (event.button !== 0) return
+
+    graphDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: event.currentTarget.scrollLeft,
+      scrollTop: event.currentTarget.scrollTop,
+      moved: false,
+    }
+    setIsGraphDragging(true)
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  function handleGraphPointerMove(event) {
+    const drag = graphDragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+
+    const deltaX = event.clientX - drag.startX
+    const deltaY = event.clientY - drag.startY
+    if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+      drag.moved = true
+    }
+
+    event.currentTarget.scrollLeft = drag.scrollLeft - deltaX
+    event.currentTarget.scrollTop = drag.scrollTop - deltaY
+    event.preventDefault()
+  }
+
+  function handleGraphPointerEnd(event) {
+    const drag = graphDragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    graphDragRef.current = null
+    setIsGraphDragging(false)
+
+    if (drag.moved) {
+      suppressGraphClickRef.current = true
+      setTimeout(() => {
+        suppressGraphClickRef.current = false
+      }, 0)
+    }
+  }
+
+  function handleGraphNodeClick(projectId) {
+    if (suppressGraphClickRef.current) return
+    setSelected(projectId)
   }
 
   return (
@@ -334,7 +388,7 @@ export default function ProjectPortfolioConsole({ user }) {
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
               <div>
                 <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
-                <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">箭头表示吸收、服务、迁移或归档关系</span>
+                <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">拖拽画布移动；箭头表示吸收、服务、迁移或归档关系</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <GraphControlButton
@@ -360,7 +414,16 @@ export default function ProjectPortfolioConsole({ user }) {
                 />
               </div>
             </div>
-            <div className={`overflow-auto p-4 ${isGraphFullscreen ? 'min-h-0 flex-1' : 'max-h-[760px]'}`}>
+            <div
+              className={`select-none overflow-auto p-4 touch-none ${
+                isGraphDragging ? 'cursor-grabbing' : 'cursor-grab'
+              } ${isGraphFullscreen ? 'min-h-0 flex-1' : 'max-h-[760px]'}`}
+              onPointerDown={handleGraphPointerDown}
+              onPointerMove={handleGraphPointerMove}
+              onPointerUp={handleGraphPointerEnd}
+              onPointerCancel={handleGraphPointerEnd}
+              onPointerLeave={handleGraphPointerEnd}
+            >
               <svg
                 className="block"
                 width={GRAPH_WIDTH * graphScale}
@@ -398,7 +461,7 @@ export default function ProjectPortfolioConsole({ user }) {
                   const isSelected = selected === project.id
                   const isCore = project.action === 'core'
                   return (
-                    <g key={project.id} transform={`translate(${x}, ${y})`} className="cursor-pointer" onClick={() => setSelected(project.id)}>
+                    <g key={project.id} transform={`translate(${x}, ${y})`} className="cursor-pointer" onClick={() => handleGraphNodeClick(project.id)}>
                       <rect
                         width="150"
                         height="58"

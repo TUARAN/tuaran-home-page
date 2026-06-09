@@ -131,6 +131,17 @@ const nextConfig = {
         destination: '/reading?tab=philosophy',
         permanent: true,
       },
+      {
+        // D1 vs Supabase 两篇调研已合并为单篇双 tab
+        source: '/articles/research/topics/cloudflare-d1-vs-supabase-vibe-coding',
+        destination: '/articles/research/topics/cloudflare-d1-vs-supabase?v=cursor',
+        permanent: true,
+      },
+      {
+        source: '/articles/research/topics/2026-06-09-cloudflare-d1-vs-supabase-vibe-coding',
+        destination: '/articles/research/topics/cloudflare-d1-vs-supabase?v=cursor',
+        permanent: true,
+      },
     ]
   },
   images: {

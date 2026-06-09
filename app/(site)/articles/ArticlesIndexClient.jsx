@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import { getCompanyTypeFilters, getTopicTypeFilters } from '../../../lib/research/categories'
 
 const TAB_DEFS = [
@@ -627,6 +628,7 @@ function ArticleRow({ item }) {
                 加密
               </span>
             ) : null}
+            <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
             {item.version ? (
               <span className="inline-flex shrink-0 items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
                 {item.version}
@@ -730,6 +732,7 @@ function HighlightLink({ item }) {
         >
           {item.tagLabel}
         </span>
+        <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
         {item.date ? (
           <span className="shrink-0 font-mono text-[10px] text-[#aaa093] dark:text-gray-500">{item.date}</span>
         ) : null}

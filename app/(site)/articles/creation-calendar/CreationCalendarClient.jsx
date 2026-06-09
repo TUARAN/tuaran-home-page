@@ -147,10 +147,10 @@ export default function CreationCalendarClient({ items }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
-              创作日历
+              站内创作日历
             </h1>
             <p className="mt-2 text-sm text-[#666] dark:text-gray-300">
-              这里按时间观察知识库的更新节奏，可像 GitHub 热力图一样查看每天的发布密度。
+              这里按时间观察本站知识库的更新节奏（不含外部掘金专栏），可像 GitHub 热力图一样查看每天的发布密度。
             </p>
           </div>
           <Link

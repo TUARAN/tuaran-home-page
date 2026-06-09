@@ -30,7 +30,7 @@ const RESEARCH_KINDS = new Set(RESEARCH_KIND_KEYS)
 const TAB_KEYS = [...TAB_DEFS.map((t) => t.key), ...RESEARCH_KIND_KEYS]
 
 const QUICK_LINKS = [
-  { label: '创作日历', href: '/articles/creation-calendar' },
+  { label: '站内创作日历', href: '/articles/creation-calendar' },
   { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/', external: true },
 ]
 

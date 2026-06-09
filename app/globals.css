@@ -146,6 +146,30 @@
     @apply [&_.research-inline-image_img]:m-0 [&_.research-inline-image_img]:aspect-[16/9] [&_.research-inline-image_img]:h-auto [&_.research-inline-image_img]:w-full [&_.research-inline-image_img]:object-cover;
     @apply [&_.research-inline-image_figcaption]:m-0 [&_.research-inline-image_figcaption]:border-t [&_.research-inline-image_figcaption]:border-[#e8dfd0] dark:[&_.research-inline-image_figcaption]:border-gray-800;
     @apply [&_.research-inline-image_figcaption]:px-3 [&_.research-inline-image_figcaption]:py-2 [&_.research-inline-image_figcaption]:text-[11px] [&_.research-inline-image_figcaption]:text-[#8d806d] dark:[&_.research-inline-image_figcaption]:text-gray-400;
+
+    @apply [&_.research-inline-diagram]:my-8 [&_.research-inline-diagram]:overflow-hidden;
+    @apply [&_.research-inline-diagram]:rounded-md [&_.research-inline-diagram]:border [&_.research-inline-diagram]:border-[#e8dfd0] dark:[&_.research-inline-diagram]:border-gray-800;
+    @apply [&_.research-inline-diagram]:bg-white dark:[&_.research-inline-diagram]:bg-gray-900;
+    @apply [&_.research-inline-diagram]:text-center;
+    @apply [&_.research-inline-diagram_svg]:mx-auto [&_.research-inline-diagram_svg]:block [&_.research-inline-diagram_svg]:h-auto [&_.research-inline-diagram_svg]:w-full [&_.research-inline-diagram_svg]:max-w-[780px];
+    @apply [&_.research-inline-diagram_figcaption]:m-0 [&_.research-inline-diagram_figcaption]:border-t [&_.research-inline-diagram_figcaption]:border-[#e8dfd0] dark:[&_.research-inline-diagram_figcaption]:border-gray-800;
+    @apply [&_.research-inline-diagram_figcaption]:px-3 [&_.research-inline-diagram_figcaption]:py-2 [&_.research-inline-diagram_figcaption]:text-[11px] [&_.research-inline-diagram_figcaption]:text-[#8d806d] dark:[&_.research-inline-diagram_figcaption]:text-gray-400;
+
+    @apply [&_.research-inline-diagram_.mm-center]:fill-[#4a6fa5];
+    @apply [&_.research-inline-diagram_.mm-center_text]:fill-white [&_.research-inline-diagram_.mm-center_text]:font-semibold;
+    @apply [&_.research-inline-diagram_.mm-branch]:fill-[#f5f0e6] [&_.research-inline-diagram_.mm-branch]:stroke-[#d4c8b0];
+    @apply [&_.research-inline-diagram_.mm-branch_text]:fill-[#221d16] [&_.research-inline-diagram_.mm-branch_text]:font-semibold;
+    @apply [&_.research-inline-diagram_.mm-leaf]:fill-[#fcfaf3] [&_.research-inline-diagram_.mm-leaf]:stroke-[#ddd2b8];
+    @apply [&_.research-inline-diagram_.mm-leaf_text]:fill-[#3d362b];
+    @apply [&_.research-inline-diagram_.mm-line]:fill-none [&_.research-inline-diagram_.mm-line]:stroke-[#c4b8a8] [&_.research-inline-diagram_.mm-line]:[stroke-width:1.5];
+    @apply [&_.research-inline-diagram_.mm-label]:font-sans [&_.research-inline-diagram_.mm-label]:text-[13px];
+
+    @apply dark:[&_.research-inline-diagram_.mm-center]:fill-[#5b7fb8];
+    @apply dark:[&_.research-inline-diagram_.mm-branch]:fill-[#2a2620] dark:[&_.research-inline-diagram_.mm-branch]:stroke-[#4a4438];
+    @apply dark:[&_.research-inline-diagram_.mm-branch_text]:fill-[#e8e4dc];
+    @apply dark:[&_.research-inline-diagram_.mm-leaf]:fill-[#1f1c18] dark:[&_.research-inline-diagram_.mm-leaf]:stroke-[#3d3830];
+    @apply dark:[&_.research-inline-diagram_.mm-leaf_text]:fill-[#c8c2b8];
+    @apply dark:[&_.research-inline-diagram_.mm-line]:stroke-[#5a5348];
   }
 
   /* 宽表格在 H5 下横向滚动：用块级容器承载滚动，切断 table min-content 对父级宽度的传导 */

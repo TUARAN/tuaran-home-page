@@ -23,6 +23,111 @@ model: claude-opus-4-7
 
 本文围绕「站长的脑图」（连接器 / 技能 / 思路）三个维度展开，论证这条赛道在 2026 国内对个人开发者的真实可行性。
 
+<figure class="research-inline-diagram">
+<svg viewBox="0 0 760 600" role="img" aria-label="workbuddy + 消息 脑图：连接器 / 技能 / 思路 三支">
+<g class="mm-center">
+<rect x="20" y="270" width="160" height="44" rx="10"/>
+<text x="100" y="298" text-anchor="middle" class="mm-label" font-size="15">workbuddy + 消息</text>
+</g>
+<path class="mm-line" d="M180 292 C 210 292, 210 78, 240 78"/>
+<g class="mm-branch">
+<rect x="240" y="60" width="80" height="36" rx="8" stroke-width="1.2"/>
+<text x="280" y="84" text-anchor="middle" class="mm-label">连接器</text>
+</g>
+<path class="mm-line" d="M320 78 C 350 78, 350 54, 380 54"/>
+<g class="mm-leaf">
+<rect x="380" y="40" width="80" height="28" rx="6" stroke-width="1"/>
+<text x="420" y="60" text-anchor="middle" class="mm-label">mcp?</text>
+</g>
+<path class="mm-line" d="M320 78 C 350 78, 350 104, 380 104"/>
+<g class="mm-leaf">
+<rect x="380" y="90" width="100" height="28" rx="6" stroke-width="1"/>
+<text x="430" y="110" text-anchor="middle" class="mm-label">channel?</text>
+</g>
+<path class="mm-line" d="M180 292 L 240 292"/>
+<g class="mm-branch">
+<rect x="240" y="274" width="80" height="36" rx="8" stroke-width="1.2"/>
+<text x="280" y="298" text-anchor="middle" class="mm-label">技能</text>
+</g>
+<path class="mm-line" d="M320 292 C 350 292, 350 170, 380 170"/>
+<g class="mm-leaf">
+<rect x="380" y="156" width="90" height="28" rx="6" stroke-width="1"/>
+<text x="425" y="176" text-anchor="middle" class="mm-label">发自己?</text>
+</g>
+<path class="mm-line" d="M470 170 L 520 170"/>
+<g class="mm-leaf">
+<rect x="520" y="156" width="120" height="28" rx="6" stroke-width="1"/>
+<text x="580" y="176" text-anchor="middle" class="mm-label">还要授权…</text>
+</g>
+<path class="mm-line" d="M320 292 C 350 292, 350 250, 380 250"/>
+<g class="mm-leaf">
+<rect x="380" y="236" width="90" height="28" rx="6" stroke-width="1"/>
+<text x="425" y="256" text-anchor="middle" class="mm-label">发他人?</text>
+</g>
+<path class="mm-line" d="M470 250 C 495 250, 495 230, 520 230"/>
+<g class="mm-leaf">
+<rect x="520" y="216" width="70" height="28" rx="6" stroke-width="1"/>
+<text x="555" y="236" text-anchor="middle" class="mm-label">授权</text>
+</g>
+<path class="mm-line" d="M470 250 C 495 250, 495 274, 520 274"/>
+<g class="mm-leaf">
+<rect x="520" y="260" width="70" height="28" rx="6" stroke-width="1"/>
+<text x="555" y="280" text-anchor="middle" class="mm-label">不授权</text>
+</g>
+<path class="mm-line" d="M320 292 C 350 292, 350 372, 380 372"/>
+<g class="mm-leaf">
+<rect x="380" y="358" width="80" height="28" rx="6" stroke-width="1"/>
+<text x="420" y="378" text-anchor="middle" class="mm-label">群发</text>
+</g>
+<path class="mm-line" d="M460 372 C 490 372, 490 352, 520 352"/>
+<g class="mm-leaf">
+<rect x="520" y="338" width="80" height="28" rx="6" stroke-width="1"/>
+<text x="560" y="358" text-anchor="middle" class="mm-label">通讯录</text>
+</g>
+<path class="mm-line" d="M600 352 C 625 352, 625 332, 650 332"/>
+<g class="mm-leaf">
+<rect x="650" y="318" width="70" height="28" rx="6" stroke-width="1"/>
+<text x="685" y="338" text-anchor="middle" class="mm-label">云盘</text>
+</g>
+<path class="mm-line" d="M600 352 C 625 352, 625 372, 650 372"/>
+<g class="mm-leaf">
+<rect x="650" y="358" width="70" height="28" rx="6" stroke-width="1"/>
+<text x="685" y="378" text-anchor="middle" class="mm-label">办公</text>
+</g>
+<path class="mm-line" d="M460 372 C 490 372, 490 412, 520 412"/>
+<g class="mm-leaf">
+<rect x="520" y="398" width="90" height="28" rx="6" stroke-width="1"/>
+<text x="565" y="418" text-anchor="middle" class="mm-label">发送内容</text>
+</g>
+<path class="mm-line" d="M180 292 C 210 292, 210 510, 240 510"/>
+<g class="mm-branch">
+<rect x="240" y="492" width="80" height="36" rx="8" stroke-width="1.2"/>
+<text x="280" y="516" text-anchor="middle" class="mm-label">思路</text>
+</g>
+<path class="mm-line" d="M320 510 C 350 510, 350 486, 380 486"/>
+<g class="mm-leaf">
+<rect x="380" y="472" width="100" height="28" rx="6" stroke-width="1"/>
+<text x="430" y="492" text-anchor="middle" class="mm-label">还有必要?</text>
+</g>
+<path class="mm-line" d="M320 510 C 350 510, 350 552, 380 552"/>
+<g class="mm-leaf">
+<rect x="380" y="538" width="80" height="28" rx="6" stroke-width="1"/>
+<text x="420" y="558" text-anchor="middle" class="mm-label">辅助?</text>
+</g>
+<path class="mm-line" d="M460 552 C 490 552, 490 534, 520 534"/>
+<g class="mm-leaf">
+<rect x="520" y="520" width="80" height="28" rx="6" stroke-width="1"/>
+<text x="560" y="540" text-anchor="middle" class="mm-label">强提醒?</text>
+</g>
+<path class="mm-line" d="M460 552 C 490 552, 490 572, 520 572"/>
+<g class="mm-leaf">
+<rect x="520" y="558" width="70" height="28" rx="6" stroke-width="1"/>
+<text x="555" y="578" text-anchor="middle" class="mm-label">双发?</text>
+</g>
+</svg>
+<figcaption>脑图原稿：连接器 · 技能 · 思路 三支</figcaption>
+</figure>
+
 ## 二、为什么重要：SMS 在 2026 的不可替代性
 
 很多人觉得"短信都死了，谁还看"。**数据相反**：

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
 import SharePageButton from '../components/SharePageButton'
+import CanvasOriginBadge from '../components/CanvasOriginBadge'
 
 import {
   AI_PRODUCTS,
@@ -243,6 +244,7 @@ export default function CloudflarePersonalSiteMapClient() {
           <span className="rounded-full bg-[#e8f0e4] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#3d5a34] dark:bg-[#1a2e18] dark:text-[#a8d4a0]">
             对照 2aran.com 实装
           </span>
+          <CanvasOriginBadge canvasId="cloudflare-personal-site-map" size="sm" />
         </div>
         <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-3xl">

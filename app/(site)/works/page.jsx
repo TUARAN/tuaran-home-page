@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import SharePageButton from '../components/SharePageButton'
 import { ENGINEERING_WORK_CATEGORIES, ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
 
@@ -131,6 +132,7 @@ export default function WorksPage() {
                           {work.badge}
                         </span>
                       ) : null}
+                      <CanvasOriginBadge canvasId={work.canvasId} href={work.href} size="sm" />
                     </div>
                     <p className="mt-2 text-[13px] leading-6 text-[#5d554a] dark:text-gray-400">
                       {work.summary}
@@ -153,6 +155,10 @@ export default function WorksPage() {
       <footer className="mt-12 border-t border-[#e8dfd0] pt-6 text-[12px] leading-6 text-[#7a6f5d] dark:border-gray-800 dark:text-gray-500">
         <p>
           站点的核心层 —— 工程量 + 原创判断 + 数据可视化 + 交互体验组合在一起，是<strong className="text-[#5d503f] dark:text-gray-300"> 不可被 AI 复制 </strong>的部分。
+        </p>
+        <p className="mt-3 text-[11px] text-[#8f8069] dark:text-gray-600">
+          若条目带 <CanvasOriginBadge canvasId="cloudflare-personal-site-map" size="sm" className="mx-1 align-middle" />{' '}
+          标签，表示先在 Cursor Canvas 里完成交互原型，再落地为站内工程页（Canvas 本身不在公网运行）。
         </p>
         <p className="mt-3 text-[11px] text-[#8f8069] dark:text-gray-600">
           如果你只想看 Markdown 形式的文章和调研，请到{' '}

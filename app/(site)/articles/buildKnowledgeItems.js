@@ -114,6 +114,7 @@ export function buildKnowledgeItems() {
     summary: p.summary,
     date: p.date,
     href: p.href,
+    canvasId: p.canvasId || null,
   }))
 
   return [

@@ -90,10 +90,10 @@ function HomeFeaturedSection({ items }) {
         </div>
         <nav
           aria-label="查看更多内容分类"
-          className="flex shrink-0 items-center gap-2.5 pt-1 font-mono text-[11px] uppercase tracking-[0.12em]"
+          className="flex shrink-0 items-center gap-3 pt-1 text-sm"
         >
           {HOME_SECTION_MORE_LINKS.map((link, idx) => (
-            <span key={link.href} className="inline-flex items-center gap-2.5">
+            <span key={link.href} className="inline-flex items-center gap-3">
               {idx > 0 ? (
                 <span aria-hidden="true" className="text-[#c8c9bf] dark:text-gray-600">
                   /

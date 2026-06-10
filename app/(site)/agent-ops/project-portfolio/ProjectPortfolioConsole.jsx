@@ -895,6 +895,7 @@ export default function ProjectPortfolioConsole({ user }) {
         ) : null}
 
         {primaryView === 'repos' ? (
+        <>
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
             <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">未来 4 阶段迭代</h3>
@@ -941,6 +942,7 @@ export default function ProjectPortfolioConsole({ user }) {
             </table>
           </div>
         </section>
+        </>
         ) : null}
       </div>
     </main>

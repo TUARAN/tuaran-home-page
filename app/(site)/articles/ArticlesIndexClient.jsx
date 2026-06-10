@@ -12,7 +12,7 @@ const TAB_DEFS = [
   { key: 'all', label: '全部' },
   { key: 'posts', label: '精选文章', tier: 'works' },
   { key: 'research', label: '调研', tier: 'research' },
-  { key: 'works', label: '工程作品', tier: 'works' },
+  { key: 'works', label: '多维页面', tier: 'works' },
   { key: 'resources', label: '资料', tier: 'resources' },
 ]
 
@@ -31,7 +31,7 @@ const RESEARCH_KINDS = new Set(RESEARCH_KIND_KEYS)
 const TAB_KEYS = [...TAB_DEFS.map((t) => t.key), ...RESEARCH_KIND_KEYS]
 
 const QUICK_LINKS = [
-  { label: '站内创作日历', href: '/articles/creation-calendar' },
+  { label: '创作日历', href: '/articles/creation-calendar' },
   { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/', external: true },
 ]
 
@@ -324,7 +324,7 @@ export default function ArticlesIndexClient({ items }) {
       },
       {
         title: '代表作品',
-        desc: '个人判断、工程作品和长期项目。',
+        desc: '个人判断、多维页面和长期项目。',
         items: publicItems
           .filter((item) => !latestIds.has(item.id || item.href) && (item.kind === 'posts' || item.kind === 'works'))
           .slice(0, 3),

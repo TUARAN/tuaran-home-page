@@ -546,7 +546,7 @@ R2  →  实际文件`}
         <p className="mt-6 text-[12px] text-[#63655f] dark:text-gray-500">
           返回{' '}
           <Link href="/works" className="text-[#8b5a1f] no-underline hover:underline dark:text-[#a1ab76]">
-            工程作品
+            多维页面
           </Link>
           {' · '}
           判定基于 wrangler.toml 与 ai-context/architecture.md（2026-06 快照）

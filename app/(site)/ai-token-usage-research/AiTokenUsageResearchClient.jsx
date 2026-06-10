@@ -791,7 +791,7 @@ export default function AiTokenUsageResearchClient() {
         </ul>
         <div className="mt-3 flex flex-wrap gap-4 text-sm">
           <Link href="/articles?tab=works" className="underline decoration-[#a3a889] underline-offset-2">
-            返回工程作品列表
+            返回多维页面列表
           </Link>
           <Link href="/skill-center/llm-productivity-directives" className="underline decoration-[#a3a889] underline-offset-2">
             相关：大模型增效指令 Skill

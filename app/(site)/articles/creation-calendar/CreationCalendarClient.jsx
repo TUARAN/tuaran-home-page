@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { JUEJIN_ACTIVITY_SNAPSHOT } from '../../../../lib/juejin/activitySnapshot'
 
 const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -85,16 +86,17 @@ function buildWeekMonthLabels(weeks) {
   return labels
 }
 
-function heatColorClass(value, max) {
+function heatColorClass(value) {
   if (!value) return 'bg-[#edeee8] dark:bg-[#151922]'
-  const ratio = max > 0 ? value / max : 0
-  if (ratio >= 0.75) return 'bg-[#2f855a]'
-  if (ratio >= 0.5) return 'bg-[#57a06f]'
-  if (ratio >= 0.25) return 'bg-[#8bc79f]'
+  if (value >= 8) return 'bg-[#2f855a]'
+  if (value >= 4) return 'bg-[#57a06f]'
+  if (value >= 2) return 'bg-[#8bc79f]'
   return 'bg-[#c6e7d0]'
 }
 
 export default function CreationCalendarClient({ items }) {
+  const juejinCountsByDate = JUEJIN_ACTIVITY_SNAPSHOT.countsByDate
+
   const datedItems = useMemo(
     () =>
       items
@@ -103,14 +105,30 @@ export default function CreationCalendarClient({ items }) {
     [items],
   )
 
-  const years = useMemo(() => {
-    const set = new Set(datedItems.map((item) => item.date.slice(0, 4)))
-    return Array.from(set).sort((a, b) => Number(b) - Number(a))
+  const localCountsByDate = useMemo(() => {
+    const map = {}
+    for (const item of datedItems) {
+      map[item.date] = (map[item.date] || 0) + 1
+    }
+    return map
   }, [datedItems])
+
+  const years = useMemo(() => {
+    const merged = { ...juejinCountsByDate, ...localCountsByDate }
+    const set = new Set(Object.keys(merged).map((date) => date.slice(0, 4)))
+    return Array.from(set).sort((a, b) => Number(b) - Number(a))
+  }, [datedItems, juejinCountsByDate, localCountsByDate])
 
   const [selectedYear, setSelectedYear] = useState(years[0] || '')
   const [selectedMonth, setSelectedMonth] = useState('all')
   const [selectedDate, setSelectedDate] = useState('')
+
+  useEffect(() => {
+    if (!years.length) return
+    if (!selectedYear || !years.includes(selectedYear)) {
+      setSelectedYear(years[0])
+    }
+  }, [years, selectedYear])
 
   const yearItems = useMemo(
     () => datedItems.filter((item) => (selectedYear ? item.date.startsWith(selectedYear) : true)),
@@ -123,18 +141,41 @@ export default function CreationCalendarClient({ items }) {
     return yearItems.filter((item) => item.date.startsWith(monthPrefix))
   }, [yearItems, selectedMonth, selectedYear])
 
-  const countsByDate = useMemo(() => {
-    const map = {}
-    for (const item of yearItems) {
-      map[item.date] = (map[item.date] || 0) + 1
+  const yearHeatmapStats = useMemo(() => {
+    if (!selectedYear) {
+      return { countsByDate: {}, total: 0, localTotal: 0, juejinTotal: 0, activeDays: 0 }
     }
-    return map
-  }, [yearItems])
 
-  const activeDays = Object.keys(countsByDate).length
-  const maxPerDay = Object.values(countsByDate).reduce((acc, value) => Math.max(acc, value), 0)
+    const countsByDate = {}
+    let localTotal = 0
+    let juejinTotal = 0
+
+    for (const [date, count] of Object.entries(localCountsByDate)) {
+      if (!date.startsWith(selectedYear)) continue
+      countsByDate[date] = (countsByDate[date] || 0) + count
+      localTotal += count
+    }
+    for (const [date, count] of Object.entries(juejinCountsByDate)) {
+      if (!date.startsWith(selectedYear)) continue
+      countsByDate[date] = (countsByDate[date] || 0) + count
+      juejinTotal += count
+    }
+
+    return {
+      countsByDate,
+      total: localTotal + juejinTotal,
+      localTotal,
+      juejinTotal,
+      activeDays: Object.keys(countsByDate).length,
+    }
+  }, [selectedYear, localCountsByDate, juejinCountsByDate])
+
+  const { countsByDate, total: yearTotal, localTotal, juejinTotal, activeDays } = yearHeatmapStats
   const yearWeeks = useMemo(() => (selectedYear ? buildYearWeeks(Number(selectedYear), countsByDate) : []), [selectedYear, countsByDate])
   const weekMonthLabels = useMemo(() => buildWeekMonthLabels(yearWeeks), [yearWeeks])
+
+  const juejinTotalAll = JUEJIN_ACTIVITY_SNAPSHOT.totalPosts
+  const totalContentCount = datedItems.length + juejinTotalAll
 
   const visibleItems = useMemo(() => {
     if (selectedDate) return monthItems.filter((item) => item.date === selectedDate)
@@ -147,10 +188,10 @@ export default function CreationCalendarClient({ items }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
-              站内创作日历
+              创作日历
             </h1>
             <p className="mt-2 text-sm text-[#666] dark:text-gray-300">
-              这里按时间观察本站知识库的更新节奏（不含外部掘金专栏），可像 GitHub 热力图一样查看每天的发布密度。
+              按时间观察本站知识库与掘金专栏的写作节奏，可像 GitHub 热力图一样查看每天的发布密度。
             </p>
           </div>
           <Link
@@ -163,10 +204,14 @@ export default function CreationCalendarClient({ items }) {
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="总内容数" value={String(datedItems.length)} note="含专栏 / 调研 / 资料" />
-        <StatCard label="当前年份" value={selectedYear || '-'} note={`${yearItems.length} 篇`} />
+        <StatCard label="总内容数" value={String(totalContentCount)} note={`站内 ${datedItems.length} + 掘金 ${juejinTotalAll}`} />
+        <StatCard label="当前年份" value={selectedYear || '-'} note={`${yearTotal} 篇（站内 ${localTotal} + 掘金 ${juejinTotal}）`} />
         <StatCard label="活跃天数" value={String(activeDays)} note="该年有内容的日期" />
-        <StatCard label="单日最高" value={String(maxPerDay)} note="当天发布条数" />
+        <StatCard
+          label="掘金快照"
+          value={JUEJIN_ACTIVITY_SNAPSHOT.snapshotAt.slice(0, 10)}
+          note="掘金发文数据同步日期"
+        />
       </section>
 
       <section className="flex flex-wrap items-center gap-2">
@@ -237,7 +282,9 @@ export default function CreationCalendarClient({ items }) {
           <h2 className="text-base font-semibold text-[#262721] dark:text-gray-100">热力图（{selectedYear}）</h2>
           <div className="rounded-md border border-[#cfd0c7] bg-[#fafbf8] p-3 dark:border-gray-700 dark:bg-[#0f141b]">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-xs text-[#626357] dark:text-gray-300">{yearItems.length} 篇内容发布</p>
+              <p className="text-xs text-[#626357] dark:text-gray-300">
+                {yearTotal} 篇内容发布（站内 {localTotal} + 掘金 {juejinTotal}）
+              </p>
               <p className="text-[11px] text-[#898b7d] dark:text-gray-500">
                 少
                 <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#edeee8] align-middle dark:bg-[#151922]" />
@@ -285,7 +332,7 @@ export default function CreationCalendarClient({ items }) {
                               onClick={() => setSelectedDate((prev) => (prev === cell.date ? '' : cell.date))}
                               className={[
                                 'h-3 w-3 rounded-[2px] text-[0px] transition-opacity',
-                                heatColorClass(cell.count, maxPerDay),
+                                heatColorClass(cell.count),
                                 selectedDate === cell.date ? 'ring-2 ring-[#1a1814] dark:ring-gray-200' : '',
                                 cell.count ? 'opacity-100' : 'opacity-80',
                                 monthActive ? '' : 'opacity-30',

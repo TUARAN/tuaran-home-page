@@ -3,11 +3,20 @@ import Image from 'next/image'
 import DaysSince from './components/DaysSince'
 import SiteFooter from './components/SiteFooter'
 import { AVATAR_PATH } from '../../lib/avatar'
-import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
+import { SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
 import { listResearch } from '../../lib/research/loader'
-import { getHomeArticlePicks, getHomeResearchPicks, getHomeResourcePicks } from '../../lib/homeHighlights'
+import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHighlights'
 
 export const dynamic = 'force-static'
+
+const SECTION_BADGE_CLASS = {
+  column:
+    'border-[#e8dfcf] bg-[#f8f4ec] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]',
+  research:
+    'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
+  resources:
+    'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
+}
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -39,9 +48,19 @@ function HomeFeaturedLinkItem({ item }) {
             最新
           </span>
         ) : null}
-        <span className="inline-flex shrink-0 items-center rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2 py-0.5 font-mono text-[10px] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
-          {item.tagLabel}
+        <span
+          className={[
+            'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 font-mono text-[10px]',
+            SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column,
+          ].join(' ')}
+        >
+          {item.sectionLabel}
         </span>
+        {item.tagLabel ? (
+          <span className="inline-flex shrink-0 items-center rounded-full border border-[#ece5d8] bg-white px-2 py-0.5 font-mono text-[10px] text-[#8b806c] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6]">
+            {item.tagLabel}
+          </span>
+        ) : null}
         {item.date ? (
           <span className="shrink-0 font-mono text-[10px] text-[#aaa093] dark:text-gray-500">{item.date}</span>
         ) : null}
@@ -72,27 +91,55 @@ function HomeFeaturedLinkItem({ item }) {
   )
 }
 
-function HomeFeaturedLinks({ items }) {
+function HomeFeaturedSection({ items }) {
   if (!items.length) return null
   return (
-    <div className="mb-4 rounded-2xl border border-[#ece5d8] bg-white p-3 dark:border-[#232c36] dark:bg-[#121821]">
-      <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
-        推荐阅读
-      </p>
-      <div className="space-y-1">
-        {items.map((item) => (
-          <HomeFeaturedLinkItem key={item.id} item={item} />
-        ))}
+    <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
+            Start Here
+          </p>
+          <h2 className="home-section-title">推荐阅读</h2>
+        </div>
+        <nav
+          aria-label="查看更多内容分类"
+          className="flex flex-wrap items-center gap-x-1 gap-y-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[#7f6f55] dark:text-[#c8b99d]"
+        >
+          {HOME_SECTION_MORE_LINKS.map((link, index) => (
+            <span key={link.href} className="inline-flex items-center gap-1">
+              {index > 0 ? (
+                <span aria-hidden="true" className="text-[#cfc4b0] dark:text-[#4a5568]">
+                  /
+                </span>
+              ) : null}
+              <Link
+                href={link.href}
+                className="no-underline opacity-80 transition-opacity hover:opacity-100"
+              >
+                {link.label} →
+              </Link>
+            </span>
+          ))}
+        </nav>
       </div>
-    </div>
+      <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
+        专栏文章、专题调研与站内资料 —— 最新内容优先，其余每日轮换。
+      </p>
+      <div className="rounded-2xl border border-[#ece5d8] bg-white p-3 dark:border-[#232c36] dark:bg-[#121821]">
+        <div className="space-y-1">
+          {items.map((item) => (
+            <HomeFeaturedLinkItem key={item.id} item={item} />
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 
 export default function HomePage() {
-  const featuredArticles = getHomeArticlePicks()
+  const featuredPicks = getHomeFeaturedPicks()
   const researchStats = buildResearchPipelineStats()
-  const featuredResearch = getHomeResearchPicks()
-  const featuredResources = getHomeResourcePicks()
   const resourceCards = [
     {
       href: '/classical-masterpieces',
@@ -240,26 +287,7 @@ export default function HomePage() {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_300px]">
           <main className="min-w-0 space-y-6">
-            <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-              <div className="mb-5 flex items-end justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0] mb-2">
-                    Column
-                  </p>
-                  <h2 className="home-section-title">专栏</h2>
-                </div>
-                <Link
-                  href="/articles"
-                  className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#7f6f55] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#c8b99d]"
-                >
-                  更多作品
-                </Link>
-              </div>
-              <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
-                精选文章 / 工程作品 / 观点输出。
-              </p>
-              <HomeFeaturedLinks items={featuredArticles} />
-            </section>
+            <HomeFeaturedSection items={featuredPicks} />
 
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
               <div className="mb-4 flex items-end justify-between gap-4">
@@ -278,7 +306,6 @@ export default function HomePage() {
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
                 专题调研 / 公司调研 / 事项调研 / 人物调研。
               </p>
-              <HomeFeaturedLinks items={featuredResearch} />
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   {
@@ -345,7 +372,6 @@ export default function HomePage() {
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
                 资料分成「站内资料」和「资源收藏」。
               </p>
-              <HomeFeaturedLinks items={featuredResources} />
               <div className="space-y-4">
                 {[
                   {

@@ -65,6 +65,11 @@ function HomeFeaturedLinks({ items }) {
             className="group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f8f4ec] dark:hover:bg-[#18202a]"
           >
             <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              {item.isLatest ? (
+                <span className="inline-flex shrink-0 items-center rounded-full border border-[#d4c4a8] bg-[#f0e6d4] px-2 py-0.5 font-mono text-[10px] text-[#6b4f1d] dark:border-[#4a3d24] dark:bg-[#2a2218] dark:text-[#e8c98a]">
+                  最新
+                </span>
+              ) : null}
               <span className="inline-flex shrink-0 items-center rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2 py-0.5 font-mono text-[10px] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
                 {item.tagLabel}
               </span>
@@ -88,7 +93,9 @@ function HomeFeaturedLinks({ items }) {
 }
 
 export default function HomePage() {
-  const featuredArticles = articles.slice(0, 3)
+  const featuredArticles = [...articles]
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .slice(0, 3)
   const researchStats = buildResearchPipelineStats()
   const featuredResearch = getHomeResearchPicks()
   const featuredResources = getHomeResourcePicks()

@@ -101,7 +101,43 @@ function ProjectCard({ project, accent }) {
   )
 }
 
-export default function ProjectMatrixTabs({ launchedProjects, devProjects }) {
+function DomainAssetList({ domainAssets }) {
+  if (!domainAssets?.length) return null
+  return (
+    <section className="mt-10 border-t border-slate-200 pt-5 dark:border-slate-800">
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">域名资产</h3>
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">{domainAssets.length} 个</span>
+      </div>
+      <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+        备用、跳转与实验域名，归入主站或产品主域，不单独算作运营项目。
+      </p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {domainAssets.map((asset) => (
+          <div
+            key={asset.domain}
+            className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
+          >
+            <a
+              href={asset.href}
+              target="_blank"
+              rel="noreferrer"
+              className="no-external-arrow text-xs font-semibold text-slate-800 hover:opacity-80 dark:text-slate-200"
+            >
+              {asset.domain}
+            </a>
+            <p className="mt-0.5 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{asset.role}</p>
+            {asset.related ? (
+              <p className="mt-0.5 font-mono text-[10px] text-slate-400 dark:text-slate-500">→ {asset.related}</p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export default function ProjectMatrixTabs({ launchedProjects, domainAssets, devProjects }) {
   const laneData = laneConfigs.map((lane, idx) => ({
     ...lane,
     index: idx + 1,
@@ -128,6 +164,8 @@ export default function ProjectMatrixTabs({ launchedProjects, devProjects }) {
           </section>
         ))}
       </div>
+
+      <DomainAssetList domainAssets={domainAssets} />
 
       {devProjects?.length ? (
         <section className="mt-10 border-t border-slate-200 pt-5 dark:border-slate-800">

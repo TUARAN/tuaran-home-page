@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import ProjectMatrixTabs from '../components/ProjectMatrixTabs'
 import SiteToolsPanel from '../components/SiteToolsPanel'
-import { domainStrategyParagraphs, maintainedDomains, opcVibeProjects } from './projectData'
+import { domainAssets, domainStrategyParagraphs, maintainedDomains, opcVibeProjects } from './projectData'
 
 export const dynamic = 'force-static'
 
@@ -56,6 +56,7 @@ export default function AiProjectsPage() {
 
       <ProjectMatrixTabs
         launchedProjects={maintainedDomains}
+        domainAssets={domainAssets}
         devProjects={opcVibeProjects}
       />
 

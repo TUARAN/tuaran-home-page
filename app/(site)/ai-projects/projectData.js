@@ -2,7 +2,7 @@ export const maintainedDomains = [
   {
     name: '🏠 WebHP',
     href: 'https://2aran.com',
-    domains: ['2aran.com', 'tuaran.me → 2aran.com'],
+    domains: ['2aran.com'],
     category: '个人主页',
     focus: '个人网络日志、项目总览与长期创作内容沉淀。',
     status: '运营中',
@@ -18,7 +18,7 @@ export const maintainedDomains = [
   {
     name: '🤝 Blogger Alliance',
     href: 'https://blogger-alliance.cn',
-    domains: ['blogger-alliance.cn', 'bzlm.net'],
+    domains: ['blogger-alliance.cn'],
     category: '社区平台',
     focus: '技术博主协作与内容联盟',
     status: '运营中',
@@ -26,13 +26,7 @@ export const maintainedDomains = [
   {
     name: '🧭 前端周看 Frontend Next',
     href: 'https://frontendnext.com',
-    domains: [
-      'frontendnext.com',
-      'frontendweekly.cn',
-      'qdzk.site',
-      'frontend2aiagent.com',
-      'iamvibecoder.cn',
-    ],
+    domains: ['frontendnext.com', 'frontendweekly.cn'],
     category: '转型决策',
     focus: '帮前端在 AI 时代做转型决策。',
     status: '持续更新',
@@ -52,6 +46,39 @@ export const maintainedDomains = [
     category: '创作实验室',
     focus: 'AI 写作、内容创作与数字出版',
     status: '打磨中',
+  },
+]
+
+export const domainAssets = [
+  {
+    domain: 'tuaran.me',
+    href: 'https://tuaran.me',
+    role: '301 → 2aran.com',
+    related: '2aran.com',
+  },
+  {
+    domain: 'bzlm.net',
+    href: 'https://bzlm.net',
+    role: '博主联盟备用域',
+    related: 'blogger-alliance.cn',
+  },
+  {
+    domain: 'qdzk.site',
+    href: 'https://qdzk.site',
+    role: '前端周刊历史/实验域',
+    related: 'frontendnext.com',
+  },
+  {
+    domain: 'frontend2aiagent.com',
+    href: 'https://frontend2aiagent.com',
+    role: '前端 → Agent 转型叙事域',
+    related: 'frontendnext.com',
+  },
+  {
+    domain: 'iamvibecoder.cn',
+    href: 'https://iamvibecoder.cn',
+    role: 'Vibe Coding 品牌实验域',
+    related: 'frontendnext.com',
   },
 ]
 

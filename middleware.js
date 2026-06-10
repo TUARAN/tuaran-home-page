@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+
+import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed } from './lib/adminRoutes'
 import { RESEARCH_ARTICLE_REDIRECTS } from './lib/research/catalog'
 
 const CANONICAL_HOST = '2aran.com'
@@ -8,6 +10,26 @@ const LEGACY_PATHS = new Set(['/weekly', '/articles/diary-self-reflection'])
 export function middleware(request) {
   const { pathname } = request.nextUrl
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
+
+  const legacyAdminTarget = ADMIN_LEGACY_REDIRECTS[pathname]
+  if (legacyAdminTarget) {
+    const url = request.nextUrl.clone()
+    url.pathname = legacyAdminTarget
+    return NextResponse.redirect(url, 301)
+  }
+
+  if (host === ADMIN_HOST) {
+    if (pathname === '/') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/admin'
+      return NextResponse.redirect(url)
+    }
+    if (!isAdminHostPathAllowed(pathname)) {
+      const url = new URL(pathname + request.nextUrl.search, `https://${CANONICAL_HOST}`)
+      return NextResponse.redirect(url)
+    }
+  }
+
   const shouldCanonicalizeHost = LEGACY_HOSTS.has(host)
   const shouldRedirectLegacyPath = LEGACY_PATHS.has(pathname)
   const shouldRedirectPoetry = pathname === '/poetry'

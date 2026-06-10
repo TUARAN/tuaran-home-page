@@ -8,6 +8,26 @@ export const metadata = {
 
 const changelog = [
   {
+    version: 'v2026.25',
+    week: '2026-W24',
+    range: '2026-06-10 起',
+    commits: 0,
+    title: '后台管理收束：/admin 统一入口与子域准备',
+    summary:
+      '把分散在 /agent-ops/* 的站长控制台收束为 /admin/* 统一入口，新增 Dashboard 总览，抽公共 owner guard，并为 admin.2aran.com 子域分流做好 middleware 与独立 layout 准备。',
+    planned: [
+      '阶段 2：Cloudflare Pages 绑定 admin.2aran.com 自定义域（middleware 分流逻辑已就绪）。',
+      '阶段 2（可选）：为 admin 子域加 Cloudflare Access，与 ops.2aran.com 对齐。',
+      '阶段 3 · 暂缓：内容 CMS、独立 repo、RBAC；内容发布继续 git + deploy；ops.2aran.com 保持外部执行引擎。',
+    ],
+    done: [
+      '新增 /admin Dashboard：聚合 D1 健康、Ops 探活与各管理台入口。',
+      '落地 (admin) route group 独立 layout：无公开站导航，仅 Theme + Session + AdminShell。',
+      '旧 /agent-ops/* 301 至 /admin/*；siteNav、robots 与 ai-projects 链接同步更新。',
+      '抽 lib/adminAuth 统一 /api/admin/* owner 校验；middleware 支持 admin.2aran.com Host 分流。',
+    ],
+  },
+  {
     version: 'v2026.24',
     week: '2026-W24',
     range: '2026-06-06 至 2026-06-08',
@@ -441,6 +461,55 @@ const totalCommits = changelog.reduce((sum, item) => sum + item.commits, 0)
 const latest = changelog[0]
 const earliest = changelog[changelog.length - 1]
 
+function ChangelogItemList({ items, markerClass }) {
+  if (!items?.length) return null
+  return (
+    <ul className="space-y-1.5">
+      {items.map((item) => (
+        <li key={item} className="flex gap-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-300">
+          <span className={`mt-[0.65em] h-1.5 w-1.5 shrink-0 rounded-full ${markerClass}`} />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function ChangelogSections({ entry }) {
+  const usesSplitFormat = 'planned' in entry || 'done' in entry
+  const doneItems = entry.done ?? entry.items ?? []
+  const plannedItems = entry.planned ?? []
+
+  if (!usesSplitFormat) {
+    return <ChangelogItemList items={doneItems} markerClass="bg-[#aaae9c] dark:bg-[#536071]" />
+  }
+
+  return (
+    <div className="mt-3 space-y-4">
+      <section>
+        <h3 className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8b5a1f] dark:text-[#989e72]">
+          已做
+        </h3>
+        {doneItems.length > 0 ? (
+          <ChangelogItemList items={doneItems} markerClass="bg-emerald-500/80 dark:bg-emerald-400/80" />
+        ) : (
+          <p className="text-[13px] leading-6 text-[#858876] dark:text-[#8e9ab0]">（本周尚未交付）</p>
+        )}
+      </section>
+      <section>
+        <h3 className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
+          计划
+        </h3>
+        {plannedItems.length > 0 ? (
+          <ChangelogItemList items={plannedItems} markerClass="bg-[#c8cabb] dark:bg-[#4a5568]" />
+        ) : (
+          <p className="text-[13px] leading-6 text-[#858876] dark:text-[#8e9ab0]">（暂无后续计划）</p>
+        )}
+      </section>
+    </div>
+  )
+}
+
 export default function ChangelogPage() {
   return (
     <main className="mx-auto w-full max-w-[1080px] px-4 py-8 md:py-10">
@@ -453,7 +522,7 @@ export default function ChangelogPage() {
         </h1>
         <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
           这份日志从 git 提交历史归纳而来，只记录活跃开发周。每个版本号对应一个自然周，例如 v2026.22
-          表示 2026 年第 22 周。
+          表示 2026 年第 22 周。新版本条目分为「计划」与「已做」两块；较早条目仅保留已交付内容。
         </p>
         <dl className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
@@ -498,14 +567,7 @@ export default function ChangelogPage() {
                 {entry.title}
               </h2>
               <p className="mt-1 text-[13.5px] leading-6 text-[#53554d] dark:text-gray-300">{entry.summary}</p>
-              <ul className="mt-3 space-y-1.5">
-                {entry.items.map((item) => (
-                  <li key={item} className="flex gap-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-300">
-                    <span className="mt-[0.65em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#aaae9c] dark:bg-[#536071]" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+              <ChangelogSections entry={entry} />
             </article>
           </li>
         ))}

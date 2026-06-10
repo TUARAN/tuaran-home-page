@@ -1,10 +1,4 @@
-import {
-  cookieNames,
-  getSecrets,
-  parseCookies,
-  verifySession,
-} from '../../../../lib/edgeSession'
-import { isOwnerUser } from '../../../../lib/ownerAuth'
+import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import {
   VALID_AUDIENCES,
   deleteNavOverride,
@@ -15,18 +9,6 @@ import { flattenChannelRoutesRaw } from '../../../../lib/siteNav'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
-
-async function getOwnerOrReject(req) {
-  const { sessionSecret } = getSecrets()
-  if (!sessionSecret) return { ok: false, response: Response.json({ error: 'MISSING_AUTH_CONFIG' }, { status: 500 }) }
-  const cookies = parseCookies(req)
-  const token = cookies[cookieNames.session]
-  const payload = await verifySession(token, sessionSecret)
-  const user = payload?.user || null
-  if (!user) return { ok: false, response: Response.json({ error: 'NOT_AUTHENTICATED' }, { status: 401 }) }
-  if (!isOwnerUser(user)) return { ok: false, response: Response.json({ error: 'NOT_OWNER' }, { status: 403 }) }
-  return { ok: true, user }
-}
 
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)

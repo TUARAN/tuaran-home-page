@@ -7,7 +7,13 @@ import { useEffect, useRef, useState } from 'react'
 import SettingsButton from './SettingsButton'
 import UserAvatar from './UserAvatar'
 import { useSessionAccount } from './SessionProvider'
-import { SITE_CHANNELS, getChannelNavSections } from '../../../lib/siteNav'
+import {
+  SITE_ADMIN_NAV_LINK,
+  SITE_CHANNELS,
+  getChannelNavSections,
+  isAdminNavPath,
+  isAdminNavVisible,
+} from '../../../lib/siteNav'
 import { getTagToneClass } from '../../../lib/tagTone'
 
 function ChevronDown() {
@@ -87,6 +93,23 @@ const TIER_SECTION_STYLES = {
 
 function getTierStyle(title) {
   return TIER_SECTION_STYLES[title] || { wrap: '', title: 'text-[#858779] dark:text-[#93a0b3]' }
+}
+
+function TopNavLink({ href, label, isActive, onNavigate }) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={[
+        'inline-flex items-center rounded-full px-2.5 py-1 text-sm font-medium no-underline transition-colors',
+        isActive
+          ? 'font-medium text-[#111] dark:text-gray-100'
+          : 'text-[#4f5048] hover:text-[#111] dark:text-[#c7d0df] dark:hover:text-[#f7fbff]',
+      ].join(' ')}
+    >
+      {label}
+    </Link>
+  )
 }
 
 function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerRef, align = 'center', account, navOverrides }) {
@@ -321,6 +344,7 @@ export default function SiteHeader() {
   const account = useSessionAccount()
   const navWrapRef = useRef(null)
   const accountRef = useRef(null)
+  const showAdminNav = isAdminNavVisible(account, account?.navOverrides)
 
   useEffect(() => {
     setMobileMenuOpen(false)
@@ -403,6 +427,13 @@ export default function SiteHeader() {
                   />
                 )
               })}
+              {showAdminNav ? (
+                <TopNavLink
+                  href={SITE_ADMIN_NAV_LINK.href}
+                  label={SITE_ADMIN_NAV_LINK.label}
+                  isActive={isAdminNavPath(pathname)}
+                />
+              ) : null}
             </nav>
             <SettingsButton />
             <AccountMenu
@@ -514,6 +545,16 @@ export default function SiteHeader() {
               </div>
             )
           })}
+          {showAdminNav ? (
+            <div className="rounded-2xl border border-[#d5d7cb] bg-white/70 px-4 py-3 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+              <TopNavLink
+                href={SITE_ADMIN_NAV_LINK.href}
+                label={SITE_ADMIN_NAV_LINK.label}
+                isActive={isAdminNavPath(pathname)}
+                onNavigate={() => setMobileMenuOpen(false)}
+              />
+            </div>
+          ) : null}
         </nav>
       </div>
     </>

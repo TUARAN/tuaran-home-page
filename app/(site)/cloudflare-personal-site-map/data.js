@@ -246,6 +246,6 @@ export const RELATED_LINKS = [
   {
     href: '/platform-framework-pairs',
     label: '平台 × 框架三极格局',
-    note: '工程作品',
+    note: '多维页面',
   },
 ]

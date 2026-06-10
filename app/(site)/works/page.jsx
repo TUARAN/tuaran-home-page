@@ -7,7 +7,7 @@ import { ENGINEERING_WORK_CATEGORIES, ENGINEERING_WORKS } from '../../../lib/eng
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '工程作品',
+  title: '多维页面',
   description:
     '涂阿燃自研的可视化、富数据调研与长期写作工程。每一件都带交互、带数据、带工程量 —— 不是单纯 Markdown 文章，而是不可被 AI 复制的原创判断与实现。',
   alternates: {
@@ -50,10 +50,10 @@ export default function WorksPage() {
       <header className="flex flex-col gap-4 border-b border-[#dee0db] pb-6 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
-            Engineering Works
+            Multi-dimensional Pages
           </p>
           <h1 className="mt-2 font-serif text-[28px] font-semibold leading-tight text-[#15140f] dark:text-gray-100 sm:text-[32px]">
-            工程作品
+            多维页面
           </h1>
           <p className="mt-3 max-w-2xl text-[14px] leading-7 text-[#51514a] dark:text-gray-400">
             带交互、带数据、带工程量的页面。这些不是单纯 Markdown 文章 ——
@@ -62,7 +62,7 @@ export default function WorksPage() {
           </p>
         </div>
         <SharePageButton
-          title="涂阿燃 · 工程作品"
+          title="涂阿燃 · 多维页面"
           text="自研可视化、富数据调研与长期写作工程"
           url="https://2aran.com/works"
           size="md"
@@ -70,7 +70,7 @@ export default function WorksPage() {
       </header>
 
       <nav
-        aria-label="工程作品分类"
+        aria-label="多维页面分类"
         className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-b border-[#dee0d6] pb-4 text-[12px] dark:border-gray-800"
       >
         {sections.map((section) => (

@@ -136,7 +136,7 @@ export default function HomePage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#858779] dark:text-[#9ca5b5] mb-0">
-                      涂阿燃｜安东尼 · 独立开发者
+                      涂阿燃｜安东尼 · Agent 工程师
                     </p>
                   </div>
                 </div>

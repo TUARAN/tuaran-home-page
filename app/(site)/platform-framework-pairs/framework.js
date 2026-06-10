@@ -81,7 +81,7 @@ export const FRAMEWORK_SECTIONS = [
     number: '09',
     title: '个人结论与跟进策略',
     body:
-      '定性：「三极割据 + AI 公司下场」格局正式成立 —— Anthropic 拥有 runtime，CF 拥有工具链上游，Vercel 拥有最成熟的部署 + 框架捆绑。三家的护城河形态不同，互相不能完全取代，未来 24 个月会持续互相侵入对方阵地。对独立开发者：先想清楚自己的工作流要锚定哪一极 —— 用 Claude Code 做主力就接受 Bun 偏好；用 Vue/Nuxt 就接受 CF 偏好；用 Next.js 就接受 Vercel 偏好。对内容创作者：值得长期跟踪三个信号 —— Bun 在 Anthropic 治下的 commit 方向、Vite 独立基金的真实 grant 流向、Vercel 的反制动作。',
+      '定性：「三极割据 + AI 公司下场」格局正式成立 —— Anthropic 拥有 runtime，CF 拥有工具链上游，Vercel 拥有最成熟的部署 + 框架捆绑。三家的护城河形态不同，互相不能完全取代，未来 24 个月会持续互相侵入对方阵地。对 Agent 工程师：先想清楚自己的工作流要锚定哪一极 —— 用 Claude Code 做主力就接受 Bun 偏好；用 Vue/Nuxt 就接受 CF 偏好；用 Next.js 就接受 Vercel 偏好。对内容创作者：值得长期跟踪三个信号 —— Bun 在 Anthropic 治下的 commit 方向、Vite 独立基金的真实 grant 流向、Vercel 的反制动作。',
     accent: 'highlight',
   },
   {

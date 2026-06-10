@@ -132,6 +132,103 @@ const positions = {
 
 const principles = ['主目录只放 Git 仓库', '缓存和源码分开判断', '不确定先归档再删除', 'dirty repo 先收口']
 
+const INFRA_DIMENSIONS = ['托管', 'DB', 'R2', '登录', '邮件', 'Admin', 'Changelog']
+
+const SITE_INFRA = [
+  {
+    id: '2aran',
+    name: '2aran.com',
+    role: '个人门户与调研知识库',
+    repoPath: 'tuaran-home-page',
+    color: pillars.blog.color,
+    stack: 'Next.js 15 + React 19 + Tailwind 3',
+    cells: {
+      托管: { tone: 'solid', primary: 'Cloudflare Pages', sub: 'next-on-pages' },
+      DB: { tone: 'solid', primary: 'Cloudflare D1', sub: 'binding DB · db tuaran-me · 19 迁移' },
+      R2: { tone: 'none', primary: '未使用', sub: 'wrangler.toml 无 r2_buckets' },
+      登录: { tone: 'solid', primary: 'GH OAuth + Google OAuth + Email OTP', sub: 'edge HMAC cookie · ownerAuth env 配置' },
+      邮件: { tone: 'solid', primary: 'Resend', sub: 'POST /emails · PBKDF2 · 限流 / TTL' },
+      Admin: { tone: 'solid', primary: '/admin', sub: 'db · nav · ops · portfolio · share' },
+      Changelog: { tone: 'partial', primary: 'JS 硬编码数组', sub: 'app/(site)/changelog/page.jsx · planned/done' },
+    },
+  },
+  {
+    id: 'syncblog',
+    name: 'syncblog.cn',
+    role: '内容生产 / 多平台分发底座',
+    repoPath: 'md (TUARAN/md)',
+    color: pillars.agent.color,
+    stack: 'Vue 3 + Vite + pnpm monorepo',
+    referenceTag: '仅 Changelog 形式参照',
+    cells: {
+      托管: { tone: 'note', primary: 'Cloudflare Worker', sub: 'WorkerEntrypoint · ASSETS 绑定 dist' },
+      DB: { tone: 'solid', primary: 'Cloudflare D1', sub: 'binding DB · db syncblog · 6 迁移' },
+      R2: { tone: 'note', primary: 'GitHub ImgBed', sub: 'bucketio × 20 仓 · 可选 CDN' },
+      登录: { tone: 'solid', primary: '邮箱 + 密码 (PBKDF2)', sub: 'Worker HMAC cookie · legacy GitHub 兼容' },
+      邮件: { tone: 'solid', primary: 'Resend', sub: 'EMAIL_PROVIDER=resend · 仅存验证码哈希' },
+      Admin: { tone: 'none', primary: '未深入扫描', sub: '—' },
+      Changelog: { tone: 'solid', primary: 'CHANGELOG.md', sub: '仓库根 markdown 文件' },
+    },
+  },
+  {
+    id: 'blogger',
+    name: 'blogger-alliance.cn',
+    role: '核心产品 · 博主联盟',
+    repoPath: 'blogger-alliance',
+    color: pillars.alliance.color,
+    stack: 'Vue 3 + Vite',
+    cells: {
+      托管: { tone: 'note', primary: 'Cloudflare Worker', sub: 'cloudflare/worker.js · ASSETS · custom domain × 2' },
+      DB: { tone: 'partial', primary: 'D1 + Supabase 双轨', sub: 'D1 业务数据 · Supabase 身份层' },
+      R2: { tone: 'none', primary: '未声明', sub: '—' },
+      登录: { tone: 'partial', primary: 'Supabase + Worker HMAC', sub: '前后端登录态断层 · Worker 不验 Supabase JWT' },
+      邮件: { tone: 'partial', primary: 'Supabase 自带', sub: 'magic link 推测 · 未对接 Resend' },
+      Admin: { tone: 'none', primary: '无统一后台', sub: '—' },
+      Changelog: { tone: 'none', primary: '未确认', sub: '?' },
+    },
+    note: '身份与业务在两套系统：Supabase 管登录与角色（member/internal/admin），Worker 自签 HMAC cookie 管业务接口——两边不互信。',
+  },
+  {
+    id: 'frontendnext',
+    name: 'frontendnext.com',
+    role: '核心产品 · 前端周刊',
+    repoPath: 'frontend-weekly-digest-cn/web',
+    color: pillars.weekly.color,
+    stack: 'Next.js 16 + TS + Tailwind 4',
+    cells: {
+      托管: { tone: 'solid', primary: 'Cloudflare Pages', sub: 'output: export (纯静态)' },
+      DB: { tone: 'none', primary: '无', sub: 'gray-matter 直接读 markdown' },
+      R2: { tone: 'none', primary: '未声明', sub: '—' },
+      登录: { tone: 'none', primary: '无', sub: '纯只读站点' },
+      邮件: { tone: 'none', primary: '无', sub: '—' },
+      Admin: { tone: 'none', primary: '无', sub: '—' },
+      Changelog: { tone: 'none', primary: '未确认', sub: '?' },
+    },
+    note: 'README 锁死 Cloudflare Pages、禁止 Vercel；未来 server 逻辑走 Pages Functions + D1。app/api/{order,payments,subscribe} 已占位。',
+  },
+]
+
+const INFRA_TONE_STYLES = {
+  solid: 'border-emerald-200 bg-emerald-50/60 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200',
+  partial: 'border-amber-200 bg-amber-50/60 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200',
+  none: 'border-[#e2e6ee] bg-[#f7f8fb] text-[#667085] dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-400',
+  note: 'border-sky-200 bg-sky-50/60 text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200',
+}
+
+const INFRA_TONE_DOT = {
+  solid: 'bg-emerald-500',
+  partial: 'bg-amber-500',
+  none: 'bg-[#cbd5e1] dark:bg-gray-700',
+  note: 'bg-sky-500',
+}
+
+const INFRA_TONE_LEGEND = [
+  ['solid', '已具备 / 已对齐'],
+  ['partial', '存在但分裂或不一致'],
+  ['note', '已具备但与众不同'],
+  ['none', '未使用 / 待定'],
+]
+
 function relationText(project) {
   const targets = project.links
     .slice(0, 4)
@@ -567,6 +664,135 @@ export default function ProjectPortfolioConsole({ user }) {
                 })}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
+            <div>
+              <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">四站基础设施现状</h3>
+              <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
+                统一管理目标：2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] dark:text-gray-400">
+              {INFRA_TONE_LEGEND.map(([tone, label]) => (
+                <span key={tone} className="inline-flex items-center gap-1.5">
+                  <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 p-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {SITE_INFRA.map((site) => (
+                <article
+                  key={site.id}
+                  className="overflow-hidden rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950/40"
+                >
+                  <div className="h-1 w-full" style={{ background: site.color }} />
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h4 className="break-words text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{site.name}</h4>
+                        <p className="mt-0.5 text-[11px] leading-5 text-[#667085] dark:text-gray-400">{site.role}</p>
+                      </div>
+                      {site.referenceTag ? (
+                        <span className="shrink-0 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300">
+                          {site.referenceTag}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 break-words font-mono text-[10px] leading-4 text-[#94a3b8] dark:text-gray-500">
+                      {site.repoPath}
+                    </p>
+                    <p className="mt-1 text-[11px] text-[#667085] dark:text-gray-400">{site.stack}</p>
+
+                    <dl className="mt-4 grid gap-1.5">
+                      {INFRA_DIMENSIONS.map((dim) => {
+                        const cell = site.cells[dim]
+                        return (
+                          <div
+                            key={dim}
+                            className={`grid grid-cols-[56px_minmax(0,1fr)] items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-4 ${INFRA_TONE_STYLES[cell.tone]}`}
+                          >
+                            <dt className="flex items-center gap-1.5 pt-0.5 font-mono text-[10px] uppercase tracking-wider opacity-80">
+                              <span className={`inline-block h-1.5 w-1.5 rounded-full ${INFRA_TONE_DOT[cell.tone]}`} />
+                              {dim}
+                            </dt>
+                            <dd className="min-w-0">
+                              <span className="block break-words font-semibold">{cell.primary}</span>
+                              {cell.sub ? <span className="block break-words text-[10px] opacity-75">{cell.sub}</span> : null}
+                            </dd>
+                          </div>
+                        )
+                      })}
+                    </dl>
+
+                    {site.note ? (
+                      <div className="mt-3 rounded-md border-l-2 border-amber-400 bg-amber-50/70 px-2.5 py-1.5 text-[11px] leading-5 text-amber-900 dark:border-amber-500 dark:bg-amber-950/30 dark:text-amber-200">
+                        {site.note}
+                      </div>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-[#d9dee7] dark:border-gray-800">
+              <table className="min-w-[920px] border-collapse text-[12px]">
+                <thead>
+                  <tr className="bg-[#f8fafc] text-left text-[#475467] dark:bg-gray-950 dark:text-gray-300">
+                    <th className="sticky left-0 z-10 border-b border-r border-[#d9dee7] bg-[#f8fafc] px-3 py-2 font-semibold dark:border-gray-800 dark:bg-gray-950">
+                      维度 ＼ 站点
+                    </th>
+                    {SITE_INFRA.map((site) => (
+                      <th
+                        key={site.id}
+                        className="border-b border-r border-[#d9dee7] px-3 py-2 font-semibold last:border-r-0 dark:border-gray-800"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-block h-2 w-2 rounded-full" style={{ background: site.color }} />
+                          <span className="break-words">{site.name}</span>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {INFRA_DIMENSIONS.map((dim) => (
+                    <tr key={dim} className="align-top">
+                      <th className="sticky left-0 z-10 border-b border-r border-[#d9dee7] bg-white px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-[#475467] dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
+                        {dim}
+                      </th>
+                      {SITE_INFRA.map((site) => {
+                        const cell = site.cells[dim]
+                        return (
+                          <td
+                            key={site.id}
+                            className="border-b border-r border-[#d9dee7] p-1.5 last:border-r-0 dark:border-gray-800"
+                          >
+                            <div className={`flex items-start gap-1.5 rounded-md border px-2 py-1.5 leading-4 ${INFRA_TONE_STYLES[cell.tone]}`}>
+                              <span className={`mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full ${INFRA_TONE_DOT[cell.tone]}`} />
+                              <div className="min-w-0">
+                                <span className="block break-words font-semibold">{cell.primary}</span>
+                                {cell.sub ? <span className="mt-0.5 block break-words text-[10px] opacity-75">{cell.sub}</span> : null}
+                              </div>
+                            </div>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="rounded-md border border-purple-200 bg-purple-50/50 px-3 py-2 text-[12px] leading-6 text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/30 dark:text-purple-200">
+              <b>模板参照范围：</b>仅 <span className="font-mono">Changelog</span> 形式参照 md（CHANGELOG.md）。其他维度（DB / R2 / 登录 / 账号 / 邮件 / Admin）现状已列，统一策略<b>待定</b>——本节先呈现真实差异，不预设对齐方向。
+            </div>
           </div>
         </section>
 

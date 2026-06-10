@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 import SettingsButton from './SettingsButton'
+import UserAvatar from './UserAvatar'
 import { useSessionAccount } from './SessionProvider'
 import { SITE_CHANNELS, getChannelNavSections } from '../../../lib/siteNav'
 import { getTagToneClass } from '../../../lib/tagTone'
@@ -181,17 +182,8 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
   )
 }
 
-function getAccountName(user) {
-  return user?.name || user?.login || user?.email || '已登录'
-}
-
 function getAccountId(user) {
   return user?.login || user?.email || user?.id || '已登录'
-}
-
-function getAccountInitial(user) {
-  const name = getAccountName(user)
-  return name.trim().slice(0, 1).toUpperCase() || 'U'
 }
 
 function getReturnPath(pathname) {
@@ -199,38 +191,7 @@ function getReturnPath(pathname) {
 }
 
 function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
-  const isLg = size === 'lg'
-  // 头像里的字与外面的 name 字号保持一致，配合默认 line-height 让 flex items-center
-  // 能稳定居中——之前 leading-none 加上字体度量偏移会让 "T" 偏低，去掉就正常了。
-  const sizeCls = isLg ? 'h-10 w-10 text-[15px]' : 'h-7 w-7 text-[12px]'
-  const borderCls = isOwner
-    ? 'border-2 border-[#c79347] dark:border-[#989e72]'
-    : 'border border-[#cbcdc2] dark:border-gray-700'
-  const baseCls = `relative flex ${sizeCls} shrink-0 items-center justify-center rounded-full ${borderCls}`
-
-  if (loading) {
-    return (
-      <span className={`${baseCls} font-mono text-[10px] text-[#767869] dark:text-gray-400`}>
-        ...
-      </span>
-    )
-  }
-
-  if (user?.image) {
-    return (
-      <span
-        className={`${baseCls} overflow-hidden bg-cover bg-center`}
-        style={{ backgroundImage: `url(${JSON.stringify(user.image)})` }}
-        aria-hidden="true"
-      />
-    )
-  }
-
-  return (
-    <span className={`${baseCls} bg-[#e9eae2] font-semibold text-[#565749] dark:bg-gray-900 dark:text-gray-200`}>
-      {user ? getAccountInitial(user) : '登'}
-    </span>
-  )
+  return <UserAvatar user={user} size={size} isOwner={isOwner} loading={loading} />
 }
 
 function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {

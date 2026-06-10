@@ -247,7 +247,7 @@ const GRAPH_HEIGHT = 760
 const GRAPH_MIN_SCALE = 0.5
 const GRAPH_MAX_SCALE = 2.25
 const GRAPH_SCALE_STEP = 0.25
-const GRAPH_DEFAULT_SCALE = 0.75
+const GRAPH_DEFAULT_SCALE = 1
 
 function clampGraphScale(value) {
   return Math.min(GRAPH_MAX_SCALE, Math.max(GRAPH_MIN_SCALE, value))
@@ -294,20 +294,37 @@ function GraphControlButton({ label, onClick, disabled = false, icon }) {
   )
 }
 
+const PORTFOLIO_SNAPSHOT = {
+  at: '2026-06',
+  label: '2026 年 6 月',
+}
+
 const PRIMARY_VIEW_DEFS = [
   {
     key: 'repos',
     label: '本地仓库',
     title: '三大板块 + AI Agent 关系图',
     desc: 'GitHub / Codex / Claude 工作区 · 拖拽画布移动；箭头表示吸收、服务、迁移或归档关系',
+    snapshotAt: PORTFOLIO_SNAPSHOT.at,
+    snapshotLabel: PORTFOLIO_SNAPSHOT.label,
   },
   {
     key: 'sites',
     label: '核心运营站点',
     title: '四站基础设施现状',
     desc: '2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）',
+    snapshotAt: PORTFOLIO_SNAPSHOT.at,
+    snapshotLabel: PORTFOLIO_SNAPSHOT.label,
   },
 ]
+
+function SnapshotBadge({ label = PORTFOLIO_SNAPSHOT.label }) {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full border border-[#d9dee7] bg-[#f8fafc] px-2 py-0.5 font-mono text-[10px] tracking-wide text-[#667085] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-400">
+      快照 {label}
+    </span>
+  )
+}
 
 export default function ProjectPortfolioConsole({ user }) {
   const [selected, setSelected] = useState('blogger-alliance')
@@ -427,102 +444,165 @@ export default function ProjectPortfolioConsole({ user }) {
           </p>
           <h1 className="mt-3 text-xl font-semibold leading-snug">TUARAN 项目组合图</h1>
           <p className="mt-2 text-sm leading-6 text-[#cbd5e1]">
-            用四条主线管理本地 GitHub、Codex、Claude 工作区：个人博客站、博主联盟、前端周刊、AI Agent。
+            {primaryView === 'repos'
+              ? '本地 GitHub / Codex / Claude 工作区：关系图、治理动作与整合路线。'
+              : '四座核心运营站点：托管、数据、登录、邮件与后台现状对比。'}
           </p>
           <p className="mt-3 text-xs text-[#94a3b8]">
-            已授权：{user?.name || user?.login || 'owner'}
+            已授权：{user?.name || user?.login || 'owner'} · 快照 {PORTFOLIO_SNAPSHOT.label}
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-2">
-          {[
-            ['4', '核心板块'],
-            ['37', '仓库/工作区'],
-            ['30G', '整理后体积'],
-            ['38G', '已释放空间'],
-          ].map(([value, label]) => (
-            <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-3">
-              <b className="block text-lg">{value}</b>
-              <span className="text-xs text-[#cbd5e1]">{label}</span>
-            </div>
-          ))}
+        <p className="mt-6 text-xs uppercase text-[#94a3b8]">主视图</p>
+        <div className="mt-2 grid gap-2">
+          {PRIMARY_VIEW_DEFS.map((view) => {
+            const active = primaryView === view.key
+            return (
+              <button
+                key={view.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setPrimaryView(view.key)}
+                className={`rounded-lg px-3 py-2.5 text-left transition ${
+                  active ? 'bg-[#f8fafc] text-[#111827]' : 'bg-white/5 text-[#e5e7eb] hover:bg-white/10'
+                }`}
+              >
+                <span className="block text-sm font-semibold">{view.label}</span>
+                <span className={`mt-0.5 block text-[11px] ${active ? 'text-[#475467]' : 'text-[#94a3b8]'}`}>
+                  {view.title}
+                </span>
+                <span className={`mt-0.5 block font-mono text-[10px] ${active ? 'text-[#667085]' : 'text-[#64748b]'}`}>
+                  快照 {view.snapshotLabel}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
-        <p className="mt-6 text-xs uppercase text-[#94a3b8]">按治理动作筛选</p>
-        <div className="mt-2 grid gap-2">
-          {Object.entries(actionLabels).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={actionFilter === id}
-              onClick={() => setActionFilter(id)}
-              className={`rounded-lg px-3 py-2 text-left text-sm transition ${
-                actionFilter === id ? 'bg-[#f8fafc] text-[#111827]' : 'bg-white/5 text-[#e5e7eb] hover:bg-white/10'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <p className="mt-6 text-xs uppercase text-[#94a3b8]">管理原则</p>
-        <div className="mt-2 grid gap-2">
-          {principles.map((principle) => (
-            <div key={principle} className="rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb]">
-              {principle}
+        {primaryView === 'repos' ? (
+          <>
+            <div className="mt-6 grid grid-cols-2 gap-2">
+              {[
+                [String(Object.keys(pillars).length), '核心板块'],
+                [String(projects.length), '仓库/工作区'],
+                ['30G', '整理后体积'],
+                ['38G', '已释放空间'],
+              ].map(([value, label]) => (
+                <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  <b className="block text-lg">{value}</b>
+                  <span className="text-xs text-[#cbd5e1]">{label}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+
+            <p className="mt-6 text-xs uppercase text-[#94a3b8]">按治理动作筛选</p>
+            <div className="mt-2 grid gap-2">
+              {Object.entries(actionLabels).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={actionFilter === id}
+                  onClick={() => setActionFilter(id)}
+                  className={`rounded-lg px-3 py-2 text-left text-sm transition ${
+                    actionFilter === id ? 'bg-[#f8fafc] text-[#111827]' : 'bg-white/5 text-[#e5e7eb] hover:bg-white/10'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-6 text-xs uppercase text-[#94a3b8]">四大板块</p>
+            <div className="mt-2 grid gap-2">
+              {Object.entries(pillars).map(([id, pillar]) => (
+                <div key={id} className="rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb]">
+                  <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: pillar.color }} />
+                  {pillar.name}
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-6 text-xs uppercase text-[#94a3b8]">管理原则</p>
+            <div className="mt-2 grid gap-2">
+              {principles.map((principle) => (
+                <div key={principle} className="rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb]">
+                  {principle}
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mt-6 grid grid-cols-2 gap-2">
+              {[
+                [String(SITE_INFRA.length), '核心站点'],
+                [String(INFRA_DIMENSIONS.length), '对比维度'],
+                ['4', '图例类型'],
+                [PORTFOLIO_SNAPSHOT.label.replace(/\s/g, ''), '快照月份'],
+              ].map(([value, label]) => (
+                <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  <b className="block text-lg">{value}</b>
+                  <span className="text-xs text-[#cbd5e1]">{label}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-6 text-xs uppercase text-[#94a3b8]">四座站点</p>
+            <div className="mt-2 grid gap-2">
+              {SITE_INFRA.map((site) => (
+                <a
+                  key={site.id}
+                  href={`#site-card-${site.id}`}
+                  className="rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb] no-underline transition hover:bg-white/10"
+                >
+                  <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: site.color }} />
+                  {site.name}
+                </a>
+              ))}
+            </div>
+
+            <p className="mt-6 text-xs uppercase text-[#94a3b8]">状态图例</p>
+            <div className="mt-2 grid gap-2">
+              {INFRA_TONE_LEGEND.map(([tone, label]) => (
+                <div key={tone} className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb]">
+                  <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
+                  {label}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </aside>
 
       <div className="grid min-w-0 gap-5">
         <section className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <div>
-            <h2 className="text-2xl font-semibold text-[#15140f] dark:text-gray-100">本地仓库 × 核心运营站点</h2>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">
+              {primaryView === 'repos' ? '本地仓库' : '核心运营站点'}
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold text-[#15140f] dark:text-gray-100">
+              {primaryView === 'repos' ? '三大板块 + AI Agent 关系图' : '四站基础设施现状'}
+            </h2>
             <p className="mt-2 text-sm leading-6 text-[#667085] dark:text-gray-400">
-              切换查看本地工作区关系图，或四座线上站点的托管、数据、登录与后台现状；每次占满主视图。点击节点或阵列行查看项目详情。
+              {primaryView === 'repos'
+                ? '在左侧切换主视图或按治理动作筛选；点击节点或阵列行查看项目详情。'
+                : '在左侧跳转四座站点卡片；对比托管、数据、登录、邮件与后台差异。'}
             </p>
           </div>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            type="search"
-            placeholder="搜索项目、角色或建议"
-            className="w-full rounded-lg border border-[#d9dee7] bg-white px-3 py-2 text-sm outline-none focus:border-[#111827] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 md:w-72"
-          />
+          {primaryView === 'repos' ? (
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              type="search"
+              placeholder="搜索项目、角色或建议"
+              className="w-full rounded-lg border border-[#d9dee7] bg-white px-3 py-2 text-sm outline-none focus:border-[#111827] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 md:w-72"
+            />
+          ) : (
+            <SnapshotBadge />
+          )}
         </section>
 
         <section className="space-y-3">
-          <div
-            role="tablist"
-            aria-label="主视图切换"
-            className="flex flex-wrap gap-2"
-          >
-            {PRIMARY_VIEW_DEFS.map((view) => {
-              const active = primaryView === view.key
-              return (
-                <button
-                  key={view.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setPrimaryView(view.key)}
-                  className={[
-                    'rounded-lg border px-3 py-2 text-left transition-colors',
-                    active
-                      ? 'border-[#111827] bg-[#111827] text-white dark:border-gray-100 dark:bg-gray-100 dark:text-[#111827]'
-                      : 'border-[#d9dee7] bg-white text-[#344054] hover:border-[#98a2b3] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500',
-                  ].join(' ')}
-                >
-                  <span className="block text-sm font-semibold">{view.label}</span>
-                  <span className={`mt-0.5 block text-[11px] ${active ? 'text-white/80 dark:text-[#111827]/70' : 'text-[#667085] dark:text-gray-400'}`}>
-                    {view.title}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-
           {primaryView === 'repos' ? (
             <div
               ref={graphFrameRef}
@@ -538,7 +618,9 @@ export default function ProjectPortfolioConsole({ user }) {
                     GitHub / Codex / Claude 工作区 · 拖拽画布移动；箭头表示吸收、服务、迁移或归档关系
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <SnapshotBadge />
+                  <div className="flex items-center gap-1.5">
                   <GraphControlButton
                     label="缩小关系图"
                     icon="zoomOut"
@@ -560,6 +642,7 @@ export default function ProjectPortfolioConsole({ user }) {
                     icon={isGraphFullscreen ? 'exitFullscreen' : 'fullscreen'}
                     onClick={toggleGraphFullscreen}
                   />
+                  </div>
                 </div>
               </div>
               <div
@@ -642,13 +725,16 @@ export default function ProjectPortfolioConsole({ user }) {
                     2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] dark:text-gray-400">
-                  {INFRA_TONE_LEGEND.map(([tone, label]) => (
-                    <span key={tone} className="inline-flex items-center gap-1.5">
-                      <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
-                      {label}
-                    </span>
-                  ))}
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <SnapshotBadge />
+                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] dark:text-gray-400">
+                    {INFRA_TONE_LEGEND.map(([tone, label]) => (
+                      <span key={tone} className="inline-flex items-center gap-1.5">
+                        <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
+                        {label}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -657,6 +743,7 @@ export default function ProjectPortfolioConsole({ user }) {
                   {SITE_INFRA.map((site) => (
                     <article
                       key={site.id}
+                      id={`site-card-${site.id}`}
                       className="overflow-hidden rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950/40"
                     >
                       <div className="h-1 w-full" style={{ background: site.color }} />
@@ -716,6 +803,7 @@ export default function ProjectPortfolioConsole({ user }) {
           )}
         </section>
 
+        {primaryView === 'repos' ? (
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
             <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">项目详情</h3>
@@ -745,7 +833,9 @@ export default function ProjectPortfolioConsole({ user }) {
             </div>
           </div>
         </section>
+        ) : null}
 
+        {primaryView === 'repos' ? (
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
             <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">关系阵列</h3>
@@ -802,7 +892,9 @@ export default function ProjectPortfolioConsole({ user }) {
             </table>
           </div>
         </section>
+        ) : null}
 
+        {primaryView === 'repos' ? (
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
             <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">未来 4 阶段迭代</h3>
@@ -849,6 +941,7 @@ export default function ProjectPortfolioConsole({ user }) {
             </table>
           </div>
         </section>
+        ) : null}
       </div>
     </main>
   )

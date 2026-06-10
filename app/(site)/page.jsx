@@ -17,6 +17,15 @@ const SECTION_BADGE_CLASS = {
     'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
 }
 
+const SECTION_NAV_LINK_CLASS = {
+  column:
+    'border-[#b7baa8] bg-[#e4e6dc] text-[#2f3228] shadow-[0_4px_14px_rgba(82,69,45,0.08)] hover:border-[#9a9d8c] hover:bg-[#d8dacf] dark:border-[#4a5240] dark:bg-[#243028] dark:text-[#e2e6d4] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:hover:border-[#5c6854] dark:hover:bg-[#2c3a30]',
+  research:
+    'border-[#8aabd6] bg-[#d4e4f8] text-[#1a3d6b] shadow-[0_4px_14px_rgba(59,91,138,0.12)] hover:border-[#6f94c8] hover:bg-[#c2d8f2] dark:border-[#3a5580] dark:bg-[#1a2d4a] dark:text-[#c8dcf5] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:hover:border-[#4a6a98] dark:hover:bg-[#223a5c]',
+  resources:
+    'border-[#7ab89a] bg-[#cfe8db] text-[#1a4f38] shadow-[0_4px_14px_rgba(56,107,84,0.1)] hover:border-[#5fa882] hover:bg-[#b8dcc8] dark:border-[#2e5540] dark:bg-[#1a3028] dark:text-[#b8e0cc] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:hover:border-[#3d6a50] dark:hover:bg-[#223c30]',
+}
+
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
@@ -81,7 +90,7 @@ function HomeFeaturedSection({ items }) {
   if (!items.length) return null
   return (
     <section className="rounded-[24px] border border-[#dcded6] bg-[#f9faf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-4 space-y-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0] mb-2">
             Start Here
@@ -90,22 +99,23 @@ function HomeFeaturedSection({ items }) {
         </div>
         <nav
           aria-label="查看更多内容分类"
-          className="flex flex-wrap items-center gap-x-1 gap-y-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[#646655] dark:text-[#acaf9d]"
+          className="flex flex-wrap items-center gap-2.5"
         >
-          {HOME_SECTION_MORE_LINKS.map((link, index) => (
-            <span key={link.href} className="inline-flex items-center gap-1">
-              {index > 0 ? (
-                <span aria-hidden="true" className="text-[#bbbdb0] dark:text-[#4a5568]">
-                  /
-                </span>
-              ) : null}
-              <Link
-                href={link.href}
-                className="no-underline opacity-80 transition-opacity hover:opacity-100"
-              >
-                {link.label} →
-              </Link>
-            </span>
+          {HOME_SECTION_MORE_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={[
+                'inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-[13.5px] font-semibold no-underline transition-all',
+                'hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(82,69,45,0.12)] dark:hover:shadow-[0_8px_20px_rgba(0,0,0,0.28)]',
+                SECTION_NAV_LINK_CLASS[link.section] || SECTION_NAV_LINK_CLASS.column,
+              ].join(' ')}
+            >
+              {link.label}
+              <span aria-hidden="true" className="font-mono text-[12px] opacity-80">
+                →
+              </span>
+            </Link>
           ))}
         </nav>
       </div>

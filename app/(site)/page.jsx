@@ -1,38 +1,16 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { articles } from './articles/articlesData'
 import DaysSince from './components/DaysSince'
 import SiteFooter from './components/SiteFooter'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
 import { listResearch } from '../../lib/research/loader'
-import { getHomeResearchPicks, getHomeResourcePicks } from '../../lib/homeHighlights'
-
-function wrapTitle(title) {
-  if (!title) return ''
-  if (title.includes('《') || title.includes('》')) return title
-  return `《${title}》`
-}
+import { getHomeArticlePicks, getHomeResearchPicks, getHomeResourcePicks } from '../../lib/homeHighlights'
 
 export const dynamic = 'force-static'
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
-}
-
-function getArticleLink(article) {
-  if (article?.slug === 'diary-self-reflection') return '/diary'
-  if (article?.href) return article.href
-  return `/articles/${article.slug}`
-}
-
-function getArticleCategory(article) {
-  if (article?.homeCategory) return article.homeCategory
-  if (article?.slug === 'ocr-comparison-paddleocr-vl') return 'AI'
-  if (article?.slug === 'content-os-blogger-matrix-alliance') return '创作'
-  if (article?.slug === 'blogger-future-community') return '社区'
-  if (article?.slug === 'diary-self-reflection') return '随笔'
-  return '工程化'
 }
 
 function buildResearchPipelineStats() {
@@ -50,6 +28,50 @@ function buildResearchPipelineStats() {
   }
 }
 
+function HomeFeaturedLinkItem({ item }) {
+  const className =
+    'group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f8f4ec] dark:hover:bg-[#18202a]'
+  const content = (
+    <>
+      <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        {item.isLatest ? (
+          <span className="inline-flex shrink-0 items-center rounded-full border border-[#d4c4a8] bg-[#f0e6d4] px-2 py-0.5 font-mono text-[10px] text-[#6b4f1d] dark:border-[#4a3d24] dark:bg-[#2a2218] dark:text-[#e8c98a]">
+            最新
+          </span>
+        ) : null}
+        <span className="inline-flex shrink-0 items-center rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2 py-0.5 font-mono text-[10px] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
+          {item.tagLabel}
+        </span>
+        {item.date ? (
+          <span className="shrink-0 font-mono text-[10px] text-[#aaa093] dark:text-gray-500">{item.date}</span>
+        ) : null}
+      </div>
+      <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[#2d261d] group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">
+        {item.title}
+      </p>
+      {item.summary ? (
+        <p className="mb-0 mt-0.5 line-clamp-1 text-[12px] leading-5 text-[#8b806c] dark:text-gray-400">
+          {item.summary}
+        </p>
+      ) : null}
+    </>
+  )
+
+  if (item.external || isExternalHref(item.href)) {
+    return (
+      <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`}>
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <Link href={item.href} className={className}>
+      {content}
+    </Link>
+  )
+}
+
 function HomeFeaturedLinks({ items }) {
   if (!items.length) return null
   return (
@@ -59,33 +81,7 @@ function HomeFeaturedLinks({ items }) {
       </p>
       <div className="space-y-1">
         {items.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            className="group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f8f4ec] dark:hover:bg-[#18202a]"
-          >
-            <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              {item.isLatest ? (
-                <span className="inline-flex shrink-0 items-center rounded-full border border-[#d4c4a8] bg-[#f0e6d4] px-2 py-0.5 font-mono text-[10px] text-[#6b4f1d] dark:border-[#4a3d24] dark:bg-[#2a2218] dark:text-[#e8c98a]">
-                  最新
-                </span>
-              ) : null}
-              <span className="inline-flex shrink-0 items-center rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2 py-0.5 font-mono text-[10px] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
-                {item.tagLabel}
-              </span>
-              {item.date ? (
-                <span className="shrink-0 font-mono text-[10px] text-[#aaa093] dark:text-gray-500">{item.date}</span>
-              ) : null}
-            </div>
-            <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[#2d261d] group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">
-              {item.title}
-            </p>
-            {item.summary ? (
-              <p className="mb-0 mt-0.5 line-clamp-1 text-[12px] leading-5 text-[#8b806c] dark:text-gray-400">
-                {item.summary}
-              </p>
-            ) : null}
-          </Link>
+          <HomeFeaturedLinkItem key={item.id} item={item} />
         ))}
       </div>
     </div>
@@ -93,9 +89,7 @@ function HomeFeaturedLinks({ items }) {
 }
 
 export default function HomePage() {
-  const featuredArticles = [...articles]
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-    .slice(0, 3)
+  const featuredArticles = getHomeArticlePicks()
   const researchStats = buildResearchPipelineStats()
   const featuredResearch = getHomeResearchPicks()
   const featuredResources = getHomeResourcePicks()
@@ -264,64 +258,7 @@ export default function HomePage() {
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
                 精选文章 / 工程作品 / 观点输出。
               </p>
-              <div className="grid gap-4">
-                {featuredArticles.map((a, index) => {
-                  const href = getArticleLink(a)
-                  const external = isExternalHref(href)
-                  const card = (
-                    <>
-                      <div className="aspect-[16/9] overflow-hidden rounded-xl border border-[#efe7db] bg-[#f6f1e7] dark:border-[#2a3440] dark:bg-[#10151d]">
-                        <Image
-                          src={a.cover}
-                          alt={a.title}
-                          width={336}
-                          height={189}
-                          priority={index === 0}
-                          sizes="(min-width: 768px) 188px, 100vw"
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
-                            #{getArticleCategory(a)}
-                          </span>
-                          <span className="font-mono text-[12px] tracking-[0.08em] text-[#9d9078] dark:text-[#94a0b1]">
-                            {a.date}
-                          </span>
-                          <span className="rounded-full bg-[#f4efe5] px-2 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-[#7d6c4f] dark:bg-[#18202a] dark:text-[#c8b99d]">
-                            {a.badge || (external ? 'Original' : 'Essay')}
-                          </span>
-                        </div>
-                        <h3 className="mb-2 font-serif text-[20px] font-semibold leading-8 text-[#201d19] transition-colors group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">
-                          {wrapTitle(a.title)}
-                        </h3>
-                        <p className="mb-0 line-clamp-3 text-[14px] leading-[1.82] text-[#625b51] dark:text-gray-300">
-                          {a.summary}
-                        </p>
-                      </div>
-                    </>
-                  )
-                  const className =
-                    'group no-external-arrow grid gap-4 rounded-2xl border border-[#ece5d8] bg-white p-4 no-underline shadow-[0_18px_48px_rgba(112,96,68,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#d7cbb7] hover:shadow-[0_20px_54px_rgba(100,79,47,0.10)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d] md:grid-cols-[188px_minmax(0,1fr)]'
-
-                  return external ? (
-                    <a
-                      key={`${a.date}-${a.title}`}
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={className}
-                    >
-                      {card}
-                    </a>
-                  ) : (
-                    <Link key={`${a.date}-${a.title}`} href={href} className={className}>
-                      {card}
-                    </Link>
-                  )
-                })}
-              </div>
+              <HomeFeaturedLinks items={featuredArticles} />
             </section>
 
             <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">

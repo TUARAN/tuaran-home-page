@@ -9,13 +9,13 @@ const PAGE_URL = 'https://2aran.com/skill-market-research'
 export const metadata = {
   title: 'Skill 上架、宣发与回流工程调研',
   description:
-    '围绕 Codex / Claude / OpenClaw / ClawHub / GitHub / X 的 Skill 制作、上架、宣发与回流路径调研，整理成可执行的工程作品打法。',
+    '围绕 Codex / Claude / OpenClaw / ClawHub / GitHub / X 的 Skill 制作、上架、宣发与回流路径调研，整理成可执行的多维页面打法。',
   alternates: { canonical: '/skill-market-research' },
   openGraph: {
     type: 'article',
     siteName: '2aran.com',
     title: 'Skill 上架、宣发与回流工程调研',
-    description: '一个 Skill 如何从文件变成工程作品：制作、上架、宣发、回流。',
+    description: '一个 Skill 如何从文件变成多维页面：制作、上架、宣发、回流。',
     url: PAGE_URL,
     publishedTime: '2026-06-05T00:00:00.000Z',
     authors: ['涂阿燃 / Tuaran'],
@@ -24,7 +24,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Skill 上架、宣发与回流工程调研',
-    description: '一个 Skill 如何从文件变成工程作品：制作、上架、宣发、回流。',
+    description: '一个 Skill 如何从文件变成多维页面：制作、上架、宣发、回流。',
     creator: '@Anthony404',
     site: '@Anthony404',
   },
@@ -107,7 +107,7 @@ export default function SkillMarketResearchPage() {
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_320px] md:py-14">
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#65665c] dark:text-gray-400">
-              <Link href="/works" className="underline-offset-4 hover:underline">工程作品</Link>
+              <Link href="/works" className="underline-offset-4 hover:underline">多维页面</Link>
               <span>/</span>
               <span>Skill 市场调研</span>
             </div>
@@ -115,7 +115,7 @@ export default function SkillMarketResearchPage() {
               Skill Market Research · 2026-06-05
             </p>
             <h1 className="mt-4 max-w-4xl font-serif text-[34px] font-semibold leading-tight text-[#1a1b17] dark:text-gray-100 md:text-[52px]">
-              一个 Skill 如何从文件变成工程作品
+              一个 Skill 如何从文件变成多维页面
             </h1>
             <p className="mt-5 max-w-3xl text-[15px] leading-8 text-[#464840] dark:text-gray-300">
               结论很直接：Skill 的竞争不在“提示词写得多漂亮”，而在能否形成一条闭环链路：
@@ -125,7 +125,7 @@ export default function SkillMarketResearchPage() {
           <div className="flex flex-col justify-between gap-5 rounded-2xl border border-[#cbcdc1] bg-white/62 p-5 dark:border-[#293544] dark:bg-white/[0.04]">
             <SharePageButton
               title="Skill 上架、宣发与回流工程调研"
-              text="一个 Skill 如何从文件变成工程作品：制作、上架、宣发、回流。"
+              text="一个 Skill 如何从文件变成多维页面：制作、上架、宣发、回流。"
               url="/skill-market-research"
             />
             <div className="grid grid-cols-2 gap-3">

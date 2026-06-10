@@ -63,7 +63,7 @@ export function buildKnowledgeItems() {
   const worksItems = ENGINEERING_WORKS.map((p) => ({
     id: `work:${p.href}`,
     kind: 'works',
-    tagLabel: p.kind ? `工程作品 · ${p.kind}` : '工程作品',
+    tagLabel: p.kind ? `多维页面 · ${p.kind}` : '多维页面',
     title: p.title,
     summary: p.summary,
     date: p.date,

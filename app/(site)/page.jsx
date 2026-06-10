@@ -17,13 +17,22 @@ const SECTION_BADGE_CLASS = {
     'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
 }
 
-const SECTION_NAV_LINK_CLASS = {
-  column:
-    'border-[#b7baa8] bg-[#e4e6dc] text-[#2f3228] shadow-[0_4px_14px_rgba(82,69,45,0.08)] hover:border-[#9a9d8c] hover:bg-[#d8dacf] dark:border-[#4a5240] dark:bg-[#243028] dark:text-[#e2e6d4] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:hover:border-[#5c6854] dark:hover:bg-[#2c3a30]',
-  research:
-    'border-[#8aabd6] bg-[#d4e4f8] text-[#1a3d6b] shadow-[0_4px_14px_rgba(59,91,138,0.12)] hover:border-[#6f94c8] hover:bg-[#c2d8f2] dark:border-[#3a5580] dark:bg-[#1a2d4a] dark:text-[#c8dcf5] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:hover:border-[#4a6a98] dark:hover:bg-[#223a5c]',
-  resources:
-    'border-[#7ab89a] bg-[#cfe8db] text-[#1a4f38] shadow-[0_4px_14px_rgba(56,107,84,0.1)] hover:border-[#5fa882] hover:bg-[#b8dcc8] dark:border-[#2e5540] dark:bg-[#1a3028] dark:text-[#b8e0cc] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:hover:border-[#3d6a50] dark:hover:bg-[#223c30]',
+const SECTION_NAV_ACCENT = {
+  column: {
+    bar: 'bg-[#8a8f72] dark:bg-[#8a9a6b]',
+    text: 'text-[#4a4d42] dark:text-[#c4c8b4]',
+    hover: 'hover:bg-[#f5f6f1] hover:text-[#1a1814] dark:hover:bg-[#1a2018] dark:hover:text-[#e8eadf]',
+  },
+  research: {
+    bar: 'bg-[#5b7fa8] dark:bg-[#6b94c4]',
+    text: 'text-[#3d5678] dark:text-[#a8c4e4]',
+    hover: 'hover:bg-[#f3f7fc] hover:text-[#1a3050] dark:hover:bg-[#141f2e] dark:hover:text-[#d4e6f8]',
+  },
+  resources: {
+    bar: 'bg-[#5a8f72] dark:bg-[#6ba888]',
+    text: 'text-[#3d5c4a] dark:text-[#a8d4bc]',
+    hover: 'hover:bg-[#f2f8f4] hover:text-[#1a3d2a] dark:hover:bg-[#141f1a] dark:hover:text-[#d0ecd8]',
+  },
 }
 
 function isExternalHref(href) {
@@ -99,29 +108,44 @@ function HomeFeaturedSection({ items }) {
         </div>
         <nav
           aria-label="查看更多内容分类"
-          className="flex shrink-0 flex-wrap items-center justify-end gap-2"
+          className="inline-flex shrink-0 items-stretch overflow-hidden rounded-lg border border-[#dfe0d8] bg-white/90 dark:border-[#2a3440] dark:bg-[#121821]/90"
         >
-          {HOME_SECTION_MORE_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={[
-                'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[13px] font-semibold no-underline transition-all',
-                'hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(82,69,45,0.12)] dark:hover:shadow-[0_8px_20px_rgba(0,0,0,0.28)]',
-                SECTION_NAV_LINK_CLASS[link.section] || SECTION_NAV_LINK_CLASS.column,
-              ].join(' ')}
-            >
-              {link.label}
-              <span aria-hidden="true" className="font-mono text-[12px] opacity-80">
-                →
-              </span>
-            </Link>
-          ))}
+          {HOME_SECTION_MORE_LINKS.map((link, idx) => {
+            const accent = SECTION_NAV_ACCENT[link.section] || SECTION_NAV_ACCENT.column
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={[
+                  'group inline-flex items-center gap-2 px-3.5 py-2 text-[13px] font-medium no-underline transition-colors',
+                  idx > 0 ? 'border-l border-[#e8e9e4] dark:border-[#2a3440]' : '',
+                  accent.text,
+                  accent.hover,
+                ].join(' ')}
+              >
+                <span
+                  aria-hidden="true"
+                  className={['h-3 w-0.5 shrink-0 rounded-full', accent.bar].join(' ')}
+                />
+                {link.label}
+                <svg
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                  className="h-3 w-3 shrink-0 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-50"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4.5 2.5h5v5" />
+                  <path d="M9.5 2.5L3.5 8.5" />
+                </svg>
+              </Link>
+            )
+          })}
         </nav>
       </div>
-      <p className="mb-4 text-[13px] leading-[1.85] text-[#6d6f65] dark:text-[#8e98a8]">
-        专栏文章、专题调研与站内资料 —— 最新内容优先，其余每日轮换。
-      </p>
       <div className="rounded-2xl border border-[#dfe0d8] bg-white p-3 dark:border-[#232c36] dark:bg-[#121821]">
         <div className="space-y-1">
           {items.map((item) => (

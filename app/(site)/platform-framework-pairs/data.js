@@ -201,7 +201,7 @@ export const PAIRS = [
     id: 'bun-elysia',
     platform: 'Bun（runtime）',
     framework: 'Elysia / Hono',
-    color: '#fbf0df',
+    color: '#e9eadf',
     status: 'forming',
     verified: true,
     foundedPairing: 2023,

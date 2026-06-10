@@ -2,9 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --page-bg: #f0f1ee;
+}
+
 @layer base {
   body {
-    @apply bg-[#f8f5f0] dark:bg-[#0b1016] text-[#333] dark:text-gray-100 font-sans;
+    @apply bg-[var(--page-bg)] dark:bg-[#0b1016] text-[#333] dark:text-gray-100 font-sans;
     width: 100%;
     max-width: 100%;
     min-height: 100vh;
@@ -30,7 +34,7 @@
   h4,
   h5,
   h6 {
-    @apply font-normal text-[#333] dark:text-gray-100 leading-tight;
+    @apply font-semibold text-[#15140f] dark:text-gray-100 leading-tight;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
       Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
     transition: color 0.3s ease;
@@ -40,7 +44,7 @@
     @apply text-2xl md:text-3xl;
   }
   h2 {
-    @apply text-xl md:text-2xl border-b border-[#eee] dark:border-gray-700 pb-2 mb-4;
+    @apply text-xl md:text-2xl border-b border-[#15140f] dark:border-gray-300 pb-2 mb-4;
   }
   h3 {
     @apply text-lg md:text-xl;
@@ -75,7 +79,7 @@
 
 @layer components {
   .home-section-title {
-    @apply mb-0 border-b-0 pb-0 font-serif text-[1.45rem] font-semibold tracking-[0.04em] text-[#221f19] dark:text-gray-100;
+    @apply mb-0 border-b-0 pb-0 font-serif text-[1.55rem] font-bold tracking-[0.02em] text-[#15140f] dark:text-gray-100;
   }
 
   .context-memory-page h1,
@@ -95,12 +99,12 @@
   }
 
   .header-icon-link {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ddd3c4] text-[#6c604d] no-underline transition-all hover:-translate-y-0.5 hover:text-[#2d261d] dark:border-[#2a3440] dark:text-[#c1cad6] dark:hover:text-white;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d0d2cd] text-[#454642] no-underline transition-all hover:-translate-y-0.5 hover:text-[#1a1814] dark:border-[#2a3440] dark:text-[#c1cad6] dark:hover:text-white;
     background-color: rgba(255, 255, 255, 0.72);
   }
 
   .back-to-top-button {
-    @apply fixed bottom-5 right-5 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ddd3c4] text-[#5d503f] shadow-[0_12px_28px_rgba(93,80,63,0.16)] backdrop-blur transition-all hover:-translate-y-0.5 hover:text-[#2d261d] dark:border-[#2a3440] dark:text-[#d3d8df] dark:hover:text-white;
+    @apply fixed bottom-5 right-5 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d0d2cd] text-[#333431] shadow-[0_12px_28px_rgba(93,80,63,0.16)] backdrop-blur transition-all hover:-translate-y-0.5 hover:text-[#1a1814] dark:border-[#2a3440] dark:text-[#d3d8df] dark:hover:text-white;
     background-color: rgba(255, 255, 255, 0.88);
   }
 
@@ -141,35 +145,35 @@
     @apply prose-td:text-[#666] dark:prose-td:text-gray-300;
 
     @apply [&_.research-inline-image]:my-8 [&_.research-inline-image]:overflow-hidden;
-    @apply [&_.research-inline-image]:rounded-md [&_.research-inline-image]:border [&_.research-inline-image]:border-[#e8dfd0] dark:[&_.research-inline-image]:border-gray-800;
+    @apply [&_.research-inline-image]:rounded-md [&_.research-inline-image]:border [&_.research-inline-image]:border-[#dee0db] dark:[&_.research-inline-image]:border-gray-800;
     @apply [&_.research-inline-image]:bg-white dark:[&_.research-inline-image]:bg-gray-900;
     @apply [&_.research-inline-image_img]:m-0 [&_.research-inline-image_img]:aspect-[16/9] [&_.research-inline-image_img]:h-auto [&_.research-inline-image_img]:w-full [&_.research-inline-image_img]:object-cover;
-    @apply [&_.research-inline-image_figcaption]:m-0 [&_.research-inline-image_figcaption]:border-t [&_.research-inline-image_figcaption]:border-[#e8dfd0] dark:[&_.research-inline-image_figcaption]:border-gray-800;
-    @apply [&_.research-inline-image_figcaption]:px-3 [&_.research-inline-image_figcaption]:py-2 [&_.research-inline-image_figcaption]:text-[11px] [&_.research-inline-image_figcaption]:text-[#8d806d] dark:[&_.research-inline-image_figcaption]:text-gray-400;
+    @apply [&_.research-inline-image_figcaption]:m-0 [&_.research-inline-image_figcaption]:border-t [&_.research-inline-image_figcaption]:border-[#dee0db] dark:[&_.research-inline-image_figcaption]:border-gray-800;
+    @apply [&_.research-inline-image_figcaption]:px-3 [&_.research-inline-image_figcaption]:py-2 [&_.research-inline-image_figcaption]:text-[11px] [&_.research-inline-image_figcaption]:text-[#63655f] dark:[&_.research-inline-image_figcaption]:text-gray-400;
 
     @apply [&_.research-inline-diagram]:my-8 [&_.research-inline-diagram]:overflow-hidden;
-    @apply [&_.research-inline-diagram]:rounded-md [&_.research-inline-diagram]:border [&_.research-inline-diagram]:border-[#e8dfd0] dark:[&_.research-inline-diagram]:border-gray-800;
+    @apply [&_.research-inline-diagram]:rounded-md [&_.research-inline-diagram]:border [&_.research-inline-diagram]:border-[#dee0db] dark:[&_.research-inline-diagram]:border-gray-800;
     @apply [&_.research-inline-diagram]:bg-white dark:[&_.research-inline-diagram]:bg-gray-900;
     @apply [&_.research-inline-diagram]:text-center;
     @apply [&_.research-inline-diagram_svg]:mx-auto [&_.research-inline-diagram_svg]:block [&_.research-inline-diagram_svg]:h-auto [&_.research-inline-diagram_svg]:w-full [&_.research-inline-diagram_svg]:max-w-[780px];
-    @apply [&_.research-inline-diagram_figcaption]:m-0 [&_.research-inline-diagram_figcaption]:border-t [&_.research-inline-diagram_figcaption]:border-[#e8dfd0] dark:[&_.research-inline-diagram_figcaption]:border-gray-800;
-    @apply [&_.research-inline-diagram_figcaption]:px-3 [&_.research-inline-diagram_figcaption]:py-2 [&_.research-inline-diagram_figcaption]:text-[11px] [&_.research-inline-diagram_figcaption]:text-[#8d806d] dark:[&_.research-inline-diagram_figcaption]:text-gray-400;
+    @apply [&_.research-inline-diagram_figcaption]:m-0 [&_.research-inline-diagram_figcaption]:border-t [&_.research-inline-diagram_figcaption]:border-[#dee0db] dark:[&_.research-inline-diagram_figcaption]:border-gray-800;
+    @apply [&_.research-inline-diagram_figcaption]:px-3 [&_.research-inline-diagram_figcaption]:py-2 [&_.research-inline-diagram_figcaption]:text-[11px] [&_.research-inline-diagram_figcaption]:text-[#63655f] dark:[&_.research-inline-diagram_figcaption]:text-gray-400;
 
     @apply [&_.research-inline-diagram_.mm-center]:fill-[#4a6fa5];
     @apply [&_.research-inline-diagram_.mm-center_text]:fill-white [&_.research-inline-diagram_.mm-center_text]:font-semibold;
-    @apply [&_.research-inline-diagram_.mm-branch]:fill-[#f5f0e6] [&_.research-inline-diagram_.mm-branch]:stroke-[#d4c8b0];
-    @apply [&_.research-inline-diagram_.mm-branch_text]:fill-[#221d16] [&_.research-inline-diagram_.mm-branch_text]:font-semibold;
-    @apply [&_.research-inline-diagram_.mm-leaf]:fill-[#fcfaf3] [&_.research-inline-diagram_.mm-leaf]:stroke-[#ddd2b8];
-    @apply [&_.research-inline-diagram_.mm-leaf_text]:fill-[#3d362b];
-    @apply [&_.research-inline-diagram_.mm-line]:fill-none [&_.research-inline-diagram_.mm-line]:stroke-[#c4b8a8] [&_.research-inline-diagram_.mm-line]:[stroke-width:1.5];
+    @apply [&_.research-inline-diagram_.mm-branch]:fill-[#e9ebe6] [&_.research-inline-diagram_.mm-branch]:stroke-[#c3c5c0];
+    @apply [&_.research-inline-diagram_.mm-branch_text]:fill-[#15140f] [&_.research-inline-diagram_.mm-branch_text]:font-semibold;
+    @apply [&_.research-inline-diagram_.mm-leaf]:fill-[#f7f8f5] [&_.research-inline-diagram_.mm-leaf]:stroke-[#d0d2cd];
+    @apply [&_.research-inline-diagram_.mm-leaf_text]:fill-[#262724];
+    @apply [&_.research-inline-diagram_.mm-line]:fill-none [&_.research-inline-diagram_.mm-line]:stroke-[#b4b6b1] [&_.research-inline-diagram_.mm-line]:[stroke-width:1.5];
     @apply [&_.research-inline-diagram_.mm-label]:font-sans [&_.research-inline-diagram_.mm-label]:text-[13px];
 
     @apply dark:[&_.research-inline-diagram_.mm-center]:fill-[#5b7fb8];
-    @apply dark:[&_.research-inline-diagram_.mm-branch]:fill-[#2a2620] dark:[&_.research-inline-diagram_.mm-branch]:stroke-[#4a4438];
-    @apply dark:[&_.research-inline-diagram_.mm-branch_text]:fill-[#e8e4dc];
-    @apply dark:[&_.research-inline-diagram_.mm-leaf]:fill-[#1f1c18] dark:[&_.research-inline-diagram_.mm-leaf]:stroke-[#3d3830];
-    @apply dark:[&_.research-inline-diagram_.mm-leaf_text]:fill-[#c8c2b8];
-    @apply dark:[&_.research-inline-diagram_.mm-line]:stroke-[#5a5348];
+    @apply dark:[&_.research-inline-diagram_.mm-branch]:fill-[#1c1d1b] dark:[&_.research-inline-diagram_.mm-branch]:stroke-[#373836];
+    @apply dark:[&_.research-inline-diagram_.mm-branch_text]:fill-[#dee0db];
+    @apply dark:[&_.research-inline-diagram_.mm-leaf]:fill-[#161513] dark:[&_.research-inline-diagram_.mm-leaf]:stroke-[#2c2d2b];
+    @apply dark:[&_.research-inline-diagram_.mm-leaf_text]:fill-[#b4b6b1];
+    @apply dark:[&_.research-inline-diagram_.mm-line]:stroke-[#41423f];
   }
 
   /* 宽表格在 H5 下横向滚动：用块级容器承载滚动，切断 table min-content 对父级宽度的传导 */
@@ -209,12 +213,12 @@
   .ai-projects-nav-icon {
     width: 20px;
     height: 20px;
-    color: #be123c;
+    color: #a8392e;
     transition: color 0.2s ease, transform 0.2s ease;
   }
 
   .ai-projects-nav-label {
-    color: #9f1239;
+    color: #8a2e23;
     font-weight: 700;
     letter-spacing: 0.01em;
     transition: color 0.2s ease;
@@ -226,12 +230,12 @@
   }
 
   .ai-projects-nav:hover .ai-projects-nav-icon {
-    color: #e11d48;
+    color: #b8422e;
     transform: translateY(-0.5px) scale(1.04);
   }
 
   .ai-projects-nav:hover .ai-projects-nav-label {
-    color: #be123c;
+    color: #a8392e;
   }
 
   .ai-projects-nav-active {
@@ -241,11 +245,11 @@
   }
 
   .ai-projects-nav-active .ai-projects-nav-icon {
-    color: #e11d48;
+    color: #b8422e;
   }
 
   .ai-projects-nav-active .ai-projects-nav-label {
-    color: #be123c;
+    color: #a8392e;
   }
 
   .dark .ai-projects-nav {
@@ -253,21 +257,21 @@
   }
 
   .dark .ai-projects-nav-icon {
-    color: #fb7185;
+    color: #92756b;
   }
 
   .dark .ai-projects-nav-label {
-    color: #fda4af;
+    color: #b8a49e;
   }
 
   .dark .ai-projects-nav:hover .ai-projects-nav-icon,
   .dark .ai-projects-nav-active .ai-projects-nav-icon {
-    color: #fecdd3;
+    color: #d7d0ca;
   }
 
   .dark .ai-projects-nav:hover .ai-projects-nav-label,
   .dark .ai-projects-nav-active .ai-projects-nav-label {
-    color: #fecdd3;
+    color: #d7d0ca;
   }
 
   .dark .header-icon-link {

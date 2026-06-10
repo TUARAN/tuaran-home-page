@@ -180,7 +180,7 @@ export default function ResearchBody({ variants }) {
             <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[#999] dark:text-gray-500">
               version
             </span>
-            <div className="inline-flex overflow-hidden rounded-full border border-[#ddd8cb] bg-white/70 dark:border-[#2d3440] dark:bg-[#121821]">
+            <div className="inline-flex overflow-hidden rounded-full border border-[#d1d3cb] bg-white/70 dark:border-[#2d3440] dark:bg-[#121821]">
               {list.map((v) => {
                 const isActive = v.id === active.id
                 return (
@@ -191,8 +191,8 @@ export default function ResearchBody({ variants }) {
                     className={[
                       'px-3 py-1 text-[12px] transition',
                       isActive
-                        ? 'bg-[#b7791f] text-white dark:bg-[#e2bd75] dark:text-[#1a1a1a]'
-                        : 'text-[#5f5a4d] hover:bg-[#fbf3e3] dark:text-gray-300 dark:hover:bg-[#1a2230]',
+                        ? 'bg-[#b7791f] text-white dark:bg-[#9ba475] dark:text-[#1a1a1a]'
+                        : 'text-[#53554d] hover:bg-[#ebede3] dark:text-gray-300 dark:hover:bg-[#1a2230]',
                     ].join(' ')}
                     aria-pressed={isActive}
                   >
@@ -210,9 +210,9 @@ export default function ResearchBody({ variants }) {
           className={[
             'inline-flex items-center rounded-full border px-3 py-1 text-[12px] transition',
             !speechSupported || !speechText
-              ? 'cursor-not-allowed border-[#ddd8cb] bg-white/70 text-[#b0a89a] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-600'
+              ? 'cursor-not-allowed border-[#d1d3cb] bg-white/70 text-[#a2a39a] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-600'
               : isSpeaking
-                ? 'border-[#e9d5b8] bg-[#fbf3e3] text-[#8a5a14] hover:border-[#d4b27d] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]'
+                ? 'border-[#c9cbb8] bg-[#ebede3] text-[#8a5a14] hover:border-[#9b9f7d] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]'
                 : 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] hover:border-[#9fb7d8] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
           ].join(' ')}
           title={speechSupported ? '' : '当前浏览器不支持语音朗读'}

@@ -457,7 +457,7 @@ export default function LLMTutorialsPage() {
       footer={<p>当前收录 {total} 个入口。后续新增资源会继续按版本标记，避免资源库失去时间上下文。</p>}
     >
       <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
-        <span className="rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-1 text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+        <span className="rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-1 text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
           {RESOURCE_VERSION}
         </span>
         <span>{total} 个资源</span>
@@ -475,7 +475,7 @@ export default function LLMTutorialsPage() {
             <header className="border-b border-[#eee] pb-3 dark:border-gray-800">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-semibold text-[#333] dark:text-gray-100">{group.title}</h2>
-                <span className="rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#777] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+                <span className="rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#777] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
                   {group.items.length}
                 </span>
               </div>
@@ -484,7 +484,7 @@ export default function LLMTutorialsPage() {
 
             <div className="mt-4 grid grid-cols-1 gap-4">
               {group.items.map((item, idx) => (
-                <article key={item.url} className="rounded-md border border-[#e8dfd0] bg-[#fdfcf9] p-4 dark:border-gray-800 dark:bg-gray-950/50">
+                <article key={item.url} className="rounded-md border border-[#dee0db] bg-[#fafbf9] p-4 dark:border-gray-800 dark:bg-gray-950/50">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3
                       id={`${group.id}-${idx}`}

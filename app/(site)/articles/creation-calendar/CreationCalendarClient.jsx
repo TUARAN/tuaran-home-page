@@ -86,7 +86,7 @@ function buildWeekMonthLabels(weeks) {
 }
 
 function heatColorClass(value, max) {
-  if (!value) return 'bg-[#f6f1e8] dark:bg-[#151922]'
+  if (!value) return 'bg-[#edeee8] dark:bg-[#151922]'
   const ratio = max > 0 ? value / max : 0
   if (ratio >= 0.75) return 'bg-[#2f855a]'
   if (ratio >= 0.5) return 'bg-[#57a06f]'
@@ -155,7 +155,7 @@ export default function CreationCalendarClient({ items }) {
           </div>
           <Link
             href="/articles"
-            className="rounded-md border border-[#d8cfbf] bg-[#faf6ef] px-3 py-1.5 text-sm text-[#5b5141] no-underline transition-colors hover:border-[#bdae93] hover:text-[#2d261d] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
+            className="rounded-md border border-[#c8c9bf] bg-[#f3f4ef] px-3 py-1.5 text-sm text-[#4a4b41] no-underline transition-colors hover:border-[#a2a593] hover:text-[#1a1814] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
           >
             返回知识库
           </Link>
@@ -170,7 +170,7 @@ export default function CreationCalendarClient({ items }) {
       </section>
 
       <section className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-[#8b7f69] dark:text-[#8e9ab0]">年份</span>
+        <span className="text-xs text-[#757769] dark:text-[#8e9ab0]">年份</span>
         {years.map((year) => (
           <button
             key={year}
@@ -184,7 +184,7 @@ export default function CreationCalendarClient({ items }) {
               'rounded px-2 py-1 text-xs transition-colors',
               selectedYear === year
                 ? 'bg-[#eef4fb] text-[#285a8d] dark:bg-[#152034] dark:text-[#9bb6df]'
-                : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
             ].join(' ')}
           >
             {year}
@@ -193,7 +193,7 @@ export default function CreationCalendarClient({ items }) {
       </section>
 
       <section className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-[#8b7f69] dark:text-[#8e9ab0]">月份</span>
+        <span className="text-xs text-[#757769] dark:text-[#8e9ab0]">月份</span>
         <button
           type="button"
           onClick={() => {
@@ -204,7 +204,7 @@ export default function CreationCalendarClient({ items }) {
             'rounded px-2 py-1 text-xs transition-colors',
             selectedMonth === 'all'
               ? 'bg-[#eef6f1] text-[#386b54] dark:bg-[#13201a] dark:text-[#9dcab1]'
-              : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+              : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
           ].join(' ')}
         >
           全部月份
@@ -223,7 +223,7 @@ export default function CreationCalendarClient({ items }) {
                 'rounded px-2 py-1 text-xs transition-colors',
                 selectedMonth === monthKey
                   ? 'bg-[#eef6f1] text-[#386b54] dark:bg-[#13201a] dark:text-[#9dcab1]'
-                  : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                  : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
               ].join(' ')}
             >
               {label}
@@ -234,13 +234,13 @@ export default function CreationCalendarClient({ items }) {
 
       {selectedYear ? (
         <section className="space-y-4">
-          <h2 className="text-base font-semibold text-[#2f2a21] dark:text-gray-100">热力图（{selectedYear}）</h2>
-          <div className="rounded-md border border-[#ded5c7] bg-[#fffdf8] p-3 dark:border-gray-700 dark:bg-[#0f141b]">
+          <h2 className="text-base font-semibold text-[#262721] dark:text-gray-100">热力图（{selectedYear}）</h2>
+          <div className="rounded-md border border-[#cfd0c7] bg-[#fafbf8] p-3 dark:border-gray-700 dark:bg-[#0f141b]">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-xs text-[#776a57] dark:text-gray-300">{yearItems.length} 篇内容发布</p>
-              <p className="text-[11px] text-[#9f927d] dark:text-gray-500">
+              <p className="text-xs text-[#626357] dark:text-gray-300">{yearItems.length} 篇内容发布</p>
+              <p className="text-[11px] text-[#898b7d] dark:text-gray-500">
                 少
-                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#f6f1e8] align-middle dark:bg-[#151922]" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#edeee8] align-middle dark:bg-[#151922]" />
                 <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#c6e7d0] align-middle" />
                 <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#8bc79f] align-middle" />
                 <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#57a06f] align-middle" />
@@ -253,7 +253,7 @@ export default function CreationCalendarClient({ items }) {
               <div className="inline-flex min-w-max flex-col gap-1.5">
                 <div className="ml-6 flex gap-[3px]">
                   {weekMonthLabels.map((label, idx) => (
-                    <span key={`${selectedYear}-month-label-${idx}`} className="w-3 text-[9px] leading-none text-[#ad9f8b] dark:text-gray-600">
+                    <span key={`${selectedYear}-month-label-${idx}`} className="w-3 text-[9px] leading-none text-[#97988b] dark:text-gray-600">
                       {label}
                     </span>
                   ))}
@@ -262,7 +262,7 @@ export default function CreationCalendarClient({ items }) {
                 <div className="flex gap-1.5">
                   <div className="grid grid-rows-7 gap-[3px] pt-[1px]">
                     {WEEKDAY_LABELS.map((d, index) => (
-                      <span key={`weekday-${d}`} className="h-3 text-[9px] leading-3 text-[#b3a693] dark:text-gray-600">
+                      <span key={`weekday-${d}`} className="h-3 text-[9px] leading-3 text-[#9e9f93] dark:text-gray-600">
                         {index % 2 === 0 ? d : ''}
                       </span>
                     ))}
@@ -286,7 +286,7 @@ export default function CreationCalendarClient({ items }) {
                               className={[
                                 'h-3 w-3 rounded-[2px] text-[0px] transition-opacity',
                                 heatColorClass(cell.count, maxPerDay),
-                                selectedDate === cell.date ? 'ring-2 ring-[#2d261d] dark:ring-gray-200' : '',
+                                selectedDate === cell.date ? 'ring-2 ring-[#1a1814] dark:ring-gray-200' : '',
                                 cell.count ? 'opacity-100' : 'opacity-80',
                                 monthActive ? '' : 'opacity-30',
                               ].join(' ')}
@@ -307,14 +307,14 @@ export default function CreationCalendarClient({ items }) {
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-[#2f2a21] dark:text-gray-100">
+          <h2 className="text-base font-semibold text-[#262721] dark:text-gray-100">
             {selectedDate ? `${formatDate(selectedDate)} 发布内容` : '时间列表'}
           </h2>
           {selectedDate ? (
             <button
               type="button"
               onClick={() => setSelectedDate('')}
-              className="text-xs text-[#8f826c] transition-colors hover:text-[#3d3429] dark:text-gray-400 dark:hover:text-gray-200"
+              className="text-xs text-[#787a6c] transition-colors hover:text-[#303029] dark:text-gray-400 dark:hover:text-gray-200"
             >
               清除日期筛选
             </button>
@@ -328,15 +328,15 @@ export default function CreationCalendarClient({ items }) {
               <Link
                 key={`${item.href}-${item.title}`}
                 href={item.href}
-                className="block rounded-md border border-[#eee] bg-white p-3 no-underline transition-colors hover:border-[#d7cab4] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
+                className="block rounded-md border border-[#eee] bg-white p-3 no-underline transition-colors hover:border-[#c0c2b4] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
               >
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#8f826c] dark:text-gray-400">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#787a6c] dark:text-gray-400">
                   <time dateTime={item.date}>{item.date}</time>
                   <span>·</span>
                   <span>{KIND_LABELS[item.kind] || item.kind}</span>
                   {item.tagLabel ? <span>· {item.tagLabel}</span> : null}
                 </div>
-                <h3 className="mt-1 text-sm font-medium text-[#2f2a21] dark:text-gray-100">{item.title}</h3>
+                <h3 className="mt-1 text-sm font-medium text-[#262721] dark:text-gray-100">{item.title}</h3>
                 {item.summary ? (
                   <p className="mt-1 line-clamp-2 text-sm text-[#666] dark:text-gray-300">{item.summary}</p>
                 ) : null}
@@ -351,10 +351,10 @@ export default function CreationCalendarClient({ items }) {
 
 function StatCard({ label, value, note }) {
   return (
-    <article className="rounded-md border border-[#eadfcd] bg-[#fffaf2] p-3 dark:border-gray-800 dark:bg-[#0f141b]">
-      <p className="text-xs text-[#9b8f79] dark:text-gray-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-[#2f2a21] dark:text-gray-100">{value}</p>
-      <p className="mt-1 text-xs text-[#8f826c] dark:text-gray-400">{note}</p>
+    <article className="rounded-md border border-[#d7d9cd] bg-[#f7f7f2] p-3 dark:border-gray-800 dark:bg-[#0f141b]">
+      <p className="text-xs text-[#858779] dark:text-gray-500">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-[#262721] dark:text-gray-100">{value}</p>
+      <p className="mt-1 text-xs text-[#787a6c] dark:text-gray-400">{note}</p>
     </article>
   )
 }

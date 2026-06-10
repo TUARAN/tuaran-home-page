@@ -82,6 +82,11 @@ export default function RootLayout({ children }) {
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var v=localStorage.getItem('reading-bg');if(v){document.documentElement.style.setProperty('--page-bg',v);}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body suppressHydrationWarning>{children}</body>
     </html>

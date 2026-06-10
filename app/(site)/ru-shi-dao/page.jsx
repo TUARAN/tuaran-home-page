@@ -20,7 +20,7 @@ export const metadata = {
 
 // 三教各用一种配色：释=暖金、道=青蓝、儒=松绿（沿用站内调研标签配色）
 const ACCENT = {
-  amber: 'border-[#e9d5b8] bg-[#fbf3e3] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]',
+  amber: 'border-[#c9cbb8] bg-[#ebede3] text-[#8a5a14] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]',
   blue: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   green: 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
 }
@@ -458,9 +458,9 @@ function Item({ item }) {
   const name = isObj ? item.name : item
   const detail = isObj ? item.detail : null
   return (
-    <span className="inline-flex items-center rounded-full border border-[#e5ddcb] bg-[#faf7f0] px-2.5 py-1 text-[13px] text-[#4a4234] dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-300">
+    <span className="inline-flex items-center rounded-full border border-[#d4d7cb] bg-[#f4f5f0] px-2.5 py-1 text-[13px] text-[#3c3d34] dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-300">
       {name}
-      {detail ? <span className="ml-1 text-[11px] text-[#a09176] dark:text-gray-500">{detail}</span> : null}
+      {detail ? <span className="ml-1 text-[11px] text-[#858876] dark:text-gray-500">{detail}</span> : null}
     </span>
   )
 }
@@ -469,10 +469,10 @@ function Group({ group }) {
   return (
     <div className="mt-3">
       {group.label ? (
-        <div className="text-[13px] font-semibold text-[#5a5142] dark:text-gray-300">{group.label}</div>
+        <div className="text-[13px] font-semibold text-[#4a4c42] dark:text-gray-300">{group.label}</div>
       ) : null}
       {group.note ? (
-        <p className="mt-0.5 text-xs text-[#8a8270] dark:text-gray-500">{group.note}</p>
+        <p className="mt-0.5 text-xs text-[#797c70] dark:text-gray-500">{group.note}</p>
       ) : null}
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {group.items.map((it, idx) => (
@@ -563,7 +563,7 @@ export default function RuShiDaoPage() {
         </aside>
 
         <main className="flex-1 min-w-0 space-y-12">
-          <p className="rounded-lg border border-[#e8dfd0] bg-[#faf7f0] px-4 py-3 text-xs leading-relaxed text-[#8a8270] dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+          <p className="rounded-lg border border-[#dee0db] bg-[#f4f5f0] px-4 py-3 text-xs leading-relaxed text-[#797c70] dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
             说明：本页是面向「建立整体认知」的通俗梳理，非教义考据。三教神谱本身是长期演变、相互附会的产物，各宗派与典籍说法多有出入（如十八罗汉名号、二十诸天、八仙排序），本页均取较常见的一种说法。
           </p>
 

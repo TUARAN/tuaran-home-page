@@ -19,11 +19,11 @@ const TAB_DEFS = [
 // 各分类标签的配色（浅色 + 暗色）
 const KIND_TAG_CLASS = {
   posts: 'border-[#dadada] text-[#666] dark:border-gray-700 dark:text-gray-300',
-  works: 'border-[#ead7b5] bg-[#fbf3df] text-[#8b6a2c] dark:border-[#3d3422] dark:bg-[#211b0f] dark:text-[#e6c887]',
+  works: 'border-[#c8cbb5] bg-[#e9ecdf] text-[#8b6a2c] dark:border-[#2b2e22] dark:bg-[#15170f] dark:text-[#a8b187]',
   companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   topics: 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
-  people: 'border-[#ead4d6] bg-[#fbf0f1] text-[#884c55] dark:border-[#4a2730] dark:bg-[#24151a] dark:text-[#e0a2ad]',
-  resources: 'border-[#ddd8cb] bg-[#f7f4ee] text-[#6b6253] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
+  people: 'border-[#ddd5d6] bg-[#f4f0f1] text-[#674f55] dark:border-[#392a30] dark:bg-[#1e171a] dark:text-[#bfa6ad]',
+  resources: 'border-[#d1d3cb] bg-[#f1f2ee] text-[#5b5d53] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
 }
 
 const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
@@ -340,7 +340,7 @@ export default function ArticlesIndexClient({ items }) {
 
       <nav
         aria-label="作品、调研与资料分类"
-        className="flex flex-nowrap items-center gap-5 overflow-x-auto border-b border-[#e8dfd0] text-sm dark:border-gray-800"
+        className="flex flex-nowrap items-center gap-5 overflow-x-auto border-b border-[#dee0db] text-sm dark:border-gray-800"
       >
         {TAB_DEFS.map((t, idx) => {
           const active = tab === t.key || (t.key === 'research' && RESEARCH_KINDS.has(tab))
@@ -353,12 +353,12 @@ export default function ArticlesIndexClient({ items }) {
             <span key={t.key} className="flex shrink-0 items-center gap-5">
               {showResearchDivider ? (
                 <span className="flex shrink-0 items-center" aria-hidden="true">
-                  <span aria-hidden="true" className="h-4 w-px bg-[#d8cdbc] dark:bg-gray-700" />
+                  <span aria-hidden="true" className="h-4 w-px bg-[#c6c7bc] dark:bg-gray-700" />
                 </span>
               ) : null}
               {showResourceDivider ? (
                 <span className="flex shrink-0 items-center" aria-hidden="true">
-                  <span aria-hidden="true" className="h-4 w-px bg-[#d8cdbc] dark:bg-gray-700" />
+                  <span aria-hidden="true" className="h-4 w-px bg-[#c6c7bc] dark:bg-gray-700" />
                 </span>
               ) : null}
               <button
@@ -369,10 +369,10 @@ export default function ArticlesIndexClient({ items }) {
                   active
                     ? 'border-[#333] text-[#222] dark:border-gray-100 dark:text-gray-100'
                     : isResearchTier
-                    ? 'border-transparent text-[#9a8e76] hover:text-[#5c5546] dark:text-[#7f8a9c] dark:hover:text-gray-200'
+                    ? 'border-transparent text-[#838676] hover:text-[#4e5046] dark:text-[#7f8a9c] dark:hover:text-gray-200'
                     : isResourceTier
-                    ? 'border-transparent text-[#8b8376] hover:text-[#4c463c] dark:text-[#7f8a9c] dark:hover:text-gray-200'
-                    : 'border-transparent text-[#716958] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
+                    ? 'border-transparent text-[#7d7e76] hover:text-[#42423c] dark:text-[#7f8a9c] dark:hover:text-gray-200'
+                    : 'border-transparent text-[#616358] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
                 ].join(' ')}
               >
                 <span className={active ? 'font-semibold' : ''}>{t.label}</span>
@@ -384,7 +384,7 @@ export default function ArticlesIndexClient({ items }) {
           )
         })}
 
-        <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[#d8cdbc] dark:bg-gray-700" />
+        <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[#c6c7bc] dark:bg-gray-700" />
 
         {QUICK_LINKS.map((t) =>
           t.external ? (
@@ -393,7 +393,7 @@ export default function ArticlesIndexClient({ items }) {
               href={t.href}
               target="_blank"
               rel="noreferrer"
-              className="no-external-arrow inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#7a6d58] no-underline hover:text-[#2d261d] dark:text-gray-400 dark:hover:text-gray-100"
+              className="no-external-arrow inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#646658] no-underline hover:text-[#1a1814] dark:text-gray-400 dark:hover:text-gray-100"
             >
               <span>{t.label}</span>
               <svg
@@ -415,7 +415,7 @@ export default function ArticlesIndexClient({ items }) {
             <Link
               key={t.href}
               href={t.href}
-              className="inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#7a6d58] no-underline hover:text-[#2d261d] dark:text-gray-400 dark:hover:text-gray-100"
+              className="inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#646658] no-underline hover:text-[#1a1814] dark:text-gray-400 dark:hover:text-gray-100"
             >
               <span>{t.label}</span>
             </Link>
@@ -425,7 +425,7 @@ export default function ArticlesIndexClient({ items }) {
 
       {tab === 'research' || RESEARCH_KINDS.has(tab) ? (
         <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
-          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">调研类型</span>
+          <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">调研类型</span>
           <nav aria-label="调研类型" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
             {RESEARCH_TYPE_DEFS.map((t) => {
               const active = tab === t.key
@@ -438,11 +438,11 @@ export default function ArticlesIndexClient({ items }) {
                     'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
                     active
                       ? 'bg-[#eef6f1] font-medium text-[#386b54] dark:bg-[#13201a] dark:text-[#9dcab1]'
-                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
                   ].join(' ')}
                 >
                   <span>{t.label}</span>
-                  <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                  <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#95968a] dark:text-[#667287]'}>
                     {counts[t.key] ?? 0}
                   </span>
                 </button>
@@ -458,11 +458,11 @@ export default function ArticlesIndexClient({ items }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="搜索知识库：标题 / 摘要 / 标签"
-          className="min-w-[220px] flex-1 rounded-md border border-[#ddd3c2] bg-white px-3 py-2 text-sm text-[#2d261d] outline-none transition-colors focus:border-[#a99779] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
+          className="min-w-[220px] flex-1 rounded-md border border-[#cbcdc2] bg-white px-3 py-2 text-sm text-[#1a1814] outline-none transition-colors focus:border-[#8a8c79] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
         />
         <button
           type="submit"
-          className="rounded-md border border-[#d8cfbf] bg-[#faf6ef] px-3 py-2 text-sm text-[#5b5141] transition-colors hover:border-[#bdae93] hover:text-[#2d261d] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
+          className="rounded-md border border-[#c8c9bf] bg-[#f3f4ef] px-3 py-2 text-sm text-[#4a4b41] transition-colors hover:border-[#a2a593] hover:text-[#1a1814] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
         >
           搜索
         </button>
@@ -470,7 +470,7 @@ export default function ArticlesIndexClient({ items }) {
           <button
             type="button"
             onClick={clearSearch}
-            className="rounded-md border border-transparent px-2 py-2 text-sm text-[#8f826c] transition-colors hover:text-[#3d3429] dark:text-gray-400 dark:hover:text-gray-200"
+            className="rounded-md border border-transparent px-2 py-2 text-sm text-[#787a6c] transition-colors hover:text-[#303029] dark:text-gray-400 dark:hover:text-gray-200"
           >
             清空
           </button>
@@ -479,7 +479,7 @@ export default function ArticlesIndexClient({ items }) {
 
       {tab === 'companies' ? (
         <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
-          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">公司分类</span>
+          <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">公司分类</span>
           <nav aria-label="公司调研分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
             {COMPANY_TYPE_DEFS.map((t) => {
               const active = companyType === t.key
@@ -492,11 +492,11 @@ export default function ArticlesIndexClient({ items }) {
                     'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
                     active
                       ? 'bg-[#eef4fb] font-medium text-[#285a8d] dark:bg-[#152034] dark:text-[#9bb6df]'
-                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
                   ].join(' ')}
                 >
                   <span>{t.label}</span>
-                  <span className={active ? 'text-[#6d8db0] dark:text-[#7899bf]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                  <span className={active ? 'text-[#6d8db0] dark:text-[#7899bf]' : 'text-[#95968a] dark:text-[#667287]'}>
                     {companyTypeCounts[t.key] ?? 0}
                   </span>
                 </button>
@@ -508,7 +508,7 @@ export default function ArticlesIndexClient({ items }) {
 
       {tab === 'topics' ? (
         <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
-          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">事项分类</span>
+          <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">事项分类</span>
           <nav aria-label="事项调研分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
             {TOPIC_TYPE_DEFS.map((t) => {
               const active = topicType === t.key
@@ -521,11 +521,11 @@ export default function ArticlesIndexClient({ items }) {
                     'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
                     active
                       ? 'bg-[#eef6f1] font-medium text-[#386b54] dark:bg-[#13201a] dark:text-[#9dcab1]'
-                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
                   ].join(' ')}
                 >
                   <span>{t.label}</span>
-                  <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                  <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#95968a] dark:text-[#667287]'}>
                     {topicTypeCounts[t.key] ?? 0}
                   </span>
                 </button>
@@ -537,7 +537,7 @@ export default function ArticlesIndexClient({ items }) {
 
       {tab === 'resources' ? (
         <div className="-mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          <span className="shrink-0 text-xs text-[#9a8b72] dark:text-[#7f8aa0]">资料分类</span>
+          <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">资料分类</span>
           <nav aria-label="资料分类" className="flex min-w-0 flex-wrap items-center gap-2">
             {RESOURCE_TYPE_DEFS.map((t) => {
               const active = resourceType === t.key
@@ -550,15 +550,15 @@ export default function ArticlesIndexClient({ items }) {
                   className={[
                     'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
                     active
-                      ? 'bg-[#f1eee7] font-medium text-[#62594b] dark:bg-[#202834] dark:text-[#c6ceda]'
-                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                      ? 'bg-[#eaece7] font-medium text-[#53544b] dark:bg-[#202834] dark:text-[#c6ceda]'
+                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
                   ].join(' ')}
                 >
                   {scopeLabel ? (
-                    <span className="font-mono text-[9px] tracking-[0.1em] text-[#b1a58f] dark:text-[#667287]">{scopeLabel}</span>
+                    <span className="font-mono text-[9px] tracking-[0.1em] text-[#9b9d8f] dark:text-[#667287]">{scopeLabel}</span>
                   ) : null}
                   <span>{t.label}</span>
-                  <span className={active ? 'text-[#8b8170] dark:text-[#9da7b8]' : 'text-[#a99d8a] dark:text-[#667287]'}>
+                  <span className={active ? 'text-[#797b70] dark:text-[#9da7b8]' : 'text-[#95968a] dark:text-[#667287]'}>
                     {resourceTypeCounts[t.key] ?? 0}
                   </span>
                 </button>
@@ -615,7 +615,7 @@ function ArticleRow({ item }) {
               {item.tagLabel}
             </span>
             {item.encrypted ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#e9d5b8] bg-[#fbf3e3] px-2 py-[1px] text-[11px] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#c9cbb8] bg-[#ebede3] px-2 py-[1px] text-[11px] text-[#8a5a14] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]">
                 <svg
                   viewBox="0 0 12 12"
                   aria-hidden="true"
@@ -634,7 +634,7 @@ function ArticleRow({ item }) {
             ) : null}
             <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
             {item.version ? (
-              <span className="inline-flex shrink-0 items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+              <span className="inline-flex shrink-0 items-center rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
                 {item.version}
               </span>
             ) : null}
@@ -665,7 +665,7 @@ function ArticleRow({ item }) {
           </div>
         </div>
         {item.image ? (
-          <div className="relative h-32 overflow-hidden rounded-md border border-[#e8dfd0] bg-[#f7f2ea] dark:border-gray-800 dark:bg-gray-950 sm:h-28 sm:w-40">
+          <div className="relative h-32 overflow-hidden rounded-md border border-[#dee0db] bg-[#efefea] dark:border-gray-800 dark:bg-gray-950 sm:h-28 sm:w-40">
             <Image
               src={item.image.src}
               alt={item.image.alt || `${item.title} 配图`}
@@ -682,19 +682,19 @@ function ArticleRow({ item }) {
 
 function ReadingHighlights({ sections }) {
   return (
-    <section className="rounded-2xl border border-[#e8dfd0] bg-[#fcfbf7] p-4 shadow-[0_12px_36px_rgba(82,69,45,0.05)] dark:border-gray-800 dark:bg-[#0f141b]">
+    <section className="rounded-2xl border border-[#dee0db] bg-[#f9faf7] p-4 shadow-[0_12px_36px_rgba(82,69,45,0.05)] dark:border-gray-800 dark:bg-[#0f141b]">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
             Start Here
           </p>
-          <h2 className="mt-1 border-b-0 pb-0 text-[18px] font-semibold text-[#221f19] dark:text-gray-100">
+          <h2 className="mt-1 border-b-0 pb-0 text-[18px] font-semibold text-[#15140f] dark:text-gray-100">
             阅读起点
           </h2>
         </div>
         <Link
           href="/services"
-          className="rounded-full border border-[#d8cfbf] bg-white px-3 py-1 text-[12px] text-[#5b5141] no-underline transition hover:border-[#bdae93] hover:text-[#2d261d] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500"
+          className="rounded-full border border-[#c8c9bf] bg-white px-3 py-1 text-[12px] text-[#4a4b41] no-underline transition hover:border-[#a2a593] hover:text-[#1a1814] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500"
         >
           合作 / 咨询 →
         </Link>
@@ -702,10 +702,10 @@ function ReadingHighlights({ sections }) {
 
       <div className="grid gap-3 md:grid-cols-3">
         {sections.map((section) => (
-          <div key={section.title} className="rounded-xl border border-[#eee7da] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+          <div key={section.title} className="rounded-xl border border-[#e1e2da] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-2">
-              <h3 className="text-[14px] font-semibold text-[#2d261d] dark:text-gray-100">{section.title}</h3>
-              <p className="mt-0.5 text-[11px] leading-5 text-[#8b806c] dark:text-gray-400">{section.desc}</p>
+              <h3 className="text-[14px] font-semibold text-[#1a1814] dark:text-gray-100">{section.title}</h3>
+              <p className="mt-0.5 text-[11px] leading-5 text-[#77796c] dark:text-gray-400">{section.desc}</p>
             </div>
             <div className="space-y-2">
               {section.items.map((item) => (
@@ -725,7 +725,7 @@ function HighlightLink({ item }) {
     <Link
       href={item.href}
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      className="group block rounded-lg px-2 py-1.5 no-underline transition hover:bg-[#f8f4ec] dark:hover:bg-[#151d27]"
+      className="group block rounded-lg px-2 py-1.5 no-underline transition hover:bg-[#f0f1ec] dark:hover:bg-[#151d27]"
     >
       <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span
@@ -738,12 +738,12 @@ function HighlightLink({ item }) {
         </span>
         <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
         {item.date ? (
-          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#aaa093] dark:text-gray-500">
+          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#9b9b93] dark:text-gray-500">
             {item.date}
           </span>
         ) : null}
       </div>
-      <p className="mb-0 line-clamp-2 text-[13px] font-medium leading-5 text-[#2d261d] group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white">
+      <p className="mb-0 line-clamp-2 text-[13px] font-medium leading-5 text-[#1a1814] group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white">
         {item.title}
       </p>
     </Link>

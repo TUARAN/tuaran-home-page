@@ -26,30 +26,30 @@ export default function PrivateVaultGate({
 
   return (
     <main className="mx-auto flex min-h-[60vh] w-full max-w-[560px] flex-col justify-center px-4 py-12">
-      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
         Private · 仅站长可见
       </p>
-      <h1 className="mt-3 font-serif text-2xl font-semibold text-[#221f19] dark:text-gray-100">
+      <h1 className="mt-3 font-serif text-2xl font-semibold text-[#15140f] dark:text-gray-100">
         {vaultLabel}
       </h1>
-      <p className="mt-4 text-[14px] leading-7 text-[#5d554a] dark:text-gray-300">
+      <p className="mt-4 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
         {description || '这是站长（涂阿燃）本人的私域空间，里面是私人数据、家庭记录或工作底稿，不向公众开放。'}
       </p>
 
       {state === 'loading' ? (
-        <p className="mt-6 font-mono text-xs text-[#8f8069] dark:text-[#8e9ab0]">checking session…</p>
+        <p className="mt-6 font-mono text-xs text-[#767869] dark:text-[#8e9ab0]">checking session…</p>
       ) : state === 'not-owner' ? (
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
-          <span className="text-[#7a6f5d] dark:text-gray-400">当前账号没有访问权限。</span>
+          <span className="text-[#67695d] dark:text-gray-400">当前账号没有访问权限。</span>
           <Link
             href="/"
-            className="text-[#5d503f] underline underline-offset-2 hover:text-[#221f19] dark:text-gray-200 dark:hover:text-white"
+            className="text-[#333431] underline underline-offset-2 hover:text-[#15140f] dark:text-gray-200 dark:hover:text-white"
           >
             返回首页
           </Link>
           <a
             href={logoutHref}
-            className="text-[#8f8069] underline underline-offset-2 hover:text-[#5d503f] dark:text-gray-500 dark:hover:text-gray-300"
+            className="text-[#767869] underline underline-offset-2 hover:text-[#333431] dark:text-gray-500 dark:hover:text-gray-300"
           >
             退出登录
           </a>
@@ -58,14 +58,14 @@ export default function PrivateVaultGate({
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
           <Link
             href="/"
-            className="text-[#5d503f] underline underline-offset-2 hover:text-[#221f19] dark:text-gray-200 dark:hover:text-white"
+            className="text-[#333431] underline underline-offset-2 hover:text-[#15140f] dark:text-gray-200 dark:hover:text-white"
           >
             返回首页
           </Link>
-          <span className="text-[#bbae93] dark:text-[#5a4f3a]" aria-hidden="true">·</span>
+          <span className="text-[#a1a593] dark:text-[#45483a]" aria-hidden="true">·</span>
           <a
             href={loginHref}
-            className="text-[#8f8069] underline underline-offset-2 hover:text-[#5d503f] dark:text-gray-500 dark:hover:text-gray-300"
+            className="text-[#767869] underline underline-offset-2 hover:text-[#333431] dark:text-gray-500 dark:hover:text-gray-300"
           >
             登录 →
           </a>

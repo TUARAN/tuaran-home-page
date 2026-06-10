@@ -72,7 +72,7 @@ function buildWeekMonthLabels(weeks) {
 
 // 绝对计数分桶（与 GitHub 类似），跨年视觉一致
 function heatColorClass(value) {
-  if (!value) return 'bg-[#f6f1e8] dark:bg-[#151922]'
+  if (!value) return 'bg-[#edeee8] dark:bg-[#151922]'
   if (value >= 8) return 'bg-[#2f855a]'
   if (value >= 4) return 'bg-[#57a06f]'
   if (value >= 2) return 'bg-[#8bc79f]'
@@ -163,7 +163,7 @@ export default function KnowledgeHeatmapClient({
             type="button"
             aria-expanded={expanded}
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex items-center gap-1 text-sm text-[#716958] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
+            className="inline-flex items-center gap-1 text-sm text-[#616358] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
           >
             <svg
               viewBox="0 0 12 12"
@@ -186,7 +186,7 @@ export default function KnowledgeHeatmapClient({
         heatmapData ? (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-[#8b7f69] dark:text-[#8e9ab0]">年份</span>
+              <span className="text-xs text-[#757769] dark:text-[#8e9ab0]">年份</span>
               {heatmapData.years.map((year) => (
                 <button
                   key={`kb-heat-year-${year}`}
@@ -196,7 +196,7 @@ export default function KnowledgeHeatmapClient({
                     'rounded px-2 py-1 text-xs transition-colors',
                     selectedHeatmapYear === year
                       ? 'bg-[#eef4fb] text-[#285a8d] dark:bg-[#152034] dark:text-[#9bb6df]'
-                      : 'text-[#756b59] hover:text-[#2d261d] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
                   ].join(' ')}
                 >
                   {year}
@@ -205,12 +205,12 @@ export default function KnowledgeHeatmapClient({
             </div>
             <div className="rounded-md border border-[#eee] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
               <div className="mb-1 flex items-center justify-between gap-3">
-                <p className="text-xs text-[#776a57] dark:text-gray-300">
+                <p className="text-xs text-[#626357] dark:text-gray-300">
                   {heatmapData.total} 篇内容发布（站内 {heatmapData.localTotal} + 掘金 {heatmapData.juejinTotal}）
                 </p>
-                <p className="text-[11px] text-[#9f927d] dark:text-gray-500">
+                <p className="text-[11px] text-[#898b7d] dark:text-gray-500">
                   少
-                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#f6f1e8] align-middle dark:bg-[#151922]" />
+                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#edeee8] align-middle dark:bg-[#151922]" />
                   <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#c6e7d0] align-middle" />
                   <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#8bc79f] align-middle" />
                   <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#57a06f] align-middle" />
@@ -222,7 +222,7 @@ export default function KnowledgeHeatmapClient({
                 <div className="inline-flex min-w-max flex-col gap-1.5">
                   <div className="ml-6 flex gap-[3px]">
                     {heatmapData.weekMonthLabels.map((label, idx) => (
-                      <span key={`kb-month-label-${idx}`} className="w-3 text-[9px] leading-none text-[#ad9f8b] dark:text-gray-600">
+                      <span key={`kb-month-label-${idx}`} className="w-3 text-[9px] leading-none text-[#97988b] dark:text-gray-600">
                         {label}
                       </span>
                     ))}
@@ -230,7 +230,7 @@ export default function KnowledgeHeatmapClient({
                   <div className="flex gap-1.5">
                     <div className="grid grid-rows-7 gap-[3px] pt-[1px]">
                       {WEEKDAY_LABELS.map((d, index) => (
-                        <span key={`kb-weekday-${d}`} className="h-3 text-[9px] leading-3 text-[#b3a693] dark:text-gray-600">
+                        <span key={`kb-weekday-${d}`} className="h-3 text-[9px] leading-3 text-[#9e9f93] dark:text-gray-600">
                           {index % 2 === 0 ? d : ''}
                         </span>
                       ))}

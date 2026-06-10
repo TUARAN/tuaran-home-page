@@ -137,8 +137,8 @@ export default function ArticleLikeButton({ articleKey, size = 'md' }) {
           'disabled:cursor-not-allowed disabled:opacity-60',
           sizeCls,
           liked
-            ? 'border-[#d4a64a] bg-[#fef3e0] text-[#8a5a14] shadow-[inset_0_-1px_0_rgba(180,120,30,0.08)] dark:border-[#e2bd75] dark:bg-[#2a2115] dark:text-[#e2bd75]'
-            : 'border-[#dcd3c0] bg-white text-[#5a5142] hover:-translate-y-px hover:border-[#b9aa8c] hover:text-[#221f19] hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100',
+            ? 'border-[#d4a64a] bg-[#eaece0] text-[#8a5a14] shadow-[inset_0_-1px_0_rgba(180,120,30,0.08)] dark:border-[#9ba475] dark:bg-[#1c1d15] dark:text-[#9ba475]'
+            : 'border-[#caccc0] bg-white text-[#4a4c42] hover:-translate-y-px hover:border-[#9ca08c] hover:text-[#15140f] hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100',
         ].join(' ')}
       >
         <svg
@@ -164,7 +164,7 @@ export default function ArticleLikeButton({ articleKey, size = 'md' }) {
         ) : null}
       </button>
       {visibleError ? (
-        <span className="text-center text-[11px] text-[#a34f47] dark:text-[#e6a29b]">{visibleError}</span>
+        <span className="text-center text-[11px] text-[#a34f47] dark:text-[#b5a09b]">{visibleError}</span>
       ) : null}
     </div>
   )

@@ -14,21 +14,21 @@ export function AuthorByline() {
   return (
     <div className="leading-6">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="text-[13px] font-semibold text-[#221f19] dark:text-gray-100">涂阿燃 · tuaran</span>
-        <span className="text-[11px] text-[#8a7e62] dark:text-[#b9a987]">
+        <span className="text-[13px] font-semibold text-[#15140f] dark:text-gray-100">涂阿燃 · tuaran</span>
+        <span className="text-[11px] text-[#707462] dark:text-[#989d87]">
           前端 / AI Agent / 政企方案 / 独立开发者
         </span>
       </div>
-      <p className="mt-0.5 text-[12px] leading-5 text-[#6d614c] dark:text-[#bbae93]">
+      <p className="mt-0.5 text-[12px] leading-5 text-[#585a4c] dark:text-[#a1a593]">
         在
         {' '}
-        <Link href="/" className="text-[#5d503f] underline underline-offset-2 hover:text-[#221f19] dark:text-gray-200 dark:hover:text-white">
+        <Link href="/" className="text-[#333431] underline underline-offset-2 hover:text-[#15140f] dark:text-gray-200 dark:hover:text-white">
           2aran.com
         </Link>
         {' '}
         写技术调研、AI 工程实践与独立开发笔记。
         {' '}
-        <Link href="/about" className="text-[#8a5a14] underline underline-offset-2 hover:text-[#5d3b08] dark:text-[#e2bd75] dark:hover:text-[#f3d99a]">
+        <Link href="/about" className="text-[#8a5a14] underline underline-offset-2 hover:text-[#5d3b08] dark:text-[#9ba475] dark:hover:text-[#b9c39a]">
           了解更多 →
         </Link>
       </p>

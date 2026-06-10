@@ -13,13 +13,13 @@ export default function ArticlesHeaderClient({ items }) {
           <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
             文章 / 调研 / 资料
           </h1>
-          <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#6e6452] dark:text-[#9aa5b6]">
+          <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
             先从最新内容和代表作开始读；需要精确查找时，再用分类、搜索和创作热力图。
             <button
               type="button"
               aria-expanded={expanded}
               onClick={() => setExpanded((value) => !value)}
-              className="ml-2 inline-flex items-baseline gap-1 align-baseline text-[12.5px] text-[#716958] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
+              className="ml-2 inline-flex items-baseline gap-1 align-baseline text-[12.5px] text-[#616358] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
             >
               <svg
                 viewBox="0 0 12 12"

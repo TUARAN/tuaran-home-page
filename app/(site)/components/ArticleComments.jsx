@@ -98,7 +98,7 @@ export default function ArticleComments({ articleKey }) {
   }
 
   return (
-    <section className="mx-auto mt-12 max-w-[72ch] border-t border-[#e8dfd0] pt-8 dark:border-gray-800">
+    <section className="mx-auto mt-12 max-w-[72ch] border-t border-[#dee0db] pt-8 dark:border-gray-800">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-[#444] dark:text-gray-200">评论</h2>

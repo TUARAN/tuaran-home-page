@@ -25,12 +25,12 @@ function ChevronDown() {
 
 function MenuItem({ item, onNavigate }) {
   const base =
-    'group/menuitem flex items-start gap-3 rounded-xl px-3 py-2 no-underline transition-colors hover:bg-[#f4ede0] dark:hover:bg-[#19212b]'
+    'group/menuitem flex items-start gap-3 rounded-xl px-3 py-2 no-underline transition-colors hover:bg-[#e7e8e0] dark:hover:bg-[#19212b]'
   const inner = (
     <>
-      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#c5b89c] transition-colors group-hover/menuitem:bg-[#8b5a1f] dark:bg-[#475061] dark:group-hover/menuitem:bg-[#e0b572]" />
+      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#aaae9c] transition-colors group-hover/menuitem:bg-[#8b5a1f] dark:bg-[#475061] dark:group-hover/menuitem:bg-[#989e72]" />
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5 text-[13.5px] font-medium leading-tight text-[#221f19] dark:text-gray-100">
+        <span className="flex items-center gap-1.5 text-[13.5px] font-medium leading-tight text-[#15140f] dark:text-gray-100">
           {item.label}
           {item.tag ? (
             <span
@@ -41,7 +41,7 @@ function MenuItem({ item, onNavigate }) {
           ) : null}
         </span>
         {item.desc ? (
-          <span className="mt-0.5 block text-[11.5px] leading-snug text-[#85806f] dark:text-[#8a93a3]">
+          <span className="mt-0.5 block text-[11.5px] leading-snug text-[#777a6f] dark:text-[#8a93a3]">
             {item.desc}
           </span>
         ) : null}
@@ -71,21 +71,21 @@ function MenuItem({ item, onNavigate }) {
 
 const TIER_SECTION_STYLES = {
   '专栏': {
-    wrap: 'bg-[#fbf2dc]/50 dark:bg-[#2a2113]/40',
-    title: 'text-[#8a6b2e] dark:text-[#d6b87a]',
+    wrap: 'bg-[#e7eadc]/50 dark:bg-[#1b1c13]/40',
+    title: 'text-[#8a6b2e] dark:text-[#9aa27a]',
   },
   '调研': {
     wrap: 'bg-[#e6ecf2]/55 dark:bg-[#15202c]/50',
     title: 'text-[#4d6a85] dark:text-[#8fb0ce]',
   },
   '资料': {
-    wrap: 'bg-[#eef0e4]/55 dark:bg-[#1a1f17]/50',
-    title: 'text-[#5f6b3b] dark:text-[#b0bd84]',
+    wrap: 'bg-[#e8ece4]/55 dark:bg-[#1a1f17]/50',
+    title: 'text-[#485a3b] dark:text-[#93a984]',
   },
 }
 
 function getTierStyle(title) {
-  return TIER_SECTION_STYLES[title] || { wrap: '', title: 'text-[#9c8f79] dark:text-[#93a0b3]' }
+  return TIER_SECTION_STYLES[title] || { wrap: '', title: 'text-[#858779] dark:text-[#93a0b3]' }
 }
 
 function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerRef, align = 'center', account, navOverrides }) {
@@ -143,7 +143,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
           'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-medium transition-colors',
           isActive
             ? 'text-[#111] font-medium dark:text-gray-100'
-            : 'text-[#5b5448] hover:text-[#111] dark:text-[#c7d0df] dark:hover:text-[#f7fbff]',
+            : 'text-[#4f5048] hover:text-[#111] dark:text-[#c7d0df] dark:hover:text-[#f7fbff]',
         ].join(' ')}
       >
         {channel.label}
@@ -155,7 +155,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
           role="menu"
           className={`absolute top-full z-[120] w-[min(calc(100vw-1rem),440px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${positionClass}`}
         >
-          <div className="rounded-2xl border border-[#e6dfd0] bg-[#fdfaf3] p-3 shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+          <div className="rounded-2xl border border-[#d8dad0] bg-[#f6f8f3] p-3 shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
             {sections.map((section) => {
               const tier = getTierStyle(section.title)
               return (
@@ -204,13 +204,13 @@ function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
   // 能稳定居中——之前 leading-none 加上字体度量偏移会让 "T" 偏低，去掉就正常了。
   const sizeCls = isLg ? 'h-10 w-10 text-[15px]' : 'h-7 w-7 text-[12px]'
   const borderCls = isOwner
-    ? 'border-2 border-[#c79347] dark:border-[#e0b572]'
-    : 'border border-[#ddd3c2] dark:border-gray-700'
+    ? 'border-2 border-[#c79347] dark:border-[#989e72]'
+    : 'border border-[#cbcdc2] dark:border-gray-700'
   const baseCls = `relative flex ${sizeCls} shrink-0 items-center justify-center rounded-full ${borderCls}`
 
   if (loading) {
     return (
-      <span className={`${baseCls} font-mono text-[10px] text-[#8f8069] dark:text-gray-400`}>
+      <span className={`${baseCls} font-mono text-[10px] text-[#767869] dark:text-gray-400`}>
         ...
       </span>
     )
@@ -227,7 +227,7 @@ function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
   }
 
   return (
-    <span className={`${baseCls} bg-[#f7efe2] font-semibold text-[#6f5f49] dark:bg-gray-900 dark:text-gray-200`}>
+    <span className={`${baseCls} bg-[#e9eae2] font-semibold text-[#565749] dark:bg-gray-900 dark:text-gray-200`}>
       {user ? getAccountInitial(user) : '登'}
     </span>
   )
@@ -241,7 +241,7 @@ function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
       <div className="flex min-w-0 flex-1 items-center">
         <p
           className={[
-            'truncate font-semibold text-[#221f19] dark:text-gray-100',
+            'truncate font-semibold text-[#15140f] dark:text-gray-100',
             isLg ? 'text-[15px]' : 'text-[13.5px]',
           ].join(' ')}
         >
@@ -262,7 +262,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
     return (
       <Link
         href={loginHref}
-        className="inline-flex items-center gap-2 rounded-full border border-[#ddd3c2] px-2.5 py-1 text-sm font-medium text-[#5b5448] no-underline transition-colors hover:border-[#b99b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
+        className="inline-flex items-center gap-2 rounded-full border border-[#cbcdc2] px-2.5 py-1 text-sm font-medium text-[#4f5048] no-underline transition-colors hover:border-[#888b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
       >
         <AccountAvatar loading={false} />
         登录
@@ -277,7 +277,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
         onClick={onToggle}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        className="inline-flex items-center gap-2 rounded-full border border-[#ddd3c2] px-2 py-1 text-sm font-medium text-[#5b5448] transition-colors hover:border-[#b99b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
+        className="inline-flex items-center gap-2 rounded-full border border-[#cbcdc2] px-2 py-1 text-sm font-medium text-[#4f5048] transition-colors hover:border-[#888b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
       >
         <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
         <span>{loading ? '检查中' : getAccountId(user)}</span>
@@ -285,14 +285,14 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-full z-[130] mt-2 w-64 overflow-hidden rounded-2xl border border-[#e6dfd0] bg-[#fdfaf3] shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
-          <div className="border-b border-[#eee5d6] bg-[#faf3e3]/60 px-3.5 py-3 dark:border-gray-800 dark:bg-[#141a23]/60">
+        <div className="absolute right-0 top-full z-[130] mt-2 w-64 overflow-hidden rounded-2xl border border-[#d8dad0] bg-[#f6f8f3] shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+          <div className="border-b border-[#dee0d6] bg-[#ebede3]/60 px-3.5 py-3 dark:border-gray-800 dark:bg-[#141a23]/60">
             <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
           </div>
           <div className="px-1.5 py-1.5">
             <a
               href={logoutHref}
-              className="flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px] font-medium text-[#8b5a1f] no-underline transition-colors hover:bg-[#f4ede0] dark:text-[#f0c776] dark:hover:bg-[#19212b]"
+              className="flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px] font-medium text-[#8b5a1f] no-underline transition-colors hover:bg-[#e7e8e0] dark:text-[#a1ab76] dark:hover:bg-[#19212b]"
             >
               <span>退出登录</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
@@ -312,18 +312,18 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
 
   if (!loading && !user) {
     return (
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[#e7decb] bg-white/70 px-3.5 py-3 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[#d5d7cb] bg-white/70 px-3.5 py-3 dark:border-[#2a3340] dark:bg-[#151c25]/70">
         <div className="flex items-center gap-3">
           <AccountAvatar loading={false} />
           <div>
-            <p className="text-[13.5px] font-semibold text-[#221f19] dark:text-gray-100">未登录</p>
-            <p className="mt-0.5 text-[11.5px] text-[#85806f] dark:text-[#8a93a3]">登录后可评论 / 私域</p>
+            <p className="text-[13.5px] font-semibold text-[#15140f] dark:text-gray-100">未登录</p>
+            <p className="mt-0.5 text-[11.5px] text-[#777a6f] dark:text-[#8a93a3]">登录后可评论 / 私域</p>
           </div>
         </div>
         <Link
           href={loginHref}
           onClick={onNavigate}
-          className="shrink-0 rounded-full border border-[#ddd3c2] px-3 py-1.5 text-[12px] font-medium text-[#6f5f49] no-underline dark:border-gray-700 dark:text-gray-300"
+          className="shrink-0 rounded-full border border-[#cbcdc2] px-3 py-1.5 text-[12px] font-medium text-[#565749] no-underline dark:border-gray-700 dark:text-gray-300"
         >
           登录
         </Link>
@@ -332,15 +332,15 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   }
 
   return (
-    <div className="mb-4 overflow-hidden rounded-2xl border border-[#e7decb] bg-white/75 dark:border-[#2a3340] dark:bg-[#151c25]/70">
-      <div className="border-b border-[#eee5d6] bg-[#faf3e3]/50 px-3.5 py-3 dark:border-[#252e39] dark:bg-[#141a23]/60">
+    <div className="mb-4 overflow-hidden rounded-2xl border border-[#d5d7cb] bg-white/75 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+      <div className="border-b border-[#dee0d6] bg-[#ebede3]/50 px-3.5 py-3 dark:border-[#252e39] dark:bg-[#141a23]/60">
         <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
       </div>
       {!loading && user ? (
         <div className="px-1.5 py-1.5">
           <a
             href={logoutHref}
-            className="flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px] font-medium text-[#8b5a1f] no-underline dark:text-[#f0c776]"
+            className="flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px] font-medium text-[#8b5a1f] no-underline dark:text-[#a1ab76]"
           >
             <span>退出登录</span>
             <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
@@ -403,7 +403,7 @@ export default function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-[#e8dfd0] bg-[#f8f5f0]/92 backdrop-blur dark:border-[#202938] dark:bg-[#0f141b]/96">
+      <header className="sticky top-0 z-40 w-full border-b border-[#dee0db] bg-[#f0f1ee]/92 backdrop-blur dark:border-[#202938] dark:bg-[#0f141b]/96">
         <div className="max-w-[1120px] mx-auto flex items-center justify-between gap-4 px-4 py-4">
           <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label="返回首页">
             <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
@@ -498,11 +498,11 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'fixed right-0 top-[73px] z-40 max-h-[calc(100vh-73px)] w-[min(88vw,340px)] overflow-y-auto border-l border-[#e5dccd] bg-[#faf7f0] px-4 py-5 shadow-[-18px_0_48px_rgba(77,62,37,0.10)] transition-transform duration-200 dark:border-[#232c36] dark:bg-[#10151d] md:hidden',
+          'fixed right-0 top-[73px] z-40 max-h-[calc(100vh-73px)] w-[min(88vw,340px)] overflow-y-auto border-l border-[#d5d7cd] bg-[#f4f5f0] px-4 py-5 shadow-[-18px_0_48px_rgba(77,62,37,0.10)] transition-transform duration-200 dark:border-[#232c36] dark:bg-[#10151d] md:hidden',
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
-        <p className="mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.22em] text-[#9e8f75] dark:text-[#8e9ab0]">
+        <p className="mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.22em] text-[#838675] dark:text-[#8e9ab0]">
           Menu
         </p>
         <MobileAccountPanel
@@ -515,7 +515,7 @@ export default function SiteHeader() {
             const expanded = openMobileChannel === channel.key
             const sections = getChannelNavSections(channel, account, account?.navOverrides)
             return (
-              <div key={channel.key} className="rounded-2xl border border-[#e7decb] bg-white/70 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+              <div key={channel.key} className="rounded-2xl border border-[#d5d7cb] bg-white/70 dark:border-[#2a3340] dark:bg-[#151c25]/70">
                 <button
                   type="button"
                   onClick={() => setOpenMobileChannel((cur) => (cur === channel.key ? null : channel.key))}
@@ -528,7 +528,7 @@ export default function SiteHeader() {
                   </span>
                 </button>
                 {expanded ? (
-                  <div className="space-y-2 border-t border-[#ece3d1] px-2 pb-3 pt-2 dark:border-[#2a3340]">
+                  <div className="space-y-2 border-t border-[#daddd1] px-2 pb-3 pt-2 dark:border-[#2a3340]">
                     {sections.map((section) => {
                       const tier = getTierStyle(section.title)
                       return (

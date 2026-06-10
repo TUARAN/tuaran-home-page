@@ -162,7 +162,7 @@ export default function MemoryVault() {
 
   if (manifestError) {
     return (
-      <div className="rounded-md border border-dashed border-[#c8b9a3] bg-[#fbf6ec] p-4 text-sm text-[#7c6643] dark:border-[#3a4554] dark:bg-[#161d27] dark:text-[#a9b3c4]">
+      <div className="rounded-md border border-dashed border-[#b0b1a3] bg-[#f1f2ec] p-4 text-sm text-[#575a43] dark:border-[#3a4554] dark:bg-[#161d27] dark:text-[#a9b3c4]">
         manifest 读取失败：{manifestError}。先在本地跑一次 <code className="font-mono">pnpm snapshot-memory</code> 并 commit。
       </div>
     )
@@ -170,7 +170,7 @@ export default function MemoryVault() {
 
   if (!manifest) {
     return (
-      <div className="text-sm text-[#76705f] dark:text-gray-400">manifest 加载中…</div>
+      <div className="text-sm text-[#676a5f] dark:text-gray-400">manifest 加载中…</div>
     )
   }
 
@@ -184,8 +184,8 @@ export default function MemoryVault() {
   return (
     <div className="space-y-3">
       {/* Header: meta + password 一行搞定 */}
-      <div className="rounded-md border border-[#dcd4c5] bg-[#fbf7ee] p-3 dark:border-[#2b3744] dark:bg-[#0f1722]">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-[#7a6f5d] dark:text-[#9aa6b7]">
+      <div className="rounded-md border border-[#cdcfc5] bg-[#f3f4ee] p-3 dark:border-[#2b3744] dark:bg-[#0f1722]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-[#67695d] dark:text-[#9aa6b7]">
           <span>更新 {generatedAt}</span>
           <span className="opacity-50">·</span>
           <span>文件 {totalFiles}</span>
@@ -208,12 +208,12 @@ export default function MemoryVault() {
             }}
             placeholder="输入密码自动解密"
             autoComplete="off"
-            className="min-w-[14rem] flex-1 rounded border border-[#d6cdb8] bg-white px-2 py-1.5 font-mono text-sm text-[#221f19] dark:border-[#33425a] dark:bg-[#091018] dark:text-gray-100"
+            className="min-w-[14rem] flex-1 rounded border border-[#c2c6b8] bg-white px-2 py-1.5 font-mono text-sm text-[#15140f] dark:border-[#33425a] dark:bg-[#091018] dark:text-gray-100"
           />
           <button
             type="button"
             onClick={() => setRevealPwd((v) => !v)}
-            className="rounded border border-[#d6cdb8] bg-white px-2 py-1.5 text-xs text-[#615847] hover:bg-[#fbf6ec] dark:border-[#33425a] dark:bg-[#091018] dark:text-[#a9b3c4] dark:hover:bg-[#10202e]"
+            className="rounded border border-[#c2c6b8] bg-white px-2 py-1.5 text-xs text-[#505247] hover:bg-[#f1f2ec] dark:border-[#33425a] dark:bg-[#091018] dark:text-[#a9b3c4] dark:hover:bg-[#10202e]"
           >
             {revealPwd ? '隐藏' : '显示'}
           </button>
@@ -223,10 +223,10 @@ export default function MemoryVault() {
             </span>
           )}
           {busy && (
-            <span className="font-mono text-[10px] text-[#7a6f5d] dark:text-[#9aa6b7]">解密中…</span>
+            <span className="font-mono text-[10px] text-[#67695d] dark:text-[#9aa6b7]">解密中…</span>
           )}
           {decryptError && (
-            <span className="font-mono text-[10px] text-[#a14545] dark:text-[#e69f9f]">{decryptError}</span>
+            <span className="font-mono text-[10px] text-[#a14545] dark:text-[#b89f9f]">{decryptError}</span>
           )}
         </div>
       </div>
@@ -234,20 +234,20 @@ export default function MemoryVault() {
       {/* 两栏：左侧紧凑文件树，右侧解密视图 */}
       <div className="grid gap-3 md:grid-cols-[15rem_minmax(0,1fr)]">
         {/* Left: grouped file tree */}
-        <aside className="rounded-md border border-[#dcd4c5] bg-white/70 p-2 text-sm dark:border-[#2b3744] dark:bg-[#0f1722]">
+        <aside className="rounded-md border border-[#cdcfc5] bg-white/70 p-2 text-sm dark:border-[#2b3744] dark:bg-[#0f1722]">
           {grouped.length === 0 && (
-            <p className="px-2 py-3 text-xs text-[#8f8069] dark:text-[#8ea0b7]">
+            <p className="px-2 py-3 text-xs text-[#767869] dark:text-[#8ea0b7]">
               暂无记录。本地跑 <code className="font-mono">pnpm snapshot-memory</code>。
             </p>
           )}
           <div className="space-y-3">
             {grouped.map((group) => (
               <div key={group.sourceId}>
-                <div className="flex items-baseline justify-between border-b border-[#ece5d4] px-1.5 pb-1 dark:border-[#1c2632]">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#8f8069] dark:text-[#8ea0b7]">
+                <div className="flex items-baseline justify-between border-b border-[#dcdfd4] px-1.5 pb-1 dark:border-[#1c2632]">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#767869] dark:text-[#8ea0b7]">
                     {group.label}
                   </span>
-                  <span className="font-mono text-[10px] text-[#a59c87] dark:text-[#6e7a8c]">
+                  <span className="font-mono text-[10px] text-[#929587] dark:text-[#6e7a8c]">
                     {group.files.length}
                   </span>
                 </div>
@@ -262,8 +262,8 @@ export default function MemoryVault() {
                           onClick={() => selectFile(file)}
                           className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-xs transition ${
                             isActive
-                              ? 'bg-[#221f19] text-white dark:bg-[#3a4554]'
-                              : 'text-[#3a342b] hover:bg-[#f3ecdf] dark:text-gray-300 dark:hover:bg-[#10202e]'
+                              ? 'bg-[#15140f] text-white dark:bg-[#3a4554]'
+                              : 'text-[#30312b] hover:bg-[#e6e7df] dark:text-gray-300 dark:hover:bg-[#10202e]'
                           }`}
                           title={file.description || file.title}
                         >
@@ -286,9 +286,9 @@ export default function MemoryVault() {
         </aside>
 
         {/* Right: viewer */}
-        <div className="min-h-[20rem] rounded-md border border-[#dcd4c5] bg-white p-4 dark:border-[#2b3744] dark:bg-[#0b1118]">
+        <div className="min-h-[20rem] rounded-md border border-[#cdcfc5] bg-white p-4 dark:border-[#2b3744] dark:bg-[#0b1118]">
           {!activeFile ? (
-            <div className="flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 text-sm text-[#8f8069] dark:text-[#8ea0b7]">
+            <div className="flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 text-sm text-[#767869] dark:text-[#8ea0b7]">
               <div className="font-mono text-[11px] uppercase tracking-[0.18em]">empty state</div>
               <p className="max-w-sm text-center text-[13px] leading-7">
                 左侧选一个文件后，在密码框输入即可自动解密。
@@ -299,25 +299,25 @@ export default function MemoryVault() {
           ) : (
             <div className="space-y-3">
               {/* File header */}
-              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#ece5d4] pb-2 dark:border-[#1c2632]">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#dcdfd4] pb-2 dark:border-[#1c2632]">
                 <div>
-                  <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">
+                  <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">
                     {activeFile.title}
                   </h3>
                   {activeFile.description && (
-                    <p className="mt-0.5 text-xs leading-6 text-[#76705f] dark:text-gray-400">
+                    <p className="mt-0.5 text-xs leading-6 text-[#676a5f] dark:text-gray-400">
                       {activeFile.description}
                     </p>
                   )}
                 </div>
-                <span className="font-mono text-[10px] text-[#a59c87] dark:text-[#6e7a8c]">
+                <span className="font-mono text-[10px] text-[#929587] dark:text-[#6e7a8c]">
                   {active.sourceId}/{activeFile.slug}
                 </span>
               </div>
 
               {/* Version timeline */}
               <div className="flex flex-wrap items-center gap-1">
-                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8f8069] dark:text-[#8ea0b7]">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#767869] dark:text-[#8ea0b7]">
                   版本：
                 </span>
                 {activeFile.versions.map((v, i) => (
@@ -327,8 +327,8 @@ export default function MemoryVault() {
                     onClick={() => selectVersion(activeFile, i)}
                     className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
                       i === versionIdx
-                        ? 'bg-[#221f19] text-white dark:bg-[#3a4554]'
-                        : 'bg-[#f3ecdf] text-[#615847] hover:bg-[#e6dbc4] dark:bg-[#10202e] dark:text-[#a9b3c4] dark:hover:bg-[#172c3e]'
+                        ? 'bg-[#15140f] text-white dark:bg-[#3a4554]'
+                        : 'bg-[#e6e7df] text-[#505247] hover:bg-[#d0d3c4] dark:bg-[#10202e] dark:text-[#a9b3c4] dark:hover:bg-[#172c3e]'
                     }`}
                     title={`${v.hash.slice(0, 12)}… · ${v.bytes}B`}
                   >
@@ -340,11 +340,11 @@ export default function MemoryVault() {
               {/* Content */}
               {decryptedHtml ? (
                 <article
-                  className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-serif prose-pre:bg-[#1a1f28] prose-pre:text-[#e7e1d3]"
+                  className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-serif prose-pre:bg-[#1a1f28] prose-pre:text-[#dadcd3]"
                   dangerouslySetInnerHTML={{ __html: decryptedHtml }}
                 />
               ) : (
-                <div className="rounded border border-dashed border-[#d6cdb8] bg-[#fbf6ec] px-3 py-8 text-center text-xs text-[#7c6643] dark:border-[#33425a] dark:bg-[#0a1119] dark:text-[#9aa6b7]">
+                <div className="rounded border border-dashed border-[#c2c6b8] bg-[#f1f2ec] px-3 py-8 text-center text-xs text-[#575a43] dark:border-[#33425a] dark:bg-[#0a1119] dark:text-[#9aa6b7]">
                   {passphrase
                     ? busy
                       ? '解密中…'

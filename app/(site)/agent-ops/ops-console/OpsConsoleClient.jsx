@@ -64,17 +64,17 @@ export default function OpsConsoleClient() {
   return (
     <main className="mx-auto w-full max-w-[960px] px-4 py-8 md:py-12">
       <header className="mb-8">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#9c8f79] dark:text-[#8e9ab0]">
+        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
           Admin · Agent Ops
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#221f19] dark:text-gray-100 md:text-[2.2rem]">
+            <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[2.2rem]">
               自动化控制台
             </h1>
-            <p className="mb-0 max-w-[44rem] text-[14px] leading-7 text-[#5d554a] dark:text-gray-300">
+            <p className="mb-0 max-w-[44rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
               这是外部 Agent Ops 控制台的站内入口。它依赖 Cloudflare Access、Cloudflare Tunnel 和本机
-              <code className="mx-1 rounded bg-[#f4ede0] px-1 py-px font-mono text-[11px] dark:bg-[#19212b]">127.0.0.1:4179</code>
+              <code className="mx-1 rounded bg-[#e7e8e0] px-1 py-px font-mono text-[11px] dark:bg-[#19212b]">127.0.0.1:4179</code>
               服务，不是主站自己的 Next 页面。
             </p>
           </div>
@@ -82,7 +82,7 @@ export default function OpsConsoleClient() {
             type="button"
             onClick={refresh}
             disabled={loading}
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#dcd3c0] bg-white px-3 text-sm font-medium text-[#5f5a4d] transition hover:border-[#9c8e72] hover:text-[#221f19] disabled:opacity-50 dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300 dark:hover:border-[#4a5568]"
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#caccc0] bg-white px-3 text-sm font-medium text-[#53554d] transition hover:border-[#818472] hover:text-[#15140f] disabled:opacity-50 dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300 dark:hover:border-[#4a5568]"
           >
             {loading ? '检查中…' : '重新检查'}
           </button>
@@ -106,7 +106,7 @@ export default function OpsConsoleClient() {
             href={OPS_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-[#221f19] px-4 text-sm font-medium text-white no-underline transition hover:bg-[#3f3527] dark:bg-gray-100 dark:text-[#111827] dark:hover:bg-white"
+            className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-[#15140f] px-4 text-sm font-medium text-white no-underline transition hover:bg-[#2f3027] dark:bg-gray-100 dark:text-[#111827] dark:hover:bg-white"
           >
             打开外部控制台 ↗
           </a>
@@ -119,9 +119,9 @@ export default function OpsConsoleClient() {
         <Stat label="检查时间" value={formatTime(status?.checkedAt)} compact />
       </section>
 
-      <section className="rounded-xl border border-[#e5dccd] bg-white/70 p-5 dark:border-[#252e39] dark:bg-[#10161f]">
-        <h2 className="text-base font-semibold text-[#221f19] dark:text-gray-100">链路拆解</h2>
-        <ol className="mt-4 space-y-3 text-sm leading-6 text-[#5d554a] dark:text-gray-300">
+      <section className="rounded-xl border border-[#d5d7cd] bg-white/70 p-5 dark:border-[#252e39] dark:bg-[#10161f]">
+        <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">链路拆解</h2>
+        <ol className="mt-4 space-y-3 text-sm leading-6 text-[#51514a] dark:text-gray-300">
           <Step title="1. 站内入口" body="当前页面只负责说明状态和提供跳转，不直接承载自动化控制台。" />
           <Step title="2. Cloudflare Access" body="外部入口会先跳到 Cloudflare Access。这里检查到 Access 跳转，说明域名和边缘鉴权入口是通的。" />
           <Step title="3. Cloudflare Tunnel" body="登录后请求才会进入 tunnel。若浏览器显示 ERR_CONNECTION_CLOSED，通常要检查网络、VPN、Access 登录域或 tunnel 稳定性。" />
@@ -134,17 +134,17 @@ export default function OpsConsoleClient() {
 
 function Stat({ label, value, compact = false }) {
   return (
-    <div className="rounded-xl border border-[#e5dccd] bg-white/70 px-4 py-3 dark:border-[#252e39] dark:bg-[#10161f]">
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#8e9ab0]">{label}</div>
-      <div className={`mt-1 font-semibold text-[#221f19] dark:text-gray-100 ${compact ? 'text-sm' : 'text-2xl'}`}>{value}</div>
+    <div className="rounded-xl border border-[#d5d7cd] bg-white/70 px-4 py-3 dark:border-[#252e39] dark:bg-[#10161f]">
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858779] dark:text-[#8e9ab0]">{label}</div>
+      <div className={`mt-1 font-semibold text-[#15140f] dark:text-gray-100 ${compact ? 'text-sm' : 'text-2xl'}`}>{value}</div>
     </div>
   )
 }
 
 function Step({ title, body }) {
   return (
-    <li className="border-l-2 border-[#ddd3c2] pl-3 dark:border-[#2d3744]">
-      <b className="block text-[#221f19] dark:text-gray-100">{title}</b>
+    <li className="border-l-2 border-[#cbcdc2] pl-3 dark:border-[#2d3744]">
+      <b className="block text-[#15140f] dark:text-gray-100">{title}</b>
       <span>{body}</span>
     </li>
   )

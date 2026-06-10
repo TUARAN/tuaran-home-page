@@ -187,7 +187,7 @@ export default function YoutubeBookmarksPage() {
       footer={<p>这里收集值得回看的影像与资料，按主题归类，持续整理。</p>}
     >
       <div className="space-y-8">
-        <div className="border-l-2 border-[#d6cdb8] pl-4 text-sm italic leading-relaxed text-[#777] dark:border-gray-700 dark:text-gray-400">
+        <div className="border-l-2 border-[#c2c6b8] pl-4 text-sm italic leading-relaxed text-[#777] dark:border-gray-700 dark:text-gray-400">
           {EPIGRAPHS.map((line) => (
             <p key={line} className="m-0 mt-2 first:mt-0">
               {line}
@@ -209,7 +209,7 @@ export default function YoutubeBookmarksPage() {
                 {c.films.map((f) => (
                   <li key={f.title} className="text-sm text-[#666] dark:text-gray-300">
                     《{f.title}》
-                    {f.by ? <span className="ml-1 text-xs text-[#a09176] dark:text-gray-500">{f.by}</span> : null}
+                    {f.by ? <span className="ml-1 text-xs text-[#858876] dark:text-gray-500">{f.by}</span> : null}
                   </li>
                 ))}
               </ul>
@@ -225,7 +225,7 @@ export default function YoutubeBookmarksPage() {
                       rel="noreferrer"
                       className="no-external-arrow group inline-flex items-baseline gap-2 text-sm text-[#444] no-underline hover:text-[#111] dark:text-gray-300 dark:hover:text-white"
                     >
-                      <span className="shrink-0 rounded border border-[#e5ddcb] bg-[#faf7f0] px-1.5 py-0.5 text-[10px] text-[#a09176] dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-500">
+                      <span className="shrink-0 rounded border border-[#d4d7cb] bg-[#f4f5f0] px-1.5 py-0.5 text-[10px] text-[#858876] dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-500">
                         {platformOf(link.url)}
                       </span>
                       <span className="underline decoration-[#ddd] underline-offset-4 group-hover:decoration-[#999]">
@@ -246,11 +246,11 @@ export default function YoutubeBookmarksPage() {
             ) : null}
 
             {c.commentary ? (
-              <div className="mt-4 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 dark:border-[#e2bd75] dark:bg-[#2a2115]">
-                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#e2bd75]">
+              <div className="mt-4 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#9ba475]">
                   评论 · 引自视频作者
                 </div>
-                <div className="mt-2 space-y-2 text-sm leading-relaxed text-[#5d503f] dark:text-gray-200">
+                <div className="mt-2 space-y-2 text-sm leading-relaxed text-[#333431] dark:text-gray-200">
                   {c.commentary.map((para, idx) => (
                     <p key={idx} className="m-0">
                       {para}

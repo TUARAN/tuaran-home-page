@@ -53,8 +53,8 @@ function genderClass(c) {
 
 const GENDER_DOT_COLOR = {
   male: '#6b85a6',
-  female: '#c98a96',
-  mixed: '#a08773',
+  female: '#a88e96',
+  mixed: '#838073',
 }
 
 export default function CancersOverviewClient() {
@@ -170,25 +170,25 @@ export default function CancersOverviewClient() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
       {/* ---- Header ---- */}
-      <header className="flex flex-col gap-4 border-b border-[#e8dfd0] pb-5 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
+      <header className="flex flex-col gap-4 border-b border-[#dee0db] pb-5 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
             Cancers · {regionMeta.sublabel}
           </p>
-          <h1 className="mt-2 font-serif text-[26px] font-semibold leading-tight text-[#221f19] dark:text-gray-100 sm:text-[30px]">
+          <h1 className="mt-2 font-serif text-[26px] font-semibold leading-tight text-[#15140f] dark:text-gray-100 sm:text-[30px]">
             癌症全景
           </h1>
-          <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#5d554a] dark:text-gray-400">
+          <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
             10 种主要癌症的发病、死亡、生存与风险因子可视化。全球口径来自{' '}
-            <a href="https://gco.iarc.fr/today" target="_blank" rel="noreferrer" className="underline decoration-[#cbb796] underline-offset-2 hover:text-[#221f19] dark:hover:text-gray-200">
+            <a href="https://gco.iarc.fr/today" target="_blank" rel="noreferrer" className="underline decoration-[#a9ab96] underline-offset-2 hover:text-[#15140f] dark:hover:text-gray-200">
               GLOBOCAN 2022
             </a>{' '}
             与{' '}
-            <a href="https://seer.cancer.gov/statfacts/" target="_blank" rel="noreferrer" className="underline decoration-[#cbb796] underline-offset-2 hover:text-[#221f19] dark:hover:text-gray-200">
+            <a href="https://seer.cancer.gov/statfacts/" target="_blank" rel="noreferrer" className="underline decoration-[#a9ab96] underline-offset-2 hover:text-[#15140f] dark:hover:text-gray-200">
               US SEER
             </a>
             ；中国口径来自国家癌症中心《中国肿瘤登记年报》。
-            <strong className="ml-1 text-[#a05a3c] dark:text-[#e2a07a]">不构成医学建议。</strong>
+            <strong className="ml-1 text-[#a05a3c] dark:text-[#9e937a]">不构成医学建议。</strong>
           </p>
         </div>
         <SharePageButton
@@ -201,10 +201,10 @@ export default function CancersOverviewClient() {
 
       {/* ---- Region toggle ---- */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
           数据口径
         </span>
-        <div className="flex items-center gap-1 rounded-lg border border-[#e0d3b8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
+        <div className="flex items-center gap-1 rounded-lg border border-[#c6cab8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
           {Object.values(REGIONS).map((r) => (
             <button
               key={r.id}
@@ -212,8 +212,8 @@ export default function CancersOverviewClient() {
               onClick={() => setRegion(r.id)}
               className={`rounded-md px-3 py-1 transition ${
                 region === r.id
-                  ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                  : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                  ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                  : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
               }`}
               title={r.sublabel}
             >
@@ -221,21 +221,21 @@ export default function CancersOverviewClient() {
             </button>
           ))}
         </div>
-        <span className="text-[11px] text-[#8f8069] dark:text-gray-500">{regionMeta.sublabel}</span>
+        <span className="text-[11px] text-[#767869] dark:text-gray-500">{regionMeta.sublabel}</span>
 
-        <span className="mx-2 hidden h-4 w-px bg-[#e0d3b8] dark:bg-gray-700 sm:inline-block" />
+        <span className="mx-2 hidden h-4 w-px bg-[#c6cab8] dark:bg-gray-700 sm:inline-block" />
 
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
           模式
         </span>
-        <div className="flex items-center gap-1 rounded-lg border border-[#e0d3b8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
+        <div className="flex items-center gap-1 rounded-lg border border-[#c6cab8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
           <button
             type="button"
             onClick={() => setCompareMode(false)}
             className={`rounded-md px-3 py-1 transition ${
               !compareMode
-                ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
             }`}
           >
             单选详情
@@ -245,8 +245,8 @@ export default function CancersOverviewClient() {
             onClick={() => setCompareMode(true)}
             className={`rounded-md px-3 py-1 transition ${
               compareMode
-                ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
             }`}
           >
             两两对比（最多 {MAX_COMPARE}）
@@ -256,7 +256,7 @@ export default function CancersOverviewClient() {
           <button
             type="button"
             onClick={() => setCompareIds([])}
-            className="text-[11px] text-[#8f8069] underline underline-offset-2 hover:text-[#5d503f] dark:text-gray-500 dark:hover:text-gray-300"
+            className="text-[11px] text-[#767869] underline underline-offset-2 hover:text-[#333431] dark:text-gray-500 dark:hover:text-gray-300"
           >
             清空已选（{compareIds.length}）
           </button>
@@ -264,16 +264,16 @@ export default function CancersOverviewClient() {
       </div>
 
       {/* ---- Filters ---- */}
-      <section className="mt-3 rounded-xl border border-[#e8dfd0] bg-[#fdfaf3]/70 p-3 dark:border-gray-800 dark:bg-gray-900/60 sm:p-4">
+      <section className="mt-3 rounded-xl border border-[#dee0db] bg-[#f6f8f3]/70 p-3 dark:border-gray-800 dark:bg-gray-900/60 sm:p-4">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索：肺癌 / breast / 吸烟…"
-            className="min-w-[180px] flex-1 rounded-lg border border-[#e0d3b8] bg-white px-3 py-1.5 text-sm text-[#221f19] outline-none placeholder:text-[#bbae93] focus:border-[#b7791f] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-600"
+            className="min-w-[180px] flex-1 rounded-lg border border-[#c6cab8] bg-white px-3 py-1.5 text-sm text-[#15140f] outline-none placeholder:text-[#a1a593] focus:border-[#b7791f] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-600"
           />
-          <div className="flex items-center gap-1 rounded-lg border border-[#e0d3b8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
+          <div className="flex items-center gap-1 rounded-lg border border-[#c6cab8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
             {GENDER_FILTERS.map((f) => (
               <button
                 key={f.id}
@@ -281,15 +281,15 @@ export default function CancersOverviewClient() {
                 onClick={() => setGenderFilter(f.id)}
                 className={`rounded-md px-2.5 py-1 transition ${
                   genderFilter === f.id
-                    ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                    : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                    ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                    : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
                 }`}
               >
                 {f.label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1 rounded-lg border border-[#e0d3b8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
+          <div className="flex items-center gap-1 rounded-lg border border-[#c6cab8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
             {SORT_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
@@ -297,8 +297,8 @@ export default function CancersOverviewClient() {
                 onClick={() => setSortBy(opt.id)}
                 className={`rounded-md px-2.5 py-1 transition ${
                   sortBy === opt.id
-                    ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                    : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                    ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                    : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
                 }`}
               >
                 {opt.label}
@@ -307,7 +307,7 @@ export default function CancersOverviewClient() {
           </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] uppercase tracking-[0.16em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <span className="text-[11px] uppercase tracking-[0.16em] text-[#767869] dark:text-[#8e9ab0]">
             风险因子
           </span>
           {CATEGORIES.map((cat) => {
@@ -320,7 +320,7 @@ export default function CancersOverviewClient() {
                 className={`rounded-full px-2.5 py-0.5 text-[11px] transition ${
                   active
                     ? 'text-white'
-                    : 'border border-[#e0d3b8] bg-white text-[#6d614c] hover:border-[#b7791f] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-400'
+                    : 'border border-[#c6cab8] bg-white text-[#585a4c] hover:border-[#b7791f] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-400'
                 }`}
                 style={active ? { backgroundColor: CATEGORY_COLORS[cat] } : undefined}
               >
@@ -337,7 +337,7 @@ export default function CancersOverviewClient() {
                 setSortBy('incidence')
                 setActiveCategories([])
               }}
-              className="ml-auto text-[11px] text-[#8f8069] underline underline-offset-2 hover:text-[#5d503f] dark:text-gray-500 dark:hover:text-gray-300"
+              className="ml-auto text-[11px] text-[#767869] underline underline-offset-2 hover:text-[#333431] dark:text-gray-500 dark:hover:text-gray-300"
             >
               重置全部
             </button>
@@ -354,12 +354,12 @@ export default function CancersOverviewClient() {
       </section>
 
       {/* ---- Quadrant scatter ---- */}
-      <section className="mt-5 rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-900/70 sm:p-4">
+      <section className="mt-5 rounded-xl border border-[#dee0db] bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-900/70 sm:p-4">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
             散点 · 发病率 × 生存率 · {regionMeta.label}
           </h2>
-          <p className="text-[11px] text-[#8f8069] dark:text-gray-500">
+          <p className="text-[11px] text-[#767869] dark:text-gray-500">
             气泡大小 = 年死亡数 · 颜色 = 性别偏好 · {compareMode ? `点选 ≤${MAX_COMPARE} 个对比` : '点选展开详情'}
           </p>
         </div>
@@ -371,7 +371,7 @@ export default function CancersOverviewClient() {
           onSelect={handleSelect}
           region={region}
         />
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#8f8069] dark:text-gray-500">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#767869] dark:text-gray-500">
           <LegendDot color={GENDER_DOT_COLOR.male} label="男性高发" />
           <LegendDot color={GENDER_DOT_COLOR.female} label="女性高发" />
           <LegendDot color={GENDER_DOT_COLOR.mixed} label="男女均见" />
@@ -379,9 +379,9 @@ export default function CancersOverviewClient() {
       </section>
 
       {/* ---- Ranking list ---- */}
-      <section className="mt-5 rounded-xl border border-[#e8dfd0] bg-white/80 dark:border-gray-800 dark:bg-gray-900/70">
-        <div className="border-b border-[#e8dfd0] px-3 py-2 dark:border-gray-800 sm:px-4">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+      <section className="mt-5 rounded-xl border border-[#dee0db] bg-white/80 dark:border-gray-800 dark:bg-gray-900/70">
+        <div className="border-b border-[#dee0db] px-3 py-2 dark:border-gray-800 sm:px-4">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
             排行 · 按 {SORT_OPTIONS.find((o) => o.id === sortBy).label} 降序 · {regionMeta.label}
           </h2>
         </div>
@@ -395,7 +395,7 @@ export default function CancersOverviewClient() {
           compareMode={compareMode}
         />
         {!sorted.length ? (
-          <div className="py-12 text-center text-[13px] text-[#8f8069] dark:text-gray-500">
+          <div className="py-12 text-center text-[13px] text-[#767869] dark:text-gray-500">
             没有匹配的癌症条目。试着放宽筛选或重置。
           </div>
         ) : null}
@@ -406,7 +406,7 @@ export default function CancersOverviewClient() {
         compareCancers.length ? (
           <CompareTable cancers={compareCancers} onRemove={(id) => setCompareIds((prev) => prev.filter((x) => x !== id))} region={region} />
         ) : (
-          <div className="mt-5 rounded-xl border border-dashed border-[#e0d3b8] py-10 text-center text-[13px] text-[#8f8069] dark:border-gray-700 dark:text-gray-500">
+          <div className="mt-5 rounded-xl border border-dashed border-[#c6cab8] py-10 text-center text-[13px] text-[#767869] dark:border-gray-700 dark:text-gray-500">
             在上面点选 2–{MAX_COMPARE} 个癌种开始对比
           </div>
         )
@@ -420,8 +420,8 @@ export default function CancersOverviewClient() {
       ) : null}
 
       {/* ---- Footer ---- */}
-      <footer className="mt-10 border-t border-[#e8dfd0] pt-6 text-[12px] leading-6 text-[#7a6f5d] dark:border-gray-800 dark:text-gray-500">
-        <p className="font-semibold text-[#5d503f] dark:text-gray-300">数据口径与免责声明</p>
+      <footer className="mt-10 border-t border-[#dee0db] pt-6 text-[12px] leading-6 text-[#67695d] dark:border-gray-800 dark:text-gray-500">
+        <p className="font-semibold text-[#333431] dark:text-gray-300">数据口径与免责声明</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
             全球口径：发病 / 死亡取自{' '}
@@ -443,7 +443,7 @@ export default function CancersOverviewClient() {
             <strong>本页为公开数据的可视化整理，不构成临床诊断或治疗建议。</strong>个体风险评估、筛查方案、症状判断请咨询专业医师。
           </li>
         </ul>
-        <p className="mt-4 text-[11px] text-[#8f8069] dark:text-gray-600">
+        <p className="mt-4 text-[11px] text-[#767869] dark:text-gray-600">
           数据更新：2026-06 · 站点：
           <Link href="/" className="underline underline-offset-2">2aran.com</Link>
         </p>
@@ -456,14 +456,14 @@ export default function CancersOverviewClient() {
 
 function StatTile({ label, value, sub }) {
   return (
-    <div className="rounded-xl border border-[#e8dfd0] bg-white/70 p-3 dark:border-gray-800 dark:bg-gray-900/70">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+    <div className="rounded-xl border border-[#dee0db] bg-white/70 p-3 dark:border-gray-800 dark:bg-gray-900/70">
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
         {label}
       </p>
-      <p className="mt-1 font-serif text-[18px] font-semibold tabular-nums text-[#221f19] dark:text-gray-100 sm:text-[20px]">
+      <p className="mt-1 font-serif text-[18px] font-semibold tabular-nums text-[#15140f] dark:text-gray-100 sm:text-[20px]">
         {value}
       </p>
-      {sub ? <p className="mt-0.5 text-[11px] text-[#8f8069] dark:text-gray-500">{sub}</p> : null}
+      {sub ? <p className="mt-0.5 text-[11px] text-[#767869] dark:text-gray-500">{sub}</p> : null}
     </div>
   )
 }
@@ -529,28 +529,28 @@ function QuadrantChart({ cancers, focusIds, hoverId, onHover, onSelect, region }
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="xMidYMid meet"
-          className="block w-full text-[#5d503f] dark:text-gray-300"
+          className="block w-full text-[#333431] dark:text-gray-300"
           role="img"
           aria-label="癌症发病率 × 生存率 散点图"
         >
           {/* 背景四象限 */}
-          <rect x={padL} y={padT} width={innerW} height={midY - padT} fill="#f5efe2" opacity={0.35} />
-          <rect x={padL} y={midY} width={innerW} height={padT + innerH - midY} fill="#e8d8d3" opacity={0.32} />
+          <rect x={padL} y={padT} width={innerW} height={midY - padT} fill="#e9eae2" opacity={0.35} />
+          <rect x={padL} y={midY} width={innerW} height={padT + innerH - midY} fill="#dad6d3" opacity={0.32} />
 
-          <text x={padL + 8} y={padT + 14} fontSize="10" fill="#7d9c7c" opacity={0.85}>少见 · 可控</text>
+          <text x={padL + 8} y={padT + 14} fontSize="10" fill="#7c917c" opacity={0.85}>少见 · 可控</text>
           <text x={padL + innerW - 8} y={padT + 14} fontSize="10" fill="#3f6a3f" opacity={0.85} textAnchor="end">常见 · 可控</text>
           <text x={padL + 8} y={padT + innerH - 4} fontSize="10" fill="#a05a3c" opacity={0.85}>少见 · 难治</text>
           <text x={padL + innerW - 8} y={padT + innerH - 4} fontSize="10" fill="#a05a3c" opacity={0.95} textAnchor="end" fontWeight="600">
             常见 · 难治（高负担区）
           </text>
 
-          <line x1={padL} x2={padL + innerW} y1={midY} y2={midY} stroke="#cbb796" strokeDasharray="3 4" opacity={0.65} />
+          <line x1={padL} x2={padL + innerW} y1={midY} y2={midY} stroke="#a9ab96" strokeDasharray="3 4" opacity={0.65} />
 
           {xTicks.map((t) => {
             const x = xPos(t.v)
             return (
               <g key={t.v}>
-                <line x1={x} x2={x} y1={padT} y2={padT + innerH} stroke="#e8dfd0" strokeDasharray="2 3" opacity={0.5} />
+                <line x1={x} x2={x} y1={padT} y2={padT + innerH} stroke="#dee0db" strokeDasharray="2 3" opacity={0.5} />
                 <text x={x} y={padT + innerH + 14} fontSize="10" fill="currentColor" opacity={0.6} textAnchor="middle">{t.label}</text>
               </g>
             )
@@ -559,7 +559,7 @@ function QuadrantChart({ cancers, focusIds, hoverId, onHover, onSelect, region }
             const y = yPos(t)
             return (
               <g key={t}>
-                <line x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#e8dfd0" strokeDasharray="2 3" opacity={0.4} />
+                <line x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#dee0db" strokeDasharray="2 3" opacity={0.4} />
                 <text x={padL - 6} y={y + 3} fontSize="10" fill="currentColor" opacity={0.6} textAnchor="end">{t}%</text>
               </g>
             )
@@ -602,7 +602,7 @@ function QuadrantChart({ cancers, focusIds, hoverId, onHover, onSelect, region }
                   r={r}
                   fill={fill}
                   opacity={isFocused || isHover ? 0.92 : 0.62}
-                  stroke={isFocused ? '#221f19' : isHover ? '#3f3527' : 'rgba(255,255,255,0.85)'}
+                  stroke={isFocused ? '#15140f' : isHover ? '#2f3027' : 'rgba(255,255,255,0.85)'}
                   strokeWidth={isFocused ? 2 : isHover ? 1.5 : 1}
                 />
                 <text
@@ -610,7 +610,7 @@ function QuadrantChart({ cancers, focusIds, hoverId, onHover, onSelect, region }
                   y={cy + r + 11}
                   fontSize={isFocused || isHover ? 11 : 10}
                   fontWeight={isFocused || isHover ? 600 : 500}
-                  fill="#221f19"
+                  fill="#15140f"
                   textAnchor="middle"
                   style={{ pointerEvents: 'none' }}
                   className="dark:!fill-gray-100"
@@ -641,7 +641,7 @@ function ChartTooltip({ cancer, chartW, chartH, xPos, yPos, rPos }) {
   const flipRight = leftPct > 65
   return (
     <div
-      className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-[#3f3527]/15 bg-white/95 px-3 py-2 text-[11px] leading-5 text-[#221f19] shadow-lg backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/95 dark:text-gray-100"
+      className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-[#2f3027]/15 bg-white/95 px-3 py-2 text-[11px] leading-5 text-[#15140f] shadow-lg backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/95 dark:text-gray-100"
       style={{
         left: `${flipRight ? Math.min(leftPct, 88) : Math.max(leftPct, 12)}%`,
         top: `${Math.max(topPct, 4)}%`,
@@ -651,30 +651,30 @@ function ChartTooltip({ cancer, chartW, chartH, xPos, yPos, rPos }) {
       <div className="flex items-center gap-1.5">
         <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: cancer.color }} />
         <strong className="text-[12px]">{cancer.nameZh}</strong>
-        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#8f8069] dark:text-gray-500">
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#767869] dark:text-gray-500">
           {cancer.nameEn}
         </span>
       </div>
       <table className="mt-1.5 w-full tabular-nums">
         <tbody>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">年新发</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">年新发</td>
             <td className="text-right">{formatNumber(cancer.incidence)}</td>
           </tr>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">年死亡</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">年死亡</td>
             <td className="text-right">{formatNumber(cancer.mortality)}</td>
           </tr>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">5 年生存</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">5 年生存</td>
             <td className="text-right">{cancer.survival5y}%</td>
           </tr>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">致死率</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">致死率</td>
             <td className="text-right">{fatalityRate(cancer)}%</td>
           </tr>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">主因</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">主因</td>
             <td className="text-right truncate" style={{ maxWidth: 130 }}>{cancer.primaryFactor}</td>
           </tr>
         </tbody>
@@ -692,7 +692,7 @@ function RankingList({ cancers, sortBy, focusIds, hoverId, onHover, onSelect, co
   const hasFocus = focusIds.length > 0
 
   return (
-    <div className="divide-y divide-[#f0e8d6] dark:divide-gray-800">
+    <div className="divide-y divide-[#dfe2d6] dark:divide-gray-800">
       {cancers.map((c, i) => {
         const v = accessor(c)
         const pct = (v / max) * 100
@@ -725,36 +725,36 @@ function RankingList({ cancers, sortBy, focusIds, hoverId, onHover, onSelect, co
             }}
             className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 transition sm:px-4 ${
               isFocused
-                ? 'bg-[#fbf3e3] dark:bg-[#2a2115]'
+                ? 'bg-[#ebede3] dark:bg-[#1c1d15]'
                 : isHover
-                ? 'bg-[#fdfaf3] dark:bg-gray-900'
-                : 'hover:bg-[#fdfaf3] dark:hover:bg-gray-900'
+                ? 'bg-[#f6f8f3] dark:bg-gray-900'
+                : 'hover:bg-[#f6f8f3] dark:hover:bg-gray-900'
             } ${isDimmed ? 'opacity-45' : ''}`}
           >
-            <span className="w-5 shrink-0 text-right font-mono text-[10px] tabular-nums text-[#8f8069] dark:text-gray-500">
+            <span className="w-5 shrink-0 text-right font-mono text-[10px] tabular-nums text-[#767869] dark:text-gray-500">
               {i + 1}
             </span>
             <div className="flex w-[170px] shrink-0 items-center gap-2 sm:w-[200px]">
               <span aria-hidden="true" className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: c.color }} />
-              <span className="truncate text-[13px] font-semibold text-[#221f19] dark:text-gray-100">{c.nameZh}</span>
+              <span className="truncate text-[13px] font-semibold text-[#15140f] dark:text-gray-100">{c.nameZh}</span>
               <span
                 className={`shrink-0 rounded-full px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] ${
                   gKey === 'male'
                     ? 'bg-[#dee6f0] text-[#3f4b5d] dark:bg-[#1c2632] dark:text-[#b3c0d1]'
                     : gKey === 'female'
-                    ? 'bg-[#f1dde3] text-[#83405a] dark:bg-[#2a1a22] dark:text-[#d9a3b8]'
-                    : 'bg-[#ede5d2] text-[#6d614c] dark:bg-[#1f1a14] dark:text-[#bbae93]'
+                    ? 'bg-[#e8dfe3] text-[#68495a] dark:bg-[#251d22] dark:text-[#c4aab8]'
+                    : 'bg-[#dbded2] text-[#585a4c] dark:bg-[#181814] dark:text-[#a1a593]'
                 }`}
               >
                 {gKey === 'male' ? '♂' : gKey === 'female' ? '♀' : '⚥'}
               </span>
               {compareMode && isFocused ? (
-                <span className="rounded-full bg-[#3f3527] px-1.5 py-px text-[9px] font-medium text-white dark:bg-gray-200 dark:text-[#111]">
+                <span className="rounded-full bg-[#2f3027] px-1.5 py-px text-[9px] font-medium text-white dark:bg-gray-200 dark:text-[#111]">
                   ✓
                 </span>
               ) : null}
             </div>
-            <div className="relative h-4 flex-1 rounded-sm bg-[#f0e8d6] dark:bg-gray-800">
+            <div className="relative h-4 flex-1 rounded-sm bg-[#dfe2d6] dark:bg-gray-800">
               <div
                 className="h-full rounded-sm transition-[width]"
                 style={{ width: `${pct}%`, backgroundColor: c.color, opacity: isFocused ? 1 : 0.78 }}
@@ -764,14 +764,14 @@ function RankingList({ cancers, sortBy, focusIds, hoverId, onHover, onSelect, co
                   className="absolute left-0 top-0 h-full rounded-sm"
                   style={{
                     width: `${(secondary.v / secondary.max) * pct}%`,
-                    backgroundColor: '#3f3527',
+                    backgroundColor: '#2f3027',
                     opacity: 0.35,
                   }}
                   title={`${secondary.label} ${formatNumber(secondary.v)}`}
                 />
               ) : null}
             </div>
-            <span className="w-16 shrink-0 text-right font-mono text-[12px] tabular-nums text-[#221f19] dark:text-gray-100">
+            <span className="w-16 shrink-0 text-right font-mono text-[12px] tabular-nums text-[#15140f] dark:text-gray-100">
               {sortBy === 'survival' || sortBy === 'fatality' ? `${v}%` : formatNumber(v)}
             </span>
             <div className="hidden shrink-0 items-center gap-1 text-[10px] sm:flex">
@@ -789,8 +789,8 @@ function Chip({ label, value, good = false, bad = false }) {
   const tone = good
     ? 'border-[#cfdfd0] bg-[#eef6ee] text-[#3f6a3f] dark:border-[#2c4030] dark:bg-[#152018] dark:text-[#a3d4a3]'
     : bad
-    ? 'border-[#f5d6b8] bg-[#fff6e6] text-[#a05a3c] dark:border-[#5a4128] dark:bg-[#2a1c10] dark:text-[#e2a07a]'
-    : 'border-[#e8dfd0] bg-[#fdfaf3] text-[#6d614c] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400'
+    ? 'border-[#cdccb8] bg-[#eff0e6] text-[#a05a3c] dark:border-[#5a4128] dark:bg-[#2a1c10] dark:text-[#9e937a]'
+    : 'border-[#dee0db] bg-[#f6f8f3] text-[#585a4c] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400'
   return (
     <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 tabular-nums ${tone}`}>
       <span className="font-mono text-[8.5px] uppercase tracking-[0.1em] opacity-60">{label}</span>
@@ -813,12 +813,12 @@ function CompareTable({ cancers, onRemove, region }) {
   ]
 
   return (
-    <section className="mt-5 rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-900/70 sm:p-4">
+    <section className="mt-5 rounded-xl border border-[#dee0db] bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-900/70 sm:p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
           对比 · {cancers.length} 种 · {REGIONS[region].label}口径
         </h2>
-        <p className="text-[11px] text-[#8f8069] dark:text-gray-500">
+        <p className="text-[11px] text-[#767869] dark:text-gray-500">
           在散点 / 排行中再点选可增减
         </p>
       </div>
@@ -828,21 +828,21 @@ function CompareTable({ cancers, onRemove, region }) {
             <tr>
               <th className="w-24 sm:w-32" />
               {cancers.map((c) => (
-                <th key={c.id} className="border-b border-[#e8dfd0] px-2 py-2 text-left align-top dark:border-gray-800">
+                <th key={c.id} className="border-b border-[#dee0db] px-2 py-2 text-left align-top dark:border-gray-800">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span aria-hidden="true" className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: c.color }} />
-                        <span className="font-serif text-[14px] font-semibold text-[#221f19] dark:text-gray-100">{c.nameZh}</span>
+                        <span className="font-serif text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{c.nameZh}</span>
                       </div>
-                      <div className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8f8069] dark:text-gray-500">
+                      <div className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#767869] dark:text-gray-500">
                         {c.nameEn}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => onRemove(c.id)}
-                      className="shrink-0 rounded-md border border-[#e0d3b8] bg-white px-1.5 py-0.5 text-[10px] text-[#8f8069] hover:bg-[#f5efe2] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-500 dark:hover:bg-gray-800"
+                      className="shrink-0 rounded-md border border-[#c6cab8] bg-white px-1.5 py-0.5 text-[10px] text-[#767869] hover:bg-[#e9eae2] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-500 dark:hover:bg-gray-800"
                       aria-label={`移除 ${c.nameZh}`}
                     >
                       ×
@@ -855,7 +855,7 @@ function CompareTable({ cancers, onRemove, region }) {
           <tbody>
             {rows.map((row) => (
               <tr key={row.key}>
-                <td className="border-b border-[#f0e8d6] px-2 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8f8069] align-top dark:border-gray-800 dark:text-gray-500">
+                <td className="border-b border-[#dfe2d6] px-2 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#767869] align-top dark:border-gray-800 dark:text-gray-500">
                   {row.label}
                 </td>
                 {cancers.map((c) => {
@@ -863,12 +863,12 @@ function CompareTable({ cancers, onRemove, region }) {
                   const toneCls = tone === 'good'
                     ? 'text-[#3f6a3f] dark:text-[#a3d4a3]'
                     : tone === 'bad'
-                    ? 'text-[#a05a3c] dark:text-[#e2a07a]'
-                    : 'text-[#221f19] dark:text-gray-100'
+                    ? 'text-[#a05a3c] dark:text-[#9e937a]'
+                    : 'text-[#15140f] dark:text-gray-100'
                   return (
                     <td
                       key={c.id}
-                      className={`border-b border-[#f0e8d6] px-2 py-2 align-top text-[12px] tabular-nums dark:border-gray-800 ${toneCls} ${row.multi ? 'leading-5' : 'font-semibold'}`}
+                      className={`border-b border-[#dfe2d6] px-2 py-2 align-top text-[12px] tabular-nums dark:border-gray-800 ${toneCls} ${row.multi ? 'leading-5' : 'font-semibold'}`}
                     >
                       {row.fmt(c)}
                     </td>
@@ -878,19 +878,19 @@ function CompareTable({ cancers, onRemove, region }) {
             ))}
             {/* 风险因子叠加 mini bar */}
             <tr>
-              <td className="border-b border-[#f0e8d6] px-2 py-2 align-top font-mono text-[10px] uppercase tracking-[0.12em] text-[#8f8069] dark:border-gray-800 dark:text-gray-500">
+              <td className="border-b border-[#dfe2d6] px-2 py-2 align-top font-mono text-[10px] uppercase tracking-[0.12em] text-[#767869] dark:border-gray-800 dark:text-gray-500">
                 风险因子（Top）
               </td>
               {cancers.map((c) => (
-                <td key={c.id} className="border-b border-[#f0e8d6] px-2 py-2 align-top dark:border-gray-800">
+                <td key={c.id} className="border-b border-[#dfe2d6] px-2 py-2 align-top dark:border-gray-800">
                   <ul className="space-y-1">
                     {c.riskFactors.slice(0, 4).map((rf) => (
                       <li key={rf.name} className="flex items-center gap-1.5 text-[11px]">
                         <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[rf.category] }} />
-                        <span className="min-w-0 flex-1 truncate text-[#5d503f] dark:text-gray-300" title={rf.name}>
+                        <span className="min-w-0 flex-1 truncate text-[#333431] dark:text-gray-300" title={rf.name}>
                           {rf.name}
                         </span>
-                        <span className="w-7 shrink-0 text-right font-mono tabular-nums text-[#8f8069] dark:text-gray-500">
+                        <span className="w-7 shrink-0 text-right font-mono tabular-nums text-[#767869] dark:text-gray-500">
                           {rf.weight}
                         </span>
                       </li>
@@ -915,12 +915,12 @@ function CancerDetail({ cancer, onClose, region }) {
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
             详情 · {cancer.nameEn} · {REGIONS[region].label}口径
           </p>
-          <h2 className="mt-1 font-serif text-[22px] font-semibold text-[#221f19] dark:text-gray-100">
+          <h2 className="mt-1 font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">
             {cancer.nameZh}
-            <span className="ml-2 text-[12px] font-normal text-[#8f8069] dark:text-gray-500">
+            <span className="ml-2 text-[12px] font-normal text-[#767869] dark:text-gray-500">
               主因：{cancer.primaryFactor}
             </span>
           </h2>
@@ -928,7 +928,7 @@ function CancerDetail({ cancer, onClose, region }) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-[#e0d3b8] bg-white px-2 py-0.5 text-[11px] text-[#6d614c] hover:bg-[#f5efe2] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-400 dark:hover:bg-gray-800"
+          className="rounded-md border border-[#c6cab8] bg-white px-2 py-0.5 text-[11px] text-[#585a4c] hover:bg-[#e9eae2] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-400 dark:hover:bg-gray-800"
         >
           收起 ×
         </button>
@@ -943,7 +943,7 @@ function CancerDetail({ cancer, onClose, region }) {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#767869] dark:text-[#8e9ab0]">
             性别分布
           </p>
           <div className="mt-1.5 flex h-5 overflow-hidden rounded-md text-[10px] font-medium text-white">
@@ -953,33 +953,33 @@ function CancerDetail({ cancer, onClose, region }) {
               </div>
             ) : null}
             {cancer.genderRatio.female > 0 ? (
-              <div className="flex items-center justify-center bg-[#c98a96]" style={{ width: `${cancer.genderRatio.female}%` }}>
+              <div className="flex items-center justify-center bg-[#a88e96]" style={{ width: `${cancer.genderRatio.female}%` }}>
                 {cancer.genderRatio.female >= 10 ? `♀ ${cancer.genderRatio.female}%` : null}
               </div>
             ) : null}
           </div>
 
-          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[#767869] dark:text-[#8e9ab0]">
             确诊年龄分布
           </p>
           <div className="mt-2 flex h-24 items-end gap-1.5">
             {cancer.ageDistribution.map((v, i) => (
               <div key={i} className="flex flex-1 flex-col items-center justify-end gap-1">
-                <span className="font-mono text-[9px] tabular-nums text-[#8f8069] dark:text-gray-500">
+                <span className="font-mono text-[9px] tabular-nums text-[#767869] dark:text-gray-500">
                   {v > 0 ? `${v}%` : ''}
                 </span>
                 <div
                   className="w-full rounded-t-sm"
                   style={{
                     height: `${Math.max((v / maxAge) * 100, v > 0 ? 4 : 2)}%`,
-                    backgroundColor: v > 0 ? cancer.color : '#eee5d3',
+                    backgroundColor: v > 0 ? cancer.color : '#dcdfd3',
                     opacity: v > 0 ? 0.85 : 0.3,
                   }}
                 />
               </div>
             ))}
           </div>
-          <div className="mt-1 flex gap-1.5 text-[9px] text-[#8f8069] dark:text-gray-500">
+          <div className="mt-1 flex gap-1.5 text-[9px] text-[#767869] dark:text-gray-500">
             {AGE_BUCKETS_DISPLAY.map((b) => (
               <span key={b} className="flex-1 text-center">{b}</span>
             ))}
@@ -987,18 +987,18 @@ function CancerDetail({ cancer, onClose, region }) {
         </div>
 
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#767869] dark:text-[#8e9ab0]">
             关键风险因子（示意权重）
           </p>
           <ul className="mt-2 space-y-1.5">
             {cancer.riskFactors.map((rf) => (
               <li key={rf.name} className="flex items-center gap-2 text-[11px]">
                 <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[rf.category] }} title={CATEGORY_LABELS[rf.category]} />
-                <span className="min-w-0 flex-1 truncate text-[#5d503f] dark:text-gray-300">{rf.name}</span>
-                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[#f0e8d6] dark:bg-gray-800">
+                <span className="min-w-0 flex-1 truncate text-[#333431] dark:text-gray-300">{rf.name}</span>
+                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[#dfe2d6] dark:bg-gray-800">
                   <div className="h-full" style={{ width: `${Math.min(rf.weight * 1.4, 100)}%`, backgroundColor: CATEGORY_COLORS[rf.category] }} />
                 </div>
-                <span className="w-7 shrink-0 text-right font-mono tabular-nums text-[#8f8069] dark:text-gray-500">
+                <span className="w-7 shrink-0 text-right font-mono tabular-nums text-[#767869] dark:text-gray-500">
                   {rf.weight}
                 </span>
               </li>
@@ -1008,11 +1008,11 @@ function CancerDetail({ cancer, onClose, region }) {
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-[#f5d6b8] bg-[#fff6e6]/60 p-3 dark:border-[#5a4128] dark:bg-[#2a1c10]/40">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#a05a3c] dark:text-[#e2a07a]">
+        <div className="rounded-lg border border-[#cdccb8] bg-[#eff0e6]/60 p-3 dark:border-[#5a4128] dark:bg-[#2a1c10]/40">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#a05a3c] dark:text-[#9e937a]">
             预警信号
           </p>
-          <ul className="mt-1.5 space-y-1 text-[12px] leading-5 text-[#5d503f] dark:text-gray-300">
+          <ul className="mt-1.5 space-y-1 text-[12px] leading-5 text-[#333431] dark:text-gray-300">
             {cancer.warnings.map((w) => (
               <li key={w} className="flex gap-1.5">
                 <span aria-hidden="true">·</span>
@@ -1025,7 +1025,7 @@ function CancerDetail({ cancer, onClose, region }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#3f6a3f] dark:text-[#a3d4a3]">
             筛查建议
           </p>
-          <p className="mt-1.5 text-[12px] leading-5 text-[#5d503f] dark:text-gray-300">
+          <p className="mt-1.5 text-[12px] leading-5 text-[#333431] dark:text-gray-300">
             {cancer.screening}
           </p>
         </div>
@@ -1039,11 +1039,11 @@ function KeyStat({ label, value, tone }) {
     tone === 'good'
       ? 'text-[#3f6a3f] dark:text-[#a3d4a3]'
       : tone === 'bad'
-      ? 'text-[#a05a3c] dark:text-[#e2a07a]'
-      : 'text-[#221f19] dark:text-gray-100'
+      ? 'text-[#a05a3c] dark:text-[#9e937a]'
+      : 'text-[#15140f] dark:text-gray-100'
   return (
-    <div className="rounded-md bg-[#fdfaf3] px-3 py-2 dark:bg-gray-950/60">
-      <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#8f8069] dark:text-gray-500">
+    <div className="rounded-md bg-[#f6f8f3] px-3 py-2 dark:bg-gray-950/60">
+      <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#767869] dark:text-gray-500">
         {label}
       </div>
       <div className={`mt-0.5 font-serif text-[18px] font-semibold tabular-nums ${toneCls}`}>

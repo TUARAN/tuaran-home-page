@@ -493,7 +493,7 @@ export default function ThreeSolarSystem({
       <div className="pointer-events-none absolute bottom-4 left-4 flex max-w-[calc(100%-8rem)] flex-wrap gap-2 rounded-2xl border border-white/12 bg-[#08111f]/78 px-3 py-2 text-[11px] text-[#cbd5e1] backdrop-blur">
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#fbbf24]" />太阳</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#38bdf8]" />地球</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#fef08a]" />广州</span>
+        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#b3cc8a]" />广州</span>
         <span>距离与大小为观察用示意</span>
       </div>
       <button

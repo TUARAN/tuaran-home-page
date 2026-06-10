@@ -108,7 +108,7 @@ export default function EatwhatClient() {
 
   return (
     <main
-      className="min-h-[100dvh] bg-gradient-to-br from-[#fbfff8] via-[#f3fbf4] to-[#eef8ff] dark:from-[#0b1016] dark:via-[#0b141a] dark:to-[#0d1822]"
+      className="min-h-[100dvh] bg-gradient-to-br from-[#f9fdf8] via-[#f3fbf4] to-[#eef8ff] dark:from-[#0b1016] dark:via-[#0b141a] dark:to-[#0d1822]"
       style={{
         paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
         paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
@@ -246,7 +246,7 @@ export default function EatwhatClient() {
               )}
             </div>
 
-            <div className="mt-3 rounded-2xl border border-[#e8dfbf]/70 bg-[#fffaf1]/90 px-4 py-3 text-sm leading-relaxed text-[#7c8375] dark:border-[#3a3528]/70 dark:bg-[#1a1812]/85 dark:text-gray-300">
+            <div className="mt-3 rounded-2xl border border-[#cdd4bf]/70 bg-[#f6f7f1]/90 px-4 py-3 text-sm leading-relaxed text-[#777e75] dark:border-[#2e3028]/70 dark:bg-[#1a1812]/85 dark:text-gray-300">
               尽量少盐少糖，注意大小和软硬度，避免整颗坚果、整粒葡萄这类容易噎住的食物。
             </div>
           </section>

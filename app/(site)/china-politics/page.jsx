@@ -425,7 +425,7 @@ function Table({ data }) {
             {data.headers.map((h) => (
               <th
                 key={h}
-                className="whitespace-nowrap border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left font-semibold text-[#333] dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-100"
+                className="whitespace-nowrap border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left font-semibold text-[#333] dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-100"
               >
                 {h}
               </th>
@@ -539,7 +539,7 @@ export default function ChinaPoliticsPage() {
                   key={item.label}
                   className="rounded-lg border border-[#eee] bg-white p-3 dark:border-gray-800 dark:bg-gray-900"
                 >
-                  <div className="text-[13px] font-semibold text-[#5a5142] dark:text-gray-300">{item.label}</div>
+                  <div className="text-[13px] font-semibold text-[#4a4c42] dark:text-gray-300">{item.label}</div>
                   <p className="mt-1 text-sm text-[#666] dark:text-gray-300">{item.text}</p>
                 </div>
               ))}
@@ -556,7 +556,7 @@ export default function ChinaPoliticsPage() {
             <SubHeading id="org-system">制度特征与立场</SubHeading>
             <div className="mt-3 space-y-4">
               <div className="rounded-lg border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-                <div className="text-[13px] font-semibold text-[#5a5142] dark:text-gray-300">制度特征</div>
+                <div className="text-[13px] font-semibold text-[#4a4c42] dark:text-gray-300">制度特征</div>
                 <ul className="mt-2 space-y-1.5 text-sm text-[#666] dark:text-gray-300">
                   <li>· 党的领导：中央政治局常委会是实质决策核心。</li>
                   <li>· 议行合一：人大立法权与国务院行政权统一协调，区别于三权分立模式。</li>
@@ -564,7 +564,7 @@ export default function ChinaPoliticsPage() {
                 </ul>
               </div>
               <div className="rounded-lg border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-                <div className="text-[13px] font-semibold text-[#5a5142] dark:text-gray-300">
+                <div className="text-[13px] font-semibold text-[#4a4c42] dark:text-gray-300">
                   官方对“三权分立”的立场
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-[#666] dark:text-gray-300">
@@ -608,7 +608,7 @@ export default function ChinaPoliticsPage() {
                     <span className="font-medium text-[#444] dark:text-gray-200">主要内容：</span>
                     {item.content}
                   </p>
-                  <p className="mt-1 text-sm leading-relaxed text-[#8a8270] dark:text-gray-400">
+                  <p className="mt-1 text-sm leading-relaxed text-[#797c70] dark:text-gray-400">
                     <span className="font-medium">延伸解读：</span>
                     {item.background}
                   </p>
@@ -651,14 +651,14 @@ export default function ChinaPoliticsPage() {
 
             <ul id="leaders-timeline" className="mt-5 scroll-mt-24">
               {LEADERS.map((item) => (
-                <li key={item.period} className="relative border-l border-[#e2d9c6] pl-5 pb-5 dark:border-gray-700">
-                  <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border border-[#b7a98a] bg-white dark:border-gray-500 dark:bg-gray-900" />
+                <li key={item.period} className="relative border-l border-[#d0d2c6] pl-5 pb-5 dark:border-gray-700">
+                  <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border border-[#9a9e8a] bg-white dark:border-gray-500 dark:bg-gray-900" />
                   <div className="font-mono text-xs text-[#999] dark:text-gray-500">{item.period}</div>
                   <div className="mt-0.5 text-sm font-semibold text-[#333] dark:text-gray-100">{item.title}</div>
                   <ul className="mt-1.5 space-y-1 text-sm text-[#666] dark:text-gray-300">
                     {item.lines.map((ln, i) => (
                       <li key={i}>
-                        <span className="font-medium text-[#5a5142] dark:text-gray-400">{ln.k}：</span>
+                        <span className="font-medium text-[#4a4c42] dark:text-gray-400">{ln.k}：</span>
                         {ln.v}
                       </li>
                     ))}
@@ -670,7 +670,7 @@ export default function ChinaPoliticsPage() {
 
           {/* ===== 延伸参考 ===== */}
           <section className="border-t border-[#eee] pt-6 dark:border-gray-800">
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
               延伸参考
             </p>
             <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">

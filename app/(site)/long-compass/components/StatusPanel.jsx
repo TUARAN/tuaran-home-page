@@ -11,10 +11,10 @@ export default function StatusPanel({
   oldestYear,
 }) {
   return (
-    <details className="mt-10 rounded-lg border border-[#e8dfd0] bg-white/70 px-4 py-3 text-sm dark:border-gray-800 dark:bg-[#121821]/70">
-      <summary className="cursor-pointer select-none font-serif text-base font-semibold text-[#221f19] dark:text-gray-100">
+    <details className="mt-10 rounded-lg border border-[#dee0db] bg-white/70 px-4 py-3 text-sm dark:border-gray-800 dark:bg-[#121821]/70">
+      <summary className="cursor-pointer select-none font-serif text-base font-semibold text-[#15140f] dark:text-gray-100">
         现状梳理 · 架构与数据
-        <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+        <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
           read-only · e2ee
         </span>
       </summary>
@@ -73,7 +73,7 @@ export default function StatusPanel({
         </SectionBlock>
       </div>
 
-      <p className="mt-5 border-t border-dashed border-[#e8dfd0] pt-3 text-[11px] leading-5 text-[#847a67] dark:border-gray-700 dark:text-gray-400">
+      <p className="mt-5 border-t border-dashed border-[#dee0db] pt-3 text-[11px] leading-5 text-[#717367] dark:border-gray-700 dark:text-gray-400">
         本页面只对登录后的 owner 账号开放。即使 GitHub OAuth 被劫持，攻击者拉到的也只是密文 + 不带口令的 schema —— 没有口令派生密钥就解不开。
       </p>
     </details>
@@ -83,10 +83,10 @@ export default function StatusPanel({
 function SectionBlock({ title, children }) {
   return (
     <div>
-      <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+      <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
         {title}
       </h3>
-      <ul className="mt-2 space-y-1.5 text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
+      <ul className="mt-2 space-y-1.5 text-[13px] leading-6 text-[#51514a] dark:text-gray-300">
         {children}
       </ul>
     </div>
@@ -99,7 +99,7 @@ function CommitLink({ hash }) {
       href={`https://github.com/TUARAN/tuaran-home-page/commit/${hash}`}
       target="_blank"
       rel="noreferrer"
-      className="font-mono text-[12px] text-[#6b4f21] hover:underline dark:text-[#e0c38f]"
+      className="font-mono text-[12px] text-[#6b4f21] hover:underline dark:text-[#abb18f]"
     >
       {hash}
     </a>

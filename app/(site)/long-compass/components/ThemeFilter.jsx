@@ -25,7 +25,7 @@ export default function ThemeFilter({ selectedTheme, onSelect, onClear, counts }
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
         主题
       </span>
 
@@ -34,8 +34,8 @@ export default function ThemeFilter({ selectedTheme, onSelect, onClear, counts }
         onClick={onClear}
         className={`rounded-full px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] transition ${
           !hasSelection
-            ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-            : 'border border-[#e8dfd0] text-[#6b5f4d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+            ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+            : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
         }`}
       >
         全部
@@ -50,7 +50,7 @@ export default function ThemeFilter({ selectedTheme, onSelect, onClear, counts }
             onClick={() => onSelect(t)}
             className={`rounded-full px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] transition ${
               selected
-                ? 'bg-[#3f3527] text-white shadow-sm dark:bg-gray-200 dark:text-[#111]'
+                ? 'bg-[#2f3027] text-white shadow-sm dark:bg-gray-200 dark:text-[#111]'
                 : THEME_COLORS[t] + ' hover:scale-105'
             }`}
           >

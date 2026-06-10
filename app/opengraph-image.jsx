@@ -13,13 +13,13 @@ export default async function OgImage() {
           width: '100%',
           height: '100%',
           background:
-            'linear-gradient(135deg, #f8f5f0 0%, #f0ebe0 100%)',
+            'linear-gradient(135deg, #f0f1ee 0%, #e6e7e0 100%)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: '72px 84px',
           fontFamily: '"PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
-          color: '#221f19',
+          color: '#15140f',
         }}
       >
         <div
@@ -28,7 +28,7 @@ export default async function OgImage() {
             alignItems: 'center',
             gap: 16,
             fontSize: 24,
-            color: '#8f8069',
+            color: '#767869',
             fontFamily: 'monospace',
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
@@ -66,7 +66,7 @@ export default async function OgImage() {
           <div
             style={{
               fontSize: 38,
-              color: '#5d554a',
+              color: '#51514a',
               lineHeight: 1.5,
               maxWidth: 900,
             }}
@@ -81,7 +81,7 @@ export default async function OgImage() {
             alignItems: 'center',
             justifyContent: 'space-between',
             fontSize: 22,
-            color: '#9a8f7a',
+            color: '#85887a',
             fontFamily: 'monospace',
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
@@ -92,7 +92,7 @@ export default async function OgImage() {
               style={{
                 width: 32,
                 height: 1,
-                background: '#d8cfbf',
+                background: '#c8c9bf',
               }}
             />
             This time · with LLM

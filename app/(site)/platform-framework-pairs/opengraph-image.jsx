@@ -16,9 +16,9 @@ export default function Image() {
           height: '100%',
           padding: '64px 72px',
           background:
-            'linear-gradient(135deg, #fbf3e3 0%, #f7ecd2 50%, #fbf3e3 100%)',
+            'linear-gradient(135deg, #ebede3 0%, #dfe3d2 50%, #ebede3 100%)',
           fontFamily: '"PingFang SC", "Noto Sans SC", sans-serif',
-          color: '#221f19',
+          color: '#15140f',
           position: 'relative',
         }}
       >
@@ -38,7 +38,7 @@ export default function Image() {
           <span>2aran.com · Featured Research</span>
           <span
             style={{
-              backgroundColor: '#f4d4cf',
+              backgroundColor: '#dcd2cf',
               color: '#8b3a36',
               padding: '6px 14px',
               borderRadius: 9999,
@@ -100,7 +100,7 @@ export default function Image() {
           <div
             style={{
               fontSize: 26,
-              color: '#5d503f',
+              color: '#333431',
               marginTop: 20,
               lineHeight: 1.4,
             }}
@@ -116,9 +116,9 @@ export default function Image() {
             alignItems: 'center',
             justifyContent: 'space-between',
             paddingTop: 28,
-            borderTop: '1px dashed #cbb796',
+            borderTop: '1px dashed #a9ab96',
             fontSize: 20,
-            color: '#8f8069',
+            color: '#767869',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -149,12 +149,12 @@ export default function Image() {
                   {s.label}
                 </span>
                 {i < 3 ? (
-                  <span style={{ color: '#cbb796', fontSize: 18 }}>—</span>
+                  <span style={{ color: '#a9ab96', fontSize: 18 }}>—</span>
                 ) : null}
               </div>
             ))}
           </div>
-          <div style={{ fontWeight: 600, color: '#5d503f' }}>10 节框架 + 11 组配对</div>
+          <div style={{ fontWeight: 600, color: '#333431' }}>10 节框架 + 11 组配对</div>
         </div>
       </div>
     ),

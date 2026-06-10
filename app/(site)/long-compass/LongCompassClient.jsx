@@ -149,17 +149,17 @@ export default function LongCompassClient() {
 
   return (
     <main className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col px-4 py-8">
-      <header className="border-b border-[#e8dfd0] pb-5 dark:border-gray-800">
+      <header className="border-b border-[#dee0db] pb-5 dark:border-gray-800">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
               Long Compass
             </p>
-            <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[#221f19] dark:text-gray-100">
+            <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
               长期罗盘
             </h1>
           </div>
-          <span className="rounded-full border border-[#e8dfd0] px-3 py-1 text-xs text-[#6b5f4d] dark:border-[#2d3440] dark:text-gray-300">
+          <span className="rounded-full border border-[#dee0db] px-3 py-1 text-xs text-[#58594d] dark:border-[#2d3440] dark:text-gray-300">
             {unlocked ? '已解锁' : user?.name || user?.login || '已登录'}
           </span>
         </div>
@@ -176,7 +176,7 @@ export default function LongCompassClient() {
         />
       ) : (
         <section className="mt-6">
-          <div className="border-b border-[#e8dfd0] pb-3 dark:border-gray-800">
+          <div className="border-b border-[#dee0db] pb-3 dark:border-gray-800">
             <div className="flex flex-wrap gap-2">
               {Object.entries(KIND_LABELS).map(([kind, label]) => (
                 <button
@@ -185,8 +185,8 @@ export default function LongCompassClient() {
                   onClick={() => handleKindChange(kind)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                     activeKind === kind
-                      ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                      : 'border border-[#e8dfd0] text-[#6b5f4d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                      ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                      : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
                   }`}
                 >
                   {label} · {counts[kind] || 0}
@@ -203,7 +203,7 @@ export default function LongCompassClient() {
 
           <div className="mt-4">
             {currentRecords.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-[#d8cdbb] px-4 py-6 text-sm text-[#847a67] dark:border-gray-700 dark:text-gray-400">
+              <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">
                 {selectedTheme ? `「${selectedTheme}」主题下暂无记录。` : '暂无记录。'}
               </p>
             ) : activeKind === 'review' ? (

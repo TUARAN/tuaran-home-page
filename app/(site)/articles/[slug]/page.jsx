@@ -252,7 +252,7 @@ export default async function ArticleDetailPage({ params }) {
             ) : null}
 
             <main className="flex-1 min-w-0">
-              <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 dark:border-[#e2bd75] dark:bg-[#2a2115]">
+              <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
                 <AuthorByline />
               </aside>
               {article.cover ? (
@@ -347,7 +347,7 @@ export default async function ArticleDetailPage({ params }) {
             </div>
           </header>
 
-          <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 dark:border-[#e2bd75] dark:bg-[#2a2115]">
+          <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
             <AuthorByline />
           </aside>
 

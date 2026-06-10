@@ -68,32 +68,32 @@ export default function DadCheckinCalendar({
   const title = `${view.year} 年 ${view.month} 月`
 
   return (
-    <section className="rounded-2xl border border-[#e5ddd0] bg-white/90 p-4 shadow-sm dark:border-[#2a3440] dark:bg-[#121820]/95">
+    <section className="rounded-2xl border border-[#d7d8d0] bg-white/90 p-4 shadow-sm dark:border-[#2a3440] dark:bg-[#121820]/95">
       <div className="mb-2 flex items-center justify-between gap-2">
         <button
           type="button"
           aria-label="上个月"
           onClick={() => shiftMonth(-1)}
           disabled={!user || loadingMonth}
-          className="rounded-lg border border-[#ddd3c4] px-2 py-1 text-sm text-[#2d261d] disabled:opacity-40 dark:border-[#3d4a5c] dark:text-gray-200"
+          className="rounded-lg border border-[#d0d2cd] px-2 py-1 text-sm text-[#1a1814] disabled:opacity-40 dark:border-[#3d4a5c] dark:text-gray-200"
         >
           ‹
         </button>
-        <span className="text-sm font-medium text-[#2d261d] dark:text-gray-100">{title}</span>
+        <span className="text-sm font-medium text-[#1a1814] dark:text-gray-100">{title}</span>
         <button
           type="button"
           aria-label="下个月"
           onClick={() => shiftMonth(1)}
           disabled={!user || loadingMonth}
-          className="rounded-lg border border-[#ddd3c4] px-2 py-1 text-sm text-[#2d261d] disabled:opacity-40 dark:border-[#3d4a5c] dark:text-gray-200"
+          className="rounded-lg border border-[#d0d2cd] px-2 py-1 text-sm text-[#1a1814] disabled:opacity-40 dark:border-[#3d4a5c] dark:text-gray-200"
         >
           ›
         </button>
       </div>
 
-      <p className="mb-2 text-xs text-[#8a7f6f] dark:text-gray-500">
+      <p className="mb-2 text-xs text-[#78796f] dark:text-gray-500">
         本月有完成记录{' '}
-        <span className="font-semibold tabular-nums text-[#2d261d] dark:text-gray-200">
+        <span className="font-semibold tabular-nums text-[#1a1814] dark:text-gray-200">
           {user ? monthHasProgressDays : '—'}
         </span>{' '}
         天 · 点选日期在下方打勾（不晚于今天）
@@ -103,7 +103,7 @@ export default function DadCheckinCalendar({
         className={`grid grid-cols-7 gap-1 text-center text-xs ${!user ? 'pointer-events-none opacity-50' : ''}`}
       >
         {WEEK_LABELS.map((w) => (
-          <div key={w} className="py-1 font-medium text-[#8a7f6f] dark:text-gray-500">
+          <div key={w} className="py-1 font-medium text-[#78796f] dark:text-gray-500">
             {w}
           </div>
         ))}
@@ -128,10 +128,10 @@ export default function DadCheckinCalendar({
                 hasAny
                   ? isFull
                     ? 'bg-[#6b9b7a]/45 text-[#1a3d24] dark:bg-[#5a8f6a]/50 dark:text-gray-100'
-                    : 'bg-[#6b9b7a]/20 text-[#2d261d] dark:bg-[#3d4a40]/50 dark:text-gray-200'
-                  : 'bg-[#f0ede6] text-[#2d261d] hover:bg-[#ebe4d6] dark:bg-[#1a222c] dark:text-gray-200 dark:hover:bg-[#243040]'
-              } ${isSelected ? 'ring-2 ring-[#4a6fa5] ring-offset-1 ring-offset-[#f8f5f0] dark:ring-offset-[#0b1016]' : ''} ${
-                isToday && !isSelected ? 'ring-1 ring-[#c4b8a8] dark:ring-gray-600' : ''
+                    : 'bg-[#6b9b7a]/20 text-[#1a1814] dark:bg-[#3d4a40]/50 dark:text-gray-200'
+                  : 'bg-[#eaebe6] text-[#1a1814] hover:bg-[#dddfd6] dark:bg-[#1a222c] dark:text-gray-200 dark:hover:bg-[#243040]'
+              } ${isSelected ? 'ring-2 ring-[#4a6fa5] ring-offset-1 ring-offset-[#f0f1ee] dark:ring-offset-[#0b1016]' : ''} ${
+                isToday && !isSelected ? 'ring-1 ring-[#b4b6b1] dark:ring-gray-600' : ''
               } ${isFuture ? 'cursor-not-allowed opacity-35' : ''} ${!isFuture && user ? 'cursor-pointer' : ''} disabled:cursor-not-allowed`}
             >
               {day}

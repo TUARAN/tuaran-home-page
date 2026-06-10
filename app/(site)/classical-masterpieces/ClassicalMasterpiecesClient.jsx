@@ -494,10 +494,10 @@ const CATEGORIES = [
 
 const colorClass = {
   amber: {
-    text: 'text-[#8b5a1f] dark:text-[#f0c776]',
-    bg: 'bg-[#fff4df] dark:bg-[#2b2214]',
-    border: 'border-[#ead7b5] dark:border-[#43341d]',
-    soft: 'bg-[#f8ead0] dark:bg-[#372817]',
+    text: 'text-[#8b5a1f] dark:text-[#a1ab76]',
+    bg: 'bg-[#eaeddf] dark:bg-[#1c1d14]',
+    border: 'border-[#c8cbb5] dark:border-[#43341d]',
+    soft: 'bg-[#dee1d0] dark:bg-[#372817]',
     ring: 'ring-[#d8a84b]/35',
   },
   blue: {
@@ -508,10 +508,10 @@ const colorClass = {
     ring: 'ring-[#4b9ed8]/35',
   },
   red: {
-    text: 'text-[#9a3e35] dark:text-[#f1aaa2]',
-    bg: 'bg-[#fff0ec] dark:bg-[#301916]',
-    border: 'border-[#efc8bf] dark:border-[#552d28]',
-    soft: 'bg-[#f7d8d0] dark:bg-[#44231f]',
+    text: 'text-[#9a3e35] dark:text-[#bea7a2]',
+    bg: 'bg-[#f3efec] dark:bg-[#1f1816]',
+    border: 'border-[#d0c5bf] dark:border-[#382b28]',
+    soft: 'bg-[#ded5d0] dark:bg-[#2c221f]',
     ring: 'ring-[#d66354]/35',
   },
   green: {
@@ -539,21 +539,21 @@ function WorkCard({ work, onRead }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className={`mb-2 text-xs font-medium ${colors.text}`}>{work.categoryLabel} · {work.form}</p>
-          <h3 className="mb-1 border-b-0 pb-0 font-serif text-xl font-semibold tracking-normal text-[#231f18] dark:text-gray-100">
+          <h3 className="mb-1 border-b-0 pb-0 font-serif text-xl font-semibold tracking-normal text-[#1c1d18] dark:text-gray-100">
             {work.title}
           </h3>
-          <p className="mb-0 text-sm text-[#756b5d] dark:text-gray-400">{work.author} · {work.era}</p>
+          <p className="mb-0 text-sm text-[#65665d] dark:text-gray-400">{work.author} · {work.era}</p>
         </div>
       </div>
 
-      <p className="mt-4 mb-0 text-[15px] leading-relaxed text-[#3f382e] dark:text-gray-200">{work.line}</p>
+      <p className="mt-4 mb-0 text-[15px] leading-relaxed text-[#34342e] dark:text-gray-200">{work.line}</p>
 
       <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
-        <span className="rounded-full bg-[#2f2a22] px-2 py-1 text-[11px] text-white dark:bg-white dark:text-[#0b1016]">
+        <span className="rounded-full bg-[#272722] px-2 py-1 text-[11px] text-white dark:bg-white dark:text-[#0b1016]">
           按需加载
         </span>
         {work.tags.slice(0, 3).map((tag) => (
-          <span key={tag} className="rounded-full bg-[#f5efe5] px-2 py-1 text-[11px] text-[#736653] dark:bg-[#17212d] dark:text-gray-300">
+          <span key={tag} className="rounded-full bg-[#ebece5] px-2 py-1 text-[11px] text-[#5e5f53] dark:bg-[#17212d] dark:text-gray-300">
             {tag}
           </span>
         ))}
@@ -562,7 +562,7 @@ function WorkCard({ work, onRead }) {
       <button
         type="button"
         onClick={() => onRead(work)}
-        className="mt-4 inline-flex w-fit rounded-md bg-[#2f2a22] px-3 py-2 text-sm text-white transition-colors hover:bg-[#4a3d30] dark:bg-white dark:text-[#0b1016] dark:hover:bg-gray-200"
+        className="mt-4 inline-flex w-fit rounded-md bg-[#272722] px-3 py-2 text-sm text-white transition-colors hover:bg-[#393830] dark:bg-white dark:text-[#0b1016] dark:hover:bg-gray-200"
       >
         读原文
       </button>
@@ -583,20 +583,20 @@ function OriginalModal({ work, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-sm">
-      <div className="flex max-h-[88dvh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-[#e5d8c7] bg-[#fdfaf3] shadow-[0_30px_90px_rgba(34,27,18,0.28)] dark:border-[#303b4c] dark:bg-[#0f1722]">
-        <div className="flex items-start justify-between gap-4 border-b border-[#eadfce] px-5 py-4 dark:border-[#263241]">
+      <div className="flex max-h-[88dvh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-[#d2d2c7] bg-[#f6f8f3] shadow-[0_30px_90px_rgba(34,27,18,0.28)] dark:border-[#303b4c] dark:bg-[#0f1722]">
+        <div className="flex items-start justify-between gap-4 border-b border-[#d8d9ce] px-5 py-4 dark:border-[#263241]">
           <div>
-            <p className="mb-1 text-xs text-[#7a6d5a] dark:text-gray-400">
+            <p className="mb-1 text-xs text-[#65665a] dark:text-gray-400">
               {work.categoryLabel} · {work.form} · {work.author}
             </p>
-            <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#241f18] dark:text-gray-100">
+            <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">
               {work.title}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded-full border border-[#dfd3c2] px-3 py-1 text-sm text-[#5b5146] hover:bg-[#f3eadc] dark:border-[#334052] dark:text-gray-200 dark:hover:bg-[#17212d]"
+            className="shrink-0 rounded-full border border-[#cccdc2] px-3 py-1 text-sm text-[#4d4d46] hover:bg-[#e4e5dc] dark:border-[#334052] dark:text-gray-200 dark:hover:bg-[#17212d]"
             aria-label="关闭原文弹窗"
           >
             关闭
@@ -605,15 +605,15 @@ function OriginalModal({ work, onClose }) {
 
         <div className="overflow-y-auto px-5 py-5">
           {work.isLoading ? (
-            <div className="rounded-md border border-[#eadfce] bg-white p-5 text-sm leading-7 text-[#584f42] dark:border-[#2b3746] dark:bg-[#121a24] dark:text-gray-300">
+            <div className="rounded-md border border-[#d8d9ce] bg-white p-5 text-sm leading-7 text-[#4a4a42] dark:border-[#2b3746] dark:bg-[#121a24] dark:text-gray-300">
               正在加载原文……
             </div>
           ) : work.originalText ? (
-            <div className="whitespace-pre-wrap font-serif text-[16px] leading-9 text-[#342d24] dark:text-gray-200">
+            <div className="whitespace-pre-wrap font-serif text-[16px] leading-9 text-[#2a2a24] dark:text-gray-200">
               {work.originalText}
             </div>
           ) : (
-            <div className="rounded-md border border-[#eadfce] bg-white p-5 text-sm leading-7 text-[#584f42] dark:border-[#2b3746] dark:bg-[#121a24] dark:text-gray-300">
+            <div className="rounded-md border border-[#d8d9ce] bg-white p-5 text-sm leading-7 text-[#4a4a42] dark:border-[#2b3746] dark:bg-[#121a24] dark:text-gray-300">
               <p className="mb-3">此篇原文暂未内置，可先查看校订来源。</p>
               <a href={work.sourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-4">
                 打开原文来源
@@ -623,7 +623,7 @@ function OriginalModal({ work, onClose }) {
         </div>
 
         {work.sourceUrl ? (
-          <div className="border-t border-[#eadfce] px-5 py-3 text-right dark:border-[#263241]">
+          <div className="border-t border-[#d8d9ce] px-5 py-3 text-right dark:border-[#263241]">
             <a href={work.sourceUrl} target="_blank" rel="noreferrer" className="text-sm underline underline-offset-4">
               原文来源
             </a>
@@ -685,27 +685,27 @@ export default function ClassicalMasterpiecesClient() {
   const featuredWork = categorizedWorks[0]?.works[0]
 
   return (
-    <main className="min-h-screen bg-[#f8f5f0] text-[#2f2a22] dark:bg-[#0b1016] dark:text-gray-100">
-      <section className="relative overflow-hidden border-b border-[#e6dccb] bg-[#f4ecdf] dark:border-[#202a37] dark:bg-[#0f151d]">
+    <main className="min-h-screen bg-[#f0f1ee] text-[#272722] dark:bg-[#0b1016] dark:text-gray-100">
+      <section className="relative overflow-hidden border-b border-[#d4d6cb] bg-[#e6e7df] dark:border-[#202a37] dark:bg-[#0f151d]">
         <div className="absolute inset-0 opacity-[0.18] dark:opacity-[0.14]">
           <div className="h-full w-full bg-[linear-gradient(90deg,rgba(111,78,38,.16)_1px,transparent_1px),linear-gradient(180deg,rgba(111,78,38,.13)_1px,transparent_1px)] bg-[size:42px_42px]" />
         </div>
         <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-[1.1fr_0.9fr] md:py-14">
           <div>
-            <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#766958] dark:text-gray-400">
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
               <Link href="/articles" className="underline-offset-4 hover:underline">
                 文章与调研
               </Link>
               <span>/</span>
               <span>古典文学资料库</span>
             </div>
-            <p className="mb-3 font-mono text-xs uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#f0c776]">
+            <p className="mb-3 font-mono text-xs uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#a1ab76]">
               Classical Chinese Masterpieces
             </p>
-            <h1 className="mb-5 max-w-3xl font-serif text-[2.3rem] font-semibold leading-tight tracking-normal text-[#1f1b16] dark:text-gray-100 md:text-[4.2rem]">
+            <h1 className="mb-5 max-w-3xl font-serif text-[2.3rem] font-semibold leading-tight tracking-normal text-[#191916] dark:text-gray-100 md:text-[4.2rem]">
               单篇封神的中国古典名篇
             </h1>
-            <p className="mb-6 max-w-2xl text-base leading-8 text-[#51483b] dark:text-gray-300 md:text-lg">
+            <p className="mb-6 max-w-2xl text-base leading-8 text-[#43433b] dark:text-gray-300 md:text-lg">
               不按“作者全集”排位，只看一篇作品能否独立撑起文学史记忆：辞赋看气象，诗歌看完成度，奏疏看胆识，古文看结构，杂体看情感与沟通的穿透力。
             </p>
             <div className="flex flex-wrap gap-2">
@@ -722,11 +722,11 @@ export default function ClassicalMasterpiecesClient() {
           </div>
 
           {featuredWork ? (
-          <div className="self-end rounded-lg border border-[#e2d5c1] bg-white/78 p-4 shadow-[0_24px_70px_rgba(83,64,33,0.14)] backdrop-blur dark:border-[#293545] dark:bg-[#111923]/80 dark:shadow-none">
+          <div className="self-end rounded-lg border border-[#cdcec1] bg-white/78 p-4 shadow-[0_24px_70px_rgba(83,64,33,0.14)] backdrop-blur dark:border-[#293545] dark:bg-[#111923]/80 dark:shadow-none">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="mb-1 text-xs text-[#827664] dark:text-gray-400">快速阅读</p>
-                <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#241f18] dark:text-gray-100">
+                <p className="mb-1 text-xs text-[#6e7064] dark:text-gray-400">快速阅读</p>
+                <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">
                   {featuredWork.title}
                 </h2>
               </div>
@@ -736,11 +736,11 @@ export default function ClassicalMasterpiecesClient() {
                 url="/classical-masterpieces"
               />
             </div>
-            <p className="mb-4 text-sm leading-7 text-[#51483b] dark:text-gray-300">{featuredWork.detail}</p>
+            <p className="mb-4 text-sm leading-7 text-[#43433b] dark:text-gray-300">{featuredWork.detail}</p>
             <button
               type="button"
               onClick={() => openOriginal(featuredWork)}
-              className="inline-flex rounded-md bg-[#2f2a22] px-3 py-2 text-sm text-white transition-colors hover:bg-[#4a3d30] dark:bg-white dark:text-[#0b1016] dark:hover:bg-gray-200"
+              className="inline-flex rounded-md bg-[#272722] px-3 py-2 text-sm text-white transition-colors hover:bg-[#393830] dark:bg-white dark:text-[#0b1016] dark:hover:bg-gray-200"
             >
               打开原文
             </button>
@@ -756,17 +756,17 @@ export default function ClassicalMasterpiecesClient() {
             return (
               <article key={category.id} id={category.id} className={`rounded-lg border p-4 ${colors.border} ${colors.bg}`}>
                 <p className={`mb-2 text-xs font-medium ${colors.text}`}>{category.benchmark}</p>
-                <h2 className="mb-3 border-b-0 pb-0 font-serif text-xl font-semibold text-[#231f18] dark:text-gray-100">
+                <h2 className="mb-3 border-b-0 pb-0 font-serif text-xl font-semibold text-[#1c1d18] dark:text-gray-100">
                   {category.label}
                 </h2>
-                <p className="mb-0 text-sm leading-6 text-[#584f42] dark:text-gray-300">{category.thesis}</p>
+                <p className="mb-0 text-sm leading-6 text-[#4a4a42] dark:text-gray-300">{category.thesis}</p>
               </article>
             )
           })}
         </div>
       </section>
 
-      <section className="sticky top-[73px] z-20 border-y border-[#e8dfd0] bg-[#f8f5f0]/95 backdrop-blur dark:border-[#202938] dark:bg-[#0b1016]/95">
+      <section className="sticky top-[73px] z-20 border-y border-[#dee0db] bg-[#f0f1ee]/95 backdrop-blur dark:border-[#202938] dark:bg-[#0b1016]/95">
         <div className="mx-auto max-w-6xl px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
             <button
@@ -774,8 +774,8 @@ export default function ClassicalMasterpiecesClient() {
               onClick={() => setActiveCategory('all')}
               className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${
                 activeCategory === 'all'
-                  ? 'bg-[#2f2a22] text-white dark:bg-white dark:text-[#0b1016]'
-                  : 'bg-white text-[#554b3d] dark:bg-[#121a24] dark:text-gray-300'
+                  ? 'bg-[#272722] text-white dark:bg-white dark:text-[#0b1016]'
+                  : 'bg-white text-[#45463d] dark:bg-[#121a24] dark:text-gray-300'
               }`}
             >
               全部
@@ -787,8 +787,8 @@ export default function ClassicalMasterpiecesClient() {
                 onClick={() => setActiveCategory(category.id)}
                 className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${
                   activeCategory === category.id
-                    ? 'bg-[#2f2a22] text-white dark:bg-white dark:text-[#0b1016]'
-                    : 'bg-white text-[#554b3d] dark:bg-[#121a24] dark:text-gray-300'
+                    ? 'bg-[#272722] text-white dark:bg-white dark:text-[#0b1016]'
+                    : 'bg-white text-[#45463d] dark:bg-[#121a24] dark:text-gray-300'
                 }`}
               >
                 {category.short}
@@ -804,14 +804,14 @@ export default function ClassicalMasterpiecesClient() {
             const colors = colorClass[category.color]
             return (
               <section key={category.id} id={`works-${category.id}`} className="scroll-mt-32">
-                <div className="mb-4 flex flex-col gap-2 border-b border-[#e8dfd0] pb-3 dark:border-[#202938] sm:flex-row sm:items-end sm:justify-between">
+                <div className="mb-4 flex flex-col gap-2 border-b border-[#dee0db] pb-3 dark:border-[#202938] sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className={`mb-2 text-xs font-medium ${colors.text}`}>{category.benchmark}</p>
-                    <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#231f18] dark:text-gray-100">
+                    <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">
                       {category.label}
                     </h2>
                   </div>
-                  <p className="mb-0 max-w-2xl text-sm leading-6 text-[#6b6256] dark:text-gray-400">
+                  <p className="mb-0 max-w-2xl text-sm leading-6 text-[#5d5e56] dark:text-gray-400">
                     {category.thesis}
                   </p>
                 </div>

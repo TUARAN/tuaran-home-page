@@ -80,14 +80,14 @@ const productLinks = [
 export default function ServicesPage() {
   return (
     <main className="mx-auto w-full max-w-[960px] px-4 py-10 md:py-12">
-      <header className="mb-10 border-b border-[#e8dfd0] pb-8 dark:border-gray-800">
-        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#8f8069] dark:text-[#8e9ab0]">
+      <header className="mb-10 border-b border-[#dee0db] pb-8 dark:border-gray-800">
+        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#767869] dark:text-[#8e9ab0]">
           Services · 合作说明
         </p>
-        <h1 className="mt-4 max-w-3xl font-serif text-[2rem] font-semibold leading-tight tracking-wide text-[#221f19] dark:text-gray-100 md:text-[2.55rem]">
+        <h1 className="mt-4 max-w-3xl font-serif text-[2rem] font-semibold leading-tight tracking-wide text-[#15140f] dark:text-gray-100 md:text-[2.55rem]">
           可以合作，但先把问题说清楚
         </h1>
-        <p className="mt-5 max-w-2xl text-[15px] leading-8 text-[#5d554a] dark:text-gray-300">
+        <p className="mt-5 max-w-2xl text-[15px] leading-8 text-[#51514a] dark:text-gray-300">
           这个页面不是报价单。它只是说明我适合参与哪些事情、通常会交付什么、哪些合作不适合。真正合作前，先确认目标、范围、周期和预期结果。
         </p>
       </header>
@@ -95,14 +95,14 @@ export default function ServicesPage() {
       <section className="mb-10">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
               What I Can Help With
             </p>
-            <h2 className="font-serif text-[1.45rem] font-semibold tracking-wide text-[#221f19] dark:text-gray-100">
+            <h2 className="font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
               合作范围
             </h2>
           </div>
-          <p className="mb-0 text-[12px] leading-6 text-[#8a7f6c] dark:text-[#7f8aa0]">
+          <p className="mb-0 text-[12px] leading-6 text-[#76786c] dark:text-[#7f8aa0]">
             报价按具体范围确认，不在页面上写死。
           </p>
         </div>
@@ -111,15 +111,15 @@ export default function ServicesPage() {
           {cooperationAreas.map((item) => (
             <article
               key={item.title}
-              className="rounded-2xl border border-[#e8dfd0] bg-white p-5 dark:border-[#252d36] dark:bg-[#121821]"
+              className="rounded-2xl border border-[#dee0db] bg-white p-5 dark:border-[#252d36] dark:bg-[#121821]"
             >
-              <h3 className="mb-2 text-[17px] font-semibold text-[#221f19] dark:text-gray-100">{item.title}</h3>
-              <p className="mb-4 text-[13.5px] leading-7 text-[#5d554a] dark:text-gray-300">{item.desc}</p>
+              <h3 className="mb-2 text-[17px] font-semibold text-[#15140f] dark:text-gray-100">{item.title}</h3>
+              <p className="mb-4 text-[13.5px] leading-7 text-[#51514a] dark:text-gray-300">{item.desc}</p>
               <div className="flex flex-wrap gap-2">
                 {item.output.map((output) => (
                   <span
                     key={output}
-                    className="rounded-full border border-[#eadfce] bg-[#faf7f1] px-2.5 py-1 text-[12px] text-[#62594d] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#c6ceda]"
+                    className="rounded-full border border-[#d8d9ce] bg-[#f4f5f1] px-2.5 py-1 text-[12px] text-[#54554d] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#c6ceda]"
                   >
                     {output}
                   </span>
@@ -131,31 +131,31 @@ export default function ServicesPage() {
       </section>
 
       <section className="mb-10 grid gap-6 md:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="rounded-2xl border border-[#e8dfd0] bg-[#fcfbf7] p-5 dark:border-[#252d36] dark:bg-[#0f141b]">
-          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+        <div className="rounded-2xl border border-[#dee0db] bg-[#f9faf7] p-5 dark:border-[#252d36] dark:bg-[#0f141b]">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
             Boundaries
           </p>
-          <h2 className="mb-4 font-serif text-[1.35rem] font-semibold tracking-wide text-[#221f19] dark:text-gray-100">
+          <h2 className="mb-4 font-serif text-[1.35rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
             合作边界
           </h2>
           <ul className="space-y-3">
             {boundaries.map((item) => (
-              <li key={item} className="flex gap-2 text-[13px] leading-6 text-[#6d6254] dark:text-[#9aa6b8]">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#b7791f] dark:bg-[#e2bd75]" />
+              <li key={item} className="flex gap-2 text-[13px] leading-6 text-[#5d5d54] dark:text-[#9aa6b8]">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#b7791f] dark:bg-[#9ba475]" />
                 <span>{item}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-[#e8dfd0] bg-white p-5 dark:border-[#252d36] dark:bg-[#121821]">
-          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+        <div className="rounded-2xl border border-[#dee0db] bg-white p-5 dark:border-[#252d36] dark:bg-[#121821]">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
             Samples
           </p>
-          <h2 className="mb-3 font-serif text-[1.25rem] font-semibold tracking-wide text-[#221f19] dark:text-gray-100">
+          <h2 className="mb-3 font-serif text-[1.25rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
             先看样本
           </h2>
-          <p className="mb-4 text-[13px] leading-6 text-[#6d6254] dark:text-[#9aa6b8]">
+          <p className="mb-4 text-[13px] leading-6 text-[#5d5d54] dark:text-[#9aa6b8]">
             站内内容基本能代表我的判断方式和写作密度。
           </p>
           <div className="flex flex-wrap gap-2">
@@ -163,7 +163,7 @@ export default function ServicesPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full border border-[#ded6c8] bg-[#faf8f3] px-3 py-1.5 text-[12px] font-medium text-[#5f5a4d] no-underline transition hover:border-[#9c8e72] hover:text-[#221f19] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062]"
+                className="rounded-full border border-[#d0d1c8] bg-[#f5f6f3] px-3 py-1.5 text-[12px] font-medium text-[#53554d] no-underline transition hover:border-[#818472] hover:text-[#15140f] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062]"
               >
                 {link.label}
               </Link>
@@ -173,10 +173,10 @@ export default function ServicesPage() {
       </section>
 
       <section className="mb-10">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
           Related Products
         </p>
-        <h2 className="mb-4 font-serif text-[1.35rem] font-semibold tracking-wide text-[#221f19] dark:text-gray-100">
+        <h2 className="mb-4 font-serif text-[1.35rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
           也可以直接看三个长期项目
         </h2>
         <div className="grid gap-3 md:grid-cols-3">
@@ -186,10 +186,10 @@ export default function ServicesPage() {
               href={item.href}
               target="_blank"
               rel="noreferrer"
-              className="no-external-arrow rounded-2xl border border-[#e8dfd0] bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:border-[#d7cbb7] dark:border-[#252d36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+              className="no-external-arrow rounded-2xl border border-[#dee0db] bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:border-[#c2c4b7] dark:border-[#252d36] dark:bg-[#121821] dark:hover:border-[#33404d]"
             >
-              <div className="mb-1 text-[15px] font-semibold text-[#221f19] dark:text-gray-100">{item.label} ↗</div>
-              <p className="mb-0 text-[13px] leading-6 text-[#6d6254] dark:text-[#9aa6b8]">{item.desc}</p>
+              <div className="mb-1 text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{item.label} ↗</div>
+              <p className="mb-0 text-[13px] leading-6 text-[#5d5d54] dark:text-[#9aa6b8]">{item.desc}</p>
             </a>
           ))}
         </div>
@@ -197,26 +197,26 @@ export default function ServicesPage() {
 
       <section
         id="contact"
-        className="scroll-mt-24 rounded-2xl border border-[#e8dfd0] bg-[#fcfbf7] p-5 dark:border-[#252d36] dark:bg-[#0f141b] md:p-6"
+        className="scroll-mt-24 rounded-2xl border border-[#dee0db] bg-[#f9faf7] p-5 dark:border-[#252d36] dark:bg-[#0f141b] md:p-6"
       >
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_190px] md:items-center">
           <div>
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
               Contact
             </p>
-            <h2 className="mb-3 font-serif text-[1.35rem] font-semibold tracking-wide text-[#221f19] dark:text-gray-100">
+            <h2 className="mb-3 font-serif text-[1.35rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
               联系方式
             </h2>
-            <p className="mb-3 text-[14px] leading-7 text-[#5d554a] dark:text-gray-300">
-              微信 <span className="font-mono font-semibold text-[#221f19] dark:text-gray-100">atar24</span>。
+            <p className="mb-3 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
+              微信 <span className="font-mono font-semibold text-[#15140f] dark:text-gray-100">atar24</span>。
               建议备注“来自 2aran.com / 合作类型 / 公司或项目”。如果有明确需求，直接附目标、时间和期望交付物。
             </p>
-            <p className="mb-0 text-[12px] leading-6 text-[#8a7f6c] dark:text-[#7f8aa0]">
+            <p className="mb-0 text-[12px] leading-6 text-[#76786c] dark:text-[#7f8aa0]">
               如果不适合，我会直接说明，不绕弯。
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
-            <div className="flex flex-col items-center gap-2 rounded-xl border border-[#e6dfd2] bg-white p-3 dark:border-[#303947] dark:bg-[#151c25]">
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-[#d9dad2] bg-white p-3 dark:border-[#303947] dark:bg-[#151c25]">
               <Image
                 src="/qrcodewechat3.png"
                 alt="微信二维码"
@@ -224,9 +224,9 @@ export default function ServicesPage() {
                 height={96}
                 className="h-24 w-24 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800"
               />
-              <span className="font-mono text-[10px] tracking-[0.14em] text-[#9c8f79] dark:text-[#8e9ab0]">微信</span>
+              <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">微信</span>
             </div>
-            <div className="flex flex-col items-center gap-2 rounded-xl border border-[#e6dfd2] bg-white p-3 dark:border-[#303947] dark:bg-[#151c25]">
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-[#d9dad2] bg-white p-3 dark:border-[#303947] dark:bg-[#151c25]">
               <Image
                 src="/qrcode_for_gh.jpg"
                 alt="公众号二维码"
@@ -234,7 +234,7 @@ export default function ServicesPage() {
                 height={96}
                 className="h-24 w-24 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800"
               />
-              <span className="font-mono text-[10px] tracking-[0.14em] text-[#9c8f79] dark:text-[#8e9ab0]">公众号</span>
+              <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">公众号</span>
             </div>
           </div>
         </div>

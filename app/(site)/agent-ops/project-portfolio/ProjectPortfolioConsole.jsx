@@ -87,8 +87,8 @@ const actionLabels = {
 }
 
 const actionStyles = {
-  core: 'bg-[#fef3c7] text-[#92400e] dark:bg-[#3a2c0a] dark:text-[#f8d779]',
-  merge: 'bg-[#ffedd5] text-[#7c2d12] dark:bg-[#3b2112] dark:text-[#fdba74]',
+  core: 'bg-[#dae4c7] text-[#92400e] dark:bg-[#3a2c0a] dark:text-[#a5b679]',
+  merge: 'bg-[#e4e5d5] text-[#7c2d12] dark:bg-[#3b2112] dark:text-[#a4a274]',
   infra: 'bg-[#dcfce7] text-[#14532d] dark:bg-[#102a1b] dark:text-[#86efac]',
   keep: 'bg-[#e0f2fe] text-[#075985] dark:bg-[#0b2638] dark:text-[#7dd3fc]',
   separate: 'bg-[#ede9fe] text-[#5b21b6] dark:bg-[#241739] dark:text-[#c4b5fd]',
@@ -365,7 +365,7 @@ export default function ProjectPortfolioConsole({ user }) {
       <div className="grid min-w-0 gap-5">
         <section className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <div>
-            <h2 className="text-2xl font-semibold text-[#221f19] dark:text-gray-100">项目关系与整合路线</h2>
+            <h2 className="text-2xl font-semibold text-[#15140f] dark:text-gray-100">项目关系与整合路线</h2>
             <p className="mt-2 text-sm leading-6 text-[#667085] dark:text-gray-400">
               点击关系图节点或阵列行查看归属、作用、整合建议和下一步动作。
             </p>
@@ -388,7 +388,7 @@ export default function ProjectPortfolioConsole({ user }) {
           >
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
               <div>
-                <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
+                <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
                 <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">拖拽画布移动；箭头表示吸收、服务、迁移或归档关系</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -488,13 +488,13 @@ export default function ProjectPortfolioConsole({ user }) {
 
           <aside className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div className="border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-              <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">项目详情</h3>
+              <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">项目详情</h3>
               <p className="mt-1 text-xs text-[#667085] dark:text-gray-400">
                 {selectedPillar.name} · {actionLabels[selectedProject.action]}
               </p>
             </div>
             <div className="p-4">
-              <h3 className="text-lg font-semibold text-[#221f19] dark:text-gray-100">{selectedProject.name}</h3>
+              <h3 className="text-lg font-semibold text-[#15140f] dark:text-gray-100">{selectedProject.name}</h3>
               <p className="mt-1 break-words font-mono text-xs text-[#667085] dark:text-gray-400">{selectedProject.path}</p>
               <dl className="mt-4 grid grid-cols-[88px_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm leading-6">
                 <dt className="text-[#667085]">归属</dt><dd>{selectedPillar.name}</dd>
@@ -503,7 +503,7 @@ export default function ProjectPortfolioConsole({ user }) {
                 <dt className="text-[#667085]">下一步</dt><dd>{selectedProject.next}</dd>
                 <dt className="text-[#667085]">连接</dt><dd>{selectedProject.links.length ? selectedProject.links.join('、') : '无强依赖'}</dd>
               </dl>
-              <p className="mt-4 text-sm font-semibold text-[#221f19] dark:text-gray-100">管理判断</p>
+              <p className="mt-4 text-sm font-semibold text-[#15140f] dark:text-gray-100">管理判断</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-[#344054] dark:text-gray-300">
                 <li>{selectedPillar.intent}</li>
                 <li>先整合内容、入口和数据关系，代码迁移要等边界稳定后再做。</li>
@@ -515,7 +515,7 @@ export default function ProjectPortfolioConsole({ user }) {
 
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-            <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">关系阵列</h3>
+            <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">关系阵列</h3>
             <span className="text-xs text-[#667085] dark:text-gray-400">按最终归属管理，不按历史目录名、工具来源或卡片分组管理</span>
           </div>
           <div className="overflow-x-auto">
@@ -536,7 +536,7 @@ export default function ProjectPortfolioConsole({ user }) {
                     <tr
                       key={project.id}
                       onClick={() => setSelected(project.id)}
-                      className={`cursor-pointer hover:bg-[#fbfcff] dark:hover:bg-gray-950 ${selected === project.id ? 'bg-[#fff7ed] dark:bg-[#2a2113]' : ''}`}
+                      className={`cursor-pointer hover:bg-[#fbfcff] dark:hover:bg-gray-950 ${selected === project.id ? 'bg-[#f3f4ed] dark:bg-[#1b1c13]' : ''}`}
                     >
                       <td className="min-w-[220px] border-b border-r border-[#d9dee7] px-3 py-2 dark:border-gray-800">
                         <b className="block break-words text-[#17202a] dark:text-gray-100">{project.name}</b>
@@ -572,7 +572,7 @@ export default function ProjectPortfolioConsole({ user }) {
 
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-            <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">未来 4 阶段迭代</h3>
+            <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">未来 4 阶段迭代</h3>
             <span className="text-xs text-[#667085] dark:text-gray-400">先收口，再整合，最后产品化</span>
           </div>
           <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
@@ -583,7 +583,7 @@ export default function ProjectPortfolioConsole({ user }) {
               ['4. Agent 化运营', 'AI Agent 线提供自动选题、采集、分发、数据回流和项目治理助手。', pillars.agent.color],
             ].map(([title, body, color]) => (
               <article key={title} className="border-l-4 py-1 pl-3" style={{ borderColor: color }}>
-                <b className="text-sm text-[#221f19] dark:text-gray-100">{title}</b>
+                <b className="text-sm text-[#15140f] dark:text-gray-100">{title}</b>
                 <p className="mt-2 text-sm leading-6 text-[#667085] dark:text-gray-400">{body}</p>
               </article>
             ))}
@@ -592,7 +592,7 @@ export default function ProjectPortfolioConsole({ user }) {
 
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-            <h3 className="text-base font-semibold text-[#221f19] dark:text-gray-100">关键决策表</h3>
+            <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">关键决策表</h3>
             <span className="text-xs text-[#667085] dark:text-gray-400">用于后续迁移、归档和命名收敛</span>
           </div>
           <div className="overflow-x-auto">

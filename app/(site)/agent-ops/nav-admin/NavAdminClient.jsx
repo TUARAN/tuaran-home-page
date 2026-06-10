@@ -130,13 +130,13 @@ export default function NavAdminClient() {
   return (
     <main className="mx-auto w-full max-w-[1080px] px-4 py-8 md:py-12">
       <header className="mb-8">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#9c8f79] dark:text-[#8e9ab0]">
+        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
           Admin · Nav Visibility
         </p>
-        <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#221f19] dark:text-gray-100 md:text-[2.2rem]">
+        <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[2.2rem]">
           菜单权限管理
         </h1>
-        <p className="mb-0 max-w-[42rem] text-[14px] leading-7 text-[#5d554a] dark:text-gray-300">
+        <p className="mb-0 max-w-[42rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
           这里列出全站所有菜单 item。每一项的「可见用户」决定它是否会出现在主导航、移动端菜单和 /map
           全站索引里。<strong>这里只控制菜单展示</strong>，页面本身的 owner gate
           不受影响——把私域页面设成 public 也只是让链接出现在菜单中，访客点进去仍然被 gate 拦截。
@@ -168,13 +168,13 @@ export default function NavAdminClient() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="搜索 label / 路径 / 频道…"
-          className="w-full rounded-lg border border-[#dcd3c0] bg-white px-3 py-1.5 text-sm outline-none focus:border-[#a37b3c] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-100 sm:w-72"
+          className="w-full rounded-lg border border-[#caccc0] bg-white px-3 py-1.5 text-sm outline-none focus:border-[#a37b3c] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-100 sm:w-72"
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[#e5dccd] dark:border-[#252e39]">
+      <div className="overflow-hidden rounded-xl border border-[#d5d7cd] dark:border-[#252e39]">
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-[#f8f3e7] text-[12px] uppercase tracking-[0.12em] text-[#7a6c54] dark:bg-[#151c25] dark:text-[#8e9ab0]">
+          <thead className="bg-[#edefe7] text-[12px] uppercase tracking-[0.12em] text-[#616454] dark:bg-[#151c25] dark:text-[#8e9ab0]">
             <tr>
               <th className="px-3 py-2">菜单项</th>
               <th className="px-3 py-2">归类</th>
@@ -185,13 +185,13 @@ export default function NavAdminClient() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={4} className="px-3 py-8 text-center text-sm text-[#9c8f79] dark:text-[#8e9ab0]">
+                <td colSpan={4} className="px-3 py-8 text-center text-sm text-[#858779] dark:text-[#8e9ab0]">
                   加载中…
                 </td>
               </tr>
             ) : filteredItems.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-3 py-8 text-center text-sm text-[#9c8f79] dark:text-[#8e9ab0]">
+                <td colSpan={4} className="px-3 py-8 text-center text-sm text-[#858779] dark:text-[#8e9ab0]">
                   没有匹配项
                 </td>
               </tr>
@@ -201,42 +201,42 @@ export default function NavAdminClient() {
                 return (
                   <tr
                     key={item.href}
-                    className="border-t border-[#ece5d8] dark:border-[#252e39]"
+                    className="border-t border-[#dfe0d8] dark:border-[#252e39]"
                   >
                     <td className="px-3 py-3 align-top">
                       <div className="flex items-start gap-2">
-                        <span className="font-medium text-[#221f19] dark:text-gray-100">{item.label}</span>
+                        <span className="font-medium text-[#15140f] dark:text-gray-100">{item.label}</span>
                         {item.tag ? (
-                          <span className="rounded bg-[#fff3d6] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#8a6b2e] dark:bg-[#2a2113] dark:text-[#d6b87a]">
+                          <span className="rounded bg-[#e4e9d6] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#8a6b2e] dark:bg-[#1b1c13] dark:text-[#9aa27a]">
                             {item.tag}
                           </span>
                         ) : null}
                         {item.navHidden ? (
-                          <span className="rounded bg-[#eef0e4] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#5f6b3b] dark:bg-[#1a1f17] dark:text-[#b0bd84]">
+                          <span className="rounded bg-[#e8ece4] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#485a3b] dark:bg-[#1a1f17] dark:text-[#93a984]">
                             nav:false
                           </span>
                         ) : null}
                         {item.external ? (
-                          <span className="font-mono text-[10px] text-[#9c8f79] dark:text-[#8e9ab0]">↗</span>
+                          <span className="font-mono text-[10px] text-[#858779] dark:text-[#8e9ab0]">↗</span>
                         ) : null}
                       </div>
-                      <div className="mt-1 break-all font-mono text-[11px] text-[#9c8f79] dark:text-[#8e9ab0]">
+                      <div className="mt-1 break-all font-mono text-[11px] text-[#858779] dark:text-[#8e9ab0]">
                         {item.href}
                       </div>
                       {item.desc ? (
-                        <div className="mt-1 text-[12px] text-[#75695a] dark:text-[#9aa6b6]">{item.desc}</div>
+                        <div className="mt-1 text-[12px] text-[#63645a] dark:text-[#9aa6b6]">{item.desc}</div>
                       ) : null}
                     </td>
-                    <td className="px-3 py-3 align-top text-[12px] text-[#75695a] dark:text-[#9aa6b6]">
+                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
                       <div className="flex items-center gap-1.5">
                         <span>{item.channel}</span>
                         {item.scope === 'footer' ? (
-                          <span className="rounded bg-[#eef0e4] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#5f6b3b] dark:bg-[#1a1f17] dark:text-[#b0bd84]">
+                          <span className="rounded bg-[#e8ece4] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#485a3b] dark:bg-[#1a1f17] dark:text-[#93a984]">
                             footer
                           </span>
                         ) : null}
                       </div>
-                      <div className="text-[11px] text-[#9c8f79] dark:text-[#8e9ab0]">{item.section}</div>
+                      <div className="text-[11px] text-[#858779] dark:text-[#8e9ab0]">{item.section}</div>
                     </td>
                     <td className="px-3 py-3 align-top">
                       <div className={`flex items-center gap-2 ${AUDIENCE_TONE[item.effectiveAudience] || ''}`}>
@@ -244,12 +244,12 @@ export default function NavAdminClient() {
                           {AUDIENCE_LABELS[item.effectiveAudience] || item.effectiveAudience}
                         </span>
                         {item.overridden ? (
-                          <span className="rounded bg-[#fff3d6] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#8a6b2e] dark:bg-[#2a2113] dark:text-[#d6b87a]">
+                          <span className="rounded bg-[#e4e9d6] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#8a6b2e] dark:bg-[#1b1c13] dark:text-[#9aa27a]">
                             Override
                           </span>
                         ) : null}
                       </div>
-                      <div className="mt-1 text-[11px] text-[#9c8f79] dark:text-[#8e9ab0]">
+                      <div className="mt-1 text-[11px] text-[#858779] dark:text-[#8e9ab0]">
                         默认 {AUDIENCE_LABELS[item.defaultAudience] || item.defaultAudience}
                         {' · '}
                         {AUDIENCE_HINTS[item.effectiveAudience]}
@@ -261,7 +261,7 @@ export default function NavAdminClient() {
                           value={item.effectiveAudience}
                           disabled={isPending}
                           onChange={(e) => setAudience(item.href, e.target.value)}
-                          className="rounded-lg border border-[#dcd3c0] bg-white px-2 py-1 text-sm dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-100"
+                          className="rounded-lg border border-[#caccc0] bg-white px-2 py-1 text-sm dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-100"
                         >
                           {audiences.map((a) => (
                             <option key={a} value={a}>{AUDIENCE_LABELS[a] || a}</option>
@@ -272,7 +272,7 @@ export default function NavAdminClient() {
                             type="button"
                             disabled={isPending}
                             onClick={() => resetAudience(item.href)}
-                            className="rounded-lg border border-[#dcd3c0] px-2 py-1 text-xs text-[#75695a] hover:bg-[#f8f3e7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
+                            className="rounded-lg border border-[#caccc0] px-2 py-1 text-xs text-[#63645a] hover:bg-[#edefe7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
                           >
                             重置
                           </button>
@@ -287,7 +287,7 @@ export default function NavAdminClient() {
         </table>
       </div>
 
-      <p className="mt-4 text-[12px] text-[#75695a] dark:text-[#9aa6b6]">
+      <p className="mt-4 text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
         改动立即生效；菜单组件会在 focus / visibilitychange / 自定义事件触发时拉新。需要其他设备同步可以让对方刷新一次。
       </p>
     </main>
@@ -300,14 +300,14 @@ function Stat({ label, value, hint, tone }) {
       ? 'text-rose-700 dark:text-rose-300'
       : tone === 'emerald'
       ? 'text-emerald-700 dark:text-emerald-300'
-      : 'text-[#221f19] dark:text-gray-100'
+      : 'text-[#15140f] dark:text-gray-100'
   return (
-    <div className="rounded-xl border border-[#e5dccd] bg-white/70 px-4 py-3 dark:border-[#252e39] dark:bg-[#10161f]">
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#8e9ab0]">
+    <div className="rounded-xl border border-[#d5d7cd] bg-white/70 px-4 py-3 dark:border-[#252e39] dark:bg-[#10161f]">
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858779] dark:text-[#8e9ab0]">
         {label}
       </div>
       <div className={`mt-1 text-2xl font-semibold ${toneClass}`}>{value}</div>
-      {hint ? <div className="text-[11px] text-[#9c8f79] dark:text-[#8e9ab0]">{hint}</div> : null}
+      {hint ? <div className="text-[11px] text-[#858779] dark:text-[#8e9ab0]">{hint}</div> : null}
     </div>
   )
 }
@@ -321,8 +321,8 @@ function FilterChip({ current, value, onClick, children }) {
       className={[
         'rounded-full border px-3 py-1 text-xs transition',
         active
-          ? 'border-[#8b5a1f] bg-[#fbf2dc] text-[#8a6b2e] dark:border-[#d7a85c] dark:bg-[#2a2113] dark:text-[#d6b87a]'
-          : 'border-[#dcd3c0] bg-white text-[#75695a] hover:bg-[#f8f3e7] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]',
+          ? 'border-[#8b5a1f] bg-[#e7eadc] text-[#8a6b2e] dark:border-[#d7a85c] dark:bg-[#1b1c13] dark:text-[#9aa27a]'
+          : 'border-[#caccc0] bg-white text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]',
       ].join(' ')}
     >
       {children}

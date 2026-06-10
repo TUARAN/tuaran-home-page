@@ -32,7 +32,7 @@ export const CANCERS = [
     ],
     warnings: ['持续 3 周以上咳嗽 / 痰中带血', '胸痛 / 反复同部位肺部感染', '不明原因体重下降 / 杵状指'],
     screening: '高危人群（55+ 且重度吸烟史）每年一次低剂量螺旋 CT（LDCT）',
-    color: '#9d6b7a',
+    color: '#86707a',
   },
   {
     id: 'breast',
@@ -55,7 +55,7 @@ export const CANCERS = [
     ],
     warnings: ['乳房无痛性肿块', '乳头溢液 / 皮肤橘皮样改变', '腋窝淋巴结肿大'],
     screening: '40+ 每 1–2 年乳腺钼靶 + 超声；高危人群（BRCA / 家族史）从 30 岁起加 MRI',
-    color: '#c98a96',
+    color: '#a88e96',
   },
   {
     id: 'colorectal',
@@ -78,7 +78,7 @@ export const CANCERS = [
     ],
     warnings: ['排便习惯改变 ≥ 4 周', '便血 / 黑便 / 黏液便', '不明原因贫血 / 体重下降'],
     screening: '45+ 每 10 年肠镜（或每年 FIT 粪便潜血）；高危人群从 40 岁起',
-    color: '#7d9c7c',
+    color: '#7c917c',
   },
   {
     id: 'prostate',
@@ -124,7 +124,7 @@ export const CANCERS = [
     ],
     warnings: ['上腹隐痛 / 饱胀 / 食欲下降 ≥ 4 周', '吞咽不适 / 呕血 / 黑便', '不明原因消瘦'],
     screening: '40+ 高发地区每 2 年胃镜 + Hp 检测；有家族史者更早',
-    color: '#a07f5f',
+    color: '#76745f',
   },
   {
     id: 'liver',
@@ -147,7 +147,7 @@ export const CANCERS = [
     ],
     warnings: ['右上腹隐痛 / 肝区不适', '黄疸 / 腹水 / 易疲劳', '不明原因消瘦'],
     screening: '乙肝携带 / 肝硬化人群每 6 月超声 + AFP',
-    color: '#8c6b3f',
+    color: '#5a5c3f',
   },
   {
     id: 'esophageal',
@@ -170,7 +170,7 @@ export const CANCERS = [
     ],
     warnings: ['吞咽哽噎感（先固体后流食）', '胸骨后烧灼或疼痛', '反酸 / 不明原因消瘦'],
     screening: '40+ 高发地区（华北、潮汕）每 2 年胃镜',
-    color: '#a67050',
+    color: '#6e6550',
   },
   {
     id: 'pancreatic',
@@ -193,7 +193,7 @@ export const CANCERS = [
     ],
     warnings: ['持续上腹 / 背部隐痛 ≥ 4 周', '黄疸（无痛性）+ 灰白便', '50+ 突发糖尿病 + 消瘦'],
     screening: '一般人群无有效筛查；BRCA / 林奇 / 家族史人群从 50 岁起 MRI + EUS',
-    color: '#7a5d4a',
+    color: '#5b564a',
   },
   {
     id: 'cervical',
@@ -216,7 +216,7 @@ export const CANCERS = [
     ],
     warnings: ['非经期 / 性交后出血', '异常分泌物（脓性 / 血性）', '绝经后再次出血'],
     screening: '25+ 每 3 年 HPV + TCT；接种 HPV 疫苗（9–45 岁，越早越好）',
-    color: '#b8889d',
+    color: '#a68f9d',
   },
   {
     id: 'oral',
@@ -239,7 +239,7 @@ export const CANCERS = [
     ],
     warnings: ['口腔白斑 / 红斑 / 溃疡 ≥ 2 周不愈', '颈部淋巴结无痛肿大', '吞咽 / 咀嚼疼痛 / 张口受限'],
     screening: '口腔自查 + 每年口腔科检查；嚼槟榔 / 重度吸烟者每 6 月一次',
-    color: '#c47b62',
+    color: '#847262',
   },
 ]
 
@@ -255,14 +255,14 @@ export const CATEGORY_LABELS = {
 }
 
 export const CATEGORY_COLORS = {
-  lifestyle: '#c47b62',
-  diet: '#a07f5f',
-  virus: '#9d6b7a',
+  lifestyle: '#847262',
+  diet: '#76745f',
+  virus: '#86707a',
   genetic: '#6b85a6',
-  hormone: '#b8889d',
-  occupation: '#7a5d4a',
-  environment: '#7d9c7c',
-  other: '#8a8170',
+  hormone: '#a68f9d',
+  occupation: '#5b564a',
+  environment: '#7c917c',
+  other: '#797b70',
 }
 
 export const AGE_BUCKETS = ['0–9', '10–19', '20–29', '30–39', '40–49', '50–59', '60–69', '70–79', '80+', '']

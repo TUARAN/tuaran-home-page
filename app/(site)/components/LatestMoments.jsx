@@ -29,14 +29,14 @@ function MomentBody({ text }) {
 
   return (
     <div className="space-y-2">
-      <p className="mb-0 text-[13px] leading-[1.8] text-[#5b564d] dark:text-gray-300">
+      <p className="mb-0 text-[13px] leading-[1.8] text-[#52534d] dark:text-gray-300">
         {displayText}
       </p>
       {shouldCollapse ? (
         <button
           type="button"
           onClick={() => setExpanded((prev) => !prev)}
-          className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#8c7f67] transition-colors hover:text-[#5d513f] dark:text-[#93a0b3] dark:hover:text-white"
+          className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#747767] transition-colors hover:text-[#4a4b3f] dark:text-[#93a0b3] dark:hover:text-white"
         >
           {expanded ? '收起' : '展开'}
         </button>
@@ -50,12 +50,12 @@ export default function LatestMoments() {
 
   return (
     <>
-      <section className="mb-5 border-b border-[#e8dfd0] pb-5 dark:border-gray-800">
+      <section className="mb-5 border-b border-[#dee0db] pb-5 dark:border-gray-800">
         <div className="mb-4">
-          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#9b8c72] dark:text-[#8e9ab0]">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#808372] dark:text-[#8e9ab0]">
             Moments
           </p>
-          <h3 className="mb-0 font-serif text-[18px] font-semibold tracking-[0.03em] text-[#221f1a] dark:text-gray-100">
+          <h3 className="mb-0 font-serif text-[18px] font-semibold tracking-[0.03em] text-[#1d1d1a] dark:text-gray-100">
             最新动态
           </h3>
         </div>
@@ -70,20 +70,20 @@ export default function LatestMoments() {
             {items.map((moment) => (
               <article
                 key={moment.id}
-                className="relative rounded-[20px] border border-[#e7dece] bg-white px-4 py-3 shadow-[0_14px_36px_rgba(112,96,68,0.05)] dark:border-[#232c36] dark:bg-[#121821]"
+                className="relative rounded-[20px] border border-[#d7d8ce] bg-white px-4 py-3 shadow-[0_14px_36px_rgba(112,96,68,0.05)] dark:border-[#232c36] dark:bg-[#121821]"
               >
                 <span
                   aria-hidden="true"
-                  className="absolute left-[-17px] top-4 h-3 w-3 rounded-full border border-[#d6c7ae] bg-[#f9f5ed] shadow-[0_0_0_4px_rgba(248,245,240,1)] dark:border-[#49566a] dark:bg-[#19212b] dark:shadow-[0_0_0_4px_rgba(16,21,29,1)]"
+                  className="absolute left-[-17px] top-4 h-3 w-3 rounded-full border border-[#bcbeae] bg-[#f1f2ed] shadow-[0_0_0_4px_rgba(248,245,240,1)] dark:border-[#49566a] dark:bg-[#19212b] dark:shadow-[0_0_0_4px_rgba(16,21,29,1)]"
                 />
 
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="mb-0 text-[12px] leading-6 text-[#6a6256] dark:text-gray-300">
+                    <p className="mb-0 text-[12px] leading-6 text-[#5d5e56] dark:text-gray-300">
                       <span className="mr-1.5 text-[15px]" aria-hidden="true">{moment.mood}</span>
                       <span>{moment.moodLabel}</span>
                     </p>
-                    <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.14em] text-[#9f9279] dark:text-[#8793a6]">
+                    <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.14em] text-[#868979] dark:text-[#8793a6]">
                       {moment.relativeTime}
                     </p>
                   </div>
@@ -91,7 +91,7 @@ export default function LatestMoments() {
 
                 <MomentBody text={moment.text} />
                 {moment.emphasis ? (
-                  <p className="mb-0 mt-3 rounded-2xl border border-[#ece4d8] bg-[#faf7f1] px-3 py-2 text-[12px] leading-6 text-[#62594d] dark:border-[#2b3440] dark:bg-[#0d1218] dark:text-gray-300">
+                  <p className="mb-0 mt-3 rounded-2xl border border-[#dfe0d8] bg-[#f4f5f1] px-3 py-2 text-[12px] leading-6 text-[#54554d] dark:border-[#2b3440] dark:bg-[#0d1218] dark:text-gray-300">
                     {moment.emphasis}
                   </p>
                 ) : null}

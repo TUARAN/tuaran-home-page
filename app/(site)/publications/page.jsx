@@ -35,31 +35,31 @@ export default function PublicationsPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1120px] px-4 py-8">
-      <section className="rounded-[24px] border border-[#e8e2d6] bg-[#fcfbf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
+      <section className="rounded-[24px] border border-[#dcded6] bg-[#f9faf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.24em] text-[#a09176] dark:text-[#8e9ab0]">
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0]">
               Publications
             </p>
             <h1 className="home-section-title mb-2">书籍 / 电子册出版计划</h1>
-            <p className="mb-0 text-[14px] leading-7 text-[#6b6255] dark:text-gray-300">
+            <p className="mb-0 text-[14px] leading-7 text-[#5d5d55] dark:text-gray-300">
               这里展示当前出版进度，也保留你的设计构思图作为阶段版本参考。
             </p>
           </div>
           <Link
             href="/"
-            className="rounded-full border border-[#ddd8cb] bg-white/90 px-4 py-1.5 text-[12px] text-[#5f5a4d] no-underline transition hover:border-[#c8bca6] hover:text-[#2f2920] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300 dark:hover:border-[#3b4656] dark:hover:text-gray-100"
+            className="rounded-full border border-[#d1d3cb] bg-white/90 px-4 py-1.5 text-[12px] text-[#53554d] no-underline transition hover:border-[#b2b4a6] hover:text-[#252620] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300 dark:hover:border-[#3b4656] dark:hover:text-gray-100"
           >
             返回首页
           </Link>
         </div>
 
-        <div className="mb-5 rounded-2xl border border-[#e6dfd2] bg-white p-4 dark:border-[#2a3440] dark:bg-[#111923]">
+        <div className="mb-5 rounded-2xl border border-[#d9dad2] bg-white p-4 dark:border-[#2a3440] dark:bg-[#111923]">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.18em] text-[#9b8f79] dark:text-[#9ca5b5]">
+            <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.18em] text-[#858779] dark:text-[#9ca5b5]">
               已出版作品封面（占位）
             </p>
-            <span className="font-mono text-[10px] tracking-[0.12em] text-[#9b8f79] dark:text-[#8e9ab0]">
+            <span className="font-mono text-[10px] tracking-[0.12em] text-[#858779] dark:text-[#8e9ab0]">
               共 {placeholderCovers.length} 本 · 可横向滑动
             </span>
           </div>
@@ -67,7 +67,7 @@ export default function PublicationsPage() {
             {placeholderCovers.map((book) => (
               <div
                 key={book.title}
-                className={`w-[min(56vw,230px)] shrink-0 snap-start rounded-xl border border-[#dfd4c0] bg-gradient-to-br ${book.accent} p-2.5 shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}
+                className={`w-[min(56vw,230px)] shrink-0 snap-start rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} p-2.5 shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}
               >
                 <div className="flex aspect-[3/4] flex-col justify-between rounded-lg border border-white/18 bg-black/12 p-2.5">
                   <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/75">Book</span>
@@ -82,10 +82,10 @@ export default function PublicationsPage() {
           </div>
         </div>
 
-        <div className="mb-5 overflow-hidden rounded-2xl border border-[#e6dfd2] bg-white dark:border-[#2a3440] dark:bg-[#111923]">
+        <div className="mb-5 overflow-hidden rounded-2xl border border-[#d9dad2] bg-white dark:border-[#2a3440] dark:bg-[#111923]">
           <table className="w-full border-collapse text-left text-[14px]">
             <thead>
-              <tr className="bg-[#f5f1e8] text-[#4f4536] dark:bg-[#1a2430] dark:text-gray-200">
+              <tr className="bg-[#edeee8] text-[#3f4036] dark:bg-[#1a2430] dark:text-gray-200">
                 <th className="px-4 py-3 font-semibold">书名 / 资料</th>
                 <th className="px-4 py-3 font-semibold">分类</th>
                 <th className="px-4 py-3 font-semibold">时间</th>
@@ -94,11 +94,11 @@ export default function PublicationsPage() {
             </thead>
             <tbody>
               {publicationItems.map((item) => (
-                <tr key={item.title} className="border-t border-[#ece4d7] dark:border-[#2b3542]">
-                  <td className="px-4 py-3 text-[#2f2a22] dark:text-gray-100">{item.title}</td>
-                  <td className="px-4 py-3 text-[#6b6255] dark:text-gray-300">{item.type}</td>
-                  <td className="px-4 py-3 text-[#6b6255] dark:text-gray-300">{item.period}</td>
-                  <td className="px-4 py-3 text-[#5a7550] dark:text-[#a7d39b]">{item.status}</td>
+                <tr key={item.title} className="border-t border-[#dedfd7] dark:border-[#2b3542]">
+                  <td className="px-4 py-3 text-[#272722] dark:text-gray-100">{item.title}</td>
+                  <td className="px-4 py-3 text-[#5d5d55] dark:text-gray-300">{item.type}</td>
+                  <td className="px-4 py-3 text-[#5d5d55] dark:text-gray-300">{item.period}</td>
+                  <td className="px-4 py-3 text-[#546850] dark:text-[#9fbf9b]">{item.status}</td>
                 </tr>
               ))}
             </tbody>

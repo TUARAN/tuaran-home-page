@@ -313,11 +313,11 @@ export default function DadTodoClient() {
   ]
 
   return (
-    <main className="min-h-[100dvh] bg-[#f8f5f0] px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] dark:bg-[#0b1016]">
+    <main className="min-h-[100dvh] bg-[#f0f1ee] px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] dark:bg-[#0b1016]">
       <div className="mx-auto flex min-h-[100dvh] max-w-lg flex-col">
         <header className="pb-3 pt-4">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="text-[1.15rem] font-semibold leading-tight tracking-tight text-[#221f19] dark:text-gray-100">
+            <h1 className="text-[1.15rem] font-semibold leading-tight tracking-tight text-[#15140f] dark:text-gray-100">
               小茉莉的爸爸带娃清单
             </h1>
             <Link
@@ -396,21 +396,21 @@ export default function DadTodoClient() {
 /** 未登录态 —— 不渲染任何打卡 UI，只一句 CTA。 */
 function UnauthenticatedView({ authLoading, loginHref }) {
   return (
-    <section className="mt-6 rounded-2xl border border-[#e8e0d0] bg-white/85 px-5 py-8 text-center dark:border-[#252d38] dark:bg-[#121820]/90">
-      <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-[#9a8f7f] dark:text-[#8e9ab0]">
+    <section className="mt-6 rounded-2xl border border-[#d8dad0] bg-white/85 px-5 py-8 text-center dark:border-[#252d38] dark:bg-[#121820]/90">
+      <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-[#88897f] dark:text-[#8e9ab0]">
         Private · 仅站长本人可见
       </p>
-      <h2 className="mt-3 font-serif text-[1.1rem] font-semibold text-[#221f19] dark:text-gray-100">
+      <h2 className="mt-3 font-serif text-[1.1rem] font-semibold text-[#15140f] dark:text-gray-100">
         家庭打卡清单
       </h2>
-      <p className="mt-2 px-2 text-[12.5px] leading-6 text-[#6f6757] dark:text-gray-400">
+      <p className="mt-2 px-2 text-[12.5px] leading-6 text-[#5f6157] dark:text-gray-400">
         这是站长（涂阿燃）家庭日常的私域打卡，不公开。
       </p>
       <a
         href={loginHref}
         className={`mt-6 inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-medium no-underline transition ${
           authLoading
-            ? 'border-[#d8cdb8] bg-white/60 text-[#8a7f6f] dark:border-[#2a3440] dark:bg-[#121820]/60 dark:text-gray-500'
+            ? 'border-[#c3c6b8] bg-white/60 text-[#78796f] dark:border-[#2a3440] dark:bg-[#121820]/60 dark:text-gray-500'
             : 'border-[#4a6fa5] bg-[#4a6fa5]/10 text-[#3d5a80] hover:bg-[#4a6fa5]/15 dark:border-[#6b8cbc] dark:bg-[#2a3f5c]/40 dark:text-[#a8c4e8]'
         }`}
       >
@@ -423,7 +423,7 @@ function UnauthenticatedView({ authLoading, loginHref }) {
 
 function UserChip({ user, logoutHref }) {
   return (
-    <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-[#e8e0d0] bg-white/70 px-3 py-1.5 text-xs text-[#5c5348] dark:border-[#252d38] dark:bg-[#121820]/70 dark:text-gray-400">
+    <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-[#d8dad0] bg-white/70 px-3 py-1.5 text-xs text-[#4f4f48] dark:border-[#252d38] dark:bg-[#121820]/70 dark:text-gray-400">
       <div className="flex min-w-0 items-center gap-2">
         {user.image ? (
           <Image
@@ -441,7 +441,7 @@ function UserChip({ user, logoutHref }) {
       </div>
       <a
         href={logoutHref}
-        className="shrink-0 text-[11px] text-[#9a8f7f] no-underline hover:text-[#5c5348] dark:text-gray-500 dark:hover:text-gray-300"
+        className="shrink-0 text-[11px] text-[#88897f] no-underline hover:text-[#4f4f48] dark:text-gray-500 dark:hover:text-gray-300"
       >
         退出
       </a>
@@ -452,35 +452,35 @@ function UserChip({ user, logoutHref }) {
 /** 日期卡片：选中日 + 当前 tab 的子合计 + 进度条 + 回到今天。 */
 function DateCard({ selectedYmd, isToday, activeSection, activeStats, activePct, onJumpToToday }) {
   return (
-    <div className="mb-4 rounded-2xl border border-[#e8e0d0] bg-white/85 px-4 py-3 dark:border-[#252d38] dark:bg-[#121820]/90">
+    <div className="mb-4 rounded-2xl border border-[#d8dad0] bg-white/85 px-4 py-3 dark:border-[#252d38] dark:bg-[#121820]/90">
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#9a8f7f] dark:text-gray-500">
+          <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#88897f] dark:text-gray-500">
             {isToday ? '今日' : '回填'}
           </p>
-          <p className="mt-0.5 text-[1.05rem] font-semibold tracking-tight text-[#221f19] dark:text-gray-100">
+          <p className="mt-0.5 text-[1.05rem] font-semibold tracking-tight text-[#15140f] dark:text-gray-100">
             {formatMD(selectedYmd)}
             {!isToday ? (
               <button
                 type="button"
                 onClick={onJumpToToday}
-                className="ml-3 rounded-full border border-[#dcd3c4] bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-[#5c5348] no-underline transition hover:border-[#b9aa8c] dark:border-[#2d3744] dark:bg-[#1a222c] dark:text-gray-300 dark:hover:border-gray-500"
+                className="ml-3 rounded-full border border-[#cccec4] bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-[#4f4f48] no-underline transition hover:border-[#9ca08c] dark:border-[#2d3744] dark:bg-[#1a222c] dark:text-gray-300 dark:hover:border-gray-500"
               >
                 ← 回到今天
               </button>
             ) : null}
           </p>
         </div>
-        <p className="text-right tabular-nums text-[#2d261d] dark:text-gray-200">
-          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#9a8f7f] dark:text-gray-500">
+        <p className="text-right tabular-nums text-[#1a1814] dark:text-gray-200">
+          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#88897f] dark:text-gray-500">
             {activeSection.short}
           </span>
           <br />
           <span className="text-[1.35rem] font-semibold">{activeStats.done}</span>
-          <span className="text-[0.85rem] text-[#b0a99c] dark:text-gray-500"> / {activeStats.total}</span>
+          <span className="text-[0.85rem] text-[#a3a49c] dark:text-gray-500"> / {activeStats.total}</span>
         </p>
       </div>
-      <div className="relative h-1.5 overflow-hidden rounded-full bg-[#ece4d6] dark:bg-[#1a222c]">
+      <div className="relative h-1.5 overflow-hidden rounded-full bg-[#dedfd6] dark:bg-[#1a222c]">
         <div
           className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#2d4a78] to-[#5a8cc9] transition-[width] duration-300 dark:from-[#2a4570] dark:to-[#5a7ab0]"
           style={{ width: `${activePct}%` }}
@@ -496,7 +496,7 @@ function TabStrip({ sections, activeTab, onChange, sectionStats }) {
     <div
       role="tablist"
       aria-label="打卡分类"
-      className="mb-3 flex gap-1.5 rounded-xl border border-[#e8e0d0] bg-white/60 p-1 dark:border-[#252d38] dark:bg-[#121820]/60"
+      className="mb-3 flex gap-1.5 rounded-xl border border-[#d8dad0] bg-white/60 p-1 dark:border-[#252d38] dark:bg-[#121820]/60"
     >
       {sections.map((s) => {
         const active = s.id === activeTab
@@ -512,7 +512,7 @@ function TabStrip({ sections, activeTab, onChange, sectionStats }) {
             className={`flex-1 rounded-lg px-2 py-1.5 text-center text-[12.5px] font-medium transition-colors ${
               active
                 ? 'bg-[#4a6fa5] text-white shadow-sm dark:bg-[#3d5a8a]'
-                : 'text-[#5c5348] hover:bg-white/80 dark:text-gray-400 dark:hover:bg-[#1a222c]'
+                : 'text-[#4f4f48] hover:bg-white/80 dark:text-gray-400 dark:hover:bg-[#1a222c]'
             }`}
           >
             <span className="block">{s.short}</span>
@@ -522,7 +522,7 @@ function TabStrip({ sections, activeTab, onChange, sectionStats }) {
                   ? 'text-white/85'
                   : fullyDone
                     ? 'text-[#3d6b4a] dark:text-[#7fcf8f]'
-                    : 'text-[#9a8f7f] dark:text-gray-500'
+                    : 'text-[#88897f] dark:text-gray-500'
               }`}
             >
               {stats.done} / {stats.total}
@@ -541,14 +541,14 @@ function TabPanel({ section, completed, pendingId, canCheck, onToggle }) {
   return (
     <section
       role="tabpanel"
-      className="rounded-2xl border border-[#e8e0d0] bg-white/85 p-3.5 dark:border-[#252d38] dark:bg-[#121820]/90"
+      className="rounded-2xl border border-[#d8dad0] bg-white/85 p-3.5 dark:border-[#252d38] dark:bg-[#121820]/90"
     >
       <div className="flex flex-col gap-4">
         {groups.map((group, idx) => (
           <div key={group.id}>
             {group.title ? (
               <p
-                className={`mb-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[#9a8f7f] dark:text-gray-500 ${
+                className={`mb-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[#88897f] dark:text-gray-500 ${
                   idx > 0 ? '' : ''
                 }`}
               >
@@ -585,7 +585,7 @@ function TodoPill({ item, done, busy, disabled, onToggle }) {
       className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 ${
         done
           ? 'border-[#4a6fa5] bg-[#4a6fa5] text-white shadow-sm dark:border-[#5a7ab0] dark:bg-[#3d5a8a]'
-          : 'border-[#e2d8c6] bg-white text-[#5c5348] hover:border-[#c8b89e] dark:border-[#2a3440] dark:bg-[#121820] dark:text-gray-300'
+          : 'border-[#d0d2c6] bg-white text-[#4f4f48] hover:border-[#adaf9e] dark:border-[#2a3440] dark:bg-[#121820] dark:text-gray-300'
       }`}
     >
       <span className="min-w-0 flex-1">{item.label}</span>
@@ -597,17 +597,17 @@ function TodoPill({ item, done, busy, disabled, onToggle }) {
 }
 
 /** 一个可折叠区块的通用外壳，统一 summary 样式。 */
-function FoldShell({ title, accentClass = 'bg-[#b0a99c]', className = 'mt-3', children }) {
+function FoldShell({ title, accentClass = 'bg-[#a3a49c]', className = 'mt-3', children }) {
   return (
-    <details className={`group ${className} rounded-2xl border border-[#e8e0d0] bg-white/60 dark:border-[#252d38] dark:bg-[#121820]/70`}>
-      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-[0.85rem] font-medium text-[#5c5348] transition hover:text-[#221f19] dark:text-gray-300 dark:hover:text-gray-100">
+    <details className={`group ${className} rounded-2xl border border-[#d8dad0] bg-white/60 dark:border-[#252d38] dark:bg-[#121820]/70`}>
+      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-[0.85rem] font-medium text-[#4f4f48] transition hover:text-[#15140f] dark:text-gray-300 dark:hover:text-gray-100">
         <span className="flex items-center gap-2">
           <span aria-hidden="true" className={`inline-block h-[7px] w-[7px] rounded-full ${accentClass}`} />
           {title}
         </span>
         <span
           aria-hidden="true"
-          className="text-[#b0a99c] transition-transform group-open:rotate-180 dark:text-gray-500"
+          className="text-[#a3a49c] transition-transform group-open:rotate-180 dark:text-gray-500"
         >
           ▾
         </span>
@@ -646,17 +646,17 @@ function CalendarFold({
 function StatsFold({ user, barBoardRows, boardRange, loadingBoard, useRemote, sumAll, windowDays }) {
   return (
     <FoldShell title={`最近 ${windowDays} 天 · 统计`}>
-      <div className="rounded-xl border border-[#e8e0d0] bg-white/70 px-3.5 py-3 dark:border-[#252d38] dark:bg-[#121820]/80">
+      <div className="rounded-xl border border-[#d8dad0] bg-white/70 px-3.5 py-3 dark:border-[#252d38] dark:bg-[#121820]/80">
         <div className="mb-2 flex items-baseline justify-between gap-2">
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#9a8f7f] dark:text-gray-500">
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#88897f] dark:text-gray-500">
             近 {windowDays} 天
           </p>
           {boardRange.start && boardRange.end ? (
-            <p className="font-mono text-[10.5px] text-[#b0a99c] dark:text-gray-500">
+            <p className="font-mono text-[10.5px] text-[#a3a49c] dark:text-gray-500">
               {boardRange.start} ～ {boardRange.end}
             </p>
           ) : loadingBoard && user && useRemote ? (
-            <p className="text-[10.5px] text-[#b0a99c]">加载中…</p>
+            <p className="text-[10.5px] text-[#a3a49c]">加载中…</p>
           ) : null}
         </div>
         <div
@@ -676,13 +676,13 @@ function StatsFold({ user, barBoardRows, boardRange, loadingBoard, useRemote, su
                 <span
                   className={`w-10 shrink-0 ${
                     isAll
-                      ? 'font-semibold text-[#2d261d] dark:text-gray-200'
-                      : 'text-[#8a7f6f] dark:text-gray-400'
+                      ? 'font-semibold text-[#1a1814] dark:text-gray-200'
+                      : 'text-[#78796f] dark:text-gray-400'
                   }`}
                 >
                   {row.short}
                 </span>
-                <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[#ece4d6] dark:bg-[#1a222c]">
+                <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[#dedfd6] dark:bg-[#1a222c]">
                   <div
                     className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-300 ${
                       isAll
@@ -692,9 +692,9 @@ function StatsFold({ user, barBoardRows, boardRange, loadingBoard, useRemote, su
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <span className="w-14 shrink-0 text-right tabular-nums text-[#2d261d] dark:text-gray-200">
+                <span className="w-14 shrink-0 text-right tabular-nums text-[#1a1814] dark:text-gray-200">
                   <span className="font-semibold">{row.done}</span>
-                  <span className="text-[#b0a99c] dark:text-gray-500"> / {row.total}</span>
+                  <span className="text-[#a3a49c] dark:text-gray-500"> / {row.total}</span>
                 </span>
               </div>
             )

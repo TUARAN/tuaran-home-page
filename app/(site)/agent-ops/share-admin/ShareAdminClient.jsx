@@ -142,56 +142,56 @@ export default function ShareAdminClient() {
   return (
     <main className="mx-auto w-full max-w-[960px] px-4 py-8 md:py-12">
       <header className="mb-8">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#9c8f79] dark:text-[#8e9ab0]">
+        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
           Admin · Encrypted Share
         </p>
-        <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#221f19] dark:text-gray-100 md:text-[2.2rem]">
+        <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[2.2rem]">
           加密分享管理
         </h1>
-        <p className="mb-0 max-w-[44rem] text-[14px] leading-7 text-[#5d554a] dark:text-gray-300">
+        <p className="mb-0 max-w-[44rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
           内容在你的浏览器里用密码 + PBKDF2 派生密钥后用 AES-GCM 加密，<strong>服务器只见到密文信封</strong>。
-          访问者凭链接 + 密码即可解锁。把密码加在链接末尾 <code className="rounded bg-[#f4ede0] px-1 py-px font-mono text-[11px] dark:bg-[#19212b]">#密码</code> 可一键打开，
+          访问者凭链接 + 密码即可解锁。把密码加在链接末尾 <code className="rounded bg-[#e7e8e0] px-1 py-px font-mono text-[11px] dark:bg-[#19212b]">#密码</code> 可一键打开，
           也可以分两个通道单独发链接和密码。
         </p>
       </header>
 
       {/* 创建新分享 */}
-      <section className="mb-8 rounded-xl border border-[#e5dccd] bg-[#fdfaf3] p-5 dark:border-[#252e39] dark:bg-[#10161f]">
-        <h2 className="mb-4 text-base font-semibold text-[#221f19] dark:text-gray-100">新建分享</h2>
+      <section className="mb-8 rounded-xl border border-[#d5d7cd] bg-[#f6f8f3] p-5 dark:border-[#252e39] dark:bg-[#10161f]">
+        <h2 className="mb-4 text-base font-semibold text-[#15140f] dark:text-gray-100">新建分享</h2>
         <form onSubmit={handleCreate} className="space-y-3">
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-[#3f392f] dark:text-gray-200">标题（明文，会显示在解锁前的标题位置）</span>
+            <span className="mb-1 block text-xs font-medium text-[#35362f] dark:text-gray-200">标题（明文，会显示在解锁前的标题位置）</span>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="例：2606 榴莲事件 · 夫妻共读复盘"
-              className="w-full rounded-lg border border-[#ddd2c0] bg-white px-3 py-2 text-sm outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
+              className="w-full rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-sm outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-[#3f392f] dark:text-gray-200">内容 markdown（加密）</span>
+            <span className="mb-1 block text-xs font-medium text-[#35362f] dark:text-gray-200">内容 markdown（加密）</span>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={12}
               placeholder="粘贴 markdown 全文…"
-              className="w-full rounded-lg border border-[#ddd2c0] bg-white px-3 py-2 font-mono text-xs leading-6 outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
+              className="w-full rounded-lg border border-[#caccc0] bg-white px-3 py-2 font-mono text-xs leading-6 outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
             />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-xs font-medium text-[#3f392f] dark:text-gray-200">密码（≥6 位）</span>
+              <span className="mb-1 block text-xs font-medium text-[#35362f] dark:text-gray-200">密码（≥6 位）</span>
               <input
                 type="text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="自定义一个口令，分享给读者"
-                className="w-full rounded-lg border border-[#ddd2c0] bg-white px-3 py-2 text-sm outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
+                className="w-full rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-sm outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs font-medium text-[#3f392f] dark:text-gray-200">有效天数（留空 = 永久）</span>
+              <span className="mb-1 block text-xs font-medium text-[#35362f] dark:text-gray-200">有效天数（留空 = 永久）</span>
               <input
                 type="number"
                 min="1"
@@ -199,17 +199,17 @@ export default function ShareAdminClient() {
                 value={expiresInDays}
                 onChange={(e) => setExpiresInDays(e.target.value)}
                 placeholder="如 30"
-                className="w-full rounded-lg border border-[#ddd2c0] bg-white px-3 py-2 text-sm outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
+                className="w-full rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-sm outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
               />
             </label>
           </div>
           {createError ? (
-            <p className="text-sm text-[#a34f47] dark:text-[#e6a29b]">{createError}</p>
+            <p className="text-sm text-[#a34f47] dark:text-[#b5a09b]">{createError}</p>
           ) : null}
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-[#8b5a1f] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#734817] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#d7a85c] dark:text-[#1d160d] dark:hover:bg-[#e8bb70]"
+            className="rounded-lg bg-[#8b5a1f] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#734817] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#d7a85c] dark:text-[#1d160d] dark:hover:bg-[#9aa170]"
           >
             {submitting ? '加密上传中…' : '生成加密链接'}
           </button>
@@ -240,20 +240,20 @@ export default function ShareAdminClient() {
       {/* 列表 */}
       <section>
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-base font-semibold text-[#221f19] dark:text-gray-100">已创建的分享</h2>
-          <span className="text-[11px] text-[#9c8f79] dark:text-[#8e9ab0]">{items.length} 条</span>
+          <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">已创建的分享</h2>
+          <span className="text-[11px] text-[#858779] dark:text-[#8e9ab0]">{items.length} 条</span>
         </div>
         {listError ? (
-          <p className="mb-3 text-sm text-[#a34f47] dark:text-[#e6a29b]">{listError}</p>
+          <p className="mb-3 text-sm text-[#a34f47] dark:text-[#b5a09b]">{listError}</p>
         ) : null}
         {loadingList ? (
-          <p className="text-sm text-[#75695a] dark:text-[#9aa6b6]">加载中…</p>
+          <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">加载中…</p>
         ) : items.length === 0 ? (
-          <p className="text-sm text-[#75695a] dark:text-[#9aa6b6]">还没有任何分享。</p>
+          <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">还没有任何分享。</p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-[#e5dccd] dark:border-[#252e39]">
+          <div className="overflow-hidden rounded-xl border border-[#d5d7cd] dark:border-[#252e39]">
             <table className="w-full border-collapse text-left text-sm">
-              <thead className="bg-[#f8f3e7] text-[12px] uppercase tracking-[0.12em] text-[#7a6c54] dark:bg-[#151c25] dark:text-[#8e9ab0]">
+              <thead className="bg-[#edefe7] text-[12px] uppercase tracking-[0.12em] text-[#616454] dark:bg-[#151c25] dark:text-[#8e9ab0]">
                 <tr>
                   <th className="px-3 py-2">标题 / slug</th>
                   <th className="px-3 py-2">创建</th>
@@ -264,20 +264,20 @@ export default function ShareAdminClient() {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.slug} className="border-t border-[#ece5d8] dark:border-[#252e39]">
+                  <tr key={item.slug} className="border-t border-[#dfe0d8] dark:border-[#252e39]">
                     <td className="px-3 py-3 align-top">
-                      <div className="font-medium text-[#221f19] dark:text-gray-100">{item.title || '(无标题)'}</div>
-                      <div className="mt-0.5 font-mono text-[11px] text-[#9c8f79] dark:text-[#8e9ab0]">
+                      <div className="font-medium text-[#15140f] dark:text-gray-100">{item.title || '(无标题)'}</div>
+                      <div className="mt-0.5 font-mono text-[11px] text-[#858779] dark:text-[#8e9ab0]">
                         /share/{item.slug}
                       </div>
                     </td>
-                    <td className="px-3 py-3 align-top text-[12px] text-[#75695a] dark:text-[#9aa6b6]">
+                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
                       {formatDate(item.created_at)}
                     </td>
-                    <td className="px-3 py-3 align-top text-[12px] text-[#75695a] dark:text-[#9aa6b6]">
+                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
                       {item.expires_at ? formatDate(item.expires_at) : '永久'}
                     </td>
-                    <td className="px-3 py-3 align-top text-[12px] text-[#75695a] dark:text-[#9aa6b6]">
+                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
                       {item.view_count || 0}
                     </td>
                     <td className="px-3 py-3 align-top">
@@ -285,7 +285,7 @@ export default function ShareAdminClient() {
                         <button
                           type="button"
                           onClick={() => copyText(buildShareUrl(item.slug, ''))}
-                          className="rounded-lg border border-[#dcd3c0] px-2 py-1 text-xs text-[#75695a] hover:bg-[#f8f3e7] dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
+                          className="rounded-lg border border-[#caccc0] px-2 py-1 text-xs text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
                         >
                           复制链接
                         </button>
@@ -313,18 +313,18 @@ export default function ShareAdminClient() {
 function Field({ label, value, onCopy, mono = false }) {
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-      <span className="text-[11px] uppercase tracking-[0.12em] text-[#75695a] dark:text-[#9aa6b6] sm:w-36">
+      <span className="text-[11px] uppercase tracking-[0.12em] text-[#63645a] dark:text-[#9aa6b6] sm:w-36">
         {label}
       </span>
       <code
-        className={`flex-1 break-all rounded bg-white px-2 py-1 ${mono ? 'font-mono' : ''} text-[12px] text-[#221f19] dark:bg-[#0d131b] dark:text-gray-100`}
+        className={`flex-1 break-all rounded bg-white px-2 py-1 ${mono ? 'font-mono' : ''} text-[12px] text-[#15140f] dark:bg-[#0d131b] dark:text-gray-100`}
       >
         {value}
       </code>
       <button
         type="button"
         onClick={() => onCopy(value)}
-        className="rounded border border-[#dcd3c0] px-2 py-1 text-[11px] text-[#75695a] hover:bg-[#f8f3e7] dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
+        className="rounded border border-[#caccc0] px-2 py-1 text-[11px] text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
       >
         复制
       </button>

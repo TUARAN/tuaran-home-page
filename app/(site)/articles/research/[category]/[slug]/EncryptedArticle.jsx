@@ -80,8 +80,8 @@ export default function EncryptedArticle({ payload, storageKey }) {
   }
 
   return (
-    <div className="mx-auto mt-2 max-w-md rounded-xl border border-[#e8dfd0] bg-white p-7 text-center dark:border-gray-800 dark:bg-gray-900">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#e9d5b8] bg-[#fbf3e3] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
+    <div className="mx-auto mt-2 max-w-md rounded-xl border border-[#dee0db] bg-white p-7 text-center dark:border-gray-800 dark:bg-gray-900">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#c9cbb8] bg-[#ebede3] text-[#8a5a14] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]">
         <svg
           viewBox="0 0 20 20"
           aria-hidden="true"
@@ -109,7 +109,7 @@ export default function EncryptedArticle({ payload, storageKey }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="请输入访问密码"
           autoComplete="off"
-          className="w-full rounded-lg border border-[#ddd] bg-white px-3 py-2 text-sm text-[#333] outline-none focus:border-[#9c8e72] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+          className="w-full rounded-lg border border-[#ddd] bg-white px-3 py-2 text-sm text-[#333] outline-none focus:border-[#818472] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
         />
         <button
           type="submit"

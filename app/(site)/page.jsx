@@ -90,7 +90,7 @@ function HomeFeaturedSection({ items }) {
   if (!items.length) return null
   return (
     <section className="rounded-[24px] border border-[#dcded6] bg-[#f9faf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-      <div className="mb-4 space-y-3">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0] mb-2">
             Start Here
@@ -99,14 +99,14 @@ function HomeFeaturedSection({ items }) {
         </div>
         <nav
           aria-label="查看更多内容分类"
-          className="flex flex-wrap items-center gap-2.5"
+          className="flex shrink-0 flex-wrap items-center justify-end gap-2"
         >
           {HOME_SECTION_MORE_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={[
-                'inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-[13.5px] font-semibold no-underline transition-all',
+                'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-[13px] font-semibold no-underline transition-all',
                 'hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(82,69,45,0.12)] dark:hover:shadow-[0_8px_20px_rgba(0,0,0,0.28)]',
                 SECTION_NAV_LINK_CLASS[link.section] || SECTION_NAV_LINK_CLASS.column,
               ].join(' ')}

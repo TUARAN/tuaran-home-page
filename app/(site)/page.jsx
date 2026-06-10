@@ -6,6 +6,7 @@ import SiteFooter from './components/SiteFooter'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_DOMAIN, SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
 import { listResearch } from '../../lib/research/loader'
+import { getHomeResearchPicks, getHomeResourcePicks } from '../../lib/homeHighlights'
 
 function wrapTitle(title) {
   if (!title) return ''
@@ -49,9 +50,48 @@ function buildResearchPipelineStats() {
   }
 }
 
+function HomeFeaturedLinks({ items }) {
+  if (!items.length) return null
+  return (
+    <div className="mb-4 rounded-2xl border border-[#ece5d8] bg-white p-3 dark:border-[#232c36] dark:bg-[#121821]">
+      <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+        推荐阅读
+      </p>
+      <div className="space-y-1">
+        {items.map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className="group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f8f4ec] dark:hover:bg-[#18202a]"
+          >
+            <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="inline-flex shrink-0 items-center rounded-full border border-[#e8dfcf] bg-[#f8f4ec] px-2 py-0.5 font-mono text-[10px] text-[#7e6d50] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#d4c3a3]">
+                {item.tagLabel}
+              </span>
+              {item.date ? (
+                <span className="shrink-0 font-mono text-[10px] text-[#aaa093] dark:text-gray-500">{item.date}</span>
+              ) : null}
+            </div>
+            <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[#2d261d] group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">
+              {item.title}
+            </p>
+            {item.summary ? (
+              <p className="mb-0 mt-0.5 line-clamp-1 text-[12px] leading-5 text-[#8b806c] dark:text-gray-400">
+                {item.summary}
+              </p>
+            ) : null}
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const featuredArticles = articles.slice(0, 3)
   const researchStats = buildResearchPipelineStats()
+  const featuredResearch = getHomeResearchPicks()
+  const featuredResources = getHomeResourcePicks()
   const resourceCards = [
     {
       href: '/classical-masterpieces',
@@ -294,6 +334,7 @@ export default function HomePage() {
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
                 专题调研 / 公司调研 / 事项调研 / 人物调研。
               </p>
+              <HomeFeaturedLinks items={featuredResearch} />
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   {
@@ -360,6 +401,7 @@ export default function HomePage() {
               <p className="mb-4 text-[13px] leading-[1.85] text-[#7c7565] dark:text-[#8e98a8]">
                 资料分成「站内资料」和「资源收藏」。
               </p>
+              <HomeFeaturedLinks items={featuredResources} />
               <div className="space-y-4">
                 {[
                   {

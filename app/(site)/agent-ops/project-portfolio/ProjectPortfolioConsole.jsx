@@ -462,9 +462,9 @@ export default function ProjectPortfolioConsole({ user }) {
       <div className="grid min-w-0 gap-5">
         <section className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <div>
-            <h2 className="text-2xl font-semibold text-[#15140f] dark:text-gray-100">项目关系与整合路线</h2>
+            <h2 className="text-2xl font-semibold text-[#15140f] dark:text-gray-100">本地仓库 × 核心运营站点</h2>
             <p className="mt-2 text-sm leading-6 text-[#667085] dark:text-gray-400">
-              点击关系图节点或阵列行查看归属、作用、整合建议和下一步动作。
+              左侧关系图梳理 GitHub / Codex / Claude 工作区的归属与整合路线；右侧对比四座线上站点的托管、数据、登录与后台现状。点击节点或阵列行查看项目详情。
             </p>
           </div>
           <input
@@ -476,17 +476,20 @@ export default function ProjectPortfolioConsole({ user }) {
           />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="grid gap-5 xl:grid-cols-2 xl:items-stretch">
           <div
             ref={graphFrameRef}
-            className={`rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${
-              isGraphFullscreen ? 'flex h-screen flex-col rounded-none border-0' : ''
+            className={`flex min-h-0 flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${
+              isGraphFullscreen ? 'h-screen rounded-none border-0' : 'min-h-[640px]'
             }`}
           >
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
               <div>
-                <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
-                <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">拖拽画布移动；箭头表示吸收、服务、迁移或归档关系</span>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">本地仓库</p>
+                <h3 className="mt-1 text-base font-semibold text-[#15140f] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
+                <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
+                  GitHub / Codex / Claude 工作区 · 拖拽画布移动；箭头表示吸收、服务、迁移或归档关系
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <GraphControlButton
@@ -513,9 +516,9 @@ export default function ProjectPortfolioConsole({ user }) {
               </div>
             </div>
             <div
-              className={`select-none overflow-auto p-4 touch-none ${
+              className={`min-h-0 flex-1 select-none overflow-auto p-4 touch-none ${
                 isGraphDragging ? 'cursor-grabbing' : 'cursor-grab'
-              } ${isGraphFullscreen ? 'min-h-0 flex-1' : 'max-h-[760px]'}`}
+              } ${isGraphFullscreen ? '' : 'max-h-[720px]'}`}
               onPointerDown={handleGraphPointerDown}
               onPointerMove={handleGraphPointerMove}
               onPointerUp={handleGraphPointerEnd}
@@ -583,14 +586,97 @@ export default function ProjectPortfolioConsole({ user }) {
             </div>
           </div>
 
-          <aside className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <div className="border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-              <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">项目详情</h3>
-              <p className="mt-1 text-xs text-[#667085] dark:text-gray-400">
-                {selectedPillar.name} · {actionLabels[selectedProject.action]}
-              </p>
+          <section className="flex min-h-[640px] min-w-0 flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">核心运营站点</p>
+                <h3 className="mt-1 text-base font-semibold text-[#15140f] dark:text-gray-100">四站基础设施现状</h3>
+                <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
+                  2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] dark:text-gray-400">
+                {INFRA_TONE_LEGEND.map(([tone, label]) => (
+                  <span key={tone} className="inline-flex items-center gap-1.5">
+                    <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
+                    {label}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="p-4">
+
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {SITE_INFRA.map((site) => (
+                  <article
+                    key={site.id}
+                    className="overflow-hidden rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950/40"
+                  >
+                    <div className="h-1 w-full" style={{ background: site.color }} />
+                    <div className="p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="break-words text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{site.name}</h4>
+                          <p className="mt-0.5 text-[11px] leading-5 text-[#667085] dark:text-gray-400">{site.role}</p>
+                        </div>
+                        {site.referenceTag ? (
+                          <span className="shrink-0 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300">
+                            {site.referenceTag}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-2 break-words font-mono text-[10px] leading-4 text-[#94a3b8] dark:text-gray-500">
+                        {site.repoPath}
+                      </p>
+                      <p className="mt-1 text-[11px] text-[#667085] dark:text-gray-400">{site.stack}</p>
+
+                      <dl className="mt-3 grid gap-1.5">
+                        {INFRA_DIMENSIONS.map((dim) => {
+                          const cell = site.cells[dim]
+                          return (
+                            <div
+                              key={dim}
+                              className={`grid grid-cols-[52px_minmax(0,1fr)] items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-4 ${INFRA_TONE_STYLES[cell.tone]}`}
+                            >
+                              <dt className="flex items-center gap-1.5 pt-0.5 font-mono text-[10px] uppercase tracking-wider opacity-80">
+                                <span className={`inline-block h-1.5 w-1.5 rounded-full ${INFRA_TONE_DOT[cell.tone]}`} />
+                                {dim}
+                              </dt>
+                              <dd className="min-w-0">
+                                <span className="block break-words font-semibold">{cell.primary}</span>
+                                {cell.sub ? <span className="block break-words text-[10px] opacity-75">{cell.sub}</span> : null}
+                              </dd>
+                            </div>
+                          )
+                        })}
+                      </dl>
+
+                      {site.note ? (
+                        <div className="mt-2 rounded-md border-l-2 border-amber-400 bg-amber-50/70 px-2.5 py-1.5 text-[11px] leading-5 text-amber-900 dark:border-amber-500 dark:bg-amber-950/30 dark:text-amber-200">
+                          {site.note}
+                        </div>
+                      ) : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="mt-auto rounded-md border border-purple-200 bg-purple-50/50 px-3 py-2 text-[12px] leading-6 text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/30 dark:text-purple-200">
+                <b>模板参照范围：</b>仅 <span className="font-mono">Changelog</span> 形式参照 md（CHANGELOG.md）。其他维度（DB / R2 / 登录 / 账号 / 邮件 / Admin）现状已列，统一策略<b>待定</b>——本节先呈现真实差异，不预设对齐方向。
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
+            <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">项目详情</h3>
+            <p className="mt-1 text-xs text-[#667085] dark:text-gray-400">
+              {selectedPillar.name} · {actionLabels[selectedProject.action]}
+            </p>
+          </div>
+          <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div>
               <h3 className="text-lg font-semibold text-[#15140f] dark:text-gray-100">{selectedProject.name}</h3>
               <p className="mt-1 break-words font-mono text-xs text-[#667085] dark:text-gray-400">{selectedProject.path}</p>
               <dl className="mt-4 grid grid-cols-[88px_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm leading-6">
@@ -600,14 +686,16 @@ export default function ProjectPortfolioConsole({ user }) {
                 <dt className="text-[#667085]">下一步</dt><dd>{selectedProject.next}</dd>
                 <dt className="text-[#667085]">连接</dt><dd>{selectedProject.links.length ? selectedProject.links.join('、') : '无强依赖'}</dd>
               </dl>
-              <p className="mt-4 text-sm font-semibold text-[#15140f] dark:text-gray-100">管理判断</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#15140f] dark:text-gray-100">管理判断</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-[#344054] dark:text-gray-300">
                 <li>{selectedPillar.intent}</li>
                 <li>先整合内容、入口和数据关系，代码迁移要等边界稳定后再做。</li>
                 <li>任何 dirty repo 先提交、stash 或归档，再移动目录。</li>
               </ul>
             </div>
-          </aside>
+          </div>
         </section>
 
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
@@ -664,135 +752,6 @@ export default function ProjectPortfolioConsole({ user }) {
                 })}
               </tbody>
             </table>
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-            <div>
-              <h3 className="text-base font-semibold text-[#15140f] dark:text-gray-100">四站基础设施现状</h3>
-              <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
-                统一管理目标：2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] dark:text-gray-400">
-              {INFRA_TONE_LEGEND.map(([tone, label]) => (
-                <span key={tone} className="inline-flex items-center gap-1.5">
-                  <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 p-4">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {SITE_INFRA.map((site) => (
-                <article
-                  key={site.id}
-                  className="overflow-hidden rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950/40"
-                >
-                  <div className="h-1 w-full" style={{ background: site.color }} />
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h4 className="break-words text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{site.name}</h4>
-                        <p className="mt-0.5 text-[11px] leading-5 text-[#667085] dark:text-gray-400">{site.role}</p>
-                      </div>
-                      {site.referenceTag ? (
-                        <span className="shrink-0 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300">
-                          {site.referenceTag}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-2 break-words font-mono text-[10px] leading-4 text-[#94a3b8] dark:text-gray-500">
-                      {site.repoPath}
-                    </p>
-                    <p className="mt-1 text-[11px] text-[#667085] dark:text-gray-400">{site.stack}</p>
-
-                    <dl className="mt-4 grid gap-1.5">
-                      {INFRA_DIMENSIONS.map((dim) => {
-                        const cell = site.cells[dim]
-                        return (
-                          <div
-                            key={dim}
-                            className={`grid grid-cols-[56px_minmax(0,1fr)] items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-4 ${INFRA_TONE_STYLES[cell.tone]}`}
-                          >
-                            <dt className="flex items-center gap-1.5 pt-0.5 font-mono text-[10px] uppercase tracking-wider opacity-80">
-                              <span className={`inline-block h-1.5 w-1.5 rounded-full ${INFRA_TONE_DOT[cell.tone]}`} />
-                              {dim}
-                            </dt>
-                            <dd className="min-w-0">
-                              <span className="block break-words font-semibold">{cell.primary}</span>
-                              {cell.sub ? <span className="block break-words text-[10px] opacity-75">{cell.sub}</span> : null}
-                            </dd>
-                          </div>
-                        )
-                      })}
-                    </dl>
-
-                    {site.note ? (
-                      <div className="mt-3 rounded-md border-l-2 border-amber-400 bg-amber-50/70 px-2.5 py-1.5 text-[11px] leading-5 text-amber-900 dark:border-amber-500 dark:bg-amber-950/30 dark:text-amber-200">
-                        {site.note}
-                      </div>
-                    ) : null}
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div className="overflow-x-auto rounded-lg border border-[#d9dee7] dark:border-gray-800">
-              <table className="min-w-[920px] border-collapse text-[12px]">
-                <thead>
-                  <tr className="bg-[#f8fafc] text-left text-[#475467] dark:bg-gray-950 dark:text-gray-300">
-                    <th className="sticky left-0 z-10 border-b border-r border-[#d9dee7] bg-[#f8fafc] px-3 py-2 font-semibold dark:border-gray-800 dark:bg-gray-950">
-                      维度 ＼ 站点
-                    </th>
-                    {SITE_INFRA.map((site) => (
-                      <th
-                        key={site.id}
-                        className="border-b border-r border-[#d9dee7] px-3 py-2 font-semibold last:border-r-0 dark:border-gray-800"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span className="inline-block h-2 w-2 rounded-full" style={{ background: site.color }} />
-                          <span className="break-words">{site.name}</span>
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {INFRA_DIMENSIONS.map((dim) => (
-                    <tr key={dim} className="align-top">
-                      <th className="sticky left-0 z-10 border-b border-r border-[#d9dee7] bg-white px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-[#475467] dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
-                        {dim}
-                      </th>
-                      {SITE_INFRA.map((site) => {
-                        const cell = site.cells[dim]
-                        return (
-                          <td
-                            key={site.id}
-                            className="border-b border-r border-[#d9dee7] p-1.5 last:border-r-0 dark:border-gray-800"
-                          >
-                            <div className={`flex items-start gap-1.5 rounded-md border px-2 py-1.5 leading-4 ${INFRA_TONE_STYLES[cell.tone]}`}>
-                              <span className={`mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full ${INFRA_TONE_DOT[cell.tone]}`} />
-                              <div className="min-w-0">
-                                <span className="block break-words font-semibold">{cell.primary}</span>
-                                {cell.sub ? <span className="mt-0.5 block break-words text-[10px] opacity-75">{cell.sub}</span> : null}
-                              </div>
-                            </div>
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="rounded-md border border-purple-200 bg-purple-50/50 px-3 py-2 text-[12px] leading-6 text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/30 dark:text-purple-200">
-              <b>模板参照范围：</b>仅 <span className="font-mono">Changelog</span> 形式参照 md（CHANGELOG.md）。其他维度（DB / R2 / 登录 / 账号 / 邮件 / Admin）现状已列，统一策略<b>待定</b>——本节先呈现真实差异，不预设对齐方向。
-            </div>
           </div>
         </section>
 

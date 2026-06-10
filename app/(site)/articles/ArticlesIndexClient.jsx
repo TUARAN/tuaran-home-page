@@ -598,13 +598,17 @@ function ArticleRow({ item }) {
     >
       <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_160px]">
         <div className="min-w-0">
-          <div className="mb-2 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap">
+          <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="shrink-0 text-sm text-[#999]">▪</span>
-            {item.date ? <span className="shrink-0 text-xs text-[#999] dark:text-gray-400">{item.date}</span> : null}
-            <span aria-hidden="true" className="shrink-0 text-xs text-[#ddd]">·</span>
+            {item.date ? (
+              <span className="shrink-0 whitespace-nowrap text-xs text-[#999] dark:text-gray-400">{item.date}</span>
+            ) : null}
+            <span aria-hidden="true" className="shrink-0 text-xs text-[#ddd]">
+              ·
+            </span>
             <span
               className={[
-                'inline-flex shrink-0 items-center rounded-full border px-2 py-[1px] text-[11px]',
+                'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-2 py-[1px] text-[11px]',
                 KIND_TAG_CLASS[item.kind] || KIND_TAG_CLASS.people,
               ].join(' ')}
             >
@@ -723,10 +727,10 @@ function HighlightLink({ item }) {
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
       className="group block rounded-lg px-2 py-1.5 no-underline transition hover:bg-[#f8f4ec] dark:hover:bg-[#151d27]"
     >
-      <div className="mb-0.5 flex min-w-0 items-center gap-2">
+      <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span
           className={[
-            'inline-flex shrink-0 items-center rounded-full border px-1.5 py-px text-[10px]',
+            'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-1.5 py-px text-[10px]',
             KIND_TAG_CLASS[item.kind] || KIND_TAG_CLASS.people,
           ].join(' ')}
         >
@@ -734,7 +738,9 @@ function HighlightLink({ item }) {
         </span>
         <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
         {item.date ? (
-          <span className="shrink-0 font-mono text-[10px] text-[#aaa093] dark:text-gray-500">{item.date}</span>
+          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#aaa093] dark:text-gray-500">
+            {item.date}
+          </span>
         ) : null}
       </div>
       <p className="mb-0 line-clamp-2 text-[13px] font-medium leading-5 text-[#2d261d] group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white">

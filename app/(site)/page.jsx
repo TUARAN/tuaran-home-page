@@ -50,19 +50,21 @@ function HomeFeaturedLinkItem({ item }) {
         ) : null}
         <span
           className={[
-            'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 font-mono text-[10px]',
+            'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-2 py-0.5 font-mono text-[10px]',
             SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column,
           ].join(' ')}
         >
           {item.sectionLabel}
         </span>
         {item.tagLabel ? (
-          <span className="inline-flex shrink-0 items-center rounded-full border border-[#ece5d8] bg-white px-2 py-0.5 font-mono text-[10px] text-[#8b806c] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6]">
+          <span className="inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border border-[#ece5d8] bg-white px-2 py-0.5 font-mono text-[10px] text-[#8b806c] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6]">
             {item.tagLabel}
           </span>
         ) : null}
         {item.date ? (
-          <span className="shrink-0 font-mono text-[10px] text-[#aaa093] dark:text-gray-500">{item.date}</span>
+          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#aaa093] dark:text-gray-500">
+            {item.date}
+          </span>
         ) : null}
       </div>
       <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[#2d261d] group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#eed8b5]">

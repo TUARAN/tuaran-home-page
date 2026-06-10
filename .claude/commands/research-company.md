@@ -29,6 +29,7 @@ research/companies/<YYYY-MM-DD>-<slug>.md
    title: <公司名> 公司调研
    category: companies
    date: <YYYY-MM-DD>
+   time: <HH:MM>              # 北京时间，用当前本地时间
    tags: [<相关标签>]
    summary: <一句话摘要>
    source: claude-code

@@ -85,7 +85,7 @@ export default function CopyIntroButton({ text, className }) {
   }
 
   const triggerBase =
-    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#d9d0c2] bg-white/90 text-[#5f5a4d] shadow-sm transition hover:border-[#c4b8a4] hover:bg-[#faf7f2] dark:border-[#3a4757] dark:bg-[#151c25] dark:text-[#c8d0dc] dark:hover:border-[#4f5f73] dark:hover:bg-[#1a2430]'
+    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#cacbc2] bg-white/90 text-[#53554d] shadow-sm transition hover:border-[#afb1a4] hover:bg-[#f5f5f2] dark:border-[#3a4757] dark:bg-[#151c25] dark:text-[#c8d0dc] dark:hover:border-[#4f5f73] dark:hover:bg-[#1a2430]'
 
   return (
     <div ref={wrapRef} className="relative">
@@ -105,16 +105,16 @@ export default function CopyIntroButton({ text, className }) {
         <div
           role="dialog"
           aria-label="自我介绍预览"
-          className="absolute right-0 top-[calc(100%+8px)] z-30 w-[min(86vw,360px)] rounded-2xl border border-[#e2d9c8] bg-white/98 p-3 text-[13px] shadow-[0_18px_48px_rgba(82,69,45,0.16)] backdrop-blur dark:border-[#36404f] dark:bg-[#10161f]/98 dark:shadow-[0_18px_48px_rgba(0,0,0,0.55)]"
+          className="absolute right-0 top-[calc(100%+8px)] z-30 w-[min(86vw,360px)] rounded-2xl border border-[#d1d3c8] bg-white/98 p-3 text-[13px] shadow-[0_18px_48px_rgba(82,69,45,0.16)] backdrop-blur dark:border-[#36404f] dark:bg-[#10161f]/98 dark:shadow-[0_18px_48px_rgba(0,0,0,0.55)]"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#9c8f79] dark:text-[#93a0b3]">
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858779] dark:text-[#93a0b3]">
               Preview · 自我介绍
             </span>
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1 rounded-full border border-[#d9d0c2] bg-[#faf7f2] px-2.5 py-1 font-mono text-[11px] tracking-[0.08em] text-[#5f4a2a] transition hover:border-[#c4b8a4] hover:bg-[#f3ede1] dark:border-[#3a4757] dark:bg-[#19212b] dark:text-[#d8c8a8] dark:hover:border-[#4f5f73] dark:hover:bg-[#1c2531]"
+              className="inline-flex items-center gap-1 rounded-full border border-[#cacbc2] bg-[#f5f5f2] px-2.5 py-1 font-mono text-[11px] tracking-[0.08em] text-[#5f4a2a] transition hover:border-[#afb1a4] hover:bg-[#e7e9e1] dark:border-[#3a4757] dark:bg-[#19212b] dark:text-[#b9bda8] dark:hover:border-[#4f5f73] dark:hover:bg-[#1c2531]"
             >
               {done ? (
                 <>
@@ -129,7 +129,7 @@ export default function CopyIntroButton({ text, className }) {
               )}
             </button>
           </div>
-          <pre className="m-0 max-h-[42vh] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-[#fbf8f2] p-3 font-sans text-[12.5px] leading-[1.7] text-[#3a352c] dark:bg-[#0c1219] dark:text-[#d4cdbe]">
+          <pre className="m-0 max-h-[42vh] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-[#f5f6f2] p-3 font-sans text-[12.5px] leading-[1.7] text-[#31322c] dark:bg-[#0c1219] dark:text-[#c6c8be]">
 {text}
           </pre>
         </div>

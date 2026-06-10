@@ -216,7 +216,7 @@ export default function VoiceTasksClient() {
         </div>
 
         {!speechSupported ? (
-          <p className="mt-3 text-xs leading-6 text-[#9a5b24] dark:text-[#e2bd75]">
+          <p className="mt-3 text-xs leading-6 text-[#9a5b24] dark:text-[#9ba475]">
             当前浏览器没有暴露 Web Speech API。可以直接手动输入任务；手机端请优先用 Chrome / Safari 并保持 HTTPS。
           </p>
         ) : null}
@@ -230,7 +230,7 @@ export default function VoiceTasksClient() {
               className={[
                 'inline-flex h-11 items-center justify-center rounded-full border px-5 text-sm font-semibold transition',
                 listening
-                  ? 'border-[#b7791f] bg-[#fbf3e3] text-[#8a5a14] dark:border-[#e2bd75] dark:bg-[#2a2115] dark:text-[#e2bd75]'
+                  ? 'border-[#b7791f] bg-[#ebede3] text-[#8a5a14] dark:border-[#9ba475] dark:bg-[#1c1d15] dark:text-[#9ba475]'
                   : 'border-[#ddd] bg-white text-[#444] hover:border-[#aaa] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200',
                 !isAuthed || !speechSupported ? 'opacity-60' : '',
               ].join(' ')}
@@ -323,7 +323,7 @@ export default function VoiceTasksClient() {
         {items.length ? (
           <ul className="space-y-3">
             {items.map((item) => (
-              <li key={item.id} className="rounded-md border border-[#e8dfd0] bg-[#fdfcf9] p-3 dark:border-gray-800 dark:bg-gray-950/60">
+              <li key={item.id} className="rounded-md border border-[#dee0db] bg-[#fafbf9] p-3 dark:border-gray-800 dark:bg-gray-950/60">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-[#888] dark:text-gray-400">
                   <span>#{item.id}</span>
                   <span>{STATUS_LABELS[item.status] || item.status}</span>

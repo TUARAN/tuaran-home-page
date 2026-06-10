@@ -152,9 +152,9 @@ function PhaseIcon({ phase, size = 112 }) {
           <stop offset="100%" stopColor="#111827" />
         </radialGradient>
         <radialGradient id={lightId} cx="34%" cy="26%" r="70%">
-          <stop offset="0%" stopColor="#fff9d7" />
-          <stop offset="62%" stopColor="#f1e7bb" />
-          <stop offset="100%" stopColor="#b8a77a" />
+          <stop offset="0%" stopColor="#e5edd7" />
+          <stop offset="62%" stopColor="#ced8bb" />
+          <stop offset="100%" stopColor="#90977a" />
         </radialGradient>
         <clipPath id={clipId}>
           <circle cx="50" cy="50" r="44" />
@@ -180,7 +180,7 @@ function IconButton({ children, label, onClick, active = false }) {
         'inline-flex h-10 w-10 items-center justify-center rounded-full border transition-all',
         active
           ? 'border-[#1e3a5f] bg-[#1e3a5f] text-white shadow-[0_10px_24px_rgba(30,58,95,0.22)]'
-          : 'border-[#d9cfbd] bg-white/85 text-[#3b352c] hover:-translate-y-0.5 hover:border-[#b8aa90] dark:border-[#344152] dark:bg-[#121a24] dark:text-gray-100 dark:hover:border-[#536175]',
+          : 'border-[#c7c9bd] bg-white/85 text-[#31322c] hover:-translate-y-0.5 hover:border-[#9ea190] dark:border-[#344152] dark:bg-[#121a24] dark:text-gray-100 dark:hover:border-[#536175]',
       ].join(' ')}
     >
       {children}
@@ -190,18 +190,18 @@ function IconButton({ children, label, onClick, active = false }) {
 
 function Stat({ label, value }) {
   return (
-    <div className="rounded-2xl border border-[#e6ddcf] bg-white/78 px-4 py-3 dark:border-[#2b3542] dark:bg-[#121922]">
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8d806d] dark:text-[#95a0af]">{label}</div>
-      <div className="mt-1 break-words text-[clamp(0.88rem,2vw,1.125rem)] font-semibold leading-tight text-[#211d17] dark:text-gray-100">{value}</div>
+    <div className="rounded-2xl border border-[#d7d8cf] bg-white/78 px-4 py-3 dark:border-[#2b3542] dark:bg-[#121922]">
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#63655f] dark:text-[#95a0af]">{label}</div>
+      <div className="mt-1 break-words text-[clamp(0.88rem,2vw,1.125rem)] font-semibold leading-tight text-[#1a1b17] dark:text-gray-100">{value}</div>
     </div>
   )
 }
 
 function CompactMetric({ label, value }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-[#eadfce] py-2.5 last:border-b-0 dark:border-[#263341]">
-      <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8d806d] dark:text-[#95a0af]">{label}</span>
-      <span className="min-w-0 text-right text-[15px] font-semibold leading-snug text-[#211d17] dark:text-gray-100">{value}</span>
+    <div className="flex items-baseline justify-between gap-4 border-b border-[#d8d9ce] py-2.5 last:border-b-0 dark:border-[#263341]">
+      <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[#63655f] dark:text-[#95a0af]">{label}</span>
+      <span className="min-w-0 text-right text-[15px] font-semibold leading-snug text-[#1a1b17] dark:text-gray-100">{value}</span>
     </div>
   )
 }
@@ -268,15 +268,15 @@ export default function SunMoonMotionClient() {
   const focusedStatus = sun.visible ? '白昼' : '夜晚'
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f8f5f0] px-4 py-6 text-[#28231c] dark:bg-[#0b1016] dark:text-gray-100 md:py-9">
+    <main className="min-h-screen overflow-x-hidden bg-[#f0f1ee] px-4 py-6 text-[#20211c] dark:bg-[#0b1016] dark:text-gray-100 md:py-9">
       <div className="mx-auto w-full max-w-[1280px]">
-        <header className="mb-6 grid gap-5 rounded-[28px] border border-[#e2d8c7] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(246,241,232,0.9))] p-5 shadow-[0_18px_60px_rgba(86,70,42,0.08)] dark:border-[#26313f] dark:bg-[linear-gradient(135deg,rgba(18,25,35,0.96),rgba(10,15,23,0.92))] md:grid-cols-[minmax(0,1fr)_320px] md:p-7">
+        <header className="mb-6 grid gap-5 rounded-[28px] border border-[#d0d2c7] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(246,241,232,0.9))] p-5 shadow-[0_18px_60px_rgba(86,70,42,0.08)] dark:border-[#26313f] dark:bg-[linear-gradient(135deg,rgba(18,25,35,0.96),rgba(10,15,23,0.92))] md:grid-cols-[minmax(0,1fr)_320px] md:p-7">
           <div>
-            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.28em] text-[#9d8f76] dark:text-[#94a1b4]">Interactive Research</p>
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.28em] text-[#848676] dark:text-[#94a1b4]">Interactive Research</p>
             <h1 className="mb-3 max-w-[720px] font-serif text-[1.8rem] font-semibold tracking-[0.02em] text-[#1d1a16] dark:text-gray-100 md:text-[2.38rem]">
               日月运行交互可视化
             </h1>
-            <p className="mb-0 max-w-[760px] text-[15px] leading-[1.85] text-[#5e5548] dark:text-gray-300">
+            <p className="mb-0 max-w-[760px] text-[15px] leading-[1.85] text-[#505048] dark:text-gray-300">
               用日心视角把太阳、地球、月球放在同一个可操作模型里：太阳位于系统中心，地球绕太阳公转并自转，月球绕地运行形成月相循环。参数为近似模型，用于我自己的富页面探索、现象复盘和长期专研记录。
             </p>
           </div>
@@ -299,11 +299,11 @@ export default function SunMoonMotionClient() {
               orbitRunKey={orbitRunKey}
             />
 
-            <div className="rounded-[24px] border border-[#e2d8c7] bg-[#fcfaf5] p-5 dark:border-[#283342] dark:bg-[#101720]">
+            <div className="rounded-[24px] border border-[#d0d2c7] bg-[#f7f8f5] p-5 dark:border-[#283342] dark:bg-[#101720]">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9b8e78] dark:text-[#93a0b3]">Research Controls</p>
-                  <h2 className="mb-0 border-b-0 pb-0 text-[1.15rem] font-semibold text-[#211d17] dark:text-gray-100">富页面探索控制台</h2>
+                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#848678] dark:text-[#93a0b3]">Research Controls</p>
+                  <h2 className="mb-0 border-b-0 pb-0 text-[1.15rem] font-semibold text-[#1a1b17] dark:text-gray-100">富页面探索控制台</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   <IconButton label={playing ? '暂停实时同步' : '实时同步'} active={playing} onClick={() => setPlaying((value) => !value)}>
@@ -329,19 +329,19 @@ export default function SunMoonMotionClient() {
 
               <div className="grid gap-5 md:grid-cols-2">
                 <label className="block">
-                  <span className="mb-2 flex justify-between text-sm font-medium text-[#40382d] dark:text-gray-200"><span>一天中的时间</span><span>{formatTime(time)}</span></span>
+                  <span className="mb-2 flex justify-between text-sm font-medium text-[#34342d] dark:text-gray-200"><span>一天中的时间</span><span>{formatTime(time)}</span></span>
                   <input className="w-full accent-[#1e3a5f]" type="range" min="0" max="23.99" step="0.05" value={time} onChange={(e) => setTime(Number(e.target.value))} />
                 </label>
                 <label className="block">
-                  <span className="mb-2 flex justify-between text-sm font-medium text-[#40382d] dark:text-gray-200"><span>月龄</span><span>{phaseInfo.age.toFixed(1)} 天</span></span>
+                  <span className="mb-2 flex justify-between text-sm font-medium text-[#34342d] dark:text-gray-200"><span>月龄</span><span>{phaseInfo.age.toFixed(1)} 天</span></span>
                   <input className="w-full accent-[#1e3a5f]" type="range" min="0" max={SYNODIC_MONTH} step="0.1" value={moonDay} onChange={(e) => setMoonDay(Number(e.target.value))} />
                 </label>
                 <label className="block">
-                  <span className="mb-2 flex justify-between text-sm font-medium text-[#40382d] dark:text-gray-200"><span>观察纬度</span><span>{latitude}°N</span></span>
+                  <span className="mb-2 flex justify-between text-sm font-medium text-[#34342d] dark:text-gray-200"><span>观察纬度</span><span>{latitude}°N</span></span>
                   <input className="w-full accent-[#1e3a5f]" type="range" min="0" max="55" step="1" value={latitude} onChange={(e) => setLatitude(Number(e.target.value))} />
                 </label>
                 <label className="block">
-                  <span className="mb-2 flex justify-between text-sm font-medium text-[#40382d] dark:text-gray-200"><span>季节倾向</span><span>{season < -0.35 ? '冬季' : season > 0.35 ? '夏季' : '春秋'}</span></span>
+                  <span className="mb-2 flex justify-between text-sm font-medium text-[#34342d] dark:text-gray-200"><span>季节倾向</span><span>{season < -0.35 ? '冬季' : season > 0.35 ? '夏季' : '春秋'}</span></span>
                   <input className="w-full accent-[#1e3a5f]" type="range" min="-1" max="1" step="0.05" value={season} onChange={(e) => setSeason(Number(e.target.value))} />
                 </label>
               </div>
@@ -352,12 +352,12 @@ export default function SunMoonMotionClient() {
                     key={item.label}
                     type="button"
                     onClick={() => setMoonDay(item.value)}
-                    className="rounded-full border border-[#d8cfbf] bg-white/78 px-3 py-1.5 text-[13px] font-medium text-[#4b4235] transition hover:-translate-y-0.5 hover:border-[#a99a82] dark:border-[#344152] dark:bg-[#121a24] dark:text-gray-100 dark:hover:border-[#536175]"
+                    className="rounded-full border border-[#c8c9bf] bg-white/78 px-3 py-1.5 text-[13px] font-medium text-[#3d3d35] transition hover:-translate-y-0.5 hover:border-[#909282] dark:border-[#344152] dark:bg-[#121a24] dark:text-gray-100 dark:hover:border-[#536175]"
                   >
                     {item.label}
                   </button>
                 ))}
-                <span className="ml-auto rounded-full border border-[#d8cfbf] bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[#5f5548] dark:border-[#344152] dark:bg-[#121a24] dark:text-gray-300">
+                <span className="ml-auto rounded-full border border-[#c8c9bf] bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[#505048] dark:border-[#344152] dark:bg-[#121a24] dark:text-gray-300">
                   3D 位置按当前时间与月龄同步
                 </span>
               </div>
@@ -365,10 +365,10 @@ export default function SunMoonMotionClient() {
           </div>
 
           <aside className="min-w-0 space-y-5">
-            <div className="overflow-hidden rounded-[24px] border border-[#e5dccf] bg-[#fcfaf5] p-5 dark:border-[#283342] dark:bg-[#101720]">
-              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9b8e78] dark:text-[#93a0b3]">Location State</p>
-              <h2 className="mb-3 border-b-0 pb-0 text-[1.08rem] font-semibold leading-snug text-[#211d17] dark:text-gray-100">广州当前观测状态</h2>
-              <div className="rounded-2xl border border-[#eadfce] bg-white/62 px-3 dark:border-[#263341] dark:bg-[#111923]">
+            <div className="overflow-hidden rounded-[24px] border border-[#d7d7cf] bg-[#f7f8f5] p-5 dark:border-[#283342] dark:bg-[#101720]">
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#848678] dark:text-[#93a0b3]">Location State</p>
+              <h2 className="mb-3 border-b-0 pb-0 text-[1.08rem] font-semibold leading-snug text-[#1a1b17] dark:text-gray-100">广州当前观测状态</h2>
+              <div className="rounded-2xl border border-[#d8d9ce] bg-white/62 px-3 dark:border-[#263341] dark:bg-[#111923]">
                 <CompactMetric label="时间" value={currentDateLabel} />
                 <CompactMetric label="经纬度" value={`${FOCUSED_LOCATION.latitude.toFixed(2)}°N / ${FOCUSED_LOCATION.longitude.toFixed(2)}°E`} />
                 <CompactMetric label="真太阳时" value={formatTime(sun.solarTime)} />
@@ -380,13 +380,13 @@ export default function SunMoonMotionClient() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-[24px] border border-[#e5dccf] bg-[#fcfaf5] p-5 dark:border-[#283342] dark:bg-[#101720]">
+            <div className="overflow-hidden rounded-[24px] border border-[#d7d7cf] bg-[#f7f8f5] p-5 dark:border-[#283342] dark:bg-[#101720]">
               <div className="mb-4 flex flex-wrap items-center gap-4">
                 <PhaseIcon phase={phaseInfo.phase} size={104} />
                 <div>
-                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9b8e78] dark:text-[#93a0b3]">Lunar Phase</p>
-                  <h2 className="mb-1 border-b-0 pb-0 text-[1.18rem] font-semibold text-[#211d17] dark:text-gray-100">{phaseInfo.name}</h2>
-                  <p className="mb-0 text-[13px] leading-6 text-[#655d50] dark:text-gray-300">{phaseInfo.note}</p>
+                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#848678] dark:text-[#93a0b3]">Lunar Phase</p>
+                  <h2 className="mb-1 border-b-0 pb-0 text-[1.18rem] font-semibold text-[#1a1b17] dark:text-gray-100">{phaseInfo.name}</h2>
+                  <p className="mb-0 text-[13px] leading-6 text-[#575850] dark:text-gray-300">{phaseInfo.note}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -395,10 +395,10 @@ export default function SunMoonMotionClient() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-[24px] border border-[#e5dccf] bg-[#fcfaf5] p-5 dark:border-[#283342] dark:bg-[#101720]">
-              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#9b8e78] dark:text-[#93a0b3]">Research Notes</p>
-              <h2 className="mb-3 border-b-0 pb-0 text-[1.15rem] font-semibold text-[#211d17] dark:text-gray-100">专研观察点</h2>
-              <ul className="m-0 space-y-3 pl-4 text-[14px] leading-7 text-[#5e5548] dark:text-gray-300">
+            <div className="overflow-hidden rounded-[24px] border border-[#d7d7cf] bg-[#f7f8f5] p-5 dark:border-[#283342] dark:bg-[#101720]">
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#848678] dark:text-[#93a0b3]">Research Notes</p>
+              <h2 className="mb-3 border-b-0 pb-0 text-[1.15rem] font-semibold text-[#1a1b17] dark:text-gray-100">专研观察点</h2>
+              <ul className="m-0 space-y-3 pl-4 text-[14px] leading-7 text-[#505048] dark:text-gray-300">
                 <li>拖动时间，观察地球上的观察点如何从昼半球转入夜半球。</li>
                 <li>讨论“太阳东升西落”为什么是地球自转造成的视运动。</li>
                 <li>观察主图中的太阳中心、地球公转轨道，以及月球绕地运行位置。</li>

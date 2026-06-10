@@ -9,15 +9,15 @@ export default function RecordCard({ record, dense = false }) {
   const themes = Array.isArray(record.plain?.theme) ? record.plain.theme : []
   return (
     <article
-      className={`rounded-lg border border-[#e8dfd0] bg-white/78 ${padding} dark:border-gray-800 dark:bg-[#121821]/78`}
+      className={`rounded-lg border border-[#dee0db] bg-white/78 ${padding} dark:border-gray-800 dark:bg-[#121821]/78`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="font-serif text-base font-semibold text-[#221f19] dark:text-gray-100">
+          <h2 className="font-serif text-base font-semibold text-[#15140f] dark:text-gray-100">
             {record.plain?.title || '未命名记录'}
           </h2>
           {record.plain?.summary ? (
-            <p className="mt-1 text-xs leading-5 text-[#847a67] dark:text-gray-400">{record.plain.summary}</p>
+            <p className="mt-1 text-xs leading-5 text-[#717367] dark:text-gray-400">{record.plain.summary}</p>
           ) : null}
           {themes.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-1">
@@ -34,7 +34,7 @@ export default function RecordCard({ record, dense = false }) {
             </div>
           ) : null}
         </div>
-        <span className="shrink-0 font-mono text-[10px] text-[#a09176] dark:text-[#8e9ab0]">
+        <span className="shrink-0 font-mono text-[10px] text-[#858876] dark:text-[#8e9ab0]">
           {new Date(record.updatedAt).toLocaleDateString('zh-CN')}
         </span>
       </div>

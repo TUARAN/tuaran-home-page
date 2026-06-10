@@ -444,14 +444,14 @@ const earliest = changelog[changelog.length - 1]
 export default function ChangelogPage() {
   return (
     <main className="mx-auto w-full max-w-[1080px] px-4 py-8 md:py-10">
-      <header className="border-b border-[#e8dfd0] pb-6 dark:border-gray-800">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#8e9ab0]">
+      <header className="border-b border-[#dee0db] pb-6 dark:border-gray-800">
+        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
           Site Changelog · 站点更新记录
         </p>
-        <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[#221f19] dark:text-gray-100 md:text-3xl">
+        <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[#15140f] dark:text-gray-100 md:text-3xl">
           按周记录这个站点如何长出来
         </h1>
-        <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#5d554a] dark:text-gray-300">
+        <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
           这份日志从 git 提交历史归纳而来，只记录活跃开发周。每个版本号对应一个自然周，例如 v2026.22
           表示 2026 年第 22 周。
         </p>
@@ -464,12 +464,12 @@ export default function ChangelogPage() {
           ].map(([label, value]) => (
             <div
               key={label}
-              className="rounded-xl border border-[#ece5d8] bg-white/72 px-3 py-2 dark:border-[#232c36] dark:bg-[#121821]/72"
+              className="rounded-xl border border-[#dfe0d8] bg-white/72 px-3 py-2 dark:border-[#232c36] dark:bg-[#121821]/72"
             >
-              <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#a09176] dark:text-[#8e9ab0]">
+              <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#858876] dark:text-[#8e9ab0]">
                 {label}
               </dt>
-              <dd className="mt-1 text-[15px] font-semibold text-[#221f19] dark:text-gray-100">{value}</dd>
+              <dd className="mt-1 text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{value}</dd>
             </div>
           ))}
         </dl>
@@ -479,29 +479,29 @@ export default function ChangelogPage() {
         {changelog.map((entry) => (
           <li
             key={entry.version}
-            className="grid gap-3 rounded-2xl border border-[#e8e2d6] bg-[#fcfbf7] p-4 dark:border-[#252d36] dark:bg-[#0f141b] md:grid-cols-[148px_1fr] md:p-5"
+            className="grid gap-3 rounded-2xl border border-[#dcded6] bg-[#f9faf7] p-4 dark:border-[#252d36] dark:bg-[#0f141b] md:grid-cols-[148px_1fr] md:p-5"
           >
             <div className="flex flex-wrap items-center gap-2 md:block">
-              <p className="font-mono text-[13px] font-semibold text-[#8b5a1f] dark:text-[#e0b572]">
+              <p className="font-mono text-[13px] font-semibold text-[#8b5a1f] dark:text-[#989e72]">
                 {entry.version}
               </p>
-              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#a09176] dark:text-[#8e9ab0] md:mt-1">
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#858876] dark:text-[#8e9ab0] md:mt-1">
                 {entry.week}
               </p>
-              <p className="text-[12px] text-[#7c7565] dark:text-[#8e98a8] md:mt-3">{entry.range}</p>
-              <p className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-[#b4aa98] dark:text-[#647083] md:mt-1">
+              <p className="text-[12px] text-[#6d6f65] dark:text-[#8e98a8] md:mt-3">{entry.range}</p>
+              <p className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-[#a2a498] dark:text-[#647083] md:mt-1">
                 {entry.commits} commits
               </p>
             </div>
             <article>
-              <h2 className="font-serif text-[18px] font-semibold text-[#221f19] dark:text-gray-100">
+              <h2 className="font-serif text-[18px] font-semibold text-[#15140f] dark:text-gray-100">
                 {entry.title}
               </h2>
-              <p className="mt-1 text-[13.5px] leading-6 text-[#5f5a4d] dark:text-gray-300">{entry.summary}</p>
+              <p className="mt-1 text-[13.5px] leading-6 text-[#53554d] dark:text-gray-300">{entry.summary}</p>
               <ul className="mt-3 space-y-1.5">
                 {entry.items.map((item) => (
-                  <li key={item} className="flex gap-2 text-[13px] leading-6 text-[#5d554a] dark:text-gray-300">
-                    <span className="mt-[0.65em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#c5b89c] dark:bg-[#536071]" />
+                  <li key={item} className="flex gap-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-300">
+                    <span className="mt-[0.65em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#aaae9c] dark:bg-[#536071]" />
                     <span>{item}</span>
                   </li>
                 ))}

@@ -44,8 +44,8 @@ export default function ReadingTabs({ categories, reviews }) {
 
   return (
     <section className="mt-8">
-      <div className="mb-4 flex flex-col gap-2 border-b border-[#e8dfd0] pb-2 dark:border-gray-800">
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#a09176] dark:text-[#8e9ab0]">
+      <div className="mb-4 flex flex-col gap-2 border-b border-[#dee0db] pb-2 dark:border-gray-800">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
           Book Notes
         </p>
         <nav aria-label="书库分类" className="flex flex-nowrap items-center gap-4 overflow-x-auto text-sm">
@@ -56,7 +56,7 @@ export default function ReadingTabs({ categories, reviews }) {
               'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0.5 pb-2 transition-colors',
               tab === TAB_ALL
                 ? 'border-[#333] font-semibold text-[#222] dark:border-gray-100 dark:text-gray-100'
-                : 'border-transparent text-[#716958] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
+                : 'border-transparent text-[#616358] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
             )}
           >
             <span>全部</span>
@@ -73,7 +73,7 @@ export default function ReadingTabs({ categories, reviews }) {
                   'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0.5 pb-2 transition-colors',
                   active
                     ? 'border-[#333] font-semibold text-[#222] dark:border-gray-100 dark:text-gray-100'
-                    : 'border-transparent text-[#716958] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
+                    : 'border-transparent text-[#616358] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
                 )}
               >
                 <span>{item.label}</span>
@@ -102,18 +102,18 @@ export default function ReadingTabs({ categories, reviews }) {
                   </div>
                   <p className="mt-2 text-sm leading-6 text-[#666] dark:text-gray-300">{category.description}</p>
                 </div>
-                <div className="shrink-0 rounded-md border border-[#e8dfd0] bg-[#faf8f4] px-3 py-2 text-xs text-[#7a6d58] dark:border-gray-800 dark:bg-gray-950 dark:text-gray-400">
+                <div className="shrink-0 rounded-md border border-[#dee0db] bg-[#f6f7f4] px-3 py-2 text-xs text-[#646658] dark:border-gray-800 dark:bg-gray-950 dark:text-gray-400">
                   {categoryReviews.length ? `${categoryReviews.length} 篇笔记` : '待读书评'}
                 </div>
               </div>
 
               <div className="mt-4">
-                <p className="mb-2 text-xs font-semibold text-[#8d806d] dark:text-gray-400">书单</p>
+                <p className="mb-2 text-xs font-semibold text-[#63655f] dark:text-gray-400">书单</p>
                 <div className="flex flex-wrap gap-2">
                   {category.books.map((book) => (
                     <span
                       key={`${category.slug}-${book}`}
-                      className="rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-1 text-xs text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300"
+                      className="rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-1 text-xs text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300"
                     >
                       《{book}》
                     </span>
@@ -142,9 +142,9 @@ export default function ReadingTabs({ categories, reviews }) {
 
 function ReviewCard({ review }) {
   return (
-    <article className="rounded-md border border-[#e8dfd0] bg-[#fdfcf9] p-4 dark:border-gray-800 dark:bg-gray-950/60">
+    <article className="rounded-md border border-[#dee0db] bg-[#fafbf9] p-4 dark:border-gray-800 dark:bg-gray-950/60">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-[#ddd8cb] bg-white px-2 py-[1px] text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+        <span className="rounded-full border border-[#d1d3cb] bg-white px-2 py-[1px] text-[11px] text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
           {review.kind}
         </span>
         <h3 className="text-base font-semibold text-[#333] dark:text-gray-100">{review.title}</h3>
@@ -178,7 +178,7 @@ function ReviewCard({ review }) {
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-[860px] w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[#e8dfd0] dark:border-gray-800">
+              <tr className="border-b border-[#dee0db] dark:border-gray-800">
                 <th className="py-2 pr-4 text-left text-xs font-bold text-[#444] dark:text-gray-200">派系</th>
                 <th className="py-2 pr-4 text-left text-xs font-bold text-[#444] dark:text-gray-200">核心问题</th>
                 <th className="py-2 pr-4 text-left text-xs font-bold text-[#444] dark:text-gray-200">代表人物</th>

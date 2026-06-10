@@ -55,19 +55,19 @@ function resolveResearchEntry(category, slug) {
 function ResearchEngagementPanel({ articleKey, related }) {
   return (
     <aside className="order-1 space-y-4 lg:order-2 lg:sticky lg:top-24">
-      <section className="rounded-lg border border-[#e8dfd0] bg-[#fdfcf9] p-4 dark:border-gray-800 dark:bg-[#0f141b]">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+      <section className="rounded-lg border border-[#dee0db] bg-[#fafbf9] p-4 dark:border-gray-800 dark:bg-[#0f141b]">
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
           Support
         </p>
         <h2 className="mt-2 text-[15px] font-semibold text-[#444] dark:text-gray-200">支持这篇调研</h2>
-        <p className="mt-1 text-[12px] leading-5 text-[#85806f] dark:text-[#8a93a3]">
+        <p className="mt-1 text-[12px] leading-5 text-[#777a6f] dark:text-[#8a93a3]">
           一下点赞、一句评论，都是对继续写下去的支持。
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <ArticleLikeButton articleKey={articleKey} />
           <a
             href="#comments"
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#dcd3c0] bg-white px-3.5 text-[13.5px] font-medium text-[#5a5142] no-underline transition-all hover:-translate-y-px hover:border-[#b9aa8c] hover:text-[#221f19] hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#caccc0] bg-white px-3.5 text-[13.5px] font-medium text-[#4a4c42] no-underline transition-all hover:-translate-y-px hover:border-[#9ca08c] hover:text-[#15140f] hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100"
           >
             <svg
               viewBox="0 0 20 20"
@@ -87,8 +87,8 @@ function ResearchEngagementPanel({ articleKey, related }) {
       </section>
 
       {related.length ? (
-        <section className="rounded-lg border border-[#e8dfd0] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#a09176] dark:text-[#8e9ab0]">
+        <section className="rounded-lg border border-[#dee0db] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
             Related
           </p>
           <h2 className="mt-2 text-base font-semibold text-[#444] dark:text-gray-200">同类调研</h2>
@@ -97,7 +97,7 @@ function ResearchEngagementPanel({ articleKey, related }) {
               <li key={r.slug}>
                 <Link
                   href={`/articles/research/${r.category}/${r.slug}`}
-                  className="block rounded-md border border-transparent px-2 py-2 no-underline transition hover:border-[#e8dfd0] hover:bg-[#fdfcf9] dark:hover:border-gray-700 dark:hover:bg-gray-900"
+                  className="block rounded-md border border-transparent px-2 py-2 no-underline transition hover:border-[#dee0db] hover:bg-[#fafbf9] dark:hover:border-gray-700 dark:hover:bg-gray-900"
                 >
                   {r.date ? (
                     <time className="font-mono text-[11px] text-[#999] dark:text-gray-500">{r.date}</time>
@@ -295,7 +295,7 @@ export default async function ResearchDetailPage({ params }) {
           {entry.topicType && TOPIC_TYPE_META[entry.topicType] ? (
             <>
               <span aria-hidden="true">·</span>
-              <span className="inline-flex items-center rounded-full border border-[#e9d5b8] bg-[#fbf3e3] px-2 py-[1px] text-[10px] text-[#8a5a14] dark:border-[#3a2f1c] dark:bg-[#2a2115] dark:text-[#e2bd75]">
+              <span className="inline-flex items-center rounded-full border border-[#c9cbb8] bg-[#ebede3] px-2 py-[1px] text-[10px] text-[#8a5a14] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]">
                 {TOPIC_TYPE_META[entry.topicType].label}
               </span>
             </>
@@ -309,7 +309,7 @@ export default async function ResearchDetailPage({ params }) {
           {entry.version ? (
             <>
               <span aria-hidden="true">·</span>
-              <span className="inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-[1px] text-[10px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+              <span className="inline-flex items-center rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-[1px] text-[10px] text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
                 {entry.version}
               </span>
             </>
@@ -349,17 +349,17 @@ export default async function ResearchDetailPage({ params }) {
           )}
         </div>
         <h1 className="mt-3 text-2xl text-[#444] dark:text-gray-200 leading-snug">{entry.title}</h1>
-        <aside className="mt-4 border-l-2 border-[#b7791f] bg-[#fbf3e3] px-4 py-3 text-sm leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:bg-[#2a2115] dark:text-gray-200">
+        <aside className="mt-4 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 text-sm leading-7 text-[#333431] dark:border-[#9ba475] dark:bg-[#1c1d15] dark:text-gray-200">
           <AuthorByline />
           {entry.tldr ? (
-            <div className="mt-3 border-t border-[#e2cea0]/60 pt-3 dark:border-[#5a4f3a]/50">
-              <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#e2bd75]">
+            <div className="mt-3 border-t border-[#b7bea0]/60 pt-3 dark:border-[#45483a]/50">
+              <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#9ba475]">
                 TL;DR
               </span>
               {entry.tldr}
             </div>
           ) : entry.summary ? (
-            <div className="mt-3 border-t border-[#e2cea0]/60 pt-3 dark:border-[#5a4f3a]/50">
+            <div className="mt-3 border-t border-[#b7bea0]/60 pt-3 dark:border-[#45483a]/50">
               {entry.summary}
             </div>
           ) : null}
@@ -369,7 +369,7 @@ export default async function ResearchDetailPage({ params }) {
             {entry.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center rounded-full border border-[#ddd8cb] bg-white/70 px-2 py-0.5 text-[11px] text-[#5f5a4d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300"
+                className="inline-flex items-center rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-0.5 text-[11px] text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300"
               >
                 #{tag}
               </span>

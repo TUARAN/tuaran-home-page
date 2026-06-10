@@ -12,7 +12,7 @@ export default function SiteFooter({ className = '' }) {
   return (
     <footer
       className={[
-        'border-t border-[#e8dfd0] pt-4 text-xs text-[#999] dark:border-gray-800',
+        'border-t border-[#dee0db] pt-4 text-xs text-[#999] dark:border-gray-800',
         className,
       ].join(' ')}
     >
@@ -47,7 +47,7 @@ export default function SiteFooter({ className = '' }) {
           href="https://github.com/TUARAN/tuaran-home-page/actions/workflows/ci.yml"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center rounded border border-[#ddd3c2] px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-[#6f6557] opacity-80 transition-opacity hover:opacity-100 dark:border-gray-700 dark:text-gray-300"
+          className="inline-flex items-center rounded border border-[#cbcdc2] px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-[#5f6057] opacity-80 transition-opacity hover:opacity-100 dark:border-gray-700 dark:text-gray-300"
           title="GitHub Actions 构建状态：点击查看最近一次 lint+build 是否通过"
         >
           CI Status

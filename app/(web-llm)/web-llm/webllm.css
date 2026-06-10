@@ -1,15 +1,15 @@
 #web-llm-app-shell {
-  --primary: #5f5648;
-  --primary-strong: #3d362b;
+  --primary: #505148;
+  --primary-strong: #262724;
   --accent: #004276;
-  --page-bg: #f6f2eb;
-  --sidebar-bg: #fcfbf7;
-  --panel-bg: #fffefa;
-  --panel-soft: #f8f4ec;
+  --page-bg: #eff0eb;
+  --sidebar-bg: #f9faf7;
+  --panel-bg: #fcfdfa;
+  --panel-soft: #f0f1ec;
   --panel-border: rgba(91, 78, 53, 0.16);
   --tint: rgba(91, 78, 53, 0.1);
   --text-main: #1d1a16;
-  --text-muted: #5f5a4d;
+  --text-muted: #53554d;
   --danger: #b42318;
   --success: #166534;
   --warning: #7a4a00;
@@ -457,7 +457,7 @@
   overflow-y: auto;
   border: 1px solid var(--panel-border);
   border-radius: 10px;
-  background: #fbf8f2;
+  background: #f5f6f2;
 }
 
 #web-llm-app-shell .message {
@@ -490,7 +490,7 @@
 #web-llm-app-shell .ai-msg {
   align-self: flex-start;
   border: 1px solid var(--panel-border);
-  background: #fffefa;
+  background: #fcfdfa;
   color: var(--text-main);
 }
 
@@ -694,8 +694,8 @@
 }
 
 .dark #web-llm-app-shell {
-  --primary: #6c604d;
-  --primary-strong: #e8dcc4;
+  --primary: #454642;
+  --primary-strong: #d1d4c4;
   --accent: #93c5fd;
   --page-bg: #0b1016;
   --sidebar-bg: #10151d;
@@ -704,8 +704,8 @@
   --panel-border: rgba(255, 255, 255, 0.1);
   --tint: rgba(255, 255, 255, 0.08);
   --text-main: #f3f4f6;
-  --text-muted: #a89f90;
-  --danger: #fca5a5;
+  --text-muted: #989a90;
+  --danger: #c3a5a5;
   --success: #86efac;
   --warning: #facc15;
   --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.32);

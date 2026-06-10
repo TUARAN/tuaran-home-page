@@ -179,13 +179,13 @@ function MoneyPathQuadrant() {
     <div className="rounded-xl border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-base font-semibold text-[#333] dark:text-gray-100">门槛 vs 天花板象限</h3>
-        <span className="text-xs text-[#8a8270] dark:text-gray-400">X: 门槛 / Y: 收入天花板</span>
+        <span className="text-xs text-[#797c70] dark:text-gray-400">X: 门槛 / Y: 收入天花板</span>
       </div>
-      <div className="relative h-72 rounded-lg border border-dashed border-[#ddd8cb] bg-[#faf7f0] dark:border-gray-700 dark:bg-[#121821]">
-        <div className="absolute inset-x-0 top-1/2 border-t border-[#e9e2d5] dark:border-gray-700" />
-        <div className="absolute inset-y-0 left-1/2 border-l border-[#e9e2d5] dark:border-gray-700" />
-        <span className="absolute left-2 top-2 text-[11px] text-[#8a8270] dark:text-gray-400">高天花板</span>
-        <span className="absolute right-2 bottom-2 text-[11px] text-[#8a8270] dark:text-gray-400">高门槛</span>
+      <div className="relative h-72 rounded-lg border border-dashed border-[#d1d3cb] bg-[#f4f5f0] dark:border-gray-700 dark:bg-[#121821]">
+        <div className="absolute inset-x-0 top-1/2 border-t border-[#dcddd5] dark:border-gray-700" />
+        <div className="absolute inset-y-0 left-1/2 border-l border-[#dcddd5] dark:border-gray-700" />
+        <span className="absolute left-2 top-2 text-[11px] text-[#797c70] dark:text-gray-400">高天花板</span>
+        <span className="absolute right-2 bottom-2 text-[11px] text-[#797c70] dark:text-gray-400">高门槛</span>
         {MECHANISMS.map((item) => {
           const left = `${(item.barrierScore / 5) * 100}%`
           const top = `${100 - (item.ceilingScore / 5) * 100}%`
@@ -234,16 +234,16 @@ export default function WritingMonetizationDashboardPage() {
         </div>
       </header>
 
-      <section className="mb-8 rounded-2xl border border-[#d8c7a7] bg-[linear-gradient(135deg,#fff7ea,#f7eddc)] p-5 shadow-[0_10px_30px_rgba(138,90,20,0.10)] dark:border-[#3e3426] dark:bg-[linear-gradient(135deg,#2a2115,#1f180f)]">
+      <section className="mb-8 rounded-2xl border border-[#b8bca7] bg-[linear-gradient(135deg,#f1f2ea,#e5e7dc)] p-5 shadow-[0_10px_30px_rgba(138,90,20,0.10)] dark:border-[#2e2f26] dark:bg-[linear-gradient(135deg,#1c1d15,#15150f)]">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-[#8a5a14] dark:text-[#e2bd75]">
+            <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-[#8a5a14] dark:text-[#9ba475]">
               推荐工具
             </p>
-            <p className="mb-0 text-sm text-[#5d503f] dark:text-gray-200">
+            <p className="mb-0 text-sm text-[#333431] dark:text-gray-200">
               如果你希望把这页「机制-平台-赛道-路径」框架直接落地到日常创作流程，可以优先试试 PublishLab。
             </p>
-            <p className="mb-0 mt-1 text-xs text-[#7a6a53] dark:text-[#c8b89d]">
+            <p className="mb-0 mt-1 text-xs text-[#616253] dark:text-[#acaf9d]">
               从内容策略到转化动作，减少试错周期，把写作增长变成可复用系统。
             </p>
           </div>
@@ -254,13 +254,13 @@ export default function WritingMonetizationDashboardPage() {
                 href={item.href}
                 target="_blank"
                 rel="noreferrer"
-                className="no-external-arrow group inline-flex min-h-11 items-center gap-2 rounded-full border border-[#b8842f]/35 bg-white/90 px-4 py-2 text-sm font-semibold text-[#6f4611] no-underline shadow-[0_8px_18px_rgba(105,73,24,0.10)] transition-all visited:text-[#6f4611] hover:-translate-y-0.5 hover:border-[#9a681f]/55 hover:bg-white hover:text-[#4f320b] hover:no-underline hover:shadow-[0_12px_24px_rgba(105,73,24,0.16)] dark:border-[#e2bd75]/30 dark:bg-[#20170e]/80 dark:text-[#f6d28c] dark:visited:text-[#f6d28c] dark:hover:border-[#f1cf8c]/55 dark:hover:bg-[#281c10] dark:hover:text-[#ffe4a8]"
+                className="no-external-arrow group inline-flex min-h-11 items-center gap-2 rounded-full border border-[#b8842f]/35 bg-white/90 px-4 py-2 text-sm font-semibold text-[#6f4611] no-underline shadow-[0_8px_18px_rgba(105,73,24,0.10)] transition-all visited:text-[#6f4611] hover:-translate-y-0.5 hover:border-[#9a681f]/55 hover:bg-white hover:text-[#4f320b] hover:no-underline hover:shadow-[0_12px_24px_rgba(105,73,24,0.16)] dark:border-[#9ba475]/30 dark:bg-[#20170e]/80 dark:text-[#b1ba8c] dark:visited:text-[#b1ba8c] dark:hover:border-[#afb88c]/55 dark:hover:bg-[#281c10] dark:hover:text-[#c6cfa8]"
                 title={item.desc}
               >
                 <span>{item.cta}</span>
                 <span
                   aria-hidden="true"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f1d99f] text-[13px] leading-none text-[#6f4611] transition-transform group-hover:-translate-y-px group-hover:translate-x-px dark:bg-[#3a2a15] dark:text-[#f7d894]"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#bcc59f] text-[13px] leading-none text-[#6f4611] transition-transform group-hover:-translate-y-px group-hover:translate-x-px dark:bg-[#3a2a15] dark:text-[#b7c094]"
                 >
                   ↗
                 </span>
@@ -268,7 +268,7 @@ export default function WritingMonetizationDashboardPage() {
             ))}
           </div>
         </div>
-        <div className="mt-3 rounded-xl border border-[#8a5a14]/20 bg-white/65 px-3 py-2 text-xs text-[#6a573d] dark:border-[#e2bd75]/25 dark:bg-[#15110c]/60 dark:text-[#d8c39b]">
+        <div className="mt-3 rounded-xl border border-[#8a5a14]/20 bg-white/65 px-3 py-2 text-xs text-[#4d4e3d] dark:border-[#9ba475]/25 dark:bg-[#15110c]/60 dark:text-[#b0b59b]">
           {RECOMMENDED_LINKS[0].note}
         </div>
       </section>
@@ -279,7 +279,7 @@ export default function WritingMonetizationDashboardPage() {
             key={card.label}
             className="rounded-xl border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
           >
-            <p className="text-xs tracking-wide text-[#8a8270] dark:text-gray-400">{card.label}</p>
+            <p className="text-xs tracking-wide text-[#797c70] dark:text-gray-400">{card.label}</p>
             <p className="mt-2 text-2xl font-semibold text-[#1f2937] dark:text-gray-100">{card.value}</p>
             <p className="mt-1 text-xs text-[#666] dark:text-gray-400">{card.note}</p>
           </article>
@@ -293,11 +293,11 @@ export default function WritingMonetizationDashboardPage() {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr>
-                  <th className="border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">机制</th>
-                  <th className="border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">资金路径</th>
-                  <th className="border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">代表平台</th>
-                  <th className="border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">门槛</th>
-                  <th className="border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">天花板</th>
+                  <th className="border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">机制</th>
+                  <th className="border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">资金路径</th>
+                  <th className="border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">代表平台</th>
+                  <th className="border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">门槛</th>
+                  <th className="border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">天花板</th>
                 </tr>
               </thead>
               <tbody>
@@ -307,16 +307,16 @@ export default function WritingMonetizationDashboardPage() {
                     <td className="border border-[#eee] px-3 py-2 text-[#666] dark:border-gray-800 dark:text-gray-300">{item.moneyFlow}</td>
                     <td className="border border-[#eee] px-3 py-2 text-[#666] dark:border-gray-800 dark:text-gray-300">{item.platforms}</td>
                     <td className="border border-[#eee] px-3 py-2 dark:border-gray-800">
-                      <div className="h-2 rounded bg-[#e9e2d5] dark:bg-gray-700">
-                        <div className="h-2 rounded bg-[#a09176]" style={{ width: scoreWidth(item.barrierScore) }} />
+                      <div className="h-2 rounded bg-[#dcddd5] dark:bg-gray-700">
+                        <div className="h-2 rounded bg-[#858876]" style={{ width: scoreWidth(item.barrierScore) }} />
                       </div>
-                      <span className="mt-1 block text-xs text-[#8a8270] dark:text-gray-400">{item.barrier}</span>
+                      <span className="mt-1 block text-xs text-[#797c70] dark:text-gray-400">{item.barrier}</span>
                     </td>
                     <td className="border border-[#eee] px-3 py-2 dark:border-gray-800">
                       <div className="h-2 rounded bg-[#d9e8f9] dark:bg-gray-700">
                         <div className="h-2 rounded bg-[#3b5b8a]" style={{ width: scoreWidth(item.ceilingScore) }} />
                       </div>
-                      <span className="mt-1 block text-xs text-[#8a8270] dark:text-gray-400">{item.ceiling}</span>
+                      <span className="mt-1 block text-xs text-[#797c70] dark:text-gray-400">{item.ceiling}</span>
                     </td>
                   </tr>
                 ))}
@@ -332,7 +332,7 @@ export default function WritingMonetizationDashboardPage() {
 
       <section className="mt-10 rounded-xl border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100">8 大平台得分卡</h2>
-        <p className="mt-1 text-xs text-[#8a8270] dark:text-gray-400">偏数据侧的快速筛选：看门槛、分成和赛道匹配度。</p>
+        <p className="mt-1 text-xs text-[#797c70] dark:text-gray-400">偏数据侧的快速筛选：看门槛、分成和赛道匹配度。</p>
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           {PLATFORMS.map((platform) => (
             <article key={platform.name} className="rounded-lg border border-[#eee] p-3 dark:border-gray-800">
@@ -340,7 +340,7 @@ export default function WritingMonetizationDashboardPage() {
               <p className="mt-1 text-xs text-[#666] dark:text-gray-300">门槛：{platform.barrier}</p>
               <p className="mt-1 text-xs text-[#666] dark:text-gray-300">分成/单价：{platform.payout}</p>
               <p className="mt-1 text-xs text-[#666] dark:text-gray-300">样本：{platform.sample}</p>
-              <p className="mt-1 text-xs text-[#8a8270] dark:text-gray-400">{platform.fit}</p>
+              <p className="mt-1 text-xs text-[#797c70] dark:text-gray-400">{platform.fit}</p>
             </article>
           ))}
         </div>
@@ -348,7 +348,7 @@ export default function WritingMonetizationDashboardPage() {
 
       <section className="mt-10 rounded-xl border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <h2 className="text-lg font-semibold text-[#333] dark:text-gray-100">掘金小册 Top10 销量样本</h2>
-        <p className="mt-1 text-xs text-[#8a8270] dark:text-gray-400">客单价 9.9-49.9 元，头部技术选题存在明确长尾收益。</p>
+        <p className="mt-1 text-xs text-[#797c70] dark:text-gray-400">客单价 9.9-49.9 元，头部技术选题存在明确长尾收益。</p>
         <div className="mt-4 space-y-3">
           {JUEJIN_TOP10.map((book, idx) => (
             <div key={book.title} className="rounded-lg border border-[#eee] p-3 dark:border-gray-800">
@@ -360,7 +360,7 @@ export default function WritingMonetizationDashboardPage() {
                   销量 {fmtNumber(book.sales)} · 单价 ¥{book.price} · 累计 ¥{fmtNumber(book.revenue)}
                 </p>
               </div>
-              <div className="mt-2 h-2 rounded bg-[#e9e2d5] dark:bg-gray-700">
+              <div className="mt-2 h-2 rounded bg-[#dcddd5] dark:bg-gray-700">
                 <div className="h-2 rounded bg-[#8a5a14]" style={{ width: `${(book.sales / maxSales) * 100}%` }} />
               </div>
             </div>
@@ -377,7 +377,7 @@ export default function WritingMonetizationDashboardPage() {
                 <li key={item.name} className="rounded-lg border border-[#eee] p-3 text-sm dark:border-gray-800">
                   <p className="font-medium text-[#333] dark:text-gray-100">{item.name}</p>
                   <p className="mt-1 text-[#666] dark:text-gray-300">{item.mode}</p>
-                  <p className="mt-1 text-xs text-[#8a8270] dark:text-gray-400">{item.note}</p>
+                  <p className="mt-1 text-xs text-[#797c70] dark:text-gray-400">{item.note}</p>
                 </li>
               ))}
             </ul>
@@ -389,9 +389,9 @@ export default function WritingMonetizationDashboardPage() {
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr>
-                    <th className="border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">维度</th>
-                    <th className="border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">付费平台</th>
-                    <th className="border border-[#eee] bg-[#faf7f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">免费平台</th>
+                    <th className="border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">维度</th>
+                    <th className="border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">付费平台</th>
+                    <th className="border border-[#eee] bg-[#f4f5f0] px-3 py-2 text-left dark:border-gray-800 dark:bg-gray-800/60">免费平台</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -415,7 +415,7 @@ export default function WritingMonetizationDashboardPage() {
           {ROUTES.map((route) => (
             <article key={route.stage} className="rounded-lg border border-[#eee] p-3 dark:border-gray-800">
               <h3 className="text-sm font-semibold text-[#333] dark:text-gray-100">{route.stage}</h3>
-              <p className="mt-1 text-xs text-[#8a8270] dark:text-gray-400">目标：{route.goal}</p>
+              <p className="mt-1 text-xs text-[#797c70] dark:text-gray-400">目标：{route.goal}</p>
               <ol className="mt-2 space-y-1 text-sm text-[#666] dark:text-gray-300">
                 {route.steps.map((step) => (
                   <li key={step}>- {step}</li>
@@ -426,9 +426,9 @@ export default function WritingMonetizationDashboardPage() {
         </div>
       </section>
 
-      <section className="mt-10 rounded-xl border border-[#e9d5b8] bg-[#fbf3e3] p-4 dark:border-[#3a2f1c] dark:bg-[#2a2115]">
-        <h2 className="text-lg font-semibold text-[#8a5a14] dark:text-[#e2bd75]">4 条核心规律</h2>
-        <ul className="mt-3 space-y-2 text-sm text-[#5d503f] dark:text-gray-200">
+      <section className="mt-10 rounded-xl border border-[#c9cbb8] bg-[#ebede3] p-4 dark:border-[#26281c] dark:bg-[#1c1d15]">
+        <h2 className="text-lg font-semibold text-[#8a5a14] dark:text-[#9ba475]">4 条核心规律</h2>
+        <ul className="mt-3 space-y-2 text-sm text-[#333431] dark:text-gray-200">
           {CORE_RULES.map((rule) => (
             <li key={rule}>- {rule}</li>
           ))}

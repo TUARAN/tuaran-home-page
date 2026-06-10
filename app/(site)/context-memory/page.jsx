@@ -16,7 +16,7 @@ const memoryLayers = [
     rule: '每次会话必加载，容量小、优先级最高、长期不变。',
     standard: '行业对应：Hermes Prompt Memory；MemGPT Core Memory。',
     accentClassName: 'border-l-[#b7791f] dark:border-l-[#d69e4a]',
-    badgeClassName: 'bg-[#f7efe0] text-[#8a5a14] dark:bg-[#2a2115] dark:text-[#e2bd75]',
+    badgeClassName: 'bg-[#e8eae0] text-[#8a5a14] dark:bg-[#1c1d15] dark:text-[#9ba475]',
     dotClassName: 'bg-[#b7791f] dark:bg-[#d69e4a]',
   },
   {
@@ -73,9 +73,9 @@ const memoryLayers = [
     ],
     rule: '结构化存储，长期有效，动态更新，用来支撑个性化判断。',
     standard: '行业对应：Hermes User Profile；MemGPT Archival Memory。',
-    accentClassName: 'border-l-[#9a4558] dark:border-l-[#dd8fa1]',
-    badgeClassName: 'bg-[#f3e3e7] text-[#9a4558] dark:bg-[#3a2028] dark:text-[#eba6b5]',
-    dotClassName: 'bg-[#9a4558] dark:bg-[#dd8fa1]',
+    accentClassName: 'border-l-[#9a4558] dark:border-l-[#b695a1]',
+    badgeClassName: 'bg-[#ebe4e7] text-[#9a4558] dark:bg-[#2e2328] dark:text-[#c8abb5]',
+    dotClassName: 'bg-[#9a4558] dark:bg-[#b695a1]',
   },
 ]
 
@@ -92,16 +92,16 @@ export const metadata = {
 export default function ContextMemoryPage() {
   return (
     <main className="context-memory-page w-full max-w-[1120px] mx-auto px-4 py-10">
-      <header className="mb-8 border-b border-[#e5dccd] pb-8 dark:border-[#253140]">
+      <header className="mb-8 border-b border-[#d5d7cd] pb-8 dark:border-[#253140]">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8f8069] dark:text-[#9ca5b5]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#9ca5b5]">
               Agent Readable Personal Memory
             </p>
-            <h1 className="mt-3 max-w-3xl font-serif text-2xl font-semibold tracking-wide text-[#221f19] dark:text-gray-100 md:text-3xl">
+            <h1 className="mt-3 max-w-3xl font-serif text-2xl font-semibold tracking-wide text-[#15140f] dark:text-gray-100 md:text-3xl">
               我的 4 层上下文记忆
             </h1>
-            <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#5d554a] dark:text-gray-300">
+            <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#51514a] dark:text-gray-300">
               把职业、创作、社区、家庭与成长系统整理成一套可复用的个人记忆结构。它既给智能体读取，也给自己每天重新校准方向。
             </p>
           </div>
@@ -109,10 +109,10 @@ export default function ContextMemoryPage() {
             {memoryLayers.map((layer) => (
               <div
                 key={`${layer.level}-summary`}
-                className="rounded-lg border border-[#e5dccd] bg-white/70 px-3 py-3 dark:border-[#253140] dark:bg-[#111820]"
+                className="rounded-lg border border-[#d5d7cd] bg-white/70 px-3 py-3 dark:border-[#253140] dark:bg-[#111820]"
               >
-                <div className="font-mono text-[11px] font-semibold text-[#8f8069] dark:text-[#8ea0b7]">{layer.level}</div>
-                <div className="mt-1 font-medium text-[#2d261d] dark:text-gray-100">{layer.shortTitle}</div>
+                <div className="font-mono text-[11px] font-semibold text-[#767869] dark:text-[#8ea0b7]">{layer.level}</div>
+                <div className="mt-1 font-medium text-[#1a1814] dark:text-gray-100">{layer.shortTitle}</div>
               </div>
             ))}
           </div>
@@ -123,28 +123,28 @@ export default function ContextMemoryPage() {
         {memoryLayers.map((layer) => (
           <article
             key={layer.level}
-            className={`rounded-lg border border-[#e6dfd2] border-l-4 bg-white/80 p-4 shadow-[0_10px_34px_rgba(82,69,45,0.04)] dark:border-[#253140] dark:bg-[#111820]/90 ${layer.accentClassName}`}
+            className={`rounded-lg border border-[#d9dad2] border-l-4 bg-white/80 p-4 shadow-[0_10px_34px_rgba(82,69,45,0.04)] dark:border-[#253140] dark:bg-[#111820]/90 ${layer.accentClassName}`}
           >
             <div className="grid gap-4 lg:grid-cols-[12rem_minmax(0,1fr)]">
               <div>
                 <span className={`inline-flex rounded-md px-2 py-1 font-mono text-[11px] font-semibold ${layer.badgeClassName}`}>
                   {layer.level}
                 </span>
-                <h2 className="mt-3 text-lg font-semibold text-[#221f19] dark:text-gray-100">{layer.title}</h2>
-                <p className="mt-2 text-sm leading-7 text-[#665e53] dark:text-gray-300">{layer.personalTerm}</p>
+                <h2 className="mt-3 text-lg font-semibold text-[#15140f] dark:text-gray-100">{layer.title}</h2>
+                <p className="mt-2 text-sm leading-7 text-[#5a5a53] dark:text-gray-300">{layer.personalTerm}</p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="h-px flex-1 bg-[#ebe5d8] dark:bg-[#253140]" />
-                    <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8f8069] dark:text-[#8ea0b7]">
+                    <span className="h-px flex-1 bg-[#dfe0d8] dark:bg-[#253140]" />
+                    <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#767869] dark:text-[#8ea0b7]">
                       个人侧
                     </span>
                   </div>
                   <ul className="mt-3 space-y-2">
                     {layer.items.map((item) => (
-                      <li key={item} className="flex gap-2 text-sm leading-7 text-[#5f5a4d] dark:text-gray-300">
+                      <li key={item} className="flex gap-2 text-sm leading-7 text-[#53554d] dark:text-gray-300">
                         <span className={`mt-3 h-1.5 w-1.5 shrink-0 rounded-full ${layer.dotClassName}`} />
                         <span>{item}</span>
                       </li>
@@ -152,9 +152,9 @@ export default function ContextMemoryPage() {
                   </ul>
                 </div>
 
-                <div className="border-t border-[#ebe5d8] pt-4 dark:border-[#253140] md:border-l md:border-t-0 md:pl-4 md:pt-0">
+                <div className="border-t border-[#dfe0d8] pt-4 dark:border-[#253140] md:border-l md:border-t-0 md:pl-4 md:pt-0">
                   <div className="flex items-center gap-2">
-                    <span className="h-px flex-1 bg-[#ebe5d8] dark:bg-[#253140]" />
+                    <span className="h-px flex-1 bg-[#dfe0d8] dark:bg-[#253140]" />
                     <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#61748a] dark:text-[#8ea0b7]">
                       智能体侧
                     </span>
@@ -177,22 +177,22 @@ export default function ContextMemoryPage() {
       {/* L5：真实运行中的记忆样本（加密 + 版本） */}
       <section
         aria-label="L5 实际运行中的记忆样本"
-        className="mt-10 rounded-lg border border-l-4 border-[#e6dfd2] border-l-[#4a5560] bg-white/80 p-4 shadow-[0_10px_34px_rgba(82,69,45,0.04)] dark:border-[#253140] dark:border-l-[#7a8696] dark:bg-[#111820]/90"
+        className="mt-10 rounded-lg border border-l-4 border-[#d9dad2] border-l-[#4a5560] bg-white/80 p-4 shadow-[0_10px_34px_rgba(82,69,45,0.04)] dark:border-[#253140] dark:border-l-[#7a8696] dark:bg-[#111820]/90"
       >
         <div className="grid gap-4 lg:grid-cols-[12rem_minmax(0,1fr)]">
           <div>
             <span className="inline-flex rounded-md bg-[#e8eaec] px-2 py-1 font-mono text-[11px] font-semibold text-[#3a4450] dark:bg-[#1f2935] dark:text-[#aebcce]">
               L5
             </span>
-            <h2 className="mt-3 text-lg font-semibold text-[#221f19] dark:text-gray-100">
+            <h2 className="mt-3 text-lg font-semibold text-[#15140f] dark:text-gray-100">
               实际运行中的记忆样本
             </h2>
-            <p className="mt-2 text-sm leading-7 text-[#665e53] dark:text-gray-300">
+            <p className="mt-2 text-sm leading-7 text-[#5a5a53] dark:text-gray-300">
               上面四层是理念，这一层是 Claude Code / 仓库 ai-context/ 里真实写下的内容快照。AES-GCM 加密上传，带版本时间线，密码只在我自己的浏览器里解密。
             </p>
           </div>
           <div className="space-y-4">
-            <div className="rounded-md border border-dashed border-[#d6cdb8] bg-[#fbf6ec] px-3 py-2 text-xs leading-6 text-[#7c6643] dark:border-[#33425a] dark:bg-[#0a1119] dark:text-[#a9b3c4]">
+            <div className="rounded-md border border-dashed border-[#c2c6b8] bg-[#f1f2ec] px-3 py-2 text-xs leading-6 text-[#575a43] dark:border-[#33425a] dark:bg-[#0a1119] dark:text-[#a9b3c4]">
               本板块是「自用 + 透明感」并存：访客能看到「这里有几个记忆文件、各更新过多少版」，但具体内容必须密码解密。
               密文已随仓库 push，未授权方读到的只是 base64 噪声。
             </div>

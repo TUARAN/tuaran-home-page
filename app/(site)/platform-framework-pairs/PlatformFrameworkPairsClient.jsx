@@ -127,20 +127,20 @@ export default function PlatformFrameworkPairsClient() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
       {/* ---- Header：研报主标题 ---- */}
-      <header className="border-b border-[#e8dfd0] pb-6 dark:border-gray-800">
+      <header className="border-b border-[#dee0db] pb-6 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#e2bd75]">
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#9ba475]">
             Featured Research · 三极割据
           </span>
           <span
-            className="rounded-full bg-[#f4d4cf] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b3a36] dark:bg-[#3a1d1c] dark:text-[#ed9d97]"
+            className="rounded-full bg-[#dcd2cf] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b3a36] dark:bg-[#261d1c] dark:text-[#b59b97]"
             title="官方公告已发布"
           >
             事件已确认
           </span>
         </div>
         <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <h1 className="max-w-4xl font-serif text-[24px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[30px]">
+          <h1 className="max-w-4xl font-serif text-[24px] font-semibold leading-snug text-[#15140f] dark:text-gray-100 sm:text-[30px]">
             {FRAMEWORK_META.title}
           </h1>
           <SharePageButton
@@ -151,12 +151,12 @@ export default function PlatformFrameworkPairsClient() {
             size="md"
           />
         </div>
-        <p className="mt-4 max-w-3xl border-l-2 border-[#b7791f] pl-3 text-[14px] leading-7 text-[#5d503f] dark:border-[#e2bd75] dark:text-gray-300">
+        <p className="mt-4 max-w-3xl border-l-2 border-[#b7791f] pl-3 text-[14px] leading-7 text-[#333431] dark:border-[#9ba475] dark:text-gray-300">
           {FRAMEWORK_META.thesis}
         </p>
 
         {/* 一手信源 */}
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#8f8069] dark:text-gray-500">
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#767869] dark:text-gray-500">
           <span className="font-mono uppercase tracking-[0.16em]">一手信源</span>
           {PRIMARY_SOURCES.map((s) => (
             <a
@@ -164,7 +164,7 @@ export default function PlatformFrameworkPairsClient() {
               href={s.url}
               target="_blank"
               rel="noreferrer"
-              className="underline underline-offset-2 hover:text-[#5d503f] dark:hover:text-gray-300"
+              className="underline underline-offset-2 hover:text-[#333431] dark:hover:text-gray-300"
             >
               {s.label} ↗
             </a>
@@ -181,22 +181,22 @@ export default function PlatformFrameworkPairsClient() {
                   <div className="flex flex-col items-center pt-1">
                     <span
                       className={`inline-block h-2.5 w-2.5 rounded-full ${
-                        s.highlight ? 'bg-[#a05a3c] dark:bg-[#e2a07a]' : 'bg-[#b7791f] dark:bg-[#e2bd75]'
+                        s.highlight ? 'bg-[#a05a3c] dark:bg-[#9e937a]' : 'bg-[#b7791f] dark:bg-[#9ba475]'
                       }`}
                     />
                     {!isLast ? (
-                      <span aria-hidden="true" className="mt-1 h-8 w-px bg-[#cbb796] dark:bg-[#5a4f3a]" />
+                      <span aria-hidden="true" className="mt-1 h-8 w-px bg-[#a9ab96] dark:bg-[#45483a]" />
                     ) : null}
                   </div>
                   <div className="min-w-[160px] max-w-[220px] pb-2 pr-4">
                     <p
                       className={`font-mono text-[10px] uppercase tracking-[0.14em] ${
-                        s.highlight ? 'text-[#a05a3c] dark:text-[#e2a07a]' : 'text-[#8a5a14] dark:text-[#e2bd75]'
+                        s.highlight ? 'text-[#a05a3c] dark:text-[#9e937a]' : 'text-[#8a5a14] dark:text-[#9ba475]'
                       }`}
                     >
                       {s.year}
                     </p>
-                    <p className="mt-0.5 text-[11.5px] leading-5 text-[#5d503f] dark:text-gray-300">
+                    <p className="mt-0.5 text-[11.5px] leading-5 text-[#333431] dark:text-gray-300">
                       {s.label}
                     </p>
                   </div>
@@ -211,27 +211,27 @@ export default function PlatformFrameworkPairsClient() {
       <ResearchFramework />
 
       {/* ---- 数据视图章节起点：作为研判的延伸 ---- */}
-      <section className="mt-10 border-t-2 border-[#3f3527] pt-6 dark:border-gray-300">
+      <section className="mt-10 border-t-2 border-[#2f3027] pt-6 dark:border-gray-300">
         <div className="flex flex-wrap items-baseline gap-3">
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#e2bd75]">
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#9ba475]">
             配套数据 · 对应研报第 06 节「对竞争对手的连锁反应」
           </span>
         </div>
-        <h2 className="mt-2 font-serif text-[22px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[26px]">
+        <h2 className="mt-2 font-serif text-[22px] font-semibold leading-snug text-[#15140f] dark:text-gray-100 sm:text-[26px]">
           平台 × 前端框架捆绑配对
         </h2>
-        <p className="mt-2 max-w-3xl text-[13px] leading-7 text-[#5d554a] dark:text-gray-400">
+        <p className="mt-2 max-w-3xl text-[13px] leading-7 text-[#51514a] dark:text-gray-400">
           11 组「平台 × 框架」配对的捆绑深度、社区反弹、AI 整合度与生命周期状态。Anthropic × Bun（AI 公司形态）/ CF × VoidZero（平台 + 工具链）/ Vercel × Next（平台 + 框架）在图中分占三极，其它平台被推到对应位置。{' '}
-          <strong className="text-[#a05a3c] dark:text-[#e2a07a]">主观打分仅作分析参考，不构成投资 / 选型决策建议。</strong>
+          <strong className="text-[#a05a3c] dark:text-[#9e937a]">主观打分仅作分析参考，不构成投资 / 选型决策建议。</strong>
         </p>
       </section>
 
       {/* ---- Mode + status ---- */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
           状态
         </span>
-        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#e0d3b8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
+        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#c6cab8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
           {STATUS_FILTERS.map((f) => (
             <button
               key={f.id}
@@ -239,8 +239,8 @@ export default function PlatformFrameworkPairsClient() {
               onClick={() => setStatusFilter(f.id)}
               className={`rounded-md px-3 py-1 transition ${
                 statusFilter === f.id
-                  ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                  : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                  ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                  : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
               }`}
             >
               {f.label}
@@ -248,19 +248,19 @@ export default function PlatformFrameworkPairsClient() {
           ))}
         </div>
 
-        <span className="mx-2 hidden h-4 w-px bg-[#e0d3b8] dark:bg-gray-700 sm:inline-block" />
+        <span className="mx-2 hidden h-4 w-px bg-[#c6cab8] dark:bg-gray-700 sm:inline-block" />
 
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
           模式
         </span>
-        <div className="flex items-center gap-1 rounded-lg border border-[#e0d3b8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
+        <div className="flex items-center gap-1 rounded-lg border border-[#c6cab8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
           <button
             type="button"
             onClick={() => setCompareMode(false)}
             className={`rounded-md px-3 py-1 transition ${
               !compareMode
-                ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
             }`}
           >
             单选详情
@@ -270,8 +270,8 @@ export default function PlatformFrameworkPairsClient() {
             onClick={() => setCompareMode(true)}
             className={`rounded-md px-3 py-1 transition ${
               compareMode
-                ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
             }`}
           >
             两两对比（最多 {MAX_COMPARE}）
@@ -281,7 +281,7 @@ export default function PlatformFrameworkPairsClient() {
           <button
             type="button"
             onClick={() => setCompareIds([])}
-            className="text-[11px] text-[#8f8069] underline underline-offset-2 hover:text-[#5d503f] dark:text-gray-500 dark:hover:text-gray-300"
+            className="text-[11px] text-[#767869] underline underline-offset-2 hover:text-[#333431] dark:text-gray-500 dark:hover:text-gray-300"
           >
             清空（{compareIds.length}）
           </button>
@@ -289,16 +289,16 @@ export default function PlatformFrameworkPairsClient() {
       </div>
 
       {/* ---- Filters ---- */}
-      <section className="mt-3 rounded-xl border border-[#e8dfd0] bg-[#fdfaf3]/70 p-3 dark:border-gray-800 dark:bg-gray-900/60 sm:p-4">
+      <section className="mt-3 rounded-xl border border-[#dee0db] bg-[#f6f8f3]/70 p-3 dark:border-gray-800 dark:bg-gray-900/60 sm:p-4">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索：vercel / vue / lock / Astro…"
-            className="min-w-[200px] flex-1 rounded-lg border border-[#e0d3b8] bg-white px-3 py-1.5 text-sm text-[#221f19] outline-none placeholder:text-[#bbae93] focus:border-[#b7791f] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-600"
+            className="min-w-[200px] flex-1 rounded-lg border border-[#c6cab8] bg-white px-3 py-1.5 text-sm text-[#15140f] outline-none placeholder:text-[#a1a593] focus:border-[#b7791f] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-600"
           />
-          <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#e0d3b8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
+          <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[#c6cab8] bg-white p-0.5 text-xs dark:border-gray-700 dark:bg-gray-950">
             {SORT_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
@@ -306,8 +306,8 @@ export default function PlatformFrameworkPairsClient() {
                 onClick={() => setSortBy(opt.id)}
                 className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 transition ${
                   sortBy === opt.id
-                    ? 'bg-[#3f3527] text-white dark:bg-gray-200 dark:text-[#111]'
-                    : 'text-[#6d614c] hover:bg-[#f5efe2] dark:text-gray-400 dark:hover:bg-gray-800'
+                    ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                    : 'text-[#585a4c] hover:bg-[#e9eae2] dark:text-gray-400 dark:hover:bg-gray-800'
                 }`}
                 title={opt.kind === 'subjective' ? '主观打分 0–100' : '实测数据'}
               >
@@ -328,7 +328,7 @@ export default function PlatformFrameworkPairsClient() {
                 setStatusFilter('all')
                 setSortBy('lockIn')
               }}
-              className="ml-auto text-[11px] text-[#8f8069] underline underline-offset-2 hover:text-[#5d503f] dark:text-gray-500 dark:hover:text-gray-300"
+              className="ml-auto text-[11px] text-[#767869] underline underline-offset-2 hover:text-[#333431] dark:text-gray-500 dark:hover:text-gray-300"
             >
               重置全部
             </button>
@@ -345,12 +345,12 @@ export default function PlatformFrameworkPairsClient() {
       </section>
 
       {/* ---- Quadrant scatter ---- */}
-      <section className="mt-5 rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-900/70 sm:p-4">
+      <section className="mt-5 rounded-xl border border-[#dee0db] bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-900/70 sm:p-4">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
             散点 · 框架影响力 × 捆绑深度
           </h2>
-          <p className="text-[11px] text-[#8f8069] dark:text-gray-500">
+          <p className="text-[11px] text-[#767869] dark:text-gray-500">
             气泡大小 = 平台体量 tier · 颜色 = 状态 · {compareMode ? `点选 ≤${MAX_COMPARE} 个对比` : '点选展开详情'}
           </p>
         </div>
@@ -361,7 +361,7 @@ export default function PlatformFrameworkPairsClient() {
           onHover={setHoverId}
           onSelect={handleSelect}
         />
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#8f8069] dark:text-gray-500">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#767869] dark:text-gray-500">
           {Object.entries(STATUS_META).map(([k, v]) => (
             <LegendDot key={k} color={v.color} label={v.label} />
           ))}
@@ -369,9 +369,9 @@ export default function PlatformFrameworkPairsClient() {
       </section>
 
       {/* ---- Ranking list ---- */}
-      <section className="mt-5 rounded-xl border border-[#e8dfd0] bg-white/80 dark:border-gray-800 dark:bg-gray-900/70">
-        <div className="border-b border-[#e8dfd0] px-3 py-2 dark:border-gray-800 sm:px-4">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+      <section className="mt-5 rounded-xl border border-[#dee0db] bg-white/80 dark:border-gray-800 dark:bg-gray-900/70">
+        <div className="border-b border-[#dee0db] px-3 py-2 dark:border-gray-800 sm:px-4">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
             排行 · 按 {SORT_OPTIONS.find((o) => o.id === sortBy).label} 降序
           </h2>
         </div>
@@ -385,7 +385,7 @@ export default function PlatformFrameworkPairsClient() {
           compareMode={compareMode}
         />
         {!sorted.length ? (
-          <div className="py-12 text-center text-[13px] text-[#8f8069] dark:text-gray-500">
+          <div className="py-12 text-center text-[13px] text-[#767869] dark:text-gray-500">
             没有匹配的配对。试着放宽筛选或重置。
           </div>
         ) : null}
@@ -396,7 +396,7 @@ export default function PlatformFrameworkPairsClient() {
         compareEntities.length ? (
           <CompareTable entities={compareEntities} onRemove={(id) => setCompareIds((prev) => prev.filter((x) => x !== id))} />
         ) : (
-          <div className="mt-5 rounded-xl border border-dashed border-[#e0d3b8] py-10 text-center text-[13px] text-[#8f8069] dark:border-gray-700 dark:text-gray-500">
+          <div className="mt-5 rounded-xl border border-dashed border-[#c6cab8] py-10 text-center text-[13px] text-[#767869] dark:border-gray-700 dark:text-gray-500">
             在上面点选 2–{MAX_COMPARE} 个配对开始对比
           </div>
         )
@@ -410,8 +410,8 @@ export default function PlatformFrameworkPairsClient() {
       ) : null}
 
       {/* ---- Footer with rubric ---- */}
-      <footer className="mt-10 border-t border-[#e8dfd0] pt-6 text-[12px] leading-6 text-[#7a6f5d] dark:border-gray-800 dark:text-gray-500">
-        <p className="font-semibold text-[#5d503f] dark:text-gray-300">数据口径、主观评分 rubric 与免责声明</p>
+      <footer className="mt-10 border-t border-[#dee0db] pt-6 text-[12px] leading-6 text-[#67695d] dark:border-gray-800 dark:text-gray-500">
+        <p className="font-semibold text-[#333431] dark:text-gray-300">数据口径、主观评分 rubric 与免责声明</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
             <strong>实测数据</strong>：框架 stars 取近年 GitHub 公开值近似（千为单位）；平台体量 tier 1–5 表示商业规模量级（个人 → hyperscaler），不是精确 ARR。
@@ -432,7 +432,7 @@ export default function PlatformFrameworkPairsClient() {
             <strong>不构成投资 / 选型建议</strong>。具体技术选型与平台采购请结合自身上下文、合同条款与平台稳定性评估。
           </li>
         </ul>
-        <p className="mt-4 text-[11px] text-[#8f8069] dark:text-gray-600">
+        <p className="mt-4 text-[11px] text-[#767869] dark:text-gray-600">
           数据来源：{TOTALS.source} · 数据更新：2026-06 · 站点：
           <Link href="/" className="underline underline-offset-2">2aran.com</Link>
         </p>
@@ -445,12 +445,12 @@ export default function PlatformFrameworkPairsClient() {
 
 function StatTile({ label, value, sub }) {
   return (
-    <div className="rounded-xl border border-[#e8dfd0] bg-white/70 p-3 dark:border-gray-800 dark:bg-gray-900/70">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">{label}</p>
-      <p className="mt-1 font-serif text-[18px] font-semibold tabular-nums text-[#221f19] dark:text-gray-100 sm:text-[20px]">
+    <div className="rounded-xl border border-[#dee0db] bg-white/70 p-3 dark:border-gray-800 dark:bg-gray-900/70">
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">{label}</p>
+      <p className="mt-1 font-serif text-[18px] font-semibold tabular-nums text-[#15140f] dark:text-gray-100 sm:text-[20px]">
         {value}
       </p>
-      {sub ? <p className="mt-0.5 text-[11px] text-[#8f8069] dark:text-gray-500">{sub}</p> : null}
+      {sub ? <p className="mt-0.5 text-[11px] text-[#767869] dark:text-gray-500">{sub}</p> : null}
     </div>
   )
 }
@@ -469,7 +469,7 @@ function VerifiedBadge({ verified, size = 'sm' }) {
   const sizeCls = size === 'lg' ? 'px-1.5 py-0.5 text-[10px]' : 'px-1 py-px text-[9px]'
   return (
     <span
-      className={`shrink-0 rounded-full bg-[#fde6c6] font-mono uppercase tracking-[0.12em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776] ${sizeCls}`}
+      className={`shrink-0 rounded-full bg-[#d9dbc6] font-mono uppercase tracking-[0.12em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#a1ab76] ${sizeCls}`}
       title="该条目部分数据来自传闻 / 估算 / 推断"
     >
       估算
@@ -606,13 +606,13 @@ function QuadrantChart({ pairs, focusIds, hoverId, onHover, onSelect }) {
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="xMidYMid meet"
-          className="block w-full text-[#5d503f] dark:text-gray-300"
+          className="block w-full text-[#333431] dark:text-gray-300"
           role="img"
           aria-label="平台 × 框架 散点图"
         >
           {/* 四象限背景 + 角落标签 */}
-          <rect x={padL} y={padT} width={innerW} height={midY - padT} fill="#e8d8d3" opacity={0.28} />
-          <rect x={padL} y={midY} width={innerW} height={padT + innerH - midY} fill="#f5efe2" opacity={0.35} />
+          <rect x={padL} y={padT} width={innerW} height={midY - padT} fill="#dad6d3" opacity={0.28} />
+          <rect x={padL} y={midY} width={innerW} height={padT + innerH - midY} fill="#e9eae2" opacity={0.35} />
 
           <text x={padL + 8} y={padT + 14} fontSize="10" fill="#a05a3c" opacity={0.85}>小众 · 深度绑定</text>
           <text x={padL + innerW - 8} y={padT + 14} fontSize="10" fill="#a05a3c" opacity={0.95} textAnchor="end" fontWeight="600">
@@ -623,13 +623,13 @@ function QuadrantChart({ pairs, focusIds, hoverId, onHover, onSelect }) {
             主流 · 自由
           </text>
 
-          <line x1={padL} x2={padL + innerW} y1={midY} y2={midY} stroke="#cbb796" strokeDasharray="3 4" opacity={0.65} />
+          <line x1={padL} x2={padL + innerW} y1={midY} y2={midY} stroke="#a9ab96" strokeDasharray="3 4" opacity={0.65} />
 
           {xTicks.map((t) => {
             const x = xPos(t.v)
             return (
               <g key={t.v}>
-                <line x1={x} x2={x} y1={padT} y2={padT + innerH} stroke="#e8dfd0" strokeDasharray="2 3" opacity={0.5} />
+                <line x1={x} x2={x} y1={padT} y2={padT + innerH} stroke="#dee0db" strokeDasharray="2 3" opacity={0.5} />
                 <text x={x} y={padT + innerH + 14} fontSize="10" fill="currentColor" opacity={0.6} textAnchor="middle">{t.label}</text>
               </g>
             )
@@ -638,7 +638,7 @@ function QuadrantChart({ pairs, focusIds, hoverId, onHover, onSelect }) {
             const y = yPos(t)
             return (
               <g key={t}>
-                <line x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#e8dfd0" strokeDasharray="2 3" opacity={0.4} />
+                <line x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#dee0db" strokeDasharray="2 3" opacity={0.4} />
                 <text x={padL - 6} y={y + 3} fontSize="10" fill="currentColor" opacity={0.6} textAnchor="end">{t}</text>
               </g>
             )
@@ -681,7 +681,7 @@ function QuadrantChart({ pairs, focusIds, hoverId, onHover, onSelect }) {
                   r={r}
                   fill={fill}
                   opacity={isFocused || isHover ? 0.92 : 0.6}
-                  stroke={isFocused ? '#221f19' : isHover ? '#3f3527' : 'rgba(255,255,255,0.85)'}
+                  stroke={isFocused ? '#15140f' : isHover ? '#2f3027' : 'rgba(255,255,255,0.85)'}
                   strokeWidth={isFocused ? 2 : isHover ? 1.5 : 1}
                 />
                 {(() => {
@@ -693,7 +693,7 @@ function QuadrantChart({ pairs, focusIds, hoverId, onHover, onSelect }) {
                       y={pos.y}
                       fontSize={isFocused || isHover ? 11 : 10}
                       fontWeight={isFocused || isHover ? 600 : 500}
-                      fill="#221f19"
+                      fill="#15140f"
                       textAnchor="middle"
                       style={{ pointerEvents: 'none' }}
                       className="dark:!fill-gray-100"
@@ -725,7 +725,7 @@ function ChartTooltip({ entity, chartW, chartH, xPos, yPos, rPos }) {
   const flipRight = leftPct > 65
   return (
     <div
-      className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-[#3f3527]/15 bg-white/95 px-3 py-2 text-[11px] leading-5 text-[#221f19] shadow-lg backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/95 dark:text-gray-100"
+      className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-[#2f3027]/15 bg-white/95 px-3 py-2 text-[11px] leading-5 text-[#15140f] shadow-lg backdrop-blur-sm dark:border-gray-700 dark:bg-gray-950/95 dark:text-gray-100"
       style={{
         left: `${flipRight ? Math.min(leftPct, 88) : Math.max(leftPct, 12)}%`,
         top: `${Math.max(topPct, 4)}%`,
@@ -742,28 +742,28 @@ function ChartTooltip({ entity, chartW, chartH, xPos, yPos, rPos }) {
       <table className="mt-1.5 w-full tabular-nums">
         <tbody>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">框架 stars</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">框架 stars</td>
             <td className="text-right">{formatStars(entity.frameworkStars)}</td>
           </tr>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">平台 tier</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">平台 tier</td>
             <td className="text-right">{entity.platformTier} · {tierLabel(entity.platformTier)}</td>
           </tr>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">捆绑深度</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">捆绑深度</td>
             <td className="text-right">{entity.lockIn} <SubjectiveChip /></td>
           </tr>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">社区反弹</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">社区反弹</td>
             <td className="text-right">{entity.backlash} <SubjectiveChip /></td>
           </tr>
           <tr>
-            <td className="pr-2 text-[#8f8069] dark:text-gray-500">AI 整合</td>
+            <td className="pr-2 text-[#767869] dark:text-gray-500">AI 整合</td>
             <td className="text-right">{entity.aiIntegration} <SubjectiveChip /></td>
           </tr>
         </tbody>
       </table>
-      <p className="mt-1.5 text-[10px] leading-4 text-[#8f8069] dark:text-gray-500">
+      <p className="mt-1.5 text-[10px] leading-4 text-[#767869] dark:text-gray-500">
         {entity.latestSignal}
       </p>
     </div>
@@ -780,7 +780,7 @@ function RankingList({ pairs, sortBy, focusIds, hoverId, onHover, onSelect, comp
   const hasFocus = focusIds.length > 0
 
   return (
-    <div className="divide-y divide-[#f0e8d6] dark:divide-gray-800">
+    <div className="divide-y divide-[#dfe2d6] dark:divide-gray-800">
       {pairs.map((p, i) => {
         const v = accessor(p)
         const pct = (v / max) * 100
@@ -805,34 +805,34 @@ function RankingList({ pairs, sortBy, focusIds, hoverId, onHover, onSelect, comp
             }}
             className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 transition sm:px-4 ${
               isFocused
-                ? 'bg-[#fbf3e3] dark:bg-[#2a2115]'
+                ? 'bg-[#ebede3] dark:bg-[#1c1d15]'
                 : isHover
-                ? 'bg-[#fdfaf3] dark:bg-gray-900'
-                : 'hover:bg-[#fdfaf3] dark:hover:bg-gray-900'
+                ? 'bg-[#f6f8f3] dark:bg-gray-900'
+                : 'hover:bg-[#f6f8f3] dark:hover:bg-gray-900'
             } ${isDimmed ? 'opacity-45' : ''}`}
           >
-            <span className="w-5 shrink-0 text-right font-mono text-[10px] tabular-nums text-[#8f8069] dark:text-gray-500">
+            <span className="w-5 shrink-0 text-right font-mono text-[10px] tabular-nums text-[#767869] dark:text-gray-500">
               {i + 1}
             </span>
             <div className="flex w-[220px] shrink-0 items-center gap-2 sm:w-[260px]">
               <span aria-hidden="true" className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: statusMeta.color }} />
-              <span className="min-w-0 truncate text-[13px] font-semibold text-[#221f19] dark:text-gray-100">
-                {p.platform} <span className="text-[#9a8e76]">×</span> {p.framework}
+              <span className="min-w-0 truncate text-[13px] font-semibold text-[#15140f] dark:text-gray-100">
+                {p.platform} <span className="text-[#838676]">×</span> {p.framework}
               </span>
               <VerifiedBadge verified={p.verified} />
               {compareMode && isFocused ? (
-                <span className="shrink-0 rounded-full bg-[#3f3527] px-1.5 py-px text-[9px] font-medium text-white dark:bg-gray-200 dark:text-[#111]">
+                <span className="shrink-0 rounded-full bg-[#2f3027] px-1.5 py-px text-[9px] font-medium text-white dark:bg-gray-200 dark:text-[#111]">
                   ✓
                 </span>
               ) : null}
             </div>
-            <div className="relative h-4 flex-1 rounded-sm bg-[#f0e8d6] dark:bg-gray-800">
+            <div className="relative h-4 flex-1 rounded-sm bg-[#dfe2d6] dark:bg-gray-800">
               <div
                 className="h-full rounded-sm transition-[width]"
                 style={{ width: `${pct}%`, backgroundColor: statusMeta.color, opacity: isFocused ? 1 : 0.78 }}
               />
             </div>
-            <span className="w-14 shrink-0 text-right font-mono text-[12px] tabular-nums text-[#221f19] dark:text-gray-100">
+            <span className="w-14 shrink-0 text-right font-mono text-[12px] tabular-nums text-[#15140f] dark:text-gray-100">
               {sortBy === 'frameworkStars' ? formatStars(v) : sortBy === 'foundedPairing' ? v : v}
               {sortOpt.unit && sortBy !== 'frameworkStars' ? ` ${sortOpt.unit}` : ''}
             </span>
@@ -863,12 +863,12 @@ function CompareTable({ entities, onRemove }) {
   ]
 
   return (
-    <section className="mt-5 rounded-xl border border-[#e8dfd0] bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-900/70 sm:p-4">
+    <section className="mt-5 rounded-xl border border-[#dee0db] bg-white/80 p-3 dark:border-gray-800 dark:bg-gray-900/70 sm:p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
           对比 · {entities.length} 组配对
         </h2>
-        <p className="text-[11px] text-[#8f8069] dark:text-gray-500">在散点 / 排行中再点选可增减</p>
+        <p className="text-[11px] text-[#767869] dark:text-gray-500">在散点 / 排行中再点选可增减</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
@@ -876,24 +876,24 @@ function CompareTable({ entities, onRemove }) {
             <tr>
               <th className="w-28 sm:w-36" />
               {entities.map((e) => (
-                <th key={e.id} className="border-b border-[#e8dfd0] px-2 py-2 text-left align-top dark:border-gray-800">
+                <th key={e.id} className="border-b border-[#dee0db] px-2 py-2 text-left align-top dark:border-gray-800">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span aria-hidden="true" className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: STATUS_META[e.status].color }} />
-                        <span className="font-serif text-[13px] font-semibold text-[#221f19] dark:text-gray-100">
+                        <span className="font-serif text-[13px] font-semibold text-[#15140f] dark:text-gray-100">
                           {e.platform} × {e.framework}
                         </span>
                         <VerifiedBadge verified={e.verified} size="lg" />
                       </div>
-                      <div className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8f8069] dark:text-gray-500">
+                      <div className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#767869] dark:text-gray-500">
                         since {e.foundedPairing} · {STATUS_META[e.status].label}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => onRemove(e.id)}
-                      className="shrink-0 rounded-md border border-[#e0d3b8] bg-white px-1.5 py-0.5 text-[10px] text-[#8f8069] hover:bg-[#f5efe2] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-500 dark:hover:bg-gray-800"
+                      className="shrink-0 rounded-md border border-[#c6cab8] bg-white px-1.5 py-0.5 text-[10px] text-[#767869] hover:bg-[#e9eae2] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-500 dark:hover:bg-gray-800"
                       aria-label={`移除 ${e.platform} × ${e.framework}`}
                     >
                       ×
@@ -906,9 +906,9 @@ function CompareTable({ entities, onRemove }) {
           <tbody>
             {rows.map((row) => (
               <tr key={row.key}>
-                <td className="border-b border-[#f0e8d6] px-2 py-2 align-top dark:border-gray-800">
+                <td className="border-b border-[#dfe2d6] px-2 py-2 align-top dark:border-gray-800">
                   <div className="flex items-center gap-1">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#8f8069] dark:text-gray-500">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#767869] dark:text-gray-500">
                       {row.label}
                     </span>
                     {row.kind === 'subjective' ? <SubjectiveChip /> : null}
@@ -919,12 +919,12 @@ function CompareTable({ entities, onRemove }) {
                   const toneCls = tone === 'good'
                     ? 'text-[#3f6a3f] dark:text-[#a3d4a3]'
                     : tone === 'bad'
-                    ? 'text-[#a05a3c] dark:text-[#e2a07a]'
-                    : 'text-[#221f19] dark:text-gray-100'
+                    ? 'text-[#a05a3c] dark:text-[#9e937a]'
+                    : 'text-[#15140f] dark:text-gray-100'
                   return (
                     <td
                       key={e.id}
-                      className={`border-b border-[#f0e8d6] px-2 py-2 align-top text-[12px] tabular-nums dark:border-gray-800 ${toneCls} ${row.multi ? 'leading-5' : 'font-semibold'}`}
+                      className={`border-b border-[#dfe2d6] px-2 py-2 align-top text-[12px] tabular-nums dark:border-gray-800 ${toneCls} ${row.multi ? 'leading-5' : 'font-semibold'}`}
                     >
                       {row.fmt(e)}
                     </td>
@@ -947,12 +947,12 @@ function PairDetail({ entity, onClose }) {
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">
             详情 · since {entity.foundedPairing}
           </p>
-          <h2 className="mt-1 flex flex-wrap items-baseline gap-2 font-serif text-[22px] font-semibold text-[#221f19] dark:text-gray-100">
+          <h2 className="mt-1 flex flex-wrap items-baseline gap-2 font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">
             <span>{entity.platform}</span>
-            <span className="text-[#9a8e76]">×</span>
+            <span className="text-[#838676]">×</span>
             <span>{entity.framework}</span>
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
@@ -962,14 +962,14 @@ function PairDetail({ entity, onClose }) {
             </span>
             <VerifiedBadge verified={entity.verified} size="lg" />
           </h2>
-          <p className="mt-1 text-[12px] leading-5 text-[#8f8069] dark:text-gray-500">
+          <p className="mt-1 text-[12px] leading-5 text-[#767869] dark:text-gray-500">
             最近信号：{entity.latestSignal}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-[#e0d3b8] bg-white px-2 py-0.5 text-[11px] text-[#6d614c] hover:bg-[#f5efe2] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-400 dark:hover:bg-gray-800"
+          className="rounded-md border border-[#c6cab8] bg-white px-2 py-0.5 text-[11px] text-[#585a4c] hover:bg-[#e9eae2] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-400 dark:hover:bg-gray-800"
         >
           收起 ×
         </button>
@@ -984,7 +984,7 @@ function PairDetail({ entity, onClose }) {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8f8069] dark:text-[#8e9ab0]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#767869] dark:text-[#8e9ab0]">
             主观打分对比
           </p>
           <ul className="mt-2 space-y-2">
@@ -995,13 +995,13 @@ function PairDetail({ entity, onClose }) {
             ].map((m) => (
               <li key={m.key}>
                 <div className="flex items-center gap-2 text-[12px]">
-                  <span className="w-20 shrink-0 text-[#5d503f] dark:text-gray-300">{m.label}</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f0e8d6] dark:bg-gray-800">
+                  <span className="w-20 shrink-0 text-[#333431] dark:text-gray-300">{m.label}</span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#dfe2d6] dark:bg-gray-800">
                     <div className="h-full" style={{ width: `${m.value}%`, backgroundColor: statusMeta.color }} />
                   </div>
-                  <span className="w-9 shrink-0 text-right font-mono tabular-nums text-[#221f19] dark:text-gray-100">{m.value}</span>
+                  <span className="w-9 shrink-0 text-right font-mono tabular-nums text-[#15140f] dark:text-gray-100">{m.value}</span>
                 </div>
-                <p className="mt-0.5 pl-[88px] text-[10.5px] leading-4 text-[#8f8069] dark:text-gray-500">
+                <p className="mt-0.5 pl-[88px] text-[10.5px] leading-4 text-[#767869] dark:text-gray-500">
                   {m.rubric}
                 </p>
               </li>
@@ -1010,11 +1010,11 @@ function PairDetail({ entity, onClose }) {
         </div>
 
         <div>
-          <div className="rounded-lg border border-[#f5d6b8] bg-[#fff6e6]/60 p-3 dark:border-[#5a4128] dark:bg-[#2a1c10]/40">
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#a05a3c] dark:text-[#e2a07a]">
+          <div className="rounded-lg border border-[#cdccb8] bg-[#eff0e6]/60 p-3 dark:border-[#5a4128] dark:bg-[#2a1c10]/40">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#a05a3c] dark:text-[#9e937a]">
               主要锁定机制
             </p>
-            <p className="mt-1.5 text-[12px] leading-5 text-[#5d503f] dark:text-gray-300">
+            <p className="mt-1.5 text-[12px] leading-5 text-[#333431] dark:text-gray-300">
               {entity.primaryLockIn}
             </p>
           </div>
@@ -1022,7 +1022,7 @@ function PairDetail({ entity, onClose }) {
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#3f6a3f] dark:text-[#a3d4a3]">
               对开发者
             </p>
-            <p className="mt-1.5 text-[12px] leading-5 text-[#5d503f] dark:text-gray-300">
+            <p className="mt-1.5 text-[12px] leading-5 text-[#333431] dark:text-gray-300">
               {entity.developerNote}
             </p>
           </div>
@@ -1030,16 +1030,16 @@ function PairDetail({ entity, onClose }) {
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#3f4b5d] dark:text-[#9bb6df]">
               竞争者视角
             </p>
-            <p className="mt-1.5 text-[12px] leading-5 text-[#5d503f] dark:text-gray-300">
+            <p className="mt-1.5 text-[12px] leading-5 text-[#333431] dark:text-gray-300">
               {entity.competitorNote}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-[11px] text-[#8f8069] dark:text-gray-500">
+      <div className="mt-4 flex items-center gap-2 text-[11px] text-[#767869] dark:text-gray-500">
         <span>一手信源：</span>
-        <a href={entity.sourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#5d503f] dark:hover:text-gray-300">
+        <a href={entity.sourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#333431] dark:hover:text-gray-300">
           {entity.sourceUrl}
         </a>
       </div>
@@ -1053,10 +1053,10 @@ function ResearchFramework() {
   return (
     <section className="mt-8">
       <div className="flex flex-wrap items-baseline gap-3">
-        <h2 className="font-serif text-[20px] font-semibold text-[#221f19] dark:text-gray-100 sm:text-[22px]">
+        <h2 className="font-serif text-[20px] font-semibold text-[#15140f] dark:text-gray-100 sm:text-[22px]">
           研报框架 · 10 节判断
         </h2>
-        <p className="text-[12px] text-[#8f8069] dark:text-gray-500">
+        <p className="text-[12px] text-[#767869] dark:text-gray-500">
           {FRAMEWORK_META.subtitle}
         </p>
       </div>
@@ -1070,9 +1070,9 @@ function ResearchFramework() {
           <a
             key={s.id}
             href={`#fwk-${s.id}`}
-            className="inline-flex items-center gap-1 rounded-md border border-[#e8dfd0] bg-white/70 px-2 py-1 text-[11px] text-[#6d614c] no-underline hover:border-[#b7791f] hover:text-[#221f19] dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-400 dark:hover:border-[#e2bd75] dark:hover:text-gray-100"
+            className="inline-flex items-center gap-1 rounded-md border border-[#dee0db] bg-white/70 px-2 py-1 text-[11px] text-[#585a4c] no-underline hover:border-[#b7791f] hover:text-[#15140f] dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-400 dark:hover:border-[#9ba475] dark:hover:text-gray-100"
           >
-            <span className="font-mono text-[9px] tracking-[0.12em] text-[#8a5a14] dark:text-[#e2bd75]">
+            <span className="font-mono text-[9px] tracking-[0.12em] text-[#8a5a14] dark:text-[#9ba475]">
               {s.number}
             </span>
             <span>{s.title.split('：')[0]}</span>
@@ -1088,17 +1088,17 @@ function ResearchFramework() {
       </ol>
 
       {/* 延伸阅读：相关工程实践调研 */}
-      <aside className="mt-6 rounded-xl border border-[#cbb796] bg-[#fbf3e3]/40 p-4 dark:border-[#5a4f3a] dark:bg-[#1f1a12]/40">
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#e2bd75]">
+      <aside className="mt-6 rounded-xl border border-[#a9ab96] bg-[#ebede3]/40 p-4 dark:border-[#45483a] dark:bg-[#171712]/40">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#9ba475]">
           延伸阅读 · 工程实践
         </p>
         <Link
           href="/articles/research/topics/chat-to-agent-loop-anthropic-practice"
-          className="mt-2 block text-[14px] font-semibold leading-snug text-[#221f19] no-underline hover:text-[#8a5a14] dark:text-gray-100 dark:hover:text-[#e2bd75]"
+          className="mt-2 block text-[14px] font-semibold leading-snug text-[#15140f] no-underline hover:text-[#8a5a14] dark:text-gray-100 dark:hover:text-[#9ba475]"
         >
           从 chat 任务到 agent loop：Anthropic 一线工程实践 + 升级路径调研 →
         </Link>
-        <p className="mt-1 text-[12px] leading-6 text-[#5d503f] dark:text-gray-400">
+        <p className="mt-1 text-[12px] leading-6 text-[#333431] dark:text-gray-400">
           Anthropic 在 runtime 层下场后，「怎么落地 agent loop」成了真问题。从 chat one-shot 到
           tool-use loop、subagent 分工、Managed Agents 的 4 阶段升级路径，附 Erik Schluntz 的
           「最小框架」主张 + 多数项目的过度工程化陷阱。
@@ -1112,17 +1112,17 @@ function FrameworkSection({ section, isLast }) {
   const accent = section.accent
   const railColor =
     accent === 'highlight'
-      ? 'bg-[#b7791f] dark:bg-[#e2bd75]'
+      ? 'bg-[#b7791f] dark:bg-[#9ba475]'
       : accent === 'warning'
-      ? 'bg-[#a05a3c] dark:bg-[#e2a07a]'
-      : 'bg-[#cbb796] dark:bg-[#5a4f3a]'
+      ? 'bg-[#a05a3c] dark:bg-[#9e937a]'
+      : 'bg-[#a9ab96] dark:bg-[#45483a]'
 
   const numberColor =
     accent === 'highlight'
-      ? 'text-[#8a5a14] dark:text-[#e2bd75]'
+      ? 'text-[#8a5a14] dark:text-[#9ba475]'
       : accent === 'warning'
-      ? 'text-[#a05a3c] dark:text-[#e2a07a]'
-      : 'text-[#a09176] dark:text-[#7f8aa0]'
+      ? 'text-[#a05a3c] dark:text-[#9e937a]'
+      : 'text-[#858876] dark:text-[#7f8aa0]'
 
   return (
     <li id={`fwk-${section.id}`} className="scroll-mt-20 relative pl-12 sm:pl-16">
@@ -1142,19 +1142,19 @@ function FrameworkSection({ section, isLast }) {
 
       <article className="pb-8">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h3 className="font-serif text-[17px] font-semibold leading-snug text-[#221f19] dark:text-gray-100 sm:text-[19px]">
+          <h3 className="font-serif text-[17px] font-semibold leading-snug text-[#15140f] dark:text-gray-100 sm:text-[19px]">
             {section.title}
           </h3>
           {section.needsFact ? (
             <span
-              className="rounded-full bg-[#fde6c6] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#f0c776]"
+              className="rounded-full bg-[#d9dbc6] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#8b5a1f] dark:bg-[#3a2c14] dark:text-[#a1ab76]"
               title="该节包含未官方确认的事实"
             >
               待核实
             </span>
           ) : null}
         </div>
-        <p className="mt-2 max-w-3xl text-[13.5px] leading-7 text-[#5d503f] dark:text-gray-300">
+        <p className="mt-2 max-w-3xl text-[13.5px] leading-7 text-[#333431] dark:text-gray-300">
           {section.body}
         </p>
       </article>
@@ -1167,18 +1167,18 @@ function KeyStat({ label, value, sub, tone, kind }) {
     tone === 'good'
       ? 'text-[#3f6a3f] dark:text-[#a3d4a3]'
       : tone === 'bad'
-      ? 'text-[#a05a3c] dark:text-[#e2a07a]'
-      : 'text-[#221f19] dark:text-gray-100'
+      ? 'text-[#a05a3c] dark:text-[#9e937a]'
+      : 'text-[#15140f] dark:text-gray-100'
   return (
-    <div className="rounded-md bg-[#fdfaf3] px-3 py-2 dark:bg-gray-950/60">
+    <div className="rounded-md bg-[#f6f8f3] px-3 py-2 dark:bg-gray-950/60">
       <div className="flex items-center gap-1">
-        <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#8f8069] dark:text-gray-500">
+        <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#767869] dark:text-gray-500">
           {label}
         </span>
         {kind === 'subjective' ? <SubjectiveChip /> : null}
       </div>
       <div className={`mt-0.5 font-serif text-[18px] font-semibold tabular-nums ${toneCls}`}>{value}</div>
-      {sub ? <div className="text-[10px] text-[#8f8069] dark:text-gray-500">{sub}</div> : null}
+      {sub ? <div className="text-[10px] text-[#767869] dark:text-gray-500">{sub}</div> : null}
     </div>
   )
 }

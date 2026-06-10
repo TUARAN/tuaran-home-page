@@ -36,13 +36,13 @@ export default async function ResearchOgImage({ params }) {
         style={{
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #fbf3e3 0%, #f4ead3 55%, #fbf3e3 100%)',
+          background: 'linear-gradient(135deg, #ebede3 0%, #dfe2d3 55%, #ebede3 100%)',
           padding: '64px 72px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           fontFamily: '"PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
-          color: '#221f19',
+          color: '#15140f',
           position: 'relative',
         }}
       >
@@ -135,7 +135,7 @@ export default async function ResearchOgImage({ params }) {
               <div
                 style={{
                   fontSize: 22,
-                  color: '#5d503f',
+                  color: '#333431',
                   lineHeight: 1.5,
                 }}
               >
@@ -152,7 +152,7 @@ export default async function ResearchOgImage({ params }) {
             alignItems: 'center',
             justifyContent: 'space-between',
             fontSize: 20,
-            color: '#9a8f7a',
+            color: '#85887a',
             fontFamily: 'monospace',
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
@@ -160,7 +160,7 @@ export default async function ResearchOgImage({ params }) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 32, height: 1, background: '#d8cfbf' }} />
+            <div style={{ width: 32, height: 1, background: '#c8c9bf' }} />
             <span>涂阿燃 · 网络日志</span>
           </div>
           <span>掘金安东尼</span>

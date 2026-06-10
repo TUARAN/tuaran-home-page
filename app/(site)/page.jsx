@@ -17,24 +17,6 @@ const SECTION_BADGE_CLASS = {
     'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
 }
 
-const SECTION_NAV_ACCENT = {
-  column: {
-    bar: 'bg-[#8a8f72] dark:bg-[#8a9a6b]',
-    text: 'text-[#4a4d42] dark:text-[#c4c8b4]',
-    hover: 'hover:bg-[#f5f6f1] hover:text-[#1a1814] dark:hover:bg-[#1a2018] dark:hover:text-[#e8eadf]',
-  },
-  research: {
-    bar: 'bg-[#5b7fa8] dark:bg-[#6b94c4]',
-    text: 'text-[#3d5678] dark:text-[#a8c4e4]',
-    hover: 'hover:bg-[#f3f7fc] hover:text-[#1a3050] dark:hover:bg-[#141f2e] dark:hover:text-[#d4e6f8]',
-  },
-  resources: {
-    bar: 'bg-[#5a8f72] dark:bg-[#6ba888]',
-    text: 'text-[#3d5c4a] dark:text-[#a8d4bc]',
-    hover: 'hover:bg-[#f2f8f4] hover:text-[#1a3d2a] dark:hover:bg-[#141f1a] dark:hover:text-[#d0ecd8]',
-  },
-}
-
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
@@ -108,42 +90,23 @@ function HomeFeaturedSection({ items }) {
         </div>
         <nav
           aria-label="查看更多内容分类"
-          className="inline-flex shrink-0 items-stretch overflow-hidden rounded-lg border border-[#dfe0d8] bg-white/90 dark:border-[#2a3440] dark:bg-[#121821]/90"
+          className="flex shrink-0 items-center gap-2.5 pt-1 font-mono text-[11px] uppercase tracking-[0.12em]"
         >
-          {HOME_SECTION_MORE_LINKS.map((link, idx) => {
-            const accent = SECTION_NAV_ACCENT[link.section] || SECTION_NAV_ACCENT.column
-            return (
+          {HOME_SECTION_MORE_LINKS.map((link, idx) => (
+            <span key={link.href} className="inline-flex items-center gap-2.5">
+              {idx > 0 ? (
+                <span aria-hidden="true" className="text-[#c8c9bf] dark:text-gray-600">
+                  /
+                </span>
+              ) : null}
               <Link
-                key={link.href}
                 href={link.href}
-                className={[
-                  'group inline-flex items-center gap-2 px-3.5 py-2 text-[13px] font-medium no-underline transition-colors',
-                  idx > 0 ? 'border-l border-[#e8e9e4] dark:border-[#2a3440]' : '',
-                  accent.text,
-                  accent.hover,
-                ].join(' ')}
+                className="text-[#646655] no-underline opacity-80 transition-opacity hover:opacity-100 hover:text-[#15140f] dark:text-[#acaf9d] dark:hover:text-gray-100"
               >
-                <span
-                  aria-hidden="true"
-                  className={['h-3 w-0.5 shrink-0 rounded-full', accent.bar].join(' ')}
-                />
                 {link.label}
-                <svg
-                  viewBox="0 0 12 12"
-                  aria-hidden="true"
-                  className="h-3 w-3 shrink-0 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-50"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M4.5 2.5h5v5" />
-                  <path d="M9.5 2.5L3.5 8.5" />
-                </svg>
               </Link>
-            )
-          })}
+            </span>
+          ))}
         </nav>
       </div>
       <div className="rounded-2xl border border-[#dfe0d8] bg-white p-3 dark:border-[#232c36] dark:bg-[#121821]">

@@ -4,7 +4,6 @@ import DaysSince from './components/DaysSince'
 import SiteFooter from './components/SiteFooter'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
-import { listResearch } from '../../lib/research/loader'
 import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHighlights'
 
 export const dynamic = 'force-static'
@@ -20,21 +19,6 @@ const SECTION_BADGE_CLASS = {
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
-}
-
-function buildResearchPipelineStats() {
-  const entries = listResearch().filter((entry) => !entry.encrypted)
-  const companies = entries.filter((entry) => entry.category === 'companies')
-  const topics = entries.filter((entry) => entry.category === 'topics')
-  const people = entries.filter((entry) => entry.category === 'people')
-  const latestDate = entries.length ? entries[0].date : null
-  return {
-    total: entries.length,
-    companies: companies.length,
-    topics: topics.length,
-    people: people.length,
-    latestDate,
-  }
 }
 
 function HomeFeaturedLinkItem({ item }) {
@@ -141,44 +125,6 @@ function HomeFeaturedSection({ items }) {
 
 export default function HomePage() {
   const featuredPicks = getHomeFeaturedPicks()
-  const researchStats = buildResearchPipelineStats()
-  const resourceCards = [
-    {
-      href: '/classical-masterpieces',
-      kicker: 'Classics',
-      title: '古典名篇',
-      desc: '辞赋 / 唐诗宋词 / 奏疏 / 古文 / 祭文 · 原文可检索',
-      scope: 'internal',
-    },
-    {
-      href: '/ru-shi-dao',
-      kicker: 'Humanities',
-      title: '人文思想',
-      desc: '儒释道体系 / 神仙谱系 / 思想结构',
-      scope: 'internal',
-    },
-    {
-      href: '/china-politics',
-      kicker: 'Politics',
-      title: '政经资料',
-      desc: '组织结构 / 行政级别 / 会议沿革 / 政经资料',
-      scope: 'internal',
-    },
-    {
-      href: '/reading',
-      kicker: 'Books',
-      title: '书目索引',
-      desc: '正在读 / 想读 / 笔记 / 书单',
-      scope: 'internal',
-    },
-    {
-      href: '/bookmarks',
-      kicker: 'Bookmarks',
-      title: '资源收藏',
-      desc: 'AI 工具 / 开发资源 / 教程 / 外部材料',
-      scope: 'bookmarks',
-    },
-  ]
   return (
     <div className="max-w-[1120px] w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
       <section className="flex-1 mb-14">
@@ -290,134 +236,6 @@ export default function HomePage() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_300px]">
           <main className="min-w-0 space-y-6">
             <HomeFeaturedSection items={featuredPicks} />
-
-            <section className="rounded-[24px] border border-[#dcded6] bg-[#f9faf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-              <div className="mb-4 flex items-end justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0] mb-2">
-                    Research
-                  </p>
-                  <h2 className="home-section-title">调研</h2>
-                </div>
-                {researchStats.latestDate ? (
-                  <span className="font-mono text-[11.5px] text-[#858779] dark:text-[#8e9ab0]">
-                    累计 {researchStats.total} 篇 · 最近 {researchStats.latestDate}
-                  </span>
-                ) : null}
-              </div>
-              <p className="mb-4 text-[13px] leading-[1.85] text-[#6d6f65] dark:text-[#8e98a8]">
-                专题调研 / 公司调研 / 事项调研 / 人物调研。
-              </p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  {
-                    href: '/articles?tab=companies',
-                    kicker: 'Companies',
-                    title: '公司调研',
-                    count: researchStats.companies,
-                    desc: '开发者生态 / 内容社区 / 企业软件 / 云通信 / 新能源 / 开发工具',
-                  },
-                  {
-                    href: '/articles?tab=topics',
-                    kicker: 'Topics',
-                    title: '事项调研',
-                    count: researchStats.topics,
-                    desc: '行业 · 技术 · 产品 · 市场 · 观点',
-                  },
-                  {
-                    href: '/articles?tab=people',
-                    kicker: 'People',
-                    title: '人物调研',
-                    count: researchStats.people,
-                    desc: '创作者 · 企业家 · 学者 · 公共人物',
-                  },
-                ].map((card) => (
-                  <Link
-                    key={card.href}
-                    href={card.href}
-                    className="no-external-arrow group flex flex-col gap-2 rounded-2xl border border-[#dfe0d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#c2c4b7] hover:shadow-[0_12px_30px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
-                        {card.kicker}
-                      </p>
-                      <span className="font-mono text-[11px] tracking-[0.08em] text-[#858779] dark:text-[#8e9ab0]">
-                        {card.count} 篇 →
-                      </span>
-                    </div>
-                    <p className="mb-0 text-[15px] font-semibold text-[#1d1a16] dark:text-gray-100">
-                      {card.title}
-                    </p>
-                    <p className="mb-0 text-[12.5px] leading-5 text-[#6d6f65] dark:text-[#8e98a8]">
-                      {card.desc}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-[24px] border border-[#dcded6] bg-[#f9faf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
-              <div className="mb-4 flex items-end justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0] mb-2">
-                    Library
-                  </p>
-                  <h2 className="home-section-title">资料</h2>
-                </div>
-                <Link
-                  href="/articles?tab=resources"
-                  className="font-mono text-[12px] uppercase tracking-[0.12em] text-[#646655] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#acaf9d]"
-                >
-                  全部资料
-                </Link>
-              </div>
-              <p className="mb-4 text-[13px] leading-[1.85] text-[#6d6f65] dark:text-[#8e98a8]">
-                资料分成「站内资料」和「资源收藏」。
-              </p>
-              <div className="space-y-4">
-                {[
-                  {
-                    key: 'internal',
-                    title: '站内资料',
-                    desc: '已经整理进站内结构，可直接阅读、检索、引用。',
-                  },
-                  {
-                    key: 'bookmarks',
-                    title: '资源收藏',
-                    desc: '外部材料、工具和教程入口，价值在指路与快速访问。',
-                  },
-                ].map((group) => (
-                  <div key={group.key}>
-                    <div className="mb-2 flex flex-wrap items-baseline gap-2">
-                      <p className="mb-0 text-[13px] font-semibold text-[#404138] dark:text-gray-200">{group.title}</p>
-                      <p className="mb-0 text-[12px] text-[#757769] dark:text-[#7f8aa0]">{group.desc}</p>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {resourceCards
-                        .filter((card) => card.scope === group.key)
-                        .map((card) => (
-                          <Link
-                            key={card.href}
-                            href={card.href}
-                            className="no-external-arrow group flex flex-col gap-2 rounded-2xl border border-[#dfe0d8] bg-white p-4 no-underline transition-all hover:-translate-y-0.5 hover:border-[#c2c4b7] hover:shadow-[0_12px_30px_rgba(96,80,53,0.08)] dark:border-[#232c36] dark:bg-[#121821] dark:hover:border-[#33404d]"
-                          >
-                            <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
-                              {card.kicker}
-                            </p>
-                            <p className="mb-0 text-[15px] font-semibold text-[#1d1a16] dark:text-gray-100">
-                              {card.title}
-                            </p>
-                            <p className="mb-0 text-[12.5px] leading-5 text-[#6d6f65] dark:text-[#8e98a8]">
-                              {card.desc}
-                            </p>
-                          </Link>
-                        ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
           </main>
 
           <aside className="w-full space-y-6">

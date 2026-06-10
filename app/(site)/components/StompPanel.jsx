@@ -1,9 +1,9 @@
 'use client'
 
-import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
+import UserAvatar from './UserAvatar'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -125,9 +125,7 @@ export default function StompPanel() {
       {isAuthed ? (
         <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-[12px] text-gray-600 dark:text-gray-300">
-            {user?.image ? (
-              <Image src={user.image} alt="avatar" width={20} height={20} unoptimized className="h-5 w-5 rounded-full" />
-            ) : null}
+            <UserAvatar user={user} size="xs" />
             <span>{user?.name || user?.login || '已登录'}</span>
           </div>
 
@@ -171,11 +169,7 @@ export default function StompPanel() {
               <li key={it.id} className="rounded-lg border border-gray-200/70 bg-white/60 p-2 dark:border-gray-700/60 dark:bg-gray-900/50">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    {it.user_image ? (
-                      <Image src={it.user_image} alt="avatar" width={20} height={20} unoptimized className="h-5 w-5 rounded-full" />
-                    ) : (
-                      <span className="inline-block h-5 w-5 rounded-full bg-gray-200 dark:bg-gray-700" />
-                    )}
+                    <UserAvatar seed={it.user_name || it.user_id || 'guest'} size="xs" title={it.user_name} />
                     <span className="text-[12px] text-gray-700 dark:text-gray-200">{it.user_name}</span>
                   </div>
                   <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatTime(it.created_at)}</span>

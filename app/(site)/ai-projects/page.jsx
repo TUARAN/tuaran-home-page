@@ -43,7 +43,7 @@ export default function AiProjectsPage() {
             </p>
           </div>
           <Link
-            href="/agent-ops/project-portfolio"
+            href="/admin/portfolio"
             className="inline-flex shrink-0 items-center gap-2 self-start border border-[#cfd0c5] px-3 py-1.5 text-[12px] font-medium text-[#565749] no-underline transition-colors hover:border-[#888b6d] hover:text-[#8b5a1f] dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100"
           >
             <span>项目管理台</span>

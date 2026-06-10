@@ -4,7 +4,7 @@ export default function robots() {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/admin/'],
+        disallow: ['/api/', '/admin/', '/agent-ops/'],
       },
     ],
     sitemap: 'https://2aran.com/sitemap.xml',

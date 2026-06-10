@@ -57,8 +57,7 @@ export default function WorksPage() {
           </h1>
           <p className="mt-3 max-w-2xl text-[14px] leading-7 text-[#51514a] dark:text-gray-400">
             带交互、带数据、带工程量的页面。这些不是单纯 Markdown 文章 ——
-            是一份份从数据、视觉、交互到结论都自己构建的富页面，每一件都需要工程实现 +
-            原创判断，单靠 AI 生成不出来。
+            是一份份从数据、视觉、交互到结论都自己构建的富页面，每一件都需要工程实现与原创判断。
           </p>
         </div>
         <SharePageButton

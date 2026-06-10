@@ -80,7 +80,7 @@ function HomeFeaturedLinkItem({ item }) {
 function HomeFeaturedSection({ items }) {
   if (!items.length) return null
   return (
-    <section className="rounded-[24px] border border-[#dcded6] bg-[#f9faf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
+    <section className="home-surface-panel rounded-[24px] border p-5 shadow-[0_12px_40px_var(--hero-shadow)] dark:border-[#252d36] dark:bg-[#0f141b] dark:shadow-none md:p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0] mb-2">
@@ -109,7 +109,7 @@ function HomeFeaturedSection({ items }) {
           ))}
         </nav>
       </div>
-      <div className="rounded-2xl border border-[#dfe0d8] bg-white p-3 dark:border-[#232c36] dark:bg-[#121821]">
+      <div className="home-surface-card rounded-2xl border p-3">
         <div className="space-y-1">
           {items.map((item) => (
             <HomeFeaturedLinkItem key={item.id} item={item} />
@@ -125,9 +125,9 @@ export default function HomePage() {
   return (
     <div className="max-w-[1120px] w-full mx-auto px-4 py-6 md:py-8 flex-1 flex flex-col">
       <section className="flex-1 mb-14">
-        <header className="relative mb-8 overflow-hidden rounded-[28px] border border-[#d9dad2] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,245,240,0.92))] px-5 py-4 shadow-[0_16px_48px_rgba(91,78,53,0.06)] dark:border-[#27303a] dark:bg-[linear-gradient(135deg,rgba(20,24,31,0.96),rgba(13,17,23,0.92))] md:px-7 md:py-5">
-          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] bg-[radial-gradient(circle_at_72%_50%,rgba(183,121,31,0.18),transparent_36%),linear-gradient(90deg,transparent,rgba(244,238,226,0.72))] dark:bg-[radial-gradient(circle_at_72%_50%,rgba(240,199,118,0.14),transparent_36%),linear-gradient(90deg,transparent,rgba(18,24,33,0.72))] lg:block" />
-          <div className="pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[2.6rem] font-semibold uppercase leading-none tracking-[0.16em] text-[#7c5d34]/[0.13] dark:text-white/[0.1] lg:block xl:right-14">
+        <header className="home-hero relative mb-8 overflow-hidden rounded-[28px] border px-5 py-4 md:px-7 md:py-5">
+          <div className="home-hero-glow pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block" />
+          <div className="home-hero-watermark pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[2.6rem] font-semibold uppercase leading-none tracking-[0.16em] lg:block xl:right-14">
             2ARAN.COM
           </div>
           <div className="relative max-w-[760px] space-y-4">
@@ -165,19 +165,22 @@ export default function HomePage() {
                   href="https://blogger-alliance.cn/"
                   target="_blank"
                   rel="noreferrer"
-                  className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#3a2c14] bg-[#3a2c14] px-3.5 py-2.5 no-underline shadow-[0_6px_18px_rgba(58,44,20,0.14)] transition-all hover:-translate-y-0.5 hover:bg-[#2a1f0e] hover:shadow-[0_10px_24px_rgba(58,44,20,0.2)] sm:w-auto sm:min-w-[230px] sm:max-w-[245px] dark:border-[#c6c9b4] dark:bg-[#c6c9b4] dark:hover:bg-[#d5d8c4]"
+                  className="home-hero-cta-primary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#a1ab76]/15 text-[#a1ab76] dark:bg-[#3a2c14]/15 dark:text-[#3a2c14]">
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--hero-cta-icon-bg)', color: 'var(--hero-cta-icon-text)' }}
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M4 7h16M4 12h10M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
-                    <span className="flex items-center gap-1 text-[13.5px] font-semibold text-[#f4f6ef] dark:text-[#1d1a16]">
+                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-cta-text)' }}>
                       加入博主联盟
                       <span className="font-mono text-[9px] tracking-[0.08em] opacity-70">→</span>
                     </span>
-                    <span className="mt-0.5 text-[11px] leading-snug text-[#aaae9a] dark:text-[#5a4725]">
+                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-cta-subtext)' }}>
                       AI 产品方 ↔ 技术博主 · 品牌增长
                     </span>
                   </span>
@@ -186,19 +189,22 @@ export default function HomePage() {
                   href="https://frontendnext.com/"
                   target="_blank"
                   rel="noreferrer"
-                  className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#cacbc2] bg-white/75 px-3.5 py-2.5 no-underline transition-all hover:-translate-y-0.5 hover:border-[#a1a494] hover:bg-white sm:w-auto sm:min-w-[230px] sm:max-w-[245px] dark:border-[#3a4757] dark:bg-[#151c25] dark:hover:border-[#5a6a7e] dark:hover:bg-[#1a2330]"
+                  className="home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e8eae1] text-[#8b5a1f] dark:bg-[#22303f] dark:text-[#989e72]">
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--hero-card-icon-bg)', color: 'var(--hero-card-icon-text)' }}
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M4 6l8 8 8-8M4 13l8 8 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
-                    <span className="flex items-center gap-1 text-[13.5px] font-semibold text-[#1d1a16] dark:text-gray-100">
+                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
                       订阅前端周看
                       <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
-                    <span className="mt-0.5 text-[11px] leading-snug text-[#6d6f65] dark:text-[#8e98a8]">
+                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
                       前端 / AI Agent / 大模型 · 技术情报站
                     </span>
                   </span>
@@ -207,19 +213,22 @@ export default function HomePage() {
                   href="https://publishlab.cc/"
                   target="_blank"
                   rel="noreferrer"
-                  className="no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border border-[#cacbc2] bg-white/75 px-3.5 py-2.5 no-underline transition-all hover:-translate-y-0.5 hover:border-[#a1a494] hover:bg-white sm:w-auto sm:min-w-[230px] sm:max-w-[245px] dark:border-[#3a4757] dark:bg-[#151c25] dark:hover:border-[#5a6a7e] dark:hover:bg-[#1a2330]"
+                  className="home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e8eae1] text-[#8b5a1f] dark:bg-[#22303f] dark:text-[#989e72]">
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--hero-card-icon-bg)', color: 'var(--hero-card-icon-text)' }}
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M5 5h14v14H5zM8 9h8M8 13h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
-                    <span className="flex items-center gap-1 text-[13.5px] font-semibold text-[#1d1a16] dark:text-gray-100">
+                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
                       使用 PublishLab
                       <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
-                    <span className="mt-0.5 text-[11px] leading-snug text-[#6d6f65] dark:text-[#8e98a8]">
+                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
                       AI 写作 / 内容创作 / 数字出版
                     </span>
                   </span>
@@ -236,9 +245,9 @@ export default function HomePage() {
           </main>
 
           <aside className="w-full space-y-6">
-            <section className="rounded-[24px] border border-[#dcdcd6] bg-[#f0f1ee] p-5 shadow-[0_8px_32px_rgba(82,69,45,0.04)] dark:border-[#252d36] dark:bg-[#10151d] dark:shadow-none md:p-6">
+            <section className="home-surface-panel rounded-[24px] border p-5 shadow-[0_8px_32px_var(--hero-shadow)] dark:border-[#252d36] dark:bg-[#10151d] dark:shadow-none md:p-6">
               <div className="mb-5 border-b border-[#dee0db] pb-5 text-center dark:border-gray-800/80">
-                <div className="mx-auto w-[116px] overflow-hidden bg-[#f0f1ee] dark:bg-[#0f1318]">
+                <div className="mx-auto w-[116px] overflow-hidden bg-[var(--page-bg)] dark:bg-[#0f1318]">
                   <Image
                     src={AVATAR_PATH}
                     alt="涂阿燃"

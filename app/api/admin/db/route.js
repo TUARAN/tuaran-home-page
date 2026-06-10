@@ -1,27 +1,9 @@
-import {
-  cookieNames,
-  getSecrets,
-  parseCookies,
-  verifySession,
-} from '../../../../lib/edgeSession'
+import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import { getD1AdminSnapshot } from '../../../../lib/dbAdmin'
-import { isOwnerUser } from '../../../../lib/ownerAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
-
-async function getOwnerOrReject(req) {
-  const { sessionSecret } = getSecrets()
-  if (!sessionSecret) return { ok: false, response: Response.json({ error: 'MISSING_AUTH_CONFIG' }, { status: 500 }) }
-  const cookies = parseCookies(req)
-  const token = cookies[cookieNames.session]
-  const payload = await verifySession(token, sessionSecret)
-  const user = payload?.user || null
-  if (!user) return { ok: false, response: Response.json({ error: 'NOT_AUTHENTICATED' }, { status: 401 }) }
-  if (!isOwnerUser(user)) return { ok: false, response: Response.json({ error: 'NOT_OWNER' }, { status: 403 }) }
-  return { ok: true, user }
-}
 
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)

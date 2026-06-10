@@ -99,8 +99,10 @@ function ResearchEngagementPanel({ articleKey, related }) {
                   href={`/articles/research/${r.category}/${r.slug}`}
                   className="block rounded-md border border-transparent px-2 py-2 no-underline transition hover:border-[#dee0db] hover:bg-[#fafbf9] dark:hover:border-gray-700 dark:hover:bg-gray-900"
                 >
-                  {r.date ? (
-                    <time className="font-mono text-[11px] text-[#999] dark:text-gray-500">{r.date}</time>
+                  {r.dateLabel || r.date ? (
+                    <time dateTime={r.dateTimeIso || r.date} className="font-mono text-[11px] text-[#999] dark:text-gray-500">
+                      {r.dateLabel || r.date}
+                    </time>
                   ) : null}
                   <span className="mt-1 block text-sm leading-5 text-[#333] dark:text-gray-200">
                     {r.title}
@@ -150,7 +152,7 @@ export async function generateMetadata({ params }) {
       siteName: SITE_TITLE,
       locale: 'zh_CN',
       type: 'article',
-      publishedTime: entry.date ? new Date(entry.date).toISOString() : undefined,
+      publishedTime: entry.dateTimeIso ? new Date(entry.dateTimeIso).toISOString() : entry.date ? new Date(entry.date).toISOString() : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -206,7 +208,11 @@ export default async function ResearchDetailPage({ params }) {
         ].slice(0, 3)
       : relatedPool.slice(0, 3)
 
-  const publishedISO = entry.date ? new Date(entry.date).toISOString() : undefined
+  const publishedISO = entry.dateTimeIso
+    ? new Date(entry.dateTimeIso).toISOString()
+    : entry.date
+      ? new Date(entry.date).toISOString()
+      : undefined
   const modifiedISO = entry.updated
     ? new Date(entry.updated).toISOString()
     : publishedISO
@@ -300,10 +306,10 @@ export default async function ResearchDetailPage({ params }) {
               </span>
             </>
           ) : null}
-          {entry.date ? (
+          {entry.dateLabel || entry.date ? (
             <>
               <span aria-hidden="true">·</span>
-              <time dateTime={entry.date}>{entry.date}</time>
+              <time dateTime={entry.dateTimeIso || entry.date}>{entry.dateLabel || entry.date}</time>
             </>
           ) : null}
           {entry.version ? (

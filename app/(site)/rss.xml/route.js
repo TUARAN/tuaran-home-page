@@ -1,4 +1,5 @@
 import { articles } from '../articles/articlesData'
+import { researchDateTimeIso } from '../../../lib/research/datetime'
 import { CATEGORY_META, listResearch } from '../../../lib/research/loader'
 
 export const dynamic = 'force-static'
@@ -50,7 +51,7 @@ function buildItems() {
     title: entry.title,
     link: `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`,
     description: entry.summary || `${CATEGORY_META[entry.category]?.label || entry.category}：${entry.title}`,
-    pubDate: toRfc822(entry.date),
+    pubDate: toRfc822(researchDateTimeIso(entry.date, entry.time) || entry.date),
     category: CATEGORY_META[entry.category]?.label || entry.category,
   }))
 

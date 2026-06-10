@@ -1,6 +1,7 @@
 import { articles } from './articlesData'
 import { ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
+import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
 import { CATEGORY_META, COMPANY_TYPE_META, TOPIC_TYPE_META, listResearch } from '../../../lib/research/loader'
 
 function isExternalHref(href) {
@@ -17,6 +18,7 @@ export function buildKnowledgeItems() {
       title: article.title,
       summary: article.summary,
       date: article.date || '',
+      sortKey: researchSortKey(article.date),
       href: isExternalHref(article.href) ? article.href : path,
     }
   })
@@ -36,6 +38,8 @@ export function buildKnowledgeItems() {
       title: entry.title,
       summary: entry.tldr || entry.summary,
       date: entry.date,
+      dateLabel: entry.dateLabel || entry.date,
+      sortKey: entry.sortKey,
       readingMinutes: entry.readingMinutes,
       pv: entry.pv || 0,
       encrypted: entry.encrypted,
@@ -52,6 +56,7 @@ export function buildKnowledgeItems() {
     title: p.title,
     summary: p.summary,
     date: p.date,
+    sortKey: researchSortKey(p.date),
     href: p.href,
   }))
 
@@ -62,6 +67,7 @@ export function buildKnowledgeItems() {
     title: p.title,
     summary: p.summary,
     date: p.date,
+    sortKey: researchSortKey(p.date),
     href: p.href,
     canvasId: p.canvasId || null,
   }))
@@ -71,9 +77,5 @@ export function buildKnowledgeItems() {
     ...worksItems,
     ...researchItems,
     ...resourceItems,
-  ].sort((a, b) => {
-    if (!a.date) return 1
-    if (!b.date) return -1
-    return a.date < b.date ? 1 : a.date > b.date ? -1 : 0
-  })
+  ].sort((a, b) => compareSortKeyDesc(a.sortKey, b.sortKey, a.id, b.id))
 }

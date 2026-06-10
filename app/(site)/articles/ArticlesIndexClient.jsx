@@ -600,8 +600,8 @@ function ArticleRow({ item }) {
         <div className="min-w-0">
           <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="shrink-0 text-sm text-[#999]">▪</span>
-            {item.date ? (
-              <span className="shrink-0 whitespace-nowrap text-xs text-[#999] dark:text-gray-400">{item.date}</span>
+            {item.dateLabel || item.date ? (
+              <span className="shrink-0 whitespace-nowrap text-xs text-[#999] dark:text-gray-400">{item.dateLabel || item.date}</span>
             ) : null}
             <span aria-hidden="true" className="shrink-0 text-xs text-[#ddd]">
               ·
@@ -737,9 +737,9 @@ function HighlightLink({ item }) {
           {item.tagLabel}
         </span>
         <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
-        {item.date ? (
+        {item.dateLabel || item.date ? (
           <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#9b9b93] dark:text-gray-500">
-            {item.date}
+            {item.dateLabel || item.date}
           </span>
         ) : null}
       </div>

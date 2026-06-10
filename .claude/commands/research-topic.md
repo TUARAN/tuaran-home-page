@@ -30,6 +30,7 @@ research/topics/<YYYY-MM-DD>-<slug>.md
    title: <事项名> 调研
    category: topics
    date: <YYYY-MM-DD>
+   time: <HH:MM>              # 北京时间，用当前本地时间
    tags: [<相关标签>]
    summary: <一句话摘要>
    source: claude-code

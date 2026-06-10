@@ -24,7 +24,7 @@ export default function sitemap() {
   })
 
   const researchEntries = listResearch().map((entry) => {
-    const parsed = entry.date ? Date.parse(entry.date) : NaN
+    const parsed = entry.dateTimeIso ? Date.parse(entry.dateTimeIso) : entry.date ? Date.parse(entry.date) : NaN
     return {
       url: `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`,
       lastModified: Number.isNaN(parsed) ? now : new Date(parsed),

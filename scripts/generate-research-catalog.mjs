@@ -54,10 +54,13 @@ for (const category of categories) {
     } catch {
       data = {}
     }
+    const date = data.date || match[1]
+    const time = data.time || ''
     entryMeta[key] = {
       category,
       slug,
-      date: data.date || match[1],
+      date,
+      ...(time ? { time } : {}),
       title: data.title || slug,
       summary: data.tldr || data.summary || '',
     }

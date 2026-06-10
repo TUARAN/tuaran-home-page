@@ -12,6 +12,7 @@ import {
   isValidDadTodoItemId,
 } from '../../../lib/dadTodoData'
 import { useSessionAccount } from '../components/SessionProvider'
+import UserAvatar from '../components/UserAvatar'
 import DadCheckinCalendar from './DadCheckinCalendar'
 
 async function safeJson(res) {
@@ -425,18 +426,7 @@ function UserChip({ user, logoutHref }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-[#d8dad0] bg-white/70 px-3 py-1.5 text-xs text-[#4f4f48] dark:border-[#252d38] dark:bg-[#121820]/70 dark:text-gray-400">
       <div className="flex min-w-0 items-center gap-2">
-        {user.image ? (
-          <Image
-            src={user.image}
-            alt=""
-            width={20}
-            height={20}
-            unoptimized
-            className="h-5 w-5 shrink-0 rounded-full"
-          />
-        ) : (
-          <span aria-hidden="true" className="inline-block h-2 w-2 shrink-0 rounded-full bg-[#8ba98b]" />
-        )}
+        <UserAvatar user={user} size="xs" />
         <span className="truncate">{user.name || user.login || '已登录'}</span>
       </div>
       <a

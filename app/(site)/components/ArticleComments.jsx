@@ -1,9 +1,9 @@
 'use client'
 
-import Image from 'next/image'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
+import UserAvatar from './UserAvatar'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -138,18 +138,7 @@ export default function ArticleComments({ articleKey }) {
       {isAuthed ? (
         <form onSubmit={submit} className="mt-4 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-            {user?.image ? (
-              <Image
-                src={user.image}
-                alt=""
-                width={24}
-                height={24}
-                unoptimized
-                className="h-6 w-6 rounded-full"
-              />
-            ) : (
-              <span className="inline-block h-6 w-6 rounded-full bg-gray-200 dark:bg-gray-700" />
-            )}
+            <UserAvatar user={user} size="md" />
             <span>{user?.name || user?.login || '已登录'}</span>
           </div>
           <textarea
@@ -191,18 +180,7 @@ export default function ArticleComments({ articleKey }) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
-                    {item.user_image ? (
-                      <Image
-                        src={item.user_image}
-                        alt=""
-                        width={28}
-                        height={28}
-                        unoptimized
-                        className="h-7 w-7 rounded-full"
-                      />
-                    ) : (
-                      <span className="inline-block h-7 w-7 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
-                    )}
+                    <UserAvatar seed={item.user_name || item.user_id || 'guest'} size="sm" title={item.user_name} />
                     <div className="min-w-0">
                       <div className="truncate text-sm text-gray-800 dark:text-gray-100">{item.user_name}</div>
                       <div className="text-[11px] text-gray-500 dark:text-gray-400">

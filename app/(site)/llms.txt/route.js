@@ -6,7 +6,7 @@ export const revalidate = 3600
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const SITE_DESC =
-  '涂阿燃（安东尼）：前端与 AI 工程化独立开发者；主理博主联盟与前端周看。' +
+  '涂阿燃（安东尼）：前端与 AI 工程化 Agent 工程师；主理博主联盟与前端周看。' +
   '本站记录工程实践、技术情报与创作者增长，并维护一个开放的调研知识库（公司调研 / 事项调研）。'
 
 function line(entry) {

@@ -7,7 +7,7 @@ import Link from 'next/link'
  */
 
 export const AUTHOR_INTRO_MARKDOWN =
-  '> **涂阿燃 · tuaran**　前端 / AI Agent / 政企方案 / 独立开发者  \n' +
+  '> **涂阿燃 · tuaran**　前端 / AI Agent / 政企方案 / Agent 工程师  \n' +
   '> 在 [2aran.com](https://2aran.com) 写技术调研、AI 工程实践与独立开发笔记。[了解更多 →](https://2aran.com/about)'
 
 export function AuthorByline() {
@@ -16,7 +16,7 @@ export function AuthorByline() {
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-[13px] font-semibold text-[#15140f] dark:text-gray-100">涂阿燃 · tuaran</span>
         <span className="text-[11px] text-[#707462] dark:text-[#989d87]">
-          前端 / AI Agent / 政企方案 / 独立开发者
+          前端 / AI Agent / 政企方案 / Agent 工程师
         </span>
       </div>
       <p className="mt-0.5 text-[12px] leading-5 text-[#585a4c] dark:text-[#a1a593]">

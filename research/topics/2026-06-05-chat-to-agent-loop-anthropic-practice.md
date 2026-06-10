@@ -171,7 +171,7 @@ Agent loop 把人从"每步决策"里解放，但要求人接受"多步决策的
 | >30k token、>30 步、明显异构子任务、需要审稿 | **阶段 2** subagent |
 | 持续 hours、需要 sandbox、多用户、不想自己运维 | **阶段 3** managed agent |
 
-**对独立开发者的实操建议**：
+**对 Agent 工程师的实操建议**：
 
 1. **从阶段 1 开始**，跳过阶段 0 的 "chat 工具"幻觉。哪怕只是"AI 帮我看一下这个文件然后写个总结"，加上 read_file tool 都比纯 chat 更可控
 2. **手写 while 循环，不要用框架**。30 行代码就够，能直接看到每个 model call 和 tool call。出问题肉眼能 debug

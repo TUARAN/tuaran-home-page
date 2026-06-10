@@ -8,12 +8,17 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import { getCompanyTypeFilters, getTopicTypeFilters } from '../../../lib/research/categories'
 
-const TAB_DEFS = [
+const CHANNEL_DEFS = [
   { key: 'all', label: '全部' },
-  { key: 'posts', label: '精选文章', tier: 'works' },
-  { key: 'research', label: '调研', tier: 'research' },
-  { key: 'works', label: '多维页面', tier: 'works' },
-  { key: 'resources', label: '资料', tier: 'resources' },
+  { key: 'column', label: '专栏' },
+  { key: 'research', label: '调研' },
+  { key: 'resources', label: '资料' },
+]
+
+const COLUMN_TAB_DEFS = [
+  { key: 'column', label: '全部专栏' },
+  { key: 'posts', label: '精选文章' },
+  { key: 'works', label: '多维页面' },
 ]
 
 // 各分类标签的配色（浅色 + 暗色）
@@ -28,7 +33,15 @@ const KIND_TAG_CLASS = {
 
 const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
 const RESEARCH_KINDS = new Set(RESEARCH_KIND_KEYS)
-const TAB_KEYS = [...TAB_DEFS.map((t) => t.key), ...RESEARCH_KIND_KEYS]
+const TAB_KEYS = ['all', 'column', 'posts', 'works', 'research', 'resources', ...RESEARCH_KIND_KEYS]
+
+function getChannelForTab(activeTab) {
+  if (activeTab === 'all') return 'all'
+  if (activeTab === 'column' || activeTab === 'posts' || activeTab === 'works') return 'column'
+  if (activeTab === 'resources') return 'resources'
+  if (activeTab === 'research' || RESEARCH_KINDS.has(activeTab)) return 'research'
+  return 'all'
+}
 
 const QUICK_LINKS = [
   { label: '创作日历', href: '/articles/creation-calendar' },
@@ -144,17 +157,19 @@ export default function ArticlesIndexClient({ items }) {
     const nextCompanyType = next === 'companies' ? companyType : 'all'
     const nextTopicType = next === 'topics' ? topicType : 'all'
     const nextResourceType = next === 'resources' ? resourceType : 'all'
-    if (next !== 'companies') {
-      setCompanyType('all')
-    }
-    if (next !== 'topics') {
-      setTopicType('all')
-    }
-    if (next !== 'resources') {
-      setResourceType('all')
-    }
+    if (next !== 'companies') setCompanyType('all')
+    if (next !== 'topics') setTopicType('all')
+    if (next !== 'resources') setResourceType('all')
     const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextResourceType, query)
     router.replace(url, { scroll: false })
+  }
+
+  function selectChannel(channelKey) {
+    if (channelKey === activeChannel) return
+    if (channelKey === 'all') selectTab('all')
+    else if (channelKey === 'column') selectTab('column')
+    else if (channelKey === 'research') selectTab('research')
+    else if (channelKey === 'resources') selectTab('resources')
   }
 
   function selectCompanyType(next) {
@@ -197,13 +212,47 @@ export default function ArticlesIndexClient({ items }) {
       if (typeof base[item.kind] === 'number') base[item.kind] += 1
       if (RESEARCH_KINDS.has(item.kind)) base.research += 1
     }
+    base.column = (base.posts || 0) + (base.works || 0)
     return base
   }, [items])
+
+  const activeChannel = getChannelForTab(tab)
+
+  const breadcrumb = useMemo(() => {
+    if (tab === 'all') return null
+    const parts = []
+    const channel = CHANNEL_DEFS.find((c) => c.key === activeChannel)
+    if (channel && channel.key !== 'all') parts.push(channel.label)
+
+    if (activeChannel === 'column') {
+      const col = COLUMN_TAB_DEFS.find((t) => t.key === tab)
+      if (col && col.key !== 'column') parts.push(col.label)
+    }
+    if (activeChannel === 'research') {
+      const researchTab = RESEARCH_TYPE_DEFS.find((t) => t.key === tab)
+      if (researchTab && researchTab.key !== 'research') parts.push(researchTab.label)
+      else if (tab === 'research') parts.push('全部调研')
+      if (tab === 'companies' && companyType !== 'all') {
+        parts.push(COMPANY_TYPE_DEFS.find((t) => t.key === companyType)?.label || companyType)
+      }
+      if (tab === 'topics' && topicType !== 'all') {
+        parts.push(TOPIC_TYPE_DEFS.find((t) => t.key === topicType)?.label || topicType)
+      }
+    }
+    if (activeChannel === 'resources') {
+      const res = RESOURCE_TYPE_DEFS.find((t) => t.key === resourceType)
+      if (res && res.key !== 'all') parts.push(res.label)
+      else parts.push('全部资料')
+    }
+    return parts.length ? parts.join(' / ') : null
+  }, [tab, activeChannel, companyType, topicType, resourceType])
 
   const visible = useMemo(() => {
     const tabItems =
       tab === 'all'
         ? items
+        : tab === 'column'
+        ? items.filter((item) => item.kind === 'posts' || item.kind === 'works')
         : tab === 'research'
         ? items.filter((item) => RESEARCH_KINDS.has(item.kind))
         : items.filter((item) => item.kind === tab)
@@ -338,235 +387,186 @@ export default function ArticlesIndexClient({ items }) {
     <div className="space-y-5">
       {showReadingHighlights ? <ReadingHighlights sections={readingHighlights} /> : null}
 
-      <nav
-        aria-label="作品、调研与资料分类"
-        className="flex flex-nowrap items-center gap-5 overflow-x-auto border-b border-[#dee0db] text-sm dark:border-gray-800"
-      >
-        {TAB_DEFS.map((t, idx) => {
-          const active = tab === t.key || (t.key === 'research' && RESEARCH_KINDS.has(tab))
-          const prevTier = idx > 0 ? TAB_DEFS[idx - 1].tier : null
-          const showResearchDivider = t.tier === 'research' && prevTier !== 'research'
-          const showResourceDivider = t.tier === 'resources' && prevTier !== 'resources'
-          const isResearchTier = t.tier === 'research'
-          const isResourceTier = t.tier === 'resources'
-          return (
-            <span key={t.key} className="flex shrink-0 items-center gap-5">
-              {showResearchDivider ? (
-                <span className="flex shrink-0 items-center" aria-hidden="true">
-                  <span aria-hidden="true" className="h-4 w-px bg-[#c6c7bc] dark:bg-gray-700" />
-                </span>
-              ) : null}
-              {showResourceDivider ? (
-                <span className="flex shrink-0 items-center" aria-hidden="true">
-                  <span aria-hidden="true" className="h-4 w-px bg-[#c6c7bc] dark:bg-gray-700" />
-                </span>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => selectTab(t.key)}
-                className={[
-                  'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0.5 pb-2 pt-1 transition-colors',
-                  active
-                    ? 'border-[#333] text-[#222] dark:border-gray-100 dark:text-gray-100'
-                    : isResearchTier
-                    ? 'border-transparent text-[#838676] hover:text-[#4e5046] dark:text-[#7f8a9c] dark:hover:text-gray-200'
-                    : isResourceTier
-                    ? 'border-transparent text-[#7d7e76] hover:text-[#42423c] dark:text-[#7f8a9c] dark:hover:text-gray-200'
-                    : 'border-transparent text-[#616358] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
-                ].join(' ')}
-              >
-                <span className={active ? 'font-semibold' : ''}>{t.label}</span>
-                <span className={active ? 'text-[#777] dark:text-gray-400' : 'text-[#999] dark:text-gray-500'}>
-                  {counts[t.key] ?? 0}
-                </span>
-              </button>
-            </span>
-          )
-        })}
-
-        <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[#c6c7bc] dark:bg-gray-700" />
-
-        {QUICK_LINKS.map((t) =>
-          t.external ? (
-            <a
-              key={t.href}
-              href={t.href}
-              target="_blank"
-              rel="noreferrer"
-              className="no-external-arrow inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#646658] no-underline hover:text-[#1a1814] dark:text-gray-400 dark:hover:text-gray-100"
-            >
-              <span>{t.label}</span>
-              <svg
-                viewBox="0 0 12 12"
-                aria-hidden="true"
-                className="h-3 w-3 opacity-70"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 2h6v6" />
-                <path d="M10 2L4 8" />
-                <path d="M9 8v2H2V3h2" />
-              </svg>
-            </a>
-          ) : (
-            <Link
-              key={t.href}
-              href={t.href}
-              className="inline-flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 pb-2 pt-1 text-[#646658] no-underline hover:text-[#1a1814] dark:text-gray-400 dark:hover:text-gray-100"
-            >
-              <span>{t.label}</span>
-            </Link>
-          ),
-        )}
-      </nav>
-
-      {tab === 'research' || RESEARCH_KINDS.has(tab) ? (
-        <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
-          <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">调研类型</span>
-          <nav aria-label="调研类型" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
-            {RESEARCH_TYPE_DEFS.map((t) => {
-              const active = tab === t.key
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => selectTab(t.key)}
-                  className={[
-                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
-                    active
-                      ? 'bg-[#eef6f1] font-medium text-[#386b54] dark:bg-[#13201a] dark:text-[#9dcab1]'
-                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
-                  ].join(' ')}
-                >
-                  <span>{t.label}</span>
-                  <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#95968a] dark:text-[#667287]'}>
-                    {counts[t.key] ?? 0}
-                  </span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-      ) : null}
-
-      <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="搜索知识库：标题 / 摘要 / 标签"
-          className="min-w-[220px] flex-1 rounded-md border border-[#cbcdc2] bg-white px-3 py-2 text-sm text-[#1a1814] outline-none transition-colors focus:border-[#8a8c79] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
-        />
-        <button
-          type="submit"
-          className="rounded-md border border-[#c8c9bf] bg-[#f3f4ef] px-3 py-2 text-sm text-[#4a4b41] transition-colors hover:border-[#a2a593] hover:text-[#1a1814] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
-        >
-          搜索
-        </button>
-        {query ? (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="rounded-md border border-transparent px-2 py-2 text-sm text-[#787a6c] transition-colors hover:text-[#303029] dark:text-gray-400 dark:hover:text-gray-200"
+      <section className="space-y-3 rounded-xl border border-[#dee0db] bg-[#fafbf8] p-3 dark:border-gray-800 dark:bg-[#0f141b]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <nav
+            aria-label="知识库频道"
+            className="flex flex-nowrap items-center gap-4 overflow-x-auto border-b border-transparent text-sm"
           >
-            清空
+            {CHANNEL_DEFS.map((channel) => {
+              const active = activeChannel === channel.key
+              const count =
+                channel.key === 'all'
+                  ? counts.all
+                  : channel.key === 'column'
+                  ? counts.column
+                  : channel.key === 'research'
+                  ? counts.research
+                  : counts.resources
+              return (
+                <button
+                  key={channel.key}
+                  type="button"
+                  onClick={() => selectChannel(channel.key)}
+                  className={[
+                    'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0.5 pb-2 pt-1 transition-colors',
+                    active
+                      ? 'border-[#333] text-[#222] dark:border-gray-100 dark:text-gray-100'
+                      : 'border-transparent text-[#616358] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
+                  ].join(' ')}
+                >
+                  <span className={active ? 'font-semibold' : ''}>{channel.label}</span>
+                  <span className={active ? 'text-[#777] dark:text-gray-400' : 'text-[#999] dark:text-gray-500'}>{count}</span>
+                </button>
+              )
+            })}
+          </nav>
+
+          <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs text-[#646658] dark:text-gray-400">
+            {QUICK_LINKS.map((link) =>
+              link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="no-external-arrow inline-flex items-center gap-1 no-underline transition-colors hover:text-[#1a1814] dark:hover:text-gray-100"
+                >
+                  <span>{link.label}</span>
+                  <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3 opacity-70" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 2h6v6" />
+                    <path d="M10 2L4 8" />
+                    <path d="M9 8v2H2V3h2" />
+                  </svg>
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="no-underline transition-colors hover:text-[#1a1814] dark:hover:text-gray-100"
+                >
+                  {link.label}
+                </Link>
+              ),
+            )}
+          </div>
+        </div>
+
+        <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="搜索知识库：标题 / 摘要 / 标签"
+            className="min-w-[220px] flex-1 rounded-md border border-[#cbcdc2] bg-white px-3 py-2 text-sm text-[#1a1814] outline-none transition-colors focus:border-[#8a8c79] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
+          />
+          <button
+            type="submit"
+            className="rounded-md border border-[#c8c9bf] bg-[#f3f4ef] px-3 py-2 text-sm text-[#4a4b41] transition-colors hover:border-[#a2a593] hover:text-[#1a1814] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
+          >
+            搜索
           </button>
+          {query ? (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="rounded-md border border-transparent px-2 py-2 text-sm text-[#787a6c] transition-colors hover:text-[#303029] dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              清空
+            </button>
+          ) : null}
+        </form>
+
+        {activeChannel !== 'all' ? (
+          <div className="space-y-2 border-t border-[#e6e7e0] pt-3 dark:border-gray-800">
+            {activeChannel === 'column' ? (
+              <FilterRow label="专栏类型" ariaLabel="专栏类型">
+                {COLUMN_TAB_DEFS.map((t) => (
+                  <FilterChip
+                    key={t.key}
+                    label={t.label}
+                    count={counts[t.key] ?? 0}
+                    active={tab === t.key}
+                    onClick={() => selectTab(t.key)}
+                  />
+                ))}
+                <Link
+                  href="/works"
+                  className="ml-1 shrink-0 text-xs text-[#8b6a2c] no-underline transition-colors hover:text-[#5c4518] dark:text-[#a8b187] dark:hover:text-[#c8d4a8]"
+                >
+                  多维页面专页 →
+                </Link>
+              </FilterRow>
+            ) : null}
+
+            {activeChannel === 'research' ? (
+              <>
+                <FilterRow label="调研类型" ariaLabel="调研类型">
+                  {RESEARCH_TYPE_DEFS.map((t) => (
+                    <FilterChip
+                      key={t.key}
+                      label={t.label}
+                      count={counts[t.key] ?? 0}
+                      active={tab === t.key}
+                      onClick={() => selectTab(t.key)}
+                    />
+                  ))}
+                </FilterRow>
+                {tab === 'companies' ? (
+                  <FilterRow label="公司分类" ariaLabel="公司调研分类">
+                    {COMPANY_TYPE_DEFS.map((t) => (
+                      <FilterChip
+                        key={t.key}
+                        label={t.label}
+                        count={companyTypeCounts[t.key] ?? 0}
+                        active={companyType === t.key}
+                        onClick={() => selectCompanyType(t.key)}
+                      />
+                    ))}
+                  </FilterRow>
+                ) : null}
+                {tab === 'topics' ? (
+                  <FilterRow label="事项分类" ariaLabel="事项调研分类">
+                    {TOPIC_TYPE_DEFS.map((t) => (
+                      <FilterChip
+                        key={t.key}
+                        label={t.label}
+                        count={topicTypeCounts[t.key] ?? 0}
+                        active={topicType === t.key}
+                        onClick={() => selectTopicType(t.key)}
+                      />
+                    ))}
+                  </FilterRow>
+                ) : null}
+              </>
+            ) : null}
+
+            {activeChannel === 'resources' ? (
+              <FilterRow label="资料分类" ariaLabel="资料分类" wrap>
+                {RESOURCE_TYPE_DEFS.map((t) => {
+                  const scopeLabel = t.key === 'bookmarks' ? '站外' : t.key === 'all' ? '' : '站内'
+                  return (
+                    <FilterChip
+                      key={t.key}
+                      label={t.label}
+                      count={resourceTypeCounts[t.key] ?? 0}
+                      active={resourceType === t.key}
+                      onClick={() => selectResourceType(t.key)}
+                      prefix={scopeLabel || undefined}
+                    />
+                  )
+                })}
+              </FilterRow>
+            ) : null}
+
+            {breadcrumb ? (
+              <p className="text-xs text-[#808272] dark:text-[#7f8aa0]">
+                当前：<span className="font-medium text-[#4a4b41] dark:text-gray-300">{breadcrumb}</span>
+              </p>
+            ) : null}
+          </div>
         ) : null}
-      </form>
-
-      {tab === 'companies' ? (
-        <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
-          <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">公司分类</span>
-          <nav aria-label="公司调研分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
-            {COMPANY_TYPE_DEFS.map((t) => {
-              const active = companyType === t.key
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => selectCompanyType(t.key)}
-                  className={[
-                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
-                    active
-                      ? 'bg-[#eef4fb] font-medium text-[#285a8d] dark:bg-[#152034] dark:text-[#9bb6df]'
-                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
-                  ].join(' ')}
-                >
-                  <span>{t.label}</span>
-                  <span className={active ? 'text-[#6d8db0] dark:text-[#7899bf]' : 'text-[#95968a] dark:text-[#667287]'}>
-                    {companyTypeCounts[t.key] ?? 0}
-                  </span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-      ) : null}
-
-      {tab === 'topics' ? (
-        <div className="-mt-2 flex min-w-0 items-center gap-3 text-sm">
-          <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">事项分类</span>
-          <nav aria-label="事项调研分类" className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto">
-            {TOPIC_TYPE_DEFS.map((t) => {
-              const active = topicType === t.key
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => selectTopicType(t.key)}
-                  className={[
-                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
-                    active
-                      ? 'bg-[#eef6f1] font-medium text-[#386b54] dark:bg-[#13201a] dark:text-[#9dcab1]'
-                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
-                  ].join(' ')}
-                >
-                  <span>{t.label}</span>
-                  <span className={active ? 'text-[#6f927f] dark:text-[#78a98e]' : 'text-[#95968a] dark:text-[#667287]'}>
-                    {topicTypeCounts[t.key] ?? 0}
-                  </span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-      ) : null}
-
-      {tab === 'resources' ? (
-        <div className="-mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">资料分类</span>
-          <nav aria-label="资料分类" className="flex min-w-0 flex-wrap items-center gap-2">
-            {RESOURCE_TYPE_DEFS.map((t) => {
-              const active = resourceType === t.key
-              const scopeLabel = t.key === 'bookmarks' ? '资源收藏' : t.key === 'all' ? '' : '站内'
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => selectResourceType(t.key)}
-                  className={[
-                    'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors',
-                    active
-                      ? 'bg-[#eaece7] font-medium text-[#53544b] dark:bg-[#202834] dark:text-[#c6ceda]'
-                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
-                  ].join(' ')}
-                >
-                  {scopeLabel ? (
-                    <span className="font-mono text-[9px] tracking-[0.1em] text-[#9b9d8f] dark:text-[#667287]">{scopeLabel}</span>
-                  ) : null}
-                  <span>{t.label}</span>
-                  <span className={active ? 'text-[#797b70] dark:text-[#9da7b8]' : 'text-[#95968a] dark:text-[#667287]'}>
-                    {resourceTypeCounts[t.key] ?? 0}
-                  </span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-      ) : null}
+      </section>
 
       <div className="space-y-4">
         {visible.length === 0 ? (
@@ -585,6 +585,44 @@ export default function ArticlesIndexClient({ items }) {
         )}
       </div>
     </div>
+  )
+}
+
+function FilterRow({ label, ariaLabel, wrap = false, children }) {
+  return (
+    <div className={`flex min-w-0 items-center gap-3 text-sm ${wrap ? 'flex-wrap' : ''}`}>
+      <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">{label}</span>
+      <nav
+        aria-label={ariaLabel}
+        className={[
+          'flex min-w-0 items-center gap-2',
+          wrap ? 'flex-wrap' : 'flex-nowrap overflow-x-auto',
+        ].join(' ')}
+      >
+        {children}
+      </nav>
+    </div>
+  )
+}
+
+function FilterChip({ label, count, active, onClick, prefix }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
+        active
+          ? 'border-[#c8c9bf] bg-[#eef0e8] font-medium text-[#3a3b34] dark:border-[#3a4030] dark:bg-[#1b1e15] dark:text-[#d5dcc4]'
+          : 'border-transparent text-[#636559] hover:bg-[#f0f1ec] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:bg-[#151d27] dark:hover:text-gray-100',
+      ].join(' ')}
+    >
+      {prefix ? (
+        <span className="font-mono text-[9px] tracking-[0.08em] text-[#9b9d8f] dark:text-[#667287]">{prefix}</span>
+      ) : null}
+      <span>{label}</span>
+      <span className={active ? 'text-[#7a7c70] dark:text-[#9da7b8]' : 'text-[#95968a] dark:text-[#667287]'}>{count}</span>
+    </button>
   )
 }
 

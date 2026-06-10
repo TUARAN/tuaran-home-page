@@ -294,10 +294,26 @@ function GraphControlButton({ label, onClick, disabled = false, icon }) {
   )
 }
 
+const PRIMARY_VIEW_DEFS = [
+  {
+    key: 'repos',
+    label: '本地仓库',
+    title: '三大板块 + AI Agent 关系图',
+    desc: 'GitHub / Codex / Claude 工作区 · 拖拽画布移动；箭头表示吸收、服务、迁移或归档关系',
+  },
+  {
+    key: 'sites',
+    label: '核心运营站点',
+    title: '四站基础设施现状',
+    desc: '2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）',
+  },
+]
+
 export default function ProjectPortfolioConsole({ user }) {
   const [selected, setSelected] = useState('blogger-alliance')
   const [actionFilter, setActionFilter] = useState('all')
   const [query, setQuery] = useState('')
+  const [primaryView, setPrimaryView] = useState('repos')
   const [graphScale, setGraphScale] = useState(GRAPH_DEFAULT_SCALE)
   const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
   const [isGraphDragging, setIsGraphDragging] = useState(false)
@@ -464,7 +480,7 @@ export default function ProjectPortfolioConsole({ user }) {
           <div>
             <h2 className="text-2xl font-semibold text-[#15140f] dark:text-gray-100">本地仓库 × 核心运营站点</h2>
             <p className="mt-2 text-sm leading-6 text-[#667085] dark:text-gray-400">
-              左侧关系图梳理 GitHub / Codex / Claude 工作区的归属与整合路线；右侧对比四座线上站点的托管、数据、登录与后台现状。点击节点或阵列行查看项目详情。
+              切换查看本地工作区关系图，或四座线上站点的托管、数据、登录与后台现状；每次占满主视图。点击节点或阵列行查看项目详情。
             </p>
           </div>
           <input
@@ -476,196 +492,228 @@ export default function ProjectPortfolioConsole({ user }) {
           />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-2 xl:items-stretch">
+        <section className="space-y-3">
           <div
-            ref={graphFrameRef}
-            className={`flex min-h-0 flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${
-              isGraphFullscreen ? 'h-screen rounded-none border-0' : 'min-h-[640px]'
-            }`}
+            role="tablist"
+            aria-label="主视图切换"
+            className="flex flex-wrap gap-2"
           >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">本地仓库</p>
-                <h3 className="mt-1 text-base font-semibold text-[#15140f] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
-                <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
-                  GitHub / Codex / Claude 工作区 · 拖拽画布移动；箭头表示吸收、服务、迁移或归档关系
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <GraphControlButton
-                  label="缩小关系图"
-                  icon="zoomOut"
-                  onClick={() => updateGraphScale(graphScale - GRAPH_SCALE_STEP)}
-                  disabled={graphScale <= GRAPH_MIN_SCALE}
-                />
-                <span className="inline-flex h-8 min-w-14 items-center justify-center rounded-md border border-[#d9dee7] bg-[#f8fafc] px-2 font-mono text-[11px] text-[#475467] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
-                  {Math.round(graphScale * 100)}%
-                </span>
-                <GraphControlButton
-                  label="放大关系图"
-                  icon="zoomIn"
-                  onClick={() => updateGraphScale(graphScale + GRAPH_SCALE_STEP)}
-                  disabled={graphScale >= GRAPH_MAX_SCALE}
-                />
-                <GraphControlButton label="重置缩放" icon="reset" onClick={() => updateGraphScale(GRAPH_DEFAULT_SCALE)} disabled={graphScale === GRAPH_DEFAULT_SCALE} />
-                <GraphControlButton
-                  label={isGraphFullscreen ? '退出全屏' : '全屏查看关系图'}
-                  icon={isGraphFullscreen ? 'exitFullscreen' : 'fullscreen'}
-                  onClick={toggleGraphFullscreen}
-                />
-              </div>
-            </div>
-            <div
-              className={`min-h-0 flex-1 select-none overflow-auto p-4 touch-none ${
-                isGraphDragging ? 'cursor-grabbing' : 'cursor-grab'
-              } ${isGraphFullscreen ? '' : 'max-h-[720px]'}`}
-              onPointerDown={handleGraphPointerDown}
-              onPointerMove={handleGraphPointerMove}
-              onPointerUp={handleGraphPointerEnd}
-              onPointerCancel={handleGraphPointerEnd}
-              onPointerLeave={handleGraphPointerEnd}
-            >
-              <svg
-                className="block"
-                width={GRAPH_WIDTH * graphScale}
-                height={GRAPH_HEIGHT * graphScale}
-                viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
-                role="img"
-                aria-label="TUARAN 项目关系图"
-              >
-                <defs>
-                  <marker id="portfolio-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#aab3c2" />
-                  </marker>
-                </defs>
-                {graphEdges.map(([fromId, toId]) => {
-                  const from = positions[fromId]
-                  const to = positions[toId]
-                  const fromProject = projects.find((project) => project.id === fromId)
-                  if (!from || !to || !fromProject) return null
-                  const strong = ['core', 'infra', 'merge'].includes(fromProject.action)
-                  const midX = (from[0] + to[0]) / 2 + 70
-                  return (
-                    <path
-                      key={`${fromId}-${toId}`}
-                      d={`M ${from[0] + 70} ${from[1] + 22} C ${midX} ${from[1] + 22}, ${midX} ${to[1] + 22}, ${to[0] + 70} ${to[1] + 22}`}
-                      markerEnd="url(#portfolio-arrow)"
-                      fill="none"
-                      stroke="#aab3c2"
-                      strokeWidth={strong ? 2.8 : 1.6}
-                    />
-                  )
-                })}
-                {graphProjects.map((project) => {
-                  const [x, y] = positions[project.id]
-                  const pillar = pillars[project.pillar]
-                  const isSelected = selected === project.id
-                  const isCore = project.action === 'core'
-                  return (
-                    <g key={project.id} transform={`translate(${x}, ${y})`} className="cursor-pointer" onClick={() => handleGraphNodeClick(project.id)}>
-                      <rect
-                        width="150"
-                        height="58"
-                        rx="8"
-                        fill="#fff"
-                        stroke={isSelected ? '#111827' : pillar.color}
-                        strokeWidth={isSelected || isCore ? 2.4 : 1.4}
-                        filter={isSelected ? 'drop-shadow(0 8px 12px rgba(15,23,42,0.16))' : undefined}
-                      />
-                      <circle cx="16" cy="18" r="5" fill={pillar.color} />
-                      <text x="28" y="22" fill="#17202a" fontSize="13" fontWeight="650">
-                        {compactName(project.name)}
-                      </text>
-                      <text x="14" y="43" fill="#667085" fontSize="11">
-                        {actionLabels[project.action]} · {pillar.name}
-                      </text>
-                    </g>
-                  )
-                })}
-              </svg>
-            </div>
+            {PRIMARY_VIEW_DEFS.map((view) => {
+              const active = primaryView === view.key
+              return (
+                <button
+                  key={view.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setPrimaryView(view.key)}
+                  className={[
+                    'rounded-lg border px-3 py-2 text-left transition-colors',
+                    active
+                      ? 'border-[#111827] bg-[#111827] text-white dark:border-gray-100 dark:bg-gray-100 dark:text-[#111827]'
+                      : 'border-[#d9dee7] bg-white text-[#344054] hover:border-[#98a2b3] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500',
+                  ].join(' ')}
+                >
+                  <span className="block text-sm font-semibold">{view.label}</span>
+                  <span className={`mt-0.5 block text-[11px] ${active ? 'text-white/80 dark:text-[#111827]/70' : 'text-[#667085] dark:text-gray-400'}`}>
+                    {view.title}
+                  </span>
+                </button>
+              )
+            })}
           </div>
 
-          <section className="flex min-h-[640px] min-w-0 flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">核心运营站点</p>
-                <h3 className="mt-1 text-base font-semibold text-[#15140f] dark:text-gray-100">四站基础设施现状</h3>
-                <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
-                  2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] dark:text-gray-400">
-                {INFRA_TONE_LEGEND.map(([tone, label]) => (
-                  <span key={tone} className="inline-flex items-center gap-1.5">
-                    <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
-                    {label}
+          {primaryView === 'repos' ? (
+            <div
+              ref={graphFrameRef}
+              className={`flex min-h-0 w-full flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${
+                isGraphFullscreen ? 'h-screen rounded-none border-0' : 'min-h-[640px]'
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">本地仓库</p>
+                  <h3 className="mt-1 text-base font-semibold text-[#15140f] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
+                  <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
+                    GitHub / Codex / Claude 工作区 · 拖拽画布移动；箭头表示吸收、服务、迁移或归档关系
                   </span>
-                ))}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <GraphControlButton
+                    label="缩小关系图"
+                    icon="zoomOut"
+                    onClick={() => updateGraphScale(graphScale - GRAPH_SCALE_STEP)}
+                    disabled={graphScale <= GRAPH_MIN_SCALE}
+                  />
+                  <span className="inline-flex h-8 min-w-14 items-center justify-center rounded-md border border-[#d9dee7] bg-[#f8fafc] px-2 font-mono text-[11px] text-[#475467] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
+                    {Math.round(graphScale * 100)}%
+                  </span>
+                  <GraphControlButton
+                    label="放大关系图"
+                    icon="zoomIn"
+                    onClick={() => updateGraphScale(graphScale + GRAPH_SCALE_STEP)}
+                    disabled={graphScale >= GRAPH_MAX_SCALE}
+                  />
+                  <GraphControlButton label="重置缩放" icon="reset" onClick={() => updateGraphScale(GRAPH_DEFAULT_SCALE)} disabled={graphScale === GRAPH_DEFAULT_SCALE} />
+                  <GraphControlButton
+                    label={isGraphFullscreen ? '退出全屏' : '全屏查看关系图'}
+                    icon={isGraphFullscreen ? 'exitFullscreen' : 'fullscreen'}
+                    onClick={toggleGraphFullscreen}
+                  />
+                </div>
+              </div>
+              <div
+                className={`min-h-0 flex-1 select-none overflow-auto p-4 touch-none ${
+                  isGraphDragging ? 'cursor-grabbing' : 'cursor-grab'
+                } ${isGraphFullscreen ? '' : 'max-h-[760px]'}`}
+                onPointerDown={handleGraphPointerDown}
+                onPointerMove={handleGraphPointerMove}
+                onPointerUp={handleGraphPointerEnd}
+                onPointerCancel={handleGraphPointerEnd}
+                onPointerLeave={handleGraphPointerEnd}
+              >
+                <svg
+                  className="block"
+                  width={GRAPH_WIDTH * graphScale}
+                  height={GRAPH_HEIGHT * graphScale}
+                  viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
+                  role="img"
+                  aria-label="TUARAN 项目关系图"
+                >
+                  <defs>
+                    <marker id="portfolio-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#aab3c2" />
+                    </marker>
+                  </defs>
+                  {graphEdges.map(([fromId, toId]) => {
+                    const from = positions[fromId]
+                    const to = positions[toId]
+                    const fromProject = projects.find((project) => project.id === fromId)
+                    if (!from || !to || !fromProject) return null
+                    const strong = ['core', 'infra', 'merge'].includes(fromProject.action)
+                    const midX = (from[0] + to[0]) / 2 + 70
+                    return (
+                      <path
+                        key={`${fromId}-${toId}`}
+                        d={`M ${from[0] + 70} ${from[1] + 22} C ${midX} ${from[1] + 22}, ${midX} ${to[1] + 22}, ${to[0] + 70} ${to[1] + 22}`}
+                        markerEnd="url(#portfolio-arrow)"
+                        fill="none"
+                        stroke="#aab3c2"
+                        strokeWidth={strong ? 2.8 : 1.6}
+                      />
+                    )
+                  })}
+                  {graphProjects.map((project) => {
+                    const [x, y] = positions[project.id]
+                    const pillar = pillars[project.pillar]
+                    const isSelected = selected === project.id
+                    const isCore = project.action === 'core'
+                    return (
+                      <g key={project.id} transform={`translate(${x}, ${y})`} className="cursor-pointer" onClick={() => handleGraphNodeClick(project.id)}>
+                        <rect
+                          width="150"
+                          height="58"
+                          rx="8"
+                          fill="#fff"
+                          stroke={isSelected ? '#111827' : pillar.color}
+                          strokeWidth={isSelected || isCore ? 2.4 : 1.4}
+                          filter={isSelected ? 'drop-shadow(0 8px 12px rgba(15,23,42,0.16))' : undefined}
+                        />
+                        <circle cx="16" cy="18" r="5" fill={pillar.color} />
+                        <text x="28" y="22" fill="#17202a" fontSize="13" fontWeight="650">
+                          {compactName(project.name)}
+                        </text>
+                        <text x="14" y="43" fill="#667085" fontSize="11">
+                          {actionLabels[project.action]} · {pillar.name}
+                        </text>
+                      </g>
+                    )
+                  })}
+                </svg>
               </div>
             </div>
+          ) : (
+            <section className="flex min-h-[640px] w-full min-w-0 flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">核心运营站点</p>
+                  <h3 className="mt-1 text-base font-semibold text-[#15140f] dark:text-gray-100">四站基础设施现状</h3>
+                  <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
+                    2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] dark:text-gray-400">
+                  {INFRA_TONE_LEGEND.map(([tone, label]) => (
+                    <span key={tone} className="inline-flex items-center gap-1.5">
+                      <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {SITE_INFRA.map((site) => (
-                  <article
-                    key={site.id}
-                    className="overflow-hidden rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950/40"
-                  >
-                    <div className="h-1 w-full" style={{ background: site.color }} />
-                    <div className="p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h4 className="break-words text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{site.name}</h4>
-                          <p className="mt-0.5 text-[11px] leading-5 text-[#667085] dark:text-gray-400">{site.role}</p>
+              <div className="flex min-h-0 flex-1 flex-col gap-4 p-4">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {SITE_INFRA.map((site) => (
+                    <article
+                      key={site.id}
+                      className="overflow-hidden rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950/40"
+                    >
+                      <div className="h-1 w-full" style={{ background: site.color }} />
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h4 className="break-words text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{site.name}</h4>
+                            <p className="mt-0.5 text-[11px] leading-5 text-[#667085] dark:text-gray-400">{site.role}</p>
+                          </div>
+                          {site.referenceTag ? (
+                            <span className="shrink-0 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300">
+                              {site.referenceTag}
+                            </span>
+                          ) : null}
                         </div>
-                        {site.referenceTag ? (
-                          <span className="shrink-0 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300">
-                            {site.referenceTag}
-                          </span>
+                        <p className="mt-2 break-words font-mono text-[10px] leading-4 text-[#94a3b8] dark:text-gray-500">
+                          {site.repoPath}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#667085] dark:text-gray-400">{site.stack}</p>
+
+                        <dl className="mt-4 grid gap-1.5">
+                          {INFRA_DIMENSIONS.map((dim) => {
+                            const cell = site.cells[dim]
+                            return (
+                              <div
+                                key={dim}
+                                className={`grid grid-cols-[56px_minmax(0,1fr)] items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-4 ${INFRA_TONE_STYLES[cell.tone]}`}
+                              >
+                                <dt className="flex items-center gap-1.5 pt-0.5 font-mono text-[10px] uppercase tracking-wider opacity-80">
+                                  <span className={`inline-block h-1.5 w-1.5 rounded-full ${INFRA_TONE_DOT[cell.tone]}`} />
+                                  {dim}
+                                </dt>
+                                <dd className="min-w-0">
+                                  <span className="block break-words font-semibold">{cell.primary}</span>
+                                  {cell.sub ? <span className="block break-words text-[10px] opacity-75">{cell.sub}</span> : null}
+                                </dd>
+                              </div>
+                            )
+                          })}
+                        </dl>
+
+                        {site.note ? (
+                          <div className="mt-3 rounded-md border-l-2 border-amber-400 bg-amber-50/70 px-2.5 py-1.5 text-[11px] leading-5 text-amber-900 dark:border-amber-500 dark:bg-amber-950/30 dark:text-amber-200">
+                            {site.note}
+                          </div>
                         ) : null}
                       </div>
-                      <p className="mt-2 break-words font-mono text-[10px] leading-4 text-[#94a3b8] dark:text-gray-500">
-                        {site.repoPath}
-                      </p>
-                      <p className="mt-1 text-[11px] text-[#667085] dark:text-gray-400">{site.stack}</p>
+                    </article>
+                  ))}
+                </div>
 
-                      <dl className="mt-3 grid gap-1.5">
-                        {INFRA_DIMENSIONS.map((dim) => {
-                          const cell = site.cells[dim]
-                          return (
-                            <div
-                              key={dim}
-                              className={`grid grid-cols-[52px_minmax(0,1fr)] items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-4 ${INFRA_TONE_STYLES[cell.tone]}`}
-                            >
-                              <dt className="flex items-center gap-1.5 pt-0.5 font-mono text-[10px] uppercase tracking-wider opacity-80">
-                                <span className={`inline-block h-1.5 w-1.5 rounded-full ${INFRA_TONE_DOT[cell.tone]}`} />
-                                {dim}
-                              </dt>
-                              <dd className="min-w-0">
-                                <span className="block break-words font-semibold">{cell.primary}</span>
-                                {cell.sub ? <span className="block break-words text-[10px] opacity-75">{cell.sub}</span> : null}
-                              </dd>
-                            </div>
-                          )
-                        })}
-                      </dl>
-
-                      {site.note ? (
-                        <div className="mt-2 rounded-md border-l-2 border-amber-400 bg-amber-50/70 px-2.5 py-1.5 text-[11px] leading-5 text-amber-900 dark:border-amber-500 dark:bg-amber-950/30 dark:text-amber-200">
-                          {site.note}
-                        </div>
-                      ) : null}
-                    </div>
-                  </article>
-                ))}
+                <div className="rounded-md border border-purple-200 bg-purple-50/50 px-3 py-2 text-[12px] leading-6 text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/30 dark:text-purple-200">
+                  <b>模板参照范围：</b>仅 <span className="font-mono">Changelog</span> 形式参照 md（CHANGELOG.md）。其他维度（DB / R2 / 登录 / 账号 / 邮件 / Admin）现状已列，统一策略<b>待定</b>——本节先呈现真实差异，不预设对齐方向。
+                </div>
               </div>
-
-              <div className="mt-auto rounded-md border border-purple-200 bg-purple-50/50 px-3 py-2 text-[12px] leading-6 text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/30 dark:text-purple-200">
-                <b>模板参照范围：</b>仅 <span className="font-mono">Changelog</span> 形式参照 md（CHANGELOG.md）。其他维度（DB / R2 / 登录 / 账号 / 邮件 / Admin）现状已列，统一策略<b>待定</b>——本节先呈现真实差异，不预设对齐方向。
-              </div>
-            </div>
-          </section>
+            </section>
+          )}
         </section>
 
         <section className="rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">

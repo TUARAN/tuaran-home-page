@@ -14,7 +14,7 @@ export default function ArticlesHeaderClient({ items }) {
             专栏 / 调研 / 资料
           </h1>
           <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
-            先从最新内容和代表作开始读；需要精确查找时，再用分类、搜索和创作热力图。
+            不确定从哪读时，先点「推荐」；需要完整浏览或精确查找时，再用全部、分类与搜索。
             <button
               type="button"
               aria-expanded={expanded}

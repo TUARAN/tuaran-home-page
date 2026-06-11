@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -112,6 +112,7 @@ export default function ArticlesIndexClient({ items }) {
   const [topicType, setTopicType] = useState(initialTopicType)
   const [resourceType, setResourceType] = useState(initialResourceType)
   const [query, setQuery] = useState(initialQuery)
+  const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
     const fromUrl = searchParams?.get('tab')
@@ -161,7 +162,9 @@ export default function ArticlesIndexClient({ items }) {
     if (next !== 'topics') setTopicType('all')
     if (next !== 'resources') setResourceType('all')
     const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextResourceType, query)
-    router.replace(url, { scroll: false })
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
   }
 
   function selectChannel(channelKey) {
@@ -176,33 +179,43 @@ export default function ArticlesIndexClient({ items }) {
     setTab('companies')
     setCompanyType(next)
     const url = buildArticlesUrl('companies', next, 'all', 'all', query)
-    router.replace(url, { scroll: false })
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
   }
 
   function selectTopicType(next) {
     setTab('topics')
     setTopicType(next)
     const url = buildArticlesUrl('topics', 'all', next, 'all', query)
-    router.replace(url, { scroll: false })
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
   }
 
   function selectResourceType(next) {
     setTab('resources')
     setResourceType(next)
     const url = buildArticlesUrl('resources', 'all', 'all', next, query)
-    router.replace(url, { scroll: false })
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
   }
 
   function submitSearch(event) {
     event.preventDefault()
     const url = buildArticlesUrl(tab, companyType, topicType, resourceType, query)
-    router.replace(url, { scroll: false })
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
   }
 
   function clearSearch() {
     setQuery('')
     const url = buildArticlesUrl(tab, companyType, topicType, resourceType, '')
-    router.replace(url, { scroll: false })
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
   }
 
   const counts = useMemo(() => {
@@ -385,72 +398,42 @@ export default function ArticlesIndexClient({ items }) {
 
   return (
     <div className="space-y-5">
-      {showReadingHighlights ? <ReadingHighlights sections={readingHighlights} /> : null}
-
-      <section className="space-y-3 rounded-xl border border-[#dee0db] bg-[#fafbf8] p-3 dark:border-gray-800 dark:bg-[#0f141b]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <nav
-            aria-label="知识库频道"
-            className="flex flex-nowrap items-center gap-4 overflow-x-auto border-b border-transparent text-sm"
-          >
-            {CHANNEL_DEFS.map((channel) => {
-              const active = activeChannel === channel.key
-              const count =
-                channel.key === 'all'
-                  ? counts.all
-                  : channel.key === 'column'
-                  ? counts.column
-                  : channel.key === 'research'
-                  ? counts.research
-                  : counts.resources
-              return (
-                <button
-                  key={channel.key}
-                  type="button"
-                  onClick={() => selectChannel(channel.key)}
-                  className={[
-                    'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0.5 pb-2 pt-1 transition-colors',
-                    active
-                      ? 'border-[#333] text-[#222] dark:border-gray-100 dark:text-gray-100'
-                      : 'border-transparent text-[#616358] hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100',
-                  ].join(' ')}
-                >
-                  <span className={active ? 'font-semibold' : ''}>{channel.label}</span>
-                  <span className={active ? 'text-[#777] dark:text-gray-400' : 'text-[#999] dark:text-gray-500'}>{count}</span>
-                </button>
-              )
-            })}
-          </nav>
-
-          <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs text-[#646658] dark:text-gray-400">
-            {QUICK_LINKS.map((link) =>
-              link.external ? (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow inline-flex items-center gap-1 no-underline transition-colors hover:text-[#1a1814] dark:hover:text-gray-100"
-                >
-                  <span>{link.label}</span>
-                  <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3 opacity-70" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 2h6v6" />
-                    <path d="M10 2L4 8" />
-                    <path d="M9 8v2H2V3h2" />
-                  </svg>
-                </a>
-              ) : (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="no-underline transition-colors hover:text-[#1a1814] dark:hover:text-gray-100"
-                >
-                  {link.label}
-                </Link>
-              ),
-            )}
-          </div>
-        </div>
+      <section className="sticky top-16 z-30 -mx-1 space-y-3 rounded-xl border border-[#dee0db] bg-[#fafbf8]/95 p-3 shadow-[0_8px_24px_rgba(82,69,45,0.06)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none">
+        <nav
+          aria-label="知识库频道"
+          role="tablist"
+          className="grid grid-cols-2 gap-1.5 rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 sm:grid-cols-4 dark:border-gray-800 dark:bg-[#151a22]"
+        >
+          {CHANNEL_DEFS.map((channel) => {
+            const active = activeChannel === channel.key
+            const count =
+              channel.key === 'all'
+                ? counts.all
+                : channel.key === 'column'
+                ? counts.column
+                : channel.key === 'research'
+                ? counts.research
+                : counts.resources
+            return (
+              <button
+                key={channel.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => selectChannel(channel.key)}
+                className={[
+                  'inline-flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-md px-2 py-2 text-sm transition-all duration-150',
+                  active
+                    ? 'bg-white font-semibold text-[#1a1814] shadow-sm dark:bg-[#1e2630] dark:text-gray-100'
+                    : 'text-[#616358] hover:bg-white/70 hover:text-[#1a1814] dark:text-gray-400 dark:hover:bg-[#1e2630]/70 dark:hover:text-gray-100',
+                ].join(' ')}
+              >
+                <span>{channel.label}</span>
+                <span className="font-mono text-[10px] text-[#95968a] dark:text-gray-500">{count}</span>
+              </button>
+            )
+          })}
+        </nav>
 
         <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
           <input
@@ -477,8 +460,14 @@ export default function ArticlesIndexClient({ items }) {
           ) : null}
         </form>
 
-        {activeChannel !== 'all' ? (
-          <div className="space-y-2 border-t border-[#e6e7e0] pt-3 dark:border-gray-800">
+        <div
+          className={[
+            'grid transition-[grid-template-rows,opacity] duration-200 ease-out',
+            activeChannel !== 'all' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+          ].join(' ')}
+        >
+          <div className="overflow-hidden">
+            <div className="space-y-3.5 border-t border-[#e6e7e0] pt-4 dark:border-gray-800">
             {activeChannel === 'column' ? (
               <FilterRow label="专栏类型" ariaLabel="专栏类型">
                 {COLUMN_TAB_DEFS.map((t) => (
@@ -559,16 +548,50 @@ export default function ArticlesIndexClient({ items }) {
               </FilterRow>
             ) : null}
 
-            {breadcrumb ? (
-              <p className="text-xs text-[#808272] dark:text-[#7f8aa0]">
-                当前：<span className="font-medium text-[#4a4b41] dark:text-gray-300">{breadcrumb}</span>
-              </p>
-            ) : null}
+            {breadcrumb ? <FilterBreadcrumb path={breadcrumb} /> : null}
+            </div>
           </div>
-        ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e6e7e0] pt-3 text-xs text-[#646658] dark:border-gray-800 dark:text-gray-400">
+          {QUICK_LINKS.map((link) =>
+            link.external ? (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noreferrer"
+                className="no-external-arrow inline-flex items-center gap-1 no-underline transition-colors hover:text-[#1a1814] dark:hover:text-gray-100"
+              >
+                <span>{link.label}</span>
+                <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3 opacity-70" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 2h6v6" />
+                  <path d="M10 2L4 8" />
+                  <path d="M9 8v2H2V3h2" />
+                </svg>
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="no-underline transition-colors hover:text-[#1a1814] dark:hover:text-gray-100"
+              >
+                {link.label}
+              </Link>
+            ),
+          )}
+        </div>
       </section>
 
-      <div className="space-y-4">
+      {showReadingHighlights ? <ReadingHighlights sections={readingHighlights} /> : null}
+
+      <div
+        className={[
+          'space-y-4 transition-opacity duration-150',
+          isPending ? 'opacity-60' : 'opacity-100',
+        ].join(' ')}
+        aria-busy={isPending}
+      >
         {visible.length === 0 ? (
           <p className="text-sm text-[#666] dark:text-gray-400">
             {query ? '没有匹配的内容，试试更短关键词或切换分类。' : '该分类下暂无内容。'}
@@ -590,17 +613,55 @@ export default function ArticlesIndexClient({ items }) {
 
 function FilterRow({ label, ariaLabel, wrap = false, children }) {
   return (
-    <div className={`flex min-w-0 items-center gap-3 text-sm ${wrap ? 'flex-wrap' : ''}`}>
-      <span className="shrink-0 text-xs text-[#808272] dark:text-[#7f8aa0]">{label}</span>
+    <div className="grid min-w-0 grid-cols-[4.25rem_minmax(0,1fr)] items-start gap-x-3 sm:grid-cols-[4.75rem_minmax(0,1fr)]">
+      <span className="pt-1.5 text-xs leading-5 text-[#808272] dark:text-[#7f8aa0]">{label}</span>
       <nav
         aria-label={ariaLabel}
         className={[
-          'flex min-w-0 items-center gap-2',
-          wrap ? 'flex-wrap' : 'flex-nowrap overflow-x-auto',
+          'flex min-w-0 items-center gap-1.5',
+          wrap ? 'flex-wrap' : 'flex-nowrap overflow-x-auto pb-0.5',
         ].join(' ')}
       >
         {children}
       </nav>
+    </div>
+  )
+}
+
+function FilterBreadcrumb({ path }) {
+  const parts = String(path || '')
+    .split(' / ')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  if (!parts.length) return null
+
+  return (
+    <div className="mt-1 rounded-lg border border-[#e8e9e2] bg-white/90 px-3 py-2.5 dark:border-gray-800 dark:bg-[#121821]">
+      <div className="flex items-start gap-3">
+        <span className="shrink-0 pt-px font-mono text-[10px] uppercase tracking-[0.14em] text-[#9b9d8f] dark:text-gray-500">
+          当前
+        </span>
+        <ol className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-5 text-[#616358] dark:text-gray-400">
+          {parts.map((part, index) => (
+            <li key={`${part}-${index}`} className="inline-flex items-center gap-1.5">
+              {index > 0 ? (
+                <span aria-hidden="true" className="text-[#cbccc4] dark:text-gray-600">
+                  /
+                </span>
+              ) : null}
+              <span
+                className={
+                  index === parts.length - 1
+                    ? 'font-medium text-[#1a1814] dark:text-gray-100'
+                    : 'text-[#6b6d62] dark:text-gray-400'
+                }
+              >
+                {part}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   )
 }
@@ -611,7 +672,7 @@ function FilterChip({ label, count, active, onClick, prefix }) {
       type="button"
       onClick={onClick}
       className={[
-        'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
+        'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors',
         active
           ? 'border-[#c8c9bf] bg-[#eef0e8] font-medium text-[#3a3b34] dark:border-[#3a4030] dark:bg-[#1b1e15] dark:text-[#d5dcc4]'
           : 'border-transparent text-[#636559] hover:bg-[#f0f1ec] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:bg-[#151d27] dark:hover:text-gray-100',

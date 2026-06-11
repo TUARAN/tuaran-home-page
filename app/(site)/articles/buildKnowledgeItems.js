@@ -2,7 +2,13 @@ import { articles } from './articlesData'
 import { ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
-import { CATEGORY_META, COMPANY_TYPE_META, TOPIC_TYPE_META, listResearch } from '../../../lib/research/loader'
+import {
+  CATEGORY_META,
+  COMPANY_TYPE_META,
+  PEOPLE_TYPE_META,
+  TOPIC_TYPE_META,
+  listResearch,
+} from '../../../lib/research/loader'
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -27,13 +33,15 @@ export function buildKnowledgeItems() {
     const baseLabel = CATEGORY_META[entry.category]?.label || entry.category
     const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
     const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
-    const subLabel = companyLabel || topicLabel
+    const peopleLabel = entry.peopleType && PEOPLE_TYPE_META[entry.peopleType]?.label
+    const subLabel = companyLabel || topicLabel || peopleLabel
     return {
       id: `research:${entry.category}:${entry.slug}`,
       kind: entry.category, // 'companies' | 'topics' | 'people'
       tagLabel: subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
       companyType: entry.companyType || '',
       topicType: entry.topicType || '',
+      peopleType: entry.peopleType || '',
       version: entry.version || '',
       title: entry.title,
       summary: entry.tldr || entry.summary,

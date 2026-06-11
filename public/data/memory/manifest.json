@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-11T02:17:38.421Z",
+  "generatedAt": "2026-06-11T13:59:07.234Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -26,6 +26,12 @@
               "hash": "58c8e13653d74605a0fca5f342e9eff82b0a75954d491c58586248f288db5926",
               "path": "claude/MEMORY/2026-06-11T01-53-53-485Z.enc.json",
               "bytes": 804
+            },
+            {
+              "ts": "2026-06-11T13:59:07.173Z",
+              "hash": "ee0ab2662e5d05b27dce868621eed254c8b253497519f31d6cb9f7a45f43a568",
+              "path": "claude/MEMORY/2026-06-11T13-59-07-192Z.enc.json",
+              "bytes": 943
             }
           ]
         },
@@ -104,6 +110,18 @@
               "hash": "159820811a920b5af351ace023de1abbed8dd250f816915086ae9ed0c89015af",
               "path": "claude/feedback-research-tone/2026-06-11T02-17-38-414Z.enc.json",
               "bytes": 1530
+            }
+          ]
+        },
+        "research-style-template-v3": {
+          "title": "research-style-template-v3",
+          "description": "调研写作规则的唯一正本在 lib/researchStyleTemplates.js 的 active 版本（当前 v3 全文范式）；动笔前先读它，不要凭记忆复述规则",
+          "versions": [
+            {
+              "ts": "2026-06-11T13:59:07.195Z",
+              "hash": "492c839f71f85eddddf1de6fff1b90c3a440faa51e42a3b508b8c81b1e14b93a",
+              "path": "claude/research-style-template-v3/2026-06-11T13-59-07-212Z.enc.json",
+              "bytes": 960
             }
           ]
         }
@@ -206,6 +224,18 @@
               "hash": "b84b59dfb6e43c6f500d4802c67570ea7ac69e8f9f32f9edc6bf3debcdf15948",
               "path": "ai-context/web-llm-port-handoff/2026-06-03T03-22-06-273Z.enc.json",
               "bytes": 7913
+            }
+          ]
+        },
+        "README": {
+          "title": "README",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-06-11T13:59:07.214Z",
+              "hash": "c72611c78876ad10755be423e12ae24df7f7406c7a65fe41a8d9b6a28c06fc16",
+              "path": "ai-context/README/2026-06-11T13-59-07-231Z.enc.json",
+              "bytes": 1237
             }
           ]
         }

@@ -151,8 +151,9 @@ export default function ResearchStyleClient() {
           <div className="rounded-xl border border-dashed border-[#caccc0] bg-transparent p-4 text-[12px] leading-relaxed text-[#73746a] dark:border-[#2d3744] dark:text-[#9aa3b3]">
             <p className="mb-1 font-semibold text-[#51514a] dark:text-gray-300">同步状态</p>
             <p className="m-0">
-              规则正本存放于站长本地 Claude 记忆库（
-              <code className="rounded bg-[#f0f0e6] px-1 font-mono dark:bg-[#1a2230]">feedback-research-tone.md</code>）。本页是它的历史快照，
+              规则正本存放于站长本地 Claude 记忆库（措辞分寸：
+              <code className="rounded bg-[#f0f0e6] px-1 font-mono dark:bg-[#1a2230]">feedback-research-tone.md</code>；全文范式：
+              <code className="rounded bg-[#f0f0e6] px-1 font-mono dark:bg-[#1a2230]">research-style-template-v3.md</code>）。本页是它的历史快照，
               规则改动后请手动添加一个新版本到{' '}
               <code className="rounded bg-[#f0f0e6] px-1 font-mono dark:bg-[#1a2230]">lib/researchStyleTemplates.js</code>。
             </p>

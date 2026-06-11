@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-04T13:26:19.256Z",
+  "generatedAt": "2026-06-11T01:53:53.508Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -20,6 +20,12 @@
               "hash": "b5ec18c0c5f58a23034511fb0bd78be4e19e82dc0a23e959a9e8dba461d16c9c",
               "path": "claude/MEMORY/2026-06-03T03-22-05-837Z.enc.json",
               "bytes": 684
+            },
+            {
+              "ts": "2026-06-11T01:53:53.466Z",
+              "hash": "58c8e13653d74605a0fca5f342e9eff82b0a75954d491c58586248f288db5926",
+              "path": "claude/MEMORY/2026-06-11T01-53-53-485Z.enc.json",
+              "bytes": 804
             }
           ]
         },
@@ -80,6 +86,18 @@
               "hash": "223b446099f5dea8a6065abaeb7a55ae0088db2a8e971b604b89cfe40091d284",
               "path": "claude/vibe-coding-research-versions/2026-06-03T03-22-06-005Z.enc.json",
               "bytes": 1510
+            }
+          ]
+        },
+        "feedback-research-tone": {
+          "title": "feedback-research-tone",
+          "description": "写公司/产品调研时不要用推测当事实陈述，尤其涉及对方\\\"还没赚到钱\\\"\\\"假装\\\"\\\"0 投入\\\"这类判断",
+          "versions": [
+            {
+              "ts": "2026-06-11T01:53:53.487Z",
+              "hash": "017e7599c0bd0fe83270f1e18df4e5a5e06619be38eb6f8dc877f25ef45c1a4a",
+              "path": "claude/feedback-research-tone/2026-06-11T01-53-53-503Z.enc.json",
+              "bytes": 1105
             }
           ]
         }

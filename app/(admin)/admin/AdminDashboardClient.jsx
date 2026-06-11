@@ -89,7 +89,7 @@ export default function AdminDashboardClient() {
               后台总览
             </h1>
             <p className="mb-0 max-w-[44rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-              站长控制台统一入口。配置与观测走 /admin；日常私有工具仍留在主站对应路径。
+              站长控制台统一入口。配置、观测、项目治理与长期罗盘走 /admin；少量高频工具保留主站快捷入口。
             </p>
           </div>
           <button

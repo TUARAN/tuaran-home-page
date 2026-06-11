@@ -11,7 +11,13 @@ import ThemeFilter from './components/ThemeFilter'
 import Timeline from './components/Timeline'
 import UnlockForm from './components/UnlockForm'
 
-export default function LongCompassClient() {
+const DEFAULT_DESCRIPTION = '站长的长期资产、行动框架与阶段复盘 —— 加密私域，仅作者本人可见。'
+
+export default function LongCompassClient({
+  returnTo = '/long-compass',
+  eyebrow = 'Long Compass',
+  description = DEFAULT_DESCRIPTION,
+}) {
   const [loading, setLoading] = useState(true)
   const [authError, setAuthError] = useState('')
   const [user, setUser] = useState(null)
@@ -130,8 +136,8 @@ export default function LongCompassClient() {
       <PrivateVaultGate
         state="loading"
         vaultLabel="长期罗盘"
-        returnTo="/long-compass"
-        description="站长的长期资产、行动框架与阶段复盘 —— 加密私域，仅作者本人可见。"
+        returnTo={returnTo}
+        description={description}
       />
     )
   }
@@ -141,8 +147,8 @@ export default function LongCompassClient() {
       <PrivateVaultGate
         state={authError === 'UNAUTHORIZED' ? 'anonymous' : 'not-owner'}
         vaultLabel="长期罗盘"
-        returnTo="/long-compass"
-        description="站长的长期资产、行动框架与阶段复盘 —— 加密私域，仅作者本人可见。"
+        returnTo={returnTo}
+        description={description}
       />
     )
   }
@@ -153,7 +159,7 @@ export default function LongCompassClient() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
-              Long Compass
+              {eyebrow}
             </p>
             <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
               长期罗盘

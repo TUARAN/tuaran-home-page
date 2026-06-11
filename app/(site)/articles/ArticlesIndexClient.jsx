@@ -6,9 +6,14 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
-import { getCompanyTypeFilters, getTopicTypeFilters } from '../../../lib/research/categories'
+import {
+  getCompanyTypeFilters,
+  getPeopleTypeFilters,
+  getTopicTypeFilters,
+} from '../../../lib/research/categories'
 
 const CHANNEL_DEFS = [
+  { key: 'picks', label: '推荐' },
   { key: 'all', label: '全部' },
   { key: 'column', label: '专栏' },
   { key: 'research', label: '调研' },
@@ -33,9 +38,10 @@ const KIND_TAG_CLASS = {
 
 const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
 const RESEARCH_KINDS = new Set(RESEARCH_KIND_KEYS)
-const TAB_KEYS = ['all', 'column', 'posts', 'works', 'research', 'resources', ...RESEARCH_KIND_KEYS]
+const TAB_KEYS = ['picks', 'all', 'column', 'posts', 'works', 'research', 'resources', ...RESEARCH_KIND_KEYS]
 
 function getChannelForTab(activeTab) {
+  if (activeTab === 'picks') return 'picks'
   if (activeTab === 'all') return 'all'
   if (activeTab === 'column' || activeTab === 'posts' || activeTab === 'works') return 'column'
   if (activeTab === 'resources') return 'resources'
@@ -62,6 +68,9 @@ const COMPANY_TYPE_KEYS = COMPANY_TYPE_DEFS.map((t) => t.key)
 
 const TOPIC_TYPE_DEFS = getTopicTypeFilters()
 const TOPIC_TYPE_KEYS = TOPIC_TYPE_DEFS.map((t) => t.key)
+
+const PEOPLE_TYPE_DEFS = getPeopleTypeFilters()
+const PEOPLE_TYPE_KEYS = PEOPLE_TYPE_DEFS.map((t) => t.key)
 
 const RESOURCE_TYPE_DEFS = [
   { key: 'all', label: '全部资料' },
@@ -102,6 +111,10 @@ export default function ArticlesIndexClient({ items }) {
     const fromUrl = searchParams?.get('topic_type')
     return TOPIC_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
   })()
+  const initialPeopleType = (() => {
+    const fromUrl = searchParams?.get('people_type')
+    return PEOPLE_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
+  })()
   const initialResourceType = (() => {
     const fromUrl = searchParams?.get('resource_type')
     return RESOURCE_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
@@ -110,6 +123,7 @@ export default function ArticlesIndexClient({ items }) {
   const [tab, setTab] = useState(initialTab)
   const [companyType, setCompanyType] = useState(initialCompanyType)
   const [topicType, setTopicType] = useState(initialTopicType)
+  const [peopleType, setPeopleType] = useState(initialPeopleType)
   const [resourceType, setResourceType] = useState(initialResourceType)
   const [query, setQuery] = useState(initialQuery)
   const [isPending, startTransition] = useTransition()
@@ -129,6 +143,11 @@ export default function ArticlesIndexClient({ items }) {
     if (nextTopicType !== topicType) {
       setTopicType(nextTopicType)
     }
+    const peopleTypeFromUrl = searchParams?.get('people_type')
+    const nextPeopleType = PEOPLE_TYPE_KEYS.includes(peopleTypeFromUrl) ? peopleTypeFromUrl : 'all'
+    if (nextPeopleType !== peopleType) {
+      setPeopleType(nextPeopleType)
+    }
     const resourceTypeFromUrl = searchParams?.get('resource_type')
     const nextResourceType = RESOURCE_TYPE_KEYS.includes(resourceTypeFromUrl) ? resourceTypeFromUrl : 'all'
     if (nextResourceType !== resourceType) {
@@ -141,11 +160,19 @@ export default function ArticlesIndexClient({ items }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  function buildArticlesUrl(nextTab, nextCompanyType, nextTopicType, nextResourceType, nextQuery) {
+  function buildArticlesUrl(
+    nextTab,
+    nextCompanyType,
+    nextTopicType,
+    nextPeopleType,
+    nextResourceType,
+    nextQuery,
+  ) {
     const params = new URLSearchParams()
     if (nextTab !== 'all') params.set('tab', nextTab)
     if (nextTab === 'companies' && nextCompanyType !== 'all') params.set('company_type', nextCompanyType)
     if (nextTab === 'topics' && nextTopicType !== 'all') params.set('topic_type', nextTopicType)
+    if (nextTab === 'people' && nextPeopleType !== 'all') params.set('people_type', nextPeopleType)
     if (nextTab === 'resources' && nextResourceType !== 'all') params.set('resource_type', nextResourceType)
     const normalizedQuery = String(nextQuery || '').trim()
     if (normalizedQuery) params.set('q', normalizedQuery)
@@ -157,11 +184,13 @@ export default function ArticlesIndexClient({ items }) {
     setTab(next)
     const nextCompanyType = next === 'companies' ? companyType : 'all'
     const nextTopicType = next === 'topics' ? topicType : 'all'
+    const nextPeopleType = next === 'people' ? peopleType : 'all'
     const nextResourceType = next === 'resources' ? resourceType : 'all'
     if (next !== 'companies') setCompanyType('all')
     if (next !== 'topics') setTopicType('all')
+    if (next !== 'people') setPeopleType('all')
     if (next !== 'resources') setResourceType('all')
-    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextResourceType, query)
+    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextPeopleType, nextResourceType, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -169,7 +198,8 @@ export default function ArticlesIndexClient({ items }) {
 
   function selectChannel(channelKey) {
     if (channelKey === activeChannel) return
-    if (channelKey === 'all') selectTab('all')
+    if (channelKey === 'picks') selectTab('picks')
+    else if (channelKey === 'all') selectTab('all')
     else if (channelKey === 'column') selectTab('column')
     else if (channelKey === 'research') selectTab('research')
     else if (channelKey === 'resources') selectTab('resources')
@@ -178,7 +208,7 @@ export default function ArticlesIndexClient({ items }) {
   function selectCompanyType(next) {
     setTab('companies')
     setCompanyType(next)
-    const url = buildArticlesUrl('companies', next, 'all', 'all', query)
+    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -187,7 +217,16 @@ export default function ArticlesIndexClient({ items }) {
   function selectTopicType(next) {
     setTab('topics')
     setTopicType(next)
-    const url = buildArticlesUrl('topics', 'all', next, 'all', query)
+    const url = buildArticlesUrl('topics', 'all', next, 'all', 'all', query)
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
+  }
+
+  function selectPeopleType(next) {
+    setTab('people')
+    setPeopleType(next)
+    const url = buildArticlesUrl('people', 'all', 'all', next, 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -196,7 +235,7 @@ export default function ArticlesIndexClient({ items }) {
   function selectResourceType(next) {
     setTab('resources')
     setResourceType(next)
-    const url = buildArticlesUrl('resources', 'all', 'all', next, query)
+    const url = buildArticlesUrl('resources', 'all', 'all', 'all', next, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -204,7 +243,7 @@ export default function ArticlesIndexClient({ items }) {
 
   function submitSearch(event) {
     event.preventDefault()
-    const url = buildArticlesUrl(tab, companyType, topicType, resourceType, query)
+    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, resourceType, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -212,7 +251,7 @@ export default function ArticlesIndexClient({ items }) {
 
   function clearSearch() {
     setQuery('')
-    const url = buildArticlesUrl(tab, companyType, topicType, resourceType, '')
+    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, resourceType, '')
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -251,6 +290,9 @@ export default function ArticlesIndexClient({ items }) {
       if (tab === 'topics' && topicType !== 'all') {
         parts.push(TOPIC_TYPE_DEFS.find((t) => t.key === topicType)?.label || topicType)
       }
+      if (tab === 'people' && peopleType !== 'all') {
+        parts.push(PEOPLE_TYPE_DEFS.find((t) => t.key === peopleType)?.label || peopleType)
+      }
     }
     if (activeChannel === 'resources') {
       const res = RESOURCE_TYPE_DEFS.find((t) => t.key === resourceType)
@@ -258,11 +300,13 @@ export default function ArticlesIndexClient({ items }) {
       else parts.push('全部资料')
     }
     return parts.length ? parts.join(' / ') : null
-  }, [tab, activeChannel, companyType, topicType, resourceType])
+  }, [tab, activeChannel, companyType, topicType, peopleType, resourceType])
 
   const visible = useMemo(() => {
+    if (tab === 'picks' && !query.trim()) return []
+
     const tabItems =
-      tab === 'all'
+      tab === 'all' || tab === 'picks'
         ? items
         : tab === 'column'
         ? items.filter((item) => item.kind === 'posts' || item.kind === 'works')
@@ -275,6 +319,9 @@ export default function ArticlesIndexClient({ items }) {
     }
     if (tab === 'topics' && topicType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.topicType === topicType)
+    }
+    if (tab === 'people' && peopleType !== 'all') {
+      typeFiltered = typeFiltered.filter((item) => item.peopleType === peopleType)
     }
     if (tab === 'resources' && resourceType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.resourceType === resourceType)
@@ -289,7 +336,7 @@ export default function ArticlesIndexClient({ items }) {
         .toLowerCase()
       return combined.includes(normalizedQuery)
     })
-  }, [items, tab, companyType, topicType, resourceType, query])
+  }, [items, tab, companyType, topicType, peopleType, resourceType, query])
 
 
   useEffect(() => {
@@ -355,6 +402,18 @@ export default function ArticlesIndexClient({ items }) {
     return base
   }, [items])
 
+  const peopleTypeCounts = useMemo(() => {
+    const base = Object.fromEntries(PEOPLE_TYPE_KEYS.map((k) => [k, 0]))
+    const peopleItems = items.filter((item) => item.kind === 'people')
+    base.all = peopleItems.length
+    for (const item of peopleItems) {
+      if (item.peopleType && typeof base[item.peopleType] === 'number') {
+        base[item.peopleType] += 1
+      }
+    }
+    return base
+  }, [items])
+
   const resourceTypeCounts = useMemo(() => {
     const base = Object.fromEntries(RESOURCE_TYPE_KEYS.map((k) => [k, 0]))
     const resourceItems = items.filter((item) => item.kind === 'resources')
@@ -394,7 +453,13 @@ export default function ArticlesIndexClient({ items }) {
     ].filter((section) => section.items.length > 0)
   }, [items])
 
-  const showReadingHighlights = tab === 'all' && !query.trim()
+  const picksCount = useMemo(
+    () => readingHighlights.reduce((sum, section) => sum + section.items.length, 0),
+    [readingHighlights],
+  )
+
+  const showReadingHighlights = tab === 'picks' && !query.trim()
+  const showArticleList = tab !== 'picks' || Boolean(query.trim())
 
   return (
     <div className="space-y-5">
@@ -402,12 +467,14 @@ export default function ArticlesIndexClient({ items }) {
         <nav
           aria-label="知识库频道"
           role="tablist"
-          className="grid grid-cols-2 gap-1.5 rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 sm:grid-cols-4 dark:border-gray-800 dark:bg-[#151a22]"
+          className="grid grid-cols-2 gap-1.5 rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 sm:grid-cols-5 dark:border-gray-800 dark:bg-[#151a22]"
         >
           {CHANNEL_DEFS.map((channel) => {
             const active = activeChannel === channel.key
             const count =
-              channel.key === 'all'
+              channel.key === 'picks'
+                ? picksCount
+                : channel.key === 'all'
                 ? counts.all
                 : channel.key === 'column'
                 ? counts.column
@@ -422,14 +489,23 @@ export default function ArticlesIndexClient({ items }) {
                 aria-selected={active}
                 onClick={() => selectChannel(channel.key)}
                 className={[
-                  'inline-flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-md px-2 py-2 text-sm transition-all duration-150',
+                  'inline-flex min-h-9 items-center justify-center rounded-md px-2.5 py-2 text-sm transition-all duration-150',
                   active
                     ? 'bg-white font-semibold text-[#1a1814] shadow-sm dark:bg-[#1e2630] dark:text-gray-100'
                     : 'text-[#616358] hover:bg-white/70 hover:text-[#1a1814] dark:text-gray-400 dark:hover:bg-[#1e2630]/70 dark:hover:text-gray-100',
                 ].join(' ')}
               >
-                <span>{channel.label}</span>
-                <span className="font-mono text-[10px] text-[#95968a] dark:text-gray-500">{count}</span>
+                <span className="whitespace-nowrap">
+                  {channel.label}
+                  <span
+                    className={[
+                      'font-mono text-[11px] tabular-nums',
+                      active ? 'text-[#777] dark:text-gray-400' : 'text-[#95968a] dark:text-gray-500',
+                    ].join(' ')}
+                  >
+                    ({count})
+                  </span>
+                </span>
               </button>
             )
           })}
@@ -463,7 +539,7 @@ export default function ArticlesIndexClient({ items }) {
         <div
           className={[
             'grid transition-[grid-template-rows,opacity] duration-200 ease-out',
-            activeChannel !== 'all' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+            activeChannel !== 'all' && activeChannel !== 'picks' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
           ].join(' ')}
         >
           <div className="overflow-hidden">
@@ -527,6 +603,19 @@ export default function ArticlesIndexClient({ items }) {
                     ))}
                   </FilterRow>
                 ) : null}
+                {tab === 'people' ? (
+                  <FilterRow label="人物分类" ariaLabel="人物调研分类" wrap>
+                    {PEOPLE_TYPE_DEFS.map((t) => (
+                      <FilterChip
+                        key={t.key}
+                        label={t.label}
+                        count={peopleTypeCounts[t.key] ?? 0}
+                        active={peopleType === t.key}
+                        onClick={() => selectPeopleType(t.key)}
+                      />
+                    ))}
+                  </FilterRow>
+                ) : null}
               </>
             ) : null}
 
@@ -585,28 +674,30 @@ export default function ArticlesIndexClient({ items }) {
 
       {showReadingHighlights ? <ReadingHighlights sections={readingHighlights} /> : null}
 
-      <div
-        className={[
-          'space-y-4 transition-opacity duration-150',
-          isPending ? 'opacity-60' : 'opacity-100',
-        ].join(' ')}
-        aria-busy={isPending}
-      >
-        {visible.length === 0 ? (
-          <p className="text-sm text-[#666] dark:text-gray-400">
-            {query ? '没有匹配的内容，试试更短关键词或切换分类。' : '该分类下暂无内容。'}
-          </p>
-        ) : (
-          visible.map((item) => {
-            const parts = String(item.href || '').split('/')
-            const pvKey = parts[3] && parts[4] ? `${parts[3]}/${parts[4]}` : ''
-            const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
-            const pvLoading = pvKey !== '' && !pvLoaded
-            const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
-            return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
-          })
-        )}
-      </div>
+      {showArticleList ? (
+        <div
+          className={[
+            'space-y-4 transition-opacity duration-150',
+            isPending ? 'opacity-60' : 'opacity-100',
+          ].join(' ')}
+          aria-busy={isPending}
+        >
+          {visible.length === 0 ? (
+            <p className="text-sm text-[#666] dark:text-gray-400">
+              {query ? '没有匹配的内容，试试更短关键词或切换分类。' : '该分类下暂无内容。'}
+            </p>
+          ) : (
+            visible.map((item) => {
+              const parts = String(item.href || '').split('/')
+              const pvKey = parts[3] && parts[4] ? `${parts[3]}/${parts[4]}` : ''
+              const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
+              const pvLoading = pvKey !== '' && !pvLoaded
+              const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
+              return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
+            })
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }

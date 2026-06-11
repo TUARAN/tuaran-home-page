@@ -180,14 +180,14 @@ const SITE_INFRA = [
     stack: 'Vue 3 + Vite',
     cells: {
       托管: { tone: 'note', primary: 'Cloudflare Worker', sub: 'cloudflare/worker.js · ASSETS · custom domain × 2' },
-      DB: { tone: 'partial', primary: 'D1 + Supabase 双轨', sub: 'D1 业务数据 · Supabase 身份层' },
+      DB: { tone: 'solid', primary: 'Supabase 单一数据源', sub: 'Postgres 业务数据 · Worker API 边界' },
       R2: { tone: 'none', primary: '未声明', sub: '—' },
       登录: { tone: 'solid', primary: 'Supabase Auth + Worker RBAC', sub: 'Bearer token · profiles.role 复验' },
       邮件: { tone: 'solid', primary: 'Resend SMTP', sub: 'Supabase 邮件改走 mail.syncblog.cn' },
       Admin: { tone: 'partial', primary: 'Workspace + 内部台账', sub: '/tob/internal · /workspace/cloud-promo' },
       Changelog: { tone: 'solid', primary: 'WorkspaceChangelog.vue', sub: '/workspace/changelog 产品动态' },
     },
-    note: '身份仍在 Supabase、业务数据仍在 D1，但 Worker 已通过 Supabase bearer token 拉取 profiles.role 做 internal/admin 校验；剩余问题是双存储架构复杂，不是鉴权断层。',
+    note: '账号、角色、商单、推广报告和年度总览已统一落到 Supabase Postgres；Cloudflare Worker 保留 API 边界，校验 Supabase JWT 与角色，并用服务端 service role 写业务数据。',
   },
   {
     id: 'frontendnext',
@@ -211,7 +211,7 @@ const SITE_INFRA = [
 
 const SITE_INFRA_FINDINGS = [
   ['syncblog.cn', '后台形态不是 /admin，而是工作流中控台：/workflow/data、/workflow/creation、/workflow/import、/workflow/distribution、/workflow/stats，加 /settings、/pricing 和 /creator-offer。'],
-  ['blogger-alliance.cn', '已从“登录态断层”推进到 Supabase Auth + Worker 复验角色；/tob/internal 承载合作台账、报告与年度数据，/workspace/cloud-promo 是 admin 级推广素材入口。'],
+  ['blogger-alliance.cn', '已收敛为 Supabase 单一数据源 + Worker API：/tob/internal 承载合作台账、推广报告与年度数据，/workspace/cloud-promo 是 admin 级推广素材入口。'],
   ['frontendnext.com', '线上部署口径仍是纯静态 Pages；订单、支付、订阅 API 是后端化预留，若上线必须先落 Pages Functions/Workers 和 D1，不能按当前 Next route handler 直接依赖。'],
   ['统一判断', '四站不需要强行同构：2aran 管理自己，syncblog 管内容生产，blogger-alliance 管商业台账，frontendnext 先保持静态内容站；需要统一的是 Changelog 口径和运行状态台账。'],
 ]

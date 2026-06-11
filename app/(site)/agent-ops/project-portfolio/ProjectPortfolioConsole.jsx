@@ -166,9 +166,10 @@ const SITE_INFRA = [
       R2: { tone: 'note', primary: 'GitHub ImgBed', sub: 'bucketio × 20 仓 · 可选 CDN' },
       登录: { tone: 'solid', primary: '邮箱 + 密码 (PBKDF2)', sub: 'Worker HMAC cookie · legacy GitHub 兼容' },
       邮件: { tone: 'solid', primary: 'Resend', sub: 'EMAIL_PROVIDER=resend · 仅存验证码哈希' },
-      Admin: { tone: 'none', primary: '未深入扫描', sub: '—' },
-      Changelog: { tone: 'solid', primary: 'CHANGELOG.md', sub: '仓库根 markdown 文件' },
+      Admin: { tone: 'note', primary: 'Workflow + Settings', sub: '/workflow/* · /settings · /pricing' },
+      Changelog: { tone: 'solid', primary: 'CHANGELOG.md + /changelog', sub: '根 markdown · ChangelogPage 时间线' },
     },
+    note: '不是传统 /admin 后台，而是把编辑器、素材、AI 创作、导入、分发、增长统计拆到 /workflow/*；账号、配额和创作者名片由 D1 + Worker API 支撑。',
   },
   {
     id: 'blogger',
@@ -181,12 +182,12 @@ const SITE_INFRA = [
       托管: { tone: 'note', primary: 'Cloudflare Worker', sub: 'cloudflare/worker.js · ASSETS · custom domain × 2' },
       DB: { tone: 'partial', primary: 'D1 + Supabase 双轨', sub: 'D1 业务数据 · Supabase 身份层' },
       R2: { tone: 'none', primary: '未声明', sub: '—' },
-      登录: { tone: 'partial', primary: 'Supabase + Worker HMAC', sub: '前后端登录态断层 · Worker 不验 Supabase JWT' },
-      邮件: { tone: 'partial', primary: 'Supabase 自带', sub: 'magic link 推测 · 未对接 Resend' },
-      Admin: { tone: 'none', primary: '无统一后台', sub: '—' },
-      Changelog: { tone: 'none', primary: '未确认', sub: '?' },
+      登录: { tone: 'solid', primary: 'Supabase Auth + Worker RBAC', sub: 'Bearer token · profiles.role 复验' },
+      邮件: { tone: 'solid', primary: 'Resend SMTP', sub: 'Supabase 邮件改走 mail.syncblog.cn' },
+      Admin: { tone: 'partial', primary: 'Workspace + 内部台账', sub: '/tob/internal · /workspace/cloud-promo' },
+      Changelog: { tone: 'solid', primary: 'WorkspaceChangelog.vue', sub: '/workspace/changelog 产品动态' },
     },
-    note: '身份与业务在两套系统：Supabase 管登录与角色（member/internal/admin），Worker 自签 HMAC cookie 管业务接口——两边不互信。',
+    note: '身份仍在 Supabase、业务数据仍在 D1，但 Worker 已通过 Supabase bearer token 拉取 profiles.role 做 internal/admin 校验；剩余问题是双存储架构复杂，不是鉴权断层。',
   },
   {
     id: 'frontendnext',
@@ -197,15 +198,22 @@ const SITE_INFRA = [
     stack: 'Next.js 16 + TS + Tailwind 4',
     cells: {
       托管: { tone: 'solid', primary: 'Cloudflare Pages', sub: 'output: export (纯静态)' },
-      DB: { tone: 'none', primary: '无', sub: 'gray-matter 直接读 markdown' },
+      DB: { tone: 'partial', primary: '无线上 DB', sub: '内容读 markdown · 订单代码写 .orders' },
       R2: { tone: 'none', primary: '未声明', sub: '—' },
       登录: { tone: 'none', primary: '无', sub: '纯只读站点' },
-      邮件: { tone: 'none', primary: '无', sub: '—' },
+      邮件: { tone: 'partial', primary: '订阅 Stub', sub: '/api/subscribe 仅校验与回包' },
       Admin: { tone: 'none', primary: '无', sub: '—' },
-      Changelog: { tone: 'none', primary: '未确认', sub: '?' },
+      Changelog: { tone: 'none', primary: '未设独立 Changelog', sub: '靠 weekly/content 与 README 记录' },
     },
-    note: 'README 锁死 Cloudflare Pages、禁止 Vercel；未来 server 逻辑走 Pages Functions + D1。app/api/{order,payments,subscribe} 已占位。',
+    note: 'README 锁死 Cloudflare Pages 与 output: export；app/api/{order,payments,subscribe} 和 .orders 文件持久化是代码占位，不等于当前线上能力。动态逻辑应迁到 Pages Functions/Workers + D1。',
   },
+]
+
+const SITE_INFRA_FINDINGS = [
+  ['syncblog.cn', '后台形态不是 /admin，而是工作流中控台：/workflow/data、/workflow/creation、/workflow/import、/workflow/distribution、/workflow/stats，加 /settings、/pricing 和 /creator-offer。'],
+  ['blogger-alliance.cn', '已从“登录态断层”推进到 Supabase Auth + Worker 复验角色；/tob/internal 承载合作台账、报告与年度数据，/workspace/cloud-promo 是 admin 级推广素材入口。'],
+  ['frontendnext.com', '线上部署口径仍是纯静态 Pages；订单、支付、订阅 API 是后端化预留，若上线必须先落 Pages Functions/Workers 和 D1，不能按当前 Next route handler 直接依赖。'],
+  ['统一判断', '四站不需要强行同构：2aran 管理自己，syncblog 管内容生产，blogger-alliance 管商业台账，frontendnext 先保持静态内容站；需要统一的是 Changelog 口径和运行状态台账。'],
 ]
 
 const INFRA_TONE_STYLES = {
@@ -797,6 +805,24 @@ export default function ProjectPortfolioConsole({ user }) {
 
                 <div className="rounded-md border border-purple-200 bg-purple-50/50 px-3 py-2 text-[12px] leading-6 text-purple-900 dark:border-purple-900/60 dark:bg-purple-950/30 dark:text-purple-200">
                   <b>模板参照范围：</b>仅 <span className="font-mono">Changelog</span> 形式参照 md（CHANGELOG.md）。其他维度（DB / R2 / 登录 / 账号 / 邮件 / Admin）现状已列，统一策略<b>待定</b>——本节先呈现真实差异，不预设对齐方向。
+                </div>
+
+                <div className="rounded-lg border border-[#d9dee7] bg-[#fbfcff] p-4 dark:border-gray-800 dark:bg-gray-950/40">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">补充调研</p>
+                      <h4 className="mt-1 text-sm font-semibold text-[#15140f] dark:text-gray-100">本轮本地代码扫描结论</h4>
+                    </div>
+                    <SnapshotBadge />
+                  </div>
+                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    {SITE_INFRA_FINDINGS.map(([site, finding]) => (
+                      <div key={site} className="rounded-md border border-[#e2e6ee] bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900">
+                        <p className="font-mono text-[10px] uppercase tracking-wider text-[#667085] dark:text-gray-500">{site}</p>
+                        <p className="mt-1 text-[12px] leading-6 text-[#344054] dark:text-gray-300">{finding}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </section>

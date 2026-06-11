@@ -536,13 +536,7 @@ export default function ArticlesIndexClient({ items }) {
           ) : null}
         </form>
 
-        <div
-          className={[
-            'grid transition-[grid-template-rows,opacity] duration-200 ease-out',
-            activeChannel !== 'all' && activeChannel !== 'picks' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-          ].join(' ')}
-        >
-          <div className="overflow-hidden">
+        {activeChannel !== 'all' && activeChannel !== 'picks' ? (
             <div className="space-y-3.5 border-t border-[#e6e7e0] pt-4 dark:border-gray-800">
             {activeChannel === 'column' ? (
               <FilterRow label="专栏类型" ariaLabel="专栏类型">
@@ -577,50 +571,44 @@ export default function ArticlesIndexClient({ items }) {
                     />
                   ))}
                 </FilterRow>
-                {tab === 'companies' ? (
-                  <FilterRow label="公司分类" ariaLabel="公司调研分类">
-                    {COMPANY_TYPE_DEFS.map((t) => (
-                      <FilterChip
-                        key={t.key}
-                        label={t.label}
-                        count={companyTypeCounts[t.key] ?? 0}
-                        active={companyType === t.key}
-                        onClick={() => selectCompanyType(t.key)}
-                      />
-                    ))}
-                  </FilterRow>
-                ) : null}
-                {tab === 'topics' ? (
-                  <FilterRow label="事项分类" ariaLabel="事项调研分类">
-                    {TOPIC_TYPE_DEFS.map((t) => (
-                      <FilterChip
-                        key={t.key}
-                        label={t.label}
-                        count={topicTypeCounts[t.key] ?? 0}
-                        active={topicType === t.key}
-                        onClick={() => selectTopicType(t.key)}
-                      />
-                    ))}
-                  </FilterRow>
-                ) : null}
-                {tab === 'people' ? (
-                  <FilterRow label="人物分类" ariaLabel="人物调研分类" wrap>
-                    {PEOPLE_TYPE_DEFS.map((t) => (
-                      <FilterChip
-                        key={t.key}
-                        label={t.label}
-                        count={peopleTypeCounts[t.key] ?? 0}
-                        active={peopleType === t.key}
-                        onClick={() => selectPeopleType(t.key)}
-                      />
-                    ))}
-                  </FilterRow>
-                ) : null}
+                <FilterRow label="公司分类" ariaLabel="公司调研分类">
+                  {COMPANY_TYPE_DEFS.map((t) => (
+                    <FilterChip
+                      key={t.key}
+                      label={t.label}
+                      count={companyTypeCounts[t.key] ?? 0}
+                      active={tab === 'companies' && companyType === t.key}
+                      onClick={() => selectCompanyType(t.key)}
+                    />
+                  ))}
+                </FilterRow>
+                <FilterRow label="事项分类" ariaLabel="事项调研分类">
+                  {TOPIC_TYPE_DEFS.map((t) => (
+                    <FilterChip
+                      key={t.key}
+                      label={t.label}
+                      count={topicTypeCounts[t.key] ?? 0}
+                      active={tab === 'topics' && topicType === t.key}
+                      onClick={() => selectTopicType(t.key)}
+                    />
+                  ))}
+                </FilterRow>
+                <FilterRow label="人物分类" ariaLabel="人物调研分类">
+                  {PEOPLE_TYPE_DEFS.map((t) => (
+                    <FilterChip
+                      key={t.key}
+                      label={t.label}
+                      count={peopleTypeCounts[t.key] ?? 0}
+                      active={tab === 'people' && peopleType === t.key}
+                      onClick={() => selectPeopleType(t.key)}
+                    />
+                  ))}
+                </FilterRow>
               </>
             ) : null}
 
             {activeChannel === 'resources' ? (
-              <FilterRow label="资料分类" ariaLabel="资料分类" wrap>
+              <FilterRow label="资料分类" ariaLabel="资料分类">
                 {RESOURCE_TYPE_DEFS.map((t) => {
                   const scopeLabel = t.key === 'bookmarks' ? '站外' : t.key === 'all' ? '' : '站内'
                   return (
@@ -639,8 +627,7 @@ export default function ArticlesIndexClient({ items }) {
 
             {breadcrumb ? <FilterBreadcrumb path={breadcrumb} /> : null}
             </div>
-          </div>
-        </div>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e6e7e0] pt-3 text-xs text-[#646658] dark:border-gray-800 dark:text-gray-400">
           {QUICK_LINKS.map((link) =>
@@ -702,17 +689,11 @@ export default function ArticlesIndexClient({ items }) {
   )
 }
 
-function FilterRow({ label, ariaLabel, wrap = false, children }) {
+function FilterRow({ label, ariaLabel, children }) {
   return (
     <div className="grid min-w-0 grid-cols-[4.25rem_minmax(0,1fr)] items-start gap-x-3 sm:grid-cols-[4.75rem_minmax(0,1fr)]">
       <span className="pt-1.5 text-xs leading-5 text-[#808272] dark:text-[#7f8aa0]">{label}</span>
-      <nav
-        aria-label={ariaLabel}
-        className={[
-          'flex min-w-0 items-center gap-1.5',
-          wrap ? 'flex-wrap' : 'flex-nowrap overflow-x-auto pb-0.5',
-        ].join(' ')}
-      >
+      <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">
         {children}
       </nav>
     </div>
@@ -772,8 +753,17 @@ function FilterChip({ label, count, active, onClick, prefix }) {
       {prefix ? (
         <span className="font-mono text-[9px] tracking-[0.08em] text-[#9b9d8f] dark:text-[#667287]">{prefix}</span>
       ) : null}
-      <span>{label}</span>
-      <span className={active ? 'text-[#7a7c70] dark:text-[#9da7b8]' : 'text-[#95968a] dark:text-[#667287]'}>{count}</span>
+      <span className="whitespace-nowrap">
+        {label}
+        <span
+          className={[
+            'font-mono text-[10px] tabular-nums',
+            active ? 'text-[#7a7c70] dark:text-[#9da7b8]' : 'text-[#95968a] dark:text-[#667287]',
+          ].join(' ')}
+        >
+          ({count})
+        </span>
+      </span>
     </button>
   )
 }

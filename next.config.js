@@ -90,6 +90,12 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // VibeCafé 调研从公司调研改为事项调研 · 产品
+        source: '/articles/research/companies/vibecafe',
+        destination: '/articles/research/topics/vibecafe',
+        permanent: true,
+      },
+      {
         // /weekly 是历史路由，统一归入 /diary 持续更新
         source: '/weekly',
         destination: '/diary',

@@ -65,7 +65,7 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
+    overflow-x: clip;
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
@@ -73,7 +73,7 @@
   html {
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
     scroll-behavior: smooth;
     /* 站点顶部 sticky 主导航；锚点/目录跳转时避免标题被 header 遮挡 */
     scroll-padding-top: 5.5rem;

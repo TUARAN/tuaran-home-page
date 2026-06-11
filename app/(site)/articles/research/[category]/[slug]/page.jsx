@@ -54,7 +54,7 @@ function resolveResearchEntry(category, slug) {
 
 function ResearchEngagementPanel({ articleKey, related }) {
   return (
-    <aside className="order-1 space-y-4 lg:order-2 lg:sticky lg:top-24">
+    <aside className="order-1 space-y-4 lg:order-2 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
       <section className="rounded-lg border border-[#dee0db] bg-[#fafbf9] p-4 dark:border-gray-800 dark:bg-[#0f141b]">
         <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
           Support

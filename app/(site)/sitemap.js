@@ -60,6 +60,7 @@ export default function sitemap() {
     '/ru-shi-dao',
     '/china-politics',
     '/reading',
+    '/resources/shen-zhi-ding-nei',
     '/traffic',
     '/web-llm',
     '/writing-monetization-2026',

@@ -6,6 +6,7 @@ import {
   rateLimitResponse,
 } from '../../../lib/abuseControls'
 import { getUserFromRequest } from '../../../lib/edgeSession'
+import { getUserRole } from '../../../lib/userDirectory'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -75,6 +76,12 @@ export async function POST(req) {
     }
 
     const userId = String(user.id)
+
+    // 用户管理（/admin/users）封禁的用户禁止发评论
+    if ((await getUserRole(userId)) === 'blocked') {
+      return Response.json({ error: 'USER_BLOCKED' }, { status: 403 })
+    }
+
     const db = getD1()
     const ip = getClientIp(req)
     const limit = await enforceRateLimits(db, [

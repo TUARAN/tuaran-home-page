@@ -125,3 +125,4 @@ private/
 # 但 .claude/commands/ 入库，让 slash commands 跟仓库走
 .claude/*
 !.claude/commands/
+.kunsdd/

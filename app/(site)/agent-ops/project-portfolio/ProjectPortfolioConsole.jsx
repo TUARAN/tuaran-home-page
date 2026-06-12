@@ -1,6 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import {
+  BIZ_STATUS_LABELS,
+  PORTFOLIO_GRAPH_POSITIONS,
+  PORTFOLIO_SNAPSHOT,
+  VALID_BIZ_STATUSES,
+  seedProjectsWithBizDefaults,
+} from '../../../../lib/portfolioSeed'
 
 const pillars = {
   blog: {
@@ -29,40 +37,7 @@ const pillars = {
   },
 }
 
-const projects = [
-  { id: 'tuaran-home-page', name: 'tuaran-home-page', pillar: 'blog', action: 'keep', role: '个人门户与调研知识库', path: '/Users/tuaran/Documents/github/tuaran-home-page', next: '继续作为所有项目的展示入口，承载调研记录和项目索引。', links: ['blogger-alliance', 'frontend-weekly-digest-cn', 'md'] },
-  { id: 'blogger-alliance', name: 'blogger-alliance', pillar: 'alliance', action: 'core', role: '核心产品：博主联盟', path: '/Users/tuaran/Documents/github/blogger-alliance', next: '作为创作者增长和品牌协作主产品，吸收周边增长工具。', links: ['matrix-alliance', 'MatrixLinkTech', 'fans-tracker', 'github-follow', 'auto-sync-blog', 'muti-ip', 'md'] },
-  { id: 'frontend-weekly-digest-cn', name: 'frontend-weekly-digest-cn', pillar: 'weekly', action: 'core', role: '核心产品：前端周刊', path: '/Users/tuaran/Documents/github/frontend-weekly-digest-cn', next: '作为技术内容主阵地，吸收 AI 学习、WebLLM 和前端实践专题。', links: ['AI-Learning-Library', 'webllm', 'edge-llm-workbench', 'awsome-prompt', 'Awesome-Nano-Banana-images', 'md'] },
-  { id: 'accomplish', name: 'accomplish', pillar: 'agent', action: 'keep', role: '桌面 AI coworker', path: '/Users/tuaran/Documents/github/accomplish', next: '独立主线，未来给内容和项目治理提供 agent 能力。', links: ['moltbot', 'md', 'tuaran-home-page'] },
-  { id: 'moltbot', name: 'moltbot', pillar: 'agent', action: 'keep', role: 'AI gateway / OpenClaw runtime', path: '/Users/tuaran/Documents/github/moltbot', next: '保留独立，作为消息、多渠道和 agent runtime 试验线。', links: ['accomplish'] },
-  { id: 'md', name: 'md', pillar: 'blog', action: 'infra', role: '内容生产和多平台分发底座', path: '/Users/tuaran/Documents/github/md', next: '不要并入单一产品，作为博客、博主联盟、前端周刊共享基础设施。', links: ['tuaran-home-page', 'blogger-alliance', 'frontend-weekly-digest-cn'] },
-  { id: 'matrix-alliance', name: 'matrix-alliance', pillar: 'alliance', action: 'merge', role: '创作者矩阵方法论和平台原型', path: '/Users/tuaran/Documents/github/matrix-alliance', next: '优先内容和概念整合进博主联盟，代码暂不强迁。', links: ['blogger-alliance'] },
-  { id: 'MatrixLinkTech', name: 'MatrixLinkTech', pillar: 'alliance', action: 'merge', role: '品牌/业务展示站', path: '/Users/tuaran/Documents/github/MatrixLinkTech', next: '整合为博主联盟背后的服务品牌或公司介绍页。', links: ['blogger-alliance'] },
-  { id: 'fans-tracker', name: 'fans-tracker', pillar: 'alliance', action: 'merge', role: '粉丝与账号数据追踪', path: '/Users/tuaran/Documents/github/fans-tracker', next: '并入博主联盟数据分析能力。', links: ['blogger-alliance'] },
-  { id: 'github-follow', name: 'github-follow', pillar: 'alliance', action: 'merge', role: '技术创作者发现工具', path: '/Users/tuaran/Documents/github/github-follow', next: '作为博主联盟创作者发现和推荐模块。', links: ['blogger-alliance'] },
-  { id: 'auto-sync-blog', name: 'auto-sync-blog', pillar: 'alliance', action: 'merge', role: '博客自动同步工具', path: '/Users/tuaran/Documents/github/auto-sync-blog', next: '并入内容分发工具链，和 md 打通。', links: ['blogger-alliance', 'md'] },
-  { id: 'muti-ip', name: 'muti-ip', pillar: 'alliance', action: 'merge', role: 'blogger-eye-platform 运行/采集工具', path: '/Users/tuaran/Documents/github/muti-ip', next: '先改名或记录远端名，再归入博主联盟数据采集线。', links: ['blogger-alliance'] },
-  { id: 'AI-Learning-Library', name: 'AI-Learning-Library', pillar: 'weekly', action: 'merge', role: 'AI 学习资源库', path: '/Users/tuaran/Documents/github/AI-Learning-Library', next: '抽取部分内容成为前端周刊 AI 学习专题，不整体硬并。', links: ['frontend-weekly-digest-cn'] },
-  { id: 'webllm', name: 'webllm', pillar: 'weekly', action: 'merge', role: 'WebLLM / WebGPU LLM 参考', path: '/Users/tuaran/Documents/github/webllm', next: '沉淀为前端周刊 Web 端 AI 专题案例。', links: ['frontend-weekly-digest-cn'] },
-  { id: 'edge-llm-workbench', name: 'edge-llm-workbench', pillar: 'weekly', action: 'merge', role: '边缘 LLM 工程实践', path: '/Users/tuaran/Documents/github/edge-llm-workbench', next: '内容进入前端周刊专题，代码保留独立。', links: ['frontend-weekly-digest-cn'] },
-  { id: 'awsome-prompt', name: 'awsome-prompt', pillar: 'weekly', action: 'merge', role: '提示词教程资源', path: '/Users/tuaran/Documents/github/awsome-prompt', next: '修正命名为 awesome-prompt，内容并入前端周刊/博主联盟资源区。', links: ['frontend-weekly-digest-cn'] },
-  { id: 'Awesome-Nano-Banana-images', name: 'Awesome-Nano-Banana-images', pillar: 'weekly', action: 'merge', role: 'AI 图像案例库', path: '/Users/tuaran/Documents/github/Awesome-Nano-Banana-images', next: '作为前端周刊 AI 图像专题素材库。', links: ['frontend-weekly-digest-cn'] },
-  { id: 'EmployeeHub', name: 'EmployeeHub', pillar: 'agent', action: 'separate', role: '审计/数字员工业务线', path: '/Users/tuaran/Documents/github/EmployeeHub', next: '不并入四个内容核心，作为独立业务线观察。', links: ['accomplish'] },
-  { id: 'Tasnia-aes', name: 'Tasnia-aes', pillar: 'weekly', action: 'archive', role: '前端可视化实验', path: '/Users/tuaran/Documents/github/Tasnia-aes', next: '已提交到私有仓库，作为实验项目归档。', links: [] },
-  { id: 'agent-ops', name: 'agent-ops', pillar: 'agent', action: 'infra', role: '本地 Agent 自动化控制面', path: '/Users/tuaran/Documents/codex/agent-ops', next: '归入 AI Agent 基础设施，后续调度内容同步、线索扫描、项目健康检查。', links: ['accomplish', 'moltbot', 'md', 'blogger-alliance'] },
-  { id: 'openclaw-issue-pr-tool', name: 'openclaw-issue-pr-tool', pillar: 'agent', action: 'infra', role: 'OpenClaw issue/PR 自动化工具', path: '/Users/tuaran/Documents/codex/openclaw-issue-pr-tool', next: '归入 AI Agent 工具线，可作为 agent-ops 的任务插件，而不是独立产品。', links: ['moltbot', 'agent-ops'] },
-  { id: 'codex-local', name: 'codex-local', pillar: 'agent', action: 'keep', role: 'Codex 本地定制研究工作区', path: '/Users/tuaran/Documents/codex/codex-local', next: '保留为 AI Agent 研发参考，不并入博客或周刊。', links: ['accomplish', 'agent-ops'] },
-  { id: 'hello-edge-agent', name: 'hello-edge-agent', pillar: 'agent', action: 'archive', role: 'Cloudflare edge agent 实验', path: '/Users/tuaran/Documents/codex/hello-edge-agent', next: '内容沉淀到 AI Agent/Cloudflare 实践文章，代码可归档；node_modules 可清理。', links: ['agent-ops'] },
-  { id: 'csdn', name: 'csdn', pillar: 'alliance', action: 'merge', role: 'CSDN 草稿和多平台发布素材', path: '/Users/tuaran/Documents/codex/csdn', next: '归入博主联盟或 md 的内容分发素材池，先处理未跟踪草稿目录。', links: ['md', 'blogger-alliance'] },
-  { id: 'pubishlab', name: 'pubishlab', pillar: 'weekly', action: 'merge', role: '出版/内容实验室 Next.js 项目', path: '/Users/tuaran/Documents/claude/pubishlab', next: '适合归入前端周刊的内容产品实验，或作为 md 的出版实验前台；先清 node_modules/.next。', links: ['frontend-weekly-digest-cn', 'md', 'tuaran-home-page'] },
-  { id: 'ccunpacked-zh', name: 'ccunpacked-zh', pillar: 'weekly', action: 'merge', role: 'Claude Code 中文资料/教育站', path: '/Users/tuaran/Documents/claude/ccunpacked-zh', next: '可作为前端周刊的 AI 开发工具专题资料，先处理 .claude/.wrangler 本地目录。', links: ['frontend-weekly-digest-cn'] },
-  { id: 'SaaS-skills', name: 'SaaS-skills', pillar: 'weekly', action: 'merge', role: 'SaaS 技术教育站', path: '/Users/tuaran/Documents/claude/SaaS-skills', next: '归入前端周刊课程/专题素材，保留独立仓库即可。', links: ['frontend-weekly-digest-cn'] },
-  { id: 'localdocx-seedance', name: 'localdocx/seedance2.0', pillar: 'weekly', action: 'archive', role: 'Seedance 2.0 出版送审稿资产', path: '/Users/tuaran/Documents/codex/localdocx/seedance2.0', next: '这是文档资产，不是代码项目；应迁入统一 doc-assets/出版/Seedance，并保留终版与修订记录。', links: ['frontend-weekly-digest-cn'] },
-  { id: 'claude-docx', name: 'claude/docx', pillar: 'weekly', action: 'archive', role: '出版、协议、智能体书稿资产', path: '/Users/tuaran/Documents/claude/docx', next: '统一归到文档资产库，按出版项目分组；不要留在 Claude 工具目录根下。', links: ['frontend-weekly-digest-cn', 'agent-ops'] },
-  { id: 'xhs-auto-poster', name: 'xhs-auto-poster', pillar: 'alliance', action: 'merge', role: '小红书自动发布脚本', path: '/Users/tuaran/Documents/claude/xhs-auto-poster', next: '归入博主联盟内容分发工具链，注意 .env 和账号登录态不要入库。', links: ['blogger-alliance', 'md'] },
-  { id: 'homepage-claude', name: 'claude/homepage', pillar: 'blog', action: 'archive', role: '历史主页静态实验', path: '/Users/tuaran/Documents/claude/homepage', next: '如无独立价值，迁到个人博客站的 archive/design-prototypes。', links: ['tuaran-home-page'] },
-  { id: 'surveys', name: 'claude/surveys', pillar: 'agent', action: 'merge', role: 'Claude/代理调研材料', path: '/Users/tuaran/Documents/claude/surveys', next: '整理为 tuaran-home-page 的 research/topics 或前端周刊 AI 工具专题。', links: ['tuaran-home-page', 'frontend-weekly-digest-cn'] },
-]
+// 项目台账数据：正本在 D1 portfolio_projects（迁移 0020），回退 seed 在 lib/portfolioSeed.js
 
 const decisions = [
   ['核心产品', 'blogger-alliance、frontend-weekly-digest-cn', '分别承担创作者增长和前端内容两条主线。'],
@@ -95,40 +70,6 @@ const actionStyles = {
   archive: 'bg-[#e2e8f0] text-[#334155] dark:bg-[#1f2937] dark:text-[#cbd5e1]',
 }
 
-const positions = {
-  'tuaran-home-page': [455, 46],
-  'blogger-alliance': [185, 260],
-  'frontend-weekly-digest-cn': [720, 260],
-  accomplish: [455, 510],
-  md: [455, 272],
-  moltbot: [650, 530],
-  'matrix-alliance': [28, 124],
-  MatrixLinkTech: [28, 224],
-  'fans-tracker': [28, 324],
-  'github-follow': [190, 408],
-  'auto-sync-blog': [190, 124],
-  'muti-ip': [190, 612],
-  'AI-Learning-Library': [890, 84],
-  webllm: [890, 174],
-  'edge-llm-workbench': [890, 264],
-  'awsome-prompt': [890, 354],
-  'Awesome-Nano-Banana-images': [890, 444],
-  EmployeeHub: [255, 520],
-  'Tasnia-aes': [742, 600],
-  'agent-ops': [255, 650],
-  'openclaw-issue-pr-tool': [650, 620],
-  'codex-local': [455, 622],
-  'hello-edge-agent': [650, 690],
-  csdn: [28, 520],
-  pubishlab: [720, 84],
-  'ccunpacked-zh': [890, 6],
-  'SaaS-skills': [890, 534],
-  'localdocx-seedance': [742, 690],
-  'claude-docx': [455, 690],
-  'xhs-auto-poster': [28, 424],
-  'homepage-claude': [255, 6],
-  surveys: [890, 650],
-}
 
 const principles = ['主目录只放 Git 仓库', '缓存和源码分开判断', '不确定先归档再删除', 'dirty repo 先收口']
 
@@ -237,13 +178,25 @@ const INFRA_TONE_LEGEND = [
   ['none', '未使用 / 待定'],
 ]
 
-function relationText(project) {
+function relationText(project, allProjects) {
   const targets = project.links
     .slice(0, 4)
-    .map((id) => projects.find((item) => item.id === id)?.name || id)
+    .map((id) => allProjects.find((item) => item.id === id)?.name || id)
     .join(' -> ')
   if (!targets) return project.next
   return `${project.role}；关联 ${targets}。${project.next}`
+}
+
+const bizStatusStyles = {
+  earning: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  burning: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+  hobby: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+  unset: 'bg-[#eef1f6] text-[#667085] dark:bg-gray-800 dark:text-gray-400',
+}
+
+function formatMoney(value) {
+  const num = Number(value) || 0
+  return `¥${num.toLocaleString('zh-CN')}`
 }
 
 function compactName(name) {
@@ -302,10 +255,6 @@ function GraphControlButton({ label, onClick, disabled = false, icon }) {
   )
 }
 
-const PORTFOLIO_SNAPSHOT = {
-  at: '2026-06',
-  label: '2026 年 6 月',
-}
 
 const PRIMARY_VIEW_DEFS = [
   {
@@ -346,6 +295,47 @@ export default function ProjectPortfolioConsole({ user }) {
   const graphDragRef = useRef(null)
   const suppressGraphClickRef = useRef(false)
 
+  // 台账数据：优先 D1（/api/admin/portfolio），不可用时回退 seed 快照（只读）
+  const [projects, setProjects] = useState(() => seedProjectsWithBizDefaults())
+  const [dataSource, setDataSource] = useState('seed')
+  const [dataMessage, setDataMessage] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadLedger() {
+      try {
+        const res = await fetch('/api/admin/portfolio', { cache: 'no-store', credentials: 'same-origin' })
+        const data = await res.json().catch(() => null)
+        if (cancelled) return
+        if (res.ok && data?.status === 'ok' && Array.isArray(data.projects) && data.projects.length) {
+          setProjects(data.projects)
+          setDataSource('d1')
+          setDataMessage('')
+        } else {
+          setDataSource('seed')
+          setDataMessage(data?.message || data?.error || `台账接口异常（HTTP ${res.status}）`)
+        }
+      } catch (error) {
+        if (cancelled) return
+        setDataSource('seed')
+        setDataMessage(String(error?.message || error))
+      }
+    }
+    loadLedger()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const positions = useMemo(() => {
+    const map = {}
+    for (const project of projects) {
+      const pos = project.position || PORTFOLIO_GRAPH_POSITIONS[project.id]
+      if (pos) map[project.id] = pos
+    }
+    return map
+  }, [projects])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return projects.filter((project) => {
@@ -355,7 +345,7 @@ export default function ProjectPortfolioConsole({ user }) {
         .toLowerCase()
       return actionOk && (!q || haystack.includes(q))
     })
-  }, [actionFilter, query])
+  }, [projects, actionFilter, query])
 
   const visibleIds = useMemo(() => new Set(filtered.map((project) => project.id)), [filtered])
   const graphProjects = filtered.filter((project) => positions[project.id])
@@ -366,6 +356,68 @@ export default function ProjectPortfolioConsole({ user }) {
   )
   const selectedProject = projects.find((item) => item.id === selected) || projects[0]
   const selectedPillar = pillars[selectedProject.pillar]
+
+  const ledgerTotals = useMemo(
+    () =>
+      projects.reduce(
+        (acc, project) => {
+          acc.revenue += Number(project.revenueMonthly) || 0
+          acc.hours += Number(project.hoursMonthly) || 0
+          if (project.bizStatus === 'earning') acc.earning += 1
+          return acc
+        },
+        { revenue: 0, hours: 0, earning: 0 }
+      ),
+    [projects]
+  )
+
+  // 商业字段编辑（仅 D1 数据源可写）
+  const [editDraft, setEditDraft] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  useEffect(() => {
+    setEditDraft({
+      revenueMonthly: String(selectedProject?.revenueMonthly ?? 0),
+      hoursMonthly: String(selectedProject?.hoursMonthly ?? 0),
+      bizStatus: selectedProject?.bizStatus || 'unset',
+    })
+    setSaveError('')
+  }, [selectedProject?.id, selectedProject?.revenueMonthly, selectedProject?.hoursMonthly, selectedProject?.bizStatus])
+
+  const saveLedger = useCallback(async () => {
+    if (!selectedProject || !editDraft) return
+    const revenueMonthly = Number(editDraft.revenueMonthly)
+    const hoursMonthly = Number(editDraft.hoursMonthly)
+    if (!Number.isFinite(revenueMonthly) || revenueMonthly < 0 || !Number.isFinite(hoursMonthly) || hoursMonthly < 0) {
+      setSaveError('收入 / 投入必须是 ≥ 0 的数字')
+      return
+    }
+    setSaving(true)
+    setSaveError('')
+    try {
+      const res = await fetch('/api/admin/portfolio', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          id: selectedProject.id,
+          revenueMonthly,
+          hoursMonthly,
+          bizStatus: editDraft.bizStatus,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok || !data.project) {
+        throw new Error(data?.error || `HTTP_${res.status}`)
+      }
+      setProjects((prev) => prev.map((item) => (item.id === data.project.id ? data.project : item)))
+    } catch (error) {
+      setSaveError(String(error?.message || error))
+    } finally {
+      setSaving(false)
+    }
+  }, [selectedProject, editDraft])
 
   useEffect(() => {
     function syncFullscreenState() {
@@ -459,6 +511,17 @@ export default function ProjectPortfolioConsole({ user }) {
           <p className="mt-3 text-xs text-[#94a3b8]">
             已授权：{user?.name || user?.login || 'owner'} · 快照 {PORTFOLIO_SNAPSHOT.label}
           </p>
+          <p className="mt-2 text-xs">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] tracking-wide ${
+                dataSource === 'd1' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'
+              }`}
+              title={dataMessage || undefined}
+            >
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${dataSource === 'd1' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              {dataSource === 'd1' ? '台账 · D1 实时' : 'seed 快照 · 只读'}
+            </span>
+          </p>
         </div>
 
         <p className="mt-6 text-xs uppercase text-[#94a3b8]">主视图</p>
@@ -495,6 +558,8 @@ export default function ProjectPortfolioConsole({ user }) {
                 [String(projects.length), '仓库/工作区'],
                 ['30G', '整理后体积'],
                 ['38G', '已释放空间'],
+                [formatMoney(ledgerTotals.revenue), '月收入合计'],
+                [`${ledgerTotals.hours}h · ${ledgerTotals.earning} 个在挣钱`, '月投入合计'],
               ].map(([value, label]) => (
                 <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-3">
                   <b className="block text-lg">{value}</b>
@@ -856,6 +921,72 @@ export default function ProjectPortfolioConsole({ user }) {
                 <li>先整合内容、入口和数据关系，代码迁移要等边界稳定后再做。</li>
                 <li>任何 dirty repo 先提交、stash 或归档，再移动目录。</li>
               </ul>
+
+              <div className="mt-4 rounded-lg border border-[#d9dee7] bg-[#fbfcff] p-3 dark:border-gray-800 dark:bg-gray-950/40">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-[#15140f] dark:text-gray-100">商业台账</p>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] ${bizStatusStyles[selectedProject.bizStatus] || bizStatusStyles.unset}`}>
+                    {BIZ_STATUS_LABELS[selectedProject.bizStatus] || BIZ_STATUS_LABELS.unset}
+                  </span>
+                </div>
+                {dataSource !== 'd1' ? (
+                  <p className="mt-2 text-xs leading-5 text-amber-700 dark:text-amber-300">
+                    当前为 seed 快照（只读）。线上 /admin/portfolio 连接 D1 后可编辑。
+                  </p>
+                ) : null}
+                {editDraft ? (
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <label className="block text-xs text-[#667085] dark:text-gray-400">
+                      月收入（元）
+                      <input
+                        type="number"
+                        min="0"
+                        value={editDraft.revenueMonthly}
+                        disabled={dataSource !== 'd1'}
+                        onChange={(event) => setEditDraft((prev) => ({ ...prev, revenueMonthly: event.target.value }))}
+                        className="mt-1 w-full rounded-md border border-[#d9dee7] bg-white px-2 py-1.5 text-sm text-[#15140f] outline-none focus:border-[#111827] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                      />
+                    </label>
+                    <label className="block text-xs text-[#667085] dark:text-gray-400">
+                      月投入（小时）
+                      <input
+                        type="number"
+                        min="0"
+                        value={editDraft.hoursMonthly}
+                        disabled={dataSource !== 'd1'}
+                        onChange={(event) => setEditDraft((prev) => ({ ...prev, hoursMonthly: event.target.value }))}
+                        className="mt-1 w-full rounded-md border border-[#d9dee7] bg-white px-2 py-1.5 text-sm text-[#15140f] outline-none focus:border-[#111827] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                      />
+                    </label>
+                    <label className="block text-xs text-[#667085] dark:text-gray-400">
+                      状态
+                      <select
+                        value={editDraft.bizStatus}
+                        disabled={dataSource !== 'd1'}
+                        onChange={(event) => setEditDraft((prev) => ({ ...prev, bizStatus: event.target.value }))}
+                        className="mt-1 w-full rounded-md border border-[#d9dee7] bg-white px-2 py-1.5 text-sm text-[#15140f] outline-none focus:border-[#111827] disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                      >
+                        {VALID_BIZ_STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {BIZ_STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                ) : null}
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={saveLedger}
+                    disabled={dataSource !== 'd1' || saving}
+                    className="inline-flex h-8 items-center justify-center rounded-md border border-[#111827] bg-[#111827] px-3 text-xs font-medium text-white transition hover:bg-[#1f2937] disabled:cursor-not-allowed disabled:opacity-45 dark:border-gray-200 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white"
+                  >
+                    {saving ? '保存中…' : '保存台账'}
+                  </button>
+                  {saveError ? <span className="text-xs text-rose-600 dark:text-rose-400">{saveError}</span> : null}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -871,7 +1002,7 @@ export default function ProjectPortfolioConsole({ user }) {
             <table className="min-w-[1080px] border-collapse text-sm">
               <thead>
                 <tr className="bg-[#f8fafc] text-left text-xs text-[#475467] dark:bg-gray-950 dark:text-gray-300">
-                  {['项目 / 工作区', '个人站点', '博主联盟', '前端周刊', 'AI Agent', '基础设施', '动作', '关系说明'].map((head) => (
+                  {['项目 / 工作区', '个人站点', '博主联盟', '前端周刊', 'AI Agent', '基础设施', '动作', '商业台账', '关系说明'].map((head) => (
                     <th key={head} className="border-b border-r border-[#d9dee7] px-3 py-2 font-semibold dark:border-gray-800">
                       {head}
                     </th>
@@ -908,8 +1039,16 @@ export default function ProjectPortfolioConsole({ user }) {
                           {actionLabels[project.action]}
                         </span>
                       </td>
+                      <td className="min-w-[120px] whitespace-nowrap border-b border-r border-[#d9dee7] px-3 py-2 dark:border-gray-800">
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] ${bizStatusStyles[project.bizStatus] || bizStatusStyles.unset}`}>
+                          {BIZ_STATUS_LABELS[project.bizStatus] || BIZ_STATUS_LABELS.unset}
+                        </span>
+                        <span className="mt-1 block font-mono text-[11px] text-[#667085] dark:text-gray-400">
+                          {formatMoney(project.revenueMonthly)} · {Number(project.hoursMonthly) || 0}h
+                        </span>
+                      </td>
                       <td className="min-w-[260px] border-b border-[#d9dee7] px-3 py-2 leading-6 text-[#344054] dark:border-gray-800 dark:text-gray-300">
-                        {relationText(project)}
+                        {relationText(project, projects)}
                       </td>
                     </tr>
                   )

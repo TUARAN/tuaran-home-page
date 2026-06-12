@@ -316,6 +316,36 @@
     }
   }
 
+  /* 长文资料（如《置身钉内》）：卷章标题加重、小节分层 */
+  .prose-resource-longform {
+    @apply max-w-none;
+  }
+
+  .prose-resource-longform .resource-volume-heading {
+    @apply mt-16 mb-6 border-b border-[#d8dacf] pb-3 text-2xl font-serif font-bold tracking-wide text-[#1a1a16];
+    @apply dark:border-[#35382e] dark:text-gray-100;
+  }
+
+  .prose-resource-longform > h2:not(.resource-volume-heading) {
+    @apply mt-12 mb-4 text-xl font-semibold text-[#2a2a24] dark:text-gray-100;
+  }
+
+  .prose-resource-longform h3 {
+    @apply mt-9 mb-3 text-lg font-semibold text-[#3a3a34] dark:text-gray-200;
+  }
+
+  .prose-resource-longform h4 {
+    @apply mt-7 mb-2 text-base font-semibold text-[#4a4a44] dark:text-gray-300;
+  }
+
+  .prose-resource-longform hr {
+    @apply my-10;
+  }
+
+  .prose-resource-longform blockquote {
+    @apply my-6 rounded-r-md bg-[#f4f5f0] py-1 dark:bg-[#161613];
+  }
+
   .ai-projects-nav {
     display: inline-flex;
     align-items: center;

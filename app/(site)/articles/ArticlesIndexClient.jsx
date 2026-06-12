@@ -77,6 +77,7 @@ const RESOURCE_TYPE_DEFS = [
   { key: 'classics', label: '古典名篇' },
   { key: 'humanities', label: '人文思想' },
   { key: 'politics', label: '政经资料' },
+  { key: 'workplace', label: '职场' },
   { key: 'books', label: '书目索引' },
   { key: 'bookmarks', label: '资源收藏' },
 ]

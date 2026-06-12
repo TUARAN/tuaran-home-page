@@ -7,6 +7,7 @@ tags: [Next.js, Cloudflare, 性能优化, 首屏加载, App Router, CDN, Middlew
 summary: 记录 2aran.com 本轮首屏加载、按需加载、项目体积与 Cloudflare 部署加速优化的完整过程：问题定位、架构拆分、缓存策略、middleware 收敛、图片优化、收益预估与后续评估。
 tldr: 本轮优化的核心不是让首页 First Load JS 立刻大幅下降，而是把主站和 /web-llm 从 layout 层解耦，减少全局 client 边界，收窄 middleware，补齐 Cloudflare 静态缓存，并明确首屏关键图片调度。预估首页冷启动提升 3% - 10%，二次访问和跨页面体感提升 10% - 30%，静态资源重复下载量可下降 50% - 95%。
 assistance: codex
+model: gpt-5
 pv: 0
 ---
 

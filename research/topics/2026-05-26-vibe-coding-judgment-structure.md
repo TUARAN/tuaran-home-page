@@ -7,6 +7,7 @@ tags: [Vibe Coding, AI 编程, 架构师, 判断力, 技术管理, 安全设计,
 summary: Vibe coding 确实提高了开发效率，但一次幻觉漂移或一次安全漏洞就可能让团队把收益全部吐回去。从架构师在 AI 时代最关键的“判断力结构”切入，给出可落地的五道治理关口。
 tldr: 执行正在被 token 平权，判断正在被事故定价。AI 能放大产能，却无法替代系统级责任。
 assistance: cursor
+model: composer-2.5
 pv: 0
 ---
 

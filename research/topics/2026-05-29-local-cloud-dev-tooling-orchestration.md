@@ -7,6 +7,7 @@ tags: [Cursor, Claude Code, Codex, GitHub, Cloudflare, Vercel, DevOps, 工作流
 summary: 把 Cursor / Claude Code / Codex 这类本地工具，和 GitHub / Cloudflare / Vercel 这类云端服务放在同一条开发链路里，区分各自最擅长的场景，并给出一套可落地的协同调度节奏；结合「博主联盟」「前端周刊」两个项目举例。
 tldr: 本地工具是「手术台」——同步、高上下文、随便试错；云端服务是「流水线与电网」——异步、持久、影响他人。最优实践不是二选一，而是用 PR 当闸门，把判断留在本地，把执行与交付交给云端。
 assistance: claude-code
+model: claude-opus-4-7
 pv: 0
 ---
 

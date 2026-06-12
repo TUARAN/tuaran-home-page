@@ -7,6 +7,7 @@ tags: [Resend, Cloudflare, Workers, D1, 邮箱验证码, OTP, 认证, SyncBlog, 
 summary: SyncBlog 从 GitHub OAuth 切到「邮箱+密码+6 位验证码」登录的完整实战记录——含接口设计、D1 表结构、Resend 域名验证、Cloudflare DNS 自动授权、Worker secrets 管理与上线踩坑清单。
 tldr: 把登录从 GitHub OAuth 换成自管邮箱体系，主要为了去掉「必须有 GitHub 账号」这道门槛。技术栈选 Cloudflare Workers + D1 + Resend——Resend 的 Cloudflare 集成把 SPF/DKIM/MX 一键写入，发件域名验证从「半天来回」压到「3 分钟点完」。最大的坑是 EMAIL_FROM 必须用已验证子域、CNAME 必须 DNS only 不开橙云、SESSION_SECRET 一旦换全员重登。
 assistance: claude-code
+model: claude-opus-4-7
 pv: 0
 ---
 

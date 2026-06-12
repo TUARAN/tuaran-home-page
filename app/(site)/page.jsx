@@ -17,6 +17,15 @@ const SECTION_BADGE_CLASS = {
     'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
 }
 
+const HOME_SECTION_TAB_CLASS = {
+  column:
+    'text-[#616358] hover:bg-white hover:text-[#4a4d3f] hover:shadow-sm hover:ring-1 hover:ring-[#d8d9cf] dark:text-gray-400 dark:hover:bg-[#1e2630] dark:hover:text-[#d5d8c8] dark:hover:ring-[#303947]',
+  research:
+    'text-[#616358] hover:bg-white hover:text-[#3b5b8a] hover:shadow-sm hover:ring-1 hover:ring-[#cbd9ee] dark:text-gray-400 dark:hover:bg-[#152034] dark:hover:text-[#9bb6df] dark:hover:ring-[#2a3a55]',
+  resources:
+    'text-[#616358] hover:bg-white hover:text-[#386b54] hover:shadow-sm hover:ring-1 hover:ring-[#c9dccf] dark:text-gray-400 dark:hover:bg-[#13201a] dark:hover:text-[#9dcab1] dark:hover:ring-[#243d33]',
+}
+
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
@@ -89,24 +98,37 @@ function HomeFeaturedSection({ items }) {
           <h2 className="home-section-title">推荐阅读</h2>
         </div>
         <nav
-          aria-label="查看更多内容分类"
-          className="flex shrink-0 items-center gap-3 pt-1 text-sm"
+          aria-label="按分类浏览更多内容"
+          className="flex w-full shrink-0 flex-col gap-1.5 pt-0.5 sm:w-auto sm:items-end"
         >
-          {HOME_SECTION_MORE_LINKS.map((link, idx) => (
-            <span key={link.href} className="inline-flex items-center gap-3">
-              {idx > 0 ? (
-                <span aria-hidden="true" className="text-[#c8c9bf] dark:text-gray-600">
-                  /
-                </span>
-              ) : null}
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#9a9b8f] sm:text-right dark:text-gray-500">
+            浏览更多
+          </span>
+          <div
+            role="group"
+            className="grid grid-cols-3 gap-1 rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:inline-flex sm:items-center dark:border-gray-800 dark:bg-[#151a22] dark:shadow-none"
+          >
+            {HOME_SECTION_MORE_LINKS.map((link) => (
               <Link
+                key={link.href}
                 href={link.href}
-                className="text-[#646655] no-underline opacity-80 transition-opacity hover:opacity-100 hover:text-[#15140f] dark:text-[#acaf9d] dark:hover:text-gray-100"
+                className={[
+                  'group/tab inline-flex min-h-9 items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-sm font-medium no-underline transition-all duration-150 sm:px-3',
+                  HOME_SECTION_TAB_CLASS[link.section] || HOME_SECTION_TAB_CLASS.column,
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9fb7d8] focus-visible:ring-offset-1 dark:focus-visible:ring-[#3b5b8a]',
+                  'active:scale-[0.98]',
+                ].join(' ')}
               >
-                {link.label}
+                <span>{link.label}</span>
+                <span
+                  aria-hidden="true"
+                  className="font-mono text-[11px] text-[#9a9b8f] transition-transform group-hover/tab:translate-x-0.5 dark:text-gray-500"
+                >
+                  →
+                </span>
               </Link>
-            </span>
-          ))}
+            ))}
+          </div>
         </nav>
       </div>
       <div className="home-surface-card rounded-2xl border p-3">

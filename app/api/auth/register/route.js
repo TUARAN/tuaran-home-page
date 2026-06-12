@@ -1,5 +1,6 @@
 import { registerEmailUser } from '../../../../lib/emailAuth'
 import { cookieNames, cookiesConfig, getSecrets, serializeCookie, signSession } from '../../../../lib/edgeSession'
+import { recordUserLogin } from '../../../../lib/userDirectory'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -19,6 +20,8 @@ export async function POST(req) {
       rawName: body?.name,
     })
     if (!result.ok) return Response.json(result, { status: result.status || 400 })
+
+    await recordUserLogin(result.user)
 
     const nowSeconds = Math.floor(Date.now() / 1000)
     const token = await signSession(

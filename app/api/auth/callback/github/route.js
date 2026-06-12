@@ -11,6 +11,7 @@ import {
   oauthProviderError,
   readProviderJson,
 } from '../../../../../lib/oauthProviderErrors'
+import { recordUserLogin } from '../../../../../lib/userDirectory'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -86,6 +87,8 @@ export async function GET(req) {
     name: String(ghUser.name || ghUser.login || 'GitHub User'),
     image: ghUser.avatar_url ? String(ghUser.avatar_url) : null,
   }
+
+  await recordUserLogin(user)
 
   const payload = {
     user,

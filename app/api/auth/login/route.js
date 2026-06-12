@@ -8,6 +8,7 @@ import {
   signSession,
 } from '../../../../lib/edgeSession'
 import { authenticateEmailUser } from '../../../../lib/emailAuth'
+import { recordUserLogin } from '../../../../lib/userDirectory'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -80,6 +81,8 @@ export async function POST(req) {
     const body = await req.json()
     const result = await authenticateEmailUser(body?.email, body?.password)
     if (!result.ok) return Response.json(result, { status: result.status || 401 })
+
+    await recordUserLogin(result.user)
 
     const nowSeconds = Math.floor(Date.now() / 1000)
     const token = await signSession(

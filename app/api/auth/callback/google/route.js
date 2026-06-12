@@ -11,6 +11,7 @@ import {
   oauthProviderError,
   readProviderJson,
 } from '../../../../../lib/oauthProviderErrors'
+import { recordUserLogin } from '../../../../../lib/userDirectory'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -84,7 +85,10 @@ export async function GET(req) {
     login: String(googleUser.email || ''),
     name: String(googleUser.name || googleUser.email || 'Google User'),
     image: googleUser.picture ? String(googleUser.picture) : null,
+    email: String(googleUser.email || ''),
   }
+
+  await recordUserLogin(user)
 
   const payload = {
     user,

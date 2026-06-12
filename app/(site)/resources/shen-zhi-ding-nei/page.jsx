@@ -12,13 +12,14 @@ const rawMarkdown = loadResourceMarkdown('shen-zhi-ding-nei')
 const article = rawMarkdown ? buildShenZhiDingNeiArticle(rawMarkdown) : null
 
 export const metadata = {
-  title: '置身钉内全文原文：钉钉 ONE 项目离职复盘长文',
+  title: '《置身钉内》全文原文：钉钉 ONE 项目离职复盘长文',
   description:
     '《置身钉内》全文原文存档：滕雅辛（幽素）2026 年阿里内网流传的钉钉 ONE 项目 7.5 万字复盘，含发心、定位、设计、用户、敏捷、秩序、军争、长期八卷；配套职场观察调研。',
   keywords: [
+    '《置身钉内》',
+    '《置身钉内》全文',
+    '《置身钉内》原文',
     '置身钉内',
-    '置身钉内全文',
-    '置身钉内原文',
     '钉钉',
     'ONE',
     '滕雅辛',
@@ -34,7 +35,7 @@ export const metadata = {
     canonical: '/resources/shen-zhi-ding-nei',
   },
   openGraph: {
-    title: '置身钉内全文原文：钉钉 ONE 项目离职复盘长文',
+    title: '《置身钉内》全文原文：钉钉 ONE 项目离职复盘长文',
     description: doc.summary,
     url: 'https://2aran.com/resources/shen-zhi-ding-nei',
     type: 'article',
@@ -102,7 +103,7 @@ export default function ShenZhiDingNeiResourcePage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-[#222] dark:text-gray-100">置身钉内 · 全文原文</h2>
+        <h2 className="mb-4 text-lg font-semibold text-[#222] dark:text-gray-100">《置身钉内》· 全文原文</h2>
         {article?.html ? (
           <ResourceLongformReader toc={article.toc} html={article.html} />
         ) : (

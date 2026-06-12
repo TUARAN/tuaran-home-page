@@ -6,6 +6,7 @@ date: 2026-05-22
 tags: [Qwen, 大模型, 开源模型, Agent, 多模态, 本地部署, 模型生态]
 summary: Qwen3.6 是 Qwen 在 2026 年 4 月推出的开源权重小型旗舰线，官方 Hugging Face Collection 当前包含 4 个条目；Qwen3.7 则在 2026 年 5 月以 Qwen3.7-Max 的闭源服务化旗舰形态发布，核心定位从“可本地部署的 agentic coding 模型”升级到“长周期 Agent 工作负载模型”。两代共同指向一个趋势：Qwen 正在把开源权重生态、工具调用、长上下文、多模态和服务化旗舰模型组合成完整开发者基础设施。
 assistance: codex
+model: gpt-5
 pv: 0
 ---
 

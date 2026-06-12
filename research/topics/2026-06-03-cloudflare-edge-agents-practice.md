@@ -7,6 +7,7 @@ tags: [Cloudflare, Workers, Agents SDK, Durable Objects, Workflows, Vectorize, A
 summary: 把 Workers + Durable Objects + Workflows + Vectorize + AI Gateway 这一套拼起来，Cloudflare 已经能在 300 个城市的边缘节点跑「带状态、能恢复、能调工具」的 Agent；本文从架构、代码、成本、坑四个角度写一份可落地的实战指南。
 tldr: Cloudflare 把「带状态的 Agent」做成了一等公民——Durable Objects 当 actor、Workflows 当 saga、Agents SDK 当壳子，配合 AI Gateway 缓存/路由模型请求，是目前唯一把「全球分布 + 持久状态 + 模型路由 + 向量检索 + MCP server」凑齐的边缘平台。代价是：被锁定在 Workers runtime（Node 兼容是补丁不是原生）、CPU 时间硬上限 30 秒/请求、跨大区延迟仍受 Durable Object 单点位置影响。结论：跑「轻量、长尾、全球分布」的 Agent（客服、监控、个人助理、MCP server hosting）非常香；跑「单次推理重、需要本地 GPU 的训练任务」不要碰。
 assistance: claude-code
+model: claude-opus-4-7
 pv: 0
 ---
 

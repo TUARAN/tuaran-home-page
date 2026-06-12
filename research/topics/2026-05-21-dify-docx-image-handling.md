@@ -6,6 +6,7 @@ date: 2026-05-21
 tags: [Dify, RAG, 知识库, DOCX, 多模态, 图片处理]
 summary: Dify 导入带图 DOCX 的完整图片链路：抽取层不限格式/大小，多模态索引层限 JPG/PNG/GIF ≤2MB（可配），普通嵌入下图片不向量化、仅随 chunk 透传。
 assistance: claude-code
+model: claude-opus-4-7
 pv: 0
 ---
 

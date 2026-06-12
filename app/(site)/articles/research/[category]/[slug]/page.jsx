@@ -328,8 +328,12 @@ export default async function ResearchDetailPage({ params }) {
           ) : null}
           <span aria-hidden="true">·</span>
           <ResearchPvCounter category={entry.category} slug={entry.slug} initialPv={entry.pv} />
-          {/* "协助：xxx" 这条 meta 不再展示给读者；assistance 字段仍保留在 frontmatter，
-              用于多版本路由（variant id）、内容随机种子、未来分析等内部用途。 */}
+          {assistance && !isEncrypted ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>协助：{entry.assistanceLabel || entry.sourceLabel || 'TUARAN'}</span>
+            </>
+          ) : null}
           {isEncrypted ? null : (
             <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto sm:flex-nowrap">
               <SharePageButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />

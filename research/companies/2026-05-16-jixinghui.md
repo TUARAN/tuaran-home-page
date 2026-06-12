@@ -6,6 +6,7 @@ date: 2026-05-16
 tags: [开发者生态, KOL, 任务撮合, 早期创业, 内容平台]
 summary: 北京极猫科技有限公司（极星会 / GitFund）运营面向科技企业的开发者生态拓展平台，做"科技企业 ↔ 技术博主"任务撮合，2024 年正式上线，技术形态显示仍处早期 / 内测状态。
 assistance: claude-code
+model: claude-opus-4-7
 pv: 0
 ---
 

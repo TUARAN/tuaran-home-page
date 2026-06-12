@@ -7,6 +7,7 @@ tags: [Agent, 端侧Agent, OpenClaw, Claude Agent SDK, 知识付费, 课程, 框
 summary: 围绕「教别人开发端侧 / 本地操作型 Agent（类 OpenClaw / QClaw / Codex）」这门课，从市场需求、竞品空白、要教哪些框架、在哪些平台投放四个维度做结构化测评，并给出选题、定价与渠道组合建议。
 tldr: 课题本身踩在风口（2026 是「agent harness 之年」），但内容会快速过时、竞品在涨。最优解不是「再做一门框架教程」，而是用「OpenClaw 为主线 + MCP/SDK 为骨架 + 一个能跑通的真实项目」做差异化；投放走「前端周刊私域引流 → 掘金小册/极客时间立信誉 → 知识星球做陪跑变现」的组合拳，而非单平台 All in。
 assistance: claude-code
+model: claude-opus-4-7
 pv: 0
 ---
 

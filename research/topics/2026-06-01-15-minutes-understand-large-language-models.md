@@ -7,6 +7,7 @@ tags: [大模型, Transformer, RAG, Agent, AI 工程, 知识库]
 summary: 用工程视角快速建立大模型全景认知：文本如何变成向量，Transformer 如何计算，KV Cache 为什么重要，RAG 和 Agent 又如何把模型接入真实业务。
 tldr: 大模型的底层是 Token 概率建模和大规模矩阵运算；Transformer 负责理解上下文，KV Cache 负责降低推理重复计算，RAG 负责接入外部知识，Agent 负责把模型从回答问题推进到执行任务。
 assistance: codex
+model: gpt-5
 pv: 0
 ---
 

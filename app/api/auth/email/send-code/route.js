@@ -5,7 +5,13 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req) {
   try {
-    const body = await req.json()
+    let body
+    try {
+      body = await req.json()
+    } catch {
+      return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
+    }
+
     if (body?.purpose && body.purpose !== 'register') {
       return Response.json({ error: 'UNSUPPORTED_CODE_PURPOSE' }, { status: 400 })
     }

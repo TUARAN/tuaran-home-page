@@ -11,6 +11,7 @@ import {
   oauthProviderError,
   readProviderJson,
 } from '../../../../../lib/oauthProviderErrors'
+import { normalizeReturnTo } from '../../../../../lib/returnTo'
 import { recordUserLogin } from '../../../../../lib/userDirectory'
 
 export const runtime = 'edge'
@@ -36,7 +37,7 @@ export async function GET(req) {
 
   const cookies = parseCookies(req)
   const expectedState = cookies[cookieNames.oauthState]
-  const returnTo = cookies[cookieNames.returnTo] || '/'
+  const returnTo = normalizeReturnTo(cookies[cookieNames.returnTo])
 
   if (!expectedState || expectedState !== state) {
     return Response.json({ error: 'INVALID_STATE' }, { status: 400 })
@@ -113,6 +114,6 @@ export async function GET(req) {
     serializeCookie(cookieNames.returnTo, '', { maxAge: 0, secure })
   )
 
-  headers.set('Location', returnTo.startsWith('/') ? returnTo : '/')
+  headers.set('Location', returnTo)
   return new Response(null, { status: 302, headers })
 }

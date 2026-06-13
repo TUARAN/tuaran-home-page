@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { marked } from 'marked'
+
+import { renderMarkdown } from '../../../lib/research/markdown'
 
 // 与 scripts/snapshot-memory.mjs 严格一致的解密
 async function deriveKey(passphrase, salt, iterations) {
@@ -115,7 +116,7 @@ export default function MemoryVault() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const blob = await res.json()
       const plaintext = await decryptBlob(blob, passToUse)
-      const html = marked.parse(plaintext, { breaks: true })
+      const html = renderMarkdown(plaintext, { breaks: true })
       setDecryptedHtml(html)
       setUnlocked(true)
     } catch (err) {

@@ -12,7 +12,13 @@ export async function POST(req) {
       return Response.json({ error: 'MISSING_AUTH_CONFIG', missing: ['NEXTAUTH_SECRET'] }, { status: 500 })
     }
 
-    const body = await req.json()
+    let body
+    try {
+      body = await req.json()
+    } catch {
+      return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
+    }
+
     const result = await registerEmailUser({
       rawEmail: body?.email,
       password: body?.password,

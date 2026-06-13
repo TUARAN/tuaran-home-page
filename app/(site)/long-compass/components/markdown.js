@@ -3,14 +3,12 @@
 // 抽出来是为了：未来想换 renderer / 加 DOMPurify / 做 syntax highlight 时，
 // 只动这一个文件，所有卡片自动跟上。
 
-import { Marked } from 'marked'
-
-const markdown = new Marked({ gfm: true, breaks: true })
+import { renderMarkdown as renderSafeMarkdown } from '../../../../lib/research/markdown'
 
 export function renderMarkdown(text) {
   if (!text) return ''
   try {
-    return markdown.parse(text)
+    return renderSafeMarkdown(text, { breaks: true })
   } catch {
     return ''
   }

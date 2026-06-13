@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
+import { normalizeReturnTo } from '../../../lib/returnTo'
+
 const ERROR_MESSAGES = {
   INVALID_EMAIL: '请输入有效的邮箱地址。',
   EMAIL_ALREADY_REGISTERED: '这个邮箱已经注册。',
@@ -77,7 +79,7 @@ export default function RegisterClient() {
       if (!response.ok) throw new Error(data?.error || 'REGISTER_FAILED')
 
       const returnTo = new URLSearchParams(window.location.search).get('returnTo')
-      window.location.href = returnTo?.startsWith('/') ? returnTo : '/'
+      window.location.href = normalizeReturnTo(returnTo)
     } catch (err) {
       setError(messageFor(err.message))
     } finally {

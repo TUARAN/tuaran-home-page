@@ -7,11 +7,22 @@ import {
   serializeCookie,
   signSession,
 } from '../../../../lib/edgeSession'
+import { getD1 } from '../../../../lib/d1'
 import { authenticateEmailUser } from '../../../../lib/emailAuth'
+import {
+  cleanupRateLimits,
+  enforceRateLimits,
+  getClientIp,
+  rateLimitResponse,
+} from '../../../../lib/abuseControls'
+import { normalizeReturnTo } from '../../../../lib/returnTo'
 import { recordUserLogin } from '../../../../lib/userDirectory'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+
+const FIVE_MINUTES_MS = 5 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
 
 export async function GET(req) {
   const { githubId, googleId, appUrl } = getSecrets()
@@ -37,7 +48,7 @@ export async function GET(req) {
     )
   }
 
-  const returnTo = url.searchParams.get('returnTo') || '/'
+  const returnTo = normalizeReturnTo(url.searchParams.get('returnTo'))
   const state = randomState()
 
   const origin = (appUrl || new URL(req.url).origin).replace(/\/$/, '')
@@ -78,11 +89,29 @@ export async function POST(req) {
       return Response.json({ error: 'MISSING_AUTH_CONFIG', missing: ['NEXTAUTH_SECRET'] }, { status: 500 })
     }
 
-    const body = await req.json()
+    let body
+    try {
+      body = await req.json()
+    } catch {
+      return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
+    }
+
+    const db = getD1()
+    const ip = getClientIp(req)
+    const emailSubject = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const limit = await enforceRateLimits(db, [
+      { scope: 'auth:login:ip:5m', subject: ip, limit: 20, windowMs: FIVE_MINUTES_MS },
+      { scope: 'auth:login:ip:day', subject: ip, limit: 200, windowMs: DAY_MS },
+      { scope: 'auth:login:email:5m', subject: emailSubject, limit: 8, windowMs: FIVE_MINUTES_MS },
+      { scope: 'auth:login:email:day', subject: emailSubject, limit: 80, windowMs: DAY_MS },
+    ])
+    if (!limit.ok) return rateLimitResponse(limit)
+
     const result = await authenticateEmailUser(body?.email, body?.password)
     if (!result.ok) return Response.json(result, { status: result.status || 401 })
 
     await recordUserLogin(result.user)
+    await cleanupRateLimits(db).catch(() => {})
 
     const nowSeconds = Math.floor(Date.now() / 1000)
     const token = await signSession(

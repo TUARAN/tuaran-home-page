@@ -117,7 +117,7 @@ export default function CreationCalendarClient({ items }) {
     const merged = { ...juejinCountsByDate, ...localCountsByDate }
     const set = new Set(Object.keys(merged).map((date) => date.slice(0, 4)))
     return Array.from(set).sort((a, b) => Number(b) - Number(a))
-  }, [datedItems, juejinCountsByDate, localCountsByDate])
+  }, [juejinCountsByDate, localCountsByDate])
 
   const [selectedYear, setSelectedYear] = useState(years[0] || '')
   const [selectedMonth, setSelectedMonth] = useState('all')

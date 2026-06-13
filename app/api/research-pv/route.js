@@ -1,10 +1,11 @@
 import { getD1 } from '../../../lib/d1'
+import { RESEARCH_CATEGORIES } from '../../../lib/research/categories'
 import { RESEARCH_ENTRY_KEY_SET } from '../../../lib/research/catalog'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const CATEGORY_SET = new Set(['companies', 'topics'])
+const CATEGORY_SET = new Set(RESEARCH_CATEGORIES)
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,120}$/i
 const MAX_KEYS = 100
 const HIT_WINDOW_MS = 60 * 60 * 1000

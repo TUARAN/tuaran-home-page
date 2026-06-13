@@ -4,7 +4,7 @@ import Image from 'next/image'
 import DaysSince from './components/DaysSince'
 import SiteFooter from './components/SiteFooter'
 import { AVATAR_PATH } from '../../lib/avatar'
-import { SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE } from '../../lib/siteIntro'
+import { SITE_HERO_TAGLINE } from '../../lib/siteIntro'
 import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHighlights'
 
 export const dynamic = 'force-static'
@@ -165,22 +165,6 @@ function ProductLink({ item }) {
   )
 }
 
-function HeroGoalText() {
-  return (
-    <>
-      {SITE_HERO_GOAL_PARTS.map((part, i) =>
-        typeof part === 'string' ? (
-          <span key={i}>{part}</span>
-        ) : (
-          <span key={i} className="home-emphasis">
-            {part.emphasis}
-          </span>
-        )
-      )}
-    </>
-  )
-}
-
 export default function HomePage() {
   const featuredPicks = getHomeFeaturedPicks()
 
@@ -190,9 +174,6 @@ export default function HomePage() {
         <div className="home-hero-copy">
           <p className="home-kicker">2aran.com · Tuaran</p>
           <h1>{SITE_HERO_TAGLINE}</h1>
-          <p className="home-hero-lead">
-            <HeroGoalText />
-          </p>
           <div className="home-hero-actions">
             <Link href="/articles" className="home-button home-button-primary">
               开始阅读

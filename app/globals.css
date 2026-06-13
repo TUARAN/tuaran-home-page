@@ -162,23 +162,32 @@
     color: var(--site-faint);
   }
 
+  .home-hero-brand {
+    @apply max-w-[760px];
+  }
+
+  .home-hero-brand span {
+    @apply mb-3 block text-[15px] font-semibold leading-6 sm:text-[17px];
+    color: var(--site-accent);
+  }
+
   .home-hero h1 {
-    @apply mb-0 max-w-[860px] border-b-0 pb-0 font-serif text-[2.15rem] font-semibold leading-[1.12] tracking-normal sm:text-[2.9rem] lg:text-[3.45rem];
+    @apply mb-0 border-b-0 pb-0 font-serif text-[4rem] font-semibold leading-none tracking-normal sm:text-[5.5rem] lg:text-[6.6rem];
     color: var(--site-ink);
   }
 
   .home-hero-lead {
-    @apply mb-0 mt-6 max-w-[720px] font-serif text-[1.05rem] font-medium leading-8 tracking-normal sm:text-[1.18rem] sm:leading-9;
+    @apply mb-0 mt-6 max-w-[680px] text-[1.02rem] font-medium leading-8 tracking-normal sm:text-[1.15rem] sm:leading-9;
     color: var(--site-muted);
   }
 
-  .home-emphasis {
-    color: var(--site-blue);
-    font-weight: 700;
+  .home-hero-position {
+    @apply mb-0 mt-4 max-w-[660px] text-[13px] leading-6;
+    color: var(--site-faint);
   }
 
   .home-hero-actions {
-    @apply mt-7 flex flex-wrap gap-3;
+    @apply mt-8 flex flex-wrap gap-3;
   }
 
   .home-button {
@@ -527,8 +536,23 @@
     max-width: 780px;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
       Roboto, Helvetica, Arial, sans-serif;
-    font-size: clamp(2rem, 5vw, 3rem);
-    line-height: 1.2;
+    font-size: 3.25rem;
+    line-height: 1.05;
+  }
+
+  :root[data-ui='classic'] .home-hero-brand span {
+    font-size: 15px;
+  }
+
+  :root[data-ui='classic'] .home-hero-lead {
+    max-width: 620px;
+    margin-top: 1rem;
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  :root[data-ui='classic'] .home-hero-position {
+    max-width: 620px;
   }
 
   :root[data-ui='classic'] .home-kicker {
@@ -674,6 +698,16 @@
   :root[data-ui='classic'] .home-qr-grid div {
     border-radius: 0.55rem;
     background: transparent;
+  }
+
+  @media (max-width: 640px) {
+    .home-hero h1 {
+      font-size: 3.45rem;
+    }
+
+    :root[data-ui='classic'] .home-hero h1 {
+      font-size: 2.65rem;
+    }
   }
 
   .home-footer {

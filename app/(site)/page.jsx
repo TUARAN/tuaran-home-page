@@ -78,7 +78,7 @@ const PRODUCT_LINKS = [
 const BLOGGER_ALLIANCE = {
   href: 'https://blogger-alliance.cn/',
   title: '博主联盟',
-  eyebrow: '推荐入口',
+  eyebrow: '立即加入',
   subtitle: 'AI 产品方与技术博主的增长协作网络',
   desc: '连接 AI 产品方与技术博主，把产品曝光、内容种草和真实转化放进一个长期协作网络。',
   points: ['AI 产品增长', '技术博主合作', '品牌内容分发'],

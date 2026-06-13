@@ -84,6 +84,8 @@ const BLOGGER_ALLIANCE = {
   points: ['AI 产品增长', '技术博主合作', '品牌内容分发'],
 }
 
+const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
+
 const PROFILE_LINKS = [
   { href: '/context-memory', label: '上下文记忆' },
   { href: '/publications', label: '出版作品' },
@@ -400,55 +402,54 @@ function ClassicHeroGoalText() {
 
 function ClassicHomePage({ featuredPicks }) {
   return (
-    <main className="home-classic-root mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-4 py-6 md:py-8">
+    <main className="home-classic-root mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 py-9 sm:px-6 md:py-12 lg:px-10">
       <section className="mb-14 flex-1">
-        <header className="classic-home-hero relative mb-8 overflow-hidden rounded-[28px] border px-5 py-4 md:px-7 md:py-5">
+        <header className="classic-home-hero relative mb-12 overflow-hidden rounded-[28px] border px-6 py-7 md:px-12 md:py-10">
           <div className="classic-home-hero-glow pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block" />
-          <div className="classic-home-hero-watermark pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[2.6rem] font-semibold uppercase leading-none tracking-[0.16em] lg:block xl:right-14">
+          <div className="classic-home-hero-watermark pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[3.2rem] font-semibold uppercase leading-none tracking-[0.16em] lg:block xl:right-20 2xl:text-[4.4rem]">
             2ARAN.COM
           </div>
-          <div className="relative max-w-[760px] space-y-4">
-            <div className="space-y-4">
-              <div className="space-y-3">
+          <div className="relative max-w-[1260px] space-y-7">
+            <div className="space-y-7">
+              <div className="space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.28em] text-[#858779] dark:text-[#9ca5b5]">
+                    <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.28em] text-[#858779] dark:text-[#9ca5b5] md:text-[15px]">
                       涂阿燃｜安东尼 · Agent 工程师
                     </p>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <h1 className="mb-0 max-w-[46rem] font-serif text-[1.28rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.56rem]">
-                    {SITE_HERO_TITLE}
+                <div className="space-y-3">
+                  <h1 className="mb-0 max-w-[68rem] font-serif text-[1.72rem] font-semibold leading-[1.28] tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[2.28rem] xl:text-[2.6rem]">
+                    {CLASSIC_SITE_HERO_TAGLINE}
                   </h1>
-                  <p className="mb-0 max-w-[44rem] font-serif text-[1rem] font-medium leading-[1.65] tracking-[0.02em] text-[#24251f] dark:text-[#e1e2dc] md:text-[1.06rem]">
-                    {SITE_HERO_TAGLINE}
-                    <span className="mx-2 text-[#a0a293] dark:text-gray-600">·</span>
+                  <p className="mb-0 max-w-[64rem] font-serif text-[1.12rem] font-medium leading-[1.65] tracking-[0.02em] text-[#24251f] dark:text-[#e1e2dc] md:text-[1.48rem]">
                     <ClassicHeroGoalText />
+                    。
                   </p>
                 </div>
               </div>
-              <div className="mt-1 flex flex-wrap items-stretch gap-2.5">
+              <div className="mt-1 flex flex-wrap items-stretch gap-4">
                 <a
                   href="https://blogger-alliance.cn/"
                   target="_blank"
                   rel="noreferrer"
-                  className="classic-home-hero-cta-primary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
+                  className="classic-home-hero-cta-primary no-external-arrow group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
                 >
                   <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
                     style={{ backgroundColor: 'var(--hero-cta-icon-bg)', color: 'var(--hero-cta-icon-text)' }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M4 7h16M4 12h10M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
-                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-cta-text)' }}>
+                    <span className="flex items-center gap-1 text-[18px] font-semibold" style={{ color: 'var(--hero-cta-text)' }}>
                       加入博主联盟
-                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-70">→</span>
+                      <span className="font-mono text-[12px] tracking-[0.08em] opacity-70">→</span>
                     </span>
-                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-cta-subtext)' }}>
+                    <span className="mt-1 text-[15px] leading-snug" style={{ color: 'var(--hero-cta-subtext)' }}>
                       AI 产品方 ↔ 技术博主 · 品牌增长
                     </span>
                   </span>
@@ -457,22 +458,22 @@ function ClassicHomePage({ featuredPicks }) {
                   href="https://frontendnext.com/"
                   target="_blank"
                   rel="noreferrer"
-                  className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
+                  className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
                 >
                   <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
                     style={{ backgroundColor: 'var(--hero-card-icon-bg)', color: 'var(--hero-card-icon-text)' }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M4 6l8 8 8-8M4 13l8 8 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
-                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
+                    <span className="flex items-center gap-1 text-[18px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
                       订阅前端周看
-                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
+                      <span className="font-mono text-[12px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
-                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
+                    <span className="mt-1 text-[15px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
                       前端 / AI Agent / 大模型 · 技术情报站
                     </span>
                   </span>
@@ -481,22 +482,22 @@ function ClassicHomePage({ featuredPicks }) {
                   href="https://publishlab.cc/"
                   target="_blank"
                   rel="noreferrer"
-                  className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
+                  className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
                 >
                   <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
                     style={{ backgroundColor: 'var(--hero-card-icon-bg)', color: 'var(--hero-card-icon-text)' }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M5 5h14v14H5zM8 9h8M8 13h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
-                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
+                    <span className="flex items-center gap-1 text-[18px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
                       使用 PublishLab
-                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
+                      <span className="font-mono text-[12px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
-                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
+                    <span className="mt-1 text-[15px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
                       AI 写作 / 内容创作 / 数字出版
                     </span>
                   </span>
@@ -506,7 +507,7 @@ function ClassicHomePage({ featuredPicks }) {
           </div>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_300px]">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_480px]">
           <div className="min-w-0 space-y-6">
             <ClassicFeaturedSection items={featuredPicks} />
           </div>
@@ -514,14 +515,14 @@ function ClassicHomePage({ featuredPicks }) {
           <aside className="w-full space-y-6">
             <section className="classic-home-surface-panel rounded-[24px] border p-5 shadow-[0_8px_32px_var(--hero-shadow)] dark:border-[#252d36] dark:bg-[#10151d] dark:shadow-none md:p-6">
               <div className="mb-5 border-b border-[#dee0db] pb-5 text-center dark:border-gray-800/80">
-                <div className="mx-auto w-[116px] overflow-hidden bg-[var(--page-bg)] dark:bg-[#0f1318]">
+                <div className="mx-auto w-[152px] overflow-hidden bg-[var(--page-bg)] dark:bg-[#0f1318] xl:w-[200px]">
                   <Image
                     src={AVATAR_PATH}
                     alt="涂阿燃"
-                    width={128}
-                    height={160}
+                    width={220}
+                    height={220}
                     priority
-                    sizes="116px"
+                    sizes="(min-width: 1280px) 200px, 152px"
                     className="h-auto w-full object-cover shadow-none"
                   />
                 </div>

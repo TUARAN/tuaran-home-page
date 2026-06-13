@@ -14,7 +14,7 @@ const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const UI_MODES = [
   { id: 'polished', label: '作品集', desc: '新版：更强封面感和作品路径' },
-  { id: 'classic', label: '经典', desc: '旧版：更窄、更平、更像日志站' },
+  { id: 'classic', label: '经典', desc: '旧版：首页原布局' },
 ]
 
 function findPresetByHex(hex) {

@@ -84,7 +84,7 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/site.webmanifest" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var v=localStorage.getItem('reading-bg');if(v){document.documentElement.style.setProperty('--page-bg',v);}}catch(e){}})();`,
+            __html: `(function(){try{var root=document.documentElement;var ui=localStorage.getItem('site-ui-mode');root.dataset.ui=ui==='classic'?'classic':'polished';var v=localStorage.getItem('reading-bg');if(v){root.style.setProperty('--page-bg',v);}}catch(e){}})();`,
           }}
         />
       </head>

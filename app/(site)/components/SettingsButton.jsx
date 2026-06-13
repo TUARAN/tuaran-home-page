@@ -11,6 +11,11 @@ const BG_PRESETS = [
 ]
 
 const STORAGE_KEY = 'reading-bg'
+const UI_STORAGE_KEY = 'site-ui-mode'
+const UI_MODES = [
+  { id: 'polished', label: '作品集', desc: '新版：更强封面感和作品路径' },
+  { id: 'classic', label: '经典', desc: '旧版：更克制、更接近原站气质' },
+]
 
 function findPresetByHex(hex) {
   return BG_PRESETS.find((p) => p.hex.toLowerCase() === (hex || '').toLowerCase())
@@ -21,6 +26,7 @@ export default function SettingsButton() {
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [bgHex, setBgHex] = useState(BG_PRESETS[0].hex)
+  const [uiMode, setUiMode] = useState('polished')
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
 
@@ -29,6 +35,8 @@ export default function SettingsButton() {
     try {
       const v = localStorage.getItem(STORAGE_KEY)
       if (v) setBgHex(v)
+      const ui = localStorage.getItem(UI_STORAGE_KEY)
+      if (ui === 'classic' || ui === 'polished') setUiMode(ui)
     } catch (e) {}
   }, [])
 
@@ -60,6 +68,15 @@ export default function SettingsButton() {
     document.documentElement.style.setProperty('--page-bg', hex)
     try {
       localStorage.setItem(STORAGE_KEY, hex)
+    } catch (e) {}
+  }
+
+  const pickUiMode = (mode) => {
+    const next = mode === 'classic' ? 'classic' : 'polished'
+    setUiMode(next)
+    document.documentElement.dataset.ui = next
+    try {
+      localStorage.setItem(UI_STORAGE_KEY, next)
     } catch (e) {}
   }
 
@@ -122,6 +139,34 @@ export default function SettingsButton() {
                 <span aria-hidden="true">🌙</span>
                 <span>深色</span>
               </button>
+            </div>
+          </div>
+
+          {/* UI 模式 */}
+          <div className="mb-3">
+            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">UI 模式</div>
+            <div className="grid grid-cols-2 gap-2">
+              {UI_MODES.map((mode) => {
+                const active = uiMode === mode.id
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => pickUiMode(mode.id)}
+                    aria-pressed={active}
+                    className={`rounded-lg border px-3 py-2 text-left transition ${
+                      active
+                        ? 'border-[#15140f] bg-[#15140f] text-white dark:border-gray-200 dark:bg-gray-200 dark:text-[#15140f]'
+                        : 'border-[#d6d5cd] text-[#15140f] hover:border-[#15140f] dark:border-[#2a3440] dark:text-gray-200 dark:hover:border-gray-400'
+                    }`}
+                  >
+                    <span className="block text-sm font-medium">{mode.label}</span>
+                    <span className={`mt-0.5 block text-[10px] leading-4 ${active ? 'opacity-75' : 'text-[#6a685f] dark:text-gray-400'}`}>
+                      {mode.desc}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 

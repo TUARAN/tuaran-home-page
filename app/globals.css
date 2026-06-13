@@ -217,6 +217,56 @@
     color: var(--site-ink);
   }
 
+  .home-focus-card {
+    @apply relative overflow-hidden rounded-2xl border p-5 no-underline transition md:p-6;
+    border-color: color-mix(in srgb, var(--site-accent) 42%, var(--site-line));
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--site-accent) 18%, var(--site-panel-strong)), var(--site-panel)),
+      var(--site-panel);
+    color: var(--site-ink);
+    box-shadow: 0 18px 42px var(--site-shadow);
+  }
+
+  .home-focus-card:hover {
+    @apply -translate-y-1 no-underline;
+    border-color: var(--site-accent);
+    color: var(--site-ink);
+    box-shadow: 0 24px 56px color-mix(in srgb, var(--site-shadow) 82%, rgba(0, 0, 0, 0.08));
+  }
+
+  .home-focus-kicker {
+    @apply mb-4 inline-flex rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em];
+    border-color: color-mix(in srgb, var(--site-accent) 48%, var(--site-line));
+    color: var(--site-accent);
+    background: color-mix(in srgb, var(--site-accent) 10%, transparent);
+  }
+
+  .home-focus-card h2 {
+    @apply mb-3 border-b-0 pb-0 font-serif text-[2rem] font-semibold leading-tight;
+    color: var(--site-ink);
+  }
+
+  .home-focus-card p {
+    @apply mb-5 text-[14px] leading-7;
+    color: var(--site-muted);
+  }
+
+  .home-focus-points {
+    @apply mb-6 flex flex-wrap gap-2;
+  }
+
+  .home-focus-points span {
+    @apply rounded-full border px-2.5 py-1 text-[12px] font-medium;
+    border-color: var(--site-line);
+    color: var(--site-muted);
+    background: var(--site-panel-strong);
+  }
+
+  .home-focus-action {
+    @apply inline-flex items-center gap-2 text-sm font-semibold;
+    color: var(--site-accent-strong);
+  }
+
   .home-profile {
     @apply rounded-2xl border p-5;
     border-color: var(--site-line);
@@ -490,10 +540,36 @@
   }
 
   :root[data-ui='classic'] .home-button,
+  :root[data-ui='classic'] .home-focus-card,
   :root[data-ui='classic'] .home-profile-links a,
   :root[data-ui='classic'] .home-tab-link,
   :root[data-ui='classic'] .home-badge {
     border-radius: 0.45rem;
+  }
+
+  :root[data-ui='classic'] .home-focus-card {
+    margin-top: 1.25rem;
+    border-width: 1px 0;
+    padding: 1.25rem 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  :root[data-ui='classic'] .home-focus-card:hover {
+    transform: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  :root[data-ui='classic'] .home-focus-card h2 {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif;
+    font-size: 1.65rem;
+  }
+
+  :root[data-ui='classic'] .home-focus-points span {
+    border-radius: 0.4rem;
+    background: transparent;
   }
 
   :root[data-ui='classic'] .home-profile {

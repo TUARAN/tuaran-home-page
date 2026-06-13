@@ -57,6 +57,13 @@ const PRODUCT_LINKS = [
   },
 ]
 
+const BLOGGER_ALLIANCE = {
+  href: 'https://blogger-alliance.cn/',
+  title: '博主联盟',
+  desc: '连接 AI 产品方与技术博主，把产品曝光、内容种草和真实转化放进一个长期协作网络。',
+  points: ['AI 产品增长', '技术博主合作', '品牌内容分发'],
+}
+
 const PROFILE_LINKS = [
   { href: '/context-memory', label: '上下文记忆' },
   { href: '/publications', label: '出版作品' },
@@ -165,6 +172,65 @@ function ProductLink({ item }) {
   )
 }
 
+function BloggerAllianceFocus() {
+  return (
+    <a href={BLOGGER_ALLIANCE.href} target="_blank" rel="noreferrer" className="home-focus-card no-external-arrow">
+      <span className="home-focus-kicker">当前重点</span>
+      <h2>{BLOGGER_ALLIANCE.title}</h2>
+      <p>{BLOGGER_ALLIANCE.desc}</p>
+      <span className="home-focus-points">
+        {BLOGGER_ALLIANCE.points.map((point) => (
+          <span key={point}>{point}</span>
+        ))}
+      </span>
+      <span className="home-focus-action">
+        了解博主联盟
+        <ArrowIcon />
+      </span>
+    </a>
+  )
+}
+
+function ProfileCard() {
+  return (
+    <section className="home-profile" aria-label="涂阿燃个人信息">
+      <div className="home-profile-top">
+        <div className="home-avatar-wrap">
+          <Image
+            src={AVATAR_PATH}
+            alt="涂阿燃"
+            width={160}
+            height={200}
+            priority
+            sizes="112px"
+            className="h-auto w-full object-cover"
+          />
+        </div>
+        <div className="min-w-0">
+          <p className="home-profile-name">涂阿燃</p>
+          <p className="home-profile-role">前端 · AI Agent · 奶爸</p>
+          <p className="home-profile-company">Founder @矩联科技</p>
+        </div>
+      </div>
+      <blockquote>
+        <p>
+          选一件值得投入 <strong>20 年</strong> 的事，每日复利，高频迭代。
+        </p>
+        <div className="home-days">
+          <DaysSince />
+        </div>
+      </blockquote>
+      <div className="home-profile-links">
+        {PROFILE_LINKS.map((link) => (
+          <Link key={link.href} href={link.href} className="no-underline">
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function HomePage() {
   const featuredPicks = getHomeFeaturedPicks()
 
@@ -175,50 +241,16 @@ export default function HomePage() {
           <p className="home-kicker">2aran.com · Tuaran</p>
           <h1>{SITE_HERO_TAGLINE}</h1>
           <div className="home-hero-actions">
-            <Link href="/articles" className="home-button home-button-primary">
-              开始阅读
-            </Link>
-            <Link href="/works" className="home-button home-button-secondary">
-              查看作品
+            <a href={BLOGGER_ALLIANCE.href} target="_blank" rel="noreferrer" className="home-button home-button-primary no-external-arrow">
+              了解博主联盟
+            </a>
+            <Link href="/services" className="home-button home-button-secondary">
+              合作方式
             </Link>
           </div>
         </div>
 
-        <aside className="home-profile" aria-label="涂阿燃个人信息">
-          <div className="home-profile-top">
-            <div className="home-avatar-wrap">
-              <Image
-                src={AVATAR_PATH}
-                alt="涂阿燃"
-                width={160}
-                height={200}
-                priority
-                sizes="112px"
-                className="h-auto w-full object-cover"
-              />
-            </div>
-            <div className="min-w-0">
-              <p className="home-profile-name">涂阿燃</p>
-              <p className="home-profile-role">前端 · AI Agent · 奶爸</p>
-              <p className="home-profile-company">Founder @矩联科技</p>
-            </div>
-          </div>
-          <blockquote>
-            <p>
-              选一件值得投入 <strong>20 年</strong> 的事，每日复利，高频迭代。
-            </p>
-            <div className="home-days">
-              <DaysSince />
-            </div>
-          </blockquote>
-          <div className="home-profile-links">
-            {PROFILE_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className="no-underline">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </aside>
+        <BloggerAllianceFocus />
       </section>
 
       <section className="home-paths" aria-label="站点主要入口">
@@ -231,6 +263,8 @@ export default function HomePage() {
         <FeaturedReading items={featuredPicks} />
 
         <aside className="home-side-stack">
+          <ProfileCard />
+
           <section className="home-section home-products">
             <div className="home-section-heading compact">
               <div>

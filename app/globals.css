@@ -294,8 +294,8 @@
     color: var(--site-accent);
   }
 
-  .home-hero h1 {
-    @apply mb-0 border-b-0 pb-0 font-serif text-[3.05rem] font-semibold leading-[1.05] tracking-normal sm:text-[4.35rem] lg:text-[5.2rem];
+  .home-hero-title {
+    @apply mb-0 border-b-0 pb-0 font-serif text-[2.15rem] font-semibold leading-[1.15] tracking-normal sm:text-[2.75rem] lg:text-[3.35rem];
     color: var(--site-ink);
   }
 
@@ -822,8 +822,8 @@
   }
 
   @media (max-width: 640px) {
-    .home-hero h1 {
-      font-size: 2.85rem;
+    .home-hero-title {
+      font-size: 2.2rem;
     }
 
     :root[data-ui='classic'] .home-hero h1 {

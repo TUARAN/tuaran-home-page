@@ -461,14 +461,111 @@ export default function ArticlesIndexClient({ items }) {
 
   const showReadingHighlights = tab === 'picks' && !query.trim()
   const showArticleList = tab !== 'picks' || Boolean(query.trim())
+  const hasAdvancedFilters = activeChannel !== 'all' && activeChannel !== 'picks'
+  const currentFilterLabel = breadcrumb || CHANNEL_DEFS.find((channel) => channel.key === activeChannel)?.label || '全部'
+
+  function AdvancedFiltersContent() {
+    return (
+      <>
+        {activeChannel === 'column' ? (
+          <FilterRow label="专栏类型" ariaLabel="专栏类型">
+            {COLUMN_TAB_DEFS.map((t) => (
+              <FilterChip
+                key={t.key}
+                label={t.label}
+                count={counts[t.key] ?? 0}
+                active={tab === t.key}
+                onClick={() => selectTab(t.key)}
+              />
+            ))}
+            <Link
+              href="/works"
+              className="ml-1 shrink-0 text-xs text-[#8b6a2c] no-underline transition-colors hover:text-[#5c4518] dark:text-[#a8b187] dark:hover:text-[#c8d4a8]"
+            >
+              多维页面专页 →
+            </Link>
+          </FilterRow>
+        ) : null}
+
+        {activeChannel === 'research' ? (
+          <>
+            <FilterRow label="调研类型" ariaLabel="调研类型">
+              {RESEARCH_TYPE_DEFS.map((t) => (
+                <FilterChip
+                  key={t.key}
+                  label={t.label}
+                  count={counts[t.key] ?? 0}
+                  active={tab === t.key}
+                  onClick={() => selectTab(t.key)}
+                />
+              ))}
+            </FilterRow>
+            <FilterRow label="公司分类" ariaLabel="公司调研分类">
+              {COMPANY_TYPE_DEFS.map((t) => (
+                <FilterChip
+                  key={t.key}
+                  label={t.label}
+                  count={companyTypeCounts[t.key] ?? 0}
+                  active={tab === 'companies' && companyType === t.key}
+                  onClick={() => selectCompanyType(t.key)}
+                />
+              ))}
+            </FilterRow>
+            <FilterRow label="事项分类" ariaLabel="事项调研分类">
+              {TOPIC_TYPE_DEFS.map((t) => (
+                <FilterChip
+                  key={t.key}
+                  label={t.label}
+                  count={topicTypeCounts[t.key] ?? 0}
+                  active={tab === 'topics' && topicType === t.key}
+                  onClick={() => selectTopicType(t.key)}
+                />
+              ))}
+            </FilterRow>
+            <FilterRow label="人物分类" ariaLabel="人物调研分类">
+              {PEOPLE_TYPE_DEFS.map((t) => (
+                <FilterChip
+                  key={t.key}
+                  label={t.label}
+                  count={peopleTypeCounts[t.key] ?? 0}
+                  active={tab === 'people' && peopleType === t.key}
+                  onClick={() => selectPeopleType(t.key)}
+                />
+              ))}
+            </FilterRow>
+          </>
+        ) : null}
+
+        {activeChannel === 'resources' ? (
+          <FilterRow label="资料分类" ariaLabel="资料分类">
+            {RESOURCE_TYPE_DEFS.map((t) => {
+              const scopeLabel = t.key === 'bookmarks' ? '站外' : t.key === 'all' ? '' : '站内'
+              return (
+                <FilterChip
+                  key={t.key}
+                  label={t.label}
+                  count={resourceTypeCounts[t.key] ?? 0}
+                  active={resourceType === t.key}
+                  onClick={() => selectResourceType(t.key)}
+                  prefix={scopeLabel || undefined}
+                />
+              )
+            })}
+          </FilterRow>
+        ) : null}
+
+        {breadcrumb ? <FilterBreadcrumb path={breadcrumb} /> : null}
+      </>
+    )
+  }
 
   return (
     <div className="space-y-5">
-      <section className="sticky top-16 z-30 -mx-1 space-y-3 rounded-xl border border-[#dee0db] bg-[#fafbf8]/95 p-3 shadow-[0_8px_24px_rgba(82,69,45,0.06)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none">
+      <section className="sticky top-16 z-30 -mx-1 space-y-2.5 rounded-xl border border-[#dee0db] bg-[#fafbf8]/95 p-2.5 shadow-[0_8px_24px_rgba(82,69,45,0.06)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none sm:space-y-3 sm:p-3">
         <nav
           aria-label="知识库频道"
           role="tablist"
-          className="grid grid-cols-2 gap-1.5 rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 sm:grid-cols-5 dark:border-gray-800 dark:bg-[#151a22]"
+          className="flex gap-1.5 overflow-x-auto rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 sm:grid sm:grid-cols-5 sm:overflow-visible dark:border-gray-800 dark:bg-[#151a22]"
         >
           {CHANNEL_DEFS.map((channel) => {
             const active = activeChannel === channel.key
@@ -490,7 +587,7 @@ export default function ArticlesIndexClient({ items }) {
                 aria-selected={active}
                 onClick={() => selectChannel(channel.key)}
                 className={[
-                  'inline-flex min-h-9 items-center justify-center rounded-md px-2.5 py-2 text-sm transition-all duration-150',
+                  'inline-flex min-h-9 min-w-[5.75rem] shrink-0 items-center justify-center rounded-md px-2.5 py-2 text-sm transition-all duration-150 sm:min-w-0',
                   active
                     ? 'bg-white font-semibold text-[#1a1814] shadow-sm dark:bg-[#1e2630] dark:text-gray-100'
                     : 'text-[#616358] hover:bg-white/70 hover:text-[#1a1814] dark:text-gray-400 dark:hover:bg-[#1e2630]/70 dark:hover:text-gray-100',
@@ -537,100 +634,47 @@ export default function ArticlesIndexClient({ items }) {
           ) : null}
         </form>
 
-        {activeChannel !== 'all' && activeChannel !== 'picks' ? (
-            <div className="space-y-3.5 border-t border-[#e6e7e0] pt-4 dark:border-gray-800">
-            {activeChannel === 'column' ? (
-              <FilterRow label="专栏类型" ariaLabel="专栏类型">
-                {COLUMN_TAB_DEFS.map((t) => (
-                  <FilterChip
-                    key={t.key}
-                    label={t.label}
-                    count={counts[t.key] ?? 0}
-                    active={tab === t.key}
-                    onClick={() => selectTab(t.key)}
-                  />
-                ))}
-                <Link
-                  href="/works"
-                  className="ml-1 shrink-0 text-xs text-[#8b6a2c] no-underline transition-colors hover:text-[#5c4518] dark:text-[#a8b187] dark:hover:text-[#c8d4a8]"
+        {hasAdvancedFilters ? (
+          <>
+            <details className="group rounded-lg border border-[#e8e9e2] bg-white/80 text-xs dark:border-gray-800 dark:bg-[#121821] md:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+              <div className="min-w-0">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#9b9d8f] dark:text-gray-500">
+                  当前
+                </span>
+                <span className="ml-2 font-medium text-[#1a1814] dark:text-gray-100">
+                  {currentFilterLabel}
+                </span>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d3d5cb] px-2.5 py-1 text-[12px] text-[#56584e] transition-colors group-open:border-[#aeb1a2] group-open:text-[#1a1814] dark:border-gray-700 dark:text-gray-300 dark:group-open:border-gray-500 dark:group-open:text-gray-100">
+                <span className="group-open:hidden">展开筛选</span>
+                <span className="hidden group-open:inline">收起筛选</span>
+                <svg
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                  className="h-3 w-3 transition-transform group-open:rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  多维页面专页 →
-                </Link>
-              </FilterRow>
-            ) : null}
+                  <path d="M3 4.5 6 7.5 9 4.5" />
+                </svg>
+              </span>
+              </summary>
+              <div className="space-y-3.5 border-t border-[#e6e7e0] px-3 py-3 dark:border-gray-800">
+                <AdvancedFiltersContent />
+              </div>
+            </details>
 
-            {activeChannel === 'research' ? (
-              <>
-                <FilterRow label="调研类型" ariaLabel="调研类型">
-                  {RESEARCH_TYPE_DEFS.map((t) => (
-                    <FilterChip
-                      key={t.key}
-                      label={t.label}
-                      count={counts[t.key] ?? 0}
-                      active={tab === t.key}
-                      onClick={() => selectTab(t.key)}
-                    />
-                  ))}
-                </FilterRow>
-                <FilterRow label="公司分类" ariaLabel="公司调研分类">
-                  {COMPANY_TYPE_DEFS.map((t) => (
-                    <FilterChip
-                      key={t.key}
-                      label={t.label}
-                      count={companyTypeCounts[t.key] ?? 0}
-                      active={tab === 'companies' && companyType === t.key}
-                      onClick={() => selectCompanyType(t.key)}
-                    />
-                  ))}
-                </FilterRow>
-                <FilterRow label="事项分类" ariaLabel="事项调研分类">
-                  {TOPIC_TYPE_DEFS.map((t) => (
-                    <FilterChip
-                      key={t.key}
-                      label={t.label}
-                      count={topicTypeCounts[t.key] ?? 0}
-                      active={tab === 'topics' && topicType === t.key}
-                      onClick={() => selectTopicType(t.key)}
-                    />
-                  ))}
-                </FilterRow>
-                <FilterRow label="人物分类" ariaLabel="人物调研分类">
-                  {PEOPLE_TYPE_DEFS.map((t) => (
-                    <FilterChip
-                      key={t.key}
-                      label={t.label}
-                      count={peopleTypeCounts[t.key] ?? 0}
-                      active={tab === 'people' && peopleType === t.key}
-                      onClick={() => selectPeopleType(t.key)}
-                    />
-                  ))}
-                </FilterRow>
-              </>
-            ) : null}
-
-            {activeChannel === 'resources' ? (
-              <FilterRow label="资料分类" ariaLabel="资料分类">
-                {RESOURCE_TYPE_DEFS.map((t) => {
-                  const scopeLabel = t.key === 'bookmarks' ? '站外' : t.key === 'all' ? '' : '站内'
-                  return (
-                    <FilterChip
-                      key={t.key}
-                      label={t.label}
-                      count={resourceTypeCounts[t.key] ?? 0}
-                      active={resourceType === t.key}
-                      onClick={() => selectResourceType(t.key)}
-                      prefix={scopeLabel || undefined}
-                    />
-                  )
-                })}
-              </FilterRow>
-            ) : null}
-
-            {breadcrumb ? <FilterBreadcrumb path={breadcrumb} /> : null}
+            <div className="hidden space-y-3.5 border-t border-[#e6e7e0] pt-4 dark:border-gray-800 md:block">
+              <AdvancedFiltersContent />
             </div>
+          </>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e6e7e0] pt-3 text-xs text-[#646658] dark:border-gray-800 dark:text-gray-400">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e6e7e0] pt-2.5 text-xs text-[#646658] dark:border-gray-800 dark:text-gray-400 sm:pt-3">
           {QUICK_LINKS.map((link) =>
             link.external ? (
               <a

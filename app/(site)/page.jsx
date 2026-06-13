@@ -15,6 +15,24 @@ const SECTION_BADGE_CLASS = {
   resources: 'home-badge home-badge-resource',
 }
 
+const CLASSIC_SECTION_BADGE_CLASS = {
+  column:
+    'border-[#d8d9cf] bg-[#f0f1ec] text-[#606350] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#b4b8a3]',
+  research:
+    'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
+  resources:
+    'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
+}
+
+const CLASSIC_HOME_SECTION_TAB_CLASS = {
+  column:
+    'text-[#616358] hover:bg-white hover:text-[#4a4d3f] hover:shadow-sm hover:ring-1 hover:ring-[#d8d9cf] dark:text-gray-400 dark:hover:bg-[#1e2630] dark:hover:text-[#d5d8c8] dark:hover:ring-[#303947]',
+  research:
+    'text-[#616358] hover:bg-white hover:text-[#3b5b8a] hover:shadow-sm hover:ring-1 hover:ring-[#cbd9ee] dark:text-gray-400 dark:hover:bg-[#152034] dark:hover:text-[#9bb6df] dark:hover:ring-[#2a3a55]',
+  resources:
+    'text-[#616358] hover:bg-white hover:text-[#386b54] hover:shadow-sm hover:ring-1 hover:ring-[#c9dccf] dark:text-gray-400 dark:hover:bg-[#13201a] dark:hover:text-[#9dcab1] dark:hover:ring-[#243d33]',
+}
+
 const START_PATHS = [
   {
     href: '/articles',
@@ -148,6 +166,118 @@ function FeaturedReading({ items }) {
   )
 }
 
+function ClassicFeaturedLinkItem({ item }) {
+  const className =
+    'group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f0f1ec] dark:hover:bg-[#18202a]'
+  const content = (
+    <>
+      <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        {item.isLatest ? (
+          <span className="inline-flex shrink-0 items-center rounded-full border border-[#b7baa8] bg-[#dee0d4] px-2 py-0.5 font-mono text-[10px] text-[#6b4f1d] dark:border-[#313424] dark:bg-[#1e1e18] dark:text-[#abb38a]">
+            最新
+          </span>
+        ) : null}
+        <span
+          className={[
+            'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-2 py-0.5 font-mono text-[10px]',
+            CLASSIC_SECTION_BADGE_CLASS[item.section] || CLASSIC_SECTION_BADGE_CLASS.column,
+          ].join(' ')}
+        >
+          {item.sectionLabel}
+        </span>
+        {item.tagLabel ? (
+          <span className="inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border border-[#dfe0d8] bg-white px-2 py-0.5 font-mono text-[10px] text-[#77796c] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6]">
+            {item.tagLabel}
+          </span>
+        ) : null}
+        {item.date ? (
+          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#9b9b93] dark:text-gray-500">
+            {item.date}
+          </span>
+        ) : null}
+      </div>
+      <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[#1a1814] group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#c9ccb5]">
+        {item.title}
+      </p>
+      {item.summary ? (
+        <p className="mb-0 mt-0.5 line-clamp-1 text-[12px] leading-5 text-[#77796c] dark:text-gray-400">
+          {item.summary}
+        </p>
+      ) : null}
+    </>
+  )
+
+  if (item.external || isExternalHref(item.href)) {
+    return (
+      <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`}>
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <Link href={item.href} className={className}>
+      {content}
+    </Link>
+  )
+}
+
+function ClassicFeaturedSection({ items }) {
+  if (!items.length) return null
+  return (
+    <section className="classic-home-surface-panel rounded-[24px] border p-5 shadow-[0_12px_40px_var(--hero-shadow)] dark:border-[#252d36] dark:bg-[#0f141b] dark:shadow-none md:p-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0]">
+            Start Here
+          </p>
+          <h2 className="classic-home-section-title">推荐阅读</h2>
+        </div>
+        <nav
+          aria-label="按分类浏览更多内容"
+          className="flex w-full shrink-0 flex-col gap-1.5 pt-0.5 sm:w-auto sm:items-end"
+        >
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#9a9b8f] sm:text-right dark:text-gray-500">
+            浏览更多
+          </span>
+          <div
+            role="group"
+            className="grid grid-cols-3 gap-1 rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:inline-flex sm:items-center dark:border-gray-800 dark:bg-[#151a22] dark:shadow-none"
+          >
+            {HOME_SECTION_MORE_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={[
+                  'group/tab inline-flex min-h-9 items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-sm font-medium no-underline transition-all duration-150 sm:px-3',
+                  CLASSIC_HOME_SECTION_TAB_CLASS[link.section] || CLASSIC_HOME_SECTION_TAB_CLASS.column,
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9fb7d8] focus-visible:ring-offset-1 dark:focus-visible:ring-[#3b5b8a]',
+                  'active:scale-[0.98]',
+                ].join(' ')}
+              >
+                <span>{link.label}</span>
+                <span
+                  aria-hidden="true"
+                  className="font-mono text-[11px] text-[#9a9b8f] transition-transform group-hover/tab:translate-x-0.5 dark:text-gray-500"
+                >
+                  →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </nav>
+      </div>
+      <div className="classic-home-surface-card rounded-2xl border p-3">
+        <div className="space-y-1">
+          {items.map((item) => (
+            <ClassicFeaturedLinkItem key={item.id} item={item} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function StartPathCard({ item }) {
   return (
     <Link href={item.href} className="home-path-card group no-underline">
@@ -249,11 +379,247 @@ function ProfileCard() {
   )
 }
 
-export default function HomePage() {
-  const featuredPicks = getHomeFeaturedPicks()
-
+function ClassicHeroGoalText() {
   return (
-    <main className="home-page">
+    <>
+      {SITE_HERO_GOAL_PARTS.map((part, i) =>
+        typeof part === 'string' ? (
+          <span key={i}>{part}</span>
+        ) : (
+          <span
+            key={i}
+            className="bg-gradient-to-br from-[#4f4c38] via-[#355c6d] to-[#0d4a63] bg-clip-text font-semibold tracking-[0.06em] text-transparent dark:from-[#c6c9b4] dark:via-[#93b8d4] dark:to-[#7eb0ef]"
+          >
+            {part.emphasis}
+          </span>
+        )
+      )}
+    </>
+  )
+}
+
+function ClassicHomePage({ featuredPicks }) {
+  return (
+    <main className="home-classic-root mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-4 py-6 md:py-8">
+      <section className="mb-14 flex-1">
+        <header className="classic-home-hero relative mb-8 overflow-hidden rounded-[28px] border px-5 py-4 md:px-7 md:py-5">
+          <div className="classic-home-hero-glow pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block" />
+          <div className="classic-home-hero-watermark pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[2.6rem] font-semibold uppercase leading-none tracking-[0.16em] lg:block xl:right-14">
+            2ARAN.COM
+          </div>
+          <div className="relative max-w-[760px] space-y-4">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.28em] text-[#858779] dark:text-[#9ca5b5]">
+                      涂阿燃｜安东尼 · Agent 工程师
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h1 className="mb-0 max-w-[46rem] font-serif text-[1.28rem] font-semibold tracking-[0.03em] text-[#1d1a16] dark:text-[#f3f4f6] md:text-[1.56rem]">
+                    {SITE_HERO_TITLE}
+                  </h1>
+                  <p className="mb-0 max-w-[44rem] font-serif text-[1rem] font-medium leading-[1.65] tracking-[0.02em] text-[#24251f] dark:text-[#e1e2dc] md:text-[1.06rem]">
+                    {SITE_HERO_TAGLINE}
+                    <span className="mx-2 text-[#a0a293] dark:text-gray-600">·</span>
+                    <ClassicHeroGoalText />
+                  </p>
+                </div>
+              </div>
+              <div className="mt-1 flex flex-wrap items-stretch gap-2.5">
+                <a
+                  href="https://blogger-alliance.cn/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="classic-home-hero-cta-primary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
+                >
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--hero-cta-icon-bg)', color: 'var(--hero-cta-icon-text)' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M4 7h16M4 12h10M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <span className="flex min-w-0 flex-col text-left">
+                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-cta-text)' }}>
+                      加入博主联盟
+                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-70">→</span>
+                    </span>
+                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-cta-subtext)' }}>
+                      AI 产品方 ↔ 技术博主 · 品牌增长
+                    </span>
+                  </span>
+                </a>
+                <a
+                  href="https://frontendnext.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
+                >
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--hero-card-icon-bg)', color: 'var(--hero-card-icon-text)' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M4 6l8 8 8-8M4 13l8 8 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="flex min-w-0 flex-col text-left">
+                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
+                      订阅前端周看
+                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
+                    </span>
+                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
+                      前端 / AI Agent / 大模型 · 技术情报站
+                    </span>
+                  </span>
+                </a>
+                <a
+                  href="https://publishlab.cc/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[230px] sm:max-w-[245px]"
+                >
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--hero-card-icon-bg)', color: 'var(--hero-card-icon-text)' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M5 5h14v14H5zM8 9h8M8 13h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="flex min-w-0 flex-col text-left">
+                    <span className="flex items-center gap-1 text-[13.5px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
+                      使用 PublishLab
+                      <span className="font-mono text-[9px] tracking-[0.08em] opacity-60">↗</span>
+                    </span>
+                    <span className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
+                      AI 写作 / 内容创作 / 数字出版
+                    </span>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_300px]">
+          <div className="min-w-0 space-y-6">
+            <ClassicFeaturedSection items={featuredPicks} />
+          </div>
+
+          <aside className="w-full space-y-6">
+            <section className="classic-home-surface-panel rounded-[24px] border p-5 shadow-[0_8px_32px_var(--hero-shadow)] dark:border-[#252d36] dark:bg-[#10151d] dark:shadow-none md:p-6">
+              <div className="mb-5 border-b border-[#dee0db] pb-5 text-center dark:border-gray-800/80">
+                <div className="mx-auto w-[116px] overflow-hidden bg-[var(--page-bg)] dark:bg-[#0f1318]">
+                  <Image
+                    src={AVATAR_PATH}
+                    alt="涂阿燃"
+                    width={128}
+                    height={160}
+                    priority
+                    sizes="116px"
+                    className="h-auto w-full object-cover shadow-none"
+                  />
+                </div>
+                <p className="mt-2.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#767869] dark:text-gray-400">
+                  前端 · AI Agent · 奶爸
+                </p>
+                <p className="mt-1 text-[12px] tracking-[0.06em] text-[#888] dark:text-gray-500">
+                  Founder @矩联科技
+                </p>
+                <blockquote className="mx-auto mt-3 max-w-[min(280px,100%)]">
+                  <p className="font-serif text-[15px] leading-[1.9] tracking-wide text-[#262724] dark:text-gray-200">
+                    选一件值得投入 <span className="font-semibold">20 年</span> 的事，
+                    <span className="mt-0.5 block">每日复利，高频迭代。</span>
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#85887a] dark:text-gray-500">
+                    <span aria-hidden="true" className="h-px flex-1 bg-[#c8c9bf] dark:bg-gray-700" />
+                    <span>This time · with LLM</span>
+                    <span aria-hidden="true" className="h-px flex-1 bg-[#c8c9bf] dark:bg-gray-700" />
+                  </div>
+                  <div className="mt-2.5 flex justify-center">
+                    <DaysSince />
+                  </div>
+                </blockquote>
+                <Link
+                  href="/context-memory"
+                  className="mt-2 inline-flex items-center rounded-full border border-[#d0d1c8] bg-white/78 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#53554d] no-underline transition hover:border-[#b4b7a9] hover:text-[#222] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
+                >
+                  我的上下文记忆
+                </Link>
+              </div>
+              <div className="mt-5 border-t border-[#dee0db] pt-4 dark:border-gray-800/80">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.2em] text-[#858779] dark:text-[#8e9ab0]">
+                    More
+                  </p>
+                  <Link
+                    href="/map"
+                    className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#646655] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#acaf9d]"
+                  >
+                    地图 →
+                  </Link>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { href: '/publications', label: '出版' },
+                    { href: '/about', label: '关于' },
+                    { href: '/ai-projects', label: '工具' },
+                  ].map((card) => (
+                    <Link
+                      key={card.href}
+                      href={card.href}
+                      className="no-external-arrow rounded-xl border border-[#d6d7cf] bg-white/70 px-2 py-2 text-center text-[12px] font-medium text-[#52534c] no-underline transition hover:border-[#b9bbad] hover:text-[#15140f] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6] dark:hover:border-[#435062] dark:hover:text-gray-100"
+                    >
+                      {card.label}
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-[#d6d7cf] bg-white/70 p-3 dark:border-[#303947] dark:bg-[#151c25]">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Image
+                      src="/qrcodewechat3.png"
+                      alt="扫码加好友二维码"
+                      width={80}
+                      height={80}
+                      className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
+                    />
+                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">加好友</span>
+                    <span className="font-mono text-[10px] text-[#262724] dark:text-gray-200">atar24</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Image
+                      src="/qrcode_for_gh.jpg"
+                      alt="公众号二维码"
+                      width={80}
+                      height={80}
+                      className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
+                    />
+                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">公众号</span>
+                    <span className="font-mono text-[10px] text-[#262724] dark:text-gray-200">2aran</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section>
+        <SiteFooter />
+      </section>
+    </main>
+  )
+}
+
+function PolishedHomePage({ featuredPicks }) {
+  return (
+    <main className="home-polished-root home-page">
       <section className="home-hero">
         <div className="home-hero-copy">
           <p className="home-kicker">2aran.com · Tuaran</p>
@@ -325,5 +691,16 @@ export default function HomePage() {
 
       <SiteFooter className="home-footer" />
     </main>
+  )
+}
+
+export default function HomePage() {
+  const featuredPicks = getHomeFeaturedPicks()
+
+  return (
+    <>
+      <PolishedHomePage featuredPicks={featuredPicks} />
+      <ClassicHomePage featuredPicks={featuredPicks} />
+    </>
   )
 }

@@ -625,7 +625,9 @@ function PolishedHomePage({ featuredPicks }) {
         <div className="home-hero-copy">
           <p className="home-kicker">2aran.com · Tuaran</p>
           <div className="home-hero-brand">
-            <h1>{SITE_HERO_TITLE}</h1>
+            <p className="home-hero-title" aria-hidden="true">
+              {SITE_HERO_TITLE}
+            </p>
             <span>{SITE_HERO_TAGLINE}</span>
           </div>
           <p className="home-hero-lead">

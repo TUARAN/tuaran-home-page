@@ -19,6 +19,27 @@
   --theme-accent: var(--site-accent);
   --theme-accent-muted: #715a31;
   --theme-sage: #9aa579;
+  --hero-surface-start: color-mix(in srgb, white 96%, var(--page-bg));
+  --hero-surface-end: color-mix(in srgb, var(--page-bg) 92%, #f8f5f0);
+  --hero-border: color-mix(in srgb, var(--page-bg) 45%, #c5c6bc);
+  --hero-shadow: color-mix(in srgb, var(--theme-accent-muted) 10%, transparent);
+  --hero-glow-core: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+  --hero-glow-fade: color-mix(in srgb, var(--page-bg) 72%, #f4eee2);
+  --hero-cta-bg: #3a2c14;
+  --hero-cta-hover: #2a1f0e;
+  --hero-cta-text: #f4f6ef;
+  --hero-cta-subtext: #aaae9a;
+  --hero-cta-icon-bg: color-mix(in srgb, var(--theme-sage) 15%, transparent);
+  --hero-cta-icon-text: var(--theme-sage);
+  --hero-card-bg: color-mix(in srgb, white 75%, var(--page-bg));
+  --hero-card-border: color-mix(in srgb, var(--page-bg) 35%, #cacbc2);
+  --hero-card-hover-bg: color-mix(in srgb, white 88%, var(--page-bg));
+  --hero-card-hover-border: color-mix(in srgb, var(--page-bg) 20%, #a1a494);
+  --hero-card-icon-bg: color-mix(in srgb, var(--page-bg) 55%, #e8eae1);
+  --hero-card-icon-text: var(--theme-accent-muted);
+  --hero-card-title: #1d1a16;
+  --hero-card-subtext: #6d6f65;
+  --hero-surface-panel: color-mix(in srgb, var(--page-bg) 94%, white);
 }
 
 .dark {
@@ -38,6 +59,27 @@
   --theme-accent: var(--site-accent);
   --theme-accent-muted: #a8ae82;
   --theme-sage: #a1ab76;
+  --hero-surface-start: rgba(20, 24, 31, 0.96);
+  --hero-surface-end: rgba(13, 17, 23, 0.92);
+  --hero-border: #27303a;
+  --hero-shadow: rgba(0, 0, 0, 0.28);
+  --hero-glow-core: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+  --hero-glow-fade: rgba(18, 24, 33, 0.72);
+  --hero-cta-bg: #c6c9b4;
+  --hero-cta-hover: #d5d8c4;
+  --hero-cta-text: #1d1a16;
+  --hero-cta-subtext: #5a4725;
+  --hero-cta-icon-bg: color-mix(in srgb, #3a2c14 15%, transparent);
+  --hero-cta-icon-text: #3a2c14;
+  --hero-card-bg: #151c25;
+  --hero-card-border: #3a4757;
+  --hero-card-hover-bg: #1a2330;
+  --hero-card-hover-border: #5a6a7e;
+  --hero-card-icon-bg: #22303f;
+  --hero-card-icon-text: var(--theme-accent-muted);
+  --hero-card-title: #f3f4f6;
+  --hero-card-subtext: #8e98a8;
+  --hero-surface-panel: #10151d;
 }
 
 :root[data-ui='classic'] {
@@ -143,6 +185,87 @@
 }
 
 @layer components {
+  .home-classic-root {
+    display: none !important;
+  }
+
+  :root[data-ui='classic'] .home-polished-root {
+    display: none !important;
+  }
+
+  :root[data-ui='classic'] .home-classic-root {
+    display: flex !important;
+  }
+
+  .classic-home-hero {
+    background: linear-gradient(135deg, var(--hero-surface-start), var(--hero-surface-end));
+    border-color: var(--hero-border);
+    box-shadow: 0 16px 48px var(--hero-shadow);
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .classic-home-hero-glow {
+    background:
+      radial-gradient(circle at 72% 50%, var(--hero-glow-core), transparent 36%),
+      linear-gradient(90deg, transparent, var(--hero-glow-fade));
+    transition: background 0.3s ease;
+  }
+
+  .classic-home-hero-watermark {
+    color: var(--theme-accent-muted);
+    opacity: 0.13;
+  }
+
+  .dark .classic-home-hero-watermark {
+    color: #fff;
+    opacity: 0.1;
+  }
+
+  .classic-home-hero-cta-primary {
+    border-color: var(--hero-cta-bg);
+    background-color: var(--hero-cta-bg);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--hero-cta-bg) 22%, transparent);
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .classic-home-hero-cta-primary:hover {
+    background-color: var(--hero-cta-hover);
+    border-color: var(--hero-cta-hover);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--hero-cta-bg) 28%, transparent);
+  }
+
+  .classic-home-hero-cta-secondary {
+    border-color: var(--hero-card-border);
+    background-color: var(--hero-card-bg);
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .classic-home-hero-cta-secondary:hover {
+    background-color: var(--hero-card-hover-bg);
+    border-color: var(--hero-card-hover-border);
+  }
+
+  .classic-home-surface-panel {
+    background-color: var(--hero-surface-panel);
+    border-color: var(--hero-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .classic-home-surface-card {
+    background-color: color-mix(in srgb, white 82%, var(--page-bg));
+    border-color: color-mix(in srgb, var(--page-bg) 30%, #dfe0d8);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .dark .classic-home-surface-card {
+    background-color: #121821;
+    border-color: #232c36;
+  }
+
+  .classic-home-section-title {
+    @apply mb-0 border-b-0 pb-0 font-serif text-[1.55rem] font-bold tracking-[0.02em] text-[#15140f] dark:text-gray-100;
+  }
+
   .home-page {
     @apply mx-auto flex w-full max-w-[1180px] flex-1 flex-col px-4 pb-10 pt-6 md:px-6 md:pb-14 md:pt-8;
     color: var(--site-ink);

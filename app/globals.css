@@ -163,7 +163,7 @@
   }
 
   .home-hero h1 {
-    @apply mb-0 max-w-[780px] border-b-0 pb-0 font-serif text-[2.4rem] font-semibold leading-[1.08] tracking-normal sm:text-[3.25rem] lg:text-[4rem];
+    @apply mb-0 max-w-[860px] border-b-0 pb-0 font-serif text-[2.15rem] font-semibold leading-[1.12] tracking-normal sm:text-[2.9rem] lg:text-[3.45rem];
     color: var(--site-ink);
   }
 
@@ -457,6 +457,147 @@
   .home-qr-grid span {
     @apply mt-2 block font-mono text-[11px];
     color: var(--site-muted);
+  }
+
+  :root[data-ui='classic'] .home-page {
+    max-width: 920px;
+    padding-top: 1.25rem;
+  }
+
+  :root[data-ui='classic'] .home-hero {
+    display: block;
+    padding-bottom: 1.5rem;
+  }
+
+  :root[data-ui='classic'] .home-hero-copy {
+    padding-top: 2rem;
+  }
+
+  :root[data-ui='classic'] .home-hero h1 {
+    max-width: 780px;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.2;
+  }
+
+  :root[data-ui='classic'] .home-kicker {
+    letter-spacing: 0.16em;
+  }
+
+  :root[data-ui='classic'] .home-hero-actions {
+    margin-top: 1.5rem;
+  }
+
+  :root[data-ui='classic'] .home-button,
+  :root[data-ui='classic'] .home-profile-links a,
+  :root[data-ui='classic'] .home-tab-link,
+  :root[data-ui='classic'] .home-badge {
+    border-radius: 0.45rem;
+  }
+
+  :root[data-ui='classic'] .home-profile {
+    display: grid;
+    gap: 1rem;
+    max-width: 620px;
+    margin-top: 1.5rem;
+    border-radius: 0.75rem;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  :root[data-ui='classic'] .home-avatar-wrap {
+    width: 64px;
+    border-radius: 999px;
+  }
+
+  :root[data-ui='classic'] .home-profile blockquote {
+    margin: 0;
+  }
+
+  :root[data-ui='classic'] .home-profile blockquote p {
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  :root[data-ui='classic'] .home-profile-links {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  :root[data-ui='classic'] .home-profile-links a {
+    width: auto;
+    padding-inline: 0.75rem;
+  }
+
+  :root[data-ui='classic'] .home-paths {
+    display: block;
+    padding-block: 1.25rem;
+  }
+
+  :root[data-ui='classic'] .home-path-card {
+    min-height: 0;
+    border-width: 0 0 1px;
+    border-radius: 0;
+    padding: 1rem 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  :root[data-ui='classic'] .home-path-card:hover {
+    transform: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  :root[data-ui='classic'] .home-path-label {
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.12em;
+  }
+
+  :root[data-ui='classic'] .home-path-card h3 {
+    margin-bottom: 0.35rem;
+    font-size: 18px;
+  }
+
+  :root[data-ui='classic'] .home-path-card p {
+    margin-bottom: 0.5rem;
+  }
+
+  :root[data-ui='classic'] .home-main-grid {
+    display: block;
+  }
+
+  :root[data-ui='classic'] .home-side-stack {
+    margin-top: 1.5rem;
+  }
+
+  :root[data-ui='classic'] .home-section,
+  :root[data-ui='classic'] .home-contact-panel {
+    border-width: 0 0 1px;
+    border-radius: 0;
+    padding: 0 0 1.5rem;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  :root[data-ui='classic'] .home-section + .home-contact-panel,
+  :root[data-ui='classic'] .home-side-stack .home-contact-panel {
+    margin-top: 1.5rem;
+  }
+
+  :root[data-ui='classic'] .home-section-title,
+  :root[data-ui='classic'] .home-contact-panel h2 {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif;
+    font-size: 1.35rem;
+  }
+
+  :root[data-ui='classic'] .home-product-link,
+  :root[data-ui='classic'] .home-qr-grid div {
+    border-radius: 0.55rem;
+    background: transparent;
   }
 
   .home-footer {

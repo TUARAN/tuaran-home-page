@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
+import { normalizeReturnTo } from '../../../lib/returnTo'
+
 const ERROR_MESSAGES = {
   INVALID_CREDENTIALS: '邮箱或密码不正确。',
   LOGIN_FAILED: '登录失败，请稍后再试。',
@@ -10,7 +12,7 @@ const ERROR_MESSAGES = {
 
 function getReturnTo() {
   const value = new URLSearchParams(window.location.search).get('returnTo')
-  return value?.startsWith('/') ? value : '/'
+  return normalizeReturnTo(value)
 }
 
 export default function LoginClient() {

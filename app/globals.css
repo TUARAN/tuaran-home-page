@@ -167,23 +167,23 @@
   }
 
   .home-hero-brand span {
-    @apply mb-3 block text-[15px] font-semibold leading-6 sm:text-[17px];
+    @apply mt-4 block text-[1.15rem] font-semibold leading-7 sm:text-[1.35rem];
     color: var(--site-accent);
   }
 
   .home-hero h1 {
-    @apply mb-0 border-b-0 pb-0 font-serif text-[4rem] font-semibold leading-none tracking-normal sm:text-[5.5rem] lg:text-[6.6rem];
+    @apply mb-0 border-b-0 pb-0 font-serif text-[3.05rem] font-semibold leading-[1.05] tracking-normal sm:text-[4.35rem] lg:text-[5.2rem];
     color: var(--site-ink);
   }
 
   .home-hero-lead {
-    @apply mb-0 mt-6 max-w-[680px] text-[1.02rem] font-medium leading-8 tracking-normal sm:text-[1.15rem] sm:leading-9;
+    @apply mb-0 mt-6 max-w-[680px] font-serif text-[1.18rem] font-medium leading-9 tracking-normal sm:text-[1.35rem] sm:leading-10;
     color: var(--site-muted);
   }
 
-  .home-hero-position {
-    @apply mb-0 mt-4 max-w-[660px] text-[13px] leading-6;
-    color: var(--site-faint);
+  .home-emphasis {
+    color: var(--site-blue);
+    font-weight: 700;
   }
 
   .home-hero-actions {
@@ -536,23 +536,21 @@
     max-width: 780px;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
       Roboto, Helvetica, Arial, sans-serif;
-    font-size: 3.25rem;
-    line-height: 1.05;
+    font-size: 3.35rem;
+    line-height: 1.08;
   }
 
   :root[data-ui='classic'] .home-hero-brand span {
-    font-size: 15px;
+    margin-top: 0.75rem;
+    font-size: 1.1rem;
   }
 
   :root[data-ui='classic'] .home-hero-lead {
     max-width: 620px;
-    margin-top: 1rem;
-    font-size: 1rem;
+    margin-top: 1.1rem;
+    font-family: inherit;
+    font-size: 1.05rem;
     line-height: 1.75;
-  }
-
-  :root[data-ui='classic'] .home-hero-position {
-    max-width: 620px;
   }
 
   :root[data-ui='classic'] .home-kicker {
@@ -702,11 +700,11 @@
 
   @media (max-width: 640px) {
     .home-hero h1 {
-      font-size: 3.45rem;
+      font-size: 2.85rem;
     }
 
     :root[data-ui='classic'] .home-hero h1 {
-      font-size: 2.65rem;
+      font-size: 2.45rem;
     }
   }
 

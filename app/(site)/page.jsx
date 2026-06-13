@@ -4,7 +4,7 @@ import Image from 'next/image'
 import DaysSince from './components/DaysSince'
 import SiteFooter from './components/SiteFooter'
 import { AVATAR_PATH } from '../../lib/avatar'
-import { SITE_HERO_TAGLINE } from '../../lib/siteIntro'
+import { SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHighlights'
 
 export const dynamic = 'force-static'
@@ -60,7 +60,7 @@ const PRODUCT_LINKS = [
 const BLOGGER_ALLIANCE = {
   href: 'https://blogger-alliance.cn/',
   title: '博主联盟',
-  eyebrow: '当前重点 · Blogger Alliance',
+  eyebrow: '推荐入口',
   subtitle: 'AI 产品方与技术博主的增长协作网络',
   desc: '连接 AI 产品方与技术博主，把产品曝光、内容种草和真实转化放进一个长期协作网络。',
   points: ['AI 产品增长', '技术博主合作', '品牌内容分发'],
@@ -174,10 +174,26 @@ function ProductLink({ item }) {
   )
 }
 
+function HeroGoalText() {
+  return (
+    <>
+      {SITE_HERO_GOAL_PARTS.map((part, i) =>
+        typeof part === 'string' ? (
+          <span key={i}>{part}</span>
+        ) : (
+          <span key={i} className="home-emphasis">
+            {part.emphasis}
+          </span>
+        )
+      )}
+    </>
+  )
+}
+
 function BloggerAllianceFocus() {
   return (
     <a href={BLOGGER_ALLIANCE.href} target="_blank" rel="noreferrer" className="home-focus-card no-external-arrow">
-      <span className="home-focus-kicker">当前重点</span>
+      <span className="home-focus-kicker">{BLOGGER_ALLIANCE.eyebrow}</span>
       <h2>{BLOGGER_ALLIANCE.title}</h2>
       <p>{BLOGGER_ALLIANCE.desc}</p>
       <span className="home-focus-points">
@@ -186,7 +202,7 @@ function BloggerAllianceFocus() {
         ))}
       </span>
       <span className="home-focus-action">
-        了解博主联盟
+        进入博主联盟
         <ArrowIcon />
       </span>
     </a>
@@ -240,16 +256,17 @@ export default function HomePage() {
     <main className="home-page">
       <section className="home-hero">
         <div className="home-hero-copy">
-          <p className="home-kicker">{BLOGGER_ALLIANCE.eyebrow}</p>
+          <p className="home-kicker">2aran.com · Tuaran</p>
           <div className="home-hero-brand">
-            <span>{BLOGGER_ALLIANCE.subtitle}</span>
-            <h1>{BLOGGER_ALLIANCE.title}</h1>
+            <h1>{SITE_HERO_TITLE}</h1>
+            <span>{SITE_HERO_TAGLINE}</span>
           </div>
-          <p className="home-hero-lead">{BLOGGER_ALLIANCE.desc}</p>
-          <p className="home-hero-position">{SITE_HERO_TAGLINE}</p>
+          <p className="home-hero-lead">
+            <HeroGoalText />
+          </p>
           <div className="home-hero-actions">
             <a href={BLOGGER_ALLIANCE.href} target="_blank" rel="noreferrer" className="home-button home-button-primary no-external-arrow">
-              了解博主联盟
+              进入博主联盟
             </a>
             <Link href="/services" className="home-button home-button-secondary">
               合作方式

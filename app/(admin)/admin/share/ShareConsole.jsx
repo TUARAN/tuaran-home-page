@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { encryptPayload } from '../../../../lib/longCompass/crypto'
+import { AdminPage } from '../../components/ui'
 
 async function safeJson(res) {
   try {
@@ -140,20 +141,11 @@ export default function ShareAdminClient() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[960px] px-4 py-8 md:py-12">
-      <header className="mb-8">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
-          Admin · Encrypted Share
-        </p>
-        <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[2.2rem]">
-          加密分享管理
-        </h1>
-        <p className="mb-0 max-w-[44rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-          内容在你的浏览器里用密码 + PBKDF2 派生密钥后用 AES-GCM 加密，<strong>服务器只见到密文信封</strong>。
-          访问者凭链接 + 密码即可解锁。把密码加在链接末尾 <code className="rounded bg-[#e7e8e0] px-1 py-px font-mono text-[11px] dark:bg-[#19212b]">#密码</code> 可一键打开，
-          也可以分两个通道单独发链接和密码。
-        </p>
-      </header>
+    <AdminPage
+      title="加密分享管理"
+      maxWidth="960px"
+      description="内容在你的浏览器里用密码 + PBKDF2 派生密钥后用 AES-GCM 加密，服务器只见到密文信封。访问者凭链接 + 密码即可解锁；把密码加在链接末尾 #密码 可一键打开，也可以分两个通道单独发链接和密码。"
+    >
 
       {/* 创建新分享 */}
       <section className="mb-8 rounded-xl border border-[#d5d7cd] bg-[#f6f8f3] p-5 dark:border-[#252e39] dark:bg-[#10161f]">
@@ -306,7 +298,7 @@ export default function ShareAdminClient() {
           </div>
         )}
       </section>
-    </main>
+    </AdminPage>
   )
 }
 

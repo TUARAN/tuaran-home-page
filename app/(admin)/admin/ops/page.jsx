@@ -1,5 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
-import OpsConsoleClient from '../../../(site)/agent-ops/ops-console/OpsConsoleClient'
+import OpsConsoleClient from './OpsConsole'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

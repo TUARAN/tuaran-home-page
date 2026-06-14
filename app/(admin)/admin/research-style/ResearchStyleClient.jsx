@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 
 import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/researchStyleTemplates'
+import { AdminPage } from '../../components/ui'
 
 const STATUS_TONE = {
   active: 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200',
@@ -98,21 +99,11 @@ export default function ResearchStyleClient() {
   const compare = sorted.find((t) => t.id === compareId)
 
   return (
-    <main className="mx-auto w-full max-w-[1180px] px-4 py-8 md:py-12">
-      <header className="mb-8">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
-          Admin · Research Style Templates
-        </p>
-        <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[2.2rem]">
-          调研风格模版
-        </h1>
-        <p className="mb-0 max-w-[44rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-          调研类内容（<code className="rounded bg-[#f0f0e6] px-1.5 py-0.5 font-mono text-[12px] dark:bg-[#1a2230]">research/companies</code>、
-          <code className="rounded bg-[#f0f0e6] px-1.5 py-0.5 font-mono text-[12px] dark:bg-[#1a2230]">research/topics</code>）在分寸感、措辞、版式上的历代快照。
-          保留全部历史版本，便于回看每条规则的来由——避免被悄悄回退。
-        </p>
-      </header>
-
+    <AdminPage
+      title="调研风格模版"
+      maxWidth="1180px"
+      description="调研类内容（research/companies、research/topics）在分寸感、措辞、版式上的历代快照。保留全部历史版本，便于回看每条规则的来由——避免被悄悄回退。"
+    >
       <div className="grid gap-6 md:grid-cols-[300px_minmax(0,1fr)]">
         {/* 左栏：版本时间线 */}
         <aside className="space-y-4">
@@ -172,7 +163,7 @@ export default function ResearchStyleClient() {
           )}
         </section>
       </div>
-    </main>
+    </AdminPage>
   )
 }
 

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+import { AdminPage } from '../../components/ui'
+
 const OPS_URL = 'https://ops.2aran.com/'
 
 async function safeJson(res) {
@@ -62,32 +64,21 @@ export default function OpsConsoleClient() {
   const tone = toneFor(status?.status)
 
   return (
-    <main className="mx-auto w-full max-w-[960px] px-4 py-8 md:py-12">
-      <header className="mb-8">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
-          Admin · Agent Ops
-        </p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[2.2rem]">
-              自动化控制台
-            </h1>
-            <p className="mb-0 max-w-[44rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-              这是外部 Agent Ops 控制台的站内入口。它依赖 Cloudflare Access、Cloudflare Tunnel 和本机
-              <code className="mx-1 rounded bg-[#e7e8e0] px-1 py-px font-mono text-[11px] dark:bg-[#19212b]">127.0.0.1:4179</code>
-              服务，不是主站自己的 Next 页面。
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={loading}
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#caccc0] bg-white px-3 text-sm font-medium text-[#53554d] transition hover:border-[#818472] hover:text-[#15140f] disabled:opacity-50 dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300 dark:hover:border-[#4a5568]"
-          >
-            {loading ? '检查中…' : '重新检查'}
-          </button>
-        </div>
-      </header>
+    <AdminPage
+      title="自动化控制台"
+      maxWidth="960px"
+      description="外部 Agent Ops 控制台的站内入口。它依赖 Cloudflare Access、Cloudflare Tunnel 和本机 127.0.0.1:4179 服务，不是主站自己的 Next 页面。"
+      actions={
+        <button
+          type="button"
+          onClick={refresh}
+          disabled={loading}
+          className="inline-flex h-9 items-center justify-center rounded-lg border border-[#caccc0] bg-white px-3 text-sm font-medium text-[#53554d] transition hover:border-[#818472] hover:text-[#15140f] disabled:opacity-50 dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300 dark:hover:border-[#4a5568]"
+        >
+          {loading ? '检查中…' : '重新检查'}
+        </button>
+      }
+    >
 
       {error ? (
         <div className="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200">
@@ -128,7 +119,7 @@ export default function OpsConsoleClient() {
           <Step title="4. 本机 Agent Ops" body="最终服务在你的 Mac 本机 127.0.0.1:4179。Mac 休眠、服务没起、tunnel 断线都会导致外部入口不可用。" />
         </ol>
       </section>
-    </main>
+    </AdminPage>
   )
 }
 

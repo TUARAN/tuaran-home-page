@@ -1,5 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
-import DbAdminClient from '../../../(site)/agent-ops/db-admin/DbAdminClient'
+import DbAdminClient from './DbConsole'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

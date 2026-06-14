@@ -1,5 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
-import ShareAdminClient from '../../../(site)/agent-ops/share-admin/ShareAdminClient'
+import ShareAdminClient from './ShareConsole'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

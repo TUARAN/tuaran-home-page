@@ -4,7 +4,7 @@ import { useTheme } from 'next-themes'
 import { useState, useEffect, useRef } from 'react'
 
 const BG_PRESETS = [
-  { id: 'city',  label: '雾粉城景', hex: '#f1eef2', desc: '潮流默认，贴合首页横幅' },
+  { id: 'city',  label: '雾粉城景', hex: '#f1eef2', desc: '封面默认，贴合首页横幅' },
   { id: 'cold',  label: '冷牙白', hex: '#f0f1ee', desc: '编辑感、克制' },
   { id: 'warm',  label: '暖米',   hex: '#f4ead5', desc: '书页感，适合长读' },
   { id: 'sand',  label: '沙石纸', hex: '#f1ebde', desc: '砂纸质地，介于两者' },
@@ -16,8 +16,8 @@ const LEGACY_DEFAULT_BG_HEXES = new Set(['#f0f1ee', '#f1f2ee'])
 const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const UI_MODES = [
-  { id: 'polished', label: '潮流', desc: '视觉化、推荐卡和宽版首页' },
-  { id: 'classic', label: '经典', desc: '旧版：首页原布局' },
+  { id: 'polished', label: '封面', desc: '横幅视觉、重点入口、随机推荐' },
+  { id: 'classic', label: '日志', desc: '原首页布局、推荐阅读、个人侧栏' },
 ]
 
 function findPresetByHex(hex) {
@@ -150,9 +150,9 @@ export default function SettingsButton() {
             </div>
           </div>
 
-          {/* UI 模式 */}
+          {/* 首页样式 */}
           <div className="mb-3">
-            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">UI 模式</div>
+            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">首页样式</div>
             <div className="grid grid-cols-2 gap-2">
               {UI_MODES.map((mode) => {
                 const active = uiMode === mode.id

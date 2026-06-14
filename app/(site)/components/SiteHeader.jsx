@@ -389,7 +389,7 @@ export default function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-[#dee0db] bg-[#f0f1ee]/92 backdrop-blur dark:border-[#202938] dark:bg-[#0f141b]/96">
-        <div className="max-w-[1120px] mx-auto flex items-center justify-between gap-4 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
           <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label="返回首页">
             <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
               <span className="font-serif text-xl sm:text-2xl font-semibold tracking-wide text-[#111] dark:text-gray-100">

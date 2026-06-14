@@ -635,9 +635,8 @@ export default function ArticlesIndexClient({ items }) {
         </form>
 
         {hasAdvancedFilters ? (
-          <>
-            <details className="group rounded-lg border border-[#e8e9e2] bg-white/80 text-xs dark:border-gray-800 dark:bg-[#121821] md:hidden">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+          <details className="group rounded-lg border border-[#e8e9e2] bg-white/80 text-xs dark:border-gray-800 dark:bg-[#121821]">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
               <div className="min-w-0">
                 <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#9b9d8f] dark:text-gray-500">
                   当前
@@ -662,16 +661,11 @@ export default function ArticlesIndexClient({ items }) {
                   <path d="M3 4.5 6 7.5 9 4.5" />
                 </svg>
               </span>
-              </summary>
-              <div className="space-y-3.5 border-t border-[#e6e7e0] px-3 py-3 dark:border-gray-800">
-                <AdvancedFiltersContent />
-              </div>
-            </details>
-
-            <div className="hidden space-y-3.5 border-t border-[#e6e7e0] pt-4 dark:border-gray-800 md:block">
+            </summary>
+            <div className="space-y-3 border-t border-[#e6e7e0] px-3 py-3 dark:border-gray-800">
               <AdvancedFiltersContent />
             </div>
-          </>
+          </details>
         ) : null}
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e6e7e0] pt-2.5 text-xs text-[#646658] dark:border-gray-800 dark:text-gray-400 sm:pt-3">

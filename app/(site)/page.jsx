@@ -649,7 +649,7 @@ function PolishedHomePage({ featuredPicks }) {
             <div>
               <p className="home-kicker">Contact</p>
               <h2>保持联系</h2>
-              <p>公众号写长线判断，微信适合聊具体项目。这里保留两个入口，不把联系信息藏在页脚。</p>
+              <p>项目合作、产品交流，添加微信；长期观察、技术判断，订阅公众号。</p>
             </div>
             <div className="home-qr-grid">
               <div>

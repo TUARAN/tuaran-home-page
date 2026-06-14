@@ -396,11 +396,33 @@
     box-shadow: 0 24px 56px color-mix(in srgb, var(--site-shadow) 82%, rgba(0, 0, 0, 0.08));
   }
 
+  .home-focus-top {
+    @apply mb-4 flex flex-wrap items-center justify-between gap-2;
+  }
+
   .home-focus-kicker {
-    @apply mb-4 inline-flex rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em];
+    @apply inline-flex rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em];
     border-color: color-mix(in srgb, var(--site-accent) 48%, var(--site-line));
     color: var(--site-accent);
     background: color-mix(in srgb, var(--site-accent) 10%, transparent);
+  }
+
+  .home-focus-swap {
+    @apply inline-flex min-h-8 items-center rounded-full border px-3 text-[12px] font-semibold transition;
+    border-color: var(--site-line);
+    background: color-mix(in srgb, var(--site-panel-strong) 86%, transparent);
+    color: var(--site-muted);
+  }
+
+  .home-focus-swap:hover {
+    border-color: var(--site-accent);
+    color: var(--site-ink);
+    background: var(--site-panel-strong);
+  }
+
+  .home-focus-swap:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
   }
 
   .home-focus-card h2 {
@@ -426,6 +448,10 @@
 
   .home-focus-action {
     @apply inline-flex items-center gap-2 text-sm font-semibold;
+    color: var(--site-accent-strong);
+  }
+
+  .home-focus-action:visited {
     color: var(--site-accent-strong);
   }
 

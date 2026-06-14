@@ -1,6 +1,7 @@
 import Script from 'next/script'
 
 import LayoutChrome from './components/LayoutChrome'
+import { LocaleProvider } from './components/LocaleProvider'
 import { SessionProvider } from './components/SessionProvider'
 import { ThemeProvider } from './components/ThemeProvider'
 
@@ -36,9 +37,11 @@ export default function SiteLayout({ children }) {
         strategy="afterInteractive"
       />
       <ThemeProvider>
-        <SessionProvider>
-          <LayoutChrome>{children}</LayoutChrome>
-        </SessionProvider>
+        <LocaleProvider>
+          <SessionProvider>
+            <LayoutChrome>{children}</LayoutChrome>
+          </SessionProvider>
+        </LocaleProvider>
       </ThemeProvider>
     </>
   )

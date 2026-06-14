@@ -2,10 +2,13 @@
 
 import Link from 'next/link'
 
+import { useLocale } from './LocaleProvider'
 import { useSessionAccount } from './SessionProvider'
-import { getFooterLinks } from '../../../lib/siteNav'
+import { pick } from '../../../lib/i18n'
+import { getFooterLinks, navLabel } from '../../../lib/siteNav'
 
 export default function SiteFooter({ className = '' }) {
+  const { locale } = useLocale()
   const account = useSessionAccount()
   const links = getFooterLinks(account, account?.navOverrides)
 
@@ -17,7 +20,7 @@ export default function SiteFooter({ className = '' }) {
       ].join(' ')}
     >
       <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
-        <span>© 2025—2026 网络日志</span>
+        <span>© 2025—2026 {pick(locale, '网络日志', 'Weblog')}</span>
         {links.map((link) => (
           <span key={link.href} className="contents">
             <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">
@@ -28,14 +31,14 @@ export default function SiteFooter({ className = '' }) {
                 href={link.href}
                 className="opacity-80 transition-colors hover:text-[#666] hover:opacity-100 dark:hover:text-gray-300"
               >
-                {link.label}
+                {navLabel(link, locale)}
               </a>
             ) : (
               <Link
                 href={link.href}
                 className="opacity-80 transition-colors hover:text-[#666] hover:opacity-100 dark:hover:text-gray-300"
               >
-                {link.label}
+                {navLabel(link, locale)}
               </Link>
             )}
           </span>
@@ -48,7 +51,7 @@ export default function SiteFooter({ className = '' }) {
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center rounded border border-[#cbcdc2] px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] text-[#5f6057] opacity-80 transition-opacity hover:opacity-100 dark:border-gray-700 dark:text-gray-300"
-          title="GitHub Actions 构建状态：点击查看最近一次 lint+build 是否通过"
+          title={pick(locale, 'GitHub Actions 构建状态：点击查看最近一次 lint+build 是否通过', 'GitHub Actions build status: click to view the latest lint+build run')}
         >
           CI Status
         </a>

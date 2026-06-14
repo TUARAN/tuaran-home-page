@@ -3,12 +3,15 @@
 import { useTheme } from 'next-themes'
 import { useState, useEffect, useRef } from 'react'
 
+import { useLocale } from './LocaleProvider'
+import { pick } from '../../../lib/i18n'
+
 const BG_PRESETS = [
-  { id: 'city',  label: '雾粉城景', hex: '#f1eef2', desc: '潮流默认，贴合首页横幅' },
-  { id: 'cold',  label: '冷牙白', hex: '#f0f1ee', desc: '经典默认，编辑感、克制' },
-  { id: 'warm',  label: '暖米',   hex: '#f4ead5', desc: '书页感，适合长读' },
-  { id: 'sand',  label: '沙石纸', hex: '#f1ebde', desc: '砂纸质地，介于两者' },
-  { id: 'pure',  label: '纯白',   hex: '#ffffff', desc: '最克制，最现代' },
+  { id: 'city',  label: '雾粉城景', labelEn: 'Misty Pink', hex: '#f1eef2', desc: '潮流默认，贴合首页横幅', descEn: 'Modern default, matches the hero' },
+  { id: 'cold',  label: '冷牙白', labelEn: 'Cool White', hex: '#f0f1ee', desc: '经典默认，编辑感、克制', descEn: 'Classic default, editorial & restrained' },
+  { id: 'warm',  label: '暖米',   labelEn: 'Warm Cream', hex: '#f4ead5', desc: '书页感，适合长读', descEn: 'Paper-like, good for long reads' },
+  { id: 'sand',  label: '沙石纸', labelEn: 'Sandstone', hex: '#f1ebde', desc: '砂纸质地，介于两者', descEn: 'Grainy, in between' },
+  { id: 'pure',  label: '纯白',   labelEn: 'Pure White', hex: '#ffffff', desc: '最克制，最现代', descEn: 'Most minimal, most modern' },
 ]
 
 const DEFAULT_BG_HEX = BG_PRESETS[0].hex
@@ -20,8 +23,8 @@ const LEGACY_DEFAULT_BG_HEXES = new Set(['#f1f2ee'])
 const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const UI_MODES = [
-  { id: 'polished', label: '潮流', desc: '横幅视觉、重点入口、随机推荐' },
-  { id: 'classic', label: '经典', desc: '原首页布局、推荐阅读、个人侧栏' },
+  { id: 'polished', label: '潮流', labelEn: 'Modern', desc: '横幅视觉、重点入口、随机推荐', descEn: 'Hero visual, key entries, random picks' },
+  { id: 'classic', label: '经典', labelEn: 'Classic', desc: '原首页布局、推荐阅读、个人侧栏', descEn: 'Original layout, picks & profile sidebar' },
 ]
 
 function findPresetByHex(hex) {
@@ -30,6 +33,7 @@ function findPresetByHex(hex) {
 
 export default function SettingsButton() {
   const { theme, setTheme } = useTheme()
+  const { locale, setLocale } = useLocale()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [bgHex, setBgHex] = useState(DEFAULT_BG_HEX)
@@ -105,9 +109,9 @@ export default function SettingsButton() {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="主题与阅读设置"
+        aria-label={pick(locale, '主题与阅读设置', 'Theme & reading settings')}
         aria-expanded={open}
-        title="主题与阅读设置"
+        title={pick(locale, '主题与阅读设置', 'Theme & reading settings')}
         className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 opacity-85 transition-opacity hover:opacity-100 dark:text-gray-200"
       >
         {/* 三档调节图标，代替单独月亮 */}
@@ -125,12 +129,43 @@ export default function SettingsButton() {
         <div
           ref={panelRef}
           role="dialog"
-          aria-label="阅读设置"
+          aria-label={pick(locale, '阅读设置', 'Reading settings')}
           className="absolute right-0 top-11 z-50 w-72 rounded-xl border border-[#d6d5cd] bg-white p-4 shadow-[0_18px_48px_rgba(20,20,18,0.12)] dark:border-[#2a3440] dark:bg-[#121821]"
         >
+          {/* 语言 / Language */}
+          <div className="mb-3">
+            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">{pick(locale, '语言', 'Language')}</div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLocale('zh')}
+                aria-pressed={locale !== 'en'}
+                className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition ${
+                  locale !== 'en'
+                    ? 'border-[#15140f] bg-[#15140f] text-white dark:border-gray-200 dark:bg-gray-200 dark:text-[#15140f]'
+                    : 'border-[#d6d5cd] text-[#15140f] hover:border-[#15140f] dark:border-[#2a3440] dark:text-gray-200 dark:hover:border-gray-400'
+                }`}
+              >
+                中文
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale('en')}
+                aria-pressed={locale === 'en'}
+                className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition ${
+                  locale === 'en'
+                    ? 'border-[#15140f] bg-[#15140f] text-white dark:border-gray-200 dark:bg-gray-200 dark:text-[#15140f]'
+                    : 'border-[#d6d5cd] text-[#15140f] hover:border-[#15140f] dark:border-[#2a3440] dark:text-gray-200 dark:hover:border-gray-400'
+                }`}
+              >
+                English
+              </button>
+            </div>
+          </div>
+
           {/* 明暗 */}
           <div className="mb-3">
-            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">主题</div>
+            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">{pick(locale, '主题', 'Theme')}</div>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -143,7 +178,7 @@ export default function SettingsButton() {
                 }`}
               >
                 <span aria-hidden="true">☀️</span>
-                <span>浅色</span>
+                <span>{pick(locale, '浅色', 'Light')}</span>
               </button>
               <button
                 type="button"
@@ -156,14 +191,14 @@ export default function SettingsButton() {
                 }`}
               >
                 <span aria-hidden="true">🌙</span>
-                <span>深色</span>
+                <span>{pick(locale, '深色', 'Dark')}</span>
               </button>
             </div>
           </div>
 
           {/* 样式 */}
           <div className="mb-3">
-            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">样式</div>
+            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">{pick(locale, '样式', 'Style')}</div>
             <div className="grid grid-cols-2 gap-2">
               {UI_MODES.map((mode) => {
                 const active = uiMode === mode.id
@@ -179,9 +214,9 @@ export default function SettingsButton() {
                         : 'border-[#d6d5cd] text-[#15140f] hover:border-[#15140f] dark:border-[#2a3440] dark:text-gray-200 dark:hover:border-gray-400'
                     }`}
                   >
-                    <span className="block text-sm font-medium">{mode.label}</span>
+                    <span className="block text-sm font-medium">{pick(locale, mode.label, mode.labelEn)}</span>
                     <span className={`mt-0.5 block text-[10px] leading-4 ${active ? 'opacity-75' : 'text-[#6a685f] dark:text-gray-400'}`}>
-                      {mode.desc}
+                      {pick(locale, mode.desc, mode.descEn)}
                     </span>
                   </button>
                 )
@@ -192,9 +227,9 @@ export default function SettingsButton() {
           {/* 阅读底色 */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">阅读底色</div>
+              <div className="text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">{pick(locale, '阅读底色', 'Reading background')}</div>
               {!isDark ? null : (
-                <span className="text-[10px] text-[#8a8a8a] dark:text-gray-500">深色模式下不生效</span>
+                <span className="text-[10px] text-[#8a8a8a] dark:text-gray-500">{pick(locale, '深色模式下不生效', 'Disabled in dark mode')}</span>
               )}
             </div>
             <div className="grid grid-cols-1 gap-1.5">
@@ -218,8 +253,8 @@ export default function SettingsButton() {
                       style={{ backgroundColor: p.hex }}
                     />
                     <span className="flex flex-col leading-tight">
-                      <span className="text-sm text-[#15140f] dark:text-gray-100">{p.label}</span>
-                      <span className="text-[11px] text-[#6a685f] dark:text-gray-400">{p.desc}</span>
+                      <span className="text-sm text-[#15140f] dark:text-gray-100">{pick(locale, p.label, p.labelEn)}</span>
+                      <span className="text-[11px] text-[#6a685f] dark:text-gray-400">{pick(locale, p.desc, p.descEn)}</span>
                     </span>
                   </button>
                 )

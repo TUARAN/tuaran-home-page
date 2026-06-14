@@ -6,13 +6,18 @@ import { useEffect, useRef, useState } from 'react'
 
 import SettingsButton from './SettingsButton'
 import UserAvatar from './UserAvatar'
+import { useLocale } from './LocaleProvider'
 import { useSessionAccount } from './SessionProvider'
+import { pick } from '../../../lib/i18n'
 import {
   SITE_ADMIN_NAV_LINK,
   SITE_CHANNELS,
   getChannelNavSections,
   isAdminNavPath,
   isAdminNavVisible,
+  navDesc,
+  navLabel,
+  navSectionTitle,
 } from '../../../lib/siteNav'
 import { getTagToneClass } from '../../../lib/tagTone'
 
@@ -31,6 +36,9 @@ function ChevronDown() {
 }
 
 function MenuItem({ item, onNavigate }) {
+  const { locale } = useLocale()
+  const label = navLabel(item, locale)
+  const desc = navDesc(item, locale)
   const base =
     'group/menuitem flex items-start gap-3 rounded-xl px-3 py-2 no-underline transition-colors hover:bg-[#e7e8e0] dark:hover:bg-[#19212b]'
   const inner = (
@@ -38,7 +46,7 @@ function MenuItem({ item, onNavigate }) {
       <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#aaae9c] transition-colors group-hover/menuitem:bg-[#8b5a1f] dark:bg-[#475061] dark:group-hover/menuitem:bg-[#989e72]" />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5 text-[13.5px] font-medium leading-tight text-[#15140f] dark:text-gray-100">
-          {item.label}
+          {label}
           {item.tag ? (
             <span
               className={`rounded-full px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] ${getTagToneClass(item.tag)}`}
@@ -47,9 +55,9 @@ function MenuItem({ item, onNavigate }) {
             </span>
           ) : null}
         </span>
-        {item.desc ? (
+        {desc ? (
           <span className="mt-0.5 block text-[11.5px] leading-snug text-[#777a6f] dark:text-[#8a93a3]">
-            {item.desc}
+            {desc}
           </span>
         ) : null}
       </span>
@@ -113,6 +121,7 @@ function TopNavLink({ href, label, isActive, onNavigate }) {
 }
 
 function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerRef, align = 'center', account, navOverrides }) {
+  const { locale } = useLocale()
   const closeTimerRef = useRef(null)
   const sections = getChannelNavSections(channel, account, navOverrides)
   const positionClass =
@@ -170,7 +179,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
             : 'text-[#4f5048] hover:text-[#111] dark:text-[#c7d0df] dark:hover:text-[#f7fbff]',
         ].join(' ')}
       >
-        {channel.label}
+        {navLabel(channel, locale)}
         <ChevronDown />
       </button>
 
@@ -188,7 +197,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
                   className={`mb-2 rounded-xl px-2 pb-1.5 pt-2 last:mb-0 ${tier.wrap}`}
                 >
                   <p className={`mb-1 px-2 font-mono text-[10px] uppercase tracking-[0.18em] ${tier.title}`}>
-                    {section.title}
+                    {navSectionTitle(section, locale)}
                   </p>
                   <div className="grid grid-cols-2 gap-1">
                     {section.items.map((item) => (
@@ -218,6 +227,7 @@ function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
 }
 
 function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
+  const { locale } = useLocale()
   const isLg = size === 'lg'
   return (
     <div className={`flex min-w-0 items-center ${isLg ? 'gap-3' : 'gap-2.5'}`}>
@@ -229,7 +239,7 @@ function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
             isLg ? 'text-[15px]' : 'text-[13.5px]',
           ].join(' ')}
         >
-          {loading ? '检查登录状态…' : getAccountId(user)}
+          {loading ? pick(locale, '检查登录状态…', 'Checking sign-in…') : getAccountId(user)}
         </p>
       </div>
     </div>
@@ -237,6 +247,7 @@ function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
 }
 
 function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef }) {
+  const { locale } = useLocale()
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
@@ -249,7 +260,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
         className="inline-flex items-center gap-2 rounded-full border border-[#cbcdc2] px-2.5 py-1 text-sm font-medium text-[#4f5048] no-underline transition-colors hover:border-[#888b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
       >
         <AccountAvatar loading={false} />
-        登录
+        {pick(locale, '登录', 'Sign in')}
       </Link>
     )
   }
@@ -264,7 +275,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
         className="inline-flex items-center gap-2 rounded-full border border-[#cbcdc2] px-2 py-1 text-sm font-medium text-[#4f5048] transition-colors hover:border-[#888b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
       >
         <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
-        <span>{loading ? '检查中' : getAccountId(user)}</span>
+        <span>{loading ? pick(locale, '检查中', 'Checking…') : getAccountId(user)}</span>
         <ChevronDown />
       </button>
 
@@ -278,7 +289,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               href={logoutHref}
               className="flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px] font-medium text-[#8b5a1f] no-underline transition-colors hover:bg-[#e7e8e0] dark:text-[#a1ab76] dark:hover:bg-[#19212b]"
             >
-              <span>退出登录</span>
+              <span>{pick(locale, '退出登录', 'Sign out')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
             </a>
           </div>
@@ -289,6 +300,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
 }
 
 function MobileAccountPanel({ account, pathname, onNavigate }) {
+  const { locale } = useLocale()
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
@@ -300,8 +312,8 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
         <div className="flex items-center gap-3">
           <AccountAvatar loading={false} />
           <div>
-            <p className="text-[13.5px] font-semibold text-[#15140f] dark:text-gray-100">未登录</p>
-            <p className="mt-0.5 text-[11.5px] text-[#777a6f] dark:text-[#8a93a3]">登录后可评论 / 私域</p>
+            <p className="text-[13.5px] font-semibold text-[#15140f] dark:text-gray-100">{pick(locale, '未登录', 'Not signed in')}</p>
+            <p className="mt-0.5 text-[11.5px] text-[#777a6f] dark:text-[#8a93a3]">{pick(locale, '登录后可评论 / 私域', 'Sign in to comment / private area')}</p>
           </div>
         </div>
         <Link
@@ -309,7 +321,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
           onClick={onNavigate}
           className="shrink-0 rounded-full border border-[#cbcdc2] px-3 py-1.5 text-[12px] font-medium text-[#565749] no-underline dark:border-gray-700 dark:text-gray-300"
         >
-          登录
+          {pick(locale, '登录', 'Sign in')}
         </Link>
       </div>
     )
@@ -326,7 +338,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             href={logoutHref}
             className="flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px] font-medium text-[#8b5a1f] no-underline dark:text-[#a1ab76]"
           >
-            <span>退出登录</span>
+            <span>{pick(locale, '退出登录', 'Sign out')}</span>
             <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
           </a>
         </div>
@@ -336,6 +348,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
 }
 
 export default function SiteHeader() {
+  const { locale } = useLocale()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openChannel, setOpenChannel] = useState(null)
@@ -390,16 +403,16 @@ export default function SiteHeader() {
     <>
       <header className="sticky top-0 z-40 w-full border-b border-[#dee0db] bg-[#f0f1ee]/92 backdrop-blur dark:border-[#202938] dark:bg-[#0f141b]/96">
         <div className="mx-auto flex w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
-          <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label="返回首页">
+          <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
               <span className="font-serif text-xl sm:text-2xl font-semibold tracking-wide text-[#111] dark:text-gray-100">
-                涂阿燃 · 网络日志
+                {pick(locale, '涂阿燃 · 网络日志', 'TUARAN · Weblog')}
               </span>
             </div>
           </Link>
 
           <div className="hidden items-center gap-3 md:flex">
-            <nav ref={navWrapRef} aria-label="主导航" className="flex items-center gap-1">
+            <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-1">
               {SITE_CHANNELS.map((channel) => {
                 const isActive = channel.match(pathname)
                 const isOpen = openChannel === channel.key
@@ -430,7 +443,7 @@ export default function SiteHeader() {
               {showAdminNav ? (
                 <TopNavLink
                   href={SITE_ADMIN_NAV_LINK.href}
-                  label={SITE_ADMIN_NAV_LINK.label}
+                  label={navLabel(SITE_ADMIN_NAV_LINK, locale)}
                   isActive={isAdminNavPath(pathname)}
                 />
               ) : null}
@@ -450,7 +463,7 @@ export default function SiteHeader() {
             <SettingsButton />
             <button
               type="button"
-              aria-label={mobileMenuOpen ? '关闭导航菜单' : '打开导航菜单'}
+              aria-label={mobileMenuOpen ? pick(locale, '关闭导航菜单', 'Close menu') : pick(locale, '打开导航菜单', 'Open menu')}
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               className="header-icon-link"
@@ -502,7 +515,7 @@ export default function SiteHeader() {
           pathname={pathname}
           onNavigate={() => setMobileMenuOpen(false)}
         />
-        <nav aria-label="移动端主导航" className="flex flex-col gap-1.5">
+        <nav aria-label={pick(locale, '移动端主导航', 'Mobile navigation')} className="flex flex-col gap-1.5">
           {SITE_CHANNELS.map((channel) => {
             const expanded = openMobileChannel === channel.key
             const sections = getChannelNavSections(channel, account, account?.navOverrides)
@@ -514,7 +527,7 @@ export default function SiteHeader() {
                   aria-expanded={expanded}
                   className="flex w-full items-center justify-between px-4 py-3 text-left text-[15px] font-medium text-[#191611] dark:text-gray-100"
                 >
-                  {channel.label}
+                  {navLabel(channel, locale)}
                   <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
                     <ChevronDown />
                   </span>
@@ -526,7 +539,7 @@ export default function SiteHeader() {
                       return (
                         <div key={section.title} className={`rounded-xl px-2 pb-1 pt-2 ${tier.wrap}`}>
                           <p className={`mb-1 px-1 font-mono text-[10px] uppercase tracking-[0.18em] ${tier.title}`}>
-                            {section.title}
+                            {navSectionTitle(section, locale)}
                           </p>
                           <div className="flex flex-col">
                             {section.items.map((item) => (

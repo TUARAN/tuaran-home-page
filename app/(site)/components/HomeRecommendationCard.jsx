@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
+import { useLocale } from './LocaleProvider'
+import { pick } from '../../../lib/i18n'
 import { HOME_RECOMMENDATIONS } from '../../../lib/homeRecommendations'
 
 function ArrowIcon() {
@@ -29,6 +31,7 @@ function randomOtherIndex(current, max) {
 }
 
 export default function HomeRecommendationCard() {
+  const { locale } = useLocale()
   const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
@@ -36,28 +39,29 @@ export default function HomeRecommendationCard() {
   }, [])
 
   const item = HOME_RECOMMENDATIONS[activeIndex] || HOME_RECOMMENDATIONS[0]
+  const points = locale === 'en' && item.pointsEn ? item.pointsEn : item.points
 
   return (
     <article className="home-focus-card" aria-live="polite">
       <div className="home-focus-top">
-        <span className="home-focus-kicker">{item.eyebrow}</span>
+        <span className="home-focus-kicker">{pick(locale, item.eyebrow, item.eyebrowEn)}</span>
         <button
           type="button"
           className="home-focus-swap"
           onClick={() => setActiveIndex((current) => randomOtherIndex(current, HOME_RECOMMENDATIONS.length))}
         >
-          换一个
+          {pick(locale, '换一个', 'Shuffle')}
         </button>
       </div>
-      <h2>{item.title}</h2>
-      <p>{item.desc}</p>
+      <h2>{pick(locale, item.title, item.titleEn)}</h2>
+      <p>{pick(locale, item.desc, item.descEn)}</p>
       <span className="home-focus-points">
-        {item.points.map((point) => (
+        {points.map((point) => (
           <span key={point}>{point}</span>
         ))}
       </span>
       <a href={item.href} target="_blank" rel="noreferrer" className="home-focus-action no-external-arrow">
-        {item.actionLabel}
+        {pick(locale, item.actionLabel, item.actionLabelEn)}
         <ArrowIcon />
       </a>
     </article>

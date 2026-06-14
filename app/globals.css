@@ -16,6 +16,15 @@
   --site-blue: #2e7088;
   --site-green: #587164;
   --site-shadow: rgba(94, 70, 79, 0.12);
+  --home-focus-border: #b9a5bf;
+  --home-focus-border-hover: #8fafc2;
+  --home-focus-panel-start: rgba(255, 255, 255, 0.82);
+  --home-focus-panel-end: rgba(246, 241, 248, 0.86);
+  --home-focus-kicker: #8a6180;
+  --home-focus-action: #1f5266;
+  --home-focus-chip-bg: rgba(255, 255, 255, 0.76);
+  --home-focus-chip-border: #d7d3dd;
+  --home-focus-shadow: rgba(77, 66, 92, 0.15);
   --theme-accent: var(--site-accent);
   --theme-accent-muted: #715a31;
   --theme-sage: #9aa579;
@@ -56,6 +65,15 @@
   --site-blue: #9ab6d4;
   --site-green: #9fc5ad;
   --site-shadow: rgba(0, 0, 0, 0.26);
+  --home-focus-border: #536070;
+  --home-focus-border-hover: #7e9bb1;
+  --home-focus-panel-start: rgba(20, 28, 39, 0.88);
+  --home-focus-panel-end: rgba(31, 26, 42, 0.82);
+  --home-focus-kicker: #d2b5cc;
+  --home-focus-action: #b7d7e8;
+  --home-focus-chip-bg: rgba(255, 255, 255, 0.08);
+  --home-focus-chip-border: #3b4655;
+  --home-focus-shadow: rgba(0, 0, 0, 0.32);
   --theme-accent: var(--site-accent);
   --theme-accent-muted: #a8ae82;
   --theme-sage: #a1ab76;
@@ -380,20 +398,20 @@
 
   .home-focus-card {
     @apply relative overflow-hidden rounded-2xl border p-5 no-underline backdrop-blur-md transition md:p-6;
-    border-color: color-mix(in srgb, var(--site-accent) 42%, var(--site-line));
+    border-color: var(--home-focus-border);
     background:
-      linear-gradient(135deg, color-mix(in srgb, var(--site-accent) 18%, var(--site-panel-strong)), color-mix(in srgb, var(--site-panel) 88%, transparent)),
-      var(--site-panel);
+      linear-gradient(135deg, var(--home-focus-panel-start), var(--home-focus-panel-end)),
+      color-mix(in srgb, white 58%, var(--page-bg));
     color: var(--site-ink);
-    box-shadow: 0 18px 42px var(--site-shadow);
+    box-shadow: 0 22px 54px var(--home-focus-shadow);
     z-index: 1;
   }
 
   .home-focus-card:hover {
     @apply -translate-y-1 no-underline;
-    border-color: var(--site-accent);
+    border-color: var(--home-focus-border-hover);
     color: var(--site-ink);
-    box-shadow: 0 24px 56px color-mix(in srgb, var(--site-shadow) 82%, rgba(0, 0, 0, 0.08));
+    box-shadow: 0 26px 62px color-mix(in srgb, var(--home-focus-shadow) 88%, rgba(70, 82, 98, 0.1));
   }
 
   .home-focus-top {
@@ -402,22 +420,22 @@
 
   .home-focus-kicker {
     @apply inline-flex rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em];
-    border-color: color-mix(in srgb, var(--site-accent) 48%, var(--site-line));
-    color: var(--site-accent);
-    background: color-mix(in srgb, var(--site-accent) 10%, transparent);
+    border-color: color-mix(in srgb, var(--home-focus-kicker) 48%, var(--home-focus-chip-border));
+    color: var(--home-focus-kicker);
+    background: color-mix(in srgb, var(--home-focus-kicker) 11%, white);
   }
 
   .home-focus-swap {
     @apply inline-flex min-h-8 items-center rounded-full border px-3 text-[12px] font-semibold transition;
-    border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 86%, transparent);
+    border-color: var(--home-focus-chip-border);
+    background: var(--home-focus-chip-bg);
     color: var(--site-muted);
   }
 
   .home-focus-swap:hover {
-    border-color: var(--site-accent);
-    color: var(--site-ink);
-    background: var(--site-panel-strong);
+    border-color: var(--home-focus-border-hover);
+    color: var(--home-focus-action);
+    background: color-mix(in srgb, white 88%, var(--home-focus-panel-end));
   }
 
   .home-focus-swap:focus-visible {
@@ -441,18 +459,18 @@
 
   .home-focus-points span {
     @apply rounded-full border px-2.5 py-1 text-[12px] font-medium;
-    border-color: var(--site-line);
+    border-color: var(--home-focus-chip-border);
     color: var(--site-muted);
-    background: var(--site-panel-strong);
+    background: var(--home-focus-chip-bg);
   }
 
   .home-focus-action {
     @apply inline-flex items-center gap-2 text-sm font-semibold;
-    color: var(--site-accent-strong);
+    color: var(--home-focus-action);
   }
 
   .home-focus-action:visited {
-    color: var(--site-accent-strong);
+    color: var(--home-focus-action);
   }
 
   .home-profile {

@@ -272,12 +272,41 @@
   }
 
   .home-hero {
-    @apply grid gap-8 border-b pb-8 md:grid-cols-[minmax(0,1fr)_330px] md:items-end md:pb-10 lg:gap-12;
-    border-color: var(--site-line);
+    @apply relative isolate grid min-h-[420px] overflow-hidden rounded-[28px] border p-5 shadow-[0_22px_70px_var(--site-shadow)] md:grid-cols-[minmax(0,1fr)_330px] md:items-end md:p-8 lg:gap-12 lg:p-10;
+    border-color: color-mix(in srgb, var(--site-line-strong) 72%, transparent);
+    background-color: var(--site-panel-strong);
+  }
+
+  .home-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background-image:
+      image-set(
+        url("/images/home/guangzhou-skyline-banner.avif") type("image/avif"),
+        url("/images/home/guangzhou-skyline-banner.webp") type("image/webp"),
+        url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+      );
+    background-position: center 45%;
+    background-size: cover;
+    opacity: 0.94;
+  }
+
+  .home-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--page-bg) 95%, transparent) 0%, color-mix(in srgb, var(--page-bg) 78%, transparent) 48%, color-mix(in srgb, var(--page-bg) 34%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, white 18%, transparent), color-mix(in srgb, var(--page-bg) 62%, transparent));
   }
 
   .home-hero-copy {
     @apply min-w-0 pt-6 md:pt-12;
+    position: relative;
+    z-index: 1;
   }
 
   .home-kicker {
@@ -350,13 +379,14 @@
   }
 
   .home-focus-card {
-    @apply relative overflow-hidden rounded-2xl border p-5 no-underline transition md:p-6;
+    @apply relative overflow-hidden rounded-2xl border p-5 no-underline backdrop-blur-md transition md:p-6;
     border-color: color-mix(in srgb, var(--site-accent) 42%, var(--site-line));
     background:
-      linear-gradient(135deg, color-mix(in srgb, var(--site-accent) 18%, var(--site-panel-strong)), var(--site-panel)),
+      linear-gradient(135deg, color-mix(in srgb, var(--site-accent) 18%, var(--site-panel-strong)), color-mix(in srgb, var(--site-panel) 88%, transparent)),
       var(--site-panel);
     color: var(--site-ink);
     box-shadow: 0 18px 42px var(--site-shadow);
+    z-index: 1;
   }
 
   .home-focus-card:hover {
@@ -822,6 +852,15 @@
   }
 
   @media (max-width: 640px) {
+    .home-hero::before {
+      background-image:
+        image-set(
+          url("/images/home/guangzhou-skyline-banner-sm.avif") type("image/avif"),
+          url("/images/home/guangzhou-skyline-banner-sm.webp") type("image/webp"),
+          url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+        );
+    }
+
     .home-hero-title {
       font-size: 2.2rem;
     }

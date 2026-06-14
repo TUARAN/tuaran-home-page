@@ -4,20 +4,24 @@ import { useTheme } from 'next-themes'
 import { useState, useEffect, useRef } from 'react'
 
 const BG_PRESETS = [
-  { id: 'city',  label: '雾粉城景', hex: '#f1eef2', desc: '封面默认，贴合首页横幅' },
-  { id: 'cold',  label: '冷牙白', hex: '#f0f1ee', desc: '编辑感、克制' },
+  { id: 'city',  label: '雾粉城景', hex: '#f1eef2', desc: '潮流默认，贴合首页横幅' },
+  { id: 'cold',  label: '冷牙白', hex: '#f0f1ee', desc: '经典默认，编辑感、克制' },
   { id: 'warm',  label: '暖米',   hex: '#f4ead5', desc: '书页感，适合长读' },
   { id: 'sand',  label: '沙石纸', hex: '#f1ebde', desc: '砂纸质地，介于两者' },
   { id: 'pure',  label: '纯白',   hex: '#ffffff', desc: '最克制，最现代' },
 ]
 
 const DEFAULT_BG_HEX = BG_PRESETS[0].hex
-const LEGACY_DEFAULT_BG_HEXES = new Set(['#f0f1ee', '#f1f2ee'])
+const DEFAULT_BG_BY_UI_MODE = {
+  polished: BG_PRESETS[0].hex,
+  classic: BG_PRESETS[1].hex,
+}
+const LEGACY_DEFAULT_BG_HEXES = new Set(['#f1f2ee'])
 const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const UI_MODES = [
-  { id: 'polished', label: '封面', desc: '横幅视觉、重点入口、随机推荐' },
-  { id: 'classic', label: '日志', desc: '原首页布局、推荐阅读、个人侧栏' },
+  { id: 'polished', label: '潮流', desc: '横幅视觉、重点入口、随机推荐' },
+  { id: 'classic', label: '经典', desc: '原首页布局、推荐阅读、个人侧栏' },
 ]
 
 function findPresetByHex(hex) {
@@ -36,15 +40,18 @@ export default function SettingsButton() {
   useEffect(() => {
     setMounted(true)
     try {
+      const ui = localStorage.getItem(UI_STORAGE_KEY)
+      const nextUi = ui === 'classic' || ui === 'polished' ? ui : 'polished'
+      setUiMode(nextUi)
       const v = localStorage.getItem(STORAGE_KEY)
       if (v && LEGACY_DEFAULT_BG_HEXES.has(v.toLowerCase())) {
         localStorage.removeItem(STORAGE_KEY)
-        setBgHex(DEFAULT_BG_HEX)
+        setBgHex(DEFAULT_BG_BY_UI_MODE[nextUi])
       } else if (v) {
         setBgHex(v)
+      } else {
+        setBgHex(DEFAULT_BG_BY_UI_MODE[nextUi])
       }
-      const ui = localStorage.getItem(UI_STORAGE_KEY)
-      if (ui === 'classic' || ui === 'polished') setUiMode(ui)
     } catch (e) {}
   }, [])
 
@@ -81,10 +88,14 @@ export default function SettingsButton() {
 
   const pickUiMode = (mode) => {
     const next = mode === 'classic' ? 'classic' : 'polished'
+    const nextBg = DEFAULT_BG_BY_UI_MODE[next]
     setUiMode(next)
+    setBgHex(nextBg)
     document.documentElement.dataset.ui = next
+    document.documentElement.style.setProperty('--page-bg', nextBg)
     try {
       localStorage.setItem(UI_STORAGE_KEY, next)
+      localStorage.setItem(STORAGE_KEY, nextBg)
     } catch (e) {}
   }
 
@@ -150,9 +161,9 @@ export default function SettingsButton() {
             </div>
           </div>
 
-          {/* 首页样式 */}
+          {/* 样式 */}
           <div className="mb-3">
-            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">首页样式</div>
+            <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#6a685f] dark:text-gray-400">样式</div>
             <div className="grid grid-cols-2 gap-2">
               {UI_MODES.map((mode) => {
                 const active = uiMode === mode.id

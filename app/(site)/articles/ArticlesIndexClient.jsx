@@ -127,6 +127,7 @@ export default function ArticlesIndexClient({ items }) {
   const [peopleType, setPeopleType] = useState(initialPeopleType)
   const [resourceType, setResourceType] = useState(initialResourceType)
   const [query, setQuery] = useState(initialQuery)
+  const [filtersOpen, setFiltersOpen] = useState(true)
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
@@ -635,7 +636,11 @@ export default function ArticlesIndexClient({ items }) {
         </form>
 
         {hasAdvancedFilters ? (
-          <details className="group rounded-lg border border-[#e8e9e2] bg-white/80 text-xs dark:border-gray-800 dark:bg-[#121821]">
+          <details
+            open={filtersOpen}
+            onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
+            className="group rounded-lg border border-[#e8e9e2] bg-white/80 text-xs dark:border-gray-800 dark:bg-[#121821]"
+          >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
               <div className="min-w-0">
                 <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#9b9d8f] dark:text-gray-500">

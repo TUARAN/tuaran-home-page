@@ -11,10 +11,10 @@ const changelog = [
     version: 'v2026.25',
     week: '2026-W24',
     range: '2026-06-10 起',
-    commits: 0,
-    title: '后台管理收束：/admin 统一入口与子域准备',
+    commits: 81,
+    title: '后台管理收束、首页封面化与文章页筛选修正',
     summary:
-      '把分散在 /agent-ops/* 的站长控制台收束为 /admin/* 统一入口，新增 Dashboard 总览，抽公共 owner guard，并为 admin.2aran.com 子域分流做好 middleware 与独立 layout 准备。',
+      '把分散在 /agent-ops/* 的站长控制台收束为 /admin/* 统一入口，同时继续打磨首页封面、经典样式、文章页筛选和合作入口文案。',
     planned: [
       '阶段 2：Cloudflare Pages 绑定 admin.2aran.com 自定义域（middleware 分流逻辑已就绪）。',
       '阶段 2（可选）：为 admin 子域加 Cloudflare Access，与 ops.2aran.com 对齐。',
@@ -25,6 +25,11 @@ const changelog = [
       '落地 (admin) route group 独立 layout：无公开站导航，仅 Theme + Session + AdminShell。',
       '旧 /agent-ops/* 301 至 /admin/*；siteNav、robots 与 ai-projects 链接同步更新。',
       '抽 lib/adminAuth 统一 /api/admin/* owner 校验；middleware 支持 admin.2aran.com Host 分流。',
+      '首页新增潮流 / 经典两套样式：潮流使用横幅视觉和随机推荐卡，经典还原日志式首页布局。',
+      '压缩广州城市横幅图并接入首页；推荐卡改为可随机切换博主联盟、前端周看和 PublishLab。',
+      '统一样式切换与阅读底色：潮流默认雾粉城景，经典默认冷牙白，刷新首屏不再误清经典底色。',
+      '文章页筛选区改为可展开面板，并按当前反馈默认展开；PC 与移动端都保留当前筛选摘要。',
+      '重写首页联系和合作页开头文案，减少自我解释，直接说明合作、交流和订阅入口。',
     ],
   },
   {

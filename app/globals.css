@@ -454,11 +454,11 @@
   }
 
   .home-focus-points {
-    @apply mb-6 flex flex-wrap gap-2;
+    @apply mb-6 flex flex-nowrap gap-2;
   }
 
   .home-focus-points span {
-    @apply rounded-full border px-2.5 py-1 text-[12px] font-medium;
+    @apply whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-medium;
     border-color: var(--home-focus-chip-border);
     color: var(--site-muted);
     background: var(--home-focus-chip-bg);

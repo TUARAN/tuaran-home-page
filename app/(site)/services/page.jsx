@@ -85,10 +85,10 @@ export default function ServicesPage() {
           Services · 合作说明
         </p>
         <h1 className="mt-4 max-w-3xl font-serif text-[2rem] font-semibold leading-tight tracking-wide text-[#15140f] dark:text-gray-100 md:text-[2.55rem]">
-          可以合作，但先把问题说清楚
+          先聊方向，再判断怎么帮
         </h1>
         <p className="mt-5 max-w-2xl text-[15px] leading-8 text-[#51514a] dark:text-gray-300">
-          这个页面不是报价单。它只是说明我适合参与哪些事情、通常会交付什么、哪些合作不适合。真正合作前，先确认目标、范围、周期和预期结果。
+          如果你正在做一个产品、内容或增长项目，可以先把背景、卡点和想要的结果发给我。我会先判断自己能不能帮上忙；能做，我们再一起定目标、节奏和交付方式。
         </p>
       </header>
 

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 import DaysSince from './components/DaysSince'
+import HomeRecommendationCard from './components/HomeRecommendationCard'
 import SiteFooter from './components/SiteFooter'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_GOAL_PARTS, SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
@@ -74,15 +75,6 @@ const PRODUCT_LINKS = [
     desc: '面向创作者的 AI 写作与出版工具',
   },
 ]
-
-const BLOGGER_ALLIANCE = {
-  href: 'https://blogger-alliance.cn/',
-  title: '博主联盟',
-  eyebrow: '立即加入',
-  subtitle: 'AI 产品方与技术博主的增长协作网络',
-  desc: '连接 AI 产品方与技术博主，把产品曝光、内容种草和真实转化放进一个长期协作网络。',
-  points: ['AI 产品增长', '技术博主合作', '品牌内容分发'],
-}
 
 const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 
@@ -319,25 +311,6 @@ function HeroGoalText() {
         )
       )}
     </>
-  )
-}
-
-function BloggerAllianceFocus() {
-  return (
-    <a href={BLOGGER_ALLIANCE.href} target="_blank" rel="noreferrer" className="home-focus-card no-external-arrow">
-      <span className="home-focus-kicker">{BLOGGER_ALLIANCE.eyebrow}</span>
-      <h2>{BLOGGER_ALLIANCE.title}</h2>
-      <p>{BLOGGER_ALLIANCE.desc}</p>
-      <span className="home-focus-points">
-        {BLOGGER_ALLIANCE.points.map((point) => (
-          <span key={point}>{point}</span>
-        ))}
-      </span>
-      <span className="home-focus-action">
-        进入博主联盟
-        <ArrowIcon />
-      </span>
-    </a>
   )
 }
 
@@ -634,7 +607,7 @@ function PolishedHomePage({ featuredPicks }) {
             <HeroGoalText />
           </p>
           <div className="home-hero-actions">
-            <a href={BLOGGER_ALLIANCE.href} target="_blank" rel="noreferrer" className="home-button home-button-primary no-external-arrow">
+            <a href="https://blogger-alliance.cn/" target="_blank" rel="noreferrer" className="home-button home-button-primary no-external-arrow">
               进入博主联盟
             </a>
             <Link href="/services" className="home-button home-button-secondary">
@@ -643,7 +616,7 @@ function PolishedHomePage({ featuredPicks }) {
           </div>
         </div>
 
-        <BloggerAllianceFocus />
+        <HomeRecommendationCard />
       </section>
 
       <section className="home-paths" aria-label="站点主要入口">

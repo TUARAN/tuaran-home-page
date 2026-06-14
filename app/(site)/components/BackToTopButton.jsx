@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react'
 
+import { useLocale } from './LocaleProvider'
+import { pick } from '../../../lib/i18n'
+
 export default function BackToTopButton() {
+  const { locale } = useLocale()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -21,8 +25,8 @@ export default function BackToTopButton() {
   return (
     <button
       type="button"
-      aria-label="返回顶部"
-      title="返回顶部"
+      aria-label={pick(locale, '返回顶部', 'Back to top')}
+      title={pick(locale, '返回顶部', 'Back to top')}
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       className={[
         'back-to-top-button',

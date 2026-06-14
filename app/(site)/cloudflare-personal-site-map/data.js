@@ -27,7 +27,8 @@ export const VERDICT_COUNTS = [
 export const SITE_FACTS = [
   { label: '部署', value: 'Cloudflare Pages + Functions' },
   { label: '动态数据', value: 'D1（留言 / 评论 / 用户 / 短链等）' },
-  { label: '内容与静态资源', value: 'Git + public/（约 7MB）' },
+  { label: '内容与静态资源', value: 'Git + public/（约 8.5MB）' },
+  { label: '默认语言', value: '边缘 Middleware 读 cf-ipcountry：中国大陆→中文，海外→英文' },
   { label: 'AI 体验', value: '浏览器 WebGPU（不进 Cloudflare AI）' },
 ]
 
@@ -42,9 +43,9 @@ export const CORE_STACK = [
   {
     layer: '边缘计算',
     product: 'Workers / Functions',
-    role: 'API 路由、OAuth、Edge Session',
+    role: 'API 路由、OAuth、Edge Session、Middleware',
     verdict: 'have',
-    note: 'next-on-pages 把 app/api/* 跑在边缘',
+    note: 'next-on-pages 把 app/api/* 与 middleware.js 跑在边缘；中间件用 cf-ipcountry 定默认语言 + 域名/路径重定向',
   },
   {
     layer: '关系型数据',
@@ -223,7 +224,7 @@ export const TRIGGER_RULES = [
   },
 ]
 
-export const MIN_STACK = ['Pages', 'Functions', 'D1', 'Git 内容', 'Resend', 'GitHub OAuth']
+export const MIN_STACK = ['Pages', 'Functions', 'Middleware', 'D1', 'Git 内容', 'Resend', 'GitHub OAuth']
 
 export const SKIP_STACK = ['R2', 'KV', 'Durable Objects', 'Workers AI', 'Vectorize', 'Queues', 'Hyperdrive']
 

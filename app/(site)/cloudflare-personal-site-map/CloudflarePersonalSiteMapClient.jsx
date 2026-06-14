@@ -78,7 +78,7 @@ function ArchitectureDiagram() {
         <text x="80" y="84" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">浏览器</text>
         <rect x="180" y="40" width="140" height="56" rx="6" className="fill-[#f7f8f5] stroke-[#d0d2cd] dark:fill-[#161513] dark:stroke-[#2c2d2b]" strokeWidth="1.2" />
         <text x="250" y="68" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">Cloudflare CDN</text>
-        <text x="250" y="84" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">Pages 边缘</text>
+        <text x="250" y="84" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">Pages 边缘 · Middleware</text>
         <rect x="360" y="28" width="160" height="80" rx="6" className="fill-[#4a6fa5] stroke-[#3d5f8f] dark:fill-[#5b7fb8] dark:stroke-[#4a6fa5]" strokeWidth="1.5" />
         <text x="440" y="58" textAnchor="middle" className="fill-white" fontSize="13" fontWeight="600">Pages Functions</text>
         <text x="440" y="78" textAnchor="middle" className="fill-white/85" fontSize="11">Next.js API Routes</text>
@@ -114,7 +114,7 @@ function ArchitectureDiagram() {
         </defs>
       </svg>
       <figcaption className="border-t border-[#dee0db] px-3 py-2 text-[11px] text-[#63655f] dark:border-gray-800 dark:text-gray-400">
-        访客请求经 Pages CDN 分发；动态写操作进 Functions → D1；R2 虚线框表示尚未接入。
+        访客请求先过边缘 Middleware（cf-ipcountry 定默认语言、域名/路径重定向），再由 Pages CDN 分发；动态写操作进 Functions → D1；R2 虚线框表示尚未接入。
       </figcaption>
     </figure>
   )
@@ -327,7 +327,7 @@ export default function CloudflarePersonalSiteMapClient() {
       <section id="flow" className="mt-10 scroll-mt-24">
         <h2 className="font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">数据流</h2>
         <p className="mt-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
-          你现在这条链路：Pages 托管 + Functions 写 D1 + Git 静态资源；R2 尚未接入。
+          你现在这条链路：Pages 托管 + 边缘 Middleware（cf-ipcountry 定默认语言 / 域名重定向）+ Functions 写 D1 + Git 静态资源；R2 尚未接入。
         </p>
         <div className="mt-4">
           <ArchitectureDiagram />

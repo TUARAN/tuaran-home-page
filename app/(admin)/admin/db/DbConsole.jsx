@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { AdminPage } from '../../components/ui'
+
 async function safeJson(res) {
   try {
     return await res.json()
@@ -101,30 +103,21 @@ export default function DbAdminClient() {
       : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
 
   return (
-    <main className="mx-auto w-full max-w-[1180px] px-4 py-8 md:py-12">
-      <header className="mb-8">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
-          Admin · Database
-        </p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[2.2rem]">
-              数据库管理
-            </h1>
-            <p className="mb-0 max-w-[46rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-              只读查看 Cloudflare D1 当前状态：表结构、行数、最近更新时间、文本体积估算和核心业务指标。这里不提供任意 SQL，不做删除或迁移。
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={loading}
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-[#caccc0] bg-white px-3 text-sm font-medium text-[#53554d] transition hover:border-[#818472] hover:text-[#15140f] disabled:opacity-50 dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300 dark:hover:border-[#4a5568]"
-          >
-            {loading ? '刷新中…' : '刷新状态'}
-          </button>
-        </div>
-      </header>
+    <AdminPage
+      title="数据库管理"
+      maxWidth="1180px"
+      description="只读查看 Cloudflare D1 当前状态：表结构、行数、最近更新时间、文本体积估算和核心业务指标。这里不提供任意 SQL，不做删除或迁移。"
+      actions={
+        <button
+          type="button"
+          onClick={refresh}
+          disabled={loading}
+          className="inline-flex h-9 items-center justify-center rounded-lg border border-[#caccc0] bg-white px-3 text-sm font-medium text-[#53554d] transition hover:border-[#818472] hover:text-[#15140f] disabled:opacity-50 dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300 dark:hover:border-[#4a5568]"
+        >
+          {loading ? '刷新中…' : '刷新状态'}
+        </button>
+      }
+    >
 
       {error ? (
         <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200">
@@ -301,7 +294,7 @@ export default function DbAdminClient() {
           )}
         </aside>
       </section>
-    </main>
+    </AdminPage>
   )
 }
 

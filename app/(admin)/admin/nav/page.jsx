@@ -1,5 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
-import NavAdminClient from '../../../(site)/agent-ops/nav-admin/NavAdminClient'
+import NavAdminClient from './NavConsole'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

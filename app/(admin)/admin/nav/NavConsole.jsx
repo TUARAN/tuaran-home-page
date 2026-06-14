@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { notifyNavChanged } from '../../components/SessionProvider'
+import { notifyNavChanged } from '../../../(site)/components/SessionProvider'
+import { AdminPage } from '../../components/ui'
 
 const AUDIENCE_LABELS = {
   public: '所有访客',
@@ -128,20 +129,11 @@ export default function NavAdminClient() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1080px] px-4 py-8 md:py-12">
-      <header className="mb-8">
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
-          Admin · Nav Visibility
-        </p>
-        <h1 className="mb-2 font-serif text-[1.9rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[2.2rem]">
-          菜单权限管理
-        </h1>
-        <p className="mb-0 max-w-[42rem] text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-          这里列出全站所有菜单 item。每一项的「可见用户」决定它是否会出现在主导航、移动端菜单和 /map
-          全站索引里。<strong>这里只控制菜单展示</strong>，页面本身的 owner gate
-          不受影响——把私域页面设成 public 也只是让链接出现在菜单中，访客点进去仍然被 gate 拦截。
-        </p>
-      </header>
+    <AdminPage
+      title="菜单权限管理"
+      maxWidth="1080px"
+      description="这里列出全站所有菜单 item。每一项的「可见用户」决定它是否出现在主导航、移动端菜单和 /map 全站索引里。这里只控制菜单展示，页面本身的 owner gate 不受影响——把私域页面设成 public 也只是让链接出现在菜单中，访客点进去仍然被 gate 拦截。"
+    >
 
       {error ? (
         <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200">
@@ -290,7 +282,7 @@ export default function NavAdminClient() {
       <p className="mt-4 text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
         改动立即生效；菜单组件会在 focus / visibilitychange / 自定义事件触发时拉新。需要其他设备同步可以让对方刷新一次。
       </p>
-    </main>
+    </AdminPage>
   )
 }
 

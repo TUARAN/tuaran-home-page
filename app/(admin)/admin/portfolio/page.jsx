@@ -1,5 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
-import ProjectPortfolioConsole from '../../../(site)/agent-ops/project-portfolio/ProjectPortfolioConsole'
+import ProjectPortfolioConsole from './PortfolioConsole'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

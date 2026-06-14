@@ -18,20 +18,20 @@ const SECTION_BADGE_CLASS = {
 
 const CLASSIC_SECTION_BADGE_CLASS = {
   column:
-    'border-[#d8d9cf] bg-[#f0f1ec] text-[#606350] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#b4b8a3]',
+    'border-[#d6d0df] bg-[#f4f2f8] text-[#625d70] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#c6ceda]',
   research:
     'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   resources:
-    'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
+    'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#263f4b] dark:bg-[#13232b] dark:text-[#9ac9d8]',
 }
 
 const CLASSIC_HOME_SECTION_TAB_CLASS = {
   column:
-    'text-[#616358] hover:bg-white hover:text-[#4a4d3f] hover:shadow-sm hover:ring-1 hover:ring-[#d8d9cf] dark:text-gray-400 dark:hover:bg-[#1e2630] dark:hover:text-[#d5d8c8] dark:hover:ring-[#303947]',
+    'text-[#696071] hover:bg-white hover:text-[#49345f] hover:shadow-sm hover:ring-1 hover:ring-[#d6d0df] dark:text-gray-400 dark:hover:bg-[#1e2630] dark:hover:text-[#d8c5f3] dark:hover:ring-[#303947]',
   research:
-    'text-[#616358] hover:bg-white hover:text-[#3b5b8a] hover:shadow-sm hover:ring-1 hover:ring-[#cbd9ee] dark:text-gray-400 dark:hover:bg-[#152034] dark:hover:text-[#9bb6df] dark:hover:ring-[#2a3a55]',
+    'text-[#696071] hover:bg-white hover:text-[#3b5b8a] hover:shadow-sm hover:ring-1 hover:ring-[#cbd9ee] dark:text-gray-400 dark:hover:bg-[#152034] dark:hover:text-[#9bb6df] dark:hover:ring-[#2a3a55]',
   resources:
-    'text-[#616358] hover:bg-white hover:text-[#386b54] hover:shadow-sm hover:ring-1 hover:ring-[#c9dccf] dark:text-gray-400 dark:hover:bg-[#13201a] dark:hover:text-[#9dcab1] dark:hover:ring-[#243d33]',
+    'text-[#696071] hover:bg-white hover:text-[#3f6878] hover:shadow-sm hover:ring-1 hover:ring-[#c7dce4] dark:text-gray-400 dark:hover:bg-[#13232b] dark:hover:text-[#9ac9d8] dark:hover:ring-[#263f4b]',
 }
 
 const START_PATHS = [
@@ -162,12 +162,12 @@ function FeaturedReading({ items }) {
 
 function ClassicFeaturedLinkItem({ item }) {
   const className =
-    'group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f0f1ec] dark:hover:bg-[#18202a]'
+    'group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f4f0f8] dark:hover:bg-[#18202a]'
   const content = (
     <>
       <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         {item.isLatest ? (
-          <span className="inline-flex shrink-0 items-center rounded-full border border-[#b7baa8] bg-[#dee0d4] px-2 py-0.5 font-mono text-[10px] text-[#6b4f1d] dark:border-[#313424] dark:bg-[#1e1e18] dark:text-[#abb38a]">
+          <span className="inline-flex shrink-0 items-center rounded-full border border-[#cfc3e2] bg-[#f3eff9] px-2 py-0.5 font-mono text-[10px] text-[#72539b] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#c5afe8]">
             最新
           </span>
         ) : null}
@@ -180,7 +180,7 @@ function ClassicFeaturedLinkItem({ item }) {
           {item.sectionLabel}
         </span>
         {item.tagLabel ? (
-          <span className="inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border border-[#dfe0d8] bg-white px-2 py-0.5 font-mono text-[10px] text-[#77796c] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6]">
+          <span className="inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border border-[#d9d4e2] bg-white px-2 py-0.5 font-mono text-[10px] text-[#625a6f] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6]">
             {item.tagLabel}
           </span>
         ) : null}
@@ -190,11 +190,11 @@ function ClassicFeaturedLinkItem({ item }) {
           </span>
         ) : null}
       </div>
-      <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[#1a1814] group-hover:text-[#5a4725] dark:text-gray-100 dark:group-hover:text-[#c9ccb5]">
+      <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[#1a1814] group-hover:text-[#49345f] dark:text-gray-100 dark:group-hover:text-[#d8c5f3]">
         {item.title}
       </p>
       {item.summary ? (
-        <p className="mb-0 mt-0.5 line-clamp-1 text-[12px] leading-5 text-[#77796c] dark:text-gray-400">
+        <p className="mb-0 mt-0.5 line-clamp-1 text-[12px] leading-5 text-[#716779] dark:text-gray-400">
           {item.summary}
         </p>
       ) : null}
@@ -222,7 +222,7 @@ function ClassicFeaturedSection({ items }) {
     <section className="classic-home-surface-panel rounded-[24px] border p-5 shadow-[0_12px_40px_var(--hero-shadow)] dark:border-[#252d36] dark:bg-[#0f141b] dark:shadow-none md:p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0]">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.24em] text-[#8e8798] dark:text-[#8e9ab0]">
             Start Here
           </p>
           <h2 className="classic-home-section-title">推荐阅读</h2>
@@ -231,12 +231,12 @@ function ClassicFeaturedSection({ items }) {
           aria-label="按分类浏览更多内容"
           className="flex w-full shrink-0 flex-col gap-1.5 pt-0.5 sm:w-auto sm:items-end"
         >
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#9a9b8f] sm:text-right dark:text-gray-500">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#958aa1] sm:text-right dark:text-gray-500">
             浏览更多
           </span>
           <div
             role="group"
-            className="grid grid-cols-3 gap-1 rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:inline-flex sm:items-center dark:border-gray-800 dark:bg-[#151a22] dark:shadow-none"
+            className="grid grid-cols-3 gap-1 rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:inline-flex sm:items-center dark:border-gray-800 dark:bg-[#151a22] dark:shadow-none"
           >
             {HOME_SECTION_MORE_LINKS.map((link) => (
               <Link
@@ -499,7 +499,7 @@ function ClassicHomePage({ featuredPicks }) {
                     className="h-auto w-full object-cover shadow-none"
                   />
                 </div>
-                <p className="mt-2.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#767869] dark:text-gray-400">
+                <p className="mt-2.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#7e7488] dark:text-gray-400">
                   前端 · AI Agent · 奶爸
                 </p>
                 <p className="mt-1 text-[12px] tracking-[0.06em] text-[#888] dark:text-gray-500">
@@ -510,10 +510,10 @@ function ClassicHomePage({ featuredPicks }) {
                     选一件值得投入 <span className="font-semibold">20 年</span> 的事，
                     <span className="mt-0.5 block">每日复利，高频迭代。</span>
                   </p>
-                  <div className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#85887a] dark:text-gray-500">
-                    <span aria-hidden="true" className="h-px flex-1 bg-[#c8c9bf] dark:bg-gray-700" />
+                  <div className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#8e8798] dark:text-gray-500">
+                    <span aria-hidden="true" className="h-px flex-1 bg-[#d9d2e2] dark:bg-gray-700" />
                     <span>This time · with LLM</span>
-                    <span aria-hidden="true" className="h-px flex-1 bg-[#c8c9bf] dark:bg-gray-700" />
+                    <span aria-hidden="true" className="h-px flex-1 bg-[#d9d2e2] dark:bg-gray-700" />
                   </div>
                   <div className="mt-2.5 flex justify-center">
                     <DaysSince />
@@ -521,7 +521,7 @@ function ClassicHomePage({ featuredPicks }) {
                 </blockquote>
                 <Link
                   href="/context-memory"
-                  className="mt-2 inline-flex items-center rounded-full border border-[#d0d1c8] bg-white/78 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#53554d] no-underline transition hover:border-[#b4b7a9] hover:text-[#222] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
+                  className="mt-2 inline-flex items-center rounded-full border border-[#d6d0df] bg-white/78 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#625d70] no-underline transition hover:border-[#b9a6c9] hover:text-[#20172f] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
                 >
                   我的上下文记忆
                 </Link>

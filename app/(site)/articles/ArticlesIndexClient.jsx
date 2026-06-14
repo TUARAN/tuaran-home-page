@@ -28,12 +28,12 @@ const COLUMN_TAB_DEFS = [
 
 // 各分类标签的配色（浅色 + 暗色）
 const KIND_TAG_CLASS = {
-  posts: 'border-[#dadada] text-[#666] dark:border-gray-700 dark:text-gray-300',
-  works: 'border-[#c8cbb5] bg-[#e9ecdf] text-[#8b6a2c] dark:border-[#2b2e22] dark:bg-[#15170f] dark:text-[#a8b187]',
+  posts: 'border-[#d9d4e2] bg-white/60 text-[#625a6f] dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300',
+  works: 'border-[#cfc3e2] bg-[#f3eff9] text-[#72539b] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#c5afe8]',
   companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
-  topics: 'border-[#d6e6dd] bg-[#eef6f1] text-[#386b54] dark:border-[#243d33] dark:bg-[#13201a] dark:text-[#9dcab1]',
-  people: 'border-[#ddd5d6] bg-[#f4f0f1] text-[#674f55] dark:border-[#392a30] dark:bg-[#1e171a] dark:text-[#bfa6ad]',
-  resources: 'border-[#d1d3cb] bg-[#f1f2ee] text-[#5b5d53] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
+  topics: 'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#263f4b] dark:bg-[#13232b] dark:text-[#9ac9d8]',
+  people: 'border-[#ddd1e1] bg-[#f6eff7] text-[#765778] dark:border-[#3e2b43] dark:bg-[#221728] dark:text-[#d2aeda]',
+  resources: 'border-[#d6d0df] bg-[#f4f2f8] text-[#625d70] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
 }
 
 const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
@@ -481,7 +481,7 @@ export default function ArticlesIndexClient({ items }) {
             ))}
             <Link
               href="/works"
-              className="ml-1 shrink-0 text-xs text-[#8b6a2c] no-underline transition-colors hover:text-[#5c4518] dark:text-[#a8b187] dark:hover:text-[#c8d4a8]"
+              className="ml-1 shrink-0 text-xs text-[var(--site-accent)] no-underline transition-colors hover:text-[var(--site-accent-strong)] dark:text-[#c5afe8] dark:hover:text-[#e1d4f5]"
             >
               多维页面专页 →
             </Link>
@@ -562,11 +562,11 @@ export default function ArticlesIndexClient({ items }) {
 
   return (
     <div className="space-y-5">
-      <section className="sticky top-16 z-30 -mx-1 space-y-2.5 rounded-xl border border-[#dee0db] bg-[#fafbf8]/95 p-2.5 shadow-[0_8px_24px_rgba(82,69,45,0.06)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none sm:space-y-3 sm:p-3">
+      <section className="sticky top-16 z-30 -mx-1 space-y-2.5 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-2.5 shadow-[0_8px_24px_rgba(76,58,96,0.08)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none sm:space-y-3 sm:p-3">
         <nav
           aria-label="知识库频道"
           role="tablist"
-          className="flex gap-1.5 overflow-x-auto rounded-lg border border-[#dde0d6] bg-[#eceee6] p-1 sm:grid sm:grid-cols-5 sm:overflow-visible dark:border-gray-800 dark:bg-[#151a22]"
+          className="flex gap-1.5 overflow-x-auto rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 sm:grid sm:grid-cols-5 sm:overflow-visible dark:border-gray-800 dark:bg-[#151a22]"
         >
           {CHANNEL_DEFS.map((channel) => {
             const active = activeChannel === channel.key
@@ -590,8 +590,8 @@ export default function ArticlesIndexClient({ items }) {
                 className={[
                   'inline-flex min-h-9 min-w-[5.75rem] shrink-0 items-center justify-center rounded-md px-2.5 py-2 text-sm transition-all duration-150 sm:min-w-0',
                   active
-                    ? 'bg-white font-semibold text-[#1a1814] shadow-sm dark:bg-[#1e2630] dark:text-gray-100'
-                    : 'text-[#616358] hover:bg-white/70 hover:text-[#1a1814] dark:text-gray-400 dark:hover:bg-[#1e2630]/70 dark:hover:text-gray-100',
+                    ? 'bg-white font-semibold text-[#20172f] shadow-sm ring-1 ring-[#d9cfe8] dark:bg-[#1e2630] dark:text-gray-100 dark:ring-transparent'
+                    : 'text-[#696071] hover:bg-white/70 hover:text-[#20172f] dark:text-gray-400 dark:hover:bg-[#1e2630]/70 dark:hover:text-gray-100',
                 ].join(' ')}
               >
                 <span className="whitespace-nowrap">
@@ -599,7 +599,7 @@ export default function ArticlesIndexClient({ items }) {
                   <span
                     className={[
                       'font-mono text-[11px] tabular-nums',
-                      active ? 'text-[#777] dark:text-gray-400' : 'text-[#95968a] dark:text-gray-500',
+                      active ? 'text-[#817789] dark:text-gray-400' : 'text-[#9a93a3] dark:text-gray-500',
                     ].join(' ')}
                   >
                     ({count})
@@ -616,11 +616,11 @@ export default function ArticlesIndexClient({ items }) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="搜索知识库：标题 / 摘要 / 标签"
-            className="min-w-[220px] flex-1 rounded-md border border-[#cbcdc2] bg-white px-3 py-2 text-sm text-[#1a1814] outline-none transition-colors focus:border-[#8a8c79] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
+            className="min-w-[220px] flex-1 rounded-md border border-[#cfc6dc] bg-white px-3 py-2 text-sm text-[#20172f] outline-none transition-colors placeholder:text-[#9a93a3] focus:border-[var(--site-accent)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
           />
           <button
             type="submit"
-            className="rounded-md border border-[#c8c9bf] bg-[#f3f4ef] px-3 py-2 text-sm text-[#4a4b41] transition-colors hover:border-[#a2a593] hover:text-[#1a1814] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
+            className="rounded-md border border-[#cfc6dc] bg-[#f4f0f8] px-3 py-2 text-sm text-[#49345f] transition-colors hover:border-[var(--site-accent)] hover:text-[#20172f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
           >
             搜索
           </button>
@@ -628,7 +628,7 @@ export default function ArticlesIndexClient({ items }) {
             <button
               type="button"
               onClick={clearSearch}
-              className="rounded-md border border-transparent px-2 py-2 text-sm text-[#787a6c] transition-colors hover:text-[#303029] dark:text-gray-400 dark:hover:text-gray-200"
+              className="rounded-md border border-transparent px-2 py-2 text-sm text-[#817789] transition-colors hover:text-[#20172f] dark:text-gray-400 dark:hover:text-gray-200"
             >
               清空
             </button>
@@ -639,18 +639,18 @@ export default function ArticlesIndexClient({ items }) {
           <details
             open={filtersOpen}
             onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
-            className="group rounded-lg border border-[#e8e9e2] bg-white/80 text-xs dark:border-gray-800 dark:bg-[#121821]"
+            className="group rounded-lg border border-[#e8e2ef] bg-white/80 text-xs dark:border-gray-800 dark:bg-[#121821]"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
               <div className="min-w-0">
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#9b9d8f] dark:text-gray-500">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#958aa1] dark:text-gray-500">
                   当前
                 </span>
-                <span className="ml-2 font-medium text-[#1a1814] dark:text-gray-100">
+                <span className="ml-2 font-medium text-[#20172f] dark:text-gray-100">
                   {currentFilterLabel}
                 </span>
               </div>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d3d5cb] px-2.5 py-1 text-[12px] text-[#56584e] transition-colors group-open:border-[#aeb1a2] group-open:text-[#1a1814] dark:border-gray-700 dark:text-gray-300 dark:group-open:border-gray-500 dark:group-open:text-gray-100">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d8d0e3] px-2.5 py-1 text-[12px] text-[#675d72] transition-colors group-open:border-[#b9a6c9] group-open:text-[#20172f] dark:border-gray-700 dark:text-gray-300 dark:group-open:border-gray-500 dark:group-open:text-gray-100">
                 <span className="group-open:hidden">展开筛选</span>
                 <span className="hidden group-open:inline">收起筛选</span>
                 <svg
@@ -667,13 +667,13 @@ export default function ArticlesIndexClient({ items }) {
                 </svg>
               </span>
             </summary>
-            <div className="space-y-3 border-t border-[#e6e7e0] px-3 py-3 dark:border-gray-800">
+            <div className="space-y-3 border-t border-[#e8e2ef] px-3 py-3 dark:border-gray-800">
               <AdvancedFiltersContent />
             </div>
           </details>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e6e7e0] pt-2.5 text-xs text-[#646658] dark:border-gray-800 dark:text-gray-400 sm:pt-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e8e2ef] pt-2.5 text-xs text-[#665f70] dark:border-gray-800 dark:text-gray-400 sm:pt-3">
           {QUICK_LINKS.map((link) =>
             link.external ? (
               <a
@@ -681,7 +681,7 @@ export default function ArticlesIndexClient({ items }) {
                 href={link.href}
                 target="_blank"
                 rel="noreferrer"
-                className="no-external-arrow inline-flex items-center gap-1 no-underline transition-colors hover:text-[#1a1814] dark:hover:text-gray-100"
+                className="no-external-arrow inline-flex items-center gap-1 no-underline transition-colors hover:text-[#20172f] dark:hover:text-gray-100"
               >
                 <span>{link.label}</span>
                 <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3 opacity-70" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -694,7 +694,7 @@ export default function ArticlesIndexClient({ items }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="no-underline transition-colors hover:text-[#1a1814] dark:hover:text-gray-100"
+                className="no-underline transition-colors hover:text-[#20172f] dark:hover:text-gray-100"
               >
                 {link.label}
               </Link>
@@ -736,7 +736,7 @@ export default function ArticlesIndexClient({ items }) {
 function FilterRow({ label, ariaLabel, children }) {
   return (
     <div className="grid min-w-0 grid-cols-[4.25rem_minmax(0,1fr)] items-start gap-x-3 sm:grid-cols-[4.75rem_minmax(0,1fr)]">
-      <span className="pt-1.5 text-xs leading-5 text-[#808272] dark:text-[#7f8aa0]">{label}</span>
+      <span className="pt-1.5 text-xs leading-5 text-[#82788e] dark:text-[#7f8aa0]">{label}</span>
       <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">
         {children}
       </nav>
@@ -752,24 +752,24 @@ function FilterBreadcrumb({ path }) {
   if (!parts.length) return null
 
   return (
-    <div className="mt-1 rounded-lg border border-[#e8e9e2] bg-white/90 px-3 py-2.5 dark:border-gray-800 dark:bg-[#121821]">
+    <div className="mt-1 rounded-lg border border-[#e8e2ef] bg-white/90 px-3 py-2.5 dark:border-gray-800 dark:bg-[#121821]">
       <div className="flex items-start gap-3">
-        <span className="shrink-0 pt-px font-mono text-[10px] uppercase tracking-[0.14em] text-[#9b9d8f] dark:text-gray-500">
+        <span className="shrink-0 pt-px font-mono text-[10px] uppercase tracking-[0.14em] text-[#958aa1] dark:text-gray-500">
           当前
         </span>
-        <ol className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-5 text-[#616358] dark:text-gray-400">
+        <ol className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-5 text-[#665f70] dark:text-gray-400">
           {parts.map((part, index) => (
             <li key={`${part}-${index}`} className="inline-flex items-center gap-1.5">
               {index > 0 ? (
-                <span aria-hidden="true" className="text-[#cbccc4] dark:text-gray-600">
+                <span aria-hidden="true" className="text-[#cbc3d5] dark:text-gray-600">
                   /
                 </span>
               ) : null}
               <span
                 className={
                   index === parts.length - 1
-                    ? 'font-medium text-[#1a1814] dark:text-gray-100'
-                    : 'text-[#6b6d62] dark:text-gray-400'
+                    ? 'font-medium text-[#20172f] dark:text-gray-100'
+                    : 'text-[#716779] dark:text-gray-400'
                 }
               >
                 {part}
@@ -790,19 +790,19 @@ function FilterChip({ label, count, active, onClick, prefix }) {
       className={[
         'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors',
         active
-          ? 'border-[#c8c9bf] bg-[#eef0e8] font-medium text-[#3a3b34] dark:border-[#3a4030] dark:bg-[#1b1e15] dark:text-[#d5dcc4]'
-          : 'border-transparent text-[#636559] hover:bg-[#f0f1ec] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:bg-[#151d27] dark:hover:text-gray-100',
+          ? 'border-[#cfc3e2] bg-[#f3eff9] font-medium text-[#49345f] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#d8c5f3]'
+          : 'border-transparent text-[#696071] hover:bg-[#f4f0f8] hover:text-[#20172f] dark:text-[#9aa6b8] dark:hover:bg-[#151d27] dark:hover:text-gray-100',
       ].join(' ')}
     >
       {prefix ? (
-        <span className="font-mono text-[9px] tracking-[0.08em] text-[#9b9d8f] dark:text-[#667287]">{prefix}</span>
+        <span className="font-mono text-[9px] tracking-[0.08em] text-[#958aa1] dark:text-[#667287]">{prefix}</span>
       ) : null}
       <span className="whitespace-nowrap">
         {label}
         <span
           className={[
             'font-mono text-[10px] tabular-nums',
-            active ? 'text-[#7a7c70] dark:text-[#9da7b8]' : 'text-[#95968a] dark:text-[#667287]',
+            active ? 'text-[#7e718d] dark:text-[#9da7b8]' : 'text-[#9a93a3] dark:text-[#667287]',
           ].join(' ')}
         >
           ({count})
@@ -818,16 +818,16 @@ function ArticleRow({ item }) {
     <Link
       href={item.href}
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      className="group block border border-[#eee] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:opacity-100 transition-all"
+      className="group block border border-[#e8e2ef] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:border-[#d6c9e3] hover:opacity-100 transition-all"
     >
       <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_160px]">
         <div className="min-w-0">
           <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="shrink-0 text-sm text-[#999]">▪</span>
+            <span className="shrink-0 text-sm text-[#a39aac]">▪</span>
             {item.dateLabel || item.date ? (
-              <span className="shrink-0 whitespace-nowrap text-xs text-[#999] dark:text-gray-400">{item.dateLabel || item.date}</span>
+              <span className="shrink-0 whitespace-nowrap text-xs text-[#958aa1] dark:text-gray-400">{item.dateLabel || item.date}</span>
             ) : null}
-            <span aria-hidden="true" className="shrink-0 text-xs text-[#ddd]">
+            <span aria-hidden="true" className="shrink-0 text-xs text-[#d9d2e2]">
               ·
             </span>
             <span
@@ -839,7 +839,7 @@ function ArticleRow({ item }) {
               {item.tagLabel}
             </span>
             {item.encrypted ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#c9cbb8] bg-[#ebede3] px-2 py-[1px] text-[11px] text-[#8a5a14] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d6c9e3] bg-[#f4f0f8] px-2 py-[1px] text-[11px] text-[#72539b] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#c5afe8]">
                 <svg
                   viewBox="0 0 12 12"
                   aria-hidden="true"
@@ -858,38 +858,38 @@ function ArticleRow({ item }) {
             ) : null}
             <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
             {item.version ? (
-              <span className="inline-flex shrink-0 items-center rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-[1px] text-[11px] text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+              <span className="inline-flex shrink-0 items-center rounded-full border border-[#d6d0df] bg-white/70 px-2 py-[1px] text-[11px] text-[#625d70] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
                 {item.version}
               </span>
             ) : null}
           </div>
           <h2
             title={item.title}
-            className="ml-5 line-clamp-2 text-lg font-semibold leading-7 text-[#333] transition-colors group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white"
+            className="ml-5 line-clamp-2 text-lg font-semibold leading-7 text-[#20172f] transition-colors group-hover:text-[#120b1f] dark:text-gray-100 dark:group-hover:text-white"
           >
             {item.title}
           </h2>
           {item.summary ? (
-            <p className="ml-5 mt-2 line-clamp-2 text-sm leading-relaxed text-[#666] transition-colors group-hover:text-[#333] dark:text-gray-300 dark:group-hover:text-gray-200">
+            <p className="ml-5 mt-2 line-clamp-2 text-sm leading-relaxed text-[#6b6472] transition-colors group-hover:text-[#3c3149] dark:text-gray-300 dark:group-hover:text-gray-200">
               {item.summary}
             </p>
           ) : null}
-          <div className="ml-5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#999] dark:text-gray-400">
+          <div className="ml-5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#958aa1] dark:text-gray-400">
             <span>{external ? '阅读原文 →' : '阅读全文 →'}</span>
             {item.readingMinutes ? (
-              <span className="font-mono text-[11px] text-[#bbb] dark:text-gray-500">
+              <span className="font-mono text-[11px] text-[#aaa1b5] dark:text-gray-500">
                 · {item.readingMinutes} min
               </span>
             ) : null}
             {'pv' in item ? (
-              <span className="font-mono text-[11px] text-[#bbb] dark:text-gray-500">
+              <span className="font-mono text-[11px] text-[#aaa1b5] dark:text-gray-500">
                 · 阅读量 {item.pvLoading ? '-' : formatPv(item.pv)}
               </span>
             ) : null}
           </div>
         </div>
         {item.image ? (
-          <div className="relative h-32 overflow-hidden rounded-md border border-[#dee0db] bg-[#efefea] dark:border-gray-800 dark:bg-gray-950 sm:h-28 sm:w-40">
+          <div className="relative h-32 overflow-hidden rounded-md border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 sm:h-28 sm:w-40">
             <Image
               src={item.image.src}
               alt={item.image.alt || `${item.title} 配图`}
@@ -906,19 +906,19 @@ function ArticleRow({ item }) {
 
 function ReadingHighlights({ sections }) {
   return (
-    <section className="rounded-2xl border border-[#dee0db] bg-[#f9faf7] p-4 shadow-[0_12px_36px_rgba(82,69,45,0.05)] dark:border-gray-800 dark:bg-[#0f141b]">
+    <section className="rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4 shadow-[0_12px_36px_rgba(76,58,96,0.06)] dark:border-gray-800 dark:bg-[#0f141b]">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8e8798] dark:text-[#8e9ab0]">
             Start Here
           </p>
-          <h2 className="mt-1 border-b-0 pb-0 text-[18px] font-semibold text-[#15140f] dark:text-gray-100">
+          <h2 className="mt-1 border-b-0 pb-0 text-[18px] font-semibold text-[#20172f] dark:text-gray-100">
             阅读起点
           </h2>
         </div>
         <Link
           href="/services"
-          className="rounded-full border border-[#c8c9bf] bg-white px-3 py-1 text-[12px] text-[#4a4b41] no-underline transition hover:border-[#a2a593] hover:text-[#1a1814] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500"
+          className="rounded-full border border-[#cfc6dc] bg-white px-3 py-1 text-[12px] text-[#49345f] no-underline transition hover:border-[var(--site-accent)] hover:text-[#20172f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500"
         >
           合作 / 咨询 →
         </Link>
@@ -926,10 +926,10 @@ function ReadingHighlights({ sections }) {
 
       <div className="grid gap-3 md:grid-cols-3">
         {sections.map((section) => (
-          <div key={section.title} className="rounded-xl border border-[#e1e2da] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+          <div key={section.title} className="rounded-xl border border-[#e5deec] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-2">
-              <h3 className="text-[14px] font-semibold text-[#1a1814] dark:text-gray-100">{section.title}</h3>
-              <p className="mt-0.5 text-[11px] leading-5 text-[#77796c] dark:text-gray-400">{section.desc}</p>
+              <h3 className="text-[14px] font-semibold text-[#20172f] dark:text-gray-100">{section.title}</h3>
+              <p className="mt-0.5 text-[11px] leading-5 text-[#716779] dark:text-gray-400">{section.desc}</p>
             </div>
             <div className="space-y-2">
               {section.items.map((item) => (
@@ -949,7 +949,7 @@ function HighlightLink({ item }) {
     <Link
       href={item.href}
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      className="group block rounded-lg px-2 py-1.5 no-underline transition hover:bg-[#f0f1ec] dark:hover:bg-[#151d27]"
+      className="group block rounded-lg px-2 py-1.5 no-underline transition hover:bg-[#f4f0f8] dark:hover:bg-[#151d27]"
     >
       <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span
@@ -962,12 +962,12 @@ function HighlightLink({ item }) {
         </span>
         <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
         {item.dateLabel || item.date ? (
-          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#9b9b93] dark:text-gray-500">
+          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#958aa1] dark:text-gray-500">
             {item.dateLabel || item.date}
           </span>
         ) : null}
       </div>
-      <p className="mb-0 line-clamp-2 text-[13px] font-medium leading-5 text-[#1a1814] group-hover:text-[#111] dark:text-gray-100 dark:group-hover:text-white">
+      <p className="mb-0 line-clamp-2 text-[13px] font-medium leading-5 text-[#20172f] group-hover:text-[#120b1f] dark:text-gray-100 dark:group-hover:text-white">
         {item.title}
       </p>
     </Link>

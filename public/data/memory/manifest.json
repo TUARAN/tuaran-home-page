@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-11T13:59:07.234Z",
+  "generatedAt": "2026-06-13T14:57:27.627Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -32,6 +32,12 @@
               "hash": "ee0ab2662e5d05b27dce868621eed254c8b253497519f31d6cb9f7a45f43a568",
               "path": "claude/MEMORY/2026-06-11T13-59-07-192Z.enc.json",
               "bytes": 943
+            },
+            {
+              "ts": "2026-06-13T14:57:27.572Z",
+              "hash": "2b6f3707273f0b4d3faff7e29fe8a76950c345cbfe34bec7196f9be491e82ea8",
+              "path": "claude/MEMORY/2026-06-13T14-57-27-597Z.enc.json",
+              "bytes": 1066
             }
           ]
         },
@@ -122,6 +128,18 @@
               "hash": "492c839f71f85eddddf1de6fff1b90c3a440faa51e42a3b508b8c81b1e14b93a",
               "path": "claude/research-style-template-v3/2026-06-11T13-59-07-212Z.enc.json",
               "bytes": 960
+            }
+          ]
+        },
+        "wrangler-proxy-workaround": {
+          "title": "wrangler-proxy-workaround",
+          "description": "本机代理会掐断 wrangler 到 dash.cloudflare.com 的连接，需清空代理变量再执行",
+          "versions": [
+            {
+              "ts": "2026-06-13T14:57:27.604Z",
+              "hash": "f2bb22030e3378376f0b4a891c7841d475db3088ef21c85eca5e4146c52621a0",
+              "path": "claude/wrangler-proxy-workaround/2026-06-13T14-57-27-624Z.enc.json",
+              "bytes": 641
             }
           ]
         }

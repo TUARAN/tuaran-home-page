@@ -3,6 +3,8 @@
 import { useMemo } from 'react'
 import { useTheme } from 'next-themes'
 
+import { useLocale } from './LocaleProvider'
+import { pick } from '../../../lib/i18n'
 import { getUserAvatarDataUri, getUserAvatarInitials, getUserAvatarSeed } from '../../../lib/userAvatar'
 
 const SIZE_CLASS = {
@@ -25,12 +27,14 @@ export default function UserAvatar({
   title = '',
 }) {
   const { resolvedTheme } = useTheme()
+  const { locale } = useLocale()
   const seed = seedProp || getUserAvatarSeed(user)
   const dataUri = useMemo(
     () => getUserAvatarDataUri(seed, { dark: resolvedTheme === 'dark' }),
     [seed, resolvedTheme],
   )
-  const initials = user ? getUserAvatarInitials(user) : seedProp ? seedProp.slice(0, 2).toUpperCase() : '登'
+  const guestInitial = pick(locale, '登', 'Hi')
+  const initials = user ? getUserAvatarInitials(user) : seedProp ? seedProp.slice(0, 2).toUpperCase() : guestInitial
   const sizeCls = typeof size === 'number' ? '' : SIZE_CLASS[size] || SIZE_CLASS.sm
   const borderCls = isOwner
     ? 'border-2 border-[#c79347] dark:border-[#989e72]'
@@ -67,7 +71,7 @@ export default function UserAvatar({
         ].join(' ')}
         aria-hidden="true"
       >
-        登
+        {guestInitial}
       </span>
     )
   }

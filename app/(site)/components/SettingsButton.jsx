@@ -4,12 +4,15 @@ import { useTheme } from 'next-themes'
 import { useState, useEffect, useRef } from 'react'
 
 const BG_PRESETS = [
-  { id: 'cold',  label: '冷牙白', hex: '#f0f1ee', desc: '编辑感、克制，默认' },
+  { id: 'city',  label: '雾粉城景', hex: '#f1eef2', desc: '作品集默认，贴合首页横幅' },
+  { id: 'cold',  label: '冷牙白', hex: '#f0f1ee', desc: '编辑感、克制' },
   { id: 'warm',  label: '暖米',   hex: '#f4ead5', desc: '书页感，适合长读' },
   { id: 'sand',  label: '沙石纸', hex: '#f1ebde', desc: '砂纸质地，介于两者' },
   { id: 'pure',  label: '纯白',   hex: '#ffffff', desc: '最克制，最现代' },
 ]
 
+const DEFAULT_BG_HEX = BG_PRESETS[0].hex
+const LEGACY_DEFAULT_BG_HEXES = new Set(['#f0f1ee', '#f1f2ee'])
 const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const UI_MODES = [
@@ -25,7 +28,7 @@ export default function SettingsButton() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
-  const [bgHex, setBgHex] = useState(BG_PRESETS[0].hex)
+  const [bgHex, setBgHex] = useState(DEFAULT_BG_HEX)
   const [uiMode, setUiMode] = useState('polished')
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
@@ -34,7 +37,12 @@ export default function SettingsButton() {
     setMounted(true)
     try {
       const v = localStorage.getItem(STORAGE_KEY)
-      if (v) setBgHex(v)
+      if (v && LEGACY_DEFAULT_BG_HEXES.has(v.toLowerCase())) {
+        localStorage.removeItem(STORAGE_KEY)
+        setBgHex(DEFAULT_BG_HEX)
+      } else if (v) {
+        setBgHex(v)
+      }
       const ui = localStorage.getItem(UI_STORAGE_KEY)
       if (ui === 'classic' || ui === 'polished') setUiMode(ui)
     } catch (e) {}

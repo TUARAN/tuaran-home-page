@@ -4,7 +4,7 @@ import { useTheme } from 'next-themes'
 import { useState, useEffect, useRef } from 'react'
 
 const BG_PRESETS = [
-  { id: 'city',  label: '雾粉城景', hex: '#f1eef2', desc: '作品集默认，贴合首页横幅' },
+  { id: 'city',  label: '雾粉城景', hex: '#f1eef2', desc: '新版默认，贴合首页横幅' },
   { id: 'cold',  label: '冷牙白', hex: '#f0f1ee', desc: '编辑感、克制' },
   { id: 'warm',  label: '暖米',   hex: '#f4ead5', desc: '书页感，适合长读' },
   { id: 'sand',  label: '沙石纸', hex: '#f1ebde', desc: '砂纸质地，介于两者' },
@@ -16,7 +16,7 @@ const LEGACY_DEFAULT_BG_HEXES = new Set(['#f0f1ee', '#f1f2ee'])
 const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const UI_MODES = [
-  { id: 'polished', label: '作品集', desc: '新版：更强封面感和作品路径' },
+  { id: 'polished', label: '新版', desc: '封面感、推荐卡和宽版首页' },
   { id: 'classic', label: '经典', desc: '旧版：首页原布局' },
 ]
 

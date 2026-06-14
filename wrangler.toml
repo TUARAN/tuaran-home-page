@@ -9,6 +9,9 @@ pages_build_output_dir = ".vercel/output/static"
 GITHUB_ID = "Ov23li1wLMVXeIzcprTU"
 NEXTAUTH_URL = "https://2aran.com"
 VOICE_TASK_OWNER_IDS = "TUARAN"
+# 壁纸资源库公开访问基址（当前使用 tuaran-media 的 r2.dev 公开 URL，末尾不带斜杠）。
+# 若后续绑定 media.2aran.com，自定义域生效后把这里替换为 https://media.2aran.com。
+R2_PUBLIC_BASE = "https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev"
 
 # Used for D1 migrations / local development.
 # In Cloudflare Pages, you can also set the D1 binding in the dashboard.
@@ -17,3 +20,9 @@ VOICE_TASK_OWNER_IDS = "TUARAN"
 binding = "DB"
 database_name = "tuaran-me"
 database_id = "9dd9a699-a708-46ca-8243-85fd12ff8d63"
+
+# 壁纸/可下载文件存储桶。所有对象落在 downloads/ 前缀下。
+# 在 Cloudflare Pages 控制台也可设置同名 R2 binding。
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "tuaran-media"

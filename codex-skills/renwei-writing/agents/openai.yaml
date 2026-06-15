@@ -1,0 +1,7 @@
+interface:
+  display_name: "人味儿写作"
+  short_description: "保住作者存在感的中文改稿 skill"
+  default_prompt: "Use $renwei-writing to lightly revise this Chinese draft while preserving the author's voice."
+
+policy:
+  allow_implicit_invocation: true

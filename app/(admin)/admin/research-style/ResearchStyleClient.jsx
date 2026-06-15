@@ -104,8 +104,8 @@ export default function ResearchStyleClient() {
       maxWidth="1180px"
       description="调研类内容（research/companies、research/topics）在分寸感、措辞、版式上的历代快照。保留全部历史版本，便于回看每条规则的来由——避免被悄悄回退。"
     >
-      <div className="grid gap-6 md:grid-cols-[300px_minmax(0,1fr)]">
-        {/* 左栏：版本时间线 */}
+      <div className="grid gap-6">
+        {/* 版本时间线 */}
         <aside className="space-y-4">
           <div>
             <SectionTitle>版本时间线</SectionTitle>
@@ -135,7 +135,7 @@ export default function ResearchStyleClient() {
                 ))}
             </select>
             <p className="mt-2 text-[11px] leading-relaxed text-[#73746a] dark:text-[#9aa3b3]">
-              选择一个对照版本，主面板会切换为左右并排，看清两版差异。
+              选择一个对照版本，主面板会切换为上下对照，看清两版差异。
             </p>
           </div>
 
@@ -154,7 +154,7 @@ export default function ResearchStyleClient() {
         {/* 主面板 */}
         <section className="space-y-6">
           {compare ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4">
               <VersionCard version={selected} />
               <VersionCard version={compare} />
             </div>
@@ -186,7 +186,7 @@ function VersionCard({ version, large = false }) {
         <StatusChip status={version.status} />
       </header>
 
-      <div className={`grid gap-6 ${large ? 'md:grid-cols-2' : ''}`}>
+      <div className="grid gap-6">
         <div>
           <SectionTitle>触发事件</SectionTitle>
           <p className="rounded-lg border border-[#e6e6dc] bg-[#fafaf6] px-4 py-3 text-[13px] leading-relaxed text-[#51514a] dark:border-[#2d3744] dark:bg-[#0e131c] dark:text-gray-300">
@@ -207,7 +207,7 @@ function VersionCard({ version, large = false }) {
         </div>
       </div>
 
-      <div className={`mt-6 grid gap-6 ${large ? 'md:grid-cols-2' : ''}`}>
+      <div className="mt-6 grid gap-6">
         <div>
           <SectionTitle>禁用措辞</SectionTitle>
           <PhraseList items={version.badPhrases} accent="text-rose-700 dark:text-rose-300" />

@@ -32,7 +32,7 @@ export function GET() {
     `- [首页](${SITE_URL}/): 个人主页与网络日志`,
     `- [关于](${SITE_URL}/about): 个人介绍与履历`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,
-    `- [AI 项目](${SITE_URL}/ai-projects): 在做的产品与实验`,
+    `- [AI 项目](${SITE_URL}/works): 在做的产品与实验`,
     `- [知识库](${SITE_URL}/articles): 调研与文章总入口`,
     `- [RSS](${SITE_URL}/rss.xml): 订阅源`,
     '',

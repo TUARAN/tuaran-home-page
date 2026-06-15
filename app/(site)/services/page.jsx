@@ -56,7 +56,7 @@ const sampleLinks = [
   { href: '/articles?tab=topics', label: '事项调研' },
   { href: '/articles?tab=companies', label: '公司调研' },
   { href: '/articles?tab=posts', label: '精选文章' },
-  { href: '/ai-projects', label: '项目记录' },
+  { href: '/works', label: '项目记录' },
 ]
 
 const productLinks = [

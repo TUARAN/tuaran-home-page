@@ -533,7 +533,7 @@ function ClassicHomePage({ featuredPicks }) {
                   {[
                     { href: '/publications', label: '出版', labelEn: 'Books' },
                     { href: '/about', label: '关于', labelEn: 'About' },
-                    { href: '/ai-projects', label: '工具', labelEn: 'Tools' },
+                    { href: '/works', label: '工具', labelEn: 'Tools' },
                   ].map((card) => (
                     <Link
                       key={card.href}

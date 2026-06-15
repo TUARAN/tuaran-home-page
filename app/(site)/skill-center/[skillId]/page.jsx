@@ -49,7 +49,7 @@ export default async function SkillDetailPage({ params }) {
     <main className="mx-auto w-full max-w-4xl px-4 py-10">
       <header className="mb-6 border-b border-[#dee0db] pb-6 dark:border-[#202938]">
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
-          <Link href="/ai-projects" className="underline-offset-4 hover:underline">
+          <Link href="/works" className="underline-offset-4 hover:underline">
             AI 项目
           </Link>
           <span>/</span>

@@ -2,9 +2,11 @@ import Link from 'next/link'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import SharePageButton from '../components/SharePageButton'
+import SiteToolsPanel from '../components/SiteToolsPanel'
 import {
   FEATURED_WORK_ITEM_IDS,
   WORK_ITEMS,
+  WORK_STRATEGY_PARAGRAPHS,
   WORK_TYPE_META,
   getWorkItemsByType,
   getWorkStatusLabel,
@@ -277,18 +279,15 @@ export default function WorksPage() {
             <p className="mb-0 mt-4 max-w-3xl text-[15px] leading-8 text-[#444740] dark:text-gray-300">
               这里不是文章目录，而是我正在运营、打磨和验证的作品展厅：产品站点、AI 工程实验、内容系统、研究页面和工具原型会放在同一张项目图里。
             </p>
+            <blockquote className="mb-0 mt-5 border-l-2 border-[#8b5a1f] pl-4 text-[14px] leading-7 text-[#67695d] italic dark:border-[#d4bd87] dark:text-gray-400">
+              {WORK_STRATEGY_PARAGRAPHS[0]}
+            </blockquote>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
                 href="#product"
                 className="inline-flex min-h-10 items-center border border-[#15140f] bg-[#15140f] px-4 text-[13px] font-semibold text-[#faf8f1] no-underline visited:text-[#faf8f1] hover:bg-[#2f2b22] dark:border-gray-100 dark:bg-gray-100 dark:text-[#111820] dark:visited:text-[#111820]"
               >
                 看产品主线
-              </Link>
-              <Link
-                href="/ai-projects"
-                className="inline-flex min-h-10 items-center border border-[#d8d9cf] bg-white/60 px-4 text-[13px] font-semibold text-[#15140f] no-underline visited:text-[#15140f] hover:border-[#b7baa8] dark:border-gray-800 dark:bg-[#101720] dark:text-gray-100 dark:visited:text-gray-100"
-              >
-                AI 项目图谱
               </Link>
             </div>
           </div>
@@ -373,6 +372,18 @@ export default function WorksPage() {
             </div>
           </section>
         ))}
+      </section>
+
+      <section className="mt-12 border-t border-[#dee0db] pt-10 dark:border-gray-800">
+        <div className="mb-8">
+          <h2 className="mb-0 border-0 p-0 text-[20px] font-semibold text-[#15140f] dark:text-gray-100">
+            站内工具
+          </h2>
+          <p className="mb-0 mt-1 text-[13px] leading-6 text-[#67695d] dark:text-gray-500">
+            自用的小工具集合。
+          </p>
+        </div>
+        <SiteToolsPanel />
       </section>
 
       <footer className="mt-12 grid gap-4 border-t border-[#dee0db] pt-6 text-[12px] leading-6 text-[#67695d] dark:border-gray-800 dark:text-gray-500 md:grid-cols-[1fr_auto] md:items-start">

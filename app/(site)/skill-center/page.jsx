@@ -142,7 +142,7 @@ export default function SkillCenterPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
-              <Link href="/ai-projects" className="underline-offset-4 hover:underline">
+              <Link href="/works" className="underline-offset-4 hover:underline">
                 AI 项目
               </Link>
               <span>/</span>

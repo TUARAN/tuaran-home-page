@@ -1,132 +1,28 @@
-export const maintainedDomains = [
-  {
-    name: '🏠 WebHP',
-    href: 'https://2aran.com',
-    domains: ['2aran.com'],
-    category: '个人主页',
-    focus: '个人网络日志、项目总览与长期创作内容沉淀。',
-    status: '运营中',
-  },
-  {
-    name: '🚀 MatrixLink',
-    href: 'https://matrixlink.tech',
-    domains: ['matrixlink.tech'],
-    category: '公司官网',
-    focus: '企业品牌展示与技术服务介绍',
-    status: '运营中',
-  },
-  {
-    name: '🤝 Blogger Alliance',
-    href: 'https://blogger-alliance.cn',
-    domains: ['blogger-alliance.cn'],
-    category: '社区平台',
-    focus: '技术博主协作与内容联盟',
-    status: '运营中',
-  },
-  {
-    name: '🧭 前端周看 Frontend Next',
-    href: 'https://frontendnext.com',
-    domains: ['frontendnext.com', 'frontendweekly.cn'],
-    category: '转型决策',
-    focus: '帮前端在 AI 时代做转型决策。',
-    status: '持续更新',
-  },
-  {
-    name: '🧠 Open Claude Code',
-    href: 'https://openclaudecode.site/',
-    domains: ['openclaudecode.site'],
-    category: '学习站',
-    focus: '系统拆解 Claude Code 的 Agent 循环、工具系统与多智能体协作。',
-    status: '运营中',
-  },
-  {
-    name: '✍️ PublishLab',
-    href: 'https://publishlab.cc',
-    domains: ['publishlab.cc'],
-    category: '创作实验室',
-    focus: 'AI 写作、内容创作与数字出版',
-    status: '打磨中',
-  },
-]
+import {
+  AI_EXPERIMENT_WORK_ITEMS,
+  DOMAIN_ASSETS,
+  PRODUCT_WORK_ITEMS,
+  WORK_STRATEGY_PARAGRAPHS,
+  getWorkStatusLabel,
+} from '../../../lib/workItems'
 
-export const domainAssets = [
-  {
-    domain: 'tuaran.me',
-    href: 'https://tuaran.me',
-    role: '301 → 2aran.com',
-    related: '2aran.com',
-  },
-  {
-    domain: 'bzlm.net',
-    href: 'https://bzlm.net',
-    role: '博主联盟备用域',
-    related: 'blogger-alliance.cn',
-  },
-  {
-    domain: 'qdzk.site',
-    href: 'https://qdzk.site',
-    role: '前端周刊历史/实验域',
-    related: 'frontendnext.com',
-  },
-  {
-    domain: 'frontend2aiagent.com',
-    href: 'https://frontend2aiagent.com',
-    role: '前端 → Agent 转型叙事域',
-    related: 'frontendnext.com',
-  },
-  {
-    domain: 'iamvibecoder.cn',
-    href: 'https://iamvibecoder.cn',
-    role: 'Vibe Coding 品牌实验域',
-    related: 'frontendnext.com',
-  },
-]
+export const maintainedDomains = PRODUCT_WORK_ITEMS.map((item) => ({
+  name: item.title,
+  href: item.href,
+  domains: item.domains || [],
+  category: item.role,
+  focus: item.summary,
+  status: getWorkStatusLabel(item.status),
+}))
 
-export const domainStrategyParagraphs = [
-  '「真正的壁垒，建立在对 Token 成本的极致抠门（Prompt Cache 优化）、对多状态机协同的流式调度（Coordinator 与 Fork 机制）、对用户意图容错与安全干预的平衡（YOLO Classifier），以及对宿主操作系统深度的文件流集成上。」',
-]
+export const domainAssets = DOMAIN_ASSETS
 
-export const opcVibeProjects = [
-  {
-    name: 'Claude Code Unpacked',
-    href: 'https://ccunpacked-zh.pages.dev/',
-    category: 'AI Agent',
-    focus: '用交互式页面和动画拆解 Claude Code 的 agent loop、工具系统与多 Agent 编排。',
-    stack: 'Agent Loop · Visualization',
-  },
-  {
-    name: 'webllm',
-    href: 'https://83945df5.webllm-8rp.pages.dev',
-    category: '实验项目',
-    focus: '基于 WebGPU 的浏览器侧大模型实验。',
-    stack: 'WebGPU · Browser LLM',
-  },
-  {
-    name: '安东尼学AI',
-    href: 'https://matrix-ai-pdfs.pages.dev/',
-    category: '学习工具',
-    focus: 'AI 学习资料整理与阅读入口，面向系统化学习与持续积累。',
-    stack: 'AI Learning',
-  },
-  {
-    name: 'banana-gallery',
-    href: 'https://banana-gallery.pages.dev/',
-    category: '创意工具',
-    focus: '轻量化的图片与内容展示实验，用于验证视觉内容产品的交互形态。',
-    stack: 'Gallery · Visual',
-  },
-  {
-    name: '提示词工程',
-    href: 'https://awesome-prompt-seven.vercel.app/',
-    category: '效率工具',
-    focus: '围绕提示词整理、沉淀与复用的轻量产品实验。',
-    stack: 'Prompt · Workflow',
-  },
-  {
-    name: '代码矿工',
-    href: 'https://toolkit-hub.pages.dev/',
-    category: '开发工具',
-    focus: '面向开发者的工具集合与能力聚合入口。',
-    stack: 'Dev Tools',
-  },
-]
+export const domainStrategyParagraphs = WORK_STRATEGY_PARAGRAPHS
+
+export const opcVibeProjects = AI_EXPERIMENT_WORK_ITEMS.map((item) => ({
+  name: item.title,
+  href: item.href,
+  category: item.role,
+  focus: item.summary,
+  stack: item.tags?.join(' · ') || item.type,
+}))

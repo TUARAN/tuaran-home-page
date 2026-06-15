@@ -4,8 +4,6 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { AdminPage } from '../../components/ui'
 
-const OPS_URL = 'https://ops.2aran.com/'
-
 async function safeJson(res) {
   try {
     return await res.json()
@@ -67,7 +65,7 @@ export default function OpsConsoleClient() {
     <AdminPage
       title="自动化控制台"
       maxWidth="960px"
-      description="外部 Agent Ops 控制台的站内入口。它依赖 Cloudflare Access、Cloudflare Tunnel 和本机 127.0.0.1:4179 服务，不是主站自己的 Next 页面。"
+      description="Ops 已收敛到本站 admin 路由。访问控制复用站内 owner session，不再经过独立子域和 Cloudflare Access。"
       actions={
         <button
           type="button"
@@ -91,32 +89,28 @@ export default function OpsConsoleClient() {
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] opacity-70">Current Status</p>
             <h2 className="mt-1 text-2xl font-semibold">{loading ? '检查中' : status?.label || '未知'}</h2>
-            <p className="mt-2 text-sm leading-6 opacity-85">{status?.message || '正在检查 Agent Ops 外部入口。'}</p>
+            <p className="mt-2 text-sm leading-6 opacity-85">{status?.message || '正在检查站内 Ops 入口。'}</p>
           </div>
-          <a
-            href={OPS_URL}
-            target="_blank"
-            rel="noreferrer"
+          <span
             className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-[#15140f] px-4 text-sm font-medium text-white no-underline transition hover:bg-[#2f3027] dark:bg-gray-100 dark:text-[#111827] dark:hover:bg-white"
           >
-            打开外部控制台 ↗
-          </a>
+            /admin/ops
+          </span>
         </div>
       </section>
 
       <section className="mb-5 grid gap-3 sm:grid-cols-3">
-        <Stat label="HTTP" value={loading ? '—' : status?.httpStatus || '—'} />
+        <Stat label="路由" value={loading ? '—' : status?.route || '/admin/ops'} compact />
         <Stat label="延迟" value={loading || status?.latencyMs == null ? '—' : `${status.latencyMs} ms`} />
         <Stat label="检查时间" value={formatTime(status?.checkedAt)} compact />
       </section>
 
       <section className="rounded-xl border border-[#d5d7cd] bg-white/70 p-5 dark:border-[#252e39] dark:bg-[#10161f]">
-        <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">链路拆解</h2>
+        <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">访问链路</h2>
         <ol className="mt-4 space-y-3 text-sm leading-6 text-[#51514a] dark:text-gray-300">
-          <Step title="1. 站内入口" body="当前页面只负责说明状态和提供跳转，不直接承载自动化控制台。" />
-          <Step title="2. Cloudflare Access" body="外部入口会先跳到 Cloudflare Access。这里检查到 Access 跳转，说明域名和边缘鉴权入口是通的。" />
-          <Step title="3. Cloudflare Tunnel" body="登录后请求才会进入 tunnel。若浏览器显示 ERR_CONNECTION_CLOSED，通常要检查网络、VPN、Access 登录域或 tunnel 稳定性。" />
-          <Step title="4. 本机 Agent Ops" body="最终服务在你的 Mac 本机 127.0.0.1:4179。Mac 休眠、服务没起、tunnel 断线都会导致外部入口不可用。" />
+          <Step title="1. /admin/ops" body="所有入口统一落在本站后台路由，旧子域只做 301 回流。" />
+          <Step title="2. Owner Gate" body="页面和 API 复用站内 tuaran_session，只允许 owner 账号访问。" />
+          <Step title="3. Admin API" body="/api/admin/ops-console 只在 owner 校验通过后返回状态，避免再叠加外部 Access 权限。" />
         </ol>
       </section>
     </AdminPage>

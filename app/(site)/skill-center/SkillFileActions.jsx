@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import { getSkillFileEntries } from './skillFiles'
+
 function basename(path) {
   const parts = String(path || '').split('/')
   return parts[parts.length - 1] || 'file'
@@ -73,6 +75,7 @@ export function SkillBundleButton({ skill }) {
   async function handleDownloadAll() {
     setState('working')
     try {
+      const files = getSkillFileEntries(skill)
       const lines = [
         `# ${skill.title} (${skill.name})`,
         '',
@@ -80,19 +83,15 @@ export function SkillBundleButton({ skill }) {
         '',
         '---',
         '',
-        `## SKILL.md`,
-        '',
-        '```markdown',
-        skill.codex.skillMd,
-        '```',
-        '',
-        `## agents/openai.yaml`,
-        '',
-        '```yaml',
-        skill.codex.openaiYaml,
-        '```',
-        '',
       ]
+      files.forEach((file) => {
+        const lang = file.filename.endsWith('.yaml') || file.filename.endsWith('.yml')
+          ? 'yaml'
+          : file.filename.endsWith('.md')
+            ? 'markdown'
+            : ''
+        lines.push(`## ${file.filename}`, '', `\`\`\`${lang}`, file.content, '```', '')
+      })
       downloadText(`${skill.name}.bundle.md`, lines.join('\n'))
       setState('done')
     } catch {
@@ -102,7 +101,13 @@ export function SkillBundleButton({ skill }) {
   }
 
   async function handleCopyAll() {
-    const text = `# ${skill.title} (${skill.name})\nInstall: ${skill.codex.installPath}\n\n## SKILL.md\n\n${skill.codex.skillMd}\n\n## agents/openai.yaml\n\n${skill.codex.openaiYaml}`
+    const files = getSkillFileEntries(skill)
+    const text = [
+      `# ${skill.title} (${skill.name})`,
+      `Install: ${skill.codex.installPath}`,
+      '',
+      ...files.flatMap((file) => [`## ${file.filename}`, '', file.content, '']),
+    ].join('\n')
     const ok = await copyText(text)
     setState(ok ? 'copied' : 'error')
     setTimeout(() => setState('idle'), 1600)
@@ -115,7 +120,7 @@ export function SkillBundleButton({ skill }) {
         onClick={handleDownloadAll}
         className="inline-flex items-center gap-1 rounded-full border border-[#8b5a1f] bg-[#8b5a1f] px-3 py-1.5 font-mono text-xs text-white transition-colors hover:bg-[#724817] dark:border-[#a1ab76] dark:bg-[#a1ab76] dark:text-[#1a1207] dark:hover:bg-[#9ba475]"
       >
-        ↓ 下载整套（{skill.codex.files.length} 个文件）
+        ↓ 下载整套（{getSkillFileEntries(skill).length} 个文件）
       </button>
       <button
         type="button"

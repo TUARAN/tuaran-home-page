@@ -9,6 +9,7 @@ import {
   buildPublicOpinionSnapshot,
 } from '../../../lib/publicOpinionData'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 function filterPosts(searchParams) {

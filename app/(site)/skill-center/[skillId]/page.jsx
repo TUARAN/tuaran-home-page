@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 
 import SharePageButton from '../../components/SharePageButton'
 import { SkillBundleButton, SkillFileButton } from '../SkillFileActions'
+import { getSkillFileEntries } from '../skillFiles'
 import { PUBLISHED_SKILLS, getSkillById } from '../skills'
 
 export const dynamic = 'force-static'
@@ -42,6 +43,7 @@ export default async function SkillDetailPage({ params }) {
 
   const content = skill.content
   const hasCodex = !!skill.codex
+  const skillFiles = hasCodex ? getSkillFileEntries(skill) : []
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10">
@@ -187,35 +189,27 @@ export default async function SkillDetailPage({ params }) {
               <p className="mb-1 text-xs uppercase tracking-[0.12em] text-[#6e7064] dark:text-gray-400">
                 单独下载
               </p>
-              <SkillFileButton filename="SKILL.md" content={skill.codex.skillMd} />
-              <SkillFileButton filename="agents/openai.yaml" content={skill.codex.openaiYaml} />
+              {skillFiles.map((file) => (
+                <SkillFileButton key={file.filename} filename={file.filename} content={file.content} />
+              ))}
               <p className="mt-2 text-xs leading-6 text-[#56564d] dark:text-gray-300">
                 下载后放到 <code className="font-mono text-[11px] text-[#8b5a1f] dark:text-[#a1ab76]">{skill.codex.installPath}</code> 即可作为本地 Codex Skill 使用。也可直接复制 SKILL.md 粘贴到 Claude Code / Cursor / ChatGPT 当 system prompt。
               </p>
             </aside>
 
             <div className="grid min-w-0 gap-4">
-              <article className="min-w-0 rounded-md border border-[#dedfd5] dark:border-[#263241]">
-                <div className="border-b border-[#dedfd5] px-4 py-3 dark:border-[#263241]">
-                  <h3 className="mb-0 border-b-0 pb-0 font-mono text-sm font-semibold text-[#1c1d18] dark:text-gray-100">
-                    SKILL.md
-                  </h3>
-                </div>
-                <pre className="m-0 max-h-[360px] overflow-auto bg-[#eeefe9] p-4 text-xs leading-6 text-[#31322b] dark:bg-[#0b1118] dark:text-gray-200">
-                  <code>{skill.codex.skillMd}</code>
-                </pre>
-              </article>
-
-              <article className="min-w-0 rounded-md border border-[#dedfd5] dark:border-[#263241]">
-                <div className="border-b border-[#dedfd5] px-4 py-3 dark:border-[#263241]">
-                  <h3 className="mb-0 border-b-0 pb-0 font-mono text-sm font-semibold text-[#1c1d18] dark:text-gray-100">
-                    agents/openai.yaml
-                  </h3>
-                </div>
-                <pre className="m-0 max-h-[180px] overflow-auto bg-[#eeefe9] p-4 text-xs leading-6 text-[#31322b] dark:bg-[#0b1118] dark:text-gray-200">
-                  <code>{skill.codex.openaiYaml}</code>
-                </pre>
-              </article>
+              {skillFiles.map((file) => (
+                <article key={file.filename} className="min-w-0 rounded-md border border-[#dedfd5] dark:border-[#263241]">
+                  <div className="border-b border-[#dedfd5] px-4 py-3 dark:border-[#263241]">
+                    <h3 className="mb-0 border-b-0 pb-0 font-mono text-sm font-semibold text-[#1c1d18] dark:text-gray-100">
+                      {file.filename}
+                    </h3>
+                  </div>
+                  <pre className="m-0 max-h-[360px] overflow-auto bg-[#eeefe9] p-4 text-xs leading-6 text-[#31322b] dark:bg-[#0b1118] dark:text-gray-200">
+                    <code>{file.content}</code>
+                  </pre>
+                </article>
+              ))}
             </div>
           </div>
         </section>

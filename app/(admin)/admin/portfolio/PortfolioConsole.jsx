@@ -496,8 +496,8 @@ export default function ProjectPortfolioConsole({ user }) {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-[1480px] gap-5 px-4 py-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="rounded-lg bg-[#111827] p-5 text-[#f8fafc] lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
+    <main className="mx-auto grid w-full max-w-[1480px] gap-5 px-4 py-6">
+      <aside className="rounded-lg bg-[#111827] p-5 text-[#f8fafc]">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#94a3b8]">
             Agent Ops · Project Portfolio
@@ -648,7 +648,7 @@ export default function ProjectPortfolioConsole({ user }) {
       </aside>
 
       <div className="grid min-w-0 gap-5">
-        <section className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+        <section className="grid gap-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">
               {primaryView === 'repos' ? '本地仓库' : '核心运营站点'}
@@ -658,8 +658,8 @@ export default function ProjectPortfolioConsole({ user }) {
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#667085] dark:text-gray-400">
               {primaryView === 'repos'
-                ? '在左侧切换主视图或按治理动作筛选；点击节点或阵列行查看项目详情。'
-                : '在左侧跳转四座站点卡片；对比托管、数据、登录、邮件与后台差异。'}
+                ? '在上方切换主视图或按治理动作筛选；点击节点或阵列行查看项目详情。'
+                : '在上方跳转四座站点卡片；对比托管、数据、登录、邮件与后台差异。'}
             </p>
           </div>
           {primaryView === 'repos' ? (
@@ -668,7 +668,7 @@ export default function ProjectPortfolioConsole({ user }) {
               onChange={(event) => setQuery(event.target.value)}
               type="search"
               placeholder="搜索项目、角色或建议"
-              className="w-full rounded-lg border border-[#d9dee7] bg-white px-3 py-2 text-sm outline-none focus:border-[#111827] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 md:w-72"
+              className="w-full rounded-lg border border-[#d9dee7] bg-white px-3 py-2 text-sm outline-none focus:border-[#111827] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
             />
           ) : (
             <SnapshotBadge />
@@ -902,7 +902,7 @@ export default function ProjectPortfolioConsole({ user }) {
               {selectedPillar.name} · {actionLabels[selectedProject.action]}
             </p>
           </div>
-          <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid gap-4 p-4">
             <div>
               <h3 className="text-lg font-semibold text-[#15140f] dark:text-gray-100">{selectedProject.name}</h3>
               <p className="mt-1 break-words font-mono text-xs text-[#667085] dark:text-gray-400">{selectedProject.path}</p>

@@ -128,9 +128,9 @@ export default function AdminDashboardClient() {
           href="/admin/db"
         />
         <StatCard
-          label="Ops 健康"
+          label="Ops 入口"
           value={ops?.label || (loading ? '检查中' : '—')}
-          sub={ops?.latencyMs != null ? `ops.2aran.com · ${ops.latencyMs}ms` : 'ops.2aran.com'}
+          sub={ops?.latencyMs != null ? `/admin/ops · ${ops.latencyMs}ms` : '/admin/ops'}
           icon="ops"
           tone={opsTone(ops?.status)}
           href="/admin/ops"
@@ -188,7 +188,7 @@ export default function AdminDashboardClient() {
               <AdminIcon name="database" size={16} /> 查看数据库状态
             </AdminButton>
             <AdminButton href="/admin/ops" className="w-full justify-start">
-              <AdminIcon name="ops" size={16} /> 检查 Ops 健康
+              <AdminIcon name="ops" size={16} /> 打开 Ops 入口
             </AdminButton>
           </div>
         </Section>

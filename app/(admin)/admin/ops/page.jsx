@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '自动化控制台',
-  description: 'ops.2aran.com 健康检查 / Agent Ops 入口。',
+  description: '站内自动化控制台，仅站长本人可访问。',
   robots: {
     index: false,
     follow: false,
@@ -19,7 +19,7 @@ export default async function AdminOpsPage() {
     <AdminPageGate
       label="自动化控制台"
       returnTo="/admin/ops"
-      description="外部 Agent Ops 控制台的站内入口，仅站长本人可见。"
+      description="站内自动化控制台，仅站长本人可见。"
     >
       <OpsConsoleClient />
     </AdminPageGate>

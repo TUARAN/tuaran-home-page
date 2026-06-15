@@ -95,7 +95,7 @@ pv: 0
 
 协作办公工具的 ARPU 往往来自愿意为「组织确定性」付费的角色——老板、行政、HR。已读、督办、AI 汇总待办，在付费者眼里是「管理升级」；在执行者眼里可能是「监督升级」。
 
-《置身钉内》的贡献，是把这条链条从「用户体验」翻译成「权力结构」语言——与 [我眼中的 CMIC](/articles/research/topics/iseecmic) 把公司当成系统来观察，是同一类镜头。
+《置身钉内》的贡献，是把这条链条从「用户体验」翻译成「权力结构」语言——与把公司当成一个系统来观察，是同一类镜头。
 
 ### 4.2 B 端 AI 的敌人常常不是模型
 
@@ -146,5 +146,4 @@ pv: 0
 - [钉钉「置身钉内」，飞书「置身事外」，企微「置身利内」· 人人都是产品经理](https://www.woshipm.com/it/6410732.html)
 
 ### 站内交叉
-- [我眼中的 CMIC：把公司当成系统来观察](/articles/research/topics/iseecmic)（组织行为观察框架）
 - [从 chat 到 agent loop：Anthropic 一线工程实践](/articles/research/topics/chat-to-agent-loop-anthropic-practice)（agent 迭代节奏参照）

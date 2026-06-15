@@ -1,6 +1,8 @@
 /**
  * Skill 中心数据源 —— 主页 /skill-center 和详情页 /skill-center/[skillId] 共享
  */
+import { RENWEI_WRITING_SKILL } from './renweiWritingSkill'
+
 export const PUBLISHED_SKILLS = [
   {
     id: 'ruanyifeng-weekly-style',
@@ -842,6 +844,7 @@ policy:
   allow_implicit_invocation: true`,
     },
   },
+  RENWEI_WRITING_SKILL,
 ]
 
 export function getSkillById(id) {

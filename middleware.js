@@ -23,6 +23,7 @@ function applyDefaultLocaleCookie(request, response) {
 }
 
 const CANONICAL_HOST = '2aran.com'
+const OPS_LEGACY_HOST = 'ops.2aran.com'
 const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
 const LEGACY_PATHS = new Set(['/weekly', '/articles/diary-self-reflection'])
 
@@ -47,6 +48,11 @@ export function middleware(request) {
       const url = new URL(pathname + request.nextUrl.search, `https://${CANONICAL_HOST}`)
       return NextResponse.redirect(url)
     }
+  }
+
+  if (host === OPS_LEGACY_HOST) {
+    const url = new URL('/admin/ops', `https://${CANONICAL_HOST}`)
+    return NextResponse.redirect(url, 301)
   }
 
   const shouldCanonicalizeHost = LEGACY_HOSTS.has(host)

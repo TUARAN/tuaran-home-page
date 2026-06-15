@@ -896,6 +896,17 @@
   }
 
   @media (max-width: 640px) {
+    .home-page {
+      padding-top: 1.25rem;
+    }
+
+    .home-hero {
+      gap: 1.5rem;
+      min-height: 0;
+      border-radius: 1.75rem;
+      padding: 1.25rem;
+    }
+
     .home-hero::before {
       background-image:
         image-set(
@@ -905,8 +916,69 @@
         );
     }
 
+    .home-hero-copy {
+      padding-top: 1rem;
+    }
+
+    .home-kicker {
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.18em;
+    }
+
     .home-hero-title {
-      font-size: 2.2rem;
+      font-size: 2rem;
+      line-height: 1.16;
+    }
+
+    .home-hero-brand span {
+      margin-top: 0.9rem;
+      font-size: 1.12rem;
+      line-height: 1.55;
+    }
+
+    .home-hero-lead {
+      margin-top: 1.25rem;
+      font-size: 1.05rem;
+      line-height: 1.85;
+    }
+
+    .home-hero-actions {
+      margin-top: 1.5rem;
+      gap: 0.75rem;
+    }
+
+    .home-button {
+      min-height: 3rem;
+      padding-inline: 1.25rem;
+    }
+
+    .home-focus-card {
+      padding: 1.25rem;
+    }
+
+    .home-focus-top {
+      margin-bottom: 1.25rem;
+    }
+
+    .home-focus-card h2 {
+      margin-bottom: 0.9rem;
+      font-size: 1.82rem;
+      line-height: 1.08;
+    }
+
+    .home-focus-card p {
+      margin-bottom: 1.25rem;
+      line-height: 1.85;
+    }
+
+    .home-focus-points {
+      margin-bottom: 1.5rem;
+    }
+
+    .home-paths {
+      gap: 1rem;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
     }
 
     :root[data-ui='classic'] .home-hero h1 {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-13T14:57:27.627Z",
+  "generatedAt": "2026-06-14T13:55:22.892Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -38,6 +38,18 @@
               "hash": "2b6f3707273f0b4d3faff7e29fe8a76950c345cbfe34bec7196f9be491e82ea8",
               "path": "claude/MEMORY/2026-06-13T14-57-27-597Z.enc.json",
               "bytes": 1066
+            },
+            {
+              "ts": "2026-06-14T08:07:57.622Z",
+              "hash": "1b7f0dff2ab368b010b8f541231cc4510bf888f9fc96730baec9148ba63d7e3d",
+              "path": "claude/MEMORY/2026-06-14T08-07-57-639Z.enc.json",
+              "bytes": 1201
+            },
+            {
+              "ts": "2026-06-14T13:55:22.852Z",
+              "hash": "2e6af2677dcbdc781bb38db25476cf51f8da3c2dd791a994c910169eb50591f6",
+              "path": "claude/MEMORY/2026-06-14T13-55-22-869Z.enc.json",
+              "bytes": 1373
             }
           ]
         },
@@ -140,6 +152,30 @@
               "hash": "f2bb22030e3378376f0b4a891c7841d475db3088ef21c85eca5e4146c52621a0",
               "path": "claude/wrangler-proxy-workaround/2026-06-13T14-57-27-624Z.enc.json",
               "bytes": 641
+            }
+          ]
+        },
+        "i18n-shell-and-home": {
+          "title": "i18n-shell-and-home",
+          "description": "站点中英双语的范围、机制与关键约束（2026-06-14 落地）",
+          "versions": [
+            {
+              "ts": "2026-06-14T08:07:57.642Z",
+              "hash": "7ca30d854e7b0df9a4cf3cc309232f642d9ea52dac8c701733979f121772d18f",
+              "path": "claude/i18n-shell-and-home/2026-06-14T08-07-57-659Z.enc.json",
+              "bytes": 1220
+            }
+          ]
+        },
+        "wallpaper-resource-feature": {
+          "title": "wallpaper-resource-feature",
+          "description": "壁纸资源库功能（R2+D1）已落代码，但依赖站长在 Cloudflare 控制台的手动配置才能真正可用",
+          "versions": [
+            {
+              "ts": "2026-06-14T13:55:22.873Z",
+              "hash": "148d149d6133290f7b68000c2b5931fb3b9d402d81df51bea9242e1a4ffe2958",
+              "path": "claude/wallpaper-resource-feature/2026-06-14T13-55-22-889Z.enc.json",
+              "bytes": 882
             }
           ]
         }

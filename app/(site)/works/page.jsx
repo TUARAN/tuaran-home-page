@@ -2,24 +2,38 @@ import Link from 'next/link'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import SharePageButton from '../components/SharePageButton'
-import { ENGINEERING_WORK_CATEGORIES, ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
+import {
+  FEATURED_WORK_ITEM_IDS,
+  WORK_ITEMS,
+  WORK_TYPE_META,
+  getWorkItemsByType,
+  getWorkStatusLabel,
+  getWorkTypeMeta,
+} from '../../../lib/workItems'
 
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '多维页面',
+  title: '作品与项目',
   description:
-    '涂阿燃自研的可视化页面、AI 工程实验、富数据研判与长期项目。这里收集已经做成系统的作品，而不只是文章目录。',
+    '涂阿燃的产品站点、AI 工程实验、内容系统、研究页面与工具作品。这里展示已经做成系统的项目，而不只是文章目录。',
   alternates: {
     canonical: '/works',
   },
 }
 
-const FEATURED_WORK_IDS = ['platform-framework-pairs', 'cancers-overview', 'web-llm']
-
-const CATEGORY_TONE = {
+const TYPE_TONE = {
+  product: {
+    label: 'Product',
+    accent: 'text-[#8b4b2f] dark:text-[#d9a38e]',
+    line: 'bg-[#d6a18f] dark:bg-[#704838]',
+    card:
+      'border-[#dfcfc8] bg-[#fbf5f2] hover:border-[#c69c8c] dark:border-[#46332d] dark:bg-[#1f1715] dark:hover:border-[#725143]',
+    chip:
+      'border-[#dfcfc8] bg-white/70 text-[#8b4b2f] dark:border-[#46332d] dark:bg-[#241a17] dark:text-[#d9a38e]',
+  },
   'ai-engineering': {
-    label: 'Run',
+    label: 'AI',
     accent: 'text-[#2f668a] dark:text-[#9ab6d4]',
     line: 'bg-[#9fc5d2] dark:bg-[#365264]',
     card:
@@ -27,8 +41,8 @@ const CATEGORY_TONE = {
     chip:
       'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   },
-  'data-visualization': {
-    label: 'Map',
+  'content-system': {
+    label: 'System',
     accent: 'text-[#386b54] dark:text-[#9dcab1]',
     line: 'bg-[#9cc7ae] dark:bg-[#385947]',
     card:
@@ -36,8 +50,8 @@ const CATEGORY_TONE = {
     chip:
       'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#263f4b] dark:bg-[#13232b] dark:text-[#9ac9d8]',
   },
-  'engineering-research': {
-    label: 'Judge',
+  'research-page': {
+    label: 'Research',
     accent: 'text-[#7352a2] dark:text-[#c5afe8]',
     line: 'bg-[#b7a0d1] dark:bg-[#4a3b62]',
     card:
@@ -45,8 +59,8 @@ const CATEGORY_TONE = {
     chip:
       'border-[#cfc3e2] bg-[#f3eff9] text-[#72539b] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#c5afe8]',
   },
-  'long-term-project': {
-    label: 'Build',
+  'tool-experiment': {
+    label: 'Tool',
     accent: 'text-[#8b5a1f] dark:text-[#d4bd87]',
     line: 'bg-[#d0b47e] dark:bg-[#6a5428]',
     card:
@@ -56,35 +70,14 @@ const CATEGORY_TONE = {
   },
 }
 
-const DEFAULT_TONE = {
-  label: 'Work',
-  accent: 'text-[#67695d] dark:text-gray-400',
-  line: 'bg-[#b7baa8] dark:bg-[#475061]',
-  card:
-    'border-[#d8d9cf] bg-white/55 hover:border-[#b7baa8] dark:border-gray-800 dark:bg-[#111820] dark:hover:border-gray-700',
-  chip:
-    'border-[#d8d9cf] bg-white/70 text-[#606358] dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300',
+const DEFAULT_TONE = TYPE_TONE.product
+
+function getTone(type) {
+  return TYPE_TONE[type] || DEFAULT_TONE
 }
 
-function formatDate(iso) {
-  if (!iso) return ''
-  return iso.replace(/-/g, ' / ')
-}
-
-function getWorksByCategory(categoryId) {
-  return ENGINEERING_WORKS.filter((work) => work.category === categoryId)
-}
-
-function getCategory(categoryId) {
-  return ENGINEERING_WORK_CATEGORIES.find((category) => category.id === categoryId)
-}
-
-function getTone(categoryId) {
-  return CATEGORY_TONE[categoryId] || DEFAULT_TONE
-}
-
-function getFeaturedWorks() {
-  return FEATURED_WORK_IDS.map((id) => ENGINEERING_WORKS.find((work) => work.id === id)).filter(Boolean)
+function isExternalHref(href) {
+  return /^https?:\/\//.test(href)
 }
 
 function ArrowIcon({ className = '' }) {
@@ -101,8 +94,8 @@ function ArrowIcon({ className = '' }) {
   )
 }
 
-function WorkPreviewMark({ categoryId, index = 0 }) {
-  const tone = getTone(categoryId)
+function WorkPreviewMark({ type, index = 0 }) {
+  const tone = getTone(type)
 
   return (
     <div
@@ -115,30 +108,139 @@ function WorkPreviewMark({ categoryId, index = 0 }) {
           <span
             key={bar}
             className={`w-full rounded-t-sm ${tone.line}`}
-            style={{ height: `${20 + ((bar * 13 + index * 9) % 48)}px`, opacity: 0.44 + bar * 0.08 }}
+            style={{ height: `${18 + ((bar * 11 + index * 7) % 48)}px`, opacity: 0.42 + bar * 0.08 }}
           />
         ))}
       </div>
       <div className="absolute right-4 top-4 grid grid-cols-2 gap-1.5">
         {[0, 1, 2, 3].map((dot) => (
-          <span key={dot} className={`h-2.5 w-2.5 rounded-full ${tone.line}`} style={{ opacity: 0.38 + dot * 0.12 }} />
+          <span key={dot} className={`h-2.5 w-2.5 rounded-full ${tone.line}`} style={{ opacity: 0.35 + dot * 0.13 }} />
         ))}
       </div>
     </div>
   )
 }
 
-function CategoryShortcut({ section }) {
+function WorkLink({ item, children, className }) {
+  if (isExternalHref(item.href)) {
+    return (
+      <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className || ''}`}>
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <Link href={item.href} className={className}>
+      {children}
+    </Link>
+  )
+}
+
+function FeaturedWorkCard({ item, index }) {
+  const tone = getTone(item.type)
+  const typeMeta = getWorkTypeMeta(item.type)
+
+  return (
+    <article className={`group overflow-hidden border transition duration-200 hover:-translate-y-1 ${tone.card}`}>
+      <WorkPreviewMark type={item.type} index={index} />
+      <div className="flex min-h-[300px] flex-col p-5">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className={`inline-flex border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] ${tone.chip}`}>
+            {typeMeta?.title || item.type}
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#858779] dark:text-gray-500">
+            {getWorkStatusLabel(item.status)}
+          </span>
+        </div>
+
+        <h2 className="mb-0 border-0 p-0 text-[24px] font-semibold leading-tight text-[#15140f] dark:text-gray-100">
+          <WorkLink
+            item={item}
+            className="text-[#15140f] no-underline transition visited:text-[#15140f] hover:text-[#8b5a1f] dark:text-gray-100 dark:visited:text-gray-100 dark:hover:text-[#d4bd87]"
+          >
+            {item.title}
+          </WorkLink>
+        </h2>
+        <p className="mb-0 mt-2 text-[13px] leading-6 text-[#767869] dark:text-gray-500">{item.role}</p>
+        <p className="mb-0 mt-4 line-clamp-5 text-[14px] leading-7 text-[#51514a] dark:text-gray-400">
+          {item.summary}
+        </p>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {item.tags?.slice(0, 3).map((tag) => (
+            <span key={tag} className={`inline-flex border px-2 py-1 text-[11px] leading-none ${tone.chip}`}>
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        <WorkLink
+          item={item}
+          className="mt-auto inline-flex items-center gap-1.5 pt-6 text-[13px] font-semibold text-[#8b5a1f] no-underline transition visited:text-[#8b5a1f] group-hover:gap-2 dark:text-[#d4bd87] dark:visited:text-[#d4bd87]"
+        >
+          {isExternalHref(item.href) ? '访问项目' : '打开页面'}
+          <ArrowIcon />
+        </WorkLink>
+      </div>
+    </article>
+  )
+}
+
+function WorkCard({ item, index }) {
+  const tone = getTone(item.type)
+  const typeMeta = getWorkTypeMeta(item.type)
+
+  return (
+    <article className={`group grid min-h-[250px] overflow-hidden border transition hover:-translate-y-0.5 ${tone.card}`}>
+      <WorkPreviewMark type={item.type} index={index} />
+      <div className="flex flex-col p-4">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className={`inline-flex border px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] ${tone.chip}`}>
+            {typeMeta?.label || tone.label}
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#858779] dark:text-gray-500">
+            {getWorkStatusLabel(item.status)}
+          </span>
+          {item.canvasId ? <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" /> : null}
+        </div>
+
+        <h3 className="mb-0 line-clamp-2 text-[18px] font-semibold leading-snug text-[#15140f] dark:text-gray-100">
+          <WorkLink
+            item={item}
+            className="text-[#15140f] no-underline transition visited:text-[#15140f] hover:text-[#8b5a1f] dark:text-gray-100 dark:visited:text-gray-100 dark:hover:text-[#d4bd87]"
+          >
+            {item.title}
+          </WorkLink>
+        </h3>
+        <p className="mb-0 mt-1 text-[12px] leading-5 text-[#767869] dark:text-gray-500">{item.role}</p>
+        <p className="mb-0 mt-3 line-clamp-3 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
+          {item.summary}
+        </p>
+
+        <WorkLink
+          item={item}
+          className="mt-auto inline-flex items-center gap-1.5 pt-4 text-[12px] font-semibold text-[#8b5a1f] no-underline transition visited:text-[#8b5a1f] group-hover:gap-2 dark:text-[#d4bd87] dark:visited:text-[#d4bd87]"
+        >
+          {isExternalHref(item.href) ? '访问' : '打开'}
+          <ArrowIcon />
+        </WorkLink>
+      </div>
+    </article>
+  )
+}
+
+function TypeShortcut({ section }) {
   const tone = getTone(section.id)
 
   return (
     <Link
       href={`#${section.id}`}
-      className="group flex min-h-[92px] flex-col justify-between border border-[#d8d9cf] bg-white/45 p-3 text-[#171611] no-underline transition visited:text-[#171611] hover:-translate-y-0.5 hover:border-[#b7baa8] hover:bg-white/72 dark:border-gray-800 dark:bg-[#101720] dark:text-gray-100 dark:visited:text-gray-100 dark:hover:border-gray-700 dark:hover:bg-[#151c25]"
+      className="group flex min-h-[110px] flex-col justify-between border border-[#d8d9cf] bg-white/45 p-3 text-[#171611] no-underline transition visited:text-[#171611] hover:-translate-y-0.5 hover:border-[#b7baa8] hover:bg-white/72 dark:border-gray-800 dark:bg-[#101720] dark:text-gray-100 dark:visited:text-gray-100 dark:hover:border-gray-700 dark:hover:bg-[#151c25]"
     >
       <span className="flex items-center justify-between gap-2">
-        <span className={`font-mono text-[10px] uppercase tracking-[0.18em] ${tone.accent}`}>{tone.label}</span>
-        <span className="font-mono text-[11px] text-[#8d9083] dark:text-gray-500">{section.works.length}</span>
+        <span className={`font-mono text-[10px] uppercase tracking-[0.18em] ${tone.accent}`}>{getTone(section.id).label}</span>
+        <span className="font-mono text-[11px] text-[#8d9083] dark:text-gray-500">{section.items.length}</span>
       </span>
       <span>
         <span className="block text-[15px] font-semibold leading-snug text-[#171611] dark:text-gray-100">
@@ -152,159 +254,63 @@ function CategoryShortcut({ section }) {
   )
 }
 
-function FeaturedWorkCard({ work, index }) {
-  const category = getCategory(work.category)
-  const tone = getTone(work.category)
-
-  return (
-    <article className={`group overflow-hidden border transition duration-200 hover:-translate-y-1 ${tone.card}`}>
-      <WorkPreviewMark categoryId={work.category} index={index} />
-      <div className="flex min-h-[260px] flex-col p-4 sm:p-5">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className={`inline-flex border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] ${tone.chip}`}>
-            {category?.title || work.kind || '作品'}
-          </span>
-          {work.badge ? (
-            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#9a6a2a] dark:text-[#d4bd87]">
-              {work.badge}
-            </span>
-          ) : null}
-          <CanvasOriginBadge canvasId={work.canvasId} href={work.href} size="sm" />
-        </div>
-
-        <h2 className="mb-0 border-0 p-0 text-[19px] font-semibold leading-snug text-[#15140f] dark:text-gray-100 sm:text-[21px]">
-          <Link
-            href={work.href}
-            className="text-[#15140f] no-underline transition visited:text-[#15140f] hover:text-[#8b5a1f] dark:text-gray-100 dark:visited:text-gray-100 dark:hover:text-[#d4bd87]"
-          >
-            {work.title}
-          </Link>
-        </h2>
-        <p className="mb-0 mt-3 line-clamp-5 text-[13.5px] leading-7 text-[#51514a] dark:text-gray-400">
-          {work.summary}
-        </p>
-
-        <div className="mt-auto flex items-end justify-between gap-3 pt-5">
-          <span className="font-mono text-[10px] leading-5 text-[#858779] dark:text-gray-500">
-            <span className="block tabular-nums">{formatDate(work.date)}</span>
-            <span className="block">{work.kind || '原创工程'}</span>
-          </span>
-          <Link
-            href={work.href}
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#8b5a1f] no-underline transition visited:text-[#8b5a1f] group-hover:gap-2 dark:text-[#d4bd87] dark:visited:text-[#d4bd87]"
-          >
-            进入作品
-            <ArrowIcon />
-          </Link>
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function WorkCard({ work, index }) {
-  const tone = getTone(work.category)
-
-  return (
-    <article className={`group grid min-h-[220px] overflow-hidden border transition hover:-translate-y-0.5 ${tone.card}`}>
-      <WorkPreviewMark categoryId={work.category} index={index} />
-      <div className="flex flex-col p-4">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#858779] dark:text-gray-500">
-            {formatDate(work.date)}
-          </span>
-          <span className={`inline-flex border px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] ${tone.chip}`}>
-            {work.kind || '原创工程'}
-          </span>
-          {work.badge ? (
-            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#9a6a2a] dark:text-[#d4bd87]">
-              {work.badge}
-            </span>
-          ) : null}
-          <CanvasOriginBadge canvasId={work.canvasId} href={work.href} size="sm" />
-        </div>
-        <h3 className="mb-0 line-clamp-2 text-[17px] font-semibold leading-snug text-[#15140f] dark:text-gray-100">
-          <Link
-            href={work.href}
-            className="text-[#15140f] no-underline transition visited:text-[#15140f] hover:text-[#8b5a1f] dark:text-gray-100 dark:visited:text-gray-100 dark:hover:text-[#d4bd87]"
-          >
-            {work.title}
-          </Link>
-        </h3>
-        <p className="mb-0 mt-2 line-clamp-3 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
-          {work.summary}
-        </p>
-        <Link
-          href={work.href}
-          className="mt-auto inline-flex items-center gap-1.5 pt-4 text-[12px] font-semibold text-[#8b5a1f] no-underline transition visited:text-[#8b5a1f] group-hover:gap-2 dark:text-[#d4bd87] dark:visited:text-[#d4bd87]"
-        >
-          打开
-          <ArrowIcon />
-        </Link>
-      </div>
-    </article>
-  )
-}
-
 export default function WorksPage() {
-  const uncategorizedWorks = ENGINEERING_WORKS.filter(
-    (work) => !ENGINEERING_WORK_CATEGORIES.some((category) => category.id === work.category)
-  )
-  const sections = [
-    ...ENGINEERING_WORK_CATEGORIES.map((category) => ({
-      ...category,
-      works: getWorksByCategory(category.id),
-    })),
-    ...(uncategorizedWorks.length
-      ? [
-          {
-            id: 'uncategorized',
-            title: '其他作品',
-            description: '尚未归入固定类型的工程页面。',
-            works: uncategorizedWorks,
-          },
-        ]
-      : []),
-  ].filter((section) => section.works.length > 0)
-  const featuredWorks = getFeaturedWorks()
-  const latestWork = ENGINEERING_WORKS[0]
+  const featuredItems = FEATURED_WORK_ITEM_IDS.map((id) => WORK_ITEMS.find((item) => item.id === id)).filter(Boolean)
+  const sections = WORK_TYPE_META.map((type) => ({
+    ...type,
+    items: getWorkItemsByType(type.id),
+  })).filter((section) => section.items.length > 0)
+  const productCount = getWorkItemsByType('product').length
+  const aiCount = getWorkItemsByType('ai-engineering').length
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <header className="border-b border-[#dee0db] pb-8 dark:border-gray-800">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
           <div>
             <p className="mb-0 font-mono text-[10px] uppercase tracking-[0.24em] text-[#767869] dark:text-[#8e9ab0]">
-              Works / Systems / Interfaces
+              Works / Products / AI Systems
             </p>
-            <h1 className="mt-3 font-serif text-[32px] font-semibold leading-tight text-[#15140f] dark:text-gray-100 sm:text-[42px]">
-              做成系统的作品
+            <h1 className="mt-3 max-w-3xl font-serif text-[34px] font-semibold leading-tight text-[#15140f] dark:text-gray-100 sm:text-[48px]">
+              把写作、工程和 AI 做成可运行的系统
             </h1>
             <p className="mb-0 mt-4 max-w-3xl text-[15px] leading-8 text-[#444740] dark:text-gray-300">
-              这里放的不是普通文章目录，而是已经落成页面的工程作品：可交互的数据视图、AI 工具实验、平台格局研判和长期写作项目。
+              这里不是文章目录，而是我正在运营、打磨和验证的作品展厅：产品站点、AI 工程实验、内容系统、研究页面和工具原型会放在同一张项目图里。
             </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="#product"
+                className="inline-flex min-h-10 items-center border border-[#15140f] bg-[#15140f] px-4 text-[13px] font-semibold text-[#faf8f1] no-underline visited:text-[#faf8f1] hover:bg-[#2f2b22] dark:border-gray-100 dark:bg-gray-100 dark:text-[#111820] dark:visited:text-[#111820]"
+              >
+                看产品主线
+              </Link>
+              <Link
+                href="/ai-projects"
+                className="inline-flex min-h-10 items-center border border-[#d8d9cf] bg-white/60 px-4 text-[13px] font-semibold text-[#15140f] no-underline visited:text-[#15140f] hover:border-[#b7baa8] dark:border-gray-800 dark:bg-[#101720] dark:text-gray-100 dark:visited:text-gray-100"
+              >
+                AI 项目图谱
+              </Link>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 border-l-0 border-[#dee0db] text-[12px] leading-6 text-[#67695d] dark:border-gray-800 dark:text-gray-500 lg:border-l lg:pl-5">
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="border border-[#d8d9cf] bg-white/45 px-2 py-3 dark:border-gray-800 dark:bg-[#101720]">
-                <span className="block font-mono text-[18px] text-[#15140f] dark:text-gray-100">{ENGINEERING_WORKS.length}</span>
-                <span className="mt-1 block text-[11px]">作品</span>
+                <span className="block font-mono text-[18px] text-[#15140f] dark:text-gray-100">{WORK_ITEMS.length}</span>
+                <span className="mt-1 block text-[11px]">项目</span>
               </div>
               <div className="border border-[#d8d9cf] bg-white/45 px-2 py-3 dark:border-gray-800 dark:bg-[#101720]">
-                <span className="block font-mono text-[18px] text-[#15140f] dark:text-gray-100">{sections.length}</span>
-                <span className="mt-1 block text-[11px]">方向</span>
+                <span className="block font-mono text-[18px] text-[#15140f] dark:text-gray-100">{productCount}</span>
+                <span className="mt-1 block text-[11px]">产品</span>
               </div>
               <div className="border border-[#d8d9cf] bg-white/45 px-2 py-3 dark:border-gray-800 dark:bg-[#101720]">
-                <span className="block font-mono text-[18px] text-[#15140f] dark:text-gray-100">
-                  {latestWork?.date?.slice(5) || '-'}
-                </span>
-                <span className="mt-1 block text-[11px]">最近更新</span>
+                <span className="block font-mono text-[18px] text-[#15140f] dark:text-gray-100">{aiCount}</span>
+                <span className="mt-1 block text-[11px]">AI 工程</span>
               </div>
             </div>
             <SharePageButton
-              title="涂阿燃 · 多维页面"
-              text="自研可视化、AI 工程实验、富数据研判与长期项目"
+              title="涂阿燃 · 作品与项目"
+              text="产品站点、AI 工程实验、内容系统、研究页面与工具作品"
               url="https://2aran.com/works"
               size="md"
             />
@@ -316,30 +322,30 @@ export default function WorksPage() {
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-[#858779] dark:text-gray-500">
-              Featured
+              Operating Spine
             </p>
-            <h2 id="featured-works" className="mb-0 border-0 p-0 text-[22px] font-semibold text-[#15140f] dark:text-gray-100">
-              先看这几件
+            <h2 id="featured-works" className="mb-0 border-0 p-0 text-[23px] font-semibold text-[#15140f] dark:text-gray-100">
+              先看三条产品主线
             </h2>
           </div>
           <Link
-            href="/articles?tab=works"
+            href="/services"
             className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#67695d] no-underline transition visited:text-[#67695d] hover:text-[#8b5a1f] dark:text-gray-400 dark:visited:text-gray-400 dark:hover:text-[#d4bd87]"
           >
-            查看文章索引里的多维页面
+            看合作方式
             <ArrowIcon />
           </Link>
         </div>
         <div className="grid gap-4 lg:grid-cols-3">
-          {featuredWorks.map((work, index) => (
-            <FeaturedWorkCard key={work.id} work={work} index={index} />
+          {featuredItems.map((item, index) => (
+            <FeaturedWorkCard key={item.id} item={item} index={index} />
           ))}
         </div>
       </section>
 
-      <nav aria-label="作品类型" className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <nav aria-label="作品类型" className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {sections.map((section) => (
-          <CategoryShortcut key={section.id} section={section} />
+          <TypeShortcut key={section.id} section={section} />
         ))}
       </nav>
 
@@ -348,7 +354,7 @@ export default function WorksPage() {
           <section key={section.id} id={section.id} className="scroll-mt-24 border-t border-[#dee0db] pt-6 dark:border-gray-800">
             <div className="mb-5 grid gap-3 md:grid-cols-[220px_1fr] md:items-end">
               <div>
-                <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#848676] dark:text-gray-500">
+                <p className={`mb-1 font-mono text-[10px] uppercase tracking-[0.18em] ${getTone(section.id).accent}`}>
                   {String(sectionIndex + 1).padStart(2, '0')} / {getTone(section.id).label}
                 </p>
                 <h2 className="mb-0 border-0 p-0 font-serif text-[24px] font-semibold leading-tight text-[#15140f] dark:text-gray-100">
@@ -361,8 +367,8 @@ export default function WorksPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {section.works.map((work, index) => (
-                <WorkCard key={work.id} work={work} index={index + sectionIndex} />
+              {section.items.map((item, index) => (
+                <WorkCard key={item.id} item={item} index={index + sectionIndex} />
               ))}
             </div>
           </section>
@@ -372,19 +378,22 @@ export default function WorksPage() {
       <footer className="mt-12 grid gap-4 border-t border-[#dee0db] pt-6 text-[12px] leading-6 text-[#67695d] dark:border-gray-800 dark:text-gray-500 md:grid-cols-[1fr_auto] md:items-start">
         <div>
           <p className="mb-0">
-            若条目带 <CanvasOriginBadge canvasId="cloudflare-personal-site-map" size="sm" className="mx-1 align-middle" />{' '}
-            标签，表示先在 Cursor Canvas 里完成交互原型，再落地为站内工程页。
+            研究型富页面仍保留在这里，但降为作品矩阵的一类；普通文章、调研和资料索引仍在{' '}
+            <Link href="/articles" className="text-[#8b5a1f] underline underline-offset-2 visited:text-[#8b5a1f] dark:text-[#d4bd87] dark:visited:text-[#d4bd87]">
+              /articles
+            </Link>
+            。
           </p>
           <p className="mb-0 mt-2">
-            普通文章、调研和资料索引仍在{' '}
-            <Link href="/articles" className="text-[#8b5a1f] underline underline-offset-2 visited:text-[#8b5a1f] dark:text-[#d4bd87] dark:visited:text-[#d4bd87]">/articles</Link>。
+            若条目带 <CanvasOriginBadge canvasId="cloudflare-personal-site-map" size="sm" className="mx-1 align-middle" />{' '}
+            标签，表示先在 Cursor Canvas 里完成交互原型，再落地为站内工程页。
           </p>
         </div>
         <Link
           href="#featured-works"
           className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#8b5a1f] no-underline visited:text-[#8b5a1f] dark:text-[#d4bd87] dark:visited:text-[#d4bd87]"
         >
-          回到代表作品
+          回到产品主线
           <ArrowIcon />
         </Link>
       </footer>

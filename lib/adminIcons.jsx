@@ -21,6 +21,7 @@ import {
   IconBell,
   IconSettings,
   IconPlug,
+  IconRouteAltLeft,
   IconCircleDot,
   IconArrowBackUp,
 } from '@tabler/icons-react'
@@ -29,6 +30,7 @@ const ICONS = {
   dashboard: IconLayoutDashboard,
   portfolio: IconFolders,
   researchStyle: IconTypography,
+  modelDispatch: IconRouteAltLeft,
   users: IconUsers,
   nav: IconMenu2,
   share: IconLockShare,

@@ -121,7 +121,7 @@ function MainHero({ item }) {
   const typeMeta = getWorkTypeMeta(item.type)
 
   return (
-    <article className="relative overflow-hidden border-b border-[#E8E4DB] dark:border-[#252218]">
+    <article className="relative overflow-hidden border-y border-[#E8E4DB] dark:border-[#252218]">
       {/* 渐变背景 */}      
       <div
         className="absolute inset-0 opacity-40 dark:opacity-25"
@@ -129,18 +129,15 @@ function MainHero({ item }) {
           background: `linear-gradient(135deg, ${tone.accentBg2} 0%, transparent 60%)`,
         }}
       />
-      <div className="relative flex flex-col gap-8 px-0 py-12 sm:flex-row sm:items-start sm:py-16">
-        {/* 超大装饰数字 */}
-        <div className="relative shrink-0 hidden sm:block">
-          <span
-            className="block font-serif text-[180px] font-bold leading-none tracking-[-0.05em]"
-            style={{ color: `${tone.accent}08` }}
-          >
-            01
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1 pt-1 sm:pt-6">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-1 top-8 hidden font-serif text-[160px] font-bold leading-none tracking-[-0.05em] sm:block"
+        style={{ color: `${tone.accent}07` }}
+      >
+        01
+      </span>
+      <div className="relative py-10 sm:py-12">
+        <div className="min-w-0">
           {/* 类型标签 */}
           <div className="mb-5 flex flex-wrap items-center gap-3">
             <span
@@ -163,12 +160,12 @@ function MainHero({ item }) {
           </h2>
 
           {/* 描述 */}
-          <p className="mb-0 mt-5 max-w-2xl text-[16px] leading-[1.75] text-[#5E5F55] dark:text-gray-400">
+          <p className="mb-0 mt-5 max-w-3xl text-[16px] leading-[1.75] text-[#5E5F55] dark:text-gray-400">
             {item.summary}
           </p>
 
           {/* Tags + CTA */}
-          <div className="mt-7 flex flex-wrap items-center gap-5">
+          <div className="mt-7 flex flex-wrap items-center gap-4">
             <div className="flex flex-wrap gap-2">
               {item.tags?.slice(0, 4).map((tag) => (
                 <span
@@ -737,8 +734,8 @@ export default function WorksPage() {
 
       {/* ===== L1: 精选 Hero ===== */}
       <section id="featured-works" className="scroll-mt-28" aria-labelledby="featured-heading">
-        <div className="mx-auto max-w-5xl px-4 pt-16 sm:px-6">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+        <div className="mx-auto max-w-5xl px-4 pt-10 sm:px-6">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="mb-1 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[#B0AE9E] dark:text-gray-600">
                 Operating Spine

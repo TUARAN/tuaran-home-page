@@ -1,11 +1,9 @@
-import Link from 'next/link'
-
 export const dynamic = 'force-static'
 
 export const metadata = {
   title: '关于我',
   description:
-    '涂阿燃（tuaran / 掘金安东尼）：前端工程化与 AI 智能体，技术博主与出版作者，矩联科技创始人。',
+    '涂阿燃（tuaran / 掘金安东尼）：前端与 AI 工程化方向的开发者、技术写作者和产品实践者。',
   keywords: [
     '涂阿燃',
     'tuaran',
@@ -57,26 +55,25 @@ const socialLinks = [
 
 const contactItems = [
   { label: '主页', value: '2aran.com', href: 'https://2aran.com' },
-  { label: '社区 ID', value: '掘金安东尼 · 安东尼404 · 安东尼与AI' },
+  { label: '常用 ID', value: '掘金安东尼 · 安东尼404 · 安东尼与AI' },
   { label: '微信', value: 'atar24' },
   { label: '邮箱', value: 'tuaran666@gmail.com', href: 'mailto:tuaran666@gmail.com' },
-  { label: '影响力', value: '全网 500+ 篇 · 阅读 400 万+' },
 ]
 
 const siteLinks = [
-  { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人技术主页 · AI × 工程 × 思考' },
-  { label: '矩联科技', href: 'https://matrixlink.tech/', desc: '公司官网 · 技术服务与品牌展示' },
-  { label: '博主联盟', href: 'https://blogger-alliance.cn/', desc: '技术博主联盟与推广协作网络' },
-  { label: '前端周看', href: 'https://frontendnext.com/', desc: '推动前端工程师向 AI Agent 工程师转型' },
-  { label: 'Open Claude Code', href: 'https://openclaudecode.site/', desc: '系统拆解 Claude Code 的 Agent 方法论' },
-  { label: 'PublishLab', href: 'https://publishlab.cc/', desc: 'AI 写作、内容创作与数字出版实验' },
+  { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人主页、技术笔记和长期内容索引' },
+  { label: '矩联科技', href: 'https://matrixlink.tech/', desc: '技术服务、项目案例和公司信息' },
+  { label: '博主联盟', href: 'https://blogger-alliance.cn/', desc: '技术博主协作与推广项目' },
+  { label: '前端周看', href: 'https://frontendnext.com/', desc: '前端、AI 工程和工具动态整理' },
+  { label: 'Open Claude Code', href: 'https://openclaudecode.site/', desc: 'Claude Code 与 Agent 工程笔记' },
+  { label: 'PublishLab', href: 'https://publishlab.cc/', desc: 'AI 写作、内容整理和出版流程实验' },
 ]
 
-const badassThings = [
-  '马斯克的第一性原理 + 工程化执行：不是喊口号，而是把“不可能”拆成可交付系统。',
-  '詹姆斯·韦伯望远镜：二十多年、全球协作、长期主义，最终把宇宙看得更深更远。',
-  '把复杂问题抽象成流程、标准和自动化，让个人能力变成可复制系统。',
-  '长期高质量写作与公开复盘：内容是认知资产，不是一次性流量消耗。',
+const workingNotes = [
+  '先把问题写清楚，再决定是否写代码；少做泛化，多做可验证交付。',
+  '复杂事项尽量沉淀成文档、清单、脚本或页面，方便下次复用。',
+  '关注 AI 进入真实工作流后的效果：能否减少重复劳动，能否稳定产出。',
+  '写作不是包装自己，而是把做过的事、踩过的坑和判断依据留下来。',
 ]
 
 const chipClassName =
@@ -143,7 +140,7 @@ export default function AboutPage() {
 
       <div className="mt-4 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4">
         <section className="flex flex-col self-start rounded-xl bg-white/72 p-3 dark:bg-[#121821]/72 sm:rounded-2xl sm:p-4">
-          <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">联系与数据</h2>
+          <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">公开入口</h2>
           <dl className="space-y-2 text-[12px] leading-5 text-[#51514a] dark:text-gray-300">
             {contactItems.map((item) => (
               <div key={item.label} className="flex flex-wrap gap-x-2 gap-y-0.5">
@@ -163,7 +160,7 @@ export default function AboutPage() {
               </div>
             ))}
             <div>
-              <dt className="mb-1.5 text-[#858878] dark:text-gray-500">社交平台</dt>
+              <dt className="mb-1.5 text-[#858878] dark:text-gray-500">内容平台</dt>
               <dd className="flex flex-wrap gap-1.5">
                 {socialLinks.map((c) => (
                   <a key={c.href} href={c.href} target="_blank" rel="noreferrer" className={socialChipClassName}>
@@ -176,7 +173,7 @@ export default function AboutPage() {
         </section>
 
         <section className="flex flex-col self-start rounded-xl bg-white/72 p-3 dark:bg-[#121821]/72 sm:rounded-2xl sm:p-4">
-          <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">站点矩阵</h2>
+          <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">正在维护的站点</h2>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {siteLinks.map((c) => (
               <div key={c.href} className="rounded-lg bg-white/65 px-2.5 py-2 dark:bg-[#18202a]/52">
@@ -188,20 +185,20 @@ export default function AboutPage() {
             ))}
           </div>
           <p className="mt-3 text-[11px] leading-5 text-[#717367] dark:text-gray-400">
-            系统优先 · 自动化优先 · 长期可复用 —— 倾向构建能长期稳定运行的系统，而非一次性工具。
+            有些是长期项目，有些还在实验阶段。这里先放公开入口，方便按主题找到对应内容。
           </p>
         </section>
       </div>
 
-<section className="mt-4 rounded-xl bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(252,248,240,0.82))] p-3 dark:bg-[linear-gradient(180deg,rgba(18,24,33,0.86),rgba(15,21,30,0.86))] sm:rounded-2xl sm:p-4">
+      <section className="mt-4 rounded-xl bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(252,248,240,0.82))] p-3 dark:bg-[linear-gradient(180deg,rgba(18,24,33,0.86),rgba(15,21,30,0.86))] sm:rounded-2xl sm:p-4">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2 pb-1">
-          <h2 className="mb-0 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">我认可的硬核范式</h2>
+          <h2 className="mb-0 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">工作方式</h2>
           <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#7f826f] dark:text-[#8e9ab0]">
-            Values / Principles
+            Working Notes
           </span>
         </div>
         <ul className="space-y-2.5">
-          {badassThings.map((line, idx) => (
+          {workingNotes.map((line, idx) => (
             <li
               key={line}
               className="group flex items-start gap-2.5 rounded-xl bg-white/72 px-3 py-2.5 text-[12.5px] leading-6 text-[#51514a] transition-colors hover:bg-[#fafbf8] dark:bg-[#141b25]/72 dark:text-gray-300 dark:hover:bg-[#17202c]"
@@ -214,7 +211,6 @@ export default function AboutPage() {
           ))}
         </ul>
       </section>
-
     </main>
   )
 }

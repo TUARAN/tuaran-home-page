@@ -105,6 +105,18 @@ ADMIN_LOCAL_PREVIEW=1 npm run dev
 
 该开关只在 `NODE_ENV=development` 下生效；生产环境即使误配 `ADMIN_LOCAL_PREVIEW=1` 也不会绕过 owner 校验。启用后 Admin 页面顶部会显示本地预览提示。
 
+### DeepSeek 任务规划器
+
+`/admin/model-dispatch` 会通过 owner-only API `/api/admin/model-dispatch/plan` 调用 DeepSeek V4 Pro 做任务拆解和 agent 分派。密钥只放环境变量，不写入源码：
+
+```bash
+DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_MODEL=deepseek-v4-pro
+# 可选：DEEPSEEK_BASE_URL=https://api.deepseek.com
+```
+
+本地 `.env.local` 已被 `.gitignore` 排除；线上部署时把同名变量配置到 Cloudflare Pages / Workers 环境变量或 secret。
+
 ### 构建生产版本
 
 ```bash

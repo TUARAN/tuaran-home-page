@@ -246,7 +246,7 @@ export default function OpsConsoleClient() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">本地自动化</h2>
-              <p className="mt-1 text-sm text-[#686962] dark:text-gray-400">运行在本机、worktree 或本地 Agent Ops，重点看人工审核、产物落盘和权限边界。</p>
+              <p className="mt-1 text-sm text-[#686962] dark:text-gray-400">运行在本机或 worktree，重点看人工审核、产物落盘和权限边界。</p>
             </div>
             <AdminButton
               type="button"
@@ -316,7 +316,7 @@ export default function OpsConsoleClient() {
 
       <section className="mb-5 rounded-xl border border-[#d5d7cd] bg-white/70 p-5 dark:border-[#252e39] dark:bg-[#10161f]">
         <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">最近运行</h2>
-        <p className="mt-1 text-sm text-[#686962] dark:text-gray-400">当前先接入本机 Agent Ops 最近运行快照；云端状态回写后会合并到这里。</p>
+        <p className="mt-1 text-sm text-[#686962] dark:text-gray-400">当前先接入本地任务最近运行快照；云端状态回写后会合并到这里。</p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {recentRuns.map((run) => (
             <article key={run.id} className="rounded-lg border border-[#d9dbd1] bg-[#fbfbf7] p-3 dark:border-[#263142] dark:bg-[#0c1118]">
@@ -355,7 +355,7 @@ export default function OpsConsoleClient() {
         <ol className="mt-4 space-y-3 text-sm leading-6 text-[#51514a] dark:text-gray-300">
           <Step title="1. Automation Registry" body="先统一登记所有自动化资产，字段固定，后续才能做状态回写、审计和调度。" />
           <Step title="2. 云端自动化" body="GitHub follow、FrontendNext 小时抓取、每日汇总归入云端列，重点管 API 限流、触发频率和回滚。" />
-          <Step title="3. 本地自动化" body="Medium 翻译、OpenClaw PR、数字员工周报、本机 Agent Ops 归入本地列，重点管人工审核、产物落盘和权限边界。" />
+          <Step title="3. 本地自动化" body="Medium 翻译、OpenClaw PR、数字员工周报、内容分发、客户雷达、指标报告和 EmployeeHub 巡检都作为本地任务同级登记。" />
         </ol>
       </section>
     </AdminPage>

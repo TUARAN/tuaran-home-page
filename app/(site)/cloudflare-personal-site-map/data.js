@@ -1,7 +1,7 @@
 export const SHARE_COPY = {
   title: 'Cloudflare 开发者平台选型地图 · 2aran.com 个人站该用哪个',
-  lead: '对照 tuaran-home-page 的真实代码与 wrangler 配置：已用 Pages + D1；R2 暂不需要；KV / DO / Workers AI 大多可跳过。带数据流图、产品判定表与 R2 触发规则。',
-  full: '继续 Pages + D1 + Git 静态资源即可。只有出现用户上传、大文件、不 deploy 发内容时再绑 R2。',
+  lead: '对照 tuaran-home-page 真实代码与 wrangler 配置：已用 Pages + D1 + R2（壁纸）；KV / DO / Workers AI 大多可跳过。带数据流图、产品判定表与 R2 扩展场景。',
+  full: '继续 Pages + D1 + R2（壁纸）+ Git 静态资源即可。语音、用户上传、后台内容发布时再拓展 R2 用途；不做后台 CMS 时无需 KV。',
 }
 
 export const VERDICT_META = {
@@ -19,15 +19,16 @@ export const VERDICT_FILTERS = [
 ]
 
 export const VERDICT_COUNTS = [
-  { label: '已用', count: 3, verdict: 'have' },
-  { label: '以后再说', count: 3, verdict: 'later' },
+  { label: '已用', count: 4, verdict: 'have' },
+  { label: '以后再说', count: 2, verdict: 'later' },
   { label: '暂不需要', count: 14, verdict: 'skip' },
 ]
 
 export const SITE_FACTS = [
   { label: '部署', value: 'Cloudflare Pages + Functions' },
   { label: '动态数据', value: 'D1（留言 / 评论 / 用户 / 短链等）' },
-  { label: '内容与静态资源', value: 'Git + public/（约 8.5MB）' },
+  { label: '媒体文件', value: 'R2（壁纸 / 可下载资源；D1 存元数据，文件走公开 R2 域名）' },
+  { label: '内容与静态资源', value: 'Git + public/（约 8.6MB）' },
   { label: '默认语言', value: '边缘 Middleware 读 cf-ipcountry：中国大陆→中文，海外→英文' },
   { label: 'AI 体验', value: '浏览器 WebGPU（不进 Cloudflare AI）' },
 ]
@@ -50,9 +51,16 @@ export const CORE_STACK = [
   {
     layer: '关系型数据',
     product: 'D1',
-    role: '结构化数据 + 小密文（shared_notes 等）',
+    role: '结构化数据 + 小密文（22 张表：留言/评论/用户/短链/语音/笔记等）',
     verdict: 'have',
-    note: 'binding = DB，单库离 10GB 上限还很远',
+    note: 'binding = DB，单库使用中；元数据指向 R2 对象',
+  },
+  {
+    layer: '对象存储',
+    product: 'R2',
+    role: '壁纸/可下载文件；D1 存元数据，文件本体走公开 R2 域名',
+    verdict: 'have',
+    note: 'binding = MEDIA，前缀 downloads/；出流量免费',
   },
 ]
 
@@ -66,8 +74,8 @@ export const STORAGE_PRODUCTS = [
   {
     product: 'R2',
     type: '对象存储（S3 兼容）',
-    personalUse: '用户上传、音频、大附件、动态媒体库',
-    verdict: 'later',
+    personalUse: '壁纸库、可下载文件；D1 存元数据，文件走公开域名',
+    verdict: 'have',
   },
   {
     product: 'KV',
@@ -183,10 +191,10 @@ export const STORAGE_COMPARE = [
   },
   {
     name: 'R2',
-    verdict: 'later',
+    verdict: 'have',
     store: 'S3 兼容对象存储，出流量免费',
-    site: '适合：用户上传、音频、动态媒体库',
-    avoid: '现在没绑，因为没有任何上传 API',
+    site: '已用：壁纸/可下载资源（binding MEDIA，前缀 downloads/）',
+    avoid: '别放：高频小块写入（SQL 查询适合 D1）',
   },
   {
     name: 'KV',
@@ -200,7 +208,7 @@ export const STORAGE_COMPARE = [
 export const TRIGGER_RULES = [
   {
     trigger: '评论 / 留言要附图、用户上传头像',
-    action: '加 R2；D1 只存元数据（key、owner、时间）',
+    action: '扩展现有 R2 用途；D1 只存元数据（key、owner、时间）',
   },
   {
     trigger: '语音任务存 mp3/wav 原音',
@@ -224,9 +232,9 @@ export const TRIGGER_RULES = [
   },
 ]
 
-export const MIN_STACK = ['Pages', 'Functions', 'Middleware', 'D1', 'Git 内容', 'Resend', 'GitHub OAuth']
+export const MIN_STACK = ['Pages', 'Functions', 'Middleware', 'D1', 'R2', 'Git 内容', 'Resend', 'GitHub OAuth']
 
-export const SKIP_STACK = ['R2', 'KV', 'Durable Objects', 'Workers AI', 'Vectorize', 'Queues', 'Hyperdrive']
+export const SKIP_STACK = ['KV', 'Durable Objects', 'Workers AI', 'Vectorize', 'Queues', 'Hyperdrive']
 
 export const RELATED_LINKS = [
   {

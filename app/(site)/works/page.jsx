@@ -18,7 +18,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '作品与项目',
   description:
-    '涂阿燃的产品站点、AI 工程实验、内容系统、研究页面与工具作品。这里展示已经做成系统的项目，而不只是文章目录。',
+    '涂阿燃的对外产品、AI 工程实验、内容系统、研究页面与工具作品。这里展示已经做成系统的项目，而不只是文章目录。',
   alternates: {
     canonical: '/works',
   },
@@ -687,7 +687,7 @@ export default function WorksPage() {
               做成可运行的系统
             </h1>
             <p className="mb-0 mt-5 max-w-xl text-[16px] leading-[1.7] text-[#5E5F55] dark:text-gray-400">
-              这里不是文章目录，而是我正在运营、打磨和验证的作品展厅——产品站点、AI 工程实验、内容系统、研究页面和工具原型。
+              这里不是文章目录，而是我正在运营、打磨和验证的作品展厅——对外产品、AI 工程实验、内容系统、研究页面和工具原型。
             </p>
             <blockquote className="mb-0 mt-6 border-l-2 pl-5 text-[14px] leading-[1.7] text-[#8E8F80] italic dark:text-gray-500" style={{ borderColor: TYPE_TONE.product.accent }}>
               {WORK_STRATEGY_PARAGRAPHS[0]}
@@ -697,7 +697,7 @@ export default function WorksPage() {
                 href="#featured-works"
                 className="inline-flex min-h-[44px] items-center gap-2 bg-[#15140f] px-6 text-[14px] font-semibold text-[#FAF8F1] no-underline transition-colors hover:bg-[#2F2B22] dark:bg-gray-100 dark:text-[#111820] dark:hover:bg-gray-200"
               >
-                看产品主线
+                看经营主轴
                 <ArrowIcon className="h-3.5 w-3.5 text-[#FAF8F1] dark:text-[#111820]" />
               </Link>
             </div>
@@ -727,7 +727,7 @@ export default function WorksPage() {
             </div>
             <SharePageButton
               title="涂阿燃 · 作品与项目"
-              text="产品站点、AI 工程实验、内容系统、研究页面与工具作品"
+              text="对外产品、AI 工程实验、内容系统、研究页面与工具作品"
               url="https://2aran.com/works"
               size="md"
             />
@@ -744,8 +744,11 @@ export default function WorksPage() {
                 Operating Spine
               </p>
               <h2 id="featured-heading" className="mb-0 border-0 p-0 font-serif text-[26px] font-bold text-[#15140f] dark:text-gray-100">
-                三条产品主线
+                三条经营主轴
               </h2>
+              <p className="mb-0 mt-2 max-w-xl text-[13px] leading-relaxed text-[#8E8F80] dark:text-gray-500">
+                按当前投入和商业闭环排序；下方作品分区再按形态归档。
+              </p>
             </div>
             <Link
               href="/services"
@@ -817,7 +820,7 @@ export default function WorksPage() {
             href="#featured-works"
             className="inline-flex items-center gap-1.5 text-[13px] font-medium no-underline transition-colors hover:opacity-70" style={{ color: TYPE_TONE.product.accent }}
           >
-            回到产品主线
+            回到经营主轴
             <ArrowIcon />
           </Link>
         </div>

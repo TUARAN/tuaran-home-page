@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import SharePageButton from '../../components/SharePageButton'
+import PageContainer from '../../components/PageContainer'
 import { getResourceDocument, loadResourceMarkdown } from '../../../../lib/resourceDocuments'
 import { buildShenZhiDingNeiArticle, buildShenZhiDingWaiArticle } from '../../../../lib/resourceMarkdown'
 import ResourceArticleSwitcher from './ResourceArticleSwitcher'
@@ -112,7 +113,7 @@ export default function ShenZhiDingNeiResourcePage() {
   ].filter(Boolean)
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto px-4 py-12">
+    <PageContainer className="py-12">
       <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -155,6 +156,6 @@ export default function ShenZhiDingNeiResourcePage() {
           </p>
         </div>
       )}
-    </div>
+    </PageContainer>
   )
 }

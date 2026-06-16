@@ -210,7 +210,7 @@ export default function WritingMonetizationDashboardPage() {
   const maxSales = Math.max(...JUEJIN_TOP10.map((item) => item.sales))
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="w-full max-w-[1120px] mx-auto px-4 py-8">
       <header className="mb-8 border-b border-[#eee] pb-4 dark:border-gray-800">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>

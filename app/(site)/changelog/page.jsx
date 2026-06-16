@@ -1,3 +1,5 @@
+import PageContainer from '../components/PageContainer'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -520,7 +522,7 @@ function ChangelogSections({ entry }) {
 
 export default function ChangelogPage() {
   return (
-    <main className="mx-auto w-full max-w-[1080px] px-4 py-8 md:py-10">
+    <PageContainer className="py-8 md:py-10">
       <header className="border-b border-[#dee0db] pb-6 dark:border-gray-800">
         <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
           Site Changelog · 站点更新记录
@@ -580,6 +582,6 @@ export default function ChangelogPage() {
           </li>
         ))}
       </ol>
-    </main>
+    </PageContainer>
   )
 }

@@ -267,7 +267,7 @@ export default async function ResearchDetailPage({ params }) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
+    <div className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-8">
       <Script id={`research-jsonld-${entry.category}-${entry.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(structuredData)}
       </Script>

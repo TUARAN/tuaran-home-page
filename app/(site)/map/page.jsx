@@ -239,7 +239,7 @@ export default async function SiteMapPage() {
   const hiddenItems = totalItems - primaryItems
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] px-4 py-6 md:py-10">
+    <div className="mx-auto w-full max-w-[1120px] px-4 py-6 md:py-10">
       <header className="mb-10 overflow-hidden border-b border-[#d4d6cc] pb-8 dark:border-[#232c36]">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
           <div>

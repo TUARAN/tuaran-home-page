@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import PageContainer from '../components/PageContainer'
+
 export const metadata = {
   title: '书籍出版 | tuaran',
   description: '书籍与电子小册出版进展页面。',
@@ -34,7 +36,7 @@ export default function PublicationsPage() {
   }))
 
   return (
-    <div className="mx-auto w-full max-w-[1120px] px-4 py-8">
+    <PageContainer className="py-8">
       <section className="rounded-[24px] border border-[#dcded6] bg-[#f9faf7] p-5 shadow-[0_12px_40px_rgba(82,69,45,0.06)] dark:border-[#252d36] dark:bg-[#0f141b] md:p-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -106,6 +108,6 @@ export default function PublicationsPage() {
         </div>
 
       </section>
-    </div>
+    </PageContainer>
   )
 }

@@ -30,7 +30,7 @@ const SECTIONS = [
   { id: 'flow', label: '数据流' },
   { id: 'products', label: '产品判定' },
   { id: 'storage', label: 'D1 / R2 / KV' },
-  { id: 'triggers', label: 'R2 触发' },
+  { id: 'triggers', label: 'R2 扩展' },
   { id: 'stack', label: '最小栈' },
 ]
 
@@ -97,9 +97,10 @@ function ArchitectureDiagram() {
         <rect x="180" y="210" width="300" height="56" rx="6" className="fill-[#f7f8f5] stroke-[#d0d2cd] dark:fill-[#161513] dark:stroke-[#2c2d2b]" strokeWidth="1.2" />
         <text x="330" y="238" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">浏览器 WebGPU</text>
         <text x="330" y="254" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">/web-llm 本地推理</text>
-        <rect x="520" y="210" width="200" height="56" rx="6" className="fill-[#f7f8f5] stroke-[#b4b6b1] dark:fill-[#161513] dark:stroke-[#41423f]" strokeWidth="1.2" strokeDasharray="6 4" />
-        <text x="620" y="238" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">R2</text>
-        <text x="620" y="254" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">未绑定</text>
+        <rect x="520" y="210" width="200" height="56" rx="6" className="fill-[#e9ebe6] stroke-[#c3c5c0] dark:fill-[#1c1d1b] dark:stroke-[#373836]" strokeWidth="1.2" />
+        <text x="620" y="238" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">R2 · MEDIA</text>
+        <text x="620" y="254" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">壁纸 / 可下载</text>
+        <line x1="440" y1="186" x2="520" y2="238" className="stroke-[#b4b6b1] dark:stroke-[#41423f]" strokeWidth="1.5" />
         <line x1="140" y1="68" x2="180" y2="68" className="stroke-[#b4b6b1] dark:stroke-[#41423f]" strokeWidth="1.5" markerEnd="url(#cf-map-arrow)" />
         <line x1="320" y1="68" x2="360" y2="68" className="stroke-[#b4b6b1] dark:stroke-[#41423f]" strokeWidth="1.5" />
         <line x1="520" y1="68" x2="560" y2="68" className="stroke-[#b4b6b1] dark:stroke-[#41423f]" strokeWidth="1.5" />
@@ -114,7 +115,7 @@ function ArchitectureDiagram() {
         </defs>
       </svg>
       <figcaption className="border-t border-[#dee0db] px-3 py-2 text-[11px] text-[#63655f] dark:border-gray-800 dark:text-gray-400">
-        访客请求先过边缘 Middleware（cf-ipcountry 定默认语言、域名/路径重定向），再由 Pages CDN 分发；动态写操作进 Functions → D1；R2 虚线框表示尚未接入。
+        访客请求先过边缘 Middleware（cf-ipcountry 定默认语言、域名/路径重定向），再由 Pages CDN 分发；动态写操作进 Functions → D1；壁纸等大文件走 Functions → R2（D1 只存元数据）；浏览器 WebGPU 本地推理不进 Cloudflare AI。
       </figcaption>
     </figure>
   )
@@ -327,7 +328,7 @@ export default function CloudflarePersonalSiteMapClient() {
       <section id="flow" className="mt-10 scroll-mt-24">
         <h2 className="font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">数据流</h2>
         <p className="mt-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
-          你现在这条链路：Pages 托管 + 边缘 Middleware（cf-ipcountry 定默认语言 / 域名重定向）+ Functions 写 D1 + Git 静态资源；R2 尚未接入。
+          你现在这条链路：Pages 托管 + 边缘 Middleware（cf-ipcountry 定默认语言 / 域名重定向）+ Functions 写 D1 + R2（壁纸/可下载文件）+ Git 静态资源。
         </p>
         <div className="mt-4">
           <ArchitectureDiagram />
@@ -497,10 +498,13 @@ export default function CloudflarePersonalSiteMapClient() {
       </section>
 
       <section id="triggers" className="mt-10 scroll-mt-24">
-        <h2 className="font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">什么时候该加 R2？</h2>
+        <h2 className="font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">R2 扩展场景</h2>
+        <p className="mt-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
+          R2 已接入壁纸/可下载资源（绑定 MEDIA，前缀 downloads/），以下场景可扩展其用途。核心原则：D1 存元数据 + R2 存大文件本体。
+        </p>
         <div className="mt-4 overflow-hidden rounded-md border border-[#dee0d6] dark:border-gray-800">
           <ProductTable
-            headers={['触发信号', '建议动作']}
+            headers={['场景', '建议动作']}
             rows={TRIGGER_RULES.map((row) => [row.trigger, row.action])}
             emptyMessage=""
           />

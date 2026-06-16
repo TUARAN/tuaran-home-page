@@ -200,6 +200,16 @@ function taskText(task) {
   )
 }
 
+function formatStreamError(payload) {
+  const parts = []
+  if (payload?.error) parts.push(payload.error)
+  if (payload?.phase) parts.push(`phase=${payload.phase}`)
+  if (payload?.status) parts.push(`HTTP_${payload.status}`)
+  if (payload?.detail) parts.push(payload.detail)
+  if (payload?.rawPreview) parts.push(`raw=${payload.rawPreview}`)
+  return parts.filter(Boolean).join(' · ') || 'DEEPSEEK_STREAM_FAILED'
+}
+
 export default function ModelDispatchConsole() {
   const [form, setForm] = useState(initialForm)
   const [plan, setPlan] = useState(emptyPlan)
@@ -247,7 +257,7 @@ export default function ModelDispatchConsole() {
       return
     }
     if (event === 'error') {
-      setError(payload?.error || payload?.detail || 'DEEPSEEK_STREAM_FAILED')
+      setError(formatStreamError(payload))
       setStatus('error')
     }
   }

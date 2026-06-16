@@ -552,7 +552,7 @@ export default function MuskExperienceClient() {
         <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(rgba(2,6,23,0.08)_1px,transparent_1px)] [background-size:18px_18px]" />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-4 py-10">
+      <div className="relative mx-auto w-full max-w-[1120px] px-4 py-10">
         {/* Hero */}
         <header className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_280px] md:items-start">
           <div>

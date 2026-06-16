@@ -1,4 +1,5 @@
 import MemoryVault from './MemoryVault'
+import PageContainer from '../components/PageContainer'
 
 const memoryLayers = [
   {
@@ -91,7 +92,7 @@ export const metadata = {
 
 export default function ContextMemoryPage() {
   return (
-    <main className="context-memory-page w-full max-w-[1120px] mx-auto px-4 py-10">
+    <PageContainer className="context-memory-page py-10">
       <header className="mb-8 border-b border-[#d5d7cd] pb-8 dark:border-[#253140]">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
           <div>
@@ -200,6 +201,6 @@ export default function ContextMemoryPage() {
           </div>
         </div>
       </section>
-    </main>
+    </PageContainer>
   )
 }

@@ -1,8 +1,162 @@
 export const SHARE_COPY = {
-  title: 'Cloudflare 开发者平台选型地图 · 2aran.com 个人站该用哪个',
-  lead: '对照 tuaran-home-page 真实代码与 wrangler 配置：已用 Pages + D1 + R2（壁纸）；KV / DO / Workers AI 大多可跳过。带数据流图、产品判定表与 R2 扩展场景。',
-  full: '继续 Pages + D1 + R2（壁纸）+ Git 静态资源即可。语音、用户上传、后台内容发布时再拓展 R2 用途；不做后台 CMS 时无需 KV。',
+  title: 'AI 商业项目设计地图 · 2aran.com 四维对照',
+  lead: '从技术架构、安全防御、运营飞轮、市场设计四个维度，对照 2aran.com 真实代码与 Cloudflare 实装，看一个 AI 商业项目该怎么设计、个人站目前处在什么位置。',
+  full: '技术架构覆盖 4/4 核心层（接入+计算+数据+存储），安全防御覆盖 2/5 层（网络+应用有，数据+模型+合规缺），运营闭环覆盖 1/2（有数据采集，缺飞轮闭环），市场设计覆盖 0/4（个人站无商业设计）。Cloudflare 栈继续 Pages + D1 + R2。',
 }
+
+// ─── 四维度覆盖度 ────────────────────────────────────────
+
+export const DIMENSION_SCORES = [
+  {
+    id: 'arch',
+    label: '技术架构',
+    score: '4/4',
+    summary: '接入+计算+数据+存储齐全',
+    color: '#4a6fa5',
+  },
+  {
+    id: 'security',
+    label: '安全防御',
+    score: '2/5',
+    summary: '网络+应用有，数据+模型+合规缺',
+    color: '#8b5a1f',
+  },
+  {
+    id: 'ops',
+    label: '运营飞轮',
+    score: '1/2',
+    summary: '有数据采集，缺飞轮闭环',
+    color: '#374d34',
+  },
+  {
+    id: 'market',
+    label: '市场设计',
+    score: '0/4',
+    summary: '个人站无商业设计',
+    color: '#63655f',
+  },
+]
+
+// ─── 技术架构四层对照 ────────────────────────────────────
+
+export const TECH_ARCH_LAYERS = [
+  { name: '接入层', items: [
+    { component: 'Web / H5', site: 'Pages CDN', verdict: 'have' },
+    { component: 'iOS / Android', site: '无', verdict: 'skip' },
+    { component: 'Open API', site: '无', verdict: 'skip' },
+    { component: 'SDK / Plugin', site: '无', verdict: 'skip' },
+  ]},
+  { name: '应用层', items: [
+    { component: '对话引擎', site: 'Web-LLM（浏览器端）', verdict: 'have' },
+    { component: 'RAG', site: '无', verdict: 'later' },
+    { component: 'Agent 编排', site: '无', verdict: 'later' },
+    { component: '工作流引擎', site: '无', verdict: 'skip' },
+    { component: '权限 / 计费', site: 'GitHub OAuth + 签名 Cookie', verdict: 'have' },
+    { component: '多租户', site: '无', verdict: 'skip' },
+    { component: '审计日志', site: '无', verdict: 'skip' },
+  ]},
+  { name: '模型层', items: [
+    { component: 'LLM 网关路由', site: '无（浏览器端直连 HuggingFace）', verdict: 'skip' },
+    { component: 'Prompt 管理', site: '无', verdict: 'skip' },
+    { component: '微调 / LoRA', site: '无', verdict: 'skip' },
+    { component: '评测基准', site: '无', verdict: 'skip' },
+  ]},
+  { name: '基础设施层', items: [
+    { component: '向量数据库', site: '无', verdict: 'skip' },
+    { component: '对象存储', site: 'R2', verdict: 'have' },
+    { component: '消息队列', site: '无', verdict: 'skip' },
+    { component: '容器编排', site: 'Workers / Functions', verdict: 'have' },
+    { component: '可观测性', site: 'Cloudflare Analytics', verdict: 'have' },
+    { component: 'GPU 集群', site: '无（浏览器端 WebGPU）', verdict: 'skip' },
+    { component: 'CDN / WAF', site: 'Cloudflare CDN', verdict: 'have' },
+    { component: '密钥管理', site: 'Cloudflare 环境变量', verdict: 'have' },
+  ]},
+]
+
+// ─── 安全防御五层对照 ────────────────────────────────────
+
+export const SECURITY_LAYERS = [
+  { name: '网络安全', items: [
+    { component: 'TLS 1.3', site: 'Cloudflare 自动 TLS', verdict: 'have' },
+    { component: 'WAF', site: 'Cloudflare 内置', verdict: 'have' },
+    { component: 'DDoS 防护', site: 'Cloudflare L3/L4/L7', verdict: 'have' },
+    { component: 'IP 白名单', site: '无', verdict: 'skip' },
+  ]},
+  { name: '应用安全', items: [
+    { component: 'OAuth 2.0', site: 'GitHub OAuth + 签名 Cookie', verdict: 'have' },
+    { component: 'RBAC', site: 'owner-only（AdminPageGate）', verdict: 'have' },
+    { component: '限流', site: 'D1 基础限流', verdict: 'later' },
+    { component: '输入校验', site: 'API 层基础校验', verdict: 'have' },
+    { component: 'CSP', site: 'next.config.js headers', verdict: 'have' },
+  ]},
+  { name: '数据安全', items: [
+    { component: 'AES-256 at rest', site: 'D1/R2 平台级加密', verdict: 'later' },
+    { component: '数据脱敏', site: '无', verdict: 'skip' },
+    { component: 'DLP', site: '无', verdict: 'skip' },
+    { component: '审计日志', site: '无', verdict: 'skip' },
+    { component: '备份', site: 'D1 导出 + Git 仓库', verdict: 'have' },
+  ]},
+  { name: '模型安全', items: [
+    { component: 'Prompt 注入防御', site: '无（浏览器端推理）', verdict: 'skip' },
+    { component: '越狱防护', site: '无', verdict: 'skip' },
+    { component: '数据泄露防护', site: '无', verdict: 'skip' },
+    { component: '幻觉监控', site: '无', verdict: 'skip' },
+    { component: '模型水印', site: '无', verdict: 'skip' },
+    { component: '对齐测试', site: '无', verdict: 'skip' },
+  ]},
+  { name: '合规框架', items: [
+    { component: 'GDPR', site: '无', verdict: 'skip' },
+    { component: '数据安全法', site: '无', verdict: 'skip' },
+    { component: '算法备案', site: '无', verdict: 'skip' },
+    { component: '隐私影响评估', site: '无', verdict: 'skip' },
+  ]},
+]
+
+// ─── 运营飞轮对照 ────────────────────────────────────────
+
+export const OPS_FLYWHEEL = [
+  { loop: '数据飞轮', items: [
+    { stage: '用户交互', site: '留言(stomp) + PV 存 D1', need: '完整行为埋点', verdict: 'later' },
+    { stage: '反馈标注', site: '无', need: '人工/自动标注管线', verdict: 'skip' },
+    { stage: '模型迭代', site: '浏览器端推理，无迭代', need: 'A/B 测试 + 模型灰度', verdict: 'skip' },
+    { stage: '体验提升', site: '偶尔手动更新', need: '数据驱动迭代', verdict: 'skip' },
+  ]},
+  { loop: '增长飞轮', items: [
+    { stage: '种子用户', site: 'GitHub OAuth 用户', need: '目标人群获客', verdict: 'later' },
+    { stage: '口碑传播', site: '社交分享按钮', need: '推荐体系 + 裂变机制', verdict: 'later' },
+    { stage: '付费转化', site: '无', need: '计费系统 + 订阅管理', verdict: 'skip' },
+    { stage: '再投入', site: '无', need: '收入反哺产品', verdict: 'skip' },
+  ]},
+]
+
+export const OPS_METRICS = [
+  { category: '产品指标', items: ['留存率', 'Token 消耗', '任务完成率', 'NPS'] },
+  { category: '商业指标', items: ['ARPU', 'CAC', 'LTV', '毛利率'] },
+]
+
+// ─── 市场设计对照 ────────────────────────────────────────
+
+export const MARKET_DESIGN = [
+  { tier: 'C 端市场', desc: '免费工具 → 高级订阅', site: '无 C 端产品', verdict: 'skip' },
+  { tier: 'SMB 市场', desc: 'API/SDK → 按量计费', site: '无 API 产品', verdict: 'skip' },
+  { tier: 'B 端市场', desc: '私有部署 → 年度合同', site: '无 B 端方案', verdict: 'skip' },
+]
+
+export const PRICING_MODELS = [
+  { model: '按量计费', desc: 'Token / API 调用 / 存储量', verdict: 'skip' },
+  { model: '订阅制', desc: '月/年费 + 阶梯权益', verdict: 'skip' },
+  { model: '混合模式', desc: '基础订阅 + 超额按量', verdict: 'skip' },
+  { model: '效果计费', desc: '按完成任务 / 节省成本分成', verdict: 'skip' },
+]
+
+export const MARKET_ENTRY = [
+  { stage: '垂直场景突破', desc: '选一个高价值垂直场景，做到极致', site: '/web-llm 是 AI 体验入口' },
+  { stage: '横向能力扩展', desc: '从单场景扩展到多场景覆盖', site: '调研内容体系可复用' },
+  { stage: '平台生态构建', desc: '开放 API / SDK，引入第三方', site: '暂未启动' },
+  { stage: '全球化', desc: '多语言 / 多区域 / 多币种', site: 'Middleware 已有 i18n 雏形' },
+]
+
+// ─── 原有 Cloudflare 选型数据（保留） ──────────────────
 
 export const VERDICT_META = {
   have: { label: '已用', tone: 'success' },
@@ -31,6 +185,7 @@ export const SITE_FACTS = [
   { label: '内容与静态资源', value: 'Git + public/（约 8.6MB）' },
   { label: '默认语言', value: '边缘 Middleware 读 cf-ipcountry：中国大陆→中文，海外→英文' },
   { label: 'AI 体验', value: '浏览器 WebGPU（不进 Cloudflare AI）' },
+  { label: '四维覆盖', value: '技术 4/4 · 安全 2/5 · 运营 1/2 · 市场 0/4' },
 ]
 
 export const CORE_STACK = [

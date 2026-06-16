@@ -97,6 +97,15 @@ function sse(controller, event, data) {
   controller.enqueue(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
 }
 
+function readDeltaLine(line) {
+  const trimmed = line.trim()
+  if (!trimmed.startsWith('data:')) return ''
+  const payload = trimmed.slice(5).trim()
+  if (!payload || payload === '[DONE]') return ''
+  const json = JSON.parse(payload)
+  return json?.choices?.[0]?.delta?.content || ''
+}
+
 export async function POST(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
@@ -117,7 +126,9 @@ export async function POST(req) {
     async start(controller) {
       sse(controller, 'start', { model, startedAt: Date.now() })
       let raw = ''
+      let phase = 'initializing'
       try {
+        phase = 'requesting_deepseek'
         const res = await fetch(`${baseUrl}/chat/completions`, {
           method: 'POST',
           headers: {
@@ -145,11 +156,12 @@ export async function POST(req) {
 
         if (!res.ok || !res.body) {
           const detail = await res.text().catch(() => '')
-          sse(controller, 'error', { error: 'DEEPSEEK_API_FAILED', status: res.status, detail })
+          sse(controller, 'error', { error: 'DEEPSEEK_API_FAILED', phase, status: res.status, detail })
           controller.close()
           return
         }
 
+        phase = 'reading_stream'
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
         let buffer = ''
@@ -161,13 +173,8 @@ export async function POST(req) {
           const lines = buffer.split('\n')
           buffer = lines.pop() || ''
           for (const line of lines) {
-            const trimmed = line.trim()
-            if (!trimmed.startsWith('data:')) continue
-            const payload = trimmed.slice(5).trim()
-            if (!payload || payload === '[DONE]') continue
             try {
-              const json = JSON.parse(payload)
-              const delta = json?.choices?.[0]?.delta?.content || ''
+              const delta = readDeltaLine(line)
               if (!delta) continue
               raw += delta
               sse(controller, 'delta', { text: delta })
@@ -177,14 +184,30 @@ export async function POST(req) {
           }
         }
 
+        if (buffer.trim()) {
+          for (const line of buffer.split('\n')) {
+            try {
+              const delta = readDeltaLine(line)
+              if (!delta) continue
+              raw += delta
+              sse(controller, 'delta', { text: delta })
+            } catch {
+              // Ignore malformed provider chunks.
+            }
+          }
+        }
+
+        phase = 'parsing_json'
         const plan = extractJson(raw)
         sse(controller, 'done', { model, raw, plan, plannedAt: Date.now() })
         controller.close()
       } catch (error) {
         sse(controller, 'error', {
           error: 'DEEPSEEK_STREAM_FAILED',
+          phase,
           detail: String(error?.message || error),
           raw,
+          rawPreview: raw.slice(0, 1000),
         })
         controller.close()
       }

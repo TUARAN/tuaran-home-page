@@ -1,6 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import PageContainer from '../components/PageContainer'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -79,7 +81,7 @@ const productLinks = [
 
 export default function ServicesPage() {
   return (
-    <main className="mx-auto w-full max-w-[960px] px-4 py-10 md:py-12">
+    <PageContainer className="py-10 md:py-12">
       <header className="mb-10 border-b border-[#dee0db] pb-8 dark:border-gray-800">
         <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#767869] dark:text-[#8e9ab0]">
           Services · 合作说明
@@ -239,6 +241,6 @@ export default function ServicesPage() {
           </div>
         </div>
       </section>
-    </main>
+    </PageContainer>
   )
 }

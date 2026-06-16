@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import PageContainer from '../components/PageContainer'
+
 import SharePageButton from '../components/SharePageButton'
 import { SkillBundleButton, SkillFileButton } from './SkillFileActions'
 import { getSkillFileEntries } from './skillFiles'
@@ -137,7 +139,7 @@ function SkillCard({ skill }) {
 
 export default function SkillCenterPage() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-10">
+    <PageContainer className="py-10">
       <header className="mb-8 border-b border-[#dee0db] pb-6 dark:border-[#202938]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -248,6 +250,6 @@ export default function SkillCenterPage() {
           ))}
         </ol>
       </section>
-    </main>
+    </PageContainer>
   )
 }

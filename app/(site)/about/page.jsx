@@ -1,3 +1,5 @@
+import PageContainer from '../components/PageContainer'
+
 export const dynamic = 'force-static'
 
 export const metadata = {
@@ -85,7 +87,7 @@ const socialChipClassName =
 
 export default function AboutPage() {
   return (
-    <main className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col px-4 py-8 sm:py-5">
+    <PageContainer className="flex flex-1 flex-col py-8 sm:py-5">
       <header className="shrink-0 border-b border-[#dee0db] pb-4 dark:border-gray-800">
         <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
           About · 关于我
@@ -211,6 +213,6 @@ export default function AboutPage() {
           ))}
         </ul>
       </section>
-    </main>
+    </PageContainer>
   )
 }

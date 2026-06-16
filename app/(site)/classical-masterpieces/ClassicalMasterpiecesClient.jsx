@@ -690,7 +690,7 @@ export default function ClassicalMasterpiecesClient() {
         <div className="absolute inset-0 opacity-[0.18] dark:opacity-[0.14]">
           <div className="h-full w-full bg-[linear-gradient(90deg,rgba(111,78,38,.16)_1px,transparent_1px),linear-gradient(180deg,rgba(111,78,38,.13)_1px,transparent_1px)] bg-[size:42px_42px]" />
         </div>
-        <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-[1.1fr_0.9fr] md:py-14">
+        <div className="relative mx-auto grid max-w-[1120px] gap-8 px-4 py-10 md:grid-cols-[1.1fr_0.9fr] md:py-14">
           <div>
             <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
               <Link href="/articles" className="underline-offset-4 hover:underline">
@@ -749,7 +749,7 @@ export default function ClassicalMasterpiecesClient() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-8">
+      <section className="mx-auto max-w-[1120px] px-4 py-8">
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
           {CATEGORIES.map((category) => {
             const colors = colorClass[category.color]
@@ -767,7 +767,7 @@ export default function ClassicalMasterpiecesClient() {
       </section>
 
       <section className="sticky top-[73px] z-20 border-y border-[#dee0db] bg-[#f0f1ee]/95 backdrop-blur dark:border-[#202938] dark:bg-[#0b1016]/95">
-        <div className="mx-auto max-w-6xl px-4 py-3">
+        <div className="mx-auto max-w-[1120px] px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
             <button
               type="button"
@@ -798,7 +798,7 @@ export default function ClassicalMasterpiecesClient() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-8">
+      <section className="mx-auto max-w-[1120px] px-4 py-8">
         <div className="space-y-8">
           {visibleCategories.map((category) => {
             const colors = colorClass[category.color]

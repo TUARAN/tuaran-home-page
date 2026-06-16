@@ -168,7 +168,7 @@ export default function CancersOverviewClient() {
   const openCancer = !compareMode && openId ? viewedAll.find((c) => c.id === openId) : null
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
+    <main className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-10">
       {/* ---- Header ---- */}
       <header className="flex flex-col gap-4 border-b border-[#dee0db] pb-5 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

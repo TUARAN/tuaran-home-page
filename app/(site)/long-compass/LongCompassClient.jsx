@@ -154,7 +154,7 @@ export default function LongCompassClient({
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-[1080px] flex-1 flex-col px-4 py-8">
+    <main className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-4 py-8">
       <header className="border-b border-[#dee0db] pb-5 dark:border-gray-800">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

@@ -245,7 +245,7 @@ export default function CloudflarePersonalSiteMapClient() {
     filteredPlatform.length
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
+    <main className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-10">
       <header className="border-b border-[#dee0db] pb-6 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#9ba475]">

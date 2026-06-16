@@ -1,5 +1,6 @@
 import WallpaperGallery from './WallpaperGallery'
 import { T } from '../../components/LocaleProvider'
+import PageContainer from '../../components/PageContainer'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -26,7 +27,7 @@ export const metadata = {
 
 export default function WallpapersPage() {
   return (
-    <main className="w-full max-w-5xl mx-auto px-4 py-10">
+    <PageContainer className="py-10">
       <header className="mb-8">
         <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
           <T zh="壁纸下载" en="Wallpapers" />
@@ -40,6 +41,6 @@ export default function WallpapersPage() {
       </header>
 
       <WallpaperGallery />
-    </main>
+    </PageContainer>
   )
 }

@@ -9,7 +9,7 @@ const STRATEGY_VERSION = 'dispatch-admin-orchestrator-v1.1.0'
 const AGENTS = [
   {
     id: 'codex-gpt55',
-    name: 'Codex-GPT5.5 一体化套件',
+    name: 'Codex-GPT5.5 全栈工程执行',
     short: 'Codex-GPT5.5',
     role: '工程执行主力',
     color: 'emerald',
@@ -108,7 +108,7 @@ const samplePlan = {
       objective: '按规划修改页面和 API，完成可运行的调度中枢。',
       assigned_agent: 'codex-gpt55',
       backup_agent: 'cursor-composer25',
-      model_rationale: 'Codex-GPT5.5 一体化套件具备读写文件、全栈实现和自测能力；Cursor 适合作为局部 UI 修复备用。',
+      model_rationale: 'Codex-GPT5.5 擅长全栈实现、端到端交付和自测；Cursor 适合作为局部 UI 修复备用。',
       estimated_tokens: '35K-70K',
       estimated_cost: '中',
       estimated_duration: '0.5-1.5 天',
@@ -222,7 +222,7 @@ const samplePlan = {
   execution_order: ['T1', 'T2', 'T4', 'T3'],
   audit_checklist: [
     'DeepSeek V4 Pro 只负责规划拆解，不默认承接全部执行。',
-    'Codex-GPT5.5 始终作为一体化套件，不拆成 Codex 和 GPT5.5 两个对象。',
+    'Codex-GPT5.5 始终作为全栈工程单元，不拆成 Codex 和 GPT5.5 两个对象。',
     'DeepSeek API 调用必须记录限流、超时、并发和隐私风险。',
     '每个子任务必须有主 agent、备用 agent、分派理由、执行 Prompt 和交付物。',
   ],
@@ -232,7 +232,7 @@ function makePlannerPrompt(form) {
   return `你是 Admin 专属多代码大模型调度规划器。你只能作为 DeepSeek V4 Pro 线上 API 规划拆解器，不能把自己当作唯一执行者。
 
 请基于原始需求拆成可执行子任务，并分配给固定 agent：
-1. Codex-GPT5.5 一体化套件：工程执行、文件读写、自测、全栈交付、API 批量生成、脚本重构。禁止拆成 Codex 和 GPT5.5。
+1. Codex-GPT5.5（全栈工程执行）：工程实现、文件读写、自测、全栈交付、API 批量生成、脚本重构。禁止拆成 Codex 和 GPT5.5。
 2. Claude Code Opus4.8：百万行上下文、跨模块架构、大型重构、漏洞合规审计、复杂长方案。
 3. Cursor Composer2.5：本地 IDE 补全、单文件 bug、前端增量、小模块快速开发。
 4. Workbuddy 轻量化运维低代码工具：低成本运维流水线、CI/CD、低代码表单、自动化辅助。

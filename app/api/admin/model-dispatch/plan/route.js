@@ -35,10 +35,28 @@ function makePlannerPrompt(task, strategyVersion) {
 是否需要本地 IDE：${task?.localIde ? '是' : '否'}
 并发量级：${task?.concurrency || ''}
 
+你必须把任务拆成 plan_steps。每个环节都要说明用哪个大模型/agent、备用模型、选型依据、预估 token、预估成本、预估耗时、依赖、交付物和风险。预估不允许留空；无法精确时给区间，例如 "20K-40K"、"低/中/高"、"2-6 小时"。
+
 只返回严格 JSON，不要 markdown。字段：
 {
   "task_info": {"task_id": "ADM-DISPATCH-YYYYMMDD-001", "title": "string", "strategy_version": "${strategyVersion}", "planner_unit": "DeepSeek V4 Pro 线上 API", "status": "planned"},
   "planner_summary": "string",
+  "plan_steps": [
+    {
+      "id": "P1",
+      "phase": "string",
+      "objective": "string",
+      "assigned_agent": "codex-gpt55 | claude-opus48 | cursor-composer25 | workbuddy-lowcode | deepseek-v4-pro-api",
+      "backup_agent": "codex-gpt55 | claude-opus48 | cursor-composer25 | workbuddy-lowcode | deepseek-v4-pro-api",
+      "model_rationale": "必须绑定 agent 能力边界或 DeepSeek V4 Pro 线上 API 风险",
+      "estimated_tokens": "例如 20K-40K",
+      "estimated_cost": "低 | 中 | 中高 | 高，或具体金额/区间",
+      "estimated_duration": "例如 2-6 小时",
+      "dependencies": ["P0"],
+      "deliverables": ["string"],
+      "risks": ["string"]
+    }
+  ],
   "subtasks": [
     {
       "id": "T1",
@@ -52,7 +70,10 @@ function makePlannerPrompt(task, strategyVersion) {
       "prompt": "给该执行 agent 的专属执行 Prompt",
       "inputs": ["string"],
       "deliverables": ["string"],
-      "risks": ["string"]
+      "risks": ["string"],
+      "estimated_tokens": "例如 20K-40K",
+      "estimated_cost": "低 | 中 | 中高 | 高，或具体金额/区间",
+      "estimated_duration": "例如 2-6 小时"
     }
   ],
   "execution_order": ["T1"],

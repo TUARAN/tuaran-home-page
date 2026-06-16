@@ -87,6 +87,64 @@ const samplePlan = {
   },
   planner_summary:
     'DeepSeek V4 Pro 负责把原始需求拆成可执行子任务；执行阶段不把 DeepSeek 当作唯一模型，而是按每个子任务能力边界分派给不同 agent。',
+  plan_steps: [
+    {
+      id: 'P1',
+      phase: '需求理解与任务拆解',
+      objective: '读取原始需求，拆出可执行环节、依赖关系和风险边界。',
+      assigned_agent: 'deepseek-v4-pro-api',
+      backup_agent: 'claude-opus48',
+      model_rationale: 'DeepSeek V4 Pro 线上 API 适合低成本生成结构化调度 JSON；复杂长方案可由 Claude Code Opus4.8 复核。',
+      estimated_tokens: '8K-14K',
+      estimated_cost: '低',
+      estimated_duration: '2-5 分钟',
+      dependencies: [],
+      deliverables: ['结构化 plan_steps', '执行顺序', '风险清单'],
+      risks: ['线上 API 超时', '输出 JSON 格式漂移', '内部需求传输隐私风险'],
+    },
+    {
+      id: 'P2',
+      phase: '工程实现',
+      objective: '按规划修改页面和 API，完成可运行的调度中枢。',
+      assigned_agent: 'codex-gpt55',
+      backup_agent: 'cursor-composer25',
+      model_rationale: 'Codex-GPT5.5 一体化套件具备读写文件、全栈实现和自测能力；Cursor 适合作为局部 UI 修复备用。',
+      estimated_tokens: '35K-70K',
+      estimated_cost: '中',
+      estimated_duration: '0.5-1.5 天',
+      dependencies: ['P1'],
+      deliverables: ['页面重构', 'planner API', '构建验证'],
+      risks: ['实现偏离调度目标', 'API key 暴露', 'UI 信息密度过高'],
+    },
+    {
+      id: 'P3',
+      phase: '安全与合规复核',
+      objective: '复核 owner gate、API key、DeepSeek 线上 API 隐私和分派规则冲突。',
+      assigned_agent: 'claude-opus48',
+      backup_agent: 'codex-gpt55',
+      model_rationale: 'Claude Code Opus4.8 适合跨模块权限、安全和合规审计；Codex-GPT5.5 可落地修复审计发现。',
+      estimated_tokens: '20K-45K',
+      estimated_cost: '中高',
+      estimated_duration: '2-6 小时',
+      dependencies: ['P2'],
+      deliverables: ['审计清单', '整改建议', '错配规则'],
+      risks: ['权限绕过', '敏感数据外发', 'DeepSeek API 限流或超时未记录'],
+    },
+    {
+      id: 'P4',
+      phase: '执行追踪与台账',
+      objective: '记录真实 agent、token、成本、耗时、返工、风险等级和归档结果。',
+      assigned_agent: 'workbuddy-lowcode',
+      backup_agent: 'codex-gpt55',
+      model_rationale: 'Workbuddy 适合低成本结构化台账和自动化辅助；复杂持久化或 API 接入由 Codex-GPT5.5 兜底。',
+      estimated_tokens: '5K-12K',
+      estimated_cost: '低',
+      estimated_duration: '1-3 小时',
+      dependencies: ['P2', 'P3'],
+      deliverables: ['执行追踪字段', '审计归档 JSON', '策略迭代依据'],
+      risks: ['只规划不闭环', '缺少真实消耗记录'],
+    },
+  ],
   subtasks: [
     {
       id: 'T1',
@@ -102,6 +160,9 @@ const samplePlan = {
       inputs: ['当前页面组件', '用户原始需求', 'Admin UI 组件'],
       deliverables: ['新的调度控制台 UI', '清晰的 DeepSeek → agents 工作流'],
       risks: ['误把 Codex 与 GPT5.5 拆分', '页面继续像静态说明页'],
+      estimated_tokens: '35K-70K',
+      estimated_cost: '中',
+      estimated_duration: '0.5-1.5 天',
     },
     {
       id: 'T2',
@@ -117,6 +178,9 @@ const samplePlan = {
       inputs: ['DEEPSEEK_API_KEY', '任务原文', '约束参数'],
       deliverables: ['owner-only planner endpoint', '错误态：缺 key、限流、超时、JSON 解析失败'],
       risks: ['线上 API 超时', '限流', '敏感数据传输'],
+      estimated_tokens: '15K-30K',
+      estimated_cost: '中',
+      estimated_duration: '2-4 小时',
     },
     {
       id: 'T3',
@@ -132,6 +196,9 @@ const samplePlan = {
       inputs: ['任务规划 JSON', '执行日志'],
       deliverables: ['执行追踪字段模板', '审计归档 JSON'],
       risks: ['只规划不追踪', '缺少错配和 API 风险记录'],
+      estimated_tokens: '5K-12K',
+      estimated_cost: '低',
+      estimated_duration: '1-3 小时',
     },
     {
       id: 'T4',
@@ -147,6 +214,9 @@ const samplePlan = {
       inputs: ['规划结果', '权限链路', 'API route'],
       deliverables: ['安全审计清单', '需要调整的分派规则'],
       risks: ['权限绕过', 'API key 暴露', '线上 API 隐私风险'],
+      estimated_tokens: '20K-45K',
+      estimated_cost: '中高',
+      estimated_duration: '2-6 小时',
     },
   ],
   execution_order: ['T1', 'T2', 'T4', 'T3'],
@@ -180,10 +250,28 @@ function makePlannerPrompt(form) {
 是否需要本地 IDE：${form.localIde ? '是' : '否'}
 并发量级：${form.concurrency}
 
+必须拆成 plan_steps，每个环节都要说明：哪个大模型/agent 执行、为什么、预计 token、预计成本、预计耗时、依赖、交付物和风险。
+
 只返回 JSON。字段：
 {
   "task_info": {"task_id": "string", "title": "string", "strategy_version": "${STRATEGY_VERSION}", "planner_unit": "DeepSeek V4 Pro 线上 API", "status": "planned"},
   "planner_summary": "string",
+  "plan_steps": [
+    {
+      "id": "P1",
+      "phase": "string",
+      "objective": "string",
+      "assigned_agent": "codex-gpt55 | claude-opus48 | cursor-composer25 | workbuddy-lowcode | deepseek-v4-pro-api",
+      "backup_agent": "codex-gpt55 | claude-opus48 | cursor-composer25 | workbuddy-lowcode | deepseek-v4-pro-api",
+      "model_rationale": "必须绑定 agent 能力边界或 DeepSeek API 风险",
+      "estimated_tokens": "例如 20K-40K",
+      "estimated_cost": "低 | 中 | 中高 | 高，或给出区间",
+      "estimated_duration": "例如 2-6 小时",
+      "dependencies": ["P0"],
+      "deliverables": ["string"],
+      "risks": ["string"]
+    }
+  ],
   "subtasks": [
     {
       "id": "T1",
@@ -197,7 +285,10 @@ function makePlannerPrompt(form) {
       "prompt": "给该执行 agent 的专属执行 Prompt",
       "inputs": ["string"],
       "deliverables": ["string"],
-      "risks": ["string"]
+      "risks": ["string"],
+      "estimated_tokens": "例如 20K-40K",
+      "estimated_cost": "低 | 中 | 中高 | 高，或给出区间",
+      "estimated_duration": "例如 2-6 小时"
     }
   ],
   "execution_order": ["T1"],
@@ -207,24 +298,42 @@ function makePlannerPrompt(form) {
 
 function normalizePlan(plan) {
   if (!plan || typeof plan !== 'object') return samplePlan
-  const subtasks = Array.isArray(plan.subtasks) ? plan.subtasks : []
+  const rawPlanSteps = Array.isArray(plan.plan_steps) ? plan.plan_steps : []
+  const subtasks = Array.isArray(plan.subtasks) ? plan.subtasks : rawPlanSteps
   return {
     ...samplePlan,
     ...plan,
     task_info: { ...samplePlan.task_info, ...(plan.task_info || {}) },
+    plan_steps: (rawPlanSteps.length ? rawPlanSteps : samplePlan.plan_steps).map((step, index) => ({
+      id: step.id || `P${index + 1}`,
+      phase: step.phase || step.title || `环节 ${index + 1}`,
+      objective: step.objective || step.goal || '',
+      assigned_agent: AGENT_BY_ID[step.assigned_agent] ? step.assigned_agent : 'codex-gpt55',
+      backup_agent: AGENT_BY_ID[step.backup_agent] ? step.backup_agent : 'codex-gpt55',
+      model_rationale: step.model_rationale || step.reason || '',
+      estimated_tokens: step.estimated_tokens || step.token_estimate || '待估',
+      estimated_cost: step.estimated_cost || step.cost_estimate || '待估',
+      estimated_duration: step.estimated_duration || step.duration_estimate || '待估',
+      dependencies: Array.isArray(step.dependencies) ? step.dependencies : [],
+      deliverables: Array.isArray(step.deliverables) ? step.deliverables : [],
+      risks: Array.isArray(step.risks) ? step.risks : [],
+    })),
     subtasks: subtasks.map((task, index) => ({
       id: task.id || `T${index + 1}`,
-      title: task.title || '未命名子任务',
-      goal: task.goal || '',
+      title: task.title || task.phase || '未命名子任务',
+      goal: task.goal || task.objective || '',
       assigned_agent: AGENT_BY_ID[task.assigned_agent] ? task.assigned_agent : 'codex-gpt55',
       backup_agent: AGENT_BY_ID[task.backup_agent] ? task.backup_agent : 'codex-gpt55',
       priority: task.priority || 'P1',
       status: task.status || 'todo',
-      reason: task.reason || '',
+      reason: task.reason || task.model_rationale || '',
       prompt: task.prompt || '',
       inputs: Array.isArray(task.inputs) ? task.inputs : [],
       deliverables: Array.isArray(task.deliverables) ? task.deliverables : [],
       risks: Array.isArray(task.risks) ? task.risks : [],
+      estimated_tokens: task.estimated_tokens || task.token_estimate || '待估',
+      estimated_cost: task.estimated_cost || task.cost_estimate || '待估',
+      estimated_duration: task.estimated_duration || task.duration_estimate || '待估',
     })),
   }
 }
@@ -251,6 +360,19 @@ function buildArchive(form, plan) {
       role: '任务拆解与调度规划，不是唯一执行者',
       prompt: makePlannerPrompt(form),
     },
+    plan_steps: (plan.plan_steps || []).map((step) => ({
+      id: step.id,
+      phase: step.phase,
+      assigned_agent: AGENT_BY_ID[step.assigned_agent]?.name,
+      backup_agent: AGENT_BY_ID[step.backup_agent]?.name,
+      model_rationale: step.model_rationale,
+      estimated_tokens: step.estimated_tokens,
+      estimated_cost: step.estimated_cost,
+      estimated_duration: step.estimated_duration,
+      dependencies: step.dependencies,
+      deliverables: step.deliverables,
+      risks: step.risks,
+    })),
     dispatch_plan: plan.subtasks.map((task) => ({
       id: task.id,
       title: task.title,
@@ -258,6 +380,9 @@ function buildArchive(form, plan) {
       backup_agent: AGENT_BY_ID[task.backup_agent]?.name,
       priority: task.priority,
       reason: task.reason,
+      estimated_tokens: task.estimated_tokens,
+      estimated_cost: task.estimated_cost,
+      estimated_duration: task.estimated_duration,
       prompt: task.prompt,
       deliverables: task.deliverables,
       risk_level: riskTone(task),
@@ -270,6 +395,7 @@ function buildArchive(form, plan) {
       completed_at: '',
       actual_tokens: '',
       actual_cost: '',
+      actual_duration: '',
       rework_count: 0,
       audit_note: '',
     })),
@@ -476,6 +602,58 @@ export default function ModelDispatchConsole() {
           </div>
         </Section>
 
+        <Section title="调度 Plan" description="DeepSeek 必须把任务拆成环节，并给出每个环节使用的大模型、依据、预估 token、成本和耗时。">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left text-sm">
+              <thead>
+                <tr className="text-[12px] uppercase tracking-[0.12em] text-[#7a7c70] dark:text-[#8e9ab0]">
+                  <th className="border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">环节</th>
+                  <th className="border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">主模型 / 备用</th>
+                  <th className="border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">选型依据</th>
+                  <th className="border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">预估消耗</th>
+                  <th className="border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">交付物 / 风险</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(normalizedPlan.plan_steps || []).map((step) => {
+                  const primary = AGENT_BY_ID[step.assigned_agent]
+                  const backup = AGENT_BY_ID[step.backup_agent]
+                  return (
+                    <tr key={step.id}>
+                      <td className="border-b border-[#eceee6] px-3 py-3 align-top dark:border-[#1b2430]">
+                        <div className="font-mono text-[11px] text-[#767869] dark:text-[#8e9ab0]">{step.id}</div>
+                        <div className="mt-1 font-semibold text-[#15140f] dark:text-gray-100">{step.phase}</div>
+                        <p className="mb-0 mt-1 text-[#56564e] dark:text-gray-300">{step.objective}</p>
+                        {step.dependencies?.length ? (
+                          <p className="mb-0 mt-1 text-[12px] text-[#858779] dark:text-[#8e9ab0]">依赖：{step.dependencies.join(' / ')}</p>
+                        ) : null}
+                      </td>
+                      <td className="border-b border-[#eceee6] px-3 py-3 align-top dark:border-[#1b2430]">
+                        <b className="block text-[#15140f] dark:text-gray-100">{primary?.name || step.assigned_agent}</b>
+                        <span className="mt-1 block text-[12px] text-[#67695d] dark:text-gray-400">备用：{backup?.name || step.backup_agent}</span>
+                      </td>
+                      <td className="border-b border-[#eceee6] px-3 py-3 align-top leading-6 text-[#56564e] dark:border-[#1b2430] dark:text-gray-300">
+                        {step.model_rationale || '待补充'}
+                      </td>
+                      <td className="border-b border-[#eceee6] px-3 py-3 align-top dark:border-[#1b2430]">
+                        <div className="space-y-1 text-[12.5px] text-[#51514a] dark:text-gray-300">
+                          <p className="mb-0"><b>Token：</b>{step.estimated_tokens}</p>
+                          <p className="mb-0"><b>成本：</b>{step.estimated_cost}</p>
+                          <p className="mb-0"><b>耗时：</b>{step.estimated_duration}</p>
+                        </div>
+                      </td>
+                      <td className="border-b border-[#eceee6] px-3 py-3 align-top text-[12.5px] leading-6 dark:border-[#1b2430]">
+                        <p className="mb-1 text-emerald-700 dark:text-emerald-300">交付：{step.deliverables?.join(' / ') || '待补充'}</p>
+                        <p className="mb-0 text-amber-700 dark:text-amber-300">风险：{step.risks?.join(' / ') || '无显著风险'}</p>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
         {selectedTask ? (
           <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
             <Section title={`${selectedTask.id} · ${selectedTask.title}`} description="这是可复制给对应执行 agent 的任务卡。">
@@ -484,6 +662,9 @@ export default function ModelDispatchConsole() {
                 <Info label="主 Agent" value={AGENT_BY_ID[selectedTask.assigned_agent]?.name || selectedTask.assigned_agent} />
                 <Info label="备用 Agent" value={AGENT_BY_ID[selectedTask.backup_agent]?.name || selectedTask.backup_agent} />
                 <Info label="分派依据" value={selectedTask.reason} />
+                <Info label="预估 Token" value={selectedTask.estimated_tokens} />
+                <Info label="预估成本" value={selectedTask.estimated_cost} />
+                <Info label="预估耗时" value={selectedTask.estimated_duration} />
                 <Info label="输入" value={(selectedTask.inputs || []).join(' / ') || '待补充'} />
                 <Info label="交付物" value={(selectedTask.deliverables || []).join(' / ') || '待补充'} />
                 <Info label="风险" value={(selectedTask.risks || []).join(' / ') || '无显著风险'} />

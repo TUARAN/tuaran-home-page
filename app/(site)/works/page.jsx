@@ -6,6 +6,7 @@ import SiteToolsPanel from '../components/SiteToolsPanel'
 import {
   FEATURED_WORK_ITEM_IDS,
   WORK_ITEMS,
+  WORK_STRATEGY_PARAGRAPHS,
   WORK_TYPE_META,
   getWorkItemsByType,
   getWorkStatusLabel,
@@ -246,19 +247,22 @@ export default function WorksPage() {
               Works Index
             </p>
             <h1 className="mb-0 mt-4 max-w-3xl font-serif text-[42px] font-bold leading-tight text-[#15140f] dark:text-gray-100 sm:text-[58px]">
-              作品不是陈列，
+              把写作、工程和 AI
               <br className="hidden sm:block" />
-              是一张项目地图
+              做成可运行的系统
             </h1>
             <p className="mb-0 mt-5 max-w-2xl text-[16px] leading-[1.8] text-[#5E5F55] dark:text-gray-400">
-              先看当前最重要的三条经营主轴，再按「对外产品、AI 工程、内容系统、研究页面、工具实验」理解所有作品。
+              正在运营、打磨和验证的对外产品、AI 工程实验、内容系统、研究页面和工具原型。
             </p>
+            <blockquote className="mb-0 mt-6 border-l-2 border-[#8B4513] pl-5 text-[14px] leading-[1.8] text-[#7A7B70] italic dark:border-[#D4A574] dark:text-gray-500">
+              {WORK_STRATEGY_PARAGRAPHS[0]}
+            </blockquote>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="#featured-works" className="inline-flex min-h-[42px] items-center gap-2 bg-[#15140f] px-5 text-[14px] font-semibold text-[#FAF8F1] no-underline transition-colors hover:bg-[#2F2B22] dark:bg-gray-100 dark:text-[#111820] dark:hover:bg-gray-200">
+              <Link href="#featured-works" className="inline-flex min-h-[42px] items-center gap-2 bg-[#15140f] px-5 text-[14px] font-semibold !text-[#FAF8F1] no-underline transition-colors visited:!text-[#FAF8F1] hover:bg-[#2F2B22] hover:!text-[#FAF8F1] hover:no-underline dark:bg-gray-100 dark:!text-[#111820] dark:visited:!text-[#111820] dark:hover:bg-gray-200 dark:hover:!text-[#111820]">
                 看经营主轴
                 <ArrowIcon className="h-3.5 w-3.5" />
               </Link>
-              <Link href="#work-categories" className="inline-flex min-h-[42px] items-center gap-2 border border-[#D8D2C4] px-5 text-[14px] font-semibold text-[#51514A] no-underline transition-colors hover:border-[#BEB5A2] hover:text-[#15140f] dark:border-[#333] dark:text-gray-400 dark:hover:text-gray-100">
+              <Link href="#work-categories" className="inline-flex min-h-[42px] items-center gap-2 border border-[#D8D2C4] px-5 text-[14px] font-semibold !text-[#51514A] no-underline transition-colors visited:!text-[#51514A] hover:border-[#BEB5A2] hover:!text-[#15140f] hover:no-underline dark:border-[#333] dark:!text-gray-400 dark:visited:!text-gray-400 dark:hover:!text-gray-100">
                 按类型浏览
               </Link>
             </div>

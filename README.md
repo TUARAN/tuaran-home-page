@@ -95,6 +95,16 @@ npm install
 npm run dev
 ```
 
+### 本地预览 Admin
+
+Admin 页面和 `/api/admin/*` 默认仍要求 owner session。仅本地开发需要快速预览时，可以显式开启本地预览开关：
+
+```bash
+ADMIN_LOCAL_PREVIEW=1 npm run dev
+```
+
+该开关只在 `NODE_ENV=development` 下生效；生产环境即使误配 `ADMIN_LOCAL_PREVIEW=1` 也不会绕过 owner 校验。启用后 Admin 页面顶部会显示本地预览提示。
+
 ### 构建生产版本
 
 ```bash

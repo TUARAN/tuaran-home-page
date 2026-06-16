@@ -294,6 +294,7 @@ export default function ProjectPortfolioConsole({ user }) {
   const graphFrameRef = useRef(null)
   const graphDragRef = useRef(null)
   const suppressGraphClickRef = useRef(false)
+  const [sidebarSections, setSidebarSections] = useState({ kpi: false, filters: true, pillars: false, principles: false })
 
   // 台账数据：优先 D1（/api/admin/portfolio），不可用时回退 seed 快照（只读）
   const [projects, setProjects] = useState(() => seedProjectsWithBizDefaults())
@@ -496,227 +497,227 @@ export default function ProjectPortfolioConsole({ user }) {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-[1480px] gap-5 px-4 py-6">
-      <aside className="rounded-lg bg-[#111827] p-5 text-[#f8fafc]">
+    <main className="mx-auto grid w-full max-w-[1480px] gap-4 px-4 py-6 md:grid-cols-[248px_1fr]">
+      <aside className="rounded-lg bg-[#111827] p-4 text-[#f8fafc] text-sm md:sticky md:top-6 md:self-start">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#94a3b8]">
-            Agent Ops · Project Portfolio
+            Agent Ops · Portfolio
           </p>
-          <h1 className="mt-3 text-xl font-semibold leading-snug">TUARAN 项目组合图</h1>
-          <p className="mt-2 text-sm leading-6 text-[#cbd5e1]">
+          <h1 className="mt-1.5 text-lg font-semibold leading-snug">项目组合图</h1>
+          <p className="mt-1.5 text-[11px] text-[#94a3b8]">
+            已授权：{user?.name || user?.login || 'owner'}
+          </p>
+          <span
+            className={`mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] tracking-wide ${
+              dataSource === 'd1' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'
+            }`}
+            title={dataMessage || undefined}
+          >
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${dataSource === 'd1' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+            {dataSource === 'd1' ? 'D1 实时' : 'seed 只读'}
+          </span>
+        </div>
+
+        {/* Accordion: KPI */}
+        <button
+          type="button"
+          onClick={() => setSidebarSections((prev) => ({ ...prev, kpi: !prev.kpi }))}
+          className="mt-4 flex w-full items-center justify-between text-xs uppercase text-[#94a3b8] hover:text-[#e5e7eb]"
+        >
+          <span>KPI 统计</span>
+          <svg className={`h-3 w-3 transition ${sidebarSections.kpi ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+        {sidebarSections.kpi && (
+          <div className="mt-2 grid grid-cols-3 gap-1.5">
             {primaryView === 'repos'
-              ? '本地 GitHub / Codex / Claude 工作区：关系图、治理动作与整合路线。'
-              : '四座核心运营站点：托管、数据、登录、邮件与后台现状对比。'}
-          </p>
-          <p className="mt-3 text-xs text-[#94a3b8]">
-            已授权：{user?.name || user?.login || 'owner'} · 快照 {PORTFOLIO_SNAPSHOT.label}
-          </p>
-          <p className="mt-2 text-xs">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] tracking-wide ${
-                dataSource === 'd1' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'
-              }`}
-              title={dataMessage || undefined}
+              ? [
+                  [String(Object.keys(pillars).length), '板块'],
+                  [String(projects.length), '仓库'],
+                  [formatMoney(ledgerTotals.revenue), '月收入'],
+                  [`${ledgerTotals.hours}h`, '月投入'],
+                  [`${ledgerTotals.earning} 个`, '在挣钱'],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-md border border-white/10 bg-white/5 p-2 text-center">
+                    <b className="block text-sm">{value}</b>
+                    <span className="text-[10px] text-[#cbd5e1]">{label}</span>
+                  </div>
+                ))
+              : [
+                  [String(SITE_INFRA.length), '站点'],
+                  [String(INFRA_DIMENSIONS.length), '维度'],
+                  ['4', '图例'],
+                  [PORTFOLIO_SNAPSHOT.label.replace(/\s/g, ''), '快照'],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-md border border-white/10 bg-white/5 p-2 text-center">
+                    <b className="block text-sm">{value}</b>
+                    <span className="text-[10px] text-[#cbd5e1]">{label}</span>
+                  </div>
+                ))}
+          </div>
+        )}
+
+        {/* Accordion: Action Filter (repos only, expanded by default) */}
+        {primaryView === 'repos' && (
+          <>
+            <button
+              type="button"
+              onClick={() => setSidebarSections((prev) => ({ ...prev, filters: !prev.filters }))}
+              className="mt-3 flex w-full items-center justify-between text-xs uppercase text-[#94a3b8] hover:text-[#e5e7eb]"
             >
-              <span className={`inline-block h-1.5 w-1.5 rounded-full ${dataSource === 'd1' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-              {dataSource === 'd1' ? '台账 · D1 实时' : 'seed 快照 · 只读'}
-            </span>
-          </p>
-        </div>
-
-        <p className="mt-6 text-xs uppercase text-[#94a3b8]">主视图</p>
-        <div className="mt-2 grid gap-2">
-          {PRIMARY_VIEW_DEFS.map((view) => {
-            const active = primaryView === view.key
-            return (
-              <button
-                key={view.key}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setPrimaryView(view.key)}
-                className={`rounded-lg px-3 py-2.5 text-left transition ${
-                  active ? 'bg-[#f8fafc] text-[#111827]' : 'bg-white/5 text-[#e5e7eb] hover:bg-white/10'
-                }`}
-              >
-                <span className="block text-sm font-semibold">{view.label}</span>
-                <span className={`mt-0.5 block text-[11px] ${active ? 'text-[#475467]' : 'text-[#94a3b8]'}`}>
-                  {view.title}
-                </span>
-                <span className={`mt-0.5 block font-mono text-[10px] ${active ? 'text-[#667085]' : 'text-[#64748b]'}`}>
-                  快照 {view.snapshotLabel}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-
-        {primaryView === 'repos' ? (
-          <>
-            <div className="mt-6 grid grid-cols-2 gap-2">
-              {[
-                [String(Object.keys(pillars).length), '核心板块'],
-                [String(projects.length), '仓库/工作区'],
-                ['30G', '整理后体积'],
-                ['38G', '已释放空间'],
-                [formatMoney(ledgerTotals.revenue), '月收入合计'],
-                [`${ledgerTotals.hours}h · ${ledgerTotals.earning} 个在挣钱`, '月投入合计'],
-              ].map(([value, label]) => (
-                <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-3">
-                  <b className="block text-lg">{value}</b>
-                  <span className="text-xs text-[#cbd5e1]">{label}</span>
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-6 text-xs uppercase text-[#94a3b8]">按治理动作筛选</p>
-            <div className="mt-2 grid gap-2">
-              {Object.entries(actionLabels).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={actionFilter === id}
-                  onClick={() => setActionFilter(id)}
-                  className={`rounded-lg px-3 py-2 text-left text-sm transition ${
-                    actionFilter === id ? 'bg-[#f8fafc] text-[#111827]' : 'bg-white/5 text-[#e5e7eb] hover:bg-white/10'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <p className="mt-6 text-xs uppercase text-[#94a3b8]">四大板块</p>
-            <div className="mt-2 grid gap-2">
-              {Object.entries(pillars).map(([id, pillar]) => (
-                <div key={id} className="rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb]">
-                  <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: pillar.color }} />
-                  {pillar.name}
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-6 text-xs uppercase text-[#94a3b8]">管理原则</p>
-            <div className="mt-2 grid gap-2">
-              {principles.map((principle) => (
-                <div key={principle} className="rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb]">
-                  {principle}
-                </div>
-              ))}
-            </div>
+              <span>治理动作</span>
+              <svg className={`h-3 w-3 transition ${sidebarSections.filters ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+            {sidebarSections.filters && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {Object.entries(actionLabels).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={actionFilter === id}
+                    onClick={() => setActionFilter(id)}
+                    className={`rounded-md px-2 py-1 text-[11px] transition ${
+                      actionFilter === id
+                        ? 'bg-[#f8fafc] text-[#111827] font-medium'
+                        : 'bg-white/10 text-[#cbd5e1] hover:bg-white/20'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
-        ) : (
-          <>
-            <div className="mt-6 grid grid-cols-2 gap-2">
-              {[
-                [String(SITE_INFRA.length), '核心站点'],
-                [String(INFRA_DIMENSIONS.length), '对比维度'],
-                ['4', '图例类型'],
-                [PORTFOLIO_SNAPSHOT.label.replace(/\s/g, ''), '快照月份'],
-              ].map(([value, label]) => (
-                <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-3">
-                  <b className="block text-lg">{value}</b>
-                  <span className="text-xs text-[#cbd5e1]">{label}</span>
-                </div>
-              ))}
-            </div>
+        )}
 
-            <p className="mt-6 text-xs uppercase text-[#94a3b8]">四座站点</p>
-            <div className="mt-2 grid gap-2">
+        {/* Accordion: Pillars */}
+        <button
+          type="button"
+          onClick={() => setSidebarSections((prev) => ({ ...prev, pillars: !prev.pillars }))}
+          className="mt-3 flex w-full items-center justify-between text-xs uppercase text-[#94a3b8] hover:text-[#e5e7eb]"
+        >
+          <span>四大板块</span>
+          <svg className={`h-3 w-3 transition ${sidebarSections.pillars ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+        {sidebarSections.pillars && (
+          <div className="mt-2 grid gap-1.5">
+            {Object.entries(pillars).map(([id, pillar]) => (
+              <div key={id} className="flex items-center gap-2 rounded-md bg-white/5 px-2.5 py-1.5 text-[11px] text-[#e5e7eb]">
+                <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ background: pillar.color }} />
+                {pillar.name}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Accordion: Principles */}
+        <button
+          type="button"
+          onClick={() => setSidebarSections((prev) => ({ ...prev, principles: !prev.principles }))}
+          className="mt-3 flex w-full items-center justify-between text-xs uppercase text-[#94a3b8] hover:text-[#e5e7eb]"
+        >
+          <span>管理原则</span>
+          <svg className={`h-3 w-3 transition ${sidebarSections.principles ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+        {sidebarSections.principles && (
+          <div className="mt-2 grid gap-1.5">
+            {principles.map((principle) => (
+              <div key={principle} className="rounded-md bg-white/5 px-2.5 py-1.5 text-[11px] text-[#e5e7eb]">
+                {principle}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Sites quick nav (sites view only) */}
+        {primaryView === 'sites' && (
+          <>
+            <p className="mt-3 text-xs uppercase text-[#94a3b8]">站点导航</p>
+            <div className="mt-1.5 grid gap-1">
               {SITE_INFRA.map((site) => (
                 <a
                   key={site.id}
                   href={`#site-card-${site.id}`}
-                  className="rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb] no-underline transition hover:bg-white/10"
+                  className="flex items-center gap-2 rounded-md bg-white/5 px-2.5 py-1.5 text-[11px] text-[#e5e7eb] no-underline transition hover:bg-white/10"
                 >
-                  <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: site.color }} />
+                  <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ background: site.color }} />
                   {site.name}
                 </a>
-              ))}
-            </div>
-
-            <p className="mt-6 text-xs uppercase text-[#94a3b8]">状态图例</p>
-            <div className="mt-2 grid gap-2">
-              {INFRA_TONE_LEGEND.map(([tone, label]) => (
-                <div key={tone} className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm text-[#e5e7eb]">
-                  <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
-                  {label}
-                </div>
               ))}
             </div>
           </>
         )}
       </aside>
 
-      <div className="grid min-w-0 gap-5">
-        <section className="grid gap-3">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">
-              {primaryView === 'repos' ? '本地仓库' : '核心运营站点'}
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold text-[#15140f] dark:text-gray-100">
-              {primaryView === 'repos' ? '三大板块 + AI Agent 关系图' : '四站基础设施现状'}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-[#667085] dark:text-gray-400">
-              {primaryView === 'repos'
-                ? '在上方切换主视图或按治理动作筛选；点击节点或阵列行查看项目详情。'
-                : '在上方跳转四座站点卡片；对比托管、数据、登录、邮件与后台差异。'}
-            </p>
+      <div className="grid min-w-0 gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* View Tabs */}
+          <div className="flex shrink-0 rounded-lg border border-[#d9dee7] bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
+            {PRIMARY_VIEW_DEFS.map((view) => {
+              const active = primaryView === view.key
+              return (
+                <button
+                  key={view.key}
+                  type="button"
+                  onClick={() => setPrimaryView(view.key)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    active
+                      ? 'bg-[#111827] text-white dark:bg-gray-100 dark:text-gray-900'
+                      : 'text-[#667085] hover:text-[#111827] dark:text-gray-400 dark:hover:text-gray-100'
+                  }`}
+                >
+                  {view.label}
+                </button>
+              )
+            })}
           </div>
           {primaryView === 'repos' ? (
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               type="search"
-              placeholder="搜索项目、角色或建议"
-              className="w-full rounded-lg border border-[#d9dee7] bg-white px-3 py-2 text-sm outline-none focus:border-[#111827] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              placeholder="搜索项目..."
+              className="min-w-[160px] flex-1 rounded-lg border border-[#d9dee7] bg-white px-3 py-1.5 text-sm outline-none focus:border-[#111827] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
             />
           ) : (
             <SnapshotBadge />
           )}
-        </section>
+        </div>
 
         <section className="space-y-3">
           {primaryView === 'repos' ? (
             <div
               ref={graphFrameRef}
-              className={`flex min-h-0 w-full flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${
+              className={`relative flex min-h-0 w-full flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${
                 isGraphFullscreen ? 'h-screen rounded-none border-0' : 'min-h-[640px]'
               }`}
             >
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">本地仓库</p>
-                  <h3 className="mt-1 text-base font-semibold text-[#15140f] dark:text-gray-100">三大板块 + AI Agent 关系图</h3>
-                  <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
-                    GitHub / Codex / Claude 工作区 · 拖拽画布移动；箭头表示吸收、服务、迁移或归档关系
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <SnapshotBadge />
-                  <div className="flex items-center gap-1.5">
-                  <GraphControlButton
-                    label="缩小关系图"
-                    icon="zoomOut"
-                    onClick={() => updateGraphScale(graphScale - GRAPH_SCALE_STEP)}
-                    disabled={graphScale <= GRAPH_MIN_SCALE}
-                  />
-                  <span className="inline-flex h-8 min-w-14 items-center justify-center rounded-md border border-[#d9dee7] bg-[#f8fafc] px-2 font-mono text-[11px] text-[#475467] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
-                    {Math.round(graphScale * 100)}%
-                  </span>
-                  <GraphControlButton
-                    label="放大关系图"
-                    icon="zoomIn"
-                    onClick={() => updateGraphScale(graphScale + GRAPH_SCALE_STEP)}
-                    disabled={graphScale >= GRAPH_MAX_SCALE}
-                  />
-                  <GraphControlButton label="重置缩放" icon="reset" onClick={() => updateGraphScale(GRAPH_DEFAULT_SCALE)} disabled={graphScale === GRAPH_DEFAULT_SCALE} />
-                  <GraphControlButton
-                    label={isGraphFullscreen ? '退出全屏' : '全屏查看关系图'}
-                    icon={isGraphFullscreen ? 'exitFullscreen' : 'fullscreen'}
-                    onClick={toggleGraphFullscreen}
-                  />
-                  </div>
-                </div>
+              {/* Floating Controls Overlay */}
+              <div className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-lg border border-[#e2e6ee] bg-white/95 px-2 py-1 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
+                <GraphControlButton
+                  label="缩小"
+                  icon="zoomOut"
+                  onClick={() => updateGraphScale(graphScale - GRAPH_SCALE_STEP)}
+                  disabled={graphScale <= GRAPH_MIN_SCALE}
+                />
+                <span className="inline-flex h-7 min-w-[44px] items-center justify-center rounded px-1.5 font-mono text-[10px] text-[#475467] dark:text-gray-300">
+                  {Math.round(graphScale * 100)}%
+                </span>
+                <GraphControlButton
+                  label="放大"
+                  icon="zoomIn"
+                  onClick={() => updateGraphScale(graphScale + GRAPH_SCALE_STEP)}
+                  disabled={graphScale >= GRAPH_MAX_SCALE}
+                />
+                <GraphControlButton label="重置" icon="reset" onClick={() => updateGraphScale(GRAPH_DEFAULT_SCALE)} disabled={graphScale === GRAPH_DEFAULT_SCALE} />
+                <GraphControlButton
+                  label={isGraphFullscreen ? '退出全屏' : '全屏'}
+                  icon={isGraphFullscreen ? 'exitFullscreen' : 'fullscreen'}
+                  onClick={toggleGraphFullscreen}
+                />
+              </div>
+              {/* Graph Label */}
+              <div className="absolute top-3 left-3 z-10 rounded-md bg-white/90 px-2.5 py-1 text-[11px] text-[#667085] backdrop-blur dark:bg-gray-950/90 dark:text-gray-400">
+                拖拽移动 · 点击节点查看详情
               </div>
               <div
                 className={`min-h-0 flex-1 select-none overflow-auto p-4 touch-none ${
@@ -789,25 +790,23 @@ export default function ProjectPortfolioConsole({ user }) {
               </div>
             </div>
           ) : (
-            <section className="flex min-h-[640px] w-full min-w-0 flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9dee7] px-4 py-3 dark:border-gray-800">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#667085] dark:text-gray-500">核心运营站点</p>
-                  <h3 className="mt-1 text-base font-semibold text-[#15140f] dark:text-gray-100">四站基础设施现状</h3>
-                  <span className="mt-1 block text-xs text-[#667085] dark:text-gray-400">
-                    2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com（md 仅作 Changelog 形式参照）
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center justify-end gap-3">
+            <section className="relative flex min-h-[640px] w-full min-w-0 flex-col rounded-lg border border-[#d9dee7] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              {/* Compact Title + Floating Legend */}
+              <div className="flex items-center gap-3 border-b border-[#d9dee7] px-4 py-2.5 dark:border-gray-800">
+                <span className="text-sm font-semibold text-[#15140f] dark:text-gray-100">四站基础设施</span>
+                <span className="text-[11px] text-[#94a3b8]">
+                  2aran.com · syncblog.cn · blogger-alliance.cn · frontendnext.com
+                </span>
+                <div className="ml-auto flex items-center gap-2.5">
                   <SnapshotBadge />
-                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] dark:text-gray-400">
+                  <span className="hidden sm:inline-flex items-center gap-2 text-[10px] text-[#667085] dark:text-gray-400">
                     {INFRA_TONE_LEGEND.map(([tone, label]) => (
-                      <span key={tone} className="inline-flex items-center gap-1.5">
-                        <span className={`inline-block h-2 w-2 rounded-full ${INFRA_TONE_DOT[tone]}`} />
+                      <span key={tone} className="inline-flex items-center gap-1">
+                        <span className={`inline-block h-1.5 w-1.5 rounded-full ${INFRA_TONE_DOT[tone]}`} />
                         {label}
                       </span>
                     ))}
-                  </div>
+                  </span>
                 </div>
               </div>
 

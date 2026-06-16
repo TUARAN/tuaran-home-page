@@ -11,13 +11,13 @@ const SHARE_URL = 'https://2aran.com/ai-token-usage-research'
 // 分发用：纯 markdown 版本（同步到 syncblog.cn）。不会在站点上直接渲染，仅供 DistributeMarkdownButton 携带。
 const DISTRIBUTE_MARKDOWN = `# AI Token 用量与花费强度调研
 
-> 围绕 10B-20B tokens/day 这种极端自报样本回答四件事：这种说法可信到什么程度、对方可能在跑什么、它为什么确实反映一部分 vibe coding 能力、以及什么情况下只是 token 空转。
+> 用 0.1B / 0.45B / 10B / 20B tokens/day 四个锚点，把日常重度使用、极重度个人自报、agent-heavy 自动化跑批放到同一条强度尺上：既看成本，也看行为可信度与 vibe coding 能力。
 
 口径：账单 tokens（含 cache-read） · 单位统一用 B / M，不使用中文大数单位 · 定价锚点：2026-Q2 三家头部厂商公开 API 价 · 价格周期：每 12-18 个月约腰斩，使用前请校对。
 
 ## 0. 先把口径讲清楚：账单 tokens ≠ 净处理 tokens
 
-2024 年起，Anthropic / OpenAI / Google 都已把 prompt caching 列为头等公民。对反复使用的长前缀（系统提示、仓库结构、文档），第二次起通常按更低的 cache-read 价格收费。因此同一笔 "10B tokens/day" 在不同口径下含义完全不同：
+2024 年起，Anthropic / OpenAI / Google 都已把 prompt caching 列为头等公民。对反复使用的长前缀（系统提示、仓库结构、文档），第二次起通常按更低的 cache-read 价格收费。因此同一笔 "0.1B tokens/day" 或 "10B tokens/day" 在不同口径下含义完全不同：
 
 | 口径 | 含义 | 是否含 cache-read | 用途 |
 | --- | --- | --- | --- |
@@ -40,12 +40,14 @@ token 区间跨 5 个数量级，横轴用对数刻度。
 | 极重度 | 0.5B-2B/day | 多 agent 协作、跨仓库检索、整日不离手 |
 | **自动化跑批** | **> 2B/day** | **后台 agent / 评测管线 / 仓库自动化主导跑量** |
 
-两个高位锚点：
+四个锚点：
 
-- **10B/day** — 个人自报若属实，基本不再是"多聊 AI"，而是高并发 agent、长上下文 IDE、自动评测或批处理。
+- **0.1B/day** — 重度编程个人用户：IDE Agent 长上下文反复读取、重构、跨文件检索，但仍以人工交互为主。
+- **0.45B/day** — 极重度个人自报：重度编程 + 长上下文复用已经能撑起来，不必预设 24/7 跑批。
+- **10B/day** — 个人自报若属实，基本不再是"多聊 AI"，而是高并发 agent、自动评测、长任务队列或批处理。
 - **20B/day** — 与 OpenClaw 公开披露的平均日用量同档。OpenClaw 30 天约 603B tokens、7.6M requests、约 100 个 Codex agents，折算约 20.1B/day。
 
-**判断**：10B-20B/day 已经不是普通个人聊天或单窗口 coding 的量级。可信解释通常只有三种：多 agent 并发、自动化任务流、或者计入口径包含大量 cache-read / 失败重试 / 空转循环。
+**判断**：0.1B-0.45B/day 可以解释为极重度个人 IDE Agent 使用；10B-20B/day 则必须有系统解释。前者像"人用 AI 很深"，后者像"人调度 AI 工厂"。
 
 ## 2. 可信度校验：先问他到底报的是什么
 
@@ -85,20 +87,18 @@ token 区间跨 5 个数量级，横轴用对数刻度。
 
 **判断**：如果 10B/day 是真的，他大概率不是"手速快"，而是会组织 AI 系统：会拆任务、开并发、让 agent 读仓库、跑测试、回收结果。这确实是一种 vibe coding 能力。
 
-## 4. 换算尺：10B / 20B tokens/day 对应多大体量
+## 4. 换算尺：0.1B / 0.45B / 10B / 20B 对应多大体量
 
 以 IDE Agent 画像（cache-read 85% / fresh-input 10% / output 5%）换算：
 
-| 指标 | 10B/day | 20B/day | 解释 |
-| --- | --- | --- | --- |
-| 账单 tokens | 10B | 20B | 含 cache-read |
-| 净处理 tokens | 1.5B | 3B | fresh-input + output |
-| 等效中文字数（净） | ~0.9B | ~1.8B | 1 token ≈ 0.6 汉字 |
-| 等效中等书目（净） | ~6000 本/day | ~12000 本/day | 1 本 ≈ 0.25M tokens |
-| 交互次数（80K t / 次） | 125000 | 250000 | 更接近 agent 请求而非人工聊天 |
-| 月账单总量（× 30） | 300B | 600B | 月度预算锚点 |
+| 档位 | 账单 tokens | 净处理 tokens | 交互 / 请求估算 | 判断 |
+| --- | --- | --- | --- | --- |
+| 重度个人 | 0.1B/day | 0.015B/day | ~12.5K 次 8K 交互 | 人工高频 + 长上下文 |
+| 极重度个人 | 0.45B/day | 0.0675B/day | ~56K 次 8K 交互 | 非常重，但仍可能是个人 IDE Agent |
+| 自动化半档 | 10B/day | 1.5B/day | ~125K 次 80K agent 请求 | 需要并发 agent / 跑批解释 |
+| OpenClaw 同档 | 20B/day | 3B/day | ~250K 次 80K agent 请求 | agent 集群级解释 |
 
-**判断**：即便 85% 都是 cache-read，10B/day 仍然意味着约 1.5B/day 的新读写。这个量已经不适合用"我问了多少问题"理解，而要用"我调度了多少自动化任务"理解。
+**判断**：0.1B 和 0.45B 是"重度个人使用"的上沿；10B 和 20B 是"自动化系统吞吐"的下沿。二者要并存，但不能混成同一种行为。
 
 ## 5. 月度花费：cache-aware 定价折算
 
@@ -106,17 +106,17 @@ token 区间跨 5 个数量级，横轴用对数刻度。
 
 **IDE Agent 画像（cache 85% / input 10% / output 5%）：**
 
-| 档位 | 代表模型 | cache / input / output（$/M） | 混合单价（$/M） | 10B/day 月费 | 20B/day 月费 |
-| --- | --- | --- | --- | --- | --- |
-| 经济档 | Haiku 4.5 / GPT-mini / Gemini Flash | 0.08 / 0.8 / 4.0 | 0.35 | $105000 ≈ ¥756000 | $210000 ≈ ¥1512000 |
-| 主力档 | Sonnet 4.6 / GPT-4o / Gemini Pro | 0.3 / 3.0 / 15.0 | 1.31 | $391500 ≈ ¥2818800 | $783000 ≈ ¥5637600 |
-| 旗舰档 | Opus 4.7 / o1 / Gemini Ultra | 1.5 / 15.0 / 75.0 | 6.53 | $1957500 ≈ ¥14094000 | $3915000 ≈ ¥28188000 |
+| 档位 | 代表模型 | cache / input / output（$/M） | 混合单价（$/M） | 0.1B/day 月费 | 0.45B/day 月费 | 10B/day 月费 | 20B/day 月费 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 经济档 | Haiku 4.5 / GPT-mini / Gemini Flash | 0.08 / 0.8 / 4.0 | 0.35 | $1050 | $4725 | $105000 | $210000 |
+| 主力档 | Sonnet 4.6 / GPT-4o / Gemini Pro | 0.3 / 3.0 / 15.0 | 1.31 | $3915 | $17618 | $391500 | $783000 |
+| 旗舰档 | Opus 4.7 / o1 / Gemini Ultra | 1.5 / 15.0 / 75.0 | 6.53 | $19575 | $88088 | $1957500 | $3915000 |
 
-**判断**：按 API 真实付费，10B-20B/day 已经是公司级账单。若个人声称长期如此，但实际只付 $100-$400/月订阅，那他说的更可能是产品内部额度、缓存折算或平台吸收后的"使用量"，不是他自己按 API 单价结算的成本。
+**判断**：0.1B-0.45B/day 在订阅产品里仍可能是个人重度使用；10B-20B/day 如果按 API 真实付费，已经是公司级账单。若个人声称长期如此但实际只付 $100-$400/month 订阅，那他说的更可能是平台内部使用量、缓存折算或产品方吸收后的额度。
 
 ## 6. 市场口径：按 token 计费 vs 订阅制
 
-2025 年起头部 IDE Agent 类产品大多提供高位订阅档，月费 $100-$400 级别，对个人重度用户取消了"用得越多花得越多"的弹性账单。多数公开自报 "X B tokens/day" 的样本，其真实支出可能落在这一档，而不是按上节表格的 metered 价格付费。
+2025 年起头部 IDE Agent 类产品大多提供高位订阅档，月费 $100-$400 级别，对个人重度用户取消了"用得越多花得越多"的弹性账单。0.1B-0.45B/day 的个人重度样本，真实支出可能落在这一档；10B-20B/day 若长期稳定，则更像平台池、企业池或 agent-heavy 自动化系统。
 
 | 计费口径 | 典型档位 | 对个人重度的实际支出 | 何时仍按 metered 算账 |
 | --- | --- | --- | --- |
@@ -124,7 +124,7 @@ token 区间跨 5 个数量级，横轴用对数刻度。
 | 订阅（flat-rate） | Max / Pro / Ultra 级别 | 月费 $100–$400 锁死 | 触发硬性速率限制、需要更高并发或 SLA |
 | 企业池（席位 + 池子） | 团队 / 组织计划 | 按席位 + 用量阶梯 | 部门级集中采购 |
 
-**判断**：10B/day 如果按 API 账单是大钱；如果按订阅产品口径，可能只是平台内部消耗或额度折算。引用这种数字时一定要先问"是 API 账单，还是订阅产品的使用量"。
+**判断**：引用任何 token 数字前都要先问"是 API 账单，还是订阅产品的使用量"。0.45B/day 和 10B/day 在产品 UI 里可能只是两个数字，但在 API 账单里已经是完全不同的组织规模。
 
 ## 7. vibe 能力：token 多为什么仍然有意义
 
@@ -148,7 +148,7 @@ token 区间跨 5 个数量级，横轴用对数刻度。
 | 上下文密度 | 指令明确、检索精准 | 塞海量文档"让 AI 自己找" |
 | 模型分层 | 简单任务用小模型 | 一律旗舰、爽就完事 |
 
-**判断**：判断一个 10B/day 用户强不强，不看 token 本身，看单位 token 产出：每 1B tokens 带来多少 merged PR、可用报告、自动化脚本、决策结论或可复用知识。
+**判断**：判断一个高 token 用户强不强，不看 token 本身，看单位 token 产出：每 1B tokens 带来多少 merged PR、可用报告、自动化脚本、决策结论或可复用知识。
 
 ## 9. 月度快照模板
 
@@ -156,11 +156,13 @@ token 区间跨 5 个数量级，横轴用对数刻度。
 
 | 月份 | 日均账单 tokens | 日均净处理（估） | 主用模型 / 工具 | 计费口径 | 本月最大优化点 |
 | --- | --- | --- | --- | --- | --- |
-| 示例行 | ~10B | ~1.5B | 主力档 IDE Agent + agent runner | 订阅 / 平台池 | 收紧上下文、限制失败重试、记录可交付物 |
+| 示例行 A | ~0.45B | ~0.0675B | 主力档 IDE Agent | 订阅 | 收紧 .ignore，缓存命中率提升至 85% |
+| 示例行 B | ~10B | ~1.5B | 主力档 IDE Agent + agent runner | 订阅 / 平台池 | 收紧上下文、限制失败重试、记录可交付物 |
 
 ## 来源与校准入口
 
 - [Tom's Hardware: OpenClaw 30 天约 603B tokens / $1.3M API bill](https://www.tomshardware.com/tech-industry/artificial-intelligence/openclaw-creator-burns-through-1-3-million-in-openai-api-tokens-in-a-single-month)
+- [Business Insider: Peter Steinberger / OpenClaw token bill](https://www.businessinsider.com/openclaw-peter-steinberger-ai-token-bill-2026-5)
 - [OpenAI API Pricing（含 cached input 折扣比例）](https://openai.com/api/pricing/)
 - [Anthropic API Pricing（cache-read / cache-write 公开报价）](https://docs.anthropic.com/en/docs/about-claude/pricing)
 - [Anthropic Prompt Caching 文档](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
@@ -175,17 +177,28 @@ const DISTRIBUTE_TAGS = ['AI', 'Token 用量', 'Prompt Cache', '花费测算', '
 // 数据基础
 // ============================================================
 
-// 两个高位锚点样本（口径：账单 tokens，含 prompt cache 命中的 cache-read）
+// 四个锚点样本（口径：账单 tokens，含 prompt cache 命中的 cache-read）
+// - 0.1B/day：重度编程个人用户
+// - 0.45B/day：极重度个人自报样本
 // - 10B/day：极端个人自报样本，用来做可信度与行为反推
 // - 20B/day：接近 OpenClaw 公开披露的 603B / 30 天平均量级
-const PERSONAL_DAILY = 10_000_000_000
-const REPORTED_DAILY = 20_000_000_000
+const HEAVY_PERSONAL_DAILY = 100_000_000
+const REPORTED_PERSONAL_DAILY = 450_000_000
+const EXTREME_DAILY = 10_000_000_000
+const OPENCLAW_DAILY_ANCHOR = 20_000_000_000
 const OPENCLAW_MONTHLY = 603_000_000_000
 const OPENCLAW_REQUESTS = 7_600_000
 const OPENCLAW_AGENTS = 100
 
-// 一次 agent 请求的常见上下文规模（含 system + 对话历史 + 检索 + 文件片段）
-const TOKENS_PER_INTERACTION = 80_000
+const HUMAN_INTERACTION_TOKENS = 8_000
+const AGENT_REQUEST_TOKENS = 80_000
+
+const DAILY_ANCHORS = [
+  { key: 'heavy', label: '0.1B/day', fullLabel: '0.1B/day 重度个人', value: HEAVY_PERSONAL_DAILY, mode: 'human', color: '#7ba0d1' },
+  { key: 'reported', label: '0.45B/day', fullLabel: '0.45B/day 极重度个人', value: REPORTED_PERSONAL_DAILY, mode: 'human', color: '#6f6c50' },
+  { key: 'extreme', label: '10B/day', fullLabel: '10B/day 自动化半档', value: EXTREME_DAILY, mode: 'agent', color: '#8d5a2c' },
+  { key: 'openclaw', label: '20B/day', fullLabel: '20B/day OpenClaw 同档', value: OPENCLAW_DAILY_ANCHOR, mode: 'agent', color: '#5a3618' },
+]
 
 // 强度分级（账单口径，含缓存命中）——经验阈值，不是行业标准
 const INTENSITY_TIERS = [
@@ -395,18 +408,20 @@ function ShareBars({ rows }) {
   )
 }
 
-/** 分组柱状：3 档定价 × 2 样本（10B / 20B） */
+/** 分组柱状：3 档定价 × 4 个锚点 */
 function CostColumnChart({ profile }) {
   const data = REAL_PRICING.map((p) => {
     const rate = blendedRate(p, profile)
     return {
       tier: p.tier,
-      monthlyPersonal: estimateUsd(PERSONAL_DAILY * 30, rate),
-      monthlyReported: estimateUsd(REPORTED_DAILY * 30, rate),
+      values: DAILY_ANCHORS.map((anchor) => ({
+        ...anchor,
+        monthly: estimateUsd(anchor.value * 30, rate),
+      })),
     }
   })
 
-  const max = Math.max(...data.map((d) => d.monthlyReported))
+  const max = Math.max(...data.flatMap((d) => d.values.map((v) => v.monthly)))
   const h = 180
 
   return (
@@ -414,41 +429,31 @@ function CostColumnChart({ profile }) {
       <div className="flex h-[200px] items-end gap-6 px-2">
         {data.map((d) => (
           <div key={d.tier} className="flex flex-1 flex-col items-center gap-1">
-            <div className="flex h-[180px] w-full items-end justify-center gap-2">
-              <div className="flex w-1/2 flex-col items-center justify-end gap-1">
+            <div className="flex h-[180px] w-full items-end justify-center gap-1">
+              {d.values.map((v) => (
+              <div key={v.key} className="flex w-1/4 flex-col items-center justify-end gap-1">
                 <div className="text-[10px] tabular-nums text-[#505048] dark:text-gray-300">
-                  {fmtUsd(d.monthlyPersonal)}
+                  {fmtUsd(v.monthly)}
                 </div>
                 <div
-                  className="w-full rounded-t bg-[#7ba0d1]"
-                  style={{ height: `${(d.monthlyPersonal / max) * h}px`, minHeight: '2px' }}
-                  title={`10B/day · ${d.tier}: ${fmtUsd(d.monthlyPersonal)} / month`}
+                  className="w-full rounded-t"
+                  style={{ height: `${(v.monthly / max) * h}px`, minHeight: '2px', background: v.color }}
+                  title={`${v.label} · ${d.tier}: ${fmtUsd(v.monthly)} / month`}
                 />
               </div>
-              <div className="flex w-1/2 flex-col items-center justify-end gap-1">
-                <div className="text-[10px] tabular-nums text-[#505048] dark:text-gray-300">
-                  {fmtUsd(d.monthlyReported)}
-                </div>
-                <div
-                  className="w-full rounded-t bg-[#8d5a2c]"
-                  style={{ height: `${(d.monthlyReported / max) * h}px`, minHeight: '2px' }}
-                  title={`20B/day · ${d.tier}: ${fmtUsd(d.monthlyReported)} / month`}
-                />
-              </div>
+              ))}
             </div>
             <div className="text-xs font-medium text-[#35352f] dark:text-gray-200">{d.tier}</div>
           </div>
         ))}
       </div>
-      <div className="mt-3 flex justify-center gap-6 text-[11px] text-[#505048] dark:text-gray-400">
-        <span className="inline-flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-sm bg-[#7ba0d1]" />
-          10B tokens/day monthly cost
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-sm bg-[#8d5a2c]" />
-          20B tokens/day monthly cost
-        </span>
+      <div className="mt-3 flex flex-wrap justify-center gap-4 text-[11px] text-[#505048] dark:text-gray-400">
+        {DAILY_ANCHORS.map((anchor) => (
+          <span key={anchor.key} className="inline-flex items-center gap-1">
+            <span className="inline-block h-3 w-3 rounded-sm" style={{ background: anchor.color }} />
+            {anchor.label}
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -523,10 +528,17 @@ export default function AiTokenUsageResearchClient() {
     }))
   }, [profile])
 
-  const personalNet = netProcessed(PERSONAL_DAILY, profile)
-  const reportedNet = netProcessed(REPORTED_DAILY, profile)
-  const personalInteractions = Math.round(PERSONAL_DAILY / TOKENS_PER_INTERACTION)
-  const reportedInteractions = Math.round(REPORTED_DAILY / TOKENS_PER_INTERACTION)
+  const anchorRows = DAILY_ANCHORS.map((anchor) => {
+    const requestSize = anchor.mode === 'agent' ? AGENT_REQUEST_TOKENS : HUMAN_INTERACTION_TOKENS
+    return {
+      ...anchor,
+      net: netProcessed(anchor.value, profile),
+      chars: tokensToChars(netProcessed(anchor.value, profile)),
+      books: tokensToBooks(netProcessed(anchor.value, profile)),
+      interactions: Math.round(anchor.value / requestSize),
+      requestSize,
+    }
+  })
   const openclawDaily = OPENCLAW_MONTHLY / 30
   const openclawTokensPerRequest = Math.round(OPENCLAW_MONTHLY / OPENCLAW_REQUESTS)
 
@@ -538,7 +550,7 @@ export default function AiTokenUsageResearchClient() {
           <div className="flex shrink-0 items-center gap-2">
             <DistributeMarkdownButton
               title="AI Token 用量与花费强度调研"
-              summary="围绕 10B-20B tokens/day 的极端自报样本，拆解可信度校验、行为画像、OpenClaw 公开对照、账单 vs 净处理、vibe coding 能力信号与浪费信号。"
+              summary="用 0.1B / 0.45B / 10B / 20B tokens/day 四个锚点，把日常重度使用、极重度个人自报、agent-heavy 自动化跑批放到同一条强度尺上。"
               markdown={DISTRIBUTE_MARKDOWN}
               url={SHARE_URL}
               category="ai"
@@ -547,7 +559,7 @@ export default function AiTokenUsageResearchClient() {
             />
             <SharePageButton
               title="AI Token 用量与花费强度调研"
-              text="10B-20B tokens/day 是否可信？看口径、并发、产出、OpenClaw 对照、vibe coding 能力信号与浪费信号。"
+              text="0.1B、0.45B、10B、20B tokens/day 分别意味着什么？看成本、可信度、OpenClaw 对照和 vibe coding 能力信号。"
               url="/ai-token-usage-research"
             />
           </div>
@@ -556,7 +568,7 @@ export default function AiTokenUsageResearchClient() {
           AI Token 用量与花费强度调研
         </h1>
         <p className="text-sm leading-7 text-[#505048] dark:text-gray-300">
-          围绕 10B-20B tokens/day 这种极端自报样本回答四件事：这种说法可信到什么程度、对方可能在跑什么、它为什么确实反映一部分 vibe coding 能力、以及什么情况下只是 token 空转。
+          用 0.1B / 0.45B / 10B / 20B tokens/day 四个锚点，把日常重度使用、极重度个人自报、agent-heavy 自动化跑批放到同一条强度尺上：既看成本，也看行为可信度与 vibe coding 能力。
         </p>
         <div className="flex flex-wrap gap-3 text-xs text-[#7e7e76] dark:text-gray-400">
           <span>口径：账单 tokens（含 cache-read）</span>
@@ -576,7 +588,7 @@ export default function AiTokenUsageResearchClient() {
         judgment="一旦区分这两本账，多数「骇人听闻的 token 数字」会还原成两类问题：他是真的让 agent 处理了大量新信息，还是把同一批上下文反复送进模型。前者更像能力，后者更像系统形态或浪费。"
       >
         <p className="text-sm leading-7 text-[#505048] dark:text-gray-300">
-          2024 年起，Anthropic / OpenAI / Google 都已把 prompt caching 列为头等公民。对反复使用的长前缀（系统提示、仓库结构、文档），第二次起通常按更低的 cache-read 价格收费。因此同一笔 <strong>10B tokens/day</strong> 在不同口径下含义完全不同：
+          2024 年起，Anthropic / OpenAI / Google 都已把 prompt caching 列为头等公民。对反复使用的长前缀（系统提示、仓库结构、文档），第二次起通常按更低的 cache-read 价格收费。因此同一笔 <strong>0.1B tokens/day</strong> 或 <strong>10B tokens/day</strong> 在不同口径下含义完全不同：
         </p>
         <Table
           headers={['口径', '含义', '是否含 cache-read', '用途']}
@@ -587,7 +599,7 @@ export default function AiTokenUsageResearchClient() {
           ]}
         />
         <p className="text-xs text-[#7e7e76] dark:text-gray-500">
-          后文所有 10B / 20B 均为账单口径；提到「净处理」或「等效阅读量」时会显式换算。
+          后文所有 0.1B / 0.45B / 10B / 20B 均为账单口径；提到「净处理」或「等效阅读量」时会显式换算。
         </p>
       </Section>
 
@@ -595,16 +607,15 @@ export default function AiTokenUsageResearchClient() {
       <Section
         id="intensity"
         title="1) 强度尺：账单口径下的 6 档对数刻度"
-        judgment="10B-20B/day 已经不是普通个人聊天或单窗口 coding 的量级。可信解释通常只有三种：多 agent 并发、自动化任务流、或者计入口径包含大量 cache-read / 失败重试 / 空转循环。"
+        judgment="0.1B-0.45B/day 可以解释为极重度个人 IDE Agent 使用；10B-20B/day 则必须有系统解释。前者像「人用 AI 很深」，后者像「人调度 AI 工厂」。"
       >
         <p className="text-sm leading-7 text-[#505048] dark:text-gray-300">
-          token 区间跨 5 个数量级，横轴用对数刻度。两个钻石标记是本页关注的高位锚点：
+          token 区间跨 5 个数量级，横轴用对数刻度。四个钻石标记分别代表个人重度、个人极重度、10B 自报和 OpenClaw 同档：
         </p>
         <div className="rounded-xl border border-[#dcddd2] bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
           <IntensityChart
             markers={[
-              { label: '10B/day 自报样本', value: PERSONAL_DAILY },
-              { label: '20B/day OpenClaw 同档', value: REPORTED_DAILY },
+              ...DAILY_ANCHORS.map((anchor) => ({ label: anchor.fullLabel, value: anchor.value })),
             ]}
           />
         </div>
@@ -664,6 +675,14 @@ export default function AiTokenUsageResearchClient() {
             OpenClaw 是公开报道里的高位参照：约 {OPENCLAW_AGENTS} 个 Codex agents、30 天 {fmtTokenScale(OPENCLAW_MONTHLY)} tokens、{fmtTokenScale(OPENCLAW_REQUESTS)} requests。它说明 20B/day 需要 agent 集群级解释，而不是普通聊天解释。
           </p>
         </div>
+        <div className="rounded-xl border border-[#dcddd2] bg-white p-4 text-sm leading-7 text-[#3d3e36] dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
+          <p>
+            公开可对照的 OpenClaw 案例里，Peter Steinberger / OpenClaw 团队 30 天用了约 <strong>{fmtTokenScale(OPENCLAW_MONTHLY)} tokens</strong>、<strong>{fmtTokenScale(OPENCLAW_REQUESTS)} requests</strong>、费用约 <strong>$1.305M</strong>，由约 <strong>{OPENCLAW_AGENTS} 个 Codex 实例</strong>产生，3 人团队维护。折算下来平均约 <strong>{fmtTokenScale(openclawDaily)} tokens/day</strong>。所以某人一天 10B 不是离谱到不可解释，反而像 OpenClaw 这种 agent-heavy 工作流的半档规模。
+          </p>
+          <p className="mt-2">
+            OpenClaw agents 会自动 review PR、扫描安全漏洞、去重 GitHub issues、写修复 PR、监控 benchmark 回归、把结果发到 Discord。有些 agent 甚至可以旁听会议，再根据会议内容开工写 feature PR。关键不是一次请求很贵，而是请求量极大：603B / 7.6M requests，平均每次约 {fmtTokenScale(openclawTokensPerRequest)} tokens；10B/day 约等于 {fmtCN(Math.round(EXTREME_DAILY / openclawTokensPerRequest))} 次这种请求，也就是每分钟约 {fmtCN(Math.round(EXTREME_DAILY / openclawTokensPerRequest / 24 / 60))} 次。
+          </p>
+        </div>
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#d7d9cd] bg-[#fbfcf9] p-3 dark:border-gray-800 dark:bg-gray-900">
           <label htmlFor="scenario" className="text-sm text-[#505048] dark:text-gray-300">
             画像
@@ -689,22 +708,21 @@ export default function AiTokenUsageResearchClient() {
       {/* 4. 等价换算 */}
       <Section
         id="equivalence"
-        title="4) 换算尺：10B / 20B tokens/day 到底对应多大体量"
-        judgment="即便 85% 都是 cache-read，10B/day 仍然意味着约 1.5B/day 的新读写。这个量已经不适合用「我问了多少问题」理解，而要用「我调度了多少自动化任务」理解。"
+        title="4) 换算尺：0.1B / 0.45B / 10B / 20B 到底对应多大体量"
+        judgment="0.1B 和 0.45B 是「重度个人使用」的上沿；10B 和 20B 是「自动化系统吞吐」的下沿。二者要并存，但不能混成同一种行为。"
       >
         <p className="text-sm leading-7 text-[#505048] dark:text-gray-300">
           切换下方「使用画像」选择器（默认 IDE Agent 85/10/5），下表的「净处理」与「等效书目」会随画像变化。
         </p>
         <Table
-          headers={['指标', '10B/day', '20B/day', '解释']}
-          rows={[
-            ['账单 tokens', fmtTokenScale(PERSONAL_DAILY), fmtTokenScale(REPORTED_DAILY), '含 cache-read'],
-            ['净处理 tokens', fmtTokenScale(Math.round(personalNet)), fmtTokenScale(Math.round(reportedNet)), 'fresh-input + output'],
-            ['等效中文字数（净）', fmtTokenScale(tokensToChars(personalNet)), fmtTokenScale(tokensToChars(reportedNet)), '1 token ≈ 0.6 汉字'],
-            ['等效中等书目（净）', `~${fmtCN(tokensToBooks(personalNet))} 本/day`, `~${fmtCN(tokensToBooks(reportedNet))} 本/day`, '1 本 ≈ 0.25M tokens'],
-            ['agent 请求次数（80K t/次）', fmtCN(personalInteractions), fmtCN(reportedInteractions), '更接近 agent 请求而非人工聊天'],
-            ['月账单总量（×30）', fmtTokenScale(PERSONAL_DAILY * 30), fmtTokenScale(REPORTED_DAILY * 30), '月度预算锚点（账单口径）'],
-          ]}
+          headers={['档位', '账单 tokens', '净处理 tokens', '交互 / 请求估算', '判断']}
+          rows={anchorRows.map((anchor) => [
+            anchor.fullLabel,
+            fmtTokenScale(anchor.value),
+            fmtTokenScale(Math.round(anchor.net)),
+            `~${fmtCN(anchor.interactions)} 次 ${fmtTokenScale(anchor.requestSize)} ${anchor.mode === 'agent' ? 'agent 请求' : '交互'}`,
+            anchor.mode === 'agent' ? '需要并发 agent / 跑批解释' : '人工高频 + 长上下文',
+          ])}
         />
       </Section>
 
@@ -712,7 +730,7 @@ export default function AiTokenUsageResearchClient() {
       <Section
         id="cost"
         title="5) 月度花费：cache-aware 定价折算"
-        judgment="按 API 真实付费，10B-20B/day 已经是公司级账单。若个人声称长期如此，但实际只付 $100-$400/month 订阅，那他说的更可能是产品内部额度、缓存折算或平台吸收后的「使用量」，不是他自己按 API 单价结算的成本。"
+        judgment="0.1B-0.45B/day 在订阅产品里仍可能是个人重度使用；10B-20B/day 如果按 API 真实付费，已经是公司级账单。若个人声称长期如此但实际只付 $100-$400/month 订阅，那他说的更可能是平台内部使用量、缓存折算或产品方吸收后的额度。"
       >
         <p className="text-sm leading-7 text-[#505048] dark:text-gray-300">
           三段定价：<strong>cache-read</strong>（命中复用，最便宜）/ <strong>fresh-input</strong>（新增上下文，标准输入价）/ <strong>output</strong>（生成，最贵）。下方计算按 Anthropic 公开比例：cache-read 取 input × 10%；OpenAI / Gemini 比例更高（25-50%），同口径会更贵但不改变量级判断。
@@ -746,6 +764,8 @@ export default function AiTokenUsageResearchClient() {
             '代表模型',
             'cache / input / output（$/M）',
             '混合单价（$/M）',
+            '0.1B/day 月费',
+            '0.45B/day 月费',
             '10B/day 月费',
             '20B/day 月费',
           ]}
@@ -754,8 +774,7 @@ export default function AiTokenUsageResearchClient() {
             p.representative,
             `${p.cacheRead} / ${p.input} / ${p.output}`,
             p.blended.toFixed(2),
-            `${fmtUsd(estimateUsd(PERSONAL_DAILY * 30, p.blended))} ≈ ${fmtCny(estimateUsd(PERSONAL_DAILY * 30, p.blended) * USD_TO_CNY)}`,
-            `${fmtUsd(estimateUsd(REPORTED_DAILY * 30, p.blended))} ≈ ${fmtCny(estimateUsd(REPORTED_DAILY * 30, p.blended) * USD_TO_CNY)}`,
+            ...DAILY_ANCHORS.map((anchor) => `${fmtUsd(estimateUsd(anchor.value * 30, p.blended))} ≈ ${fmtCny(estimateUsd(anchor.value * 30, p.blended) * USD_TO_CNY)}`),
           ])}
         />
       </Section>
@@ -764,10 +783,10 @@ export default function AiTokenUsageResearchClient() {
       <Section
         id="subscription"
         title="6) 市场口径：按 token 计费 vs 订阅制"
-        judgment="10B/day 如果按 API 账单是大钱；如果按订阅产品口径，可能只是平台内部消耗或额度折算。引用这种数字时一定要先问「是 API 账单，还是订阅产品的使用量」。"
+        judgment="引用任何 token 数字前都要先问「是 API 账单，还是订阅产品的使用量」。0.45B/day 和 10B/day 在产品 UI 里可能只是两个数字，但在 API 账单里已经是完全不同的组织规模。"
       >
         <p className="text-sm leading-7 text-[#505048] dark:text-gray-300">
-          2025 年起头部 IDE Agent 类产品大多提供高位订阅档，月费 $100-$400 级别，对个人重度用户取消了「用得越多花得越多」的弹性账单。多数公开自报「X B tokens/day」的样本，其真实支出可能落在这一档，而不是按上节表格的 metered 价格付费。
+          2025 年起头部 IDE Agent 类产品大多提供高位订阅档，月费 $100-$400 级别，对个人重度用户取消了「用得越多花得越多」的弹性账单。0.1B-0.45B/day 的个人重度样本，真实支出可能落在这一档；10B-20B/day 若长期稳定，则更像平台池、企业池或 agent-heavy 自动化系统。
         </p>
         <Table
           headers={['计费口径', '典型档位', '对个人重度的实际支出', '何时仍按 metered 算账']}
@@ -804,7 +823,7 @@ export default function AiTokenUsageResearchClient() {
       <Section
         id="optimization"
         title="8) 浪费信号：什么时候 10B/day 只是空转"
-        judgment="判断一个 10B/day 用户强不强，不看 token 本身，看单位 token 产出：每 1B tokens 带来多少 merged PR、可用报告、自动化脚本、决策结论或可复用知识。"
+        judgment="判断一个高 token 用户强不强，不看 token 本身，看单位 token 产出：每 1B tokens 带来多少 merged PR、可用报告、自动化脚本、决策结论或可复用知识。"
       >
         <Table
           headers={['信号', '健康', '空转迹象']}
@@ -827,7 +846,8 @@ export default function AiTokenUsageResearchClient() {
         <Table
           headers={['月份', '日均账单 tokens', '日均净处理（估）', '主用模型 / 工具', '计费口径', '本月最大优化点']}
           rows={[
-            ['示例行', '~10B', '~1.5B', '主力档 IDE Agent + agent runner', '订阅 / 平台池', '收紧上下文、限制失败重试、记录可交付物'],
+            ['示例行 A', '~0.45B', '~0.0675B', '主力档 IDE Agent', '订阅', '收紧 .ignore，缓存命中率提升至 85%'],
+            ['示例行 B', '~10B', '~1.5B', '主力档 IDE Agent + agent runner', '订阅 / 平台池', '收紧上下文、限制失败重试、记录可交付物'],
             ['填新行', '——', '——', '——', '——', '——'],
           ]}
         />
@@ -839,6 +859,9 @@ export default function AiTokenUsageResearchClient() {
         <ul className="space-y-1 text-sm text-[#44453d] dark:text-gray-300">
           <li>
             · <a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/openclaw-creator-burns-through-1-3-million-in-openai-api-tokens-in-a-single-month" target="_blank" rel="noreferrer" className="underline">Tom&apos;s Hardware: OpenClaw 30 天约 603B tokens / $1.3M API bill</a>
+          </li>
+          <li>
+            · <a href="https://www.businessinsider.com/openclaw-peter-steinberger-ai-token-bill-2026-5" target="_blank" rel="noreferrer" className="underline">Business Insider: Peter Steinberger / OpenClaw token bill</a>
           </li>
           <li>
             · <a href="https://openai.com/api/pricing/" target="_blank" rel="noreferrer" className="underline">OpenAI API Pricing（含 cached input 折扣比例）</a>

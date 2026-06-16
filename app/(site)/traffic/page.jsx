@@ -1,3 +1,4 @@
+import PageContainer from '../components/PageContainer'
 
 export const dynamic = 'force-static'
 
@@ -16,7 +17,7 @@ export const metadata = {
 
 export default function TrafficPage() {
   return (
-    <div className="w-full max-w-[1120px] mx-auto px-4 py-12">
+    <PageContainer className="py-12">
       <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -34,6 +35,6 @@ export default function TrafficPage() {
           className="block w-full border-0 h-[80vh] min-h-[640px]"
         />
       </section>
-    </div>
+    </PageContainer>
   )
 }

@@ -104,7 +104,7 @@ export default function SkillMarketResearchPage() {
   return (
     <main className="min-h-screen bg-[#f2f3ef] text-[#1c1d18] dark:bg-[#0b1017] dark:text-gray-100">
       <section className="border-b border-[#d7d8cf] bg-[#ebece6] dark:border-[#202938] dark:bg-[#101720]">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_320px] md:py-14">
+        <div className="mx-auto grid w-full max-w-[1120px] gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_320px] md:py-14">
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#65665c] dark:text-gray-400">
               <Link href="/works" className="underline-offset-4 hover:underline">多维页面</Link>
@@ -145,7 +145,7 @@ export default function SkillMarketResearchPage() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-10">
+      <section className="mx-auto w-full max-w-[1120px] px-4 py-10">
         <SectionTitle eyebrow="Lifecycle" title="先看链路，不先看卡片" desc="把 Skill 当作一个小型产品：从选题、制作、验证、上架、宣发到回流，每一段都要能交付证据。" />
         <div className="relative grid gap-3 lg:grid-cols-6">
           {FUNNEL.map(([title, label, desc], index) => (
@@ -160,7 +160,7 @@ export default function SkillMarketResearchPage() {
       </section>
 
       <section className="border-y border-[#d7d8cf] bg-white dark:border-[#202938] dark:bg-[#0f1620]">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="mx-auto grid w-full max-w-[1120px] gap-8 px-4 py-10 lg:grid-cols-[0.95fr_1.05fr]">
           <div>
             <SectionTitle eyebrow="Ecosystem" title="四层生态地图" desc="同一个 Skill 在不同平台承担的职责不同：运行、信任、市场、传播不能混在一起看。" />
             <div className="space-y-4">
@@ -196,7 +196,7 @@ export default function SkillMarketResearchPage() {
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[1fr_360px]">
+      <section className="mx-auto grid w-full max-w-[1120px] gap-8 px-4 py-10 lg:grid-cols-[1fr_360px]">
         <div>
           <SectionTitle eyebrow="Launch Desk" title="发布作战台" desc="首发材料要让用户 10 秒内判断：它解决什么问题，怎么安装，源码在哪里，是否值得信任。" />
           <div className="overflow-hidden rounded-2xl border border-[#d3d5cb] bg-white dark:border-[#293544] dark:bg-[#101820]">
@@ -235,7 +235,7 @@ export default function SkillMarketResearchPage() {
       </section>
 
       <section className="border-t border-[#d7d8cf] bg-white dark:border-[#202938] dark:bg-[#0f1620]">
-        <div className="mx-auto w-full max-w-6xl px-4 py-10">
+        <div className="mx-auto w-full max-w-[1120px] px-4 py-10">
           <SectionTitle eyebrow="Sources" title="调研来源" desc="来源保留为可继续追踪的入口，后续适合按 GitHub star、下载量、案例数继续补数据。" />
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {SOURCES.map(([name, href]) => (

@@ -125,7 +125,7 @@ export default function PlatformFrameworkPairsClient() {
   }, [filtered])
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
+    <main className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-10">
       {/* ---- Header：研报主标题 ---- */}
       <header className="border-b border-[#dee0db] pb-6 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2">

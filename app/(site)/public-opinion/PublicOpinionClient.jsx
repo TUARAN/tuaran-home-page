@@ -407,7 +407,7 @@ export default function PublicOpinionClient({
   const averageSentimentLabel = getSentimentLabel(snapshot.averageSentiment || 0)
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+    <main className="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 sm:py-10">
       <header className="border-b border-[#d7d9cf] pb-6 dark:border-[#2b3644]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>

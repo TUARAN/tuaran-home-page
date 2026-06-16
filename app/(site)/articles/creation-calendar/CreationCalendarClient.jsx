@@ -183,7 +183,7 @@ export default function CreationCalendarClient({ items }) {
   }, [monthItems, selectedDate])
 
   return (
-    <main className="w-full max-w-5xl mx-auto px-4 py-10 space-y-6">
+    <main className="w-full max-w-[1120px] mx-auto px-4 py-10 space-y-6">
       <header className="border-b border-[#eee] pb-5 dark:border-gray-800">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

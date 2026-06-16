@@ -240,7 +240,7 @@ export default function WorksPage() {
 
   return (
     <main className="bg-[#FAF8F1] text-[#15140f] dark:bg-[#101010] dark:text-gray-100">
-      <header className="mx-auto max-w-6xl px-4 pb-10 pt-12 sm:px-6 sm:pt-16">
+      <header className="mx-auto max-w-[1120px] px-4 pb-10 pt-12 sm:px-6 sm:pt-16">
         <div className="grid gap-10 border-b border-[#E8E4DB] pb-10 dark:border-[#2A2820] lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
           <div>
             <p className="mb-0 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-[#8E8F80] dark:text-gray-500">
@@ -276,7 +276,7 @@ export default function WorksPage() {
         </div>
       </header>
 
-      <section id="featured-works" className="mx-auto max-w-6xl scroll-mt-28 px-4 py-8 sm:px-6" aria-labelledby="featured-heading">
+      <section id="featured-works" className="mx-auto max-w-[1120px] scroll-mt-28 px-4 py-8 sm:px-6" aria-labelledby="featured-heading">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#8E8F80] dark:text-gray-500">
@@ -298,7 +298,7 @@ export default function WorksPage() {
         </div>
       </section>
 
-      <section id="work-categories" className="mx-auto max-w-6xl scroll-mt-28 px-4 py-8 sm:px-6" aria-labelledby="categories-heading">
+      <section id="work-categories" className="mx-auto max-w-[1120px] scroll-mt-28 px-4 py-8 sm:px-6" aria-labelledby="categories-heading">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#8E8F80] dark:text-gray-500">
@@ -322,13 +322,13 @@ export default function WorksPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6">
+      <div className="mx-auto max-w-[1120px] px-4 pb-6 pt-4 sm:px-6">
         {sections.map((section, index) => (
           <WorkSection key={section.id} section={section} sectionIndex={index} />
         ))}
       </div>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <section className="mx-auto max-w-[1120px] px-4 py-12 sm:px-6">
         <div className="mb-5">
           <h2 className="mb-0 border-0 p-0 text-[20px] font-bold text-[#15140f] dark:text-gray-100">站内工具</h2>
           <p className="mb-0 mt-1 text-[13px] leading-relaxed text-[#8E8F80] dark:text-gray-500">
@@ -338,7 +338,7 @@ export default function WorksPage() {
         <SiteToolsPanel />
       </section>
 
-      <footer className="mx-auto max-w-6xl border-t border-[#E8E4DB] px-4 py-8 text-[13px] leading-relaxed text-[#8E8F80] dark:border-[#2A2820] dark:text-gray-500 sm:px-6">
+      <footer className="mx-auto max-w-[1120px] border-t border-[#E8E4DB] px-4 py-8 text-[13px] leading-relaxed text-[#8E8F80] dark:border-[#2A2820] dark:text-gray-500 sm:px-6">
         研究型富页面仍保留在这里，但降为作品矩阵的一类；普通文章在{' '}
         <Link href="/articles" className="font-semibold text-[#15140f] no-underline transition-colors hover:opacity-70 dark:text-gray-200">
           /articles

@@ -402,7 +402,7 @@ function StatusBadge({ status }) {
 
 export default function ZhangJuzhengBookPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="w-full max-w-[1120px] mx-auto px-4 py-8">
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#888] dark:text-gray-400">
           <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-2 py-[1px]">

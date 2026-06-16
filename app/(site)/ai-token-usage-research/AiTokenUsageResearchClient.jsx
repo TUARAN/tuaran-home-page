@@ -506,7 +506,7 @@ export default function AiTokenUsageResearchClient() {
   const reportedInteractions = Math.round(REPORTED_DAILY / TOKENS_PER_INTERACTION)
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-10 px-4 py-10">
+    <main className="mx-auto w-full max-w-[1120px] space-y-10 px-4 py-10">
       <header className="space-y-3 border-b border-[#d7d9cd] pb-6 dark:border-gray-800">
         <div className="flex items-start justify-between gap-4">
           <p className="text-xs tracking-wide text-[#7e7e76] dark:text-gray-500">专题调研 · AI 调研</p>

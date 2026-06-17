@@ -354,7 +354,7 @@ export default function OpsConsoleClient() {
         <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">访问链路</h2>
         <ol className="mt-4 space-y-3 text-sm leading-6 text-[#51514a] dark:text-gray-300">
           <Step title="1. Automation Registry" body="先统一登记所有自动化资产，字段固定，后续才能做状态回写、审计和调度。" />
-          <Step title="2. 云端自动化" body="GitHub follow、FrontendNext 小时抓取、每日汇总归入云端列，重点管 API 限流、触发频率和回滚。" />
+          <Step title="2. 云端自动化" body="GitHub follow、FrontendNext 小时抓取、每日汇总、世界杯比分采集归入云端列，重点管 API 限流、触发频率和回滚。" />
           <Step title="3. 本地自动化" body="Medium 翻译、OpenClaw PR、数字员工周报、内容分发、客户雷达、指标报告和 EmployeeHub 巡检都作为本地任务同级登记。" />
         </ol>
       </section>

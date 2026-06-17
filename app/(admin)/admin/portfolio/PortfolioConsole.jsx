@@ -70,9 +70,6 @@ const actionStyles = {
   archive: 'bg-[#e2e8f0] text-[#334155] dark:bg-[#1f2937] dark:text-[#cbd5e1]',
 }
 
-
-const principles = ['主目录只放 Git 仓库', '缓存和源码分开判断', '不确定先归档再删除', 'dirty repo 先收口']
-
 const INFRA_DIMENSIONS = ['托管', 'DB', 'R2', '登录', '邮件', 'Admin', 'Changelog']
 
 const SITE_INFRA = [
@@ -283,9 +280,8 @@ function SnapshotBadge({ label = PORTFOLIO_SNAPSHOT.label }) {
   )
 }
 
-export default function ProjectPortfolioConsole({ user }) {
+export default function ProjectPortfolioConsole() {
   const [selected, setSelected] = useState('blogger-alliance')
-  const [actionFilter, setActionFilter] = useState('all')
   const [query, setQuery] = useState('')
   const [primaryView, setPrimaryView] = useState('repos')
   const [graphScale, setGraphScale] = useState(GRAPH_DEFAULT_SCALE)
@@ -294,12 +290,9 @@ export default function ProjectPortfolioConsole({ user }) {
   const graphFrameRef = useRef(null)
   const graphDragRef = useRef(null)
   const suppressGraphClickRef = useRef(false)
-  const [sidebarSections, setSidebarSections] = useState({ kpi: false, filters: true, pillars: false, principles: false })
-
   // 台账数据：优先 D1（/api/admin/portfolio），不可用时回退 seed 快照（只读）
   const [projects, setProjects] = useState(() => seedProjectsWithBizDefaults())
   const [dataSource, setDataSource] = useState('seed')
-  const [dataMessage, setDataMessage] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -311,15 +304,12 @@ export default function ProjectPortfolioConsole({ user }) {
         if (res.ok && data?.status === 'ok' && Array.isArray(data.projects) && data.projects.length) {
           setProjects(data.projects)
           setDataSource('d1')
-          setDataMessage('')
         } else {
           setDataSource('seed')
-          setDataMessage(data?.message || data?.error || `台账接口异常（HTTP ${res.status}）`)
         }
-      } catch (error) {
+      } catch {
         if (cancelled) return
         setDataSource('seed')
-        setDataMessage(String(error?.message || error))
       }
     }
     loadLedger()
@@ -340,13 +330,12 @@ export default function ProjectPortfolioConsole({ user }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return projects.filter((project) => {
-      const actionOk = actionFilter === 'all' || project.action === actionFilter
       const haystack = [project.name, project.role, project.next, project.path, pillars[project.pillar]?.name, project.action]
         .join(' ')
         .toLowerCase()
-      return actionOk && (!q || haystack.includes(q))
+      return !q || haystack.includes(q)
     })
-  }, [projects, actionFilter, query])
+  }, [projects, query])
 
   const visibleIds = useMemo(() => new Set(filtered.map((project) => project.id)), [filtered])
   const graphProjects = filtered.filter((project) => positions[project.id])
@@ -357,20 +346,6 @@ export default function ProjectPortfolioConsole({ user }) {
   )
   const selectedProject = projects.find((item) => item.id === selected) || projects[0]
   const selectedPillar = pillars[selectedProject.pillar]
-
-  const ledgerTotals = useMemo(
-    () =>
-      projects.reduce(
-        (acc, project) => {
-          acc.revenue += Number(project.revenueMonthly) || 0
-          acc.hours += Number(project.hoursMonthly) || 0
-          if (project.bizStatus === 'earning') acc.earning += 1
-          return acc
-        },
-        { revenue: 0, hours: 0, earning: 0 }
-      ),
-    [projects]
-  )
 
   // 商业字段编辑（仅 D1 数据源可写）
   const [editDraft, setEditDraft] = useState(null)
@@ -497,157 +472,7 @@ export default function ProjectPortfolioConsole({ user }) {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-[1480px] gap-4 px-4 py-6 md:grid-cols-[248px_1fr]">
-      <aside className="rounded-lg bg-[#111827] p-4 text-[#f8fafc] text-sm md:sticky md:top-6 md:self-start">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#94a3b8]">
-            Agent Ops · Portfolio
-          </p>
-          <h1 className="mt-1.5 text-lg font-semibold leading-snug">项目组合图</h1>
-          <p className="mt-1.5 text-[11px] text-[#94a3b8]">
-            已授权：{user?.name || user?.login || 'owner'}
-          </p>
-          <span
-            className={`mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] tracking-wide ${
-              dataSource === 'd1' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'
-            }`}
-            title={dataMessage || undefined}
-          >
-            <span className={`inline-block h-1.5 w-1.5 rounded-full ${dataSource === 'd1' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-            {dataSource === 'd1' ? 'D1 实时' : 'seed 只读'}
-          </span>
-        </div>
-
-        {/* Accordion: KPI */}
-        <button
-          type="button"
-          onClick={() => setSidebarSections((prev) => ({ ...prev, kpi: !prev.kpi }))}
-          className="mt-4 flex w-full items-center justify-between text-xs uppercase text-[#94a3b8] hover:text-[#e5e7eb]"
-        >
-          <span>KPI 统计</span>
-          <svg className={`h-3 w-3 transition ${sidebarSections.kpi ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
-        </button>
-        {sidebarSections.kpi && (
-          <div className="mt-2 grid grid-cols-3 gap-1.5">
-            {primaryView === 'repos'
-              ? [
-                  [String(Object.keys(pillars).length), '板块'],
-                  [String(projects.length), '仓库'],
-                  [formatMoney(ledgerTotals.revenue), '月收入'],
-                  [`${ledgerTotals.hours}h`, '月投入'],
-                  [`${ledgerTotals.earning} 个`, '在挣钱'],
-                ].map(([value, label]) => (
-                  <div key={label} className="rounded-md border border-white/10 bg-white/5 p-2 text-center">
-                    <b className="block text-sm">{value}</b>
-                    <span className="text-[10px] text-[#cbd5e1]">{label}</span>
-                  </div>
-                ))
-              : [
-                  [String(SITE_INFRA.length), '站点'],
-                  [String(INFRA_DIMENSIONS.length), '维度'],
-                  ['4', '图例'],
-                  [PORTFOLIO_SNAPSHOT.label.replace(/\s/g, ''), '快照'],
-                ].map(([value, label]) => (
-                  <div key={label} className="rounded-md border border-white/10 bg-white/5 p-2 text-center">
-                    <b className="block text-sm">{value}</b>
-                    <span className="text-[10px] text-[#cbd5e1]">{label}</span>
-                  </div>
-                ))}
-          </div>
-        )}
-
-        {/* Accordion: Action Filter (repos only, expanded by default) */}
-        {primaryView === 'repos' && (
-          <>
-            <button
-              type="button"
-              onClick={() => setSidebarSections((prev) => ({ ...prev, filters: !prev.filters }))}
-              className="mt-3 flex w-full items-center justify-between text-xs uppercase text-[#94a3b8] hover:text-[#e5e7eb]"
-            >
-              <span>治理动作</span>
-              <svg className={`h-3 w-3 transition ${sidebarSections.filters ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
-            </button>
-            {sidebarSections.filters && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {Object.entries(actionLabels).map(([id, label]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-pressed={actionFilter === id}
-                    onClick={() => setActionFilter(id)}
-                    className={`rounded-md px-2 py-1 text-[11px] transition ${
-                      actionFilter === id
-                        ? 'bg-[#f8fafc] text-[#111827] font-medium'
-                        : 'bg-white/10 text-[#cbd5e1] hover:bg-white/20'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Accordion: Pillars */}
-        <button
-          type="button"
-          onClick={() => setSidebarSections((prev) => ({ ...prev, pillars: !prev.pillars }))}
-          className="mt-3 flex w-full items-center justify-between text-xs uppercase text-[#94a3b8] hover:text-[#e5e7eb]"
-        >
-          <span>四大板块</span>
-          <svg className={`h-3 w-3 transition ${sidebarSections.pillars ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
-        </button>
-        {sidebarSections.pillars && (
-          <div className="mt-2 grid gap-1.5">
-            {Object.entries(pillars).map(([id, pillar]) => (
-              <div key={id} className="flex items-center gap-2 rounded-md bg-white/5 px-2.5 py-1.5 text-[11px] text-[#e5e7eb]">
-                <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ background: pillar.color }} />
-                {pillar.name}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Accordion: Principles */}
-        <button
-          type="button"
-          onClick={() => setSidebarSections((prev) => ({ ...prev, principles: !prev.principles }))}
-          className="mt-3 flex w-full items-center justify-between text-xs uppercase text-[#94a3b8] hover:text-[#e5e7eb]"
-        >
-          <span>管理原则</span>
-          <svg className={`h-3 w-3 transition ${sidebarSections.principles ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
-        </button>
-        {sidebarSections.principles && (
-          <div className="mt-2 grid gap-1.5">
-            {principles.map((principle) => (
-              <div key={principle} className="rounded-md bg-white/5 px-2.5 py-1.5 text-[11px] text-[#e5e7eb]">
-                {principle}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Sites quick nav (sites view only) */}
-        {primaryView === 'sites' && (
-          <>
-            <p className="mt-3 text-xs uppercase text-[#94a3b8]">站点导航</p>
-            <div className="mt-1.5 grid gap-1">
-              {SITE_INFRA.map((site) => (
-                <a
-                  key={site.id}
-                  href={`#site-card-${site.id}`}
-                  className="flex items-center gap-2 rounded-md bg-white/5 px-2.5 py-1.5 text-[11px] text-[#e5e7eb] no-underline transition hover:bg-white/10"
-                >
-                  <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ background: site.color }} />
-                  {site.name}
-                </a>
-              ))}
-            </div>
-          </>
-        )}
-      </aside>
-
+    <main className="mx-auto grid w-full max-w-[1480px] gap-4 px-4 py-6">
       <div className="grid min-w-0 gap-4">
         <div className="flex flex-wrap items-center gap-3">
           {/* View Tabs */}

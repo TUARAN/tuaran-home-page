@@ -112,7 +112,7 @@ export default function SettingsButton() {
         aria-label={pick(locale, '主题与阅读设置', 'Theme & reading settings')}
         aria-expanded={open}
         title={pick(locale, '主题与阅读设置', 'Theme & reading settings')}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 opacity-85 transition-opacity hover:opacity-100 dark:text-gray-200"
+        className="header-icon-link"
       >
         {/* 三档调节图标，代替单独月亮 */}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

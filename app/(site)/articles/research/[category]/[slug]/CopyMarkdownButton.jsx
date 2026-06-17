@@ -40,7 +40,7 @@ export default function CopyMarkdownButton({ markdown }) {
       onClick={handleCopy}
       aria-live="polite"
       title="复制本篇调研的 Markdown 源码"
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#ddd] bg-white px-3 py-1 text-xs text-[#555] transition-colors hover:border-[#999] hover:text-[#222] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100"
+      className="article-action-button px-3 py-1 text-xs"
     >
       {copied ? (
         <svg

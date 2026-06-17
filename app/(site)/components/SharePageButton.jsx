@@ -92,7 +92,7 @@ export default function SharePageButton({ title, text, fullText, url, size = 'sm
       onClick={handleShare}
       aria-live="polite"
       title="分享本页"
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#ddd] bg-white text-[#555] transition-colors hover:border-[#999] hover:text-[#222] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100 ${paddingClass}`}
+      className={`article-action-button ${paddingClass}`}
     >
       {state === 'shared' || state === 'copied' ? (
         <svg

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-14T13:55:22.892Z",
+  "generatedAt": "2026-06-16T17:03:50.351Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -50,6 +50,12 @@
               "hash": "2e6af2677dcbdc781bb38db25476cf51f8da3c2dd791a994c910169eb50591f6",
               "path": "claude/MEMORY/2026-06-14T13-55-22-869Z.enc.json",
               "bytes": 1373
+            },
+            {
+              "ts": "2026-06-16T17:03:50.297Z",
+              "hash": "539a1e2835e3056ad0e74b1351396025f328adda33b804ae61c8d82f0d6174da",
+              "path": "claude/MEMORY/2026-06-16T17-03-50-321Z.enc.json",
+              "bytes": 1512
             }
           ]
         },
@@ -176,6 +182,18 @@
               "hash": "148d149d6133290f7b68000c2b5931fb3b9d402d81df51bea9242e1a4ffe2958",
               "path": "claude/wallpaper-resource-feature/2026-06-14T13-55-22-889Z.enc.json",
               "bytes": 882
+            }
+          ]
+        },
+        "layout-width-tiers": {
+          "title": "layout-width-tiers",
+          "description": "全站内容容器宽度的三档约定与 PageContainer 组件，新建/改页面时套用",
+          "versions": [
+            {
+              "ts": "2026-06-16T17:03:50.326Z",
+              "hash": "5dd844abf1e73f8a0b98272f1c61a48882daa72cb98b62129c2b9e295905afa6",
+              "path": "claude/layout-width-tiers/2026-06-16T17-03-50-345Z.enc.json",
+              "bytes": 902
             }
           ]
         }

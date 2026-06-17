@@ -8,9 +8,9 @@ import { useState } from 'react'
  *
  * props:
  * - title:    页面标题
- * - text:     短分享摘要（移动端原生面板的 text 字段）
+ * - text:     短分享摘要（会和链接一起组成「文案 + 空行 + URL」）
  * - fullText: 完整分享文案（桌面端复制时一并塞进剪贴板，给用户粘到 X / 公众号用）
- *             不传则退化为只复制 URL（旧行为）。
+ *             不传则使用 text；text / fullText 都不传时才只复制 URL。
  * - url:      SSR 传入的 canonical URL；客户端优先用 window.location.href
  * - exactUrl: true 时 url 视为权威路径（拼 location.origin）
  * - size:     'sm' / 'md'
@@ -56,8 +56,11 @@ export default function SharePageButton({ title, text, fullText, url, size = 'sm
         typeof window !== 'undefined' && window.location?.href ? window.location.href : url
     }
 
-    // 移动端原生面板：text 字段优先用 fullText（更多场景下系统会把它带出去）
-    const payload = { title, text: fullText || text, url: targetUrl }
+    const shareCopy = fullText || text
+    const textWithUrl = shareCopy ? `${shareCopy}\n\n${targetUrl}` : targetUrl
+
+    // 移动端原生面板：把链接放进 text 末尾，避免部分平台把单独的 url 排到文案前面。
+    const payload = shareCopy ? { title, text: textWithUrl } : { title, url: targetUrl }
 
     if (typeof navigator.share === 'function') {
       try {
@@ -69,16 +72,14 @@ export default function SharePageButton({ title, text, fullText, url, size = 'sm
       }
     }
 
-    // 桌面端：fullText 在场则把"文案 + 空行 + URL"一起复制
-    const clipPayload = fullText ? `${fullText}\n\n${targetUrl}` : targetUrl
-    await copyToClipboard(clipPayload)
+    await copyToClipboard(textWithUrl)
   }
 
   const label =
     state === 'shared'
       ? '已分享'
       : state === 'copied'
-      ? fullText ? '已复制文案 + 链接' : '已复制链接'
+      ? fullText || text ? '已复制文案 + 链接' : '已复制链接'
       : state === 'failed'
       ? '分享失败'
       : '分享'

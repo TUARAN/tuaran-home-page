@@ -22,8 +22,8 @@ export default function HotTickerBar() {
       className="hot-ticker-wrapper"
       style={{
         position: 'sticky',
-        top: 0,
-        zIndex: 40,
+        top: 57,
+        zIndex: 39,
         // Slight shadow for depth when overlaid on content
         boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
       }}

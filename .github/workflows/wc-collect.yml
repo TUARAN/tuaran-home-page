@@ -6,8 +6,10 @@ name: World Cup collect
 #       (值要和 Cloudflare Pages 上配的同名 Secret 一致)。
 on:
   schedule:
-    # 每 10 分钟一次。注意 GitHub Actions 定时常有几分钟~十几分钟延迟,对比分页够用。
-    - cron: '*/10 * * * *'
+    # 每 3 小时一次(整点)。私有仓库 Actions 按分钟计费且不足 1 分钟算 1 分钟,
+    # 每 10 分钟会吃满免费额度(2000 min/月)甚至月中停摆;3 小时 ≈ 240 min/月,稳在免费档。
+    # 想临时更勤(如比赛日)就手动点 Run workflow,或临时调小这里。
+    - cron: '0 */3 * * *'
   workflow_dispatch: {}
 
 concurrency:

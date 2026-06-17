@@ -774,7 +774,7 @@ export default function AgentWorldCupClient() {
 
         <footer className="mt-16 py-8 text-center" style={{ borderTop: `1px solid ${D.line}` }}>
           <p className="text-[10px] tracking-[0.1em] uppercase" style={{ color: D.text3 }}>
-            Agent World Cup 2026 · 数据来源: openfootball · 定时每 10 分钟自动同步
+            Agent World Cup 2026 · 数据来源: openfootball · 定时每 3 小时自动同步
           </p>
         </footer>
       </div>

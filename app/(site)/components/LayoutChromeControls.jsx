@@ -6,7 +6,7 @@ import BackToTopButton from './BackToTopButton'
 import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
 
-const HIDE_CHROME_PATHS = new Set(['/web-llm', '/web-llm/embed', '/xiaomoli-dad-todo', '/eatwhat'])
+const HIDE_CHROME_PATHS = new Set(['/web-llm', '/web-llm/embed', '/xiaomoli-dad-todo', '/eatwhat', '/agent-world-cup'])
 
 function useChromeVisibility() {
   const pathname = usePathname()

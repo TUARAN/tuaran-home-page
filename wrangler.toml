@@ -8,7 +8,7 @@ pages_build_output_dir = ".vercel/output/static"
 # 2026 世界杯页面 (/agent-world-cup) 定时采集
 # 端点 app/api/wc/collect/route.js (Edge),数据源 openfootball/worldcup.json (无 key、无限流)。
 # 注意: Cloudflare Pages 不支持 cron triggers([triggers] 会被 Pages 配置校验拒绝),
-# 定时改由外部调度器每 ~10 分钟 POST /api/wc/collect (带 x-wc-secret) 触发。详见 private/wc-deploy.md。
+# 定时改由外部调度器每 3 小时 POST /api/wc/collect (带 x-wc-secret) 触发。详见 private/wc-deploy.md。
 
 [vars]
 GITHUB_ID = "Ov23li1wLMVXeIzcprTU"

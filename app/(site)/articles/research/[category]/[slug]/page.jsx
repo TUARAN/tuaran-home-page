@@ -275,8 +275,8 @@ export default async function ResearchDetailPage({ params }) {
         {JSON.stringify(breadcrumbData)}
       </Script>
 
-      <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-4">
-        <div className="text-xs text-[#999] dark:text-gray-400 flex flex-wrap items-center gap-2">
+      <header className="research-article-header mb-8 border-b pb-4">
+        <div className="research-article-meta flex flex-wrap items-center gap-2 text-xs">
           <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
             知识库
           </Link>
@@ -292,7 +292,7 @@ export default async function ResearchDetailPage({ params }) {
               <span aria-hidden="true">·</span>
               <Link
                 href={`/articles?tab=companies&company_type=${entry.companyType}`}
-                className="inline-flex items-center rounded-full border border-[#cbd9ee] bg-[#eff4fc] px-2 py-[1px] text-[10px] text-[#3b5b8a] no-underline hover:border-[#9fb7d8] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]"
+                className="research-pill research-pill-blue"
               >
                 {COMPANY_TYPE_META[entry.companyType].label}
               </Link>
@@ -301,7 +301,7 @@ export default async function ResearchDetailPage({ params }) {
           {entry.topicType && TOPIC_TYPE_META[entry.topicType] ? (
             <>
               <span aria-hidden="true">·</span>
-              <span className="inline-flex items-center rounded-full border border-[#c9cbb8] bg-[#ebede3] px-2 py-[1px] text-[10px] text-[#8a5a14] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]">
+              <span className="research-pill research-pill-accent">
                 {TOPIC_TYPE_META[entry.topicType].label}
               </span>
             </>
@@ -315,7 +315,7 @@ export default async function ResearchDetailPage({ params }) {
           {entry.version ? (
             <>
               <span aria-hidden="true">·</span>
-              <span className="inline-flex items-center rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-[1px] text-[10px] text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
+              <span className="research-pill">
                 {entry.version}
               </span>
             </>
@@ -358,18 +358,18 @@ export default async function ResearchDetailPage({ params }) {
             </div>
           )}
         </div>
-        <h1 className="mt-3 text-2xl text-[#444] dark:text-gray-200 leading-snug">{entry.title}</h1>
-        <aside className="mt-4 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 text-sm leading-7 text-[#333431] dark:border-[#9ba475] dark:bg-[#1c1d15] dark:text-gray-200">
+        <h1 className="research-article-title mt-3 text-2xl leading-snug">{entry.title}</h1>
+        <aside className="research-summary-box mt-4 border-l-2 px-4 py-3 text-sm leading-7">
           <AuthorByline />
           {entry.tldr ? (
-            <div className="mt-3 border-t border-[#b7bea0]/60 pt-3 dark:border-[#45483a]/50">
-              <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a5a14] dark:text-[#9ba475]">
+            <div className="research-summary-divider mt-3 border-t pt-3">
+              <span className="research-summary-label mr-2 font-mono text-[10px] uppercase tracking-[0.18em]">
                 TL;DR
               </span>
               {entry.tldr}
             </div>
           ) : entry.summary ? (
-            <div className="mt-3 border-t border-[#b7bea0]/60 pt-3 dark:border-[#45483a]/50">
+            <div className="research-summary-divider mt-3 border-t pt-3">
               {entry.summary}
             </div>
           ) : null}
@@ -379,7 +379,7 @@ export default async function ResearchDetailPage({ params }) {
             {entry.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-0.5 text-[11px] text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300"
+                className="research-pill px-2 py-0.5 text-[11px]"
               >
                 #{tag}
               </span>

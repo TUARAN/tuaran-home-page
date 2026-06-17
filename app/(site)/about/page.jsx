@@ -1,6 +1,5 @@
 import Image from 'next/image'
 
-import PageContainer from '../components/PageContainer'
 import { AVATAR_PATH } from '../../../lib/avatar'
 
 export const dynamic = 'force-static'
@@ -102,40 +101,40 @@ const GRID_BG = {
 }
 
 const kicker = 'font-mono text-[10px] uppercase tracking-[0.28em] text-[#5cd6c8]'
+const sectionInner = 'mx-auto w-full max-w-[1120px] px-4'
 
 export default function AboutPage() {
   return (
-    <PageContainer className="py-8 sm:py-10">
+    <main className="min-h-screen text-[#dbe6f0]" style={GRID_BG}>
+      {/* 霓虹光晕 */}
       <div
-        style={GRID_BG}
-        className="relative overflow-hidden rounded-3xl border border-[#1c2a3c] p-5 text-[#dbe6f0] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)] sm:p-8"
-      >
-        {/* 霓虹光晕 */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full opacity-50 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(56,225,212,0.22), transparent 70%)' }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full opacity-40 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(139,124,246,0.2), transparent 70%)' }}
-        />
+        aria-hidden="true"
+        className="pointer-events-none fixed -right-24 -top-24 h-72 w-72 rounded-full opacity-50 blur-3xl"
+        style={{ background: 'radial-gradient(circle, rgba(56,225,212,0.22), transparent 70%)' }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed -bottom-32 -left-20 h-80 w-80 rounded-full opacity-40 blur-3xl"
+        style={{ background: 'radial-gradient(circle, rgba(139,124,246,0.2), transparent 70%)' }}
+      />
 
-        {/* 终端 chrome 顶栏 */}
-        <div className="relative mb-7 flex items-center gap-2 border-b border-[#15212f] pb-3">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" aria-hidden="true" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" aria-hidden="true" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" aria-hidden="true" />
+      {/* 终端 chrome 顶栏 */}
+      <header className="sticky top-0 z-10 border-b border-[#1c2a3c] bg-[#080c15]/90 backdrop-blur">
+        <div className={`flex items-center gap-2 py-3 ${sectionInner}`}>
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#ff5f57]" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#febc2e]" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#28c840]" aria-hidden="true" />
           <span className="ml-2 font-mono text-[11px] text-[#5b6c82]">~/about/tuaran</span>
           <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#5cd6c8]">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#34e0d0]" aria-hidden="true" />
             online
           </span>
         </div>
+      </header>
 
-        {/* Hero：头像 + 介绍 */}
-        <header className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-7">
+      {/* Hero：头像 + 介绍 */}
+      <section>
+        <div className={`flex flex-col gap-6 py-8 sm:flex-row sm:items-start sm:gap-7 ${sectionInner}`}>
           <div className="relative w-28 shrink-0 sm:w-32">
             <div
               aria-hidden="true"
@@ -200,13 +199,12 @@ export default function AboutPage() {
               ))}
             </div>
           </div>
-        </header>
+        </div>
+      </section>
 
-        {/* 数据带 */}
-        <section
-          className="relative mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5"
-          aria-label="一些数字"
-        >
+      {/* 数据带 */}
+      <section className="border-t border-[#1c2a3c]" aria-label="一些数字">
+        <div className={`grid grid-cols-2 gap-2.5 py-8 sm:grid-cols-3 lg:grid-cols-5 ${sectionInner}`}>
           {stats.map((stat) => (
             <div
               key={stat.label}
@@ -218,10 +216,12 @@ export default function AboutPage() {
               </div>
             </div>
           ))}
-        </section>
+        </div>
+      </section>
 
-        {/* 横向时间线 */}
-        <section className="relative mt-9" aria-label="成长时间线">
+      {/* 横向时间线 */}
+      <section className="border-t border-[#1c2a3c]" aria-label="成长时间线">
+        <div className={`py-8 ${sectionInner}`}>
           <div className="mb-4 flex items-baseline justify-between gap-2">
             <h2 className="font-mono text-[14px] font-bold text-[#e2ecf6]">
               <span className="text-[#5cd6c8]">$</span> timeline
@@ -245,11 +245,13 @@ export default function AboutPage() {
               </li>
             ))}
           </ol>
-        </section>
+        </div>
+      </section>
 
-        {/* 联系方式 + 正在做的事 */}
-        <div className="relative mt-9 grid grid-cols-1 items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <section className="rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/70 p-4" aria-label="联系方式">
+      {/* 联系方式 + 正在维护的站点 */}
+      <section className="border-t border-[#1c2a3c]">
+        <div className={`grid grid-cols-1 items-start gap-6 py-8 lg:grid-cols-[300px_minmax(0,1fr)] ${sectionInner}`}>
+          <div className="rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/70 p-4" aria-label="联系方式">
             <h2 className="mb-3 font-mono text-[14px] font-bold text-[#e2ecf6]">
               <span className="text-[#5cd6c8]">$</span> contact
             </h2>
@@ -288,9 +290,9 @@ export default function AboutPage() {
                 ))}
               </div>
             </div>
-          </section>
+          </div>
 
-          <section aria-label="正在维护的站点">
+          <div aria-label="正在维护的站点">
             <div className="mb-3 flex items-baseline justify-between gap-2">
               <h2 className="font-mono text-[14px] font-bold text-[#e2ecf6]">
                 <span className="text-[#5cd6c8]">$</span> building
@@ -315,9 +317,9 @@ export default function AboutPage() {
                 </a>
               ))}
             </div>
-          </section>
+          </div>
         </div>
-      </div>
-    </PageContainer>
+      </section>
+    </main>
   )
 }

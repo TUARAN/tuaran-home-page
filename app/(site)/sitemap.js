@@ -65,6 +65,9 @@ export default function sitemap() {
     '/web-llm',
     '/writing-monetization-2026',
     '/xiaomoli-dad-todo',
+    '/agent-world-cup',
+    '/stock-analysis',
+    '/stock-analysis',
   ]
 
   return [

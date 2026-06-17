@@ -1562,3 +1562,17 @@
     }
   }
 }
+
+/* ─── Hot Ticker Marquee ─── */
+@keyframes hot-ticker-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.hot-ticker-track {
+  animation: hot-ticker-marquee 22s linear infinite;
+}
+
+.hot-ticker-track:hover {
+  animation-play-state: paused;
+}

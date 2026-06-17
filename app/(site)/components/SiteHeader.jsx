@@ -397,7 +397,7 @@ export default function SiteHeader() {
   return (
     <>
       <header className="site-header sticky top-0 z-40 w-full border-b backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
+        <div className="mx-auto flex w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-10">
           <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
               <span className="site-brand-text font-serif text-xl sm:text-2xl font-semibold tracking-wide">

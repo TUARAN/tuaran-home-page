@@ -21,7 +21,7 @@ export default function AdminButton({
   ...rest
 }) {
   const sizeCls = size === 'sm' ? 'h-8 px-2.5 text-[13px]' : 'h-9 px-3 text-sm'
-  const cls = `inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition disabled:opacity-50 ${sizeCls} ${
+  const cls = `inline-flex items-center justify-center gap-1.5 rounded-lg font-medium whitespace-nowrap transition disabled:opacity-50 ${sizeCls} ${
     VARIANTS[variant] || VARIANTS.default
   } ${className}`
   if (href) {

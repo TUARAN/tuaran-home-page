@@ -1,17 +1,13 @@
-import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
-
 import { getOwnerOrReject } from '../../../../../../lib/adminAuth'
+import {
+  DEEPSEEK_DEFAULT_BASE_URL,
+  DEEPSEEK_DEFAULT_MODEL,
+  extractJson,
+  getDeepSeekEnv,
+} from '../../../../../../lib/deepseek'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
-
-const DEFAULT_BASE_URL = 'https://api.deepseek.com'
-const DEFAULT_MODEL = 'deepseek-v4-pro'
-
-function getEnv() {
-  const ctx = getOptionalRequestContext()
-  return ctx?.env || process.env || {}
-}
 
 function makePlannerPrompt(task, strategyVersion) {
   return `你是企业后台 Admin 专属多代码大模型智能调度规划器。你的身份是 DeepSeek V4 Pro 线上 API 规划拆解器，只负责把需求拆成任务图和分派方案，不是唯一执行者。
@@ -81,18 +77,6 @@ function makePlannerPrompt(task, strategyVersion) {
 }`
 }
 
-function extractJson(text) {
-  const value = String(text || '').trim()
-  if (!value) throw new Error('EMPTY_DEEPSEEK_RESPONSE')
-  try {
-    return JSON.parse(value)
-  } catch {
-    const match = value.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('DEEPSEEK_JSON_NOT_FOUND')
-    return JSON.parse(match[0])
-  }
-}
-
 function sse(controller, event, data) {
   controller.enqueue(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
 }
@@ -110,8 +94,8 @@ export async function POST(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
 
-  const env = getEnv()
-  const apiKey = env.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
+  const env = getDeepSeekEnv()
+  const apiKey = env.DEEPSEEK_API_KEY
   if (!apiKey) {
     return Response.json({ error: 'MISSING_DEEPSEEK_API_KEY' }, { status: 500 })
   }
@@ -119,8 +103,8 @@ export async function POST(req) {
   const body = await req.json().catch(() => null)
   const task = body?.task || {}
   const strategyVersion = body?.strategyVersion || 'dispatch-admin-orchestrator-v1.2.0'
-  const baseUrl = (env.DEEPSEEK_BASE_URL || process.env.DEEPSEEK_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, '')
-  const model = env.DEEPSEEK_MODEL || process.env.DEEPSEEK_MODEL || DEFAULT_MODEL
+  const baseUrl = String(env.DEEPSEEK_BASE_URL || DEEPSEEK_DEFAULT_BASE_URL).replace(/\/+$/, '')
+  const model = env.DEEPSEEK_MODEL || DEEPSEEK_DEFAULT_MODEL
 
   const stream = new ReadableStream({
     async start(controller) {

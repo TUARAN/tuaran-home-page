@@ -150,7 +150,7 @@
     overflow-x: clip;
     scroll-behavior: smooth;
     /* 站点顶部 sticky 主导航；锚点/目录跳转时避免标题被 header 遮挡 */
-    scroll-padding-top: 5.5rem;
+    scroll-padding-top: 4rem;
   }
 
   h1,

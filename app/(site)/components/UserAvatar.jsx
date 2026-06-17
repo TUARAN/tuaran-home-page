@@ -37,8 +37,8 @@ export default function UserAvatar({
   const initials = user ? getUserAvatarInitials(user) : seedProp ? seedProp.slice(0, 2).toUpperCase() : guestInitial
   const sizeCls = typeof size === 'number' ? '' : SIZE_CLASS[size] || SIZE_CLASS.sm
   const borderCls = isOwner
-    ? 'border-2 border-[#c79347] dark:border-[#989e72]'
-    : 'border border-[#cbcdc2] dark:border-gray-700'
+    ? 'border-2 border-[var(--site-accent)]'
+    : 'border border-[var(--site-line-strong)]'
   const style = typeof size === 'number' ? { width: size, height: size } : undefined
 
   if (loading) {
@@ -64,7 +64,7 @@ export default function UserAvatar({
         style={style}
         title={title}
         className={[
-          'relative inline-flex shrink-0 items-center justify-center rounded-full bg-[#e9eae2] text-[12px] font-semibold text-[#565749] dark:bg-gray-900 dark:text-gray-200',
+          'relative inline-flex shrink-0 items-center justify-center rounded-full bg-[var(--site-panel)] text-[12px] font-semibold text-[var(--site-muted)]',
           sizeCls,
           borderCls,
           className,

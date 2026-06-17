@@ -365,7 +365,7 @@ function ProfileCard() {
 
 function ClassicHomePage({ featuredPicks }) {
   return (
-    <main className="home-classic-root mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 py-9 sm:px-6 md:py-12 lg:px-10">
+    <main className="home-classic-root mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-5 pb-9 sm:px-6 md:pt-7 md:pb-12 lg:px-10">
       {/* Hot ticker marquee — sticky top bar, below nav above hero */}
       <div className="mb-3">
         <HotTickerBar />

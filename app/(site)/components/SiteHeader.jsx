@@ -39,13 +39,12 @@ function MenuItem({ item, onNavigate }) {
   const { locale } = useLocale()
   const label = navLabel(item, locale)
   const desc = navDesc(item, locale)
-  const base =
-    'group/menuitem flex items-start gap-3 rounded-xl px-3 py-2 no-underline transition-colors hover:bg-[#e7e8e0] dark:hover:bg-[#19212b]'
+  const base = 'site-menu-item'
   const inner = (
     <>
-      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#aaae9c] transition-colors group-hover/menuitem:bg-[#8b5a1f] dark:bg-[#475061] dark:group-hover/menuitem:bg-[#989e72]" />
+      <span className="site-menu-dot mt-1 h-1.5 w-1.5 shrink-0 rounded-full transition-colors" />
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5 text-[13.5px] font-medium leading-tight text-[#15140f] dark:text-gray-100">
+        <span className="site-menu-title flex items-center gap-1.5 text-[13.5px] font-medium leading-tight">
           {label}
           {item.tag ? (
             <span
@@ -56,7 +55,7 @@ function MenuItem({ item, onNavigate }) {
           ) : null}
         </span>
         {desc ? (
-          <span className="mt-0.5 block text-[11.5px] leading-snug text-[#777a6f] dark:text-[#8a93a3]">
+          <span className="site-menu-desc mt-0.5 block text-[11.5px] leading-snug">
             {desc}
           </span>
         ) : null}
@@ -86,21 +85,21 @@ function MenuItem({ item, onNavigate }) {
 
 const TIER_SECTION_STYLES = {
   '专栏': {
-    wrap: 'bg-[#e7eadc]/50 dark:bg-[#1b1c13]/40',
-    title: 'text-[#8a6b2e] dark:text-[#9aa27a]',
+    wrap: 'site-tier-section site-tier-column',
+    title: 'site-tier-title site-tier-title-column',
   },
   '调研': {
-    wrap: 'bg-[#e6ecf2]/55 dark:bg-[#15202c]/50',
-    title: 'text-[#4d6a85] dark:text-[#8fb0ce]',
+    wrap: 'site-tier-section site-tier-research',
+    title: 'site-tier-title site-tier-title-research',
   },
   '资料': {
-    wrap: 'bg-[#e8ece4]/55 dark:bg-[#1a1f17]/50',
-    title: 'text-[#485a3b] dark:text-[#93a984]',
+    wrap: 'site-tier-section site-tier-archive',
+    title: 'site-tier-title site-tier-title-archive',
   },
 }
 
 function getTierStyle(title) {
-  return TIER_SECTION_STYLES[title] || { wrap: '', title: 'text-[#858779] dark:text-[#93a0b3]' }
+  return TIER_SECTION_STYLES[title] || { wrap: 'site-tier-section', title: 'site-tier-title' }
 }
 
 function TopNavLink({ href, label, isActive, onNavigate }) {
@@ -109,10 +108,8 @@ function TopNavLink({ href, label, isActive, onNavigate }) {
       href={href}
       onClick={onNavigate}
       className={[
-        'inline-flex items-center rounded-full px-2.5 py-1 text-sm font-medium no-underline transition-colors',
-        isActive
-          ? 'font-medium text-[#111] dark:text-gray-100'
-          : 'text-[#4f5048] hover:text-[#111] dark:text-[#c7d0df] dark:hover:text-[#f7fbff]',
+        'site-nav-trigger',
+        isActive ? 'site-nav-trigger-active' : '',
       ].join(' ')}
     >
       {label}
@@ -173,10 +170,8 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
         aria-haspopup="true"
         aria-expanded={isOpen}
         className={[
-          'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-medium transition-colors',
-          isActive
-            ? 'text-[#111] font-medium dark:text-gray-100'
-            : 'text-[#4f5048] hover:text-[#111] dark:text-[#c7d0df] dark:hover:text-[#f7fbff]',
+          'site-nav-trigger',
+          isActive ? 'site-nav-trigger-active' : '',
         ].join(' ')}
       >
         {navLabel(channel, locale)}
@@ -188,7 +183,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
           role="menu"
           className={`absolute top-full z-[120] w-[min(calc(100vw-1rem),440px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${positionClass}`}
         >
-          <div className="rounded-2xl border border-[#d8dad0] bg-[#f6f8f3] p-3 shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+          <div className="site-dropdown-panel rounded-2xl border p-3">
             {sections.map((section) => {
               const tier = getTierStyle(section.title)
               return (
@@ -235,7 +230,7 @@ function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
       <div className="flex min-w-0 flex-1 items-center">
         <p
           className={[
-            'truncate font-semibold text-[#15140f] dark:text-gray-100',
+            'site-menu-title truncate font-semibold',
             isLg ? 'text-[15px]' : 'text-[13.5px]',
           ].join(' ')}
         >
@@ -257,7 +252,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
     return (
       <Link
         href={loginHref}
-        className="inline-flex items-center gap-2 rounded-full border border-[#cbcdc2] px-2.5 py-1 text-sm font-medium text-[#4f5048] no-underline transition-colors hover:border-[#888b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
+        className="site-account-button"
       >
         <AccountAvatar loading={false} />
         {pick(locale, '登录', 'Sign in')}
@@ -272,7 +267,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
         onClick={onToggle}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        className="inline-flex items-center gap-2 rounded-full border border-[#cbcdc2] px-2 py-1 text-sm font-medium text-[#4f5048] transition-colors hover:border-[#888b6d] hover:text-[#111] dark:border-gray-700 dark:text-[#c7d0df] dark:hover:border-gray-500 dark:hover:text-[#f7fbff]"
+        className="site-account-button px-2"
       >
         <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
         <span>{loading ? pick(locale, '检查中', 'Checking…') : getAccountId(user)}</span>
@@ -280,14 +275,14 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-full z-[130] mt-2 w-64 overflow-hidden rounded-2xl border border-[#d8dad0] bg-[#f6f8f3] shadow-[0_24px_60px_rgba(82,69,45,0.14)] dark:border-[#2c3340] dark:bg-[#10161f] dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
-          <div className="border-b border-[#dee0d6] bg-[#ebede3]/60 px-3.5 py-3 dark:border-gray-800 dark:bg-[#141a23]/60">
+        <div className="site-dropdown-panel absolute right-0 top-full z-[130] mt-2 w-64 overflow-hidden rounded-2xl border">
+          <div className="site-dropdown-strip border-b px-3.5 py-3">
             <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
           </div>
           <div className="px-1.5 py-1.5">
             <a
               href={logoutHref}
-              className="flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px] font-medium text-[#8b5a1f] no-underline transition-colors hover:bg-[#e7e8e0] dark:text-[#a1ab76] dark:hover:bg-[#19212b]"
+              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
             >
               <span>{pick(locale, '退出登录', 'Sign out')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
@@ -308,18 +303,18 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
 
   if (!loading && !user) {
     return (
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[#d5d7cb] bg-white/70 px-3.5 py-3 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+      <div className="site-mobile-card mb-4 flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-3">
         <div className="flex items-center gap-3">
           <AccountAvatar loading={false} />
           <div>
-            <p className="text-[13.5px] font-semibold text-[#15140f] dark:text-gray-100">{pick(locale, '未登录', 'Not signed in')}</p>
-            <p className="mt-0.5 text-[11.5px] text-[#777a6f] dark:text-[#8a93a3]">{pick(locale, '登录后可评论 / 私域', 'Sign in to comment / private area')}</p>
+            <p className="site-menu-title text-[13.5px] font-semibold">{pick(locale, '未登录', 'Not signed in')}</p>
+            <p className="site-menu-desc mt-0.5 text-[11.5px]">{pick(locale, '登录后可评论 / 私域', 'Sign in to comment / private area')}</p>
           </div>
         </div>
         <Link
           href={loginHref}
           onClick={onNavigate}
-          className="shrink-0 rounded-full border border-[#cbcdc2] px-3 py-1.5 text-[12px] font-medium text-[#565749] no-underline dark:border-gray-700 dark:text-gray-300"
+          className="site-account-button shrink-0 px-3 py-1.5 text-[12px]"
         >
           {pick(locale, '登录', 'Sign in')}
         </Link>
@@ -328,15 +323,15 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   }
 
   return (
-    <div className="mb-4 overflow-hidden rounded-2xl border border-[#d5d7cb] bg-white/75 dark:border-[#2a3340] dark:bg-[#151c25]/70">
-      <div className="border-b border-[#dee0d6] bg-[#ebede3]/50 px-3.5 py-3 dark:border-[#252e39] dark:bg-[#141a23]/60">
+    <div className="site-mobile-card mb-4 overflow-hidden rounded-2xl border">
+      <div className="site-dropdown-strip border-b px-3.5 py-3">
         <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
       </div>
       {!loading && user ? (
         <div className="px-1.5 py-1.5">
           <a
             href={logoutHref}
-            className="flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px] font-medium text-[#8b5a1f] no-underline dark:text-[#a1ab76]"
+            className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
           >
             <span>{pick(locale, '退出登录', 'Sign out')}</span>
             <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
@@ -401,11 +396,11 @@ export default function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-[#dee0db] bg-[#f0f1ee]/92 backdrop-blur dark:border-[#202938] dark:bg-[#0f141b]/96">
+      <header className="site-header sticky top-0 z-40 w-full border-b backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
           <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
-              <span className="font-serif text-xl sm:text-2xl font-semibold tracking-wide text-[#111] dark:text-gray-100">
+              <span className="site-brand-text font-serif text-xl sm:text-2xl font-semibold tracking-wide">
                 {pick(locale, '涂阿燃 · 网络日志', 'TUARAN · Weblog')}
               </span>
             </div>
@@ -494,7 +489,7 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'fixed inset-0 z-30 bg-[rgba(23,18,12,0.22)] transition-opacity duration-200 md:hidden',
+          'fixed inset-0 z-30 bg-[color-mix(in_srgb,var(--site-accent-strong)_18%,transparent)] transition-opacity duration-200 md:hidden',
           mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
         onClick={() => setMobileMenuOpen(false)}
@@ -503,11 +498,11 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'fixed right-0 top-[73px] z-40 max-h-[calc(100vh-73px)] w-[min(88vw,340px)] overflow-y-auto border-l border-[#d5d7cd] bg-[#f4f5f0] px-4 py-5 shadow-[-18px_0_48px_rgba(77,62,37,0.10)] transition-transform duration-200 dark:border-[#232c36] dark:bg-[#10151d] md:hidden',
+          'site-mobile-drawer fixed right-0 top-[73px] z-40 max-h-[calc(100vh-73px)] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 md:hidden',
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
-        <p className="mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.22em] text-[#838675] dark:text-[#8e9ab0]">
+        <p className="site-menu-desc mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.22em]">
           Menu
         </p>
         <MobileAccountPanel
@@ -520,12 +515,12 @@ export default function SiteHeader() {
             const expanded = openMobileChannel === channel.key
             const sections = getChannelNavSections(channel, account, account?.navOverrides)
             return (
-              <div key={channel.key} className="rounded-2xl border border-[#d5d7cb] bg-white/70 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+              <div key={channel.key} className="site-mobile-card rounded-2xl border">
                 <button
                   type="button"
                   onClick={() => setOpenMobileChannel((cur) => (cur === channel.key ? null : channel.key))}
                   aria-expanded={expanded}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left text-[15px] font-medium text-[#191611] dark:text-gray-100"
+                  className="site-menu-title flex w-full items-center justify-between px-4 py-3 text-left text-[15px] font-medium"
                 >
                   {navLabel(channel, locale)}
                   <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
@@ -533,7 +528,7 @@ export default function SiteHeader() {
                   </span>
                 </button>
                 {expanded ? (
-                  <div className="space-y-2 border-t border-[#daddd1] px-2 pb-3 pt-2 dark:border-[#2a3340]">
+                  <div className="site-mobile-section-divider space-y-2 border-t px-2 pb-3 pt-2">
                     {sections.map((section) => {
                       const tier = getTierStyle(section.title)
                       return (
@@ -559,7 +554,7 @@ export default function SiteHeader() {
             )
           })}
           {showAdminNav ? (
-            <div className="rounded-2xl border border-[#d5d7cb] bg-white/70 px-4 py-3 dark:border-[#2a3340] dark:bg-[#151c25]/70">
+            <div className="site-mobile-card rounded-2xl border px-4 py-3">
               <TopNavLink
                 href={SITE_ADMIN_NAV_LINK.href}
                 label={SITE_ADMIN_NAV_LINK.label}

@@ -50,6 +50,11 @@ const TYPE_TONE = {
     bg: '#FCFAF4',
     border: '#E8DDC0',
   },
+  'quant-analysis': {
+    accent: '#C0392B',
+    bg: '#FDF5F4',
+    border: '#E8C5C2',
+  },
 }
 
 function getTone(type) {

@@ -9,7 +9,7 @@ export const revalidate = 0
 export const metadata = {
   title: 'Agent世界杯 · 2026 FIFA World Cup',
   description:
-    '2026 FIFA世界杯赛程、积分榜、射手榜、助攻榜、红黄牌 · 48队·104场·16城 · 美国·加拿大·墨西哥 · 数据每 10 分钟自动同步',
+    '2026 FIFA世界杯赛程、积分榜、射手榜、助攻榜、红黄牌 · 48队·104场·16城 · 美国·加拿大·墨西哥 · 数据每 3 小时自动同步',
   keywords: [
     '2026世界杯',
     'FIFA World Cup',

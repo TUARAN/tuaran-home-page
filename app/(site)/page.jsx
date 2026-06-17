@@ -6,6 +6,7 @@ import HomeRecommendationCard from './components/HomeRecommendationCard'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
+import HotTickerBar from './components/HotTickerBar'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHighlights'
@@ -365,6 +366,11 @@ function ProfileCard() {
 function ClassicHomePage({ featuredPicks }) {
   return (
     <main className="home-classic-root mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 py-9 sm:px-6 md:py-12 lg:px-10">
+      {/* Hot ticker marquee — sticky top bar, below nav above hero */}
+      <div className="mb-3">
+        <HotTickerBar />
+      </div>
+
       <section className="mb-14 flex-1">
         <header className="classic-home-hero relative mb-12 overflow-hidden rounded-[28px] border px-6 py-7 md:px-12 md:py-10">
           <div className="classic-home-hero-glow pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block" />
@@ -585,6 +591,11 @@ function ClassicHomePage({ featuredPicks }) {
 function PolishedHomePage({ featuredPicks }) {
   return (
     <main className="home-polished-root home-page">
+      {/* Hot ticker marquee — sticky top bar, below nav above hero */}
+      <div className="mb-3">
+        <HotTickerBar />
+      </div>
+
       <section className="home-hero">
         <div className="home-hero-copy">
           <p className="home-kicker">2aran.com · Tuaran</p>

@@ -84,7 +84,9 @@ async function handle(request, ctx) {
   }
 }
 
-export const GET = (request, ctx) => handle(request, ctx || getOptionalRequestContext())
+// 注意:Next.js App Router 传给 handler 的第二参是 { params },不是 Cloudflare 上下文,
+// 所以必须直接调 getOptionalRequestContext() 拿 env.DB(跟 lib/d1.js 一致)。
+export const GET = (request) => handle(request, getOptionalRequestContext())
 
 /* ━━━ D1 reads ━━━ */
 

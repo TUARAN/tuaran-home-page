@@ -44,8 +44,9 @@ async function handle(request, ctx) {
       readCards(db),
     ])
 
+    // 注意:readMeta 返回的是 wc_meta 的原始 snake_case key,这里要对应着读。
     // 距上次采集超过 2 小时,或 D1 里没数据 → 标 degraded
-    const lastCollectAt = Number(meta.lastCollectAt || 0)
+    const lastCollectAt = Number(meta.last_collect_at || 0)
     const isStale = !lastCollectAt || Date.now() / 1000 - lastCollectAt > 2 * 3600
     const hasData = matches.length + standings.length + scorers.length > 0
 
@@ -54,8 +55,8 @@ async function handle(request, ctx) {
       generatedAt: new Date().toISOString(),
       meta: {
         lastCollectAt,
-        lastCollectStatus: meta.lastCollectStatus || 'never',
-        lastCollectError: meta.lastCollectError || '',
+        lastCollectStatus: meta.last_collect_status || 'never',
+        lastCollectError: meta.last_collect_error || '',
         isStale,
         hasData,
       },

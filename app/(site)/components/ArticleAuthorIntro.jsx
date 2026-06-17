@@ -14,21 +14,21 @@ export function AuthorByline() {
   return (
     <div className="leading-6">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="text-[13px] font-semibold text-[#15140f] dark:text-gray-100">涂阿燃 · tuaran</span>
-        <span className="text-[11px] text-[#707462] dark:text-[#989d87]">
+        <span className="research-author-title text-[13px] font-semibold">涂阿燃 · tuaran</span>
+        <span className="research-author-muted text-[11px]">
           前端 / AI Agent / 政企方案
         </span>
       </div>
-      <p className="mt-0.5 text-[12px] leading-5 text-[#585a4c] dark:text-[#a1a593]">
+      <p className="research-author-muted mt-0.5 text-[12px] leading-5">
         在
         {' '}
-        <Link href="/" className="text-[#333431] underline underline-offset-2 hover:text-[#15140f] dark:text-gray-200 dark:hover:text-white">
+        <Link href="/" className="research-author-link underline underline-offset-2">
           2aran.com
         </Link>
         {' '}
         写技术调研、AI 工程实践与独立开发笔记。
         {' '}
-        <Link href="/about" className="text-[#8a5a14] underline underline-offset-2 hover:text-[#5d3b08] dark:text-[#9ba475] dark:hover:text-[#b9c39a]">
+        <Link href="/about" className="research-author-cta underline underline-offset-2">
           了解更多 →
         </Link>
       </p>

@@ -71,7 +71,7 @@ export default function DownloadPptButton({ title, subtitle, fileBaseName, image
       disabled={state === 'working' || list.length === 0}
       aria-live="polite"
       title="把当前版本的调研下载为 PPT"
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#ddd] bg-white px-3 py-1 text-xs text-[#555] transition-colors hover:border-[#999] hover:text-[#222] disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100"
+      className="article-action-button px-3 py-1 text-xs disabled:opacity-60"
     >
       <svg
         viewBox="0 0 14 14"

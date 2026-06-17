@@ -132,7 +132,7 @@ export default function DistributeMarkdownButton({
       onClick={handleDistribute}
       aria-live="polite"
       title="发送到 syncblog.cn 内容分发页"
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#ddd] bg-white px-3 py-1 text-xs text-[#555] transition-colors hover:border-[#999] hover:text-[#222] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:text-gray-100"
+      className="article-action-button px-3 py-1 text-xs"
     >
       {state === 'sent' ? (
         <svg

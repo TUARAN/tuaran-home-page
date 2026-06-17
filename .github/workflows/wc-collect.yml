@@ -1,0 +1,35 @@
+name: World Cup collect
+
+# Cloudflare Pages 不支持 cron triggers,改由 GitHub Actions 定时敲采集端点。
+# 端点 /api/wc/collect (Edge Function) 会从 openfootball 拉数据写进 D1。
+# 鉴权: 在仓库 Settings → Secrets and variables → Actions 加 Secret WC_COLLECT_SECRET
+#       (值要和 Cloudflare Pages 上配的同名 Secret 一致)。
+on:
+  schedule:
+    # 每 10 分钟一次。注意 GitHub Actions 定时常有几分钟~十几分钟延迟,对比分页够用。
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: wc-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: Trigger collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/wc/collect
+        env:
+          WC_COLLECT_SECRET: ${{ secrets.WC_COLLECT_SECRET }}
+        run: |
+          if [ -z "$WC_COLLECT_SECRET" ]; then
+            echo "::error::缺少仓库 Secret WC_COLLECT_SECRET"; exit 1
+          fi
+          code=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
+            -H "x-wc-secret: $WC_COLLECT_SECRET" \
+            https://2aran.com/api/wc/collect)
+          echo "HTTP $code"
+          cat /tmp/resp.json; echo
+          test "$code" = "200"

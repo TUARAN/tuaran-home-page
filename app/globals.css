@@ -285,7 +285,7 @@
   }
 
   .home-page {
-    @apply mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 py-9 sm:px-6 md:py-12 lg:px-10;
+    @apply mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-2 pb-9 sm:px-6 md:pt-3 md:pb-12 lg:px-10;
     color: var(--site-ink);
   }
 
@@ -897,7 +897,7 @@
 
   @media (max-width: 640px) {
     .home-page {
-      padding-top: 1.25rem;
+      padding-top: 0.5rem;
     }
 
     .home-hero {

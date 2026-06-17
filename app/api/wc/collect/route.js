@@ -53,8 +53,9 @@ async function handle(request, ctx) {
   }
 }
 
-export const GET = (request, ctx) => handle(request, ctx || getOptionalRequestContext())
-export const POST = (request, ctx) => handle(request, ctx || getOptionalRequestContext())
+// Next.js App Router 第二参是 { params } 不是 CF 上下文,必须直接取 getOptionalRequestContext()。
+export const GET = (request) => handle(request, getOptionalRequestContext())
+export const POST = (request) => handle(request, getOptionalRequestContext())
 
 // scheduled 事件处理:Cloudflare Pages 不支持 cron triggers,所以线上不会调用它
 // (定时走 GitHub Actions 敲上面的 HTTP 端点)。保留它以便将来迁到 Worker 时可直接复用。

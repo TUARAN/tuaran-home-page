@@ -310,7 +310,7 @@ function MetricCard({ label, value, sub, colorClass }) {
   return (
     <div className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923] hover:border-[#00e5a0] transition-colors">
       <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-[#68706a] dark:text-[#98a5b6]">{label}</p>
-      <div className={`font-mono text-[26px] font-semibold leading-none ${colorClass || 'text-[#161b1a] dark:text-gray-100'}`}>
+      <div className={`font-mono text-[26px] font-semibold leading-[1.15] tracking-tight ${colorClass || 'text-[#161b1a] dark:text-gray-100'}`}>
         {value}
       </div>
       {sub && <p className="mt-2 text-[12px] leading-5 text-[#77736b] dark:text-[#8d98a8]">{sub}</p>}
@@ -516,9 +516,11 @@ export default function StockAnalysisClient({ record }) {
               <MetricCard label="历史总成交" value={R.volume.totalHistoricalVol} sub={R.pair.split('USDT')[0]} />
             </div>
             {R.riskSignals.volumePriceDivergence ? (
-              <AlertBox type="warning" title="量价背离信号">
-                近期出现巨量 spike 后缩量上涨，价格创新高但成交量未同步放大，存在量价背离迹象。
-              </AlertBox>
+              <div className="mt-4">
+                <AlertBox type="warning" title="量价背离信号">
+                  近期出现巨量 spike 后缩量上涨，价格创新高但成交量未同步放大，存在量价背离迹象。
+                </AlertBox>
+              </div>
             ) : null}
           </div>
           {/* Funding */}
@@ -536,15 +538,19 @@ export default function StockAnalysisClient({ record }) {
               <MetricCard label="下次结算" value={R.funding.countdown} sub="倒计时" />
             </div>
             {R.riskSignals.highFundingRate ? (
-              <AlertBox type="danger" title="资金费率极端异常">
-                {R.funding.annualizedPct >= 0
-                  ? '正费率意味着多头需向空头支付费用。费率越高，说明多头杠杆仓位越拥挤，市场情绪极度狂热，随时可能出现多杀多踩踏。'
-                  : '负费率意味着空头需向多头支付费用。负费率过深说明空头杠杆仓位过挤，存在轧空风险。'}
-              </AlertBox>
+              <div className="mt-4">
+                <AlertBox type="danger" title="资金费率极端异常">
+                  {R.funding.annualizedPct >= 0
+                    ? '正费率意味着多头需向空头支付费用。费率越高，说明多头杠杆仓位越拥挤，市场情绪极度狂热，随时可能出现多杀多踩踏。'
+                    : '负费率意味着空头需向多头支付费用。负费率过深说明空头杠杆仓位过挤，存在轧空风险。'}
+                </AlertBox>
+              </div>
             ) : (
-              <AlertBox type="info" title="资金费率正常">
-                费率处于健康区间，多空力量相对均衡。
-              </AlertBox>
+              <div className="mt-4">
+                <AlertBox type="info" title="资金费率正常">
+                  费率处于健康区间，多空力量相对均衡。
+                </AlertBox>
+              </div>
             )}
           </div>
         </div>

@@ -1,4 +1,7 @@
+import Image from 'next/image'
+
 import PageContainer from '../components/PageContainer'
+import { AVATAR_PATH } from '../../../lib/avatar'
 
 export const dynamic = 'force-static'
 
@@ -28,11 +31,30 @@ export const metadata = {
 
 const identityTags = [
   '程序员',
-  '项目经理',
+  '项目经理 · PMP',
   '技术博主',
   '出版作者',
   '矩联科技创始人',
   '茉莉奶爸',
+]
+
+const introLines = [
+  { icon: '📚', text: '《程序员成长手记》《AI Bots 通关指南》作者' },
+  { icon: '💡', text: '专注前端工程化与 AI 智能体，深耕实战与技术社区共建' },
+  { icon: '🌐', text: '个人主页：2aran.com', href: 'https://2aran.com' },
+  {
+    icon: '🤝',
+    text: '加入博主联盟：blogger-alliance.cn — 连接 AI 产品与技术影响力',
+    href: 'https://blogger-alliance.cn/',
+  },
+]
+
+const stats = [
+  { value: '500+', label: '技术文章' },
+  { value: '400万+', label: '累计阅读' },
+  { value: '2', label: '出版作品' },
+  { value: '6', label: '在维护站点' },
+  { value: '2016', label: '起步至今' },
 ]
 
 const timeline = [
@@ -40,11 +62,11 @@ const timeline = [
   { year: '2018', label: '华南师大毕业' },
   { year: '2019', label: '大厂 · 技术写作' },
   { year: '2020', label: '掘金优秀作者' },
-  { year: '2021', label: '央企 · PMP' },
+  { year: '2021', label: '央企 · 拿下 PMP' },
   { year: '2023', label: '《程序员成长手记》' },
   { year: '2024', label: '《AI Bots 通关指南》' },
-  { year: '2025', label: '博主联盟 · 前端周刊' },
-  { year: '2026', label: '矩联科技' },
+  { year: '2025', label: '博主联盟 · 前端周看' },
+  { year: '2026', label: '创立矩联科技' },
 ]
 
 const socialLinks = [
@@ -56,163 +78,246 @@ const socialLinks = [
 ]
 
 const contactItems = [
-  { label: '主页', value: '2aran.com', href: 'https://2aran.com' },
-  { label: '常用 ID', value: '掘金安东尼 · 安东尼404 · 安东尼与AI' },
-  { label: '微信', value: 'atar24' },
-  { label: '邮箱', value: 'tuaran666@gmail.com', href: 'mailto:tuaran666@gmail.com' },
+  { label: 'home', value: '2aran.com', href: 'https://2aran.com' },
+  { label: 'wechat', value: 'atar24' },
+  { label: 'email', value: 'tuaran666@gmail.com', href: 'mailto:tuaran666@gmail.com' },
+  { label: 'alias', value: '掘金安东尼 · 安东尼404 · 安东尼与AI' },
 ]
 
 const siteLinks = [
-  { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人主页、技术笔记和长期内容索引' },
   { label: '矩联科技', href: 'https://matrixlink.tech/', desc: '技术服务、项目案例和公司信息' },
-  { label: '博主联盟', href: 'https://blogger-alliance.cn/', desc: '技术博主协作与推广项目' },
-  { label: '前端周看', href: 'https://frontendnext.com/', desc: '前端、AI 工程和工具动态整理' },
-  { label: 'Open Claude Code', href: 'https://openclaudecode.site/', desc: 'Claude Code 与 Agent 工程笔记' },
+  { label: '博主联盟', href: 'https://blogger-alliance.cn/', desc: 'AI 产品方与技术博主的连接网络' },
+  { label: '前端周看', href: 'https://frontendnext.com/', desc: '前端、AI Agent 与大模型工程情报' },
   { label: 'PublishLab', href: 'https://publishlab.cc/', desc: 'AI 写作、内容整理和出版流程实验' },
+  { label: 'Open Claude Code', href: 'https://openclaudecode.site/', desc: 'Claude Code 与 Agent 工程笔记' },
+  { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人主页、技术笔记与长期内容索引' },
 ]
 
-const workingNotes = [
-  '先把问题写清楚，再决定是否写代码；少做泛化，多做可验证交付。',
-  '复杂事项尽量沉淀成文档、清单、脚本或页面，方便下次复用。',
-  '关注 AI 进入真实工作流后的效果：能否减少重复劳动，能否稳定产出。',
-  '写作不是包装自己，而是把做过的事、踩过的坑和判断依据留下来。',
-]
+// 本页独立配色：不跟随站点明暗主题，固定一套深色「工程师终端」科技风
+const GRID_BG = {
+  backgroundColor: '#080c15',
+  backgroundImage:
+    'linear-gradient(rgba(120,200,220,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(120,200,220,0.045) 1px, transparent 1px)',
+  backgroundSize: '34px 34px',
+}
 
-const chipClassName =
-  'inline-flex items-center rounded-full border border-[#d0d1c8] bg-white/90 px-2.5 py-1 text-[12px] text-[#53554d] no-underline transition hover:border-[#818472] hover:text-[#15140f] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300 dark:hover:border-[#4a5568]'
-
-const externalChipClassName = `${chipClassName} no-external-arrow`
-const socialChipClassName =
-  'no-external-arrow inline-flex items-center rounded-full bg-[#eceee7] px-2.5 py-1 text-[12px] text-[#53554d] no-underline transition hover:bg-[#dcded3] hover:text-[#15140f] dark:bg-[#1a2430] dark:text-gray-300 dark:hover:bg-[#223040]'
+const kicker = 'font-mono text-[10px] uppercase tracking-[0.28em] text-[#5cd6c8]'
 
 export default function AboutPage() {
   return (
-    <PageContainer className="flex flex-1 flex-col py-8 sm:py-5">
-      <header className="shrink-0 border-b border-[#dee0db] pb-4 dark:border-gray-800">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
-          About · 关于我
-        </p>
-        <h1 className="mt-2 break-words font-serif text-xl font-semibold tracking-wide text-[#15140f] dark:text-gray-100 sm:text-2xl">
-          涂阿燃 <span className="text-[#888] dark:text-gray-500">TUARAN</span>
-        </h1>
-        <p className="mt-1 break-words font-mono text-[11px] tracking-wide text-[#858878] dark:text-[#94a0b1]">
-          掘金安东尼 · 安东尼404 · tuaran
-        </p>
-        <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[#51514a] dark:text-gray-300">把混乱编程为系统，把想法变成产品。</p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {identityTags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-[#dee0db] bg-[#f0f1ec] px-2.5 py-0.5 font-mono text-[11px] text-[#58594d] dark:border-[#2d3440] dark:bg-[#18202a] dark:text-[#acaf9d]"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      </header>
+    <PageContainer className="py-8 sm:py-10">
+      <div
+        style={GRID_BG}
+        className="relative overflow-hidden rounded-3xl border border-[#1c2a3c] p-5 text-[#dbe6f0] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)] sm:p-8"
+      >
+        {/* 霓虹光晕 */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full opacity-50 blur-3xl"
+          style={{ background: 'radial-gradient(circle, rgba(56,225,212,0.22), transparent 70%)' }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full opacity-40 blur-3xl"
+          style={{ background: 'radial-gradient(circle, rgba(139,124,246,0.2), transparent 70%)' }}
+        />
 
-      <section className="mt-4 shrink-0" aria-label="成长时间线">
-        <div className="mb-2 flex items-baseline justify-between gap-2">
-          <h2 className="font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">时间线</h2>
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
-            2016 — 2026
+        {/* 终端 chrome 顶栏 */}
+        <div className="relative mb-7 flex items-center gap-2 border-b border-[#15212f] pb-3">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" aria-hidden="true" />
+          <span className="ml-2 font-mono text-[11px] text-[#5b6c82]">~/about/tuaran</span>
+          <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#5cd6c8]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#34e0d0]" aria-hidden="true" />
+            online
           </span>
         </div>
-        <ol className="grid grid-cols-2 gap-x-3 gap-y-3 min-[380px]:grid-cols-3 sm:grid-cols-5 lg:grid-cols-9">
-          {timeline.map((item, i) => (
-            <li key={`${item.year}-${item.label}`} className="relative min-w-0">
-              <div className="flex items-center gap-1">
-                <span className="font-mono text-[11px] font-semibold tabular-nums text-[#b7791f] dark:text-[#9ba475]">
-                  {item.year}
-                </span>
-                {i < timeline.length - 1 ? (
-                  <span
-                    className="hidden h-px flex-1 bg-[#dee0db] dark:bg-gray-700 lg:block"
-                    aria-hidden="true"
-                  />
-                ) : null}
-              </div>
-              <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-[#666] dark:text-gray-400 sm:text-[11px] sm:leading-snug">
-                {item.label}
-              </p>
-            </li>
-          ))}
-        </ol>
-      </section>
 
-      <div className="mt-4 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4">
-        <section className="flex flex-col self-start rounded-xl bg-white/72 p-3 dark:bg-[#121821]/72 sm:rounded-2xl sm:p-4">
-          <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">公开入口</h2>
-          <dl className="space-y-2 text-[12px] leading-5 text-[#51514a] dark:text-gray-300">
-            {contactItems.map((item) => (
-              <div key={item.label} className="flex flex-wrap gap-x-2 gap-y-0.5">
-                <dt className="text-[#858878] dark:text-gray-500">{item.label}</dt>
-                <dd className="min-w-0">
-                  {item.href ? (
+        {/* Hero：头像 + 介绍 */}
+        <header className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-7">
+          <div className="relative w-28 shrink-0 sm:w-32">
+            <div
+              aria-hidden="true"
+              className="absolute -inset-1 rounded-2xl opacity-70 blur-md"
+              style={{ background: 'linear-gradient(135deg, rgba(52,224,208,0.5), rgba(139,124,246,0.5))' }}
+            />
+            <div className="relative overflow-hidden rounded-2xl border border-[#2a3b50] bg-[#0b121d]">
+              <Image
+                src={AVATAR_PATH}
+                alt="涂阿燃 TUARAN"
+                width={240}
+                height={288}
+                priority
+                sizes="128px"
+                className="h-auto w-full object-cover"
+              />
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className={kicker}>About · 关于我</p>
+            <h1 className="mt-2 break-words font-mono text-[26px] font-bold tracking-tight sm:text-[32px]">
+              <span className="bg-[linear-gradient(90deg,#5cf0e0,#8b9cff)] bg-clip-text text-transparent">
+                涂阿燃
+              </span>{' '}
+              <span className="text-[#4d5e73]">TUARAN</span>
+            </h1>
+            <p className="mt-1 font-mono text-[11px] tracking-wide text-[#5b6c82]">
+              掘金安东尼 · 安东尼404 · tuaran
+            </p>
+
+            <ul className="mt-5 space-y-2.5">
+              {introLines.map((line) => (
+                <li key={line.text} className="flex items-start gap-3 text-[13.5px] leading-6 text-[#c3d0de]">
+                  <span className="mt-0.5 shrink-0 text-[15px]" aria-hidden="true">
+                    {line.icon}
+                  </span>
+                  {line.href ? (
                     <a
-                      href={item.href}
-                      className="break-all text-[#5a4725] no-underline hover:underline dark:text-[#acaf9d]"
+                      href={line.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="no-external-arrow text-[#c3d0de] no-underline transition hover:text-[#5cf0e0]"
                     >
-                      {item.value}
+                      {line.text}
                     </a>
                   ) : (
-                    <span className="text-[#15140f] dark:text-gray-100">{item.value}</span>
+                    <span>{line.text}</span>
                   )}
-                </dd>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-5 flex flex-wrap gap-1.5">
+              {identityTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-md border border-[#243549] bg-[#0d1622] px-2.5 py-1 font-mono text-[11px] text-[#8ea3bb]"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </header>
+
+        {/* 数据带 */}
+        <section
+          className="relative mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5"
+          aria-label="一些数字"
+        >
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-xl border border-[#1d2c3e] bg-[#0b1320]/80 px-3 py-3.5 text-center"
+            >
+              <div className="font-mono text-[22px] font-bold tabular-nums text-[#5cf0e0]">{stat.value}</div>
+              <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#5f7088]">
+                {stat.label}
               </div>
+            </div>
+          ))}
+        </section>
+
+        {/* 横向时间线 */}
+        <section className="relative mt-9" aria-label="成长时间线">
+          <div className="mb-4 flex items-baseline justify-between gap-2">
+            <h2 className="font-mono text-[14px] font-bold text-[#e2ecf6]">
+              <span className="text-[#5cd6c8]">$</span> timeline
+            </h2>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5f7088]">2016 — 2026</span>
+          </div>
+          <ol className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-5 lg:grid-cols-9">
+            {timeline.map((item, i) => (
+              <li key={`${item.year}-${item.label}`} className="relative min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-[#34e0d0] shadow-[0_0_8px_rgba(52,224,208,0.8)]" aria-hidden="true" />
+                  {i < timeline.length - 1 ? (
+                    <span
+                      className="hidden h-px flex-1 bg-[linear-gradient(90deg,#2a4456,transparent)] lg:block"
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                </div>
+                <p className="mt-1.5 font-mono text-[12px] font-bold tabular-nums text-[#7fe6da]">{item.year}</p>
+                <p className="mt-0.5 text-[11px] leading-4 text-[#9aabc0]">{item.label}</p>
+              </li>
             ))}
-            <div>
-              <dt className="mb-1.5 text-[#858878] dark:text-gray-500">内容平台</dt>
-              <dd className="flex flex-wrap gap-1.5">
+          </ol>
+        </section>
+
+        {/* 联系方式 + 正在做的事 */}
+        <div className="relative mt-9 grid grid-cols-1 items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <section className="rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/70 p-4" aria-label="联系方式">
+            <h2 className="mb-3 font-mono text-[14px] font-bold text-[#e2ecf6]">
+              <span className="text-[#5cd6c8]">$</span> contact
+            </h2>
+            <dl className="space-y-2 font-mono text-[12px] leading-6">
+              {contactItems.map((item) => (
+                <div key={item.label} className="flex flex-wrap gap-x-2.5">
+                  <dt className="text-[#566a82]">{item.label}</dt>
+                  <dd className="min-w-0">
+                    {item.href ? (
+                      <a
+                        href={item.href}
+                        className="break-all text-[#7fe6da] no-underline hover:underline"
+                      >
+                        {item.value}
+                      </a>
+                    ) : (
+                      <span className="text-[#c3d0de]">{item.value}</span>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-4 border-t border-[#15212f] pt-3">
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#566a82]">platforms</p>
+              <div className="flex flex-wrap gap-1.5">
                 {socialLinks.map((c) => (
-                  <a key={c.href} href={c.href} target="_blank" rel="noreferrer" className={socialChipClassName}>
+                  <a
+                    key={c.href}
+                    href={c.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow inline-flex items-center rounded-md border border-[#243549] bg-[#0d1622] px-2.5 py-1 font-mono text-[11px] text-[#8ea3bb] no-underline transition hover:border-[#34e0d0] hover:text-[#5cf0e0]"
+                  >
                     {c.label}
                   </a>
                 ))}
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className="flex flex-col self-start rounded-xl bg-white/72 p-3 dark:bg-[#121821]/72 sm:rounded-2xl sm:p-4">
-          <h2 className="mb-2 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">正在维护的站点</h2>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {siteLinks.map((c) => (
-              <div key={c.href} className="rounded-lg bg-white/65 px-2.5 py-2 dark:bg-[#18202a]/52">
-                <a href={c.href} target="_blank" rel="noreferrer" className={`${externalChipClassName} !px-2 !py-0.5`}>
-                  {c.label}
-                </a>
-                <p className="mt-1 text-[11px] leading-5 text-[#717367] dark:text-gray-400">{c.desc}</p>
               </div>
-            ))}
-          </div>
-          <p className="mt-3 text-[11px] leading-5 text-[#717367] dark:text-gray-400">
-            有些是长期项目，有些还在实验阶段。这里先放公开入口，方便按主题找到对应内容。
-          </p>
-        </section>
-      </div>
+            </div>
+          </section>
 
-      <section className="mt-4 rounded-xl bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(252,248,240,0.82))] p-3 dark:bg-[linear-gradient(180deg,rgba(18,24,33,0.86),rgba(15,21,30,0.86))] sm:rounded-2xl sm:p-4">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2 pb-1">
-          <h2 className="mb-0 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">工作方式</h2>
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#7f826f] dark:text-[#8e9ab0]">
-            Working Notes
-          </span>
+          <section aria-label="正在维护的站点">
+            <div className="mb-3 flex items-baseline justify-between gap-2">
+              <h2 className="font-mono text-[14px] font-bold text-[#e2ecf6]">
+                <span className="text-[#5cd6c8]">$</span> building
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {siteLinks.map((c) => (
+                <a
+                  key={c.href}
+                  href={c.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="no-external-arrow group block rounded-xl border border-[#1d2c3e] bg-[#0a1018]/70 p-3.5 no-underline transition hover:border-[#2c4a5e] hover:bg-[#0d1826]"
+                >
+                  <div className="flex items-center gap-1.5 text-[13.5px] font-semibold text-[#dbe6f0] transition-colors group-hover:text-[#5cf0e0]">
+                    {c.label}
+                    <span className="font-mono text-[11px] text-[#4d5e73] transition-transform group-hover:translate-x-0.5 group-hover:text-[#5cf0e0]">
+                      ↗
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[12px] leading-5 text-[#7186a0]">{c.desc}</p>
+                </a>
+              ))}
+            </div>
+          </section>
         </div>
-        <ul className="space-y-2.5">
-          {workingNotes.map((line, idx) => (
-            <li
-              key={line}
-              className="group flex items-start gap-2.5 rounded-xl bg-white/72 px-3 py-2.5 text-[12.5px] leading-6 text-[#51514a] transition-colors hover:bg-[#fafbf8] dark:bg-[#141b25]/72 dark:text-gray-300 dark:hover:bg-[#17202c]"
-            >
-              <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dadccd] px-1.5 font-mono text-[10px] font-semibold text-[#8f6a34] transition-colors group-hover:bg-[#cacdb8] dark:bg-[#233143] dark:text-[#abb18f] dark:group-hover:bg-[#2a3a50]">
-                {String(idx + 1).padStart(2, '0')}
-              </span>
-              <span className="flex-1">{line}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      </div>
     </PageContainer>
   )
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T17:03:50.351Z",
+  "generatedAt": "2026-06-18T06:14:42.795Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -56,6 +56,18 @@
               "hash": "539a1e2835e3056ad0e74b1351396025f328adda33b804ae61c8d82f0d6174da",
               "path": "claude/MEMORY/2026-06-16T17-03-50-321Z.enc.json",
               "bytes": 1512
+            },
+            {
+              "ts": "2026-06-17T09:10:35.695Z",
+              "hash": "e7d16be5e9a6fdf1febef76b319c852d10b3c19608be42540b5aaa1222ee4ed0",
+              "path": "claude/MEMORY/2026-06-17T09-10-35-712Z.enc.json",
+              "bytes": 1669
+            },
+            {
+              "ts": "2026-06-17T09:33:38.166Z",
+              "hash": "cc3e8eb5ef916a3b4e656179b46cf76ff6f18abd9b575d58244ee8b63a0028aa",
+              "path": "claude/MEMORY/2026-06-17T09-33-38-184Z.enc.json",
+              "bytes": 1827
             }
           ]
         },
@@ -68,6 +80,12 @@
               "hash": "dd8e0e0828f0393e8028d1159ab115a44ad92ded429545b2600d7e81ead2421d",
               "path": "claude/content-strategy-first-person-pivot/2026-06-03T03-22-05-871Z.enc.json",
               "bytes": 1004
+            },
+            {
+              "ts": "2026-06-18T06:14:42.755Z",
+              "hash": "58b01473d8bae3b5815f954a4f88ca68abc22b77f683764247bd7cff804ef58e",
+              "path": "claude/content-strategy-first-person-pivot/2026-06-18T06-14-42-773Z.enc.json",
+              "bytes": 1210
             }
           ]
         },
@@ -194,6 +212,42 @@
               "hash": "5dd844abf1e73f8a0b98272f1c61a48882daa72cb98b62129c2b9e295905afa6",
               "path": "claude/layout-width-tiers/2026-06-16T17-03-50-345Z.enc.json",
               "bytes": 902
+            }
+          ]
+        },
+        "world-cup-feature": {
+          "title": "world-cup-feature",
+          "description": "/agent-world-cup 自动采集的数据源、无 key 事实与上线手动步骤；页面空/STALE 先查这里",
+          "versions": [
+            {
+              "ts": "2026-06-17T09:10:35.717Z",
+              "hash": "0299d064753f7807f9f952bc980d254bf2b80030850d98ab4128c1197c085b7a",
+              "path": "claude/world-cup-feature/2026-06-17T09-10-35-735Z.enc.json",
+              "bytes": 972
+            },
+            {
+              "ts": "2026-06-17T09:33:38.205Z",
+              "hash": "68c19934d2b5c060ed576d2f2217e11a61cb059b7f5ef075f9ec8fd8bd20ee74",
+              "path": "claude/world-cup-feature/2026-06-17T09-33-38-223Z.enc.json",
+              "bytes": 1670
+            },
+            {
+              "ts": "2026-06-18T06:14:42.777Z",
+              "hash": "b72f4ede6fb46dd6bc8d22c4b4a196403eb614bfa9319c9aaba4f49c2e2290b5",
+              "path": "claude/world-cup-feature/2026-06-18T06-14-42-793Z.enc.json",
+              "bytes": 1821
+            }
+          ]
+        },
+        "automation-strategy": {
+          "title": "automation-strategy",
+          "description": "站长的自动化总方针——优先云端、LLM 步骤统一用 DeepSeek V4 Pro；做/改任何自动化任务前先读",
+          "versions": [
+            {
+              "ts": "2026-06-17T09:33:38.186Z",
+              "hash": "b8ad3593cfa6d18d337676dc02880a9cf7ee4ce1c1afba626633c6e332d40e05",
+              "path": "claude/automation-strategy/2026-06-17T09-33-38-202Z.enc.json",
+              "bytes": 1278
             }
           ]
         }

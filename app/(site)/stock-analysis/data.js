@@ -110,6 +110,128 @@ export const STOCK_ANALYSIS_RECORDS = [
     },
     dataSource: 'Binance',
   },
+  {
+    id: 2,
+    slug: 'lobsterusdt-2026-06-18-1407',
+    date: '2026-06-18',
+    time: '14:07',
+    pair: 'LOBSTERUSDT',
+    contractType: '永续合约',
+    exchange: '火币 HTX',
+    timeframe: '1日',
+    price: {
+      // 火币行情截图直接可见的字段
+      current: 0.009511,
+      // 24h 跌 14.64%，按现价反推 24h 前参考价（标作「今日开盘」）
+      open: 0.011142,
+      high: 0.020550,
+      low: 0.009233,
+      close: 0.009511,
+      changePct: -14.64,
+      changeAbs: -0.001631,
+      // 截图未单列标记/指数价，近似取最新成交价
+      markPrice: 0.009511,
+      indexPrice: 0.009511,
+    },
+    range24h: {
+      high: 0.020550,
+      low: 0.009233,
+      // (高-低)/低
+      rangePct: 122.6,
+    },
+    volume: {
+      vol24hToken: 12550000,
+      vol24hUsdt: 119000,
+      vol24hDisplay: '12.55M 龙虾',
+      volUsdtDisplay: '11.9万 USDT',
+      historicalMaxVol: '—',
+      totalHistoricalVol: '—',
+    },
+    funding: {
+      // 截图为「行情」页，未含资金费率；不臆造，标记为未采集
+      rate: null,
+      rateDisplay: '未采集',
+      annualizedPct: null,
+      countdown: '—',
+      direction: '—',
+    },
+    ma: {
+      // 火币日线 MA5 / MA10 / MA30（注意非分钟级 MA7/25/99，见 maPeriods）
+      ma7: 0.012513,
+      ma25: 0.011686,
+      ma99: 0.008851,
+      priceVsMa7Pct: -24.0,
+      priceVsMa25Pct: -18.6,
+      priceVsMa99Pct: 7.5,
+    },
+    // 该条快照的均线周期标签（日线 MA5/10/30）；缺省视为分钟级 7/25/99
+    maPeriods: { short: 5, mid: 10, long: 30 },
+    keyLevels: {
+      resistance: 0.020550,
+      support1: 0.009233,
+      support2: 0.008851,
+      historicalHigh: 0.027461,
+      recentLow: 0.005234,
+      reboundFromLowPct: 82,
+    },
+    riskSignals: {
+      highFundingRate: false, // 未采集，不判定
+      volumePriceDivergence: false,
+      farFromMa: true, // 价格跌破 MA5/MA10，乖离 -24%
+      overbought: false, // 已自高位跳水，不再超买
+    },
+    radarValues: {
+      fundingRisk: 50, // 数据缺失，取中性占位
+      volumeDivergence: 55,
+      maDeviation: 70,
+      overbought: 25,
+      volatility: 95,
+      liquidity: 45,
+    },
+    radarNormal: {
+      fundingRisk: 30,
+      volumeDivergence: 25,
+      maDeviation: 20,
+      overbought: 30,
+      volatility: 35,
+      liquidity: 50,
+    },
+    gaugeValue: 78,
+    analysisSummary: {
+      trend: '高位跳水 / 回调',
+      riskLevel: '高风险',
+      sentiment: '多空剧烈分歧',
+      keyConcern:
+        '自 0.005234 反弹逾 80%、冲高 0.020550 后单日跳水，价格跌破 MA5/MA10，火币该合约 24h 成交额仅 11.9 万 USDT、流动性偏薄，追高风险极大',
+      action: '观望为主',
+    },
+    // 龙虾币基础情况（公开数据检索：CoinMarketCap / CoinGlass / BingX Learn，2026-06-18）
+    fundamentals: {
+      name: '龙虾 / Lobster（LOBSTER）',
+      chain: 'BNB Smart Chain',
+      contract: '0xeccbb861c0dda7efd964010085488b69317e4444',
+      totalSupply: '10 亿（1,000,000,000，部署时一次性铸造，无增发/质押/销毁/交易税）',
+      launch: 'Four.meme 公平发射，PancakeSwap 提供初始流动性；无预挖、无团队预留',
+      team: '匿名团队，合约未开源',
+      peakMarketCap: '约 1000 万美元（2026-03-09 前后，盘中一度 +190%）',
+      totalOpenInterest: '全市场永续未平仓约 815 万美元（CoinGlass）',
+      origin:
+        '得名于 OpenClaw（红色龙虾图标的开源 AI agent，"养龙虾"=跑 OpenClaw 当私人 AI 工人）；价值主要由社区情绪与 MEME 传播驱动，与 OpenClaw 热度深度绑定（共识层而非技术层）',
+      note: '匿名团队 + 合约未开源 + 流动性偏薄，价格与代码风险均较高；以上为外部可观察到的公开信息，不构成投资建议',
+    },
+    // 持仓基础情况（对象 / 方向 / 成本 / 盈亏）——来自火币持仓浮窗 + 图上买卖标记，截图未直接给出开仓均价
+    position: {
+      object: '龙虾USDT 永续合约（LOBSTER/USDT Perp · 火币 HTX）',
+      direction: '多头（图上多处绿色 B 买入标记，最低买点约 0.005234）',
+      pnlUsdt: 15.2184, // 持仓浮窗「收益 +15.2184」
+      notionalUsdt: 1010.0682, // 持仓浮窗右侧「1010.0682」(名义/保证金)
+      contractOpenInterestToken: 3374800, // 火币该合约「持仓量 3,374,800.0 龙虾」
+      avgCost: null, // 截图未直接显示开仓均价
+      costNote: '截图未给出开仓均价；图上最低买入标记约 0.005234，高位卖出标记区约 0.018～0.020',
+      orderBookImbalance: 'B 65% / 35% S（买盘略占优）',
+    },
+    dataSource: '火币 HTX（行情截图）+ CoinMarketCap / CoinGlass（基础数据检索）',
+  },
 ]
 
 // ============================================================

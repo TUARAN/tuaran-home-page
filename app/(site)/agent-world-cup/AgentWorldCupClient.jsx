@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 
+import { tTeam, tFlag, tRound, tVenue } from '../../../lib/wc/i18n'
+
 /* ━━━ design tokens ━━━ */
 const D = {
   bg: '#050810',
@@ -165,13 +167,13 @@ function MetaBar({ data }) {
   const status = meta.lastCollectStatus
   let badge
   if (status === 'ok' && !isStale) {
-    badge = { label: 'LIVE', color: D.green }
+    badge = { label: '实时', color: D.green }
   } else if (status === 'ok' && isStale) {
-    badge = { label: 'STALE', color: D.yellow }
+    badge = { label: '滞后', color: D.yellow }
   } else if (status === 'error') {
-    badge = { label: 'ERROR', color: D.red }
+    badge = { label: '错误', color: D.red }
   } else {
-    badge = { label: 'PENDING', color: D.text3 }
+    badge = { label: '待采集', color: D.text3 }
   }
   return (
     <div
@@ -206,7 +208,7 @@ function HeroSection({ data }) {
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px] bg-gradient-to-r from-transparent via-[var(--wc-gold)] to-transparent opacity-20" />
 
       <p className="text-[10px] tracking-[0.35em] uppercase mb-4" style={{ color: D.gold }}>
-        FIFA World Cup 2026 · 48 Teams · 104 Matches
+2026 国际足联世界杯 · 48 支球队 · 104 场比赛
       </p>
       <h1
         className="text-[48px] md:text-[72px] font-black leading-[0.95] tracking-tight mb-2"
@@ -273,6 +275,8 @@ function MatchCard({ m }) {
   const isDone = bucket === 'done'
   const borderColor = isLive ? D.fire : isDone ? D.green : D.line
   const score = formatMatchScore(m)
+  const homeFlag = m.home_flag || tFlag(m.home_team)
+  const awayFlag = m.away_flag || tFlag(m.away_team)
   return (
     <div
       className="rounded-lg p-4 transition-all duration-200 hover:scale-[1.01]"
@@ -284,7 +288,7 @@ function MatchCard({ m }) {
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-[10px] tracking-[0.1em] uppercase font-bold" style={{ color: D.text3 }}>
-          {m.group_label ? `${m.group_label}组` : m.round} · {m.match_date} {m.match_time}
+          {m.group_label ? `${m.group_label}组` : tRound(m.round)} · {m.match_date} {m.match_time}
         </span>
         {isLive ? (
           <span
@@ -305,12 +309,12 @@ function MatchCard({ m }) {
       </div>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {m.home_flag && /^https?:\/\//.test(m.home_flag) ? (
-            <img src={m.home_flag} alt="" className="w-[20px] h-[14px] object-cover rounded-sm" />
+          {homeFlag && /^https?:\/\//.test(homeFlag) ? (
+            <img src={homeFlag} alt="" className="w-[20px] h-[14px] object-cover rounded-sm" />
           ) : (
-            <span className="text-[18px]">{m.home_flag}</span>
+            <span className="text-[18px]">{homeFlag}</span>
           )}
-          <span className="text-[14px] font-semibold truncate" style={{ color: D.text }}>{m.home_team}</span>
+          <span className="text-[14px] font-semibold truncate" style={{ color: D.text }}>{tTeam(m.home_team)}</span>
         </div>
         <div className="text-center px-3 shrink-0">
           {score ? (
@@ -320,15 +324,15 @@ function MatchCard({ m }) {
           )}
         </div>
         <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          <span className="text-[14px] font-semibold truncate" style={{ color: D.text }}>{m.away_team}</span>
-          {m.away_flag && /^https?:\/\//.test(m.away_flag) ? (
-            <img src={m.away_flag} alt="" className="w-[20px] h-[14px] object-cover rounded-sm" />
+          <span className="text-[14px] font-semibold truncate" style={{ color: D.text }}>{tTeam(m.away_team)}</span>
+          {awayFlag && /^https?:\/\//.test(awayFlag) ? (
+            <img src={awayFlag} alt="" className="w-[20px] h-[14px] object-cover rounded-sm" />
           ) : (
-            <span className="text-[18px]">{m.away_flag}</span>
+            <span className="text-[18px]">{awayFlag}</span>
           )}
         </div>
       </div>
-      <div className="text-[10px] mt-2" style={{ color: D.text3 }}>📍 {m.city || m.venue}</div>
+      <div className="text-[10px] mt-2" style={{ color: D.text3 }}>📍 {tVenue(m.city || m.venue)}</div>
     </div>
   )
 }
@@ -466,8 +470,9 @@ function StandingsTab({ data }) {
                 {rows.map((r) => (
                   <tr key={`${r.group_label}-${r.team_id}`} style={{ borderTop: `1px solid ${D.line}` }}>
                     <td className="py-2 px-3" style={{ color: D.text3 }}>{r.rank}</td>
-                    <td className="py-2 px-2 truncate max-w-[100px]" style={{ color: D.text }} title={r.team_name}>
-                      {r.team_name}
+                    <td className="py-2 px-2 truncate max-w-[100px]" style={{ color: D.text }} title={tTeam(r.team_name)}>
+                      {tFlag(r.team_name) ? <span className="mr-1">{tFlag(r.team_name)}</span> : null}
+                      {tTeam(r.team_name)}
                     </td>
                     <td className="text-center py-2 px-1" style={{ color: D.text2 }}>{r.played}</td>
                     <td className="text-center py-2 px-1" style={{ color: D.text2 }}>{r.win}</td>
@@ -540,8 +545,8 @@ function PlayerRow({ rank, row, primaryKey, secondaryKey, emptyMsg, badgeColor }
       <td className="py-2.5 px-2 truncate max-w-[180px]" style={{ color: D.text }} title={row.player_name}>
         {row.player_name}
       </td>
-      <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={row.team_name}>
-        {row.team_name}
+      <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={tTeam(row.team_name)}>
+        {tFlag(row.team_name) ? `${tFlag(row.team_name)} ` : ''}{tTeam(row.team_name)}
       </td>
       <td className="text-center py-2.5 px-2 font-black" style={{ color: D.gold }}>{row[primaryKey]}</td>
       {secondaryKey && (
@@ -602,7 +607,7 @@ function AssistsList({ rows }) {
                 {i + 1 <= 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}
               </td>
               <td className="py-2.5 px-2 truncate max-w-[180px]" style={{ color: D.text }} title={r.player_name}>{r.player_name}</td>
-              <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={r.team_name}>{r.team_name}</td>
+              <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={tTeam(r.team_name)}>{tFlag(r.team_name) ? `${tFlag(r.team_name)} ` : ''}{tTeam(r.team_name)}</td>
               <td className="text-center py-2.5 px-2 font-black" style={{ color: D.gold }}>{r.assists}</td>
               <td className="text-center py-2.5 px-3" style={{ color: D.text3 }}>{r.played ?? 0}</td>
             </tr>
@@ -637,7 +642,7 @@ function CardsList({ rows }) {
               <tr key={`${r.player_id}-${r.card_type}`} style={{ borderTop: `1px solid ${D.line}` }}>
                 <td className="py-2.5 px-3 text-center font-black" style={{ color: D.text3 }}>{i + 1}</td>
                 <td className="py-2.5 px-2 truncate max-w-[180px]" style={{ color: D.text }} title={r.player_name}>{r.player_name}</td>
-                <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={r.team_name}>{r.team_name}</td>
+                <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={tTeam(r.team_name)}>{tFlag(r.team_name) ? `${tFlag(r.team_name)} ` : ''}{tTeam(r.team_name)}</td>
                 <td className="text-center py-2.5 px-2" style={{ color: cardColor, fontWeight: 700 }}>{cardLabel}</td>
                 <td className="text-center py-2.5 px-3 font-black" style={{ color: cardColor }}>{r.count}</td>
               </tr>

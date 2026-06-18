@@ -59,7 +59,9 @@ function RankList({ rows, unit }) {
                 {row.title}
               </span>
             )}
-            <span className="font-mono text-[11px] text-[#9a9c8f] dark:text-gray-600">{row.key}</span>
+            <span className="block truncate font-mono text-[11px] text-[#9a9c8f] dark:text-gray-600" title={row.key}>
+              {row.key}
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-sm font-semibold text-[#15140f] dark:text-gray-100">

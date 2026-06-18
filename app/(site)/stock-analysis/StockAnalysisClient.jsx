@@ -185,7 +185,10 @@ function maOption(R) {
     grid: { left: 50, right: 30, top: 40, bottom: 40 },
     xAxis: {
       type: 'category',
-      data: ['MA7', 'MA25', 'MA99'],
+      data: (() => {
+        const mp = R.maPeriods || { short: 7, mid: 25, long: 99 }
+        return [`MA${mp.short}`, `MA${mp.mid}`, `MA${mp.long}`]
+      })(),
       axisLine: { lineStyle: { color: C.line } },
       axisLabel: { color: C.muted, fontSize: 11 },
       axisTick: { show: false },
@@ -328,14 +331,14 @@ function SectionTitle({ dotColor, children }) {
   )
 }
 
-function AlertBox({ type, title, children }) {
+function AlertBox({ type, title, children, className = '' }) {
   const cls = {
     danger: 'bg-[rgba(255,77,106,0.08)] border-[rgba(255,77,106,0.3)] text-[#ff4d6a] dark:text-[#ff4d6a]',
     warning: 'bg-[rgba(245,166,35,0.08)] border-[rgba(245,166,35,0.3)] text-[#f5a623] dark:text-[#f5a623]',
     info: 'bg-[rgba(0,229,160,0.06)] border-[rgba(0,229,160,0.2)] text-[#00e5a0] dark:text-[#00e5a0]',
   }
   return (
-    <div className={`border rounded-lg p-4 text-[14px] leading-[1.7] ${cls[type]}`}>
+    <div className={`border rounded-lg p-4 text-[14px] leading-[1.7] ${cls[type]} ${className}`}>
       <p className="font-bold mb-1.5 text-[12px] uppercase tracking-[0.05em]">{title}</p>
       {children}
     </div>
@@ -389,7 +392,8 @@ function buildTopAlertText(R) {
     concerns.push(`资金费率 ${R.funding.rateDisplay} 折算年化 ${R.funding.annualizedPct >= 0 ? '超过' : '约'} <strong>${Math.abs(R.funding.annualizedPct)}%</strong>`)
   }
   if (R.riskSignals.farFromMa) {
-    concerns.push(`当前价格偏离 MA7 达 <strong>${R.ma.priceVsMa7Pct.toFixed(1)}%</strong>`)
+    const shortP = (R.maPeriods || { short: 7 }).short
+    concerns.push(`当前价格偏离 MA${shortP} 达 <strong>${R.ma.priceVsMa7Pct.toFixed(1)}%</strong>`)
   }
   if (R.riskSignals.volumePriceDivergence) {
     concerns.push('量价背离明显')
@@ -406,6 +410,7 @@ function buildTopAlertText(R) {
 /* ─── main component ─── */
 export default function StockAnalysisClient({ record }) {
   const R = record
+  const maP = R.maPeriods || { short: 7, mid: 25, long: 99 }
   const radarRef = useRef(null)
   const gaugeRef = useRef(null)
   const maRef = useRef(null)
@@ -463,6 +468,15 @@ export default function StockAnalysisClient({ record }) {
             <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">资金费率</p>
             <p className={`text-[18px] font-bold mt-1 ${fundingColor}`}>{R.funding.rateDisplay}</p>
           </div>
+          {R.position?.contractOpenInterestToken ? (
+            <div className="text-center">
+              <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">持仓量</p>
+              <p className="text-[18px] font-bold text-[var(--site-ink)] mt-1">
+                {(R.position.contractOpenInterestToken / 1_000_000).toFixed(2)}M
+                <span className="text-[11px] font-normal text-[var(--site-muted)] ml-1">{R.pair.split('USDT')[0]}</span>
+              </p>
+            </div>
+          ) : null}
           <div className="text-center">
             <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">采集时间</p>
             <p className="text-[18px] font-bold text-[var(--site-ink)] mt-1">{R.date} {R.time}</p>
@@ -511,7 +525,7 @@ export default function StockAnalysisClient({ record }) {
             <SectionTitle dotColor={C.accent4}>成交量分析</SectionTitle>
             <div className="grid grid-cols-2 gap-4">
               <MetricCard label="24H 成交量" value={R.volume.vol24hToken ? (R.volume.vol24hToken / 1_000_000).toFixed(1) + 'M' : '—'} sub={R.pair.split('USDT')[0]} />
-              <MetricCard label="24H 成交额" value={R.volume.vol24hUsdt >= 1_000_000_000 ? (R.volume.vol24hUsdt / 1_000_000_000).toFixed(2) + 'B' : (R.volume.vol24hUsdt / 1_000_000).toFixed(2) + 'M'} sub="USDT" />
+              <MetricCard label="24H 成交额" value={R.volume.vol24hUsdt >= 1_000_000_000 ? (R.volume.vol24hUsdt / 1_000_000_000).toFixed(2) + 'B' : R.volume.vol24hUsdt >= 1_000_000 ? (R.volume.vol24hUsdt / 1_000_000).toFixed(2) + 'M' : (R.volume.vol24hUsdt / 1_000).toFixed(1) + 'k'} sub="USDT" />
               <MetricCard label="历史最高量" value={R.volume.historicalMaxVol} sub="对比参照" />
               <MetricCard label="历史总成交" value={R.volume.totalHistoricalVol} sub={R.pair.split('USDT')[0]} />
             </div>
@@ -530,14 +544,20 @@ export default function StockAnalysisClient({ record }) {
               <MetricCard label="当前费率" value={R.funding.rateDisplay} sub="每4小时结算" colorClass={fundingColor} />
               <MetricCard
                 label="年化费率"
-                value={`${R.funding.annualizedPct >= 0 ? '~' : '~'}${R.funding.annualizedPct}%`}
-                sub={fundingHot ? '极端异常水平' : '正常区间'}
+                value={R.funding.annualizedPct == null ? '—' : `~${R.funding.annualizedPct}%`}
+                sub={R.funding.annualizedPct == null ? '未采集' : fundingHot ? '极端异常水平' : '正常区间'}
                 colorClass={fundingColor}
               />
               <MetricCard label="费率方向" value={R.funding.direction} sub="多空杠杆对比" colorClass={fundingColor} />
               <MetricCard label="下次结算" value={R.funding.countdown} sub="倒计时" />
             </div>
-            {R.riskSignals.highFundingRate ? (
+            {R.funding.rate == null ? (
+              <div className="mt-4">
+                <AlertBox type="info" title="资金费率未采集">
+                  本次为行情页截图，未包含资金费率字段，故不对多空拥挤度做判断。
+                </AlertBox>
+              </div>
+            ) : R.riskSignals.highFundingRate ? (
               <div className="mt-4">
                 <AlertBox type="danger" title="资金费率极端异常">
                   {R.funding.annualizedPct >= 0
@@ -571,17 +591,17 @@ export default function StockAnalysisClient({ record }) {
             </thead>
             <tbody>
               <tr className="hover:bg-[var(--site-panel)]">
-                <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">MA(7) 短期均线</td>
+                <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">MA({maP.short}) 短期均线</td>
                 <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">{fmt(R.ma.ma7)}</td>
                 <td className={`p-3 border-b border-[#d7d9cf] dark:border-[#2b3644] ${R.ma.priceVsMa7Pct >= 0 ? 'text-[#ff4d6a]' : 'text-[#00e5a0]'}`}>
                   {R.ma.priceVsMa7Pct >= 0 ? '+' : ''}{R.ma.priceVsMa7Pct}%
                 </td>
                 <td className={`p-3 border-b border-[#d7d9cf] dark:border-[#2b3644] ${Math.abs(R.ma.priceVsMa7Pct) > 20 ? 'text-[#ff4d6a]' : Math.abs(R.ma.priceVsMa7Pct) > 10 ? 'text-[#f5a623]' : 'text-[#00e5a0]'}`}>
-                  {Math.abs(R.ma.priceVsMa7Pct) > 20 ? '严重超买' : Math.abs(R.ma.priceVsMa7Pct) > 10 ? '明显偏离' : '合理区间'}
+                  {Math.abs(R.ma.priceVsMa7Pct) > 20 ? (R.ma.priceVsMa7Pct >= 0 ? '严重超买' : '严重超卖') : Math.abs(R.ma.priceVsMa7Pct) > 10 ? '明显偏离' : '合理区间'}
                 </td>
               </tr>
               <tr className="hover:bg-[var(--site-panel)]">
-                <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">MA(25) 中期均线</td>
+                <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">MA({maP.mid}) 中期均线</td>
                 <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">{fmt(R.ma.ma25)}</td>
                 <td className={`p-3 border-b border-[#d7d9cf] dark:border-[#2b3644] ${R.ma.priceVsMa25Pct >= 0 ? 'text-[#ff4d6a]' : 'text-[#00e5a0]'}`}>
                   {R.ma.priceVsMa25Pct >= 0 ? '+' : ''}{R.ma.priceVsMa25Pct}%
@@ -591,7 +611,7 @@ export default function StockAnalysisClient({ record }) {
                 </td>
               </tr>
               <tr className="hover:bg-[var(--site-panel)]">
-                <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">MA(99) 长期均线</td>
+                <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">MA({maP.long}) 长期均线</td>
                 <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">{fmt(R.ma.ma99)}</td>
                 <td className={`p-3 border-b border-[#d7d9cf] dark:border-[#2b3644] ${R.ma.priceVsMa99Pct >= 0 ? 'text-[#ff4d6a]' : 'text-[#00e5a0]'}`}>
                   {R.ma.priceVsMa99Pct >= 0 ? '+' : ''}{R.ma.priceVsMa99Pct}%
@@ -605,7 +625,7 @@ export default function StockAnalysisClient({ record }) {
         </div>
         <div className="bg-[var(--site-panel)] border-l-3 border-[#00e5a0] p-4 mt-4 rounded-r-lg text-[13px] text-[var(--site-muted)] leading-[1.8]">
           <strong className="text-[var(--site-ink)]">均线分析：</strong>
-          价格相对 MA7 偏离 <strong>{R.ma.priceVsMa7Pct >= 0 ? '+' : ''}{R.ma.priceVsMa7Pct}%</strong>，
+          价格相对 MA{maP.short} 偏离 <strong>{R.ma.priceVsMa7Pct >= 0 ? '+' : ''}{R.ma.priceVsMa7Pct}%</strong>，
           {Math.abs(R.ma.priceVsMa7Pct) > 20
             ? '属于极端乖离，历史上此类形态常伴随剧烈回调。'
             : Math.abs(R.ma.priceVsMa7Pct) > 10
@@ -793,6 +813,82 @@ export default function StockAnalysisClient({ record }) {
           </div>
         </div>
       </section>
+
+      {/* Section 8: 持仓基础情况（仅当快照含 position 时渲染） */}
+      {R.position ? (
+        <section className="mb-10">
+          <SectionTitle dotColor={C.accent4}>持仓基础情况</SectionTitle>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <MetricCard
+              label="当前浮盈"
+              value={`${R.position.pnlUsdt >= 0 ? '+' : ''}${R.position.pnlUsdt} USDT`}
+              sub="火币持仓浮窗「收益」"
+              colorClass={R.position.pnlUsdt >= 0 ? 'text-[#00e5a0]' : 'text-[#ff4d6a]'}
+            />
+            <MetricCard
+              label="名义 / 保证金"
+              value={`${R.position.notionalUsdt} USDT`}
+              sub="持仓浮窗右侧数值"
+            />
+            <MetricCard
+              label="合约持仓量"
+              value={R.position.contractOpenInterestToken ? (R.position.contractOpenInterestToken / 1_000_000).toFixed(2) + 'M' : '—'}
+              sub={`${R.pair.split('USDT')[0]} · 火币该合约`}
+            />
+            <MetricCard
+              label="开仓均价"
+              value={R.position.avgCost != null ? fmt(R.position.avgCost) : '未披露'}
+              sub={R.position.avgCost != null ? '持仓成本' : '截图未直接显示'}
+              colorClass={R.position.avgCost == null ? 'text-[#f5a623]' : ''}
+            />
+          </div>
+          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <AlertBox type="info" title="持仓对象 / 方向">
+              <span className="block text-[var(--site-ink)]">{R.position.object}</span>
+              <span className="block mt-1.5 text-[var(--site-muted)]">{R.position.direction}</span>
+              {R.position.orderBookImbalance ? (
+                <span className="block mt-1.5 text-[var(--site-muted)]">盘口买卖比：{R.position.orderBookImbalance}</span>
+              ) : null}
+            </AlertBox>
+            <AlertBox type="warning" title="成本说明">
+              {R.position.costNote}
+            </AlertBox>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Section 9: 龙虾币基础情况（仅当快照含 fundamentals 时渲染） */}
+      {R.fundamentals ? (
+        <section className="mb-10">
+          <SectionTitle dotColor={C.accent3}>{R.fundamentals.name} · 币种基础情况</SectionTitle>
+          <div className="overflow-x-auto rounded-lg border border-[#d7d9cf] dark:border-[#2b3644]">
+            <table className="w-full border-collapse text-[13px]">
+              <tbody>
+                {[
+                  ['所在链', R.fundamentals.chain],
+                  ['合约地址', R.fundamentals.contract],
+                  ['总供应量', R.fundamentals.totalSupply],
+                  ['发行方式', R.fundamentals.launch],
+                  ['团队', R.fundamentals.team],
+                  ['历史峰值市值', R.fundamentals.peakMarketCap],
+                  ['全市场永续持仓', R.fundamentals.totalOpenInterest],
+                  ['由来 / 价值驱动', R.fundamentals.origin],
+                ].filter(([, v]) => v).map(([k, v]) => (
+                  <tr key={k} className="hover:bg-[var(--site-panel)]">
+                    <th className="bg-[var(--site-panel-strong)] text-[var(--site-muted)] text-[11px] tracking-[0.04em] p-3 text-left align-top border-b border-[#d7d9cf] dark:border-[#2b3644] whitespace-nowrap w-[140px]">{k}</th>
+                    <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644] break-all leading-[1.7]">{v}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {R.fundamentals.note ? (
+            <div className="mt-4">
+              <AlertBox type="warning" title="风险提示">{R.fundamentals.note}</AlertBox>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* Footer */}
       <footer className="mt-10 pt-6 border-t border-[#d7d9cf] dark:border-[#2b3644] text-center text-[11px] text-[var(--site-muted)]">

@@ -87,7 +87,13 @@ function PhraseList({ items, accent }) {
 
 export default function ResearchStyleClient() {
   const sorted = useMemo(
-    () => [...RESEARCH_STYLE_TEMPLATES].sort((a, b) => a.id.localeCompare(b.id)),
+    () =>
+      [...RESEARCH_STYLE_TEMPLATES].sort((a, b) => {
+        const na = parseInt(String(a.id).replace(/\D/g, ''), 10)
+        const nb = parseInt(String(b.id).replace(/\D/g, ''), 10)
+        if (Number.isNaN(na) || Number.isNaN(nb)) return String(a.id).localeCompare(String(b.id))
+        return na - nb
+      }),
     [],
   )
 
@@ -104,9 +110,9 @@ export default function ResearchStyleClient() {
       maxWidth="1180px"
       description="调研类内容（research/companies、research/topics）在分寸感、措辞、版式上的历代快照。保留全部历史版本，便于回看每条规则的来由——避免被悄悄回退。"
     >
-      <div className="grid gap-6">
+      <div className="grid gap-6 md:grid-cols-[280px_minmax(0,1fr)] md:items-start">
         {/* 版本时间线 */}
-        <aside className="space-y-4">
+        <aside className="space-y-4 md:sticky md:top-[72px] md:self-start">
           <div>
             <SectionTitle>版本时间线</SectionTitle>
             <ol className="space-y-2">
@@ -135,7 +141,7 @@ export default function ResearchStyleClient() {
                 ))}
             </select>
             <p className="mt-2 text-[11px] leading-relaxed text-[#73746a] dark:text-[#9aa3b3]">
-              选择一个对照版本，主面板会切换为上下对照，看清两版差异。
+              选择一个对照版本，主面板会切换为并排对照，看清两版差异。
             </p>
           </div>
 
@@ -154,7 +160,7 @@ export default function ResearchStyleClient() {
         {/* 主面板 */}
         <section className="space-y-6">
           {compare ? (
-            <div className="grid gap-4">
+            <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
               <VersionCard version={selected} />
               <VersionCard version={compare} />
             </div>

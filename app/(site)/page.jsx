@@ -11,8 +11,8 @@ import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHighlights'
 
-const SITE_HERO_TITLE_EN = 'Frontend & AI Engineering'
-const SITE_HERO_TAGLINE_EN = 'Ship engineering · AI frontier · brand growth'
+const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
+const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
 
 export const dynamic = 'force-static'
 

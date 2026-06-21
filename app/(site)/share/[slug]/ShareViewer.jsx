@@ -35,7 +35,15 @@ export default function ShareViewer({ slug }) {
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
   const [plain, setPlain] = useState(null)
+  const [copyNotice, setCopyNotice] = useState('')
   const triedHashRef = useRef(false)
+  const copyNoticeTimerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (copyNoticeTimerRef.current) clearTimeout(copyNoticeTimerRef.current)
+    }
+  }, [])
 
   // 拿密文
   useEffect(() => {
@@ -104,6 +112,21 @@ export default function ShareViewer({ slug }) {
     e.preventDefault()
     if (!note?.envelope || !password) return
     tryDecrypt(note.envelope, password)
+  }
+
+  function handleMarkdownClick(e) {
+    const link = e.target?.closest?.('a[data-extract-code]')
+    if (!link) return
+    const code = link.getAttribute('data-extract-code')
+    if (!code) return
+    navigator.clipboard.writeText(code).then(
+      () => {
+        setCopyNotice(`提取码 ${code} 已复制`)
+        if (copyNoticeTimerRef.current) clearTimeout(copyNoticeTimerRef.current)
+        copyNoticeTimerRef.current = setTimeout(() => setCopyNotice(''), 2200)
+      },
+      () => setCopyNotice('提取码复制失败，请手动复制')
+    )
   }
 
   if (phase === 'loading') {
@@ -192,10 +215,17 @@ export default function ShareViewer({ slug }) {
         {note?.updated_at && note.updated_at !== note.created_at ? ` · 更新 ${formatDate(note.updated_at)}` : ''}
         {note?.expires_at ? ` · 到期 ${formatDate(note.expires_at)}` : ''}
       </p>
-      <div
-        className={PROSE_CLASS}
-        dangerouslySetInnerHTML={{ __html: renderMarkdown(plainText) }}
-      />
+      <div onClick={handleMarkdownClick}>
+        <div
+          className={PROSE_CLASS}
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(plainText) }}
+        />
+      </div>
+      {copyNotice ? (
+        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#24251f] px-4 py-2 text-sm font-medium text-white shadow-lg dark:bg-[#e8dfcf] dark:text-[#1d160d]">
+          {copyNotice}
+        </div>
+      ) : null}
       <p className="mt-8 border-t border-[#dee0db] pt-4 text-[11px] text-[#858779] dark:border-[#252e39] dark:text-[#8e9ab0]">
         内容已在你的浏览器解密。服务器始终看不到明文。关闭页面后明文不会保留。
       </p>

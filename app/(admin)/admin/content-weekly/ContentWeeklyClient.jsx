@@ -34,11 +34,11 @@ function RankList({ rows, unit }) {
     return <EmptyState title="近 7 天暂无数据" description="等有访问/点赞后这里会自动出现。" />
   }
   return (
-    <ol className="grid gap-2">
+    <ol className="grid min-w-0 gap-2">
       {rows.map((row, i) => (
         <li
           key={row.key}
-          className="flex items-center gap-3 rounded-lg border border-[#e6e7df] bg-white/60 px-3 py-2.5 dark:border-[#243041] dark:bg-[#0e141d]"
+          className="flex min-w-0 items-center gap-3 overflow-hidden rounded-lg border border-[#e6e7df] bg-white/60 px-3 py-2.5 dark:border-[#243041] dark:bg-[#0e141d]"
         >
           <span className="w-5 shrink-0 text-center font-mono text-sm text-[#9a9c8f] dark:text-gray-500">
             {i + 1}
@@ -147,11 +147,19 @@ export default function ContentWeeklyClient() {
         <StatCard label="上榜文章(赞)" value={loading ? '—' : likes.top.length} />
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Section title="被读最多 · 近 7 天" description="数据源 research_pv_hits;趋势对比上一个 7 天。">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        <Section
+          title="被读最多 · 近 7 天"
+          description="数据源 research_pv_hits;趋势对比上一个 7 天。"
+          className="min-w-0 overflow-hidden"
+        >
           {loading ? <p className="text-sm text-[#82847a]">加载中…</p> : <RankList rows={reads.top} unit="次" />}
         </Section>
-        <Section title="被赞最多 · 近 7 天" description="数据源 article_likes;趋势对比上一个 7 天。">
+        <Section
+          title="被赞最多 · 近 7 天"
+          description="数据源 article_likes;趋势对比上一个 7 天。"
+          className="min-w-0 overflow-hidden"
+        >
           {loading ? <p className="text-sm text-[#82847a]">加载中…</p> : <RankList rows={likes.top} unit="赞" />}
         </Section>
       </div>

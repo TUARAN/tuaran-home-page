@@ -1,5 +1,6 @@
 import { getOwnerOrReject } from '../../../../../lib/adminAuth'
 import { callDeepSeek, extractJson } from '../../../../../lib/deepseek'
+import { enrichDeepSeekTask, finishDeepSeekTask } from '../../../../../lib/deepseekTasks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -81,7 +82,7 @@ export async function POST(req) {
   const strategyVersion = body?.strategyVersion || 'dispatch-admin-orchestrator-v1.1.0'
 
   try {
-    const { model, content, usage } = await callDeepSeek({
+    const { model, content, usage, taskId } = await callDeepSeek({
       messages: [
         {
           role: 'system',
@@ -93,14 +94,45 @@ export async function POST(req) {
       temperature: 0.2,
       maxTokens: 4096,
       timeoutMs: 60000,
+      task: {
+        source: 'admin-model-dispatch',
+        taskType: 'planning',
+        title: task.title || '模型调度规划',
+        actorId: guard.user?.id,
+        actorName: guard.user?.name || guard.user?.login,
+        inputSummary: task.demand || task.context || '',
+        metadata: { strategyVersion, repo: task.repo || '', streaming: false },
+      },
     })
 
-    const plan = extractJson(content)
+    let plan
+    try {
+      plan = extractJson(content)
+    } catch (error) {
+      await finishDeepSeekTask(taskId, {
+        status: 'failed',
+        usage,
+        errorCode: error?.code || 'DEEPSEEK_JSON_PARSE_FAILED',
+        errorDetail: error?.message || String(error),
+      })
+      throw error
+    }
+    await enrichDeepSeekTask(taskId, {
+      resultSummary: plan?.planner_summary || '',
+      metadata: {
+        strategyVersion,
+        taskId: plan?.task_info?.task_id || '',
+        planSteps: Array.isArray(plan?.plan_steps) ? plan.plan_steps.length : 0,
+        subtasks: Array.isArray(plan?.subtasks) ? plan.subtasks.length : 0,
+        streaming: false,
+      },
+    })
     return Response.json({
       ok: true,
       model,
       plannedAt: Date.now(),
       usage: usage || null,
+      taskRecordId: taskId,
       plan,
       raw: content,
     })

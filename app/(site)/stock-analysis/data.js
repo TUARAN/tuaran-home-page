@@ -11,6 +11,7 @@
  * - date        分析日期 YYYY-MM-DD
  * - time        分析时刻 HH:mm（精确到分钟）
  * - pair        交易对，例如 LOBSTERUSDT
+ * - category    币种分类，{ id, label }，例如 { id: 'lobster', label: '龙虾币' }
  * - contractType  永续合约 / 交割合约 / 现货
  * - exchange    交易所
  * - timeframe   分析周期：1分钟 / 5分钟 / 15分钟 ...
@@ -28,6 +29,7 @@ export const STOCK_ANALYSIS_RECORDS = [
     date: '2026-06-17',
     time: '13:20',
     pair: 'LOBSTERUSDT',
+    category: { id: 'lobster', label: '龙虾币' },
     contractType: '永续合约',
     exchange: 'Binance',
     timeframe: '1分钟',
@@ -116,6 +118,7 @@ export const STOCK_ANALYSIS_RECORDS = [
     date: '2026-06-18',
     time: '14:07',
     pair: 'LOBSTERUSDT',
+    category: { id: 'lobster', label: '龙虾币' },
     contractType: '永续合约',
     exchange: '火币 HTX',
     timeframe: '1日',
@@ -238,6 +241,7 @@ export const STOCK_ANALYSIS_RECORDS = [
     date: '2026-06-22',
     time: '09:20',
     pair: 'LOBSTERUSDT',
+    category: { id: 'lobster', label: '龙虾币' },
     contractType: '永续合约',
     exchange: 'Binance',
     timeframe: '1日',
@@ -364,6 +368,7 @@ export function getAllSnapshotsSummary() {
     time: r.time,
     datetime: toDateTime(r),
     pair: r.pair,
+    category: r.category,
     contractType: r.contractType,
     exchange: r.exchange,
     timeframe: r.timeframe,
@@ -373,6 +378,15 @@ export function getAllSnapshotsSummary() {
     gaugeValue: r.gaugeValue,
     analysisSummary: r.analysisSummary,
   }))
+}
+
+/** 按币种分类取最近若干条完整快照，供横向趋势分析使用 */
+export function getRecentSnapshotsByCategory(categoryId, limit = 5) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 5, 2), 8)
+  return STOCK_ANALYSIS_RECORDS
+    .filter((r) => r.category?.id === categoryId)
+    .sort((a, b) => toDateTime(b).localeCompare(toDateTime(a)))
+    .slice(0, safeLimit)
 }
 
 /** 给定 slug，返回上一条/下一条 slug（按 datetime 倒序：最新在前） */

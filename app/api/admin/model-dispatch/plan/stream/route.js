@@ -5,6 +5,7 @@ import {
   extractJson,
   getDeepSeekEnv,
 } from '../../../../../../lib/deepseek'
+import { createDeepSeekTask, finishDeepSeekTask } from '../../../../../../lib/deepseekTasks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -81,35 +82,57 @@ function sse(controller, event, data) {
   controller.enqueue(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
 }
 
-function readDeltaLine(line) {
+function readStreamLine(line) {
   const trimmed = line.trim()
-  if (!trimmed.startsWith('data:')) return ''
+  if (!trimmed.startsWith('data:')) return null
   const payload = trimmed.slice(5).trim()
-  if (!payload || payload === '[DONE]') return ''
+  if (!payload || payload === '[DONE]') return null
   const json = JSON.parse(payload)
-  return json?.choices?.[0]?.delta?.content || ''
+  return {
+    delta: json?.choices?.[0]?.delta?.content || '',
+    usage: json?.usage || null,
+  }
 }
 
 export async function POST(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
 
-  const env = getDeepSeekEnv()
-  const apiKey = env.DEEPSEEK_API_KEY
-  if (!apiKey) {
-    return Response.json({ error: 'MISSING_DEEPSEEK_API_KEY' }, { status: 500 })
-  }
-
   const body = await req.json().catch(() => null)
   const task = body?.task || {}
   const strategyVersion = body?.strategyVersion || 'dispatch-admin-orchestrator-v1.2.0'
+  const env = getDeepSeekEnv()
+  const apiKey = env.DEEPSEEK_API_KEY
   const baseUrl = String(env.DEEPSEEK_BASE_URL || DEEPSEEK_DEFAULT_BASE_URL).replace(/\/+$/, '')
   const model = env.DEEPSEEK_MODEL || DEEPSEEK_DEFAULT_MODEL
+  const startedAt = Date.now()
+  const taskRecordId = await createDeepSeekTask({
+    source: 'admin-model-dispatch',
+    taskType: 'planning-stream',
+    title: task.title || '模型调度流式规划',
+    actorId: guard.user?.id,
+    actorName: guard.user?.name || guard.user?.login,
+    model,
+    inputSummary: task.demand || task.context || '',
+    metadata: { strategyVersion, repo: task.repo || '', streaming: true },
+    startedAt,
+  })
+
+  if (!apiKey) {
+    await finishDeepSeekTask(taskRecordId, {
+      status: 'failed',
+      durationMs: Date.now() - startedAt,
+      errorCode: 'MISSING_DEEPSEEK_API_KEY',
+      errorDetail: '缺少 DEEPSEEK_API_KEY',
+    })
+    return Response.json({ error: 'MISSING_DEEPSEEK_API_KEY' }, { status: 500 })
+  }
 
   const stream = new ReadableStream({
     async start(controller) {
-      sse(controller, 'start', { model, startedAt: Date.now() })
+      sse(controller, 'start', { model, startedAt, taskRecordId })
       let raw = ''
+      let usage = null
       let phase = 'initializing'
       try {
         phase = 'requesting_deepseek'
@@ -122,6 +145,7 @@ export async function POST(req) {
           body: JSON.stringify({
             model,
             stream: true,
+            stream_options: { include_usage: true },
             messages: [
               {
                 role: 'system',
@@ -140,6 +164,12 @@ export async function POST(req) {
 
         if (!res.ok || !res.body) {
           const detail = await res.text().catch(() => '')
+          await finishDeepSeekTask(taskRecordId, {
+            status: 'failed',
+            durationMs: Date.now() - startedAt,
+            errorCode: 'DEEPSEEK_API_FAILED',
+            errorDetail: detail || `HTTP ${res.status}`,
+          })
           sse(controller, 'error', { error: 'DEEPSEEK_API_FAILED', phase, status: res.status, detail })
           controller.close()
           return
@@ -158,10 +188,13 @@ export async function POST(req) {
           buffer = lines.pop() || ''
           for (const line of lines) {
             try {
-              const delta = readDeltaLine(line)
-              if (!delta) continue
-              raw += delta
-              sse(controller, 'delta', { text: delta })
+              const chunk = readStreamLine(line)
+              if (!chunk) continue
+              if (chunk.usage) usage = chunk.usage
+              if (chunk.delta) {
+                raw += chunk.delta
+                sse(controller, 'delta', { text: chunk.delta })
+              }
             } catch {
               // Ignore malformed provider chunks.
             }
@@ -171,10 +204,13 @@ export async function POST(req) {
         if (buffer.trim()) {
           for (const line of buffer.split('\n')) {
             try {
-              const delta = readDeltaLine(line)
-              if (!delta) continue
-              raw += delta
-              sse(controller, 'delta', { text: delta })
+              const chunk = readStreamLine(line)
+              if (!chunk) continue
+              if (chunk.usage) usage = chunk.usage
+              if (chunk.delta) {
+                raw += chunk.delta
+                sse(controller, 'delta', { text: chunk.delta })
+              }
             } catch {
               // Ignore malformed provider chunks.
             }
@@ -183,9 +219,29 @@ export async function POST(req) {
 
         phase = 'parsing_json'
         const plan = extractJson(raw)
-        sse(controller, 'done', { model, raw, plan, plannedAt: Date.now() })
+        await finishDeepSeekTask(taskRecordId, {
+          status: 'succeeded',
+          usage,
+          durationMs: Date.now() - startedAt,
+          resultSummary: plan?.planner_summary || '',
+          metadata: {
+            strategyVersion,
+            taskId: plan?.task_info?.task_id || '',
+            planSteps: Array.isArray(plan?.plan_steps) ? plan.plan_steps.length : 0,
+            subtasks: Array.isArray(plan?.subtasks) ? plan.subtasks.length : 0,
+            streaming: true,
+          },
+        })
+        sse(controller, 'done', { model, raw, plan, usage, taskRecordId, plannedAt: Date.now() })
         controller.close()
       } catch (error) {
+        await finishDeepSeekTask(taskRecordId, {
+          status: 'failed',
+          durationMs: Date.now() - startedAt,
+          errorCode: 'DEEPSEEK_STREAM_FAILED',
+          errorDetail: error?.message || String(error),
+          metadata: { phase, streaming: true },
+        })
         sse(controller, 'error', {
           error: 'DEEPSEEK_STREAM_FAILED',
           phase,

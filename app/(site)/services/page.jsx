@@ -82,12 +82,6 @@ const productLinks = [
 export default function ServicesPage() {
   return (
     <PageContainer className="py-10 md:py-12">
-      <header className="mb-10 border-b border-[#dee0db] pb-8 dark:border-gray-800">
-        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#767869] dark:text-[#8e9ab0]">
-          Services · 合作说明
-        </p>
-      </header>
-
       <section className="mb-10">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -98,9 +92,6 @@ export default function ServicesPage() {
               合作范围
             </h1>
           </div>
-          <p className="mb-0 text-[12px] leading-6 text-[#76786c] dark:text-[#7f8aa0]">
-            报价按具体范围确认，不在页面上写死。
-          </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

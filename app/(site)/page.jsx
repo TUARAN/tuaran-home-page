@@ -89,11 +89,11 @@ const PRODUCT_LINKS = [
     descEn: 'Intel on frontend, AI Agents and LLM engineering',
   },
   {
-    href: 'https://publishlab.cc/',
-    label: 'PublishLab',
-    labelEn: 'PublishLab',
-    desc: '面向创作者的 AI 写作与出版工具',
-    descEn: 'AI writing and publishing tools for creators',
+    href: 'https://syncblog.cn/',
+    label: '内容同步智能体',
+    labelEn: 'SyncBlog',
+    desc: '一次创作，多平台自动同步分发',
+    descEn: 'Write once, auto-sync across platforms',
   },
 ]
 
@@ -447,7 +447,7 @@ function ClassicHomePage({ featuredPicks }) {
                   </span>
                 </a>
                 <a
-                  href="https://publishlab.cc/"
+                  href="https://syncblog.cn/"
                   target="_blank"
                   rel="noreferrer"
                   className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
@@ -462,11 +462,11 @@ function ClassicHomePage({ featuredPicks }) {
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
                     <span className="flex items-center gap-1 text-[18px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
-                      <T zh="使用 PublishLab" en="Use PublishLab" />
+                      <T zh="使用内容同步智能体" en="Use SyncBlog" />
                       <span className="font-mono text-[12px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
                     <span className="mt-1 text-[15px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
-                      <T zh="AI 写作 / 内容创作 / 数字出版" en="AI writing / content / digital publishing" />
+                      <T zh="一次创作 / 多平台同步 / 自动分发" en="Write once / multi-platform sync / auto distribute" />
                     </span>
                   </span>
                 </a>

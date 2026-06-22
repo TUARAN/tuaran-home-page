@@ -1,0 +1,85 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+
+import { useSessionAccount } from './SessionProvider'
+
+async function safeJson(res) {
+  const text = await res.text()
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 燃币余额 + 每日签到。仅登录用户展示（游客零燃币）。
+ * 内联小组件，放在评论区头部等处；不依赖任何外部状态。
+ */
+export default function RanbiBalance({ className = '' }) {
+  const { user, loading: userLoading } = useSessionAccount()
+  const [info, setInfo] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [hint, setHint] = useState('')
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch('/api/points/me', { cache: 'no-store', credentials: 'same-origin' })
+      const data = await safeJson(res)
+      setInfo(data || null)
+    } catch {
+      setInfo(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!userLoading && user) refresh()
+  }, [user, userLoading, refresh])
+
+  async function checkin() {
+    setBusy(true)
+    setHint('')
+    try {
+      const res = await fetch('/api/points/checkin', {
+        method: 'POST',
+        credentials: 'same-origin',
+      })
+      const data = await safeJson(res)
+      if (res.ok && data?.ok) {
+        setHint(data.awarded ? `签到 +${data.gained} 燃币` : '今天已签到')
+        await refresh()
+      } else {
+        setHint(data?.error || '签到失败')
+      }
+    } catch (e) {
+      setHint(String(e?.message || e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (userLoading || !user || !info?.authed) return null
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      <span
+        className="inline-flex items-center gap-1 rounded-full bg-[#fbf3df] px-2.5 py-1 text-xs font-medium text-[#7a5b1e] dark:bg-amber-950/30 dark:text-amber-200"
+        title="燃币余额"
+      >
+        🔥 {info.balance} 燃币
+      </span>
+      <button
+        type="button"
+        onClick={checkin}
+        disabled={busy || info.checkedInToday}
+        className="rounded-full border border-gray-200/80 bg-white/80 px-3 py-1 text-xs text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
+        title={info.checkedInToday ? '今天已签到' : `签到 +${info?.rules?.checkin ?? 5} 燃币`}
+      >
+        {info.checkedInToday ? '已签到' : '签到'}
+      </button>
+      {hint ? <span className="text-[11px] text-[#8a7a55] dark:text-amber-300/70">{hint}</span> : null}
+    </div>
+  )
+}

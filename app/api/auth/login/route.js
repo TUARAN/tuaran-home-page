@@ -17,6 +17,8 @@ import {
 } from '../../../../lib/abuseControls'
 import { normalizeReturnTo } from '../../../../lib/returnTo'
 import { recordUserLogin } from '../../../../lib/userDirectory'
+import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/guestSession'
+import { awardRegisterOnLogin } from '../../../../lib/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -111,6 +113,8 @@ export async function POST(req) {
     if (!result.ok) return Response.json(result, { status: result.status || 401 })
 
     await recordUserLogin(result.user)
+    await awardRegisterOnLogin(result.user)
+    const mergedGid = await mergeGuestFromRequest(req, result.user)
     await cleanupRateLimits(db).catch(() => {})
 
     const nowSeconds = Math.floor(Date.now() / 1000)
@@ -124,6 +128,7 @@ export async function POST(req) {
       'Set-Cookie',
       serializeCookie(cookieNames.session, token, { maxAge: 7 * 24 * 60 * 60, secure })
     )
+    if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())
     return Response.json({ ok: true, user: result.user }, { headers })
   } catch (error) {
     console.error('email login failed', error)

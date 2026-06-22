@@ -13,6 +13,8 @@ import {
 } from '../../../../../lib/oauthProviderErrors'
 import { normalizeReturnTo } from '../../../../../lib/returnTo'
 import { recordUserLogin } from '../../../../../lib/userDirectory'
+import { clearGuestCookie, mergeGuestFromRequest } from '../../../../../lib/guestSession'
+import { awardRegisterOnLogin } from '../../../../../lib/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -90,6 +92,8 @@ export async function GET(req) {
   }
 
   await recordUserLogin(user)
+  await awardRegisterOnLogin(user)
+  const mergedGid = await mergeGuestFromRequest(req, user)
 
   const payload = {
     user,
@@ -107,6 +111,7 @@ export async function GET(req) {
   )
   headers.append('Set-Cookie', serializeCookie(cookieNames.oauthState, '', { maxAge: 0, secure }))
   headers.append('Set-Cookie', serializeCookie(cookieNames.returnTo, '', { maxAge: 0, secure }))
+  if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())
 
   headers.set('Location', returnTo)
   return new Response(null, { status: 302, headers })

@@ -20,6 +20,8 @@ R2_PUBLIC_BASE = "https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev"
 # 2026 世界杯数据源:openfootball/worldcup.json (无 key、无限流)。
 # 采集只需 D1 binding;手动触发鉴权用的 WC_COLLECT_SECRET 走 Secret,不在这里。
 WC_DATA_SOURCE = "openfootball"
+# 舆情采集端点鉴权使用 PUBLIC_OPINION_COLLECT_SECRET。
+# 该值必须作为 Cloudflare Secret 配置，不要写入本文件。
 
 # Used for D1 migrations / local development.
 # In Cloudflare Pages, you can also set the D1 binding in the dashboard.

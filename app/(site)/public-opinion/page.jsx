@@ -32,7 +32,7 @@ export const metadata = {
 }
 
 export default function PublicOpinionPage() {
-  const snapshot = buildPublicOpinionSnapshot(OPINION_POSTS)
+  const snapshot = buildPublicOpinionSnapshot(OPINION_POSTS, OPINION_TOPICS, SOURCE_CONNECTORS)
 
   return (
     <PublicOpinionClient
@@ -42,6 +42,7 @@ export default function PublicOpinionPage() {
       stack={PUBLIC_OPINION_STACK}
       trendPoints={TREND_POINTS}
       initialSnapshot={snapshot}
+      initialGeneratedAt={new Date().toISOString()}
     />
   )
 }

@@ -10,7 +10,7 @@ import {
   IconScale,
   IconTopologyStar3,
 } from '@tabler/icons-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   buildPublicOpinionSnapshot,
@@ -102,7 +102,7 @@ function Distribution({ title, items, total, meta }) {
 }
 
 function TrendPanel({ trendPoints }) {
-  const maxHeat = Math.max(...trendPoints.map((point) => point.heat))
+  const maxHeat = Math.max(...trendPoints.map((point) => point.heat), 1)
 
   return (
     <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923] lg:col-span-2">
@@ -128,7 +128,10 @@ function TrendPanel({ trendPoints }) {
           </span>
         </div>
       </div>
-      <div className="grid min-h-[220px] grid-cols-6 items-end gap-2 border-b border-l border-[#dfe1d6] px-2 pt-2 dark:border-[#334052]">
+      <div
+        className="grid min-h-[220px] items-end gap-2 overflow-x-auto border-b border-l border-[#dfe1d6] px-2 pt-2 dark:border-[#334052]"
+        style={{ gridTemplateColumns: `repeat(${trendPoints.length}, minmax(58px, 1fr))` }}
+      >
         {trendPoints.map((point) => (
           <div key={point.time} className="flex h-full flex-col justify-end gap-2">
             <div className="flex h-[160px] items-end justify-center gap-1">
@@ -336,7 +339,22 @@ function PostFeed({ posts }) {
                 <span className="ml-auto font-mono text-[#7b5d36] dark:text-[#d2b47d]">{numberFormat(post.engagement)}</span>
               </div>
               <p className="mb-2 text-[14px] leading-6 text-[#242b28] dark:text-gray-100">{post.text}</p>
-              <p className="mb-0 text-[12px] leading-5 text-[#68706a] dark:text-[#98a5b6]">核心观点：{post.viewpoint}</p>
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <p className="mb-0 text-[12px] leading-5 text-[#68706a] dark:text-[#98a5b6]">
+                  核心观点：{post.viewpoint}
+                </p>
+                {post.url ? (
+                  <a
+                    href={post.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow inline-flex items-center gap-1 text-[12px] font-medium text-[#2f668a] no-underline hover:underline dark:text-[#9ab6d4]"
+                  >
+                    查看原文
+                    <IconExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  </a>
+                ) : null}
+              </div>
             </article>
           )
         })}
@@ -389,22 +407,78 @@ export default function PublicOpinionClient({
   stack,
   trendPoints,
   initialSnapshot,
+  initialGeneratedAt,
 }) {
+  const [data, setData] = useState({
+    source: 'fallback',
+    generatedAt: initialGeneratedAt,
+    meta: {
+      lastCollectAt: 0,
+      lastCollectStatus: 'loading',
+      isStale: true,
+      hasData: false,
+    },
+    topics,
+    posts,
+    connectors,
+    stack,
+    trendPoints,
+    snapshot: initialSnapshot,
+  })
   const [activeTopicId, setActiveTopicId] = useState('all')
   const [activeSourceId, setActiveSourceId] = useState('all')
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState('')
+
+  const refreshData = useCallback(async () => {
+    setIsRefreshing(true)
+    setRefreshError('')
+    try {
+      const response = await fetch('/api/public-opinion', { cache: 'no-store' })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const nextData = await response.json()
+      setData(nextData)
+    } catch (error) {
+      setRefreshError(error.message || '刷新失败')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshData()
+  }, [refreshData])
 
   const filteredPosts = useMemo(() => {
-    return posts.filter((post) => {
+    return data.posts.filter((post) => {
       if (activeTopicId !== 'all' && post.topicId !== activeTopicId) return false
       if (activeSourceId !== 'all' && post.sourceId !== activeSourceId) return false
       return true
     })
-  }, [activeSourceId, activeTopicId, posts])
+  }, [activeSourceId, activeTopicId, data.posts])
 
-  const snapshot = useMemo(() => buildPublicOpinionSnapshot(filteredPosts), [filteredPosts])
-  const allTopicSnapshot = initialSnapshot
+  const snapshot = useMemo(
+    () => buildPublicOpinionSnapshot(filteredPosts, data.topics, data.connectors),
+    [data.connectors, data.topics, filteredPosts],
+  )
+  const allTopicSnapshot = data.snapshot
   const activeTopic = snapshot.topicCards.find((topic) => topic.id === activeTopicId) || snapshot.topicCards[0]
   const averageSentimentLabel = getSentimentLabel(snapshot.averageSentiment || 0)
+  const lastUpdated = data.meta?.lastCollectAt
+    ? new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(data.meta.lastCollectAt * 1000))
+    : '等待首次采集'
+  const dataStatus =
+    data.source === 'd1'
+      ? data.meta?.isStale
+        ? '数据已过期'
+        : data.meta?.lastCollectStatus === 'partial'
+          ? '部分数据源可用'
+          : '定时采集中'
+      : '降级数据'
 
   return (
     <main className="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 sm:py-10">
@@ -418,20 +492,23 @@ export default function PublicOpinionClient({
               舆情分析工作台
             </h1>
             <p className="mt-4 max-w-3xl text-[14px] leading-7 text-[#59605b] dark:text-[#b8c2cf]">
-              面向全网公开内容的采集、聚合、中文文本分析与可视化系统。当前页面使用内置样本演示完整链路，
-              后续可把 Crawlee、Scrapy、RSSHub、Nutch 与 NLP 服务接入同一数据层。
+              每小时从公开新闻与开发者社区采集数据，自动完成热点聚合、情绪识别和立场分析。
+              数据保留来源链接；外部数据源异常时自动降级到内置样本。
             </p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#68706a] dark:text-[#98a5b6]">
+              <span className="font-medium text-[#476a75] dark:text-[#9fc5ad]">{dataStatus}</span>
+              <span>最后采集：{lastUpdated}</span>
+              {refreshError ? <span className="text-rose-700 dark:text-rose-300">刷新失败：{refreshError}</span> : null}
+            </div>
           </div>
           <button
             type="button"
-            onClick={() => {
-              setActiveTopicId('all')
-              setActiveSourceId('all')
-            }}
+            onClick={refreshData}
+            disabled={isRefreshing}
             className="inline-flex min-h-10 items-center justify-center gap-2 border border-[#20343c] bg-[#20343c] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[#2e4c57] dark:border-[#d6dbc5] dark:bg-[#d6dbc5] dark:text-[#141914] dark:hover:bg-[#e6ead6]"
           >
-            <IconRefresh className="h-4 w-4" aria-hidden="true" />
-            重置筛选
+            <IconRefresh className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+            {isRefreshing ? '刷新中' : '刷新数据'}
           </button>
         </div>
       </header>
@@ -440,8 +517,8 @@ export default function PublicOpinionClient({
         <StatTile
           icon={IconDatabaseSearch}
           label="公开采集连接器"
-          value={connectors.length}
-          note="新闻、社交公开页、视频公开区、论坛社区"
+          value={data.connectors.length}
+          note={data.connectors.map((connector) => connector.label).join('、')}
         />
         <StatTile
           icon={IconTopologyStar3}
@@ -476,7 +553,7 @@ export default function PublicOpinionClient({
           >
             全部话题
           </SegmentButton>
-          {topics.map((topic) => (
+          {data.topics.map((topic) => (
             <SegmentButton
               key={topic.id}
               active={activeTopicId === topic.id}
@@ -490,7 +567,7 @@ export default function PublicOpinionClient({
       </section>
 
       <section className="mt-6 grid gap-4 lg:grid-cols-3">
-        <TrendPanel trendPoints={trendPoints} />
+        <TrendPanel trendPoints={data.trendPoints} />
         <Distribution title="情绪倾向" items={snapshot.sentimentCounts} total={snapshot.totalPosts} meta={SENTIMENT_META} />
         <TopicTable topics={snapshot.topicCards} activeTopicId={activeTopicId} onSelect={setActiveTopicId} />
         <Distribution title="网民立场" items={snapshot.stanceCounts} total={snapshot.totalPosts} meta={STANCE_META} />
@@ -503,7 +580,7 @@ export default function PublicOpinionClient({
 
       <section className="mt-4">
         <SourceConnectors
-          connectors={connectors}
+          connectors={data.connectors}
           sourceCounts={snapshot.sourceCounts}
           activeSourceId={activeSourceId}
           onSelect={setActiveSourceId}
@@ -511,7 +588,7 @@ export default function PublicOpinionClient({
       </section>
 
       <section className="mt-4">
-        <StackSection stack={stack} />
+        <StackSection stack={data.stack} />
       </section>
     </main>
   )

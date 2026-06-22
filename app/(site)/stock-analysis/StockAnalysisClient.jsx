@@ -525,14 +525,14 @@ export default function StockAnalysisClient({ record }) {
             <SectionTitle dotColor={C.accent4}>成交量分析</SectionTitle>
             <div className="grid grid-cols-2 gap-4">
               <MetricCard label="24H 成交量" value={R.volume.vol24hToken ? (R.volume.vol24hToken / 1_000_000).toFixed(1) + 'M' : '—'} sub={R.pair.split('USDT')[0]} />
-              <MetricCard label="24H 成交额" value={R.volume.vol24hUsdt >= 1_000_000_000 ? (R.volume.vol24hUsdt / 1_000_000_000).toFixed(2) + 'B' : R.volume.vol24hUsdt >= 1_000_000 ? (R.volume.vol24hUsdt / 1_000_000).toFixed(2) + 'M' : (R.volume.vol24hUsdt / 1_000).toFixed(1) + 'k'} sub="USDT" />
-              <MetricCard label="历史最高量" value={R.volume.historicalMaxVol} sub="对比参照" />
-              <MetricCard label="历史总成交" value={R.volume.totalHistoricalVol} sub={R.pair.split('USDT')[0]} />
+              <MetricCard label="24H 成交额" value={R.volume.vol24hUsdt == null ? '未采集' : R.volume.vol24hUsdt >= 1_000_000_000 ? (R.volume.vol24hUsdt / 1_000_000_000).toFixed(2) + 'B' : R.volume.vol24hUsdt >= 1_000_000 ? (R.volume.vol24hUsdt / 1_000_000).toFixed(2) + 'M' : (R.volume.vol24hUsdt / 1_000).toFixed(1) + 'k'} sub="USDT" />
+              <MetricCard label={R.volume.historicalMaxVolLabel || '历史最高量'} value={R.volume.historicalMaxVol} sub="对比参照" />
+              <MetricCard label={R.volume.totalHistoricalVolLabel || '历史总成交'} value={R.volume.totalHistoricalVol} sub={R.pair.split('USDT')[0]} />
             </div>
             {R.riskSignals.volumePriceDivergence ? (
               <div className="mt-4">
                 <AlertBox type="warning" title="量价背离信号">
-                  近期出现巨量 spike 后缩量上涨，价格创新高但成交量未同步放大，存在量价背离迹象。
+                  近期巨量波动后量能明显回落，价格动能未获得持续量能配合，存在量价背离迹象。
                 </AlertBox>
               </div>
             ) : null}
@@ -737,7 +737,7 @@ export default function StockAnalysisClient({ record }) {
                   <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">均线乖离</td>
                   <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644] text-[#ff4d6a]">触发</td>
                   <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644] text-[#ff4d6a]">极高</td>
-                  <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">偏离 MA7 达 {Math.abs(R.ma.priceVsMa7Pct)}%，偏离 MA25 达 {Math.abs(R.ma.priceVsMa25Pct)}%</td>
+                  <td className="p-3 border-b border-[#d7d9cf] dark:border-[#2b3644]">偏离 MA{maP.short} 达 {Math.abs(R.ma.priceVsMa7Pct)}%，偏离 MA{maP.mid} 达 {Math.abs(R.ma.priceVsMa25Pct)}%</td>
                 </tr>
               ) : null}
               {R.riskSignals.overbought ? (

@@ -1,0 +1,38 @@
+name: Public opinion collect
+
+on:
+  schedule:
+    # GitHub Actions 使用 UTC。每小时第 17 分钟触发，避开整点拥堵。
+    - cron: '17 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: public-opinion-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: Trigger public opinion collector
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/public-opinion/collect
+        env:
+          PUBLIC_OPINION_COLLECT_SECRET: ${{ secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+        run: |
+          if [ -z "$PUBLIC_OPINION_COLLECT_SECRET" ]; then
+            echo "::error::缺少仓库 Secret PUBLIC_OPINION_COLLECT_SECRET"
+            exit 1
+          fi
+
+          code=$(curl -sS --retry 2 --retry-delay 5 \
+            -o /tmp/public-opinion-response.json \
+            -w '%{http_code}' \
+            -X POST \
+            -H "x-public-opinion-secret: $PUBLIC_OPINION_COLLECT_SECRET" \
+            https://2aran.com/api/public-opinion/collect)
+
+          echo "HTTP $code"
+          cat /tmp/public-opinion-response.json
+          echo
+          test "$code" = "200"

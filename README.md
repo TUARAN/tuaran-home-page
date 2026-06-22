@@ -117,6 +117,22 @@ DEEPSEEK_MODEL=deepseek-v4-pro
 
 本地 `.env.local` 已被 `.gitignore` 排除；线上部署时把同名变量配置到 Cloudflare Pages / Workers 环境变量或 secret。
 
+### 舆情分析定时采集
+
+`/public-opinion` 会从 D1 读取公开新闻和 Hacker News 的最新数据。GitHub Actions
+每小时调用一次 `/api/public-opinion/collect`，外部数据源不可用时页面自动回退到内置样本。
+
+首次部署需要应用 D1 migration，并在 Cloudflare Pages 与 GitHub Actions 中配置相同的密钥：
+
+```bash
+npx wrangler d1 migrations apply tuaran-me --remote
+npx wrangler pages secret put PUBLIC_OPINION_COLLECT_SECRET --project-name=tuaran
+```
+
+然后在 GitHub 仓库的 `Settings -> Secrets and variables -> Actions` 新增
+`PUBLIC_OPINION_COLLECT_SECRET`。可在 Actions 页面手动运行 `Public opinion collect`
+完成首次采集。
+
 ### 构建生产版本
 
 ```bash

@@ -1,6 +1,8 @@
 import { registerEmailUser } from '../../../../lib/emailAuth'
 import { cookieNames, cookiesConfig, getSecrets, serializeCookie, signSession } from '../../../../lib/edgeSession'
 import { recordUserLogin } from '../../../../lib/userDirectory'
+import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/guestSession'
+import { awardRegisterOnLogin } from '../../../../lib/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -28,6 +30,8 @@ export async function POST(req) {
     if (!result.ok) return Response.json(result, { status: result.status || 400 })
 
     await recordUserLogin(result.user)
+    await awardRegisterOnLogin(result.user)
+    const mergedGid = await mergeGuestFromRequest(req, result.user)
 
     const nowSeconds = Math.floor(Date.now() / 1000)
     const token = await signSession(
@@ -40,6 +44,7 @@ export async function POST(req) {
       'Set-Cookie',
       serializeCookie(cookieNames.session, token, { maxAge: 7 * 24 * 60 * 60, secure })
     )
+    if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())
 
     return Response.json({ ok: true, user: result.user }, { headers })
   } catch (error) {

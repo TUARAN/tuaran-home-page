@@ -487,6 +487,13 @@ export function getLatestWeeklyAdvice(categoryId = '') {
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null
 }
 
+/** 索引页用：所有周建议，按创建时间倒序 */
+export function getAllWeeklyAdvice() {
+  return WEEKLY_ADVICE_RECORDS
+    .slice()
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+}
+
 /** 给定 slug，返回上一条/下一条 slug（按 datetime 倒序：最新在前） */
 export function getSiblingSlugs(slug) {
   // 默认排序：datetime 从新到旧

@@ -25,10 +25,12 @@ import {
   IconRouteAltLeft,
   IconCircleDot,
   IconArrowBackUp,
+  IconFileText,
 } from '@tabler/icons-react'
 
 const ICONS = {
   dashboard: IconLayoutDashboard,
+  articles: IconFileText,
   portfolio: IconFolders,
   researchStyle: IconTypography,
   modelDispatch: IconRouteAltLeft,

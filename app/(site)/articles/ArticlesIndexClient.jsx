@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useSessionAccount } from '../components/SessionProvider'
+import { compareSortKeyDesc } from '../../../lib/research/datetime'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import {
@@ -95,7 +97,9 @@ function formatPv(pv) {
   return String(n)
 }
 
-export default function ArticlesIndexClient({ items }) {
+export default function ArticlesIndexClient({ items: staticItems }) {
+  const { isOwner } = useSessionAccount()
+  const [items, setItems] = useState(staticItems)
   const router = useRouter()
   const searchParams = useSearchParams()
   const [pvCounts, setPvCounts] = useState({})
@@ -129,6 +133,20 @@ export default function ArticlesIndexClient({ items }) {
   const [query, setQuery] = useState(initialQuery)
   const [filtersOpen, setFiltersOpen] = useState(true)
   const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/articles', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!alive || !Array.isArray(data?.articles) || !data.articles.length) return
+        const merged = [...staticItems, ...data.articles]
+          .sort((a, b) => compareSortKeyDesc(a.sortKey, b.sortKey, a.id, b.id))
+        setItems(merged)
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [staticItems])
 
   useEffect(() => {
     const fromUrl = searchParams?.get('tab')
@@ -674,6 +692,14 @@ export default function ArticlesIndexClient({ items }) {
         ) : null}
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e8e2ef] pt-2.5 text-xs text-[#665f70] dark:border-gray-800 dark:text-gray-400 sm:pt-3">
+          {isOwner && tab === 'posts' ? (
+            <Link
+              href="/admin/articles/new"
+              className="inline-flex items-center rounded-md border border-[#cfc3e2] bg-[#f3eff9] px-2.5 py-1.5 font-medium text-[#49345f] no-underline transition-colors hover:border-[#ae9ac3] hover:text-[#20172f] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#d8c5f3]"
+            >
+              写文章 ✎
+            </Link>
+          ) : null}
           {QUICK_LINKS.map((link) =>
             link.external ? (
               <a
@@ -890,13 +916,19 @@ function ArticleRow({ item }) {
         </div>
         {item.image ? (
           <div className="relative h-32 overflow-hidden rounded-md border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 sm:h-28 sm:w-40">
-            <Image
-              src={item.image.src}
-              alt={item.image.alt || `${item.title} 配图`}
-              fill
-              sizes="(min-width: 640px) 160px, 100vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            />
+            {String(item.id || '').startsWith('post-db:') ? (
+              // 在线文章封面允许使用站长填写的任意 HTTPS 地址，不能受 Next 静态域名白名单限制。
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.image.src} alt={item.image.alt || `${item.title} 配图`} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+            ) : (
+              <Image
+                src={item.image.src}
+                alt={item.image.alt || `${item.title} 配图`}
+                fill
+                sizes="(min-width: 640px) 160px, 100vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              />
+            )}
           </div>
         ) : null}
       </div>

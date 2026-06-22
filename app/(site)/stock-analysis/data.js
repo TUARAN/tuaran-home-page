@@ -335,6 +335,93 @@ export const STOCK_ANALYSIS_RECORDS = [
   },
 ]
 
+export const WEEKLY_ADVICE_RECORDS = [
+  {
+    id: 'lobster-weekly-2026-06-22',
+    category: { id: 'lobster', label: '龙虾币' },
+    pair: 'LOBSTERUSDT',
+    week: '2026-06-22 ~ 2026-06-28',
+    createdAt: '2026-06-22 11:03',
+    sourceSnapshotSlugs: [
+      'lobsterusdt-2026-06-17-1320',
+      'lobsterusdt-2026-06-18-1407',
+      'lobsterusdt-2026-06-22-0920',
+    ],
+    sourceNote: '结合最新 3 个龙虾币快照与用户火币持仓截图录入。',
+    position: {
+      direction: '空单',
+      marginMode: '全仓',
+      leverage: '5x',
+      notionalUsdt: 997.6428,
+      marginUsdt: 199.5285,
+      entryPrice: 0.009654,
+      referencePrice: 0.009394,
+      pnlUsdt: 27.6438,
+      pnlPct: 13.48,
+      liquidationPrice: 0.024520,
+      priorMaxDrawdownNote: '此前该类仓位一度浮亏 1000+ USDT，本周首要目标是把风险窗口关闭，而不是继续扩大方向性押注。',
+    },
+    headline: '不要一次性平光：先保护本金，再留尾仓吃可能的暴跌。',
+    summary:
+      '最新 3 个快照显示：龙虾币从 6 月 17 日极端拉升，转入 6 月 18 日高位跳水，再到 6 月 22 日 0.0094 附近缩量整理偏弱。当前空单方向仍有依据，但已经接近 0.00911 / 0.00865 支撑区。更合理的处理不是“到支撑就全平”，而是先把这次从 1000+ USDT 浮亏扛回来的风险降下来，同时保留一部分尾仓，避免后续真暴跌时产生强烈 FOMO。',
+    bias: '短线偏弱，空单可以继续参与；但应从“全仓扛方向”切换成“分层仓位 + 尾仓跟踪”。',
+    priority: '本周第一优先级：先把账户从情绪扛单状态切回规则交易，同时保留尾仓参与极端下跌。',
+    actionPlan: [
+      {
+        title: '现在',
+        tone: 'warning',
+        content: '不加仓空。先把仓位拆成两层：70% 主仓用于锁利润/降风险，30% 尾仓专门用来吃可能的暴跌。这样不需要在“全平”和“死扛”之间二选一。',
+      },
+      {
+        title: '跌到 0.00911 附近',
+        tone: 'success',
+        content: '只平主仓的一部分，例如总仓 25%～35%。不是看空逻辑结束，而是先让这笔单从事故单变成可控单。',
+      },
+      {
+        title: '跌到 0.00865 附近',
+        tone: 'success',
+        content: '再平总仓 25%～35%。到这里至少应让已兑现利润覆盖一部分此前情绪成本，但仍保留 20%～30% 尾仓。',
+      },
+      {
+        title: '跌破 0.00820 并放量',
+        tone: 'success',
+        content: '尾仓继续跟踪，不急着全平。此时用移动止盈保护利润，例如反抽重新站回 0.00865 / 0.00911 再逐步收掉尾仓。',
+      },
+      {
+        title: '反弹到 0.00975 附近',
+        tone: 'danger',
+        content: '主仓风险开始变大，先减掉总仓 30%～50%。尾仓可以保留，但必须接受它可能回吐利润。',
+      },
+      {
+        title: '站上 0.01004',
+        tone: 'danger',
+        content: '空头结构被明显修复，主仓应退出。若还想防暴跌，只允许留很小尾仓，不能重新变成全仓扛单。',
+      },
+    ],
+    priceLevels: [
+      { price: 0.00975, label: '主仓风控线', action: '站上先减总仓 30%～50%', tone: 'danger' },
+      { price: 0.01004, label: '主仓退出线', action: '主仓退出，只允许小尾仓', tone: 'danger' },
+      { price: 0.00911, label: '第一止盈区', action: '平总仓 25%～35%，不全平', tone: 'success' },
+      { price: 0.00865, label: '第二止盈区', action: '再平总仓 25%～35%，保留尾仓', tone: 'success' },
+      { price: 0.00820, label: '暴跌延伸区', action: '尾仓跟踪，移动止盈', tone: 'warning' },
+    ],
+    riskRules: [
+      '不要一次性全平，除非价格站上主仓退出线；否则保留 20%～30% 尾仓，专门处理“后续暴跌”的 FOMO。',
+      '尾仓的意义是降低后悔，不是重新加回风险。尾仓盈利可以回吐，但不能加成新的重仓。',
+      '如果跌到目标区后想追空加仓，先等反弹失败再说；不要在支撑位下方情绪化追空。',
+      '任何时候只要重新出现被动扛单心态，优先减主仓，而不是补仓。',
+    ],
+    fomoProtocol: [
+      '如果你平了一部分后继续暴跌：提醒自己“我还有尾仓”，不要用市价追回已经卖掉的仓位。',
+      '如果你完全没平、价格又反弹：这就是旧问题复发，所以主仓必须按 0.00975 / 0.01004 执行风控。',
+      '如果你想重新加空：只允许在反弹到压力位失败后，用已兑现利润的一小部分试，不允许把本金风险重新放大。',
+    ],
+    invalidation:
+      '若价格重新站稳 0.0108 上方，最近“冲高回落后整理”的判断失效，应重新评估，不再按弱势空头思路执行。',
+    disclaimer: '本周建议仅基于有限快照和用户提供的持仓截图，用于交易复盘与风险管理，不构成投资建议。',
+  },
+]
+
 // ============================================================
 // 工具函数
 // ============================================================
@@ -387,6 +474,17 @@ export function getRecentSnapshotsByCategory(categoryId, limit = 5) {
     .filter((r) => r.category?.id === categoryId)
     .sort((a, b) => toDateTime(b).localeCompare(toDateTime(a)))
     .slice(0, safeLimit)
+}
+
+/** 按币种分类取最新周建议；未传分类时返回最新一条 */
+export function getLatestWeeklyAdvice(categoryId = '') {
+  const records = categoryId
+    ? WEEKLY_ADVICE_RECORDS.filter((r) => r.category?.id === categoryId)
+    : WEEKLY_ADVICE_RECORDS
+
+  return records
+    .slice()
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null
 }
 
 /** 给定 slug，返回上一条/下一条 slug（按 datetime 倒序：最新在前） */

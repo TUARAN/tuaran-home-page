@@ -97,7 +97,7 @@ export async function POST(req) {
       task: {
         source: 'admin-model-dispatch',
         taskType: 'planning',
-        title: task.title || '模型调度规划',
+        title: task.title || 'Agent 协同测试',
         actorId: guard.user?.id,
         actorName: guard.user?.name || guard.user?.login,
         inputSummary: task.demand || task.context || '',

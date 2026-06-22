@@ -1,6 +1,5 @@
-import Link from 'next/link'
 import SnapshotIndexClient from './SnapshotIndexClient'
-import { getAllSnapshotsSummary } from './data'
+import { getAllSnapshotsSummary, getLatestWeeklyAdvice } from './data'
 
 export const dynamic = 'force-static'
 
@@ -26,5 +25,6 @@ export const metadata = {
 
 export default function StockAnalysisIndexPage() {
   const summaries = getAllSnapshotsSummary()
-  return <SnapshotIndexClient summaries={summaries} />
+  const weeklyAdvice = getLatestWeeklyAdvice('lobster')
+  return <SnapshotIndexClient summaries={summaries} weeklyAdvice={weeklyAdvice} />
 }

@@ -28,6 +28,19 @@ function fmtPrice(v, changePct) {
   return v.toFixed(v < 1 ? 5 : 2)
 }
 
+function fmtUsdt(v) {
+  return typeof v === 'number' ? `${v.toFixed(2)} USDT` : v
+}
+
+function toneClass(tone) {
+  const map = {
+    danger: 'border-[#ff4d6a]/35 bg-[#ff4d6a]/10 text-[#ff4d6a]',
+    warning: 'border-[#f5a623]/35 bg-[#f5a623]/10 text-[#f5a623]',
+    success: 'border-[#00e5a0]/35 bg-[#00e5a0]/10 text-[#00a978]',
+  }
+  return map[tone] || 'border-[#d7d9cf] bg-[var(--site-panel)] text-[var(--site-muted)] dark:border-[#2b3644]'
+}
+
 function deriveActiveTags(summary) {
   const tags = []
   if (summary.riskSignals.highFundingRate) tags.push('资金费率异常')
@@ -56,7 +69,126 @@ function uniqueRiskLevels(summaries) {
   )
 }
 
-export default function SnapshotIndexClient({ summaries }) {
+function WeeklyAdvicePanel({ advice }) {
+  if (!advice) return null
+
+  const position = advice.position || {}
+  const sourceSnapshotCount = Array.isArray(advice.sourceSnapshotSlugs) ? advice.sourceSnapshotSlugs.length : 0
+
+  return (
+    <section className="mb-8 overflow-hidden rounded-xl border border-[#f5a623]/40 bg-white dark:bg-[#111923]">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e3e4db] p-5 dark:border-[#2b3644]">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">周建议 · {advice.category?.label}</p>
+          <h2 className="mt-1 font-serif text-[24px] leading-tight text-[var(--site-ink)]">{advice.headline}</h2>
+          <p className="mt-2 max-w-[760px] text-[13px] leading-6 text-[var(--site-muted)]">{advice.summary}</p>
+        </div>
+        <div className="rounded-lg bg-[var(--site-panel)] px-3 py-2 text-right">
+          <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">周期</p>
+          <p className="mt-1 font-mono text-[13px] text-[var(--site-ink)]">{advice.week}</p>
+          <p className="mt-1 text-[11px] text-[var(--site-muted)]">{sourceSnapshotCount} 个快照 · {advice.createdAt}</p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 p-5 lg:grid-cols-[1fr_1.15fr]">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              ['方向 / 杠杆', `${position.direction || '—'} · ${position.marginMode || '—'} ${position.leverage || ''}`],
+              ['持仓规模', fmtUsdt(position.notionalUsdt)],
+              ['开仓均价', fmtPrice(position.entryPrice)],
+              ['参考现价', fmtPrice(position.referencePrice)],
+              ['当前浮盈', `${position.pnlUsdt >= 0 ? '+' : ''}${fmtUsdt(position.pnlUsdt)}`],
+              ['强平价', fmtPrice(position.liquidationPrice)],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-lg bg-[var(--site-panel)] p-3">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">{label}</p>
+                <p className="mt-1 font-mono text-[16px] font-semibold text-[var(--site-ink)]">{value || '—'}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-lg border border-[#f5a623]/35 bg-[#f5a623]/10 p-4 text-[13px] leading-6 text-[#b87800] dark:text-[#f5a623]">
+            <p className="font-bold">本周优先级</p>
+            <p className="mt-1">{advice.priority}</p>
+            {position.priorMaxDrawdownNote ? <p className="mt-2">{position.priorMaxDrawdownNote}</p> : null}
+          </div>
+
+          <div className="rounded-lg border border-[#00e5a0]/25 bg-[#00e5a0]/5 p-4 text-[13px] leading-6 text-[var(--site-muted)]">
+            <p className="font-bold text-[var(--site-ink)]">方向判断</p>
+            <p className="mt-1">{advice.bias}</p>
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-[13px] font-bold text-[var(--site-ink)]">执行动作</h3>
+            <div className="mt-3 grid gap-2">
+              {advice.actionPlan?.map((item) => (
+                <div key={item.title} className={`rounded-lg border p-3 ${toneClass(item.tone)}`}>
+                  <p className="text-[12px] font-bold">{item.title}</p>
+                  <p className="mt-1 text-[12px] leading-5">{item.content}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-[13px] font-bold text-[var(--site-ink)]">关键价位纪律</h3>
+            <div className="mt-3 overflow-x-auto rounded-lg border border-[#d7d9cf] dark:border-[#2b3644]">
+              <table className="w-full border-collapse text-[12px]">
+                <thead>
+                  <tr className="bg-[var(--site-panel-strong)] text-[var(--site-muted)]">
+                    <th className="p-2 text-left">价位</th>
+                    <th className="p-2 text-left">类型</th>
+                    <th className="p-2 text-left">动作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {advice.priceLevels?.map((level) => (
+                    <tr key={`${level.label}-${level.price}`} className="border-t border-[#e3e4db] dark:border-[#2b3644]">
+                      <td className="p-2 font-mono text-[var(--site-ink)]">{fmtPrice(level.price)}</td>
+                      <td className="p-2">
+                        <span className={`rounded border px-2 py-0.5 text-[11px] ${toneClass(level.tone)}`}>{level.label}</span>
+                      </td>
+                      <td className="p-2 text-[var(--site-muted)]">{level.action}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {Array.isArray(advice.riskRules) && advice.riskRules.length ? (
+            <div>
+              <h3 className="text-[13px] font-bold text-[var(--site-ink)]">风险纪律</h3>
+              <ul className="mt-2 space-y-1.5 text-[12px] leading-5 text-[var(--site-muted)]">
+                {advice.riskRules.map((rule, index) => <li key={index}>· {rule}</li>)}
+              </ul>
+            </div>
+          ) : null}
+
+          {Array.isArray(advice.fomoProtocol) && advice.fomoProtocol.length ? (
+            <div className="rounded-lg border border-[#6c5ce7]/30 bg-[#6c5ce7]/10 p-4">
+              <h3 className="text-[13px] font-bold text-[#6c5ce7]">FOMO 处理预案</h3>
+              <ul className="mt-2 space-y-1.5 text-[12px] leading-5 text-[var(--site-muted)]">
+                {advice.fomoProtocol.map((rule, index) => <li key={index}>· {rule}</li>)}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-[#e3e4db] px-5 py-3 text-[11px] leading-5 text-[var(--site-muted)] dark:border-[#2b3644]">
+        <span className="text-[#ff4d6a]">失效条件：</span>{advice.invalidation}
+        <br />
+        {advice.disclaimer}
+      </div>
+    </section>
+  )
+}
+
+export default function SnapshotIndexClient({ summaries, weeklyAdvice }) {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [pairFilter, setPairFilter] = useState('all')
   const [riskFilter, setRiskFilter] = useState('all')
@@ -151,6 +283,8 @@ export default function SnapshotIndexClient({ summaries }) {
           </div>
         </div>
       </header>
+
+      <WeeklyAdvicePanel advice={weeklyAdvice} />
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-4 mb-6 rounded-xl border border-[#d7d9cf] dark:border-[#2b3644] bg-white dark:bg-[#111923] p-4">

@@ -7,7 +7,7 @@ import { AdminIcon } from '../../../lib/adminIcons'
 
 function navItemClass(active) {
   return active
-    ? 'bg-[#15140f] text-white dark:bg-gray-100 dark:text-[#111827]'
+    ? 'bg-[#eeece0] text-[#15140f] dark:bg-[#1a2330] dark:text-gray-100'
     : 'text-[#53554d] hover:bg-[#ecede5] hover:text-[#15140f] dark:text-gray-300 dark:hover:bg-[#151c26] dark:hover:text-gray-100'
 }
 
@@ -64,7 +64,7 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
                     <span
                       className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-normal ${
                         active
-                          ? 'bg-white/20 text-white dark:bg-black/20 dark:text-[#111827]'
+                          ? 'bg-[#15140f] text-white dark:bg-gray-100 dark:text-[#111827]'
                           : 'bg-[#eef0e8] text-[#67695d] dark:bg-[#1a2230] dark:text-gray-400'
                       }`}
                     >

@@ -148,11 +148,11 @@ const CORE_RULES = [
 
 const RECOMMENDED_LINKS = [
   {
-    label: 'PublishLab',
-    cta: '立即体验 PublishLab',
-    href: 'https://publishlab.cc/',
-    desc: '面向中文创作者的写作变现工作台：把选题、分发、订阅与增长路径串成可执行闭环。',
-    note: '适合想从「持续写作」走到「稳定收入」的创作者与小团队。',
+    label: '内容同步智能体',
+    cta: '立即体验内容同步智能体',
+    href: 'https://syncblog.cn/',
+    desc: '面向中文创作者的内容同步智能体：一次创作，自动同步分发到多个平台，把多平台发布串成可执行闭环。',
+    note: '适合想把「持续写作」高效铺到多平台的创作者与小团队。',
   },
 ]
 
@@ -241,7 +241,7 @@ export default function WritingMonetizationDashboardPage() {
               推荐工具
             </p>
             <p className="mb-0 text-sm text-[#333431] dark:text-gray-200">
-              如果你希望把这页「机制-平台-赛道-路径」框架直接落地到日常创作流程，可以优先试试 PublishLab。
+              如果你希望把这页「机制-平台-赛道-路径」框架直接落地到日常创作流程，可以优先试试内容同步智能体。
             </p>
             <p className="mb-0 mt-1 text-xs text-[#616253] dark:text-[#acaf9d]">
               从内容策略到转化动作，减少试错周期，把写作增长变成可复用系统。

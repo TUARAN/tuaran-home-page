@@ -54,7 +54,7 @@ function resolveResearchEntry(category, slug) {
 
 function ResearchEngagementPanel({ articleKey, related }) {
   return (
-    <aside className="order-1 space-y-4 lg:order-2 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
+    <aside className="space-y-4 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
       <section className="rounded-lg border border-[#dee0db] bg-[#fafbf9] p-4 dark:border-gray-800 dark:bg-[#0f141b]">
         <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
           Support
@@ -389,7 +389,7 @@ export default async function ResearchDetailPage({ params }) {
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-        <main className="order-2 min-w-0 lg:order-1">
+        <main className="min-w-0">
           {isEncrypted ? (
             <EncryptedArticle
               payload={entry.encryptedPayload}

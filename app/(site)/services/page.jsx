@@ -86,12 +86,6 @@ export default function ServicesPage() {
         <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#767869] dark:text-[#8e9ab0]">
           Services · 合作说明
         </p>
-        <h1 className="mt-4 max-w-3xl font-serif text-[2rem] font-semibold leading-tight tracking-wide text-[#15140f] dark:text-gray-100 md:text-[2.55rem]">
-          先聊方向，再判断怎么帮
-        </h1>
-        <p className="mt-5 max-w-2xl text-[15px] leading-8 text-[#51514a] dark:text-gray-300">
-          如果你正在做一个产品、内容或增长项目，可以先把背景、卡点和想要的结果发给我。我会先判断自己能不能帮上忙；能做，我们再一起定目标、节奏和交付方式。
-        </p>
       </header>
 
       <section className="mb-10">
@@ -100,9 +94,9 @@ export default function ServicesPage() {
             <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
               What I Can Help With
             </p>
-            <h2 className="font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+            <h1 className="font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
               合作范围
-            </h2>
+            </h1>
           </div>
           <p className="mb-0 text-[12px] leading-6 text-[#76786c] dark:text-[#7f8aa0]">
             报价按具体范围确认，不在页面上写死。

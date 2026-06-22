@@ -69,19 +69,39 @@ function uniqueRiskLevels(summaries) {
   )
 }
 
-function WeeklyAdvicePanel({ advice }) {
+function WeeklyAdvicePanel({ advice, locked, onUnlock }) {
   if (!advice) return null
 
   const position = advice.position || {}
   const sourceSnapshotCount = Array.isArray(advice.sourceSnapshotSlugs) ? advice.sourceSnapshotSlugs.length : 0
 
+  // 加密遮罩组件
+  const BlurShield = ({ children, className = '' }) => {
+    if (!locked) return <div className={className}>{children}</div>
+    return (
+      <div className={`relative ${className}`}>
+        <div className="blur-sm select-none pointer-events-none" aria-hidden="true">{children}</div>
+        <button
+          type="button"
+          onClick={onUnlock}
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-inherit bg-black/20 backdrop-blur-[2px] transition hover:bg-black/30"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#f5a623]/60 bg-white/90 text-[#f5a623] shadow-sm">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+          </span>
+          <span className="text-[12px] font-semibold text-white drop-shadow-sm">点击解锁查看</span>
+        </button>
+      </div>
+    )
+  }
+
   return (
     <section className="mb-8 overflow-hidden rounded-xl border border-[#f5a623]/40 bg-white dark:bg-[#111923]">
+      {/* 标题区 — 不加密 */}
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e3e4db] p-5 dark:border-[#2b3644]">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">周建议 · {advice.category?.label}</p>
-          <h2 className="mt-1 font-serif text-[24px] leading-tight text-[var(--site-ink)]">{advice.headline}</h2>
-          <p className="mt-2 max-w-[760px] text-[13px] leading-6 text-[var(--site-muted)]">{advice.summary}</p>
+          <h2 className="mt-1 font-serif text-[24px] leading-tight text-[var(--site-ink)]">{advice.pair}</h2>
         </div>
         <div className="rounded-lg bg-[var(--site-panel)] px-3 py-2 text-right">
           <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">周期</p>
@@ -90,7 +110,7 @@ function WeeklyAdvicePanel({ advice }) {
         </div>
       </div>
 
-      <div className="grid gap-6 p-5 lg:grid-cols-[1fr_1.15fr]">
+      <BlurShield className="grid gap-6 p-5 lg:grid-cols-[1fr_1.15fr]">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -177,8 +197,9 @@ function WeeklyAdvicePanel({ advice }) {
             </div>
           ) : null}
         </div>
-      </div>
+      </BlurShield>
 
+      {/* 底部免责声明 — 不加密 */}
       <div className="border-t border-[#e3e4db] px-5 py-3 text-[11px] leading-5 text-[var(--site-muted)] dark:border-[#2b3644]">
         <span className="text-[#ff4d6a]">失效条件：</span>{advice.invalidation}
         <br />
@@ -208,8 +229,19 @@ function WeeklyAdviceCard({ advice, onOpen }) {
         </span>
       </div>
 
-      <p className="text-[13px] font-semibold leading-5 text-[var(--site-ink)] line-clamp-2">{advice.headline}</p>
-      <p className="mt-2 text-[12px] leading-5 text-[var(--site-muted)] line-clamp-3">{advice.priority || advice.bias}</p>
+      {/* 加密内容区：默认模糊，hover 时微弱透出，点击弹窗解锁 */}
+      <div className="relative">
+        <div className="blur-sm select-none pointer-events-none transition group-hover:blur-[2px]" aria-hidden="true">
+          <p className="text-[13px] font-semibold leading-5 text-[var(--site-ink)] line-clamp-2">{advice.headline}</p>
+          <p className="mt-2 text-[12px] leading-5 text-[var(--site-muted)] line-clamp-3">{advice.priority || advice.bias}</p>
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5a623]/10 px-3 py-1.5 text-[11px] font-medium text-[#f5a623]">
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+            内容已加密
+          </span>
+        </div>
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#f5a623]/25 pt-3 text-[11px] text-[var(--site-muted)]">
         <span>{sourceSnapshotCount} 个快照依据</span>
@@ -222,35 +254,40 @@ function WeeklyAdviceCard({ advice, onOpen }) {
 }
 
 function WeeklyAdviceModal({ advice, onClose }) {
+  const [unlocked, setUnlocked] = useState(false)
+
   if (!advice) return null
 
+  // 每次切换 advice 时重置锁定状态
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6"
       role="dialog"
       aria-modal="true"
       aria-label={`${advice.category?.label || ''}周建议`}
       onClick={onClose}
     >
       <div
-        className="max-h-[88vh] w-full max-w-[980px] overflow-y-auto rounded-2xl bg-[var(--site-bg)] shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-[980px] flex-col overflow-hidden rounded-2xl bg-[var(--site-bg)] shadow-2xl ring-1 ring-black/10"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#e3e4db] bg-[var(--site-bg)] px-5 py-3 dark:border-[#2b3644]">
-          <div>
+        {/* 固定顶部栏 — 不随内容滚动 */}
+        <div className="shrink-0 flex items-center justify-between gap-3 border-b border-[#e3e4db] bg-[var(--site-bg)] px-5 py-3.5 dark:border-[#2b3644]">
+          <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">周建议详情</p>
-            <p className="text-[13px] text-[var(--site-muted)]">{advice.pair} · {advice.week}</p>
+            <p className="mt-0.5 truncate text-[13px] text-[var(--site-muted)]">{advice.pair} · {advice.week}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-[#d7d9cf] px-3 py-1.5 text-[12px] text-[var(--site-muted)] hover:border-[#ff4d6a] hover:text-[#ff4d6a] dark:border-[#2b3644]"
+            className="shrink-0 rounded-lg border border-[#d7d9cf] px-3 py-1.5 text-[12px] text-[var(--site-muted)] hover:border-[#ff4d6a] hover:text-[#ff4d6a] dark:border-[#2b3644]"
           >
             关闭
           </button>
         </div>
-        <div className="p-4">
-          <WeeklyAdvicePanel advice={advice} />
+        {/* 可滚动内容区 */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <WeeklyAdvicePanel advice={advice} locked={!unlocked} onUnlock={() => setUnlocked(true)} />
         </div>
       </div>
     </div>

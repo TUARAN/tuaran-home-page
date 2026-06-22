@@ -188,7 +188,76 @@ function WeeklyAdvicePanel({ advice }) {
   )
 }
 
-export default function SnapshotIndexClient({ summaries, weeklyAdvice }) {
+function WeeklyAdviceCard({ advice, onOpen }) {
+  const sourceSnapshotCount = Array.isArray(advice.sourceSnapshotSlugs) ? advice.sourceSnapshotSlugs.length : 0
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(advice)}
+      className="group block rounded-xl border border-[#f5a623]/40 bg-[#f5a623]/[0.07] p-5 text-left transition-colors hover:border-[#f5a623] dark:bg-[#1a1620]"
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">周建议 · {advice.category?.label}</p>
+          <h2 className="mt-1 font-serif text-[20px] leading-tight text-[var(--site-ink)]">{advice.pair}</h2>
+          <p className="mt-1 text-[11px] text-[var(--site-muted)]">{advice.week}</p>
+        </div>
+        <span className="shrink-0 rounded border border-[#f5a623]/40 bg-[#f5a623]/10 px-2.5 py-1 text-[10px] font-bold text-[#f5a623]">
+          追踪
+        </span>
+      </div>
+
+      <p className="text-[13px] font-semibold leading-5 text-[var(--site-ink)] line-clamp-2">{advice.headline}</p>
+      <p className="mt-2 text-[12px] leading-5 text-[var(--site-muted)] line-clamp-3">{advice.priority || advice.bias}</p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#f5a623]/25 pt-3 text-[11px] text-[var(--site-muted)]">
+        <span>{sourceSnapshotCount} 个快照依据</span>
+        <span>·</span>
+        <span>{advice.createdAt}</span>
+        <span className="ml-auto text-[#f5a623] group-hover:underline">打开弹窗 →</span>
+      </div>
+    </button>
+  )
+}
+
+function WeeklyAdviceModal({ advice, onClose }) {
+  if (!advice) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${advice.category?.label || ''}周建议`}
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[88vh] w-full max-w-[980px] overflow-y-auto rounded-2xl bg-[var(--site-bg)] shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#e3e4db] bg-[var(--site-bg)] px-5 py-3 dark:border-[#2b3644]">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">周建议详情</p>
+            <p className="text-[13px] text-[var(--site-muted)]">{advice.pair} · {advice.week}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-[#d7d9cf] px-3 py-1.5 text-[12px] text-[var(--site-muted)] hover:border-[#ff4d6a] hover:text-[#ff4d6a] dark:border-[#2b3644]"
+          >
+            关闭
+          </button>
+        </div>
+        <div className="p-4">
+          <WeeklyAdvicePanel advice={advice} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function SnapshotIndexClient({ summaries, weeklyAdvices = [] }) {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [pairFilter, setPairFilter] = useState('all')
   const [riskFilter, setRiskFilter] = useState('all')
@@ -196,6 +265,7 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvice }) {
   const [horizontalAnalysis, setHorizontalAnalysis] = useState(null)
   const [analysisStatus, setAnalysisStatus] = useState('idle')
   const [analysisError, setAnalysisError] = useState('')
+  const [selectedWeeklyAdvice, setSelectedWeeklyAdvice] = useState(null)
 
   const categories = useMemo(() => uniqueCategories(summaries), [summaries])
   const pairs = useMemo(() => uniquePairs(summaries), [summaries])
@@ -218,6 +288,46 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvice }) {
     })
     return arr
   }, [summaries, categoryFilter, pairFilter, riskFilter, sort])
+
+  const filteredWeeklyAdvices = useMemo(() => {
+    if (riskFilter !== 'all') return []
+    return weeklyAdvices.filter((advice) => {
+      if (categoryFilter !== 'all' && advice.category?.id !== categoryFilter) return false
+      if (pairFilter !== 'all' && advice.pair !== pairFilter) return false
+      return true
+    })
+  }, [weeklyAdvices, categoryFilter, pairFilter, riskFilter])
+
+  const timelineEntries = useMemo(() => {
+    const entries = [
+      ...filtered.map((item) => ({
+        type: 'snapshot',
+        key: `snapshot-${item.slug}`,
+        datetime: item.datetime,
+        pair: item.pair,
+        riskOrder: RISK_META[item.analysisSummary.riskLevel]?.order ?? 0,
+        item,
+      })),
+      ...filteredWeeklyAdvices.map((item) => ({
+        type: 'weekly-advice',
+        key: `weekly-advice-${item.id}`,
+        datetime: item.createdAt,
+        pair: item.pair,
+        riskOrder: 2.5,
+        item,
+      })),
+    ]
+
+    entries.sort((a, b) => {
+      if (sort === 'datetime-desc') return b.datetime.localeCompare(a.datetime)
+      if (sort === 'datetime-asc') return a.datetime.localeCompare(b.datetime)
+      if (sort === 'risk-desc') return b.riskOrder - a.riskOrder
+      if (sort === 'pair-asc') return a.pair.localeCompare(b.pair) || b.datetime.localeCompare(a.datetime)
+      return 0
+    })
+
+    return entries
+  }, [filtered, filteredWeeklyAdvices, sort])
 
   const analysisCategory = categoryFilter !== 'all'
     ? categoryFilter
@@ -283,8 +393,6 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvice }) {
           </div>
         </div>
       </header>
-
-      <WeeklyAdvicePanel advice={weeklyAdvice} />
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-4 mb-6 rounded-xl border border-[#d7d9cf] dark:border-[#2b3644] bg-white dark:bg-[#111923] p-4">
@@ -354,7 +462,10 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvice }) {
         </div>
 
         <div className="ml-auto text-[12px] text-[var(--site-muted)]">
-          匹配 <strong className="text-[var(--site-ink)]">{filtered.length}</strong> / {total}
+          匹配快照 <strong className="text-[var(--site-ink)]">{filtered.length}</strong> / {total}
+          {filteredWeeklyAdvices.length ? (
+            <span> · 周建议 <strong className="text-[#f5a623]">{filteredWeeklyAdvices.length}</strong></span>
+          ) : null}
         </div>
 
         <button
@@ -434,13 +545,24 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvice }) {
       ) : null}
 
       {/* Grid */}
-      {filtered.length === 0 ? (
+      {timelineEntries.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[#d7d9cf] dark:border-[#2b3644] p-12 text-center text-[14px] text-[var(--site-muted)]">
           当前筛选下没有快照。试着切换标的或风险等级。
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((s) => {
+          {timelineEntries.map((entry) => {
+            if (entry.type === 'weekly-advice') {
+              return (
+                <WeeklyAdviceCard
+                  key={entry.key}
+                  advice={entry.item}
+                  onOpen={setSelectedWeeklyAdvice}
+                />
+              )
+            }
+
+            const s = entry.item
             const changePositive = s.price.changePct >= 0
             const changeColor = changePositive ? 'text-[#00e5a0]' : 'text-[#ff4d6a]'
             const changeSign = changePositive ? '+' : ''
@@ -529,6 +651,8 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvice }) {
           })}
         </div>
       )}
+
+      <WeeklyAdviceModal advice={selectedWeeklyAdvice} onClose={() => setSelectedWeeklyAdvice(null)} />
 
       {/* Footer hint */}
       <div className="mt-10 pt-6 border-t border-[#d7d9cf] dark:border-[#2b3644] text-center text-[11px] text-[var(--site-muted)]">

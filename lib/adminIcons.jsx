@@ -26,6 +26,7 @@ import {
   IconCircleDot,
   IconArrowBackUp,
   IconFileText,
+  IconCoin,
 } from '@tabler/icons-react'
 
 const ICONS = {
@@ -45,6 +46,7 @@ const ICONS = {
   audit: IconBell,
   settings: IconSettings,
   integrations: IconPlug,
+  ranbi: IconCoin,
   back: IconArrowBackUp,
 }
 

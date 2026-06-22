@@ -46,4 +46,4 @@ INSERT OR IGNORE INTO public_opinion_meta (k, v, updated_at) VALUES
   ('last_collect_status', 'never', 0),
   ('last_collect_error', '', 0),
   ('last_collect_count', '0', 0),
-  ('data_sources', 'gdelt,hn-algolia', 0);
+  ('data_sources', 'infoq-rss,venturebeat-rss,techcrunch-rss,hn-algolia', 0);

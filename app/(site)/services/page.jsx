@@ -19,7 +19,7 @@ export const metadata = {
     '数字员工',
     '博主联盟',
     '前端周看',
-    'PublishLab',
+    '内容同步智能体',
   ],
   alternates: { canonical: '/services' },
 }
@@ -73,9 +73,9 @@ const productLinks = [
     desc: '前端、AI Agent 与大模型技术情报站',
   },
   {
-    href: 'https://publishlab.cc/',
-    label: 'PublishLab',
-    desc: 'AI 写作、内容创作与数字出版实验',
+    href: 'https://syncblog.cn/',
+    label: '内容同步智能体',
+    desc: '一次创作，多平台自动同步分发',
   },
 ]
 

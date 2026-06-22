@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-20T01:10:09.856Z",
+  "generatedAt": "2026-06-22T09:11:46.190Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -68,6 +68,18 @@
               "hash": "cc3e8eb5ef916a3b4e656179b46cf76ff6f18abd9b575d58244ee8b63a0028aa",
               "path": "claude/MEMORY/2026-06-17T09-33-38-184Z.enc.json",
               "bytes": 1827
+            },
+            {
+              "ts": "2026-06-22T07:58:42.157Z",
+              "hash": "1f04e9b0cbe093e4285ad8ea98c389b9f2ccf043f244e2507e34d7598b218b4a",
+              "path": "claude/MEMORY/2026-06-22T07-58-42-174Z.enc.json",
+              "bytes": 1848
+            },
+            {
+              "ts": "2026-06-22T09:11:46.148Z",
+              "hash": "81893716d3c591109a3e3150e90808d7df496c98a5fd4fcf5194771800f94f49",
+              "path": "claude/MEMORY/2026-06-22T09-11-46-165Z.enc.json",
+              "bytes": 1986
             }
           ]
         },
@@ -163,13 +175,19 @@
         },
         "research-style-template-v3": {
           "title": "research-style-template-v3",
-          "description": "调研写作规则的唯一正本在 lib/researchStyleTemplates.js 的 active 版本（当前 v3 全文范式）；动笔前先读它，不要凭记忆复述规则",
+          "description": "调研写作规则的唯一正本在 lib/researchStyleTemplates.js 的 active 版本（当前 v4 开篇瘦身版，文件名 v3 为历史命名）；动笔前先读它，不要凭记忆复述规则",
           "versions": [
             {
               "ts": "2026-06-11T13:59:07.195Z",
               "hash": "492c839f71f85eddddf1de6fff1b90c3a440faa51e42a3b508b8c81b1e14b93a",
               "path": "claude/research-style-template-v3/2026-06-11T13-59-07-212Z.enc.json",
               "bytes": 960
+            },
+            {
+              "ts": "2026-06-22T07:58:42.179Z",
+              "hash": "beca4dcde51dccfccf6dc9efc4eefbb41c4f8020d474167e161fa9aaca49f82f",
+              "path": "claude/research-style-template-v3/2026-06-22T07-58-42-195Z.enc.json",
+              "bytes": 1127
             }
           ]
         },
@@ -254,6 +272,18 @@
               "hash": "b8ad3593cfa6d18d337676dc02880a9cf7ee4ce1c1afba626633c6e332d40e05",
               "path": "claude/automation-strategy/2026-06-17T09-33-38-202Z.enc.json",
               "bytes": 1278
+            }
+          ]
+        },
+        "guest-and-ranbi-feature": {
+          "title": "guest-and-ranbi-feature",
+          "description": "游客评论 + 燃币（积分）体系已落代码，但要站长在 Cloudflare 手动跑 migration 0027/0028 才生效",
+          "versions": [
+            {
+              "ts": "2026-06-22T09:11:46.168Z",
+              "hash": "a65b2dea2449f68a4e86fff01442df5888728b9911bdd35f13a77c6b53739b9e",
+              "path": "claude/guest-and-ranbi-feature/2026-06-22T09-11-46-184Z.enc.json",
+              "bytes": 1352
             }
           ]
         }

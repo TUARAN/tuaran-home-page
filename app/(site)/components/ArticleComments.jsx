@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
 import UserAvatar from './UserAvatar'
+import RanbiBalance from './RanbiBalance'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -31,6 +32,7 @@ function formatTime(ts) {
 
 function providerLabel(provider) {
   if (provider === 'google') return 'Google'
+  if (provider === 'guest') return '游客'
   return 'GitHub'
 }
 
@@ -107,6 +109,7 @@ export default function ArticleComments({ articleKey }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <RanbiBalance />
           <button
             type="button"
             onClick={refresh}
@@ -135,38 +138,40 @@ export default function ArticleComments({ articleKey }) {
         </div>
       </div>
 
-      {isAuthed ? (
-        <form onSubmit={submit} className="mt-4 flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-            <UserAvatar user={user} size="md" />
-            <span>{user?.name || user?.login || '已登录'}</span>
-          </div>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-            maxLength={1000}
-            placeholder="写下你的评论（最多 1000 字）"
-            className="w-full rounded-lg border border-gray-200/80 bg-white/80 p-3 text-sm leading-6 text-gray-700 outline-none focus:ring-2 focus:ring-gray-200 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200 dark:focus:ring-gray-700"
-          />
-          <div className="flex items-center justify-between">
-            <span className={`text-xs ${remaining < 0 ? 'text-red-600' : 'text-gray-500'} dark:text-gray-400`}>
-              {remaining} 字
+      <form onSubmit={submit} className="mt-4 flex flex-col gap-2">
+        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+          {isAuthed ? (
+            <>
+              <UserAvatar user={user} size="md" />
+              <span>{user?.name || user?.login || '已登录'}</span>
+            </>
+          ) : (
+            <span>
+              以<span className="font-medium">游客</span>身份发表 —— 登录后历史评论会自动绑定到你的账号
             </span>
-            <button
-              type="submit"
-              disabled={loading || !message.trim() || remaining < 0}
-              className="rounded-full border border-gray-200/80 bg-white/90 px-4 py-1.5 text-xs text-gray-700 shadow-sm hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/80 dark:text-gray-200"
-            >
-              {loading ? '发送中...' : '发表评论'}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <p className="mt-4 rounded-lg border border-dashed border-gray-200/80 px-3 py-3 text-sm text-gray-600 dark:border-gray-700/70 dark:text-gray-300">
-          登录后可以评论，支持邮箱、GitHub 或 Google。
-        </p>
-      )}
+          )}
+        </div>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={4}
+          maxLength={1000}
+          placeholder="写下你的评论（最多 1000 字）"
+          className="w-full rounded-lg border border-gray-200/80 bg-white/80 p-3 text-sm leading-6 text-gray-700 outline-none focus:ring-2 focus:ring-gray-200 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200 dark:focus:ring-gray-700"
+        />
+        <div className="flex items-center justify-between">
+          <span className={`text-xs ${remaining < 0 ? 'text-red-600' : 'text-gray-500'} dark:text-gray-400`}>
+            {remaining} 字
+          </span>
+          <button
+            type="submit"
+            disabled={loading || userLoading || !message.trim() || remaining < 0}
+            className="rounded-full border border-gray-200/80 bg-white/90 px-4 py-1.5 text-xs text-gray-700 shadow-sm hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/80 dark:text-gray-200"
+          >
+            {loading ? '发送中...' : isAuthed ? '发表评论' : '以游客身份发表'}
+          </button>
+        </div>
+      </form>
 
       {error ? <p className="mt-3 text-xs text-red-600">{error}</p> : null}
 

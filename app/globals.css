@@ -185,11 +185,12 @@
     transition: color 0.3s ease;
   }
 
-  a:visited {
+  /* 仅为无样式的正文链接保留访问态颜色，避免覆盖按钮、导航等组件配色。 */
+  a:not([class]):visited {
     color: #004276;
   }
 
-  .dark a:visited {
+  .dark a:not([class]):visited {
     color: #60a5fa;
   }
 

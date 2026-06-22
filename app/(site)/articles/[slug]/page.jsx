@@ -7,10 +7,13 @@ import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import { avatarAbsoluteUrl } from '../../../../lib/avatar'
-import { listResearch } from '../../../../lib/research/loader'
+import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
+import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
+import PublishedArticle from './PublishedArticle'
 
-export const dynamic = 'force-static'
-export const dynamicParams = false
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
 
 const SITE_URL = 'https://2aran.com'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
@@ -65,33 +68,56 @@ function renderInlineBold(text) {
   return nodes.length ? nodes : text
 }
 
-export function generateStaticParams() {
-  return [
-    ...articles.map((article) => ({ slug: article.slug })),
-    ...listResearch().map((entry) => ({ slug: entry.slug })),
-  ]
-}
-
 export async function generateMetadata({ params }) {
   const resolvedParams = await params
   const article = articles.find((item) => item.slug === resolvedParams.slug)
-  const researchEntry = !article ? listResearch().find((entry) => entry.slug === resolvedParams.slug) : null
+  const researchRedirect = !article ? RESEARCH_ARTICLE_REDIRECTS[resolvedParams.slug] : null
+  const publishedArticle = !article && !researchRedirect
+    ? await getPublishedArticlePostBySlug(resolvedParams.slug)
+    : null
 
-  if (!article && !researchEntry) {
+  if (!article && !researchRedirect && !publishedArticle) {
     return {
       title: `文章未找到 · ${SITE_TITLE}`,
       robots: { index: false, follow: false },
     }
   }
 
-  if (researchEntry) {
+  if (researchRedirect) {
     return {
-      title: researchEntry.title,
-      description: researchEntry.summary || researchEntry.tldr || '',
-      alternates: {
-        canonical: `${SITE_URL}/articles/research/${researchEntry.category}/${researchEntry.slug}`,
-      },
+      title: `调研文章 · ${SITE_TITLE}`,
+      alternates: { canonical: `${SITE_URL}${researchRedirect}` },
       robots: { index: false, follow: true },
+    }
+  }
+
+  if (publishedArticle) {
+    const url = `${SITE_URL}/articles/${publishedArticle.slug}`
+    const description = publishedArticle.summary || publishedArticle.contentText.slice(0, 160)
+    const publishedTime = publishedArticle.publishedAt
+      ? new Date(publishedArticle.publishedAt).toISOString()
+      : undefined
+    return {
+      title: publishedArticle.title,
+      description,
+      alternates: { canonical: url },
+      robots: { index: true, follow: true },
+      openGraph: {
+        title: publishedArticle.title,
+        description,
+        url,
+        siteName: SITE_TITLE,
+        locale: 'zh_CN',
+        type: 'article',
+        publishedTime,
+        images: [publishedArticle.coverUrl || AVATAR_URL],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: publishedArticle.title,
+        description,
+        images: [publishedArticle.coverUrl || AVATAR_URL],
+      },
     }
   }
 
@@ -142,10 +168,15 @@ export async function generateMetadata({ params }) {
 export default async function ArticleDetailPage({ params }) {
   const resolvedParams = await params
   const article = articles.find((item) => item.slug === resolvedParams.slug)
-  const researchEntry = !article ? listResearch().find((entry) => entry.slug === resolvedParams.slug) : null
+  const researchRedirect = !article ? RESEARCH_ARTICLE_REDIRECTS[resolvedParams.slug] : null
 
-  if (researchEntry) {
-    redirect(`/articles/research/${researchEntry.category}/${researchEntry.slug}`)
+  if (researchRedirect) {
+    redirect(researchRedirect)
+  }
+
+  if (!article) {
+    const publishedArticle = await getPublishedArticlePostBySlug(resolvedParams.slug)
+    if (publishedArticle) return <PublishedArticle article={publishedArticle} siteUrl={SITE_URL} />
   }
 
   if (!article) {

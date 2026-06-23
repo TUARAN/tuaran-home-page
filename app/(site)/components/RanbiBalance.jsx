@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
@@ -15,7 +16,7 @@ async function safeJson(res) {
 }
 
 /**
- * 燃币余额 + 每日签到。仅登录用户展示（游客零燃币）。
+ * 燃币余额 + 每日签到。登录用户显示余额 + 签到；游客显示余额 + 「注册得 100」入口。
  * 内联小组件，放在评论区头部等处；不依赖任何外部状态。
  */
 export default function RanbiBalance({ className = '' }) {
@@ -35,7 +36,8 @@ export default function RanbiBalance({ className = '' }) {
   }, [])
 
   useEffect(() => {
-    if (!userLoading && user) refresh()
+    // 登录用户与游客都拉余额（游客由 /api/points/me 自动播种 50 燃币）
+    if (!userLoading) refresh()
   }, [user, userLoading, refresh])
 
   async function checkin() {
@@ -60,7 +62,10 @@ export default function RanbiBalance({ className = '' }) {
     }
   }
 
-  if (userLoading || !user || !info?.authed) return null
+  // 燃币系统不可用（无 D1）时不展示，避免误显示 0
+  if (userLoading || !info || info.dbUnavailable || (!info.authed && !info.isGuest)) return null
+
+  const isGuest = !info.authed
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -70,15 +75,25 @@ export default function RanbiBalance({ className = '' }) {
       >
         🔥 {info.balance} 燃币
       </span>
-      <button
-        type="button"
-        onClick={checkin}
-        disabled={busy || info.checkedInToday}
-        className="rounded-full border border-gray-200/80 bg-white/80 px-3 py-1 text-xs text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
-        title={info.checkedInToday ? '今天已签到' : `签到 +${info?.rules?.checkin ?? 5} 燃币`}
-      >
-        {info.checkedInToday ? '已签到' : '签到'}
-      </button>
+      {isGuest ? (
+        <Link
+          href="/login"
+          className="rounded-full border border-[#caa86a] bg-white/80 px-3 py-1 text-xs font-medium text-[#7a5b1e] no-underline hover:bg-white dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+          title="注册 / 登录立得 100 燃币"
+        >
+          注册得 100
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={checkin}
+          disabled={busy || info.checkedInToday}
+          className="rounded-full border border-gray-200/80 bg-white/80 px-3 py-1 text-xs text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
+          title={info.checkedInToday ? '今天已签到' : `签到 +${info?.rules?.checkin ?? 5} 燃币`}
+        >
+          {info.checkedInToday ? '已签到' : '签到'}
+        </button>
+      )}
       {hint ? <span className="text-[11px] text-[#8a7a55] dark:text-amber-300/70">{hint}</span> : null}
     </div>
   )

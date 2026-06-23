@@ -23,6 +23,7 @@ import DistributeMarkdownButton from './DistributeMarkdownButton'
 import DownloadPptButton from './DownloadPptButton'
 import EncryptedArticle from './EncryptedArticle'
 import ResearchBody from './ResearchBody'
+import ResearchPaywall from './ResearchPaywall'
 import ResearchPvCounter from './ResearchPvCounter'
 import SharePageButton from '../../../../components/SharePageButton'
 
@@ -396,7 +397,9 @@ export default async function ResearchDetailPage({ params }) {
               storageKey={`research-dec:${entry.category}:${entry.slug}`}
             />
           ) : (
-            <ResearchBody variants={renderedVariants} />
+            <ResearchPaywall resourceKey={articleKey}>
+              <ResearchBody variants={renderedVariants} />
+            </ResearchPaywall>
           )}
 
         </main>

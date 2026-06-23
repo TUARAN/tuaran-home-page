@@ -27,14 +27,15 @@ export default function ResearchPaywall({ resourceKey, children }) {
   // phase: loading | free | content | wall
   const [phase, setPhase] = useState('loading')
   const [info, setInfo] = useState({})
-  const [toast, setToast] = useState('')
+  const [charged, setCharged] = useState(false)
   const settledRef = useRef(false)
   const toastTimerRef = useRef(null)
 
-  const showToast = useCallback((text) => {
-    setToast(text)
+  const announceCharge = useCallback((isGuest) => {
+    setCharged(true)
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-    toastTimerRef.current = setTimeout(() => setToast(''), 4200)
+    // 游客提示带注册引导，停留久一点；登录用户只是轻提示
+    toastTimerRef.current = setTimeout(() => setCharged(false), isGuest ? 9000 : 4200)
   }, [])
 
   const autoUnlock = useCallback(
@@ -48,12 +49,12 @@ export default function ResearchPaywall({ resourceKey, children }) {
         })
         const data = await safeJson(res)
         if (res.ok && data?.ok !== false) {
-          setInfo((prev) => ({ ...prev, ...data }))
+          const merged = { ...status, ...data }
+          setInfo((prev) => ({ ...prev, ...merged }))
           setPhase('content')
           // 真正发生扣费才提示；已解锁（幂等命中）不打扰
           if (!data?.alreadyUnlocked) {
-            const cost = Number(status.cost || data?.cost || 0)
-            showToast(`已消耗 ${cost} 燃币 · 余额 ${Number(data?.balance ?? 0)}`)
+            announceCharge(!merged.authed)
           }
           return
         }
@@ -68,7 +69,7 @@ export default function ResearchPaywall({ resourceKey, children }) {
         setPhase('content')
       }
     },
-    [resourceKey, showToast]
+    [resourceKey, announceCharge]
   )
 
   const settle = useCallback(async () => {
@@ -161,15 +162,39 @@ export default function ResearchPaywall({ resourceKey, children }) {
         </div>
       ) : null}
 
-      {/* 自动扣费提示：底部居中，几秒后自动消失 */}
-      {toast ? (
+      {/* 自动扣费提示：底部居中，几秒后自动消失；游客带注册引导 */}
+      {charged ? (
         <div
           className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4"
           role="status"
           aria-live="polite"
         >
-          <div className="rounded-full border border-[#e2d9c4] bg-[#fbf7ee]/95 px-4 py-2 text-sm font-medium text-[#7a5b1e] shadow-lg backdrop-blur dark:border-amber-900/50 dark:bg-amber-950/80 dark:text-amber-100">
-            🔥 {toast}
+          <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-[#e2d9c4] bg-[#fbf7ee]/95 py-2 pl-4 pr-2 text-sm font-medium text-[#7a5b1e] shadow-lg backdrop-blur dark:border-amber-900/50 dark:bg-amber-950/85 dark:text-amber-100">
+            <span>
+              🔥 已消耗 {cost} 燃币 · 余额 {balance}
+              {isGuest ? (
+                <span className="hidden sm:inline">
+                  ，游客燃币仅够读约 {Math.max(0, Math.floor(balance / (cost || 1)))} 篇
+                </span>
+              ) : null}
+            </span>
+            {isGuest ? (
+              <button
+                type="button"
+                onClick={goToLogin}
+                className="shrink-0 rounded-full border border-[#caa86a] bg-[#7a5b1e] px-3 py-1 text-xs font-semibold text-white hover:bg-[#6a4f19] dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
+              >
+                注册得 100 →
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setCharged(false)}
+              aria-label="关闭提示"
+              className="shrink-0 rounded-full px-1.5 text-base leading-none text-[#a8966f] hover:text-[#7a5b1e] dark:text-amber-300/60 dark:hover:text-amber-200"
+            >
+              ×
+            </button>
           </div>
         </div>
       ) : null}

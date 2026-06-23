@@ -13,17 +13,20 @@ async function safeJson(res) {
 }
 
 /**
- * 调研燃币墙（软墙 · 自动扣费）。
+ * 燃币墙（软墙 · 自动扣费）。调研、资料/资源主题页共用。
  *
  * 行为：
- *  - 打开文章即自动结算——余额够就静默扣 5 燃币（解锁后永久可读），并弹一个会自动消失的提示，
+ *  - 打开即自动结算——余额够就静默扣费（解锁后永久可读），弹一个会自动消失的提示，
  *    不需要用户点任何按钮；正文始终可见。
  *  - 已解锁（之前付过）→ 直接看，不再扣、不提示。
  *  - 余额不足 → 截断正文 + 「燃币不足」挂卡（游客引导注册得 100）。
- *  - 资源未配置 / 无 D1 / 任何异常 → 直接放行（fail-open），绝不因燃币系统故障挡正文。
+ *  - 资源未配置 / 无 D1 / 任何异常 → 直接放行（fail-open），绝不因燃币系统故障挡内容。
  *  - 扣费幂等：unlockResource 以 resource_unlocks 兜底，重复打开不会重复扣。
+ *
+ * @param {string} resourceKey 资源标识（research:<cat>:<slug> 默认 5；resource:<slug> 默认 10）
+ * @param {string} unitLabel   文案里的内容名词，如「调研」「资料」（默认「内容」）
  */
-export default function ResearchPaywall({ resourceKey, children }) {
+export default function RanbiPaywall({ resourceKey, children, unitLabel = '内容' }) {
   // phase: loading | free | content | wall
   const [phase, setPhase] = useState('loading')
   const [info, setInfo] = useState({})
@@ -129,12 +132,12 @@ export default function ResearchPaywall({ resourceKey, children }) {
       </div>
 
       {wall ? (
-        <div className="mt-6 rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
+        <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
           <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">
             🔥 燃币不足，还差 {need} 枚
           </p>
           <p className="mt-1.5 text-sm text-[#8a7a55] dark:text-amber-300/80">
-            每篇调研需 {cost} 燃币 · 当前余额 <span className="font-semibold">{balance}</span> 燃币
+            解锁此{unitLabel}需 {cost} 燃币 · 当前余额 <span className="font-semibold">{balance}</span> 燃币
           </p>
           <div className="mt-4 flex flex-col items-center gap-2">
             {isGuest ? (
@@ -147,7 +150,7 @@ export default function ResearchPaywall({ resourceKey, children }) {
                   注册 / 登录，立得 100 燃币
                 </button>
                 <span className="text-xs text-[#8a7a55] dark:text-amber-300/70">
-                  绑定后之前解锁过的文章仍免费可读
+                  绑定后之前解锁过的内容仍免费可读
                 </span>
               </>
             ) : (
@@ -174,7 +177,7 @@ export default function ResearchPaywall({ resourceKey, children }) {
               🔥 已消耗 {cost} 燃币 · 余额 {balance}
               {isGuest ? (
                 <span className="hidden sm:inline">
-                  ，游客燃币仅够读约 {Math.max(0, Math.floor(balance / (cost || 1)))} 篇
+                  ，游客燃币仅够再开约 {Math.max(0, Math.floor(balance / (cost || 1)))} 个
                 </span>
               ) : null}
             </span>

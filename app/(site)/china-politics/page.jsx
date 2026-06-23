@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import RanbiPaywall from '../components/RanbiPaywall'
 
 import SharePageButton from '../components/SharePageButton'
 
@@ -466,7 +467,7 @@ function SubHeading({ id, children }) {
   )
 }
 
-export default function ChinaPoliticsPage() {
+function ChinaPoliticsContent() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
@@ -691,5 +692,13 @@ export default function ChinaPoliticsPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function ChinaPoliticsPage() {
+  return (
+    <RanbiPaywall resourceKey="resource:china-politics" unitLabel="资料">
+      <ChinaPoliticsContent />
+    </RanbiPaywall>
   )
 }

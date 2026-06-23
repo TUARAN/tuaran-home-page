@@ -1,0 +1,77 @@
+// ============================================================
+// 「灵感」短平快内容流（/feed）
+//
+// 用途：引流向板块。承载短平快的图片 / 视频 / 资源 / 观点。
+// 更新方式：在 FEED_ITEMS 顶部追加一条记录 → git push → Cloudflare 重建上线。
+//
+// 字段约定（按 type 取用对应字段）：
+//   id        唯一 slug（全小写连字符，供锚点 #id 深链与 React key）
+//   type      'video' | 'image' | 'link' | 'quote'
+//   title     标题
+//   summary   一句话说明（列表与卡片展示，可选）
+//   tags      标签数组（可选）
+//   date      'YYYY-MM-DD'（北京时间，倒序排列）
+//   time      'HH:MM'（可选，同日内排序）
+//   source    { label, href } 出处（可选）
+//   ── type=video ──
+//   src       视频地址（/feed/xxx.mp4 或外链）
+//   poster    封面图（可选）
+//   aspect    宽高比，如 '16/9' | '9/16' | '1/1'（默认 16/9）
+//   ── type=image ──
+//   src       图片地址
+//   aspect    宽高比（可选）
+//   ── type=link ──
+//   href      外链地址
+//   image     缩略图（可选）
+//   ── type=quote ──
+//   quote     引述正文
+//   author    署名（可选）
+// ============================================================
+
+export const FEED_TYPE_META = {
+  video: { label: '视频', labelEn: 'Video', accent: '#ff4d6a' },
+  image: { label: '图片', labelEn: 'Image', accent: '#6c5ce7' },
+  link: { label: '资源', labelEn: 'Resource', accent: '#00a978' },
+  quote: { label: '观点', labelEn: 'Take', accent: '#f5a623' },
+}
+
+export const FEED_ITEMS = [
+  {
+    id: 'midjourney-future-city',
+    type: 'video',
+    title: 'Midjourney 未来城市',
+    summary:
+      '用 Midjourney 生成的未来城市概念影像：体量感的天际线、湿润的霓虹反光与缓慢推进的镜头，一段就能感受到「AI 影像」当下的审美高度。',
+    tags: ['Midjourney', 'AI 影像', '未来城市', '概念设计'],
+    date: '2026-06-23',
+    time: '17:10',
+    src: '/feed/midjourney-future-city.mp4',
+    aspect: '16/9',
+    source: { label: 'Midjourney', href: 'https://www.midjourney.com/' },
+  },
+]
+
+// ============================================================
+// 工具函数
+// ============================================================
+
+/** 拼接可比较的排序键 'YYYY-MM-DD HH:mm' */
+function feedSortKey(item) {
+  return `${item.date || ''} ${item.time || '00:00'}`
+}
+
+/** 所有条目，按时间倒序（最新在前） */
+export function getAllFeedItems() {
+  return [...FEED_ITEMS].sort((a, b) => feedSortKey(b).localeCompare(feedSortKey(a)))
+}
+
+/** 取最新若干条（首页推荐位用） */
+export function getLatestFeedItems(count = 1) {
+  return getAllFeedItems().slice(0, Math.max(0, count))
+}
+
+/** 内容类型在列表里的出现顺序（用于筛选 chips） */
+export function getFeedTypesPresent() {
+  const present = new Set(FEED_ITEMS.map((i) => i.type))
+  return Object.keys(FEED_TYPE_META).filter((t) => present.has(t))
+}

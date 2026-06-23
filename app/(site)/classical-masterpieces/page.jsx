@@ -1,4 +1,5 @@
 import ClassicalMasterpiecesClient from './ClassicalMasterpiecesClient'
+import RanbiPaywall from '../components/RanbiPaywall'
 
 export const dynamic = 'force-static'
 
@@ -17,5 +18,9 @@ export const metadata = {
 }
 
 export default function ClassicalMasterpiecesPage() {
-  return <ClassicalMasterpiecesClient />
+  return (
+    <RanbiPaywall resourceKey="resource:classical-masterpieces" unitLabel="资料">
+      <ClassicalMasterpiecesClient />
+    </RanbiPaywall>
+  )
 }

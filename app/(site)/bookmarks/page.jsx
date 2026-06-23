@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import RanbiPaywall from '../components/RanbiPaywall'
 
 export const dynamic = 'force-static'
 
@@ -53,7 +54,7 @@ const categories = [
   },
 ]
 
-export default function BookmarksIndexPage() {
+function BookmarksIndexContent() {
   return (
     <main className="w-full max-w-4xl mx-auto px-4 py-10">
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-5">
@@ -102,5 +103,13 @@ export default function BookmarksIndexPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function BookmarksIndexPage() {
+  return (
+    <RanbiPaywall resourceKey="resource:bookmarks" unitLabel="资源">
+      <BookmarksIndexContent />
+    </RanbiPaywall>
   )
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import RanbiPaywall from '../../components/RanbiPaywall'
 
 import SharePageButton from '../../components/SharePageButton'
 import PageContainer from '../../components/PageContainer'
@@ -70,7 +71,7 @@ const WAI_POINTS = [
   '作者没有把离开写成控诉，文末仍祝福钉钉——情绪克制反而让「我真的想多活几年」更有分量。',
 ]
 
-export default function ShenZhiDingNeiResourcePage() {
+function ShenZhiDingNeiResourceContent() {
   const url = 'https://2aran.com/resources/shen-zhi-ding-nei'
 
   const articles = [
@@ -157,5 +158,13 @@ export default function ShenZhiDingNeiResourcePage() {
         </div>
       )}
     </PageContainer>
+  )
+}
+
+export default function ShenZhiDingNeiResourcePage() {
+  return (
+    <RanbiPaywall resourceKey="resource:shen-zhi-ding-nei" unitLabel="资料">
+      <ShenZhiDingNeiResourceContent />
+    </RanbiPaywall>
   )
 }

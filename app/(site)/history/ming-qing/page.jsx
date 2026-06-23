@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import RanbiPaywall from '../../components/RanbiPaywall'
 
 import SharePageButton from '../../components/SharePageButton'
 import { CAO_CAO_TIMELINE } from './threeKingdomsData'
@@ -1742,7 +1743,7 @@ export const metadata = {
   },
 }
 
-export default function MingQingPage() {
+function MingQingContent() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-2">
@@ -2200,5 +2201,13 @@ export default function MingQingPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function MingQingPage() {
+  return (
+    <RanbiPaywall resourceKey="resource:history-ming-qing" unitLabel="资料">
+      <MingQingContent />
+    </RanbiPaywall>
   )
 }

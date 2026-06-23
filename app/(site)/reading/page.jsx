@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import RanbiPaywall from '../components/RanbiPaywall'
 
 import ReadingPyramid from '../components/ReadingPyramid'
 import ReadingTabs from './ReadingTabs'
@@ -157,7 +158,7 @@ const readingReviews = [
   },
 ]
 
-export default function ReadingIndexPage() {
+function ReadingIndexContent() {
   return (
     <main className="w-full max-w-4xl mx-auto px-4 py-10">
       <header className="mb-10 border-b border-[#eee] pb-5 dark:border-gray-800">
@@ -182,5 +183,13 @@ export default function ReadingIndexPage() {
         <ReadingTabs categories={readingCategories} reviews={readingReviews} />
       </Suspense>
     </main>
+  )
+}
+
+export default function ReadingIndexPage() {
+  return (
+    <RanbiPaywall resourceKey="resource:reading" unitLabel="资料">
+      <ReadingIndexContent />
+    </RanbiPaywall>
   )
 }

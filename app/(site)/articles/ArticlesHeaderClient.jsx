@@ -4,7 +4,7 @@ import { useState } from 'react'
 import KnowledgeHeatmapClient from './KnowledgeHeatmapClient'
 
 export default function ArticlesHeaderClient({ items }) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
 
   return (
     <header className="mb-4">

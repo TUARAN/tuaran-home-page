@@ -69,46 +69,66 @@ function uniqueRiskLevels(summaries) {
   )
 }
 
-function WeeklyAdvicePanel({ advice, locked, onUnlock }) {
+function WeeklyAdvicePanel({ advice, locked, onUnlock, embedded = false }) {
   if (!advice) return null
 
   const position = advice.position || {}
   const sourceSnapshotCount = Array.isArray(advice.sourceSnapshotSlugs) ? advice.sourceSnapshotSlugs.length : 0
 
-  // 加密遮罩组件
+  // 加密遮罩组件：锁定时只露出一小段模糊预览，解锁按钮始终居中可见
   const BlurShield = ({ children, className = '' }) => {
     if (!locked) return <div className={className}>{children}</div>
     return (
-      <div className={`relative ${className}`}>
-        <div className="blur-sm select-none pointer-events-none" aria-hidden="true">{children}</div>
+      <div className="relative">
+        <div
+          className={`${className} max-h-[260px] overflow-hidden blur-[6px] select-none pointer-events-none`}
+          aria-hidden="true"
+        >
+          {children}
+        </div>
+        {/* 底部渐隐到背景，让截断看起来是有意为之 */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[var(--site-bg)]"
+          aria-hidden="true"
+        />
         <button
           type="button"
           onClick={onUnlock}
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-inherit bg-black/20 backdrop-blur-[2px] transition hover:bg-black/30"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#f5a623]/60 bg-white/90 text-[#f5a623] shadow-sm">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#f5a623]/60 bg-white text-[#f5a623] shadow-md">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
           </span>
-          <span className="text-[12px] font-semibold text-white drop-shadow-sm">点击解锁查看</span>
+          <span className="rounded-full bg-[#f5a623] px-4 py-1.5 text-[12px] font-semibold text-white shadow-md">
+            点击解锁查看完整周建议
+          </span>
         </button>
       </div>
     )
   }
 
   return (
-    <section className="mb-8 overflow-hidden rounded-xl border border-[#f5a623]/40 bg-white dark:bg-[#111923]">
-      {/* 标题区 — 不加密 */}
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e3e4db] p-5 dark:border-[#2b3644]">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">周建议 · {advice.category?.label}</p>
-          <h2 className="mt-1 font-serif text-[24px] leading-tight text-[var(--site-ink)]">{advice.pair}</h2>
+    <section
+      className={
+        embedded
+          ? 'overflow-hidden bg-white dark:bg-[#111923]'
+          : 'mb-8 overflow-hidden rounded-xl border border-[#f5a623]/40 bg-white dark:bg-[#111923]'
+      }
+    >
+      {/* 标题区 — 不加密；嵌入弹窗时由弹窗顶栏承载标题，避免重复 */}
+      {!embedded ? (
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e3e4db] p-5 dark:border-[#2b3644]">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">周建议 · {advice.category?.label}</p>
+            <h2 className="mt-1 font-serif text-[24px] leading-tight text-[var(--site-ink)]">{advice.pair}</h2>
+          </div>
+          <div className="rounded-lg bg-[var(--site-panel)] px-3 py-2 text-right">
+            <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">周期</p>
+            <p className="mt-1 font-mono text-[13px] text-[var(--site-ink)]">{advice.week}</p>
+            <p className="mt-1 text-[11px] text-[var(--site-muted)]">{sourceSnapshotCount} 个快照 · {advice.createdAt}</p>
+          </div>
         </div>
-        <div className="rounded-lg bg-[var(--site-panel)] px-3 py-2 text-right">
-          <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">周期</p>
-          <p className="mt-1 font-mono text-[13px] text-[var(--site-ink)]">{advice.week}</p>
-          <p className="mt-1 text-[11px] text-[var(--site-muted)]">{sourceSnapshotCount} 个快照 · {advice.createdAt}</p>
-        </div>
-      </div>
+      ) : null}
 
       <BlurShield className="grid gap-6 p-5 lg:grid-cols-[1fr_1.15fr]">
         <div className="space-y-4">
@@ -274,8 +294,12 @@ function WeeklyAdviceModal({ advice, onClose }) {
         {/* 固定顶部栏 — 不随内容滚动 */}
         <div className="shrink-0 flex items-center justify-between gap-3 border-b border-[#e3e4db] bg-[var(--site-bg)] px-5 py-3.5 dark:border-[#2b3644]">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">周建议详情</p>
-            <p className="mt-0.5 truncate text-[13px] text-[var(--site-muted)]">{advice.pair} · {advice.week}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#f5a623]">
+              周建议详情{advice.category?.label ? ` · ${advice.category.label}` : ''}
+            </p>
+            <p className="mt-0.5 truncate text-[13px] text-[var(--site-muted)]">
+              {advice.pair} · {advice.week} · {advice.sourceSnapshotSlugs?.length || 0} 个快照
+            </p>
           </div>
           <button
             type="button"
@@ -287,7 +311,7 @@ function WeeklyAdviceModal({ advice, onClose }) {
         </div>
         {/* 可滚动内容区 */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <WeeklyAdvicePanel advice={advice} locked={!unlocked} onUnlock={() => setUnlocked(true)} />
+          <WeeklyAdvicePanel advice={advice} locked={!unlocked} onUnlock={() => setUnlocked(true)} embedded />
         </div>
       </div>
     </div>

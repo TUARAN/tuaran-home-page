@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import SharePageButton from '../components/SharePageButton'
 import { FEED_TYPE_META } from './data'
 
 function TypeBadge({ type }) {
@@ -16,29 +17,56 @@ function TypeBadge({ type }) {
   )
 }
 
-function MetaRow({ item }) {
+const ALL_FILTER_ACCENT = '#7352a2'
+
+function itemShareText(item) {
+  return [
+    `看到一个灵感：${item.title}`,
+    item.summary,
+  ].filter(Boolean).join('\n')
+}
+
+function MetaRow({ item, showShare = true }) {
+  const sourceLink = item.source?.href ? (
+    <a
+      href={item.source.href}
+      target="_blank"
+      rel="noreferrer"
+      className="article-action-button px-3 py-1 text-xs no-underline"
+    >
+      <span>来源：{item.source.label || '链接'}</span>
+      <span aria-hidden="true">↗</span>
+    </a>
+  ) : null
+
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[var(--site-muted)]">
-      {item.date ? <time>{item.date}</time> : null}
-      {item.tags?.length ? (
-        <>
-          <span aria-hidden="true">·</span>
-          {item.tags.map((t) => (
-            <span key={t} className="rounded bg-[var(--site-panel)] px-1.5 py-0.5">
-              #{t}
-            </span>
-          ))}
-        </>
-      ) : null}
-      {item.source?.href ? (
-        <a
-          href={item.source.href}
-          target="_blank"
-          rel="noreferrer"
-          className="ml-auto inline-flex items-center gap-1 text-[var(--site-muted)] underline-offset-2 hover:text-[var(--site-ink)] hover:underline"
-        >
-          来源：{item.source.label || '链接'} ↗
-        </a>
+    <div className="mt-5 flex flex-col gap-3 text-[11px] text-[var(--site-muted)] sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2">
+        {item.date ? <time>{item.date}</time> : null}
+        {item.tags?.length ? (
+          <>
+            <span aria-hidden="true">·</span>
+            {item.tags.map((t) => (
+              <span key={t} className="rounded-md bg-[var(--site-panel-strong)] px-2 py-1">
+                #{t}
+              </span>
+            ))}
+          </>
+        ) : null}
+      </div>
+      {sourceLink || showShare ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {sourceLink}
+          {showShare ? (
+            <SharePageButton
+              title={item.title}
+              text={itemShareText(item)}
+              url={`/feed#${item.id}`}
+              exactUrl
+              idleLabel="转发"
+            />
+          ) : null}
+        </div>
       ) : null}
     </div>
   )
@@ -102,7 +130,7 @@ function HeadlineCard({ item }) {
   const hasMedia = item.type === 'video' || item.type === 'image' || (item.type === 'link' && item.image)
 
   const text = (
-    <div className="flex flex-col justify-center">
+    <div className="flex flex-col justify-start lg:py-3">
       <div className="flex items-center gap-2">
         <span
           className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em]"
@@ -111,7 +139,7 @@ function HeadlineCard({ item }) {
           头条 · {FEED_TYPE_META[item.type]?.label || ''}
         </span>
       </div>
-      <h2 className="mt-3 font-serif text-[24px] leading-tight text-[var(--site-ink)] md:text-[28px]">
+      <h2 className="mb-0 mt-3 border-b border-[var(--site-ink)] pb-2 font-serif text-[24px] leading-tight text-[var(--site-ink)] md:text-[28px]">
         {item.type === 'link' && item.href ? (
           <a href={item.href} target="_blank" rel="noreferrer" className="no-underline hover:underline">
             {item.title} ↗
@@ -125,9 +153,9 @@ function HeadlineCard({ item }) {
           {item.quote || item.summary}
         </blockquote>
       ) : item.summary ? (
-        <p className="mt-3 text-[15px] leading-7 text-[var(--site-muted)]">{item.summary}</p>
+        <p className="mb-0 mt-4 text-[15px] leading-7 text-[var(--site-muted)]">{item.summary}</p>
       ) : null}
-      {item.author ? <p className="mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
+      {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
       <MetaRow item={item} />
     </div>
   )
@@ -139,7 +167,7 @@ function HeadlineCard({ item }) {
       style={{ borderColor: `${accent}40` }}
     >
       {hasMedia ? (
-        <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:gap-7">
+        <div className="grid gap-5 lg:grid-cols-[1.45fr_minmax(320px,0.95fr)] lg:items-start lg:gap-7">
           <div>{media}</div>
           {text}
         </div>
@@ -166,10 +194,10 @@ function VideoCard({ item }) {
       </MediaFrame>
       <div className="mt-3 flex items-center gap-2">
         <TypeBadge type={item.type} />
-        <h2 className="font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title}</h2>
+        <h2 className="mb-0 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title}</h2>
       </div>
       {item.summary ? (
-        <p className="mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
+        <p className="mb-0 mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
       ) : null}
       <MetaRow item={item} />
     </article>
@@ -186,10 +214,10 @@ function ImageCard({ item }) {
       </MediaFrame>
       <div className="mt-3 flex items-center gap-2">
         <TypeBadge type={item.type} />
-        <h2 className="font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title}</h2>
+        <h2 className="mb-0 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title}</h2>
       </div>
       {item.summary ? (
-        <p className="mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
+        <p className="mb-0 mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
       ) : null}
       <MetaRow item={item} />
     </article>
@@ -199,22 +227,24 @@ function ImageCard({ item }) {
 function LinkCard({ item }) {
   return (
     <article id={item.id} className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors hover:border-[#00a978]/50">
-      <a href={item.href} target="_blank" rel="noreferrer" className="block p-4 no-underline">
-        {item.image ? (
-          <MediaFrame aspect={item.aspect || '16/9'}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="absolute inset-0 h-full w-full object-cover" src={item.image} alt={item.title} loading="lazy" />
-          </MediaFrame>
-        ) : null}
-        <div className={`flex items-center gap-2 ${item.image ? 'mt-3' : ''}`}>
-          <TypeBadge type={item.type} />
-          <h2 className="font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title} ↗</h2>
-        </div>
+      <div className="p-4">
+        <a href={item.href} target="_blank" rel="noreferrer" className="block no-underline">
+          {item.image ? (
+            <MediaFrame aspect={item.aspect || '16/9'}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="absolute inset-0 h-full w-full object-cover" src={item.image} alt={item.title} loading="lazy" />
+            </MediaFrame>
+          ) : null}
+          <div className={`flex items-center gap-2 ${item.image ? 'mt-3' : ''}`}>
+            <TypeBadge type={item.type} />
+            <h2 className="mb-0 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title} ↗</h2>
+          </div>
+        </a>
         {item.summary ? (
-          <p className="mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
+          <p className="mb-0 mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
         ) : null}
         <MetaRow item={item} />
-      </a>
+      </div>
     </article>
   )
 }
@@ -227,7 +257,7 @@ function QuoteCard({ item }) {
         {item.quote || item.summary}
       </blockquote>
       {item.author ? (
-        <p className="mt-3 text-right text-[12px] text-[var(--site-muted)]">—— {item.author}</p>
+        <p className="mb-0 mt-3 text-right text-[12px] text-[var(--site-muted)]">—— {item.author}</p>
       ) : null}
       <MetaRow item={item} />
     </article>
@@ -258,17 +288,19 @@ export default function FeedClient({ items, typesPresent }) {
       <div className="mb-6 flex flex-wrap gap-2">
         {chips.map((chip) => {
           const active = typeFilter === chip.key
+          const accent = FEED_TYPE_META[chip.key]?.accent || ALL_FILTER_ACCENT
           return (
             <button
               key={chip.key}
               type="button"
               onClick={() => setTypeFilter(chip.key)}
               className={[
-                'rounded-full border px-3 py-1 text-[13px] transition-colors',
+                'rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors',
                 active
-                  ? 'border-[var(--site-ink)] bg-[var(--site-ink)] text-[var(--site-bg)]'
+                  ? ''
                   : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]',
               ].join(' ')}
+              style={active ? { borderColor: accent, color: accent, background: `${accent}14` } : undefined}
             >
               {chip.label}
             </button>

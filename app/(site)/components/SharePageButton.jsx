@@ -14,8 +14,9 @@ import { useState } from 'react'
  * - url:      SSR 传入的 canonical URL；客户端优先用 window.location.href
  * - exactUrl: true 时 url 视为权威路径（拼 location.origin）
  * - size:     'sm' / 'md'
+ * - idleLabel: 默认按钮文案
  */
-export default function SharePageButton({ title, text, fullText, url, size = 'sm', exactUrl = false }) {
+export default function SharePageButton({ title, text, fullText, url, size = 'sm', exactUrl = false, idleLabel = '分享' }) {
   const [state, setState] = useState('idle')
 
   function flash(next) {
@@ -82,7 +83,7 @@ export default function SharePageButton({ title, text, fullText, url, size = 'sm
       ? fullText || text ? '已复制文案 + 链接' : '已复制链接'
       : state === 'failed'
       ? '分享失败'
-      : '分享'
+      : idleLabel
 
   const paddingClass = size === 'md' ? 'px-3.5 py-1.5 text-sm' : 'px-3 py-1 text-xs'
 
@@ -91,7 +92,7 @@ export default function SharePageButton({ title, text, fullText, url, size = 'sm
       type="button"
       onClick={handleShare}
       aria-live="polite"
-      title="分享本页"
+      title={idleLabel}
       className={`article-action-button ${paddingClass}`}
     >
       {state === 'shared' || state === 'copied' ? (

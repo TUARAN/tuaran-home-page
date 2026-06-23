@@ -20,9 +20,12 @@ const SECTION_BADGE_CLASS = {
   column: 'home-badge home-badge-column',
   research: 'home-badge home-badge-research',
   resources: 'home-badge home-badge-resource',
+  feed: 'home-badge home-badge-feed',
 }
 
 const CLASSIC_SECTION_BADGE_CLASS = {
+  feed:
+    'border-[#e7d2a6] bg-[#fbf4e6] text-[#9c6b12] dark:border-[#4a3c20] dark:bg-[#241d10] dark:text-[#e6b964]',
   column:
     'border-[#d6d0df] bg-[#f4f2f8] text-[#625d70] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#c6ceda]',
   research:

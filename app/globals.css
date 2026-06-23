@@ -645,6 +645,11 @@
     color: var(--site-green);
   }
 
+  .home-badge-feed {
+    border-color: color-mix(in srgb, #f5a623 40%, var(--site-line));
+    color: #c07c12;
+  }
+
   .home-badge-muted,
   .home-item-date {
     border-color: var(--site-line);

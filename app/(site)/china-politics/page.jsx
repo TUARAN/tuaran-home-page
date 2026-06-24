@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import RanbiPaywall from '../components/RanbiPaywall'
+import ContentPvBeacon from '../components/ContentPvBeacon'
 
 import SharePageButton from '../components/SharePageButton'
 
@@ -697,8 +698,11 @@ function ChinaPoliticsContent() {
 
 export default function ChinaPoliticsPage() {
   return (
-    <RanbiPaywall resourceKey="resource:china-politics" unitLabel="资料">
-      <ChinaPoliticsContent />
-    </RanbiPaywall>
+    <>
+      <ContentPvBeacon category="resource" slug="china-politics" />
+      <RanbiPaywall resourceKey="resource:china-politics" unitLabel="资料">
+        <ChinaPoliticsContent />
+      </RanbiPaywall>
+    </>
   )
 }

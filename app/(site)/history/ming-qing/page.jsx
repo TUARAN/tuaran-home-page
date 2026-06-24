@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import RanbiPaywall from '../../components/RanbiPaywall'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
 
 import SharePageButton from '../../components/SharePageButton'
 import { CAO_CAO_TIMELINE } from './threeKingdomsData'
@@ -2206,8 +2207,11 @@ function MingQingContent() {
 
 export default function MingQingPage() {
   return (
-    <RanbiPaywall resourceKey="resource:history-ming-qing" unitLabel="资料">
-      <MingQingContent />
-    </RanbiPaywall>
+    <>
+      <ContentPvBeacon category="resource" slug="history-ming-qing" />
+      <RanbiPaywall resourceKey="resource:history-ming-qing" unitLabel="资料">
+        <MingQingContent />
+      </RanbiPaywall>
+    </>
   )
 }

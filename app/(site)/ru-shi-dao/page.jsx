@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import RanbiPaywall from '../components/RanbiPaywall'
+import ContentPvBeacon from '../components/ContentPvBeacon'
 
 import SharePageButton from '../components/SharePageButton'
 
@@ -594,8 +595,11 @@ function RuShiDaoContent() {
 
 export default function RuShiDaoPage() {
   return (
-    <RanbiPaywall resourceKey="resource:ru-shi-dao" unitLabel="资料">
-      <RuShiDaoContent />
-    </RanbiPaywall>
+    <>
+      <ContentPvBeacon category="resource" slug="ru-shi-dao" />
+      <RanbiPaywall resourceKey="resource:ru-shi-dao" unitLabel="资料">
+        <RuShiDaoContent />
+      </RanbiPaywall>
+    </>
   )
 }

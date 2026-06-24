@@ -1,4 +1,5 @@
 import PageContainer from '../components/PageContainer'
+import ContentPvBeacon from '../components/ContentPvBeacon'
 import FeedClient from './FeedClient'
 import { getAllFeedItems, getFeedTypesPresent } from './data'
 
@@ -24,6 +25,7 @@ export default function FeedPage() {
 
   return (
     <PageContainer className="py-10">
+      <ContentPvBeacon category="feed" slug="index" />
       <header className="mb-8 border-b border-[var(--site-line)] pb-5">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[var(--site-panel)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--site-muted)]">
           Inspiration · 灵感流

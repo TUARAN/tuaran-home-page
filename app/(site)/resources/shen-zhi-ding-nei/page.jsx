@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import RanbiPaywall from '../../components/RanbiPaywall'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
 
 import SharePageButton from '../../components/SharePageButton'
 import PageContainer from '../../components/PageContainer'
@@ -163,8 +164,11 @@ function ShenZhiDingNeiResourceContent() {
 
 export default function ShenZhiDingNeiResourcePage() {
   return (
-    <RanbiPaywall resourceKey="resource:shen-zhi-ding-nei" unitLabel="资料">
-      <ShenZhiDingNeiResourceContent />
-    </RanbiPaywall>
+    <>
+      <ContentPvBeacon category="resource" slug="shen-zhi-ding-nei" />
+      <RanbiPaywall resourceKey="resource:shen-zhi-ding-nei" unitLabel="资料">
+        <ShenZhiDingNeiResourceContent />
+      </RanbiPaywall>
+    </>
   )
 }

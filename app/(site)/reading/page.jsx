@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import RanbiPaywall from '../components/RanbiPaywall'
+import ContentPvBeacon from '../components/ContentPvBeacon'
 
 import ReadingPyramid from '../components/ReadingPyramid'
 import ReadingTabs from './ReadingTabs'
@@ -188,8 +189,11 @@ function ReadingIndexContent() {
 
 export default function ReadingIndexPage() {
   return (
-    <RanbiPaywall resourceKey="resource:reading" unitLabel="资料">
-      <ReadingIndexContent />
-    </RanbiPaywall>
+    <>
+      <ContentPvBeacon category="resource" slug="reading" />
+      <RanbiPaywall resourceKey="resource:reading" unitLabel="资料">
+        <ReadingIndexContent />
+      </RanbiPaywall>
+    </>
   )
 }

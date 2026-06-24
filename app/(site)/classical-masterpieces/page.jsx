@@ -1,5 +1,6 @@
 import ClassicalMasterpiecesClient from './ClassicalMasterpiecesClient'
 import RanbiPaywall from '../components/RanbiPaywall'
+import ContentPvBeacon from '../components/ContentPvBeacon'
 
 export const dynamic = 'force-static'
 
@@ -19,8 +20,11 @@ export const metadata = {
 
 export default function ClassicalMasterpiecesPage() {
   return (
-    <RanbiPaywall resourceKey="resource:classical-masterpieces" unitLabel="资料">
-      <ClassicalMasterpiecesClient />
-    </RanbiPaywall>
+    <>
+      <ContentPvBeacon category="resource" slug="classical-masterpieces" />
+      <RanbiPaywall resourceKey="resource:classical-masterpieces" unitLabel="资料">
+        <ClassicalMasterpiecesClient />
+      </RanbiPaywall>
+    </>
   )
 }

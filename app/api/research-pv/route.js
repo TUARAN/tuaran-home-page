@@ -1,12 +1,19 @@
 import { getD1 } from '../../../lib/d1'
 import { RESEARCH_CATEGORIES } from '../../../lib/research/categories'
 import { RESEARCH_ENTRY_KEY_SET } from '../../../lib/research/catalog'
+import { CONTENT_PV_CATEGORIES, CONTENT_PV_KEY_SET } from '../../../lib/contentRegistry'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const CATEGORY_SET = new Set(RESEARCH_CATEGORIES)
+// 调研三类 + 自建统计的合成类型（资料 resource / 灵感 feed）
+const CATEGORY_SET = new Set([...RESEARCH_CATEGORIES, ...CONTENT_PV_CATEGORIES])
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,120}$/i
+
+/** 这个 key 是否在可统计白名单（调研条目或登记过的内容页） */
+function isTrackableKey(key) {
+  return RESEARCH_ENTRY_KEY_SET.has(key) || CONTENT_PV_KEY_SET.has(key)
+}
 const MAX_KEYS = 100
 const HIT_WINDOW_MS = 60 * 60 * 1000
 const HIT_RETENTION_MS = 8 * 24 * 60 * 60 * 1000
@@ -64,7 +71,7 @@ export async function GET(req) {
     .split(',')
     .map(parseKey)
     .filter(Boolean)
-    .filter((item) => RESEARCH_ENTRY_KEY_SET.has(item.key))
+    .filter((item) => isTrackableKey(item.key))
     .slice(0, MAX_KEYS)
 
   if (!keys.length) {
@@ -114,8 +121,8 @@ export async function POST(req) {
     return Response.json({ error: 'INVALID_RESEARCH_ENTRY' }, { status: 400 })
   }
   const entryKey = `${category}/${slug}`
-  if (!RESEARCH_ENTRY_KEY_SET.has(entryKey)) {
-    return Response.json({ error: 'RESEARCH_ENTRY_NOT_FOUND' }, { status: 404 })
+  if (!isTrackableKey(entryKey)) {
+    return Response.json({ error: 'CONTENT_ENTRY_NOT_FOUND' }, { status: 404 })
   }
 
   let db

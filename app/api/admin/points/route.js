@@ -6,6 +6,7 @@ import {
   deleteResource,
   getBalance,
   listResources,
+  reverseLedgerEntry,
   upsertResource,
 } from '../../../../lib/points'
 
@@ -67,6 +68,7 @@ export async function GET(req) {
  *  - upsertResource: { resourceKey, costPoints, minRole }
  *  - deleteResource: { resourceKey }
  *  - adjust:         { userId, delta, note }  站长手动加/减燃币
+ *  - reverse:        { ledgerId }             撤销某条流水（补一笔反向变动）
  */
 export async function POST(req) {
   const guard = await getOwnerOrReject(req)
@@ -105,6 +107,12 @@ export async function POST(req) {
       if (!result.ok) return Response.json(result, { status: result.status || 400 })
       const balance = await getBalance(db, String(body?.userId || ''))
       return Response.json({ ok: true, balance })
+    }
+
+    if (action === 'reverse') {
+      const result = await reverseLedgerEntry(db, body?.ledgerId)
+      if (!result.ok) return Response.json(result, { status: result.status || 400 })
+      return Response.json({ ok: true, ...result })
     }
 
     return Response.json({ error: 'UNKNOWN_ACTION' }, { status: 400 })

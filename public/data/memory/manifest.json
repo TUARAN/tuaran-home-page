@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-23T09:51:25.191Z",
+  "generatedAt": "2026-06-24T09:07:41.226Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -80,6 +80,12 @@
               "hash": "81893716d3c591109a3e3150e90808d7df496c98a5fd4fcf5194771800f94f49",
               "path": "claude/MEMORY/2026-06-22T09-11-46-165Z.enc.json",
               "bytes": 1986
+            },
+            {
+              "ts": "2026-06-24T09:07:41.181Z",
+              "hash": "3e6d2bc02b0fc9300d1ba91a58b520f637e0b840c27f2be62ba8704931a66390",
+              "path": "claude/MEMORY/2026-06-24T09-07-41-202Z.enc.json",
+              "bytes": 2137
             }
           ]
         },
@@ -290,6 +296,18 @@
               "hash": "cc5c2b6bf58fc4c939f3dba781ce0112dea355da74a0debed7bdba1ae6d5f56e",
               "path": "claude/guest-and-ranbi-feature/2026-06-23T09-51-25-182Z.enc.json",
               "bytes": 2159
+            }
+          ]
+        },
+        "openclaw-verify-against-core-repo": {
+          "title": "openclaw-verify-against-core-repo",
+          "description": "调研 OpenClaw 任何「官方有没有 X」时，必须核 openclaw/openclaw 核心仓库，别信 web 搜索摘要",
+          "versions": [
+            {
+              "ts": "2026-06-24T09:07:41.206Z",
+              "hash": "4a424cc658e35f7915745b2d96e3766f6f3ca21667cb9b02f84a262761381ad6",
+              "path": "claude/openclaw-verify-against-core-repo/2026-06-24T09-07-41-221Z.enc.json",
+              "bytes": 908
             }
           ]
         }

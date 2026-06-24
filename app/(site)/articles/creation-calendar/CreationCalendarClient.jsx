@@ -12,7 +12,7 @@ const KIND_LABELS = {
   companies: '公司调研',
   topics: '事项调研',
   special: '专题调研',
-  resources: '资料',
+  resources: '资源',
 }
 
 function isValidDate(value) {

@@ -19,7 +19,7 @@ const CHANNEL_DEFS = [
   { key: 'all', label: '全部' },
   { key: 'column', label: '专栏' },
   { key: 'research', label: '调研' },
-  { key: 'resources', label: '资料' },
+  { key: 'resources', label: '资源' },
 ]
 
 const COLUMN_TAB_DEFS = [
@@ -75,11 +75,11 @@ const PEOPLE_TYPE_DEFS = getPeopleTypeFilters()
 const PEOPLE_TYPE_KEYS = PEOPLE_TYPE_DEFS.map((t) => t.key)
 
 const RESOURCE_TYPE_DEFS = [
-  { key: 'all', label: '全部资料' },
+  { key: 'all', label: '全部资源' },
   { key: 'classics', label: '古典名篇' },
   { key: 'humanities', label: '人文思想' },
   { key: 'politics', label: '政经资料' },
-  { key: 'workplace', label: '职场' },
+  { key: 'workplace', label: '职场资料' },
   { key: 'books', label: '书目索引' },
   { key: 'bookmarks', label: '资源收藏' },
 ]
@@ -317,7 +317,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (activeChannel === 'resources') {
       const res = RESOURCE_TYPE_DEFS.find((t) => t.key === resourceType)
       if (res && res.key !== 'all') parts.push(res.label)
-      else parts.push('全部资料')
+      else parts.push('全部资源')
     }
     return parts.length ? parts.join(' / ') : null
   }, [tab, activeChannel, companyType, topicType, peopleType, resourceType])
@@ -556,7 +556,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         ) : null}
 
         {activeChannel === 'resources' ? (
-          <FilterRow label="资料分类" ariaLabel="资料分类">
+          <FilterRow label="资源分类" ariaLabel="资源分类">
             {RESOURCE_TYPE_DEFS.map((t) => {
               const scopeLabel = t.key === 'bookmarks' ? '站外' : t.key === 'all' ? '' : '站内'
               return (

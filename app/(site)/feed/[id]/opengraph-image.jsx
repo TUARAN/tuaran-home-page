@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getAllFeedItems } from '../data'
-import { avatarAbsoluteUrl } from '../../../../../lib/avatar'
+import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 
 export const runtime = 'edge'
 export const size = { width: 1200, height: 630 }
@@ -26,10 +26,6 @@ function truncate(text, max) {
   if (!text) return ''
   const t = String(text).replace(/\s+/g, ' ').trim()
   return t.length > max ? `${t.slice(0, max - 1)}…` : t
-}
-
-export async function generateStaticParams() {
-  return getAllFeedItems().map((item) => ({ id: item.id }))
 }
 
 export default async function FeedItemOgImage({ params }) {

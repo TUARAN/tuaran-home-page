@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { IconRefresh, IconCoin, IconTrash } from '@tabler/icons-react'
 
 import { USER_ROLE_LABELS, VALID_USER_ROLES } from '../../../../lib/userRoles'
@@ -8,13 +8,32 @@ import { displayNameForUserId } from '../../../../lib/userDisplayName'
 import { AdminPage, Section, StatCard, DataTable, EmptyState, AdminButton } from '../../components/ui'
 
 /** 把 user_id 渲染成趣味昵称 + 来源 + 短 id（hover 看完整 id） */
-function UserIdCell({ userId }) {
+function UserIdCell({ userId, onPick }) {
   const u = displayNameForUserId(userId)
-  return (
-    <span className="inline-flex items-center gap-1.5" title={u.full}>
+  const inner = (
+    <>
       <span aria-hidden="true">{u.emoji}</span>
       <span className="font-medium text-[#33352c] dark:text-gray-200">{u.name}</span>
       <span className="font-mono text-[10px] text-[#9a9c8f] dark:text-gray-500">{u.providerLabel} {u.short}</span>
+    </>
+  )
+  // 短 id 只是显示用；真正能操作的是完整 user_id。点一下把完整 id 填进调整框，避免手敲对不上。
+  if (onPick) {
+    return (
+      <button
+        type="button"
+        onClick={() => onPick(u.full)}
+        title={`点击填入调整框：${u.full}`}
+        className="group inline-flex items-center gap-1.5 text-left hover:opacity-80"
+      >
+        {inner}
+        <span className="font-mono text-[10px] text-[#caa86a] opacity-0 transition-opacity group-hover:opacity-100">填入↑</span>
+      </button>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5" title={u.full}>
+      {inner}
     </span>
   )
 }
@@ -62,6 +81,17 @@ export default function PointsConsole() {
   const [adjUser, setAdjUser] = useState('')
   const [adjDelta, setAdjDelta] = useState('')
   const [adjNote, setAdjNote] = useState('')
+  const adjUserRef = useRef(null)
+
+  // 从流水里点某个用户 → 把完整 user_id 填进调整框并聚焦（短 id 不可逆，必须用完整 id 操作）
+  const pickUser = useCallback((userId) => {
+    setAdjUser(userId)
+    setMessage(`已填入 user_id：${userId}`)
+    requestAnimationFrame(() => {
+      adjUserRef.current?.focus()
+      adjUserRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    })
+  }, [])
 
   const refresh = useCallback(async () => {
     setStatus('loading')
@@ -139,6 +169,13 @@ export default function PointsConsole() {
       setAdjDelta('')
       setAdjNote('')
     }
+  }
+
+  async function reverseEntry(row) {
+    if (!row?.id) return
+    const sign = row.delta >= 0 ? '+' : ''
+    if (!window.confirm(`撤销这笔「${sign}${row.delta}」流水？会给该用户补一笔反向变动来抵消（账本只增不改）。`)) return
+    await post({ action: 'reverse', ledgerId: row.id }, '已撤销该笔流水')
   }
 
   const actions = (
@@ -239,13 +276,13 @@ export default function PointsConsole() {
 
       <Section
         title="手动加减燃币"
-        description="user_id 形如 github:123 / google:abc / email:xxx；记一笔 reason=admin 的流水。"
+        description="user_id 形如 guest:<uuid> / github:123 / google:abc；不要手敲短 id——直接点下方流水里的用户，即可把完整 user_id 填进来。"
         className="mb-5"
       >
         <form onSubmit={adjust} className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
             user_id
-            <input className={`${inputCls} w-56`} value={adjUser} onChange={(e) => setAdjUser(e.target.value)} placeholder="github:123" />
+            <input ref={adjUserRef} className={`${inputCls} w-72`} value={adjUser} onChange={(e) => setAdjUser(e.target.value)} placeholder="点流水里的用户自动填入" />
           </label>
           <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
             增减（可负）
@@ -266,7 +303,7 @@ export default function PointsConsole() {
           <DataTable
             columns={[
               { key: 'created_at', header: '时间', render: (row) => formatTime(row.created_at) },
-              { key: 'user_id', header: '用户', render: (row) => <UserIdCell userId={row.user_id} /> },
+              { key: 'user_id', header: '用户', render: (row) => <UserIdCell userId={row.user_id} onPick={pickUser} /> },
               {
                 key: 'delta',
                 header: '增减',
@@ -278,6 +315,21 @@ export default function PointsConsole() {
               },
               { key: 'reason', header: '原因', render: (row) => REASON_LABELS[row.reason] || row.reason },
               { key: 'ref', header: 'ref' },
+              {
+                key: 'op',
+                header: '操作',
+                render: (row) => (
+                  <button
+                    type="button"
+                    onClick={() => reverseEntry(row)}
+                    disabled={busy || String(row.ref || '').startsWith('reverse:')}
+                    title="给该用户补一笔反向变动，抵消这笔"
+                    className="rounded-md border border-[#d8b4b4] px-2 py-0.5 text-[11px] text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                  >
+                    撤销
+                  </button>
+                ),
+              },
             ]}
             rows={ledger}
             rowKey={(row) => row.id}

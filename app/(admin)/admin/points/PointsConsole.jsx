@@ -4,7 +4,20 @@ import { useCallback, useEffect, useState } from 'react'
 import { IconRefresh, IconCoin, IconTrash } from '@tabler/icons-react'
 
 import { USER_ROLE_LABELS, VALID_USER_ROLES } from '../../../../lib/userRoles'
+import { displayNameForUserId } from '../../../../lib/userDisplayName'
 import { AdminPage, Section, StatCard, DataTable, EmptyState, AdminButton } from '../../components/ui'
+
+/** 把 user_id 渲染成趣味昵称 + 来源 + 短 id（hover 看完整 id） */
+function UserIdCell({ userId }) {
+  const u = displayNameForUserId(userId)
+  return (
+    <span className="inline-flex items-center gap-1.5" title={u.full}>
+      <span aria-hidden="true">{u.emoji}</span>
+      <span className="font-medium text-[#33352c] dark:text-gray-200">{u.name}</span>
+      <span className="font-mono text-[10px] text-[#9a9c8f] dark:text-gray-500">{u.providerLabel} {u.short}</span>
+    </span>
+  )
+}
 
 const REASON_LABELS = {
   register: '注册',
@@ -253,7 +266,7 @@ export default function PointsConsole() {
           <DataTable
             columns={[
               { key: 'created_at', header: '时间', render: (row) => formatTime(row.created_at) },
-              { key: 'user_id', header: 'user_id' },
+              { key: 'user_id', header: '用户', render: (row) => <UserIdCell userId={row.user_id} /> },
               {
                 key: 'delta',
                 header: '增减',

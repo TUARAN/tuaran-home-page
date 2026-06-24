@@ -11,7 +11,7 @@ export default function ArticlesHeaderClient({ items }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
-            专栏 / 调研 / 资料
+            专栏 / 调研 / 资源
           </h1>
           <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
             不确定从哪读时，先点「推荐」；需要完整浏览或精确查找时，再用全部、分类与搜索。

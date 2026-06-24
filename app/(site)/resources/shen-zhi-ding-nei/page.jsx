@@ -119,7 +119,7 @@ function ShenZhiDingNeiResourceContent() {
       <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs tracking-[0.14em] text-[#888] dark:text-gray-500">资料库 · 职场</p>
+            <p className="text-xs tracking-[0.14em] text-[#888] dark:text-gray-500">资源库 · 职场资料</p>
             <h1 className="mt-2 font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
               《置身钉内》×《置身钉外》：钉钉离职长文双篇存档
             </h1>

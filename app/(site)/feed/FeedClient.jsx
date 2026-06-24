@@ -61,7 +61,7 @@ function MetaRow({ item, showShare = true }) {
             <SharePageButton
               title={item.title}
               text={itemShareText(item)}
-              url={`/feed#${item.id}`}
+              url={`/feed/${item.id}`}
               exactUrl
               idleLabel="转发"
             />

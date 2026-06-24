@@ -92,7 +92,7 @@ const TIER_SECTION_STYLES = {
     wrap: 'site-tier-section site-tier-research',
     title: 'site-tier-title site-tier-title-research',
   },
-  '资料': {
+  '资源': {
     wrap: 'site-tier-section site-tier-archive',
     title: 'site-tier-title site-tier-title-archive',
   },

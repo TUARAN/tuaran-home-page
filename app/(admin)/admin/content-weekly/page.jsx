@@ -5,8 +5,8 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '内容数据周报',
-  description: '近 7 天站内被读/被赞 top 与趋势,仅站长本人可访问。',
+  title: '自建数据中心',
+  description: '自建阅读统计：调研 / 资料 / 灵感被读 / 被赞 top 与趋势,仅站长本人可访问。',
   robots: {
     index: false,
     follow: false,
@@ -17,9 +17,9 @@ export const metadata = {
 export default async function AdminContentWeeklyPage() {
   return (
     <AdminPageGate
-      label="内容数据周报"
+      label="自建数据中心"
       returnTo="/admin/content-weekly"
-      description="近 7 天站内被读/被赞 top 与趋势,仅站长本人可见。"
+      description="自建阅读统计：调研 / 资料 / 灵感被读 / 被赞 top 与趋势,仅站长本人可见。"
     >
       <ContentWeeklyClient />
     </AdminPageGate>

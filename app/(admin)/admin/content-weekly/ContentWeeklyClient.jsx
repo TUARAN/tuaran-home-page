@@ -44,21 +44,28 @@ function RankList({ rows, unit }) {
             {i + 1}
           </span>
           <div className="min-w-0 flex-1">
-            {row.href ? (
-              <a
-                href={row.href}
-                target="_blank"
-                rel="noreferrer"
-                className="block truncate text-sm font-medium text-[#15140f] hover:underline dark:text-gray-100"
-                title={row.title}
-              >
-                {row.title}
-              </a>
-            ) : (
-              <span className="block truncate text-sm font-medium text-[#15140f] dark:text-gray-100" title={row.title}>
-                {row.title}
-              </span>
-            )}
+            <div className="flex min-w-0 items-center gap-1.5">
+              {row.type ? (
+                <span className="shrink-0 rounded bg-[#eef0e8] px-1.5 py-0.5 font-mono text-[10px] text-[#67695d] dark:bg-[#1b2330] dark:text-gray-400">
+                  {row.type}
+                </span>
+              ) : null}
+              {row.href ? (
+                <a
+                  href={row.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="min-w-0 truncate text-sm font-medium text-[#15140f] hover:underline dark:text-gray-100"
+                  title={row.title}
+                >
+                  {row.title}
+                </a>
+              ) : (
+                <span className="min-w-0 truncate text-sm font-medium text-[#15140f] dark:text-gray-100" title={row.title}>
+                  {row.title}
+                </span>
+              )}
+            </div>
             <span className="block truncate font-mono text-[11px] text-[#9a9c8f] dark:text-gray-600" title={row.key}>
               {row.key}
             </span>
@@ -102,16 +109,17 @@ export default function ContentWeeklyClient() {
     refresh()
   }, [refresh])
 
-  const reads = data?.reads || { top: [], total: { thisWeek: 0, prevWeek: 0 } }
+  const reads = data?.reads || { top: [], byType: [], total: { thisWeek: 0, prevWeek: 0 } }
   const likes = data?.likes || { top: [], total: { thisWeek: 0, prevWeek: 0 } }
+  const byType = reads.byType || []
   const readsDelta = deltaVsPrev(reads.total.thisWeek, reads.total.prevWeek)
   const likesDelta = deltaVsPrev(likes.total.thisWeek, likes.total.prevWeek)
 
   return (
     <AdminPage
-      title="内容数据周报"
+      title="自建数据中心"
       maxWidth="1100px"
-      description="近 7 天站内文章被读 / 被赞 top 与上周趋势对比。打开即实时计算,看看什么内容真的打动人。"
+      description="自建阅读统计：调研 / 资料·资源 / 灵感的被读、被赞，近 7 天 top 与上周趋势。打开即实时计算，看看什么内容真的打动人。"
       actions={
         <AdminButton type="button" onClick={refresh} disabled={loading}>
           {loading ? '刷新中…' : '重新计算'}
@@ -147,10 +155,34 @@ export default function ContentWeeklyClient() {
         <StatCard label="上榜文章(赞)" value={loading ? '—' : likes.top.length} />
       </section>
 
+      {byType.length ? (
+        <Section title="内容类型分布 · 近 7 天" description="自建阅读统计按大类汇总，对比上一个 7 天。" className="mb-4">
+          <div className="grid gap-2 sm:grid-cols-3">
+            {byType.map((t) => (
+              <div
+                key={t.type}
+                className="flex items-center justify-between gap-3 rounded-lg border border-[#e6e7df] bg-white/60 px-3 py-2.5 dark:border-[#243041] dark:bg-[#0e141d]"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-[#15140f] dark:text-gray-100">{t.type}</p>
+                  <p className="font-mono text-[11px] text-[#9a9c8f] dark:text-gray-500">上周 {t.prevWeek}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-base font-semibold text-[#15140f] dark:text-gray-100">{t.thisWeek}</span>
+                  <StatusPill tone={trendTone(t.delta)} size="sm" icon={false}>
+                    {trendText(t.delta)}
+                  </StatusPill>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      ) : null}
+
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <Section
           title="被读最多 · 近 7 天"
-          description="数据源 research_pv_hits;趋势对比上一个 7 天。"
+          description="数据源 research_pv_hits（调研 / 资料 / 灵感）；趋势对比上一个 7 天。"
           className="min-w-0 overflow-hidden"
         >
           {loading ? <p className="text-sm text-[#82847a]">加载中…</p> : <RankList rows={reads.top} unit="次" />}

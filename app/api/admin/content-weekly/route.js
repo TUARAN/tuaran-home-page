@@ -1,23 +1,31 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import { RESEARCH_ENTRY_META } from '../../../../lib/research/catalog'
+import { CONTENT_TYPE_GROUP, CONTENT_TYPE_LABELS, resolveContentEntry } from '../../../../lib/contentRegistry'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 /**
- * 内容数据周报(看板按需计算,无定时、无存储)。
- * 口径:最近 7 天被读(research_pv_hits)/被赞(article_likes)的 top,
+ * 自建数据中心(看板按需计算,无定时、无存储)。
+ * 口径:最近 7 天被读(research_pv_hits，含调研/资料/灵感)/被赞(article_likes)的 top,
  *      并与前 7 天同口径对比出趋势。两张表 created_at 均为毫秒。
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const WEEK_MS = 7 * DAY_MS
-const LIMIT = 10
+const LIMIT = 12
 
-function titleForResearch(category, slug) {
+/** 任意 category/slug → { title, href, type }（调研走 catalog，资料/灵感走 contentRegistry） */
+function resolveContentKey(category, slug) {
+  const content = resolveContentEntry(category, slug)
+  if (content) return { title: content.title, href: content.href, type: content.typeLabel }
   const meta = RESEARCH_ENTRY_META[`${category}/${slug}`]
-  return meta?.title || `${category}/${slug}`
+  return {
+    title: meta?.title || `${category}/${slug}`,
+    href: `/articles/research/${category}/${slug}`,
+    type: CONTENT_TYPE_LABELS[category] || '调研',
+  }
 }
 
 /** article_key 形如 research:<cat>:<slug> 或 article:<slug>,解析成标题 + 链接 */
@@ -26,7 +34,8 @@ function resolveArticleKey(articleKey) {
   if (key.startsWith('research:')) {
     const [, category, slug] = key.split(':')
     if (category && slug) {
-      return { title: titleForResearch(category, slug), href: `/articles/research/${category}/${slug}` }
+      const r = resolveContentKey(category, slug)
+      return { title: r.title, href: r.href }
     }
   }
   if (key.startsWith('article:')) {
@@ -58,7 +67,7 @@ export async function GET(req) {
   const wk2 = now - 2 * WEEK_MS // 前 7 天的起点
 
   try {
-    const [readRows, readTotal, likeRows, likeTotal] = await Promise.all([
+    const [readRows, readTotal, readByCategory, likeRows, likeTotal] = await Promise.all([
       db
         .prepare(
           `SELECT category, slug,
@@ -72,6 +81,18 @@ export async function GET(req) {
            LIMIT ?3`,
         )
         .bind(wk1, wk2, LIMIT)
+        .all()
+        .then((r) => r.results || []),
+      db
+        .prepare(
+          `SELECT category,
+             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week,
+             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_week
+           FROM research_pv_hits
+           WHERE created_at >= ?2
+           GROUP BY category`,
+        )
+        .bind(wk1, wk2)
         .all()
         .then((r) => r.results || []),
       db
@@ -114,15 +135,30 @@ export async function GET(req) {
     const reads = readRows.map((r) => {
       const thisWeek = Number(r.this_week) || 0
       const prevWeek = Number(r.prev_week) || 0
+      const resolved = resolveContentKey(r.category, r.slug)
       return {
         key: `${r.category}/${r.slug}`,
-        title: titleForResearch(r.category, r.slug),
-        href: `/articles/research/${r.category}/${r.slug}`,
+        title: resolved.title,
+        href: resolved.href,
+        type: resolved.type,
         thisWeek,
         prevWeek,
         delta: thisWeek - prevWeek,
       }
     })
+
+    // 按大类（调研 / 资料·资源 / 灵感）汇总本周与上周阅读
+    const byTypeMap = new Map()
+    for (const r of readByCategory) {
+      const group = CONTENT_TYPE_GROUP[r.category] || '其它'
+      const cur = byTypeMap.get(group) || { type: group, thisWeek: 0, prevWeek: 0 }
+      cur.thisWeek += Number(r.this_week) || 0
+      cur.prevWeek += Number(r.prev_week) || 0
+      byTypeMap.set(group, cur)
+    }
+    const byType = [...byTypeMap.values()]
+      .map((t) => ({ ...t, delta: t.thisWeek - t.prevWeek }))
+      .sort((a, b) => b.thisWeek - a.thisWeek)
 
     const likes = likeRows.map((r) => {
       const thisWeek = Number(r.this_week) || 0
@@ -137,6 +173,7 @@ export async function GET(req) {
       window: { thisWeekStart: wk1, prevWeekStart: wk2, days: 7 },
       reads: {
         top: reads,
+        byType,
         total: {
           thisWeek: Number(readTotal?.this_week) || 0,
           prevWeek: Number(readTotal?.prev_week) || 0,

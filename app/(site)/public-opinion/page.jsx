@@ -29,6 +29,10 @@ export const metadata = {
   alternates: {
     canonical: '/public-opinion',
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default function PublicOpinionPage() {

@@ -27,6 +27,8 @@ import {
   IconArrowBackUp,
   IconFileText,
   IconCoin,
+  IconRadar2,
+  IconChartCandle,
 } from '@tabler/icons-react'
 
 const ICONS = {
@@ -48,6 +50,8 @@ const ICONS = {
   integrations: IconPlug,
   ranbi: IconCoin,
   back: IconArrowBackUp,
+  publicOpinion: IconRadar2,
+  stockAnalysis: IconChartCandle,
 }
 
 export function AdminIcon({ name, size = 18, stroke = 1.6, className, ...rest }) {

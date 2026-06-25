@@ -28,7 +28,7 @@ export default function ArticlesPage() {
   const items = buildKnowledgeItems()
 
   return (
-    <main className="w-full max-w-4xl mx-auto px-4 py-10">
+    <main className="w-full max-w-[1120px] mx-auto px-4 py-10">
       <ArticlesHeaderClient items={items} />
 
       <Suspense fallback={<div className="text-sm text-[#666] dark:text-gray-400">加载中…</div>}>

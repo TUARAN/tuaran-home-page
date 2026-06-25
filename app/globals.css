@@ -49,6 +49,12 @@
   --hero-card-title: #1d1a16;
   --hero-card-subtext: #6f6877;
   --hero-surface-panel: color-mix(in srgb, var(--page-bg) 94%, white);
+  /* 知识库热力图色阶：站点鼠尾草绿，跟随主题，不再用 GitHub 绿。 */
+  --kb-heat-empty: color-mix(in srgb, var(--site-line) 60%, transparent);
+  --kb-heat-1: #d2e7d6;
+  --kb-heat-2: #9cc6a6;
+  --kb-heat-3: #6aa07c;
+  --kb-heat-4: #467a5a;
   --site-header-height: 53px;
 }
 
@@ -99,6 +105,12 @@
   --hero-card-title: #f3f4f6;
   --hero-card-subtext: #aaa69a;
   --hero-surface-panel: #171512;
+  /* 知识库热力图色阶（深色）：以站点鼠尾草绿 #9fc5ad 为最深档向下推。 */
+  --kb-heat-empty: color-mix(in srgb, var(--site-line-strong) 55%, transparent);
+  --kb-heat-1: #294638;
+  --kb-heat-2: #436b54;
+  --kb-heat-3: #6ba07f;
+  --kb-heat-4: #9fc5ad;
   --site-header-height: 53px;
 }
 
@@ -1808,104 +1820,89 @@
     color: #d7d0ca;
   }
 
-  .dark .articles-index-stone {
-    --articles-stone-base: #11100e;
-    --articles-stone-panel: #151410;
-    --articles-stone-panel-strong: #1c1a16;
-    --articles-stone-chip: #24231f;
-    --articles-stone-chip-active: #302c1f;
-    --articles-stone-line: #292720;
-    --articles-stone-line-strong: #3a372f;
-    --articles-stone-text: #f1f0ea;
-    --articles-stone-muted: #aaa69a;
-    --articles-stone-faint: #87847a;
-    --articles-stone-accent: #d7d0ad;
-  }
-
-  .dark .articles-index-stone :where(section, aside, details, .article-row) {
-    border-color: var(--articles-stone-line) !important;
-    background-color: var(--articles-stone-panel) !important;
+  /* 知识库（/articles）统一走站点 --site-* token，浅/深/经典/自定义底色
+     一套规则、自动随主题切换；不再用一套独立的紫罗兰浅色 + 冷蓝深色硬编码。
+     注意：本块不限定 .dark，故 JSX 内的旧硬编码（dark:bg-[#...] 等）由此处接管。 */
+  .articles-index-stone :where(section, aside, details, .article-row) {
+    border-color: var(--site-line) !important;
+    background-color: color-mix(in srgb, var(--site-panel-strong) 72%, transparent) !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
   }
 
-  .dark .articles-index-stone :where(section, aside, details) {
-    color: var(--articles-stone-text);
+  .articles-index-stone :where(section, aside, details) {
+    color: var(--site-ink);
   }
 
-  .dark .articles-index-stone .article-row {
+  .articles-index-stone .article-row {
     opacity: 1;
   }
 
-  .dark .articles-index-stone .article-row:hover {
-    border-color: var(--articles-stone-line-strong) !important;
-    background-color: var(--articles-stone-panel-strong) !important;
+  .articles-index-stone .article-row:hover {
+    border-color: var(--site-line-strong) !important;
+    background-color: var(--site-panel-strong) !important;
   }
 
-  .dark .articles-index-stone :where(nav[role="tablist"], input, form button, .article-row [class*="rounded-full"], [title^="Cursor Canvas"]) {
-    border-color: var(--articles-stone-line-strong) !important;
-    background-color: var(--articles-stone-chip) !important;
-    color: var(--articles-stone-muted) !important;
+  .articles-index-stone :where(nav[role="tablist"], input, form button, .article-row [class*="rounded-full"], [title^="Cursor Canvas"]) {
+    border-color: var(--site-line) !important;
+    background-color: color-mix(in srgb, var(--site-panel) 88%, transparent) !important;
+    color: var(--site-muted) !important;
   }
 
-  .dark .articles-index-stone :where(button[role="tab"], button[aria-pressed]) {
+  .articles-index-stone :where(button[role="tab"], button[aria-pressed]) {
     border-color: transparent !important;
     background-color: transparent !important;
-    color: var(--articles-stone-muted) !important;
+    color: var(--site-muted) !important;
   }
 
-  .dark .articles-index-stone :where(button[role="tab"]:hover, button[aria-pressed]:hover, .group:hover [class*="rounded-full"]) {
-    border-color: var(--articles-stone-line-strong) !important;
-    background-color: var(--articles-stone-chip) !important;
-    color: var(--articles-stone-text) !important;
+  .articles-index-stone :where(button[role="tab"]:hover, button[aria-pressed]:hover, .group:hover [class*="rounded-full"]) {
+    border-color: var(--site-line-strong) !important;
+    background-color: color-mix(in srgb, var(--site-panel-strong) 60%, transparent) !important;
+    color: var(--site-ink) !important;
   }
 
-  .dark .articles-index-stone :where(button[aria-selected="true"], button[aria-pressed="true"]) {
-    border-color: #4f472f !important;
-    background-color: var(--articles-stone-chip-active) !important;
-    color: var(--articles-stone-text) !important;
+  .articles-index-stone :where(button[aria-selected="true"], button[aria-pressed="true"]) {
+    border-color: color-mix(in srgb, var(--site-accent) 40%, var(--site-line)) !important;
+    background-color: color-mix(in srgb, var(--site-accent) 14%, var(--site-panel-strong)) !important;
+    color: var(--site-ink) !important;
     box-shadow: none !important;
   }
 
-  .dark .articles-index-stone :where(button[aria-selected="true"], button[aria-pressed="true"]) span {
-    color: var(--articles-stone-text) !important;
+  .articles-index-stone :where(button[aria-selected="true"], button[aria-pressed="true"]) span {
+    color: var(--site-ink) !important;
   }
 
-  .dark .articles-index-stone :where(a, a:visited) {
-    color: var(--articles-stone-text) !important;
+  .articles-index-stone :where(a, a:visited) {
+    color: var(--site-ink) !important;
   }
 
-  .dark .articles-index-stone :where(a:hover) {
-    color: white !important;
+  .articles-index-stone :where(a:hover) {
+    color: var(--site-accent-strong) !important;
   }
 
-  .dark .articles-index-stone :where(p, span, li) {
-    border-color: var(--articles-stone-line) !important;
+  .articles-index-stone :where(p, span, li) {
+    border-color: var(--site-line) !important;
   }
 
-  .dark .articles-index-stone :where(p, li) {
-    color: var(--articles-stone-muted) !important;
+  .articles-index-stone :where(p, li) {
+    color: var(--site-muted) !important;
   }
 
-  .dark .articles-index-stone input::placeholder {
-    color: var(--articles-stone-faint) !important;
+  .articles-index-stone input::placeholder {
+    color: var(--site-faint) !important;
   }
 
-  .dark .articles-index-stone :where(h2, h3, .article-row h2) {
-    color: var(--articles-stone-text) !important;
+  .articles-index-stone :where(h2, h3, .article-row h2) {
+    color: var(--site-ink) !important;
   }
 
-  .dark .articles-index-stone :where(.article-row p) {
-    color: #c5c1b7 !important;
+  .articles-index-stone :where(.article-row p) {
+    color: var(--site-muted) !important;
   }
 
-  .dark .articles-index-stone :where(.article-row img) {
-    filter: saturate(0.86) contrast(0.96);
-  }
-
-  .dark .articles-index-stone :where(.article-row > div > div:last-child) {
-    border-color: var(--articles-stone-line) !important;
-    background-color: #181713 !important;
+  .articles-index-stone :where(.article-row > div > div:last-child) {
+    border-color: var(--site-line) !important;
+    background-color: color-mix(in srgb, var(--site-panel) 88%, transparent) !important;
   }
 
   .dark .back-to-top-button {

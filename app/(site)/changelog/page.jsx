@@ -10,6 +10,26 @@ export const metadata = {
 
 const changelog = [
   {
+    version: 'v2026.28',
+    week: '2026-W26',
+    range: '2026-06-25 起',
+    commits: 2,
+    title: '配色系统收敛：阅读页与热力图统一到站点 token',
+    summary:
+      '一次设计层面的整理而非加功能：把 /articles 知识库页和内容热力图从各自硬编码的「紫罗兰浅色 + 冷蓝深色 + GitHub 绿」统一收敛到全站 --site-* 语义色板，并修掉「切换主题后配色错乱」的老问题——根因是浅色阅读底被错误地钉在了暗色主题上。同时在更新记录里立了一块「设计原则」，把一直隐含的规矩写明。',
+    planned: [
+      '把同款冷蓝硬编码（changelog 等其余内容页）逐页并入站点 token，最终全站只剩一套色板。',
+      '为 reading-bg 增加暗色档位，让阅读底色在深色主题下也能个性化而不破坏一致性。',
+    ],
+    done: [
+      '知识库页（/articles）与内容热力图全面改用 --site-* 语义 token：浅 / 深 / 经典 / 自定义底色共用一套规则、随主题自动切换。',
+      '热力图色阶从 GitHub 绿换成站点鼠尾草绿（--kb-heat-*），与全站绿调统一。',
+      '删除约 90 行 .dark 专属的 !important 重皮覆盖，改为不限主题的 token 规则，不再出现「浅底飘深块」。',
+      '修复主题切换配色错乱：阅读底色（reading-bg）只在亮色主题生效，暗色恒用自身深色基底，切 dark ↔ light 不再卡死。',
+      '新增「设计原则」板块，明确 token 优先、暖中性基底 + 克制点缀、一处定义处处跟随等规矩。',
+    ],
+  },
+  {
     version: 'v2026.27',
     week: '2026-W26',
     range: '2026-06-19 起',
@@ -568,6 +588,34 @@ function ChangelogSections({ entry }) {
   )
 }
 
+// 站点设计原则：一直隐含在代码里的规矩，这里写明，作为后续每次改样式的对照基准。
+const DESIGN_PRINCIPLES = [
+  {
+    title: 'Token 优先，组件不写死颜色',
+    body: '全站颜色走一套语义 token（--site-ink / muted / faint / line / panel / accent / green 等），浅、深、经典三套主题各定义一次。组件只引用 token，不再散落 hex；想调色只改根变量，全站跟随。',
+  },
+  {
+    title: '暖中性基底 + 克制点缀',
+    body: '以暖灰（浅色）、暖近黑（深色）作基底，鼠尾草绿与赭紫只做少量点缀。一个页面不堆多种强色，让信息层级而非颜色抢注意力。',
+  },
+  {
+    title: '一处定义，处处跟随',
+    body: '主题与阅读底色的切换只动根变量，不逐组件改写。阅读底色（reading-bg）仅在亮色主题生效，暗色恒用自身深色基底——切换主题不会把浅底卡死在暗色上。',
+  },
+  {
+    title: '内容优先，视觉克制',
+    body: '列表与卡片低饱和、弱投影、细边框，正文与标题是主角。装饰性渐变、光晕只在首页等少数门面出现，内容页保持安静。',
+  },
+  {
+    title: '三档宽度 + 三态主题',
+    body: '页面宽度收敛为 narrow / standard / wide 三档，主题统一为 浅 / 深 / 经典 三态。跨页沿用同一套度量与色板，避免每页各写一套。',
+  },
+  {
+    title: '可达性是底线',
+    body: '保证文字对比度、保留 focus-visible 键盘轮廓、尊重 prefers-reduced-motion。好看不能以牺牲可读、可操作为代价。',
+  },
+]
+
 export default function ChangelogPage() {
   return (
     <PageContainer className="py-8 md:py-10">
@@ -601,6 +649,36 @@ export default function ChangelogPage() {
           ))}
         </dl>
       </header>
+
+      <section className="mt-8 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_60%,transparent)] p-5 md:p-6">
+        <div className="flex flex-col gap-1">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--site-faint)]">
+            Design Principles · 设计原则
+          </p>
+          <h2 className="border-b-0 pb-0 font-serif text-xl font-semibold tracking-wide text-[var(--site-ink)] md:text-2xl">
+            这个站点配色与样式的取舍
+          </h2>
+          <p className="mt-1 max-w-3xl text-[13.5px] leading-7 text-[var(--site-muted)]">
+            不是为了好看而堆视觉，而是用一套尽量小的规则让浅色、深色、经典三套主题始终一致、可维护。下面这些原则一直隐含在代码里，这里写明，作为以后每次动样式的对照基准。
+          </p>
+        </div>
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+          {DESIGN_PRINCIPLES.map((p, idx) => (
+            <li
+              key={p.title}
+              className="rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_50%,transparent)] p-4"
+            >
+              <p className="flex items-baseline gap-2 font-serif text-[15px] font-semibold text-[var(--site-ink)]">
+                <span className="font-mono text-[11px] text-[var(--site-accent)]">
+                  {String(idx + 1).padStart(2, '0')}
+                </span>
+                {p.title}
+              </p>
+              <p className="mt-1.5 text-[13px] leading-6 text-[var(--site-muted)]">{p.body}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <ol className="mt-8 space-y-4">
         {changelog.map((entry) => (

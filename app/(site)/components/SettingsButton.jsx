@@ -59,6 +59,19 @@ export default function SettingsButton() {
     } catch (e) {}
   }, [])
 
+  // 阅读底色（reading-bg）的预设都是浅色，仅在亮色主题下生效。
+  // 暗色主题始终用自身的深色 --page-bg（来自 .dark token），避免切主题后浅底
+  // 卡死在暗色上导致整页配色错乱。这里是 --page-bg 的唯一权威同步点。
+  useEffect(() => {
+    if (!mounted) return
+    const root = document.documentElement
+    if (theme === 'dark') {
+      root.style.removeProperty('--page-bg')
+    } else {
+      root.style.setProperty('--page-bg', bgHex)
+    }
+  }, [theme, bgHex, mounted])
+
   useEffect(() => {
     if (!open) return
     const onClick = (e) => {
@@ -82,9 +95,10 @@ export default function SettingsButton() {
   const isDark = theme === 'dark'
   const activePreset = findPresetByHex(bgHex)?.id || 'custom'
 
+  // 仅更新状态与持久化；实际写入 --page-bg 交给上面的主题同步 effect，
+  // 这样在暗色主题下选底色不会污染暗色页面，切回亮色才套用。
   const pickBg = (hex) => {
     setBgHex(hex)
-    document.documentElement.style.setProperty('--page-bg', hex)
     try {
       localStorage.setItem(STORAGE_KEY, hex)
     } catch (e) {}
@@ -96,7 +110,6 @@ export default function SettingsButton() {
     setUiMode(next)
     setBgHex(nextBg)
     document.documentElement.dataset.ui = next
-    document.documentElement.style.setProperty('--page-bg', nextBg)
     try {
       localStorage.setItem(UI_STORAGE_KEY, next)
       localStorage.setItem(STORAGE_KEY, nextBg)

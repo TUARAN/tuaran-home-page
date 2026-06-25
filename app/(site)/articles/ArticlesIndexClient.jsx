@@ -30,12 +30,12 @@ const COLUMN_TAB_DEFS = [
 
 // 各分类标签的配色（浅色 + 暗色）
 const KIND_TAG_CLASS = {
-  posts: 'border-[#d9d4e2] bg-white/60 text-[#625a6f] dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300',
-  works: 'border-[#cfc3e2] bg-[#f3eff9] text-[#72539b] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#c5afe8]',
-  companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
-  topics: 'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#263f4b] dark:bg-[#13232b] dark:text-[#9ac9d8]',
-  people: 'border-[#ddd1e1] bg-[#f6eff7] text-[#765778] dark:border-[#3e2b43] dark:bg-[#221728] dark:text-[#d2aeda]',
-  resources: 'border-[#d6d0df] bg-[#f4f2f8] text-[#625d70] dark:border-[#303845] dark:bg-[#171d25] dark:text-[#c6ceda]',
+  posts: 'border-[#d9d4e2] bg-white/60 text-[#625a6f] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
+  works: 'border-[#cfc3e2] bg-[#f3eff9] text-[#72539b] dark:border-[#4f472f] dark:bg-[#302c1f] dark:text-[#d7d0ad]',
+  companies: 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
+  topics: 'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
+  people: 'border-[#ddd1e1] bg-[#f6eff7] text-[#765778] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
+  resources: 'border-[#d6d0df] bg-[#f4f2f8] text-[#625d70] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
 }
 
 const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
@@ -604,7 +604,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   ) : null
 
   return (
-    <div className="space-y-5">
+    <div className="articles-index-stone space-y-5">
       <section className="-mx-1 space-y-2.5 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-2.5 shadow-[0_8px_24px_rgba(76,58,96,0.08)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none sm:space-y-3 sm:p-3">
         <nav
           aria-label="知识库频道"
@@ -848,6 +848,7 @@ function FilterChip({ label, count, active, onClick, prefix }) {
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={[
         'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors',
         active
@@ -879,7 +880,7 @@ function ArticleRow({ item }) {
     <Link
       href={item.href}
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      className="group block border border-[#e8e2ef] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:border-[#d6c9e3] hover:opacity-100 transition-all"
+      className="article-row group block border border-[#e8e2ef] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:border-[#d6c9e3] hover:opacity-100 transition-all"
     >
       <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_160px]">
         <div className="min-w-0">

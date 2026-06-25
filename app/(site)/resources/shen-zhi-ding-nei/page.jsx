@@ -5,38 +5,55 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import SharePageButton from '../../components/SharePageButton'
 import PageContainer from '../../components/PageContainer'
 import { getResourceDocument, loadResourceMarkdown } from '../../../../lib/resourceDocuments'
-import { buildShenZhiDingNeiArticle, buildShenZhiDingWaiArticle } from '../../../../lib/resourceMarkdown'
+import {
+  buildShenZhiDingNeiArticle,
+  buildShenZhiDingWaiArticle,
+  buildShenZhiTuanNeiArticle,
+} from '../../../../lib/resourceMarkdown'
 import ResourceArticleSwitcher from './ResourceArticleSwitcher'
 
 export const dynamic = 'force-static'
 
 const docNei = getResourceDocument('shen-zhi-ding-nei')
 const docWai = getResourceDocument('shen-zhi-ding-wai')
+const docTuan = getResourceDocument('shen-zhi-tuan-nei')
+const docMi = getResourceDocument('shen-zhi-mi-nei')
 
 const rawNei = loadResourceMarkdown('shen-zhi-ding-nei')
 const rawWai = loadResourceMarkdown('shen-zhi-ding-wai')
+const rawTuan = loadResourceMarkdown('shen-zhi-tuan-nei')
 
 const articleNei = rawNei ? buildShenZhiDingNeiArticle(rawNei) : null
 const articleWai = rawWai ? buildShenZhiDingWaiArticle(rawWai) : null
+const articleTuan = rawTuan ? buildShenZhiTuanNeiArticle(rawTuan) : null
 
 export const metadata = {
-  title: '《置身钉内》《置身钉外》全文原文：钉钉离职长文双篇存档',
+  title: '置身 X 内：大厂职场长文存档合集（钉内·钉外·团内·米内）',
   description:
-    '《置身钉内》与《置身钉外》全文原文存档，可切换阅读：滕雅辛（幽素）7.5 万字钉钉 ONE 项目复盘，与钉钉副总裁马锐拉的离职回应长文；配套职场观察调研。',
+    '「置身 X 内」系列大厂职场长文存档合集，可切换阅读：钉钉《置身钉内》（滕雅辛 7.5 万字 ONE 复盘）×《置身钉外》（副总裁马锐拉回应）、美团《置身团内》到餐基层产品长文，以及小米《置身米内》（媒体摘录，原文已删）；各篇配套职场观察调研。',
   keywords: [
+    '置身X内',
+    '置身x内',
+    '大厂离职长文',
+    '大厂职场长文',
     '《置身钉内》',
     '《置身钉内》全文',
-    '《置身钉内》原文',
     '置身钉内',
     '《置身钉外》',
-    '《置身钉外》全文',
-    '《置身钉外》原文',
     '置身钉外',
     '马锐拉',
     '钉钉',
     'ONE',
     '滕雅辛',
     '幽素',
+    '《置身团内》',
+    '置身团内',
+    '美团',
+    '美团到餐',
+    '《置身米内》',
+    '置身米内',
+    '小米',
+    '雷军',
     '职场',
     '组织观察',
     'B端AI',
@@ -48,8 +65,9 @@ export const metadata = {
     canonical: '/resources/shen-zhi-ding-nei',
   },
   openGraph: {
-    title: '《置身钉内》《置身钉外》全文原文：钉钉离职长文双篇存档',
-    description: docNei.summary,
+    title: '置身 X 内：大厂职场长文存档合集（钉内·钉外·团内·米内）',
+    description:
+      '钉钉《置身钉内》×《置身钉外》、美团《置身团内》、小米《置身米内》——「置身 X 内」系列大厂职场长文，可切换对照阅读并附配套调研。',
     url: 'https://2aran.com/resources/shen-zhi-ding-nei',
     type: 'article',
   },
@@ -72,7 +90,24 @@ const WAI_POINTS = [
   '作者没有把离开写成控诉，文末仍祝福钉钉——情绪克制反而让「我真的想多活几年」更有分量。',
 ]
 
-function ShenZhiDingNeiResourceContent() {
+const TUAN_POINTS = [
+  '《置身团内》把美团的组织问题从「执行力强」反过来追问：强执行是否正在遮蔽一线重新定义问题的能力。',
+  '作者描述的到餐 PM 更像「拆解上级意图」的执行者而非问题定义者——长期如此，沉淀的是组织生存技巧，不是可迁移的产品判断力。',
+  '「有数据」不等于「数据资产化」：拥有本地生活交易数据，与一线能否用它回答供给与用户预期，是两件事。',
+  '相比单点人事归因，长文更像在提醒一种路径依赖：曾帮公司打赢的低成本、强管控机制，换到新竞争周期可能变成惯性。',
+]
+
+const MI_POINTS = [
+  '《置身米内》的火力不在某款产品好坏，而在「爆款是否过度绑定创始人亲自操盘」这一结构问题。',
+  '雷军被类比为项羽：亲自抓的产品线易出爆款，放手的易遇瓶颈——优势与「难长出二号人物」是同一枚硬币的两面。',
+  '作者把「高强度节奏 + 薪酬被指偏低」与校招人才流失挂钩（媒体转述有 16k vs 26k 的对比，未见原文核验）。',
+  '低端起步、短期见效，但「低端转高端」被放回组织能力与人才结构语境讨论，而非单纯营销定价问题。',
+]
+
+const MI_ARCHIVE_NOTE =
+  '《置身米内》原文为内网飞书文档，发布后已被紧急删除，外部没有可核验的公开全文。本站因此不做全文原文存档，仅整理公开报道摘录（见上）与配套调研。'
+
+function ShenZhiXNeiResourceContent() {
   const url = 'https://2aran.com/resources/shen-zhi-ding-nei'
 
   const articles = [
@@ -84,8 +119,7 @@ function ShenZhiDingNeiResourceContent() {
           author: docNei.author,
           date: docNei.date,
           wordCount: docNei.wordCount,
-          intro:
-            '以下为读完全文后的提炼，不构成对任何个人或组织的判决。',
+          intro: '以下为读完全文后的提炼，不构成对任何个人或组织的判决。',
           points: NEI_POINTS,
           sourceLabel: 'GitHub Gist 公开版',
           sourceUrl: docNei.gistUrl,
@@ -112,6 +146,41 @@ function ShenZhiDingNeiResourceContent() {
           html: articleWai.html,
         }
       : null,
+    articleTuan
+      ? {
+          key: 'tuan-nei',
+          tabLabel: '《置身团内》',
+          title: docTuan.title,
+          author: docTuan.author,
+          date: docTuan.date,
+          wordCount: docTuan.wordCount,
+          intro: '以下为读完公开文字版后的提炼，不构成对美团或任何个人的判决。',
+          points: TUAN_POINTS,
+          sourceLabel: docTuan.sourceLabel,
+          sourceUrl: docTuan.sourceUrl,
+          researchHref: docTuan.researchHref,
+          toc: articleTuan.toc,
+          html: articleTuan.html,
+        }
+      : null,
+    docMi
+      ? {
+          key: 'mi-nei',
+          tabLabel: '《置身米内》',
+          title: docMi.title,
+          author: docMi.author,
+          date: docMi.date,
+          wordCount: docMi.wordCount,
+          intro: '原文是已删除的内网飞书文档，以下为公开报道摘录，不构成对小米或任何个人的判决。',
+          points: MI_POINTS,
+          sourceLabel: docMi.sourceLabel,
+          sourceUrl: docMi.sourceUrl,
+          researchHref: docMi.researchHref,
+          toc: [],
+          html: null,
+          archiveNote: MI_ARCHIVE_NOTE,
+        }
+      : null,
   ].filter(Boolean)
 
   return (
@@ -121,22 +190,22 @@ function ShenZhiDingNeiResourceContent() {
           <div>
             <p className="text-xs tracking-[0.14em] text-[#888] dark:text-gray-500">资源库 · 职场资料</p>
             <h1 className="mt-2 font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
-              《置身钉内》×《置身钉外》：钉钉离职长文双篇存档
+              置身 X 内：大厂职场长文存档合集
             </h1>
             <p className="mt-2 text-sm text-[#666] dark:text-gray-300">
-              {docNei.subtitle} ｜ {docWai.subtitle}
+              钉钉《置身钉内》×《置身钉外》 ｜ 美团《置身团内》 ｜ 小米《置身米内》
             </p>
             <p className="mt-3 text-sm leading-relaxed text-[#555] dark:text-gray-400">
-              员工视角的《置身钉内》（滕雅辛 7.5 万字 ONE 项目复盘）与管理者视角的《置身钉外》（钉钉副总裁马锐拉离职回应），同一事件的两侧记录，可切换对照阅读。更完整的观察框架见
+              「置身 X 内」是 2026 年 6 月起一批大厂员工借用兰小欢《置身事内》命名格式写下的职场长文。本页按标签切换对照阅读：钉钉、美团两篇有可核验文字版全文，小米《置身米内》原文为已删除的内网飞书文档、仅存媒体摘录。每篇均配套
               <Link href={docNei.researchHref} className="mx-1 underline underline-offset-4">
-                《置身钉内》职场调研
+                职场观察调研
               </Link>
               。
             </p>
           </div>
           <SharePageButton
-            title="《置身钉内》×《置身钉外》全文原文存档"
-            text={docNei.summary}
+            title="置身 X 内：大厂职场长文存档合集（钉内·钉外·团内·米内）"
+            text="钉钉《置身钉内》×《置身钉外》、美团《置身团内》、小米《置身米内》——大厂职场长文存档合集。"
             url={url}
           />
         </div>
@@ -162,12 +231,12 @@ function ShenZhiDingNeiResourceContent() {
   )
 }
 
-export default function ShenZhiDingNeiResourcePage() {
+export default function ShenZhiXNeiResourcePage() {
   return (
     <>
       <ContentPvBeacon category="resource" slug="shen-zhi-ding-nei" />
       <RanbiPaywall resourceKey="resource:shen-zhi-ding-nei" unitLabel="资料">
-        <ShenZhiDingNeiResourceContent />
+        <ShenZhiXNeiResourceContent />
       </RanbiPaywall>
     </>
   )

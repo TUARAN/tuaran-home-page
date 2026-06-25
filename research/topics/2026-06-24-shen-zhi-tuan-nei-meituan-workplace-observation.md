@@ -12,7 +12,7 @@ model: gpt-5-codex
 pv: 0
 ---
 
-> **写在前面**：本文基于 2026-06-24 可访问报道与新浪科技 / 快科技转载整理。站内已提供文字版原文存档，见[资料页](/resources/shen-zhi-tuan-nei)。
+> **写在前面**：本文基于 2026-06-24 可访问报道与新浪科技 / 快科技转载整理。站内已提供文字版原文存档，见[资料页](/resources/shen-zhi-ding-nei#tuan-nei)。
 
 ## 一、先给结论
 
@@ -37,7 +37,7 @@ pv: 0
 | 篇幅 | 36氪/ZAKER 称约两千多字，是“mini 版《置身钉内》” |
 | 传播路径 | 脉脉原帖或截图 -> 新浪科技 / 快科技图片版 -> IT之家报道 -> 36氪/ZAKER 二次解读 -> IT早报收录 |
 | 美团回应 | IT之家与 36氪/ZAKER 均称截至发稿，美团方面未公开回应 |
-| 文字版原文 | [站内资料页](/resources/shen-zhi-tuan-nei)；来源为[新浪科技转载快科技页面](https://finance.sina.com.cn/tech/discovery/2026-06-23/doc-iniekeev9770960.shtml)中的长图 OCR 整理 |
+| 文字版原文 | [站内资料页](/resources/shen-zhi-ding-nei#tuan-nei)；来源为[新浪科技转载快科技页面](https://finance.sina.com.cn/tech/discovery/2026-06-23/doc-iniekeev9770960.shtml)中的长图 OCR 整理 |
 
 需要特别说明：新浪科技 / 快科技页面提供了长图版原文，但未给出脉脉原帖 URL；36氪/ZAKER 提供了“脉脉”线索和两张截图，但也未给出可点击原帖 URL。
 
@@ -127,5 +127,5 @@ pv: 0
 ### 站内交叉
 
 - [《置身钉内》调研：钉钉 ONE 项目复盘与职场权力结构的观察](/articles/research/topics/shen-zhi-ding-nei-workplace-observation)
-- [《置身钉内》×《置身钉外》：钉钉离职长文双篇存档](/resources/shen-zhi-ding-nei)
-- [《置身团内》文字版原文](/resources/shen-zhi-tuan-nei)
+- [置身 X 内：大厂职场长文存档合集（钉内·钉外·团内·米内）](/resources/shen-zhi-ding-nei)
+- [《置身团内》文字版原文（合集内切换）](/resources/shen-zhi-ding-nei#tuan-nei)

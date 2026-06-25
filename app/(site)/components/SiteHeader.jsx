@@ -396,7 +396,7 @@ export default function SiteHeader() {
 
   return (
     <>
-      <header className="site-header sticky top-0 z-40 w-full border-b backdrop-blur">
+      <header className="site-header fixed left-0 right-0 top-0 z-[120] w-full border-b backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-10">
           <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
@@ -498,7 +498,7 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'site-mobile-drawer fixed right-0 top-[73px] z-40 max-h-[calc(100vh-73px)] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 md:hidden',
+          'site-mobile-drawer fixed right-0 top-[var(--site-header-height)] z-[120] max-h-[calc(100vh-var(--site-header-height))] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 md:hidden',
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >

@@ -2,7 +2,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 import DaysSince from './components/DaysSince'
-import HomeRecommendationCard from './components/HomeRecommendationCard'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
@@ -132,11 +131,11 @@ function HomeFeaturedLinkItem({ item }) {
         {item.tagLabel ? <span className="home-badge home-badge-muted">{item.tagLabel}</span> : null}
         {item.date ? <time className="home-item-date">{item.date}</time> : null}
       </div>
-      <p className="mb-0 line-clamp-2 text-[15px] font-semibold leading-6 text-[#191813] transition-colors group-hover:text-[#6c4c1f] dark:text-[#f2f3ed] dark:group-hover:text-[#d5d8c4]">
+      <p className="mb-0 line-clamp-2 text-[18px] font-semibold leading-7 text-[#191813] transition-colors group-hover:text-[#6c4c1f] dark:text-[#f2f3ed] dark:group-hover:text-[#d5d8c4] md:text-[20px] md:leading-8">
         {item.title}
       </p>
       {item.summary ? (
-        <p className="mb-0 mt-1 line-clamp-2 text-[13px] leading-6 text-[#686a5f] dark:text-[#9ca6b4]">
+        <p className="mb-0 mt-2 line-clamp-2 text-[14px] leading-7 text-[#686a5f] dark:text-[#9ca6b4] md:text-[15px]">
           {item.summary}
         </p>
       ) : null}
@@ -594,42 +593,6 @@ function ClassicHomePage({ featuredPicks }) {
 function PolishedHomePage({ featuredPicks }) {
   return (
     <main className="home-polished-root home-page">
-      {/* Hot ticker marquee — sticky top bar, below nav above hero */}
-      <div className="mb-3">
-        <HotTickerBar />
-      </div>
-
-      <section className="home-hero">
-        <div className="home-hero-copy">
-          <p className="home-kicker">2aran.com · Tuaran</p>
-          <div className="home-hero-brand">
-            <p className="home-hero-title" aria-hidden="true">
-              <T zh={SITE_HERO_TITLE} en={SITE_HERO_TITLE_EN} />
-            </p>
-            <span><T zh={SITE_HERO_TAGLINE} en={SITE_HERO_TAGLINE_EN} /></span>
-          </div>
-          <p className="home-hero-lead">
-            <HomeHeroGoal variant="polished" />
-          </p>
-          <div className="home-hero-actions">
-            <a href="https://blogger-alliance.cn/" target="_blank" rel="noreferrer" className="home-button home-button-primary no-external-arrow">
-              <T zh="进入博主联盟" en="Enter Blogger Alliance" />
-            </a>
-            <Link href="/services" className="home-button home-button-secondary">
-              <T zh="合作方式" en="Work with me" />
-            </Link>
-          </div>
-        </div>
-
-        <HomeRecommendationCard />
-      </section>
-
-      <section className="home-paths" aria-label="Main site entries">
-        {START_PATHS.map((item) => (
-          <StartPathCard key={item.href} item={item} />
-        ))}
-      </section>
-
       <div className="home-main-grid">
         <FeaturedReading items={featuredPicks} />
 
@@ -646,6 +609,20 @@ function PolishedHomePage({ featuredPicks }) {
             <div className="home-product-list">
               {PRODUCT_LINKS.map((item) => (
                 <ProductLink key={item.href} item={item} />
+              ))}
+            </div>
+          </section>
+
+          <section className="home-section home-entry-panel">
+            <div className="home-section-heading compact">
+              <div>
+                <p className="home-kicker">Entries</p>
+                <h2 className="home-section-title"><T zh="几个入口" en="Entries" /></h2>
+              </div>
+            </div>
+            <div className="home-entry-list">
+              {START_PATHS.map((item) => (
+                <StartPathCard key={item.href} item={item} />
               ))}
             </div>
           </section>
@@ -683,10 +660,5 @@ function PolishedHomePage({ featuredPicks }) {
 export default function HomePage() {
   const featuredPicks = getHomeFeaturedPicks()
 
-  return (
-    <>
-      <PolishedHomePage featuredPicks={featuredPicks} />
-      <ClassicHomePage featuredPicks={featuredPicks} />
-    </>
-  )
+  return <PolishedHomePage featuredPicks={featuredPicks} />
 }

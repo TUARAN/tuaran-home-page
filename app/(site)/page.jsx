@@ -593,6 +593,7 @@ function ClassicHomePage({ featuredPicks }) {
 function PolishedHomePage({ featuredPicks }) {
   return (
     <main className="home-polished-root home-page">
+      <div className="home-backdrop" aria-hidden="true" />
       <div className="home-main-grid">
         <FeaturedReading items={featuredPicks} />
 

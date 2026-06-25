@@ -39,7 +39,7 @@ export default function HotTickerBar() {
         aria-label="Agent世界杯热点入口"
       >
         {/* Scroll container */}
-        <div className="relative flex items-center h-[36px] md:h-[40px]">
+        <div className="relative flex h-[36px] max-w-full items-center overflow-hidden md:h-[40px]">
           {/* Left gradient fade */}
           <div
             className="pointer-events-none absolute left-0 top-0 z-10 h-full w-[60px]"

@@ -49,37 +49,38 @@
   --hero-card-title: #1d1a16;
   --hero-card-subtext: #6f6877;
   --hero-surface-panel: color-mix(in srgb, var(--page-bg) 94%, white);
+  --site-header-height: 53px;
 }
 
 .dark {
-  --page-bg: #0b1016;
-  --site-ink: #f1f2ec;
-  --site-muted: #a2acba;
-  --site-faint: #7f8997;
-  --site-line: #27303a;
-  --site-line-strong: #364252;
-  --site-panel: #101720;
-  --site-panel-strong: #141c27;
+  --page-bg: #11100e;
+  --site-ink: #f1f0ea;
+  --site-muted: #aaa69a;
+  --site-faint: #827f76;
+  --site-line: #2e2b25;
+  --site-line-strong: #4a453b;
+  --site-panel: #171512;
+  --site-panel-strong: #211f1a;
   --site-accent: #c1c6a8;
   --site-accent-strong: #e6e8d8;
-  --site-blue: #9ab6d4;
+  --site-blue: #aab7bf;
   --site-green: #9fc5ad;
   --site-shadow: rgba(0, 0, 0, 0.26);
-  --home-focus-border: #536070;
+  --home-focus-border: #5b5549;
   --home-focus-border-hover: #7e9bb1;
-  --home-focus-panel-start: rgba(20, 28, 39, 0.88);
-  --home-focus-panel-end: rgba(31, 26, 42, 0.82);
+  --home-focus-panel-start: rgba(28, 26, 22, 0.88);
+  --home-focus-panel-end: rgba(35, 32, 27, 0.82);
   --home-focus-kicker: #d2b5cc;
   --home-focus-action: #b7d7e8;
   --home-focus-chip-bg: rgba(255, 255, 255, 0.08);
-  --home-focus-chip-border: #3b4655;
+  --home-focus-chip-border: #3f3a32;
   --home-focus-shadow: rgba(0, 0, 0, 0.32);
   --theme-accent: var(--site-accent);
   --theme-accent-muted: #a8ae82;
   --theme-sage: #a1ab76;
-  --hero-surface-start: rgba(20, 24, 31, 0.96);
-  --hero-surface-end: rgba(13, 17, 23, 0.92);
-  --hero-border: #27303a;
+  --hero-surface-start: rgba(31, 29, 24, 0.96);
+  --hero-surface-end: rgba(18, 17, 15, 0.92);
+  --hero-border: #2e2b25;
   --hero-shadow: rgba(0, 0, 0, 0.28);
   --hero-glow-core: color-mix(in srgb, var(--theme-accent) 16%, transparent);
   --hero-glow-fade: rgba(18, 24, 33, 0.72);
@@ -89,15 +90,16 @@
   --hero-cta-subtext: #5a4725;
   --hero-cta-icon-bg: color-mix(in srgb, #3a2c14 15%, transparent);
   --hero-cta-icon-text: #3a2c14;
-  --hero-card-bg: #151c25;
-  --hero-card-border: #3a4757;
-  --hero-card-hover-bg: #1a2330;
-  --hero-card-hover-border: #5a6a7e;
-  --hero-card-icon-bg: #22303f;
+  --hero-card-bg: #211f1a;
+  --hero-card-border: #4a453b;
+  --hero-card-hover-bg: #29261f;
+  --hero-card-hover-border: #675f50;
+  --hero-card-icon-bg: #302c23;
   --hero-card-icon-text: var(--theme-accent-muted);
   --hero-card-title: #f3f4f6;
-  --hero-card-subtext: #8e98a8;
-  --hero-surface-panel: #10151d;
+  --hero-card-subtext: #aaa69a;
+  --hero-surface-panel: #171512;
+  --site-header-height: 53px;
 }
 
 :root[data-ui='classic'] {
@@ -133,21 +135,27 @@
 
 @layer base {
   body {
-    @apply bg-[var(--page-bg)] dark:bg-[#0b1016] text-[#333] dark:text-gray-100 font-sans;
+    @apply bg-[var(--page-bg)] dark:bg-[var(--page-bg)] text-[#333] dark:text-gray-100 font-sans;
     width: 100%;
     max-width: 100%;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-x: clip;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  body:has(.site-header) {
+    padding-top: var(--site-header-height);
   }
 
   html {
     width: 100%;
     max-width: 100%;
-    overflow-x: clip;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
     scroll-behavior: smooth;
     /* 站点顶部 sticky 主导航；锚点/目录跳转时避免标题被 header 遮挡 */
     scroll-padding-top: 4rem;
@@ -286,8 +294,53 @@
   }
 
   .home-page {
-    @apply mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-2 pb-9 sm:px-6 md:pt-3 md:pb-12 lg:px-10;
+    @apply relative isolate mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-3 pb-9 sm:px-6 md:pt-5 md:pb-12 lg:px-10;
     color: var(--site-ink);
+  }
+
+  .home-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background-image:
+      linear-gradient(180deg, rgba(241, 238, 242, 0.08), rgba(241, 238, 242, 0.34) 58%, rgba(241, 238, 242, 0.62)),
+      image-set(
+        url("/images/home/guangzhou-skyline-banner.avif") type("image/avif"),
+        url("/images/home/guangzhou-skyline-banner.webp") type("image/webp"),
+        url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+      );
+    background-position: center top;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+
+  .home-page::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 22% 8%, rgba(255, 255, 255, 0.1), transparent 34%),
+      linear-gradient(90deg, rgba(241, 238, 242, 0.18), rgba(241, 238, 242, 0.08) 45%, rgba(241, 238, 242, 0.2));
+  }
+
+  .dark .home-page::before {
+    background-image:
+      linear-gradient(180deg, rgba(11, 16, 22, 0.1), rgba(11, 16, 22, 0.48) 58%, rgba(11, 16, 22, 0.78)),
+      image-set(
+        url("/images/home/guangzhou-skyline-banner.avif") type("image/avif"),
+        url("/images/home/guangzhou-skyline-banner.webp") type("image/webp"),
+        url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+      );
+  }
+
+  .dark .home-page::after {
+    background:
+      radial-gradient(circle at 22% 8%, rgba(255, 255, 255, 0.05), transparent 34%),
+      linear-gradient(90deg, rgba(11, 16, 22, 0.22), rgba(11, 16, 22, 0.12) 45%, rgba(11, 16, 22, 0.34));
   }
 
   .home-hero {
@@ -475,9 +528,11 @@
   }
 
   .home-profile {
-    @apply rounded-2xl border p-5;
+    @apply rounded-[22px] border p-5 md:p-6;
     border-color: var(--site-line);
-    background: var(--site-panel);
+    background: color-mix(in srgb, var(--site-panel-strong) 46%, transparent);
+    backdrop-filter: blur(3px) saturate(1.08);
+    box-shadow: 0 18px 46px color-mix(in srgb, var(--site-shadow) 72%, transparent);
   }
 
   .home-profile-top {
@@ -485,7 +540,7 @@
   }
 
   .home-avatar-wrap {
-    @apply w-[92px] shrink-0 overflow-hidden rounded-xl border;
+    @apply w-[112px] shrink-0 overflow-hidden rounded-xl border;
     border-color: var(--site-line);
     background: var(--page-bg);
   }
@@ -520,7 +575,7 @@
   }
 
   .home-profile-links a {
-    @apply rounded-full border px-2 py-1.5 text-center text-[11px] font-medium transition;
+    @apply min-h-10 rounded-full border px-2 py-2 text-center text-[12px] font-medium transition;
     border-color: var(--site-line);
     color: var(--site-muted);
   }
@@ -568,22 +623,55 @@
     color: var(--site-accent);
   }
 
+  .home-entry-list {
+    @apply space-y-2;
+  }
+
+  .home-entry-list .home-path-card {
+    @apply min-h-0 rounded-xl px-4 py-3;
+  }
+
+  .home-entry-list .home-path-label {
+    @apply mb-2;
+  }
+
+  .home-entry-list .home-path-card h3 {
+    @apply mb-1 text-[15px] leading-6;
+  }
+
+  .home-entry-list .home-path-card p {
+    @apply mb-3 text-[12.5px] leading-5;
+  }
+
+  .home-entry-list .home-path-meta {
+    @apply text-[10px];
+  }
+
   .home-main-grid {
-    @apply grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px];
+    @apply grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_430px];
   }
 
   .home-side-stack {
     @apply space-y-6;
   }
 
+  @media (min-width: 1024px) {
+    .home-side-stack {
+      position: sticky;
+      top: 5.5rem;
+    }
+  }
+
   .home-section {
-    @apply rounded-2xl border p-5 md:p-6;
+    @apply rounded-[22px] border p-5 md:p-8;
     border-color: var(--site-line);
-    background: var(--site-panel);
+    background: color-mix(in srgb, var(--site-panel-strong) 46%, transparent);
+    backdrop-filter: blur(3px) saturate(1.08);
+    box-shadow: 0 18px 46px color-mix(in srgb, var(--site-shadow) 72%, transparent);
   }
 
   .home-section-heading {
-    @apply mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
+    @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
   }
 
   .home-section-heading.compact {
@@ -591,7 +679,7 @@
   }
 
   .home-section-title {
-    @apply mb-0 border-b-0 pb-0 font-serif text-[1.65rem] font-semibold leading-tight tracking-normal;
+    @apply mb-0 border-b-0 pb-0 font-serif text-[2rem] font-semibold leading-tight tracking-normal md:text-[2.25rem];
     color: var(--site-ink);
   }
 
@@ -617,7 +705,7 @@
   }
 
   .home-reading-item {
-    @apply block px-0 py-4 first:pt-0 last:pb-0;
+    @apply block px-0 py-6 first:pt-0 last:pb-0;
   }
 
   .home-badge {
@@ -665,30 +753,33 @@
   }
 
   .home-product-link {
-    @apply flex items-center justify-between gap-3 rounded-xl border px-3 py-3 no-underline transition;
+    @apply flex min-h-[86px] items-center justify-between gap-3 rounded-xl border px-4 py-3 no-underline transition;
     border-color: var(--site-line);
+    background: color-mix(in srgb, var(--site-panel-strong) 34%, transparent);
     color: var(--site-ink);
   }
 
   .home-product-link:hover {
     @apply no-underline;
     border-color: var(--site-line-strong);
-    background: var(--site-panel-strong);
+    background: color-mix(in srgb, var(--site-panel-strong) 50%, transparent);
   }
 
   .home-product-link strong {
-    @apply block text-sm;
+    @apply block text-[15px];
   }
 
   .home-product-link small {
-    @apply mt-0.5 block text-[12px] leading-5;
+    @apply mt-1 block text-[13px] leading-5;
     color: var(--site-muted);
   }
 
   .home-contact-panel {
-    @apply rounded-2xl border p-5;
+    @apply rounded-[22px] border p-5 md:p-6;
     border-color: var(--site-line);
-    background: var(--site-panel);
+    background: color-mix(in srgb, var(--site-panel-strong) 46%, transparent);
+    backdrop-filter: blur(3px) saturate(1.08);
+    box-shadow: 0 18px 46px color-mix(in srgb, var(--site-shadow) 72%, transparent);
   }
 
   .home-contact-panel h2 {
@@ -708,7 +799,7 @@
   .home-qr-grid div {
     @apply rounded-xl border p-3 text-center;
     border-color: var(--site-line);
-    background: var(--site-panel-strong);
+    background: color-mix(in srgb, var(--site-panel-strong) 44%, transparent);
   }
 
   .home-qr-grid img {
@@ -719,6 +810,17 @@
   .home-qr-grid span {
     @apply mt-2 block font-mono text-[11px];
     color: var(--site-muted);
+  }
+
+  .hot-ticker-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    contain: paint;
+  }
+
+  .hot-ticker-wrapper > a {
+    max-width: 100%;
   }
 
   :root[data-ui='classic'] .home-page {
@@ -901,9 +1003,103 @@
     background: transparent;
   }
 
+  :root[data-ui='classic'] .home-polished-root {
+    display: flex !important;
+  }
+
+  :root[data-ui='classic'] .home-page {
+    max-width: 1880px;
+    padding-top: 1.25rem;
+  }
+
+  :root[data-ui='classic'] .home-main-grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  :root[data-ui='classic'] .home-side-stack {
+    margin-top: 0;
+  }
+
+  :root[data-ui='classic'] .home-profile,
+  :root[data-ui='classic'] .home-section,
+  :root[data-ui='classic'] .home-contact-panel {
+    border-width: 1px;
+    border-radius: 1.375rem;
+    background: color-mix(in srgb, var(--site-panel-strong) 46%, transparent);
+    backdrop-filter: blur(3px) saturate(1.08);
+    box-shadow: 0 18px 46px color-mix(in srgb, var(--site-shadow) 72%, transparent);
+  }
+
+  :root[data-ui='classic'] .home-profile {
+    display: block;
+    max-width: none;
+  }
+
+  :root[data-ui='classic'] .home-profile-top {
+    display: flex;
+  }
+
+  :root[data-ui='classic'] .home-avatar-wrap {
+    width: 112px;
+    border-radius: 0.75rem;
+  }
+
+  :root[data-ui='classic'] .home-profile-links {
+    display: grid;
+  }
+
+  :root[data-ui='classic'] .home-section,
+  :root[data-ui='classic'] .home-contact-panel {
+    padding: 1.5rem;
+  }
+
+  :root[data-ui='classic'] .home-section + .home-contact-panel,
+  :root[data-ui='classic'] .home-side-stack .home-contact-panel {
+    margin-top: 0;
+  }
+
+  :root[data-ui='classic'] .home-section-title,
+  :root[data-ui='classic'] .home-contact-panel h2 {
+    font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+  }
+
+  @media (min-width: 1024px) {
+    :root[data-ui='classic'] .home-main-grid {
+      grid-template-columns: minmax(0, 1fr) 380px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    :root[data-ui='classic'] .home-main-grid {
+      grid-template-columns: minmax(0, 1fr) 430px;
+    }
+  }
+
   @media (max-width: 640px) {
     .home-page {
       padding-top: 0.5rem;
+    }
+
+    .home-page::before {
+      background-image:
+        linear-gradient(180deg, rgba(241, 238, 242, 0.08), rgba(241, 238, 242, 0.38) 58%, rgba(241, 238, 242, 0.66)),
+        image-set(
+          url("/images/home/guangzhou-skyline-banner-sm.avif") type("image/avif"),
+          url("/images/home/guangzhou-skyline-banner-sm.webp") type("image/webp"),
+          url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+        );
+      background-position: center top;
+    }
+
+    .dark .home-page::before {
+      background-image:
+        linear-gradient(180deg, rgba(11, 16, 22, 0.1), rgba(11, 16, 22, 0.52) 58%, rgba(11, 16, 22, 0.8)),
+        image-set(
+          url("/images/home/guangzhou-skyline-banner-sm.avif") type("image/avif"),
+          url("/images/home/guangzhou-skyline-banner-sm.webp") type("image/webp"),
+          url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+        );
     }
 
     .home-hero {
@@ -1016,12 +1212,22 @@
     border-color: var(--site-line);
     background-color: color-mix(in srgb, var(--page-bg) 88%, white);
     box-shadow: 0 1px 0 color-mix(in srgb, var(--site-line) 58%, transparent);
+    min-height: var(--site-header-height);
   }
 
   .dark .site-header {
     border-color: var(--site-line);
     background-color: color-mix(in srgb, var(--site-panel) 94%, transparent);
     box-shadow: 0 1px 0 color-mix(in srgb, var(--site-line) 66%, transparent);
+  }
+
+  body:has(.home-page) .site-header {
+    background-color: color-mix(in srgb, var(--page-bg) 54%, transparent);
+    backdrop-filter: blur(18px) saturate(1.08);
+  }
+
+  .dark body:has(.home-page) .site-header {
+    background-color: color-mix(in srgb, var(--site-panel) 54%, transparent);
   }
 
   .site-brand-text {

@@ -131,7 +131,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [peopleType, setPeopleType] = useState(initialPeopleType)
   const [resourceType, setResourceType] = useState(initialResourceType)
   const [query, setQuery] = useState(initialQuery)
-  const [filtersOpen, setFiltersOpen] = useState(true)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
@@ -483,11 +483,11 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const hasAdvancedFilters = activeChannel !== 'all' && activeChannel !== 'picks'
   const currentFilterLabel = breadcrumb || CHANNEL_DEFS.find((channel) => channel.key === activeChannel)?.label || '全部'
 
-  function AdvancedFiltersContent() {
+  function AdvancedFiltersContent({ orientation = 'inline' }) {
     return (
       <>
         {activeChannel === 'column' ? (
-          <FilterRow label="专栏类型" ariaLabel="专栏类型">
+          <FilterRow label="专栏类型" ariaLabel="专栏类型" orientation={orientation}>
             {COLUMN_TAB_DEFS.map((t) => (
               <FilterChip
                 key={t.key}
@@ -508,7 +508,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
         {activeChannel === 'research' ? (
           <>
-            <FilterRow label="调研类型" ariaLabel="调研类型">
+            <FilterRow label="调研类型" ariaLabel="调研类型" orientation={orientation}>
               {RESEARCH_TYPE_DEFS.map((t) => (
                 <FilterChip
                   key={t.key}
@@ -519,7 +519,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                 />
               ))}
             </FilterRow>
-            <FilterRow label="公司分类" ariaLabel="公司调研分类">
+            <FilterRow label="公司分类" ariaLabel="公司调研分类" orientation={orientation}>
               {COMPANY_TYPE_DEFS.map((t) => (
                 <FilterChip
                   key={t.key}
@@ -530,7 +530,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                 />
               ))}
             </FilterRow>
-            <FilterRow label="事项分类" ariaLabel="事项调研分类">
+            <FilterRow label="事项分类" ariaLabel="事项调研分类" orientation={orientation}>
               {TOPIC_TYPE_DEFS.map((t) => (
                 <FilterChip
                   key={t.key}
@@ -541,7 +541,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                 />
               ))}
             </FilterRow>
-            <FilterRow label="人物分类" ariaLabel="人物调研分类">
+            <FilterRow label="人物分类" ariaLabel="人物调研分类" orientation={orientation}>
               {PEOPLE_TYPE_DEFS.map((t) => (
                 <FilterChip
                   key={t.key}
@@ -556,7 +556,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         ) : null}
 
         {activeChannel === 'resources' ? (
-          <FilterRow label="资源分类" ariaLabel="资源分类">
+          <FilterRow label="资源分类" ariaLabel="资源分类" orientation={orientation}>
             {RESOURCE_TYPE_DEFS.map((t) => {
               const scopeLabel = t.key === 'bookmarks' ? '站外' : t.key === 'all' ? '' : '站内'
               return (
@@ -573,10 +573,35 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           </FilterRow>
         ) : null}
 
-        {breadcrumb ? <FilterBreadcrumb path={breadcrumb} /> : null}
+        {orientation !== 'stack' && breadcrumb ? <FilterBreadcrumb path={breadcrumb} /> : null}
       </>
     )
   }
+
+  const listContent = showArticleList ? (
+    <div
+      className={[
+        'space-y-4 transition-opacity duration-150',
+        isPending ? 'opacity-60' : 'opacity-100',
+      ].join(' ')}
+      aria-busy={isPending}
+    >
+      {visible.length === 0 ? (
+        <p className="text-sm text-[#666] dark:text-gray-400">
+          {query ? '没有匹配的内容，试试更短关键词或切换分类。' : '该分类下暂无内容。'}
+        </p>
+      ) : (
+        visible.map((item) => {
+          const parts = String(item.href || '').split('/')
+          const pvKey = parts[3] && parts[4] ? `${parts[3]}/${parts[4]}` : ''
+          const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
+          const pvLoading = pvKey !== '' && !pvLoaded
+          const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
+          return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
+        })
+      )}
+    </div>
+  ) : null
 
   return (
     <div className="space-y-5">
@@ -653,44 +678,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           ) : null}
         </form>
 
-        {hasAdvancedFilters ? (
-          <details
-            open={filtersOpen}
-            onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
-            className="group rounded-lg border border-[#e8e2ef] bg-white/80 text-xs dark:border-gray-800 dark:bg-[#121821]"
-          >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
-              <div className="min-w-0">
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#958aa1] dark:text-gray-500">
-                  当前
-                </span>
-                <span className="ml-2 font-medium text-[#20172f] dark:text-gray-100">
-                  {currentFilterLabel}
-                </span>
-              </div>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d8d0e3] px-2.5 py-1 text-[12px] text-[#675d72] transition-colors group-open:border-[#b9a6c9] group-open:text-[#20172f] dark:border-gray-700 dark:text-gray-300 dark:group-open:border-gray-500 dark:group-open:text-gray-100">
-                <span className="group-open:hidden">展开筛选</span>
-                <span className="hidden group-open:inline">收起筛选</span>
-                <svg
-                  viewBox="0 0 12 12"
-                  aria-hidden="true"
-                  className="h-3 w-3 transition-transform group-open:rotate-180"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 4.5 6 7.5 9 4.5" />
-                </svg>
-              </span>
-            </summary>
-            <div className="space-y-3 border-t border-[#e8e2ef] px-3 py-3 dark:border-gray-800">
-              <AdvancedFiltersContent />
-            </div>
-          </details>
-        ) : null}
-
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e8e2ef] pt-2.5 text-xs text-[#665f70] dark:border-gray-800 dark:text-gray-400 sm:pt-3">
           {isOwner && tab === 'posts' ? (
             <Link
@@ -729,37 +716,85 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         </div>
       </section>
 
-      {showReadingHighlights ? <ReadingHighlights sections={readingHighlights} /> : null}
+      {hasAdvancedFilters ? (
+        <div className="lg:grid lg:grid-cols-[236px_minmax(0,1fr)] lg:items-start lg:gap-6">
+          <aside className="hidden self-start rounded-lg border border-[#e8e2ef] bg-white/80 p-3 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto dark:border-gray-800 dark:bg-[#121821]">
+            <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#eee6f1] pb-2 dark:border-gray-800">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#958aa1] dark:text-gray-500">
+                筛选
+              </span>
+              <span className="truncate text-xs font-medium text-[#20172f] dark:text-gray-100">
+                {currentFilterLabel}
+              </span>
+            </div>
+            <div className="space-y-3 text-xs">
+              <AdvancedFiltersContent orientation="stack" />
+            </div>
+          </aside>
 
-      {showArticleList ? (
-        <div
-          className={[
-            'space-y-4 transition-opacity duration-150',
-            isPending ? 'opacity-60' : 'opacity-100',
-          ].join(' ')}
-          aria-busy={isPending}
-        >
-          {visible.length === 0 ? (
-            <p className="text-sm text-[#666] dark:text-gray-400">
-              {query ? '没有匹配的内容，试试更短关键词或切换分类。' : '该分类下暂无内容。'}
-            </p>
-          ) : (
-            visible.map((item) => {
-              const parts = String(item.href || '').split('/')
-              const pvKey = parts[3] && parts[4] ? `${parts[3]}/${parts[4]}` : ''
-              const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
-              const pvLoading = pvKey !== '' && !pvLoaded
-              const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
-              return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
-            })
-          )}
+          <div className="mt-3 min-w-0 space-y-4 lg:mt-0">
+            <details
+              open={filtersOpen}
+              onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
+              className="group rounded-lg border border-[#e8e2ef] bg-white/80 text-xs lg:hidden dark:border-gray-800 dark:bg-[#121821]"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+                <div className="min-w-0">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#958aa1] dark:text-gray-500">
+                    当前
+                  </span>
+                  <span className="ml-2 font-medium text-[#20172f] dark:text-gray-100">
+                    {currentFilterLabel}
+                  </span>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d8d0e3] px-2.5 py-1 text-[12px] text-[#675d72] transition-colors group-open:border-[#b9a6c9] group-open:text-[#20172f] dark:border-gray-700 dark:text-gray-300 dark:group-open:border-gray-500 dark:group-open:text-gray-100">
+                  <span className="group-open:hidden">展开筛选</span>
+                  <span className="hidden group-open:inline">收起筛选</span>
+                  <svg
+                    viewBox="0 0 12 12"
+                    aria-hidden="true"
+                    className="h-3 w-3 transition-transform group-open:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 4.5 6 7.5 9 4.5" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="space-y-3 border-t border-[#e8e2ef] px-3 py-3 dark:border-gray-800">
+                <AdvancedFiltersContent orientation="inline" />
+              </div>
+            </details>
+
+            {listContent}
+          </div>
         </div>
-      ) : null}
+      ) : (
+        <>
+          {showReadingHighlights ? <ReadingHighlights sections={readingHighlights} /> : null}
+          {listContent}
+        </>
+      )}
     </div>
   )
 }
 
-function FilterRow({ label, ariaLabel, children }) {
+function FilterRow({ label, ariaLabel, orientation = 'inline', children }) {
+  if (orientation === 'stack') {
+    return (
+      <div className="min-w-0">
+        <span className="mb-1.5 block text-[11px] font-medium tracking-[0.04em] text-[#82788e] dark:text-[#7f8aa0]">
+          {label}
+        </span>
+        <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {children}
+        </nav>
+      </div>
+    )
+  }
   return (
     <div className="grid min-w-0 grid-cols-[4.25rem_minmax(0,1fr)] items-start gap-x-3 sm:grid-cols-[4.75rem_minmax(0,1fr)]">
       <span className="pt-1.5 text-xs leading-5 text-[#82788e] dark:text-[#7f8aa0]">{label}</span>

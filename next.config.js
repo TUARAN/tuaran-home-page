@@ -84,6 +84,12 @@ const nextConfig = {
         permanent: false,
       },
       {
+        // 《置身团内》原独立资料页已并入「置身 X 内」合集页
+        source: '/resources/shen-zhi-tuan-nei',
+        destination: '/resources/shen-zhi-ding-nei#tuan-nei',
+        permanent: true,
+      },
+      {
         // 张居正调研已升级为专题工程页 /zhang-juzheng-book
         source: '/articles/research/topics/zhang-juzheng-book-project',
         destination: '/zhang-juzheng-book',

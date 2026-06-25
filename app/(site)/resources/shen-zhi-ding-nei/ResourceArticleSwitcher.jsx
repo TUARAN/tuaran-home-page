@@ -99,8 +99,25 @@ export default function ResourceArticleSwitcher({ articles }) {
         </p>
       </section>
 
-      <h2 className="mb-4 text-lg font-semibold text-[#222] dark:text-gray-100">{active.title} · 全文原文</h2>
-      <ResourceLongformReader key={active.key} toc={active.toc} html={active.html} />
+      {active.html ? (
+        <>
+          <h2 className="mb-4 text-lg font-semibold text-[#222] dark:text-gray-100">{active.title} · 全文原文</h2>
+          <ResourceLongformReader key={active.key} toc={active.toc} html={active.html} />
+        </>
+      ) : (
+        <div className="rounded-xl border border-dashed border-[#ccc] bg-[#fafaf8] p-6 text-sm leading-relaxed text-[#666] dark:border-[#3a3a32] dark:bg-[#121410] dark:text-gray-300">
+          <p>{active.archiveNote || '该篇暂无可核验的公开全文，本站不做全文存档。'}</p>
+          {active.researchHref ? (
+            <p className="mt-3">
+              配套观察见
+              <Link href={active.researchHref} className="mx-1 underline underline-offset-4">
+                {active.tabLabel}职场调研
+              </Link>
+              。
+            </p>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }

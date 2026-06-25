@@ -1808,6 +1808,106 @@
     color: #d7d0ca;
   }
 
+  .dark .articles-index-stone {
+    --articles-stone-base: #11100e;
+    --articles-stone-panel: #151410;
+    --articles-stone-panel-strong: #1c1a16;
+    --articles-stone-chip: #24231f;
+    --articles-stone-chip-active: #302c1f;
+    --articles-stone-line: #292720;
+    --articles-stone-line-strong: #3a372f;
+    --articles-stone-text: #f1f0ea;
+    --articles-stone-muted: #aaa69a;
+    --articles-stone-faint: #87847a;
+    --articles-stone-accent: #d7d0ad;
+  }
+
+  .dark .articles-index-stone :where(section, aside, details, .article-row) {
+    border-color: var(--articles-stone-line) !important;
+    background-color: var(--articles-stone-panel) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .dark .articles-index-stone :where(section, aside, details) {
+    color: var(--articles-stone-text);
+  }
+
+  .dark .articles-index-stone .article-row {
+    opacity: 1;
+  }
+
+  .dark .articles-index-stone .article-row:hover {
+    border-color: var(--articles-stone-line-strong) !important;
+    background-color: var(--articles-stone-panel-strong) !important;
+  }
+
+  .dark .articles-index-stone :where(nav[role="tablist"], input, form button, .article-row [class*="rounded-full"], [title^="Cursor Canvas"]) {
+    border-color: var(--articles-stone-line-strong) !important;
+    background-color: var(--articles-stone-chip) !important;
+    color: var(--articles-stone-muted) !important;
+  }
+
+  .dark .articles-index-stone :where(button[role="tab"], button[aria-pressed]) {
+    border-color: transparent !important;
+    background-color: transparent !important;
+    color: var(--articles-stone-muted) !important;
+  }
+
+  .dark .articles-index-stone :where(button[role="tab"]:hover, button[aria-pressed]:hover, .group:hover [class*="rounded-full"]) {
+    border-color: var(--articles-stone-line-strong) !important;
+    background-color: var(--articles-stone-chip) !important;
+    color: var(--articles-stone-text) !important;
+  }
+
+  .dark .articles-index-stone :where(button[aria-selected="true"], button[aria-pressed="true"]) {
+    border-color: #4f472f !important;
+    background-color: var(--articles-stone-chip-active) !important;
+    color: var(--articles-stone-text) !important;
+    box-shadow: none !important;
+  }
+
+  .dark .articles-index-stone :where(button[aria-selected="true"], button[aria-pressed="true"]) span {
+    color: var(--articles-stone-text) !important;
+  }
+
+  .dark .articles-index-stone :where(a, a:visited) {
+    color: var(--articles-stone-text) !important;
+  }
+
+  .dark .articles-index-stone :where(a:hover) {
+    color: white !important;
+  }
+
+  .dark .articles-index-stone :where(p, span, li) {
+    border-color: var(--articles-stone-line) !important;
+  }
+
+  .dark .articles-index-stone :where(p, li) {
+    color: var(--articles-stone-muted) !important;
+  }
+
+  .dark .articles-index-stone input::placeholder {
+    color: var(--articles-stone-faint) !important;
+  }
+
+  .dark .articles-index-stone :where(h2, h3, .article-row h2) {
+    color: var(--articles-stone-text) !important;
+  }
+
+  .dark .articles-index-stone :where(.article-row p) {
+    color: #c5c1b7 !important;
+  }
+
+  .dark .articles-index-stone :where(.article-row img) {
+    filter: saturate(0.86) contrast(0.96);
+  }
+
+  .dark .articles-index-stone :where(.article-row > div > div:last-child) {
+    border-color: var(--articles-stone-line) !important;
+    background-color: #181713 !important;
+  }
+
   .dark .back-to-top-button {
     background-color: rgba(18, 24, 33, 0.9);
   }

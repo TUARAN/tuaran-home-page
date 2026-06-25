@@ -70,13 +70,14 @@ function buildWeekMonthLabels(weeks) {
   return labels
 }
 
-// 绝对计数分桶（与 GitHub 类似），跨年视觉一致
+// 绝对计数分桶（与 GitHub 类似），跨年视觉一致。
+// 色阶用站点鼠尾草绿 token（--kb-heat-*），随主题切换，浅/深一致。
 function heatColorClass(value) {
-  if (!value) return 'bg-[#edeee8] dark:bg-[#151922]'
-  if (value >= 8) return 'bg-[#2f855a]'
-  if (value >= 4) return 'bg-[#57a06f]'
-  if (value >= 2) return 'bg-[#8bc79f]'
-  return 'bg-[#c6e7d0]'
+  if (!value) return 'bg-[var(--kb-heat-empty)]'
+  if (value >= 8) return 'bg-[var(--kb-heat-4)]'
+  if (value >= 4) return 'bg-[var(--kb-heat-3)]'
+  if (value >= 2) return 'bg-[var(--kb-heat-2)]'
+  return 'bg-[var(--kb-heat-1)]'
 }
 
 export default function KnowledgeHeatmapClient({
@@ -163,7 +164,7 @@ export default function KnowledgeHeatmapClient({
             type="button"
             aria-expanded={expanded}
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex items-center gap-1 text-sm text-[#616358] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
+            className="inline-flex items-center gap-1 text-sm text-[var(--site-muted)] transition-colors hover:text-[var(--site-ink)]"
           >
             <svg
               viewBox="0 0 12 12"
@@ -186,7 +187,7 @@ export default function KnowledgeHeatmapClient({
         heatmapData ? (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-[#757769] dark:text-[#8e9ab0]">年份</span>
+              <span className="text-xs text-[var(--site-faint)]">年份</span>
               {heatmapData.years.map((year) => (
                 <button
                   key={`kb-heat-year-${year}`}
@@ -195,26 +196,26 @@ export default function KnowledgeHeatmapClient({
                   className={[
                     'rounded px-2 py-1 text-xs transition-colors',
                     selectedHeatmapYear === year
-                      ? 'bg-[#eef4fb] text-[#285a8d] dark:bg-[#152034] dark:text-[#9bb6df]'
-                      : 'text-[#636559] hover:text-[#1a1814] dark:text-[#9aa6b8] dark:hover:text-gray-100',
+                      ? 'bg-[color-mix(in_srgb,var(--site-accent)_14%,transparent)] text-[var(--site-accent-strong)]'
+                      : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]',
                   ].join(' ')}
                 >
                   {year}
                 </button>
               ))}
             </div>
-            <div className="rounded-md border border-[#eee] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+            <div className="rounded-md border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_72%,transparent)] p-3">
               <div className="mb-1 flex items-center justify-between gap-3">
-                <p className="text-xs text-[#626357] dark:text-gray-300">
+                <p className="text-xs text-[var(--site-muted)]">
                   {heatmapData.total} 篇内容发布（站内 {heatmapData.localTotal} + 掘金 {heatmapData.juejinTotal}）
                 </p>
-                <p className="text-[11px] text-[#898b7d] dark:text-gray-500">
+                <p className="text-[11px] text-[var(--site-faint)]">
                   少
-                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#edeee8] align-middle dark:bg-[#151922]" />
-                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#c6e7d0] align-middle" />
-                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#8bc79f] align-middle" />
-                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#57a06f] align-middle" />
-                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#2f855a] align-middle" />
+                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-empty)] align-middle" />
+                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-1)] align-middle" />
+                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-2)] align-middle" />
+                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-3)] align-middle" />
+                  <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-4)] align-middle" />
                   多
                 </p>
               </div>
@@ -222,7 +223,7 @@ export default function KnowledgeHeatmapClient({
                 <div className="inline-flex min-w-max flex-col gap-1.5">
                   <div className="ml-6 flex gap-[3px]">
                     {heatmapData.weekMonthLabels.map((label, idx) => (
-                      <span key={`kb-month-label-${idx}`} className="w-3 text-[9px] leading-none text-[#97988b] dark:text-gray-600">
+                      <span key={`kb-month-label-${idx}`} className="w-3 text-[9px] leading-none text-[var(--site-faint)]">
                         {label}
                       </span>
                     ))}
@@ -230,7 +231,7 @@ export default function KnowledgeHeatmapClient({
                   <div className="flex gap-1.5">
                     <div className="grid grid-rows-7 gap-[3px] pt-[1px]">
                       {WEEKDAY_LABELS.map((d, index) => (
-                        <span key={`kb-weekday-${d}`} className="h-3 text-[9px] leading-3 text-[#9e9f93] dark:text-gray-600">
+                        <span key={`kb-weekday-${d}`} className="h-3 text-[9px] leading-3 text-[var(--site-faint)]">
                           {index % 2 === 0 ? d : ''}
                         </span>
                       ))}
@@ -258,7 +259,7 @@ export default function KnowledgeHeatmapClient({
             </div>
           </>
         ) : (
-          <section className="rounded-md border border-[#eee] bg-white p-3 text-xs text-[#666] dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
+          <section className="rounded-md border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_72%,transparent)] p-3 text-xs text-[var(--site-muted)]">
             热力图加载中…
           </section>
         )

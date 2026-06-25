@@ -1,6 +1,7 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import { isOwnerUser } from '../../../../lib/ownerAuth'
+import { getBalancesFor } from '../../../../lib/points'
 import { listSiteUsers, updateSiteUser } from '../../../../lib/userDirectory'
 
 export const runtime = 'edge'
@@ -42,7 +43,15 @@ export async function GET(req) {
 
   try {
     const users = (await listSiteUsers(db)).map(withOwnerFlag)
-    return Response.json({ status: 'ok', generatedAt: Date.now(), users })
+    // 燃币余额按 user_id 关联；迁移 0028 未应用时容错为 0，不阻断目录加载。
+    let balances = {}
+    try {
+      balances = await getBalancesFor(db, users.map((user) => user.id))
+    } catch {
+      balances = {}
+    }
+    const withBalance = users.map((user) => ({ ...user, balance: balances[user.id] || 0 }))
+    return Response.json({ status: 'ok', generatedAt: Date.now(), users: withBalance })
   } catch (error) {
     return Response.json(
       {

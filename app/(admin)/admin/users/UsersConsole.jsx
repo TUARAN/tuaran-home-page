@@ -53,6 +53,11 @@ export default function UsersConsole() {
   const [drafts, setDrafts] = useState({})
   const [savingId, setSavingId] = useState('')
   const [rowError, setRowError] = useState({ id: '', text: '' })
+  const [ptsAdjustUser, setPtsAdjustUser] = useState('')
+  const [ptsAdjustDelta, setPtsAdjustDelta] = useState('')
+  const [ptsAdjustNote, setPtsAdjustNote] = useState('')
+  const [ptsBusy, setPtsBusy] = useState(false)
+  const [ptsMessage, setPtsMessage] = useState('')
 
   const [guests, setGuests] = useState([])
   const [guestStats, setGuestStats] = useState(null)
@@ -116,10 +121,11 @@ export default function UsersConsole() {
   }, [activeTab, guestStatus, refreshGuests])
 
   const stats = useMemo(() => {
-    const counts = { total: users.length, member: 0, trusted: 0, blocked: 0, owner: 0 }
+    const counts = { total: users.length, member: 0, trusted: 0, blocked: 0, owner: 0, totalBalance: 0 }
     for (const user of users) {
       counts[user.role] = (counts[user.role] || 0) + 1
       if (user.isOwner) counts.owner += 1
+      counts.totalBalance += Number(user.balance || 0)
     }
     return counts
   }, [users])
@@ -201,6 +207,38 @@ export default function UsersConsole() {
       setRowError({ id: user.id, text: String(error?.message || error) })
     } finally {
       setSavingId('')
+    }
+  }
+
+  async function adjustUserPoints(e) {
+    e.preventDefault()
+    if (!ptsAdjustUser.trim() || !ptsAdjustDelta) return
+    setPtsBusy(true)
+    setPtsMessage('')
+    try {
+      const res = await fetch('/api/admin/points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          action: 'adjust',
+          userId: ptsAdjustUser.trim(),
+          delta: Number(ptsAdjustDelta),
+          note: ptsAdjustNote.trim(),
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || data?.ok === false) {
+        throw new Error(data?.error || `HTTP_${res.status}`)
+      }
+      setPtsMessage(`已调整，最新余额 ${data?.balance ?? '—'}`)
+      setPtsAdjustDelta('')
+      setPtsAdjustNote('')
+      await refresh()
+    } catch (error) {
+      setPtsMessage(String(error?.message || error))
+    } finally {
+      setPtsBusy(false)
     }
   }
 
@@ -348,6 +386,13 @@ export default function UsersConsole() {
       tdClassName: 'text-xs text-[#67695d] dark:text-gray-400',
     },
     {
+      key: 'balance',
+      header: '燃币',
+      align: 'right',
+      render: (user) => Number(user.balance || 0),
+      tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400',
+    },
+    {
       key: 'action',
       header: '操作',
       render: (user) => (
@@ -360,6 +405,16 @@ export default function UsersConsole() {
           >
             {savingId === user.id ? '保存中…' : '保存'}
           </AdminButton>
+          <button
+            type="button"
+            onClick={() => {
+              setPtsAdjustUser(user.id)
+              setPtsMessage(`已填入：${user.name || user.login || user.id}`)
+            }}
+            className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
+          >
+            燃币
+          </button>
           {rowError.id === user.id ? (
             <span className="text-[11px] text-rose-600 dark:text-rose-400">{rowError.text}</span>
           ) : null}
@@ -496,7 +551,7 @@ export default function UsersConsole() {
     <AdminPage
       title="用户管理"
       maxWidth="1180px"
-      description="管理登录用户与燃币游客。登录用户可维护角色与备注；游客按 guest:<gid> 聚合燃币、解锁、评论和绑定状态。"
+      description="管理登录用户与燃币游客。登录用户可维护角色、备注与燃币；游客按 guest:<gid> 聚合燃币、解锁、评论和绑定状态。"
       actions={
         <AdminButton onClick={refreshActive} disabled={activeLoading}>
           <IconRefresh size={16} aria-hidden="true" />
@@ -521,13 +576,55 @@ export default function UsersConsole() {
 
       {activeTab === 'users' ? (
         <>
-          <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+          <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
             <StatCard label="用户总数" value={stats.total} icon="users" />
             <StatCard label={USER_ROLE_LABELS.member} value={stats.member} />
             <StatCard label={USER_ROLE_LABELS.trusted} value={stats.trusted} tone="success" />
             <StatCard label={USER_ROLE_LABELS.blocked} value={stats.blocked} tone="danger" />
             <StatCard label="站长（env）" value={stats.owner} />
+            <StatCard label="燃币总余额" value={stats.totalBalance} />
           </div>
+
+          <Section
+            title="登录用户燃币调整"
+            description="点击用户行「燃币」按钮把其 user_id 填入下方；调整会写入燃币流水（reason=admin），不直接改余额。"
+            className="mb-5"
+          >
+            <form onSubmit={adjustUserPoints} className="flex flex-wrap items-end gap-2">
+              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
+                user_id
+                <input
+                  className={`${inputCls} h-9 w-72 text-sm`}
+                  value={ptsAdjustUser}
+                  onChange={(event) => setPtsAdjustUser(event.target.value)}
+                  placeholder="点用户行「燃币」按钮填入"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
+                增减（可负）
+                <input
+                  type="number"
+                  className={`${inputCls} h-9 w-28 text-sm`}
+                  value={ptsAdjustDelta}
+                  onChange={(event) => setPtsAdjustDelta(event.target.value)}
+                  placeholder="+10 / -5"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
+                备注
+                <input
+                  className={`${inputCls} h-9 w-48 text-sm`}
+                  value={ptsAdjustNote}
+                  onChange={(event) => setPtsAdjustNote(event.target.value)}
+                  placeholder="可选"
+                />
+              </label>
+              <AdminButton type="submit" variant="primary" disabled={ptsBusy || !ptsAdjustUser.trim() || !ptsAdjustDelta}>
+                {ptsBusy ? '调整中…' : '调整'}
+              </AdminButton>
+            </form>
+            {ptsMessage ? <p className="mt-3 text-xs text-[#67695d] dark:text-gray-400">{ptsMessage}</p> : null}
+          </Section>
 
           <Section
             title="用户目录"

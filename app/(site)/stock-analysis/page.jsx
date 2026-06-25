@@ -21,6 +21,10 @@ export const metadata = {
   alternates: {
     canonical: '/stock-analysis',
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default function StockAnalysisIndexPage() {

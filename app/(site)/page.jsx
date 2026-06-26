@@ -594,6 +594,9 @@ function PolishedHomePage({ featuredPicks }) {
   return (
     <main className="home-polished-root home-page">
       <div className="home-backdrop" aria-hidden="true" />
+      <div className="relative z-[1] mb-4">
+        <HotTickerBar />
+      </div>
       <div className="home-main-grid">
         <FeaturedReading items={featuredPicks} />
 

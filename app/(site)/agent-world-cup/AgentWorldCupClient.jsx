@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react'
+import Link from 'next/link'
 
-import { tTeam, tFlag, tRound, tVenue } from '../../../lib/wc/i18n'
+import { tTeam, tFlag, tRound, tVenue, tPlayer } from '../../../lib/wc/i18n'
+import { useSessionAccount } from '../components/SessionProvider'
 
 /* ━━━ design tokens ━━━ */
 const D = {
@@ -157,6 +159,78 @@ function useWorldCupData() {
   return { data, loading, err, reload: load }
 }
 
+/* ━━━ 竞猜（猜胜平负，免费竞猜、猜中得燃币） ━━━ */
+const PredictionCtx = createContext(null)
+function usePredict() {
+  return useContext(PredictionCtx)
+}
+
+function usePredictionsState() {
+  const { user, loading: userLoading } = useSessionAccount()
+  const [state, setState] = useState({ authed: false, reward: 10, picks: {}, balance: 0, loading: true })
+  const [busyFixture, setBusyFixture] = useState(0)
+  const [hint, setHint] = useState('')
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/wc/predict', { cache: 'no-store', credentials: 'same-origin' })
+      const j = await res.json()
+      setState({
+        authed: Boolean(j.authed),
+        reward: Number(j.reward || 10),
+        picks: j.predictions || {},
+        balance: Number(j.balance || 0),
+        loading: false,
+      })
+    } catch {
+      setState((s) => ({ ...s, loading: false }))
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!userLoading) load()
+  }, [userLoading, user, load])
+
+  const submit = useCallback(async (fixtureId, pick) => {
+    setHint('')
+    setBusyFixture(fixtureId)
+    try {
+      const res = await fetch('/api/wc/predict', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ fixtureId, pick }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j.ok) {
+        setState((s) => ({
+          ...s,
+          picks: { ...s.picks, [fixtureId]: { pick: j.pick, settled: 0, correct: null, awarded: 0 } },
+          balance: typeof j.balance === 'number' ? j.balance : s.balance,
+        }))
+        return { ok: true }
+      }
+      const msg =
+        j.error === 'UNAUTHORIZED'
+          ? '请先登录再竞猜'
+          : j.error === 'PREDICTION_CLOSED'
+          ? '该场已开赛，竞猜已截止'
+          : j.error === 'DB_UNAVAILABLE'
+          ? '竞猜暂不可用（数据库未就绪）'
+          : '竞猜失败，请稍后再试'
+      setHint(msg)
+      return { ok: false, error: j.error }
+    } catch {
+      setHint('网络异常，请稍后再试')
+      return { ok: false }
+    } finally {
+      setBusyFixture(0)
+    }
+  }, [])
+
+  return { ...state, busyFixture, hint, submit, reload: load }
+}
+
 /* ━━━ components ━━━ */
 
 function MetaBar({ data }) {
@@ -269,6 +343,91 @@ function formatMatchScore(m) {
   return `${m.home_goals}-${m.away_goals}`
 }
 
+const PICK_LABEL = { home: '主胜', draw: '平局', away: '客胜' }
+
+function PredictRow({ m }) {
+  const pred = usePredict()
+  if (!pred) return null
+  const bucket = statusBucket(m)
+  const mine = pred.picks?.[m.fixture_id]
+  const busy = pred.busyFixture === m.fixture_id
+  const wrap = { borderTop: `1px dashed ${D.line}`, marginTop: 10, paddingTop: 8 }
+
+  // 已结束：展示结算结果
+  if (bucket === 'done') {
+    if (!mine) return null
+    return (
+      <div className="text-[11px] flex items-center gap-2" style={wrap}>
+        <span style={{ color: D.text3 }}>你猜 {PICK_LABEL[mine.pick]}</span>
+        {mine.settled ? (
+          mine.correct === 1 ? (
+            <span className="font-bold" style={{ color: D.gold }}>猜中 +{mine.awarded || pred.reward} 燃币 🎉</span>
+          ) : (
+            <span style={{ color: D.text3 }}>· 未猜中</span>
+          )
+        ) : (
+          <span style={{ color: D.neonDim }}>· 待结算</span>
+        )}
+      </div>
+    )
+  }
+
+  // 进行中：已锁定
+  if (bucket === 'live') {
+    if (!mine) return null
+    return (
+      <div className="text-[11px]" style={{ ...wrap, color: D.text3 }}>
+        已锁定 · 你猜 <span style={{ color: D.text2 }}>{PICK_LABEL[mine.pick]}</span>
+      </div>
+    )
+  }
+
+  // 未开赛：可竞猜。未登录引导登录。
+  if (!pred.authed) {
+    return (
+      <div className="flex items-center justify-between gap-2 text-[11px]" style={wrap}>
+        <span style={{ color: D.text3 }}>竞猜胜平负，猜中赢 {pred.reward} 燃币</span>
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold no-underline"
+          style={{ color: D.gold, background: hexToRgba(D.gold, 0.12), border: `1px solid ${hexToRgba(D.gold, 0.3)}` }}
+        >
+          登录竞猜 &rarr;
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div style={wrap}>
+      <div className="flex items-center gap-2">
+        {['home', 'draw', 'away'].map((key) => {
+          const active = mine?.pick === key
+          return (
+            <button
+              key={key}
+              type="button"
+              disabled={busy}
+              onClick={() => pred.submit(m.fixture_id, key)}
+              className="flex-1 rounded py-1.5 text-[11px] font-bold transition-all disabled:opacity-50"
+              style={{
+                background: active ? hexToRgba(D.gold, 0.2) : D.bg3,
+                color: active ? D.gold : D.text2,
+                border: `1px solid ${active ? hexToRgba(D.gold, 0.5) : D.line}`,
+              }}
+            >
+              {PICK_LABEL[key]}
+            </button>
+          )
+        })}
+      </div>
+      <div className="text-[9px] mt-1.5" style={{ color: D.text3 }}>
+        猜中 +{pred.reward} 燃币 · 开赛前可改{mine ? ' · 已选' + PICK_LABEL[mine.pick] : ''}
+      </div>
+    </div>
+  )
+}
+
 function MatchCard({ m }) {
   const bucket = statusBucket(m)
   const isLive = bucket === 'live'
@@ -333,6 +492,7 @@ function MatchCard({ m }) {
         </div>
       </div>
       <div className="text-[10px] mt-2" style={{ color: D.text3 }}>📍 {tVenue(m.city || m.venue)}</div>
+      <PredictRow m={m} />
     </div>
   )
 }
@@ -543,7 +703,7 @@ function PlayerRow({ rank, row, primaryKey, secondaryKey, emptyMsg, badgeColor }
         {rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : rank}
       </td>
       <td className="py-2.5 px-2 truncate max-w-[180px]" style={{ color: D.text }} title={row.player_name}>
-        {row.player_name}
+        {tPlayer(row.player_name)}
       </td>
       <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={tTeam(row.team_name)}>
         {tFlag(row.team_name) ? `${tFlag(row.team_name)} ` : ''}{tTeam(row.team_name)}
@@ -606,7 +766,7 @@ function AssistsList({ rows }) {
               <td className="py-2.5 px-3 text-center font-black" style={{ color: D.gold }}>
                 {i + 1 <= 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}
               </td>
-              <td className="py-2.5 px-2 truncate max-w-[180px]" style={{ color: D.text }} title={r.player_name}>{r.player_name}</td>
+              <td className="py-2.5 px-2 truncate max-w-[180px]" style={{ color: D.text }} title={r.player_name}>{tPlayer(r.player_name)}</td>
               <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={tTeam(r.team_name)}>{tFlag(r.team_name) ? `${tFlag(r.team_name)} ` : ''}{tTeam(r.team_name)}</td>
               <td className="text-center py-2.5 px-2 font-black" style={{ color: D.gold }}>{r.assists}</td>
               <td className="text-center py-2.5 px-3" style={{ color: D.text3 }}>{r.played ?? 0}</td>
@@ -641,7 +801,7 @@ function CardsList({ rows }) {
             return (
               <tr key={`${r.player_id}-${r.card_type}`} style={{ borderTop: `1px solid ${D.line}` }}>
                 <td className="py-2.5 px-3 text-center font-black" style={{ color: D.text3 }}>{i + 1}</td>
-                <td className="py-2.5 px-2 truncate max-w-[180px]" style={{ color: D.text }} title={r.player_name}>{r.player_name}</td>
+                <td className="py-2.5 px-2 truncate max-w-[180px]" style={{ color: D.text }} title={r.player_name}>{tPlayer(r.player_name)}</td>
                 <td className="py-2.5 px-2 truncate max-w-[120px]" style={{ color: D.text2 }} title={tTeam(r.team_name)}>{tFlag(r.team_name) ? `${tFlag(r.team_name)} ` : ''}{tTeam(r.team_name)}</td>
                 <td className="text-center py-2.5 px-2" style={{ color: cardColor, fontWeight: 700 }}>{cardLabel}</td>
                 <td className="text-center py-2.5 px-3 font-black" style={{ color: cardColor }}>{r.count}</td>
@@ -722,13 +882,63 @@ function MilestoneTicker({ data }) {
   )
 }
 
+function PredictBanner() {
+  const pred = usePredict()
+  if (!pred) return null
+  const total = Object.keys(pred.picks || {}).length
+  return (
+    <div
+      className="mb-6 rounded-lg px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
+      style={{
+        background: `linear-gradient(135deg, ${hexToRgba(D.gold, 0.12)}, ${hexToRgba(D.gold, 0.03)})`,
+        border: `1px solid ${hexToRgba(D.gold, 0.3)}`,
+      }}
+    >
+      <div className="flex items-center gap-2.5">
+        <span className="text-[18px]">🎯</span>
+        <div>
+          <p className="text-[13px] font-bold" style={{ color: D.gold }}>竞猜世界杯 · 赢燃币</p>
+          <p className="text-[11px]" style={{ color: D.text2 }}>
+            每场猜「胜 / 平 / 负」，猜中 +{pred.reward} 燃币 · 开赛前可改注
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 text-[11px]">
+        {pred.authed ? (
+          <>
+            <span style={{ color: D.text2 }}>
+              我的燃币 <b style={{ color: D.gold }}>{pred.balance}</b>
+            </span>
+            {total ? <span style={{ color: D.text3 }}>已竞猜 {total} 场</span> : null}
+          </>
+        ) : (
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1 rounded-full px-3 py-1 font-bold no-underline"
+            style={{ color: D.gold, background: hexToRgba(D.gold, 0.15), border: `1px solid ${hexToRgba(D.gold, 0.35)}` }}
+          >
+            登录开始竞猜 &rarr;
+          </Link>
+        )}
+      </div>
+      {pred.hint ? (
+        <p className="w-full text-[11px]" style={{ color: D.red }}>
+          {pred.hint}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 /* ━━━ main ━━━ */
 
 export default function AgentWorldCupClient() {
   const [tab, setTab] = useState('schedule')
   const { data, loading, err } = useWorldCupData()
+  const pred = usePredictionsState()
 
   return (
+    <PredictionCtx.Provider value={pred}>
     <div
       className="min-h-screen relative"
       style={{ background: D.bg, color: D.text, fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif" }}
@@ -739,6 +949,7 @@ export default function AgentWorldCupClient() {
         <HeroSection data={data} />
         <MilestoneTicker data={data} />
         <MetaBar data={data} />
+        <PredictBanner />
 
         {err && (
           <div className="mb-4 px-4 py-2 rounded text-[11px]" style={{ background: hexToRgba(D.red, 0.1), color: D.red, border: `1px solid ${hexToRgba(D.red, 0.3)}` }}>
@@ -784,5 +995,6 @@ export default function AgentWorldCupClient() {
         </footer>
       </div>
     </div>
+    </PredictionCtx.Provider>
   )
 }

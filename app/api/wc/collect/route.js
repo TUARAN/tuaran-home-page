@@ -12,6 +12,19 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { runCollect, recordCollectError } from '../../../../lib/wc/collector.js'
+import { settleAllFinished } from '../../../../lib/wc/predictions.js'
+
+// 采集完后顺手结算竞猜（猜中发燃币）。best-effort：失败只记日志，不影响采集结果。
+async function settleAfterCollect(db, log) {
+  try {
+    const r = await settleAllFinished(db)
+    if (r.settled) log(`settled predictions: ${JSON.stringify(r)}`)
+    return r
+  } catch (err) {
+    log(`settle failed: ${err.message}`)
+    return { settled: 0, awarded: 0 }
+  }
+}
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -44,8 +57,9 @@ async function handle(request, ctx) {
   try {
     log('start')
     const stats = await runCollect({ db, log })
+    const settle = await settleAfterCollect(db, log)
     log(`done ${JSON.stringify(stats)}`)
-    return Response.json({ ok: true, ...stats })
+    return Response.json({ ok: true, ...stats, predictionsSettled: settle.settled, predictionsAwarded: settle.awarded })
   } catch (err) {
     log(`failed: ${err.message}`)
     await recordCollectError(db, err.message)
@@ -68,6 +82,7 @@ export const scheduled = async (event, env, ctx) => {
   const log = (msg) => console.log(`[wc-collect:cron] ${msg}`)
   try {
     const stats = await runCollect({ db, log })
+    await settleAfterCollect(db, log)
     log(`done ${JSON.stringify(stats)}`)
   } catch (err) {
     log(`failed: ${err.message}`)

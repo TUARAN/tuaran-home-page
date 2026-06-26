@@ -1,6 +1,5 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
-import { adminAdjust, getBalance } from '../../../../lib/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -222,35 +221,5 @@ export async function POST(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
 
-  const db = dbOrNull()
-  if (!db) return Response.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
-
-  let body = null
-  try {
-    body = await req.json()
-  } catch {
-    return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
-  }
-
-  const action = String(body?.action || '')
-  if (action !== 'adjust') {
-    return Response.json({ error: 'UNKNOWN_ACTION' }, { status: 400 })
-  }
-
-  const userId = String(body?.userId || '').trim()
-  if (!userId.startsWith('guest:')) {
-    return Response.json({ error: 'INVALID_GUEST_ID' }, { status: 400 })
-  }
-
-  try {
-    const result = await adminAdjust(db, userId, body?.delta, String(body?.note || ''))
-    if (!result.ok) return Response.json(result, { status: result.status || 400 })
-    const balance = await getBalance(db, userId)
-    return Response.json({ ok: true, balance })
-  } catch (error) {
-    return Response.json(
-      { error: 'GUESTS_WRITE_FAILED', detail: String(error?.message || error) },
-      { status: 500 }
-    )
-  }
+  return Response.json({ error: 'GUEST_POINTS_UNSUPPORTED' }, { status: 400 })
 }

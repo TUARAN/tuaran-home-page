@@ -65,10 +65,6 @@ export default function UsersConsole() {
   const [guestMessage, setGuestMessage] = useState('')
   const [guestQuery, setGuestQuery] = useState('')
   const [guestFilter, setGuestFilter] = useState('all')
-  const [guestBusy, setGuestBusy] = useState(false)
-  const [guestAdjustUser, setGuestAdjustUser] = useState('')
-  const [guestAdjustDelta, setGuestAdjustDelta] = useState('')
-  const [guestAdjustNote, setGuestAdjustNote] = useState('')
 
   const refresh = useCallback(async () => {
     setStatus('loading')
@@ -248,38 +244,6 @@ export default function UsersConsole() {
       setGuestMessage(`已复制：${userId}`)
     } catch {
       setGuestMessage(userId)
-    }
-  }
-
-  async function adjustGuest(e) {
-    e.preventDefault()
-    if (!guestAdjustUser.trim() || !guestAdjustDelta) return
-    setGuestBusy(true)
-    setGuestMessage('')
-    try {
-      const res = await fetch('/api/admin/guests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          action: 'adjust',
-          userId: guestAdjustUser.trim(),
-          delta: Number(guestAdjustDelta),
-          note: guestAdjustNote.trim(),
-        }),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok || data?.ok === false) {
-        throw new Error(data?.error || `HTTP_${res.status}`)
-      }
-      setGuestMessage('游客燃币已调整')
-      setGuestAdjustDelta('')
-      setGuestAdjustNote('')
-      await refreshGuests()
-    } catch (error) {
-      setGuestMessage(String(error?.message || error))
-    } finally {
-      setGuestBusy(false)
     }
   }
 
@@ -536,16 +500,6 @@ export default function UsersConsole() {
         <div className="flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={() => {
-              setGuestAdjustUser(guest.userId)
-              setGuestMessage(`已填入：${guest.userId}`)
-            }}
-            className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
-          >
-            填入
-          </button>
-          <button
-            type="button"
             onClick={() => copyGuestId(guest.userId)}
             className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
           >
@@ -722,47 +676,6 @@ export default function UsersConsole() {
             <StatCard label="累计解锁" value={guestStats?.unlocks ?? 0} />
             <StatCard label="累计消费" value={guestStats?.totalSpent ?? 0} tone="danger" />
           </div>
-
-          <Section
-            title="游客燃币调整"
-            description="点击下方表格的「填入」拿到完整 guest:<gid> 后再调整；调整会写入燃币流水，不直接改余额。"
-            className="mb-5"
-          >
-            <form onSubmit={adjustGuest} className="flex flex-wrap items-end gap-2">
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                guest user_id
-                <input
-                  className={`${inputCls} h-9 w-72 text-sm`}
-                  value={guestAdjustUser}
-                  onChange={(event) => setGuestAdjustUser(event.target.value)}
-                  placeholder="guest:..."
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                增减（可负）
-                <input
-                  type="number"
-                  className={`${inputCls} h-9 w-28 text-sm`}
-                  value={guestAdjustDelta}
-                  onChange={(event) => setGuestAdjustDelta(event.target.value)}
-                  placeholder="+10 / -5"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                备注
-                <input
-                  className={`${inputCls} h-9 w-48 text-sm`}
-                  value={guestAdjustNote}
-                  onChange={(event) => setGuestAdjustNote(event.target.value)}
-                  placeholder="可选"
-                />
-              </label>
-              <AdminButton type="submit" variant="primary" disabled={guestBusy || !guestAdjustUser.trim() || !guestAdjustDelta}>
-                {guestBusy ? '调整中…' : '调整'}
-              </AdminButton>
-            </form>
-            {guestMessage ? <p className="mt-3 text-xs text-[#67695d] dark:text-gray-400">{guestMessage}</p> : null}
-          </Section>
 
           <Section
             title="游客目录"

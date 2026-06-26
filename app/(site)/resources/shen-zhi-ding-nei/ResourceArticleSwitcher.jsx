@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 import ResourceLongformReader from './ResourceLongformReader'
 
-/** 《置身钉内》/《置身钉外》双文切换阅读：标签页 + 各自目录与原文，支持 #ding-wai 锚点直达。 */
+/** 「置身 X 内」多文切换阅读：标签页 + 各自目录与原文，支持 hash 锚点直达。 */
 export default function ResourceArticleSwitcher({ articles }) {
   const [activeKey, setActiveKey] = useState(articles[0]?.key)
 
@@ -32,7 +32,7 @@ export default function ResourceArticleSwitcher({ articles }) {
       <div
         role="tablist"
         aria-label="切换原文"
-        className="mb-6 inline-flex rounded-full border border-[#e2e2da] bg-[#f4f4ee] p-1 dark:border-[#2a2d24] dark:bg-[#141612]"
+        className="mb-6 inline-flex flex-wrap gap-1 rounded-2xl border border-[#e2e2da] bg-[#f4f4ee] p-1 dark:border-[#2a2d24] dark:bg-[#141612]"
       >
         {articles.map((item) => {
           const isActive = item.key === active.key

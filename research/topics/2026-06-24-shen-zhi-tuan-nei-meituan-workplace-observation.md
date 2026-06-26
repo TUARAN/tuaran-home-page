@@ -127,5 +127,5 @@ pv: 0
 ### 站内交叉
 
 - [《置身钉内》调研：钉钉 ONE 项目复盘与职场权力结构的观察](/articles/research/topics/shen-zhi-ding-nei-workplace-observation)
-- [置身 X 内：大厂职场长文存档合集（钉内·钉外·团内·米内）](/resources/shen-zhi-ding-nei)
+- [置身 X 内：大厂职场文本存档合集](/resources/shen-zhi-ding-nei)
 - [《置身团内》文字版原文（合集内切换）](/resources/shen-zhi-ding-nei#tuan-nei)

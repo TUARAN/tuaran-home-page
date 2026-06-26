@@ -67,7 +67,7 @@ export async function GET(req) {
   const wk2 = now - 2 * WEEK_MS // 前 7 天的起点
 
   try {
-    const [readRows, readTotal, readByCategory, likeRows, likeTotal] = await Promise.all([
+    const [readRows, readByCategory, readTotal, likeRows, likeTotal] = await Promise.all([
       db
         .prepare(
           `SELECT category, slug,

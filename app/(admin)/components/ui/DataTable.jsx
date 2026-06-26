@@ -3,19 +3,20 @@
  *  columns: [{ key, header, align?, width?, render?(row), thClassName?, tdClassName? }]
  *  rows:    任意对象数组
  *  rowKey:  (row, i) => string
+ *  tableClassName: 传给 <table> 的额外 class，用于特定表格控制 table-layout / min-width
  */
-export default function DataTable({ columns, rows, rowKey, empty = null, className = '' }) {
+export default function DataTable({ columns, rows, rowKey, empty = null, className = '', tableClassName = '' }) {
   if (!rows?.length && empty) return empty
   return (
     <div className={`overflow-x-auto ${className}`}>
-      <table className="w-full border-collapse text-[13px]">
+      <table className={`w-full border-collapse text-[13px] ${tableClassName}`}>
         <thead>
           <tr className="border-b border-[#eceee6] dark:border-[#1b2430]">
             {columns.map((col) => (
               <th
                 key={col.key}
                 style={col.width ? { width: col.width } : undefined}
-                className={`px-3 py-2 font-medium text-[#82847a] dark:text-gray-500 ${
+                className={`whitespace-nowrap px-3 py-2 font-medium text-[#82847a] dark:text-gray-500 ${
                   col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
                 } ${col.thClassName || ''}`}
               >

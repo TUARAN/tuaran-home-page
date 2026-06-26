@@ -427,15 +427,16 @@ export default function UsersConsole() {
     {
       key: 'guest',
       header: '游客',
-      width: '260px',
+      width: '280px',
+      tdClassName: 'w-[280px] max-w-[280px]',
       render: (guest) => {
         const u = displayNameForUserId(guest.userId)
         return (
-          <div className="min-w-0">
-            <p className="flex items-center gap-1.5 font-medium text-[#17202a] dark:text-gray-100">
-              <span aria-hidden="true">{u.emoji}</span>
+          <div className="w-full min-w-0">
+            <p className="flex min-w-0 items-center gap-1.5 font-medium text-[#17202a] dark:text-gray-100">
+              <span className="shrink-0" aria-hidden="true">{u.emoji}</span>
               <span className="truncate">{u.name}</span>
-              <span className="font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">
+              <span className="shrink-0 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">
                 游客 {u.short}
               </span>
             </p>
@@ -449,9 +450,11 @@ export default function UsersConsole() {
     {
       key: 'state',
       header: '状态',
+      width: '96px',
+      tdClassName: 'whitespace-nowrap',
       render: (guest) =>
         guest.boundUserId ? (
-          <span className="inline-flex max-w-[180px] items-center rounded-full bg-[#eef1f6] px-2 py-1 text-xs text-[#475467] dark:bg-gray-800 dark:text-gray-300" title={guest.boundUserId}>
+          <span className="inline-block max-w-full truncate rounded-full bg-[#eef1f6] px-2 py-1 text-xs text-[#475467] dark:bg-gray-800 dark:text-gray-300" title={guest.boundUserId}>
             已绑定 {displayNameForUserId(guest.boundUserId).short}
           </span>
         ) : (
@@ -463,29 +466,34 @@ export default function UsersConsole() {
     {
       key: 'balance',
       header: '余额',
+      width: '64px',
       align: 'right',
       render: (guest) => guest.balance,
-      tdClassName: 'font-mono text-xs',
+      tdClassName: 'whitespace-nowrap font-mono text-xs',
     },
     {
       key: 'earned',
       header: '累计获得',
+      width: '72px',
       align: 'right',
       render: (guest) => `+${guest.earned}`,
-      tdClassName: 'font-mono text-xs text-emerald-600 dark:text-emerald-400',
+      tdClassName: 'whitespace-nowrap font-mono text-xs text-emerald-600 dark:text-emerald-400',
     },
     {
       key: 'spent',
       header: '累计消费',
+      width: '72px',
       align: 'right',
       render: (guest) => (guest.spent ? `-${guest.spent}` : '0'),
-      tdClassName: 'font-mono text-xs text-rose-600 dark:text-rose-400',
+      tdClassName: 'whitespace-nowrap font-mono text-xs text-rose-600 dark:text-rose-400',
     },
     {
       key: 'activity',
       header: '行为',
+      width: '100px',
+      tdClassName: 'whitespace-nowrap',
       render: (guest) => (
-        <span className="text-xs text-[#67695d] dark:text-gray-400">
+        <span className="whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400">
           解锁 {guest.unlockCount} · 评论 {guest.commentCount}
         </span>
       ),
@@ -494,9 +502,10 @@ export default function UsersConsole() {
       key: 'latest',
       header: '最近流水',
       width: '220px',
+      tdClassName: 'w-[220px] max-w-[220px]',
       render: (guest) =>
         guest.latestLedger ? (
-          <div className="min-w-0 text-xs">
+          <div className="w-full min-w-0 text-xs">
             <p className="truncate text-[#3f4039] dark:text-gray-200">
               {reasonLabels[guest.latestLedger.reason] || guest.latestLedger.reason}
               <span className={guest.latestLedger.delta >= 0 ? 'ml-1 font-mono text-emerald-600 dark:text-emerald-400' : 'ml-1 font-mono text-rose-600 dark:text-rose-400'}>
@@ -514,14 +523,17 @@ export default function UsersConsole() {
     {
       key: 'lastSeen',
       header: '最近活跃',
+      width: '136px',
       render: (guest) => formatTime(guest.lastSeenAt),
       tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400',
     },
     {
       key: 'action',
       header: '操作',
+      width: '124px',
+      tdClassName: 'whitespace-nowrap',
       render: (guest) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => {
@@ -792,6 +804,7 @@ export default function UsersConsole() {
               columns={guestColumns}
               rows={guestStatus === 'loading' ? [] : filteredGuests}
               rowKey={(guest) => guest.userId}
+              tableClassName="min-w-[1164px] table-fixed"
               empty={
                 <EmptyState
                   title={

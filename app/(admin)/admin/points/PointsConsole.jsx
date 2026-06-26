@@ -10,6 +10,7 @@ import { AdminPage, Section, StatCard, DataTable, EmptyState, AdminButton } from
 /** 把 user_id 渲染成趣味昵称 + 来源 + 短 id（hover 看完整 id） */
 function UserIdCell({ userId, onPick }) {
   const u = displayNameForUserId(userId)
+  const isGuest = String(userId || '').startsWith('guest:')
   const inner = (
     <>
       <span aria-hidden="true">{u.emoji}</span>
@@ -18,7 +19,7 @@ function UserIdCell({ userId, onPick }) {
     </>
   )
   // 短 id 只是显示用；真正能操作的是完整 user_id。点一下把完整 id 填进调整框，避免手敲对不上。
-  if (onPick) {
+  if (onPick && !isGuest) {
     return (
       <button
         type="button"
@@ -32,7 +33,7 @@ function UserIdCell({ userId, onPick }) {
     )
   }
   return (
-    <span className="inline-flex items-center gap-1.5" title={u.full}>
+    <span className="inline-flex items-center gap-1.5" title={isGuest ? `${u.full}（游客不参与燃币调整）` : u.full}>
       {inner}
     </span>
   )
@@ -174,6 +175,10 @@ export default function PointsConsole() {
   async function adjust(e) {
     e.preventDefault()
     if (!adjUser.trim() || !adjDelta) return
+    if (adjUser.trim().startsWith('guest:')) {
+      setMessage('游客燃币由系统自动发放/消费，后台不支持手动增减。')
+      return
+    }
     const ok = await post(
       { action: 'adjust', userId: adjUser.trim(), delta: Number(adjDelta), note: adjNote.trim() },
       '燃币已调整'
@@ -448,7 +453,7 @@ export default function PointsConsole() {
 
           <Section
             title="手动增减燃币"
-            description="user_id 形如 guest:<uuid> / github:123 / google:abc；不要手敲短 id——直接点流水里的用户，即可把完整 user_id 填进来。"
+            description="仅支持登录用户 user_id（如 github:123 / google:abc / email:xxx）；游客不参与燃币，不能手动增减。"
           >
             <form onSubmit={adjust} className="flex flex-wrap items-end gap-2">
               <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">

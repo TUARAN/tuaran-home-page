@@ -5,8 +5,8 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '燃币与门槛',
-  description: '燃币流水 / 资源门槛配置 / 手动加减燃币。',
+  title: '燃币管理',
+  description: '燃币流水 / 资源门槛设置 / 手动增减燃币。',
   robots: {
     index: false,
     follow: false,
@@ -17,9 +17,9 @@ export const metadata = {
 export default async function AdminPointsPage() {
   return (
     <AdminPageGate
-      label="燃币与门槛"
+      label="燃币管理"
       returnTo="/admin/points"
-      description="燃币流水、资源门槛配置与手动加减，仅站长本人可见。"
+      description="燃币流水、资源门槛设置与手动增减，仅站长本人可见。"
     >
       <PointsConsole />
     </AdminPageGate>

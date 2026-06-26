@@ -1,288 +1,112 @@
-# 涂阿燃的网络日志
+# 涂阿燃的个人网站
 
-一个极简风格的个人网站与网络日志，记录编程、创作与生活。
+这是 [2aran.com](https://2aran.com) 的源码仓库。它是一个长期演进的个人网站，核心不是模板工程，而是把写作、研究、作品展示、公开工具和站内互动放在同一个 Web 应用里。
 
-🌐 线上地址：[https://2aran.com](https://2aran.com)
+如果你发现内容错误、页面问题、链接失效，或者有新的栏目和工具建议，欢迎到 [Issues](https://github.com/TUARAN/tuaran-home-page/issues) 提出。
 
----
+## 网站在做什么
 
-## 设计理念
+这个网站主要承载几类内容：
 
-- **极简主义**：去除复杂的动画效果和视觉干扰，专注于内容本身
-- **清晰布局**：使用简洁的卡片布局和网格系统
-- **响应式设计**：适配各种设备尺寸
-- **快速加载**：最小化 CSS 和 JavaScript，提升性能
+- **个人主页**：展示作者、作品、社交入口和近期更新。
+- **技术写作**：发布技术文章、产品观察、AI 编程实践和个人经验。
+- **研究笔记**：把公司、人物、行业、工具、政策等主题整理成可检索的长文档。
+- **资源归档**：沉淀外部文章、资料、案例和专题页面。
+- **公开工具**：把一些日常用到的小工具直接做成网页，例如短链、数据看板、舆情聚合、世界杯数据页等。
+- **站内互动**：支持登录、评论、点赞、留言、燃币等轻量互动。
+- **私有运营后台**：用于内容管理、任务记录、数据采集和站点维护，部分能力仅作者可见。
 
----
+## 功能地图
+
+### 内容与阅读
+
+- 首页信息流：聚合文章、作品、资源、更新和个人入口。
+- 文章系统：技术文章、随笔、专题内容、RSS 输出。
+- 研究系统：按公司、人物、主题归档深度研究内容。
+- 资源库：保存外部资料、原文整理、链接和说明。
+- 阅读体验：移动端适配、目录、复制 Markdown、分享入口等。
+
+### 作品与项目
+
+- 作品集：展示个人项目、实验产品和技术作品。
+- AI 项目页：记录 AI 工具、agent、模型调度和自动化实践。
+- 服务页：对外展示可提供的技术服务和合作方向。
+- 更新日志：记录站点和项目的持续迭代。
+
+### 数据与工具
+
+- 短链系统：生成和访问站内短链接。
+- 公开舆情：定时采集公开新闻和 Hacker News 数据，做轻量聚合展示。
+- 世界杯数据页：展示赛程、分组、积分和榜单数据。
+- 股票/加密快照分析：沉淀分钟级市场快照和横向分析。
+- Web LLM 实验：浏览器端大模型推理和相关能力验证。
+
+### 账号与互动
+
+- GitHub / 邮箱登录。
+- 文章评论、点赞和阅读互动。
+- 游客评论与登录后合并。
+- 燃币体系：签到、评论、解锁等站内激励机制。
+- 留言、分享和部分受保护内容访问。
+
+### 管理与自动化
+
+- Owner-only Admin 页面。
+- 内容、导航、资源、任务和用户运营管理。
+- Cloudflare D1 数据库迁移。
+- GitHub Actions 定时采集。
+- Cloudflare Pages Functions / D1 / R2 集成。
 
 ## 技术栈
 
-| 类别 | 技术 |
-|------|------|
-| 前端框架 | Next.js (App Router) + React |
-| 样式框架 | Tailwind CSS |
-| 开发语言 | JavaScript |
-| 身份认证 | NextAuth.js（GitHub OAuth） |
-| 数据存储 | Cloudflare D1（SQLite） |
-| 部署平台 | Cloudflare Pages |
+- **框架**：Next.js App Router + React
+- **样式**：Tailwind CSS
+- **运行平台**：Cloudflare Pages / Functions
+- **数据**：Cloudflare D1、R2
+- **认证**：NextAuth、自定义 Edge session、GitHub / Google / 邮箱登录
+- **自动化**：GitHub Actions、Wrangler、站内采集任务
 
----
+## 反馈方式
 
-## 功能特性
+这个仓库优先通过 Issue 收集反馈。你可以提交：
 
-### 个人信息展示
-- 头像和基本信息
-- 社交媒体链接
-- 加入技术群功能
+- 页面打不开、移动端错位、样式异常、链接失效。
+- 文章或研究内容里的事实错误、错别字、表达不清。
+- 可访问性、性能、SEO、结构化数据改进建议。
+- 新页面、新工具、新栏目想法。
+- 本地运行或部署文档里的缺漏。
 
-### 技术栈展示
-- 前端技术（Vue.js / React）
-- 后端技术（Node.js / Python）
-- AI/ML 技术
-- 云原生架构
+请不要在 Issue 里提交 API key、token、密码、私人联系方式或其他敏感信息。
 
-### 技术成就
-- 技术文章数量
-- 技术粉丝数量
-- 开源项目数量
-- 帮助开发者数量
+## 开发者说明
 
-### 项目展示
-- 社区看板 — 数据可视化项目
-- 博主联盟 — 技术生态平台
-- 超棒提示词 — AI 对话优化
-- AI 学习路径 — 技术能力提升
-- 大模型交易 — 智能金融决策
-- 代码矿工 — 开发工具集合
-- 数据库范式教学平台 — 交互式学习
+这个项目可以本地运行，但很多功能依赖作者自己的 Cloudflare、OAuth、邮件和数据库配置。外部开发者如果只是浏览代码，通常不需要完整复刻这些环境。
 
-### 互动功能
-- GitHub 账号登录
-- 踩一踩留言（基于 Cloudflare D1 存储）
-
----
-
-## 项目结构
-
-```
-tuaran-home-page/
-├── app/                    # Next.js App Router 页面目录
-│   ├── api/                # API 路由（NextAuth、留言等）
-│   ├── reading/            # 阅读相关页面
-│   └── ...
-├── components/             # 公共组件
-├── migrations/             # D1 数据库迁移文件
-│   └── 0001_init.sql
-├── public/                 # 静态资源
-├── wrangler.toml           # Cloudflare Workers/Pages 配置
-├── next.config.js          # Next.js 配置
-└── package.json
-```
-
----
-
-## 开发指南
-
-### 安装依赖
+最小启动流程：
 
 ```bash
 npm install
-```
-
-### 启动开发服务器
-
-```bash
+cp .env.example .env.local
 npm run dev
 ```
 
-### 本地预览 Admin
+默认本地地址是 [http://localhost:3000](http://localhost:3000)。涉及登录、邮件、D1、R2、采集任务、加密内容的功能，需要按 `.env.example` 补充自己的环境变量。
 
-Admin 页面和 `/api/admin/*` 默认仍要求 owner session。仅本地开发需要快速预览时，可以显式开启本地预览开关：
-
-```bash
-ADMIN_LOCAL_PREVIEW=1 npm run dev
-```
-
-该开关只在 `NODE_ENV=development` 下生效；生产环境即使误配 `ADMIN_LOCAL_PREVIEW=1` 也不会绕过 owner 校验。启用后 Admin 页面顶部会显示本地预览提示。
-
-### DeepSeek 任务规划器
-
-`/admin/model-dispatch` 会通过 owner-only API `/api/admin/model-dispatch/plan` 调用 DeepSeek V4 Pro 做任务拆解和 agent 分派。密钥只放环境变量，不写入源码：
-
-```bash
-DEEPSEEK_API_KEY=sk-...
-DEEPSEEK_MODEL=deepseek-v4-pro
-# 可选：DEEPSEEK_BASE_URL=https://api.deepseek.com
-```
-
-本地 `.env.local` 已被 `.gitignore` 排除；线上部署时把同名变量配置到 Cloudflare Pages / Workers 环境变量或 secret。
-
-### 舆情分析定时采集
-
-`/public-opinion` 会从 D1 读取公开新闻和 Hacker News 的最新数据。GitHub Actions
-每小时调用一次 `/api/public-opinion/collect`，外部数据源不可用时页面自动回退到内置样本。
-
-首次部署需要应用 D1 migration，并在 Cloudflare Pages 与 GitHub Actions 中配置相同的密钥：
-
-```bash
-npx wrangler d1 migrations apply tuaran-me --remote
-npx wrangler pages secret put PUBLIC_OPINION_COLLECT_SECRET --project-name=tuaran
-```
-
-然后在 GitHub 仓库的 `Settings -> Secrets and variables -> Actions` 新增
-`PUBLIC_OPINION_COLLECT_SECRET`。可在 Actions 页面手动运行 `Public opinion collect`
-完成首次采集。
-
-### 构建生产版本
+常用检查：
 
 ```bash
 npm run build
 ```
 
-### 运行生产服务器
+## 贡献说明
 
-```bash
-npm run start
-```
+这个项目是个人网站源码，不是通用 starter。欢迎 Issue 反馈；Pull Request 会按是否符合站点定位、内容风格和维护成本来决定是否接受。
 
----
-
-## Cloudflare Pages 部署
-
-本项目在 Cloudflare Pages 上以 **SSR/Functions** 方式运行（非纯静态导出）。
-
-### 1. Pages 构建配置
-
-在 Cloudflare Pages 项目设置中配置：
-
-| 配置项 | 值 |
-|--------|-----|
-| Build command | `npm run pages:build` |
-| Build output directory | `.vercel/output/static` |
-
-> ⚠️ **常见报错**：`Error: Output directory "out" not found`
->
-> 原因：旧的纯静态方案产物在 `out/`，而 next-on-pages 产物在 `.vercel/output/static`，请确认构建配置正确。
-
-### 2. 环境变量
-
-在 Cloudflare Pages 项目里添加以下环境变量（Production / Preview 均需配置）：
-
-| 变量名 | 类型 | 说明 |
-|--------|------|------|
-| `NODE_VERSION` | Text | `20`（与 `.nvmrc` 一致；Next 15 建议在 Cloudflare 显式指定，避免默认 Node 过旧） |
-| `GITHUB_ID` | Text | GitHub OAuth App Client ID |
-| `GITHUB_SECRET` | Secret | GitHub OAuth App Client Secret |
-| `NEXTAUTH_URL` | Text | 例如 `https://2aran.com` |
-| `NEXTAUTH_SECRET` | Secret | 使用 `openssl rand -base64 32` 生成 |
-
-### 3. GitHub OAuth App 配置
-
-在 GitHub 创建/配置 OAuth App：
-
-- **Homepage URL**：`https://2aran.com`
-- **Authorization callback URL**：`https://2aran.com/api/auth/callback/github`
-
-### 4. D1 数据库配置（踩一踩留言存储）
-
-留言存储使用 Cloudflare D1，通过 `DB` binding 注入到 Functions。
-
-#### 4.1 创建并迁移数据库
-
-```bash
-# 1) 创建数据库
-wrangler d1 create tuaran-me
-
-# 2) 将输出的 database_id 填入 wrangler.toml
-
-# 3) 执行迁移建表
-wrangler d1 migrations apply tuaran-me
-```
-
-公开写接口启用限流后，需要确保 `0017_abuse_controls.sql` 已应用到线上 D1；否则短链、评论、踩踏等写接口会因为缺少 `api_rate_limits` 表而返回 500。
-
-> ⚠️ **常见报错**：`Error 8000022: Invalid database UUID ()`
->
-> 解决：到 Cloudflare D1 控制台复制正确的 Database ID（UUID），填入 `wrangler.toml` 后重新部署。
-
-### 邮箱验证码注册（Resend）
-
-项目提供 `/register` 注册页，以及以下 Edge API：
-
-```text
-POST /api/auth/email/send-code
-POST /api/auth/register
-POST /api/auth/login
-```
-
-先在 Resend 验证发件域名，再为 Cloudflare Pages / Worker 配置 secrets：
-
-```bash
-npx wrangler pages secret put NEXTAUTH_SECRET --project-name=tuaran
-npx wrangler pages secret put EMAIL_CODE_SECRET --project-name=tuaran
-npx wrangler pages secret put RESEND_API_KEY --project-name=tuaran
-npx wrangler pages secret put EMAIL_FROM --project-name=tuaran
-```
-
-`EMAIL_FROM` 示例：`2aran.com <noreply@mail.2aran.com>`。`NEXTAUTH_SECRET` 与
-`EMAIL_CODE_SECRET` 必须使用不同的随机值。然后应用 D1 migration：
-
-```bash
-npx wrangler d1 migrations apply tuaran-me --remote
-```
-
-#### 4.2 在 Pages 项目中绑定 D1
-
-Cloudflare Dashboard → Pages → 你的项目 → Settings → Bindings：
-
-| 配置项 | 值 |
-|--------|-----|
-| Binding type | D1 database |
-| Binding name | `DB` |
-| Database | 选择你创建的 D1 数据库（云端） |
-
-### 5. nodejs_compat 兼容性标志
-
-如果构建时出现以下警告：
-
-```
-The package "node:async_hooks" wasn't found... enable the "nodejs_compat" compatibility flag
-```
-
-请在 `wrangler.toml` 中开启：
-
-```toml
-compatibility_flags = ["nodejs_compat"]
-```
-
-### 6. 部署方式说明
-
-| 方式 | 说明 |
-|------|------|
-| **方式 A（推荐）** | Cloudflare Pages 连接 Git 仓库，`git push` 后自动构建发布 |
-| **方式 B** | 本地手动执行 `wrangler pages deploy`，需确保 `wrangler.toml` 中 `database_id` 正确 |
-
----
-
-## 设计变更记录
-
-### 重构前
-- 复杂的瀑布流布局
-- 大量动画效果和渐变背景
-- 霓虹灯、脉冲、呼吸等特效
-- 深色主题设计
-
-### 重构后
-- 简洁的卡片布局
-- 白色背景，清晰的层次结构
-- 最小化的过渡效果
-- 专注于内容可读性
-
----
+如果要复用代码，请先注意：当前仓库没有声明开源许可证，默认不授予复制、分发或商用授权。
 
 ## 作者
 
-**掘金安东尼** — 全栈开发专家 / AI 技术博主
+涂阿燃 / 掘金安东尼
 
-- 🌐 网站：[2aran.com](https://2aran.com)
-- 📝 掘金：[掘金主页](https://juejin.cn/user/3544481219674541)
+- 网站：[2aran.com](https://2aran.com)
+- 掘金：[掘金主页](https://juejin.cn/user/3544481219674541)

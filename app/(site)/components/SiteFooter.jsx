@@ -7,6 +7,8 @@ import { useSessionAccount } from './SessionProvider'
 import { pick } from '../../../lib/i18n'
 import { getFooterLinks, navLabel } from '../../../lib/siteNav'
 
+const FEEDBACK_ISSUES_URL = 'https://github.com/TUARAN/tuaran-home-page/issues'
+
 export default function SiteFooter({ className = '' }) {
   const { locale } = useLocale()
   const account = useSessionAccount()
@@ -43,6 +45,17 @@ export default function SiteFooter({ className = '' }) {
             )}
           </span>
         ))}
+        <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">
+          ·
+        </span>
+        <a
+          href={FEEDBACK_ISSUES_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="opacity-80 transition-colors hover:text-[#666] hover:opacity-100 dark:hover:text-gray-300"
+        >
+          {pick(locale, '提建议', 'Issues')}
+        </a>
         <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">
           ·
         </span>

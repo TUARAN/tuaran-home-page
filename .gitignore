@@ -123,6 +123,9 @@ temp/
 # 本地明文种子（长期罗盘导入用，永远不入库）
 private/
 
+# WorkBuddy 本地记忆，可能包含调试日志、密钥片段或私人上下文
+.workbuddy/
+
 # Claude Code 本地状态（settings + session 自建的 worktrees）
 # 但 .claude/commands/ 入库，让 slash commands 跟仓库走
 .claude/*

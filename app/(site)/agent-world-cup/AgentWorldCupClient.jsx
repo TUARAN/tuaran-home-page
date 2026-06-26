@@ -428,8 +428,55 @@ function PredictRow({ m }) {
   )
 }
 
+function renderFlagSmall(f) {
+  return f && /^https?:\/\//.test(f) ? (
+    <img src={f} alt="" className="w-[16px] h-[11px] object-cover rounded-sm shrink-0" />
+  ) : (
+    <span className="text-[13px] shrink-0">{f}</span>
+  )
+}
+
+// 已结束比赛用紧凑单行，避免大卡片占版面（结果已定，只需快速扫读比分）。
+function MatchCardDone({ m }) {
+  const pred = usePredict()
+  const mine = pred?.picks?.[m.fixture_id]
+  const score = formatMatchScore(m)
+  const homeFlag = m.home_flag || tFlag(m.home_team)
+  const awayFlag = m.away_flag || tFlag(m.away_team)
+  return (
+    <div
+      className="rounded-md px-3 py-1.5 flex items-center gap-2 text-[12px]"
+      style={{ background: D.bg2, border: `1px solid ${D.line}` }}
+      title={`${tTeam(m.home_team)} ${score || ''} ${tTeam(m.away_team)} · ${tVenue(m.city || m.venue)}`}
+    >
+      <span className="shrink-0 w-11 truncate text-[9px] uppercase tracking-[0.06em]" style={{ color: D.text3 }}>
+        {m.group_label ? `${m.group_label}组` : tRound(m.round)}
+      </span>
+      <span className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
+        <span className="truncate" style={{ color: D.text }}>{tTeam(m.home_team)}</span>
+        {renderFlagSmall(homeFlag)}
+      </span>
+      <span className="shrink-0 font-black px-1.5" style={{ color: D.gold }}>{score || 'vs'}</span>
+      <span className="flex-1 min-w-0 flex items-center gap-1.5">
+        {renderFlagSmall(awayFlag)}
+        <span className="truncate" style={{ color: D.text }}>{tTeam(m.away_team)}</span>
+      </span>
+      {mine?.settled ? (
+        <span
+          className="shrink-0 text-[10px] font-bold"
+          style={{ color: mine.correct === 1 ? D.gold : D.text3 }}
+          title={mine.correct === 1 ? `竞猜命中 +${mine.awarded || pred.reward} 燃币` : '竞猜未中'}
+        >
+          {mine.correct === 1 ? `+${mine.awarded || pred.reward}` : '✗'}
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
 function MatchCard({ m }) {
   const bucket = statusBucket(m)
+  if (bucket === 'done') return <MatchCardDone m={m} />
   const isLive = bucket === 'live'
   const isDone = bucket === 'done'
   const borderColor = isLive ? D.fire : isDone ? D.green : D.line
@@ -502,6 +549,16 @@ function ScheduleTab({ data }) {
   const matches = data?.matches || []
   const enriched = matches.map((m) => ({ ...m, _bucket: statusBucket(m) }))
   const filtered = filter === 'all' ? enriched : enriched.filter((m) => m._bucket === filter)
+  // 排序以「现在」为中心，而非单纯时间正序：
+  // 进行中 → 最近 / 本周即将开赛（越近越靠前）→ 已结束（最近结束的在前）。
+  const bucketRank = { live: 0, upcoming: 1, done: 2 }
+  const sorted = [...filtered].sort((a, b) => {
+    const rank = bucketRank[a._bucket] - bucketRank[b._bucket]
+    if (rank !== 0) return rank
+    const ta = Number(a.match_timestamp || 0)
+    const tb = Number(b.match_timestamp || 0)
+    return a._bucket === 'done' ? tb - ta : ta - tb
+  })
   const rounds = [
     { key: 'all', label: '全部' },
     { key: 'done', label: '已结束' },
@@ -534,7 +591,7 @@ function ScheduleTab({ data }) {
         ))}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {filtered.map((m) => (
+        {sorted.map((m) => (
           <MatchCard key={m.fixture_id} m={m} />
         ))}
       </div>

@@ -46,7 +46,7 @@ const laneConfigs = [
     title: '创作与转型',
     description: '产品化路径与职业升级。',
     accent: 'emerald',
-    keywords: ['内容同步智能体'],
+    keywords: ['AI分发大师'],
   },
 ]
 

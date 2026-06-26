@@ -92,7 +92,7 @@ const PRODUCT_LINKS = [
   },
   {
     href: 'https://syncblog.cn/',
-    label: '内容同步智能体',
+    label: 'AI分发大师',
     labelEn: 'SyncBlog',
     desc: '一次创作，多平台自动同步分发',
     descEn: 'Write once, auto-sync across platforms',
@@ -464,7 +464,7 @@ function ClassicHomePage({ featuredPicks }) {
                   </span>
                   <span className="flex min-w-0 flex-col text-left">
                     <span className="flex items-center gap-1 text-[18px] font-semibold" style={{ color: 'var(--hero-card-title)' }}>
-                      <T zh="使用内容同步智能体" en="Use SyncBlog" />
+                      <T zh="使用AI分发大师" en="Use SyncBlog" />
                       <span className="font-mono text-[12px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
                     <span className="mt-1 text-[15px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>

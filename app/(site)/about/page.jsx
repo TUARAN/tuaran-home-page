@@ -87,7 +87,7 @@ const siteLinks = [
   { label: '矩联科技', href: 'https://matrixlink.tech/', desc: '技术服务、项目案例和公司信息' },
   { label: '博主联盟', href: 'https://blogger-alliance.cn/', desc: 'AI 产品方与技术博主的连接网络' },
   { label: '前端周看', href: 'https://frontendnext.com/', desc: '前端、AI Agent 与大模型工程情报' },
-  { label: '内容同步智能体', href: 'https://syncblog.cn/', desc: '一次创作，多平台自动同步分发' },
+  { label: 'AI分发大师', href: 'https://syncblog.cn/', desc: '一次创作，多平台自动同步分发' },
   { label: 'Open Claude Code', href: 'https://openclaudecode.site/', desc: 'Claude Code 与 Agent 工程笔记' },
   { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人主页、技术笔记与长期内容索引' },
 ]

@@ -3,20 +3,53 @@
 import Link from 'next/link'
 
 /* ─── Hot Ticker Marquee ───
- *  Slim scrolling bar, sticks to top of viewport on scroll.
- *  Placed below the site nav, above hero banner.
+ *  顶部细长流动条，置于站点导航下、首页 hero 上方，滚动时吸顶。
+ *  每条都是一个独立入口（各自跳不同目的地），用来给重点动作更明显的推荐位：
+ *   1. 竞猜世界杯赢燃币  2. 资源库  3. 博主联盟（推广 / 兼职）
  */
-export default function HotTickerBar() {
-  const items = [
-    { icon: '\u26BD', label: 'Agent世界杯', sub: 'FIFA 2026' },
-    { icon: '\uD83C\uDFC6', label: '48队 \u00B7 104场', sub: '' },
-    { icon: '\uD83D\uDCC5', label: '6.11 开幕 \u00B7 7.19 决赛', sub: '' },
-    { icon: '\uD83C\uDF0D', label: '16城主办 \u00B7 北美三联', sub: '' },
-    { icon: '\u26A1', label: '实时赛程 \u00B7 分组对阵', sub: '' },
-    { icon: '\uD83D\uDD25', label: 'HOT 热点专题', sub: '' },
-    { icon: '\u2192', label: '点击查看完整赛程', sub: '' },
-  ]
+const TICKER_ITEMS = [
+  { icon: '⚽', label: '竞猜世界杯 · 赢燃币', cta: '去竞猜', href: '/agent-world-cup' },
+  { icon: '📚', label: '海量资源任你取', cta: '看资源', href: '/articles?tab=resources' },
+  {
+    icon: '🤝',
+    label: '推广 AI 产品 / 兼职赚钱',
+    cta: '博主联盟',
+    href: 'https://blogger-alliance.cn/',
+    external: true,
+  },
+]
 
+function TickerItem({ item }) {
+  const inner = (
+    <>
+      <span className="text-sm md:text-base leading-none">{item.icon}</span>
+      <span className="text-[13px] md:text-[14px] font-semibold tracking-wide leading-none" style={{ color: '#e8eaf4' }}>
+        {item.label}
+      </span>
+      <span
+        className="inline-flex items-center gap-0.5 rounded-full px-2 py-px text-[10px] font-bold leading-none"
+        style={{ color: '#d4a853', background: 'rgba(212,168,83,0.12)', border: '1px solid rgba(212,168,83,0.3)' }}
+      >
+        {item.cta}&nbsp;&rarr;
+      </span>
+      <span className="ml-3 inline-block w-1 h-1 rounded-full shrink-0" style={{ background: 'rgba(212,168,83,0.35)' }} />
+    </>
+  )
+  const cls = 'group/item inline-flex items-center gap-1.5 mx-3 no-underline hover:no-underline'
+  return item.external ? (
+    <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${cls}`} aria-label={item.label}>
+      {inner}
+    </a>
+  ) : (
+    <Link href={item.href} className={cls} aria-label={item.label}>
+      {inner}
+    </Link>
+  )
+}
+
+export default function HotTickerBar() {
+  // 复制一份用于无缝滚动；两份内容首尾相接，translateX(-50%) 即可循环。
+  const loop = [...TICKER_ITEMS, ...TICKER_ITEMS]
   return (
     <div
       className="hot-ticker-wrapper"
@@ -24,79 +57,35 @@ export default function HotTickerBar() {
         position: 'sticky',
         top: 45,
         zIndex: 39,
-        // Slight shadow for depth when overlaid on content
         boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
       }}
     >
-      <Link
-        href="/agent-world-cup"
-        className="group no-underline block overflow-hidden"
+      <div
+        className="block overflow-hidden"
         style={{
           background: 'linear-gradient(90deg, #0a0e1a 0%, #111827 40%, #0d1322 70%, #080c16 100%)',
           borderTop: '1px solid rgba(212,168,83,0.3)',
           borderBottom: '1px solid rgba(212,168,83,0.25)',
         }}
-        aria-label="Agent世界杯热点入口"
       >
-        {/* Scroll container */}
         <div className="relative flex h-[36px] max-w-full items-center overflow-hidden md:h-[40px]">
-          {/* Left gradient fade */}
+          {/* 两侧渐隐 */}
           <div
             className="pointer-events-none absolute left-0 top-0 z-10 h-full w-[60px]"
             style={{ background: 'linear-gradient(90deg, #0a0e1a 0%, transparent 100%)' }}
           />
-          {/* Right gradient fade */}
           <div
             className="pointer-events-none absolute right-0 top-0 z-10 h-full w-[60px]"
             style={{ background: 'linear-gradient(270deg, #0a0e1a 0%, transparent 100%)' }}
           />
-
-          {/* Scrolling content — CSS marquee */}
+          {/* 流动内容 — CSS marquee；每条是独立链接 */}
           <div className="flex items-center hot-ticker-track whitespace-nowrap">
-            {[...items, ...items].map((item, i) => (
-              <span key={i} className="inline-flex items-center gap-1.5 mx-3">
-                <span className="text-sm md:text-base leading-none">{item.icon}</span>
-                <span
-                  className="text-[13px] md:text-[14px] font-semibold tracking-wide leading-none"
-                  style={{ color: '#e8eaF4' }}
-                >
-                  {item.label}
-                </span>
-                {item.sub && (
-                  <span
-                    className="hidden sm:inline font-mono text-[10px] tracking-[0.12em] uppercase px-1.5 py-px rounded leading-none"
-                    style={{
-                      color: '#d4a853',
-                      background: 'rgba(212,168,83,0.1)',
-                      border: '1px solid rgba(212,168,83,0.18)',
-                    }}
-                  >
-                    {item.sub}
-                  </span>
-                )}
-                <span
-                  className="ml-3 inline-block w-1 h-1 rounded-full shrink-0"
-                  style={{ background: 'rgba(212,168,83,0.35)' }}
-                />
-              </span>
+            {loop.map((item, i) => (
+              <TickerItem key={`${item.href}-${i}`} item={item} />
             ))}
           </div>
-
-          {/* Static CTA on hover — appears at right edge */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            <span
-              className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold"
-              style={{
-                color: '#d4a853',
-                background: 'rgba(212,168,83,0.15)',
-                border: '1px solid rgba(212,168,83,0.3)',
-              }}
-            >
-              进入 &rarr;
-            </span>
-          </div>
         </div>
-      </Link>
+      </div>
     </div>
   )
 }

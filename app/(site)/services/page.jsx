@@ -19,7 +19,7 @@ export const metadata = {
     '数字员工',
     '博主联盟',
     '前端周看',
-    '内容同步智能体',
+    'AI分发大师',
   ],
   alternates: { canonical: '/services' },
 }
@@ -74,7 +74,7 @@ const productLinks = [
   },
   {
     href: 'https://syncblog.cn/',
-    label: '内容同步智能体',
+    label: 'AI分发大师',
     desc: '一次创作，多平台自动同步分发',
   },
 ]

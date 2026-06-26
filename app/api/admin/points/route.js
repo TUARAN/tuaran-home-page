@@ -4,6 +4,7 @@ import {
   POINT_RULES,
   adminAdjust,
   deleteResource,
+  getBalancesFor,
   getBalance,
   listResources,
   reverseLedgerEntry,
@@ -43,12 +44,17 @@ export async function GET(req) {
            FROM point_ledger ORDER BY id DESC LIMIT 50`
       )
       .all()
+    const ledgerRows = ledger?.results || []
+    const balanceMap = await getBalancesFor(db, ledgerRows.map((row) => row.user_id))
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
       rules: POINT_RULES,
       resources,
-      recentLedger: ledger?.results || [],
+      recentLedger: ledgerRows.map((row) => ({
+        ...row,
+        user_balance: balanceMap[row.user_id] ?? 0,
+      })),
     })
   } catch (error) {
     return Response.json(

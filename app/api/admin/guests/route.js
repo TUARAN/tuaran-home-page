@@ -67,30 +67,17 @@ function normalizeGuest(row) {
   }
 }
 
-function buildStats(guests) {
-  return guests.reduce(
-    (acc, guest) => {
-      acc.total += 1
-      if (guest.boundUserId) acc.bound += 1
-      else acc.active += 1
-      acc.totalBalance += guest.balance
-      acc.totalEarned += guest.earned
-      acc.totalSpent += guest.spent
-      acc.unlocks += guest.unlockCount
-      acc.comments += guest.commentCount
-      return acc
-    },
-    {
-      total: 0,
-      active: 0,
-      bound: 0,
-      totalBalance: 0,
-      totalEarned: 0,
-      totalSpent: 0,
-      unlocks: 0,
-      comments: 0,
-    }
-  )
+function normalizeStats(row) {
+  return {
+    total: toNumber(row?.total),
+    active: toNumber(row?.active),
+    bound: toNumber(row?.bound),
+    totalBalance: toNumber(row?.total_balance),
+    totalEarned: toNumber(row?.total_earned),
+    totalSpent: toNumber(row?.total_spent),
+    unlocks: toNumber(row?.unlocks),
+    comments: toNumber(row?.comments),
+  }
 }
 
 export async function GET(req) {
@@ -107,7 +94,7 @@ export async function GET(req) {
   }
 
   try {
-    const result = await db
+    const guestsResult = await db
       .prepare(
         `WITH guest_ids AS (
            SELECT user_id FROM user_points WHERE user_id LIKE 'guest:%'
@@ -196,11 +183,67 @@ export async function GET(req) {
       )
       .all()
 
-    const guests = (result?.results || []).map(normalizeGuest)
+    const statsResult = await db
+      .prepare(
+        `WITH guest_ids AS (
+           SELECT user_id FROM user_points WHERE user_id LIKE 'guest:%'
+           UNION
+           SELECT user_id FROM point_ledger WHERE user_id LIKE 'guest:%'
+           UNION
+           SELECT user_id FROM resource_unlocks WHERE user_id LIKE 'guest:%'
+           UNION
+           SELECT user_id FROM article_comments WHERE user_id LIKE 'guest:%'
+           UNION
+           SELECT 'guest:' || gid AS user_id FROM guest_bindings
+         ),
+         ledger_rollup AS (
+           SELECT
+             user_id,
+             SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END) AS earned,
+             SUM(CASE WHEN delta < 0 THEN delta ELSE 0 END) AS spent
+           FROM point_ledger
+           WHERE user_id LIKE 'guest:%'
+           GROUP BY user_id
+         ),
+         unlock_rollup AS (
+           SELECT
+             user_id,
+             COUNT(*) AS unlock_count
+           FROM resource_unlocks
+           WHERE user_id LIKE 'guest:%'
+           GROUP BY user_id
+         ),
+         comment_rollup AS (
+           SELECT
+             user_id,
+             COUNT(*) AS comment_count
+           FROM article_comments
+           WHERE user_id LIKE 'guest:%'
+           GROUP BY user_id
+         )
+         SELECT
+           COUNT(*) AS total,
+           SUM(CASE WHEN gb.user_id IS NULL THEN 1 ELSE 0 END) AS active,
+           SUM(CASE WHEN gb.user_id IS NOT NULL THEN 1 ELSE 0 END) AS bound,
+           SUM(COALESCE(up.balance, 0)) AS total_balance,
+           SUM(COALESCE(lr.earned, 0)) AS total_earned,
+           SUM(ABS(COALESCE(lr.spent, 0))) AS total_spent,
+           SUM(COALESCE(ur.unlock_count, 0)) AS unlocks,
+           SUM(COALESCE(cr.comment_count, 0)) AS comments
+         FROM guest_ids g
+         LEFT JOIN user_points up ON up.user_id = g.user_id
+         LEFT JOIN guest_bindings gb ON ('guest:' || gb.gid) = g.user_id
+         LEFT JOIN ledger_rollup lr ON lr.user_id = g.user_id
+         LEFT JOIN unlock_rollup ur ON ur.user_id = g.user_id
+         LEFT JOIN comment_rollup cr ON cr.user_id = g.user_id`
+      )
+      .first()
+
+    const guests = (guestsResult?.results || []).map(normalizeGuest)
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
-      stats: buildStats(guests),
+      stats: normalizeStats(statsResult),
       guests,
     })
   } catch (error) {

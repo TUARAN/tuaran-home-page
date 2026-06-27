@@ -30,10 +30,6 @@ function TocList({ items, className = '' }) {
 
 export default function ResourceLongformReader({ toc, html }) {
   const safeToc = toc || []
-  const hasToc = safeToc.length > 0
-  const volumeItems = safeToc.filter((item) => item.kind === 'volume' || item.kind === 'preface')
-  const sectionItems = safeToc.filter((item) => item.kind === 'section')
-
   const groupedToc = []
   let current = null
   for (const item of safeToc) {
@@ -46,6 +42,9 @@ export default function ResourceLongformReader({ toc, html }) {
       current.sections.push(item)
     }
   }
+  const hasToc = groupedToc.length > 0
+  const volumeItems = groupedToc.map((group) => group.heading)
+  const sectionItems = groupedToc.flatMap((group) => group.sections)
 
   return (
     <div className="flex flex-col gap-6">

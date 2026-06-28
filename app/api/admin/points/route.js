@@ -26,10 +26,20 @@ function toNumber(value) {
   return Number(value || 0)
 }
 
+function normalizeLedgerRow(row, balanceMap = {}) {
+  return {
+    ...row,
+    user_balance: balanceMap[row.user_id] ?? 0,
+  }
+}
+
 /** 列出登录账户燃币概览 + 门槛资源配置 + 规则初值。游客燃币留给游客管理页聚合。 */
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
+
+  const url = new URL(req.url)
+  const detailUserId = String(url.searchParams.get('userId') || '').trim()
 
   const db = dbOrNull()
   if (!db) {
@@ -81,6 +91,50 @@ export async function GET(req) {
       .first()
     const ledgerRows = ledger?.results || []
     const balanceMap = await getBalancesFor(db, ledgerRows.map((row) => row.user_id))
+
+    let accountDetail = null
+    let accountLedger = []
+    if (detailUserId && !detailUserId.startsWith('guest:')) {
+      const [balance, detailRollup, detailLedger] = await Promise.all([
+        getBalance(db, detailUserId),
+        db
+          .prepare(
+            `SELECT
+               COUNT(*) AS ledger_count,
+               COALESCE(SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END), 0) AS earned_points,
+               COALESCE(SUM(CASE WHEN delta < 0 THEN -delta ELSE 0 END), 0) AS spent_points,
+               MIN(created_at) AS first_ledger_at,
+               MAX(created_at) AS last_ledger_at
+               FROM point_ledger
+              WHERE user_id = ?1
+                AND user_id NOT LIKE 'guest:%'`
+          )
+          .bind(detailUserId)
+          .first(),
+        db
+          .prepare(
+            `SELECT id, user_id, delta, reason, ref, created_at
+               FROM point_ledger
+              WHERE user_id = ?1
+                AND user_id NOT LIKE 'guest:%'
+              ORDER BY id DESC
+              LIMIT 200`
+          )
+          .bind(detailUserId)
+          .all(),
+      ])
+      accountDetail = {
+        user_id: detailUserId,
+        balance,
+        ledgerCount: toNumber(detailRollup?.ledger_count),
+        earnedPoints: toNumber(detailRollup?.earned_points),
+        spentPoints: toNumber(detailRollup?.spent_points),
+        firstLedgerAt: detailRollup?.first_ledger_at || null,
+        lastLedgerAt: detailRollup?.last_ledger_at || null,
+      }
+      accountLedger = (detailLedger?.results || []).map((row) => normalizeLedgerRow(row, { [detailUserId]: balance }))
+    }
+
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
@@ -100,10 +154,9 @@ export async function GET(req) {
         last_ledger_at: row.last_ledger_at,
         ledger_count: toNumber(row.ledger_count),
       })),
-      recentLedger: ledgerRows.map((row) => ({
-        ...row,
-        user_balance: balanceMap[row.user_id] ?? 0,
-      })),
+      accountDetail,
+      accountLedger,
+      recentLedger: ledgerRows.map((row) => normalizeLedgerRow(row, balanceMap)),
     })
   } catch (error) {
     return Response.json(

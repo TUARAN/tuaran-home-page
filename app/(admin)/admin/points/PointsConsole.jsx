@@ -83,6 +83,10 @@ export default function PointsConsole() {
   const [summary, setSummary] = useState(null)
   const [accounts, setAccounts] = useState([])
   const [ledger, setLedger] = useState([])
+  const [selectedAccountId, setSelectedAccountId] = useState('')
+  const [accountDetail, setAccountDetail] = useState(null)
+  const [accountLedger, setAccountLedger] = useState([])
+  const [detailStatus, setDetailStatus] = useState('idle')
   const [busy, setBusy] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -166,6 +170,35 @@ export default function PointsConsole() {
     }
   }
 
+  async function loadAccountHistory(userId) {
+    const id = String(userId || '').trim()
+    if (!id) return
+    setSelectedAccountId(id)
+    setDetailStatus('loading')
+    setMessage('')
+    try {
+      const res = await fetch(`/api/admin/points?userId=${encodeURIComponent(id)}`, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || data?.status !== 'ok') {
+        throw new Error(data?.message || data?.error || `HTTP ${res.status}`)
+      }
+      setRules(data.rules || null)
+      setResources(Array.isArray(data.resources) ? data.resources : [])
+      setSummary(data.summary || null)
+      setAccounts(Array.isArray(data.accounts) ? data.accounts : [])
+      setLedger(Array.isArray(data.recentLedger) ? data.recentLedger : [])
+      setAccountDetail(data.accountDetail || null)
+      setAccountLedger(Array.isArray(data.accountLedger) ? data.accountLedger : [])
+      setDetailStatus('ok')
+    } catch (error) {
+      setDetailStatus('error')
+      setMessage(String(error?.message || error))
+    }
+  }
+
   async function saveResource(e) {
     e.preventDefault()
     if (!resKey.trim()) return
@@ -194,6 +227,7 @@ export default function PointsConsole() {
     if (ok) {
       setAdjDelta('')
       setAdjNote('')
+      if (selectedAccountId === adjUser.trim()) await loadAccountHistory(selectedAccountId)
     }
   }
 
@@ -201,7 +235,8 @@ export default function PointsConsole() {
     if (!row?.id) return
     const sign = row.delta >= 0 ? '+' : ''
     if (!window.confirm(`撤销这笔「${sign}${row.delta}」变动？会给该用户补一笔反向变动来抵消（账本只增不改）。`)) return
-    await post({ action: 'reverse', ledgerId: row.id }, '已撤销该笔变动')
+    const ok = await post({ action: 'reverse', ledgerId: row.id }, '已撤销该笔变动')
+    if (ok && selectedAccountId) await loadAccountHistory(selectedAccountId)
   }
 
   const filteredLedger = useMemo(() => {
@@ -340,13 +375,22 @@ export default function PointsConsole() {
                       key: 'op',
                       header: '操作',
                       render: (row) => (
-                        <button
-                          type="button"
-                          onClick={() => pickUser(row.user_id)}
-                          className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
-                        >
-                          调整
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => loadAccountHistory(row.user_id)}
+                            className="rounded-md border border-[#c9d4e5] px-2 py-1 text-[11px] text-blue-700 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
+                          >
+                            记录
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => pickUser(row.user_id)}
+                            className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
+                          >
+                            调整
+                          </button>
+                        </div>
                       ),
                     },
                   ]}
@@ -360,6 +404,81 @@ export default function PointsConsole() {
               <EmptyState icon={IconCoin} title="暂无登录账户燃币数据" description="用户获得或消费燃币后会出现在这里。" />
             )}
           </Section>
+
+          {selectedAccountId ? (
+            <Section
+              title="账户记录"
+              description={`当前查看：${selectedAccountId}。这里展示该账户自己的完整燃币变动，不受全站最近 50 条限制。`}
+              actions={
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAccountId('')
+                    setAccountDetail(null)
+                    setAccountLedger([])
+                    setDetailStatus('idle')
+                  }}
+                  className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
+                >
+                  关闭
+                </button>
+              }
+              className="mb-5"
+            >
+              {detailStatus === 'loading' ? (
+                <EmptyState icon={IconCoin} title="正在读取账户记录…" />
+              ) : detailStatus === 'error' ? (
+                <p className="text-sm text-rose-600 dark:text-rose-400">{message || '账户记录读取失败'}</p>
+              ) : (
+                <>
+                  <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <StatCard label="当前余额" value={accountDetail?.balance ?? 0} />
+                    <StatCard label="记录数" value={accountDetail?.ledgerCount ?? accountLedger.length} />
+                    <StatCard label="累计获得" value={`+${accountDetail?.earnedPoints ?? 0}`} tone="success" />
+                    <StatCard label="累计消费" value={`-${accountDetail?.spentPoints ?? 0}`} tone="danger" />
+                  </div>
+
+                  {accountLedger.length ? (
+                    <DataTable
+                      columns={[
+                        { key: 'created_at', header: '时间', render: (row) => formatTime(row.created_at) },
+                        {
+                          key: 'delta',
+                          header: '增减',
+                          render: (row) => (
+                            <span className={row.delta >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                              {row.delta >= 0 ? `+${row.delta}` : row.delta}
+                            </span>
+                          ),
+                        },
+                        { key: 'reason', header: '原因', render: (row) => REASON_LABELS[row.reason] || row.reason },
+                        { key: 'ref', header: 'ref' },
+                        {
+                          key: 'op',
+                          header: '操作',
+                          render: (row) => (
+                            <button
+                              type="button"
+                              onClick={() => reverseEntry(row)}
+                              disabled={busy || String(row.ref || '').startsWith('reverse:')}
+                              title="给该用户补一笔反向变动，抵消这笔"
+                              className="rounded-md border border-[#d8b4b4] px-2 py-0.5 text-[11px] text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                            >
+                              撤销
+                            </button>
+                          ),
+                        },
+                      ]}
+                      rows={accountLedger}
+                      rowKey={(row) => row.id}
+                    />
+                  ) : (
+                    <EmptyState icon={IconCoin} title="这个账户还没有燃币记录" />
+                  )}
+                </>
+              )}
+            </Section>
+          ) : null}
 
           <Section
             title="近期变动"

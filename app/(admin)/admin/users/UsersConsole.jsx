@@ -19,15 +19,6 @@ const providerLabels = {
   email: '邮箱',
 }
 
-const reasonLabels = {
-  guest_seed: '游客播种',
-  register: '注册',
-  checkin: '签到',
-  comment: '评论',
-  unlock: '解锁',
-  admin: '手动',
-}
-
 function formatTime(ts) {
   if (!ts) return '—'
   try {
@@ -429,60 +420,29 @@ export default function UsersConsole() {
     },
     {
       key: 'balance',
-      header: '余额',
-      width: '64px',
+      header: '燃币概况',
+      width: '132px',
       align: 'right',
-      render: (guest) => guest.balance,
-      tdClassName: 'whitespace-nowrap font-mono text-xs',
-    },
-    {
-      key: 'earned',
-      header: '累计获得',
-      width: '72px',
-      align: 'right',
-      render: (guest) => `+${guest.earned}`,
-      tdClassName: 'whitespace-nowrap font-mono text-xs text-emerald-600 dark:text-emerald-400',
-    },
-    {
-      key: 'spent',
-      header: '累计消费',
-      width: '72px',
-      align: 'right',
-      render: (guest) => (guest.spent ? `-${guest.spent}` : '0'),
-      tdClassName: 'whitespace-nowrap font-mono text-xs text-rose-600 dark:text-rose-400',
+      render: (guest) => (
+        <div className="whitespace-nowrap text-right">
+          <p className="font-mono text-xs text-[#3f4039] dark:text-gray-200">{guest.balance}</p>
+          <p className="font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">
+            得 {guest.earned} / 用 {guest.spent}
+          </p>
+        </div>
+      ),
     },
     {
       key: 'activity',
       header: '行为',
-      width: '100px',
+      width: '132px',
       tdClassName: 'whitespace-nowrap',
       render: (guest) => (
-        <span className="whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400">
-          解锁 {guest.unlockCount} · 评论 {guest.commentCount}
-        </span>
+        <div className="whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400">
+          <p>解锁 {guest.unlockCount} · 评论 {guest.commentCount}</p>
+          <p className="font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">变动 {guest.ledgerCount}</p>
+        </div>
       ),
-    },
-    {
-      key: 'latest',
-      header: '最近流水',
-      width: '220px',
-      tdClassName: 'w-[220px] max-w-[220px]',
-      render: (guest) =>
-        guest.latestLedger ? (
-          <div className="w-full min-w-0 text-xs">
-            <p className="truncate text-[#3f4039] dark:text-gray-200">
-              {reasonLabels[guest.latestLedger.reason] || guest.latestLedger.reason}
-              <span className={guest.latestLedger.delta >= 0 ? 'ml-1 font-mono text-emerald-600 dark:text-emerald-400' : 'ml-1 font-mono text-rose-600 dark:text-rose-400'}>
-                {guest.latestLedger.delta >= 0 ? `+${guest.latestLedger.delta}` : guest.latestLedger.delta}
-              </span>
-            </p>
-            <p className="truncate font-mono text-[11px] text-[#94a3b8] dark:text-gray-500" title={guest.latestLedger.ref}>
-              {guest.latestLedger.ref || '—'}
-            </p>
-          </div>
-        ) : (
-          '—'
-        ),
     },
     {
       key: 'lastSeen',
@@ -517,7 +477,7 @@ export default function UsersConsole() {
     <AdminPage
       title="用户管理"
       maxWidth="1180px"
-      description="管理登录用户与燃币游客。登录用户可维护角色、备注与燃币；游客按 guest:<gid> 聚合燃币、解锁、评论和绑定状态。"
+      description="管理登录用户与游客目录。登录用户可维护角色、备注与燃币；游客按 guest:<gid> 聚合身份、解锁、评论和绑定状态。"
       actions={
         <AdminButton onClick={refreshActive} disabled={activeLoading}>
           <IconRefresh size={16} aria-hidden="true" />
@@ -553,7 +513,7 @@ export default function UsersConsole() {
 
           <Section
             title="登录用户燃币调整"
-            description="点击用户行「燃币」按钮把其 user_id 填入下方；调整会写入燃币流水（reason=admin），不直接改余额。"
+            description="点击用户行「燃币」按钮把其 user_id 填入下方；调整会写入燃币变动（reason=admin），不直接改余额。"
             className="mb-5"
           >
             <form onSubmit={adjustUserPoints} className="flex flex-wrap items-end gap-2">
@@ -674,7 +634,7 @@ export default function UsersConsole() {
             <StatCard label="已绑定" value={guestStats?.bound ?? 0} />
             <StatCard label="游客总余额" value={guestStats?.totalBalance ?? 0} />
             <StatCard label="累计解锁" value={guestStats?.unlocks ?? 0} />
-            <StatCard label="累计消费" value={guestStats?.totalSpent ?? 0} tone="danger" />
+            <StatCard label="解锁燃币" value={guestStats?.totalSpent ?? 0} tone="danger" />
           </div>
 
           <Section
@@ -685,7 +645,7 @@ export default function UsersConsole() {
                   value={guestQuery}
                   onChange={(event) => setGuestQuery(event.target.value)}
                   type="search"
-                  placeholder="搜索昵称 / guest ID / 绑定用户 / ref"
+                  placeholder="搜索昵称 / guest ID / 绑定用户"
                   className="w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-1.5 text-sm outline-none focus:border-[#15140f] dark:border-[#2d3744] dark:bg-[#0d1218] dark:text-gray-100 dark:focus:border-[#4a5568] sm:w-72"
                 />
                 <div className="flex flex-wrap gap-1.5">
@@ -717,7 +677,7 @@ export default function UsersConsole() {
               columns={guestColumns}
               rows={guestStatus === 'loading' ? [] : filteredGuests}
               rowKey={(guest) => guest.userId}
-              tableClassName="min-w-[1164px] table-fixed"
+              tableClassName="min-w-[900px] table-fixed"
               empty={
                 <EmptyState
                   title={

@@ -22,7 +22,11 @@ function dbOrNull() {
   }
 }
 
-/** 列出门槛资源配置 + 最近燃币流水 + 规则初值。 */
+function toNumber(value) {
+  return Number(value || 0)
+}
+
+/** 列出登录账户燃币概览 + 门槛资源配置 + 规则初值。游客燃币留给游客管理页聚合。 */
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
@@ -38,12 +42,43 @@ export async function GET(req) {
 
   try {
     const resources = await listResources(db)
+    const accountsResult = await db
+      .prepare(
+        `SELECT up.user_id, up.balance, up.updated_at, MAX(pl.created_at) AS last_ledger_at, COUNT(pl.id) AS ledger_count
+           FROM user_points up
+           LEFT JOIN point_ledger pl ON pl.user_id = up.user_id
+          WHERE up.user_id NOT LIKE 'guest:%'
+          GROUP BY up.user_id, up.balance, up.updated_at
+          ORDER BY up.balance DESC, up.updated_at DESC
+          LIMIT 80`
+      )
+      .all()
     const ledger = await db
       .prepare(
         `SELECT id, user_id, delta, reason, ref, created_at
-           FROM point_ledger ORDER BY id DESC LIMIT 50`
+           FROM point_ledger
+          WHERE user_id NOT LIKE 'guest:%'
+          ORDER BY id DESC
+          LIMIT 50`
       )
       .all()
+    const accountSummary = await db
+      .prepare(
+        `SELECT COUNT(*) AS account_count, COALESCE(SUM(balance), 0) AS total_balance
+           FROM user_points
+          WHERE user_id NOT LIKE 'guest:%'`
+      )
+      .first()
+    const ledgerSummary = await db
+      .prepare(
+        `SELECT
+           COUNT(*) AS ledger_count,
+           COALESCE(SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END), 0) AS issued_points,
+           COALESCE(SUM(CASE WHEN delta < 0 THEN -delta ELSE 0 END), 0) AS spent_points
+           FROM point_ledger
+          WHERE user_id NOT LIKE 'guest:%'`
+      )
+      .first()
     const ledgerRows = ledger?.results || []
     const balanceMap = await getBalancesFor(db, ledgerRows.map((row) => row.user_id))
     return Response.json({
@@ -51,6 +86,20 @@ export async function GET(req) {
       generatedAt: Date.now(),
       rules: POINT_RULES,
       resources,
+      summary: {
+        accountCount: toNumber(accountSummary?.account_count),
+        totalBalance: toNumber(accountSummary?.total_balance),
+        ledgerCount: toNumber(ledgerSummary?.ledger_count),
+        issuedPoints: toNumber(ledgerSummary?.issued_points),
+        spentPoints: toNumber(ledgerSummary?.spent_points),
+      },
+      accounts: (accountsResult?.results || []).map((row) => ({
+        user_id: row.user_id,
+        balance: toNumber(row.balance),
+        updated_at: row.updated_at,
+        last_ledger_at: row.last_ledger_at,
+        ledger_count: toNumber(row.ledger_count),
+      })),
       recentLedger: ledgerRows.map((row) => ({
         ...row,
         user_balance: balanceMap[row.user_id] ?? 0,
@@ -74,7 +123,7 @@ export async function GET(req) {
  *  - upsertResource: { resourceKey, costPoints, minRole }
  *  - deleteResource: { resourceKey }
  *  - adjust:         { userId, delta, note }  站长手动加/减燃币
- *  - reverse:        { ledgerId }             撤销某条流水（补一笔反向变动）
+ *  - reverse:        { ledgerId }             撤销某条燃币变动（补一笔反向变动）
  */
 export async function POST(req) {
   const guard = await getOwnerOrReject(req)

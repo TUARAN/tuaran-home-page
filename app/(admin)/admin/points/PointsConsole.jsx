@@ -216,8 +216,14 @@ export default function PointsConsole() {
   async function adjust(e) {
     e.preventDefault()
     if (!adjUser.trim() || !adjDelta) return
-    if (adjUser.trim().startsWith('guest:')) {
+    const id = adjUser.trim()
+    if (id.startsWith('guest:')) {
       setMessage('游客燃币由系统自动发放/消费，后台不支持手动增减。')
+      return
+    }
+    // 只认登录账户前缀；裸码 / 手滑粘进的短 id 会被服务端拒绝（避免凭空建号），这里先友好拦一道。
+    if (!/^(github|google|email):/.test(id)) {
+      setMessage('user_id 需带登录前缀（github: / google: / email:）。点上方账户行的「调整」会自动填入完整 id，别手敲短码。')
       return
     }
     const ok = await post(

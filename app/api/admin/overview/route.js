@@ -1,7 +1,7 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import { listSiteUsers } from '../../../../lib/userDirectory'
-import { getD1AdminSnapshot } from '../../../../lib/dbAdmin'
+import { getD1QuickStatus } from '../../../../lib/dbAdmin'
 import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/researchStyleTemplates'
 
 export const runtime = 'edge'
@@ -48,7 +48,7 @@ export async function GET(req) {
   try {
     const [users, dbSnap, pvTotalRow, pvTodayRow] = await Promise.all([
       listSiteUsers(db).catch(() => []),
-      getD1AdminSnapshot(db).catch(() => ({ status: 'error' })),
+      getD1QuickStatus(db).catch(() => ({ status: 'error', tableCount: null })),
       db.prepare('SELECT COALESCE(SUM(pv), 0) AS total FROM research_pv').first().catch(() => null),
       db
         .prepare('SELECT COUNT(*) AS today FROM research_pv_hits WHERE created_at >= ?1')
@@ -77,8 +77,8 @@ export async function GET(req) {
       },
       db: {
         status: dbSnap?.status || 'unknown',
-        tables: Array.isArray(dbSnap?.tables) ? dbSnap.tables.length : null,
-        name: dbSnap?.database?.name || null,
+        tables: dbSnap?.tableCount ?? null,
+        name: null,
       },
       recent: { users: recentUsers, style },
     })

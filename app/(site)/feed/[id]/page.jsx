@@ -1,5 +1,8 @@
-import { redirect, notFound } from 'next/navigation'
-import { getAllFeedItems } from '../data'
+import { notFound } from 'next/navigation'
+import PageContainer from '../../components/PageContainer'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
+import FeedClient from '../FeedClient'
+import { getAllFeedItems, getFeedTypesPresent } from '../data'
 
 export const dynamic = 'force-static'
 
@@ -52,17 +55,21 @@ export async function generateMetadata({ params }) {
   }
 }
 
-/**
- * /feed/[id] → 重定向到 /feed#[id]
- * 这是一个「OG 落地页」，真正内容在 /feed#[id] 锚点处。
- * 分享时用 /feed/[id]，确保 social crawler 能读到正确的 og:image。
- */
-export default async function FeedItemRedirectPage({ params }) {
+export default async function FeedItemPage({ params }) {
   const { id } = await params
   const items = getAllFeedItems()
   const item = items.find((i) => i.id === id)
 
   if (!item) notFound()
 
-  redirect(`/feed#${id}`)
+  return (
+    <PageContainer className="py-10">
+      <ContentPvBeacon category="feed" slug="index" />
+      <FeedClient items={items} typesPresent={getFeedTypesPresent()} featuredItemId={id} />
+
+      <p className="mt-12 border-t border-[var(--site-line)] pt-6 text-center text-[11px] text-[var(--site-muted)]">
+        持续更新 · 内容由 TUARAN 精选整理，版权归原作者所有，仅作分享与学习
+      </p>
+    </PageContainer>
+  )
 }

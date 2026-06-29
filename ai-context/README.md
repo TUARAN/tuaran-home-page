@@ -25,5 +25,5 @@
 
 - **CLAUDE.md（仓库根）**：每次 AI 会话自动加载的最小事实集，指向各正本
 - **research/README.md**：调研知识库的 frontmatter / 目录契约
-- **lib/researchStyleTemplates.js**：调研写作规则的唯一正本（带版本史，/admin/research-style 可视化）
+- **lib/researchStyleTemplates.js**：调研写作风格的唯一正本（风格库，/admin/research-style 可视化）
 - **本目录**：架构、审查、计划、交接等项目文档；一次性记录完成后移入 `archive/`

@@ -26,7 +26,7 @@ function itemShareText(item) {
   ].filter(Boolean).join('\n')
 }
 
-function MetaRow({ item, showShare = true, maxTags = Infinity }) {
+function MetaRow({ item, showShare = true, maxTags = Infinity, stackActions = false }) {
   const tags = item.tags || []
   const visibleTags = Number.isFinite(maxTags) ? tags.slice(0, maxTags) : tags
   const hiddenTagCount = Math.max(0, tags.length - visibleTags.length)
@@ -43,8 +43,18 @@ function MetaRow({ item, showShare = true, maxTags = Infinity }) {
   ) : null
 
   return (
-    <div className="mt-5 flex flex-col gap-3 text-[11px] text-[var(--site-muted)] sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2">
+    <div
+      className={[
+        'mt-5 flex flex-col text-[11px] text-[var(--site-muted)]',
+        stackActions ? 'gap-2' : 'gap-3 sm:flex-row sm:items-center sm:justify-between',
+      ].join(' ')}
+    >
+      <div
+        className={[
+          'flex min-w-0 items-center gap-x-2 gap-y-2',
+          stackActions ? 'overflow-x-auto whitespace-nowrap pb-1' : 'flex-wrap',
+        ].join(' ')}
+      >
         {item.date ? <time>{item.date}</time> : null}
         {visibleTags.length ? (
           <>
@@ -66,7 +76,12 @@ function MetaRow({ item, showShare = true, maxTags = Infinity }) {
         ) : null}
       </div>
       {sourceLink || showShare ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div
+          className={[
+            'flex shrink-0 flex-wrap items-center gap-2',
+            stackActions ? 'justify-end' : '',
+          ].join(' ')}
+        >
           {sourceLink}
           {showShare ? (
             <SharePageButton
@@ -167,7 +182,7 @@ function HeadlineCard({ item }) {
         <p className="mb-0 mt-4 text-[15px] leading-7 text-[var(--site-muted)]">{item.summary}</p>
       ) : null}
       {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
-      <MetaRow item={item} maxTags={3} />
+      <MetaRow item={item} stackActions />
     </div>
   )
 

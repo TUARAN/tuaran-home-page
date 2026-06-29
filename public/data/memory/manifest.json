@@ -193,7 +193,7 @@
         },
         "research-style-template-v3": {
           "title": "research-style-template-v3",
-          "description": "调研写作规则的唯一正本在 lib/researchStyleTemplates.js 的 active 版本（当前 v4 开篇瘦身版，文件名 v3 为历史命名）；动笔前先读它，不要凭记忆复述规则",
+          "description": "调研写作风格的唯一正本在 lib/researchStyleTemplates.js；动笔前先选风格（默认调研 / 人味调研 / 周刊解释 / 投研备忘 / 资料档案），不要凭旧模板复述规则",
           "versions": [
             {
               "ts": "2026-06-11T13:59:07.195Z",

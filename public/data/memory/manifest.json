@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-25T01:11:45.223Z",
+  "generatedAt": "2026-06-29T07:50:18.338Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -326,6 +326,18 @@
               "hash": "a68529619f2919e630c600ef5aa692c619ab53a8d26e3c8d90c129ea09e987f7",
               "path": "claude/shen-zhi-x-nei-hub/2026-06-25T01-11-45-219Z.enc.json",
               "bytes": 811
+            }
+          ]
+        },
+        "rss-blogroll-feature": {
+          "title": "rss-blogroll-feature",
+          "description": "RSS 订阅墙（/resources/rss + /admin/rss-feeds，D1）代码已落，需站长手动跑 migration 0031；排查订阅加不上/不显示先查迁移",
+          "versions": [
+            {
+              "ts": "2026-06-29T07:50:18.317Z",
+              "hash": "ebd8848a933d47b6c8dfc3d551548442cccae67d49af3b546bde84a5a934be5f",
+              "path": "claude/rss-blogroll-feature/2026-06-29T07-50-18-334Z.enc.json",
+              "bytes": 1246
             }
           ]
         }

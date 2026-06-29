@@ -81,7 +81,12 @@ const RESOURCE_TYPE_DEFS = [
   { key: 'politics', label: '政经资料' },
   { key: 'workplace', label: '职场资料' },
   { key: 'books', label: '书目索引' },
-  { key: 'bookmarks', label: '资源收藏' },
+  { key: 'twitter-bookmarks', label: '推特资讯' },
+  { key: 'youtube-bookmarks', label: 'YouTube 收藏' },
+  { key: 'llm-tutorials', label: '大模型教程' },
+  { key: 'ai-tools', label: 'AI 工具' },
+  { key: 'dev-resources', label: '开发资源' },
+  { key: 'codex-learning', label: 'Codex 学习' },
 ]
 
 const RESOURCE_TYPE_KEYS = RESOURCE_TYPE_DEFS.map((t) => t.key)
@@ -557,19 +562,15 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
         {activeChannel === 'resources' ? (
           <FilterRow label="资源分类" ariaLabel="资源分类" orientation={orientation}>
-            {RESOURCE_TYPE_DEFS.map((t) => {
-              const scopeLabel = t.key === 'bookmarks' ? '站外' : t.key === 'all' ? '' : '站内'
-              return (
-                <FilterChip
-                  key={t.key}
-                  label={t.label}
-                  count={resourceTypeCounts[t.key] ?? 0}
-                  active={resourceType === t.key}
-                  onClick={() => selectResourceType(t.key)}
-                  prefix={scopeLabel || undefined}
-                />
-              )
-            })}
+            {RESOURCE_TYPE_DEFS.map((t) => (
+              <FilterChip
+                key={t.key}
+                label={t.label}
+                count={resourceTypeCounts[t.key] ?? 0}
+                active={resourceType === t.key}
+                onClick={() => selectResourceType(t.key)}
+              />
+            ))}
           </FilterRow>
         ) : null}
 

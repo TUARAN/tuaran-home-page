@@ -102,6 +102,17 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // Codex 学习链接帖归档从事项调研调整为资源收集页
+        source: '/articles/research/topics/codex-learning-resource-map-yichen',
+        destination: '/resources/codex-learning-resource-map-yichen',
+        permanent: true,
+      },
+      {
+        source: '/articles/research/topics/2026-06-29-codex-learning-resource-map-yichen',
+        destination: '/resources/codex-learning-resource-map-yichen',
+        permanent: true,
+      },
+      {
         // /weekly 是历史路由，统一归入 /diary 持续更新
         source: '/weekly',
         destination: '/diary',

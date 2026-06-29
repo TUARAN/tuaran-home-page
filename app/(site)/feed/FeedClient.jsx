@@ -26,7 +26,10 @@ function itemShareText(item) {
   ].filter(Boolean).join('\n')
 }
 
-function MetaRow({ item, showShare = true }) {
+function MetaRow({ item, showShare = true, maxTags = Infinity }) {
+  const tags = item.tags || []
+  const visibleTags = Number.isFinite(maxTags) ? tags.slice(0, maxTags) : tags
+  const hiddenTagCount = Math.max(0, tags.length - visibleTags.length)
   const sourceLink = item.source?.href ? (
     <a
       href={item.source.href}
@@ -43,14 +46,22 @@ function MetaRow({ item, showShare = true }) {
     <div className="mt-5 flex flex-col gap-3 text-[11px] text-[var(--site-muted)] sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2">
         {item.date ? <time>{item.date}</time> : null}
-        {item.tags?.length ? (
+        {visibleTags.length ? (
           <>
             <span aria-hidden="true">·</span>
-            {item.tags.map((t) => (
+            {visibleTags.map((t) => (
               <span key={t} className="rounded-md bg-[var(--site-panel-strong)] px-2 py-1">
                 #{t}
               </span>
             ))}
+            {hiddenTagCount ? (
+              <span
+                className="rounded-md bg-[var(--site-panel-strong)] px-2 py-1 font-mono text-[10px]"
+                title={tags.slice(visibleTags.length).map((t) => `#${t}`).join(' ')}
+              >
+                +{hiddenTagCount}
+              </span>
+            ) : null}
           </>
         ) : null}
       </div>
@@ -156,7 +167,7 @@ function HeadlineCard({ item }) {
         <p className="mb-0 mt-4 text-[15px] leading-7 text-[var(--site-muted)]">{item.summary}</p>
       ) : null}
       {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
-      <MetaRow item={item} />
+      <MetaRow item={item} maxTags={3} />
     </div>
   )
 

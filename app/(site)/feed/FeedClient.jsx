@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import SharePageButton from '../components/SharePageButton'
 import { FEED_TYPE_META } from './data'
 
@@ -272,12 +272,37 @@ function FeedCard({ item }) {
   return null
 }
 
-export default function FeedClient({ items, typesPresent }) {
+function prioritizeItem(items, itemId) {
+  if (!itemId) return items
+  const selected = items.find((item) => item.id === itemId)
+  if (!selected) return items
+  return [selected, ...items.filter((item) => item.id !== itemId)]
+}
+
+export default function FeedClient({ items, typesPresent, featuredItemId = '' }) {
   const [typeFilter, setTypeFilter] = useState('all')
+  const [hashFeaturedItemId, setHashFeaturedItemId] = useState('')
+  const activeFeaturedItemId = featuredItemId || hashFeaturedItemId
+
+  useEffect(() => {
+    if (featuredItemId || typeof window === 'undefined') return
+
+    function syncHashFeaturedItem() {
+      const nextId = decodeURIComponent(window.location.hash || '').replace(/^#/, '')
+      setHashFeaturedItemId(nextId)
+    }
+
+    syncHashFeaturedItem()
+    window.addEventListener('hashchange', syncHashFeaturedItem)
+    return () => window.removeEventListener('hashchange', syncHashFeaturedItem)
+  }, [featuredItemId])
 
   const filtered = useMemo(
-    () => (typeFilter === 'all' ? items : items.filter((i) => i.type === typeFilter)),
-    [items, typeFilter]
+    () => {
+      const tabItems = typeFilter === 'all' ? items : items.filter((i) => i.type === typeFilter)
+      return prioritizeItem(tabItems, activeFeaturedItemId)
+    },
+    [items, typeFilter, activeFeaturedItemId]
   )
 
   const chips = [{ key: 'all', label: '全部' }, ...typesPresent.map((t) => ({ key: t, label: FEED_TYPE_META[t]?.label || t }))]

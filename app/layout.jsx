@@ -82,6 +82,13 @@ export default function RootLayout({ children }) {
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
+        {/* RSS 自动发现：阅读器 / 浏览器插件在任意页面都能探测到 /rss.xml */}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="涂阿燃（tuaran）的网络日志"
+          href="/rss.xml"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var root=document.documentElement;var ui=localStorage.getItem('site-ui-mode');root.dataset.ui=ui==='classic'?'classic':'polished';var th=localStorage.getItem('theme');var v=localStorage.getItem('reading-bg');if(v==='#f1f2ee'){localStorage.removeItem('reading-bg');v='';}if(v&&th==='light'){root.style.setProperty('--page-bg',v);}var lm=document.cookie.match(/(?:^|; )site-lang=([^;]+)/);var lang=lm?decodeURIComponent(lm[1]):'';if(lang==='en'||lang==='zh'){root.dataset.lang=lang;root.lang=lang==='en'?'en':'zh-CN';}}catch(e){}})();`,

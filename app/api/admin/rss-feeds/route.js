@@ -26,6 +26,92 @@ function rowToAdmin(row) {
   }
 }
 
+async function loadRssAnalytics(db) {
+  const now = Date.now()
+  const dayStart = now - 24 * 60 * 60 * 1000
+  const weekStart = now - 7 * 24 * 60 * 60 * 1000
+  const monthStart = now - 30 * 24 * 60 * 60 * 1000
+
+  try {
+    const [summary, readers, recent] = await Promise.all([
+      db
+        .prepare(
+          `SELECT
+             COUNT(*) AS total_requests,
+             COUNT(DISTINCT client_hash) AS total_clients,
+             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS requests_24h,
+             SUM(CASE WHEN created_at >= ?2 THEN 1 ELSE 0 END) AS requests_7d,
+             SUM(CASE WHEN created_at >= ?3 THEN 1 ELSE 0 END) AS requests_30d,
+             COUNT(DISTINCT CASE WHEN created_at >= ?2 THEN client_hash ELSE NULL END) AS clients_7d,
+             COUNT(DISTINCT CASE WHEN created_at >= ?3 THEN client_hash ELSE NULL END) AS clients_30d,
+             MAX(created_at) AS last_seen_at
+           FROM rss_hits`,
+        )
+        .bind(dayStart, weekStart, monthStart)
+        .first(),
+      db
+        .prepare(
+          `SELECT
+             COALESCE(reader, 'Unknown') AS reader,
+             COUNT(*) AS requests,
+             COUNT(DISTINCT client_hash) AS clients,
+             MAX(created_at) AS last_seen_at
+           FROM rss_hits
+           WHERE created_at >= ?1
+           GROUP BY COALESCE(reader, 'Unknown')
+           ORDER BY requests DESC, last_seen_at DESC
+           LIMIT 12`,
+        )
+        .bind(monthStart)
+        .all()
+        .then((r) => r.results || []),
+      db
+        .prepare(
+          `SELECT path, reader, user_agent, referer, created_at
+           FROM rss_hits
+           ORDER BY created_at DESC
+           LIMIT 30`,
+        )
+        .all()
+        .then((r) => r.results || []),
+    ])
+
+    return {
+      status: 'ok',
+      note: 'RSS 没有订阅回调；这里统计的是 /rss.xml 请求次数与近似独立客户端。',
+      summary: {
+        totalRequests: Number(summary?.total_requests) || 0,
+        totalClients: Number(summary?.total_clients) || 0,
+        requests24h: Number(summary?.requests_24h) || 0,
+        requests7d: Number(summary?.requests_7d) || 0,
+        requests30d: Number(summary?.requests_30d) || 0,
+        clients7d: Number(summary?.clients_7d) || 0,
+        clients30d: Number(summary?.clients_30d) || 0,
+        lastSeenAt: Number(summary?.last_seen_at) || 0,
+      },
+      readers: readers.map((row) => ({
+        reader: row.reader || 'Unknown',
+        requests: Number(row.requests) || 0,
+        clients: Number(row.clients) || 0,
+        lastSeenAt: Number(row.last_seen_at) || 0,
+      })),
+      recent: recent.map((row) => ({
+        path: row.path || '/rss.xml',
+        reader: row.reader || 'Unknown',
+        userAgent: row.user_agent || '',
+        referer: row.referer || '',
+        createdAt: Number(row.created_at) || 0,
+      })),
+    }
+  } catch (error) {
+    return {
+      status: 'unavailable',
+      message: 'RSS 请求统计未就绪（需要跑 migration 0033_rss_hits.sql）。',
+      detail: String(error?.message || error),
+    }
+  }
+}
+
 // 宽松归一化 URL：允许站长少打 https://，空串保持空。
 function normUrl(value) {
   const s = String(value || '').trim()
@@ -47,10 +133,13 @@ export async function GET(req) {
   }
 
   try {
-    const result = await db
-      .prepare('SELECT * FROM rss_feeds ORDER BY sort_order DESC, created_at DESC')
-      .all()
-    return Response.json({ status: 'ok', feeds: (result?.results || []).map(rowToAdmin) })
+    const [result, analytics] = await Promise.all([
+      db
+        .prepare('SELECT * FROM rss_feeds ORDER BY sort_order DESC, created_at DESC')
+        .all(),
+      loadRssAnalytics(db),
+    ])
+    return Response.json({ status: 'ok', feeds: (result?.results || []).map(rowToAdmin), analytics })
   } catch (error) {
     return Response.json(
       {

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS rss_feeds (
 CREATE INDEX IF NOT EXISTS idx_rss_feeds_pub
   ON rss_feeds(published, sort_order DESC, created_at DESC);
 
--- 首条种子：阮一峰的网络日志（与 lib/rssFeedsSeed.js 保持一致）
+-- 内置种子（与 lib/rssFeedsSeed.js 保持一致）
 INSERT OR IGNORE INTO rss_feeds
   (id, site_name, site_url, rss_url, description, category, published, sort_order, created_at)
 VALUES (
@@ -31,4 +31,18 @@ VALUES (
   1,
   100,
   1782000000000
+);
+
+INSERT OR IGNORE INTO rss_feeds
+  (id, site_name, site_url, rss_url, description, category, published, sort_order, created_at)
+VALUES (
+  'tuaran-home',
+  '涂阿燃的网络日志',
+  'https://2aran.com/',
+  'https://2aran.com/rss.xml',
+  '2aran.com 的本站 RSS：前端、AI Agent、技术调研、资源整理与独立开发笔记。',
+  '个人站 / 技术',
+  1,
+  90,
+  1782000001000
 );

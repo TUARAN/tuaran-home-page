@@ -4,11 +4,13 @@ import Link from 'next/link'
 
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import RanbiPaywall from '../../components/RanbiPaywall'
+import SharePageButton from '../../components/SharePageButton'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 
 export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'codex-learning-resource-map-yichen'
+const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const RESOURCE_PATH = path.join(process.cwd(), 'resources', '2026-06-29-codex-learning-resource-map-yichen.md')
 
 function parseFrontmatter(raw) {
@@ -71,7 +73,6 @@ export default function CodexLearningResourcePage() {
 
   return (
     <main className="mx-auto w-full max-w-[1120px] px-4 py-8">
-      <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
       <header className="mb-8 border-b border-[#eee] pb-5 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
           <Link href="/articles?tab=resources" className="underline underline-offset-4 opacity-80 hover:opacity-100">
@@ -81,6 +82,8 @@ export default function CodexLearningResourcePage() {
           <span>资源收集</span>
           <span aria-hidden="true">·</span>
           <time dateTime={resource.date}>{resource.date}</time>
+          <span aria-hidden="true">·</span>
+          <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} display />
         </div>
         <h1 className="mt-3 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
           {resource.title}
@@ -102,6 +105,13 @@ export default function CodexLearningResourcePage() {
             ))}
           </div>
         ) : null}
+        <div className="mt-4">
+          <SharePageButton
+            title={resource.title}
+            text={resource.summary || 'Codex 学习资源收集：逸尘 X 链接帖归档'}
+            url={RESOURCE_URL}
+          />
+        </div>
       </header>
 
       <RanbiPaywall resourceKey={`resource:${RESOURCE_SLUG}`} unitLabel="资源">

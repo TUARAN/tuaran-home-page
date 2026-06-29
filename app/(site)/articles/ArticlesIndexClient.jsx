@@ -76,20 +76,30 @@ const PEOPLE_TYPE_KEYS = PEOPLE_TYPE_DEFS.map((t) => t.key)
 
 const RESOURCE_TYPE_DEFS = [
   { key: 'all', label: '全部资源' },
-  { key: 'classics', label: '古典名篇' },
-  { key: 'humanities', label: '人文思想' },
-  { key: 'politics', label: '政经资料' },
+  { key: 'ai-dev', label: 'AI 与开发' },
+  { key: 'humanities-politics', label: '人文与政经' },
+  { key: 'external-archive', label: '外部收藏' },
   { key: 'workplace', label: '职场资料' },
-  { key: 'books', label: '书目索引' },
-  { key: 'twitter-bookmarks', label: '推特资讯' },
-  { key: 'youtube-bookmarks', label: 'YouTube 收藏' },
-  { key: 'llm-tutorials', label: '大模型教程' },
-  { key: 'ai-tools', label: 'AI 工具' },
-  { key: 'dev-resources', label: '开发资源' },
-  { key: 'codex-learning', label: 'Codex 学习' },
 ]
 
 const RESOURCE_TYPE_KEYS = RESOURCE_TYPE_DEFS.map((t) => t.key)
+const RESOURCE_TYPE_ALIASES = {
+  classics: 'humanities-politics',
+  humanities: 'humanities-politics',
+  politics: 'humanities-politics',
+  books: 'humanities-politics',
+  'twitter-bookmarks': 'external-archive',
+  'youtube-bookmarks': 'external-archive',
+  'llm-tutorials': 'ai-dev',
+  'ai-tools': 'ai-dev',
+  'dev-resources': 'ai-dev',
+  'codex-learning': 'ai-dev',
+}
+
+function normalizeResourceType(value) {
+  if (RESOURCE_TYPE_KEYS.includes(value)) return value
+  return RESOURCE_TYPE_ALIASES[value] || 'all'
+}
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -127,7 +137,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   })()
   const initialResourceType = (() => {
     const fromUrl = searchParams?.get('resource_type')
-    return RESOURCE_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
+    return normalizeResourceType(fromUrl)
   })()
   const initialQuery = searchParams?.get('q') || ''
   const [tab, setTab] = useState(initialTab)
@@ -174,7 +184,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       setPeopleType(nextPeopleType)
     }
     const resourceTypeFromUrl = searchParams?.get('resource_type')
-    const nextResourceType = RESOURCE_TYPE_KEYS.includes(resourceTypeFromUrl) ? resourceTypeFromUrl : 'all'
+    const nextResourceType = normalizeResourceType(resourceTypeFromUrl)
     if (nextResourceType !== resourceType) {
       setResourceType(nextResourceType)
     }
@@ -366,17 +376,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   useEffect(() => {
     const keys = Array.from(
-      new Set(
-        items
-          .filter((item) => item.kind === 'companies' || item.kind === 'topics' || item.kind === 'people')
-          .map((item) => {
-            const parts = String(item.href || '').split('/')
-            const category = parts[3]
-            const slug = parts[4]
-            return category && slug ? `${category}/${slug}` : ''
-          })
-          .filter(Boolean),
-      ),
+      new Set(items.map((item) => item.pvKey).filter(Boolean)),
     )
     if (!keys.length) {
       setPvLoaded(true)
@@ -593,8 +593,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         </p>
       ) : (
         visible.map((item) => {
-          const parts = String(item.href || '').split('/')
-          const pvKey = parts[3] && parts[4] ? `${parts[3]}/${parts[4]}` : ''
+          const pvKey = item.pvKey || ''
           const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
           const pvLoading = pvKey !== '' && !pvLoaded
           const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item

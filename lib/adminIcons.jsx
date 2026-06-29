@@ -29,6 +29,7 @@ import {
   IconCoin,
   IconRadar2,
   IconChartCandle,
+  IconRss,
 } from '@tabler/icons-react'
 
 const ICONS = {
@@ -52,6 +53,7 @@ const ICONS = {
   back: IconArrowBackUp,
   publicOpinion: IconRadar2,
   stockAnalysis: IconChartCandle,
+  rss: IconRss,
 }
 
 export function AdminIcon({ name, size = 18, stroke = 1.6, className, ...rest }) {

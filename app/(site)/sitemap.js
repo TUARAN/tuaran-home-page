@@ -44,6 +44,7 @@ export default function sitemap() {
     '/bookmarks/llm-tutorials',
     '/bookmarks/dev-resources',
     '/bookmarks/ai-tools',
+    '/resources/rss',
     '/resources/codex-learning-resource-map-yichen',
     '/community',
     '/changelog',

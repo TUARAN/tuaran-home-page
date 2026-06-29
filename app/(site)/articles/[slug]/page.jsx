@@ -455,7 +455,9 @@ export default async function ArticleDetailPage({ params }) {
         </>
       )}
 
-      <ArticleComments articleKey={`article:${article.slug}`} />
+      <div id="comments" className="scroll-mt-24">
+        <ArticleComments articleKey={`article:${article.slug}`} />
+      </div>
       <ArticleFooterCta />
     </div>
   )

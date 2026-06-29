@@ -22,6 +22,17 @@ function normalizeArticleKey(value) {
   return articleKey
 }
 
+function normalizeReplyToId(value) {
+  if (value == null || value === '') return null
+  const id = Number(value)
+  if (!Number.isInteger(id) || id <= 0) return null
+  return id
+}
+
+function commentExcerpt(message) {
+  return String(message || '').replace(/\s+/g, ' ').trim().slice(0, 160)
+}
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url)
@@ -34,10 +45,13 @@ export async function GET(req) {
     const db = getD1()
     const result = await db
       .prepare(
-        `SELECT id, article_key, user_id, user_provider, user_name, user_image, message, created_at
-         FROM article_comments
-         WHERE article_key = ?1
-         ORDER BY created_at DESC
+        `SELECT c.id, c.article_key, c.user_id, c.user_provider, c.user_name, c.user_image,
+                c.message, c.reply_to_id, c.created_at,
+                r.user_id AS reply_to_user_id, r.user_name AS reply_to_user_name
+         FROM article_comments c
+         LEFT JOIN article_comments r ON c.reply_to_id = r.id
+         WHERE c.article_key = ?1
+         ORDER BY c.created_at DESC
          LIMIT ?2`
       )
       .bind(articleKey, limit)
@@ -77,6 +91,7 @@ export async function POST(req) {
 
     const db = getD1()
     const ip = getClientIp(req)
+    const replyToId = normalizeReplyToId(body?.replyToId)
 
     // 身份分两路：登录用户用 user.id；游客用签名 cookie 里的 guest_id（无则签发）。
     let userId
@@ -123,16 +138,59 @@ export async function POST(req) {
     if (!limit.ok) return rateLimitResponse(limit)
 
     const createdAt = Date.now()
+    let replyTarget = null
+    if (replyToId) {
+      replyTarget = await db
+        .prepare(
+          `SELECT id, user_id, user_name
+           FROM article_comments
+           WHERE id = ?1 AND article_key = ?2`
+        )
+        .bind(replyToId, articleKey)
+        .first()
+      if (!replyTarget?.id) {
+        return Response.json({ error: 'REPLY_TARGET_NOT_FOUND' }, { status: 400 })
+      }
+    }
 
     const insert = await db
       .prepare(
         `INSERT INTO article_comments
-           (article_key, user_id, user_provider, user_name, user_image, message, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-         RETURNING id, article_key, user_id, user_provider, user_name, user_image, message, created_at`
+           (article_key, user_id, user_provider, user_name, user_image, message, reply_to_id, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+         RETURNING id, article_key, user_id, user_provider, user_name, user_image, message, reply_to_id, created_at`
       )
-      .bind(articleKey, userId, userProvider, userName, userImage, message, createdAt)
+      .bind(articleKey, userId, userProvider, userName, userImage, message, replyTarget?.id || null, createdAt)
       .first()
+
+    if (
+      insert?.id != null &&
+      replyTarget?.user_id &&
+      replyTarget.user_id !== userId &&
+      !String(replyTarget.user_id).startsWith(GUEST_USER_PREFIX)
+    ) {
+      await db
+        .prepare(
+          `INSERT INTO comment_notifications
+             (type, recipient_user_id, actor_user_id, actor_user_provider, actor_user_name,
+              actor_user_image, article_key, comment_id, reply_to_comment_id, message_excerpt, created_at)
+           VALUES ('comment_reply', ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`
+        )
+        .bind(
+          replyTarget.user_id,
+          userId,
+          userProvider,
+          userName,
+          userImage,
+          articleKey,
+          insert.id,
+          replyTarget.id,
+          commentExcerpt(message),
+          createdAt
+        )
+        .run()
+        .catch(() => {})
+    }
 
     // 有效评论奖励燃币（仅登录用户，游客零燃币）；best-effort，不阻断评论。
     if (!isGuest && insert?.id != null) {

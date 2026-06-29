@@ -7,8 +7,11 @@ const SessionContext = createContext({
   user: null,
   isOwner: false,
   navOverrides: {},
+  notifications: { unread: 0, items: [], status: 'idle' },
   refresh: async () => {},
   refreshNav: async () => {},
+  refreshNotifications: async () => {},
+  markNotificationsRead: async () => {},
 })
 
 const REFRESH_EVENT = 'tuaran:session-refresh'
@@ -20,9 +23,11 @@ export function SessionProvider({ children }) {
     user: null,
     isOwner: false,
     navOverrides: {},
+    notifications: { unread: 0, items: [], status: 'idle' },
   })
   const inFlightAccountRef = useRef(null)
   const inFlightNavRef = useRef(null)
+  const inFlightNotificationsRef = useRef(null)
 
   const refresh = useCallback(async () => {
     if (inFlightAccountRef.current) return inFlightAccountRef.current
@@ -37,7 +42,13 @@ export function SessionProvider({ children }) {
           isOwner: Boolean(data?.isOwner),
         }))
       } catch {
-        setState((prev) => ({ ...prev, loading: false, user: null, isOwner: false }))
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          user: null,
+          isOwner: false,
+          notifications: { unread: 0, items: [], status: 'anonymous' },
+        }))
       } finally {
         inFlightAccountRef.current = null
       }
@@ -45,6 +56,47 @@ export function SessionProvider({ children }) {
     inFlightAccountRef.current = p
     return p
   }, [])
+
+  const refreshNotifications = useCallback(async () => {
+    if (inFlightNotificationsRef.current) return inFlightNotificationsRef.current
+    const p = (async () => {
+      try {
+        const res = await fetch('/api/notifications', { cache: 'no-store', credentials: 'same-origin' })
+        const data = await res.json().catch(() => null)
+        setState((prev) => ({
+          ...prev,
+          notifications: {
+            unread: Number(data?.unread) || 0,
+            items: Array.isArray(data?.items) ? data.items : [],
+            status: data?.status || (res.ok ? 'ok' : 'error'),
+          },
+        }))
+      } catch {
+        setState((prev) => ({
+          ...prev,
+          notifications: { unread: 0, items: [], status: 'error' },
+        }))
+      } finally {
+        inFlightNotificationsRef.current = null
+      }
+    })()
+    inFlightNotificationsRef.current = p
+    return p
+  }, [])
+
+  const markNotificationsRead = useCallback(async (payload = { all: true }) => {
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) await refreshNotifications()
+    } catch {
+      // best-effort UI refresh only
+    }
+  }, [refreshNotifications])
 
   const refreshNav = useCallback(async () => {
     if (inFlightNavRef.current) return inFlightNavRef.current
@@ -101,8 +153,20 @@ export function SessionProvider({ children }) {
     }
   }, [refresh, refreshNav])
 
+  useEffect(() => {
+    if (state.loading) return
+    if (state.user?.id) {
+      refreshNotifications()
+    } else {
+      setState((prev) => ({
+        ...prev,
+        notifications: { unread: 0, items: [], status: 'anonymous' },
+      }))
+    }
+  }, [state.loading, state.user?.id, refreshNotifications])
+
   return (
-    <SessionContext.Provider value={{ ...state, refresh, refreshNav }}>
+    <SessionContext.Provider value={{ ...state, refresh, refreshNav, refreshNotifications, markNotificationsRead }}>
       {children}
     </SessionContext.Provider>
   )

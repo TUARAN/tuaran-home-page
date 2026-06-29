@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
 import UserAvatar from './UserAvatar'
@@ -36,15 +36,28 @@ function providerLabel(provider) {
   return 'GitHub'
 }
 
+function mentionName(name) {
+  return String(name || '用户').replace(/\s+/g, '').slice(0, 32) || '用户'
+}
+
 export default function ArticleComments({ articleKey }) {
-  const { user, loading: userLoading } = useSessionAccount()
+  const {
+    user,
+    loading: userLoading,
+    notifications,
+    refreshNotifications,
+    markNotificationsRead,
+  } = useSessionAccount()
   const [items, setItems] = useState([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [replyTarget, setReplyTarget] = useState(null)
+  const textareaRef = useRef(null)
 
   const remaining = useMemo(() => 1000 - message.trim().length, [message])
   const isAuthed = !!user
+  const unreadNotifications = (notifications?.items || []).filter((item) => !item.readAt)
 
   const refresh = useCallback(async () => {
     if (!articleKey) return
@@ -85,18 +98,40 @@ export default function ArticleComments({ articleKey }) {
       const res = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ articleKey, message: trimmed }),
+        body: JSON.stringify({ articleKey, message: trimmed, replyToId: replyTarget?.id || null }),
       })
       const data = await safeJson(res)
       if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
 
       setMessage('')
+      setReplyTarget(null)
       await refresh()
+      if (isAuthed) await refreshNotifications?.()
     } catch (e) {
       setError(e?.message || 'POST_FAILED')
     } finally {
       setLoading(false)
     }
+  }
+
+  function replyTo(item) {
+    const name = mentionName(item.user_name)
+    const prefix = `@${name} `
+    setReplyTarget({ id: item.id, userName: item.user_name || name })
+    setMessage((current) => {
+      const text = current.trimStart()
+      if (text.startsWith(prefix)) return current
+      if (!text) return prefix
+      return `${prefix}${current}`
+    })
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus()
+      textareaRef.current?.setSelectionRange?.(prefix.length, prefix.length)
+    })
+  }
+
+  async function markAllRepliesRead() {
+    await markNotificationsRead?.({ all: true })
   }
 
   return (
@@ -138,6 +173,35 @@ export default function ArticleComments({ articleKey }) {
         </div>
       </div>
 
+      {isAuthed && unreadNotifications.length ? (
+        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-sm text-rose-950 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-100">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-medium">你有 {unreadNotifications.length} 条新的评论回复</p>
+            <button
+              type="button"
+              onClick={markAllRepliesRead}
+              className="self-start rounded-full border border-rose-200 bg-white/80 px-3 py-1 text-xs text-rose-700 hover:bg-white dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-100"
+            >
+              全部已读
+            </button>
+          </div>
+          <ul className="mt-2 space-y-1.5">
+            {unreadNotifications.slice(0, 3).map((item) => (
+              <li key={item.id} className="leading-5">
+                <a
+                  href={item.href || '#comments'}
+                  onClick={() => markNotificationsRead?.({ id: item.id })}
+                  className="font-medium text-rose-800 underline-offset-4 hover:underline dark:text-rose-100"
+                >
+                  {item.actorUserName || '有人'} 回复了你
+                </a>
+                <span className="text-rose-700/80 dark:text-rose-100/75">：{item.messageExcerpt}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <form onSubmit={submit} className="mt-4 flex flex-col gap-2">
         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
           {isAuthed ? (
@@ -151,7 +215,16 @@ export default function ArticleComments({ articleKey }) {
             </span>
           )}
         </div>
+        {replyTarget ? (
+          <div className="flex items-center justify-between rounded-lg border border-gray-200/80 bg-white/70 px-3 py-2 text-xs text-gray-600 dark:border-gray-700/70 dark:bg-gray-900/60 dark:text-gray-300">
+            <span>正在回复 @{replyTarget.userName}</span>
+            <button type="button" onClick={() => setReplyTarget(null)} className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100">
+              取消回复
+            </button>
+          </div>
+        ) : null}
         <textarea
+          ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={4}
@@ -181,6 +254,7 @@ export default function ArticleComments({ articleKey }) {
             {items.map((item) => (
               <li
                 key={item.id}
+                id={`comment-${item.id}`}
                 className="rounded-lg border border-gray-200/80 bg-white/70 p-3 dark:border-gray-700/70 dark:bg-gray-900/50"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -193,10 +267,24 @@ export default function ArticleComments({ articleKey }) {
                       </div>
                     </div>
                   </div>
-                  <time className="shrink-0 text-[11px] text-gray-500 dark:text-gray-400">
-                    {formatTime(item.created_at)}
-                  </time>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => replyTo(item)}
+                      className="rounded-full border border-gray-200/80 px-2 py-0.5 text-[11px] text-gray-600 hover:bg-white dark:border-gray-700/70 dark:text-gray-300 dark:hover:bg-gray-800"
+                    >
+                      回复
+                    </button>
+                    <time className="text-[11px] text-gray-500 dark:text-gray-400">
+                      {formatTime(item.created_at)}
+                    </time>
+                  </div>
                 </div>
+                {item.reply_to_user_name ? (
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    回复 @{item.reply_to_user_name}
+                  </p>
+                ) : null}
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-700 dark:text-gray-200">
                   {item.message}
                 </p>

@@ -35,7 +35,7 @@ function TickerItem({ item }) {
       <span className="ml-3 inline-block w-1 h-1 rounded-full shrink-0" style={{ background: 'rgba(212,168,83,0.35)' }} />
     </>
   )
-  const cls = 'group/item inline-flex items-center gap-1.5 mx-3 no-underline hover:no-underline'
+  const cls = 'hot-ticker-item group/item inline-flex shrink-0 items-center gap-1.5 no-underline hover:no-underline'
   return item.external ? (
     <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${cls}`} aria-label={item.label}>
       {inner}
@@ -48,8 +48,6 @@ function TickerItem({ item }) {
 }
 
 export default function HotTickerBar() {
-  // 复制一份用于无缝滚动；两份内容首尾相接，translateX(-50%) 即可循环。
-  const loop = [...TICKER_ITEMS, ...TICKER_ITEMS]
   return (
     <div
       className="hot-ticker-wrapper"
@@ -78,11 +76,18 @@ export default function HotTickerBar() {
             className="pointer-events-none absolute right-0 top-0 z-10 h-full w-[60px]"
             style={{ background: 'linear-gradient(270deg, #0a0e1a 0%, transparent 100%)' }}
           />
-          {/* 流动内容 — CSS marquee；每条是独立链接 */}
-          <div className="flex items-center hot-ticker-track whitespace-nowrap">
-            {loop.map((item, i) => (
-              <TickerItem key={`${item.href}-${i}`} item={item} />
-            ))}
+          {/* 桌面完整展示；窄屏才启用 marquee，避免宽屏首屏出现半截文案。 */}
+          <div className="hot-ticker-track whitespace-nowrap">
+            <div className="hot-ticker-group">
+              {TICKER_ITEMS.map((item) => (
+                <TickerItem key={item.href} item={item} />
+              ))}
+            </div>
+            <div className="hot-ticker-group" aria-hidden="true">
+              {TICKER_ITEMS.map((item) => (
+                <TickerItem key={`${item.href}-loop`} item={item} />
+              ))}
+            </div>
           </div>
         </div>
       </div>

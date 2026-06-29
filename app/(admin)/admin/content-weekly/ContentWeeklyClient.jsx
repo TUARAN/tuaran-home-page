@@ -29,6 +29,18 @@ function deltaVsPrev(current, previous, previousLabel) {
   return { d, label: `${previousLabel} ${previous}` }
 }
 
+function formatDateTime(value) {
+  const n = Number(value) || 0
+  if (!n) return '—'
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(n))
+}
+
 function RankList({ rows, unit, valueKey = 'thisWeek', emptyTitle = '近 7 天暂无数据' }) {
   if (!rows.length) {
     return <EmptyState title={emptyTitle} description="等有访问/点赞后这里会自动出现。" />
@@ -125,10 +137,87 @@ function InlineRankPanel({ title, description, children }) {
   )
 }
 
+function CommentFollowUp({ comments, loading, deletingId, onDelete }) {
+  const total = comments?.total || { all: 0, thisWeek: 0, thisMonth: 0, articles: 0 }
+  const recent = comments?.recent || []
+
+  return (
+    <Section
+      title="评论跟进"
+      description="最近 20 条站内评论；可直接打开原文评论区，垃圾评论可由站长删除。"
+      className="mt-4"
+    >
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="累计评论" value={loading ? '—' : total.all} />
+        <StatCard label="本周新增" value={loading ? '—' : total.thisWeek} />
+        <StatCard label="本月新增" value={loading ? '—' : total.thisMonth} />
+        <StatCard label="有评论文章" value={loading ? '—' : total.articles} />
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-[#82847a]">加载中…</p>
+      ) : recent.length ? (
+        <ol className="grid gap-2">
+          {recent.map((comment) => (
+            <li
+              key={comment.id}
+              className="rounded-lg border border-[#e6e7df] bg-white/60 p-3 dark:border-[#243041] dark:bg-[#0e141d]"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-[#82847a] dark:text-gray-500">
+                    <span className="font-medium text-[#15140f] dark:text-gray-100">{comment.userName || '匿名用户'}</span>
+                    <span className="rounded bg-[#eef0e8] px-1.5 py-0.5 font-mono text-[10px] dark:bg-[#1b2330]">
+                      {comment.userProvider || 'unknown'}
+                    </span>
+                    <span>{formatDateTime(comment.createdAt)}</span>
+                  </div>
+                  <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-xs">
+                    {comment.href ? (
+                      <a
+                        href={comment.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="truncate font-medium text-[#476a75] hover:underline dark:text-[#9fc5ad]"
+                        title={comment.articleTitle}
+                      >
+                        {comment.articleTitle}
+                      </a>
+                    ) : (
+                      <span className="truncate font-medium text-[#476a75] dark:text-[#9fc5ad]" title={comment.articleTitle}>
+                        {comment.articleTitle}
+                      </span>
+                    )}
+                    <span className="font-mono text-[11px] text-[#9a9c8f] dark:text-gray-600">{comment.articleKey}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onDelete(comment)}
+                  disabled={deletingId === comment.id}
+                  className="shrink-0 rounded-md border border-rose-200 px-2.5 py-1 text-xs text-rose-700 hover:border-rose-300 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300"
+                >
+                  {deletingId === comment.id ? '删除中…' : '删除'}
+                </button>
+              </div>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-[#4c4f46] dark:text-gray-300">
+                {comment.message}
+              </p>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <EmptyState title="暂无评论" description="有新评论后会显示在这里。" />
+      )}
+    </Section>
+  )
+}
+
 export default function ContentWeeklyClient() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deletingCommentId, setDeletingCommentId] = useState(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -149,6 +238,26 @@ export default function ContentWeeklyClient() {
     refresh()
   }, [refresh])
 
+  const deleteComment = useCallback(async (comment) => {
+    if (!comment?.id) return
+    if (!window.confirm(`确认删除「${comment.userName || '匿名用户'}」的这条评论？`)) return
+    setDeletingCommentId(comment.id)
+    setError('')
+    try {
+      const res = await fetch(`/api/admin/comments?id=${encodeURIComponent(comment.id)}`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      })
+      const json = await safeJson(res)
+      if (!res.ok) throw new Error(json?.detail || json?.error || `HTTP_${res.status}`)
+      await refresh()
+    } catch (e) {
+      setError(e?.message || 'COMMENT_DELETE_FAILED')
+    } finally {
+      setDeletingCommentId(null)
+    }
+  }, [refresh])
+
   const reads = data?.reads || { top: [], byType: [], total: { thisWeek: 0, prevWeek: 0 } }
   const likes = data?.likes || { top: [], total: { thisWeek: 0, prevWeek: 0 } }
   const month = data?.month || {
@@ -157,6 +266,7 @@ export default function ContentWeeklyClient() {
   }
   const byType = reads.byType || []
   const monthByType = month.reads.byType || []
+  const comments = data?.comments || { recent: [], total: { all: 0, thisWeek: 0, thisMonth: 0, articles: 0 } }
   const readsDelta = deltaVsPrev(reads.total.thisWeek, reads.total.prevWeek, '上周')
   const likesDelta = deltaVsPrev(likes.total.thisWeek, likes.total.prevWeek, '上周')
   const monthReadsDelta = deltaVsPrev(month.reads.total.thisMonth, month.reads.total.prevMonth, '上月')
@@ -277,6 +387,13 @@ export default function ContentWeeklyClient() {
           </InlineRankPanel>
         </div>
       </Section>
+
+      <CommentFollowUp
+        comments={comments}
+        loading={loading}
+        deletingId={deletingCommentId}
+        onDelete={deleteComment}
+      />
     </AdminPage>
   )
 }

@@ -481,7 +481,7 @@ export default function PublicOpinionClient({
       : '降级数据'
 
   return (
-    <main className="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 sm:py-10">
+    <main className="mx-auto w-full max-w-[1360px] px-4 py-8 sm:px-6 sm:py-10">
       <header className="border-b border-[#d7d9cf] pb-6 dark:border-[#2b3644]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -513,83 +513,89 @@ export default function PublicOpinionClient({
         </div>
       </header>
 
-      <section className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-        <StatTile
-          icon={IconDatabaseSearch}
-          label="公开采集连接器"
-          value={data.connectors.length}
-          note={data.connectors.map((connector) => connector.label).join('、')}
-        />
-        <StatTile
-          icon={IconTopologyStar3}
-          label="热点话题"
-          value={allTopicSnapshot.topicCards.length}
-          note={`当前最高热度：${allTopicSnapshot.topTopic.title}`}
-        />
-        <StatTile
-          icon={IconMessageCircle2}
-          label="分析样本"
-          value={numberFormat(snapshot.totalPosts)}
-          note={`互动量 ${numberFormat(snapshot.totalEngagement)}`}
-        />
-        <StatTile
-          icon={IconChartBar}
-          label="综合情绪"
-          value={averageSentimentLabel}
-          note={`均值 ${Number.isFinite(snapshot.averageSentiment) ? snapshot.averageSentiment.toFixed(2) : '0.00'}`}
-        />
-      </section>
+      <div className="mt-6 grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
+          <section className="border border-[#d7d9cf] bg-[#fbfbf7] p-4 dark:border-[#2b3644] dark:bg-[#101720]">
+            <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-[#17201c] dark:text-gray-100">
+              <IconFilter className="h-4 w-4 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
+              筛选视图
+            </div>
+            <div className="grid gap-2">
+              <SegmentButton
+                active={activeTopicId === 'all'}
+                onClick={() => setActiveTopicId('all')}
+                testId="public-opinion-topic-all"
+              >
+                全部话题
+              </SegmentButton>
+              {data.topics.map((topic) => (
+                <SegmentButton
+                  key={topic.id}
+                  active={activeTopicId === topic.id}
+                  onClick={() => setActiveTopicId(topic.id)}
+                  testId={`public-opinion-topic-${topic.id}`}
+                >
+                  {topic.title}
+                </SegmentButton>
+              ))}
+            </div>
+          </section>
 
-      <section className="mt-6 border border-[#d7d9cf] bg-[#fbfbf7] p-4 dark:border-[#2b3644] dark:bg-[#101720]">
-        <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-[#17201c] dark:text-gray-100">
-          <IconFilter className="h-4 w-4 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
-          筛选视图
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <StatTile
+              icon={IconDatabaseSearch}
+              label="公开采集连接器"
+              value={data.connectors.length}
+              note={data.connectors.map((connector) => connector.label).join('、')}
+            />
+            <StatTile
+              icon={IconTopologyStar3}
+              label="热点话题"
+              value={allTopicSnapshot.topicCards.length}
+              note={`当前最高热度：${allTopicSnapshot.topTopic.title}`}
+            />
+            <StatTile
+              icon={IconMessageCircle2}
+              label="分析样本"
+              value={numberFormat(snapshot.totalPosts)}
+              note={`互动量 ${numberFormat(snapshot.totalEngagement)}`}
+            />
+            <StatTile
+              icon={IconChartBar}
+              label="综合情绪"
+              value={averageSentimentLabel}
+              note={`均值 ${Number.isFinite(snapshot.averageSentiment) ? snapshot.averageSentiment.toFixed(2) : '0.00'}`}
+            />
+          </div>
+        </aside>
+
+        <div className="min-w-0">
+          <section className="grid gap-4 lg:grid-cols-3">
+            <TrendPanel trendPoints={data.trendPoints} />
+            <Distribution title="情绪倾向" items={snapshot.sentimentCounts} total={snapshot.totalPosts} meta={SENTIMENT_META} />
+            <TopicTable topics={snapshot.topicCards} activeTopicId={activeTopicId} onSelect={setActiveTopicId} />
+            <Distribution title="网民立场" items={snapshot.stanceCounts} total={snapshot.totalPosts} meta={STANCE_META} />
+          </section>
+
+          <section className="mt-4 grid gap-4 lg:grid-cols-3">
+            <TopicDetail topic={activeTopic} />
+            <PostFeed posts={filteredPosts} />
+          </section>
+
+          <section className="mt-4">
+            <SourceConnectors
+              connectors={data.connectors}
+              sourceCounts={snapshot.sourceCounts}
+              activeSourceId={activeSourceId}
+              onSelect={setActiveSourceId}
+            />
+          </section>
+
+          <section className="mt-4">
+            <StackSection stack={data.stack} />
+          </section>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <SegmentButton
-            active={activeTopicId === 'all'}
-            onClick={() => setActiveTopicId('all')}
-            testId="public-opinion-topic-all"
-          >
-            全部话题
-          </SegmentButton>
-          {data.topics.map((topic) => (
-            <SegmentButton
-              key={topic.id}
-              active={activeTopicId === topic.id}
-              onClick={() => setActiveTopicId(topic.id)}
-              testId={`public-opinion-topic-${topic.id}`}
-            >
-              {topic.title}
-            </SegmentButton>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-6 grid gap-4 lg:grid-cols-3">
-        <TrendPanel trendPoints={data.trendPoints} />
-        <Distribution title="情绪倾向" items={snapshot.sentimentCounts} total={snapshot.totalPosts} meta={SENTIMENT_META} />
-        <TopicTable topics={snapshot.topicCards} activeTopicId={activeTopicId} onSelect={setActiveTopicId} />
-        <Distribution title="网民立场" items={snapshot.stanceCounts} total={snapshot.totalPosts} meta={STANCE_META} />
-      </section>
-
-      <section className="mt-4 grid gap-4 lg:grid-cols-3">
-        <TopicDetail topic={activeTopic} />
-        <PostFeed posts={filteredPosts} />
-      </section>
-
-      <section className="mt-4">
-        <SourceConnectors
-          connectors={data.connectors}
-          sourceCounts={snapshot.sourceCounts}
-          activeSourceId={activeSourceId}
-          onSelect={setActiveSourceId}
-        />
-      </section>
-
-      <section className="mt-4">
-        <StackSection stack={data.stack} />
-      </section>
+      </div>
     </main>
   )
 }

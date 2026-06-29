@@ -37,6 +37,18 @@ export const FEED_TYPE_META = {
 
 export const FEED_ITEMS = [
   {
+    id: 'ai-restored-tom-and-jerry',
+    type: 'video',
+    title: '用 AI 还原猫和老鼠',
+    summary:
+      '把经典动画质感交给 AI 重新演绎：熟悉的追逐、夸张动作和复古镜头语言，被还原成一种介于怀旧与新技术之间的短片实验。',
+    tags: ['AI 视频', '猫和老鼠', '经典动画', '影像修复'],
+    date: '2026-06-29',
+    time: '14:44',
+    src: '/feed/ai-restored-tom-and-jerry.mp4',
+    aspect: '16/9',
+  },
+  {
     id: 'midjourney-future-city',
     type: 'video',
     title: 'Midjourney 未来城市',

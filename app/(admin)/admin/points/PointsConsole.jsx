@@ -10,7 +10,7 @@ import { AdminPage, Section, StatCard, DataTable, EmptyState, AdminButton } from
 /** 把 user_id 渲染成趣味昵称 + 来源 + 短 id（hover 看完整 id） */
 function UserIdCell({ userId, onPick }) {
   const u = displayNameForUserId(userId)
-  const isGuest = String(userId || '').startsWith('guest:')
+  const canAdjust = isAdjustableAccountId(userId)
   const inner = (
     <>
       <span aria-hidden="true">{u.emoji}</span>
@@ -19,7 +19,7 @@ function UserIdCell({ userId, onPick }) {
     </>
   )
   // 短 id 只是显示用；真正能操作的是完整 user_id。点一下把完整 id 填进调整框，避免手敲对不上。
-  if (onPick && !isGuest) {
+  if (onPick && canAdjust) {
     return (
       <button
         type="button"
@@ -33,10 +33,14 @@ function UserIdCell({ userId, onPick }) {
     )
   }
   return (
-    <span className="inline-flex items-center gap-1.5" title={isGuest ? `${u.full}（游客不参与后台燃币调整）` : u.full}>
+    <span className="inline-flex items-center gap-1.5" title={canAdjust ? u.full : `${u.full}（只允许查看记录，不支持后台调账）`}>
       {inner}
     </span>
   )
+}
+
+function isAdjustableAccountId(userId) {
+  return /^(github|google|email):/.test(String(userId || '').trim())
 }
 
 const REASON_LABELS = {
@@ -217,12 +221,7 @@ export default function PointsConsole() {
     e.preventDefault()
     if (!adjUser.trim() || !adjDelta) return
     const id = adjUser.trim()
-    if (id.startsWith('guest:')) {
-      setMessage('游客燃币由系统自动发放/消费，后台不支持手动增减。')
-      return
-    }
-    // 只认登录账户前缀；裸码 / 手滑粘进的短 id 会被服务端拒绝（避免凭空建号），这里先友好拦一道。
-    if (!/^(github|google|email):/.test(id)) {
+    if (!isAdjustableAccountId(id)) {
       setMessage('user_id 需带登录前缀（github: / google: / email:）。点上方账户行的「调整」会自动填入完整 id，别手敲短码。')
       return
     }
@@ -358,7 +357,7 @@ export default function PointsConsole() {
 
           <Section
             title="燃币账户"
-            description="只展示登录账户余额，不混入 guest:* 游客。点击账户可填入下方手动调整表单。"
+            description="只展示非 guest:* 余额。GitHub / Google / 邮箱登录账户可后台调整；匿名裸 ID 只允许查记录，不允许调账。"
             actions={
               <input
                 className={`${inputCls} w-64`}
@@ -380,8 +379,10 @@ export default function PointsConsole() {
                     {
                       key: 'op',
                       header: '操作',
-                      render: (row) => (
-                        <div className="flex items-center gap-2">
+                      render: (row) => {
+                        const canAdjust = isAdjustableAccountId(row.user_id)
+                        return (
+                          <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => loadAccountHistory(row.user_id)}
@@ -389,15 +390,18 @@ export default function PointsConsole() {
                           >
                             记录
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => pickUser(row.user_id)}
-                            className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
-                          >
-                            调整
-                          </button>
+                          {canAdjust ? (
+                            <button
+                              type="button"
+                              onClick={() => pickUser(row.user_id)}
+                              className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
+                            >
+                              调整
+                            </button>
+                          ) : null}
                         </div>
-                      ),
+                        )
+                      },
                     },
                   ]}
                   rows={filteredAccounts}

@@ -147,7 +147,7 @@ const SOCIAL_MEDIA_LINKS = [
     labelEn: 'Weibo',
     followers: '3k',
     followersCount: 3014,
-    reads: '2w',
+    reads: '<2w',
     icon: IconBrandWeibo,
   },
   {
@@ -183,7 +183,7 @@ const SOCIAL_MEDIA_LINKS = [
     labelEn: 'OSChina',
     followers: '<1k',
     followersCount: 100,
-    reads: '2w',
+    reads: '<2w',
     icon: IconCodeCircle,
   },
   {
@@ -192,7 +192,7 @@ const SOCIAL_MEDIA_LINKS = [
     labelEn: 'InfoQ',
     followers: '<1k',
     followersCount: 100,
-    reads: '2w',
+    reads: '<2w',
     icon: IconFileText,
   },
   {
@@ -201,7 +201,7 @@ const SOCIAL_MEDIA_LINKS = [
     labelEn: 'Baijiahao',
     followers: '<1k',
     followersCount: 100,
-    reads: '2w',
+    reads: '<2w',
     icon: IconBrandBaidu,
   },
   {
@@ -210,7 +210,7 @@ const SOCIAL_MEDIA_LINKS = [
     labelEn: 'Tencent Cloud',
     followers: '<1k',
     followersCount: 100,
-    reads: '2w',
+    reads: '<2w',
     icon: IconCloud,
   },
   {
@@ -219,7 +219,7 @@ const SOCIAL_MEDIA_LINKS = [
     labelEn: 'Alibaba Cloud',
     followers: '<1k',
     followersCount: 100,
-    reads: '2w',
+    reads: '<2w',
     icon: IconCloud,
   },
   {
@@ -228,7 +228,7 @@ const SOCIAL_MEDIA_LINKS = [
     labelEn: 'Huawei Cloud',
     followers: '<1k',
     followersCount: 100,
-    reads: '2w',
+    reads: '<2w',
     icon: IconCloud,
   },
   {
@@ -237,7 +237,7 @@ const SOCIAL_MEDIA_LINKS = [
     labelEn: 'SegmentFault',
     followers: '<1k',
     followersCount: 100,
-    reads: '2w',
+    reads: '<2w',
     icon: IconCode,
   },
   {

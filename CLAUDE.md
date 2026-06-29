@@ -5,7 +5,7 @@ Next.js 15 App Router 个人站，部署在 Cloudflare Pages（Functions + D1）
 ## 关键目录
 
 - `app/` — 页面、布局、API 路由（App Router）；`app/(admin)/admin/*` 为站长后台（AdminPageGate 鉴权）
-- `lib/` — 运行时封装与数据：`edgeSession.js`（自定义 GitHub OAuth + 签名 Cookie）、`d1.js`（D1 binding）、`researchStyleTemplates.js`（调研风格版本快照，见下）
+- `lib/` — 运行时封装与数据：`edgeSession.js`（自定义 GitHub OAuth + 签名 Cookie）、`d1.js`（D1 binding）、`researchStyleTemplates.js`（调研风格库，见下）
 - `research/` — 调研知识库（companies / topics / people），Markdown 落盘，构建时由 loader 渲染到 `/articles`
 - `migrations/` — D1 SQL
 - `ai-context/` — 项目文档与历史快照（架构、审查、移植记录），索引见 `ai-context/README.md`；时效以各文档落款日期为准
@@ -13,7 +13,7 @@ Next.js 15 App Router 个人站，部署在 Cloudflare Pages（Functions + D1）
 ## 调研知识库（最常见的协作任务）
 
 - **frontmatter 与目录契约**：`research/README.md`
-- **写作结构与措辞规则的唯一正本**：`lib/researchStyleTemplates.js` 中 `status === 'active'` 的版本（站长在 `/admin/research-style` 查看版本史）。**写任何调研前先读它**，不要凭旧模板或记忆复述规则
+- **调研风格与措辞规则的唯一正本**：`lib/researchStyleTemplates.js`（站长在 `/admin/research-style` 查看风格库）。**写任何调研前先选风格**，例如默认调研、人味调研、周刊解释、投研备忘、资料档案；不要凭旧模板复述规则
 - 一键生成：`/research-company <名称>`、`/research-topic <事项>`（`.claude/commands/`）
 - **不要自动 commit 调研产出**，由站长确认后自行提交
 - 网站不调用任何大模型；调研作者统一记为 TUARAN，AI 仅作为协助工具标注在 `assistance` 字段

@@ -214,6 +214,8 @@ export default function RssFeedConsole() {
 
       <RssAnalyticsPanel analytics={analytics} />
 
+      <SiteRssCoveragePanel />
+
       <div className="rounded-xl border border-[#e2e3da] bg-white dark:border-[#1e2733] dark:bg-[#10161f]">
         {status === 'loading' ? (
           <p className="p-4 text-sm text-[#82847a] dark:text-gray-500">加载中…</p>
@@ -271,6 +273,109 @@ export default function RssFeedConsole() {
         )}
       </div>
     </div>
+  )
+}
+
+// 本站 /rss.xml 覆盖口径——改了 app/(site)/rss.xml/route.js 的 buildItems() 后同步更新这张表
+const SITE_RSS_COVERAGE = [
+  {
+    section: '精选文章',
+    path: '/articles?tab=posts',
+    status: 'in',
+    note: 'articlesData 内链文章全文进 content:encoded；外链型文章剔除。',
+  },
+  {
+    section: '公司 / 事项 / 人物调研',
+    path: '/articles/research/*',
+    status: 'in',
+    note: 'listResearch() 全文进；加密文章只出摘要，明文不进静态产物。',
+  },
+  {
+    section: '灵感流',
+    path: '/feed',
+    status: 'in',
+    note: '图片 / 视频 / 资源 / 观点，统一归到「灵感」分类。视频给封面 + 跳详情页入口，不内嵌媒体。',
+  },
+  {
+    section: '近期日志',
+    path: '/diary',
+    status: 'partial',
+    note: '仅作为 articlesData 里一条聚合文章出现，逐条日志更新不会触发新 RSS item。',
+  },
+  {
+    section: '富页面项目',
+    path: '/zhang-juzheng-book、/ai-token-usage-research 等',
+    status: 'out',
+    note: '长期富页面，内容更新订阅者收不到。如需推送可单独建 item。',
+  },
+  {
+    section: '工作台类',
+    path: '/public-opinion、/stock-analysis、/agent-world-cup',
+    status: 'out-ok',
+    note: 'owner-facing / 自动采集，不进 RSS 是有意为之。',
+  },
+  {
+    section: '收藏 / 资源',
+    path: '/bookmarks/*、/resources/*',
+    status: 'out',
+    note: '索引型，看是否想推。',
+  },
+]
+
+const COVERAGE_BADGE = {
+  in: { label: '✓ 在', cls: 'bg-[#e8f5ec] text-[#2c7a45] dark:bg-[#16291d] dark:text-[#7fcaa0]' },
+  partial: { label: '⚠ 半个', cls: 'bg-[#fdf3e3] text-[#a76a1e] dark:bg-[#2a2113] dark:text-[#e0b276]' },
+  out: { label: '✕ 没有', cls: 'bg-[#f5f0f0] text-[#9a7373] dark:bg-[#241a1a] dark:text-[#c39a9a]' },
+  'out-ok': { label: '✕ 没有（合理）', cls: 'bg-[#f3f4ee] text-[#82847a] dark:bg-[#1a212b] dark:text-gray-400' },
+}
+
+function SiteRssCoveragePanel() {
+  return (
+    <section className="mb-8 rounded-xl border border-[#e2e3da] bg-white p-4 dark:border-[#1e2733] dark:bg-[#10161f]">
+      <div className="mb-4">
+        <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">本站 RSS 覆盖情况</h2>
+        <p className="mt-1 text-xs leading-5 text-[#82847a] dark:text-gray-500">
+          记录本站{' '}
+          <a href="/rss.xml" target="_blank" rel="noreferrer" className="underline underline-offset-4">
+            /rss.xml
+          </a>{' '}
+          收录了哪些更新流。口径以 <code className="font-mono">app/(site)/rss.xml/route.js</code> 的{' '}
+          <code className="font-mono">buildItems()</code> 为准，改动后同步更新此表。
+        </p>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border border-[#eef0e8] dark:border-[#1b2633]">
+        <table className="w-full border-collapse text-left text-sm">
+          <thead>
+            <tr className="bg-[#fafaf6] text-[11px] uppercase tracking-wide text-[#82847a] dark:bg-[#0e141d] dark:text-gray-500">
+              <th className="px-3 py-2 font-medium">板块</th>
+              <th className="px-3 py-2 font-medium">路径</th>
+              <th className="whitespace-nowrap px-3 py-2 font-medium">在 RSS 里吗</th>
+              <th className="px-3 py-2 font-medium">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SITE_RSS_COVERAGE.map((row) => {
+              const badge = COVERAGE_BADGE[row.status] || COVERAGE_BADGE.out
+              return (
+                <tr key={row.section} className="border-t border-[#f1f2ec] align-top dark:border-[#161e29]">
+                  <td className="whitespace-nowrap px-3 py-2 font-medium text-[#15140f] dark:text-gray-100">
+                    {row.section}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-[#67695d] dark:text-gray-400">{row.path}</td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${badge.cls}`}>
+                      {badge.label}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-xs leading-5 text-[#67695d] dark:text-gray-400">{row.note}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 

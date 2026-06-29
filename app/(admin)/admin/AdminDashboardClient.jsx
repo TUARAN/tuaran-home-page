@@ -56,27 +56,44 @@ const providerLabels = { github: 'GitHub', google: 'Google', email: '邮箱' }
 export default function AdminDashboardClient() {
   const [overview, setOverview] = useState(null)
   const [ops, setOps] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loadingOverview, setLoadingOverview] = useState(true)
+  const [loadingOps, setLoadingOps] = useState(true)
   const [error, setError] = useState('')
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  // 总览与 Ops 各自独立加载：谁先回谁先显示，不让某个慢接口拖黑整屏。
+  const loadOverview = useCallback(async () => {
+    setLoadingOverview(true)
     setError('')
     try {
-      const [ovRes, opsRes] = await Promise.all([
-        fetch('/api/admin/overview', { cache: 'no-store', credentials: 'same-origin' }),
-        fetch('/api/admin/ops-console', { cache: 'no-store', credentials: 'same-origin' }),
-      ])
-      const [ovData, opsData] = await Promise.all([safeJson(ovRes), safeJson(opsRes)])
-      if (!ovRes.ok) throw new Error(ovData?.error || `OVERVIEW_HTTP_${ovRes.status}`)
-      setOverview(ovData)
-      setOps(opsData)
+      const res = await fetch('/api/admin/overview', { cache: 'no-store', credentials: 'same-origin' })
+      const data = await safeJson(res)
+      if (!res.ok) throw new Error(data?.error || `OVERVIEW_HTTP_${res.status}`)
+      setOverview(data)
     } catch (e) {
       setError(e?.message || 'FETCH_FAILED')
     } finally {
-      setLoading(false)
+      setLoadingOverview(false)
     }
   }, [])
+
+  const loadOps = useCallback(async () => {
+    setLoadingOps(true)
+    try {
+      const res = await fetch('/api/admin/ops-console', { cache: 'no-store', credentials: 'same-origin' })
+      setOps(await safeJson(res))
+    } catch {
+      // Ops 状态卡失败不阻断总览，卡片回落到「—」
+    } finally {
+      setLoadingOps(false)
+    }
+  }, [])
+
+  const refresh = useCallback(() => {
+    loadOverview()
+    loadOps()
+  }, [loadOverview, loadOps])
+
+  const busy = loadingOverview || loadingOps
 
   useEffect(() => {
     refresh()
@@ -93,9 +110,9 @@ export default function AdminDashboardClient() {
       title="后台总览"
       description="站点状态、近期变更与快捷操作一屏可见。配置、观测、项目治理与长期罗盘走左侧导航。"
       actions={
-        <AdminButton onClick={refresh} disabled={loading}>
+        <AdminButton onClick={refresh} disabled={busy}>
           <IconRefresh size={16} aria-hidden="true" />
-          {loading ? '刷新中…' : '刷新状态'}
+          {busy ? '刷新中…' : '刷新状态'}
         </AdminButton>
       }
     >
@@ -129,7 +146,7 @@ export default function AdminDashboardClient() {
         />
         <StatCard
           label="Ops 入口"
-          value={ops?.label || (loading ? '检查中' : '—')}
+          value={ops?.label || (loadingOps ? '检查中' : '—')}
           sub={ops?.latencyMs != null ? `/admin/ops · ${ops.latencyMs}ms` : '/admin/ops'}
           icon="ops"
           tone={opsTone(ops?.status)}
@@ -172,7 +189,7 @@ export default function AdminDashboardClient() {
               ) : null}
             </ul>
           ) : (
-            <EmptyState title={loading ? '加载中…' : '暂无近期活动'} description={loading ? undefined : '用户登录或规则更新后会显示在这里。'} />
+            <EmptyState title={loadingOverview ? '加载中…' : '暂无近期活动'} description={loadingOverview ? undefined : '用户登录或规则更新后会显示在这里。'} />
           )}
         </Section>
       </div>

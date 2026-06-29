@@ -1,8 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-import { ADMIN_NAV_GROUPS, ADMIN_PLANNED, isActiveAdminPath } from '../../../lib/adminRoutes'
+import { ADMIN_NAV_GROUPS, ADMIN_PLANNED, ADMIN_HOST, CANONICAL_HOST, isActiveAdminPath } from '../../../lib/adminRoutes'
 import { AdminIcon } from '../../../lib/adminIcons'
 
 function navItemClass(active) {
@@ -18,6 +19,12 @@ function navItemClass(active) {
  *  - onNavigate：移动端抽屉里点击后关闭
  */
 export default function AdminSidebar({ pathname, collapsed = false, badges = null, onNavigate }) {
+  // 是否运行在 admin 子域：决定「主站页面」外链是否要改走 canonical host。
+  const [onAdminHost, setOnAdminHost] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') setOnAdminHost(window.location.hostname === ADMIN_HOST)
+  }, [])
+
   return (
     <div className="flex h-full flex-col bg-white dark:bg-[#0f141c]">
       <div
@@ -47,19 +54,20 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
             {group.items.map((item) => {
               const active = isActiveAdminPath(pathname, item.href)
               const badge = item.badgeKey && badges ? badges[item.badgeKey] : null
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={active ? 'page' : undefined}
-                  title={item.label}
-                  className={`group mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition ${navItemClass(
-                    active
-                  )} ${collapsed ? 'justify-center' : ''}`}
-                >
+              // 「主站页面」外链：在 admin 子域上点它本会被 301 回跳，改成直接指 canonical host + 新标签打开。
+              const externalHop = item.external && onAdminHost
+              const className = `group mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition ${navItemClass(
+                active
+              )} ${collapsed ? 'justify-center' : ''}`
+              const inner = (
+                <>
                   <AdminIcon name={item.icon} size={18} />
                   {collapsed ? null : <span className="truncate">{item.label}</span>}
+                  {!collapsed && externalHop ? (
+                    <span className="ml-auto font-mono text-[10px] text-[#9a9c8e] dark:text-[#5d6b80]" aria-hidden="true">
+                      ↗
+                    </span>
+                  ) : null}
                   {!collapsed && badge != null ? (
                     <span
                       className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-normal ${
@@ -71,6 +79,33 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
                       {badge}
                     </span>
                   ) : null}
+                </>
+              )
+              if (externalHop) {
+                return (
+                  <a
+                    key={item.href}
+                    href={`https://${CANONICAL_HOST}${item.href}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={onNavigate}
+                    title={`${item.label}（主站新标签打开）`}
+                    className={className}
+                  >
+                    {inner}
+                  </a>
+                )
+              }
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  aria-current={active ? 'page' : undefined}
+                  title={item.label}
+                  className={className}
+                >
+                  {inner}
                 </Link>
               )
             })}

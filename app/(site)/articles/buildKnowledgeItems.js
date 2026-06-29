@@ -1,7 +1,13 @@
 import { articles } from './articlesData'
 import { ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
+import { CONTENT_PV_ENTRIES } from '../../../lib/contentRegistry'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
+
+// 资源页 href → 阅读统计 key（仅登记进 contentRegistry 的资源才有阅读量）
+const RESOURCE_PV_KEY_BY_HREF = new Map(
+  CONTENT_PV_ENTRIES.map((e) => [e.href, `${e.category}/${e.slug}`]),
+)
 import {
   CATEGORY_META,
   COMPANY_TYPE_META,
@@ -50,23 +56,29 @@ export function buildKnowledgeItems() {
       sortKey: entry.sortKey,
       readingMinutes: entry.readingMinutes,
       pv: entry.pv || 0,
+      pvKey: `${entry.category}/${entry.slug}`,
       encrypted: entry.encrypted,
       image: entry.images?.[0] || null,
       href: `/articles/research/${entry.category}/${entry.slug}`,
     }
   })
 
-  const resourceItems = HOME_RESOURCE_ITEMS.map((p) => ({
-    id: `resource:${p.resourceType}:${p.href}`,
-    kind: 'resources',
-    tagLabel: p.tagLabel || '资料库',
-    resourceType: p.resourceType || 'other',
-    title: p.title,
-    summary: p.summary,
-    date: p.date,
-    sortKey: researchSortKey(p.date),
-    href: p.href,
-  }))
+  const resourceItems = HOME_RESOURCE_ITEMS.map((p) => {
+    const pvKey = RESOURCE_PV_KEY_BY_HREF.get(p.href) || ''
+    return {
+      id: `resource:${p.resourceType}:${p.href}`,
+      kind: 'resources',
+      tagLabel: p.tagLabel || '资料库',
+      resourceType: p.resourceType || 'other',
+      title: p.title,
+      summary: p.summary,
+      date: p.date,
+      sortKey: researchSortKey(p.date),
+      href: p.href,
+      // 登记过阅读统计的资源才挂 pv，列表才会显示阅读量
+      ...(pvKey ? { pvKey, pv: 0 } : {}),
+    }
+  })
 
   const worksItems = ENGINEERING_WORKS.map((p) => ({
     id: `work:${p.href}`,

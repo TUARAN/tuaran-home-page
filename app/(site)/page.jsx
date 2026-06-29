@@ -253,7 +253,10 @@ const SOCIAL_MEDIA_LINKS = [
 
 const SORTED_SOCIAL_MEDIA_LINKS = [...SOCIAL_MEDIA_LINKS]
   .sort((a, b) => b.followersCount - a.followersCount)
-  .map((item, index) => ({ ...item, priority: index < 3 }))
+  .map((item, index) => ({ ...item, priority: index < 3, rank: index + 1 }))
+
+const PRIMARY_SOCIAL_MEDIA_LINKS = SORTED_SOCIAL_MEDIA_LINKS.slice(0, 3)
+const SECONDARY_SOCIAL_MEDIA_LINKS = SORTED_SOCIAL_MEDIA_LINKS.slice(3)
 
 const SOCIAL_MEDIA_TOTALS = {
   followers: '3.2w+',
@@ -501,6 +504,7 @@ function SocialMediaCard({ item }) {
         <Icon size={item.priority ? 24 : 18} stroke={1.8} />
       </span>
       <span className="home-social-main">
+        {item.priority ? <small>TOP {item.rank}</small> : null}
         <strong><T zh={item.label} en={item.labelEn} /></strong>
       </span>
       <span className="home-social-metrics" aria-hidden="true">
@@ -804,9 +808,16 @@ function PolishedHomePage({ featuredPicks }) {
               <span><IconEye size={13} stroke={1.8} aria-hidden="true" /><T zh="总阅读" en="Views" /> {SOCIAL_MEDIA_TOTALS.reads}</span>
             </div>
             <div className="home-social-grid">
-              {SORTED_SOCIAL_MEDIA_LINKS.map((item) => (
-                <SocialMediaCard key={item.label} item={item} />
-              ))}
+              <div className="home-social-priority-grid">
+                {PRIMARY_SOCIAL_MEDIA_LINKS.map((item) => (
+                  <SocialMediaCard key={item.label} item={item} />
+                ))}
+              </div>
+              <div className="home-social-secondary-grid">
+                {SECONDARY_SOCIAL_MEDIA_LINKS.map((item) => (
+                  <SocialMediaCard key={item.label} item={item} />
+                ))}
+              </div>
             </div>
           </section>
 

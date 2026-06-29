@@ -1,4 +1,5 @@
 import { articles } from '../articles/articlesData'
+import { getAllFeedItems } from '../feed/data'
 import { researchDateTimeIso } from '../../../lib/research/datetime'
 import { CATEGORY_META, getResearchEntry, listResearch } from '../../../lib/research/loader'
 import { renderMarkdown } from '../../../lib/research/markdown'
@@ -70,6 +71,34 @@ function researchContentHtml(category, slug, title) {
   }
 }
 
+// 灵感流（/feed）正文：按 type 拼一段轻量 HTML（图片直出、视频给封面+入口、观点引述、资源外链）
+function feedContentHtml(item) {
+  const parts = []
+  if (item.type === 'image' && item.src) {
+    parts.push(`<p><img src="${escapeXml(item.src)}" alt="${escapeXml(item.title)}" /></p>`)
+  } else if (item.type === 'video' && item.poster) {
+    parts.push(`<p><img src="${escapeXml(item.poster)}" alt="${escapeXml(item.title)}" /></p>`)
+  } else if (item.type === 'quote' && item.quote) {
+    parts.push(
+      `<blockquote><p>${escapeXml(item.quote)}</p>${item.author ? `<p>— ${escapeXml(item.author)}</p>` : ''}</blockquote>`
+    )
+  }
+  if (item.summary) parts.push(`<p>${escapeXml(item.summary)}</p>`)
+  if (item.type === 'link' && item.href) {
+    parts.push(`<p><a href="${escapeXml(item.href)}">查看资源 →</a></p>`)
+  }
+  if (item.type === 'video') {
+    parts.push(`<p><a href="${SITE_URL}/feed/${item.id}">▶ 打开看视频</a></p>`)
+  }
+  if (item.source && item.source.href) {
+    parts.push(
+      `<p>来源：<a href="${escapeXml(item.source.href)}">${escapeXml(item.source.label || item.source.href)}</a></p>`
+    )
+  }
+  // 相对路径媒体（/feed/xxx）补成绝对地址，R2 等绝对 URL 不受影响
+  return absolutize(parts.join('\n'))
+}
+
 function buildItems() {
   // 1. 精选文章（剔除外链型）
   const postItems = articles
@@ -96,7 +125,17 @@ function buildItems() {
     contentHtml: researchContentHtml(entry.category, entry.slug, entry.title),
   }))
 
-  return [...postItems, ...researchItems].sort((a, b) => {
+  // 3. 灵感流（/feed）：图片 / 视频 / 资源 / 观点，统一归到「灵感」分类方便订阅者过滤
+  const feedItems = getAllFeedItems().map((item) => ({
+    title: item.title || item.quote || '灵感',
+    link: `${SITE_URL}/feed/${item.id}`,
+    description: item.summary || item.quote || item.title || '',
+    pubDate: toRfc822(researchDateTimeIso(item.date, item.time) || item.date),
+    category: '灵感',
+    contentHtml: feedContentHtml(item),
+  }))
+
+  return [...postItems, ...researchItems, ...feedItems].sort((a, b) => {
     return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
   })
 }

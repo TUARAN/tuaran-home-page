@@ -768,8 +768,15 @@
   }
 
   .home-social-grid {
-    @apply grid gap-1.5;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
+    @apply space-y-2.5;
+  }
+
+  .home-social-priority-grid {
+    @apply grid grid-cols-3 gap-2;
+  }
+
+  .home-social-secondary-grid {
+    @apply grid grid-cols-4 gap-1.5;
   }
 
   .home-social-total {
@@ -784,11 +791,10 @@
   }
 
   .home-social-card {
-    @apply relative flex min-w-0 items-center gap-1 rounded-lg border px-1.5 py-1.5 no-underline transition;
-    grid-column: span 3;
-    min-height: 38px;
+    @apply relative flex min-w-0 items-center gap-1.5 rounded-lg border px-1.5 py-1.5 no-underline transition;
+    min-height: 36px;
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 24%, transparent);
+    background: color-mix(in srgb, var(--site-panel-strong) 16%, transparent);
     color: var(--site-ink);
   }
 
@@ -804,9 +810,13 @@
   }
 
   .home-social-card.is-priority {
-    @apply px-2 py-2;
-    grid-column: span 4;
-    min-height: 46px;
+    @apply gap-2 px-2.5 py-2;
+    min-height: 58px;
+    border-color: color-mix(in srgb, var(--site-accent) 34%, var(--site-line));
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--site-accent) 13%, transparent), transparent 58%),
+      color-mix(in srgb, var(--site-panel-strong) 32%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent);
   }
 
   .home-social-icon {
@@ -818,8 +828,9 @@
   }
 
   .home-social-card.is-priority .home-social-icon {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
+    background: color-mix(in srgb, var(--site-accent) 18%, transparent);
   }
 
   .home-social-main {
@@ -830,8 +841,13 @@
     @apply truncate text-[11.5px] font-semibold leading-4;
   }
 
+  .home-social-main small {
+    @apply font-mono text-[9px] font-semibold uppercase leading-3 tracking-[0.14em];
+    color: var(--site-accent);
+  }
+
   .home-social-card.is-priority .home-social-main strong {
-    @apply text-[13px];
+    @apply text-[14px] leading-5;
   }
 
   .home-social-metrics {
@@ -878,13 +894,12 @@
   }
 
   @media (max-width: 420px) {
-    .home-social-card {
-      grid-column: span 6;
+    .home-social-priority-grid {
+      @apply grid-cols-1;
     }
 
-    .home-social-card.is-priority {
-      grid-column: 1 / -1;
-      min-height: 54px;
+    .home-social-secondary-grid {
+      @apply grid-cols-2;
     }
   }
 

@@ -2,7 +2,10 @@
 // 「灵感」短平快内容流（/feed）
 //
 // 用途：引流向板块。承载短平快的图片 / 视频 / 资源 / 观点。
-// 更新方式：在 FEED_ITEMS 顶部追加一条记录 → git push → Cloudflare 重建上线。
+// 更新方式：
+//   1) 将媒体文件上传到 R2 的 feed/ 前缀
+//   2) 在 FEED_ITEMS 顶部追加记录，src 写 feedMediaUrl('feed/xxx.mp4')
+//   3) git push → Cloudflare 重建上线
 //
 // 字段约定（按 type 取用对应字段）：
 //   id        唯一 slug（全小写连字符，供锚点 #id 深链与 React key）
@@ -14,7 +17,7 @@
 //   time      'HH:MM'（可选，同日内排序）
 //   source    { label, href } 出处（可选）
 //   ── type=video ──
-//   src       视频地址（/feed/xxx.mp4 或外链）
+//   src       视频地址（R2 URL 或外链）
 //   poster    封面图（可选）
 //   aspect    宽高比，如 '16/9' | '9/16' | '1/1'（默认 16/9）
 //   ── type=image ──
@@ -35,6 +38,20 @@ export const FEED_TYPE_META = {
   quote: { label: '观点', labelEn: 'Take', accent: '#f5a623' },
 }
 
+const DEFAULT_FEED_MEDIA_BASE = 'https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev'
+
+const FEED_MEDIA_BASE = (
+  process.env.NEXT_PUBLIC_R2_PUBLIC_BASE ||
+  process.env.R2_PUBLIC_BASE ||
+  DEFAULT_FEED_MEDIA_BASE
+).replace(/\/+$/, '')
+
+function feedMediaUrl(objectKey) {
+  if (!objectKey) return ''
+  if (/^https?:\/\//i.test(objectKey)) return objectKey
+  return `${FEED_MEDIA_BASE}/${objectKey.replace(/^\/+/, '')}`
+}
+
 export const FEED_ITEMS = [
   {
     id: 'ai-restored-tom-and-jerry',
@@ -45,7 +62,7 @@ export const FEED_ITEMS = [
     tags: ['AI 视频', '猫和老鼠', '经典动画', '影像修复'],
     date: '2026-06-29',
     time: '14:44',
-    src: '/feed/ai-restored-tom-and-jerry.mp4',
+    src: feedMediaUrl('feed/ai-restored-tom-and-jerry.mp4'),
     aspect: '16/9',
   },
   {
@@ -57,7 +74,7 @@ export const FEED_ITEMS = [
     tags: ['Midjourney', 'AI 影像', '未来城市', '概念设计'],
     date: '2026-06-23',
     time: '17:10',
-    src: '/feed/midjourney-future-city.mp4',
+    src: feedMediaUrl('feed/midjourney-future-city.mp4'),
     aspect: '16/9',
     source: { label: 'Midjourney', href: 'https://www.midjourney.com/' },
   },

@@ -36,8 +36,8 @@ export default function RssResourcePage() {
           我的 RSS 订阅
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[#666] dark:text-gray-300">
-          我长期关注的博客与周刊。任选一条点「复制 RSS 链接」，丢进你的阅读器（Reeder / Feedly / Folo
-          等）即可订阅。本页只列出来源，不在本站抓取对方文章。
+          我长期关注的博客与周刊。点「最新文章」可直接在本页读到该源的近期更新（标题 + 摘要，点进去到原站读全文）；
+          也可以点「复制 RSS 链接」丢进你的阅读器（Reeder / Feedly / Folo 等）订阅。
         </p>
         <p className="mt-2 text-xs text-[#999] dark:text-gray-500">
           想订阅本站更新？这里 →{' '}

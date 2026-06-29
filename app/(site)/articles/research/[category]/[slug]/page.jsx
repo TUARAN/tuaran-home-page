@@ -18,6 +18,7 @@ import { AUTHOR_INTRO_MARKDOWN, AuthorByline } from '../../../../components/Arti
 import ArticleComments from '../../../../components/ArticleComments'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import ArticleLikeButton from '../../../../components/ArticleLikeButton'
+import ArticleActionsDropdown from '../../../../components/ArticleActionsDropdown'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
 import DownloadPptButton from './DownloadPptButton'
@@ -337,10 +338,12 @@ export default async function ResearchDetailPage({ params }) {
             </>
           ) : null}
           <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto sm:flex-nowrap">
-            <RssButton />
             {isEncrypted ? null : (
-              <>
-                <SharePageButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
+              <SharePageButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
+            )}
+            <RssButton label="RSS" />
+            {isEncrypted ? null : (
+              <ArticleActionsDropdown label="更多">
                 <CopyMarkdownButton markdown={markdownDoc} />
                 <DownloadPptButton
                   title={entry.title}
@@ -359,7 +362,7 @@ export default async function ResearchDetailPage({ params }) {
                   slug={entry.slug}
                   tags={entry.tags || []}
                 />
-              </>
+              </ArticleActionsDropdown>
             )}
           </div>
         </div>

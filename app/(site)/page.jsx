@@ -330,7 +330,9 @@ function FeaturedReading({ items }) {
         <div className="home-section-tabs" role="group" aria-label="Browse more by category">
           {HOME_SECTION_MORE_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className="home-tab-link">
-              <span><T zh={link.label} en={link.labelEn} /></span>
+              <span>
+                <T zh={`${link.label}（${link.countLabel}）`} en={`${link.labelEn} (${link.countLabelEn})`} />
+              </span>
               <ArrowIcon />
             </Link>
           ))}
@@ -434,7 +436,9 @@ function ClassicFeaturedSection({ items }) {
                   'active:scale-[0.98]',
                 ].join(' ')}
               >
-                <span><T zh={link.label} en={link.labelEn} /></span>
+                <span>
+                  <T zh={`${link.label}（${link.countLabel}）`} en={`${link.labelEn} (${link.countLabelEn})`} />
+                </span>
                 <span
                   aria-hidden="true"
                   className="font-mono text-[11px] text-[#9a9b8f] transition-transform group-hover/tab:translate-x-0.5 dark:text-gray-500"

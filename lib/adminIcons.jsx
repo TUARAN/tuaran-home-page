@@ -54,6 +54,7 @@ const ICONS = {
   publicOpinion: IconRadar2,
   stockAnalysis: IconChartCandle,
   rss: IconRss,
+  memory: IconBrain,
 }
 
 export function AdminIcon({ name, size = 18, stroke = 1.6, className, ...rest }) {

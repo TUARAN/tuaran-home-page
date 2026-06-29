@@ -767,6 +767,90 @@
     @apply font-mono text-[10px];
   }
 
+  .home-social-grid {
+    @apply grid gap-1.5;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .home-social-total {
+    @apply mb-3 grid grid-cols-2 gap-2;
+  }
+
+  .home-social-total span {
+    @apply inline-flex min-w-0 items-center justify-center gap-1 rounded-lg border px-2.5 py-2 font-mono text-[11px] font-semibold no-underline;
+    border-color: var(--site-line);
+    background: color-mix(in srgb, var(--site-accent) 8%, transparent);
+    color: var(--site-ink);
+  }
+
+  .home-social-card {
+    @apply relative flex min-w-0 items-center gap-1 rounded-lg border px-1.5 py-1.5 no-underline transition;
+    grid-column: span 3;
+    min-height: 38px;
+    border-color: var(--site-line);
+    background: color-mix(in srgb, var(--site-panel-strong) 24%, transparent);
+    color: var(--site-ink);
+  }
+
+  .home-social-card:hover {
+    @apply no-underline;
+    border-color: var(--site-line-strong);
+    background: color-mix(in srgb, var(--site-panel-strong) 44%, transparent);
+  }
+
+  .home-social-card:visited,
+  .dark .home-social-card {
+    color: var(--site-ink);
+  }
+
+  .home-social-card.is-priority {
+    @apply px-2 py-2;
+    grid-column: span 4;
+    min-height: 46px;
+  }
+
+  .home-social-icon {
+    @apply flex shrink-0 items-center justify-center rounded-lg;
+    width: 24px;
+    height: 24px;
+    background: color-mix(in srgb, var(--site-accent) 10%, transparent);
+    color: var(--site-accent);
+  }
+
+  .home-social-card.is-priority .home-social-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .home-social-main {
+    @apply flex min-w-0 flex-1 flex-col;
+  }
+
+  .home-social-main strong {
+    @apply truncate text-[11.5px] font-semibold leading-4;
+  }
+
+  .home-social-card.is-priority .home-social-main strong {
+    @apply text-[13px];
+  }
+
+  .home-social-metrics {
+    @apply pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-lg border px-2 py-1.5 font-mono text-[10px] leading-none opacity-0 shadow-lg transition;
+    border-color: var(--site-line-strong);
+    background: color-mix(in srgb, var(--site-panel-strong) 92%, transparent);
+    color: var(--site-muted);
+    white-space: nowrap;
+  }
+
+  .home-social-card:hover .home-social-metrics,
+  .home-social-card:focus-visible .home-social-metrics {
+    @apply opacity-100;
+  }
+
+  .home-social-metrics > span {
+    @apply inline-flex items-center gap-0.5 whitespace-nowrap;
+  }
+
   .home-product-list {
     @apply space-y-2;
   }
@@ -791,6 +875,17 @@
   .home-product-link small {
     @apply mt-1 block text-[13px] leading-5;
     color: var(--site-muted);
+  }
+
+  @media (max-width: 420px) {
+    .home-social-card {
+      grid-column: span 6;
+    }
+
+    .home-social-card.is-priority {
+      grid-column: 1 / -1;
+      min-height: 54px;
+    }
   }
 
   .home-contact-panel {

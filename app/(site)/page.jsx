@@ -1,5 +1,19 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import {
+  IconBrandBaidu,
+  IconBrandJuejin,
+  IconBrandTopbuzz,
+  IconBrandWeibo,
+  IconBrandX,
+  IconBrandZhihu,
+  IconCloud,
+  IconCode,
+  IconCodeCircle,
+  IconEye,
+  IconFileText,
+  IconUsers,
+} from '@tabler/icons-react'
 
 import DaysSince from './components/DaysSince'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
@@ -98,6 +112,137 @@ const PRODUCT_LINKS = [
     descEn: 'Write once, auto-sync across platforms',
   },
 ]
+
+const SOCIAL_MEDIA_LINKS = [
+  {
+    href: 'https://juejin.cn/user/1521379823340792',
+    label: '掘金',
+    labelEn: 'Juejin',
+    followers: '1.18w+',
+    reads: '300w+',
+    priority: true,
+    icon: IconBrandJuejin,
+  },
+  {
+    href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e',
+    label: '小红书',
+    labelEn: 'RedNote',
+    followers: '1.2w+',
+    reads: '200w+',
+    priority: true,
+    icon: IconFileText,
+  },
+  {
+    href: 'https://x.com/Anthony404',
+    label: 'X',
+    labelEn: 'X',
+    followers: '1000+',
+    reads: '100w+',
+    priority: true,
+    icon: IconBrandX,
+  },
+  {
+    href: 'https://weibo.com/',
+    label: '微博',
+    labelEn: 'Weibo',
+    followers: '3,014',
+    reads: '2万',
+    icon: IconBrandWeibo,
+  },
+  {
+    href: 'https://blog.csdn.net/aifs2025',
+    label: 'CSDN',
+    labelEn: 'CSDN',
+    followers: '2,771',
+    reads: '28.4万',
+    icon: IconCode,
+  },
+  {
+    href: 'https://www.toutiao.com/',
+    label: '今日头条',
+    labelEn: 'Toutiao',
+    followers: '709',
+    reads: '12.9万',
+    icon: IconBrandTopbuzz,
+  },
+  {
+    href: 'https://www.zhihu.com/',
+    label: '知乎',
+    labelEn: 'Zhihu',
+    followers: '345',
+    reads: '38万',
+    icon: IconBrandZhihu,
+  },
+  {
+    href: 'https://www.oschina.net/',
+    label: '开源中国',
+    labelEn: 'OSChina',
+    followers: '100',
+    reads: '2万',
+    icon: IconCodeCircle,
+  },
+  {
+    href: 'https://www.infoq.cn/',
+    label: 'InfoQ',
+    labelEn: 'InfoQ',
+    followers: '100',
+    reads: '2万',
+    icon: IconFileText,
+  },
+  {
+    href: 'https://baijiahao.baidu.com/',
+    label: '百家号',
+    labelEn: 'Baijiahao',
+    followers: '100',
+    reads: '2万',
+    icon: IconBrandBaidu,
+  },
+  {
+    href: 'https://cloud.tencent.com/developer',
+    label: '腾讯云',
+    labelEn: 'Tencent Cloud',
+    followers: '100',
+    reads: '2万',
+    icon: IconCloud,
+  },
+  {
+    href: 'https://developer.aliyun.com/',
+    label: '阿里云',
+    labelEn: 'Alibaba Cloud',
+    followers: '100',
+    reads: '2万',
+    icon: IconCloud,
+  },
+  {
+    href: 'https://developer.huaweicloud.com/',
+    label: '华为云',
+    labelEn: 'Huawei Cloud',
+    followers: '100',
+    reads: '2万',
+    icon: IconCloud,
+  },
+  {
+    href: 'https://segmentfault.com/',
+    label: '思否',
+    labelEn: 'SegmentFault',
+    followers: '100',
+    reads: '2万',
+    icon: IconCode,
+  },
+  {
+    href: 'https://blog.51cto.com/u_15298598',
+    label: '51CTO',
+    labelEn: '51CTO',
+    followers: '21',
+    reads: '17.1万',
+    icon: IconCode,
+  },
+]
+
+const SOCIAL_MEDIA_TOTALS = {
+  followers: '3.2w+',
+  reads: '712w+',
+}
 
 const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 const CLASSIC_SITE_HERO_TAGLINE_EN = `${SITE_HERO_TITLE_EN}: ${SITE_HERO_TAGLINE_EN}`
@@ -318,6 +463,30 @@ function ProductLink({ item }) {
         <small><T zh={item.desc} en={item.descEn} /></small>
       </span>
       <ArrowIcon />
+    </a>
+  )
+}
+
+function SocialMediaCard({ item }) {
+  const Icon = item.icon
+  return (
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noreferrer"
+      className={item.priority ? 'home-social-card is-priority no-external-arrow group' : 'home-social-card no-external-arrow group'}
+      aria-label={`${item.label}: ${item.followers} followers, ${item.reads} views`}
+    >
+      <span className="home-social-icon" aria-hidden="true">
+        <Icon size={item.priority ? 24 : 18} stroke={1.8} />
+      </span>
+      <span className="home-social-main">
+        <strong><T zh={item.label} en={item.labelEn} /></strong>
+      </span>
+      <span className="home-social-metrics" aria-hidden="true">
+        <span><IconUsers size={11} stroke={1.8} />{item.followers}</span>
+        <span><IconEye size={11} stroke={1.8} />{item.reads}</span>
+      </span>
     </a>
   )
 }
@@ -602,6 +771,24 @@ function PolishedHomePage({ featuredPicks }) {
 
         <aside className="home-side-stack">
           <ProfileCard />
+
+          <section className="home-section home-socials">
+            <div className="home-section-heading compact">
+              <div>
+                <p className="home-kicker">Social</p>
+                <h2 className="home-section-title"><T zh="我的社交媒体" en="My social media" /></h2>
+              </div>
+            </div>
+            <div className="home-social-total" aria-label="Social media totals">
+              <span><IconUsers size={13} stroke={1.8} aria-hidden="true" /><T zh="总粉丝" en="Followers" /> {SOCIAL_MEDIA_TOTALS.followers}</span>
+              <span><IconEye size={13} stroke={1.8} aria-hidden="true" /><T zh="总阅读" en="Views" /> {SOCIAL_MEDIA_TOTALS.reads}</span>
+            </div>
+            <div className="home-social-grid">
+              {SOCIAL_MEDIA_LINKS.map((item) => (
+                <SocialMediaCard key={item.label} item={item} />
+              ))}
+            </div>
+          </section>
 
           <section className="home-section home-products">
             <div className="home-section-heading compact">

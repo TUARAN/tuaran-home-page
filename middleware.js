@@ -27,9 +27,16 @@ const OPS_LEGACY_HOST = 'ops.2aran.com'
 const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
 const LEGACY_PATHS = new Set(['/weekly', '/articles/diary-self-reflection'])
 
-export function middleware(request) {
+export function middleware(request, event) {
   const { pathname } = request.nextUrl
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
+
+  if (pathname === '/rss.xml') {
+    event?.waitUntil?.(
+      import('./lib/rssAnalytics').then(({ trackRssHit }) => trackRssHit(request)),
+    )
+    return NextResponse.next()
+  }
 
   const legacyAdminTarget = ADMIN_LEGACY_REDIRECTS[pathname]
   if (legacyAdminTarget) {
@@ -91,6 +98,7 @@ export function middleware(request) {
 
 export const config = {
   matcher: [
+    '/rss.xml',
     '/((?!_next/static|_next/image|favicon.ico|site.webmanifest|robots.txt|.*\\.(?:png|jpg|jpeg|webp|svg|ico|mp3|xml|txt)$).*)',
   ],
 }

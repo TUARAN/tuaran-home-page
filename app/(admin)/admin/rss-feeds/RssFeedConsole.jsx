@@ -13,6 +13,7 @@ const EMPTY_FORM = {
 
 export default function RssFeedConsole() {
   const [items, setItems] = useState([])
+  const [analytics, setAnalytics] = useState(null)
   const [status, setStatus] = useState('loading')
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
@@ -27,6 +28,7 @@ export default function RssFeedConsole() {
       const data = await res.json()
       if (data?.status === 'ok') {
         setItems(Array.isArray(data.feeds) ? data.feeds : [])
+        setAnalytics(data.analytics || null)
         setStatus('ok')
       } else if (data?.status === 'unavailable') {
         setStatus('unavailable')
@@ -210,6 +212,8 @@ export default function RssFeedConsole() {
         </div>
       </form>
 
+      <RssAnalyticsPanel analytics={analytics} />
+
       <div className="rounded-xl border border-[#e2e3da] bg-white dark:border-[#1e2733] dark:bg-[#10161f]">
         {status === 'loading' ? (
           <p className="p-4 text-sm text-[#82847a] dark:text-gray-500">加载中…</p>
@@ -267,5 +271,123 @@ export default function RssFeedConsole() {
         )}
       </div>
     </div>
+  )
+}
+
+function formatTime(value) {
+  const n = Number(value) || 0
+  if (!n) return '—'
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(n))
+}
+
+function StatBox({ label, value, sub }) {
+  return (
+    <div className="rounded-lg border border-[#e6e7df] bg-[#fafaf6] p-3 dark:border-[#243041] dark:bg-[#0e141d]">
+      <p className="text-xs text-[#82847a] dark:text-gray-500">{label}</p>
+      <p className="mt-1 font-mono text-2xl font-semibold text-[#15140f] dark:text-gray-100">{value}</p>
+      {sub ? <p className="mt-1 text-xs text-[#9a9c8f] dark:text-gray-500">{sub}</p> : null}
+    </div>
+  )
+}
+
+function RssAnalyticsPanel({ analytics }) {
+  if (!analytics) return null
+
+  if (analytics.status === 'unavailable') {
+    return (
+      <section className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+        {analytics.message || 'RSS 请求统计未就绪。'}
+      </section>
+    )
+  }
+
+  if (analytics.status !== 'ok') return null
+
+  const summary = analytics.summary || {}
+  const readers = Array.isArray(analytics.readers) ? analytics.readers : []
+  const recent = Array.isArray(analytics.recent) ? analytics.recent : []
+
+  return (
+    <section className="mb-8 rounded-xl border border-[#e2e3da] bg-white p-4 dark:border-[#1e2733] dark:bg-[#10161f]">
+      <div className="mb-4">
+        <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">本站 RSS 请求记录</h2>
+        <p className="mt-1 text-xs leading-5 text-[#82847a] dark:text-gray-500">
+          {analytics.note || 'RSS 没有订阅回调；这里统计的是 /rss.xml 请求次数与近似独立客户端。'}
+        </p>
+      </div>
+
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatBox label="累计请求" value={summary.totalRequests || 0} sub={`近似客户端 ${summary.totalClients || 0}`} />
+        <StatBox label="近 24 小时" value={summary.requests24h || 0} sub="RSS feed 请求" />
+        <StatBox label="近 7 天" value={summary.requests7d || 0} sub={`近似客户端 ${summary.clients7d || 0}`} />
+        <StatBox label="近 30 天" value={summary.requests30d || 0} sub={`最近 ${formatTime(summary.lastSeenAt)}`} />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="min-w-0 rounded-lg border border-[#eef0e8] bg-[#fbfbf8] p-3 dark:border-[#1b2633] dark:bg-[#0c121a]">
+          <h3 className="mb-3 text-sm font-semibold text-[#15140f] dark:text-gray-100">Reader / 客户端分布 · 近 30 天</h3>
+          {readers.length ? (
+            <ul className="grid gap-2">
+              {readers.map((row) => (
+                <li
+                  key={row.reader}
+                  className="flex items-center justify-between gap-3 rounded-md border border-[#edf0e8] bg-white px-3 py-2 dark:border-[#1e2733] dark:bg-[#10161f]"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[#15140f] dark:text-gray-100">{row.reader}</p>
+                    <p className="text-[11px] text-[#9a9c8f] dark:text-gray-500">
+                      近似客户端 {row.clients || 0} · 最近 {formatTime(row.lastSeenAt)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-mono text-sm font-semibold text-[#15140f] dark:text-gray-100">
+                    {row.requests || 0}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-[#82847a] dark:text-gray-500">还没有 RSS 请求记录。</p>
+          )}
+        </div>
+
+        <div className="min-w-0 rounded-lg border border-[#eef0e8] bg-[#fbfbf8] p-3 dark:border-[#1b2633] dark:bg-[#0c121a]">
+          <h3 className="mb-3 text-sm font-semibold text-[#15140f] dark:text-gray-100">最近请求</h3>
+          {recent.length ? (
+            <ol className="grid max-h-[360px] gap-2 overflow-auto pr-1">
+              {recent.map((row, index) => (
+                <li
+                  key={`${row.createdAt}-${index}`}
+                  className="rounded-md border border-[#edf0e8] bg-white px-3 py-2 dark:border-[#1e2733] dark:bg-[#10161f]"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 truncate text-sm font-medium text-[#15140f] dark:text-gray-100">
+                      {row.reader || 'Unknown'}
+                    </span>
+                    <span className="shrink-0 font-mono text-[11px] text-[#9a9c8f] dark:text-gray-500">
+                      {formatTime(row.createdAt)}
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate font-mono text-[11px] text-[#aaa] dark:text-gray-500" title={row.userAgent}>
+                    {row.userAgent || '无 User-Agent'}
+                  </p>
+                  {row.referer ? (
+                    <p className="mt-1 truncate font-mono text-[11px] text-[#bbb] dark:text-gray-600" title={row.referer}>
+                      ref: {row.referer}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-sm text-[#82847a] dark:text-gray-500">还没有 RSS 请求记录。</p>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }

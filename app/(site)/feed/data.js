@@ -55,14 +55,15 @@ function feedMediaUrl(objectKey) {
 export const FEED_ITEMS = [
   {
     id: 'gemma-4-agent-vllm-challenge',
-    type: 'link',
+    type: 'video',
     title: '上百个 AI 智能体协作优化 Gemma 4 推理',
     summary:
       'Hugging Face 工程师 Thom Wolf 记录了一场开放式协同实验：上百个 AI 智能体围绕 Gemma 4 推理加速挑战赛，在 vLLM 框架下分工优化，最终把推理速度提高约 5 倍。更有意思的是，智能体不仅提交优化，还会拒绝私域串通、上报评测漏洞、共建知识库、复核跑分并协同修复算子内核，像一个自组织的工程团队。',
     tags: ['AI Agent', 'Hugging Face', 'Gemma 4', 'vLLM', '推理加速'],
     date: '2026-06-29',
     time: '17:22',
-    href: 'https://x.com/Thom_Wolf/status/2070134136304517284?s=20',
+    src: '/feed/gemma-4-agent-vllm-challenge.mp4',
+    aspect: '16/9',
     source: {
       label: 'Thom Wolf / X',
       href: 'https://x.com/Thom_Wolf/status/2070134136304517284?s=20',

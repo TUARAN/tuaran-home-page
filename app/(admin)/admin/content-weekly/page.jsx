@@ -5,7 +5,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '自建数据中心',
+  title: '阅读分析',
   description: '自建阅读统计：调研 / 资料 / 灵感被读 / 被赞 top 与趋势,仅站长本人可访问。',
   robots: {
     index: false,
@@ -17,7 +17,7 @@ export const metadata = {
 export default async function AdminContentWeeklyPage() {
   return (
     <AdminPageGate
-      label="自建数据中心"
+      label="阅读分析"
       returnTo="/admin/content-weekly"
       description="自建阅读统计：调研 / 资料 / 灵感被读 / 被赞 top 与趋势,仅站长本人可见。"
     >

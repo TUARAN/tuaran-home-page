@@ -46,7 +46,9 @@ export default function PublishedArticle({ article, siteUrl }) {
       </aside>
       {article.coverUrl ? <figure className="mb-10">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={article.coverUrl} alt={`${article.title} 封面`} className="h-auto w-full rounded-lg border border-[#eee] object-cover dark:border-gray-800" /></figure> : null}
       <ArticlePostBody content={article.content} />
-      <ArticleComments articleKey={`article:${article.slug}`} />
+      <div id="comments" className="scroll-mt-24">
+        <ArticleComments articleKey={`article:${article.slug}`} />
+      </div>
       <ArticleFooterCta />
     </div>
   )

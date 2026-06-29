@@ -26,7 +26,7 @@ function itemShareText(item) {
   ].filter(Boolean).join('\n')
 }
 
-function MetaRow({ item, showShare = true, maxTags = Infinity, stackActions = false }) {
+function MetaRow({ item, showShare = true, maxTags = Infinity }) {
   const tags = item.tags || []
   const visibleTags = Number.isFinite(maxTags) ? tags.slice(0, maxTags) : tags
   const hiddenTagCount = Math.max(0, tags.length - visibleTags.length)
@@ -43,18 +43,8 @@ function MetaRow({ item, showShare = true, maxTags = Infinity, stackActions = fa
   ) : null
 
   return (
-    <div
-      className={[
-        'mt-5 flex flex-col text-[11px] text-[var(--site-muted)]',
-        stackActions ? 'gap-2' : 'gap-3 sm:flex-row sm:items-center sm:justify-between',
-      ].join(' ')}
-    >
-      <div
-        className={[
-          'flex min-w-0 items-center gap-x-2 gap-y-2',
-          stackActions ? 'overflow-x-auto whitespace-nowrap pb-1' : 'flex-wrap',
-        ].join(' ')}
-      >
+    <div className="mt-5 flex flex-col gap-2 text-[11px] text-[var(--site-muted)]">
+      <div className="flex min-w-0 items-center gap-x-2 gap-y-2 overflow-x-auto whitespace-nowrap pb-1">
         {item.date ? <time>{item.date}</time> : null}
         {visibleTags.length ? (
           <>
@@ -76,12 +66,7 @@ function MetaRow({ item, showShare = true, maxTags = Infinity, stackActions = fa
         ) : null}
       </div>
       {sourceLink || showShare ? (
-        <div
-          className={[
-            'flex shrink-0 flex-wrap items-center gap-2',
-            stackActions ? 'justify-end' : '',
-          ].join(' ')}
-        >
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {sourceLink}
           {showShare ? (
             <SharePageButton
@@ -182,7 +167,7 @@ function HeadlineCard({ item }) {
         <p className="mb-0 mt-4 text-[15px] leading-7 text-[var(--site-muted)]">{item.summary}</p>
       ) : null}
       {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
-      <MetaRow item={item} stackActions />
+      <MetaRow item={item} />
     </div>
   )
 

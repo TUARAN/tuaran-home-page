@@ -1,7 +1,7 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
+import { resolveArticleKey, resolveContentKey } from '../../../../lib/articleLinks'
 import { getD1 } from '../../../../lib/d1'
-import { RESEARCH_ENTRY_META } from '../../../../lib/research/catalog'
-import { CONTENT_TYPE_GROUP, CONTENT_TYPE_LABELS, resolveContentEntry } from '../../../../lib/contentRegistry'
+import { CONTENT_TYPE_GROUP } from '../../../../lib/contentRegistry'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -27,35 +27,6 @@ function getShanghaiMonthWindow(now) {
   return { thisMonthStart, prevMonthStart, monthLabel, timezone: 'Asia/Shanghai' }
 }
 
-/** 任意 category/slug → { title, href, type }（调研走 catalog，资料/灵感走 contentRegistry） */
-function resolveContentKey(category, slug) {
-  const content = resolveContentEntry(category, slug)
-  if (content) return { title: content.title, href: content.href, type: content.typeLabel }
-  const meta = RESEARCH_ENTRY_META[`${category}/${slug}`]
-  return {
-    title: meta?.title || `${category}/${slug}`,
-    href: `/articles/research/${category}/${slug}`,
-    type: CONTENT_TYPE_LABELS[category] || '调研',
-  }
-}
-
-/** article_key 形如 research:<cat>:<slug> 或 article:<slug>,解析成标题 + 链接 */
-function resolveArticleKey(articleKey) {
-  const key = String(articleKey || '')
-  if (key.startsWith('research:')) {
-    const [, category, slug] = key.split(':')
-    if (category && slug) {
-      const r = resolveContentKey(category, slug)
-      return { title: r.title, href: r.href }
-    }
-  }
-  if (key.startsWith('article:')) {
-    const slug = key.slice('article:'.length)
-    return { title: slug || key, href: slug ? `/articles/${slug}` : null }
-  }
-  return { title: key, href: null }
-}
-
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
@@ -70,6 +41,7 @@ export async function GET(req) {
       window: null,
       reads: { top: [], total: { thisWeek: 0, prevWeek: 0 } },
       likes: { top: [], total: { thisWeek: 0, prevWeek: 0 } },
+      comments: { recent: [], total: { all: 0, thisWeek: 0, thisMonth: 0, articles: 0 } },
       month: {
         reads: { top: [], byType: [], total: { thisMonth: 0, prevMonth: 0 } },
         likes: { top: [], total: { thisMonth: 0, prevMonth: 0 } },
@@ -94,6 +66,8 @@ export async function GET(req) {
       monthReadTotal,
       monthLikeRows,
       monthLikeTotal,
+      commentRows,
+      commentTotal,
     ] = await Promise.all([
       db
         .prepare(
@@ -219,6 +193,26 @@ export async function GET(req) {
         )
         .bind(monthWindow.thisMonthStart, monthWindow.prevMonthStart)
         .first(),
+      db
+        .prepare(
+          `SELECT id, article_key, user_id, user_provider, user_name, user_image, message, created_at
+           FROM article_comments
+           ORDER BY created_at DESC
+           LIMIT 20`,
+        )
+        .all()
+        .then((r) => r.results || []),
+      db
+        .prepare(
+          `SELECT
+             COUNT(*) AS total_comments,
+             COUNT(DISTINCT article_key) AS article_count,
+             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week,
+             SUM(CASE WHEN created_at >= ?2 THEN 1 ELSE 0 END) AS this_month
+           FROM article_comments`,
+        )
+        .bind(wk1, monthWindow.thisMonthStart)
+        .first(),
     ])
 
     const reads = readRows.map((r) => {
@@ -290,6 +284,22 @@ export async function GET(req) {
       return { key: r.article_key, title, href, thisMonth, prevMonth, delta: thisMonth - prevMonth }
     })
 
+    const comments = commentRows.map((r) => {
+      const resolved = resolveArticleKey(r.article_key)
+      return {
+        id: Number(r.id),
+        articleKey: r.article_key || '',
+        articleTitle: resolved.title,
+        href: resolved.href ? `${resolved.href}#comments` : null,
+        userId: r.user_id || '',
+        userProvider: r.user_provider || '',
+        userName: r.user_name || '',
+        userImage: r.user_image || '',
+        message: r.message || '',
+        createdAt: Number(r.created_at) || 0,
+      }
+    })
+
     return Response.json({
       status: 'ok',
       generatedAt: now,
@@ -315,6 +325,15 @@ export async function GET(req) {
         total: {
           thisWeek: Number(likeTotal?.this_week) || 0,
           prevWeek: Number(likeTotal?.prev_week) || 0,
+        },
+      },
+      comments: {
+        recent: comments,
+        total: {
+          all: Number(commentTotal?.total_comments) || 0,
+          articles: Number(commentTotal?.article_count) || 0,
+          thisWeek: Number(commentTotal?.this_week) || 0,
+          thisMonth: Number(commentTotal?.this_month) || 0,
         },
       },
       month: {

@@ -241,12 +241,24 @@ function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
   )
 }
 
+function NotificationBadge({ count }) {
+  const n = Number(count) || 0
+  if (n <= 0) return null
+  return (
+    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold leading-none text-white shadow-sm">
+      {n > 99 ? '99+' : n}
+    </span>
+  )
+}
+
 function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef }) {
   const { locale } = useLocale()
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  const { loading, user, isOwner } = account
+  const { loading, user, isOwner, notifications, markNotificationsRead } = account
+  const unread = Number(notifications?.unread) || 0
+  const latestNotification = (notifications?.items || []).find((item) => !item.readAt) || notifications?.items?.[0]
 
   if (!loading && !user) {
     return (
@@ -271,6 +283,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
       >
         <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
         <span>{loading ? pick(locale, '检查中', 'Checking…') : getAccountId(user)}</span>
+        <NotificationBadge count={unread} />
         <ChevronDown />
       </button>
 
@@ -280,6 +293,19 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
             <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
           </div>
           <div className="px-1.5 py-1.5">
+            {unread > 0 ? (
+              <Link
+                href={latestNotification?.href || '#comments'}
+                onClick={() => {
+                  if (latestNotification?.id) markNotificationsRead?.({ id: latestNotification.id })
+                  onClose()
+                }}
+                className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+              >
+                <span>{pick(locale, `评论回复 ${unread} 条`, `${unread} comment replies`)}</span>
+                <NotificationBadge count={unread} />
+              </Link>
+            ) : null}
             <a
               href={logoutHref}
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
@@ -299,7 +325,9 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  const { loading, user, isOwner } = account
+  const { loading, user, isOwner, notifications, markNotificationsRead } = account
+  const unread = Number(notifications?.unread) || 0
+  const latestNotification = (notifications?.items || []).find((item) => !item.readAt) || notifications?.items?.[0]
 
   if (!loading && !user) {
     return (
@@ -325,10 +353,26 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   return (
     <div className="site-mobile-card mb-4 overflow-hidden rounded-2xl border">
       <div className="site-dropdown-strip border-b px-3.5 py-3">
-        <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
+        <div className="flex items-center justify-between gap-3">
+          <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
+          <NotificationBadge count={unread} />
+        </div>
       </div>
       {!loading && user ? (
         <div className="px-1.5 py-1.5">
+          {unread > 0 ? (
+            <Link
+              href={latestNotification?.href || '#comments'}
+              onClick={() => {
+                if (latestNotification?.id) markNotificationsRead?.({ id: latestNotification.id })
+                onNavigate()
+              }}
+              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+            >
+              <span>{pick(locale, `评论回复 ${unread} 条`, `${unread} comment replies`)}</span>
+              <NotificationBadge count={unread} />
+            </Link>
+          ) : null}
           <a
             href={logoutHref}
             className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"

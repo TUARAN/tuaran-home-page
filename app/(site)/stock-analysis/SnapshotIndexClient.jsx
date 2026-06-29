@@ -418,7 +418,7 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvices = [] }) {
   const highRiskCount = summaries.filter((s) => s.analysisSummary.riskLevel === '高风险').length
 
   return (
-    <main className="mx-auto w-full max-w-[1120px] px-4 py-10">
+    <main className="mx-auto w-full max-w-[1360px] px-4 py-10">
 
       {/* Header */}
       <header className="pb-8 border-b border-[#d7d9cf] dark:border-[#2b3644] mb-10">
@@ -433,112 +433,106 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvices = [] }) {
           同一标的日内多个时间点也可以并存，便于跟踪分钟级变化。
           新增快照只需在 <code className="px-1.5 py-0.5 rounded bg-[var(--site-panel)] text-[12px]">data.js</code> 中追加一条记录。
         </p>
-        <div className="flex gap-6 mt-6 flex-wrap">
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">快照总数</p>
-            <p className="text-[18px] font-bold text-[var(--site-ink)] mt-1">{total}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">高风险</p>
-            <p className="text-[18px] font-bold text-[#ff4d6a] mt-1">{highRiskCount}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">覆盖标的</p>
-            <p className="text-[18px] font-bold text-[var(--site-ink)] mt-1">{pairs.length}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">最新快照</p>
-            <p className="text-[18px] font-bold text-[var(--site-ink)] mt-1">
-              {summaries.map((s) => s.datetime).sort().slice(-1)[0]}
-            </p>
-          </div>
-        </div>
       </header>
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-4 mb-6 rounded-xl border border-[#d7d9cf] dark:border-[#2b3644] bg-white dark:bg-[#111923] p-4">
-        <div className="flex items-center gap-2 text-[13px]">
-          <label htmlFor="category" className="text-[var(--site-muted)]">币种分类</label>
-          <select
-            id="category"
-            value={categoryFilter}
-            onChange={(e) => {
-              setCategoryFilter(e.target.value)
-              setHorizontalAnalysis(null)
-              setAnalysisStatus('idle')
-              setAnalysisError('')
-            }}
-            className="rounded border border-[#c7c9be] dark:border-[#2b3644] bg-white dark:bg-[#0a0e17] px-2 py-1 text-[13px]"
-          >
-            <option value="all">全部</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>{category.label}</option>
+      <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
+          <section className="rounded-xl border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
+            <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.1em] text-[#00a978]">筛选控制台</p>
+            <div className="grid gap-3">
+              <label className="grid gap-1.5 text-[13px]" htmlFor="category">
+                <span className="text-[var(--site-muted)]">币种分类</span>
+                <select
+                  id="category"
+                  value={categoryFilter}
+                  onChange={(e) => {
+                    setCategoryFilter(e.target.value)
+                    setHorizontalAnalysis(null)
+                    setAnalysisStatus('idle')
+                    setAnalysisError('')
+                  }}
+                  className="w-full rounded border border-[#c7c9be] bg-white px-2 py-2 text-[13px] dark:border-[#2b3644] dark:bg-[#0a0e17]"
+                >
+                  <option value="all">全部</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1.5 text-[13px]" htmlFor="pair">
+                <span className="text-[var(--site-muted)]">标的</span>
+                <select
+                  id="pair"
+                  value={pairFilter}
+                  onChange={(e) => setPairFilter(e.target.value)}
+                  className="w-full rounded border border-[#c7c9be] bg-white px-2 py-2 text-[13px] dark:border-[#2b3644] dark:bg-[#0a0e17]"
+                >
+                  <option value="all">全部</option>
+                  {pairs.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1.5 text-[13px]" htmlFor="risk">
+                <span className="text-[var(--site-muted)]">风险等级</span>
+                <select
+                  id="risk"
+                  value={riskFilter}
+                  onChange={(e) => setRiskFilter(e.target.value)}
+                  className="w-full rounded border border-[#c7c9be] bg-white px-2 py-2 text-[13px] dark:border-[#2b3644] dark:bg-[#0a0e17]"
+                >
+                  <option value="all">全部</option>
+                  {riskLevels.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1.5 text-[13px]" htmlFor="sort">
+                <span className="text-[var(--site-muted)]">排序</span>
+                <select
+                  id="sort"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="w-full rounded border border-[#c7c9be] bg-white px-2 py-2 text-[13px] dark:border-[#2b3644] dark:bg-[#0a0e17]"
+                >
+                  <option value="datetime-desc">时间从新到旧</option>
+                  <option value="datetime-asc">时间从旧到新</option>
+                  <option value="risk-desc">风险等级从高到低</option>
+                  <option value="pair-asc">标的字母序</option>
+                </select>
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={generateHorizontalAnalysis}
+              disabled={!analysisCategory || analysisStatus === 'loading'}
+              className="mt-4 w-full rounded-lg bg-[#00e5a0] px-4 py-2.5 text-[12px] font-bold text-[#0a0e17] transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-45"
+              title={!analysisCategory ? '请先选择一个币种分类' : '调用 DeepSeek 对比最近 5 个快照'}
+            >
+              {analysisStatus === 'loading' ? 'DeepSeek 分析中…' : '横向分析'}
+            </button>
+          </section>
+
+          <section className="grid grid-cols-2 gap-3 rounded-xl border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
+            {[
+              ['匹配快照', `${filtered.length} / ${total}`],
+              ['周建议', filteredWeeklyAdvices.length],
+              ['覆盖标的', pairs.length],
+              ['高风险', highRiskCount],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-muted)]">{label}</p>
+                <p className="mt-1 font-mono text-[18px] font-bold text-[var(--site-ink)]">{value}</p>
+              </div>
             ))}
-          </select>
-        </div>
+          </section>
+        </aside>
 
-        <div className="flex items-center gap-2 text-[13px]">
-          <label htmlFor="pair" className="text-[var(--site-muted)]">标的</label>
-          <select
-            id="pair"
-            value={pairFilter}
-            onChange={(e) => setPairFilter(e.target.value)}
-            className="rounded border border-[#c7c9be] dark:border-[#2b3644] bg-white dark:bg-[#0a0e17] px-2 py-1 text-[13px]"
-          >
-            <option value="all">全部</option>
-            {pairs.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2 text-[13px]">
-          <label htmlFor="risk" className="text-[var(--site-muted)]">风险等级</label>
-          <select
-            id="risk"
-            value={riskFilter}
-            onChange={(e) => setRiskFilter(e.target.value)}
-            className="rounded border border-[#c7c9be] dark:border-[#2b3644] bg-white dark:bg-[#0a0e17] px-2 py-1 text-[13px]"
-          >
-            <option value="all">全部</option>
-            {riskLevels.map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2 text-[13px]">
-          <label htmlFor="sort" className="text-[var(--site-muted)]">排序</label>
-          <select
-            id="sort"
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="rounded border border-[#c7c9be] dark:border-[#2b3644] bg-white dark:bg-[#0a0e17] px-2 py-1 text-[13px]"
-          >
-            <option value="datetime-desc">时间从新到旧</option>
-            <option value="datetime-asc">时间从旧到新</option>
-            <option value="risk-desc">风险等级从高到低</option>
-            <option value="pair-asc">标的字母序</option>
-          </select>
-        </div>
-
-        <div className="ml-auto text-[12px] text-[var(--site-muted)]">
-          匹配快照 <strong className="text-[var(--site-ink)]">{filtered.length}</strong> / {total}
-          {filteredWeeklyAdvices.length ? (
-            <span> · 周建议 <strong className="text-[#f5a623]">{filteredWeeklyAdvices.length}</strong></span>
-          ) : null}
-        </div>
-
-        <button
-          type="button"
-          onClick={generateHorizontalAnalysis}
-          disabled={!analysisCategory || analysisStatus === 'loading'}
-          className="rounded-lg bg-[#00e5a0] px-4 py-2 text-[12px] font-bold text-[#0a0e17] transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-45"
-          title={!analysisCategory ? '请先选择一个币种分类' : '调用 DeepSeek 对比最近 5 个快照'}
-        >
-          {analysisStatus === 'loading' ? 'DeepSeek 分析中…' : '横向分析'}
-        </button>
-      </div>
+        <div className="min-w-0">
 
       {analysisError ? (
         <div role="alert" className="mb-6 rounded-xl border border-[#ff4d6a]/40 bg-[#ff4d6a]/10 px-4 py-3 text-[13px] text-[#ff4d6a]">
@@ -713,13 +707,15 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvices = [] }) {
         </div>
       )}
 
-      <WeeklyAdviceModal advice={selectedWeeklyAdvice} onClose={() => setSelectedWeeklyAdvice(null)} />
-
       {/* Footer hint */}
       <div className="mt-10 pt-6 border-t border-[#d7d9cf] dark:border-[#2b3644] text-center text-[11px] text-[var(--site-muted)]">
         所有快照数据均来源于公开交易所 API · 本分析仅供参考，不构成投资建议<br />
         新增快照：在 <code className="px-1.5 py-0.5 rounded bg-[var(--site-panel)] text-[12px]">app/(site)/stock-analysis/data.js</code> 中追加一条 <code className="px-1 py-0.5 rounded bg-[var(--site-panel)] text-[12px]">STOCK_ANALYSIS_RECORDS</code> 即可
       </div>
+        </div>
+      </div>
+
+      <WeeklyAdviceModal advice={selectedWeeklyAdvice} onClose={() => setSelectedWeeklyAdvice(null)} />
     </main>
   )
 }

@@ -6,6 +6,7 @@ import { articles } from '../articlesData'
 import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
+import RssButton from '../../components/RssButton'
 import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
 import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
@@ -256,6 +257,9 @@ export default async function ArticleDetailPage({ params }) {
                   ) : null}
                 </div>
               </div>
+              <div className="mt-3 shrink-0 sm:mt-0">
+                <RssButton />
+              </div>
             </div>
           </header>
 
@@ -374,6 +378,9 @@ export default async function ArticleDetailPage({ params }) {
                     </a>
                   ) : null}
                 </div>
+              </div>
+              <div className="mt-3 shrink-0 sm:mt-0">
+                <RssButton />
               </div>
             </div>
           </header>

@@ -26,6 +26,7 @@ import ResearchBody from './ResearchBody'
 import RanbiPaywall from '../../../../components/RanbiPaywall'
 import ResearchPvCounter from './ResearchPvCounter'
 import SharePageButton from '../../../../components/SharePageButton'
+import RssButton from '../../../../components/RssButton'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -335,29 +336,32 @@ export default async function ResearchDetailPage({ params }) {
               <span>协助：{entry.assistanceLabel || entry.sourceLabel || 'TUARAN'}</span>
             </>
           ) : null}
-          {isEncrypted ? null : (
-            <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto sm:flex-nowrap">
-              <SharePageButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
-              <CopyMarkdownButton markdown={markdownDoc} />
-              <DownloadPptButton
-                title={entry.title}
-                subtitle={entry.tldr || entry.summary || ''}
-                fileBaseName={entry.slug}
-                images={entry.images || []}
-                variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
-              />
-              <DistributeMarkdownButton
-                title={entry.title}
-                summary={entry.summary || entry.tldr || ''}
-                markdown={markdownDoc}
-                images={entry.images || []}
-                url={url}
-                category={entry.category}
-                slug={entry.slug}
-                tags={entry.tags || []}
-              />
-            </div>
-          )}
+          <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto sm:flex-nowrap">
+            <RssButton />
+            {isEncrypted ? null : (
+              <>
+                <SharePageButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
+                <CopyMarkdownButton markdown={markdownDoc} />
+                <DownloadPptButton
+                  title={entry.title}
+                  subtitle={entry.tldr || entry.summary || ''}
+                  fileBaseName={entry.slug}
+                  images={entry.images || []}
+                  variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
+                />
+                <DistributeMarkdownButton
+                  title={entry.title}
+                  summary={entry.summary || entry.tldr || ''}
+                  markdown={markdownDoc}
+                  images={entry.images || []}
+                  url={url}
+                  category={entry.category}
+                  slug={entry.slug}
+                  tags={entry.tags || []}
+                />
+              </>
+            )}
+          </div>
         </div>
         <h1 className="research-article-title mt-3 text-2xl leading-snug">{entry.title}</h1>
         <aside className="research-summary-box mt-4 border-l-2 px-4 py-3 text-sm leading-7">

@@ -117,7 +117,7 @@ export default function ContentWeeklyClient() {
 
   return (
     <AdminPage
-      title="自建数据中心"
+      title="阅读分析"
       maxWidth="1100px"
       description="自建阅读统计：调研 / 资料·资源 / 灵感的被读、被赞，近 7 天 top 与上周趋势。打开即实时计算，看看什么内容真的打动人。"
       actions={

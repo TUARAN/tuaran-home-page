@@ -137,7 +137,7 @@ export default function AdminDashboardClient() {
         />
       </div>
 
-      <div className="mb-7 grid gap-4 lg:grid-cols-[1.5fr_minmax(0,1fr)]">
+      <div className="mb-7">
         <Section title="最近活动" description="登录目录与生效规则的近期变化">
           {recentUsers.length || activeStyle ? (
             <ul className="divide-y divide-[#f1f2ec] dark:divide-[#161e29]">
@@ -174,23 +174,6 @@ export default function AdminDashboardClient() {
           ) : (
             <EmptyState title={loading ? '加载中…' : '暂无近期活动'} description={loading ? undefined : '用户登录或规则更新后会显示在这里。'} />
           )}
-        </Section>
-
-        <Section title="快捷操作">
-          <div className="flex flex-col gap-2">
-            <AdminButton href="/admin/portfolio" className="w-full justify-start">
-              <AdminIcon name="portfolio" size={16} /> 打开项目管理台
-            </AdminButton>
-            <AdminButton href="/admin/users" className="w-full justify-start">
-              <AdminIcon name="users" size={16} /> 管理用户与角色
-            </AdminButton>
-            <AdminButton href="/admin/db" className="w-full justify-start">
-              <AdminIcon name="database" size={16} /> 查看数据库状态
-            </AdminButton>
-            <AdminButton href="/admin/ops" className="w-full justify-start">
-              <AdminIcon name="ops" size={16} /> 打开 Ops 入口
-            </AdminButton>
-          </div>
         </Section>
       </div>
 

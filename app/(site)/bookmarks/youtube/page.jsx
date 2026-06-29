@@ -1,4 +1,6 @@
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
+import RanbiPaywall from '../../components/RanbiPaywall'
 
 export const dynamic = 'force-static'
 
@@ -180,12 +182,15 @@ const tocItems = COLLECTIONS.map((c) => ({ id: c.id, title: c.title }))
 
 export default function YoutubeBookmarksPage() {
   return (
-    <BookmarksTocLayout
-      title="YouTube 收藏"
-      description="按主题整理的 YouTube / B 站 / 纪录片与延伸资料收藏。"
-      tocItems={tocItems}
-      footer={<p>这里收集值得回看的影像与资料，按主题归类，持续整理。</p>}
-    >
+    <>
+      <ContentPvBeacon category="resource" slug="bookmarks-youtube" />
+      <RanbiPaywall resourceKey="resource:bookmarks-youtube" unitLabel="资源">
+        <BookmarksTocLayout
+          title="YouTube 收藏"
+          description="按主题整理的 YouTube / B 站 / 纪录片与延伸资料收藏。"
+          tocItems={tocItems}
+          footer={<p>这里收集值得回看的影像与资料，按主题归类，持续整理。</p>}
+        >
       <div className="space-y-8">
         <div className="border-l-2 border-[#c2c6b8] pl-4 text-sm italic leading-relaxed text-[#777] dark:border-gray-700 dark:text-gray-400">
           {EPIGRAPHS.map((line) => (
@@ -262,6 +267,8 @@ export default function YoutubeBookmarksPage() {
           </section>
         ))}
       </div>
-    </BookmarksTocLayout>
+        </BookmarksTocLayout>
+      </RanbiPaywall>
+    </>
   )
 }

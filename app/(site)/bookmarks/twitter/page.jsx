@@ -1,5 +1,7 @@
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ImageLightbox from '../../components/ImageLightbox'
+import RanbiPaywall from '../../components/RanbiPaywall'
 import TwitterBookmarksFilterClient from './TwitterBookmarksFilterClient'
 
 export const dynamic = 'force-static'
@@ -651,19 +653,22 @@ export default function TwitterBookmarksPage({ searchParams } = {}) {
   }))
 
   return (
-    <BookmarksTocLayout
-      title="推特收藏"
-      description="不为别的，只是为了更好的认识这个世界🌍"
-      tocItems={tocItems}
-      footer={<p>这里记录适合“收藏”的知识型推文/卡片，方便回看。</p>}
-    >
-      <TwitterBookmarksFilterClient
-        categories={allCategories}
-        formats={allFormats}
-        itemsMeta={itemsMeta}
-        initialSelectedCategories={initialSelectedCategories}
-        initialSelectedFormats={initialSelectedFormats}
-      />
+    <>
+      <ContentPvBeacon category="resource" slug="bookmarks-twitter" />
+      <RanbiPaywall resourceKey="resource:bookmarks-twitter" unitLabel="资源">
+        <BookmarksTocLayout
+          title="推特收藏"
+          description="不为别的，只是为了更好的认识这个世界🌍"
+          tocItems={tocItems}
+          footer={<p>这里记录适合“收藏”的知识型推文/卡片，方便回看。</p>}
+        >
+          <TwitterBookmarksFilterClient
+            categories={allCategories}
+            formats={allFormats}
+            itemsMeta={itemsMeta}
+            initialSelectedCategories={initialSelectedCategories}
+            initialSelectedFormats={initialSelectedFormats}
+          />
 
       <div className="space-y-10">
         {categoriesInView.map((category) => {
@@ -741,6 +746,8 @@ export default function TwitterBookmarksPage({ searchParams } = {}) {
           )
         })}
       </div>
-    </BookmarksTocLayout>
+        </BookmarksTocLayout>
+      </RanbiPaywall>
+    </>
   )
 }

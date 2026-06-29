@@ -4,8 +4,8 @@ import Link from 'next/link'
 export default function BookmarksTocLayout({
   title,
   description,
-  backHref = '/bookmarks',
-  backText = '返回收藏夹',
+  backHref = '/articles?tab=resources',
+  backText = '返回资源库',
   tocTitle = '目录',
   tocItems = [],
   children,

@@ -1,4 +1,6 @@
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
+import RanbiPaywall from '../../components/RanbiPaywall'
 
 export const dynamic = 'force-static'
 
@@ -139,12 +141,15 @@ const tocItems = resources.map((item, idx) => ({
 
 export default function DevResourcesPage() {
   return (
-    <BookmarksTocLayout
-      title="开发资源"
-      description="前端、后端、DevOps 等开发相关的优质资源与工具链。"
-      tocItems={tocItems}
-      footer={<p>这里会持续补充：优质文档、工具链与工程实践参考。</p>}
-    >
+    <>
+      <ContentPvBeacon category="resource" slug="bookmarks-dev-resources" />
+      <RanbiPaywall resourceKey="resource:bookmarks-dev-resources" unitLabel="资源">
+        <BookmarksTocLayout
+          title="开发资源"
+          description="前端、后端、DevOps 等开发相关的优质资源与工具链。"
+          tocItems={tocItems}
+          footer={<p>这里会持续补充：优质文档、工具链与工程实践参考。</p>}
+        >
       <div className="grid grid-cols-1 gap-4 sm:gap-6">
         {resources.map((item, idx) => (
           <section
@@ -226,6 +231,8 @@ export default function DevResourcesPage() {
           </section>
         ))}
       </div>
-    </BookmarksTocLayout>
+        </BookmarksTocLayout>
+      </RanbiPaywall>
+    </>
   )
 }

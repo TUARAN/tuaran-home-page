@@ -1,4 +1,6 @@
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
+import RanbiPaywall from '../../components/RanbiPaywall'
 
 export const dynamic = 'force-static'
 
@@ -450,12 +452,15 @@ export default function LLMTutorialsPage() {
   const total = tutorialGroups.reduce((sum, group) => sum + group.items.length, 0)
 
   return (
-    <BookmarksTocLayout
-      title="大模型教程"
-      description={`大语言模型（LLM）教程、官方文档与工程实践资源库。当前版本：${RESOURCE_VERSION}。`}
-      tocItems={tocItems}
-      footer={<p>当前收录 {total} 个入口。后续新增资源会继续按版本标记，避免资源库失去时间上下文。</p>}
-    >
+    <>
+      <ContentPvBeacon category="resource" slug="bookmarks-llm-tutorials" />
+      <RanbiPaywall resourceKey="resource:bookmarks-llm-tutorials" unitLabel="资源">
+        <BookmarksTocLayout
+          title="大模型教程"
+          description={`大语言模型（LLM）教程、官方文档与工程实践资源库。当前版本：${RESOURCE_VERSION}。`}
+          tocItems={tocItems}
+          footer={<p>当前收录 {total} 个入口。后续新增资源会继续按版本标记，避免资源库失去时间上下文。</p>}
+        >
       <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
         <span className="rounded-full border border-[#d1d3cb] bg-white/70 px-2 py-1 text-[#53554d] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">
           {RESOURCE_VERSION}
@@ -530,6 +535,8 @@ export default function LLMTutorialsPage() {
           </section>
         ))}
       </div>
-    </BookmarksTocLayout>
+        </BookmarksTocLayout>
+      </RanbiPaywall>
+    </>
   )
 }

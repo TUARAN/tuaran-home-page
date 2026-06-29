@@ -146,7 +146,7 @@ export default function AdminDashboardClient() {
         />
         <StatCard
           label="Ops 入口"
-          value={ops?.label || (loadingOps ? '检查中' : '—')}
+          value={ops?.label || '—'}
           sub={ops?.latencyMs != null ? `/admin/ops · ${ops.latencyMs}ms` : '/admin/ops'}
           icon="ops"
           tone={opsTone(ops?.status)}

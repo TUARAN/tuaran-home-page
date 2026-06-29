@@ -956,7 +956,7 @@
     display: flex;
     width: max-content;
     align-items: center;
-    animation: hot-ticker-marquee 22s linear infinite;
+    animation: hot-ticker-marquee 30s linear infinite;
   }
 
   .hot-ticker-group {
@@ -972,21 +972,9 @@
   }
 
   @media (min-width: 900px) {
-    .hot-ticker-track {
-      width: 100%;
-      justify-content: center;
-      animation: none;
-    }
-
     .hot-ticker-group {
-      flex: 0 1 auto;
-      justify-content: center;
       gap: clamp(1.5rem, 3vw, 3.5rem);
-      padding-right: 0;
-    }
-
-    .hot-ticker-group[aria-hidden='true'] {
-      display: none;
+      padding-right: clamp(1.5rem, 3vw, 3.5rem);
     }
   }
 
@@ -2139,7 +2127,7 @@
 /* ─── Hot Ticker Marquee ─── */
 @keyframes hot-ticker-marquee {
   0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  100% { transform: translateX(-25%); }
 }
 
 .hot-ticker-track:hover {

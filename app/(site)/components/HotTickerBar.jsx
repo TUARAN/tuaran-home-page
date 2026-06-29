@@ -48,6 +48,7 @@ function TickerItem({ item }) {
 }
 
 export default function HotTickerBar() {
+  const groups = Array.from({ length: 4 })
   return (
     <div
       className="hot-ticker-wrapper"
@@ -76,18 +77,15 @@ export default function HotTickerBar() {
             className="pointer-events-none absolute right-0 top-0 z-10 h-full w-[60px]"
             style={{ background: 'linear-gradient(270deg, #0a0e1a 0%, transparent 100%)' }}
           />
-          {/* 桌面完整展示；窄屏才启用 marquee，避免宽屏首屏出现半截文案。 */}
+          {/* 复制多组保证宽屏滚动时不露空；首帧从完整内容开始。 */}
           <div className="hot-ticker-track whitespace-nowrap">
-            <div className="hot-ticker-group">
-              {TICKER_ITEMS.map((item) => (
-                <TickerItem key={item.href} item={item} />
-              ))}
-            </div>
-            <div className="hot-ticker-group" aria-hidden="true">
-              {TICKER_ITEMS.map((item) => (
-                <TickerItem key={`${item.href}-loop`} item={item} />
-              ))}
-            </div>
+            {groups.map((_, groupIndex) => (
+              <div key={groupIndex} className="hot-ticker-group" aria-hidden={groupIndex > 0 ? 'true' : undefined}>
+                {TICKER_ITEMS.map((item) => (
+                  <TickerItem key={`${item.href}-${groupIndex}`} item={item} />
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       </div>

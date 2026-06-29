@@ -118,7 +118,7 @@ const SOCIAL_MEDIA_LINKS = [
     href: 'https://juejin.cn/user/1521379823340792',
     label: '掘金',
     labelEn: 'Juejin',
-    followers: '1.18w+',
+    followers: '1.2w+',
     reads: '300w+',
     priority: true,
     icon: IconBrandJuejin,

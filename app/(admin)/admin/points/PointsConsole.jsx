@@ -1,40 +1,21 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { IconRefresh, IconCoin, IconTrash } from '@tabler/icons-react'
+import { IconCoin, IconRefresh, IconTrash } from '@tabler/icons-react'
 
 import { USER_ROLE_LABELS, VALID_USER_ROLES } from '../../../../lib/userRoles'
 import { displayNameForUserId } from '../../../../lib/userDisplayName'
 import { AdminPage, Section, StatCard, DataTable, EmptyState, AdminButton } from '../../components/ui'
 
-/** 把 user_id 渲染成趣味昵称 + 来源 + 短 id（hover 看完整 id） */
-function UserIdCell({ userId, onPick }) {
+function UserIdCell({ userId }) {
   const u = displayNameForUserId(userId)
-  const canAdjust = isAdjustableAccountId(userId)
-  const inner = (
-    <>
+  return (
+    <span className="inline-flex items-center gap-1.5" title={u.full}>
       <span aria-hidden="true">{u.emoji}</span>
       <span className="font-medium text-[#33352c] dark:text-gray-200">{u.name}</span>
-      <span className="font-mono text-[10px] text-[#9a9c8f] dark:text-gray-500">{u.providerLabel} {u.short}</span>
-    </>
-  )
-  // 短 id 只是显示用；真正能操作的是完整 user_id。点一下把完整 id 填进调整框，避免手敲对不上。
-  if (onPick && canAdjust) {
-    return (
-      <button
-        type="button"
-        onClick={() => onPick(u.full)}
-        title={`点击填入调整框：${u.full}`}
-        className="group inline-flex items-center gap-1.5 text-left hover:opacity-80"
-      >
-        {inner}
-        <span className="font-mono text-[10px] text-[#caa86a] opacity-0 transition-opacity group-hover:opacity-100">填入↑</span>
-      </button>
-    )
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5" title={canAdjust ? u.full : `${u.full}（只允许查看记录，不支持后台调账）`}>
-      {inner}
+      <span className="font-mono text-[10px] text-[#9a9c8f] dark:text-gray-500">
+        {u.providerLabel} {u.short}
+      </span>
     </span>
   )
 }
@@ -44,6 +25,7 @@ function isAdjustableAccountId(userId) {
 }
 
 const REASON_LABELS = {
+  guest_seed: '游客初始',
   register: '注册',
   checkin: '签到',
   comment: '评论',
@@ -51,9 +33,14 @@ const REASON_LABELS = {
   admin: '手动',
 }
 
+const ROLE_LABELS = {
+  ...USER_ROLE_LABELS,
+  guest: '游客可解锁',
+}
+
 const TABS = [
-  { id: 'overview', label: '账户概览' },
   { id: 'settings', label: '门槛与调整' },
+  { id: 'ledger', label: '账户流水查询' },
 ]
 
 function formatTime(ts) {
@@ -71,9 +58,9 @@ function formatTime(ts) {
   }
 }
 
-function timeValue(ts) {
-  const value = new Date(ts || 0).getTime()
-  return Number.isFinite(value) ? value : 0
+function toValue(value, fallback) {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
 }
 
 const inputCls =
@@ -85,41 +72,25 @@ export default function PointsConsole() {
   const [rules, setRules] = useState(null)
   const [resources, setResources] = useState([])
   const [summary, setSummary] = useState(null)
-  const [accounts, setAccounts] = useState([])
-  const [ledger, setLedger] = useState([])
-  const [selectedAccountId, setSelectedAccountId] = useState('')
   const [accountDetail, setAccountDetail] = useState(null)
   const [accountLedger, setAccountLedger] = useState([])
   const [detailStatus, setDetailStatus] = useState('idle')
   const [busy, setBusy] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('settings')
 
-  // 账户搜索与近期变动筛选 / 排序
-  const [ledgerQuery, setLedgerQuery] = useState('')
-  const [ledgerReason, setLedgerReason] = useState('all')
-  const [ledgerDelta, setLedgerDelta] = useState('all')
-  const [ledgerSort, setLedgerSort] = useState('timeDesc')
-
-  // 资源门槛表单
   const [resKey, setResKey] = useState('')
   const [resCost, setResCost] = useState('10')
   const [resRole, setResRole] = useState('member')
 
-  // 手动调整表单
   const [adjUser, setAdjUser] = useState('')
   const [adjDelta, setAdjDelta] = useState('')
   const [adjNote, setAdjNote] = useState('')
   const adjUserRef = useRef(null)
+  const adjustSectionRef = useRef(null)
 
-  // 从账户或近期变动里点某个用户 → 把完整 user_id 填进调整框并聚焦。
-  const pickUser = useCallback((userId) => {
-    setAdjUser(userId)
-    setMessage(`已填入 user_id：${userId}`)
-    requestAnimationFrame(() => {
-      adjUserRef.current?.focus()
-      adjUserRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    })
-  }, [])
+  const [historyUser, setHistoryUser] = useState('')
+  const historyUserRef = useRef(null)
+  const initialParamsApplied = useRef(false)
 
   const refresh = useCallback(async () => {
     setStatus('loading')
@@ -131,8 +102,6 @@ export default function PointsConsole() {
         setRules(data.rules || null)
         setResources(Array.isArray(data.resources) ? data.resources : [])
         setSummary(data.summary || null)
-        setAccounts(Array.isArray(data.accounts) ? data.accounts : [])
-        setLedger(Array.isArray(data.recentLedger) ? data.recentLedger : [])
         setStatus('ok')
       } else {
         setRules(data?.rules || null)
@@ -145,9 +114,62 @@ export default function PointsConsole() {
     }
   }, [])
 
+  const loadAccountHistory = useCallback(async (userId) => {
+    const id = String(userId || '').trim()
+    if (!id) return
+    if (id.startsWith('guest:')) {
+      setMessage('已绑定游客身份只作为历史记录保留。登录用户流水请查询 github: / google: / email: 账号。')
+      return
+    }
+    setHistoryUser(id)
+    setDetailStatus('loading')
+    setMessage('')
+    try {
+      const res = await fetch(`/api/admin/points?userId=${encodeURIComponent(id)}`, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || data?.status !== 'ok') {
+        throw new Error(data?.message || data?.error || `HTTP ${res.status}`)
+      }
+      setRules(data.rules || null)
+      setResources(Array.isArray(data.resources) ? data.resources : [])
+      setSummary(data.summary || null)
+      setAccountDetail(data.accountDetail || null)
+      setAccountLedger(Array.isArray(data.accountLedger) ? data.accountLedger : [])
+      setDetailStatus('ok')
+    } catch (error) {
+      setDetailStatus('error')
+      setMessage(String(error?.message || error))
+    }
+  }, [])
+
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    if (initialParamsApplied.current) return
+    initialParamsApplied.current = true
+    const params = new URLSearchParams(window.location.search)
+    const userId = String(params.get('userId') || '').trim()
+    const view = String(params.get('view') || '')
+    if (view === 'ledger') {
+      setActiveTab('ledger')
+      if (userId) loadAccountHistory(userId)
+      requestAnimationFrame(() => historyUserRef.current?.focus())
+      return
+    }
+    if (view === 'adjust') {
+      setActiveTab('settings')
+      if (userId) setAdjUser(userId)
+      requestAnimationFrame(() => {
+        adjUserRef.current?.focus()
+        adjustSectionRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      })
+    }
+  }, [loadAccountHistory])
 
   async function post(payload, okMsg) {
     setBusy(true)
@@ -174,35 +196,6 @@ export default function PointsConsole() {
     }
   }
 
-  async function loadAccountHistory(userId) {
-    const id = String(userId || '').trim()
-    if (!id) return
-    setSelectedAccountId(id)
-    setDetailStatus('loading')
-    setMessage('')
-    try {
-      const res = await fetch(`/api/admin/points?userId=${encodeURIComponent(id)}`, {
-        cache: 'no-store',
-        credentials: 'same-origin',
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok || data?.status !== 'ok') {
-        throw new Error(data?.message || data?.error || `HTTP ${res.status}`)
-      }
-      setRules(data.rules || null)
-      setResources(Array.isArray(data.resources) ? data.resources : [])
-      setSummary(data.summary || null)
-      setAccounts(Array.isArray(data.accounts) ? data.accounts : [])
-      setLedger(Array.isArray(data.recentLedger) ? data.recentLedger : [])
-      setAccountDetail(data.accountDetail || null)
-      setAccountLedger(Array.isArray(data.accountLedger) ? data.accountLedger : [])
-      setDetailStatus('ok')
-    } catch (error) {
-      setDetailStatus('error')
-      setMessage(String(error?.message || error))
-    }
-  }
-
   async function saveResource(e) {
     e.preventDefault()
     if (!resKey.trim()) return
@@ -219,21 +212,28 @@ export default function PointsConsole() {
 
   async function adjust(e) {
     e.preventDefault()
-    if (!adjUser.trim() || !adjDelta) return
     const id = adjUser.trim()
+    if (!id || !adjDelta) return
     if (!isAdjustableAccountId(id)) {
-      setMessage('user_id 需带登录前缀（github: / google: / email:）。点上方账户行的「调整」会自动填入完整 id，别手敲短码。')
+      setMessage('user_id 需带登录前缀（github: / google: / email:）。游客身份绑定后不再后台手动调账。')
       return
     }
     const ok = await post(
-      { action: 'adjust', userId: adjUser.trim(), delta: Number(adjDelta), note: adjNote.trim() },
+      { action: 'adjust', userId: id, delta: Number(adjDelta), note: adjNote.trim() },
       '燃币已调整'
     )
     if (ok) {
       setAdjDelta('')
       setAdjNote('')
-      if (selectedAccountId === adjUser.trim()) await loadAccountHistory(selectedAccountId)
+      if (historyUser === id) await loadAccountHistory(id)
     }
+  }
+
+  async function queryHistory(e) {
+    e.preventDefault()
+    const id = historyUser.trim()
+    if (!id) return
+    await loadAccountHistory(id)
   }
 
   async function reverseEntry(row) {
@@ -241,63 +241,28 @@ export default function PointsConsole() {
     const sign = row.delta >= 0 ? '+' : ''
     if (!window.confirm(`撤销这笔「${sign}${row.delta}」变动？会给该用户补一笔反向变动来抵消（账本只增不改）。`)) return
     const ok = await post({ action: 'reverse', ledgerId: row.id }, '已撤销该笔变动')
-    if (ok && selectedAccountId) await loadAccountHistory(selectedAccountId)
+    if (ok && historyUser) await loadAccountHistory(historyUser)
   }
 
-  const filteredLedger = useMemo(() => {
-    const q = ledgerQuery.trim().toLowerCase()
-    const rows = ledger.filter((row) => {
-      if (ledgerReason !== 'all' && row.reason !== ledgerReason) return false
-      if (ledgerDelta === 'earn' && Number(row.delta) <= 0) return false
-      if (ledgerDelta === 'spend' && Number(row.delta) >= 0) return false
-      if (q) {
-        const user = displayNameForUserId(row.user_id)
-        const haystack = [
-          row.user_id,
-          user.name,
-          user.providerLabel,
-          user.short,
-          row.reason,
-          REASON_LABELS[row.reason],
-          row.ref,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-        if (!haystack.includes(q)) return false
-      }
-      return true
-    })
-
-    return [...rows].sort((a, b) => {
-      if (ledgerSort === 'balanceDesc') {
-        return Number(b.user_balance || 0) - Number(a.user_balance || 0) || timeValue(b.created_at) - timeValue(a.created_at)
-      }
-      if (ledgerSort === 'balanceAsc') {
-        return Number(a.user_balance || 0) - Number(b.user_balance || 0) || timeValue(b.created_at) - timeValue(a.created_at)
-      }
-      if (ledgerSort === 'deltaDesc') {
-        return Number(b.delta || 0) - Number(a.delta || 0) || timeValue(b.created_at) - timeValue(a.created_at)
-      }
-      if (ledgerSort === 'deltaAsc') {
-        return Number(a.delta || 0) - Number(b.delta || 0) || timeValue(b.created_at) - timeValue(a.created_at)
-      }
-      return timeValue(b.created_at) - timeValue(a.created_at)
-    })
-  }, [ledger, ledgerDelta, ledgerQuery, ledgerReason, ledgerSort])
-
-  const filteredAccounts = useMemo(() => {
-    const q = ledgerQuery.trim().toLowerCase()
-    if (!q) return accounts
-    return accounts.filter((row) => {
-      const user = displayNameForUserId(row.user_id)
-      return [row.user_id, user.name, user.providerLabel, user.short]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(q)
-    })
-  }, [accounts, ledgerQuery])
+  const defaultResourceRows = useMemo(
+    () => [
+      {
+        key: 'research:*',
+        label: '调研文章默认门槛',
+        cost: toValue(rules?.researchDefaultCost, 5),
+        minRole: 'guest',
+        note: '未单独配置的 research: 资源按这个价格解锁。',
+      },
+      {
+        key: 'resource:*',
+        label: '资料页默认门槛',
+        cost: toValue(rules?.resourceDefaultCost, 10),
+        minRole: 'guest',
+        note: '未单独配置的 resource: 资源按这个价格解锁。',
+      },
+    ],
+    [rules]
+  )
 
   const actions = (
     <AdminButton variant="default" onClick={refresh} disabled={busy}>
@@ -308,7 +273,7 @@ export default function PointsConsole() {
   return (
     <AdminPage
       title="燃币管理"
-      description="面向登录账户的燃币控制台：看余额、发放与扣减概况，配置资源门槛，并对指定账户做手动调整。游客燃币活动归入游客管理。"
+      description="集中管理燃币规则、资源门槛和人工调账。流水只在查询具体登录账户时显示。"
       actions={actions}
     >
       {status === 'unavailable' || status === 'error' ? (
@@ -319,10 +284,14 @@ export default function PointsConsole() {
 
       {rules ? (
         <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="游客初始" value={`+${rules.guestSeed}`} />
           <StatCard label="注册奖励" value={`+${rules.register}`} />
           <StatCard label="每日签到" value={`+${rules.checkin}`} />
           <StatCard label="有效评论" value={`+${rules.comment}`} />
           <StatCard label="评论每日上限" value={`+${rules.commentDailyCap}`} />
+          <StatCard label="调研默认价" value={rules.researchDefaultCost} />
+          <StatCard label="资源默认价" value={rules.resourceDefaultCost} />
+          <StatCard label="登录账户余额" value={summary?.totalBalance ?? 0} />
         </div>
       ) : null}
 
@@ -346,241 +315,33 @@ export default function PointsConsole() {
         })}
       </div>
 
-      {activeTab === 'overview' ? (
+      {activeTab === 'settings' ? (
         <>
-          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="燃币账户" value={summary?.accountCount ?? accounts.length} icon="users" />
-            <StatCard label="当前总余额" value={summary?.totalBalance ?? 0} />
-            <StatCard label="累计发放" value={`+${summary?.issuedPoints ?? 0}`} tone="success" />
-            <StatCard label="累计扣减" value={`-${summary?.spentPoints ?? 0}`} tone="danger" />
-          </div>
-
           <Section
-            title="燃币账户"
-            description="只展示非 guest:* 余额。GitHub / Google / 邮箱登录账户可后台调整；匿名裸 ID 只允许查记录，不允许调账。"
-            actions={
-              <input
-                className={`${inputCls} w-64`}
-                value={ledgerQuery}
-                onChange={(e) => setLedgerQuery(e.target.value)}
-                placeholder="搜索用户 / provider / ID"
-              />
-            }
+            title="默认门槛"
+            description="这些是代码里的默认规则：资源没有显式配置时会自动回退到这里，不需要逐条登记。"
             className="mb-5"
           >
-            {accounts.length ? (
-              filteredAccounts.length ? (
-                <DataTable
-                  columns={[
-                    { key: 'user_id', header: '账户', render: (row) => <UserIdCell userId={row.user_id} onPick={pickUser} /> },
-                    { key: 'balance', header: '余额', align: 'right', render: (row) => Number(row.balance || 0) },
-                    { key: 'ledger_count', header: '变动次数', align: 'right', render: (row) => Number(row.ledger_count || 0) },
-                    { key: 'last_ledger_at', header: '最近变动', render: (row) => formatTime(row.last_ledger_at || row.updated_at) },
-                    {
-                      key: 'op',
-                      header: '操作',
-                      render: (row) => {
-                        const canAdjust = isAdjustableAccountId(row.user_id)
-                        return (
-                          <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => loadAccountHistory(row.user_id)}
-                            className="rounded-md border border-[#c9d4e5] px-2 py-1 text-[11px] text-blue-700 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
-                          >
-                            记录
-                          </button>
-                          {canAdjust ? (
-                            <button
-                              type="button"
-                              onClick={() => pickUser(row.user_id)}
-                              className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
-                            >
-                              调整
-                            </button>
-                          ) : null}
-                        </div>
-                        )
-                      },
-                    },
-                  ]}
-                  rows={filteredAccounts}
-                  rowKey={(row) => row.user_id}
-                />
-              ) : (
-                <EmptyState icon={IconCoin} title="没有匹配的账户" description="换一个关键词试试。" />
-              )
-            ) : (
-              <EmptyState icon={IconCoin} title="暂无登录账户燃币数据" description="用户获得或消费燃币后会出现在这里。" />
-            )}
+            <DataTable
+              columns={[
+                { key: 'label', header: '默认项' },
+                { key: 'key', header: '匹配范围', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
+                { key: 'cost', header: '燃币价格', align: 'right' },
+                {
+                  key: 'minRole',
+                  header: '最低角色',
+                  render: (row) => ROLE_LABELS[row.minRole] || row.minRole,
+                },
+                { key: 'note', header: '说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
+              ]}
+              rows={defaultResourceRows}
+              rowKey={(row) => row.key}
+            />
           </Section>
 
-          {selectedAccountId ? (
-            <Section
-              title="账户记录"
-              description={`当前查看：${selectedAccountId}。这里展示该账户自己的完整燃币变动，不受全站最近 50 条限制。`}
-              actions={
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedAccountId('')
-                    setAccountDetail(null)
-                    setAccountLedger([])
-                    setDetailStatus('idle')
-                  }}
-                  className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
-                >
-                  关闭
-                </button>
-              }
-              className="mb-5"
-            >
-              {detailStatus === 'loading' ? (
-                <EmptyState icon={IconCoin} title="正在读取账户记录…" />
-              ) : detailStatus === 'error' ? (
-                <p className="text-sm text-rose-600 dark:text-rose-400">{message || '账户记录读取失败'}</p>
-              ) : (
-                <>
-                  <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <StatCard label="当前余额" value={accountDetail?.balance ?? 0} />
-                    <StatCard label="记录数" value={accountDetail?.ledgerCount ?? accountLedger.length} />
-                    <StatCard label="累计获得" value={`+${accountDetail?.earnedPoints ?? 0}`} tone="success" />
-                    <StatCard label="累计消费" value={`-${accountDetail?.spentPoints ?? 0}`} tone="danger" />
-                  </div>
-
-                  {accountLedger.length ? (
-                    <DataTable
-                      columns={[
-                        { key: 'created_at', header: '时间', render: (row) => formatTime(row.created_at) },
-                        {
-                          key: 'delta',
-                          header: '增减',
-                          render: (row) => (
-                            <span className={row.delta >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
-                              {row.delta >= 0 ? `+${row.delta}` : row.delta}
-                            </span>
-                          ),
-                        },
-                        { key: 'reason', header: '原因', render: (row) => REASON_LABELS[row.reason] || row.reason },
-                        { key: 'ref', header: 'ref' },
-                        {
-                          key: 'op',
-                          header: '操作',
-                          render: (row) => (
-                            <button
-                              type="button"
-                              onClick={() => reverseEntry(row)}
-                              disabled={busy || String(row.ref || '').startsWith('reverse:')}
-                              title="给该用户补一笔反向变动，抵消这笔"
-                              className="rounded-md border border-[#d8b4b4] px-2 py-0.5 text-[11px] text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/30"
-                            >
-                              撤销
-                            </button>
-                          ),
-                        },
-                      ]}
-                      rows={accountLedger}
-                      rowKey={(row) => row.id}
-                    />
-                  ) : (
-                    <EmptyState icon={IconCoin} title="这个账户还没有燃币记录" />
-                  )}
-                </>
-              )}
-            </Section>
-          ) : null}
-
           <Section
-            title="近期变动"
-            description="登录账户最近 50 条燃币变动，用于核对发放、消费和手动调整；游客变动已从这里排除。"
-          >
-            <div className="mb-4 grid gap-2 md:grid-cols-[140px_140px_180px]">
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                原因
-                <select className={inputCls} value={ledgerReason} onChange={(e) => setLedgerReason(e.target.value)}>
-                  <option value="all">全部原因</option>
-                  {Object.entries(REASON_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                增减
-                <select className={inputCls} value={ledgerDelta} onChange={(e) => setLedgerDelta(e.target.value)}>
-                  <option value="all">全部</option>
-                  <option value="earn">只看增加</option>
-                  <option value="spend">只看扣减</option>
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                排序
-                <select className={inputCls} value={ledgerSort} onChange={(e) => setLedgerSort(e.target.value)}>
-                  <option value="timeDesc">最新优先</option>
-                  <option value="balanceDesc">用户余额高到低</option>
-                  <option value="balanceAsc">用户余额低到高</option>
-                  <option value="deltaDesc">单笔增减高到低</option>
-                  <option value="deltaAsc">单笔增减低到高</option>
-                </select>
-              </label>
-            </div>
-
-            {ledger.length ? (
-              filteredLedger.length ? (
-                <DataTable
-                  columns={[
-                    { key: 'created_at', header: '时间', render: (row) => formatTime(row.created_at) },
-                    { key: 'user_id', header: '账户', render: (row) => <UserIdCell userId={row.user_id} onPick={pickUser} /> },
-                    {
-                      key: 'user_balance',
-                      header: '余额',
-                      align: 'right',
-                      render: (row) => `${Number(row.user_balance || 0)}`,
-                    },
-                    {
-                      key: 'delta',
-                      header: '增减',
-                      render: (row) => (
-                        <span className={row.delta >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
-                          {row.delta >= 0 ? `+${row.delta}` : row.delta}
-                        </span>
-                      ),
-                    },
-                    { key: 'reason', header: '原因', render: (row) => REASON_LABELS[row.reason] || row.reason },
-                    { key: 'ref', header: 'ref' },
-                    {
-                      key: 'op',
-                      header: '操作',
-                      render: (row) => (
-                        <button
-                          type="button"
-                          onClick={() => reverseEntry(row)}
-                          disabled={busy || String(row.ref || '').startsWith('reverse:')}
-                          title="给该用户补一笔反向变动，抵消这笔"
-                          className="rounded-md border border-[#d8b4b4] px-2 py-0.5 text-[11px] text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/30"
-                        >
-                          撤销
-                        </button>
-                      ),
-                    },
-                  ]}
-                  rows={filteredLedger}
-                  rowKey={(row) => row.id}
-                />
-              ) : (
-                <EmptyState icon={IconCoin} title="没有匹配的变动" description="换一个筛选条件试试。" />
-              )
-            ) : (
-              <EmptyState icon={IconCoin} title="暂无登录账户变动" />
-            )}
-          </Section>
-        </>
-      ) : (
-        <>
-          <Section
-            title="资源门槛设置"
-            description="resource_key 为资源标识（如文章 slug 或 download:xxx）；解锁一次后该用户永久可读，不再扣燃币。"
+            title="资源门槛覆盖"
+            description="只在需要改写默认价格或最低角色时添加显式配置；解锁一次后该用户永久可读。"
             className="mb-5"
           >
             <form onSubmit={saveResource} className="mb-4 flex flex-wrap items-end gap-2">
@@ -590,7 +351,7 @@ export default function PointsConsole() {
                   className={`${inputCls} w-64`}
                   value={resKey}
                   onChange={(e) => setResKey(e.target.value)}
-                  placeholder="如 research/topics/xxx"
+                  placeholder="如 research:topics:xxx"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
@@ -621,12 +382,12 @@ export default function PointsConsole() {
             {resources.length ? (
               <DataTable
                 columns={[
-                  { key: 'resource_key', header: 'resource_key' },
-                  { key: 'cost_points', header: '燃币价格', render: (row) => `${row.cost_points}` },
+                  { key: 'resource_key', header: 'resource_key', tdClassName: 'font-mono text-xs' },
+                  { key: 'cost_points', header: '燃币价格', align: 'right', render: (row) => `${row.cost_points}` },
                   {
                     key: 'min_role',
                     header: '最低角色',
-                    render: (row) => USER_ROLE_LABELS[row.min_role] || row.min_role,
+                    render: (row) => ROLE_LABELS[row.min_role] || row.min_role,
                   },
                   { key: 'created_at', header: '创建时间', render: (row) => formatTime(row.created_at) },
                   {
@@ -643,36 +404,146 @@ export default function PointsConsole() {
                 rowKey={(row) => row.resource_key}
               />
             ) : (
-              <EmptyState icon={IconCoin} title="还没有配置任何门槛资源" description="在上方表单添加第一个。" />
+              <EmptyState icon={IconCoin} title="暂无显式门槛覆盖" description="没有配置时会使用上方默认项。" />
             )}
           </Section>
 
-          <Section
-            title="手动增减燃币"
-            description="仅支持登录用户 user_id（如 github:123 / google:abc / email:xxx）；游客燃币活动归游客管理观察，不在后台手动增减。"
-          >
-            <form onSubmit={adjust} className="flex flex-wrap items-end gap-2">
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                user_id
-                <input ref={adjUserRef} className={`${inputCls} w-72`} value={adjUser} onChange={(e) => setAdjUser(e.target.value)} placeholder="点账户或近期变动自动填入" />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                增减（可负）
-                <input type="number" className={`${inputCls} w-28`} value={adjDelta} onChange={(e) => setAdjDelta(e.target.value)} placeholder="+10 / -5" />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                备注
-                <input className={`${inputCls} w-48`} value={adjNote} onChange={(e) => setAdjNote(e.target.value)} placeholder="可选" />
-              </label>
-              <AdminButton type="submit" variant="primary" disabled={busy || !adjUser.trim() || !adjDelta}>
-                调整
-              </AdminButton>
-            </form>
-          </Section>
+          <div ref={adjustSectionRef}>
+            <Section
+              title="手动增减燃币"
+              description="仅支持登录用户 user_id（github: / google: / email:）。用户管理页的「调整燃币」会直接跳到这里。"
+            >
+              <form onSubmit={adjust} className="flex flex-wrap items-end gap-2">
+                <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
+                  user_id
+                  <input
+                    ref={adjUserRef}
+                    className={`${inputCls} w-72`}
+                    value={adjUser}
+                    onChange={(e) => setAdjUser(e.target.value)}
+                    placeholder="github:123 / google:abc / email:x"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
+                  增减（可负）
+                  <input
+                    type="number"
+                    className={`${inputCls} w-28`}
+                    value={adjDelta}
+                    onChange={(e) => setAdjDelta(e.target.value)}
+                    placeholder="+10 / -5"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
+                  备注
+                  <input className={`${inputCls} w-48`} value={adjNote} onChange={(e) => setAdjNote(e.target.value)} placeholder="可选" />
+                </label>
+                <AdminButton type="submit" variant="primary" disabled={busy || !adjUser.trim() || !adjDelta}>
+                  调整
+                </AdminButton>
+              </form>
+            </Section>
+          </div>
         </>
+      ) : (
+        <Section
+          title="账户流水查询"
+          description="这里只查具体登录账户的燃币流水；不再默认展示全站流水。"
+        >
+          <form onSubmit={queryHistory} className="mb-5 flex flex-wrap items-end gap-2">
+            <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
+              user_id
+              <input
+                ref={historyUserRef}
+                className={`${inputCls} w-72`}
+                value={historyUser}
+                onChange={(e) => setHistoryUser(e.target.value)}
+                placeholder="从用户管理跳转，或手动输入完整 user_id"
+              />
+            </label>
+            <AdminButton type="submit" variant="primary" disabled={busy || !historyUser.trim()}>
+              查询流水
+            </AdminButton>
+            {isAdjustableAccountId(historyUser) ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAdjUser(historyUser.trim())
+                  setActiveTab('settings')
+                  requestAnimationFrame(() => {
+                    adjUserRef.current?.focus()
+                    adjustSectionRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+                  })
+                }}
+                className="h-9 rounded-lg border border-[#d8dad0] px-3 text-sm text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
+              >
+                去调整
+              </button>
+            ) : null}
+          </form>
+
+          {detailStatus === 'idle' ? (
+            <EmptyState icon={IconCoin} title="先选择一个登录账户" description="用户管理页的「查流水」会自动带入 user_id。" />
+          ) : detailStatus === 'loading' ? (
+            <EmptyState icon={IconCoin} title="正在读取账户流水…" />
+          ) : detailStatus === 'error' ? (
+            <p className="text-sm text-rose-600 dark:text-rose-400">{message || '账户流水读取失败'}</p>
+          ) : (
+            <>
+              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatCard label="当前余额" value={accountDetail?.balance ?? 0} />
+                <StatCard label="记录数" value={accountDetail?.ledgerCount ?? accountLedger.length} />
+                <StatCard label="累计获得" value={`+${accountDetail?.earnedPoints ?? 0}`} tone="success" />
+                <StatCard label="累计消费" value={`-${accountDetail?.spentPoints ?? 0}`} tone="danger" />
+              </div>
+
+              <div className="mb-3 text-xs text-[#67695d] dark:text-gray-400">
+                当前账户：<UserIdCell userId={accountDetail?.user_id || historyUser} />
+              </div>
+
+              {accountLedger.length ? (
+                <DataTable
+                  columns={[
+                    { key: 'created_at', header: '时间', render: (row) => formatTime(row.created_at) },
+                    {
+                      key: 'delta',
+                      header: '增减',
+                      render: (row) => (
+                        <span className={row.delta >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                          {row.delta >= 0 ? `+${row.delta}` : row.delta}
+                        </span>
+                      ),
+                    },
+                    { key: 'reason', header: '原因', render: (row) => REASON_LABELS[row.reason] || row.reason },
+                    { key: 'ref', header: 'ref', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
+                    {
+                      key: 'op',
+                      header: '操作',
+                      render: (row) => (
+                        <button
+                          type="button"
+                          onClick={() => reverseEntry(row)}
+                          disabled={busy || String(row.ref || '').startsWith('reverse:')}
+                          title="给该用户补一笔反向变动，抵消这笔"
+                          className="rounded-md border border-[#d8b4b4] px-2 py-0.5 text-[11px] text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                        >
+                          撤销
+                        </button>
+                      ),
+                    },
+                  ]}
+                  rows={accountLedger}
+                  rowKey={(row) => row.id}
+                />
+              ) : (
+                <EmptyState icon={IconCoin} title="这个账户还没有燃币流水" />
+              )}
+            </>
+          )}
+        </Section>
       )}
 
-      {message ? <p className="mt-4 text-xs text-[#67695d] dark:text-gray-400">{message}</p> : null}
+      {message && detailStatus !== 'error' ? <p className="mt-4 text-xs text-[#67695d] dark:text-gray-400">{message}</p> : null}
     </AdminPage>
   )
 }

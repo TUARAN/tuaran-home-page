@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { IconRefresh } from '@tabler/icons-react'
 
 import { USER_ROLE_LABELS, VALID_USER_ROLES } from '../../../../lib/userRoles'
@@ -35,6 +36,7 @@ function formatTime(ts) {
 }
 
 export default function UsersConsole() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('users')
   const [users, setUsers] = useState([])
   const [status, setStatus] = useState('loading')
@@ -44,18 +46,13 @@ export default function UsersConsole() {
   const [drafts, setDrafts] = useState({})
   const [savingId, setSavingId] = useState('')
   const [rowError, setRowError] = useState({ id: '', text: '' })
-  const [ptsAdjustUser, setPtsAdjustUser] = useState('')
-  const [ptsAdjustDelta, setPtsAdjustDelta] = useState('')
-  const [ptsAdjustNote, setPtsAdjustNote] = useState('')
-  const [ptsBusy, setPtsBusy] = useState(false)
-  const [ptsMessage, setPtsMessage] = useState('')
 
   const [guests, setGuests] = useState([])
   const [guestStats, setGuestStats] = useState(null)
   const [guestStatus, setGuestStatus] = useState('idle')
   const [guestMessage, setGuestMessage] = useState('')
   const [guestQuery, setGuestQuery] = useState('')
-  const [guestFilter, setGuestFilter] = useState('all')
+  const [guestFilter, setGuestFilter] = useState('active')
 
   const refresh = useCallback(async () => {
     setStatus('loading')
@@ -197,38 +194,6 @@ export default function UsersConsole() {
     }
   }
 
-  async function adjustUserPoints(e) {
-    e.preventDefault()
-    if (!ptsAdjustUser.trim() || !ptsAdjustDelta) return
-    setPtsBusy(true)
-    setPtsMessage('')
-    try {
-      const res = await fetch('/api/admin/points', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          action: 'adjust',
-          userId: ptsAdjustUser.trim(),
-          delta: Number(ptsAdjustDelta),
-          note: ptsAdjustNote.trim(),
-        }),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok || data?.ok === false) {
-        throw new Error(data?.error || `HTTP_${res.status}`)
-      }
-      setPtsMessage(`已调整，最新余额 ${data?.balance ?? '—'}`)
-      setPtsAdjustDelta('')
-      setPtsAdjustNote('')
-      await refresh()
-    } catch (error) {
-      setPtsMessage(String(error?.message || error))
-    } finally {
-      setPtsBusy(false)
-    }
-  }
-
   async function copyGuestId(userId) {
     try {
       await navigator.clipboard.writeText(userId)
@@ -247,6 +212,10 @@ export default function UsersConsole() {
         ? 'bg-[#15140f] text-white dark:bg-gray-100 dark:text-[#111827]'
         : 'border border-[#d8dad0] bg-white text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:bg-[#0d1218] dark:text-gray-300'
     }`
+
+  function goToPoints(userId, view) {
+    router.push(`/admin/points?userId=${encodeURIComponent(userId)}&view=${view}`)
+  }
 
   const columns = [
     {
@@ -362,13 +331,17 @@ export default function UsersConsole() {
           </AdminButton>
           <button
             type="button"
-            onClick={() => {
-              setPtsAdjustUser(user.id)
-              setPtsMessage(`已填入：${user.name || user.login || user.id}`)
-            }}
+            onClick={() => goToPoints(user.id, 'ledger')}
+            className="rounded-md border border-[#c9d4e5] px-2 py-1 text-[11px] text-blue-700 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
+          >
+            查流水
+          </button>
+          <button
+            type="button"
+            onClick={() => goToPoints(user.id, 'adjust')}
             className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
           >
-            燃币
+            调整燃币
           </button>
           {rowError.id === user.id ? (
             <span className="text-[11px] text-rose-600 dark:text-rose-400">{rowError.text}</span>
@@ -410,7 +383,7 @@ export default function UsersConsole() {
       render: (guest) =>
         guest.boundUserId ? (
           <span className="inline-block max-w-full truncate rounded-full bg-[#eef1f6] px-2 py-1 text-xs text-[#475467] dark:bg-gray-800 dark:text-gray-300" title={guest.boundUserId}>
-            已绑定 {displayNameForUserId(guest.boundUserId).short}
+            历史身份 -&gt; {displayNameForUserId(guest.boundUserId).short}
           </span>
         ) : (
           <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
@@ -477,7 +450,7 @@ export default function UsersConsole() {
     <AdminPage
       title="用户管理"
       maxWidth="1180px"
-      description="管理登录用户与游客目录。登录用户可维护角色、备注与燃币；游客按 guest:<gid> 聚合身份、解锁、评论和绑定状态。"
+      description="管理登录用户、角色与游客身份。燃币流水和调账统一跳转到燃币管理，登录后的游客身份只作为历史绑定记录保留。"
       actions={
         <AdminButton onClick={refreshActive} disabled={activeLoading}>
           <IconRefresh size={16} aria-hidden="true" />
@@ -510,47 +483,6 @@ export default function UsersConsole() {
             <StatCard label="站长（env）" value={stats.owner} />
             <StatCard label="燃币总余额" value={stats.totalBalance} />
           </div>
-
-          <Section
-            title="登录用户燃币调整"
-            description="点击用户行「燃币」按钮把其 user_id 填入下方；调整会写入燃币变动（reason=admin），不直接改余额。"
-            className="mb-5"
-          >
-            <form onSubmit={adjustUserPoints} className="flex flex-wrap items-end gap-2">
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                user_id
-                <input
-                  className={`${inputCls} h-9 w-72 text-sm`}
-                  value={ptsAdjustUser}
-                  onChange={(event) => setPtsAdjustUser(event.target.value)}
-                  placeholder="点用户行「燃币」按钮填入"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                增减（可负）
-                <input
-                  type="number"
-                  className={`${inputCls} h-9 w-28 text-sm`}
-                  value={ptsAdjustDelta}
-                  onChange={(event) => setPtsAdjustDelta(event.target.value)}
-                  placeholder="+10 / -5"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                备注
-                <input
-                  className={`${inputCls} h-9 w-48 text-sm`}
-                  value={ptsAdjustNote}
-                  onChange={(event) => setPtsAdjustNote(event.target.value)}
-                  placeholder="可选"
-                />
-              </label>
-              <AdminButton type="submit" variant="primary" disabled={ptsBusy || !ptsAdjustUser.trim() || !ptsAdjustDelta}>
-                {ptsBusy ? '调整中…' : '调整'}
-              </AdminButton>
-            </form>
-            {ptsMessage ? <p className="mt-3 text-xs text-[#67695d] dark:text-gray-400">{ptsMessage}</p> : null}
-          </Section>
 
           <Section
             title="用户目录"
@@ -632,7 +564,7 @@ export default function UsersConsole() {
             <StatCard label="游客总数" value={guestStats?.total ?? guests.length} icon="users" />
             <StatCard label="未绑定" value={guestStats?.active ?? 0} tone="success" />
             <StatCard label="已绑定" value={guestStats?.bound ?? 0} />
-            <StatCard label="游客总余额" value={guestStats?.totalBalance ?? 0} />
+            <StatCard label="历史游客余额" value={guestStats?.totalBalance ?? 0} />
             <StatCard label="累计解锁" value={guestStats?.unlocks ?? 0} />
             <StatCard label="解锁燃币" value={guestStats?.totalSpent ?? 0} tone="danger" />
           </div>
@@ -650,8 +582,8 @@ export default function UsersConsole() {
                 />
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    ['all', '全部'],
                     ['active', '未绑定'],
+                    ['all', '全部'],
                     ['bound', '已绑定'],
                   ].map(([value, label]) => (
                     <button

@@ -25,7 +25,6 @@ const UI_STORAGE_KEY = 'site-ui-mode'
 const READING_PALETTE_KEY = 'reading-palette'
 const UI_MODES = [
   { id: 'polished', label: '潮流', labelEn: 'Modern', desc: '横幅视觉、重点入口、随机推荐', descEn: 'Hero visual, key entries, random picks' },
-  { id: 'classic', label: '经典', labelEn: 'Classic', desc: '原首页布局、推荐阅读、个人侧栏', descEn: 'Original layout, picks & profile sidebar' },
 ]
 
 function findPresetByHex(hex) {
@@ -39,15 +38,17 @@ export default function SettingsButton() {
   const [open, setOpen] = useState(false)
   const [bgHex, setBgHex] = useState(DEFAULT_BG_HEX)
   const [uiMode, setUiMode] = useState('polished')
-  const [readingPalette, setReadingPalette] = useState('default')
+  const [readingPalette, setReadingPalette] = useState('eink')
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
 
   useEffect(() => {
     setMounted(true)
     try {
+      // 经典样式已下线：任何遗留的 'classic' 都归一到 'polished'
       const ui = localStorage.getItem(UI_STORAGE_KEY)
-      const nextUi = ui === 'classic' || ui === 'polished' ? ui : 'polished'
+      const nextUi = 'polished'
+      if (ui === 'classic') localStorage.setItem(UI_STORAGE_KEY, nextUi)
       setUiMode(nextUi)
       const v = localStorage.getItem(STORAGE_KEY)
       if (v && LEGACY_DEFAULT_BG_HEXES.has(v.toLowerCase())) {
@@ -58,8 +59,9 @@ export default function SettingsButton() {
       } else {
         setBgHex(DEFAULT_BG_BY_UI_MODE[nextUi])
       }
+      // 默认开启墨水屏：仅当用户显式选择 'default'（标准）时才关闭
       const rp = localStorage.getItem(READING_PALETTE_KEY)
-      setReadingPalette(rp === 'eink' ? 'eink' : 'default')
+      setReadingPalette(rp === 'default' ? 'default' : 'eink')
     } catch (e) {}
   }, [])
 
@@ -223,10 +225,10 @@ export default function SettingsButton() {
             </div>
           </div>
 
-          {/* 样式 */}
+          {/* UI（原「样式」；经典已下线，仅保留潮流） */}
           <div className="mb-3">
-            <div className="site-settings-label">{pick(locale, '样式', 'Style')}</div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="site-settings-label">{pick(locale, 'UI', 'UI')}</div>
+            <div className="grid grid-cols-1 gap-2">
               {UI_MODES.map((mode) => {
                 const active = uiMode === mode.id
                 return (

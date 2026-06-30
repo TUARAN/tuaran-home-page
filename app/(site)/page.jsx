@@ -16,6 +16,7 @@ import {
 } from '@tabler/icons-react'
 
 import DaysSince from './components/DaysSince'
+import ForceDarkRoute from './components/ForceDarkRoute'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
@@ -882,5 +883,10 @@ function PolishedHomePage({ featuredPicks }) {
 export default function HomePage() {
   const featuredPicks = getHomeFeaturedPicks()
 
-  return <PolishedHomePage featuredPicks={featuredPicks} />
+  return (
+    <>
+      <ForceDarkRoute />
+      <PolishedHomePage featuredPicks={featuredPicks} />
+    </>
+  )
 }

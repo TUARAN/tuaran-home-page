@@ -2,6 +2,14 @@ import './globals.css'
 
 import { avatarAbsoluteUrl } from '../lib/avatar'
 
+/**
+ * 主题设置版本号：每次「更新主题默认值」（默认明暗 / 墨水屏 / 样式 / 阅读底色等）时 bump 它。
+ * 客户端发现本地存的版本与此不一致，就清掉主题相关的 localStorage（theme / reading-palette /
+ * site-ui-mode / reading-bg），让新默认对老用户也立即生效；之后用户自己的设置再正常缓存，
+ * 直到下次 bump。改默认却不 bump 的话，老用户会被旧缓存卡住、看不到新观感。
+ */
+const THEME_SETTINGS_VERSION = '2026-06-30-eink-darkhome'
+
 const SITE_URL = 'https://2aran.com'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
@@ -91,11 +99,20 @@ export default function RootLayout({ children }) {
         />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var root=document.documentElement;var ui=localStorage.getItem('site-ui-mode');root.dataset.ui=ui==='classic'?'classic':'polished';var rp=localStorage.getItem('reading-palette');var eink=rp==='eink';if(eink){root.dataset.reading='eink';}var th=localStorage.getItem('theme');var v=localStorage.getItem('reading-bg');if(v==='#f1f2ee'){localStorage.removeItem('reading-bg');v='';}if(v&&th==='light'&&!eink){root.style.setProperty('--page-bg',v);}var lm=document.cookie.match(/(?:^|; )site-lang=([^;]+)/);var lang=lm?decodeURIComponent(lm[1]):'';if(lang==='en'||lang==='zh'){root.dataset.lang=lang;root.lang=lang==='en'?'en':'zh-CN';}}catch(e){}})();`,
+            __html: `(function(){try{var root=document.documentElement;var SV='${THEME_SETTINGS_VERSION}';if(localStorage.getItem('theme-settings-version')!==SV){localStorage.removeItem('theme');localStorage.removeItem('reading-palette');localStorage.removeItem('site-ui-mode');localStorage.removeItem('reading-bg');localStorage.setItem('theme-settings-version',SV);}root.dataset.ui='polished';var rp=localStorage.getItem('reading-palette');var eink=rp!=='default';if(eink){root.dataset.reading='eink';}var th=localStorage.getItem('theme');var v=localStorage.getItem('reading-bg');if(v==='#f1f2ee'){localStorage.removeItem('reading-bg');v='';}if(v&&th==='light'&&!eink){root.style.setProperty('--page-bg',v);}var lm=document.cookie.match(/(?:^|; )site-lang=([^;]+)/);var lang=lm?decodeURIComponent(lm[1]):'';if(lang==='en'||lang==='zh'){root.dataset.lang=lang;root.lang=lang==='en'?'en':'zh-CN';}}catch(e){}})();`,
           }}
         />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        {/* 首页恒为深色：此脚本在 next-themes 初始化之后执行，强制 / 路由首屏走深色，避免闪烁。
+            客户端导航与水合由 ForceDarkRoute 守住。 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(location.pathname==='/'){var r=document.documentElement;r.classList.add('dark');r.style.removeProperty('--page-bg');}}catch(e){}})();`,
+          }}
+        />
+      </body>
     </html>
   )
 }

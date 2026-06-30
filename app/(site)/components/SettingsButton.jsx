@@ -22,6 +22,7 @@ const DEFAULT_BG_BY_UI_MODE = {
 const LEGACY_DEFAULT_BG_HEXES = new Set(['#f1f2ee'])
 const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
+const READING_PALETTE_KEY = 'reading-palette'
 const UI_MODES = [
   { id: 'polished', label: '潮流', labelEn: 'Modern', desc: '横幅视觉、重点入口、随机推荐', descEn: 'Hero visual, key entries, random picks' },
   { id: 'classic', label: '经典', labelEn: 'Classic', desc: '原首页布局、推荐阅读、个人侧栏', descEn: 'Original layout, picks & profile sidebar' },
@@ -38,6 +39,7 @@ export default function SettingsButton() {
   const [open, setOpen] = useState(false)
   const [bgHex, setBgHex] = useState(DEFAULT_BG_HEX)
   const [uiMode, setUiMode] = useState('polished')
+  const [readingPalette, setReadingPalette] = useState('default')
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
 
@@ -56,6 +58,8 @@ export default function SettingsButton() {
       } else {
         setBgHex(DEFAULT_BG_BY_UI_MODE[nextUi])
       }
+      const rp = localStorage.getItem(READING_PALETTE_KEY)
+      setReadingPalette(rp === 'eink' ? 'eink' : 'default')
     } catch (e) {}
   }, [])
 
@@ -65,12 +69,22 @@ export default function SettingsButton() {
   useEffect(() => {
     if (!mounted) return
     const root = document.documentElement
-    if (theme === 'dark') {
+    // 墨水屏开启时移除内联底色，让 :root[data-reading='eink'] 的纸感 --page-bg 接管；
+    // 深色主题始终用自身深色底；其余情况套用所选阅读底色。
+    if (theme === 'dark' || readingPalette === 'eink') {
       root.style.removeProperty('--page-bg')
     } else {
       root.style.setProperty('--page-bg', bgHex)
     }
-  }, [theme, bgHex, mounted])
+  }, [theme, bgHex, readingPalette, mounted])
+
+  // 墨水屏开关：写到 data-reading，触发 globals.css 的 e-ink token 覆盖。
+  useEffect(() => {
+    if (!mounted) return
+    const root = document.documentElement
+    if (readingPalette === 'eink') root.dataset.reading = 'eink'
+    else delete root.dataset.reading
+  }, [readingPalette, mounted])
 
   useEffect(() => {
     if (!open) return
@@ -101,6 +115,14 @@ export default function SettingsButton() {
     setBgHex(hex)
     try {
       localStorage.setItem(STORAGE_KEY, hex)
+    } catch (e) {}
+  }
+
+  const pickReadingPalette = (val) => {
+    const next = val === 'eink' ? 'eink' : 'default'
+    setReadingPalette(next)
+    try {
+      localStorage.setItem(READING_PALETTE_KEY, next)
     } catch (e) {}
   }
 
@@ -227,41 +249,76 @@ export default function SettingsButton() {
             </div>
           </div>
 
-          {/* 阅读底色 */}
-          <div>
+          {/* 护眼配色 / 墨水屏（浅色深色均可叠加） */}
+          <div className="mb-3">
             <div className="mb-2 flex items-center justify-between">
-              <div className="site-settings-label mb-0">{pick(locale, '阅读底色', 'Reading background')}</div>
-              {!isDark ? null : (
-                <span className="site-settings-note text-[10px]">{pick(locale, '深色模式下不生效', 'Disabled in dark mode')}</span>
-              )}
+              <div className="site-settings-label mb-0">{pick(locale, '护眼配色', 'Reading palette')}</div>
+              <span className="site-settings-note text-[10px]">{pick(locale, '叠加于当前明暗', 'Layers on light/dark')}</span>
             </div>
-            <div className="grid grid-cols-1 gap-1.5">
-              {BG_PRESETS.map((p) => {
-                const isActive = activePreset === p.id
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => pickBg(p.hex)}
-                    aria-pressed={isActive}
-                    className={`site-settings-option flex items-center gap-3 px-3 py-2 text-left ${
-                      isActive ? 'site-settings-option-active' : ''
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="site-settings-swatch inline-block h-6 w-6 shrink-0 rounded-full border"
-                      style={{ backgroundColor: p.hex }}
-                    />
-                    <span className="flex flex-col leading-tight">
-                      <span className="text-sm">{pick(locale, p.label, p.labelEn)}</span>
-                      <span className="site-settings-option-desc text-[11px]">{pick(locale, p.desc, p.descEn)}</span>
-                    </span>
-                  </button>
-                )
-              })}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => pickReadingPalette('default')}
+                aria-pressed={readingPalette !== 'eink'}
+                className={`site-settings-option px-3 py-2 text-left ${
+                  readingPalette !== 'eink' ? 'site-settings-option-active' : ''
+                }`}
+              >
+                <span className="block text-sm font-medium">{pick(locale, '标准', 'Standard')}</span>
+                <span className="site-settings-option-desc mt-0.5 block text-[10px] leading-4">
+                  {pick(locale, '彩色强调 · 默认观感', 'Color accents · default')}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => pickReadingPalette('eink')}
+                aria-pressed={readingPalette === 'eink'}
+                className={`site-settings-option px-3 py-2 text-left ${
+                  readingPalette === 'eink' ? 'site-settings-option-active' : ''
+                }`}
+              >
+                <span className="block text-sm font-medium">{pick(locale, '墨水屏', 'E-ink')}</span>
+                <span className="site-settings-option-desc mt-0.5 block text-[10px] leading-4">
+                  {pick(locale, '纸感灰阶 · 低刺激', 'Paper grayscale · gentle')}
+                </span>
+              </button>
             </div>
           </div>
+
+          {/* 阅读底色：仅在浅色且非墨水屏时可用，其它情况不生效，干脆不展示 */}
+          {!isDark && readingPalette !== 'eink' ? (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <div className="site-settings-label mb-0">{pick(locale, '阅读底色', 'Reading background')}</div>
+              </div>
+              <div className="grid grid-cols-1 gap-1.5">
+                {BG_PRESETS.map((p) => {
+                  const isActive = activePreset === p.id
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => pickBg(p.hex)}
+                      aria-pressed={isActive}
+                      className={`site-settings-option flex items-center gap-3 px-3 py-2 text-left ${
+                        isActive ? 'site-settings-option-active' : ''
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="site-settings-swatch inline-block h-6 w-6 shrink-0 rounded-full border"
+                        style={{ backgroundColor: p.hex }}
+                      />
+                      <span className="flex flex-col leading-tight">
+                        <span className="text-sm">{pick(locale, p.label, p.labelEn)}</span>
+                        <span className="site-settings-option-desc text-[11px]">{pick(locale, p.desc, p.descEn)}</span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
     </div>

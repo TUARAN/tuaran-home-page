@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-29T12:13:21.472Z",
+  "generatedAt": "2026-06-30T06:51:54.651Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -98,6 +98,12 @@
               "hash": "42a060f16a3ecc3ec9465de282936f79f5c82a5aa752eadb0661ef4faf592e43",
               "path": "claude/MEMORY/2026-06-29T07-50-18-313Z.enc.json",
               "bytes": 2384
+            },
+            {
+              "ts": "2026-06-30T06:51:54.607Z",
+              "hash": "2984e76cc7429edae4870f3fc45b5665fdbee2dad482821983c088a88d9b7357",
+              "path": "claude/MEMORY/2026-06-30T06-51-54-626Z.enc.json",
+              "bytes": 2574
             }
           ]
         },
@@ -344,6 +350,18 @@
               "hash": "ebd8848a933d47b6c8dfc3d551548442cccae67d49af3b546bde84a5a934be5f",
               "path": "claude/rss-blogroll-feature/2026-06-29T07-50-18-334Z.enc.json",
               "bytes": 1246
+            }
+          ]
+        },
+        "eink-reading-palette": {
+          "title": "eink-reading-palette",
+          "description": "墨水屏护眼配色 data-reading=eink 机制；以及深底面板内文字必须用固定浅色、不能跟随 --site-ink",
+          "versions": [
+            {
+              "ts": "2026-06-30T06:51:54.627Z",
+              "hash": "75ffbe054d2fa20fc5755d8d4bb2bb3231180d8de9487e0ebac3e3725b923711",
+              "path": "claude/eink-reading-palette/2026-06-30T06-51-54-644Z.enc.json",
+              "bytes": 2257
             }
           ]
         }

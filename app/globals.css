@@ -145,6 +145,92 @@
   --site-shadow: rgba(0, 0, 0, 0.28);
 }
 
+/*
+ * 墨水屏 / 纸感配色（reading-palette = eink）。
+ * 参考公认的 e-ink 阅读主题（eink-emacs、obsidian-ink）：暖白纸底、柔和深灰
+ * 正文（不用纯黑）、强调色去饱和成灰阶、浅灰线条、几乎无阴影发光。
+ * 仅作用于浅色主题（「浅色为主」），深色主题保留自身配色不被它污染。
+ * --page-bg 不在此设内联 style（由 SettingsButton/FOUC 脚本移除内联后由此接管）。
+ * 大量 hero-* / home-focus-* 派生 token 通过 color-mix 引用下列基色，会自动跟随变灰。
+ */
+:root[data-reading='eink']:not(.dark) {
+  --page-bg: #f4f1e9;
+  --site-ink: #2b2a26;
+  --site-muted: #6c6a62;
+  --site-faint: #9a988e;
+  --site-line: #d9d5c8;
+  --site-line-strong: #bdb9ac;
+  --site-panel: color-mix(in srgb, #fffdf6 78%, var(--page-bg));
+  --site-panel-strong: color-mix(in srgb, #fffdf6 92%, var(--page-bg));
+  --site-accent: #3b3933;
+  --site-accent-strong: #23211c;
+  --site-blue: #54524b;
+  --site-green: #54524b;
+  --site-shadow: rgba(43, 42, 38, 0.07);
+  --home-focus-border: #cfcabd;
+  --home-focus-border-hover: #b3ae9f;
+  --home-focus-kicker: #5f5c54;
+  --home-focus-action: #3b3933;
+  --home-focus-chip-border: #d3cfc2;
+  --home-focus-shadow: rgba(43, 42, 38, 0.08);
+  --theme-accent: var(--site-accent);
+  --theme-accent-muted: #5a5750;
+  --theme-sage: #6f6c63;
+  --hero-cta-bg: #2f2d27;
+  --hero-cta-hover: #211f1a;
+  --hero-cta-text: #f4f1e9;
+  --hero-cta-subtext: #c8c4b6;
+  --hero-card-title: #26241f;
+  --hero-card-subtext: #6c6a62;
+  /* 热力图改用暖灰阶，不再出现绿色 */
+  --kb-heat-empty: color-mix(in srgb, var(--site-line) 60%, transparent);
+  --kb-heat-1: #dcd8cb;
+  --kb-heat-2: #b3ae9f;
+  --kb-heat-3: #827e72;
+  --kb-heat-4: #4f4c44;
+}
+
+/*
+ * 深色墨水屏 / 夜间 e-reader（.dark + reading-palette = eink）。
+ * 思路同浅色版：去饱和、去发光，但底仍是深色——柔和暖灰正文（不用刺眼纯白），
+ * 强调色全部转中性灰，几乎无阴影。给「默认深色 + 阅读趋于墨水屏」的诉求用。
+ */
+.dark[data-reading='eink'] {
+  --page-bg: #181714;
+  --site-ink: #d7d5cc;
+  --site-muted: #9b988e;
+  --site-faint: #76736b;
+  --site-line: #2f2d27;
+  --site-line-strong: #46433b;
+  --site-panel: #1e1d19;
+  --site-panel-strong: #242320;
+  --site-accent: #c2c0b6;
+  --site-accent-strong: #e2e0d7;
+  --site-blue: #b4b2a8;
+  --site-green: #b4b2a8;
+  --site-shadow: rgba(0, 0, 0, 0.32);
+  --home-focus-border: #3a3830;
+  --home-focus-border-hover: #5a574c;
+  --home-focus-kicker: #c2bfb4;
+  --home-focus-action: #cfccc2;
+  --home-focus-chip-border: #3a3830;
+  --home-focus-shadow: rgba(0, 0, 0, 0.34);
+  --theme-accent: var(--site-accent);
+  --theme-accent-muted: #a8a69c;
+  --theme-sage: #a09e94;
+  --hero-cta-bg: #cfccc2;
+  --hero-cta-hover: #dddace;
+  --hero-cta-text: #1b1a16;
+  --hero-cta-subtext: #5a5750;
+  --hero-card-title: #e6e4db;
+  --hero-card-subtext: #9b988e;
+  --kb-heat-empty: color-mix(in srgb, var(--site-line-strong) 55%, transparent);
+  --kb-heat-1: #2f2d27;
+  --kb-heat-2: #4a4740;
+  --kb-heat-3: #6f6c62;
+  --kb-heat-4: #9a978d;
+}
+
 @layer base {
   body {
     @apply bg-[var(--page-bg)] dark:bg-[var(--page-bg)] text-[#333] dark:text-gray-100 font-sans;
@@ -392,6 +478,19 @@
     background:
       linear-gradient(90deg, color-mix(in srgb, var(--page-bg) 95%, transparent) 0%, color-mix(in srgb, var(--page-bg) 78%, transparent) 48%, color-mix(in srgb, var(--page-bg) 34%, transparent) 100%),
       linear-gradient(180deg, color-mix(in srgb, white 18%, transparent), color-mix(in srgb, var(--page-bg) 62%, transparent));
+  }
+
+  /*
+   * 墨水屏 / 纸感：保留首页天际线照片，但整体去色——真实墨水屏本来就以灰阶显示照片。
+   * 不再 display:none，而是 grayscale 滤镜 + 略降对比，让照片像印在纸上的灰阶图，
+   * 既保留背景层次又不刺眼。浅色深色都适用。
+   */
+  :root[data-reading='eink'] .home-backdrop {
+    filter: grayscale(1) contrast(0.95);
+  }
+
+  :root[data-reading='eink'] .home-hero::before {
+    filter: grayscale(1) contrast(0.92);
   }
 
   .home-hero-copy {
@@ -1463,9 +1562,11 @@
     color: var(--site-ink);
   }
 
+  /* 下拉面板与移动抽屉始终是深底（#151410），内部文字固定用浅色，
+     不能跟随 --site-ink——否则浅色主题下变深色字，深底上看不清。 */
   .site-dropdown-panel .site-menu-item,
   .site-mobile-drawer .site-menu-item {
-    color: var(--site-ink);
+    color: #f1f0ea;
   }
 
   .site-menu-item:visited {
@@ -1474,7 +1575,7 @@
 
   .site-dropdown-panel .site-menu-item:visited,
   .site-mobile-drawer .site-menu-item:visited {
-    color: var(--site-ink);
+    color: #f1f0ea;
   }
 
   .site-menu-item:hover {
@@ -1507,6 +1608,12 @@
   .site-dropdown-panel .site-menu-desc,
   .site-mobile-drawer .site-menu-desc {
     color: #aaa69a;
+  }
+
+  /* 标题同理：深底面板内固定浅色，覆盖默认的 var(--site-ink) */
+  .site-dropdown-panel .site-menu-title,
+  .site-mobile-drawer .site-menu-title {
+    color: #f1f0ea;
   }
 
   .site-tier-section {
@@ -1578,21 +1685,23 @@
     color: var(--site-ink);
   }
 
+  /* 设置面板始终是深底（#151410，两个主题一致），内部文字全部用固定浅色，
+     不能跟随 --site-ink / --site-faint / --site-muted——否则浅色主题下变深色，深底上看不清。 */
   .site-settings-panel {
     border-color: #332d26;
     background-color: #151410;
-    color: var(--site-ink);
+    color: #f1f0ea;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
   }
 
   .site-settings-label {
     @apply mb-2 text-xs uppercase;
     letter-spacing: 0.12em;
-    color: var(--site-faint);
+    color: #94918a;
   }
 
   .site-settings-note {
-    color: var(--site-faint);
+    color: #94918a;
   }
 
   .site-settings-option {
@@ -1605,13 +1714,13 @@
   .site-settings-option:hover {
     border-color: #3c372e;
     background-color: #2b2924;
-    color: var(--site-ink);
+    color: #f4f3ee;
   }
 
   .site-settings-option-active {
     border-color: #4f472f;
     background-color: #302c1f;
-    color: var(--site-ink);
+    color: #f4f3ee;
   }
 
   .site-settings-option-desc {
@@ -1619,7 +1728,7 @@
   }
 
   .site-settings-option-active .site-settings-option-desc {
-    color: var(--site-muted);
+    color: #cfccc2;
   }
 
   .site-settings-swatch {

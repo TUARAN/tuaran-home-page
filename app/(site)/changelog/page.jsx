@@ -10,6 +10,29 @@ export const metadata = {
 
 const changelog = [
   {
+    version: 'v2026.29',
+    week: '2026-W27',
+    range: '2026-06-29 至 2026-06-30',
+    commits: 45,
+    title: '资源库、RSS 订阅墙与主题体系继续收束',
+    summary:
+      '最近这一轮围绕「内容入口可持续运营」继续收口：资源收藏拆分成更清晰的分类，RSS 从输出能力扩展到站内订阅墙与后台分析，首页社交与 ticker 继续打磨；同时完成主题体系重构，把首页、浅色纸感、墨水屏和资源导航的配色规则统一起来，并清理 YouTube 收藏里的失效视频。',
+    planned: [
+      '继续把资源页的硬编码数据抽成更容易维护的结构，避免每个分类都堆在页面组件里。',
+      '梳理 RSS 订阅墙与灵感流的边界：一个偏阅读入口，一个偏素材流转与内容生产。',
+      '继续检查内容页在三态主题下的视觉一致性，特别是资源库、更新记录和文章详情页。',
+    ],
+    done: [
+      '拆分资源收藏，迁移 Codex 资源页，并补齐 AI 工具收集页，让资源导航和真实分类对齐。',
+      'RSS 能力从 /rss.xml 扩展到站内订阅墙：加入全文 content:encoded、RSS 自动发现、文章页 RSS 按钮、内置 mini 阅读器，并补齐后台请求分析。',
+      '灵感流接入 RSS，后台记录覆盖情况，并重写 README 定位；首页 ticker 增加社群 CTA 并修复桌面端停动问题。',
+      '新增评论回复、admin insights、月度阅读分析、RSS 请求分析，并继续整理 memory vault 到后台入口。',
+      '补充东亚计算硬件集群、商桥物流、X 互关生态等调研内容，并更新 feed 视频与社交指标展示。',
+      '重构主题体系：首页保持深色表达，全站浅色纸感默认，墨水屏护眼配色增强，并通过设置版本缓存失效解决旧主题残留。',
+      '清理 YouTube 收藏：删除已不可用链接，移除空分组，为 32 个保留链接补摘要并在页面展示。',
+    ],
+  },
+  {
     version: 'v2026.28',
     week: '2026-W26',
     range: '2026-06-25 起',
@@ -650,18 +673,18 @@ export default function ChangelogPage() {
         </dl>
       </header>
 
-      <section className="mt-8 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_60%,transparent)] p-5 md:p-6">
-        <div className="flex flex-col gap-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--site-faint)]">
+      <details className="mt-8 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_60%,transparent)] p-5 md:p-6">
+        <summary className="cursor-pointer">
+          <span className="block font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--site-faint)]">
             Design Principles · 设计原则
-          </p>
-          <h2 className="border-b-0 pb-0 font-serif text-xl font-semibold tracking-wide text-[var(--site-ink)] md:text-2xl">
+          </span>
+          <span className="mt-1 block border-b-0 pb-0 font-serif text-xl font-semibold tracking-wide text-[var(--site-ink)] md:text-2xl">
             这个站点配色与样式的取舍
-          </h2>
-          <p className="mt-1 max-w-3xl text-[13.5px] leading-7 text-[var(--site-muted)]">
-            不是为了好看而堆视觉，而是用一套尽量小的规则让浅色、深色、经典三套主题始终一致、可维护。下面这些原则一直隐含在代码里，这里写明，作为以后每次动样式的对照基准。
-          </p>
-        </div>
+          </span>
+          <span className="mt-1 block max-w-3xl text-[13.5px] leading-7 text-[var(--site-muted)]">
+            不是为了好看而堆视觉，而是用一套尽量小的规则让浅色、深色、经典三套主题始终一致、可维护。
+          </span>
+        </summary>
         <ul className="mt-5 grid gap-3 sm:grid-cols-2">
           {DESIGN_PRINCIPLES.map((p, idx) => (
             <li
@@ -678,7 +701,7 @@ export default function ChangelogPage() {
             </li>
           ))}
         </ul>
-      </section>
+      </details>
 
       <ol className="mt-8 space-y-4">
         {changelog.map((entry) => (

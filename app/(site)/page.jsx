@@ -797,15 +797,29 @@ function PolishedHomePage({ featuredPicks }) {
         <aside className="home-side-stack">
           <ProfileCard />
 
+          <section className="home-section home-products">
+            <div className="home-section-heading compact">
+              <div>
+                <p className="home-kicker">Products</p>
+                <h2 className="home-section-title"><T zh="我正在经营的" en="What I'm building" /></h2>
+              </div>
+            </div>
+            <div className="home-product-list">
+              {PRODUCT_LINKS.map((item) => (
+                <ProductLink key={item.href} item={item} />
+              ))}
+            </div>
+          </section>
+
           <section className="home-section home-socials">
             <div className="home-section-heading compact">
               <div>
-                <p className="home-kicker">Social</p>
-                <h2 className="home-section-title"><T zh="我的社交媒体" en="My social media" /></h2>
+                <p className="home-kicker">Channels</p>
+                <h2 className="home-section-title"><T zh="其他内容渠道" en="More channels" /></h2>
               </div>
             </div>
-            <div className="home-social-total" aria-label="Social media totals">
-              <span><IconUsers size={13} stroke={1.8} aria-hidden="true" /><T zh="总粉丝" en="Followers" /> {SOCIAL_MEDIA_TOTALS.followers}</span>
+            <div className="home-social-total" aria-label="Content channel totals">
+              <span><IconUsers size={13} stroke={1.8} aria-hidden="true" /><T zh="总关注" en="Followers" /> {SOCIAL_MEDIA_TOTALS.followers}</span>
               <span><IconEye size={13} stroke={1.8} aria-hidden="true" /><T zh="总阅读" en="Views" /> {SOCIAL_MEDIA_TOTALS.reads}</span>
             </div>
             <div className="home-social-grid">
@@ -819,20 +833,6 @@ function PolishedHomePage({ featuredPicks }) {
                   <SocialMediaCard key={item.label} item={item} />
                 ))}
               </div>
-            </div>
-          </section>
-
-          <section className="home-section home-products">
-            <div className="home-section-heading compact">
-              <div>
-                <p className="home-kicker">Products</p>
-                <h2 className="home-section-title"><T zh="正在经营的东西" en="What I'm building" /></h2>
-              </div>
-            </div>
-            <div className="home-product-list">
-              {PRODUCT_LINKS.map((item) => (
-                <ProductLink key={item.href} item={item} />
-              ))}
             </div>
           </section>
 

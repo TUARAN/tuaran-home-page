@@ -94,6 +94,21 @@
   line-height: 1.4;
 }
 
+.xmc-resource-link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  color: #1d9bf0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.xmc-resource-link:hover {
+  text-decoration: underline;
+}
+
 .xmc-log {
   max-height: 96px;
   overflow: auto;

@@ -39,8 +39,8 @@ export default function CommunityLoginPrompt() {
   }
 
   return (
-    <div className="px-4 py-2">
-      <div className="mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-[#e2d8c6] bg-[#faf7ef] px-4 py-2 text-sm shadow-sm dark:border-gray-800 dark:bg-[#12161d] sm:rounded-full">
+    <div className="pointer-events-none fixed inset-x-0 top-[calc(var(--site-header-height)+0.5rem)] z-[110] px-4">
+      <div className="pointer-events-auto mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-[#e2d8c6] bg-[#faf7ef] px-4 py-2 text-sm shadow-sm dark:border-gray-800 dark:bg-[#12161d] sm:rounded-full">
         <span aria-hidden="true" className="shrink-0 text-base leading-none">
           👋
         </span>

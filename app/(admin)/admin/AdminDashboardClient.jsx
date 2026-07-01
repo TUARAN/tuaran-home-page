@@ -4,7 +4,12 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { IconRefresh, IconUserCircle, IconTypography, IconArrowRight } from '@tabler/icons-react'
 
-import { ADMIN_CONSOLE_ITEMS, ADMIN_PRIVATE_TOOL_LINKS } from '../../../lib/adminRoutes'
+import {
+  ADMIN_CONSOLE_ITEMS,
+  ADMIN_HOST,
+  ADMIN_PRIVATE_TOOL_LINKS,
+  CANONICAL_HOST,
+} from '../../../lib/adminRoutes'
 import { AdminIcon } from '../../../lib/adminIcons'
 import { AdminPage, Section, StatCard, AdminButton, EmptyState } from '../components/ui'
 
@@ -59,6 +64,7 @@ export default function AdminDashboardClient() {
   const [loadingOverview, setLoadingOverview] = useState(true)
   const [loadingOps, setLoadingOps] = useState(true)
   const [error, setError] = useState('')
+  const [onAdminHost, setOnAdminHost] = useState(false)
 
   // 总览与 Ops 各自独立加载：谁先回谁先显示，不让某个慢接口拖黑整屏。
   const loadOverview = useCallback(async () => {
@@ -98,6 +104,10 @@ export default function AdminDashboardClient() {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    setOnAdminHost(window.location.hostname === ADMIN_HOST)
+  }, [])
 
   const pv = overview?.pv
   const users = overview?.users
@@ -196,22 +206,41 @@ export default function AdminDashboardClient() {
 
       <Section title="全部控制台" description="左侧导航也可直达；这里按域汇总。">
         <div className="grid gap-2.5 sm:grid-cols-2">
-          {ADMIN_CONSOLE_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="group flex items-start gap-3 rounded-lg border border-[#e2e3da] bg-white px-3.5 py-3 transition hover:border-[#b9bbad] dark:border-[#1e2733] dark:bg-[#10161f] dark:hover:border-[#34414f]"
-            >
-              <AdminIcon name={item.icon} size={18} className="mt-0.5 shrink-0 text-[#7a7c70] dark:text-[#7c8aa0]" />
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1 text-[13.5px] font-medium text-[#15140f] dark:text-gray-100">
-                  {item.label}
-                  <IconArrowRight size={14} className="opacity-0 transition group-hover:opacity-60" aria-hidden="true" />
-                </p>
-                <p className="mt-0.5 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{item.desc}</p>
-              </div>
-            </Link>
-          ))}
+          {ADMIN_CONSOLE_ITEMS.map((item) => {
+            const externalHop = item.external && onAdminHost
+            const className =
+              'group flex items-start gap-3 rounded-lg border border-[#e2e3da] bg-white px-3.5 py-3 transition hover:border-[#b9bbad] dark:border-[#1e2733] dark:bg-[#10161f] dark:hover:border-[#34414f]'
+            const inner = (
+              <>
+                <AdminIcon name={item.icon} size={18} className="mt-0.5 shrink-0 text-[#7a7c70] dark:text-[#7c8aa0]" />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1 text-[13.5px] font-medium text-[#15140f] dark:text-gray-100">
+                    {item.label}
+                    <IconArrowRight size={14} className="opacity-0 transition group-hover:opacity-60" aria-hidden="true" />
+                  </p>
+                  <p className="mt-0.5 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{item.desc}</p>
+                </div>
+              </>
+            )
+            if (externalHop) {
+              return (
+                <a
+                  key={item.href}
+                  href={`https://${CANONICAL_HOST}${item.href}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
+                  {inner}
+                </a>
+              )
+            }
+            return (
+              <Link key={item.href} href={item.href} className={className}>
+                {inner}
+              </Link>
+            )
+          })}
         </div>
       </Section>
 

@@ -25,10 +25,14 @@ export default function FeedPage() {
 
   return (
     <PageContainer className="py-10">
-      <ContentPvBeacon category="feed" slug="index" />
       <header className="mb-8 border-b border-[var(--site-line)] pb-5">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[var(--site-panel)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--site-muted)]">
-          Inspiration · 灵感流
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[var(--site-panel)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--site-muted)]">
+            Inspiration · 灵感流
+          </div>
+          <div className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-bg)] px-3 py-1 text-[11px] font-medium text-[var(--site-muted)]">
+            <ContentPvBeacon category="feed" slug="index" display />
+          </div>
         </div>
         <h1 className="font-serif text-[32px] leading-tight tracking-wide text-[var(--site-ink)] md:text-[38px]">
           灵感

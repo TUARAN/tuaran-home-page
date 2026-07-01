@@ -55,7 +55,7 @@ export async function GET(req) {
   }
 }
 
-/** 用燃币解锁资源：游客也可解锁（用其 guest 余额）；已解锁直接放行；余额不足 402。 */
+/** 使用燃币解锁资源：游客也可解锁（用其 guest 余额）；已解锁直接放行；余额不足 402。 */
 export async function POST(req) {
   try {
     const user = await getUserFromRequest(req)
@@ -72,7 +72,7 @@ export async function POST(req) {
     const db = getD1()
     const ip = getClientIp(req)
 
-    // 解析消费身份：登录用 user.id；游客用 guest:<gid>（无则签发）
+    // 解析燃币使用身份：登录用 user.id；游客用 guest:<gid>（无则签发）
     let spendId
     let guestSetCookie = null
     if (user) {

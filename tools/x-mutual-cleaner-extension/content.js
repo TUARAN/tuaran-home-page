@@ -40,14 +40,25 @@
   }
 
   function buttonLabel(button) {
-    return (button?.innerText || button?.getAttribute("aria-label") || "").trim();
+    return (button?.getAttribute("aria-label") || button?.innerText || button?.textContent || "").trim();
   }
 
   function getActionElements(scope) {
-    return Array.from(scope.querySelectorAll('button, [role="button"]'));
+    const elements = Array.from(scope.querySelectorAll('button, [role="button"]'));
+    if (scope.matches?.('button, [role="button"]')) elements.unshift(scope);
+    return Array.from(new Set(elements));
   }
 
-  function findHandle(row) {
+  function getHandleFromButton(button) {
+    const label = buttonLabel(button);
+    const match = label.match(USER_HANDLE_RE);
+    return match ? match[0] : "";
+  }
+
+  function findHandle(row, followingButton = null) {
+    const buttonHandle = getHandleFromButton(followingButton);
+    if (buttonHandle) return buttonHandle;
+
     const links = Array.from(row.querySelectorAll("a[href]"));
     for (const link of links) {
       const href = link.getAttribute("href") || "";
@@ -74,17 +85,32 @@
   }
 
   function findFollowingButton(row) {
-    return getActionElements(row).find(isFollowingButton) || null;
+    return (
+      row.querySelector('button[data-testid$="-unfollow"], [role="button"][data-testid$="-unfollow"]') ||
+      getActionElements(row).find(isFollowingButton) ||
+      null
+    );
+  }
+
+  function hasFollowsYou(row) {
+    return Boolean(row.querySelector('[data-testid="userFollowIndicator"]')) || FOLLOWS_YOU_RE.test(textOf(row));
   }
 
   function getRowElements() {
-    const rows = [
+    const rows = [];
+
+    for (const button of document.querySelectorAll('button[data-testid$="-unfollow"], [role="button"][data-testid$="-unfollow"]')) {
+      const row = button.closest('[data-testid="UserCell"], [data-testid="cellInnerDiv"], article[role="article"]');
+      if (row) rows.push(row);
+    }
+
+    rows.push(
       ...document.querySelectorAll('[data-testid="UserCell"]'),
       ...document.querySelectorAll('article[role="article"]'),
       ...Array.from(document.querySelectorAll('[data-testid="cellInnerDiv"]')).filter((node) =>
-        node.querySelector('a[href]') && getActionElements(node).some(isFollowingButton)
+        node.querySelector('a[href]') && findFollowingButton(node)
       )
-    ];
+    );
 
     return Array.from(new Set(rows)).filter((row) => {
       if (!row || row.closest(`#${PANEL_ID}`)) return false;
@@ -96,10 +122,9 @@
   function getVisibleRows() {
     return getRowElements()
       .map((row) => {
-        const text = textOf(row);
-        const handle = findHandle(row);
         const followingButton = findFollowingButton(row);
-        const followsYou = FOLLOWS_YOU_RE.test(text);
+        const handle = findHandle(row, followingButton);
+        const followsYou = hasFollowsYou(row);
 
         return {
           row,

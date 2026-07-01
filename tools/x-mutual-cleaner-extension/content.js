@@ -189,8 +189,55 @@
       .filter((row) => row.handle && row.followingButton);
   }
 
+  function getScrollInfo() {
+    const scrollingElement = document.scrollingElement || document.documentElement;
+    const top = window.scrollY || scrollingElement.scrollTop || 0;
+    const height = Math.max(
+      scrollingElement.scrollHeight || 0,
+      document.documentElement.scrollHeight || 0,
+      document.body?.scrollHeight || 0
+    );
+
+    return {
+      top,
+      height,
+      maxTop: Math.max(0, height - window.innerHeight)
+    };
+  }
+
   function isNearBottom() {
-    return window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 12;
+    const info = getScrollInfo();
+    return info.maxTop > 0 && info.top >= info.maxTop - 24;
+  }
+
+  function rowsSignature(rows) {
+    return rows.map((row) => row.handle).join("|");
+  }
+
+  async function scrollForward(previousSignature) {
+    const before = getScrollInfo();
+    const step = Math.max(640, Math.floor(window.innerHeight * 0.9));
+    window.scrollBy({ top: step, behavior: "auto" });
+
+    let elapsed = 0;
+    let latestRows = [];
+    while (elapsed < 1600 && !state.stopping) {
+      await sleepActive(120);
+      elapsed += 120;
+
+      latestRows = getVisibleRows();
+      const after = getScrollInfo();
+      const signature = rowsSignature(latestRows);
+      const moved = after.top > before.top + 8;
+      const heightChanged = after.height !== before.height;
+      const rowsChanged = Boolean(signature && signature !== previousSignature);
+
+      if (moved || heightChanged || rowsChanged) {
+        return { progressed: true, rows: latestRows };
+      }
+    }
+
+    return { progressed: false, rows: latestRows };
   }
 
   function setStatus(message) {
@@ -208,7 +255,7 @@
     const button = document.querySelector(`#${PANEL_ID} [data-xmc-toggle]`);
     if (!button) return;
 
-    button.textContent = state.running ? "停止" : "一键取消未回关";
+    button.textContent = state.running ? "运行中 · 点此停止" : "一键取消未回关";
     button.classList.toggle("xmc-button-danger", state.running);
     button.classList.toggle("xmc-button-primary", !state.running);
   }
@@ -417,15 +464,12 @@
 
       setStatus("当前屏没有未回关账号，继续下刷");
       await waitForForeground();
-      const beforeY = window.scrollY;
-      const beforeHeight = document.documentElement.scrollHeight;
-      window.scrollBy({ top: Math.max(520, Math.floor(window.innerHeight * 0.82)), behavior: "smooth" });
-      await sleepActive(SCROLL_DELAY_MS);
+      const currentSignature = rowsSignature(rows);
+      const result = await scrollForward(currentSignature);
 
-      const moved = window.scrollY > beforeY + 8;
-      const heightChanged = document.documentElement.scrollHeight !== beforeHeight;
-      if (moved || heightChanged || !isNearBottom()) {
+      if (result.progressed || !isNearBottom()) {
         stalledScrolls = 0;
+        await sleepActive(SCROLL_DELAY_MS);
         continue;
       }
 

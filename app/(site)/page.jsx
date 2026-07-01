@@ -734,7 +734,7 @@ function ClassicHomePage({ featuredPicks }) {
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { href: '/publications', label: '出版', labelEn: 'Books' },
-                    { href: '/about', label: '关于', labelEn: 'About' },
+                    { href: '/about', label: '站长', labelEn: 'Owner' },
                     { href: '/works', label: '工具', labelEn: 'Tools' },
                   ].map((card) => (
                     <Link

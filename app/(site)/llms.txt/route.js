@@ -31,7 +31,7 @@ export function GET() {
     '## 主要页面',
     `- [首页](${SITE_URL}/): 个人主页与网络日志`,
     `- [关于本站](${SITE_URL}/site): 站点定位、参与方式、燃币与支持说明`,
-    `- [个人档案](${SITE_URL}/about): 个人介绍与履历`,
+    `- [关于站长](${SITE_URL}/about): 站长介绍与履历`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,
     `- [AI 项目](${SITE_URL}/works): 在做的产品与实验`,
     `- [知识库](${SITE_URL}/articles): 调研与文章总入口`,

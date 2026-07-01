@@ -60,7 +60,7 @@ export default function ArticleFooterCta() {
         >
           <span className="text-[18px]" aria-hidden="true">👋</span>
           <div className="flex-1">
-            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">关于我 →</div>
+            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">关于站长 →</div>
             <p className="mt-0.5 text-[12px] leading-5 text-[#666] dark:text-gray-400">
               前端 · AI Agent · 政企方案
             </p>

@@ -34,6 +34,7 @@ const SECTION_BADGE_CLASS = {
   column: 'home-badge home-badge-column',
   research: 'home-badge home-badge-research',
   resources: 'home-badge home-badge-resource',
+  tools: 'home-badge home-badge-resource',
   feed: 'home-badge home-badge-feed',
 }
 
@@ -46,6 +47,8 @@ const CLASSIC_SECTION_BADGE_CLASS = {
     'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
   resources:
     'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#263f4b] dark:bg-[#13232b] dark:text-[#9ac9d8]',
+  tools:
+    'border-[#d8cfb8] bg-[#fbf6ea] text-[#7a5417] dark:border-[#4a3c20] dark:bg-[#241d10] dark:text-[#e6b964]',
 }
 
 const CLASSIC_HOME_SECTION_TAB_CLASS = {
@@ -55,6 +58,8 @@ const CLASSIC_HOME_SECTION_TAB_CLASS = {
     'text-[#696071] hover:bg-white hover:text-[#3b5b8a] hover:shadow-sm hover:ring-1 hover:ring-[#cbd9ee] dark:text-gray-400 dark:hover:bg-[#152034] dark:hover:text-[#9bb6df] dark:hover:ring-[#2a3a55]',
   resources:
     'text-[#696071] hover:bg-white hover:text-[#3f6878] hover:shadow-sm hover:ring-1 hover:ring-[#c7dce4] dark:text-gray-400 dark:hover:bg-[#13232b] dark:hover:text-[#9ac9d8] dark:hover:ring-[#263f4b]',
+  tools:
+    'text-[#696071] hover:bg-white hover:text-[#7a5417] hover:shadow-sm hover:ring-1 hover:ring-[#d8cfb8] dark:text-gray-400 dark:hover:bg-[#241d10] dark:hover:text-[#e6b964] dark:hover:ring-[#4a3c20]',
 }
 
 const START_PATHS = [
@@ -427,7 +432,7 @@ function ClassicFeaturedSection({ items }) {
           </span>
           <div
             role="group"
-            className="grid grid-cols-3 gap-1 rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:inline-flex sm:items-center dark:border-gray-800 dark:bg-[#151a22] dark:shadow-none"
+            className="grid grid-cols-2 gap-1 rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:inline-flex sm:items-center dark:border-gray-800 dark:bg-[#151a22] dark:shadow-none"
           >
             {HOME_SECTION_MORE_LINKS.map((link) => (
               <Link

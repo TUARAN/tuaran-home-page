@@ -37,6 +37,7 @@ export default function sitemap() {
     '/services',
     '/articles',
     '/works',
+    '/tools',
     '/skill-center',
     '/context-memory',
     '/bookmarks/twitter',

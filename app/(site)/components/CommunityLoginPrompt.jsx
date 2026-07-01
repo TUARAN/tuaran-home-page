@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { useSessionAccount } from './SessionProvider'
 
 const DISMISS_KEY = 'tuaran:community-prompt-dismissed'
+const AUTO_DISMISS_SECONDS = 10
 
 /**
  * 登录后引导：提示加微信进社群（指向 /community，那里有社群码与微信号）。
@@ -17,6 +18,16 @@ export default function CommunityLoginPrompt() {
   const pathname = usePathname()
   // 初始按「已关闭」渲染，避免 SSR/首帧闪烁；挂载后再读 localStorage。
   const [dismissed, setDismissed] = useState(true)
+  const [secondsLeft, setSecondsLeft] = useState(AUTO_DISMISS_SECONDS)
+
+  const dismiss = useCallback(() => {
+    setDismissed(true)
+    try {
+      localStorage.setItem(DISMISS_KEY, '1')
+    } catch {
+      /* localStorage 不可用时仅当次关闭 */
+    }
+  }, [])
 
   useEffect(() => {
     try {
@@ -26,17 +37,27 @@ export default function CommunityLoginPrompt() {
     }
   }, [])
 
-  if (loading || !user || isOwner || dismissed) return null
-  if (pathname === '/community') return null
+  const shouldShow = !loading && user && !isOwner && !dismissed && pathname !== '/community'
 
-  const dismiss = () => {
-    setDismissed(true)
-    try {
-      localStorage.setItem(DISMISS_KEY, '1')
-    } catch {
-      /* localStorage 不可用时仅当次关闭 */
-    }
-  }
+  useEffect(() => {
+    if (!shouldShow) return undefined
+
+    setSecondsLeft(AUTO_DISMISS_SECONDS)
+    const timer = window.setInterval(() => {
+      setSecondsLeft((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer)
+          dismiss()
+          return 0
+        }
+        return current - 1
+      })
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [dismiss, shouldShow])
+
+  if (!shouldShow) return null
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[calc(var(--site-header-height)+0.5rem)] z-[110] px-4">
@@ -53,6 +74,12 @@ export default function CommunityLoginPrompt() {
         >
           查看社群 / 加微信
         </Link>
+        <span
+          aria-live="polite"
+          className="shrink-0 rounded-full bg-[#ede5d6] px-2.5 py-1 font-mono text-[11px] leading-none text-[#8a806c] dark:bg-white/5 dark:text-gray-400"
+        >
+          {secondsLeft} 秒后自动关闭
+        </span>
         <button
           type="button"
           onClick={dismiss}

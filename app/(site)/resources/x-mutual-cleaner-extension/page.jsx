@@ -9,14 +9,14 @@ export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'x-mutual-cleaner-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
-const DOWNLOAD_URL = '/downloads/x-mutual-cleaner-extension-v0.1.8.zip'
+const DOWNLOAD_URL = '/downloads/x-mutual-cleaner-extension-v0.1.9.zip'
 
 const title = 'X 平台一键取消没有回关你的人：浏览器插件下载'
 const description =
-  'X 互关清理助手是一款本地运行的 Chrome 浏览器插件：登录 X 后，在 Following 列表一键取消没有回关你的人，自动下刷列表，只跳过显示 Follows you 的互关账号。'
+  'X 互关清理助手是一款本地运行的 Chrome 浏览器插件：登录 X 后，在 Following 列表一键取消没有回关你的人，也支持在粉丝列表测试慢速批量点击 Follow back。'
 
 const shareText =
-  'X 平台一键取消没有回关你的人：本地运行的 Chrome 浏览器插件，打开 Following 列表后点一下即可自动处理未回关账号。'
+  'X 平台一键取消没有回关你的人：本地运行的 Chrome 浏览器插件，支持清理未回关，也支持测试慢速批量 Follow back。'
 
 export const metadata = {
   title,
@@ -26,6 +26,8 @@ export const metadata = {
     'X 取消未回关',
     'Twitter 取消未回关',
     'X Following 清理',
+    'X Follow back 批量回关',
+    'Twitter Follow back',
     '互关清理',
     'Chrome 浏览器插件',
     'X 粉丝管理工具',
@@ -55,7 +57,7 @@ function DownloadButton({ className = '' }) {
       download
       className={`inline-flex min-h-11 items-center justify-center rounded-full border border-[#0f1419] bg-[#0f1419] px-5 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#2f3336] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200 ${className}`}
     >
-      下载 Chrome 插件 v0.1.8
+      下载 Chrome 插件 v0.1.9
     </a>
   )
 }
@@ -94,10 +96,11 @@ export default function XMutualCleanerResourcePage() {
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
           一个面向 X/Twitter Following 列表的 Chrome 浏览器插件。登录 X 后打开自己的关注列表，点击一次按钮，
           插件会自动往下刷，只取消没有显示 <span className="font-semibold text-[var(--site-ink)]">Follows you</span> 的账号。
+          新增测试功能也可以在粉丝列表慢速批量点击 <span className="font-semibold text-[var(--site-ink)]">Follow back</span>。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {['X 平台', '一键取消未回关', 'Chrome 插件', '本地运行', '自动下刷列表'].map((tag) => (
+          {['X 平台', '一键取消未回关', 'Follow back 测试', 'Chrome 插件', '本地运行', '自动下刷列表'].map((tag) => (
             <span
               key={tag}
               className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-3 py-1 text-xs text-[#7a5b1e] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
@@ -151,6 +154,9 @@ export default function XMutualCleanerResourcePage() {
             <FeatureCard title="只跳过互关">
               看到 Follows you / 关注了你 的账号会跳过；没有互关标记且按钮是 Following 才会处理。
             </FeatureCard>
+            <FeatureCard title="测试回关">
+              在 Followers / Verified Followers 页面可慢速批量点击 Follow back，只处理已经关注你的账号。
+            </FeatureCard>
             <FeatureCard title="本地运行">
               插件运行在你自己的浏览器页面里，不需要你提供账号密码，也不把关注列表上传到第三方服务器。
             </FeatureCard>
@@ -165,6 +171,18 @@ export default function XMutualCleanerResourcePage() {
             需要注意的是，任何批量取消关注行为都可能触发平台风控。插件内置固定节奏和停止按钮，但仍建议你按自己的账号情况使用，
             不要把它当成无限量清理工具。
           </p>
+          <p>
+            批量回关属于测试功能。它只会点击显示 <strong>Follow back</strong> / <strong>回关</strong> 的按钮，
+            默认每次回关后等待 5.5 秒，每回关 20 个暂停 60 秒，单次运行最多回关 80 个，用来避免连续快速关注。
+          </p>
+          <p>
+            <a href="https://www.axios.com/2019/04/08/twitter-spam-follow-limit" target="_blank" rel="noreferrer">
+              公开报道
+            </a>
+            里，Twitter/X 曾为了抑制刷粉把每日关注上限从 1000 降到 400；
+            自动关注规则也更强调“别人先关注你之后再回关”的边界。因此这个测试功能不会跑满公开上限，
+            也不会点击普通 Follow，只做低频 Follow back。
+          </p>
 
           <h2>使用方法</h2>
           <ol>
@@ -174,6 +192,14 @@ export default function XMutualCleanerResourcePage() {
             <li>点击“加载已解压的扩展程序”，选择解压后的插件目录。</li>
             <li>登录 X，打开 <code>https://x.com/你的用户名/following</code>。</li>
             <li>点击右下角“一键取消未回关”。需要停止时，再点同一个按钮。</li>
+          </ol>
+
+          <h2>如何测试批量 Follow back？</h2>
+          <ol>
+            <li>登录 X，打开 <code>https://x.com/你的用户名/followers</code> 或 Verified Followers 页面。</li>
+            <li>点击右下角“测试：一键回关粉丝”。</li>
+            <li>插件只处理有 Follows you 标记且按钮是 Follow back 的账号，已经 Following 的账号会跳过。</li>
+            <li>需要停止时，再点同一个按钮。</li>
           </ol>
 
           <h2>适合谁？</h2>

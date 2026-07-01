@@ -2,11 +2,16 @@
   "use strict";
 
   const PANEL_ID = "x-mutual-cleaner-panel";
-  const DEFAULT_DELAY_MS = 650;
+  const UNFOLLOW_DELAY_MS = 650;
+  const FOLLOW_BACK_DELAY_MS = 5500;
+  const FOLLOW_BACK_BATCH_SIZE = 20;
+  const FOLLOW_BACK_BATCH_COOLDOWN_MS = 60000;
+  const FOLLOW_BACK_MAX_PER_RUN = 80;
   const SCROLL_DELAY_MS = 450;
   const MAX_STALLED_SCROLLS = 4;
 
   const FOLLOWING_RE = /^(Following|正在关注)$/i;
+  const FOLLOW_BACK_RE = /^(Follow back|回关)$/i;
   const FOLLOW_RE = /^(Follow|关注)$/i;
   const FOLLOWS_YOU_RE = /(Follows you|关注了你)/i;
   const USER_HANDLE_RE = /@[A-Za-z0-9_]{1,15}/;
@@ -15,7 +20,9 @@
   const state = {
     running: false,
     stopping: false,
+    mode: "",
     unfollowed: 0,
+    followedBack: 0,
     skipped: 0,
     errors: 0,
     pausedByHidden: false,
@@ -73,6 +80,10 @@
 
   function isFollowingPage() {
     return /^\/[^/]+\/following\/?$/.test(window.location.pathname);
+  }
+
+  function isFollowersPage() {
+    return /^\/[^/]+\/(followers|verified_followers)\/?$/.test(window.location.pathname);
   }
 
   function looksLoggedIn() {
@@ -136,12 +147,24 @@
     return FOLLOWING_RE.test(label) || /^Following\s+@/i.test(label) || /^正在关注\s+@/.test(label);
   }
 
+  function isFollowBackButton(button) {
+    const label = buttonLabel(button);
+    if (!label) return false;
+    return FOLLOW_BACK_RE.test(label) || /^Follow back\s+@/i.test(label);
+  }
+
   function findFollowingButton(row) {
     return (
       row.querySelector('button[data-testid$="-unfollow"], [role="button"][data-testid$="-unfollow"]') ||
       getActionElements(row).find(isFollowingButton) ||
       null
     );
+  }
+
+  function findFollowBackButton(row) {
+    const testIdButton = row.querySelector('button[data-testid$="-follow"], [role="button"][data-testid$="-follow"]');
+    if (testIdButton && isFollowBackButton(testIdButton)) return getClickableElement(testIdButton);
+    return getActionElements(row).find(isFollowBackButton) || null;
   }
 
   function hasFollowsYou(row) {
@@ -160,7 +183,7 @@
       ...document.querySelectorAll('[data-testid="UserCell"]'),
       ...document.querySelectorAll('article[role="article"]'),
       ...Array.from(document.querySelectorAll('[data-testid="cellInnerDiv"]')).filter((node) =>
-        node.querySelector('a[href]') && findFollowingButton(node)
+        node.querySelector('a[href]') && (findFollowingButton(node) || findFollowBackButton(node))
       )
     );
 
@@ -189,6 +212,26 @@
       .filter((row) => row.handle && row.followingButton);
   }
 
+  function getVisibleFollowBackRows() {
+    return getRowElements()
+      .map((row) => {
+        const followBackButton = findFollowBackButton(row);
+        const followingButton = findFollowingButton(row);
+        const handle = findHandle(row, followBackButton || followingButton);
+        const followsYou = hasFollowsYou(row);
+
+        return {
+          row,
+          handle,
+          followsYou,
+          followBackButton,
+          followingButton,
+          isCandidate: Boolean(handle && followBackButton && followsYou)
+        };
+      })
+      .filter((row) => row.handle && (row.followBackButton || row.followingButton));
+  }
+
   function getScrollInfo() {
     const scrollingElement = document.scrollingElement || document.documentElement;
     const top = window.scrollY || scrollingElement.scrollTop || 0;
@@ -214,7 +257,7 @@
     return rows.map((row) => row.handle).join("|");
   }
 
-  async function scrollForward(previousSignature) {
+  async function scrollForward(previousSignature, getRows = getVisibleRows) {
     const before = getScrollInfo();
     const step = Math.max(640, Math.floor(window.innerHeight * 0.9));
     window.scrollBy({ top: step, behavior: "auto" });
@@ -225,7 +268,7 @@
       await sleepActive(120);
       elapsed += 120;
 
-      latestRows = getVisibleRows();
+      latestRows = getRows();
       const after = getScrollInfo();
       const signature = rowsSignature(latestRows);
       const moved = after.top > before.top + 8;
@@ -248,16 +291,27 @@
   function setStats() {
     const stats = document.querySelector(`#${PANEL_ID} .xmc-stats`);
     if (!stats) return;
+    if (state.mode === "followBack") {
+      stats.textContent = `已回关 ${state.followedBack} · 已互关 ${state.skipped} · 异常 ${state.errors}`;
+      return;
+    }
     stats.textContent = `已取消 ${state.unfollowed} · 跳过互关 ${state.skipped} · 异常 ${state.errors}`;
   }
 
-  function setButton() {
-    const button = document.querySelector(`#${PANEL_ID} [data-xmc-toggle]`);
-    if (!button) return;
+  function setButtons() {
+    const buttons = Array.from(document.querySelectorAll(`#${PANEL_ID} [data-xmc-mode]`));
+    for (const button of buttons) {
+      const mode = button.getAttribute("data-xmc-mode");
+      const isActive = state.running && state.mode === mode;
+      const isInactiveWhileRunning = state.running && state.mode !== mode;
+      const idleText = mode === "followBack" ? "测试：一键回关粉丝" : "一键取消未回关";
 
-    button.textContent = state.running ? "运行中 · 点此停止" : "一键取消未回关";
-    button.classList.toggle("xmc-button-danger", state.running);
-    button.classList.toggle("xmc-button-primary", !state.running);
+      button.textContent = isActive ? "运行中 · 点此停止" : idleText;
+      button.disabled = isInactiveWhileRunning;
+      button.classList.toggle("xmc-button-danger", isActive);
+      button.classList.toggle("xmc-button-primary", !isActive && mode === "unfollow");
+      button.classList.toggle("xmc-button-secondary", !isActive && mode === "followBack");
+    }
   }
 
   function log(message) {
@@ -406,34 +460,82 @@
     return true;
   }
 
-  async function run() {
+  async function waitUntilFollowedBack(row, timeoutMs) {
+    let elapsed = 0;
+
+    while (elapsed < timeoutMs) {
+      await waitForForeground();
+
+      const hasFollowing = Boolean(findFollowingButton(row));
+      const hasFollowBack = Boolean(findFollowBackButton(row));
+      if (hasFollowing || !hasFollowBack || !document.body.contains(row)) return true;
+
+      await sleepActive(120);
+      elapsed += 120;
+    }
+
+    return false;
+  }
+
+  async function followBack(row) {
+    await waitForForeground();
+    state.seenHandles.add(row.handle);
+    setStatus(`点击 ${row.handle} 的 Follow back`);
+    realClick(row.followBackButton);
+
+    const ok = await waitUntilFollowedBack(row.row, 6000);
+    if (!ok) {
+      state.errors += 1;
+      log(`${row.handle} 回关后没有确认变化`);
+      return false;
+    }
+
+    state.followedBack += 1;
+    log(`已回关 ${row.handle}`);
+    return true;
+  }
+
+  function startRun(mode) {
     if (state.running) {
       state.stopping = true;
       setStatus("正在停止，当前动作结束后退出");
-      setButton();
-      return;
+      setButtons();
+      return false;
     }
 
-    if (!isFollowingPage()) {
+    if (mode === "unfollow" && !isFollowingPage()) {
       setStatus("请先打开自己的 X Following 页面");
-      return;
+      return false;
+    }
+
+    if (mode === "followBack" && !isFollowersPage()) {
+      setStatus("请先打开自己的 X Followers 或 Verified Followers 页面");
+      return false;
     }
 
     if (!looksLoggedIn()) {
-      setStatus("请先登录 X，再回到 Following 页面");
-      return;
+      setStatus("请先登录 X，再回到对应列表页面");
+      return false;
     }
 
     state.running = true;
     state.stopping = false;
+    state.mode = mode;
     state.pausedByHidden = false;
     state.unfollowed = 0;
+    state.followedBack = 0;
     state.skipped = 0;
     state.errors = 0;
     state.seenHandles.clear();
     state.skippedHandles.clear();
-    setButton();
+    setButtons();
     setStats();
+    return true;
+  }
+
+  async function runUnfollow() {
+    if (!startRun("unfollow")) return;
+
     setStatus("开始自动取消未回关账号");
     log("开始执行");
 
@@ -458,7 +560,7 @@
         stalledScrolls = 0;
         await unfollow(candidate);
         setStats();
-        if (!state.stopping) await sleepActive(DEFAULT_DELAY_MS);
+        if (!state.stopping) await sleepActive(UNFOLLOW_DELAY_MS);
         continue;
       }
 
@@ -479,11 +581,75 @@
 
     state.running = false;
     state.stopping = false;
+    state.mode = "";
     state.pausedByHidden = false;
-    setButton();
+    setButtons();
     setStats();
     setStatus(`完成：已取消 ${state.unfollowed} 个`);
     log("执行结束");
+  }
+
+  async function runFollowBack() {
+    if (!startRun("followBack")) return;
+
+    setStatus(`开始测试回关粉丝，默认慢速执行，单次最多 ${FOLLOW_BACK_MAX_PER_RUN} 个`);
+    log("开始回关测试");
+
+    let stalledScrolls = 0;
+
+    while (!state.stopping && state.followedBack < FOLLOW_BACK_MAX_PER_RUN) {
+      await waitForForeground();
+
+      const rows = getVisibleFollowBackRows();
+      if (!rows.length) {
+        setStatus("当前屏没有识别到 X 用户行，继续下刷");
+      }
+
+      for (const row of rows) {
+        if (row.followingButton && !state.skippedHandles.has(row.handle)) {
+          state.skippedHandles.add(row.handle);
+          state.skipped += 1;
+        }
+      }
+
+      const candidate = rows.find((row) => row.isCandidate && !state.seenHandles.has(row.handle));
+      if (candidate) {
+        stalledScrolls = 0;
+        await followBack(candidate);
+        setStats();
+
+        if (!state.stopping && state.followedBack > 0 && state.followedBack % FOLLOW_BACK_BATCH_SIZE === 0) {
+          setStatus(`已回关 ${state.followedBack} 个，暂停 60 秒降低频率`);
+          await sleepActive(FOLLOW_BACK_BATCH_COOLDOWN_MS);
+        } else if (!state.stopping) {
+          await sleepActive(FOLLOW_BACK_DELAY_MS);
+        }
+        continue;
+      }
+
+      setStatus("当前屏没有待回关账号，继续下刷");
+      await waitForForeground();
+      const currentSignature = rowsSignature(rows);
+      const result = await scrollForward(currentSignature, getVisibleFollowBackRows);
+
+      if (result.progressed || !isNearBottom()) {
+        stalledScrolls = 0;
+        await sleepActive(SCROLL_DELAY_MS);
+        continue;
+      }
+
+      stalledScrolls += 1;
+      if (stalledScrolls >= MAX_STALLED_SCROLLS) break;
+    }
+
+    state.running = false;
+    state.stopping = false;
+    state.pausedByHidden = false;
+    setStats();
+    state.mode = "";
+    setButtons();
+    setStatus(`完成：已回关 ${state.followedBack} 个`);
+    log("回关测试结束");
   }
 
   function renderPanel() {
@@ -497,9 +663,11 @@
         <button class="xmc-close" type="button" aria-label="关闭">×</button>
       </div>
       <div class="xmc-body">
-        <button class="xmc-button xmc-button-primary" type="button" data-xmc-toggle>一键取消未回关</button>
+        <button class="xmc-button xmc-button-primary" type="button" data-xmc-mode="unfollow">一键取消未回关</button>
+        <button class="xmc-button xmc-button-secondary" type="button" data-xmc-mode="followBack">测试：一键回关粉丝</button>
         <div class="xmc-status">打开 Following 页面后直接点击按钮。</div>
         <div class="xmc-stats">已取消 0 · 跳过互关 0 · 异常 0</div>
+        <div class="xmc-note">回关测试需在 Followers / Verified Followers 页面使用，默认慢速执行。</div>
         <a
           class="xmc-resource-link"
           href="https://2aran.com/resources/x-mutual-cleaner-extension?from=x-mutual-cleaner-extension"
@@ -514,7 +682,8 @@
 
     document.documentElement.appendChild(panel);
     panel.querySelector(".xmc-close").addEventListener("click", () => panel.remove());
-    panel.querySelector("[data-xmc-toggle]").addEventListener("click", run);
+    panel.querySelector('[data-xmc-mode="unfollow"]').addEventListener("click", runUnfollow);
+    panel.querySelector('[data-xmc-mode="followBack"]').addEventListener("click", runFollowBack);
   }
 
   if (document.readyState === "loading") {

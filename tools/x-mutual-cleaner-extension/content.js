@@ -3,10 +3,11 @@
 
   const PANEL_ID = "x-mutual-cleaner-panel";
   const UNFOLLOW_DELAY_MS = 650;
-  const FOLLOW_BACK_DELAY_MS = 5500;
-  const FOLLOW_BACK_BATCH_SIZE = 20;
-  const FOLLOW_BACK_BATCH_COOLDOWN_MS = 60000;
-  const FOLLOW_BACK_MAX_PER_RUN = 80;
+  const FOLLOW_BACK_DELAY_MS = 12000;
+  const FOLLOW_BACK_BATCH_SIZE = 8;
+  const FOLLOW_BACK_BATCH_COOLDOWN_MS = 120000;
+  const FOLLOW_BACK_MAX_PER_RUN = 40;
+  const FOLLOW_BACK_ERROR_COOLDOWN_MS = 30000;
   const SCROLL_DELAY_MS = 450;
   const MAX_STALLED_SCROLLS = 4;
 
@@ -14,6 +15,7 @@
   const FOLLOW_BACK_RE = /^(Follow back|回关)$/i;
   const FOLLOW_RE = /^(Follow|关注)$/i;
   const FOLLOWS_YOU_RE = /(Follows you|关注了你)/i;
+  const TIMELINE_ERROR_RE = /(Something went wrong|Try reloading|出错了|出了点问题|重试)/i;
   const USER_HANDLE_RE = /@[A-Za-z0-9_]{1,15}/;
   const PROFILE_PATH_RE = /^\/([A-Za-z0-9_]{1,15})\/?$/;
 
@@ -110,6 +112,41 @@
     const elements = Array.from(scope.querySelectorAll('button, [role="button"]'));
     if (scope.matches?.('button, [role="button"]')) elements.unshift(scope);
     return Array.from(new Set(elements));
+  }
+
+  function getMainColumn() {
+    return document.querySelector('[data-testid="primaryColumn"]') || document.body;
+  }
+
+  function findRetryButton() {
+    const mainColumn = getMainColumn();
+    return (
+      getActionElements(mainColumn).find((button) => /^(Retry|重试)$/i.test(buttonLabel(button))) || null
+    );
+  }
+
+  function hasTimelineError() {
+    const mainColumn = getMainColumn();
+    return TIMELINE_ERROR_RE.test(textOf(mainColumn)) && Boolean(findRetryButton());
+  }
+
+  async function recoverTimelineError() {
+    if (!hasTimelineError()) return false;
+
+    state.errors += 1;
+    setStats();
+    setStatus("X 列表加载失败，暂停 30 秒后点击 Retry");
+    log("检测到 X 列表加载失败");
+    await sleepActive(FOLLOW_BACK_ERROR_COOLDOWN_MS);
+
+    const retryButton = findRetryButton();
+    if (retryButton && !state.stopping) {
+      realClick(retryButton);
+      log("已点击 Retry");
+      await sleepActive(5000);
+    }
+
+    return true;
   }
 
   function getHandleFromButton(button) {
@@ -304,7 +341,7 @@
       const mode = button.getAttribute("data-xmc-mode");
       const isActive = state.running && state.mode === mode;
       const isInactiveWhileRunning = state.running && state.mode !== mode;
-      const idleText = mode === "followBack" ? "测试：一键回关粉丝" : "一键取消未回关";
+      const idleText = mode === "followBack" ? "一键回关粉丝" : "一键取消未回关";
 
       button.textContent = isActive ? "运行中 · 点此停止" : idleText;
       button.disabled = isInactiveWhileRunning;
@@ -592,13 +629,18 @@
   async function runFollowBack() {
     if (!startRun("followBack")) return;
 
-    setStatus(`开始测试回关粉丝，默认慢速执行，单次最多 ${FOLLOW_BACK_MAX_PER_RUN} 个`);
+    setStatus(`开始回关测试，慢速执行，单次最多 ${FOLLOW_BACK_MAX_PER_RUN} 个`);
     log("开始回关测试");
 
     let stalledScrolls = 0;
 
     while (!state.stopping && state.followedBack < FOLLOW_BACK_MAX_PER_RUN) {
       await waitForForeground();
+
+      if (await recoverTimelineError()) {
+        stalledScrolls = 0;
+        continue;
+      }
 
       const rows = getVisibleFollowBackRows();
       if (!rows.length) {
@@ -619,7 +661,7 @@
         setStats();
 
         if (!state.stopping && state.followedBack > 0 && state.followedBack % FOLLOW_BACK_BATCH_SIZE === 0) {
-          setStatus(`已回关 ${state.followedBack} 个，暂停 60 秒降低频率`);
+          setStatus(`已回关 ${state.followedBack} 个，暂停 2 分钟降低频率`);
           await sleepActive(FOLLOW_BACK_BATCH_COOLDOWN_MS);
         } else if (!state.stopping) {
           await sleepActive(FOLLOW_BACK_DELAY_MS);
@@ -664,10 +706,15 @@
       </div>
       <div class="xmc-body">
         <button class="xmc-button xmc-button-primary" type="button" data-xmc-mode="unfollow">一键取消未回关</button>
-        <button class="xmc-button xmc-button-secondary" type="button" data-xmc-mode="followBack">测试：一键回关粉丝</button>
         <div class="xmc-status">打开 Following 页面后直接点击按钮。</div>
         <div class="xmc-stats">已取消 0 · 跳过互关 0 · 异常 0</div>
-        <div class="xmc-note">回关测试需在 Followers / Verified Followers 页面使用，默认慢速执行。</div>
+        <details class="xmc-test-section">
+          <summary class="xmc-test-summary">测试功能</summary>
+          <div class="xmc-test-panel">
+            <button class="xmc-button xmc-button-secondary xmc-button-compact" type="button" data-xmc-mode="followBack">一键回关粉丝</button>
+            <div class="xmc-note">需在 Followers / Verified Followers 页面使用。慢速执行：12 秒一个，8 个暂停 2 分钟，单次最多 40 个。</div>
+          </div>
+        </details>
         <a
           class="xmc-resource-link"
           href="https://2aran.com/resources/x-mutual-cleaner-extension?from=x-mutual-cleaner-extension"

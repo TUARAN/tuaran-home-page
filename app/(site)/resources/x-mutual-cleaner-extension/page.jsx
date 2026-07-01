@@ -9,7 +9,7 @@ export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'x-mutual-cleaner-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
-const DOWNLOAD_URL = '/downloads/x-mutual-cleaner-extension-v0.1.9.zip'
+const DOWNLOAD_URL = '/downloads/x-mutual-cleaner-extension-v0.1.10.zip'
 
 const title = 'X 平台一键取消没有回关你的人：浏览器插件下载'
 const description =
@@ -57,7 +57,7 @@ function DownloadButton({ className = '' }) {
       download
       className={`inline-flex min-h-11 items-center justify-center rounded-full border border-[#0f1419] bg-[#0f1419] px-5 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#2f3336] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200 ${className}`}
     >
-      下载 Chrome 插件 v0.1.9
+      下载 Chrome 插件 v0.1.10
     </a>
   )
 }
@@ -173,7 +173,8 @@ export default function XMutualCleanerResourcePage() {
           </p>
           <p>
             批量回关属于测试功能。它只会点击显示 <strong>Follow back</strong> / <strong>回关</strong> 的按钮，
-            默认每次回关后等待 5.5 秒，每回关 20 个暂停 60 秒，单次运行最多回关 80 个，用来避免连续快速关注。
+            入口收在插件面板的“测试功能”折叠区里。默认每次回关后等待 12 秒，每回关 8 个暂停 2 分钟，
+            单次运行最多回关 40 个；如果 X 列表出现 Something went wrong，会先暂停 30 秒再点击 Retry 尝试恢复。
           </p>
           <p>
             <a href="https://www.axios.com/2019/04/08/twitter-spam-follow-limit" target="_blank" rel="noreferrer">
@@ -197,7 +198,7 @@ export default function XMutualCleanerResourcePage() {
           <h2>如何测试批量 Follow back？</h2>
           <ol>
             <li>登录 X，打开 <code>https://x.com/你的用户名/followers</code> 或 Verified Followers 页面。</li>
-            <li>点击右下角“测试：一键回关粉丝”。</li>
+            <li>展开右下角插件面板里的“测试功能”，点击“一键回关粉丝”。</li>
             <li>插件只处理有 Follows you 标记且按钮是 Follow back 的账号，已经 Following 的账号会跳过。</li>
             <li>需要停止时，再点同一个按钮。</li>
           </ol>

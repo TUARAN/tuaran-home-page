@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
-import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/researchStyleTemplates'
+import { RESEARCH_STYLE_TEMPLATES, UNIVERSAL_BAN_PHRASES } from '../../../../lib/researchStyleTemplates'
 import { AdminPage } from '../../components/ui'
 
 const STATUS_TONE = {
@@ -114,6 +114,15 @@ export default function ResearchStyleClient() {
       maxWidth="1180px"
       description="调研按风格选择：默认调研、人味调研、周刊解释、投研备忘、资料档案。动笔前先选风格，用户也可以直接说“用 XX 风格调研”。"
     >
+      <div className="mb-6 rounded-2xl border border-rose-300 bg-rose-50/60 p-5 dark:border-rose-900/60 dark:bg-rose-950/20">
+        <SectionTitle>公理 · 所有风格通用禁语</SectionTitle>
+        <p className="mb-3 text-[12px] leading-relaxed text-[#73746a] dark:text-[#9aa3b3]">
+          与选哪种风格无关：任何调研 / 文章都不应出现下列 AI 腔套话。先满足「不像 AI 写的」，再谈风格。
+          有些（如「不是 X，而是 Y」）是合法中文结构，禁的是「删掉后不损失意思」的假深刻用法——写时自检，不做机械删除。
+        </p>
+        <PhraseList items={UNIVERSAL_BAN_PHRASES} accent="text-rose-700 dark:text-rose-300" />
+      </div>
+
       <div className="grid gap-6 md:grid-cols-[300px_minmax(0,1fr)] md:items-start">
         <aside className="space-y-4 md:sticky md:top-[72px] md:self-start">
           <div>

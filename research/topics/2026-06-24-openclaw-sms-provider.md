@@ -16,7 +16,7 @@ pv: 0
 
 ## 一、先给结论
 
-**如果只记住一句话：OpenClaw 现在（`2026.6.10` 起）官方内置了一方 SMS channel `@openclaw/sms`，后端是 Twilio——这就是「哪家提供」的官方默认答案；Telnyx 是另一条由 Telnyx 公司自己写的一方 channel，社区还补了大量 Twilio/自建方案和发短信 skill。**
+**OpenClaw 现在（`2026.6.10` 起）官方内置了一方 SMS channel `@openclaw/sms`，后端是 Twilio——这就是「哪家提供」的官方默认答案；Telnyx 是另一条由 Telnyx 公司自己写的一方 channel，社区还补了大量 Twilio/自建方案和发短信 skill。**
 
 > **更正**：本文初稿曾判断「OpenClaw 官方内核不自带 SMS channel、短信全靠生态」——经核心仓库核验，该结论已过时。`openclaw/openclaw` 的 `extensions/sms` 自 2026-05-31「feat: add Twilio SMS channel」起内置了一方 Twilio SMS channel，随 `2026.6.10` 版发行。下文按此更正。
 

@@ -16,7 +16,7 @@ pv: 0
 
 ## 一、先给结论
 
-**如果只记住一句话：在 OpenClaw 里做一个 channel 不难（它就是个插件），难的是「被官方集成」——官方默认让你做第三方插件，能不能往上爬到「随核心发行」那一档，实质取决于有没有领域 maintainer 愿意接管维护。**
+**在 OpenClaw 里做一个 channel 不难（它就是个插件），难的是「被官方集成」——官方默认让你做第三方插件，能不能往上爬到「随核心发行」那一档，实质取决于有没有领域 maintainer 愿意接管维护。**
 
 - **做出来**：写一个带 `openclaw.plugin.json` manifest、声明 `channel` 契约（id / 配置 schema / 入站 / 出站 / allowlist）的插件，发到 **ClawHub**（或 npm），用户 `openclaw plugins install` 即可用。这条路对任何人开放。
 - **被官方集成**：CONTRIBUTING 原文——「**Most features are not accepted and should be third party plugins instead**」。所以「进核心」是例外，不是默认。它分四档（见第三节），越往核心越要 maintainer 背书。

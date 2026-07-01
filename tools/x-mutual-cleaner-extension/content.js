@@ -10,6 +10,7 @@
   const FOLLOW_RE = /^(Follow|关注)$/i;
   const FOLLOWS_YOU_RE = /(Follows you|关注了你)/i;
   const USER_HANDLE_RE = /@[A-Za-z0-9_]{1,15}/;
+  const PROFILE_PATH_RE = /^\/([A-Za-z0-9_]{1,15})\/?$/;
 
   const state = {
     running: false,
@@ -42,8 +43,26 @@
     return (button?.innerText || button?.getAttribute("aria-label") || "").trim();
   }
 
-  function findHandle(article) {
-    const text = textOf(article);
+  function getActionElements(scope) {
+    return Array.from(scope.querySelectorAll('button, [role="button"]'));
+  }
+
+  function findHandle(row) {
+    const links = Array.from(row.querySelectorAll("a[href]"));
+    for (const link of links) {
+      const href = link.getAttribute("href") || "";
+      let pathname = href;
+      try {
+        pathname = new URL(href, window.location.origin).pathname;
+      } catch {
+        // Keep the raw href fallback.
+      }
+
+      const match = pathname.match(PROFILE_PATH_RE);
+      if (match) return `@${match[1]}`;
+    }
+
+    const text = textOf(row);
     const match = text.match(USER_HANDLE_RE);
     return match ? match[0] : "";
   }
@@ -54,20 +73,36 @@
     return FOLLOWING_RE.test(label) || /^Following\s+@/i.test(label) || /^正在关注\s+@/.test(label);
   }
 
-  function findFollowingButton(article) {
-    return Array.from(article.querySelectorAll("button")).find(isFollowingButton) || null;
+  function findFollowingButton(row) {
+    return getActionElements(row).find(isFollowingButton) || null;
+  }
+
+  function getRowElements() {
+    const rows = [
+      ...document.querySelectorAll('[data-testid="UserCell"]'),
+      ...document.querySelectorAll('article[role="article"]'),
+      ...Array.from(document.querySelectorAll('[data-testid="cellInnerDiv"]')).filter((node) =>
+        node.querySelector('a[href]') && getActionElements(node).some(isFollowingButton)
+      )
+    ];
+
+    return Array.from(new Set(rows)).filter((row) => {
+      if (!row || row.closest(`#${PANEL_ID}`)) return false;
+      const rect = row.getBoundingClientRect();
+      return rect.bottom > 0 && rect.top < window.innerHeight;
+    });
   }
 
   function getVisibleRows() {
-    return Array.from(document.querySelectorAll('article[role="article"]'))
-      .map((article) => {
-        const text = textOf(article);
-        const handle = findHandle(article);
-        const followingButton = findFollowingButton(article);
+    return getRowElements()
+      .map((row) => {
+        const text = textOf(row);
+        const handle = findHandle(row);
+        const followingButton = findFollowingButton(row);
         const followsYou = FOLLOWS_YOU_RE.test(text);
 
         return {
-          article,
+          row,
           handle,
           followsYou,
           followingButton,
@@ -125,15 +160,17 @@
       clientY: rect.top + rect.height / 2
     };
 
-    for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup", "click"]) {
-      element.dispatchEvent(new MouseEvent(type, init));
+    for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup"]) {
+      const EventClass = type.startsWith("pointer") && typeof PointerEvent === "function" ? PointerEvent : MouseEvent;
+      element.dispatchEvent(new EventClass(type, init));
     }
+    element.click();
   }
 
   function findUnfollowConfirm() {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
-      const buttons = Array.from(dialog.querySelectorAll("button"));
+      const buttons = getActionElements(dialog);
       const confirm = buttons.find((button) => {
         const label = buttonLabel(button);
         return /^(Unfollow|取消关注)$/i.test(label) || /^Unfollow\s+@/i.test(label) || /取消关注/.test(label);
@@ -143,16 +180,16 @@
     return null;
   }
 
-  async function waitForConfirmOrStateChange(article, timeoutMs) {
+  async function waitForConfirmOrStateChange(row, timeoutMs) {
     const startedAt = Date.now();
 
     while (Date.now() - startedAt < timeoutMs) {
       const confirm = findUnfollowConfirm();
       if (confirm) return { type: "confirm", button: confirm };
 
-      const currentButton = findFollowingButton(article);
-      const hasFollowButton = Array.from(article.querySelectorAll("button")).some((button) => FOLLOW_RE.test(buttonLabel(button)));
-      if (!currentButton || hasFollowButton || !document.body.contains(article)) {
+      const currentButton = findFollowingButton(row);
+      const hasFollowButton = getActionElements(row).some((button) => FOLLOW_RE.test(buttonLabel(button)));
+      if (!currentButton || hasFollowButton || !document.body.contains(row)) {
         return { type: "changed" };
       }
 
@@ -162,13 +199,13 @@
     return { type: "timeout" };
   }
 
-  async function waitUntilUnfollowed(article, timeoutMs) {
+  async function waitUntilUnfollowed(row, timeoutMs) {
     const startedAt = Date.now();
 
     while (Date.now() - startedAt < timeoutMs) {
-      const hasFollowing = Boolean(findFollowingButton(article));
-      const hasFollow = Array.from(article.querySelectorAll("button")).some((button) => FOLLOW_RE.test(buttonLabel(button)));
-      if (!hasFollowing || hasFollow || !document.body.contains(article)) return true;
+      const hasFollowing = Boolean(findFollowingButton(row));
+      const hasFollow = getActionElements(row).some((button) => FOLLOW_RE.test(buttonLabel(button)));
+      if (!hasFollowing || hasFollow || !document.body.contains(row)) return true;
       await sleep(150);
     }
 
@@ -180,11 +217,11 @@
     setStatus(`点击 ${row.handle} 的 Following`);
     realClick(row.followingButton);
 
-    const result = await waitForConfirmOrStateChange(row.article, 1800);
+    const result = await waitForConfirmOrStateChange(row.row, 1800);
     if (result.type === "confirm") {
       setStatus(`确认取消 ${row.handle}`);
       realClick(result.button);
-      const ok = await waitUntilUnfollowed(row.article, 2600);
+      const ok = await waitUntilUnfollowed(row.row, 2600);
       if (!ok) {
         state.errors += 1;
         log(`${row.handle} 未确认完成`);
@@ -235,6 +272,9 @@
 
     while (!state.stopping) {
       const rows = getVisibleRows();
+      if (!rows.length) {
+        setStatus("当前屏没有识别到 X 用户行，继续下刷");
+      }
       for (const row of rows) {
         if (row.followsYou && !state.skippedHandles.has(row.handle)) {
           state.skippedHandles.add(row.handle);

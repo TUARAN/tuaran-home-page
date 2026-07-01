@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-01T01:25:00.538Z",
+  "generatedAt": "2026-07-01T01:58:26.726Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -110,6 +110,12 @@
               "hash": "5ef9d7110f253af88202f4cb48a080d6057e1385443c28d3f32b5e8db7ac8922",
               "path": "claude/MEMORY/2026-07-01T01-25-00-506Z.enc.json",
               "bytes": 2693
+            },
+            {
+              "ts": "2026-07-01T01:58:26.677Z",
+              "hash": "e03e77f7ecb9d5327c9b880b52ca81d63ba3fe5b2df2c50d62d7ef0612f1a553",
+              "path": "claude/MEMORY/2026-07-01T01-58-26-696Z.enc.json",
+              "bytes": 2731
             }
           ]
         },
@@ -373,13 +379,19 @@
         },
         "feedback-ai-cliche-phrases": {
           "title": "feedback-ai-cliche-phrases",
-          "description": "写作禁用的 AI 腔套话清单；「如果只记住一句话」全风格禁用，直接给结论",
+          "description": "AI 腔套话公理级禁语（全风格通用），正本在 researchStyleTemplates.js 的 UNIVERSAL_BAN_PHRASES；动笔前先读",
           "versions": [
             {
               "ts": "2026-07-01T01:25:00.515Z",
               "hash": "c83fc83844a3bb058b8948d0819429964b376449ee44f3c4e7577c9252b7c5c5",
               "path": "claude/feedback-ai-cliche-phrases/2026-07-01T01-25-00-532Z.enc.json",
               "bytes": 821
+            },
+            {
+              "ts": "2026-07-01T01:58:26.701Z",
+              "hash": "093dda8d7a330b988717a10a4720d42c21b88c651a0df321d9bfa891478f04d0",
+              "path": "claude/feedback-ai-cliche-phrases/2026-07-01T01-58-26-720Z.enc.json",
+              "bytes": 1194
             }
           ]
         }

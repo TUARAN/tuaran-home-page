@@ -3,8 +3,8 @@
 //
 // 用途：引流向板块。承载短平快的图片 / 视频 / 资源 / 观点。
 // 更新方式：
-//   1) 将媒体文件上传到 R2 的 feed/ 前缀
-//   2) 在 FEED_ITEMS 顶部追加记录，src 写 feedMediaUrl('feed/xxx.mp4')
+//   1) 小于等于 25 MiB 的媒体可放 public/feed/，src 写 '/feed/xxx.mp4'
+//   2) 大于 25 MiB 的媒体必须上传到 R2 的 feed/ 前缀，src 写 feedMediaUrl('feed/xxx.mp4')
 //   3) git push → Cloudflare 重建上线
 //
 // 字段约定（按 type 取用对应字段）：

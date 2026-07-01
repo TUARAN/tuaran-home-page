@@ -26,6 +26,9 @@ if ! git diff --quiet -- public/data/memory 2>/dev/null; then
   echo "          回头记得 git add public/data/memory && git commit。"
 fi
 
+echo "[pre-push] public asset size check …"
+node scripts/check-public-asset-size.mjs
+
 echo "[pre-push] npm run lint …"
 if ! npm run --silent lint; then
   echo

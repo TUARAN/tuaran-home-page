@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 export const AUTHOR_INTRO_MARKDOWN =
   '> **涂阿燃 · tuaran**　前端 / AI Agent / 政企方案  \n' +
-  '> 在 [2aran.com](https://2aran.com) 写技术调研、AI 工程实践与独立开发笔记。[了解更多 →](https://2aran.com/about)'
+  '> 在 [2aran.com](https://2aran.com) 写技术调研、AI 工程实践与独立开发笔记。[关于站长 →](https://2aran.com/about)'
 
 export function AuthorByline() {
   return (
@@ -29,7 +29,7 @@ export function AuthorByline() {
         写技术调研、AI 工程实践与独立开发笔记。
         {' '}
         <Link href="/about" className="research-author-cta underline underline-offset-2">
-          了解更多 →
+          关于站长 →
         </Link>
       </p>
     </div>

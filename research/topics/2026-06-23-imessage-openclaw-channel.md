@@ -22,7 +22,7 @@ pv: 0
 
 ## 一、先给结论
 
-**如果只记住一句话：iMessage 之所以能驱动 OpenClaw，靠的不是任何越狱或私有 API，而是「一台已登录 iMessage 的 Mac + 一个直接读 `chat.db`、用 AppleScript 发消息的 CLI（imsg）+ OpenClaw Gateway 把它当渠道插件起进来」——能力边界和脆弱点都由 macOS 的权限模型决定。**
+**iMessage 之所以能驱动 OpenClaw，靠的不是任何越狱或私有 API，而是「一台已登录 iMessage 的 Mac + 一个直接读 `chat.db`、用 AppleScript 发消息的 CLI（imsg）+ OpenClaw Gateway 把它当渠道插件起进来」——能力边界和脆弱点都由 macOS 的权限模型决定。**
 
 把这件事拆成三层，每层各自能不能成立、卡在哪里，结论很清楚：
 

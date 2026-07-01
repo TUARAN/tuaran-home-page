@@ -3,7 +3,7 @@
   right: 18px;
   bottom: 18px;
   z-index: 2147483647;
-  width: min(360px, calc(100vw - 36px));
+  width: min(300px, calc(100vw - 36px));
   box-sizing: border-box;
   border: 1px solid rgba(83, 100, 113, 0.32);
   border-radius: 8px;
@@ -31,13 +31,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 12px 12px 8px;
+  padding: 11px 12px 8px;
   border-bottom: 1px solid rgba(83, 100, 113, 0.18);
 }
 
 .xmc-title {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .xmc-close {
@@ -54,51 +54,17 @@
 
 .xmc-body {
   display: grid;
-  gap: 10px;
+  gap: 9px;
   padding: 12px;
 }
 
-.xmc-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.xmc-muted {
-  color: #536471;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-@media (prefers-color-scheme: dark) {
-  .xmc-muted {
-    color: #8b98a5;
-  }
-}
-
-.xmc-status {
-  min-height: 36px;
-  padding: 8px;
-  border-radius: 6px;
-  background: rgba(29, 155, 240, 0.08);
-  line-height: 1.45;
-}
-
-.xmc-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
 .xmc-button {
-  min-height: 36px;
+  min-height: 40px;
+  width: 100%;
   border: 1px solid rgba(83, 100, 113, 0.28);
   border-radius: 6px;
-  background: #fff;
-  color: #0f1419;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .xmc-button-primary {
@@ -113,54 +79,26 @@
   color: #fff;
 }
 
-.xmc-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.52;
+.xmc-status {
+  min-height: 34px;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(29, 155, 240, 0.08);
+  color: inherit;
+  line-height: 1.45;
 }
 
-@media (prefers-color-scheme: dark) {
-  .xmc-button {
-    background: #16181c;
-    color: #e7e9ea;
-  }
-
-  .xmc-button-primary,
-  .xmc-button-danger {
-    color: #fff;
-  }
-}
-
-.xmc-settings {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.xmc-field {
-  display: grid;
-  gap: 4px;
-}
-
-.xmc-field label {
+.xmc-stats {
   color: #536471;
   font-size: 12px;
-}
-
-.xmc-field input {
-  width: 100%;
-  height: 34px;
-  border: 1px solid rgba(83, 100, 113, 0.32);
-  border-radius: 6px;
-  padding: 0 8px;
-  background: transparent;
-  color: inherit;
+  line-height: 1.4;
 }
 
 .xmc-log {
-  max-height: 130px;
+  max-height: 96px;
   overflow: auto;
   border-top: 1px solid rgba(83, 100, 113, 0.18);
-  padding-top: 8px;
+  padding-top: 7px;
   color: #536471;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 12px;
@@ -168,6 +106,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .xmc-stats,
   .xmc-log {
     color: #8b98a5;
   }

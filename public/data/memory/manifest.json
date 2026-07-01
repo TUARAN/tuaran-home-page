@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-30T06:51:54.651Z",
+  "generatedAt": "2026-07-01T01:25:00.538Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -104,6 +104,12 @@
               "hash": "2984e76cc7429edae4870f3fc45b5665fdbee2dad482821983c088a88d9b7357",
               "path": "claude/MEMORY/2026-06-30T06-51-54-626Z.enc.json",
               "bytes": 2574
+            },
+            {
+              "ts": "2026-07-01T01:25:00.488Z",
+              "hash": "5ef9d7110f253af88202f4cb48a080d6057e1385443c28d3f32b5e8db7ac8922",
+              "path": "claude/MEMORY/2026-07-01T01-25-00-506Z.enc.json",
+              "bytes": 2693
             }
           ]
         },
@@ -362,6 +368,18 @@
               "hash": "75ffbe054d2fa20fc5755d8d4bb2bb3231180d8de9487e0ebac3e3725b923711",
               "path": "claude/eink-reading-palette/2026-06-30T06-51-54-644Z.enc.json",
               "bytes": 2257
+            }
+          ]
+        },
+        "feedback-ai-cliche-phrases": {
+          "title": "feedback-ai-cliche-phrases",
+          "description": "写作禁用的 AI 腔套话清单；「如果只记住一句话」全风格禁用，直接给结论",
+          "versions": [
+            {
+              "ts": "2026-07-01T01:25:00.515Z",
+              "hash": "c83fc83844a3bb058b8948d0819429964b376449ee44f3c4e7577c9252b7c5c5",
+              "path": "claude/feedback-ai-cliche-phrases/2026-07-01T01-25-00-532Z.enc.json",
+              "bytes": 821
             }
           ]
         }

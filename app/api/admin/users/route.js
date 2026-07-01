@@ -1,7 +1,7 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import { isOwnerUser } from '../../../../lib/ownerAuth'
-import { getBalancesFor } from '../../../../lib/points'
+import { getBalance, getBalancesFor, getUnlockCountsForUsers } from '../../../../lib/points'
 import { listSiteUsers, updateSiteUser } from '../../../../lib/userDirectory'
 
 export const runtime = 'edge'
@@ -50,7 +50,18 @@ export async function GET(req) {
     } catch {
       balances = {}
     }
-    const withBalance = users.map((user) => ({ ...user, balance: balances[user.id] || 0 }))
+    let unlockCounts = {}
+    try {
+      unlockCounts = await getUnlockCountsForUsers(db, users.map((user) => user.id))
+    } catch {
+      unlockCounts = {}
+    }
+    const withBalance = users.map((user) => ({
+      ...user,
+      balance: balances[user.id] || 0,
+      unlockCount: unlockCounts[user.id]?.unlockCount || 0,
+      lastUnlockAt: unlockCounts[user.id]?.lastUnlockAt || null,
+    }))
     return Response.json({ status: 'ok', generatedAt: Date.now(), users: withBalance })
   } catch (error) {
     return Response.json(
@@ -106,6 +117,13 @@ export async function PATCH(req) {
     }
 
     const updated = await db.prepare('SELECT * FROM site_users WHERE id = ?').bind(id).first()
+    let balance = 0
+    let unlockCounts = {}
+    try {
+      balance = await getBalance(db, updated.id)
+      unlockCounts = await getUnlockCountsForUsers(db, [updated.id])
+    } catch {}
+
     return Response.json({
       ok: true,
       user: withOwnerFlag({
@@ -120,6 +138,9 @@ export async function PATCH(req) {
         firstSeenAt: updated.first_seen_at,
         lastSeenAt: updated.last_seen_at,
         loginCount: updated.login_count,
+        balance,
+        unlockCount: unlockCounts[updated.id]?.unlockCount || 0,
+        lastUnlockAt: unlockCounts[updated.id]?.lastUnlockAt || null,
       }),
     })
   } catch (error) {

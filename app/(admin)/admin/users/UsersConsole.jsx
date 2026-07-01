@@ -105,11 +105,12 @@ export default function UsersConsole() {
   }, [activeTab, guestStatus, refreshGuests])
 
   const stats = useMemo(() => {
-    const counts = { total: users.length, member: 0, trusted: 0, blocked: 0, owner: 0, totalBalance: 0 }
+    const counts = { total: users.length, member: 0, trusted: 0, blocked: 0, owner: 0, totalBalance: 0, totalUnlocks: 0 }
     for (const user of users) {
       counts[user.role] = (counts[user.role] || 0) + 1
       if (user.isOwner) counts.owner += 1
       counts.totalBalance += Number(user.balance || 0)
+      counts.totalUnlocks += Number(user.unlockCount || 0)
     }
     return counts
   }, [users])
@@ -317,6 +318,19 @@ export default function UsersConsole() {
       tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400',
     },
     {
+      key: 'unlocks',
+      header: '已解锁',
+      align: 'right',
+      render: (user) => (
+        <div className="text-right">
+          <p className="font-mono text-xs text-[#67695d] dark:text-gray-400">{Number(user.unlockCount || 0)}</p>
+          {user.lastUnlockAt ? (
+            <p className="text-[10px] text-[#94a3b8] dark:text-gray-500">{formatTime(user.lastUnlockAt)}</p>
+          ) : null}
+        </div>
+      ),
+    },
+    {
       key: 'action',
       header: '操作',
       render: (user) => (
@@ -334,7 +348,7 @@ export default function UsersConsole() {
             onClick={() => goToPoints(user.id, 'ledger')}
             className="rounded-md border border-[#c9d4e5] px-2 py-1 text-[11px] text-blue-700 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
           >
-            查流水
+            流水/解锁
           </button>
           <button
             type="button"
@@ -475,13 +489,14 @@ export default function UsersConsole() {
 
       {activeTab === 'users' ? (
         <>
-          <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-7">
             <StatCard label="用户总数" value={stats.total} icon="users" />
             <StatCard label={USER_ROLE_LABELS.member} value={stats.member} />
             <StatCard label={USER_ROLE_LABELS.trusted} value={stats.trusted} tone="success" />
             <StatCard label={USER_ROLE_LABELS.blocked} value={stats.blocked} tone="danger" />
             <StatCard label="站长（env）" value={stats.owner} />
             <StatCard label="燃币总余额" value={stats.totalBalance} />
+            <StatCard label="累计解锁" value={stats.totalUnlocks} />
           </div>
 
           <Section

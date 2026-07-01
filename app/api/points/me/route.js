@@ -2,6 +2,7 @@ import { getD1 } from '../../../../lib/d1'
 import { getUserFromRequest } from '../../../../lib/edgeSession'
 import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/guestSession'
 import { POINT_RULES, awardGuestSeed, getBalance, hasCheckedInToday } from '../../../../lib/points'
+import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -45,11 +46,19 @@ export async function GET(req) {
     }
 
     const userId = String(user.id)
-    const [balance, checkedInToday] = await Promise.all([
+    const [balance, checkedInToday, unlocks] = await Promise.all([
       getBalance(db, userId),
       hasCheckedInToday(db, userId),
+      listUnlocksForUser(db, userId, { limit: 100 }),
     ])
-    return Response.json({ authed: true, balance, checkedInToday, rules: POINT_RULES })
+    return Response.json({
+      authed: true,
+      balance,
+      checkedInToday,
+      rules: POINT_RULES,
+      unlockCount: unlocks.length,
+      unlocks,
+    })
   } catch {
     return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }

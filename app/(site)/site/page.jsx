@@ -38,7 +38,7 @@ const participate = [
 
 export default function SiteAboutPage() {
   return (
-    <PageContainer width="wide" className="py-12">
+    <PageContainer className="py-12">
       <header className="border-b border-[var(--site-line)] pb-8">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#7a5b1e] dark:text-amber-300">
           About This Site
@@ -46,7 +46,7 @@ export default function SiteAboutPage() {
         <h1 className="mt-3 font-serif text-[34px] leading-tight text-[var(--site-ink)] md:text-[46px]">
           关于本站
         </h1>
-        <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[var(--site-muted)]">
+        <p className="mt-4 max-w-[760px] text-[15px] leading-8 text-[var(--site-muted)]">
           2aran.com 是涂阿燃维护的个人内容、项目和资源门户。它不是一个 UGC 社区，也不以“收费阅读”为目标；
           更像一个长期开放的工作台：我负责持续整理内容和资源，读者可以围绕特定话题评论讨论、领取资料、参加活动，
           并通过燃币保留自己的参与记录和资源权益。

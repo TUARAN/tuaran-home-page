@@ -11,6 +11,7 @@ import {
   reverseLedgerEntry,
   upsertResource,
 } from '../../../../lib/points'
+import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -96,8 +97,9 @@ export async function GET(req) {
 
     let accountDetail = null
     let accountLedger = []
+    let accountUnlocks = []
     if (detailUserId && !detailUserId.startsWith('guest:')) {
-      const [balance, detailRollup, detailLedger] = await Promise.all([
+      const [balance, detailRollup, detailLedger, unlocks] = await Promise.all([
         getBalance(db, detailUserId),
         db
           .prepare(
@@ -124,13 +126,16 @@ export async function GET(req) {
           )
           .bind(detailUserId)
           .all(),
+        listUnlocksForUser(db, detailUserId, { limit: 300 }),
       ])
+      accountUnlocks = unlocks
       accountDetail = {
         user_id: detailUserId,
         balance,
         ledgerCount: toNumber(detailRollup?.ledger_count),
         earnedPoints: toNumber(detailRollup?.earned_points),
         spentPoints: toNumber(detailRollup?.spent_points),
+        unlockCount: unlocks.length,
         firstLedgerAt: detailRollup?.first_ledger_at || null,
         lastLedgerAt: detailRollup?.last_ledger_at || null,
       }
@@ -159,6 +164,7 @@ export async function GET(req) {
       })),
       accountDetail,
       accountLedger,
+      accountUnlocks,
       recentLedger: ledgerRows.map((row) => normalizeLedgerRow(row, balanceMap)),
     })
   } catch (error) {

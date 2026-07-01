@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Mutual Cleanup Assistant",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Scan an X Following list and help unfollow accounts that do not show Follows you.",
   "permissions": ["storage"],
   "host_permissions": ["https://x.com/*", "https://twitter.com/*"],

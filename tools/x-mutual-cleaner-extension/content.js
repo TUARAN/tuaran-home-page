@@ -43,6 +43,11 @@
     return (button?.getAttribute("aria-label") || button?.innerText || button?.textContent || "").trim();
   }
 
+  function getClickableElement(element) {
+    if (!element) return null;
+    return element.closest?.('button, [role="button"]') || element;
+  }
+
   function getActionElements(scope) {
     const elements = Array.from(scope.querySelectorAll('button, [role="button"]'));
     if (scope.matches?.('button, [role="button"]')) elements.unshift(scope);
@@ -192,24 +197,43 @@
     element.click();
   }
 
-  function findUnfollowConfirm() {
-    const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
+  function dialogLooksLikeUnfollow(dialog, handle = "") {
+    const text = textOf(dialog);
+    const normalizedHandle = handle.replace(/^@/, "");
+    const mentionsTarget = !normalizedHandle || text.includes(handle) || text.includes(normalizedHandle);
+    return mentionsTarget && /(Unfollow|取消关注)/i.test(text) && !/Block|Mute|Report|屏蔽|拉黑|举报/.test(text);
+  }
+
+  function findUnfollowConfirm(handle = "") {
+    const dialogs = Array.from(
+      document.querySelectorAll('[data-testid="confirmationSheetDialog"], [role="dialog"], [aria-modal="true"]')
+    );
     for (const dialog of dialogs) {
+      if (!dialogLooksLikeUnfollow(dialog, handle)) continue;
+
+      const testIdConfirm = dialog.querySelector(
+        '[data-testid="confirmationSheetConfirm"], [data-testid="unfollowConfirm"]'
+      );
+      if (testIdConfirm) return getClickableElement(testIdConfirm);
+
       const buttons = getActionElements(dialog);
       const confirm = buttons.find((button) => {
         const label = buttonLabel(button);
-        return /^(Unfollow|取消关注)$/i.test(label) || /^Unfollow\s+@/i.test(label) || /取消关注/.test(label);
+        return (
+          !/Cancel|取消$/i.test(label) &&
+          (/^(Unfollow|取消关注)$/i.test(label) || /^Unfollow\s+@/i.test(label) || /取消关注/.test(label))
+        );
       });
       if (confirm) return confirm;
     }
     return null;
   }
 
-  async function waitForConfirmOrStateChange(row, timeoutMs) {
+  async function waitForConfirmOrStateChange(row, handle, timeoutMs) {
     const startedAt = Date.now();
 
     while (Date.now() - startedAt < timeoutMs) {
-      const confirm = findUnfollowConfirm();
+      const confirm = findUnfollowConfirm(handle);
       if (confirm) return { type: "confirm", button: confirm };
 
       const currentButton = findFollowingButton(row);
@@ -222,6 +246,17 @@
     }
 
     return { type: "timeout" };
+  }
+
+  async function waitForConfirmToClose(handle, timeoutMs) {
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt < timeoutMs) {
+      if (!findUnfollowConfirm(handle)) return true;
+      await sleep(120);
+    }
+
+    return false;
   }
 
   async function waitUntilUnfollowed(row, timeoutMs) {
@@ -242,11 +277,12 @@
     setStatus(`点击 ${row.handle} 的 Following`);
     realClick(row.followingButton);
 
-    const result = await waitForConfirmOrStateChange(row.row, 1800);
+    const result = await waitForConfirmOrStateChange(row.row, row.handle, 4000);
     if (result.type === "confirm") {
       setStatus(`确认取消 ${row.handle}`);
       realClick(result.button);
-      const ok = await waitUntilUnfollowed(row.row, 2600);
+      await waitForConfirmToClose(row.handle, 3000);
+      const ok = await waitUntilUnfollowed(row.row, 5200);
       if (!ok) {
         state.errors += 1;
         log(`${row.handle} 未确认完成`);

@@ -10,6 +10,7 @@ const TYPE_TONES = {
   'content-system': { accent: '#3f6c50', wash: '#afc2ac', deep: '#253d2d' },
   'research-page': { accent: '#725292', wash: '#c3b1d1', deep: '#3d2a50' },
   'tool-experiment': { accent: '#a06a12', wash: '#d8c59c', deep: '#50370d' },
+  'browser-extension': { accent: '#2f6f68', wash: '#a8cfc6', deep: '#173d39' },
   'quant-analysis': { accent: '#a83f36', wash: '#d5aaa6', deep: '#52211d' },
 }
 
@@ -68,6 +69,7 @@ function WorkLink({ item, className, children }) {
     <a
       href={item.href}
       className={className}
+      download={item.download ? '' : undefined}
       target={isExternal(item.href) ? '_blank' : undefined}
       rel={isExternal(item.href) ? 'noreferrer' : undefined}
     >
@@ -139,7 +141,7 @@ function ExhibitDialog({ item, allItems, onClose, onSelect }) {
           </div>
 
           <WorkLink item={item} className={styles.primaryAction}>
-            {isExternal(item.href) ? '进入线上项目' : '打开站内作品'}
+            {item.actionLabel || (isExternal(item.href) ? '进入线上项目' : '打开站内作品')}
             <ArrowIcon />
           </WorkLink>
 
@@ -309,14 +311,18 @@ export default function WorksMuseumClient({ featuredItems, sections, items, oper
       <nav className={styles.roomDirectory} aria-label="展厅导航">
         <div className={styles.directoryTitle}>
           <span>Floor Directory</span>
-          <strong>馆内导览</strong>
+          <strong>展区导览</strong>
+          <p>按作品用途分区：先看长期产品，再看 AI 工程、研究页面和可下载工具。</p>
         </div>
         <ol>
           {sections.map((section, index) => (
             <li key={section.id}>
               <a href={`#room-${section.id}`}>
                 <span>{numberLabel(index)}</span>
-                <strong>{section.title}</strong>
+                <strong>
+                  {section.title}
+                  <small>{section.description}</small>
+                </strong>
                 <em>{section.items.length}</em>
               </a>
             </li>

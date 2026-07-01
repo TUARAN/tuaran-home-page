@@ -422,6 +422,12 @@
 
 .directoryTitle span { color: var(--museum-muted); font: 700 9px/1.4 ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
 .directoryTitle strong { font: 500 30px/1.2 Georgia, 'Songti SC', serif; }
+.directoryTitle p {
+  margin: 16px 0 0;
+  color: var(--museum-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
 .roomDirectory ol { margin: 0; padding: 0; list-style: none; }
 .roomDirectory li + li { border-top: 1px solid var(--museum-line); }
 
@@ -438,7 +444,16 @@
 
 .roomDirectory a:hover { padding-left: 34px; background: rgba(255,255,255,.32); }
 .roomDirectory a span { color: #8b8276; font: 700 10px/1 ui-monospace, monospace; }
-.roomDirectory a strong { font: 600 16px/1.2 Georgia, 'Songti SC', serif; }
+.roomDirectory a strong {
+  display: grid;
+  gap: 5px;
+  font: 600 16px/1.2 Georgia, 'Songti SC', serif;
+}
+.roomDirectory a small {
+  max-width: 560px;
+  color: var(--museum-muted);
+  font: 400 12px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
 .roomDirectory a em { color: #8b8276; font: normal 12px/1 ui-monospace, monospace; }
 
 .rooms { border-top: 1px solid var(--museum-line); }

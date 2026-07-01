@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSessionAccount } from '../components/SessionProvider'
 import { compareSortKeyDesc } from '../../../lib/research/datetime'
@@ -952,19 +951,25 @@ function ArticleRow({ item }) {
         </div>
         {item.image ? (
           <div className="relative h-32 overflow-hidden rounded-md border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 sm:h-28 sm:w-40">
-            {String(item.id || '').startsWith('post-db:') ? (
-              // 在线文章封面允许使用站长填写的任意 HTTPS 地址，不能受 Next 静态域名白名单限制。
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.image.src} alt={item.image.alt || `${item.title} 配图`} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
-            ) : (
-              <Image
-                src={item.image.src}
-                alt={item.image.alt || `${item.title} 配图`}
-                fill
-                sizes="(min-width: 640px) 160px, 100vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-              />
-            )}
+            {/*
+              统一用客户端直连 <img>，不走 Next /_next/image 优化器：
+              - 在线文章封面是站长填写的任意 HTTPS 地址，本就不能受静态域名白名单限制；
+              - 研究类封面经 wsrv.nl 代理，Cloudflare 优化器抓 wsrv 会 403、本地 dev 优化器会超时 abort，
+                造成列表裂图；客户端直连 wsrv 正常（200），故一并走 <img>。
+              onError：任何封面加载失败就隐藏整块，避免出现裂图图标。
+            */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.image.src}
+              alt={item.image.alt || `${item.title} 配图`}
+              loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                const box = e.currentTarget.parentElement
+                if (box) box.style.display = 'none'
+              }}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            />
           </div>
         ) : null}
       </div>

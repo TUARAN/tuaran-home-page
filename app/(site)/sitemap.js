@@ -46,6 +46,7 @@ export default function sitemap() {
     '/bookmarks/ai-tools',
     '/resources/rss',
     '/resources/codex-learning-resource-map-yichen',
+    '/resources/x-mutual-cleaner-extension',
     '/community',
     '/changelog',
     '/diary',

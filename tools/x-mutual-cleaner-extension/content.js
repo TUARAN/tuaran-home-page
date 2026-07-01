@@ -500,6 +500,14 @@
         <button class="xmc-button xmc-button-primary" type="button" data-xmc-toggle>一键取消未回关</button>
         <div class="xmc-status">打开 Following 页面后直接点击按钮。</div>
         <div class="xmc-stats">已取消 0 · 跳过互关 0 · 异常 0</div>
+        <a
+          class="xmc-resource-link"
+          href="https://2aran.com/resources/x-mutual-cleaner-extension?from=x-mutual-cleaner-extension"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          插件介绍 / 下载页
+        </a>
         <div class="xmc-log" aria-live="polite"></div>
       </div>
     `;

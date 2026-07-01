@@ -20,6 +20,15 @@ const providerLabels = {
   email: '邮箱',
 }
 
+const stickyUserTh =
+  'sticky left-0 z-20 bg-white shadow-[10px_0_16px_-16px_rgba(21,20,15,0.45)] dark:bg-[#0d1218]'
+const stickyUserTd =
+  'sticky left-0 z-10 bg-white shadow-[10px_0_16px_-16px_rgba(21,20,15,0.45)] dark:bg-[#0d1218]'
+const stickyActionTh =
+  'sticky right-0 z-20 bg-white shadow-[-10px_0_16px_-16px_rgba(21,20,15,0.45)] dark:bg-[#0d1218]'
+const stickyActionTd =
+  'sticky right-0 z-10 bg-white shadow-[-10px_0_16px_-16px_rgba(21,20,15,0.45)] dark:bg-[#0d1218]'
+
 function formatTime(ts) {
   if (!ts) return '—'
   try {
@@ -222,7 +231,9 @@ export default function UsersConsole() {
     {
       key: 'user',
       header: '用户',
-      width: '240px',
+      width: '260px',
+      thClassName: stickyUserTh,
+      tdClassName: `${stickyUserTd} w-[260px] min-w-[260px] max-w-[260px]`,
       render: (user) => (
         <div className="flex items-center gap-2.5">
           {user.image ? (
@@ -258,12 +269,14 @@ export default function UsersConsole() {
     {
       key: 'provider',
       header: '来源',
+      width: '92px',
       render: (user) => providerLabels[user.provider] || user.provider || '—',
-      tdClassName: 'text-xs text-[#67695d] dark:text-gray-400',
+      tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400',
     },
     {
       key: 'role',
       header: '角色',
+      width: '136px',
       render: (user) =>
         user.isOwner ? (
           <span className={`inline-block rounded-full px-2 py-1 text-xs ${roleStyles[user.role] || roleStyles.member}`}>
@@ -273,7 +286,7 @@ export default function UsersConsole() {
           <select
             value={draftFor(user).role}
             onChange={(event) => setDraft(user, { role: event.target.value })}
-            className={inputCls}
+            className={`${inputCls} w-32`}
           >
             {VALID_USER_ROLES.map((role) => (
               <option key={role} value={role}>
@@ -286,12 +299,12 @@ export default function UsersConsole() {
     {
       key: 'note',
       header: '备注',
-      width: '200px',
+      width: '160px',
       render: (user) => (
         <input
           value={draftFor(user).note}
           onChange={(event) => setDraft(user, { note: event.target.value })}
-          placeholder="备注（仅站长可见）"
+          placeholder="备注"
           maxLength={500}
           className={`w-full ${inputCls}`}
         />
@@ -300,12 +313,14 @@ export default function UsersConsole() {
     {
       key: 'lastSeen',
       header: '最近活跃',
+      width: '150px',
       render: (user) => formatTime(user.lastSeenAt),
       tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400',
     },
     {
       key: 'loginCount',
       header: '登录次数',
+      width: '92px',
       align: 'center',
       render: (user) => user.loginCount,
       tdClassName: 'text-xs text-[#67695d] dark:text-gray-400',
@@ -313,6 +328,7 @@ export default function UsersConsole() {
     {
       key: 'balance',
       header: '燃币',
+      width: '80px',
       align: 'right',
       render: (user) => Number(user.balance || 0),
       tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400',
@@ -320,6 +336,7 @@ export default function UsersConsole() {
     {
       key: 'unlocks',
       header: '已解锁',
+      width: '104px',
       align: 'right',
       render: (user) => (
         <div className="text-right">
@@ -333,8 +350,11 @@ export default function UsersConsole() {
     {
       key: 'action',
       header: '操作',
+      width: '300px',
+      thClassName: stickyActionTh,
+      tdClassName: `${stickyActionTd} w-[300px] min-w-[300px] max-w-[300px]`,
       render: (user) => (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
           <AdminButton
             variant="primary"
             size="sm"
@@ -346,14 +366,14 @@ export default function UsersConsole() {
           <button
             type="button"
             onClick={() => goToPoints(user.id, 'ledger')}
-            className="rounded-md border border-[#c9d4e5] px-2 py-1 text-[11px] text-blue-700 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
+            className="inline-flex h-8 items-center rounded-md border border-[#c9d4e5] px-2.5 text-[11px] font-medium text-blue-700 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
           >
             流水/解锁
           </button>
           <button
             type="button"
             onClick={() => goToPoints(user.id, 'adjust')}
-            className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
+            className="inline-flex h-8 items-center rounded-md border border-[#d8dad0] px-2.5 text-[11px] font-medium text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
           >
             调整燃币
           </button>
@@ -541,6 +561,7 @@ export default function UsersConsole() {
               columns={columns}
               rows={status === 'loading' ? [] : filtered}
               rowKey={(user) => user.id}
+              tableClassName="min-w-[1374px] table-fixed"
               empty={
                 <EmptyState
                   title={

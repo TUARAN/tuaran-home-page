@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Mutual Cleanup Assistant",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Clean X non-mutual following accounts and test slow batch follow-back on follower lists.",
   "permissions": ["storage"],
   "host_permissions": ["https://x.com/*", "https://twitter.com/*"],

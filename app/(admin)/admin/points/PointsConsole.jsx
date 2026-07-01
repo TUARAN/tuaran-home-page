@@ -75,6 +75,7 @@ export default function PointsConsole() {
   const [summary, setSummary] = useState(null)
   const [accountDetail, setAccountDetail] = useState(null)
   const [accountLedger, setAccountLedger] = useState([])
+  const [accountUnlocks, setAccountUnlocks] = useState([])
   const [detailStatus, setDetailStatus] = useState('idle')
   const [busy, setBusy] = useState(false)
   const [activeTab, setActiveTab] = useState('settings')
@@ -142,6 +143,7 @@ export default function PointsConsole() {
       setSummary(data.summary || null)
       setAccountDetail(data.accountDetail || null)
       setAccountLedger(Array.isArray(data.accountLedger) ? data.accountLedger : [])
+      setAccountUnlocks(Array.isArray(data.accountUnlocks) ? data.accountUnlocks : [])
       setDetailStatus('ok')
     } catch (error) {
       setDetailStatus('error')
@@ -574,12 +576,52 @@ export default function PointsConsole() {
                 <StatCard label="记录数" value={accountDetail?.ledgerCount ?? accountLedger.length} />
                 <StatCard label="累计获得" value={`+${accountDetail?.earnedPoints ?? 0}`} tone="success" />
                 <StatCard label="累计使用" value={`-${accountDetail?.spentPoints ?? 0}`} tone="danger" />
+                <StatCard label="已解锁" value={accountDetail?.unlockCount ?? accountUnlocks.length} />
               </div>
 
               <div className="mb-3 text-xs text-[#67695d] dark:text-gray-400">
                 当前账户：<UserIdCell userId={accountDetail?.user_id || historyUser} />
               </div>
 
+              <div className="mb-6">
+                <h3 className="mb-2 text-sm font-semibold text-[#33352c] dark:text-gray-200">解锁页面和资源</h3>
+                {accountUnlocks.length ? (
+                  <DataTable
+                    columns={[
+                      {
+                        key: 'title',
+                        header: '内容',
+                        render: (row) => (
+                          <div className="min-w-0">
+                            {row.href ? (
+                              <a
+                                href={row.href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-medium text-[#33352c] underline-offset-2 hover:underline dark:text-gray-200"
+                              >
+                                {row.title}
+                              </a>
+                            ) : (
+                              <span className="font-medium text-[#33352c] dark:text-gray-200">{row.title}</span>
+                            )}
+                            <p className="mt-1 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{row.resourceKey}</p>
+                          </div>
+                        ),
+                      },
+                      { key: 'typeLabel', header: '类型', tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400' },
+                      { key: 'costPoints', header: '额度', align: 'right' },
+                      { key: 'unlockedAt', header: '解锁时间', render: (row) => formatTime(row.unlockedAt) },
+                    ]}
+                    rows={accountUnlocks}
+                    rowKey={(row) => `${row.resourceKey}:${row.unlockedAt}`}
+                  />
+                ) : (
+                  <EmptyState icon={IconCoin} title="这个账户还没有解锁记录" />
+                )}
+              </div>
+
+              <h3 className="mb-2 text-sm font-semibold text-[#33352c] dark:text-gray-200">燃币流水</h3>
               {accountLedger.length ? (
                 <DataTable
                   columns={[

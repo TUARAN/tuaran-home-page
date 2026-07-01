@@ -1,5 +1,6 @@
 import PageContainer from '../components/PageContainer'
 import RanbiBalance from '../components/RanbiBalance'
+import RanbiUnlocksPanel from './RanbiUnlocksPanel'
 import { POINT_POLICY, POINT_RULES } from '../../../lib/points'
 
 export const dynamic = 'force-static'
@@ -82,6 +83,8 @@ export default function RanbiPage() {
           <RanbiBalance />
         </div>
       </header>
+
+      <RanbiUnlocksPanel />
 
       {/* 它是什么 */}
       <section className="mb-10">

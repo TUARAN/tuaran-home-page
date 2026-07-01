@@ -86,7 +86,7 @@ function MetaRow({ item, showShare = true, maxTags = Infinity }) {
 function MediaFrame({ aspect = '16/9', children }) {
   return (
     <div
-      className="relative w-full overflow-hidden rounded-lg bg-black/90"
+      className="relative min-w-0 w-full max-w-full overflow-hidden rounded-lg bg-black/90"
       style={{ aspectRatio: aspect }}
     >
       {children}
@@ -141,7 +141,7 @@ function HeadlineCard({ item }) {
   const hasMedia = item.type === 'video' || item.type === 'image' || (item.type === 'link' && item.image)
 
   const text = (
-    <div className="flex flex-col justify-start lg:py-3">
+    <div className={`flex min-w-0 flex-col justify-start ${hasMedia ? 'p-4 md:p-0 lg:py-3' : 'lg:py-3'}`}>
       <div className="flex items-center gap-2">
         <span
           className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em]"
@@ -174,12 +174,12 @@ function HeadlineCard({ item }) {
   return (
     <article
       id={item.id}
-      className="scroll-mt-24 overflow-hidden rounded-2xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors md:p-6"
+      className={`scroll-mt-24 overflow-hidden rounded-2xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors md:p-6 ${hasMedia ? 'p-0' : 'p-4'}`}
       style={{ borderColor: `${accent}40` }}
     >
       {hasMedia ? (
-        <div className="grid gap-5 lg:grid-cols-[1.45fr_minmax(320px,0.95fr)] lg:items-start lg:gap-7">
-          <div>{media}</div>
+        <div className="grid min-w-0 gap-0 md:gap-5 lg:grid-cols-[1.45fr_minmax(320px,0.95fr)] lg:items-start lg:gap-7">
+          <div className="min-w-0">{media}</div>
           {text}
         </div>
       ) : (

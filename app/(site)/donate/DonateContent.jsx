@@ -6,39 +6,39 @@ import Link from 'next/link'
 
 const copy = {
   zh: {
-    title: '请我喝杯咖啡',
+    title: '支持本站',
     intro:
-      '如果这些文章、项目、周刊和实验内容对你有帮助，欢迎请我喝杯咖啡，支持我继续写作、做产品和长期更新。',
+      '如果这些文章、项目、资源和实验内容对你有帮助，欢迎支持本站的长期维护。支持会优先用于图床、视频、模型请求、存储、带宽和内容整理成本；如果需要补充燃币，也可以支持后私聊站长说明账号。',
     home: '返回首页',
     articles: '看看文章',
     lang: 'EN',
     pay: 'WeChat Pay',
     paragraphs: [
-      '这些年我一直在持续写技术文章、做网站、折腾产品，也在认真维护自己的内容和项目矩阵。很多东西看起来只是一个页面、一篇文章、一个小工具，但背后往往是长期投入的时间、精力和耐心。',
-      '如果你觉得这些内容对你有启发，或者某个项目刚好帮到了你，欢迎用“请我喝杯咖啡”的方式支持一下。这会让我更有动力，把这些事情继续认真做下去。',
-      '每一份支持，我都会心怀感激。无论是捐助、留言、转发，还是单纯来看看，这些都是真实的鼓励。谢谢你愿意为我的创作和产品实验投下一点点信任。',
+      '2aran.com 不是收费阅读站，也不是 UGC 平台。这里更像一个长期维护的个人内容与资源工作台：文章、调研、插件、资料、活动和评论讨论，都围绕具体主题展开。',
+      '站点长期运行会产生真实成本：图片与文件存储、视频素材、Cloudflare R2、模型请求、数据采集、带宽和域名服务。支持不是强制门槛，而是让这些内容可以继续更新、继续开放。',
+      '燃币主要用于留存、友好交流和资源权益。如果你因为活动、资源领取或内容解锁需要补充燃币，可以支持后私聊站长，说明账号和理由；理由充分，一切好说。',
     ],
     thanksTitle: '感谢支持',
     thanks:
-      '你的支持会优先用于内容创作、网站维护、域名与服务成本，以及更多新项目的尝试。谢谢你请我喝杯咖啡。',
+      '你的支持会优先用于内容创作、网站维护、图床/视频/请求/存储/带宽成本，以及更多新项目的尝试。需要补充燃币时，请支持后私聊站长处理。',
     qrAlt: '微信收款码',
   },
   en: {
-    title: 'Buy Me a Coffee',
+    title: 'Support This Site',
     intro:
-      'If my articles, projects, weekly posts, or experiments have been helpful to you, you can buy me a coffee and support my writing, product building, and long-term updates.',
+      'If my articles, projects, resources, or experiments have been helpful, you can support the long-term maintenance of this site. Support helps cover image hosting, video, model requests, storage, bandwidth, and curation costs. If you need more Ranbi, message me after supporting the site.',
     home: 'Back Home',
     articles: 'Read Articles',
     lang: '中文',
     pay: 'WeChat Pay',
     paragraphs: [
-      'Over the years, I have kept writing technical articles, building websites, and experimenting with products while steadily maintaining my content and project ecosystem. Many things may look small on the surface, but each page, article, or tool usually takes real time, energy, and patience.',
-      'If any of this work has inspired you or if one of the projects has genuinely helped you, you are welcome to support it by buying me a coffee. That kind of support gives me more momentum to keep doing this seriously and consistently.',
-      'Every bit of support means a lot to me. Whether it is a donation, a message, a share, or simply stopping by, I appreciate it. Thank you for placing a little trust in my writing and product experiments.',
+      '2aran.com is not a paid-reading site or a UGC platform. It is a personal content and resource workspace: articles, research, plugins, references, activities, and comment discussions are organized around specific topics.',
+      'Running the site has real costs: image and file hosting, video assets, Cloudflare R2, model requests, data collection, bandwidth, and domains. Support is not a mandatory gate; it helps keep the work updated and accessible.',
+      'Ranbi is mainly for retention, friendly participation, and resource access. If you need more Ranbi for an activity or resource, message me after supporting the site with your account and reason.',
     ],
     thanksTitle: 'Thanks for Your Support',
     thanks:
-      'Your support will primarily go toward content creation, website maintenance, domain and service costs, and more experiments on new projects. Thank you for buying me a coffee.',
+      'Your support will primarily go toward content creation, site maintenance, image/video/request/storage/bandwidth costs, and new experiments. If you need more Ranbi, message me after supporting the site.',
     qrAlt: 'WeChat payment QR code',
   },
 }

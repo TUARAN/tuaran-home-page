@@ -7,7 +7,7 @@ const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const SITE_DESC =
   '涂阿燃（安东尼）：前端与 AI 工程化 Agent 工程师；主理博主联盟与前端周看。' +
-  '本站记录工程实践、技术情报与创作者增长，并维护一个开放的调研知识库（公司调研 / 事项调研）。'
+  '本站记录工程实践、技术情报与创作者增长，并维护一个个人内容、项目和资源门户。'
 
 function line(entry) {
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
@@ -30,7 +30,8 @@ export function GET() {
     '',
     '## 主要页面',
     `- [首页](${SITE_URL}/): 个人主页与网络日志`,
-    `- [关于](${SITE_URL}/about): 个人介绍与履历`,
+    `- [关于本站](${SITE_URL}/site): 站点定位、参与方式、燃币与支持说明`,
+    `- [个人档案](${SITE_URL}/about): 个人介绍与履历`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,
     `- [AI 项目](${SITE_URL}/works): 在做的产品与实验`,
     `- [知识库](${SITE_URL}/articles): 调研与文章总入口`,

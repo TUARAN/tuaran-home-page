@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import styles from './works-museum.module.css'
 
@@ -179,6 +179,14 @@ export default function WorksMuseumClient({ featuredItems, sections, items, oper
     ? normalizedItems
     : normalizedItems.filter((item) => item.type === archiveFilter)
 
+  const scrollToHash = useCallback((hash) => {
+    const id = String(hash || '').replace(/^#/, '')
+    if (!id) return
+    const target = document.getElementById(id)
+    if (!target) return
+    target.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }, [])
+
   useEffect(() => {
     const viewport = featuredViewportRef.current
     if (!viewport) return undefined
@@ -196,6 +204,22 @@ export default function WorksMuseumClient({ featuredItems, sections, items, oper
     featuredRefs.current.forEach((node) => node && observer.observe(node))
     return () => observer.disconnect()
   }, [featuredItems])
+
+  useEffect(() => {
+    if (!window.location.hash) return undefined
+    const hash = window.location.hash
+    const timer = window.setTimeout(() => {
+      scrollToHash(hash)
+    }, 80)
+    return () => window.clearTimeout(timer)
+  }, [scrollToHash, sections])
+
+  function handleRoomLinkClick(event, id) {
+    event.preventDefault()
+    const hash = `#room-${id}`
+    window.history.pushState(null, '', hash)
+    scrollToHash(hash)
+  }
 
   function scrollToFeatured(index) {
     const nextIndex = Math.max(0, Math.min(featuredItems.length - 1, index))
@@ -317,7 +341,7 @@ export default function WorksMuseumClient({ featuredItems, sections, items, oper
         <ol>
           {sections.map((section, index) => (
             <li key={section.id}>
-              <a href={`#room-${section.id}`}>
+              <a href={`#room-${section.id}`} onClick={(event) => handleRoomLinkClick(event, section.id)}>
                 <span>{numberLabel(index)}</span>
                 <strong>
                   {section.title}

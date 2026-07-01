@@ -113,7 +113,7 @@ export default function XMutualCleanerResourcePage() {
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享这个插件" />
           <span className="text-xs text-[#888] dark:text-gray-500">
-            打开正文会按资源页扣 10 燃币，解锁后永久可读。
+            打开正文会使用 10 燃币作为资源权益记录，解锁后永久可读。
           </span>
         </div>
       </header>

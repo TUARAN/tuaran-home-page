@@ -3,8 +3,8 @@ import DonateContent from './DonateContent'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '请我喝杯咖啡',
-  description: '如果这些文章、项目和内容对你有帮助，欢迎请我喝杯咖啡，支持我继续创作与折腾。',
+  title: '支持本站',
+  description: '支持 2aran.com 的内容创作、图床、视频、模型请求、存储和带宽成本；也可以在支持后私聊站长补充燃币。',
   alternates: {
     canonical: '/donate',
   },

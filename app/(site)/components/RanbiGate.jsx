@@ -18,8 +18,8 @@ async function safeJson(res) {
  * 燃币墙：用 resourceKey 标识一篇/一段受保护内容。
  *  - 服务端未配置该资源 → 直接放行（门槛判定永远以服务端为准，前端只做展示）。
  *  - 已解锁 → 渲染 children。
- *  - 未解锁 → 显示预览(preview) + 解锁面板；余额足够则一键扣燃币解锁，不足提示再赚。
- *  - 游客 → 引导登录（游客零燃币，不可解锁）。
+ *  - 未解锁 → 显示预览(preview) + 解锁面板；余额足够则一键使用燃币解锁，不足提示补充。
+ *  - 游客 → 引导登录或先使用试用额度。
  */
 export default function RanbiGate({ resourceKey, children, preview = null, title = '此内容需要燃币解锁' }) {
   const { user, loading: userLoading } = useSessionAccount()
@@ -101,13 +101,13 @@ export default function RanbiGate({ resourceKey, children, preview = null, title
           需 <span className="font-semibold">{cost}</span> 燃币解锁，解锁后永久可读。
         </p>
 
-        {isGuest ? (
+        {isGuest && balance < cost ? (
           <button
             type="button"
             onClick={goToLogin}
             className="mt-4 rounded-full border border-[#caa86a] bg-white px-5 py-1.5 text-sm font-medium text-[#7a5b1e] hover:bg-[#fffdf7] dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
           >
-            登录后用燃币解锁
+            登录后补充燃币
           </button>
         ) : (
           <div className="mt-4 flex flex-col items-center gap-2">
@@ -117,7 +117,7 @@ export default function RanbiGate({ resourceKey, children, preview = null, title
               disabled={busy}
               className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-5 py-1.5 text-sm font-medium text-white hover:bg-[#6a4f19] disabled:opacity-60 dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
             >
-              {busy ? '解锁中…' : `用 ${cost} 燃币解锁`}
+              {busy ? '解锁中…' : `使用 ${cost} 燃币解锁`}
             </button>
             <span className="text-xs text-[#8a7a55] dark:text-amber-300/70">当前余额 {balance} 燃币</span>
           </div>

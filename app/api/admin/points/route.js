@@ -1,6 +1,7 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import {
+  POINT_POLICY,
   POINT_RULES,
   adminAdjust,
   deleteResource,
@@ -47,6 +48,7 @@ export async function GET(req) {
       status: 'unavailable',
       message: '当前运行环境没有 D1 绑定，无法读取燃币配置（迁移 0028 是否已应用？）。',
       rules: POINT_RULES,
+      policy: POINT_POLICY,
     })
   }
 
@@ -139,6 +141,7 @@ export async function GET(req) {
       status: 'ok',
       generatedAt: Date.now(),
       rules: POINT_RULES,
+      policy: POINT_POLICY,
       resources,
       summary: {
         accountCount: toNumber(accountSummary?.account_count),

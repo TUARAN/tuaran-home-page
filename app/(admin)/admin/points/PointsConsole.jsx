@@ -70,6 +70,7 @@ export default function PointsConsole() {
   const [status, setStatus] = useState('loading')
   const [message, setMessage] = useState('')
   const [rules, setRules] = useState(null)
+  const [policy, setPolicy] = useState(null)
   const [resources, setResources] = useState([])
   const [summary, setSummary] = useState(null)
   const [accountDetail, setAccountDetail] = useState(null)
@@ -100,11 +101,13 @@ export default function PointsConsole() {
       const data = await res.json().catch(() => null)
       if (res.ok && data?.status === 'ok') {
         setRules(data.rules || null)
+        setPolicy(data.policy || null)
         setResources(Array.isArray(data.resources) ? data.resources : [])
         setSummary(data.summary || null)
         setStatus('ok')
       } else {
         setRules(data?.rules || null)
+        setPolicy(data?.policy || null)
         setStatus(data?.status === 'unavailable' ? 'unavailable' : 'error')
         setMessage(data?.message || data?.error || `HTTP ${res.status}`)
       }
@@ -134,6 +137,7 @@ export default function PointsConsole() {
         throw new Error(data?.message || data?.error || `HTTP ${res.status}`)
       }
       setRules(data.rules || null)
+      setPolicy(data.policy || null)
       setResources(Array.isArray(data.resources) ? data.resources : [])
       setSummary(data.summary || null)
       setAccountDetail(data.accountDetail || null)
@@ -264,6 +268,24 @@ export default function PointsConsole() {
     [rules]
   )
 
+  const policyEarnRows = useMemo(() => {
+    return (policy?.earnMethods || []).map((item) => ({
+      ...item,
+      amount: item.delta == null ? '按需' : `+${item.delta}`,
+      capText: item.cap == null ? '按运营判断' : `+${item.cap}`,
+      statusLabel: item.status === 'live' ? '已上线' : '预留',
+    }))
+  }, [policy])
+
+  const policySpendRows = useMemo(() => {
+    return (policy?.spendScenarios || []).map((item) => ({
+      ...item,
+      quota: item.cost == null ? '按需' : `${item.cost}`,
+      pattern: item.resourcePattern || '—',
+      statusLabel: item.status === 'live' ? '已上线' : '预留',
+    }))
+  }, [policy])
+
   const actions = (
     <AdminButton variant="default" onClick={refresh} disabled={busy}>
       <IconRefresh size={16} /> 刷新
@@ -273,7 +295,7 @@ export default function PointsConsole() {
   return (
     <AdminPage
       title="燃币管理"
-      description="集中管理燃币规则、资源门槛和人工调账。流水只在查询具体登录账户时显示。"
+      description="集中管理燃币规则、资源权益和人工调账。流水只在查询具体登录账户时显示。"
       actions={actions}
     >
       {status === 'unavailable' || status === 'error' ? (
@@ -289,10 +311,67 @@ export default function PointsConsole() {
           <StatCard label="每日签到" value={`+${rules.checkin}`} />
           <StatCard label="有效评论" value={`+${rules.comment}`} />
           <StatCard label="评论每日上限" value={`+${rules.commentDailyCap}`} />
-          <StatCard label="调研默认价" value={rules.researchDefaultCost} />
-          <StatCard label="资源默认价" value={rules.resourceDefaultCost} />
+          <StatCard label="调研默认额度" value={rules.researchDefaultCost} />
+          <StatCard label="资源默认额度" value={rules.resourceDefaultCost} />
           <StatCard label="登录账户余额" value={summary?.totalBalance ?? 0} />
         </div>
+      ) : null}
+
+      {policy ? (
+        <Section
+          title="燃币体系设置"
+          description={`参考 ${policy.reference?.label || '社区货币体系'}：${policy.reference?.note || '把获取、使用、余额和反滥用放在同一套规则里。'}`}
+          className="mb-5"
+        >
+          <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1.3fr]">
+            <div className="rounded-lg border border-[#e2e3da] bg-[#fbfcf7] p-4 dark:border-[#1e2733] dark:bg-[#10161f]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#67695d] dark:text-gray-400">
+                {policy.currency?.symbol || '🔥'} {policy.currency?.name || '燃币'}
+              </p>
+              <p className="mt-2 text-sm text-[#33352c] dark:text-gray-200">{policy.currency?.scope}</p>
+              <a
+                href={policy.reference?.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex text-xs font-medium text-[#7a5b1e] underline underline-offset-2 dark:text-amber-300"
+              >
+                查看参考页面
+              </a>
+            </div>
+            <ul className="rounded-lg border border-[#e2e3da] bg-white p-4 text-xs leading-6 text-[#67695d] dark:border-[#1e2733] dark:bg-[#0b1119] dark:text-gray-400">
+              {(policy.principles || []).map((text) => (
+                <li key={text}>· {text}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <DataTable
+              columns={[
+                { key: 'label', header: '获取方式' },
+                { key: 'amount', header: '燃币', align: 'right' },
+                { key: 'frequency', header: '频率' },
+                { key: 'capText', header: '上限', align: 'right' },
+                { key: 'statusLabel', header: '状态' },
+                { key: 'description', header: '说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
+              ]}
+              rows={policyEarnRows}
+              rowKey={(row) => row.id}
+            />
+            <DataTable
+              columns={[
+                { key: 'label', header: '使用场景' },
+                { key: 'quota', header: '额度', align: 'right' },
+                { key: 'unit', header: '单位' },
+                { key: 'pattern', header: '匹配范围', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
+                { key: 'statusLabel', header: '状态' },
+                { key: 'description', header: '说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
+              ]}
+              rows={policySpendRows}
+              rowKey={(row) => row.id}
+            />
+          </div>
+        </Section>
       ) : null}
 
       <div className="mb-5 flex flex-wrap items-center gap-2 border-b border-[#e2e3da] dark:border-[#1e2733]">
@@ -318,7 +397,7 @@ export default function PointsConsole() {
       {activeTab === 'settings' ? (
         <>
           <Section
-            title="默认门槛"
+            title="默认权益额度"
             description="这些是代码里的默认规则：资源没有显式配置时会自动回退到这里，不需要逐条登记。"
             className="mb-5"
           >
@@ -326,7 +405,7 @@ export default function PointsConsole() {
               columns={[
                 { key: 'label', header: '默认项' },
                 { key: 'key', header: '匹配范围', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
-                { key: 'cost', header: '燃币价格', align: 'right' },
+                { key: 'cost', header: '燃币额度', align: 'right' },
                 {
                   key: 'minRole',
                   header: '最低角色',
@@ -340,8 +419,8 @@ export default function PointsConsole() {
           </Section>
 
           <Section
-            title="资源门槛覆盖"
-            description="只在需要改写默认价格或最低角色时添加显式配置；解锁一次后该用户永久可读。"
+            title="资源权益覆盖"
+            description="只在需要改写默认额度或最低角色时添加显式配置；解锁一次后该用户永久可读。"
             className="mb-5"
           >
             <form onSubmit={saveResource} className="mb-4 flex flex-wrap items-end gap-2">
@@ -355,7 +434,7 @@ export default function PointsConsole() {
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                燃币价格
+                燃币额度
                 <input
                   type="number"
                   min="0"
@@ -375,7 +454,7 @@ export default function PointsConsole() {
                 </select>
               </label>
               <AdminButton type="submit" variant="primary" disabled={busy || !resKey.trim()}>
-                保存门槛
+                保存权益
               </AdminButton>
             </form>
 
@@ -383,7 +462,7 @@ export default function PointsConsole() {
               <DataTable
                 columns={[
                   { key: 'resource_key', header: 'resource_key', tdClassName: 'font-mono text-xs' },
-                  { key: 'cost_points', header: '燃币价格', align: 'right', render: (row) => `${row.cost_points}` },
+                  { key: 'cost_points', header: '燃币额度', align: 'right', render: (row) => `${row.cost_points}` },
                   {
                     key: 'min_role',
                     header: '最低角色',
@@ -404,7 +483,7 @@ export default function PointsConsole() {
                 rowKey={(row) => row.resource_key}
               />
             ) : (
-              <EmptyState icon={IconCoin} title="暂无显式门槛覆盖" description="没有配置时会使用上方默认项。" />
+              <EmptyState icon={IconCoin} title="暂无显式权益覆盖" description="没有配置时会使用上方默认项。" />
             )}
           </Section>
 
@@ -494,7 +573,7 @@ export default function PointsConsole() {
                 <StatCard label="当前余额" value={accountDetail?.balance ?? 0} />
                 <StatCard label="记录数" value={accountDetail?.ledgerCount ?? accountLedger.length} />
                 <StatCard label="累计获得" value={`+${accountDetail?.earnedPoints ?? 0}`} tone="success" />
-                <StatCard label="累计消费" value={`-${accountDetail?.spentPoints ?? 0}`} tone="danger" />
+                <StatCard label="累计使用" value={`-${accountDetail?.spentPoints ?? 0}`} tone="danger" />
               </div>
 
               <div className="mb-3 text-xs text-[#67695d] dark:text-gray-400">

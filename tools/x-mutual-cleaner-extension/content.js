@@ -2,8 +2,8 @@
   "use strict";
 
   const PANEL_ID = "x-mutual-cleaner-panel";
-  const DEFAULT_DELAY_MS = 1400;
-  const SCROLL_DELAY_MS = 900;
+  const DEFAULT_DELAY_MS = 650;
+  const SCROLL_DELAY_MS = 450;
   const MAX_IDLE_SCROLLS = 12;
 
   const FOLLOWING_RE = /^(Following|正在关注)$/i;
@@ -18,11 +18,58 @@
     unfollowed: 0,
     skipped: 0,
     errors: 0,
+    pausedByHidden: false,
     seenHandles: new Set(),
     skippedHandles: new Set()
   };
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+  function enterHiddenPause() {
+    if (!state.running || state.stopping || !document.hidden) return false;
+    if (!state.pausedByHidden) {
+      state.pausedByHidden = true;
+      setStatus("检测到页面切到后台，已暂停，回到此标签页后继续");
+      log("切到后台，暂停执行");
+    }
+    return true;
+  }
+
+  function resumeHiddenPause() {
+    if (!state.pausedByHidden) return;
+    state.pausedByHidden = false;
+    setStatus("页面已回到前台，继续执行");
+    log("回到前台，继续执行");
+  }
+
+  async function waitForForeground() {
+    if (!document.hidden) {
+      resumeHiddenPause();
+      return;
+    }
+
+    enterHiddenPause();
+
+    await new Promise((resolve) => {
+      const onVisibilityChange = () => {
+        if (document.hidden) return;
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+        resumeHiddenPause();
+        resolve();
+      };
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    });
+  }
+
+  async function sleepActive(ms) {
+    let remaining = ms;
+    while (remaining > 0 && !state.stopping) {
+      await waitForForeground();
+      const chunk = Math.min(remaining, 100);
+      await sleep(chunk);
+      remaining -= chunk;
+    }
+  }
 
   function isFollowingPage() {
     return /^\/[^/]+\/following\/?$/.test(window.location.pathname);
@@ -230,9 +277,11 @@
   }
 
   async function waitForConfirmOrStateChange(row, handle, timeoutMs) {
-    const startedAt = Date.now();
+    let elapsed = 0;
 
-    while (Date.now() - startedAt < timeoutMs) {
+    while (elapsed < timeoutMs) {
+      await waitForForeground();
+
       const confirm = findUnfollowConfirm(handle);
       if (confirm) return { type: "confirm", button: confirm };
 
@@ -242,37 +291,44 @@
         return { type: "changed" };
       }
 
-      await sleep(120);
+      await sleepActive(80);
+      elapsed += 80;
     }
 
     return { type: "timeout" };
   }
 
   async function waitForConfirmToClose(handle, timeoutMs) {
-    const startedAt = Date.now();
+    let elapsed = 0;
 
-    while (Date.now() - startedAt < timeoutMs) {
+    while (elapsed < timeoutMs) {
+      await waitForForeground();
       if (!findUnfollowConfirm(handle)) return true;
-      await sleep(120);
+      await sleepActive(80);
+      elapsed += 80;
     }
 
     return false;
   }
 
   async function waitUntilUnfollowed(row, timeoutMs) {
-    const startedAt = Date.now();
+    let elapsed = 0;
 
-    while (Date.now() - startedAt < timeoutMs) {
+    while (elapsed < timeoutMs) {
+      await waitForForeground();
+
       const hasFollowing = Boolean(findFollowingButton(row));
       const hasFollow = getActionElements(row).some((button) => FOLLOW_RE.test(buttonLabel(button)));
       if (!hasFollowing || hasFollow || !document.body.contains(row)) return true;
-      await sleep(150);
+      await sleepActive(100);
+      elapsed += 100;
     }
 
     return false;
   }
 
   async function unfollow(row) {
+    await waitForForeground();
     state.seenHandles.add(row.handle);
     setStatus(`点击 ${row.handle} 的 Following`);
     realClick(row.followingButton);
@@ -319,6 +375,7 @@
 
     state.running = true;
     state.stopping = false;
+    state.pausedByHidden = false;
     state.unfollowed = 0;
     state.skipped = 0;
     state.errors = 0;
@@ -332,6 +389,8 @@
     let idleScrolls = 0;
 
     while (!state.stopping) {
+      await waitForForeground();
+
       const rows = getVisibleRows();
       if (!rows.length) {
         setStatus("当前屏没有识别到 X 用户行，继续下刷");
@@ -348,7 +407,7 @@
         idleScrolls = 0;
         await unfollow(candidate);
         setStats();
-        if (!state.stopping) await sleep(DEFAULT_DELAY_MS);
+        if (!state.stopping) await sleepActive(DEFAULT_DELAY_MS);
         continue;
       }
 
@@ -356,12 +415,14 @@
       if (idleScrolls > MAX_IDLE_SCROLLS) break;
 
       setStatus("当前屏没有未回关账号，继续下刷");
+      await waitForForeground();
       window.scrollBy({ top: Math.max(520, Math.floor(window.innerHeight * 0.82)), behavior: "smooth" });
-      await sleep(SCROLL_DELAY_MS);
+      await sleepActive(SCROLL_DELAY_MS);
     }
 
     state.running = false;
     state.stopping = false;
+    state.pausedByHidden = false;
     setButton();
     setStats();
     setStatus(`完成：已取消 ${state.unfollowed} 个`);
@@ -396,4 +457,13 @@
   } else {
     renderPanel();
   }
+
+  document.addEventListener("visibilitychange", () => {
+    if (!state.running || state.stopping) return;
+    if (document.hidden) {
+      enterHiddenPause();
+      return;
+    }
+    resumeHiddenPause();
+  });
 })();

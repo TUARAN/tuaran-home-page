@@ -54,6 +54,18 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'humanoid-robot-beauty-inspiration',
+    type: 'video',
+    title: '人形机器人的美妆灵感',
+    summary:
+      '当机器人开始拥有接近真人的面部、皮肤和表情，美妆就不再只是遮瑕、修饰和风格表达，也会变成一种“如何让非人类更像人、又保留一点异质感”的设计语言。这个方向很适合延展成 AI 影像、虚拟偶像、仿生机器人和未来美妆品牌的视觉参考。',
+    tags: ['人形机器人', '美妆灵感', 'AI 影像', '仿生设计', '未来审美'],
+    date: '2026-07-01',
+    time: '16:59',
+    src: '/feed/humanoid-robot-beauty-inspiration.mp4',
+    aspect: '16/9',
+  },
+  {
     id: 'gemma-4-agent-vllm-challenge',
     type: 'video',
     title: '上百个 AI 智能体协作优化 Gemma 4 推理',

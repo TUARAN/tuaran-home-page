@@ -9,7 +9,7 @@ export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'x-mutual-cleaner-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
-const DOWNLOAD_URL = '/downloads/x-mutual-cleaner-extension-v0.1.2.zip'
+const DOWNLOAD_URL = '/downloads/x-mutual-cleaner-extension-v0.1.3.zip'
 
 const title = 'X 平台一键取消没有回关你的人：浏览器插件下载'
 const description =
@@ -55,7 +55,7 @@ function DownloadButton({ className = '' }) {
       download
       className={`inline-flex min-h-11 items-center justify-center rounded-full border border-[#0f1419] bg-[#0f1419] px-5 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#2f3336] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200 ${className}`}
     >
-      下载 Chrome 插件 v0.1.2
+      下载 Chrome 插件 v0.1.3
     </a>
   )
 }

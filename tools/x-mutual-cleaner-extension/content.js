@@ -4,7 +4,7 @@
   const PANEL_ID = "x-mutual-cleaner-panel";
   const DEFAULT_DELAY_MS = 650;
   const SCROLL_DELAY_MS = 450;
-  const MAX_IDLE_SCROLLS = 12;
+  const MAX_STALLED_SCROLLS = 4;
 
   const FOLLOWING_RE = /^(Following|正在关注)$/i;
   const FOLLOW_RE = /^(Follow|关注)$/i;
@@ -187,6 +187,10 @@
         };
       })
       .filter((row) => row.handle && row.followingButton);
+  }
+
+  function isNearBottom() {
+    return window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 12;
   }
 
   function setStatus(message) {
@@ -386,7 +390,7 @@
     setStatus("开始自动取消未回关账号");
     log("开始执行");
 
-    let idleScrolls = 0;
+    let stalledScrolls = 0;
 
     while (!state.stopping) {
       await waitForForeground();
@@ -404,20 +408,29 @@
 
       const candidate = rows.find((row) => row.isCandidate && !state.seenHandles.has(row.handle));
       if (candidate) {
-        idleScrolls = 0;
+        stalledScrolls = 0;
         await unfollow(candidate);
         setStats();
         if (!state.stopping) await sleepActive(DEFAULT_DELAY_MS);
         continue;
       }
 
-      idleScrolls += 1;
-      if (idleScrolls > MAX_IDLE_SCROLLS) break;
-
       setStatus("当前屏没有未回关账号，继续下刷");
       await waitForForeground();
+      const beforeY = window.scrollY;
+      const beforeHeight = document.documentElement.scrollHeight;
       window.scrollBy({ top: Math.max(520, Math.floor(window.innerHeight * 0.82)), behavior: "smooth" });
       await sleepActive(SCROLL_DELAY_MS);
+
+      const moved = window.scrollY > beforeY + 8;
+      const heightChanged = document.documentElement.scrollHeight !== beforeHeight;
+      if (moved || heightChanged || !isNearBottom()) {
+        stalledScrolls = 0;
+        continue;
+      }
+
+      stalledScrolls += 1;
+      if (stalledScrolls >= MAX_STALLED_SCROLLS) break;
     }
 
     state.running = false;

@@ -389,8 +389,8 @@ export default function UsersConsole() {
     {
       key: 'guest',
       header: '游客',
-      width: '280px',
-      tdClassName: 'w-[280px] max-w-[280px]',
+      width: '360px',
+      tdClassName: 'w-[360px] max-w-[360px]',
       render: (guest) => {
         const u = displayNameForUserId(guest.userId)
         return (
@@ -402,9 +402,15 @@ export default function UsersConsole() {
                 游客 {u.short}
               </span>
             </p>
-            <p className="truncate font-mono text-[11px] text-[#94a3b8] dark:text-gray-500" title={guest.userId}>
+            <button
+              type="button"
+              onClick={() => copyGuestId(guest.userId)}
+              className="block max-w-full truncate font-mono text-[11px] text-[#94a3b8] underline-offset-2 transition hover:text-[#53554d] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15140f]/20 dark:text-gray-500 dark:hover:text-gray-300"
+              title="点击复制游客 ID"
+              aria-label={`复制游客 ID：${guest.userId}`}
+            >
               {guest.userId}
-            </p>
+            </button>
           </div>
         )
       },
@@ -457,23 +463,6 @@ export default function UsersConsole() {
       width: '136px',
       render: (guest) => formatTime(guest.lastSeenAt),
       tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400',
-    },
-    {
-      key: 'action',
-      header: '操作',
-      width: '124px',
-      tdClassName: 'whitespace-nowrap',
-      render: (guest) => (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => copyGuestId(guest.userId)}
-            className="rounded-md border border-[#d8dad0] px-2 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
-          >
-            复制 ID
-          </button>
-        </div>
-      ),
     },
   ]
 
@@ -645,7 +634,7 @@ export default function UsersConsole() {
               columns={guestColumns}
               rows={guestStatus === 'loading' ? [] : filteredGuests}
               rowKey={(guest) => guest.userId}
-              tableClassName="min-w-[900px] table-fixed"
+              tableClassName="min-w-[780px] table-fixed"
               empty={
                 <EmptyState
                   title={

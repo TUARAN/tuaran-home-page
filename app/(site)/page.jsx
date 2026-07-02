@@ -533,7 +533,7 @@ function AchievementMiniCard({ item }) {
       {item.image ? (
         <span className="home-achievement-media-slot">
           <span className="home-achievement-card-cover">
-            <Image src={item.image} alt={item.imageAlt || ''} width={96} height={96} sizes="56px" />
+            <Image src={item.image} alt={item.imageAlt || ''} width={96} height={96} sizes="80px" />
           </span>
         </span>
       ) : (

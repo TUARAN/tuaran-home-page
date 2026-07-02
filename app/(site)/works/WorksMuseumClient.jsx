@@ -273,7 +273,7 @@ export default function WorksMuseumClient({ featuredItems, sections, items, oper
             <p className={styles.eyebrow}>Featured Exhibition</p>
             <h2 id="featured-title">本期主展</h2>
           </div>
-          <p>三件长期经营的代表作品。拖动展墙，或使用方向键参观。</p>
+          <p>代表作品与阶段性工程成果。拖动展墙，或使用方向键参观。</p>
         </div>
 
         <div

@@ -1,4 +1,4 @@
-import { registerEmailUser } from '../../../../lib/emailAuth'
+import { activateEmailUser } from '../../../../../lib/emailAuth'
 import {
   cookieNames,
   cookiesConfig,
@@ -6,10 +6,9 @@ import {
   serializeLastLoginMethodCookie,
   serializeCookie,
   signSession,
-} from '../../../../lib/edgeSession'
-import { recordUserLogin } from '../../../../lib/userDirectory'
-import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/guestSession'
-import { awardRegisterOnLogin } from '../../../../lib/points'
+} from '../../../../../lib/edgeSession'
+import { recordUserLogin } from '../../../../../lib/userDirectory'
+import { awardRegisterOnLogin } from '../../../../../lib/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -28,17 +27,14 @@ export async function POST(req) {
       return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
     }
 
-    const result = await registerEmailUser({
+    const result = await activateEmailUser({
       rawEmail: body?.email,
-      password: body?.password,
       rawCode: body?.code,
-      rawName: body?.name,
     })
     if (!result.ok) return Response.json(result, { status: result.status || 400 })
 
     await recordUserLogin(result.user)
     await awardRegisterOnLogin(result.user)
-    const mergedGid = await mergeGuestFromRequest(req, result.user)
 
     const nowSeconds = Math.floor(Date.now() / 1000)
     const token = await signSession(
@@ -52,15 +48,10 @@ export async function POST(req) {
       serializeCookie(cookieNames.session, token, { maxAge: 7 * 24 * 60 * 60, secure })
     )
     headers.append('Set-Cookie', serializeLastLoginMethodCookie('email', { secure }))
-    if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())
 
     return Response.json({ ok: true, user: result.user }, { headers })
   } catch (error) {
-    console.error('email registration failed', error)
-    const message = String(error?.message || '')
-    if (message.includes('UNIQUE constraint failed')) {
-      return Response.json({ error: 'EMAIL_ALREADY_REGISTERED' }, { status: 409 })
-    }
-    return Response.json({ error: 'REGISTER_FAILED' }, { status: 500 })
+    console.error('email activation failed', error)
+    return Response.json({ error: 'ACTIVATE_FAILED' }, { status: 500 })
   }
 }

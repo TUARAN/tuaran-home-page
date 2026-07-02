@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 
 import BackToTopButton from './BackToTopButton'
 import CommunityLoginPrompt from './CommunityLoginPrompt'
+import EmailActivationPrompt from './EmailActivationPrompt'
 import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
 
@@ -24,6 +25,7 @@ export default function LayoutChromeControls() {
   return (
     <>
       <SiteHeader />
+      <EmailActivationPrompt />
       <CommunityLoginPrompt />
       <BackToTopButton />
     </>

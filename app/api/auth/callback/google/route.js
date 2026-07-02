@@ -3,6 +3,7 @@ import {
   cookiesConfig,
   getSecrets,
   parseCookies,
+  serializeLastLoginMethodCookie,
   serializeCookie,
   signSession,
 } from '../../../../../lib/edgeSession'
@@ -109,6 +110,7 @@ export async function GET(req) {
     'Set-Cookie',
     serializeCookie(cookieNames.session, jwt, { maxAge: 7 * 24 * 60 * 60, secure })
   )
+  headers.append('Set-Cookie', serializeLastLoginMethodCookie('google', { secure }))
   headers.append('Set-Cookie', serializeCookie(cookieNames.oauthState, '', { maxAge: 0, secure }))
   headers.append('Set-Cookie', serializeCookie(cookieNames.returnTo, '', { maxAge: 0, secure }))
   if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())

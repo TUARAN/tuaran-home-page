@@ -1075,6 +1075,10 @@
     color: var(--site-muted);
   }
 
+  .home-achievement-media-slot {
+    @apply flex w-20 shrink-0 items-center;
+  }
+
   .home-achievement-card-cover {
     @apply block h-12 w-12 shrink-0 overflow-hidden rounded-lg border;
     border-color: color-mix(in srgb, var(--site-ink) 12%, var(--site-line));

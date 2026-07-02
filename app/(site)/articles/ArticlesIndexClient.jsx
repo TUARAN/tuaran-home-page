@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSessionAccount } from '../components/SessionProvider'
-import { compareSortKeyDesc } from '../../../lib/research/datetime'
+import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import {
@@ -48,6 +48,46 @@ function getChannelForTab(activeTab) {
   if (activeTab === 'resources') return 'resources'
   if (activeTab === 'research' || RESEARCH_KINDS.has(activeTab)) return 'research'
   return 'all'
+}
+
+// D1 内容索引（/api/content?source=manual）的手工登记条目 → 列表 item。
+// 让构建之后新登记的内容 metadata 不经部署直接出现在索引里；feed 类不进本页。
+const MANUAL_ENTRY_KIND = {
+  article: { kind: 'posts', tagLabel: '文章' },
+  research: null, // 按 category 细分
+  resource: { kind: 'resources', tagLabel: '资料库' },
+}
+const MANUAL_RESEARCH_TAG = { companies: '公司调研', topics: '事项调研', people: '人物调研' }
+
+function manualEntriesToItems(entries, existingItems) {
+  if (!Array.isArray(entries) || !entries.length) return []
+  const seenHrefs = new Set(existingItems.map((item) => item.href))
+  const out = []
+  for (const entry of entries) {
+    if (!entry?.href || !entry?.title || seenHrefs.has(entry.href)) continue
+    let kind = null
+    let tagLabel = ''
+    if (entry.type === 'research' && MANUAL_RESEARCH_TAG[entry.category]) {
+      kind = entry.category
+      tagLabel = MANUAL_RESEARCH_TAG[entry.category]
+    } else if (MANUAL_ENTRY_KIND[entry.type]) {
+      kind = MANUAL_ENTRY_KIND[entry.type].kind
+      tagLabel = MANUAL_ENTRY_KIND[entry.type].tagLabel
+    }
+    if (!kind) continue
+    out.push({
+      id: `content-db:${entry.contentKey}`,
+      kind,
+      tagLabel,
+      ...(kind === 'resources' ? { resourceType: 'other' } : {}),
+      title: entry.title,
+      summary: entry.summary || '',
+      date: entry.date || '',
+      sortKey: researchSortKey(entry.date),
+      href: entry.href,
+    })
+  }
+  return out
 }
 
 const QUICK_LINKS = [
@@ -150,15 +190,23 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   useEffect(() => {
     let alive = true
-    fetch('/api/articles', { cache: 'no-store' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!alive || !Array.isArray(data?.articles) || !data.articles.length) return
-        const merged = [...staticItems, ...data.articles]
-          .sort((a, b) => compareSortKeyDesc(a.sortKey, b.sortKey, a.id, b.id))
-        setItems(merged)
-      })
-      .catch(() => {})
+    Promise.all([
+      fetch('/api/articles', { cache: 'no-store' })
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null),
+      fetch('/api/content?source=manual', { cache: 'no-store' })
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null),
+    ]).then(([articlesData, contentData]) => {
+      if (!alive) return
+      const dbArticles = Array.isArray(articlesData?.articles) ? articlesData.articles : []
+      const base = [...staticItems, ...dbArticles]
+      const manualItems = manualEntriesToItems(contentData?.entries, base)
+      if (!dbArticles.length && !manualItems.length) return
+      const merged = [...base, ...manualItems]
+        .sort((a, b) => compareSortKeyDesc(a.sortKey, b.sortKey, a.id, b.id))
+      setItems(merged)
+    })
     return () => { alive = false }
   }, [staticItems])
 

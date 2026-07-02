@@ -28,6 +28,17 @@ function parseFrontmatter(raw) {
   return data
 }
 
+// frontmatter 的 tags 是单行 inline list：tags: [a, b, c]
+function parseTagList(value) {
+  if (typeof value !== 'string') return []
+  const inner = value.trim().replace(/^\[/, '').replace(/\]$/, '')
+  if (!inner) return []
+  return inner
+    .split(',')
+    .map((t) => t.trim().replace(/^["']|["']$/g, ''))
+    .filter(Boolean)
+}
+
 for (const category of categories) {
   const dir = path.join(root, 'research', category)
   let files = []
@@ -56,6 +67,7 @@ for (const category of categories) {
     }
     const date = data.date || match[1]
     const time = data.time || ''
+    const tags = parseTagList(data.tags)
     entryMeta[key] = {
       category,
       slug,
@@ -63,6 +75,7 @@ for (const category of categories) {
       ...(time ? { time } : {}),
       title: data.title || slug,
       summary: data.tldr || data.summary || '',
+      ...(tags.length ? { tags } : {}),
     }
   }
 }

@@ -5,7 +5,7 @@ Next.js 15 App Router 个人站，部署在 Cloudflare Pages（Functions + D1）
 ## 关键目录
 
 - `app/` — 页面、布局、API 路由（App Router）；`app/(admin)/admin/*` 为站长后台（AdminPageGate 鉴权）
-- `lib/` — 运行时封装与数据：`edgeSession.js`（自定义 GitHub OAuth + 签名 Cookie）、`d1.js`（D1 binding）、`researchStyleTemplates.js`（调研风格库，见下）
+- `lib/` — 运行时封装与数据：`edgeSession.js`（自定义 GitHub OAuth + 签名 Cookie）、`d1.js`（D1 binding）、`researchStyleTemplates.js`（调研风格库，见下）、`contentPipeline.js`（统一内容注册表：文章/调研/资源归一 + 跨类型相关阅读；contentKey 与评论 articleKey、燃币 resourceKey 同一套约定）
 - `research/` — 调研知识库（companies / topics / people），Markdown 落盘，构建时由 loader 渲染到 `/articles`
 - `migrations/` — D1 SQL
 - `ai-context/` — 项目文档与历史快照（架构、审查、移植记录），索引见 `ai-context/README.md`；时效以各文档落款日期为准

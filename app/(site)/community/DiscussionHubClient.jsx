@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
+import { useSessionAccount } from '../components/SessionProvider'
 import UserAvatar from '../components/UserAvatar'
 
 const QR_ITEMS = [
@@ -110,6 +111,88 @@ function ThreadItem({ thread }) {
   )
 }
 
+function formatNotificationTime(ts) {
+  const n = Number(ts)
+  if (!n) return ''
+  const diff = Date.now() - n
+  if (diff < 60_000) return '刚刚'
+  if (diff < 3_600_000) return `${Math.max(1, Math.floor(diff / 60_000))} 分钟前`
+  if (diff < 86_400_000) return `${Math.max(1, Math.floor(diff / 3_600_000))} 小时前`
+  return formatTime(n)
+}
+
+function NotificationPanel() {
+  const {
+    loading,
+    user,
+    notifications,
+    refreshNotifications,
+    markNotificationsRead,
+  } = useSessionAccount()
+  const items = Array.isArray(notifications?.items) ? notifications.items.slice(0, 4) : []
+  const unread = Number(notifications?.unread) || 0
+
+  if (loading) {
+    return <p className="mb-0 text-sm text-[var(--site-muted)]">正在检查登录状态...</p>
+  }
+
+  if (!user) {
+    return (
+      <>
+        <p className="mb-3 text-sm text-[var(--site-muted)]">
+          登录后，别人回复你的评论会出现在顶部账号菜单，也会跳转到具体评论。
+        </p>
+        <Link href="/login?returnTo=%2Fcommunity" className="discussion-primary-link">
+          登录查看通知
+        </Link>
+      </>
+    )
+  }
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="mb-0 text-sm text-[var(--site-muted)]">
+          已登录。{unread ? `你有 ${unread} 条未读回复。` : '暂无未读回复。'}
+        </p>
+        <button
+          type="button"
+          onClick={() => refreshNotifications?.()}
+          className="discussion-text-link shrink-0 text-xs"
+        >
+          刷新
+        </button>
+      </div>
+      {items.length ? (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <Link
+              key={item.id}
+              href={item.href || '/community'}
+              onClick={() => item.id && markNotificationsRead?.({ id: item.id })}
+              className="block rounded-xl border border-[var(--site-line)] px-3 py-2 no-underline hover:no-underline"
+            >
+              <p className="mb-1 line-clamp-2 text-xs leading-5 text-[var(--site-muted)]">
+                {item.messageExcerpt || '有人回复了你的评论'}
+              </p>
+              <p className="mb-1 line-clamp-1 text-[11px] text-[var(--site-faint)]">
+                {item.articleTitle}
+              </p>
+              <p className="mb-0 font-mono text-[10px] text-[var(--site-faint)]">
+                {item.actorUserName || '访客'} · {formatNotificationTime(item.createdAt)}
+              </p>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <p className="mb-0 text-sm text-[var(--site-muted)]">
+          还没有新的评论回复。你回复别人或在文章底部留言后，这里会跟顶部账号菜单同步。
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function DiscussionHubClient() {
   const [data, setData] = useState({ status: 'loading', items: [], threads: [], stats: null })
 
@@ -181,6 +264,29 @@ export default function DiscussionHubClient() {
 
       <aside className="space-y-4">
         <section className="discussion-side-panel">
+          <p className="discussion-eyebrow">Groups</p>
+          <h2 className="mb-2 border-0 p-0 text-base">社群入口</h2>
+          <p className="mb-3 text-sm text-[var(--site-muted)]">
+            加群二维码会不定期更新，失效时可先加微信号。
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {QR_ITEMS.map((item) => (
+              <div key={item.src} className="discussion-qr-card">
+                <Image
+                  src={item.src}
+                  alt={item.label}
+                  width={132}
+                  height={132}
+                  sizes="132px"
+                  className="h-auto w-full object-contain"
+                />
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="discussion-side-panel">
           <p className="discussion-eyebrow">Threads</p>
           <h2 className="mb-3 border-0 p-0 text-base">活跃讨论</h2>
           {data.threads?.length ? (
@@ -197,32 +303,7 @@ export default function DiscussionHubClient() {
         <section className="discussion-side-panel">
           <p className="discussion-eyebrow">Notify</p>
           <h2 className="mb-2 border-0 p-0 text-base">通知中心</h2>
-          <p className="mb-3 text-sm text-[var(--site-muted)]">
-            登录后，别人回复你的评论会出现在顶部账号菜单，也会跳转到具体评论。
-          </p>
-          <Link href="/login?returnTo=%2Fcommunity" className="discussion-primary-link">
-            登录查看通知
-          </Link>
-        </section>
-
-        <section className="discussion-side-panel">
-          <p className="discussion-eyebrow">Groups</p>
-          <h2 className="mb-3 border-0 p-0 text-base">社群入口</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {QR_ITEMS.map((item) => (
-              <div key={item.src} className="discussion-qr-card">
-                <Image
-                  src={item.src}
-                  alt={item.label}
-                  width={132}
-                  height={132}
-                  sizes="132px"
-                  className="h-auto w-full object-contain"
-                />
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </div>
+          <NotificationPanel />
         </section>
       </aside>
     </div>

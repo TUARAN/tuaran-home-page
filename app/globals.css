@@ -1788,7 +1788,7 @@
 
   .site-dropdown-panel .site-menu-item:hover,
   .site-mobile-drawer .site-menu-item:hover {
-    color: var(--site-ink);
+    color: #f8f7f0;
     text-decoration: none;
   }
 

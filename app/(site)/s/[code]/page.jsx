@@ -1,15 +1,13 @@
 import { notFound, redirect } from 'next/navigation'
-import { getD1 } from '../../../lib/d1'
-import { bumpShortLinkClick, isValidShortCode, resolveShortLink } from '../../../lib/shortLinks'
+import { getD1 } from '../../../../lib/d1'
+import { bumpShortLinkClick, isValidShortCode, resolveShortLink } from '../../../../lib/shortLinks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const RESERVED_CODES = new Set(['poetry'])
-
 export default async function ShortRedirectPage({ params }) {
   const { code } = await params
-  if (!code || RESERVED_CODES.has(code) || !isValidShortCode(code)) {
+  if (!code || !isValidShortCode(code)) {
     notFound()
   }
 
@@ -21,7 +19,6 @@ export default async function ShortRedirectPage({ params }) {
   }
 
   const row = await resolveShortLink(db, code)
-
   if (!row?.original) {
     notFound()
   }

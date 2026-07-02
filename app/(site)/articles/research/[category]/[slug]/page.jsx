@@ -30,7 +30,7 @@ import SharePageButton from '../../../../components/SharePageButton'
 import RssButton from '../../../../components/RssButton'
 
 const SITE_URL = 'https://2aran.com'
-const SITE_TITLE = '涂阿燃（tuaran）的主编札记'
+const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 
 export const dynamic = 'force-static'

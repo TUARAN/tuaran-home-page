@@ -8,9 +8,9 @@ export const dynamic = 'force-static'
 export const revalidate = 3600
 
 const SITE_URL = 'https://2aran.com'
-const SITE_TITLE = '涂阿燃（tuaran）的主编札记'
+const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const SITE_DESC =
-  '涂阿燃（安东尼）：前端与 AI 工程化 Agent 工程师；主理博主联盟与前端周看。个人主编札记，记录工程实践、技术情报与创作者增长。'
+  '涂阿燃（安东尼）：前端与 AI 工程化 Agent 工程师；主理博主联盟与前端周看。个人网络日志，记录工程实践、技术情报与创作者增长。'
 const AUTHOR_EMAIL = 'chaosdefense1@gmail.com'
 const AUTHOR_NAME = '涂阿燃'
 

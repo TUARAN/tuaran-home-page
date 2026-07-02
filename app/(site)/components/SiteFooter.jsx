@@ -22,7 +22,7 @@ export default function SiteFooter({ className = '' }) {
       ].join(' ')}
     >
       <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
-        <span>© 2025—2026 {pick(locale, '主编札记', 'Editor Notes')}</span>
+        <span>© 2025—2026 {pick(locale, '网络日志', 'Weblog')}</span>
         {links.map((link) => (
           <span key={link.href} className="contents">
             <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">

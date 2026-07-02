@@ -297,7 +297,7 @@ const SITE_RSS_COVERAGE = [
     note: '图片 / 视频 / 资源 / 观点，统一归到「灵感」分类。视频给封面 + 跳详情页入口，不内嵌媒体。',
   },
   {
-    section: '主编札记',
+    section: '网络日志',
     path: '/diary',
     status: 'partial',
     note: '仅作为 articlesData 里一条聚合文章出现，逐条日志更新不会触发新 RSS item。',

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import SettingsButton from './SettingsButton'
 import UserAvatar from './UserAvatar'
@@ -459,6 +459,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
 export default function SiteHeader() {
   const { locale } = useLocale()
   const pathname = usePathname()
+  const [searchString, setSearchString] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openChannel, setOpenChannel] = useState(null)
   const [openMobileChannel, setOpenMobileChannel] = useState(null)
@@ -466,12 +467,40 @@ export default function SiteHeader() {
   const account = useSessionAccount()
   const navWrapRef = useRef(null)
   const accountRef = useRef(null)
+  const searchParams = useMemo(() => new URLSearchParams(searchString), [searchString])
 
   useEffect(() => {
     setMobileMenuOpen(false)
     setOpenChannel(null)
     setAccountOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    function syncSearch() {
+      setSearchString(window.location.search || '')
+    }
+
+    syncSearch()
+    const originalPushState = window.history.pushState
+    const originalReplaceState = window.history.replaceState
+
+    window.history.pushState = function pushState(...args) {
+      const result = originalPushState.apply(this, args)
+      queueMicrotask(syncSearch)
+      return result
+    }
+    window.history.replaceState = function replaceState(...args) {
+      const result = originalReplaceState.apply(this, args)
+      queueMicrotask(syncSearch)
+      return result
+    }
+    window.addEventListener('popstate', syncSearch)
+    return () => {
+      window.history.pushState = originalPushState
+      window.history.replaceState = originalReplaceState
+      window.removeEventListener('popstate', syncSearch)
+    }
+  }, [])
 
   useEffect(() => {
     if (!openChannel) return
@@ -526,7 +555,7 @@ export default function SiteHeader() {
           <div className="hidden items-center gap-3 md:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-1">
               {SITE_CHANNELS.map((channel) => {
-                const isActive = channel.match(pathname)
+                const isActive = channel.match(pathname, searchParams)
                 const isOpen = openChannel === channel.key
                 const align =
                   channel.key === 'content'

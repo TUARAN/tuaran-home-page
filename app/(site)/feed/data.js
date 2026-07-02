@@ -62,7 +62,7 @@ export const FEED_ITEMS = [
     tags: ['人形机器人', '美妆灵感', 'AI 影像', '仿生设计', '未来审美'],
     date: '2026-07-01',
     time: '16:59',
-    src: '/feed/humanoid-robot-beauty-inspiration.mp4',
+    src: feedMediaUrl('feed/humanoid-robot-beauty-inspiration-2026-07-02.mp4'),
     aspect: '16/9',
   },
   {

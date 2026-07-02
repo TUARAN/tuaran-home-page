@@ -157,7 +157,7 @@ export default function SiteToolsPanel() {
           </div>
         </div>
         <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">
-          自建短链：随机生成 7 位 code，命中 D1 后 302 直跳原链接；会拦截本地 / 私网目标并限制创建频率。记录按账号写入 Cloudflare D1，需先登录。
+          自建短链：随机生成 7 位 code，命中 D1 后 302 直跳原链接；同一个原链接全站复用同一条短链，并记录点击次数。手动转外链仅站长可用。
         </p>
 
         {!userLoading && !isAuthed ? (

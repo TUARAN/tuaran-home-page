@@ -16,7 +16,7 @@ import { useState } from 'react'
  * - size:     'sm' / 'md'
  * - idleLabel: 默认按钮文案
  */
-export default function SharePageButton({ title, text, fullText, url, size = 'sm', exactUrl = false, idleLabel = '分享' }) {
+export default function SharePageButton({ title, text, fullText, url, size = 'sm', exactUrl = false, idleLabel = '分享', shorten = true }) {
   const [state, setState] = useState('idle')
 
   function flash(next) {
@@ -57,11 +57,27 @@ export default function SharePageButton({ title, text, fullText, url, size = 'sm
         typeof window !== 'undefined' && window.location?.href ? window.location.href : url
     }
 
+    let shareUrl = targetUrl
+    if (shorten) {
+      try {
+        const res = await fetch('/api/short', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ url: targetUrl, title, mode: 'share' }),
+        })
+        const data = await res.json().catch(() => null)
+        if (res.ok && data?.item?.short) shareUrl = data.item.short
+      } catch {
+        // 分享不能被转短失败阻断，保留原链接继续走原生分享 / 复制。
+      }
+    }
+
     const shareCopy = fullText || text
-    const textWithUrl = shareCopy ? `${shareCopy}\n\n${targetUrl}` : targetUrl
+    const textWithUrl = shareCopy ? `${shareCopy}\n\n${shareUrl}` : shareUrl
 
     // 移动端原生面板：把链接放进 text 末尾，避免部分平台把单独的 url 排到文案前面。
-    const payload = shareCopy ? { title, text: textWithUrl } : { title, url: targetUrl }
+    const payload = shareCopy ? { title, text: textWithUrl } : { title, url: shareUrl }
 
     if (typeof navigator.share === 'function') {
       try {

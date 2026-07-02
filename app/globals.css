@@ -1046,18 +1046,14 @@
 
   .home-achievement-button {
     @apply flex w-full items-center gap-2.5 rounded-xl border p-2 text-left transition;
-    border-color: color-mix(in srgb, var(--site-blue) 32%, var(--site-line));
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--site-blue) 11%, transparent), transparent 70%),
-      color-mix(in srgb, var(--site-panel-strong) 34%, transparent);
+    border-color: var(--site-line);
+    background: color-mix(in srgb, var(--site-panel-strong) 28%, transparent);
     color: var(--site-ink);
   }
 
   .home-achievement-button:hover {
-    border-color: color-mix(in srgb, var(--site-blue) 56%, var(--site-line));
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--site-blue) 16%, transparent), transparent 70%),
-      color-mix(in srgb, var(--site-panel-strong) 52%, transparent);
+    border-color: color-mix(in srgb, var(--site-ink) 18%, var(--site-line));
+    background: color-mix(in srgb, var(--site-panel-strong) 46%, transparent);
   }
 
   .home-achievement-card {
@@ -1091,6 +1087,7 @@
 
   .home-achievement-card strong {
     @apply block line-clamp-2 text-[13px] font-semibold leading-5;
+    color: var(--site-ink);
   }
 
   .home-achievement-card small {
@@ -1099,8 +1096,8 @@
   }
 
   .home-achievement-proof {
-    @apply relative block h-[54px] w-[82px] shrink-0 overflow-hidden rounded-lg border;
-    border-color: var(--site-line);
+    @apply relative block h-12 w-20 shrink-0 overflow-hidden rounded-lg border;
+    border-color: color-mix(in srgb, var(--site-ink) 12%, var(--site-line));
     background: #080d14;
   }
 
@@ -1120,12 +1117,6 @@
   .home-achievement-button small {
     @apply mt-0.5 block line-clamp-2 text-[11.5px] leading-4;
     color: var(--site-muted);
-  }
-
-  .home-achievement-meta {
-    @apply shrink-0 rounded-md border px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em];
-    border-color: color-mix(in srgb, var(--site-blue) 28%, var(--site-line));
-    color: var(--site-blue);
   }
 
   .home-achievement-modal {

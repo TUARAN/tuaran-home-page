@@ -54,6 +54,18 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'seedance-2-korean-community-life',
+    type: 'video',
+    title: 'Seedance 2.0 的韩国社区生活感',
+    summary:
+      'Seedance 2.0 生成太惊讶了！捕捉真实的韩国社区生活，仿佛一段被遗忘的 2000 年代初家庭录像——即兴、不完美、真实、温暖且极具说服力。',
+    tags: ['Seedance 2.0', 'AI 视频', '韩国社区', '家庭录像', '真实感'],
+    date: '2026-07-02',
+    time: '22:22',
+    src: '/feed/seedance-2-korean-community-life-2026-07-02.mp4',
+    aspect: '16/9',
+  },
+  {
     id: 'humanoid-robot-beauty-inspiration',
     type: 'video',
     title: '人形机器人的美妆灵感',

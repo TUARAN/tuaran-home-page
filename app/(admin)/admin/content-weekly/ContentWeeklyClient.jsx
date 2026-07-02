@@ -24,6 +24,12 @@ function trendText(delta) {
   return '→ 持平'
 }
 
+function formatPercent(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return '0%'
+  return `${Math.round(n * 1000) / 10}%`
+}
+
 function deltaVsPrev(current, previous, previousLabel) {
   const d = current - previous
   return { d, label: `${previousLabel} ${previous}` }
@@ -311,6 +317,11 @@ export default function ContentWeeklyClient() {
   const byType = reads.byType || []
   const monthByType = month.reads.byType || []
   const comments = data?.comments || { recent: [], total: { all: 0, thisWeek: 0, thisMonth: 0, articles: 0 } }
+  const ops = data?.ops || {
+    visitors: { total: 0, returning: 0, returnRate: 0 },
+    comments: { commenters: 0, comments: 0, conversionRate: 0 },
+    newsletter: { active: 0, thisWeek: 0 },
+  }
   const readsDelta = deltaVsPrev(reads.total.thisWeek, reads.total.prevWeek, '上周')
   const todayReadsDelta = deltaVsPrev(reads.total.today || 0, reads.total.yesterday || 0, '昨日')
   const likesDelta = deltaVsPrev(likes.total.thisWeek, likes.total.prevWeek, '上周')
@@ -325,7 +336,7 @@ export default function ContentWeeklyClient() {
       maxWidth="1100px"
       description={
         <>
-          自建阅读统计：调研 / 资料·资源 / 灵感的被读、被赞，今日 PV、近 7 天走势 + 自然月统计。
+          自建阅读统计：调研 / 资料·资源 / 灵感的被读、被赞，今日 PV、近 7 天走势、回访率 / 评论转化率 / 订阅数 + 自然月统计。
           <br />
           刷新时间：{generatedAtLabel}（北京时间；打开页面或点击重新计算时实时聚合，不走定时缓存）。
         </>
@@ -369,6 +380,27 @@ export default function ContentWeeklyClient() {
         />
         <StatCard label="上榜文章(读)" value={loading ? '—' : reads.top.length} />
         <StatCard label="上榜文章(赞)" value={loading ? '—' : likes.top.length} />
+      </section>
+
+      <section className="mb-5 grid gap-3 md:grid-cols-3">
+        <StatCard
+          label="回访率"
+          value={loading ? '—' : formatPercent(ops.visitors.returnRate)}
+          sub={loading ? '近 7 天唯一访客' : `${ops.visitors.returning}/${ops.visitors.total} 访客 · 近 7 天`}
+          tone="info"
+        />
+        <StatCard
+          label="评论转化率"
+          value={loading ? '—' : formatPercent(ops.comments.conversionRate)}
+          sub={loading ? '近 7 天评论用户 / 访客' : `${ops.comments.commenters} 人评论 · ${ops.comments.comments || 0} 条`}
+          tone="warning"
+        />
+        <StatCard
+          label="订阅数"
+          value={loading ? '—' : ops.newsletter.active}
+          sub={loading ? 'Newsletter active' : `近 7 天新增 +${ops.newsletter.thisWeek || 0}`}
+          tone="success"
+        />
       </section>
 
       <Section title="每日 PV · 最近 7 天" description="按北京时间自然日统计 research_pv_hits；最后一根柱子是今天截至当前刷新时的 PV。" className="mb-4">

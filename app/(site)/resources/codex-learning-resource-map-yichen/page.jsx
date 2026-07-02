@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import Link from 'next/link'
 
+import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import RanbiPaywall from '../../components/RanbiPaywall'
 import SharePageButton from '../../components/SharePageButton'
@@ -117,6 +118,7 @@ export default function CodexLearningResourcePage() {
       <RanbiPaywall resourceKey={`resource:${RESOURCE_SLUG}`} unitLabel="资源">
         <article className="prose-tuaran" dangerouslySetInnerHTML={{ __html: resource.html }} />
       </RanbiPaywall>
+      <ArticleFooterCta />
     </main>
   )
 }

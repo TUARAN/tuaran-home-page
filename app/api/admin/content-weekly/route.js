@@ -62,6 +62,15 @@ function buildDailyReads(rows, sevenDayStart) {
   })
 }
 
+async function firstOrNull(db, sql, binds = []) {
+  try {
+    const stmt = binds.length ? db.prepare(sql).bind(...binds) : db.prepare(sql)
+    return (await stmt.first()) || null
+  } catch {
+    return null
+  }
+}
+
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
@@ -77,6 +86,11 @@ export async function GET(req) {
       reads: { top: [], daily: [], total: { thisWeek: 0, prevWeek: 0, today: 0, yesterday: 0 } },
       likes: { top: [], total: { thisWeek: 0, prevWeek: 0 } },
       comments: { recent: [], total: { all: 0, thisWeek: 0, thisMonth: 0, articles: 0 } },
+      ops: {
+        visitors: { total: 0, returning: 0, returnRate: 0 },
+        comments: { commenters: 0, conversionRate: 0 },
+        newsletter: { active: 0, thisWeek: 0 },
+      },
       month: {
         reads: { top: [], byType: [], total: { thisMonth: 0, prevMonth: 0 } },
         likes: { top: [], total: { thisMonth: 0, prevMonth: 0 } },
@@ -105,6 +119,9 @@ export async function GET(req) {
       monthLikeTotal,
       commentRows,
       commentTotal,
+      visitorTotal,
+      commentConversion,
+      newsletterTotal,
     ] = await Promise.all([
       db
         .prepare(
@@ -261,6 +278,40 @@ export async function GET(req) {
         )
         .bind(wk1, monthWindow.thisMonthStart)
         .first(),
+      db
+        .prepare(
+          `SELECT
+             COUNT(*) AS visitors,
+             SUM(CASE WHEN days_seen >= 2 THEN 1 ELSE 0 END) AS returning_visitors
+           FROM (
+             SELECT visitor_hash,
+               COUNT(DISTINCT CAST((created_at + ?1) / ?2 AS INTEGER)) AS days_seen
+             FROM research_pv_hits
+             WHERE created_at >= ?3
+             GROUP BY visitor_hash
+           )`,
+        )
+        .bind(SHANGHAI_TZ_OFFSET_MS, DAY_MS, wk1)
+        .first(),
+      db
+        .prepare(
+          `SELECT
+             COUNT(*) AS comments,
+             COUNT(DISTINCT user_id) AS commenters
+           FROM article_comments
+           WHERE created_at >= ?1`,
+        )
+        .bind(wk1)
+        .first(),
+      firstOrNull(
+        db,
+        `SELECT
+           COUNT(*) AS active,
+           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week
+         FROM newsletter_subscribers
+         WHERE status = 'active'`,
+        [wk1],
+      ),
     ])
 
     const reads = readRows.map((r) => {
@@ -351,6 +402,9 @@ export async function GET(req) {
     const dailyReads = buildDailyReads(dailyReadRows, dayWindow.sevenDayStart)
     const todayReads = dailyReads[dailyReads.length - 1]?.pv || 0
     const yesterdayReads = dailyReads[dailyReads.length - 2]?.pv || 0
+    const visitors = Number(visitorTotal?.visitors) || 0
+    const returningVisitors = Number(visitorTotal?.returning_visitors) || 0
+    const commenters = Number(commentConversion?.commenters) || 0
 
     return Response.json({
       status: 'ok',
@@ -391,6 +445,22 @@ export async function GET(req) {
           articles: Number(commentTotal?.article_count) || 0,
           thisWeek: Number(commentTotal?.this_week) || 0,
           thisMonth: Number(commentTotal?.this_month) || 0,
+        },
+      },
+      ops: {
+        visitors: {
+          total: visitors,
+          returning: returningVisitors,
+          returnRate: visitors ? returningVisitors / visitors : 0,
+        },
+        comments: {
+          commenters,
+          comments: Number(commentConversion?.comments) || 0,
+          conversionRate: visitors ? commenters / visitors : 0,
+        },
+        newsletter: {
+          active: Number(newsletterTotal?.active) || 0,
+          thisWeek: Number(newsletterTotal?.this_week) || 0,
         },
       },
       month: {

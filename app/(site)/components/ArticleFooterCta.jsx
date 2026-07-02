@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import NewsletterSignup from './NewsletterSignup'
 
 /**
  * 文章底部统一 CTA：留住流量、引导下一步
@@ -14,7 +15,9 @@ export default function ArticleFooterCta() {
         <p className="text-[11px] text-[#999] dark:text-gray-500">写完一篇 · 走到下一段</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <NewsletterSignup />
+
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <a
           href="/rss.xml"
           className="group flex items-baseline gap-3 rounded-xl border border-[#dee0db] bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:border-[#c2c4b7] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-600"

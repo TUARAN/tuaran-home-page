@@ -1,4 +1,5 @@
 import ClassicalMasterpiecesClient from './ClassicalMasterpiecesClient'
+import ContentEngagement from '../components/ContentEngagement'
 import RanbiPaywall from '../components/RanbiPaywall'
 import ContentPvBeacon from '../components/ContentPvBeacon'
 
@@ -25,6 +26,7 @@ export default function ClassicalMasterpiecesPage() {
       <RanbiPaywall resourceKey="resource:classical-masterpieces" unitLabel="资料">
         <ClassicalMasterpiecesClient />
       </RanbiPaywall>
+      <ContentEngagement contentKey="resource:classical-masterpieces" />
     </>
   )
 }

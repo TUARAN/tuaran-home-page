@@ -1,4 +1,5 @@
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
+import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import RanbiPaywall from '../../components/RanbiPaywall'
 
@@ -400,6 +401,7 @@ export default function YoutubeBookmarksPage() {
       </div>
         </BookmarksTocLayout>
       </RanbiPaywall>
+      <ContentEngagement contentKey="resource:bookmarks-youtube" width="standard" />
     </>
   )
 }

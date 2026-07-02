@@ -1,4 +1,5 @@
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
+import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ImageLightbox from '../../components/ImageLightbox'
 import RanbiPaywall from '../../components/RanbiPaywall'
@@ -748,6 +749,7 @@ export default function TwitterBookmarksPage({ searchParams } = {}) {
       </div>
         </BookmarksTocLayout>
       </RanbiPaywall>
+      <ContentEngagement contentKey="resource:bookmarks-twitter" width="standard" />
     </>
   )
 }

@@ -2,6 +2,18 @@
 
 > 写于 2026-05-30。建议作为多周渐进推进的工作底稿，每完成一步打勾。
 
+## 进展 · 2026-07-02（统一内容管线 + D1 内容索引 + 5 频道导航）
+
+本轮没有按原 Phase 1（先抽样式组件）推进，而是先把**互动层和数据层**打通（对平台化目标收益更大）：
+
+- [x] **统一内容管线** `lib/contentPipeline.js`：文章（articlesData）+ 调研（research catalog，已扩展 tags）+ 资源主题页（contentRegistry，已补 tags）归一成统一 entry 形状；`getRelatedContent()` 跨类型相关阅读（标签重叠 > 同类 > 时间）。contentKey 与评论 articleKey、燃币 resourceKey 同一套约定。
+- [x] **ContentEngagement 组件**（`app/(site)/components/ContentEngagement.jsx`）：相关阅读 + 评论区，已挂到 9 个资源主题页（classical-masterpieces / ru-shi-dao / china-politics / history/ming-qing / bookmarks×5）。资源主题页从此进入评论 + 相关阅读体系；`resolveArticleKey` 已支持 `resource:` 前缀（通知/后台可解析）。
+- [x] **内容 metadata 进 D1**：migration `0035_content_index.sql`（content_index 表）+ `lib/contentIndex.js` + `/api/content`（公开读）+ `/api/admin/content-index`（owner 同步/登记）。`/admin/content-index` 后台：一键同步构建期注册表进 D1；**手工登记的条目无需构建即出现在 /articles 索引**（客户端 fetch `/api/content?source=manual` 合并）。⚠️ 需在 Cloudflare 手动跑迁移 0035 才生效。
+- [x] **导航收敛为 5 频道**：内容 / 资源 / 工具 / 社区 / 关于（原 阅读/作品/合作/关于 四频道重组，路由本身未迁移、无 301 需求）。/map 频道配色与 SiteHeader 对齐逻辑已同步。
+
+原计划仍然有效的部分：Phase 1 共享样式组件、Phase 2 大页面拆 md（ai-pioneers / ming-qing）、Phase 3 /knowledge 模板。后续推进时注意：新的统一管线（contentPipeline）应作为 loader 输出的消费端，别再造第二套注册表。
+调研详情页的「同类调研」推荐仍用页内旧逻辑（同 category + companyType 优先），后续可切换到 `getRelatedContent()` 统一。
+
 ## 问题
 
 知识展示类页面被写成巨型 React 组件：

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 
-const OPENCLAW_PR_URL = 'https://github.com/openclaw/openclaw/pull/90517#event-27417133330'
+const OPENCLAW_PR_URL = 'https://github.com/openclaw/openclaw/pull/90517'
 
 export default function HomeOpenClawAchievement() {
   const [open, setOpen] = useState(false)
@@ -40,7 +40,6 @@ export default function HomeOpenClawAchievement() {
         <span className="min-w-0 flex-1">
           <span className="home-achievement-kicker">开源贡献</span>
           <strong>给全球最大开源项目OpenClaw🦞提代码，被官方合并。</strong>
-          <small>PR #90517 · +153 −5</small>
         </span>
       </button>
 
@@ -73,11 +72,11 @@ export default function HomeOpenClawAchievement() {
               />
             </a>
             <div className="home-achievement-modal-foot">
-              <span>PR #90517</span>
+              <span>openclaw/openclaw#90517</span>
               <span>+153 -5</span>
               <span>主分支已合并</span>
               <a href={OPENCLAW_PR_URL} target="_blank" rel="noreferrer" className="no-external-arrow">
-                查看 PR →
+                查看 openclaw/openclaw#90517 →
               </a>
             </div>
           </div>

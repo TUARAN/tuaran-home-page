@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-01T01:58:26.726Z",
+  "generatedAt": "2026-07-02T01:35:02.295Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -116,6 +116,12 @@
               "hash": "e03e77f7ecb9d5327c9b880b52ca81d63ba3fe5b2df2c50d62d7ef0612f1a553",
               "path": "claude/MEMORY/2026-07-01T01-58-26-696Z.enc.json",
               "bytes": 2731
+            },
+            {
+              "ts": "2026-07-02T01:35:02.232Z",
+              "hash": "b7d2b34fc9b2515e0513a4646b9a44d99f8b617d4daba22838577da52ba18d72",
+              "path": "claude/MEMORY/2026-07-02T01-35-02-252Z.enc.json",
+              "bytes": 2922
             }
           ]
         },
@@ -394,6 +400,18 @@
               "bytes": 1194
             }
           ]
+        },
+        "content-pipeline-and-index": {
+          "title": "content-pipeline-and-index",
+          "description": "统一内容管线 + D1 内容索引（migration 0035 需手动跑）+ 5 频道导航，2026-07-02 落地",
+          "versions": [
+            {
+              "ts": "2026-07-02T01:35:02.254Z",
+              "hash": "d16f993995cca117bb9a62463dfe1a16c137ee324b7c7e1b2e713a881174f926",
+              "path": "claude/content-pipeline-and-index/2026-07-02T01-35-02-271Z.enc.json",
+              "bytes": 1257
+            }
+          ]
         }
       }
     },
@@ -422,6 +440,12 @@
               "hash": "77ddc37ae2c4d9c9c1e3f68a2a5a71ef9072909f1bd651451113ed3ca222bfec",
               "path": "ai-context/content-layer-refactor-plan/2026-06-03T03-22-06-072Z.enc.json",
               "bytes": 3129
+            },
+            {
+              "ts": "2026-07-02T01:35:02.277Z",
+              "hash": "7af6c2d59420008a7565e64e00cb96d6063503bf4d5921abc598670dc38d24bf",
+              "path": "ai-context/content-layer-refactor-plan/2026-07-02T01-35-02-293Z.enc.json",
+              "bytes": 4387
             }
           ]
         },

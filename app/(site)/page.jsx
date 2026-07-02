@@ -18,6 +18,7 @@ import {
 import DaysSince from './components/DaysSince'
 import ForceDarkRoute from './components/ForceDarkRoute'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
+import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
 import HotTickerBar from './components/HotTickerBar'
@@ -248,9 +249,22 @@ const PRIMARY_SOCIAL_MEDIA_LINKS = SORTED_SOCIAL_MEDIA_LINKS.slice(0, 3)
 const SECONDARY_SOCIAL_MEDIA_LINKS = SORTED_SOCIAL_MEDIA_LINKS.slice(3)
 
 const SOCIAL_MEDIA_TOTALS = {
-  followers: '3.2w+',
-  reads: '712w+',
+  followers: '3.0w+',
+  reads: '600w+',
 }
+
+const HOME_ACHIEVEMENT_LINKS = [
+  {
+    href: '/publications',
+    kicker: '出版写作',
+    title: '已出版 / 发布 2 本技术作品',
+    desc: '《程序员成长手记》《AI Bots 通关指南》作者',
+    meta: '2 本',
+    image: '/images/books/programmer-growth-notes.jpg',
+    imageAlt: '《程序员成长手记》书籍封面',
+    icon: IconFileText,
+  },
+]
 
 const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 const CLASSIC_SITE_HERO_TAGLINE_EN = `${SITE_HERO_TITLE_EN}: ${SITE_HERO_TAGLINE_EN}`
@@ -481,13 +495,20 @@ function ProductLink({ item }) {
 
 function SocialMediaCard({ item }) {
   const Icon = item.icon
+  const showFollowers = !item.followers.startsWith('<')
+  const showReads = !item.reads.startsWith('<')
+  const ariaLabel = [
+    item.label,
+    showFollowers ? `${item.followers} followers` : null,
+    showReads ? `${item.reads} views` : null,
+  ].filter(Boolean).join(', ')
   return (
     <a
       href={item.href}
       target="_blank"
       rel="noreferrer"
       className={item.priority ? 'home-social-card is-priority no-external-arrow group' : 'home-social-card no-external-arrow group'}
-      aria-label={`${item.label}: ${item.followers} followers, ${item.reads} views`}
+      aria-label={ariaLabel}
     >
       <span className="home-social-icon" aria-hidden="true">
         <Icon size={item.priority ? 24 : 18} stroke={1.8} />
@@ -496,11 +517,106 @@ function SocialMediaCard({ item }) {
         {item.priority ? <small>TOP {item.rank}</small> : null}
         <strong><T zh={item.label} en={item.labelEn} /></strong>
       </span>
-      <span className="home-social-metrics" aria-hidden="true">
-        <span><IconUsers size={11} stroke={1.8} />{item.followers}</span>
-        <span><IconEye size={11} stroke={1.8} />{item.reads}</span>
-      </span>
+      {showFollowers || showReads ? (
+        <span className="home-social-metrics" aria-hidden="true">
+          {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
+          {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
+        </span>
+      ) : null}
     </a>
+  )
+}
+
+function AchievementMiniCard({ item }) {
+  const Icon = item.icon
+  const content = (
+    <>
+      {item.image ? (
+        <span className="home-achievement-card-cover">
+          <Image src={item.image} alt={item.imageAlt || ''} width={96} height={96} sizes="56px" />
+        </span>
+      ) : (
+        <span className="home-achievement-card-icon" aria-hidden="true">
+          <Icon size={19} stroke={1.8} />
+        </span>
+      )}
+      <span className="min-w-0 flex-1">
+        <span className="home-achievement-kicker">{item.kicker}</span>
+        <strong>{item.title}</strong>
+        <small>{item.desc}</small>
+      </span>
+      <span className="home-achievement-meta">{item.meta}</span>
+    </>
+  )
+
+  if (isExternalHref(item.href)) {
+    return (
+      <a href={item.href} target="_blank" rel="noreferrer" className="home-achievement-card no-external-arrow">
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <Link href={item.href} className="home-achievement-card">
+      {content}
+    </Link>
+  )
+}
+
+function BuilderAndSignalsPanel() {
+  return (
+    <section className="home-section home-builder-panel">
+      <div className="home-section-heading compact">
+        <div>
+          <p className="home-kicker">Builder</p>
+          <h2 className="home-section-title"><T zh="我正在经营的" en="What I'm building" /></h2>
+        </div>
+      </div>
+
+      <div className="home-builder-group">
+        <div className="home-product-list">
+          {PRODUCT_LINKS.map((item) => (
+            <ProductLink key={item.href} item={item} />
+          ))}
+        </div>
+      </div>
+
+      <div className="home-builder-group">
+        <p className="home-builder-subtitle"><T zh="站长成就" en="Owner highlights" /></p>
+        <div className="home-achievement-list">
+          <HomeOpenClawAchievement />
+          {HOME_ACHIEVEMENT_LINKS.map((item) => (
+            <AchievementMiniCard key={item.title} item={item} />
+          ))}
+        </div>
+      </div>
+
+      <div className="home-builder-group">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="home-builder-subtitle mb-0"><T zh="内容影响力 · 站长其他社媒" en="Reach · More channels" /></p>
+          <Link href="/about" className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--site-faint)] no-underline hover:text-[var(--site-ink)]">
+            <T zh="履历 →" en="About →" />
+          </Link>
+        </div>
+        <div className="home-social-total" aria-label="Content channel totals">
+          <span><IconUsers size={13} stroke={1.8} aria-hidden="true" /><T zh="总关注" en="Followers" /> {SOCIAL_MEDIA_TOTALS.followers}</span>
+          <span><IconEye size={13} stroke={1.8} aria-hidden="true" /><T zh="全网阅读" en="Views" /> {SOCIAL_MEDIA_TOTALS.reads}</span>
+        </div>
+        <div className="home-social-grid">
+          <div className="home-social-priority-grid">
+            {PRIMARY_SOCIAL_MEDIA_LINKS.map((item) => (
+              <SocialMediaCard key={item.label} item={item} />
+            ))}
+          </div>
+          <div className="home-social-secondary-grid">
+            {SECONDARY_SOCIAL_MEDIA_LINKS.map((item) => (
+              <SocialMediaCard key={item.label} item={item} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -785,44 +901,7 @@ function PolishedHomePage({ featuredPicks }) {
         <aside className="home-side-stack">
           <ProfileCard />
 
-          <section className="home-section home-products">
-            <div className="home-section-heading compact">
-              <div>
-                <p className="home-kicker">Products</p>
-                <h2 className="home-section-title"><T zh="我正在经营的" en="What I'm building" /></h2>
-              </div>
-            </div>
-            <div className="home-product-list">
-              {PRODUCT_LINKS.map((item) => (
-                <ProductLink key={item.href} item={item} />
-              ))}
-            </div>
-          </section>
-
-          <section className="home-section home-socials">
-            <div className="home-section-heading compact">
-              <div>
-                <p className="home-kicker">Channels</p>
-                <h2 className="home-section-title"><T zh="其他内容渠道" en="More channels" /></h2>
-              </div>
-            </div>
-            <div className="home-social-total" aria-label="Content channel totals">
-              <span><IconUsers size={13} stroke={1.8} aria-hidden="true" /><T zh="总关注" en="Followers" /> {SOCIAL_MEDIA_TOTALS.followers}</span>
-              <span><IconEye size={13} stroke={1.8} aria-hidden="true" /><T zh="总阅读" en="Views" /> {SOCIAL_MEDIA_TOTALS.reads}</span>
-            </div>
-            <div className="home-social-grid">
-              <div className="home-social-priority-grid">
-                {PRIMARY_SOCIAL_MEDIA_LINKS.map((item) => (
-                  <SocialMediaCard key={item.label} item={item} />
-                ))}
-              </div>
-              <div className="home-social-secondary-grid">
-                {SECONDARY_SOCIAL_MEDIA_LINKS.map((item) => (
-                  <SocialMediaCard key={item.label} item={item} />
-                ))}
-              </div>
-            </div>
-          </section>
+          <BuilderAndSignalsPanel />
 
           <section className="home-section home-entry-panel">
             <div className="home-section-heading compact">

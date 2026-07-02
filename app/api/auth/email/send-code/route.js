@@ -1,4 +1,4 @@
-import { requestRegistrationCode } from '../../../../../lib/emailAuth'
+import { requestEmailCode } from '../../../../../lib/emailAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -12,11 +12,12 @@ export async function POST(req) {
       return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
     }
 
-    if (body?.purpose && body.purpose !== 'register') {
+    const purpose = body?.purpose === 'activate' ? 'activate' : 'register'
+    if (body?.purpose && !['register', 'activate'].includes(body.purpose)) {
       return Response.json({ error: 'UNSUPPORTED_CODE_PURPOSE' }, { status: 400 })
     }
 
-    const result = await requestRegistrationCode(req, body?.email)
+    const result = await requestEmailCode(req, body?.email, purpose)
     if (!result.ok) return Response.json(result, { status: result.status || 400 })
     return Response.json({ ok: true })
   } catch (error) {

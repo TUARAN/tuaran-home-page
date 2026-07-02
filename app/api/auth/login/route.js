@@ -4,11 +4,12 @@ import {
   getSecrets,
   parseCookies,
   randomState,
+  serializeLastLoginMethodCookie,
   serializeCookie,
   signSession,
 } from '../../../../lib/edgeSession'
 import { getD1 } from '../../../../lib/d1'
-import { authenticateEmailUser } from '../../../../lib/emailAuth'
+import { authenticateOrCreateEmailUser } from '../../../../lib/emailAuth'
 import {
   cleanupRateLimits,
   enforceRateLimits,
@@ -109,7 +110,7 @@ export async function POST(req) {
     ])
     if (!limit.ok) return rateLimitResponse(limit)
 
-    const result = await authenticateEmailUser(body?.email, body?.password)
+    const result = await authenticateOrCreateEmailUser(body?.email, body?.password)
     if (!result.ok) return Response.json(result, { status: result.status || 401 })
 
     await recordUserLogin(result.user)
@@ -128,8 +129,9 @@ export async function POST(req) {
       'Set-Cookie',
       serializeCookie(cookieNames.session, token, { maxAge: 7 * 24 * 60 * 60, secure })
     )
+    headers.append('Set-Cookie', serializeLastLoginMethodCookie('email', { secure }))
     if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())
-    return Response.json({ ok: true, user: result.user }, { headers })
+    return Response.json({ ok: true, user: result.user, createdPending: Boolean(result.createdPending) }, { headers })
   } catch (error) {
     console.error('email login failed', error)
     return Response.json({ error: 'LOGIN_FAILED' }, { status: 500 })

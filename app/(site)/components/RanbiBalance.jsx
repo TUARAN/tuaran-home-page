@@ -53,7 +53,11 @@ export default function RanbiBalance({ className = '' }) {
         setHint(data.awarded ? `签到 +${data.gained} 燃币` : '今天已签到')
         await refresh()
       } else {
-        setHint(data?.error || '签到失败')
+        setHint(
+          data?.error === 'EMAIL_ACTIVATION_REQUIRED'
+            ? `未激活邮箱先开放 ${data?.pendingCheckinLimit || 3} 次签到；激活后继续每日签到`
+            : data?.error || '签到失败'
+        )
       }
     } catch (e) {
       setHint(String(e?.message || e))

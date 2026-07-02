@@ -1,4 +1,10 @@
-import { cookieNames, cookiesConfig, getSecrets, parseCookies, verifySession } from '../../../lib/edgeSession'
+import {
+  cookieNames,
+  cookiesConfig,
+  getSecrets,
+  parseCookies,
+  verifySession,
+} from '../../../lib/edgeSession'
 import { isOwnerUser } from '../../../lib/ownerAuth'
 
 export const runtime = 'edge'

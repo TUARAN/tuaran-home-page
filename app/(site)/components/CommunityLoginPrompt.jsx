@@ -37,7 +37,13 @@ export default function CommunityLoginPrompt() {
     }
   }, [])
 
-  const shouldShow = !loading && user && !isOwner && !dismissed && pathname !== '/community'
+  const shouldShow =
+    !loading &&
+    user &&
+    user.status !== 'pending' &&
+    !isOwner &&
+    !dismissed &&
+    pathname !== '/community'
 
   useEffect(() => {
     if (!shouldShow) return undefined

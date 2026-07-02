@@ -38,28 +38,11 @@ const SECTION_BADGE_CLASS = {
   feed: 'home-badge home-badge-feed',
 }
 
-const CLASSIC_SECTION_BADGE_CLASS = {
-  feed:
-    'border-[#e7d2a6] bg-[#fbf4e6] text-[#9c6b12] dark:border-[#4a3c20] dark:bg-[#241d10] dark:text-[#e6b964]',
-  column:
-    'border-[#d6d0df] bg-[#f4f2f8] text-[#625d70] dark:border-[#303947] dark:bg-[#18202a] dark:text-[#c6ceda]',
-  research:
-    'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
-  resources:
-    'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#263f4b] dark:bg-[#13232b] dark:text-[#9ac9d8]',
-  tools:
-    'border-[#d8cfb8] bg-[#fbf6ea] text-[#7a5417] dark:border-[#4a3c20] dark:bg-[#241d10] dark:text-[#e6b964]',
-}
-
 const CLASSIC_HOME_SECTION_TAB_CLASS = {
-  column:
-    'text-[#696071] hover:bg-white hover:text-[#49345f] hover:shadow-sm hover:ring-1 hover:ring-[#d6d0df] dark:text-gray-400 dark:hover:bg-[#1e2630] dark:hover:text-[#d8c5f3] dark:hover:ring-[#303947]',
-  research:
-    'text-[#696071] hover:bg-white hover:text-[#3b5b8a] hover:shadow-sm hover:ring-1 hover:ring-[#cbd9ee] dark:text-gray-400 dark:hover:bg-[#152034] dark:hover:text-[#9bb6df] dark:hover:ring-[#2a3a55]',
-  resources:
-    'text-[#696071] hover:bg-white hover:text-[#3f6878] hover:shadow-sm hover:ring-1 hover:ring-[#c7dce4] dark:text-gray-400 dark:hover:bg-[#13232b] dark:hover:text-[#9ac9d8] dark:hover:ring-[#263f4b]',
-  tools:
-    'text-[#696071] hover:bg-white hover:text-[#7a5417] hover:shadow-sm hover:ring-1 hover:ring-[#d8cfb8] dark:text-gray-400 dark:hover:bg-[#241d10] dark:hover:text-[#e6b964] dark:hover:ring-[#4a3c20]',
+  column: 'home-classic-tab home-classic-tab-column',
+  research: 'home-classic-tab home-classic-tab-research',
+  resources: 'home-classic-tab home-classic-tab-resource',
+  tools: 'home-classic-tab home-classic-tab-feed',
 }
 
 const START_PATHS = [
@@ -363,25 +346,25 @@ function ClassicFeaturedLinkItem({ item }) {
     <>
       <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         {item.isLatest ? (
-          <span className="inline-flex shrink-0 items-center rounded-full border border-[#cfc3e2] bg-[#f3eff9] px-2 py-0.5 font-mono text-[10px] text-[#72539b] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#c5afe8]">
+          <span className="home-badge home-badge-latest shrink-0">
             <T zh="最新" en="Latest" />
           </span>
         ) : null}
         <span
           className={[
-            'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-2 py-0.5 font-mono text-[10px]',
-            CLASSIC_SECTION_BADGE_CLASS[item.section] || CLASSIC_SECTION_BADGE_CLASS.column,
+            'min-w-0 shrink truncate',
+            SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column,
           ].join(' ')}
         >
           {item.sectionLabel}
         </span>
         {item.tagLabel ? (
-          <span className="inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border border-[#d9d4e2] bg-white px-2 py-0.5 font-mono text-[10px] text-[#625a6f] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#aeb8c6]">
+          <span className="home-badge home-badge-muted min-w-0 shrink truncate">
             {item.tagLabel}
           </span>
         ) : null}
         {item.date ? (
-          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#9b9b93] dark:text-gray-500">
+          <span className="home-item-date shrink-0 whitespace-nowrap">
             {item.date}
           </span>
         ) : null}

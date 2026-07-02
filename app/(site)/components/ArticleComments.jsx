@@ -135,12 +135,13 @@ export default function ArticleComments({ articleKey }) {
   }
 
   return (
-    <section className="mx-auto mt-12 max-w-[72ch] border-t border-[#dee0db] pt-8 dark:border-gray-800">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="discussion-comments mx-auto mt-12 max-w-[72ch]">
+      <div className="discussion-comments-header flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-[#444] dark:text-gray-200">评论</h2>
-          <p className="mt-1 text-xs text-[#777] dark:text-gray-400">
-            {items.length ? `${items.length} 条评论` : '还没有评论'}
+          <p className="discussion-eyebrow mb-1">Discussion</p>
+          <h2 className="mb-0 border-0 p-0 text-xl font-semibold">讨论</h2>
+          <p className="mb-0 mt-1 text-xs text-[var(--site-faint)]">
+            {items.length ? `${items.length} 条讨论` : '还没有讨论'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -148,7 +149,7 @@ export default function ArticleComments({ articleKey }) {
           <button
             type="button"
             onClick={refresh}
-            className="rounded-full border border-gray-200/80 bg-white/80 px-3 py-1 text-xs text-gray-700 hover:bg-white dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
+            className="discussion-ghost-button"
           >
             刷新
           </button>
@@ -156,7 +157,7 @@ export default function ArticleComments({ articleKey }) {
             <button
               type="button"
               onClick={logout}
-              className="rounded-full border border-gray-200/80 bg-white/80 px-3 py-1 text-xs text-gray-700 hover:bg-white dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
+              className="discussion-ghost-button"
             >
               退出
             </button>
@@ -165,7 +166,7 @@ export default function ArticleComments({ articleKey }) {
               type="button"
               disabled={userLoading}
               onClick={goToLogin}
-              className="rounded-full border border-gray-200/80 bg-white/80 px-4 py-1 text-xs text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
+              className="discussion-ghost-button"
             >
               登录
             </button>
@@ -174,13 +175,13 @@ export default function ArticleComments({ articleKey }) {
       </div>
 
       {isAuthed && unreadNotifications.length ? (
-        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-sm text-rose-950 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-100">
+        <div className="discussion-notice mt-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-medium">你有 {unreadNotifications.length} 条新的评论回复</p>
             <button
               type="button"
               onClick={markAllRepliesRead}
-              className="self-start rounded-full border border-rose-200 bg-white/80 px-3 py-1 text-xs text-rose-700 hover:bg-white dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-100"
+              className="discussion-ghost-button self-start"
             >
               全部已读
             </button>
@@ -191,18 +192,18 @@ export default function ArticleComments({ articleKey }) {
                 <a
                   href={item.href || '#comments'}
                   onClick={() => markNotificationsRead?.({ id: item.id })}
-                  className="font-medium text-rose-800 underline-offset-4 hover:underline dark:text-rose-100"
+                  className="font-medium text-[var(--site-accent-strong)] underline-offset-4 hover:underline"
                 >
                   {item.actorUserName || '有人'} 回复了你
                 </a>
-                <span className="text-rose-700/80 dark:text-rose-100/75">：{item.messageExcerpt}</span>
+                <span className="text-[var(--site-muted)]">：{item.messageExcerpt}</span>
               </li>
             ))}
           </ul>
         </div>
       ) : null}
 
-      <form onSubmit={submit} className="mt-4 flex flex-col gap-2">
+      <form onSubmit={submit} className="discussion-composer mt-4 flex flex-col gap-3">
         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
           {isAuthed ? (
             <>
@@ -216,9 +217,9 @@ export default function ArticleComments({ articleKey }) {
           )}
         </div>
         {replyTarget ? (
-          <div className="flex items-center justify-between rounded-lg border border-gray-200/80 bg-white/70 px-3 py-2 text-xs text-gray-600 dark:border-gray-700/70 dark:bg-gray-900/60 dark:text-gray-300">
+          <div className="flex items-center justify-between rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-2 text-xs text-[var(--site-muted)]">
             <span>正在回复 @{replyTarget.userName}</span>
-            <button type="button" onClick={() => setReplyTarget(null)} className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100">
+            <button type="button" onClick={() => setReplyTarget(null)} className="text-[var(--site-faint)] hover:text-[var(--site-ink)]">
               取消回复
             </button>
           </div>
@@ -230,16 +231,16 @@ export default function ArticleComments({ articleKey }) {
           rows={4}
           maxLength={1000}
           placeholder="写下你的评论（最多 1000 字）"
-          className="w-full rounded-lg border border-gray-200/80 bg-white/80 p-3 text-sm leading-6 text-gray-700 outline-none focus:ring-2 focus:ring-gray-200 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200 dark:focus:ring-gray-700"
+          className="discussion-textarea"
         />
         <div className="flex items-center justify-between">
-          <span className={`text-xs ${remaining < 0 ? 'text-red-600' : 'text-gray-500'} dark:text-gray-400`}>
+          <span className={`text-xs ${remaining < 0 ? 'text-red-600' : 'text-[var(--site-faint)]'}`}>
             {remaining} 字
           </span>
           <button
             type="submit"
             disabled={loading || userLoading || !message.trim() || remaining < 0}
-            className="rounded-full border border-gray-200/80 bg-white/90 px-4 py-1.5 text-xs text-gray-700 shadow-sm hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/80 dark:text-gray-200"
+            className="discussion-submit-button"
           >
             {loading ? '发送中...' : isAuthed ? '发表评论' : '以游客身份发表'}
           </button>
@@ -255,14 +256,14 @@ export default function ArticleComments({ articleKey }) {
               <li
                 key={item.id}
                 id={`comment-${item.id}`}
-                className="rounded-lg border border-gray-200/80 bg-white/70 p-3 dark:border-gray-700/70 dark:bg-gray-900/50"
+                className="discussion-comment-card"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
                     <UserAvatar seed={item.user_name || item.user_id || 'guest'} size="sm" title={item.user_name} />
                     <div className="min-w-0">
-                      <div className="truncate text-sm text-gray-800 dark:text-gray-100">{item.user_name}</div>
-                      <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                      <div className="truncate text-sm font-medium text-[var(--site-ink)]">{item.user_name}</div>
+                      <div className="text-[11px] text-[var(--site-faint)]">
                         {providerLabel(item.user_provider)}
                       </div>
                     </div>
@@ -271,28 +272,28 @@ export default function ArticleComments({ articleKey }) {
                     <button
                       type="button"
                       onClick={() => replyTo(item)}
-                      className="rounded-full border border-gray-200/80 px-2 py-0.5 text-[11px] text-gray-600 hover:bg-white dark:border-gray-700/70 dark:text-gray-300 dark:hover:bg-gray-800"
+                      className="discussion-ghost-button px-2 py-0.5 text-[11px]"
                     >
                       回复
                     </button>
-                    <time className="text-[11px] text-gray-500 dark:text-gray-400">
+                    <time className="text-[11px] text-[var(--site-faint)]">
                       {formatTime(item.created_at)}
                     </time>
                   </div>
                 </div>
                 {item.reply_to_user_name ? (
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="mb-0 mt-2 text-xs text-[var(--site-faint)]">
                     回复 @{item.reply_to_user_name}
                   </p>
                 ) : null}
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-700 dark:text-gray-200">
+                <p className="mb-0 mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--site-muted)]">
                   {item.message}
                 </p>
               </li>
             ))}
           </ul>
         ) : (
-          <div className="text-sm text-gray-500 dark:text-gray-400">来留下第一条评论。</div>
+          <div className="discussion-empty">来留下第一条讨论。</div>
         )}
       </div>
     </section>

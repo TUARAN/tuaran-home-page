@@ -852,8 +852,8 @@
   }
 
   .home-badge-feed {
-    border-color: color-mix(in srgb, #f5a623 40%, var(--site-line));
-    color: #c07c12;
+    border-color: color-mix(in srgb, var(--site-accent) 36%, var(--site-line));
+    color: var(--site-accent-strong);
   }
 
   .home-badge-muted,
@@ -864,6 +864,36 @@
 
   .home-item-date {
     @apply font-mono text-[10px];
+  }
+
+  .home-classic-tab {
+    color: var(--site-muted);
+  }
+
+  .home-classic-tab:hover {
+    background-color: var(--site-panel-strong);
+    box-shadow: 0 1px 0 color-mix(in srgb, white 55%, transparent);
+    text-decoration: none;
+  }
+
+  .home-classic-tab-column:hover {
+    color: var(--site-accent-strong);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--site-accent) 26%, var(--site-line));
+  }
+
+  .home-classic-tab-research:hover {
+    color: var(--site-blue);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--site-blue) 28%, var(--site-line));
+  }
+
+  .home-classic-tab-resource:hover {
+    color: var(--site-green);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--site-green) 28%, var(--site-line));
+  }
+
+  .home-classic-tab-feed:hover {
+    color: var(--site-accent-strong);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--site-accent) 28%, var(--site-line));
   }
 
   .home-social-grid {
@@ -1488,6 +1518,27 @@
     color: var(--site-ink);
   }
 
+  .site-brand-mark {
+    display: inline-flex;
+    height: 2rem;
+    width: 2rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--site-accent) 52%, var(--site-line));
+    border-radius: 0.45rem;
+    background-color: color-mix(in srgb, var(--site-accent) 12%, var(--site-panel-strong));
+    color: var(--site-accent-strong);
+    font-family: ui-serif, Georgia, "Songti SC", serif;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .site-brand-subtitle {
+    color: var(--site-faint);
+  }
+
   .site-nav-trigger {
     @apply inline-flex items-center gap-1 rounded-full border border-transparent px-2.5 py-1 text-sm font-medium no-underline transition-colors;
     color: var(--site-muted);
@@ -1616,6 +1667,72 @@
     color: #f1f0ea;
   }
 
+  .site-notification-empty {
+    margin: 0;
+    padding: 0.5rem 0.375rem 0.625rem;
+    color: #aaa69a;
+    font-size: 12px;
+  }
+
+  .site-notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    padding: 0.625rem;
+    color: #f1f0ea;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .site-notification-item:visited {
+    color: #f1f0ea;
+  }
+
+  .site-notification-item:hover {
+    border-color: #3b372f;
+    background-color: #24231f;
+    color: #f1f0ea;
+    text-decoration: none;
+  }
+
+  .site-notification-item-unread {
+    border-color: color-mix(in srgb, #c1c6a8 32%, #292720);
+    background-color: color-mix(in srgb, #c1c6a8 8%, #151410);
+  }
+
+  .site-notification-title,
+  .site-notification-body {
+    display: block;
+  }
+
+  .site-notification-title {
+    color: #f1f0ea;
+    font-size: 12.5px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .site-notification-body {
+    margin-top: 0.15rem;
+    color: #aaa69a;
+    display: -webkit-box;
+    font-size: 11.5px;
+    line-height: 1.45;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .site-notification-time {
+    flex-shrink: 0;
+    color: #87847a;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
   .site-tier-section {
     border: 1px solid #292720;
     background-color: #24231f;
@@ -1733,6 +1850,244 @@
 
   .site-settings-swatch {
     border-color: color-mix(in srgb, var(--site-line-strong) 82%, transparent);
+  }
+
+  .discussion-eyebrow {
+    color: var(--site-faint);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .discussion-hero,
+  .discussion-side-panel,
+  .discussion-comments,
+  .discussion-composer,
+  .discussion-feed-item,
+  .discussion-comment-card {
+    border: 1px solid var(--site-line);
+    background-color: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
+    box-shadow: 0 18px 44px color-mix(in srgb, var(--site-shadow) 52%, transparent);
+  }
+
+  .discussion-hero {
+    border-color: color-mix(in srgb, var(--site-accent) 24%, var(--site-line));
+    border-radius: 0.5rem;
+    padding: clamp(1.25rem, 4vw, 2rem);
+  }
+
+  .discussion-hero h1 {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    color: var(--site-ink);
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    line-height: 1;
+  }
+
+  .discussion-hero p {
+    max-width: 44rem;
+    color: var(--site-muted);
+  }
+
+  .discussion-stats {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1.25rem;
+  }
+
+  .discussion-stat {
+    border: 1px solid var(--site-line);
+    border-radius: 0.45rem;
+    padding: 0.75rem;
+    background-color: color-mix(in srgb, var(--site-panel) 78%, transparent);
+  }
+
+  .discussion-stat strong,
+  .discussion-stat span {
+    display: block;
+  }
+
+  .discussion-stat strong {
+    color: var(--site-ink);
+    font-size: 1.35rem;
+    line-height: 1.1;
+  }
+
+  .discussion-stat span {
+    margin-top: 0.25rem;
+    color: var(--site-faint);
+    font-size: 12px;
+  }
+
+  .discussion-feed-item,
+  .discussion-comment-card,
+  .discussion-composer,
+  .discussion-side-panel {
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  .discussion-feed-item,
+  .discussion-thread-item,
+  .discussion-comment-card {
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .discussion-feed-item:hover,
+  .discussion-thread-item:hover {
+    border-color: color-mix(in srgb, var(--site-accent) 32%, var(--site-line));
+    background-color: color-mix(in srgb, var(--site-panel-strong) 92%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .discussion-thread-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px solid var(--site-line);
+    border-radius: 0.45rem;
+    padding: 0.75rem;
+    background-color: color-mix(in srgb, var(--site-panel) 72%, transparent);
+  }
+
+  .discussion-thread-item > span {
+    display: inline-flex;
+    min-width: 2rem;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--site-accent) 12%, transparent);
+    color: var(--site-accent-strong);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .discussion-qr-card {
+    border: 1px solid var(--site-line);
+    border-radius: 0.45rem;
+    overflow: hidden;
+    background-color: var(--site-panel-strong);
+  }
+
+  .discussion-qr-card span {
+    display: block;
+    border-top: 1px solid var(--site-line);
+    padding: 0.4rem 0.5rem;
+    color: var(--site-muted);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .discussion-text-link,
+  .discussion-primary-link {
+    color: var(--site-accent-strong);
+    font-size: 13px;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .discussion-text-link:visited,
+  .discussion-primary-link:visited {
+    color: var(--site-accent-strong);
+  }
+
+  .discussion-primary-link {
+    display: inline-flex;
+    border: 1px solid color-mix(in srgb, var(--site-accent) 36%, var(--site-line));
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    background-color: color-mix(in srgb, var(--site-accent) 10%, var(--site-panel));
+  }
+
+  .discussion-empty {
+    border: 1px dashed var(--site-line);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    color: var(--site-muted);
+    background-color: color-mix(in srgb, var(--site-panel) 58%, transparent);
+    font-size: 14px;
+  }
+
+  .discussion-comments {
+    padding: 1rem;
+  }
+
+  .discussion-comments-header {
+    border-bottom: 1px solid var(--site-line);
+    padding-bottom: 1rem;
+  }
+
+  .discussion-notice {
+    border: 1px solid color-mix(in srgb, var(--site-accent) 32%, var(--site-line));
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    background-color: color-mix(in srgb, var(--site-accent) 10%, var(--site-panel));
+    color: var(--site-ink);
+    font-size: 14px;
+  }
+
+  .discussion-ghost-button {
+    border: 1px solid var(--site-line);
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    background-color: color-mix(in srgb, var(--site-panel-strong) 72%, transparent);
+    color: var(--site-muted);
+    font-size: 12px;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .discussion-ghost-button:hover {
+    border-color: color-mix(in srgb, var(--site-accent) 36%, var(--site-line));
+    background-color: var(--site-panel-strong);
+    color: var(--site-ink);
+  }
+
+  .discussion-ghost-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+
+  .discussion-textarea {
+    width: 100%;
+    border: 1px solid var(--site-line);
+    border-radius: 0.5rem;
+    background-color: color-mix(in srgb, var(--site-panel-strong) 84%, transparent);
+    color: var(--site-ink);
+    font-size: 14px;
+    line-height: 1.7;
+    outline: none;
+    padding: 0.85rem;
+  }
+
+  .discussion-textarea:focus {
+    border-color: color-mix(in srgb, var(--site-accent) 48%, var(--site-line));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--site-accent) 14%, transparent);
+  }
+
+  .discussion-submit-button {
+    border: 1px solid var(--site-accent-strong);
+    border-radius: 999px;
+    background-color: var(--site-accent-strong);
+    color: var(--page-bg);
+    font-size: 12px;
+    font-weight: 650;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .discussion-submit-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+
+  @media (max-width: 640px) {
+    .discussion-stats {
+      grid-template-columns: 1fr;
+    }
   }
 
   .back-to-top-button {

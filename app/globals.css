@@ -2126,6 +2126,11 @@
     background-color: var(--site-panel-strong);
   }
 
+  .discussion-qr-card-primary img {
+    max-width: 9rem;
+    margin: 0 auto;
+  }
+
   .discussion-qr-card span {
     display: block;
     border-top: 1px solid var(--site-line);

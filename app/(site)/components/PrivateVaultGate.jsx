@@ -20,9 +20,11 @@ export default function PrivateVaultGate({
   vaultLabel = '私域内容',
   description,
   returnTo = '/',
+  homeHref = '/',
+  loginHref,
   logoutHref = '/api/auth/logout?returnTo=/',
 }) {
-  const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
+  const ownerLoginHref = loginHref || `/login?returnTo=${encodeURIComponent(returnTo)}`
 
   return (
     <main className="mx-auto flex min-h-[60vh] w-full max-w-[560px] flex-col justify-center px-4 py-12">
@@ -42,7 +44,7 @@ export default function PrivateVaultGate({
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
           <span className="text-[#67695d] dark:text-gray-400">当前账号没有访问权限。</span>
           <Link
-            href="/"
+            href={homeHref}
             className="text-[#333431] underline underline-offset-2 hover:text-[#15140f] dark:text-gray-200 dark:hover:text-white"
           >
             返回首页
@@ -57,14 +59,14 @@ export default function PrivateVaultGate({
       ) : (
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
           <Link
-            href="/"
+            href={homeHref}
             className="text-[#333431] underline underline-offset-2 hover:text-[#15140f] dark:text-gray-200 dark:hover:text-white"
           >
             返回首页
           </Link>
           <span className="text-[#a1a593] dark:text-[#45483a]" aria-hidden="true">·</span>
           <a
-            href={loginHref}
+            href={ownerLoginHref}
             className="text-[#767869] underline underline-offset-2 hover:text-[#333431] dark:text-gray-500 dark:hover:text-gray-300"
           >
             登录 →

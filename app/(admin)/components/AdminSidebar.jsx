@@ -24,6 +24,7 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
   useEffect(() => {
     if (typeof window !== 'undefined') setOnAdminHost(window.location.hostname === ADMIN_HOST)
   }, [])
+  const canonicalHomeHref = onAdminHost ? `https://${CANONICAL_HOST}/` : '/'
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-[#0f141c]">
@@ -136,7 +137,7 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
 
       <div className="border-t border-[#e6e7df] px-2 py-2 dark:border-[#1b2430]">
         <Link
-          href="/"
+          href={canonicalHomeHref}
           onClick={onNavigate}
           title="返回主站"
           className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-[#67695d] transition hover:bg-[#ecede5] hover:text-[#15140f] dark:text-gray-400 dark:hover:bg-[#151c26] dark:hover:text-gray-100 ${

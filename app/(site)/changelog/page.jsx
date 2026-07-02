@@ -10,6 +10,30 @@ export const metadata = {
 
 const changelog = [
   {
+    version: 'v2026.30',
+    week: '2026-W27',
+    range: '2026-07-02（当前分支）',
+    commits: 0,
+    title: '网络日志命名回归，讨论中心与通知入口前台化',
+    summary:
+      '这一轮不是增加内容数量，而是回应界面审查里“缺少识别符号、主题状态复杂、评论权重太低”的问题：把站点命名统一回「网络日志」，新增 TUARAN 字标，把 /community 从社群二维码页改成站内讨论中心，并把评论回复通知从数据层推进到顶部账号菜单。',
+    planned: [
+      '继续把首页和旧内容页里剩余的十六进制 Tailwind 色值逐步并入 --site-* token，避免再出现同一视觉意图两套实现。',
+      '在有 D1 数据的环境里做一次真实评论流和通知跳转的浏览器验证，补齐截图级检查。',
+      '后续如果讨论量增加，再为 /api/discussions 增加分页、热门排序和按“我参与的讨论”筛选。',
+    ],
+    done: [
+      '全站把“主编札记 / Editor Notes”改回“网络日志 / Weblog”，同步 metadata、RSS、manifest、导航、站点上下文和公开说明。',
+      '顶部导航新增稳定 TUARAN 字标，副标题固定为「涂阿燃 · 网络日志」，提升截图传播时的识别度。',
+      '新增 /api/discussions，聚合 article_comments 的最近评论、活跃讨论主题和全站讨论统计；本地 D1 不可用时返回稳定空态。',
+      '重做 /community：主区域展示“看看大家在聊什么”和最新 10 条评论，侧栏展示活跃讨论、通知说明和社群二维码，让它从“社群介绍”升级为“讨论中心”。',
+      '重写 ArticleComments 视觉层级：评论区改为“讨论”模块，输入框、回复提示、空态和评论卡片统一走 discussion-* 语义样式。',
+      '顶部账号下拉增加最近 5 条评论回复通知和讨论中心入口，点击通知继续复用 0034 迁移里的具体评论锚点。',
+      '收敛首页 classic badge：删除 CLASSIC_SECTION_BADGE_CLASS 硬编码色值常量，改回 home-badge-* 语义 class，并补充 classic tab token 样式。',
+      '新增 discussion-*、site-notification-*、site-brand-* 等全局组件样式，主要消费 --site-* token，减少新增 UI 的颜色分裂。',
+    ],
+  },
+  {
     version: 'v2026.29',
     week: '2026-W27',
     range: '2026-06-29 至 2026-06-30',

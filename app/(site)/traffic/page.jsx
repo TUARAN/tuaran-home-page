@@ -5,7 +5,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '访问统计',
   description: '涂阿燃（tuaran）的站点访问统计面板（Umami）。',
-  keywords: ['涂阿燃', 'tuaran', '访问统计', 'Umami', '网站分析', '网络日志'],
+  keywords: ['涂阿燃', 'tuaran', '访问统计', 'Umami', '网站分析', '主编札记'],
   alternates: {
     canonical: '/traffic',
   },

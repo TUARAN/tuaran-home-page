@@ -12,9 +12,9 @@ const THEME_SETTINGS_VERSION = '2026-06-30-eink-darkhome'
 
 const SITE_URL = 'https://2aran.com'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
-const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
+const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的主编札记'
 const SITE_DESCRIPTION =
-  '2aran.com 是涂阿燃（安东尼）的个人主页与网络日志：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
+  '2aran.com 是涂阿燃（安东尼）的个人主页与主编札记：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -94,7 +94,7 @@ export default function RootLayout({ children }) {
         <link
           rel="alternate"
           type="application/rss+xml"
-          title="涂阿燃（tuaran）的网络日志"
+          title="涂阿燃（tuaran）的主编札记"
           href="/rss.xml"
         />
         <script

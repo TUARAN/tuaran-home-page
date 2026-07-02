@@ -18,7 +18,7 @@ export const dynamicParams = true
 
 const SITE_URL = 'https://2aran.com'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
-const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
+const SITE_TITLE = '涂阿燃（tuaran）的主编札记'
 
 function toIsoDate(dateString) {
   const parsed = Date.parse(dateString)

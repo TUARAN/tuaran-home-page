@@ -89,7 +89,7 @@ const siteLinks = [
   { label: '前端周看', href: 'https://frontendnext.com/', desc: '前端、AI Agent 与大模型工程情报' },
   { label: 'AI分发大师', href: 'https://syncblog.cn/', desc: '一次创作，多平台自动同步分发' },
   { label: 'Open Claude Code', href: 'https://openclaudecode.site/', desc: 'Claude Code 与 Agent 工程笔记' },
-  { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人主页、技术笔记与长期内容索引' },
+  { label: 'TUARAN 主编札记', href: 'https://2aran.com/', desc: '个人主页、技术笔记与长期内容索引' },
 ]
 
 // 本页独立配色：不跟随站点明暗主题，固定一套深色「工程师终端」科技风

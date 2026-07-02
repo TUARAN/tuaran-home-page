@@ -251,6 +251,52 @@ function NotificationBadge({ count }) {
   )
 }
 
+function formatNotificationTime(ts) {
+  const n = Number(ts)
+  if (!n) return ''
+  try {
+    return new Date(n).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+  } catch {
+    return ''
+  }
+}
+
+function NotificationList({ notifications, markNotificationsRead, onNavigate, emptyLabel }) {
+  const items = Array.isArray(notifications?.items) ? notifications.items.slice(0, 5) : []
+  if (!items.length) {
+    return <p className="site-notification-empty">{emptyLabel}</p>
+  }
+
+  return (
+    <div className="space-y-1">
+      {items.map((item) => {
+        const unread = !item.readAt
+        return (
+          <Link
+            key={item.id}
+            href={item.href || '/community'}
+            onClick={() => {
+              if (item.id) markNotificationsRead?.({ id: item.id })
+              onNavigate?.()
+            }}
+            className={`site-notification-item ${unread ? 'site-notification-item-unread' : ''}`}
+          >
+            <span className="min-w-0 flex-1">
+              <span className="site-notification-title">
+                {item.actorUserName || '有人'} 回复了你
+              </span>
+              <span className="site-notification-body">
+                {item.articleTitle ? `${item.articleTitle} · ` : ''}{item.messageExcerpt || '查看详情'}
+              </span>
+            </span>
+            <span className="site-notification-time">{formatNotificationTime(item.createdAt)}</span>
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
+
 function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef }) {
   const { locale } = useLocale()
   const returnTo = getReturnPath(pathname)
@@ -258,7 +304,6 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
   const { loading, user, isOwner, notifications, markNotificationsRead } = account
   const unread = Number(notifications?.unread) || 0
-  const latestNotification = (notifications?.items || []).find((item) => !item.readAt) || notifications?.items?.[0]
 
   if (!loading && !user) {
     return (
@@ -288,24 +333,33 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
       </button>
 
       {isOpen ? (
-        <div className="site-dropdown-panel absolute right-0 top-full z-[130] mt-2 w-64 overflow-hidden rounded-2xl border">
+        <div className="site-dropdown-panel absolute right-0 top-full z-[130] mt-2 w-[min(92vw,360px)] overflow-hidden rounded-2xl border">
           <div className="site-dropdown-strip border-b px-3.5 py-3">
             <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
           </div>
+          <div className="border-b border-[var(--site-line)] px-2 py-2">
+            <div className="mb-1.5 flex items-center justify-between px-1.5">
+              <p className="site-menu-desc mb-0 font-mono text-[10px] uppercase tracking-[0.16em]">
+                {pick(locale, '通知', 'Notifications')}
+              </p>
+              <NotificationBadge count={unread} />
+            </div>
+            <NotificationList
+              notifications={notifications}
+              markNotificationsRead={markNotificationsRead}
+              onNavigate={onClose}
+              emptyLabel={pick(locale, '暂无新的评论回复。', 'No comment replies yet.')}
+            />
+          </div>
           <div className="px-1.5 py-1.5">
-            {unread > 0 ? (
-              <Link
-                href={latestNotification?.href || '#comments'}
-                onClick={() => {
-                  if (latestNotification?.id) markNotificationsRead?.({ id: latestNotification.id })
-                  onClose()
-                }}
-                className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
-              >
-                <span>{pick(locale, `评论回复 ${unread} 条`, `${unread} comment replies`)}</span>
-                <NotificationBadge count={unread} />
-              </Link>
-            ) : null}
+            <Link
+              href="/community"
+              onClick={onClose}
+              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+            >
+              <span>{pick(locale, '讨论中心', 'Discussion hub')}</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+            </Link>
             <a
               href={logoutHref}
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
@@ -327,7 +381,6 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
   const { loading, user, isOwner, notifications, markNotificationsRead } = account
   const unread = Number(notifications?.unread) || 0
-  const latestNotification = (notifications?.items || []).find((item) => !item.readAt) || notifications?.items?.[0]
 
   if (!loading && !user) {
     return (
@@ -359,20 +412,30 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
         </div>
       </div>
       {!loading && user ? (
-        <div className="px-1.5 py-1.5">
-          {unread > 0 ? (
+        <div>
+          <div className="border-b border-[var(--site-line)] px-2 py-2">
+            <div className="mb-1.5 flex items-center justify-between px-1.5">
+              <p className="site-menu-desc mb-0 font-mono text-[10px] uppercase tracking-[0.16em]">
+                {pick(locale, '通知', 'Notifications')}
+              </p>
+              <NotificationBadge count={unread} />
+            </div>
+            <NotificationList
+              notifications={notifications}
+              markNotificationsRead={markNotificationsRead}
+              onNavigate={onNavigate}
+              emptyLabel={pick(locale, '暂无新的评论回复。', 'No comment replies yet.')}
+            />
+          </div>
+          <div className="px-1.5 py-1.5">
             <Link
-              href={latestNotification?.href || '#comments'}
-              onClick={() => {
-                if (latestNotification?.id) markNotificationsRead?.({ id: latestNotification.id })
-                onNavigate()
-              }}
+              href="/community"
+              onClick={onNavigate}
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
             >
-              <span>{pick(locale, `评论回复 ${unread} 条`, `${unread} comment replies`)}</span>
-              <NotificationBadge count={unread} />
+              <span>{pick(locale, '讨论中心', 'Discussion hub')}</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
             </Link>
-          ) : null}
           <a
             href={logoutHref}
             className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
@@ -380,6 +443,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             <span>{pick(locale, '退出登录', 'Sign out')}</span>
             <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
           </a>
+          </div>
         </div>
       ) : null}
     </div>
@@ -442,10 +506,14 @@ export default function SiteHeader() {
     <>
       <header className="site-header fixed left-0 right-0 top-0 z-[120] w-full border-b backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-10">
-          <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label={pick(locale, '返回首页', 'Back to home')}>
-            <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
-              <span className="site-brand-text font-serif text-xl sm:text-2xl font-semibold tracking-wide">
-                {pick(locale, '涂阿燃 · 主编札记', 'TUARAN · Editor Notes')}
+          <Link href="/" className="group flex min-w-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
+            <span className="site-brand-mark" aria-hidden="true">T</span>
+            <div className="inline-flex min-w-0 flex-col leading-tight">
+              <span className="site-brand-text font-serif text-lg font-semibold tracking-wide sm:text-xl">
+                TUARAN
+              </span>
+              <span className="site-brand-subtitle hidden text-[11px] font-medium sm:block">
+                {pick(locale, '涂阿燃 · 网络日志', 'Weblog')}
               </span>
             </div>
           </Link>

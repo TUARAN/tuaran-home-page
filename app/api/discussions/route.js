@@ -1,4 +1,4 @@
-import { resolveArticleKey } from '../../../lib/articleLinks'
+import { loadContentKeyMeta, resolveContentKeyLite } from '../../../lib/contentKeyLite'
 import { getD1 } from '../../../lib/d1'
 
 export const runtime = 'edge'
@@ -10,20 +10,20 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(n) ? n : fallback
 }
 
-function commentHref(articleKey, commentId) {
-  const resolved = resolveArticleKey(articleKey)
+function commentHref(articleKey, commentId, metaMap) {
+  const resolved = resolveContentKeyLite(articleKey, metaMap)
   if (!resolved.href) return null
   return `${resolved.href}#comment-${commentId || 'comments'}`
 }
 
-function mapComment(row) {
-  const article = resolveArticleKey(row.article_key)
+function mapComment(row, metaMap) {
+  const article = resolveContentKeyLite(row.article_key, metaMap)
   return {
     id: toNumber(row.id),
     articleKey: row.article_key || '',
     articleTitle: article.title || row.article_key || '未知内容',
     articleHref: article.href || null,
-    href: commentHref(row.article_key, row.id),
+    href: commentHref(row.article_key, row.id, metaMap),
     userId: row.user_id || '',
     userProvider: row.user_provider || '',
     userName: row.user_name || '用户',
@@ -35,8 +35,8 @@ function mapComment(row) {
   }
 }
 
-function mapThread(row) {
-  const article = resolveArticleKey(row.article_key)
+function mapThread(row, metaMap) {
+  const article = resolveContentKeyLite(row.article_key, metaMap)
   return {
     articleKey: row.article_key || '',
     title: article.title || row.article_key || '未知内容',
@@ -104,11 +104,15 @@ export async function GET(req) {
         .bind(sinceWeek)
         .first(),
     ])
+    const metaMap = await loadContentKeyMeta(db, [
+      ...(itemsResult?.results || []).map((row) => row.article_key),
+      ...(threadsResult?.results || []).map((row) => row.article_key),
+    ])
 
     return Response.json({
       status: 'ok',
-      items: (itemsResult?.results || []).map(mapComment),
-      threads: (threadsResult?.results || []).map(mapThread),
+      items: (itemsResult?.results || []).map((row) => mapComment(row, metaMap)),
+      threads: (threadsResult?.results || []).map((row) => mapThread(row, metaMap)),
       stats: {
         comments: toNumber(totalRow?.comments),
         articles: toNumber(totalRow?.articles),

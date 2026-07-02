@@ -1,18 +1,18 @@
-import { resolveArticleKey } from '../../../lib/articleLinks'
+import { loadContentKeyMeta, resolveContentKeyLite } from '../../../lib/contentKeyLite'
 import { getD1 } from '../../../lib/d1'
 import { getUserFromRequest } from '../../../lib/edgeSession'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-function notificationHref(articleKey, commentId) {
-  const resolved = resolveArticleKey(articleKey)
+function notificationHref(articleKey, commentId, metaMap) {
+  const resolved = resolveContentKeyLite(articleKey, metaMap)
   if (!resolved.href) return null
   return `${resolved.href}#comment-${commentId || 'comments'}`
 }
 
-function mapNotification(row) {
-  const article = resolveArticleKey(row.article_key)
+function mapNotification(row, metaMap) {
+  const article = resolveContentKeyLite(row.article_key, metaMap)
   return {
     id: Number(row.id),
     type: row.type || 'comment_reply',
@@ -22,7 +22,7 @@ function mapNotification(row) {
     actorUserImage: row.actor_user_image || '',
     articleKey: row.article_key || '',
     articleTitle: article.title,
-    href: notificationHref(row.article_key, row.comment_id),
+    href: notificationHref(row.article_key, row.comment_id, metaMap),
     commentId: Number(row.comment_id) || null,
     replyToCommentId: Number(row.reply_to_comment_id) || null,
     messageExcerpt: row.message_excerpt || '',
@@ -64,11 +64,15 @@ export async function GET(req) {
         .bind(String(user.id))
         .first(),
     ])
+    const metaMap = await loadContentKeyMeta(
+      db,
+      (itemsResult?.results || []).map((row) => row.article_key)
+    )
 
     return Response.json({
       status: 'ok',
       unread: Number(unreadRow?.unread) || 0,
-      items: (itemsResult?.results || []).map(mapNotification),
+      items: (itemsResult?.results || []).map((row) => mapNotification(row, metaMap)),
     })
   } catch {
     return Response.json({ items: [], unread: 0, status: 'error' }, { status: 500 })

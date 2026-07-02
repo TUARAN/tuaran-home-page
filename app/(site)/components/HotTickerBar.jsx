@@ -10,7 +10,7 @@ import Link from 'next/link'
 const TICKER_ITEMS = [
   { icon: '⚽', label: '竞猜世界杯 · 赢燃币', cta: '去竞猜', href: '/agent-world-cup' },
   { icon: '📚', label: '海量资源任你取', cta: '看资源', href: '/articles?tab=resources' },
-  { icon: '💬', label: '加站长微信 · 进社群得燃币', cta: '加微信', href: '/community' },
+  { icon: '💬', label: '加站长微信 · 交友进社群', cta: '加微信', href: '/community' },
   {
     icon: '🤝',
     label: '推广 AI 产品 / 兼职赚钱',

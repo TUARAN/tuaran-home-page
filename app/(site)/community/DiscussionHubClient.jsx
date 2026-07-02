@@ -7,11 +7,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSessionAccount } from '../components/SessionProvider'
 import UserAvatar from '../components/UserAvatar'
 
-const QR_ITEMS = [
+const WECHAT_QR_ITEM = { src: '/qrcode-wechat.jpg', label: '个人微信号' }
+
+const GROUP_QR_ITEMS = [
   { src: '/qrcode-community1.jpg', label: '前端周刊群' },
   { src: '/qrcode-community2.jpg', label: '抽奖粉丝群' },
   { src: '/qrcode-community3.jpg', label: 'AI资讯群' },
-  { src: '/qrcode-wechat.jpg', label: '微信号' },
 ]
 
 function formatTime(ts) {
@@ -269,8 +270,21 @@ export default function DiscussionHubClient() {
           <p className="mb-3 text-sm text-[var(--site-muted)]">
             加群二维码会不定期更新，失效时可先加微信号。
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            {QR_ITEMS.map((item) => (
+          <div className="mb-3">
+            <div className="discussion-qr-card discussion-qr-card-primary">
+              <Image
+                src={WECHAT_QR_ITEM.src}
+                alt={WECHAT_QR_ITEM.label}
+                width={132}
+                height={132}
+                sizes="132px"
+                className="h-auto w-full object-contain"
+              />
+              <span>{WECHAT_QR_ITEM.label}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {GROUP_QR_ITEMS.map((item) => (
               <div key={item.src} className="discussion-qr-card">
                 <Image
                   src={item.src}

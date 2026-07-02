@@ -125,6 +125,50 @@ function TypeDistribution({ rows, valueKey, previousKey, previousLabel }) {
   )
 }
 
+function DailyPvChart({ rows, loading }) {
+  const safeRows = Array.isArray(rows) ? rows : []
+  if (loading) return <p className="text-sm text-[#82847a]">加载中…</p>
+  if (!safeRows.length) return <EmptyState title="暂无每日 PV 数据" description="有访问后这里会自动出现最近 7 天走势。" />
+
+  const max = Math.max(...safeRows.map((row) => Number(row.pv) || 0), 1)
+  return (
+    <div className="overflow-x-auto">
+      <div className="grid min-w-[520px] grid-cols-7 gap-3">
+        {safeRows.map((row, index) => {
+          const pv = Number(row.pv) || 0
+          const height = Math.max(10, Math.round((pv / max) * 132))
+          const isToday = index === safeRows.length - 1
+          return (
+            <div key={row.date || index} className="flex min-w-0 flex-col items-center gap-2">
+              <div className="h-5 font-mono text-[12px] font-semibold text-[#15140f] dark:text-gray-100">
+                {pv}
+              </div>
+              <div className="flex h-36 w-full items-end rounded-lg border border-[#eceee6] bg-[#f8f7f1] px-2 pb-2 dark:border-[#1b2430] dark:bg-[#0b1119]">
+                <div
+                  className={[
+                    'w-full rounded-md transition-all',
+                    isToday ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-[#b6aa91] dark:bg-[#596777]',
+                  ].join(' ')}
+                  style={{ height }}
+                  title={`${row.date || row.label}: ${pv} PV`}
+                />
+              </div>
+              <div className="text-center">
+                <p className="mb-0 font-mono text-[11px] text-[#67695d] dark:text-gray-400">{row.label || row.date}</p>
+                {isToday ? (
+                  <p className="mb-0 mt-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    今天
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function InlineRankPanel({ title, description, children }) {
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border border-[#e6e7df] bg-white/40 p-3 dark:border-[#243041] dark:bg-[#0e141d]/60">
@@ -258,7 +302,7 @@ export default function ContentWeeklyClient() {
     }
   }, [refresh])
 
-  const reads = data?.reads || { top: [], byType: [], total: { thisWeek: 0, prevWeek: 0 } }
+  const reads = data?.reads || { top: [], byType: [], daily: [], total: { thisWeek: 0, prevWeek: 0, today: 0, yesterday: 0 } }
   const likes = data?.likes || { top: [], total: { thisWeek: 0, prevWeek: 0 } }
   const month = data?.month || {
     reads: { top: [], byType: [], total: { thisMonth: 0, prevMonth: 0 } },
@@ -268,16 +312,24 @@ export default function ContentWeeklyClient() {
   const monthByType = month.reads.byType || []
   const comments = data?.comments || { recent: [], total: { all: 0, thisWeek: 0, thisMonth: 0, articles: 0 } }
   const readsDelta = deltaVsPrev(reads.total.thisWeek, reads.total.prevWeek, '上周')
+  const todayReadsDelta = deltaVsPrev(reads.total.today || 0, reads.total.yesterday || 0, '昨日')
   const likesDelta = deltaVsPrev(likes.total.thisWeek, likes.total.prevWeek, '上周')
   const monthReadsDelta = deltaVsPrev(month.reads.total.thisMonth, month.reads.total.prevMonth, '上月')
   const monthLikesDelta = deltaVsPrev(month.likes.total.thisMonth, month.likes.total.prevMonth, '上月')
   const monthLabel = data?.window?.monthLabel || '本月'
+  const generatedAtLabel = data?.generatedAt ? formatDateTime(data.generatedAt) : loading ? '计算中…' : '—'
 
   return (
     <AdminPage
       title="阅读分析"
       maxWidth="1100px"
-      description="自建阅读统计：调研 / 资料·资源 / 灵感的被读、被赞，近 7 天趋势 + 自然月统计。打开即实时计算，看看什么内容真的打动人。"
+      description={
+        <>
+          自建阅读统计：调研 / 资料·资源 / 灵感的被读、被赞，今日 PV、近 7 天走势 + 自然月统计。
+          <br />
+          刷新时间：{generatedAtLabel}（北京时间；打开页面或点击重新计算时实时聚合，不走定时缓存）。
+        </>
+      }
       actions={
         <AdminButton type="button" onClick={refresh} disabled={loading}>
           {loading ? '刷新中…' : '重新计算'}
@@ -296,7 +348,13 @@ export default function ContentWeeklyClient() {
         </div>
       ) : null}
 
-      <section className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard
+          label="今日 PV"
+          value={loading ? '—' : reads.total.today}
+          sub={`${todayReadsDelta.label} · ${trendText(todayReadsDelta.d)}`}
+          tone={trendTone(todayReadsDelta.d)}
+        />
         <StatCard
           label="本周阅读"
           value={loading ? '—' : reads.total.thisWeek}
@@ -312,6 +370,10 @@ export default function ContentWeeklyClient() {
         <StatCard label="上榜文章(读)" value={loading ? '—' : reads.top.length} />
         <StatCard label="上榜文章(赞)" value={loading ? '—' : likes.top.length} />
       </section>
+
+      <Section title="每日 PV · 最近 7 天" description="按北京时间自然日统计 research_pv_hits；最后一根柱子是今天截至当前刷新时的 PV。" className="mb-4">
+        <DailyPvChart rows={reads.daily} loading={loading} />
+      </Section>
 
       {byType.length ? (
         <Section title="内容类型分布 · 近 7 天" description="自建阅读统计按大类汇总，对比上一个 7 天。" className="mb-4">

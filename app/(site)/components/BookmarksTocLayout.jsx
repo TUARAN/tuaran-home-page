@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import ArticleFooterCta from './ArticleFooterCta'
 
 export default function BookmarksTocLayout({
   title,
@@ -80,6 +81,7 @@ export default function BookmarksTocLayout({
             {footer}
           </footer>
         ) : null}
+        <ArticleFooterCta />
       </main>
     </div>
   )

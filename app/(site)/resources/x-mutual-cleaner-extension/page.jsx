@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
 import RanbiPaywall from '../../components/RanbiPaywall'
@@ -215,6 +216,7 @@ export default function XMutualCleanerResourcePage() {
           </div>
         </article>
       </RanbiPaywall>
+      <ArticleFooterCta />
     </PageContainer>
   )
 }

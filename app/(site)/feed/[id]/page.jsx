@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import PageContainer from '../../components/PageContainer'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
+import ArticleFooterCta from '../../components/ArticleFooterCta'
 import FeedClient from '../FeedClient'
 import { getAllFeedItems, getFeedTypesPresent } from '../data'
 
@@ -70,6 +71,7 @@ export default async function FeedItemPage({ params }) {
       <p className="mt-12 border-t border-[var(--site-line)] pt-6 text-center text-[11px] text-[var(--site-muted)]">
         持续更新 · 内容由 TUARAN 精选整理，版权归原作者所有，仅作分享与学习
       </p>
+      <ArticleFooterCta />
     </PageContainer>
   )
 }

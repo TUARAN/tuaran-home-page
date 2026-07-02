@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
 import RssBlogroll from './RssBlogroll'
@@ -53,6 +54,7 @@ export default function RssResourcePage() {
       </header>
 
       <RssBlogroll fallback={RSS_FEEDS_SEED} />
+      <ArticleFooterCta />
     </PageContainer>
   )
 }

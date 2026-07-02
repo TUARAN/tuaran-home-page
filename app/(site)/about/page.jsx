@@ -44,7 +44,7 @@ const introLines = [
   {
     icon: '🧩',
     text: 'OpenClaw 开源贡献者：PR #90517 已合并至 openclaw:main',
-    href: 'https://github.com/openclaw/openclaw/pull/90517#event-27417133330',
+    href: 'https://github.com/openclaw/openclaw/pull/90517',
   },
   { icon: '🌐', text: '个人主页：2aran.com', href: 'https://2aran.com' },
   {
@@ -77,7 +77,7 @@ const timeline = [
 ]
 
 const openSourceHighlight = {
-  href: 'https://github.com/openclaw/openclaw/pull/90517#event-27417133330',
+  href: 'https://github.com/openclaw/openclaw/pull/90517',
   title: 'OpenClaw PR #90517 · merged into main',
   summary:
     '修复 gateway 侧 web login 外部插件缺失提示：复用官方 external plugin repair hint 路径，在 provider 不可用时返回可执行的安装或 openclaw doctor --fix 指引。',

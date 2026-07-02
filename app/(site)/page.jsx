@@ -531,8 +531,10 @@ function AchievementMiniCard({ item }) {
   const content = (
     <>
       {item.image ? (
-        <span className="home-achievement-card-cover">
-          <Image src={item.image} alt={item.imageAlt || ''} width={96} height={96} sizes="56px" />
+        <span className="home-achievement-media-slot">
+          <span className="home-achievement-card-cover">
+            <Image src={item.image} alt={item.imageAlt || ''} width={96} height={96} sizes="56px" />
+          </span>
         </span>
       ) : (
         <span className="home-achievement-card-icon" aria-hidden="true">

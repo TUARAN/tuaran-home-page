@@ -158,9 +158,17 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const searchParams = useSearchParams()
   const [pvCounts, setPvCounts] = useState({})
   const [pvLoaded, setPvLoaded] = useState(false)
+  function normalizeTabFromParams(params) {
+    const fromUrl = params?.get('tab')
+    if (TAB_KEYS.includes(fromUrl)) return fromUrl
+    if (params?.get('resource_type')) return 'resources'
+    if (params?.get('company_type')) return 'companies'
+    if (params?.get('topic_type')) return 'topics'
+    if (params?.get('people_type')) return 'people'
+    return 'all'
+  }
   const initialTab = (() => {
-    const fromUrl = searchParams?.get('tab')
-    return TAB_KEYS.includes(fromUrl) ? fromUrl : 'all'
+    return normalizeTabFromParams(searchParams)
   })()
   const initialCompanyType = (() => {
     const fromUrl = searchParams?.get('company_type')
@@ -211,9 +219,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   }, [staticItems])
 
   useEffect(() => {
-    const fromUrl = searchParams?.get('tab')
-    if (fromUrl && TAB_KEYS.includes(fromUrl) && fromUrl !== tab) {
-      setTab(fromUrl)
+    const nextTab = normalizeTabFromParams(searchParams)
+    if (nextTab !== tab) {
+      setTab(nextTab)
     }
     const companyTypeFromUrl = searchParams?.get('company_type')
     const nextCompanyType = COMPANY_TYPE_KEYS.includes(companyTypeFromUrl) ? companyTypeFromUrl : 'all'

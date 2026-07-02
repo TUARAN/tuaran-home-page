@@ -12,7 +12,7 @@ const ERROR_MESSAGES = {
 }
 const LAST_LOGIN_METHOD_COOKIE = 'tuaran_last_login_method'
 const LOGIN_METHOD_LABELS = {
-  google: 'Google / Chrome',
+  google: 'Google',
   github: 'GitHub',
   email: '邮箱',
 }
@@ -76,9 +76,9 @@ export default function LoginClient() {
         <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-[#9a7b45] dark:text-[#929870]">
           Account
         </p>
-        <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">登录 / 创建临时账号</h1>
+        <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">登录</h1>
         <p className="mb-8 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">
-          推荐使用 Google / Chrome 或 GitHub 登录；如果你想先用邮箱继续，也可以在下面创建临时账号。
+          请选择：Google 和 GitHub 可直接登录；邮箱方式可快速登录，之后再激活邮箱以保留长期权益。
         </p>
 
         {lastLoginMethod && LOGIN_METHOD_LABELS[lastLoginMethod] ? (
@@ -96,7 +96,7 @@ export default function LoginClient() {
                 : 'border-[#caccc0] text-[#35362f] dark:border-[#344052] dark:text-gray-200'
             }`}
           >
-            <span>Google / Chrome 登录</span>
+            <span>Google 登录</span>
             {lastLoginMethod === 'google' ? <LastUsedBadge /> : null}
           </a>
           <a
@@ -114,12 +114,12 @@ export default function LoginClient() {
 
         <div className="my-6 flex items-center gap-3 text-xs text-[#898a7f] dark:text-[#738095]">
           <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
-          <span>或使用邮箱</span>
+          <span>或创建邮箱临时账号</span>
           <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
         </div>
 
         <p className="mb-4 rounded-xl border border-[#e4d8c3] bg-white/55 px-3.5 py-2.5 text-xs leading-5 text-[#776b58] dark:border-[#344052] dark:bg-[#0d131b]/60 dark:text-gray-300">
-          邮箱已有账号会直接登录。第一次使用这个邮箱时，请设置一个你记得住的密码；我们会先保留阅读记录和燃币，之后再引导你激活邮箱。
+          邮箱已有账号会直接登录；第一次使用这个邮箱时，请设置一个你记得住的密码。我们会先保留阅读记录和燃币，之后再引导你激活邮箱。
         </p>
 
         <form onSubmit={login} className="space-y-5">

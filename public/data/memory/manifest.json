@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-02T01:35:02.295Z",
+  "generatedAt": "2026-07-02T02:38:38.139Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -410,6 +410,12 @@
               "hash": "d16f993995cca117bb9a62463dfe1a16c137ee324b7c7e1b2e713a881174f926",
               "path": "claude/content-pipeline-and-index/2026-07-02T01-35-02-271Z.enc.json",
               "bytes": 1257
+            },
+            {
+              "ts": "2026-07-02T02:38:38.089Z",
+              "hash": "a57c774808fc0355126a550ed37a381fd3314c6a0620b0543ac665465c86d35f",
+              "path": "claude/content-pipeline-and-index/2026-07-02T02-38-38-108Z.enc.json",
+              "bytes": 1306
             }
           ]
         }
@@ -446,6 +452,12 @@
               "hash": "7af6c2d59420008a7565e64e00cb96d6063503bf4d5921abc598670dc38d24bf",
               "path": "ai-context/content-layer-refactor-plan/2026-07-02T01-35-02-293Z.enc.json",
               "bytes": 4387
+            },
+            {
+              "ts": "2026-07-02T02:38:38.118Z",
+              "hash": "4dc6de40761b0e818f460ae93b5284339ce3e5e55b9253528acf1a845ecfe8c0",
+              "path": "ai-context/content-layer-refactor-plan/2026-07-02T02-38-38-138Z.enc.json",
+              "bytes": 4411
             }
           ]
         },

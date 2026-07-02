@@ -48,6 +48,17 @@ function excludeAdminPaths() {
   }
 }
 
+function cleanBuildOutputs() {
+  for (const relativePath of ['.next', path.join('.vercel', 'output')]) {
+    const target = path.join(root, relativePath)
+    try {
+      fs.rmSync(target, { recursive: true, force: true })
+    } catch {
+      // Build outputs are disposable. Leave the real error to next-on-pages.
+    }
+  }
+}
+
 function runNextOnPages() {
   return spawnSync(
     process.platform === 'win32' ? 'npx.cmd' : 'npx',
@@ -66,6 +77,7 @@ function runNextOnPages() {
 let result
 try {
   excludeAdminPaths()
+  cleanBuildOutputs()
   result = runNextOnPages()
 } finally {
   restoreMovedPaths()

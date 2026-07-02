@@ -259,7 +259,6 @@ const HOME_ACHIEVEMENT_LINKS = [
     kicker: '出版写作',
     title: '已出版 / 发布 2 本技术作品',
     desc: '《程序员成长手记》《AI Bots 通关指南》作者',
-    meta: '2 本',
     image: '/images/books/programmer-growth-notes.jpg',
     imageAlt: '《程序员成长手记》书籍封面',
     icon: IconFileText,
@@ -545,7 +544,6 @@ function AchievementMiniCard({ item }) {
         <strong>{item.title}</strong>
         <small>{item.desc}</small>
       </span>
-      <span className="home-achievement-meta">{item.meta}</span>
     </>
   )
 

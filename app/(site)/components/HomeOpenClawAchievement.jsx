@@ -38,11 +38,10 @@ export default function HomeOpenClawAchievement() {
           />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="home-achievement-kicker">站长成就 · 开源贡献</span>
+          <span className="home-achievement-kicker">开源贡献</span>
           <strong>给全球最大开源项目OpenClaw🦞提代码，被官方合并。</strong>
           <small>PR #90517 · +153 −5</small>
         </span>
-        <span className="home-achievement-meta">已合并</span>
       </button>
 
       {open ? createPortal(

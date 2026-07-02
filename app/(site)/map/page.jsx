@@ -7,14 +7,14 @@ import { isOwnerUser } from '../../../lib/ownerAuth'
 import {
   SITE_CHANNELS,
   getChannelAllSections,
-  getChannelNavSections,
   isItemVisibleForAccount,
+  resolveItemAudience,
 } from '../../../lib/siteNav'
 import { getTagToneClass } from '../../../lib/tagTone'
 
 export const metadata = {
-  title: '全站索引 · 2aran.com',
-  description: '按信息架构组织的全站入口：主导航精选、频道结构、归档页面。',
+  title: '全站地图 · 2aran.com',
+  description: '按层级和频道组织的全站入口：主路径、补充索引、权限入口与完整页面结构。',
 }
 
 export const runtime = 'edge'
@@ -76,13 +76,55 @@ function allItems(channel, account, overrides) {
   return channel.sections.flatMap((section) =>
     section.items
       .filter((item) => isItemVisibleForAccount(item, account, overrides))
-      .map((item) => ({ ...item, section: section.title }))
+      .map((item) => ({
+        ...item,
+        section: section.title,
+        effectiveAudience: resolveItemAudience(item, overrides),
+      }))
   )
 }
 
-function navItems(channel, account, overrides) {
-  return getChannelNavSections(channel, account, overrides).flatMap((section) =>
-    section.items.map((item) => ({ ...item, section: section.title }))
+function channelSummary(channel, account, overrides) {
+  const items = allItems(channel, account, overrides)
+  const primary = items.filter((item) => item.nav !== false)
+  const archive = items.filter((item) => item.nav === false)
+  const restricted = items.filter((item) => item.effectiveAudience !== 'public')
+  const external = items.filter((item) => item.external)
+  return {
+    channel,
+    items,
+    primary,
+    archive,
+    restricted,
+    external,
+    sections: getChannelAllSections(channel, account, overrides),
+  }
+}
+
+function LevelCard({ level, title, count, desc, tone = 'default' }) {
+  const toneClass = {
+    default: 'border-[#d4d6cc] bg-white/80 text-[#1a1b17] dark:border-[#2a3440] dark:bg-[#10161f] dark:text-gray-100',
+    strong: 'border-[#b8cfc8] bg-[#eef8f6] text-[#153c3d] dark:border-[#285352] dark:bg-[#0f2023] dark:text-[#b5e0dc]',
+    warm: 'border-[#d9c7a8] bg-[#fbf3e5] text-[#6f4710] dark:border-[#4b3a20] dark:bg-[#201911] dark:text-[#e9c78e]',
+    quiet: 'border-[#d8d9d1] bg-[#f7f8f5] text-[#56584e] dark:border-[#252e39] dark:bg-[#0f141b] dark:text-[#b9c2d0]',
+  }[tone]
+  return (
+    <article className={`rounded-xl border px-4 py-4 ${toneClass}`}>
+      <div className="flex items-start justify-between gap-3">
+        <span className="font-mono text-[10px] uppercase tracking-[0.22em] opacity-70">{level}</span>
+        <strong className="font-serif text-3xl leading-none tabular-nums">{count}</strong>
+      </div>
+      <h3 className="mt-3 mb-0 text-[15px] font-semibold">{title}</h3>
+      <p className="mt-2 mb-0 text-[12px] leading-6 opacity-75">{desc}</p>
+    </article>
+  )
+}
+
+function CountPill({ children }) {
+  return (
+    <span className="rounded-full border border-[#d6d8cd] bg-white px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#606258] dark:border-[#2a3440] dark:bg-[#10161f] dark:text-[#aeb8c8]">
+      {children}
+    </span>
   )
 }
 
@@ -146,8 +188,11 @@ function IndexLink({ item, compact = false }) {
 
 function ChannelNode({ channel, account, overrides }) {
   const style = CHANNEL_STYLES[channel.key] || CHANNEL_STYLES.content
-  const total = allItems(channel, account, overrides).length
-  const primary = navItems(channel, account, overrides).length
+  const summary = channelSummary(channel, account, overrides)
+  const total = summary.items.length
+  const primary = summary.primary.length
+  const archive = summary.archive.length
+  const restricted = summary.restricted.length
 
   return (
     <Link
@@ -169,7 +214,10 @@ function ChannelNode({ channel, account, overrides }) {
       <span className="mt-3 flex items-center gap-3 text-[12px] text-[#606258] dark:text-[#a0aaba]">
         <span>{primary} 个主入口</span>
         <span className="h-1 w-1 rounded-full bg-[#a4a699]" />
-        <span>{total} 个索引项</span>
+        <span>{archive} 个补充</span>
+      </span>
+      <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.12em] text-[#858779] dark:text-[#8793a6]">
+        total {total}{restricted ? ` · restricted ${restricted}` : ''}
       </span>
     </Link>
   )
@@ -177,9 +225,10 @@ function ChannelNode({ channel, account, overrides }) {
 
 function ChannelSection({ channel, account, overrides }) {
   const style = CHANNEL_STYLES[channel.key] || CHANNEL_STYLES.content
-  const primary = navItems(channel, account, overrides)
-  const total = allItems(channel, account, overrides).length
-  const visibleSections = getChannelAllSections(channel, account, overrides)
+  const summary = channelSummary(channel, account, overrides)
+  const primary = summary.primary
+  const total = summary.items.length
+  const visibleSections = summary.sections
 
   return (
     <section className="border-t border-[#d4d6cc] py-8 dark:border-[#232c36]">
@@ -200,7 +249,10 @@ function ChannelSection({ channel, account, overrides }) {
             主导航 {primary.length}
           </span>
           <span className="rounded-full border border-[#c6c9bd] bg-white px-3 py-1 text-[#56584e] dark:border-[#2d3744] dark:bg-[#111821] dark:text-[#b9c2d0]">
-            全量 {total}
+            补充 {summary.archive.length}
+          </span>
+          <span className="rounded-full border border-[#c6c9bd] bg-white px-3 py-1 text-[#56584e] dark:border-[#2d3744] dark:bg-[#111821] dark:text-[#b9c2d0]">
+            当前可见 {total}
           </span>
         </div>
       </div>
@@ -214,6 +266,12 @@ function ChannelSection({ channel, account, overrides }) {
             {primary.map((item) => (
               <IndexLink key={item.href + item.label} item={item} compact />
             ))}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <CountPill>sections {visibleSections.length}</CountPill>
+            <CountPill>archive {summary.archive.length}</CountPill>
+            {summary.external.length ? <CountPill>external {summary.external.length}</CountPill> : null}
+            {summary.restricted.length ? <CountPill>restricted {summary.restricted.length}</CountPill> : null}
           </div>
         </div>
 
@@ -241,9 +299,13 @@ function ChannelSection({ channel, account, overrides }) {
 
 export default async function SiteMapPage() {
   const [account, overrides] = await Promise.all([getAccountForRequest(), getNavOverrides()])
-  const totalItems = SITE_CHANNELS.reduce((n, channel) => n + allItems(channel, account, overrides).length, 0)
-  const primaryItems = SITE_CHANNELS.reduce((n, channel) => n + navItems(channel, account, overrides).length, 0)
+  const summaries = SITE_CHANNELS.map((channel) => channelSummary(channel, account, overrides))
+  const totalItems = summaries.reduce((n, summary) => n + summary.items.length, 0)
+  const primaryItems = summaries.reduce((n, summary) => n + summary.primary.length, 0)
   const hiddenItems = totalItems - primaryItems
+  const sectionCount = summaries.reduce((n, summary) => n + summary.sections.length, 0)
+  const restrictedItems = summaries.reduce((n, summary) => n + summary.restricted.length, 0)
+  const externalItems = summaries.reduce((n, summary) => n + summary.external.length, 0)
 
   return (
     <div className="mx-auto w-full max-w-[1120px] px-4 py-6 md:py-10">
@@ -254,14 +316,14 @@ export default async function SiteMapPage() {
               Site Index · Information Architecture
             </p>
             <h1 className="mb-4 font-serif text-[2.25rem] font-semibold leading-tight text-[#1d1a16] dark:text-gray-100 md:text-[3.2rem]">
-              全站索引
+              全站地图
             </h1>
             <p className="mb-0 max-w-[42rem] text-[15px] leading-[1.9] text-[#53554d] dark:text-gray-300">
-              主导航只保留高频入口；完整页面、专题调研、工具和归档内容在这里按频道展开。把它当成这个站点的信息架构视图，而不是一张普通链接表。
+              先看层级，再看频道，最后进入完整入口清单。主导航只放高频路径；资源、专题、工具、讨论、站点治理这些变化都在这里按优先级展开。
             </p>
           </div>
 
-          <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-[#d4d6cc] bg-white/75 dark:border-[#2a3440] dark:bg-[#10161f]">
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#d4d6cc] bg-white/75 dark:border-[#2a3440] dark:bg-[#10161f] sm:grid-cols-4">
             <div className="border-r border-[#dee0db] p-4 dark:border-[#26313d]">
               <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-[#858779] dark:text-[#8793a6]">
                 Channels
@@ -274,11 +336,17 @@ export default async function SiteMapPage() {
               </span>
               <strong className="mt-2 block text-2xl text-[#1a1b17] dark:text-gray-100">{primaryItems}</strong>
             </div>
-            <div className="p-4">
+            <div className="border-r border-[#dee0db] p-4 dark:border-[#26313d]">
               <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-[#858779] dark:text-[#8793a6]">
                 Archive
               </span>
               <strong className="mt-2 block text-2xl text-[#1a1b17] dark:text-gray-100">{hiddenItems}</strong>
+            </div>
+            <div className="p-4">
+              <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-[#858779] dark:text-[#8793a6]">
+                Sections
+              </span>
+              <strong className="mt-2 block text-2xl text-[#1a1b17] dark:text-gray-100">{sectionCount}</strong>
             </div>
           </div>
         </div>
@@ -288,19 +356,118 @@ export default async function SiteMapPage() {
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
+              Levels
+            </p>
+            <h2 className="mb-0 font-serif text-[1.5rem] font-semibold text-[#15140f] dark:text-gray-100">
+              先按四层读
+            </h2>
+          </div>
+          <p className="mb-0 text-[13px] text-[#676960] dark:text-[#9aa4b4]">当前身份只显示你可访问的入口。</p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <LevelCard
+            level="L0"
+            title="频道层"
+            count={SITE_CHANNELS.length}
+            desc="内容、资源、工具、圈子、关于，决定站点的最高层结构。"
+            tone="strong"
+          />
+          <LevelCard
+            level="L1"
+            title="主路径"
+            count={primaryItems}
+            desc="会出现在主导航和频道主路径里，适合第一次访问先点。"
+            tone="default"
+          />
+          <LevelCard
+            level="L2"
+            title="补充索引"
+            count={hiddenItems}
+            desc="不进主导航，但保留为专题、归档、长期工具和资料入口。"
+            tone="warm"
+          />
+          <LevelCard
+            level="L3"
+            title="权限入口"
+            count={restrictedItems}
+            desc="登录或站长可见入口；普通访客不会看到不可访问的私域链接。"
+            tone="quiet"
+          />
+        </div>
+      </section>
+
+      <section className="mb-10">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
               Top Level
             </p>
             <h2 className="mb-0 font-serif text-[1.5rem] font-semibold text-[#15140f] dark:text-gray-100">
-              四个频道，一张结构图
+              五个频道，一张结构图
             </h2>
           </div>
           <p className="mb-0 text-[13px] text-[#676960] dark:text-[#9aa4b4]">点击频道进入它的默认入口。</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           {SITE_CHANNELS.map((channel) => (
             <ChannelNode key={channel.key} channel={channel} account={account} overrides={overrides} />
           ))}
+        </div>
+      </section>
+
+      <section className="mb-10 overflow-hidden rounded-xl border border-[#d5d7cd] bg-white/70 dark:border-[#252e39] dark:bg-[#10161f]">
+        <div className="border-b border-[#e1e2da] px-4 py-3 dark:border-[#26313d]">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[#858876] dark:text-[#8e9ab0]">
+                Channel Matrix
+              </p>
+              <h2 className="mb-0 text-[1rem] font-semibold text-[#15140f] dark:text-gray-100">频道分级速览</h2>
+            </div>
+            <p className="mb-0 text-[12px] text-[#676960] dark:text-[#9aa4b4]">
+              外链 {externalItems} · 权限入口 {restrictedItems}
+            </p>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] border-collapse text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-[#e4e6dc] dark:border-[#26313d]">
+                <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#858779] dark:text-[#8793a6]">频道</th>
+                <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#858779] dark:text-[#8793a6]">主路径</th>
+                <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#858779] dark:text-[#8793a6]">补充索引</th>
+                <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#858779] dark:text-[#8793a6]">分组</th>
+                <th className="px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#858779] dark:text-[#8793a6]">定位</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summaries.map((summary) => {
+                const style = CHANNEL_STYLES[summary.channel.key] || CHANNEL_STYLES.content
+                return (
+                  <tr key={summary.channel.key} className="border-b border-[#eceee6] last:border-b-0 dark:border-[#202a35]">
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2.5 w-2.5 rounded-full ${style.accent}`} />
+                        <div>
+                          <div className="font-semibold text-[#15140f] dark:text-gray-100">{summary.channel.label}</div>
+                          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#929487] dark:text-[#7f8a9b]">{summary.channel.key}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 align-top text-[#262724] dark:text-gray-200">{summary.primary.length}</td>
+                    <td className="px-4 py-4 align-top text-[#262724] dark:text-gray-200">{summary.archive.length}</td>
+                    <td className="px-4 py-4 align-top text-[#262724] dark:text-gray-200">{summary.sections.length}</td>
+                    <td className="px-4 py-4 align-top text-[#56584e] dark:text-[#b9c2d0]">
+                      {summary.primary.slice(0, 3).map((item) => item.label).join(' · ')}
+                      {summary.primary.length > 3 ? ' …' : ''}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       </section>
 

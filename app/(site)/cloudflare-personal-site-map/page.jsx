@@ -18,7 +18,7 @@ export const metadata = {
     description: SHARE_COPY.lead,
     url: PAGE_URL,
     publishedTime: '2026-06-09T00:00:00.000Z',
-    modifiedTime: '2026-06-16T00:00:00.000Z',
+    modifiedTime: '2026-07-02T00:00:00.000Z',
     authors: ['涂阿燃 / Tuaran'],
     locale: 'zh_CN',
   },

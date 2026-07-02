@@ -17,7 +17,9 @@ import {
   OPS_METRICS,
   PLATFORM_PRODUCTS,
   PRICING_MODELS,
+  RECENT_UPDATES,
   RELATED_LINKS,
+  RUNTIME_SURFACES,
   SECURITY_LAYERS,
   SHARE_COPY,
   SITE_FACTS,
@@ -29,12 +31,14 @@ import {
   VERDICT_COUNTS,
   VERDICT_FILTERS,
   VERDICT_META,
+  WORKER_BUNDLE_METRICS,
 } from './data'
 
 const SHARE_URL = 'https://2aran.com/cloudflare-personal-site-map'
 
 const SECTIONS = [
   { id: 'overview', label: '概览' },
+  { id: 'runtime', label: '运行时边界' },
   { id: 'arch', label: '技术架构' },
   { id: 'security', label: '安全防御' },
   { id: 'ops', label: '运营飞轮' },
@@ -80,7 +84,7 @@ function ArchitectureDiagram() {
         className="mx-auto block h-auto w-full max-w-[780px]"
       >
         <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">
-          架构快照 · tuaran-home-page · 2026-06
+          架构快照 · tuaran-home-page · 2026-07
         </text>
         <rect x="20" y="40" width="120" height="56" rx="6" className="fill-[#f7f8f5] stroke-[#d0d2cd] dark:fill-[#161513] dark:stroke-[#2c2d2b]" strokeWidth="1.2" />
         <text x="80" y="68" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">访客</text>
@@ -89,14 +93,14 @@ function ArchitectureDiagram() {
         <text x="250" y="68" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">Cloudflare CDN</text>
         <text x="250" y="84" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">Pages 边缘 · Middleware</text>
         <rect x="360" y="28" width="160" height="80" rx="6" className="fill-[#4a6fa5] stroke-[#3d5f8f] dark:fill-[#5b7fb8] dark:stroke-[#4a6fa5]" strokeWidth="1.5" />
-        <text x="440" y="58" textAnchor="middle" className="fill-white" fontSize="13" fontWeight="600">Pages Functions</text>
-        <text x="440" y="78" textAnchor="middle" className="fill-white/85" fontSize="11">Next.js API Routes</text>
+        <text x="440" y="58" textAnchor="middle" className="fill-white" fontSize="13" fontWeight="600">Public Pages Worker</text>
+        <text x="440" y="78" textAnchor="middle" className="fill-white/85" fontSize="11">43 routes · public build</text>
         <rect x="560" y="40" width="160" height="56" rx="6" className="fill-[#e9ebe6] stroke-[#c3c5c0] dark:fill-[#1c1d1b] dark:stroke-[#373836]" strokeWidth="1.2" />
         <text x="640" y="68" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">D1 · DB</text>
         <text x="640" y="84" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">SQLite 边缘库</text>
         <rect x="180" y="130" width="140" height="56" rx="6" className="fill-[#f7f8f5] stroke-[#d0d2cd] dark:fill-[#161513] dark:stroke-[#2c2d2b]" strokeWidth="1.2" />
-        <text x="250" y="158" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">Git 构建产物</text>
-        <text x="250" y="174" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">public/ + SSR</text>
+        <text x="250" y="158" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">Admin / API 拆分</text>
+        <text x="250" y="174" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">admin.2aran.com · api 规划</text>
         <rect x="360" y="130" width="160" height="56" rx="6" className="fill-[#f7f8f5] stroke-[#d0d2cd] dark:fill-[#161513] dark:stroke-[#2c2d2b]" strokeWidth="1.2" />
         <text x="440" y="158" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">Resend</text>
         <text x="440" y="174" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">邮箱验证码</text>
@@ -108,7 +112,7 @@ function ArchitectureDiagram() {
         <text x="330" y="254" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">/web-llm 本地推理</text>
         <rect x="520" y="210" width="200" height="56" rx="6" className="fill-[#e9ebe6] stroke-[#c3c5c0] dark:fill-[#1c1d1b] dark:stroke-[#373836]" strokeWidth="1.2" />
         <text x="620" y="238" textAnchor="middle" className="fill-[#15140f] dark:fill-gray-100" fontSize="13" fontWeight="600">R2 · MEDIA</text>
-        <text x="620" y="254" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">壁纸 / 可下载</text>
+        <text x="620" y="254" textAnchor="middle" className="fill-[#51514a] dark:fill-gray-400" fontSize="11">downloads / feed 视频</text>
         <line x1="440" y1="186" x2="520" y2="238" className="stroke-[#b4b6b1] dark:stroke-[#41423f]" strokeWidth="1.5" />
         <line x1="140" y1="68" x2="180" y2="68" className="stroke-[#b4b6b1] dark:stroke-[#41423f]" strokeWidth="1.5" markerEnd="url(#cf-map-arrow)" />
         <line x1="320" y1="68" x2="360" y2="68" className="stroke-[#b4b6b1] dark:stroke-[#41423f]" strokeWidth="1.5" />
@@ -124,7 +128,7 @@ function ArchitectureDiagram() {
         </defs>
       </svg>
       <figcaption className="border-t border-[#dee0db] px-3 py-2 text-[11px] text-[#63655f] dark:border-gray-800 dark:text-gray-400">
-        访客请求先过边缘 Middleware（cf-ipcountry 定默认语言、域名/路径重定向），再由 Pages CDN 分发；动态写操作进 Functions → D1；壁纸等大文件走 Functions → R2（D1 只存元数据）；浏览器 WebGPU 本地推理不进 Cloudflare AI。
+        访客请求先过边缘 Middleware（语言判断、域名/路径重定向），再由公开 Pages Worker 承接前台页面与少量 API；后台和后台 API 已准备拆到 admin.2aran.com，评论/通知/积分后续收敛到轻 API Worker；R2 承接 downloads/ 与 feed/ 大文件。
       </figcaption>
     </figure>
   )
@@ -249,7 +253,7 @@ export default function CloudflarePersonalSiteMapClient() {
       <header className="border-b border-[#dee0db] pb-6 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#9ba475]">
-            Engineering Work · AI 项目设计
+            Engineering Work · Cloudflare 架构
           </span>
           <span className="rounded-full bg-[#e5ece4] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#374d34] dark:bg-[#1a2e18] dark:text-[#a3c2a0]">
             对照 2aran.com 实装
@@ -259,7 +263,7 @@ export default function CloudflarePersonalSiteMapClient() {
         <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-3xl">
             <h1 className="font-serif text-[24px] font-semibold leading-snug text-[#15140f] dark:text-gray-100 sm:text-[30px]">
-              AI 商业项目设计地图
+              Cloudflare 个人站技术地图
             </h1>
             <p className="mt-3 text-[14px] leading-7 text-[#51514a] dark:text-gray-400">
               {SHARE_COPY.lead}
@@ -342,6 +346,28 @@ export default function CloudflarePersonalSiteMapClient() {
           {SHARE_COPY.full}
         </div>
 
+        <div className="mt-6">
+          <h2 className="font-serif text-[20px] font-semibold text-[#15140f] dark:text-gray-100">2026-07 优化记录</h2>
+          <div className="mt-3 grid gap-3 lg:grid-cols-4">
+            {RECENT_UPDATES.map((item) => (
+              <article
+                key={`${item.date}-${item.title}`}
+                className="rounded-md border border-[#dee0d6] bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+              >
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#767869] dark:text-gray-500">
+                  {item.date}
+                </div>
+                <h3 className="mt-2 font-serif text-[15px] font-semibold text-[#15140f] dark:text-gray-100">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-[12px] leading-6 text-[#51514a] dark:text-gray-400">
+                  {item.detail}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-6 overflow-hidden rounded-md border border-[#dee0d6] dark:border-gray-800">
           <table className="w-full border-collapse text-left text-[13px]">
             <tbody>
@@ -358,6 +384,47 @@ export default function CloudflarePersonalSiteMapClient() {
         </div>
       </section>
 
+      <section id="runtime" className="mt-10 scroll-mt-24">
+        <h2 className="font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">运行时边界</h2>
+        <p className="mt-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
+          这次优化的核心不是“删一点代码”，而是把普通访客需要的公开站、owner 才需要的后台、以及可以独立演进的前台 API 分开。短期先用 public build 贴着 Cloudflare Pages 免费计划边界，长期再拆独立 Worker。
+        </p>
+
+        <div className="mt-5 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <h3 className="font-serif text-[16px] font-semibold text-[#15140f] dark:text-gray-100">Worker 体积过程</h3>
+            <div className="mt-3 overflow-hidden rounded-md border border-[#dee0d6] dark:border-gray-800">
+              <ProductTable
+                headers={['阶段', 'Routes', '包体', '说明']}
+                rows={WORKER_BUNDLE_METRICS.map((row) => [
+                  row.stage,
+                  row.routes,
+                  row.packageSize,
+                  row.note,
+                ])}
+                emptyMessage=""
+              />
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-serif text-[16px] font-semibold text-[#15140f] dark:text-gray-100">站点边界</h3>
+            <div className="mt-3 overflow-hidden rounded-md border border-[#dee0d6] dark:border-gray-800">
+              <ProductTable
+                headers={['Surface', '当前状态', '下一步', '判定']}
+                rows={RUNTIME_SURFACES.filter((row) => matchesVerdict(row.verdict, verdictFilter)).map((row) => [
+                  row.surface,
+                  row.current,
+                  row.next,
+                  <VerdictPill key={`${row.surface}-pill`} verdict={row.verdict} />,
+                ])}
+                emptyMessage="当前筛选下没有运行时边界。"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="arch" className="mt-10 scroll-mt-24">
         <h2 className="font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">技术架构</h2>
         <p className="mt-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
@@ -366,7 +433,7 @@ export default function CloudflarePersonalSiteMapClient() {
         <div className="mt-4">
           <figure className="overflow-hidden rounded-md border border-[#dee0db] bg-white text-center dark:border-gray-800 dark:bg-gray-900">
             <svg viewBox="0 0 760 340" role="img" aria-label="AI 商业项目四层技术架构" className="mx-auto block h-auto w-full max-w-[780px]">
-              <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">四层技术架构 · AI 商业项目设计地图</text>
+              <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">四层技术架构 · Cloudflare 个人站技术地图</text>
               {/* 接入层 */}
               <rect x="20" y="36" width="720" height="52" rx="6" className="fill-[#e4ebf5] stroke-[#b4c4de] dark:fill-[#1a2438] dark:stroke-[#2c3e5a]" strokeWidth="1" />
               <text x="40" y="58" className="fill-[#334d73] dark:fill-[#9db8e8]" fontSize="11" fontWeight="600">接入层</text>
@@ -469,7 +536,7 @@ export default function CloudflarePersonalSiteMapClient() {
         <div className="mt-4">
           <figure className="overflow-hidden rounded-md border border-[#dee0db] bg-white text-center dark:border-gray-800 dark:bg-gray-900">
             <svg viewBox="0 0 760 320" role="img" aria-label="纵深安全防御五层架构" className="mx-auto block h-auto w-full max-w-[780px]">
-              <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">纵深安全防御 · AI 商业项目设计地图</text>
+              <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">纵深安全防御 · Cloudflare 个人站技术地图</text>
               {/* 网络安全 */}
               <rect x="20" y="36" width="720" height="48" rx="6" className="fill-[#4a6fa5] stroke-[#3d5f8f] dark:fill-[#5b7fb8] dark:stroke-[#4a6fa5]" strokeWidth="1" />
               <text x="40" y="65" className="fill-white" fontSize="11" fontWeight="600">网络安全</text>
@@ -552,7 +619,7 @@ export default function CloudflarePersonalSiteMapClient() {
         <div className="mt-4">
           <figure className="overflow-hidden rounded-md border border-[#dee0db] bg-white text-center dark:border-gray-800 dark:bg-gray-900">
             <svg viewBox="0 0 760 360" role="img" aria-label="双飞轮运营模型" className="mx-auto block h-auto w-full max-w-[780px]">
-              <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">双飞轮运营 · AI 商业项目设计地图</text>
+              <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">双飞轮运营 · Cloudflare 个人站技术地图</text>
               {/* 数据飞轮 - 圆形 */}
               <circle cx="220" cy="190" r="110" className="fill-[#e5ece4] stroke-[#b4ccb0] dark:fill-[#1a2e18] dark:stroke-[#2c4a28]" strokeWidth="1.5" />
               <text x="220" y="175" textAnchor="middle" className="fill-[#374d34] dark:fill-[#a3c2a0]" fontSize="14" fontWeight="600">数据飞轮</text>
@@ -649,7 +716,7 @@ export default function CloudflarePersonalSiteMapClient() {
         <div className="mt-4">
           <figure className="overflow-hidden rounded-md border border-[#dee0db] bg-white text-center dark:border-gray-800 dark:bg-gray-900">
             <svg viewBox="0 0 760 340" role="img" aria-label="市场设计与进入路径" className="mx-auto block h-auto w-full max-w-[780px]">
-              <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">市场设计 · AI 商业项目设计地图</text>
+              <text x="0" y="16" className="fill-[#63655f] dark:fill-gray-500" fontSize="11">市场设计 · Cloudflare 个人站技术地图</text>
               {/* 三层市场 */}
               <rect x="20" y="36" width="230" height="52" rx="6" className="fill-[#4a6fa5] stroke-[#3d5f8f] dark:fill-[#5b7fb8] dark:stroke-[#4a6fa5]" strokeWidth="1.5" />
               <text x="135" y="58" textAnchor="middle" className="fill-white" fontSize="13" fontWeight="600">C 端市场</text>
@@ -981,7 +1048,7 @@ R2  →  实际文件`}
             多维页面
           </Link>
           {' · '}
-          判定基于 wrangler.toml 与 ai-context/architecture.md（2026-06 快照）
+          判定基于 wrangler.toml、next-on-pages 构建日志与本次 public/admin/API 拆分记录（2026-07 快照）
         </p>
       </section>
     </main>

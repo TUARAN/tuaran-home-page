@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { IconInfoCircle } from '@tabler/icons-react'
 
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
 
@@ -28,6 +29,26 @@ function formatPercent(value) {
   const n = Number(value)
   if (!Number.isFinite(n)) return '0%'
   return `${Math.round(n * 1000) / 10}%`
+}
+
+function MetricLabel({ label, tip }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span>{label}</span>
+      <span className="group relative inline-flex">
+        <IconInfoCircle
+          size={13}
+          stroke={1.8}
+          className="text-[#a0a295] transition group-hover:text-[#53554d] group-focus-visible:text-[#53554d] dark:text-gray-600 dark:group-hover:text-gray-300"
+          tabIndex={0}
+          aria-label={`${label}说明`}
+        />
+        <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border border-[#e2e3da] bg-white px-3 py-2 text-left text-[11px] leading-5 text-[#53554d] shadow-lg group-hover:block group-focus-within:block dark:border-[#243041] dark:bg-[#10161f] dark:text-gray-300">
+          {tip}
+        </span>
+      </span>
+    </span>
+  )
 }
 
 function deltaVsPrev(current, previous, previousLabel) {
@@ -384,7 +405,12 @@ export default function ContentWeeklyClient() {
 
       <section className="mb-5 grid gap-3 md:grid-cols-3">
         <StatCard
-          label="回访率"
+          label={
+            <MetricLabel
+              label="回访率"
+              tip="近 7 天内，在至少 2 个自然日出现过的唯一访客 / 近 7 天唯一访客总数。用于观察内容是否让人回来。"
+            />
+          }
           value={loading ? '—' : formatPercent(ops.visitors.returnRate)}
           sub={loading ? '近 7 天唯一访客' : `${ops.visitors.returning}/${ops.visitors.total} 访客 · 近 7 天`}
           tone="info"
@@ -396,7 +422,12 @@ export default function ContentWeeklyClient() {
           tone="warning"
         />
         <StatCard
-          label="订阅数"
+          label={
+            <MetricLabel
+              label="订阅数"
+              tip="当前有效 Newsletter 订阅用户总数；下方 +N 是近 7 天新增订阅。用于观察有多少人留下长期触达入口。"
+            />
+          }
           value={loading ? '—' : ops.newsletter.active}
           sub={loading ? 'Newsletter active' : `近 7 天新增 +${ops.newsletter.thisWeek || 0}`}
           tone="success"

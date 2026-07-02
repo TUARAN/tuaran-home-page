@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import SharePageButton from '../components/SharePageButton'
 import { FEED_TYPE_META } from './data'
 
@@ -26,7 +27,7 @@ function itemShareText(item) {
   ].filter(Boolean).join('\n')
 }
 
-function MetaRow({ item, showShare = true, maxTags = Infinity }) {
+function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinity }) {
   const tags = item.tags || []
   const visibleTags = Number.isFinite(maxTags) ? tags.slice(0, maxTags) : tags
   const hiddenTagCount = Math.max(0, tags.length - visibleTags.length)
@@ -65,9 +66,14 @@ function MetaRow({ item, showShare = true, maxTags = Infinity }) {
           </>
         ) : null}
       </div>
-      {sourceLink || showShare ? (
+      {sourceLink || showDetail || showShare ? (
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {sourceLink}
+          {showDetail ? (
+            <Link href={`/feed/${item.id}`} className="article-action-button px-3 py-1 text-xs no-underline">
+              查看
+            </Link>
+          ) : null}
           {showShare ? (
             <SharePageButton
               title={item.title}
@@ -191,7 +197,7 @@ function HeadlineCard({ item }) {
 
 function VideoCard({ item }) {
   return (
-    <article id={item.id} className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#ff4d6a]/50">
+    <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#ff4d6a]/50">
       <MediaFrame aspect={item.aspect}>
         <video
           className="absolute inset-0 h-full w-full"
@@ -203,42 +209,58 @@ function VideoCard({ item }) {
           aria-label={item.title}
         />
       </MediaFrame>
-      <div className="mt-3 flex items-center gap-2">
-        <TypeBadge type={item.type} />
-        <h2 className="mb-0 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title}</h2>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="mt-3 flex items-center gap-2">
+          <TypeBadge type={item.type} />
+          <h2 className="mb-0 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
+            <Link href={`/feed/${item.id}`} className="no-underline hover:underline">
+              {item.title}
+            </Link>
+          </h2>
+        </div>
+        {item.summary ? (
+          <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
+        ) : null}
+        <div className="mt-auto">
+          <MetaRow item={item} showDetail maxTags={3} />
+        </div>
       </div>
-      {item.summary ? (
-        <p className="mb-0 mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
-      ) : null}
-      <MetaRow item={item} />
     </article>
   )
 }
 
 function ImageCard({ item }) {
   return (
-    <article id={item.id} className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#6c5ce7]/50">
+    <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#6c5ce7]/50">
       <MediaFrame aspect={item.aspect}>
         {/* 静态资源，沿用站内 <img> 约定 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="absolute inset-0 h-full w-full object-cover" src={item.src} alt={item.title} loading="lazy" />
       </MediaFrame>
-      <div className="mt-3 flex items-center gap-2">
-        <TypeBadge type={item.type} />
-        <h2 className="mb-0 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title}</h2>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="mt-3 flex items-center gap-2">
+          <TypeBadge type={item.type} />
+          <h2 className="mb-0 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
+            <Link href={`/feed/${item.id}`} className="no-underline hover:underline">
+              {item.title}
+            </Link>
+          </h2>
+        </div>
+        {item.summary ? (
+          <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
+        ) : null}
+        <div className="mt-auto">
+          <MetaRow item={item} showDetail maxTags={3} />
+        </div>
       </div>
-      {item.summary ? (
-        <p className="mb-0 mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
-      ) : null}
-      <MetaRow item={item} />
     </article>
   )
 }
 
 function LinkCard({ item }) {
   return (
-    <article id={item.id} className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors hover:border-[#00a978]/50">
-      <div className="p-4">
+    <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors hover:border-[#00a978]/50">
+      <div className="flex min-h-0 flex-1 flex-col p-4">
         <a href={item.href} target="_blank" rel="noreferrer" className="block no-underline">
           {item.image ? (
             <MediaFrame aspect={item.aspect || '16/9'}>
@@ -252,9 +274,11 @@ function LinkCard({ item }) {
           </div>
         </a>
         {item.summary ? (
-          <p className="mb-0 mt-2 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
+          <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
         ) : null}
-        <MetaRow item={item} />
+        <div className="mt-auto">
+          <MetaRow item={item} showDetail maxTags={3} />
+        </div>
       </div>
     </article>
   )
@@ -262,15 +286,17 @@ function LinkCard({ item }) {
 
 function QuoteCard({ item }) {
   return (
-    <article id={item.id} className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[#f5a623]/50">
+    <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[#f5a623]/50">
       <div className="mb-3"><TypeBadge type={item.type} /></div>
-      <blockquote className="border-l-2 border-[#f5a623] pl-4 font-serif text-[17px] leading-8 text-[var(--site-ink)]">
+      <blockquote className="line-clamp-6 border-l-2 border-[#f5a623] pl-4 font-serif text-[17px] leading-8 text-[var(--site-ink)]">
         {item.quote || item.summary}
       </blockquote>
       {item.author ? (
         <p className="mb-0 mt-3 text-right text-[12px] text-[var(--site-muted)]">—— {item.author}</p>
       ) : null}
-      <MetaRow item={item} />
+      <div className="mt-auto">
+        <MetaRow item={item} showDetail maxTags={3} />
+      </div>
     </article>
   )
 }

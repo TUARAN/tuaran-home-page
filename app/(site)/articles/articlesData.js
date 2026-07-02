@@ -13,6 +13,13 @@ export const articles = [
       'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
     content: [
       {
+        date: '2026-07-02',
+        label: '模板化与留白',
+        category: '内容与增长',
+      },
+      '1. 可持续必模板化，模板化皆可 AI 化。',
+      '2. 好的创作者从不定义作品，留白存万象，自有大儒辩经。',
+      {
         date: '2026-06-12',
         label: '个人门户与博主联盟阶段复盘',
         category: '项目复盘',

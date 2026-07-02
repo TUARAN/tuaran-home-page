@@ -13,7 +13,6 @@ import {
   SITE_ADMIN_NAV_LINK,
   SITE_CHANNELS,
   getChannelNavSections,
-  isAdminNavPath,
   isAdminNavVisible,
   navDesc,
   navLabel,
@@ -100,21 +99,6 @@ const TIER_SECTION_STYLES = {
 
 function getTierStyle(title) {
   return TIER_SECTION_STYLES[title] || { wrap: 'site-tier-section', title: 'site-tier-title' }
-}
-
-function TopNavLink({ href, label, isActive, onNavigate }) {
-  return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      className={[
-        'site-nav-trigger',
-        isActive ? 'site-nav-trigger-active' : '',
-      ].join(' ')}
-    >
-      {label}
-    </Link>
-  )
 }
 
 function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerRef, align = 'center', account, navOverrides }) {
@@ -304,6 +288,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
   const { loading, user, isOwner, notifications, markNotificationsRead } = account
   const unread = Number(notifications?.unread) || 0
+  const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
 
   if (!loading && !user) {
     return (
@@ -352,6 +337,16 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
             />
           </div>
           <div className="px-1.5 py-1.5">
+            {showAdminLink ? (
+              <Link
+                href={SITE_ADMIN_NAV_LINK.href}
+                onClick={onClose}
+                className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+              >
+                <span>{navLabel(SITE_ADMIN_NAV_LINK, locale)}</span>
+                <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+              </Link>
+            ) : null}
             <Link
               href="/community"
               onClick={onClose}
@@ -381,6 +376,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
   const { loading, user, isOwner, notifications, markNotificationsRead } = account
   const unread = Number(notifications?.unread) || 0
+  const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
 
   if (!loading && !user) {
     return (
@@ -428,6 +424,16 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             />
           </div>
           <div className="px-1.5 py-1.5">
+            {showAdminLink ? (
+              <Link
+                href={SITE_ADMIN_NAV_LINK.href}
+                onClick={onNavigate}
+                className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+              >
+                <span>{navLabel(SITE_ADMIN_NAV_LINK, locale)}</span>
+                <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+              </Link>
+            ) : null}
             <Link
               href="/community"
               onClick={onNavigate}
@@ -460,7 +466,6 @@ export default function SiteHeader() {
   const account = useSessionAccount()
   const navWrapRef = useRef(null)
   const accountRef = useRef(null)
-  const showAdminNav = isAdminNavVisible(account, account?.navOverrides)
 
   useEffect(() => {
     setMobileMenuOpen(false)
@@ -547,13 +552,6 @@ export default function SiteHeader() {
                   />
                 )
               })}
-              {showAdminNav ? (
-                <TopNavLink
-                  href={SITE_ADMIN_NAV_LINK.href}
-                  label={navLabel(SITE_ADMIN_NAV_LINK, locale)}
-                  isActive={isAdminNavPath(pathname)}
-                />
-              ) : null}
             </nav>
             <SettingsButton />
             <AccountMenu
@@ -665,16 +663,6 @@ export default function SiteHeader() {
               </div>
             )
           })}
-          {showAdminNav ? (
-            <div className="site-mobile-card rounded-2xl border px-4 py-3">
-              <TopNavLink
-                href={SITE_ADMIN_NAV_LINK.href}
-                label={SITE_ADMIN_NAV_LINK.label}
-                isActive={isAdminNavPath(pathname)}
-                onNavigate={() => setMobileMenuOpen(false)}
-              />
-            </div>
-          ) : null}
         </nav>
       </div>
     </>

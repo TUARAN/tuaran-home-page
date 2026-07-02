@@ -54,6 +54,11 @@ export function middleware(request) {
     return NextResponse.redirect(url, 301)
   }
 
+  if (host === CANONICAL_HOST && (pathname === '/admin' || pathname.startsWith('/admin/'))) {
+    const url = new URL(pathname + request.nextUrl.search, `https://${ADMIN_HOST}`)
+    return NextResponse.redirect(url, 302)
+  }
+
   const shouldCanonicalizeHost = LEGACY_HOSTS.has(host)
   const shouldRedirectLegacyPath = LEGACY_PATHS.has(pathname)
   const shouldRedirectPoetry = pathname === '/poetry'

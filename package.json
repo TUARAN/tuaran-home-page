@@ -10,6 +10,8 @@
     "build:check": "NEXT_DIST_DIR=.next-check next build",
     "start": "next start -p 3000",
     "pages:build": "npx @cloudflare/next-on-pages@1.13.16",
+    "pages:build:all": "npx @cloudflare/next-on-pages@1.13.16",
+    "pages:build:public": "node scripts/build-public-pages.cjs",
     "lint": "next lint",
     "snapshot-memory": "node scripts/snapshot-memory.mjs"
   },

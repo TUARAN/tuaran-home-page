@@ -27,6 +27,41 @@ function getShanghaiMonthWindow(now) {
   return { thisMonthStart, prevMonthStart, monthLabel, timezone: 'Asia/Shanghai' }
 }
 
+function getShanghaiDayWindow(now) {
+  const local = new Date(now + SHANGHAI_TZ_OFFSET_MS)
+  const year = local.getUTCFullYear()
+  const month = local.getUTCMonth()
+  const date = local.getUTCDate()
+  const todayStart = Date.UTC(year, month, date) - SHANGHAI_TZ_OFFSET_MS
+  const sevenDayStart = todayStart - 6 * DAY_MS
+  return { todayStart, sevenDayStart, timezone: 'Asia/Shanghai' }
+}
+
+function formatShanghaiDay(dayStart) {
+  const local = new Date(dayStart + SHANGHAI_TZ_OFFSET_MS)
+  const year = local.getUTCFullYear()
+  const month = String(local.getUTCMonth() + 1).padStart(2, '0')
+  const date = String(local.getUTCDate()).padStart(2, '0')
+  return {
+    date: `${year}-${month}-${date}`,
+    label: `${month}/${date}`,
+  }
+}
+
+function buildDailyReads(rows, sevenDayStart) {
+  const byDay = new Map(rows.map((row) => [Number(row.day_key), Number(row.pv) || 0]))
+  return Array.from({ length: 7 }, (_, index) => {
+    const dayStart = sevenDayStart + index * DAY_MS
+    const dayKey = Math.floor((dayStart + SHANGHAI_TZ_OFFSET_MS) / DAY_MS)
+    const labels = formatShanghaiDay(dayStart)
+    return {
+      ...labels,
+      dayStart,
+      pv: byDay.get(dayKey) || 0,
+    }
+  })
+}
+
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
@@ -39,7 +74,7 @@ export async function GET(req) {
       status: 'unavailable',
       generatedAt: Date.now(),
       window: null,
-      reads: { top: [], total: { thisWeek: 0, prevWeek: 0 } },
+      reads: { top: [], daily: [], total: { thisWeek: 0, prevWeek: 0, today: 0, yesterday: 0 } },
       likes: { top: [], total: { thisWeek: 0, prevWeek: 0 } },
       comments: { recent: [], total: { all: 0, thisWeek: 0, thisMonth: 0, articles: 0 } },
       month: {
@@ -53,12 +88,14 @@ export async function GET(req) {
   const wk1 = now - WEEK_MS // 最近 7 天的起点
   const wk2 = now - 2 * WEEK_MS // 前 7 天的起点
   const monthWindow = getShanghaiMonthWindow(now)
+  const dayWindow = getShanghaiDayWindow(now)
 
   try {
     const [
       readRows,
       readByCategory,
       readTotal,
+      dailyReadRows,
       likeRows,
       likeTotal,
       monthReadRows,
@@ -106,6 +143,17 @@ export async function GET(req) {
         )
         .bind(wk1, wk2)
         .first(),
+      db
+        .prepare(
+          `SELECT CAST((created_at + ?1) / ?2 AS INTEGER) AS day_key, COUNT(*) AS pv
+           FROM research_pv_hits
+           WHERE created_at >= ?3 AND created_at <= ?4
+           GROUP BY day_key
+           ORDER BY day_key ASC`,
+        )
+        .bind(SHANGHAI_TZ_OFFSET_MS, DAY_MS, dayWindow.sevenDayStart, now)
+        .all()
+        .then((r) => r.results || []),
       db
         .prepare(
           `SELECT article_key,
@@ -300,6 +348,10 @@ export async function GET(req) {
       }
     })
 
+    const dailyReads = buildDailyReads(dailyReadRows, dayWindow.sevenDayStart)
+    const todayReads = dailyReads[dailyReads.length - 1]?.pv || 0
+    const yesterdayReads = dailyReads[dailyReads.length - 2]?.pv || 0
+
     return Response.json({
       status: 'ok',
       generatedAt: now,
@@ -309,15 +361,20 @@ export async function GET(req) {
         days: 7,
         thisMonthStart: monthWindow.thisMonthStart,
         prevMonthStart: monthWindow.prevMonthStart,
+        todayStart: dayWindow.todayStart,
+        sevenDayStart: dayWindow.sevenDayStart,
         monthLabel: monthWindow.monthLabel,
         timezone: monthWindow.timezone,
       },
       reads: {
         top: reads,
         byType,
+        daily: dailyReads,
         total: {
           thisWeek: Number(readTotal?.this_week) || 0,
           prevWeek: Number(readTotal?.prev_week) || 0,
+          today: todayReads,
+          yesterday: yesterdayReads,
         },
       },
       likes: {

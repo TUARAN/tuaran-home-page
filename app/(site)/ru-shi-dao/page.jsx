@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import ContentEngagement from '../components/ContentEngagement'
 import RanbiPaywall from '../components/RanbiPaywall'
 import ContentPvBeacon from '../components/ContentPvBeacon'
 
@@ -600,6 +601,7 @@ export default function RuShiDaoPage() {
       <RanbiPaywall resourceKey="resource:ru-shi-dao" unitLabel="资料">
         <RuShiDaoContent />
       </RanbiPaywall>
+      <ContentEngagement contentKey="resource:ru-shi-dao" />
     </>
   )
 }

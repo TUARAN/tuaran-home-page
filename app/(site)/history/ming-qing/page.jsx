@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import ContentEngagement from '../../components/ContentEngagement'
 import RanbiPaywall from '../../components/RanbiPaywall'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 
@@ -2212,6 +2213,7 @@ export default function MingQingPage() {
       <RanbiPaywall resourceKey="resource:history-ming-qing" unitLabel="资料">
         <MingQingContent />
       </RanbiPaywall>
+      <ContentEngagement contentKey="resource:history-ming-qing" />
     </>
   )
 }

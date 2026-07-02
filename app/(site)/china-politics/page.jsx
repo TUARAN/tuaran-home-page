@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import ContentEngagement from '../components/ContentEngagement'
 import RanbiPaywall from '../components/RanbiPaywall'
 import ContentPvBeacon from '../components/ContentPvBeacon'
 
@@ -703,6 +704,7 @@ export default function ChinaPoliticsPage() {
       <RanbiPaywall resourceKey="resource:china-politics" unitLabel="资料">
         <ChinaPoliticsContent />
       </RanbiPaywall>
+      <ContentEngagement contentKey="resource:china-politics" />
     </>
   )
 }

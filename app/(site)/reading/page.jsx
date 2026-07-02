@@ -10,7 +10,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '书库',
   description: '涂阿燃（tuaran）的书库：读书笔记、书评与待写书单，按传记、心理学、社会学、财富、历史、哲学归一化整理。',
-  keywords: ['涂阿燃', 'tuaran', '书库', '读书笔记', '书评', '阅读记录', '读无用书', '主编札记'],
+  keywords: ['涂阿燃', 'tuaran', '书库', '读书笔记', '书评', '阅读记录', '读无用书', '网络日志'],
   alternates: {
     canonical: '/reading',
   },

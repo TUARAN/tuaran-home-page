@@ -1080,7 +1080,7 @@
   }
 
   .home-achievement-card-cover {
-    @apply block h-12 w-12 shrink-0 overflow-hidden rounded-lg border;
+    @apply block h-14 w-full shrink-0 overflow-hidden rounded-lg border;
     border-color: color-mix(in srgb, var(--site-ink) 12%, var(--site-line));
     background: #f5f5f0;
   }

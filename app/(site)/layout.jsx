@@ -6,9 +6,9 @@ import { SessionProvider } from './components/SessionProvider'
 import { ThemeProvider } from './components/ThemeProvider'
 
 const SITE_URL = 'https://2aran.com'
-const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
+const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的主编札记'
 const SITE_DESCRIPTION =
-  '2aran.com 是涂阿燃（安东尼）的个人主页与网络日志：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
+  '2aran.com 是涂阿燃（安东尼）的个人主页与主编札记：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
 
 const structuredData = {
   '@context': 'https://schema.org',

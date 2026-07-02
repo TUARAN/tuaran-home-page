@@ -42,15 +42,22 @@ const CHANNEL_STYLES = {
     soft: 'bg-[#f3f4ec]',
     text: 'text-[#7a4c10]',
   },
-  projects: {
+  resources: {
+    label: 'Archive',
+    accent: 'bg-[#3f6878]',
+    border: 'border-[#c7dce4]',
+    soft: 'bg-[#edf6f8]',
+    text: 'text-[#3f6878]',
+  },
+  tools: {
     label: 'Systems',
     accent: 'bg-[#2f6f73]',
     border: 'border-[#c7dfdd]',
     soft: 'bg-[#eef8f7]',
     text: 'text-[#245b5f]',
   },
-  services: {
-    label: 'Business',
+  community: {
+    label: 'Community',
     accent: 'bg-[#6b5aa6]',
     border: 'border-[#d9d3f0]',
     soft: 'bg-[#f5f2ff]',

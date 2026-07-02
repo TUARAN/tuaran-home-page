@@ -4,7 +4,7 @@ export const dynamic = 'force-static'
 export const revalidate = 3600
 
 const SITE_URL = 'https://2aran.com'
-const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
+const SITE_TITLE = '涂阿燃（tuaran）的主编札记'
 const SITE_DESC =
   '涂阿燃（安东尼）：前端与 AI 工程化 Agent 工程师；主理博主联盟与前端周看。' +
   '本站记录工程实践、技术情报与创作者增长，并维护一个个人内容、项目和资源门户。'
@@ -29,7 +29,7 @@ export function GET() {
     '内容作者统一署名 TUARAN，AI 仅作协助工具。',
     '',
     '## 主要页面',
-    `- [首页](${SITE_URL}/): 个人主页与网络日志`,
+    `- [首页](${SITE_URL}/): 个人主页与主编札记`,
     `- [关于本站](${SITE_URL}/site): 站点定位、参与方式、燃币与支持说明`,
     `- [关于站长](${SITE_URL}/about): 站长介绍与履历`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,

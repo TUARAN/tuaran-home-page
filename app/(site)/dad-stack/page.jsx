@@ -47,7 +47,7 @@ const familyLinks = [
   },
   {
     href: '/diary',
-    label: '近期日志',
+    label: '主编札记',
     desc: '阶段性想法与生活片段，不少是带娃的日常。',
   },
 ]

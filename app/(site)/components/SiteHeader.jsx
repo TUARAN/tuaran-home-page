@@ -445,7 +445,7 @@ export default function SiteHeader() {
           <Link href="/" className="no-underline hover:no-underline group min-w-0" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <div className="leading-tight inline-flex flex-wrap items-baseline gap-x-2">
               <span className="site-brand-text font-serif text-xl sm:text-2xl font-semibold tracking-wide">
-                {pick(locale, '涂阿燃 · 网络日志', 'TUARAN · Weblog')}
+                {pick(locale, '涂阿燃 · 主编札记', 'TUARAN · Editor Notes')}
               </span>
             </div>
           </Link>
@@ -458,7 +458,7 @@ export default function SiteHeader() {
                 const align =
                   channel.key === 'content'
                     ? 'left'
-                    : channel.key === 'services' || channel.key === 'about'
+                    : channel.key === 'community' || channel.key === 'about'
                     ? 'right'
                     : 'center'
                 return (

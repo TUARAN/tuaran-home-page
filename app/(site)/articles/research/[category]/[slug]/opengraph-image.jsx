@@ -161,7 +161,7 @@ export default async function ResearchOgImage({ params }) {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 32, height: 1, background: '#c8c9bf' }} />
-            <span>涂阿燃 · 网络日志</span>
+            <span>涂阿燃 · 主编札记</span>
           </div>
           <span>掘金安东尼</span>
         </div>

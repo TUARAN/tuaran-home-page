@@ -10,6 +10,7 @@ import UserAvatar from '../components/UserAvatar'
 const WECHAT_QR_ITEM = { src: '/qrcode-wechat.jpg', label: '个人微信号' }
 
 const GROUP_QR_ITEMS = [
+  { src: '/qrcode-x-group.jpg', label: 'X互帮互助群' },
   { src: '/qrcode-community1.jpg', label: '前端周刊群' },
   { src: '/qrcode-community2.jpg', label: '抽奖粉丝群' },
   { src: '/qrcode-community3.jpg', label: 'AI资讯群' },

@@ -2823,3 +2823,136 @@
 .dark .article-editor .ProseMirror blockquote { color: #aeb5c0; }
 .dark .article-editor .ProseMirror code:not(pre code) { background: #1c2430; }
 .dark .article-editor .ProseMirror hr { border-color: #293443; }
+
+/* X 互帮互助圈：独立于全站纸感的纯黑 / X 蓝视觉。 */
+body:has(.x-mutual-page) {
+  background: #000;
+  color: #e7e9ea;
+}
+
+body:has(.x-mutual-page) .site-header {
+  border-color: #2f3336;
+  background-color: rgba(0, 0, 0, 0.86);
+  box-shadow: 0 1px 0 #2f3336;
+  backdrop-filter: blur(12px) saturate(1.08);
+  -webkit-backdrop-filter: blur(12px) saturate(1.08);
+}
+
+body:has(.x-mutual-page) footer {
+  border-color: #2f3336 !important;
+  color: #71767b;
+}
+
+body:has(.x-mutual-page) footer a:hover {
+  color: #1d9bf0;
+}
+
+.x-mutual-page {
+  --site-bg: #000000;
+  --site-ink: #e7e9ea;
+  --site-muted: #8b98a5;
+  --site-faint: #71767b;
+  --site-line: #2f3336;
+  --site-line-strong: #536471;
+  --site-panel: #000000;
+  --site-panel-strong: #080808;
+  --site-accent: #1d9bf0;
+  --site-accent-strong: #1d9bf0;
+  --site-blue: #1d9bf0;
+  --site-shadow: rgba(0, 0, 0, 0.5);
+}
+
+.x-mutual-page strong {
+  color: #e7e9ea;
+}
+
+.x-mutual-page :where(h1, h2, h3, h4, h5, h6) {
+  color: #e7e9ea;
+}
+
+.x-mutual-page .article-action-button {
+  border-color: #1d9bf0;
+  background-color: #1d9bf0;
+  color: #fff;
+  font-weight: 700;
+}
+
+.x-mutual-page .article-action-button:hover,
+.x-mutual-page .article-action-button:focus-visible {
+  border-color: #1a8cd8;
+  background-color: #1a8cd8;
+  color: #fff;
+}
+
+.x-mutual-page .article-actions-dropdown-menu {
+  border-color: #2f3336;
+  background: rgba(0, 0, 0, 0.96);
+}
+
+.x-mutual-page .article-actions-dropdown-menu .article-action-button:hover {
+  background-color: #1d9bf0;
+}
+
+.x-mutual-page .prose-tuaran {
+  color: #c9d1d9;
+}
+
+.x-mutual-page .prose-tuaran :where(h2, h3, h4) {
+  color: #e7e9ea;
+}
+
+.x-mutual-page .prose-tuaran :where(a, a:visited) {
+  color: #1d9bf0;
+}
+
+.x-mutual-page .prose-tuaran :where(p, li) {
+  color: #c9d1d9;
+}
+
+.x-mutual-page .prose-tuaran :where(code) {
+  background: #16181c;
+  color: #e7e9ea;
+}
+
+.x-mutual-page > aside {
+  border-color: #2f3336;
+  color: #8b98a5;
+}
+
+.x-mutual-page > aside form,
+.x-mutual-page > aside a.group,
+.x-mutual-page section:has(.discussion-comments) > section,
+.x-mutual-page .discussion-comments,
+.x-mutual-page .discussion-composer,
+.x-mutual-page .discussion-comment-card {
+  border-color: #2f3336 !important;
+  background-color: #080808 !important;
+  box-shadow: none !important;
+}
+
+.x-mutual-page > aside form h2,
+.x-mutual-page > aside a.group div:first-child,
+.x-mutual-page section:has(.discussion-comments) h2 {
+  color: #e7e9ea !important;
+}
+
+.x-mutual-page > aside form p,
+.x-mutual-page > aside a.group p,
+.x-mutual-page section:has(.discussion-comments) p {
+  color: #8b98a5 !important;
+}
+
+.x-mutual-page > aside input,
+.x-mutual-page .discussion-textarea {
+  border-color: #2f3336 !important;
+  background-color: #000 !important;
+  color: #e7e9ea !important;
+}
+
+.x-mutual-page > aside button[type='submit'],
+.x-mutual-page .discussion-submit-button {
+  border-color: #1d9bf0 !important;
+  background-color: #1d9bf0 !important;
+  color: #fff !important;
+  border-radius: 999px;
+}

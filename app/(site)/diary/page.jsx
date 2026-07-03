@@ -224,7 +224,7 @@ function TocGroup({ title, groups, baseIdPrefix = 'year' }) {
 
 function TimelineToc({ diaryGroups, yearSummaryGroups }) {
   return (
-    <nav className="toc-scroll-panel space-y-6" aria-label="浮生日记目录">
+    <nav className="toc-scroll-panel space-y-6 md:static" aria-label="浮生日记目录">
       <div className="text-sm font-bold border-b border-[#eee] pb-2 dark:border-gray-800 dark:text-gray-200">
         目录
       </div>
@@ -412,9 +412,22 @@ export default function DiaryPage() {
 
       <div className="flex flex-col gap-6 md:flex-row">
         {diaryGroups.length > 0 || yearSummaryGroups.length > 0 ? (
-          <aside className="hidden md:block md:w-52 shrink-0">
-            <TimelineToc diaryGroups={diaryGroups} yearSummaryGroups={yearSummaryGroups} />
-          </aside>
+          <>
+            <aside className="hidden md:block md:w-56 shrink-0">
+              <div className="md:fixed md:top-24 md:w-56">
+                <TimelineToc diaryGroups={diaryGroups} yearSummaryGroups={yearSummaryGroups} />
+              </div>
+            </aside>
+
+            <details className="md:hidden border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <summary className="cursor-pointer text-sm font-bold text-[#444] dark:text-gray-200">
+                展开目录
+              </summary>
+              <div className="mt-4">
+                <TimelineToc diaryGroups={diaryGroups} yearSummaryGroups={yearSummaryGroups} />
+              </div>
+            </details>
+          </>
         ) : null}
 
         <main className="flex-1 min-w-0">

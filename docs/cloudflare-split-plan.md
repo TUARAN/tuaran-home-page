@@ -18,7 +18,13 @@ Use it only for the public `2aran.com` Cloudflare Pages project after `admin.2ar
 Live Cloudflare Pages config:
 
 - `tuaran` (`2aran.com`): build command `npm run pages:build:public`; build watch paths include `*`.
-- `tuaran-admin-git` (`admin.2aran.com`): build command `npm run pages:build`; build watch paths include only admin routes, auth/admin API routes, and shared admin dependencies.
+- `tuaran-admin-git` (`admin.2aran.com`): build command `npm run pages:build`; build watch paths are compact boundary rules for admin routes, auth/admin API routes, shared runtime code, and build config.
+
+Admin build watch path policy:
+
+- Route surfaces: `app/(admin)*`, admin/auth/private API routes, login/register, and the few shared site components used by admin.
+- Shared runtime: `lib/*` intentionally triggers admin rebuilds for any shared library change; this is broader than a per-file allowlist, but avoids stale admin deployments when a shared dependency changes.
+- Build config: `package*`, `*.config.js`, `wrangler.toml`, `jsconfig.json`, `public/_headers`, and build helper scripts.
 
 Current commands:
 

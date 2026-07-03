@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-02T15:26:38.940Z",
+  "generatedAt": "2026-07-03T07:50:00.510Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -128,6 +128,12 @@
               "hash": "c579030eeec7b5911ee1250da3faad764f98fa2cd77042168304c40dc257ddbd",
               "path": "claude/MEMORY/2026-07-02T15-26-38-920Z.enc.json",
               "bytes": 3041
+            },
+            {
+              "ts": "2026-07-03T07:50:00.462Z",
+              "hash": "37e73d49748596b3edc5e9aa0e8e9bf2f110a16c6dfcbc5a21eb0bbebaf9b382",
+              "path": "claude/MEMORY/2026-07-03T07-50-00-481Z.enc.json",
+              "bytes": 3185
             }
           ]
         },
@@ -434,6 +440,18 @@
               "hash": "12d7b6eeb2ba74c2f03cc89b1528b6fab309ccb8a5444422cc4d15e1a8748731",
               "path": "claude/feedback-examples-are-not-axes/2026-07-02T15-26-38-938Z.enc.json",
               "bytes": 680
+            }
+          ]
+        },
+        "x-mutual-aid-circle-page": {
+          "title": "x-mutual-aid-circle-page",
+          "description": "/resources/x-mutual-aid-circle 是「X 互帮互助」圈子品牌页；二维码文件 public/qrcode-x-group.jpg 每 7 天过期需站长手动覆盖，2026-07-03 落码时还是占位图",
+          "versions": [
+            {
+              "ts": "2026-07-03T07:50:00.489Z",
+              "hash": "6eef6c5b4681d2d0faab27a888d1cbe89658d10125d5828ab7fff486b787908e",
+              "path": "claude/x-mutual-aid-circle-page/2026-07-03T07-50-00-507Z.enc.json",
+              "bytes": 800
             }
           ]
         }

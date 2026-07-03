@@ -8,9 +8,9 @@
   const FOLLOW_BACK_BATCH_COOLDOWN_MS = 60000;
   const FOLLOW_BACK_MAX_PER_RUN = 50;
   const TARGET_FOLLOW_DELAY_MS = 30000;
-  const TARGET_FOLLOW_MAX_PER_ROUND = 10;
-  const TARGET_FOLLOW_NEXT_ROUND_COOLDOWN_MS = 900000;
-  const TARGET_FOLLOW_DAILY_SUGGESTED_MAX = 200;
+  const TARGET_FOLLOW_BATCH_SIZE = 10;
+  const TARGET_FOLLOW_BATCH_COOLDOWN_MS = 900000;
+  const TARGET_FOLLOW_MAX_PER_RUN = 200;
   const FOLLOW_BACK_ERROR_COOLDOWN_MS = 30000;
   const SCROLL_DELAY_MS = 450;
   const MAX_STALLED_SCROLLS = 4;
@@ -30,6 +30,7 @@
     unfollowed: 0,
     followedBack: 0,
     targetFollowed: 0,
+    targetFollowCooldownUntil: 0,
     skipped: 0,
     errors: 0,
     pausedByHidden: false,
@@ -38,6 +39,13 @@
   };
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+  function formatCountdown(ms) {
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }
 
   function enterHiddenPause() {
     if (!state.running || state.stopping || !document.hidden) return false;
@@ -83,6 +91,23 @@
       await sleep(chunk);
       remaining -= chunk;
     }
+  }
+
+  async function sleepActiveWithButtonCountdown(ms) {
+    state.targetFollowCooldownUntil = Date.now() + ms;
+    setButtons();
+
+    let remaining = ms;
+    while (remaining > 0 && !state.stopping) {
+      await waitForForeground();
+      const chunk = Math.min(remaining, 1000);
+      await sleep(chunk);
+      remaining -= chunk;
+      setButtons();
+    }
+
+    state.targetFollowCooldownUntil = 0;
+    setButtons();
   }
 
   function isFollowingPage() {
@@ -366,7 +391,7 @@
     const stats = document.querySelector(`#${PANEL_ID} .xmc-stats`);
     if (!stats) return;
     if (state.mode === "targetFollow") {
-      stats.textContent = `已关注 ${state.targetFollowed}/${TARGET_FOLLOW_MAX_PER_ROUND} · 跳过 ${state.skipped} · 异常 ${state.errors}`;
+      stats.textContent = `已关注 ${state.targetFollowed}/${TARGET_FOLLOW_MAX_PER_RUN} · 跳过 ${state.skipped} · 异常 ${state.errors}`;
       return;
     }
     if (state.mode === "followBack") {
@@ -379,9 +404,9 @@
   function setButtons() {
     const buttons = Array.from(document.querySelectorAll(`#${PANEL_ID} [data-xmc-mode]`));
     const idleTexts = {
-      unfollow: "取消未回关",
-      followBack: "回关粉丝",
-      targetFollow: "关注候选"
+      unfollow: "开始",
+      followBack: "开始",
+      targetFollow: "开始"
     };
 
     for (const button of buttons) {
@@ -389,8 +414,12 @@
       const isActive = state.running && state.mode === mode;
       const isInactiveWhileRunning = state.running && state.mode !== mode;
       const idleText = idleTexts[mode] || "开始";
+      const cooldownRemaining = mode === "targetFollow" ? state.targetFollowCooldownUntil - Date.now() : 0;
+      const activeText = cooldownRemaining > 0
+        ? `暂停 ${formatCountdown(cooldownRemaining)}`
+        : "运行中 · 点此停止";
 
-      button.textContent = isActive ? "运行中 · 点此停止" : idleText;
+      button.textContent = isActive ? activeText : idleText;
       button.disabled = isInactiveWhileRunning;
       button.classList.toggle("xmc-button-danger", isActive);
       button.classList.toggle("xmc-button-primary", !isActive && mode === "unfollow");
@@ -649,6 +678,7 @@
     state.unfollowed = 0;
     state.followedBack = 0;
     state.targetFollowed = 0;
+    state.targetFollowCooldownUntil = 0;
     state.skipped = 0;
     state.errors = 0;
     state.seenHandles.clear();
@@ -785,12 +815,12 @@
   async function runTargetFollow() {
     if (!startRun("targetFollow")) return;
 
-    setStatus(`开始关注候选测试：30 秒一个，本轮最多 ${TARGET_FOLLOW_MAX_PER_ROUND} 个`);
+    setStatus(`开始关注候选测试：每批 ${TARGET_FOLLOW_BATCH_SIZE} 个，30 秒一个，批次间自动暂停 15 分钟`);
     log("开始关注候选测试");
 
     let stalledScrolls = 0;
 
-    while (!state.stopping && state.targetFollowed < TARGET_FOLLOW_MAX_PER_ROUND) {
+    while (!state.stopping && state.targetFollowed < TARGET_FOLLOW_MAX_PER_RUN) {
       await waitForForeground();
 
       if (await recoverTimelineError()) {
@@ -816,7 +846,17 @@
         await followTarget(candidate);
         setStats();
 
-        if (!state.stopping && state.targetFollowed < TARGET_FOLLOW_MAX_PER_ROUND) {
+        if (
+          !state.stopping &&
+          state.targetFollowed > 0 &&
+          state.targetFollowed < TARGET_FOLLOW_MAX_PER_RUN &&
+          state.targetFollowed % TARGET_FOLLOW_BATCH_SIZE === 0
+        ) {
+          setStatus(`已关注 ${state.targetFollowed} 个，自动暂停 15 分钟后继续下一批`);
+          log(`批次暂停，倒计时 ${Math.round(TARGET_FOLLOW_BATCH_COOLDOWN_MS / 60000)} 分钟`);
+          await sleepActiveWithButtonCountdown(TARGET_FOLLOW_BATCH_COOLDOWN_MS);
+          if (!state.stopping) setStatus("暂停结束，继续下一批关注候选");
+        } else if (!state.stopping && state.targetFollowed < TARGET_FOLLOW_MAX_PER_RUN) {
           await sleepActive(TARGET_FOLLOW_DELAY_MS);
         }
         continue;
@@ -844,9 +884,9 @@
     state.mode = "";
     setButtons();
 
-    if (state.targetFollowed >= TARGET_FOLLOW_MAX_PER_ROUND) {
-      setStatus(`本轮完成：已关注 ${state.targetFollowed} 个。建议暂停 15 分钟后再继续；每日建议不超过 ${TARGET_FOLLOW_DAILY_SUGGESTED_MAX} 个。`);
-      log(`本轮完成，建议暂停 ${Math.round(TARGET_FOLLOW_NEXT_ROUND_COOLDOWN_MS / 60000)} 分钟`);
+    if (state.targetFollowed >= TARGET_FOLLOW_MAX_PER_RUN) {
+      setStatus(`完成：已关注 ${state.targetFollowed} 个，达到单次运行上限`);
+      log("关注候选达到单次运行上限");
     } else {
       setStatus(`完成：已关注 ${state.targetFollowed} 个`);
       log("关注候选测试结束");
@@ -862,42 +902,36 @@
       <div class="xmc-header">
         <div>
           <div class="xmc-title">X 互关助手</div>
-          <div class="xmc-subtitle">清理 · 回关 · 候选关注测试</div>
+          <div class="xmc-subtitle">三项功能按需执行</div>
         </div>
         <button class="xmc-close" type="button" aria-label="关闭">×</button>
       </div>
       <div class="xmc-body">
         <div class="xmc-status">打开对应列表页后选择一个操作。</div>
         <div class="xmc-stats">已取消 0 · 跳过互关 0 · 异常 0</div>
-        <div class="xmc-section">
-          <div class="xmc-section-head">
-            <span>清理 Following</span>
-            <em>自己的 Following 页</em>
+        <div class="xmc-feature-list">
+          <div class="xmc-feature">
+            <div class="xmc-feature-main">
+              <div class="xmc-feature-title"><b>功能 1</b><span>清理未回关</span></div>
+              <button class="xmc-button xmc-button-primary xmc-button-compact" type="button" data-xmc-mode="unfollow">开始</button>
+            </div>
+            <div class="xmc-note">自己的 Following 页：跳过 Follows you，只取消没有互关标记的 Following。</div>
           </div>
-          <button class="xmc-button xmc-button-primary" type="button" data-xmc-mode="unfollow">取消未回关</button>
-          <div class="xmc-note">跳过 Follows you，只取消没有互关标记的 Following。</div>
+          <div class="xmc-feature">
+            <div class="xmc-feature-main">
+              <div class="xmc-feature-title"><b>功能 2</b><span>回关粉丝</span><em>测试</em></div>
+              <button class="xmc-button xmc-button-secondary xmc-button-compact" type="button" data-xmc-mode="followBack">开始</button>
+            </div>
+            <div class="xmc-note">自己的 Followers 页：只点 Follow back / 回关。5 秒一个，10 个暂停 1 分钟，单次最多 50 个。</div>
+          </div>
+          <div class="xmc-feature">
+            <div class="xmc-feature-main">
+              <div class="xmc-feature-title"><b>功能 3</b><span>关注候选</span><em>测试</em></div>
+              <button class="xmc-button xmc-button-secondary xmc-button-compact" type="button" data-xmc-mode="targetFollow">开始</button>
+            </div>
+            <div class="xmc-note">任意账号 Followers 页：只点普通 Follow。每批 10 个，30 秒一个；自动暂停 15 分钟后继续，单次最多 200 个。</div>
+          </div>
         </div>
-        <details class="xmc-test-section">
-          <summary class="xmc-test-summary">测试功能</summary>
-          <div class="xmc-test-panel">
-            <div class="xmc-section">
-              <div class="xmc-section-head">
-                <span>回关粉丝</span>
-                <em>自己的 Followers 页</em>
-              </div>
-              <button class="xmc-button xmc-button-secondary xmc-button-compact" type="button" data-xmc-mode="followBack">回关粉丝</button>
-              <div class="xmc-note">只点击 Follow back / 回关：5 秒一个，10 个暂停 1 分钟，单次最多 50 个。</div>
-            </div>
-            <div class="xmc-section xmc-section-warn">
-              <div class="xmc-section-head">
-                <span>关注候选</span>
-                <em>任意账号 Followers 页</em>
-              </div>
-              <button class="xmc-button xmc-button-secondary xmc-button-compact" type="button" data-xmc-mode="targetFollow">关注候选</button>
-              <div class="xmc-note">只点击普通 Follow：每轮最多 10 个，30 秒一个；完成后建议暂停 15 分钟，每日建议不超过 200 个。</div>
-            </div>
-          </div>
-        </details>
         <a
           class="xmc-resource-link"
           href="https://2aran.com/resources/x-mutual-cleaner-extension?from=x-mutual-cleaner-extension"

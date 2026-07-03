@@ -95,7 +95,7 @@ function ToolkitCard({ tool }) {
           href={tool.href}
           target="_blank"
           rel="noreferrer"
-          className="no-external-arrow inline-flex min-h-10 items-center justify-center rounded-full border border-[#1d9bf0] bg-[#1d9bf0] px-4 py-1.5 text-sm font-bold text-white no-underline transition hover:border-[#1a8cd8] hover:bg-[#1a8cd8]"
+          className="x-mutual-cta-button no-external-arrow inline-flex min-h-10 items-center justify-center rounded-full border border-[#1d9bf0] bg-[#1d9bf0] px-4 py-1.5 text-sm font-bold no-underline transition hover:border-[#1a8cd8] hover:bg-[#1a8cd8]"
         >
           {tool.action} →
         </a>

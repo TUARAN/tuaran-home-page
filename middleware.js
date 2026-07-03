@@ -25,10 +25,20 @@ const CANONICAL_HOST = '2aran.com'
 const OPS_LEGACY_HOST = 'ops.2aran.com'
 const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
 const LEGACY_PATHS = new Set(['/weekly', '/articles/diary-self-reflection'])
+const ADS_TXT = 'google.com, pub-7037125126940820, DIRECT, f08c47fec0942fa0\n'
 
 export function middleware(request) {
   const { pathname } = request.nextUrl
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
+
+  if (pathname === '/ads.txt') {
+    return new Response(ADS_TXT, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    })
+  }
 
   const legacyAdminTarget = ADMIN_LEGACY_REDIRECTS[pathname]
   if (legacyAdminTarget) {
@@ -91,6 +101,7 @@ export function middleware(request) {
 
 export const config = {
   matcher: [
+    '/ads.txt',
     '/((?!_next/static|_next/image|favicon.ico|site.webmanifest|robots.txt|.*\\.(?:png|jpg|jpeg|webp|svg|ico|mp3|xml|txt)$).*)',
   ],
 }

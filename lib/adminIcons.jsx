@@ -32,6 +32,7 @@ import {
   IconRss,
   IconChecklist,
   IconMicrophone2,
+  IconBrandGithub,
 } from '@tabler/icons-react'
 
 const ICONS = {
@@ -59,6 +60,7 @@ const ICONS = {
   memory: IconBrain,
   todo: IconChecklist,
   voice: IconMicrophone2,
+  siteDev: IconBrandGithub,
 }
 
 export function AdminIcon({ name, size = 18, stroke = 1.6, className, ...rest }) {

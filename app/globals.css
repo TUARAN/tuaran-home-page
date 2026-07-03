@@ -742,27 +742,52 @@
   }
 
   .home-entry-list {
-    @apply space-y-2;
+    @apply space-y-1.5;
   }
 
   .home-entry-list .home-path-card {
-    @apply min-h-0 rounded-xl px-4 py-3;
+    @apply grid min-h-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 rounded-lg px-3.5 py-2.5;
   }
 
   .home-entry-list .home-path-label {
-    @apply mb-2;
+    @apply mb-1 text-[9.5px] leading-4 tracking-[0.12em];
+    grid-column: 1;
   }
 
   .home-entry-list .home-path-card h3 {
-    @apply mb-1 text-[15px] leading-6;
+    @apply mb-0.5 text-[14.5px] leading-5;
+    grid-column: 1;
   }
 
   .home-entry-list .home-path-card p {
-    @apply mb-3 text-[12.5px] leading-5;
+    @apply mb-0 overflow-hidden text-[12px] leading-[1.45] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1];
+    grid-column: 1;
   }
 
   .home-entry-list .home-path-meta {
-    @apply text-[10px];
+    @apply justify-self-end text-[0px] leading-none tracking-normal;
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+
+  .home-entry-list .home-path-meta svg {
+    @apply h-4 w-4;
+  }
+
+  .home-entry-panel {
+    @apply p-4 md:p-5;
+  }
+
+  .home-entry-panel .home-section-heading.compact {
+    @apply mb-3;
+  }
+
+  .home-entry-panel .home-kicker {
+    @apply mb-1.5 text-[10px] tracking-[0.2em];
+  }
+
+  .home-entry-panel .home-section-title {
+    @apply text-[1.6rem] md:text-[1.8rem];
   }
 
   .home-main-grid {
@@ -997,11 +1022,11 @@
   }
 
   .home-product-list {
-    @apply space-y-2;
+    @apply space-y-1;
   }
 
   .home-product-link {
-    @apply flex min-h-[86px] items-center justify-between gap-3 rounded-xl border px-4 py-3 no-underline transition;
+    @apply flex min-h-[58px] items-center justify-between gap-3 rounded-lg border px-3 py-2 no-underline transition;
     border-color: var(--site-line);
     background: color-mix(in srgb, var(--site-panel-strong) 34%, transparent);
     color: var(--site-ink);
@@ -1014,16 +1039,28 @@
   }
 
   .home-product-link strong {
-    @apply block text-[15px];
+    @apply block text-[14px] leading-5;
   }
 
   .home-product-link small {
-    @apply mt-1 block text-[13px] leading-5;
+    @apply mt-0.5 block text-[12px] leading-[1.3];
     color: var(--site-muted);
   }
 
   .home-builder-panel {
-    @apply md:p-5;
+    @apply p-4 md:p-5;
+  }
+
+  .home-builder-panel .home-section-heading.compact {
+    @apply mb-3;
+  }
+
+  .home-builder-panel .home-kicker {
+    @apply mb-1.5 text-[10px] tracking-[0.2em];
+  }
+
+  .home-builder-panel .home-section-title {
+    @apply text-[1.6rem] md:text-[1.8rem];
   }
 
   .home-builder-group {

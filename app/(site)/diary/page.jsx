@@ -413,10 +413,8 @@ export default function DiaryPage() {
       <div className="flex flex-col gap-6 md:flex-row">
         {diaryGroups.length > 0 || yearSummaryGroups.length > 0 ? (
           <>
-            <aside className="hidden md:block md:w-56 shrink-0">
-              <div className="md:fixed md:top-24 md:w-56">
-                <TimelineToc diaryGroups={diaryGroups} yearSummaryGroups={yearSummaryGroups} />
-              </div>
+            <aside className="hidden md:sticky md:top-24 md:block md:w-56 md:self-start shrink-0">
+              <TimelineToc diaryGroups={diaryGroups} yearSummaryGroups={yearSummaryGroups} />
             </aside>
 
             <details className="md:hidden border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">

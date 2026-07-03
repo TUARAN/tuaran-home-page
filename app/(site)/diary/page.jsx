@@ -111,9 +111,16 @@ function buildDiaryEntries(content) {
   return entries
 }
 
-function buildTimelineEntries(diary) {
-  const diaryEntries = buildDiaryEntries(diary.content)
-  const yearSummaryEntries = YEAR_SUMMARY_ARTICLES.map((article, idx) => ({
+function buildDiaryTimelineEntries(diary) {
+  return buildDiaryEntries(diary.content).sort((a, b) => {
+    const byDate = (b.date || '').localeCompare(a.date || '')
+    if (byDate !== 0) return byDate
+    return a.index - b.index
+  })
+}
+
+function buildYearSummaryEntries() {
+  return YEAR_SUMMARY_ARTICLES.map((article, idx) => ({
     id: `year-summary-${article.id}`,
     kind: 'year-summary',
     date: article.date,
@@ -121,9 +128,7 @@ function buildTimelineEntries(diary) {
     category: article.phase,
     article,
     index: 10000 + idx,
-  }))
-
-  return [...diaryEntries, ...yearSummaryEntries].sort((a, b) => {
+  })).sort((a, b) => {
     const byDate = (b.date || '').localeCompare(a.date || '')
     if (byDate !== 0) return byDate
     return a.index - b.index
@@ -182,17 +187,17 @@ function renderInlineBold(text) {
   return nodes.length ? nodes : text
 }
 
-function TimelineToc({ groups }) {
+function TocGroup({ title, groups, baseIdPrefix = 'year' }) {
   return (
-    <nav className="toc-scroll-panel" aria-label="浮生日记时间线目录">
-      <div className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">
-        时间线目录
-      </div>
-      <div className="space-y-4 text-sm text-[#666] dark:text-gray-300">
+    <div>
+      {title ? (
+        <div className="text-xs font-bold tracking-[0.16em] text-[#999] dark:text-gray-500">{title}</div>
+      ) : null}
+      <div className={`${title ? 'mt-3' : ''} space-y-4 text-sm text-[#666] dark:text-gray-300`}>
         {groups.map((group) => (
           <div key={group.year}>
             <a
-              href={`#year-${group.year}`}
+              href={`#${baseIdPrefix}-${group.year}`}
               className="font-mono text-sm font-semibold text-[#7a5a1f] hover:underline dark:text-[#d7a85c]"
             >
               {group.year}
@@ -213,8 +218,27 @@ function TimelineToc({ groups }) {
           </div>
         ))}
       </div>
-      <div className="mt-5 border-t border-[#eee] pt-4 text-xs leading-5 text-[#777] dark:border-gray-800 dark:text-gray-400">
-        年中年终总结已并入浮生日记，共 {YEAR_SUMMARY_ARTICLES.length} 篇外部原文。
+    </div>
+  )
+}
+
+function TimelineToc({ diaryGroups, yearSummaryGroups }) {
+  return (
+    <nav className="toc-scroll-panel space-y-6" aria-label="浮生日记目录">
+      <div className="text-sm font-bold border-b border-[#eee] pb-2 dark:border-gray-800 dark:text-gray-200">
+        目录
+      </div>
+      <TocGroup title="浮生日记" groups={diaryGroups} />
+      <div className="border-t border-[#eee] pt-5 dark:border-gray-800">
+        <a
+          href="#year-summary"
+          className="text-xs font-bold tracking-[0.16em] text-[#999] hover:text-[#7a5a1f] dark:text-gray-500 dark:hover:text-[#d7a85c]"
+        >
+          年中年终总结
+        </a>
+        <div className="mt-3">
+          <TocGroup title="" groups={yearSummaryGroups} baseIdPrefix="summary-year" />
+        </div>
       </div>
     </nav>
   )
@@ -333,8 +357,10 @@ export default function DiaryPage() {
     notFound()
   }
 
-  const timelineEntries = buildTimelineEntries(diary)
-  const timelineGroups = groupTimelineByYear(timelineEntries)
+  const diaryEntries = buildDiaryTimelineEntries(diary)
+  const diaryGroups = groupTimelineByYear(diaryEntries)
+  const yearSummaryEntries = buildYearSummaryEntries()
+  const yearSummaryGroups = groupTimelineByYear(yearSummaryEntries)
 
   const articleStructuredData = {
     '@context': 'https://schema.org',
@@ -385,9 +411,9 @@ export default function DiaryPage() {
       </header>
 
       <div className="flex flex-col gap-6 md:flex-row">
-        {timelineGroups.length > 0 ? (
+        {diaryGroups.length > 0 || yearSummaryGroups.length > 0 ? (
           <aside className="hidden md:block md:w-52 shrink-0">
-            <TimelineToc groups={timelineGroups} />
+            <TimelineToc diaryGroups={diaryGroups} yearSummaryGroups={yearSummaryGroups} />
           </aside>
         ) : null}
 
@@ -405,15 +431,8 @@ export default function DiaryPage() {
             </div>
           ) : null}
 
-          <div id="year-summary" className="mb-6 rounded-lg border border-[#eee] bg-[#fffefa] p-4 text-sm leading-6 text-[#666] dark:border-gray-800 dark:bg-[#151813] dark:text-gray-300">
-            <div className="font-semibold text-[#444] dark:text-gray-100">{YEAR_SUMMARY_COLUMN.title}已并入浮生日记</div>
-            <p className="mt-1">
-              {YEAR_SUMMARY_COLUMN.subtitle}这里按时间线统一展示日记、阶段复盘与掘金总结，外部长文继续保留原文入口。
-            </p>
-          </div>
-
           <section className="space-y-10" aria-label="浮生日记时间线">
-            {timelineGroups.map((group) => (
+            {diaryGroups.map((group) => (
               <div key={group.year} id={`year-${group.year}`} className="scroll-mt-24">
                 <div className="mb-5 flex items-baseline justify-between border-b border-[#eee] pb-3 dark:border-gray-800">
                   <h2 className="font-mono text-2xl font-semibold text-[#444] dark:text-gray-200">{group.year}</h2>
@@ -448,13 +467,56 @@ export default function DiaryPage() {
                         ) : null}
                       </div>
 
-                      {entry.kind === 'year-summary' ? (
-                        <YearSummaryTimelineCard article={entry.article} />
-                      ) : (
-                        <div className="prose-tuaran">
-                          <DiaryBlocks blocks={entry.blocks} diary={diary} />
-                        </div>
-                      )}
+                      <div className="prose-tuaran">
+                        <DiaryBlocks blocks={entry.blocks} diary={diary} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section id="year-summary" className="mt-14 scroll-mt-24 space-y-10" aria-label="年中年终总结">
+            <header className="border-b border-[#eee] pb-4 dark:border-gray-800">
+              <h2 className="text-2xl font-semibold text-[#444] dark:text-gray-200">{YEAR_SUMMARY_COLUMN.title}</h2>
+              <p className="mt-2 text-sm text-[#777] dark:text-gray-400">阶段总结时间线目录</p>
+            </header>
+
+            {yearSummaryGroups.map((group) => (
+              <div key={group.year} id={`summary-year-${group.year}`} className="scroll-mt-24">
+                <div className="mb-5 flex items-baseline justify-between border-b border-[#eee] pb-3 dark:border-gray-800">
+                  <h3 className="font-mono text-2xl font-semibold text-[#444] dark:text-gray-200">{group.year}</h3>
+                  <span className="text-sm text-[#777] dark:text-gray-400">{group.items.length} 篇</span>
+                </div>
+                <div className="space-y-7">
+                  {group.items.map((entry, index) => (
+                    <article
+                      key={entry.id}
+                      id={entry.id}
+                      className="relative scroll-mt-24 pl-8"
+                    >
+                      <div className="absolute left-0 top-1 h-full">
+                        <span className="block h-3 w-3 rounded-full border-2 border-[#9b7a3d] bg-[#fbfaf6] dark:border-[#d7a85c] dark:bg-[#11130f]" />
+                        {index !== group.items.length - 1 ? (
+                          <span className="ml-[5px] mt-2 block h-[calc(100%-8px)] w-px bg-[#e6dfd3] dark:bg-[#343a33]" />
+                        ) : null}
+                      </div>
+
+                      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <h4 className="m-0 text-lg sm:text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug">
+                          {entry.label}
+                        </h4>
+                        <span className="text-[#999] dark:text-gray-500" aria-hidden="true">·</span>
+                        <time className="text-base text-[#999] dark:text-gray-400" dateTime={entry.date}>
+                          {entry.date}
+                        </time>
+                        <span className="rounded-full border border-[#e4ded3] px-2 py-0.5 text-xs text-[#7a5a1f] dark:border-[#3a4038] dark:text-[#d7a85c]">
+                          {entry.category}
+                        </span>
+                      </div>
+
+                      <YearSummaryTimelineCard article={entry.article} />
                     </article>
                   ))}
                 </div>

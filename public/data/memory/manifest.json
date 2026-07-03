@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-02T02:38:38.139Z",
+  "generatedAt": "2026-07-02T15:26:38.940Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -122,6 +122,12 @@
               "hash": "b7d2b34fc9b2515e0513a4646b9a44d99f8b617d4daba22838577da52ba18d72",
               "path": "claude/MEMORY/2026-07-02T01-35-02-252Z.enc.json",
               "bytes": 2922
+            },
+            {
+              "ts": "2026-07-02T15:26:38.902Z",
+              "hash": "c579030eeec7b5911ee1250da3faad764f98fa2cd77042168304c40dc257ddbd",
+              "path": "claude/MEMORY/2026-07-02T15-26-38-920Z.enc.json",
+              "bytes": 3041
             }
           ]
         },
@@ -416,6 +422,18 @@
               "hash": "a57c774808fc0355126a550ed37a381fd3314c6a0620b0543ac665465c86d35f",
               "path": "claude/content-pipeline-and-index/2026-07-02T02-38-38-108Z.enc.json",
               "bytes": 1306
+            }
+          ]
+        },
+        "feedback-examples-are-not-axes": {
+          "title": "feedback-examples-are-not-axes",
+          "description": "站长随口举例的对比对象不是穷举也不是靶子——别排成并列坐标，也别在文中反驳他的提法，要自己找立论角度",
+          "versions": [
+            {
+              "ts": "2026-07-02T15:26:38.921Z",
+              "hash": "12d7b6eeb2ba74c2f03cc89b1528b6fab309ccb8a5444422cc4d15e1a8748731",
+              "path": "claude/feedback-examples-are-not-axes/2026-07-02T15-26-38-938Z.enc.json",
+              "bytes": 680
             }
           ]
         }

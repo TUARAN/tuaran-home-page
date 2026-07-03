@@ -83,6 +83,10 @@ function MenuItem({ item, onNavigate }) {
 }
 
 const TIER_SECTION_STYLES = {
+  '创作': {
+    wrap: 'site-tier-section site-tier-column',
+    title: 'site-tier-title site-tier-title-column',
+  },
   '专栏': {
     wrap: 'site-tier-section site-tier-column',
     title: 'site-tier-title site-tier-title-column',

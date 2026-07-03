@@ -53,9 +53,9 @@ const START_PATHS = [
     labelEn: 'Read',
     title: '从判断和长期写作开始',
     titleEn: 'Start with judgment & long-form writing',
-    desc: '原创专栏、AI 协助调研、资源索引，按阅读价值重新组织。',
-    descEn: 'Original columns, AI-assisted research and archives, reorganized by reading value.',
-    meta: 'Column · Research · Archive',
+    desc: '原创文章、多维页面、AI 协助调研和资源索引，按阅读价值重新组织。',
+    descEn: 'Original writing, rich pages, AI-assisted research and archives, reorganized by reading value.',
+    meta: 'Writing · Research · Archive',
   },
   {
     href: '/works',

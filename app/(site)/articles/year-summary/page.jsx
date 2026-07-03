@@ -95,8 +95,8 @@ export default function YearSummaryPage() {
   return (
     <main className="mx-auto w-full max-w-[1120px] px-4 py-10">
       <div className="mb-8 flex flex-wrap items-center gap-3 text-sm text-[#68645c] dark:text-[#b8b3aa]">
-        <Link href="/articles?tab=posts" className="font-semibold text-[#2f6f73] hover:underline dark:text-[#8dd5cf]">
-          专栏
+        <Link href="/articles?tab=column" className="font-semibold text-[#2f6f73] hover:underline dark:text-[#8dd5cf]">
+          创作
         </Link>
         <span>/</span>
         <span>{YEAR_SUMMARY_COLUMN.title}</span>

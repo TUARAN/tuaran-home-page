@@ -39,6 +39,8 @@ export const metadata = {
     'X 取消未回关 插件',
     'X 发帖最佳时间',
     'Tweepcred 评分',
+    'X ghostban 检测',
+    'X shadowban 检测',
     'Twitter 运营工具',
   ],
   alternates: {
@@ -79,6 +81,13 @@ const TOOLKIT = [
     desc: 'Tweet Hunter 提供的第三方估算工具，参考 X 内部 Tweepcred（类 PageRank 的账号评分）口径。测完看看自己的分数段，再决定是先清关注比还是先提互动。',
     href: 'https://tweethunter.io/tweepcred-calculator',
     action: '测我的评分',
+  },
+  {
+    step: '04 · 查可见性',
+    name: 'Shadowban Test',
+    desc: '输入 X 用户名，检查账号是否疑似 search ban、search suggestion ban、ghostban 或 reply deboosting。互动突然变少时，先测一下是不是被限流。',
+    href: 'https://shadowban.yuzurisa.com/',
+    action: '检测 ghostban',
   },
 ]
 
@@ -274,10 +283,10 @@ export default function XMutualAidCirclePage() {
         <section className="mt-12">
           <SectionHeading
             eyebrow="Circle Toolkit"
-            title="圈子三件套"
-            desc="互助解决的是「人」的问题，这三件工具解决「账号」的问题。群里大家都在用，按顺序来：先把关注列表清干净，再看自己粉丝几点在线，最后测一下账号权重心里有数。"
+            title="圈子四件套"
+            desc="互助解决的是「人」的问题，这几件工具解决「账号」的问题。按顺序来：先把关注列表清干净，再看粉丝几点在线，测账号权重，最后排查是不是被 shadowban / ghostban。"
           />
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {TOOLKIT.map((tool) => (
               <ToolkitCard key={tool.name} tool={tool} />
             ))}

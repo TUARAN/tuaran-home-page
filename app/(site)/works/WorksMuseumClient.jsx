@@ -10,7 +10,6 @@ const TYPE_TONES = {
   'content-system': { accent: '#3f6c50', wash: '#afc2ac', deep: '#253d2d' },
   'research-page': { accent: '#725292', wash: '#c3b1d1', deep: '#3d2a50' },
   'tool-experiment': { accent: '#a06a12', wash: '#d8c59c', deep: '#50370d' },
-  'browser-extension': { accent: '#2f6f68', wash: '#a8cfc6', deep: '#173d39' },
   'quant-analysis': { accent: '#a83f36', wash: '#d5aaa6', deep: '#52211d' },
 }
 

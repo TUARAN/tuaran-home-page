@@ -83,7 +83,7 @@ export default function XMutualCleanerResourcePage() {
             资源库
           </Link>
           <span aria-hidden="true">·</span>
-          <Link href="/works#room-browser-extension" className="underline underline-offset-4 opacity-80 hover:opacity-100">
+          <Link href="/browser-extensions" className="underline underline-offset-4 opacity-80 hover:opacity-100">
             浏览器扩展
           </Link>
           <span aria-hidden="true">·</span>

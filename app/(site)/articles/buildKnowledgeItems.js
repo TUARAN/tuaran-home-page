@@ -1,4 +1,5 @@
 import { articles } from './articlesData'
+import { YEAR_SUMMARY_ARTICLES } from './year-summary/yearSummaryData'
 import { ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
 import { CONTENT_PV_ENTRIES } from '../../../lib/contentRegistry'
@@ -34,6 +35,17 @@ export function buildKnowledgeItems() {
       href: isExternalHref(article.href) ? article.href : path,
     }
   })
+
+  const yearSummaryItem = {
+    id: 'post:year-summary-column',
+    kind: 'posts',
+    tagLabel: '专栏 · 时间线',
+    title: '年中年终总结',
+    summary: `掘金专栏时间线目录，收录 ${YEAR_SUMMARY_ARTICLES.length} 篇年中、年终与阶段性总结。`,
+    date: YEAR_SUMMARY_ARTICLES[0]?.date || '',
+    sortKey: researchSortKey(YEAR_SUMMARY_ARTICLES[0]?.date),
+    href: '/articles/year-summary',
+  }
 
   const researchItems = listResearch().map((entry) => {
     const baseLabel = CATEGORY_META[entry.category]?.label || entry.category
@@ -93,6 +105,7 @@ export function buildKnowledgeItems() {
   }))
 
   return [
+    yearSummaryItem,
     ...postItems,
     ...worksItems,
     ...researchItems,

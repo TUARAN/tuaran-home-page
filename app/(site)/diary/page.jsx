@@ -45,11 +45,11 @@ function normalizeDiaryLabel(label) {
 }
 
 function renderInlineBold(text) {
-  if (typeof text !== 'string' || !text.includes('**')) return text
+  if (typeof text !== 'string' || (!text.includes('**') && !text.includes(']('))) return text
 
   const nodes = []
   let lastIndex = 0
-  const regex = /\*\*([^*]+)\*\*/g
+  const regex = /\*\*([^*]+)\*\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g
   let match
 
   while ((match = regex.exec(text)) !== null) {
@@ -57,12 +57,25 @@ function renderInlineBold(text) {
     const before = text.slice(lastIndex, matchIndex)
     if (before) nodes.push(before)
 
-    const boldText = match[1]
-    nodes.push(
-      <strong key={`b-${matchIndex}`} className="font-semibold">
-        {boldText}
-      </strong>
-    )
+    if (match[1]) {
+      nodes.push(
+        <strong key={`b-${matchIndex}`} className="font-semibold">
+          {match[1]}
+        </strong>
+      )
+    } else {
+      nodes.push(
+        <a
+          key={`a-${matchIndex}`}
+          href={match[3]}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[#7a5a1f] underline underline-offset-4 hover:text-[#15140f] dark:text-[#d7a85c] dark:hover:text-gray-100"
+        >
+          {match[2]}
+        </a>
+      )
+    }
 
     lastIndex = matchIndex + match[0].length
   }

@@ -2,8 +2,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import Link from 'next/link'
 
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
+import DistributeContentButton from '../../components/DistributeContentButton'
 import RanbiPaywall from '../../components/RanbiPaywall'
 import SharePageButton from '../../components/SharePageButton'
 import { renderMarkdown } from '../../../../lib/research/markdown'
@@ -106,12 +108,23 @@ export default function CodexLearningResourcePage() {
             ))}
           </div>
         ) : null}
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <SharePageButton
             title={resource.title}
             text={resource.summary || 'Codex 学习资源收集：逸尘 X 链接帖归档'}
             url={RESOURCE_URL}
           />
+          <ArticleActionsDropdown label="更多">
+            <DistributeContentButton
+              title={resource.title}
+              summary={resource.summary || 'Codex 学习资源收集：逸尘 X 链接帖归档'}
+              url={`/resources/${RESOURCE_SLUG}`}
+              category="resource"
+              slug={RESOURCE_SLUG}
+              tags={resource.tags}
+              kindLabel="资源"
+            />
+          </ArticleActionsDropdown>
         </div>
       </header>
 

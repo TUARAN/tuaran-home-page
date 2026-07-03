@@ -354,6 +354,8 @@ export default async function ResearchDetailPage({ params }) {
                   category={entry.category}
                   slug={entry.slug}
                   tags={entry.tags || []}
+                  kindLabel="调研"
+                  allowArticle
                 />
                 <DownloadPptButton
                   title={entry.title}

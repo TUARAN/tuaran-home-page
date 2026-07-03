@@ -1,7 +1,9 @@
 import Link from 'next/link'
 
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
+import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import RanbiPaywall from '../../components/RanbiPaywall'
 import SharePageButton from '../../components/SharePageButton'
@@ -113,6 +115,17 @@ export default function XMutualCleanerResourcePage() {
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享这个插件" />
+          <ArticleActionsDropdown label="更多">
+            <DistributeContentButton
+              title={title}
+              summary={shareText}
+              url={`/resources/${RESOURCE_SLUG}`}
+              category="resource"
+              slug={RESOURCE_SLUG}
+              tags={['X 平台', 'Chrome 插件', '工具']}
+              kindLabel="资源"
+            />
+          </ArticleActionsDropdown>
           <span className="text-xs text-[#888] dark:text-gray-500">
             打开正文会使用 10 燃币作为资源权益记录，解锁后永久可读。
           </span>
@@ -213,6 +226,17 @@ export default function XMutualCleanerResourcePage() {
           <div className="not-prose mt-8 flex flex-wrap items-center gap-3 border-t border-[#eee] pt-6 dark:border-gray-800">
             <DownloadButton />
             <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享给朋友" />
+            <ArticleActionsDropdown label="更多">
+              <DistributeContentButton
+                title={title}
+                summary={shareText}
+                url={`/resources/${RESOURCE_SLUG}`}
+                category="resource"
+                slug={RESOURCE_SLUG}
+                tags={['X 平台', 'Chrome 插件', '工具']}
+                kindLabel="资源"
+              />
+            </ArticleActionsDropdown>
           </div>
         </article>
       </RanbiPaywall>

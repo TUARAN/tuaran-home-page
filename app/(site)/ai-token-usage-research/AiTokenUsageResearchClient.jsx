@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
-import DistributeMarkdownButton from '../articles/research/[category]/[slug]/DistributeMarkdownButton'
+import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
+import DistributeMarkdownButton from '../components/DistributeContentButton'
 import SharePageButton from '../components/SharePageButton'
 
 const SHARE_URL = 'https://2aran.com/ai-token-usage-research'
@@ -548,20 +549,24 @@ export default function AiTokenUsageResearchClient() {
         <div className="flex items-start justify-between gap-4">
           <p className="text-xs tracking-wide text-[#7e7e76] dark:text-gray-500">专题调研 · AI 调研</p>
           <div className="flex shrink-0 items-center gap-2">
-            <DistributeMarkdownButton
-              title="AI Token 用量与花费强度调研"
-              summary="用 0.1B / 0.45B / 10B / 20B tokens/day 四个锚点，把日常重度使用、极重度个人自报、agent-heavy 自动化跑批放到同一条强度尺上。"
-              markdown={DISTRIBUTE_MARKDOWN}
-              url={SHARE_URL}
-              category="ai"
-              slug="ai-token-usage-research"
-              tags={DISTRIBUTE_TAGS}
-            />
             <SharePageButton
               title="AI Token 用量与花费强度调研"
               text="0.1B、0.45B、10B、20B tokens/day 分别意味着什么？看成本、可信度、OpenClaw 对照和 vibe coding 能力信号。"
               url="/ai-token-usage-research"
             />
+            <ArticleActionsDropdown label="更多">
+              <DistributeMarkdownButton
+                title="AI Token 用量与花费强度调研"
+                summary="用 0.1B / 0.45B / 10B / 20B tokens/day 四个锚点，把日常重度使用、极重度个人自报、agent-heavy 自动化跑批放到同一条强度尺上。"
+                markdown={DISTRIBUTE_MARKDOWN}
+                url={SHARE_URL}
+                category="ai"
+                slug="ai-token-usage-research"
+                tags={DISTRIBUTE_TAGS}
+                kindLabel="调研"
+                allowArticle
+              />
+            </ArticleActionsDropdown>
           </div>
         </div>
         <h1 className="text-3xl font-semibold text-[#222] dark:text-gray-100">

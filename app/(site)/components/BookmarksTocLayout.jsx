@@ -9,6 +9,7 @@ export default function BookmarksTocLayout({
   backText = '返回资源库',
   tocTitle = '目录',
   tocItems = [],
+  actions = null,
   children,
   footer,
 }) {
@@ -25,6 +26,7 @@ export default function BookmarksTocLayout({
               <Link href={backHref} className="opacity-80 hover:opacity-100 underline underline-offset-4">
                 {backText}
               </Link>
+              {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
             </div>
           </div>
         </div>

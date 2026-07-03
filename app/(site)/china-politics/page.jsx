@@ -1,7 +1,9 @@
 import Link from 'next/link'
+import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import ContentEngagement from '../components/ContentEngagement'
 import RanbiPaywall from '../components/RanbiPaywall'
 import ContentPvBeacon from '../components/ContentPvBeacon'
+import DistributeContentButton from '../components/DistributeContentButton'
 
 import SharePageButton from '../components/SharePageButton'
 
@@ -487,11 +489,24 @@ function ChinaPoliticsContent() {
               </Link>
             </div>
           </div>
-          <SharePageButton
-            title="中国政治体制 · 资料库"
-            text="中央与国务院组织结构、历届三中全会、领导层 1971 至今沿革。"
-            url="/china-politics"
-          />
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <SharePageButton
+              title="中国政治体制 · 资料库"
+              text="中央与国务院组织结构、历届三中全会、领导层 1971 至今沿革。"
+              url="/china-politics"
+            />
+            <ArticleActionsDropdown label="更多">
+              <DistributeContentButton
+                title="中国政治体制 · 资料库"
+                summary="中央与国务院组织结构、历届三中全会、领导层 1971 至今沿革。"
+                url="/china-politics"
+                category="resource"
+                slug="china-politics"
+                tags={['政治体制', '资料库', '资源']}
+                kindLabel="资源"
+              />
+            </ArticleActionsDropdown>
+          </div>
         </div>
       </header>
 

@@ -1,7 +1,9 @@
 import Link from 'next/link'
+import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import ContentEngagement from '../components/ContentEngagement'
 import RanbiPaywall from '../components/RanbiPaywall'
 import ContentPvBeacon from '../components/ContentPvBeacon'
+import DistributeContentButton from '../components/DistributeContentButton'
 
 import SharePageButton from '../components/SharePageButton'
 
@@ -527,11 +529,24 @@ function RuShiDaoContent() {
               </Link>
             </div>
           </div>
-          <SharePageButton
-            title="儒释道 · 神仙体系调研"
-            text="佛教五层果位、道教十级神格、儒家文庙道统——三教神仙体系结构图。"
-            url="/ru-shi-dao"
-          />
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <SharePageButton
+              title="儒释道 · 神仙体系调研"
+              text="佛教五层果位、道教十级神格、儒家文庙道统——三教神仙体系结构图。"
+              url="/ru-shi-dao"
+            />
+            <ArticleActionsDropdown label="更多">
+              <DistributeContentButton
+                title="儒释道 · 神仙体系调研"
+                summary="佛教五层果位、道教十级神格、儒家文庙道统——三教神仙体系结构图。"
+                url="/ru-shi-dao"
+                category="resource"
+                slug="ru-shi-dao"
+                tags={['儒释道', '资料库', '资源']}
+                kindLabel="资源"
+              />
+            </ArticleActionsDropdown>
+          </div>
         </div>
       </header>
 

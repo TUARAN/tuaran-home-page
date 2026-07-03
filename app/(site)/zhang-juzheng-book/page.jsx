@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
+import DistributeContentButton from '../components/DistributeContentButton'
 import SharePageButton from '../components/SharePageButton'
 
 export const dynamic = 'force-static'
@@ -434,6 +436,17 @@ export default function ZhangJuzhengBookPage() {
             text="把『写一本张居正的书并发布出版』作为长期项目运营。"
             url="/zhang-juzheng-book"
           />
+          <ArticleActionsDropdown label="更多">
+            <DistributeContentButton
+              title="《张居正：一个改革者的成事与代价》· 写作出版工程"
+              summary="把『写一本张居正的书并发布出版』作为长期项目运营。"
+              url="/zhang-juzheng-book"
+              category="resource"
+              slug="zhang-juzheng-book"
+              tags={['张居正', '写作出版', '资源']}
+              kindLabel="资源"
+            />
+          </ArticleActionsDropdown>
         </div>
       </header>
 

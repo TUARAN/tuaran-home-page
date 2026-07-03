@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
+import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
+import DistributeContentButton from '../components/DistributeContentButton'
 import SharePageButton from '../components/SharePageButton'
 
 function cleanTitle(title) {
@@ -730,11 +732,24 @@ export default function ClassicalMasterpiecesClient() {
                   {featuredWork.title}
                 </h2>
               </div>
-              <SharePageButton
-                title="单篇封神的中国古典名篇"
-                text="辞赋、诗歌、政论奏疏、古文散文、祭文书信杂文体的古典文学资料库。"
-                url="/classical-masterpieces"
-              />
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <SharePageButton
+                  title="单篇封神的中国古典名篇"
+                  text="辞赋、诗歌、政论奏疏、古文散文、祭文书信杂文体的古典文学资料库。"
+                  url="/classical-masterpieces"
+                />
+                <ArticleActionsDropdown label="更多">
+                  <DistributeContentButton
+                    title="单篇封神的中国古典名篇"
+                    summary="辞赋、诗歌、政论奏疏、古文散文、祭文书信杂文体的古典文学资料库。"
+                    url="/classical-masterpieces"
+                    category="resource"
+                    slug="classical-masterpieces"
+                    tags={['古典文学', '资料库', '资源']}
+                    kindLabel="资源"
+                  />
+                </ArticleActionsDropdown>
+              </div>
             </div>
             <p className="mb-4 text-sm leading-7 text-[#43433b] dark:text-gray-300">{featuredWork.detail}</p>
             <button

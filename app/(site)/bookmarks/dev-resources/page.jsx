@@ -1,6 +1,8 @@
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
+import DistributeContentButton from '../../components/DistributeContentButton'
 import RanbiPaywall from '../../components/RanbiPaywall'
 
 export const dynamic = 'force-static'
@@ -526,6 +528,19 @@ export default function DevResourcesPage() {
           title="开发资源"
           description="按真实开发工作流整理：基础、前端、测试、后端、数据、DevOps、架构、安全与桌面应用。"
           tocItems={tocItems}
+          actions={(
+            <ArticleActionsDropdown label="更多">
+              <DistributeContentButton
+                title="开发资源"
+                summary="前端、后端、数据库、测试、DevOps、安全与架构相关的优质开发资源与工具链。"
+                url="/bookmarks/dev-resources"
+                category="resource"
+                slug="bookmarks-dev-resources"
+                tags={['开发资源', '工具链', '资源']}
+                kindLabel="资源"
+              />
+            </ArticleActionsDropdown>
+          )}
           footer={<p>筛选原则：优先官方文档、长期维护的开源资料和可直接进入项目实践的工具链；泛泛的博客合集只在必要时补充。</p>}
         >
       <div className="grid grid-cols-1 gap-4 sm:gap-6">

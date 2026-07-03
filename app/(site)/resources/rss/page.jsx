@@ -1,7 +1,9 @@
 import Link from 'next/link'
 
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
+import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import RssBlogroll from './RssBlogroll'
 import { RSS_FEEDS_SEED } from '../../../../lib/rssFeedsSeed'
@@ -51,6 +53,19 @@ export default function RssResourcePage() {
             2aran.com/rss.xml
           </a>
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <ArticleActionsDropdown label="更多">
+            <DistributeContentButton
+              title="我的 RSS 订阅"
+              summary="我长期关注的博客与周刊订阅墙，可一键复制 feed 到阅读器。"
+              url="/resources/rss"
+              category="resource"
+              slug="rss-blogroll"
+              tags={['RSS', '博客订阅', '资源']}
+              kindLabel="资源"
+            />
+          </ArticleActionsDropdown>
+        </div>
       </header>
 
       <RssBlogroll fallback={RSS_FEEDS_SEED} />

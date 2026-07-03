@@ -2,9 +2,11 @@ import Link from 'next/link'
 import Script from 'next/script'
 
 import ArticlePostBody from '../../components/ArticlePostBody'
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
+import DistributeContentButton from '../../components/DistributeContentButton'
 
 function dateLabel(value) {
   if (!value) return ''
@@ -14,6 +16,12 @@ function dateLabel(value) {
 export default function PublishedArticle({ article, siteUrl }) {
   const url = `${siteUrl}/articles/${article.slug}`
   const publishedTime = article.publishedAt ? new Date(article.publishedAt).toISOString() : undefined
+  const markdown = [
+    `# ${article.title}`,
+    article.summary || '',
+    article.contentText || '',
+    `原文：${url}`,
+  ].filter(Boolean).join('\n\n')
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -39,7 +47,23 @@ export default function PublishedArticle({ article, siteUrl }) {
           {article.tags.map((tag) => <span key={tag} className="rounded-full border border-[#ddd] px-2 py-0.5 text-xs dark:border-gray-700">{tag}</span>)}
         </div>
         {article.summary ? <p className="mt-4 text-sm leading-7 text-[#666] dark:text-gray-300">{article.summary}</p> : null}
-        <Link href="/articles?tab=posts" className="mt-4 inline-block text-sm text-[#666] underline underline-offset-4 dark:text-gray-300">返回精选文章</Link>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Link href="/articles?tab=posts" className="text-sm text-[#666] underline underline-offset-4 dark:text-gray-300">返回精选文章</Link>
+          <ArticleActionsDropdown label="更多">
+            <DistributeContentButton
+              title={article.title}
+              summary={article.summary || article.contentText.slice(0, 160)}
+              markdown={markdown}
+              images={article.coverUrl ? [article.coverUrl] : []}
+              url={url}
+              category="article"
+              slug={article.slug}
+              tags={article.tags}
+              kindLabel="文章"
+              allowArticle
+            />
+          </ArticleActionsDropdown>
+        </div>
       </header>
       <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
         <AuthorByline />

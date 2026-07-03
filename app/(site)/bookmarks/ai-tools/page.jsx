@@ -1,6 +1,8 @@
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
+import DistributeContentButton from '../../components/DistributeContentButton'
 import RanbiPaywall from '../../components/RanbiPaywall'
 
 export const dynamic = 'force-static'
@@ -353,6 +355,19 @@ export default function AIToolsPage() {
           title="AI 工具"
           description="常用 AI 工具、产品与服务收集，按用途分组。链接均为官方入口，部分产品在国内可能需要相应网络条件。"
           tocItems={tocItems}
+          actions={(
+            <ArticleActionsDropdown label="更多">
+              <DistributeContentButton
+                title="AI 工具"
+                summary="常用 AI 工具、产品与服务收集：对话大模型、编程 Agent、图像与视频、语音、搜索、自动化与本地部署。"
+                url="/bookmarks/ai-tools"
+                category="resource"
+                slug="bookmarks-ai-tools"
+                tags={['AI 工具', '产品推荐', '资源']}
+                kindLabel="资源"
+              />
+            </ArticleActionsDropdown>
+          )}
           footer={<p>清单会随产品迭代不定期更新；介绍仅作中性参考，选型请以各自官方信息为准。</p>}
         >
           <div className="flex flex-col gap-10">

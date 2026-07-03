@@ -3,9 +3,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { articles } from '../articlesData'
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
+import DistributeContentButton from '../../components/DistributeContentButton'
 import RssButton from '../../components/RssButton'
 import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
@@ -67,6 +69,24 @@ function renderInlineBold(text) {
   if (after) nodes.push(after)
 
   return nodes.length ? nodes : text
+}
+
+function articleContentToMarkdown(article, articleUrl) {
+  const parts = [`# ${article.title}`]
+  if (article.summary) parts.push(article.summary)
+  const body = (article.content || [])
+    .map((item) => {
+      if (!item) return ''
+      if (typeof item === 'string') return item
+      if (item.date) return `## ${item.label || item.date}\n\n${item.date}`
+      return ''
+    })
+    .filter(Boolean)
+    .join('\n\n')
+  if (body) parts.push(body)
+  if (article.href) parts.push(`原文：${article.href}`)
+  else parts.push(`原文：${articleUrl}`)
+  return parts.join('\n\n')
 }
 
 export async function generateMetadata({ params }) {
@@ -185,6 +205,7 @@ export default async function ArticleDetailPage({ params }) {
   }
 
   const articleUrl = `${SITE_URL}/articles/${article.slug}`
+  const articleMarkdown = articleContentToMarkdown(article, articleUrl)
   const publishedTime = toIsoDate(article.date)
   const enableDiaryToc = article.slug === 'diary-self-reflection'
   const tocItems = []
@@ -257,8 +278,22 @@ export default async function ArticleDetailPage({ params }) {
                   ) : null}
                 </div>
               </div>
-              <div className="mt-3 shrink-0 sm:mt-0">
+              <div className="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
                 <RssButton />
+                <ArticleActionsDropdown label="更多">
+                  <DistributeContentButton
+                    title={article.title}
+                    summary={article.summary}
+                    markdown={articleMarkdown}
+                    images={article.cover ? [article.cover] : []}
+                    url={articleUrl}
+                    category="article"
+                    slug={article.slug}
+                    tags={[]}
+                    kindLabel="文章"
+                    allowArticle
+                  />
+                </ArticleActionsDropdown>
               </div>
             </div>
           </header>
@@ -379,8 +414,22 @@ export default async function ArticleDetailPage({ params }) {
                   ) : null}
                 </div>
               </div>
-              <div className="mt-3 shrink-0 sm:mt-0">
+              <div className="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
                 <RssButton />
+                <ArticleActionsDropdown label="更多">
+                  <DistributeContentButton
+                    title={article.title}
+                    summary={article.summary}
+                    markdown={articleMarkdown}
+                    images={article.cover ? [article.cover] : []}
+                    url={articleUrl}
+                    category="article"
+                    slug={article.slug}
+                    tags={[]}
+                    kindLabel="文章"
+                    allowArticle
+                  />
+                </ArticleActionsDropdown>
               </div>
             </div>
           </header>

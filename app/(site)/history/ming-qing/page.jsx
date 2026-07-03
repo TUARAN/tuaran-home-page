@@ -1,7 +1,9 @@
 import Link from 'next/link'
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ContentEngagement from '../../components/ContentEngagement'
 import RanbiPaywall from '../../components/RanbiPaywall'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
+import DistributeContentButton from '../../components/DistributeContentButton'
 
 import SharePageButton from '../../components/SharePageButton'
 import { CAO_CAO_TIMELINE } from './threeKingdomsData'
@@ -1759,7 +1761,20 @@ function MingQingContent() {
               </Link>
             </div>
           </div>
-          <SharePageButton title="历史调研 · 明清与三国" text="以时间线梳理三国、明清的制度、权力与人物命运。" url="/history/ming-qing" />
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <SharePageButton title="历史调研 · 明清与三国" text="以时间线梳理三国、明清的制度、权力与人物命运。" url="/history/ming-qing" />
+            <ArticleActionsDropdown label="更多">
+              <DistributeContentButton
+                title="历史调研 · 明清与三国"
+                summary="以时间线梳理三国、明清的制度、权力与人物命运。"
+                url="/history/ming-qing"
+                category="resource"
+                slug="history-ming-qing"
+                tags={['历史', '明清', '三国', '资源']}
+                kindLabel="资源"
+              />
+            </ArticleActionsDropdown>
+          </div>
         </div>
       </header>
 

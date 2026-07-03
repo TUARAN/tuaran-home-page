@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
+import DistributeContentButton from '../components/DistributeContentButton'
 import SharePageButton from '../components/SharePageButton'
 import { FEED_TYPE_META } from './data'
 
@@ -83,6 +85,18 @@ function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinit
               idleLabel="转发"
             />
           ) : null}
+          <ArticleActionsDropdown label="更多">
+            <DistributeContentButton
+              title={item.title}
+              summary={item.summary || item.quote || ''}
+              images={[item.src, item.image, item.poster].filter(Boolean)}
+              url={`/feed/${item.id}`}
+              category="feed"
+              slug={item.id}
+              tags={item.tags || []}
+              kindLabel="灵感"
+            />
+          </ArticleActionsDropdown>
         </div>
       ) : null}
     </div>

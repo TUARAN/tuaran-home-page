@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import RanbiPaywall from '../../components/RanbiPaywall'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
+import DistributeContentButton from '../../components/DistributeContentButton'
 
 import SharePageButton from '../../components/SharePageButton'
 import PageContainer from '../../components/PageContainer'
@@ -242,11 +244,24 @@ function ShenZhiXNeiResourceContent() {
               。
             </p>
           </div>
-          <SharePageButton
-            title="置身 X 内：大厂职场文本存档合集（钉内·钉外·团内·米内·抖内）"
-            text="钉钉《置身钉内》×《置身钉外》、美团《置身团内》、小米《置身米内》、字节《置身抖内》——大厂职场文本存档合集。"
-            url={url}
-          />
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <SharePageButton
+              title="置身 X 内：大厂职场文本存档合集（钉内·钉外·团内·米内·抖内）"
+              text="钉钉《置身钉内》×《置身钉外》、美团《置身团内》、小米《置身米内》、字节《置身抖内》——大厂职场文本存档合集。"
+              url={url}
+            />
+            <ArticleActionsDropdown label="更多">
+              <DistributeContentButton
+                title="置身 X 内：大厂职场文本存档合集"
+                summary="钉钉《置身钉内》×《置身钉外》、美团《置身团内》、小米《置身米内》、字节《置身抖内》——大厂职场文本存档合集。"
+                url={url}
+                category="resource"
+                slug="shen-zhi-ding-nei"
+                tags={['职场资料', '大厂', '资源']}
+                kindLabel="资源"
+              />
+            </ArticleActionsDropdown>
+          </div>
         </div>
       </header>
 

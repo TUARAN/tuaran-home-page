@@ -39,7 +39,7 @@ export default function HomeOpenClawAchievement() {
         </span>
         <span className="min-w-0 flex-1">
           <span className="home-achievement-kicker">开源贡献</span>
-          <strong>参与全球最大开源项目OpenClaw🦞，代码被合并到主分支。</strong>
+          <strong>贡献代码至全球最大开源项目 OpenClaw🦞，成功合入主分支</strong>
         </span>
       </button>
 
@@ -55,7 +55,7 @@ export default function HomeOpenClawAchievement() {
             <div className="home-achievement-modal-head">
               <div>
                 <p>OpenClaw 合并证明</p>
-                <h2 id="openclaw-proof-title">参与全球最大开源项目OpenClaw🦞，代码被合并到主分支。</h2>
+                <h2 id="openclaw-proof-title">贡献代码至全球最大开源项目 OpenClaw🦞，成功合入主分支</h2>
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="关闭弹窗">
                 ×

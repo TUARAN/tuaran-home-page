@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 
-const GOOGLE_ADSENSE_CLIENT = process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT
+const GOOGLE_ADSENSE_CLIENT =
+  process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT || 'ca-pub-7037125126940820'
 
 export default function GoogleAdSlot({
   slot,

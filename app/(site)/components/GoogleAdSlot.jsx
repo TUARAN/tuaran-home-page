@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+import { getPublicSiteSettings } from './siteSettingsClient'
 
 const GOOGLE_ADSENSE_CLIENT =
   process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT || 'ca-pub-7037125126940820'
@@ -13,9 +15,20 @@ export default function GoogleAdSlot({
   label = 'Google 广告',
 }) {
   const pushedRef = useRef(false)
+  const [adsEnabled, setAdsEnabled] = useState(false)
 
   useEffect(() => {
-    if (!GOOGLE_ADSENSE_CLIENT || !slot || pushedRef.current) return
+    let cancelled = false
+    getPublicSiteSettings().then((settings) => {
+      if (!cancelled) setAdsEnabled(Boolean(settings?.ads?.enabled))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!adsEnabled || !GOOGLE_ADSENSE_CLIENT || !slot || pushedRef.current) return
     pushedRef.current = true
 
     try {
@@ -24,9 +37,9 @@ export default function GoogleAdSlot({
     } catch {
       pushedRef.current = false
     }
-  }, [slot])
+  }, [adsEnabled, slot])
 
-  if (!GOOGLE_ADSENSE_CLIENT || !slot) return null
+  if (!adsEnabled || !GOOGLE_ADSENSE_CLIENT || !slot) return null
 
   return (
     <aside

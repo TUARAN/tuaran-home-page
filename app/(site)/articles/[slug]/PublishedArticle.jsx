@@ -7,6 +7,7 @@ import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
+import GoogleAdSlot from '../../components/GoogleAdSlot'
 
 function dateLabel(value) {
   if (!value) return ''
@@ -68,6 +69,7 @@ export default function PublishedArticle({ article, siteUrl }) {
       <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
         <AuthorByline />
       </aside>
+      <GoogleAdSlot slot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ARTICLE_SLOT} />
       {article.coverUrl ? <figure className="mb-10">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={article.coverUrl} alt={`${article.title} 封面`} className="h-auto w-full rounded-lg border border-[#eee] object-cover dark:border-gray-800" /></figure> : null}
       <ArticlePostBody content={article.content} />
       <div id="comments" className="scroll-mt-24">

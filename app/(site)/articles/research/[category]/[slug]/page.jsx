@@ -28,6 +28,7 @@ import RanbiPaywall from '../../../../components/RanbiPaywall'
 import ResearchPvCounter from './ResearchPvCounter'
 import SharePageButton from '../../../../components/SharePageButton'
 import RssButton from '../../../../components/RssButton'
+import GoogleAdSlot from '../../../../components/GoogleAdSlot'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -397,6 +398,10 @@ export default async function ResearchDetailPage({ params }) {
           </div>
         ) : null}
       </header>
+
+      {isEncrypted ? null : (
+        <GoogleAdSlot slot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_RESEARCH_SLOT} />
+      )}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <main className="min-w-0">

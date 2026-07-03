@@ -16,13 +16,13 @@ import {
 const CHANNEL_DEFS = [
   { key: 'picks', label: '推荐' },
   { key: 'all', label: '全部' },
-  { key: 'column', label: '专栏' },
+  { key: 'column', label: '创作' },
   { key: 'research', label: '调研' },
   { key: 'resources', label: '资源' },
 ]
 
 const COLUMN_TAB_DEFS = [
-  { key: 'column', label: '全部专栏' },
+  { key: 'column', label: '全部创作' },
   { key: 'posts', label: '精选文章' },
   { key: 'works', label: '多维页面' },
 ]
@@ -547,7 +547,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     return (
       <>
         {activeChannel === 'column' ? (
-          <FilterRow label="专栏类型" ariaLabel="专栏类型" orientation={orientation}>
+          <FilterRow label="创作类型" ariaLabel="创作类型" orientation={orientation}>
             {COLUMN_TAB_DEFS.map((t) => (
               <FilterChip
                 key={t.key}

@@ -50,6 +50,7 @@ export default function sitemap() {
     '/resources/rss',
     '/resources/codex-learning-resource-map-yichen',
     '/resources/x-mutual-cleaner-extension',
+    '/resources/x-best-time-to-post',
     '/community',
     '/changelog',
     '/diary',

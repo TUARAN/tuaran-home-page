@@ -1,3 +1,5 @@
+import 'server-only'
+
 export const SHARE_COPY = {
   title: 'Cloudflare 个人站技术地图 · 2aran.com 2026-07',
   lead: '把 2aran.com 最近一次 Cloudflare 架构优化摊开：Pages Worker 体积治理、public/admin/API 边界、D1/R2 数据分层、评论通知与内容索引，放回技术架构、安全防御、运营飞轮、市场设计四个维度里对照。',
@@ -475,3 +477,29 @@ export const RELATED_LINKS = [
     note: '多维页面',
   },
 ]
+
+export const PERSONAL_SITE_MAP_DATA = {
+  AI_PRODUCTS,
+  CORE_STACK,
+  DIMENSION_SCORES,
+  MARKET_DESIGN,
+  MARKET_ENTRY,
+  MIN_STACK,
+  OPS_FLYWHEEL,
+  OPS_METRICS,
+  PLATFORM_PRODUCTS,
+  PRICING_MODELS,
+  RECENT_UPDATES,
+  RELATED_LINKS,
+  RUNTIME_SURFACES,
+  SECURITY_LAYERS,
+  SHARE_COPY,
+  SITE_FACTS,
+  SKIP_STACK,
+  STORAGE_COMPARE,
+  STORAGE_PRODUCTS,
+  TECH_ARCH_LAYERS,
+  TRIGGER_RULES,
+  VERDICT_COUNTS,
+  WORKER_BUNDLE_METRICS,
+}

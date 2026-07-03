@@ -3,11 +3,13 @@
 import { useState } from 'react'
 
 const DEFAULT_ARTICLE_SYNCBLOG_URL = 'https://syncblog.cn/md/#content-sync'
-const DEFAULT_OPINION_SYNCBLOG_URL = 'https://syncblog.cn/md/#opinion-sync'
+const DEFAULT_OPINION_EDITOR_ORIGIN = 'https://md.doocs.org'
+const DEFAULT_OPINION_ENTRY = `${DEFAULT_OPINION_EDITOR_ORIGIN}/#opinion-sync`
 const READY_TYPE = 'SYNCBLOG_IMPORT_READY'
 const GENERIC_READY_TYPE = 'MD_IMPORT_READY'
 const ARTICLE_IMPORT_TYPE = 'SYNCBLOG_IMPORT_ARTICLE'
-const OPINION_IMPORT_TYPE = 'SYNCBLOG_IMPORT_OPINION'
+const OPINION_IMPORT_TYPE = 'MD_IMPORT_OPINION'
+const OPINION_RESULT_TYPE = 'MD_IMPORT_RESULT'
 
 function getTargetOrigin(targetUrl) {
   try {
@@ -23,6 +25,21 @@ function resolveCanonicalUrl(url) {
   if (/^https?:\/\//i.test(value)) return value
   if (typeof window !== 'undefined' && value.startsWith('/')) return `${window.location.origin}${value}`
   return value
+}
+
+function isLocalSite() {
+  if (typeof window === 'undefined') return false
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+}
+
+function resolveOpinionEntry() {
+  const configuredUrl = process.env.NEXT_PUBLIC_OPINION_IMPORT_URL
+    || process.env.NEXT_PUBLIC_SYNCBLOG_OPINION_IMPORT_URL
+  const configuredOrigin = process.env.NEXT_PUBLIC_OPINION_EDITOR_ORIGIN
+
+  if (configuredUrl) return configuredUrl
+  if (configuredOrigin) return `${configuredOrigin.replace(/\/$/, '')}/#opinion-sync`
+  return DEFAULT_OPINION_ENTRY
 }
 
 async function copyText(text) {
@@ -82,33 +99,8 @@ export default function DistributeContentButton({
     return `${body}\n\n${title ? `标题：${title}\n` : ''}原文：${resolveCanonicalUrl(url)}`
   }
 
-  async function handleDistribute(mode) {
-    const isOpinion = mode === 'opinion'
-    const localSyncblogUrl = isOpinion
-      ? 'http://localhost:5173/md/#opinion-sync'
-      : 'http://localhost:5173/md/#content-sync'
-    const defaultUrl = isOpinion ? DEFAULT_OPINION_SYNCBLOG_URL : DEFAULT_ARTICLE_SYNCBLOG_URL
-    const targetUrl =
-      (isOpinion ? process.env.NEXT_PUBLIC_SYNCBLOG_OPINION_IMPORT_URL : process.env.NEXT_PUBLIC_SYNCBLOG_IMPORT_URL)
-      || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? localSyncblogUrl
-        : defaultUrl)
-    const targetOrigin = getTargetOrigin(targetUrl)
-    const win = window.open(targetUrl, isOpinion ? 'syncblog-opinion-distribute' : 'syncblog-article-distribute')
-    const fallbackText = isOpinion ? buildOpinionText() : String(markdown || '').trim()
-
-    if (!fallbackText) {
-      flash(mode, 'failed')
-      return
-    }
-
-    if (!win) {
-      const copied = await copyText(fallbackText)
-      flash(mode, copied ? 'blocked' : 'failed')
-      return
-    }
-
-    const commonPayload = {
+  function buildCommonPayload() {
+    return {
       version: 1,
       source: '2aran.com',
       title,
@@ -120,20 +112,96 @@ export default function DistributeContentButton({
       kind: kindLabel,
       importedAt: new Date().toISOString(),
     }
-    const payload = isOpinion
-      ? {
-          ...commonPayload,
-          type: OPINION_IMPORT_TYPE,
-          opinion: fallbackText,
-          coverImage: images[0] || null,
+  }
+
+  function handleOpinionDistribute() {
+    const targetUrl = resolveOpinionEntry()
+    const targetOrigin = getTargetOrigin(targetUrl)
+    const win = window.open(targetUrl, 'md-editor')
+    const fallbackText = buildOpinionText()
+
+    if (!fallbackText) {
+      flash('opinion', 'failed')
+      return
+    }
+
+    if (!win) {
+      window.alert?.('请允许弹出窗口')
+      flash('opinion', 'failed')
+      return
+    }
+
+    let sent = false
+    const requestId = `op-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const payload = {
+      ...buildCommonPayload(),
+      type: OPINION_IMPORT_TYPE,
+      requestId,
+      opinion: fallbackText,
+      content: fallbackText,
+      markdown: fallbackText,
+      coverImage: images[0] || null,
+    }
+
+    const cleanup = () => {
+      clearTimeout(timeout)
+      window.removeEventListener('message', onMessage)
+    }
+
+    const onMessage = (event) => {
+      if (event.origin !== targetOrigin) return
+
+      if (event.data?.type === GENERIC_READY_TYPE && !sent) {
+        sent = true
+        win.postMessage(payload, targetOrigin)
+        return
+      }
+
+      if (event.data?.type === OPINION_RESULT_TYPE && event.data?.requestId === requestId) {
+        cleanup()
+        if (event.data.ok) {
+          flash('opinion', 'sent')
+        } else {
+          console.warn('导入失败:', event.data.reason)
+          flash('opinion', 'failed')
         }
-      : {
-          ...commonPayload,
-          type: ARTICLE_IMPORT_TYPE,
-          coverImage: images[0] || null,
-          images,
-          markdown: fallbackText,
-        }
+      }
+    }
+
+    window.addEventListener('message', onMessage)
+    const timeout = setTimeout(() => {
+      cleanup()
+      flash('opinion', sent ? 'sent' : 'failed')
+    }, 30000)
+  }
+
+  async function handleArticleDistribute() {
+    const localSyncblogUrl = 'http://localhost:5173/md/#content-sync'
+    const targetUrl =
+      process.env.NEXT_PUBLIC_SYNCBLOG_IMPORT_URL
+      || (isLocalSite() ? localSyncblogUrl : DEFAULT_ARTICLE_SYNCBLOG_URL)
+    const targetOrigin = getTargetOrigin(targetUrl)
+    const win = window.open(targetUrl, 'syncblog-article-distribute')
+    const fallbackText = String(markdown || '').trim()
+
+    if (!fallbackText) {
+      flash('article', 'failed')
+      return
+    }
+
+    if (!win) {
+      const copied = await copyText(fallbackText)
+      flash('article', copied ? 'blocked' : 'failed')
+      return
+    }
+
+    const payload = {
+      ...buildCommonPayload(),
+      type: ARTICLE_IMPORT_TYPE,
+      coverImage: images[0] || null,
+      images,
+      markdown: fallbackText,
+    }
 
     let delivered = false
     let attempts = 0
@@ -144,7 +212,7 @@ export default function DistributeContentButton({
       win.postMessage(payload, targetOrigin)
       if (attempts >= 20) {
         clearInterval(timer)
-        copyText(fallbackText).then((copied) => flash(mode, copied ? 'copied' : 'failed'))
+        copyText(fallbackText).then((copied) => flash('article', copied ? 'copied' : 'failed'))
       }
     }
 
@@ -155,12 +223,20 @@ export default function DistributeContentButton({
       clearInterval(timer)
       win.postMessage(payload, targetOrigin)
       window.removeEventListener('message', onMessage)
-      flash(mode, 'sent')
+      flash('article', 'sent')
     }
 
     window.addEventListener('message', onMessage)
     const timer = setInterval(send, 500)
     send()
+  }
+
+  function handleDistribute(mode) {
+    if (mode === 'opinion') {
+      handleOpinionDistribute()
+      return
+    }
+    handleArticleDistribute()
   }
 
   function getLabel(mode) {

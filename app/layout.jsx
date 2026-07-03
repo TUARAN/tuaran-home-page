@@ -1,6 +1,7 @@
 import './globals.css'
 
 import { avatarAbsoluteUrl } from '../lib/avatar'
+import GoogleAdsenseScript from './(site)/components/GoogleAdsenseScript'
 
 /**
  * 主题设置版本号：每次「更新主题默认值」（默认明暗 / 墨水屏 / 样式 / 阅读底色等）时 bump 它。
@@ -15,9 +16,6 @@ const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
 const SITE_DESCRIPTION =
   '2aran.com 是涂阿燃（安东尼）的个人主页与网络日志：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
-const GOOGLE_ADSENSE_CLIENT =
-  process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT || 'ca-pub-7037125126940820'
-
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -100,17 +98,13 @@ export default function RootLayout({ children }) {
           href="/rss.xml"
         />
         <script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${GOOGLE_ADSENSE_CLIENT}`}
-          crossOrigin="anonymous"
-        />
-        <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var root=document.documentElement;var SV='${THEME_SETTINGS_VERSION}';if(localStorage.getItem('theme-settings-version')!==SV){localStorage.removeItem('theme');localStorage.removeItem('reading-palette');localStorage.removeItem('site-ui-mode');localStorage.removeItem('reading-bg');localStorage.setItem('theme-settings-version',SV);}root.dataset.ui='polished';var rp=localStorage.getItem('reading-palette');var eink=rp!=='default';if(eink){root.dataset.reading='eink';}var th=localStorage.getItem('theme');var v=localStorage.getItem('reading-bg');if(v==='#f1f2ee'){localStorage.removeItem('reading-bg');v='';}if(v&&th==='light'&&!eink){root.style.setProperty('--page-bg',v);}var lm=document.cookie.match(/(?:^|; )site-lang=([^;]+)/);var lang=lm?decodeURIComponent(lm[1]):'';if(lang==='en'||lang==='zh'){root.dataset.lang=lang;root.lang=lang==='en'?'en':'zh-CN';}}catch(e){}})();`,
           }}
         />
       </head>
       <body suppressHydrationWarning>
+        <GoogleAdsenseScript />
         {children}
         {/* 独立视觉页恒为深色：此脚本在 next-themes 初始化之后执行，强制目标路由首屏走深色，避免闪烁。
             客户端导航与水合由 ForceDarkRoute 守住。 */}

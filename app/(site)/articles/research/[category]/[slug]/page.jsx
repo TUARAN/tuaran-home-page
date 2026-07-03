@@ -343,7 +343,7 @@ export default async function ResearchDetailPage({ params }) {
             )}
             <RssButton label="RSS" />
             {isEncrypted ? null : (
-              <>
+              <ArticleActionsDropdown label="更多">
                 <CopyMarkdownButton markdown={markdownDoc} />
                 <DistributeMarkdownButton
                   title={entry.title}
@@ -355,10 +355,6 @@ export default async function ResearchDetailPage({ params }) {
                   slug={entry.slug}
                   tags={entry.tags || []}
                 />
-              </>
-            )}
-            {isEncrypted ? null : (
-              <ArticleActionsDropdown label="更多">
                 <DownloadPptButton
                   title={entry.title}
                   subtitle={entry.tldr || entry.summary || ''}

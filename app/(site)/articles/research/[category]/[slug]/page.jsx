@@ -337,30 +337,34 @@ export default async function ResearchDetailPage({ params }) {
               <span>协助：{entry.assistanceLabel || entry.sourceLabel || 'TUARAN'}</span>
             </>
           ) : null}
-          <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto sm:flex-nowrap">
+          <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto lg:flex-nowrap">
             {isEncrypted ? null : (
               <SharePageButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
             )}
             <RssButton label="RSS" />
             {isEncrypted ? null : (
-              <ArticleActionsDropdown label="更多">
+              <>
                 <CopyMarkdownButton markdown={markdownDoc} />
-                <DownloadPptButton
-                  title={entry.title}
-                  subtitle={entry.tldr || entry.summary || ''}
-                  fileBaseName={entry.slug}
-                  images={entry.images || []}
-                  variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
-                />
                 <DistributeMarkdownButton
                   title={entry.title}
-                  summary={entry.summary || entry.tldr || ''}
+                  summary={entry.tldr || entry.summary || ''}
                   markdown={markdownDoc}
                   images={entry.images || []}
                   url={url}
                   category={entry.category}
                   slug={entry.slug}
                   tags={entry.tags || []}
+                />
+              </>
+            )}
+            {isEncrypted ? null : (
+              <ArticleActionsDropdown label="更多">
+                <DownloadPptButton
+                  title={entry.title}
+                  subtitle={entry.tldr || entry.summary || ''}
+                  fileBaseName={entry.slug}
+                  images={entry.images || []}
+                  variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
                 />
               </ArticleActionsDropdown>
             )}

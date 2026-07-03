@@ -2,9 +2,12 @@
 
 import { useState } from 'react'
 
-const DEFAULT_SYNCBLOG_URL = 'https://syncblog.cn/md/#content-sync'
+const DEFAULT_ARTICLE_SYNCBLOG_URL = 'https://syncblog.cn/md/#content-sync'
+const DEFAULT_OPINION_SYNCBLOG_URL = 'https://syncblog.cn/md/#opinion-sync'
 const READY_TYPE = 'SYNCBLOG_IMPORT_READY'
-const IMPORT_TYPE = 'SYNCBLOG_IMPORT_ARTICLE'
+const GENERIC_READY_TYPE = 'MD_IMPORT_READY'
+const ARTICLE_IMPORT_TYPE = 'SYNCBLOG_IMPORT_ARTICLE'
+const OPINION_IMPORT_TYPE = 'SYNCBLOG_IMPORT_OPINION'
 
 function getTargetOrigin(targetUrl) {
   try {
@@ -48,44 +51,71 @@ export default function DistributeMarkdownButton({
   slug,
   tags = [],
 }) {
-  const [state, setState] = useState('idle')
+  const [states, setStates] = useState({ article: 'idle', opinion: 'idle' })
 
-  function flash(next) {
-    setState(next)
-    setTimeout(() => setState('idle'), 2600)
+  function flash(mode, next) {
+    setStates((prev) => ({ ...prev, [mode]: next }))
+    setTimeout(() => setStates((prev) => ({ ...prev, [mode]: 'idle' })), 2600)
   }
 
-  async function handleDistribute() {
-    const localSyncblogUrl = 'http://localhost:5173/md/#content-sync'
+  function getSelectedOpinionText() {
+    if (typeof window === 'undefined') return ''
+    const selected = window.getSelection?.()?.toString()?.trim() || ''
+    return selected.replace(/\s+/g, ' ').slice(0, 1200)
+  }
+
+  function buildOpinionText() {
+    const opinion = getSelectedOpinionText() || String(summary || title || '').trim()
+    const body = opinion || `我刚更新了一篇调研：${title}`
+    return `${body}\n\n原文：${url}`
+  }
+
+  async function handleDistribute(mode) {
+    const isOpinion = mode === 'opinion'
+    const localSyncblogUrl = isOpinion
+      ? 'http://localhost:5173/md/#opinion-sync'
+      : 'http://localhost:5173/md/#content-sync'
+    const defaultUrl = isOpinion ? DEFAULT_OPINION_SYNCBLOG_URL : DEFAULT_ARTICLE_SYNCBLOG_URL
     const targetUrl =
-      process.env.NEXT_PUBLIC_SYNCBLOG_IMPORT_URL
+      (isOpinion ? process.env.NEXT_PUBLIC_SYNCBLOG_OPINION_IMPORT_URL : process.env.NEXT_PUBLIC_SYNCBLOG_IMPORT_URL)
       || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? localSyncblogUrl
-        : DEFAULT_SYNCBLOG_URL)
+        : defaultUrl)
     const targetOrigin = getTargetOrigin(targetUrl)
-    const win = window.open(targetUrl, 'syncblog-distribute')
+    const win = window.open(targetUrl, isOpinion ? 'syncblog-opinion-distribute' : 'syncblog-article-distribute')
+    const fallbackText = isOpinion ? buildOpinionText() : markdown
 
     if (!win) {
-      const copied = await copyText(markdown)
-      flash(copied ? 'blocked' : 'failed')
+      const copied = await copyText(fallbackText)
+      flash(mode, copied ? 'blocked' : 'failed')
       return
     }
 
-    const payload = {
+    const commonPayload = {
       version: 1,
       source: '2aran.com',
-      type: IMPORT_TYPE,
       title,
       summary,
       canonicalUrl: url,
       category,
       slug,
       tags,
-      coverImage: images[0] || null,
-      images,
-      markdown,
       importedAt: new Date().toISOString(),
     }
+    const payload = isOpinion
+      ? {
+          ...commonPayload,
+          type: OPINION_IMPORT_TYPE,
+          opinion: fallbackText,
+          coverImage: images[0] || null,
+        }
+      : {
+          ...commonPayload,
+          type: ARTICLE_IMPORT_TYPE,
+          coverImage: images[0] || null,
+          images,
+          markdown,
+        }
 
     let delivered = false
     let attempts = 0
@@ -96,18 +126,18 @@ export default function DistributeMarkdownButton({
       win.postMessage(payload, targetOrigin)
       if (attempts >= 20) {
         clearInterval(timer)
-        copyText(markdown).then((copied) => flash(copied ? 'copied' : 'failed'))
+        copyText(fallbackText).then((copied) => flash(mode, copied ? 'copied' : 'failed'))
       }
     }
 
     const onMessage = (event) => {
       if (event.origin !== targetOrigin) return
-      if (event.data?.type !== READY_TYPE) return
+      if (event.data?.type !== READY_TYPE && event.data?.type !== GENERIC_READY_TYPE) return
       delivered = true
       clearInterval(timer)
       win.postMessage(payload, targetOrigin)
       window.removeEventListener('message', onMessage)
-      flash('sent')
+      flash(mode, 'sent')
     }
 
     window.addEventListener('message', onMessage)
@@ -115,8 +145,10 @@ export default function DistributeMarkdownButton({
     send()
   }
 
-  const label =
-    state === 'sent'
+  function getLabel(mode) {
+    const state = states[mode]
+    const idleLabel = mode === 'opinion' ? '分发观点' : '分发文章'
+    return state === 'sent'
       ? '已发送到分发'
       : state === 'copied'
         ? '已复制，去粘贴'
@@ -124,17 +156,12 @@ export default function DistributeMarkdownButton({
           ? '已复制，去分发'
           : state === 'failed'
             ? '分发失败'
-            : '分发'
+            : idleLabel
+  }
 
-  return (
-    <button
-      type="button"
-      onClick={handleDistribute}
-      aria-live="polite"
-      title="发送到 syncblog.cn 内容分发页"
-      className="article-action-button px-3 py-1 text-xs"
-    >
-      {state === 'sent' ? (
+  function DistributeIcon({ active }) {
+    if (active) {
+      return (
         <svg
           viewBox="0 0 14 14"
           aria-hidden="true"
@@ -147,23 +174,48 @@ export default function DistributeMarkdownButton({
         >
           <path d="M2.5 7.5L6 11l5.5-7" />
         </svg>
-      ) : (
-        <svg
-          viewBox="0 0 14 14"
-          aria-hidden="true"
-          className="h-3.5 w-3.5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M2 11.5 12 2.5" />
-          <path d="m5 2.5 7 0 0 7" />
-          <path d="M2 5v6.5h6.5" />
-        </svg>
-      )}
-      <span>{label}</span>
-    </button>
+      )
+    }
+    return (
+      <svg
+        viewBox="0 0 14 14"
+        aria-hidden="true"
+        className="h-3.5 w-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2 11.5 12 2.5" />
+        <path d="m5 2.5 7 0 0 7" />
+        <path d="M2 5v6.5h6.5" />
+      </svg>
+    )
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => handleDistribute('article')}
+        aria-live="polite"
+        title="发送到 syncblog.cn 文章分发页"
+        className="article-action-button px-3 py-1 text-xs"
+      >
+        <DistributeIcon active={states.article === 'sent'} />
+        <span>{getLabel('article')}</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => handleDistribute('opinion')}
+        aria-live="polite"
+        title="发送到 syncblog.cn 观点分发页；若先选中正文，会优先分发选中文本"
+        className="article-action-button px-3 py-1 text-xs"
+      >
+        <DistributeIcon active={states.opinion === 'sent'} />
+        <span>{getLabel('opinion')}</span>
+      </button>
+    </>
   )
 }

@@ -158,10 +158,10 @@ export default function XMutualCleanerResourcePage() {
           </p>
           <p>
             这个动作很重复，也很容易漏。X 互关清理助手就是把这一步做成一个按钮：你确认自己已经登录 X，
-            打开自己的 Following 页面后，点击“一键取消未回关”，它会自动处理当前屏幕，并继续向下滚动列表。
+            打开自己的 Following 页面后，点击“取消未回关”，它会自动处理当前屏幕，并继续向下滚动列表。
           </p>
 
-          <div className="not-prose my-8 grid gap-3 md:grid-cols-3">
+          <div className="not-prose my-8 grid gap-3 md:grid-cols-2">
             <FeatureCard title="一键执行">
               不需要扫描、不需要配置数量、不需要设置间隔。打开 Following 页面，点一次按钮就开始。
             </FeatureCard>
@@ -170,6 +170,9 @@ export default function XMutualCleanerResourcePage() {
             </FeatureCard>
             <FeatureCard title="测试回关">
               在 Followers / Verified Followers 页面可慢速批量点击 Follow back，只处理已经关注你的账号。
+            </FeatureCard>
+            <FeatureCard title="候选关注">
+              在任意账号 Followers 页面低频点击普通 Follow：每轮最多 10 个，30 秒一个，完成后建议暂停 15 分钟。
             </FeatureCard>
             <FeatureCard title="本地运行">
               插件运行在你自己的浏览器页面里，不需要你提供账号密码，也不把关注列表上传到第三方服务器。
@@ -187,8 +190,14 @@ export default function XMutualCleanerResourcePage() {
           </p>
           <p>
             批量回关属于测试功能。它只会点击显示 <strong>Follow back</strong> / <strong>回关</strong> 的按钮，
-            入口收在插件面板的“测试功能”折叠区里。默认每次回关后等待 12 秒，每回关 8 个暂停 2 分钟，
-            单次运行最多回关 40 个；如果 X 列表出现 Something went wrong，会先暂停 30 秒再点击 Retry 尝试恢复。
+            入口收在插件面板的“测试功能”折叠区里。默认每次回关后等待 5 秒，每回关 10 个暂停 1 分钟，
+            单次运行最多回关 50 个；如果 X 列表出现 Something went wrong，会先暂停 30 秒再点击 Retry 尝试恢复。
+          </p>
+          <p>
+            关注候选也属于测试功能。它只会在 Followers / Verified Followers 列表里点击普通
+            <strong> Follow</strong> / <strong>关注</strong>，不会处理 Follow back 或已经 Following 的账号。
+            当前口径是：每轮最多 10 个，每个动作间隔 30 秒；完成 10 个后本轮结束，建议至少暂停 15 分钟再继续；
+            每日建议不超过 200 个。这个功能不建议用于复制他人粉丝列表或无限量增长。
           </p>
           <p>
             <a href="https://www.axios.com/2019/04/08/twitter-spam-follow-limit" target="_blank" rel="noreferrer">
@@ -206,14 +215,23 @@ export default function XMutualCleanerResourcePage() {
             <li>开启“开发者模式”。</li>
             <li>点击“加载已解压的扩展程序”，选择解压后的插件目录。</li>
             <li>登录 X，打开 <code>https://x.com/你的用户名/following</code>。</li>
-            <li>点击右下角“一键取消未回关”。需要停止时，再点同一个按钮。</li>
+            <li>点击右下角“取消未回关”。需要停止时，再点同一个按钮。</li>
           </ol>
 
           <h2>如何测试批量 Follow back？</h2>
           <ol>
             <li>登录 X，打开 <code>https://x.com/你的用户名/followers</code> 或 Verified Followers 页面。</li>
-            <li>展开右下角插件面板里的“测试功能”，点击“一键回关粉丝”。</li>
+            <li>展开右下角插件面板里的“测试功能”，点击“回关粉丝”。</li>
             <li>插件只处理有 Follows you 标记且按钮是 Follow back 的账号，已经 Following 的账号会跳过。</li>
+            <li>需要停止时，再点同一个按钮。</li>
+          </ol>
+
+          <h2>如何测试关注候选？</h2>
+          <ol>
+            <li>登录 X，打开任意账号的 <code>https://x.com/目标用户名/followers</code> 或 Verified Followers 页面。</li>
+            <li>展开右下角插件面板里的“测试功能”，点击“关注候选”。</li>
+            <li>插件只处理右侧按钮是普通 Follow / 关注的账号；已经 Following、Follow back 或无法识别的行会跳过。</li>
+            <li>本轮最多 10 个，两个关注动作之间间隔 30 秒；完成 10 个后建议暂停 15 分钟，每日建议不超过 200 个。</li>
             <li>需要停止时，再点同一个按钮。</li>
           </ol>
 

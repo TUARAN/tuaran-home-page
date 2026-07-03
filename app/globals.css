@@ -2893,6 +2893,20 @@ body:has(.x-mutual-page) footer a:hover {
   background-color: #1d9bf0;
 }
 
+.x-mutual-page .x-mutual-cta-button,
+.x-mutual-page .x-mutual-cta-button:visited {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.x-mutual-page .x-mutual-cta-button:hover,
+.x-mutual-page .x-mutual-cta-button:focus-visible {
+  color: #ffffff;
+  text-decoration: none;
+}
+
 .x-mutual-page .prose-tuaran {
   color: #c9d1d9;
 }

@@ -29,7 +29,7 @@ const SCORE_META = [
   { label: '黄金时段', alpha: 0.88 },
 ]
 
-const HEAT_COLOR = '176, 138, 46' // 站点金橄榄色的 rgb，用透明度表示热度
+const HEAT_COLOR = '29, 155, 240' // X 蓝，用透明度表示热度
 
 const AUDIENCE_ZONES = [
   { id: 'America/New_York', label: '北美东部', hint: '英文主流受众，多数研究的默认口径' },
@@ -152,14 +152,14 @@ export default function TimingHeatmapClient() {
   }, [selected, clock])
 
   return (
-    <section className="rounded-xl border border-[#ded8ca] bg-white/70 p-5 dark:border-[#252e38] dark:bg-[#101720]/70">
+    <section className="rounded-[28px] border border-[#2f3336] bg-[#080808] p-5 shadow-[0_0_80px_rgba(29,155,240,0.08)]">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#6f6f40] dark:text-[#d7d7a7]">
+          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#1d9bf0]">
             Weekly Heatmap
           </p>
-          <h2 className="m-0 mt-1 text-xl font-semibold text-[var(--site-ink)]">一周发帖时段热力图</h2>
-          <p className="m-0 mt-1 text-xs leading-6 text-[#8a877d] dark:text-[#8f9aaa]">
+          <h2 className="m-0 mt-1 text-xl font-semibold text-[#e7e9ea]">一周发帖时段热力图</h2>
+          <p className="m-0 mt-1 text-xs leading-6 text-[#8b98a5]">
             横轴为受众本地时间。综合多份公开研究整理的通用口径，点任意格子看换算后的你的本地时间。
           </p>
         </div>
@@ -172,8 +172,8 @@ export default function TimingHeatmapClient() {
               title={z.hint}
               className={`rounded-full border px-3 py-1 text-xs transition ${
                 z.id === zoneId
-                  ? 'border-[#171611] bg-[#171611] text-white dark:border-white dark:bg-white dark:text-black'
-                  : 'border-[#d8d1c4] bg-white/60 text-[#67645b] hover:border-[#a09a8a] dark:border-[#303947] dark:bg-transparent dark:text-[#a7b0be] dark:hover:border-[#5a6575]'
+                  ? 'border-[#1d9bf0] bg-[#1d9bf0] text-white'
+                  : 'border-[#2f3336] bg-black text-[#8b98a5] hover:border-[#1d9bf0]/70 hover:text-[#e7e9ea]'
               }`}
             >
               受众在{z.label}
@@ -190,7 +190,7 @@ export default function TimingHeatmapClient() {
               {Array.from({ length: 24 }, (_, h) => (
                 <th
                   key={h}
-                  className="pb-1 text-center font-mono text-[9px] font-normal text-[#9a968a] dark:text-[#7e8a9b]"
+                  className="pb-1 text-center font-mono text-[9px] font-normal text-[#71767b]"
                   scope="col"
                 >
                   {h % 3 === 0 ? h : ''}
@@ -203,7 +203,7 @@ export default function TimingHeatmapClient() {
               <tr key={day}>
                 <th
                   scope="row"
-                  className="pr-2 text-right font-mono text-[10px] font-normal text-[#7a766b] dark:text-[#8f9aaa]"
+                  className="pr-2 text-right font-mono text-[10px] font-normal text-[#8b98a5]"
                 >
                   {DAY_LABELS[day]}
                 </th>
@@ -218,9 +218,9 @@ export default function TimingHeatmapClient() {
                         aria-label={`${DAY_LABELS[day]} ${fmtHour(hour)}，${SCORE_META[score].label}`}
                         className={`block h-6 w-full min-w-[18px] rounded-[3px] border transition hover:scale-110 ${
                           isSelected
-                            ? 'border-[#171611] dark:border-white'
-                            : 'border-black/5 dark:border-white/10'
-                        } ${isNow ? 'ring-2 ring-[#b08a2e] ring-offset-1 ring-offset-white dark:ring-offset-[#101720]' : ''}`}
+                            ? 'border-[#e7e9ea]'
+                            : 'border-white/10'
+                        } ${isNow ? 'ring-2 ring-[#1d9bf0] ring-offset-1 ring-offset-black' : ''}`}
                         style={{ backgroundColor: `rgba(${HEAT_COLOR}, ${SCORE_META[score].alpha})` }}
                       />
                     </td>
@@ -232,13 +232,13 @@ export default function TimingHeatmapClient() {
         </table>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-[#8a877d] dark:text-[#8f9aaa]">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-[#8b98a5]">
         <span className="flex items-center gap-1.5">
           热度
           {SCORE_META.map((meta, score) => (
             <span
               key={score}
-              className="inline-block h-3.5 w-3.5 rounded-[3px] border border-black/10 dark:border-white/15"
+              className="inline-block h-3.5 w-3.5 rounded-[3px] border border-white/15"
               style={{ backgroundColor: `rgba(${HEAT_COLOR}, ${meta.alpha})` }}
               title={meta.label}
             />
@@ -247,43 +247,43 @@ export default function TimingHeatmapClient() {
         </span>
         {clock ? (
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3.5 w-3.5 rounded-[3px] border border-black/10 ring-2 ring-[#b08a2e] dark:border-white/15" />
+            <span className="inline-block h-3.5 w-3.5 rounded-[3px] border border-white/15 ring-2 ring-[#1d9bf0]" />
             受众时区的现在
           </span>
         ) : null}
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <div className="rounded-lg border border-[#e6e0d3] bg-[#fbf7ee]/80 p-4 dark:border-[#3a4436] dark:bg-[#161d16]/60">
-          <p className="m-0 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a7a55] dark:text-[#b8c49a]">
+        <div className="rounded-2xl border border-[#2f3336] bg-black p-4">
+          <p className="m-0 font-mono text-[10px] uppercase tracking-[0.18em] text-[#1d9bf0]">
             Selected Slot
           </p>
-          <p className="m-0 mt-2 text-sm font-semibold text-[var(--site-ink)]">
+          <p className="m-0 mt-2 text-sm font-semibold text-[#e7e9ea]">
             {DAY_LABELS[selected.day]} {fmtHour(selected.hour)}–{fmtHour((selected.hour + 1) % 24)}（受众{zone.label}时间）
           </p>
-          <p className="m-0 mt-1 flex items-center gap-2 text-sm text-[#67645b] dark:text-[#a7b0be]">
+          <p className="m-0 mt-1 flex items-center gap-2 text-sm text-[#8b98a5]">
             <Stars score={selectedDetail.score} />
             {SCORE_META[selectedDetail.score].label}
           </p>
           {selectedDetail.viewer && !clock?.sameZone ? (
-            <p className="m-0 mt-2 text-xs leading-6 text-[#8a877d] dark:text-[#8f9aaa]">
+            <p className="m-0 mt-2 text-xs leading-6 text-[#71767b]">
               换算成你的本地时间：{DAY_LABELS[selectedDetail.viewer.day]} {fmtHour(selectedDetail.viewer.hour)} 发出
             </p>
           ) : null}
         </div>
 
-        <div className="rounded-lg border border-[#e6e0d3] bg-white/60 p-4 dark:border-[#252e38] dark:bg-[#0d131c]/60">
-          <p className="m-0 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a877d] dark:text-[#7e8a9b]">
+        <div className="rounded-2xl border border-[#2f3336] bg-black p-4">
+          <p className="m-0 font-mono text-[10px] uppercase tracking-[0.18em] text-[#71767b]">
             Right Now
           </p>
           {clock ? (
             <>
-              <p className="m-0 mt-2 text-sm font-semibold text-[var(--site-ink)]">
+              <p className="m-0 mt-2 text-sm font-semibold text-[#e7e9ea]">
                 受众{zone.label}现在是 {DAY_LABELS[clock.now.day]} {fmtHour(clock.now.hour).slice(0, 3)}
                 {String(clock.now.minute).padStart(2, '0')} · <Stars score={nowScore} /> {SCORE_META[nowScore].label}
               </p>
               {golden && golden.hoursAway > 0 ? (
-                <p className="m-0 mt-2 text-xs leading-6 text-[#8a877d] dark:text-[#8f9aaa]">
+                <p className="m-0 mt-2 text-xs leading-6 text-[#71767b]">
                   下一个黄金时段：{DAY_LABELS[golden.day]} {fmtHour(golden.hour)}（约 {golden.hoursAway} 小时后
                   {clock.sameZone
                     ? ''
@@ -293,13 +293,13 @@ export default function TimingHeatmapClient() {
                   ）
                 </p>
               ) : (
-                <p className="m-0 mt-2 text-xs leading-6 text-[#8a877d] dark:text-[#8f9aaa]">
+                <p className="m-0 mt-2 text-xs leading-6 text-[#71767b]">
                   现在就在黄金时段里，写好了直接发。
                 </p>
               )}
             </>
           ) : (
-            <p className="m-0 mt-2 text-sm text-[#8a877d] dark:text-[#8f9aaa]">正在读取你的本地时间…</p>
+            <p className="m-0 mt-2 text-sm text-[#71767b]">正在读取你的本地时间…</p>
           )}
         </div>
       </div>

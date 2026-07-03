@@ -9,8 +9,6 @@ const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
 const SITE_DESCRIPTION =
   '2aran.com 是涂阿燃（安东尼）的个人主页与网络日志：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
-const GOOGLE_ADSENSE_CLIENT =
-  process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT || 'ca-pub-7037125126940820'
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -38,14 +36,6 @@ export default function SiteLayout({ children }) {
         data-website-id="8bb48b09-3e10-4ec1-9bbe-c55c87418fa9"
         strategy="afterInteractive"
       />
-      {GOOGLE_ADSENSE_CLIENT ? (
-        <Script
-          id="google-adsense"
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${GOOGLE_ADSENSE_CLIENT}`}
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
-        />
-      ) : null}
       <ThemeProvider>
         <LocaleProvider>
           <SessionProvider>

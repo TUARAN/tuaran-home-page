@@ -13,10 +13,11 @@ export const dynamic = 'force-dynamic'
  * /api/admin/ops-console 单独提供（dashboard 并行取）。
  */
 
-function startOfTodayMs() {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  return d.getTime()
+const SHANGHAI_TZ_OFFSET_MS = 8 * 60 * 60 * 1000
+
+function startOfShanghaiTodayMs(now = Date.now()) {
+  const local = new Date(now + SHANGHAI_TZ_OFFSET_MS)
+  return Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - SHANGHAI_TZ_OFFSET_MS
 }
 
 function activeStyleSummary() {
@@ -52,7 +53,7 @@ export async function GET(req) {
       db.prepare('SELECT COALESCE(SUM(pv), 0) AS total FROM research_pv').first().catch(() => null),
       db
         .prepare('SELECT COUNT(*) AS today FROM research_pv_hits WHERE created_at >= ?1')
-        .bind(startOfTodayMs())
+        .bind(startOfShanghaiTodayMs())
         .first()
         .catch(() => null),
     ])

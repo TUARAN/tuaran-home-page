@@ -21,7 +21,7 @@ Next.js 15 App Router 个人站，部署在 Cloudflare Pages（Functions + D1）
 ## 运行时约束
 
 - 三层运行时并存：静态/ISR 页面、Cloudflare Edge API（`runtime = 'edge'`）、浏览器端推理（`/web-llm`，WebGPU）
-- Cloudflare 构建：`npm run pages:build`（`@cloudflare/next-on-pages`）；配置在 `wrangler.toml`
+- Cloudflare 构建：公开站 `npm run pages:build:public`，后台站 `npm run pages:build`（`@cloudflare/next-on-pages`）；配置在 `wrangler.toml` 与 Cloudflare Pages Build settings
 - Edge 路由不能用 Node-only API；D1 经 `lib/d1.js` 取 binding
 
 ## 注意

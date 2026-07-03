@@ -15,19 +15,25 @@ This repo is being split into three runtime surfaces:
 
 Use it only for the public `2aran.com` Cloudflare Pages project after `admin.2aran.com` has its own deployment.
 
+Live Cloudflare Pages config:
+
+- `tuaran` (`2aran.com`): build command `npm run pages:build:public`; build watch paths include `*`.
+- `tuaran-admin-git` (`admin.2aran.com`): build command `npm run pages:build`; build watch paths include only admin routes, auth/admin API routes, and shared admin dependencies.
+
 Current commands:
 
-- `npm run pages:build` / `npm run pages:build:all`: current full build, keeps admin routes.
+- `npm run pages:build` / `npm run pages:build:all`: full build, keeps admin routes.
 - `npm run pages:build:public`: public-only build, excludes admin routes.
 
 Cutover checklist:
 
-1. Create a separate Cloudflare Pages project for `admin.2aran.com`.
-2. Point that project at the full/admin build path first.
-3. Bind the same `DB` D1 database and `MEDIA` R2 bucket.
-4. Copy required secrets: GitHub/Google OAuth, auth/session secrets, DeepSeek keys, collect secrets.
-5. Confirm `https://admin.2aran.com/admin` loads and owner auth works.
-6. Change the public `2aran.com` Pages build command from `npm run pages:build` to `npm run pages:build:public`.
+1. Done: Create a separate Cloudflare Pages project for `admin.2aran.com`.
+2. Done: Point that project at the full/admin build path first.
+3. Done: Bind the same `DB` D1 database and `MEDIA` R2 bucket.
+4. Done: Copy required secrets: GitHub/Google OAuth, auth/session secrets, DeepSeek keys, collect secrets.
+5. Done: Confirm `https://admin.2aran.com/admin` loads and owner auth works.
+6. Done: Change the public `2aran.com` Pages build command from `npm run pages:build` to `npm run pages:build:public`.
+7. Done: Configure `admin.2aran.com` Build watch paths so normal public content changes do not trigger admin builds.
 
 The public middleware redirects `https://2aran.com/admin/*` to `https://admin.2aran.com/admin/*`.
 

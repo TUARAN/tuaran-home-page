@@ -3,15 +3,18 @@
   right: 18px;
   bottom: 18px;
   z-index: 2147483647;
-  width: min(300px, calc(100vw - 36px));
+  width: min(340px, calc(100vw - 36px));
   box-sizing: border-box;
-  border: 1px solid rgba(83, 100, 113, 0.32);
-  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(207, 217, 222, 0.95);
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.98);
   color: #0f1419;
-  box-shadow: 0 12px 36px rgba(15, 20, 25, 0.18);
+  box-shadow: 0 18px 52px rgba(15, 20, 25, 0.18);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
+  line-height: 1.45;
+  backdrop-filter: blur(12px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,23 +31,32 @@
 
 .xmc-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
-  padding: 11px 12px 8px;
+  gap: 12px;
+  padding: 14px 14px 12px;
   border-bottom: 1px solid rgba(83, 100, 113, 0.18);
+  background: linear-gradient(180deg, rgba(247, 249, 249, 0.98), rgba(255, 255, 255, 0.98));
 }
 
 .xmc-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
+  letter-spacing: 0;
+}
+
+.xmc-subtitle {
+  margin-top: 2px;
+  color: #536471;
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .xmc-close {
   width: 28px;
   height: 28px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 999px;
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -54,17 +66,23 @@
 
 .xmc-body {
   display: grid;
-  gap: 9px;
+  gap: 10px;
   padding: 12px;
 }
 
 .xmc-button {
-  min-height: 40px;
+  min-height: 38px;
   width: 100%;
   border: 1px solid rgba(83, 100, 113, 0.28);
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
+  font-size: 13px;
   font-weight: 800;
+  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.xmc-button:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .xmc-button-primary {
@@ -96,18 +114,59 @@
 }
 
 .xmc-status {
-  min-height: 34px;
-  padding: 8px;
-  border-radius: 6px;
+  min-height: 38px;
+  padding: 9px 10px;
+  border: 1px solid rgba(29, 155, 240, 0.18);
+  border-radius: 12px;
   background: rgba(29, 155, 240, 0.08);
   color: inherit;
   line-height: 1.45;
 }
 
 .xmc-stats {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(83, 100, 113, 0.08);
   color: #536471;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.xmc-section {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(207, 217, 222, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.xmc-section-warn {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(255, 251, 235, 0.84);
+}
+
+.xmc-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.xmc-section-head span {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.xmc-section-head em {
+  color: #536471;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 650;
+  white-space: nowrap;
 }
 
 .xmc-note {
@@ -117,22 +176,24 @@
 }
 
 .xmc-test-section {
-  border-top: 1px solid rgba(83, 100, 113, 0.18);
-  padding-top: 6px;
+  border: 1px solid rgba(207, 217, 222, 0.9);
+  border-radius: 14px;
+  background: rgba(247, 249, 249, 0.78);
 }
 
 .xmc-test-summary {
   cursor: pointer;
-  color: #536471;
-  font-size: 12px;
+  padding: 10px;
+  color: #0f1419;
+  font-size: 13px;
   font-weight: 800;
   line-height: 1.5;
 }
 
 .xmc-test-panel {
   display: grid;
-  gap: 7px;
-  padding-top: 8px;
+  gap: 9px;
+  padding: 0 10px 10px;
 }
 
 .xmc-resource-link {
@@ -151,7 +212,7 @@
 }
 
 .xmc-log {
-  max-height: 96px;
+  max-height: 108px;
   overflow: auto;
   border-top: 1px solid rgba(83, 100, 113, 0.18);
   padding-top: 7px;
@@ -163,10 +224,34 @@
 
 @media (prefers-color-scheme: dark) {
   .xmc-stats,
+  .xmc-subtitle,
   .xmc-note,
-  .xmc-test-summary,
+  .xmc-section-head em,
   .xmc-log {
     color: #8b98a5;
+  }
+
+  .xmc-header {
+    background: linear-gradient(180deg, rgba(15, 20, 25, 0.98), rgba(0, 0, 0, 0.96));
+  }
+
+  .xmc-stats {
+    background: rgba(231, 233, 234, 0.08);
+  }
+
+  .xmc-section,
+  .xmc-test-section {
+    border-color: rgba(231, 233, 234, 0.16);
+    background: rgba(22, 24, 28, 0.78);
+  }
+
+  .xmc-section-warn {
+    border-color: rgba(245, 158, 11, 0.36);
+    background: rgba(120, 53, 15, 0.18);
+  }
+
+  .xmc-test-summary {
+    color: #e7e9ea;
   }
 
   .xmc-button-secondary {

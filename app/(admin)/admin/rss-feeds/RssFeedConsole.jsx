@@ -437,7 +437,7 @@ function RssAnalyticsPanel({ analytics }) {
         <div className="min-w-0 rounded-lg border border-[#eef0e8] bg-[#fbfbf8] p-3 dark:border-[#1b2633] dark:bg-[#0c121a]">
           <h3 className="mb-3 text-sm font-semibold text-[#15140f] dark:text-gray-100">Reader / 客户端分布 · 近 30 天</h3>
           {readers.length ? (
-            <ul className="grid gap-2">
+            <ul className="grid max-h-[360px] gap-2 overflow-auto pr-1">
               {readers.map((row) => (
                 <li
                   key={row.reader}

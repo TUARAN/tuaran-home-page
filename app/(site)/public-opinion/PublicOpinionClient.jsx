@@ -68,6 +68,25 @@ function SegmentButton({ active, children, onClick, testId }) {
   )
 }
 
+function FilterSelect({ label, value, options, onChange }) {
+  return (
+    <label className="inline-flex items-center gap-2 text-[12px] text-[#68706a] dark:text-[#98a5b6]">
+      <span className="shrink-0">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 min-w-[108px] border border-[#cfd4ca] bg-white px-2 text-[12px] font-medium text-[#535d59] outline-none transition focus:border-[#20343c] dark:border-[#324050] dark:bg-[#101720] dark:text-[#b8c2cf] dark:focus:border-[#d6dbc5]"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
 function Meter({ value, color = 'bg-[#476a75]' }) {
   const width = Math.max(4, Math.min(100, value))
   return (
@@ -246,7 +265,7 @@ function TopicDetail({ topic }) {
   if (!topic) return null
 
   return (
-    <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
+    <section className="self-start border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
       <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Selected Topic</p>
       <h2 className="mb-3 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">{topic.title}</h2>
       <p className="text-[13px] leading-6 text-[#59605b] dark:text-[#b8c2cf]">{topic.summary}</p>
@@ -314,20 +333,56 @@ function SourceConnectors({ connectors, sourceCounts, activeSourceId, onSelect }
   )
 }
 
-function PostFeed({ posts }) {
+function PostFeed({ posts, connectors, filters, onFilterChange }) {
+  const sourceOptions = [
+    { value: 'all', label: '全部来源' },
+    ...connectors.map((connector) => ({ value: connector.id, label: connector.label })),
+  ]
+  const sentimentOptions = [
+    { value: 'all', label: '全部情绪' },
+    ...Object.entries(SENTIMENT_META).map(([value, meta]) => ({ value, label: meta.label })),
+  ]
+  const stanceOptions = [
+    { value: 'all', label: '全部立场' },
+    ...Object.entries(STANCE_META).map(([value, meta]) => ({ value, label: meta.label })),
+  ]
+
   return (
     <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923] lg:col-span-2">
-      <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3 border-b border-[#dfe1d6] pb-4 dark:border-[#303b4a] xl:flex-row xl:items-start xl:justify-between">
         <div>
           <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Evidence Feed</p>
           <h2 className="mb-0 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">
             样本观点与立场识别
           </h2>
+          <p className="mb-0 mt-1 text-[12px] text-[#68706a] dark:text-[#98a5b6]">
+            当前 {numberFormat(posts.length)} 条样本
+          </p>
         </div>
-        <IconMessageCircle2 className="h-5 w-5 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterSelect
+            label="来源"
+            value={filters.source}
+            options={sourceOptions}
+            onChange={(value) => onFilterChange('source', value)}
+          />
+          <FilterSelect
+            label="情绪"
+            value={filters.sentiment}
+            options={sentimentOptions}
+            onChange={(value) => onFilterChange('sentiment', value)}
+          />
+          <FilterSelect
+            label="立场"
+            value={filters.stance}
+            options={stanceOptions}
+            onChange={(value) => onFilterChange('stance', value)}
+          />
+          <IconMessageCircle2 className="h-5 w-5 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
+        </div>
       </div>
-      <div className="space-y-3">
-        {posts.map((post) => {
+      <div className="max-h-[640px] space-y-3 overflow-auto pr-1">
+        {posts.length ? posts.map((post) => {
           const sentimentKey = getSentimentBucket(post.sentiment)
           return (
             <article key={post.id} className="border border-[#e2e4da] bg-[#fbfbf7] p-3 dark:border-[#303b4a] dark:bg-[#151d27]">
@@ -357,7 +412,11 @@ function PostFeed({ posts }) {
               </div>
             </article>
           )
-        })}
+        }) : (
+          <div className="border border-dashed border-[#d7d9cf] bg-[#fbfbf7] p-6 text-center text-[13px] text-[#68706a] dark:border-[#303b4a] dark:bg-[#151d27] dark:text-[#98a5b6]">
+            当前筛选条件下没有样本。
+          </div>
+        )}
       </div>
     </section>
   )
@@ -427,6 +486,8 @@ export default function PublicOpinionClient({
   })
   const [activeTopicId, setActiveTopicId] = useState('all')
   const [activeSourceId, setActiveSourceId] = useState('all')
+  const [activeSentiment, setActiveSentiment] = useState('all')
+  const [activeStance, setActiveStance] = useState('all')
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState('')
 
@@ -453,9 +514,17 @@ export default function PublicOpinionClient({
     return data.posts.filter((post) => {
       if (activeTopicId !== 'all' && post.topicId !== activeTopicId) return false
       if (activeSourceId !== 'all' && post.sourceId !== activeSourceId) return false
+      if (activeSentiment !== 'all' && getSentimentBucket(post.sentiment) !== activeSentiment) return false
+      if (activeStance !== 'all' && post.stance !== activeStance) return false
       return true
     })
-  }, [activeSourceId, activeTopicId, data.posts])
+  }, [activeSentiment, activeSourceId, activeStance, activeTopicId, data.posts])
+
+  const handleEvidenceFilterChange = useCallback((key, value) => {
+    if (key === 'source') setActiveSourceId(value)
+    if (key === 'sentiment') setActiveSentiment(value)
+    if (key === 'stance') setActiveStance(value)
+  }, [])
 
   const snapshot = useMemo(
     () => buildPublicOpinionSnapshot(filteredPosts, data.topics, data.connectors),
@@ -577,9 +646,14 @@ export default function PublicOpinionClient({
             <Distribution title="网民立场" items={snapshot.stanceCounts} total={snapshot.totalPosts} meta={STANCE_META} />
           </section>
 
-          <section className="mt-4 grid gap-4 lg:grid-cols-3">
+          <section className="mt-4 grid items-start gap-4 lg:grid-cols-3">
             <TopicDetail topic={activeTopic} />
-            <PostFeed posts={filteredPosts} />
+            <PostFeed
+              posts={filteredPosts}
+              connectors={data.connectors}
+              filters={{ source: activeSourceId, sentiment: activeSentiment, stance: activeStance }}
+              onFilterChange={handleEvidenceFilterChange}
+            />
           </section>
 
           <section className="mt-4">

@@ -86,7 +86,7 @@ export default function NewsletterSignup({ source = 'article_footer' }) {
           {message ? <p className="mb-0 mt-2 text-[12px] leading-5 text-emerald-700 dark:text-emerald-300">{message}</p> : null}
           {error ? <p className="mb-0 mt-2 text-[12px] leading-5 text-rose-600 dark:text-rose-300">{error}</p> : null}
           <p className="mb-0 mt-2 text-[11px] leading-5 text-[#999] dark:text-gray-500">
-            先用本站 D1 记录订阅；配置 Buttondown token 后会同步到 Buttondown。
+            订阅会记录在本站，后续用于发送新文章、资源更新和工具发布提醒。
           </p>
         </div>
       </div>

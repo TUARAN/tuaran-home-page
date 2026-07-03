@@ -172,7 +172,7 @@ export default function XMutualCleanerResourcePage() {
               在 Followers / Verified Followers 页面可慢速批量点击 Follow back，只处理已经关注你的账号。
             </FeatureCard>
             <FeatureCard title="候选关注">
-              在任意账号 Followers 页面低频点击普通 Follow：每轮最多 10 个，30 秒一个，完成后建议暂停 15 分钟。
+              在任意账号 Followers 页面低频点击普通 Follow：每批最多 10 个，30 秒一个，自动暂停 15 分钟后继续。
             </FeatureCard>
             <FeatureCard title="本地运行">
               插件运行在你自己的浏览器页面里，不需要你提供账号密码，也不把关注列表上传到第三方服务器。
@@ -190,14 +190,14 @@ export default function XMutualCleanerResourcePage() {
           </p>
           <p>
             批量回关属于测试功能。它只会点击显示 <strong>Follow back</strong> / <strong>回关</strong> 的按钮，
-            入口收在插件面板的“测试功能”折叠区里。默认每次回关后等待 5 秒，每回关 10 个暂停 1 分钟，
+            入口标为“功能 2 回关粉丝”。默认每次回关后等待 5 秒，每回关 10 个暂停 1 分钟，
             单次运行最多回关 50 个；如果 X 列表出现 Something went wrong，会先暂停 30 秒再点击 Retry 尝试恢复。
           </p>
           <p>
             关注候选也属于测试功能。它只会在 Followers / Verified Followers 列表里点击普通
             <strong> Follow</strong> / <strong>关注</strong>，不会处理 Follow back 或已经 Following 的账号。
-            当前口径是：每轮最多 10 个，每个动作间隔 30 秒；完成 10 个后本轮结束，建议至少暂停 15 分钟再继续；
-            每日建议不超过 200 个。这个功能不建议用于复制他人粉丝列表或无限量增长。
+            当前口径是：每批最多 10 个，每个动作间隔 30 秒；完成 10 个后自动暂停 15 分钟，按钮显示倒计时；
+            倒计时结束后自动进入下一批，单次运行最多 200 个。这个功能不建议用于复制他人粉丝列表或无限量增长。
           </p>
           <p>
             <a href="https://www.axios.com/2019/04/08/twitter-spam-follow-limit" target="_blank" rel="noreferrer">
@@ -221,7 +221,7 @@ export default function XMutualCleanerResourcePage() {
           <h2>如何测试批量 Follow back？</h2>
           <ol>
             <li>登录 X，打开 <code>https://x.com/你的用户名/followers</code> 或 Verified Followers 页面。</li>
-            <li>展开右下角插件面板里的“测试功能”，点击“回关粉丝”。</li>
+            <li>在右下角插件面板里找到“功能 2 回关粉丝”，点击“开始”。</li>
             <li>插件只处理有 Follows you 标记且按钮是 Follow back 的账号，已经 Following 的账号会跳过。</li>
             <li>需要停止时，再点同一个按钮。</li>
           </ol>
@@ -229,9 +229,9 @@ export default function XMutualCleanerResourcePage() {
           <h2>如何测试关注候选？</h2>
           <ol>
             <li>登录 X，打开任意账号的 <code>https://x.com/目标用户名/followers</code> 或 Verified Followers 页面。</li>
-            <li>展开右下角插件面板里的“测试功能”，点击“关注候选”。</li>
+            <li>在右下角插件面板里找到“功能 3 关注候选”，点击“开始”。</li>
             <li>插件只处理右侧按钮是普通 Follow / 关注的账号；已经 Following、Follow back 或无法识别的行会跳过。</li>
-            <li>本轮最多 10 个，两个关注动作之间间隔 30 秒；完成 10 个后建议暂停 15 分钟，每日建议不超过 200 个。</li>
+            <li>每批最多 10 个，两个关注动作之间间隔 30 秒；完成 10 个后自动暂停 15 分钟并显示倒计时，倒计时结束后继续下一批，单次最多 200 个。</li>
             <li>需要停止时，再点同一个按钮。</li>
           </ol>
 

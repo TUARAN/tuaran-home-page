@@ -2156,25 +2156,51 @@
     font-weight: 700;
   }
 
-  .discussion-qr-card {
+  .discussion-qr-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     border: 1px solid var(--site-line);
-    border-radius: 0.45rem;
+    border-radius: 0.5rem;
+    padding: 0.65rem;
+    background-color: color-mix(in srgb, var(--site-panel) 76%, transparent);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .discussion-qr-entry:hover {
+    border-color: color-mix(in srgb, var(--site-accent) 30%, var(--site-line));
+    background-color: color-mix(in srgb, var(--site-panel-strong) 90%, transparent);
+  }
+
+  .discussion-qr-entry-primary {
+    border-color: color-mix(in srgb, var(--site-accent) 26%, var(--site-line));
+    background-color: color-mix(in srgb, var(--site-accent) 7%, var(--site-panel-strong));
+  }
+
+  .discussion-qr-image {
+    display: flex;
+    height: 5.5rem;
+    width: 5.5rem;
+    flex: none;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
-    background-color: var(--site-panel-strong);
+    border: 1px solid color-mix(in srgb, var(--site-line-strong) 76%, transparent);
+    border-radius: 0.4rem;
+    background-color: #fff;
+    padding: 0.25rem;
   }
 
-  .discussion-qr-card-primary img {
-    max-width: 9rem;
-    margin: 0 auto;
-  }
-
-  .discussion-qr-card span {
-    display: block;
-    border-top: 1px solid var(--site-line);
-    padding: 0.4rem 0.5rem;
-    color: var(--site-muted);
-    font-size: 12px;
-    text-align: center;
+  .discussion-qr-tag {
+    flex: none;
+    border: 1px solid color-mix(in srgb, var(--site-accent) 22%, transparent);
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--site-accent) 9%, transparent);
+    color: var(--site-accent-strong);
+    padding: 0.1rem 0.45rem;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.4;
   }
 
   .discussion-text-link,

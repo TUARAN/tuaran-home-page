@@ -84,6 +84,9 @@ function feedContentHtml(item) {
     )
   }
   if (item.summary) parts.push(`<p>${escapeXml(item.summary)}</p>`)
+  if (item.prompt) {
+    parts.push(`<pre>${escapeXml(item.prompt)}</pre>`)
+  }
   if (item.type === 'link' && item.href) {
     parts.push(`<p><a href="${escapeXml(item.href)}">查看资源 →</a></p>`)
   }

@@ -7,13 +7,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSessionAccount } from '../components/SessionProvider'
 import UserAvatar from '../components/UserAvatar'
 
-const WECHAT_QR_ITEM = { src: '/qrcode-wechat.jpg', label: '个人微信号' }
+const WECHAT_QR_ITEM = {
+  src: '/qrcode-wechat.jpg',
+  label: '个人微信号',
+  desc: '群二维码失效时，先加我拉你进群。',
+  tag: '联系站长',
+}
 
 const GROUP_QR_ITEMS = [
-  { src: '/qrcode-x-group.jpg', label: 'X互帮互助群' },
-  { src: '/qrcode-community1.jpg', label: '前端周刊群' },
-  { src: '/qrcode-community2.jpg', label: '抽奖粉丝群' },
-  { src: '/qrcode-community3.jpg', label: 'AI资讯群' },
+  { src: '/qrcode-x-group.jpg', label: 'X 互帮互助群', desc: 'X 互关、账号增长、创作者互助。', tag: '互助' },
+  { src: '/qrcode-community1.jpg', label: '前端周刊群', desc: '前端、AI 工程、技术内容同步。', tag: '技术' },
+  { src: '/qrcode-community2.jpg', label: '抽奖粉丝群', desc: '抽奖活动、福利通知和粉丝互动。', tag: '活动' },
+  { src: '/qrcode-community3.jpg', label: 'AI 资讯群', desc: 'AI 产品、工具、资讯和案例分享。', tag: 'AI' },
 ]
 
 function formatTime(ts) {
@@ -110,6 +115,32 @@ function ThreadItem({ thread }) {
     <Link href={thread.href} className="block no-underline hover:no-underline">
       {content}
     </Link>
+  )
+}
+
+function QrEntry({ item, primary = false }) {
+  return (
+    <div className={`discussion-qr-entry ${primary ? 'discussion-qr-entry-primary' : ''}`}>
+      <div className="discussion-qr-image">
+        <Image
+          src={item.src}
+          alt={item.label}
+          width={96}
+          height={96}
+          sizes="96px"
+          className="h-full w-full object-contain"
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex min-w-0 items-center gap-2">
+          <h3 className="mb-0 truncate border-0 p-0 text-sm font-semibold text-[var(--site-ink)]">
+            {item.label}
+          </h3>
+          <span className="discussion-qr-tag">{item.tag}</span>
+        </div>
+        <p className="mb-0 text-xs leading-5 text-[var(--site-muted)]">{item.desc}</p>
+      </div>
+    </div>
   )
 }
 
@@ -271,32 +302,10 @@ export default function DiscussionHubClient() {
           <p className="mb-3 text-sm text-[var(--site-muted)]">
             加群二维码会不定期更新，失效时可先加微信号。
           </p>
-          <div className="mb-3">
-            <div className="discussion-qr-card discussion-qr-card-primary">
-              <Image
-                src={WECHAT_QR_ITEM.src}
-                alt={WECHAT_QR_ITEM.label}
-                width={132}
-                height={132}
-                sizes="132px"
-                className="h-auto w-full object-contain"
-              />
-              <span>{WECHAT_QR_ITEM.label}</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-2.5">
+            <QrEntry item={WECHAT_QR_ITEM} primary />
             {GROUP_QR_ITEMS.map((item) => (
-              <div key={item.src} className="discussion-qr-card">
-                <Image
-                  src={item.src}
-                  alt={item.label}
-                  width={132}
-                  height={132}
-                  sizes="132px"
-                  className="h-auto w-full object-contain"
-                />
-                <span>{item.label}</span>
-              </div>
+              <QrEntry key={item.src} item={item} />
             ))}
           </div>
         </section>

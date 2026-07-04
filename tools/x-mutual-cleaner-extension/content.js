@@ -382,19 +382,29 @@
     return { progressed: false, rows: latestRows };
   }
 
-  function setStatus(message) {
-    const status = document.querySelector(`#${PANEL_ID} .xmc-status`);
+  function getFeatureStatus(mode) {
+    if (!mode) return null;
+    return document.querySelector(`#${PANEL_ID} [data-xmc-feature="${mode}"] .xmc-feature-status`);
+  }
+
+  function getFeatureStats(mode) {
+    if (!mode) return null;
+    return document.querySelector(`#${PANEL_ID} [data-xmc-feature="${mode}"] .xmc-feature-stats`);
+  }
+
+  function setStatus(message, mode = state.mode) {
+    const status = getFeatureStatus(mode);
     if (status) status.textContent = message;
   }
 
-  function setStats() {
-    const stats = document.querySelector(`#${PANEL_ID} .xmc-stats`);
+  function setStats(mode = state.mode) {
+    const stats = getFeatureStats(mode);
     if (!stats) return;
-    if (state.mode === "targetFollow") {
+    if (mode === "targetFollow") {
       stats.textContent = `已关注 ${state.targetFollowed}/${TARGET_FOLLOW_MAX_PER_RUN} · 跳过 ${state.skipped} · 异常 ${state.errors}`;
       return;
     }
-    if (state.mode === "followBack") {
+    if (mode === "followBack") {
       stats.textContent = `已回关 ${state.followedBack} · 已互关 ${state.skipped} · 异常 ${state.errors}`;
       return;
     }
@@ -652,22 +662,22 @@
     }
 
     if (mode === "unfollow" && !isFollowingPage()) {
-      setStatus("请先打开自己的 X Following 页面");
+      setStatus("请先打开自己的 X Following 页面", mode);
       return false;
     }
 
     if (mode === "followBack" && !isFollowersPage()) {
-      setStatus("请先打开自己的 X Followers 或 Verified Followers 页面");
+      setStatus("请先打开自己的 X Followers 或 Verified Followers 页面", mode);
       return false;
     }
 
     if (mode === "targetFollow" && !isFollowersPage()) {
-      setStatus("请先打开某个账号的 Followers 或 Verified Followers 页面");
+      setStatus("请先打开某个账号的 Followers 或 Verified Followers 页面", mode);
       return false;
     }
 
     if (!looksLoggedIn()) {
-      setStatus("请先登录 X，再回到对应列表页面");
+      setStatus("请先登录 X，再回到对应列表页面", mode);
       return false;
     }
 
@@ -684,7 +694,7 @@
     state.seenHandles.clear();
     state.skippedHandles.clear();
     setButtons();
-    setStats();
+    setStats(mode);
     return true;
   }
 
@@ -736,11 +746,11 @@
 
     state.running = false;
     state.stopping = false;
-    state.mode = "";
     state.pausedByHidden = false;
     setButtons();
-    setStats();
-    setStatus(`完成：已取消 ${state.unfollowed} 个`);
+    setStats("unfollow");
+    setStatus(`完成：已取消 ${state.unfollowed} 个`, "unfollow");
+    state.mode = "";
     log("执行结束");
   }
 
@@ -805,10 +815,10 @@
     state.running = false;
     state.stopping = false;
     state.pausedByHidden = false;
-    setStats();
-    state.mode = "";
+    setStats("followBack");
     setButtons();
-    setStatus(`完成：已回关 ${state.followedBack} 个`);
+    setStatus(`完成：已回关 ${state.followedBack} 个`, "followBack");
+    state.mode = "";
     log("回关测试结束");
   }
 
@@ -880,17 +890,17 @@
     state.running = false;
     state.stopping = false;
     state.pausedByHidden = false;
-    setStats();
-    state.mode = "";
+    setStats("targetFollow");
     setButtons();
 
     if (state.targetFollowed >= TARGET_FOLLOW_MAX_PER_RUN) {
-      setStatus(`完成：已关注 ${state.targetFollowed} 个，达到单次运行上限`);
+      setStatus(`完成：已关注 ${state.targetFollowed} 个，达到单次运行上限`, "targetFollow");
       log("关注候选达到单次运行上限");
     } else {
-      setStatus(`完成：已关注 ${state.targetFollowed} 个`);
+      setStatus(`完成：已关注 ${state.targetFollowed} 个`, "targetFollow");
       log("关注候选测试结束");
     }
+    state.mode = "";
   }
 
   function renderPanel() {
@@ -907,29 +917,33 @@
         <button class="xmc-close" type="button" aria-label="关闭">×</button>
       </div>
       <div class="xmc-body">
-        <div class="xmc-status">打开对应列表页后选择一个操作。</div>
-        <div class="xmc-stats">已取消 0 · 跳过互关 0 · 异常 0</div>
         <div class="xmc-feature-list">
-          <div class="xmc-feature">
+          <div class="xmc-feature" data-xmc-feature="unfollow">
             <div class="xmc-feature-main">
               <div class="xmc-feature-title"><b>功能 1</b><span>清理未回关</span></div>
               <button class="xmc-button xmc-button-primary xmc-button-compact" type="button" data-xmc-mode="unfollow">开始</button>
             </div>
             <div class="xmc-note">自己的 Following 页：跳过 Follows you，只取消没有互关标记的 Following。</div>
+            <div class="xmc-feature-status">待命：打开自己的 Following 页后开始。</div>
+            <div class="xmc-feature-stats">已取消 0 · 跳过互关 0 · 异常 0</div>
           </div>
-          <div class="xmc-feature">
+          <div class="xmc-feature" data-xmc-feature="followBack">
             <div class="xmc-feature-main">
               <div class="xmc-feature-title"><b>功能 2</b><span>回关粉丝</span><em>测试</em></div>
               <button class="xmc-button xmc-button-secondary xmc-button-compact" type="button" data-xmc-mode="followBack">开始</button>
             </div>
             <div class="xmc-note">自己的 Followers 页：只点 Follow back / 回关。5 秒一个，10 个暂停 1 分钟，单次最多 50 个。</div>
+            <div class="xmc-feature-status">待命：打开自己的 Followers 页后开始。</div>
+            <div class="xmc-feature-stats">已回关 0 · 已互关 0 · 异常 0</div>
           </div>
-          <div class="xmc-feature">
+          <div class="xmc-feature" data-xmc-feature="targetFollow">
             <div class="xmc-feature-main">
               <div class="xmc-feature-title"><b>功能 3</b><span>关注候选</span><em>测试</em></div>
               <button class="xmc-button xmc-button-secondary xmc-button-compact" type="button" data-xmc-mode="targetFollow">开始</button>
             </div>
             <div class="xmc-note">任意账号 Followers 页：只点普通 Follow。每批 10 个，30 秒一个；自动暂停 15 分钟后继续，单次最多 200 个。</div>
+            <div class="xmc-feature-status">待命：打开任意账号 Followers 页后开始。</div>
+            <div class="xmc-feature-stats">已关注 0/200 · 跳过 0 · 异常 0</div>
           </div>
         </div>
         <a

@@ -23,24 +23,36 @@ export default function sitemap() {
     }
   })
 
-  const researchEntries = listResearch().map((entry) => {
-    const parsed = entry.dateTimeIso ? Date.parse(entry.dateTimeIso) : entry.date ? Date.parse(entry.date) : NaN
-    return {
-      url: `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`,
-      lastModified: Number.isNaN(parsed) ? now : new Date(parsed),
-    }
-  })
+  const researchEntries = listResearch()
+    .filter((entry) => !entry.encrypted)
+    .map((entry) => {
+      const parsed = entry.dateTimeIso ? Date.parse(entry.dateTimeIso) : entry.date ? Date.parse(entry.date) : NaN
+      return {
+        url: `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`,
+        lastModified: Number.isNaN(parsed) ? now : new Date(parsed),
+      }
+    })
 
   const staticRoutes = [
     '',
     '/about',
     '/services',
     '/articles',
+    '/articles/creation-calendar',
     '/works',
     '/tools',
     '/browser-extensions',
     '/skill-center',
     '/context-memory',
+    '/cancers-overview',
+    '/platform-framework-pairs',
+    '/ai-token-usage-research',
+    '/skill-market-research',
+    '/sun-moon-motion',
+    '/tang-ping-map',
+    '/zhang-juzheng-book',
+    '/writing-monetization-2026',
+    '/agent-world-cup',
     '/bookmarks/twitter',
     '/bookmarks/youtube',
     '/bookmarks/llm-tutorials',
@@ -48,6 +60,8 @@ export default function sitemap() {
     '/bookmarks/ai-tools',
     '/resources/rss',
     '/resources/codex-learning-resource-map-yichen',
+    '/resources/shen-zhi-ding-nei',
+    '/resources/wallpapers',
     '/resources/x-mutual-cleaner-extension',
     '/resources/x-mutual-aid-circle',
     '/community',
@@ -56,26 +70,16 @@ export default function sitemap() {
     '/donate',
     '/eatwhat',
     '/messages',
-    '/people',
-    '/people/elon-musk',
-    '/people/su-shi',
-    '/people/ai-pioneers',
     '/history/ming-qing',
     '/classical-masterpieces',
     '/ru-shi-dao',
     '/china-politics',
     '/reading',
-    '/resources/shen-zhi-ding-nei',
-    '/traffic',
     '/web-llm',
-    '/writing-monetization-2026',
     '/xiaomoli-dad-todo',
-    '/agent-world-cup',
-    '/stock-analysis',
-    '/stock-analysis',
   ]
 
-  return [
+  const entries = [
     ...staticRoutes.map((path) => ({
       url: `${SITE_URL}${path}`,
       lastModified: now,
@@ -83,4 +87,6 @@ export default function sitemap() {
     ...articleEntries,
     ...researchEntries,
   ]
+
+  return Array.from(new Map(entries.map((entry) => [entry.url, entry])).values())
 }

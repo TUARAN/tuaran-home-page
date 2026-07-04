@@ -47,7 +47,7 @@
   margin: 0 auto;
   padding: clamp(72px, 10vw, 140px) 0 44px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) minmax(520px, 600px);
   grid-template-rows: 1fr auto;
   gap: 48px;
   align-items: center;
@@ -104,9 +104,18 @@
 .enterButton:hover,
 .primaryAction:hover { background: #39352e; }
 
+.entrancePanel {
+  align-self: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  align-items: stretch;
+  border-top: 1px solid #a9a092;
+  border-bottom: 1px solid #a9a092;
+}
+
 .entranceStats {
   align-self: end;
-  border-top: 1px solid #a9a092;
+  border-left: 1px solid #a9a092;
 }
 
 .entranceStats div {
@@ -114,8 +123,10 @@
   grid-template-columns: 64px 1fr;
   align-items: baseline;
   padding: 17px 0;
-  border-bottom: 1px solid #a9a092;
+  border-top: 1px solid #a9a092;
 }
+
+.entranceStats div:first-child { border-top: 0; }
 
 .entranceStats strong {
   font: 500 32px/1 Georgia, serif;
@@ -412,6 +423,48 @@
   border-bottom: 1px solid var(--museum-line);
 }
 
+.entranceDirectory {
+  width: auto;
+  margin: 0;
+  grid-template-columns: 118px minmax(0, 1fr);
+  border: 0;
+}
+
+.entranceDirectory .directoryTitle {
+  min-height: 0;
+  padding: 20px 18px 20px 0;
+}
+
+.entranceDirectory .directoryTitle strong {
+  font-size: 20px;
+}
+
+.entranceDirectory .directoryTitle p {
+  display: none;
+}
+
+.entranceDirectory a {
+  grid-template-columns: 34px minmax(0, 1fr) 22px;
+  min-height: 45px;
+  padding: 0 10px 0 14px;
+}
+
+.entranceDirectory a:hover {
+  padding-left: 18px;
+}
+
+.entranceDirectory a strong {
+  font-size: 13px;
+}
+
+.entranceDirectory a small {
+  display: none;
+}
+
+.entranceDirectory a em {
+  font-size: 10px;
+}
+
 .directoryTitle {
   display: flex;
   flex-direction: column;
@@ -614,6 +667,7 @@
 }
 :global(.dark) .entranceLead { color: #bbb5aa; }
 :global(.dark) .entranceGrid span { border-color: rgba(255,255,255,.06); }
+:global(.dark) .entrancePanel { border-color: #464740; }
 :global(.dark) .entranceStats { border-color: #464740; }
 :global(.dark) .entranceStats div { border-color: #464740; }
 :global(.dark) .featuredSlide { background: #181a17; border-color: #3b3c36; }
@@ -634,8 +688,11 @@
 @media (max-width: 900px) {
   .entrance { min-height: auto; }
   .entranceInner { min-height: 700px; grid-template-columns: 1fr; grid-template-rows: auto auto auto; align-items: end; }
+  .entrancePanel { grid-template-columns: 1fr; }
+  .entranceDirectory { grid-template-columns: 190px 1fr; border-bottom: 1px solid #a9a092; }
   .entranceStats { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .entranceStats div { display: flex; flex-direction: column; gap: 8px; border-right: 1px solid #a9a092; padding: 15px; }
+  .entranceStats { border-left: 0; }
+  .entranceStats div { display: flex; flex-direction: column; gap: 8px; border-top: 0; border-right: 1px solid #a9a092; padding: 15px; }
   .entranceStats div:last-child { border-right: 0; }
   .featuredSlide { grid-template-columns: 1fr; min-height: 0; }
   .featuredInfo { min-height: 420px; border-right: 0; border-bottom: 1px solid #bdb4a6; }
@@ -681,8 +738,12 @@
   .posterTitle { font-size: 17px; }
   .posterCaption { display: none; }
   .roomDirectory { display: block; margin-bottom: 74px; }
+  .entranceDirectory { margin-bottom: 0; border-bottom: 1px solid var(--museum-line); }
   .directoryTitle { min-height: 110px; padding: 18px 0; border-right: 0; border-bottom: 1px solid var(--museum-line); }
+  .entranceDirectory .directoryTitle { min-height: auto; padding: 14px 0; }
+  .entranceDirectory .directoryTitle strong { font-size: 18px; }
   .roomDirectory a { min-height: 60px; padding-inline: 6px; }
+  .entranceDirectory a { min-height: 42px; }
   .room { display: block; padding: 72px 0; }
   .roomIntro { position: static; margin-bottom: 42px; }
   .roomCount { position: absolute; right: 18px; margin-top: -65px; font-size: 80px; }

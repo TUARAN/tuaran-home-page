@@ -253,10 +253,33 @@ export default function WorksMuseumClient({ featuredItems, sections, items, oper
             </a>
           </div>
 
-          <div className={styles.entranceStats} aria-label="展览数据">
-            <div><strong>{items.length}</strong><span>件数字作品</span></div>
-            <div><strong>{sections.length}</strong><span>个主题展厅</span></div>
-            <div><strong>{operatingCount}</strong><span>件持续运营</span></div>
+          <div className={styles.entrancePanel}>
+            <nav className={`${styles.roomDirectory} ${styles.entranceDirectory}`} aria-label="展厅导航">
+              <div className={styles.directoryTitle}>
+                <span>Floor Directory</span>
+                <strong>展区导览</strong>
+              </div>
+              <ol>
+                {sections.map((section, index) => (
+                  <li key={section.id}>
+                    <a href={`#room-${section.id}`} onClick={(event) => handleRoomLinkClick(event, section.id)}>
+                      <span>{numberLabel(index)}</span>
+                      <strong>
+                        {section.title}
+                        <small>{section.description}</small>
+                      </strong>
+                      <em>{section.items.length}</em>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+
+            <div className={styles.entranceStats} aria-label="展览数据">
+              <div><strong>{items.length}</strong><span>件数字作品</span></div>
+              <div><strong>{sections.length}</strong><span>个主题展厅</span></div>
+              <div><strong>{operatingCount}</strong><span>件持续运营</span></div>
+            </div>
           </div>
 
           <div className={styles.entranceLabel}>
@@ -330,28 +353,6 @@ export default function WorksMuseumClient({ featuredItems, sections, items, oper
           </button>
         </div>
       </section>
-
-      <nav className={styles.roomDirectory} aria-label="展厅导航">
-        <div className={styles.directoryTitle}>
-          <span>Floor Directory</span>
-          <strong>展区导览</strong>
-          <p>按作品用途分区：先看长期产品，再看 AI 工程、研究页面和可下载工具。</p>
-        </div>
-        <ol>
-          {sections.map((section, index) => (
-            <li key={section.id}>
-              <a href={`#room-${section.id}`} onClick={(event) => handleRoomLinkClick(event, section.id)}>
-                <span>{numberLabel(index)}</span>
-                <strong>
-                  {section.title}
-                  <small>{section.description}</small>
-                </strong>
-                <em>{section.items.length}</em>
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
 
       <div className={styles.rooms}>
         {sections.map((section, sectionIndex) => {

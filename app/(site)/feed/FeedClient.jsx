@@ -29,6 +29,10 @@ function itemShareText(item) {
   ].filter(Boolean).join('\n')
 }
 
+function itemDistributeSummary(item) {
+  return [item.summary || item.quote || '', item.prompt ? `提示词：\n${item.prompt}` : ''].filter(Boolean).join('\n\n')
+}
+
 function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinity }) {
   const tags = item.tags || []
   const visibleTags = Number.isFinite(maxTags) ? tags.slice(0, maxTags) : tags
@@ -88,7 +92,7 @@ function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinit
           <ArticleActionsDropdown label="更多">
             <DistributeContentButton
               title={item.title}
-              summary={item.summary || item.quote || ''}
+              summary={itemDistributeSummary(item)}
               images={[item.src, item.image, item.poster].filter(Boolean)}
               url={`/feed/${item.id}`}
               category="feed"
@@ -100,6 +104,20 @@ function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinit
         </div>
       ) : null}
     </div>
+  )
+}
+
+function PromptBlock({ prompt }) {
+  if (!prompt) return null
+  return (
+    <details className="mt-4 rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] p-3">
+      <summary className="cursor-pointer text-[12px] font-semibold text-[var(--site-ink)]">
+        查看完整提示词
+      </summary>
+      <pre className="mb-0 mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap rounded-md bg-[var(--site-bg)] p-3 text-[12px] leading-6 text-[var(--site-muted)]">
+        {prompt}
+      </pre>
+    </details>
   )
 }
 
@@ -186,6 +204,7 @@ function HeadlineCard({ item }) {
       ) : item.summary ? (
         <p className="mb-0 mt-4 text-[15px] leading-7 text-[var(--site-muted)]">{item.summary}</p>
       ) : null}
+      <PromptBlock prompt={item.prompt} />
       {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
       <MetaRow item={item} />
     </div>

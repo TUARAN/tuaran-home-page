@@ -74,8 +74,9 @@ export function middleware(request) {
   const shouldRedirectPoetry = pathname === '/poetry'
   const shouldRedirectThreeKingdoms = pathname === '/history/three-kingdoms'
   const shouldRedirectLongCompass = pathname === '/about/long-compass' || pathname.startsWith('/about/long-compass/')
+  const shouldRedirectXMutualAidCircle = pathname === '/resources/x-mutual-aid-circle'
 
-  if (shouldCanonicalizeHost || shouldRedirectLegacyPath || shouldRedirectPoetry || shouldRedirectThreeKingdoms || shouldRedirectLongCompass) {
+  if (shouldCanonicalizeHost || shouldRedirectLegacyPath || shouldRedirectPoetry || shouldRedirectThreeKingdoms || shouldRedirectLongCompass || shouldRedirectXMutualAidCircle) {
     const url = request.nextUrl.clone()
     if (shouldCanonicalizeHost) {
       url.protocol = 'https'
@@ -88,6 +89,8 @@ export function middleware(request) {
       url.hash = '#sanguo'
     } else if (shouldRedirectLongCompass) {
       url.pathname = pathname.replace(/^\/about\/long-compass/, '/long-compass')
+    } else if (shouldRedirectXMutualAidCircle) {
+      url.pathname = '/x-mutual-aid-circle'
     } else if (shouldRedirectLegacyPath) {
       url.pathname = '/diary'
     }

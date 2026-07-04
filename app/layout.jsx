@@ -110,7 +110,7 @@ export default function RootLayout({ children }) {
             客户端导航与水合由 ForceDarkRoute 守住。 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname;if(p==='/'||p==='/resources/x-mutual-aid-circle'){var r=document.documentElement;r.classList.add('dark');if(p==='/resources/x-mutual-aid-circle')r.style.setProperty('--page-bg','#000000');else r.style.removeProperty('--page-bg');}}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname;if(p==='/'||p==='/x-mutual-aid-circle'){var r=document.documentElement;r.classList.add('dark');if(p==='/x-mutual-aid-circle')r.style.setProperty('--page-bg','#000000');else r.style.removeProperty('--page-bg');}}catch(e){}})();`,
           }}
         />
       </body>

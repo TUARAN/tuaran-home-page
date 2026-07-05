@@ -107,7 +107,7 @@ export default function SkillMarketResearchPage() {
         <div className="mx-auto grid w-full max-w-[1120px] gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_320px] md:py-14">
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#65665c] dark:text-gray-400">
-              <Link href="/works" className="underline-offset-4 hover:underline">多维页面</Link>
+              <Link href="/articles?tab=works" className="underline-offset-4 hover:underline">多维页面</Link>
               <span>/</span>
               <span>Skill 市场调研</span>
             </div>

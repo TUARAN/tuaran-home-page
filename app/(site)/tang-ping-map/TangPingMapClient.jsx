@@ -217,7 +217,7 @@ export default function TangPingMapClient() {
     <main className="min-h-screen bg-[#eee7da] text-[#1b1b16] dark:bg-[#0d1014] dark:text-white">
       <section className="mx-auto max-w-[1240px] px-4 pb-8 pt-10 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#746c5e] dark:text-white/45">
-          <Link href="/works" className="underline underline-offset-4 hover:text-[#1b1b16] dark:hover:text-white">
+          <Link href="/articles?tab=works" className="underline underline-offset-4 hover:text-[#1b1b16] dark:hover:text-white">
             多维页面
           </Link>
           <span>·</span>

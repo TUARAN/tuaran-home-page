@@ -38,8 +38,7 @@ export default function FeedPage() {
           灵感
         </h1>
         <p className="mt-3 max-w-[680px] text-[14px] leading-7 text-[var(--site-muted)]">
-          短平快地分享有审美的图片、视频、值得一看的资源，以及一句话观点。
-          不求深，求一眼能打动你 —— 看到喜欢的，欢迎转发出去。
+          这个世界，究竟是怎样？应是怎样？会怎样？怎会这样？
         </p>
       </header>
 

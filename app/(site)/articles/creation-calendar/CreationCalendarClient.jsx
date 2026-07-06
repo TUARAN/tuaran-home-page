@@ -87,11 +87,11 @@ function buildWeekMonthLabels(weeks) {
 }
 
 function heatColorClass(value) {
-  if (!value) return 'bg-[#edeee8] dark:bg-[#151922]'
-  if (value >= 8) return 'bg-[#2f855a]'
-  if (value >= 4) return 'bg-[#57a06f]'
-  if (value >= 2) return 'bg-[#8bc79f]'
-  return 'bg-[#c6e7d0]'
+  if (!value) return 'bg-[var(--kb-heat-empty)]'
+  if (value >= 8) return 'bg-[var(--kb-heat-4)]'
+  if (value >= 4) return 'bg-[var(--kb-heat-3)]'
+  if (value >= 2) return 'bg-[var(--kb-heat-2)]'
+  return 'bg-[var(--kb-heat-1)]'
 }
 
 export default function CreationCalendarClient({ items }) {
@@ -287,11 +287,11 @@ export default function CreationCalendarClient({ items }) {
               </p>
               <p className="text-[11px] text-[#898b7d] dark:text-gray-500">
                 少
-                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#edeee8] align-middle dark:bg-[#151922]" />
-                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#c6e7d0] align-middle" />
-                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#8bc79f] align-middle" />
-                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#57a06f] align-middle" />
-                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[#2f855a] align-middle" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-empty)] align-middle" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-1)] align-middle" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-2)] align-middle" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-3)] align-middle" />
+                <span className="mx-1 inline-block h-2.5 w-2.5 rounded-[2px] bg-[var(--kb-heat-4)] align-middle" />
                 多
               </p>
             </div>

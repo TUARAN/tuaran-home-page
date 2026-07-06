@@ -6,6 +6,7 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
+import DesktopDownloadChooser from './DesktopDownloadChooser'
 
 export const dynamic = 'force-static'
 
@@ -24,6 +25,7 @@ function downloadUrl(file) {
 
 const downloads = [
   {
+    key: 'macos-arm64',
     platform: 'macOS',
     arch: 'Apple Silicon',
     file: `2aran-desktop-macos-arm64-${VERSION}.dmg`,
@@ -34,6 +36,7 @@ const downloads = [
     note: '适用于 Apple Silicon 芯片的 Mac。',
   },
   {
+    key: 'macos-x64',
     platform: 'macOS',
     arch: 'Intel',
     file: `2aran-desktop-macos-x64-${VERSION}.dmg`,
@@ -44,6 +47,7 @@ const downloads = [
     note: '适用于 Intel 芯片的 Mac。',
   },
   {
+    key: 'windows-x64',
     platform: 'Windows',
     arch: 'x64',
     file: `2aran-desktop-windows-${VERSION}.exe`,
@@ -56,8 +60,8 @@ const downloads = [
 ]
 
 const title = '2aran 桌面版下载：Windows / macOS'
-const description = '2aran 桌面版的 Windows 与 macOS 下载入口，后续用于承接站内工具、资源领取、通知和本地工作流。'
-const shareText = '2aran 桌面版下载入口：Windows 和 macOS 安装包会在这里集中发布。'
+const description = '2aran 桌面版测试版本下载入口，会根据当前系统推荐 Windows 或 macOS 安装包，并提供首次安装指引。'
+const shareText = '2aran 桌面版测试版本下载入口：自动推荐 Windows / macOS 安装包，并提供首次安装指引。'
 
 export const metadata = {
   title,
@@ -77,52 +81,6 @@ export const metadata = {
     title,
     description,
   },
-}
-
-function PlatformDownload({ item }) {
-  const className = item.available
-    ? 'border-[#0f1419] bg-[#0f1419] text-white hover:bg-[#2f3336] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200'
-    : 'cursor-not-allowed border-[#d8d1c4] bg-[#f4efe5] text-[#8a8376] dark:border-[#303947] dark:bg-[#17202b] dark:text-[#7e8a9b]'
-
-  return (
-    <div className="rounded-lg border border-[#e6e0d3] bg-white/70 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a7a55] dark:text-amber-300/80">
-            {item.platform}
-          </p>
-          <h3 className="m-0 mt-1 text-xl font-semibold text-[var(--site-ink)]">{item.platform} 桌面版</h3>
-          <p className="m-0 mt-1 text-sm text-[#777] dark:text-gray-400">{item.arch}</p>
-        </div>
-        <span className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-2.5 py-1 text-xs text-[#7a5b1e] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-          {item.available ? '可下载' : '待上传'}
-        </span>
-      </div>
-      <p className="m-0 text-sm leading-7 text-[#666] dark:text-gray-300">{item.note}</p>
-      <p className="m-0 mt-2 text-xs text-[#8a8376] dark:text-gray-500">
-        {item.size} · SHA-256
-      </p>
-      <p className="m-0 mt-1 break-all font-mono text-[11px] text-[#8a8376] dark:text-gray-500">
-        {item.sha256}
-      </p>
-      <p className="m-0 mt-2 break-all font-mono text-[12px] text-[#8a8376] dark:text-gray-500">
-        R2 downloads/{item.file}
-      </p>
-      {item.available ? (
-        <a
-          href={item.href}
-          download
-          className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2 text-sm font-semibold no-underline transition ${className}`}
-        >
-          下载 {item.platform} 版
-        </a>
-      ) : (
-        <span className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2 text-sm font-semibold ${className}`}>
-          安装包待上传
-        </span>
-      )}
-    </div>
-  )
 }
 
 export default function DesktopResourcePage() {
@@ -148,8 +106,8 @@ export default function DesktopResourcePage() {
         </h1>
 
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
-          面向 Windows 和 macOS 的桌面客户端下载页。后续桌面版会优先承接站内工具、资源领取、通知提醒和本地工作流，
-          不再把桌面安装包散落在文章或网盘链接里。
+          面向 Windows 和 macOS 的桌面客户端下载页。当前是测试版本，安装包已经上传到 Cloudflare R2；
+          页面会根据当前系统推荐下载，其他架构和平台可以展开后手动选择。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -180,33 +138,33 @@ export default function DesktopResourcePage() {
       </header>
 
       <article className="prose-tuaran mt-8">
-        <div className="not-prose mb-8 rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-[#8a7a55] dark:text-amber-300/80">
-                Desktop Downloads
-              </p>
-              <h2 className="m-0 mt-1 border-0 p-0 text-xl font-semibold text-[var(--site-ink)]">
-                Windows / macOS 下载位
-              </h2>
-              <p className="m-0 mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
-                安装包已放在 Cloudflare R2 的 downloads/ 前缀下，页面按钮会直接指向公开 R2 下载地址。
-              </p>
-            </div>
-            <Link
-              href="/desktop-apps"
-              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-[#0f1419] bg-[#0f1419] px-5 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#2f3336] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
-            >
-              返回桌面版列表
-            </Link>
-          </div>
-        </div>
+        <DesktopDownloadChooser downloads={downloads} version={VERSION} />
 
-        <div className="not-prose grid gap-4 md:grid-cols-2">
-          {downloads.map((item) => (
-            <PlatformDownload key={item.file} item={item} />
-          ))}
-        </div>
+        <h2>测试版本说明</h2>
+        <p>
+          当前安装包未做 Apple Developer ID / Windows EV 证书签名，所以首次安装或启动时，macOS Gatekeeper 和 Windows SmartScreen
+          可能会拦截或提示风险。这不代表安装包损坏，而是系统对未签名测试版本的常规提示。
+        </p>
+        <p>
+          如果你对安装包来源敏感，可以先核对页面展示的 SHA-256，再决定是否安装。正式版会在完成证书签名后替换这里的下载入口。
+        </p>
+
+        <h2>安装指引</h2>
+        <h3>macOS</h3>
+        <ol>
+          <li>下载对应芯片的 DMG。Apple Silicon 通常是 M1/M2/M3/M4；较早的 Mac 请选择 Intel。</li>
+          <li>打开 DMG，把 2aran 拖到 Applications 文件夹。</li>
+          <li>
+            如果系统提示“无法验证开发者”，进入“系统设置 - 隐私与安全性”，在安全提示处选择“仍要打开”；也可以在应用图标上右键选择“打开”。
+          </li>
+        </ol>
+
+        <h3>Windows</h3>
+        <ol>
+          <li>下载 Windows x64 安装程序。</li>
+          <li>如果 SmartScreen 出现提示，点击“更多信息”，再选择“仍要运行”。</li>
+          <li>按安装向导完成安装；首次启动如果被安全软件拦截，请确认文件名和校验值后再放行。</li>
+        </ol>
 
         <h2>发布约定</h2>
         <p>

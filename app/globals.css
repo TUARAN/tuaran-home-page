@@ -2516,7 +2516,8 @@
     @apply [&_.research-inline-image]:my-8 [&_.research-inline-image]:overflow-hidden;
     @apply [&_.research-inline-image]:rounded-md [&_.research-inline-image]:border [&_.research-inline-image]:border-[#dee0db] dark:[&_.research-inline-image]:border-gray-800;
     @apply [&_.research-inline-image]:bg-white dark:[&_.research-inline-image]:bg-gray-900;
-    @apply [&_.research-inline-image_img]:m-0 [&_.research-inline-image_img]:aspect-[16/9] [&_.research-inline-image_img]:h-auto [&_.research-inline-image_img]:w-full [&_.research-inline-image_img]:object-cover;
+    @apply [&_.research-inline-image_img]:m-0 [&_.research-inline-image_img]:h-auto [&_.research-inline-image_img]:w-full [&_.research-inline-image_img]:cursor-zoom-in [&_.research-inline-image_img]:object-contain;
+    @apply [&_.research-inline-image_img]:outline-none [&_.research-inline-image_img:focus]:ring-2 [&_.research-inline-image_img:focus]:ring-[#8a5a14] dark:[&_.research-inline-image_img:focus]:ring-[#9ba475];
     @apply [&_.research-inline-image_figcaption]:m-0 [&_.research-inline-image_figcaption]:border-t [&_.research-inline-image_figcaption]:border-[#dee0db] dark:[&_.research-inline-image_figcaption]:border-gray-800;
     @apply [&_.research-inline-image_figcaption]:px-3 [&_.research-inline-image_figcaption]:py-2 [&_.research-inline-image_figcaption]:text-[11px] [&_.research-inline-image_figcaption]:text-[#63655f] dark:[&_.research-inline-image_figcaption]:text-gray-400;
 

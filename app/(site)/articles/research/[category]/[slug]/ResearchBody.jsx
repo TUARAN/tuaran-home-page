@@ -65,6 +65,7 @@ function pickChineseVoice(voices) {
 export default function ResearchBody({ variants }) {
   const list = Array.isArray(variants) && variants.length > 0 ? variants : []
   const [activeId, setActiveId] = useState(list[0]?.id)
+  const [lightboxImage, setLightboxImage] = useState(null)
   const [speechSupported, setSpeechSupported] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const active = list.find((v) => v.id === activeId) || list[0]
@@ -159,6 +160,21 @@ export default function ResearchBody({ variants }) {
   }, [])
 
   useEffect(() => {
+    if (!lightboxImage || typeof window === 'undefined') return
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setLightboxImage(null)
+    }
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [lightboxImage])
+
+  useEffect(() => {
     return () => {
       stopSpeech()
     }
@@ -167,10 +183,33 @@ export default function ResearchBody({ variants }) {
 
   useEffect(() => {
     stopSpeech()
+    setLightboxImage(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id])
 
   if (!active) return null
+
+  function openImageFromElement(image) {
+    if (!image?.src) return
+    setLightboxImage({
+      src: image.currentSrc || image.src,
+      alt: image.getAttribute('alt') || '',
+    })
+  }
+
+  function handleArticleClick(event) {
+    const image = event.target?.closest?.('img[data-research-lightbox="true"]')
+    if (!image) return
+    openImageFromElement(image)
+  }
+
+  function handleArticleKeyDown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    const image = event.target?.closest?.('img[data-research-lightbox="true"]')
+    if (!image) return
+    event.preventDefault()
+    openImageFromElement(image)
+  }
 
   return (
     <>
@@ -248,10 +287,47 @@ export default function ResearchBody({ variants }) {
           <article
             key={active.id}
             className="prose-tuaran"
+            onClick={handleArticleClick}
+            onKeyDown={handleArticleKeyDown}
             dangerouslySetInnerHTML={{ __html: active.html }}
           />
         </div>
       </div>
+
+      {lightboxImage ? (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/88 p-3 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={lightboxImage.alt || '查看图片'}
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="flex h-full w-full flex-col" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setLightboxImage(null)}
+                className="rounded-full border border-white/25 bg-white/12 px-4 py-2 text-sm text-white backdrop-blur transition hover:bg-white/20"
+              >
+                关闭
+              </button>
+            </div>
+            <div className="min-h-0 flex-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={lightboxImage.src}
+                alt={lightboxImage.alt}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            {lightboxImage.alt ? (
+              <p className="mx-auto mt-3 max-w-3xl text-center text-xs leading-5 text-white/70">
+                {lightboxImage.alt}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </>
   )
 }

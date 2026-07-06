@@ -10,6 +10,7 @@ dist/
 desktop-dist/
 build/
 out/
+output/
 *.local
 
 # Environment variables
@@ -119,7 +120,25 @@ temp/
 # Local sqlite data (root-level only, not public/data/...)
 /data/
 *.sqlite
+*.sqlite3
+*.db
 .wrangler/
+
+# Local exports and sensitive document artifacts.
+# If a public document is intentionally needed, review it first and force-add explicitly.
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.pages
+*.numbers
+*.key
+*.pem
+*.p12
+*.pfx
 
 # 本地明文种子（长期罗盘导入用，永远不入库）
 private/

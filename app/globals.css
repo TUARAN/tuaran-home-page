@@ -49,12 +49,12 @@
   --hero-card-title: #1d1a16;
   --hero-card-subtext: #6f6877;
   --hero-surface-panel: color-mix(in srgb, var(--page-bg) 94%, white);
-  /* 知识库热力图色阶：站点鼠尾草绿，跟随主题，不再用 GitHub 绿。 */
-  --kb-heat-empty: color-mix(in srgb, var(--site-line) 60%, transparent);
-  --kb-heat-1: #d2e7d6;
-  --kb-heat-2: #9cc6a6;
-  --kb-heat-3: #6aa07c;
-  --kb-heat-4: #467a5a;
+  /* 知识库热力图色阶：低饱和暖黄，避免灰阶过冷，也不使用高亮金黄。 */
+  --kb-heat-empty: #ece7d9;
+  --kb-heat-1: #eadfbd;
+  --kb-heat-2: #d5bf7a;
+  --kb-heat-3: #b0934c;
+  --kb-heat-4: #76633c;
   --site-header-height: 53px;
 }
 
@@ -105,12 +105,12 @@
   --hero-card-title: #f3f4f6;
   --hero-card-subtext: #aaa69a;
   --hero-surface-panel: #171512;
-  /* 知识库热力图色阶（深色）：以站点鼠尾草绿 #9fc5ad 为最深档向下推。 */
-  --kb-heat-empty: color-mix(in srgb, var(--site-line-strong) 55%, transparent);
-  --kb-heat-1: #294638;
-  --kb-heat-2: #436b54;
-  --kb-heat-3: #6ba07f;
-  --kb-heat-4: #9fc5ad;
+  /* 知识库热力图色阶（深色）：压低亮度的褐金，不刺眼。 */
+  --kb-heat-empty: #2a271f;
+  --kb-heat-1: #3d321c;
+  --kb-heat-2: #665324;
+  --kb-heat-3: #93743a;
+  --kb-heat-4: #c0a35a;
   --site-header-height: 53px;
 }
 
@@ -182,12 +182,12 @@
   --hero-cta-subtext: #c8c4b6;
   --hero-card-title: #26241f;
   --hero-card-subtext: #6c6a62;
-  /* 热力图改用暖灰阶，不再出现绿色 */
-  --kb-heat-empty: color-mix(in srgb, var(--site-line) 60%, transparent);
-  --kb-heat-1: #dcd8cb;
-  --kb-heat-2: #b3ae9f;
-  --kb-heat-3: #827e72;
-  --kb-heat-4: #4f4c44;
+  /* 热力图沿用低饱和暖黄，贴合纸感阅读底。 */
+  --kb-heat-empty: #e8e1d1;
+  --kb-heat-1: #e6d8ad;
+  --kb-heat-2: #cfb66d;
+  --kb-heat-3: #a98b47;
+  --kb-heat-4: #70603b;
 }
 
 /*
@@ -224,11 +224,11 @@
   --hero-cta-subtext: #5a5750;
   --hero-card-title: #e6e4db;
   --hero-card-subtext: #9b988e;
-  --kb-heat-empty: color-mix(in srgb, var(--site-line-strong) 55%, transparent);
-  --kb-heat-1: #2f2d27;
-  --kb-heat-2: #4a4740;
-  --kb-heat-3: #6f6c62;
-  --kb-heat-4: #9a978d;
+  --kb-heat-empty: #2f2a20;
+  --kb-heat-1: #443719;
+  --kb-heat-2: #6c5725;
+  --kb-heat-3: #96783d;
+  --kb-heat-4: #bfa35f;
 }
 
 @layer base {

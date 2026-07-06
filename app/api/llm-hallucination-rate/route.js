@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { LLM_HALLUCINATION_RATE_REFERENCE } from '../../../lib/llmHallucinationRate'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export function GET() {

@@ -1,0 +1,38 @@
+{
+  "appId": "com.2aran.desktop",
+  "productName": "2aran Desktop",
+  "electronVersion": "43.0.0",
+  "copyright": "Copyright © 2026 2aran.com",
+  "directories": {
+    "output": "../desktop-dist"
+  },
+  "files": [
+    "main.cjs",
+    "preload.cjs",
+    "package.json"
+  ],
+  "npmRebuild": false,
+  "mac": {
+    "target": [
+      "dmg"
+    ],
+    "category": "public.app-category.productivity",
+    "artifactName": "2aran-desktop-macos-${arch}-v0.1.0.${ext}"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "artifactName": "2aran-desktop-windows-v0.1.0.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "perMachine": false
+  }
+}

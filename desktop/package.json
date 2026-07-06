@@ -1,0 +1,8 @@
+{
+  "name": "2aran-desktop",
+  "version": "0.1.0",
+  "description": "Desktop shell for 2aran.com",
+  "main": "main.cjs",
+  "author": "TUARAN",
+  "license": "UNLICENSED"
+}

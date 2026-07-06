@@ -1,465 +1,1222 @@
 'use client'
 
-import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
-import DistributeContentButton from '../components/DistributeContentButton'
-import SharePageButton from '../components/SharePageButton'
 import { TANG_PING_MAP_POINTS } from '../../../lib/tangPingMapData'
 
-const LON_MIN = 72
-const LON_MAX = 136
-const LAT_MIN = 18
-const LAT_MAX = 54
+const LEAFLET_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
+const CLUSTER_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css'
+const CLUSTER_DEFAULT_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css'
+
+const LEAFLET_SCRIPTS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
+  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+]
+
+const CLUSTER_SCRIPTS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js',
+  'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js',
+  'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js',
+]
 
 const PRICE_TIERS = [
-  { label: '<= 3 万', max: 3, color: '#1f766d' },
-  { label: '3-6 万', max: 6, color: '#4f8a5b' },
-  { label: '6-10 万', max: 10, color: '#c58b29' },
-  { label: '10-15 万', max: 15, color: '#b55b3b' },
-  { label: '> 15 万', max: Infinity, color: '#8f3f46' },
+  { label: '≤ 3', name: '极低', max: 3, color: '#2d5d65' },
+  { label: '3 - 6', name: '低', max: 6, color: '#5a7a5a' },
+  { label: '6 - 10', name: '中', max: 10, color: '#c89132' },
+  { label: '10 - 15', name: '高', max: 15, color: '#b85c3a' },
+  { label: '> 15', name: '极高', max: Infinity, color: '#8b3a3a' },
 ]
 
-const SORT_OPTIONS = [
-  { key: 'priceAsc', label: '总价最低' },
-  { key: 'yieldDesc', label: '租金回报高' },
-  { key: 'paybackAsc', label: '回本更快' },
-  { key: 'areaDesc', label: '面积更大' },
-]
-
-function getTier(point) {
-  return PRICE_TIERS.find((tier) => point.priceWan <= tier.max) || PRICE_TIERS[PRICE_TIERS.length - 1]
+const TILES = {
+  amap: {
+    name: '高德',
+    url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+    subdomains: '1234',
+    attribution: '© 高德地图',
+    coord: 'gcj02',
+    maxZoom: 18,
+  },
+  carto: {
+    name: 'CARTO',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    subdomains: 'abcd',
+    attribution: '© OpenStreetMap · © CARTO',
+    coord: 'wgs84',
+    maxZoom: 19,
+  },
+  osm: {
+    name: 'OSM',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    subdomains: 'abc',
+    attribution: '© OpenStreetMap',
+    coord: 'wgs84',
+    maxZoom: 19,
+  },
 }
 
-function enrich(point) {
-  const total = point.priceWan * 10000
-  const annualRent = point.rent * 12
-  return {
-    ...point,
-    pricePerSqm: total / point.area,
-    annualYield: annualRent / total,
-    paybackYears: annualRent > 0 ? total / annualRent : null,
-    tier: getTier(point),
-  }
+const COORD = {
+  pi: Math.PI,
+  a: 6378245.0,
+  ee: 0.00669342162296594323,
+  outOfChina(lat, lng) {
+    return lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271
+  },
+  transformLat(x, y) {
+    let result = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x))
+    result += ((20 * Math.sin(6 * x * this.pi) + 20 * Math.sin(2 * x * this.pi)) * 2) / 3
+    result += ((20 * Math.sin(y * this.pi) + 40 * Math.sin((y / 3) * this.pi)) * 2) / 3
+    result += ((160 * Math.sin((y / 12) * this.pi) + 320 * Math.sin((y * this.pi) / 30)) * 2) / 3
+    return result
+  },
+  transformLng(x, y) {
+    let result = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x))
+    result += ((20 * Math.sin(6 * x * this.pi) + 20 * Math.sin(2 * x * this.pi)) * 2) / 3
+    result += ((20 * Math.sin(x * this.pi) + 40 * Math.sin((x / 3) * this.pi)) * 2) / 3
+    result += ((150 * Math.sin((x / 12) * this.pi) + 300 * Math.sin((x / 30) * this.pi)) * 2) / 3
+    return result
+  },
+  wgs84ToGcj02(lat, lng) {
+    if (this.outOfChina(lat, lng)) return [lat, lng]
+    let dLat = this.transformLat(lng - 105, lat - 35)
+    let dLng = this.transformLng(lng - 105, lat - 35)
+    const radLat = (lat / 180) * this.pi
+    let magic = Math.sin(radLat)
+    magic = 1 - this.ee * magic * magic
+    const sqrtMagic = Math.sqrt(magic)
+    dLat = (dLat * 180) / (((this.a * (1 - this.ee)) / (magic * sqrtMagic)) * this.pi)
+    dLng = (dLng * 180) / ((this.a / sqrtMagic) * Math.cos(radLat) * this.pi)
+    return [lat + dLat, lng + dLng]
+  },
 }
 
-const POINTS = TANG_PING_MAP_POINTS.map(enrich)
-const PROVINCES = [...new Set(POINTS.map((point) => point.province))].sort((a, b) => a.localeCompare(b, 'zh-CN'))
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value))
+function ensureStylesheet(id, href) {
+  if (typeof document === 'undefined' || document.getElementById(id)) return
+  const link = document.createElement('link')
+  link.id = id
+  link.rel = 'stylesheet'
+  link.href = href
+  document.head.appendChild(link)
 }
 
-function project(point) {
-  const x = ((point.lng - LON_MIN) / (LON_MAX - LON_MIN)) * 100
-  const y = (1 - (point.lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100
-  return [clamp(x, 2, 98), clamp(y, 2, 98)]
-}
-
-function formatWan(value) {
-  return `${Number(value).toFixed(value < 10 ? 1 : 0)} 万`
-}
-
-function formatCurrency(value) {
-  return `¥${Math.round(value).toLocaleString('zh-CN')}`
-}
-
-function metricAvg(rows, key) {
-  if (!rows.length) return 0
-  return rows.reduce((sum, row) => sum + row[key], 0) / rows.length
-}
-
-function sortRows(rows, sortKey) {
-  return [...rows].sort((a, b) => {
-    if (sortKey === 'yieldDesc') return b.annualYield - a.annualYield
-    if (sortKey === 'paybackAsc') return (a.paybackYears || 999) - (b.paybackYears || 999)
-    if (sortKey === 'areaDesc') return b.area - a.area
-    return a.priceWan - b.priceWan
+function loadScript(url) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${url}"]`)
+    if (existing?.dataset.loaded === 'true') {
+      resolve()
+      return
+    }
+    if (existing) {
+      existing.addEventListener('load', resolve, { once: true })
+      existing.addEventListener('error', reject, { once: true })
+      return
+    }
+    const script = document.createElement('script')
+    script.src = url
+    script.async = false
+    script.onload = () => {
+      script.dataset.loaded = 'true'
+      resolve()
+    }
+    script.onerror = reject
+    document.head.appendChild(script)
   })
 }
 
-function StatCard({ label, value, hint }) {
-  return (
-    <div className="rounded-lg border border-[#d9d2c2] bg-white/72 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-      <p className="mb-1 font-mono text-[10px] uppercase text-[#7b735f] dark:text-white/45">{label}</p>
-      <p className="mb-0 text-2xl font-bold text-[#1b1b16] dark:text-white">{value}</p>
-      {hint ? <p className="mb-0 mt-1 text-xs text-[#766f62] dark:text-white/48">{hint}</p> : null}
-    </div>
-  )
-}
-
-function NumberInput({ label, value, onChange, placeholder, suffix }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block font-mono text-[10px] uppercase text-[#7f7768] dark:text-white/45">{label}</span>
-      <div className="flex items-center rounded-lg border border-[#d7d0c2] bg-white/72 px-3 py-2 dark:border-white/10 dark:bg-white/[0.04]">
-        <input
-          type="number"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#aaa08f] dark:text-white dark:placeholder:text-white/25"
-        />
-        {suffix ? <span className="ml-2 text-xs text-[#8a8171] dark:text-white/40">{suffix}</span> : null}
-      </div>
-    </label>
-  )
-}
-
-function PointDetail({ point }) {
-  if (!point) {
-    return (
-      <div className="rounded-lg border border-dashed border-[#d7d0c2] bg-[#f7f1e4]/70 p-4 text-sm leading-7 text-[#786f5e] dark:border-white/10 dark:bg-white/[0.03] dark:text-white/50">
-        点击地图上的点位，查看城市、小区、总价、面积、租金和回本周期。
-      </div>
-    )
+async function loadAny(urls, isReady) {
+  if (isReady()) return
+  let lastError = null
+  for (const url of urls) {
+    try {
+      await loadScript(url)
+      if (isReady()) return
+    } catch (error) {
+      lastError = error
+    }
   }
-
-  return (
-    <div className="rounded-lg border border-[#cfc5af] bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#111419]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="mb-1 font-mono text-[10px] uppercase text-[#7c735f] dark:text-white/45">
-            No. {String(point.id).padStart(3, '0')} · {point.date}
-          </p>
-          <h3 className="mb-1 text-lg font-bold text-[#1b1b16] dark:text-white">{point.location}</h3>
-          <p className="mb-0 text-sm text-[#6d6658] dark:text-white/55">
-            {point.province} · {point.city} · {point.district}
-          </p>
-        </div>
-        <span
-          className="rounded-full px-2.5 py-1 font-mono text-[11px] font-semibold text-white"
-          style={{ backgroundColor: point.tier.color }}
-        >
-          {point.tier.label}
-        </span>
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-        <div className="rounded-md bg-[#f5efe3] p-3 dark:bg-white/[0.05]">
-          <p className="mb-1 text-xs text-[#7c735f] dark:text-white/45">总价</p>
-          <p className="mb-0 font-bold">{formatWan(point.priceWan)}</p>
-        </div>
-        <div className="rounded-md bg-[#f5efe3] p-3 dark:bg-white/[0.05]">
-          <p className="mb-1 text-xs text-[#7c735f] dark:text-white/45">面积</p>
-          <p className="mb-0 font-bold">{point.area} 平</p>
-        </div>
-        <div className="rounded-md bg-[#f5efe3] p-3 dark:bg-white/[0.05]">
-          <p className="mb-1 text-xs text-[#7c735f] dark:text-white/45">租金</p>
-          <p className="mb-0 font-bold">¥{point.rent}/月</p>
-        </div>
-        <div className="rounded-md bg-[#f5efe3] p-3 dark:bg-white/[0.05]">
-          <p className="mb-1 text-xs text-[#7c735f] dark:text-white/45">回本</p>
-          <p className="mb-0 font-bold">{point.paybackYears?.toFixed(1)} 年</p>
-        </div>
-      </div>
-    </div>
-  )
+  throw lastError || new Error('script load failed')
 }
 
-function Distribution({ rows }) {
-  const counts = PRICE_TIERS.map((tier) => ({
-    ...tier,
-    count: rows.filter((row) => getTier(row).label === tier.label).length,
-  }))
-  const max = Math.max(...counts.map((item) => item.count), 1)
+function getTier(priceWan) {
+  return PRICE_TIERS.find((tier) => priceWan <= tier.max) || PRICE_TIERS[PRICE_TIERS.length - 1]
+}
 
-  return (
-    <div className="rounded-xl border border-[#d9d2c2] bg-white/70 p-4 dark:border-white/10 dark:bg-white/[0.04]">
-      <h2 className="mb-3 text-base font-bold">价格分布</h2>
-      <div className="space-y-3">
-        {counts.map((item) => (
-          <div key={item.label} className="grid grid-cols-[64px_minmax(0,1fr)_36px] items-center gap-3 text-sm">
-            <span className="text-[#5e584d] dark:text-white/55">{item.label}</span>
-            <div className="h-3 overflow-hidden rounded-full bg-[#e9dfcd] dark:bg-white/10">
-              <div className="h-full rounded-full" style={{ width: `${(item.count / max) * 100}%`, backgroundColor: item.color }} />
-            </div>
-            <span className="text-right font-mono text-xs text-[#5e584d] dark:text-white/55">{item.count}</span>
-          </div>
-        ))}
+function popupHtml(point) {
+  const tier = getTier(point.priceWan)
+  return `
+    <div class="tp-pop">
+      <div class="tp-pop-head">
+        <div class="tp-id-tag">No. ${String(point.id).padStart(3, '0')} · ${tier.name}价位</div>
+        <div class="tp-pop-region">
+          <span class="tp-pop-prov">${point.province}</span>
+          <span class="tp-pop-city">${point.city}</span>
+        </div>
       </div>
+      <div class="tp-pop-loc">
+        <div class="tp-pop-name">${point.location}</div>
+        <div class="tp-pop-sub">${point.district}</div>
+      </div>
+      <div class="tp-pop-stats">
+        <div class="tp-pop-stat price">
+          <div class="tp-pop-label">House</div>
+          <div class="tp-pop-value">约${point.priceWan}万</div>
+        </div>
+        <div class="tp-pop-stat">
+          <div class="tp-pop-label">Area</div>
+          <div class="tp-pop-value">${point.area}平</div>
+        </div>
+        <div class="tp-pop-stat">
+          <div class="tp-pop-label">Rent</div>
+          <div class="tp-pop-value">¥${point.rent}/月</div>
+        </div>
+      </div>
+      <div class="tp-pop-foot">更新 · ${point.date}</div>
     </div>
-  )
+  `
+}
+
+function numericFilter(value) {
+  if (value === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 export default function TangPingMapClient() {
-  const [query, setQuery] = useState('')
-  const [province, setProvince] = useState('')
-  const [priceMax, setPriceMax] = useState('')
-  const [areaMin, setAreaMin] = useState('')
-  const [rentMax, setRentMax] = useState('')
-  const [sortKey, setSortKey] = useState('priceAsc')
-  const [selectedId, setSelectedId] = useState(POINTS[0]?.id)
+  const mapNodeRef = useRef(null)
+  const mapRef = useRef(null)
+  const baseLayerRef = useRef(null)
+  const markerLayerRef = useRef(null)
+  const leafletReadyRef = useRef(false)
+  const [loadError, setLoadError] = useState('')
+  const [mapReady, setMapReady] = useState(false)
+  const [tileKey, setTileKey] = useState('amap')
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [fitRequest, setFitRequest] = useState(0)
+  const [filters, setFilters] = useState({
+    search: '',
+    province: '',
+    priceMin: '',
+    priceMax: '',
+    areaMin: '',
+    areaMax: '',
+    rentMin: '',
+    rentMax: '',
+  })
+
+  const provinces = useMemo(
+    () => [...new Set(TANG_PING_MAP_POINTS.map((point) => point.province))].sort((a, b) => a.localeCompare(b, 'zh-CN')),
+    []
+  )
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return POINTS.filter((point) => {
-      if (province && point.province !== province) return false
-      if (q) {
+    const search = filters.search.trim().toLowerCase()
+    const priceMin = numericFilter(filters.priceMin)
+    const priceMax = numericFilter(filters.priceMax)
+    const areaMin = numericFilter(filters.areaMin)
+    const areaMax = numericFilter(filters.areaMax)
+    const rentMin = numericFilter(filters.rentMin)
+    const rentMax = numericFilter(filters.rentMax)
+
+    return TANG_PING_MAP_POINTS.filter((point) => {
+      if (filters.province && point.province !== filters.province) return false
+      if (search) {
         const blob = `${point.province}${point.city}${point.district}${point.location}`.toLowerCase()
-        if (!blob.includes(q)) return false
+        if (!blob.includes(search)) return false
       }
-      if (priceMax && point.priceWan > Number(priceMax)) return false
-      if (areaMin && point.area < Number(areaMin)) return false
-      if (rentMax && point.rent > Number(rentMax)) return false
+      if (priceMin != null && point.priceWan < priceMin) return false
+      if (priceMax != null && point.priceWan > priceMax) return false
+      if (areaMin != null && point.area < areaMin) return false
+      if (areaMax != null && point.area > areaMax) return false
+      if (rentMin != null && point.rent < rentMin) return false
+      if (rentMax != null && point.rent > rentMax) return false
       return true
     })
-  }, [areaMin, priceMax, province, query, rentMax])
+  }, [filters])
 
-  const ranked = useMemo(() => sortRows(filtered, sortKey), [filtered, sortKey])
-  const selected = filtered.find((point) => point.id === selectedId) || ranked[0] || null
-  const avgPrice = metricAvg(filtered, 'priceWan')
-  const avgArea = metricAvg(filtered, 'area')
-  const avgYield = metricAvg(filtered, 'annualYield')
-  const fastest = sortRows(filtered, 'paybackAsc')[0]
+  const getCoord = useCallback(
+    (point) => {
+      if (TILES[tileKey].coord === 'gcj02') return COORD.wgs84ToGcj02(point.lat, point.lng)
+      return [point.lat, point.lng]
+    },
+    [tileKey]
+  )
+
+  const updateFilter = useCallback((key, value) => {
+    setFilters((current) => ({ ...current, [key]: value }))
+    if (key === 'province' && value) setFitRequest((current) => current + 1)
+  }, [])
+
+  const resetFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      province: '',
+      priceMin: '',
+      priceMax: '',
+      areaMin: '',
+      areaMax: '',
+      rentMin: '',
+      rentMax: '',
+    })
+    setFitRequest((current) => current + 1)
+  }, [])
+
+  useEffect(() => {
+    ensureStylesheet('tp-leaflet-css', LEAFLET_CSS)
+    ensureStylesheet('tp-cluster-css', CLUSTER_CSS)
+    ensureStylesheet('tp-cluster-default-css', CLUSTER_DEFAULT_CSS)
+
+    let cancelled = false
+
+    async function initMap() {
+      try {
+        await loadAny(LEAFLET_SCRIPTS, () => Boolean(window.L))
+        try {
+          await loadAny(CLUSTER_SCRIPTS, () => Boolean(window.L?.markerClusterGroup))
+        } catch {
+          // Marker clustering is an enhancement; the map should still work with plain markers.
+        }
+        if (cancelled || !mapNodeRef.current || mapRef.current) return
+
+        const L = window.L
+        const map = L.map(mapNodeRef.current, {
+          zoomControl: true,
+          attributionControl: true,
+          preferCanvas: false,
+          maxZoom: 19,
+        }).setView([34.8, 105.0], 4)
+
+        L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map)
+
+        const layer =
+          typeof L.markerClusterGroup === 'function'
+            ? L.markerClusterGroup({
+                chunkedLoading: true,
+                maxClusterRadius: 45,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                disableClusteringAtZoom: 11,
+              })
+            : L.layerGroup()
+        map.addLayer(layer)
+
+        mapRef.current = map
+        markerLayerRef.current = layer
+        leafletReadyRef.current = true
+        setMapReady(true)
+        setLoadError('')
+        setFitRequest((current) => current + 1)
+      } catch (error) {
+        console.error('[TangPingMap] map init failed', error)
+        if (!cancelled) setLoadError('地图资源加载失败，请检查网络后刷新。')
+      }
+    }
+
+    initMap()
+
+    return () => {
+      cancelled = true
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+        markerLayerRef.current = null
+        baseLayerRef.current = null
+        leafletReadyRef.current = false
+        setMapReady(false)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!mapReady || !leafletReadyRef.current || !mapRef.current) return
+    const L = window.L
+    const tile = TILES[tileKey]
+    if (baseLayerRef.current) mapRef.current.removeLayer(baseLayerRef.current)
+    baseLayerRef.current = L.tileLayer(tile.url, {
+      subdomains: tile.subdomains,
+      attribution: tile.attribution,
+      maxZoom: tile.maxZoom,
+    }).addTo(mapRef.current)
+  }, [mapReady, tileKey])
+
+  useEffect(() => {
+    if (!mapReady || !leafletReadyRef.current || !mapRef.current || !markerLayerRef.current) return
+    const L = window.L
+    const layer = markerLayerRef.current
+    layer.clearLayers()
+
+    const markers = filtered.map((point) => {
+      const tier = getTier(point.priceWan)
+      const marker = L.marker(getCoord(point), {
+        icon: L.divIcon({
+          className: 'tp-pin-wrap',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+          popupAnchor: [0, -10],
+          html: `<div class="tp-pin" style="background:${tier.color}"></div>`,
+        }),
+      })
+      marker.bindPopup(popupHtml(point), { maxWidth: 320, minWidth: 240, closeButton: true })
+      return marker
+    })
+
+    if (typeof layer.addLayers === 'function') {
+      layer.addLayers(markers)
+    } else {
+      markers.forEach((marker) => layer.addLayer(marker))
+    }
+
+    if (fitRequest && filtered.length) {
+      const bounds = L.latLngBounds(filtered.map((point) => getCoord(point)))
+      mapRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 })
+    }
+  }, [filtered, fitRequest, getCoord, mapReady])
 
   return (
-    <main className="min-h-screen bg-[#eee7da] text-[#1b1b16] dark:bg-[#0d1014] dark:text-white">
-      <section className="mx-auto max-w-[1240px] px-4 pb-8 pt-10 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-[#746c5e] dark:text-white/45">
-          <Link href="/articles?tab=works" className="underline underline-offset-4 hover:text-[#1b1b16] dark:hover:text-white">
-            多维页面
-          </Link>
-          <span>·</span>
-          <span>低总价房源观察</span>
-          <span>·</span>
-          <a
-            href="https://tpmap.ritmex.one"
-            target="_blank"
-            rel="noreferrer"
-            className="underline underline-offset-4 hover:text-[#1b1b16] dark:hover:text-white"
-          >
-            数据源：Tang Ping Map
-          </a>
+    <main className="tp-map-shell">
+      <div className="tp-topbar">
+        <div className="tp-brand">
+          <p className="tp-eyebrow">Atlas · 2026</p>
+          <h1>
+            躺平地图<span> · tang ping map</span>
+          </h1>
         </div>
+        <div className="tp-stats">
+          <strong>{filtered.length}</strong>
+          <span> / </span>
+          <strong>{TANG_PING_MAP_POINTS.length}</strong>
+          <span> 个标记</span>
+        </div>
+      </div>
 
-        <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
-          <div>
-            <p className="mb-2 font-mono text-[11px] font-bold uppercase text-[#7c6f52] dark:text-[#d7c08a]">
-              Tang Ping Map · 2026
-            </p>
-            <h1 className="mb-3 font-serif text-4xl font-bold leading-tight sm:text-5xl">躺平地图</h1>
-            <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#665f52] dark:text-white/58">
-              这不是购房建议，而是一个观察低总价房源分布的多维页面：把总价、面积、租金、回本周期和地理位置放到同一张图里，
-              看哪些地方“便宜”，哪些地方只是“总价小”，以及租金回报是否真的说得过去。
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 lg:justify-end">
-            <SharePageButton
-              title="躺平地图 · 低总价房源多维观察"
-              text="121 个低总价房源点位的地图、筛选、排行和回本周期观察。"
-              url="https://2aran.com/tang-ping-map"
-              size="md"
+      <aside className={`tp-panel ${panelOpen ? 'open' : ''}`}>
+        <button type="button" className="tp-panel-head" onClick={() => setPanelOpen((open) => !open)}>
+          <span>筛选 · Filters</span>
+          <span className="tp-panel-toggle">{panelOpen ? '▾' : '▴'}</span>
+        </button>
+        <div className="tp-panel-body">
+          <label className="tp-field">
+            <span>关键词搜索</span>
+            <input
+              value={filters.search}
+              onChange={(event) => updateFilter('search', event.target.value)}
+              placeholder="城市、小区…"
+              autoComplete="off"
             />
-            <ArticleActionsDropdown label="更多">
-              <DistributeContentButton
-                title="躺平地图 · 低总价房源多维观察"
-                summary="121 个低总价房源点位的地图、筛选、排行和回本周期观察。数据源自 Tang Ping Map 公开页面。"
-                url="/tang-ping-map"
-                category="works"
-                slug="tang-ping-map"
-                tags={['多维页面', '地图', '房价', '租金']}
-                kindLabel="多维页面"
-              />
-            </ArticleActionsDropdown>
-          </div>
-        </div>
+          </label>
 
-        <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="点位数" value={filtered.length} hint={`总样本 ${POINTS.length} 个`} />
-          <StatCard label="平均总价" value={formatWan(avgPrice || 0)} hint="按当前筛选计算" />
-          <StatCard label="平均面积" value={`${avgArea.toFixed(1)} 平`} hint={`均价约 ${formatCurrency(metricAvg(filtered, 'pricePerSqm'))}/平`} />
-          <StatCard label="平均年租金回报" value={`${(avgYield * 100).toFixed(1)}%`} hint={fastest ? `最快回本：${fastest.city}` : '暂无样本'} />
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-[1240px] gap-5 px-4 pb-10 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:px-8">
-        <aside className="space-y-4">
-          <div className="rounded-xl border border-[#d5cbb9] bg-[#fbf8ef]/88 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-            <h2 className="mb-4 text-base font-bold">筛选</h2>
-            <div className="space-y-3">
-              <label className="block">
-                <span className="mb-1 block font-mono text-[10px] uppercase text-[#7f7768] dark:text-white/45">关键词</span>
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="城市 / 小区 / 区县"
-                  className="w-full rounded-lg border border-[#d7d0c2] bg-white/72 px-3 py-2 text-sm outline-none placeholder:text-[#aaa08f] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:placeholder:text-white/25"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block font-mono text-[10px] uppercase text-[#7f7768] dark:text-white/45">省份</span>
-                <select
-                  value={province}
-                  onChange={(event) => setProvince(event.target.value)}
-                  className="w-full rounded-lg border border-[#d7d0c2] bg-white/72 px-3 py-2 text-sm outline-none dark:border-white/10 dark:bg-[#141820] dark:text-white"
-                >
-                  <option value="">全部省份</option>
-                  {PROVINCES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="grid grid-cols-2 gap-3">
-                <NumberInput label="总价上限" value={priceMax} onChange={setPriceMax} placeholder="10" suffix="万" />
-                <NumberInput label="面积下限" value={areaMin} onChange={setAreaMin} placeholder="40" suffix="平" />
-              </div>
-              <NumberInput label="租金上限" value={rentMax} onChange={setRentMax} placeholder="800" suffix="元/月" />
-
-              <label className="block">
-                <span className="mb-1 block font-mono text-[10px] uppercase text-[#7f7768] dark:text-white/45">排行口径</span>
-                <select
-                  value={sortKey}
-                  onChange={(event) => setSortKey(event.target.value)}
-                  className="w-full rounded-lg border border-[#d7d0c2] bg-white/72 px-3 py-2 text-sm outline-none dark:border-white/10 dark:bg-[#141820] dark:text-white"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery('')
-                  setProvince('')
-                  setPriceMax('')
-                  setAreaMin('')
-                  setRentMax('')
-                  setSortKey('priceAsc')
-                }}
-                className="w-full rounded-lg border border-[#1f1d18] bg-[#1f1d18] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#385c4b] dark:border-white/15 dark:bg-white dark:text-[#101318] dark:hover:bg-[#d7c08a]"
-              >
-                重置筛选
-              </button>
-            </div>
-          </div>
-
-          <Distribution rows={filtered} />
-        </aside>
-
-        <div className="space-y-5">
-          <section className="overflow-hidden rounded-xl border border-[#d5cbb9] bg-[#f8f1e2] shadow-sm dark:border-white/10 dark:bg-[#10141a]">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ded4c1] px-4 py-3 dark:border-white/10">
-              <div>
-                <h2 className="mb-0 text-base font-bold">地理分布</h2>
-                <p className="mb-0 text-xs text-[#766f62] dark:text-white/45">经纬度近似投影，点位越靠右越东，越靠上越北。</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {PRICE_TIERS.map((tier) => (
-                  <span key={tier.label} className="inline-flex items-center gap-1.5 text-xs text-[#5f574a] dark:text-white/55">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tier.color }} />
-                    {tier.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="relative min-h-[420px] p-4">
-                <svg viewBox="0 0 100 100" role="img" aria-label="低总价房源点位地图" className="h-[420px] w-full rounded-lg bg-[#e7dcc8] dark:bg-[#0b1116]">
-                  <defs>
-                    <pattern id="tp-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(78,70,54,0.14)" strokeWidth="0.35" />
-                    </pattern>
-                  </defs>
-                  <rect x="0" y="0" width="100" height="100" fill="url(#tp-grid)" />
-                  <path
-                    d="M19 22 C31 8 54 5 73 15 C88 23 96 43 87 59 C80 73 62 86 42 82 C25 79 12 66 9 50 C7 39 11 29 19 22 Z"
-                    fill="rgba(255,255,255,0.42)"
-                    stroke="rgba(74,68,56,0.30)"
-                    strokeWidth="0.55"
-                  />
-                  {[80, 90, 100, 110, 120, 130].map((lon) => (
-                    <text key={lon} x={((lon - LON_MIN) / (LON_MAX - LON_MIN)) * 100} y="98" textAnchor="middle" className="fill-[#817769] text-[2.5px] dark:fill-white/35">
-                      {lon}E
-                    </text>
-                  ))}
-                  {[20, 30, 40, 50].map((lat) => (
-                    <text key={lat} x="2" y={(1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100} className="fill-[#817769] text-[2.5px] dark:fill-white/35">
-                      {lat}N
-                    </text>
-                  ))}
-                  {filtered.map((point) => {
-                    const [x, y] = project(point)
-                    const active = selected?.id === point.id
-                    return (
-                      <g
-                        key={point.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setSelectedId(point.id)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault()
-                            setSelectedId(point.id)
-                          }
-                        }}
-                        aria-label={`${point.city} ${point.location}`}
-                      >
-                        <circle
-                          cx={x}
-                          cy={y}
-                          r={active ? 1.7 : 1.15}
-                          fill={point.tier.color}
-                          stroke={active ? '#111111' : '#fff7e6'}
-                          strokeWidth={active ? 0.55 : 0.35}
-                          className="cursor-pointer transition hover:opacity-80"
-                        />
-                      </g>
-                    )
-                  })}
-                </svg>
-              </div>
-              <div className="border-t border-[#ded4c1] p-4 dark:border-white/10 lg:border-l lg:border-t-0">
-                <PointDetail point={selected} />
-                <div className="mt-4 rounded-lg bg-[#fffaf0] p-4 text-xs leading-6 text-[#6e6556] dark:bg-white/[0.04] dark:text-white/48">
-                  <p className="mb-1 font-semibold text-[#1b1b16] dark:text-white">口径说明</p>
-                  <p className="mb-0">
-                    点位来自公开页面内嵌数据，可能是样本集合而非完整市场；价格、租金和坐标适合作观察，不构成投资、居住或交易建议。
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-[#d5cbb9] bg-[#fbf8ef]/88 p-4 dark:border-white/10 dark:bg-white/[0.04]">
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className="mb-1 text-base font-bold">样本排行</h2>
-                <p className="mb-0 text-xs text-[#766f62] dark:text-white/45">按当前筛选与排行口径展示前 12 个点位。</p>
-              </div>
-              <span className="font-mono text-xs text-[#766f62] dark:text-white/45">{ranked.length} rows</span>
-            </div>
-            <div className="divide-y divide-[#e1d8c8] overflow-hidden rounded-lg border border-[#e1d8c8] bg-white/60 dark:divide-white/10 dark:border-white/10 dark:bg-[#10141a]">
-              {ranked.slice(0, 12).map((point, index) => (
-                <button
-                  key={point.id}
-                  type="button"
-                  onClick={() => setSelectedId(point.id)}
-                  className="grid w-full gap-2 px-3 py-3 text-left transition hover:bg-[#fffaf0] dark:hover:bg-white/[0.05] sm:grid-cols-[36px_minmax(0,1fr)_96px_96px_96px] sm:items-center"
-                >
-                  <span className="font-mono text-xs text-[#8a8171] dark:text-white/35">#{index + 1}</span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold">{point.city} · {point.location}</span>
-                    <span className="block truncate text-xs text-[#766f62] dark:text-white/45">{point.province} / {point.district}</span>
-                  </span>
-                  <span className="text-sm font-semibold">{formatWan(point.priceWan)}</span>
-                  <span className="text-sm text-[#5f574a] dark:text-white/62">{point.area} 平</span>
-                  <span className="text-sm text-[#5f574a] dark:text-white/62">{point.paybackYears?.toFixed(1)} 年</span>
-                </button>
+          <label className="tp-field">
+            <span>省份</span>
+            <select value={filters.province} onChange={(event) => updateFilter('province', event.target.value)}>
+              <option value="">全部</option>
+              {provinces.map((province) => (
+                <option key={province} value={province}>
+                  {province}
+                </option>
               ))}
+            </select>
+          </label>
+
+          <label className="tp-field">
+            <span>二手房价 (万元)</span>
+            <div className="tp-range">
+              <input
+                type="number"
+                value={filters.priceMin}
+                onChange={(event) => updateFilter('priceMin', event.target.value)}
+                placeholder="0"
+                step="0.1"
+              />
+              <b>—</b>
+              <input
+                type="number"
+                value={filters.priceMax}
+                onChange={(event) => updateFilter('priceMax', event.target.value)}
+                placeholder="20"
+                step="0.1"
+              />
             </div>
-          </section>
+          </label>
+
+          <label className="tp-field">
+            <span>面积 (平)</span>
+            <div className="tp-range">
+              <input type="number" value={filters.areaMin} onChange={(event) => updateFilter('areaMin', event.target.value)} placeholder="0" />
+              <b>—</b>
+              <input type="number" value={filters.areaMax} onChange={(event) => updateFilter('areaMax', event.target.value)} placeholder="120" />
+            </div>
+          </label>
+
+          <label className="tp-field">
+            <span>租金 (元/月)</span>
+            <div className="tp-range">
+              <input
+                type="number"
+                value={filters.rentMin}
+                onChange={(event) => updateFilter('rentMin', event.target.value)}
+                placeholder="0"
+                step="50"
+              />
+              <b>—</b>
+              <input
+                type="number"
+                value={filters.rentMax}
+                onChange={(event) => updateFilter('rentMax', event.target.value)}
+                placeholder="1200"
+                step="50"
+              />
+            </div>
+          </label>
+
+          <button type="button" className="tp-reset" onClick={resetFilters}>
+            重置 Reset
+          </button>
         </div>
-      </section>
+      </aside>
+
+      <div className="tp-tile-switcher" aria-label="底图切换">
+        {Object.entries(TILES).map(([key, tile]) => (
+          <button key={key} type="button" className={tileKey === key ? 'active' : ''} onClick={() => setTileKey(key)}>
+            {tile.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="tp-legend">
+        <div className="tp-legend-title">房价分级 · 万元/套</div>
+        {PRICE_TIERS.map((tier) => (
+          <div key={tier.label} className="tp-legend-row">
+            <span style={{ backgroundColor: tier.color }} />
+            <b>{tier.label}</b>
+          </div>
+        ))}
+      </div>
+
+      <a className="tp-source" href="https://tpmap.ritmex.one/" target="_blank" rel="noreferrer">
+        Source · Tang Ping Map
+      </a>
+
+      {loadError ? (
+        <div className="tp-load-error">
+          <h2>地图加载失败</h2>
+          <p>{loadError}</p>
+        </div>
+      ) : null}
+
+      <div ref={mapNodeRef} className="tp-map" aria-label="躺平地图点位地图" />
+
+      <style jsx global>{`
+        .tp-map-shell {
+          --bg: #f5f0e1;
+          --paper: #fbf7ea;
+          --surface: #ffffff;
+          --ink: #1a1c19;
+          --ink-soft: #3d403a;
+          --ink-muted: #7a7c72;
+          --line: #d4cbb1;
+          --line-soft: #e6dfc8;
+          --jade: #2d4a3d;
+          --jade-pale: #e6ecde;
+          position: relative;
+          height: 100dvh;
+          min-height: 620px;
+          overflow: hidden;
+          background: var(--bg);
+          color: var(--ink);
+          font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .tp-map {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          background: #eae3d0;
+        }
+
+        .tp-map .leaflet-container,
+        .tp-map-shell .leaflet-container {
+          background: #eae3d0;
+          font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .tp-map-shell .leaflet-top.leaflet-left {
+          left: 14px;
+          top: 14px;
+        }
+
+        .tp-map-shell .leaflet-bottom.leaflet-left {
+          bottom: 14px;
+          left: 14px;
+        }
+
+        .tp-map-shell .leaflet-control-zoom {
+          overflow: hidden;
+          border: 1px solid rgba(61, 64, 58, 0.18) !important;
+          border-radius: 6px !important;
+          box-shadow: 0 8px 24px rgba(26, 28, 25, 0.12);
+        }
+
+        .tp-map-shell .leaflet-control-zoom a {
+          width: 38px !important;
+          height: 38px !important;
+          border-color: rgba(61, 64, 58, 0.12) !important;
+          background: rgba(255, 255, 255, 0.92) !important;
+          color: var(--ink) !important;
+          line-height: 36px !important;
+          backdrop-filter: blur(10px);
+        }
+
+        .tp-map-shell .leaflet-control-scale-line {
+          border-color: rgba(61, 64, 58, 0.45) !important;
+          background: rgba(251, 247, 234, 0.78);
+          color: var(--ink-soft);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 10px;
+        }
+
+        .tp-map-shell .leaflet-control-attribution {
+          background: rgba(251, 247, 234, 0.85) !important;
+          color: var(--ink-muted);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 10px !important;
+        }
+
+        .tp-topbar {
+          pointer-events: none;
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 0;
+          z-index: 30;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 28px;
+          padding: 18px 92px 40px 74px;
+          background: linear-gradient(180deg, rgba(251, 247, 234, 0.9) 0%, rgba(251, 247, 234, 0.62) 66%, rgba(251, 247, 234, 0) 100%);
+        }
+
+        .tp-brand,
+        .tp-stats {
+          pointer-events: auto;
+        }
+
+        .tp-brand {
+          max-width: min(620px, calc(100vw - 390px));
+        }
+
+        .tp-eyebrow {
+          margin: 0 0 4px;
+          color: var(--jade);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 10px;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+        }
+
+        .tp-brand h1 {
+          margin: 0;
+          color: var(--ink);
+          font-family: 'Noto Serif SC', Georgia, serif;
+          font-size: clamp(20px, 2vw, 30px);
+          font-weight: 900;
+          letter-spacing: 0;
+          line-height: 1.1;
+          text-shadow: 0 1px 0 rgba(251, 247, 234, 0.8);
+        }
+
+        .tp-brand h1 span {
+          color: var(--jade);
+          font-family: Georgia, serif;
+          font-style: italic;
+          font-weight: 500;
+        }
+
+        .tp-stats {
+          white-space: nowrap;
+          border: 1px solid rgba(61, 64, 58, 0.14);
+          border-radius: 6px;
+          background: rgba(255, 255, 255, 0.9);
+          box-shadow: 0 8px 22px rgba(26, 28, 25, 0.08);
+          color: var(--ink-soft);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 11px;
+          letter-spacing: 0.06em;
+          padding: 10px 16px;
+          backdrop-filter: blur(10px);
+        }
+
+        .tp-stats strong {
+          color: var(--jade);
+          font-size: 13px;
+          font-weight: 600;
+        }
+
+        .tp-panel {
+          position: absolute;
+          left: 28px;
+          top: 128px;
+          z-index: 25;
+          display: flex;
+          width: min(300px, calc(100vw - 56px));
+          max-height: calc(100dvh - 164px);
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid rgba(61, 64, 58, 0.14);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.94);
+          box-shadow: 0 18px 44px rgba(26, 28, 25, 0.12);
+          backdrop-filter: blur(12px);
+        }
+
+        .tp-panel-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          border: 0;
+          border-bottom: 1px solid rgba(61, 64, 58, 0.1);
+          background: rgba(251, 247, 234, 0.74);
+          color: var(--jade);
+          cursor: default;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 11px;
+          letter-spacing: 0.18em;
+          padding: 13px 18px;
+          text-align: left;
+          text-transform: uppercase;
+        }
+
+        .tp-panel-toggle {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border: 1px solid var(--line);
+          border-radius: 5px;
+          color: var(--ink-soft);
+          font-size: 14px;
+          letter-spacing: 0;
+        }
+
+        .tp-panel-body {
+          flex: 1;
+          overflow-y: auto;
+          padding: 18px;
+        }
+
+        .tp-field {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+          margin-bottom: 16px;
+        }
+
+        .tp-field > span {
+          color: var(--ink-soft);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+        }
+
+        .tp-field input,
+        .tp-field select {
+          width: 100%;
+          border: 1px solid rgba(61, 64, 58, 0.16);
+          border-radius: 6px;
+          background: rgba(251, 247, 234, 0.72);
+          color: var(--ink);
+          font-family: inherit;
+          font-size: 13px;
+          outline: none;
+          padding: 10px 12px;
+          transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .tp-field input:focus,
+        .tp-field select:focus {
+          border-color: var(--jade);
+          background: var(--surface);
+          box-shadow: 0 0 0 2px var(--jade-pale);
+        }
+
+        .tp-range {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
+          align-items: center;
+          gap: 8px;
+        }
+
+        .tp-range input {
+          padding-left: 6px;
+          padding-right: 6px;
+          text-align: center;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 12px;
+        }
+
+        .tp-range b {
+          color: var(--ink-muted);
+          font-weight: 400;
+          text-align: center;
+        }
+
+        .tp-reset {
+          width: 100%;
+          border: 0;
+          border-radius: 6px;
+          background: var(--ink);
+          color: var(--paper);
+          cursor: pointer;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 11px;
+          letter-spacing: 0.16em;
+          padding: 11px 16px;
+          text-transform: uppercase;
+          transition: background 0.2s ease;
+        }
+
+        .tp-reset:hover {
+          background: var(--jade);
+        }
+
+        .tp-tile-switcher {
+          position: absolute;
+          right: 20px;
+          top: 82px;
+          z-index: 25;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid rgba(61, 64, 58, 0.14);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.92);
+          box-shadow: 0 12px 28px rgba(26, 28, 25, 0.1);
+          backdrop-filter: blur(10px);
+        }
+
+        .tp-tile-switcher button {
+          min-width: 72px;
+          width: 100%;
+          border: 0;
+          border-bottom: 1px solid var(--line-soft);
+          background: transparent;
+          color: var(--ink-soft);
+          cursor: pointer;
+          display: block;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          padding: 9px 12px;
+          text-align: center;
+          transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .tp-tile-switcher button:last-child {
+          border-bottom: 0;
+        }
+
+        .tp-tile-switcher button:hover {
+          background: rgba(230, 236, 222, 0.85);
+          color: var(--jade);
+        }
+
+        .tp-tile-switcher button.active {
+          background: var(--jade);
+          color: var(--paper);
+        }
+
+        .tp-legend {
+          position: absolute;
+          bottom: 36px;
+          right: 26px;
+          z-index: 25;
+          border: 1px solid rgba(61, 64, 58, 0.14);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.92);
+          box-shadow: 0 16px 36px rgba(26, 28, 25, 0.1);
+          font-size: 12px;
+          padding: 13px 16px;
+          backdrop-filter: blur(12px);
+        }
+
+        .tp-legend-title {
+          border-bottom: 1px solid var(--line-soft);
+          color: var(--jade);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 10px;
+          letter-spacing: 0.18em;
+          margin-bottom: 8px;
+          padding-bottom: 6px;
+          text-transform: uppercase;
+        }
+
+        .tp-legend-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 4px 0;
+          color: var(--ink-soft);
+        }
+
+        .tp-legend-row span {
+          width: 14px;
+          height: 14px;
+          flex: 0 0 14px;
+          border: 2px solid var(--surface);
+          border-radius: 50%;
+          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+        }
+
+        .tp-legend-row b {
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 11px;
+          font-weight: 500;
+        }
+
+        .tp-source {
+          position: absolute;
+          bottom: 18px;
+          right: 26px;
+          z-index: 25;
+          color: rgba(61, 64, 58, 0.62);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 10px;
+          letter-spacing: 0.08em;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+
+        .tp-pin-wrap {
+          border: 0;
+          background: transparent;
+        }
+
+        .tp-pin {
+          width: 18px;
+          height: 18px;
+          border: 2.5px solid var(--paper);
+          border-radius: 50%;
+          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.25);
+          cursor: pointer;
+          transition: transform 0.15s ease;
+        }
+
+        .tp-pin:hover {
+          transform: scale(1.25);
+        }
+
+        .tp-map-shell .marker-cluster-small,
+        .tp-map-shell .marker-cluster-medium,
+        .tp-map-shell .marker-cluster-large {
+          background: transparent !important;
+        }
+
+        .tp-map-shell .marker-cluster-small div,
+        .tp-map-shell .marker-cluster-medium div,
+        .tp-map-shell .marker-cluster-large div {
+          border: 2px solid var(--paper) !important;
+          background: rgba(45, 74, 61, 0.92) !important;
+          box-shadow: 0 0 0 1px var(--jade), 0 4px 14px rgba(26, 28, 25, 0.2) !important;
+          color: var(--paper) !important;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+          font-size: 12px !important;
+          font-weight: 500 !important;
+        }
+
+        .tp-map-shell .marker-cluster-medium div {
+          background: rgba(184, 92, 58, 0.92) !important;
+          box-shadow: 0 0 0 1px #b85c3a, 0 4px 14px rgba(26, 28, 25, 0.2) !important;
+        }
+
+        .tp-map-shell .marker-cluster-large div {
+          background: rgba(139, 58, 58, 0.94) !important;
+          box-shadow: 0 0 0 1px #8b3a3a, 0 4px 14px rgba(26, 28, 25, 0.2) !important;
+        }
+
+        .tp-map-shell .leaflet-popup-content-wrapper {
+          overflow: hidden;
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          background: var(--surface);
+          box-shadow: 0 8px 32px rgba(26, 28, 25, 0.18);
+          padding: 0;
+        }
+
+        .tp-map-shell .leaflet-popup-content {
+          min-width: 240px;
+          margin: 0 !important;
+        }
+
+        .tp-map-shell .leaflet-popup-tip {
+          background: var(--surface);
+        }
+
+        .tp-map-shell .leaflet-popup-close-button {
+          color: var(--ink-muted) !important;
+          font-size: 18px !important;
+          padding: 6px 8px !important;
+        }
+
+        .tp-pop {
+          color: var(--ink);
+          font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .tp-pop-head {
+          border-bottom: 1px solid var(--line-soft);
+          background: var(--paper);
+          padding: 14px 18px 10px;
+        }
+
+        .tp-id-tag {
+          color: var(--ink-muted);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 10px;
+          letter-spacing: 0.14em;
+        }
+
+        .tp-pop-region {
+          margin-top: 4px;
+        }
+
+        .tp-pop-prov {
+          color: var(--jade);
+          font-family: 'Noto Serif SC', Georgia, serif;
+          font-size: 17px;
+          font-weight: 700;
+          margin-right: 6px;
+        }
+
+        .tp-pop-city {
+          color: var(--ink);
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .tp-pop-loc {
+          padding: 10px 18px 6px;
+        }
+
+        .tp-pop-name {
+          color: var(--ink);
+          font-family: 'Noto Serif SC', Georgia, serif;
+          font-size: 16px;
+          font-weight: 700;
+          margin-bottom: 2px;
+        }
+
+        .tp-pop-sub {
+          color: var(--ink-muted);
+          font-size: 12px;
+        }
+
+        .tp-pop-stats {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1px;
+          margin-top: 8px;
+          background: var(--line-soft);
+        }
+
+        .tp-pop-stat {
+          background: var(--surface);
+          padding: 10px 8px;
+          text-align: center;
+        }
+
+        .tp-pop-label {
+          color: var(--ink-muted);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 9px;
+          letter-spacing: 0.14em;
+          margin-bottom: 3px;
+          text-transform: uppercase;
+        }
+
+        .tp-pop-value {
+          color: var(--ink);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .tp-pop-stat.price .tp-pop-value {
+          color: var(--jade);
+        }
+
+        .tp-pop-foot {
+          color: var(--ink-muted);
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 10px;
+          letter-spacing: 0.1em;
+          padding: 8px 18px 12px;
+          text-align: right;
+        }
+
+        .tp-load-error {
+          position: fixed;
+          inset: 0;
+          z-index: 60;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          background: var(--paper);
+          color: var(--ink-soft);
+          padding: 24px;
+          text-align: center;
+        }
+
+        .tp-load-error h2 {
+          color: var(--ink);
+          font-family: 'Noto Serif SC', Georgia, serif;
+          font-size: 24px;
+          margin: 0 0 12px;
+        }
+
+        .tp-load-error p {
+          max-width: 420px;
+          color: var(--ink-muted);
+          font-size: 14px;
+          margin: 0;
+        }
+
+        @media (max-width: 980px) {
+          .tp-topbar {
+            padding-right: 86px;
+          }
+
+          .tp-brand {
+            max-width: calc(100vw - 250px);
+          }
+
+          .tp-panel {
+            left: 18px;
+            top: 118px;
+            width: 286px;
+            max-height: calc(100dvh - 154px);
+          }
+
+          .tp-tile-switcher {
+            right: 18px;
+            top: 78px;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .tp-map-shell {
+            min-height: 100dvh;
+          }
+
+          .tp-topbar {
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 74px 32px 62px;
+          }
+
+          .tp-brand {
+            max-width: calc(100vw - 156px);
+          }
+
+          .tp-eyebrow {
+            font-size: 9px;
+            letter-spacing: 0.16em;
+          }
+
+          .tp-brand h1 {
+            font-size: 18px;
+            line-height: 1.12;
+          }
+
+          .tp-brand h1 span {
+            display: none;
+          }
+
+          .tp-stats {
+            border-radius: 6px;
+            font-size: 10px;
+            padding: 8px 10px;
+          }
+
+          .tp-map-shell .leaflet-top.leaflet-left {
+            left: 12px;
+            top: 12px;
+          }
+
+          .tp-map-shell .leaflet-control-zoom a {
+            width: 34px !important;
+            height: 34px !important;
+            line-height: 32px !important;
+          }
+
+          .tp-tile-switcher {
+            right: 12px;
+            top: 76px;
+          }
+
+          .tp-tile-switcher button {
+            min-width: 58px;
+            font-size: 10px;
+            padding: 8px 9px;
+          }
+
+          .tp-panel {
+            left: 0;
+            right: 0;
+            top: auto;
+            bottom: 0;
+            width: 100%;
+            max-height: 50dvh;
+            border-right: 0;
+            border-bottom: 0;
+            border-left: 0;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 -4px 20px rgba(26, 28, 25, 0.15);
+            transform: translateY(calc(100% - 46px));
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .tp-panel.open {
+            transform: translateY(0);
+          }
+
+          .tp-panel-head {
+            cursor: pointer;
+          }
+
+          .tp-panel-toggle {
+            display: inline-flex;
+          }
+
+          .tp-panel-body {
+            max-height: calc(50dvh - 50px);
+          }
+
+          .tp-legend {
+            bottom: 62px;
+            right: 12px;
+            font-size: 11px;
+            padding: 8px 10px;
+          }
+
+          .tp-legend-row {
+            margin: 2px 0;
+          }
+
+          .tp-source {
+            display: none;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .tp-legend {
+            display: none;
+          }
+        }
+      `}</style>
     </main>
   )
 }

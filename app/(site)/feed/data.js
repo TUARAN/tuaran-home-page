@@ -55,6 +55,18 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'fable5-notion-rebuild',
+    type: 'video',
+    title: 'Fable 5 复刻 Notion 的完成度已经很夸张',
+    summary:
+      '网友用 Fable 5 复刻 Notion，这么大的工程已经做到了接近 70% 的完成度。它不只是一个炫技 Demo，而是在说明 AI 原型工具已经开始逼近复杂产品级界面：信息架构、交互细节和组件一致性，都能被大规模还原出来。',
+    tags: ['Fable 5', 'Notion', 'AI 原型', '产品复刻', '低代码'],
+    date: '2026-07-06',
+    time: '09:30',
+    src: '/feed/fable5-notion-rebuild-2026-07-06.mp4',
+    aspect: '16/9',
+  },
+  {
     id: 'fable5-grok-eastbourne-tennis-dv',
     type: 'video',
     title: 'Fable 5 提示词让 Grok 跑出 Seedance 2.5 质感',

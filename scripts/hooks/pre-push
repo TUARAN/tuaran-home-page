@@ -29,6 +29,9 @@ fi
 echo "[pre-push] public asset size check …"
 node scripts/check-public-asset-size.mjs
 
+echo "[pre-push] sensitive file check …"
+node scripts/check-sensitive-files.mjs
+
 echo "[pre-push] npm run lint …"
 if ! npm run --silent lint; then
   echo

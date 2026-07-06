@@ -143,7 +143,7 @@ function LazyVideo({ item, eager = false }) {
     <MediaFrame aspect={item.aspect}>
       {shouldLoad ? (
         <video
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-contain"
           src={item.src}
           poster={item.poster || undefined}
           controls
@@ -163,7 +163,7 @@ function LazyVideo({ item, eager = false }) {
             // 静态 poster 已经是视频缩略图，这里用原生 img 避免给 feed 卡片引入 next/image 包装尺寸。
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain"
               src={item.poster}
               alt=""
               loading="lazy"

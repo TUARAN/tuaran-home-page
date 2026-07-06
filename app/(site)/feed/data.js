@@ -64,6 +64,7 @@ export const FEED_ITEMS = [
     date: '2026-07-06',
     time: '09:30',
     src: '/feed/fable5-notion-rebuild-2026-07-06.mp4',
+    poster: '/feed/posters/fable5-notion-rebuild-2026-07-06.jpg',
     aspect: '16/9',
   },
   {
@@ -92,6 +93,7 @@ export const FEED_ITEMS = [
     date: '2026-07-04',
     time: '11:01',
     src: '/feed/fable5-grok-eastbourne-tennis-dv-2026-07-04.mp4',
+    poster: '/feed/posters/fable5-grok-eastbourne-tennis-dv-2026-07-04.jpg',
     aspect: '16/9',
   },
   {
@@ -104,6 +106,7 @@ export const FEED_ITEMS = [
     date: '2026-07-02',
     time: '22:22',
     src: '/feed/seedance-2-korean-community-life-2026-07-02.mp4',
+    poster: '/feed/posters/seedance-2-korean-community-life-2026-07-02.jpg',
     aspect: '16/9',
   },
   {
@@ -116,6 +119,7 @@ export const FEED_ITEMS = [
     date: '2026-07-01',
     time: '16:59',
     src: feedMediaUrl('feed/humanoid-robot-beauty-inspiration-2026-07-02.mp4'),
+    poster: '/feed/posters/humanoid-robot-beauty-inspiration.jpg',
     aspect: '16/9',
   },
   {
@@ -128,6 +132,7 @@ export const FEED_ITEMS = [
     date: '2026-06-29',
     time: '17:22',
     src: '/feed/gemma-4-agent-vllm-challenge.mp4',
+    poster: '/feed/posters/gemma-4-agent-vllm-challenge.jpg',
     aspect: '16/9',
     source: {
       label: 'Thom Wolf / X',

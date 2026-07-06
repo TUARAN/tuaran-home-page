@@ -23,7 +23,6 @@ function TypeBadge({ type }) {
 const ALL_FILTER_ACCENT = '#7352a2'
 const INITIAL_RENDER_COUNT = 7
 const RENDER_BATCH_SIZE = 6
-const VIDEO_LOAD_ROOT_MARGIN = '900px 0px'
 
 function itemShareText(item) {
   return [
@@ -136,63 +135,57 @@ function MediaFrame({ aspect = '16/9', children, frameRef }) {
   )
 }
 
-function useNearViewport(rootMargin = '0px') {
-  const ref = useRef(null)
-  const [isNear, setIsNear] = useState(false)
-
-  useEffect(() => {
-    if (isNear) return undefined
-    const node = ref.current
-    if (!node) return undefined
-
-    if (typeof IntersectionObserver === 'undefined') {
-      setIsNear(true)
-      return undefined
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return
-        setIsNear(true)
-        observer.disconnect()
-      },
-      { rootMargin, threshold: 0.01 }
-    )
-
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [isNear, rootMargin])
-
-  return [ref, isNear]
-}
-
 function LazyVideo({ item, eager = false }) {
-  const [frameRef, isNearViewport] = useNearViewport(VIDEO_LOAD_ROOT_MARGIN)
   const [activated, setActivated] = useState(eager)
-  const shouldLoad = eager || activated || isNearViewport
+  const shouldLoad = eager || activated
 
   return (
-    <MediaFrame aspect={item.aspect} frameRef={frameRef}>
+    <MediaFrame aspect={item.aspect}>
       {shouldLoad ? (
         <video
-          className="absolute inset-0 h-full w-full"
+          className="absolute inset-0 h-full w-full object-cover"
           src={item.src}
           poster={item.poster || undefined}
           controls
-          preload={eager ? 'metadata' : 'none'}
+          preload="metadata"
           playsInline
+          autoPlay={activated && !eager}
           aria-label={item.title}
         />
       ) : (
         <button
           type="button"
-          className="absolute inset-0 flex h-full w-full items-center justify-center bg-black text-white/90"
+          className="absolute inset-0 block h-full w-full overflow-hidden bg-[#282824] text-left text-white"
           onClick={() => setActivated(true)}
           aria-label={`加载视频：${item.title}`}
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/30 bg-white/10 shadow-lg shadow-black/30" aria-hidden="true">
+          {item.poster ? (
+            // 静态 poster 已经是视频缩略图，这里用原生 img 避免给 feed 卡片引入 next/image 包装尺寸。
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="absolute inset-0 h-full w-full object-cover"
+              src={item.poster}
+              alt=""
+              loading="lazy"
+            />
+          ) : (
+            <span
+              className="absolute inset-0 block bg-[radial-gradient(circle_at_18%_18%,rgba(255,77,106,0.32),transparent_34%),linear-gradient(135deg,#394340,#1f211d_58%,#111)]"
+              aria-hidden="true"
+            />
+          )}
+          <span className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 via-black/20 to-transparent" aria-hidden="true" />
+          <span className="absolute left-4 top-4 rounded-full bg-black/45 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
+            视频
+          </span>
+          <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-black/35 shadow-lg shadow-black/35 backdrop-blur-sm" aria-hidden="true">
             <span className="ml-1 h-0 w-0 border-y-[9px] border-y-transparent border-l-[14px] border-l-white" />
           </span>
+          {!item.poster ? (
+            <span className="absolute inset-x-4 bottom-4 line-clamp-2 font-serif text-[18px] leading-tight text-white drop-shadow">
+              {item.title}
+            </span>
+          ) : null}
         </button>
       )}
     </MediaFrame>

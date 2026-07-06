@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import ImageViewer from '../../../../components/ImageViewer'
+
 const QUERY_KEY = 'v'
 const VARIANT_EVENT = 'research:variant'
 const MAX_UTTERANCE_LENGTH = 140
@@ -160,21 +162,6 @@ export default function ResearchBody({ variants }) {
   }, [])
 
   useEffect(() => {
-    if (!lightboxImage || typeof window === 'undefined') return
-
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setLightboxImage(null)
-    }
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [lightboxImage])
-
-  useEffect(() => {
     return () => {
       stopSpeech()
     }
@@ -294,40 +281,7 @@ export default function ResearchBody({ variants }) {
         </div>
       </div>
 
-      {lightboxImage ? (
-        <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/88 p-3 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label={lightboxImage.alt || '查看图片'}
-          onClick={() => setLightboxImage(null)}
-        >
-          <div className="flex h-full w-full flex-col" onClick={(event) => event.stopPropagation()}>
-            <div className="mb-3 flex items-center justify-end">
-              <button
-                type="button"
-                onClick={() => setLightboxImage(null)}
-                className="rounded-full border border-white/25 bg-white/12 px-4 py-2 text-sm text-white backdrop-blur transition hover:bg-white/20"
-              >
-                关闭
-              </button>
-            </div>
-            <div className="min-h-0 flex-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={lightboxImage.src}
-                alt={lightboxImage.alt}
-                className="h-full w-full object-contain"
-              />
-            </div>
-            {lightboxImage.alt ? (
-              <p className="mx-auto mt-3 max-w-3xl text-center text-xs leading-5 text-white/70">
-                {lightboxImage.alt}
-              </p>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+      <ImageViewer image={lightboxImage} onClose={() => setLightboxImage(null)} />
     </>
   )
 }

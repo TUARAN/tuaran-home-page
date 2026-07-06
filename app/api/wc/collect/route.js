@@ -1,7 +1,7 @@
 /**
  * 采集触发入口
  * - Cloudflare Cron Trigger: scheduled event (无需 secret,Cron 来自 CF 内部)
- * - 手动触发 (运维用): GET/POST 携带 ?secret=<WC_COLLECT_SECRET> 或 header `x-wc-secret`
+ * - 手动触发 (运维用): GET/POST 携带 header `x-wc-secret: <WC_COLLECT_SECRET>`
  *
  * 数据源是 openfootball/worldcup.json (公共 JSON,无 key、无限流),
  * 所以这里不需要任何外部 API key —— 只需要 D1 binding。
@@ -36,14 +36,9 @@ async function handle(request, ctx) {
   const requiredSecret = env.WC_COLLECT_SECRET
   const log = (msg) => console.log(`[wc-collect] ${msg}`)
 
-  // 鉴权: cron 不带 query/header,走 CF 平台;手动调用必须带 secret
-  const url = new URL(request.url)
-  const querySecret = url.searchParams.get('secret') || ''
+  // HTTP 触发必须带 secret；平台 scheduled 事件走下面单独的 scheduled handler。
   const headerSecret = request.headers.get(HEADER_SECRET) || ''
-  const isCron = request.headers.get('cf-cron') || request.headers.get('x-cron') || false
-  const isAuthorized =
-    Boolean(isCron) ||
-    (requiredSecret && (querySecret === requiredSecret || headerSecret === requiredSecret))
+  const isAuthorized = requiredSecret && headerSecret === requiredSecret
 
   if (!isAuthorized) {
     return Response.json({ error: 'unauthorized' }, { status: 401 })

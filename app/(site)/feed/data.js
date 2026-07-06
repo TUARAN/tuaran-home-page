@@ -149,6 +149,7 @@ export const FEED_ITEMS = [
     date: '2026-06-29',
     time: '14:44',
     src: feedMediaUrl('feed/ai-restored-tom-and-jerry.mp4'),
+    poster: '/feed/posters/ai-restored-tom-and-jerry.jpg',
     aspect: '16/9',
   },
   {
@@ -161,6 +162,7 @@ export const FEED_ITEMS = [
     date: '2026-06-23',
     time: '17:10',
     src: feedMediaUrl('feed/midjourney-future-city.mp4'),
+    poster: '/feed/posters/midjourney-future-city.jpg',
     aspect: '16/9',
     source: { label: 'Midjourney', href: 'https://www.midjourney.com/' },
   },

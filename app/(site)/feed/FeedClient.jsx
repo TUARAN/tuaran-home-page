@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import DistributeContentButton from '../components/DistributeContentButton'
@@ -21,6 +21,9 @@ function TypeBadge({ type }) {
 }
 
 const ALL_FILTER_ACCENT = '#7352a2'
+const INITIAL_RENDER_COUNT = 7
+const RENDER_BATCH_SIZE = 6
+const VIDEO_LOAD_ROOT_MARGIN = '900px 0px'
 
 function itemShareText(item) {
   return [
@@ -121,9 +124,10 @@ function PromptBlock({ prompt }) {
   )
 }
 
-function MediaFrame({ aspect = '16/9', children }) {
+function MediaFrame({ aspect = '16/9', children, frameRef }) {
   return (
     <div
+      ref={frameRef}
       className="relative min-w-0 w-full max-w-full overflow-hidden rounded-lg bg-black/90"
       style={{ aspectRatio: aspect }}
     >
@@ -132,22 +136,73 @@ function MediaFrame({ aspect = '16/9', children }) {
   )
 }
 
-// 仅渲染媒体本体（视频 / 图片），供普通卡与头条卡复用
-function ItemMedia({ item }) {
-  if (item.type === 'video') {
-    return (
-      <MediaFrame aspect={item.aspect}>
+function useNearViewport(rootMargin = '0px') {
+  const ref = useRef(null)
+  const [isNear, setIsNear] = useState(false)
+
+  useEffect(() => {
+    if (isNear) return undefined
+    const node = ref.current
+    if (!node) return undefined
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsNear(true)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setIsNear(true)
+        observer.disconnect()
+      },
+      { rootMargin, threshold: 0.01 }
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [isNear, rootMargin])
+
+  return [ref, isNear]
+}
+
+function LazyVideo({ item, eager = false }) {
+  const [frameRef, isNearViewport] = useNearViewport(VIDEO_LOAD_ROOT_MARGIN)
+  const [activated, setActivated] = useState(eager)
+  const shouldLoad = eager || activated || isNearViewport
+
+  return (
+    <MediaFrame aspect={item.aspect} frameRef={frameRef}>
+      {shouldLoad ? (
         <video
           className="absolute inset-0 h-full w-full"
           src={item.src}
           poster={item.poster || undefined}
           controls
-          preload="metadata"
+          preload={eager ? 'metadata' : 'none'}
           playsInline
           aria-label={item.title}
         />
-      </MediaFrame>
-    )
+      ) : (
+        <button
+          type="button"
+          className="absolute inset-0 flex h-full w-full items-center justify-center bg-black text-white/90"
+          onClick={() => setActivated(true)}
+          aria-label={`加载视频：${item.title}`}
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/30 bg-white/10 shadow-lg shadow-black/30" aria-hidden="true">
+            <span className="ml-1 h-0 w-0 border-y-[9px] border-y-transparent border-l-[14px] border-l-white" />
+          </span>
+        </button>
+      )}
+    </MediaFrame>
+  )
+}
+
+// 仅渲染媒体本体（视频 / 图片），供普通卡与头条卡复用
+function ItemMedia({ item, eager = false }) {
+  if (item.type === 'video') {
+    return <LazyVideo item={item} eager={eager} />
   }
   if (item.type === 'image' || (item.type === 'link' && item.image)) {
     return (
@@ -157,7 +212,7 @@ function ItemMedia({ item }) {
           className="absolute inset-0 h-full w-full object-cover"
           src={item.type === 'image' ? item.src : item.image}
           alt={item.title}
-          loading="lazy"
+          loading={eager ? 'eager' : 'lazy'}
         />
       </MediaFrame>
     )
@@ -175,7 +230,7 @@ const HEADLINE_ACCENT = {
 // 头条卡：占满整行，桌面端媒体在左、文案在右
 function HeadlineCard({ item }) {
   const accent = HEADLINE_ACCENT[item.type] || '#f5a623'
-  const media = <ItemMedia item={item} />
+  const media = <ItemMedia item={item} eager />
   const hasMedia = item.type === 'video' || item.type === 'image' || (item.type === 'link' && item.image)
 
   const text = (
@@ -231,17 +286,7 @@ function HeadlineCard({ item }) {
 function VideoCard({ item }) {
   return (
     <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#ff4d6a]/50">
-      <MediaFrame aspect={item.aspect}>
-        <video
-          className="absolute inset-0 h-full w-full"
-          src={item.src}
-          poster={item.poster || undefined}
-          controls
-          preload="metadata"
-          playsInline
-          aria-label={item.title}
-        />
-      </MediaFrame>
+      <LazyVideo item={item} />
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mt-3 flex items-center gap-2">
           <TypeBadge type={item.type} />
@@ -349,9 +394,46 @@ function prioritizeItem(items, itemId) {
   return [selected, ...items.filter((item) => item.id !== itemId)]
 }
 
+function LoadMoreTrigger({ hasMore, onLoadMore, remainingCount }) {
+  const triggerRef = useRef(null)
+
+  useEffect(() => {
+    if (!hasMore) return undefined
+    const node = triggerRef.current
+    if (!node) return undefined
+
+    if (typeof IntersectionObserver === 'undefined') return undefined
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) onLoadMore()
+      },
+      { rootMargin: '700px 0px', threshold: 0.01 }
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMore, onLoadMore])
+
+  if (!hasMore) return null
+
+  return (
+    <div ref={triggerRef} className="flex justify-center pt-1">
+      <button
+        type="button"
+        className="article-action-button px-4 py-2 text-xs"
+        onClick={onLoadMore}
+      >
+        继续浏览 {remainingCount}
+      </button>
+    </div>
+  )
+}
+
 export default function FeedClient({ items, typesPresent, featuredItemId = '' }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [hashFeaturedItemId, setHashFeaturedItemId] = useState('')
+  const [visibleCount, setVisibleCount] = useState(INITIAL_RENDER_COUNT)
   const activeFeaturedItemId = featuredItemId || hashFeaturedItemId
 
   useEffect(() => {
@@ -374,6 +456,17 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '' })
     },
     [items, typeFilter, activeFeaturedItemId]
   )
+  const visibleItems = filtered.slice(0, visibleCount)
+  const hasMore = visibleCount < filtered.length
+  const remainingCount = Math.max(0, filtered.length - visibleCount)
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_RENDER_COUNT)
+  }, [typeFilter, activeFeaturedItemId])
+
+  const loadMore = () => {
+    setVisibleCount((count) => Math.min(count + RENDER_BATCH_SIZE, filtered.length))
+  }
 
   const chips = [{ key: 'all', label: '全部' }, ...typesPresent.map((t) => ({ key: t, label: FEED_TYPE_META[t]?.label || t }))]
 
@@ -410,15 +503,21 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '' })
       ) : (
         <div className="space-y-5">
           {/* 首条作为头条，占满整行大版面 */}
-          <HeadlineCard item={filtered[0]} />
+          <HeadlineCard item={visibleItems[0]} />
 
-          {filtered.length > 1 ? (
+          {visibleItems.length > 1 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.slice(1).map((item) => (
+              {visibleItems.slice(1).map((item) => (
                 <FeedCard key={item.id} item={item} />
               ))}
             </div>
           ) : null}
+
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            remainingCount={remainingCount}
+          />
         </div>
       )}
     </div>

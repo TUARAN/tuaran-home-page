@@ -78,45 +78,21 @@ pv: 0
 
 选项从“差不多每天”到“几乎从来没有”，共 9 个核心频次档。这个口径很适合站内问卷复用，因为它比“经常/偶尔”更可量化。
 
-<figure class="research-inline-diagram">
-<svg viewBox="0 0 760 420" width="760" height="420" role="img" aria-label="CHARLS亲子联系频次口径折算为年联系次数">
-<text x="24" y="34" font-size="22" font-weight="700" fill="#1f2933">频次口径：从“几乎每天”到“几乎从不”</text>
-<text x="24" y="62" font-size="13" fill="#5b6470">按 CHARLS 选项折算为约等于每年联系次数；这是问卷口径，不是样本分布</text>
-<line x1="126" y1="352" x2="724" y2="352" stroke="#d6d3cc" stroke-width="1" />
-<rect x="150" y="92" width="42" height="260" fill="#2f6f73" rx="4" />
-<rect x="216" y="259" width="42" height="93" fill="#3f7f7d" rx="4" />
-<rect x="282" y="315" width="42" height="37" fill="#5b8e7d" rx="4" />
-<rect x="348" y="333" width="42" height="19" fill="#7c9a76" rx="4" />
-<rect x="414" y="343" width="42" height="9" fill="#9ca36c" rx="4" />
-<rect x="480" y="349" width="42" height="3" fill="#b4a564" rx="3" />
-<rect x="546" y="350" width="42" height="2" fill="#c7a35d" rx="2" />
-<rect x="612" y="351" width="42" height="1" fill="#d6a85d" rx="1" />
-<rect x="678" y="352" width="42" height="0" fill="#c46352" rx="1" />
-<text x="171" y="84" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">365</text>
-<text x="237" y="251" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">130</text>
-<text x="303" y="307" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">52</text>
-<text x="369" y="325" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">26</text>
-<text x="435" y="335" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">12</text>
-<text x="501" y="341" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">4</text>
-<text x="567" y="342" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">2</text>
-<text x="633" y="343" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">1</text>
-<text x="699" y="343" font-size="14" font-weight="700" fill="#1f2933" text-anchor="middle">0</text>
-<text x="171" y="374" font-size="12" fill="#39414d" text-anchor="middle">每天</text>
-<text x="237" y="374" font-size="12" fill="#39414d" text-anchor="middle">周2-3</text>
-<text x="303" y="374" font-size="12" fill="#39414d" text-anchor="middle">每周</text>
-<text x="369" y="374" font-size="12" fill="#39414d" text-anchor="middle">半月</text>
-<text x="435" y="374" font-size="12" fill="#39414d" text-anchor="middle">每月</text>
-<text x="501" y="374" font-size="12" fill="#39414d" text-anchor="middle">季度</text>
-<text x="567" y="374" font-size="12" fill="#39414d" text-anchor="middle">半年</text>
-<text x="633" y="374" font-size="12" fill="#39414d" text-anchor="middle">每年</text>
-<text x="699" y="374" font-size="12" fill="#39414d" text-anchor="middle">几乎无</text>
-<text x="28" y="116" font-size="13" fill="#6b7280">站内问卷不建议只问</text>
-<text x="28" y="144" font-size="13" fill="#6b7280">“经常联系吗”。</text>
-<text x="28" y="196" font-size="13" fill="#6b7280">应该让用户选频次档，</text>
-<text x="28" y="224" font-size="13" fill="#6b7280">再统一折算成月/年。</text>
-</svg>
-<figcaption>图 2：CHARLS 给出的频次档可以直接改造成站内问卷选项。</figcaption>
-</figure>
+这里不应该画柱状图。原因很简单：**口径折算不是样本分布**。把“每天≈365 次/年”画成最高柱，会让读者误以为“选择每天的人最多”。真正值得画柱状图的，是问卷回收后“每个频次档有多少人选择”。
+
+| 问卷频次档 | 统计编码 | 折算用途 |
+|---|---:|---|
+| 几乎每天 | 约 365 次/年 | 只用于把不同频次统一成可比较数值 |
+| 每周 2-3 次 | 约 130 次/年 | 按 2.5 × 52 粗略折算 |
+| 每周一次 | 约 52 次/年 | 用于估算年联系量 |
+| 每半个月一次 | 约 26 次/年 | 用于估算年联系量 |
+| 每月一次 | 约 12 次/年 | 用于估算年联系量 |
+| 每三个月一次 | 约 4 次/年 | 用于估算年联系量 |
+| 每半年一次 | 约 2 次/年 | 用于估算年联系量 |
+| 每年一次 | 约 1 次/年 | 用于估算年联系量 |
+| 几乎从不 | 约 0 次/年 | 用于标记极低联系 |
+
+这张表的作用是“编码”，不是“展示发现”。站内结果页应该展示的是：每个频次档的选择人数、占比，以及父母主动联系和子女主动联系之间的差距。
 
 这套频次档可以解释现实中的四类家庭：
 
@@ -166,7 +142,7 @@ pv: 0
 <text x="30" y="254" font-size="13" fill="#6b7280">“孩子主动”与</text>
 <text x="30" y="282" font-size="13" fill="#6b7280">“父母主动”。</text>
 </svg>
-<figcaption>图 3：父母主动联系孩子，是站内问卷必须单独计量的变量。</figcaption>
+<figcaption>图 2：父母主动联系孩子，是站内问卷必须单独计量的变量。</figcaption>
 </figure>
 
 ## 五、为什么年轻人联系变少：不是只有“孝不孝”
@@ -227,12 +203,12 @@ pv: 0
 | 11 | 婆媳/翁婿联系主要由谁中转？ | 自己 / 伴侣 / 家庭群 / 无中转 |
 | 12 | 你认为“不联系但不冲突”是否可以接受？ | 可以 / 不可以 / 看情况 |
 
-回收后，站内最值得展示的不是平均值，而是四张图：
+回收后，站内最值得展示的不是频次口径折算，而是四张样本分布图：
 
-1. 孩子主动联系次数分布；
-2. 父母主动联系次数分布；
-3. 理想频次与实际频次差距；
-4. 已婚样本中的婆媳/翁婿直接联系频率。
+1. 孩子主动联系次数分布：横轴为 0 / 1 / 2-3 / 4-7 / 8-15 / 16 次以上，纵轴为人数或占比；
+2. 父母主动联系次数分布：同一套横轴，和孩子主动分布并排比较；
+3. 理想频次与实际频次差距：横轴为频次档，纵轴为人数或占比；
+4. 已婚样本中的婆媳/翁婿直接联系频率：横轴为经常 / 偶尔 / 节日 / 基本不 / 完全不，纵轴为人数或占比。
 
 ## 八、预期可验证假设
 

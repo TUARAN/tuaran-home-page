@@ -21,19 +21,6 @@ const CHANNEL_DEFS = [
   { key: 'resources', label: '资源' },
 ]
 
-const VIEW_COPY = {
-  picks: { title: '推荐入口', desc: '最新内容、推荐调研和代表作品。' },
-  all: { title: '全部知识库', desc: '创作、调研、资源统一按时间和主题索引。' },
-  column: { title: '全部创作', desc: '原创文章和多维页面放在一起看。' },
-  posts: { title: '精选文章', desc: '个人判断与原创长文。' },
-  works: { title: '多维页面', desc: '交互、数据和富页面项目。' },
-  research: { title: '全部调研', desc: '公司、事项、人物调研的统一入口。' },
-  companies: { title: '公司调研', desc: '公司画像、业务分析和商业线索。' },
-  topics: { title: '事项调研', desc: '技术、行业、市场与写作问题。' },
-  people: { title: '人物调研', desc: '人物经历、公开表达和长期判断。' },
-  resources: { title: '资源库', desc: '资料、原文、收藏和长期索引。' },
-}
-
 const COLUMN_TAB_DEFS = [
   { key: 'column', label: '全部创作' },
   { key: 'posts', label: '精选文章' },
@@ -555,7 +542,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const showArticleList = tab !== 'picks' || Boolean(query.trim())
   const hasAdvancedFilters = activeChannel !== 'all' && activeChannel !== 'picks'
   const currentFilterLabel = breadcrumb || CHANNEL_DEFS.find((channel) => channel.key === activeChannel)?.label || '全部'
-  const currentViewCopy = VIEW_COPY[tab] || VIEW_COPY.all
 
   function AdvancedFiltersContent({ orientation = 'inline' }) {
     return (
@@ -662,25 +648,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       ].join(' ')}
       aria-busy={isPending}
     >
-      <div className="rounded-lg border border-[#e8e2ef] bg-white/75 px-3.5 py-3 dark:border-gray-800 dark:bg-[#121821]/90">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#958aa1] dark:text-gray-500">
-              {breadcrumb ? `知识库 / ${breadcrumb}` : '知识库'}
-            </p>
-            <h2 className="font-serif text-xl font-semibold tracking-wide text-[#20172f] dark:text-gray-100">
-              {currentViewCopy.title}
-            </h2>
-            <p className="mt-1 text-[13px] leading-6 text-[#665f70] dark:text-gray-400">
-              {currentViewCopy.desc}
-            </p>
-          </div>
-          <span className="inline-flex shrink-0 items-center rounded-full border border-[#d8d0e3] bg-[#f7f4fa] px-2.5 py-1 font-mono text-[11px] text-[#675d72] dark:border-gray-700 dark:bg-[#151d27] dark:text-gray-300">
-            {visible.length} 条
-          </span>
-        </div>
-      </div>
-
       {visible.length === 0 ? (
         <p className="text-sm text-[#666] dark:text-gray-400">
           {query ? '没有匹配的内容，试试更短关键词或切换分类。' : '该分类下暂无内容。'}
@@ -812,7 +779,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
       {hasAdvancedFilters ? (
         <div className="lg:grid lg:grid-cols-[236px_minmax(0,1fr)] lg:items-start lg:gap-6">
-          <aside className="hidden self-start rounded-lg border border-[#e8e2ef] bg-white/80 p-3 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto dark:border-gray-800 dark:bg-[#121821]">
+          <aside className="hidden self-start rounded-lg border border-[#e8e2ef] bg-white/80 p-3 lg:block lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto dark:border-gray-800 dark:bg-[#121821]">
             <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#eee6f1] pb-2 dark:border-gray-800">
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#958aa1] dark:text-gray-500">
                 筛选
@@ -826,7 +793,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
             </div>
           </aside>
 
-          <div className="mt-3 min-w-0 space-y-4 lg:mt-0">
+          <div className="mt-3 min-w-0 space-y-4 lg:mt-0 lg:space-y-0">
             <details
               open={filtersOpen}
               onToggle={(event) => setFiltersOpen(event.currentTarget.open)}

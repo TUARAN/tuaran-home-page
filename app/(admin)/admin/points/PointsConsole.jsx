@@ -73,6 +73,7 @@ export default function PointsConsole() {
   const [policy, setPolicy] = useState(null)
   const [resources, setResources] = useState([])
   const [summary, setSummary] = useState(null)
+  const [autoReconcile, setAutoReconcile] = useState(null)
   const [accountDetail, setAccountDetail] = useState(null)
   const [accountLedger, setAccountLedger] = useState([])
   const [accountUnlocks, setAccountUnlocks] = useState([])
@@ -106,10 +107,12 @@ export default function PointsConsole() {
         setPolicy(data.policy || null)
         setResources(Array.isArray(data.resources) ? data.resources : [])
         setSummary(data.summary || null)
+        setAutoReconcile(data.autoReconcile || null)
         setStatus('ok')
       } else {
         setRules(data?.rules || null)
         setPolicy(data?.policy || null)
+        setAutoReconcile(data?.autoReconcile || null)
         setStatus(data?.status === 'unavailable' ? 'unavailable' : 'error')
         setMessage(data?.message || data?.error || `HTTP ${res.status}`)
       }
@@ -142,6 +145,7 @@ export default function PointsConsole() {
       setPolicy(data.policy || null)
       setResources(Array.isArray(data.resources) ? data.resources : [])
       setSummary(data.summary || null)
+      setAutoReconcile(data.autoReconcile || null)
       setAccountDetail(data.accountDetail || null)
       setAccountLedger(Array.isArray(data.accountLedger) ? data.accountLedger : [])
       setAccountUnlocks(Array.isArray(data.accountUnlocks) ? data.accountUnlocks : [])
@@ -303,6 +307,14 @@ export default function PointsConsole() {
     return Math.max(0, expectedSpent - Number(accountDetail.unlockSpentPoints || 0))
   }, [accountDetail, accountUnlocks])
 
+  const autoReconcileText = useMemo(() => {
+    if (!autoReconcile) return ''
+    if (autoReconcile.ok === false) return '自动补齐检查失败，请稍后刷新或查看接口日志。'
+    if (Number(autoReconcile.fixedAccounts || 0) <= 0) return ''
+    const suffix = autoReconcile.limited ? '；本次达到批量上限，刷新后会继续处理剩余账号' : ''
+    return `已自动补齐 ${autoReconcile.fixedAccounts} 个账号、${autoReconcile.inserted} 条解锁扣款流水，共 ${autoReconcile.charged} 燃币${suffix}。`
+  }, [autoReconcile])
+
   const actions = (
     <AdminButton variant="default" onClick={refresh} disabled={busy}>
       <IconRefresh size={16} /> 刷新
@@ -356,6 +368,12 @@ export default function PointsConsole() {
               </div>
             ))}
           </div>
+
+          {autoReconcileText ? (
+            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/25 dark:text-emerald-200">
+              {autoReconcileText}
+            </div>
+          ) : null}
 
           {showPolicyDetails && policy ? (
             <div className="mt-4 border-t border-[#eceee6] pt-4 dark:border-[#1b2430]">

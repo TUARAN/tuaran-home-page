@@ -8,6 +8,7 @@ import {
   getBalancesFor,
   getBalance,
   listResources,
+  reconcileUnlockLedgerForAccounts,
   reconcileUnlockLedgerForUser,
   reverseLedgerEntry,
   upsertResource,
@@ -55,6 +56,13 @@ export async function GET(req) {
   }
 
   try {
+    let autoReconcile = null
+    try {
+      autoReconcile = await reconcileUnlockLedgerForAccounts(db, { limit: 1000 })
+    } catch (error) {
+      autoReconcile = { ok: false, error: 'AUTO_RECONCILE_FAILED', detail: String(error?.message || error) }
+    }
+
     const resources = await listResources(db)
     const accountsResult = await db
       .prepare(
@@ -150,6 +158,7 @@ export async function GET(req) {
       generatedAt: Date.now(),
       rules: POINT_RULES,
       policy: POINT_POLICY,
+      autoReconcile,
       resources,
       summary: {
         accountCount: toNumber(accountSummary?.account_count),

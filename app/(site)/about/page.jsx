@@ -110,6 +110,22 @@ const siteLinks = [
   { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人主页、技术笔记与长期内容索引' },
 ]
 
+const friendLinks = [
+  {
+    label: '阮一峰的网络日志',
+    href: 'https://www.ruanyifeng.com/blog/',
+    desc: '中文技术圈经典个人博客与《科技爱好者周刊》，长期稳定更新。',
+    tag: '技术 / 周刊',
+  },
+  {
+    label: '我的 RSS 订阅墙',
+    href: '/resources/rss',
+    desc: '我长期订阅和推荐的博客入口，也欢迎互换 RSS 与个人站链接。',
+    tag: 'Blogroll',
+    internal: true,
+  },
+]
+
 // 本页独立配色：不跟随站点明暗主题，固定一套深色「工程师终端」科技风
 const GRID_BG = {
   backgroundColor: '#080c15',
@@ -391,6 +407,76 @@ export default function AboutPage() {
                 </a>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 友链 */}
+      <section className="border-t border-[#1c2a3c]" aria-label="友链">
+        <div className={`py-8 ${sectionInner}`}>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className={kicker}>Friend Links · 友链</p>
+              <h2 className="mt-2 border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">
+                <span className="text-[#5cd6c8]">$</span> friends
+              </h2>
+              <p className="mt-2 max-w-[680px] text-[13px] leading-6 text-[#8ea3bb]">
+                这里放长期阅读、互相知道、或者值得推荐给本站读者的个人站和博客。
+              </p>
+            </div>
+            <a
+              href="mailto:tuaran666@gmail.com?subject=%E4%BA%A4%E6%8D%A2%E5%8F%8B%E9%93%BE"
+              className="no-external-arrow inline-flex w-fit items-center rounded-md border border-[#2d4d61] bg-[#102032] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
+            >
+              交换友链
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {friendLinks.map((link) => {
+              const cardClass =
+                'no-external-arrow group block rounded-xl border border-[#1d2c3e] bg-[#0a1018]/70 p-3.5 no-underline transition hover:border-[#2c4a5e] hover:bg-[#0d1826]'
+              const card = (
+                <>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-[13.5px] font-semibold text-[#dbe6f0] transition-colors group-hover:text-[#5cf0e0]">
+                        {link.label}
+                      </p>
+                      <p className="mt-1 break-all font-mono text-[10px] text-[#4d5e73]">{link.href}</p>
+                    </div>
+                    <span className="shrink-0 rounded-md border border-[#243549] bg-[#0d1622] px-2 py-0.5 font-mono text-[10px] text-[#8ea3bb]">
+                      {link.tag}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[12px] leading-5 text-[#7186a0]">{link.desc}</p>
+                </>
+              )
+
+              return link.internal ? (
+                <Link key={link.href} href={link.href} className={cardClass}>
+                  {card}
+                </Link>
+              ) : (
+                <a key={link.href} href={link.href} target="_blank" rel="noreferrer" className={cardClass}>
+                  {card}
+                </a>
+              )
+            })}
+
+            <a
+              href="mailto:tuaran666@gmail.com?subject=%E4%BA%A4%E6%8D%A2%E5%8F%8B%E9%93%BE&body=%E7%AB%99%E7%82%B9%E5%90%8D%EF%BC%9A%0A%E9%93%BE%E6%8E%A5%EF%BC%9A%0A%E7%AE%80%E4%BB%8B%EF%BC%9A"
+              className="no-external-arrow flex min-h-[126px] flex-col justify-between rounded-xl border border-dashed border-[#2d4d61] bg-[#07101a]/70 p-3.5 no-underline transition hover:border-[#34e0d0] hover:bg-[#0c1a28]"
+            >
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#5cd6c8]">Open Slot</p>
+                <p className="mt-2 text-[13.5px] font-semibold text-[#dbe6f0]">你的个人站 / 博客</p>
+                <p className="mt-2 text-[12px] leading-5 text-[#7186a0]">
+                  技术、AI、独立开发、长期写作方向优先。发我站名、链接和一句简介即可。
+                </p>
+              </div>
+              <span className="mt-3 font-mono text-[11px] text-[#7fe6da]">mailto →</span>
+            </a>
           </div>
         </div>
       </section>

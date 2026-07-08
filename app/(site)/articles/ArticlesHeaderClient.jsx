@@ -8,43 +8,33 @@ import { LLM_HALLUCINATION_RATE_REFERENCE } from '../../../lib/llmHallucinationR
 const PAGE_COPY = {
   picks: {
     title: '推荐入口',
-    desc: '先从最新内容、代表作品和高密度调研开始读，再进入完整知识库。',
   },
   all: {
     title: '知识库',
-    desc: '把创作、调研和资源放在同一个索引里，方便按问题、主题和内容类型继续追踪。',
   },
   column: {
     title: '创作库',
-    desc: '个人判断、原创长文、多维页面和长期写作项目，偏向可反复阅读的内容。',
   },
   posts: {
     title: '精选文章',
-    desc: '围绕技术、产品、创作和生活经验沉淀下来的原创文章。',
   },
   works: {
     title: '多维页面',
-    desc: '用交互、数据、可视化和长页面承载复杂主题，不只是一篇普通文章。',
   },
   research: {
     title: '调研库',
-    desc: '公司、事项与人物调研的统一入口，保留来源、判断和版本上下文。',
   },
   companies: {
     title: '公司调研',
-    desc: '公司画像、商业模式、产品线索与行业位置，适合做合作、投资和竞品判断。',
   },
   topics: {
     title: '事项调研',
-    desc: '技术、行业、市场、写作与增长问题的专题梳理，重点是把问题拆清楚。',
   },
   people: {
     title: '人物调研',
-    desc: '创作者、企业家和学者的经历线索、公开表达和长期判断。',
   },
   resources: {
     title: '资源库',
-    desc: '原文、资料、外部收藏和长期索引，适合查证、延伸阅读和反复调用。',
   },
 }
 
@@ -97,8 +87,7 @@ export default function ArticlesHeaderClient({ items }) {
             {pageCopy.title}
           </h1>
           <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
-            {pageCopy.desc}
-            {' '}我们都不喜欢被营销 FOMO 情绪/焦虑情绪推着走，所以多给几分钟时间，认真找来源、查事实。
+            我们都不喜欢被营销 FOMO 情绪/焦虑情绪推着走，所以多给几分钟时间，认真找来源、查事实，看看有哪些真的能为我所用。
             LLM {checkedAt} 幻觉率参考：
             <a
               href={hallucinationRate.sourceUrl}

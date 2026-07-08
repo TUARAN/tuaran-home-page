@@ -59,14 +59,14 @@ const downloads = [
   },
 ]
 
-const title = '2aran 桌面版下载：Windows / macOS'
-const description = '2aran 桌面版测试版本下载入口，会根据当前系统推荐 Windows 或 macOS 安装包，并提供首次安装指引。'
-const shareText = '2aran 桌面版测试版本下载入口：自动推荐 Windows / macOS 安装包，并提供首次安装指引。'
+const title = '2aran 桌面应用下载：Windows / macOS'
+const description = '2aran 桌面应用测试版本下载入口，会根据当前系统推荐 Windows 或 macOS 安装包，并提供首次安装指引。'
+const shareText = '2aran 桌面应用测试版本下载入口：自动推荐 Windows / macOS 安装包，并提供首次安装指引。'
 
 export const metadata = {
   title,
   description,
-  keywords: ['2aran 桌面版', 'Windows 下载', 'macOS 下载', '桌面客户端', '2aran Desktop'],
+  keywords: ['2aran 桌面应用', 'Windows 下载', 'macOS 下载', '桌面客户端', '2aran Desktop'],
   alternates: {
     canonical: `/resources/${RESOURCE_SLUG}`,
   },
@@ -93,7 +93,7 @@ export default function DesktopResourcePage() {
           </Link>
           <span aria-hidden="true">·</span>
           <Link href="/desktop-apps" className="underline underline-offset-4 opacity-80 hover:opacity-100">
-            桌面版
+            桌面应用
           </Link>
           <span aria-hidden="true">·</span>
           <span>{VERSION}</span>
@@ -102,7 +102,7 @@ export default function DesktopResourcePage() {
         </div>
 
         <h1 className="mt-4 max-w-4xl font-serif text-3xl font-semibold leading-tight tracking-wide text-[#222] dark:text-gray-100 md:text-5xl">
-          2aran 桌面版
+          2aran 桌面应用
         </h1>
 
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
@@ -130,7 +130,7 @@ export default function DesktopResourcePage() {
               url={`/resources/${RESOURCE_SLUG}`}
               category="resource"
               slug={RESOURCE_SLUG}
-              tags={['桌面版', 'Windows', 'macOS']}
+              tags={['桌面应用', 'Windows', 'macOS']}
               kindLabel="资源"
             />
           </ArticleActionsDropdown>
@@ -168,7 +168,7 @@ export default function DesktopResourcePage() {
 
         <h2>发布约定</h2>
         <p>
-          桌面版安装包统一放在 Cloudflare R2 的 <code>downloads/</code> 前缀。当前版本使用三个文件名：
+          桌面应用安装包统一放在 Cloudflare R2 的 <code>downloads/</code> 前缀。当前版本使用三个文件名：
           <code>2aran-desktop-macos-arm64-{VERSION}.dmg</code>、<code>2aran-desktop-macos-x64-{VERSION}.dmg</code> 和
           <code>2aran-desktop-windows-{VERSION}.exe</code>。
         </p>
@@ -177,7 +177,7 @@ export default function DesktopResourcePage() {
           因为它们超过 Cloudflare Pages 单文件 25MiB 限制；发布时用 wrangler 上传到 R2。
         </p>
 
-        <h2>适合放进桌面版的能力</h2>
+        <h2>适合放进桌面应用的能力</h2>
         <ul>
           <li>站内工具的桌面快捷入口。</li>
           <li>资源领取、版本更新和下载管理。</li>
@@ -193,7 +193,7 @@ export default function DesktopResourcePage() {
               url={`/resources/${RESOURCE_SLUG}`}
               category="resource"
               slug={RESOURCE_SLUG}
-              tags={['桌面版', 'Windows', 'macOS']}
+              tags={['桌面应用', 'Windows', 'macOS']}
               kindLabel="资源"
             />
           </ArticleActionsDropdown>

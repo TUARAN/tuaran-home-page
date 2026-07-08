@@ -69,7 +69,7 @@ export default function DesktopDownloadChooser({ downloads, version }) {
             Recommended Download
           </p>
           <h2 className="m-0 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
-            下载 {recommended.platform} 桌面版
+            下载 {recommended.platform} 桌面应用
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-white/72 dark:text-black/68">{platform.detail}</p>
 

@@ -8,13 +8,13 @@ import { DESKTOP_APP_WORK_ITEMS, getWorkStatusLabel } from '../../../lib/workIte
 export const dynamic = 'force-static'
 
 const PAGE_URL = 'https://2aran.com/desktop-apps'
-const title = '桌面版 · 2aran.com'
+const title = '桌面应用 · 2aran.com'
 const description = '2aran.com 维护的 Windows 与 macOS 桌面客户端下载入口。'
 
 export const metadata = {
   title,
   description,
-  keywords: ['桌面版', 'Windows 下载', 'macOS 下载', '桌面客户端', '2aran'],
+  keywords: ['桌面应用', 'Windows 下载', 'macOS 下载', '桌面客户端', '2aran'],
   alternates: {
     canonical: '/desktop-apps',
   },
@@ -58,7 +58,7 @@ export default function DesktopAppsPage() {
               Desktop Apps
             </p>
             <h1 className="mb-3 font-serif text-[38px] font-bold leading-tight text-[#15130e] dark:text-white sm:text-[52px]">
-              桌面版
+              桌面应用
             </h1>
             <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
               集中收纳可安装到 Windows 和 macOS 的桌面客户端。每个应用页都会分别给出对应系统的下载位、版本说明和安装提示。
@@ -85,7 +85,7 @@ export default function DesktopAppsPage() {
                   url="/desktop-apps"
                   category="tools"
                   slug="desktop-apps"
-                  tags={['桌面版', 'Windows', 'macOS']}
+                  tags={['桌面应用', 'Windows', 'macOS']}
                   kindLabel="工具"
                 />
               </ArticleActionsDropdown>

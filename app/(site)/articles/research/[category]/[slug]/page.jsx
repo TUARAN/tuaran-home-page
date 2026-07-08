@@ -29,6 +29,7 @@ import ResearchPvCounter from './ResearchPvCounter'
 import SharePageButton from '../../../../components/SharePageButton'
 import RssButton from '../../../../components/RssButton'
 import GoogleAdSlot from '../../../../components/GoogleAdSlot'
+import LifeTrafficTest from './LifeTrafficTest'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -201,6 +202,7 @@ export default async function ResearchDetailPage({ params }) {
   const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
   const articleKey = `research:${entry.category}:${entry.slug}`
+  const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
 
   // 相关阅读：同 category 其它条目，最近 3 篇
   const relatedPool = listResearchByCategory(entry.category).filter((e) => e.slug !== entry.slug)
@@ -402,6 +404,8 @@ export default async function ResearchDetailPage({ params }) {
       {isEncrypted ? null : (
         <GoogleAdSlot slot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_RESEARCH_SLOT} />
       )}
+
+      {showLifeTrafficTest && !isEncrypted ? <LifeTrafficTest /> : null}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <main className="min-w-0">

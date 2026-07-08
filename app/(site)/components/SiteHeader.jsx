@@ -20,6 +20,11 @@ import {
 } from '../../../lib/siteNav'
 import { getTagToneClass } from '../../../lib/tagTone'
 
+const DESKTOP_CHANNEL_GROUPS = [
+  SITE_CHANNELS.slice(0, 3),
+  SITE_CHANNELS.slice(3, 5),
+]
+
 function ChevronDown() {
   return (
     <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" className="opacity-60">
@@ -557,34 +562,38 @@ export default function SiteHeader() {
           </Link>
 
           <div className="hidden items-center gap-3 md:flex">
-            <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-1">
-              {SITE_CHANNELS.map((channel) => {
-                const isActive = channel.match(pathname, searchParams)
-                const isOpen = openChannel === channel.key
-                const align =
-                  channel.key === 'content'
-                    ? 'left'
-                    : channel.key === 'community' || channel.key === 'about'
-                    ? 'right'
-                    : 'center'
-                return (
-                  <ChannelTrigger
-                    key={channel.key}
-                    channel={channel}
-                    isOpen={isOpen}
-                    isActive={isActive}
-                    onToggle={{
-                      open: () => setOpenChannel(channel.key),
-                      close: () => setOpenChannel((cur) => (cur === channel.key ? null : cur)),
-                      toggle: () => setOpenChannel((cur) => (cur === channel.key ? null : channel.key)),
-                    }}
-                    onClose={() => setOpenChannel(null)}
-                    align={align}
-                    account={account}
-                    navOverrides={account?.navOverrides}
-                  />
-                )
-              })}
+            <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
+              {DESKTOP_CHANNEL_GROUPS.map((channels, groupIndex) => (
+                <div key={`nav-group-${groupIndex}`} className="site-nav-cluster">
+                  {channels.map((channel) => {
+                    const isActive = channel.match(pathname, searchParams)
+                    const isOpen = openChannel === channel.key
+                    const align =
+                      channel.key === 'content'
+                        ? 'left'
+                        : channel.key === 'community' || channel.key === 'about'
+                        ? 'right'
+                        : 'center'
+                    return (
+                      <ChannelTrigger
+                        key={channel.key}
+                        channel={channel}
+                        isOpen={isOpen}
+                        isActive={isActive}
+                        onToggle={{
+                          open: () => setOpenChannel(channel.key),
+                          close: () => setOpenChannel((cur) => (cur === channel.key ? null : cur)),
+                          toggle: () => setOpenChannel((cur) => (cur === channel.key ? null : channel.key)),
+                        }}
+                        onClose={() => setOpenChannel(null)}
+                        align={align}
+                        account={account}
+                        navOverrides={account?.navOverrides}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
             </nav>
             <SettingsButton />
             <AccountMenu

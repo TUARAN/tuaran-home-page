@@ -76,7 +76,7 @@ export function buildKnowledgeItems() {
       sortKey: researchSortKey(p.date),
       href: p.href,
       // 登记过阅读统计的资源才挂 pv，列表才会显示阅读量
-      ...(pvKey ? { pvKey, pv: 0 } : {}),
+      ...(pvKey ? { pvKey, pv: null } : {}),
     }
   })
 

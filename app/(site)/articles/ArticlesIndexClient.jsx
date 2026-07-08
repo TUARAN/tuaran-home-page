@@ -75,6 +75,12 @@ function manualEntriesToItems(entries, existingItems) {
       tagLabel = MANUAL_ENTRY_KIND[entry.type].tagLabel
     }
     if (!kind) continue
+    const pvKey =
+      entry.type === 'research' && MANUAL_RESEARCH_TAG[entry.category] && entry.slug
+        ? `${entry.category}/${entry.slug}`
+        : entry.type === 'resource' && entry.slug
+        ? `resource/${entry.slug}`
+        : ''
     out.push({
       id: `content-db:${entry.contentKey}`,
       kind,
@@ -85,6 +91,7 @@ function manualEntriesToItems(entries, existingItems) {
       date: entry.date || '',
       sortKey: researchSortKey(entry.date),
       href: entry.href,
+      ...(pvKey ? { pvKey, pv: null } : {}),
     })
   }
   return out
@@ -145,8 +152,10 @@ function isExternalHref(href) {
 }
 
 function formatPv(pv) {
-  const n = Number(pv) || 0
-  if (n <= 0) return '-'
+  if (pv === null || typeof pv === 'undefined') return '-'
+  const n = Number(pv)
+  if (!Number.isFinite(n) || n < 0) return '-'
+  if (n === 0) return '0'
   if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '')} 万`
   return String(n)
 }
@@ -656,7 +665,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         <div className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65">
           {visible.map((item) => {
             const pvKey = item.pvKey || ''
-            const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
+            const hasLivePv = pvKey && Object.prototype.hasOwnProperty.call(pvCounts, pvKey)
+            const livePv = hasLivePv ? pvCounts[pvKey] : item.pv
             const pvLoading = pvKey !== '' && !pvLoaded
             const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
             return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />

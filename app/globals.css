@@ -674,6 +674,19 @@
     color: var(--site-muted);
   }
 
+  .home-company-link {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 32%, transparent);
+    text-underline-offset: 0.18em;
+    transition: color 160ms ease, text-decoration-color 160ms ease;
+  }
+
+  .home-company-link:hover {
+    color: var(--site-ink);
+    text-decoration-color: currentColor;
+  }
+
   .home-profile blockquote {
     @apply my-5 border-l-2 pl-4;
     border-color: var(--site-accent);

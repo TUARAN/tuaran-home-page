@@ -28,6 +28,7 @@ import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHig
 
 const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
+const MATRIXLINK_URL = 'https://matrixlink.tech/'
 
 export const dynamic = 'force-static'
 
@@ -638,7 +639,7 @@ function ProfileCard() {
         <div className="min-w-0">
           <p className="home-profile-name"><T zh="涂阿燃" en="TUARAN" /></p>
           <p className="home-profile-role"><T zh="前端 · AI Agent · 奶爸" en="Frontend · AI Agent · Dad" /></p>
-          <p className="home-profile-company"><T zh="Founder @矩联科技" en="Founder @Julian Tech" /></p>
+          <p className="home-profile-company"><FounderCompanyText /></p>
         </div>
       </div>
       <blockquote>
@@ -660,6 +661,28 @@ function ProfileCard() {
         ))}
       </div>
     </section>
+  )
+}
+
+function CompanyOfficialLink({ children }) {
+  return (
+    <a
+      href={MATRIXLINK_URL}
+      target="_blank"
+      rel="noreferrer"
+      className="home-company-link no-external-arrow"
+    >
+      {children}
+    </a>
+  )
+}
+
+function FounderCompanyText() {
+  return (
+    <T
+      zh={<>Founder @<CompanyOfficialLink>矩联科技</CompanyOfficialLink></>}
+      en={<>Founder @<CompanyOfficialLink>Julian Tech</CompanyOfficialLink></>}
+    />
   )
 }
 
@@ -798,7 +821,7 @@ function ClassicHomePage({ featuredPicks }) {
                   <T zh="前端 · AI Agent · 奶爸" en="Frontend · AI Agent · Dad" />
                 </p>
                 <p className="mt-1 text-[12px] tracking-[0.06em] text-[#888] dark:text-gray-500">
-                  <T zh="Founder @矩联科技" en="Founder @Julian Tech" />
+                  <FounderCompanyText />
                 </p>
                 <blockquote className="mx-auto mt-3 max-w-[min(280px,100%)]">
                   <p className="font-serif text-[15px] leading-[1.9] tracking-wide text-[#262724] dark:text-gray-200">

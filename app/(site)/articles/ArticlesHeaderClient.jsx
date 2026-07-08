@@ -12,7 +12,7 @@ function formatDateLabel(value) {
 }
 
 export default function ArticlesHeaderClient({ items }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const [hallucinationRate, setHallucinationRate] = useState(LLM_HALLUCINATION_RATE_REFERENCE)
 
   useEffect(() => {
@@ -49,12 +49,12 @@ export default function ArticlesHeaderClient({ items }) {
             >
               {hallucinationRate.rate}
             </a>
-            （{hallucinationRate.model}，{hallucinationRate.benchmark}；{hallucinationRate.note}）
+            （{hallucinationRate.model}，{hallucinationRate.benchmark}）
             <button
               type="button"
               aria-expanded={expanded}
               onClick={() => setExpanded((value) => !value)}
-              className="ml-2 inline-flex items-baseline gap-1 align-baseline text-[12.5px] text-[#616358] transition-colors hover:text-[#222] dark:text-gray-400 dark:hover:text-gray-100"
+              className="ml-2 inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 align-baseline text-[12.5px] font-medium text-amber-800 transition-colors hover:bg-amber-200 hover:text-amber-950 dark:bg-amber-500/15 dark:text-amber-200 dark:hover:bg-amber-500/25"
             >
               <svg
                 viewBox="0 0 12 12"

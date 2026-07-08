@@ -22,10 +22,10 @@ const OWNER_QR_SRC = '/qrcode-wechat.jpg'
 
 const title = 'X 互帮互助圈子：真实互动，一起把 X 流量玩明白'
 const description =
-  '「X 互帮互助」微信圈子主页：X 算法对早期真实互动很敏感，群里互相把优质推文的前 30–60 分钟互动做起来；圈子配套互关清理 Chrome 插件、发帖时段热力图、Tweepcred 评分三件工具。'
+  '「X 互帮互助」微信圈子主页：X 算法对早期真实互动很敏感，群里互相把优质推文的前 30–60 分钟互动做起来；圈子配套互关清理 Chrome 插件、发帖时段热力图、Tweepcred 评分、可见性检测和违规提示自查工具。'
 
 const shareText =
-  '推文总破不了 1000 曝光？多半是早期互动没启动。我们建了个 X 互帮互助群：真实点赞评论互相带，还配了互关清理插件、发帖时段热力图和 Tweepcred 评分工具，自取。'
+  '推文总破不了 1000 曝光？多半是早期互动没启动。我们建了个 X 互帮互助群：真实点赞评论互相带，还配了互关清理插件、发帖时段热力图、Tweepcred 评分和账号状态自查工具，自取。'
 
 export const metadata = {
   title,
@@ -41,6 +41,7 @@ export const metadata = {
     'Tweepcred 评分',
     'X ghostban 检测',
     'X shadowban 检测',
+    'X 违规提示自查',
     'Twitter 运营工具',
   ],
   alternates: {
@@ -88,6 +89,13 @@ const TOOLKIT = [
     desc: '输入 X 用户名，检查账号是否疑似 search ban、search suggestion ban、ghostban 或 reply deboosting。互动突然变少时，先测一下是不是被限流。',
     href: 'https://shadowban.yuzurisa.com/',
     action: '检测 ghostban',
+  },
+  {
+    step: '05 · 查违规提示',
+    name: 'X 近期违规自查',
+    desc: '打开 X Community Notes 加入流程，页面会提示账号近期是否存在影响参与资格的违规记录。适合在互动异常、功能受限时顺手排查。',
+    href: 'https://x.com/i/flow/join-birdwatch',
+    action: '查看违规提示',
   },
 ]
 
@@ -283,10 +291,10 @@ export default function XMutualAidCirclePage() {
         <section className="mt-12">
           <SectionHeading
             eyebrow="Circle Toolkit"
-            title="圈子四件套"
-            desc="互助解决的是「人」的问题，这几件工具解决「账号」的问题。按顺序来：先把关注列表清干净，再看粉丝几点在线，测账号权重，最后排查是不是被 shadowban / ghostban。"
+            title="圈子五件套"
+            desc="互助解决的是「人」的问题，这几件工具解决「账号」的问题。按顺序来：先把关注列表清干净，再看粉丝几点在线，测账号权重，最后排查是不是被 shadowban / ghostban 或近期违规提示影响。"
           />
-          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {TOOLKIT.map((tool) => (
               <ToolkitCard key={tool.name} tool={tool} />
             ))}
@@ -322,7 +330,7 @@ export default function XMutualAidCirclePage() {
               </a>{' '}
               等公开研究里重合度较高的结论：工作日 9:00–14:00（受众本地时间）互动最好，周二到周四略强于周一周五，
               周末整体走低。它是大盘口径的整理，不是本站实测——不同账号的粉丝结构差异很大，
-              连上自己的账号看真实活跃分布（三件套第二件）永远比通用图准。
+              连上自己的账号看真实活跃分布（五件套第二件）永远比通用图准。
             </p>
 
             <h2>给中文时区用户的三条实操建议</h2>
@@ -346,7 +354,7 @@ export default function XMutualAidCirclePage() {
               Tweepcred 是 X 开源代码里出现过的账号评分机制（类 PageRank）。外部能观察到的口径是：
               关注数远大于粉丝数的账号评分会被压低，评分低的账号内容进推荐流的机会更少。
               所以「清理未回关」不只是强迫症——把关注比拉回健康区间，是发帖时间之外成本最低的一步。
-              先用三件套第三件测个分数，再决定清多少。
+              先用五件套第三件测个分数，再决定清多少。
             </p>
             <p>
               需要提醒：批量取消关注和批量回关都可能触发平台风控，插件内置了固定节奏和停止按钮，

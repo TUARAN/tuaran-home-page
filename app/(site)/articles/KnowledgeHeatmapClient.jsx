@@ -71,7 +71,7 @@ function buildWeekMonthLabels(weeks) {
 }
 
 // 绝对计数分桶（与 GitHub 类似），跨年视觉一致。
-// 色阶用站点鼠尾草绿 token（--kb-heat-*），随主题切换，浅/深一致。
+// 色阶用热力图 token（--kb-heat-*），随主题切换，浅/深一致。
 function heatColorClass(value) {
   if (!value) return 'bg-[var(--kb-heat-empty)]'
   if (value >= 8) return 'bg-[var(--kb-heat-4)]'
@@ -86,7 +86,7 @@ export default function KnowledgeHeatmapClient({
   onToggle,
   hideOwnToggle = false,
 }) {
-  const [internalExpanded, setInternalExpanded] = useState(true)
+  const [internalExpanded, setInternalExpanded] = useState(false)
   const isControlled = typeof controlledExpanded === 'boolean'
   const expanded = isControlled ? controlledExpanded : internalExpanded
   const setExpanded = (next) => {
@@ -164,7 +164,7 @@ export default function KnowledgeHeatmapClient({
             type="button"
             aria-expanded={expanded}
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex items-center gap-1 text-sm text-[var(--site-muted)] transition-colors hover:text-[var(--site-ink)]"
+            className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-1 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-200 hover:text-amber-950 dark:bg-amber-500/15 dark:text-amber-200 dark:hover:bg-amber-500/25"
           >
             <svg
               viewBox="0 0 12 12"

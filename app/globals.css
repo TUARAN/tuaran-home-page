@@ -1728,6 +1728,17 @@
     color: var(--site-faint);
   }
 
+  .site-nav-cluster {
+    @apply inline-flex items-center gap-0.5 rounded-full border px-1 py-0.5;
+    border-color: color-mix(in srgb, var(--site-line) 56%, transparent);
+    background-color: color-mix(in srgb, var(--site-panel-strong) 24%, transparent);
+  }
+
+  .dark .site-nav-cluster {
+    border-color: color-mix(in srgb, var(--site-line) 64%, transparent);
+    background-color: color-mix(in srgb, var(--site-panel-strong) 18%, transparent);
+  }
+
   .site-nav-trigger {
     @apply inline-flex items-center gap-1 rounded-full border border-transparent px-2.5 py-1 text-sm font-medium no-underline transition-colors;
     color: var(--site-muted);

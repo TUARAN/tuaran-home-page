@@ -3,8 +3,7 @@
 import { useState } from 'react'
 
 const DEFAULT_ARTICLE_SYNCBLOG_URL = 'https://syncblog.cn/md/#content-sync'
-const DEFAULT_OPINION_EDITOR_ORIGIN = 'https://md.doocs.org'
-const DEFAULT_OPINION_ENTRY = `${DEFAULT_OPINION_EDITOR_ORIGIN}/#opinion-sync`
+const DEFAULT_OPINION_SYNCBLOG_URL = 'https://syncblog.cn/#opinion-sync'
 const READY_TYPE = 'SYNCBLOG_IMPORT_READY'
 const GENERIC_READY_TYPE = 'MD_IMPORT_READY'
 const ARTICLE_IMPORT_TYPE = 'SYNCBLOG_IMPORT_ARTICLE'
@@ -33,13 +32,13 @@ function isLocalSite() {
 }
 
 function resolveOpinionEntry() {
-  const configuredUrl = process.env.NEXT_PUBLIC_OPINION_IMPORT_URL
-    || process.env.NEXT_PUBLIC_SYNCBLOG_OPINION_IMPORT_URL
+  const configuredUrl = process.env.NEXT_PUBLIC_SYNCBLOG_OPINION_IMPORT_URL
+    || process.env.NEXT_PUBLIC_OPINION_IMPORT_URL
   const configuredOrigin = process.env.NEXT_PUBLIC_OPINION_EDITOR_ORIGIN
 
   if (configuredUrl) return configuredUrl
   if (configuredOrigin) return `${configuredOrigin.replace(/\/$/, '')}/#opinion-sync`
-  return DEFAULT_OPINION_ENTRY
+  return DEFAULT_OPINION_SYNCBLOG_URL
 }
 
 async function copyText(text) {

@@ -1,6 +1,8 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 import { AVATAR_PATH } from '../../../lib/avatar'
+import SharePageButton from '../components/SharePageButton'
 
 export const dynamic = 'force-static'
 
@@ -121,7 +123,7 @@ const sectionInner = 'mx-auto w-full max-w-[1120px] px-4'
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen text-[#dbe6f0]" style={GRID_BG}>
+    <main className="about-page min-h-screen text-[#dbe6f0]" style={GRID_BG}>
       {/* 霓虹光晕 */}
       <div
         aria-hidden="true"
@@ -140,11 +142,20 @@ export default function AboutPage() {
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#ff5f57]" aria-hidden="true" />
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#febc2e]" aria-hidden="true" />
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#28c840]" aria-hidden="true" />
-          <span className="ml-2 font-mono text-[11px] text-[#5b6c82]">~/about/tuaran</span>
-          <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#5cd6c8]">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#34e0d0]" aria-hidden="true" />
-            online
-          </span>
+          <span className="ml-2 min-w-0 truncate font-mono text-[11px] text-[#5b6c82]">~/about/tuaran</span>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <Link href="/" aria-label="返回首页" className="article-action-button px-3.5 py-1.5 text-sm no-underline">
+              返回
+            </Link>
+            <SharePageButton
+              title="关于我 · 涂阿燃 TUARAN"
+              text="涂阿燃（tuaran / 掘金安东尼）：前端与 AI 工程化方向的开发者、技术写作者和产品实践者。"
+              url="/about"
+              exactUrl
+              size="md"
+              idleLabel="分享"
+            />
+          </div>
         </div>
       </header>
 

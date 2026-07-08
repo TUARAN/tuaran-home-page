@@ -13,6 +13,12 @@ export const articles = [
       'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
     content: [
       {
+        date: '2026-07-09',
+        label: '情绪立场',
+        category: '内容与增长',
+      },
+      '1条有情绪立场的评论顶得上99条没有情绪立场的评论',
+      {
         date: '2026-07-03',
         label: '内容配比 1:3:6',
         category: '内容与增长',

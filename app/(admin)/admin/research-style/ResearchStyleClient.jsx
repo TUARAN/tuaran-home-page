@@ -85,6 +85,31 @@ function PhraseList({ items, accent }) {
   )
 }
 
+function AxiomList({ items }) {
+  return (
+    <ol className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+      {items.map((it, idx) => (
+        <li
+          key={it.phrase}
+          className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-3 rounded-lg border border-rose-200 bg-white/80 px-3 py-2.5 dark:border-rose-900/60 dark:bg-[#10161f]"
+        >
+          <span className="flex h-7 w-9 items-center justify-center rounded-md bg-rose-100 font-mono text-[11px] font-semibold text-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+            {String(idx + 1).padStart(2, '0')}
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold leading-snug text-rose-700 dark:text-rose-300">
+              {it.phrase}
+            </span>
+            <span className="mt-1 block text-[12px] leading-5 text-[#73746a] dark:text-[#9aa3b3]">
+              {it.why}
+            </span>
+          </span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 function TextList({ items, ordered = false }) {
   const Tag = ordered ? 'ol' : 'ul'
   return (
@@ -114,13 +139,19 @@ export default function ResearchStyleClient() {
       maxWidth="1180px"
       description="调研按风格选择：默认调研、人味调研、周刊解释、投研备忘、资料档案。动笔前先选风格，用户也可以直接说“用 XX 风格调研”。"
     >
-      <div className="mb-6 rounded-2xl border border-rose-300 bg-rose-50/60 p-5 dark:border-rose-900/60 dark:bg-rose-950/20">
-        <SectionTitle>公理 · 所有风格通用禁语</SectionTitle>
-        <p className="mb-3 text-[12px] leading-relaxed text-[#73746a] dark:text-[#9aa3b3]">
-          与选哪种风格无关：任何调研 / 文章都不应出现下列 AI 腔套话。先满足「不像 AI 写的」，再谈风格。
-          有些（如「不是 X，而是 Y」）是合法中文结构，禁的是「删掉后不损失意思」的假深刻用法——写时自检，不做机械删除。
-        </p>
-        <PhraseList items={UNIVERSAL_BAN_PHRASES} accent="text-rose-700 dark:text-rose-300" />
+      <div className="mb-6 rounded-xl border border-rose-300 bg-rose-50/60 p-4 dark:border-rose-900/60 dark:bg-rose-950/20">
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <SectionTitle>公理 · 所有风格通用禁语</SectionTitle>
+            <p className="m-0 max-w-4xl text-[12px] leading-6 text-[#73746a] dark:text-[#9aa3b3]">
+              与选哪种风格无关，任何调研 / 文章都不应出现下列 AI 腔套话。先满足「不像 AI 写的」，再谈风格；合法对比句只禁「删掉后不损失意思」的假深刻用法。
+            </p>
+          </div>
+          <span className="inline-flex h-7 shrink-0 items-center rounded-full border border-rose-200 bg-white px-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-rose-800 dark:border-rose-900/60 dark:bg-[#10161f] dark:text-rose-200">
+            {UNIVERSAL_BAN_PHRASES.length} 条
+          </span>
+        </div>
+        <AxiomList items={UNIVERSAL_BAN_PHRASES} />
       </div>
 
       <div className="grid gap-6 md:grid-cols-[300px_minmax(0,1fr)] md:items-start">

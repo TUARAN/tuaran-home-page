@@ -81,32 +81,54 @@ const productLinks = [
 
 export default function ServicesPage() {
   return (
-    <PageContainer className="py-10 md:py-12">
-      <section className="mb-10">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <PageContainer className="py-9 md:py-12">
+      <section className="mb-12 border-b border-[#d7d6cb] pb-8 dark:border-[#27303a] md:mb-14 md:pb-10">
+        <div className="grid gap-5 md:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] md:items-end">
+          <div>
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.24em] text-[#858876] dark:text-[#8e9ab0]">
+              Cooperation
+            </p>
+            <h1 className="mb-0 border-b-0 pb-0 font-serif text-[2rem] font-semibold leading-tight tracking-wide text-[#15140f] dark:text-gray-100 md:text-[2.45rem]">
+              能合作的事，先摊开说清楚
+            </h1>
+          </div>
+          <p className="mb-0 max-w-[560px] text-[14px] leading-7 text-[#56564e] dark:text-[#aeb8c6] md:justify-self-end">
+            我更适合做需要判断、拆解和落地执行的工作：把复杂问题整理成可验证的方案、内容或流程，而不是只给一堆抽象建议。
+          </p>
+        </div>
+      </section>
+
+      <section className="mb-14">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
               What I Can Help With
             </p>
-            <h1 className="font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+            <h2 className="mb-0 border-b-0 pb-0 font-serif text-[1.55rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
               合作范围
-            </h1>
+            </h2>
           </div>
+          <span className="font-mono text-[11px] text-[#9a988e] dark:text-[#6f7a8c]">01 - 04</span>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {cooperationAreas.map((item) => (
+        <div className="divide-y divide-[#d9d8ce] border-y border-[#c7c6bb] dark:divide-[#27303a] dark:border-[#33404d]">
+          {cooperationAreas.map((item, index) => (
             <article
               key={item.title}
-              className="rounded-2xl border border-[#dee0db] bg-white p-5 dark:border-[#252d36] dark:bg-[#121821]"
+              className="grid gap-4 py-6 md:grid-cols-[72px_minmax(0,0.62fr)_minmax(260px,0.38fr)] md:gap-6 md:py-7"
             >
-              <h3 className="mb-2 text-[17px] font-semibold text-[#15140f] dark:text-gray-100">{item.title}</h3>
-              <p className="mb-4 text-[13.5px] leading-7 text-[#51514a] dark:text-gray-300">{item.desc}</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="font-mono text-[12px] tracking-[0.16em] text-[#b7791f] dark:text-[#a8ae82]">
+                {String(index + 1).padStart(2, '0')}
+              </div>
+              <div>
+                <h3 className="mb-2 text-[18px] font-semibold text-[#15140f] dark:text-gray-100">{item.title}</h3>
+                <p className="mb-0 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">{item.desc}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 self-start border-l border-[#d9d8ce] pl-4 dark:border-[#27303a] sm:grid-cols-4 md:grid-cols-2">
                 {item.output.map((output) => (
                   <span
                     key={output}
-                    className="rounded-full border border-[#d8d9ce] bg-[#f4f5f1] px-2.5 py-1 text-[12px] text-[#54554d] dark:border-[#303947] dark:bg-[#151c25] dark:text-[#c6ceda]"
+                    className="text-[12.5px] leading-5 text-[#606358] before:mr-2 before:text-[#b7791f] before:content-['/'] dark:text-[#aeb8c6] dark:before:text-[#a8ae82]"
                   >
                     {output}
                   </span>
@@ -117,66 +139,75 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      <section className="mb-10 grid gap-6 md:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="rounded-2xl border border-[#dee0db] bg-[#f9faf7] p-5 dark:border-[#252d36] dark:bg-[#0f141b]">
+      <section className="mb-14 grid gap-9 md:grid-cols-[minmax(0,1fr)_320px]">
+        <div>
           <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
             Boundaries
           </p>
-          <h2 className="mb-4 font-serif text-[1.35rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+          <h2 className="mb-5 border-b border-[#15140f] pb-3 font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:border-gray-300 dark:text-gray-100">
             合作边界
           </h2>
-          <ul className="space-y-3">
+          <ul className="space-y-0">
             {boundaries.map((item) => (
-              <li key={item} className="flex gap-2 text-[13px] leading-6 text-[#5d5d54] dark:text-[#9aa6b8]">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#b7791f] dark:bg-[#9ba475]" />
+              <li
+                key={item}
+                className="flex gap-3 border-b border-[#dedbd0] py-3 text-[13.5px] leading-6 text-[#5d5d54] last:border-b-0 dark:border-[#27303a] dark:text-[#9aa6b8]"
+              >
+                <span className="mt-[0.45rem] h-px w-5 shrink-0 bg-[#b7791f] dark:bg-[#9ba475]" />
                 <span>{item}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-[#dee0db] bg-white p-5 dark:border-[#252d36] dark:bg-[#121821]">
+        <aside className="border-t border-[#d7d6cb] pt-6 dark:border-[#27303a] md:border-l md:border-t-0 md:pl-5 md:pt-0">
           <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
             Samples
           </p>
-          <h2 className="mb-3 font-serif text-[1.25rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+          <h2 className="mb-3 border-b-0 pb-0 font-serif text-[1.35rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
             先看样本
           </h2>
           <p className="mb-4 text-[13px] leading-6 text-[#5d5d54] dark:text-[#9aa6b8]">
             站内内容基本能代表我的判断方式和写作密度。
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2">
             {sampleLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full border border-[#d0d1c8] bg-[#f5f6f3] px-3 py-1.5 text-[12px] font-medium text-[#53554d] no-underline transition hover:border-[#818472] hover:text-[#15140f] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062]"
+                className="group flex items-center justify-between border-b border-[#dedbd0] py-2 text-[13px] font-medium text-[#53554d] no-underline transition last:border-b-0 hover:text-[#15140f] dark:border-[#27303a] dark:text-gray-300 dark:hover:text-white"
               >
-                {link.label}
+                <span>{link.label}</span>
+                <span className="font-mono text-[11px] text-[#a5a397] transition group-hover:text-[#7c5d34] dark:text-[#6f7a8c]">
+                  open
+                </span>
               </Link>
             ))}
           </div>
-        </div>
+        </aside>
       </section>
 
-      <section className="mb-10">
+      <section className="mb-14">
         <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
           Related Products
         </p>
-        <h2 className="mb-4 font-serif text-[1.35rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+        <h2 className="mb-5 border-b border-[#15140f] pb-3 font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:border-gray-300 dark:text-gray-100">
           也可以直接看三个长期项目
         </h2>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="divide-y divide-[#d9d8ce] border-y border-[#c7c6bb] dark:divide-[#27303a] dark:border-[#33404d]">
           {productLinks.map((item) => (
             <a
               key={item.href}
               href={item.href}
               target="_blank"
               rel="noreferrer"
-              className="no-external-arrow rounded-2xl border border-[#dee0db] bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:border-[#c2c4b7] dark:border-[#252d36] dark:bg-[#121821] dark:hover:border-[#33404d]"
+              className="no-external-arrow grid gap-2 py-4 no-underline transition hover:bg-[#f6f3eb] dark:hover:bg-[#151c25] md:grid-cols-[220px_minmax(0,1fr)_56px] md:items-center md:px-2"
             >
-              <div className="mb-1 text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{item.label} ↗</div>
+              <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{item.label}</div>
               <p className="mb-0 text-[13px] leading-6 text-[#5d5d54] dark:text-[#9aa6b8]">{item.desc}</p>
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#9a988e] dark:text-[#6f7a8c] md:text-right">
+                visit
+              </span>
             </a>
           ))}
         </div>
@@ -184,14 +215,14 @@ export default function ServicesPage() {
 
       <section
         id="contact"
-        className="scroll-mt-24 rounded-2xl border border-[#dee0db] bg-[#f9faf7] p-5 dark:border-[#252d36] dark:bg-[#0f141b] md:p-6"
+        className="scroll-mt-24 border-t border-[#c7c6bb] pt-7 dark:border-[#33404d] md:pt-8"
       >
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_190px] md:items-center">
           <div>
             <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
               Contact
             </p>
-            <h2 className="mb-3 font-serif text-[1.35rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+            <h2 className="mb-3 border-b-0 pb-0 font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
               联系方式
             </h2>
             <p className="mb-3 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
@@ -203,7 +234,7 @@ export default function ServicesPage() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
-            <div className="flex flex-col items-center gap-2 rounded-xl border border-[#d9dad2] bg-white p-3 dark:border-[#303947] dark:bg-[#151c25]">
+            <div className="flex flex-col items-center gap-2 border border-[#d9dad2] bg-[#f9faf7] p-3 dark:border-[#303947] dark:bg-[#151c25]">
               <Image
                 src="/qrcodewechat3.png"
                 alt="微信二维码"
@@ -213,7 +244,7 @@ export default function ServicesPage() {
               />
               <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">微信</span>
             </div>
-            <div className="flex flex-col items-center gap-2 rounded-xl border border-[#d9dad2] bg-white p-3 dark:border-[#303947] dark:bg-[#151c25]">
+            <div className="flex flex-col items-center gap-2 border border-[#d9dad2] bg-[#f9faf7] p-3 dark:border-[#303947] dark:bg-[#151c25]">
               <Image
                 src="/qrcode_for_gh.jpg"
                 alt="公众号二维码"

@@ -653,13 +653,15 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           {query ? '没有匹配的内容，试试更短关键词或切换分类。' : '该分类下暂无内容。'}
         </p>
       ) : (
-        visible.map((item) => {
-          const pvKey = item.pvKey || ''
-          const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
-          const pvLoading = pvKey !== '' && !pvLoaded
-          const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
-          return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
-        })
+        <div className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65">
+          {visible.map((item) => {
+            const pvKey = item.pvKey || ''
+            const livePv = pvKey && typeof pvCounts[pvKey] === 'number' ? pvCounts[pvKey] : item.pv
+            const pvLoading = pvKey !== '' && !pvLoaded
+            const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
+            return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
+          })}
+        </div>
       )}
     </section>
   ) : null
@@ -941,9 +943,9 @@ function ArticleRow({ item }) {
     <Link
       href={item.href}
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      className="article-row group block border border-[#e8e2ef] bg-white dark:border-gray-800 dark:bg-gray-900 no-underline hover:no-underline opacity-90 hover:border-[#d6c9e3] hover:opacity-100 transition-all"
+      className="article-row group block border-b border-[#e8e2ef] bg-transparent no-underline transition-colors last:border-b-0 hover:bg-white/80 hover:no-underline dark:border-gray-800 dark:hover:bg-[#151d27]"
     >
-      <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_160px]">
+      <div className="grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_136px] sm:px-5">
         <div className="min-w-0">
           <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="shrink-0 text-sm text-[#a39aac]">▪</span>
@@ -988,7 +990,7 @@ function ArticleRow({ item }) {
           </div>
           <h2
             title={item.title}
-            className="ml-5 line-clamp-2 text-lg font-semibold leading-7 text-[#20172f] transition-colors group-hover:text-[#120b1f] dark:text-gray-100 dark:group-hover:text-white"
+            className="ml-5 line-clamp-2 text-[17px] font-semibold leading-7 text-[#20172f] transition-colors group-hover:text-[#120b1f] dark:text-gray-100 dark:group-hover:text-white"
           >
             {item.title}
           </h2>
@@ -997,7 +999,7 @@ function ArticleRow({ item }) {
               {item.summary}
             </p>
           ) : null}
-          <div className="ml-5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#958aa1] dark:text-gray-400">
+          <div className="ml-5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#958aa1] dark:text-gray-400">
             <span>{external ? '阅读原文 →' : '阅读全文 →'}</span>
             {item.readingMinutes ? (
               <span className="font-mono text-[11px] text-[#aaa1b5] dark:text-gray-500">
@@ -1012,7 +1014,7 @@ function ArticleRow({ item }) {
           </div>
         </div>
         {item.image ? (
-          <div className="relative h-32 overflow-hidden rounded-md border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 sm:h-28 sm:w-40">
+          <div className="relative h-28 overflow-hidden rounded-md border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 sm:h-24 sm:w-[136px]">
             {/*
               统一用客户端直连 <img>，不走 Next /_next/image 优化器：
               - 在线文章封面是站长填写的任意 HTTPS 地址，本就不能受静态域名白名单限制；

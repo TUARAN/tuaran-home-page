@@ -8,6 +8,7 @@ import {
   getBalancesFor,
   getBalance,
   listResources,
+  reconcileUnlockLedgerForUser,
   reverseLedgerEntry,
   upsertResource,
 } from '../../../../lib/points'
@@ -107,6 +108,7 @@ export async function GET(req) {
                COUNT(*) AS ledger_count,
                COALESCE(SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END), 0) AS earned_points,
                COALESCE(SUM(CASE WHEN delta < 0 THEN -delta ELSE 0 END), 0) AS spent_points,
+               COALESCE(SUM(CASE WHEN reason = 'unlock' AND delta < 0 THEN -delta ELSE 0 END), 0) AS unlock_spent_points,
                MIN(created_at) AS first_ledger_at,
                MAX(created_at) AS last_ledger_at
                FROM point_ledger
@@ -135,6 +137,7 @@ export async function GET(req) {
         ledgerCount: toNumber(detailRollup?.ledger_count),
         earnedPoints: toNumber(detailRollup?.earned_points),
         spentPoints: toNumber(detailRollup?.spent_points),
+        unlockSpentPoints: toNumber(detailRollup?.unlock_spent_points),
         unlockCount: unlocks.length,
         firstLedgerAt: detailRollup?.first_ledger_at || null,
         lastLedgerAt: detailRollup?.last_ledger_at || null,
@@ -186,6 +189,7 @@ export async function GET(req) {
  *  - deleteResource: { resourceKey }
  *  - adjust:         { userId, delta, note }  站长手动加/减燃币
  *  - reverse:        { ledgerId }             撤销某条燃币变动（补一笔反向变动）
+ *  - reconcile:      { userId }               按已解锁权益补齐缺失的扣款流水
  */
 export async function POST(req) {
   const guard = await getOwnerOrReject(req)
@@ -228,6 +232,12 @@ export async function POST(req) {
 
     if (action === 'reverse') {
       const result = await reverseLedgerEntry(db, body?.ledgerId)
+      if (!result.ok) return Response.json(result, { status: result.status || 400 })
+      return Response.json({ ok: true, ...result })
+    }
+
+    if (action === 'reconcile') {
+      const result = await reconcileUnlockLedgerForUser(db, body?.userId)
       if (!result.ok) return Response.json(result, { status: result.status || 400 })
       return Response.json({ ok: true, ...result })
     }

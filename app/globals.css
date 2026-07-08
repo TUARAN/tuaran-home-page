@@ -2959,6 +2959,27 @@ body:has(.x-mutual-page) footer a:hover {
   background-color: #1d9bf0;
 }
 
+.about-page .article-action-button {
+  border-color: #243549;
+  background-color: rgba(13, 22, 34, 0.82);
+  color: #8ea3bb;
+  font-family: var(--font-mono, ui-monospace), SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.about-page .article-action-button:visited {
+  color: #8ea3bb;
+}
+
+.about-page .article-action-button:hover,
+.about-page .article-action-button:focus-visible {
+  border-color: #34e0d0;
+  background-color: #13283d;
+  color: #5cf0e0;
+}
+
 .x-mutual-page .x-mutual-cta-button,
 .x-mutual-page .x-mutual-cta-button:visited {
   color: #ffffff;

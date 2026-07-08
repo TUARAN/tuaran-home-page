@@ -251,6 +251,14 @@ export default function PointsConsole() {
     if (ok && historyUser) await loadAccountHistory(historyUser)
   }
 
+  async function reconcileAccountUnlocks() {
+    const id = String(accountDetail?.user_id || historyUser || '').trim()
+    if (!id) return
+    if (!window.confirm('按“已解锁页面和资源”补齐缺失的解锁扣款流水，并用账本重算余额？')) return
+    const ok = await post({ action: 'reconcile', userId: id }, '已补齐缺失的解锁扣款流水')
+    if (ok) await loadAccountHistory(id)
+  }
+
   const defaultResourceRows = useMemo(
     () => [
       {
@@ -288,6 +296,12 @@ export default function PointsConsole() {
       statusLabel: item.status === 'live' ? '已上线' : '预留',
     }))
   }, [policy])
+
+  const unlockChargeGap = useMemo(() => {
+    if (!accountDetail) return 0
+    const expectedSpent = accountUnlocks.reduce((sum, row) => sum + Math.max(0, Number(row.costPoints || 0)), 0)
+    return Math.max(0, expectedSpent - Number(accountDetail.unlockSpentPoints || 0))
+  }, [accountDetail, accountUnlocks])
 
   const actions = (
     <AdminButton variant="default" onClick={refresh} disabled={busy}>
@@ -603,6 +617,15 @@ export default function PointsConsole() {
                 <StatCard label="累计使用" value={`-${accountDetail?.spentPoints ?? 0}`} tone="danger" />
                 <StatCard label="已解锁" value={accountDetail?.unlockCount ?? accountUnlocks.length} />
               </div>
+
+              {unlockChargeGap > 0 ? (
+                <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-200">
+                  <span>检测到已解锁权益比扣款流水多 {unlockChargeGap} 燃币，通常来自旧版游客绑定迁移。</span>
+                  <AdminButton variant="default" size="sm" onClick={reconcileAccountUnlocks} disabled={busy}>
+                    补齐扣款流水
+                  </AdminButton>
+                </div>
+              ) : null}
 
               <div className="mb-3 text-xs text-[#67695d] dark:text-gray-400">
                 当前账户：<UserIdCell userId={accountDetail?.user_id || historyUser} />

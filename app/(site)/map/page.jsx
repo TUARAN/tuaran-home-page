@@ -42,13 +42,6 @@ const CHANNEL_STYLES = {
     soft: 'bg-[#f3f4ec]',
     text: 'text-[#7a4c10]',
   },
-  resources: {
-    label: 'Archive',
-    accent: 'bg-[#3f6878]',
-    border: 'border-[#c7dce4]',
-    soft: 'bg-[#edf6f8]',
-    text: 'text-[#3f6878]',
-  },
   tools: {
     label: 'Systems',
     accent: 'bg-[#2f6f73]',
@@ -370,7 +363,7 @@ export default async function SiteMapPage() {
             level="L0"
             title="频道层"
             count={SITE_CHANNELS.length}
-            desc="内容、资源、工具、圈子、关于，决定站点的最高层结构。"
+            desc="内容、工具、圈子、关于，决定站点的最高层结构；资源作为内容下的二级分组。"
             tone="strong"
           />
           <LevelCard
@@ -404,13 +397,13 @@ export default async function SiteMapPage() {
               Top Level
             </p>
             <h2 className="mb-0 font-serif text-[1.5rem] font-semibold text-[#15140f] dark:text-gray-100">
-              五个频道，一张结构图
+              四个频道，一张结构图
             </h2>
           </div>
           <p className="mb-0 text-[13px] text-[#676960] dark:text-[#9aa4b4]">点击频道进入它的默认入口。</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {SITE_CHANNELS.map((channel) => (
             <ChannelNode key={channel.key} channel={channel} account={account} overrides={overrides} />
           ))}

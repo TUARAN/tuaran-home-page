@@ -7,10 +7,10 @@ import { buildKnowledgeItems } from './buildKnowledgeItems'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '创作 & 调研 & 资源',
+  title: '知识库',
   description:
-    '涂阿燃（tuaran）的创作、调研与资源库：个人判断的文章与多维页面、AI 协助调研、原文谱系与可检索资料三类内容。',
-  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '创作', '专栏', '调研', '资源库', '资料库', '公司调研', '事项调研', '人物调研', 'AI'],
+    '涂阿燃（tuaran）的知识库：创作文章、多维页面、AI 协助调研、资源索引与可检索资料入口。',
+  keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '知识库', '创作', '专栏', '调研', '资源库', '资料库', '公司调研', '事项调研', '人物调研', 'AI'],
   alternates: {
     canonical: '/articles',
   },
@@ -29,7 +29,9 @@ export default function ArticlesPage() {
 
   return (
     <main className="w-full max-w-[1120px] mx-auto px-4 py-10">
-      <ArticlesHeaderClient items={items} />
+      <Suspense fallback={<div className="mb-4 text-sm text-[#666] dark:text-gray-400">加载知识库…</div>}>
+        <ArticlesHeaderClient items={items} />
+      </Suspense>
 
       <Suspense fallback={<div className="text-sm text-[#666] dark:text-gray-400">加载中…</div>}>
         <ArticlesIndexClient items={items} />

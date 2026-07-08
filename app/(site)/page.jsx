@@ -50,9 +50,9 @@ const CLASSIC_HOME_SECTION_TAB_CLASS = {
 const START_PATHS = [
   {
     href: '/articles',
-    label: '读文章',
+    label: '看知识库',
     labelEn: 'Read',
-    title: '从判断和长期写作开始',
+    title: '从知识库开始',
     titleEn: 'Start with judgment & long-form writing',
     desc: '原创文章、多维页面、AI 协助调研和资源索引，按阅读价值重新组织。',
     descEn: 'Original writing, rich pages, AI-assisted research and archives, reorganized by reading value.',

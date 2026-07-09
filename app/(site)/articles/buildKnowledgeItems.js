@@ -57,6 +57,7 @@ export function buildKnowledgeItems() {
       readingMinutes: entry.readingMinutes,
       pv: entry.pv || 0,
       pvKey: `${entry.category}/${entry.slug}`,
+      hasAssessment: entry.hasAssessment || false,
       encrypted: entry.encrypted,
       image: entry.images?.[0] || null,
       href: `/articles/research/${entry.category}/${entry.slug}`,

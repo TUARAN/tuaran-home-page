@@ -328,6 +328,14 @@ export default async function ResearchDetailPage({ params }) {
               </span>
             </>
           ) : null}
+          {entry.hasAssessment ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="research-pill research-pill-accent">
+                测评
+              </span>
+            </>
+          ) : null}
           {entry.readingMinutes ? (
             <>
               <span aria-hidden="true">·</span>

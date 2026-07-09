@@ -232,9 +232,9 @@ export default function XMutualAidCirclePage() {
           </div>
         </header>
 
-        <section className="mt-10 border-b border-[#2f3336] pb-10">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:items-start">
-            <figure className="m-0 overflow-hidden rounded-3xl border border-[#2f3336] bg-[#080808] shadow-[0_0_80px_rgba(29,155,240,0.10)]">
+        <section className="mx-auto mt-10 max-w-[1080px] border-b border-[#2f3336] pb-10">
+          <div className="grid gap-6 lg:grid-cols-[minmax(300px,420px)_minmax(0,600px)] lg:items-start lg:justify-center">
+            <figure className="m-0 overflow-hidden rounded-2xl border border-[#2f3336] bg-[#080808] shadow-[0_0_60px_rgba(29,155,240,0.10)]">
               <Image
                 src={PROFILE_SCREENSHOT_SRC}
                 alt="2aRan X 蓝 V 账号主页截图，显示关注数和粉丝数接近"
@@ -248,11 +248,11 @@ export default function XMutualAidCirclePage() {
               </figcaption>
             </figure>
 
-            <article className="max-w-3xl">
+            <article className="max-w-[600px]">
               <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#1d9bf0]">
                 Field Note
               </p>
-              <h2 className="m-0 mt-2 text-2xl font-semibold leading-tight text-[#e7e9ea] md:text-4xl">
+              <h2 className="m-0 mt-2 text-2xl font-semibold leading-tight text-[#e7e9ea] md:text-[2rem]">
                 蓝 V 互关一周涨粉 1k 后，我反而更关心「人」了
               </h2>
 
@@ -274,13 +274,13 @@ export default function XMutualAidCirclePage() {
                 </p>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                 {[
                   ['门槛', '蓝 V 订阅 + 跨墙环境，先筛掉一批完全随机用户。'],
                   ['动作', '关注只是第一步，点赞评论和持续表达才是社交信号。'],
                   ['边界', '把互关当终点就是刷数，当入口才可能长出关系。'],
                 ].map(([label, text]) => (
-                  <div key={label} className="rounded-2xl border border-[#2f3336] bg-[#080808] p-4">
+                  <div key={label} className="rounded-xl border border-[#2f3336] bg-[#080808] p-4">
                     <p className="m-0 text-xs font-bold text-[#1d9bf0]">{label}</p>
                     <p className="m-0 mt-2 text-xs leading-6 text-[#8b98a5]">{text}</p>
                   </div>

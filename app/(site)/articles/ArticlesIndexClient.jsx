@@ -991,6 +991,11 @@ function ArticleRow({ item }) {
                 加密
               </span>
             ) : null}
+            {item.hasAssessment ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d9c99b] bg-[#fff8e8] px-2 py-[1px] text-[11px] font-medium text-[#7a5318] dark:border-[#594621] dark:bg-[#241f13] dark:text-[#f0d49a]">
+                测评
+              </span>
+            ) : null}
             <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
             {item.version ? (
               <span className="inline-flex shrink-0 items-center rounded-full border border-[#d6d0df] bg-white/70 px-2 py-[1px] text-[11px] text-[#625d70] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300">

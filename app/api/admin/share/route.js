@@ -28,6 +28,7 @@ export async function POST(req) {
   const result = await createSharedNote({
     envelope: body?.envelope,
     title: body?.title,
+    content: body?.content,
     expiresInDays: body?.expiresInDays ?? null,
     createdBy: guard.user?.id || guard.user?.login || null,
   })
@@ -48,6 +49,7 @@ export async function PATCH(req) {
     slug: body?.slug,
     envelope: body?.envelope,
     title: body?.title,
+    content: body?.content,
     expiresInDays: body?.expiresInDays,
   })
   if (!result.ok) return Response.json(result, { status: result.status || 400 })

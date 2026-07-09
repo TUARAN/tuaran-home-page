@@ -164,7 +164,7 @@ export default function ShareViewer({ slug }) {
           {note?.title || '加密文档'}
         </h1>
         <p className="mt-3 text-[13px] leading-7 text-[#51514a] dark:text-gray-300">
-          这是一份端到端加密文档，<strong>服务器看不到内容</strong>，需要密码才能解锁。
+          这是一份加密分享文档，公开链接只会拿到密文，需要密码才能解锁。
           密码错误时只会在你的浏览器里失败，服务器既不知道你猜了什么，也不知道你猜对了没。
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -227,7 +227,7 @@ export default function ShareViewer({ slug }) {
         </div>
       ) : null}
       <p className="mt-8 border-t border-[#dee0db] pt-4 text-[11px] text-[#858779] dark:border-[#252e39] dark:text-[#8e9ab0]">
-        内容已在你的浏览器解密。服务器始终看不到明文。关闭页面后明文不会保留。
+        内容已在你的浏览器解密。公开分享接口不会返回明文；关闭页面后本页明文不会保留。
       </p>
     </main>
   )

@@ -62,7 +62,12 @@ export default function ShareViewer({ slug }) {
         }
         if (cancelled) return
         setNote(data)
-        setPhase('fetched')
+        if (typeof data.content === 'string' && data.content.trim()) {
+          setPlain({ content: data.content })
+          setPhase('decrypted')
+        } else {
+          setPhase('fetched')
+        }
       } catch (e) {
         if (cancelled) return
         setError(e?.message || 'NETWORK_FAILED')

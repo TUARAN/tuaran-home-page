@@ -5,8 +5,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * 公共接口：任何人凭 slug 拿到密文信封。
- * 这是 e2e 加密分享的"取信封"端点——拿到信封后浏览器自己解密。
- * 没有密码解不出明文，所以暴露密文是安全的。
+ * 后台可见明文；公开分享端仍只拿 envelope，浏览器用密码解密。
  */
 export async function GET(req, context) {
   const { slug } = await context.params

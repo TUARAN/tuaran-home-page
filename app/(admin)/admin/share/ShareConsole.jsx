@@ -85,7 +85,7 @@ export default function ShareAdminClient() {
     setCreateError('')
     setCreatedSlug('')
     try {
-      // 浏览器里加密 → 服务器只收密文
+      // 生成公开分享用密文信封；后台同时保存明文，便于 owner 直接查看。
       const envelope = await encryptPayload({ content }, password)
       const days = expiresInDays === '' ? null : Math.max(1, Math.min(3650, parseInt(expiresInDays, 10) || 0))
       const res = await fetch('/api/admin/share', {
@@ -95,6 +95,7 @@ export default function ShareAdminClient() {
         body: JSON.stringify({
           envelope,
           title: title.trim(),
+          content,
           expiresInDays: days,
         }),
       })
@@ -144,7 +145,7 @@ export default function ShareAdminClient() {
     <AdminPage
       title="加密分享管理"
       maxWidth="960px"
-      description="内容在你的浏览器里用密码 + PBKDF2 派生密钥后用 AES-GCM 加密，服务器只见到密文信封。访问者凭链接 + 密码即可解锁；把密码加在链接末尾 #密码 可一键打开，也可以分两个通道单独发链接和密码。"
+      description="站长后台保存并展示明文，方便直接管理；分享出去的公开链接只返回密文信封。访问者凭链接 + 密码即可解锁；把密码加在链接末尾 #密码 可一键打开，也可以分两个通道单独发链接和密码。"
     >
 
       {/* 创建新分享 */}
@@ -162,7 +163,7 @@ export default function ShareAdminClient() {
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-[#35362f] dark:text-gray-200">内容 markdown（加密）</span>
+            <span className="mb-1 block text-xs font-medium text-[#35362f] dark:text-gray-200">内容 markdown（后台明文可见，分享端加密）</span>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -262,6 +263,18 @@ export default function ShareAdminClient() {
                       <div className="mt-0.5 font-mono text-[11px] text-[#858779] dark:text-[#8e9ab0]">
                         /share/{item.slug}
                       </div>
+                      <details open className="mt-2 rounded-lg border border-[#e1e2d9] bg-[#fafbf7] p-2 dark:border-[#253041] dark:bg-[#0d131b]">
+                        <summary className="cursor-pointer text-xs text-[#63645a] dark:text-[#9aa6b6]">
+                          正文
+                        </summary>
+                        {item.content ? (
+                          <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-[#25261f] dark:text-gray-200">{item.content}</pre>
+                        ) : (
+                          <p className="mt-2 text-xs text-[#858779] dark:text-[#8e9ab0]">
+                            这条是旧版本历史分享，库里只有密文信封，没有保存后台明文。
+                          </p>
+                        )}
+                      </details>
                     </td>
                     <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
                       {formatDate(item.created_at)}

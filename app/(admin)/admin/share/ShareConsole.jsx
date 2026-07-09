@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { encryptPayload } from '../../../../lib/longCompass/crypto'
+import { decryptPayload, encryptPayload } from '../../../../lib/longCompass/crypto'
 import { AdminPage } from '../../components/ui'
+
+const LEGACY_SHARE_PASSWORD = '123123'
 
 async function safeJson(res) {
   try {
@@ -35,6 +37,39 @@ function buildShareUrl(slug, password) {
   return `${base}#${encodeURIComponent(password)}`
 }
 
+function normalizeEnvelope(envelope) {
+  if (!envelope) return null
+  if (typeof envelope === 'object') return envelope
+  if (typeof envelope !== 'string') return null
+  try {
+    return JSON.parse(envelope)
+  } catch {
+    return null
+  }
+}
+
+async function resolveLegacyContent(item) {
+  if (item?.content) return item
+  const envelope = normalizeEnvelope(item?.envelope)
+  if (!envelope) return { ...item, legacyContentStatus: 'missing-envelope' }
+  try {
+    const decoded = await decryptPayload(envelope, LEGACY_SHARE_PASSWORD)
+    const legacyContent =
+      typeof decoded?.content === 'string' ? decoded.content : JSON.stringify(decoded, null, 2)
+    return {
+      ...item,
+      legacyContent,
+      legacyContentStatus: legacyContent ? 'decrypted' : 'empty',
+    }
+  } catch {
+    return { ...item, legacyContentStatus: 'decrypt-failed' }
+  }
+}
+
+function getVisibleContent(item) {
+  return item?.content || item?.legacyContent || ''
+}
+
 export default function ShareAdminClient() {
   const [items, setItems] = useState([])
   const [loadingList, setLoadingList] = useState(true)
@@ -59,7 +94,8 @@ export default function ShareAdminClient() {
       const res = await fetch('/api/admin/share', { cache: 'no-store', credentials: 'same-origin' })
       const data = await safeJson(res)
       if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
-      setItems(Array.isArray(data?.items) ? data.items : [])
+      const rows = Array.isArray(data?.items) ? data.items : []
+      setItems(await Promise.all(rows.map(resolveLegacyContent)))
     } catch (e) {
       setListError(e?.message || 'FETCH_FAILED')
     } finally {
@@ -266,12 +302,19 @@ export default function ShareAdminClient() {
                       <details open className="mt-2 rounded-lg border border-[#e1e2d9] bg-[#fafbf7] p-2 dark:border-[#253041] dark:bg-[#0d131b]">
                         <summary className="cursor-pointer text-xs text-[#63645a] dark:text-[#9aa6b6]">
                           正文
+                          {!item.content && item.legacyContent ? (
+                            <span className="ml-2 rounded-full border border-[#d9c7a2] px-2 py-0.5 text-[10px] text-[#8b5a1f] dark:border-[#5a4730] dark:text-[#d7a85c]">
+                              已用历史密码 123123 解密
+                            </span>
+                          ) : null}
                         </summary>
-                        {item.content ? (
-                          <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-[#25261f] dark:text-gray-200">{item.content}</pre>
+                        {getVisibleContent(item) ? (
+                          <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-[#25261f] dark:text-gray-200">{getVisibleContent(item)}</pre>
                         ) : (
                           <p className="mt-2 text-xs text-[#858779] dark:text-[#8e9ab0]">
-                            这条是旧版本历史分享，库里只有密文信封，没有保存后台明文。
+                            {item.legacyContentStatus === 'decrypt-failed'
+                              ? '这条旧版本历史分享只有密文信封，但用历史密码 123123 解密失败。'
+                              : '这条旧版本历史分享没有可展示的明文。'}
                           </p>
                         )}
                       </details>

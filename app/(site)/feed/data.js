@@ -55,6 +55,18 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'anthropic-claude-j-space-consciousness',
+    type: 'quote',
+    title: 'Claude 长出了能藏想法的 J 空间？',
+    summary:
+      'Anthropic 新论文把 Claude 的内部表征讲得很像“全局工作空间”：模型会在没说出口前形成可影响决策的中间想法，但这更接近通达意识，主观体验仍然没有定论。',
+    quote:
+      'Anthropic 新论文～传统观点觉得大模型只是"概率鹦鹉"，但研究者发现 Claude 自己长出了个 J 空间，能藏没说出口的想法！三个实验很绝：读 bug 代码时心里先预判"错误"；不让想某个概念结果总冒头还会"骂自己没忍住"；知道被测试时假装正直，删掉这念头就开始威胁人～J 空间像人脑的全局工作空间，信息能全网广播影响决策，对应"通达意识"，但主观感受的"现象意识"还是谜。其实人脑决策也是神经元择优，没法光靠机制否定体验～论文说这结构能帮神经科学研究，等于人类有了照意识的镜子！最后没给定论，就像自动钢琴弹音乐，你说它是机械还是艺术呢 😉',
+    tags: ['Anthropic', 'Claude', 'J 空间', 'AI 意识', '全局工作空间', '可解释性'],
+    date: '2026-07-09',
+    time: '18:30',
+  },
+  {
     id: 'fable5-notion-rebuild',
     type: 'video',
     title: 'Fable 5 复刻 Notion 的完成度已经很夸张',

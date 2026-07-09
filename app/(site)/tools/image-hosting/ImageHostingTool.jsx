@@ -56,6 +56,10 @@ function imageHtml(image) {
   return `<img src="${image.url}" alt="${alt}" />`
 }
 
+function imageShareUrl(image) {
+  return image?.shareUrl || image?.sharePath || image?.url || ''
+}
+
 function readImageSize(file) {
   return new Promise((resolve) => {
     if (!file || typeof Image === 'undefined') {
@@ -258,7 +262,7 @@ export default function ImageHostingTool() {
               图床
             </h1>
             <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-              上传图片后生成公开链接，可直接复制 URL、Markdown 或 HTML。仅登录用户可用，每张图片消耗 {COST} 燃币。
+              上传图片后生成公开分享页，朋友打开能看图，也能回到 2aran 使用图床。仅登录用户可用，每张图片消耗 {COST} 燃币。
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -345,13 +349,30 @@ export default function ImageHostingTool() {
             <div className="rounded-lg border border-[#ded8ca] bg-white/68 p-4 dark:border-[#252e38] dark:bg-[#101720]/78">
               <h2 className="mb-3 text-[15px] font-bold">最近链接</h2>
               <div className="grid gap-2">
+                <a
+                  href={imageShareUrl(latest)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#25221b] px-3 text-[13px] font-semibold text-white no-underline transition hover:bg-[#3a3428] dark:bg-[#e8d7b4] dark:text-[#17130d]"
+                >
+                  <IconLink size={17} />
+                  打开分享页
+                </a>
+                <button
+                  type="button"
+                  onClick={() => copyText(`share:${latest.id}`, imageShareUrl(latest))}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d8d1c4] bg-white/70 px-3 text-[13px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
+                >
+                  <IconLink size={17} />
+                  {copied === `share:${latest.id}` ? '已复制分享页' : '复制分享页'}
+                </button>
                 <button
                   type="button"
                   onClick={() => copyText(`url:${latest.id}`, latest.url)}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d8d1c4] bg-white/70 px-3 text-[13px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                 >
-                  <IconLink size={17} />
-                  {copied === `url:${latest.id}` ? '已复制 URL' : '复制 URL'}
+                  <IconCopy size={17} />
+                  {copied === `url:${latest.id}` ? '已复制直链' : '复制图片直链'}
                 </button>
                 <button
                   type="button"
@@ -407,7 +428,7 @@ export default function ImageHostingTool() {
               {images.map((image) => (
                 <article key={image.id} className="grid gap-3 p-4 sm:grid-cols-[150px_minmax(0,1fr)]">
                   <a
-                    href={image.url}
+                    href={imageShareUrl(image)}
                     target="_blank"
                     rel="noreferrer"
                     className="no-external-arrow block overflow-hidden rounded-md border border-[#ded8ca] bg-white dark:border-[#252e38] dark:bg-[#0b1118]"
@@ -425,7 +446,7 @@ export default function ImageHostingTool() {
                       </span>
                     </div>
                     <p className="mb-2 break-all font-mono text-[11px] leading-5 text-[#7a766b] dark:text-[#9da7b5]">
-                      {image.url}
+                      {imageShareUrl(image)}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full border border-[#ded8ca] px-2 py-0.5 text-[11px] text-[#68645a] dark:border-[#303947] dark:text-[#aab4c2]">
@@ -434,11 +455,19 @@ export default function ImageHostingTool() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => copyText(`url:${image.id}`, image.url)}
+                        onClick={() => copyText(`share:${image.id}`, imageShareUrl(image))}
                         className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#d8d1c4] bg-white/70 px-2.5 text-[12px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                       >
                         <IconLink size={15} />
-                        {copied === `url:${image.id}` ? '已复制' : 'URL'}
+                        {copied === `share:${image.id}` ? '已复制' : '分享页'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copyText(`url:${image.id}`, image.url)}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#d8d1c4] bg-white/70 px-2.5 text-[12px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
+                      >
+                        <IconCopy size={15} />
+                        图片直链
                       </button>
                       <button
                         type="button"

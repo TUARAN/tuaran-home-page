@@ -1,7 +1,8 @@
 import { getD1 } from '../../../lib/d1'
 import { getUserFromRequest } from '../../../lib/edgeSession'
+import { rowToHostedImage } from '../../../lib/hostedImages'
 import { POINT_RULES, award, spendPoints } from '../../../lib/points'
-import { getR2, publicUrlFor } from '../../../lib/r2'
+import { getR2 } from '../../../lib/r2'
 import { getUserRole } from '../../../lib/userDirectory'
 import {
   cleanupRateLimits,
@@ -60,20 +61,6 @@ function r2OrResponse() {
   }
 }
 
-function rowToImage(row) {
-  return {
-    id: row.id,
-    url: publicUrlFor(row.object_key),
-    objectKey: row.object_key,
-    fileName: row.file_name || '',
-    contentType: row.content_type || '',
-    sizeBytes: Number(row.size_bytes || 0),
-    width: row.width == null ? null : Number(row.width),
-    height: row.height == null ? null : Number(row.height),
-    createdAt: row.created_at,
-  }
-}
-
 async function requireUser(req) {
   const user = await getUserFromRequest(req)
   if (!user?.id) {
@@ -111,10 +98,11 @@ export async function GET(req) {
       .bind(auth.userId, LIST_LIMIT)
       .all()
 
+    const origin = new URL(req.url).origin
     return Response.json({
       status: 'ok',
       cost: POINT_RULES.imageHostingUpload,
-      images: (result?.results || []).map(rowToImage),
+      images: (result?.results || []).map((row) => rowToHostedImage(row, origin)),
     })
   } catch (error) {
     const message = String(error?.message || error)
@@ -227,12 +215,22 @@ export async function POST(req) {
     await cleanupRateLimits(db).catch(() => {})
 
     const row = await db.prepare('SELECT * FROM hosted_images WHERE id = ?1').bind(id).first()
+    const origin = new URL(req.url).origin
     return Response.json(
       {
         ok: true,
         cost,
         balance: spend.balance,
-        image: row ? rowToImage(row) : { id, url: publicUrlFor(objectKey), objectKey },
+        image: row ? rowToHostedImage(row, origin) : rowToHostedImage({
+          id,
+          object_key: objectKey,
+          file_name: file.name || `${id}.${ext}`,
+          content_type: contentType,
+          size_bytes: file.size,
+          width,
+          height,
+          created_at: now,
+        }, origin),
       },
       { status: 201 }
     )

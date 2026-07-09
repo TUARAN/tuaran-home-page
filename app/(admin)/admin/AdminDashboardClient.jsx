@@ -118,7 +118,7 @@ export default function AdminDashboardClient() {
   return (
     <AdminPage
       title="后台总览"
-      description="站点状态、近期变更与快捷操作一屏可见。配置、观测、项目治理与长期罗盘走左侧导航。"
+      description="站点状态、近期变更与快捷操作一屏可见。配置、观测、项目治理与私域分享走左侧导航。"
       actions={
         <AdminButton onClick={refresh} disabled={busy}>
           <IconRefresh size={16} aria-hidden="true" />

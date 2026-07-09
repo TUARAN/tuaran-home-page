@@ -324,9 +324,9 @@ export default function SpeedrunInvestingPage() {
   return (
     <>
       <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
-      <PageContainer className="py-10">
-        <header className="mb-8 border-b border-[#eee] pb-6 dark:border-gray-800">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
+      <PageContainer className="py-10 md:py-12">
+        <header className="mb-8 border-b border-[var(--site-line)] pb-7">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--site-faint)]">
             <Link href="/articles?tab=resources" className="underline underline-offset-4 opacity-80 hover:opacity-100">
               资源库
             </Link>
@@ -336,29 +336,29 @@ export default function SpeedrunInvestingPage() {
             <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} display />
           </div>
 
-          <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-end">
+          <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8a6f3d] dark:text-amber-300">
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--site-accent)]">
                 Investing Resource Map
               </p>
-              <h1 className="mt-2 font-serif text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-4xl">
+              <h1 className="mt-2 font-serif text-3xl font-semibold tracking-wide text-[var(--site-ink)] md:text-4xl">
                 速通投资
               </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-[#666] dark:text-gray-300">
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--site-muted)]">
                 把截图里的投资书整理成一页可执行资源：从价值投资、有效市场、随机性、周期和财报入门，
                 一路读到巴菲特、芒格、纳瓦尔、达利欧和金钱心理学。每本书都带豆瓣、微信读书、购买检索；
                 能确认官方或出版方入口的，额外放在最前面。
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 rounded border border-[#e8e1d2] bg-[#fbfaf6] p-3 dark:border-gray-800 dark:bg-gray-900">
+            <dl className="grid grid-cols-3 gap-3 border-l border-[var(--site-line)] pl-4">
               {stats.map(([value, label]) => (
-                <div key={label} className="text-center">
-                  <div className="font-serif text-2xl font-semibold text-[#3f3324] dark:text-gray-100">{value}</div>
-                  <div className="mt-1 text-[11px] text-[#777] dark:text-gray-400">{label}</div>
+                <div key={label}>
+                  <dt className="text-[11px] text-[var(--site-faint)]">{label}</dt>
+                  <dd className="mt-1 font-serif text-2xl font-semibold text-[var(--site-ink)]">{value}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -382,108 +382,119 @@ export default function SpeedrunInvestingPage() {
         </header>
 
         <RanbiPaywall resourceKey={`resource:${RESOURCE_SLUG}`} unitLabel="资源">
-          <section className="mb-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-              <h2 className="text-base font-semibold text-[#333] dark:text-gray-100">推荐读法</h2>
-              <ol className="mt-3 space-y-2 text-sm leading-7 text-[#666] dark:text-gray-300">
-                {readingPath.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ol>
-            </div>
+          <div className="grid gap-9 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
+            <main>
+              <section className="mb-9">
+                <h2 className="font-serif text-xl font-semibold text-[var(--site-ink)]">推荐读法</h2>
+                <ol className="mt-4 divide-y divide-[var(--site-line)] border-y border-[var(--site-line)] text-sm leading-7 text-[var(--site-muted)]">
+                  {readingPath.map((item, index) => (
+                    <li key={item} className="grid gap-3 py-3 md:grid-cols-[42px_1fr]">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--site-faint)]">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
 
-            <nav className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900" aria-label="页面目录">
-              <h2 className="text-base font-semibold text-[#333] dark:text-gray-100">目录</h2>
-              <div className="mt-3 space-y-2 text-sm">
+              <details className="mb-10 border-y border-[var(--site-line)] py-4">
+                <summary className="cursor-pointer font-serif text-base font-semibold text-[var(--site-ink)]">
+                  截图书名校对
+                </summary>
+                <p className="mt-2 text-sm leading-7 text-[var(--site-muted)]">
+                  原图共整理出 {sourceBooks.length} 本。下面保留原始书名，方便和截图逐条对照。
+                </p>
+                <p className="mt-3 text-sm leading-7 text-[var(--site-muted)]">
+                  {sourceBooks.map((book, index) => (
+                    <span key={book}>
+                      {book}
+                      {index < sourceBooks.length - 1 ? ' / ' : ''}
+                    </span>
+                  ))}
+                </p>
+              </details>
+
+              <div className="space-y-11">
+                {bookGroups.map((group) => (
+                  <section key={group.id} id={group.id} className="scroll-mt-24">
+                    <div className="mb-4">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--site-faint)]">
+                        {group.id}
+                      </p>
+                      <h2 className="mt-1 font-serif text-xl font-semibold text-[var(--site-ink)]">
+                        {group.title}
+                      </h2>
+                      <p className="mt-2 text-sm leading-7 text-[var(--site-muted)]">{group.description}</p>
+                    </div>
+
+                    <div className="divide-y divide-[var(--site-line)] border-y border-[var(--site-line)]">
+                      {group.books.map((book) => {
+                        const links = bookSearchLinks(book.title)
+                        return (
+                          <article key={book.title} className="grid gap-3 py-5 md:grid-cols-[minmax(150px,0.7fr)_1fr]">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--site-faint)]">
+                                <span>{book.level}</span>
+                                <span aria-hidden="true">/</span>
+                                <span>{book.role}</span>
+                              </div>
+                              <h3 className="mt-2 text-lg font-semibold text-[var(--site-ink)]">{book.title}</h3>
+                              <p className="mt-1 text-sm text-[var(--site-faint)]">{book.author}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm leading-7 text-[var(--site-muted)]">{book.note}</p>
+                              <p className="mt-3 text-sm leading-6 text-[var(--site-muted)]">
+                                {links.map((link, index) => (
+                                  <span key={`${book.title}-${link.label}`}>
+                                    <a
+                                      href={link.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="font-semibold text-[var(--site-accent)] underline underline-offset-4 hover:text-[var(--site-accent-strong)]"
+                                    >
+                                      {link.label}
+                                    </a>
+                                    {index < links.length - 1 ? <span className="text-[var(--site-faint)]"> · </span> : null}
+                                  </span>
+                                ))}
+                              </p>
+                            </div>
+                          </article>
+                        )
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              <section className="mt-11 border-t border-[var(--site-line)] pt-6 text-sm leading-7 text-[var(--site-muted)]">
+                <h2 className="text-base font-semibold text-[var(--site-ink)]">维护说明</h2>
+                <p className="mt-2">
+                  这里不提供盗版电子书下载。豆瓣用于看版本和评论，微信读书用于确认可读性，京东用于查在售版本；
+                  官方/出版方链接优先放原始资料或正版页面。遇到中文译名多版本的书，建议先用豆瓣确认译者、出版社和版次。
+                </p>
+                <p className="mt-2">
+                  当前页面收录 {allBooks.length} 个条目；后续可以继续加读书笔记、推荐阅读顺序和中文版本校勘。
+                </p>
+              </section>
+            </main>
+
+            <nav className="border-l border-[var(--site-line)] pl-4 text-sm lg:sticky lg:top-24" aria-label="页面目录">
+              <h2 className="font-serif text-base font-semibold text-[var(--site-ink)]">目录</h2>
+              <div className="mt-3 space-y-2">
                 {tocItems.map((item) => (
                   <a
                     key={item.id}
                     href={`#${item.id}`}
-                    className="block text-[#666] underline underline-offset-4 hover:text-[#333] dark:text-gray-300 dark:hover:text-gray-100"
+                    className="block text-[var(--site-muted)] underline underline-offset-4 hover:text-[var(--site-ink)]"
                   >
                     {item.title}
                   </a>
                 ))}
               </div>
             </nav>
-          </section>
-
-          <section className="mb-8 border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-base font-semibold text-[#333] dark:text-gray-100">截图书名校对</h2>
-            <p className="mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
-              原图共整理出 {sourceBooks.length} 本。下面保留原始书名，方便和截图逐条对照：
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {sourceBooks.map((book) => (
-                <span
-                  key={book}
-                  className="rounded-full border border-[#e5dfd2] bg-[#fbfaf6] px-2.5 py-1 text-xs text-[#5f574a] dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
-                >
-                  {book}
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <div className="space-y-8">
-            {bookGroups.map((group) => (
-              <section key={group.id} id={group.id} className="scroll-mt-24">
-                <div className="mb-4">
-                  <h2 className="font-serif text-xl font-semibold text-[#222] dark:text-gray-100">
-                    {group.title}
-                  </h2>
-                  <p className="mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">{group.description}</p>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  {group.books.map((book) => {
-                    const links = bookSearchLinks(book.title)
-                    return (
-                      <article
-                        key={book.title}
-                        className="flex min-h-[250px] flex-col border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
-                      >
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
-                          <span className="rounded-full border border-[#e5dfd2] px-2 py-0.5 text-[#7b6436] dark:border-gray-700 dark:text-amber-300">
-                            {book.level}
-                          </span>
-                          <span>{book.role}</span>
-                        </div>
-                        <h3 className="mt-3 text-lg font-semibold text-[#222] dark:text-gray-100">{book.title}</h3>
-                        <p className="mt-1 text-sm text-[#777] dark:text-gray-400">{book.author}</p>
-                        <p className="mt-3 flex-1 text-sm leading-7 text-[#666] dark:text-gray-300">{book.note}</p>
-
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {links.map((link) => (
-                            <a
-                              key={`${book.title}-${link.label}`}
-                              href={link.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded border border-[#d9d2c4] px-2.5 py-1 text-xs font-semibold text-[#4f4639] transition hover:border-[#b9a779] hover:bg-[#fbfaf6] dark:border-gray-700 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-gray-800"
-                            >
-                              {link.label}
-                            </a>
-                          ))}
-                        </div>
-                      </article>
-                    )
-                  })}
-                </div>
-              </section>
-            ))}
           </div>
-
-          <section className="mt-10 border-t border-[#eee] pt-6 text-sm leading-7 text-[#666] dark:border-gray-800 dark:text-gray-300">
-            <h2 className="text-base font-semibold text-[#333] dark:text-gray-100">维护说明</h2>
-            <p className="mt-2">
-              这里不提供盗版电子书下载。豆瓣用于看版本和评论，微信读书用于确认可读性，京东用于查在售版本；
-              官方/出版方链接优先放原始资料或正版页面。遇到中文译名多版本的书，建议先用豆瓣确认译者、出版社和版次。
-            </p>
-            <p className="mt-2">
-              当前页面收录 {allBooks.length} 个条目；后续可以继续加读书笔记、推荐阅读顺序和中文版本校勘。
-            </p>
-          </section>
         </RanbiPaywall>
         <ArticleFooterCta />
       </PageContainer>

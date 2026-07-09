@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import {
+  IconArrowRight,
   IconBrain,
+  IconChevronLeft,
   IconCheck,
   IconClipboardCheck,
   IconRefresh,
@@ -109,7 +111,11 @@ function getTopAxes(selected) {
 }
 
 export default function RebuttalPersonalityTest() {
-  const [selected, setSelected] = useState([])
+  const [answers, setAnswers] = useState({})
+  const [current, setCurrent] = useState(0)
+  const selected = questions.filter((question) => answers[question.id] === true).map((question) => question.id)
+  const answeredCount = Object.keys(answers).length
+  const currentQuestion = questions[current]
   const totalWeight = questions.reduce((sum, question) => sum + question.weight, 0)
   const rawScore = questions
     .filter((question) => selected.includes(question.id))
@@ -117,37 +123,44 @@ export default function RebuttalPersonalityTest() {
   const score = Math.round((rawScore / totalWeight) * 100)
   const level = getLevel(score)
   const topAxes = useMemo(() => getTopAxes(selected), [selected])
+  const progress = Math.round((answeredCount / questions.length) * 100)
+  const isComplete = answeredCount === questions.length
 
-  function toggle(id) {
-    setSelected((prev) => (
-      prev.includes(id)
-        ? prev.filter((item) => item !== id)
-        : [...prev, id]
-    ))
+  function answer(id, value) {
+    setAnswers((prev) => ({ ...prev, [id]: value }))
+    if (current < questions.length - 1) {
+      window.setTimeout(() => setCurrent((index) => Math.min(index + 1, questions.length - 1)), 120)
+    }
   }
 
   function reset() {
-    setSelected([])
+    setAnswers({})
+    setCurrent(0)
   }
 
   return (
     <section className="not-prose my-8 overflow-hidden rounded-lg border border-[#dadfd5] bg-[#f7f8f2] text-[#1f241f] shadow-sm dark:border-[#27313b] dark:bg-[#101820] dark:text-gray-100">
-      <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="border-b border-[#dadfd5] bg-[#e9eee6] p-5 dark:border-[#27313b] dark:bg-[#121f21] lg:border-b-0 lg:border-r">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#cdd8cc] bg-white/50 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-[#526b62] dark:border-white/10 dark:bg-white/[0.04] dark:text-[#9ac0b3]">
-            <IconClipboardCheck size={15} stroke={1.8} />
-            Self check
+      <div className="border-b border-[#dadfd5] bg-[#e9eee6] p-4 dark:border-[#27313b] dark:bg-[#121f21]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#cdd8cc] bg-white/50 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-[#526b62] dark:border-white/10 dark:bg-white/[0.04] dark:text-[#9ac0b3]">
+              <IconClipboardCheck size={15} stroke={1.8} />
+              Self check
+            </div>
+            <h2 className="mt-2 text-xl font-semibold leading-tight text-[#1b241e] dark:text-white sm:text-2xl">
+              反驳性沟通自测
+            </h2>
           </div>
-
-          <h2 className="mt-4 max-w-xl text-2xl font-semibold leading-tight text-[#1b241e] dark:text-white sm:text-3xl">
-            反驳性沟通自测
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-[#5d665e] dark:text-[#aeb8b5]">
-            勾选过去 30 天里“经常发生”的项。它不是诊断，只用来判断你的第一反应更像批判性思考，还是反驳优先的防御模式。
+          <p className="max-w-xl text-sm leading-6 text-[#5d665e] dark:text-[#aeb8b5]">
+            每次只答 1 题。按过去 30 天“经常如此”来选，不是诊断，只做自查。
           </p>
+        </div>
+      </div>
 
-          <div className="mt-6 rounded-md border border-[#d6ddd0] bg-white/60 p-4 dark:border-white/10 dark:bg-white/[0.04]">
-            <div className="flex items-end justify-between gap-3">
+      <div className="grid lg:grid-cols-[0.82fr_1.18fr]">
+        <div className="border-b border-[#dadfd5] p-4 dark:border-[#27313b] lg:border-b-0 lg:border-r">
+          <div className="rounded-md border border-[#d6ddd0] bg-white/60 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+            <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#6d776e] dark:text-[#99a6a1]">
                   Score
@@ -162,30 +175,34 @@ export default function RebuttalPersonalityTest() {
               </div>
             </div>
 
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#dfe5dc] dark:bg-[#28333c]">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#dfe5dc] dark:bg-[#28333c]">
               <div
                 className="h-full rounded-full bg-[#2f7782] transition-all duration-300 dark:bg-[#9fc5ad]"
                 style={{ width: `${score}%` }}
               />
             </div>
 
-            <p className="mt-4 text-sm leading-6 text-[#5c665f] dark:text-[#aeb8b5]">{level.summary}</p>
-            <div className="mt-4 rounded-md bg-[#fff8e8] p-3 text-sm leading-6 text-[#6d4b16] dark:bg-[#241f13] dark:text-[#f0d49a]">
+            <p className="mt-3 text-sm leading-6 text-[#5c665f] dark:text-[#aeb8b5]">{level.summary}</p>
+            <div className="mt-3 rounded-md bg-[#fff8e8] p-3 text-sm leading-6 text-[#6d4b16] dark:bg-[#241f13] dark:text-[#f0d49a]">
               {level.action}
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-3 grid grid-cols-3 gap-2">
             {[
-              ['7', '道强特征题'],
-              [`${selected.length}`, '已勾选'],
+              [`${answeredCount}/7`, '已回答'],
+              [`${selected.length}`, '符合项'],
               ['非诊断', '仅供自查'],
             ].map(([value, label]) => (
-              <div key={label} className="rounded-md border border-white/70 bg-white/45 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div key={label} className="rounded-md border border-[#dbe1d7] bg-white/45 p-3 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="font-mono text-lg font-semibold text-[#254f55] dark:text-[#acd4d8]">{value}</div>
                 <div className="mt-1 text-xs text-[#68736b] dark:text-[#9aa7a4]">{label}</div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#dfe5dc] dark:bg-[#28333c]">
+            <div className="h-full rounded-full bg-[#b7791f] transition-all duration-300 dark:bg-[#f0ca7a]" style={{ width: `${progress}%` }} />
           </div>
         </div>
 
@@ -194,10 +211,10 @@ export default function RebuttalPersonalityTest() {
             <div>
               <div className="flex items-center gap-2 text-sm font-semibold text-[#26342d] dark:text-white">
                 <IconTargetArrow size={18} stroke={1.8} />
-                勾选符合你的项
+                {isComplete ? '结果摘要' : `第 ${current + 1} 题 / ${questions.length}`}
               </div>
               <p className="mt-1 text-xs leading-5 text-[#737d77] dark:text-[#98a4a1]">
-                只选“经常如此”，偶尔发生不要选。
+                {isComplete ? '可以返回修改任意题，也可以清空重测。' : '选“符合”会计入分数；选“不符合”不会计分。'}
               </p>
             </div>
             <button
@@ -210,58 +227,93 @@ export default function RebuttalPersonalityTest() {
             </button>
           </div>
 
-          <div className="mt-5 grid gap-2">
-            {questions.map((question) => {
-              const checked = selected.includes(question.id)
-              return (
-                <label
-                  key={question.id}
-                  className={[
-                    'group grid cursor-pointer grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-md border p-3.5 transition',
-                    checked
-                      ? 'border-[#2f7782] bg-[#e4f0ed] dark:border-[#9fc5ad] dark:bg-[#1d2c29]'
-                      : 'border-[#d8ded2] bg-white/65 hover:border-[#8ea39b] hover:bg-white dark:border-[#303b46] dark:bg-white/[0.04] dark:hover:border-[#6b7d89]',
-                  ].join(' ')}
+          {isComplete ? (
+            <div className="mt-5 rounded-md border border-[#d8ded2] bg-white/65 p-4 dark:border-[#303b46] dark:bg-white/[0.04]">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs text-[#68736e] dark:text-[#9aa7a4]">你的结果</div>
+                  <div className="mt-1 text-2xl font-semibold text-[#1f241f] dark:text-white">{level.name}</div>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-[#5f6962] dark:text-[#aeb8b5]">{level.summary}</p>
+                </div>
+                <div className="rounded-md bg-[#e9efe7] px-4 py-3 text-right dark:bg-[#1d2a28]">
+                  <div className="font-mono text-3xl font-semibold text-[#254f55] dark:text-[#acd4d8]">{score}</div>
+                  <div className="text-xs text-[#68736b] dark:text-[#9aa7a4]">总分</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 rounded-md border border-[#d8ded2] bg-white/65 p-5 dark:border-[#303b46] dark:bg-white/[0.04]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-[#edf1e9] px-2.5 py-1 text-xs font-semibold text-[#587066] dark:bg-white/[0.06] dark:text-[#a9c6bb]">
+                  {currentQuestion.axis}
+                </span>
+                <span className="font-mono text-xs text-[#879084] dark:text-[#83908c]">
+                  +{currentQuestion.weight}
+                </span>
+              </div>
+              <h3 className="mt-3 text-xl font-semibold leading-snug text-[#202720] dark:text-gray-100">
+                {currentQuestion.text}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-[#68736e] dark:text-[#9aa7a4]">
+                {currentQuestion.hint}
+              </p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => answer(currentQuestion.id, true)}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#2f7782] bg-[#2f7782] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#25646d] dark:border-[#9fc5ad] dark:bg-[#9fc5ad] dark:text-[#111820] dark:hover:bg-[#b8d7ca]"
                 >
-                  <span
+                  <IconCheck size={17} stroke={2} />
+                  符合，经常这样
+                </button>
+                <button
+                  type="button"
+                  onClick={() => answer(currentQuestion.id, false)}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#cfd8cc] bg-white px-4 py-3 text-sm font-semibold text-[#425048] transition hover:border-[#8ea39b] hover:text-[#17211d] dark:border-[#34404b] dark:bg-[#121b24] dark:text-[#c2cbc8] dark:hover:border-[#6b7d89]"
+                >
+                  不符合 / 偶尔才会
+                  <IconArrowRight size={16} stroke={1.8} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setCurrent((index) => Math.max(0, index - 1))}
+              disabled={current === 0}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#cdd4c9] bg-white px-3 text-sm text-[#48524c] transition disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#34404b] dark:bg-[#121b24] dark:text-[#c2cbc8]"
+            >
+              <IconChevronLeft size={15} stroke={1.8} />
+              上一题
+            </button>
+            <div className="flex gap-1.5">
+              {questions.map((question, index) => {
+                const answered = answers[question.id] !== undefined
+                const active = index === current
+                return (
+                  <button
+                    key={question.id}
+                    type="button"
+                    onClick={() => setCurrent(index)}
                     className={[
-                      'mt-0.5 flex h-6 w-6 items-center justify-center rounded-md border transition',
-                      checked
-                        ? 'border-[#2f7782] bg-[#2f7782] text-white dark:border-[#9fc5ad] dark:bg-[#9fc5ad] dark:text-[#111820]'
-                        : 'border-[#c8d0c5] bg-white text-transparent dark:border-[#44505b] dark:bg-[#111820]',
+                      'h-2.5 w-2.5 rounded-full transition',
+                      active
+                        ? 'bg-[#2f7782] dark:bg-[#9fc5ad]'
+                        : answered
+                          ? 'bg-[#b7791f] dark:bg-[#f0ca7a]'
+                          : 'bg-[#d8ded2] dark:bg-[#3a4650]',
                     ].join(' ')}
-                    aria-hidden="true"
-                  >
-                    <IconCheck size={16} stroke={2.2} />
-                  </span>
-                  <span>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggle(question.id)}
-                      className="sr-only"
-                    />
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-[#edf1e9] px-2 py-0.5 text-[11px] font-semibold text-[#587066] dark:bg-white/[0.06] dark:text-[#a9c6bb]">
-                        {question.axis}
-                      </span>
-                      <span className="font-mono text-[11px] text-[#879084] dark:text-[#83908c]">
-                        +{question.weight}
-                      </span>
-                    </span>
-                    <span className="mt-1 block text-[15px] font-semibold leading-6 text-[#202720] dark:text-gray-100">
-                      {question.text}
-                    </span>
-                    <span className="mt-1 block text-xs leading-5 text-[#737d77] dark:text-[#98a4a1]">
-                      {question.hint}
-                    </span>
-                  </span>
-                </label>
-              )
-            })}
+                    aria-label={`跳到第 ${index + 1} 题`}
+                  />
+                )
+              })}
+            </div>
           </div>
 
-          <div className="mt-5 grid gap-3 rounded-md border border-[#d8ded2] bg-white/60 p-4 dark:border-[#303b46] dark:bg-white/[0.04] sm:grid-cols-[1fr_1fr]">
+          <div className="mt-5 grid gap-3 rounded-md border border-[#d8ded2] bg-white/50 p-4 dark:border-[#303b46] dark:bg-white/[0.04] sm:grid-cols-[1fr_1fr]">
             <div>
               <div className="flex items-center gap-2 text-sm font-semibold text-[#26342d] dark:text-white">
                 <IconShieldHalf size={17} stroke={1.8} />

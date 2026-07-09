@@ -2,7 +2,6 @@ import Link from 'next/link'
 
 import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
-import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import RanbiPaywall from '../../components/RanbiPaywall'
@@ -79,8 +78,8 @@ export default function XMutualCleanerResourcePage() {
     <PageContainer className="py-10">
       <header className="border-b border-[#eee] pb-7 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
-          <Link href="/articles?tab=resources" className="underline underline-offset-4 opacity-80 hover:opacity-100">
-            资源库
+          <Link href="/tools" className="underline underline-offset-4 opacity-80 hover:opacity-100">
+            工具库
           </Link>
           <span aria-hidden="true">·</span>
           <Link href="/browser-extensions" className="underline underline-offset-4 opacity-80 hover:opacity-100">
@@ -88,8 +87,6 @@ export default function XMutualCleanerResourcePage() {
           </Link>
           <span aria-hidden="true">·</span>
           <span>2026-07-01</span>
-          <span aria-hidden="true">·</span>
-          <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} display />
         </div>
 
         <h1 className="mt-4 max-w-4xl font-serif text-3xl font-semibold leading-tight tracking-wide text-[#222] dark:text-gray-100 md:text-5xl">
@@ -120,19 +117,19 @@ export default function XMutualCleanerResourcePage() {
               title={title}
               summary={shareText}
               url={`/resources/${RESOURCE_SLUG}`}
-              category="resource"
+              category="tools"
               slug={RESOURCE_SLUG}
               tags={['X 平台', 'Chrome 插件', '工具']}
-              kindLabel="资源"
+              kindLabel="工具"
             />
           </ArticleActionsDropdown>
           <span className="text-xs text-[#888] dark:text-gray-500">
-            打开正文会使用 10 燃币作为资源权益记录，解锁后永久可读。
+            打开下载页会使用 10 燃币作为工具权益记录，解锁后永久可读。
           </span>
         </div>
       </header>
 
-      <RanbiPaywall resourceKey={`resource:${RESOURCE_SLUG}`} unitLabel="资源">
+      <RanbiPaywall resourceKey={`resource:${RESOURCE_SLUG}`} unitLabel="工具">
         <article className="prose-tuaran mt-8">
           <div className="not-prose mb-8 rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -249,10 +246,10 @@ export default function XMutualCleanerResourcePage() {
                 title={title}
                 summary={shareText}
                 url={`/resources/${RESOURCE_SLUG}`}
-                category="resource"
+                category="tools"
                 slug={RESOURCE_SLUG}
                 tags={['X 平台', 'Chrome 插件', '工具']}
-                kindLabel="资源"
+                kindLabel="工具"
               />
             </ArticleActionsDropdown>
           </div>

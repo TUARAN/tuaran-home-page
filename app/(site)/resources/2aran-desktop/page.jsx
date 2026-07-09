@@ -2,7 +2,6 @@ import Link from 'next/link'
 
 import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
-import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
@@ -88,8 +87,8 @@ export default function DesktopResourcePage() {
     <PageContainer className="py-10">
       <header className="border-b border-[#eee] pb-7 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
-          <Link href="/articles?tab=resources" className="underline underline-offset-4 opacity-80 hover:opacity-100">
-            资源库
+          <Link href="/tools" className="underline underline-offset-4 opacity-80 hover:opacity-100">
+            工具库
           </Link>
           <span aria-hidden="true">·</span>
           <Link href="/desktop-apps" className="underline underline-offset-4 opacity-80 hover:opacity-100">
@@ -97,8 +96,6 @@ export default function DesktopResourcePage() {
           </Link>
           <span aria-hidden="true">·</span>
           <span>{VERSION}</span>
-          <span aria-hidden="true">·</span>
-          <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} display />
         </div>
 
         <h1 className="mt-4 max-w-4xl font-serif text-3xl font-semibold leading-tight tracking-wide text-[#222] dark:text-gray-100 md:text-5xl">
@@ -128,10 +125,10 @@ export default function DesktopResourcePage() {
               title={title}
               summary={shareText}
               url={`/resources/${RESOURCE_SLUG}`}
-              category="resource"
+              category="tools"
               slug={RESOURCE_SLUG}
               tags={['桌面应用', 'Windows', 'macOS']}
-              kindLabel="资源"
+              kindLabel="工具"
             />
           </ArticleActionsDropdown>
         </div>
@@ -191,10 +188,10 @@ export default function DesktopResourcePage() {
               title={title}
               summary={shareText}
               url={`/resources/${RESOURCE_SLUG}`}
-              category="resource"
+              category="tools"
               slug={RESOURCE_SLUG}
               tags={['桌面应用', 'Windows', 'macOS']}
-              kindLabel="资源"
+              kindLabel="工具"
             />
           </ArticleActionsDropdown>
         </div>

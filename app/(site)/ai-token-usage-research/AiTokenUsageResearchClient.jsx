@@ -888,7 +888,7 @@ export default function AiTokenUsageResearchClient() {
           </li>
         </ul>
         <div className="mt-3 flex flex-wrap gap-4 text-sm">
-          <Link href="/articles?tab=works" className="underline decoration-[#a3a889] underline-offset-2">
+          <Link href="/rich-pages" className="underline decoration-[#a3a889] underline-offset-2">
             返回多维页面列表
           </Link>
           <Link href="/skill-center/llm-productivity-directives" className="underline decoration-[#a3a889] underline-offset-2">

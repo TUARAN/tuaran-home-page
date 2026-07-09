@@ -39,6 +39,7 @@ export default function sitemap() {
     '/services',
     '/articles',
     '/articles/creation-calendar',
+    '/rich-pages',
     '/works',
     '/tools',
     '/browser-extensions',

@@ -19,10 +19,11 @@ const RESOURCE_URL = `https://2aran.com/${RESOURCE_SLUG}`
 const EXTENSION_SHORT_URL = 'https://2aran.com/s/Os0WrDh'
 const GROUP_QR_SRC = '/qrcode-x-group.jpg'
 const OWNER_QR_SRC = '/qrcode-wechat.jpg'
+const PROFILE_SCREENSHOT_SRC = '/images/diary/x-blue-v-mutual-profile-2026-07-09.png'
 
 const title = 'X 互帮互助圈子：真实互动，一起把 X 流量玩明白'
 const description =
-  '「X 互帮互助」微信圈子主页：X 算法对早期真实互动很敏感，群里互相把优质推文的前 30–60 分钟互动做起来；圈子配套互关清理 Chrome 插件、发帖时段热力图、Tweepcred 评分、可见性检测和违规提示自查工具。'
+  '「X 互帮互助」微信圈子主页：从蓝 V 互关一周涨粉 1k 的实测观察出发，记录中文 X 小圈层如何靠真实表达、点赞评论和持续互动形成社交；圈子配套互关清理 Chrome 插件、发帖时段热力图、Tweepcred 评分、可见性检测和违规提示自查工具。'
 
 const shareText =
   '推文总破不了 1000 曝光？多半是早期互动没启动。我们建了个 X 互帮互助群：真实点赞评论互相带，还配了互关清理插件、发帖时段热力图、Tweepcred 评分和账号状态自查工具，自取。'
@@ -99,6 +100,29 @@ const TOOLKIT = [
   },
 ]
 
+const PLATFORM_COMPARISON = [
+  {
+    name: '微博',
+    desc: '最像老 Twitter，也有认证、互粉、超话和评论抱团。但微博蓝 V 更偏企业/机构身份，互粉更多是平台内流量玩法，不像 X 这样把付费蓝勾、开放关注图谱和跨墙中文用户筛到同一个池子里。',
+  },
+  {
+    name: '小红书',
+    desc: '有互赞群、评论互助、专业号和蒲公英生态，互动当然有用；只是它的核心仍然是内容标签和推荐算法，用户关注关系没有 X 这么强。',
+  },
+  {
+    name: 'B 站',
+    desc: '也有互粉、三连、UP 主认证，但视频内容成本高，不适合高频轻社交。它更像作品平台，不像 X 是一条连续流动的公共时间线。',
+  },
+  {
+    name: '知乎',
+    desc: '认证和创作者体系都在，但更重答案质量、议题权威和搜索沉淀。单纯互关很难直接放大，更适合把内容做成长尾。',
+  },
+  {
+    name: '抖音 / 快手 / 视频号',
+    desc: '有蓝 V、企业号、直播间互粉和垂类抱团，但核心分发是短视频推荐流。粉丝关系存在，可平台真正奖励的是内容完播、停留和转化。',
+  },
+]
+
 function ToolkitCard({ tool }) {
   return (
     <div className="flex flex-col rounded-2xl border border-[#2f3336] bg-[#080808] p-5 transition hover:border-[#1d9bf0]/70 hover:bg-[#0d0f11]">
@@ -151,7 +175,7 @@ export default function XMutualAidCirclePage() {
       <PageContainer className="py-10 md:py-12">
         <header className="border-b border-[#2f3336] pb-8">
           <div className="flex flex-wrap items-center gap-2 text-xs text-[#71767b]">
-            <Link href="/articles?tab=works" className="underline underline-offset-4 opacity-80 hover:text-[#e7e9ea] hover:opacity-100">
+            <Link href="/rich-pages" className="underline underline-offset-4 opacity-80 hover:text-[#e7e9ea] hover:opacity-100">
               多维页面
             </Link>
             <span aria-hidden="true">·</span>
@@ -207,6 +231,106 @@ export default function XMutualAidCirclePage() {
             </ArticleActionsDropdown>
           </div>
         </header>
+
+        <section className="mt-10 border-b border-[#2f3336] pb-10">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:items-start">
+            <figure className="m-0 overflow-hidden rounded-3xl border border-[#2f3336] bg-[#080808] shadow-[0_0_80px_rgba(29,155,240,0.10)]">
+              <Image
+                src={PROFILE_SCREENSHOT_SRC}
+                alt="2aRan X 蓝 V 账号主页截图，显示关注数和粉丝数接近"
+                width={1196}
+                height={956}
+                className="h-auto w-full"
+                priority
+              />
+              <figcaption className="border-t border-[#2f3336] px-4 py-3 text-xs leading-6 text-[#71767b]">
+                一周多跑下来，关注和粉丝数开始接近。数字只是表层，真正有意思的是时间线变宽了。
+              </figcaption>
+            </figure>
+
+            <article className="max-w-3xl">
+              <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#1d9bf0]">
+                Field Note
+              </p>
+              <h2 className="m-0 mt-2 text-2xl font-semibold leading-tight text-[#e7e9ea] md:text-4xl">
+                蓝 V 互关一周涨粉 1k 后，我反而更关心「人」了
+              </h2>
+
+              <div className="mt-5 space-y-4 text-[15px] leading-8 text-[#c9d1d9]">
+                <p className="m-0">
+                  最近一周多，我在 X 上参与蓝 V 互关，涨了大概 1k 粉。一开始我也以为这只是互粉，跑下来才发现，事情没有那么薄。
+                </p>
+                <p className="m-0">
+                  以前我的时间线很窄，基本是程序员、AI、独立开发和出海，内容密度高，但情绪也很单一：AI 焦虑、职业焦虑、产品焦虑、变现焦虑。蓝 V 互关之后，时间线突然变宽了。开发者、设计师、跨境电商、投资、留学、教育、自媒体、法律、外贸、币圈、海外生活，全挤进来了。
+                </p>
+                <p className="m-0">
+                  表面看，这是互关列表。往深一点看，它更像把中文互联网里一批愿意折腾、愿意表达、愿意为工具和身份付费的人聚到了一起。蓝 V 需要订阅，中文用户用 X 还隔着墙、支付、语言和信息源的门槛，所以这一批人并不是随机样本。
+                </p>
+                <p className="m-0">
+                  我观察到的共识也很朴素：光互关没用，后面要多活跃、多表达、多点赞、多评论。你会在一次次互动里记住几个人：谁在做产品，谁在研究流量，谁表达很真，谁只是刷存在感。社交关系不是从「关注」开始的，是从持续可见的行为开始的。
+                </p>
+                <p className="m-0">
+                  所以我现在不把它看成一个纯增长技巧。互关只是入口，真正难的是互关之后继续真实。你要让别人慢慢知道你是谁、在做什么、信什么、反对什么。即使只是互关，要做到被看见、被记住、形成关系，也不容易。
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                {[
+                  ['门槛', '蓝 V 订阅 + 跨墙环境，先筛掉一批完全随机用户。'],
+                  ['动作', '关注只是第一步，点赞评论和持续表达才是社交信号。'],
+                  ['边界', '把互关当终点就是刷数，当入口才可能长出关系。'],
+                ].map(([label, text]) => (
+                  <div key={label} className="rounded-2xl border border-[#2f3336] bg-[#080808] p-4">
+                    <p className="m-0 text-xs font-bold text-[#1d9bf0]">{label}</p>
+                    <p className="m-0 mt-2 text-xs leading-6 text-[#8b98a5]">{text}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className="mt-12">
+          <SectionHeading
+            eyebrow="Platform Map"
+            title="其他平台也有类似玩法，但 X 这一波不太一样"
+            desc="微博、小红书、B 站、知乎、抖音、快手、视频号都有认证、互粉或互助的局部形态。差别在于，X 中文蓝 V 互关把付费蓝勾、开放关注关系、跨墙门槛和公共时间线叠在了一起。"
+          />
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            {PLATFORM_COMPARISON.map((platform) => (
+              <div key={platform.name} className="rounded-2xl border border-[#2f3336] bg-[#080808] p-5">
+                <h3 className="m-0 text-base font-semibold text-[#e7e9ea]">{platform.name}</h3>
+                <p className="m-0 mt-2 text-sm leading-7 text-[#8b98a5]">{platform.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-[#2f3336] bg-[#080808] p-5 text-sm leading-7 text-[#8b98a5]">
+            <p className="m-0">
+              我的判断：这波蓝 V 互关不是万能增长法，更像一个窗口期。它能把一批有行动力的人拉到同一个场里，但最后留下来的，还是那些真实表达、持续互动、有具体事情在推进的人。
+            </p>
+            <p className="m-0 mt-3">
+              更完整的机制拆解，可以看站内调研：
+              <Link
+                href="/articles/research/topics/x-mutual-follow-ecosystem"
+                className="text-[#1d9bf0] underline underline-offset-4 hover:text-[#8ecdf8]"
+              >
+                X 平台互关生态观察
+              </Link>
+              ；X 蓝勾和 Premium 机制以
+              <a
+                href="https://help.x.com/en/managing-your-account/about-x-verified-accounts"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#1d9bf0] underline underline-offset-4 hover:text-[#8ecdf8]"
+              >
+                官方说明
+              </a>
+              为准。
+            </p>
+          </div>
+        </section>
 
         <section className="mt-8 rounded-[28px] border border-[#2f3336] bg-[#080808] p-6 shadow-[0_0_80px_rgba(29,155,240,0.10)] md:p-8">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,500px)] lg:items-start">

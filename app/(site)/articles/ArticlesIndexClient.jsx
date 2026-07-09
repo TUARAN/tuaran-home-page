@@ -567,7 +567,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               />
             ))}
             <Link
-              href="/works"
+              href="/rich-pages"
               className="ml-1 shrink-0 text-xs text-[var(--site-accent)] no-underline transition-colors hover:text-[var(--site-accent-strong)] dark:text-[#c5afe8] dark:hover:text-[#e1d4f5]"
             >
               多维页面专页 →

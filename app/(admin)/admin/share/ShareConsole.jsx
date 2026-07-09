@@ -66,10 +66,6 @@ async function resolveLegacyContent(item) {
   }
 }
 
-function getVisibleContent(item) {
-  return item?.content || item?.legacyContent || ''
-}
-
 export default function ShareAdminClient() {
   const [items, setItems] = useState([])
   const [loadingList, setLoadingList] = useState(true)
@@ -177,15 +173,103 @@ export default function ShareAdminClient() {
     }
   }
 
+  function buildOwnerOpenUrl(item) {
+    const password = !item?.content && item?.legacyContent ? LEGACY_SHARE_PASSWORD : ''
+    return buildShareUrl(item.slug, password)
+  }
+
   return (
     <AdminPage
       title="加密分享管理"
       maxWidth="960px"
       description="站长后台保存并展示明文，方便直接管理；分享出去的公开链接只返回密文信封。访问者凭链接 + 密码即可解锁；把密码加在链接末尾 #密码 可一键打开，也可以分两个通道单独发链接和密码。"
     >
+      {/* 列表 */}
+      <section className="mb-8">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">历史分享</h2>
+          <span className="text-[11px] text-[#858779] dark:text-[#8e9ab0]">{items.length} 条</span>
+        </div>
+        {listError ? (
+          <p className="mb-3 text-sm text-[#a34f47] dark:text-[#b5a09b]">{listError}</p>
+        ) : null}
+        {loadingList ? (
+          <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">加载中…</p>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">还没有任何分享。</p>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-[#d5d7cd] dark:border-[#252e39]">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead className="bg-[#edefe7] text-[12px] uppercase tracking-[0.12em] text-[#616454] dark:bg-[#151c25] dark:text-[#8e9ab0]">
+                <tr>
+                  <th className="px-3 py-2">标题 / slug</th>
+                  <th className="px-3 py-2">创建</th>
+                  <th className="px-3 py-2">到期</th>
+                  <th className="px-3 py-2">浏览</th>
+                  <th className="px-3 py-2 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.slug} className="border-t border-[#dfe0d8] dark:border-[#252e39]">
+                    <td className="px-3 py-3 align-top">
+                      <div className="font-medium text-[#15140f] dark:text-gray-100">{item.title || '(无标题)'}</div>
+                      <div className="mt-0.5 font-mono text-[11px] text-[#858779] dark:text-[#8e9ab0]">
+                        /share/{item.slug}
+                      </div>
+                      {!item.content && item.legacyContent ? (
+                        <div className="mt-1 text-[11px] text-[#8b5a1f] dark:text-[#d7a85c]">
+                          旧分享：打开时自动带历史密码 123123
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
+                      {formatDate(item.created_at)}
+                    </td>
+                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
+                      {item.expires_at ? formatDate(item.expires_at) : '永久'}
+                    </td>
+                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
+                      {Number(item.view_count || 0)}
+                    </td>
+                    <td className="px-3 py-3 align-top">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <a
+                          href={buildOwnerOpenUrl(item)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={() => window.setTimeout(refresh, 1200)}
+                          className="rounded-lg border border-[#c8b68f] bg-[#fffdf7] px-2 py-1 text-xs font-medium text-[#8b5a1f] hover:bg-[#f7efd9] dark:border-[#5a4730] dark:bg-[#19140d] dark:text-[#d7a85c] dark:hover:bg-[#221a10]"
+                        >
+                          打开
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => copyText(buildShareUrl(item.slug, ''))}
+                          className="rounded-lg border border-[#caccc0] px-2 py-1 text-xs text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
+                        >
+                          复制链接
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pendingSlug === item.slug}
+                          onClick={() => handleDelete(item.slug)}
+                          className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/40"
+                        >
+                          {pendingSlug === item.slug ? '删除中…' : '删除'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {/* 创建新分享 */}
-      <section className="mb-8 rounded-xl border border-[#d5d7cd] bg-[#f6f8f3] p-5 dark:border-[#252e39] dark:bg-[#10161f]">
+      <section className="rounded-xl border border-[#d5d7cd] bg-[#f6f8f3] p-5 dark:border-[#252e39] dark:bg-[#10161f]">
         <h2 className="mb-4 text-base font-semibold text-[#15140f] dark:text-gray-100">新建分享</h2>
         <form onSubmit={handleCreate} className="space-y-3">
           <label className="block">
@@ -264,95 +348,6 @@ export default function ShareAdminClient() {
             </div>
           </div>
         ) : null}
-      </section>
-
-      {/* 列表 */}
-      <section>
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">已创建的分享</h2>
-          <span className="text-[11px] text-[#858779] dark:text-[#8e9ab0]">{items.length} 条</span>
-        </div>
-        {listError ? (
-          <p className="mb-3 text-sm text-[#a34f47] dark:text-[#b5a09b]">{listError}</p>
-        ) : null}
-        {loadingList ? (
-          <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">加载中…</p>
-        ) : items.length === 0 ? (
-          <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">还没有任何分享。</p>
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-[#d5d7cd] dark:border-[#252e39]">
-            <table className="w-full border-collapse text-left text-sm">
-              <thead className="bg-[#edefe7] text-[12px] uppercase tracking-[0.12em] text-[#616454] dark:bg-[#151c25] dark:text-[#8e9ab0]">
-                <tr>
-                  <th className="px-3 py-2">标题 / slug</th>
-                  <th className="px-3 py-2">创建</th>
-                  <th className="px-3 py-2">到期</th>
-                  <th className="px-3 py-2">浏览</th>
-                  <th className="px-3 py-2 text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.slug} className="border-t border-[#dfe0d8] dark:border-[#252e39]">
-                    <td className="px-3 py-3 align-top">
-                      <div className="font-medium text-[#15140f] dark:text-gray-100">{item.title || '(无标题)'}</div>
-                      <div className="mt-0.5 font-mono text-[11px] text-[#858779] dark:text-[#8e9ab0]">
-                        /share/{item.slug}
-                      </div>
-                      <details open className="mt-2 rounded-lg border border-[#e1e2d9] bg-[#fafbf7] p-2 dark:border-[#253041] dark:bg-[#0d131b]">
-                        <summary className="cursor-pointer text-xs text-[#63645a] dark:text-[#9aa6b6]">
-                          正文
-                          {!item.content && item.legacyContent ? (
-                            <span className="ml-2 rounded-full border border-[#d9c7a2] px-2 py-0.5 text-[10px] text-[#8b5a1f] dark:border-[#5a4730] dark:text-[#d7a85c]">
-                              已用历史密码 123123 解密
-                            </span>
-                          ) : null}
-                        </summary>
-                        {getVisibleContent(item) ? (
-                          <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-[#25261f] dark:text-gray-200">{getVisibleContent(item)}</pre>
-                        ) : (
-                          <p className="mt-2 text-xs text-[#858779] dark:text-[#8e9ab0]">
-                            {item.legacyContentStatus === 'decrypt-failed'
-                              ? '这条旧版本历史分享只有密文信封，但用历史密码 123123 解密失败。'
-                              : '这条旧版本历史分享没有可展示的明文。'}
-                          </p>
-                        )}
-                      </details>
-                    </td>
-                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
-                      {formatDate(item.created_at)}
-                    </td>
-                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
-                      {item.expires_at ? formatDate(item.expires_at) : '永久'}
-                    </td>
-                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
-                      {item.view_count || 0}
-                    </td>
-                    <td className="px-3 py-3 align-top">
-                      <div className="flex flex-wrap items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => copyText(buildShareUrl(item.slug, ''))}
-                          className="rounded-lg border border-[#caccc0] px-2 py-1 text-xs text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
-                        >
-                          复制链接
-                        </button>
-                        <button
-                          type="button"
-                          disabled={pendingSlug === item.slug}
-                          onClick={() => handleDelete(item.slug)}
-                          className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/40"
-                        >
-                          {pendingSlug === item.slug ? '删除中…' : '删除'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </section>
     </AdminPage>
   )

@@ -30,6 +30,7 @@ import SharePageButton from '../../../../components/SharePageButton'
 import RssButton from '../../../../components/RssButton'
 import GoogleAdSlot from '../../../../components/GoogleAdSlot'
 import LifeTrafficTest from './LifeTrafficTest'
+import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -203,6 +204,7 @@ export default async function ResearchDetailPage({ params }) {
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
   const articleKey = `research:${entry.category}:${entry.slug}`
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
+  const showRebuttalPersonalityTest = entry.category === 'topics' && entry.slug === 'rebuttal-personality-communication-pattern'
 
   // 相关阅读：同 category 其它条目，最近 3 篇
   const relatedPool = listResearchByCategory(entry.category).filter((e) => e.slug !== entry.slug)
@@ -400,6 +402,8 @@ export default async function ResearchDetailPage({ params }) {
           </div>
         ) : null}
       </header>
+
+      {showRebuttalPersonalityTest && !isEncrypted ? <RebuttalPersonalityTest /> : null}
 
       {isEncrypted ? null : (
         <GoogleAdSlot slot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_RESEARCH_SLOT} />

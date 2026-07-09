@@ -7,10 +7,6 @@ import styles from './works-museum.module.css'
 const TYPE_TONES = {
   product: { accent: '#9a3f2d', wash: '#d7b19f', deep: '#4b2119' },
   'ai-engineering': { accent: '#276b84', wash: '#a8c4cb', deep: '#173a48' },
-  'content-system': { accent: '#3f6c50', wash: '#afc2ac', deep: '#253d2d' },
-  'research-page': { accent: '#725292', wash: '#c3b1d1', deep: '#3d2a50' },
-  'tool-experiment': { accent: '#a06a12', wash: '#d8c59c', deep: '#50370d' },
-  'quant-analysis': { accent: '#a83f36', wash: '#d5aaa6', deep: '#52211d' },
 }
 
 const STATUS_LABELS = {
@@ -247,7 +243,7 @@ export default function WorksMuseumClient({ featuredItems, sections, items, oper
           <div className={styles.entranceCopy}>
             <p className={styles.kicker}>Digital Works Exhibition · 2026</p>
             <h1>作品展厅</h1>
-            <p className={styles.entranceLead}>把写作、工程与 AI 做成可以进入、观察和持续运行的系统。</p>
+            <p className={styles.entranceLead}>只陈列长期运行的产品、品牌入口与代表性 AI 工程成果。</p>
             <a className={styles.enterButton} href="#featured-exhibition">
               进入主展 <ArrowIcon />
             </a>

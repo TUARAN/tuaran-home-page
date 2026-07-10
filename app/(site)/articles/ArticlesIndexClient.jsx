@@ -55,7 +55,7 @@ function getChannelForTab(activeTab) {
 const MANUAL_ENTRY_KIND = {
   article: { kind: 'posts', tagLabel: '文章' },
   research: null, // 按 category 细分
-  resource: { kind: 'resources', tagLabel: '资料库' },
+  resource: { kind: 'resources', tagLabel: '资源库' },
 }
 const MANUAL_RESEARCH_TAG = { companies: '公司调研', topics: '事项调研', people: '人物调研' }
 
@@ -125,19 +125,29 @@ const RESOURCE_TYPE_DEFS = [
   { key: 'ai-dev', label: 'AI 与开发' },
   { key: 'ai-music', label: 'AI 音乐' },
   { key: 'humanities-politics', label: '人文与政经' },
-  { key: 'external-archive', label: '外部收藏' },
-  { key: 'workplace', label: '职场资料' },
+  { key: 'rss', label: 'RSS 订阅' },
+  { key: 'twitter', label: '推特资讯' },
+  { key: 'youtube', label: 'YouTube 收藏' },
+  { key: 'workplace', label: '职场资源' },
   { key: 'visual-assets', label: '壁纸下载' },
 ]
 
 const RESOURCE_TYPE_KEYS = RESOURCE_TYPE_DEFS.map((t) => t.key)
+const RESOURCE_GROUP_DEFS = [
+  { key: 'all', label: '全部资源', typeKeys: RESOURCE_TYPE_KEYS.filter((key) => key !== 'all') },
+  { key: 'content', label: '内容资源', allLabel: '全部内容', typeKeys: ['ai-dev', 'ai-music', 'humanities-politics', 'workplace'] },
+  { key: 'external', label: '收藏资源', allLabel: '全部收藏', typeKeys: ['rss', 'twitter', 'youtube'] },
+  { key: 'downloads', label: '下载资源', allLabel: '全部下载', typeKeys: ['visual-assets'] },
+]
+const RESOURCE_GROUP_KEYS = RESOURCE_GROUP_DEFS.map((t) => t.key)
 const RESOURCE_TYPE_ALIASES = {
   classics: 'humanities-politics',
   humanities: 'humanities-politics',
   politics: 'humanities-politics',
   books: 'humanities-politics',
-  'twitter-bookmarks': 'external-archive',
-  'youtube-bookmarks': 'external-archive',
+  'twitter-bookmarks': 'twitter',
+  'youtube-bookmarks': 'youtube',
+  'external-archive': 'all',
   'llm-tutorials': 'ai-dev',
   'ai-tools': 'ai-dev',
   'dev-resources': 'ai-dev',
@@ -151,6 +161,19 @@ const PAGE_SIZE = 24
 function normalizeResourceType(value) {
   if (RESOURCE_TYPE_KEYS.includes(value)) return value
   return RESOURCE_TYPE_ALIASES[value] || 'all'
+}
+
+function normalizeResourceGroup(value) {
+  return RESOURCE_GROUP_KEYS.includes(value) ? value : 'all'
+}
+
+function getResourceTypeDefsForGroup(groupKey) {
+  const group = RESOURCE_GROUP_DEFS.find((item) => item.key === groupKey) || RESOURCE_GROUP_DEFS[0]
+  const label = group.key === 'all' ? '全部资源' : group.allLabel
+  return [
+    { key: 'all', label },
+    ...RESOURCE_TYPE_DEFS.filter((item) => group.typeKeys.includes(item.key)),
+  ]
 }
 
 function isExternalHref(href) {
@@ -176,7 +199,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function normalizeTabFromParams(params) {
     const fromUrl = params?.get('tab')
     if (TAB_KEYS.includes(fromUrl)) return fromUrl
-    if (params?.get('resource_type')) return 'resources'
+    if (params?.get('resource_type') || params?.get('resource_group')) return 'resources'
     if (params?.get('company_type')) return 'companies'
     if (params?.get('topic_type')) return 'topics'
     if (params?.get('people_type')) return 'people'
@@ -201,12 +224,16 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     const fromUrl = searchParams?.get('resource_type')
     return normalizeResourceType(fromUrl)
   })()
+  const initialResourceGroup = (() => {
+    return normalizeResourceGroup(searchParams?.get('resource_group'))
+  })()
   const initialQuery = searchParams?.get('q') || ''
   const [tab, setTab] = useState(initialTab)
   const [companyType, setCompanyType] = useState(initialCompanyType)
   const [topicType, setTopicType] = useState(initialTopicType)
   const [peopleType, setPeopleType] = useState(initialPeopleType)
   const [resourceType, setResourceType] = useState(initialResourceType)
+  const [resourceGroup, setResourceGroup] = useState(initialResourceGroup)
   const [query, setQuery] = useState(initialQuery)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -260,6 +287,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (nextResourceType !== resourceType) {
       setResourceType(nextResourceType)
     }
+    const nextResourceGroup = normalizeResourceGroup(searchParams?.get('resource_group'))
+    if (nextResourceGroup !== resourceGroup) {
+      setResourceGroup(nextResourceGroup)
+    }
     const queryFromUrl = searchParams?.get('q') || ''
     if (queryFromUrl !== query) {
       setQuery(queryFromUrl)
@@ -273,6 +304,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     nextTopicType,
     nextPeopleType,
     nextResourceType,
+    nextResourceGroup,
     nextQuery,
   ) {
     const params = new URLSearchParams()
@@ -281,6 +313,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (nextTab === 'topics' && nextTopicType !== 'all') params.set('topic_type', nextTopicType)
     if (nextTab === 'people' && nextPeopleType !== 'all') params.set('people_type', nextPeopleType)
     if (nextTab === 'resources' && nextResourceType !== 'all') params.set('resource_type', nextResourceType)
+    if (nextTab === 'resources' && nextResourceGroup !== 'all') params.set('resource_group', nextResourceGroup)
     const normalizedQuery = String(nextQuery || '').trim()
     if (normalizedQuery) params.set('q', normalizedQuery)
     const queryString = params.toString()
@@ -293,11 +326,15 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     const nextTopicType = next === 'topics' ? topicType : 'all'
     const nextPeopleType = next === 'people' ? peopleType : 'all'
     const nextResourceType = next === 'resources' ? resourceType : 'all'
+    const nextResourceGroup = next === 'resources' ? resourceGroup : 'all'
     if (next !== 'companies') setCompanyType('all')
     if (next !== 'topics') setTopicType('all')
     if (next !== 'people') setPeopleType('all')
-    if (next !== 'resources') setResourceType('all')
-    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextPeopleType, nextResourceType, query)
+    if (next !== 'resources') {
+      setResourceType('all')
+      setResourceGroup('all')
+    }
+    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextPeopleType, nextResourceType, nextResourceGroup, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -315,7 +352,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectCompanyType(next) {
     setTab('companies')
     setCompanyType(next)
-    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', query)
+    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -324,7 +361,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectTopicType(next) {
     setTab('topics')
     setTopicType(next)
-    const url = buildArticlesUrl('topics', 'all', next, 'all', 'all', query)
+    const url = buildArticlesUrl('topics', 'all', next, 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -333,7 +370,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectPeopleType(next) {
     setTab('people')
     setPeopleType(next)
-    const url = buildArticlesUrl('people', 'all', 'all', next, 'all', query)
+    const url = buildArticlesUrl('people', 'all', 'all', next, 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -342,7 +379,19 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectResourceType(next) {
     setTab('resources')
     setResourceType(next)
-    const url = buildArticlesUrl('resources', 'all', 'all', 'all', next, query)
+    const url = buildArticlesUrl('resources', 'all', 'all', 'all', next, resourceGroup, query)
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
+  }
+
+  function selectResourceGroup(next) {
+    const group = RESOURCE_GROUP_DEFS.find((item) => item.key === next) || RESOURCE_GROUP_DEFS[0]
+    const nextType = group.typeKeys.includes(resourceType) ? resourceType : 'all'
+    setTab('resources')
+    setResourceGroup(next)
+    setResourceType(nextType)
+    const url = buildArticlesUrl('resources', 'all', 'all', 'all', nextType, next, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -350,7 +399,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function submitSearch(event) {
     event.preventDefault()
-    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, resourceType, query)
+    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, resourceType, resourceGroup, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -358,7 +407,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function clearSearch() {
     setQuery('')
-    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, resourceType, '')
+    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, resourceType, resourceGroup, '')
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -402,12 +451,14 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       }
     }
     if (activeChannel === 'resources') {
+      const group = RESOURCE_GROUP_DEFS.find((item) => item.key === resourceGroup)
+      if (group && group.key !== 'all') parts.push(group.label)
       const res = RESOURCE_TYPE_DEFS.find((t) => t.key === resourceType)
       if (res && res.key !== 'all') parts.push(res.label)
-      else parts.push('全部资源')
+      else parts.push(group && group.key !== 'all' ? group.allLabel : '全部资源')
     }
     return parts.length ? parts.join(' / ') : null
-  }, [tab, activeChannel, companyType, topicType, peopleType, resourceType])
+  }, [tab, activeChannel, companyType, topicType, peopleType, resourceType, resourceGroup])
 
   const visible = useMemo(() => {
     if (tab === 'picks' && !query.trim()) return []
@@ -430,6 +481,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (tab === 'people' && peopleType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.peopleType === peopleType)
     }
+    if (tab === 'resources' && resourceGroup !== 'all') {
+      const group = RESOURCE_GROUP_DEFS.find((item) => item.key === resourceGroup)
+      typeFiltered = typeFiltered.filter((item) => group?.typeKeys.includes(item.resourceType))
+    }
     if (tab === 'resources' && resourceType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.resourceType === resourceType)
     }
@@ -443,7 +498,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         .toLowerCase()
       return combined.includes(normalizedQuery)
     })
-  }, [items, tab, companyType, topicType, peopleType, resourceType, query])
+  }, [items, tab, companyType, topicType, peopleType, resourceType, resourceGroup, query])
 
   const paginatedItems = useMemo(
     () => visible.slice(0, visibleCount),
@@ -459,7 +514,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
-  }, [tab, companyType, topicType, peopleType, resourceType, query])
+  }, [tab, companyType, topicType, peopleType, resourceType, resourceGroup, query])
 
   useEffect(() => {
     const keys = (visiblePvKeySignature ? visiblePvKeySignature.split(',') : [])
@@ -542,6 +597,22 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     }
     return base
   }, [items])
+
+  const resourceGroupCounts = useMemo(() => {
+    const resourceItems = items.filter((item) => item.kind === 'resources')
+    const base = Object.fromEntries(RESOURCE_GROUP_KEYS.map((key) => [key, 0]))
+    base.all = resourceItems.length
+    for (const group of RESOURCE_GROUP_DEFS) {
+      if (group.key === 'all') continue
+      base[group.key] = resourceItems.filter((item) => group.typeKeys.includes(item.resourceType)).length
+    }
+    return base
+  }, [items])
+
+  const visibleResourceTypeDefs = useMemo(
+    () => getResourceTypeDefsForGroup(resourceGroup),
+    [resourceGroup],
+  )
 
   const readingHighlights = useMemo(() => {
     const publicItems = items.filter((item) => !item.encrypted)
@@ -659,17 +730,30 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         ) : null}
 
         {activeChannel === 'resources' ? (
-          <FilterRow label="资源分类" ariaLabel="资源分类" orientation={orientation}>
-            {RESOURCE_TYPE_DEFS.map((t) => (
+          <>
+            <FilterRow label="资源类型" ariaLabel="资源类型" orientation={orientation}>
+              {RESOURCE_GROUP_DEFS.map((group) => (
+                <FilterChip
+                  key={group.key}
+                  label={group.label}
+                  count={resourceGroupCounts[group.key] ?? 0}
+                  active={resourceGroup === group.key}
+                  onClick={() => selectResourceGroup(group.key)}
+                />
+              ))}
+            </FilterRow>
+            <FilterRow label="资源分类" ariaLabel="资源分类" orientation={orientation}>
+              {visibleResourceTypeDefs.map((t) => (
               <FilterChip
                 key={t.key}
                 label={t.label}
-                count={resourceTypeCounts[t.key] ?? 0}
+                count={t.key === 'all' ? resourceGroupCounts[resourceGroup] ?? 0 : resourceTypeCounts[t.key] ?? 0}
                 active={resourceType === t.key}
                 onClick={() => selectResourceType(t.key)}
               />
             ))}
-          </FilterRow>
+            </FilterRow>
+          </>
         ) : null}
 
         {orientation !== 'stack' && breadcrumb ? <FilterBreadcrumb path={breadcrumb} /> : null}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useTheme } from 'next-themes'
+import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 
 import { useLocale } from './LocaleProvider'
@@ -23,6 +24,10 @@ const LEGACY_DEFAULT_BG_HEXES = new Set(['#f1f2ee'])
 const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const READING_PALETTE_KEY = 'reading-palette'
+const HOME_PANEL_OPACITY_KEY = 'home:panel-opacity'
+const DEFAULT_HOME_PANEL_OPACITY = 70
+const MIN_HOME_PANEL_OPACITY = 0
+const MAX_HOME_PANEL_OPACITY = 100
 const UI_MODES = [
   { id: 'polished', label: '潮流', labelEn: 'Modern', desc: '横幅视觉、重点入口、随机推荐', descEn: 'Hero visual, key entries, random picks' },
 ]
@@ -31,14 +36,22 @@ function findPresetByHex(hex) {
   return BG_PRESETS.find((p) => p.hex.toLowerCase() === (hex || '').toLowerCase())
 }
 
+function clampHomePanelOpacity(value) {
+  const next = Number(value)
+  if (!Number.isFinite(next)) return DEFAULT_HOME_PANEL_OPACITY
+  return Math.min(MAX_HOME_PANEL_OPACITY, Math.max(MIN_HOME_PANEL_OPACITY, Math.round(next)))
+}
+
 export default function SettingsButton() {
   const { theme, setTheme } = useTheme()
   const { locale, setLocale } = useLocale()
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [bgHex, setBgHex] = useState(DEFAULT_BG_HEX)
   const [uiMode, setUiMode] = useState('polished')
   const [readingPalette, setReadingPalette] = useState('eink')
+  const [homePanelOpacity, setHomePanelOpacity] = useState(DEFAULT_HOME_PANEL_OPACITY)
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
 
@@ -62,8 +75,23 @@ export default function SettingsButton() {
       // 默认开启墨水屏：仅当用户显式选择 'default'（标准）时才关闭
       const rp = localStorage.getItem(READING_PALETTE_KEY)
       setReadingPalette(rp === 'default' ? 'default' : 'eink')
+      const homeOpacity = localStorage.getItem(HOME_PANEL_OPACITY_KEY)
+      if (homeOpacity !== null) setHomePanelOpacity(clampHomePanelOpacity(homeOpacity))
     } catch (e) {}
   }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    document.documentElement.style.setProperty('--home-panel-opacity', `${homePanelOpacity}%`)
+    document.documentElement.style.setProperty('--home-panel-backdrop-blur', `${Math.round(homePanelOpacity * 0.14)}px`)
+    document.documentElement.style.setProperty(
+      '--home-backdrop-overlay-opacity',
+      String(Math.min(1, homePanelOpacity / DEFAULT_HOME_PANEL_OPACITY)),
+    )
+    try {
+      localStorage.setItem(HOME_PANEL_OPACITY_KEY, String(homePanelOpacity))
+    } catch (e) {}
+  }, [mounted, homePanelOpacity])
 
   // 阅读底色（reading-bg）的预设都是浅色，仅在亮色主题下生效。
   // 暗色主题始终用自身的深色 --page-bg（来自 .dark token），避免切主题后浅底
@@ -110,6 +138,7 @@ export default function SettingsButton() {
 
   const isDark = theme === 'dark'
   const activePreset = findPresetByHex(bgHex)?.id || 'custom'
+  const isHome = pathname === '/'
 
   // 仅更新状态与持久化；实际写入 --page-bg 交给上面的主题同步 effect，
   // 这样在暗色主题下选底色不会污染暗色页面，切回亮色才套用。
@@ -286,6 +315,41 @@ export default function SettingsButton() {
               </button>
             </div>
           </div>
+
+          {isHome ? (
+            <div className="mb-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="site-settings-label mb-0">{pick(locale, '首页背景', 'Homepage background')}</div>
+                <output className="site-settings-opacity-value">{homePanelOpacity}%</output>
+              </div>
+              <div className="site-settings-opacity-control rounded-lg border px-3 py-2.5">
+                <div className="mb-2 flex items-center justify-between gap-3 text-[11px] text-[#aaa69a]">
+                  <span>{pick(locale, '组件透明度', 'Panel opacity')}</span>
+                  <button
+                    type="button"
+                    onClick={() => setHomePanelOpacity(DEFAULT_HOME_PANEL_OPACITY)}
+                    className="underline underline-offset-2 transition hover:text-[#f4f3ee]"
+                  >
+                    {pick(locale, '恢复默认', 'Reset')}
+                  </button>
+                </div>
+                <input
+                  type="range"
+                  min={MIN_HOME_PANEL_OPACITY}
+                  max={MAX_HOME_PANEL_OPACITY}
+                  step="1"
+                  value={homePanelOpacity}
+                  onChange={(event) => setHomePanelOpacity(clampHomePanelOpacity(event.target.value))}
+                  aria-label={pick(locale, '首页组件透明度', 'Homepage panel opacity')}
+                  aria-valuetext={`${homePanelOpacity}%`}
+                  className="site-settings-opacity-slider"
+                />
+                <p className="site-settings-option-desc mt-1 text-[10px]">
+                  {pick(locale, '数值越低，组件与背景遮罩越淡，背后城市越清晰。', 'Lower values reduce panel and backdrop overlays.')}
+                </p>
+              </div>
+            </div>
+          ) : null}
 
           {/* 阅读底色：仅在浅色且非墨水屏时可用，其它情况不生效，干脆不展示 */}
           {!isDark && readingPalette !== 'eink' ? (

@@ -402,19 +402,26 @@
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background-image:
-      linear-gradient(180deg, rgba(250, 248, 243, 0.52), rgba(247, 244, 237, 0.66) 56%, rgba(243, 240, 233, 0.78)),
-      image-set(
-        url("/images/home/guangzhou-skyline-banner.avif") type("image/avif"),
-        url("/images/home/guangzhou-skyline-banner.webp") type("image/webp"),
-        url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
-      );
+    background-image: image-set(
+      url("/images/home/guangzhou-skyline-banner.avif") type("image/avif"),
+      url("/images/home/guangzhou-skyline-banner.webp") type("image/webp"),
+      url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+    );
     background-position: center top;
     background-size: cover;
     background-repeat: no-repeat;
     filter: saturate(0.64) contrast(0.92) brightness(1.04);
     transform: translateZ(0);
     will-change: transform;
+  }
+
+  .home-backdrop::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(250, 248, 243, 0.52), rgba(247, 244, 237, 0.66) 56%, rgba(243, 240, 233, 0.78));
+    opacity: var(--home-backdrop-overlay-opacity, 1);
   }
 
   .home-backdrop::after {
@@ -425,17 +432,20 @@
     background:
       radial-gradient(circle at 20% 7%, rgba(255, 255, 255, 0.48), transparent 36%),
       linear-gradient(90deg, rgba(250, 247, 240, 0.22), rgba(255, 255, 255, 0.04) 46%, rgba(242, 237, 227, 0.28));
+    opacity: var(--home-backdrop-overlay-opacity, 1);
   }
 
   .dark .home-backdrop {
     filter: none;
-    background-image:
-      linear-gradient(180deg, rgba(11, 16, 22, 0.1), rgba(11, 16, 22, 0.48) 58%, rgba(11, 16, 22, 0.78)),
-      image-set(
-        url("/images/home/guangzhou-skyline-banner.avif") type("image/avif"),
-        url("/images/home/guangzhou-skyline-banner.webp") type("image/webp"),
-        url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
-      );
+    background-image: image-set(
+      url("/images/home/guangzhou-skyline-banner.avif") type("image/avif"),
+      url("/images/home/guangzhou-skyline-banner.webp") type("image/webp"),
+      url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+    );
+  }
+
+  .dark .home-backdrop::before {
+    background: linear-gradient(180deg, rgba(11, 16, 22, 0.1), rgba(11, 16, 22, 0.48) 58%, rgba(11, 16, 22, 0.78));
   }
 
   .dark .home-backdrop::after {
@@ -650,10 +660,10 @@
   .home-profile {
     @apply rounded-[22px] border p-5 md:p-6;
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
+    background: color-mix(in srgb, var(--site-panel-strong) var(--home-panel-opacity, 70%), transparent);
     box-shadow: 0 14px 38px color-mix(in srgb, var(--site-shadow) 48%, transparent);
-    backdrop-filter: blur(10px) saturate(0.92);
-    -webkit-backdrop-filter: blur(10px) saturate(0.92);
+    backdrop-filter: blur(var(--home-panel-backdrop-blur, 10px)) saturate(0.92);
+    -webkit-backdrop-filter: blur(var(--home-panel-backdrop-blur, 10px)) saturate(0.92);
     transform: translateZ(0);
   }
 
@@ -759,36 +769,73 @@
   }
 
   .home-entry-list {
-    @apply space-y-1.5;
+    @apply space-y-2;
   }
 
-  .home-entry-list .home-path-card {
-    @apply grid min-h-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 rounded-lg px-3.5 py-2.5;
+  .home-entry-link {
+    @apply grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border px-3 py-2 no-underline transition;
+    border-color: var(--site-line);
+    background: color-mix(in srgb, var(--site-panel-strong) 72%, transparent);
+    color: var(--site-ink);
   }
 
-  .home-entry-list .home-path-label {
-    @apply mb-1 text-[9.5px] leading-4 tracking-[0.12em];
-    grid-column: 1;
+  .home-entry-link:hover {
+    @apply no-underline;
+    border-color: var(--site-line-strong);
+    background: color-mix(in srgb, var(--site-panel-strong) 94%, transparent);
   }
 
-  .home-entry-list .home-path-card h3 {
-    @apply mb-0.5 text-[14.5px] leading-5;
-    grid-column: 1;
+  .home-entry-icon {
+    @apply inline-flex h-7 w-7 items-center justify-center rounded-md border;
   }
 
-  .home-entry-list .home-path-card p {
-    @apply mb-0 overflow-hidden text-[12px] leading-[1.45] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1];
-    grid-column: 1;
+  .home-entry-icon-knowledge {
+    border-color: #c4d5c3;
+    background: #edf5ec;
+    color: #4d8060;
   }
 
-  .home-entry-list .home-path-meta {
-    @apply justify-self-end text-[0px] leading-none tracking-normal;
-    grid-column: 2;
-    grid-row: 1 / span 3;
+  .home-entry-icon-works {
+    border-color: #c8bfdc;
+    background: #f0ecf8;
+    color: #72589b;
   }
 
-  .home-entry-list .home-path-meta svg {
-    @apply h-4 w-4;
+  .home-entry-icon-collaborate {
+    border-color: #b8cde0;
+    background: #eaf3fb;
+    color: #39759f;
+  }
+
+  .home-entry-copy {
+    @apply grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2;
+  }
+
+  .home-entry-copy strong {
+    @apply whitespace-nowrap text-[14px] leading-5;
+  }
+
+  .home-entry-copy small {
+    @apply min-w-0 truncate text-[12px] leading-5;
+    color: var(--site-muted);
+  }
+
+  .dark .home-entry-icon-knowledge {
+    border-color: #3d5b43;
+    background: #182b1c;
+    color: #a9d4af;
+  }
+
+  .dark .home-entry-icon-works {
+    border-color: #4d3f69;
+    background: #261e38;
+    color: #c7b3e8;
+  }
+
+  .dark .home-entry-icon-collaborate {
+    border-color: #31536b;
+    background: #152735;
+    color: #8fc3e4;
   }
 
   .home-entry-panel {
@@ -825,10 +872,10 @@
   .home-section {
     @apply rounded-[22px] border p-5 md:p-8;
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
+    background: color-mix(in srgb, var(--site-panel-strong) var(--home-panel-opacity, 70%), transparent);
     box-shadow: 0 14px 38px color-mix(in srgb, var(--site-shadow) 48%, transparent);
-    backdrop-filter: blur(10px) saturate(0.92);
-    -webkit-backdrop-filter: blur(10px) saturate(0.92);
+    backdrop-filter: blur(var(--home-panel-backdrop-blur, 10px)) saturate(0.92);
+    -webkit-backdrop-filter: blur(var(--home-panel-backdrop-blur, 10px)) saturate(0.92);
     transform: translateZ(0);
   }
 
@@ -1291,10 +1338,10 @@
   .home-contact-panel {
     @apply rounded-[22px] border p-5 md:p-6;
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
+    background: color-mix(in srgb, var(--site-panel-strong) var(--home-panel-opacity, 70%), transparent);
     box-shadow: 0 14px 38px color-mix(in srgb, var(--site-shadow) 48%, transparent);
-    backdrop-filter: blur(10px) saturate(0.92);
-    -webkit-backdrop-filter: blur(10px) saturate(0.92);
+    backdrop-filter: blur(var(--home-panel-backdrop-blur, 10px)) saturate(0.92);
+    -webkit-backdrop-filter: blur(var(--home-panel-backdrop-blur, 10px)) saturate(0.92);
     transform: translateZ(0);
   }
 
@@ -1682,24 +1729,20 @@
     }
 
     .home-backdrop {
-      background-image:
-        linear-gradient(180deg, rgba(250, 248, 243, 0.58), rgba(247, 244, 237, 0.7) 56%, rgba(243, 240, 233, 0.82)),
-        image-set(
-          url("/images/home/guangzhou-skyline-banner-sm.avif") type("image/avif"),
-          url("/images/home/guangzhou-skyline-banner-sm.webp") type("image/webp"),
-          url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
-        );
+      background-image: image-set(
+        url("/images/home/guangzhou-skyline-banner-sm.avif") type("image/avif"),
+        url("/images/home/guangzhou-skyline-banner-sm.webp") type("image/webp"),
+        url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+      );
       background-position: center top;
     }
 
     .dark .home-backdrop {
-      background-image:
-        linear-gradient(180deg, rgba(11, 16, 22, 0.1), rgba(11, 16, 22, 0.52) 58%, rgba(11, 16, 22, 0.8)),
-        image-set(
-          url("/images/home/guangzhou-skyline-banner-sm.avif") type("image/avif"),
-          url("/images/home/guangzhou-skyline-banner-sm.webp") type("image/webp"),
-          url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
-        );
+      background-image: image-set(
+        url("/images/home/guangzhou-skyline-banner-sm.avif") type("image/avif"),
+        url("/images/home/guangzhou-skyline-banner-sm.webp") type("image/webp"),
+        url("/images/home/guangzhou-skyline-banner.jpg") type("image/jpeg")
+      );
     }
 
     .home-hero {
@@ -2191,6 +2234,46 @@
 
   .site-settings-option-active .site-settings-option-desc {
     color: #cfccc2;
+  }
+
+  .site-settings-opacity-value {
+    color: #d8cfa9;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+  }
+
+  .site-settings-opacity-control {
+    border-color: #292720;
+    background-color: #24231f;
+  }
+
+  .site-settings-opacity-slider {
+    width: 100%;
+    height: 0.375rem;
+    cursor: pointer;
+    appearance: none;
+    border-radius: 999px;
+    accent-color: #d8cfa9;
+    background: linear-gradient(90deg, #d8cfa9, #4f472f);
+  }
+
+  .site-settings-opacity-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid #302c1f;
+    border-radius: 999px;
+    background: #d8cfa9;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .site-settings-opacity-slider::-moz-range-thumb {
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid #302c1f;
+    border-radius: 999px;
+    background: #d8cfa9;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
   }
 
   .site-settings-swatch {

@@ -43,7 +43,7 @@ const TAB_KEYS = Object.keys(PAGE_COPY)
 function normalizeTabFromParams(params) {
   const fromUrl = params?.get('tab')
   if (TAB_KEYS.includes(fromUrl)) return fromUrl
-  if (params?.get('resource_type')) return 'resources'
+  if (params?.get('resource_type') || params?.get('resource_group')) return 'resources'
   if (params?.get('company_type')) return 'companies'
   if (params?.get('topic_type')) return 'topics'
   if (params?.get('people_type')) return 'people'

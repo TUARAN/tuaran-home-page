@@ -105,11 +105,11 @@ export default function RootLayout({ children }) {
       <body suppressHydrationWarning>
         <GoogleAdsenseScript />
         {children}
-        {/* 独立视觉页恒为深色：此脚本在 next-themes 初始化之后执行，强制目标路由首屏走深色，避免闪烁。
+        {/* 黑色互助圈页面恒为深色：此脚本在 next-themes 初始化之后执行，强制目标路由首屏走深色，避免闪烁。
             客户端导航与水合由 ForceDarkRoute 守住。 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname;if(p==='/'||p==='/x-mutual-aid-circle'){var r=document.documentElement;r.classList.add('dark');if(p==='/x-mutual-aid-circle')r.style.setProperty('--page-bg','#000000');else r.style.removeProperty('--page-bg');}}catch(e){}})();`,
+            __html: `(function(){try{if(location.pathname==='/x-mutual-aid-circle'){var r=document.documentElement;r.classList.add('dark');r.style.setProperty('--page-bg','#000000');}}catch(e){}})();`,
           }}
         />
       </body>

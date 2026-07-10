@@ -8,24 +8,29 @@ import Link from 'next/link'
  *   1. 竞猜世界杯赢燃币  2. 资源库  3. 博主联盟（推广 / 兼职） 4. 微信社群
  */
 const TICKER_ITEMS = [
-  { icon: '📚', label: '从知识库开始', cta: '看内容', href: '/articles' },
-  { icon: '🧰', label: '直接使用站内工具', cta: '用工具', href: '/tools' },
+  { icon: '⚽', label: '竞猜世界杯 · 赢燃币', cta: '去竞猜', href: '/agent-world-cup' },
+  { icon: '📚', label: '海量资源任你取', cta: '看资源', href: '/articles?tab=resources' },
+  { icon: '💬', label: '加站长微信 · 交友进社群', cta: '加微信', href: '/community' },
+  {
+    icon: '🤝',
+    label: '推广 AI 产品 / 兼职赚钱',
+    cta: '博主联盟',
+    href: 'https://blogger-alliance.cn/',
+    external: true,
+  },
 ]
 
 function TickerItem({ item, focusable = true }) {
   const inner = (
     <>
       <span className="text-sm md:text-base leading-none">{item.icon}</span>
-      <span className="text-[13px] md:text-[14px] font-semibold tracking-wide leading-none" style={{ color: '#e8eaf4' }}>
+      <span className="hot-ticker-label text-[13px] md:text-[14px] font-semibold tracking-wide leading-none">
         {item.label}
       </span>
-      <span
-        className="inline-flex items-center gap-0.5 rounded-full px-2 py-px text-[10px] font-bold leading-none"
-        style={{ color: '#d4a853', background: 'rgba(212,168,83,0.12)', border: '1px solid rgba(212,168,83,0.3)' }}
-      >
+      <span className="hot-ticker-cta inline-flex items-center gap-0.5 rounded-full border px-2 py-px text-[10px] font-bold leading-none">
         {item.cta}&nbsp;&rarr;
       </span>
-      <span className="ml-3 inline-block w-1 h-1 rounded-full shrink-0" style={{ background: 'rgba(212,168,83,0.35)' }} />
+      <span className="hot-ticker-divider ml-3 inline-block h-1 w-1 shrink-0 rounded-full" />
     </>
   )
   const cls = 'hot-ticker-item group/item inline-flex shrink-0 items-center gap-1.5 no-underline hover:no-underline'
@@ -49,27 +54,13 @@ export default function HotTickerBar() {
         position: 'sticky',
         top: 45,
         zIndex: 39,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
       }}
     >
-      <div
-        className="block overflow-hidden"
-        style={{
-          background: 'linear-gradient(90deg, #0a0e1a 0%, #111827 40%, #0d1322 70%, #080c16 100%)',
-          borderTop: '1px solid rgba(212,168,83,0.3)',
-          borderBottom: '1px solid rgba(212,168,83,0.25)',
-        }}
-      >
+      <div className="hot-ticker-surface block overflow-hidden border-y">
         <div className="relative flex h-[36px] max-w-full items-center overflow-hidden md:h-[40px]">
           {/* 两侧渐隐 */}
-          <div
-            className="pointer-events-none absolute left-0 top-0 z-10 h-full w-[60px]"
-            style={{ background: 'linear-gradient(90deg, #0a0e1a 0%, transparent 100%)' }}
-          />
-          <div
-            className="pointer-events-none absolute right-0 top-0 z-10 h-full w-[60px]"
-            style={{ background: 'linear-gradient(270deg, #0a0e1a 0%, transparent 100%)' }}
-          />
+          <div className="hot-ticker-fade hot-ticker-fade-left pointer-events-none absolute left-0 top-0 z-10 h-full w-[60px]" />
+          <div className="hot-ticker-fade hot-ticker-fade-right pointer-events-none absolute right-0 top-0 z-10 h-full w-[60px]" />
           {/* 复制多组保证宽屏滚动时不露空；首帧从完整内容开始。 */}
           <div className="hot-ticker-track whitespace-nowrap">
             {groups.map((_, groupIndex) => (

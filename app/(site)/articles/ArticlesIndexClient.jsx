@@ -127,7 +127,7 @@ const RESOURCE_TYPE_DEFS = [
   { key: 'humanities-politics', label: '人文与政经' },
   { key: 'external-archive', label: '外部收藏' },
   { key: 'workplace', label: '职场资料' },
-  { key: 'visual-assets', label: '视觉资源' },
+  { key: 'visual-assets', label: '壁纸下载' },
 ]
 
 const RESOURCE_TYPE_KEYS = RESOURCE_TYPE_DEFS.map((t) => t.key)

@@ -403,7 +403,7 @@
     z-index: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(180deg, rgba(250, 248, 243, 0.72), rgba(247, 244, 237, 0.84) 56%, rgba(243, 240, 233, 0.94)),
+      linear-gradient(180deg, rgba(250, 248, 243, 0.52), rgba(247, 244, 237, 0.66) 56%, rgba(243, 240, 233, 0.78)),
       image-set(
         url("/images/home/guangzhou-skyline-banner.avif") type("image/avif"),
         url("/images/home/guangzhou-skyline-banner.webp") type("image/webp"),
@@ -412,7 +412,7 @@
     background-position: center top;
     background-size: cover;
     background-repeat: no-repeat;
-    filter: saturate(0.52) contrast(0.86) brightness(1.08);
+    filter: saturate(0.64) contrast(0.92) brightness(1.04);
     transform: translateZ(0);
     will-change: transform;
   }
@@ -423,8 +423,8 @@
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(circle at 20% 7%, rgba(255, 255, 255, 0.72), transparent 36%),
-      linear-gradient(90deg, rgba(250, 247, 240, 0.38), rgba(255, 255, 255, 0.08) 46%, rgba(242, 237, 227, 0.44));
+      radial-gradient(circle at 20% 7%, rgba(255, 255, 255, 0.48), transparent 36%),
+      linear-gradient(90deg, rgba(250, 247, 240, 0.22), rgba(255, 255, 255, 0.04) 46%, rgba(242, 237, 227, 0.28));
   }
 
   .dark .home-backdrop {
@@ -650,7 +650,7 @@
   .home-profile {
     @apply rounded-[22px] border p-5 md:p-6;
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 88%, transparent);
+    background: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
     box-shadow: 0 14px 38px color-mix(in srgb, var(--site-shadow) 48%, transparent);
     backdrop-filter: blur(10px) saturate(0.92);
     -webkit-backdrop-filter: blur(10px) saturate(0.92);
@@ -825,7 +825,7 @@
   .home-section {
     @apply rounded-[22px] border p-5 md:p-8;
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 88%, transparent);
+    background: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
     box-shadow: 0 14px 38px color-mix(in srgb, var(--site-shadow) 48%, transparent);
     backdrop-filter: blur(10px) saturate(0.92);
     -webkit-backdrop-filter: blur(10px) saturate(0.92);
@@ -1045,7 +1045,7 @@
   }
 
   .home-product-link {
-    @apply flex min-h-[58px] items-center justify-between gap-3 rounded-lg border px-3 py-2 no-underline transition;
+    @apply grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border px-3 py-2 no-underline transition;
     border-color: var(--site-line);
     background: color-mix(in srgb, var(--site-panel-strong) 72%, transparent);
     color: var(--site-ink);
@@ -1057,12 +1057,16 @@
     background: color-mix(in srgb, var(--site-panel-strong) 94%, transparent);
   }
 
+  .home-product-link > span {
+    display: contents;
+  }
+
   .home-product-link strong {
-    @apply block text-[14px] leading-5;
+    @apply whitespace-nowrap text-[14px] leading-5;
   }
 
   .home-product-link small {
-    @apply mt-0.5 block text-[12px] leading-[1.3];
+    @apply min-w-0 truncate text-[12px] leading-5;
     color: var(--site-muted);
   }
 
@@ -1243,7 +1247,7 @@
   .home-contact-panel {
     @apply rounded-[22px] border p-5 md:p-6;
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 88%, transparent);
+    background: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
     box-shadow: 0 14px 38px color-mix(in srgb, var(--site-shadow) 48%, transparent);
     backdrop-filter: blur(10px) saturate(0.92);
     -webkit-backdrop-filter: blur(10px) saturate(0.92);
@@ -1635,7 +1639,7 @@
 
     .home-backdrop {
       background-image:
-        linear-gradient(180deg, rgba(250, 248, 243, 0.76), rgba(247, 244, 237, 0.87) 56%, rgba(243, 240, 233, 0.95)),
+        linear-gradient(180deg, rgba(250, 248, 243, 0.58), rgba(247, 244, 237, 0.7) 56%, rgba(243, 240, 233, 0.82)),
         image-set(
           url("/images/home/guangzhou-skyline-banner-sm.avif") type("image/avif"),
           url("/images/home/guangzhou-skyline-banner-sm.webp") type("image/webp"),

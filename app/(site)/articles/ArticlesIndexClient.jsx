@@ -123,9 +123,11 @@ const PEOPLE_TYPE_KEYS = PEOPLE_TYPE_DEFS.map((t) => t.key)
 const RESOURCE_TYPE_DEFS = [
   { key: 'all', label: '全部资源' },
   { key: 'ai-dev', label: 'AI 与开发' },
+  { key: 'ai-music', label: 'AI 音乐' },
   { key: 'humanities-politics', label: '人文与政经' },
   { key: 'external-archive', label: '外部收藏' },
   { key: 'workplace', label: '职场资料' },
+  { key: 'visual-assets', label: '视觉资源' },
 ]
 
 const RESOURCE_TYPE_KEYS = RESOURCE_TYPE_DEFS.map((t) => t.key)
@@ -140,6 +142,8 @@ const RESOURCE_TYPE_ALIASES = {
   'ai-tools': 'ai-dev',
   'dev-resources': 'ai-dev',
   'codex-learning': 'ai-dev',
+  music: 'ai-music',
+  wallpapers: 'visual-assets',
 }
 
 const PAGE_SIZE = 24

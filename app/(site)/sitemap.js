@@ -61,6 +61,7 @@ export default function sitemap() {
     '/bookmarks/dev-resources',
     '/bookmarks/ai-tools',
     '/resources/rss',
+    '/resources/ai-music',
     '/resources/codex-learning-resource-map-yichen',
     '/resources/shen-zhi-ding-nei',
     '/resources/wallpapers',

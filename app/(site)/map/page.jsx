@@ -13,7 +13,7 @@ import {
 import { getTagToneClass } from '../../../lib/tagTone'
 
 export const metadata = {
-  title: '全站地图 · 2aran.com',
+  title: '全站地图',
   description: '按层级和频道组织的全站入口：主路径、补充索引、权限入口与完整页面结构。',
 }
 

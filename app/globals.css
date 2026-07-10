@@ -832,6 +832,10 @@
     transform: translateZ(0);
   }
 
+  .home-featured-reading {
+    @apply pt-4 md:pt-5;
+  }
+
   .home-section-heading {
     @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
   }
@@ -1057,8 +1061,30 @@
     background: color-mix(in srgb, var(--site-panel-strong) 94%, transparent);
   }
 
-  .home-product-link > span {
-    display: contents;
+  .home-product-icon {
+    @apply inline-flex h-7 w-7 items-center justify-center rounded-md border;
+  }
+
+  .home-product-icon-blogger-alliance {
+    border-color: #b8cde0;
+    background: #eaf3fb;
+    color: #39759f;
+  }
+
+  .home-product-icon-frontendnext {
+    border-color: #c8bfdc;
+    background: #f0ecf8;
+    color: #72589b;
+  }
+
+  .home-product-icon-syncblog {
+    border-color: #c4d5c3;
+    background: #edf5ec;
+    color: #4d8060;
+  }
+
+  .home-product-copy {
+    @apply grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2;
   }
 
   .home-product-link strong {
@@ -1068,6 +1094,24 @@
   .home-product-link small {
     @apply min-w-0 truncate text-[12px] leading-5;
     color: var(--site-muted);
+  }
+
+  .dark .home-product-icon-blogger-alliance {
+    border-color: #31536b;
+    background: #152735;
+    color: #8fc3e4;
+  }
+
+  .dark .home-product-icon-frontendnext {
+    border-color: #4d3f69;
+    background: #261e38;
+    color: #c7b3e8;
+  }
+
+  .dark .home-product-icon-syncblog {
+    border-color: #3d5b43;
+    background: #182b1c;
+    color: #a9d4af;
   }
 
   .home-builder-panel {
@@ -1795,8 +1839,8 @@
 
   .site-brand-mark {
     display: inline-flex;
-    height: 2rem;
-    width: 2rem;
+    height: 2.25rem;
+    width: 2.25rem;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
@@ -1805,7 +1849,7 @@
     background-color: color-mix(in srgb, var(--site-accent) 12%, var(--site-panel-strong));
     color: var(--site-accent-strong);
     font-family: ui-serif, Georgia, "Songti SC", serif;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     line-height: 1;
   }

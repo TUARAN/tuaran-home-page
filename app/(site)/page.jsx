@@ -82,24 +82,30 @@ const START_PATHS = [
 const PRODUCT_LINKS = [
   {
     href: 'https://blogger-alliance.cn/',
+    id: 'blogger-alliance',
     label: '博主联盟',
     labelEn: 'Blogger Alliance',
     desc: 'AI 产品方与技术博主的连接网络',
     descEn: 'A network linking AI products and tech bloggers',
+    icon: IconUsers,
   },
   {
     href: 'https://frontendnext.com/',
+    id: 'frontendnext',
     label: '前端周看',
     labelEn: 'Frontend Weekly',
     desc: '前端、AI Agent 与大模型工程情报',
     descEn: 'Intel on frontend, AI Agents and LLM engineering',
+    icon: IconCode,
   },
   {
     href: 'https://syncblog.cn/',
+    id: 'syncblog',
     label: 'AI分发大师',
     labelEn: 'SyncBlog',
     desc: '一次创作，多平台自动同步分发',
     descEn: 'Write once, auto-sync across platforms',
+    icon: IconFileText,
   },
 ]
 
@@ -326,7 +332,7 @@ function HomeFeaturedLinkItem({ item }) {
 function FeaturedReading({ items }) {
   if (!items.length) return null
   return (
-    <section className="home-section">
+    <section className="home-featured-reading home-section">
       <div className="home-section-heading">
         <div>
           <p className="home-kicker">Start here</p>
@@ -481,9 +487,13 @@ function StartPathCard({ item }) {
 }
 
 function ProductLink({ item }) {
+  const Icon = item.icon
   return (
     <a href={item.href} target="_blank" rel="noreferrer" className="home-product-link no-external-arrow group">
-      <span>
+      <span className={`home-product-icon home-product-icon-${item.id}`} aria-hidden="true">
+        <Icon size={18} stroke={1.8} />
+      </span>
+      <span className="home-product-copy">
         <strong><T zh={item.label} en={item.labelEn} /></strong>
         <small><T zh={item.desc} en={item.descEn} /></small>
       </span>

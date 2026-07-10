@@ -26,11 +26,12 @@ export const metadata = {
 
 export default function ArticlesPage() {
   const items = buildKnowledgeItems()
+  const heatmapItems = items.map((item) => ({ id: item.id, date: item.date }))
 
   return (
     <main className="w-full max-w-[1120px] mx-auto px-4 py-10">
       <Suspense fallback={<div className="mb-4 text-sm text-[#666] dark:text-gray-400">加载知识库…</div>}>
-        <ArticlesHeaderClient items={items} />
+        <ArticlesHeaderClient items={heatmapItems} />
       </Suspense>
 
       <Suspense fallback={<div className="text-sm text-[#666] dark:text-gray-400">加载中…</div>}>

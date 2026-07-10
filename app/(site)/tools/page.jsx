@@ -12,7 +12,7 @@ import {
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '工具库 · 2aran.com',
+  title: '工具库',
   description: '涂阿燃维护的站内工具、浏览器插件、AI 工程实验、开发者工具链与可复用工作流入口。',
   keywords: ['工具库', '站内工具', 'AI 工具', '浏览器插件', '开发工具', '2aran'],
   alternates: {

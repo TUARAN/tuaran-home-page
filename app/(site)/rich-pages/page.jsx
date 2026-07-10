@@ -10,7 +10,7 @@ export const dynamic = 'force-static'
 const PAGE_URL = 'https://2aran.com/rich-pages'
 
 export const metadata = {
-  title: '多维页面 · 2aran.com',
+  title: '多维页面',
   description:
     '涂阿燃的多维页面专页：把调研、宣发、内容展示和可交互工具做成同一个可阅读、可操作、可传播的页面系统。',
   alternates: {

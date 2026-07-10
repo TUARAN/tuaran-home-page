@@ -8,19 +8,11 @@ import Link from 'next/link'
  *   1. 竞猜世界杯赢燃币  2. 资源库  3. 博主联盟（推广 / 兼职） 4. 微信社群
  */
 const TICKER_ITEMS = [
-  { icon: '⚽', label: '竞猜世界杯 · 赢燃币', cta: '去竞猜', href: '/agent-world-cup' },
-  { icon: '📚', label: '海量资源任你取', cta: '看资源', href: '/articles?tab=resources' },
-  { icon: '💬', label: '加站长微信 · 交友进社群', cta: '加微信', href: '/community' },
-  {
-    icon: '🤝',
-    label: '推广 AI 产品 / 兼职赚钱',
-    cta: '博主联盟',
-    href: 'https://blogger-alliance.cn/',
-    external: true,
-  },
+  { icon: '📚', label: '从知识库开始', cta: '看内容', href: '/articles' },
+  { icon: '🧰', label: '直接使用站内工具', cta: '用工具', href: '/tools' },
 ]
 
-function TickerItem({ item }) {
+function TickerItem({ item, focusable = true }) {
   const inner = (
     <>
       <span className="text-sm md:text-base leading-none">{item.icon}</span>
@@ -38,11 +30,11 @@ function TickerItem({ item }) {
   )
   const cls = 'hot-ticker-item group/item inline-flex shrink-0 items-center gap-1.5 no-underline hover:no-underline'
   return item.external ? (
-    <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${cls}`} aria-label={item.label}>
+    <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${cls}`} aria-label={item.label} tabIndex={focusable ? undefined : -1}>
       {inner}
     </a>
   ) : (
-    <Link href={item.href} className={cls} aria-label={item.label}>
+    <Link href={item.href} className={cls} aria-label={item.label} tabIndex={focusable ? undefined : -1}>
       {inner}
     </Link>
   )
@@ -83,7 +75,7 @@ export default function HotTickerBar() {
             {groups.map((_, groupIndex) => (
               <div key={groupIndex} className="hot-ticker-group" aria-hidden={groupIndex > 0 ? 'true' : undefined}>
                 {TICKER_ITEMS.map((item) => (
-                  <TickerItem key={`${item.href}-${groupIndex}`} item={item} />
+                  <TickerItem key={`${item.href}-${groupIndex}`} item={item} focusable={groupIndex === 0} />
                 ))}
               </div>
             ))}

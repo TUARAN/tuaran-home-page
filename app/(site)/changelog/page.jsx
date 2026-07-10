@@ -3,7 +3,7 @@ import PageContainer from '../components/PageContainer'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '站点更新记录 · 2aran.com',
+  title: '站点更新记录',
   description: '从 git 提交历史归纳而来的 2aran.com 站点周更记录，按自然周整理版本、功能演进与内容建设。',
   alternates: { canonical: '/changelog' },
 }

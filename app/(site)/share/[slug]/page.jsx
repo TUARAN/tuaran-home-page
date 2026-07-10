@@ -4,7 +4,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '加密分享 · 2aran.com',
+  title: '加密分享',
   description: '加密分享文档；公开链接需要密码解锁。',
   robots: {
     index: false,

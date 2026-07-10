@@ -5,7 +5,7 @@ import PageContainer from '../components/PageContainer'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '隐私政策 · 2aran.com',
+  title: '隐私政策',
   description:
     '2aran.com 的隐私政策：说明本站收集哪些信息、如何使用评论/登录/访问统计数据，以及如何联系站长处理隐私请求。',
   keywords: ['隐私政策', '2aran.com', '涂阿燃', 'Cookie', '访问统计', 'AdSense'],

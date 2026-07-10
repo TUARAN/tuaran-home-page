@@ -5,7 +5,7 @@ import PageContainer from '../components/PageContainer'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '联系方式 · 2aran.com',
+  title: '联系方式',
   description:
     '联系涂阿燃（tuaran）：本站问题、内容合作、商务咨询、资源领取、隐私请求和技术服务联系入口。',
   keywords: ['联系方式', '涂阿燃', 'tuaran', '2aran.com', '商务合作', '内容合作'],

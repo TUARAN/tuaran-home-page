@@ -69,7 +69,7 @@ export function buildKnowledgeItems() {
     return {
       id: `resource:${p.resourceType}:${p.href}`,
       kind: 'resources',
-      tagLabel: p.tagLabel || '资料库',
+      tagLabel: p.tagLabel || '资源库',
       resourceType: p.resourceType || 'other',
       title: p.title,
       summary: p.summary,

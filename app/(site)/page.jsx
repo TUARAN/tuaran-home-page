@@ -48,6 +48,7 @@ const CLASSIC_HOME_SECTION_TAB_CLASS = {
 
 const START_PATHS = [
   {
+    id: 'knowledge',
     href: '/articles',
     label: '看知识库',
     labelEn: 'Read',
@@ -56,8 +57,10 @@ const START_PATHS = [
     desc: '原创文章、多维页面、AI 协助调研和资源索引，按阅读价值重新组织。',
     descEn: 'Original writing, rich pages, AI-assisted research and archives, reorganized by reading value.',
     meta: 'Writing · Research · Archive',
+    icon: IconFileText,
   },
   {
+    id: 'works',
     href: '/works',
     label: '看项目',
     labelEn: 'Projects',
@@ -66,8 +69,10 @@ const START_PATHS = [
     desc: '可视化页面、AI 工具、长期工程和私域工作台，保留能反复演进的作品。',
     descEn: 'Visual pages, AI tools, long-running projects and private workbenches that keep evolving.',
     meta: 'Systems · Tools · Interfaces',
+    icon: IconCodeCircle,
   },
   {
+    id: 'collaborate',
     href: '/services',
     label: '聊合作',
     labelEn: 'Collaborate',
@@ -76,6 +81,7 @@ const START_PATHS = [
     desc: '技术内容、产品调研、创作者增长和 AI 工程化协作，适合需要长期判断的项目。',
     descEn: 'Tech content, product research, creator growth and AI engineering — for projects that need long-term judgment.',
     meta: 'Consulting · Content · Growth',
+    icon: IconUsers,
   },
 ]
 
@@ -473,15 +479,17 @@ function ClassicFeaturedSection({ items }) {
 }
 
 function StartPathCard({ item }) {
+  const Icon = item.icon
   return (
-    <Link href={item.href} className="home-path-card group no-underline">
-      <span className="home-path-label"><T zh={item.label} en={item.labelEn} /></span>
-      <h3><T zh={item.title} en={item.titleEn} /></h3>
-      <p><T zh={item.desc} en={item.descEn} /></p>
-      <span className="home-path-meta">
-        {item.meta}
-        <ArrowIcon />
+    <Link href={item.href} className="home-entry-link group no-underline">
+      <span className={`home-entry-icon home-entry-icon-${item.id}`} aria-hidden="true">
+        <Icon size={18} stroke={1.8} />
       </span>
+      <span className="home-entry-copy">
+        <strong><T zh={item.title} en={item.titleEn} /></strong>
+        <small><T zh={item.desc} en={item.descEn} /></small>
+      </span>
+      <ArrowIcon />
     </Link>
   )
 }

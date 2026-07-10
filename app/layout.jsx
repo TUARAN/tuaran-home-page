@@ -12,9 +12,9 @@ const THEME_SETTINGS_VERSION = '2026-06-30-eink-darkhome'
 
 const SITE_URL = 'https://2aran.com'
 const SOCIAL_PREVIEW_URL = `${SITE_URL}/og.png`
-const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
-const SITE_DESCRIPTION =
-  '2aran.com 是涂阿燃（安东尼）的个人主页与网络日志：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
+// 分享平台会单独显示来源域名；标题和摘要只承载必要信息，避免与域名、站长名重复。
+const SITE_TITLE = '涂阿燃的网络日志'
+const SITE_DESCRIPTION = '前端与 AI 工程、技术情报、知识库与调研。'
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -27,8 +27,6 @@ export const metadata = {
     '2aran.com',
     'tuaran',
     'TUARAN',
-    '掘金安东尼',
-    '安东尼404',
     'SEO',
     '前端博客',
     '前端周刊',
@@ -42,7 +40,7 @@ export const metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
-    siteName: SITE_TITLE,
+    siteName: '2aran.com',
     locale: 'zh_CN',
     type: 'website',
     images: [
@@ -58,7 +56,6 @@ export const metadata = {
     card: 'summary_large_image',
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    creator: '@Anthony404',
     images: [SOCIAL_PREVIEW_URL],
   },
   robots: {

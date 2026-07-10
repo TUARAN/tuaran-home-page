@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSessionAccount } from '../components/SessionProvider'
@@ -142,6 +142,8 @@ const RESOURCE_TYPE_ALIASES = {
   'codex-learning': 'ai-dev',
 }
 
+const PAGE_SIZE = 24
+
 function normalizeResourceType(value) {
   if (RESOURCE_TYPE_KEYS.includes(value)) return value
   return RESOURCE_TYPE_ALIASES[value] || 'all'
@@ -203,6 +205,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [resourceType, setResourceType] = useState(initialResourceType)
   const [query, setQuery] = useState(initialQuery)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const requestedPvKeys = useRef(new Set())
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
@@ -437,25 +441,45 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     })
   }, [items, tab, companyType, topicType, peopleType, resourceType, query])
 
+  const paginatedItems = useMemo(
+    () => visible.slice(0, visibleCount),
+    [visible, visibleCount],
+  )
+
+  const visiblePvKeys = useMemo(
+    () => Array.from(new Set(paginatedItems.map((item) => item.pvKey).filter(Boolean))),
+    [paginatedItems],
+  )
+
+  const visiblePvKeySignature = visiblePvKeys.join(',')
 
   useEffect(() => {
-    const keys = Array.from(
-      new Set(items.map((item) => item.pvKey).filter(Boolean)),
-    )
+    setVisibleCount(PAGE_SIZE)
+  }, [tab, companyType, topicType, peopleType, resourceType, query])
+
+  useEffect(() => {
+    const keys = (visiblePvKeySignature ? visiblePvKeySignature.split(',') : [])
+      .filter((key) => !requestedPvKeys.current.has(key))
     if (!keys.length) {
       setPvLoaded(true)
       return
     }
 
+    keys.forEach((key) => requestedPvKeys.current.add(key))
+    setPvLoaded(false)
     let cancelled = false
     async function loadPv() {
       try {
         const res = await fetch(`/api/research-pv?keys=${encodeURIComponent(keys.join(','))}`)
-        if (!res.ok) return
+        if (!res.ok) {
+          keys.forEach((key) => requestedPvKeys.current.delete(key))
+          return
+        }
         const data = await res.json()
         if (!cancelled && data?.counts) setPvCounts(data.counts)
       } catch {
         // 统计接口不可用时保留静态 frontmatter 里的 pv。
+        keys.forEach((key) => requestedPvKeys.current.delete(key))
       } finally {
         if (!cancelled) setPvLoaded(true)
       }
@@ -465,7 +489,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     return () => {
       cancelled = true
     }
-  }, [items])
+  }, [visiblePvKeySignature])
 
   const companyTypeCounts = useMemo(() => {
     const base = Object.fromEntries(COMPANY_TYPE_KEYS.map((k) => [k, 0]))
@@ -663,7 +687,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         </p>
       ) : (
         <div className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65">
-          {visible.map((item) => {
+          {paginatedItems.map((item) => {
             const pvKey = item.pvKey || ''
             const hasLivePv = pvKey && Object.prototype.hasOwnProperty.call(pvCounts, pvKey)
             const livePv = hasLivePv ? pvCounts[pvKey] : item.pv
@@ -671,6 +695,20 @@ export default function ArticlesIndexClient({ items: staticItems }) {
             const nextItem = 'pv' in item ? { ...item, pv: livePv, pvLoading } : item
             return <ArticleRow key={item.id || `${item.kind}:${item.href}:${item.title}`} item={nextItem} />
           })}
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-[#d9d2df] px-4 py-4 text-center dark:border-gray-800 sm:flex-row sm:text-left">
+            <p className="mb-0 text-xs text-[#777184] dark:text-gray-400" aria-live="polite">
+              已显示 {paginatedItems.length} / {visible.length} 条
+            </p>
+            {paginatedItems.length < visible.length ? (
+              <button
+                type="button"
+                onClick={() => setVisibleCount((count) => Math.min(count + PAGE_SIZE, visible.length))}
+                className="min-h-10 rounded-full border border-[#cfc6dc] bg-[#f4f0f8] px-5 text-sm font-medium text-[#49345f] transition hover:border-[var(--site-accent)] hover:bg-white hover:text-[#20172f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-[#18202a] dark:hover:text-white"
+              >
+                加载更多
+              </button>
+            ) : null}
+          </div>
         </div>
       )}
     </section>

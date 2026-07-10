@@ -7,7 +7,7 @@ import { POINT_RULES } from '../../../lib/points'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '关于本站 · 2aran.com',
+  title: '关于本站',
   description:
     '2aran.com 是涂阿燃维护的个人内容与项目门户，不是 UGC 社区；这里支持围绕特定话题评论讨论、领取资源、参加活动，并用燃币做友好的留存和互动权益。',
   keywords: ['关于本站', '2aran.com', '涂阿燃', '燃币', '资源', '活动', '评论讨论'],

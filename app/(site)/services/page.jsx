@@ -79,6 +79,36 @@ const productLinks = [
   },
 ]
 
+const caseStudies = [
+  {
+    label: '内容系统',
+    title: '把分散内容归一成可持续增长的知识库',
+    problem: '文章、调研、资源和互动入口各自生长，读者难发现，维护也容易重复。',
+    action: '统一 contentKey、内容索引、相关阅读、评论、阅读统计与订阅链路。',
+    deliverable: '知识库、内容管线、RSS、Newsletter 与后台同步工具。',
+    result: '目前统一索引 160+ 条内容，调研、资源和原创文章可以按同一套结构持续发布。',
+    href: '/site',
+  },
+  {
+    label: '开源协作',
+    title: '推动 OpenClaw 图片兼容修复走到合并',
+    problem: 'Anthropic 图片输入规范化存在真实兼容问题，仅提交代码不足以证明行为正确。',
+    action: '定位问题、提交修复、补充行为证明，并根据机器人评审继续迭代。',
+    deliverable: '代码补丁、复现说明、行为证明与完整 PR 沟通记录。',
+    result: '修复成功合入 OpenClaw 主分支，并沉淀成一篇可复用的贡献流程记录。',
+    href: '/articles/openclaw-pr-anthropic-image-normalization',
+  },
+  {
+    label: '浏览器工具',
+    title: '把 X 互关清理变成用户可控的本地工具',
+    problem: '关注列表难以识别未回关账号，手工核对和取消关注成本高。',
+    action: '设计本地扫描、结果确认和批量操作流程，把最终决定留给用户。',
+    deliverable: 'Chrome 扩展、使用说明、版本包与站内下载页。',
+    result: '已发布至 v0.1.11，可直接下载使用，并保留明确的确认步骤与操作边界。',
+    href: '/resources/x-mutual-cleaner-extension',
+  },
+]
+
 export default function ServicesPage() {
   return (
     <PageContainer className="py-9 md:py-12">
@@ -92,9 +122,26 @@ export default function ServicesPage() {
               能合作的事，先摊开说清楚
             </h1>
           </div>
-          <p className="mb-0 max-w-[560px] text-[14px] leading-7 text-[#56564e] dark:text-[#aeb8c6] md:justify-self-end">
-            我更适合做需要判断、拆解和落地执行的工作：把复杂问题整理成可验证的方案、内容或流程，而不是只给一堆抽象建议。
-          </p>
+          <div className="max-w-[560px] md:justify-self-end">
+            <p className="mb-4 text-[14px] leading-7 text-[#56564e] dark:text-[#aeb8c6]">
+              我更适合做需要判断、拆解和落地执行的工作：把复杂问题整理成可验证的方案、内容或流程，而不是只给一堆抽象建议。
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="#contact"
+                className="inline-flex min-h-10 items-center rounded-full bg-[#15140f] px-4 text-[13px] font-semibold text-white no-underline transition hover:bg-[#3f3a2f] dark:bg-gray-100 dark:text-[#111827] dark:hover:bg-white"
+              >
+                带着问题来聊
+              </a>
+              <a
+                href="#cases"
+                className="inline-flex min-h-10 items-center rounded-full border border-[#c7c6bb] px-4 text-[13px] font-medium text-[#51514a] no-underline transition hover:border-[#8a6422] hover:text-[#15140f] dark:border-[#33404d] dark:text-gray-300 dark:hover:border-[#a8ae82] dark:hover:text-white"
+              >
+                先看案例
+              </a>
+              <span className="font-mono text-[11px] text-[#858876] dark:text-[#8e9ab0]">微信 atar24</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -134,6 +181,55 @@ export default function ServicesPage() {
                   </span>
                 ))}
               </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="cases" className="mb-14 scroll-mt-24">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
+              Selected Cases
+            </p>
+            <h2 className="mb-0 border-b-0 pb-0 font-serif text-[1.55rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+              三个已经落地的样本
+            </h2>
+          </div>
+          <span className="max-w-[420px] text-[12px] leading-6 text-[#76786c] dark:text-[#7f8aa0]">
+            不只看最终页面，也看问题怎么拆、交付物怎么形成、结果如何验证。
+          </span>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          {caseStudies.map((item, index) => (
+            <article key={item.title} className="flex h-full flex-col rounded-xl border border-[#d9d8ce] bg-white/55 p-5 dark:border-[#303947] dark:bg-[#121821]">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#b7791f] dark:text-[#a8ae82]">{item.label}</span>
+                <span className="font-mono text-[10px] text-[#aaa79c] dark:text-[#667184]">0{index + 1}</span>
+              </div>
+              <h3 className="mb-4 text-[18px] font-semibold leading-7 text-[#15140f] dark:text-gray-100">{item.title}</h3>
+              <dl className="mb-5 grid gap-3 text-[12.5px] leading-6">
+                <div>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b897e] dark:text-[#758195]">问题</dt>
+                  <dd className="mt-0.5 text-[#55564f] dark:text-gray-300">{item.problem}</dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b897e] dark:text-[#758195]">行动</dt>
+                  <dd className="mt-0.5 text-[#55564f] dark:text-gray-300">{item.action}</dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b897e] dark:text-[#758195]">交付</dt>
+                  <dd className="mt-0.5 text-[#55564f] dark:text-gray-300">{item.deliverable}</dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b897e] dark:text-[#758195]">结果</dt>
+                  <dd className="mt-0.5 font-medium text-[#2d332c] dark:text-[#d9dfd6]">{item.result}</dd>
+                </div>
+              </dl>
+              <Link href={item.href} className="mt-auto inline-flex items-center gap-2 text-[12px] font-semibold text-[#7c5d34] no-underline hover:text-[#15140f] dark:text-[#c2b48b] dark:hover:text-white">
+                查看完整样本 <span aria-hidden="true">→</span>
+              </Link>
             </article>
           ))}
         </div>

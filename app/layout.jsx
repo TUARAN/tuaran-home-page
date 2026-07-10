@@ -1,6 +1,5 @@
 import './globals.css'
 
-import { avatarAbsoluteUrl } from '../lib/avatar'
 import GoogleAdsenseScript from './(site)/components/GoogleAdsenseScript'
 
 /**
@@ -12,7 +11,7 @@ import GoogleAdsenseScript from './(site)/components/GoogleAdsenseScript'
 const THEME_SETTINGS_VERSION = '2026-06-30-eink-darkhome'
 
 const SITE_URL = 'https://2aran.com'
-const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
+const SOCIAL_PREVIEW_URL = `${SITE_URL}/og.png`
 const SITE_TITLE = '2aran.com｜涂阿燃（tuaran）的网络日志'
 const SITE_DESCRIPTION =
   '2aran.com 是涂阿燃（安东尼）的个人主页与网络日志：前端与 AI 工程化、技术情报、知识库、调研与创作者增长。'
@@ -48,10 +47,10 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: AVATAR_URL,
-        width: 512,
-        height: 512,
-        alt: '涂阿燃（掘金安东尼）头像',
+        url: SOCIAL_PREVIEW_URL,
+        width: 1200,
+        height: 630,
+        alt: '涂阿燃的网络日志：用 AI 和工程方法，长期研究技术、产品与创作者增长',
       },
     ],
   },
@@ -60,7 +59,7 @@ export const metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     creator: '@Anthony404',
-    images: [AVATAR_URL],
+    images: [SOCIAL_PREVIEW_URL],
   },
   robots: {
     index: true,

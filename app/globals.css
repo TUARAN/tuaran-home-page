@@ -442,10 +442,19 @@
       linear-gradient(90deg, rgba(11, 16, 22, 0.22), rgba(11, 16, 22, 0.12) 45%, rgba(11, 16, 22, 0.34));
   }
 
+  .home-intro-panel,
   .home-main-grid,
   .home-footer {
     position: relative;
     z-index: 1;
+  }
+
+  .home-intro-panel {
+    @apply mb-5 grid gap-4 rounded-[18px] border px-4 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,560px)] lg:items-center lg:px-5;
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(10, 15, 22, 0.82);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(12px);
   }
 
   .home-hero {
@@ -2856,6 +2865,17 @@
 
 .hot-ticker-track:hover {
   animation-play-state: paused;
+}
+
+.hot-ticker-track:focus-within {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hot-ticker-track {
+    animation: none;
+    transform: none;
+  }
 }
 
 /* Tiptap online article editor */

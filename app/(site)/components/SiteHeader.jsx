@@ -556,7 +556,7 @@ export default function SiteHeader() {
                 TUARAN
               </span>
               <span className="site-brand-subtitle hidden text-[11px] font-medium sm:block">
-                {pick(locale, '涂阿燃 · 网络日志', 'Weblog')}
+                {pick(locale, '用 AI 和工程方法，长期研究技术、产品与创作者增长。', 'Using AI and engineering to study technology, products, and creator growth.')}
               </span>
             </div>
           </Link>

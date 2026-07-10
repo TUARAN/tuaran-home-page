@@ -329,7 +329,7 @@ function FeaturedReading({ items }) {
     <section className="home-section">
       <h1 className="mb-5 max-w-[760px] border-l border-[var(--site-accent)] pl-3 font-serif text-[14px] font-medium leading-6 text-[var(--site-muted)] md:text-[15px]">
         <T
-          zh="涂阿燃：用 AI 和工程方法，长期研究技术、产品与创作者增长。"
+          zh="用 AI 和工程方法，长期研究技术、产品与创作者增长。"
           en="TUARAN: studying technology, products and creator growth through AI and engineering."
         />
       </h1>

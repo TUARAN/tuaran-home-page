@@ -3,7 +3,6 @@ import Link from 'next/link'
 import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import DistributeContentButton from '../components/DistributeContentButton'
 import {
-  FEATURED_TOOL_ITEMS,
   TOOL_STATUS_META,
   TOOL_TYPE_META,
   getToolItemsByType,
@@ -57,31 +56,6 @@ function ToolLink({ item, className = '', children }) {
   )
 }
 
-function FeaturedTools({ items }) {
-  return (
-    <div className="border-y border-[#d8d1c4] py-3 dark:border-[#27313d]">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="mb-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#8a6422] dark:text-[#d4ae66]">
-          Featured
-        </p>
-        <span className="text-[12px] text-[#7a766b] dark:text-[#8f9aaa]">{items.length} 个优先入口</span>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {items.map((item) => (
-          <ToolLink
-            key={item.id}
-            item={item}
-            className="inline-flex items-center gap-2 rounded-full border border-[#d8d1c4] bg-white/55 px-3 py-1.5 text-[13px] font-semibold text-[#242119] no-underline transition hover:border-[#bda77b] hover:bg-white dark:border-[#26313d] dark:bg-[#101720]/70 dark:text-gray-100 dark:hover:border-[#4b5c70]"
-          >
-            <span>{item.title}</span>
-            <span className="text-[#8a877d] dark:text-[#7e8a9b]">→</span>
-          </ToolLink>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function ToolRow({ item }) {
   const content = (
     <>
@@ -90,11 +64,6 @@ function ToolRow({ item }) {
           <h3 className="mb-0 text-[15px] font-bold leading-snug text-[#1d1a16] dark:text-white">
             {item.title}
           </h3>
-          {item.featured ? (
-            <span className="rounded-full bg-[#efe7d6] px-2 py-0.5 text-[10px] font-semibold text-[#76551b] dark:bg-[#2a2419] dark:text-[#d9b66f]">
-              推荐
-            </span>
-          ) : null}
           <span className="md:hidden">
             <ToolStatus status={item.status} />
           </span>
@@ -144,7 +113,7 @@ export default function ToolsPage() {
   return (
     <main className="min-h-screen bg-[#f2efe7] text-[#171611] dark:bg-[#0d0f12] dark:text-gray-100">
       <section className="mx-auto max-w-[1100px] px-4 pb-4 pt-9 sm:px-6 lg:px-8">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+        <div>
           <div>
             <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#8a6422] dark:text-[#d4ae66]">
               Tools
@@ -153,7 +122,7 @@ export default function ToolsPage() {
               工具库
             </h1>
             <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-              这里集中放可直接使用、可下载或可复用的工具入口。优先展示能打开就用的站内工具、插件、AI 工程实验和开发者工作流。
+              这里按用途整理站内工具、客户端与浏览器扩展、AI 与开发者工具，以及工具与资源索引。
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <ArticleActionsDropdown label="更多">
@@ -169,7 +138,6 @@ export default function ToolsPage() {
               </ArticleActionsDropdown>
             </div>
           </div>
-          <FeaturedTools items={FEATURED_TOOL_ITEMS} />
         </div>
       </section>
 

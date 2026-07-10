@@ -50,13 +50,6 @@ function normalizeTabFromParams(params) {
   return 'all'
 }
 
-function formatDateLabel(value) {
-  if (!value) return ''
-  const [year, month, day] = String(value).split('-')
-  if (!year || !month || !day) return String(value)
-  return `${year}.${Number(month)}.${Number(day)}`
-}
-
 export default function ArticlesHeaderClient({ items }) {
   const searchParams = useSearchParams()
   const [expanded, setExpanded] = useState(false)
@@ -77,8 +70,6 @@ export default function ArticlesHeaderClient({ items }) {
     }
   }, [])
 
-  const checkedAt = formatDateLabel(hallucinationRate.checkedAt)
-
   return (
     <header className="mb-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -87,9 +78,8 @@ export default function ArticlesHeaderClient({ items }) {
             {pageCopy.title}
           </h1>
           <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
-            我们都不喜欢被营销 FOMO 情绪/焦虑情绪推着走，多给几分钟时间，认真找来源、查事实，世界这么大与我何干？
-            调研把 AI 当作扩大检索面、整理材料和压缩信息的助手，不让它替事实背书：约六成内容由 AI 协助处理，三成落在可追溯引用上，一成才是我的观点。工作流要求它以客观事实为起点、说明缘由；具体结论仍应回到来源核对。
-            LLM {checkedAt} 幻觉率参考：
+            抗拒营销制造的焦虑裹挟，遇事溯源辨真；资讯万千，唯有能利己受益，方有价值。
+            GPT-5 幻觉率参考：
             <a
               href={hallucinationRate.sourceUrl}
               target="_blank"

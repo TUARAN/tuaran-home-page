@@ -47,7 +47,7 @@ export default function RichPagesPage() {
   const featuredWorks = ENGINEERING_WORKS.slice(0, 6)
 
   return (
-    <main className="min-h-screen bg-[#f2f3ec] text-[#181b18] dark:bg-[#0c1114] dark:text-gray-100">
+    <main className="min-h-screen bg-[var(--page-bg)] text-[var(--site-ink)]">
       <PageContainer className="py-10 md:py-14">
         <header className="border-b border-[#d6d9c9] pb-8 dark:border-[#24313a]">
           <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#667063] dark:text-[#91a0a9]">
@@ -103,7 +103,7 @@ export default function RichPagesPage() {
               <Link
                 key={work.id}
                 href={work.href}
-                className="group grid gap-3 border-b border-[#d6d9c9] py-5 text-[#181b18] no-underline transition last:border-b-0 hover:bg-[#ecefe4] dark:border-[#24313a] dark:text-gray-100 dark:hover:bg-[#111a20] md:grid-cols-[170px_minmax(0,1fr)_96px] md:items-start"
+                className="group grid gap-3 border-b border-[#d6d9c9] py-5 text-[#181b18] no-underline transition last:border-b-0 hover:bg-[var(--site-panel)] dark:border-[#24313a] dark:text-gray-100 md:grid-cols-[170px_minmax(0,1fr)_96px] md:items-start"
               >
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-[#667063] dark:text-[#91a0a9] md:block md:space-y-1">
                   <span className="text-[#1f6f78] dark:text-[#76c6d0]">{categoryLabel(work.category)}</span>

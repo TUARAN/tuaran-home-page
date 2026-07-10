@@ -24,27 +24,6 @@ export const metadata = {
   },
 }
 
-const sourceBooks = [
-  '期权、期货及其他衍生品',
-  '聪明的投资者',
-  '证券分析',
-  '漫步华尔街',
-  '灰犀牛',
-  '黑天鹅',
-  '随机漫步的傻瓜',
-  '区域经济学',
-  '纳瓦尔宝典',
-  '股息不说谎',
-  '邓普顿教你逆向投资',
-  '滚雪球',
-  '巴菲特致股东的信',
-  '穷查理宝典',
-  '金钱心理学',
-  '客户的游艇在哪里',
-  '周期',
-  '原则',
-]
-
 const officialLinks = {
   '期权、期货及其他衍生品': {
     label: 'Pearson 检索',
@@ -337,7 +316,7 @@ export default function SpeedrunInvestingPage() {
                 速通投资
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--site-muted)]">
-                把截图里的投资书整理成一页可执行资源：从价值投资、有效市场、随机性、周期和财报入门，
+                从价值投资、有效市场、随机性、周期和财报入门，
                 一路读到巴菲特、芒格、纳瓦尔、达利欧和金钱心理学。每本书都带豆瓣、微信读书、购买检索；
                 能确认官方或出版方入口的，额外放在最前面。
               </p>
@@ -389,23 +368,6 @@ export default function SpeedrunInvestingPage() {
                   ))}
                 </ol>
               </section>
-
-              <details className="mb-10 border-y border-[var(--site-line)] py-4">
-                <summary className="cursor-pointer font-serif text-base font-semibold text-[var(--site-ink)]">
-                  截图书名校对
-                </summary>
-                <p className="mt-2 text-sm leading-7 text-[var(--site-muted)]">
-                  原图共整理出 {sourceBooks.length} 本。下面保留原始书名，方便和截图逐条对照。
-                </p>
-                <p className="mt-3 text-sm leading-7 text-[var(--site-muted)]">
-                  {sourceBooks.map((book, index) => (
-                    <span key={book}>
-                      {book}
-                      {index < sourceBooks.length - 1 ? ' / ' : ''}
-                    </span>
-                  ))}
-                </p>
-              </details>
 
               <div className="space-y-11">
                 {bookGroups.map((group) => (

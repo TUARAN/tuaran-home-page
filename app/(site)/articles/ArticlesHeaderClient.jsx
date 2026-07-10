@@ -87,7 +87,8 @@ export default function ArticlesHeaderClient({ items }) {
             {pageCopy.title}
           </h1>
           <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
-            我们都不喜欢被营销 FOMO 情绪/焦虑情绪推着走，所以多给几分钟时间，认真找来源、查事实，看看有哪些真的能为我所用。
+            我们都不喜欢被营销 FOMO 情绪/焦虑情绪推着走，多给几分钟时间，认真找来源、查事实，世界这么大与我何干？
+            调研把 AI 当作扩大检索面、整理材料和压缩信息的助手，不让它替事实背书：约六成内容由 AI 协助处理，三成落在可追溯引用上，一成才是我的观点。工作流要求它以客观事实为起点、说明缘由；具体结论仍应回到来源核对。
             LLM {checkedAt} 幻觉率参考：
             <a
               href={hallucinationRate.sourceUrl}

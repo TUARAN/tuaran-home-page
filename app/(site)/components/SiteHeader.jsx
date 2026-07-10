@@ -548,14 +548,14 @@ export default function SiteHeader() {
   return (
     <>
       <header className="site-header fixed left-0 right-0 top-0 z-[120] w-full border-b backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-10">
+        <div className="mx-auto flex h-[var(--site-header-height)] w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-1 sm:px-6 lg:px-10">
           <Link href="/" className="group flex min-w-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <span className="site-brand-mark" aria-hidden="true">T</span>
             <div className="inline-flex min-w-0 flex-col leading-tight">
-              <span className="site-brand-text font-serif text-xl font-semibold tracking-wide sm:text-2xl">
+              <span className="site-brand-text font-serif text-base font-semibold tracking-wide sm:text-lg">
                 TUARAN
               </span>
-              <span className="site-brand-subtitle hidden text-[11px] font-medium sm:block">
+              <span className="site-brand-subtitle hidden w-full text-[11px] font-medium [text-align-last:justify] sm:block">
                 {pick(locale, '涂阿燃 · 网络日志', 'Weblog')}
               </span>
             </div>

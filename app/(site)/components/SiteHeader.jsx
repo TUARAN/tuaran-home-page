@@ -552,11 +552,14 @@ export default function SiteHeader() {
           <Link href="/" className="group flex min-w-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <span className="site-brand-mark" aria-hidden="true">T</span>
             <div className="inline-flex min-w-0 flex-col leading-tight">
-              <span className="site-brand-text font-serif text-lg font-semibold tracking-wide sm:text-xl">
+              <span className="site-brand-text font-serif text-lg font-semibold tracking-wide sm:hidden">
                 TUARAN
               </span>
-              <span className="site-brand-subtitle hidden text-[11px] font-medium sm:block">
+              <span className="site-brand-text hidden whitespace-nowrap text-[12px] font-semibold tracking-[0.02em] sm:block">
                 {pick(locale, '用 AI 和工程方法，长期研究技术、产品与创作者增长。', 'Using AI and engineering to study technology, products, and creator growth.')}
+              </span>
+              <span className="site-brand-subtitle hidden text-[11px] font-medium sm:block">
+                {pick(locale, '涂阿燃 · 网络日志', 'Weblog')}
               </span>
             </div>
           </Link>

@@ -10,7 +10,7 @@ async function safeJson(res) {
   }
 }
 
-export default function NewsletterSignup({ source = 'article_footer' }) {
+export default function NewsletterSignup({ source = 'article_footer', variant = 'default' }) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -47,6 +47,34 @@ export default function NewsletterSignup({ source = 'article_footer' }) {
     }
   }
 
+  if (variant === 'compact') {
+    return (
+      <form onSubmit={submit} className="w-full lg:max-w-[560px]" aria-label="订阅网络日志">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="你的邮箱"
+            aria-label="邮箱地址"
+            className="min-h-11 min-w-0 flex-1 rounded-full border border-white/20 bg-black/20 px-4 text-[14px] text-white outline-none transition placeholder:text-white/45 focus:border-[#d4ae66] focus:bg-black/30"
+            disabled={loading}
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading || !email.trim()}
+            className="min-h-11 shrink-0 rounded-full bg-[#f2f0e8] px-5 text-[13px] font-semibold text-[#111820] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            {loading ? '提交中…' : '订阅更新'}
+          </button>
+        </div>
+        {message ? <p className="mb-0 mt-2 text-[12px] leading-5 text-emerald-300" role="status">{message}</p> : null}
+        {error ? <p className="mb-0 mt-2 text-[12px] leading-5 text-rose-300" role="alert">{error}</p> : null}
+      </form>
+    )
+  }
+
   return (
     <form
       onSubmit={submit}
@@ -71,6 +99,7 @@ export default function NewsletterSignup({ source = 'article_footer' }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              aria-label="邮箱地址"
               className="min-h-11 flex-1 rounded-xl border border-[#d8dad0] bg-white px-3 text-[14px] text-[#15140f] outline-none transition focus:border-[#8a6422] dark:border-[#303947] dark:bg-[#0b1119] dark:text-gray-100 dark:focus:border-[#d4ae66]"
               disabled={loading}
               required

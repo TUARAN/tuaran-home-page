@@ -5,7 +5,7 @@ import PageContainer from '../components/PageContainer'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '原创内容导航 · 2aran.com',
+  title: '原创内容导航',
   description:
     '2aran.com 原创内容导航：精选文章、调研库、日记、作品、出版作品和外部创作平台索引。',
   keywords: ['原创内容', '2aran.com', '涂阿燃', '技术博客', '调研', '精选文章'],

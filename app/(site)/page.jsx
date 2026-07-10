@@ -22,6 +22,7 @@ import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
 import HotTickerBar from './components/HotTickerBar'
+import NewsletterSignup from './components/NewsletterSignup'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHighlights'
@@ -918,6 +919,18 @@ function PolishedHomePage({ featuredPicks }) {
       <div className="relative z-[1] mb-4">
         <HotTickerBar />
       </div>
+      <section className="home-intro-panel" aria-labelledby="home-intro-title">
+        <div className="min-w-0">
+          <p className="home-kicker mb-1.5 text-[#b7c0cc]">2ARAN.COM · NETWORK LOG</p>
+          <h1 id="home-intro-title" className="mb-0 border-b-0 pb-0 font-serif text-[1.2rem] font-semibold leading-8 text-white sm:text-[1.35rem]">
+            涂阿燃：用 AI 和工程方法，长期研究技术、产品与创作者增长。
+          </h1>
+          <p className="mb-0 mt-1 text-[12.5px] leading-6 text-[#aeb8c6]">
+            每周整理新文章、调研、资源和工具更新，频率克制。
+          </p>
+        </div>
+        <NewsletterSignup source="homepage" variant="compact" />
+      </section>
       <div className="home-main-grid">
         <FeaturedReading items={featuredPicks} />
 

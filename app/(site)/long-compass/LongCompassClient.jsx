@@ -18,6 +18,7 @@ export default function LongCompassClient({
   returnTo = '/long-compass',
   eyebrow = 'Long Compass',
   description = DEFAULT_DESCRIPTION,
+  embedded = false,
 }) {
   const [loading, setLoading] = useState(true)
   const [authError, setAuthError] = useState('')
@@ -168,23 +169,27 @@ export default function LongCompassClient({
     )
   }
 
+  const Container = embedded ? 'section' : 'main'
+
   return (
-    <main className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-4 py-8">
-      <header className="border-b border-[#dee0db] pb-5 dark:border-gray-800">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
-              {eyebrow}
-            </p>
-            <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
-              长期罗盘
-            </h1>
+    <Container className={`mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-4 md:px-6 ${embedded ? 'py-5' : 'py-8'}`}>
+      {!embedded ? (
+        <header className="border-b border-[#dee0db] pb-5 dark:border-gray-800">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
+                {eyebrow}
+              </p>
+              <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+                长期罗盘
+              </h1>
+            </div>
+            <span className="rounded-full border border-[#dee0db] px-3 py-1 text-xs text-[#58594d] dark:border-[#2d3440] dark:text-gray-300">
+              {unlocked ? '已解锁' : user?.name || user?.login || '已登录'}
+            </span>
           </div>
-          <span className="rounded-full border border-[#dee0db] px-3 py-1 text-xs text-[#58594d] dark:border-[#2d3440] dark:text-gray-300">
-            {unlocked ? '已解锁' : user?.name || user?.login || '已登录'}
-          </span>
-        </div>
-      </header>
+        </header>
+      ) : null}
 
       {!unlocked ? (
         <UnlockForm
@@ -196,7 +201,7 @@ export default function LongCompassClient({
           error={error}
         />
       ) : (
-        <section className="mt-6">
+        <section className={embedded ? '' : 'mt-6'}>
           <div className="border-b border-[#dee0db] pb-3 dark:border-gray-800">
             <div className="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="长期罗盘视图">
               <button
@@ -296,6 +301,6 @@ export default function LongCompassClient({
         maxPlainKChars={stats.maxPlainKChars}
         oldestYear={stats.oldestYear}
       />
-    </main>
+    </Container>
   )
 }

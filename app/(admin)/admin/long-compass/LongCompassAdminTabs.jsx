@@ -9,12 +9,12 @@ const TABS = [
   {
     id: 'long-compass',
     label: '长期罗盘',
-    desc: '强私密内容库：资产、复盘、行动框架。服务端只持有密文，正文与内嵌图片均须用口令在浏览器解锁。',
+    desc: '强私密内容库：数据库仅存密文，浏览器本地解锁。',
   },
   {
     id: 'encrypted-share',
     label: '密码保护分享',
-    desc: '对外分发内容库：后台保留明文副本，公开访问者只拿密文链接，凭密码在浏览器解锁；可嵌入图片。',
+    desc: '对外分发：后台保留明文副本，公开端只返回密文。',
   },
 ]
 
@@ -33,18 +33,18 @@ export default function LongCompassAdminTabs() {
 
   return (
     <>
-      <section className="mx-auto w-full max-w-[1120px] px-4 pt-7 md:px-6 md:pt-9">
-        <div className="border-b border-[#d9dbd1] pb-4 dark:border-[#263140]">
+      <section className="mx-auto w-full max-w-[1120px] px-4 pt-5 md:px-6 md:pt-6">
+        <div className="border-b border-[#d9dbd1] pb-3 dark:border-[#263140]">
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
             Private Content Hub
           </p>
-          <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="mt-1.5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div className="min-w-0">
               <h1 className="font-serif text-2xl font-semibold text-[#15140f] dark:text-gray-100">
                 私域与分享
               </h1>
-              <p className="mt-2 max-w-[52rem] text-[13.5px] leading-7 text-[#56564e] dark:text-gray-400">
-                长期罗盘用于强私密长期记录，数据库仅存密文、浏览器本地解密；密码保护分享用于对外分发，后台保留明文副本，公开链接只返回密文信封。两者的隐私边界不同，避免混用。
+              <p className="mt-1 max-w-[52rem] text-[13px] leading-6 text-[#66675d] dark:text-[#9aa6b6]">
+                {TABS.find((tab) => tab.id === activeTab)?.desc}
               </p>
             </div>
             <div
@@ -73,9 +73,6 @@ export default function LongCompassAdminTabs() {
               })}
             </div>
           </div>
-          <p className="mt-3 text-xs leading-6 text-[#66675d] dark:text-[#9aa6b6]">
-            {TABS.find((tab) => tab.id === activeTab)?.desc}
-          </p>
         </div>
       </section>
 
@@ -85,9 +82,10 @@ export default function LongCompassAdminTabs() {
             returnTo="/admin/long-compass"
             eyebrow="Admin · 强私密模型"
             description="长期罗盘：密文存储，本页输入口令后只在浏览器本地解密。"
+            embedded
           />
         ) : (
-          <ShareAdminClient />
+          <ShareAdminClient embedded />
         )}
       </div>
     </>

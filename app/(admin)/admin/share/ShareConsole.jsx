@@ -93,7 +93,7 @@ async function resolveLegacyContent(item) {
   }
 }
 
-export default function ShareAdminClient() {
+export default function ShareAdminClient({ embedded = false }) {
   const [items, setItems] = useState([])
   const [loadingList, setLoadingList] = useState(true)
   const [listError, setListError] = useState('')
@@ -251,7 +251,8 @@ export default function ShareAdminClient() {
   return (
     <AdminPage
       title="密码保护分享"
-      maxWidth="960px"
+      maxWidth={embedded ? '1120px' : '960px'}
+      compact={embedded}
       description="这是对外分发工具：后台保存明文副本，公开链接只返回密文信封；读者在浏览器用密码解锁。它不同于长期罗盘的强私密模式。密码可单独发送，或放在链接末尾 #密码 供一键打开。"
     >
       {/* 列表 */}

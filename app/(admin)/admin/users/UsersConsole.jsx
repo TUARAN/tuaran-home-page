@@ -63,6 +63,7 @@ export default function UsersConsole() {
   const [guestQuery, setGuestQuery] = useState('')
   const [guestFilter, setGuestFilter] = useState('active')
   const [guestDetail, setGuestDetail] = useState(null)
+  const [guestDetailTarget, setGuestDetailTarget] = useState(null)
   const [guestDetailStatus, setGuestDetailStatus] = useState('idle')
 
   const refresh = useCallback(async () => {
@@ -216,6 +217,7 @@ export default function UsersConsole() {
   }
 
   async function openGuestUnlocks(guest) {
+    setGuestDetailTarget(guest)
     setGuestDetailStatus('loading')
     setGuestDetail(null)
     setGuestMessage('')
@@ -234,6 +236,13 @@ export default function UsersConsole() {
       setGuestDetailStatus('error')
       setGuestMessage(`读取游客解锁记录失败：${String(error?.message || error)}`)
     }
+  }
+
+  function closeGuestUnlocks() {
+    setGuestDetail(null)
+    setGuestDetailTarget(null)
+    setGuestDetailStatus('idle')
+    setGuestMessage('')
   }
 
   const inputCls =
@@ -694,66 +703,85 @@ export default function UsersConsole() {
               }
             />
 
-            {guestDetailStatus === 'loading' ? (
-              <p className="px-4 py-4 text-sm text-[#67695d] dark:text-gray-400">正在读取游客解锁内容…</p>
-            ) : null}
-            {guestDetail ? (
-              <div className="border-t border-[#e2e3da] bg-[#fbfcf7] p-4 dark:border-[#1e2733] dark:bg-[#10161f]">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+          </Section>
+
+          {guestDetailTarget ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+              role="presentation"
+              onClick={closeGuestUnlocks}
+            >
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="guest-unlocks-title"
+                className="max-h-[calc(100vh-2rem)] w-full max-w-4xl overflow-hidden rounded-xl border border-[#d8dad0] bg-white shadow-2xl sm:max-h-[42rem] dark:border-[#2d3744] dark:bg-[#10161f]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#e2e3da] px-5 py-4 dark:border-[#1e2733]">
                   <div>
-                    <h3 className="text-sm font-semibold text-[#15140f] dark:text-gray-100">
-                      {displayNameForUserId(guestDetail.guest.userId).name} 的解锁记录
+                    <h3 id="guest-unlocks-title" className="text-base font-semibold text-[#15140f] dark:text-gray-100">
+                      {displayNameForUserId(guestDetailTarget.userId).name} 的解锁记录
                     </h3>
-                    <p className="mt-1 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{guestDetail.guest.userId}</p>
+                    <p className="mt-1 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{guestDetailTarget.userId}</p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setGuestDetail(null)
-                      setGuestDetailStatus('idle')
-                    }}
+                    onClick={closeGuestUnlocks}
                     className="rounded-md border border-[#d8dad0] px-2.5 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
                   >
-                    收起
+                    关闭
                   </button>
                 </div>
-                {guestDetail.movedToAccount ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-[#c9d4e5] bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/25 dark:text-blue-200">
-                    <span>该游客已绑定，解锁权益已归并到正式账号。</span>
-                    <button
-                      type="button"
-                      onClick={() => goToPoints(guestDetail.movedToAccount, 'ledger')}
-                      className="font-medium underline underline-offset-2"
-                    >
-                      查看正式账号记录
-                    </button>
-                  </div>
-                ) : guestDetail.unlocks.length ? (
-                  <DataTable
-                    columns={[
-                      {
-                        key: 'title',
-                        header: '已解锁内容',
-                        render: (row) => (
-                          <div>
-                            <p className="font-medium text-[#33352c] dark:text-gray-200">{row.title}</p>
-                            <p className="mt-1 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{row.resourceKey}</p>
-                          </div>
-                        ),
-                      },
-                      { key: 'typeLabel', header: '类型', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
-                      { key: 'costPoints', header: '燃币', align: 'right' },
-                      { key: 'unlockedAt', header: '解锁时间', render: (row) => formatTime(row.unlockedAt), tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400' },
-                    ]}
-                    rows={guestDetail.unlocks}
-                    rowKey={(row) => `${row.resourceKey}:${row.unlockedAt}`}
-                  />
-                ) : (
-                  <p className="mt-3 text-sm text-[#67695d] dark:text-gray-400">该游客还没有解锁内容。</p>
-                )}
-              </div>
-            ) : null}
-          </Section>
+                <div className="max-h-[calc(100vh-7.5rem)] overflow-y-auto p-5 sm:max-h-[36.5rem]">
+                  {guestDetailStatus === 'loading' ? (
+                    <p className="py-8 text-center text-sm text-[#67695d] dark:text-gray-400">正在读取游客解锁内容…</p>
+                  ) : guestDetailStatus === 'error' ? (
+                    <p className="py-8 text-center text-sm text-rose-700 dark:text-rose-300">
+                      {guestMessage || '读取游客解锁记录失败。'}
+                    </p>
+                  ) : guestDetail ? (
+                    <>
+                      {guestDetail.movedToAccount ? (
+                        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-[#c9d4e5] bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/25 dark:text-blue-200">
+                          <span>该游客已绑定，解锁权益已归并到正式账号。</span>
+                          <button
+                            type="button"
+                            onClick={() => goToPoints(guestDetail.movedToAccount, 'ledger')}
+                            className="font-medium underline underline-offset-2"
+                          >
+                            查看正式账号记录
+                          </button>
+                        </div>
+                      ) : guestDetail.unlocks.length ? (
+                        <DataTable
+                          columns={[
+                            {
+                              key: 'title',
+                              header: '已解锁内容',
+                              render: (row) => (
+                                <div>
+                                  <p className="font-medium text-[#33352c] dark:text-gray-200">{row.title}</p>
+                                  <p className="mt-1 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{row.resourceKey}</p>
+                                </div>
+                              ),
+                            },
+                            { key: 'typeLabel', header: '类型', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
+                            { key: 'costPoints', header: '燃币', align: 'right' },
+                            { key: 'unlockedAt', header: '解锁时间', render: (row) => formatTime(row.unlockedAt), tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400' },
+                          ]}
+                          rows={guestDetail.unlocks}
+                          rowKey={(row) => `${row.resourceKey}:${row.unlockedAt}`}
+                        />
+                      ) : (
+                        <p className="py-8 text-center text-sm text-[#67695d] dark:text-gray-400">该游客还没有解锁内容。</p>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              </section>
+            </div>
+          ) : null}
         </>
       )}
     </AdminPage>

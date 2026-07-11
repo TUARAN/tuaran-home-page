@@ -50,7 +50,7 @@ export default async function RanbiPage() {
   const DIMENSIONS = [
     ['身份', '游客也有燃币（按匿名身份发放）；绑定登录后转为正式账号，额度更高、可签到可评论赚币。'],
     ['获取', `自动发放 + 主动赚取两条线：游客 ${R.guestSeed}、注册 ${R.register} 是底子，签到 +${R.checkin}/天、评论 +${R.comment} 是细水长流。`],
-    ['使用', `文字内容统一 ${R.resourceDefaultCost}；工具包/安装包领取 ${R.toolDefaultCost}。使用燃币前会明确确认，不会因普通浏览自动扣除。`],
+    ['使用', `文字内容统一 ${R.resourceDefaultCost}；工具包/安装包领取 ${R.toolDefaultCost}。进入内容或点击领取时自动扣减。`],
     ['权益', '内容解锁一次、工具包领取一次后永久有效；壁纸和音乐等免费资源也会保留领取/打开记录。'],
   ]
   return (
@@ -147,7 +147,7 @@ export default async function RanbiPage() {
           </table>
         </div>
         <p className="mt-3 text-[13px] leading-6 text-[var(--site-muted)]">
-          阅读内容会先显示<strong className="text-[var(--site-ink)]">明确的解锁确认</strong>，不会因为打开页面自动使用燃币；
+          进入有燃币门槛的内容时，余额足够会<strong className="text-[var(--site-ink)]">自动解锁并使用燃币</strong>；
           <strong className="text-[var(--site-ink)]">解锁后永久可读</strong>，反复打开、刷新都不再重复使用。工具包和安装包则在点击“领取”时才结算；壁纸、音乐等免费资源只记录领取/打开，不使用燃币。
         </p>
       </section>
@@ -201,7 +201,7 @@ export default async function RanbiPage() {
         <ul className="space-y-1.5 text-[13px] leading-6 text-[#8a7a55] dark:text-amber-300/80">
           <li>· 游客自动 <strong>{R.guestSeed}</strong> 燃币 → 够读约 {Math.floor(R.guestSeed / R.resourceDefaultCost)} 篇内容，或领取 {Math.floor(R.guestSeed / R.toolDefaultCost)} 个工具包。</li>
           <li>· 注册 / 绑定一次性 <strong>{R.register}</strong> 燃币，之后每天签到 +{R.checkin}、评论 +{R.comment}。</li>
-          <li>· 调研、资料、资源内容统一 {R.resourceDefaultCost} / 篇；工具包 / 安装包 {R.toolDefaultCost} / 项，确认后永久有效。</li>
+          <li>· 调研、资料、资源内容统一 {R.resourceDefaultCost} / 篇；工具包 / 安装包 {R.toolDefaultCost} / 项，进入内容或领取时自动扣减，解锁后永久有效。</li>
           <li>· 壁纸、音乐等免费资源不消耗燃币，但领取/打开会进入“我的领取记录”。</li>
           <li>· 评论奖励每日最多 +{R.commentDailyCap}，流水可查、重复操作不重复记账。</li>
           <li>· 支持本站可用于图床、视频、请求、存储和带宽成本；需要补充燃币可私聊站长。</li>

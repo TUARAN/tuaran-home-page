@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 export default function StatusPanel({
   unlocked,
   total,
@@ -10,16 +12,68 @@ export default function StatusPanel({
   maxPlainKChars,
   oldestYear,
 }) {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open) return undefined
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open])
+
   return (
-    <details className="mt-10 rounded-lg border border-[#dee0db] bg-white/70 px-4 py-3 text-sm dark:border-gray-800 dark:bg-[#121821]/70">
-      <summary className="cursor-pointer select-none font-serif text-base font-semibold text-[#15140f] dark:text-gray-100">
+    <>
+      <div className="mt-8 flex items-center gap-2 border-t border-[#dee0db] pt-3 dark:border-gray-800">
+        <span className="font-serif text-sm font-semibold text-[#51514a] dark:text-gray-300">
         现状梳理 · 架构与数据
-        <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
+        </span>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="查看长期罗盘的架构与数据说明"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#b7baad] font-serif text-xs font-semibold text-[#626459] transition hover:border-[#8b5a1f] hover:text-[#8b5a1f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b5a1f] dark:border-[#475061] dark:text-[#9aa6b6] dark:hover:border-[#d7a85c] dark:hover:text-[#d7a85c] dark:focus-visible:ring-[#d7a85c]"
+        >
+          i
+        </button>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
           read-only · e2ee
         </span>
-      </summary>
+      </div>
 
-      <div className="mt-4 grid gap-5 md:grid-cols-2">
+      {open ? (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#15140f]/35 p-4 backdrop-blur-sm"
+          onMouseDown={() => setOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="long-compass-info-title"
+            className="max-h-[min(760px,calc(100vh-2rem))] w-full max-w-4xl overflow-y-auto rounded-xl border border-[#d5d7cd] bg-[#fdfdf9] p-5 shadow-2xl dark:border-[#2d3744] dark:bg-[#10161f] sm:p-6"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header className="flex items-start justify-between gap-4 border-b border-[#dee0db] pb-4 dark:border-gray-800">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
+                  Read-only · E2EE
+                </p>
+                <h2 id="long-compass-info-title" className="mt-1 font-serif text-xl font-semibold text-[#15140f] dark:text-gray-100">
+                  现状梳理 · 架构与数据
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-md border border-[#d5d7cd] px-2.5 py-1.5 text-xs font-medium text-[#626459] transition hover:bg-[#edefe7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8b5a1f] dark:border-[#344052] dark:text-[#9aa6b6] dark:hover:bg-[#151c25] dark:focus-visible:ring-[#d7a85c]"
+              >
+                关闭
+              </button>
+            </header>
+
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
         <SectionBlock title="加密机制">
           <li>· 算法：<code className="font-mono text-[12px]">AES-256-GCM</code></li>
           <li>· 派生：<code className="font-mono text-[12px]">PBKDF2-SHA256 / 310,000 轮</code></li>
@@ -72,12 +126,16 @@ export default function StatusPanel({
             <CommitLink hash="9f30a41" />
           </li>
         </SectionBlock>
-      </div>
 
-      <p className="mt-5 border-t border-dashed border-[#dee0db] pt-3 text-[11px] leading-5 text-[#717367] dark:border-gray-700 dark:text-gray-400">
-        本页面只对登录后的 owner 账号开放。即使 GitHub OAuth 被劫持，攻击者拉到的也只是密文 + 不带口令的 schema —— 没有口令派生密钥就解不开。
-      </p>
-    </details>
+            </div>
+
+            <p className="mt-5 border-t border-dashed border-[#dee0db] pt-3 text-[11px] leading-5 text-[#717367] dark:border-gray-700 dark:text-gray-400">
+              本页面只对登录后的 owner 账号开放。即使 GitHub OAuth 被劫持，攻击者拉到的也只是密文 + 不带口令的 schema —— 没有口令派生密钥就解不开。
+            </p>
+          </section>
+        </div>
+      ) : null}
+    </>
   )
 }
 

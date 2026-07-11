@@ -87,7 +87,10 @@ export default function RanbiUnlocksPanel() {
         </span>
       </div>
       {unlocks.length ? (
-        <ul className="mt-4 divide-y divide-[var(--site-line)]">
+        <ul
+          aria-label="已解锁内容列表"
+          className="mt-4 max-h-[30rem] divide-y divide-[var(--site-line)] overflow-y-auto overscroll-contain pr-2 [scrollbar-gutter:stable]"
+        >
           {unlocks.map((item) => (
             <li key={`${item.resourceKey}:${item.unlockedAt}`} className="py-3">
               <div className="flex flex-wrap items-start justify-between gap-2">

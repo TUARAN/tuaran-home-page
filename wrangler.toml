@@ -36,3 +36,9 @@ database_id = "9dd9a699-a708-46ca-8243-85fd12ff8d63"
 [[r2_buckets]]
 binding = "MEDIA"
 bucket_name = "tuaran-media"
+
+# 私有成人媒体桶：创建后不允许启用 r2.dev 或任何公开自定义域。
+# Pages 项目在部署时应使用同名 binding；预览环境同样需要此 binding。
+[[r2_buckets]]
+binding = "NSFW_MEDIA"
+bucket_name = "tuaran-nsfw-private"

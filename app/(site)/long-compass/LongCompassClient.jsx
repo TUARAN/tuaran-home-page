@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { decryptPayload, fetchEncryptedRecords, KIND_LABELS, migrate } from '../../../lib/longCompass'
 
 import PrivateVaultGate from '../components/PrivateVaultGate'
+import FinanceView from './components/FinanceView'
 import RecordCard from './components/RecordCard'
 import StatusPanel from './components/StatusPanel'
 import ThemeFilter from './components/ThemeFilter'
@@ -25,6 +26,7 @@ export default function LongCompassClient({
   const [password, setPassword] = useState('')
   const [unlocked, setUnlocked] = useState(false)
   const [records, setRecords] = useState([])
+  const [activeView, setActiveView] = useState('records')
   const [activeKind, setActiveKind] = useState('snapshot')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -34,6 +36,11 @@ export default function LongCompassClient({
 
   function handleKindChange(kind) {
     setActiveKind(kind)
+    setSelectedTheme(null)
+  }
+
+  function handleViewChange(view) {
+    setActiveView(view)
     setSelectedTheme(null)
   }
 
@@ -183,32 +190,66 @@ export default function LongCompassClient({
       ) : (
         <section className="mt-6">
           <div className="border-b border-[#dee0db] pb-3 dark:border-gray-800">
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(KIND_LABELS).map(([kind, label]) => (
-                <button
-                  key={kind}
-                  type="button"
-                  onClick={() => handleKindChange(kind)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                    activeKind === kind
-                      ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
-                      : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
-                  }`}
-                >
-                  {label} · {counts[kind] || 0}
-                </button>
-              ))}
+            <div className="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="长期罗盘视图">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeView === 'records'}
+                onClick={() => handleViewChange('records')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  activeView === 'records'
+                    ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                    : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                }`}
+              >
+                原始记录
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeView === 'finance'}
+                onClick={() => handleViewChange('finance')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  activeView === 'finance'
+                    ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                    : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                }`}
+              >
+                财务视图
+              </button>
             </div>
-            <ThemeFilter
-              selectedTheme={selectedTheme}
-              onSelect={selectTheme}
-              onClear={() => setSelectedTheme(null)}
-              counts={themeCounts}
-            />
+            {activeView === 'records' ? (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(KIND_LABELS).map(([kind, label]) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      onClick={() => handleKindChange(kind)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                        activeKind === kind
+                          ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                          : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                      }`}
+                    >
+                      {label} · {counts[kind] || 0}
+                    </button>
+                  ))}
+                </div>
+                <ThemeFilter
+                  selectedTheme={selectedTheme}
+                  onSelect={selectTheme}
+                  onClear={() => setSelectedTheme(null)}
+                  counts={themeCounts}
+                />
+              </>
+            ) : null}
           </div>
 
           <div className="mt-4">
-            {currentRecords.length === 0 ? (
+            {activeView === 'finance' ? (
+              <FinanceView records={records} />
+            ) : currentRecords.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">
                 {selectedTheme ? `「${selectedTheme}」主题下暂无记录。` : '暂无记录。'}
               </p>

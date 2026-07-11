@@ -77,6 +77,7 @@ export default function RanbiUnlocksPanel() {
   }
 
   const unlocks = Array.isArray(data.unlocks) ? data.unlocks : []
+  const resourceEvents = Array.isArray(data.resourceEvents) ? data.resourceEvents : []
   return (
     <section className="mb-10 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -115,6 +116,34 @@ export default function RanbiUnlocksPanel() {
           这个账号还没有解锁记录。打开带燃币权益的调研或资源后，会自动出现在这里。
         </p>
       )}
+      <div className="mt-5 border-t border-[var(--site-line)] pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-[14px] font-semibold text-[var(--site-ink)]">我的领取记录</h3>
+          <span className="text-xs text-[var(--site-muted)]">{resourceEvents.length} 次</span>
+        </div>
+        {resourceEvents.length ? (
+          <ul className="mt-2 divide-y divide-[var(--site-line)]">
+            {resourceEvents.map((item) => (
+              <li key={item.id} className="py-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-[var(--site-ink)]">
+                      {item.href ? <Link href={item.href} className="no-underline hover:underline">{item.title}</Link> : item.title}
+                    </p>
+                    <p className="mt-1 text-[12px] leading-5 text-[var(--site-muted)]">{item.userDescription}</p>
+                  </div>
+                  <div className="shrink-0 text-right text-[11px] leading-5 text-[var(--site-muted)]">
+                    <p>{item.eventLabel}</p>
+                    <p>{formatTime(item.createdAt)}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-[13px] leading-6 text-[var(--site-muted)]">壁纸、工具包和外部作品的领取/打开记录会显示在这里。</p>
+        )}
+      </div>
     </section>
   )
 }

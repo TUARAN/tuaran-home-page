@@ -63,13 +63,11 @@ export default function WallpaperGallery() {
     return wallpapers.filter((w) => (w.category || 'misc') === active)
   }, [wallpapers, active])
 
+  function downloadHref(w) {
+    return `/api/resources/deliver?resourceKey=resource%3Awallpapers&wallpaperId=${encodeURIComponent(w.id)}`
+  }
+
   function handleDownload(w) {
-    // 埋点（失败不影响下载，直链交给浏览器）
-    fetch('/api/wallpapers', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: w.id }),
-    }).catch(() => {})
     setWallpapers((list) =>
       list.map((item) => (item.id === w.id ? { ...item, downloads: item.downloads + 1 } : item))
     )
@@ -159,10 +157,8 @@ export default function WallpaperGallery() {
                   </p>
                 </div>
                 <a
-                  href={w.url}
+                  href={downloadHref(w)}
                   download={w.fileName || true}
-                  target="_blank"
-                  rel="noreferrer"
                   onClick={() => handleDownload(w)}
                   className="shrink-0 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
                 >

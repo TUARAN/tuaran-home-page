@@ -72,11 +72,13 @@ export default function PointsConsole() {
   const [rules, setRules] = useState(null)
   const [policy, setPolicy] = useState(null)
   const [resources, setResources] = useState([])
+  const [resourceCatalog, setResourceCatalog] = useState([])
   const [summary, setSummary] = useState(null)
   const [autoReconcile, setAutoReconcile] = useState(null)
   const [accountDetail, setAccountDetail] = useState(null)
   const [accountLedger, setAccountLedger] = useState([])
   const [accountUnlocks, setAccountUnlocks] = useState([])
+  const [accountResourceEvents, setAccountResourceEvents] = useState([])
   const [detailStatus, setDetailStatus] = useState('idle')
   const [busy, setBusy] = useState(false)
   const [activeTab, setActiveTab] = useState('settings')
@@ -106,6 +108,7 @@ export default function PointsConsole() {
         setRules(data.rules || null)
         setPolicy(data.policy || null)
         setResources(Array.isArray(data.resources) ? data.resources : [])
+        setResourceCatalog(Array.isArray(data.resourceCatalog) ? data.resourceCatalog : [])
         setSummary(data.summary || null)
         setAutoReconcile(data.autoReconcile || null)
         setStatus('ok')
@@ -144,11 +147,13 @@ export default function PointsConsole() {
       setRules(data.rules || null)
       setPolicy(data.policy || null)
       setResources(Array.isArray(data.resources) ? data.resources : [])
+      setResourceCatalog(Array.isArray(data.resourceCatalog) ? data.resourceCatalog : [])
       setSummary(data.summary || null)
       setAutoReconcile(data.autoReconcile || null)
       setAccountDetail(data.accountDetail || null)
       setAccountLedger(Array.isArray(data.accountLedger) ? data.accountLedger : [])
       setAccountUnlocks(Array.isArray(data.accountUnlocks) ? data.accountUnlocks : [])
+      setAccountResourceEvents(Array.isArray(data.accountResourceEvents) ? data.accountResourceEvents : [])
       setDetailStatus('ok')
     } catch (error) {
       setDetailStatus('error')
@@ -274,10 +279,10 @@ export default function PointsConsole() {
       },
       {
         key: 'resource:*',
-        label: '资料页默认门槛',
-        cost: toValue(rules?.resourceDefaultCost, 10),
+        label: '文字资源默认门槛',
+        cost: toValue(rules?.resourceDefaultCost, 5),
         minRole: 'guest',
-        note: '未单独配置的 resource: 资源按这个价格解锁。',
+        note: '未单独配置的 resource: 文字内容按这个价格解锁。工具包应设显式 10 燃币门槛。',
       },
     ],
     [rules]
@@ -360,7 +365,8 @@ export default function PointsConsole() {
               ['签到', `+${rules.checkin}`],
               ['评论', `+${rules.comment}`],
               ['调研', rules.researchDefaultCost],
-              ['资源', rules.resourceDefaultCost],
+              ['内容', rules.resourceDefaultCost],
+              ['工具包', rules.toolDefaultCost],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-[#eceee6] bg-[#fbfcf7] px-3 py-2 dark:border-[#1b2430] dark:bg-[#10161f]">
                 <p className="text-[11px] text-[#82847a] dark:text-gray-500">{label}</p>
@@ -546,6 +552,25 @@ export default function PointsConsole() {
             )}
           </Section>
 
+          <Section
+            title="资源交付目录"
+            description="面向用户的名称和说明与下面的站长交付说明分开维护；下载、外部跳转会写入资源操作记录。"
+            className="mb-5"
+          >
+            <DataTable
+              columns={[
+                { key: 'title', header: '用户看到的资源' },
+                { key: 'kind', header: '类型' },
+                { key: 'delivery', header: '交付' },
+                { key: 'resourceKey', header: 'resource_key', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
+                { key: 'userDescription', header: '用户说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
+                { key: 'adminDescription', header: '站长说明', tdClassName: 'text-xs text-[#7a5b1e] dark:text-amber-300' },
+              ]}
+              rows={resourceCatalog}
+              rowKey={(row) => row.resourceKey}
+            />
+          </Section>
+
           <div ref={adjustSectionRef}>
             <Section
               title="手动增减燃币"
@@ -684,6 +709,26 @@ export default function PointsConsole() {
                   />
                 ) : (
                   <EmptyState icon={IconCoin} title="这个账户还没有解锁记录" />
+                )}
+              </div>
+
+              <div className="mb-6">
+                <h3 className="mb-2 text-sm font-semibold text-[#33352c] dark:text-gray-200">资源领取与外部打开记录</h3>
+                {accountResourceEvents.length ? (
+                  <DataTable
+                    columns={[
+                      { key: 'createdAt', header: '时间', render: (row) => formatTime(row.createdAt) },
+                      { key: 'title', header: '用户资源' },
+                      { key: 'eventLabel', header: '用户动作' },
+                      { key: 'itemKey', header: '交付项', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
+                      { key: 'adminDescription', header: '站长说明', tdClassName: 'text-xs text-[#7a5b1e] dark:text-amber-300' },
+                      { key: 'resourceKey', header: 'resource_key', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
+                    ]}
+                    rows={accountResourceEvents}
+                    rowKey={(row) => row.id}
+                  />
+                ) : (
+                  <EmptyState icon={IconCoin} title="这个账户还没有资源领取记录" />
                 )}
               </div>
 

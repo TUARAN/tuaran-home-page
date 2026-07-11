@@ -14,17 +14,16 @@ async function safeJson(res) {
 }
 
 /**
- * 燃币墙（软墙 · 自动使用燃币）。调研、资料/资源主题页共用。
+ * 燃币墙（软墙 · 明确确认后使用燃币）。调研、资料/资源主题页共用。
  *
  * 行为：
- *  - 打开即自动结算——余额够就静默使用燃币（解锁后永久可读），弹一个会自动消失的提示，
- *    不需要用户点任何按钮；正文始终可见。
+ *  - 余额够时展示明确的「使用燃币解锁」按钮；确认后永久解锁，不会把一次普通浏览当成消费。
  *  - 已解锁（之前付过）→ 直接看，不再扣、不提示。
  *  - 余额不足 → 截断正文 + 「燃币不足」挂卡（游客引导注册得 100）。
  *  - 资源未配置 / 无 D1 / 任何异常 → 直接放行（fail-open），绝不因燃币系统故障挡内容。
  *  - 使用幂等：unlockResource 以 resource_unlocks 兜底，重复打开不会重复使用燃币。
  *
- * @param {string} resourceKey 资源标识（research:<cat>:<slug> 默认 5；resource:<slug> 默认 10）
+ * @param {string} resourceKey 资源标识（文字内容默认 5；工具包可显式设为 10）
  * @param {string} unitLabel   文案里的内容名词，如「调研」「资料」（默认「内容」）
  */
 export default function RanbiPaywall({ resourceKey, children, unitLabel = '内容' }) {
@@ -90,15 +89,11 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
 
       const cost = Number(data.cost || 0)
       const balance = Number(data.balance || 0)
-      if (balance >= cost) {
-        await autoUnlock(data) // 余额够 → 静默自动使用燃币
-      } else {
-        setPhase('wall') // 余额不足 → 拦截
-      }
+      setPhase('wall') // 统一由用户明确确认解锁；余额不足时展示补充入口
     } catch {
       setPhase('free') // fail-open
     }
-  }, [resourceKey, autoUnlock])
+  }, [resourceKey])
 
   useEffect(() => {
     if (settledRef.current) return
@@ -119,6 +114,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
   const balance = Number(info.balance || 0)
   const isGuest = !info.authed
   const need = Number(info.need ?? Math.max(0, cost - balance))
+  const canUnlock = balance >= cost
 
   return (
     <div>
@@ -135,13 +131,21 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
       {wall ? (
         <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
           <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">
-            🔥 燃币不足，还差 {need} 枚
+            {canUnlock ? `🔥 解锁此${unitLabel}` : `🔥 燃币不足，还差 ${need} 枚`}
           </p>
           <p className="mt-1.5 text-sm text-[#8a7a55] dark:text-amber-300/80">
-            解锁此{unitLabel}需 {cost} 燃币 · 当前余额 <span className="font-semibold">{balance}</span> 燃币
+            解锁此{unitLabel}需 {cost} 燃币 · 当前余额 <span className="font-semibold">{balance}</span> 燃币 · 解锁后永久有效
           </p>
           <div className="mt-4 flex flex-col items-center gap-2">
-            {isGuest ? (
+            {canUnlock ? (
+              <button
+                type="button"
+                onClick={() => autoUnlock(info)}
+                className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-6 py-2 text-sm font-medium text-white hover:bg-[#6a4f19] dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
+              >
+                使用 {cost} 燃币解锁
+              </button>
+            ) : isGuest ? (
               <>
                 <button
                   type="button"
@@ -174,7 +178,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
         </div>
       ) : null}
 
-      {/* 自动使用提示：底部居中，几秒后自动消失；游客带注册引导 */}
+      {/* 确认使用后的反馈：底部居中，几秒后自动消失；游客带注册引导 */}
       {charged ? (
         <div
           className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4"

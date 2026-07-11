@@ -48,28 +48,3 @@ export async function GET() {
     )
   }
 }
-
-// 下载埋点：文件本体直接走公开 R2 域名，此接口只 +1 计数。
-export async function POST(req) {
-  const db = dbOrNull()
-  if (!db) return Response.json({ ok: false }, { status: 200 })
-
-  let body = null
-  try {
-    body = await req.json()
-  } catch {
-    return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
-  }
-  const id = typeof body?.id === 'string' ? body.id.trim() : ''
-  if (!id) return Response.json({ error: 'INVALID_ID' }, { status: 400 })
-
-  try {
-    await db
-      .prepare('UPDATE wallpapers SET downloads = downloads + 1 WHERE id = ? AND published = 1')
-      .bind(id)
-      .run()
-  } catch {
-    // 计数失败不影响下载，静默
-  }
-  return Response.json({ ok: true })
-}

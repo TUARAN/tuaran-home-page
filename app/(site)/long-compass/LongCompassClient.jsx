@@ -28,6 +28,7 @@ export default function LongCompassClient({
   const [records, setRecords] = useState([])
   const [activeView, setActiveView] = useState('records')
   const [activeKind, setActiveKind] = useState('snapshot')
+  const [expandedRecordId, setExpandedRecordId] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   // 主题筛选改为单选互斥（null = 全部）：选另一个会自动取消旧的，
@@ -37,15 +38,22 @@ export default function LongCompassClient({
   function handleKindChange(kind) {
     setActiveKind(kind)
     setSelectedTheme(null)
+    setExpandedRecordId(null)
   }
 
   function handleViewChange(view) {
     setActiveView(view)
     setSelectedTheme(null)
+    setExpandedRecordId(null)
   }
 
   function selectTheme(theme) {
     setSelectedTheme((prev) => (prev === theme ? null : theme))
+    setExpandedRecordId(null)
+  }
+
+  function toggleRecord(id) {
+    setExpandedRecordId((current) => (current === id ? null : id))
   }
 
   // ---- 拉密文记录 ----
@@ -239,7 +247,10 @@ export default function LongCompassClient({
                 <ThemeFilter
                   selectedTheme={selectedTheme}
                   onSelect={selectTheme}
-                  onClear={() => setSelectedTheme(null)}
+                  onClear={() => {
+                    setSelectedTheme(null)
+                    setExpandedRecordId(null)
+                  }}
                   counts={themeCounts}
                 />
               </>
@@ -254,11 +265,20 @@ export default function LongCompassClient({
                 {selectedTheme ? `「${selectedTheme}」主题下暂无记录。` : '暂无记录。'}
               </p>
             ) : activeKind === 'review' ? (
-              <Timeline records={currentRecords} />
+              <Timeline
+                records={currentRecords}
+                expandedRecordId={expandedRecordId}
+                onToggleRecord={toggleRecord}
+              />
             ) : (
               <div className="space-y-3">
                 {currentRecords.map((record) => (
-                  <RecordCard key={record.id} record={record} />
+                  <RecordCard
+                    key={record.id}
+                    record={record}
+                    expanded={expandedRecordId === record.id}
+                    onToggle={toggleRecord}
+                  />
                 ))}
               </div>
             )}

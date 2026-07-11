@@ -4,14 +4,19 @@ import { THEME_COLORS } from '../../../../lib/longCompass/schema'
 
 import { PROSE_CLASS, renderMarkdown } from './markdown'
 
-export default function RecordCard({ record, dense = false }) {
+export default function RecordCard({ record, dense = false, expanded = false, onToggle }) {
   const padding = dense ? 'p-3' : 'p-4'
   const themes = Array.isArray(record.plain?.theme) ? record.plain.theme : []
   return (
     <article
       className={`rounded-lg border border-[#dee0db] bg-white/78 ${padding} dark:border-gray-800 dark:bg-[#121821]/78`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <button
+        type="button"
+        onClick={() => onToggle?.(record.id)}
+        aria-expanded={expanded}
+        className="flex w-full flex-wrap items-start justify-between gap-3 rounded-md text-left outline-none transition focus-visible:ring-2 focus-visible:ring-[#8b5a1f] dark:focus-visible:ring-[#d7a85c]"
+      >
         <div className="min-w-0 flex-1">
           <h2 className="font-serif text-base font-semibold text-[#15140f] dark:text-gray-100">
             {record.plain?.title || '未命名记录'}
@@ -34,14 +39,19 @@ export default function RecordCard({ record, dense = false }) {
             </div>
           ) : null}
         </div>
-        <span className="shrink-0 font-mono text-[10px] text-[#858876] dark:text-[#8e9ab0]">
+        <span className="flex shrink-0 items-center gap-2 font-mono text-[10px] text-[#858876] dark:text-[#8e9ab0]">
           {new Date(record.updatedAt).toLocaleDateString('zh-CN')}
+          <span className="rounded border border-[#d8dad2] px-1.5 py-0.5 dark:border-[#344052]">
+            {expanded ? '收起' : '展开'}
+          </span>
         </span>
-      </div>
-      <div
-        className={PROSE_CLASS}
-        dangerouslySetInnerHTML={{ __html: renderMarkdown(record.plain?.content) }}
-      />
+      </button>
+      {expanded ? (
+        <div
+          className={PROSE_CLASS}
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(record.plain?.content) }}
+        />
+      ) : null}
     </article>
   )
 }

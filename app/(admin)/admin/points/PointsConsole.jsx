@@ -66,10 +66,24 @@ function toValue(value, fallback) {
 const inputCls =
   'h-9 rounded-lg border border-[#caccc0] bg-white px-2.5 text-sm text-[#15140f] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-100'
 
+const RULE_FIELDS = [
+  ['guestSeed', '游客试用额度', '首次匿名访问一次性发放'],
+  ['register', '注册 / 绑定奖励', '正式账号首次登录一次性发放'],
+  ['checkin', '每日签到奖励', '每个自然日一次'],
+  ['pendingCheckinLimit', '待激活签到次数', '邮箱激活前的总次数上限'],
+  ['comment', '有效评论奖励', '每条成功评论'],
+  ['commentDailyCap', '评论每日上限', '单日最多获得的评论燃币'],
+  ['researchDefaultCost', '调研内容默认价', '未单独配置 research:*'],
+  ['resourceDefaultCost', '文字资源默认价', '未单独配置 resource:*'],
+  ['toolDefaultCost', '工具包默认价', '已登记工具包 / 安装包领取'],
+  ['imageHostingUpload', '图床上传单价', '每上传一张图片'],
+]
+
 export default function PointsConsole() {
   const [status, setStatus] = useState('loading')
   const [message, setMessage] = useState('')
   const [rules, setRules] = useState(null)
+  const [ruleDraft, setRuleDraft] = useState({})
   const [policy, setPolicy] = useState(null)
   const [resources, setResources] = useState([])
   const [resourceCatalog, setResourceCatalog] = useState([])
@@ -106,6 +120,7 @@ export default function PointsConsole() {
       const data = await res.json().catch(() => null)
       if (res.ok && data?.status === 'ok') {
         setRules(data.rules || null)
+        setRuleDraft(data.rules || {})
         setPolicy(data.policy || null)
         setResources(Array.isArray(data.resources) ? data.resources : [])
         setResourceCatalog(Array.isArray(data.resourceCatalog) ? data.resourceCatalog : [])
@@ -145,6 +160,7 @@ export default function PointsConsole() {
         throw new Error(data?.message || data?.error || `HTTP ${res.status}`)
       }
       setRules(data.rules || null)
+      setRuleDraft(data.rules || {})
       setPolicy(data.policy || null)
       setResources(Array.isArray(data.resources) ? data.resources : [])
       setResourceCatalog(Array.isArray(data.resourceCatalog) ? data.resourceCatalog : [])
@@ -222,6 +238,12 @@ export default function PointsConsole() {
     if (ok) setResKey('')
   }
 
+  async function saveRuleSettings(e) {
+    e.preventDefault()
+    const ok = await post({ action: 'updateRules', rules: ruleDraft }, '默认燃币规则已保存，新请求即时生效')
+    if (ok?.rules) setRuleDraft(ok.rules)
+  }
+
   async function removeResource(key) {
     await post({ action: 'deleteResource', resourceKey: key }, '门槛已删除')
   }
@@ -282,7 +304,14 @@ export default function PointsConsole() {
         label: '文字资源默认门槛',
         cost: toValue(rules?.resourceDefaultCost, 5),
         minRole: 'guest',
-        note: '未单独配置的 resource: 文字内容按这个价格解锁。工具包应设显式 10 燃币门槛。',
+        note: '未单独配置的 resource: 文字内容按这个价格解锁。',
+      },
+      {
+        key: '已登记工具包',
+        label: '工具包 / 安装包默认门槛',
+        cost: toValue(rules?.toolDefaultCost, 10),
+        minRole: 'guest',
+        note: '资源目录中登记的工具包和安装包会优先按这个价格领取；后台显式配置仅用于运营覆盖。',
       },
     ],
     [rules]
@@ -462,8 +491,45 @@ export default function PointsConsole() {
       {activeTab === 'settings' ? (
         <>
           <Section
+            title="全站燃币规则"
+            description="这里的数值是实际生效规则，不是写死在代码中的价格。保存后只影响新的发币、扣币和解锁；已发生的账本与已解锁权益不会被改写。"
+            className="mb-5"
+          >
+            <form onSubmit={saveRuleSettings}>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                {RULE_FIELDS.map(([key, label, hint]) => (
+                  <label key={key} className="rounded-lg border border-[#e2e3da] bg-[#fbfcf7] p-3 dark:border-[#1e2733] dark:bg-[#10161f]">
+                    <span className="block text-xs font-medium text-[#33352c] dark:text-gray-200">{label}</span>
+                    <span className="mt-1 block min-h-8 text-[11px] leading-4 text-[#82847a] dark:text-gray-500">{hint}</span>
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100000"
+                        step="1"
+                        value={ruleDraft[key] ?? ''}
+                        onChange={(event) => setRuleDraft((prev) => ({ ...prev, [key]: event.target.value }))}
+                        className={`${inputCls} w-full font-mono`}
+                      />
+                      <span className="text-xs text-[#82847a] dark:text-gray-500">{key === 'pendingCheckinLimit' ? '次' : '燃币'}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <AdminButton type="submit" variant="primary" disabled={busy || !Object.keys(ruleDraft).length}>
+                  保存全站规则
+                </AdminButton>
+                <p className="text-xs leading-5 text-[#67695d] dark:text-gray-400">
+                  单个资源的“资源权益覆盖”优先级更高；工具包也可在下方单独覆盖。
+                </p>
+              </div>
+            </form>
+          </Section>
+
+          <Section
             title="默认权益额度"
-            description="这些是代码里的默认规则：资源没有显式配置时会自动回退到这里，不需要逐条登记。"
+            description="这是上方规则在内容系统中的映射预览：文字内容按前缀回退，已登记工具包按目录价格领取；显式配置只用于覆盖。"
             className="mb-5"
           >
             <DataTable

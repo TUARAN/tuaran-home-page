@@ -7,7 +7,7 @@ import {
   getClientIp,
   rateLimitResponse,
 } from '../../../../lib/abuseControls'
-import { POINT_RULES, awardCheckin, countCheckins, getBalance } from '../../../../lib/points'
+import { awardCheckin, countCheckins, getBalance, getPointRules } from '../../../../lib/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -27,6 +27,7 @@ export async function POST(req) {
     }
 
     const db = getD1()
+    const rules = await getPointRules(db)
     const ip = getClientIp(req)
     const limit = await enforceRateLimits(db, [
       { scope: 'points:checkin:user:day', subject: userId, limit: 5, windowMs: DAY_MS },
@@ -36,11 +37,11 @@ export async function POST(req) {
 
     if (user.provider === 'email' && user.status === 'pending') {
       const checkins = await countCheckins(db, userId)
-      if (checkins >= POINT_RULES.pendingCheckinLimit) {
+      if (checkins >= rules.pendingCheckinLimit) {
         return Response.json(
           {
             error: 'EMAIL_ACTIVATION_REQUIRED',
-            pendingCheckinLimit: POINT_RULES.pendingCheckinLimit,
+            pendingCheckinLimit: rules.pendingCheckinLimit,
             balance: await getBalance(db, userId),
           },
           { status: 403 }
@@ -54,7 +55,7 @@ export async function POST(req) {
     return Response.json({
       ok: true,
       awarded: result.awarded,
-      gained: result.awarded ? POINT_RULES.checkin : 0,
+      gained: result.awarded ? rules.checkin : 0,
       balance: result.balance ?? (await getBalance(db, userId)),
       alreadyCheckedIn: !result.awarded,
     })

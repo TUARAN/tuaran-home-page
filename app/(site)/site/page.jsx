@@ -2,7 +2,6 @@ import Link from 'next/link'
 
 import PageContainer from '../components/PageContainer'
 import RanbiBalance from '../components/RanbiBalance'
-import { POINT_RULES } from '../../../lib/points'
 
 export const dynamic = 'force-static'
 
@@ -112,8 +111,7 @@ export default function SiteAboutPage() {
         </p>
         <h2 className="mt-2 font-serif text-[26px] text-[#5f4617] dark:text-amber-100">燃币不是收费墙</h2>
         <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#7f704e] dark:text-amber-300/85">
-          燃币是本站的留存和友好交流机制：游客有 {POINT_RULES.guestSeed} 枚试用额度，登录后有 {POINT_RULES.register}{' '}
-          枚起步额度，也可以通过签到、评论、活动或站长手动调整获得。它主要用来记录资源领取、活动参与和内容解锁，
+          燃币是本站的留存和友好交流机制：游客有试用额度，登录后有起步额度，也可以通过签到、评论、活动或站长手动调整获得。它主要用来记录资源领取、活动参与和内容解锁，
           不是为了把阅读变成收费。图床、视频、模型请求、存储和带宽确实会有成本；如果你愿意支持本站，也可以在支持后私聊站长调整燃币。
         </p>
         <div className="mt-5 flex flex-wrap gap-3">

@@ -1,9 +1,11 @@
 import PageContainer from '../components/PageContainer'
 import RanbiBalance from '../components/RanbiBalance'
 import RanbiUnlocksPanel from './RanbiUnlocksPanel'
-import { POINT_POLICY, POINT_RULES } from '../../../lib/points'
+import { getD1 } from '../../../lib/d1'
+import { getPointPolicy, getPointRules } from '../../../lib/points'
 
-export const dynamic = 'force-static'
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '燃币说明 · 留存、交流与资源权益',
@@ -13,38 +15,6 @@ export const metadata = {
   alternates: { canonical: '/ranbi' },
 }
 
-const R = POINT_RULES
-const POLICY = POINT_POLICY
-const commentMaxPerDay = Math.floor(R.commentDailyCap / R.comment)
-
-const EARN_ROWS = POLICY.earnMethods.filter((row) => row.status === 'live').map((row) => [
-  row.label,
-  row.delta == null ? '按需' : `+${row.delta}`,
-  row.id === 'comment'
-    ? `${row.description} 当前约 ${commentMaxPerDay} 条封顶。`
-    : row.description,
-  row.frequency,
-])
-
-const SPEND_ROWS = POLICY.spendScenarios.filter((row) => row.status === 'live' && row.cost != null).map((row) => [
-  row.label,
-  `${row.cost} / ${row.unit}`,
-  row.description,
-])
-
-const RESERVED_ROWS = POLICY.spendScenarios.filter((row) => row.status === 'reserved').map((row) => [
-  row.label,
-  row.cost == null ? '待定' : `${row.cost} / ${row.unit}`,
-  row.description,
-])
-
-const DIMENSIONS = [
-  ['身份', '游客也有燃币（按匿名身份发放）；绑定登录后转为正式账号，额度更高、可签到可评论赚币。'],
-  ['获取', `自动发放 + 主动赚取两条线：游客 ${R.guestSeed}、注册 ${R.register} 是底子，签到 +${R.checkin}/天、评论 +${R.comment}/条 是细水长流。`],
-  ['使用', `文字内容统一 ${R.resourceDefaultCost}；工具包/安装包领取 ${R.toolDefaultCost}。使用燃币前会明确确认，不会因普通浏览自动扣除。`],
-  ['权益', '内容解锁一次、工具包领取一次后永久有效；壁纸和音乐等免费资源也会保留领取/打开记录。'],
-]
-
 function Th({ children, className = '' }) {
   return <th className={`p-3 text-left font-semibold text-[var(--site-ink)] ${className}`}>{children}</th>
 }
@@ -53,7 +23,36 @@ function Td({ children, className = '' }) {
   return <td className={`p-3 align-top text-[var(--site-muted)] ${className}`}>{children}</td>
 }
 
-export default function RanbiPage() {
+export default async function RanbiPage() {
+  let db = null
+  try {
+    db = getD1()
+  } catch {}
+  const R = await getPointRules(db)
+  const POLICY = getPointPolicy(R)
+  const commentMaxPerDay = R.comment > 0 ? Math.floor(R.commentDailyCap / R.comment) : 0
+  const EARN_ROWS = POLICY.earnMethods.filter((row) => row.status === 'live').map((row) => [
+    row.label,
+    row.delta == null ? '按需' : `+${row.delta}`,
+    row.id === 'comment' ? `${row.description} 当前约 ${commentMaxPerDay} 条封顶。` : row.description,
+    row.frequency,
+  ])
+  const SPEND_ROWS = POLICY.spendScenarios.filter((row) => row.status === 'live' && row.cost != null).map((row) => [
+    row.label,
+    `${row.cost} / ${row.unit}`,
+    row.description,
+  ])
+  const RESERVED_ROWS = POLICY.spendScenarios.filter((row) => row.status === 'reserved').map((row) => [
+    row.label,
+    row.cost == null ? '待定' : `${row.cost} / ${row.unit}`,
+    row.description,
+  ])
+  const DIMENSIONS = [
+    ['身份', '游客也有燃币（按匿名身份发放）；绑定登录后转为正式账号，额度更高、可签到可评论赚币。'],
+    ['获取', `自动发放 + 主动赚取两条线：游客 ${R.guestSeed}、注册 ${R.register} 是底子，签到 +${R.checkin}/天、评论 +${R.comment} 是细水长流。`],
+    ['使用', `文字内容统一 ${R.resourceDefaultCost}；工具包/安装包领取 ${R.toolDefaultCost}。使用燃币前会明确确认，不会因普通浏览自动扣除。`],
+    ['权益', '内容解锁一次、工具包领取一次后永久有效；壁纸和音乐等免费资源也会保留领取/打开记录。'],
+  ]
   return (
     <PageContainer width="narrow" className="py-12">
       <header className="mb-8 border-b border-[var(--site-line)] pb-6">

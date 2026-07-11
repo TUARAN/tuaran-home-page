@@ -1,11 +1,20 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { decryptPayload, encryptPayload } from '../../../../lib/longCompass/crypto'
+import { SHARED_NOTE_MAX_CONTENT_LENGTH } from '../../../../lib/shareContent'
 import { AdminPage } from '../../components/ui'
 
 const LEGACY_SHARE_PASSWORD = '123123'
+const MAX_EMBEDDED_IMAGE_BYTES = 600 * 1024
+const EMBEDDABLE_IMAGE_TYPES = new Set([
+  'image/avif',
+  'image/gif',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+])
 
 async function safeJson(res) {
   try {
@@ -35,6 +44,24 @@ function buildShareUrl(slug, password) {
   const base = `${window.location.origin}/share/${slug}`
   if (!password) return base
   return `${base}#${encodeURIComponent(password)}`
+}
+
+function imageAltFromFileName(name) {
+  return String(name || '图片')
+    .replace(/\.[a-z0-9]+$/i, '')
+    .replace(/[\[\]\n\r]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120) || '图片'
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('IMAGE_READ_FAILED'))
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.readAsDataURL(file)
+  })
 }
 
 function normalizeEnvelope(envelope) {
@@ -80,6 +107,8 @@ export default function ShareAdminClient() {
   const [createError, setCreateError] = useState('')
   const [createdSlug, setCreatedSlug] = useState('')
   const [createdPassword, setCreatedPassword] = useState('')
+  const [embeddingImage, setEmbeddingImage] = useState(false)
+  const imageInputRef = useRef(null)
 
   // 删除中状态
   const [pendingSlug, setPendingSlug] = useState('')
@@ -111,6 +140,10 @@ export default function ShareAdminClient() {
     }
     if (password.length < 6) {
       setCreateError('密码至少 6 位')
+      return
+    }
+    if (content.length > SHARED_NOTE_MAX_CONTENT_LENGTH) {
+      setCreateError(`内容过大，最多 ${Math.floor(SHARED_NOTE_MAX_CONTENT_LENGTH / 1000)} 万字符`)
       return
     }
     setSubmitting(true)
@@ -147,6 +180,43 @@ export default function ShareAdminClient() {
     }
   }
 
+  async function handleEmbedImage(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setCreateError('')
+
+    if (!EMBEDDABLE_IMAGE_TYPES.has(file.type)) {
+      setCreateError('仅支持 JPG、PNG、WebP、GIF 或 AVIF 图片')
+      return
+    }
+    if (file.size > MAX_EMBEDDED_IMAGE_BYTES) {
+      setCreateError('内嵌图片不能超过 600 KB；请先压缩图片后再试')
+      return
+    }
+
+    setEmbeddingImage(true)
+    try {
+      const dataUrl = await readFileAsDataUrl(file)
+      if (!/^data:image\/(?:avif|gif|jpe?g|png|webp);base64,[a-z0-9+/]+=*$/i.test(dataUrl)) {
+        throw new Error('INVALID_IMAGE_DATA')
+      }
+      const markdown = `\n\n![${imageAltFromFileName(file.name)}](${dataUrl})\n`
+      if (content.length + markdown.length > SHARED_NOTE_MAX_CONTENT_LENGTH) {
+        throw new Error('CONTENT_TOO_LARGE')
+      }
+      setContent((current) => `${current}${markdown}`)
+    } catch (error) {
+      setCreateError(
+        error?.message === 'CONTENT_TOO_LARGE'
+          ? `图片加入后内容会超过 ${Math.floor(SHARED_NOTE_MAX_CONTENT_LENGTH / 1000)} 万字符上限`
+          : '图片读取失败，请换一张图片重试'
+      )
+    } finally {
+      setEmbeddingImage(false)
+    }
+  }
+
   async function handleDelete(slug) {
     if (!confirm(`确定删除分享 ${slug}？这是不可逆的。`)) return
     setPendingSlug(slug)
@@ -180,9 +250,9 @@ export default function ShareAdminClient() {
 
   return (
     <AdminPage
-      title="加密分享管理"
+      title="密码保护分享"
       maxWidth="960px"
-      description="站长后台保存并展示明文，方便直接管理；分享出去的公开链接只返回密文信封。访问者凭链接 + 密码即可解锁；把密码加在链接末尾 #密码 可一键打开，也可以分两个通道单独发链接和密码。"
+      description="这是对外分发工具：后台保存明文副本，公开链接只返回密文信封；读者在浏览器用密码解锁。它不同于长期罗盘的强私密模式。密码可单独发送，或放在链接末尾 #密码 供一键打开。"
     >
       {/* 列表 */}
       <section className="mb-8">
@@ -283,7 +353,7 @@ export default function ShareAdminClient() {
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-[#35362f] dark:text-gray-200">内容 markdown（后台明文可见，分享端加密）</span>
+            <span className="mb-1 block text-xs font-medium text-[#35362f] dark:text-gray-200">正文 Markdown（后台保留明文副本，公开端加密）</span>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -291,6 +361,31 @@ export default function ShareAdminClient() {
               placeholder="粘贴 markdown 全文…"
               className="w-full rounded-lg border border-[#caccc0] bg-white px-3 py-2 font-mono text-xs leading-6 outline-none focus:border-[#a37b3c] dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
             />
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleEmbedImage}
+                />
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={embeddingImage}
+                  className="rounded-md border border-[#caccc0] px-2.5 py-1.5 text-xs font-medium text-[#63645a] hover:bg-[#edefe7] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
+                >
+                  {embeddingImage ? '嵌入图片中…' : '嵌入图片'}
+                </button>
+                <span className="text-[11px] leading-5 text-[#73756a] dark:text-[#8e9ab0]">
+                  ≤ 600 KB；图片随正文加密，解锁后才会加载。
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-[#858779] dark:text-[#8e9ab0]">
+                {content.length.toLocaleString()} / {SHARED_NOTE_MAX_CONTENT_LENGTH.toLocaleString()}
+              </span>
+            </div>
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">

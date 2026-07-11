@@ -15,7 +15,6 @@ import {
   upsertResource,
 } from '../../../../lib/points'
 import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
-import { listResourceCatalogForAdmin } from '../../../../lib/resourceCatalog'
 import { listResourceEventsForUser } from '../../../../lib/resourceEvents'
 
 export const runtime = 'edge'
@@ -167,7 +166,6 @@ export async function GET(req) {
       policy: getPointPolicy(rules),
       autoReconcile,
       resources,
-      resourceCatalog: listResourceCatalogForAdmin(),
       summary: {
         accountCount: toNumber(accountSummary?.account_count),
         totalBalance: toNumber(accountSummary?.total_balance),
@@ -203,7 +201,7 @@ export async function GET(req) {
 
 /**
  * 写操作（action 区分）：
- *  - upsertResource: { resourceKey, costPoints, minRole }
+ *  - upsertResource: { resourceKey, costPoints }
  *  - deleteResource: { resourceKey }
  *  - adjust:         { userId, delta, note }  站长手动加/减燃币
  *  - reverse:        { ledgerId }             撤销某条燃币变动（补一笔反向变动）
@@ -229,7 +227,6 @@ export async function POST(req) {
       const result = await upsertResource(db, {
         resourceKey: body?.resourceKey,
         costPoints: body?.costPoints,
-        minRole: body?.minRole,
       })
       if (!result.ok) return Response.json(result, { status: result.status || 400 })
       return Response.json({ ok: true, resource: result })

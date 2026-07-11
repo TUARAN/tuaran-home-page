@@ -14,10 +14,10 @@ async function safeJson(res) {
 }
 
 /**
- * 燃币墙（软墙 · 明确确认后使用燃币）。调研、资料/资源主题页共用。
+ * 燃币墙（软墙 · 自动使用燃币）。调研、资料/资源主题页共用。
  *
  * 行为：
- *  - 余额够时展示明确的「使用燃币解锁」按钮；确认后永久解锁，不会把一次普通浏览当成消费。
+ *  - 余额够时进入内容即自动解锁；已解锁后永久可读，不重复使用燃币。
  *  - 已解锁（之前付过）→ 直接看，不再扣、不提示。
  *  - 余额不足 → 截断正文 + 「燃币不足」挂卡（游客引导注册得 100）。
  *  - 资源未配置 / 无 D1 / 任何异常 → 直接放行（fail-open），绝不因燃币系统故障挡内容。
@@ -89,11 +89,16 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
 
       const cost = Number(data.cost || 0)
       const balance = Number(data.balance || 0)
-      setPhase('wall') // 统一由用户明确确认解锁；余额不足时展示补充入口
+      if (balance >= cost) {
+        // 内容页只有这一个受控入口；服务端以 resource_unlocks 幂等，重复进入不重复扣款。
+        await autoUnlock(data)
+        return
+      }
+      setPhase('wall') // 余额不足时才显示补充燃币入口
     } catch {
       setPhase('free') // fail-open
     }
-  }, [resourceKey])
+  }, [resourceKey, autoUnlock])
 
   useEffect(() => {
     if (settledRef.current) return
@@ -114,7 +119,6 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
   const balance = Number(info.balance || 0)
   const isGuest = !info.authed
   const need = Number(info.need ?? Math.max(0, cost - balance))
-  const canUnlock = balance >= cost
 
   return (
     <div>
@@ -131,21 +135,13 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
       {wall ? (
         <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
           <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">
-            {canUnlock ? `🔥 解锁此${unitLabel}` : `🔥 燃币不足，还差 ${need} 枚`}
+            🔥 燃币不足，还差 {need} 枚
           </p>
           <p className="mt-1.5 text-sm text-[#8a7a55] dark:text-amber-300/80">
-            解锁此{unitLabel}需 {cost} 燃币 · 当前余额 <span className="font-semibold">{balance}</span> 燃币 · 解锁后永久有效
+            自动解锁此{unitLabel}需 {cost} 燃币 · 当前余额 <span className="font-semibold">{balance}</span> 燃币 · 解锁后永久有效
           </p>
           <div className="mt-4 flex flex-col items-center gap-2">
-            {canUnlock ? (
-              <button
-                type="button"
-                onClick={() => autoUnlock(info)}
-                className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-6 py-2 text-sm font-medium text-white hover:bg-[#6a4f19] dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
-              >
-                使用 {cost} 燃币解锁
-              </button>
-            ) : isGuest ? (
+            {isGuest ? (
               <>
                 <button
                   type="button"
@@ -178,7 +174,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
         </div>
       ) : null}
 
-      {/* 确认使用后的反馈：底部居中，几秒后自动消失；游客带注册引导 */}
+      {/* 自动使用后的反馈：底部居中，几秒后自动消失；游客带注册引导 */}
       {charged ? (
         <div
           className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4"

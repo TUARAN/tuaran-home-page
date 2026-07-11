@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { IconCoin, IconRefresh, IconTrash } from '@tabler/icons-react'
 
-import { USER_ROLE_LABELS, VALID_USER_ROLES } from '../../../../lib/userRoles'
 import { displayNameForUserId } from '../../../../lib/userDisplayName'
 import { AdminPage, Section, StatCard, DataTable, EmptyState, AdminButton } from '../../components/ui'
 
@@ -33,11 +32,6 @@ const REASON_LABELS = {
   admin: '手动',
 }
 
-const ROLE_LABELS = {
-  ...USER_ROLE_LABELS,
-  guest: '游客可解锁',
-}
-
 const TABS = [
   { id: 'settings', label: '门槛与调整' },
   { id: 'ledger', label: '账户流水查询' },
@@ -56,11 +50,6 @@ function formatTime(ts) {
   } catch {
     return '—'
   }
-}
-
-function toValue(value, fallback) {
-  const n = Number(value)
-  return Number.isFinite(n) ? n : fallback
 }
 
 const inputCls =
@@ -86,7 +75,6 @@ export default function PointsConsole() {
   const [ruleDraft, setRuleDraft] = useState({})
   const [policy, setPolicy] = useState(null)
   const [resources, setResources] = useState([])
-  const [resourceCatalog, setResourceCatalog] = useState([])
   const [summary, setSummary] = useState(null)
   const [autoReconcile, setAutoReconcile] = useState(null)
   const [accountDetail, setAccountDetail] = useState(null)
@@ -99,8 +87,7 @@ export default function PointsConsole() {
   const [showPolicyDetails, setShowPolicyDetails] = useState(false)
 
   const [resKey, setResKey] = useState('')
-  const [resCost, setResCost] = useState('10')
-  const [resRole, setResRole] = useState('member')
+  const [resCost, setResCost] = useState('')
 
   const [adjUser, setAdjUser] = useState('')
   const [adjDelta, setAdjDelta] = useState('')
@@ -123,7 +110,6 @@ export default function PointsConsole() {
         setRuleDraft(data.rules || {})
         setPolicy(data.policy || null)
         setResources(Array.isArray(data.resources) ? data.resources : [])
-        setResourceCatalog(Array.isArray(data.resourceCatalog) ? data.resourceCatalog : [])
         setSummary(data.summary || null)
         setAutoReconcile(data.autoReconcile || null)
         setStatus('ok')
@@ -163,7 +149,6 @@ export default function PointsConsole() {
       setRuleDraft(data.rules || {})
       setPolicy(data.policy || null)
       setResources(Array.isArray(data.resources) ? data.resources : [])
-      setResourceCatalog(Array.isArray(data.resourceCatalog) ? data.resourceCatalog : [])
       setSummary(data.summary || null)
       setAutoReconcile(data.autoReconcile || null)
       setAccountDetail(data.accountDetail || null)
@@ -230,12 +215,15 @@ export default function PointsConsole() {
 
   async function saveResource(e) {
     e.preventDefault()
-    if (!resKey.trim()) return
+    if (!resKey.trim() || resCost === '') return
     const ok = await post(
-      { action: 'upsertResource', resourceKey: resKey.trim(), costPoints: Number(resCost) || 0, minRole: resRole },
-      '门槛已保存'
+      { action: 'upsertResource', resourceKey: resKey.trim(), costPoints: Number(resCost) },
+      '例外定价已保存'
     )
-    if (ok) setResKey('')
+    if (ok) {
+      setResKey('')
+      setResCost('')
+    }
   }
 
   async function saveRuleSettings(e) {
@@ -290,33 +278,6 @@ export default function PointsConsole() {
     if (ok) await loadAccountHistory(id)
   }
 
-  const defaultResourceRows = useMemo(
-    () => [
-      {
-        key: 'research:*',
-        label: '调研文章默认门槛',
-        cost: toValue(rules?.researchDefaultCost, 5),
-        minRole: 'guest',
-        note: '未单独配置的 research: 资源按这个价格解锁。',
-      },
-      {
-        key: 'resource:*',
-        label: '文字资源默认门槛',
-        cost: toValue(rules?.resourceDefaultCost, 5),
-        minRole: 'guest',
-        note: '未单独配置的 resource: 文字内容按这个价格解锁。',
-      },
-      {
-        key: '已登记工具包',
-        label: '工具包 / 安装包默认门槛',
-        cost: toValue(rules?.toolDefaultCost, 10),
-        minRole: 'guest',
-        note: '资源目录中登记的工具包和安装包会优先按这个价格领取；后台显式配置仅用于运营覆盖。',
-      },
-    ],
-    [rules]
-  )
-
   const policyEarnRows = useMemo(() => {
     return (policy?.earnMethods || []).map((item) => ({
       ...item,
@@ -358,7 +319,7 @@ export default function PointsConsole() {
   return (
     <AdminPage
       title="燃币管理"
-      description="集中管理燃币规则、资源权益和人工调账。流水只在查询具体登录账户时显示。"
+      description="集中管理燃币规则、单资源例外价格和人工调账。流水只在查询具体登录账户时显示。"
       actions={actions}
     >
       {status === 'unavailable' || status === 'error' ? (
@@ -521,37 +482,15 @@ export default function PointsConsole() {
                   保存全站规则
                 </AdminButton>
                 <p className="text-xs leading-5 text-[#67695d] dark:text-gray-400">
-                  单个资源的“资源权益覆盖”优先级更高；工具包也可在下方单独覆盖。
+                  单资源例外价格优先级更高；仅在确有特殊定价时配置，避免把默认价再次写死。
                 </p>
               </div>
             </form>
           </Section>
 
           <Section
-            title="默认权益额度"
-            description="这是上方规则在内容系统中的映射预览：文字内容按前缀回退，已登记工具包按目录价格领取；显式配置只用于覆盖。"
-            className="mb-5"
-          >
-            <DataTable
-              columns={[
-                { key: 'label', header: '默认项' },
-                { key: 'key', header: '匹配范围', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
-                { key: 'cost', header: '燃币额度', align: 'right' },
-                {
-                  key: 'minRole',
-                  header: '最低角色',
-                  render: (row) => ROLE_LABELS[row.minRole] || row.minRole,
-                },
-                { key: 'note', header: '说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
-              ]}
-              rows={defaultResourceRows}
-              rowKey={(row) => row.key}
-            />
-          </Section>
-
-          <Section
-            title="资源权益覆盖"
-            description="只在需要改写默认额度或最低角色时添加显式配置；解锁一次后该用户永久可读。"
+            title="单资源例外定价"
+            description="只在某一篇内容或某个工具需要区别于全站默认价时添加。此处不配置角色权限；解锁一次后该用户永久可读。"
             className="mb-5"
           >
             <form onSubmit={saveResource} className="mb-4 flex flex-wrap items-end gap-2">
@@ -569,23 +508,16 @@ export default function PointsConsole() {
                 <input
                   type="number"
                   min="0"
+                  max="100000"
+                  step="1"
                   className={`${inputCls} w-28`}
                   value={resCost}
                   onChange={(e) => setResCost(e.target.value)}
+                  placeholder="如 15"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
-                最低角色
-                <select className={`${inputCls} w-32`} value={resRole} onChange={(e) => setResRole(e.target.value)}>
-                  {VALID_USER_ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {USER_ROLE_LABELS[r] || r}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <AdminButton type="submit" variant="primary" disabled={busy || !resKey.trim()}>
-                保存权益
+              <AdminButton type="submit" variant="primary" disabled={busy || !resKey.trim() || resCost === ''}>
+                保存例外价
               </AdminButton>
             </form>
 
@@ -593,12 +525,7 @@ export default function PointsConsole() {
               <DataTable
                 columns={[
                   { key: 'resource_key', header: 'resource_key', tdClassName: 'font-mono text-xs' },
-                  { key: 'cost_points', header: '燃币额度', align: 'right', render: (row) => `${row.cost_points}` },
-                  {
-                    key: 'min_role',
-                    header: '最低角色',
-                    render: (row) => ROLE_LABELS[row.min_role] || row.min_role,
-                  },
+                  { key: 'cost_points', header: '例外价格', align: 'right', render: (row) => `${row.cost_points} 燃币` },
                   { key: 'created_at', header: '创建时间', render: (row) => formatTime(row.created_at) },
                   {
                     key: '_ops',
@@ -614,27 +541,8 @@ export default function PointsConsole() {
                 rowKey={(row) => row.resource_key}
               />
             ) : (
-              <EmptyState icon={IconCoin} title="暂无显式权益覆盖" description="没有配置时会使用上方默认项。" />
+              <EmptyState icon={IconCoin} title="暂无单资源例外价" description="所有资源都会使用全站规则中的默认价格。" />
             )}
-          </Section>
-
-          <Section
-            title="资源交付目录"
-            description="面向用户的名称和说明与下面的站长交付说明分开维护；下载、外部跳转会写入资源操作记录。"
-            className="mb-5"
-          >
-            <DataTable
-              columns={[
-                { key: 'title', header: '用户看到的资源' },
-                { key: 'kind', header: '类型' },
-                { key: 'delivery', header: '交付' },
-                { key: 'resourceKey', header: 'resource_key', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
-                { key: 'userDescription', header: '用户说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
-                { key: 'adminDescription', header: '站长说明', tdClassName: 'text-xs text-[#7a5b1e] dark:text-amber-300' },
-              ]}
-              rows={resourceCatalog}
-              rowKey={(row) => row.resourceKey}
-            />
           </Section>
 
           <div ref={adjustSectionRef}>

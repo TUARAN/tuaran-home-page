@@ -49,7 +49,7 @@ export async function GET(req) {
     }
 
     // 付费工具包按真正点击领取时结算；文字页的解锁仍由 RanbiPaywall 处理。
-    if (delivery.defaultCost != null) {
+    if (delivery.kind === 'tool') {
       const result = await unlockResource(db, actor.userId, resourceKey)
       if (!result.ok) return jsonError(result.error || 'UNLOCK_FAILED', result.status || 400, actor.setCookie)
     }

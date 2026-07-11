@@ -1,7 +1,7 @@
 import { getD1 } from '../../../lib/d1'
 import { getUserFromRequest } from '../../../lib/edgeSession'
 import { rowToHostedImage } from '../../../lib/hostedImages'
-import { POINT_RULES, award, spendPoints } from '../../../lib/points'
+import { award, getPointRules, spendPoints } from '../../../lib/points'
 import { getR2 } from '../../../lib/r2'
 import { getUserRole } from '../../../lib/userDirectory'
 import {
@@ -87,6 +87,7 @@ export async function GET(req) {
 
     const { db, response } = dbOrResponse()
     if (response) return response
+    const rules = await getPointRules(db)
 
     const result = await db
       .prepare(
@@ -101,7 +102,7 @@ export async function GET(req) {
     const origin = new URL(req.url).origin
     return Response.json({
       status: 'ok',
-      cost: POINT_RULES.imageHostingUpload,
+      cost: rules.imageHostingUpload,
       images: (result?.results || []).map((row) => rowToHostedImage(row, origin)),
     })
   } catch (error) {
@@ -122,6 +123,7 @@ export async function POST(req) {
 
     const { db, response: dbResponse } = dbOrResponse()
     if (dbResponse) return dbResponse
+    const rules = await getPointRules(db)
     const { bucket, response: r2Response } = r2OrResponse()
     if (r2Response) return r2Response
 
@@ -159,7 +161,7 @@ export async function POST(req) {
     const width = Number(form.get('width')) || null
     const height = Number(form.get('height')) || null
     const now = Date.now()
-    const cost = POINT_RULES.imageHostingUpload
+    const cost = rules.imageHostingUpload
 
     const bytes = await file.arrayBuffer()
     await bucket.put(objectKey, bytes, {

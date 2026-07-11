@@ -1,5 +1,6 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
+import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -94,6 +95,8 @@ export async function GET(req) {
   }
 
   try {
+    const url = new URL(req.url)
+    const detailUserId = String(url.searchParams.get('userId') || '').trim()
     const guestsResult = await db
       .prepare(
         `WITH guest_ids AS (
@@ -240,11 +243,28 @@ export async function GET(req) {
       .first()
 
     const guests = (guestsResult?.results || []).map(normalizeGuest)
+    let guestDetail = null
+    if (detailUserId) {
+      if (!detailUserId.startsWith('guest:')) {
+        return Response.json({ status: 'error', error: 'INVALID_GUEST_ID' }, { status: 400 })
+      }
+      const guest = guests.find((item) => item.userId === detailUserId)
+      if (!guest) {
+        return Response.json({ status: 'error', error: 'GUEST_NOT_FOUND' }, { status: 404 })
+      }
+      const unlocks = await listUnlocksForUser(db, detailUserId, { limit: 300 })
+      guestDetail = {
+        guest,
+        unlocks,
+        movedToAccount: guest.boundUserId || '',
+      }
+    }
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
       stats: normalizeStats(statsResult),
       guests,
+      guestDetail,
     })
   } catch (error) {
     return Response.json(

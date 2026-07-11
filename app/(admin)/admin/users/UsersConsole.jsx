@@ -62,6 +62,8 @@ export default function UsersConsole() {
   const [guestMessage, setGuestMessage] = useState('')
   const [guestQuery, setGuestQuery] = useState('')
   const [guestFilter, setGuestFilter] = useState('active')
+  const [guestDetail, setGuestDetail] = useState(null)
+  const [guestDetailStatus, setGuestDetailStatus] = useState('idle')
 
   const refresh = useCallback(async () => {
     setStatus('loading')
@@ -210,6 +212,27 @@ export default function UsersConsole() {
       setGuestMessage(`已复制：${userId}`)
     } catch {
       setGuestMessage(userId)
+    }
+  }
+
+  async function openGuestUnlocks(guest) {
+    setGuestDetailStatus('loading')
+    setGuestDetail(null)
+    setGuestMessage('')
+    try {
+      const res = await fetch(`/api/admin/guests?userId=${encodeURIComponent(guest.userId)}`, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || data?.status !== 'ok' || !data?.guestDetail) {
+        throw new Error(data?.error || data?.message || `HTTP ${res.status}`)
+      }
+      setGuestDetail(data.guestDetail)
+      setGuestDetailStatus('ok')
+    } catch (error) {
+      setGuestDetailStatus('error')
+      setGuestMessage(`读取游客解锁记录失败：${String(error?.message || error)}`)
     }
   }
 
@@ -458,6 +481,22 @@ export default function UsersConsole() {
       ),
     },
     {
+      key: 'actions',
+      header: '操作',
+      width: '104px',
+      tdClassName: 'whitespace-nowrap',
+      render: (guest) => (
+        <button
+          type="button"
+          onClick={() => openGuestUnlocks(guest)}
+          disabled={guestDetailStatus === 'loading'}
+          className="rounded-md border border-[#c9d4e5] px-2.5 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
+        >
+          查看解锁
+        </button>
+      ),
+    },
+    {
       key: 'lastSeen',
       header: '最近活跃',
       width: '136px',
@@ -634,7 +673,7 @@ export default function UsersConsole() {
               columns={guestColumns}
               rows={guestStatus === 'loading' ? [] : filteredGuests}
               rowKey={(guest) => guest.userId}
-              tableClassName="min-w-[780px] table-fixed"
+              tableClassName="min-w-[884px] table-fixed"
               empty={
                 <EmptyState
                   title={
@@ -654,6 +693,66 @@ export default function UsersConsole() {
                 />
               }
             />
+
+            {guestDetailStatus === 'loading' ? (
+              <p className="px-4 py-4 text-sm text-[#67695d] dark:text-gray-400">正在读取游客解锁内容…</p>
+            ) : null}
+            {guestDetail ? (
+              <div className="border-t border-[#e2e3da] bg-[#fbfcf7] p-4 dark:border-[#1e2733] dark:bg-[#10161f]">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#15140f] dark:text-gray-100">
+                      {displayNameForUserId(guestDetail.guest.userId).name} 的解锁记录
+                    </h3>
+                    <p className="mt-1 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{guestDetail.guest.userId}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGuestDetail(null)
+                      setGuestDetailStatus('idle')
+                    }}
+                    className="rounded-md border border-[#d8dad0] px-2.5 py-1 text-[11px] text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
+                  >
+                    收起
+                  </button>
+                </div>
+                {guestDetail.movedToAccount ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-[#c9d4e5] bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/25 dark:text-blue-200">
+                    <span>该游客已绑定，解锁权益已归并到正式账号。</span>
+                    <button
+                      type="button"
+                      onClick={() => goToPoints(guestDetail.movedToAccount, 'ledger')}
+                      className="font-medium underline underline-offset-2"
+                    >
+                      查看正式账号记录
+                    </button>
+                  </div>
+                ) : guestDetail.unlocks.length ? (
+                  <DataTable
+                    columns={[
+                      {
+                        key: 'title',
+                        header: '已解锁内容',
+                        render: (row) => (
+                          <div>
+                            <p className="font-medium text-[#33352c] dark:text-gray-200">{row.title}</p>
+                            <p className="mt-1 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{row.resourceKey}</p>
+                          </div>
+                        ),
+                      },
+                      { key: 'typeLabel', header: '类型', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
+                      { key: 'costPoints', header: '燃币', align: 'right' },
+                      { key: 'unlockedAt', header: '解锁时间', render: (row) => formatTime(row.unlockedAt), tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400' },
+                    ]}
+                    rows={guestDetail.unlocks}
+                    rowKey={(row) => `${row.resourceKey}:${row.unlockedAt}`}
+                  />
+                ) : (
+                  <p className="mt-3 text-sm text-[#67695d] dark:text-gray-400">该游客还没有解锁内容。</p>
+                )}
+              </div>
+            ) : null}
           </Section>
         </>
       )}

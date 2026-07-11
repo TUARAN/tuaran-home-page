@@ -1,16 +1,17 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import {
-  POINT_POLICY,
-  POINT_RULES,
   adminAdjust,
   deleteResource,
   getBalancesFor,
   getBalance,
+  getPointPolicy,
+  getPointRules,
   listResources,
   reconcileUnlockLedgerForAccounts,
   reconcileUnlockLedgerForUser,
   reverseLedgerEntry,
+  updatePointRules,
   upsertResource,
 } from '../../../../lib/points'
 import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
@@ -52,12 +53,13 @@ export async function GET(req) {
     return Response.json({
       status: 'unavailable',
       message: '当前运行环境没有 D1 绑定，无法读取燃币配置（迁移 0028 是否已应用？）。',
-      rules: POINT_RULES,
-      policy: POINT_POLICY,
+      rules: await getPointRules(null),
+      policy: getPointPolicy(),
     })
   }
 
   try {
+    const rules = await getPointRules(db)
     let autoReconcile = null
     try {
       autoReconcile = await reconcileUnlockLedgerForAccounts(db, { limit: 1000 })
@@ -161,8 +163,8 @@ export async function GET(req) {
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
-      rules: POINT_RULES,
-      policy: POINT_POLICY,
+      rules,
+      policy: getPointPolicy(rules),
       autoReconcile,
       resources,
       resourceCatalog: listResourceCatalogForAdmin(),
@@ -231,6 +233,12 @@ export async function POST(req) {
       })
       if (!result.ok) return Response.json(result, { status: result.status || 400 })
       return Response.json({ ok: true, resource: result })
+    }
+
+    if (action === 'updateRules') {
+      const result = await updatePointRules(db, body?.rules, guard.user)
+      if (!result.ok) return Response.json(result, { status: result.status || 400 })
+      return Response.json(result)
     }
 
     if (action === 'deleteResource') {

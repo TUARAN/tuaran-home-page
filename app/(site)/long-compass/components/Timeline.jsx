@@ -9,7 +9,7 @@ function getRecordYear(record) {
   return Number.isNaN(d.getTime()) ? null : d.getFullYear()
 }
 
-export default function Timeline({ records }) {
+export default function Timeline({ records, expandedRecordId, onToggleRecord }) {
   // 按年份升序（旧 → 新）
   const sorted = [...records].sort((a, b) => {
     const ya = getRecordYear(a) || 0
@@ -50,7 +50,13 @@ export default function Timeline({ records }) {
             </span>
             <div className="space-y-3 pt-2">
               {group.items.map((record) => (
-                <RecordCard key={record.id} record={record} dense />
+                <RecordCard
+                  key={record.id}
+                  record={record}
+                  dense
+                  expanded={expandedRecordId === record.id}
+                  onToggle={onToggleRecord}
+                />
               ))}
             </div>
           </div>

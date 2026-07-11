@@ -14,6 +14,8 @@ import {
   upsertResource,
 } from '../../../../lib/points'
 import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
+import { listResourceCatalogForAdmin } from '../../../../lib/resourceCatalog'
+import { listResourceEventsForUser } from '../../../../lib/resourceEvents'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -107,8 +109,9 @@ export async function GET(req) {
     let accountDetail = null
     let accountLedger = []
     let accountUnlocks = []
+    let accountResourceEvents = []
     if (detailUserId && !detailUserId.startsWith('guest:')) {
-      const [balance, detailRollup, detailLedger, unlocks] = await Promise.all([
+      const [balance, detailRollup, detailLedger, unlocks, resourceEvents] = await Promise.all([
         getBalance(db, detailUserId),
         db
           .prepare(
@@ -137,8 +140,10 @@ export async function GET(req) {
           .bind(detailUserId)
           .all(),
         listUnlocksForUser(db, detailUserId, { limit: 300 }),
+        listResourceEventsForUser(db, detailUserId, { limit: 300 }),
       ])
       accountUnlocks = unlocks
+      accountResourceEvents = resourceEvents
       accountDetail = {
         user_id: detailUserId,
         balance,
@@ -160,6 +165,7 @@ export async function GET(req) {
       policy: POINT_POLICY,
       autoReconcile,
       resources,
+      resourceCatalog: listResourceCatalogForAdmin(),
       summary: {
         accountCount: toNumber(accountSummary?.account_count),
         totalBalance: toNumber(accountSummary?.total_balance),
@@ -177,6 +183,7 @@ export async function GET(req) {
       accountDetail,
       accountLedger,
       accountUnlocks,
+      accountResourceEvents,
       recentLedger: ledgerRows.map((row) => normalizeLedgerRow(row, balanceMap)),
     })
   } catch (error) {

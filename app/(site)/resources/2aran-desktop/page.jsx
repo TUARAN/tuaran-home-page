@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
@@ -12,14 +13,8 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = '2aran-desktop'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const VERSION = 'v0.1.0'
-const R2_PUBLIC_BASE =
-  (process.env.NEXT_PUBLIC_R2_PUBLIC_BASE || process.env.R2_PUBLIC_BASE || 'https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev').replace(
-    /\/+$/,
-    ''
-  )
-
-function downloadUrl(file) {
-  return `${R2_PUBLIC_BASE}/downloads/${file}`
+function downloadUrl(fileKey) {
+  return `/api/resources/deliver?resourceKey=resource%3A2aran-desktop&file=${encodeURIComponent(fileKey)}`
 }
 
 const downloads = [
@@ -28,7 +23,7 @@ const downloads = [
     platform: 'macOS',
     arch: 'Apple Silicon',
     file: `2aran-desktop-macos-arm64-${VERSION}.dmg`,
-    href: downloadUrl(`2aran-desktop-macos-arm64-${VERSION}.dmg`),
+    href: downloadUrl('macos-arm64'),
     available: true,
     size: '114 MB',
     sha256: 'c141656540ae0fe58c5e48068dfb228b5a7a91a73e11de0b6968f0fafe563b8c',
@@ -39,7 +34,7 @@ const downloads = [
     platform: 'macOS',
     arch: 'Intel',
     file: `2aran-desktop-macos-x64-${VERSION}.dmg`,
-    href: downloadUrl(`2aran-desktop-macos-x64-${VERSION}.dmg`),
+    href: downloadUrl('macos-x64'),
     available: true,
     size: '116 MB',
     sha256: 'e47d3ec133122fe2ab6c492537a9f907b88a934207c3e2654ac35f8c19a7e2af',
@@ -50,7 +45,7 @@ const downloads = [
     platform: 'Windows',
     arch: 'x64',
     file: `2aran-desktop-windows-${VERSION}.exe`,
-    href: downloadUrl(`2aran-desktop-windows-${VERSION}.exe`),
+    href: downloadUrl('windows-x64'),
     available: true,
     size: '99 MB',
     sha256: '97aa08e9d8be7589b528a33be03f20212954e5eeff63ed2f7808a0e628099685',
@@ -85,6 +80,7 @@ export const metadata = {
 export default function DesktopResourcePage() {
   return (
     <PageContainer className="py-10">
+      <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
       <header className="border-b border-[#eee] pb-7 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
           <Link href="/tools" className="underline underline-offset-4 opacity-80 hover:opacity-100">
@@ -105,6 +101,9 @@ export default function DesktopResourcePage() {
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
           面向 Windows 和 macOS 的桌面客户端下载页。当前是测试版本，安装包已经上传到 Cloudflare R2；
           页面会根据当前系统推荐下载，其他架构和平台可以展开后手动选择。
+        </p>
+        <p className="mt-2 text-sm text-[#8a7a55] dark:text-amber-300/80">
+          说明免费阅读；首次点击领取任一安装包使用 10 燃币，之后可永久重复下载。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">

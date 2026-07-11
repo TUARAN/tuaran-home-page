@@ -3,6 +3,7 @@ import { getUserFromRequest } from '../../../../lib/edgeSession'
 import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/guestSession'
 import { POINT_RULES, awardGuestSeed, countCheckins, getBalance, hasCheckedInToday } from '../../../../lib/points'
 import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
+import { listResourceEventsForUser } from '../../../../lib/resourceEvents'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -47,10 +48,11 @@ export async function GET(req) {
 
     const userId = String(user.id)
     const isPendingEmail = user.provider === 'email' && user.status === 'pending'
-    const [balance, checkedInToday, unlocks, pendingCheckins] = await Promise.all([
+    const [balance, checkedInToday, unlocks, resourceEvents, pendingCheckins] = await Promise.all([
       getBalance(db, userId),
       hasCheckedInToday(db, userId),
       listUnlocksForUser(db, userId, { limit: 100 }),
+      listResourceEventsForUser(db, userId, { limit: 100 }),
       isPendingEmail ? countCheckins(db, userId) : Promise.resolve(0),
     ])
     return Response.json({
@@ -63,6 +65,7 @@ export async function GET(req) {
       rules: POINT_RULES,
       unlockCount: unlocks.length,
       unlocks,
+      resourceEvents,
     })
   } catch {
     return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })

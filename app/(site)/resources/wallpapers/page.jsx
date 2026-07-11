@@ -1,4 +1,5 @@
 import WallpaperGallery from './WallpaperGallery'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
 import { T } from '../../components/LocaleProvider'
 import PageContainer from '../../components/PageContainer'
 
@@ -28,14 +29,15 @@ export const metadata = {
 export default function WallpapersPage() {
   return (
     <PageContainer className="py-10">
+      <ContentPvBeacon category="resource" slug="wallpapers" />
       <header className="mb-8">
         <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
           <T zh="壁纸下载" en="Wallpapers" />
         </h1>
         <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
           <T
-            zh="按主题整理的可下载壁纸，点选分类筛选，点「下载」获取原图。"
-            en="Downloadable wallpapers organized by theme. Filter by category and click Download for the full-resolution image."
+            zh="按主题整理的免费可下载壁纸，点选分类筛选，点「下载」获取原图并记录领取。"
+            en="Free downloadable wallpapers organized by theme. Filter by category and click Download for the full-resolution image."
           />
         </p>
       </header>

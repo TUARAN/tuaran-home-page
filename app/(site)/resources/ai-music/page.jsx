@@ -11,7 +11,7 @@ export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'ai-music'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
-const TRACK_URL = 'https://music.163.com/#/song?id=3404858039'
+const TRACK_URL = '/api/resources/deliver?resourceKey=resource%3Aai-music'
 const title = 'GPT 不解释｜AI 音乐'
 const description = 'tuaran 的 AI 音乐单曲《GPT 不解释》。在网易云音乐播放，也可以分享这张站内音乐卡片。'
 
@@ -97,7 +97,7 @@ export default function AiMusicResourcePage() {
         </section>
 
         <p className="mt-5 text-sm leading-7 text-[#6b6472] dark:text-gray-300">
-          音频版权与播放由网易云音乐页面承载；本站只收录作品信息和可分享的跳转卡片。
+          音频版权与播放由网易云音乐页面承载；本站只收录作品信息和可分享的跳转卡片。打开播放免费，并会记录在你的领取记录中。
         </p>
       </article>
 

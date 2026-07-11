@@ -2,16 +2,16 @@ import Link from 'next/link'
 
 import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
-import RanbiPaywall from '../../components/RanbiPaywall'
 import SharePageButton from '../../components/SharePageButton'
 
 export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'x-mutual-cleaner-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
-const DOWNLOAD_URL = '/downloads/x-mutual-cleaner-extension-v0.1.11.zip'
+const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-mutual-cleaner-extension&file=extension-zip'
 
 const title = 'X 平台一键取消没有回关你的人：浏览器插件下载'
 const description =
@@ -76,6 +76,7 @@ function FeatureCard({ title, children }) {
 export default function XMutualCleanerResourcePage() {
   return (
     <PageContainer className="py-10">
+      <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
       <header className="border-b border-[#eee] pb-7 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
           <Link href="/tools" className="underline underline-offset-4 opacity-80 hover:opacity-100">
@@ -124,13 +125,12 @@ export default function XMutualCleanerResourcePage() {
             />
           </ArticleActionsDropdown>
           <span className="text-xs text-[#888] dark:text-gray-500">
-            打开下载页会使用 10 燃币作为工具权益记录，解锁后永久可读。
+            工具说明免费阅读；点击领取工具包时使用 10 燃币，之后可永久重复下载。
           </span>
         </div>
       </header>
 
-      <RanbiPaywall resourceKey={`resource:${RESOURCE_SLUG}`} unitLabel="工具">
-        <article className="prose-tuaran mt-8">
+      <article className="prose-tuaran mt-8">
           <div className="not-prose mb-8 rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
@@ -253,8 +253,7 @@ export default function XMutualCleanerResourcePage() {
               />
             </ArticleActionsDropdown>
           </div>
-        </article>
-      </RanbiPaywall>
+      </article>
       <ArticleFooterCta />
     </PageContainer>
   )

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import ContentPvBeacon from '../components/ContentPvBeacon'
 import RanbiPaywall from '../components/RanbiPaywall'
 
 export const dynamic = 'force-static'
@@ -109,6 +110,7 @@ function BookmarksIndexContent() {
 export default function BookmarksIndexPage() {
   return (
     <RanbiPaywall resourceKey="resource:bookmarks" unitLabel="资源">
+      <ContentPvBeacon category="resource" slug="bookmarks" />
       <BookmarksIndexContent />
     </RanbiPaywall>
   )

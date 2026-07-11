@@ -163,14 +163,14 @@ export default function ShareViewer({ slug }) {
     return (
       <main className="mx-auto w-full max-w-[560px] px-4 py-12">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
-          Encrypted Share · 端到端加密
+          Password Protected Share
         </p>
         <h1 className="mt-3 font-serif text-2xl font-semibold text-[#15140f] dark:text-gray-100">
           {note?.title || '加密文档'}
         </h1>
         <p className="mt-3 text-[13px] leading-7 text-[#51514a] dark:text-gray-300">
-          这是一份加密分享文档，公开链接只会拿到密文，需要密码才能解锁。
-          密码错误时只会在你的浏览器里失败，服务器既不知道你猜了什么，也不知道你猜对了没。
+          这是一份密码保护的分享文档，公开链接只会拿到密文，需要密码才能解锁。
+          密码错误时只会在你的浏览器里失败；正文和内嵌图片会在解锁后才显示。
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block">
@@ -210,7 +210,7 @@ export default function ShareViewer({ slug }) {
   return (
     <main className="mx-auto w-full max-w-[760px] px-4 py-8 md:py-12">
       <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
-        Encrypted Share · 已解锁
+        Password Protected Share · 已解锁
       </p>
       <h1 className="mb-2 mt-3 font-serif text-2xl font-semibold text-[#15140f] dark:text-gray-100 md:text-3xl">
         {note?.title || '加密文档'}
@@ -232,7 +232,7 @@ export default function ShareViewer({ slug }) {
         </div>
       ) : null}
       <p className="mt-8 border-t border-[#dee0db] pt-4 text-[11px] text-[#858779] dark:border-[#252e39] dark:text-[#8e9ab0]">
-        内容已在你的浏览器解密。公开分享接口不会返回明文；关闭页面后本页明文不会保留。
+        正文和内嵌图片已在你的浏览器解锁。公开分享接口不会返回明文；关闭页面后本页明文不会保留。
       </p>
     </main>
   )

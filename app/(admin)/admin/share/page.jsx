@@ -5,8 +5,8 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '加密分享管理',
-  description: '后台明文管理，公开链接加密分享。',
+  title: '密码保护分享',
+  description: '后台明文管理，公开链接密码保护分享。',
   robots: {
     index: false,
     follow: false,
@@ -17,9 +17,9 @@ export const metadata = {
 export default async function AdminSharePage() {
   return (
     <AdminPageGate
-      label="加密分享管理"
+      label="密码保护分享"
       returnTo="/admin/share"
-      description="后台明文管理，公开链接加密分享，仅站长本人可见。"
+      description="后台明文管理，公开链接仅返回密文，仅站长本人可见。"
     >
       <ShareAdminClient />
     </AdminPageGate>

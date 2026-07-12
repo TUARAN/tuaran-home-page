@@ -1,54 +1,85 @@
 {
-  "updatedAt": "2026-06-15T01:58:19.151Z",
-  "count": 6,
+  "updatedAt": "2026-07-12T03:55:04.421Z",
   "items": [
     {
       "topic": "行业",
-      "title": "OpenAI 推出合作伙伴网络 OpenAI Partner Network",
-      "summary": "OpenAI 宣布推出 OpenAI Partner Network，并投资 1.5 亿美元支持全球合作伙伴构建、销售和交付 AI 解决方案。该计划设立 Select、Advanced、Elite 三级合作伙伴层级，提供 Codex、网络安全、智能体等专业方向认证，并试点 Forward Deployed Experts 项目以支持复杂企业部署。目标在 2026 年底前培训认证 30 万名顾问。案例显示，Paychex 借助 Bain 和 OpenAI 的方案将等待时间降低 80%，人工审核时间减少 30%。",
-      "source": "OpenAI：官网动态（RSS · 排除企业/客户案例）",
-      "href": "https://openai.com/index/introducing-openai-partner-network",
-      "publishedAt": "2026-06-14T17:00:00.000Z"
+      "title": "苹果起诉OpenAI挖角窃密，分析师称即使指控未证实也可能重创其硬件计划",
+      "summary": "苹果在美国起诉OpenAI，指控其挖角400名员工、窃取工程机和机密文件。分析师Paolo Pescatore认为，即使指控最终无法证实，OpenAI的硬件计划仍可能受拖累，双方本就脆弱的合作关系将进一步削弱。斯坦福大学教授Mark Lemley指出，若前苹果员工确实带走机密文件并在OpenAI使用，问题将变得严重。该案涉及消费级硬件产品，预计未来将有更多信息曝光。",
+      "source": "IT之家（RSS）",
+      "href": "https://www.ithome.com/0/975/666.htm",
+      "publishedAt": "2026-07-12T02:37:22.000Z"
+    },
+    {
+      "topic": "产品",
+      "title": "Mesh LLM：在 iroh 上进行分布式人工智能计算",
+      "summary": "Mesh LLM 是一个开源项目，能将用户多台机器上的 GPU 和内存池化，对外暴露兼容 OpenAI 的 API。它通过 iroh 网络库实现点对点连接，无需中央服务器。请求可在本地 GPU 运行、路由到已加载模型的节点，或将大模型按层分区（内部称\"Skippy\"）流水线式拆分到多台机器。系统内置 40 多个模型，从 5 亿参数到 235B MoE 巨模型均可支持。软件体积约 18 MB，启动后以 `localhost：9337/v1` 提供服务。",
+      "source": "Hacker News 热门（buzzing.cc 中文翻译）",
+      "href": "https://www.iroh.computer/blog/mesh-llm",
+      "publishedAt": "2026-07-12T02:23:05.249Z"
     },
     {
       "topic": "技巧",
-      "title": "白宫AI监管决定被指偏袒OpenAI与亚马逊",
-      "summary": "白宫周五做出的AI监管决定被指偏袒OpenAI、亚马逊等企业，同时对Anthropic施压不足24小时，缺乏透明度和事实依据。Gary Marcus、Dean W Ball及卡托研究所Kevin Frazier等专家指出，这种由少数人闭门快速决策的做法带有腐败嫌疑，可能促使其他国家加速发展\"主权AI\"甚至中国AI，并导致美国人才流失。Anthropic声明称政府应在法定程序中基于技术事实阻止不安全部署，而非当前方式。Marcus呼吁建立独立机构负责AI监管，确保公平、清晰、基于证据的执行。",
-      "source": "Gary Marcus：The Road to AI We Can Trust（RSS）",
-      "href": "https://garymarcus.substack.com/p/what-washington-must-do",
-      "publishedAt": "2026-06-14T16:15:35.000Z"
+      "title": "Tibo 分享通过 CLIProxyAPI 将 Claude Code 后端模型切换为 GPT-5.6 Sol 的方法",
+      "summary": "用户 Tibo 分享了一种通过 CLIProxyAPI 将 Claude Code 后端模型切换为 GPT-5.6 Sol 的方法。只需三步：安装 CLIProxyAPI、连接认证、设置环境变量别名 `claudex`。该别名配置了子智能体模型、始终启用 Effort、最大并发工具调用数等参数。引用推文作者 Theo 补充，若已配置好代理，仅需约 2 条提示词即可完成设置。Tibo 称整个过程约 5 分钟，若被封锁可重置。",
+      "source": "X：Tibo (@thsottiaux)",
+      "href": "https://x.com/thsottiaux/status/2076119366647894371",
+      "publishedAt": "2026-07-12T01:40:04.000Z"
     },
     {
-      "topic": "技巧",
-      "title": "Satya Nadella：没有生态的前沿不稳定",
-      "summary": "微软CEO Satya Nadella认为，AI驱动的平台转变首次实现人与数字系统间的认知循环。企业需同时构建人力资本（知识、判断、关系）与token资本（自有的AI能力），且人力资本不会贬值，反而随token资本增长而增值。真正的机会在于建立人力资本与token资本复合增长的学习循环--企业应能替换通用模型而不丢失已内化的专家知识，通过私有评估和强化学习让模型从内部真实轨迹中持续提升。他警告，若所有价值被少数模型吞噬，将重演全球化空心化悲剧，呼吁构建前沿生态系统，让每家企业、行业和国家拥有自己的学习循环。",
-      "source": "X：Satya Nadella (@satyanadella)",
-      "href": "https://x.com/satyanadella/status/2066182223213293753",
-      "publishedAt": "2026-06-14T15:33:24.000Z"
-    },
-    {
-      "topic": "技巧",
-      "title": "乔木小说创作 Skill 开源发布",
-      "summary": "开源乔木小说创作 Skill，用户只需说\"我想写一个小说\"或指定风格，AI 自动生成剧情梗概、人物设定、钩子、经典桥段、人物欲望、冲突升级和结尾。与 AI 讨论确认后，可生成完整、低 AI 味的小说。安装命令：npx skills add joeseesun/qiaomu-novel-generator，Github 开源地址见评论区。",
-      "source": "X：Vista (@vista8)",
-      "href": "https://x.com/vista8/status/2066165703443726749",
-      "publishedAt": "2026-06-14T14:27:45.000Z"
+      "topic": "论文",
+      "title": "OpenAI GPT-5.6 Sol Ultra 一小时证明 50 年图论猜想",
+      "summary": "OpenAI 宣布其 GPT-5.6 Sol Ultra 模型在不到一小时内生成了图论难题\"循环双覆盖猜想\"的完整证明。该猜想由数学家 George Szekeres 和 Paul Seymour 于 1970 年代提出，悬而未决超过 50 年。模型通过调用 64 个并行子智能体及对抗智能体，在预留的 8 小时计算时间内仅用约 1 小时完成证明。OpenAI 已将证明及提示词以 PDF 形式发布。该证明尚未经同行评审，也未使用 Lean 等形式化工具验证。若通过验证，这将是 LLM 首次独立解决维基百科\"未解决数学问题\"列表中的难题。",
+      "source": "IT之家（RSS）",
+      "href": "https://www.ithome.com/0/975/646.htm",
+      "publishedAt": "2026-07-12T00:44:43.000Z"
     },
     {
       "topic": "行业",
-      "title": "Anthropic 暂停新模型访问，印度辩论 AI 未来",
-      "summary": "Anthropic 暂停了新模型的访问权限，印度科技领袖围绕这一事件展开辩论，探讨其是否是对该国 AI 雄心的警示。",
-      "source": "TechCrunch：AI（RSS）",
-      "href": "https://techcrunch.com/2026/06/13/as-anthropic-suspends-access-to-new-models-india-debates-its-ai-future",
-      "publishedAt": "2026-06-14T03:00:00.000Z"
+      "title": "彭博社揭秘苹果起诉 OpenAI 内幕：前员工一句\"哈哈\"成窃密关键",
+      "summary": "苹果起诉 OpenAI，指控前工程师 Chang Liu 离职时带走未归还的 MacBook、一名可分享内情的员工，并利用软件漏洞持续访问苹果内网。他发现漏洞后向同事分享\"哈哈，我发现我还能访问网络存储\"，后者协助其获取更多机密。苹果称 OpenAI 试图复制 iPhone 产品研发体系，核心从非法窃取的商业机密腐烂。目前已有超 400 名苹果员工跳槽至 OpenAI，包括前苹果高管、现任 OpenAI 首席硬件官 Tang Tan。苹果曾于今年 2 月尝试私了，但 OpenAI 未回应。",
+      "source": "IT之家（RSS）",
+      "href": "https://www.ithome.com/0/975/634.htm",
+      "publishedAt": "2026-07-11T23:21:57.000Z"
+    },
+    {
+      "topic": "行业",
+      "title": "研究：博科圣地已使用ChatGPT、Claude等主流AI聊天机器人用于袭击策划与武器开发",
+      "summary": "剑桥大学CASP研究员Antonia Jülich对27名前成员的57次访谈显示，博科圣地已使用ChatGPT、Claude、Gemini、Grok、Meta AI和DeepSeek等主流AI聊天机器人，用于袭击策划、制造更强爆炸装置、武器维护及行动安全。该组织两个派系均设立了专门的AI部门。ISIS自2023年起便提供提示工程和越狱培训，并训练尼日利亚的博科圣地指挥官绕过AI安全过滤器。研究指出，安全过滤器未能可靠防止滥用。Anthropic近期承认，越狱可能永远无法完全消除。",
+      "source": "The Decoder：AI News（RSS）",
+      "href": "https://the-decoder.com/terrorist-groups-are-using-every-major-ai-chatbot-for-attack-planning-and-weapons-development",
+      "publishedAt": "2026-07-11T17:04:28.000Z"
+    },
+    {
+      "topic": "模型",
+      "title": "OpenAI 发布 GPT-5.6 系列医疗评估结果",
+      "summary": "OpenAI 发布 GPT-5.6 系列在医疗领域的评估结果。最小变体 GPT-5.6 Luna 在最低推理强度下即超越最高推理强度的 GPT-5.5，且成本低 25 倍；最大变体 GPT-5.6 Sol 树立新标杆。在涵盖患者端与临床端的多样化任务中，专科医生被要求以无限时间和网络访问权限撰写回答，随后由其他医生盲评。评估基于准确性、沟通、完整性、指令遵循及健康决策帮助性五个维度，共 20000 次评分。结果显示，所有 GPT-5.6 模型表现均显著优于医生，且医生发现 GPT-5.6 回答中的缺陷少于医生自己撰写的回答。",
+      "source": "X：Sam Altman (@sama)",
+      "href": "https://x.com/sama/status/2075985056846451123",
+      "publishedAt": "2026-07-11T16:46:22.000Z"
     },
     {
       "topic": "技巧",
-      "title": "Anthropic 上市前夕",
-      "summary": "Anthropic CEO Dario Amodei透露内部模型Mythos有上千漏洞，能黑银行、窃取国家机密；预言AI一到五年内砍掉一半入门级白领工作；称Claude已被美军用于对伊朗战争，涉及女校150人死亡拷问；解释离开OpenAI因信任崩塌；回怼黄仁勋末日营销指控；给出文明崩溃概率10%-25%。",
-      "source": "X：小互 (@xiaohu)",
-      "href": "https://x.com/xiaohu/status/2065991805238497732",
-      "publishedAt": "2026-06-14T02:56:45.000Z"
+      "title": "Ghost Font：一种人类能读懂但AI无法识别的反AI字体",
+      "summary": "Ghost Font 是一种利用运动、视频、噪点和诱饵来隐藏文字的反AI字体。用户输入文字后可生成并下载视频片段，视频中的字母由与背景完全相同的点组成，单帧截图无法显示任何信息。该字体生成的视频被传递给Claude Fable和GPT Sol 5.6 Ultra等前沿模型时，这些模型即使具备编程能力也无法解码移动信息，直到被提示具体技术。视频中还包含一条诱饵信息，使模型误以为找到真实内容。项目灵感来自2013年Sang Mun设计的ZXX字体，但现代AI已能轻松读取ZXX。Ghost Font目前为本地原型，数据不发送至任何服务器。作者计划未来将视频生成代码开源，并探索将其用于CAPTCHA系统或AI视觉感知基准测试。",
+      "source": "Hacker News 热门（buzzing.cc 中文翻译）",
+      "href": "https://www.mixfont.com/ghost-font",
+      "publishedAt": "2026-07-11T16:31:09.615Z"
+    },
+    {
+      "topic": "模型",
+      "title": "蚂蚁集团 Robbyant 发布 LingBot-VA 2.0，首个原生具身基础模型",
+      "summary": "蚂蚁集团旗下具身智能团队 Robbyant 发布 LingBot-VA 2.0，首个原生具身基础模型。该模型采用因果 DiT 架构，视频专家约 13.0B 参数（约 1.9B 激活），训练规模约 15.3B 参数，推理时每 token 约 2.5B 激活。模型引入多块预测（MCP）实现 2.3 倍训练加速，并通过前瞻推理将推理延迟降至 142 ms/chunk。在 RoboTwin 2.0 的 50 个任务上，干净与随机演示数据平均成功率分别达 93.8% 和 93.4%。",
+      "source": "MarkTechPost（RSS）",
+      "href": "https://www.marktechpost.com/2026/07/11/ant-groups-robbyant-unveils-lingbot-va-2-0",
+      "publishedAt": "2026-07-11T07:56:11.000Z"
+    },
+    {
+      "topic": "行业",
+      "title": "11天Claude Fable 5写超100万行代码：Rust重构JavaScript运行时Bun",
+      "summary": "开发者Jarred Sumner借助Claude Fable 5模型，11天内将Bun从Zig重写为Rust，64个实例并行编写超100万行代码，API费用约16.5万美元。重构主因是Zig频繁内存错误，Rust可在编译时捕获。Bun v1.4.0以Canary版本发布，修复128个错误，速度提高约2%到5%。Bun团队已于2025年12月被Anthropic收购。",
+      "source": "IT之家（RSS）",
+      "href": "https://www.ithome.com/0/975/469.htm",
+      "publishedAt": "2026-07-11T07:33:08.000Z"
     }
   ]
 }

@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-12",
+      "displayDate": "Jul 12",
+      "count": 5,
+      "highlights": [
+        "研究：博科圣地已使用ChatGPT、Claude等主",
+        "Ghost Font：一种人类能读懂但AI无法识别的",
+        "蚂蚁集团 Robbyant 发布 LingBot-V",
+        "11天Claude Fable 5写超100万行代码",
+        "苹果起诉OpenAI挖角窃密，分析师称即使指控未证实"
+      ]
+    },
+    {
       "date": "2026-06-15",
       "displayDate": "Jun 15",
       "json": "/ai-daily/2026-06-15.json",
@@ -247,5 +259,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-06-15"
+  "latest": "2026-07-12"
 }

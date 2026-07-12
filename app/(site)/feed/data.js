@@ -57,10 +57,10 @@ export const FEED_ITEMS = [
   {
     id: 'codex-level-switch-effect',
     type: 'video',
-    title: 'Codex 等级切换效果',
+    title: 'Codex 5.6 三档模型能力动效展示',
     summary:
-      '把模型能力档位做成一段可感知的状态切换：炽热的太阳沿着能量轨道推进，推理进度、等级编号和「SOL HIGH」标识随之完成升级。没有堆叠太多说明文字，却让“更高推理等级”有了清晰的重量感和仪式感。',
-    tags: ['Codex', '交互动效', '等级切换', 'AI 界面', '科幻 UI'],
+      'Codex 5.6 的模型能力动效：以 6 段 Reasoning 进度串联 Luna、Terra、Sol 三档模型，能力标识依次为「LUNA｜LOW」「TERRA｜LOW」「TERRA｜HIGH」「SOL｜HIGH」「SOL｜ULTRA」。月球、地球与太阳的视觉意象也随模型档位变化。',
+    tags: ['Codex 5.6', '模型能力', 'Luna', 'Terra', 'Sol'],
     date: '2026-07-12',
     time: '18:27',
     src: '/feed/codex-level-switch-2026-07-12.mp4',

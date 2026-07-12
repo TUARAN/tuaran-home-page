@@ -51,7 +51,7 @@ export default function VoiceTasksClient() {
   const [speechSupported, setSpeechSupported] = useState(false)
   const [listening, setListening] = useState(false)
   const session = useSessionAccount()
-  const user = session.isOwner ? session.user : null
+  const user = session.user
   const userLoading = session.loading
   const [content, setContent] = useState('')
   const [interimText, setInterimText] = useState('')
@@ -192,7 +192,7 @@ export default function VoiceTasksClient() {
       <div className="rounded-md border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-[#666] dark:text-gray-300">
-            {userLoading ? '检查登录状态…' : isAuthed ? `已登录：${user.name || user.login}` : '私域内容 · 仅站长可写入'}
+            {userLoading ? '检查登录状态…' : isAuthed ? `已登录：${user.name || user.login}` : '登录后可使用；每个账户只会看到自己的记录'}
           </div>
           <div className="flex items-center gap-2">
             {isAuthed ? (
@@ -347,7 +347,7 @@ export default function VoiceTasksClient() {
           </ul>
         ) : (
           <p className="text-sm text-[#777] dark:text-gray-400">
-            {isAuthed ? '当前分类没有任务。' : '私域内容 · 仅站长本人可见。'}
+            {isAuthed ? '当前分类没有记录。' : '登录后可以创建和管理自己的语音记事。'}
           </p>
         )}
       </div>

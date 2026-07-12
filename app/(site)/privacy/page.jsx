@@ -35,7 +35,7 @@ const sections = [
   {
     title: '第三方服务',
     body: [
-      '本站可能使用 Google AdSense 展示广告，使用 Umami 等工具做访问统计，并接入 GitHub、Google OAuth、Resend、Cloudflare 等服务完成登录、邮件、部署、安全和存储能力。',
+      '本站可能使用 Google AdSense 展示广告，使用 Umami 等工具做访问统计，并接入微信开放平台、GitHub、Google OAuth、Resend、Cloudflare 等服务完成登录、邮件、部署、安全和存储能力。微信登录会按微信开放平台授权范围获取用于建立登录身份的 openid、昵称和头像；本站不会用昵称、手机号或邮箱自动合并账号。',
       '这些第三方服务会按照其各自的隐私政策处理相关数据。本站不会出售你的个人信息，也不会将你的站内评论、邮箱或登录信息主动提供给无关第三方。',
     ],
   },

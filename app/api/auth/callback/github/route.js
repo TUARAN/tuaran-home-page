@@ -2,6 +2,7 @@ import {
   cookieNames,
   cookiesConfig,
   getSecrets,
+  getUserFromRequest,
   parseCookies,
   serializeLastLoginMethodCookie,
   serializeCookie,
@@ -16,9 +17,22 @@ import { normalizeReturnTo } from '../../../../../lib/returnTo'
 import { recordUserLogin } from '../../../../../lib/userDirectory'
 import { clearGuestCookie, mergeGuestFromRequest } from '../../../../../lib/guestSession'
 import { awardRegisterOnLogin } from '../../../../../lib/points'
+import { bindIdentityToUser, ensureIdentityForUser, resolveIdentityForLogin } from '../../../../../lib/accountIdentities'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+
+function accountLocation(req, result) {
+  const url = new URL('/account', new URL(req.url).origin)
+  url.searchParams.set('github', result)
+  return url.toString()
+}
+
+function clearOAuthCookies(headers, secure) {
+  headers.append('Set-Cookie', serializeCookie(cookieNames.oauthState, '', { maxAge: 0, secure }))
+  headers.append('Set-Cookie', serializeCookie(cookieNames.oauthIntent, '', { maxAge: 0, secure }))
+  headers.append('Set-Cookie', serializeCookie(cookieNames.returnTo, '', { maxAge: 0, secure }))
+}
 
 export async function GET(req) {
   const { githubId, githubSecret, appUrl, sessionSecret } = getSecrets()
@@ -40,6 +54,7 @@ export async function GET(req) {
 
   const cookies = parseCookies(req)
   const expectedState = cookies[cookieNames.oauthState]
+  const intent = cookies[cookieNames.oauthIntent] === 'bind' ? 'bind' : 'login'
   const returnTo = normalizeReturnTo(cookies[cookieNames.returnTo])
 
   if (!expectedState || expectedState !== state) {
@@ -84,12 +99,39 @@ export async function GET(req) {
     return oauthProviderError('GITHUB_USER_FETCH_FAILED')
   }
 
-  const user = {
-    id: `github:${String(ghUser.id)}`,
+  const profile = {
     provider: 'github',
     login: String(ghUser.login || ''),
     name: String(ghUser.name || ghUser.login || 'GitHub User'),
     image: ghUser.avatar_url ? String(ghUser.avatar_url) : null,
+  }
+  const providerAccountId = String(ghUser.id)
+  const { secure } = cookiesConfig()
+
+  if (intent === 'bind') {
+    const currentUser = await getUserFromRequest(req)
+    const binding = currentUser?.id
+      ? await bindIdentityToUser({ provider: 'github', providerAccountId, userId: currentUser.id, profile })
+      : { error: 'LOGIN_REQUIRED' }
+    const result = !currentUser?.id ? 'login_required' : binding.ok ? (binding.alreadyBound ? 'already_bound' : 'bound') : 'belongs_to_other_account'
+    const headers = new Headers({ Location: accountLocation(req, result) })
+    clearOAuthCookies(headers, secure)
+    return new Response(null, { status: 302, headers })
+  }
+
+  const fallbackUser = { id: `github:${providerAccountId}`, ...profile }
+  let resolved = await resolveIdentityForLogin({ provider: 'github', providerAccountId, profile, fallbackUser })
+  if (!resolved.ok) return Response.json({ error: resolved.error }, { status: resolved.status || 500 })
+  let user = resolved.user
+  if (resolved.isNewAccount) {
+    const ensured = await ensureIdentityForUser({ provider: 'github', providerAccountId, userId: user.id, profile })
+    if (!ensured.ok && ensured.error === 'IDENTITY_ALREADY_BOUND') {
+      resolved = await resolveIdentityForLogin({ provider: 'github', providerAccountId, profile, fallbackUser })
+      if (!resolved.ok || resolved.isNewAccount) return Response.json({ error: 'IDENTITY_RESOLUTION_FAILED' }, { status: 409 })
+      user = resolved.user
+    } else if (!ensured.ok) {
+      return Response.json({ error: ensured.error }, { status: ensured.status || 500 })
+    }
   }
 
   await recordUserLogin(user)
@@ -103,22 +145,13 @@ export async function GET(req) {
   }
 
   const jwt = await signSession(payload, sessionSecret)
-  const { secure } = cookiesConfig()
-
   const headers = new Headers()
   headers.append(
     'Set-Cookie',
     serializeCookie(cookieNames.session, jwt, { maxAge: 7 * 24 * 60 * 60, secure })
   )
   headers.append('Set-Cookie', serializeLastLoginMethodCookie('github', { secure }))
-  headers.append(
-    'Set-Cookie',
-    serializeCookie(cookieNames.oauthState, '', { maxAge: 0, secure })
-  )
-  headers.append(
-    'Set-Cookie',
-    serializeCookie(cookieNames.returnTo, '', { maxAge: 0, secure })
-  )
+  clearOAuthCookies(headers, secure)
   if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())
 
   headers.set('Location', returnTo)

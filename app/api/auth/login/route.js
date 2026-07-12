@@ -21,6 +21,7 @@ import { normalizeReturnTo } from '../../../../lib/returnTo'
 import { recordUserLogin } from '../../../../lib/userDirectory'
 import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/guestSession'
 import { awardRegisterOnLogin } from '../../../../lib/points'
+import { resolveEmailLogin } from '../../../../lib/accountIdentities'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -41,9 +42,6 @@ export async function GET(req) {
     return Response.json({ error: 'UNSUPPORTED_AUTH_PROVIDER' }, { status: 400 })
   }
 
-  if (wantsBind && !isWechat) {
-    return Response.json({ error: 'UNSUPPORTED_BIND_PROVIDER' }, { status: 400 })
-  }
   if (wantsBind && !(await getUserFromRequest(req))?.id) {
     return Response.json({ error: 'LOGIN_REQUIRED_FOR_BINDING' }, { status: 401 })
   }
@@ -140,14 +138,17 @@ export async function POST(req) {
     const result = await authenticateOrCreateEmailUser(body?.email, body?.password)
     if (!result.ok) return Response.json(result, { status: result.status || 401 })
 
-    await recordUserLogin(result.user)
-    await awardRegisterOnLogin(result.user)
-    const mergedGid = await mergeGuestFromRequest(req, result.user)
+    const account = await resolveEmailLogin(result.user)
+    if (!account.ok) return Response.json({ error: account.error }, { status: account.status || 500 })
+    const user = account.user
+    await recordUserLogin(user)
+    await awardRegisterOnLogin(user)
+    const mergedGid = await mergeGuestFromRequest(req, user)
     await cleanupRateLimits(db).catch(() => {})
 
     const nowSeconds = Math.floor(Date.now() / 1000)
     const token = await signSession(
-      { user: result.user, iat: nowSeconds, exp: nowSeconds + 7 * 24 * 60 * 60 },
+      { user, iat: nowSeconds, exp: nowSeconds + 7 * 24 * 60 * 60 },
       sessionSecret
     )
     const { secure } = cookiesConfig()
@@ -158,7 +159,7 @@ export async function POST(req) {
     )
     headers.append('Set-Cookie', serializeLastLoginMethodCookie('email', { secure }))
     if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())
-    return Response.json({ ok: true, user: result.user, createdPending: Boolean(result.createdPending) }, { headers })
+    return Response.json({ ok: true, user, createdPending: Boolean(result.createdPending) }, { headers })
   } catch (error) {
     console.error('email login failed', error)
     return Response.json({ error: 'LOGIN_FAILED' }, { status: 500 })

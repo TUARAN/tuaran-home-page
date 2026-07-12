@@ -21,6 +21,7 @@ const ERROR_MESSAGES = {
   INVALID_CODE: '验证码不正确。',
   REGISTER_FAILED: '注册失败，请稍后再试。',
 }
+const WECHAT_LOGIN_ENABLED = process.env.NEXT_PUBLIC_WECHAT_LOGIN_ENABLED === 'true'
 
 function messageFor(error) {
   return ERROR_MESSAGES[error] || '请求失败，请稍后再试。'
@@ -95,8 +96,24 @@ export default function RegisterClient() {
         </p>
         <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">邮箱验证码注册</h1>
         <p className="mb-8 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">
-          验证码 10 分钟内有效。注册成功后会自动登录，现有 GitHub 和 Google 登录不受影响。
+          验证码 10 分钟内有效。注册成功后会自动登录；微信注册/登录正在审核中。
         </p>
+
+        {WECHAT_LOGIN_ENABLED ? (
+          <Link href="/api/auth/login?provider=wechat&returnTo=%2F" className="mb-6 flex min-h-12 items-center justify-center rounded-xl bg-[#07a443] px-4 py-2.5 text-center text-sm font-medium text-white no-underline transition hover:bg-[#078c3a]">
+            微信注册 / 登录
+          </Link>
+        ) : (
+          <span className="mb-6 flex min-h-12 cursor-not-allowed items-center justify-center rounded-xl border border-dashed border-[#b7c7b2] bg-[#eff5ed] px-4 py-2.5 text-center text-sm font-medium text-[#597154] dark:border-[#3b5b40] dark:bg-[#16261a] dark:text-[#9ac596]">
+            微信注册 / 登录 · 待开放
+          </span>
+        )}
+
+        <div className="my-6 flex items-center gap-3 text-xs text-[#898a7f] dark:text-[#738095]">
+          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
+          <span>或使用邮箱</span>
+          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
+        </div>
 
         <form onSubmit={register} className="space-y-5">
           <label className="block">

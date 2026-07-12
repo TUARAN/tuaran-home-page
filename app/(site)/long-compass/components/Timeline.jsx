@@ -33,16 +33,10 @@ export default function Timeline({ records, expandedRecordId, onToggleRecord }) 
 
   return (
     <div className="relative pl-16 sm:pl-20">
-      {/* 竖向时间线 */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-2 left-5 top-2 w-px bg-gradient-to-b from-[#c5c7bb] via-[#aaae9c] to-[#c5c7bb] dark:from-[#2d3440] dark:via-[#475061] dark:to-[#2d3440] sm:left-7"
-      />
       <div className="space-y-8">
         {groups.map((group, gi) => (
           <div key={`${group.year ?? 'unknown'}-${gi}`} className="relative">
-            {/* 年份 chip 直接当节点用：居中在 thread 上，外圈 ring 与页面 bg 同色，
-                造出"线穿珠子"的视觉效果。不再单独画一个 dot 防止位置重叠。 */}
+            {/* 年份标签放在卡片左侧，作为各阶段的辨识点。 */}
             <span
               className="absolute -top-1 left-5 z-10 -translate-x-1/2 rounded-full bg-[#2f3027] px-2 py-0.5 font-mono text-[10px] font-semibold text-white shadow-sm ring-4 ring-[#f4f5f1] dark:bg-gray-200 dark:text-[#111] dark:ring-[#121821] sm:left-7"
             >

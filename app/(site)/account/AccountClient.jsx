@@ -25,11 +25,20 @@ function identityName(identity) {
   return PROVIDER_LABELS[identity.provider] || identity.provider
 }
 
+function SectionIntro({ index, eyebrow, title, children }) {
+  return <aside className="lg:pr-8">
+    <p className="text-[11px] font-bold tracking-[0.18em] text-[#7a5b1e] dark:text-amber-300">{index} / {eyebrow}</p>
+    <h2 className="mt-2 text-[24px] font-semibold tracking-tight text-[#1a1b17] dark:text-gray-100">{title}</h2>
+    {children ? <div className="mt-3 text-sm leading-7 text-[#65665d] dark:text-[#9aa6b6]">{children}</div> : null}
+  </aside>
+}
+
 export default function AccountClient() {
   const { loading, user } = useSessionAccount()
   const [identities, setIdentities] = useState([])
   const [guestIdentities, setGuestIdentities] = useState([])
   const [platformId, setPlatformId] = useState('')
+  const [identitiesLoaded, setIdentitiesLoaded] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [unlinking, setUnlinking] = useState('')
   const [actionError, setActionError] = useState('')
@@ -37,6 +46,7 @@ export default function AccountClient() {
   useEffect(() => {
     if (!user?.id) return
     let cancelled = false
+    setIdentitiesLoaded(false)
     fetch('/api/account/identities', { cache: 'no-store' })
       .then(async (response) => ({ response, data: await response.json().catch(() => null) }))
       .then(({ response, data }) => {
@@ -49,11 +59,17 @@ export default function AccountClient() {
       .catch(() => {
         if (!cancelled) setLoadError('暂时无法读取已绑定的登录方式，请稍后刷新。')
       })
+      .finally(() => {
+        if (!cancelled) setIdentitiesLoaded(true)
+      })
     return () => { cancelled = true }
   }, [user?.id])
 
   const result = typeof window === 'undefined' ? '' : ['github', 'google', 'wechat'].map((key) => new URLSearchParams(window.location.search).get(key)).find(Boolean)
-  const wechatBound = identities.some((identity) => identity.provider === 'wechat')
+  const boundProviders = new Set(identities.map((identity) => identity.provider))
+  const githubBound = boundProviders.has('github')
+  const googleBound = boundProviders.has('google')
+  const wechatBound = boundProviders.has('wechat')
 
   async function unbind(provider) {
     if (unlinking) return
@@ -78,60 +94,68 @@ export default function AccountClient() {
   }
 
   if (!loading && !user) {
-    return (
-      <main className="mx-auto w-full max-w-xl px-4 py-12 sm:py-20">
-        <section className="rounded-3xl border border-[#d5d7cd] bg-[#f6f8f3] p-6 text-center shadow-[0_20px_60px_rgba(82,69,45,0.08)] dark:border-[#293241] dark:bg-[#111821] sm:p-8">
-          <h1 className="text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">账号中心</h1>
-          <p className="mt-3 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">请先登录，再绑定微信或查看账号的登录方式。</p>
-          <Link href="/login?returnTo=/account" className="mt-6 inline-flex rounded-xl bg-[#8b5a1f] px-4 py-2.5 text-sm font-medium text-white no-underline dark:bg-[#d7a85c] dark:text-[#1d160d]">去登录</Link>
-        </section>
-      </main>
-    )
+    return <main className="mx-auto w-full max-w-xl px-4 py-12 sm:py-20">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#7a5b1e] dark:text-amber-300">Account</p>
+      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#1a1b17] dark:text-gray-100">账号中心</h1>
+      <p className="mt-4 max-w-md text-sm leading-7 text-[#65665d] dark:text-[#9aa6b6]">请先登录，再绑定微信或查看账号的登录方式。</p>
+      <Link href="/login?returnTo=/account" className="mt-6 inline-flex rounded-full bg-[#1f242b] px-4 py-2.5 text-sm font-medium text-white no-underline transition hover:bg-[#353c46]">去登录</Link>
+    </main>
   }
 
-  return (
-    <main className="mx-auto w-full max-w-xl px-4 py-12 sm:py-20">
-      <section className="rounded-3xl border border-[#d5d7cd] bg-[#f6f8f3] p-6 shadow-[0_20px_60px_rgba(82,69,45,0.08)] dark:border-[#293241] dark:bg-[#111821] sm:p-8">
-        <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-[#9a7b45] dark:text-[#929870]">Account</p>
-        <h1 className="text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">账号中心</h1>
-        <p className="mt-2 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">账号模块统一管理你的站内身份和登录方式。</p>
+  return <main className="mx-auto w-full max-w-[960px] px-4 py-12 sm:py-16">
+    <header className="border-b border-[#d8dad0] pb-9 dark:border-[#344052]">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#7a5b1e] dark:text-amber-300">Account / identity</p>
+      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#1a1b17] dark:text-gray-100 sm:text-4xl">账号中心</h1>
+      <p className="mt-3 max-w-2xl text-sm leading-7 text-[#65665d] dark:text-[#9aa6b6]">管理你的站内身份与登录方式。第三方账号只是登录凭据，不会改变你的平台 ID、评论、燃币或阅读记录。</p>
+      <dl className="mt-6 flex flex-wrap gap-x-7 gap-y-2 border-t border-[#d8dad0] pt-4 text-sm dark:border-[#344052]">
+        <div className="flex items-baseline gap-3"><dt className="text-[#74766d] dark:text-[#9aa6b6]">平台 ID</dt><dd className="font-mono text-xs text-[#35362f] dark:text-gray-100">{platformId || user?.id || '读取中…'}</dd></div>
+        <div className="flex items-baseline gap-3"><dt className="text-[#74766d] dark:text-[#9aa6b6]">登录方式</dt><dd className="text-[#35362f] dark:text-gray-100">{identitiesLoaded ? `${identities.length} 种` : '读取中…'}</dd></div>
+      </dl>
+    </header>
 
-        <div className="mt-5 rounded-2xl border border-[#d8dad0] bg-[#fbfcf9] px-4 py-3 dark:border-[#344052] dark:bg-[#0d131b]/60">
-          <p className="text-sm font-semibold text-[#35362f] dark:text-gray-100">平台 ID</p>
-          <p className="mt-1 break-all font-mono text-xs text-[#74766d] dark:text-[#9aa6b6]">{platformId || user?.id || '读取中…'}</p>
-          <p className="mt-2 text-xs leading-5 text-[#74766d] dark:text-[#9aa6b6]">这是唯一且长期不变的站内身份；GitHub、微信、Google 和邮箱只是可绑定的登录方式。</p>
-        </div>
+    {result && RESULT_MESSAGES[result] ? <p className={`mt-6 border-l-2 py-1 pl-4 text-sm leading-6 ${result === 'belongs_to_other_account' || result === 'login_required' ? 'border-[#a34f47] text-[#8c3d34] dark:border-[#d58a82] dark:text-[#e9b7b0]' : 'border-[#638262] text-[#426440] dark:border-[#8bb585] dark:text-[#b3d6ae]'}`}>{RESULT_MESSAGES[result]}</p> : null}
 
-        {result && RESULT_MESSAGES[result] ? <p className={`mt-5 rounded-xl border px-3.5 py-3 text-sm leading-6 ${result === 'belongs_to_other_account' || result === 'login_required' ? 'border-[#e3bbb3] bg-[#fff5f2] text-[#8c3d34] dark:border-[#693b36] dark:bg-[#281815] dark:text-[#e9b7b0]' : 'border-[#bfd5bd] bg-[#f1f8ef] text-[#426440] dark:border-[#3b5b40] dark:bg-[#16261a] dark:text-[#b3d6ae]'}`}>{RESULT_MESSAGES[result]}</p> : null}
-
-        <div className="mt-6 rounded-2xl border border-[#d8dad0] bg-white/65 p-4 dark:border-[#344052] dark:bg-[#0d131b]/60">
-          <p className="text-sm font-semibold text-[#35362f] dark:text-gray-100">已绑定</p>
-          {loadError ? <p className="mt-2 text-sm text-[#a34f47]">{loadError}</p> : null}
-          {!loadError && identities.length === 0 ? <p className="mt-2 text-sm text-[#65665d] dark:text-[#9aa6b6]">暂未发现已绑定的登录方式。请重新登录或绑定一种登录方式。</p> : null}
-          {identities.length ? <ul className="mt-3 space-y-2">{identities.map((identity) => <li key={`${identity.provider}:${identity.provider_account_id}`} className="flex items-center justify-between gap-3 rounded-xl border border-[#e1e3da] px-3 py-2.5 text-sm dark:border-[#2c3746]"><span className="font-medium text-[#35362f] dark:text-gray-100">{identityName(identity)}</span><span className="ml-auto max-w-[42%] truncate text-xs text-[#74766d] dark:text-[#9aa6b6]">{identity.provider_name || identity.provider_login || '已绑定'}</span>{identity.provider !== 'email' ? <button type="button" onClick={() => unbind(identity.provider)} disabled={Boolean(unlinking)} className="shrink-0 text-xs text-[#a34f47] disabled:opacity-50">{unlinking === identity.provider ? '解绑中…' : '解绑'}</button> : <span className="shrink-0 text-xs text-[#74766d] dark:text-[#9aa6b6]">邮箱凭据</span>}</li>)}</ul> : null}
-          {actionError ? <p className="mt-3 text-sm text-[#a34f47]">{actionError}</p> : null}
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-[#d8dad0] bg-white/65 p-4 dark:border-[#344052] dark:bg-[#0d131b]/60">
-          <p className="text-sm font-semibold text-[#35362f] dark:text-gray-100">添加登录方式</p>
-          <p className="mt-1 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">系统不会依据昵称、手机号或邮箱自动合并账号；若该身份已属于另一个账号，会拒绝绑定以保护评论、燃币和阅读记录。</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/api/auth/login?provider=github&intent=bind&returnTo=%2Faccount" className="inline-flex rounded-xl bg-[#24292f] px-4 py-2.5 text-sm font-medium text-white no-underline">绑定 GitHub</Link>
-            <Link href="/api/auth/login?provider=google&intent=bind&returnTo=%2Faccount" className="inline-flex rounded-xl bg-[#3b6db3] px-4 py-2.5 text-sm font-medium text-white no-underline">绑定 Google</Link>
-          {WECHAT_LOGIN_ENABLED ? (
-            <Link href="/api/auth/login?provider=wechat&intent=bind&returnTo=%2Faccount" className={`inline-flex rounded-xl px-4 py-2.5 text-sm font-medium no-underline ${wechatBound ? 'bg-[#e7e8e0] text-[#5f6257] dark:bg-[#293241] dark:text-gray-300' : 'bg-[#07a443] text-white hover:bg-[#078c3a]'}`}>{wechatBound ? '重新确认微信' : '绑定微信'}</Link>
-          ) : (
-            <span className="inline-flex rounded-xl border border-dashed border-[#b7c7b2] bg-[#eff5ed] px-4 py-2.5 text-sm font-medium text-[#597154] dark:border-[#3b5b40] dark:bg-[#16261a] dark:text-[#9ac596]">微信登录审核中</span>
-          )}
+    <section className="grid gap-8 border-b border-[#d8dad0] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12 dark:border-[#344052]">
+      <SectionIntro index="01" eyebrow="CONNECTED" title="已绑定">
+        <p>这些方式均可直接登录同一个账号。</p>
+      </SectionIntro>
+      <div className="border-t border-[#d8dad0] dark:border-[#344052]">
+        {loadError ? <p className="py-4 text-sm text-[#a34f47]">{loadError}</p> : null}
+        {!loadError && !identitiesLoaded ? <p className="py-4 text-sm text-[#74766d] dark:text-[#9aa6b6]">正在读取登录方式…</p> : null}
+        {!loadError && identitiesLoaded && identities.length === 0 ? <p className="py-4 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">暂未发现已绑定的登录方式。请重新登录或绑定一种登录方式。</p> : null}
+        {identities.map((identity) => {
+          const canUnbind = identity.provider !== 'email' && identities.length > 1
+          return <div key={`${identity.provider}:${identity.provider_account_id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[#d8dad0] py-4 dark:border-[#344052]">
+            <span className="min-w-20 font-medium text-[#35362f] dark:text-gray-100">{identityName(identity)}</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-[#74766d] dark:text-[#9aa6b6]">{identity.provider_name || identity.provider_login || '已绑定'}</span>
+            {identity.provider === 'email' ? <span className="text-xs text-[#74766d] dark:text-[#9aa6b6]">邮箱凭据</span> : canUnbind ? <button type="button" onClick={() => unbind(identity.provider)} disabled={Boolean(unlinking)} className="text-xs text-[#a34f47] transition hover:text-[#7f332d] disabled:opacity-50">{unlinking === identity.provider ? '解绑中…' : '解绑'}</button> : <span className="text-xs text-[#74766d] dark:text-[#9aa6b6]">主要登录方式</span>}
           </div>
-        </div>
+        })}
+      </div>
+    </section>
 
-        <div className="mt-4 rounded-2xl border border-[#d8dad0] bg-white/65 p-4 dark:border-[#344052] dark:bg-[#0d131b]/60">
-          <p className="text-sm font-semibold text-[#35362f] dark:text-gray-100">已关联的游客身份</p>
-          <p className="mt-1 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">登录前在这台浏览器产生的游客记录会归入本账号，并保留关联历史。</p>
-          {guestIdentities.length ? <ul className="mt-3 space-y-2">{guestIdentities.map((guest) => <li key={guest.id} className="rounded-xl border border-[#e1e3da] px-3 py-2 text-xs font-mono text-[#74766d] dark:border-[#2c3746] dark:text-[#9aa6b6]">{guest.id}</li>)}</ul> : <p className="mt-3 text-sm text-[#74766d] dark:text-[#9aa6b6]">暂无已关联的游客身份。</p>}
-        </div>
-      </section>
-    </main>
-  )
+    <section className="grid gap-8 border-b border-[#d8dad0] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12 dark:border-[#344052]">
+      <SectionIntro index="02" eyebrow="ADD A METHOD" title="添加登录方式">
+        <p>系统不会按昵称、手机号或邮箱合并账号。若身份已属于另一个账号，会拒绝绑定以保护你的记录。</p>
+      </SectionIntro>
+      <div className="border-t border-[#d8dad0] dark:border-[#344052]">
+        {!identitiesLoaded ? <p className="py-4 text-sm text-[#74766d] dark:text-[#9aa6b6]">正在读取可添加的方式…</p> : <>
+          {!githubBound ? <Link href="/api/auth/login?provider=github&intent=bind&returnTo=%2Faccount" className="group flex items-center justify-between gap-4 border-b border-[#d8dad0] py-4 text-sm no-underline dark:border-[#344052]"><span className="font-medium text-[#35362f] dark:text-gray-100">GitHub</span><span className="text-[#74766d] transition group-hover:text-[#1f242b] dark:text-[#9aa6b6] dark:group-hover:text-white">绑定 GitHub →</span></Link> : null}
+          {!googleBound ? <Link href="/api/auth/login?provider=google&intent=bind&returnTo=%2Faccount" className="group flex items-center justify-between gap-4 border-b border-[#d8dad0] py-4 text-sm no-underline dark:border-[#344052]"><span className="font-medium text-[#35362f] dark:text-gray-100">Google</span><span className="text-[#74766d] transition group-hover:text-[#1f242b] dark:text-[#9aa6b6] dark:group-hover:text-white">绑定 Google →</span></Link> : null}
+          {!wechatBound && (WECHAT_LOGIN_ENABLED ? <Link href="/api/auth/login?provider=wechat&intent=bind&returnTo=%2Faccount" className="group flex items-center justify-between gap-4 border-b border-[#d8dad0] py-4 text-sm no-underline dark:border-[#344052]"><span className="font-medium text-[#35362f] dark:text-gray-100">微信</span><span className="text-[#74766d] transition group-hover:text-[#1f242b] dark:text-[#9aa6b6] dark:group-hover:text-white">绑定微信 →</span></Link> : <div className="flex items-center justify-between gap-4 border-b border-[#d8dad0] py-4 text-sm dark:border-[#344052]"><span className="font-medium text-[#74766d] dark:text-[#9aa6b6]">微信</span><span className="text-xs text-[#7a8e73] dark:text-[#9ac596]">登录审核中</span></div>)}
+          {githubBound && googleBound && (wechatBound || !WECHAT_LOGIN_ENABLED) ? <p className="py-4 text-sm text-[#74766d] dark:text-[#9aa6b6]">当前可用的登录方式均已添加。</p> : null}
+        </>}
+        {actionError ? <p className="mt-4 text-sm text-[#a34f47]">{actionError}</p> : null}
+      </div>
+    </section>
+
+    <section className="grid gap-8 py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
+      <SectionIntro index="03" eyebrow="GUEST HISTORY" title="已关联的游客身份">
+        <p>登录前在这台浏览器产生的游客记录会归入本账号，并保留关联历史。</p>
+      </SectionIntro>
+      <div className="border-t border-[#d8dad0] dark:border-[#344052]">
+        {guestIdentities.length ? guestIdentities.map((guest) => <div key={guest.id} className="border-b border-[#d8dad0] py-4 font-mono text-xs text-[#74766d] dark:border-[#344052] dark:text-[#9aa6b6]">{guest.id}</div>) : <p className="py-4 text-sm text-[#74766d] dark:text-[#9aa6b6]">暂无已关联的游客身份。</p>}
+      </div>
+    </section>
+  </main>
 }

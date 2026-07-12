@@ -1,0 +1,251 @@
+{
+  "list": [
+    {
+      "date": "2026-06-15",
+      "displayDate": "Jun 15",
+      "json": "/ai-daily/2026-06-15.json",
+      "count": 5,
+      "highlights": [
+        "OpenAI 推出合作伙伴网络 Open",
+        "白宫AI监管决定被指偏袒OpenAI与亚",
+        "Anthropic 上市前夕",
+        "乔木小说创作 Skill 开源发布",
+        "Anthropic 暂停新模型访问，印度"
+      ]
+    },
+    {
+      "date": "2026-06-14",
+      "displayDate": "Jun 14",
+      "json": "/ai-daily/2026-06-14.json",
+      "count": 5,
+      "highlights": [
+        "SemiAnalysis 洞察 Toke",
+        "亚马逊首席执行官与美国官员会谈引发对 A",
+        "/architect：减少80%的Fab",
+        "Anthropic 秘密申请上市，估值 ",
+        "智谱 GLM-5.2 全量开放，支持 1"
+      ]
+    },
+    {
+      "date": "2026-06-13",
+      "displayDate": "Jun 13",
+      "json": "/ai-daily/2026-06-13.json",
+      "count": 5,
+      "highlights": [
+        "MiniMax M3 开源权重模型发布，",
+        "关于美国政府指令暂停访问Fable 5和",
+        "olmo-eval：面向模型开发循环的评",
+        "字节豆包上线\"任务模式\"：支持定时执行与",
+        "Kimi 发布并开源最新代码模型 Kim"
+      ]
+    },
+    {
+      "date": "2026-06-12",
+      "displayDate": "Jun 12",
+      "json": "/ai-daily/2026-06-12.json",
+      "count": 5,
+      "highlights": [
+        "阿里云发布 Meoo CLI：本地 AI",
+        "从0到1速通WorkBuddy：国内通用",
+        "Hermes Agent Desktop",
+        "OpenAI Codex 推出速率重置攒",
+        "Anthropic与DXC达成全球联盟，"
+      ]
+    },
+    {
+      "date": "2026-06-11",
+      "displayDate": "Jun 11",
+      "json": "/ai-daily/2026-06-11.json",
+      "count": 5,
+      "highlights": [
+        "小米发布 MiMo Code V0.1 ",
+        "摩尔线程开源 MusaCoder 代码大",
+        "通过语言服务器为 GitHub Copi",
+        "Cursor Bugbot 更新：速度提",
+        "华为云发布全球首个端到端具身AI平台Cl"
+      ]
+    },
+    {
+      "date": "2026-06-10",
+      "displayDate": "Jun 10",
+      "json": "/ai-daily/2026-06-10.json",
+      "count": 5,
+      "highlights": [
+        "AI 编程独角兽 Cursor 欧洲总部",
+        "Text-To-Lottie：Agent",
+        "Hugging Face 博客发布语音智",
+        "Claude Fable 发布：Anth",
+        "OpenRouter与Cursor集成指"
+      ]
+    },
+    {
+      "date": "2026-06-09",
+      "displayDate": "Jun 9",
+      "json": "/ai-daily/2026-06-09.json",
+      "count": 5,
+      "highlights": [
+        "FrontierCode 基准测试：AI",
+        "Hivemind推出面向AI编程智能体的",
+        "小互开源视频翻译工具：一句话自动下载、转",
+        "Claude 为 Connector 开",
+        "两部门：到2026年底人形机器人等重点产"
+      ]
+    },
+    {
+      "date": "2026-06-08",
+      "displayDate": "Jun 8",
+      "json": "/ai-daily/2026-06-08.json",
+      "count": 5,
+      "highlights": [
+        "ChatGPT 要变 AgentGPT ",
+        "英伟达与斗山集团合作推进物理AI及AI工",
+        "Harness 工程：在智能体优先的世界",
+        "Symbolica 2.0：适用于 Py",
+        "\"我在田里雇了一名工程师，它叫 Code"
+      ]
+    },
+    {
+      "date": "2026-06-07",
+      "displayDate": "Jun 7",
+      "json": "/ai-daily/2026-06-07.json",
+      "count": 5,
+      "highlights": [
+        "GitHub 开源 Spec Kit 工",
+        "M3与Opus代码审计13个bug：$0",
+        "Job Searcher",
+        "OpenCV 5 发布：升级全新 DNN",
+        "Persona Atlas：Huggin"
+      ]
+    },
+    {
+      "date": "2026-06-06",
+      "displayDate": "Jun 6",
+      "json": "/ai-daily/2026-06-06.json",
+      "count": 5,
+      "highlights": [
+        "Arena 发布真实世界 AI 智能体排",
+        "Anthropic：让Claude成为化",
+        "PolarDB-X Zero 上线：30",
+        "Apollo 敲定 350 亿美元债务融",
+        "Google Colab CLI 发布"
+      ]
+    },
+    {
+      "date": "2026-06-05",
+      "displayDate": "Jun 5",
+      "json": "/ai-daily/2026-06-05.json",
+      "count": 5,
+      "highlights": [
+        "Nex-N2-Pro 发布：基于 Qwe",
+        "EVA-Bench Data 2.0 发",
+        "Google Magenta RealT",
+        "Anthropic 开源 AI 驱动漏洞",
+        "OpenAI API 新增内容审核评分"
+      ]
+    },
+    {
+      "date": "2026-06-04",
+      "displayDate": "Jun 4",
+      "json": "/ai-daily/2026-06-04.json",
+      "count": 5,
+      "highlights": [
+        "Ideogram v4.0 发布：2K ",
+        "Anthropic 用 Claude 赋",
+        "Replit上线SEO Agent助应用",
+        "NVIDIA Research 在 CV",
+        "Anthropic 分析 832 个 A"
+      ]
+    },
+    {
+      "date": "2026-06-03",
+      "displayDate": "Jun 3",
+      "json": "/ai-daily/2026-06-03.json",
+      "count": 5,
+      "highlights": [
+        "阶跃星辰Step 3.7 Flash发布",
+        "MiniMax M3 模型在 Silic",
+        "Alphabet拟融资800亿美元 An",
+        "GitHub Copilot应用：智能体",
+        "Claude Code团队实践：智能体编"
+      ]
+    },
+    {
+      "date": "2026-06-02",
+      "displayDate": "Jun 2",
+      "json": "/ai-daily/2026-06-02.json",
+      "count": 5,
+      "highlights": [
+        "Anthropic 保密向 SEC 提交",
+        "Perplexity发布Search a",
+        "Anthropic 开发者分享 Clau",
+        "作者分享使用 Codex App 开发的",
+        "OpenBMB发布UltraData两大"
+      ]
+    },
+    {
+      "date": "2026-06-01",
+      "displayDate": "Jun 1",
+      "json": "/ai-daily/2026-06-01.json",
+      "count": 5,
+      "highlights": [
+        "全球首次：MWC26 上海将举办\"人形机",
+        "OpenAI正式进军机器人领域并启动招聘",
+        "OpenAI发布生物防御AI工具Rosa",
+        "MiniMax M3即将发布，可免费试用",
+        "DeepSeek V4 Flash 已上"
+      ]
+    },
+    {
+      "date": "2026-05-31",
+      "displayDate": "May 31",
+      "json": "/ai-daily/2026-05-31.json",
+      "count": 5,
+      "highlights": [
+        "免费领取6个月ChatGPT Pro及A",
+        "在浏览器中通过 Pyodide 和 Se",
+        "\"开玩笑吧\"：GitHub Copilo",
+        "小即是美：开源多模态模型发布",
+        "NVIDIA 或将于六月发布整合 Bla"
+      ]
+    },
+    {
+      "date": "2026-05-30",
+      "displayDate": "May 30",
+      "json": "/ai-daily/2026-05-30.json",
+      "count": 5,
+      "highlights": [
+        "Braintrust如何用Codex将客",
+        "小米开源可控视频音效生成模型 Contr",
+        "OpenAI Codex登陆Window",
+        "OpenAI推出实时翻译模型，支持70+",
+        "LlamaIndex 团队基于 Goog"
+      ]
+    },
+    {
+      "date": "2026-05-29",
+      "displayDate": "May 29",
+      "json": "/ai-daily/2026-05-29.json",
+      "count": 5,
+      "highlights": [
+        "阶跃星辰 Step 3.7 Flash ",
+        "Claude Opus 4.8 发布：在",
+        "Cursor 团队发布《开发者习惯报告》",
+        "别只看基准测试，要看全面表现",
+        "使用 Google Pay & Wall"
+      ]
+    },
+    {
+      "date": "2026-05-28",
+      "displayDate": "May 28",
+      "count": 4,
+      "highlights": [
+        "OpenAI GPT-5.6 曝 ultrafast 模式，向企业发 $400 迁移补贴",
+        "DeepSeek 秘密组建 Harness 团队，对标 Claude Code 入局代码 Agent",
+        "2026 世界智能产业博览会今日开幕，具身智能单独成展区",
+        "宇树科技 6月1日科创板上会，有望成 A 股具身智能第一股"
+      ],
+      "json": "/ai-daily/2026-05-28.json"
+    }
+  ],
+  "latest": "2026-06-15"
+}

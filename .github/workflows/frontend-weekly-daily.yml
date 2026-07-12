@@ -1,0 +1,29 @@
+name: 前端周看 · 每日精选
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-weekly-content
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/frontend-weekly-daily.mjs
+      - name: Commit generated content
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/frontend-weekly/daily content/frontend-weekly/daily-manifest.json public/frontend-weekly/daily
+          git diff --cached --quiet || git commit -m "chore: update frontend weekly daily picks"
+          git push

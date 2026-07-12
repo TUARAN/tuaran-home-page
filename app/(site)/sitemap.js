@@ -39,6 +39,7 @@ export default function sitemap() {
     '/services',
     '/articles',
     '/articles/creation-calendar',
+    '/frontend-weekly',
     '/rich-pages',
     '/works',
     '/tools',

@@ -11,9 +11,11 @@ const ERROR_MESSAGES = {
   LOGIN_FAILED: '登录失败，请稍后再试。',
 }
 const LAST_LOGIN_METHOD_COOKIE = 'tuaran_last_login_method'
+const WECHAT_LOGIN_ENABLED = process.env.NEXT_PUBLIC_WECHAT_LOGIN_ENABLED === 'true'
 const LOGIN_METHOD_LABELS = {
   google: 'Google',
   github: 'GitHub',
+  wechat: '微信',
   email: '邮箱',
 }
 
@@ -78,7 +80,7 @@ export default function LoginClient() {
         </p>
         <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">登录</h1>
         <p className="mb-8 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">
-          请选择：Google 和 GitHub 可直接登录；邮箱方式可快速登录，之后再激活邮箱以保留长期权益。
+          微信登录正在审核；Google、GitHub 和邮箱方式可正常使用。
         </p>
 
         {lastLoginMethod && LOGIN_METHOD_LABELS[lastLoginMethod] ? (
@@ -87,7 +89,24 @@ export default function LoginClient() {
           </p>
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {WECHAT_LOGIN_ENABLED ? (
+            <a
+              href={`/api/auth/login?provider=wechat&returnTo=${encodeURIComponent(oauthReturnTo)}`}
+              className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-center text-sm font-medium no-underline transition hover:bg-[#e7e8e0] dark:hover:bg-[#19212b] ${
+                lastLoginMethod === 'wechat'
+                  ? 'border-[#a37b3c] bg-white text-[#1f211b] shadow-sm dark:border-[#d7a85c] dark:bg-[#151d26] dark:text-gray-100'
+                  : 'border-[#caccc0] text-[#35362f] dark:border-[#344052] dark:text-gray-200'
+              }`}
+            >
+              <span>微信登录</span>
+              {lastLoginMethod === 'wechat' ? <LastUsedBadge /> : null}
+            </a>
+          ) : (
+            <span className="flex min-h-12 cursor-not-allowed items-center justify-center rounded-xl border border-dashed border-[#b7c7b2] bg-[#eff5ed] px-4 py-2.5 text-center text-sm font-medium text-[#597154] dark:border-[#3b5b40] dark:bg-[#16261a] dark:text-[#9ac596]">
+              微信登录 · 待开放
+            </span>
+          )}
           <a
             href={`/api/auth/login?provider=google&returnTo=${encodeURIComponent(oauthReturnTo)}`}
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-center text-sm font-medium no-underline transition hover:bg-[#e7e8e0] dark:hover:bg-[#19212b] ${

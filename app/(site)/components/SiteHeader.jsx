@@ -357,6 +357,14 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               </Link>
             ) : null}
             <Link
+              href="/account"
+              onClick={onClose}
+              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+            >
+              <span>{pick(locale, '账号与登录方式', 'Account & sign-in')}</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+            </Link>
+            <Link
               href="/community"
               onClick={onClose}
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
@@ -443,6 +451,14 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
                 <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
               </Link>
             ) : null}
+            <Link
+              href="/account"
+              onClick={onNavigate}
+              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+            >
+              <span>{pick(locale, '账号与登录方式', 'Account & sign-in')}</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+            </Link>
             <Link
               href="/community"
               onClick={onNavigate}

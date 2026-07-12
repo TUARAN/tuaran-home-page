@@ -99,7 +99,7 @@ export async function PATCH(req) {
   }
 
   try {
-    const row = await db.prepare('SELECT * FROM site_users WHERE id = ?').bind(id).first()
+    const row = await db.prepare('SELECT * FROM site_users WHERE platform_id = ?1 OR id = ?1 LIMIT 1').bind(id).first()
     if (!row) {
       return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
     }
@@ -116,18 +116,19 @@ export async function PATCH(req) {
       return Response.json({ error: result.error }, { status: result.status || 400 })
     }
 
-    const updated = await db.prepare('SELECT * FROM site_users WHERE id = ?').bind(id).first()
+    const updated = await db.prepare('SELECT * FROM site_users WHERE platform_id = ?1 OR id = ?1 LIMIT 1').bind(id).first()
+    const platformId = updated.platform_id || updated.id
     let balance = 0
     let unlockCounts = {}
     try {
-      balance = await getBalance(db, updated.id)
-      unlockCounts = await getUnlockCountsForUsers(db, [updated.id])
+      balance = await getBalance(db, platformId)
+      unlockCounts = await getUnlockCountsForUsers(db, [platformId])
     } catch {}
 
     return Response.json({
       ok: true,
       user: withOwnerFlag({
-        id: updated.id,
+        id: platformId,
         provider: updated.provider,
         login: updated.login,
         name: updated.name,
@@ -139,8 +140,8 @@ export async function PATCH(req) {
         lastSeenAt: updated.last_seen_at,
         loginCount: updated.login_count,
         balance,
-        unlockCount: unlockCounts[updated.id]?.unlockCount || 0,
-        lastUnlockAt: unlockCounts[updated.id]?.lastUnlockAt || null,
+        unlockCount: unlockCounts[platformId]?.unlockCount || 0,
+        lastUnlockAt: unlockCounts[platformId]?.lastUnlockAt || null,
       }),
     })
   } catch (error) {

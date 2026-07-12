@@ -114,7 +114,6 @@ export async function GET(req) {
 
   let user = resolved.user
   if (resolved.isNewAccount) {
-    await recordUserLogin(user)
     const ensured = await ensureIdentityForUser({ provider: 'wechat', providerAccountId, userId: user.id, profile })
     if (!ensured.ok && ensured.error === 'IDENTITY_ALREADY_BOUND') {
       // 同一微信在两个并发回调中首次登录时，后到的请求改用已经建立的账号。

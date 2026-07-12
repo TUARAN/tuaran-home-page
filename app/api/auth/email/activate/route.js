@@ -9,6 +9,7 @@ import {
 } from '../../../../../lib/edgeSession'
 import { recordUserLogin } from '../../../../../lib/userDirectory'
 import { awardRegisterOnLogin } from '../../../../../lib/points'
+import { resolveEmailLogin } from '../../../../../lib/accountIdentities'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -33,12 +34,15 @@ export async function POST(req) {
     })
     if (!result.ok) return Response.json(result, { status: result.status || 400 })
 
-    await recordUserLogin(result.user)
-    await awardRegisterOnLogin(result.user)
+    const account = await resolveEmailLogin(result.user)
+    if (!account.ok) return Response.json({ error: account.error }, { status: account.status || 500 })
+    const user = account.user
+    await recordUserLogin(user)
+    await awardRegisterOnLogin(user)
 
     const nowSeconds = Math.floor(Date.now() / 1000)
     const token = await signSession(
-      { user: result.user, iat: nowSeconds, exp: nowSeconds + 7 * 24 * 60 * 60 },
+      { user, iat: nowSeconds, exp: nowSeconds + 7 * 24 * 60 * 60 },
       sessionSecret
     )
     const { secure } = cookiesConfig()
@@ -49,7 +53,7 @@ export async function POST(req) {
     )
     headers.append('Set-Cookie', serializeLastLoginMethodCookie('email', { secure }))
 
-    return Response.json({ ok: true, user: result.user }, { headers })
+    return Response.json({ ok: true, user }, { headers })
   } catch (error) {
     console.error('email activation failed', error)
     return Response.json({ error: 'ACTIVATE_FAILED' }, { status: 500 })

@@ -361,7 +361,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               onClick={onClose}
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
             >
-              <span>{pick(locale, '账号与登录方式', 'Account & sign-in')}</span>
+              <span>{pick(locale, '账号中心', 'Account center')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
             </Link>
             <Link
@@ -456,7 +456,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
               onClick={onNavigate}
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
             >
-              <span>{pick(locale, '账号与登录方式', 'Account & sign-in')}</span>
+              <span>{pick(locale, '账号中心', 'Account center')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
             </Link>
             <Link

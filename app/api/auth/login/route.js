@@ -2,6 +2,7 @@ import {
   cookieNames,
   cookiesConfig,
   getSecrets,
+  getUserFromRequest,
   parseCookies,
   randomState,
   serializeLastLoginMethodCookie,
@@ -28,14 +29,23 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export async function GET(req) {
-  const { githubId, googleId, appUrl } = getSecrets()
+  const { githubId, googleId, wechatAppId, wechatAppSecret, wechatLoginEnabled, appUrl } = getSecrets()
   const url = new URL(req.url)
   const provider = url.searchParams.get('provider') || 'github'
   const isGoogle = provider === 'google'
   const isGithub = provider === 'github'
+  const isWechat = provider === 'wechat'
+  const wantsBind = url.searchParams.get('intent') === 'bind'
 
-  if (!isGithub && !isGoogle) {
+  if (!isGithub && !isGoogle && !isWechat) {
     return Response.json({ error: 'UNSUPPORTED_AUTH_PROVIDER' }, { status: 400 })
+  }
+
+  if (wantsBind && !isWechat) {
+    return Response.json({ error: 'UNSUPPORTED_BIND_PROVIDER' }, { status: 400 })
+  }
+  if (wantsBind && !(await getUserFromRequest(req))?.id) {
+    return Response.json({ error: 'LOGIN_REQUIRED_FOR_BINDING' }, { status: 401 })
   }
 
   if (isGithub && !githubId) {
@@ -50,6 +60,12 @@ export async function GET(req) {
       { status: 500 }
     )
   }
+  if (isWechat && (!wechatLoginEnabled || !wechatAppId || !wechatAppSecret)) {
+    return Response.json(
+      { error: 'WECHAT_LOGIN_PENDING_REVIEW', message: '微信登录正在审核，暂未开放。' },
+      { status: 503 }
+    )
+  }
 
   const returnTo = normalizeReturnTo(url.searchParams.get('returnTo'))
   const state = randomState()
@@ -58,11 +74,14 @@ export async function GET(req) {
   const redirectUri = `${origin}/api/auth/callback/${provider}`
   const authUrl = isGoogle
     ? new URL('https://accounts.google.com/o/oauth2/v2/auth')
-    : new URL('https://github.com/login/oauth/authorize')
+    : isWechat
+      ? new URL('https://open.weixin.qq.com/connect/qrconnect')
+      : new URL('https://github.com/login/oauth/authorize')
 
-  authUrl.searchParams.set('client_id', isGoogle ? googleId : githubId)
+  if (isWechat) authUrl.searchParams.set('appid', wechatAppId)
+  else authUrl.searchParams.set('client_id', isGoogle ? googleId : githubId)
   authUrl.searchParams.set('redirect_uri', redirectUri)
-  authUrl.searchParams.set('scope', isGoogle ? 'openid profile email' : 'read:user user:email')
+  authUrl.searchParams.set('scope', isGoogle ? 'openid profile email' : isWechat ? 'snsapi_login' : 'read:user user:email')
   authUrl.searchParams.set('state', state)
   if (isGoogle) {
     authUrl.searchParams.set('response_type', 'code')
@@ -79,6 +98,14 @@ export async function GET(req) {
   headers.append(
     'Set-Cookie',
     serializeCookie(cookieNames.returnTo, returnTo, { maxAge: 10 * 60, secure, httpOnly: true })
+  )
+  headers.append(
+    'Set-Cookie',
+    serializeCookie(cookieNames.oauthIntent, wantsBind ? 'bind' : 'login', {
+      maxAge: 10 * 60,
+      secure,
+      httpOnly: true,
+    })
   )
   headers.set('Location', authUrl.toString())
 

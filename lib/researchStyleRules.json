@@ -1,0 +1,86 @@
+[
+  {
+    "id": "one-sentence-takeaway",
+    "phrase": "如果只记住一句话",
+    "why": "AI 味极重的收尾套话；要收敛结论就直接写「先给结论」+ 一句加粗陈述。",
+    "matcher": "如果只记住一句话",
+    "severity": "fix"
+  },
+  {
+    "id": "false-contrast",
+    "phrase": "不是 X，而是 Y",
+    "why": "高频 AI 假深刻句式。删掉「不是 X」若不损失意思就删；只有真需要对比才保留。",
+    "matcher": "不是[^。；，、：:！!？?\\n]{1,24}而是",
+    "severity": "review"
+  },
+  {
+    "id": "forced-elevation",
+    "phrase": "不仅仅是 X，更是 Y",
+    "why": "强行拔高普通事实，宣传腔。直接说 Y。",
+    "matcher": "不仅仅是[^。；，、：:！!？?\\n]{1,24}更是",
+    "severity": "fix"
+  },
+  {
+    "id": "empty-transition",
+    "phrase": "值得关注 / 注意 / 一提的是",
+    "why": "空转过渡句，什么信息都没给。直接说那件事。",
+    "matcher": "值得(?:关注|注意|一提)",
+    "severity": "fix"
+  },
+  {
+    "id": "vague-qualifier",
+    "phrase": "某种程度上 / 某种意义上",
+    "why": "模糊限定词，用来回避把话说准。要么给具体程度，要么删。",
+    "matcher": "某种(?:程度|意义)上",
+    "severity": "fix"
+  },
+  {
+    "id": "grand-conclusion",
+    "phrase": "本质上 / 从本质上讲 / 归根结底 / 说到底",
+    "why": "把观察包装成终极判决的拔高腔。直接陈述。",
+    "matcher": "(?:从)?本质上(?:讲)?|归根结底|说到底",
+    "severity": "fix"
+  },
+  {
+    "id": "cheap-emphasis",
+    "phrase": "更重要的是 / 值得强调的是",
+    "why": "廉价递进，用来制造重点感。让内容自己承担重点。",
+    "matcher": "(?:更重要|值得强调)的是",
+    "severity": "fix"
+  },
+  {
+    "id": "closing-filler",
+    "phrase": "综上所述 / 总而言之 / 总的来说 / 一言以蔽之",
+    "why": "收尾套话。用具体结论收束，不用套壳。",
+    "matcher": "综上所述|总而言之|总的来说|一言以蔽之",
+    "severity": "fix"
+  },
+  {
+    "id": "rephrase-filler",
+    "phrase": "换言之 / 换句话说",
+    "why": "八成是把上一句换皮重说一遍。删掉重复，或只留一种说法。",
+    "matcher": "换言之|换句话说",
+    "severity": "review"
+  },
+  {
+    "id": "lazy-assertion",
+    "phrase": "众所周知 / 显而易见 / 不难看出",
+    "why": "偷懒断言，跳过论证；对读者也不礼貌。",
+    "matcher": "众所周知|显而易见|不难看出",
+    "severity": "fix"
+  },
+  {
+    "id": "marketing-jargon",
+    "phrase": "赋能 / 打造 / 重塑 / 未来可期",
+    "why": "宣传腔，读者立刻出戏。",
+    "matcher": "赋能|打造|重塑|未来可期",
+    "severity": "review"
+  },
+  {
+    "id": "empty-context",
+    "phrase": "在……的时代 / 背景 / 浪潮下",
+    "why": "空泛背景句，没有具体的人和事。",
+    "matcher": "在[^。；，、：:！!？?\\n]{1,24}(?:时代|背景|浪潮)下",
+    "severity": "fix"
+  }
+]

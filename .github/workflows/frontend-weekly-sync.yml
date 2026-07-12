@@ -1,0 +1,29 @@
+name: 前端周看 · 周刊同步
+
+on:
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-weekly-content
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/sync-frontend-weekly.mjs
+      - name: Commit synchronized index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/frontend-weekly/weekly-index.json
+          git diff --cached --quiet || git commit -m "chore: sync frontend weekly index"
+          git push

@@ -55,6 +55,19 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'codex-level-switch-effect',
+    type: 'video',
+    title: 'Codex 等级切换效果',
+    summary:
+      '把模型能力档位做成一段可感知的状态切换：炽热的太阳沿着能量轨道推进，推理进度、等级编号和「SOL HIGH」标识随之完成升级。没有堆叠太多说明文字，却让“更高推理等级”有了清晰的重量感和仪式感。',
+    tags: ['Codex', '交互动效', '等级切换', 'AI 界面', '科幻 UI'],
+    date: '2026-07-12',
+    time: '18:27',
+    src: '/feed/codex-level-switch-2026-07-12.mp4',
+    poster: '/feed/posters/codex-level-switch-2026-07-12.png',
+    aspect: '16/9',
+  },
+  {
     id: 'anthropic-claude-j-space-consciousness',
     type: 'quote',
     title: 'Claude 长出了能藏想法的 J 空间？',

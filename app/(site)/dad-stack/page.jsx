@@ -25,6 +25,12 @@ export const metadata = {
 // 循证育儿调研：站内已发布、可公开的内容（据实列出，不注水）
 const researchPieces = [
   {
+    href: '/articles/research/topics/china-toddler-probiotics-prebiotics-synbiotics-postbiotics',
+    title: '1 岁半宝宝怎么选益生菌、益生元、合生元、后生元',
+    desc: '中国市场的品牌格局、四类产品的证据差异与购买清单：健康孩子通常不用常规补，真要选先看菌株、年龄与用途。',
+    tag: '市场调研',
+  },
+  {
     href: '/articles/research/topics/father-parenting-18-month-toddler-evidence-based',
     title: '父亲如何科学育儿一岁半幼儿',
     desc: '发展里程碑、依恋与「发球—回球」、睡眠/活动/屏幕、情绪与发脾气、管教、喂养——把权威机构的共识和我的落地研判分开。',

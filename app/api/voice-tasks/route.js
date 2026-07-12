@@ -75,7 +75,7 @@ export async function GET(req) {
        FROM voice_tasks`
     const binds = []
 
-    if (principal.type === 'owner') {
+    if (principal.type !== 'token') {
       query += ' WHERE user_id = ?'
       binds.push(String(principal.user.id))
       if (status !== 'all') {
@@ -104,7 +104,7 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const principal = await getVoiceTaskPrincipal(req)
-    if (!principal || principal.type !== 'owner') {
+    if (!principal || principal.type === 'token') {
       return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 })
     }
 
@@ -179,7 +179,7 @@ export async function PATCH(req) {
       .first()
 
     if (!current) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
-    if (principal.type === 'owner' && String(current.user_id) !== String(principal.user.id)) {
+    if (principal.type !== 'token' && String(current.user_id) !== String(principal.user.id)) {
       return Response.json({ error: 'FORBIDDEN' }, { status: 403 })
     }
 

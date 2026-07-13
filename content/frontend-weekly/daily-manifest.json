@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-13",
+      "displayDate": "Jul 13",
+      "count": 5,
+      "highlights": [
+        "Mindwalk：在代码库 3D 地图上回放编码代理",
+        "OpenAI CEO Altman 改口称 AI 净",
+        "Ploy 将 AI 智能体默认模型从 Claude ",
+        "Codex与ChatGPT Work多项更新：取消5",
+        "腾讯混元发布Hy3模型：295B参数MoE架构，Ag"
+      ]
+    },
+    {
       "date": "2026-07-12",
       "displayDate": "Jul 12",
       "count": 5,
@@ -259,5 +271,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-12"
+  "latest": "2026-07-13"
 }

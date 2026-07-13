@@ -38,8 +38,11 @@ try {
   }
   const files = existsSync(source)
     ? readdirSync(join(source, 'weekly'), { recursive: true }).map((file) => `weekly/${String(file).replaceAll('\\', '/')}`)
-    : git(['-C', repo, 'ls-tree', '-r', '--name-only', 'HEAD', 'weekly']).split('\n')
+    : git(['-c', 'core.quotePath=false', '-C', repo, 'ls-tree', '-r', '--name-only', 'HEAD', 'weekly']).split('\n')
   const issues = files.filter((file) => /^weekly\/\d+\/前端周刊第\d+期\.md$/.test(file)).map((file) => parseIssue(file, readSource(file))).sort((a, b) => b.id - a.id)
+  if (!issues.length) {
+    throw new Error('No weekly issues found; refusing to overwrite the existing index')
+  }
   const out = resolve(process.cwd(), 'content/frontend-weekly')
   mkdirSync(out, { recursive: true })
   writeFileSync(join(out, 'weekly-index.json'), JSON.stringify({ updatedAt: new Date().toISOString(), source: 'TUARAN/frontend-weekly-digest-cn', issues }, null, 2) + '\n')

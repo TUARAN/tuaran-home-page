@@ -21,8 +21,8 @@ import {
 import { getTagToneClass } from '../../../lib/tagTone'
 
 const DESKTOP_CHANNEL_GROUPS = [
-  SITE_CHANNELS.slice(0, 2),
-  SITE_CHANNELS.slice(2, 4),
+  SITE_CHANNELS.slice(0, 3),
+  SITE_CHANNELS.slice(3, 5),
 ]
 
 function ChevronDown() {

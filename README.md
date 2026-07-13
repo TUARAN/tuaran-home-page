@@ -8,13 +8,14 @@
 
 ## 四个板块
 
-站点主导航就是站点的世界观，收敛为四个频道；资源作为内容下面的二级分组：
+站点主导航就是站点的世界观，收敛为五个频道；资源作为内容下面的二级分组：
 
 | 板块 | 里面有什么 |
 |---|---|
 | **内容** | 原创专栏、灵感流、网络日志、[Dad Stack](https://2aran.com/dad-stack)，公司 / 事项 / 人物三类 AI 协助深度调研，以及 [资源库](https://2aran.com/articles?tab=resources)：AI 与开发、人文与政经、外部收藏、职场资料、壁纸等原文与索引 |
-| **工具** | [工具库](https://2aran.com/tools)：可直接使用的站内工具、浏览器扩展、可视化富页面与长期系统 |
-| **圈子** | [讨论中心](https://2aran.com/community)：聚合全站评论与热门讨论串，加上留言板、燃币与合作入口 |
+| **工具** | [工具库](https://2aran.com/tools)：可直接使用的站内工具、浏览器扩展与可视化富页面 |
+| **系统** | [作品展厅](https://2aran.com/works)：长期产品、AI 工程、Agent 项目与 Skill 能力中心 |
+| **圈子** | [讨论中心](https://2aran.com/community)：统一收纳留言、全站评论、热门讨论串、燃币与合作入口 |
 | **关于** | [关于本站](https://2aran.com/site)、[站点索引](https://2aran.com/map)、[更新记录](https://2aran.com/changelog)、公开的[访问数据](https://2aran.com/traffic) |
 
 ## 设计上值得一看的几件事

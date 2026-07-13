@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
 import { useSessionAccount } from '../components/SessionProvider'
+import StompPanel from '../components/StompPanel'
 import UserAvatar from '../components/UserAvatar'
 
 const WECHAT_QR_ITEM = {
@@ -261,7 +262,7 @@ export default function DiscussionHubClient() {
           <p className="discussion-eyebrow">Community Feed</p>
           <h1>讨论</h1>
           <p>
-            看看大家在聊什么。这里展示最近 10 条公开评论，点击后可以跳到对应文章和具体评论位置。
+            留言也是讨论的一部分。这里统一收纳给站长的留言、全站公开评论、回复通知和社群入口。
           </p>
           <div className="discussion-stats">
             <Stat value={stats.comments ?? '—'} label="全部评论" />
@@ -270,15 +271,24 @@ export default function DiscussionHubClient() {
           </div>
         </section>
 
+        <section id="message" className="mt-6 scroll-mt-24">
+          <div className="mb-3">
+            <p className="discussion-eyebrow mb-1">Message</p>
+            <h2 className="mb-0 border-0 p-0 text-lg">留下想法</h2>
+            <p className="mb-0 mt-1 text-sm text-[var(--site-muted)]">
+              可以写近况、建议、问题或合作想法，最新留言也会在这里展示。
+            </p>
+          </div>
+          <StompPanel />
+        </section>
+
         <section className="mt-6">
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
               <p className="discussion-eyebrow mb-1">Live</p>
               <h2 className="mb-0 border-0 p-0 text-lg">最新 10 条评论</h2>
             </div>
-            <Link href="/messages" className="discussion-text-link">
-              去留言板
-            </Link>
+            <a href="#message" className="discussion-text-link">留下想法</a>
           </div>
 
           {loading ? (

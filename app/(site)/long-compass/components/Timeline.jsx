@@ -32,17 +32,14 @@ export default function Timeline({ records, expandedRecordId, onToggleRecord }) 
   }
 
   return (
-    <div className="relative pl-16 sm:pl-20">
-      <div className="space-y-8">
-        {groups.map((group, gi) => (
-          <div key={`${group.year ?? 'unknown'}-${gi}`} className="relative">
-            {/* 年份标签放在卡片左侧，作为各阶段的辨识点。 */}
-            <span
-              className="absolute -top-1 left-5 z-10 -translate-x-1/2 rounded-full bg-[#2f3027] px-2 py-0.5 font-mono text-[10px] font-semibold text-white shadow-sm ring-4 ring-[#f4f5f1] dark:bg-gray-200 dark:text-[#111] dark:ring-[#121821] sm:left-7"
-            >
-              {group.year ?? '?'}
-            </span>
-            <div className="space-y-3 pt-2">
+    <div className="space-y-8">
+      {groups.map((group, gi) => (
+        <section key={`${group.year ?? 'unknown'}-${gi}`}>
+          {/* 年份与卡片共用左边界，避免时间轴留白让内容向右偏。 */}
+          <span className="mb-2 inline-flex rounded-full bg-[#2f3027] px-2 py-0.5 font-mono text-[10px] font-semibold text-white shadow-sm dark:bg-gray-200 dark:text-[#111]">
+            {group.year ?? '?'}
+          </span>
+          <div className="space-y-3">
               {group.items.map((record) => (
                 <RecordCard
                   key={record.id}
@@ -52,10 +49,9 @@ export default function Timeline({ records, expandedRecordId, onToggleRecord }) 
                   onToggle={onToggleRecord}
                 />
               ))}
-            </div>
           </div>
-        ))}
-      </div>
+        </section>
+      ))}
     </div>
   )
 }

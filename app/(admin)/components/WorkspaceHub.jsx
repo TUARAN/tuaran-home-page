@@ -14,50 +14,56 @@ export default function WorkspaceHub({ title, description, eyebrow, flow, sectio
   return (
     <AdminPage title={title} description={description} maxWidth="1180px">
       {flow?.length ? (
-        <section className="mb-7 rounded-xl border border-[#e2e3da] bg-[#fafaf6] px-4 py-4 dark:border-[#1e2733] dark:bg-[#10161f]">
+        <section className="mb-9 border-y border-[#d9d9cf] py-4 dark:border-[#26313e] md:grid md:grid-cols-[180px_1fr] md:items-center md:gap-6">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#858779] dark:text-[#8e9ab0]">
             {eyebrow || '推荐流程'}
           </p>
-          <ol className="mt-3 flex flex-col gap-2 md:flex-row md:items-stretch">
+          <ol className="mt-3 grid gap-2 sm:grid-cols-2 md:mt-0 md:flex md:items-center">
             {flow.map((step, index) => (
-              <li key={step} className="flex min-w-0 flex-1 items-center gap-2 text-[12px] text-[#53554d] dark:text-gray-300">
-                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#15140f] font-mono text-[10px] text-white dark:bg-gray-100 dark:text-[#111827]">
-                  {index + 1}
+              <li key={step} className="flex min-w-0 flex-1 items-center text-[12px] text-[#53554d] dark:text-gray-300">
+                <span className="mr-2 font-mono text-[10px] font-semibold tabular-nums text-[#929487] dark:text-[#718096]">
+                  {String(index + 1).padStart(2, '0')}
                 </span>
-                <span>{step}</span>
+                <span className="font-medium">{step}</span>
+                {index < flow.length - 1 ? (
+                  <span className="mx-4 hidden h-px min-w-4 flex-1 bg-[#d9d9cf] dark:bg-[#26313e] md:block" aria-hidden="true" />
+                ) : null}
               </li>
             ))}
           </ol>
         </section>
       ) : null}
 
-      <div className="space-y-6">
+      <div>
         {sections.map((section) => (
-          <section key={section.title}>
-            <div className="mb-3 flex items-end justify-between gap-3">
-              <div>
-                <h2 className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{section.title}</h2>
-                {section.description ? <p className="mt-1 text-[12px] text-[#67695d] dark:text-gray-400">{section.description}</p> : null}
-              </div>
+          <section
+            key={section.title}
+            className="border-t border-[#d9d9cf] py-7 first:border-t-0 first:pt-0 dark:border-[#26313e] md:grid md:grid-cols-[240px_1fr] md:gap-10"
+          >
+            <div className="mb-4 md:mb-0">
+              <h2 className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{section.title}</h2>
+              {section.description ? <p className="mt-2 text-[12px] leading-5 text-[#77796d] dark:text-gray-400">{section.description}</p> : null}
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="border-y border-[#d9d9cf] dark:border-[#26313e]">
               {section.items.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group flex min-h-[112px] items-start gap-3 rounded-xl border border-[#e2e3da] bg-white p-4 transition hover:border-[#aeb0a2] hover:shadow-sm dark:border-[#1e2733] dark:bg-[#10161f] dark:hover:border-[#394757]"
+                  className="group -mx-2 flex items-start gap-4 border-t border-[#e4e4dc] px-2 py-5 transition-colors first:border-t-0 hover:bg-[#efeee7]/70 focus-visible:bg-[#efeee7]/70 focus-visible:outline-none dark:border-[#202b38] dark:hover:bg-[#131b25] dark:focus-visible:bg-[#131b25]"
                 >
-                  <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#f2f1ea] text-[#5b5d53] dark:bg-[#1a2330] dark:text-[#aab6c8]">
+                  <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center text-[#6b6d62] dark:text-[#aab6c8]">
                     <AdminIcon name={item.icon} size={19} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1 text-[14px] font-semibold text-[#15140f] dark:text-gray-100">
-                      {item.title}
-                      <IconArrowRight size={14} className="opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-70" aria-hidden="true" />
-                    </span>
+                    <span className="block text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{item.title}</span>
                     <span className="mt-1 block text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{item.description}</span>
                     {item.note ? <span className="mt-2 block font-mono text-[10px] text-[#929487] dark:text-[#718096]">{item.note}</span> : null}
                   </span>
+                  <IconArrowRight
+                    size={15}
+                    className="mt-1.5 shrink-0 text-[#a3a598] transition group-hover:translate-x-1 group-hover:text-[#55574e] dark:text-[#536173] dark:group-hover:text-[#aab6c8]"
+                    aria-hidden="true"
+                  />
                 </Link>
               ))}
             </div>

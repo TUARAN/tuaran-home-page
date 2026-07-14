@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>推文导出</title>
+    <link rel="stylesheet" href="print.css" />
+  </head>
+  <body>
+    <div class="toolbar" role="toolbar" aria-label="PDF 导出工具栏">
+      <div class="toolbar-copy">
+        <strong>PDF 排版已就绪</strong>
+        <span>在打印窗口中选择「另存为 PDF」</span>
+      </div>
+      <button id="print-button" type="button" disabled>正在准备图片…</button>
+    </div>
+
+    <main id="document" class="document" hidden>
+      <header class="document-header">
+        <div class="x-mark" aria-hidden="true">X</div>
+        <span>POST ARCHIVE</span>
+      </header>
+
+      <article class="tweet-card">
+        <header class="author-row">
+          <div id="avatar-wrap" class="avatar-wrap">
+            <img id="avatar" alt="" />
+          </div>
+          <div class="author-copy">
+            <strong id="display-name"></strong>
+            <span id="handle"></span>
+          </div>
+        </header>
+
+        <div id="tweet-text" class="tweet-text"></div>
+        <div id="image-grid" class="image-grid"></div>
+        <div id="metrics" class="metrics"></div>
+
+        <footer class="tweet-footer">
+          <time id="published-at"></time>
+          <span class="dot">·</span>
+          <a id="source-link">查看原文</a>
+        </footer>
+      </article>
+
+      <footer class="document-footer">
+        <span id="exported-at"></span>
+        <span>由 X Tweet to PDF 在本地生成</span>
+      </footer>
+    </main>
+
+    <section id="error-view" class="error-view" hidden>
+      <strong>无法打开这份推文</strong>
+      <p id="error-message"></p>
+    </section>
+
+    <script src="print.js"></script>
+  </body>
+</html>

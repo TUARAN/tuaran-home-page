@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>X Tweet to PDF</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="brand">
+        <div class="brand-mark" aria-hidden="true">X</div>
+        <div>
+          <h1>推文转 PDF</h1>
+          <p>干净保存，适合阅读与归档</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="feature-row">
+          <span class="feature-icon" aria-hidden="true">文</span>
+          <div>
+            <strong>保留核心内容</strong>
+            <span>作者、正文、时间、图片与原文链接</span>
+          </div>
+        </div>
+        <div class="feature-row">
+          <span class="feature-icon" aria-hidden="true">A4</span>
+          <div>
+            <strong>自动适配打印</strong>
+            <span>生成独立排版页，再由浏览器保存为 PDF</span>
+          </div>
+        </div>
+      </section>
+
+      <button id="export-button" class="primary-button" type="button">
+        <span id="button-label">提取当前推文</span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </button>
+
+      <p id="status" class="status" role="status">请先打开一条推文的详情页</p>
+      <p class="privacy">所有内容仅在本机处理，不会上传服务器。</p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

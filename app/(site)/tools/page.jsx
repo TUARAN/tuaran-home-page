@@ -122,7 +122,7 @@ export default function ToolsPage() {
               工具库
             </h1>
             <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-              这里按用途整理站内工具、客户端与浏览器扩展、AI 与开发者工具，以及工具与资源索引。
+              <strong>人与动物的本质区别是制造和使用工具</strong>
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <ArticleActionsDropdown label="更多">

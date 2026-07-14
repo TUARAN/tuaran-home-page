@@ -98,7 +98,6 @@ function manualEntriesToItems(entries, existingItems) {
 }
 
 const QUICK_LINKS = [
-  { label: '创作日历', href: '/articles/creation-calendar' },
   { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/', external: true },
 ]
 

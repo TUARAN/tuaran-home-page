@@ -1,6 +1,16 @@
 {
   "list": [
     {
+      "date": "2026-07-14",
+      "displayDate": "Jul 14",
+      "count": 3,
+      "highlights": [
+        "前沿模型实际成本：tokenizer 差异导致隐性涨",
+        "OpenAI 面向普通用户发布提示词指南：从结果出发",
+        "腾讯混元发布 HyOCR-1.5：端到端 OCR 大"
+      ]
+    },
+    {
       "date": "2026-07-13",
       "displayDate": "Jul 13",
       "count": 5,
@@ -271,5 +281,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-13"
+  "latest": "2026-07-14"
 }

@@ -78,7 +78,7 @@ export default function ArticlesHeaderClient({ items }) {
             {pageCopy.title}
           </h1>
           <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
-            抗拒营销制造的焦虑裹挟，遇事溯源辨真；资讯万千，唯有能利己受益，方有价值。
+            <strong>抗拒营销制造的焦虑裹挟，遇事溯源辨真；资讯万千，唯有能利己受益，方有价值。</strong>
             GPT-5 幻觉率参考：
             <a
               href={hallucinationRate.sourceUrl}

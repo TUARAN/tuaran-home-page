@@ -200,6 +200,8 @@ export default async function ResearchDetailPage({ params }) {
     intro: AUTHOR_INTRO_MARKDOWN,
   })
   const categoryLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
+  const topicTypeLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
+  const showTopicType = topicTypeLabel && topicTypeLabel !== categoryLabel
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
   const articleKey = `research:${entry.category}:${entry.slug}`
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
@@ -305,11 +307,11 @@ export default async function ResearchDetailPage({ params }) {
               </Link>
             </>
           ) : null}
-          {entry.topicType && TOPIC_TYPE_META[entry.topicType] ? (
+          {showTopicType ? (
             <>
               <span aria-hidden="true">·</span>
               <span className="research-pill research-pill-accent">
-                {TOPIC_TYPE_META[entry.topicType].label}
+                {topicTypeLabel}
               </span>
             </>
           ) : null}

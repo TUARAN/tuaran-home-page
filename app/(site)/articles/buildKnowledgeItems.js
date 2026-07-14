@@ -40,7 +40,7 @@ export function buildKnowledgeItems() {
     const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
     const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
     const peopleLabel = entry.peopleType && PEOPLE_TYPE_META[entry.peopleType]?.label
-    const subLabel = companyLabel || topicLabel || peopleLabel
+    const subLabel = [companyLabel, topicLabel, peopleLabel].find((label) => label && label !== baseLabel)
     return {
       id: `research:${entry.category}:${entry.slug}`,
       kind: entry.category, // 'companies' | 'topics' | 'people'

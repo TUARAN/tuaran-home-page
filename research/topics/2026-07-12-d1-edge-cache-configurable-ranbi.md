@@ -7,6 +7,7 @@ tags: [Cloudflare Workers, D1, Edge 缓存, 燃币, 权益系统, 配置中心, 
 summary: 为站内燃币与资源解锁设计一套可配置、可审计又不把每次请求都压到 D1 的实现：D1 保存规则与权益正本，Edge 进程内短缓存只加速低频规则和单资源覆盖价，余额、解锁状态与扣款始终实时查询。
 tldr: 规则价格可以缓存 45 秒，单资源覆盖价可以缓存 60 秒；用户余额、已解锁状态、账本和扣款判断不能缓存。这样把运营配置从代码常量移到 D1，又不把权限正确性让给缓存。
 topic_type: tech
+tech_type: web_cloud
 assistance: codex
 model: gpt-5
 pv: 0

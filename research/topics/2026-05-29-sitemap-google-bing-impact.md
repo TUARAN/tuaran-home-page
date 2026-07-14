@@ -2,6 +2,7 @@
 title: 不想花钱做 SEO/GEO，个人站该怎么做：从零预算路径到 sitemap.xml 落地
 category: topics
 topic_type: tech
+tech_type: web_cloud
 date: 2026-05-29
 tags: [SEO, Sitemap, Google Search Console, Bing Webmaster Tools, 收录, 索引]
 summary: 面向不想投入 SEO/GEO 预算的个人站，给出一套“先内容、再结构、再抓取信号、再监控”的零成本执行路径，并说明 sitemap.xml 在其中的角色、效果与常见误区。

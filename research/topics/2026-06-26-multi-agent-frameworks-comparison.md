@@ -2,6 +2,7 @@
 title: 多 Agent 框架横向对比调研：AgentScope 2.0 / LangGraph / AutoGen / LangChain（附 AgentScope × OpenClaw 框架与 Skill 对比）
 category: topics
 topic_type: tech
+tech_type: agents_automation
 date: 2026-06-26
 time: 16:50
 tags: [AI, Agent, 多智能体, AgentScope, LangGraph, AutoGen, LangChain, OpenClaw, MCP, Skill, 渐进式披露, 工程化, 框架选型, Microsoft Agent Framework, 编排, 本地优先]

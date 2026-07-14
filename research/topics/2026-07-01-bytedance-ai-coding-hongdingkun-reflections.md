@@ -2,6 +2,7 @@
 title: 字节 AI Coding 的三个反思：代码占比不该当 KPI
 category: topics
 topic_type: tech
+tech_type: ai_coding
 date: 2026-07-01
 time: 15:40
 tags: [AI Coding, 字节跳动, 洪定坤, TRAE, Vibe Coding, Harness, 研发提效, 工程质量]

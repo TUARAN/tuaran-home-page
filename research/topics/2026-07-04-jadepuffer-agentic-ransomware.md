@@ -2,6 +2,7 @@
 title: JADEPUFFER 深度调研：当勒索软件开始由 Agent 自己动手
 category: topics
 topic_type: tech
+tech_type: security_identity
 date: 2026-07-04
 time: 14:23
 tags: [AI安全, Agent, 勒索软件, 云安全, Sysdig, Langflow, Nacos, 数据库安全, 运行时检测]

@@ -2,6 +2,7 @@
 title: Qwen3.5 系列模型端侧部署全维度调研
 category: topics
 topic_type: tech
+tech_type: models_compute
 date: 2026-05-20
 tags: [Qwen, 端侧部署, WebGPU, transformers.js, ONNX, 大模型, 量化, MoE]
 summary: 以端侧部署视角梳理 Qwen3.5 全系列（0.8B → 397B-A17B）：哪些能塞进浏览器 / 手机 / 笔记本，哪些只能上服务器，给出一张可复用的对照大表。

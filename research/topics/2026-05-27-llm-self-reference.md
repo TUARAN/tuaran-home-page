@@ -2,6 +2,7 @@
 title: 大模型的自我指涉问题：为什么 AI 总爱说“不是……而是……”？
 category: topics
 topic_type: tech
+tech_type: models_compute
 date: 2026-05-27
 tags: [大模型, LLM, AI 写作, RLHF, Transformer, Prompt Engineering, 自我指涉]
 summary: AI 写出来的文章一眼能看出"AI 味"，很大一部分来自"自我指涉"——模型不自觉地谈论自己或谈论这篇文章本身。问题不在某一家模型差，而在训练分布、attention 偏置、RLHF 奖励三者叠加形成的结构性"职业病"。

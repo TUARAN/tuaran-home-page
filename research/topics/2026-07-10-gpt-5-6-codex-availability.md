@@ -2,6 +2,7 @@
 title: GPT-5.6 已在 Codex 可用：Sol、Terra、Luna 三个档位怎么选
 category: topics
 topic_type: tech
+tech_type: ai_coding
 date: 2026-07-10
 time: 08:45
 tags: [OpenAI, GPT-5.6, Codex, AI编程, 大模型, 软件工程, 网络安全]

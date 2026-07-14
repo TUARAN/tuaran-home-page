@@ -7,6 +7,7 @@ tags: [大模型, 本地部署, DeepSeek, DeepSeek-V4, MoE, 量化, 显存, vLLM
 summary: 拆解 DeepSeek-V4-Pro（1.6T MoE）的参数、四档硬件需求、五大框架适配、效果评测与并发吞吐，并给出可复制的部署命令；立场是把"集群级 Pro"与"单机可跑的 Flash"严格分开，不替任一档编实测数。
 tldr: 判断框架——Pro 是集群机型（原生 862GB，Q4 仍要 ~569GB 显存，最少 8×H200/多节点），消费级单卡跑的其实是 V4-Flash（284B）。量化红线在 Q4：代码/数学/长链推理掉 Q3 以下不可用，闲聊可下探。成本上 API 是默认基线（Flash 输出 $0.28/M），自建多数场景更贵，仅数据不出域/低延迟/有闲置卡/需微调才划算。逐显卡吞吐与硬件售价均为估算/市场参考，非官方实测，边界已逐项标注。
 topic_type: tech
+tech_type: models_compute
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

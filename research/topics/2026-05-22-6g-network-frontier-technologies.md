@@ -2,6 +2,7 @@
 title: 6G 网络前沿技术行业调研（2026）
 category: topics
 topic_type: tech
+tech_type: networking
 date: 2026-05-22
 tags: [6G, IMT-2030, 通信网络, 无线通信, AI-RAN, 通感一体化, NTN, 太赫兹, 产业趋势]
 summary: 围绕 6G / IMT-2030 的主流技术方向、全球科研社区、专家技术博客、国内外研发机构、产业落地进展、技术难点与未来趋势进行系统梳理，判断 6G 正从愿景研究进入标准前夜，但商业规模化仍要等 2030 年前后。

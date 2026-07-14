@@ -6,6 +6,7 @@ tags: [WorkBuddy, AI Agent, SMS, 5G 消息, RCS, MCP, 短信网关, 工信部]
 summary: 把 AI 工作助手（WorkBuddy）和"短信 / 5G 消息"这条 channel 接上，理论上能拿到 99% 触达率和锁屏强提醒的杀手锏，但 2026 年的国内监管把这条路对个人开发者基本封死——签名实名制、模板审核、新版《电信短信息服务管理规定》5 月 1 日生效。本文把连接器（MCP vs 云厂商 SDK）、技能（发自己 / 发他人 / 群发）、思路（必要性 / 辅助定位）三个维度逐条拆开，论证「个人 workbuddy + SMS」99% 走不通，但「企业 workbuddy + 5G 消息 chatbot」这条路在 2026 仍然有空间。
 tldr: 国内 5G 消息（RCS）用户 8.5 亿但真实激活 2.6 亿（覆盖 1/3 移动用户），三大运营商共用一个平台；普通 SMS 已是 3200 亿规模的存量市场。Twilio 官方 MCP server 跑通了海外路径，但国内必须用阿里云 / 腾讯云 SMS API + 自建 MCP wrapper。架构上 MCP 把 API key 隔离在 server 端，agent 看不到密钥——这是相对直连最关键的安全收益。技能维度：发自己卡在签名实名制（个人无企业资质），发他人卡在接收方授权要求，群发卡在工信部 5 月新规禁止"系统通知"等模糊签名。思路维度：作为 IM 失败时的"双发降级"通道有不可替代价值，作为日常 reminder 主通道则被微信推送压制；个人 WorkBuddy + SMS 这个组合在 2026 国内基本不成立，做 5G 消息 chatbot（被动接收 + 应答）才是有空间的方向。
 topic_type: tech
+tech_type: networking
 assistance: claude
 model: claude-opus-4-7
 ---

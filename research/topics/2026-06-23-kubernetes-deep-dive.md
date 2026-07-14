@@ -7,6 +7,7 @@ tags: [Kubernetes, K8s, 容器编排, 云原生, CNCF, Borg, 微服务, 声明�
 summary: 把 Kubernetes 从源头讲清楚：它从 Google 内部的 Borg / Omega 演化而来，2014 年开源、2015 年捐给 CNCF 并赢下容器编排之争；核心是「声明式 API + 控制循环（reconciliation）」这一套设计哲学。本文梳理它的历史脉络、控制面/节点架构与核心对象、真正适合与不适合的场景，并把它与 Docker Swarm、HashiCorp Nomad、已退役的 Apache Mesos，以及 GKE/EKS/AKS、k3s、OpenShift 等发行版做横向参照。截至 2026-06 最新稳定版为 v1.36。本文为基于官方文档的技术综述，版本相关结论以官方 Releases 页为准。
 tldr: Kubernetes 的本质不是「容器调度器」，而是「一套声明式的、可扩展的集群状态协调系统」——你声明期望状态，控制器循环不断把现实拉向它，容器只是它管的第一类对象。它从 Google Borg 的十几年运维经验里长出来，2014 开源、2017 前后赢下与 Docker Swarm / Mesos 的编排之争，2018 成为 CNCF 首个毕业项目，此后靠 CRI/CNI/CSI 标准接口 + CRD/Operator 可扩展性把自己做成了「云原生操作系统」。代价是复杂度陡峭：自建运维成本高，多数团队应该用托管发行版（GKE/EKS/AKS）或轻量发行版（k3s）。判断：中大型、多团队、需要水平扩展和跨云一致性的场景，K8s 仍是事实标准、值得跟进；单体小应用或小团队，Nomad / Swarm / 托管 PaaS 往往 ROI 更高。以上为外部技术判断，非选型建议。
 topic_type: tech
+tech_type: architecture
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

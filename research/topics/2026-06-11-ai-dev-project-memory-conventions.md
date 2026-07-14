@@ -7,6 +7,7 @@ tags: [AI 记忆, CLAUDE.md, AGENTS.md, Cursor Rules, Copilot instructions, Memo
 summary: 起点是本站今晚的一次自查：调研写作规则同时存在于本地记忆库、仓库 lib 文件、slash command、README 四个地方，重复且有漂移风险。本文调研行业同行怎么解决同一个问题——AI 辅助开发项目的「记忆功能」通常怎么分层、放在哪里、怎么管理：仓库指令文件（CLAUDE.md / AGENTS.md / Cursor Rules / Copilot instructions）、工具自动维护的本机会话记忆（Claude Code auto memory / Cursor Memories）、外挂记忆基础设施（MCP memory / Mem0 / Letta / Zep）。信息来源为各工具官方文档、公开报道，以及我作为一个 Claude Code 会话对自身记忆机制的第一手观察。
 tldr: 行业把「记忆」收敛成三层，分层标准只有一个——这条信息该跟着谁走：跟仓库走的进指令文件（git 版本化、团队共享）；跟人走的进工具本机记忆（自动维护、不进仓库）；跟账号/产品走的进外挂记忆数据库（跨工具检索）。管理上的共识是「单一正本 + 指针引用 + 按需加载」，最大的反模式是同一条规则复制多处。以上为基于公开资料与一手使用观察的整理，不构成对任何工具的优劣判定。
 topic_type: tech
+tech_type: ai_coding
 assistance: claude-code
 model: fable5
 pv: 0

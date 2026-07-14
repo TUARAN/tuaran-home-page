@@ -7,6 +7,7 @@ tags: [OpenClaw, SMS, Twilio, 智能体, Agent, CPaaS, 10DLC, Webhook, OTP, 国�
 summary: 拆解国外 OpenClaw 类框架把智能体接入 SMS 的工程流程：Twilio 账号与号码、出站 Messages API、入站 webhook、签名校验、手机号绑定认证、美国 A2P 10DLC 与国际 Geo Permissions。
 tldr: 国外 OpenClaw 类智能体接短信，本质不是“走某个网络端口”，而是把 Agent 的 channel 接到 Twilio 这类 CPaaS：买/接入可发短信的号码，配置 Messaging Service 或号码 webhook，出站调用 Messages API，入站校验 X-Twilio-Signature，再把手机号和站内用户绑定。美国号码要重点处理 A2P 10DLC、免费号验证或短码；国际短信要开 Geo Permissions，并逐目的国看 sender 类型与合规。
 topic_type: tech
+tech_type: networking
 assistance: codex
 model: gpt-5-codex
 pv: 0

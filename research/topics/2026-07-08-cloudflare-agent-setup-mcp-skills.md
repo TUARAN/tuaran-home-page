@@ -2,6 +2,7 @@
 title: Cloudflare Agent Setup：Skills 与 MCP 服务器集成调研
 category: topics
 topic_type: tech
+tech_type: agents_automation
 date: 2026-07-08
 tags: [Cloudflare, MCP, Skills, Codex, Claude Code, Cursor, Windsurf, OpenCode, AI Agent, 开发环境]
 summary: Cloudflare 发布了一份面向 AI 编程代理的 Agent Setup 指南，用 Skills 提供平台知识，用远程 MCP 服务器提供文档、账户资源、Bindings、Builds 和 Observability 能力；对个人站和边缘应用开发者来说，它更像一套“让代理理解 Cloudflare 项目”的开发环境入口。

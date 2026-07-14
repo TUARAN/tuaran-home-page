@@ -2,6 +2,7 @@
 title: 千问 C 端 Agent 算法日常实习一面面试题与参考解答
 category: topics
 topic_type: tech
+tech_type: agents_automation
 date: 2026-05-26
 tags: [千问, Qwen, C端Agent, AI Agent, RAG, Memory, ReAct, Workflow, 面经]
 summary: 根据一份「千问 C 端 Agent 算法日常实习一面」题单，逐题整理面试官真正想考察的能力点，并给出可直接口播的参考答案。

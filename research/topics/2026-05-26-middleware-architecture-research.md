@@ -2,6 +2,7 @@
 title: 中间件技术调研：从系统物流网络到架构底座
 category: topics
 topic_type: tech
+tech_type: architecture
 date: 2026-05-26
 tags: [中间件, 架构设计, 消息队列, 缓存, 数据库中间件, API 网关, Web 服务器]
 summary: 从系统分层、解耦复用、性能稳定性、产品分类、选型取舍和落地风险几个维度，系统梳理中间件在现代软件架构中的位置与价值。

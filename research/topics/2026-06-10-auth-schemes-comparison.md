@@ -6,6 +6,7 @@ tags: [鉴权, 身份认证, Cookie, Session, JWT, OAuth, OIDC, SAML, API Key, S
 summary: 系统梳理七种常见 Web 身份认证与授权方案——Cookie-Session、随机 Token、JWT、OAuth 2.0、OIDC、SAML、API Key——从有状态/无状态、适用场景、安全边界到选型建议，帮助在单体、前后端分离、微服务与第三方登录之间做正确取舍。
 tldr: 认证方案没有银弹：同域传统 Web 优先 Cookie-Session；前后端分离/移动端用服务端存 Token；跨服务/SSO 用 JWT 但要配黑名单或短 TTL；第三方登录走 OAuth 2.0，要「知道用户是谁」选 OIDC；政企老系统才碰 SAML；机器对机器用 API Key。协议（OAuth/OIDC/SAML）解决的是「谁签发身份」，凭证形态（Cookie/Token/JWT）解决的是「怎么携带身份」，两者不要混为一谈。
 topic_type: tech
+tech_type: security_identity
 assistance: cursor
 model: composer-2.5
 pv: 0

@@ -2,6 +2,7 @@
 title: 从 chat 任务到 agent loop：Anthropic 一线工程实践 + 升级路径调研
 category: topics
 topic_type: tech
+tech_type: agents_automation
 date: 2026-06-05
 tags: [Agent, Agent Loop, Claude Code, Tool Use, Subagent, Harness, Managed Agents, Anthropic, 工程实践]
 summary: chat → agent loop 不是工程模式升级，是失控范围放大。综合 Anthropic 官方 "Building Effective Agents" + Erik Schluntz 的最小框架主张 + 2026-04 三-agent harness + Claude Managed Agents，给出从 chat one-shot 到 managed agent 的四阶段路径与判断标准。

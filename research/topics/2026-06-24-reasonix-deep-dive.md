@@ -2,6 +2,7 @@
 title: Reasonix 深度技术调研：DeepSeek 原生 Coding Agent 的工程哲学
 category: topics
 topic_type: tech
+tech_type: ai_coding
 date: 2026-06-24
 tags: [Reasonix, DeepSeek, AI编码, Coding Agent, 前缀缓存, MCP, Go, 推理链, Tool-Call, 工具调用]
 summary: 以 DeepSeek 前缀缓存为切入点，深入剖析 Reasonix 1.0（Go 重写）的三大技术支柱——Cache-First Loop、R1 Thought Harvesting、Tool-Call Repair；拆解其双模型协作、Checkpoints/Rewind 机制与权限沙盒设计；并与 Claude Code、Cursor、Aider 做横向对比。结论：对高频 DeepSeek 用户，缓存命中率可达 85%～99.8%，等量任务成本约为 Claude Code 的 1/20。

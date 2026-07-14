@@ -7,6 +7,7 @@ tags: [OpenClaw, channel, 插件, plugin-SDK, ClawHub, 官方集成, 贡献指�
 summary: 拆解「我怎么做一个 channel、并让它被 OpenClaw 官方集成」——结论先行：默认你只能做第三方插件，能不能往「核心原生 / bundled / 官方外部 / 社区」四档里上爬，取决于是否有 maintainer 接管。本文据核心仓库 CONTRIBUTING、插件文档与 channel 源码逐项标注证据。
 tldr: OpenClaw 的 channel 就是插件。做出来不难（manifest + 契约 + 发 ClawHub），难的是「被官方集成」——官方明说「多数功能不接受、应做第三方插件」。四档分发：核心原生 / bundled（随核心发行）/ 官方外部 / 社区；想进 bundled 实质条件是有领域 maintainer 愿意接管维护，飞书就是这么进的。
 topic_type: tech
+tech_type: agents_automation
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

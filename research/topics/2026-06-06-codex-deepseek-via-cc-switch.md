@@ -6,6 +6,7 @@ tags: [Codex, DeepSeek, cc-switch, 大模型, 工具链]
 summary: Codex CLI 用的是 Responses API，DeepSeek 只提供 Chat Completions —— cc-switch 用本地路由做协议翻译，把两边接上。配置不复杂，但启动期间有几个坑会让 Codex 直接起不来。
 tldr: cc-switch 在本机 127.0.0.1:15721 起一个网关，把 Codex 发的 `/responses` 请求拦下来翻成 DeepSeek 的 `/chat/completions`，再把响应回译回去。Codex 端只改 `config.toml`，真实 API Key 由 cc-switch 注入。需要 cc-switch ≥ 3.16，且改完 provider 后 `auth.json` 也会被覆盖，回退要一起回。
 topic_type: tech
+tech_type: ai_coding
 assistance: codex
 model: claude-opus-4-7
 ---

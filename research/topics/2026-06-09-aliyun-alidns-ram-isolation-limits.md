@@ -6,6 +6,7 @@ tags: [阿里云, RAM, 权限管理, DNS, 域名管理, 安全, 多账号, 踩�
 summary: 在同一主账号下，用 RAM 策略实现"只能操作指定 6 个域名的 DNS、看不到其他域名"，技术上无法完整做到。本篇逐一复盘 7 个典型坑，并给出唯一真正可行的方案。
 tldr: 阿里云 alidns 产品的 RAM 设计存在根本缺陷 —— 写操作 ARN 不统一（Add 用 domainName / Update / Delete 用 domainId）、不支持 Deny+NotResource、控制台辅助接口必须走全量、DescribeInvalidDomains 还会泄露全账号域名列表。结论：**同主账号下做不到完整隔离，唯一解是把目标域名迁到独立主账号。**
 topic_type: tech
+tech_type: security_identity
 assistance: claude-code
 model: claude-opus-4-7
 pv: 0

@@ -2,6 +2,7 @@
 title: CUDA 生态是什么：NVIDIA 二十年护城河的全景拆解
 category: topics
 topic_type: tech
+tech_type: models_compute
 date: 2026-06-02
 tags: [CUDA, NVIDIA, GPU, AI 基础设施, 并行计算, 深度学习, 开发者生态]
 summary: 把 CUDA 生态拆成"硬件—工具链—加速库—应用框架—部署平台"五层，看清楚 NVIDIA 真正的护城河在哪一层，以及 AMD ROCm、Intel oneAPI、Apple MLX 各自卡在哪一层。

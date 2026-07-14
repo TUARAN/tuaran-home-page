@@ -6,6 +6,7 @@ tags: [2aran.com, 鉴权, owner session, 菜单权限, Cloudflare, Next.js, 私�
 summary: 梳理 2aran.com 当前私有功能的鉴权体系：统一登录态、统一 owner 判断、共享 session cookie、共享前端 session 状态、菜单可见性按 audience 解耦并可被后台覆盖、私有 API 保护，以及长期罗盘的端到端加密边界；并对比市面常见做法。
 tldr: 这套体系经历过三轮迭代：第一轮把"每个工具各写一套登录"统一成"`tuaran_session + ownerAuth`"；第二轮把"每个页面组件各自 fetch `/api/me`"统一成 `SessionProvider` 单一上下文，解决登录状态在不同页面之间割裂的问题；第三轮把"哪些菜单对谁可见"从硬编码改成每项菜单的 `audience` 字段 + D1 `nav_overrides` 表，站长可以在 `/agent-ops/nav-admin` 后台动态调整。市面通行做法是 RBAC + feature flag + headless CMS 三块组合；单站长场景下这套轻量方案在保留同等表达力的同时省掉了 80% 的开销。
 topic_type: tech
+tech_type: security_identity
 assistance: codex
 model: gpt-5
 pv: 0

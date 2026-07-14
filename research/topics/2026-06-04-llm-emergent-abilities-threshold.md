@@ -2,6 +2,7 @@
 title: 大模型涌现能力的参数量阈值调研
 category: topics
 topic_type: tech
+tech_type: models_compute
 date: 2026-06-04
 tags: [大模型, 涌现能力, Scaling Law, 后训练, 推理模型]
 summary: 「模型大到一定程度就会涌现」是 2022 年的经典叙事；2023 年被「海市蜃楼」论文打回原形，2024-2026 年又被小模型 + 后训练 + 推理 RL 彻底改写。本文梳理这条结论的兴衰史，并给出今天还能不能用「参数量阈值」来谈涌现的判断。

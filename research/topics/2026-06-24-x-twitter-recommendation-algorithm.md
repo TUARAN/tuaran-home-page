@@ -7,6 +7,7 @@ tags: [推荐算法, X, Twitter, 推荐系统, Grok, SimClusters, Heavy Ranker, 
 summary: X（原 Twitter）先后两次把「For You」推荐算法开源到 GitHub：2023-03 的 twitter/the-algorithm（Scala 为主的经典多级漏斗——SimClusters 社区召回、TwHIN/RealGraph 信号、Light/Heavy Ranker 排序、可见性过滤），与 2026-01 起 xai-org/x-algorithm 的彻底重写（Rust+Python，用 Grok 同源 Transformer「Phoenix」做两塔召回+排序，几乎删光手工特征）。本文拆解两代架构的多级流水线、关键模块与排序目标，并研判「开源了代码、却没开源权重/训练数据/用户信号」这件事的边界。本文为基于公开仓库与官方资料的技术整理。
 tldr: 推荐系统的工程范式这三年在 X 身上完整演了一遍：2023 版是「人写规则 + 多个专用模型」的经典漏斗——先用 SimClusters/关注图把全网几亿帖收敛到约 1500 条候选（约一半来自关注内、一半关注外），再用约 4800 万参数的 Heavy Ranker 按「点赞/回复/转发/被作者回复/举报」等带权重的互动概率打分，最后叠一层多样性与可见性过滤；2026 版被 Grok 同源 Transformer「Phoenix」一锅端：两塔出 user/post 向量做召回，排序时用注意力掩码让候选互不可见以便缓存，官方称「删掉了每一个手工特征和大部分启发式」。但两次开源都只给了代码骨架，没给模型权重、训练数据和真实用户信号——能看懂「怎么排」，看不到「凭什么是你」。以上为外部技术判断，不构成对平台的合规或商业结论。
 topic_type: tech
+tech_type: data_algorithms
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

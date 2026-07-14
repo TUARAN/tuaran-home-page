@@ -2,6 +2,7 @@
 title: Tailscale 技术调研：把 WireGuard 变成一张基于身份的私有网络
 category: topics
 topic_type: tech
+tech_type: networking
 date: 2026-07-14
 time: 09:07
 tags: [Tailscale, WireGuard, VPN, Zero Trust, NAT 穿透, DERP, 内网穿透, 远程访问]

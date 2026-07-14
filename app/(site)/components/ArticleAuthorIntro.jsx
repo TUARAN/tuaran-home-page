@@ -12,7 +12,7 @@ export const AUTHOR_INTRO_MARKDOWN =
 export function AuthorByline() {
   return (
     <p className="research-author-muted text-[12px] leading-5">
-      <Link href="/about" className="research-author-link underline underline-offset-2">
+      <Link href="/about" className="research-author-link no-underline">
         涂阿燃的网络日志：FDE・KOL・OPC｜记录 AI 实践、社会洞察、生活随笔
       </Link>
     </p>

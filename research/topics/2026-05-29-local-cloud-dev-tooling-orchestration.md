@@ -2,6 +2,7 @@
 title: Agent 开发时代的链路：本地工具 vs 云端服务的分工与协同调度
 category: topics
 topic_type: tech
+tech_type: agents_automation
 date: 2026-05-29
 tags: [Cursor, Claude Code, Codex, GitHub, Cloudflare, Vercel, DevOps, 工作流, AI 编程]
 summary: 把 Cursor / Claude Code / Codex 这类本地工具，和 GitHub / Cloudflare / Vercel 这类云端服务放在同一条开发链路里，区分各自最擅长的场景，并给出一套可落地的协同调度节奏；结合「博主联盟」「前端周刊」两个项目举例。

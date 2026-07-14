@@ -6,6 +6,7 @@ tags: [OpenClaw, AI Agent, 普及率, 开发者工具, Codex, Hermes]
 summary: GitHub 346K 星、3.2M 月活、925% 月增长，开发者圈的 OpenClaw 看起来如日中天。但从「主力工具份额 <1%」「样本量低于报告阈值」「典型月成本 $15-120」「Codex+Hermes 通吃」四个角度看，它在普通人群体里的真实渗透接近零。本文用四道墙 —— 命令行门槛 / 长任务幻觉 / Token 经济 / 强竞品挤压 —— 论证为什么 OpenClaw 至少在 2026 这个时点上，不会成为「普通人的 AI 助理」。
 tldr: 开发者主力工具份额里 Claude Code 28% + Cursor 24% 拿走过半，OpenClaw 与 Kilo / Manus Desktop / Devin 一起挤在 <1% 那一档；Cline / OpenClaw 调研样本量低到不到报告阈值（n=38-72）；典型月成本 $15-120 vs ChatGPT Plus 平价 $20、Copilot $10 平价 flat fee；Hermes Agent 把 Codex 当引擎、自己当壳，OpenAI 第一方 + 智能 shell 的组合把开源 CLI agent 的生态位压得更窄。普通人对 24/7 长任务的需求接近不存在，命令行依然是劝退首墙。
 topic_type: tech
+tech_type: agents_automation
 assistance: claude
 model: claude-opus-4-7
 ---

@@ -2,6 +2,7 @@
 title: 基于 Cloudflare 的边缘智能体开发实战
 category: topics
 topic_type: tech
+tech_type: agents_automation
 date: 2026-06-03
 tags: [Cloudflare, Workers, Agents SDK, Durable Objects, Workflows, Vectorize, AI Gateway, MCP, 边缘计算, Agent]
 summary: 把 Workers + Durable Objects + Workflows + Vectorize + AI Gateway 这一套拼起来，Cloudflare 已经能在 300 个城市的边缘节点跑「带状态、能恢复、能调工具」的 Agent；本文从架构、代码、成本、坑四个角度写一份可落地的实战指南。

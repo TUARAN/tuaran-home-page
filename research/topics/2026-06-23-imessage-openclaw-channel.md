@@ -7,6 +7,7 @@ tags: [OpenClaw, 龙虾, iMessage, imsg, AI Agent, macOS, AppleScript, Full Disk
 summary: 拆解 OpenClaw（社区昵称「龙虾」）把 iMessage 当作一条 AI agent 渠道的完整技术路径：Gateway 如何通过 imsg CLI 以 JSON-RPC over stdio 读 chat.db、走 Messages.app 的 AppleScript 公共接口收发消息，需要哪些 macOS 权限（Full Disk Access / Automation / 进阶动作才需关 SIP），本地与远程 Mac 两种部署形态，以及 BlueBubbles 下线、macOS 26 下 FDA 不随 LaunchAgent 继承等已知坑。本文为基于官方文档与开源仓库的外部技术整理，非官方教程。
 tldr: iMessage 渠道的本质是「一台已登录 Messages 的 Mac + imsg CLI + OpenClaw Gateway」三件套：Gateway 起 imsg rpc 子进程，JSON-RPC 走 stdio，读消息靠直接读 ~/Library/Messages/chat.db（需 Full Disk Access），发消息靠 Messages.app 的公共 AppleScript 接口（需 Automation 权限），二者都不依赖私有 API；只有 react/编辑/撤回/建群这类进阶动作才需要关 SIP + 注入 dylib，是真实的安全代价。它能跑，但脆弱点集中在「权限按进程上下文授予」——LaunchAgent/Login Item 起的进程拿不到 FDA、macOS 26 上 imsg send 可能静默失败。判断：想要「发条短信就驱动 agent」的体验，值得在一台专用 Mac 上跟进自建；想要稳定对外服务或无 Mac 环境，现阶段观望。以上为外部观察，非承诺或建议。
 topic_type: tech
+tech_type: networking
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

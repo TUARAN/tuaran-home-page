@@ -2,6 +2,7 @@
 title: Codex 驱动的本地视频剪辑：macOS 自动字幕、裁切、拼接与导出怎么落地
 category: topics
 topic_type: tech
+tech_type: ai_coding
 date: 2026-07-13
 time: 16:30
 tags: [Codex, macOS, 视频剪辑, FFmpeg, Whisper, AVFoundation, VideoToolbox, 本地AI]

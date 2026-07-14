@@ -2,6 +2,7 @@
 title: Claude 的 J-space：Anthropic 全局工作空间论文调研
 category: topics
 topic_type: tech
+tech_type: models_compute
 date: 2026-07-09
 time: 23:01
 tags: [Anthropic, Claude, J-space, Jacobian Lens, Global Workspace, Mechanistic Interpretability, AI Safety, Alignment, Consciousness, 可解释性]

@@ -2,6 +2,7 @@
 title: Cloudflare 免费与付费服务边界深度调研
 category: topics
 topic_type: tech
+tech_type: web_cloud
 date: 2026-07-02
 tags: [Cloudflare, Workers, Pages, R2, D1, KV, Zero Trust, CDN, WAF, 成本模型, 边缘计算]
 summary: Cloudflare 的免费层不是一个简单的试用版，而是一套覆盖 DNS、CDN、安全和轻量开发者平台的基础设施入口；真正的付费边界出现在 SLA、合规、安全深度、团队治理、日志留存和按量资源消耗上。

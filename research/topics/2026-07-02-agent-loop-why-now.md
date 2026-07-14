@@ -2,6 +2,7 @@
 title: Agent Loop 深度调研：把决定权交给模型的一次换代，为什么发生在现在
 category: topics
 topic_type: tech
+tech_type: agents_automation
 date: 2026-07-02
 time: 23:08
 tags: [Agent, Agent Loop, Prompt Engineering, RAG, LangChain, MCP, Tool Use, ReAct, METR, 范式演化, 技术调研]

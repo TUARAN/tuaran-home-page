@@ -2,6 +2,7 @@
 title: 邮箱登录与 Resend 邮件验证码配置经验（SyncBlog 实战）
 category: topics
 topic_type: tech
+tech_type: security_identity
 date: 2026-06-03
 tags: [Resend, Cloudflare, Workers, D1, 邮箱验证码, OTP, 认证, SyncBlog, DNS, PBKDF2]
 summary: SyncBlog 从 GitHub OAuth 切到「邮箱+密码+6 位验证码」登录的完整实战记录——含接口设计、D1 表结构、Resend 域名验证、Cloudflare DNS 自动授权、Worker secrets 管理与上线踩坑清单。

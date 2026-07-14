@@ -10,6 +10,7 @@ import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import {
   getCompanyTypeFilters,
   getPeopleTypeFilters,
+  getTechTypeFilters,
   getTopicTypeFilters,
 } from '../../../lib/research/categories'
 
@@ -123,6 +124,9 @@ const OTHER_TOPIC_TYPE_DEFS = TOPIC_TYPE_DEFS
 const PEOPLE_TYPE_DEFS = getPeopleTypeFilters()
 const PEOPLE_TYPE_KEYS = PEOPLE_TYPE_DEFS.map((t) => t.key)
 
+const TECH_TYPE_DEFS = getTechTypeFilters()
+const TECH_TYPE_KEYS = TECH_TYPE_DEFS.map((t) => t.key)
+
 const RESOURCE_TYPE_DEFS = [
   { key: 'all', label: '全部资源' },
   { key: 'ai-dev', label: 'AI 与开发' },
@@ -205,6 +209,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (TAB_KEYS.includes(fromUrl)) return fromUrl
     if (params?.get('resource_type') || params?.get('resource_group')) return 'resources'
     if (params?.get('company_type')) return 'companies'
+    if (params?.get('tech_type')) return 'tech'
     if (params?.get('topic_type')) return params.get('topic_type') === 'tech' ? 'tech' : 'other'
     if (params?.get('people_type')) return 'people'
     return 'all'
@@ -224,6 +229,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     const fromUrl = searchParams?.get('people_type')
     return PEOPLE_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
   })()
+  const initialTechType = (() => {
+    const fromUrl = searchParams?.get('tech_type')
+    return TECH_TYPE_KEYS.includes(fromUrl) ? fromUrl : 'all'
+  })()
   const initialResourceType = (() => {
     const fromUrl = searchParams?.get('resource_type')
     return normalizeResourceType(fromUrl)
@@ -236,6 +245,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [companyType, setCompanyType] = useState(initialCompanyType)
   const [topicType, setTopicType] = useState(initialTopicType)
   const [peopleType, setPeopleType] = useState(initialPeopleType)
+  const [techType, setTechType] = useState(initialTechType)
   const [resourceType, setResourceType] = useState(initialResourceType)
   const [resourceGroup, setResourceGroup] = useState(initialResourceGroup)
   const [query, setQuery] = useState(initialQuery)
@@ -286,6 +296,11 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (nextPeopleType !== peopleType) {
       setPeopleType(nextPeopleType)
     }
+    const techTypeFromUrl = searchParams?.get('tech_type')
+    const nextTechType = TECH_TYPE_KEYS.includes(techTypeFromUrl) ? techTypeFromUrl : 'all'
+    if (nextTechType !== techType) {
+      setTechType(nextTechType)
+    }
     const resourceTypeFromUrl = searchParams?.get('resource_type')
     const nextResourceType = normalizeResourceType(resourceTypeFromUrl)
     if (nextResourceType !== resourceType) {
@@ -307,6 +322,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     nextCompanyType,
     nextTopicType,
     nextPeopleType,
+    nextTechType,
     nextResourceType,
     nextResourceGroup,
     nextQuery,
@@ -316,6 +332,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (nextTab === 'companies' && nextCompanyType !== 'all') params.set('company_type', nextCompanyType)
     if (nextTab === 'other' && nextTopicType !== 'all') params.set('topic_type', nextTopicType)
     if (nextTab === 'people' && nextPeopleType !== 'all') params.set('people_type', nextPeopleType)
+    if (nextTab === 'tech' && nextTechType !== 'all') params.set('tech_type', nextTechType)
     if (nextTab === 'resources' && nextResourceType !== 'all') params.set('resource_type', nextResourceType)
     if (nextTab === 'resources' && nextResourceGroup !== 'all') params.set('resource_group', nextResourceGroup)
     const normalizedQuery = String(nextQuery || '').trim()
@@ -329,16 +346,18 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     const nextCompanyType = next === 'companies' ? companyType : 'all'
     const nextTopicType = next === 'other' ? topicType : 'all'
     const nextPeopleType = next === 'people' ? peopleType : 'all'
+    const nextTechType = next === 'tech' ? techType : 'all'
     const nextResourceType = next === 'resources' ? resourceType : 'all'
     const nextResourceGroup = next === 'resources' ? resourceGroup : 'all'
     if (next !== 'companies') setCompanyType('all')
     if (next !== 'other') setTopicType('all')
     if (next !== 'people') setPeopleType('all')
+    if (next !== 'tech') setTechType('all')
     if (next !== 'resources') {
       setResourceType('all')
       setResourceGroup('all')
     }
-    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextPeopleType, nextResourceType, nextResourceGroup, query)
+    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextPeopleType, nextTechType, nextResourceType, nextResourceGroup, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -356,7 +375,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectCompanyType(next) {
     setTab('companies')
     setCompanyType(next)
-    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', 'all', query)
+    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -365,7 +384,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectTopicType(next) {
     setTab('other')
     setTopicType(next)
-    const url = buildArticlesUrl('other', 'all', next, 'all', 'all', 'all', query)
+    const url = buildArticlesUrl('other', 'all', next, 'all', 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -374,7 +393,16 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectPeopleType(next) {
     setTab('people')
     setPeopleType(next)
-    const url = buildArticlesUrl('people', 'all', 'all', next, 'all', 'all', query)
+    const url = buildArticlesUrl('people', 'all', 'all', next, 'all', 'all', 'all', query)
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
+  }
+
+  function selectTechType(next) {
+    setTab('tech')
+    setTechType(next)
+    const url = buildArticlesUrl('tech', 'all', 'all', 'all', next, 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -383,7 +411,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectResourceType(next) {
     setTab('resources')
     setResourceType(next)
-    const url = buildArticlesUrl('resources', 'all', 'all', 'all', next, resourceGroup, query)
+    const url = buildArticlesUrl('resources', 'all', 'all', 'all', 'all', next, resourceGroup, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -395,7 +423,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     setTab('resources')
     setResourceGroup(next)
     setResourceType(nextType)
-    const url = buildArticlesUrl('resources', 'all', 'all', 'all', nextType, next, query)
+    const url = buildArticlesUrl('resources', 'all', 'all', 'all', 'all', nextType, next, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -403,7 +431,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function submitSearch(event) {
     event.preventDefault()
-    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, resourceType, resourceGroup, query)
+    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -411,7 +439,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function clearSearch() {
     setQuery('')
-    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, resourceType, resourceGroup, '')
+    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, '')
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -455,6 +483,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       if (tab === 'people' && peopleType !== 'all') {
         parts.push(PEOPLE_TYPE_DEFS.find((t) => t.key === peopleType)?.label || peopleType)
       }
+      if (tab === 'tech' && techType !== 'all') {
+        parts.push(TECH_TYPE_DEFS.find((t) => t.key === techType)?.label || techType)
+      }
     }
     if (activeChannel === 'resources') {
       const group = RESOURCE_GROUP_DEFS.find((item) => item.key === resourceGroup)
@@ -464,7 +495,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       else parts.push(group && group.key !== 'all' ? group.allLabel : '全部资源')
     }
     return parts.length ? parts.join(' / ') : null
-  }, [tab, activeChannel, companyType, topicType, peopleType, resourceType, resourceGroup])
+  }, [tab, activeChannel, companyType, topicType, peopleType, techType, resourceType, resourceGroup])
 
   const visible = useMemo(() => {
     if (tab === 'picks' && !query.trim()) return []
@@ -491,6 +522,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (tab === 'people' && peopleType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.peopleType === peopleType)
     }
+    if (tab === 'tech' && techType !== 'all') {
+      typeFiltered = typeFiltered.filter((item) => item.techType === techType)
+    }
     if (tab === 'resources' && resourceGroup !== 'all') {
       const group = RESOURCE_GROUP_DEFS.find((item) => item.key === resourceGroup)
       typeFiltered = typeFiltered.filter((item) => group?.typeKeys.includes(item.resourceType))
@@ -508,7 +542,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         .toLowerCase()
       return combined.includes(normalizedQuery)
     })
-  }, [items, tab, companyType, topicType, peopleType, resourceType, resourceGroup, query])
+  }, [items, tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query])
 
   const paginatedItems = useMemo(
     () => visible.slice(0, visibleCount),
@@ -524,7 +558,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
-  }, [tab, companyType, topicType, peopleType, resourceType, resourceGroup, query])
+  }, [tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query])
 
   useEffect(() => {
     const keys = (visiblePvKeySignature ? visiblePvKeySignature.split(',') : [])
@@ -591,6 +625,18 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     for (const item of peopleItems) {
       if (item.peopleType && typeof base[item.peopleType] === 'number') {
         base[item.peopleType] += 1
+      }
+    }
+    return base
+  }, [items])
+
+  const techTypeCounts = useMemo(() => {
+    const base = Object.fromEntries(TECH_TYPE_KEYS.map((k) => [k, 0]))
+    const techItems = items.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
+    base.all = techItems.length
+    for (const item of techItems) {
+      if (item.techType && typeof base[item.techType] === 'number') {
+        base[item.techType] += 1
       }
     }
     return base
@@ -732,6 +778,19 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                     count={peopleTypeCounts[t.key] ?? 0}
                     active={peopleType === t.key}
                     onClick={() => selectPeopleType(t.key)}
+                  />
+                ))}
+              </FilterRow>
+            ) : null}
+            {tab === 'tech' ? (
+              <FilterRow label="技术分类" ariaLabel="技术内容分类" orientation={orientation}>
+                {TECH_TYPE_DEFS.map((t) => (
+                  <FilterChip
+                    key={t.key}
+                    label={t.label}
+                    count={techTypeCounts[t.key] ?? 0}
+                    active={techType === t.key}
+                    onClick={() => selectTechType(t.key)}
                   />
                 ))}
               </FilterRow>

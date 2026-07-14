@@ -7,6 +7,7 @@ tags: [OpenClaw, SMS, 短信, Twilio, Telnyx, Plivo, ClawdTalk, AI-Agent, CPaaS,
 summary: 拆解「OpenClaw 的 SMS 是哪家提供」这个问题——结论先行：OpenClaw 现在（2026.6.10 起）官方内置了一方 SMS channel `@openclaw/sms`，后端是 Twilio；此外 Telnyx 自己写了一方 channel，社区还补了大量 Twilio/自建方案与发短信 skill。本文按核心仓库与官方文档逐项标注证据状态。
 tldr: 「OpenClaw 的短信」现在有官方答案：核心仓库内置的 `@openclaw/sms` channel 默认走 Twilio（2026-05-31 加入、随 2026.6.10 发行）。Telnyx 是另一条由 Telnyx 公司自建的一方 channel；要 Agent 主动外发的 skill、以及更省/托管路线，则靠生态。判断落在「内置默认 vs 自选 vs 社区」「channel vs skill」上。
 topic_type: tech
+tech_type: networking
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

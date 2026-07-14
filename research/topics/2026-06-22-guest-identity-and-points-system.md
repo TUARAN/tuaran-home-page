@@ -7,6 +7,7 @@ tags: [游客身份, 匿名评论, 设备指纹, 签名Cookie, 账号绑定, 燃
 summary: 调研「免登录游客也能评论 + 后续注册可绑定」与「注册得燃币、燃币解锁资源」的通用技术方案，对比 Cookie UUID / 签名 Cookie / IP / 设备指纹四类匿名身份的稳定性、隐私与防滥用取舍，给出燃币账本（ledger）设计范式，并落到 2aran.com 现有 HMAC 签名 cookie + D1 架构上的具体表结构与分期建议。
 tldr: 游客身份不要以 IP 为主键——IP 会因 NAT/移动网络共享和漂移。通用稳妥解是「签名 Cookie 装随机 UUID 作主身份 + IP/UA 仅作限流与反滥用弱信号 + 设备指纹按需后置」，注册时把 guest_id 写一条绑定并迁移其评论。燃币体系的正本应是「只增不改的流水账本（ledger）+ 物化余额」，而非直接改一个余额数字；赚取要设每日上限、游客零燃币，消费用「解锁权益表」保证解锁一次后永久可读。对 2aran.com，这套几乎全部能复用已有的签名 cookie、限流表和 site_users，建议分两期：先做游客评论，再做燃币解锁。以下为技术方案与设计视角，不是法律意见，合规口径需自行核实。
 topic_type: tech
+tech_type: security_identity
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

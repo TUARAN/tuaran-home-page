@@ -2,6 +2,7 @@
 title: 浏览器跨域窗口通信技术调研：window.open 与 postMessage
 category: topics
 topic_type: tech
+tech_type: web_cloud
 date: 2026-05-23
 tags: [Web 安全, 跨域通信, postMessage, Same-Origin Policy, CORS, 前端工程, 内容分发]
 summary: 围绕浏览器同源策略、CORS、window.open、window.opener、iframe 与 postMessage，系统解释跨域窗口通信的原理、安全边界、常见模式和工程落地方案，并结合 2aran.com 向 syncblog.cn 分发 Markdown 的场景给出实现建议。

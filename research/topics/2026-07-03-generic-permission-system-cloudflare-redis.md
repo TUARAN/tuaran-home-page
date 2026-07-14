@@ -6,6 +6,7 @@ tags: [权限系统, RBAC, ABAC, SaaS, APP, Redis, Cloudflare, Workers, D1, Dura
 summary: 系统梳理通用后台、SaaS 平台和移动端 APP 的权限系统标准架构：以数据库作为唯一权威数据源，以 Redis 或内存缓存加速高频校验，以主动删除缓存保证权限变更实时生效，并补充在 Cloudflare Workers 体系下如何实践 Redis、D1、Durable Objects 与 KV 的组合。
 tldr: 权限系统的核心不是“把权限查出来”，而是“高频校验不拖垮数据库，权限回收后旧权限不能继续生效”。标准做法是 DB 存正本，Redis 缓存用户权限、会话 Token 与角色模板，管理员变更权限后先提交 DB 事务，再主动删除相关用户和角色缓存；下一次请求缓存未命中时回源查 DB。Cloudflare 体系下没有一个等同传统内网 Redis 的原生绑定，生产上优先用 Upstash Redis REST 客户端，或用外部 Redis + Workers TCP sockets；如果要尽量 Cloudflare 原生化，则用 D1/外部数据库做权威层，Durable Objects 做强一致状态与主动失效协调，KV 只适合低敏读多写少缓存，不应单独承担安全权限正本。
 topic_type: tech
+tech_type: security_identity
 assistance: codex
 model: gpt-5
 pv: 0

@@ -2,6 +2,7 @@
 title: 15 分钟了解大模型：从 Token、矩阵运算到 RAG 与 Agent
 category: topics
 topic_type: tech
+tech_type: models_compute
 date: 2026-06-01
 tags: [大模型, Transformer, RAG, Agent, AI 工程, 知识库]
 summary: 用工程视角快速建立大模型全景认知：文本如何变成向量，Transformer 如何计算，KV Cache 为什么重要，RAG 和 Agent 又如何把模型接入真实业务。

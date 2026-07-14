@@ -2,6 +2,7 @@
 title: 本地 Agent Ops 控制台架构调研：launchd + Cloudflare Tunnel + 双层鉴权
 category: topics
 topic_type: tech
+tech_type: architecture
 date: 2026-06-05
 tags: [Agent Ops, 自动化, launchd, Cloudflare Tunnel, Cloudflare Access, 本地优先, macOS, Codex, Claude Code]
 summary: 把自动化 Agent 控制台跑在本机 127.0.0.1:4179，由 launchd 常驻 + Cloudflare Tunnel 反代到 ops.2aran.com，外面 Access、里面本地 token，双层鉴权 —— 用最低复杂度跑出个人 Agent 中枢第一阶段。

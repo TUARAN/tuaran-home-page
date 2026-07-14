@@ -6,6 +6,7 @@ tags: [Cloudflare, D1, Workers, Supabase, 边缘计算, Postgres, SQLite, BaaS, 
 summary: 同一议题的两个视角合并为一篇：Opus 4.7 版做全栈平台对比（架构、周边服务、价格、站长迁移判断）；Composer 2.5 版做 Vibe Coding 实战（场景选型表、提示语模板、AI 幻觉清单）。页面顶部 version 切换。
 tldr: 两套世界观——Cloudflare「边缘乐高 + D1 SQLite」，Supabase「Postgres 大礼包」。已 all-in CF 的站长不必迁；多用户 SaaS / RLS / Realtime 优先 Supabase。Vibe Coding 时选型必须在第一句提示语钉死，否则 AI 默认 Prisma/Postgres 导致大面积返工。切换 **Composer 2.5** tab 看提示语模板。
 topic_type: tech
+tech_type: web_cloud
 assistance: claude-code
 model: claude-opus-4-7
 pv: 0

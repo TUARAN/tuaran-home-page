@@ -603,8 +603,18 @@ function ProfileCard() {
         </div>
         <div className="min-w-0">
           <p className="home-profile-name"><T zh="涂阿燃" en="TUARAN" /></p>
-          <p className="home-profile-role"><T zh="FDE・KOL・OPC｜记录 AI 实践、社会洞察、生活随笔" en="FDE · KOL · OPC | AI practice, social insights, life notes" /></p>
-          <p className="home-profile-company"><FounderCompanyText /></p>
+          <p className="home-profile-role">
+            <T
+              zh={<>FDE・KOL・OPC｜<FounderCompanyText /></>}
+              en={<>FDE · KOL · OPC | <FounderCompanyText /></>}
+            />
+          </p>
+          <p className="home-profile-company">
+            <T
+              zh="记录 AI 实践、社会洞察、生活随笔"
+              en="AI practice, social insights, life notes"
+            />
+          </p>
         </div>
       </div>
       <blockquote>
@@ -783,10 +793,13 @@ function ClassicHomePage({ featuredPicks }) {
                   />
                 </div>
                 <p className="mt-2.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[#7e7488] dark:text-gray-400">
-                  <T zh="FDE・KOL・OPC｜记录 AI 实践、社会洞察、生活随笔" en="FDE · KOL · OPC | AI practice, social insights, life notes" />
+                  <T
+                    zh={<>FDE・KOL・OPC｜<FounderCompanyText /></>}
+                    en={<>FDE · KOL · OPC | <FounderCompanyText /></>}
+                  />
                 </p>
                 <p className="mt-1 text-[12px] tracking-[0.06em] text-[#888] dark:text-gray-500">
-                  <FounderCompanyText />
+                  <T zh="记录 AI 实践、社会洞察、生活随笔" en="AI practice, social insights, life notes" />
                 </p>
                 <blockquote className="mx-auto mt-3 max-w-[min(280px,100%)]">
                   <p className="font-serif text-[15px] leading-[1.9] tracking-wide text-[#262724] dark:text-gray-200">

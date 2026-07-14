@@ -7,6 +7,7 @@ tags: [豆包, 字节跳动, 火山引擎, LLM, 技术架构, 推理优化, 实�
 summary: 以公开披露的火山引擎 / 豆包技术信息为锚点，自下而上推演豆包 App 可能的七层架构（客户端 → 网关 → 编排/Agent → 推理服务 → 模型 → 记忆/数据 → 基础设施），并重点拆解「LLM 原生应用」与传统移动 App 后端的结构性差异。事实层与猜想层物理分离，立场为外部观察。
 tldr: 一句话框架——传统 App 的后端是「确定性的请求/响应 + CRUD 数据库」，豆包这类 LLM 原生 App 的后端是「概率性的 token 流 + GPU 推理集群 + KV Cache 作为新的一等公民」。本文能确认的只有模型层与火山引擎推理优化的公开口径（MoE、EIC 分布式 KVCache、端到端实时语音的延迟数字）；客户端到编排层的具体实现均为基于公开技术常识的结构性猜想，非字节内部资料。
 topic_type: tech
+tech_type: architecture
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

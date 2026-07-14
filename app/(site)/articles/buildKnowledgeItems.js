@@ -12,6 +12,7 @@ import {
   CATEGORY_META,
   COMPANY_TYPE_META,
   PEOPLE_TYPE_META,
+  TECH_TYPE_META,
   TOPIC_TYPE_META,
   listResearch,
 } from '../../../lib/research/loader'
@@ -40,7 +41,8 @@ export function buildKnowledgeItems() {
     const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
     const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
     const peopleLabel = entry.peopleType && PEOPLE_TYPE_META[entry.peopleType]?.label
-    const subLabel = [companyLabel, topicLabel, peopleLabel].find((label) => label && label !== baseLabel)
+    const techLabel = entry.techType && TECH_TYPE_META[entry.techType]?.label
+    const subLabel = [companyLabel, techLabel, topicLabel, peopleLabel].find((label) => label && label !== baseLabel)
     return {
       id: `research:${entry.category}:${entry.slug}`,
       kind: entry.category, // 'companies' | 'topics' | 'people'
@@ -48,6 +50,7 @@ export function buildKnowledgeItems() {
       companyType: entry.companyType || '',
       topicType: entry.topicType || '',
       peopleType: entry.peopleType || '',
+      techType: entry.techType || '',
       contentType: entry.contentType || 'analysis',
       version: entry.version || '',
       title: entry.title,

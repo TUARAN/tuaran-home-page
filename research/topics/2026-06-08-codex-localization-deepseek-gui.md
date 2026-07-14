@@ -6,6 +6,7 @@ tags: [DeepSeek, Codex, Claude Code, Qclaw, OpenClaw, 国产模型, 开源工具
 summary: DeepSeek-GUI 把 Codex 风格的终端 agent 体验做成桌面 app，Code 和 Claw 双模共用一个 DeepSeek runtime。把它放进 2026 年的国产化谱系里看，能清晰看到「GUI 封装 / 协议路由 / 配置切换 / 本地复刻」四条路线，以及每条路线最具代表性的 7-8 个开源项目。
 tldr: DeepSeek-GUI（XingYu-Zhong，721★）是一个 Electron 桌面 app，把 Code（项目工作台）+ Claw（自动化 agent）打包到一个 UI 里，专门跑 DeepSeek。同期还有 Qclaw（OpenClaw 的桌面封装，2.8k★，已停更）、claude-code-router（26.4k★，把 Claude Code 请求转发到 DeepSeek/Qwen/Kimi）、cc-switch（Codex 的本地协议翻译网关）、OpenCode（Provider-agnostic CLI agent）。四类工具的差异在于：直接做 GUI vs 拦截原生 CLI；自带 runtime vs 借用其它 agent；闭源生态绕过 vs 协议改写。
 topic_type: tech
+tech_type: ai_coding
 assistance: claude
 model: claude-opus-4-7
 ---

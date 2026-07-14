@@ -5,6 +5,7 @@ import Script from 'next/script'
 import {
   CATEGORY_META,
   COMPANY_TYPE_META,
+  TECH_TYPE_META,
   RESEARCH_CATEGORIES,
   TOPIC_TYPE_META,
   getAllResearchParams,
@@ -202,6 +203,11 @@ export default async function ResearchDetailPage({ params }) {
   const categoryLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
   const topicTypeLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
   const showTopicType = topicTypeLabel && topicTypeLabel !== categoryLabel
+  const categoryHref = entry.category === 'topics'
+    ? entry.topicType === 'tech'
+      ? '/articles?tab=tech'
+      : '/articles?tab=other'
+    : `/articles?tab=${entry.category}`
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
   const articleKey = `research:${entry.category}:${entry.slug}`
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
@@ -269,7 +275,7 @@ export default async function ResearchDetailPage({ params }) {
         '@type': 'ListItem',
         position: 2,
         name: categoryLabel,
-        item: `${SITE_URL}/articles?tab=${entry.category}`,
+        item: `${SITE_URL}${categoryHref}`,
       },
       { '@type': 'ListItem', position: 3, name: entry.title, item: url },
     ],
@@ -291,7 +297,7 @@ export default async function ResearchDetailPage({ params }) {
           </Link>
           <span aria-hidden="true">·</span>
           <Link
-            href={`/articles?tab=${entry.category}`}
+            href={categoryHref}
             className="opacity-80 hover:opacity-100 underline underline-offset-4"
           >
             {categoryLabel}
@@ -313,6 +319,17 @@ export default async function ResearchDetailPage({ params }) {
               <span className="research-pill research-pill-accent">
                 {topicTypeLabel}
               </span>
+            </>
+          ) : null}
+          {entry.techType && TECH_TYPE_META[entry.techType] ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <Link
+                href={`/articles?tab=tech&tech_type=${entry.techType}`}
+                className="research-pill research-pill-accent"
+              >
+                {TECH_TYPE_META[entry.techType].label}
+              </Link>
             </>
           ) : null}
           {entry.dateLabel || entry.date ? (

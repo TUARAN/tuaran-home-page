@@ -6,6 +6,7 @@ tags: [Codex, 项目管理, 本地工程治理, Git, 自动化]
 summary: 记录一次用 Codex 梳理本地 GitHub 同级项目目录的全过程：先盘点，再分类，再清理缓存与归档非 Git 项目，最后沉淀管理规则。
 tldr: 项目目录失控时，真正的问题通常不是“项目太多”，而是缺少状态、体积、归属和风险台账；Codex 适合把本地文件系统、Git 状态和工程判断串成一次可审计的整理流程。
 topic_type: tech
+tech_type: ai_coding
 assistance: codex
 model: gpt-5
 pv: 0

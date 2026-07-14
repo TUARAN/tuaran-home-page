@@ -144,7 +144,11 @@ export default function ToolsPage() {
       <section className="mx-auto max-w-[1100px] px-4 py-5 sm:px-6 lg:px-8">
         <div className="space-y-6">
           {sections.map((section) => (
-            <section key={section.id} className="grid gap-3 border-t border-[#d8d1c4] pt-6 dark:border-[#27313d] lg:grid-cols-[220px_minmax(0,1fr)]">
+            <section
+              key={section.id}
+              id={section.anchor}
+              className="scroll-mt-[calc(var(--site-header-height)+16px)] grid gap-3 border-t border-[#d8d1c4] pt-6 dark:border-[#27313d] lg:grid-cols-[220px_minmax(0,1fr)]"
+            >
               <div>
                 <div className="sticky top-[calc(var(--site-header-height)+16px)]">
                   <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a6422] dark:text-[#d4ae66]">

@@ -8,7 +8,6 @@ import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
-import GoogleAdSlot from '../../components/GoogleAdSlot'
 import RssButton from '../../components/RssButton'
 import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
@@ -326,7 +325,6 @@ export default async function ArticleDetailPage({ params }) {
               <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
                 <AuthorByline />
               </aside>
-              <GoogleAdSlot slot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ARTICLE_SLOT} />
               {article.cover ? (
                 <div className="mb-8 max-w-3xl mx-auto">
                   <Image
@@ -440,7 +438,6 @@ export default async function ArticleDetailPage({ params }) {
             <AuthorByline />
           </aside>
 
-          <GoogleAdSlot slot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ARTICLE_SLOT} />
 
           {article.cover ? (
             <div className="mb-8 max-w-3xl mx-auto">

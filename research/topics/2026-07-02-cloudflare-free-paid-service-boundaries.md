@@ -11,7 +11,7 @@ model: gpt-5
 pv: 0
 ---
 
-> 调研口径：本文按 2026-07-02 公开信息整理。Cloudflare 的价格、免费额度和限制经常调整，涉及采购、合规或大规模上线时，应以官方价格页和开发者文档为准。
+本文按 2026-07-02 公开信息整理。Cloudflare 的价格、免费额度和限制经常调整，涉及采购、合规或大规模上线时，应以官方价格页和开发者文档为准。
 >
 > 核心来源：Cloudflare [Plans](https://www.cloudflare.com/plans/)、Workers [Limits](https://developers.cloudflare.com/workers/platform/limits/)、Pages [Limits](https://developers.cloudflare.com/pages/platform/limits/)、Pages Functions [Pricing](https://developers.cloudflare.com/pages/functions/pricing/)、Rules [Page Rules migration](https://developers.cloudflare.com/rules/reference/page-rules-migration/)、Turnstile [product page](https://www.cloudflare.com/application-services/products/turnstile/)、Registrar [product page](https://www.cloudflare.com/products/registrar/)。
 

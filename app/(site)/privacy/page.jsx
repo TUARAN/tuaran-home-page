@@ -29,7 +29,7 @@ const sections = [
     title: 'Cookie 与本地存储',
     body: [
       '本站会使用 Cookie 或浏览器本地存储保存语言、主题、登录状态、阅读偏好等必要设置，以便提供稳定的浏览体验。',
-      '第三方服务也可能通过 Cookie 或类似技术进行统计、广告展示、反作弊或安全验证。你可以在浏览器中清除或限制 Cookie，但部分登录、评论和偏好功能可能因此不可用。',
+      '第三方供应商（包括 Google）可能通过 Cookie、网络信标、IP 地址或类似标识符进行统计、广告展示、反作弊和安全验证。Google 及其合作伙伴可能根据你此前访问本站或其他网站的情况投放广告。',
     ],
   },
   {
@@ -37,6 +37,7 @@ const sections = [
     body: [
       '本站可能使用 Google AdSense 展示广告，使用 Umami 等工具做访问统计，并接入微信开放平台、GitHub、Google OAuth、Resend、Cloudflare 等服务完成登录、邮件、部署、安全和存储能力。微信登录会按微信开放平台授权范围获取用于建立登录身份的 openid、昵称和头像；本站不会用昵称、手机号或邮箱自动合并账号。',
       '这些第三方服务会按照其各自的隐私政策处理相关数据。本站不会出售你的个人信息，也不会将你的站内评论、邮箱或登录信息主动提供给无关第三方。',
+      '你可以前往 Google 广告设置关闭个性化广告，也可以阅读“Google 如何使用合作伙伴网站或应用中的信息”了解 Google 的数据处理方式。',
     ],
   },
   {
@@ -49,7 +50,7 @@ const sections = [
   {
     title: '你的选择',
     body: [
-      '你可以选择不登录、不评论、不订阅邮件，也可以通过浏览器设置限制 Cookie 或广告个性化。',
+      '你可以选择不登录、不评论、不订阅邮件，也可以通过浏览器设置限制 Cookie，或前往 Google 广告设置关闭个性化广告。',
       '如果你希望删除、修改或查询自己在本站留下的评论、留言、账号关联或订阅信息，可以通过联系页面找到站长邮箱。',
     ],
   },
@@ -67,7 +68,7 @@ export default function PrivacyPage() {
         </h1>
         <p className="mt-4 text-[15px] leading-8 text-[var(--site-muted)]">
           本政策适用于 2aran.com。它说明本站如何处理访问统计、登录、评论、资源领取、广告和联系信息。
-          最后更新：2026 年 7 月 3 日。
+          最后更新：2026 年 7 月 14 日。
         </p>
       </header>
 
@@ -85,6 +86,14 @@ export default function PrivacyPage() {
           </section>
         ))}
       </div>
+
+      <section className="mb-8 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5">
+        <h2 className="font-serif text-[24px] text-[var(--site-ink)]">Google 广告与数据说明</h2>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          <a href="https://adssettings.google.com/" target="_blank" rel="noreferrer" className="underline underline-offset-4">Google 广告设置</a>
+          <a href="https://policies.google.com/technologies/partner-sites?hl=zh-CN" target="_blank" rel="noreferrer" className="underline underline-offset-4">Google 如何使用合作伙伴网站或应用中的信息</a>
+        </div>
+      </section>
 
       <section className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5">
         <h2 className="font-serif text-[24px] text-[var(--site-ink)]">联系我们</h2>

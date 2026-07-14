@@ -11,7 +11,7 @@ model: gpt-5
 pv: 0
 ---
 
-> **本调研定位**：以 **2aran.com 调研文章一键分发到 syncblog.cn 内容同步页** 为具体案例，解释浏览器跨域窗口通信的技术原理和安全实践。核心技术是 `window.open()` + `window.postMessage()`；相关边界涉及同源策略、CORS、`window.opener`、`targetOrigin`、结构化克隆、弹窗拦截和 COOP / COEP 等浏览器安全机制。
+以 **2aran.com 调研文章一键分发到 syncblog.cn 内容同步页** 为具体案例，解释浏览器跨域窗口通信的技术原理和安全实践。核心技术是 `window.open()` + `window.postMessage()`；相关边界涉及同源策略、CORS、`window.opener`、`targetOrigin`、结构化克隆、弹窗拦截和 COOP / COEP 等浏览器安全机制。
 
 ## 一、核心结论
 

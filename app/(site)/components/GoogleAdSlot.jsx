@@ -9,6 +9,7 @@ const GOOGLE_ADSENSE_CLIENT =
 
 export default function GoogleAdSlot({
   slot,
+  eligible = false,
   className = '',
   format = 'auto',
   fullWidthResponsive = true,
@@ -20,12 +21,16 @@ export default function GoogleAdSlot({
   useEffect(() => {
     let cancelled = false
     getPublicSiteSettings().then((settings) => {
-      if (!cancelled) setAdsEnabled(Boolean(settings?.ads?.enabled))
+      if (!cancelled) {
+        setAdsEnabled(Boolean(
+          eligible && settings?.ads?.manualSlotsEnabled && !settings?.ads?.reviewMode,
+        ))
+      }
     })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [eligible])
 
   useEffect(() => {
     if (!adsEnabled || !GOOGLE_ADSENSE_CLIENT || !slot || pushedRef.current) return

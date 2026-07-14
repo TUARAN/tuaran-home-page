@@ -12,7 +12,7 @@ model: gpt-5
 pv: 0
 ---
 
-> 调研口径：本文基于用户提供的 Sysdig Threat Research Team（TRT）《JADEPUFFER: Agentic ransomware for automated database extortion》报告文本整理，报告发布日期为 2026-07-01。由于公开搜索未稳定命中原文页面，本文把 Sysdig 报告视为附件来源，不额外扩写未核验事实。
+本文基于用户提供的 Sysdig Threat Research Team（TRT）《JADEPUFFER: Agentic ransomware for automated database extortion》报告文本整理，报告发布日期为 2026-07-01。由于公开搜索未稳定命中原文页面，本文把 Sysdig 报告视为附件来源，不额外扩写未核验事实。
 >
 > 标题翻译参考：**“Sysdig introduces first headless cloud security platform”** 可译为 **“Sysdig 推出首个无头云安全平台”**。其中 “headless” 在安全平台语境里更接近“无界面/无前端依赖、以 API 和自动化为中心”，不宜直译成“无头”。不过，附件正文的核心材料并不是产品发布稿，而是 Sysdig TRT 对 JADEPUFFER 的威胁研究。
 

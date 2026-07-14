@@ -11,7 +11,7 @@ model: claude-opus-4-7
 pv: 0
 ---
 
-> **本调研定位**：以**端侧部署（on-device / 浏览器内）**为唯一视角，把 Qwen3.5 全系列从最小的 0.8B 到满血旗舰 397B-A17B 拉通对照，回答一个问题——**每一档到底能落在什么设备上**。技术口径锚定本站 `/web-llm` 实际用的 `transformers.js + ONNX Runtime Web + WebGPU` 链路。
+以**端侧部署（on-device / 浏览器内）**为唯一视角，把 Qwen3.5 全系列从最小的 0.8B 到满血旗舰 397B-A17B 拉通对照，回答一个问题——**每一档到底能落在什么设备上**。技术口径锚定本站 `/web-llm` 实际用的 `transformers.js + ONNX Runtime Web + WebGPU` 链路。
 
 ## 一、是什么
 

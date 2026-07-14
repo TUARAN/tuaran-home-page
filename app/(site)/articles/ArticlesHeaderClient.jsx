@@ -10,7 +10,7 @@ const PAGE_COPY = {
     title: '推荐入口',
   },
   all: {
-    title: '知识库',
+    title: '文章与分析',
   },
   column: {
     title: '创作库',
@@ -22,16 +22,16 @@ const PAGE_COPY = {
     title: '多维页面',
   },
   research: {
-    title: '调研库',
+    title: '分析',
   },
   companies: {
-    title: '公司调研',
+    title: '公司观察',
   },
   topics: {
-    title: '事项调研',
+    title: '专题',
   },
   people: {
-    title: '人物调研',
+    title: '人物',
   },
   resources: {
     title: '资源库',

@@ -12,7 +12,7 @@ model: gpt-5.5
 pv: 0
 ---
 
-> 核验口径：本文于 2026-07-13（Asia/Shanghai）根据 OpenAI 的 Codex 文档、Apple AVFoundation / VideoToolbox 文档、FFmpeg 官方手册和 whisper.cpp 项目说明整理。这里的“本地”指视频素材、转写与渲染可在 Mac 上完成；首次安装依赖或下载语音模型仍可能需要网络。工具版本、芯片型号和授权策略会改变速度与可用编码器，本文不把单台机器的实测速度外推成通用结论。
+本文于 2026-07-13（Asia/Shanghai）根据 OpenAI 的 Codex 文档、Apple AVFoundation / VideoToolbox 文档、FFmpeg 官方手册和 whisper.cpp 项目说明整理。这里的“本地”指视频素材、转写与渲染可在 Mac 上完成；首次安装依赖或下载语音模型仍可能需要网络。工具版本、芯片型号和授权策略会改变速度与可用编码器，本文不把单台机器的实测速度外推成通用结论。
 
 ## 一、先给结论
 

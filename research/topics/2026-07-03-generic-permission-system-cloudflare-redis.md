@@ -11,7 +11,7 @@ model: gpt-5
 pv: 0
 ---
 
-> 调研口径：本文面向通用后台、B 端 SaaS、移动端 APP、小程序与多租户系统的权限架构设计。重点是工程实现，不讨论组织审批流、法务授权边界和企业 IAM 采购。
+本文面向通用后台、B 端 SaaS、移动端 APP、小程序与多租户系统的权限架构设计。重点是工程实现，不讨论组织审批流、法务授权边界和企业 IAM 采购。
 >
 > 参考资料：Cloudflare Workers [TCP sockets](https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/)、Cloudflare Workers [Upstash integration](https://developers.cloudflare.com/workers/databases/third-party-integrations/upstash/)、Cloudflare KV [How KV works](https://developers.cloudflare.com/kv/concepts/how-kv-works/)、Cloudflare Durable Objects [overview](https://developers.cloudflare.com/durable-objects/)、Cloudflare D1 [documentation](https://developers.cloudflare.com/d1/)、Cloudflare Hyperdrive [documentation](https://developers.cloudflare.com/hyperdrive/)。
 

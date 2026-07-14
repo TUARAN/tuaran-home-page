@@ -11,7 +11,7 @@ model: gpt-5
 pv: 0
 ---
 
-> 核验口径：本文按 2026-07-08 11:28（Asia/Shanghai）前后访问 Cloudflare 官方地址整理。原始页面地址为 [https://developers.cloudflare.com/agent-setup/prompt.md](https://developers.cloudflare.com/agent-setup/prompt.md)，HTTP 响应为 `200`，`content-type` 为 `text/markdown; charset=utf-8`。涉及命令和服务器地址时，应以 Cloudflare 官方页面为准。
+本文按 2026-07-08 11:28（Asia/Shanghai）前后访问 Cloudflare 官方地址整理。原始页面地址为 [https://developers.cloudflare.com/agent-setup/prompt.md](https://developers.cloudflare.com/agent-setup/prompt.md)，HTTP 响应为 `200`，`content-type` 为 `text/markdown; charset=utf-8`。涉及命令和服务器地址时，应以 Cloudflare 官方页面为准。
 
 ## 一、结论
 

@@ -141,9 +141,9 @@ export default function ResearchStyleClient() {
 
   return (
     <AdminPage
-      title="调研风格库"
+      title="内容风格库"
       maxWidth="1180px"
-      description="先定写法，再写内容。这里既是风格配置，也是存量调研的措辞复核入口。"
+      description="先定写法，再写内容。这里既是风格配置，也是存量文章的措辞复核入口。"
     >
       <section className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="rounded-2xl border border-[#caccc0] bg-white p-5 dark:border-[#2d3744] dark:bg-[#10161f]">
@@ -152,7 +152,7 @@ export default function ResearchStyleClient() {
               <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#858779] dark:text-[#8e9ab0]">执行状态</p>
               <h2 className="mt-1 text-[17px] font-semibold text-[#15140f] dark:text-gray-100">规则已入库，存量内容尚未完全收敛</h2>
               <p className="mt-1.5 max-w-2xl text-[12px] leading-6 text-[#73746a] dark:text-[#9aa3b3]">
-                构建前会扫描调研 Markdown；它只报出待改与待人工判断项，不会把有必要的对比句误判成错误。
+                构建前会扫描文章 Markdown；它只报出待改与待人工判断项，不会把有必要的对比句误判成错误。
               </p>
             </div>
             <span className="inline-flex shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-mono text-[10px] text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">

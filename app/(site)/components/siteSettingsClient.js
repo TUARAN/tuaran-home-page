@@ -13,11 +13,13 @@ export async function getPublicSiteSettings() {
       .then(async (response) => {
         if (!response.ok) throw new Error(`HTTP_${response.status}`)
         const data = await response.json()
-        cachedSettings = data?.settings || { ads: { enabled: false } }
+        cachedSettings = data?.settings || {
+          ads: { scriptEnabled: false, manualSlotsEnabled: false, reviewMode: true },
+        }
         return cachedSettings
       })
       .catch(() => {
-        cachedSettings = { ads: { enabled: false } }
+        cachedSettings = { ads: { scriptEnabled: false, manualSlotsEnabled: false, reviewMode: true } }
         return cachedSettings
       })
       .finally(() => {

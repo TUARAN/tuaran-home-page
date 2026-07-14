@@ -36,7 +36,7 @@ export function buildKnowledgeItems() {
   })
 
   const researchItems = listResearch().map((entry) => {
-    const baseLabel = CATEGORY_META[entry.category]?.label || entry.category
+    const baseLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
     const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
     const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
     const peopleLabel = entry.peopleType && PEOPLE_TYPE_META[entry.peopleType]?.label
@@ -48,6 +48,7 @@ export function buildKnowledgeItems() {
       companyType: entry.companyType || '',
       topicType: entry.topicType || '',
       peopleType: entry.peopleType || '',
+      contentType: entry.contentType || 'analysis',
       version: entry.version || '',
       title: entry.title,
       summary: entry.tldr || entry.summary,

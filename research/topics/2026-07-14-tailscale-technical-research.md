@@ -12,7 +12,7 @@ model: gpt-5.5
 pv: 0
 ---
 
-> 核验口径：本文于 2026-07-14（Asia/Shanghai）根据 Tailscale 官方文档、公开仓库、安全公告，以及 WireGuard、Headscale、ZeroTier 和 Cloudflare 的一手资料整理。价格与产品权限按调研当日页面记录；网络质量取决于两端运营商、NAT、防火墙和中继位置，本文未把某一地区或某一条线路的体验写成普遍结论。
+本文于 2026-07-14（Asia/Shanghai）根据 Tailscale 官方文档、公开仓库、安全公告，以及 WireGuard、Headscale、ZeroTier 和 Cloudflare 的一手资料整理。价格与产品权限按调研当日页面记录；网络质量取决于两端运营商、NAT、防火墙和中继位置，本文未把某一地区或某一条线路的体验写成普遍结论。
 
 ## 一、先给结论
 

@@ -70,7 +70,7 @@ export default function DownloadPptButton({ title, subtitle, fileBaseName, image
       onClick={handleClick}
       disabled={state === 'working' || list.length === 0}
       aria-live="polite"
-      title="把当前版本的调研下载为 PPT"
+      title="把当前版本的文章下载为 PPT"
       className="article-action-button px-3 py-1 text-xs disabled:opacity-60"
     >
       <svg

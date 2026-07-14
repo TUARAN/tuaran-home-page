@@ -9,9 +9,9 @@ const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
 const KIND_LABELS = {
   posts: '文章',
-  companies: '公司调研',
-  topics: '事项调研',
-  special: '专题调研',
+  companies: '公司观察',
+  topics: '专题分析',
+  special: '专题',
   resources: '资源',
 }
 

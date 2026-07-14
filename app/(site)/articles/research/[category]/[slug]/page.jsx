@@ -28,7 +28,6 @@ import RanbiPaywall from '../../../../components/RanbiPaywall'
 import ResearchPvCounter from './ResearchPvCounter'
 import SharePageButton from '../../../../components/SharePageButton'
 import RssButton from '../../../../components/RssButton'
-import GoogleAdSlot from '../../../../components/GoogleAdSlot'
 import LifeTrafficTest from './LifeTrafficTest'
 import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 
@@ -65,7 +64,7 @@ function ResearchEngagementPanel({ articleKey, related }) {
         <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
           Support
         </p>
-        <h2 className="mt-2 text-[15px] font-semibold text-[#444] dark:text-gray-200">支持这篇调研</h2>
+        <h2 className="mt-2 text-[15px] font-semibold text-[#444] dark:text-gray-200">支持这篇文章</h2>
         <p className="mt-1 text-[12px] leading-5 text-[#777a6f] dark:text-[#8a93a3]">
           一下点赞、一句评论，都是对继续写下去的支持。
         </p>
@@ -97,7 +96,7 @@ function ResearchEngagementPanel({ articleKey, related }) {
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
             Related
           </p>
-          <h2 className="mt-2 text-base font-semibold text-[#444] dark:text-gray-200">同类调研</h2>
+          <h2 className="mt-2 text-base font-semibold text-[#444] dark:text-gray-200">相关阅读</h2>
           <ul className="mt-3 space-y-2">
             {related.map((r) => (
               <li key={r.slug}>
@@ -128,7 +127,7 @@ export async function generateMetadata({ params }) {
   const entry = resolveResearchEntry(category, slug)
   if (!entry) {
     return {
-      title: `调研未找到 · ${SITE_TITLE}`,
+      title: `内容未找到 · ${SITE_TITLE}`,
       robots: { index: false, follow: false },
     }
   }
@@ -145,7 +144,7 @@ export async function generateMetadata({ params }) {
     title,
     description,
     alternates: { canonical: url },
-    keywords: ['涂阿燃', 'tuaran', '调研', CATEGORY_META[entry.category]?.label, ...(entry.tags || [])].filter(Boolean),
+    keywords: ['涂阿燃', 'tuaran', '分析', CATEGORY_META[entry.category]?.label, ...(entry.tags || [])].filter(Boolean),
     robots: {
       index: !isEncrypted,
       follow: !isEncrypted,
@@ -193,14 +192,14 @@ export default async function ResearchDetailPage({ params }) {
         }),
         toc: extractToc(variant.content),
       }))
-  // 一键复制/分发用的 Markdown：标题 + 正文 + 调研配图（不含 YAML frontmatter）；加密文章不提供
+  // 一键复制/分发用的 Markdown：标题 + 正文 + 配图（不含 YAML frontmatter）；加密文章不提供
   const markdownDoc = isEncrypted ? '' : buildResearchMarkdownDocument(entry.content, {
     images: entry.images || [],
     seed: `${entry.category}:${entry.slug}:${variantList[0]?.id || assistance || 'assistance'}`,
     title: entry.title,
     intro: AUTHOR_INTRO_MARKDOWN,
   })
-  const categoryLabel = CATEGORY_META[entry.category]?.label || entry.category
+  const categoryLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
   const articleKey = `research:${entry.category}:${entry.slug}`
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
@@ -286,7 +285,7 @@ export default async function ResearchDetailPage({ params }) {
       <header className="research-article-header mb-8 border-b pb-4">
         <div className="research-article-meta flex flex-wrap items-center gap-2 text-xs">
           <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-            知识库
+            文章与分析
           </Link>
           <span aria-hidden="true">·</span>
           <Link
@@ -344,10 +343,12 @@ export default async function ResearchDetailPage({ params }) {
           ) : null}
           <span aria-hidden="true">·</span>
           <ResearchPvCounter category={entry.category} slug={entry.slug} initialPv={entry.pv} />
-          {assistance && !isEncrypted ? (
+          {entry.showAssistance && assistance && !isEncrypted ? (
             <>
               <span aria-hidden="true">·</span>
-              <span>协助：{entry.assistanceLabel || entry.sourceLabel || 'TUARAN'}</span>
+              <Link href="/editorial" className="underline decoration-dotted underline-offset-4">
+                协助：{entry.assistanceLabel || entry.sourceLabel || 'TUARAN'}
+              </Link>
             </>
           ) : null}
           <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto lg:flex-nowrap">
@@ -367,7 +368,7 @@ export default async function ResearchDetailPage({ params }) {
                   category={entry.category}
                   slug={entry.slug}
                   tags={entry.tags || []}
-                  kindLabel="调研"
+                  kindLabel={entry.contentTypeLabel || '文章'}
                   allowArticle
                 />
                 <DownloadPptButton
@@ -413,10 +414,6 @@ export default async function ResearchDetailPage({ params }) {
 
       {showRebuttalPersonalityTest && !isEncrypted ? <RebuttalPersonalityTest /> : null}
 
-      {isEncrypted ? null : (
-        <GoogleAdSlot slot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_RESEARCH_SLOT} />
-      )}
-
       {showLifeTrafficTest && !isEncrypted ? <LifeTrafficTest /> : null}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
@@ -427,7 +424,7 @@ export default async function ResearchDetailPage({ params }) {
               storageKey={`research-dec:${entry.category}:${entry.slug}`}
             />
           ) : (
-            <RanbiPaywall resourceKey={articleKey} unitLabel="调研">
+            <RanbiPaywall resourceKey={articleKey} unitLabel="文章">
               <ResearchBody variants={renderedVariants} />
             </RanbiPaywall>
           )}

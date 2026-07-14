@@ -285,7 +285,7 @@ const SITE_RSS_COVERAGE = [
     note: 'articlesData 内链文章全文进 content:encoded；外链型文章剔除。',
   },
   {
-    section: '公司 / 事项 / 人物调研',
+    section: '公司观察 / 专题 / 人物',
     path: '/articles/research/*',
     status: 'in',
     note: 'listResearch() 全文进；加密文章只出摘要，明文不进静态产物。',

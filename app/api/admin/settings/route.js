@@ -1,5 +1,5 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getSiteSettings, setAdsEnabled } from '../../../../lib/siteSettings'
+import { getSiteSettings, setAdsSettings } from '../../../../lib/siteSettings'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -22,7 +22,7 @@ export async function POST(req) {
     return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
   }
 
-  const result = await setAdsEnabled(body?.ads?.enabled, guard.user)
+  const result = await setAdsSettings(body?.ads, guard.user)
   if (!result.ok) return Response.json(result, { status: result.status || 400 })
   return Response.json(result)
 }

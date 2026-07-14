@@ -12,7 +12,7 @@ model: gpt-5
 pv: 0
 ---
 
-> 核验口径：本文按 2026-07-09 23:01（Asia/Shanghai）前后访问 Anthropic 官方研究页与 Transformer Circuits 长文整理。官方发布页为 [A global workspace in language models](https://www.anthropic.com/research/global-workspace)，长文为 [Verbalizable Representations Form a Global Workspace in Language Models](https://transformer-circuits.pub/2026/workspace/index.html)，发布日期为 2026-07-06。本文是调研解读，不把论文结论外推为“AI 已经有主观意识”。
+本文按 2026-07-09 23:01（Asia/Shanghai）前后访问 Anthropic 官方研究页与 Transformer Circuits 长文整理。官方发布页为 [A global workspace in language models](https://www.anthropic.com/research/global-workspace)，长文为 [Verbalizable Representations Form a Global Workspace in Language Models](https://transformer-circuits.pub/2026/workspace/index.html)，发布日期为 2026-07-06。本文是调研解读，不把论文结论外推为“AI 已经有主观意识”。
 
 ## 一、先给结论
 

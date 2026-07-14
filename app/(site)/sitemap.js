@@ -36,6 +36,7 @@ export default function sitemap() {
   const staticRoutes = [
     '',
     '/about',
+    '/editorial',
     '/services',
     '/articles',
     '/articles/creation-calendar',

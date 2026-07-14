@@ -7,8 +7,8 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '原创内容导航',
   description:
-    '2aran.com 原创内容导航：精选文章、调研库、日记、作品、出版作品和外部创作平台索引。',
-  keywords: ['原创内容', '2aran.com', '涂阿燃', '技术博客', '调研', '精选文章'],
+    '2aran.com 原创内容导航：精选文章、专题分析、日记、作品、出版作品和外部创作平台索引。',
+  keywords: ['原创内容', '2aran.com', '涂阿燃', '技术博客', '专题分析', '精选文章'],
   alternates: { canonical: '/originals' },
   robots: {
     index: true,
@@ -25,10 +25,10 @@ const originalGroups = [
     items: ['前端与 AI 工程化', '产品与项目复盘', '个人判断与方法论'],
   },
   {
-    title: '调研库',
-    desc: '围绕公司、人物、技术、市场和行业议题整理的长文调研。',
+    title: '分析与观察',
+    desc: '围绕公司、人物、技术、市场和行业议题形成的作者分析。',
     href: '/articles?tab=research',
-    items: ['公司调研', '事项调研', '人物调研'],
+    items: ['公司观察', '专题分析', '人物内容'],
   },
   {
     title: '浮生日记',
@@ -63,7 +63,7 @@ export default function OriginalsPage() {
           原创内容导航
         </h1>
         <p className="mt-4 max-w-[780px] text-[15px] leading-8 text-[var(--site-muted)]">
-          本页把 2aran.com 的原创内容入口集中起来：文章、调研、日记、作品和外部创作账号。
+          本页把 2aran.com 的原创内容入口集中起来：文章、分析、日记、作品和外部创作账号。
           站内内容主要由涂阿燃持续整理、写作和维护；引用、转载或资料归档会在页面中尽量标注来源。
         </p>
       </header>
@@ -98,7 +98,7 @@ export default function OriginalsPage() {
           </p>
           <h2 className="mt-2 font-serif text-[28px] text-[var(--site-ink)]">原创与引用说明</h2>
           <p className="mt-3 text-[14px] leading-7 text-[var(--site-muted)]">
-            本站的观点文章、日记、项目说明和大部分调研解读为站长原创或深度整理。资料库、古典文本、外部收藏、
+            本站的观点文章、专题分析、日记和项目说明由站长选题、组织、判断并最终确认。资料库、古典文本、外部收藏、
             书目和链接归档中会包含第三方来源，相关页面会尽量保留原始出处、链接或说明。
           </p>
         </div>

@@ -50,9 +50,9 @@ export default function ArticleFooterCta() {
         >
           <span className="text-[18px]" aria-hidden="true">📚</span>
           <div className="flex-1">
-            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">知识库 →</div>
+            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">文章与分析 →</div>
             <p className="mt-0.5 text-[12px] leading-5 text-[#666] dark:text-gray-400">
-              精选文章 + 公司调研 + 事项调研 + 人物调研
+              原创文章 + 技术实践 + 专题分析 + 人物观察
             </p>
           </div>
         </Link>
@@ -72,7 +72,7 @@ export default function ArticleFooterCta() {
       </div>
 
       <p className="mt-6 text-center text-[12px] text-[#999] dark:text-gray-500">
-        合作 / 咨询 / 调研定制见 <Link href="/services" className="text-[#646655] no-underline hover:text-[#15140f] dark:text-[#acaf9d] dark:hover:text-gray-100">合作说明</Link> · 微信 <span className="font-mono">atar24</span>
+        合作 / 咨询 / 内容分析见 <Link href="/services" className="text-[#646655] no-underline hover:text-[#15140f] dark:text-[#acaf9d] dark:hover:text-gray-100">合作说明</Link> · 微信 <span className="font-mono">atar24</span>
       </p>
     </aside>
   )

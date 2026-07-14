@@ -61,7 +61,7 @@ export default function NewsletterSignup({ source = 'article_footer' }) {
             每周收一封，少刷一点信息流
           </h2>
           <p className="mb-0 text-[13px] leading-6 text-[#66645c] dark:text-gray-400">
-            我会把新文章、调研、资源更新和工具发布整理成一封邮件。频率克制，不做日更轰炸。
+            我会把新文章、专题分析、资源更新和工具发布整理成一封邮件。频率克制，不做日更轰炸。
           </p>
         </div>
         <div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 import { getPublicSiteSettings } from './siteSettingsClient'
 
@@ -9,12 +10,20 @@ const GOOGLE_ADSENSE_CLIENT =
 const SCRIPT_ID = 'google-adsense-script'
 
 export default function GoogleAdsenseScript() {
+  const pathname = usePathname()
+
   useEffect(() => {
     let cancelled = false
 
     async function loadScript() {
       const settings = await getPublicSiteSettings()
-      if (cancelled || !settings?.ads?.enabled || !GOOGLE_ADSENSE_CLIENT) return
+      if (cancelled || !settings?.ads?.scriptEnabled || !GOOGLE_ADSENSE_CLIENT) return
+      const isResearchDetail = /^\/articles\/research\/(companies|topics|people)\/[^/]+$/.test(pathname || '')
+      const isArticleDetail = /^\/articles\/[^/]+$/.test(pathname || '') && ![
+        '/articles/creation-calendar',
+        '/articles/year-summary',
+      ].includes(pathname)
+      if (pathname !== '/' && !isResearchDetail && !isArticleDetail) return
       if (document.getElementById(SCRIPT_ID)) return
 
       const script = document.createElement('script')
@@ -30,7 +39,7 @@ export default function GoogleAdsenseScript() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [pathname])
 
   return null
 }

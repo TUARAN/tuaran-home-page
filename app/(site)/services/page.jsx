@@ -8,13 +8,13 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '合作说明 · AI 咨询、调研与内容协作',
   description:
-    '涂阿燃（tuaran）的合作说明：AI 落地咨询、调研定制、技术内容协作、数字员工方案与企业内训。',
+    '涂阿燃（tuaran）的合作说明：AI 落地咨询、专题分析、技术内容协作、数字员工方案与企业内训。',
   keywords: [
     '涂阿燃',
     'tuaran',
     '合作说明',
     'AI 咨询',
-    '调研定制',
+    '专题分析',
     '技术内容',
     '数字员工',
     '博主联盟',
@@ -31,7 +31,7 @@ const cooperationAreas = [
     output: ['场景拆解', '技术路线建议', 'PoC 范围', '风险与投入判断'],
   },
   {
-    title: '调研定制',
+    title: '专题分析',
     desc: '适合需要快速理解一家公司、一个行业、一个产品机会或一个人物脉络的产品、市场、投资与战略团队。',
     output: ['结构化报告', '来源附录', '关键判断', '不确定性说明'],
   },
@@ -55,8 +55,8 @@ const boundaries = [
 ]
 
 const sampleLinks = [
-  { href: '/articles?tab=topics', label: '事项调研' },
-  { href: '/articles?tab=companies', label: '公司调研' },
+  { href: '/articles?tab=topics', label: '专题' },
+  { href: '/articles?tab=companies', label: '公司观察' },
   { href: '/articles?tab=posts', label: '精选文章' },
   { href: '/works', label: '项目记录' },
 ]

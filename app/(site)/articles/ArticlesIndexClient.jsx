@@ -17,7 +17,7 @@ const CHANNEL_DEFS = [
   { key: 'picks', label: '推荐' },
   { key: 'all', label: '全部' },
   { key: 'column', label: '创作' },
-  { key: 'research', label: '调研' },
+  { key: 'research', label: '分析' },
   { key: 'resources', label: '资源' },
 ]
 
@@ -57,7 +57,7 @@ const MANUAL_ENTRY_KIND = {
   research: null, // 按 category 细分
   resource: { kind: 'resources', tagLabel: '资源库' },
 }
-const MANUAL_RESEARCH_TAG = { companies: '公司调研', topics: '事项调研', people: '人物调研' }
+const MANUAL_RESEARCH_TAG = { companies: '公司观察', topics: '专题分析', people: '人物' }
 
 function manualEntriesToItems(entries, existingItems) {
   if (!Array.isArray(entries) || !entries.length) return []
@@ -103,10 +103,10 @@ const QUICK_LINKS = [
 ]
 
 const RESEARCH_TYPE_DEFS = [
-  { key: 'research', label: '全部调研' },
-  { key: 'companies', label: '公司调研' },
-  { key: 'topics', label: '事项调研' },
-  { key: 'people', label: '人物调研' },
+  { key: 'research', label: '全部分析' },
+  { key: 'companies', label: '公司观察' },
+  { key: 'topics', label: '专题' },
+  { key: 'people', label: '人物' },
 ]
 
 // 公司 / 事项分类的 filter defs 由 lib/research/loader.js 派生，避免双源维护。
@@ -439,7 +439,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (activeChannel === 'research') {
       const researchTab = RESEARCH_TYPE_DEFS.find((t) => t.key === tab)
       if (researchTab && researchTab.key !== 'research') parts.push(researchTab.label)
-      else if (tab === 'research') parts.push('全部调研')
+      else if (tab === 'research') parts.push('全部分析')
       if (tab === 'companies' && companyType !== 'all') {
         parts.push(COMPANY_TYPE_DEFS.find((t) => t.key === companyType)?.label || companyType)
       }
@@ -621,12 +621,12 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     return [
       {
         title: '最新内容',
-        desc: '刚发布的文章、调研与工程记录。',
+        desc: '刚发布的文章、分析与工程记录。',
         items: latestItems,
       },
       {
-        title: '推荐调研',
-        desc: '技术、市场、公司画像的高密度输出。',
+        title: '推荐分析',
+        desc: '技术、市场与公司观察中的作者判断。',
         items: publicItems
           .filter((item) => !latestIds.has(item.id || item.href) && RESEARCH_KINDS.has(item.kind))
           .slice(0, 3),
@@ -676,7 +676,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
         {activeChannel === 'research' ? (
           <>
-            <FilterRow label="调研类型" ariaLabel="调研类型" orientation={orientation}>
+            <FilterRow label="内容类型" ariaLabel="分析内容类型" orientation={orientation}>
               {RESEARCH_TYPE_DEFS.map((t) => (
                 <FilterChip
                   key={t.key}
@@ -688,7 +688,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               ))}
             </FilterRow>
             {tab === 'companies' ? (
-              <FilterRow label="公司分类" ariaLabel="公司调研分类" orientation={orientation}>
+              <FilterRow label="公司分类" ariaLabel="公司观察分类" orientation={orientation}>
                 {COMPANY_TYPE_DEFS.map((t) => (
                   <FilterChip
                     key={t.key}
@@ -701,7 +701,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               </FilterRow>
             ) : null}
             {tab === 'topics' ? (
-              <FilterRow label="事项分类" ariaLabel="事项调研分类" orientation={orientation}>
+              <FilterRow label="专题分类" ariaLabel="专题分析分类" orientation={orientation}>
                 {TOPIC_TYPE_DEFS.map((t) => (
                   <FilterChip
                     key={t.key}
@@ -714,7 +714,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               </FilterRow>
             ) : null}
             {tab === 'people' ? (
-              <FilterRow label="人物分类" ariaLabel="人物调研分类" orientation={orientation}>
+              <FilterRow label="人物分类" ariaLabel="人物内容分类" orientation={orientation}>
                 {PEOPLE_TYPE_DEFS.map((t) => (
                   <FilterChip
                     key={t.key}

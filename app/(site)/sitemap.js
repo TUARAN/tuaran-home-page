@@ -76,6 +76,7 @@ export default function sitemap() {
     '/resources/shen-zhi-ding-nei',
     '/resources/wallpapers',
     '/resources/x-mutual-cleaner-extension',
+    '/resources/x-tweet-to-pdf-extension',
     '/community',
     '/changelog',
     '/diary',

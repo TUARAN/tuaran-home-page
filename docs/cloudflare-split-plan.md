@@ -18,7 +18,7 @@ Use it only for the public `2aran.com` Cloudflare Pages project after `admin.2ar
 Live Cloudflare Pages config:
 
 - `tuaran` (`2aran.com`): build command `npm run pages:build:public`; build watch paths include `*`.
-- `tuaran-admin-git` (`admin.2aran.com`): build command `npm run pages:build`; build watch paths are compact boundary rules for admin routes, auth/admin API routes, shared runtime code, and build config.
+- `tuaran-admin-git` (`admin.2aran.com`): build command `npm run pages:build`, which delegates to the admin-only build. The build temporarily excludes public pages and unrelated public APIs, while keeping admin routes, auth, and the session APIs used by the admin shell. Build watch paths are compact boundary rules for admin routes, auth/admin API routes, shared runtime code, and build config.
 
 Admin build watch path policy:
 
@@ -28,13 +28,14 @@ Admin build watch path policy:
 
 Current commands:
 
-- `npm run pages:build` / `npm run pages:build:all`: full build, keeps admin routes.
+- `npm run pages:build` / `npm run pages:build:admin`: admin-only build, keeps `app/(admin)`, admin/auth APIs, and `/api/me`, `/api/nav-config`, `/api/notifications`, `/api/private-records`, `/api/site-settings`. It also verifies required runtime routes, checks client API references, rejects leaked public routes, and enforces the 3 MiB Worker budget.
+- `npm run pages:build:all`: full build for local verification or emergency use.
 - `npm run pages:build:public`: public-only build, excludes admin routes.
 
 Cutover checklist:
 
 1. Done: Create a separate Cloudflare Pages project for `admin.2aran.com`.
-2. Done: Point that project at the full/admin build path first.
+2. Done: Keep the project on `npm run pages:build`; the repository now delegates that command to the admin-only build.
 3. Done: Bind the same `DB` D1 database and `MEDIA` R2 bucket.
 4. Done: Copy required secrets: GitHub/Google OAuth, auth/session secrets, DeepSeek keys, collect secrets.
 5. Done: Confirm `https://admin.2aran.com/admin` loads and owner auth works.

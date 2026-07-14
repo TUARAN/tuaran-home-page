@@ -136,7 +136,7 @@ const RESOURCE_TYPE_KEYS = RESOURCE_TYPE_DEFS.map((t) => t.key)
 const RESOURCE_GROUP_DEFS = [
   { key: 'all', label: '全部资源', typeKeys: RESOURCE_TYPE_KEYS.filter((key) => key !== 'all') },
   { key: 'content', label: '内容资源', allLabel: '全部内容', typeKeys: ['ai-dev', 'ai-music', 'humanities-politics', 'workplace'] },
-  { key: 'external', label: '收藏资源', allLabel: '全部收藏', typeKeys: ['rss', 'twitter', 'youtube'] },
+  { key: 'external', label: '国外资源', allLabel: '全部国外资源', typeKeys: ['rss', 'twitter', 'youtube'] },
   { key: 'downloads', label: '下载资源', allLabel: '全部下载', typeKeys: ['visual-assets'] },
 ]
 const RESOURCE_GROUP_KEYS = RESOURCE_GROUP_DEFS.map((t) => t.key)

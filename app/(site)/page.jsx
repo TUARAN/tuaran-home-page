@@ -23,7 +23,7 @@ import SiteFooter from './components/SiteFooter'
 import HotTickerBar from './components/HotTickerBar'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
-import { getHomeFeaturedPicks, HOME_SECTION_MORE_LINKS } from '../../lib/homeHighlights'
+import { getHomeFeaturedPicks } from '../../lib/homeHighlights'
 
 const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
@@ -37,13 +37,6 @@ const SECTION_BADGE_CLASS = {
   resources: 'home-badge home-badge-resource',
   tools: 'home-badge home-badge-resource',
   feed: 'home-badge home-badge-feed',
-}
-
-const CLASSIC_HOME_SECTION_TAB_CLASS = {
-  column: 'home-classic-tab home-classic-tab-column',
-  research: 'home-classic-tab home-classic-tab-research',
-  resources: 'home-classic-tab home-classic-tab-resource',
-  tools: 'home-classic-tab home-classic-tab-feed',
 }
 
 const START_PATHS = [
@@ -344,16 +337,6 @@ function FeaturedReading({ items }) {
           <p className="home-kicker">Start here</p>
           <h2 className="home-section-title"><T zh="先读这几篇" en="Start with these" /></h2>
         </div>
-        <div className="home-section-tabs" role="group" aria-label="Browse more by category">
-          {HOME_SECTION_MORE_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="home-tab-link">
-              <span>
-                <T zh={`${link.label}（${link.countLabel}）`} en={`${link.labelEn} (${link.countLabelEn})`} />
-              </span>
-              <ArrowIcon />
-            </Link>
-          ))}
-        </div>
       </div>
       <div className="home-reading-list">
         {items.map((item) => (
@@ -431,41 +414,6 @@ function ClassicFeaturedSection({ items }) {
           </p>
           <h2 className="classic-home-section-title"><T zh="推荐阅读" en="Recommended reading" /></h2>
         </div>
-        <nav
-          aria-label="Browse more by category"
-          className="flex w-full shrink-0 flex-col gap-1.5 pt-0.5 sm:w-auto sm:items-end"
-        >
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#958aa1] sm:text-right dark:text-gray-500">
-            <T zh="浏览更多" en="Browse more" />
-          </span>
-          <div
-            role="group"
-            className="grid grid-cols-2 gap-1 rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:inline-flex sm:items-center dark:border-gray-800 dark:bg-[#151a22] dark:shadow-none"
-          >
-            {HOME_SECTION_MORE_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={[
-                  'group/tab inline-flex min-h-9 items-center justify-center gap-1 rounded-md px-2.5 py-1.5 text-sm font-medium no-underline transition-all duration-150 sm:px-3',
-                  CLASSIC_HOME_SECTION_TAB_CLASS[link.section] || CLASSIC_HOME_SECTION_TAB_CLASS.column,
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9fb7d8] focus-visible:ring-offset-1 dark:focus-visible:ring-[#3b5b8a]',
-                  'active:scale-[0.98]',
-                ].join(' ')}
-              >
-                <span>
-                  <T zh={`${link.label}（${link.countLabel}）`} en={`${link.labelEn} (${link.countLabelEn})`} />
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="font-mono text-[11px] text-[#9a9b8f] transition-transform group-hover/tab:translate-x-0.5 dark:text-gray-500"
-                >
-                  →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </nav>
       </div>
       <div className="classic-home-surface-card rounded-2xl border p-3">
         <div className="space-y-1">

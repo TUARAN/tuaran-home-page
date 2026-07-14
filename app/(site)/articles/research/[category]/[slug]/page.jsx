@@ -388,14 +388,14 @@ export default async function ResearchDetailPage({ params }) {
         <aside className="research-summary-box mt-4 border-l-2 px-4 py-3 text-sm leading-7">
           <AuthorByline />
           {entry.tldr ? (
-            <div className="research-summary-divider mt-3 border-t pt-3">
+            <div className="research-summary-divider mt-2 border-t pt-3">
               <span className="research-summary-label mr-2 font-mono text-[10px] uppercase tracking-[0.18em]">
                 TL;DR
               </span>
               {entry.tldr}
             </div>
           ) : entry.summary ? (
-            <div className="research-summary-divider mt-3 border-t pt-3">
+            <div className="research-summary-divider mt-2 border-t pt-3">
               {entry.summary}
             </div>
           ) : null}

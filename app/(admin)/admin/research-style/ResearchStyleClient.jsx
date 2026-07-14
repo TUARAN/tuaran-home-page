@@ -152,7 +152,7 @@ export default function ResearchStyleClient() {
               <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#858779] dark:text-[#8e9ab0]">执行状态</p>
               <h2 className="mt-1 text-[17px] font-semibold text-[#15140f] dark:text-gray-100">规则已入库，存量内容尚未完全收敛</h2>
               <p className="mt-1.5 max-w-2xl text-[12px] leading-6 text-[#73746a] dark:text-[#9aa3b3]">
-                构建前会扫描文章 Markdown；它只报出待改与待人工判断项，不会把有必要的对比句误判成错误。
+                构建前会扫描文章 Markdown；强制禁语直接列为待改，其它候选表达再由人工判断。
               </p>
             </div>
             <span className="inline-flex shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-mono text-[10px] text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
@@ -194,7 +194,7 @@ export default function ResearchStyleClient() {
           <div className="mb-4">
             <SectionTitle>公理 · 所有风格通用禁语</SectionTitle>
             <p className="m-0 max-w-4xl text-[12px] leading-6 text-[#73746a] dark:text-[#9aa3b3]">
-              规则扫描只负责发现候选句。特别是「不是 X，而是 Y」「换句话说」和宣传词，必须结合上下文人工判断，不做机械删除。
+              「不是 X，而是 Y」是强制禁语；其它候选句由规则扫描提示，再结合上下文人工处理。
             </p>
           </div>
           <AxiomList items={UNIVERSAL_BAN_PHRASES} auditById={auditById} />

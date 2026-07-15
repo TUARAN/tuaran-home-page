@@ -54,6 +54,7 @@ export default function sitemap() {
     '/context-memory',
     '/cancers-overview',
     '/platform-framework-pairs',
+    '/network-access-guide',
     '/ai-token-usage-research',
     '/skill-market-research',
     '/sun-moon-motion',

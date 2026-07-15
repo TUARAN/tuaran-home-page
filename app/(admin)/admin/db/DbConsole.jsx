@@ -105,7 +105,6 @@ export default function DbAdminClient() {
   return (
     <AdminPage
       title="数据库管理"
-      maxWidth="1180px"
       description="只读查看 Cloudflare D1 当前状态：表结构、行数、最近更新时间、文本体积估算和核心业务指标。这里不提供任意 SQL，不做删除或迁移。"
       actions={
         <button

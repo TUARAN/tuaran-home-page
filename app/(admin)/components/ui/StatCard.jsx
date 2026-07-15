@@ -28,8 +28,7 @@ export default function StatCard({ label, value, sub, icon, tone = 'neutral', hr
       {sub ? <p className="mt-1.5 text-[12px] leading-5 text-[#82847a] dark:text-gray-500">{sub}</p> : null}
     </>
   )
-  const cls =
-    'block rounded-xl border border-[#e2e3da] bg-white px-4 py-3.5 dark:border-[#1e2733] dark:bg-[#10161f]'
+  const cls = 'admin-stat-card block rounded-xl border px-4 py-3.5'
   if (href) {
     return (
       <Link href={href} className={`${cls} transition hover:border-[#b9bbad] dark:hover:border-[#34414f]`}>

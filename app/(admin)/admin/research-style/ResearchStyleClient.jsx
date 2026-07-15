@@ -142,7 +142,6 @@ export default function ResearchStyleClient() {
   return (
     <AdminPage
       title="内容风格库"
-      maxWidth="1180px"
       description="先定写法，再写内容。这里既是风格配置，也是存量文章的措辞复核入口。"
     >
       <section className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">

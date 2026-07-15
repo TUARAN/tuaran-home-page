@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { AdminPage } from '../../components/ui'
+
 const TYPE_OPTIONS = [
   { value: 'article', label: '文章（专栏）' },
   { value: 'research', label: '调研' },
@@ -168,18 +170,19 @@ export default function ContentIndexConsole() {
     'w-full rounded-md border border-[#dcdfe5] bg-white px-3 py-2 text-sm text-[#222] outline-none focus:border-[#9aa0aa] dark:border-[#2a3440] dark:bg-[#0f151d] dark:text-gray-100'
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 py-6 md:px-6">
-      <header className="mb-6">
-        <h1 className="text-xl font-semibold text-[#15140f] dark:text-gray-100">内容索引管理台</h1>
-        <p className="mt-1 text-sm text-[#67695d] dark:text-gray-400">
+    <AdminPage
+      title="内容索引管理台"
+      description={
+        <>
           统一内容索引（content_index）。「同步」把构建期注册表（文章 / 调研 / 资源）镜像进
           D1；「手工登记」的条目无需构建即出现在{' '}
           <a href="/articles" target="_blank" rel="noreferrer" className="underline underline-offset-4">
             /articles
           </a>{' '}
           索引。需先在 Cloudflare 跑迁移 0035。
-        </p>
-      </header>
+        </>
+      }
+    >
 
       {message ? (
         <div className="mb-4 rounded-lg border border-[#dbe4d6] bg-[#f3f8ef] px-4 py-2.5 text-sm text-[#3c5a2f] dark:border-[#2c3d2a] dark:bg-[#15200f] dark:text-[#a9cf92]">
@@ -359,6 +362,6 @@ export default function ContentIndexConsole() {
           ) : null}
         </ul>
       </section>
-    </div>
+    </AdminPage>
   )
 }

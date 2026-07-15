@@ -21,9 +21,10 @@ import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
 import HotTickerBar from './components/HotTickerBar'
+import HomeFeaturedReadingClient from './components/HomeFeaturedReadingClient'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
-import { getHomeFeaturedPicks } from '../../lib/homeHighlights'
+import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
 
 const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
@@ -329,22 +330,7 @@ function HomeFeaturedLinkItem({ item }) {
 }
 
 function FeaturedReading({ items }) {
-  if (!items.length) return null
-  return (
-    <section className="home-featured-reading home-section">
-      <div className="home-section-heading">
-        <div>
-          <p className="home-kicker">Start here</p>
-          <h2 className="home-section-title"><T zh="先读这几篇" en="Start with these" /></h2>
-        </div>
-      </div>
-      <div className="home-reading-list">
-        {items.map((item) => (
-          <HomeFeaturedLinkItem key={item.id} item={item} />
-        ))}
-      </div>
-    </section>
-  )
+  return <HomeFeaturedReadingClient catalog={items} />
 }
 
 function ClassicFeaturedLinkItem({ item }) {
@@ -949,7 +935,7 @@ function PolishedHomePage({ featuredPicks }) {
 }
 
 export default function HomePage() {
-  const featuredPicks = getHomeFeaturedPicks()
+  const featuredPicks = getHomeRecommendationCatalog()
 
   return <PolishedHomePage featuredPicks={featuredPicks} />
 }

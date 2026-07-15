@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { AdminPage } from '../../components/ui'
+
 import {
   BIZ_STATUS_LABELS,
   PORTFOLIO_GRAPH_POSITIONS,
@@ -472,7 +474,10 @@ export default function ProjectPortfolioConsole() {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-[1480px] gap-4 px-4 py-6">
+    <AdminPage
+      title="AI 项目管理台"
+      description="统一查看项目关系、业务状态和整合路线图。"
+    >
       <div className="grid min-w-0 gap-4">
         <div className="flex flex-wrap items-center gap-3">
           {/* View Tabs */}
@@ -934,6 +939,6 @@ export default function ProjectPortfolioConsole() {
         </>
         ) : null}
       </div>
-    </main>
+    </AdminPage>
   )
 }

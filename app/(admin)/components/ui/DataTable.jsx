@@ -8,7 +8,7 @@
 export default function DataTable({ columns, rows, rowKey, empty = null, className = '', tableClassName = '' }) {
   if (!rows?.length && empty) return empty
   return (
-    <div className={`overflow-x-auto ${className}`}>
+    <div className={`admin-data-table overflow-x-auto ${className}`}>
       <table className={`w-full border-collapse text-[13px] ${tableClassName}`}>
         <thead>
           <tr className="border-b border-[#eceee6] dark:border-[#1b2430]">

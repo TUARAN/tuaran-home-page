@@ -130,7 +130,6 @@ export default function NsfwConsole() {
   return (
     <AdminPage
       title="NSFW 私有媒体库"
-      maxWidth="1180px"
       description="内容只存入独立的私有 R2 桶；列表、预览和下载均须通过 owner-only 后台接口，不会生成公开 URL。"
     >
       <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] leading-6 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">

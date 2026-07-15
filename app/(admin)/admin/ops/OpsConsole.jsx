@@ -166,7 +166,6 @@ export default function OpsConsoleClient() {
   return (
     <AdminPage
       title="自动化控制台"
-      maxWidth="1180px"
       description="统一登记云端与本地自动化，固定追踪入口、触发频率、最近运行、成功率、产物、风险和审核策略。"
       actions={
         <div className="flex flex-wrap gap-2">

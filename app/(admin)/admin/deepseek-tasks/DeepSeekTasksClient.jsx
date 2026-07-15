@@ -165,7 +165,6 @@ export default function DeepSeekTasksClient() {
   return (
     <AdminPage
       title="LLM API 任务管理"
-      maxWidth="1240px"
       description="统一记录站内 DeepSeek 调用，审阅规划结果、Token 消耗、失败原因和后续处理状态。完整 Prompt 与密钥不会写入台账。"
       actions={
         <>

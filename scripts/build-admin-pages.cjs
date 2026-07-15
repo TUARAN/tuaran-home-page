@@ -16,6 +16,9 @@ const stashRoot = path.join(root, '.admin-pages-build-excluded')
 const KEPT_SITE_DIRECTORY_ENTRIES = new Map([
   ['articles', new Set(['articlesData.js'])],
   ['context-memory', new Set(['MemoryVault.jsx'])],
+  // Admin recommendations builds its candidate catalog from the same feed data
+  // as the public site. Keep the data module without shipping the /feed routes.
+  ['feed', new Set(['data.js'])],
   ['long-compass', new Set(['LongCompassClient.jsx', 'components'])],
 ])
 

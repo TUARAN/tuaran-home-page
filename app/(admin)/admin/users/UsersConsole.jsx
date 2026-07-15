@@ -520,7 +520,6 @@ export default function UsersConsole() {
   return (
     <AdminPage
       title="用户管理"
-      maxWidth="1180px"
       description="管理登录用户、角色与游客身份。燃币流水和调账统一跳转到燃币管理，登录后的游客身份只作为历史绑定记录保留。"
       actions={
         <AdminButton onClick={refreshActive} disabled={activeLoading}>

@@ -77,7 +77,6 @@ export default function SettingsConsole() {
   return (
     <AdminPage
       title="站点设置"
-      maxWidth="960px"
       description="管理影响全站的功能开关。当前先接入广告开关；后续 SEO、第三方脚本、实验功能可以继续挂到这里。"
     >
       {error ? (

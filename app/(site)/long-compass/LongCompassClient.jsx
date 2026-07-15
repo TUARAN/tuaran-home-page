@@ -172,7 +172,11 @@ export default function LongCompassClient({
   const Container = embedded ? 'section' : 'main'
 
   return (
-    <Container className={`mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-4 md:px-6 ${embedded ? 'py-5' : 'py-8'}`}>
+    <Container
+      className={`flex w-full flex-1 flex-col ${
+        embedded ? 'py-5' : 'mx-auto max-w-[1120px] px-4 py-8 md:px-6'
+      }`}
+    >
       {!embedded ? (
         <header className="border-b border-[#dee0db] pb-5 dark:border-gray-800">
           <div className="flex flex-wrap items-end justify-between gap-3">

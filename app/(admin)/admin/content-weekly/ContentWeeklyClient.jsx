@@ -354,7 +354,6 @@ export default function ContentWeeklyClient() {
   return (
     <AdminPage
       title="阅读分析"
-      maxWidth="1100px"
       description={
         <>
           自建阅读统计：调研 / 资料·资源 / 灵感的被读、被赞，今日 PV、近 7 天走势、回访率 / 评论转化率 / 订阅数 + 自然月统计。

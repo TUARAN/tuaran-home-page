@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+import { AdminButton, AdminPage } from '../../components/ui'
+
 const EMPTY_FORM = {
   siteName: '',
   rssUrl: '',
@@ -121,17 +123,18 @@ export default function RssFeedConsole() {
     'w-full rounded-md border border-[#dcdfe5] bg-white px-3 py-2 text-sm text-[#222] outline-none focus:border-[#9aa0aa] dark:border-[#2a3440] dark:bg-[#0f151d] dark:text-gray-100'
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 py-6 md:px-6">
-      <header className="mb-6">
-        <h1 className="text-xl font-semibold text-[#15140f] dark:text-gray-100">RSS 订阅管理台</h1>
-        <p className="mt-1 text-sm text-[#67695d] dark:text-gray-400">
+    <AdminPage
+      title="RSS 订阅管理台"
+      description={
+        <>
           这里增删的订阅会展示在公开页{' '}
           <a href="/resources/rss" target="_blank" rel="noreferrer" className="underline underline-offset-4">
             /resources/rss
           </a>
           。需先在 Cloudflare 跑迁移 0031 并绑定 D1。
-        </p>
-      </header>
+        </>
+      }
+    >
 
       {status === 'unavailable' ? (
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
@@ -199,13 +202,13 @@ export default function RssFeedConsole() {
           />
         </label>
         <div className="flex items-end gap-3">
-          <button
+          <AdminButton
             type="submit"
+            variant="primary"
             disabled={saving}
-            className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-5 py-2 text-sm font-medium text-white hover:bg-[#6a4f19] disabled:opacity-50"
           >
             {saving ? '添加中…' : '添加订阅'}
-          </button>
+          </AdminButton>
           {message ? (
             <span className="text-xs text-[#82847a] dark:text-gray-500">{message}</span>
           ) : null}
@@ -272,7 +275,7 @@ export default function RssFeedConsole() {
           </ul>
         )}
       </div>
-    </div>
+    </AdminPage>
   )
 }
 

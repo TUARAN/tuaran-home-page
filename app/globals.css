@@ -2,6 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 后台管理统一设计令牌。所有后台路由共享同一内容宽度、表面与控件语言。 */
+.admin-shell {
+  --admin-content-width: 1180px;
+  --admin-canvas: #f4f5f0;
+  --admin-surface: #ffffff;
+  --admin-surface-subtle: #fafbf7;
+  --admin-line: #e2e3da;
+  --admin-line-soft: #eceee6;
+  --admin-ink: #15140f;
+  --admin-muted: #67695d;
+  --admin-focus: #818472;
+  background: var(--admin-canvas);
+  color: var(--admin-ink);
+}
+
+.dark .admin-shell {
+  --admin-canvas: #0b0f14;
+  --admin-surface: #10161f;
+  --admin-surface-subtle: #0d131b;
+  --admin-line: #1e2733;
+  --admin-line-soft: #1b2430;
+  --admin-ink: #f3f4f6;
+  --admin-muted: #9ca3af;
+  --admin-focus: #5f6f86;
+}
+
+.admin-shell__content {
+  min-width: 0;
+}
+
+.admin-page {
+  max-width: var(--admin-content-width);
+}
+
+.admin-page--compact {
+  max-width: none;
+}
+
+.admin-page__header,
+.admin-section__header {
+  border-color: var(--admin-line-soft);
+}
+
+.admin-page__title,
+.admin-section__title {
+  color: var(--admin-ink);
+}
+
+.admin-page__description,
+.admin-section__description {
+  color: var(--admin-muted);
+}
+
+.admin-section,
+.admin-stat-card {
+  border-color: var(--admin-line);
+  background: var(--admin-surface);
+  box-shadow: 0 1px 2px rgba(21, 20, 15, 0.025);
+}
+
+.dark .admin-section,
+.dark .admin-stat-card {
+  box-shadow: none;
+}
+
+.admin-shell :where(input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea) {
+  border-color: var(--admin-line);
+  background-color: var(--admin-surface);
+  color: var(--admin-ink);
+}
+
+.admin-shell :where(input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea):focus {
+  border-color: var(--admin-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-focus) 14%, transparent);
+  outline: none;
+}
+
+.admin-shell :where(button, a):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--admin-focus) 65%, transparent);
+  outline-offset: 2px;
+}
+
+.admin-data-table {
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-line) transparent;
+}
+
 :root {
   --page-bg: #f1eef2;
   --site-ink: #171611;
@@ -855,11 +942,11 @@
   }
 
   .home-main-grid {
-    @apply grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_430px];
+    @apply grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_430px];
   }
 
   .home-side-stack {
-    @apply space-y-6;
+    @apply self-start space-y-6;
   }
 
   @media (min-width: 1024px) {
@@ -880,7 +967,7 @@
   }
 
   .home-featured-reading {
-    @apply pt-4 md:pt-5;
+    @apply h-full pt-4 md:pt-5;
   }
 
   .home-featured-reading .home-section-title {
@@ -923,6 +1010,10 @@
 
   .home-reading-item {
     @apply block px-0 py-6 first:pt-0 last:pb-0;
+  }
+
+  .home-reading-meta {
+    @apply mb-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5;
   }
 
   .home-badge {

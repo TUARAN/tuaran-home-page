@@ -132,7 +132,6 @@ export default function ShortLinksConsole() {
   return (
     <AdminPage
       title="短链管理"
-      maxWidth="1180px"
       description="全站短链映射表。同一个原始 URL 只复用一条短链；公开分享只允许站内链接自动转短，站长可在这里手动登记外部链接。"
     >
       {error ? (

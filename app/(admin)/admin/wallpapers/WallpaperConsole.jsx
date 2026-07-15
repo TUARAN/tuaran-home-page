@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { AdminButton, AdminPage, Section } from '../../components/ui'
+
 const CATEGORIES = [
   { value: 'misc', label: '综合 Misc' },
   { value: 'nature', label: '自然 Nature' },
@@ -146,17 +148,13 @@ export default function WallpaperConsole() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8">
-      <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">壁纸资源管理台</h1>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        文件存 Cloudflare R2 的 downloads/ 目录，元数据存 D1（wallpapers 表）。支持 JPG/PNG/WebP/AVIF/GIF，单文件 ≤ 25MB。
-      </p>
-
-      <form
-        onSubmit={handleUpload}
-        className="mt-6 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <AdminPage
+      title="壁纸资源管理台"
+      description="文件存 Cloudflare R2 的 downloads/ 目录，元数据存 D1（wallpapers 表）。支持 JPG/PNG/WebP/AVIF/GIF，单文件 ≤ 25MB。"
+    >
+      <Section title="上传壁纸" description="补齐中英文标题和分类后上传至公开画廊。">
+        <form onSubmit={handleUpload}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="text-sm">
             <span className="mb-1 block text-neutral-600 dark:text-neutral-300">中文标题</span>
             <input
@@ -198,22 +196,19 @@ export default function WallpaperConsole() {
               className="w-full text-sm"
             />
           </label>
-        </div>
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={uploading}
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-neutral-900"
-          >
-            {uploading ? '上传中…' : '上传壁纸'}
-          </button>
-          {message ? (
-            <span className="text-sm text-neutral-600 dark:text-neutral-300">{message}</span>
-          ) : null}
-        </div>
-      </form>
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <AdminButton type="submit" variant="primary" disabled={uploading}>
+              {uploading ? '上传中…' : '上传壁纸'}
+            </AdminButton>
+            {message ? (
+              <span className="text-sm text-neutral-600 dark:text-neutral-300">{message}</span>
+            ) : null}
+          </div>
+        </form>
+      </Section>
 
-      <div className="mt-8">
+      <Section title="壁纸库" description={`当前共 ${items.length} 张壁纸`} className="mt-6">
         {status === 'loading' ? (
           <p className="text-sm text-neutral-500">加载中…</p>
         ) : status === 'unavailable' ? (
@@ -270,7 +265,7 @@ export default function WallpaperConsole() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </Section>
+    </AdminPage>
   )
 }

@@ -12,7 +12,7 @@ import { AdminPage } from './ui'
  */
 export default function WorkspaceHub({ title, description, eyebrow, flow, sections }) {
   return (
-    <AdminPage title={title} description={description} maxWidth="1180px">
+    <AdminPage title={title} description={description}>
       {flow?.length ? (
         <section className="mb-9 border-y border-[#d9d9cf] py-4 dark:border-[#26313e] md:grid md:grid-cols-[180px_1fr] md:items-center md:gap-6">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#858779] dark:text-[#8e9ab0]">

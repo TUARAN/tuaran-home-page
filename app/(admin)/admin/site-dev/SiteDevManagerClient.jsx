@@ -411,7 +411,6 @@ export default function SiteDevManagerClient() {
   return (
     <AdminPage
       title="本站开发管理"
-      maxWidth="1440px"
       description="把站内项目、GitHub issue / PR 和 npm 发布状态放到同一个执行看板里。第一阶段只读同步 GitHub / npm，本地维护优先级和推进状态。"
       actions={
         <AdminButton type="button" variant="primary" onClick={() => sync('')} disabled={Boolean(syncingId) || !sources.length}>

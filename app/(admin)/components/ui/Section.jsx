@@ -2,18 +2,18 @@
 export default function Section({ title, description, actions, children, className = '' }) {
   return (
     <section
-      className={`rounded-xl border border-[#e2e3da] bg-white dark:border-[#1e2733] dark:bg-[#10161f] ${className}`}
+      className={`admin-section rounded-xl border ${className}`}
     >
       {title || actions ? (
-        <header className="flex items-start justify-between gap-3 border-b border-[#eceee6] px-4 py-3 dark:border-[#1b2430] md:px-5">
+        <header className="admin-section__header flex items-start justify-between gap-3 border-b px-4 py-3.5 md:px-5">
           <div className="min-w-0">
             {title ? (
-              <h2 className="font-serif text-[1.05rem] font-semibold text-[#15140f] dark:text-gray-100">
+              <h2 className="admin-section__title font-serif text-[1.05rem] font-semibold">
                 {title}
               </h2>
             ) : null}
             {description ? (
-              <p className="mb-0 mt-0.5 text-[12.5px] leading-6 text-[#67695d] dark:text-gray-400">
+              <p className="admin-section__description mb-0 mt-0.5 text-[12.5px] leading-6">
                 {description}
               </p>
             ) : null}

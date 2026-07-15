@@ -14,8 +14,7 @@ const SOURCE_META = {
 
 const EMPTY_SETTINGS = {
   enabled: true,
-  batchSize: 6,
-  latestCount: 1,
+  batchSize: 10,
   rotationMode: 'random',
   avoidImmediateRepeats: true,
   sources: Object.fromEntries(Object.keys(SOURCE_META).map((key) => [key, { enabled: true, weight: 2 }])),
@@ -119,7 +118,6 @@ export default function RecommendationConsole() {
     <AdminPage
       title="推荐管理"
       description="统一管理首页“先读这几篇”的候选来源、换一批策略和人工置顶。规则保存在 D1，调整后无需重新构建站点。"
-      maxWidth="1120px"
       actions={(
         <>
           <AdminButton onClick={load} disabled={loading || saving}><IconRefresh size={15} />重新读取</AdminButton>
@@ -150,11 +148,8 @@ export default function RecommendationConsole() {
                 disabled={loading}
                 onChange={(avoidImmediateRepeats) => update({ avoidImmediateRepeats })}
               />
-              <Field label="每批展示数量" help="允许 2–12 条">
-                <input type="number" min="2" max="12" value={settings.batchSize} onChange={(event) => update({ batchSize: Number(event.target.value) })} className={inputClass} />
-              </Field>
-              <Field label="固定最新内容" help="每批保留 0–3 条全站最新内容">
-                <input type="number" min="0" max="3" value={settings.latestCount} onChange={(event) => update({ latestCount: Number(event.target.value) })} className={inputClass} />
+              <Field label="每批展示数量" help="允许 10–12 条">
+                <input type="number" min="10" max="12" value={settings.batchSize} onChange={(event) => update({ batchSize: Number(event.target.value) })} className={inputClass} />
               </Field>
               <Field label="换一批策略" help="随机模式会结合来源权重">
                 <select value={settings.rotationMode} onChange={(event) => update({ rotationMode: event.target.value })} className={inputClass}>

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import AdminPageGate from '../../components/AdminPageGate'
+import { AdminPage } from '../../components/ui'
 import {
   AI_PRODUCTS,
   CORE_STACK,
@@ -159,8 +160,8 @@ function ArchitectureDiagram() {
 
 function CloudflarePersonalSiteMapContent() {
   return (
-    <main className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-10">
-      <header className="border-b border-[#dee0db] pb-6 dark:border-gray-800">
+    <AdminPage title="Cloudflare 个人站技术地图" description={SHARE_COPY.lead}>
+      <div className="border-b border-[#dee0db] pb-4 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#9ba475]">
             Engineering Work · Cloudflare 架构
@@ -169,11 +170,7 @@ function CloudflarePersonalSiteMapContent() {
             后台私有 · Server Rendered
           </span>
         </div>
-        <h1 className="mt-3 font-serif text-[24px] font-semibold leading-snug text-[#15140f] dark:text-gray-100 sm:text-[30px]">
-          Cloudflare 个人站技术地图
-        </h1>
-        <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#51514a] dark:text-gray-400">{SHARE_COPY.lead}</p>
-      </header>
+      </div>
 
       <nav aria-label="页面章节" className="sticky top-0 z-10 mt-5 flex flex-wrap gap-x-3 gap-y-2 border-b border-[#dee0d6] bg-[#f7f8f5]/95 py-3 backdrop-blur dark:border-gray-800 dark:bg-[#111]/95">
         {SECTIONS.map((section) => (
@@ -334,7 +331,7 @@ function CloudflarePersonalSiteMapContent() {
           判定基于 wrangler.toml、next-on-pages 构建日志与本次 public/admin/API 拆分记录（2026-07 快照）
         </p>
       </section>
-    </main>
+    </AdminPage>
   )
 }
 

@@ -15,6 +15,7 @@ const SOURCE_META = {
 const EMPTY_SETTINGS = {
   enabled: true,
   batchSize: 10,
+  autoRotateHours: 12,
   rotationMode: 'random',
   avoidImmediateRepeats: true,
   sources: Object.fromEntries(Object.keys(SOURCE_META).map((key) => [key, { enabled: true, weight: 2 }])),
@@ -150,6 +151,12 @@ export default function RecommendationConsole() {
               />
               <Field label="每批展示数量" help="允许 10–12 条">
                 <input type="number" min="10" max="12" value={settings.batchSize} onChange={(event) => update({ batchSize: Number(event.target.value) })} className={inputClass} />
+              </Field>
+              <Field label="自动轮换间隔" help="默认 12 小时，允许 1–168 小时">
+                <div className="relative">
+                  <input type="number" min="1" max="168" value={settings.autoRotateHours} onChange={(event) => update({ autoRotateHours: Number(event.target.value) })} className={`${inputClass} pr-12`} />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#94968a]">小时</span>
+                </div>
               </Field>
               <Field label="换一批策略" help="随机模式会结合来源权重">
                 <select value={settings.rotationMode} onChange={(event) => update({ rotationMode: event.target.value })} className={inputClass}>

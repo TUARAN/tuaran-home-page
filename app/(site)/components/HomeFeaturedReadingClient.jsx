@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   chooseHomeRecommendationBatch,
   DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS,
+  getHomeRecommendationBatchNumber,
   mergeHomeRecommendationSettings,
 } from '../../../lib/homeRecommendationEngine'
 import { T } from './LocaleProvider'
@@ -40,12 +41,18 @@ function FeaturedLink({ item }) {
 
 export default function HomeFeaturedReadingClient({ catalog }) {
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
-  const [batchNumber, setBatchNumber] = useState(0)
+  const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
+  const [manualBatchOffset, setManualBatchOffset] = useState(0)
   const [previousIds, setPreviousIds] = useState([])
   const [changing, setChanging] = useState(false)
+  const batchNumber = automaticBatchNumber + manualBatchOffset
+  const automaticPreviousIds = useMemo(() => {
+    if (!automaticBatchNumber || manualBatchOffset) return previousIds
+    return chooseHomeRecommendationBatch(catalog, settings, automaticBatchNumber - 1, []).map((item) => item.id)
+  }, [automaticBatchNumber, catalog, manualBatchOffset, previousIds, settings])
   const items = useMemo(
-    () => chooseHomeRecommendationBatch(catalog, settings, batchNumber, previousIds),
-    [catalog, settings, batchNumber, previousIds],
+    () => chooseHomeRecommendationBatch(catalog, settings, batchNumber, automaticPreviousIds),
+    [automaticPreviousIds, batchNumber, catalog, settings],
   )
 
   useEffect(() => {
@@ -57,10 +64,24 @@ export default function HomeFeaturedReadingClient({ catalog }) {
     return () => { alive = false }
   }, [])
 
+  useEffect(() => {
+    let timer
+    const intervalMs = settings.autoRotateHours * 60 * 60 * 1000
+    const syncAutomaticBatch = () => {
+      setAutomaticBatchNumber(getHomeRecommendationBatchNumber(settings.autoRotateHours))
+      setManualBatchOffset(0)
+      setPreviousIds([])
+      const remaining = intervalMs - (Date.now() % intervalMs)
+      timer = window.setTimeout(syncAutomaticBatch, remaining + 100)
+    }
+    syncAutomaticBatch()
+    return () => window.clearTimeout(timer)
+  }, [settings.autoRotateHours])
+
   const changeBatch = useCallback(() => {
     setChanging(true)
     setPreviousIds(items.map((item) => item.id))
-    setBatchNumber((value) => value + 1)
+    setManualBatchOffset((value) => value + 1)
     window.setTimeout(() => setChanging(false), 260)
   }, [items])
 

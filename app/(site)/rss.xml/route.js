@@ -45,6 +45,13 @@ function cdata(html) {
 
 // 精选文章（articlesData 内链型）正文：content 数组里字符串=段落、对象=小标题
 function postContentHtml(article) {
+  if (article.markdown) {
+    try {
+      return absolutize(renderMarkdown(article.markdown, { seed: `article:${article.slug}`, title: article.title }))
+    } catch {
+      return ''
+    }
+  }
   if (!Array.isArray(article.content)) return ''
   const parts = []
   for (const block of article.content) {

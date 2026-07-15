@@ -79,11 +79,6 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/articles/content-os-blogger-matrix-alliance',
-        destination: 'https://juejin.cn/post/7595425302968696873',
-        permanent: false,
-      },
-      {
         // 《置身团内》原独立资料页已并入「置身 X 内」合集页
         source: '/resources/shen-zhi-tuan-nei',
         destination: '/resources/shen-zhi-ding-nei#tuan-nei',

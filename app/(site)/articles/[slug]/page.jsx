@@ -12,6 +12,7 @@ import RssButton from '../../components/RssButton'
 import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
 import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
+import { renderMarkdown } from '../../../../lib/research/markdown'
 import PublishedArticle from './PublishedArticle'
 
 export const runtime = 'edge'
@@ -72,6 +73,7 @@ function renderInlineBold(text) {
 }
 
 function articleContentToMarkdown(article, articleUrl) {
+  if (article.markdown) return article.markdown
   const parts = [`# ${article.title}`]
   if (article.summary) parts.push(article.summary)
   const body = (article.content || [])
@@ -79,14 +81,20 @@ function articleContentToMarkdown(article, articleUrl) {
       if (!item) return ''
       if (typeof item === 'string') return item
       if (item.date) return `## ${item.label || item.date}\n\n${item.date}`
+      if (item.heading) return `## ${item.heading}`
       return ''
     })
     .filter(Boolean)
     .join('\n\n')
   if (body) parts.push(body)
-  if (article.href) parts.push(`原文：${article.href}`)
+  if (article.sourceUrl) parts.push(`同步来源：${article.sourceUrl}`)
+  else if (article.href) parts.push(`原文：${article.href}`)
   else parts.push(`原文：${articleUrl}`)
   return parts.join('\n\n')
+}
+
+function normalizeArticleMarkdown(markdown) {
+  return String(markdown || '').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
 }
 
 export async function generateMetadata({ params }) {
@@ -206,6 +214,9 @@ export default async function ArticleDetailPage({ params }) {
 
   const articleUrl = `${SITE_URL}/articles/${article.slug}`
   const articleMarkdown = articleContentToMarkdown(article, articleUrl)
+  const articleMarkdownHtml = article.markdown
+    ? renderMarkdown(normalizeArticleMarkdown(article.markdown), { seed: `article:${article.slug}`, title: article.title })
+    : ''
   const publishedTime = toIsoDate(article.date)
   const enableDiaryToc = article.slug === 'diary-self-reflection'
   const tocItems = []
@@ -266,7 +277,16 @@ export default async function ArticleDetailPage({ params }) {
                   <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                     返回列表
                   </Link>
-                  {isExternalHref(article.href) ? (
+                  {article.sourceUrl ? (
+                    <a
+                      href={article.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                    >
+                      掘金同步来源
+                    </a>
+                  ) : isExternalHref(article.href) ? (
                     <a
                       href={article.href}
                       target="_blank"
@@ -339,7 +359,7 @@ export default async function ArticleDetailPage({ params }) {
               ) : null}
 
               <article className="prose-tuaran">
-                {article.content.map((paragraph, idx) => {
+                {articleMarkdownHtml ? <div dangerouslySetInnerHTML={{ __html: articleMarkdownHtml }} /> : article.content.map((paragraph, idx) => {
           // 支持两种日期写法：
           // 1）纯字符串日期：'2026-01-05'
           // 2）对象：{ date: '2026-01-05', label: '小标题' }
@@ -365,6 +385,10 @@ export default async function ArticleDetailPage({ params }) {
                 </div>
               </div>
             )
+          }
+
+          if (paragraph && typeof paragraph === 'object' && paragraph.heading) {
+            return <h2 key={`${idx}-${paragraph.heading}`} className="mt-10 mb-4 text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug">{paragraph.heading}</h2>
           }
 
           const image = parseMarkdownImage(paragraph)
@@ -402,7 +426,16 @@ export default async function ArticleDetailPage({ params }) {
                   <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                     返回列表
                   </Link>
-                  {isExternalHref(article.href) ? (
+                  {article.sourceUrl ? (
+                    <a
+                      href={article.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="opacity-80 hover:opacity-100 underline underline-offset-4"
+                    >
+                      掘金同步来源
+                    </a>
+                  ) : isExternalHref(article.href) ? (
                     <a
                       href={article.href}
                       target="_blank"
@@ -453,7 +486,7 @@ export default async function ArticleDetailPage({ params }) {
           ) : null}
 
           <article className="prose-tuaran">
-            {article.content.map((paragraph, idx) => {
+            {articleMarkdownHtml ? <div dangerouslySetInnerHTML={{ __html: articleMarkdownHtml }} /> : article.content.map((paragraph, idx) => {
               // 支持两种日期写法：
               // 1）纯字符串日期：'2026-01-05'
               // 2）对象：{ date: '2026-01-05', label: '小标题' }
@@ -480,6 +513,10 @@ export default async function ArticleDetailPage({ params }) {
                     </div>
                   </div>
                 )
+              }
+
+              if (paragraph && typeof paragraph === 'object' && paragraph.heading) {
+                return <h2 key={`${idx}-${paragraph.heading}`} className="mt-10 mb-4 text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug">{paragraph.heading}</h2>
               }
 
               const image = parseMarkdownImage(paragraph)

@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-15",
+      "displayDate": "Jul 15",
+      "count": 5,
+      "highlights": [
+        "Cursor IDE 0day 漏洞：打开恶意仓库即",
+        "Google AI 发布 Gemini 3.5 Li",
+        "Anthropic 推出 Claude for Te",
+        "实测LibTV Agent：100个AI视频工作流重",
+        "腾讯混元 Hy3 量化版发布：1bit 版本单卡可部"
+      ]
+    },
+    {
       "date": "2026-07-14",
       "displayDate": "Jul 14",
       "count": 3,
@@ -281,5 +293,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-14"
+  "latest": "2026-07-15"
 }

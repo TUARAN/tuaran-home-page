@@ -7,12 +7,12 @@ import Link from 'next/link'
  */
 
 export const AUTHOR_INTRO_MARKDOWN =
-  '> [涂阿燃的网络日志：FDE・KOL・OPC｜记录 AI 实践、社会洞察、生活随笔](https://2aran.com/about)'
+  '> [涂阿燃的网络日志：FDE・KOL・OPC｜记录 AI 实践、社会洞察、生活随笔](https://2aran.com/)'
 
 export function AuthorByline() {
   return (
     <p className="research-author-muted mb-0 text-[12px] leading-5">
-      <Link href="/about" className="research-author-link no-underline">
+      <Link href="/" className="research-author-link no-underline">
         涂阿燃的网络日志：FDE・KOL・OPC｜记录 AI 实践、社会洞察、生活随笔
       </Link>
     </p>

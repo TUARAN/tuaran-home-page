@@ -129,13 +129,26 @@ const SOCIAL_MEDIA_LINKS = [
     icon: IconFileText,
   },
   {
-    href: 'https://x.com/Anthony404',
-    label: 'X',
+    href: 'https://x.com/tarsixseveneig1',
+    label: 'X 平台',
     labelEn: 'X',
-    followers: '1k',
-    followersCount: 1000,
+    followers: '2k',
+    followersCount: 2000,
     reads: '100w+',
     icon: IconBrandX,
+  },
+  {
+    href: 'https://blog.csdn.net/aifs2025',
+    label: 'CSDN',
+    labelEn: 'CSDN',
+    followers: '5k',
+    followersCount: 5000,
+    reads: '28.4w',
+    icon: IconCode,
+    accounts: [
+      { label: 'aifs2025', href: 'https://blog.csdn.net/aifs2025?spm=1003.2018.3001.10640' },
+      { label: 'Anthony1453', href: 'https://blog.csdn.net/Anthony1453' },
+    ],
   },
   {
     href: 'https://weibo.com/',
@@ -145,15 +158,6 @@ const SOCIAL_MEDIA_LINKS = [
     followersCount: 3014,
     reads: '<2w',
     icon: IconBrandWeibo,
-  },
-  {
-    href: 'https://blog.csdn.net/aifs2025',
-    label: 'CSDN',
-    labelEn: 'CSDN',
-    followers: '2.8k',
-    followersCount: 2771,
-    reads: '28.4w',
-    icon: IconCode,
   },
   {
     href: 'https://www.toutiao.com/',
@@ -247,15 +251,14 @@ const SOCIAL_MEDIA_LINKS = [
   },
 ]
 
-const SORTED_SOCIAL_MEDIA_LINKS = [...SOCIAL_MEDIA_LINKS]
-  .sort((a, b) => b.followersCount - a.followersCount)
+const ORDERED_SOCIAL_MEDIA_LINKS = SOCIAL_MEDIA_LINKS
   .map((item, index) => ({ ...item, priority: index < 3, rank: index + 1 }))
 
-const PRIMARY_SOCIAL_MEDIA_LINKS = SORTED_SOCIAL_MEDIA_LINKS.slice(0, 3)
-const SECONDARY_SOCIAL_MEDIA_LINKS = SORTED_SOCIAL_MEDIA_LINKS.slice(3)
+const PRIMARY_SOCIAL_MEDIA_LINKS = ORDERED_SOCIAL_MEDIA_LINKS.slice(0, 3)
+const SECONDARY_SOCIAL_MEDIA_LINKS = ORDERED_SOCIAL_MEDIA_LINKS.slice(3)
 
 const SOCIAL_MEDIA_TOTALS = {
-  followers: '3.0w+',
+  followers: '3.5w+',
   reads: '600w+',
 }
 
@@ -453,6 +456,48 @@ function SocialMediaCard({ item }) {
     showFollowers ? `${item.followers} followers` : null,
     showReads ? `${item.reads} views` : null,
   ].filter(Boolean).join(', ')
+  const content = (
+    <>
+      <span className="home-social-icon" aria-hidden="true">
+        <Icon size={item.priority ? 24 : 18} stroke={1.8} />
+      </span>
+      <span className="home-social-main">
+        {item.priority ? <small>TOP {item.rank}</small> : null}
+        <strong><T zh={item.label} en={item.labelEn} /></strong>
+        {item.accounts ? (
+          <span className="home-social-account-links">
+            {item.accounts.map((account, index) => (
+              <a
+                key={account.href}
+                href={account.href}
+                target="_blank"
+                rel="noreferrer"
+                className="no-external-arrow"
+                aria-label={`打开 CSDN 账号 ${account.label}`}
+              >
+                账号 {index + 1}
+              </a>
+            ))}
+          </span>
+        ) : null}
+      </span>
+      {showFollowers || showReads ? (
+        <span className="home-social-metrics" aria-hidden="true">
+          {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
+          {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
+        </span>
+      ) : null}
+    </>
+  )
+
+  if (item.accounts) {
+    return (
+      <div className="home-social-card" aria-label={ariaLabel}>
+        {content}
+      </div>
+    )
+  }
+
   return (
     <a
       href={item.href}
@@ -461,19 +506,7 @@ function SocialMediaCard({ item }) {
       className={item.priority ? 'home-social-card is-priority no-external-arrow group' : 'home-social-card no-external-arrow group'}
       aria-label={ariaLabel}
     >
-      <span className="home-social-icon" aria-hidden="true">
-        <Icon size={item.priority ? 24 : 18} stroke={1.8} />
-      </span>
-      <span className="home-social-main">
-        {item.priority ? <small>TOP {item.rank}</small> : null}
-        <strong><T zh={item.label} en={item.labelEn} /></strong>
-      </span>
-      {showFollowers || showReads ? (
-        <span className="home-social-metrics" aria-hidden="true">
-          {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
-          {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
-        </span>
-      ) : null}
+      {content}
     </a>
   )
 }

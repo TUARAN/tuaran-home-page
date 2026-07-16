@@ -39,14 +39,14 @@ const KIND_TAG_CLASS = {
 
 const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
 const RESEARCH_KINDS = new Set(RESEARCH_KIND_KEYS)
-const TAB_KEYS = ['picks', 'all', 'column', 'posts', 'works', 'research', 'companies', 'people', 'tech', 'other', 'topics', 'resources']
+const TAB_KEYS = ['picks', 'all', 'column', 'posts', 'works', 'research', 'companies', 'people', 'tech', 'business', 'other', 'topics', 'resources']
 
 function getChannelForTab(activeTab) {
   if (activeTab === 'picks') return 'picks'
   if (activeTab === 'all') return 'all'
   if (activeTab === 'column' || activeTab === 'posts' || activeTab === 'works') return 'column'
   if (activeTab === 'resources') return 'resources'
-  if (activeTab === 'research' || RESEARCH_KINDS.has(activeTab) || activeTab === 'tech' || activeTab === 'other') return 'research'
+  if (activeTab === 'research' || RESEARCH_KINDS.has(activeTab) || activeTab === 'tech' || activeTab === 'business' || activeTab === 'other') return 'research'
   return 'all'
 }
 
@@ -102,6 +102,7 @@ const RESEARCH_TYPE_DEFS = [
   { key: 'companies', label: '公司' },
   { key: 'people', label: '人物' },
   { key: 'tech', label: '技术' },
+  { key: 'business', label: '商业' },
   { key: 'other', label: '其他' },
 ]
 
@@ -112,9 +113,19 @@ const COMPANY_TYPE_KEYS = COMPANY_TYPE_DEFS.map((t) => t.key)
 
 const TOPIC_TYPE_DEFS = getTopicTypeFilters()
 const TOPIC_TYPE_KEYS = TOPIC_TYPE_DEFS.map((t) => t.key)
+const BUSINESS_TOPIC_TYPE_KEYS = ['industry', 'market', 'product']
+const BUSINESS_TOPIC_TYPE_DEFS = TOPIC_TYPE_DEFS
+  .filter((t) => t.key === 'all' || BUSINESS_TOPIC_TYPE_KEYS.includes(t.key))
+  .map((t) => (t.key === 'all' ? { ...t, label: '全部商业' } : t))
 const OTHER_TOPIC_TYPE_DEFS = TOPIC_TYPE_DEFS
-  .filter((t) => t.key !== 'tech')
+  .filter((t) => t.key !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(t.key))
   .map((t) => (t.key === 'all' ? { ...t, label: '全部其他' } : t))
+
+function getTabForTopicType(topicType) {
+  if (topicType === 'tech') return 'tech'
+  if (BUSINESS_TOPIC_TYPE_KEYS.includes(topicType)) return 'business'
+  return 'other'
+}
 
 const PEOPLE_TYPE_DEFS = getPeopleTypeFilters()
 const PEOPLE_TYPE_KEYS = PEOPLE_TYPE_DEFS.map((t) => t.key)
@@ -199,12 +210,12 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [pvLoaded, setPvLoaded] = useState(false)
   function normalizeTabFromParams(params) {
     const fromUrl = params?.get('tab')
-    if (fromUrl === 'topics') return params?.get('topic_type') === 'tech' ? 'tech' : 'other'
+    if (fromUrl === 'topics') return getTabForTopicType(params?.get('topic_type'))
     if (TAB_KEYS.includes(fromUrl)) return fromUrl
     if (params?.get('resource_type') || params?.get('resource_group')) return 'resources'
     if (params?.get('company_type')) return 'companies'
     if (params?.get('tech_type')) return 'tech'
-    if (params?.get('topic_type')) return params.get('topic_type') === 'tech' ? 'tech' : 'other'
+    if (params?.get('topic_type')) return getTabForTopicType(params.get('topic_type'))
     if (params?.get('people_type')) return 'people'
     return 'all'
   }
@@ -324,7 +335,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     const params = new URLSearchParams()
     if (nextTab !== 'all') params.set('tab', nextTab)
     if (nextTab === 'companies' && nextCompanyType !== 'all') params.set('company_type', nextCompanyType)
-    if (nextTab === 'other' && nextTopicType !== 'all') params.set('topic_type', nextTopicType)
+    if ((nextTab === 'business' || nextTab === 'other') && nextTopicType !== 'all') params.set('topic_type', nextTopicType)
     if (nextTab === 'people' && nextPeopleType !== 'all') params.set('people_type', nextPeopleType)
     if (nextTab === 'tech' && nextTechType !== 'all') params.set('tech_type', nextTechType)
     if (nextTab === 'resources' && nextResourceType !== 'all') params.set('resource_type', nextResourceType)
@@ -338,13 +349,18 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectTab(next) {
     setTab(next)
     const nextCompanyType = next === 'companies' ? companyType : 'all'
-    const nextTopicType = next === 'other' ? topicType : 'all'
+    const nextTopicType =
+      next === 'business' && BUSINESS_TOPIC_TYPE_KEYS.includes(topicType)
+        ? topicType
+        : next === 'other' && topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(topicType)
+        ? topicType
+        : 'all'
     const nextPeopleType = next === 'people' ? peopleType : 'all'
     const nextTechType = next === 'tech' ? techType : 'all'
     const nextResourceType = next === 'resources' ? resourceType : 'all'
     const nextResourceGroup = next === 'resources' ? resourceGroup : 'all'
     if (next !== 'companies') setCompanyType('all')
-    if (next !== 'other') setTopicType('all')
+    setTopicType(nextTopicType)
     if (next !== 'people') setPeopleType('all')
     if (next !== 'tech') setTechType('all')
     if (next !== 'resources') {
@@ -375,10 +391,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     })
   }
 
-  function selectTopicType(next) {
-    setTab('other')
+  function selectTopicType(tabKey, next) {
+    setTab(tabKey)
     setTopicType(next)
-    const url = buildArticlesUrl('other', 'all', next, 'all', 'all', 'all', 'all', query)
+    const url = buildArticlesUrl(tabKey, 'all', next, 'all', 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -446,7 +462,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       if (typeof base[item.kind] === 'number') base[item.kind] += 1
       if (RESEARCH_KINDS.has(item.kind)) base.research += 1
       if (item.kind === 'topics' && item.topicType === 'tech') base.tech += 1
-      if (item.kind === 'topics' && item.topicType !== 'tech') base.other += 1
+      if (item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType)) base.business += 1
+      if (item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType)) base.other += 1
     }
     base.column = (base.posts || 0) + (base.works || 0)
     return base
@@ -471,8 +488,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       if (tab === 'companies' && companyType !== 'all') {
         parts.push(COMPANY_TYPE_DEFS.find((t) => t.key === companyType)?.label || companyType)
       }
-      if (tab === 'other' && topicType !== 'all') {
-        parts.push(OTHER_TOPIC_TYPE_DEFS.find((t) => t.key === topicType)?.label || topicType)
+      if ((tab === 'business' || tab === 'other') && topicType !== 'all') {
+        const defs = tab === 'business' ? BUSINESS_TOPIC_TYPE_DEFS : OTHER_TOPIC_TYPE_DEFS
+        parts.push(defs.find((t) => t.key === topicType)?.label || topicType)
       }
       if (tab === 'people' && peopleType !== 'all') {
         parts.push(PEOPLE_TYPE_DEFS.find((t) => t.key === peopleType)?.label || peopleType)
@@ -503,14 +521,16 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         ? items.filter((item) => RESEARCH_KINDS.has(item.kind))
         : tab === 'tech'
         ? items.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
+        : tab === 'business'
+        ? items.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
         : tab === 'other'
-        ? items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech')
+        ? items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
         : items.filter((item) => item.kind === tab)
     let typeFiltered = tabItems
     if (tab === 'companies' && companyType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.companyType === companyType)
     }
-    if (tab === 'other' && topicType !== 'all') {
+    if ((tab === 'business' || tab === 'other') && topicType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.topicType === topicType)
     }
     if (tab === 'people' && peopleType !== 'all') {
@@ -600,9 +620,21 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     return base
   }, [items])
 
-  const topicTypeCounts = useMemo(() => {
+  const businessTopicTypeCounts = useMemo(() => {
     const base = Object.fromEntries(TOPIC_TYPE_KEYS.map((k) => [k, 0]))
-    const topicItems = items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech')
+    const topicItems = items.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
+    base.all = topicItems.length
+    for (const item of topicItems) {
+      if (item.topicType && typeof base[item.topicType] === 'number') {
+        base[item.topicType] += 1
+      }
+    }
+    return base
+  }, [items])
+
+  const otherTopicTypeCounts = useMemo(() => {
+    const base = Object.fromEntries(TOPIC_TYPE_KEYS.map((k) => [k, 0]))
+    const topicItems = items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
     base.all = topicItems.length
     for (const item of topicItems) {
       if (item.topicType && typeof base[item.topicType] === 'number') {
@@ -756,9 +788,22 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                   <FilterChip
                     key={t.key}
                     label={t.label}
-                    count={topicTypeCounts[t.key] ?? 0}
+                    count={otherTopicTypeCounts[t.key] ?? 0}
                     active={topicType === t.key}
-                    onClick={() => selectTopicType(t.key)}
+                    onClick={() => selectTopicType('other', t.key)}
+                  />
+                ))}
+              </FilterRow>
+            ) : null}
+            {tab === 'business' ? (
+              <FilterRow label="商业分类" ariaLabel="商业内容分类" orientation={orientation}>
+                {BUSINESS_TOPIC_TYPE_DEFS.map((t) => (
+                  <FilterChip
+                    key={t.key}
+                    label={t.label}
+                    count={businessTopicTypeCounts[t.key] ?? 0}
+                    active={topicType === t.key}
+                    onClick={() => selectTopicType('business', t.key)}
                   />
                 ))}
               </FilterRow>

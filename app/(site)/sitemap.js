@@ -56,6 +56,7 @@ export default function sitemap() {
     '/cancers-overview',
     '/platform-framework-pairs',
     '/network-access-guide',
+    '/workbuddy-harness',
     '/ai-token-usage-research',
     '/skill-market-research',
     '/sun-moon-motion',

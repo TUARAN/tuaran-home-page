@@ -56,6 +56,15 @@ export default function UsersConsole() {
   const [savingId, setSavingId] = useState('')
   const [rowError, setRowError] = useState({ id: '', text: '' })
 
+  const [mcpGrants, setMcpGrants] = useState([])
+  const [mcpClients, setMcpClients] = useState([])
+  const [mcpStatus, setMcpStatus] = useState('idle')
+  const [mcpMessage, setMcpMessage] = useState('')
+  const [mcpQuery, setMcpQuery] = useState('')
+  const [mcpDraft, setMcpDraft] = useState({ userId: '', clientId: '' })
+  const [mcpSaving, setMcpSaving] = useState(false)
+  const [mcpDeleting, setMcpDeleting] = useState('')
+
   const [guests, setGuests] = useState([])
   const [guestStats, setGuestStats] = useState(null)
   const [guestStatus, setGuestStatus] = useState('idle')
@@ -89,6 +98,26 @@ export default function UsersConsole() {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  const refreshMcpGrants = useCallback(async () => {
+    setMcpStatus('loading')
+    setMcpMessage('')
+    try {
+      const res = await fetch('/api/admin/oauth-grants', { cache: 'no-store', credentials: 'same-origin' })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || data?.status !== 'ok') throw new Error(data?.error || `HTTP ${res.status}`)
+      setMcpGrants(Array.isArray(data.grants) ? data.grants : [])
+      setMcpClients(Array.isArray(data.clients) ? data.clients : [])
+      setMcpStatus('ok')
+    } catch (error) {
+      setMcpStatus('error')
+      setMcpMessage(String(error?.message || error))
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'mcp' && mcpStatus === 'idle') refreshMcpGrants()
+  }, [activeTab, mcpStatus, refreshMcpGrants])
 
   const refreshGuests = useCallback(async () => {
     setGuestStatus('loading')
@@ -165,6 +194,20 @@ export default function UsersConsole() {
     })
   }, [guests, guestFilter, guestQuery])
 
+  const usersById = useMemo(() => Object.fromEntries(users.map((user) => [user.id, user])), [users])
+
+  const filteredMcpGrants = useMemo(() => {
+    const q = mcpQuery.trim().toLowerCase()
+    if (!q) return mcpGrants
+    return mcpGrants.filter((grant) => {
+      const user = usersById[grant.user_id] || {}
+      return [grant.user_id, user.name, user.login, user.email, grant.client_id, grant.client_name, grant.scope]
+        .join(' ')
+        .toLowerCase()
+        .includes(q)
+    })
+  }, [mcpGrants, mcpQuery, usersById])
+
   function draftFor(user) {
     return drafts[user.id] || { role: user.role, note: user.note }
   }
@@ -204,6 +247,49 @@ export default function UsersConsole() {
       setRowError({ id: user.id, text: String(error?.message || error) })
     } finally {
       setSavingId('')
+    }
+  }
+
+  async function addMcpGrant(event) {
+    event.preventDefault()
+    if (!mcpDraft.userId || !mcpDraft.clientId) return
+    setMcpSaving(true)
+    setMcpMessage('')
+    try {
+      const res = await fetch('/api/admin/oauth-grants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(mcpDraft),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`)
+      setMcpGrants(Array.isArray(data.grants) ? data.grants : [])
+      setMcpDraft({ userId: '', clientId: '' })
+      setMcpMessage('授权已新增。客户端仍需通过标准 OAuth 流程取得 Token。')
+    } catch (error) {
+      setMcpMessage(`新增失败：${String(error?.message || error)}`)
+    } finally {
+      setMcpSaving(false)
+    }
+  }
+
+  async function deleteMcpGrant(grant) {
+    const key = `${grant.user_id}:${grant.client_id}`
+    if (!window.confirm(`确认撤销 ${grant.client_name || grant.client_id} 对该账号的 MCP 授权？现有 Token 将同时失效。`)) return
+    setMcpDeleting(key)
+    setMcpMessage('')
+    try {
+      const params = new URLSearchParams({ user_id: grant.user_id, client_id: grant.client_id })
+      const res = await fetch(`/api/admin/oauth-grants?${params}`, { method: 'DELETE', credentials: 'same-origin' })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`)
+      setMcpGrants(Array.isArray(data.grants) ? data.grants : [])
+      setMcpMessage('授权已撤销，相关 Access Token 和 Refresh Token 已失效。')
+    } catch (error) {
+      setMcpMessage(`撤销失败：${String(error?.message || error)}`)
+    } finally {
+      setMcpDeleting('')
     }
   }
 
@@ -514,13 +600,68 @@ export default function UsersConsole() {
     },
   ]
 
-  const refreshActive = activeTab === 'guests' ? refreshGuests : refresh
-  const activeLoading = activeTab === 'guests' ? guestStatus === 'loading' : status === 'loading'
+  const mcpColumns = [
+    {
+      key: 'user',
+      header: '账号',
+      width: '250px',
+      render: (grant) => {
+        const user = usersById[grant.user_id]
+        return (
+          <div className="min-w-0">
+            <p className="truncate font-medium text-[#17202a] dark:text-gray-100">{user?.name || user?.login || grant.user_id}</p>
+            <p className="truncate font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{user?.email || grant.user_id}</p>
+          </div>
+        )
+      },
+    },
+    {
+      key: 'client',
+      header: 'MCP 客户端',
+      width: '260px',
+      render: (grant) => (
+        <div className="min-w-0">
+          <p className="truncate text-sm text-[#3f4039] dark:text-gray-200">{grant.client_name || 'MCP Client'}</p>
+          <p className="truncate font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{grant.client_id}</p>
+        </div>
+      ),
+    },
+    { key: 'scope', header: '权限', width: '130px', render: (grant) => grant.scope, tdClassName: 'font-mono text-xs' },
+    { key: 'grantedAt', header: '授权时间', width: '150px', render: (grant) => formatTime(grant.granted_at), tdClassName: 'whitespace-nowrap text-xs' },
+    {
+      key: 'token',
+      header: 'Token 状态',
+      width: '140px',
+      render: (grant) => grant.access_expires_at && Number(grant.access_expires_at) > Date.now() ? 'Access Token 有效' : '无有效 Access Token',
+      tdClassName: 'whitespace-nowrap text-xs text-[#67695d] dark:text-gray-400',
+    },
+    {
+      key: 'action',
+      header: '操作',
+      width: '100px',
+      render: (grant) => {
+        const key = `${grant.user_id}:${grant.client_id}`
+        return (
+          <button
+            type="button"
+            onClick={() => deleteMcpGrant(grant)}
+            disabled={mcpDeleting === key}
+            className="rounded-md border border-rose-200 px-2.5 py-1 text-[11px] font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900/60 dark:text-rose-300 dark:hover:bg-rose-950/30"
+          >
+            {mcpDeleting === key ? '撤销中…' : '撤销授权'}
+          </button>
+        )
+      },
+    },
+  ]
+
+  const refreshActive = activeTab === 'guests' ? refreshGuests : activeTab === 'mcp' ? refreshMcpGrants : refresh
+  const activeLoading = activeTab === 'guests' ? guestStatus === 'loading' : activeTab === 'mcp' ? mcpStatus === 'loading' : status === 'loading'
 
   return (
     <AdminPage
       title="用户管理"
-      description="管理登录用户、角色与游客身份。燃币流水和调账统一跳转到燃币管理，登录后的游客身份只作为历史绑定记录保留。"
+      description="管理登录用户、角色、游客身份与 MCP 授权。燃币流水和调账统一跳转到燃币管理。"
       actions={
         <AdminButton onClick={refreshActive} disabled={activeLoading}>
           <IconRefresh size={16} aria-hidden="true" />
@@ -534,6 +675,9 @@ export default function UsersConsole() {
         </button>
         <button type="button" className={tabCls('guests')} onClick={() => setActiveTab('guests')}>
           游客管理
+        </button>
+        <button type="button" className={tabCls('mcp')} onClick={() => setActiveTab('mcp')}>
+          MCP 授权
         </button>
       </div>
 
@@ -624,7 +768,7 @@ export default function UsersConsole() {
             历史评论作者由迁移回填，OAuth 用户首次重新登录后信息会自动补全。
           </p>
         </>
-      ) : (
+      ) : activeTab === 'guests' ? (
         <>
           {guestStatus === 'unavailable' || guestStatus === 'error' ? (
             <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
@@ -781,6 +925,56 @@ export default function UsersConsole() {
               </section>
             </div>
           ) : null}
+        </>
+      ) : (
+        <>
+          {mcpStatus === 'error' || mcpMessage ? (
+            <div className={`mb-5 rounded-lg border px-3 py-2 text-sm ${mcpStatus === 'error' || mcpMessage.startsWith('新增失败') || mcpMessage.startsWith('撤销失败') ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200' : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200'}`}>
+              {mcpMessage || 'MCP 授权数据不可用。'}
+            </div>
+          ) : null}
+
+          <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            <StatCard label="有效授权" value={mcpGrants.length} />
+            <StatCard label="已授权账号" value={new Set(mcpGrants.map((grant) => grant.user_id)).size} icon="users" />
+            <StatCard label="已注册客户端" value={mcpClients.length} />
+          </div>
+
+          <Section title="新增 MCP 授权" description="选择站点账号和已注册的 MCP OAuth 客户端。这里只建立批准记录，不展示或签发明文 Token。">
+            <form onSubmit={addMcpGrant} className="flex flex-wrap items-end gap-3">
+              <label className="min-w-64 flex-1 text-xs text-[#67695d] dark:text-gray-400">
+                <span className="mb-1 block">账号</span>
+                <select value={mcpDraft.userId} onChange={(event) => setMcpDraft((prev) => ({ ...prev, userId: event.target.value }))} className={`${inputCls} h-9 w-full`} required>
+                  <option value="">选择账号</option>
+                  {users.map((user) => <option key={user.id} value={user.id}>{user.name || user.login || user.id} · {user.email || user.id}</option>)}
+                </select>
+              </label>
+              <label className="min-w-64 flex-1 text-xs text-[#67695d] dark:text-gray-400">
+                <span className="mb-1 block">MCP 客户端</span>
+                <select value={mcpDraft.clientId} onChange={(event) => setMcpDraft((prev) => ({ ...prev, clientId: event.target.value }))} className={`${inputCls} h-9 w-full`} required>
+                  <option value="">选择已注册客户端</option>
+                  {mcpClients.map((client) => <option key={client.client_id} value={client.client_id}>{client.client_name} · {client.client_id}</option>)}
+                </select>
+              </label>
+              <AdminButton type="submit" variant="primary" disabled={mcpSaving || !mcpDraft.userId || !mcpDraft.clientId}>
+                {mcpSaving ? '新增中…' : '新增授权'}
+              </AdminButton>
+            </form>
+          </Section>
+
+          <Section
+            title="已授权 MCP"
+            actions={<input value={mcpQuery} onChange={(event) => setMcpQuery(event.target.value)} type="search" placeholder="搜索账号 / 客户端 / 权限" className="w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-1.5 text-sm outline-none focus:border-[#15140f] dark:border-[#2d3744] dark:bg-[#0d1218] dark:text-gray-100 sm:w-72" />}
+            className="mt-5 overflow-hidden"
+          >
+            <DataTable
+              columns={mcpColumns}
+              rows={mcpStatus === 'loading' ? [] : filteredMcpGrants}
+              rowKey={(grant) => `${grant.user_id}:${grant.client_id}:${grant.resource}`}
+              tableClassName="min-w-[1030px] table-fixed"
+              empty={<EmptyState title={mcpStatus === 'loading' ? '加载中…' : mcpGrants.length ? '没有匹配的授权' : '暂无 MCP 授权'} description={mcpStatus === 'loading' ? undefined : '可从上方为账号新增授权。'} />}
+            />
+          </Section>
         </>
       )}
     </AdminPage>

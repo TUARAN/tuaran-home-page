@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-16",
+      "displayDate": "Jul 16",
+      "count": 5,
+      "highlights": [
+        "xAI 开源 Grok CLI 代码库中发现 Mer",
+        "远程操控Agent干活方案：Codex主力 + UU",
+        "开源编程智能体内存方案发布，通过 SSH 同步",
+        "xAI 开源 Grok Build 编程智能体与终端",
+        "Claude Code 新增 MCP 连接器调用功能"
+      ]
+    },
+    {
       "date": "2026-07-15",
       "displayDate": "Jul 15",
       "count": 5,
@@ -293,5 +305,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-15"
+  "latest": "2026-07-16"
 }

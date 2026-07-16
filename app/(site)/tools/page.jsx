@@ -121,21 +121,23 @@ export default function ToolsPage() {
             <h1 className="mb-3 font-serif text-[38px] font-bold leading-tight text-[#15130e] dark:text-white sm:text-[48px]">
               工具库
             </h1>
-            <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-              <strong>人与动物的本质区别是制造和使用工具</strong>
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <ArticleActionsDropdown label="更多">
-                <DistributeContentButton
-                  title="工具库"
-                  summary="涂阿燃维护的站内工具、浏览器插件、AI 工程实验、开发者工具链与可复用工作流入口。"
-                  url="/tools"
-                  category="tools"
-                  slug="index"
-                  tags={['工具库', 'AI 工具', '开发工具']}
-                  kindLabel="工具"
-                />
-              </ArticleActionsDropdown>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+              <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
+                <strong>人与动物的本质区别是制造和使用工具。</strong>
+              </p>
+              <div className="shrink-0">
+                <ArticleActionsDropdown label="更多">
+                  <DistributeContentButton
+                    title="工具库"
+                    summary="涂阿燃维护的站内工具、浏览器插件、AI 工程实验、开发者工具链与可复用工作流入口。"
+                    url="/tools"
+                    category="tools"
+                    slug="index"
+                    tags={['工具库', 'AI 工具', '开发工具']}
+                    kindLabel="工具"
+                  />
+                </ArticleActionsDropdown>
+              </div>
             </div>
           </div>
         </div>

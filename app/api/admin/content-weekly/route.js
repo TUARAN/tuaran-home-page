@@ -133,7 +133,7 @@ export async function GET(req) {
          FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3`,
       ).bind(periodStart, previousStart, now).first(),
       db.prepare(
-        `SELECT COUNT(*) AS returning FROM (
+        `SELECT COUNT(*) AS returning_count FROM (
            SELECT ${visitorKey} AS visitor_key
            FROM research_pv_hits
            WHERE created_at >= ?1 AND created_at <= ?2
@@ -238,7 +238,7 @@ export async function GET(req) {
 
     const pv = Number(overviewRow?.pv) || 0
     const uv = Number(overviewRow?.uv) || 0
-    const returning = Number(returningRow?.returning) || 0
+    const returning = Number(returningRow?.returning_count) || 0
     const mapSource = (row) => ({
       source: row.source || 'direct',
       medium: row.medium || 'none',

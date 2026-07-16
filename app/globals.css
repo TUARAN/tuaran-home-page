@@ -1169,6 +1169,21 @@
     @apply text-[14px] leading-5;
   }
 
+  .home-social-account-links {
+    @apply mt-0.5 flex items-center gap-1 font-mono text-[8px] leading-3;
+  }
+
+  .home-social-account-links a {
+    @apply rounded border px-1 py-0.5 no-underline transition;
+    border-color: var(--site-line);
+    color: var(--site-muted);
+  }
+
+  .home-social-account-links a:hover {
+    border-color: var(--site-line-strong);
+    color: var(--site-ink);
+  }
+
   .home-social-metrics {
     @apply pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-lg border px-2 py-1.5 font-mono text-[10px] leading-none opacity-0 shadow-lg transition;
     border-color: var(--site-line-strong);

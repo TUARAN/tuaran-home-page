@@ -37,24 +37,33 @@ export default function AccountClient() {
   const { loading, user } = useSessionAccount()
   const [identities, setIdentities] = useState([])
   const [guestIdentities, setGuestIdentities] = useState([])
+  const [oauthGrants, setOauthGrants] = useState([])
   const [platformId, setPlatformId] = useState('')
   const [identitiesLoaded, setIdentitiesLoaded] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [unlinking, setUnlinking] = useState('')
   const [actionError, setActionError] = useState('')
+  const [revokingClient, setRevokingClient] = useState('')
 
   useEffect(() => {
     if (!user?.id) return
     let cancelled = false
     setIdentitiesLoaded(false)
-    fetch('/api/account/identities', { cache: 'no-store' })
-      .then(async (response) => ({ response, data: await response.json().catch(() => null) }))
-      .then(({ response, data }) => {
+    Promise.all([
+      fetch('/api/account/identities', { cache: 'no-store' }),
+      fetch('/api/account/oauth-grants', { cache: 'no-store' }),
+    ]).then(async ([identityResponse, grantResponse]) => ({
+      identityResponse,
+      identityData: await identityResponse.json().catch(() => null),
+      grantData: grantResponse.ok ? await grantResponse.json().catch(() => null) : null,
+    }))
+      .then(({ identityResponse, identityData, grantData }) => {
         if (cancelled) return
-        if (!response.ok) throw new Error(data?.error || 'LOAD_FAILED')
-        setIdentities(Array.isArray(data?.identities) ? data.identities : [])
-        setGuestIdentities(Array.isArray(data?.guestIdentities) ? data.guestIdentities : [])
-        setPlatformId(data?.account?.platformId || user.id || '')
+        if (!identityResponse.ok) throw new Error(identityData?.error || 'LOAD_FAILED')
+        setIdentities(Array.isArray(identityData?.identities) ? identityData.identities : [])
+        setGuestIdentities(Array.isArray(identityData?.guestIdentities) ? identityData.guestIdentities : [])
+        setOauthGrants(Array.isArray(grantData?.grants) ? grantData.grants : [])
+        setPlatformId(identityData?.account?.platformId || user.id || '')
       })
       .catch(() => {
         if (!cancelled) setLoadError('暂时无法读取已绑定的登录方式，请稍后刷新。')
@@ -90,6 +99,22 @@ export default function AccountClient() {
       setActionError(String(error?.message || error))
     } finally {
       setUnlinking('')
+    }
+  }
+
+  async function revokeOAuthGrant(clientId) {
+    if (revokingClient) return
+    setActionError('')
+    setRevokingClient(clientId)
+    try {
+      const response = await fetch(`/api/account/oauth-grants?client_id=${encodeURIComponent(clientId)}`, { method: 'DELETE' })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(data?.error || '撤销失败，请稍后重试。')
+      setOauthGrants((current) => current.filter((grant) => grant.client_id !== clientId))
+    } catch (error) {
+      setActionError(String(error?.message || error))
+    } finally {
+      setRevokingClient('')
     }
   }
 
@@ -149,8 +174,23 @@ export default function AccountClient() {
       </div>
     </section>
 
+    <section className="grid gap-8 border-b border-[#d8dad0] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12 dark:border-[#344052]">
+      <SectionIntro index="03" eyebrow="AUTHORIZED APPS" title="智能体授权">
+        <p>管理已获得本站 MCP 权限的客户端。撤销后，Access Token 和 Refresh Token 会一起失效。</p>
+      </SectionIntro>
+      <div className="border-t border-[#d8dad0] dark:border-[#344052]">
+        {oauthGrants.length ? oauthGrants.map((grant) => <div key={`${grant.client_id}:${grant.resource}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[#d8dad0] py-4 dark:border-[#344052]">
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium text-[#35362f] dark:text-gray-100">{grant.client_name || 'MCP Client'}</span>
+            <span className="mt-1 block font-mono text-[11px] text-[#74766d] dark:text-[#9aa6b6]">{grant.scope}</span>
+          </span>
+          <button type="button" onClick={() => revokeOAuthGrant(grant.client_id)} disabled={Boolean(revokingClient)} className="text-xs text-[#a34f47] transition hover:text-[#7f332d] disabled:opacity-50">{revokingClient === grant.client_id ? '撤销中…' : '撤销访问'}</button>
+        </div>) : <p className="py-4 text-sm text-[#74766d] dark:text-[#9aa6b6]">暂无已授权的 MCP 客户端。</p>}
+      </div>
+    </section>
+
     <section className="grid gap-8 py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
-      <SectionIntro index="03" eyebrow="GUEST HISTORY" title="已关联的游客身份">
+      <SectionIntro index="04" eyebrow="GUEST HISTORY" title="已关联的游客身份">
         <p>登录前在这台浏览器产生的游客记录会归入本账号，并保留关联历史。</p>
       </SectionIntro>
       <div className="border-t border-[#d8dad0] dark:border-[#344052]">

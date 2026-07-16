@@ -69,6 +69,7 @@ for (const category of categories) {
     const time = data.time || ''
     const tags = parseTagList(data.tags)
     const hasAssessment = data.assessment === 'true' || data.has_assessment === 'true'
+    const encrypted = data.encrypted === 'true' || data.encrypted_source === 'true'
     entryMeta[key] = {
       category,
       slug,
@@ -78,6 +79,7 @@ for (const category of categories) {
       summary: data.tldr || data.summary || '',
       ...(tags.length ? { tags } : {}),
       ...(hasAssessment ? { hasAssessment: true } : {}),
+      ...(encrypted ? { encrypted: true } : {}),
     }
   }
 }

@@ -25,7 +25,7 @@ const CODEX_CONFIG = `[mcp_servers.tuaran-articles]\nurl = "${ENDPOINT}"`
 const SECURITY_ITEMS = [
   ['只读最小权限', '仅提供公开文章元数据查询；不暴露正文草稿、后台数据、用户信息和任何写操作。'],
   ['协议与输入校验', '校验 JSON-RPC、MCP 版本、Content-Type、请求体大小、工具名和参数范围。'],
-  ['访问边界', '校验浏览器 Origin，支持用 MCP_ARTICLES_API_KEY 环境变量开启 Bearer Token。'],
+  ['OAuth 授权', '使用本站账号登录和同意页，授权码通过 PKCE 换取绑定到文章 MCP audience 的短期 Token。'],
   ['滥用控制', '按 IP 做分钟与每日限流；线上建议再叠加 Cloudflare WAF Rate Limiting。'],
 ]
 
@@ -67,13 +67,13 @@ export default function McpCenterPage() {
               <p className="mb-1 font-mono text-xs text-[#8b5a1f] dark:text-[#a1ab76]">tuaran-articles</p>
               <h2 className="mb-2 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">涂阿燃文章 MCP</h2>
               <div className="flex flex-wrap gap-1.5">
-                <Pill>已上架</Pill><Pill>Streamable HTTP</Pill><Pill>公开只读</Pill><Pill>无需登录</Pill>
+                <Pill>已上架</Pill><Pill>Streamable HTTP</Pill><Pill>OAuth 2.1</Pill><Pill>公开只读</Pill>
               </div>
             </div>
             <McpConfigActions config={JSON_CONFIG} />
           </div>
           <p className="mb-0 mt-4 max-w-3xl text-sm leading-7 text-[#4c4c44] dark:text-gray-300">
-            查询本站公开文章、专题调研和资源。当前提供 <code>get_recent_articles</code> 与 <code>search_articles</code> 两个只读工具。
+            查询本站公开文章、专题调研和资源。首次连接会跳转到本站登录与授权页；确认后提供 <code>get_recent_articles</code> 与 <code>search_articles</code> 两个只读工具。
           </p>
         </header>
 
@@ -108,15 +108,15 @@ export default function McpCenterPage() {
           ))}
         </div>
         <p className="mb-0 mt-4 text-sm leading-7 text-[#4c4c44] dark:text-gray-300">
-          当前数据本来就是网站公开内容，因此适合无登录读取。若未来接入付费文章、私有知识库、评论发布或后台操作，应拆成独立服务，并启用 OAuth 2.1、用户级授权、操作确认和完整审计日志。
+          站点登录会话、OAuth 授权服务与 MCP Resource Server 分开运行：Cookie 只用于确认用户身份，MCP 只接受面向自身 audience、包含 <code>articles:read</code> scope 的短期 Access Token。若未来接入付费内容或写操作，将继续拆分独立 scope 和服务。
         </p>
       </section>
 
       <section className="mt-8 grid gap-4 md:grid-cols-3">
         {[
-          ['1', '添加服务', '复制配置，把远程端点加入支持 MCP 的客户端。'],
-          ['2', '客户端发现工具', '智能体通过 tools/list 看到最近文章查询与搜索工具。'],
-          ['3', '按需查询', '只有在用户提问时才调用，只返回公开元数据与原文链接。'],
+          ['1', '添加服务', '复制配置，客户端发现受保护资源和本站授权中心。'],
+          ['2', '登录并授权', '浏览器打开本站登录与同意页，通过 PKCE 建立用户委托。'],
+          ['3', '按需查询', '智能体携带短期 Token 调用，只返回授权范围内的公开元数据。'],
         ].map(([number, title, desc]) => (
           <article key={number} className="rounded-lg border border-[#d2d3c8] bg-white p-4 dark:border-[#283443] dark:bg-[#101820]">
             <span className="font-mono text-xs text-[#8b5a1f] dark:text-[#a1ab76]">STEP {number}</span>

@@ -1,7 +1,5 @@
 import Link from 'next/link'
 
-import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
-import DistributeContentButton from '../components/DistributeContentButton'
 import {
   TOOL_STATUS_META,
   TOOL_TYPE_META,
@@ -125,19 +123,6 @@ export default function ToolsPage() {
               <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
                 <strong>人与动物的本质区别是制造和使用工具。</strong>
               </p>
-              <div className="shrink-0">
-                <ArticleActionsDropdown label="更多">
-                  <DistributeContentButton
-                    title="工具库"
-                    summary="涂阿燃维护的站内工具、浏览器插件、AI 工程实验、开发者工具链与可复用工作流入口。"
-                    url="/tools"
-                    category="tools"
-                    slug="index"
-                    tags={['工具库', 'AI 工具', '开发工具']}
-                    kindLabel="工具"
-                  />
-                </ArticleActionsDropdown>
-              </div>
             </div>
           </div>
         </div>

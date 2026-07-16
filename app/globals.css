@@ -2858,7 +2858,8 @@
     @apply [&_.research-inline-diagram]:my-8 [&_.research-inline-diagram]:overflow-hidden;
     @apply [&_.research-inline-diagram]:rounded-md [&_.research-inline-diagram]:border [&_.research-inline-diagram]:border-[#dee0db] dark:[&_.research-inline-diagram]:border-gray-800;
     @apply [&_.research-inline-diagram]:bg-white dark:[&_.research-inline-diagram]:bg-gray-900;
-    @apply [&_.research-inline-diagram]:text-center;
+    @apply [&_.research-inline-diagram]:cursor-zoom-in [&_.research-inline-diagram]:text-center;
+    @apply [&_.research-inline-diagram]:outline-none [&_.research-inline-diagram:focus]:ring-2 [&_.research-inline-diagram:focus]:ring-[#8a5a14] dark:[&_.research-inline-diagram:focus]:ring-[#9ba475];
     @apply [&_.research-inline-diagram_svg]:mx-auto [&_.research-inline-diagram_svg]:block [&_.research-inline-diagram_svg]:h-auto [&_.research-inline-diagram_svg]:w-full [&_.research-inline-diagram_svg]:max-w-[780px];
     @apply [&_.research-inline-diagram_figcaption]:m-0 [&_.research-inline-diagram_figcaption]:border-t [&_.research-inline-diagram_figcaption]:border-[#dee0db] dark:[&_.research-inline-diagram_figcaption]:border-gray-800;
     @apply [&_.research-inline-diagram_figcaption]:px-3 [&_.research-inline-diagram_figcaption]:py-2 [&_.research-inline-diagram_figcaption]:text-[11px] [&_.research-inline-diagram_figcaption]:text-[#63655f] dark:[&_.research-inline-diagram_figcaption]:text-gray-400;
@@ -2878,6 +2879,20 @@
     @apply dark:[&_.research-inline-diagram_.mm-leaf]:fill-[#161513] dark:[&_.research-inline-diagram_.mm-leaf]:stroke-[#2c2d2b];
     @apply dark:[&_.research-inline-diagram_.mm-leaf_text]:fill-[#b4b6b1];
     @apply dark:[&_.research-inline-diagram_.mm-line]:stroke-[#41423f];
+  }
+
+  .research-media-viewer .research-inline-diagram {
+    margin: 0;
+    border: 0;
+    background: transparent;
+    cursor: default;
+  }
+
+  .research-media-viewer .research-inline-diagram svg {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: calc(100dvh - 10rem);
   }
 
   /* 宽表格在 H5 下横向滚动：用块级容器承载滚动，切断 table min-content 对父级宽度的传导 */

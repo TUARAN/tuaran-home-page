@@ -4,7 +4,7 @@ import { IconExternalLink, IconX } from '@tabler/icons-react'
 import { useEffect } from 'react'
 
 export default function ImageViewer({ image, onClose, title = '查看图片' }) {
-  const isOpen = Boolean(image?.src)
+  const isOpen = Boolean(image?.src || image?.svgMarkup)
 
   useEffect(() => {
     if (!isOpen || typeof window === 'undefined') return
@@ -67,14 +67,24 @@ export default function ImageViewer({ image, onClose, title = '查看图片' }) 
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 items-center justify-center bg-[#f4f3ed] p-3 dark:bg-[#0b1119] sm:p-5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={image.src}
-            alt={alt}
-            className="max-h-[calc(100dvh-10rem)] max-w-full rounded-md object-contain shadow-sm"
-            draggable={false}
-          />
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#f4f3ed] p-3 dark:bg-[#0b1119] sm:p-5">
+          {image.svgMarkup ? (
+            <div className="prose-tuaran research-media-viewer flex min-h-0 w-full items-center justify-center">
+              <figure
+                className="research-inline-diagram"
+                aria-label={alt}
+                dangerouslySetInnerHTML={{ __html: image.svgMarkup }}
+              />
+            </div>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={image.src}
+              alt={alt}
+              className="max-h-[calc(100dvh-10rem)] max-w-full rounded-md object-contain shadow-sm"
+              draggable={false}
+            />
+          )}
         </div>
 
         {image.alt ? (

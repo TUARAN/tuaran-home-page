@@ -34,6 +34,7 @@ export function GET() {
     `- [关于站长](${SITE_URL}/about): 站长介绍与履历`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,
     `- [AI 项目](${SITE_URL}/works): 在做的产品与实验`,
+    `- [MCP 中心](${SITE_URL}/mcp-center): 可供智能体连接的公开服务与配置说明`,
     `- [文章与分析](${SITE_URL}/articles): 原创文章、实践复盘与专题分析入口`,
     `- [内容说明](${SITE_URL}/editorial): 作者责任、工具使用与更正机制`,
     `- [RSS](${SITE_URL}/rss.xml): 订阅源`,

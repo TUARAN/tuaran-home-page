@@ -63,6 +63,7 @@
 - [X 互关清理助手](https://2aran.com/resources/x-mutual-cleaner-extension) — 一键取消没有回关你的人（浏览器扩展）
 - [端侧大模型实验台](https://2aran.com/web-llm) — WebGPU 在浏览器里跑大模型，不上传任何数据
 - [Skill 中心](https://2aran.com/skill-center) — 模型与智能体能力货架
+- [MCP 中心](https://2aran.com/mcp-center) — 面向智能体的服务货架，文章 MCP 可查询最近更新与相关内容
 - [Agent 世界杯](https://2aran.com/agent-world-cup) — 2026 世界杯赛程 / 分组 / 资讯，自动采集
 - [站内转短](https://2aran.com/works#site-tools) — 短链与分享系统
 - [吃什么](https://2aran.com/eatwhat) — 今天点什么的小工具

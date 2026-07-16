@@ -10,6 +10,27 @@ export const metadata = {
 
 const changelog = [
   {
+    version: 'v2026.32',
+    week: '2026-W29',
+    range: '2026-07-16（当前分支）',
+    commits: 0,
+    title: 'MCP 中心与文章查询服务上线',
+    summary:
+      '新增面向智能体的 MCP 服务货架，并把公开文章、专题调研和资源索引封装为无状态 Streamable HTTP 服务。用户把远程端点加入支持 MCP 的客户端后，可以直接查询最近更新或按主题搜索；服务端同步收紧公开数据边界、Origin、限流、可选密钥与请求校验。',
+    planned: [
+      '部署后用实际使用的智能体客户端完成一次远程连接回归，并记录不同客户端的配置差异。',
+      '在 Cloudflare WAF 为文章 MCP 增加边缘限流规则，观察 4xx、429 与工具调用分布。',
+      '后续若接入付费内容或写操作，拆分独立 MCP，并升级为 OAuth 2.1 用户级授权与审计。',
+    ],
+    done: [
+      '新增 /mcp-center，提供文章 MCP 说明、通用 mcpServers JSON、Codex config.toml 与一键复制。',
+      '新增 /api/mcp/articles，支持 initialize、ping、tools/list、tools/call 和无状态 Streamable HTTP。',
+      '提供 get_recent_articles 与 search_articles 两个只读工具，返回标题、摘要、标签、日期和公开原文链接。',
+      '加入请求体上限、JSON-RPC 与协议版本校验、Origin 白名单、可选 Bearer Token、D1 IP 限流和安全响应头。',
+      '调研轻量目录补齐 encrypted 标记，统一内容管线明确排除加密调研，避免其元数据进入公开检索。',
+    ],
+  },
+  {
     version: 'v2026.31',
     week: '2026-W28',
     range: '2026-07-10 至 2026-07-12',

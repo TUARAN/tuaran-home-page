@@ -51,6 +51,7 @@ export default function sitemap() {
     '/tools/multi-ip',
     '/browser-extensions',
     '/skill-center',
+    '/mcp-center',
     '/context-memory',
     '/cancers-overview',
     '/platform-framework-pairs',

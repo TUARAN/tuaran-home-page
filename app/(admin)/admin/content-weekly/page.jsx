@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '阅读分析',
-  description: '自建阅读统计：调研 / 资料 / 灵感被读 / 被赞 top、周趋势、月统计与评论跟进,仅站长本人可访问。',
+  description: '多维阅读分析：今日排行、读者与游客、来源归因、内容表现及 7/30/90 天趋势，仅站长本人可访问。',
   robots: {
     index: false,
     follow: false,
@@ -19,7 +19,7 @@ export default async function AdminContentWeeklyPage() {
     <AdminPageGate
       label="阅读分析"
       returnTo="/admin/content-weekly"
-      description="自建阅读统计：调研 / 资料 / 灵感被读 / 被赞 top、周趋势、月统计与评论跟进,仅站长本人可见。"
+      description="按今日、7 天、30 天和 90 天查看内容、读者与来源，仅站长本人可见。"
     >
       <ContentWeeklyClient />
     </AdminPageGate>

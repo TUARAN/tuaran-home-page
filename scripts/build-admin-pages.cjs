@@ -9,6 +9,7 @@ const appRoot = path.join(root, 'app')
 const siteRoot = path.join(appRoot, '(site)')
 const apiRoot = path.join(appRoot, 'api')
 const webLlmRoot = path.join(appRoot, '(web-llm)')
+const wellKnownRoot = path.join(appRoot, '.well-known')
 const stashRoot = path.join(root, '.admin-pages-build-excluded')
 
 // Admin pages import shared UI from app/(site)/components. Everything else in
@@ -79,6 +80,15 @@ function restoreMovedPaths() {
     fs.renameSync(stashedWebLlm, webLlmRoot)
   }
 
+  const stashedWellKnown = path.join(stashRoot, 'well-known')
+  if (fs.existsSync(stashedWellKnown)) {
+    if (fs.existsSync(wellKnownRoot)) {
+      throw new Error(`Cannot restore Admin build exclusion because the target already exists: ${wellKnownRoot}`)
+    }
+    mkdirFor(wellKnownRoot)
+    fs.renameSync(stashedWellKnown, wellKnownRoot)
+  }
+
   try {
     fs.rmSync(stashRoot, { recursive: true, force: true })
   } catch {
@@ -127,6 +137,7 @@ function excludePublicPaths() {
   }
 
   moveEntry(webLlmRoot, path.join(stashRoot, 'web-llm'), 'app/(web-llm)')
+  moveEntry(wellKnownRoot, path.join(stashRoot, 'well-known'), 'app/.well-known')
 }
 
 function cleanBuildOutputs() {

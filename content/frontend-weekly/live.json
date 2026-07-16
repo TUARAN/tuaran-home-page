@@ -1,6 +1,14 @@
 {
-  "updatedAt": "2026-07-16T06:54:23.209Z",
+  "updatedAt": "2026-07-16T07:44:36.803Z",
   "items": [
+    {
+      "topic": "技巧",
+      "title": "Patter SDK 教程：构建餐厅预订电话智能体，支持动态变量、护栏、延迟仪表盘与评估检查",
+      "summary": "Patter SDK 发布教程，演示如何构建一个餐厅预订场景的语音智能体工作流。该流程支持动态调用变量、注册可调用工具、应用输出护栏（如PII脱敏、脏话过滤、话题范围限制），并可在无需实时电话凭证的情况下运行脚本化通话模拟。教程还涵盖延迟与成本指标追踪、回归式评估检查，以及将智能体逻辑、工具调用、安全检查和通话模拟整合为单一结构化管线。",
+      "source": "MarkTechPost（RSS）",
+      "href": "https://www.marktechpost.com/2026/07/16/patter-sdk-guide-to-building-a-restaurant-booking-phone-agent-with-dynamic-variables-guardrails-latency-dashboards-and-eval-checks",
+      "publishedAt": "2026-07-16T07:42:49.000Z"
+    },
     {
       "topic": "技巧",
       "title": "千问APP联合武汉发布举办AI求职实战课，演示简历诊断与办公自动化",

@@ -2,8 +2,10 @@
  * Skill 中心数据源 —— 主页 /skill-center 和详情页 /skill-center/[skillId] 共享
  */
 import { RENWEI_WRITING_SKILL } from './renweiWritingSkill'
+import { DREAM_SKIN_REINSTALL_SKILL } from './dreamSkinReinstallSkill'
 
 export const PUBLISHED_SKILLS = [
+  DREAM_SKIN_REINSTALL_SKILL,
   {
     id: 'ruanyifeng-weekly-style',
     name: 'ruanyifeng-weekly-style',

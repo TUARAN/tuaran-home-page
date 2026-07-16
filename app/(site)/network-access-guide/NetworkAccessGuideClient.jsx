@@ -288,11 +288,11 @@ export default function NetworkAccessGuideClient() {
         </section>
 
         <section className="grid gap-5 border-t border-[#ced6ce] py-8 dark:border-white/10 md:py-12 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="rounded-3xl bg-[#143f37] p-6 text-white md:p-8 dark:bg-[#71cdbc] dark:text-[#07130f]">
+          <div className="rounded-3xl bg-[#143f37] p-6 text-[#f7fbf9] md:p-8">
             <IconBolt size={24} aria-hidden="true" />
-            <p className="m-0 mt-12 font-mono text-[10px] font-bold uppercase tracking-[0.22em] opacity-70">Bottom line</p>
+            <p className="m-0 mt-12 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[#b8d5ce]">Bottom line</p>
             <h2 className="m-0 mt-3 text-3xl font-black leading-tight tracking-tight">没有“闭眼买”，只有不同程度的继续核验。</h2>
-            <p className="m-0 mt-5 text-sm leading-7 opacity-80">
+            <p className="m-0 mt-5 text-sm leading-7 text-[#d3e3df]">
               当前最明确的动作是：红海 Pro 暂缓；平行网先索要资料；脉动云、火烧云、鱼云如需尝试，只做小额月付，并在你的网络环境里实测。
             </p>
           </div>

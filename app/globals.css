@@ -1169,12 +1169,34 @@
     @apply text-[14px] leading-5;
   }
 
+  .home-social-account-picker {
+    @apply invisible pointer-events-none absolute left-0 z-30 min-w-[150px] rounded-lg border p-2 opacity-0 shadow-xl transition;
+    top: calc(100% - 1px);
+    border-color: var(--site-line-strong);
+    background: color-mix(in srgb, var(--site-panel-strong) 96%, transparent);
+    color: var(--site-muted);
+  }
+
+  .home-social-card:hover .home-social-account-picker,
+  .home-social-card:focus-within .home-social-account-picker {
+    @apply visible pointer-events-auto opacity-100;
+  }
+
+  .home-social-account-summary {
+    @apply mb-1.5 flex items-center gap-2 border-b pb-1.5 font-mono text-[9px] leading-none;
+    border-color: var(--site-line);
+  }
+
+  .home-social-account-summary span {
+    @apply inline-flex items-center gap-0.5 whitespace-nowrap;
+  }
+
   .home-social-account-links {
-    @apply mt-0.5 flex items-center gap-1 font-mono text-[8px] leading-3;
+    @apply grid gap-1 font-mono text-[9px] leading-4;
   }
 
   .home-social-account-links a {
-    @apply rounded border px-1 py-0.5 no-underline transition;
+    @apply truncate rounded border px-1.5 py-1 no-underline transition;
     border-color: var(--site-line);
     color: var(--site-muted);
   }

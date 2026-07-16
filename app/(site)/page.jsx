@@ -464,24 +464,8 @@ function SocialMediaCard({ item }) {
       <span className="home-social-main">
         {item.priority ? <small>TOP {item.rank}</small> : null}
         <strong><T zh={item.label} en={item.labelEn} /></strong>
-        {item.accounts ? (
-          <span className="home-social-account-links">
-            {item.accounts.map((account, index) => (
-              <a
-                key={account.href}
-                href={account.href}
-                target="_blank"
-                rel="noreferrer"
-                className="no-external-arrow"
-                aria-label={`打开 CSDN 账号 ${account.label}`}
-              >
-                账号 {index + 1}
-              </a>
-            ))}
-          </span>
-        ) : null}
       </span>
-      {showFollowers || showReads ? (
+      {!item.accounts && (showFollowers || showReads) ? (
         <span className="home-social-metrics" aria-hidden="true">
           {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
           {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
@@ -492,8 +476,27 @@ function SocialMediaCard({ item }) {
 
   if (item.accounts) {
     return (
-      <div className="home-social-card" aria-label={ariaLabel}>
+      <div className="home-social-card" aria-label={ariaLabel} tabIndex={0}>
         {content}
+        <div className="home-social-account-picker">
+          <div className="home-social-account-summary" aria-hidden="true">
+            {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
+            {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
+          </div>
+          <div className="home-social-account-links">
+            {item.accounts.map((account) => (
+              <a
+                key={account.href}
+                href={account.href}
+                target="_blank"
+                rel="noreferrer"
+                className="no-external-arrow"
+              >
+                {account.label}
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }

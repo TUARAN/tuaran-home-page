@@ -41,7 +41,7 @@ Articles MCP Resource Server
 
 - `authorization_code` / `refresh_token`
 - `token_endpoint_auth_method=none`
-- HTTPS redirect URI，或 HTTP localhost loopback URI
+- HTTPS redirect URI、HTTP localhost loopback URI，或 WorkBuddy 固定格式的 `workbuddy://workbuddy/mcp/<config-id>/oauth/callback`
 - 最多 5 个 redirect URI
 - 每 IP 每小时 20 次注册
 

@@ -12,6 +12,8 @@ import {
 } from '../../../lib/homeRecommendationEngine'
 import { T } from './LocaleProvider'
 
+const DAILY_BATCH_STORAGE_KEY = 'tuaran:home-recommendation-batch'
+
 const SECTION_BADGE_CLASS = {
   column: 'home-badge home-badge-column',
   research: 'home-badge home-badge-research',
@@ -19,6 +21,30 @@ const SECTION_BADGE_CLASS = {
   feed: 'home-badge home-badge-feed',
 }
 
+function getLocalDayKey(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function readStoredBatchState() {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(DAILY_BATCH_STORAGE_KEY) || 'null')
+    if (!value || typeof value.day !== 'string' || !Number.isSafeInteger(value.offset) || value.offset < 0) return null
+    return value
+  } catch {
+    return null
+  }
+}
+
+function storeBatchState(day, offset) {
+  try {
+    window.localStorage.setItem(DAILY_BATCH_STORAGE_KEY, JSON.stringify({ day, offset }))
+  } catch {
+    // Storage can be unavailable in private/restricted browser contexts.
+  }
+}
 
 function FeaturedLink({ item }) {
   const content = (
@@ -42,17 +68,19 @@ function FeaturedLink({ item }) {
 export default function HomeFeaturedReadingClient({ catalog }) {
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
   const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
-  const [manualBatchOffset, setManualBatchOffset] = useState(0)
-  const [previousIds, setPreviousIds] = useState([])
+  const [batchOffset, setBatchOffset] = useState(0)
+  const [batchStateReady, setBatchStateReady] = useState(false)
   const [changing, setChanging] = useState(false)
-  const batchNumber = automaticBatchNumber + manualBatchOffset
-  const automaticPreviousIds = useMemo(() => {
-    if (!automaticBatchNumber || manualBatchOffset) return previousIds
-    return chooseHomeRecommendationBatch(catalog, settings, automaticBatchNumber - 1, []).map((item) => item.id)
-  }, [automaticBatchNumber, catalog, manualBatchOffset, previousIds, settings])
+  const batchNumber = automaticBatchNumber + batchOffset
+  const previousIds = useMemo(
+    () => batchNumber > 0
+      ? chooseHomeRecommendationBatch(catalog, settings, batchNumber - 1, []).map((item) => item.id)
+      : [],
+    [batchNumber, catalog, settings],
+  )
   const items = useMemo(
-    () => chooseHomeRecommendationBatch(catalog, settings, batchNumber, automaticPreviousIds),
-    [automaticPreviousIds, batchNumber, catalog, settings],
+    () => chooseHomeRecommendationBatch(catalog, settings, batchNumber, previousIds),
+    [batchNumber, catalog, previousIds, settings],
   )
 
   useEffect(() => {
@@ -69,8 +97,6 @@ export default function HomeFeaturedReadingClient({ catalog }) {
     const intervalMs = settings.autoRotateHours * 60 * 60 * 1000
     const syncAutomaticBatch = () => {
       setAutomaticBatchNumber(getHomeRecommendationBatchNumber(settings.autoRotateHours))
-      setManualBatchOffset(0)
-      setPreviousIds([])
       const remaining = intervalMs - (Date.now() % intervalMs)
       timer = window.setTimeout(syncAutomaticBatch, remaining + 100)
     }
@@ -78,12 +104,27 @@ export default function HomeFeaturedReadingClient({ catalog }) {
     return () => window.clearTimeout(timer)
   }, [settings.autoRotateHours])
 
+  useEffect(() => {
+    const today = getLocalDayKey()
+    const stored = readStoredBatchState()
+    const nextOffset = stored
+      ? stored.offset + (stored.day === today ? 0 : 1)
+      : 0
+    setBatchOffset(nextOffset)
+    storeBatchState(today, nextOffset)
+    setBatchStateReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (!batchStateReady) return
+    storeBatchState(getLocalDayKey(), batchOffset)
+  }, [batchOffset, batchStateReady])
+
   const changeBatch = useCallback(() => {
     setChanging(true)
-    setPreviousIds(items.map((item) => item.id))
-    setManualBatchOffset((value) => value + 1)
+    setBatchOffset((value) => value + 1)
     window.setTimeout(() => setChanging(false), 260)
-  }, [items])
+  }, [])
 
   if (!settings.enabled || !items.length) return null
   const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled !== false).length

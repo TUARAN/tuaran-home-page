@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import ImageViewer from '../../../../components/ImageViewer'
+import ZoomableResearchMedia from '../../../../components/ZoomableResearchMedia'
 
 const QUERY_KEY = 'v'
 const VARIANT_EVENT = 'research:variant'
@@ -67,7 +67,6 @@ function pickChineseVoice(voices) {
 export default function ResearchBody({ variants }) {
   const list = Array.isArray(variants) && variants.length > 0 ? variants : []
   const [activeId, setActiveId] = useState(list[0]?.id)
-  const [lightboxImage, setLightboxImage] = useState(null)
   const [speechSupported, setSpeechSupported] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const active = list.find((v) => v.id === activeId) || list[0]
@@ -170,33 +169,10 @@ export default function ResearchBody({ variants }) {
 
   useEffect(() => {
     stopSpeech()
-    setLightboxImage(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id])
 
   if (!active) return null
-
-  function openImageFromElement(image) {
-    if (!image?.src) return
-    setLightboxImage({
-      src: image.currentSrc || image.src,
-      alt: image.getAttribute('alt') || '',
-    })
-  }
-
-  function handleArticleClick(event) {
-    const image = event.target?.closest?.('img[data-research-lightbox="true"]')
-    if (!image) return
-    openImageFromElement(image)
-  }
-
-  function handleArticleKeyDown(event) {
-    if (event.key !== 'Enter' && event.key !== ' ') return
-    const image = event.target?.closest?.('img[data-research-lightbox="true"]')
-    if (!image) return
-    event.preventDefault()
-    openImageFromElement(image)
-  }
 
   return (
     <>
@@ -271,17 +247,9 @@ export default function ResearchBody({ variants }) {
         ) : null}
 
         <div className="flex-1 min-w-0">
-          <article
-            key={active.id}
-            className="prose-tuaran"
-            onClick={handleArticleClick}
-            onKeyDown={handleArticleKeyDown}
-            dangerouslySetInnerHTML={{ __html: active.html }}
-          />
+          <ZoomableResearchMedia contentKey={active.id} html={active.html} />
         </div>
       </div>
-
-      <ImageViewer image={lightboxImage} onClose={() => setLightboxImage(null)} />
     </>
   )
 }

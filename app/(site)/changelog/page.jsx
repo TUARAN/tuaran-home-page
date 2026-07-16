@@ -14,9 +14,9 @@ const changelog = [
     week: '2026-W29',
     range: '2026-07-16（当前分支）',
     commits: 0,
-    title: 'MCP 中心与文章查询服务上线',
+    title: 'MCP 中心、文章查询服务与 OAuth 授权链路上线',
     summary:
-      '新增面向智能体的 MCP 服务货架，并把公开文章、专题调研和资源索引封装为无状态 Streamable HTTP 服务。用户把远程端点加入支持 MCP 的客户端后，可以直接查询最近更新或按主题搜索；服务端同步收紧公开数据边界、Origin、限流、可选密钥与请求校验。',
+      '新增面向智能体的 MCP 服务货架，并把公开文章、专题调研和资源索引封装为无状态 Streamable HTTP 服务。连接过程复用本站账号登录，但站点 Session、OAuth 授权中心与 MCP Resource Server 保持解耦；用户确认授权后，智能体使用绑定 audience 与 scope 的短期 Token 查询最近更新或按主题搜索。',
     planned: [
       '部署后用实际使用的智能体客户端完成一次远程连接回归，并记录不同客户端的配置差异。',
       '在 Cloudflare WAF 为文章 MCP 增加边缘限流规则，观察 4xx、429 与工具调用分布。',
@@ -28,6 +28,8 @@ const changelog = [
       '提供 get_recent_articles 与 search_articles 两个只读工具，返回标题、摘要、标签、日期和公开原文链接。',
       '加入请求体上限、JSON-RPC 与协议版本校验、Origin 白名单、可选 Bearer Token、D1 IP 限流和安全响应头。',
       '调研轻量目录补齐 encrypted 标记，统一内容管线明确排除加密调研，避免其元数据进入公开检索。',
+      '新增 OAuth Protected Resource / Authorization Server Metadata、动态客户端注册、PKCE 授权码、Token 刷新轮换与撤销端点。',
+      '新增站内授权确认页：未登录先进入既有账号体系，登录后返回授权事务；站点 Cookie 不作为 MCP Token 使用。',
     ],
   },
   {

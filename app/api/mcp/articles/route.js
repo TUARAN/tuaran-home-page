@@ -8,6 +8,12 @@ import { cleanupRateLimits, enforceRateLimits, getClientIp } from '../../../../l
 import { listContentIndex } from '../../../../lib/contentIndex'
 import { listAllContent } from '../../../../lib/contentPipeline'
 import { getD1 } from '../../../../lib/d1'
+import {
+  MCP_ARTICLES_SCOPE,
+  oauthBaseUrl,
+  protectedResourceMetadataUrl,
+  validateMcpAccessToken,
+} from '../../../../lib/oauthServer'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -58,27 +64,22 @@ function validateOrigin(req) {
   return { origin, ok: !origin || ALLOWED_ORIGINS.has(origin) }
 }
 
-async function sameSecret(left, right) {
-  const encoder = new TextEncoder()
-  const [a, b] = await Promise.all([
-    crypto.subtle.digest('SHA-256', encoder.encode(left)),
-    crypto.subtle.digest('SHA-256', encoder.encode(right)),
-  ])
-  const aa = new Uint8Array(a)
-  const bb = new Uint8Array(b)
-  let diff = aa.length ^ bb.length
-  for (let index = 0; index < Math.max(aa.length, bb.length); index += 1) {
-    diff |= (aa[index] || 0) ^ (bb[index] || 0)
+function authorizationChallenge(req, auth, origin) {
+  const metadata = protectedResourceMetadataUrl(oauthBaseUrl(req))
+  if (auth.status === 503) {
+    return responseJson(jsonRpcError(null, -32003, 'Authorization service unavailable'), { status: 503, origin })
   }
-  return diff === 0
-}
-
-async function isAuthorized(req) {
-  const requiredKey = String(process.env.MCP_ARTICLES_API_KEY || '').trim()
-  if (!requiredKey) return true
-  const authorization = req.headers.get('authorization') || ''
-  const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
-  return supplied ? sameSecret(supplied, requiredKey) : false
+  const insufficient = auth.status === 403
+  const value = insufficient
+    ? `Bearer error="insufficient_scope", scope="${MCP_ARTICLES_SCOPE}", resource_metadata="${metadata}"`
+    : auth.error === 'missing_token'
+      ? `Bearer scope="${MCP_ARTICLES_SCOPE}", resource_metadata="${metadata}"`
+      : `Bearer error="invalid_token", scope="${MCP_ARTICLES_SCOPE}", resource_metadata="${metadata}"`
+  return responseJson(jsonRpcError(null, -32001, insufficient ? 'Insufficient scope' : 'Unauthorized'), {
+    status: auth.status,
+    origin,
+    headers: { 'WWW-Authenticate': value },
+  })
 }
 
 async function enforceMcpRateLimit(req) {
@@ -134,13 +135,8 @@ export async function OPTIONS(req) {
 export async function GET(req) {
   const { origin, ok } = validateOrigin(req)
   if (!ok) return responseJson(jsonRpcError(null, -32000, 'Origin not allowed'), { status: 403 })
-  if (!(await isAuthorized(req))) {
-    return responseJson(jsonRpcError(null, -32001, 'Unauthorized'), {
-      status: 401,
-      origin,
-      headers: { 'WWW-Authenticate': 'Bearer realm="tuaran-articles-mcp"' },
-    })
-  }
+  const auth = await validateMcpAccessToken(req)
+  if (!auth.ok) return authorizationChallenge(req, auth, origin)
   return responseJson(jsonRpcError(null, -32000, 'This stateless server does not provide an SSE stream'), {
     status: 405,
     origin,
@@ -154,7 +150,7 @@ export async function POST(req) {
     return responseJson(jsonRpcError(null, -32000, 'Origin not allowed'), { status: 403 })
   }
 
-  // 鉴权失败也计入限流，避免 Bearer Token 被无限暴力猜测。
+  // 鉴权失败也计入限流，避免 Access Token 被无限暴力猜测。
   const limit = await enforceMcpRateLimit(req)
   if (!limit.ok) {
     return responseJson(jsonRpcError(null, -32002, 'Rate limit exceeded', { retryAfter: limit.retryAfter }), {
@@ -163,13 +159,8 @@ export async function POST(req) {
       headers: { 'Retry-After': String(limit.retryAfter || 60) },
     })
   }
-  if (!(await isAuthorized(req))) {
-    return responseJson(jsonRpcError(null, -32001, 'Unauthorized'), {
-      status: 401,
-      origin,
-      headers: { 'WWW-Authenticate': 'Bearer realm="tuaran-articles-mcp"' },
-    })
-  }
+  const auth = await validateMcpAccessToken(req)
+  if (!auth.ok) return authorizationChallenge(req, auth, origin)
 
   const contentType = req.headers.get('content-type') || ''
   if (!contentType.toLowerCase().includes('application/json')) {

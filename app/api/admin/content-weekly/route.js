@@ -6,35 +6,14 @@ import { CONTENT_TYPE_GROUP } from '../../../../lib/contentRegistry'
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-/**
- * 自建数据中心(看板按需计算,无定时、无存储)。
- * 口径:最近 7 天 + 当前自然月被读(research_pv_hits，含调研/资料/灵感)/被赞(article_likes)的 top,
- *      分别与前 7 天 / 上一自然月同口径对比出趋势。两张表 created_at 均为毫秒。
- */
-
 const DAY_MS = 24 * 60 * 60 * 1000
-const WEEK_MS = 7 * DAY_MS
 const SHANGHAI_TZ_OFFSET_MS = 8 * 60 * 60 * 1000
+const ALLOWED_DAYS = new Set([1, 7, 30, 90])
 const LIMIT = 12
 
-function getShanghaiMonthWindow(now) {
+function shanghaiDayStart(now) {
   const local = new Date(now + SHANGHAI_TZ_OFFSET_MS)
-  const year = local.getUTCFullYear()
-  const month = local.getUTCMonth()
-  const thisMonthStart = Date.UTC(year, month, 1) - SHANGHAI_TZ_OFFSET_MS
-  const prevMonthStart = Date.UTC(year, month - 1, 1) - SHANGHAI_TZ_OFFSET_MS
-  const monthLabel = `${year}-${String(month + 1).padStart(2, '0')}`
-  return { thisMonthStart, prevMonthStart, monthLabel, timezone: 'Asia/Shanghai' }
-}
-
-function getShanghaiDayWindow(now) {
-  const local = new Date(now + SHANGHAI_TZ_OFFSET_MS)
-  const year = local.getUTCFullYear()
-  const month = local.getUTCMonth()
-  const date = local.getUTCDate()
-  const todayStart = Date.UTC(year, month, date) - SHANGHAI_TZ_OFFSET_MS
-  const sevenDayStart = todayStart - 6 * DAY_MS
-  return { todayStart, sevenDayStart, timezone: 'Asia/Shanghai' }
+  return Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - SHANGHAI_TZ_OFFSET_MS
 }
 
 function formatShanghaiDay(dayStart) {
@@ -42,454 +21,296 @@ function formatShanghaiDay(dayStart) {
   const year = local.getUTCFullYear()
   const month = String(local.getUTCMonth() + 1).padStart(2, '0')
   const date = String(local.getUTCDate()).padStart(2, '0')
-  return {
-    date: `${year}-${month}-${date}`,
-    label: `${month}/${date}`,
-  }
+  return { date: `${year}-${month}-${date}`, label: `${month}/${date}` }
 }
 
-function buildDailyReads(rows, sevenDayStart) {
-  const byDay = new Map(rows.map((row) => [Number(row.day_key), Number(row.pv) || 0]))
-  return Array.from({ length: 7 }, (_, index) => {
-    const dayStart = sevenDayStart + index * DAY_MS
+function buildSeries(rows, start, days) {
+  const values = new Map(rows.map((row) => [Number(row.day_key), Number(row.pv) || 0]))
+  return Array.from({ length: days }, (_, index) => {
+    const dayStart = start + index * DAY_MS
     const dayKey = Math.floor((dayStart + SHANGHAI_TZ_OFFSET_MS) / DAY_MS)
-    const labels = formatShanghaiDay(dayStart)
+    return { ...formatShanghaiDay(dayStart), dayStart, pv: values.get(dayKey) || 0 }
+  })
+}
+
+function visitorKeySql() {
+  return `CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END`
+}
+
+function typeRows(rows) {
+  const grouped = new Map()
+  for (const row of rows) {
+    const type = CONTENT_TYPE_GROUP[row.category] || '其它'
+    const current = grouped.get(type) || { type, pv: 0, previousPv: 0 }
+    current.pv += Number(row.pv) || 0
+    current.previousPv += Number(row.previous_pv) || 0
+    grouped.set(type, current)
+  }
+  return [...grouped.values()]
+    .map((row) => ({ ...row, delta: row.pv - row.previousPv }))
+    .sort((a, b) => b.pv - a.pv)
+}
+
+function resolveReadRows(rows) {
+  return rows.map((row) => {
+    const resolved = resolveContentKey(row.category, row.slug)
+    const pv = Number(row.pv) || 0
+    const previousPv = Number(row.previous_pv) || 0
     return {
-      ...labels,
-      dayStart,
-      pv: byDay.get(dayKey) || 0,
+      key: `${row.category}/${row.slug}`,
+      title: resolved.title,
+      href: resolved.href,
+      type: resolved.type,
+      pv,
+      previousPv,
+      uv: Number(row.uv) || 0,
+      delta: pv - previousPv,
     }
   })
 }
 
-async function firstOrNull(db, sql, binds = []) {
-  try {
-    const stmt = binds.length ? db.prepare(sql).bind(...binds) : db.prepare(sql)
-    return (await stmt.first()) || null
-  } catch {
-    return null
-  }
+function unavailable(days) {
+  return Response.json({
+    status: 'unavailable',
+    generatedAt: Date.now(),
+    window: { days, timezone: 'Asia/Shanghai' },
+    overview: { pv: 0, previousPv: 0, uv: 0, previousUv: 0, returning: 0, returnRate: 0 },
+    series: [], topContent: [], byType: [], sources: [], audience: { breakdown: [], visitors: [] },
+    today: { pv: 0, uv: 0, topContent: [], sources: [], visitors: [] },
+    likes: { total: 0, previousTotal: 0, top: [] },
+    comments: { recent: [], total: { all: 0, period: 0, articles: 0 } },
+    newsletter: { active: 0, period: 0 },
+  })
 }
 
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
 
-  let db = null
+  const requestedDays = Number(new URL(req.url).searchParams.get('days'))
+  const days = ALLOWED_DAYS.has(requestedDays) ? requestedDays : 7
+
+  let db
   try {
     db = getD1()
   } catch {
-    return Response.json({
-      status: 'unavailable',
-      generatedAt: Date.now(),
-      window: null,
-      reads: { top: [], daily: [], total: { thisWeek: 0, prevWeek: 0, today: 0, yesterday: 0 } },
-      likes: { top: [], total: { thisWeek: 0, prevWeek: 0 } },
-      comments: { recent: [], total: { all: 0, thisWeek: 0, thisMonth: 0, articles: 0 } },
-      ops: {
-        visitors: { total: 0, returning: 0, returnRate: 0 },
-        comments: { commenters: 0, conversionRate: 0 },
-        newsletter: { active: 0, thisWeek: 0 },
-      },
-      month: {
-        reads: { top: [], byType: [], total: { thisMonth: 0, prevMonth: 0 } },
-        likes: { top: [], total: { thisMonth: 0, prevMonth: 0 } },
-      },
-    })
+    return unavailable(days)
   }
 
   const now = Date.now()
-  const wk1 = now - WEEK_MS // 最近 7 天的起点
-  const wk2 = now - 2 * WEEK_MS // 前 7 天的起点
-  const monthWindow = getShanghaiMonthWindow(now)
-  const dayWindow = getShanghaiDayWindow(now)
+  const todayStart = shanghaiDayStart(now)
+  const periodStart = todayStart - (days - 1) * DAY_MS
+  const previousStart = periodStart - days * DAY_MS
+  const visitorKey = visitorKeySql()
 
   try {
     const [
-      readRows,
-      readByCategory,
-      readTotal,
-      dailyReadRows,
-      likeRows,
+      overviewRow,
+      returningRow,
+      seriesRows,
+      contentRows,
+      categoryRows,
+      sourceRows,
+      audienceRows,
+      visitorRows,
+      todayOverview,
+      todayContentRows,
+      todaySourceRows,
+      todayVisitorRows,
       likeTotal,
-      monthReadRows,
-      monthReadByCategory,
-      monthReadTotal,
-      monthLikeRows,
-      monthLikeTotal,
+      likeRows,
       commentRows,
       commentTotal,
-      visitorTotal,
-      commentConversion,
       newsletterTotal,
+      coverageRow,
     ] = await Promise.all([
-      db
-        .prepare(
-          `SELECT category, slug,
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week,
-             SUM(CASE WHEN created_at < ?1 THEN 1 ELSE 0 END) AS prev_week
-           FROM research_pv_hits
-           WHERE created_at >= ?2
-           GROUP BY category, slug
-           HAVING this_week > 0
-           ORDER BY this_week DESC, prev_week DESC
-           LIMIT ?3`,
-        )
-        .bind(wk1, wk2, LIMIT)
-        .all()
-        .then((r) => r.results || []),
-      db
-        .prepare(
-          `SELECT category,
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week,
-             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_week
-           FROM research_pv_hits
-           WHERE created_at >= ?2
-           GROUP BY category`,
-        )
-        .bind(wk1, wk2)
-        .all()
-        .then((r) => r.results || []),
-      db
-        .prepare(
-          `SELECT
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week,
-             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_week
-           FROM research_pv_hits
-           WHERE created_at >= ?2`,
-        )
-        .bind(wk1, wk2)
-        .first(),
-      db
-        .prepare(
-          `SELECT CAST((created_at + ?1) / ?2 AS INTEGER) AS day_key, COUNT(*) AS pv
-           FROM research_pv_hits
-           WHERE created_at >= ?3 AND created_at <= ?4
-           GROUP BY day_key
-           ORDER BY day_key ASC`,
-        )
-        .bind(SHANGHAI_TZ_OFFSET_MS, DAY_MS, dayWindow.sevenDayStart, now)
-        .all()
-        .then((r) => r.results || []),
-      db
-        .prepare(
-          `SELECT article_key,
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week,
-             SUM(CASE WHEN created_at < ?1 THEN 1 ELSE 0 END) AS prev_week
-           FROM article_likes
-           WHERE created_at >= ?2
-           GROUP BY article_key
-           HAVING this_week > 0
-           ORDER BY this_week DESC, prev_week DESC
-           LIMIT ?3`,
-        )
-        .bind(wk1, wk2, LIMIT)
-        .all()
-        .then((r) => r.results || []),
-      db
-        .prepare(
-          `SELECT
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week,
-             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_week
-           FROM article_likes
-           WHERE created_at >= ?2`,
-        )
-        .bind(wk1, wk2)
-        .first(),
-      db
-        .prepare(
-          `SELECT category, slug,
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_month,
-             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_month
-           FROM research_pv_hits
-           WHERE created_at >= ?2
-           GROUP BY category, slug
-           HAVING this_month > 0
-           ORDER BY this_month DESC, prev_month DESC
-           LIMIT ?3`,
-        )
-        .bind(monthWindow.thisMonthStart, monthWindow.prevMonthStart, LIMIT)
-        .all()
-        .then((r) => r.results || []),
-      db
-        .prepare(
-          `SELECT category,
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_month,
-             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_month
-           FROM research_pv_hits
-           WHERE created_at >= ?2
-           GROUP BY category`,
-        )
-        .bind(monthWindow.thisMonthStart, monthWindow.prevMonthStart)
-        .all()
-        .then((r) => r.results || []),
-      db
-        .prepare(
-          `SELECT
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_month,
-             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_month
-           FROM research_pv_hits
-           WHERE created_at >= ?2`,
-        )
-        .bind(monthWindow.thisMonthStart, monthWindow.prevMonthStart)
-        .first(),
-      db
-        .prepare(
-          `SELECT article_key,
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_month,
-             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_month
-           FROM article_likes
-           WHERE created_at >= ?2
-           GROUP BY article_key
-           HAVING this_month > 0
-           ORDER BY this_month DESC, prev_month DESC
-           LIMIT ?3`,
-        )
-        .bind(monthWindow.thisMonthStart, monthWindow.prevMonthStart, LIMIT)
-        .all()
-        .then((r) => r.results || []),
-      db
-        .prepare(
-          `SELECT
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_month,
-             SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS prev_month
-           FROM article_likes
-           WHERE created_at >= ?2`,
-        )
-        .bind(monthWindow.thisMonthStart, monthWindow.prevMonthStart)
-        .first(),
-      db
-        .prepare(
-          `SELECT id, article_key, user_id, user_provider, user_name, user_image, message, created_at
-           FROM article_comments
-           ORDER BY created_at DESC
-           LIMIT 20`,
-        )
-        .all()
-        .then((r) => r.results || []),
-      db
-        .prepare(
-          `SELECT
-             COUNT(*) AS total_comments,
-             COUNT(DISTINCT article_key) AS article_count,
-             SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week,
-             SUM(CASE WHEN created_at >= ?2 THEN 1 ELSE 0 END) AS this_month
-           FROM article_comments`,
-        )
-        .bind(wk1, monthWindow.thisMonthStart)
-        .first(),
-      db
-        .prepare(
-          `SELECT
-             COUNT(*) AS visitors,
-             SUM(CASE WHEN days_seen >= 2 THEN 1 ELSE 0 END) AS returning_visitors
-           FROM (
-             SELECT visitor_hash,
-               COUNT(DISTINCT CAST((created_at + ?1) / ?2 AS INTEGER)) AS days_seen
-             FROM research_pv_hits
-             WHERE created_at >= ?3
-             GROUP BY visitor_hash
-           )`,
-        )
-        .bind(SHANGHAI_TZ_OFFSET_MS, DAY_MS, wk1)
-        .first(),
-      db
-        .prepare(
-          `SELECT
-             COUNT(*) AS comments,
-             COUNT(DISTINCT user_id) AS commenters
-           FROM article_comments
-           WHERE created_at >= ?1`,
-        )
-        .bind(wk1)
-        .first(),
-      firstOrNull(
-        db,
+      db.prepare(
         `SELECT
-           COUNT(*) AS active,
-           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS this_week
-         FROM newsletter_subscribers
-         WHERE status = 'active'`,
-        [wk1],
-      ),
+           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
+           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
+           COUNT(DISTINCT CASE WHEN created_at >= ?1 THEN ${visitorKey} END) AS uv,
+           COUNT(DISTINCT CASE WHEN created_at >= ?2 AND created_at < ?1 THEN ${visitorKey} END) AS previous_uv
+         FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3`,
+      ).bind(periodStart, previousStart, now).first(),
+      db.prepare(
+        `SELECT COUNT(*) AS returning FROM (
+           SELECT ${visitorKey} AS visitor_key
+           FROM research_pv_hits
+           WHERE created_at >= ?1 AND created_at <= ?2
+           GROUP BY visitor_key
+           HAVING COUNT(DISTINCT CAST((created_at + ?3) / ?4 AS INTEGER)) >= 2
+         )`,
+      ).bind(periodStart, now, SHANGHAI_TZ_OFFSET_MS, DAY_MS).first(),
+      db.prepare(
+        `SELECT CAST((created_at + ?1) / ?2 AS INTEGER) AS day_key, COUNT(*) AS pv
+         FROM research_pv_hits WHERE created_at >= ?3 AND created_at <= ?4
+         GROUP BY day_key ORDER BY day_key ASC`,
+      ).bind(SHANGHAI_TZ_OFFSET_MS, DAY_MS, periodStart, now).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT category, slug,
+           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
+           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
+           COUNT(DISTINCT CASE WHEN created_at >= ?1 THEN ${visitorKey} END) AS uv
+         FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3
+         GROUP BY category, slug
+         HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
+         ORDER BY pv DESC, uv DESC LIMIT ?4`,
+      ).bind(periodStart, previousStart, now, LIMIT).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT category,
+           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
+           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv
+         FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3 GROUP BY category`,
+      ).bind(periodStart, previousStart, now).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
+           COUNT(DISTINCT ${visitorKey}) AS uv
+         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         GROUP BY source, medium, campaign, referrer_host
+         ORDER BY pv DESC, uv DESC LIMIT ?3`,
+      ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT visitor_type, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
+         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         GROUP BY visitor_type ORDER BY pv DESC`,
+      ).bind(periodStart, now).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT ${visitorKey} AS visitor_key,
+           MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
+           MAX(user_name) AS user_name, COUNT(*) AS pv,
+           COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
+         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         GROUP BY visitor_key ORDER BY pv DESC, last_seen DESC LIMIT ?3`,
+      ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
+         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2`,
+      ).bind(todayStart, now).first(),
+      db.prepare(
+        `SELECT category, slug, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv, 0 AS previous_pv
+         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         GROUP BY category, slug ORDER BY pv DESC, uv DESC LIMIT ?3`,
+      ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
+           COUNT(DISTINCT ${visitorKey}) AS uv
+         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         GROUP BY source, medium, campaign, referrer_host ORDER BY pv DESC LIMIT 8`,
+      ).bind(todayStart, now).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT ${visitorKey} AS visitor_key,
+           MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
+           MAX(user_name) AS user_name, COUNT(*) AS pv,
+           COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
+         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         GROUP BY visitor_key ORDER BY last_seen DESC LIMIT ?3`,
+      ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT
+           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
+           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
+         FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3`,
+      ).bind(periodStart, previousStart, now).first(),
+      db.prepare(
+        `SELECT article_key,
+           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
+           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
+         FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3
+         GROUP BY article_key HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
+         ORDER BY total DESC LIMIT ?4`,
+      ).bind(periodStart, previousStart, now, LIMIT).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT id, article_key, user_id, user_provider, user_name, user_image, message, created_at
+         FROM article_comments ORDER BY created_at DESC LIMIT 20`,
+      ).all().then((r) => r.results || []),
+      db.prepare(
+        `SELECT COUNT(*) AS total_comments, COUNT(DISTINCT article_key) AS article_count,
+           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_comments
+         FROM article_comments`,
+      ).bind(periodStart).first(),
+      db.prepare(
+        `SELECT COUNT(*) AS active,
+           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_total
+         FROM newsletter_subscribers WHERE status = 'active'`,
+      ).bind(periodStart).first().catch(() => null),
+      db.prepare('SELECT MIN(created_at) AS available_from, MAX(created_at) AS available_to FROM research_pv_hits').first(),
     ])
 
-    const reads = readRows.map((r) => {
-      const thisWeek = Number(r.this_week) || 0
-      const prevWeek = Number(r.prev_week) || 0
-      const resolved = resolveContentKey(r.category, r.slug)
+    const pv = Number(overviewRow?.pv) || 0
+    const uv = Number(overviewRow?.uv) || 0
+    const returning = Number(returningRow?.returning) || 0
+    const mapSource = (row) => ({
+      source: row.source || 'direct',
+      medium: row.medium || 'none',
+      campaign: row.campaign || '',
+      referrerHost: row.referrer_host || '',
+      pv: Number(row.pv) || 0,
+      uv: Number(row.uv) || 0,
+    })
+    const mapVisitor = (row) => ({
+      key: row.visitor_key || '',
+      type: row.visitor_type || 'anonymous',
+      provider: row.user_provider || '',
+      name: row.user_name || (row.visitor_type === 'guest' ? '游客' : '匿名访客'),
+      pv: Number(row.pv) || 0,
+      contentCount: Number(row.content_count) || 0,
+      lastSeen: Number(row.last_seen) || 0,
+    })
+    const likes = likeRows.map((row) => {
+      const resolved = resolveArticleKey(row.article_key)
+      const total = Number(row.total) || 0
+      const previousTotal = Number(row.previous_total) || 0
+      return { key: row.article_key, title: resolved.title, href: resolved.href, total, previousTotal, delta: total - previousTotal }
+    })
+    const comments = commentRows.map((row) => {
+      const resolved = resolveArticleKey(row.article_key)
       return {
-        key: `${r.category}/${r.slug}`,
-        title: resolved.title,
-        href: resolved.href,
-        type: resolved.type,
-        thisWeek,
-        prevWeek,
-        delta: thisWeek - prevWeek,
-      }
-    })
-
-    // 按大类（调研 / 资料·资源 / 灵感）汇总本周与上周阅读
-    const byTypeMap = new Map()
-    for (const r of readByCategory) {
-      const group = CONTENT_TYPE_GROUP[r.category] || '其它'
-      const cur = byTypeMap.get(group) || { type: group, thisWeek: 0, prevWeek: 0 }
-      cur.thisWeek += Number(r.this_week) || 0
-      cur.prevWeek += Number(r.prev_week) || 0
-      byTypeMap.set(group, cur)
-    }
-    const byType = [...byTypeMap.values()]
-      .map((t) => ({ ...t, delta: t.thisWeek - t.prevWeek }))
-      .sort((a, b) => b.thisWeek - a.thisWeek)
-
-    const likes = likeRows.map((r) => {
-      const thisWeek = Number(r.this_week) || 0
-      const prevWeek = Number(r.prev_week) || 0
-      const { title, href } = resolveArticleKey(r.article_key)
-      return { key: r.article_key, title, href, thisWeek, prevWeek, delta: thisWeek - prevWeek }
-    })
-
-    const monthReads = monthReadRows.map((r) => {
-      const thisMonth = Number(r.this_month) || 0
-      const prevMonth = Number(r.prev_month) || 0
-      const resolved = resolveContentKey(r.category, r.slug)
-      return {
-        key: `${r.category}/${r.slug}`,
-        title: resolved.title,
-        href: resolved.href,
-        type: resolved.type,
-        thisMonth,
-        prevMonth,
-        delta: thisMonth - prevMonth,
-      }
-    })
-
-    const monthByTypeMap = new Map()
-    for (const r of monthReadByCategory) {
-      const group = CONTENT_TYPE_GROUP[r.category] || '其它'
-      const cur = monthByTypeMap.get(group) || { type: group, thisMonth: 0, prevMonth: 0 }
-      cur.thisMonth += Number(r.this_month) || 0
-      cur.prevMonth += Number(r.prev_month) || 0
-      monthByTypeMap.set(group, cur)
-    }
-    const monthByType = [...monthByTypeMap.values()]
-      .map((t) => ({ ...t, delta: t.thisMonth - t.prevMonth }))
-      .sort((a, b) => b.thisMonth - a.thisMonth)
-
-    const monthLikes = monthLikeRows.map((r) => {
-      const thisMonth = Number(r.this_month) || 0
-      const prevMonth = Number(r.prev_month) || 0
-      const { title, href } = resolveArticleKey(r.article_key)
-      return { key: r.article_key, title, href, thisMonth, prevMonth, delta: thisMonth - prevMonth }
-    })
-
-    const comments = commentRows.map((r) => {
-      const resolved = resolveArticleKey(r.article_key)
-      return {
-        id: Number(r.id),
-        articleKey: r.article_key || '',
-        articleTitle: resolved.title,
+        id: Number(row.id), articleKey: row.article_key || '', articleTitle: resolved.title,
         href: resolved.href ? `${resolved.href}#comments` : null,
-        userId: r.user_id || '',
-        userProvider: r.user_provider || '',
-        userName: r.user_name || '',
-        userImage: r.user_image || '',
-        message: r.message || '',
-        createdAt: Number(r.created_at) || 0,
+        userId: row.user_id || '', userProvider: row.user_provider || '',
+        userName: row.user_name || '', userImage: row.user_image || '',
+        message: row.message || '', createdAt: Number(row.created_at) || 0,
       }
     })
-
-    const dailyReads = buildDailyReads(dailyReadRows, dayWindow.sevenDayStart)
-    const todayReads = dailyReads[dailyReads.length - 1]?.pv || 0
-    const yesterdayReads = dailyReads[dailyReads.length - 2]?.pv || 0
-    const visitors = Number(visitorTotal?.visitors) || 0
-    const returningVisitors = Number(visitorTotal?.returning_visitors) || 0
-    const commenters = Number(commentConversion?.commenters) || 0
+    const availableFrom = Number(coverageRow?.available_from) || 0
 
     return Response.json({
       status: 'ok',
       generatedAt: now,
       window: {
-        thisWeekStart: wk1,
-        prevWeekStart: wk2,
-        days: 7,
-        thisMonthStart: monthWindow.thisMonthStart,
-        prevMonthStart: monthWindow.prevMonthStart,
-        todayStart: dayWindow.todayStart,
-        sevenDayStart: dayWindow.sevenDayStart,
-        monthLabel: monthWindow.monthLabel,
-        timezone: monthWindow.timezone,
+        days, periodStart, previousStart, todayStart, timezone: 'Asia/Shanghai',
+        availableFrom, availableTo: Number(coverageRow?.available_to) || 0,
+        complete: Boolean(availableFrom && availableFrom <= periodStart),
       },
-      reads: {
-        top: reads,
-        byType,
-        daily: dailyReads,
-        total: {
-          thisWeek: Number(readTotal?.this_week) || 0,
-          prevWeek: Number(readTotal?.prev_week) || 0,
-          today: todayReads,
-          yesterday: yesterdayReads,
-        },
+      overview: {
+        pv, previousPv: Number(overviewRow?.previous_pv) || 0,
+        uv, previousUv: Number(overviewRow?.previous_uv) || 0,
+        returning, returnRate: uv ? returning / uv : 0,
+        viewsPerVisitor: uv ? pv / uv : 0,
       },
-      likes: {
-        top: likes,
-        total: {
-          thisWeek: Number(likeTotal?.this_week) || 0,
-          prevWeek: Number(likeTotal?.prev_week) || 0,
-        },
+      series: buildSeries(seriesRows, periodStart, days),
+      topContent: resolveReadRows(contentRows),
+      byType: typeRows(categoryRows),
+      sources: sourceRows.map(mapSource),
+      audience: {
+        breakdown: audienceRows.map((row) => ({ type: row.visitor_type || 'anonymous', pv: Number(row.pv) || 0, uv: Number(row.uv) || 0 })),
+        visitors: visitorRows.map(mapVisitor),
       },
+      today: {
+        pv: Number(todayOverview?.pv) || 0,
+        uv: Number(todayOverview?.uv) || 0,
+        topContent: resolveReadRows(todayContentRows),
+        sources: todaySourceRows.map(mapSource),
+        visitors: todayVisitorRows.map(mapVisitor),
+      },
+      likes: { total: Number(likeTotal?.total) || 0, previousTotal: Number(likeTotal?.previous_total) || 0, top: likes },
       comments: {
         recent: comments,
-        total: {
-          all: Number(commentTotal?.total_comments) || 0,
-          articles: Number(commentTotal?.article_count) || 0,
-          thisWeek: Number(commentTotal?.this_week) || 0,
-          thisMonth: Number(commentTotal?.this_month) || 0,
-        },
+        total: { all: Number(commentTotal?.total_comments) || 0, period: Number(commentTotal?.period_comments) || 0, articles: Number(commentTotal?.article_count) || 0 },
       },
-      ops: {
-        visitors: {
-          total: visitors,
-          returning: returningVisitors,
-          returnRate: visitors ? returningVisitors / visitors : 0,
-        },
-        comments: {
-          commenters,
-          comments: Number(commentConversion?.comments) || 0,
-          conversionRate: visitors ? commenters / visitors : 0,
-        },
-        newsletter: {
-          active: Number(newsletterTotal?.active) || 0,
-          thisWeek: Number(newsletterTotal?.this_week) || 0,
-        },
-      },
-      month: {
-        reads: {
-          top: monthReads,
-          byType: monthByType,
-          total: {
-            thisMonth: Number(monthReadTotal?.this_month) || 0,
-            prevMonth: Number(monthReadTotal?.prev_month) || 0,
-          },
-        },
-        likes: {
-          top: monthLikes,
-          total: {
-            thisMonth: Number(monthLikeTotal?.this_month) || 0,
-            prevMonth: Number(monthLikeTotal?.prev_month) || 0,
-          },
-        },
-      },
+      newsletter: { active: Number(newsletterTotal?.active) || 0, period: Number(newsletterTotal?.period_total) || 0 },
     })
   } catch (error) {
-    return Response.json(
-      {
-        status: 'error',
-        generatedAt: now,
-        error: 'CONTENT_WEEKLY_FAILED',
-        detail: String(error?.message || error),
-      },
-      { status: 500 },
-    )
+    return Response.json({ status: 'error', generatedAt: now, error: 'CONTENT_ANALYTICS_FAILED', detail: String(error?.message || error) }, { status: 500 })
   }
 }

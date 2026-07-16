@@ -31,7 +31,15 @@ export default function ResearchPvCounter({ category, slug, initialPv }) {
         const res = await fetch('/api/research-pv', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ category, slug }),
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            category,
+            slug,
+            referrer: document.referrer || '',
+            utmSource: new URLSearchParams(window.location.search).get('utm_source') || '',
+            utmMedium: new URLSearchParams(window.location.search).get('utm_medium') || '',
+            utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign') || '',
+          }),
           keepalive: true,
         })
         if (!res.ok) return

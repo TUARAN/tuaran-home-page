@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useSessionAccount } from '../components/SessionProvider'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
@@ -97,10 +96,6 @@ function manualEntriesToItems(entries, existingItems) {
   }
   return out
 }
-
-const QUICK_LINKS = [
-  { label: '掘金专栏', href: 'https://tuaran.github.io/auto-sync-blog/', external: true },
-]
 
 const RESEARCH_TYPE_DEFS = [
   { key: 'research', label: '全部分析' },
@@ -197,7 +192,6 @@ function formatPv(pv) {
 }
 
 export default function ArticlesIndexClient({ items: staticItems }) {
-  const { isOwner } = useSessionAccount()
   const [items, setItems] = useState(staticItems)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -944,44 +938,20 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               清空
             </button>
           ) : null}
+          <a
+            href="https://tuaran.github.io/auto-sync-blog/"
+            target="_blank"
+            rel="noreferrer"
+            className="no-external-arrow inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-2 text-sm text-[#665f70] no-underline transition-colors hover:bg-[#f4f0f8] hover:text-[#20172f] dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-100"
+          >
+            <span>掘金专栏</span>
+            <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3 opacity-70" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 2h6v6" />
+              <path d="M10 2L4 8" />
+              <path d="M9 8v2H2V3h2" />
+            </svg>
+          </a>
         </form>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e8e2ef] pt-2.5 text-xs text-[#665f70] dark:border-gray-800 dark:text-gray-400 sm:pt-3">
-          {isOwner && tab === 'posts' ? (
-            <Link
-              href="/admin/articles/new"
-              className="inline-flex items-center rounded-md border border-[#cfc3e2] bg-[#f3eff9] px-2.5 py-1.5 font-medium text-[#49345f] no-underline transition-colors hover:border-[#ae9ac3] hover:text-[#20172f] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#d8c5f3]"
-            >
-              写文章 ✎
-            </Link>
-          ) : null}
-          {QUICK_LINKS.map((link) =>
-            link.external ? (
-              <a
-                key={link.href}
-                href={link.href}
-                target="_blank"
-                rel="noreferrer"
-                className="no-external-arrow inline-flex items-center gap-1 no-underline transition-colors hover:text-[#20172f] dark:hover:text-gray-100"
-              >
-                <span>{link.label}</span>
-                <svg viewBox="0 0 12 12" aria-hidden="true" className="h-3 w-3 opacity-70" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 2h6v6" />
-                  <path d="M10 2L4 8" />
-                  <path d="M9 8v2H2V3h2" />
-                </svg>
-              </a>
-            ) : (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="no-underline transition-colors hover:text-[#20172f] dark:hover:text-gray-100"
-              >
-                {link.label}
-              </Link>
-            ),
-          )}
-        </div>
       </section>
 
       {hasAdvancedFilters ? (

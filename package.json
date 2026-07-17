@@ -22,7 +22,9 @@
     "pages:build:public": "node scripts/build-public-pages.cjs",
     "lint": "next lint",
     "research:style-audit": "node scripts/audit-research-style.mjs",
-    "snapshot-memory": "node scripts/snapshot-memory.mjs"
+    "snapshot-memory": "node scripts/snapshot-memory.mjs",
+    "mcp:stdio": "node tools/mcp-stdio-demo/server.mjs",
+    "mcp:stdio:check": "node scripts/test-mcp-stdio-demo.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.0",

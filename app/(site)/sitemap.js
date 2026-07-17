@@ -52,6 +52,7 @@ export default function sitemap() {
     '/browser-extensions',
     '/skill-center',
     '/mcp-center',
+    '/prompt-center',
     '/context-memory',
     '/cancers-overview',
     '/platform-framework-pairs',

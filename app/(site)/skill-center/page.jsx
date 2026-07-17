@@ -1,10 +1,9 @@
 import Link from 'next/link'
 
 import PageContainer from '../components/PageContainer'
-
+import AgentCenterHero from '../components/AgentCenterHero'
 import SharePageButton from '../components/SharePageButton'
-import { SkillBundleButton, SkillFileButton } from './SkillFileActions'
-import { getSkillFileEntries } from './skillFiles'
+import { SkillInstallPanel } from './SkillFileActions'
 import { PUBLISHED_SKILLS } from './skills'
 
 export const dynamic = 'force-static'
@@ -50,7 +49,7 @@ const PUBLISHING_RULES = [
 
 function StatusPill({ children }) {
   return (
-    <span className="inline-flex rounded-full border border-[#cccdc2] bg-[#eaebe3] px-2 py-0.5 text-[11px] leading-5 text-[#555640] dark:border-[#334052] dark:bg-[#131d29] dark:text-[#c9d6e5]">
+    <span className="inline-flex rounded-sm bg-[#eceae2] px-2 py-0.5 font-mono text-[10px] leading-5 text-[#666653] dark:bg-[#17212d] dark:text-[#c9d6e5]">
       {children}
     </span>
   )
@@ -58,11 +57,10 @@ function StatusPill({ children }) {
 
 function SkillCard({ skill }) {
   const detailHref = `/skill-center/${skill.id}`
-  const skillFiles = skill.codex ? getSkillFileEntries(skill) : []
   return (
     <article
       id={skill.id}
-      className="flex min-w-0 flex-col rounded-lg border border-[#d2d3c8] bg-white p-4 dark:border-[#283443] dark:bg-[#101820]"
+      className="flex min-w-0 flex-col py-6"
     >
       <header>
         <div className="flex items-start justify-between gap-3">
@@ -91,25 +89,8 @@ function SkillCard({ skill }) {
       </header>
 
       {skill.codex ? (
-        <section className="mt-4 border-t border-[#dedfd5] pt-3 dark:border-[#263241]">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <SkillBundleButton skill={skill} />
-            <span className="font-mono text-[10px] text-[#6e7064] dark:text-gray-400">{skillFiles.length} files</span>
-          </div>
-          <details className="group mt-3 rounded-md border border-[#dedfd5] bg-[#f8f8f5] dark:border-[#263241] dark:bg-[#121a24]">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-medium text-[#4c4c44] marker:hidden dark:text-gray-300">
-              <span>单独下载与安装位置</span>
-              <span className="text-[#8b5a1f] transition-transform group-open:rotate-90 dark:text-[#a1ab76]">→</span>
-            </summary>
-            <div className="space-y-2 border-t border-[#dedfd5] p-3 dark:border-[#263241]">
-              {skillFiles.map((file) => (
-                <SkillFileButton key={file.filename} filename={file.filename} content={file.content} />
-              ))}
-              <p className="mb-0 text-xs leading-5 text-[#56564d] dark:text-gray-300">
-                安装到 <code className="font-mono text-[10px] text-[#8b5a1f] dark:text-[#a1ab76]">{skill.codex.installPath}</code>；SKILL.md 也可作为其他智能体的 system prompt。
-              </p>
-            </div>
-          </details>
+        <section className="mt-4">
+          <SkillInstallPanel skill={skill} />
         </section>
       ) : null}
 
@@ -128,39 +109,21 @@ function SkillCard({ skill }) {
 export default function SkillCenterPage() {
   return (
     <PageContainer className="py-6 md:py-8">
-      <header className="mb-5 border-b border-[#dee0db] pb-5 dark:border-[#202938]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
-              <Link href="/works" className="underline-offset-4 hover:underline">
-                AI 项目
-              </Link>
-              <span>/</span>
-              <span>Skill 中心</span>
-            </div>
-            <h1 className="mb-2 font-serif text-3xl font-semibold tracking-normal text-[#191915] dark:text-gray-100 md:text-4xl">
-              面向大模型与智能体的能力货架
-            </h1>
-            <p className="mb-0 max-w-3xl text-sm leading-6 text-[#43433b] dark:text-gray-300 md:text-base">
-              Skill 是一组可复用的任务能力：它把经验、流程、工具调用、产出格式和验收标准封装起来，让模型不只是回答问题，而是稳定完成一类工作。
-            </p>
-          </div>
-          <div className="self-start">
-            <SharePageButton
-              title="Skill 中心"
-              text="面向大模型与智能体的 Skill 能力中心。"
-              url="/skill-center"
-            />
-          </div>
-        </div>
-      </header>
+      <AgentCenterHero
+        current="/skill-center"
+        eyebrow="Skill 中心"
+        title="面向大模型与智能体的能力货架"
+        description="Skill 是一组可复用的任务能力：它把经验、流程、工具调用、产出格式和验收标准封装起来，让模型不只是回答问题，而是稳定完成一类工作。"
+        shareText="面向大模型与智能体的 Skill 能力中心。"
+      />
 
-      <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        {SKILL_CATEGORIES.map((category) => (
+      <section className="grid grid-cols-2 gap-x-5 gap-y-7 lg:grid-cols-4">
+        {SKILL_CATEGORIES.map((category, index) => (
           <article
             key={category.title}
-            className="rounded-md border border-[#d2d3c8] bg-white p-3 dark:border-[#283443] dark:bg-[#101820]"
+            className="min-w-0"
           >
+            <span className="mb-3 block font-mono text-[10px] tracking-[0.16em] text-[#a06d2d] dark:text-[#a1ab76]">0{index + 1}</span>
             <h2 className="mb-1 border-b-0 pb-0 text-sm font-semibold text-[#1c1d18] dark:text-gray-100">
               {category.title}
             </h2>
@@ -178,14 +141,14 @@ export default function SkillCenterPage() {
         <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">已上架 Skill</h2>
         <StatusPill>{PUBLISHED_SKILLS.length} 个</StatusPill>
       </div>
-      <section className="grid items-start gap-3 lg:grid-cols-2">
+      <section className="divide-y divide-[#d8d7cf] border-y border-[#d8d7cf] dark:divide-[#283443] dark:border-[#283443]">
         {PUBLISHED_SKILLS.map((skill) => (
           <SkillCard key={skill.id} skill={skill} />
         ))}
       </section>
 
       {/* Publishing standards */}
-      <section className="mt-6 rounded-lg border border-[#d2d3c8] bg-white p-4 dark:border-[#283443] dark:bg-[#101820]">
+      <section className="mt-8 bg-[#efede5] px-5 py-6 dark:bg-[#111a24] md:px-6">
         <h2 className="mb-3 border-b-0 pb-0 font-serif text-xl font-semibold text-[#1c1d18] dark:text-gray-100">
           上架标准
         </h2>

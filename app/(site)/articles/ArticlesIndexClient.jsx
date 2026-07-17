@@ -53,7 +53,7 @@ function getChannelForTab(activeTab) {
 // D1 内容索引（/api/content?source=manual）的手工登记条目 → 列表 item。
 // 让构建之后新登记的内容 metadata 不经部署直接出现在索引里；feed 类不进本页。
 const MANUAL_ENTRY_KIND = {
-  article: { kind: 'posts', tagLabel: '文章' },
+  article: { kind: 'posts', tagLabel: '精选' },
   research: null, // 按 category 细分
   resource: { kind: 'resources', tagLabel: '资源库' },
 }

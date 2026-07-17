@@ -27,7 +27,7 @@ export function buildKnowledgeItems() {
     return {
       id: `post:${article.slug || article.href || article.title}`,
       kind: 'posts',
-      tagLabel: '文章',
+      tagLabel: '精选',
       title: article.title,
       summary: article.summary,
       date: article.date || '',

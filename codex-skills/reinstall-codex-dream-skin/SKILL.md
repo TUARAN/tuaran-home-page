@@ -30,13 +30,25 @@ Turn one local image into a reversible Codex Desktop theme by reusing the audite
    /bin/bash scripts/reinstall-theme-macos.sh --image "/absolute/path/image.png" --name "主题名"
    ```
 
-6. If Codex is already running, pass `--apply-now` only when the user explicitly authorized applying/restarting it. A request that clearly says “重装并应用”“现在换肤” or equivalent is authorization. Otherwise, ask first. If Codex is not running, `--apply-now` may launch it.
+6. If Codex is already running, pass `--apply-now` only when the user explicitly authorized applying/restarting it. A request that clearly says “重装并应用”“现在换肤” or equivalent is authorization. Otherwise, ask first. If Codex is not running, `--apply-now` may launch it. This command only prepares a durable resume marker and starts the independent helper; it must not assume the invoking Agent will survive the restart.
 
    ```bash
    /bin/bash scripts/reinstall-theme-macos.sh --image "/absolute/path/image.png" --name "主题名" --apply-now
    ```
 
-7. Report the installed engine commit, theme name, verification state, and rollback command. Do not claim the visual result passed unless live verification passed.
+7. Treat restart and injection/verification as two recoverable stages. Before restart, require `resume.json` to record the theme, port, phase, result path, log path, and restart count. The persistent helper owns: wait for CDP → start/reuse injector → live verify → atomically write `result.json`.
+8. After the invoking Agent or script resumes, inspect the marker and result first. Probe all three facts before taking action: `http://127.0.0.1:<port>/json/version`, whether the Codex main process command line contains `--remote-debugging-port=<port>`, and whether a live recorded injector/state already exists. If CDP is healthy, resume injection/verification only. Never repeat `--apply-now` merely because the prior call was interrupted or status reports `session=off`.
+9. Report the installed engine commit, theme name, durable phase/result, exact log path, and rollback command. Do not claim the visual result passed unless `result.json` says `verified` and live verification passed.
+
+## Resume after Codex restarts
+
+Use the installed helper rather than rerunning installation:
+
+```bash
+~/.codex/codex-dream-skin-studio/scripts/resume-dream-skin-macos.sh --resume
+```
+
+Valid phases are `prepared`, `restarting`, `cdp-ready`, `injecting`, `verified`, and `failed`. `session=off` describes only an injector session and is not an install/reinstall decision signal.
 
 ## Safety rules
 
@@ -45,6 +57,8 @@ Turn one local image into a reversible Codex Desktop theme by reusing the audite
 - Keep CDP on loopback. Reject ports outside `1024..65535`.
 - Preserve the engine's existing atomic config backup and restore path.
 - Do not remove user images or theme state during reinstall.
+- After `open -na ... --args`, verify both `/json/version` and the Codex main-process debug-port argument. If Codex is running without usable CDP, stop it at most once, then launch the already signature-verified `$CODEX_EXE` directly as the only fallback. Window activation must use `open -a`, never `open -n`.
+- Permit at most one automatic restart per resume marker. A second failure must end in `failed` and report the exact `apply.log` and `result.json` paths; never loop.
 - If any preflight, install, or verification step fails, stop and report the exact failing step. Do not bypass signature or process-identity checks.
 
 ## Repair and rollback

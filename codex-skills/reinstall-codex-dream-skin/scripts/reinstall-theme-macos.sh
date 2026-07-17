@@ -123,6 +123,8 @@ for required in \
   "$MACOS_ROOT/scripts/common-macos.sh" \
   "$MACOS_ROOT/scripts/load-image-theme-macos.sh" \
   "$MACOS_ROOT/scripts/doctor-macos.sh" \
+  "$MACOS_ROOT/scripts/resume-dream-skin-macos.sh" \
+  "$MACOS_ROOT/scripts/start-dream-skin-macos.sh" \
   "$MACOS_ROOT/scripts/verify-dream-skin-macos.sh" \
   "$MACOS_ROOT/assets/dream-skin.css" \
   "$MACOS_ROOT/assets/renderer-inject.js"; do
@@ -190,13 +192,39 @@ LOAD_IMAGE="$INSTALLED_ROOT/scripts/load-image-theme-macos.sh"
 
 if [ "$APPLY_NOW" = "true" ]; then
   "$INSTALLED_ROOT/scripts/start-dream-skin-macos.sh" --port "$PORT" --restart-existing
-  "$INSTALLED_ROOT/scripts/verify-dream-skin-macos.sh" --port "$PORT"
 fi
 
-printf 'RESULT engine_commit=%s theme=%s applied=%s verified=%s\n' \
-  "$COMMIT" "$THEME_NAME" "$APPLY_NOW" "$APPLY_NOW"
+APPLY_PHASE="prepared"
+VERIFIED="false"
+RESULT_PATH="$HOME/Library/Application Support/CodexDreamSkinStudio/result.json"
+RESUME_PATH="$HOME/Library/Application Support/CodexDreamSkinStudio/resume.json"
+if [ "$APPLY_NOW" = "true" ]; then
+  APPLY_PHASE="$(/usr/bin/python3 - "$RESUME_PATH" "$RESULT_PATH" <<'PY'
+import json, sys
+for path, key in ((sys.argv[2], "status"), (sys.argv[1], "phase")):
+    try:
+        with open(path, encoding="utf-8") as source:
+            value = json.load(source).get(key)
+        if value:
+            print(value, end="")
+            break
+    except (OSError, ValueError):
+        pass
+PY
+)"
+  [ -n "$APPLY_PHASE" ] || APPLY_PHASE="prepared"
+  [ "$APPLY_PHASE" = "verified" ] && VERIFIED="true"
+fi
+
+printf 'RESULT engine_commit=%s theme=%s applied=%s phase=%s verified=%s\n' \
+  "$COMMIT" "$THEME_NAME" "$APPLY_NOW" "$APPLY_PHASE" "$VERIFIED"
 if [ "$APPLY_NOW" != "true" ]; then
   printf 'Theme is prepared but not live. Re-run with --apply-now after restart authorization.\n'
+elif [ "$VERIFIED" != "true" ]; then
+  printf 'Apply continues independently across the Codex restart. Resume with: %s --resume\n' \
+    "$INSTALLED_ROOT/scripts/resume-dream-skin-macos.sh"
+  printf 'Result: %s\nLog: %s\n' "$RESULT_PATH" \
+    "$HOME/Library/Application Support/CodexDreamSkinStudio/apply.log"
 fi
 printf 'Rollback: %s --restore-base-theme --restart-codex\n' \
   "$INSTALLED_ROOT/scripts/restore-dream-skin-macos.sh"

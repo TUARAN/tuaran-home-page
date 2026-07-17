@@ -19,7 +19,7 @@ import { AUTHOR_INTRO_MARKDOWN, AuthorByline } from '../../../../components/Arti
 import ArticleComments from '../../../../components/ArticleComments'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import ArticleLikeButton from '../../../../components/ArticleLikeButton'
-import ArticleActionsDropdown from '../../../../components/ArticleActionsDropdown'
+import ArticleHeaderActions from '../../../../components/ArticleHeaderActions'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
 import DownloadPptButton from './DownloadPptButton'
@@ -27,8 +27,6 @@ import EncryptedArticle from './EncryptedArticle'
 import ResearchBody from './ResearchBody'
 import RanbiPaywall from '../../../../components/RanbiPaywall'
 import ResearchPvCounter from './ResearchPvCounter'
-import SharePageButton from '../../../../components/SharePageButton'
-import RssButton from '../../../../components/RssButton'
 import LifeTrafficTest from './LifeTrafficTest'
 import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 
@@ -370,15 +368,15 @@ export default async function ResearchDetailPage({ params }) {
               </Link>
             </>
           ) : null}
-          <div className="mt-2 flex w-full flex-wrap items-center gap-2 sm:mt-0 sm:ml-auto sm:w-auto lg:flex-nowrap">
-            {isEncrypted ? null : (
-              <SharePageButton title={entry.title} text={entry.summary || entry.tldr || entry.title} url={url} />
-            )}
-            <RssButton label="RSS" />
-            {isEncrypted ? null : (
-              <ArticleActionsDropdown label="更多">
-                <CopyMarkdownButton markdown={markdownDoc} />
-                <DistributeMarkdownButton
+          <ArticleHeaderActions
+            title={entry.title}
+            text={entry.summary || entry.tldr || entry.title}
+            url={url}
+            actionsEnabled={!isEncrypted}
+            className="mt-2 sm:mt-0 sm:ml-auto lg:flex-nowrap"
+          >
+            <CopyMarkdownButton markdown={markdownDoc} />
+            <DistributeMarkdownButton
                   title={entry.title}
                   summary={entry.tldr || entry.summary || ''}
                   markdown={markdownDoc}
@@ -389,17 +387,15 @@ export default async function ResearchDetailPage({ params }) {
                   tags={entry.tags || []}
                   kindLabel={entry.contentTypeLabel || '文章'}
                   allowArticle
-                />
-                <DownloadPptButton
+            />
+            <DownloadPptButton
                   title={entry.title}
                   subtitle={entry.tldr || entry.summary || ''}
                   fileBaseName={entry.slug}
                   images={entry.images || []}
                   variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
-                />
-              </ArticleActionsDropdown>
-            )}
-          </div>
+            />
+          </ArticleHeaderActions>
         </div>
         <h1 className="research-article-title mt-3 text-2xl leading-snug">{entry.title}</h1>
         <aside className="research-summary-box mt-4 border-l-2 px-4 py-3 text-sm leading-7">

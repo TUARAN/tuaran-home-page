@@ -2,11 +2,12 @@ import Link from 'next/link'
 import Script from 'next/script'
 
 import ArticlePostBody from '../../components/ArticlePostBody'
-import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
+import ArticleHeaderActions from '../../components/ArticleHeaderActions'
 import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
+import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 
 function dateLabel(value) {
   if (!value) return ''
@@ -41,15 +42,25 @@ export default function PublishedArticle({ article, siteUrl }) {
         {JSON.stringify(structuredData)}
       </Script>
       <header className="mb-8 border-b border-[#eee] pb-5 dark:border-gray-800">
-        <h1 className="font-serif text-3xl font-semibold leading-snug text-[#333] dark:text-gray-100">{article.title}</h1>
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#888] dark:text-gray-400">
-          <time dateTime={publishedTime}>{dateLabel(article.publishedAt)}</time>
-          {article.tags.map((tag) => <span key={tag} className="rounded-full border border-[#ddd] px-2 py-0.5 text-xs dark:border-gray-700">{tag}</span>)}
-        </div>
-        {article.summary ? <p className="mt-4 text-sm leading-7 text-[#666] dark:text-gray-300">{article.summary}</p> : null}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Link href="/articles?tab=posts" className="text-sm text-[#666] underline underline-offset-4 dark:text-gray-300">返回精选文章</Link>
-          <ArticleActionsDropdown label="更多">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="font-serif text-3xl font-semibold leading-snug text-[#333] dark:text-gray-100">{article.title}</h1>
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#888] dark:text-gray-400">
+              <time dateTime={publishedTime}>{dateLabel(article.publishedAt)}</time>
+              {article.tags.map((tag) => <span key={tag} className="rounded-full border border-[#ddd] px-2 py-0.5 text-xs dark:border-gray-700">{tag}</span>)}
+            </div>
+            {article.summary ? <p className="mt-4 text-sm leading-7 text-[#666] dark:text-gray-300">{article.summary}</p> : null}
+            <div className="mt-4">
+              <Link href="/articles?tab=posts" className="text-sm text-[#666] underline underline-offset-4 dark:text-gray-300">返回精选文章</Link>
+            </div>
+          </div>
+          <ArticleHeaderActions
+            title={article.title}
+            text={article.summary || article.contentText.slice(0, 160)}
+            url={url}
+            className="mt-3 shrink-0 sm:mt-0"
+          >
+            <CopyMarkdownButton markdown={markdown} />
             <DistributeContentButton
               title={article.title}
               summary={article.summary || article.contentText.slice(0, 160)}
@@ -62,7 +73,7 @@ export default function PublishedArticle({ article, siteUrl }) {
               kindLabel="文章"
               allowArticle
             />
-          </ArticleActionsDropdown>
+          </ArticleHeaderActions>
         </div>
       </header>
       <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">

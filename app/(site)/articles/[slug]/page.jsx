@@ -3,12 +3,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { articles } from '../articlesData'
-import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
+import ArticleHeaderActions from '../../components/ArticleHeaderActions'
 import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
-import RssButton from '../../components/RssButton'
+import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
 import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
@@ -298,10 +298,14 @@ export default async function ArticleDetailPage({ params }) {
                   ) : null}
                 </div>
               </div>
-              <div className="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
-                <RssButton />
-                <ArticleActionsDropdown label="更多">
-                  <DistributeContentButton
+              <ArticleHeaderActions
+                title={article.title}
+                text={article.summary}
+                url={articleUrl}
+                className="mt-3 shrink-0 sm:mt-0"
+              >
+                <CopyMarkdownButton markdown={articleMarkdown} />
+                <DistributeContentButton
                     title={article.title}
                     summary={article.summary}
                     markdown={articleMarkdown}
@@ -312,9 +316,8 @@ export default async function ArticleDetailPage({ params }) {
                     tags={[]}
                     kindLabel="文章"
                     allowArticle
-                  />
-                </ArticleActionsDropdown>
-              </div>
+                />
+              </ArticleHeaderActions>
             </div>
           </header>
 
@@ -447,10 +450,14 @@ export default async function ArticleDetailPage({ params }) {
                   ) : null}
                 </div>
               </div>
-              <div className="mt-3 flex shrink-0 items-center gap-2 sm:mt-0">
-                <RssButton />
-                <ArticleActionsDropdown label="更多">
-                  <DistributeContentButton
+              <ArticleHeaderActions
+                title={article.title}
+                text={article.summary}
+                url={articleUrl}
+                className="mt-3 shrink-0 sm:mt-0"
+              >
+                <CopyMarkdownButton markdown={articleMarkdown} />
+                <DistributeContentButton
                     title={article.title}
                     summary={article.summary}
                     markdown={articleMarkdown}
@@ -461,9 +468,8 @@ export default async function ArticleDetailPage({ params }) {
                     tags={[]}
                     kindLabel="文章"
                     allowArticle
-                  />
-                </ArticleActionsDropdown>
-              </div>
+                />
+              </ArticleHeaderActions>
             </div>
           </header>
 

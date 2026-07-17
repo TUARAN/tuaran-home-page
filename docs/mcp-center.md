@@ -76,3 +76,7 @@ npx wrangler d1 migrations apply tuaran-me --remote
 6. Client 使用授权码、PKCE verifier 和相同 resource 换取 Token。
 7. Client 在每个 MCP 请求中发送 `Authorization: Bearer <access-token>`。
 8. Access Token 到期后使用 Refresh Token 轮换；解除连接时调用 Revocation Endpoint。
+
+## 本地 stdio Demo
+
+仓库同时提供一个不走 HTTPS/OAuth 的本地加解密 MCP Demo。WorkBuddy 通过 `command` + `args` 在本机拉起 Node.js 子进程，以 stdin/stdout 传输 JSON-RPC。完整配置、自测和安全边界见 [mcp-stdio-demo.md](./mcp-stdio-demo.md)。

@@ -56,6 +56,7 @@ export default function sitemap() {
     '/context-memory',
     '/cancers-overview',
     '/platform-framework-pairs',
+    '/global-ai-governance',
     '/network-access-guide',
     '/workbuddy-harness',
     '/ai-token-usage-research',

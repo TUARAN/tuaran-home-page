@@ -25,20 +25,22 @@ const WEATHER_JSON_CONFIG = JSON.stringify({
   },
 }, null, 2)
 const WEATHER_CODEX_CONFIG = `[mcp_servers.tuaran-weather-test]\nurl = "${WEATHER_ENDPOINT}"`
-const LOCAL_SERVER_PATH = '/ABSOLUTE/PATH/TO/tuaran-home-page/tools/mcp-stdio-demo/server.mjs'
-const LOCAL_SECRET_PATH = '/ABSOLUTE/PATH/TO/crypto-demo.key'
+const LOCAL_NODE_PATH = '/Users/tuaran/.local/bin/node'
+const LOCAL_SERVER_PATH = '/Users/tuaran/Documents/GitHub/tuaran-home-page/tools/mcp-stdio-demo/server.mjs'
+const LOCAL_SECRET_PATH = '/Users/tuaran/Documents/GitHub/tuaran-home-page/tools/mcp-stdio-demo/crypto-demo.key'
 const LOCAL_STDIO_JSON_CONFIG = JSON.stringify({
   mcpServers: {
     'tuaran-local-crypto-demo': {
       type: 'stdio',
-      command: 'node',
+      command: LOCAL_NODE_PATH,
       args: [LOCAL_SERVER_PATH],
       env: { LOCAL_MCP_SECRET_FILE: LOCAL_SECRET_PATH },
       description: '本地 AES-256-GCM 加解密联调 Demo',
+      disabled: false,
     },
   },
 }, null, 2)
-const LOCAL_STDIO_CODEX_CONFIG = `[mcp_servers.tuaran-local-crypto-demo]\ncommand = "node"\nargs = ["${LOCAL_SERVER_PATH}"]\nenv = { LOCAL_MCP_SECRET_FILE = "${LOCAL_SECRET_PATH}" }`
+const LOCAL_STDIO_CODEX_CONFIG = `[mcp_servers.tuaran-local-crypto-demo]\ncommand = "${LOCAL_NODE_PATH}"\nargs = ["${LOCAL_SERVER_PATH}"]\nenv = { LOCAL_MCP_SECRET_FILE = "${LOCAL_SECRET_PATH}" }`
 
 const SERVICES = [
   {
@@ -69,13 +71,17 @@ const SERVICES = [
     name: 'tuaran-local-crypto-demo',
     title: '本地加解密 MCP Demo',
     transport: 'stdio · 本地子进程',
-    endpoint: 'node <server.mjs>  ↔  stdin / stdout',
-    tags: ['联调 Demo', '无网络端口', '本地密钥'],
-    desc: '由 WorkBuddy 在用户电脑上拉起 Node.js 进程，在本地执行 AES-256-GCM 加解密，用于验证 stdio 握手和工具调用。',
+    endpoint: `${LOCAL_NODE_PATH} ${LOCAL_SERVER_PATH}`,
+    tags: ['WorkBuddy 已验证', '3 个工具', '本地密钥'],
+    desc: '由 WorkBuddy 在本机拉起 Node.js 进程，在本地执行 AES-256-GCM 加解密。配置已使用真实绝对路径验证，可直接用于当前维护机。',
     tools: ['local_runtime_info', 'local_encrypt_text', 'local_decrypt_text'],
     config: LOCAL_STDIO_JSON_CONFIG,
     codexConfig: LOCAL_STDIO_CODEX_CONFIG,
-    prompt: '“调用 tuaran-local-crypto-demo，先查看本地运行信息，再加密一段测试文本。”',
+    prompts: [
+      '“调用 tuaran-local-crypto-demo 的 local_runtime_info，确认本地进程和密钥状态。”',
+      '“调用 local_encrypt_text，把「这是一段本地测试文本」加密。”',
+      '“调用 local_decrypt_text，解密刚才返回的 v1 密文。”',
+    ],
     guide: true,
   },
 ]
@@ -103,6 +109,8 @@ function Pill({ children }) {
 }
 
 function McpServiceCard({ service }) {
+  const prompts = service.prompts || [service.prompt]
+
   return (
     <article className="flex min-w-0 flex-col py-6">
       <header>
@@ -136,11 +144,17 @@ function McpServiceCard({ service }) {
       </dl>
 
       <div className="mt-5 border-l-2 border-[#c8b184] pl-3 dark:border-[#687348]">
-        <p className="mb-1 text-[10px] uppercase tracking-[0.1em] text-[#6e7064] dark:text-gray-400">试着这样问</p>
-        <p className="mb-0 text-xs leading-5 text-[#34362e] dark:text-gray-200">{service.prompt}</p>
+        <p className="mb-1 text-[10px] uppercase tracking-[0.1em] text-[#6e7064] dark:text-gray-400">{prompts.length > 1 ? '对应用法' : '试着这样问'}</p>
+        {prompts.length > 1 ? (
+          <ol className="mb-0 grid gap-1 pl-4 text-xs leading-5 text-[#34362e] dark:text-gray-200">
+            {prompts.map((prompt) => <li key={prompt}>{prompt}</li>)}
+          </ol>
+        ) : (
+          <p className="mb-0 text-xs leading-5 text-[#34362e] dark:text-gray-200">{prompts[0]}</p>
+        )}
         {service.guide ? (
           <p className="mb-0 mt-2 text-xs leading-5 text-[#4c4c44] dark:text-gray-300">
-            先在仓库执行 <code>npm run mcp:stdio:check</code>，再将配置中的脚本和密钥改为本机绝对路径。
+            当前配置已在 WorkBuddy 5.2.5 验证为 3/3 个工具启用。其他电脑复制时，需要把 Node、脚本和密钥路径改成该设备的真实绝对路径；可先在仓库执行 <code>npm run mcp:stdio:check</code> 自测。
           </p>
         ) : null}
       </div>

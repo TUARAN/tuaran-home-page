@@ -1,7 +1,7 @@
 interface:
   display_name: "重装 Codex 梦幻皮肤"
-  short_description: "用一张本地图片安全重装、应用并验证 Codex 桌面主题"
-  default_prompt: "Use $reinstall-codex-dream-skin to reinstall my local Codex theme from this image and verify the result."
+  short_description: "按 macOS 或 Windows 宿主安全重装并验证 Codex 主题"
+  default_prompt: "Use $reinstall-codex-dream-skin to detect my host OS, reinstall the local Codex theme from this image, and verify the result."
 
 policy:
   allow_implicit_invocation: true

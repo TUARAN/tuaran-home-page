@@ -26,6 +26,80 @@ import {
 const PAGE_URL = 'https://2aran.com/global-ai-governance'
 const MAX_COMPARE = 4
 
+function GovernanceWorldMap() {
+  const nodes = [
+    { x: 138, y: 126, color: '#315d8a', label: 'GPAI', dx: -8, dy: -13 },
+    { x: 300, y: 112, color: '#315d8a', label: 'G7', dx: -3, dy: -13 },
+    { x: 264, y: 142, color: '#3b7b6d', label: 'UN', dx: -2, dy: 22 },
+    { x: 474, y: 142, color: '#b45f45', label: 'WAICO', dx: -18, dy: -13 },
+    { x: 334, y: 238, color: '#b45f45', label: 'AU', dx: -2, dy: 22 },
+    { x: 182, y: 250, color: '#b45f45', label: 'eLAC', dx: -14, dy: 22 },
+    { x: 499, y: 232, color: '#8a6a35', label: 'ASEAN', dx: -20, dy: 22 },
+    { x: 389, y: 183, color: '#8a6a35', label: 'ARAB', dx: -16, dy: -13 },
+  ]
+
+  return (
+    <div className="absolute inset-y-0 right-0 hidden w-[41%] border-l border-[#ded9cd] bg-[#f8f5ee] dark:border-[#303640] dark:bg-[#10151b] lg:block" aria-hidden="true">
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_23px,#e8e3d8_24px),linear-gradient(#f1ede4_23px,#ded9cd_24px)] bg-[size:24px_24px] opacity-55 dark:opacity-[0.07]" />
+      <div className="absolute left-6 top-6 z-10">
+        <p className="font-mono text-[8px] uppercase tracking-[0.22em] text-[#7c7b74] dark:text-gray-500">Institutional geography</p>
+        <p className="mt-1 font-serif text-[12px] font-semibold text-[#354157] dark:text-gray-300">全球机制节点与协作方向</p>
+      </div>
+
+      <svg viewBox="0 0 640 390" className="absolute inset-x-3 bottom-6 top-12 h-[calc(100%-4.5rem)] w-[calc(100%-1.5rem)]" role="img">
+        <g className="fill-[#dbe1df] stroke-[#9eaaa7] dark:fill-[#252e35] dark:stroke-[#53616a]" strokeWidth="1.2" strokeLinejoin="round">
+          {/* 北美 */}
+          <path d="M55 93 79 70l50-17 48 8 31 24-13 19-28 7-11 23-25 15-19 35-18-5-5-31-22-12-19-22Z" />
+          <path d="m76 188 24 10 14 17-6 13-28-9-16-18Z" />
+          {/* 南美 */}
+          <path d="m145 205 38-7 30 18 12 29-16 31-12 49-21 29-13-28 5-33-19-30-17-34Z" />
+          {/* 欧洲 */}
+          <path d="m272 91 22-20 39 4 14 19-15 15 17 13-15 15-31-8-17 11-20-15Z" />
+          {/* 非洲 */}
+          <path d="m281 145 48-9 40 27 5 43-22 54-30 30-22-33-7-38-21-30Z" />
+          {/* 亚洲 */}
+          <path d="m344 93 46-28 67-1 34 20 54 7 37 29-18 22-42 8-28 31-35-12-25 20-34-12-24-29-34-5 11-23-26-11Z" />
+          {/* 东南亚岛链 */}
+          <path d="m463 193 18 4 8 22 18-4 18 18-8 13-28-8-17-18Z" />
+          <path d="m514 255 34 9 24 23-15 17-41-4-31-22Z" />
+          {/* 日本 */}
+          <path d="m546 135 8-13 7 16-9 20Z" />
+          {/* 格陵兰 */}
+          <path d="m202 45 30-14 21 14-10 28-28 6-18-17Z" />
+        </g>
+
+        <g fill="none" strokeLinecap="round">
+          <path d="M138 126 Q217 62 300 112" stroke="#315d8a" strokeWidth="1.5" strokeDasharray="4 5" opacity=".68" />
+          <path d="M264 142 Q372 74 474 142" stroke="#3b7b6d" strokeWidth="1.5" strokeDasharray="4 5" opacity=".68" />
+          <path d="M474 142 Q429 205 334 238" stroke="#b45f45" strokeWidth="1.5" strokeDasharray="4 5" opacity=".72" />
+          <path d="M474 142 Q515 174 499 232" stroke="#8a6a35" strokeWidth="1.5" strokeDasharray="4 5" opacity=".72" />
+          <path d="M334 238 Q255 305 182 250" stroke="#b45f45" strokeWidth="1.2" strokeDasharray="3 6" opacity=".55" />
+          <path d="M389 183 Q448 190 499 232" stroke="#8a6a35" strokeWidth="1.2" strokeDasharray="3 6" opacity=".6" />
+        </g>
+
+        {nodes.map((node) => (
+          <g key={node.label}>
+            <circle cx={node.x} cy={node.y} r="7" fill={node.color} opacity=".15" />
+            <circle cx={node.x} cy={node.y} r="3.2" fill={node.color} />
+            <text x={node.x + node.dx} y={node.y + node.dy} textAnchor="middle" className="fill-[#4d5360] font-mono text-[8px] font-semibold tracking-[0.12em] dark:fill-[#aeb8c5]">
+              {node.label}
+            </text>
+          </g>
+        ))}
+      </svg>
+
+      <div className="absolute bottom-4 left-6 right-5 z-10 flex flex-wrap gap-x-3 gap-y-1 border-t border-[#d5d1c7] pt-2 dark:border-[#333b44]">
+        {Object.entries(CATEGORY_META).map(([id, meta]) => (
+          <span key={id} className="inline-flex items-center gap-1.5 font-mono text-[7px] uppercase tracking-[0.08em] text-[#77766f] dark:text-gray-500">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+            {meta.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ScoreDots({ value, color = '#315d8a', compact = false }) {
   return (
     <span className="inline-flex items-center gap-1" aria-label={`${value} / 5`}>
@@ -272,8 +346,8 @@ export default function GlobalAiGovernanceClient() {
     <main className="bg-[#f2efe7] text-[#292b2f] dark:bg-[#0d1117] dark:text-gray-200">
       <div className="mx-auto w-full max-w-[1180px] px-4 py-8 sm:px-6 sm:py-12">
         <header className="relative overflow-hidden border border-[#cfcabe] bg-[#fffdf8] p-5 dark:border-[#343943] dark:bg-[#12171e] sm:p-8">
-          <div aria-hidden="true" className="absolute right-0 top-0 hidden h-full w-[38%] border-l border-[#ded9cd] bg-[linear-gradient(90deg,transparent_23px,#e8e3d8_24px),linear-gradient(#f1ede4_23px,#ded9cd_24px)] bg-[size:24px_24px] opacity-45 dark:border-[#303640] dark:opacity-10 lg:block" />
-          <div className="relative max-w-[770px]">
+          <GovernanceWorldMap />
+          <div className="relative max-w-[770px] lg:max-w-[56%]">
             <div className="flex flex-wrap items-center gap-3">
               <span className="bg-[#c6533b] px-2.5 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-white">Global AI Governance Atlas</span>
               <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#74736d] dark:text-gray-500">核验至 2026.07.17</span>

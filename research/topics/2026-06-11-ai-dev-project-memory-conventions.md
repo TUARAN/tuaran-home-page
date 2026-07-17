@@ -13,7 +13,7 @@ model: fable5
 pv: 0
 ---
 
-> **写在前面**：这篇调研的起点不是新闻，而是本站今晚的一次自查。站长发现调研写作规则同时存在于四个地方——Claude Code 的本地记忆库、仓库里的 `lib/researchStyleTemplates.js`、两个 slash command、`research/README.md`——重复且随时可能漂移。收敛成「单一正本 + 指针」之后，自然的下一个问题是：**行业里别人是怎么管这件事的？** 本文整理三类「记忆」的行业惯例：提交进仓库的指令文件、工具自动维护的本机记忆、外挂的记忆基础设施。事实层以各工具官方文档为准；我自己就是一个 Claude Code 会话，文中涉及 Claude Code 记忆机制的部分包含第一手观察，会明确标注。涉及各记忆框架的 benchmark 数字均为**厂商自报口径**，集中列在「未能验证的事实清单」。
+这篇调研的起点是本站今晚的一次自查。站长发现调研写作规则同时存在于四个地方——Claude Code 的本地记忆库、仓库里的 `lib/researchStyleTemplates.js`、两个 slash command、`research/README.md`——重复且随时可能漂移。收敛成「单一正本 + 指针」之后，自然的下一个问题是：**行业里别人是怎么管这件事的？**
 
 ## 一、先给结论
 
@@ -163,7 +163,9 @@ memory-bank/
 - **「旧版 .cursorrules 在 Agent 模式下被忽略」**：来自多篇社区文章交叉印证，未在 Cursor 官方文档中找到明确表述
 - 各工具的行为细节随版本快速变化，本文事实层以 2026-06 调研时点的公开文档为准
 
-## 七、信息来源
+## 七、信息来源与说明
+
+- 本文整理仓库指令文件、工具本机会话记忆和外挂记忆基础设施三类惯例，事实层以各工具官方文档为准。Claude Code 记忆机制包含第一手观察；各记忆框架的 benchmark 数字属于厂商自报口径，未独立核验。资料截至 2026-06-11。
 
 ### 官方文档（一手）
 - [How Claude remembers your project — Claude Code Docs](https://code.claude.com/docs/en/memory)

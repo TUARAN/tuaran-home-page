@@ -213,6 +213,31 @@ function CommentFollowUp({ comments, loading, deletingId, onDelete }) {
   ))}</ol>
 }
 
+function LikedContentList({ likes, loading }) {
+  const rows = likes?.top || []
+  if (loading) return <LoadingRows />
+  if (!rows.length) return <EmptyState title="暂无获赞文章" description="当前周期产生点赞后，会在这里列出对应文章。" />
+  return (
+    <ol className="divide-y divide-[#ecece5] dark:divide-[#202a37]">
+      {rows.map((row) => (
+        <li key={row.key} className="flex items-center justify-between gap-4 py-2.5">
+          <div className="min-w-0">
+            {row.href ? (
+              <a href={row.href} target="_blank" rel="noreferrer" className="block truncate text-xs font-medium text-[#171611] hover:underline dark:text-gray-100">
+                {row.title}
+              </a>
+            ) : (
+              <p className="truncate text-xs font-medium text-[#171611] dark:text-gray-100">{row.title}</p>
+            )}
+            <p className="mt-0.5 truncate font-mono text-[10px] text-[#aaa99f] dark:text-gray-700">{row.key}</p>
+          </div>
+          <span className="shrink-0 text-xs font-semibold text-[#55574f] dark:text-gray-300">{number(row.total)} 赞</span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 export default function ContentWeeklyClient() {
   const [days, setDays] = useState(7)
   const [data, setData] = useState(null)
@@ -304,6 +329,10 @@ export default function ContentWeeklyClient() {
       <div className="grid gap-4 xl:grid-cols-2">
         <Section title="互动与留存" description={`${label}点赞、评论与订阅沉淀，用于观察阅读后的进一步行动。`}>
           <div className="grid grid-cols-3 gap-3"><div><p className="text-[10px] text-[#8f9187]">点赞</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.likes?.total)}</p><Delta value={(data?.likes?.total || 0) - (data?.likes?.previousTotal || 0)} /></div><div><p className="text-[10px] text-[#8f9187]">评论</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.comments?.total?.period)}</p><p className="mt-1 text-[10px] text-[#9a9b92]">累计 {number(data?.comments?.total?.all)}</p></div><div><p className="text-[10px] text-[#8f9187]">有效订阅</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.newsletter?.active)}</p><p className="mt-1 text-[10px] text-[#9a9b92]">周期新增 +{number(data?.newsletter?.period)}</p></div></div>
+          <div className="mt-5 border-t border-[#e5e6de] pt-4 dark:border-[#25303e]">
+            <h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.13em] text-[#8f9187] dark:text-gray-600">{label}获赞文章</h3>
+            <LikedContentList likes={data?.likes} loading={loading} />
+          </div>
         </Section>
         <Section title="最新评论" description="保留内容运营所需的评论跟进入口。">
           <CommentFollowUp comments={data?.comments} loading={loading} deletingId={deletingCommentId} onDelete={deleteComment} />

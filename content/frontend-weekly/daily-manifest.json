@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-17",
+      "displayDate": "Jul 17",
+      "count": 5,
+      "highlights": [
+        "Anthropic 用 Claude Code 大规",
+        "面壁智能开源企业AI数字员工平台StaffDeck",
+        "秒哒 3.5 全球首发 iOS App，无代码开发与",
+        "Gemini Enterprise Agent Pl",
+        "MiniMax Code 2.0 桌面端焕新：底层架"
+      ]
+    },
+    {
       "date": "2026-07-16",
       "displayDate": "Jul 16",
       "count": 5,
@@ -305,5 +317,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-16"
+  "latest": "2026-07-17"
 }

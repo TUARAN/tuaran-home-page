@@ -13,8 +13,6 @@ model: claude-opus-4-8
 pv: 0
 ---
 
-> **写在前面**：本文据 OpenClaw 核心仓库 CONTRIBUTING、插件文档与 channel 源码，整理「如何做 channel + 四档分发 + 如何被官方集成」，属外部观察与操作梳理、非官方承诺；标注「未核实」处为公开渠道未确认。
-
 ## 一、先给结论
 
 **在 OpenClaw 里做一个 channel 不难（它就是个插件），难的是「被官方集成」——官方默认让你做第三方插件，能不能往上爬到「随核心发行」那一档，实质取决于有没有领域 maintainer 愿意接管维护。**
@@ -134,7 +132,9 @@ CONTRIBUTING 写得很直白：
 
 **一种外部解读**：OpenClaw 把 channel 设计成插件，于是「做一个 channel」对所有人开放，而「被官方集成」是一道由 maintainer 把关的窄门——四档分发（核心原生 / bundled / 官方外部 / 社区）本质是「核心愿意为它背多少维护责任」的刻度。想被集成，与其打磨代码，不如先确认有没有对口 maintainer 愿意接管；飞书能进 bundled，正是因为这三件事都凑齐了。以上为分析视角，不是预测，也不是建议。
 
-### 信息来源
+### 信息来源与说明
+
+- 主要资料来自 OpenClaw 核心仓库 CONTRIBUTING、插件文档和 channel 源码；本文是外部操作梳理，不代表官方承诺，“未核实”表示公开渠道尚未确认。资料截至 2026-06-24。
 
 **OpenClaw 一手 / 官方**
 - [GitHub · openclaw/openclaw · CONTRIBUTING.md](https://github.com/openclaw/openclaw/blob/main/CONTRIBUTING.md)

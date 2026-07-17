@@ -11,8 +11,6 @@ model: gpt-5
 pv: 0
 ---
 
-> **信息来源说明**：本调研基于 Qwen 官方博客 / Alibaba Cloud Community、Hugging Face 官方 Qwen 模型卡、Hugging Face Collection、vLLM recipes、ModelScope / 第三方模型平台索引、TechNode / CnTechPost 等公开资料整理。Qwen3.7 仍处于刚发布阶段，部分信息仅有服务化模型与媒体报道，未公开权重、参数规模和完整模型卡；下文出现此类数据时统一标注"未公开"或"估算"。
-
 ## 一、核心结论
 
 - **Qwen3.6 官方开源家族数量**：**4 个 Hugging Face 官方条目**，分别为 Qwen3.6-35B-A3B、Qwen3.6-35B-A3B-FP8、Qwen3.6-27B、Qwen3.6-27B-FP8。
@@ -388,7 +386,9 @@ Qwen3.6 模型卡建议：
 4. **商业侧**：Qwen3.7 如果 API 稳定且价格有优势，会直接进入 Claude Code / OpenCode / OpenClaw / DevRel 自动化工作流。
 5. **下一阶段看点**：是否发布 Qwen3.7-27B / 35B-A3B 开源权重，以及 Qwen3.7-Max 是否开放稳定 API、价格和系统卡。
 
-## 参考来源
+## 信息来源与说明
+
+- 主要资料来自 Qwen 官方博客、Alibaba Cloud Community、Hugging Face 官方模型卡与 Collection、vLLM recipes、ModelScope 及公开报道；Qwen3.7 的权重、参数规模与完整模型卡尚未公开，相关数据按“未公开 / 估算”标记。资料截至 2026-05-22。
 
 - Qwen3.6-35B-A3B Hugging Face 模型卡：<https://huggingface.co/Qwen/Qwen3.6-35B-A3B>
 - Qwen3.6-27B Hugging Face 模型卡：<https://huggingface.co/Qwen/Qwen3.6-27B>

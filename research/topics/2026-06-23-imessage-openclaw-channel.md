@@ -15,8 +15,6 @@ pv: 0
 
 # 用 iMessage 驱动 OpenClaw（龙虾）调研：渠道架构、权限模型与踩坑清单
 
-> **写在前面**：本文基于 OpenClaw 官方文档与 imsg 开源仓库（来源见文末）做外部技术整理，非官方教程；项目迭代极快，判断只对 2026-06 这一刻成立，落地前请先核对最新文档与 `CHANGELOG`。
-
 ![用 iMessage 驱动 OpenClaw 的端到端架构：发送端（苹果终端）→ 运行 OpenClaw 的 Mac（Messages.app → chat.db → imsg watch → Gateway → agent loop → imsg send）→ 接收端](/research/imessage-openclaw-channel/architecture-overview.png)
 
 ---
@@ -235,7 +233,9 @@ exec ssh -T gateway-host imsg "$@"
 
 **一种外部解读**：用 iMessage 驱动龙虾，技术上比想象中「正派」——基础收发不碰私有 API，全靠读本地数据库和系统自带的自动化接口；难点不在「能不能调通」，而在「macOS 的权限模型逼你必须有一台真机 Mac，并且要在正确的进程上下文里把权限授予好」。它是个人专机自建的好玩法，是对外托管的麻烦事。**以上为分析视角，不是预测，也不是建议。**
 
-### 信息来源
+### 信息来源与说明
+
+- 本文依据 OpenClaw 官方文档与 imsg 开源仓库做外部技术整理，不是官方教程；项目迭代很快，判断只对应 2026-06 的版本状态，落地前需核对最新文档与 `CHANGELOG`。
 
 一手资料（官方 / 仓库）：
 

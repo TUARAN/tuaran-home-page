@@ -13,8 +13,6 @@ model: claude-opus-4-8
 pv: 0
 ---
 
-> **写在前面**：本文梳理 OpenClaw 短信能力的官方与生态路径，依据官方文档、GitHub 仓库与服务商页面等公开信息整理，属外部观察，不构成接入建议；标注「未对外披露 / 未核实」处为未能从公开渠道确认。
-
 ## 一、先给结论
 
 **OpenClaw 现在（`2026.6.10` 起）官方内置了一方 SMS channel `@openclaw/sms`，后端是 Twilio——这就是「哪家提供」的官方默认答案；Telnyx 是另一条由 Telnyx 公司自己写的一方 channel，社区还补了大量 Twilio/自建方案和发短信 skill。**
@@ -263,7 +261,9 @@ Telnyx / Twilio 的对比见第四节。生态里还有第三家 **Plivo**——
 
 **一种外部解读**：到 2026.6.10，「OpenClaw 的短信是哪家」有了官方答案——核心内置 `@openclaw/sms`，后端 **Twilio**（2026-05-31 收进框架）。在它之外，Telnyx 公司自建了另一条一方 channel（自有网络、低单价），托管的 ClawdTalk 自述 Powered by Telnyx，社区还补了大量 channel 与「主动外发」的 skill。所以更准确的说法不是「没官方」，而是「**官方内置默认是 Twilio，换承运 / 要 skill / 要托管再往生态走**」。这也提醒一点：OpenClaw 迭代极快，结论要以核心仓库当前版本为准——本文已据此从「官方缺位」更正为「官方内置 Twilio」。以上为分析视角，不是预测，也不是建议。
 
-### 信息来源
+### 信息来源与说明
+
+- 主要资料来自 OpenClaw 官方文档、GitHub 仓库与服务商页面；本文是外部观察，不构成接入建议，“未对外披露 / 未核实”表示公开渠道无法确认。资料截至 2026-06-24。
 
 **OpenClaw 一手 / 官方**
 - [GitHub · openclaw/openclaw 核心仓库 `extensions/sms`（`@openclaw/sms`，Twilio SMS channel）](https://github.com/openclaw/openclaw/tree/main/extensions/sms)

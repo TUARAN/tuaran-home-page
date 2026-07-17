@@ -50,7 +50,7 @@ const PUBLISHING_RULES = [
 
 function StatusPill({ children }) {
   return (
-    <span className="inline-flex rounded-full border border-[#cccdc2] bg-[#eaebe3] px-2.5 py-1 text-xs text-[#555640] dark:border-[#334052] dark:bg-[#131d29] dark:text-[#c9d6e5]">
+    <span className="inline-flex rounded-full border border-[#cccdc2] bg-[#eaebe3] px-2 py-0.5 text-[11px] leading-5 text-[#555640] dark:border-[#334052] dark:bg-[#131d29] dark:text-[#c9d6e5]">
       {children}
     </span>
   )
@@ -62,14 +62,13 @@ function SkillCard({ skill }) {
   return (
     <article
       id={skill.id}
-      className="rounded-lg border border-[#d2d3c8] bg-white dark:border-[#283443] dark:bg-[#101820]"
+      className="flex min-w-0 flex-col rounded-lg border border-[#d2d3c8] bg-white p-4 dark:border-[#283443] dark:bg-[#101820]"
     >
-      {/* Header — title + share button */}
-      <header className="border-b border-[#dedfd5] p-5 dark:border-[#263241]">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="mb-1 font-mono text-xs text-[#8b5a1f] dark:text-[#a1ab76]">{skill.name}</p>
-            <h2 className="mb-2 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">
+      <header>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="mb-0.5 truncate font-mono text-[11px] text-[#8b5a1f] dark:text-[#a1ab76]">{skill.name}</p>
+            <h2 className="mb-1.5 border-b-0 pb-0 font-serif text-xl font-semibold leading-tight text-[#1c1d18] dark:text-gray-100">
               <Link href={detailHref} className="text-[#1c1d18] no-underline hover:!no-underline hover:text-[#8b5a1f] dark:text-gray-100 dark:hover:text-[#a1ab76]">
                 {skill.title}
               </Link>
@@ -88,49 +87,38 @@ function SkillCard({ skill }) {
             exactUrl
           />
         </div>
-        <p className="mb-0 mt-4 text-sm leading-7 text-[#4c4c44] dark:text-gray-300">{skill.desc}</p>
+        <p className="mb-0 mt-3 text-sm leading-6 text-[#4c4c44] dark:text-gray-300">{skill.desc}</p>
       </header>
 
-      {/* Codex install / download / copy / share — the focus */}
       {skill.codex ? (
-        <section className="p-5">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-            <div>
-              <p className="mb-1 text-xs uppercase tracking-[0.12em] text-[#6e7064] dark:text-gray-400">
-                配置到本地 Codex / 给智能体阅读 / 分享给同事
-              </p>
-              <h3 className="mb-0 border-b-0 pb-0 font-serif text-xl font-semibold text-[#1c1d18] dark:text-gray-100">
-                下载 / 复制 Skill 文件
-              </h3>
-            </div>
-            <StatusPill>{skill.codex.installPath}</StatusPill>
-          </div>
-
-          <div className="mb-4">
+        <section className="mt-4 border-t border-[#dedfd5] pt-3 dark:border-[#263241]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <SkillBundleButton skill={skill} />
+            <span className="font-mono text-[10px] text-[#6e7064] dark:text-gray-400">{skillFiles.length} files</span>
           </div>
-
-          <div className="space-y-2">
-            <p className="mb-1 text-xs uppercase tracking-[0.12em] text-[#6e7064] dark:text-gray-400">
-              单独下载
-            </p>
-            {skillFiles.map((file) => (
-              <SkillFileButton key={file.filename} filename={file.filename} content={file.content} />
-            ))}
-            <p className="mt-2 text-xs leading-6 text-[#56564d] dark:text-gray-300">
-              下载后放到 <code className="font-mono text-[11px] text-[#8b5a1f] dark:text-[#a1ab76]">{skill.codex.installPath}</code> 即可作为本地 Codex Skill 使用。也可直接复制 SKILL.md 粘贴到 Claude Code / Cursor / ChatGPT 当 system prompt。
-            </p>
-          </div>
+          <details className="group mt-3 rounded-md border border-[#dedfd5] bg-[#f8f8f5] dark:border-[#263241] dark:bg-[#121a24]">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-medium text-[#4c4c44] marker:hidden dark:text-gray-300">
+              <span>单独下载与安装位置</span>
+              <span className="text-[#8b5a1f] transition-transform group-open:rotate-90 dark:text-[#a1ab76]">→</span>
+            </summary>
+            <div className="space-y-2 border-t border-[#dedfd5] p-3 dark:border-[#263241]">
+              {skillFiles.map((file) => (
+                <SkillFileButton key={file.filename} filename={file.filename} content={file.content} />
+              ))}
+              <p className="mb-0 text-xs leading-5 text-[#56564d] dark:text-gray-300">
+                安装到 <code className="font-mono text-[10px] text-[#8b5a1f] dark:text-[#a1ab76]">{skill.codex.installPath}</code>；SKILL.md 也可作为其他智能体的 system prompt。
+              </p>
+            </div>
+          </details>
         </section>
       ) : null}
 
-      {/* Detail link */}
-      <footer className="border-t border-[#dedfd5] px-5 py-3 dark:border-[#263241]">
+      <footer className="mt-auto pt-3">
         <Link
           href={detailHref}
-          className="inline-flex items-center gap-1 text-sm font-medium text-[#8b5a1f] no-underline transition-colors hover:!no-underline hover:text-[#724817] dark:text-[#a1ab76] dark:hover:text-[#9ba475]"
+          className="inline-flex items-center gap-1 text-xs font-medium text-[#8b5a1f] no-underline transition-colors hover:!no-underline hover:text-[#724817] dark:text-[#a1ab76] dark:hover:text-[#9ba475]"
         >
-          查看完整介绍（含基础信息 + 内容） →
+          查看完整内容 →
         </Link>
       </footer>
     </article>
@@ -139,47 +127,45 @@ function SkillCard({ skill }) {
 
 export default function SkillCenterPage() {
   return (
-    <PageContainer className="py-10">
-      <header className="mb-8 border-b border-[#dee0db] pb-6 dark:border-[#202938]">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <PageContainer className="py-6 md:py-8">
+      <header className="mb-5 border-b border-[#dee0db] pb-5 dark:border-[#202938]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
               <Link href="/works" className="underline-offset-4 hover:underline">
                 AI 项目
               </Link>
               <span>/</span>
               <span>Skill 中心</span>
             </div>
-            <p className="mb-3 font-mono text-xs uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#a1ab76]">
-              Skill Hub
-            </p>
-            <h1 className="mb-4 font-serif text-3xl font-semibold tracking-normal text-[#191915] dark:text-gray-100 md:text-5xl">
+            <h1 className="mb-2 font-serif text-3xl font-semibold tracking-normal text-[#191915] dark:text-gray-100 md:text-4xl">
               面向大模型与智能体的能力货架
             </h1>
-            <p className="mb-0 max-w-3xl text-base leading-8 text-[#43433b] dark:text-gray-300">
+            <p className="mb-0 max-w-3xl text-sm leading-6 text-[#43433b] dark:text-gray-300 md:text-base">
               Skill 是一组可复用的任务能力：它把经验、流程、工具调用、产出格式和验收标准封装起来，让模型不只是回答问题，而是稳定完成一类工作。
             </p>
           </div>
-          <SharePageButton
-            title="Skill 中心"
-            text="面向大模型与智能体的 Skill 能力中心。"
-            url="/skill-center"
-          />
+          <div className="self-start">
+            <SharePageButton
+              title="Skill 中心"
+              text="面向大模型与智能体的 Skill 能力中心。"
+              url="/skill-center"
+            />
+          </div>
         </div>
       </header>
 
-      {/* Categories */}
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         {SKILL_CATEGORIES.map((category) => (
           <article
             key={category.title}
-            className="rounded-lg border border-[#d2d3c8] bg-white p-4 dark:border-[#283443] dark:bg-[#101820]"
+            className="rounded-md border border-[#d2d3c8] bg-white p-3 dark:border-[#283443] dark:bg-[#101820]"
           >
-            <h2 className="mb-2 border-b-0 pb-0 font-serif text-xl font-semibold text-[#1c1d18] dark:text-gray-100">
+            <h2 className="mb-1 border-b-0 pb-0 text-sm font-semibold text-[#1c1d18] dark:text-gray-100">
               {category.title}
             </h2>
-            <p className="mb-4 text-sm leading-6 text-[#4c4c44] dark:text-gray-300">{category.desc}</p>
-            <div className="flex flex-wrap gap-1.5">
+            <p className="mb-2 text-xs leading-5 text-[#4c4c44] dark:text-gray-300">{category.desc}</p>
+            <div className="flex flex-wrap gap-1">
               {category.examples.map((item) => (
                 <StatusPill key={item}>{item}</StatusPill>
               ))}
@@ -188,61 +174,28 @@ export default function SkillCenterPage() {
         ))}
       </section>
 
-      {/* Quick catalog index */}
-      <section className="mt-8 rounded-lg border border-[#d2d3c8] bg-white p-5 dark:border-[#283443] dark:bg-[#101820]">
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="mb-1 text-xs text-[#6e7064] dark:text-gray-400">Catalog</p>
-            <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">
-              已上架 Skill
-            </h2>
-          </div>
-          <StatusPill>{PUBLISHED_SKILLS.length} 个 Skill</StatusPill>
-        </div>
-        <ul className="grid gap-2 md:grid-cols-2">
-          {PUBLISHED_SKILLS.map((skill) => (
-            <li key={skill.id}>
-              <Link
-                href={`/skill-center/${skill.id}`}
-                className="group flex items-center justify-between gap-3 rounded-md border border-[#dedfd5] bg-[#f8f8f5] px-4 py-3 no-underline transition-colors hover:!no-underline hover:border-[#b9bda8] hover:bg-[#e7eade] dark:border-[#263241] dark:bg-[#121a24] dark:hover:border-[#3a4a5d]"
-              >
-                <span>
-                  <span className="block font-mono text-xs text-[#8b5a1f] dark:text-[#a1ab76]">
-                    {skill.name}
-                  </span>
-                  <span className="mt-0.5 block text-sm font-semibold text-[#1c1d18] dark:text-gray-100">
-                    {skill.title}
-                  </span>
-                </span>
-                <span className="text-[#8b5a1f] transition-transform group-hover:translate-x-0.5 dark:text-[#a1ab76]">
-                  →
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Per-skill cards focused on download/share */}
-      <section className="mt-8 grid gap-6">
+      <div className="mb-3 mt-6 flex items-center justify-between gap-3">
+        <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">已上架 Skill</h2>
+        <StatusPill>{PUBLISHED_SKILLS.length} 个</StatusPill>
+      </div>
+      <section className="grid items-start gap-3 lg:grid-cols-2">
         {PUBLISHED_SKILLS.map((skill) => (
           <SkillCard key={skill.id} skill={skill} />
         ))}
       </section>
 
       {/* Publishing standards */}
-      <section className="mt-8 rounded-lg border border-[#d2d3c8] bg-white p-5 dark:border-[#283443] dark:bg-[#101820]">
-        <p className="mb-1 text-xs text-[#6e7064] dark:text-gray-400">Publishing Standard</p>
-        <h2 className="mb-4 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">
+      <section className="mt-6 rounded-lg border border-[#d2d3c8] bg-white p-4 dark:border-[#283443] dark:bg-[#101820]">
+        <h2 className="mb-3 border-b-0 pb-0 font-serif text-xl font-semibold text-[#1c1d18] dark:text-gray-100">
           上架标准
         </h2>
-        <ol className="grid gap-3 md:grid-cols-2">
+        <ol className="grid gap-x-5 gap-y-2 md:grid-cols-2">
           {PUBLISHING_RULES.map((rule, index) => (
             <li
               key={rule}
-              className="flex gap-3 rounded-md border border-[#dedfd5] bg-[#f8f8f5] p-4 text-sm leading-7 text-[#43433b] dark:border-[#263241] dark:bg-[#121a24] dark:text-gray-300"
+              className="flex gap-2 text-xs leading-5 text-[#43433b] dark:text-gray-300"
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#e1e2d8] font-mono text-xs text-[#545545] dark:bg-[#17212d] dark:text-gray-300">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#e1e2d8] font-mono text-[10px] text-[#545545] dark:bg-[#17212d] dark:text-gray-300">
                 {index + 1}
               </span>
               <span>{rule}</span>

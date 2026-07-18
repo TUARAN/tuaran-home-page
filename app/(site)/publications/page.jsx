@@ -71,7 +71,7 @@ export default function PublicationsPage() {
                 key={book.title}
                 className={`w-[min(56vw,230px)] shrink-0 snap-start rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} p-2.5 shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}
               >
-                <div className="flex aspect-[3/4] flex-col justify-between rounded-lg border border-white/18 bg-black/12 p-2.5">
+                <div className="flex aspect-[3/4] flex-col justify-between rounded-lg border border-white/[0.18] bg-black/[0.12] p-2.5">
                   <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/75">Book</span>
                   <div>
                     <h3 className="mb-1 font-serif text-[14px] font-semibold leading-[1.35] text-white">{book.title}</h3>

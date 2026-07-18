@@ -190,7 +190,7 @@ function IconButton({ children, label, onClick, active = false }) {
 
 function Stat({ label, value }) {
   return (
-    <div className="rounded-2xl border border-[#d7d8cf] bg-white/78 px-4 py-3 dark:border-[#2b3542] dark:bg-[#121922]">
+    <div className="rounded-2xl border border-[#d7d8cf] bg-white/[0.78] px-4 py-3 dark:border-[#2b3542] dark:bg-[#121922]">
       <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#63655f] dark:text-[#95a0af]">{label}</div>
       <div className="mt-1 break-words text-[clamp(0.88rem,2vw,1.125rem)] font-semibold leading-tight text-[#1a1b17] dark:text-gray-100">{value}</div>
     </div>
@@ -352,7 +352,7 @@ export default function SunMoonMotionClient() {
                     key={item.label}
                     type="button"
                     onClick={() => setMoonDay(item.value)}
-                    className="rounded-full border border-[#c8c9bf] bg-white/78 px-3 py-1.5 text-[13px] font-medium text-[#3d3d35] transition hover:-translate-y-0.5 hover:border-[#909282] dark:border-[#344152] dark:bg-[#121a24] dark:text-gray-100 dark:hover:border-[#536175]"
+                    className="rounded-full border border-[#c8c9bf] bg-white/[0.78] px-3 py-1.5 text-[13px] font-medium text-[#3d3d35] transition hover:-translate-y-0.5 hover:border-[#909282] dark:border-[#344152] dark:bg-[#121a24] dark:text-gray-100 dark:hover:border-[#536175]"
                   >
                     {item.label}
                   </button>
@@ -368,7 +368,7 @@ export default function SunMoonMotionClient() {
             <div className="overflow-hidden rounded-[24px] border border-[#d7d7cf] bg-[#f7f8f5] p-5 dark:border-[#283342] dark:bg-[#101720]">
               <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#848678] dark:text-[#93a0b3]">Location State</p>
               <h2 className="mb-3 border-b-0 pb-0 text-[1.08rem] font-semibold leading-snug text-[#1a1b17] dark:text-gray-100">广州当前观测状态</h2>
-              <div className="rounded-2xl border border-[#d8d9ce] bg-white/62 px-3 dark:border-[#263341] dark:bg-[#111923]">
+              <div className="rounded-2xl border border-[#d8d9ce] bg-white/[0.62] px-3 dark:border-[#263341] dark:bg-[#111923]">
                 <CompactMetric label="时间" value={currentDateLabel} />
                 <CompactMetric label="经纬度" value={`${FOCUSED_LOCATION.latitude.toFixed(2)}°N / ${FOCUSED_LOCATION.longitude.toFixed(2)}°E`} />
                 <CompactMetric label="真太阳时" value={formatTime(sun.solarTime)} />

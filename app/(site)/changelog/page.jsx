@@ -736,7 +736,7 @@ export default function ChangelogPage() {
           ].map(([label, value]) => (
             <div
               key={label}
-              className="rounded-xl border border-[#dfe0d8] bg-white/72 px-3 py-2 dark:border-[#232c36] dark:bg-[#121821]/72"
+              className="rounded-xl border border-[#dfe0d8] bg-white/[0.72] px-3 py-2 dark:border-[#232c36] dark:bg-[#121821]/[0.72]"
             >
               <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#858876] dark:text-[#8e9ab0]">
                 {label}

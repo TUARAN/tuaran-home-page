@@ -3,7 +3,7 @@
 export default function UnlockForm({ encryptedCount, password, onPasswordChange, onSubmit, busy, error }) {
   return (
     <section className="mt-8 grid gap-5 lg:grid-cols-[1fr_1.2fr]">
-      <div className="rounded-lg border border-[#dee0db] bg-white/82 p-6 dark:border-gray-800 dark:bg-[#121821]/82">
+      <div className="rounded-lg border border-[#dee0db] bg-white/[0.82] p-6 dark:border-gray-800 dark:bg-[#121821]/[0.82]">
         <h2 className="font-serif text-lg font-semibold text-[#15140f] dark:text-gray-100">解锁资料库</h2>
         <p className="mt-2 text-sm leading-6 text-[#51514a] dark:text-gray-300">
           当前共有 <strong>{encryptedCount}</strong> 条密文记录。口令只在浏览器本地使用。

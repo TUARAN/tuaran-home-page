@@ -25,6 +25,17 @@
   box-shadow: 0 28px 90px rgba(18, 35, 59, 0.18);
 }
 
+.hero h1,
+.darkPanel h2,
+.darkPanel h3 {
+  color: #f8f5ed;
+}
+
+.hero .heroCopy,
+.darkPanel .darkPanelCopy {
+  color: rgba(248, 245, 237, 0.68);
+}
+
 .hero::before {
   content: '';
   position: absolute;

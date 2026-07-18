@@ -1,34 +1,12 @@
 import Link from 'next/link'
 
+import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import RichPageJsonLd from '../components/RichPageJsonLd'
 import SharePageButton from '../components/SharePageButton'
 
 export const dynamic = 'force-static'
 
-const PAGE_URL = 'https://2aran.com/skill-market-research'
-
-export const metadata = {
-  title: 'Skill 上架、宣发与回流工程调研',
-  description:
-    '围绕 Codex / Claude / OpenClaw / ClawHub / GitHub / X 的 Skill 制作、上架、宣发与回流路径调研，整理成可执行的多维页面打法。',
-  alternates: { canonical: '/skill-market-research' },
-  openGraph: {
-    type: 'article',
-    siteName: '2aran.com',
-    title: 'Skill 上架、宣发与回流工程调研',
-    description: '一个 Skill 如何从文件变成多维页面：制作、上架、宣发、回流。',
-    url: PAGE_URL,
-    publishedTime: '2026-06-05T00:00:00.000Z',
-    authors: ['涂阿燃 / Tuaran'],
-    locale: 'zh_CN',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Skill 上架、宣发与回流工程调研',
-    description: '一个 Skill 如何从文件变成多维页面：制作、上架、宣发、回流。',
-    creator: '@Anthony404',
-    site: '@Anthony404',
-  },
-}
+export const metadata = createRichPageMetadata('skill-market-research')
 
 const FUNNEL = [
   ['选题', '高频痛点', '每周重复 3 次以上，AI 经常做不稳，且验收标准能写清。'],
@@ -103,6 +81,7 @@ function MiniBar({ value }) {
 export default function SkillMarketResearchPage() {
   return (
     <main className="min-h-screen bg-[#f2f3ef] text-[#1c1d18] dark:bg-[#0b1017] dark:text-gray-100">
+      <RichPageJsonLd pageId="skill-market-research" />
       <section className="border-b border-[#d7d8cf] bg-[#ebece6] dark:border-[#202938] dark:bg-[#101720]">
         <div className="mx-auto grid w-full max-w-[1120px] gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_320px] md:py-14">
           <div>
@@ -122,7 +101,7 @@ export default function SkillMarketResearchPage() {
               有真实痛点、有可安装资产、有可信样本、有传播材料、有反馈指标。
             </p>
           </div>
-          <div className="flex flex-col justify-between gap-5 rounded-2xl border border-[#cbcdc1] bg-white/62 p-5 dark:border-[#293544] dark:bg-white/[0.04]">
+          <div className="flex flex-col justify-between gap-5 rounded-2xl border border-[#cbcdc1] bg-white/[0.62] p-5 dark:border-[#293544] dark:bg-white/[0.04]">
             <SharePageButton
               title="Skill 上架、宣发与回流工程调研"
               text="一个 Skill 如何从文件变成多维页面：制作、上架、宣发、回流。"

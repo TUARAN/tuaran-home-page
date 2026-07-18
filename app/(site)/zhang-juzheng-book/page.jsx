@@ -1,36 +1,14 @@
 import Link from 'next/link'
 
+import { createRichPageMetadata } from '../../../lib/richPageSeo'
 import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import DistributeContentButton from '../components/DistributeContentButton'
+import RichPageJsonLd from '../components/RichPageJsonLd'
 import SharePageButton from '../components/SharePageButton'
 
 export const dynamic = 'force-static'
 
-export const metadata = {
-  title: '《张居正：一个改革者的成事与代价》· 写作出版工程',
-  description:
-    '《张居正：一个改革者的成事与代价》写作出版工程：主线、人物关系、关键事件、12 章目录、20 篇连载、写作方法、出版路径与 12 个月节奏。',
-  keywords: [
-    '涂阿燃',
-    'tuaran',
-    '张居正',
-    '万历新政',
-    '历史写作',
-    '写作出版',
-    '考成法',
-    '一条鞭法',
-    '改革',
-    '人物传记',
-    'Markdown 写作',
-  ],
-  alternates: {
-    canonical: '/zhang-juzheng-book',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
+export const metadata = createRichPageMetadata('zhang-juzheng-book')
 
 const KPI = [
   { label: '项目主张', value: '用输出倒逼输入', note: '以"写一本书"反推系统性研读' },
@@ -405,6 +383,7 @@ function StatusBadge({ status }) {
 export default function ZhangJuzhengBookPage() {
   return (
     <div className="w-full max-w-[1120px] mx-auto px-4 py-8">
+      <RichPageJsonLd pageId="zhang-juzheng-book" />
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#888] dark:text-gray-400">
           <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-2 py-[1px]">

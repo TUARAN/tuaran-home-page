@@ -1,16 +1,11 @@
+import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import RichPageJsonLd from '../components/RichPageJsonLd'
 import SunMoonMotionClient from './SunMoonMotionClient'
 
 export const dynamic = 'force-static'
 
-export const metadata = {
-  title: '日月运行交互可视化',
-  description:
-    '个人富页面研究用的日月运行交互可视化：用日心视角探索太阳中心、地球公转与自转、月球绕地运行与月相变化。',
-  alternates: {
-    canonical: '/sun-moon-motion',
-  },
-}
+export const metadata = createRichPageMetadata('sun-moon-motion')
 
 export default function SunMoonMotionPage() {
-  return <SunMoonMotionClient />
+  return <><RichPageJsonLd pageId="sun-moon-motion" /><SunMoonMotionClient /></>
 }

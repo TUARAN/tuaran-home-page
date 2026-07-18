@@ -134,12 +134,12 @@ const toneClasses = {
   green: 'border-[#4d927f]/35 bg-[#2e7663]/[0.07] text-[#246451] dark:text-[#84c9b6]',
 }
 
-function SectionHeading({ eyebrow, title, copy }) {
+function SectionHeading({ eyebrow, title, copy, inverted = false }) {
   return (
     <div className="max-w-3xl">
-      <p className="m-0 font-mono text-[10px] font-black uppercase tracking-[0.24em] text-[#a56e16] dark:text-[#e1aa51]">{eyebrow}</p>
+      <p className={`m-0 font-mono text-[10px] font-black uppercase tracking-[0.24em] ${inverted ? 'text-[#edc883]' : 'text-[#85560e] dark:text-[#e1aa51]'}`}>{eyebrow}</p>
       <h2 className="m-0 mt-2 text-3xl font-black tracking-[-0.035em] text-[#12233b] dark:text-white md:text-4xl">{title}</h2>
-      {copy ? <p className="m-0 mt-3 text-sm leading-7 text-[#617080] dark:text-[#9ca8b5]">{copy}</p> : null}
+      {copy ? <p className={`${inverted ? styles.darkPanelCopy : ''} m-0 mt-3 text-sm leading-7 text-[#617080] dark:text-[#9ca8b5]`}>{copy}</p> : null}
     </div>
   )
 }
@@ -168,7 +168,7 @@ function ScenarioPanel({ scenario }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {scenario.steps.map(([title, copy], index) => (
-          <article key={title} className="rounded-2xl border border-[#d8d1c3] bg-white/48 p-5 dark:border-white/10 dark:bg-white/[0.025]">
+          <article key={title} className="rounded-2xl border border-[#d8d1c3] bg-white/[0.48] p-5 dark:border-white/10 dark:bg-white/[0.025]">
             <span className="font-mono text-3xl font-black text-[#d7c6a5] dark:text-[#4e5661]">0{index + 1}</span>
             <h3 className="m-0 mt-5 text-base font-black text-[#15233a] dark:text-white">{title}</h3>
             <p className="m-0 mt-2 text-xs leading-6 text-[#657181] dark:text-[#9faab6]">{copy}</p>
@@ -205,7 +205,7 @@ export default function GuoqiGuodanClient() {
   return (
     <main className={`${styles.page} min-h-screen`}>
       <PageContainer width="wide" className="relative z-[1] py-7 md:py-10">
-        <header className={`${styles.hero} p-5 md:p-10 lg:p-14`}>
+        <header className={`${styles.hero} surface-inverse p-5 md:p-10 lg:p-14`}>
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,.65fr)] lg:items-end">
             <div>
               <div className="mb-7 flex flex-wrap items-center gap-2">
@@ -217,11 +217,11 @@ export default function GuoqiGuodanClient() {
               <h1 className="m-0 mt-4 max-w-5xl text-[40px] font-black leading-[1.03] tracking-[-0.055em] sm:text-[56px] lg:text-[72px]">
                 国企“过单”是什么意思？<br /><span className="text-[#e4b65f]">一页看懂走单、空转贸易与融资性贸易</span>
               </h1>
-              <p className="m-0 mt-6 max-w-3xl text-[15px] leading-8 text-white/66 md:text-base">
+              <p className={`${styles.heroCopy} m-0 mt-6 max-w-3xl text-[15px] leading-8 text-white/[0.66] md:text-base`}>
                 行业里都叫“过单”，法律与监管判断却不看叫法，而看交易实质：有没有真实商业目的，谁控制货权，谁承担风险，资金为什么流动，合同、发票、资金与履约证据能否互相印证。
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <a href="#definition" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#e0aa4f] px-5 text-sm font-black text-[#182238] no-underline transition hover:-translate-y-0.5 hover:bg-[#efc373]">先看定义 <IconArrowDown size={17} /></a>
+                <a href="#definition" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#e0aa4f] px-5 text-sm font-black text-[#182238] no-underline transition hover:-translate-y-0.5 hover:bg-[#efc373] dark:text-[#182238]">先看定义 <IconArrowDown size={17} /></a>
                 <SharePageButton title="国企过单是什么意思？走单、空转贸易、融资性贸易全流程与风险详解" text="从交易实质判断正常供应链与违规空转走单。" url={PAGE_URL} />
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function GuoqiGuodanClient() {
                 <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
                   <Icon size={18} className="text-[#e1b55e]" />
                   <strong className="mt-6 block font-mono text-3xl text-white">{value}</strong>
-                  <span className="mt-1 block text-xs text-white/48">{label}</span>
+                  <span className="mt-1 block text-xs text-white/[0.48]">{label}</span>
                 </div>
               ))}
             </div>
@@ -287,7 +287,7 @@ export default function GuoqiGuodanClient() {
               { icon: IconBuildingFactory2, who: '民企一侧', color: '#2e7663', items: [['低成本融资', '借助国企信用与银行授信，取得原本难以获得的资金。'], ['美化经营数据', '放大营业收入、资金流水或交易规模，用于融资、投标或资本运作。'], ['借用能力与资质', '使用国企的准入、仓储、渠道、进出口和结算能力；其中真实服务可以合规。']] },
               { icon: IconBuildingBank, who: '国企一侧', color: '#b84c3e', items: [['完成营收考核', '以低毛利、高周转交易快速放大账面销售规模。'], ['赚固定通道费', '不承担商品经营风险，却按交易额或占款时间收取固定回报。'], ['变现授信资源', '将低成本融资能力转换为对外资金敞口，收益像利差而非贸易利润。']] },
             ].map(({ icon: Icon, who, color, items }) => (
-              <article key={who} className="rounded-3xl border border-[#d7cfc1] bg-white/48 p-6 dark:border-white/10 dark:bg-white/[0.025] md:p-8">
+              <article key={who} className="rounded-3xl border border-[#d7cfc1] bg-white/[0.48] p-6 dark:border-white/10 dark:bg-white/[0.025] md:p-8">
                 <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl" style={{ backgroundColor: `${color}16`, color }}><Icon size={22} /></span><h3 className="m-0 text-xl font-black text-[#18263b] dark:text-white">{who}</h3></div>
                 <div className="mt-7 space-y-5">{items.map(([title, copy], index) => <div key={title} className="grid grid-cols-[28px_1fr] gap-3"><span className="font-mono text-xs font-black" style={{ color }}>0{index + 1}</span><div><h4 className="m-0 text-sm font-black text-[#263347] dark:text-[#e1e7ed]">{title}</h4><p className="m-0 mt-1 text-xs leading-6 text-[#697586] dark:text-[#9ba6b2]">{copy}</p></div></div>)}</div>
               </article>
@@ -295,8 +295,8 @@ export default function GuoqiGuodanClient() {
           </div>
         </section>
 
-        <section id="risks" className="scroll-mt-24 rounded-3xl bg-[#12233b] px-5 py-9 text-white md:px-9 md:py-12">
-          <SectionHeading eyebrow="04 / Risk stack" title="违规“过单”的风险不是一条线，而是四层连锁反应" copy="先出现经营与资金风险，再向国资追责、民事重定性、发票与刑事责任扩散。是否触发哪一层，取决于具体事实、损失、主观认知与法定构成要件。" />
+        <section id="risks" className={`${styles.darkPanel} surface-inverse scroll-mt-24 rounded-3xl bg-[#12233b] px-5 py-9 text-white md:px-9 md:py-12`}>
+          <SectionHeading eyebrow="04 / Risk stack" title="违规“过单”的风险不是一条线，而是四层连锁反应" copy="先出现经营与资金风险，再向国资追责、民事重定性、发票与刑事责任扩散。是否触发哪一层，取决于具体事实、损失、主观认知与法定构成要件。" inverted />
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {[
               ['01', '国资监管与追责', '融资性贸易及“空转”“走单”虚假业务一直是重点整治对象。发生损失或严重后果时，可能启动责任认定、组织处理、扣减薪酬等。', IconScale],
@@ -307,7 +307,7 @@ export default function GuoqiGuodanClient() {
               <article key={index} className="rounded-2xl border border-white/10 bg-white/[0.055] p-5">
                 <div className="flex items-center justify-between"><span className="font-mono text-[11px] font-black text-[#e0ae55]">{index}</span><Icon size={19} className="text-white/45" /></div>
                 <h3 className="m-0 mt-10 text-lg font-black">{title}</h3>
-                <p className="m-0 mt-3 text-xs leading-6 text-white/58">{copy}</p>
+                <p className={`${styles.darkPanelCopy} m-0 mt-3 text-xs leading-6 text-white/[0.58]`}>{copy}</p>
               </article>
             ))}
           </div>

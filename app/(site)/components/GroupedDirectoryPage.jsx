@@ -125,7 +125,7 @@ export default function GroupedDirectoryPage({
                 </div>
               </div>
 
-              <div className="divide-y divide-[#e8e1d5] overflow-hidden rounded-lg border border-[#ded8ca] bg-white/60 dark:divide-[#252e38] dark:border-[#252e38] dark:bg-[#101720]/72">
+              <div className="divide-y divide-[#e8e1d5] overflow-hidden rounded-lg border border-[#ded8ca] bg-white/60 dark:divide-[#252e38] dark:border-[#252e38] dark:bg-[#101720]/[0.72]">
                 {section.items.map((item) => (
                   <DirectoryRow key={item.id} item={item} actionLabel={actionLabel} />
                 ))}

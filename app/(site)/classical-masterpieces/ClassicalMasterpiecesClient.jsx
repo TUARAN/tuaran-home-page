@@ -724,7 +724,7 @@ export default function ClassicalMasterpiecesClient() {
           </div>
 
           {featuredWork ? (
-          <div className="self-end rounded-lg border border-[#cdcec1] bg-white/78 p-4 shadow-[0_24px_70px_rgba(83,64,33,0.14)] backdrop-blur dark:border-[#293545] dark:bg-[#111923]/80 dark:shadow-none">
+          <div className="self-end rounded-lg border border-[#cdcec1] bg-white/[0.78] p-4 shadow-[0_24px_70px_rgba(83,64,33,0.14)] backdrop-blur dark:border-[#293545] dark:bg-[#111923]/80 dark:shadow-none">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="mb-1 text-xs text-[#6e7064] dark:text-gray-400">快速阅读</p>

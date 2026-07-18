@@ -205,7 +205,7 @@ export default function HtmlToPdfTool() {
 
       <section className="mx-auto grid max-w-[1180px] gap-5 px-4 pb-10 sm:px-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:px-8">
         <aside className="space-y-4">
-          <div className="rounded-lg border border-[#ded8ca] bg-white/68 p-4 dark:border-[#252e38] dark:bg-[#101720]/78">
+          <div className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-4 dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="mb-0 text-[15px] font-bold">文件</h2>
               <span className="truncate text-[12px] text-[#797469] dark:text-[#9da7b5]">{fileName}</span>
@@ -237,7 +237,7 @@ export default function HtmlToPdfTool() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#ded8ca] bg-white/68 p-4 dark:border-[#252e38] dark:bg-[#101720]/78">
+          <div className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-4 dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
             <h2 className="mb-3 text-[15px] font-bold">打印</h2>
             <div className="space-y-4">
               <label className="block">
@@ -318,7 +318,7 @@ export default function HtmlToPdfTool() {
         </aside>
 
         <div className="grid min-h-[680px] gap-4 lg:grid-rows-[auto_minmax(0,1fr)]">
-          <div className="rounded-lg border border-[#ded8ca] bg-white/68 p-3 dark:border-[#252e38] dark:bg-[#101720]/78">
+          <div className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-3 dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
             <div className="mb-2 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <IconFileTypeHtml size={18} className="text-[#8a6422] dark:text-[#d4ae66]" />

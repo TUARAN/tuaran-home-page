@@ -485,12 +485,12 @@ export default function ThreeSolarSystem({
   return (
     <div className="relative min-h-[340px] min-w-0 w-full overflow-hidden rounded-[24px] border border-[#243244] bg-[#07101d] shadow-[0_18px_50px_rgba(15,23,42,0.2)]">
       <div ref={hostRef} className="h-full min-h-[340px] min-w-0 w-full" aria-label="3D 太阳、地球、月球运行模型" />
-      <div className="pointer-events-none absolute left-4 right-4 top-4 rounded-2xl border border-white/12 bg-[#08111f]/78 px-3 py-2 text-[12px] leading-5 text-[#dbeafe] backdrop-blur">
+      <div className="pointer-events-none absolute left-4 right-4 top-4 rounded-2xl border border-white/[0.12] bg-[#08111f]/[0.78] px-3 py-2 text-[12px] leading-5 text-[#dbeafe] backdrop-blur">
         <span className="font-semibold text-[#f8fafc]">广州观测 · 3D 日心模型</span>
         <span className="mx-2 text-[#7f8fa6]">·</span>
         完整系统视图，可拖动与缩放
       </div>
-      <div className="pointer-events-none absolute bottom-4 left-4 flex max-w-[calc(100%-8rem)] flex-wrap gap-2 rounded-2xl border border-white/12 bg-[#08111f]/78 px-3 py-2 text-[11px] text-[#cbd5e1] backdrop-blur">
+      <div className="pointer-events-none absolute bottom-4 left-4 flex max-w-[calc(100%-8rem)] flex-wrap gap-2 rounded-2xl border border-white/[0.12] bg-[#08111f]/[0.78] px-3 py-2 text-[11px] text-[#cbd5e1] backdrop-blur">
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#fbbf24]" />太阳</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#38bdf8]" />地球</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#b3cc8a]" />广州</span>
@@ -499,7 +499,7 @@ export default function ThreeSolarSystem({
       <button
         type="button"
         onClick={() => hostRef.current?.dispatchEvent(new Event('sunMoonResetView'))}
-        className="absolute bottom-4 right-4 rounded-full border border-white/15 bg-[#08111f]/78 px-3 py-2 text-[11px] font-semibold text-[#dbeafe] backdrop-blur transition hover:border-white/35 hover:bg-[#111c2c]"
+        className="absolute bottom-4 right-4 rounded-full border border-white/15 bg-[#08111f]/[0.78] px-3 py-2 text-[11px] font-semibold text-[#dbeafe] backdrop-blur transition hover:border-white/35 hover:bg-[#111c2c]"
       >
         重置视角
       </button>

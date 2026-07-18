@@ -841,7 +841,7 @@ function ClassicHomePage({ featuredPicks }) {
                 </blockquote>
                 <Link
                   href="/context-memory"
-                  className="mt-2 inline-flex items-center rounded-full border border-[#d6d0df] bg-white/78 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#625d70] no-underline transition hover:border-[#b9a6c9] hover:text-[#20172f] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
+                  className="mt-2 inline-flex items-center rounded-full border border-[#d6d0df] bg-white/[0.78] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#625d70] no-underline transition hover:border-[#b9a6c9] hover:text-[#20172f] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
                 >
                   <T zh="我的上下文记忆" en="My context memory" />
                 </Link>

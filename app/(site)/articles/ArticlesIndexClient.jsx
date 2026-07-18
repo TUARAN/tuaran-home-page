@@ -85,6 +85,10 @@ function manualEntriesToItems(entries, existingItems) {
       id: `content-db:${entry.contentKey}`,
       kind,
       tagLabel,
+      ...(kind === 'posts' ? {
+        columnCategory: 'uncategorized',
+        columnCategoryLabel: '未分类',
+      } : {}),
       ...(kind === 'resources' ? { resourceType: 'other' } : {}),
       title: entry.title,
       summary: entry.summary || '',
@@ -245,6 +249,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const initialResourceGroup = (() => {
     return normalizeResourceGroup(searchParams?.get('resource_group'))
   })()
+  const initialColumnCategory = searchParams?.get('column_category') || 'all'
   const initialQuery = searchParams?.get('q') || ''
   const [tab, setTab] = useState(initialTab)
   const [companyType, setCompanyType] = useState(initialCompanyType)
@@ -253,6 +258,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [techType, setTechType] = useState(initialTechType)
   const [resourceType, setResourceType] = useState(initialResourceType)
   const [resourceGroup, setResourceGroup] = useState(initialResourceGroup)
+  const [columnCategory, setColumnCategory] = useState(initialColumnCategory)
   const [query, setQuery] = useState(initialQuery)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -315,6 +321,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (nextResourceGroup !== resourceGroup) {
       setResourceGroup(nextResourceGroup)
     }
+    const nextColumnCategory = searchParams?.get('column_category') || 'all'
+    if (nextColumnCategory !== columnCategory) {
+      setColumnCategory(nextColumnCategory)
+    }
     const queryFromUrl = searchParams?.get('q') || ''
     if (queryFromUrl !== query) {
       setQuery(queryFromUrl)
@@ -330,6 +340,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     nextTechType,
     nextResourceType,
     nextResourceGroup,
+    nextColumnCategory,
     nextQuery,
   ) {
     const params = new URLSearchParams()
@@ -340,6 +351,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (nextTab === 'tech' && nextTechType !== 'all') params.set('tech_type', nextTechType)
     if (nextTab === 'resources' && nextResourceType !== 'all') params.set('resource_type', nextResourceType)
     if (nextTab === 'resources' && nextResourceGroup !== 'all') params.set('resource_group', nextResourceGroup)
+    if ((nextTab === 'posts' || nextTab === 'works') && nextColumnCategory !== 'all') {
+      params.set('column_category', nextColumnCategory)
+    }
     const normalizedQuery = String(nextQuery || '').trim()
     if (normalizedQuery) params.set('q', normalizedQuery)
     const queryString = params.toString()
@@ -348,6 +362,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function selectTab(next) {
     setTab(next)
+    const nextColumnCategory = next === tab && (next === 'posts' || next === 'works') ? columnCategory : 'all'
     const nextCompanyType = next === 'companies' ? companyType : 'all'
     const nextTopicType =
       next === 'business' && BUSINESS_TOPIC_TYPE_KEYS.includes(topicType)
@@ -367,7 +382,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       setResourceType('all')
       setResourceGroup('all')
     }
-    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextPeopleType, nextTechType, nextResourceType, nextResourceGroup, query)
+    setColumnCategory(nextColumnCategory)
+    const url = buildArticlesUrl(next, nextCompanyType, nextTopicType, nextPeopleType, nextTechType, nextResourceType, nextResourceGroup, nextColumnCategory, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -385,7 +401,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectCompanyType(next) {
     setTab('companies')
     setCompanyType(next)
-    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', 'all', 'all', query)
+    const url = buildArticlesUrl('companies', next, 'all', 'all', 'all', 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -394,7 +410,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectTopicType(tabKey, next) {
     setTab(tabKey)
     setTopicType(next)
-    const url = buildArticlesUrl(tabKey, 'all', next, 'all', 'all', 'all', 'all', query)
+    const url = buildArticlesUrl(tabKey, 'all', next, 'all', 'all', 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -403,7 +419,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectPeopleType(next) {
     setTab('people')
     setPeopleType(next)
-    const url = buildArticlesUrl('people', 'all', 'all', next, 'all', 'all', 'all', query)
+    const url = buildArticlesUrl('people', 'all', 'all', next, 'all', 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -412,7 +428,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectTechType(next) {
     setTab('tech')
     setTechType(next)
-    const url = buildArticlesUrl('tech', 'all', 'all', 'all', next, 'all', 'all', query)
+    const url = buildArticlesUrl('tech', 'all', 'all', 'all', next, 'all', 'all', 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -421,7 +437,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function selectResourceType(next) {
     setTab('resources')
     setResourceType(next)
-    const url = buildArticlesUrl('resources', 'all', 'all', 'all', 'all', next, resourceGroup, query)
+    const url = buildArticlesUrl('resources', 'all', 'all', 'all', 'all', next, resourceGroup, 'all', query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -433,7 +449,15 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     setTab('resources')
     setResourceGroup(next)
     setResourceType(nextType)
-    const url = buildArticlesUrl('resources', 'all', 'all', 'all', 'all', nextType, next, query)
+    const url = buildArticlesUrl('resources', 'all', 'all', 'all', 'all', nextType, next, 'all', query)
+    startTransition(() => {
+      router.replace(url, { scroll: false })
+    })
+  }
+
+  function selectColumnCategory(next) {
+    setColumnCategory(next)
+    const url = buildArticlesUrl(tab, 'all', 'all', 'all', 'all', 'all', 'all', next, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -441,7 +465,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function submitSearch(event) {
     event.preventDefault()
-    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query)
+    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, columnCategory, query)
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -449,7 +473,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function clearSearch() {
     setQuery('')
-    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, '')
+    const url = buildArticlesUrl(tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, columnCategory, '')
     startTransition(() => {
       router.replace(url, { scroll: false })
     })
@@ -471,6 +495,36 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   const activeChannel = getChannelForTab(tab)
 
+  const columnCategoryDefs = useMemo(() => {
+    if (tab !== 'posts' && tab !== 'works') return []
+    const categoryMap = new Map()
+    for (const item of items) {
+      if (item.kind !== tab || !item.columnCategory) continue
+      categoryMap.set(item.columnCategory, {
+        key: item.columnCategory,
+        label: item.columnCategoryLabel || item.columnCategory,
+        order: item.columnCategoryOrder >= 0 ? item.columnCategoryOrder : Number.MAX_SAFE_INTEGER,
+      })
+    }
+    return [
+      { key: 'all', label: tab === 'posts' ? '全部文章' : '全部页面' },
+      ...Array.from(categoryMap.values()).sort((a, b) => a.order - b.order),
+    ]
+  }, [items, tab])
+
+  const columnCategoryCounts = useMemo(() => {
+    const base = { all: 0 }
+    if (tab !== 'posts' && tab !== 'works') return base
+    const columnItems = items.filter((item) => item.kind === tab)
+    base.all = columnItems.length
+    for (const item of columnItems) {
+      if (item.columnCategory) {
+        base[item.columnCategory] = (base[item.columnCategory] || 0) + 1
+      }
+    }
+    return base
+  }, [items, tab])
+
   const breadcrumb = useMemo(() => {
     if (tab === 'all') return null
     const parts = []
@@ -480,6 +534,11 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (activeChannel === 'column') {
       const col = COLUMN_TAB_DEFS.find((t) => t.key === tab)
       if (col && col.key !== 'column') parts.push(col.label)
+      if ((tab === 'posts' || tab === 'works') && columnCategory !== 'all') {
+        parts.push(
+          columnCategoryDefs.find((category) => category.key === columnCategory)?.label || columnCategory,
+        )
+      }
     }
     if (activeChannel === 'research') {
       const researchTab = RESEARCH_TYPE_DEFS.find((t) => t.key === tab)
@@ -507,7 +566,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       else parts.push(group && group.key !== 'all' ? group.allLabel : '全部资源')
     }
     return parts.length ? parts.join(' / ') : null
-  }, [tab, activeChannel, companyType, topicType, peopleType, techType, resourceType, resourceGroup])
+  }, [tab, activeChannel, columnCategory, columnCategoryDefs, companyType, topicType, peopleType, techType, resourceType, resourceGroup])
 
   const visible = useMemo(() => {
     if (tab === 'picks' && !query.trim()) return []
@@ -527,6 +586,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         ? items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
         : items.filter((item) => item.kind === tab)
     let typeFiltered = tabItems
+    if ((tab === 'posts' || tab === 'works') && columnCategory !== 'all') {
+      typeFiltered = typeFiltered.filter((item) => item.columnCategory === columnCategory)
+    }
     if (tab === 'companies' && companyType !== 'all') {
       typeFiltered = typeFiltered.filter((item) => item.companyType === companyType)
     }
@@ -556,7 +618,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         .toLowerCase()
       return combined.includes(normalizedQuery)
     })
-  }, [items, tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query])
+  }, [items, tab, columnCategory, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query])
 
   const paginatedItems = useMemo(
     () => visible.slice(0, visibleCount),
@@ -572,7 +634,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
-  }, [tab, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query])
+  }, [tab, columnCategory, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query])
 
   useEffect(() => {
     const keys = (visiblePvKeySignature ? visiblePvKeySignature.split(',') : [])
@@ -737,23 +799,42 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     return (
       <>
         {activeChannel === 'column' ? (
-          <FilterRow label="专栏类型" ariaLabel="专栏类型" orientation={orientation}>
-            {COLUMN_TAB_DEFS.map((t) => (
-              <FilterChip
-                key={t.key}
-                label={t.label}
-                count={counts[t.key] ?? 0}
-                active={tab === t.key}
-                onClick={() => selectTab(t.key)}
-              />
-            ))}
-            <Link
-              href="/rich-pages"
-              className="ml-1 shrink-0 text-xs text-[var(--site-accent)] no-underline transition-colors hover:text-[var(--site-accent-strong)] dark:text-[#c5afe8] dark:hover:text-[#e1d4f5]"
-            >
-              多维页面专页 →
-            </Link>
-          </FilterRow>
+          <>
+            <FilterRow label="专栏类型" ariaLabel="专栏类型" orientation={orientation}>
+              {COLUMN_TAB_DEFS.map((t) => (
+                <FilterChip
+                  key={t.key}
+                  label={t.label}
+                  count={counts[t.key] ?? 0}
+                  active={tab === t.key}
+                  onClick={() => selectTab(t.key)}
+                />
+              ))}
+              <Link
+                href="/rich-pages"
+                className="ml-1 shrink-0 text-xs text-[var(--site-accent)] no-underline transition-colors hover:text-[var(--site-accent-strong)] dark:text-[#c5afe8] dark:hover:text-[#e1d4f5]"
+              >
+                多维页面专页 →
+              </Link>
+            </FilterRow>
+            {tab === 'posts' || tab === 'works' ? (
+              <FilterRow
+                label={tab === 'posts' ? '文章分类' : '页面分类'}
+                ariaLabel={tab === 'posts' ? '精选文章分类' : '多维页面分类'}
+                orientation={orientation}
+              >
+                {columnCategoryDefs.map((category) => (
+                  <FilterChip
+                    key={category.key}
+                    label={category.label}
+                    count={columnCategoryCounts[category.key] ?? 0}
+                    active={columnCategory === category.key}
+                    onClick={() => selectColumnCategory(category.key)}
+                  />
+                ))}
+              </FilterRow>
+            ) : null}
+          </>
         ) : null}
 
         {activeChannel === 'research' ? (

@@ -59,10 +59,10 @@ export default function DesktopDownloadChooser({ downloads, version }) {
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="px-5 py-7 sm:px-7 lg:px-9 lg:py-9">
           <div className="mb-5 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white dark:bg-black/10 dark:text-[#111418]">
+            <span className="rounded-full bg-white/[0.12] px-3 py-1 text-xs font-semibold text-white dark:bg-black/10 dark:text-[#111418]">
               测试版本 {version}
             </span>
-            <span className="text-xs text-white/62 dark:text-black/55">{platform.label}</span>
+            <span className="text-xs text-white/[0.62] dark:text-black/55">{platform.label}</span>
           </div>
 
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-[#d7c77b] dark:text-[#7a6425]">
@@ -71,7 +71,7 @@ export default function DesktopDownloadChooser({ downloads, version }) {
           <h2 className="m-0 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
             下载 {recommended.platform} 桌面应用
           </h2>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-white/72 dark:text-black/68">{platform.detail}</p>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-white/[0.72] dark:text-black/[0.68]">{platform.detail}</p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a
@@ -86,7 +86,7 @@ export default function DesktopDownloadChooser({ downloads, version }) {
             </span>
           </div>
 
-          <div className="mt-5 grid gap-2 text-xs text-white/54 dark:text-black/52 sm:grid-cols-2">
+          <div className="mt-5 grid gap-2 text-xs text-white/[0.54] dark:text-black/[0.52] sm:grid-cols-2">
             <p className="m-0 break-all font-mono">文件：{recommended.file}</p>
             <p className="m-0 break-all font-mono">SHA-256：{checksumText(recommended.sha256)}</p>
           </div>
@@ -94,7 +94,7 @@ export default function DesktopDownloadChooser({ downloads, version }) {
 
         <aside className="bg-white/[0.06] px-5 py-6 dark:bg-black/[0.04] sm:px-7 lg:px-8">
           <p className="m-0 text-sm font-semibold text-white dark:text-[#111418]">首次安装提示</p>
-          <p className="mt-3 text-sm leading-7 text-white/68 dark:text-black/64">
+          <p className="mt-3 text-sm leading-7 text-white/[0.68] dark:text-black/[0.64]">
             当前安装包未做 Apple Developer ID / Windows EV 证书签名，属于公开测试版本。首次打开时系统可能出现安全提示。
           </p>
           <details className="mt-5">
@@ -112,7 +112,7 @@ export default function DesktopDownloadChooser({ downloads, version }) {
                   <span className="block font-semibold">
                     {item.platform} · {item.arch}
                   </span>
-                  <span className="mt-1 block text-xs text-white/55 dark:text-black/52">{item.size}</span>
+                  <span className="mt-1 block text-xs text-white/55 dark:text-black/[0.52]">{item.size}</span>
                 </a>
               ))}
             </div>

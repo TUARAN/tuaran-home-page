@@ -34,6 +34,7 @@ import {
   IconBrandGithub,
   IconShieldLock,
   IconBinaryTree2,
+  IconWorldSearch,
 } from '@tabler/icons-react'
 
 const ICONS = {
@@ -63,6 +64,7 @@ const ICONS = {
   siteDev: IconBrandGithub,
   nsfw: IconShieldLock,
   reverseLab: IconBinaryTree2,
+  seo: IconWorldSearch,
 }
 
 export function AdminIcon({ name, size = 18, stroke = 1.6, className, ...rest }) {

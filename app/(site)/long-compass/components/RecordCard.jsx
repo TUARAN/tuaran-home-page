@@ -9,7 +9,7 @@ export default function RecordCard({ record, dense = false, expanded = false, on
   const themes = Array.isArray(record.plain?.theme) ? record.plain.theme : []
   return (
     <article
-      className={`rounded-lg border border-[#dee0db] bg-white/78 ${padding} dark:border-gray-800 dark:bg-[#121821]/78`}
+      className={`rounded-lg border border-[#dee0db] bg-white/[0.78] ${padding} dark:border-gray-800 dark:bg-[#121821]/[0.78]`}
     >
       <button
         type="button"

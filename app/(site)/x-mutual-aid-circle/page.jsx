@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { createRichPageMetadata } from '../../../lib/richPageSeo'
 import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../components/ArticleFooterCta'
 import ContentEngagement from '../components/ContentEngagement'
@@ -9,6 +10,7 @@ import DistributeContentButton from '../components/DistributeContentButton'
 import ForceDarkRoute from '../components/ForceDarkRoute'
 import PageContainer from '../components/PageContainer'
 import RanbiPaywall from '../components/RanbiPaywall'
+import RichPageJsonLd from '../components/RichPageJsonLd'
 import SharePageButton from '../components/SharePageButton'
 import TimingHeatmapClient from './TimingHeatmapClient'
 
@@ -22,44 +24,11 @@ const OWNER_QR_SRC = '/qrcode-wechat.jpg'
 const PROFILE_SCREENSHOT_SRC = '/images/diary/x-blue-v-mutual-profile-2026-07-09.png'
 
 const title = 'X 互帮互助圈子：真实互动，一起把 X 流量玩明白'
-const description =
-  '「X 互帮互助」微信圈子主页：从蓝 V 互关一周涨粉 1k 的实测观察出发，记录中文 X 小圈层如何靠真实表达、点赞评论和持续互动形成社交；圈子配套互关清理 Chrome 插件、发帖时段热力图、Tweepcred 评分、可见性检测和违规提示自查工具。'
 
 const shareText =
   '推文总破不了 1000 曝光？多半是早期互动没启动。我们建了个 X 互帮互助群：真实点赞评论互相带，还配了互关清理插件、发帖时段热力图、Tweepcred 评分和账号状态自查工具，自取。'
 
-export const metadata = {
-  title,
-  description,
-  keywords: [
-    'X 互帮互助群',
-    'Twitter 互助群',
-    '推文互动 微信群',
-    'X 涨粉',
-    'X 早期互动',
-    'X 取消未回关 插件',
-    'X 发帖最佳时间',
-    'Tweepcred 评分',
-    'X ghostban 检测',
-    'X shadowban 检测',
-    'X 违规提示自查',
-    'Twitter 运营工具',
-  ],
-  alternates: {
-    canonical: `/${RESOURCE_SLUG}`,
-  },
-  openGraph: {
-    title,
-    description,
-    url: RESOURCE_URL,
-    type: 'article',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title,
-    description,
-  },
-}
+export const metadata = createRichPageMetadata('x-mutual-aid-circle')
 
 const TOOLKIT = [
   {
@@ -170,6 +139,7 @@ function SectionHeading({ eyebrow, title: heading, desc }) {
 export default function XMutualAidCirclePage() {
   return (
     <>
+      <RichPageJsonLd pageId="x-mutual-aid-circle" />
       <ForceDarkRoute pageBg="#000000" />
       <div className="x-mutual-page min-h-screen bg-black pb-1 text-[#e7e9ea]">
       <PageContainer className="py-10 md:py-12">

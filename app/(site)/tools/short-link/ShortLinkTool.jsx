@@ -189,7 +189,7 @@ export default function ShortLinkTool() {
         <aside className="space-y-4">
           <form
             onSubmit={handleSubmit}
-            className="rounded-lg border border-[#ded8ca] bg-white/68 p-4 dark:border-[#252e38] dark:bg-[#101720]/78"
+            className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-4 dark:border-[#252e38] dark:bg-[#101720]/[0.78]"
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="mb-0 text-[15px] font-bold">转短</h2>
@@ -218,7 +218,7 @@ export default function ShortLinkTool() {
           </form>
 
           {!userLoading && !isAuthed ? (
-            <p className="rounded-md border border-[#ded8ca] bg-white/68 px-3 py-2 text-[12px] text-[#68645a] dark:border-[#252e38] dark:bg-[#101720]/78 dark:text-[#aab4c2]">
+            <p className="rounded-md border border-[#ded8ca] bg-white/[0.68] px-3 py-2 text-[12px] text-[#68645a] dark:border-[#252e38] dark:bg-[#101720]/[0.78] dark:text-[#aab4c2]">
               登录后可使用站长权限维护外部链接短链。
             </p>
           ) : null}
@@ -234,7 +234,7 @@ export default function ShortLinkTool() {
           ) : null}
         </aside>
 
-        <div className="min-h-[560px] rounded-lg border border-[#ded8ca] bg-white/68 dark:border-[#252e38] dark:bg-[#101720]/78">
+        <div className="min-h-[560px] rounded-lg border border-[#ded8ca] bg-white/[0.68] dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
           <div className="flex h-12 items-center justify-between border-b border-[#e7dfd1] px-4 dark:border-[#252e38]">
             <h2 className="mb-0 text-[15px] font-bold">短链记录</h2>
             {canManage ? (

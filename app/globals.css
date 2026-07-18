@@ -93,7 +93,7 @@
   --page-bg: #f1eef2;
   --site-ink: #171611;
   --site-muted: #68636f;
-  --site-faint: #8e8798;
+  --site-faint: #706a78;
   --site-line: #ded8e4;
   --site-line-strong: #b9a6c9;
   --site-panel: color-mix(in srgb, white 72%, var(--page-bg));
@@ -205,7 +205,7 @@
   --page-bg: #f0f1ee;
   --site-ink: #1d1a16;
   --site-muted: #606358;
-  --site-faint: #858779;
+  --site-faint: #696b61;
   --site-line: #d8d9cf;
   --site-line-strong: #b7baa8;
   --site-panel: color-mix(in srgb, white 82%, var(--page-bg));
@@ -244,7 +244,7 @@
   --page-bg: #f4f1e9;
   --site-ink: #2b2a26;
   --site-muted: #6c6a62;
-  --site-faint: #9a988e;
+  --site-faint: #706d65;
   --site-line: #d9d5c8;
   --site-line-strong: #bdb9ac;
   --site-panel: color-mix(in srgb, #fffdf6 78%, var(--page-bg));
@@ -286,7 +286,7 @@
   --page-bg: #181714;
   --site-ink: #d7d5cc;
   --site-muted: #9b988e;
-  --site-faint: #76736b;
+  --site-faint: #8c8980;
   --site-line: #2f2d27;
   --site-line-strong: #46433b;
   --site-panel: #1e1d19;
@@ -320,7 +320,8 @@
 
 @layer base {
   body {
-    @apply bg-[var(--page-bg)] dark:bg-[var(--page-bg)] text-[#333] dark:text-gray-100 font-sans;
+    @apply bg-[var(--page-bg)] dark:bg-[var(--page-bg)] font-sans;
+    color: var(--site-ink);
     width: 100%;
     max-width: 100%;
     min-height: 100vh;
@@ -329,7 +330,6 @@
     overflow-x: clip;
     overscroll-behavior-x: none;
     line-height: 1.6;
-    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body:has(.site-header) {
@@ -352,37 +352,46 @@
   h4,
   h5,
   h6 {
-    @apply font-semibold text-[#15140f] dark:text-gray-100 leading-tight;
+    @apply font-semibold leading-tight;
+    color: inherit;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
       Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-    transition: color 0.3s ease;
   }
 
   h1 {
     @apply text-2xl md:text-3xl;
   }
   h2 {
-    @apply text-xl md:text-2xl border-b border-[#15140f] dark:border-gray-300 pb-2 mb-4;
+    @apply text-xl md:text-2xl;
   }
   h3 {
     @apply text-lg md:text-xl;
   }
 
   p {
-    @apply text-[#444] dark:text-gray-300 leading-relaxed mb-4;
-    transition: color 0.3s ease;
+    @apply leading-relaxed mb-4;
+    color: inherit;
   }
 
   a {
-    @apply text-[#004276] dark:text-blue-400 hover:underline;
+    color: inherit;
     transition: color 0.3s ease;
   }
 
-  /* 仅为无样式的正文链接保留访问态颜色，避免覆盖按钮、导航等组件配色。 */
+  /* 仅为无样式的正文链接提供链接色，避免覆盖按钮、导航和深色表面。 */
+  a:not([class]) {
+    color: #004276;
+  }
+
+  a:not([class]):hover {
+    text-decoration: underline;
+  }
+
   a:not([class]):visited {
     color: #004276;
   }
 
+  .dark a:not([class]),
   .dark a:not([class]):visited {
     color: #60a5fa;
   }
@@ -397,6 +406,25 @@
 }
 
 @layer components {
+  /* Semantic contract for bespoke dark surfaces and shared controls inside them. */
+  .surface-inverse {
+    --surface-inverse-ink: #f8f5ed;
+    --surface-inverse-muted: #c9c5ba;
+    color: var(--surface-inverse-ink);
+  }
+
+  .surface-inverse .article-action-button {
+    border-color: rgba(248, 245, 237, 0.34);
+    background-color: rgba(248, 245, 237, 0.1);
+    color: var(--surface-inverse-ink);
+  }
+
+  .surface-inverse .article-action-button:hover {
+    border-color: rgba(248, 245, 237, 0.58);
+    background-color: rgba(248, 245, 237, 0.16);
+    color: #ffffff;
+  }
+
   .home-classic-root {
     display: none !important;
   }

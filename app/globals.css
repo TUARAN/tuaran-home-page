@@ -2,6 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * 多维页面只有两套页面壳：
+ * 1. site：复用主站导航、页脚、背景和 1120px 内容宽度；
+ * 2. feature：全宽沉浸式画布，统一使用深色基底，页面内部只负责内容编排。
+ * 页面模式来自 lib/engineeringWorks.js，不允许在路由组件里另起第三套 shell。
+ */
+.rich-page-frame {
+  min-width: 0;
+  width: 100%;
+}
+
+.rich-page-frame--site {
+  background: var(--page-bg);
+  color: var(--site-ink);
+}
+
+.rich-page-frame--site > :where(main, div):first-of-type {
+  margin-inline: auto !important;
+  max-width: 1120px !important;
+  width: 100%;
+}
+
+.rich-page-frame--feature {
+  --rich-page-canvas: #08090b;
+  --rich-page-surface: #11151a;
+  --rich-page-ink: #f1f3f5;
+  --rich-page-muted: #9aa4ae;
+  --rich-page-line: rgba(255, 255, 255, 0.12);
+  --rich-page-accent: #d7b66f;
+  background: var(--rich-page-canvas);
+  color: var(--rich-page-ink);
+  min-height: 100vh;
+}
+
+@media (max-width: 640px) {
+  .rich-page-frame--site > :where(main, div):first-of-type {
+    max-width: 100% !important;
+  }
+}
+
 /* 后台管理统一设计令牌。所有后台路由共享同一内容宽度、表面与控件语言。 */
 .admin-shell {
   --admin-content-width: 1180px;

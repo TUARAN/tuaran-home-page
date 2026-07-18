@@ -1,6 +1,10 @@
 import SharePageButton from '../components/SharePageButton'
 import GroupedDirectoryPage from '../components/GroupedDirectoryPage'
-import { ENGINEERING_WORK_CATEGORIES, ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
+import {
+  ENGINEERING_WORK_CATEGORIES,
+  ENGINEERING_WORKS,
+  getRichPagePresentation,
+} from '../../../lib/engineeringWorks'
 
 export const dynamic = 'force-static'
 
@@ -36,19 +40,29 @@ export default function RichPagesPage() {
     titleEn: category.id.replaceAll('-', ' '),
     items: ENGINEERING_WORKS
       .filter((work) => work.category === category.id)
-      .map((work) => ({
-        ...work,
-        actionLabel: '进入',
-        mobileBadge: { label: work.kind || work.date, mono: false },
-        badges: [
-          { label: work.kind || '多维页面', mono: false },
-          { label: work.date },
-          ...(work.badge ? [{
-            label: work.badge,
-            className: 'border-[#c9b27c] bg-[#fff8e8] text-[#7a581b] dark:border-[#5b4824] dark:bg-[#241d12] dark:text-[#e7c77f]',
-          }] : []),
-        ],
-      })),
+      .map((work) => {
+        const presentation = getRichPagePresentation(work)
+        return {
+          ...work,
+          actionLabel: '进入',
+          mobileBadge: { label: presentation.label, mono: false },
+          badges: [
+            {
+              label: presentation.label,
+              mono: false,
+              className: presentation.id === 'feature'
+                ? 'border-[#6d5d82] bg-[#2f2146] text-white dark:border-[#75698a] dark:bg-[#c1c6a8] dark:text-[#171611]'
+                : '',
+            },
+            { label: work.kind || '多维页面', mono: false },
+            { label: work.date },
+            ...(work.badge ? [{
+              label: work.badge,
+              className: 'border-[#c9b27c] bg-[#fff8e8] text-[#7a581b] dark:border-[#5b4824] dark:bg-[#241d12] dark:text-[#e7c77f]',
+            }] : []),
+          ],
+        }
+      }),
   })).filter((section) => section.items.length > 0)
 
   return (
@@ -57,7 +71,7 @@ export default function RichPagesPage() {
       title="多维页面"
       description={(
         <p className="mb-0">
-          把调研、数据、工具和行动入口放在一起：能阅读、能筛选、能对比，也能直接进入下一步。
+          页面只保留两种：跟随主站的「站点型」，以及统一全宽、独立呈现的「沉浸型」。调研、数据、工具和行动入口不再各自发明一套页面外壳。
         </p>
       )}
       headerActions={<SharePageButton title="多维页面" text="可阅读、可筛选、可操作的内容页。" url={PAGE_URL} size="sm" />}

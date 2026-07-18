@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-18",
+      "displayDate": "Jul 18",
+      "count": 5,
+      "highlights": [
+        "Cursor 评估负责人确认 Claude Fabl",
+        "Apple 起诉 OpenAI：诉讼背后是竞争焦虑还",
+        "月之暗面在GTC 2026披露Kimi K2.5技术",
+        "苹果与 OpenAI 法律战升级：约 40 名前员工",
+        "OpenAI 提出 AI 时代记分卡：\"有用智能每美"
+      ]
+    },
+    {
       "date": "2026-07-17",
       "displayDate": "Jul 17",
       "count": 5,
@@ -317,5 +329,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-17"
+  "latest": "2026-07-18"
 }

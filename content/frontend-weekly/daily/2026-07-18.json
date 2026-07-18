@@ -1,0 +1,59 @@
+{
+  "date": "2026-07-18",
+  "displayDate": "Jul 18",
+  "count": 5,
+  "highlights": [
+    "Cursor 评估负责人确认 Claude Fabl",
+    "Apple 起诉 OpenAI：诉讼背后是竞争焦虑还",
+    "月之暗面在GTC 2026披露Kimi K2.5技术",
+    "苹果与 OpenAI 法律战升级：约 40 名前员工",
+    "OpenAI 提出 AI 时代记分卡：\"有用智能每美"
+  ],
+  "items": [
+    {
+      "num": "01",
+      "topic": "AI Coding",
+      "title": "Cursor 评估负责人确认 Claude Fable 5 在 CursorBench 达 72.9% 新高",
+      "summary": "Cursor 的模型评估负责人 Nate Schmidt 发现，Claude Fable 5 在其内部基准 CursorBench 上以 Max effort 模式达到 72.9%，创下新高。该模型在模糊的真实编程任务中表现出全局推理能力，例如在航天模拟器中仅凭一句提示自主规划并成功登月，而此前 Claude Opus 运行 12 小时以上仍无结果。",
+      "reason": "行业数据与评测为技术选型提供参考",
+      "href": "https://claude.com/blog/working-at-the-frontier-cursor",
+      "source": "Claude：Blog（网页）"
+    },
+    {
+      "num": "02",
+      "topic": "AI Coding",
+      "title": "Apple 起诉 OpenAI：诉讼背后是竞争焦虑还是时机博弈？",
+      "summary": "Apple 对 OpenAI 提起诉讼，指控其存在多项不当行为，尽管许多专家认为部分指控属于行业惯例。此举正值 Apple 发布新版软件公测版（以新 Siri AI 为核心）之际，外界猜测 Apple 究竟是担忧 OpenAI 成为潜在竞争对手，还是想利用 OpenAI 的弱势期获利。",
+      "reason": "新能力发布直接影响开发者工具链，值得第一时间关注",
+      "href": "https://www.theverge.com/podcast/967244/apple-openai-lawsuit-vergecast",
+      "source": "The Verge：AI（RSS）"
+    },
+    {
+      "num": "03",
+      "topic": "AI Coding",
+      "title": "月之暗面在GTC 2026披露Kimi K2.5技术路线：用MuonClip、线性注意力与Agent Swarm重构三大基础组件",
+      "summary": "月之暗面CEO杨植麟在GTC 2026演讲中提出用MuonClip优化器替代Adam，可将数据利用效率提升近一倍。同时推出Kimi Linear线性注意力，在百万Token上下文下全面超越全注意力；Agent Swarm已支持300个Agent并行工作。",
+      "reason": "新能力发布直接影响开发者工具链，值得第一时间关注",
+      "href": "https://x.com/dotey/status/2078172517085085951",
+      "source": "X：宝玉 (@dotey)"
+    },
+    {
+      "num": "04",
+      "topic": "AI Coding",
+      "title": "苹果与 OpenAI 法律战升级：约 40 名前员工收到苹果律师函",
+      "summary": "苹果已向约40名就职于OpenAI的前员工发出律师函，要求保存相关文件。此前苹果起诉OpenAI及两名前员工，指控其通过挖角获取商业机密以加速AI硬件研发。苹果称已有超400名前员工在OpenAI工作，正寻求法院禁令阻止OpenAI使用苹果信息并要求归还机密。",
+      "reason": "对 AI 开发与前端工具链有潜在影响，值得持续跟踪",
+      "href": "https://www.ithome.com/0/978/277.htm",
+      "source": "IT之家（RSS）"
+    },
+    {
+      "num": "05",
+      "topic": "AI Coding",
+      "title": "OpenAI 提出 AI 时代记分卡：\"有用智能每美元\"衡量实际工作价值",
+      "summary": "OpenAI 提出\"Useful Intelligence per Dollar\"（有用智能每美元）作为衡量 AI 投资回报的核心指标，从完成的有用工作量、成功任务的实际成本、结果可靠性三个维度评估。",
+      "reason": "对 AI 开发与前端工具链有潜在影响，值得持续跟踪",
+      "href": "https://openai.com/index/a-scorecard-for-the-ai-age",
+      "source": "OpenAI：官网动态（RSS · 排除企业/客户案例）"
+    }
+  ]
+}

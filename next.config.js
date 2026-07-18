@@ -79,6 +79,12 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        // 「智慧边界」已从资源库迁移到多维页面
+        source: '/resources/wisdom-frontier',
+        destination: '/wisdom-frontier',
+        permanent: true,
+      },
+      {
         // 《置身团内》原独立资料页已并入「置身 X 内」合集页
         source: '/resources/shen-zhi-tuan-nei',
         destination: '/resources/shen-zhi-ding-nei#tuan-nei',

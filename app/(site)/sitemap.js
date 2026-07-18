@@ -1,6 +1,7 @@
 import { articles } from './articles/articlesData'
 import { COMMUNITY_TOPICS } from '../../lib/communityTopics'
 import { listResearch } from '../../lib/research/loader'
+import { listRichPagePaths, listRichPageSitemapEntries } from '../../lib/richPageSeo'
 
 const SITE_URL = 'https://2aran.com'
 
@@ -11,16 +12,15 @@ function isExternalHref(href) {
 export const revalidate = 3600
 
 export default function sitemap() {
-  const now = new Date()
-
+  const richPagePaths = new Set(listRichPagePaths())
   const articleEntries = articles
     .filter((article) => !isExternalHref(article.href) && article.slug !== 'diary-self-reflection')
     .map((article) => {
-    const parsedDate = Number.isNaN(Date.parse(article.date)) ? now : new Date(article.date)
+    const parsedDate = Date.parse(article.date)
 
     return {
       url: `${SITE_URL}/articles/${article.slug}`,
-      lastModified: parsedDate,
+      ...(Number.isNaN(parsedDate) ? {} : { lastModified: new Date(parsedDate) }),
     }
   })
 
@@ -30,7 +30,7 @@ export default function sitemap() {
       const parsed = entry.dateTimeIso ? Date.parse(entry.dateTimeIso) : entry.date ? Date.parse(entry.date) : NaN
       return {
         url: `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`,
-        lastModified: Number.isNaN(parsed) ? now : new Date(parsed),
+        ...(Number.isNaN(parsed) ? {} : { lastModified: new Date(parsed) }),
       }
     })
 
@@ -59,6 +59,7 @@ export default function sitemap() {
     '/platform-framework-pairs',
     '/global-ai-governance',
     '/guoqi-guodan',
+    '/wisdom-frontier',
     '/network-access-guide',
     '/workbuddy-harness',
     '/ai-token-usage-research',
@@ -77,7 +78,6 @@ export default function sitemap() {
     '/resources/rss',
     '/resources/ai-music',
     '/resources/ai-learning-library',
-    '/resources/wisdom-frontier',
     '/resources/edge-agent-development',
     '/resources/nano-banana-gallery',
     '/resources/codex-learning-resource-map-yichen',
@@ -101,12 +101,12 @@ export default function sitemap() {
   ]
 
   const entries = [
-    ...staticRoutes.map((path) => ({
-      url: `${SITE_URL}${path}`,
-      lastModified: now,
-    })),
+    ...staticRoutes
+      .filter((path) => !richPagePaths.has(path))
+      .map((path) => ({ url: `${SITE_URL}${path}` })),
     ...articleEntries,
     ...researchEntries,
+    ...listRichPageSitemapEntries(),
   ]
 
   return Array.from(new Map(entries.map((entry) => [entry.url, entry])).values())

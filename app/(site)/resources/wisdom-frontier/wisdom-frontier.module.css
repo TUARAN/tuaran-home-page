@@ -1,0 +1,9 @@
+.page {
+  min-height: 100%;
+}
+
+:global(.dark) .page {
+  --site-ink: #f0eee8;
+  --site-muted: #b8b6b0;
+  --site-faint: #94938e;
+}

@@ -105,7 +105,7 @@ export default function CopyIntroButton({ text, className }) {
         <div
           role="dialog"
           aria-label="自我介绍预览"
-          className="absolute right-0 top-[calc(100%+8px)] z-30 w-[min(86vw,360px)] rounded-2xl border border-[#d1d3c8] bg-white/98 p-3 text-[13px] shadow-[0_18px_48px_rgba(82,69,45,0.16)] backdrop-blur dark:border-[#36404f] dark:bg-[#10161f]/98 dark:shadow-[0_18px_48px_rgba(0,0,0,0.55)]"
+          className="absolute right-0 top-[calc(100%+8px)] z-30 w-[min(86vw,360px)] rounded-2xl border border-[#d1d3c8] bg-white/[0.98] p-3 text-[13px] shadow-[0_18px_48px_rgba(82,69,45,0.16)] backdrop-blur dark:border-[#36404f] dark:bg-[#10161f]/[0.98] dark:shadow-[0_18px_48px_rgba(0,0,0,0.55)]"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858779] dark:text-[#93a0b3]">

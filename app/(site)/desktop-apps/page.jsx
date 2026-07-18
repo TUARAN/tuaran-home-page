@@ -99,7 +99,7 @@ export default function DesktopAppsPage() {
           {apps.map((item) => (
             <article
               key={item.id}
-              className="grid gap-5 rounded-lg border border-[#ded8ca] bg-white/70 p-5 shadow-sm shadow-black/5 dark:border-[#252e38] dark:bg-[#101720]/72 md:grid-cols-[minmax(0,1fr)_220px]"
+              className="grid gap-5 rounded-lg border border-[#ded8ca] bg-white/70 p-5 shadow-sm shadow-black/5 dark:border-[#252e38] dark:bg-[#101720]/[0.72] md:grid-cols-[minmax(0,1fr)_220px]"
             >
               <div className="min-w-0">
                 <div className="mb-3 flex flex-wrap items-center gap-2">

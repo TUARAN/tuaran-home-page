@@ -285,7 +285,7 @@ export default function ImageHostingTool() {
       <section className="mx-auto grid max-w-[1180px] gap-5 px-4 pb-10 sm:px-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-8">
         <aside className="space-y-4">
           <div
-            className="rounded-lg border border-[#ded8ca] bg-white/68 p-4 dark:border-[#252e38] dark:bg-[#101720]/78"
+            className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-4 dark:border-[#252e38] dark:bg-[#101720]/[0.78]"
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
               event.preventDefault()
@@ -346,7 +346,7 @@ export default function ImageHostingTool() {
           ) : null}
 
           {latest ? (
-            <div className="rounded-lg border border-[#ded8ca] bg-white/68 p-4 dark:border-[#252e38] dark:bg-[#101720]/78">
+            <div className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-4 dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
               <h2 className="mb-3 text-[15px] font-bold">最近链接</h2>
               <div className="grid gap-2">
                 <a
@@ -395,7 +395,7 @@ export default function ImageHostingTool() {
           ) : null}
         </aside>
 
-        <div className="min-h-[620px] rounded-lg border border-[#ded8ca] bg-white/68 dark:border-[#252e38] dark:bg-[#101720]/78">
+        <div className="min-h-[620px] rounded-lg border border-[#ded8ca] bg-white/[0.68] dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
           <div className="flex h-12 items-center justify-between border-b border-[#e7dfd1] px-4 dark:border-[#252e38]">
             <h2 className="mb-0 text-[15px] font-bold">上传记录</h2>
             <span className="text-[12px] text-[#7a766b] dark:text-[#9da7b5]">{images.length} 张</span>

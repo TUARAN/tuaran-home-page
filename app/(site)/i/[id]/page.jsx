@@ -187,7 +187,7 @@ export default async function HostedImageSharePage({ params }) {
         </div>
 
         <aside className="space-y-4">
-          <div className="rounded-lg border border-[#ded8ca] bg-white/68 p-4 dark:border-[#252e38] dark:bg-[#101720]/78">
+          <div className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-4 dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
             <h2 className="mb-3 text-[15px] font-bold">分享这张图</h2>
             <ImageShareActions
               title={`${title} · 2aran 图床`}
@@ -197,7 +197,7 @@ export default async function HostedImageSharePage({ params }) {
             />
           </div>
 
-          <div className="rounded-lg border border-[#ded8ca] bg-white/68 p-4 dark:border-[#252e38] dark:bg-[#101720]/78">
+          <div className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-4 dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
             <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a6422] dark:text-[#d4ae66]">
               Powered by 2aran
             </p>

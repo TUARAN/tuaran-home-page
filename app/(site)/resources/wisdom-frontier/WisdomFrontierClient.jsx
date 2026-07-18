@@ -17,6 +17,7 @@ import { useMemo, useState } from 'react'
 import { WISDOM_AWARDS, WISDOM_CATEGORIES, WISDOM_LEARNING_PATHS, WISDOM_TRACKING, WISDOM_FRONTIER_UPDATED_AT } from '../../../../lib/wisdomFrontierData'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
+import styles from './wisdom-frontier.module.css'
 
 const FEATURED_IDS = ['nobel-medicine', 'fields', 'turing', 'pritzker', 'world-food', 'wise', 'breakthrough', 'pulitzer']
 
@@ -80,7 +81,7 @@ export default function WisdomFrontierClient() {
 
   return (
     <>
-      <PageContainer width="standard" className="py-8 md:py-11">
+      <PageContainer width="standard" className={`${styles.page} py-8 md:py-11`}>
         <ContentPvBeacon category="resource" slug="wisdom-frontier" />
 
         <header className="relative overflow-hidden rounded-[28px] border border-[#d9d5ca] bg-[#f5f1e8] px-5 py-7 dark:border-[#3b3832] dark:bg-[#191816] md:px-9 md:py-10">
@@ -90,7 +91,7 @@ export default function WisdomFrontierClient() {
 
           <div className="relative">
             <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#7c715f] dark:text-[#ada28f]">
-              <Link href="/articles?tab=resources" className="hover:text-[var(--site-ink)]">专题 · 资源</Link>
+              <Link href="/rich-pages" className="hover:text-[var(--site-ink)]">多维页面</Link>
               <span>/</span>
               <span>长期知识工程</span>
               <span>/</span>
@@ -135,7 +136,7 @@ export default function WisdomFrontierClient() {
           </div>
           <div className="mt-5 grid gap-px overflow-hidden rounded-2xl border border-[var(--site-line)] bg-[var(--site-line)] sm:grid-cols-2 lg:grid-cols-4">
             {featured.map((award, index) => (
-              <article key={award.id} className="bg-[var(--site-paper)] p-4 dark:bg-[#171717]">
+              <article key={award.id} className="bg-[var(--site-panel-strong)] p-4 dark:bg-[#171717]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-[10px] text-[var(--site-faint)]">{String(index + 1).padStart(2, '0')}</span>
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: categoryMap[award.category].color }} />
@@ -235,7 +236,7 @@ export default function WisdomFrontierClient() {
 
         <section className="mt-8 grid gap-4 md:grid-cols-2">
           <Link href="/community" className="group rounded-2xl border border-[var(--site-line)] p-5 no-underline hover:no-underline"><IconMessageCircle size={20} className="text-[var(--site-accent)]" /><h2 className="mt-4 text-base font-semibold text-[var(--site-ink)]">讨论：什么才算人类智慧的边界？</h2><p className="mt-2 text-sm leading-6 text-[var(--site-muted)]">进入讨论中心查看全站评论动态，或在本页留下问题、补充与不同意见。</p><span className="mt-4 inline-block text-xs font-semibold text-[var(--site-accent)]">进入讨论中心 <span className="inline-block transition-transform group-hover:translate-x-1">→</span></span></Link>
-          <Link href="/articles?tab=resources" className="group rounded-2xl border border-[var(--site-line)] p-5 no-underline hover:no-underline"><IconTrophy size={20} className="text-[#9b7435]" /><h2 className="mt-4 text-base font-semibold text-[var(--site-ink)]">继续探索站内资源</h2><p className="mt-2 text-sm leading-6 text-[var(--site-muted)]">从 AI 学习、人文思想、书目索引到外部资料，沿着兴趣建立自己的长期知识地图。</p><span className="mt-4 inline-block text-xs font-semibold text-[var(--site-accent)]">返回资源库 <span className="inline-block transition-transform group-hover:translate-x-1">→</span></span></Link>
+          <Link href="/rich-pages" className="group rounded-2xl border border-[var(--site-line)] p-5 no-underline hover:no-underline"><IconTrophy size={20} className="text-[#9b7435]" /><h2 className="mt-4 text-base font-semibold text-[var(--site-ink)]">继续探索多维页面</h2><p className="mt-2 text-sm leading-6 text-[var(--site-muted)]">从数据图谱、专题调研到可交互工具，继续探索可阅读、可筛选、可操作的页面。</p><span className="mt-4 inline-block text-xs font-semibold text-[var(--site-accent)]">返回多维页面 <span className="inline-block transition-transform group-hover:translate-x-1">→</span></span></Link>
         </section>
       </PageContainer>
     </>

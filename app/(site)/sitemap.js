@@ -1,4 +1,5 @@
 import { articles } from './articles/articlesData'
+import { COMMUNITY_TOPICS } from '../../lib/communityTopics'
 import { listResearch } from '../../lib/research/loader'
 
 const SITE_URL = 'https://2aran.com'
@@ -57,13 +58,14 @@ export default function sitemap() {
     '/cancers-overview',
     '/platform-framework-pairs',
     '/global-ai-governance',
+    '/guoqi-guodan',
     '/network-access-guide',
     '/workbuddy-harness',
     '/ai-token-usage-research',
     '/skill-market-research',
     '/sun-moon-motion',
     '/tang-ping-map',
-    '/x-mutual-aid-circle',
+    ...COMMUNITY_TOPICS.map((topic) => topic.href),
     '/zhang-juzheng-book',
     '/writing-monetization-2026',
     '/agent-world-cup',
@@ -75,6 +77,7 @@ export default function sitemap() {
     '/resources/rss',
     '/resources/ai-music',
     '/resources/ai-learning-library',
+    '/resources/wisdom-frontier',
     '/resources/edge-agent-development',
     '/resources/nano-banana-gallery',
     '/resources/codex-learning-resource-map-yichen',

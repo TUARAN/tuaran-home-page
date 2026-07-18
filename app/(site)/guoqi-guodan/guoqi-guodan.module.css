@@ -1,0 +1,101 @@
+.page {
+  --navy: #12233b;
+  --ink: #172235;
+  --paper: #f3efe5;
+  --amber: #d49427;
+  --green: #2e7663;
+  --red: #b84c3e;
+  position: relative;
+  overflow: hidden;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 92% 4%, rgba(212, 148, 39, 0.12), transparent 25rem),
+    radial-gradient(circle at 8% 22%, rgba(46, 118, 99, 0.09), transparent 29rem),
+    #f5f2e9;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(18, 35, 59, 0.2);
+  border-radius: 30px;
+  background: var(--navy);
+  color: #f8f5ed;
+  box-shadow: 0 28px 90px rgba(18, 35, 59, 0.18);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(255,255,255,.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.15) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(110deg, black, transparent 68%);
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -7rem;
+  bottom: -10rem;
+  z-index: -1;
+  width: 34rem;
+  height: 34rem;
+  border: 1px solid rgba(225, 176, 79, .38);
+  border-radius: 50%;
+  box-shadow: 0 0 0 5rem rgba(225,176,79,.045), 0 0 0 10rem rgba(225,176,79,.025);
+}
+
+.flowLine {
+  position: relative;
+}
+
+.flowLine:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  right: -17px;
+  top: 50%;
+  color: #9a8463;
+  transform: translateY(-50%);
+}
+
+.riskMeter {
+  background: linear-gradient(90deg, #2e7663 0 28%, #d49427 45% 67%, #b84c3e 84% 100%);
+}
+
+.sourceCard {
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.sourceCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(212, 148, 39, 0.56);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+:global(.dark) .page {
+  --ink: #e9edf2;
+  background:
+    radial-gradient(circle at 92% 4%, rgba(212, 148, 39, 0.1), transparent 25rem),
+    radial-gradient(circle at 8% 22%, rgba(46, 118, 99, 0.08), transparent 29rem),
+    #0d131b;
+}
+
+:global(.dark) .sourceCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 767px) {
+  .hero::after { width: 22rem; height: 22rem; right: -10rem; }
+  .flowLine:not(:last-child)::after { content: '↓'; right: 50%; top: auto; bottom: -23px; transform: translateX(50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sourceCard { transition: none; }
+  .sourceCard:hover { transform: none; }
+}

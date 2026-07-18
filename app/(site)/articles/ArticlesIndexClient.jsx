@@ -110,6 +110,18 @@ const RESEARCH_TYPE_DEFS = [
   { key: 'other', label: '其他' },
 ]
 
+const ALL_CONTENT_TYPE_DEFS = [
+  { key: 'all', label: '全部内容' },
+  { key: 'posts', label: '精选文章' },
+  { key: 'works', label: '多维页面' },
+  { key: 'companies', label: '公司' },
+  { key: 'people', label: '人物' },
+  { key: 'tech', label: '技术' },
+  { key: 'business', label: '商业' },
+  { key: 'other', label: '其他' },
+  { key: 'resources', label: '资源' },
+]
+
 // 公司 / 主题分类的 filter defs 由 lib/research/loader.js 派生，避免双源维护。
 // 新增 / 删除分类只改 loader 一处即可。
 const COMPANY_TYPE_DEFS = getCompanyTypeFilters()
@@ -792,12 +804,26 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   const showReadingHighlights = tab === 'picks' && !query.trim()
   const showArticleList = tab !== 'picks' || Boolean(query.trim())
-  const hasAdvancedFilters = activeChannel !== 'all' && activeChannel !== 'picks'
+  const hasAdvancedFilters = activeChannel !== 'picks'
   const currentFilterLabel = breadcrumb || CHANNEL_DEFS.find((channel) => channel.key === activeChannel)?.label || '全部'
 
   function AdvancedFiltersContent({ orientation = 'inline' }) {
     return (
       <>
+        {activeChannel === 'all' ? (
+          <FilterRow label="内容类型" ariaLabel="全部内容类型" orientation={orientation}>
+            {ALL_CONTENT_TYPE_DEFS.map((item) => (
+              <FilterChip
+                key={item.key}
+                label={item.label}
+                count={counts[item.key] ?? 0}
+                active={tab === item.key}
+                onClick={() => selectTab(item.key)}
+              />
+            ))}
+          </FilterRow>
+        ) : null}
+
         {activeChannel === 'column' ? (
           <>
             <FilterRow label="专栏类型" ariaLabel="专栏类型" orientation={orientation}>

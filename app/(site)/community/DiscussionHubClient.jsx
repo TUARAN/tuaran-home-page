@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
+import { COMMUNITY_TOPICS } from '../../../lib/communityTopics'
 import { useSessionAccount } from '../components/SessionProvider'
 import StompPanel from '../components/StompPanel'
 import UserAvatar from '../components/UserAvatar'
@@ -145,6 +146,27 @@ function QrEntry({ item, primary = false }) {
   )
 }
 
+function TopicCircleCard({ topic }) {
+  return (
+    <Link href={topic.href} className="discussion-topic-card group no-underline hover:no-underline">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="discussion-eyebrow mb-2">{topic.eyebrow}</p>
+          <h3 className="mb-0 border-0 p-0 text-base font-semibold text-[var(--site-ink)]">
+            {topic.label}
+          </h3>
+        </div>
+        <span className="discussion-topic-tag">{topic.tag}</span>
+      </div>
+      <p className="mb-0 mt-2 text-sm leading-6 text-[var(--site-muted)]">{topic.desc}</p>
+      <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--site-accent-strong)]">
+        进入专题
+        <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
+      </span>
+    </Link>
+  )
+}
+
 function formatNotificationTime(ts) {
   const n = Number(ts)
   if (!n) return ''
@@ -268,6 +290,21 @@ export default function DiscussionHubClient() {
             <Stat value={stats.comments ?? '—'} label="全部评论" />
             <Stat value={stats.weekComments ?? '—'} label="近 7 天" />
             <Stat value={stats.participants ?? '—'} label="参与者" />
+          </div>
+        </section>
+
+        <section className="mt-6" aria-labelledby="topic-circles-title">
+          <div className="mb-3">
+            <p className="discussion-eyebrow mb-1">Topic Circles</p>
+            <h2 id="topic-circles-title" className="mb-0 border-0 p-0 text-lg">专题圈子</h2>
+            <p className="mb-0 mt-1 text-sm text-[var(--site-muted)]">
+              围绕具体主题长期共建的内容、工具和参与入口。
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {COMMUNITY_TOPICS.map((topic) => (
+              <TopicCircleCard key={topic.id} topic={topic} />
+            ))}
           </div>
         </section>
 

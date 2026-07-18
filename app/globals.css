@@ -2426,6 +2426,7 @@
   .discussion-comments,
   .discussion-composer,
   .discussion-feed-item,
+  .discussion-topic-card,
   .discussion-comment-card {
     border: 1px solid var(--site-line);
     background-color: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
@@ -2492,16 +2493,188 @@
   }
 
   .discussion-feed-item,
+  .discussion-topic-card,
   .discussion-thread-item,
   .discussion-comment-card {
     transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
   }
 
   .discussion-feed-item:hover,
+  .discussion-topic-card:hover,
   .discussion-thread-item:hover {
     border-color: color-mix(in srgb, var(--site-accent) 32%, var(--site-line));
     background-color: color-mix(in srgb, var(--site-panel-strong) 92%, transparent);
     transform: translateY(-1px);
+  }
+
+  .discussion-topic-card {
+    display: block;
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  .discussion-topic-tag {
+    flex: none;
+    border: 1px solid color-mix(in srgb, var(--site-accent) 24%, transparent);
+    border-radius: 999px;
+    padding: 0.12rem 0.5rem;
+    background-color: color-mix(in srgb, var(--site-accent) 9%, transparent);
+    color: var(--site-accent-strong);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .circle-topic-hero {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--circle-accent) 38%, var(--site-line));
+    border-radius: 0.75rem;
+    padding: clamp(1.5rem, 5vw, 3.5rem);
+    background:
+      radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--circle-accent) 17%, transparent), transparent 35%),
+      color-mix(in srgb, var(--site-panel-strong) 88%, transparent);
+    box-shadow: 0 24px 64px color-mix(in srgb, var(--site-shadow) 62%, transparent);
+  }
+
+  .circle-topic-hero::after {
+    content: '';
+    position: absolute;
+    right: -4rem;
+    bottom: -7rem;
+    width: 20rem;
+    height: 20rem;
+    border: 1px solid color-mix(in srgb, var(--circle-accent) 24%, transparent);
+    border-radius: 999px;
+  }
+
+  .circle-topic-hero h1 {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    color: var(--site-ink);
+    font-size: clamp(2.2rem, 7vw, 5rem);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+  }
+
+  .circle-topic-platform,
+  .circle-topic-status {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 0.28rem 0.65rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .circle-topic-platform {
+    border: 1px solid color-mix(in srgb, var(--circle-accent) 42%, var(--site-line));
+    color: color-mix(in srgb, var(--circle-accent) 74%, var(--site-ink));
+  }
+
+  .circle-topic-status {
+    background-color: color-mix(in srgb, var(--circle-accent) 12%, transparent);
+    color: var(--site-muted);
+  }
+
+  .circle-topic-primary-link,
+  .circle-topic-secondary-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.62rem 1rem;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .circle-topic-primary-link,
+  .circle-topic-primary-link:visited {
+    border: 1px solid color-mix(in srgb, var(--circle-accent, var(--site-accent)) 58%, var(--site-line));
+    background-color: color-mix(in srgb, var(--circle-accent, var(--site-accent)) 14%, var(--site-panel));
+    color: var(--site-ink);
+  }
+
+  .circle-topic-secondary-link,
+  .circle-topic-secondary-link:visited {
+    border: 1px solid var(--site-line);
+    color: var(--site-muted);
+  }
+
+  .circle-topic-panel,
+  .circle-topic-join,
+  .circle-topic-related {
+    border: 1px solid var(--site-line);
+    border-radius: 0.65rem;
+    background-color: color-mix(in srgb, var(--site-panel-strong) 78%, transparent);
+    box-shadow: 0 16px 42px color-mix(in srgb, var(--site-shadow) 46%, transparent);
+  }
+
+  .circle-topic-panel {
+    padding: 1.15rem;
+  }
+
+  .circle-topic-panel h2,
+  .circle-topic-join h2 {
+    margin: 0.25rem 0 0;
+    border: 0;
+    padding: 0;
+    color: var(--site-ink);
+    font-size: 1.15rem;
+  }
+
+  .circle-topic-eyebrow {
+    margin: 0;
+    color: var(--site-faint);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .circle-topic-index {
+    flex: none;
+    color: var(--site-faint);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 10px;
+  }
+
+  .circle-topic-join {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: clamp(1.15rem, 4vw, 2rem);
+  }
+
+  .circle-topic-qr {
+    width: 7rem;
+    height: 7rem;
+    overflow: hidden;
+    border: 1px solid var(--site-line-strong);
+    border-radius: 0.55rem;
+    background: #fff;
+    padding: 0.3rem;
+  }
+
+  .circle-topic-related {
+    display: block;
+    padding: 0.9rem;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .circle-topic-related:hover {
+    border-color: color-mix(in srgb, var(--site-accent) 35%, var(--site-line));
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 640px) {
+    .circle-topic-join {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 
   .discussion-thread-item {

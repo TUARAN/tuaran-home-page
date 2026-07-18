@@ -8,16 +8,16 @@ import CommunityLoginPrompt from './CommunityLoginPrompt'
 import EmailActivationPrompt from './EmailActivationPrompt'
 import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
-import { ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
+import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
 
-const HIDE_CHROME_PATHS = new Set(['/about', '/web-llm', '/web-llm/embed', '/xiaomoli-dad-todo', '/eatwhat', '/agent-world-cup'])
-const RICH_PAGE_PATHS = new Set(ENGINEERING_WORKS.map((work) => work.href))
-const MINIMAL_HOME_BUTTON_PATHS = new Set([...RICH_PAGE_PATHS, '/agent-world-cup'])
+const HIDE_CHROME_PATHS = new Set(['/about', '/web-llm', '/web-llm/embed', '/agent-world-cup'])
 
 function useChromeVisibility() {
   const pathname = usePathname()
-  const hideChrome = HIDE_CHROME_PATHS.has(pathname) || RICH_PAGE_PATHS.has(pathname)
-  const showHomeButton = MINIMAL_HOME_BUTTON_PATHS.has(pathname)
+  const richPage = getRichPageByPath(pathname)
+  const isFeaturePage = getRichPagePresentation(richPage).id === 'feature'
+  const hideChrome = HIDE_CHROME_PATHS.has(pathname) || isFeaturePage
+  const showHomeButton = isFeaturePage || pathname === '/agent-world-cup'
 
   return { hideChrome, showHomeButton, pathname }
 }

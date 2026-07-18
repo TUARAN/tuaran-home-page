@@ -162,7 +162,9 @@ const ALL_CONTENT_TYPE_KEYS = new Set([
   'business',
   'other',
   'resources',
-  ...RESOURCE_TYPE_KEYS.filter((key) => key !== 'all'),
+  'resource-content',
+  'resource-external',
+  'resource-downloads',
 ])
 const RESOURCE_GROUP_DEFS = [
   { key: 'all', label: '全部资源', typeKeys: RESOURCE_TYPE_KEYS.filter((key) => key !== 'all') },
@@ -192,7 +194,9 @@ const ALL_CONTENT_FILTER_GROUPS = [
     label: '资源',
     items: [
       { key: 'resources', label: '全部资源' },
-      ...RESOURCE_TYPE_DEFS.filter((item) => item.key !== 'all'),
+      ...RESOURCE_GROUP_DEFS
+        .filter((group) => group.key !== 'all')
+        .map((group) => ({ key: `resource-${group.key}`, label: group.label })),
     ],
   },
 ]
@@ -650,8 +654,12 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         ? items.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
         : allContentType === 'other'
         ? items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
-        : RESOURCE_TYPE_KEYS.includes(allContentType)
-        ? items.filter((item) => item.kind === 'resources' && item.resourceType === allContentType)
+        : allContentType.startsWith('resource-')
+        ? items.filter((item) => {
+            const groupKey = allContentType.slice('resource-'.length)
+            const group = RESOURCE_GROUP_DEFS.find((entry) => entry.key === groupKey)
+            return item.kind === 'resources' && group?.typeKeys.includes(item.resourceType)
+          })
         : items.filter((item) => item.kind === allContentType)
 
     const tabItems =
@@ -901,8 +909,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                   <FilterChip
                     key={item.key}
                     label={item.label}
-                    count={RESOURCE_TYPE_KEYS.includes(item.key) && item.key !== 'all'
-                      ? resourceTypeCounts[item.key] ?? 0
+                    count={item.key.startsWith('resource-')
+                      ? resourceGroupCounts[item.key.slice('resource-'.length)] ?? 0
                       : counts[item.key] ?? 0}
                     active={allContentType === item.key}
                     onClick={() => selectAllContentType(item.key)}

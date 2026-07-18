@@ -1,5 +1,5 @@
 import { articles } from './articlesData'
-import { ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
+import { ENGINEERING_WORK_CATEGORIES, ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
 import { CONTENT_PV_ENTRIES } from '../../../lib/contentRegistry'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
@@ -21,13 +21,25 @@ function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
 
+function getArticleCategory(article) {
+  if (article.homeCategory) return article.homeCategory
+  if (article.slug === 'ocr-comparison-paddleocr-vl') return 'AI'
+  if (article.slug === 'content-os-blogger-matrix-alliance') return '创作'
+  if (article.slug === 'blogger-future-community') return '社区'
+  if (article.slug === 'diary-self-reflection') return '随笔'
+  return '工程化'
+}
+
 export function buildKnowledgeItems() {
   const postItems = articles.map((article) => {
     const path = article.slug === 'diary-self-reflection' ? '/diary' : `/articles/${article.slug}`
+    const columnCategory = getArticleCategory(article)
     return {
       id: `post:${article.slug || article.href || article.title}`,
       kind: 'posts',
       tagLabel: '精选',
+      columnCategory,
+      columnCategoryLabel: columnCategory,
       title: article.title,
       summary: article.summary,
       date: article.date || '',
@@ -89,6 +101,10 @@ export function buildKnowledgeItems() {
     id: `work:${p.href}`,
     kind: 'works',
     tagLabel: p.kind ? `多维页面 · ${p.kind}` : '多维页面',
+    columnCategory: p.category || 'uncategorized',
+    columnCategoryLabel:
+      ENGINEERING_WORK_CATEGORIES.find((category) => category.id === p.category)?.title || '未分类',
+    columnCategoryOrder: ENGINEERING_WORK_CATEGORIES.findIndex((category) => category.id === p.category),
     title: p.title,
     summary: p.summary,
     date: p.date,

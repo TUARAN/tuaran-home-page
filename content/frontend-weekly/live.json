@@ -1,6 +1,14 @@
 {
-  "updatedAt": "2026-07-19T13:44:05.294Z",
+  "updatedAt": "2026-07-19T16:00:24.582Z",
   "items": [
+    {
+      "topic": "模型",
+      "title": "面壁智能开源 MiniCPM-Robot 具身智能模型系列",
+      "summary": "面壁智能开源首个具身AI模型系列 MiniCPM-Robot，包含 1.5B 参数的通用视觉-语言-动作（VLA）模型 MiniCPM-RobotManip 和用于目标跟踪的 MiniCPM-RobotTrack。同时发布高性能推理框架 PhyAI，旨在让机器人实现理解、记忆与行动。",
+      "source": "X：面壁智能 OpenBMB (@OpenBMB)",
+      "href": "https://x.com/OpenBMB/status/2078839529591759025",
+      "publishedAt": "2026-07-19T13:49:01.000Z"
+    },
     {
       "topic": "模型",
       "title": "MiniCPM5-2B发布：4B以下全球性能第一，适配9款芯片",

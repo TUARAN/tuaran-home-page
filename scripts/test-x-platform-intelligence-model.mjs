@@ -68,4 +68,17 @@ assert.equal(bundle.subject.id, 'x-real-time')
 assert.deepEqual(bundle.sources.map((source) => source.id), ['x-dsa-2025-h2'])
 assert.deepEqual(bundle.observations.map((row) => row.id), ['x-eu-mau-2025-h2'])
 
+const { X_INTELLIGENCE_REPOSITORY } = await import('../app/(site)/x-platform-intelligence/data.mjs')
+const result = validateRepository(X_INTELLIGENCE_REPOSITORY)
+assert.deepEqual(result.errors, [], result.errors.join('\n'))
+assert.deepEqual(X_INTELLIGENCE_REPOSITORY.platforms.map((item) => item.id).sort(), [
+  'facebook', 'instagram', 'jike', 'linkedin', 'reddit', 'threads', 'wechat-oa', 'weibo', 'xiaohongshu', 'x', 'zhihu', 'tiktok',
+].sort())
+assert.ok(X_INTELLIGENCE_REPOSITORY.sources.length >= 30)
+assert.ok(X_INTELLIGENCE_REPOSITORY.observations.length >= 60)
+assert.ok(X_INTELLIGENCE_REPOSITORY.insights.length >= 12)
+assert.equal(X_INTELLIGENCE_REPOSITORY.comparisons.length, 12 * 16)
+assert.ok(X_INTELLIGENCE_REPOSITORY.observations.some((row) => row.platformId === 'x' && row.metricId === 'mau' && row.conflictGroupId === 'x-global-mau-2025'))
+assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => gap.platformId === 'jike'))
+
 console.log('[x-intelligence:model] all assertions passed')

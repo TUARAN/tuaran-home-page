@@ -154,3 +154,6 @@ private/
 
 # Superpowers brainstorming visual companion sessions
 .superpowers/
+
+# Isolated feature worktrees
+.worktrees/

@@ -31,3 +31,27 @@ test('rich-page engagement keys resolve to the canonical route', async () => {
   assert.match(keyLite, /key\.startsWith\('rich-page:'\)/)
   assert.match(keyLite, /return slug \? `\/\$\{slug\}` : null/)
 })
+
+test('canonical page uses rich-page SEO analytics and engagement', async () => {
+  const page = await read('app/(site)/nano-banana-gallery/page.jsx')
+  assert.match(page, /createRichPageMetadata\('nano-banana-gallery'\)/)
+  assert.match(page, /RichPageJsonLd pageId="nano-banana-gallery"/)
+  assert.match(page, /ContentPvBeacon category="rich-page" slug=\{PAGE_SLUG\}/)
+  assert.match(page, /ContentEngagement contentKey=\{`rich-page:\$\{PAGE_SLUG\}`\}/)
+  assert.match(page, /href="\/rich-pages"/)
+})
+
+test('legacy resource URL is redirect-only', async () => {
+  const legacy = await read('app/(site)/resources/nano-banana-gallery/page.jsx')
+  assert.match(legacy, /permanentRedirect\('\/nano-banana-gallery'\)/)
+  assert.doesNotMatch(legacy, /NanoBananaGallery cases=/)
+})
+
+test('SEO and sitemap expose only the canonical rich-page URL', async () => {
+  const [seo, sitemap] = await Promise.all([
+    read('lib/richPageSeo.js'),
+    read('app/(site)/sitemap.js'),
+  ])
+  assert.match(seo, /'nano-banana-gallery': \{[\s\S]*schemaType: 'CollectionPage'/)
+  assert.doesNotMatch(sitemap, /'\/resources\/nano-banana-gallery'/)
+})

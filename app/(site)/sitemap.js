@@ -79,7 +79,6 @@ export default function sitemap() {
     '/resources/ai-music',
     '/resources/ai-learning-library',
     '/resources/edge-agent-development',
-    '/resources/nano-banana-gallery',
     '/resources/codex-learning-resource-map-yichen',
     '/resources/shen-zhi-ding-nei',
     '/resources/wallpapers',

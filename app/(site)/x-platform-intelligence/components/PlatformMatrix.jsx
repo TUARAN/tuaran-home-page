@@ -143,15 +143,12 @@ export default function PlatformMatrix({ matrix, onOpenEvidence }) {
         </a>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="平台比较分组">
+      <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label="平台比较分组">
         {GROUPS.map(([id, label]) => (
           <button
             key={id}
             type="button"
-            role="tab"
-            id={`comparison-tab-${id}`}
-            aria-selected={activeGroup === id}
-            aria-controls={`comparison-panel-${id}`}
+            aria-pressed={activeGroup === id}
             onClick={() => setActiveGroup(id)}
             className={`border px-4 py-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6f44] ${activeGroup === id ? 'border-[#526354] bg-[#e8eee5] text-[#26392a] dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200' : 'border-[#c8cec3] bg-white text-[#60665c] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400'}`}
           >
@@ -160,12 +157,7 @@ export default function PlatformMatrix({ matrix, onOpenEvidence }) {
         ))}
       </div>
 
-      <div
-        id={`comparison-panel-${activeGroup}`}
-        role="tabpanel"
-        aria-labelledby={`comparison-tab-${activeGroup}`}
-        className="mt-4"
-      >
+      <div className="mt-4">
         <DesktopMatrix dimensions={matrix.dimensions} rows={rows} onOpenEvidence={onOpenEvidence} />
         <MobileMatrix
           dimensions={matrix.dimensions}
@@ -177,7 +169,7 @@ export default function PlatformMatrix({ matrix, onOpenEvidence }) {
       </div>
 
       <p id="platform-matrix-end" tabIndex="-1" className="mt-4 text-[11px] leading-5 text-[#747a70] dark:text-gray-500">
-        当前组显示 {rows.length} 个平台 × {matrix.dimensions.length} 个维度。平台筛选会缩小比较对象，但不会移除基准平台 X。
+        当前组显示 {rows.length} 个平台 × {matrix.dimensions.length} 个维度。矩阵仅响应数据快照与对比平台筛选；地区、人群、目标和可信度筛选不适用于编辑评级。平台筛选不会移除基准平台 X。
       </p>
     </section>
   )

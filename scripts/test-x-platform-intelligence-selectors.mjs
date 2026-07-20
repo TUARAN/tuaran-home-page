@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { X_INTELLIGENCE_REPOSITORY as repository } from '../app/(site)/x-platform-intelligence/data.mjs'
 import { DEFAULT_FILTERS } from '../app/(site)/x-platform-intelligence/filters.mjs'
 import {
@@ -159,5 +160,18 @@ assert.deepEqual(filteredMatrixGroups.china.map((row) => row.platform.id), ['x',
 
 const evidenceRows = selectEvidenceRows(repository, DEFAULT_FILTERS)
 assert.ok(evidenceRows.every((row) => row.sourceUrl.startsWith('https://')))
+
+const evidenceDrawerSource = readFileSync(new URL('../app/(site)/x-platform-intelligence/components/EvidenceDrawer.jsx', import.meta.url), 'utf8')
+assert.ok(evidenceDrawerSource.includes('>来源发布日期<'))
+assert.ok(evidenceDrawerSource.includes('>统计期<'))
+assert.ok(evidenceDrawerSource.includes('未绑定定量观测 / 不适用'))
+assert.ok(!evidenceDrawerSource.includes('发布日期 / 统计期'))
+
+const platformMatrixSource = readFileSync(new URL('../app/(site)/x-platform-intelligence/components/PlatformMatrix.jsx', import.meta.url), 'utf8')
+assert.ok(platformMatrixSource.includes('role="group"'))
+assert.ok(platformMatrixSource.includes('aria-pressed={activeGroup === id}'))
+assert.ok(!platformMatrixSource.includes('role="tablist"'))
+assert.ok(!platformMatrixSource.includes('role="tab"'))
+assert.ok(!platformMatrixSource.includes('role="tabpanel"'))
 
 console.log('[x-intelligence:selectors] all assertions passed')

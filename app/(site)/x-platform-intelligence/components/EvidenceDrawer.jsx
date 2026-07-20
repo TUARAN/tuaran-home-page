@@ -89,7 +89,7 @@ function SourceList({ sources }) {
           <dl className="mt-3 grid gap-3 text-[11px] sm:grid-cols-2">
             <div><dt className="text-[#7b8177] dark:text-gray-600">来源类别</dt><dd className="mt-1 text-[#4e554b] dark:text-gray-400">{valueOrUnknown(source.sourceClass)}</dd></div>
             <div><dt className="text-[#7b8177] dark:text-gray-600">地域</dt><dd className="mt-1 text-[#4e554b] dark:text-gray-400">{source.geography ? geographyLabel(source.geography) : '未注明'}</dd></div>
-            <div><dt className="text-[#7b8177] dark:text-gray-600">发布日期 / 统计期</dt><dd className="mt-1 font-mono text-[#4e554b] dark:text-gray-400">{valueOrUnknown(source.publishedAt)}</dd></div>
+            <div><dt className="text-[#7b8177] dark:text-gray-600">来源发布日期</dt><dd className="mt-1 font-mono text-[#4e554b] dark:text-gray-400">{valueOrUnknown(source.publishedAt)}</dd></div>
             <div><dt className="text-[#7b8177] dark:text-gray-600">归档状态</dt><dd className="mt-1 text-[#4e554b] dark:text-gray-400">{valueOrUnknown(source.archiveStatus)}</dd></div>
             <div className="sm:col-span-2"><dt className="text-[#7b8177] dark:text-gray-600">方法</dt><dd className="mt-1 leading-5 text-[#4e554b] dark:text-gray-400">{valueOrUnknown(source.methodologySummary)}</dd></div>
           </dl>
@@ -111,6 +111,7 @@ export default function EvidenceDrawer({ evidenceRef, bundle, repository, onClos
   const titleId = 'x-evidence-dialog-title'
   const descriptionId = 'x-evidence-dialog-description'
   const subject = bundle?.subject || null
+  const observationPeriods = [...new Set((bundle?.observations || []).map((row) => formatPeriod(row.periodStart, row.periodEnd)))]
   const title = useMemo(() => <EvidenceTitle evidenceRef={evidenceRef} repository={repository} subject={subject} />, [evidenceRef, repository, subject])
 
   useEffect(() => {
@@ -199,6 +200,7 @@ export default function EvidenceDrawer({ evidenceRef, bundle, repository, onClos
                 <dl className="mt-4 grid gap-3 text-[11px] sm:grid-cols-2">
                   <div><dt className="text-[#7b8177] dark:text-gray-600">引用类型</dt><dd className="mt-1 text-[#4e554b] dark:text-gray-400">{evidenceRef.kind}</dd></div>
                   <div><dt className="text-[#7b8177] dark:text-gray-600">置信度</dt><dd className="mt-1 text-[#4e554b] dark:text-gray-400">{confidenceLabel(subject.confidence || '未注明')}</dd></div>
+                  <div className="sm:col-span-2"><dt className="text-[#7b8177] dark:text-gray-600">统计期</dt><dd className="mt-1 font-mono text-[#4e554b] dark:text-gray-400">{observationPeriods.length ? observationPeriods.join('；') : '未绑定定量观测 / 不适用'}</dd></div>
                 </dl>
               </section>
 

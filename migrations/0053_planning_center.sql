@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS planning_project_profiles (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   FOREIGN KEY (project_id) REFERENCES portfolio_projects(id) ON DELETE RESTRICT,
-  FOREIGN KEY (direction_id) REFERENCES planning_directions(id) ON DELETE RESTRICT
+  FOREIGN KEY (direction_id) REFERENCES planning_directions(id) ON DELETE RESTRICT,
+  UNIQUE (direction_id, project_id)
 );
 
 CREATE TABLE IF NOT EXISTS planning_milestones (
@@ -40,8 +41,8 @@ CREATE TABLE IF NOT EXISTS planning_milestones (
   archived_at INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
-  FOREIGN KEY (direction_id) REFERENCES planning_directions(id) ON DELETE RESTRICT,
-  FOREIGN KEY (project_id) REFERENCES planning_project_profiles(project_id) ON DELETE RESTRICT
+  FOREIGN KEY (direction_id, project_id)
+    REFERENCES planning_project_profiles(direction_id, project_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS planning_tasks (

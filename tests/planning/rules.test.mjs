@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 
 import {
   classifyPlanningItem,
@@ -43,4 +44,14 @@ test('maps status transitions to append-only events', () => {
 test('detects dependency cycles', () => {
   const edges = [{ fromType: 'task', fromId: 'a', toType: 'task', toId: 'b' }]
   assert.equal(wouldCreateDependencyCycle(edges, { fromType: 'task', fromId: 'b', toType: 'task', toId: 'a' }), true)
+})
+
+test('binds each milestone project to its direction profile', async () => {
+  const migration = await readFile(new URL('../../migrations/0053_planning_center.sql', import.meta.url), 'utf8')
+
+  assert.match(migration, /UNIQUE\s*\(\s*direction_id\s*,\s*project_id\s*\)/)
+  assert.match(
+    migration,
+    /FOREIGN KEY\s*\(\s*direction_id\s*,\s*project_id\s*\)\s*REFERENCES\s+planning_project_profiles\s*\(\s*direction_id\s*,\s*project_id\s*\)\s*ON DELETE RESTRICT/,
+  )
 })

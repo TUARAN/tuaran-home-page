@@ -98,11 +98,12 @@ assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
   gap.platformId === 'x' && gap.metricId === 'country-share' && gap.reason && gap.attemptedSourceUrl && gap.impact
 )))
 
-for (const profileDimensionId of ['occupation-industry', 'city-tier', 'political-orientation', 'general-use-motivation']) {
-  assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
-    gap.platformId === 'x' && gap.profileDimensionId === profileDimensionId
-    && gap.reason && gap.attemptedSourceUrl && gap.checkedAt && gap.impact
-  )), `${profileDimensionId} must have a precise coverage gap`)
+assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
+  gap.platformId === 'x' && gap.profileDimensionId === 'occupation-industry'
+  && gap.reason && gap.attemptedSourceUrl && gap.checkedAt && gap.impact
+)))
+for (const profileDimensionId of ['city-tier', 'political-orientation', 'general-use-motivation']) {
+  assert.ok(!X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => gap.profileDimensionId === profileDimensionId), `${profileDimensionId} must not remain a false gap`)
 }
 for (const geoDimensionId of ['country-availability', 'country-restrictions', 'primary-languages']) {
   assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
@@ -110,6 +111,36 @@ for (const geoDimensionId of ['country-availability', 'country-restrictions', 'p
     && gap.reason && gap.attemptedSourceUrl && gap.checkedAt && gap.impact
   )), `${geoDimensionId} must have a precise coverage gap`)
 }
+
+const xCommunityUse = X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.platformId === 'x' && row.metricId === 'community-use-rate')
+assert.deepEqual(Object.fromEntries(xCommunityUse.map((row) => [row.segments.at(-1), row.value])), {
+  'community-urban': 23, 'community-suburban': 22, 'community-rural': 17,
+})
+assert.ok(xCommunityUse.every((row) => row.comparability === 'us-adult-cohort-use-rate' && row.editorNote.includes('not the community share')))
+
+const xPartyUse = X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.platformId === 'x' && row.metricId === 'party-use-rate')
+assert.deepEqual(Object.fromEntries(xPartyUse.map((row) => [row.segments.at(-1), row.value])), {
+  'rep-lean-rep': 24, 'dem-lean-dem': 19,
+})
+assert.ok(xPartyUse.every((row) => row.comparability === 'us-adult-cohort-use-rate' && row.editorNote.includes('not the party composition')))
+
+const xUseReasons = X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.platformId === 'x' && row.metricId === 'use-reason-rate')
+assert.deepEqual(Object.fromEntries(xUseReasons.map((row) => [row.segments.at(-1), row.value])), {
+  'reason-entertainment': 81,
+  'reason-shared-interests': 62,
+  'reason-sports-pop-culture': 59,
+  'reason-politics': 59,
+  'reason-friends-family': 33,
+  'reason-product-reviews': 29,
+})
+assert.ok(xUseReasons.every((row) => row.periodStart === '2024-03-18' && row.periodEnd === '2024-03-24' && row.sourceId === 'pew-x-experience-2024'))
+const xNewsReason = X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.id === 'x-us-news-reason-2024')
+assert.equal(xNewsReason.length, 1, 'news reason must reuse the existing evidence row rather than duplicate 65%')
+assert.equal(xNewsReason[0].value, 65)
+assert.ok(!xUseReasons.some((row) => row.segments.includes('reason-news')))
+const xExperienceSource = X_INTELLIGENCE_REPOSITORY.sources.find((source) => source.id === 'pew-x-experience-2024')
+assert.equal(xExperienceSource.sampleSize, 2565)
+assert.equal(xExperienceSource.totalSampleSize, 10287)
 
 for (const comparison of X_INTELLIGENCE_REPOSITORY.comparisons) {
   const comparisonBundle = getEvidenceBundle(X_INTELLIGENCE_REPOSITORY, { kind: 'comparison', id: comparison.id })

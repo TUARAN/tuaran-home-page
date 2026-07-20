@@ -116,8 +116,14 @@ assert.equal(geoRow.sourceUrl, 'https://datareportal.com/essential-x-stats')
 
 assert.deepEqual(
   new Set(selectAudienceCoverageGaps(repository, DEFAULT_FILTERS).map((gap) => gap.profileDimensionId)),
-  new Set(['occupation-industry', 'city-tier', 'political-orientation', 'general-use-motivation']),
+  new Set(['occupation-industry']),
 )
+const falseGapRepository = structuredClone(repository)
+falseGapRepository.coverageGaps.push({
+  ...falseGapRepository.coverageGaps.find((gap) => gap.profileDimensionId === 'occupation-industry'),
+  id: 'false-gap-community-test', profileDimensionId: 'city-tier',
+})
+assert.ok(!selectAudienceCoverageGaps(falseGapRepository, DEFAULT_FILTERS).some((gap) => gap.id === 'false-gap-community-test'))
 assert.deepEqual(
   new Set(selectGeoCoverageGaps(repository, DEFAULT_FILTERS).map((gap) => gap.geoDimensionId)),
   new Set(['country-availability', 'country-restrictions', 'primary-languages', 'country-share']),
@@ -126,6 +132,18 @@ assert.deepEqual(
 assert.ok(selectAudienceGroups(repository, { ...DEFAULT_FILTERS, geography: 'us' }).every((group) => group.geography === 'us'))
 assert.ok(selectAudienceGroups(repository, { ...DEFAULT_FILTERS, geography: 'us' })
   .some((group) => group.metricId === 'news-use-rate'))
+const expandedAudienceGroups = selectAudienceGroups(repository, { ...DEFAULT_FILTERS, geography: 'us' })
+for (const metricId of ['community-use-rate', 'party-use-rate', 'use-reason-rate']) {
+  assert.ok(expandedAudienceGroups.some((group) => group.metricId === metricId), `missing ${metricId} audience group`)
+}
+const useReasonGroup = expandedAudienceGroups.find((group) => group.metricId === 'use-reason-rate')
+assert.equal(useReasonGroup.sources[0].sampleSize, 2565)
+assert.match(useReasonGroup.methodology, /2,565 US adult X users/)
+const reasonRows = expandedAudienceGroups
+  .filter((group) => group.metricId === 'use-reason-rate' || group.metricId === 'news-use-rate')
+  .flatMap((group) => group.rows)
+assert.equal(reasonRows.length, 7)
+assert.equal(reasonRows.filter((row) => row.value === 65).length, 1, 'news reason 65% must render once')
 const audienceRepository = structuredClone(repository)
 const audienceBase = audienceRepository.observations.find((row) => row.id === 'x-us-age-18-29-use-2025')
 audienceRepository.observations.push({

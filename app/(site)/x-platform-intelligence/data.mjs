@@ -23,6 +23,8 @@ const metrics = [
   ['gender-use-rate', '性别人群使用率', ['percent']],
   ['age-share', '年龄占比', ['percent']], ['gender-share', '性别占比', ['percent']],
   ['income-use-rate', '收入人群使用率', ['percent']], ['education-use-rate', '教育人群使用率', ['percent']],
+  ['community-use-rate', '社区类型群体内使用率', ['percent']], ['party-use-rate', '党派群体内使用率', ['percent']],
+  ['use-reason-rate', 'X 用户使用理由（主要或次要）', ['percent']],
   ['news-use-rate', '新闻使用率', ['percent']], ['creator-threshold', '创作者门槛', ['qualitative']],
   ['post-volume', '发布量', ['posts']], ['engagement-rate', '互动率', ['percent']],
 ].map(([id, label, allowedUnits]) => ({ id, label, allowedUnits }))
@@ -61,7 +63,7 @@ const sources = [
   source('eu-x-action-plan-2026', 'Commission accepts X’s action plan to comply with Digital Services Act', 'European Commission', 'https://digital-strategy.ec.europa.eu/en/news/commission-accepts-xs-action-plan-comply-digital-services-act', '2026-07-16', 'regulatory', 'Records corrective commitments for advertising-repository search/API access and eligible researcher access; implementation remains subject to supervision.', { geography: 'eu' }),
   source('x-global-mau-self-2025', 'With 600 million users, X’s CEO cites platform scale', 'Digiday', 'https://digiday.com/marketing/with-600-million-users-xs-linda-yaccarino-doubles-down-on-dismissing-journalism/', '2025-04-30', 'secondary-self-report', 'Contemporaneous report of the X CEO’s approximately 600M global MAU claim; no deduplication, bot treatment, or measurement method was disclosed.', { geography: 'global' }),
   source('pew-social-2025', 'Social Media Fact Sheet', 'Pew Research Center', 'https://www.pewresearch.org/internet/fact-sheet/social-media/', '2025-11-20', 'independent-survey', 'Survey of 5,022 US adults fielded 2025-02-05 through 2025-06-18 by SSRS using address-based sampling and web, mail, and phone modes; weighted to US adults.', { geography: 'us', sampleSize: 5022 }),
-  source('pew-x-experience-2024', 'How X users view and experience the platform', 'Pew Research Center', 'https://www.pewresearch.org/2024/06/12/how-x-users-view-experience-the-platform/', '2024-06-12', 'independent-survey', 'US survey of X users covering reasons for use, news, and politics; estimates apply to surveyed US adults/users, not global platform activity.', { geography: 'us' }),
+  source('pew-x-experience-2024', 'How X users view and experience the platform', 'Pew Research Center', 'https://www.pewresearch.org/2024/06/12/how-x-users-view-experience-the-platform/', '2024-06-12', 'independent-survey', 'Pew American Trends Panel Wave 144 surveyed 10,287 US adult internet users from 2024-03-18 through 2024-03-24; reasons-for-use estimates use the X-user subgroup (unweighted n=2,565), not global platform activity.', { geography: 'us', sampleSize: 2565, totalSampleSize: 10287 }),
   source('pew-news-influencers-2025', 'News Influencers Fact Sheet', 'Pew Research Center', 'https://www.pewresearch.org/journalism/fact-sheet/news-influencers-fact-sheet/', '2025-11-04', 'independent-content-analysis', 'Pew-Knight sample defines news influencers as accounts regularly posting current-events/civic content with at least 100,000 followers; platform findings are sample-specific.', { geography: 'us' }),
   source('ofcom-online-nation-2025', 'Online Nation 2025', 'Ofcom', 'https://www.ofcom.org.uk/siteassets/resources/documents/research-and-data/online-research/online-nation/2025/online-nations-report-2025.pdf', '2025-12-10', 'regulatory-measurement', 'Ipsos iris UK Online Audience Measurement, May 2025, adults 18+; smartphone, tablet, and computer use only, excluding TV sets and smart displays.', { geography: 'uk' }),
   source('datareportal-x-2025', 'Essential X statistics and trends for 2025', 'DataReportal / Kepios', 'https://datareportal.com/essential-x-stats', '2025-03-12', 'independent-analysis', 'Kepios analysis of X ad-planning data for January 2025. Ad reach can include duplicate, inauthentic, and non-human accounts and is explicitly not MAU.', { geography: 'global' }),
@@ -218,6 +220,35 @@ for (const [platformId, profile] of Object.entries(pewProfiles)) {
     })))
   }
 }
+
+for (const [metricId, segmentValues, editorNote] of [
+  ['community-use-rate', [['community-urban', 23], ['community-suburban', 22], ['community-rural', 17]], 'Use rate within the named US adult community cohort, not the community share of X users.'],
+  ['party-use-rate', [['rep-lean-rep', 24], ['dem-lean-dem', 19]], 'Use rate within the named US adult party cohort, not the party composition of X users.'],
+]) {
+  for (const [segment, value] of segmentValues) observations.push(observation({
+    id: `x-us-${segment}-use-2025`, platformId: 'x', metricId, valueType: 'percentage', value,
+    unit: 'percent', periodStart: '2025-02-05', periodEnd: '2025-06-18', publishedAt: '2025-11-20',
+    geography: 'us', segments: ['adults-18-plus', segment],
+    methodology: 'Pew NPORS address-based probability survey of 5,022 US adults; web, mail, and phone; weighted. This is a within-cohort use rate.',
+    sourceId: 'pew-social-2025', confidence: 'high', comparability: 'us-adult-cohort-use-rate', editorNote,
+  }))
+}
+
+for (const [segment, value] of [
+  ['reason-entertainment', 81],
+  ['reason-shared-interests', 62],
+  ['reason-sports-pop-culture', 59],
+  ['reason-politics', 59],
+  ['reason-friends-family', 33],
+  ['reason-product-reviews', 29],
+]) observations.push(observation({
+  id: `x-us-${segment}-2024`, platformId: 'x', metricId: 'use-reason-rate', valueType: 'percentage', value,
+  unit: 'percent', periodStart: '2024-03-18', periodEnd: '2024-03-24', publishedAt: '2024-06-12',
+  geography: 'us', segments: ['x-users', 'major-or-minor-reason', segment],
+  methodology: 'Pew American Trends Panel Wave 144; 2,565 US adult X users within a survey of 10,287 US adult internet users. Share naming each item as a major or minor reason for using X.',
+  sourceId: 'pew-x-experience-2024', confidence: 'high', comparability: 'us-x-user-use-reason-survey',
+  editorNote: 'Applies to surveyed US adult X users in March 2024; not all US adults, not user composition, and not global X users.',
+}))
 
 observations.push(observation({
   id: 'linkedin-us-adult-use-2025', platformId: 'linkedin', metricId: 'adult-use-rate',
@@ -484,9 +515,6 @@ const fixedCoverageGaps = [
   { id: 'gap-source-x-device-count-unavailable', gapKind: 'metric', platformId: 'x', metricId: 'device-count', reason: 'The verified Sensor Tower sources estimate app users rather than a deduplicated count of devices, so no device-count observation can be created.', attemptedSourceUrl: 'https://techcrunch.com/2025/07/10/as-x-loses-its-ceo-daily-usage-is-down-and-competition-is-growing/', checkedAt: ACCESSED_AT, impact: 'Mobile user estimates are not transformed into device counts.' },
   { id: 'gap-source-x-country-share-unavailable', gapKind: 'metric', platformId: 'x', metricId: 'country-share', geoDimensionId: 'country-share', reason: '已核验的 DataReportal 来源列出各国 X 广告可触达人数，但没有直接公布各国占全球 X 受众的比例。', attemptedSourceUrl: 'https://datareportal.com/essential-x-stats', checkedAt: ACCESSED_AT, impact: '国家受众占比保持缺口；不会用经过取整的全球广告触达总数反推。可改看独立呈现的各国广告触达人数与互联网人口渗透率。' },
   { id: 'gap-source-x-occupation-industry-profile', gapKind: 'profile', platformId: 'x', profileDimensionId: 'occupation-industry', reason: '已核验的 Pew 2025 社交媒体事实表没有发布 X 用户的职业或行业交叉分布，广告受众工具公开页也没有可复核的职业样本与口径。', attemptedSourceUrl: 'https://www.pewresearch.org/internet/fact-sheet/social-media/', checkedAt: ACCESSED_AT, impact: '无法判断 X 用户集中在哪些职业或行业；页面不以创作者观察代替总体用户画像。' },
-  { id: 'gap-source-x-city-tier-profile', gapKind: 'profile', platformId: 'x', profileDimensionId: 'city-tier', reason: '已核验的公开调查没有给出 X 用户按城市层级、城市规模或城乡类型划分的可复核分布。', attemptedSourceUrl: 'https://www.pewresearch.org/internet/fact-sheet/social-media/', checkedAt: ACCESSED_AT, impact: '无法量化一线城市、低线城市或城乡用户差异；不从国家广告触达数据推断城市结构。' },
-  { id: 'gap-source-x-political-orientation-profile', gapKind: 'profile', platformId: 'x', profileDimensionId: 'political-orientation', reason: '已核验的 Pew 2025 社交媒体事实表未发布 X 用户按政治倾向划分的当前占比；其他公开材料也没有同口径、可复核的全球数据。', attemptedSourceUrl: 'https://www.pewresearch.org/internet/fact-sheet/social-media/', checkedAt: ACCESSED_AT, impact: '不能把平台上的高可见政治内容等同于总体用户政治倾向，也不展示未经当前样本验证的比例。' },
-  { id: 'gap-source-x-general-use-motivation-profile', gapKind: 'profile', platformId: 'x', profileDimensionId: 'general-use-motivation', reason: '当前可核验调查只支持“获取新闻”这一特定使用理由，未形成覆盖社交、娱乐、学习、客户服务等一般使用动机的同一问卷分布。', attemptedSourceUrl: 'https://www.pewresearch.org/internet/fact-sheet/social-media/', checkedAt: ACCESSED_AT, impact: '一般使用动机保持未知；新闻使用率不会被扩展解释成所有使用目的。' },
   { id: 'gap-source-x-country-availability', gapKind: 'geography', platformId: 'x', geoDimensionId: 'country-availability', reason: '已核验来源没有提供带核验日期、覆盖完整且可复核的 X 国家/地区可用性清单。广告工具覆盖或创作者收款支持国家都不等于产品可用国家。', attemptedSourceUrl: 'https://help.x.com/en/rules-and-policies/x-services-and-corporate-affiliates', checkedAt: ACCESSED_AT, impact: '页面不声称 X 在某个完整国家集合中均可用；运营前仍需按目标市场单独核验。' },
   { id: 'gap-source-x-country-restrictions', gapKind: 'geography', platformId: 'x', geoDimensionId: 'country-restrictions', reason: 'X 透明度材料记录部分法律请求，但没有形成截至本快照逐国、实时的访问限制或封锁状态清单。限制状态也可能快速变化。', attemptedSourceUrl: 'https://transparency.x.com/en/reports/removal-requests.html', checkedAt: ACCESSED_AT, impact: '无法在静态季度快照中穷尽列出每个国家的访问限制；不会把法律请求数量替代为可用性结论。' },
   { id: 'gap-source-x-primary-languages', gapKind: 'geography', platformId: 'x', geoDimensionId: 'primary-languages', reason: 'X 帮助文档可列界面支持语言，但已核验来源没有发布用户主要发帖语言或各语言受众规模的可复核分布。', attemptedSourceUrl: 'https://help.x.com/en/using-x/x-supported-languages', checkedAt: ACCESSED_AT, impact: '界面支持语言不等于用户主要语言；页面不据此估算中文、英文或其他语言受众占比。' },

@@ -7,8 +7,14 @@ const SCALE_METRIC_IDS = new Set([
 
 const AUDIENCE_METRIC_IDS = new Set([
   'adult-use-rate', 'age-use-rate', 'gender-use-rate', 'income-use-rate', 'education-use-rate',
-  'age-share', 'gender-share', 'news-use-rate',
+  'community-use-rate', 'party-use-rate', 'use-reason-rate', 'age-share', 'gender-share', 'news-use-rate',
 ])
+
+const PROFILE_DIMENSION_METRICS = {
+  'city-tier': 'community-use-rate',
+  'political-orientation': 'party-use-rate',
+  'general-use-motivation': 'use-reason-rate',
+}
 
 const CONFIDENCE_ORDER = new Map([['high', 0], ['reference', 1], ['disputed', 2]])
 
@@ -182,7 +188,13 @@ export function selectGeoCoverageGaps(repository, filters) {
 
 export function selectAudienceCoverageGaps(repository, filters) {
   return repository.coverageGaps.filter((gap) => (
-    filters.platformIds.includes(gap.platformId) && gap.profileDimensionId
+    filters.platformIds.includes(gap.platformId)
+    && gap.profileDimensionId
+    && (!PROFILE_DIMENSION_METRICS[gap.profileDimensionId] || !repository.observations.some((row) => (
+      row.snapshotId === filters.snapshotId
+      && row.platformId === gap.platformId
+      && row.metricId === PROFILE_DIMENSION_METRICS[gap.profileDimensionId]
+    )))
   ))
 }
 

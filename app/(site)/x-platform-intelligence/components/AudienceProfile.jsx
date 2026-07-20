@@ -1,11 +1,13 @@
-import { confidenceLabel, formatMetricValue, geographyLabel, segmentLabel } from '../presentation.mjs'
+import { confidenceLabel, formatMetricValue, formatPeriod, geographyLabel, segmentLabel } from '../presentation.mjs'
 
 const PROFILE_SECTIONS = [
   { id: 'age', label: '年龄', metricIds: ['age-use-rate', 'age-share'] },
   { id: 'gender', label: '性别', metricIds: ['gender-use-rate', 'gender-share'] },
   { id: 'income', label: '收入', metricIds: ['income-use-rate'] },
   { id: 'education', label: '教育', metricIds: ['education-use-rate'] },
-  { id: 'news', label: '新闻使用', metricIds: ['news-use-rate'] },
+  { id: 'community', label: '社区类型（群体内使用率）', metricIds: ['community-use-rate'] },
+  { id: 'party', label: '党派群体（群体内使用率）', metricIds: ['party-use-rate'] },
+  { id: 'reasons', label: '使用理由（X 用户，主要或次要）', metricIds: ['use-reason-rate', 'news-use-rate'] },
 ]
 
 const GAP_LABELS = {
@@ -16,7 +18,7 @@ const GAP_LABELS = {
 }
 
 function rowSegmentLabel(row) {
-  const meaningful = [...row.segments].reverse().find((segment) => segment !== 'adults-18-plus')
+  const meaningful = [...row.segments].reverse().find((segment) => !['adults-18-plus', 'major-or-minor-reason'].includes(segment))
   return segmentLabel(meaningful || row.segments.at(-1) || 'all')
 }
 
@@ -59,7 +61,7 @@ export default function AudienceProfile({ groups, coverageGaps, onOpenEvidence }
                           >
                             {formatMetricValue(row)}
                           </button>
-                          <span className="sm:col-start-2 text-[9px] text-[#7a8076] dark:text-gray-600">{confidenceLabel(row.confidence)}</span>
+                          <span className="sm:col-start-2 text-[9px] text-[#7a8076] dark:text-gray-600">{confidenceLabel(row.confidence)} · {formatPeriod(row.periodStart, row.periodEnd)}</span>
                         </div>
                       ))}
                     </div>

@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import SharePageButton from '../components/SharePageButton'
 import { X_INTELLIGENCE_REPOSITORY as repository } from './data.mjs'
 import { DEFAULT_FILTERS, parseFilterParams, serializeFilterParams } from './filters.mjs'
+import { getEvidenceBundle } from './model.mjs'
 import {
   selectAudienceGroups,
+  selectComparisonMatrix,
   selectGeoRows,
   selectOperationalInsights,
   selectOverview,
@@ -15,16 +17,17 @@ import {
 import AudienceProfile from './components/AudienceProfile'
 import ContentMechanics from './components/ContentMechanics'
 import CreatorPlaybook from './components/CreatorPlaybook'
+import EvidenceDrawer from './components/EvidenceDrawer'
 import FilterBar from './components/FilterBar'
 import GeoExplorer from './components/GeoExplorer'
 import Overview from './components/Overview'
+import PlatformMatrix from './components/PlatformMatrix'
 import RiskRegister from './components/RiskRegister'
 import ScaleTrends from './components/ScaleTrends'
 
 const PAGE_URL = 'https://2aran.com/x-platform-intelligence'
 
 const MODULES = [
-  ['comparison', '平台差异'],
   ['evidence', '完整证据账本'],
 ]
 
@@ -57,6 +60,11 @@ export default function XPlatformIntelligenceClient() {
     segment: 'all',
     goal: DEFAULT_FILTERS.goal,
   }), [filters])
+  const comparisonMatrix = useMemo(() => selectComparisonMatrix(repository, filters), [filters])
+  const evidenceBundle = useMemo(() => (
+    evidenceRef ? getEvidenceBundle(repository, evidenceRef) : null
+  ), [evidenceRef])
+  const closeEvidence = useCallback(() => setEvidenceRef(null), [])
 
   return (
     <main className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-10">
@@ -93,6 +101,7 @@ export default function XPlatformIntelligenceClient() {
         <ContentMechanics insights={operationalInsights} onOpenEvidence={setEvidenceRef} />
         <CreatorPlaybook insights={operationalInsights} onOpenEvidence={setEvidenceRef} />
         <RiskRegister insights={riskInsights} onOpenEvidence={setEvidenceRef} />
+        <PlatformMatrix matrix={comparisonMatrix} onOpenEvidence={setEvidenceRef} />
         {MODULES.map(([id, title]) => (
           <section
             key={id}
@@ -110,6 +119,14 @@ export default function XPlatformIntelligenceClient() {
           </section>
         ))}
       </div>
+      {evidenceRef ? (
+        <EvidenceDrawer
+          evidenceRef={evidenceRef}
+          bundle={evidenceBundle}
+          repository={repository}
+          onClose={closeEvidence}
+        />
+      ) : null}
     </main>
   )
 }

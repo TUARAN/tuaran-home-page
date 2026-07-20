@@ -68,6 +68,10 @@ assert.equal(bundle.subject.id, 'x-real-time')
 assert.deepEqual(bundle.sources.map((source) => source.id), ['x-dsa-2025-h2'])
 assert.deepEqual(bundle.observations.map((row) => row.id), ['x-eu-mau-2025-h2'])
 
+assert.deepEqual(getEvidenceBundle(fixture, null), {
+  subject: null, sources: [], observations: [], conflicts: [],
+})
+
 const { X_INTELLIGENCE_REPOSITORY } = await import('../app/(site)/x-platform-intelligence/data.mjs')
 const result = validateRepository(X_INTELLIGENCE_REPOSITORY)
 assert.deepEqual(result.errors, [], result.errors.join('\n'))
@@ -93,6 +97,12 @@ assert.ok(X_INTELLIGENCE_REPOSITORY.observations.some((row) => row.platformId ==
 assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
   gap.platformId === 'x' && gap.metricId === 'country-share' && gap.reason && gap.attemptedSourceUrl && gap.impact
 )))
+
+for (const comparison of X_INTELLIGENCE_REPOSITORY.comparisons) {
+  const comparisonBundle = getEvidenceBundle(X_INTELLIGENCE_REPOSITORY, { kind: 'comparison', id: comparison.id })
+  assert.ok(comparisonBundle.subject)
+  assert.ok(comparisonBundle.sources.length > 0 || comparisonBundle.observations.length > 0)
+}
 
 const reviewerFailures = []
 const repositorySourceById = new Map(X_INTELLIGENCE_REPOSITORY.sources.map((source) => [source.id, source]))

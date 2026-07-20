@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { X_INTELLIGENCE_REPOSITORY as repository } from '../app/(site)/x-platform-intelligence/data.mjs'
 import { DEFAULT_FILTERS } from '../app/(site)/x-platform-intelligence/filters.mjs'
 import {
+  groupComparisonRows,
   selectAudienceGroups, selectComparisonMatrix, selectEvidenceRows, selectGeoRows,
   selectOperationalInsights, selectOverview, selectScaleTrends,
 } from '../app/(site)/x-platform-intelligence/selectors.mjs'
@@ -142,6 +143,19 @@ assert.ok(!spacesSource.supportedDimensionIds.includes('native-monetization'), '
 const matrix = selectComparisonMatrix(repository, { ...DEFAULT_FILTERS, platformIds: repository.platforms.map((item) => item.id) })
 assert.equal(matrix.rows.length, 12)
 assert.ok(matrix.rows.every((row) => row.cells.length === 16))
+assert.ok(matrix.dimensions.every((dimension) => !dimension.label.includes('-')))
+const matrixGroups = groupComparisonRows(matrix.rows)
+assert.equal(matrixGroups.global.length, 7)
+assert.equal(matrixGroups.china.length, 6)
+assert.equal(matrixGroups.global[0].platform.id, 'x')
+assert.equal(matrixGroups.china[0].platform.id, 'x')
+
+const filteredMatrixGroups = groupComparisonRows(selectComparisonMatrix(repository, {
+  ...DEFAULT_FILTERS,
+  platformIds: ['weibo'],
+}).rows)
+assert.deepEqual(filteredMatrixGroups.global.map((row) => row.platform.id), ['x'])
+assert.deepEqual(filteredMatrixGroups.china.map((row) => row.platform.id), ['x', 'weibo'])
 
 const evidenceRows = selectEvidenceRows(repository, DEFAULT_FILTERS)
 assert.ok(evidenceRows.every((row) => row.sourceUrl.startsWith('https://')))

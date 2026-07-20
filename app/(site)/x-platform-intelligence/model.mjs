@@ -85,6 +85,9 @@ export function validateRepository(repository) {
 }
 
 export function getEvidenceBundle(repository, evidenceRef) {
+  if (!evidenceRef || !['observation', 'insight', 'comparison'].includes(evidenceRef.kind)) {
+    return { subject: null, sources: [], observations: [], conflicts: [] }
+  }
   const index = createRepositoryIndex(repository)
   const map = evidenceRef.kind === 'observation' ? index.observationById : evidenceRef.kind === 'insight' ? index.insightById : index.comparisonById
   const subject = map.get(evidenceRef.id)

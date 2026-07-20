@@ -12,6 +12,29 @@ const AUDIENCE_METRIC_IDS = new Set([
 
 const CONFIDENCE_ORDER = new Map([['high', 0], ['reference', 1], ['disputed', 2]])
 
+const COMPARISON_DIMENSION_LABELS = {
+  reach: '总体触达',
+  realtime: '实时性',
+  'content-longevity': '内容寿命',
+  'search-value': '搜索价值',
+  'professional-relationships': '专业关系密度',
+  'public-conversation': '公共讨论能力',
+  'external-links': '外链友好度',
+  'algorithmic-distribution': '算法分发强度',
+  'follow-graph': '关注关系价值',
+  'chinese-reach': '中文覆盖',
+  internationalization: '国际化',
+  'production-cost': '内容制作成本',
+  'native-monetization': '原生商业化',
+  'private-audience': '私域沉淀',
+  'brand-safety': '品牌安全',
+  'data-transparency': '数据透明度',
+}
+
+export function comparisonDimensionLabel(dimensionId) {
+  return COMPARISON_DIMENSION_LABELS[dimensionId] || dimensionId
+}
+
 function selectedInsights(repository, filters, { includeAllGoals = false } = {}) {
   return repository.insights.filter((item) => (
     item.snapshotId === filters.snapshotId
@@ -162,17 +185,18 @@ export function selectOperationalInsights(repository, filters) {
 }
 
 export function selectComparisonMatrix(repository, filters) {
+  const platformIds = new Set(['x', ...filters.platformIds])
   const comparisons = repository.comparisons.filter((item) => (
-    item.snapshotId === filters.snapshotId && filters.platformIds.includes(item.platformId)
+    item.snapshotId === filters.snapshotId && platformIds.has(item.platformId)
   ))
   const dimensions = [...new Set(repository.comparisons
     .filter((item) => item.snapshotId === filters.snapshotId)
     .map((item) => item.dimensionId))]
-    .map((id) => ({ id, label: id }))
+    .map((id) => ({ id, label: comparisonDimensionLabel(id) }))
 
   const comparisonByPlatformDimension = new Map(comparisons.map((item) => [`${item.platformId}\u0000${item.dimensionId}`, item]))
   const platforms = sortByRepositoryOrder(
-    repository.platforms.filter((platform) => filters.platformIds.includes(platform.id)),
+    repository.platforms.filter((platform) => platformIds.has(platform.id)),
     repository.platforms,
   )
 
@@ -191,6 +215,15 @@ export function selectComparisonMatrix(repository, filters) {
       }),
     })),
   }
+}
+
+export function groupComparisonRows(rows) {
+  const focusRow = rows.find((row) => row.platform.id === 'x')
+  const rowsFor = (group) => [
+    ...(focusRow ? [focusRow] : []),
+    ...rows.filter((row) => row.platform.group === group),
+  ]
+  return { global: rowsFor('global'), china: rowsFor('china') }
 }
 
 export function selectEvidenceRows(repository, filters) {

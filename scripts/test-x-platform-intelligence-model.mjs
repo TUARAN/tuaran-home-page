@@ -98,6 +98,19 @@ assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
   gap.platformId === 'x' && gap.metricId === 'country-share' && gap.reason && gap.attemptedSourceUrl && gap.impact
 )))
 
+for (const profileDimensionId of ['occupation-industry', 'city-tier', 'political-orientation', 'general-use-motivation']) {
+  assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
+    gap.platformId === 'x' && gap.profileDimensionId === profileDimensionId
+    && gap.reason && gap.attemptedSourceUrl && gap.checkedAt && gap.impact
+  )), `${profileDimensionId} must have a precise coverage gap`)
+}
+for (const geoDimensionId of ['country-availability', 'country-restrictions', 'primary-languages']) {
+  assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
+    gap.platformId === 'x' && gap.geoDimensionId === geoDimensionId
+    && gap.reason && gap.attemptedSourceUrl && gap.checkedAt && gap.impact
+  )), `${geoDimensionId} must have a precise coverage gap`)
+}
+
 for (const comparison of X_INTELLIGENCE_REPOSITORY.comparisons) {
   const comparisonBundle = getEvidenceBundle(X_INTELLIGENCE_REPOSITORY, { kind: 'comparison', id: comparison.id })
   assert.ok(comparisonBundle.subject)

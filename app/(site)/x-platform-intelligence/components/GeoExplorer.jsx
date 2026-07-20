@@ -6,8 +6,16 @@ import { confidenceLabel, formatMetricValue, formatPeriod, geographyLabel } from
 
 const METRICS = [
   ['country-share', '国家受众占比'],
+  ['ad-reach', '广告可触达人数（不是 MAU）'],
   ['internet-penetration', '广告触达 / 当地互联网用户'],
 ]
+
+const GAP_LABELS = {
+  'country-share': '国家受众占比',
+  'country-availability': '国家可用性',
+  'country-restrictions': '国家限制状态',
+  'primary-languages': '主要语言',
+}
 
 const MAP_POINTS = {
   us: [24, 42],
@@ -19,7 +27,7 @@ const MAP_POINTS = {
 
 export default function GeoExplorer({ rows, coverageGaps, onOpenEvidence }) {
   const [metricId, setMetricId] = useState(() => (
-    rows.some((row) => row.metricId === 'country-share') ? 'country-share' : 'internet-penetration'
+    rows.some((row) => row.metricId === 'country-share') ? 'country-share' : 'ad-reach'
   ))
   const [sort, setSort] = useState({ key: 'value', direction: 'desc' })
   const visibleRows = useMemo(() => {
@@ -31,7 +39,7 @@ export default function GeoExplorer({ rows, coverageGaps, onOpenEvidence }) {
       return sort.direction === 'asc' ? order : -order
     })
   }, [metricId, rows, sort])
-  const activeGaps = coverageGaps.filter((gap) => gap.metricId === metricId)
+  const activeGaps = coverageGaps.filter((gap) => gap.geoDimensionId === metricId)
 
   const changeSort = (key) => {
     setSort((current) => ({ key, direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc' }))
@@ -45,7 +53,7 @@ export default function GeoExplorer({ rows, coverageGaps, onOpenEvidence }) {
           <h2 id="geography-title" className="mt-2 font-serif text-2xl font-semibold text-[#20231e] dark:text-gray-100">国家与地区</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5a6056] dark:text-gray-400">地图只标出证据仓库中已有观察值的国家或地区，不推断、不补齐缺失国家。</p>
         </div>
-        <div className="inline-flex w-fit border border-[#cfd4cc] bg-white p-1 dark:border-gray-800 dark:bg-gray-950" aria-label="国家指标">
+        <div className="inline-flex w-fit flex-wrap border border-[#cfd4cc] bg-white p-1 dark:border-gray-800 dark:bg-gray-950" aria-label="国家指标">
           {METRICS.map(([id, label]) => (
             <button
               key={id}
@@ -80,12 +88,12 @@ export default function GeoExplorer({ rows, coverageGaps, onOpenEvidence }) {
                 onClick={() => onOpenEvidence({ kind: 'observation', id: row.observationId })}
                 data-evidence-kind="observation"
                 data-evidence-id={row.observationId}
-                aria-label={`${geographyLabel(row.country)}，${formatMetricValue(row)}，打开证据`}
+                aria-label={`${row.platformName}，${geographyLabel(row.country)}，${formatMetricValue(row)}，打开证据`}
                 className="group absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#2f6f44] shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1d4e2d] dark:border-gray-950 dark:bg-emerald-400"
                 style={{ left: `${point[0]}%`, top: `${point[1]}%` }}
               >
                 <span className="pointer-events-none absolute left-1/2 top-5 z-10 hidden -translate-x-1/2 whitespace-nowrap border border-[#d4d8d1] bg-white px-2 py-1 text-[10px] text-[#343a32] shadow-sm group-hover:block group-focus-visible:block dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
-                  {geographyLabel(row.country)} · {formatMetricValue(row)}
+                  {row.platformName} · {geographyLabel(row.country)} · {formatMetricValue(row)}
                 </span>
               </button>
             )
@@ -108,6 +116,7 @@ export default function GeoExplorer({ rows, coverageGaps, onOpenEvidence }) {
             <caption className="sr-only">国家指标排序表，包含周期、来源和置信度</caption>
             <thead>
               <tr className="border-b border-[#d8dcd5] text-[#626960] dark:border-gray-800 dark:text-gray-500">
+                <th scope="col" className="py-2 pr-3 font-medium">平台</th>
                 <th scope="col" aria-sort={sort.key === 'country' ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'} className="py-2 pr-3 font-medium">
                   <button type="button" onClick={() => changeSort('country')} className="underline decoration-[#c0c5bd] underline-offset-4">国家 / 地区</button>
                 </th>
@@ -121,7 +130,8 @@ export default function GeoExplorer({ rows, coverageGaps, onOpenEvidence }) {
             <tbody>
               {visibleRows.map((row) => (
                 <tr key={row.observationId} className="border-b border-[#e7e9e4] align-top last:border-0 dark:border-gray-900">
-                  <th scope="row" className="py-3 pr-3 font-semibold text-[#31362f] dark:text-gray-300">{geographyLabel(row.country)}</th>
+                  <th scope="row" className="py-3 pr-3 font-semibold text-[#31362f] dark:text-gray-300">{row.platformName}</th>
+                  <td className="py-3 pr-3 font-semibold text-[#31362f] dark:text-gray-300">{geographyLabel(row.country)}</td>
                   <td className="px-3 py-3">
                     <button
                       type="button"
@@ -143,6 +153,20 @@ export default function GeoExplorer({ rows, coverageGaps, onOpenEvidence }) {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="mt-5 border-t border-[#e0e3dd] pt-5 dark:border-gray-800">
+        <h3 className="font-serif text-lg font-semibold text-[#272b25] dark:text-gray-200">已核验但仍缺失的国家维度</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          {coverageGaps.map((gap) => (
+            <article key={gap.id} className="border border-dashed border-[#c9cec5] bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-semibold text-[#343a32] dark:text-gray-300">{GAP_LABELS[gap.geoDimensionId] || gap.geoDimensionId} · {gap.platformId.toUpperCase()}</p>
+              <p className="mt-2 text-xs leading-6 text-[#5d645a] dark:text-gray-400">{gap.reason}</p>
+              <p className="mt-2 text-[11px] leading-5 text-[#71776d] dark:text-gray-500">影响：{gap.impact}</p>
+              <a href={gap.attemptedSourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[11px] underline decoration-[#b8beb5] underline-offset-4">查看已核验来源</a>
+            </article>
+          ))}
         </div>
       </div>
     </section>

@@ -63,7 +63,7 @@ export default function RiskRegister({ insights, onOpenEvidence }) {
       <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[#7c8277] dark:text-gray-500">Global risk register</p>
       <h2 id="risk-title" className="mt-2 font-serif text-2xl font-semibold text-[#20231e] dark:text-gray-100">风险与边界</h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5a6056] dark:text-gray-400">
-        风险保留全局视角，不随地区、人群或创作者目标筛选缩窄。严重度同时使用图标和文字，颜色只作辅助。
+        风险保留全局视角，不随地区、人群或创作者目标筛选缩窄，但仍响应数据快照与可信度。严重度同时使用图标和文字，颜色只作辅助。
       </p>
 
       <div className="mt-5 grid gap-6 lg:grid-cols-2">

@@ -55,7 +55,10 @@ export default function Overview({ overview, onOpenEvidence }) {
         {overview.headlineMetrics.map((row) => (
           <article key={row.id} className="flex min-h-44 flex-col border border-[#dfe2dc] bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
             <div className="flex items-start justify-between gap-3">
-              <p className="text-xs font-semibold text-[#4d534a] dark:text-gray-400">{METRIC_LABELS[row.metricId] || row.metricId}</p>
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#73796f] dark:text-gray-500">{row.platformName}</p>
+                <p className="mt-1 text-xs font-semibold text-[#4d534a] dark:text-gray-400">{METRIC_LABELS[row.metricId] || row.metricId}</p>
+              </div>
               <span className={`whitespace-nowrap border px-2 py-1 font-mono text-[9px] ${CONFIDENCE_STYLES[row.confidence] || ''}`}>
                 {confidenceLabel(row.confidence)}
               </span>

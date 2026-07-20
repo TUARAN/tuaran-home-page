@@ -70,20 +70,29 @@ function groupBy(items, keyFor) {
 
 function methodologyKey(row) {
   return [
-    row.metricId, row.unit, row.geography, row.periodStart, row.periodEnd,
+    row.platformId, row.metricId, row.unit, row.geography,
     row.comparability, row.methodology, row.segments.join('|'),
   ].join('\u0000')
 }
 
+function periodOrder(left, right) {
+  return left.periodStart.localeCompare(right.periodStart)
+    || left.periodEnd.localeCompare(right.periodEnd)
+    || left.id.localeCompare(right.id)
+}
+
 export function selectOverview(repository, filters) {
   const observations = filterObservations(repository, filters)
+  const platformNameById = new Map(repository.platforms.map((platform) => [platform.id, platform.name]))
   const insights = selectedInsights(repository, filters, { includeAllGoals: true })
   const conflictRows = observations.filter((row) => row.conflictGroupId)
   const snapshot = repository.snapshots.find((item) => item.id === filters.snapshotId) || null
 
   return {
     snapshot,
-    headlineMetrics: observations.filter((row) => SCALE_METRIC_IDS.has(row.metricId)),
+    headlineMetrics: observations
+      .filter((row) => SCALE_METRIC_IDS.has(row.metricId))
+      .map((row) => ({ ...row, platformName: platformNameById.get(row.platformId) || row.platformId })),
     insights,
     changeNotes: conflictRows.map((row) => ({
       observationId: row.id,
@@ -100,19 +109,33 @@ export function selectOverview(repository, filters) {
 }
 
 export function selectScaleTrends(repository, filters) {
-  const rows = filterObservations(repository, filters).filter((row) => (
-    SCALE_METRIC_IDS.has(row.metricId) && typeof row.value === 'number'
-  ))
-  const groups = [...groupBy(rows, (row) => row.metricId)].map(([metricId, groupRows]) => ({
-    metricId,
-    label: metricLabel(repository, metricId),
-    rows: groupRows,
-    conflict: groupRows.some((row) => row.conflictGroupId),
-  }))
+  const platformNameById = new Map(repository.platforms.map((platform) => [platform.id, platform.name]))
+  const rows = filterObservations(repository, filters)
+    .filter((row) => SCALE_METRIC_IDS.has(row.metricId) && typeof row.value === 'number')
+    .map((row) => ({ ...row, platformName: platformNameById.get(row.platformId) || row.platformId }))
+  const groups = [...groupBy(rows, (row) => `${row.platformId}\u0000${row.metricId}`)]
+    .map(([, groupRows]) => {
+      const platformId = groupRows[0].platformId
+      const metricId = groupRows[0].metricId
+      const conflictGroups = [...groupBy(
+        groupRows.filter((row) => row.conflictGroupId),
+        (row) => row.conflictGroupId,
+      )].map(([id, conflictRows]) => ({ id, rows: conflictRows }))
+      return {
+        platformId,
+        platformName: platformNameById.get(platformId) || platformId,
+        metricId,
+        label: metricLabel(repository, metricId),
+        rows: groupRows,
+        ordinaryRows: groupRows.filter((row) => !row.conflictGroupId),
+        conflictGroups,
+        conflict: conflictGroups.length > 0,
+      }
+    })
 
   const comparableSeries = [...groupBy(rows.filter((row) => !row.conflictGroupId), methodologyKey)].map(([key, seriesRows]) => ({
     key,
-    rows: seriesRows,
+    rows: [...seriesRows].sort(periodOrder),
   }))
 
   return { groups, comparableSeries }
@@ -120,12 +143,13 @@ export function selectScaleTrends(repository, filters) {
 
 export function selectGeoRows(repository, filters) {
   const sourceById = new Map(repository.sources.map((item) => [item.id, item]))
+  const platformNameById = new Map(repository.platforms.map((platform) => [platform.id, platform.name]))
   return repository.observations
     .filter((row) => (
       row.snapshotId === filters.snapshotId
       && filters.platformIds.includes(row.platformId)
       && filters.confidences.includes(row.confidence)
-      && (row.metricId === 'country-share' || row.metricId === 'internet-penetration')
+      && (row.metricId === 'country-share' || row.metricId === 'internet-penetration' || row.metricId === 'ad-reach')
       && (filters.geography === 'global' ? row.geography !== 'global' : row.geography === filters.geography)
       && (filters.segment === 'all' || row.segments.includes(filters.segment))
     ))
@@ -133,6 +157,8 @@ export function selectGeoRows(repository, filters) {
       const source = sourceById.get(row.sourceId)
       return {
         observationId: row.id,
+        platformId: row.platformId,
+        platformName: platformNameById.get(row.platformId) || row.platformId,
         country: row.geography,
         metricId: row.metricId,
         value: row.value,
@@ -146,6 +172,18 @@ export function selectGeoRows(repository, filters) {
         editorNote: row.editorNote,
       }
     })
+}
+
+export function selectGeoCoverageGaps(repository, filters) {
+  return repository.coverageGaps
+    .filter((gap) => filters.platformIds.includes(gap.platformId) && (gap.geoDimensionId || gap.metricId === 'country-share'))
+    .map((gap) => ({ ...gap, geoDimensionId: gap.geoDimensionId || gap.metricId }))
+}
+
+export function selectAudienceCoverageGaps(repository, filters) {
+  return repository.coverageGaps.filter((gap) => (
+    filters.platformIds.includes(gap.platformId) && gap.profileDimensionId
+  ))
 }
 
 export function selectAudienceGroups(repository, filters) {

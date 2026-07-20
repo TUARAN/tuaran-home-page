@@ -30,7 +30,7 @@ export function validateRepository(repository) {
   for (const name of collections) if (!Array.isArray(repository[name])) errors.push(`${name} must be an array`)
   if (errors.length) return { errors, warnings }
 
-  for (const name of collections.filter((name) => name !== 'coverageGaps')) {
+  for (const name of collections) {
     for (const id of duplicateIds(repository[name])) errors.push(`${name} duplicate id: ${id}`)
   }
 
@@ -79,6 +79,14 @@ export function validateRepository(repository) {
     if (!comparison.quantitativeObservationIds.length && !comparison.evidenceSourceIds.length) errors.push(`comparison ${comparison.id} has no evidence`)
     for (const id of comparison.quantitativeObservationIds) if (!observationIds.has(id)) errors.push(`comparison ${comparison.id} missing observation ${id}`)
     for (const id of comparison.evidenceSourceIds) if (!sourceIds.has(id)) errors.push(`comparison ${comparison.id} missing source ${id}`)
+  }
+
+  for (const gap of repository.coverageGaps) {
+    if (!platformIds.has(gap.platformId)) errors.push(`coverage gap ${gap.id} missing platform ${gap.platformId}`)
+    if (gap.metricId && !metricById.has(gap.metricId)) errors.push(`coverage gap ${gap.id} missing metric ${gap.metricId}`)
+    if (!gap.reason || !gap.impact) errors.push(`coverage gap ${gap.id} requires reason and impact`)
+    if (!/^https:\/\//.test(gap.attemptedSourceUrl || '')) errors.push(`coverage gap ${gap.id} must use an https attemptedSourceUrl`)
+    if (!validDate(gap.checkedAt)) errors.push(`coverage gap ${gap.id} has invalid checkedAt`)
   }
 
   return { errors, warnings }

@@ -135,6 +135,9 @@ for (const item of operational.filter((insight) => insight.category === 'platfor
   assert.ok(['high', 'medium', 'low'].includes(item.severity), `${item.id} missing severity`)
   assert.ok(['current', 'changed'].includes(item.status), `${item.id} missing status`)
 }
+const spacesSource = repository.sources.find((source) => source.id === 'x-spaces')
+assert.ok(!spacesSource.methodologySummary.toLowerCase().includes('subscriber'), 'Spaces source must not claim subscription features')
+assert.ok(!spacesSource.supportedDimensionIds.includes('native-monetization'), 'Spaces source must not support monetization')
 
 const matrix = selectComparisonMatrix(repository, { ...DEFAULT_FILTERS, platformIds: repository.platforms.map((item) => item.id) })
 assert.equal(matrix.rows.length, 12)

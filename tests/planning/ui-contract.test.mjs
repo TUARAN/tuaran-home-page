@@ -7,6 +7,8 @@ async function loadPlanningUi() {
   return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
 }
 
+const planningCenterSource = await readFile(new URL('../../app/(admin)/admin/planning/PlanningCenter.jsx', import.meta.url), 'utf8')
+
 test('planning UI publishes the four views and labels every planning status', async () => {
   const { PLANNING_STATUS_META, PLANNING_TABS } = await loadPlanningUi()
 
@@ -31,4 +33,13 @@ test('planning UI formats missing dates and sends safe request errors', async ()
   } finally {
     globalThis.fetch = originalFetch
   }
+})
+
+test('planning shell mounts every tab panel and hides inactive panels', () => {
+  assert.match(
+    planningCenterSource,
+    /\{PLANNING_TABS\.map\(\(tab\) => \(\s*<div\s+id=\{`planning-panel-\$\{tab\.id\}`\}\s+role="tabpanel"/s,
+  )
+  assert.match(planningCenterSource, /aria-labelledby=\{`planning-tab-\$\{tab\.id\}`\}/)
+  assert.match(planningCenterSource, /hidden=\{activeTab !== tab\.id\}/)
 })

@@ -150,10 +150,10 @@ function TopicCircleCard({ topic }) {
   return (
     <Link href={topic.href} className="discussion-topic-card no-underline hover:no-underline">
       <h3 className="mb-0 border-0 p-0 text-base font-semibold text-[var(--site-ink)]">
-        {topic.shortLabel}
+        {topic.label}
       </h3>
-      <p className="mb-0 mt-1.5 text-sm leading-5 text-[var(--site-muted)]">
-        {topic.shortDesc}
+      <p className="mb-0 mt-2 text-sm leading-6 text-[var(--site-muted)]">
+        {topic.desc}
       </p>
     </Link>
   )

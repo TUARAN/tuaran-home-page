@@ -206,8 +206,18 @@ export function buildOverviewModel(snapshot = {}, directionId = '') {
   }
 }
 
-function isArchived(item) {
+export function isPlanningArchived(item) {
   return item?.archivedAt != null || item?.status === 'archived' || item?.planningStatus === 'archived'
+}
+
+export function planningNodeCapabilities(node = {}) {
+  const active = !node.effectivelyArchived && !isPlanningArchived(node)
+  return {
+    canLinkProject: active && node.entityType === 'direction',
+    canAddMilestone: active && node.entityType === 'project-profile',
+    canAddTask: active && node.entityType === 'milestone',
+    canAddDependency: active && (node.entityType === 'milestone' || node.entityType === 'task'),
+  }
 }
 
 function endpointProjectId(type, id, index) {
@@ -235,8 +245,8 @@ export function buildRoadmapModel(snapshot = {}) {
   const quarterEnd = new Date(currentDate.getFullYear(), Math.floor(currentDate.getMonth() / 3) * 3 + 3, 1).getTime() - 1
   const activeDependencies = (snapshot.dependencies || []).filter((item) => item.status == null || item.status === 'active')
 
-  const rows = (snapshot.projects || []).filter((project) => !isArchived(project)).map((project) => {
-    const projectMilestones = (snapshot.milestones || []).filter((item) => item.projectId === project.projectId && !isArchived(item))
+  const rows = (snapshot.projects || []).filter((project) => !isPlanningArchived(project)).map((project) => {
+    const projectMilestones = (snapshot.milestones || []).filter((item) => item.projectId === project.projectId && !isPlanningArchived(item))
     const columns = { past: [], current: [], future: [], unscheduled: [] }
     for (const milestone of projectMilestones) {
       if (TERMINAL_STATUSES.has(milestone.status)) columns.past.push(milestone)
@@ -271,7 +281,7 @@ export function buildRoadmapModel(snapshot = {}) {
 export function buildPlanningTree(snapshot = {}, options = {}) {
   const showArchived = Boolean(options.showArchived)
   const source = showArchived && snapshot.hierarchy ? snapshot.hierarchy : snapshot
-  const visible = (item) => showArchived || !isArchived(item)
+  const visible = (item) => showArchived || !isPlanningArchived(item)
   const tasksByMilestone = new Map()
   for (const task of source.tasks || []) {
     if (!visible(task)) continue
@@ -301,11 +311,20 @@ export function buildPlanningTree(snapshot = {}, options = {}) {
       children: milestonesByProject.get(project.projectId) || [],
     }])
   }
-  return (source.directions || []).filter(visible).map((direction) => ({
+  const roots = (source.directions || []).filter(visible).map((direction) => ({
     ...direction,
     entityType: 'direction',
     children: projectsByDirection.get(direction.id) || [],
   }))
+  const markEffectiveArchive = (node, ancestorArchived = false) => {
+    const effectivelyArchived = ancestorArchived || isPlanningArchived(node)
+    return {
+      ...node,
+      effectivelyArchived,
+      children: node.children.map((child) => markEffectiveArchive(child, effectivelyArchived)),
+    }
+  }
+  return roots.map((root) => markEffectiveArchive(root))
 }
 
 function filterDateValue(value, endOfDay = false) {
@@ -332,7 +351,7 @@ export function buildPlanningHistory(snapshot = {}, filters = {}) {
     timelineAt: Number(item.decidedAt ?? item.updatedAt ?? item.createdAt ?? 0),
   }))
 
-  return [...events, ...decisions]
+  const timeline = [...events, ...decisions]
     .map((item) => {
       const ancestry = ancestryFor(item, index)
       const project = index.projects.get(ancestry.projectId)
@@ -346,6 +365,36 @@ export function buildPlanningHistory(snapshot = {}, filters = {}) {
     .filter((item) => from == null || item.timelineAt >= from)
     .filter((item) => to == null || item.timelineAt <= to)
     .sort((left, right) => right.timelineAt - left.timelineAt)
+  const visibleEventIds = new Set(timeline.filter((item) => item.kind === 'event').map((item) => item.id))
+  const correctionsByTarget = new Map()
+  for (const item of timeline) {
+    if (item.kind !== 'event') continue
+    const target = item.details?.correctsEventId || item.details?.correctedEventId || item.details?.correctionOf
+    if (!target || !visibleEventIds.has(target)) continue
+    correctionsByTarget.set(target, [...(correctionsByTarget.get(target) || []), item.id])
+  }
+  return timeline.map((item) => {
+    if (item.kind !== 'event') return item
+    const target = item.details?.correctsEventId || item.details?.correctedEventId || item.details?.correctionOf
+    return {
+      ...item,
+      correctionTargetId: target && visibleEventIds.has(target) ? target : null,
+      correctionIds: correctionsByTarget.get(item.id) || [],
+    }
+  })
+}
+
+export function buildPlanningHistoryFilterOptions(snapshot = {}) {
+  const timeline = buildPlanningHistory(snapshot)
+  const directionIds = new Set(timeline.map((item) => item.directionId).filter(Boolean))
+  const projectIds = new Set(timeline.map((item) => item.projectId).filter(Boolean))
+  const hierarchy = snapshot.hierarchy || {}
+  const directions = [...(hierarchy.directions || []), ...(snapshot.directions || [])]
+  const projects = [...(hierarchy.projects || []), ...(snapshot.projects || [])]
+  return {
+    directions: [...new Map(directions.filter((item) => directionIds.has(item.id)).map((item) => [item.id, item])).values()],
+    projects: [...new Map(projects.filter((item) => projectIds.has(item.projectId)).map((item) => [item.projectId, item])).values()],
+  }
 }
 
 export function timestampToDateInput(value) {

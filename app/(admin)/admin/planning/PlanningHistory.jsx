@@ -7,6 +7,7 @@ import { EmptyState, StatusPill } from '../../components/ui'
 import {
   PLANNING_STATUS_META,
   buildPlanningHistory,
+  buildPlanningHistoryFilterOptions,
   formatPlanningDate,
 } from './planningUi'
 
@@ -44,8 +45,7 @@ function DecisionCard({ item }) {
   )
 }
 
-function EventCard({ item, corrections }) {
-  const correctedTarget = item.details?.correctsEventId || item.details?.correctedEventId || item.details?.correctionOf
+function EventCard({ item }) {
   return (
     <article id={`planning-history-${item.id}`} className="rounded-xl border bg-[var(--admin-surface)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -59,8 +59,8 @@ function EventCard({ item, corrections }) {
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--admin-muted)]">
         <span>来源：{item.source || 'manual'}</span>
         {item.projectName ? <span>项目：{item.projectName}</span> : null}
-        {correctedTarget ? <a className="underline" href={`#planning-history-${correctedTarget}`}>查看原事件</a> : null}
-        {corrections.map((correction) => <a key={correction.id} className="underline" href={`#planning-history-${correction.id}`}>查看更正</a>)}
+        {item.correctionTargetId ? <a className="underline" href={`#planning-history-${item.correctionTargetId}`}>查看原事件</a> : null}
+        {item.correctionIds.map((correctionId) => <a key={correctionId} className="underline" href={`#planning-history-${correctionId}`}>查看更正</a>)}
       </div>
     </article>
   )
@@ -69,15 +69,11 @@ function EventCard({ item, corrections }) {
 export default function PlanningHistory({ snapshot }) {
   const [filters, setFilters] = useState({ directionId: '', projectId: '', type: '', from: '', to: '' })
   const timeline = useMemo(() => buildPlanningHistory(snapshot, filters), [filters, snapshot])
-  const projects = useMemo(() => (snapshot.projects || []).filter((item) => !filters.directionId || item.directionId === filters.directionId), [filters.directionId, snapshot.projects])
-  const correctionsByEvent = useMemo(() => {
-    const result = new Map()
-    for (const event of snapshot.events || []) {
-      const target = event.details?.correctsEventId || event.details?.correctedEventId || event.details?.correctionOf
-      if (target) result.set(target, [...(result.get(target) || []), event])
-    }
-    return result
-  }, [snapshot.events])
+  const filterOptions = useMemo(() => buildPlanningHistoryFilterOptions(snapshot), [snapshot])
+  const projects = useMemo(
+    () => filterOptions.projects.filter((item) => !filters.directionId || item.directionId === filters.directionId),
+    [filterOptions.projects, filters.directionId],
+  )
 
   function change(event) {
     const { name, value } = event.target
@@ -97,7 +93,7 @@ export default function PlanningHistory({ snapshot }) {
           方向
           <select name="directionId" value={filters.directionId} className={fieldClass()} onChange={change}>
             <option value="">全部方向</option>
-            {(snapshot.directions || []).map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+            {filterOptions.directions.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
           </select>
         </label>
         <label className="grid gap-1 text-xs text-[var(--admin-muted)]">
@@ -129,7 +125,7 @@ export default function PlanningHistory({ snapshot }) {
             <li key={`${item.kind}:${item.id}`}>
               {item.kind === 'decision'
                 ? <DecisionCard item={item} />
-                : <EventCard item={item} corrections={correctionsByEvent.get(item.id) || []} />}
+                : <EventCard item={item} />}
             </li>
           ))}
         </ol>

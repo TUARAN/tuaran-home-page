@@ -158,7 +158,7 @@ export default function PlanningCenter() {
 
   return (
     <>
-      <div ref={backgroundRef} data-planning-modal-background>
+      <div ref={backgroundRef} data-planning-modal-background data-planning-focus-fallback tabIndex={-1}>
         <AdminPage
       title="规划中心"
       description="把全部项目的过去、现在与未来放在同一条主线上。"

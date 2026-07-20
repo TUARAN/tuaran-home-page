@@ -16,6 +16,26 @@ function focusableElements(container) {
     .filter((element) => !element.hidden && element.getAttribute('aria-hidden') !== 'true')
 }
 
+function isUsableFocusTarget(element) {
+  return element instanceof HTMLElement
+    && element.isConnected
+    && !element.closest('[hidden], [inert], [aria-hidden="true"]')
+    && !element.matches(':disabled')
+}
+
+function restoreFocus(previouslyFocused) {
+  const previousIsUsable = previouslyFocused instanceof HTMLElement
+    && previouslyFocused.isConnected
+    && !previouslyFocused.closest('[hidden], [inert], [aria-hidden="true"]')
+    && !previouslyFocused.matches(':disabled')
+  const selectedTab = document.querySelector('[role="tab"][aria-selected="true"]')
+  const pageFallback = document.querySelector('[data-planning-focus-fallback]')
+  const target = previousIsUsable
+    ? previouslyFocused
+    : [selectedTab, pageFallback].find(isUsableFocusTarget)
+  target?.focus()
+}
+
 export default function usePlanningModal({ dialogRef, initialFocusRef, backgroundRef, onClose, canClose = true }) {
   const closeRef = useRef(onClose)
   const canCloseRef = useRef(canClose)
@@ -71,7 +91,7 @@ export default function usePlanningModal({ dialogRef, initialFocusRef, backgroun
         if (previousAriaHidden == null) background.removeAttribute('aria-hidden')
         else background.setAttribute('aria-hidden', previousAriaHidden)
       }
-      previouslyFocused?.focus()
+      restoreFocus(previouslyFocused)
     }
   }, [backgroundRef, dialogRef, initialFocusRef])
 }

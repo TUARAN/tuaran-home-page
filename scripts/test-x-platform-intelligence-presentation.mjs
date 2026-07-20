@@ -31,11 +31,22 @@ const clientSource = await readFile(new URL('../app/(site)/x-platform-intelligen
 assert.match(clientSource, /coverageGaps=\{geoCoverageGaps\}/, 'client must pass metric coverage gaps to geography')
 assert.match(clientSource, /\[&>\*\]:min-w-0/, 'module grid children must shrink so only table containers scroll')
 assert.match(geoSource, /gap\.reason/, 'geography empty state must show the precise coverage-gap reason')
+assert.match(geoSource, /广告可触达人数（不是 MAU）/, 'geography needs a distinct country ad-reach metric')
+assert.match(geoSource, />平台</, 'geography rows must identify their platform')
+
+const overviewSource = await readFile(new URL('../app/(site)/x-platform-intelligence/components/Overview.jsx', import.meta.url), 'utf8')
+assert.match(overviewSource, /row\.platformName/, 'overview scale cards must name their platform')
+assert.match(scaleSource, /group\.platformName/, 'scale groups must name their platform')
+
+const audienceSource = await readFile(new URL('../app/(site)/x-platform-intelligence/components/AudienceProfile.jsx', import.meta.url), 'utf8')
+assert.match(audienceSource, /coverageGaps/, 'audience must render profile coverage gaps')
+assert.match(audienceSource, /gap\.reason/, 'audience coverage gaps need precise reasons')
 
 const filterSource = await readFile(new URL('../app/(site)/x-platform-intelligence/components/FilterBar.jsx', import.meta.url), 'utf8')
 assert.match(filterSource, /geographyLabel\(id\)/, 'geography options must use public-facing labels')
 assert.match(filterSource, /segmentLabel\(id\)/, 'segment options must use public-facing labels')
 assert.match(filterSource, /<fieldset/, 'checkbox collections need fieldset semantics')
 assert.match(filterSource, /<legend/, 'checkbox collections need an accessible group name')
+assert.ok(!filterSource.includes('7 / 9'), 'filter scope copy must not use a stale module count')
 
 console.log('[x-intelligence:presentation] all assertions passed')

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { X_INTELLIGENCE_REPOSITORY as repository } from '../app/(site)/x-platform-intelligence/data.mjs'
 import { DEFAULT_FILTERS } from '../app/(site)/x-platform-intelligence/filters.mjs'
 import {
-  groupComparisonRows,
+  groupComparisonRows, selectAudienceCoverageGaps, selectGeoCoverageGaps,
   selectAudienceGroups, selectComparisonMatrix, selectEvidenceRows, selectGeoRows,
   selectOperationalInsights, selectOverview, selectScaleTrends,
 } from '../app/(site)/x-platform-intelligence/selectors.mjs'
@@ -11,6 +11,7 @@ import {
 const overview = selectOverview(repository, DEFAULT_FILTERS)
 assert.ok(overview.insights.length >= 3)
 assert.ok(overview.insights.every((item) => item.confidence !== 'lead-only'))
+assert.ok(overview.headlineMetrics.every((row) => row.platformName), 'overview scale rows must name their platform')
 
 const insightFixture = structuredClone(repository)
 insightFixture.insights.push(
@@ -39,7 +40,18 @@ assert.ok(matchingSegmentOverview.insights.some((item) => item.id === 'matching-
 assert.ok(!matchingSegmentOverview.insights.some((item) => item.id === 'mismatched-segment-overview-regression'))
 
 const scale = selectScaleTrends(repository, DEFAULT_FILTERS)
-assert.ok(scale.groups.some((group) => group.metricId === 'mau' && group.conflict))
+assert.ok(scale.groups.some((group) => group.platformId === 'x' && group.metricId === 'mau' && group.conflict))
+
+const multiPlatformFilters = { ...DEFAULT_FILTERS, platformIds: ['x', 'threads'] }
+const multiPlatformOverview = selectOverview(repository, multiPlatformFilters)
+assert.deepEqual(new Set(multiPlatformOverview.headlineMetrics.map((row) => row.platformName)), new Set(['X', 'Threads']))
+const multiPlatformScale = selectScaleTrends(repository, multiPlatformFilters)
+const multiPlatformMauGroups = multiPlatformScale.groups.filter((group) => group.metricId === 'mau')
+assert.deepEqual(new Set(multiPlatformMauGroups.map((group) => group.platformId)), new Set(['x', 'threads']))
+assert.equal(multiPlatformMauGroups.find((group) => group.platformId === 'threads').conflict, false)
+assert.ok(multiPlatformMauGroups.find((group) => group.platformId === 'x').conflictGroups.every((conflictGroup) => (
+  conflictGroup.rows.every((row) => row.platformId === 'x' && row.conflictGroupId === conflictGroup.id)
+)))
 
 const postVolumeRepository = structuredClone(repository)
 postVolumeRepository.observations.push({
@@ -49,9 +61,22 @@ postVolumeRepository.observations.push({
 })
 assert.ok(selectScaleTrends(postVolumeRepository, DEFAULT_FILTERS).groups.some((group) => group.metricId === 'post-volume'))
 for (const series of scale.comparableSeries) {
-  assert.equal(new Set(series.rows.map((row) => `${row.metricId}:${row.unit}:${row.geography}`)).size, 1)
-  assert.equal(new Set(series.rows.map((row) => `${row.periodStart}:${row.periodEnd}:${row.comparability}:${row.methodology}`)).size, 1)
+  assert.equal(new Set(series.rows.map((row) => `${row.platformId}:${row.metricId}:${row.unit}:${row.geography}`)).size, 1)
+  assert.equal(new Set(series.rows.map((row) => `${row.comparability}:${row.methodology}`)).size, 1)
+  assert.deepEqual(series.rows.map((row) => `${row.periodStart}:${row.periodEnd}`), [...series.rows]
+    .sort((left, right) => left.periodStart.localeCompare(right.periodStart) || left.periodEnd.localeCompare(right.periodEnd))
+    .map((row) => `${row.periodStart}:${row.periodEnd}`))
 }
+
+const chronologicalRepository = structuredClone(repository)
+const chronologicalBase = chronologicalRepository.observations.find((row) => row.id === 'x-global-ad-reach-2025-01')
+chronologicalRepository.observations.push({
+  ...chronologicalBase,
+  id: 'x-global-ad-reach-2024-10', periodStart: '2024-10-01', periodEnd: '2024-10-31', value: 580000000,
+})
+const chronologicalSeries = selectScaleTrends(chronologicalRepository, DEFAULT_FILTERS).comparableSeries
+  .find((series) => series.rows.some((row) => row.id === 'x-global-ad-reach-2024-10'))
+assert.deepEqual(chronologicalSeries.rows.map((row) => row.id), ['x-global-ad-reach-2024-10', 'x-global-ad-reach-2025-01'])
 
 const incompatibleMethodologyRepository = structuredClone(repository)
 const adReach = incompatibleMethodologyRepository.observations.find((row) => row.id === 'x-global-ad-reach-2025-01')
@@ -67,12 +92,16 @@ const incompatibleSeries = incompatibleScale.comparableSeries.filter((series) =>
 assert.equal(incompatibleSeries.length, 2)
 assert.ok(incompatibleSeries.every((series) => series.rows.length === 1))
 
-assert.ok(selectGeoRows(repository, DEFAULT_FILTERS).every((row) => row.metricId === 'country-share' || row.metricId === 'internet-penetration'))
+assert.ok(selectGeoRows(repository, DEFAULT_FILTERS).every((row) => ['country-share', 'internet-penetration', 'ad-reach'].includes(row.metricId)))
 const productionGeoRows = selectGeoRows(repository, DEFAULT_FILTERS)
-assert.ok(productionGeoRows.length >= 3)
+const productionCountryAdReach = productionGeoRows.filter((row) => row.metricId === 'ad-reach')
+assert.equal(productionCountryAdReach.length, 3)
+assert.deepEqual(new Set(productionCountryAdReach.map((row) => row.country)), new Set(['us', 'japan', 'uk']))
+assert.ok(productionCountryAdReach.every((row) => row.platformId === 'x' && row.platformName === 'X'))
+assert.ok(productionGeoRows.length >= 6)
 assert.deepEqual(new Set(productionGeoRows.map((row) => row.country)), new Set(['us', 'japan', 'uk']))
 assert.ok(productionGeoRows.every((row) => row.country !== 'global'))
-assert.ok(productionGeoRows.every((row) => typeof row.editorNote === 'string' && row.editorNote.includes('not MAU')))
+assert.ok(productionGeoRows.every((row) => typeof row.editorNote === 'string' && row.editorNote.includes('MAU')))
 const geoRepository = structuredClone(repository)
 geoRepository.observations.push({
   ...geoRepository.observations.find((row) => row.id === 'x-us-ad-reach-2025-01'),
@@ -84,6 +113,15 @@ const geoRow = selectGeoRows(geoRepository, { ...DEFAULT_FILTERS, geography: 'us
 assert.equal(geoRow.periodStart, '2025-01-01')
 assert.equal(geoRow.periodEnd, '2025-01-31')
 assert.equal(geoRow.sourceUrl, 'https://datareportal.com/essential-x-stats')
+
+assert.deepEqual(
+  new Set(selectAudienceCoverageGaps(repository, DEFAULT_FILTERS).map((gap) => gap.profileDimensionId)),
+  new Set(['occupation-industry', 'city-tier', 'political-orientation', 'general-use-motivation']),
+)
+assert.deepEqual(
+  new Set(selectGeoCoverageGaps(repository, DEFAULT_FILTERS).map((gap) => gap.geoDimensionId)),
+  new Set(['country-availability', 'country-restrictions', 'primary-languages', 'country-share']),
+)
 
 assert.ok(selectAudienceGroups(repository, { ...DEFAULT_FILTERS, geography: 'us' }).every((group) => group.geography === 'us'))
 assert.ok(selectAudienceGroups(repository, { ...DEFAULT_FILTERS, geography: 'us' })

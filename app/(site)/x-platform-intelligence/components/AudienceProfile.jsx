@@ -8,12 +8,19 @@ const PROFILE_SECTIONS = [
   { id: 'news', label: '新闻使用', metricIds: ['news-use-rate'] },
 ]
 
+const GAP_LABELS = {
+  'occupation-industry': '职业 / 行业',
+  'city-tier': '城市层级 / 城乡',
+  'political-orientation': '政治倾向',
+  'general-use-motivation': '一般使用动机',
+}
+
 function rowSegmentLabel(row) {
   const meaningful = [...row.segments].reverse().find((segment) => segment !== 'adults-18-plus')
   return segmentLabel(meaningful || row.segments.at(-1) || 'all')
 }
 
-export default function AudienceProfile({ groups, onOpenEvidence }) {
+export default function AudienceProfile({ groups, coverageGaps, onOpenEvidence }) {
   return (
     <section id="audience" aria-labelledby="audience-title" className="scroll-mt-24 border border-[#d9dcd7] bg-[#fbfcf8] p-5 dark:border-gray-800 dark:bg-gray-950/40 sm:p-6">
       <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[#7c8277] dark:text-gray-500">Geography-bound survey profiles</p>
@@ -78,6 +85,20 @@ export default function AudienceProfile({ groups, onOpenEvidence }) {
             </article>
           )
         })}
+      </div>
+
+      <div className="mt-5 border-t border-[#e0e3dd] pt-5 dark:border-gray-800">
+        <h3 className="font-serif text-lg font-semibold text-[#272b25] dark:text-gray-200">已核验但仍缺失的画像维度</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          {coverageGaps.map((gap) => (
+            <article key={gap.id} className="border border-dashed border-[#c9cec5] bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-semibold text-[#343a32] dark:text-gray-300">{GAP_LABELS[gap.profileDimensionId] || gap.profileDimensionId} · {gap.platformId.toUpperCase()}</p>
+              <p className="mt-2 text-xs leading-6 text-[#5d645a] dark:text-gray-400">{gap.reason}</p>
+              <p className="mt-2 text-[11px] leading-5 text-[#71776d] dark:text-gray-500">影响：{gap.impact}</p>
+              <a href={gap.attemptedSourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[11px] underline decoration-[#b8beb5] underline-offset-4">查看已核验来源</a>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   )

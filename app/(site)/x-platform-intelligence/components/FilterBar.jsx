@@ -47,7 +47,7 @@ export default function FilterBar({ repository, filters, onChange }) {
         <div>
           <h2 id="filter-bar-title" className="font-serif text-lg font-semibold text-[#20231e] dark:text-gray-200">筛选情报</h2>
           <p className="mt-1 text-[11px] leading-5 text-[#666c61] dark:text-gray-500">
-            筛选影响 7 / 9 个模块；风险与完整证据账本保留全局范围
+            风险不响应地区、人群和目标；矩阵不响应地区、人群、目标和可信度；账本响应全部全局筛选，本地检索不影响导出
           </p>
         </div>
         <button

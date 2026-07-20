@@ -8,9 +8,11 @@ import { DEFAULT_FILTERS, parseFilterParams, serializeFilterParams } from './fil
 import { getEvidenceBundle } from './model.mjs'
 import {
   selectAudienceGroups,
+  selectAudienceCoverageGaps,
   selectComparisonMatrix,
   selectEvidenceRows,
   selectGeoRows,
+  selectGeoCoverageGaps,
   selectOperationalInsights,
   selectOverview,
   selectScaleTrends,
@@ -46,11 +48,9 @@ export default function XPlatformIntelligenceClient() {
   const overview = useMemo(() => selectOverview(repository, filters), [filters])
   const scale = useMemo(() => selectScaleTrends(repository, filters), [filters])
   const geoRows = useMemo(() => selectGeoRows(repository, filters), [filters])
-  const geoCoverageGaps = useMemo(() => repository.coverageGaps.filter((gap) => (
-    filters.platformIds.includes(gap.platformId)
-    && (gap.metricId === 'country-share' || gap.metricId === 'internet-penetration')
-  )), [filters])
+  const geoCoverageGaps = useMemo(() => selectGeoCoverageGaps(repository, filters), [filters])
   const audienceGroups = useMemo(() => selectAudienceGroups(repository, filters), [filters])
+  const audienceCoverageGaps = useMemo(() => selectAudienceCoverageGaps(repository, filters), [filters])
   const operationalInsights = useMemo(() => selectOperationalInsights(repository, filters), [filters])
   const riskInsights = useMemo(() => selectOperationalInsights(repository, {
     ...filters,
@@ -96,7 +96,7 @@ export default function XPlatformIntelligenceClient() {
         <Overview overview={overview} onOpenEvidence={setEvidenceRef} />
         <ScaleTrends scale={scale} onOpenEvidence={setEvidenceRef} />
         <GeoExplorer rows={geoRows} coverageGaps={geoCoverageGaps} onOpenEvidence={setEvidenceRef} />
-        <AudienceProfile groups={audienceGroups} onOpenEvidence={setEvidenceRef} />
+        <AudienceProfile groups={audienceGroups} coverageGaps={audienceCoverageGaps} onOpenEvidence={setEvidenceRef} />
         <ContentMechanics insights={operationalInsights} onOpenEvidence={setEvidenceRef} />
         <CreatorPlaybook insights={operationalInsights} onOpenEvidence={setEvidenceRef} />
         <RiskRegister insights={riskInsights} onOpenEvidence={setEvidenceRef} />

@@ -63,6 +63,7 @@ test('planning tree preserves the direction-project-milestone-task hierarchy and
       projects: [
         { id: 'profile:a', projectId: 'project:a', directionId: 'direction:a', name: 'Project A', planningStatus: 'active' },
         { id: 'profile:old', projectId: 'project:old', directionId: 'direction:a', name: 'Old project', planningStatus: 'archived', archivedAt: NOW },
+        { id: 'profile:under-archived', projectId: 'project:under-archived', directionId: 'direction:archived', name: 'Inherited archive', planningStatus: 'active' },
       ],
       milestones: [{ id: 'milestone:a', directionId: 'direction:a', projectId: 'project:a', title: 'Milestone A', status: 'active' }],
       tasks: [{ id: 'task:a', milestoneId: 'milestone:a', title: 'Task A', status: 'doing' }],
@@ -78,6 +79,7 @@ test('planning tree preserves the direction-project-milestone-task hierarchy and
   const withArchives = buildPlanningTree(snapshot, { showArchived: true })
   assert.equal(withArchives.length, 2)
   assert.equal(withArchives[0].children.length, 2)
+  assert.equal(withArchives[1].children[0].effectivelyArchived, true)
 })
 
 test('history merges copies in descending order and filters task events through ancestry', async () => {
@@ -117,7 +119,7 @@ test('history merges copies in descending order and filters task events through 
 })
 
 test('history resolves archived task events through the full hierarchy lookup', async () => {
-  const { buildPlanningHistory } = await loadPlanningUi()
+  const { buildPlanningHistory, buildPlanningHistoryFilterOptions } = await loadPlanningUi()
   const snapshot = {
     directions: [], projects: [], milestones: [], tasks: [], decisions: [],
     hierarchy: {
@@ -132,6 +134,40 @@ test('history resolves archived task events through the full hierarchy lookup', 
   const result = buildPlanningHistory(snapshot, { directionId: 'direction:a', projectId: 'project:a' })
   assert.deepEqual(result.map((item) => item.id), ['event:a'])
   assert.equal(result[0].projectName, 'Project A')
+  const options = buildPlanningHistoryFilterOptions(snapshot)
+  assert.deepEqual(options.directions.map((item) => item.id), ['direction:a'])
+  assert.deepEqual(options.projects.map((item) => item.projectId), ['project:a'])
+})
+
+test('history correction links only target events retained by the active filters', async () => {
+  const { buildPlanningHistory } = await loadPlanningUi()
+  const snapshot = {
+    directions: [], projects: [], milestones: [], tasks: [], decisions: [],
+    events: [
+      { id: 'event:original', entityType: 'project', entityId: 'project:a', eventType: 'completed', occurredAt: NOW - DAY },
+      { id: 'event:correction', entityType: 'project', entityId: 'project:a', eventType: 'corrected', occurredAt: NOW, details: { correctsEventId: 'event:original' } },
+    ],
+  }
+
+  const all = buildPlanningHistory(snapshot)
+  assert.equal(all.find((item) => item.id === 'event:correction').correctionTargetId, 'event:original')
+  assert.deepEqual(all.find((item) => item.id === 'event:original').correctionIds, ['event:correction'])
+
+  const onlyCorrections = buildPlanningHistory(snapshot, { type: 'corrected' })
+  assert.equal(onlyCorrections[0].correctionTargetId, null)
+  const onlyOriginals = buildPlanningHistory(snapshot, { type: 'completed' })
+  assert.deepEqual(onlyOriginals[0].correctionIds, [])
+})
+
+test('archived tree nodes cannot create children, project links, or dependencies', async () => {
+  const { planningNodeCapabilities } = await loadPlanningUi()
+  assert.equal(planningNodeCapabilities({ entityType: 'direction', status: 'archived' }).canLinkProject, false)
+  assert.equal(planningNodeCapabilities({ entityType: 'project-profile', planningStatus: 'archived' }).canAddMilestone, false)
+  assert.equal(planningNodeCapabilities({ entityType: 'milestone', archivedAt: NOW }).canAddTask, false)
+  assert.equal(planningNodeCapabilities({ entityType: 'milestone', status: 'archived' }).canAddDependency, false)
+  assert.equal(planningNodeCapabilities({ entityType: 'task', status: 'archived' }).canAddDependency, false)
+  assert.equal(planningNodeCapabilities({ entityType: 'project-profile', effectivelyArchived: true }).canAddMilestone, false)
+  assert.equal(planningNodeCapabilities({ entityType: 'direction', status: 'active' }).canLinkProject, true)
 })
 
 test('contextual profile and dependency forms emit only their repository contracts', async () => {
@@ -192,7 +228,15 @@ test('Task 7 views preserve contextual actions, append-only history, PATCH archi
   assert.match(tree, /显示已归档/)
   assert.match(tree, /关联项目/)
   assert.match(tree, /添加依赖/)
+  assert.match(tree, /planningNodeCapabilities/)
+  assert.match(tree, /capabilities\.canLinkProject/)
+  assert.match(tree, /capabilities\.canAddMilestone/)
+  assert.match(tree, /capabilities\.canAddTask/)
+  assert.match(tree, /capabilities\.canAddDependency/)
   assert.match(roadmap, /待排期/)
   assert.match(history, /来源/)
+  assert.match(history, /buildPlanningHistoryFilterOptions/)
+  assert.match(history, /item\.correctionTargetId/)
+  assert.match(history, /item\.correctionIds/)
   assert.doesNotMatch(history, />删除</)
 })

@@ -19,6 +19,7 @@ import {
   createTask,
   deletePristinePlanningEntity,
   readPlanningSnapshot,
+  updateDirection,
   updateMilestone,
   updateProjectProfile,
   updateTask,
@@ -361,6 +362,57 @@ test('snapshot includes a full hierarchy lookup while keeping archived work out 
   assert.deepEqual(snapshot.hierarchy.projects.map((item) => item.id), ['profile:one'])
   assert.deepEqual(snapshot.hierarchy.milestones.map((item) => item.id), ['milestone:one'])
   assert.deepEqual(snapshot.hierarchy.tasks.map((item) => item.id), ['task:one'])
+})
+
+test('active snapshot arrays exclude descendants when only one ancestor level is archived', async (t) => {
+  async function snapshotAfterArchiving(entity, id) {
+    const db = baseHierarchy()
+    t.after(() => db.sqlite.close())
+    insertTask(db, { id: 'task:a', status: 'blocked' })
+    insertTask(db, { id: 'task:b', status: 'planned' })
+    assert.equal((await createDependency(db, {
+      id: 'dependency:one', fromType: 'task', fromId: 'task:a', toType: 'task', toId: 'task:b',
+    })).ok, true)
+    assert.equal((await archivePlanningEntity(db, entity, id, { now: 20 })).ok, true)
+    return readPlanningSnapshot(db, { window: 'month', now: 30 })
+  }
+
+  const directionArchived = await snapshotAfterArchiving('direction', 'direction:one')
+  assert.deepEqual(directionArchived.directions, [])
+  assert.deepEqual(directionArchived.projects, [])
+  assert.deepEqual(directionArchived.milestones, [])
+  assert.deepEqual(directionArchived.tasks, [])
+  assert.deepEqual(directionArchived.dependencies, [])
+  assert.deepEqual(directionArchived.stats, { completed: 0, focus: 0, blocked: 0, overdue: 0, decisions: 0 })
+
+  const profileArchived = await snapshotAfterArchiving('project-profile', 'profile:one')
+  assert.deepEqual(profileArchived.directions.map((item) => item.id), ['direction:one'])
+  assert.deepEqual(profileArchived.projects, [])
+  assert.deepEqual(profileArchived.milestones, [])
+  assert.deepEqual(profileArchived.tasks, [])
+  assert.deepEqual(profileArchived.dependencies, [])
+
+  const milestoneArchived = await snapshotAfterArchiving('milestone', 'milestone:one')
+  assert.deepEqual(milestoneArchived.projects.map((item) => item.id), ['profile:one'])
+  assert.deepEqual(milestoneArchived.milestones, [])
+  assert.deepEqual(milestoneArchived.tasks, [])
+  assert.deepEqual(milestoneArchived.dependencies, [])
+})
+
+test('status-only archive updates always stamp archivedAt across mutable hierarchy entities', async (t) => {
+  const db = baseHierarchy()
+  t.after(() => db.sqlite.close())
+  insertTask(db)
+
+  assert.equal((await updateDirection(db, 'direction:one', { status: 'archived' }, { now: 20 })).ok, true)
+  assert.equal((await updateProjectProfile(db, 'profile:one', { planningStatus: 'archived' }, { now: 21 })).ok, true)
+  assert.equal((await updateMilestone(db, 'milestone:one', { status: 'archived' }, { now: 22 })).ok, true)
+  assert.equal((await updateTask(db, 'task:one', { status: 'archived' }, { now: 23 })).ok, true)
+
+  assert.equal(db.sqlite.prepare("SELECT archived_at FROM planning_directions WHERE id = 'direction:one'").get().archived_at, 20)
+  assert.equal(db.sqlite.prepare("SELECT archived_at FROM planning_project_profiles WHERE id = 'profile:one'").get().archived_at, 21)
+  assert.equal(db.sqlite.prepare("SELECT archived_at FROM planning_milestones WHERE id = 'milestone:one'").get().archived_at, 22)
+  assert.equal(db.sqlite.prepare("SELECT archived_at FROM planning_tasks WHERE id = 'task:one'").get().archived_at, 23)
 })
 
 test('returns the existing persisted profile ID after an upsert conflict', async (t) => {

@@ -8,6 +8,7 @@ import {
   PLANNING_STATUS_META,
   buildPlanningTree,
   formatPlanningDate,
+  planningNodeCapabilities,
 } from './planningUi'
 
 const PRIORITY_LABELS = { critical: '关键', high: '高', normal: '普通', low: '低' }
@@ -16,6 +17,7 @@ function TreeNode({ node, depth, expanded, onToggle, onEdit, onArchive, onCreate
   const hasChildren = node.children.length > 0
   const isExpanded = expanded.has(node.id)
   const status = PLANNING_STATUS_META[node.status] || { label: node.status || '未设置', tone: 'neutral' }
+  const capabilities = planningNodeCapabilities(node)
   const controlsId = `planning-tree-children-${node.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`
 
   return (
@@ -46,10 +48,10 @@ function TreeNode({ node, depth, expanded, onToggle, onEdit, onArchive, onCreate
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5 lg:justify-end">
-            {node.entityType === 'direction' ? <AdminButton type="button" size="sm" variant="ghost" onClick={() => onLinkProject(node)}>关联项目</AdminButton> : null}
-            {node.entityType === 'project-profile' ? <AdminButton type="button" size="sm" variant="ghost" onClick={() => onCreate('milestone', { directionId: node.directionId, projectId: node.projectId })}>添加里程碑</AdminButton> : null}
-            {node.entityType === 'milestone' ? <AdminButton type="button" size="sm" variant="ghost" onClick={() => onCreate('task', { directionId: node.directionId, projectId: node.projectId, milestoneId: node.id })}>添加任务</AdminButton> : null}
-            {node.entityType === 'milestone' || node.entityType === 'task' ? <AdminButton type="button" size="sm" variant="ghost" onClick={() => onCreateDependency(node)}>添加依赖</AdminButton> : null}
+            {capabilities.canLinkProject ? <AdminButton type="button" size="sm" variant="ghost" onClick={() => onLinkProject(node)}>关联项目</AdminButton> : null}
+            {capabilities.canAddMilestone ? <AdminButton type="button" size="sm" variant="ghost" onClick={() => onCreate('milestone', { directionId: node.directionId, projectId: node.projectId })}>添加里程碑</AdminButton> : null}
+            {capabilities.canAddTask ? <AdminButton type="button" size="sm" variant="ghost" onClick={() => onCreate('task', { directionId: node.directionId, projectId: node.projectId, milestoneId: node.id })}>添加任务</AdminButton> : null}
+            {capabilities.canAddDependency ? <AdminButton type="button" size="sm" variant="ghost" onClick={() => onCreateDependency(node)}>添加依赖</AdminButton> : null}
             <AdminButton type="button" size="sm" variant="ghost" onClick={() => onEdit(node)}>编辑</AdminButton>
             <AdminButton type="button" size="sm" variant="danger" onClick={() => onArchive(node)}>归档</AdminButton>
           </div>

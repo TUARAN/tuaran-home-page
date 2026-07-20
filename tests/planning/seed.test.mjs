@@ -19,3 +19,15 @@ test('builds directions, references, pending milestones, and one event per chang
 test('returns stable ids and keys for repeated previews', () => {
   assert.deepEqual(buildPlanningImportPreview(projects, changelog), buildPlanningImportPreview(projects, changelog))
 })
+
+test('does not create a milestone for a whitespace-only next step', () => {
+  const preview = buildPlanningImportPreview([{ id: 'site', name: 'Site', pillar: 'blog', next: '   ' }], [])
+
+  assert.deepEqual(preview.milestones, [])
+})
+
+test('uses legacy changelog items as completed event details', () => {
+  const preview = buildPlanningImportPreview([], [{ version: 'v0', title: 'Legacy release', items: ['A'], range: '2026-01-01' }])
+
+  assert.deepEqual(preview.events[0].details.done, ['A'])
+})

@@ -26,7 +26,8 @@
     "snapshot-memory": "node scripts/snapshot-memory.mjs",
     "mcp:stdio": "node tools/mcp-stdio-demo/server.mjs",
     "mcp:stdio:check": "node scripts/test-mcp-stdio-demo.mjs",
-    "x-intelligence:check": "node scripts/test-x-platform-intelligence-model.mjs && node scripts/test-x-platform-intelligence-filters.mjs && node scripts/test-x-platform-intelligence-selectors.mjs"
+    "x-intelligence:check": "node scripts/test-x-platform-intelligence-model.mjs && node scripts/test-x-platform-intelligence-filters.mjs && node scripts/test-x-platform-intelligence-selectors.mjs",
+    "test:planning": "node --test tests/planning/*.test.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.0",

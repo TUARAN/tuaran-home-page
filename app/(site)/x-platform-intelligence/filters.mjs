@@ -5,8 +5,10 @@ export const DEFAULT_FILTERS = Object.freeze({
 
 const DEFAULT_CONFIDENCES = new Set(DEFAULT_FILTERS.confidences)
 
-function parseList(value, allowed) {
-  return value.split(',').filter((item) => allowed.has(item))
+function parseList(value, allowed, defaults) {
+  if (value === '') return []
+  const parsed = value.split(',').filter((item) => allowed.has(item))
+  return parsed.length ? parsed : [...defaults]
 }
 
 function parseValue(value, allowed, defaultValue) {
@@ -32,8 +34,8 @@ export function parseFilterParams(params, repository) {
     geography: parseValue(params.get('geo'), geographies, DEFAULT_FILTERS.geography),
     segment: parseValue(params.get('segment'), segments, DEFAULT_FILTERS.segment),
     goal: parseValue(params.get('goal'), goals, DEFAULT_FILTERS.goal),
-    platformIds: platforms === null ? [...DEFAULT_FILTERS.platformIds] : parseList(platforms, platformIds),
-    confidences: confidence === null ? [...DEFAULT_FILTERS.confidences] : parseList(confidence, DEFAULT_CONFIDENCES),
+    platformIds: platforms === null ? [...DEFAULT_FILTERS.platformIds] : parseList(platforms, platformIds, DEFAULT_FILTERS.platformIds),
+    confidences: confidence === null ? [...DEFAULT_FILTERS.confidences] : parseList(confidence, DEFAULT_CONFIDENCES, DEFAULT_FILTERS.confidences),
   }
 }
 

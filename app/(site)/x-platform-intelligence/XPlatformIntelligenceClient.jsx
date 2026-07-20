@@ -92,7 +92,7 @@ export default function XPlatformIntelligenceClient() {
 
       <FilterBar repository={repository} filters={filters} onChange={setFilters} />
 
-      <div className="mt-8 grid gap-5">
+      <div className="mt-8 grid min-w-0 gap-5 [&>*]:min-w-0">
         <Overview overview={overview} onOpenEvidence={setEvidenceRef} />
         <ScaleTrends scale={scale} onOpenEvidence={setEvidenceRef} />
         <GeoExplorer rows={geoRows} coverageGaps={geoCoverageGaps} onOpenEvidence={setEvidenceRef} />

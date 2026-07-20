@@ -12,6 +12,7 @@ export default function ProjectWorkspace() {
           title: '项目治理',
           description: '跨项目判断优先级、路线图与工作区归属。',
           items: [
+            { href: '/admin/planning', title: '规划中心', description: '统一记录全部项目的过去、当前焦点、未来里程碑与执行任务。', icon: 'planning' },
             { href: '/admin/portfolio', title: '项目总览', description: 'AI 项目台账、整合路线图与 Codex 工作区治理。', icon: 'portfolio' },
           ],
         },

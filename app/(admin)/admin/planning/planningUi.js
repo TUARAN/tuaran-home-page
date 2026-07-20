@@ -37,6 +37,7 @@ const DAY_MS = 86400000
 const TERMINAL_STATUSES = new Set(['completed', 'done', 'cancelled', 'archived'])
 const DATE_FIELDS = {
   direction: ['startAt', 'targetAt', 'completedAt'],
+  'project-profile': ['startAt', 'targetAt'],
   milestone: ['startAt', 'targetAt', 'completedAt'],
   task: ['plannedAt', 'startAt', 'targetAt', 'completedAt'],
   event: ['occurredAt'],
@@ -44,10 +45,12 @@ const DATE_FIELDS = {
 }
 const TEXT_FIELDS = {
   direction: ['title', 'description', 'northStar', 'status', 'priority'],
+  'project-profile': ['projectId', 'directionId', 'summary', 'planningStatus'],
   milestone: ['directionId', 'projectId', 'title', 'description', 'successCriteria', 'status', 'priority'],
   task: ['milestoneId', 'title', 'description', 'status', 'priority', 'assignee', 'note', 'blockedReason'],
   event: ['entityType', 'entityId', 'eventType', 'title', 'description'],
   decision: ['directionId', 'projectId', 'milestoneId', 'title', 'context', 'conclusion', 'rationale', 'impact', 'status'],
+  dependency: ['fromType', 'fromId', 'toType', 'toId', 'dependencyType', 'description'],
 }
 const HIERARCHY_FIELDS = {
   task: ['directionId', 'projectId'],
@@ -55,10 +58,12 @@ const HIERARCHY_FIELDS = {
 }
 const FORM_DEFAULTS = {
   direction: { status: 'planned', priority: 'normal' },
+  'project-profile': { planningStatus: 'active', isFocus: false },
   milestone: { status: 'planned', priority: 'normal' },
   task: { status: 'planned', priority: 'normal' },
   event: { entityType: 'milestone', eventType: 'note' },
   decision: { status: 'open' },
+  dependency: { fromType: 'milestone', toType: 'milestone', dependencyType: 'depends_on' },
 }
 
 function itemKey(item) {
@@ -66,14 +71,15 @@ function itemKey(item) {
 }
 
 function createSnapshotIndex(snapshot = {}) {
-  const directions = new Map((snapshot.directions || []).map((item) => [item.id, item]))
+  const hierarchy = snapshot.hierarchy || {}
+  const directions = new Map([...(hierarchy.directions || []), ...(snapshot.directions || [])].map((item) => [item.id, item]))
   const projects = new Map()
-  for (const item of snapshot.projects || []) {
+  for (const item of [...(hierarchy.projects || []), ...(snapshot.projects || [])]) {
     projects.set(item.id, item)
     projects.set(item.projectId, item)
   }
-  const milestones = new Map((snapshot.milestones || []).map((item) => [item.id, item]))
-  const tasks = new Map((snapshot.tasks || []).map((item) => [item.id, item]))
+  const milestones = new Map([...(hierarchy.milestones || []), ...(snapshot.milestones || [])].map((item) => [item.id, item]))
+  const tasks = new Map([...(hierarchy.tasks || []), ...(snapshot.tasks || [])].map((item) => [item.id, item]))
   const decisions = new Map((snapshot.decisions || []).map((item) => [item.id, item]))
   return { directions, projects, milestones, tasks, decisions }
 }
@@ -111,6 +117,10 @@ function ancestryFor(item, index) {
     projectId: item.projectId,
     milestoneId: item.milestoneId,
   }
+}
+
+export function planningAncestryFor(item, snapshot = {}) {
+  return ancestryFor(item, createSnapshotIndex(snapshot))
 }
 
 function enrichOverviewItem(item, index) {
@@ -196,6 +206,148 @@ export function buildOverviewModel(snapshot = {}, directionId = '') {
   }
 }
 
+function isArchived(item) {
+  return item?.archivedAt != null || item?.status === 'archived' || item?.planningStatus === 'archived'
+}
+
+function endpointProjectId(type, id, index) {
+  if (type === 'milestone') return index.milestones.get(id)?.projectId
+  if (type === 'task') {
+    const task = index.tasks.get(id)
+    return index.milestones.get(task?.milestoneId)?.projectId
+  }
+  return null
+}
+
+function isRiskyWorkItem(item, now) {
+  return Boolean(item && (
+    item.status === 'blocked'
+    || (!TERMINAL_STATUSES.has(item.status) && item.targetAt != null && Number(item.targetAt) < now)
+  ))
+}
+
+export function buildRoadmapModel(snapshot = {}) {
+  const index = createSnapshotIndex(snapshot)
+  const generatedAt = Number(snapshot.generatedAt)
+  const now = Number.isFinite(generatedAt) ? generatedAt : Date.now()
+  const currentDate = new Date(now)
+  const quarterStart = new Date(currentDate.getFullYear(), Math.floor(currentDate.getMonth() / 3) * 3, 1).getTime()
+  const quarterEnd = new Date(currentDate.getFullYear(), Math.floor(currentDate.getMonth() / 3) * 3 + 3, 1).getTime() - 1
+  const activeDependencies = (snapshot.dependencies || []).filter((item) => item.status == null || item.status === 'active')
+
+  const rows = (snapshot.projects || []).filter((project) => !isArchived(project)).map((project) => {
+    const projectMilestones = (snapshot.milestones || []).filter((item) => item.projectId === project.projectId && !isArchived(item))
+    const columns = { past: [], current: [], future: [], unscheduled: [] }
+    for (const milestone of projectMilestones) {
+      if (TERMINAL_STATUSES.has(milestone.status)) columns.past.push(milestone)
+      else if (milestone.targetAt == null) columns.unscheduled.push(milestone)
+      else if (milestone.status === 'active' || milestone.status === 'blocked' || Number(milestone.targetAt) <= quarterEnd) columns.current.push(milestone)
+      else columns.future.push(milestone)
+    }
+
+    const relatedDependencies = activeDependencies.filter((dependency) => (
+      endpointProjectId(dependency.fromType, dependency.fromId, index) === project.projectId
+      || endpointProjectId(dependency.toType, dependency.toId, index) === project.projectId
+    ))
+    const hasUpstreamRisk = activeDependencies.some((dependency) => {
+      if (endpointProjectId(dependency.fromType, dependency.fromId, index) !== project.projectId) return false
+      const upstream = dependency.toType === 'milestone'
+        ? index.milestones.get(dependency.toId)
+        : index.tasks.get(dependency.toId)
+      return isRiskyWorkItem(upstream, now)
+    })
+
+    return {
+      ...project,
+      columns,
+      activeDependencyCount: relatedDependencies.length,
+      hasUpstreamRisk,
+    }
+  })
+
+  return { generatedAt: now, quarterStart, quarterEnd, rows }
+}
+
+export function buildPlanningTree(snapshot = {}, options = {}) {
+  const showArchived = Boolean(options.showArchived)
+  const source = showArchived && snapshot.hierarchy ? snapshot.hierarchy : snapshot
+  const visible = (item) => showArchived || !isArchived(item)
+  const tasksByMilestone = new Map()
+  for (const task of source.tasks || []) {
+    if (!visible(task)) continue
+    tasksByMilestone.set(task.milestoneId, [...(tasksByMilestone.get(task.milestoneId) || []), {
+      ...task,
+      entityType: 'task',
+      children: [],
+    }])
+  }
+  const milestonesByProject = new Map()
+  for (const milestone of source.milestones || []) {
+    if (!visible(milestone)) continue
+    milestonesByProject.set(milestone.projectId, [...(milestonesByProject.get(milestone.projectId) || []), {
+      ...milestone,
+      entityType: 'milestone',
+      children: tasksByMilestone.get(milestone.id) || [],
+    }])
+  }
+  const projectsByDirection = new Map()
+  for (const project of source.projects || []) {
+    if (!visible(project)) continue
+    projectsByDirection.set(project.directionId, [...(projectsByDirection.get(project.directionId) || []), {
+      ...project,
+      title: project.name || project.projectId,
+      status: project.planningStatus,
+      entityType: 'project-profile',
+      children: milestonesByProject.get(project.projectId) || [],
+    }])
+  }
+  return (source.directions || []).filter(visible).map((direction) => ({
+    ...direction,
+    entityType: 'direction',
+    children: projectsByDirection.get(direction.id) || [],
+  }))
+}
+
+function filterDateValue(value, endOfDay = false) {
+  if (value == null || value === '') return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  const parsed = dateInputToTimestamp(value)
+  return parsed == null ? null : parsed + (endOfDay ? DAY_MS - 1 : 0)
+}
+
+export function buildPlanningHistory(snapshot = {}, filters = {}) {
+  const index = createSnapshotIndex(snapshot)
+  const from = filterDateValue(filters.from)
+  const to = filterDateValue(filters.to, true)
+  const events = (snapshot.events || []).map((item) => ({
+    ...item,
+    kind: 'event',
+    timelineAt: Number(item.occurredAt ?? item.createdAt ?? 0),
+  }))
+  const decisions = (snapshot.decisions || []).map((item) => ({
+    ...item,
+    entityType: 'decision',
+    eventType: 'decision',
+    kind: 'decision',
+    timelineAt: Number(item.decidedAt ?? item.updatedAt ?? item.createdAt ?? 0),
+  }))
+
+  return [...events, ...decisions]
+    .map((item) => {
+      const ancestry = ancestryFor(item, index)
+      const project = index.projects.get(ancestry.projectId)
+      return { ...item, ...ancestry, projectName: project?.name || project?.projectId || '' }
+    })
+    .filter((item) => !filters.directionId || item.directionId === filters.directionId)
+    .filter((item) => !filters.projectId || item.projectId === filters.projectId)
+    .filter((item) => !filters.type || filters.type === 'all' || (
+      filters.type === 'event' ? item.kind === 'event' : item.eventType === filters.type
+    ))
+    .filter((item) => from == null || item.timelineAt >= from)
+    .filter((item) => to == null || item.timelineAt <= to)
+    .sort((left, right) => right.timelineAt - left.timelineAt)
+}
+
 export function timestampToDateInput(value) {
   if (value == null || value === '') return ''
   const date = new Date(Number(value))
@@ -247,6 +399,8 @@ export function buildInitialPlanningForm(entity, initialValue = {}, context = {}
   for (const field of TEXT_FIELDS[entity] || []) result[field] = merged[field] ?? FORM_DEFAULTS[entity]?.[field] ?? ''
   for (const field of HIERARCHY_FIELDS[entity] || []) result[field] = merged[field] ?? ''
   for (const field of DATE_FIELDS[entity] || []) result[field] = timestampToDateInput(merged[field])
+  if (entity === 'project-profile') result.isFocus = Boolean(merged.isFocus ?? FORM_DEFAULTS[entity].isFocus)
+  if (entity === 'dependency' && !merged.toType) result.toType = result.fromType
   return result
 }
 
@@ -258,16 +412,23 @@ export function buildPlanningPayload(entity, form = {}) {
     else result[field] = field === 'title' ? value.trim() : value
   }
   for (const field of DATE_FIELDS[entity] || []) result[field] = dateInputToTimestamp(form[field])
+  if (entity === 'project-profile') result.isFocus = Boolean(form.isFocus)
   return result
 }
 
 export function validatePlanningEditor(entity, form = {}) {
-  if (!String(form.title || '').trim()) return '请填写标题。'
+  if (!['project-profile', 'dependency'].includes(entity) && !String(form.title || '').trim()) return '请填写标题。'
+  if (entity === 'project-profile' && !form.projectId) return '请选择要关联的项目。'
+  if (entity === 'project-profile' && !form.directionId) return '请选择所属方向。'
   if (entity === 'milestone' && !form.directionId) return '请选择所属方向。'
   if (entity === 'milestone' && !form.projectId) return '请选择所属项目。'
   if (entity === 'task' && !form.milestoneId) return '请选择所属里程碑。'
   if (entity === 'event' && (!form.entityType || !form.entityId)) return '请选择历史事件关联的实体。'
   if (entity === 'decision' && form.status === 'decided' && !String(form.conclusion || '').trim()) return '已决策记录必须填写最终结论。'
+  if (entity === 'dependency' && (!form.fromId || !form.toId)) return '请选择依赖关系的两端。'
+  if (entity === 'dependency' && form.fromType !== form.toType) return '依赖关系只能连接两个里程碑或两个任务。'
+  if (entity === 'dependency' && !['milestone', 'task'].includes(form.fromType)) return '依赖关系只能连接里程碑或任务。'
+  if (entity === 'dependency' && form.fromId === form.toId) return '不能让规划事项依赖自身。'
   for (const field of DATE_FIELDS[entity] || []) {
     if (form[field] && dateInputToTimestamp(form[field]) == null) return '请填写有效日期。'
   }

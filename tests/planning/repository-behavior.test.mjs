@@ -191,6 +191,19 @@ test('validates merged parent IDs when reparenting milestones and tasks', async 
   assert.equal(db.sqlite.prepare("SELECT milestone_id FROM planning_tasks WHERE id = 'task:one'").get().milestone_id, 'milestone:one')
 })
 
+test('moves a project profile and its milestone ancestry together', async (t) => {
+  const db = baseHierarchy()
+  t.after(() => db.sqlite.close())
+  insertDirection(db, { id: 'direction:two' })
+
+  assert.deepEqual(await updateProjectProfile(db, 'profile:one', { directionId: 'direction:two' }, { now: 20 }), {
+    ok: true,
+    id: 'profile:one',
+  })
+  assert.equal(db.sqlite.prepare("SELECT direction_id FROM planning_project_profiles WHERE id = 'profile:one'").get().direction_id, 'direction:two')
+  assert.equal(db.sqlite.prepare("SELECT direction_id FROM planning_milestones WHERE id = 'milestone:one'").get().direction_id, 'direction:two')
+})
+
 test('allows historical links to archived records and canonical portfolio projects', async (t) => {
   const db = new D1Adapter()
   t.after(() => db.sqlite.close())
@@ -324,6 +337,30 @@ test('bounds event and closed-decision history on both sides of generatedAt', as
   const historySql = db.preparedSql.filter((sql) => /planning_(events|decisions)/.test(sql))
   assert.match(historySql[0], /occurred_at\s*>=\s*\?1[\s\S]*occurred_at\s*<=\s*\?2/i)
   assert.match(historySql[1], /COALESCE[\s\S]*>=\s*\?1[\s\S]*COALESCE[\s\S]*<=\s*\?2/i)
+})
+
+test('snapshot includes a full hierarchy lookup while keeping archived work out of active arrays', async (t) => {
+  const db = baseHierarchy()
+  t.after(() => db.sqlite.close())
+  insertTask(db)
+  await createManualEvent(db, {
+    id: 'event:archived-task', entityType: 'task', entityId: 'task:one', title: 'Archived task', occurredAt: 90,
+  }, { now: 90 })
+  await archivePlanningEntity(db, 'direction', 'direction:one', { now: 91 })
+  await archivePlanningEntity(db, 'project-profile', 'profile:one', { now: 92 })
+  await archivePlanningEntity(db, 'milestone', 'milestone:one', { now: 93 })
+  await archivePlanningEntity(db, 'task', 'task:one', { now: 94 })
+
+  const snapshot = await readPlanningSnapshot(db, { window: 'month', now: 100 })
+  assert.deepEqual(snapshot.directions, [])
+  assert.deepEqual(snapshot.projects, [])
+  assert.deepEqual(snapshot.milestones, [])
+  assert.deepEqual(snapshot.tasks, [])
+  assert.equal(snapshot.events[0].id, 'event:archived-task')
+  assert.deepEqual(snapshot.hierarchy.directions.map((item) => item.id), ['direction:one'])
+  assert.deepEqual(snapshot.hierarchy.projects.map((item) => item.id), ['profile:one'])
+  assert.deepEqual(snapshot.hierarchy.milestones.map((item) => item.id), ['milestone:one'])
+  assert.deepEqual(snapshot.hierarchy.tasks.map((item) => item.id), ['task:one'])
 })
 
 test('returns the existing persisted profile ID after an upsert conflict', async (t) => {

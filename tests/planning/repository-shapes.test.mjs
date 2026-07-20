@@ -154,6 +154,7 @@ test('migration includes the repository-required V1 fields', async () => {
   assert.match(migration, /planning_events[\s\S]*description TEXT NOT NULL DEFAULT ''[\s\S]*details_json TEXT NOT NULL DEFAULT '\{\}'[\s\S]*source TEXT NOT NULL DEFAULT 'manual'[\s\S]*source_key TEXT UNIQUE/)
   assert.match(migration, /planning_decisions[\s\S]*rationale TEXT NOT NULL DEFAULT ''[\s\S]*impact TEXT NOT NULL DEFAULT ''/)
   assert.match(migration, /planning_dependencies[\s\S]*dependency_type TEXT NOT NULL DEFAULT 'depends_on'[\s\S]*description TEXT NOT NULL DEFAULT ''[\s\S]*status TEXT NOT NULL DEFAULT 'active'[\s\S]*archived_at INTEGER[\s\S]*updated_at INTEGER NOT NULL/)
+  assert.match(migration, /REFERENCES planning_project_profiles\(direction_id, project_id\) ON DELETE RESTRICT ON UPDATE CASCADE/)
 })
 
 test('rejects invalid project-profile status and date ranges before writing', async () => {

@@ -38,6 +38,14 @@ assert.ok(!matchingSegmentOverview.insights.some((item) => item.id === 'mismatch
 
 const scale = selectScaleTrends(repository, DEFAULT_FILTERS)
 assert.ok(scale.groups.some((group) => group.metricId === 'mau' && group.conflict))
+
+const postVolumeRepository = structuredClone(repository)
+postVolumeRepository.observations.push({
+  ...postVolumeRepository.observations.find((row) => row.id === 'x-global-ad-reach-2025-01'),
+  id: 'x-global-post-volume-test', metricId: 'post-volume', value: 1000, unit: 'posts',
+  valueType: 'exact', comparability: 'public-post-corpus', conflictGroupId: null,
+})
+assert.ok(selectScaleTrends(postVolumeRepository, DEFAULT_FILTERS).groups.some((group) => group.metricId === 'post-volume'))
 for (const series of scale.comparableSeries) {
   assert.equal(new Set(series.rows.map((row) => `${row.metricId}:${row.unit}:${row.geography}`)).size, 1)
   assert.equal(new Set(series.rows.map((row) => `${row.periodStart}:${row.periodEnd}:${row.comparability}:${row.methodology}`)).size, 1)
@@ -58,7 +66,38 @@ assert.equal(incompatibleSeries.length, 2)
 assert.ok(incompatibleSeries.every((series) => series.rows.length === 1))
 
 assert.ok(selectGeoRows(repository, DEFAULT_FILTERS).every((row) => row.metricId === 'country-share' || row.metricId === 'internet-penetration'))
+const geoRepository = structuredClone(repository)
+geoRepository.observations.push({
+  ...geoRepository.observations.find((row) => row.id === 'x-us-ad-reach-2025-01'),
+  id: 'x-us-country-share-test', metricId: 'country-share', value: 17.7, valueType: 'percentage',
+  unit: 'percent', comparability: 'country-share-only', conflictGroupId: null,
+})
+const geoRow = selectGeoRows(geoRepository, { ...DEFAULT_FILTERS, geography: 'us' })[0]
+assert.equal(geoRow.periodStart, '2025-01-01')
+assert.equal(geoRow.periodEnd, '2025-01-31')
+assert.equal(geoRow.sourceUrl, 'https://datareportal.com/essential-x-stats')
+
 assert.ok(selectAudienceGroups(repository, { ...DEFAULT_FILTERS, geography: 'us' }).every((group) => group.geography === 'us'))
+const audienceRepository = structuredClone(repository)
+const audienceBase = audienceRepository.observations.find((row) => row.id === 'x-us-age-18-29-use-2025')
+audienceRepository.observations.push({
+  ...audienceBase,
+  id: 'x-us-age-18-29-use-other-method-test',
+  methodology: 'A different US adult survey methodology.',
+})
+const ageGroups = selectAudienceGroups(audienceRepository, { ...DEFAULT_FILTERS, geography: 'us' })
+  .filter((group) => group.metricId === 'age-use-rate' && group.rows.some((row) => row.segments.includes('age-18-29')))
+assert.equal(ageGroups.length, 2)
+assert.ok(ageGroups.every((group) => group.sources.every((source) => source.url.startsWith('https://'))))
+assert.ok(ageGroups.every((group) => group.methodology.length > 0))
+
+const newsUseRepository = structuredClone(repository)
+newsUseRepository.observations.push({
+  ...audienceBase,
+  id: 'x-us-news-use-test', metricId: 'news-use-rate', segments: ['adults-18-plus', 'news-users'],
+})
+assert.ok(selectAudienceGroups(newsUseRepository, { ...DEFAULT_FILTERS, geography: 'us' })
+  .some((group) => group.metricId === 'news-use-rate'))
 assert.ok(selectOperationalInsights(repository, DEFAULT_FILTERS).some((item) => item.audienceGoal.includes('technology-creator')))
 
 const matrix = selectComparisonMatrix(repository, { ...DEFAULT_FILTERS, platformIds: repository.platforms.map((item) => item.id) })

@@ -2,11 +2,12 @@ import { filterObservations } from './filters.mjs'
 
 const SCALE_METRIC_IDS = new Set([
   'dau', 'mau', 'ad-reach', 'registered-members', 'device-count', 'monthly-visitors', 'daily-minutes',
+  'post-volume',
 ])
 
 const AUDIENCE_METRIC_IDS = new Set([
   'adult-use-rate', 'age-use-rate', 'gender-use-rate', 'income-use-rate', 'education-use-rate',
-  'age-share', 'gender-share',
+  'age-share', 'gender-share', 'news-use-rate',
 ])
 
 const CONFIDENCE_ORDER = new Map([['high', 0], ['reference', 1], ['disputed', 2]])
@@ -95,31 +96,54 @@ export function selectScaleTrends(repository, filters) {
 }
 
 export function selectGeoRows(repository, filters) {
+  const sourceById = new Map(repository.sources.map((item) => [item.id, item]))
   return filterObservations(repository, filters)
     .filter((row) => row.metricId === 'country-share' || row.metricId === 'internet-penetration')
-    .map((row) => ({
-      observationId: row.id,
-      country: row.geography,
-      metricId: row.metricId,
-      value: row.value,
-      unit: row.unit,
-      confidence: row.confidence,
-      sourceId: row.sourceId,
-    }))
+    .map((row) => {
+      const source = sourceById.get(row.sourceId)
+      return {
+        observationId: row.id,
+        country: row.geography,
+        metricId: row.metricId,
+        value: row.value,
+        unit: row.unit,
+        periodStart: row.periodStart,
+        periodEnd: row.periodEnd,
+        confidence: row.confidence,
+        sourceId: row.sourceId,
+        sourceTitle: source?.title || '',
+        sourceUrl: source?.url || '',
+      }
+    })
 }
 
 export function selectAudienceGroups(repository, filters) {
+  const sourceById = new Map(repository.sources.map((item) => [item.id, item]))
   const rows = filterObservations(repository, filters).filter((row) => (
     AUDIENCE_METRIC_IDS.has(row.metricId)
     && (filters.geography === 'global' ? row.geography === 'global' : row.geography === filters.geography)
   ))
 
-  return [...groupBy(rows, (row) => [row.metricId, row.geography, row.segments.join('|')].join('\u0000'))]
+  return [...groupBy(rows, (row) => [
+    row.metricId, row.platformId, row.geography, row.methodology, row.sourceId, row.comparability,
+  ].join('\u0000'))]
     .map(([key, groupRows]) => ({
       key,
       metricId: groupRows[0].metricId,
+      platformId: groupRows[0].platformId,
       geography: groupRows[0].geography,
-      segmentLabel: groupRows[0].segments.at(-1) || 'all',
+      segmentLabel: groupRows[0].segments[0] || 'all',
+      methodology: groupRows[0].methodology,
+      sources: [...new Set(groupRows.map((row) => row.sourceId))].map((sourceId) => {
+        const source = sourceById.get(sourceId)
+        return {
+          id: sourceId,
+          title: source?.title || sourceId,
+          url: source?.url || '',
+          sampleSize: source?.sampleSize || null,
+          methodologySummary: source?.methodologySummary || '',
+        }
+      }),
       rows: groupRows,
     }))
 }

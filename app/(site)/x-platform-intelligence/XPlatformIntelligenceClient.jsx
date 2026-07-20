@@ -8,22 +8,23 @@ import { DEFAULT_FILTERS, parseFilterParams, serializeFilterParams } from './fil
 import {
   selectAudienceGroups,
   selectGeoRows,
+  selectOperationalInsights,
   selectOverview,
   selectScaleTrends,
 } from './selectors.mjs'
 import AudienceProfile from './components/AudienceProfile'
+import ContentMechanics from './components/ContentMechanics'
+import CreatorPlaybook from './components/CreatorPlaybook'
 import FilterBar from './components/FilterBar'
 import GeoExplorer from './components/GeoExplorer'
 import Overview from './components/Overview'
+import RiskRegister from './components/RiskRegister'
 import ScaleTrends from './components/ScaleTrends'
 
 const PAGE_URL = 'https://2aran.com/x-platform-intelligence'
 
 const MODULES = [
-  ['content', '内容机制'],
-  ['creator', '创作者经营'],
   ['comparison', '平台差异'],
-  ['risk', '风险与边界'],
   ['evidence', '完整证据账本'],
 ]
 
@@ -49,6 +50,13 @@ export default function XPlatformIntelligenceClient() {
     && (gap.metricId === 'country-share' || gap.metricId === 'internet-penetration')
   )), [filters])
   const audienceGroups = useMemo(() => selectAudienceGroups(repository, filters), [filters])
+  const operationalInsights = useMemo(() => selectOperationalInsights(repository, filters), [filters])
+  const riskInsights = useMemo(() => selectOperationalInsights(repository, {
+    ...filters,
+    geography: 'global',
+    segment: 'all',
+    goal: DEFAULT_FILTERS.goal,
+  }), [filters])
 
   return (
     <main className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-10">
@@ -82,6 +90,9 @@ export default function XPlatformIntelligenceClient() {
         <ScaleTrends scale={scale} onOpenEvidence={setEvidenceRef} />
         <GeoExplorer rows={geoRows} coverageGaps={geoCoverageGaps} onOpenEvidence={setEvidenceRef} />
         <AudienceProfile groups={audienceGroups} onOpenEvidence={setEvidenceRef} />
+        <ContentMechanics insights={operationalInsights} onOpenEvidence={setEvidenceRef} />
+        <CreatorPlaybook insights={operationalInsights} onOpenEvidence={setEvidenceRef} />
+        <RiskRegister insights={riskInsights} onOpenEvidence={setEvidenceRef} />
         {MODULES.map(([id, title]) => (
           <section
             key={id}

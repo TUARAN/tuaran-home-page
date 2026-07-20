@@ -1,6 +1,17 @@
 {
   "list": [
     {
+      "date": "2026-07-20",
+      "displayDate": "Jul 20",
+      "count": 4,
+      "highlights": [
+        "不会代码也能做产品：一份从0开始的Vibe Codi",
+        "面壁智能发布首个具身智能成果 MiniCPM-Rob",
+        "黄仁勋访日：Nvidia 联手日本打造物理 AI 时",
+        "AI 热潮正在瓦解全球决策机制"
+      ]
+    },
+    {
       "date": "2026-07-18",
       "displayDate": "Jul 18",
       "count": 5,
@@ -329,5 +340,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-18"
+  "latest": "2026-07-20"
 }

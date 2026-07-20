@@ -81,4 +81,58 @@ assert.equal(X_INTELLIGENCE_REPOSITORY.comparisons.length, 12 * 16)
 assert.ok(X_INTELLIGENCE_REPOSITORY.observations.some((row) => row.platformId === 'x' && row.metricId === 'mau' && row.conflictGroupId === 'x-global-mau-2025'))
 assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => gap.platformId === 'jike'))
 
+const reviewerFailures = []
+const repositorySourceById = new Map(X_INTELLIGENCE_REPOSITORY.sources.map((source) => [source.id, source]))
+const knownComparisons = X_INTELLIGENCE_REPOSITORY.comparisons.filter((comparison) => comparison.rating !== 'unknown')
+const nonTraceableComparisons = knownComparisons.filter((comparison) => (
+  !comparison.evidenceSourceIds.length
+  || comparison.evidenceSourceIds.some((sourceId) => !repositorySourceById.get(sourceId)?.supportedDimensionIds?.includes(comparison.dimensionId))
+))
+if (nonTraceableComparisons.length) reviewerFailures.push(`${nonTraceableComparisons.length} non-unknown comparisons lack dimension-specific source evidence`)
+
+const rationaleCounts = knownComparisons.reduce((counts, comparison) => counts.set(comparison.rationale, (counts.get(comparison.rationale) || 0) + 1), new Map())
+const genericComparisons = knownComparisons.filter((comparison) => comparison.rationale.length < 24 || rationaleCounts.get(comparison.rationale) !== 1)
+if (genericComparisons.length) reviewerFailures.push(`${genericComparisons.length} non-unknown comparisons have generic or repeated rationales`)
+
+for (const [platformId, dimensionId] of [
+  ['tiktok', 'native-monetization'],
+  ['linkedin', 'brand-safety'],
+  ['threads', 'production-cost'],
+]) {
+  const comparison = X_INTELLIGENCE_REPOSITORY.comparisons.find((item) => item.platformId === platformId && item.dimensionId === dimensionId)
+  if (comparison?.rating !== 'unknown') reviewerFailures.push(`${platformId}/${dimensionId} must remain unknown without direct evidence`)
+}
+
+const metricById = new Map(X_INTELLIGENCE_REPOSITORY.metrics.map((metric) => [metric.id, metric]))
+for (const [metricId, expectedLabel] of [
+  ['adult-use-rate', '成年人口使用率'],
+  ['age-use-rate', '年龄人群使用率'],
+  ['gender-use-rate', '性别人群使用率'],
+  ['registered-members', '注册会员数'],
+  ['device-count', '设备数'],
+]) {
+  if (metricById.get(metricId)?.label !== expectedLabel) reviewerFailures.push(`missing semantic metric ${metricId}`)
+}
+
+const pewObservations = X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.sourceId === 'pew-social-2025')
+if (pewObservations.some((row) => ['age-share', 'gender-share', 'internet-penetration'].includes(row.metricId))) reviewerFailures.push('Pew cohort use rates still use composition or penetration metric IDs')
+if (!pewObservations.some((row) => row.metricId === 'adult-use-rate') || !pewObservations.some((row) => row.metricId === 'age-use-rate') || !pewObservations.some((row) => row.metricId === 'gender-use-rate')) reviewerFailures.push('Pew semantic use-rate observations are incomplete')
+
+const linkedInObservations = X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.platformId === 'linkedin')
+if (linkedInObservations.some((row) => row.metricId === 'mau')) reviewerFailures.push('LinkedIn members are mislabeled as MAU')
+if (!linkedInObservations.some((row) => row.metricId === 'registered-members' && row.value === 1200000000)) reviewerFailures.push('LinkedIn 1.2B registered-members observation is missing')
+if (!X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => gap.metricId === 'device-count')) reviewerFailures.push('device-count limitation gap is missing')
+
+const xiaohongshuObservations = X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.platformId === 'xiaohongshu')
+if (xiaohongshuObservations.some((row) => row.sourceId === 'xiaohongshu-commercial' || row.geography === 'global' || (row.periodStart === '2025-01-01' && row.periodEnd === '2025-12-31'))) reviewerFailures.push('Xiaohongshu observation invents official global or annual MAU scope')
+const independentXiaohongshuMau = xiaohongshuObservations.find((row) => row.id === 'xiaohongshu-mobile-mau-quest-2025-05')
+if (independentXiaohongshuMau?.geography !== 'china' || independentXiaohongshuMau?.periodStart !== '2025-05-01' || independentXiaohongshuMau?.periodEnd !== '2025-05-31' || independentXiaohongshuMau?.conflictGroupId) reviewerFailures.push('Independent Xiaohongshu MAU scope or conflict marker is incorrect')
+
+const coverageGapIds = X_INTELLIGENCE_REPOSITORY.coverageGaps.map((gap) => gap.id)
+if (new Set(coverageGapIds).size !== coverageGapIds.length) reviewerFailures.push('coverage gap IDs are not unique')
+const unknownWithoutGap = X_INTELLIGENCE_REPOSITORY.comparisons.filter((comparison) => comparison.rating === 'unknown' && !X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => gap.platformId === comparison.platformId && gap.dimensionId === comparison.dimensionId))
+if (unknownWithoutGap.length) reviewerFailures.push(`${unknownWithoutGap.length} unknown comparisons lack coverage gaps`)
+
+assert.deepEqual(reviewerFailures, [], reviewerFailures.join('\n'))
+
 console.log('[x-intelligence:model] all assertions passed')

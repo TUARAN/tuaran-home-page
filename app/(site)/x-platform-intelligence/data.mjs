@@ -16,8 +16,11 @@ const platforms = [
 
 const metrics = [
   ['dau', 'DAU', ['people']], ['mau', 'MAU', ['people']], ['ad-reach', '广告可触达人数', ['people']],
+  ['registered-members', '注册会员数', ['people']], ['device-count', '设备数', ['devices']],
   ['monthly-visitors', '月访问者', ['people']], ['daily-minutes', '日均使用时长', ['minutes']],
   ['country-share', '国家受众占比', ['percent']], ['internet-penetration', '互联网人口渗透率', ['percent']],
+  ['adult-use-rate', '成年人口使用率', ['percent']], ['age-use-rate', '年龄人群使用率', ['percent']],
+  ['gender-use-rate', '性别人群使用率', ['percent']],
   ['age-share', '年龄占比', ['percent']], ['gender-share', '性别占比', ['percent']],
   ['income-use-rate', '收入人群使用率', ['percent']], ['education-use-rate', '教育人群使用率', ['percent']],
   ['news-use-rate', '新闻使用率', ['percent']], ['creator-threshold', '创作者门槛', ['qualitative']],
@@ -75,10 +78,45 @@ const sources = [
   source('xiaohongshu-local-life', 'Xiaohongshu Local Life', 'Xiaohongshu', 'https://life.xiaohongshu.com/', ACCESSED_AT, 'primary-live-reference', 'Official commercial page describes 260M users interacting in local-life scenarios; this is a marketing reach statement, not MAU.', { geography: 'china', publicationDateStatus: 'undated-live-page-access-date-proxy' }),
   source('questmobile-new-media-2025', '2025 New Media Ecosystem Review', 'QuestMobile', 'https://www.questmobile.com.cn/research/report/2000767092954075138/', '2025-12-17', 'independent-app-measurement', 'QuestMobile TRUTH app measurement. Public report places Xiaohongshu app MAU at 242M in May 2025; app/device scope differs from company-reported MAU.', { geography: 'china', deviceScope: 'mobile-app' }),
   source('questmobile-methodology', 'QuestMobile data sources and metric definitions', 'QuestMobile', 'https://www.questmobile.com.cn/blog/blog_41.html', '2016-04-15', 'methodology', 'Discloses multi-source device coverage across 31 provinces and 600+ cities and defines active users as users launching an app at least once in the period.', { geography: 'china', archiveStatus: 'methodology-reference' }),
+  source('xiaohongshu-qilin-2025', 'Qilin: A Multimodal Information Retrieval Dataset with APP-level User Sessions', 'arXiv / Xiaohongshu research team', 'https://arxiv.org/abs/2503.00501', '2025-03-01', 'academic-dataset', 'Method-published Xiaohongshu session dataset covering heterogeneous search results; reports search penetration above 70%, but is not an active-user census.', { geography: 'china' }),
   source('jike-app-store', '即刻 App listing', 'If Tech / Apple App Store', 'https://apps.apple.com/cn/app/%E5%8D%B3%E5%88%BBapp/id966129812', ACCESSED_AT, 'primary-distributor-listing', 'Developer-supplied product description documents interest circles, personalised recommendation, comments, and Jike Yellow pricing; it provides no active-user count.', { geography: 'china', publicationDateStatus: 'undated-live-page-access-date-proxy' }),
   source('jike-official-site', '即刻 official site', 'If Tech', 'https://www.okjike.com/', ACCESSED_AT, 'primary-live-reference', 'Official product landing endpoint verified live; no public user metric or audience methodology is disclosed.', { geography: 'china', publicationDateStatus: 'undated-live-page-access-date-proxy' }),
   source('appinchina-index-2025', 'AppInChina App Index', 'AppInChina', 'https://appinchina.co/market/apps/', '2025-11-30', 'independent-app-index', 'Monthly-active ranking for Android apps in China, last updated November 2025; no public Jike value was available in the accessible index.', { geography: 'china', deviceScope: 'android-apps' }),
 ]
+
+const sourceDimensionCoverage = {
+  'x-eu-amars-history': ['reach'],
+  'x-ads-audience-estimate': ['reach'],
+  'x-creator-revenue': ['native-monetization'],
+  'x-creator-subscriptions': ['native-monetization'],
+  'x-organic-best-practices': ['public-conversation', 'external-links'],
+  'eu-x-dsa-fine-2025': ['brand-safety', 'data-transparency'],
+  'eu-x-action-plan-2026': ['data-transparency'],
+  'x-global-mau-self-2025': ['reach'],
+  'pew-social-2025': ['reach'],
+  'ofcom-online-nation-2025': ['reach', 'brand-safety'],
+  'datareportal-x-2025': ['reach', 'chinese-reach', 'internationalization'],
+  'sensor-tower-x-q4-2024': ['reach'],
+  'sensor-tower-x-june-2025': ['reach'],
+  'meta-threads-500m': ['reach', 'algorithmic-distribution', 'internationalization'],
+  'meta-threads-live-chats': ['realtime', 'content-longevity', 'public-conversation', 'external-links'],
+  'reddit-fy2025-results': ['reach', 'public-conversation', 'internationalization', 'data-transparency'],
+  'linkedin-fy2025-highlights': ['reach', 'professional-relationships', 'data-transparency'],
+  'tiktok-dsa-h2-2025': ['reach', 'brand-safety', 'data-transparency'],
+  'weibo-fy2025-results': ['reach', 'realtime', 'search-value', 'public-conversation', 'algorithmic-distribution', 'follow-graph', 'chinese-reach', 'internationalization', 'native-monetization', 'data-transparency'],
+  'weibo-2025-20f': ['reach', 'realtime', 'public-conversation', 'follow-graph', 'chinese-reach', 'internationalization', 'native-monetization', 'data-transparency'],
+  'zhihu-fy2025-results': ['search-value', 'professional-relationships', 'algorithmic-distribution', 'chinese-reach'],
+  'zhihu-2025-20f': ['search-value', 'professional-relationships', 'algorithmic-distribution', 'chinese-reach', 'data-transparency'],
+  'wechat-oa-official-help': ['follow-graph', 'private-audience'],
+  'xiaohongshu-commercial': ['native-monetization', 'data-transparency'],
+  'xiaohongshu-local-life': ['native-monetization'],
+  'questmobile-new-media-2025': ['reach', 'chinese-reach', 'data-transparency'],
+  'questmobile-methodology': ['reach', 'chinese-reach', 'data-transparency'],
+  'xiaohongshu-qilin-2025': ['search-value'],
+  'jike-app-store': ['content-longevity', 'public-conversation', 'algorithmic-distribution', 'native-monetization'],
+}
+
+for (const item of sources) item.supportedDimensionIds = sourceDimensionCoverage[item.id] || []
 
 function observation({
   id, platformId, metricId, valueType = 'exact', value, unit, periodStart, periodEnd,
@@ -116,11 +154,11 @@ const observations = [
   observation({ id: 'reddit-global-dauq-2025-q4', platformId: 'reddit', metricId: 'dau', value: 121400000, unit: 'people', periodStart: '2025-10-01', periodEnd: '2025-12-31', publishedAt: '2026-02-05', geography: 'global', methodology: 'Reddit company-defined quarterly average daily active uniques, logged-in and logged-out.', sourceId: 'reddit-fy2025-results', confidence: 'high', comparability: 'company-defined-dauq', editorNote: 'DAUq, not MAU.' }),
   observation({ id: 'reddit-uk-daily-minutes-2025-05', platformId: 'reddit', metricId: 'daily-minutes', value: 4, unit: 'minutes', periodStart: '2025-05-01', periodEnd: '2025-05-31', publishedAt: '2025-12-10', geography: 'uk', methodology: 'Ipsos iris UK adults 18+, smartphone/tablet/computer.', sourceId: 'ofcom-online-nation-2025', confidence: 'high', comparability: 'uk-device-panel-only' }),
   observation({ id: 'linkedin-uk-daily-minutes-2025-05', platformId: 'linkedin', metricId: 'daily-minutes', value: 2, unit: 'minutes', periodStart: '2025-05-01', periodEnd: '2025-05-31', publishedAt: '2025-12-10', geography: 'uk', methodology: 'Ipsos iris UK adults 18+, smartphone/tablet/computer.', sourceId: 'ofcom-online-nation-2025', confidence: 'high', comparability: 'uk-device-panel-only', editorNote: 'LinkedIn 1.2B member count is intentionally not recorded as MAU.' }),
+  observation({ id: 'linkedin-registered-members-2025-07', platformId: 'linkedin', metricId: 'registered-members', value: 1200000000, unit: 'people', periodStart: '2025-07-30', periodEnd: '2025-07-30', publishedAt: '2025-07-30', geography: 'global', methodology: 'Official registered-member count; registrations are not a measure of monthly or daily activity.', sourceId: 'linkedin-fy2025-highlights', confidence: 'high', comparability: 'registered-members-only', editorNote: 'Registered members are never represented as MAU or DAU.' }),
   observation({ id: 'weibo-mau-2025-12', platformId: 'weibo', metricId: 'mau', value: 567000000, unit: 'people', periodStart: '2025-12-01', periodEnd: '2025-12-31', publishedAt: '2026-03-18', geography: 'china', methodology: 'Company-defined December MAU in FY2025 results.', sourceId: 'weibo-fy2025-results', confidence: 'high', comparability: 'company-defined-mau' }),
   observation({ id: 'weibo-dau-2025-12', platformId: 'weibo', metricId: 'dau', value: 252000000, unit: 'people', periodStart: '2025-12-01', periodEnd: '2025-12-31', publishedAt: '2026-03-18', geography: 'china', methodology: 'Company-defined average December DAU in FY2025 results.', sourceId: 'weibo-fy2025-results', confidence: 'high', comparability: 'company-defined-dau' }),
   observation({ id: 'zhihu-dau-daily-minutes-2025-q4', platformId: 'zhihu', metricId: 'daily-minutes', value: 41, unit: 'minutes', periodStart: '2025-10-01', periodEnd: '2025-12-31', publishedAt: '2026-03-25', geography: 'china', methodology: 'Company-reported average time among DAUs in Q4 2025.', sourceId: 'zhihu-fy2025-results', confidence: 'high', comparability: 'company-defined-dau-time', editorNote: 'Applies to DAUs, not all MAUs.' }),
-  observation({ id: 'xiaohongshu-mau-official-2025', platformId: 'xiaohongshu', metricId: 'mau', value: 300000000, unit: 'people', periodStart: '2025-01-01', periodEnd: '2025-12-31', publishedAt: '2026-07-20', geography: 'global', methodology: 'Official commercial claim on a live merchant page; metric method and as-of month not disclosed.', sourceId: 'xiaohongshu-commercial', confidence: 'disputed', comparability: 'company-defined-mau', conflictGroupId: 'xiaohongshu-mau-2025', editorNote: 'Marketing claim; period is bounded to 2025 only because no exact as-of date is published.' }),
-  observation({ id: 'xiaohongshu-mobile-mau-quest-2025-05', platformId: 'xiaohongshu', metricId: 'mau', value: 242000000, unit: 'people', periodStart: '2025-05-01', periodEnd: '2025-05-31', publishedAt: '2025-12-17', geography: 'china', methodology: 'QuestMobile TRUTH app active users: at least one app launch in the month, modelled from multi-source device data.', sourceId: 'questmobile-new-media-2025', confidence: 'reference', comparability: 'mobile-app-only', conflictGroupId: 'xiaohongshu-mau-2025', editorNote: 'Independent app measurement; differs in geography, device coverage, and metric definition from the official claim.' }),
+  observation({ id: 'xiaohongshu-mobile-mau-quest-2025-05', platformId: 'xiaohongshu', metricId: 'mau', value: 242000000, unit: 'people', periodStart: '2025-05-01', periodEnd: '2025-05-31', publishedAt: '2025-12-17', geography: 'china', methodology: 'QuestMobile TRUTH app active users: at least one app launch in the month, modelled from multi-source device data.', sourceId: 'questmobile-new-media-2025', confidence: 'reference', comparability: 'mobile-app-only', editorNote: 'Independent China mobile-app measurement; no official observation with matching period and scope is available for conflict comparison.' }),
 ]
 
 const pewProfiles = {
@@ -133,15 +171,15 @@ const pewProfiles = {
 }
 
 const pewSegmentDefinitions = [
-  ['age-share', ['age-18-29', 'age-30-49', 'age-50-64', 'age-65-plus'], 'age'],
-  ['gender-share', ['men', 'women'], 'gender'],
+  ['age-use-rate', ['age-18-29', 'age-30-49', 'age-50-64', 'age-65-plus'], 'age'],
+  ['gender-use-rate', ['men', 'women'], 'gender'],
   ['income-use-rate', ['income-under-30000', 'income-30000-69999', 'income-70000-99999', 'income-100000-plus'], 'income'],
   ['education-use-rate', ['high-school-or-less', 'some-college', 'college-graduate'], 'education'],
 ]
 
 for (const [platformId, profile] of Object.entries(pewProfiles)) {
   observations.push(observation({
-    id: `${platformId}-us-adult-use-2025`, platformId, metricId: 'internet-penetration',
+    id: `${platformId}-us-adult-use-2025`, platformId, metricId: 'adult-use-rate',
     valueType: 'percentage', value: profile.use, unit: 'percent', periodStart: '2025-02-05',
     periodEnd: '2025-06-18', publishedAt: '2025-11-20', geography: 'us', segments: ['adults-18-plus'],
     methodology: 'Pew NPORS address-based probability survey of 5,022 US adults; web, mail, and phone; weighted.',
@@ -162,7 +200,7 @@ for (const [platformId, profile] of Object.entries(pewProfiles)) {
 }
 
 observations.push(observation({
-  id: 'linkedin-us-adult-use-2025', platformId: 'linkedin', metricId: 'internet-penetration',
+  id: 'linkedin-us-adult-use-2025', platformId: 'linkedin', metricId: 'adult-use-rate',
   valueType: 'percentage', value: 25, unit: 'percent', periodStart: '2025-02-05', periodEnd: '2025-06-18',
   publishedAt: '2025-11-20', geography: 'us', segments: ['adults-18-plus'],
   methodology: 'Pew NPORS address-based probability survey of 5,022 US adults; web, mail, and phone; weighted.',
@@ -180,104 +218,117 @@ const insights = [
   { id: 'linkedin-professional-graph', title: 'LinkedIn 的专业关系链定位最清晰', summary: '官方会员规模支持网络广度但不是 MAU；活跃判断需使用独立访问或调查指标。', audienceGoal: ['professional', 'b2b'], geographies: ['global', 'us', 'uk'], segmentFilters: [], evidenceObservationIds: ['linkedin-us-adult-use-2025', 'linkedin-uk-daily-minutes-2025-05'], evidenceSourceIds: ['linkedin-fy2025-highlights'], confidence: 'reference', validFrom: '2026-04-01', validTo: null, snapshotId: '2026-q2' },
   { id: 'weibo-public-china', title: '微博仍是中国大规模实时公共讨论平台', summary: '2025 年末 MAU、DAU 与公司对非对称关系链和实时传播的定义共同支持这一定位。', audienceGoal: ['news', 'public-conversation'], geographies: ['china'], segmentFilters: [], evidenceObservationIds: ['weibo-mau-2025-12', 'weibo-dau-2025-12'], evidenceSourceIds: ['weibo-2025-20f'], confidence: 'high', validFrom: '2026-04-01', validTo: null, snapshotId: '2026-q2' },
   { id: 'zhihu-search-depth', title: '知乎的长内容与搜索价值仍强', summary: '公司披露 DAU 日均 41 分钟且强调专家和可信内容，但 2025 精确 MAU 未披露。', audienceGoal: ['knowledge', 'search'], geographies: ['china'], segmentFilters: [], evidenceObservationIds: ['zhihu-dau-daily-minutes-2025-q4'], evidenceSourceIds: ['zhihu-2025-20f'], confidence: 'reference', validFrom: '2026-04-01', validTo: null, snapshotId: '2026-q2' },
-  { id: 'xiaohongshu-search-commerce', title: '小红书兼具搜索、内容和商业转化', summary: '官方与 QuestMobile 的规模口径不同，应并列呈现；内容搜索优势不等于公开关系链优势。', audienceGoal: ['lifestyle', 'commerce', 'search'], geographies: ['china'], segmentFilters: [], evidenceObservationIds: ['xiaohongshu-mau-official-2025', 'xiaohongshu-mobile-mau-quest-2025-05'], evidenceSourceIds: ['xiaohongshu-local-life'], confidence: 'disputed', validFrom: '2026-04-01', validTo: null, snapshotId: '2026-q2' },
+  { id: 'xiaohongshu-search-commerce', title: '小红书兼具搜索、内容和商业转化', summary: 'QuestMobile 提供中国移动 App 月活估计；官方商业页缺少时期与地域范围，只作为产品证据而不生成 MAU 观察。', audienceGoal: ['lifestyle', 'commerce', 'search'], geographies: ['china'], segmentFilters: [], evidenceObservationIds: ['xiaohongshu-mobile-mau-quest-2025-05'], evidenceSourceIds: ['xiaohongshu-local-life', 'xiaohongshu-qilin-2025'], confidence: 'reference', validFrom: '2026-04-01', validTo: null, snapshotId: '2026-q2' },
   { id: 'wechat-oa-owned-audience', title: '公众号更适合沉淀关注关系而非估算公域规模', summary: '腾讯总微信月活不能代替公众号触达；公众号应以关注、打开和私域运营指标评估。', audienceGoal: ['owned-audience', 'china'], geographies: ['china'], segmentFilters: [], evidenceObservationIds: [], evidenceSourceIds: ['wechat-oa-official-help', 'tencent-2025-annual'], confidence: 'reference', validFrom: '2026-04-01', validTo: null, snapshotId: '2026-q2' },
   { id: 'jike-niche-community', title: '即刻是兴趣与职业同好社区，但公开规模证据不足', summary: '产品材料支持兴趣圈、推荐和评论能力；公开、方法披露的活跃用户估计仍缺失。', audienceGoal: ['technology-creator', 'community'], geographies: ['china'], segmentFilters: [], evidenceObservationIds: [], evidenceSourceIds: ['jike-app-store', 'appinchina-index-2025'], confidence: 'reference', validFrom: '2026-04-01', validTo: null, snapshotId: '2026-q2' },
 ]
 
-const comparisonProfiles = {
-  x: ['high', 'high', 'medium', 'high', 'high', 'high', 'high', 'high', 'high', 'low', 'high', 'low', 'high', 'medium', 'low', 'low'],
-  threads: ['high', 'high', 'medium', 'medium', 'medium', 'high', 'medium', 'high', 'medium', 'low', 'high', 'low', 'low', 'medium', 'medium', 'medium'],
-  facebook: ['high', 'medium', 'high', 'high', 'medium', 'high', 'medium', 'high', 'high', 'low', 'high', 'medium', 'high', 'high', 'medium', 'medium'],
-  instagram: ['high', 'medium', 'medium', 'high', 'medium', 'medium', 'low', 'high', 'high', 'low', 'high', 'high', 'high', 'high', 'medium', 'medium'],
-  tiktok: ['high', 'high', 'low', 'medium', 'low', 'medium', 'low', 'high', 'medium', 'low', 'high', 'high', 'high', 'medium', 'low', 'medium'],
-  reddit: ['high', 'high', 'high', 'high', 'medium', 'high', 'high', 'high', 'medium', 'low', 'high', 'medium', 'medium', 'medium', 'medium', 'high'],
-  linkedin: ['high', 'medium', 'high', 'high', 'high', 'medium', 'high', 'medium', 'high', 'low', 'high', 'medium', 'high', 'high', 'high', 'medium'],
-  weibo: ['high', 'high', 'medium', 'medium', 'low', 'high', 'medium', 'high', 'high', 'high', 'low', 'medium', 'high', 'medium', 'low', 'high'],
-  zhihu: ['medium', 'low', 'high', 'high', 'high', 'high', 'medium', 'medium', 'medium', 'high', 'low', 'medium', 'medium', 'low', 'medium', 'medium'],
-  xiaohongshu: ['high', 'low', 'high', 'high', 'low', 'medium', 'low', 'high', 'medium', 'high', 'low', 'high', 'high', 'medium', 'medium', 'low'],
-  'wechat-oa': ['unknown', 'low', 'high', 'medium', 'medium', 'low', 'medium', 'low', 'high', 'high', 'medium', 'medium', 'medium', 'high', 'medium', 'low'],
-  jike: ['unknown', 'medium', 'low', 'low', 'medium', 'medium', 'low', 'medium', 'medium', 'unknown', 'low', 'low', 'medium', 'medium', 'unknown', 'unknown'],
+const supportedComparisonClaims = {
+  x: {
+    reach: { rating: 'high', evidenceSourceIds: ['x-global-mau-self-2025', 'datareportal-x-2025', 'sensor-tower-x-q4-2024', 'sensor-tower-x-june-2025', 'pew-social-2025', 'ofcom-online-nation-2025'], rationale: 'X 的公司自报、全球广告触达、移动端估计及美英调查共同证明大规模覆盖，但这些口径不得合并为单一活跃数。' },
+    internationalization: { rating: 'high', evidenceSourceIds: ['datareportal-x-2025'], rationale: 'DataReportal 的全球广告工具分析同时列出美国、日本和英国等市场，直接支持 X 的跨国家受众分布。' },
+    'native-monetization': { rating: 'high', evidenceSourceIds: ['x-creator-revenue', 'x-creator-subscriptions'], rationale: 'X 官方帮助页明确列出创作者广告收入分成与订阅项目及各自门槛，平台内变现工具证据充分。' },
+    'brand-safety': { rating: 'low', evidenceSourceIds: ['eu-x-dsa-fine-2025', 'ofcom-online-nation-2025'], rationale: '欧盟最终处罚记录蓝标设计问题，Ofcom 亦记录英国用户伤害暴露，现有证据支持较弱的品牌安全判断。' },
+    'data-transparency': { rating: 'low', evidenceSourceIds: ['eu-x-dsa-fine-2025', 'eu-x-action-plan-2026'], rationale: '欧盟处罚明确涉及广告资料库和研究者数据访问，后续行动计划仍受监督，因此 X 的数据透明度评级偏低。' },
+  },
+  threads: {
+    reach: { rating: 'high', evidenceSourceIds: ['meta-threads-500m', 'pew-social-2025'], rationale: 'Meta 披露 Threads 达到五亿月活，美国成年人概率调查又提供独立使用率，二者直接支持其大规模覆盖。' },
+    realtime: { rating: 'high', evidenceSourceIds: ['meta-threads-live-chats'], rationale: 'Meta 对 Live Chats 的官方说明明确将其定义为公开、可发现的实时聊天，直接证明 Threads 的实时参与能力。' },
+    'public-conversation': { rating: 'high', evidenceSourceIds: ['meta-threads-live-chats'], rationale: 'Threads Live Chats 被官方描述为公开且可发现的社区对话，直接支持平台的公共讨论能力评级。' },
+  },
+  facebook: {
+    reach: { rating: 'high', evidenceSourceIds: ['pew-social-2025'], rationale: 'Pew 概率调查显示 Facebook 在美国成年人及多个年龄组中均有广泛使用，足以支持覆盖维度的高评级。' },
+    'brand-safety': { rating: 'medium', evidenceSourceIds: ['ofcom-online-nation-2025'], rationale: 'Ofcom 对英国线上平台的独立测量包含 Facebook 用户伤害暴露证据，只支持地域受限的中等品牌安全判断。' },
+  },
+  instagram: {
+    reach: { rating: 'high', evidenceSourceIds: ['pew-social-2025'], rationale: 'Pew 的美国成年人调查及年龄分组使用率显示 Instagram 覆盖广且年轻人使用突出，直接支持高覆盖评级。' },
+    'brand-safety': { rating: 'medium', evidenceSourceIds: ['ofcom-online-nation-2025'], rationale: 'Ofcom 英国报告提供 Instagram 使用与伤害暴露的独立监管测量，但地域单一，故品牌安全仅评为中等。' },
+  },
+  tiktok: {
+    reach: { rating: 'high', evidenceSourceIds: ['tiktok-dsa-h2-2025', 'pew-social-2025', 'ofcom-online-nation-2025'], rationale: 'TikTok 欧盟月活跃接收者、美国家庭概率调查及英国受众测量分别证明多个市场的大规模覆盖。' },
+    'brand-safety': { rating: 'medium', evidenceSourceIds: ['tiktok-dsa-h2-2025'], rationale: 'TikTok 的欧盟 DSA 报告披露内容审核执行数据，但只覆盖欧盟监管口径，因此品牌安全评为中等。' },
+    'data-transparency': { rating: 'medium', evidenceSourceIds: ['tiktok-dsa-h2-2025'], rationale: 'TikTok 按 DSA 发布欧盟活跃接收者和内容审核数据，具备正式披露但缺少同等全球口径，透明度评为中等。' },
+  },
+  reddit: {
+    reach: { rating: 'high', evidenceSourceIds: ['reddit-fy2025-results', 'pew-social-2025'], rationale: 'Reddit 公司披露全球季度日活独立用户，Pew 同时给出美国成年人使用率，直接支持其较高覆盖评级。' },
+    'data-transparency': { rating: 'high', evidenceSourceIds: ['reddit-fy2025-results'], rationale: 'Reddit 财报公开季度日活独立用户并说明登录与未登录用户口径，当前来源足以支持较高数据透明度。' },
+  },
+  linkedin: {
+    reach: { rating: 'medium', evidenceSourceIds: ['linkedin-fy2025-highlights', 'pew-social-2025'], rationale: 'LinkedIn 官方披露十二亿注册会员，Pew 提供美国成年人使用率；因会员不等于活跃用户，覆盖仅评为中等。' },
+    'professional-relationships': { rating: 'high', evidenceSourceIds: ['linkedin-fy2025-highlights'], rationale: 'LinkedIn 官方商业亮点以会员网络及职业互动趋势为核心披露，直接支持其专业关系维度的高评级。' },
+    'data-transparency': { rating: 'medium', evidenceSourceIds: ['linkedin-fy2025-highlights'], rationale: 'LinkedIn 明确披露注册会员规模但未提供可比月活或日活，因此数据透明度有正式来源却仍存在关键缺口。' },
+  },
+  weibo: {
+    reach: { rating: 'high', evidenceSourceIds: ['weibo-fy2025-results', 'weibo-2025-20f'], rationale: '微博财报披露二〇二五年十二月月活和日活，年报同时给出定义与历史序列，直接支持中国大规模覆盖。' },
+    realtime: { rating: 'high', evidenceSourceIds: ['weibo-fy2025-results', 'weibo-2025-20f'], rationale: '微博财报和年报均将产品描述为实时公共信息网络，且披露持续活跃规模，直接支持高实时性评级。' },
+    'public-conversation': { rating: 'high', evidenceSourceIds: ['weibo-fy2025-results', 'weibo-2025-20f'], rationale: '微博上市文件明确描述公开信息传播和互动讨论结构，直接支持其公共对话能力的高评级。' },
+    'follow-graph': { rating: 'high', evidenceSourceIds: ['weibo-fy2025-results', 'weibo-2025-20f'], rationale: '微博公司文件明确说明非对称关注关系，用户可持续关注账号接收更新，直接支持高关注关系链评级。' },
+    'native-monetization': { rating: 'high', evidenceSourceIds: ['weibo-fy2025-results', 'weibo-2025-20f'], rationale: '微博财报和年报披露平台广告及增值服务商业模式，直接证明平台内原生变现渠道已经成熟。' },
+    'data-transparency': { rating: 'high', evidenceSourceIds: ['weibo-fy2025-results', 'weibo-2025-20f'], rationale: '微博通过年度财报和审计年报持续公开月活、日活定义与历史序列，直接支持较高的数据透明度。' },
+  },
+  zhihu: {
+    'data-transparency': { rating: 'medium', evidenceSourceIds: ['zhihu-2025-20f'], rationale: '知乎年报说明月活去重口径并坦承二〇二五年未给精确月活值，方法有披露但关键数字缺失，故评中等。' },
+  },
+  xiaohongshu: {
+    reach: { rating: 'medium', evidenceSourceIds: ['questmobile-new-media-2025', 'questmobile-methodology'], rationale: 'QuestMobile 给出二〇二五年五月中国移动 App 月活及设备测量方法，但不含网页和境外，覆盖仅评为中等。' },
+    'search-value': { rating: 'high', evidenceSourceIds: ['xiaohongshu-qilin-2025'], rationale: '小红书研究团队发布的 Qilin 数据集直接覆盖 App 内多模态搜索会话，并报告较高搜索渗透，支持高搜索价值。' },
+    'chinese-reach': { rating: 'high', evidenceSourceIds: ['questmobile-new-media-2025', 'questmobile-methodology'], rationale: 'QuestMobile 在中国多省市设备样本中测得小红书移动 App 月活，地域与方法均直接支持较高中文受众覆盖。' },
+    'native-monetization': { rating: 'high', evidenceSourceIds: ['xiaohongshu-commercial', 'xiaohongshu-local-life'], rationale: '小红书官方商家平台和本地生活页面直接提供商户经营与场景转化入口，支持成熟的平台内商业变现评级。' },
+    'data-transparency': { rating: 'low', evidenceSourceIds: ['xiaohongshu-commercial', 'questmobile-new-media-2025', 'questmobile-methodology'], rationale: '官方商业页的月活说法缺少时期和方法，只能依赖 QuestMobile 的中国移动测量补足，故透明度评为低。' },
+  },
+  'wechat-oa': {
+    'follow-graph': { rating: 'high', evidenceSourceIds: ['wechat-oa-official-help'], rationale: '微信官方帮助中心明确区分订阅号与服务号并说明关注后消息分发，直接支持公众号的关注关系链能力。' },
+    'private-audience': { rating: 'high', evidenceSourceIds: ['wechat-oa-official-help'], rationale: '微信官方文档说明公众号可向已关注用户持续发送消息，直接支持其沉淀和运营自有受众的高评级。' },
+  },
+  jike: {
+    'public-conversation': { rating: 'medium', evidenceSourceIds: ['jike-app-store'], rationale: '即刻开发者提供的应用商店说明明确列出兴趣圈和评论互动，支持公共社区对话，但证据仅来自产品描述。' },
+    'algorithmic-distribution': { rating: 'medium', evidenceSourceIds: ['jike-app-store'], rationale: '即刻应用商店页面明确写有个性化推荐，直接证明非关注分发能力；缺少独立审计，因此仅评为中等。' },
+    'native-monetization': { rating: 'medium', evidenceSourceIds: ['jike-app-store'], rationale: '即刻应用商店页面公开即刻黄标服务及定价，证明存在平台内付费工具，但商业规模未披露，故评中等。' },
+  },
 }
 
-const platformEvidenceSourceIds = {
-  x: ['x-dsa-h2-2025', 'datareportal-x-2025', 'pew-social-2025', 'ofcom-online-nation-2025', 'x-organic-best-practices', 'x-recommendation-code', 'x-creator-revenue', 'eu-x-dsa-fine-2025'],
-  threads: ['meta-threads-500m', 'meta-threads-live-chats', 'pew-social-2025', 'ofcom-online-nation-2025'],
-  facebook: ['meta-fy2025-results', 'pew-social-2025', 'ofcom-online-nation-2025'],
-  instagram: ['meta-fy2025-results', 'pew-social-2025', 'ofcom-online-nation-2025'],
-  tiktok: ['tiktok-dsa-h2-2025', 'pew-social-2025', 'ofcom-online-nation-2025'],
-  reddit: ['reddit-fy2025-results', 'pew-social-2025', 'ofcom-online-nation-2025'],
-  linkedin: ['linkedin-fy2025-highlights', 'pew-social-2025', 'ofcom-online-nation-2025'],
-  weibo: ['weibo-fy2025-results', 'weibo-2025-20f'],
-  zhihu: ['zhihu-fy2025-results', 'zhihu-2025-20f'],
-  xiaohongshu: ['xiaohongshu-commercial', 'xiaohongshu-local-life', 'questmobile-new-media-2025', 'questmobile-methodology'],
-  'wechat-oa': ['wechat-oa-official-help', 'tencent-2025-annual'],
-  jike: ['jike-app-store', 'jike-official-site', 'appinchina-index-2025'],
-}
-
-const dimensionRationales = {
-  reach: '按可比的活跃、访问、调查或触达证据评估，非同口径数字不合并。',
-  realtime: '按事件发生时公开参与和传播能力评估。',
-  'content-longevity': '按内容在发布后持续被发现和消费的能力评估。',
-  'search-value': '按站内搜索、外部索引和问题解决意图评估。',
-  'professional-relationships': '按专业身份、职业关系链和 B2B 使用情境评估。',
-  'public-conversation': '按公开回复、讨论串和可发现对话评估。',
-  'external-links': '按外链发布、点击和站外导流的产品支持评估。',
-  'algorithmic-distribution': '按非关注推荐和内容发现能力评估。',
-  'follow-graph': '按可持续关注关系和直接分发能力评估。',
-  'chinese-reach': '按中国大陆的公开规模、可用性和内容生态证据评估。',
-  internationalization: '按跨国家、跨语言的可用性与受众证据评估。',
-  'production-cost': '按持续产出所需的视频、视觉或编辑投入评估；高评分代表成本更低。',
-  'native-monetization': '按平台内广告、订阅、分成或商业转化工具评估。',
-  'private-audience': '按私信、群组、订阅或自有关注关系沉淀评估。',
-  'brand-safety': '按治理机制、监管记录和公开风险证据评估。',
-  'data-transparency': '按审计、监管披露、方法说明和可重复获取程度评估。',
-}
-
-const comparisonNotes = {
-  x: '规模自报与移动端独立估计冲突，监管也记录了透明度缺陷。',
-  threads: '官方规模快速增长，实时社区功能仍在扩展。',
-  facebook: 'Pew 支持广泛成年覆盖，但 Meta Family 指标不能拆成单平台数据。',
-  instagram: '调查和英国测量支持视觉与年轻受众优势。',
-  tiktok: '欧盟 DSA 和英国测量支持高规模、高消费强度。',
-  reddit: '公司 DAUq、独立调查和主题社区结构共同提供证据。',
-  linkedin: '专业关系定位清晰；会员数绝不按 MAU 使用。',
-  weibo: '上市公司披露和产品定义支持大规模、实时、公开关系链。',
-  zhihu: '长内容和知识搜索定位清晰，但 2025 精确 MAU 缺失。',
-  xiaohongshu: '官方与独立移动测量的规模口径不同，搜索与商业场景证据较强。',
-  'wechat-oa': '公众号是微信生态内的关注分发产品，微信总 MAU 不能作为公众号触达。',
-  jike: '官方材料支持兴趣社区功能，但公开规模与治理透明度证据不足。',
+const platformLimitationSourceIds = {
+  x: ['x-dsa-h2-2025'], threads: ['meta-threads-500m'], facebook: ['meta-fy2025-results'],
+  instagram: ['meta-fy2025-results'], tiktok: ['tiktok-dsa-h2-2025'], reddit: ['reddit-fy2025-results'],
+  linkedin: ['linkedin-fy2025-highlights'], weibo: ['weibo-2025-20f'], zhihu: ['zhihu-2025-20f'],
+  xiaohongshu: ['xiaohongshu-commercial'], 'wechat-oa': ['wechat-oa-official-help'], jike: ['jike-official-site'],
 }
 
 const reachObservationIds = Object.fromEntries(platforms.map(({ id }) => [
   id,
-  observations.filter((row) => row.platformId === id && ['mau', 'dau', 'monthly-visitors', 'internet-penetration'].includes(row.metricId)).map((row) => row.id),
+  observations.filter((row) => row.platformId === id && ['mau', 'dau', 'monthly-visitors', 'adult-use-rate', 'registered-members'].includes(row.metricId)).map((row) => row.id),
 ]))
 
-const comparisons = platforms.flatMap((platform) => COMPARISON_DIMENSIONS.map((dimensionId, dimensionIndex) => ({
-  id: `${platform.id}-${dimensionId}`,
-  platformId: platform.id,
-  dimensionId,
-  rating: comparisonProfiles[platform.id][dimensionIndex],
-  quantitativeObservationIds: dimensionId === 'reach' ? reachObservationIds[platform.id] : [],
-  evidenceSourceIds: platformEvidenceSourceIds[platform.id],
-  rationale: `${comparisonNotes[platform.id]} ${dimensionRationales[dimensionId]}`,
-  confidence: comparisonProfiles[platform.id][dimensionIndex] === 'unknown' ? 'lead-only' : 'reference',
-  snapshotId: '2026-q2',
-})))
+const comparisons = platforms.flatMap((platform) => COMPARISON_DIMENSIONS.map((dimensionId) => {
+  const claim = supportedComparisonClaims[platform.id]?.[dimensionId]
+  return {
+    id: `${platform.id}-${dimensionId}`,
+    platformId: platform.id,
+    dimensionId,
+    rating: claim?.rating || 'unknown',
+    quantitativeObservationIds: claim && dimensionId === 'reach' ? reachObservationIds[platform.id] : [],
+    evidenceSourceIds: claim?.evidenceSourceIds || platformLimitationSourceIds[platform.id],
+    rationale: claim?.rationale || `${platform.name} 的 ${dimensionId} 维度在截至 ${ACCESSED_AT} 核验的公开来源中没有直接、可复核证据，因此保持未知且不参与评级。`,
+    confidence: claim ? 'reference' : 'lead-only',
+    snapshotId: '2026-q2',
+  }
+}))
 
 const fixedCoverageGaps = [
-  { id: 'gap-x-h2-amars-not-global', platformId: 'x', dimensionId: 'reach', reason: 'X H2 2025 DSA reporting is EU regulatory evidence and cannot support a global MAU value.', attemptedSourceUrl: 'https://transparency.x.com/en/reports/dsa-transparency-report', checkedAt: ACCESSED_AT, impact: 'Global scale remains a disputed range using self-report and independent mobile-app estimates.' },
-  { id: 'gap-x-similarweb-public-current', platformId: 'x', dimensionId: 'reach', reason: 'No current Similarweb daily-use value with sufficient public method and device scope was accessible; Sensor Tower mobile estimates are retained instead.', attemptedSourceUrl: 'https://www.similarweb.com/website/x.com/', checkedAt: ACCESSED_AT, impact: 'Daily-use trend evidence is mobile-app scoped and excludes web.' },
-  { id: 'gap-zhihu-2025-exact-mau', platformId: 'zhihu', dimensionId: 'reach', reason: 'FY2025 results and Form 20-F say the MAU base was stable but publish no exact 2025 MAU.', attemptedSourceUrl: 'https://www.sec.gov/Archives/edgar/data/1835724/000110465926044557/zh-20251231x20f.htm', checkedAt: ACCESSED_AT, impact: 'No exact 2025 Zhihu reach number is shown.' },
-  { id: 'gap-wechat-oa-reach', platformId: 'wechat-oa', dimensionId: 'reach', reason: 'Tencent reports 1.418B combined Weixin/WeChat MAU, not Official Account reach; no public OA-specific total was found.', attemptedSourceUrl: 'https://static.www.tencent.com/uploads/2026/04/09/62d786fcf3d3c8cb7e54791ee95439ac.pdf', checkedAt: ACCESSED_AT, impact: 'WeChat total MAU is excluded from Official Account reach comparisons.' },
-  { id: 'gap-jike-independent-mau', platformId: 'jike', dimensionId: 'reach', reason: 'Official Jike materials publish no active-user metric, and the accessible AppInChina independent index exposes no public Jike value.', attemptedSourceUrl: 'https://appinchina.co/market/apps/', checkedAt: ACCESSED_AT, impact: 'Jike reach remains unknown; no unattributed estimate is substituted.' },
+  { id: 'gap-source-x-h2-amars-not-global', gapKind: 'source-floor', platformId: 'x', dimensionId: 'reach', reason: 'X H2 2025 DSA reporting is EU regulatory evidence and cannot support a global MAU value.', attemptedSourceUrl: 'https://transparency.x.com/en/reports/dsa-transparency-report', checkedAt: ACCESSED_AT, impact: 'Global scale remains a disputed range using self-report and independent mobile-app estimates.' },
+  { id: 'gap-source-x-similarweb-public-current', gapKind: 'source-floor', platformId: 'x', dimensionId: 'reach', reason: 'No current Similarweb daily-use value with sufficient public method and device scope was accessible; Sensor Tower mobile estimates are retained instead.', attemptedSourceUrl: 'https://www.similarweb.com/website/x.com/', checkedAt: ACCESSED_AT, impact: 'Daily-use trend evidence is mobile-app scoped and excludes web.' },
+  { id: 'gap-source-x-device-count-unavailable', gapKind: 'metric', platformId: 'x', metricId: 'device-count', reason: 'The verified Sensor Tower sources estimate app users rather than a deduplicated count of devices, so no device-count observation can be created.', attemptedSourceUrl: 'https://techcrunch.com/2025/07/10/as-x-loses-its-ceo-daily-usage-is-down-and-competition-is-growing/', checkedAt: ACCESSED_AT, impact: 'Mobile user estimates are not transformed into device counts.' },
+  { id: 'gap-source-zhihu-2025-exact-mau', gapKind: 'source-floor', platformId: 'zhihu', dimensionId: 'reach', reason: 'FY2025 results and Form 20-F say the MAU base was stable but publish no exact 2025 MAU.', attemptedSourceUrl: 'https://www.sec.gov/Archives/edgar/data/1835724/000110465926044557/zh-20251231x20f.htm', checkedAt: ACCESSED_AT, impact: 'No exact 2025 Zhihu reach number is shown.' },
+  { id: 'gap-source-wechat-oa-reach', gapKind: 'source-floor', platformId: 'wechat-oa', dimensionId: 'reach', reason: 'Tencent reports 1.418B combined Weixin/WeChat MAU, not Official Account reach; no public OA-specific total was found.', attemptedSourceUrl: 'https://static.www.tencent.com/uploads/2026/04/09/62d786fcf3d3c8cb7e54791ee95439ac.pdf', checkedAt: ACCESSED_AT, impact: 'WeChat total MAU is excluded from Official Account reach comparisons.' },
+  { id: 'gap-source-xiaohongshu-official-mau-scope', gapKind: 'metric', platformId: 'xiaohongshu', metricId: 'mau', reason: 'The official commercial page states a monthly-active figure but exposes no as-of period, geography, or measurement method.', attemptedSourceUrl: 'https://zhaoshang.xiaohongshu.com/merchant/login', checkedAt: ACCESSED_AT, impact: 'No official Xiaohongshu MAU observation is created; only the exact China mobile estimate is retained.' },
+  { id: 'gap-source-jike-independent-mau', gapKind: 'source-floor', platformId: 'jike', dimensionId: 'reach', reason: 'Official Jike materials publish no active-user metric, and the accessible AppInChina independent index exposes no public Jike value.', attemptedSourceUrl: 'https://appinchina.co/market/apps/', checkedAt: ACCESSED_AT, impact: 'Jike reach remains unknown; no unattributed estimate is substituted.' },
 ]
 
 const comparisonCoverageGaps = comparisons.filter((item) => item.rating === 'unknown').map((item) => {
-  const attemptedSourceUrl = sources.find((itemSource) => itemSource.id === platformEvidenceSourceIds[item.platformId][0]).url
+  const attemptedSourceUrl = sources.find((itemSource) => itemSource.id === platformLimitationSourceIds[item.platformId][0]).url
   return {
-    id: `gap-${item.id}`,
+    id: `gap-comparison-${item.id}`,
+    gapKind: 'comparison',
     platformId: item.platformId,
     dimensionId: item.dimensionId,
     reason: `The verified public source floor does not support a defensible ${item.dimensionId} rating for ${item.platformId}.`,

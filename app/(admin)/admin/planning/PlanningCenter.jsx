@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import AdminPage from '../../components/ui/AdminPage'
+import { AdminButton, AdminPage } from '../../components/ui'
+import PlanningEditor from './PlanningEditor'
+import TriStateOverview from './TriStateOverview'
 import { PLANNING_TABS, PLANNING_WINDOWS, planningRequest } from './planningUi'
 
 const EMPTY_SNAPSHOT = { directions: [], stats: {} }
@@ -16,9 +18,42 @@ function errorMessage(error) {
 function EmptyTab({ tab }) {
   return (
     <section className="rounded-xl border border-dashed px-4 py-8 text-sm leading-7 text-[var(--admin-muted)]">
-      <h2 className="font-medium text-[var(--admin-foreground)]">{tab.label}</h2>
+      <h2 className="font-medium text-[var(--admin-ink)]">{tab.label}</h2>
       <p className="mb-0 mt-1">此视图将在下一步补齐详细内容。当前仍可切换时间窗口并刷新规划快照。</p>
     </section>
+  )
+}
+
+const entityTypes = [
+  { id: 'direction', label: '方向', description: '定义长期目标与本期北极星。' },
+  { id: 'milestone', label: '里程碑', description: '为项目创建可验证的阶段成果。' },
+  { id: 'task', label: '任务', description: '把下一步放入明确的里程碑。' },
+  { id: 'event', label: '历史事件', description: '补录已发生的节点、复盘或更正。' },
+  { id: 'decision', label: '决策', description: '保存背景、结论、理由与影响。' },
+]
+
+function QuickAddChooser({ onChoose, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="planning-quick-add-title">
+      <button type="button" className="absolute inset-0 bg-black/35" aria-label="关闭快速添加" onClick={onClose} />
+      <section className="absolute inset-x-0 bottom-0 rounded-t-2xl border bg-[var(--admin-surface)] p-4 shadow-2xl sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:w-[32rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="m-0 text-xs text-[var(--admin-muted)]">快速添加</p>
+            <h2 id="planning-quick-add-title" className="m-0 mt-1 font-serif text-xl font-semibold">要创建什么？</h2>
+          </div>
+          <AdminButton type="button" size="sm" variant="ghost" onClick={onClose}>关闭</AdminButton>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {entityTypes.map((item) => (
+            <button key={item.id} type="button" className="rounded-xl border p-3 text-left transition hover:border-[var(--admin-focus)] hover:bg-[var(--admin-surface-subtle)]" onClick={() => onChoose(item.id)}>
+              <span className="block text-sm font-medium">{item.label}</span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--admin-muted)]">{item.description}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
   )
 }
 
@@ -70,7 +105,50 @@ export default function PlanningCenter() {
   }, [reload])
 
   const visibleSnapshot = snapshot || EMPTY_SNAPSHOT
-  const stats = visibleSnapshot.stats || {}
+
+  const openCreate = useCallback((entity, context = {}) => {
+    setEditor({
+      mode: 'create',
+      entity,
+      context: { directionId: directionId || '', ...context },
+      initialValue: {},
+    })
+  }, [directionId])
+
+  const openEdit = useCallback((item) => {
+    if (!['direction', 'milestone', 'task'].includes(item.entityType)) return
+    setEditor({ mode: 'edit', entity: item.entityType, initialValue: item, context: {} })
+  }, [])
+
+  const saveEditor = useCallback(async (payload) => {
+    if (!editor?.entity) return
+    if (editor.mode === 'edit') {
+      await mutate('/api/admin/planning', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity: editor.entity, id: editor.initialValue.id, changes: payload }),
+      })
+    } else {
+      const action = {
+        direction: 'create-direction',
+        milestone: 'create-milestone',
+        task: 'create-task',
+        event: 'create-event',
+        decision: 'create-decision',
+      }[editor.entity]
+      await mutate('/api/admin/planning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+      })
+    }
+    setEditor(null)
+  }, [editor, mutate])
+
+  const changeDirection = useCallback((nextDirectionId) => {
+    setDirectionId(nextDirectionId)
+    void reload()
+  }, [reload])
 
   return (
     <AdminPage
@@ -78,75 +156,37 @@ export default function PlanningCenter() {
       description="把全部项目的过去、现在与未来放在同一条主线上。"
       actions={(
         <>
-          <button type="button" className="rounded-lg border px-3 py-1.5 text-sm font-medium transition hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setImportPanel({ open: true })}>
+          <AdminButton type="button" onClick={() => setImportPanel({ open: true })}>
             初始化数据
-          </button>
-          <button type="button" className="rounded-lg bg-[var(--admin-foreground)] px-3 py-1.5 text-sm font-medium text-[var(--admin-background)] transition hover:opacity-90" onClick={() => setEditor({ mode: 'create' })}>
+          </AdminButton>
+          <AdminButton type="button" variant="primary" onClick={() => setEditor({ mode: 'choose' })}>
             快速添加
-          </button>
+          </AdminButton>
         </>
       )}
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div role="tablist" aria-label="规划中心视图" className="flex flex-wrap gap-2">
-            {PLANNING_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                id={`planning-tab-${tab.id}`}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={`planning-panel-${tab.id}`}
-                className={`rounded-full px-3 py-1.5 text-sm transition ${activeTab === tab.id ? 'bg-[var(--admin-foreground)] text-[var(--admin-background)]' : 'border text-[var(--admin-muted)] hover:text-[var(--admin-foreground)]'}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <label className="sr-only" htmlFor="planning-window">时间窗口</label>
-            <select
-              id="planning-window"
-              value={safeWindow}
-              className="rounded-lg border bg-transparent px-2 py-1.5 text-sm"
-              onChange={(event) => {
-                const nextWindow = event.target.value
-                if (PLANNING_WINDOWS.some((item) => item.id === nextWindow)) setWindow(nextWindow)
-              }}
+        <div role="tablist" aria-label="规划中心视图" className="flex flex-wrap gap-2">
+          {PLANNING_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              id={`planning-tab-${tab.id}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`planning-panel-${tab.id}`}
+              className={`rounded-full px-3 py-1.5 text-sm transition ${activeTab === tab.id ? 'bg-[var(--admin-ink)] text-[var(--admin-surface)]' : 'border text-[var(--admin-muted)] hover:text-[var(--admin-ink)]'}`}
+              onClick={() => setActiveTab(tab.id)}
             >
-              {PLANNING_WINDOWS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
-            <label className="sr-only" htmlFor="planning-direction">方向筛选</label>
-            <select id="planning-direction" value={directionId} className="rounded-lg border bg-transparent px-2 py-1.5 text-sm" onChange={(event) => setDirectionId(event.target.value)}>
-              <option value="">全部方向</option>
-              {visibleSnapshot.directions.map((direction) => <option key={direction.id} value={direction.id}>{direction.title}</option>)}
-            </select>
-          </div>
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {error ? (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-100">
             <span>{errorMessage(error)}</span>
             <button type="button" className="rounded-lg border px-3 py-1.5 text-sm font-medium transition hover:bg-rose-100 dark:hover:bg-rose-950/60" onClick={reload}>重试</button>
-          </div>
-        ) : null}
-
-        {snapshot ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label="规划摘要">
-            {[
-              ['已完成', stats.completed || 0],
-              ['当前焦点', stats.focus || 0],
-              ['受阻', stats.blocked || 0],
-              ['已逾期', stats.overdue || 0],
-              ['待决策', stats.decisions || 0],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border px-3 py-3">
-                <div className="text-xs text-[var(--admin-muted)]">{label}</div>
-                <div className="mt-1 text-xl font-semibold">{value}</div>
-              </div>
-            ))}
           </div>
         ) : null}
 
@@ -162,16 +202,39 @@ export default function PlanningCenter() {
             hidden={activeTab !== tab.id}
             key={tab.id}
           >
-            <EmptyTab tab={tab} />
+            {tab.id === 'overview' && snapshot ? (
+              <TriStateOverview
+                snapshot={visibleSnapshot}
+                directionId={directionId}
+                window={safeWindow}
+                onDirectionChange={changeDirection}
+                onWindowChange={(nextWindow) => {
+                  if (PLANNING_WINDOWS.some((item) => item.id === nextWindow)) setWindow(nextWindow)
+                }}
+                onEdit={openEdit}
+                onCreate={openCreate}
+              />
+            ) : <EmptyTab tab={tab} />}
           </div>
         ))}
       </div>
 
-      {editor ? (
-        <div role="status" className="mt-4 rounded-xl border border-dashed px-4 py-3 text-sm">
-          快速添加面板将在下一步提供；当前不会创建不完整的规划记录。
-          <button type="button" className="ml-3 underline" onClick={() => setEditor(null)}>关闭</button>
-        </div>
+      {editor?.mode === 'choose' ? <QuickAddChooser onChoose={(entity) => openCreate(entity)} onClose={() => setEditor(null)} /> : null}
+      {editor?.entity ? (
+        <PlanningEditor
+          key={`${editor.mode}:${editor.entity}:${editor.initialValue?.id || 'new'}`}
+          mode={editor.mode}
+          entity={editor.entity}
+          initialValue={editor.initialValue}
+          context={editor.context}
+          snapshot={visibleSnapshot}
+          onSave={saveEditor}
+          onClose={() => setEditor(null)}
+          onOpenTree={() => {
+            setActiveTab('tree')
+            setEditor(null)
+          }}
+        />
       ) : null}
       {importPanel ? (
         <div role="status" className="mt-4 rounded-xl border border-dashed px-4 py-3 text-sm">

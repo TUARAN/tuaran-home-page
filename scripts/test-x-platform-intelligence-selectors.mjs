@@ -108,6 +108,34 @@ assert.ok(selectAudienceGroups(newsUseRepository, { ...DEFAULT_FILTERS, geograph
   .some((group) => group.metricId === 'news-use-rate'))
 assert.ok(selectOperationalInsights(repository, DEFAULT_FILTERS).some((item) => item.audienceGoal.includes('technology-creator')))
 
+const operational = selectOperationalInsights(repository, DEFAULT_FILTERS)
+for (const category of ['content', 'distribution', 'creator-fit', 'monetization', 'platform-risk', 'creator-risk']) {
+  assert.ok(operational.some((item) => item.category === category), `missing ${category}`)
+}
+assert.deepEqual(
+  new Set(operational.filter((item) => item.mechanicId).map((item) => item.mechanicId)),
+  new Set(['formats', 'discovery-surfaces', 'relationship-propagation', 'content-lifespan', 'search-value', 'external-links']),
+)
+assert.deepEqual(
+  new Set(operational.filter((item) => item.verdict).map((item) => item.verdict)),
+  new Set(['fit', 'complement', 'avoid-only']),
+)
+assert.deepEqual(
+  new Set(operational.filter((item) => item.playbookArea).map((item) => item.playbookArea)),
+  new Set(['eligibility', 'payout-geography', 'subscriptions', 'revenue-stability', 'external-conversion']),
+)
+const operationalCategories = new Set(['content', 'distribution', 'creator-fit', 'monetization', 'platform-risk', 'creator-risk'])
+const evidenceTypes = new Set(['当前产品规则', '监管材料', '历史开源代码', '独立研究', '编辑推断'])
+for (const item of operational.filter((insight) => operationalCategories.has(insight.category))) {
+  assert.ok(evidenceTypes.has(item.evidenceType), `${item.id} missing evidence type`)
+  assert.ok(item.evidenceObservationIds.length + item.evidenceSourceIds.length > 0, `${item.id} missing evidence`)
+  assert.match(item.lastVerifiedAt, /^\d{4}-\d{2}-\d{2}$/)
+}
+for (const item of operational.filter((insight) => insight.category === 'platform-risk' || insight.category === 'creator-risk')) {
+  assert.ok(['high', 'medium', 'low'].includes(item.severity), `${item.id} missing severity`)
+  assert.ok(['current', 'changed'].includes(item.status), `${item.id} missing status`)
+}
+
 const matrix = selectComparisonMatrix(repository, { ...DEFAULT_FILTERS, platformIds: repository.platforms.map((item) => item.id) })
 assert.equal(matrix.rows.length, 12)
 assert.ok(matrix.rows.every((row) => row.cells.length === 16))

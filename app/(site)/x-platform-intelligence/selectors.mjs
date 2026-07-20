@@ -14,8 +14,12 @@ const CONFIDENCE_ORDER = new Map([['high', 0], ['reference', 1], ['disputed', 2]
 function selectedInsights(repository, filters, { includeAllGoals = false } = {}) {
   return repository.insights.filter((item) => (
     item.snapshotId === filters.snapshotId
+    && item.confidence !== 'lead-only'
     && filters.confidences.includes(item.confidence)
     && (filters.geography === 'global' ? item.geographies.includes('global') : item.geographies.includes(filters.geography))
+    && (filters.segment === 'all'
+      ? item.segmentFilters.length === 0
+      : item.segmentFilters.length === 0 || item.segmentFilters.includes(filters.segment))
     && (includeAllGoals || item.audienceGoal.includes(filters.goal))
   ))
 }

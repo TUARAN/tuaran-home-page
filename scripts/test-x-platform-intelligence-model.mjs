@@ -43,6 +43,10 @@ const fixture = {
 
 assert.deepEqual(validateRepository(fixture).errors, [])
 
+const badCalendarDate = structuredClone(fixture)
+badCalendarDate.sources[0].publishedAt = '2026-02-30'
+assert.ok(validateRepository(badCalendarDate).errors.some((error) => error.includes('invalid dates')))
+
 const badSource = structuredClone(fixture)
 badSource.observations[0].sourceId = 'missing-source'
 assert.ok(validateRepository(badSource).errors.some((error) => error.includes('missing-source')))

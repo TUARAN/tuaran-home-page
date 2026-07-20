@@ -71,7 +71,7 @@ export default function RichPagesPage() {
       title="多维页面"
       description={(
         <p className="mb-0">
-          页面只保留两种：跟随主站的「站点型」，以及统一全宽、独立呈现的「沉浸型」。调研、数据、工具和行动入口不再各自发明一套页面外壳。
+          多维页面是一种可交互的内容页面。相比传统图文，它能更直观、更有层次地呈现数据，并通过丰富的交互方式，让信息更易探索和理解。
         </p>
       )}
       headerActions={<SharePageButton title="多维页面" text="可阅读、可筛选、可操作的内容页。" url={PAGE_URL} size="sm" />}

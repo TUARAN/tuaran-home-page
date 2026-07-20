@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AdminButton, AdminPage } from '../../components/ui'
 import PlanningEditor from './PlanningEditor'
 import PlanningHistory from './PlanningHistory'
+import PlanningImportPanel from './PlanningImportPanel'
 import PlanningRoadmap from './PlanningRoadmap'
 import PlanningTree from './PlanningTree'
 import TriStateOverview from './TriStateOverview'
@@ -67,7 +68,7 @@ export default function PlanningCenter() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [editor, setEditor] = useState(null)
-  const [importPanel, setImportPanel] = useState(null)
+  const [importPanel, setImportPanel] = useState(false)
   const backgroundRef = useRef(null)
 
   const safeWindow = PLANNING_WINDOWS.some((item) => item.id === window) ? window : 'month'
@@ -92,16 +93,6 @@ export default function PlanningCenter() {
     await reload()
     return result
   }, [reload])
-
-  const runImport = useCallback(async () => {
-    const result = await mutate('/api/admin/planning/import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ confirm: true }),
-    })
-    setImportPanel(null)
-    return result
-  }, [mutate])
 
   useEffect(() => {
     reload()
@@ -198,7 +189,7 @@ export default function PlanningCenter() {
       description="把全部项目的过去、现在与未来放在同一条主线上。"
       actions={(
         <>
-          <AdminButton type="button" onClick={() => setImportPanel({ open: true })}>
+          <AdminButton type="button" onClick={() => setImportPanel(true)}>
             初始化数据
           </AdminButton>
           <AdminButton type="button" variant="primary" onClick={() => setEditor({ mode: 'choose' })}>
@@ -272,15 +263,16 @@ export default function PlanningCenter() {
           </div>
         ))}
           </div>
-
-          {importPanel ? (
-            <div role="status" className="mt-4 rounded-xl border border-dashed px-4 py-3 text-sm">
-              初始化面板将在下一步提供预览与确认；当前不会执行导入。
-              <button type="button" className="ml-3 underline" onClick={() => setImportPanel(null)}>关闭</button>
-            </div>
-          ) : null}
         </AdminPage>
       </div>
+
+      {importPanel ? (
+        <PlanningImportPanel
+          backgroundRef={backgroundRef}
+          onApplied={reload}
+          onClose={() => setImportPanel(false)}
+        />
+      ) : null}
 
       {editor?.mode === 'choose' ? (
         <QuickAddChooser backgroundRef={backgroundRef} onChoose={(entity) => openCreate(entity)} onClose={() => setEditor(null)} />

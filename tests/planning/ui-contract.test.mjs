@@ -43,3 +43,24 @@ test('planning shell mounts every tab panel and hides inactive panels', () => {
   assert.match(planningCenterSource, /aria-labelledby=\{`planning-tab-\$\{tab\.id\}`\}/)
   assert.match(planningCenterSource, /hidden=\{activeTab !== tab\.id\}/)
 })
+
+test('planning import requires preview and explicit confirmation before apply', async () => {
+  const [panelSource, verifierSource] = await Promise.all([
+    readFile(new URL('../../app/(admin)/admin/planning/PlanningImportPanel.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../scripts/verify-admin-pages-build.cjs', import.meta.url), 'utf8'),
+  ])
+
+  assert.match(panelSource, /planningRequest\('\/api\/admin\/planning\/import'/)
+  assert.match(panelSource, /method: 'POST'/)
+  assert.match(panelSource, /JSON\.stringify\(\{ confirm: true \}\)/)
+  assert.match(panelSource, /我知道重复来源会跳过，已有规划不会被覆盖/)
+  assert.match(panelSource, /确认导入为规划初始数据/)
+  assert.match(panelSource, /preview\.milestones[\s\S]*slice\(0, 5\)/)
+  assert.match(panelSource, /preview\.events[\s\S]*slice\(0, 5\)/)
+  assert.match(panelSource, /existingSourceKeyCounts/)
+  assert.match(planningCenterSource, /<PlanningImportPanel/)
+  assert.match(planningCenterSource, /onApplied=\{reload\}/)
+  for (const route of ['/admin/planning', '/api/admin/planning', '/api/admin/planning/import']) {
+    assert.match(verifierSource, new RegExp(`['"]${route}['"]`))
+  }
+})

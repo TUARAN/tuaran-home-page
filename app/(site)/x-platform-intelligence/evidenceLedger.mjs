@@ -51,6 +51,8 @@ function rowSearchText(row) {
     row.platformId, row.metricId, row.value, row.valueMin, row.valueMax, row.unit,
     row.confidence, row.sourceTitle, row.sourceUrl, row.periodStart, row.periodEnd,
     row.geography, ...(row.segments || []), row.methodology, row.conflictGroupId,
+    row.platformName, row.metricLabel, formatMetricValue(row), formatPeriod(row.periodStart, row.periodEnd),
+    evidenceAudienceLabel(row), sourceLabel(row), confidenceLabel(row.confidence), conflictLabel(row.conflictGroupId),
   ].map(normalized).join('\u0000')
 }
 

@@ -64,8 +64,10 @@ export function filterObservations(repository, filters) {
 
 function escapeCsvValue(value) {
   const text = String(value ?? '')
-  const needsQuotes = /[,"]|\r|\n|[“”]/.test(text)
-  return needsQuotes ? `"${text.replaceAll('"', '""')}"` : text
+  const isFormulaLikeText = typeof value === 'string' && /^[=+\-@]/.test(text.trimStart())
+  const safeText = isFormulaLikeText ? `'${text}` : text
+  const needsQuotes = /[,\"]|\r|\n|[“”]/.test(safeText)
+  return needsQuotes ? `"${safeText.replaceAll('"', '""')}"` : safeText
 }
 
 export function buildEvidenceCsv(rows) {

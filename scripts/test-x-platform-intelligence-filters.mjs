@@ -27,4 +27,19 @@ assert.ok(rows.every((row) => row.platformId === 'x' && (row.geography === 'us' 
 const csv = buildEvidenceCsv([{ metric: 'MAU', value: '区间', source: 'X, Inc.', note: '含“冲突”' }])
 assert.equal(csv, '\uFEFFmetric,value,source,note\r\nMAU,区间,"X, Inc.","含“冲突”"\r\n')
 
+const formulaCsv = buildEvidenceCsv([{
+  equals: '=HYPERLINK("https://example.com", "打开")',
+  plus: '+SUM(1,2)',
+  minus: '-1+2',
+  at: '@SUM(1,2)',
+  whitespace: '\t \r =SUM(1,2)',
+  safeNumber: -42,
+}])
+assert.ok(formulaCsv.includes("'=HYPERLINK"))
+assert.ok(formulaCsv.includes("'+SUM(1,2)"))
+assert.ok(formulaCsv.includes("'-1+2"))
+assert.ok(formulaCsv.includes("'@SUM(1,2)"))
+assert.ok(formulaCsv.includes("'\t \r =SUM(1,2)"))
+assert.ok(formulaCsv.includes(',-42\r\n'))
+
 console.log('[x-intelligence:filters] all assertions passed')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import AdminPage from '../../components/ui/AdminPage'
 import { PLANNING_TABS, PLANNING_WINDOWS, planningRequest } from './planningUi'
@@ -69,10 +69,6 @@ export default function PlanningCenter() {
     reload()
   }, [reload])
 
-  const currentTab = useMemo(
-    () => PLANNING_TABS.find((tab) => tab.id === activeTab) || PLANNING_TABS[0],
-    [activeTab],
-  )
   const visibleSnapshot = snapshot || EMPTY_SNAPSHOT
   const stats = visibleSnapshot.stats || {}
 
@@ -158,9 +154,17 @@ export default function PlanningCenter() {
         {loading && snapshot ? <p className="mb-0 text-xs text-[var(--admin-muted)]">正在更新，保留上次成功加载的数据。</p> : null}
         {!loading && !snapshot && !error ? <div className="rounded-xl border px-4 py-8 text-sm text-[var(--admin-muted)]">暂无规划数据，可先初始化或快速添加。</div> : null}
 
-        <div id={`planning-panel-${currentTab.id}`} role="tabpanel" aria-labelledby={`planning-tab-${currentTab.id}`}>
-          <EmptyTab tab={currentTab} />
-        </div>
+        {PLANNING_TABS.map((tab) => (
+          <div
+            id={`planning-panel-${tab.id}`}
+            role="tabpanel"
+            aria-labelledby={`planning-tab-${tab.id}`}
+            hidden={activeTab !== tab.id}
+            key={tab.id}
+          >
+            <EmptyTab tab={tab} />
+          </div>
+        ))}
       </div>
 
       {editor ? (

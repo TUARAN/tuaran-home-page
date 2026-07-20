@@ -151,3 +151,6 @@ private/
 .claude/*
 !.claude/commands/
 .kunsdd/
+
+# Superpowers brainstorming visual companion sessions
+.superpowers/

@@ -80,7 +80,7 @@ function createSnapshotIndex(snapshot = {}) {
 
 function ancestryFor(item, index) {
   if (!item) return {}
-  if (item.entityType === 'direction') return { directionId: item.id }
+  if (item.entityType === 'direction') return { directionId: item.entityId || item.id }
   if (item.entityType === 'project' || item.entityType === 'project-profile') {
     const project = index.projects.get(item.entityId || item.id) || item
     return { directionId: project.directionId, projectId: project.projectId || item.entityId }

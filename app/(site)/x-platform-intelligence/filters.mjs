@@ -9,6 +9,10 @@ function parseList(value, allowed) {
   return value.split(',').filter((item) => allowed.has(item))
 }
 
+function parseValue(value, allowed, defaultValue) {
+  return allowed.has(value) ? value : defaultValue
+}
+
 function hasSameValues(value, defaults) {
   return value.length === defaults.length && value.every((item, index) => item === defaults[index])
 }
@@ -16,15 +20,18 @@ function hasSameValues(value, defaults) {
 export function parseFilterParams(params, repository) {
   const snapshotIds = new Set(repository.snapshots.map((snapshot) => snapshot.id))
   const platformIds = new Set(repository.platforms.map((platform) => platform.id))
+  const geographies = new Set(['global', ...repository.observations.map((row) => row.geography)])
+  const segments = new Set(['all', ...repository.observations.flatMap((row) => row.segments)])
+  const goals = new Set([DEFAULT_FILTERS.goal, ...repository.insights.flatMap((insight) => insight.audienceGoal)])
   const snapshotId = params.get('snapshot')
   const platforms = params.get('platforms')
   const confidence = params.get('confidence')
 
   return {
-    snapshotId: snapshotIds.has(snapshotId) ? snapshotId : DEFAULT_FILTERS.snapshotId,
-    geography: params.get('geo') || DEFAULT_FILTERS.geography,
-    segment: params.get('segment') || DEFAULT_FILTERS.segment,
-    goal: params.get('goal') || DEFAULT_FILTERS.goal,
+    snapshotId: parseValue(snapshotId, snapshotIds, DEFAULT_FILTERS.snapshotId),
+    geography: parseValue(params.get('geo'), geographies, DEFAULT_FILTERS.geography),
+    segment: parseValue(params.get('segment'), segments, DEFAULT_FILTERS.segment),
+    goal: parseValue(params.get('goal'), goals, DEFAULT_FILTERS.goal),
     platformIds: platforms === null ? [...DEFAULT_FILTERS.platformIds] : parseList(platforms, platformIds),
     confidences: confidence === null ? [...DEFAULT_FILTERS.confidences] : parseList(confidence, DEFAULT_CONFIDENCES),
   }

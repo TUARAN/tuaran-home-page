@@ -12,6 +12,11 @@ assert.equal(parsed.geography, 'us')
 assert.deepEqual(parsed.platformIds, ['x', 'weibo'])
 assert.deepEqual(parsed.confidences, ['high', 'disputed'])
 
+const invalidDimensions = parseFilterParams(new URLSearchParams('geo=invalid&segment=invalid&goal=invalid'), repository)
+assert.equal(invalidDimensions.geography, DEFAULT_FILTERS.geography)
+assert.equal(invalidDimensions.segment, DEFAULT_FILTERS.segment)
+assert.equal(invalidDimensions.goal, DEFAULT_FILTERS.goal)
+
 const serialized = serializeFilterParams({ ...DEFAULT_FILTERS, geography: 'us', platformIds: ['x', 'reddit'] })
 assert.equal(serialized.toString(), 'geo=us&platforms=x%2Creddit')
 

@@ -70,6 +70,7 @@ function FeaturedLink({ item }) {
 export default function HomeFeaturedReadingClient({ catalog }) {
   const router = useRouter()
   const searchInputRef = useRef(null)
+  const pageLoadHandledRef = useRef(false)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
   const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
   const [batchOffset, setBatchOffset] = useState(0)
@@ -117,11 +118,12 @@ export default function HomeFeaturedReadingClient({ catalog }) {
   }, [settings.autoRotateHours])
 
   useEffect(() => {
+    if (pageLoadHandledRef.current) return
+    pageLoadHandledRef.current = true
+
     const today = getLocalDayKey()
     const stored = readStoredBatchState()
-    const nextOffset = stored
-      ? stored.offset + (stored.day === today ? 0 : 1)
-      : 0
+    const nextOffset = stored ? stored.offset + 1 : 0
     setBatchOffset(nextOffset)
     storeBatchState(today, nextOffset)
     setBatchStateReady(true)
@@ -163,8 +165,35 @@ export default function HomeFeaturedReadingClient({ catalog }) {
     }
   }, [clearSearch, normalizedQuery, viewAllResults])
 
-  if (!settings.enabled || !items.length) return null
   const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled !== false).length
+
+  useEffect(() => {
+    const handlePageKeyDown = (event) => {
+      if (
+        event.key !== 'Enter'
+        || event.repeat
+        || event.defaultPrevented
+        || event.metaKey
+        || event.ctrlKey
+        || event.altKey
+        || event.shiftKey
+        || normalizedQuery
+        || changing
+        || eligibleCount <= items.length
+      ) return
+
+      const target = event.target
+      if (target instanceof Element && target.closest('a, button, input, textarea, select, [contenteditable="true"], [role="button"]')) return
+
+      event.preventDefault()
+      changeBatch()
+    }
+
+    window.addEventListener('keydown', handlePageKeyDown)
+    return () => window.removeEventListener('keydown', handlePageKeyDown)
+  }, [changeBatch, changing, eligibleCount, items.length, normalizedQuery])
+
+  if (!settings.enabled || !items.length) return null
 
   return (
     <section className="home-featured-reading home-section">
@@ -207,6 +236,9 @@ export default function HomeFeaturedReadingClient({ catalog }) {
             <IconRefresh size={15} className={`transition-transform duration-300 ${changing ? 'rotate-180' : 'group-hover:rotate-45'}`} aria-hidden="true" />
             <T zh="换一批" en="Refresh" />
           </button>
+          <p className="order-4 mb-0 basis-full text-right text-[11px] leading-4 text-[#969287] dark:text-[#748090]">
+            <T zh="按回车换一批" en="Press Enter for a new batch" />
+          </p>
         </div>
       </div>
       <div className={`home-reading-list transition-opacity duration-200 ${changing ? 'opacity-55' : 'opacity-100'}`} aria-live="polite">

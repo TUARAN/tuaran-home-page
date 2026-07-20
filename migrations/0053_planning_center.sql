@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS planning_milestones (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   FOREIGN KEY (direction_id, project_id)
-    REFERENCES planning_project_profiles(direction_id, project_id) ON DELETE RESTRICT
+    REFERENCES planning_project_profiles(direction_id, project_id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS planning_tasks (

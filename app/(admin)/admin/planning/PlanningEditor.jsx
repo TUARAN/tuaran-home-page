@@ -13,18 +13,21 @@ import usePlanningModal from './planningModalFocus'
 
 const ENTITY_LABELS = {
   direction: '方向',
+  'project-profile': '项目规划资料',
   milestone: '里程碑',
   task: '任务',
   event: '历史事件',
   decision: '决策',
+  dependency: '依赖关系',
 }
 const STATUS_OPTIONS = {
   direction: [['planned', '待规划'], ['active', '进行中'], ['paused', '已暂停'], ['completed', '已完成'], ['archived', '已归档']],
+  'project-profile': [['active', '进行中'], ['paused', '已暂停'], ['archived', '已归档']],
   milestone: [['planned', '待规划'], ['active', '进行中'], ['blocked', '受阻'], ['completed', '已完成'], ['cancelled', '已取消'], ['archived', '已归档']],
   task: [['planned', '待规划'], ['doing', '处理中'], ['blocked', '受阻'], ['done', '已完成'], ['cancelled', '已取消'], ['archived', '已归档']],
   decision: [['open', '待决策'], ['decided', '已决策'], ['superseded', '已替代']],
 }
-const DEFAULT_STATUS = { direction: 'planned', milestone: 'planned', task: 'planned', decision: 'open' }
+const DEFAULT_STATUS = { direction: 'planned', 'project-profile': 'active', milestone: 'planned', task: 'planned', decision: 'open' }
 const PRIORITIES = [['critical', '关键'], ['high', '高'], ['normal', '普通'], ['low', '低']]
 const EVENT_TYPES = [
   ['created', '创建'], ['started', '开始'], ['blocked', '阻塞'], ['completed', '完成'],
@@ -60,10 +63,10 @@ function TextArea({ label, name, value, onChange, required = false, rows = 3 }) 
   )
 }
 
-function SelectField({ label, name, value, onChange, options, required = false, emptyLabel }) {
+function SelectField({ label, name, value, onChange, options, required = false, emptyLabel, disabled = false }) {
   return (
     <Field label={label} name={name} required={required}>
-      <select id={`planning-editor-${name}`} name={name} value={value || ''} required={required} className={fieldClass()} onChange={onChange}>
+      <select id={`planning-editor-${name}`} name={name} value={value || ''} required={required} disabled={disabled} className={fieldClass()} onChange={onChange}>
         {emptyLabel != null ? <option value="">{emptyLabel}</option> : null}
         {options.map(([optionValue, optionLabel]) => <option key={optionValue} value={optionValue}>{optionLabel}</option>)}
       </select>
@@ -81,6 +84,10 @@ function errorCopy(error) {
     TARGET_BEFORE_START: '目标日期不能早于开始日期。',
     CONCLUSION_REQUIRED: '已决策记录必须填写最终结论。',
     MILESTONE_HAS_OPEN_TASKS: '这个里程碑仍有未完成任务，暂时不能标记为完成。',
+    DEPENDENCY_CYCLE: '这条依赖会形成循环，请调整前置事项。',
+    DEPENDENCY_TYPE_MISMATCH: '依赖关系只能连接两个里程碑或两个任务。',
+    DEPENDENCY_SELF_LINK: '不能让规划事项依赖自身。',
+    DEPENDENCY_ENDPOINT_NOT_FOUND: '依赖事项已不存在或已归档，请重新选择。',
     WRITE_CONFLICT: '记录已在别处更新，请保留输入并刷新后重试。',
   }
   return messages[error?.code] || error?.message || '保存失败，输入已保留，请重试。'
@@ -122,6 +129,23 @@ export default function PlanningEditor({
     )),
     [form.directionId, form.projectId, snapshot.milestones],
   )
+  const profileProjects = useMemo(() => {
+    const linkedProjectIds = new Set((snapshot.projects || []).map((item) => item.projectId))
+    return (snapshot.projectCatalog || []).filter((item) => (
+      item.id === form.projectId || !linkedProjectIds.has(item.id)
+    ))
+  }, [form.projectId, snapshot.projectCatalog, snapshot.projects])
+  const dependencyItems = useMemo(
+    () => form.fromType === 'task' ? (snapshot.tasks || []) : (snapshot.milestones || []),
+    [form.fromType, snapshot.milestones, snapshot.tasks],
+  )
+  const dependencyOptions = useMemo(() => dependencyItems.map((item) => {
+    const milestone = form.fromType === 'task'
+      ? (snapshot.milestones || []).find((candidate) => candidate.id === item.milestoneId)
+      : item
+    const project = (snapshot.projects || []).find((candidate) => candidate.projectId === milestone?.projectId)
+    return [item.id, `${project?.name ? `${project.name} · ` : ''}${item.title}`]
+  }), [dependencyItems, form.fromType, snapshot.milestones, snapshot.projects])
   const eventTargets = useMemo(() => {
     if (form.entityType === 'direction') return snapshot.directions || []
     if (form.entityType === 'project') return snapshot.projects || []
@@ -132,13 +156,16 @@ export default function PlanningEditor({
   }, [form.entityType, snapshot])
 
   function change(event) {
-    const { name, value } = event.target
+    const { checked, name, type, value } = event.target
+    const nextValue = type === 'checkbox' ? checked : value
     setError(null)
     setForm((current) => {
-      const next = { ...current, [name]: value }
-      if (name === 'directionId') return { ...next, projectId: '', milestoneId: '' }
+      const next = { ...current, [name]: nextValue }
+      if (name === 'directionId' && entity !== 'project-profile') return { ...next, projectId: '', milestoneId: '' }
       if (name === 'projectId') return { ...next, milestoneId: '' }
       if (name === 'entityType') return { ...next, entityId: '' }
+      if (name === 'fromType') return { ...next, fromId: '', toType: nextValue, toId: '' }
+      if (name === 'fromId' && current.toId === nextValue) return { ...next, toId: '' }
       return next
     })
   }
@@ -162,7 +189,11 @@ export default function PlanningEditor({
   }
 
   const isWorkItem = entity === 'direction' || entity === 'milestone' || entity === 'task'
-  const title = `${mode === 'edit' ? '编辑' : '新建'}${ENTITY_LABELS[entity] || '规划记录'}`
+  const title = entity === 'project-profile' && mode !== 'edit'
+    ? '关联项目'
+    : entity === 'dependency'
+      ? '添加依赖关系'
+      : `${mode === 'edit' ? '编辑' : '新建'}${ENTITY_LABELS[entity] || '规划记录'}`
   const openTaskIds = Array.isArray(error?.openTaskIds) ? error.openTaskIds : []
 
   return (
@@ -181,6 +212,29 @@ export default function PlanningEditor({
 
         <form className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
+            {entity === 'project-profile' ? (
+              <>
+                <SelectField
+                  label="所属方向"
+                  name="directionId"
+                  value={form.directionId}
+                  onChange={change}
+                  required
+                  emptyLabel="请选择方向"
+                  options={(snapshot.directions || []).map((item) => [item.id, item.title])}
+                />
+                <SelectField
+                  label="项目台账记录"
+                  name="projectId"
+                  value={form.projectId}
+                  onChange={change}
+                  required
+                  disabled={mode === 'edit'}
+                  emptyLabel="请选择尚未关联的项目"
+                  options={profileProjects.map((item) => [item.id, item.name || item.id])}
+                />
+              </>
+            ) : null}
             {entity === 'milestone' || entity === 'task' || entity === 'decision' ? (
               <SelectField
                 label="所属方向"
@@ -231,10 +285,43 @@ export default function PlanningEditor({
               </>
             ) : null}
 
-            <TextInput label="标题" name="title" value={form.title} onChange={change} required />
+            {entity === 'dependency' ? (
+              <>
+                <SelectField
+                  label="依赖事项类型"
+                  name="fromType"
+                  value={form.fromType}
+                  onChange={change}
+                  disabled={Boolean(context.fromId)}
+                  options={[["milestone", '里程碑'], ["task", '任务']]}
+                />
+                <SelectField
+                  label="需要等待的事项"
+                  name="fromId"
+                  value={form.fromId}
+                  onChange={change}
+                  disabled={Boolean(context.fromId)}
+                  required
+                  emptyLabel="请选择需要等待的事项"
+                  options={dependencyOptions}
+                />
+                <SelectField
+                  label="前置事项"
+                  name="toId"
+                  value={form.toId}
+                  onChange={change}
+                  required
+                  emptyLabel="请选择前置事项"
+                  options={dependencyOptions.filter(([id]) => id !== form.fromId)}
+                />
+              </>
+            ) : null}
+
+            {entity !== 'project-profile' && entity !== 'dependency' ? <TextInput label="标题" name="title" value={form.title} onChange={change} required /> : null}
             {entity === 'direction' ? <TextArea label="方向愿景" name="description" value={form.description} onChange={change} /> : null}
             {entity === 'direction' ? <TextArea label="本期北极星" name="northStar" value={form.northStar} onChange={change} /> : null}
-            {entity === 'milestone' || entity === 'task' || entity === 'event' ? <TextArea label="说明" name="description" value={form.description} onChange={change} /> : null}
+            {entity === 'project-profile' ? <TextArea label="规划摘要" name="summary" value={form.summary} onChange={change} /> : null}
+            {entity === 'milestone' || entity === 'task' || entity === 'event' || entity === 'dependency' ? <TextArea label="说明" name="description" value={form.description} onChange={change} /> : null}
             {entity === 'milestone' ? <TextArea label="成功标准" name="successCriteria" value={form.successCriteria} onChange={change} /> : null}
             {entity === 'task' ? <TextInput label="负责人" name="assignee" value={form.assignee} onChange={change} /> : null}
             {entity === 'task' ? <TextArea label="备注" name="note" value={form.note} onChange={change} /> : null}
@@ -245,12 +332,19 @@ export default function PlanningEditor({
             {entity === 'decision' ? <TextArea label="判断理由" name="rationale" value={form.rationale} onChange={change} /> : null}
             {entity === 'decision' ? <TextArea label="影响范围" name="impact" value={form.impact} onChange={change} /> : null}
 
-            {STATUS_OPTIONS[entity] ? <SelectField label="状态" name="status" value={form.status} onChange={change} options={STATUS_OPTIONS[entity]} /> : null}
+            {entity === 'project-profile' ? <SelectField label="规划状态" name="planningStatus" value={form.planningStatus} onChange={change} options={STATUS_OPTIONS[entity]} /> : null}
+            {entity !== 'project-profile' && STATUS_OPTIONS[entity] ? <SelectField label="状态" name="status" value={form.status} onChange={change} options={STATUS_OPTIONS[entity]} /> : null}
             {isWorkItem ? <SelectField label="优先级" name="priority" value={form.priority} onChange={change} options={PRIORITIES} /> : null}
+            {entity === 'project-profile' ? (
+              <label className="flex items-center gap-2 text-sm font-medium" htmlFor="planning-editor-isFocus">
+                <input id="planning-editor-isFocus" name="isFocus" type="checkbox" checked={Boolean(form.isFocus)} onChange={change} />
+                设为当前焦点项目
+              </label>
+            ) : null}
 
             {entity === 'task' ? <TextInput label="计划日期" name="plannedAt" value={form.plannedAt} onChange={change} type="date" /> : null}
-            {isWorkItem ? <TextInput label="开始日期" name="startAt" value={form.startAt} onChange={change} type="date" /> : null}
-            {isWorkItem ? <TextInput label="目标日期" name="targetAt" value={form.targetAt} onChange={change} type="date" /> : null}
+            {isWorkItem || entity === 'project-profile' ? <TextInput label="开始日期" name="startAt" value={form.startAt} onChange={change} type="date" /> : null}
+            {isWorkItem || entity === 'project-profile' ? <TextInput label="目标日期" name="targetAt" value={form.targetAt} onChange={change} type="date" /> : null}
             {isWorkItem ? <TextInput label="完成日期" name="completedAt" value={form.completedAt} onChange={change} type="date" /> : null}
             {entity === 'event' ? <TextInput label="发生日期" name="occurredAt" value={form.occurredAt} onChange={change} type="date" /> : null}
             {entity === 'decision' ? <TextInput label="决策日期" name="decidedAt" value={form.decidedAt} onChange={change} type="date" /> : null}

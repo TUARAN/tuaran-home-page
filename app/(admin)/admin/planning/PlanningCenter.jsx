@@ -4,25 +4,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { AdminButton, AdminPage } from '../../components/ui'
 import PlanningEditor from './PlanningEditor'
+import PlanningHistory from './PlanningHistory'
+import PlanningRoadmap from './PlanningRoadmap'
+import PlanningTree from './PlanningTree'
 import TriStateOverview from './TriStateOverview'
 import usePlanningModal from './planningModalFocus'
 import { PLANNING_TABS, PLANNING_WINDOWS, planningRequest } from './planningUi'
 
-const EMPTY_SNAPSHOT = { directions: [], stats: {} }
+const EMPTY_SNAPSHOT = {
+  directions: [], projects: [], projectCatalog: [], milestones: [], tasks: [],
+  events: [], decisions: [], dependencies: [], triState: {}, stats: {},
+}
 
 function errorMessage(error) {
   if (error?.code === 'DB_UNAVAILABLE') return '规划数据暂时不可用，请稍后重试。'
   if (error?.code === 'INVALID_WINDOW') return '时间窗口无效，已保留当前页面数据。'
   return error?.message || '加载规划中心时出现问题，请重试。'
-}
-
-function EmptyTab({ tab }) {
-  return (
-    <section className="rounded-xl border border-dashed px-4 py-8 text-sm leading-7 text-[var(--admin-muted)]">
-      <h2 className="font-medium text-[var(--admin-ink)]">{tab.label}</h2>
-      <p className="mb-0 mt-1">此视图将在下一步补齐详细内容。当前仍可切换时间窗口并刷新规划快照。</p>
-    </section>
-  )
 }
 
 const entityTypes = [
@@ -122,8 +119,27 @@ export default function PlanningCenter() {
   }, [directionId])
 
   const openEdit = useCallback((item) => {
-    if (!['direction', 'milestone', 'task'].includes(item.entityType)) return
+    if (!['direction', 'project-profile', 'milestone', 'task'].includes(item.entityType)) return
     setEditor({ mode: 'edit', entity: item.entityType, initialValue: item, context: {} })
+  }, [])
+
+  const openLinkProject = useCallback((direction) => {
+    setEditor({
+      mode: 'create',
+      entity: 'project-profile',
+      initialValue: {},
+      context: { directionId: direction.id },
+    })
+  }, [])
+
+  const openDependency = useCallback((item) => {
+    const fromType = item.entityType === 'task' ? 'task' : 'milestone'
+    setEditor({
+      mode: 'create',
+      entity: 'dependency',
+      initialValue: {},
+      context: { fromType, fromId: item.id, toType: fromType },
+    })
   }, [])
 
   const saveEditor = useCallback(async (payload) => {
@@ -137,10 +153,12 @@ export default function PlanningCenter() {
     } else {
       const action = {
         direction: 'create-direction',
+        'project-profile': 'upsert-project-profile',
         milestone: 'create-milestone',
         task: 'create-task',
         event: 'create-event',
         decision: 'create-decision',
+        dependency: 'create-dependency',
       }[editor.entity]
       await mutate('/api/admin/planning', {
         method: 'POST',
@@ -150,6 +168,22 @@ export default function PlanningCenter() {
     }
     setEditor(null)
   }, [editor, mutate])
+
+  const archiveItem = useCallback(async (item) => {
+    const entity = item.entityType
+    const changes = entity === 'project-profile'
+      ? { planningStatus: 'archived', archivedAt: Date.now() }
+      : { status: 'archived', archivedAt: Date.now() }
+    try {
+      await mutate('/api/admin/planning', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity, id: item.id, changes }),
+      })
+    } catch (archiveError) {
+      setError(archiveError)
+    }
+  }, [mutate])
 
   const changeDirection = useCallback((nextDirectionId) => {
     setDirectionId(nextDirectionId)
@@ -222,7 +256,19 @@ export default function PlanningCenter() {
                 onEdit={openEdit}
                 onCreate={openCreate}
               />
-            ) : <EmptyTab tab={tab} />}
+            ) : null}
+            {tab.id === 'roadmap' && snapshot ? <PlanningRoadmap snapshot={visibleSnapshot} onEdit={openEdit} /> : null}
+            {tab.id === 'tree' && snapshot ? (
+              <PlanningTree
+                snapshot={visibleSnapshot}
+                onEdit={openEdit}
+                onArchive={archiveItem}
+                onCreate={openCreate}
+                onLinkProject={openLinkProject}
+                onCreateDependency={openDependency}
+              />
+            ) : null}
+            {tab.id === 'history' && snapshot ? <PlanningHistory snapshot={visibleSnapshot} /> : null}
           </div>
         ))}
           </div>

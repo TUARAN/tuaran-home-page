@@ -57,7 +57,7 @@ export default function ScaleTrends({ scale, onOpenEvidence }) {
       <h2 id="scale-title" className="mt-2 font-serif text-2xl font-semibold text-[#20231e] dark:text-gray-100">活跃规模与趋势</h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5a6056] dark:text-gray-400">只在指标、地域、周期和方法一致时画趋势；公司口径与第三方估算保持分行。</p>
 
-      <div className="mt-5 grid gap-4">
+      <div className="mt-5 grid min-w-0 gap-4 [&>*]:min-w-0">
         {SCALE_GROUPS.map(([metricId, label]) => {
           const group = groupByMetric.get(metricId)
           const rows = group?.rows || []
@@ -66,7 +66,7 @@ export default function ScaleTrends({ scale, onOpenEvidence }) {
           const series = scale.comparableSeries.filter((item) => item.rows[0]?.metricId === metricId)
 
           return (
-            <article key={metricId} className="border border-[#dfe2dc] bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+            <article key={metricId} className="min-w-0 border border-[#dfe2dc] bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-serif text-lg font-semibold text-[#272b25] dark:text-gray-200">{label}</h3>
                 {incompatible ? <span className="border border-amber-700/30 bg-amber-50 px-2 py-1 font-mono text-[9px] text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">不可直接比较</span> : null}

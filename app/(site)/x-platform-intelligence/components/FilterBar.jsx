@@ -1,30 +1,5 @@
 import { DEFAULT_FILTERS } from '../filters.mjs'
-
-const GEOGRAPHY_LABELS = {
-  global: '全球',
-  china: '中国',
-  eu: '欧盟',
-  us: '美国',
-  uk: '英国',
-}
-
-const SEGMENT_LABELS = {
-  all: '全部人群',
-  'adults-18-plus': '18 岁以上成年人',
-  'age-18-29': '18–29 岁',
-  'age-30-49': '30–49 岁',
-  'age-50-64': '50–64 岁',
-  'age-65-plus': '65 岁以上',
-  men: '男性',
-  women: '女性',
-  'income-under-30000': '年收入低于 3 万美元',
-  'income-30000-69999': '年收入 3–7 万美元',
-  'income-70000-99999': '年收入 7–10 万美元',
-  'income-100000-plus': '年收入 10 万美元以上',
-  'high-school-or-less': '高中及以下',
-  'some-college': '部分大学教育',
-  'college-graduate': '大学毕业',
-}
+import { geographyLabel, segmentLabel } from '../presentation.mjs'
 
 const GOAL_LABELS = {
   'technology-creator': '中文科技创作者',
@@ -89,10 +64,10 @@ export default function FilterBar({ repository, filters, onChange }) {
           {repository.snapshots.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
         </SelectControl>
         <SelectControl label="地区" value={filters.geography} onChange={(value) => setValue('geography', value)}>
-          {geographies.map((id) => <option key={id} value={id}>{GEOGRAPHY_LABELS[id] || id}</option>)}
+          {geographies.map((id) => <option key={id} value={id}>{geographyLabel(id)}</option>)}
         </SelectControl>
         <SelectControl label="人群" value={filters.segment} onChange={(value) => setValue('segment', value)}>
-          {segments.map((id) => <option key={id} value={id}>{SEGMENT_LABELS[id] || id}</option>)}
+          {segments.map((id) => <option key={id} value={id}>{segmentLabel(id)}</option>)}
         </SelectControl>
         <SelectControl label="目标" value={filters.goal} onChange={(value) => setValue('goal', value)}>
           {goals.map((id) => <option key={id} value={id}>{GOAL_LABELS[id] || id}</option>)}
@@ -136,9 +111,12 @@ function CheckboxGroup({ label, selectedCount, children }) {
       <summary className="cursor-pointer list-none px-3 py-2.5 text-xs font-medium text-[#4c5248] dark:text-gray-300">
         {label} · 已选 {selectedCount}
       </summary>
-      <div className="grid max-h-52 gap-2 overflow-auto border-t border-[#e0e3dc] p-3 dark:border-gray-800 sm:grid-cols-2">
-        {children}
-      </div>
+      <fieldset className="border-t border-[#e0e3dc] dark:border-gray-800">
+        <legend className="sr-only">{label}</legend>
+        <div className="grid max-h-52 gap-2 overflow-auto p-3 sm:grid-cols-2">
+          {children}
+        </div>
+      </fieldset>
     </details>
   )
 }

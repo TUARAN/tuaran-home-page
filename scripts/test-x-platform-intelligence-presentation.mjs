@@ -24,10 +24,18 @@ assert.equal(segmentLabel('news-major-or-minor-reason'), '将获取新闻视为�
 const scaleSource = await readFile(new URL('../app/(site)/x-platform-intelligence/components/ScaleTrends.jsx', import.meta.url), 'utf8')
 assert.ok(!scaleSource.includes('aria-labelledby={`series-'), 'scale SVG must not use the full series key as an IDREF')
 assert.match(scaleSource, /aria-label=/, 'scale SVG needs a direct accessible name')
+assert.match(scaleSource, /mt-5 grid min-w-0 gap-4 \[&>\*\]:min-w-0/, 'scale cards must shrink around their scrolling tables')
 
 const geoSource = await readFile(new URL('../app/(site)/x-platform-intelligence/components/GeoExplorer.jsx', import.meta.url), 'utf8')
 const clientSource = await readFile(new URL('../app/(site)/x-platform-intelligence/XPlatformIntelligenceClient.jsx', import.meta.url), 'utf8')
 assert.match(clientSource, /coverageGaps=\{geoCoverageGaps\}/, 'client must pass metric coverage gaps to geography')
+assert.match(clientSource, /\[&>\*\]:min-w-0/, 'module grid children must shrink so only table containers scroll')
 assert.match(geoSource, /gap\.reason/, 'geography empty state must show the precise coverage-gap reason')
+
+const filterSource = await readFile(new URL('../app/(site)/x-platform-intelligence/components/FilterBar.jsx', import.meta.url), 'utf8')
+assert.match(filterSource, /geographyLabel\(id\)/, 'geography options must use public-facing labels')
+assert.match(filterSource, /segmentLabel\(id\)/, 'segment options must use public-facing labels')
+assert.match(filterSource, /<fieldset/, 'checkbox collections need fieldset semantics')
+assert.match(filterSource, /<legend/, 'checkbox collections need an accessible group name')
 
 console.log('[x-intelligence:presentation] all assertions passed')

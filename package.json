@@ -25,7 +25,8 @@
     "research:style-audit": "node scripts/audit-research-style.mjs",
     "snapshot-memory": "node scripts/snapshot-memory.mjs",
     "mcp:stdio": "node tools/mcp-stdio-demo/server.mjs",
-    "mcp:stdio:check": "node scripts/test-mcp-stdio-demo.mjs"
+    "mcp:stdio:check": "node scripts/test-mcp-stdio-demo.mjs",
+    "test:planning": "node --test tests/planning/*.test.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.0",

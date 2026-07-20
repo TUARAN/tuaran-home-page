@@ -237,7 +237,7 @@ export default function HomeFeaturedReadingClient({ catalog }) {
             <T zh="换一批" en="Refresh" />
           </button>
           <p className="order-4 mb-0 basis-full text-right text-[11px] leading-4 text-[#969287] dark:text-[#748090]">
-            <T zh="按回车换一批" en="Press Enter for a new batch" />
+            <T zh="点击或回车～刷新内容～" en="Press Enter for a new batch" />
           </p>
         </div>
       </div>

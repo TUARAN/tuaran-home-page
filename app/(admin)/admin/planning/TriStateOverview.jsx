@@ -9,6 +9,7 @@ import {
 } from './planningUi'
 
 const PRIORITY_META = {
+  critical: { label: '关键', tone: 'danger' },
   high: { label: '高优先级', tone: 'danger' },
   normal: { label: '普通', tone: 'neutral' },
   low: { label: '低优先级', tone: 'neutral' },

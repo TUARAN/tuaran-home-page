@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { AdminButton, AdminPage } from '../../components/ui'
 import PlanningEditor from './PlanningEditor'
 import TriStateOverview from './TriStateOverview'
+import usePlanningModal from './planningModalFocus'
 import { PLANNING_TABS, PLANNING_WINDOWS, planningRequest } from './planningUi'
 
 const EMPTY_SNAPSHOT = { directions: [], stats: {} }
@@ -32,17 +33,21 @@ const entityTypes = [
   { id: 'decision', label: '决策', description: '保存背景、结论、理由与影响。' },
 ]
 
-function QuickAddChooser({ onChoose, onClose }) {
+function QuickAddChooser({ backgroundRef, onChoose, onClose }) {
+  const dialogRef = useRef(null)
+  const initialFocusRef = useRef(null)
+  usePlanningModal({ dialogRef, initialFocusRef, backgroundRef, onClose })
+
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="planning-quick-add-title">
-      <button type="button" className="absolute inset-0 bg-black/35" aria-label="关闭快速添加" onClick={onClose} />
+    <div ref={dialogRef} className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="planning-quick-add-title">
+      <button type="button" tabIndex={-1} className="absolute inset-0 bg-black/35" aria-label="关闭快速添加" onClick={onClose} />
       <section className="absolute inset-x-0 bottom-0 rounded-t-2xl border bg-[var(--admin-surface)] p-4 shadow-2xl sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:w-[32rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="m-0 text-xs text-[var(--admin-muted)]">快速添加</p>
             <h2 id="planning-quick-add-title" className="m-0 mt-1 font-serif text-xl font-semibold">要创建什么？</h2>
           </div>
-          <AdminButton type="button" size="sm" variant="ghost" onClick={onClose}>关闭</AdminButton>
+          <button ref={initialFocusRef} type="button" className="rounded-lg border px-2.5 py-1.5 text-sm font-medium transition hover:bg-[var(--admin-surface-subtle)]" aria-label="关闭快速添加" onClick={onClose}>关闭</button>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {entityTypes.map((item) => (
@@ -66,6 +71,7 @@ export default function PlanningCenter() {
   const [error, setError] = useState(null)
   const [editor, setEditor] = useState(null)
   const [importPanel, setImportPanel] = useState(null)
+  const backgroundRef = useRef(null)
 
   const safeWindow = PLANNING_WINDOWS.some((item) => item.id === window) ? window : 'month'
 
@@ -151,7 +157,9 @@ export default function PlanningCenter() {
   }, [reload])
 
   return (
-    <AdminPage
+    <>
+      <div ref={backgroundRef} data-planning-modal-background>
+        <AdminPage
       title="规划中心"
       description="把全部项目的过去、现在与未来放在同一条主线上。"
       actions={(
@@ -164,8 +172,8 @@ export default function PlanningCenter() {
           </AdminButton>
         </>
       )}
-    >
-      <div className="flex flex-col gap-4">
+        >
+          <div className="flex flex-col gap-4">
         <div role="tablist" aria-label="规划中心视图" className="flex flex-wrap gap-2">
           {PLANNING_TABS.map((tab) => (
             <button
@@ -217,9 +225,20 @@ export default function PlanningCenter() {
             ) : <EmptyTab tab={tab} />}
           </div>
         ))}
+          </div>
+
+          {importPanel ? (
+            <div role="status" className="mt-4 rounded-xl border border-dashed px-4 py-3 text-sm">
+              初始化面板将在下一步提供预览与确认；当前不会执行导入。
+              <button type="button" className="ml-3 underline" onClick={() => setImportPanel(null)}>关闭</button>
+            </div>
+          ) : null}
+        </AdminPage>
       </div>
 
-      {editor?.mode === 'choose' ? <QuickAddChooser onChoose={(entity) => openCreate(entity)} onClose={() => setEditor(null)} /> : null}
+      {editor?.mode === 'choose' ? (
+        <QuickAddChooser backgroundRef={backgroundRef} onChoose={(entity) => openCreate(entity)} onClose={() => setEditor(null)} />
+      ) : null}
       {editor?.entity ? (
         <PlanningEditor
           key={`${editor.mode}:${editor.entity}:${editor.initialValue?.id || 'new'}`}
@@ -228,20 +247,14 @@ export default function PlanningCenter() {
           initialValue={editor.initialValue}
           context={editor.context}
           snapshot={visibleSnapshot}
+          backgroundRef={backgroundRef}
           onSave={saveEditor}
           onClose={() => setEditor(null)}
           onOpenTree={() => {
             setActiveTab('tree')
-            setEditor(null)
           }}
         />
       ) : null}
-      {importPanel ? (
-        <div role="status" className="mt-4 rounded-xl border border-dashed px-4 py-3 text-sm">
-          初始化面板将在下一步提供预览与确认；当前不会执行导入。
-          <button type="button" className="ml-3 underline" onClick={() => setImportPanel(null)}>关闭</button>
-        </div>
-      ) : null}
-    </AdminPage>
+    </>
   )
 }

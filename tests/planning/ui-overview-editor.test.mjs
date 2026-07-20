@@ -27,6 +27,7 @@ test('overview groups filtered items once using the snapshot generation time', a
     ],
     tasks: [],
     events: [
+      { id: 'event:direction-a', entityType: 'direction', entityId: 'direction:a', title: 'Direction A review', occurredAt: now - day },
       { id: 'event:a', entityType: 'milestone', entityId: 'milestone:a', title: 'Completed A', occurredAt: now - day },
       { id: 'event:decision-a', entityType: 'decision', entityId: 'decision:a', title: 'Recorded A decision', occurredAt: now - day },
       { id: 'event:b', entityType: 'milestone', entityId: 'milestone:b', title: 'Completed B', occurredAt: now - day },
@@ -57,7 +58,7 @@ test('overview groups filtered items once using the snapshot generation time', a
   const model = buildOverviewModel(snapshot, 'direction:a')
 
   assert.equal(model.northStar, 'Ship A')
-  assert.deepEqual(model.past.map((item) => item.id), ['event:a', 'event:decision-a'])
+  assert.deepEqual(model.past.map((item) => item.id), ['event:direction-a', 'event:a', 'event:decision-a'])
   assert.deepEqual(model.present.map((item) => item.id), ['task:now'])
   assert.deepEqual(model.future.near.map((item) => item.id), ['milestone:near'])
   assert.deepEqual(model.future.mid.map((item) => item.id), ['milestone:mid'])
@@ -132,10 +133,11 @@ test('planning request preserves structured conflict details for the editor', as
 })
 
 test('overview and editor sources retain accessibility and workflow contracts', async () => {
-  const [overview, editor, center] = await Promise.all([
+  const [overview, editor, center, modalFocus] = await Promise.all([
     readFile(new URL('../../app/(admin)/admin/planning/TriStateOverview.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(admin)/admin/planning/PlanningEditor.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(admin)/admin/planning/PlanningCenter.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(admin)/admin/planning/planningModalFocus.js', import.meta.url), 'utf8'),
   ])
 
   assert.match(overview, /<StatusPill/)
@@ -145,9 +147,30 @@ test('overview and editor sources retain accessibility and workflow contracts', 
   assert.match(editor, /aria-label="关闭编辑器"/)
   assert.match(editor, /openTaskIds/)
   assert.match(editor, /onOpenTree/)
+  assert.match(editor, /usePlanningModal/)
+  assert.match(editor, /ref=\{initialFocusRef\}/)
+  assert.match(editor, /\['critical', '关键'\]/)
+  assert.match(overview, /critical:\s*\{ label: '关键', tone: 'danger' \}/)
   assert.match(center, /entityTypes/)
+  assert.match(center, /usePlanningModal/)
+  assert.match(center, /data-planning-modal-background/)
+  assert.match(center, /ref=\{initialFocusRef\}/)
   assert.doesNotMatch(center, /project-profile[^\n]*快速添加/)
   assert.doesNotMatch(center, /dependency[^\n]*快速添加/)
   assert.match(center, /\{PLANNING_TABS\.map\(\(tab\) => \(/)
   assert.match(center, /hidden=\{activeTab !== tab\.id\}/)
+
+  const treeHandler = center.match(/onOpenTree=\{\(\) => \{([\s\S]*?)\}\}/)?.[1] || ''
+  assert.match(treeHandler, /setActiveTab\('tree'\)/)
+  assert.doesNotMatch(treeHandler, /setEditor\(null\)/)
+
+  assert.match(modalFocus, /document\.activeElement/)
+  assert.match(modalFocus, /initialFocusRef\.current\?\.focus\(\)/)
+  assert.match(modalFocus, /event\.key === 'Escape'/)
+  assert.match(modalFocus, /event\.key !== 'Tab'/)
+  assert.match(modalFocus, /event\.shiftKey/)
+  assert.match(modalFocus, /background\.inert = true/)
+  assert.match(modalFocus, /setAttribute\('aria-hidden', 'true'\)/)
+  assert.match(modalFocus, /removeEventListener\('keydown'/)
+  assert.match(modalFocus, /previouslyFocused\?\.focus\(\)/)
 })

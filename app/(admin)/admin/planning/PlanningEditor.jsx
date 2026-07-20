@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { IconAlertTriangle, IconX } from '@tabler/icons-react'
 
 import { AdminButton } from '../../components/ui'
@@ -9,6 +9,7 @@ import {
   buildPlanningPayload,
   validatePlanningEditor,
 } from './planningUi'
+import usePlanningModal from './planningModalFocus'
 
 const ENTITY_LABELS = {
   direction: '方向',
@@ -24,7 +25,7 @@ const STATUS_OPTIONS = {
   decision: [['open', '待决策'], ['decided', '已决策'], ['superseded', '已替代']],
 }
 const DEFAULT_STATUS = { direction: 'planned', milestone: 'planned', task: 'planned', decision: 'open' }
-const PRIORITIES = [['high', '高'], ['normal', '普通'], ['low', '低']]
+const PRIORITIES = [['critical', '关键'], ['high', '高'], ['normal', '普通'], ['low', '低']]
 const EVENT_TYPES = [
   ['created', '创建'], ['started', '开始'], ['blocked', '阻塞'], ['completed', '完成'],
   ['cancelled', '取消'], ['decision', '决策'], ['review', '复盘'], ['note', '备注'], ['imported', '导入'], ['corrected', '更正'],
@@ -91,6 +92,7 @@ export default function PlanningEditor({
   initialValue = {},
   context = {},
   snapshot,
+  backgroundRef,
   onSave,
   onClose,
   onOpenTree,
@@ -104,14 +106,10 @@ export default function PlanningEditor({
   }))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const dialogRef = useRef(null)
+  const initialFocusRef = useRef(null)
 
-  useEffect(() => {
-    function handleKeyDown(event) {
-      if (event.key === 'Escape' && !saving) onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, saving])
+  usePlanningModal({ dialogRef, initialFocusRef, backgroundRef, onClose, canClose: !saving })
 
   const projects = useMemo(
     () => (snapshot.projects || []).filter((item) => !form.directionId || item.directionId === form.directionId),
@@ -168,15 +166,15 @@ export default function PlanningEditor({
   const openTaskIds = Array.isArray(error?.openTaskIds) ? error.openTaskIds : []
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="planning-editor-title">
-      <button type="button" className="absolute inset-0 hidden bg-black/35 sm:block" aria-label="关闭编辑器遮罩" onClick={saving ? undefined : onClose} />
+    <div ref={dialogRef} className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="planning-editor-title">
+      <button type="button" tabIndex={-1} className="absolute inset-0 hidden bg-black/35 sm:block" aria-label="关闭编辑器遮罩" onClick={saving ? undefined : onClose} />
       <section className="fixed inset-0 flex w-full flex-col overflow-hidden bg-[var(--admin-surface)] shadow-2xl sm:inset-y-0 sm:left-auto sm:right-0 sm:max-w-xl">
         <header className="flex items-center justify-between gap-3 border-b px-4 py-4 sm:px-6">
           <div>
             <p className="m-0 text-xs text-[var(--admin-muted)]">{mode === 'edit' ? '更新规划正本' : '添加到规划正本'}</p>
             <h2 id="planning-editor-title" className="m-0 mt-1 font-serif text-xl font-semibold">{title}</h2>
           </div>
-          <button type="button" aria-label="关闭编辑器" className="rounded-lg border p-2 transition hover:bg-[var(--admin-surface-subtle)]" disabled={saving} onClick={onClose}>
+          <button ref={initialFocusRef} type="button" aria-label="关闭编辑器" className="rounded-lg border p-2 transition hover:bg-[var(--admin-surface-subtle)]" disabled={saving} onClick={onClose}>
             <IconX size={19} aria-hidden="true" />
           </button>
         </header>

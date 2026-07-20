@@ -4,7 +4,9 @@ import {
   SEO_STRATEGY_LAYERS,
   getSeoGovernanceSnapshot,
 } from '../../../../lib/seoGovernance'
+import { listPublishedArticlePosts } from '../../../../lib/articlePosts'
 import { AdminButton, AdminPage, Section, StatCard, StatusPill } from '../../components/ui'
+import SeoRegistryTable from './SeoRegistryTable'
 
 const STATUS_META = {
   stable: { label: '稳定运行', tone: 'success' },
@@ -43,14 +45,15 @@ function StrategyLayer({ layer }) {
   )
 }
 
-export default function SeoManagementConsole() {
-  const snapshot = getSeoGovernanceSnapshot()
+export default async function SeoManagementConsole() {
+  const publishedArticles = await listPublishedArticlePosts()
+  const snapshot = getSeoGovernanceSnapshot({ publishedArticles })
   const { totals, pages } = snapshot
 
   return (
     <AdminPage
       title="SEO 管理"
-      description="统一查看站点的索引、Metadata、结构化数据、Sitemap 和演进策略。当前以代码注册表为单一事实源；后台负责审计、解释和规划，避免未经评审直接修改线上 SEO。"
+      description="统一查看文章、分析、资源、多维页面的索引、Metadata、结构化数据、Sitemap 和演进策略。内容注册源与实际页面模板共同构成审计口径；后台负责发现问题和规划，避免未经评审直接修改线上 SEO。"
       actions={(
         <>
           <AdminButton href="/sitemap.xml" target="_blank" rel="noreferrer" size="sm">Sitemap</AdminButton>
@@ -60,9 +63,9 @@ export default function SeoManagementConsole() {
       )}
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="多维页面注册" value={totals.richPages} sub={`${totals.indexable} 个可索引 · ${totals.noindex} 个 noindex`} icon="analytics" tone="info" />
-        <StatCard label="Metadata 完整" value={`${totals.metadataReady}/${totals.richPages}`} sub="标题、摘要与 canonical" icon="articles" tone="success" />
-        <StatCard label="JSON-LD 完整" value={`${totals.jsonLdReady}/${totals.richPages}`} sub="Schema 与发布时间字段" icon="researchStyle" tone="success" />
+        <StatCard label="内容 SEO 注册" value={totals.pages} sub={`多维页面 ${totals.richPages} · 文章 ${totals.articles} · 分析 ${totals.research} · 资源 ${totals.resources}`} icon="analytics" tone="info" />
+        <StatCard label="Metadata 完整" value={`${totals.metadataReady}/${totals.pages}`} sub={`${totals.indexable} 个可索引 · ${totals.noindex} 个 noindex`} icon="articles" tone={totals.metadataReady === totals.pages ? 'success' : 'warning'} />
+        <StatCard label="JSON-LD 完整" value={`${totals.jsonLdReady}/${totals.pages}`} sub="Schema 与发布时间字段" icon="researchStyle" tone={totals.jsonLdReady === totals.pages ? 'success' : 'warning'} />
         <StatCard label="Canonical 唯一" value={totals.canonicalUnique ? '通过' : '冲突'} sub={`${totals.withImages} 个专属 OG 图 · ${totals.withKeywords} 个关键词集`} icon="audit" tone={totals.canonicalUnique ? 'success' : 'danger'} />
       </div>
 
@@ -104,43 +107,10 @@ export default function SeoManagementConsole() {
 
       <Section
         className="mt-5"
-        title="多维页面 SEO 注册表"
-        description="这里直接读取统一注册表；新增多维页面后，Metadata、JSON-LD 与 Sitemap 状态会同步出现。"
+        title="全站内容 SEO 注册表"
+        description="统一汇总多维页面、精选文章、分析和资源。支持按类型筛选与搜索；状态来自注册数据和实际页面模板，缺失项会如实标记。"
       >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-left text-[12px]">
-            <thead>
-              <tr className="border-b border-[#e4e5dc] text-[#85877c] dark:border-[#263142] dark:text-[#78869a]">
-                <th className="px-2 py-2 font-medium">页面</th>
-                <th className="px-2 py-2 font-medium">Canonical</th>
-                <th className="px-2 py-2 font-medium">Schema</th>
-                <th className="px-2 py-2 font-medium">修改日</th>
-                <th className="px-2 py-2 font-medium">索引</th>
-                <th className="px-2 py-2 font-medium">增强项</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pages.map((page) => (
-                <tr key={page.id} className="border-b border-[#eceee6] last:border-0 dark:border-[#1b2430]">
-                  <td className="max-w-[320px] px-2 py-3">
-                    <a href={page.href} target="_blank" rel="noreferrer" className="font-medium text-[#22231e] hover:underline dark:text-gray-200">{page.title}</a>
-                    <p className="mb-0 mt-1 font-mono text-[10px] text-[#94968a] dark:text-[#647185]">{page.category}</p>
-                  </td>
-                  <td className="px-2 py-3 font-mono text-[10.5px] text-[#67695d] dark:text-gray-400">{page.href}</td>
-                  <td className="px-2 py-3"><StatusPill tone="info" size="sm" icon={false}>{page.schemaType}</StatusPill></td>
-                  <td className="px-2 py-3 font-mono text-[10.5px] text-[#67695d] dark:text-gray-400">{page.date}</td>
-                  <td className="px-2 py-3"><StatusPill tone={page.indexable ? 'success' : 'neutral'} size="sm">{page.indexable ? 'index' : 'noindex'}</StatusPill></td>
-                  <td className="px-2 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      <StatusPill tone={page.hasImage ? 'success' : 'neutral'} size="sm" icon={false}>{page.hasImage ? 'OG 图' : '默认图'}</StatusPill>
-                      <StatusPill tone={page.hasKeywords ? 'info' : 'neutral'} size="sm" icon={false}>{page.hasKeywords ? '关键词' : '无关键词集'}</StatusPill>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SeoRegistryTable pages={pages} />
       </Section>
 
       <Section className="mt-5" title="变更治理清单" description="把页面生命周期里的 SEO 动作固定下来，减少遗漏和互相冲突。">

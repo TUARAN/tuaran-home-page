@@ -157,3 +157,6 @@ private/
 
 # Isolated feature worktrees
 .worktrees/
+
+# Isolated feature worktrees
+.worktrees/

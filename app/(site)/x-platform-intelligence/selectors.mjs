@@ -97,8 +97,15 @@ export function selectScaleTrends(repository, filters) {
 
 export function selectGeoRows(repository, filters) {
   const sourceById = new Map(repository.sources.map((item) => [item.id, item]))
-  return filterObservations(repository, filters)
-    .filter((row) => row.metricId === 'country-share' || row.metricId === 'internet-penetration')
+  return repository.observations
+    .filter((row) => (
+      row.snapshotId === filters.snapshotId
+      && filters.platformIds.includes(row.platformId)
+      && filters.confidences.includes(row.confidence)
+      && (row.metricId === 'country-share' || row.metricId === 'internet-penetration')
+      && (filters.geography === 'global' ? row.geography !== 'global' : row.geography === filters.geography)
+      && (filters.segment === 'all' || row.segments.includes(filters.segment))
+    ))
     .map((row) => {
       const source = sourceById.get(row.sourceId)
       return {
@@ -113,6 +120,7 @@ export function selectGeoRows(repository, filters) {
         sourceId: row.sourceId,
         sourceTitle: source?.title || '',
         sourceUrl: source?.url || '',
+        editorNote: row.editorNote,
       }
     })
 }

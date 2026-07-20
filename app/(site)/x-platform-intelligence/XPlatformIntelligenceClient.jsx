@@ -44,6 +44,10 @@ export default function XPlatformIntelligenceClient() {
   const overview = useMemo(() => selectOverview(repository, filters), [filters])
   const scale = useMemo(() => selectScaleTrends(repository, filters), [filters])
   const geoRows = useMemo(() => selectGeoRows(repository, filters), [filters])
+  const geoCoverageGaps = useMemo(() => repository.coverageGaps.filter((gap) => (
+    filters.platformIds.includes(gap.platformId)
+    && (gap.metricId === 'country-share' || gap.metricId === 'internet-penetration')
+  )), [filters])
   const audienceGroups = useMemo(() => selectAudienceGroups(repository, filters), [filters])
 
   return (
@@ -76,7 +80,7 @@ export default function XPlatformIntelligenceClient() {
       <div className="mt-8 grid gap-5">
         <Overview overview={overview} onOpenEvidence={setEvidenceRef} />
         <ScaleTrends scale={scale} onOpenEvidence={setEvidenceRef} />
-        <GeoExplorer rows={geoRows} onOpenEvidence={setEvidenceRef} />
+        <GeoExplorer rows={geoRows} coverageGaps={geoCoverageGaps} onOpenEvidence={setEvidenceRef} />
         <AudienceProfile groups={audienceGroups} onOpenEvidence={setEvidenceRef} />
         {MODULES.map(([id, title]) => (
           <section

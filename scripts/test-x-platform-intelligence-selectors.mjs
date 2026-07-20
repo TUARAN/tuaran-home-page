@@ -66,18 +66,26 @@ assert.equal(incompatibleSeries.length, 2)
 assert.ok(incompatibleSeries.every((series) => series.rows.length === 1))
 
 assert.ok(selectGeoRows(repository, DEFAULT_FILTERS).every((row) => row.metricId === 'country-share' || row.metricId === 'internet-penetration'))
+const productionGeoRows = selectGeoRows(repository, DEFAULT_FILTERS)
+assert.ok(productionGeoRows.length >= 3)
+assert.deepEqual(new Set(productionGeoRows.map((row) => row.country)), new Set(['us', 'japan', 'uk']))
+assert.ok(productionGeoRows.every((row) => row.country !== 'global'))
+assert.ok(productionGeoRows.every((row) => typeof row.editorNote === 'string' && row.editorNote.includes('not MAU')))
 const geoRepository = structuredClone(repository)
 geoRepository.observations.push({
   ...geoRepository.observations.find((row) => row.id === 'x-us-ad-reach-2025-01'),
   id: 'x-us-country-share-test', metricId: 'country-share', value: 17.7, valueType: 'percentage',
   unit: 'percent', comparability: 'country-share-only', conflictGroupId: null,
 })
-const geoRow = selectGeoRows(geoRepository, { ...DEFAULT_FILTERS, geography: 'us' })[0]
+const geoRow = selectGeoRows(geoRepository, { ...DEFAULT_FILTERS, geography: 'us' })
+  .find((row) => row.observationId === 'x-us-country-share-test')
 assert.equal(geoRow.periodStart, '2025-01-01')
 assert.equal(geoRow.periodEnd, '2025-01-31')
 assert.equal(geoRow.sourceUrl, 'https://datareportal.com/essential-x-stats')
 
 assert.ok(selectAudienceGroups(repository, { ...DEFAULT_FILTERS, geography: 'us' }).every((group) => group.geography === 'us'))
+assert.ok(selectAudienceGroups(repository, { ...DEFAULT_FILTERS, geography: 'us' })
+  .some((group) => group.metricId === 'news-use-rate'))
 const audienceRepository = structuredClone(repository)
 const audienceBase = audienceRepository.observations.find((row) => row.id === 'x-us-age-18-29-use-2025')
 audienceRepository.observations.push({

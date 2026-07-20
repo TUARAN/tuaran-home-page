@@ -6,7 +6,7 @@ import { confidenceLabel, formatMetricValue, formatPeriod, geographyLabel } from
 
 const METRICS = [
   ['country-share', '国家受众占比'],
-  ['internet-penetration', '互联网人口渗透率'],
+  ['internet-penetration', '广告触达 / 当地互联网用户'],
 ]
 
 const MAP_POINTS = {
@@ -17,8 +17,10 @@ const MAP_POINTS = {
   china: [77, 44],
 }
 
-export default function GeoExplorer({ rows, onOpenEvidence }) {
-  const [metricId, setMetricId] = useState('country-share')
+export default function GeoExplorer({ rows, coverageGaps, onOpenEvidence }) {
+  const [metricId, setMetricId] = useState(() => (
+    rows.some((row) => row.metricId === 'country-share') ? 'country-share' : 'internet-penetration'
+  ))
   const [sort, setSort] = useState({ key: 'value', direction: 'desc' })
   const visibleRows = useMemo(() => {
     const selected = rows.filter((row) => row.metricId === metricId)
@@ -29,6 +31,7 @@ export default function GeoExplorer({ rows, onOpenEvidence }) {
       return sort.direction === 'asc' ? order : -order
     })
   }, [metricId, rows, sort])
+  const activeGaps = coverageGaps.filter((gap) => gap.metricId === metricId)
 
   const changeSort = (key) => {
     setSort((current) => ({ key, direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc' }))
@@ -88,9 +91,15 @@ export default function GeoExplorer({ rows, onOpenEvidence }) {
             )
           })}
           {visibleRows.length === 0 ? (
-            <p className="absolute inset-x-6 bottom-6 border border-dashed border-[#c6cbc3] bg-[#fbfcf8]/90 p-3 text-center text-xs leading-5 text-[#6f756b] dark:border-gray-700 dark:bg-gray-950/90 dark:text-gray-500">
-              当前筛选下没有这一指标的国家观察值。
-            </p>
+            <div className="absolute inset-x-6 bottom-6 border border-dashed border-[#c6cbc3] bg-[#fbfcf8]/95 p-3 text-xs leading-5 text-[#6f756b] dark:border-gray-700 dark:bg-gray-950/95 dark:text-gray-500">
+              {activeGaps.length > 0 ? activeGaps.map((gap) => (
+                <div key={gap.id}>
+                  <p>{gap.reason}</p>
+                  <p className="mt-1">{gap.impact}</p>
+                  <a href={gap.attemptedSourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block underline decoration-[#b8beb5] underline-offset-4">查看已核验来源</a>
+                </div>
+              )) : <p>当前筛选下没有这一指标的国家观察值。</p>}
+            </div>
           ) : null}
         </div>
 
@@ -128,6 +137,7 @@ export default function GeoExplorer({ rows, onOpenEvidence }) {
                   <td className="px-3 py-3 text-[#5c6359] dark:text-gray-400">
                     {row.sourceUrl ? <a href={row.sourceUrl} target="_blank" rel="noreferrer" className="underline decoration-[#b8beb5] underline-offset-4">{row.sourceTitle || row.sourceId}</a> : row.sourceId}
                     <span className="mt-1 block font-mono text-[9px]">{confidenceLabel(row.confidence)}</span>
+                    {row.editorNote ? <span className="mt-1 block max-w-xs text-[10px] leading-5">{row.editorNote}</span> : null}
                   </td>
                 </tr>
               ))}

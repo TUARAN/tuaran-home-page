@@ -81,6 +81,19 @@ assert.equal(X_INTELLIGENCE_REPOSITORY.comparisons.length, 12 * 16)
 assert.ok(X_INTELLIGENCE_REPOSITORY.observations.some((row) => row.platformId === 'x' && row.metricId === 'mau' && row.conflictGroupId === 'x-global-mau-2025'))
 assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => gap.platformId === 'jike'))
 
+for (const metricId of ['country-share', 'internet-penetration', 'news-use-rate']) {
+  const observations = X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.platformId === 'x' && row.metricId === metricId)
+  const gaps = X_INTELLIGENCE_REPOSITORY.coverageGaps.filter((gap) => gap.platformId === 'x' && gap.metricId === metricId)
+  assert.ok(observations.length > 0 || gaps.length > 0, `${metricId} must have production observations or a precise coverage gap`)
+  assert.ok(observations.every((row) => X_INTELLIGENCE_REPOSITORY.sources.some((source) => source.id === row.sourceId)))
+}
+
+assert.ok(X_INTELLIGENCE_REPOSITORY.observations.filter((row) => row.platformId === 'x' && row.metricId === 'internet-penetration').length >= 3)
+assert.ok(X_INTELLIGENCE_REPOSITORY.observations.some((row) => row.platformId === 'x' && row.metricId === 'news-use-rate' && row.geography === 'us'))
+assert.ok(X_INTELLIGENCE_REPOSITORY.coverageGaps.some((gap) => (
+  gap.platformId === 'x' && gap.metricId === 'country-share' && gap.reason && gap.attemptedSourceUrl && gap.impact
+)))
+
 const reviewerFailures = []
 const repositorySourceById = new Map(X_INTELLIGENCE_REPOSITORY.sources.map((source) => [source.id, source]))
 const knownComparisons = X_INTELLIGENCE_REPOSITORY.comparisons.filter((comparison) => comparison.rating !== 'unknown')

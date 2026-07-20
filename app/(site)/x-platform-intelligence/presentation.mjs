@@ -43,6 +43,8 @@ const SEGMENT_LABELS = {
   'some-college': '部分大学教育',
   'college-graduate': '大学毕业及以上',
   'news-users': '新闻用户',
+  'news-major-or-minor-reason': '将获取新闻视为主要或次要使用理由',
+  'x-users': 'X 用户',
   'ad-audience': '广告受众',
 }
 

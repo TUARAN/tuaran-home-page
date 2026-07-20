@@ -33,8 +33,8 @@ function MiniSeries({ series }) {
   }).join(' ')
 
   return (
-    <svg viewBox="0 0 184 84" role="img" aria-labelledby={`series-${series.key.replaceAll('\u0000', '-')}`} className="h-24 w-full max-w-xs">
-      <title id={`series-${series.key.replaceAll('\u0000', '-')}`}>可比较序列趋势：横轴为时间或来源，纵轴为指标数值</title>
+    <svg viewBox="0 0 184 84" role="img" aria-label="可比较序列趋势：横轴为时间或来源，纵轴为指标数值" className="h-24 w-full max-w-xs">
+      <title>可比较序列趋势</title>
       <line x1="22" y1="64" x2="166" y2="64" stroke="currentColor" opacity="0.35" />
       <line x1="22" y1="12" x2="22" y2="64" stroke="currentColor" opacity="0.35" />
       <polyline points={points} fill="none" stroke="#2f6f44" strokeWidth="2" />

@@ -9,6 +9,7 @@ import { getEvidenceBundle } from './model.mjs'
 import {
   selectAudienceGroups,
   selectComparisonMatrix,
+  selectEvidenceRows,
   selectGeoRows,
   selectOperationalInsights,
   selectOverview,
@@ -18,6 +19,7 @@ import AudienceProfile from './components/AudienceProfile'
 import ContentMechanics from './components/ContentMechanics'
 import CreatorPlaybook from './components/CreatorPlaybook'
 import EvidenceDrawer from './components/EvidenceDrawer'
+import EvidenceLedger from './components/EvidenceLedger'
 import FilterBar from './components/FilterBar'
 import GeoExplorer from './components/GeoExplorer'
 import Overview from './components/Overview'
@@ -26,10 +28,6 @@ import RiskRegister from './components/RiskRegister'
 import ScaleTrends from './components/ScaleTrends'
 
 const PAGE_URL = 'https://2aran.com/x-platform-intelligence'
-
-const MODULES = [
-  ['evidence', '完整证据账本'],
-]
 
 export default function XPlatformIntelligenceClient() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
@@ -61,6 +59,7 @@ export default function XPlatformIntelligenceClient() {
     goal: DEFAULT_FILTERS.goal,
   }), [filters])
   const comparisonMatrix = useMemo(() => selectComparisonMatrix(repository, filters), [filters])
+  const evidenceRows = useMemo(() => selectEvidenceRows(repository, filters), [filters])
   const evidenceBundle = useMemo(() => (
     evidenceRef ? getEvidenceBundle(repository, evidenceRef) : null
   ), [evidenceRef])
@@ -102,22 +101,12 @@ export default function XPlatformIntelligenceClient() {
         <CreatorPlaybook insights={operationalInsights} onOpenEvidence={setEvidenceRef} />
         <RiskRegister insights={riskInsights} onOpenEvidence={setEvidenceRef} />
         <PlatformMatrix matrix={comparisonMatrix} onOpenEvidence={setEvidenceRef} />
-        {MODULES.map(([id, title]) => (
-          <section
-            key={id}
-            id={id}
-            data-evidence-ref={id === 'evidence' && evidenceRef ? JSON.stringify(evidenceRef) : undefined}
-            aria-labelledby={`${id}-title`}
-            className="min-h-32 scroll-mt-24 border border-[#d9dcd7] bg-[#fbfcf8] p-5 dark:border-gray-800 dark:bg-gray-950/40"
-          >
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-[#8a8f84] dark:text-gray-600">
-              Module placeholder
-            </p>
-            <h2 id={`${id}-title`} className="mt-2 font-serif text-xl font-semibold text-[#20231e] dark:text-gray-200">
-              {title}
-            </h2>
-          </section>
-        ))}
+        <EvidenceLedger
+          rows={evidenceRows}
+          repository={repository}
+          snapshotId={filters.snapshotId}
+          onOpenEvidence={setEvidenceRef}
+        />
       </div>
       {evidenceRef ? (
         <EvidenceDrawer

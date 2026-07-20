@@ -1,5 +1,10 @@
 import PageContainer from '../components/PageContainer'
-import { CHANGELOG as changelog } from '../../../lib/changelogData'
+import {
+  CHANGELOG as changelog,
+  CHANGELOG_TOTAL_COMMITS as totalCommits,
+  EARLIEST_CHANGELOG as earliest,
+  LATEST_CHANGELOG as latest,
+} from '../../../lib/changelogData'
 
 export const dynamic = 'force-static'
 

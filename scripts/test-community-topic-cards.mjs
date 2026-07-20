@@ -11,11 +11,11 @@ const registrySource = await readFile(
   'utf8',
 )
 
-test('discussion topic subset contains only the three requested platforms', () => {
+test('discussion topic menu contains three platforms with compact copy', () => {
   assert.match(registrySource, /export const DISCUSSION_COMMUNITY_TOPICS/)
-  assert.match(registrySource, /shortLabel: 'X', shortDesc: '真实互动，一起增长。'/)
+  assert.match(registrySource, /shortLabel: 'X', shortDesc: '真实互动，互助增长。'/)
   assert.match(registrySource, /shortLabel: '小红书', shortDesc: '选题、标题与封面互评。'/)
-  assert.match(registrySource, /shortLabel: '掘金', shortDesc: '技术文章互审与共创。'/)
+  assert.match(registrySource, /shortLabel: '掘金', shortDesc: '技术文章互审共创。'/)
   assert.match(registrySource, /\.filter\(\(topic\) => DISCUSSION_TOPIC_COPY\[topic\.id\]\)/)
 })
 
@@ -26,4 +26,5 @@ test('discussion cards use compact content and a responsive three-column grid', 
   assert.match(componentSource, /md:grid-cols-3/)
   assert.doesNotMatch(componentSource, /discussion-topic-tag/)
   assert.doesNotMatch(componentSource, /进入专题/)
+  assert.doesNotMatch(componentSource, /topic\.tag/)
 })

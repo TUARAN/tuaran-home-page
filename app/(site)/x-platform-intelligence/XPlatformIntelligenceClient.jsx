@@ -1,19 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import SharePageButton from '../components/SharePageButton'
 import { X_INTELLIGENCE_REPOSITORY as repository } from './data.mjs'
 import { DEFAULT_FILTERS, parseFilterParams, serializeFilterParams } from './filters.mjs'
+import {
+  selectAudienceGroups,
+  selectGeoRows,
+  selectOverview,
+  selectScaleTrends,
+} from './selectors.mjs'
+import AudienceProfile from './components/AudienceProfile'
 import FilterBar from './components/FilterBar'
+import GeoExplorer from './components/GeoExplorer'
+import Overview from './components/Overview'
+import ScaleTrends from './components/ScaleTrends'
 
 const PAGE_URL = 'https://2aran.com/x-platform-intelligence'
 
 const MODULES = [
-  ['overview', '总览'],
-  ['scale', '活跃规模'],
-  ['geography', '国家与地区'],
-  ['audience', '用户画像'],
   ['content', '内容机制'],
   ['creator', '创作者经营'],
   ['comparison', '平台差异'],
@@ -23,7 +29,7 @@ const MODULES = [
 
 export default function XPlatformIntelligenceClient() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
-  const [evidenceRef] = useState(null)
+  const [evidenceRef, setEvidenceRef] = useState(null)
 
   useEffect(() => {
     setFilters(parseFilterParams(new URLSearchParams(window.location.search), repository))
@@ -35,6 +41,10 @@ export default function XPlatformIntelligenceClient() {
   }, [filters])
 
   const snapshot = repository.snapshots.find((item) => item.id === filters.snapshotId)
+  const overview = useMemo(() => selectOverview(repository, filters), [filters])
+  const scale = useMemo(() => selectScaleTrends(repository, filters), [filters])
+  const geoRows = useMemo(() => selectGeoRows(repository, filters), [filters])
+  const audienceGroups = useMemo(() => selectAudienceGroups(repository, filters), [filters])
 
   return (
     <main className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-10">
@@ -64,11 +74,15 @@ export default function XPlatformIntelligenceClient() {
       <FilterBar repository={repository} filters={filters} onChange={setFilters} />
 
       <div className="mt-8 grid gap-5">
+        <Overview overview={overview} onOpenEvidence={setEvidenceRef} />
+        <ScaleTrends scale={scale} onOpenEvidence={setEvidenceRef} />
+        <GeoExplorer rows={geoRows} onOpenEvidence={setEvidenceRef} />
+        <AudienceProfile groups={audienceGroups} onOpenEvidence={setEvidenceRef} />
         {MODULES.map(([id, title]) => (
           <section
             key={id}
             id={id}
-            data-evidence-ref={id === 'evidence' ? evidenceRef || undefined : undefined}
+            data-evidence-ref={id === 'evidence' && evidenceRef ? JSON.stringify(evidenceRef) : undefined}
             aria-labelledby={`${id}-title`}
             className="min-h-32 scroll-mt-24 border border-[#d9dcd7] bg-[#fbfcf8] p-5 dark:border-gray-800 dark:bg-gray-950/40"
           >

@@ -55,6 +55,23 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'ai-fomo-big-tree',
+    type: 'video',
+    title: '被 AI FOMO 围住时，先看看这棵树',
+    summary:
+      '今天上午，两个朋友先后找我聊 AI 焦虑：一个问最新的技术方向，一个问工具使用技巧。我想了想，竟然沉默了。怎么说呢，与其被这种 AI FOMO 情绪反复裹挟，不如先看看网友分享的这棵大树。其实，真没什么好焦虑的。至少到现在，我还没见过谁单靠“龙虾”或者智能体本身赚到钱；倒是见过不少人通过营销“龙虾”、营销智能体赚到钱。当然，倒卖 Token、卡、存储服务这类上游生意另说。技术会继续变，但焦虑没必要跟着日更。',
+    tags: ['AI 焦虑', 'AI FOMO', '智能体', '龙虾', '技术趋势', '生活观察'],
+    date: '2026-07-21',
+    time: '14:20',
+    src: '/feed/ai-fomo-big-tree-2026-07-21.mp4',
+    poster: '/feed/posters/ai-fomo-big-tree-2026-07-21.jpg',
+    aspect: '16/9',
+    source: {
+      label: 'Margaux / X',
+      href: 'https://x.com/Margaux91717615/status/2079209334366716051',
+    },
+  },
+  {
     id: 'codex-level-switch-effect',
     type: 'video',
     title: 'Codex 5.6 三档模型能力动效展示',

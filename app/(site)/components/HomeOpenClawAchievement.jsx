@@ -96,7 +96,7 @@ export default function HomeOpenClawAchievement() {
               ）
             </span>
           </span>
-          <strong>向全球 Star 数最多的开源软件项目 OpenClaw 提交的代码，已有 2 次成功被合并</strong>
+          <strong>开源贡献至全球 Star 数最多的开源软件项目 OpenClaw🦞，已有 2 次代码成功被合并。</strong>
         </span>
       </div>
 

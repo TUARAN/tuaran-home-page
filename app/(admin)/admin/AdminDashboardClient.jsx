@@ -244,22 +244,24 @@ export default function AdminDashboardClient() {
         </div>
       </Section>
 
-      <div className="mt-6">
-        <h2 className="mb-3 font-serif text-[1.05rem] font-semibold text-[#15140f] dark:text-gray-100">主站私有工具</h2>
-        <p className="mb-3 text-[12.5px] text-[#67695d] dark:text-gray-400">高频日常工具不迁入 admin 子域，此处仅作快捷入口。</p>
-        <div className="grid gap-2.5 sm:grid-cols-3">
-          {ADMIN_PRIVATE_TOOL_LINKS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg border border-dashed border-[#caccc0] bg-[#fafbf7] px-3.5 py-3 transition hover:border-[#a8aa9c] dark:border-[#2d3744] dark:bg-[#0d1218] dark:hover:border-[#4a5568]"
-            >
-              <p className="text-[13.5px] font-medium text-[#15140f] dark:text-gray-100">{item.label}</p>
-              <p className="mt-0.5 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{item.desc}</p>
-            </Link>
-          ))}
+      {ADMIN_PRIVATE_TOOL_LINKS.length ? (
+        <div className="mt-6">
+          <h2 className="mb-3 font-serif text-[1.05rem] font-semibold text-[#15140f] dark:text-gray-100">主站私有工具</h2>
+          <p className="mb-3 text-[12.5px] text-[#67695d] dark:text-gray-400">高频日常工具不迁入 admin 子域，此处仅作快捷入口。</p>
+          <div className="grid gap-2.5 sm:grid-cols-3">
+            {ADMIN_PRIVATE_TOOL_LINKS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-lg border border-dashed border-[#caccc0] bg-[#fafbf7] px-3.5 py-3 transition hover:border-[#a8aa9c] dark:border-[#2d3744] dark:bg-[#0d1218] dark:hover:border-[#4a5568]"
+              >
+                <p className="text-[13.5px] font-medium text-[#15140f] dark:text-gray-100">{item.label}</p>
+                <p className="mt-0.5 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{item.desc}</p>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </AdminPage>
   )
 }

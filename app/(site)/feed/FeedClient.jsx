@@ -227,7 +227,7 @@ function HeadlineCard({ item }) {
   const hasMedia = item.type === 'video' || item.type === 'image' || (item.type === 'link' && item.image)
 
   const text = (
-    <div className={`flex min-w-0 flex-col justify-start ${hasMedia ? 'p-4 md:p-0 lg:py-3' : 'lg:py-3'}`}>
+    <div className={`flex min-w-0 flex-col justify-start ${hasMedia ? 'p-4 md:p-0' : 'lg:py-3'}`}>
       <div className="flex items-center gap-2">
         <span
           className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em]"
@@ -250,11 +250,18 @@ function HeadlineCard({ item }) {
           {item.quote || item.summary}
         </blockquote>
       ) : item.summary ? (
-        <p className="mb-0 mt-4 text-[15px] leading-7 text-[var(--site-muted)]">{item.summary}</p>
+        <p
+          className="mb-0 mt-4 text-[15px] leading-7 text-[var(--site-muted)] lg:line-clamp-4"
+          title={item.summary}
+        >
+          {item.summary}
+        </p>
       ) : null}
       <PromptBlock prompt={item.prompt} />
       {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
-      <MetaRow item={item} />
+      <div className="mt-auto">
+        <MetaRow item={item} />
+      </div>
     </div>
   )
 
@@ -265,7 +272,7 @@ function HeadlineCard({ item }) {
       style={{ borderColor: `${accent}40` }}
     >
       {hasMedia ? (
-        <div className="grid min-w-0 gap-0 md:gap-5 lg:grid-cols-[1.45fr_minmax(320px,0.95fr)] lg:items-start lg:gap-7">
+        <div className="grid min-w-0 gap-0 md:gap-5 lg:grid-cols-[1.45fr_minmax(320px,0.95fr)] lg:items-stretch lg:gap-7">
           <div className="min-w-0">{media}</div>
           {text}
         </div>

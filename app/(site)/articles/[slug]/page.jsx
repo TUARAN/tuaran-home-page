@@ -271,10 +271,10 @@ export default async function ArticleDetailPage({ params }) {
       </Script>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-        <main className="min-w-0">
+        <main className="min-w-0 lg:contents">
       {enableDiaryToc ? (
         <>
-          <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
+          <header className="mb-8 min-w-0 border-b border-[#eee] pb-2 dark:border-gray-800 lg:col-span-2 lg:mb-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h1 className="text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
@@ -327,7 +327,7 @@ export default async function ArticleDetailPage({ params }) {
             </div>
           </header>
 
-          <div className="flex flex-col gap-6 md:flex-row">
+          <div className="min-w-0 flex flex-col gap-6 md:flex-row">
             <ArticleToc items={tocItems} title="目录" />
 
             <div className="min-w-0 flex-1">
@@ -405,7 +405,7 @@ export default async function ArticleDetailPage({ params }) {
         </>
       ) : (
         <>
-          <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
+          <header className="mb-8 min-w-0 border-b border-[#eee] pb-2 dark:border-gray-800 lg:col-span-2 lg:mb-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
@@ -459,7 +459,7 @@ export default async function ArticleDetailPage({ params }) {
             </div>
           </header>
 
-          <div className="flex flex-col gap-6 md:flex-row">
+          <div className="min-w-0 flex flex-col gap-6 md:flex-row">
             <ArticleToc items={tocItems} />
             <div className="min-w-0 flex-1">
           <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">

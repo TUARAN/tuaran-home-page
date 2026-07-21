@@ -1,6 +1,14 @@
 {
-  "updatedAt": "2026-07-21T02:57:24.836Z",
+  "updatedAt": "2026-07-21T05:56:43.997Z",
   "items": [
+    {
+      "topic": "产品",
+      "title": "腾讯混元推出Hyra-1.0递归自我改进研究智能体",
+      "summary": "腾讯混元推出Hyra-1.0，一个能递归自我改进的研究智能体，在NanoChat等三项任务上均超越Recursive公开结果。Hyra在55个数学开放问题中刷新29个历史最好结果，并设计出仅含15个可训练参数即可完成10位数加法的Transformer。所有产物已在GitHub开源。",
+      "source": "公众号：腾讯混元",
+      "href": "https://mp.weixin.qq.com/s/upwDQ_6ZfmszBUcRQjR_Dg",
+      "publishedAt": "2026-07-21T03:33:08.000Z"
+    },
     {
       "topic": "行业",
       "title": "Anthropic 与作家群体15亿美元版权和解获批",
@@ -128,14 +136,6 @@
       "source": "IT之家（RSS）",
       "href": "https://www.ithome.com/0/979/017.htm",
       "publishedAt": "2026-07-20T07:00:15.000Z"
-    },
-    {
-      "topic": "模型",
-      "title": "面壁智能发布首个具身智能成果 MiniCPM-Robot 系列模型，含 1.5B VLA 与 0.9B 跟踪模型",
-      "summary": "面壁智能联合 OpenBMB 发布并开源 MiniCPM-Robot 系列，包括通用 VLA 模型 MiniCPM-RobotManip（1.5B 参数）与移动跟踪模型 MiniCPM-RobotTrack（0.9B 参数）。",
-      "source": "公众号：面壁智能（MiniCPM）",
-      "href": "https://mp.weixin.qq.com/s/KwBAC8TFa846WFj-DHrgIQ",
-      "publishedAt": "2026-07-20T03:54:08.000Z"
     }
   ]
 }

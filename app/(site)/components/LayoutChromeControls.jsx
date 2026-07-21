@@ -10,14 +10,14 @@ import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
 
-const HIDE_CHROME_PATHS = new Set(['/about', '/web-llm', '/web-llm/embed', '/agent-world-cup'])
+const HIDE_CHROME_PATHS = new Set(['/about', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
 
 function useChromeVisibility() {
   const pathname = usePathname()
   const richPage = getRichPageByPath(pathname)
   const isFeaturePage = getRichPagePresentation(richPage).id === 'feature'
   const hideChrome = HIDE_CHROME_PATHS.has(pathname) || isFeaturePage
-  const showHomeButton = isFeaturePage || pathname === '/agent-world-cup'
+  const showHomeButton = isFeaturePage || pathname === '/archives/agent-world-cup'
 
   return { hideChrome, showHomeButton, pathname }
 }

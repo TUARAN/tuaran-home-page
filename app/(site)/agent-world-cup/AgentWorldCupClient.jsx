@@ -58,9 +58,13 @@ const TABS = [
 ]
 
 /* ━━━ countdown hook ━━━ */
-function useCountdown() {
+function useCountdown(archived = false) {
   const [diff, setDiff] = useState('')
   useEffect(() => {
+    if (archived) {
+      setDiff('已结束')
+      return
+    }
     const target = new Date('2026-07-19T15:00:00-04:00')
     function tick() {
       const now = new Date()
@@ -78,7 +82,7 @@ function useCountdown() {
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [archived])
   return diff
 }
 
@@ -130,7 +134,7 @@ function BgCanvas() {
 }
 
 /* ━━━ fetch hook ━━━ */
-function useWorldCupData() {
+function useWorldCupData({ archived = false } = {}) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
@@ -151,10 +155,11 @@ function useWorldCupData() {
 
   useEffect(() => {
     load()
-    // 每 60s 自动刷新
+    if (archived) return undefined
+    // 活动进行中时每 60s 自动刷新；归档页只读取最后一次采集结果。
     const id = setInterval(load, 60_000)
     return () => clearInterval(id)
-  }, [load])
+  }, [archived, load])
 
   return { data, loading, err, reload: load }
 }
@@ -165,7 +170,7 @@ function usePredict() {
   return useContext(PredictionCtx)
 }
 
-function usePredictionsState() {
+function usePredictionsState({ archived = false } = {}) {
   const { user, loading: userLoading } = useSessionAccount()
   const [state, setState] = useState({ authed: false, reward: 10, picks: {}, balance: 0, loading: true })
   const [busyFixture, setBusyFixture] = useState(0)
@@ -188,8 +193,12 @@ function usePredictionsState() {
   }, [])
 
   useEffect(() => {
+    if (archived) {
+      setState((current) => ({ ...current, loading: false }))
+      return
+    }
     if (!userLoading) load()
-  }, [userLoading, user, load])
+  }, [archived, userLoading, user, load])
 
   const submit = useCallback(async (fixtureId, pick) => {
     setHint('')
@@ -228,7 +237,7 @@ function usePredictionsState() {
     }
   }, [])
 
-  return { ...state, busyFixture, hint, submit, reload: load }
+  return { ...state, archived, busyFixture, hint, submit, reload: load }
 }
 
 /* ━━━ components ━━━ */
@@ -273,8 +282,8 @@ function MetaBar({ data }) {
   )
 }
 
-function HeroSection({ data }) {
-  const countdown = useCountdown()
+function HeroSection({ data, archived = false }) {
+  const countdown = useCountdown(archived)
   const skel = data?.skeleton
   return (
     <div className="relative overflow-hidden py-16 md:py-24 px-4 text-center">
@@ -304,7 +313,7 @@ function HeroSection({ data }) {
             color: D.gold,
           }}
         >
-          决赛倒计时 &nbsp;{countdown}
+          {archived ? '赛事已结束 · 页面已归档' : <>决赛倒计时 &nbsp;{countdown}</>}
         </div>
       </div>
       <div className="flex justify-center gap-8 mt-10 flex-wrap">
@@ -347,7 +356,7 @@ const PICK_LABEL = { home: '主胜', draw: '平局', away: '客胜' }
 
 function PredictRow({ m }) {
   const pred = usePredict()
-  if (!pred) return null
+  if (!pred || pred.archived) return null
   const bucket = statusBucket(m)
   const mine = pred.picks?.[m.fixture_id]
   const busy = pred.busyFixture === m.fixture_id
@@ -942,6 +951,16 @@ function MilestoneTicker({ data }) {
 function PredictBanner() {
   const pred = usePredict()
   if (!pred) return null
+  if (pred.archived) {
+    return (
+      <div
+        className="mb-6 rounded-lg px-4 py-3 text-[12px] leading-6"
+        style={{ color: D.text2, background: hexToRgba(D.gold, 0.08), border: `1px solid ${hexToRgba(D.gold, 0.25)}` }}
+      >
+        <strong style={{ color: D.gold }}>活动归档</strong> · 赛事与竞猜均已结束。页面保留最后一次采集结果供回顾，不再自动刷新或接受竞猜。
+      </div>
+    )
+  }
   const total = Object.keys(pred.picks || {}).length
   return (
     <div
@@ -989,10 +1008,10 @@ function PredictBanner() {
 
 /* ━━━ main ━━━ */
 
-export default function AgentWorldCupClient() {
+export default function AgentWorldCupClient({ archived = false }) {
   const [tab, setTab] = useState('schedule')
-  const { data, loading, err } = useWorldCupData()
-  const pred = usePredictionsState()
+  const { data, loading, err } = useWorldCupData({ archived })
+  const pred = usePredictionsState({ archived })
 
   return (
     <PredictionCtx.Provider value={pred}>
@@ -1003,14 +1022,14 @@ export default function AgentWorldCupClient() {
       <BgCanvas />
 
       <div className="max-w-[1100px] mx-auto px-4 relative z-10">
-        <HeroSection data={data} />
+        <HeroSection data={data} archived={archived} />
         <MilestoneTicker data={data} />
         <MetaBar data={data} />
         <PredictBanner />
 
         {err && (
           <div className="mb-4 px-4 py-2 rounded text-[11px]" style={{ background: hexToRgba(D.red, 0.1), color: D.red, border: `1px solid ${hexToRgba(D.red, 0.3)}` }}>
-            数据拉取失败: {err} · 页面将在 60s 后自动重试
+            数据拉取失败: {err}{archived ? ' · 归档数据暂不可用' : ' · 页面将在 60s 后自动重试'}
           </div>
         )}
 
@@ -1047,7 +1066,7 @@ export default function AgentWorldCupClient() {
 
         <footer className="mt-16 py-8 text-center" style={{ borderTop: `1px solid ${D.line}` }}>
           <p className="text-[10px] tracking-[0.1em] uppercase" style={{ color: D.text3 }}>
-            Agent World Cup 2026 · 数据来源: openfootball · 定时每 3 小时自动同步
+            Agent World Cup 2026 · 活动存档 · 数据来源: openfootball · 归档后不再更新
           </p>
         </footer>
       </div>

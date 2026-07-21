@@ -9,7 +9,7 @@ import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { getUserFromRequest } from '../../../../lib/edgeSession'
 import { getBalance } from '../../../../lib/points'
-import { PREDICT_REWARD, getUserPredictions, setPrediction } from '../../../../lib/wc/predictions'
+import { PREDICT_REWARD, getUserPredictions } from '../../../../lib/wc/predictions'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -29,23 +29,9 @@ export const GET = async (request) => {
   return Response.json({ authed: true, reward: PREDICT_REWARD, predictions, balance })
 }
 
-export const POST = async (request) => {
-  const ctx = getOptionalRequestContext()
-  const db = ctx?.env?.DB || null
-  const user = await getUserFromRequest(request)
-  if (!user) return Response.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 })
-  if (!db) return Response.json({ ok: false, error: 'DB_UNAVAILABLE' }, { status: 503 })
-
-  let body = {}
-  try {
-    body = await request.json()
-  } catch {
-    body = {}
-  }
-  const result = await setPrediction(db, String(user.id), body.fixtureId, body.pick)
-  if (!result.ok) {
-    return Response.json({ ok: false, error: result.error }, { status: result.status || 400 })
-  }
-  const balance = await getBalance(db, String(user.id))
-  return Response.json({ ok: true, fixtureId: result.fixtureId, pick: result.pick, balance })
+export const POST = async () => {
+  return Response.json(
+    { ok: false, error: 'ACTIVITY_ARCHIVED', archivedAt: '2026-07-21' },
+    { status: 410 }
+  )
 }

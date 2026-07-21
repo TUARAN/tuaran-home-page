@@ -1,14 +1,8 @@
 name: World Cup collect
 
-# Cloudflare Pages 不支持 cron triggers,改由 GitHub Actions 定时敲采集端点。
-# 端点 /api/wc/collect (Edge Function) 会从 openfootball 拉数据写进 D1。
-# 鉴权: 在仓库 Settings → Secrets and variables → Actions 加 Secret WC_COLLECT_SECRET
-#       (值要和 Cloudflare Pages 上配的同名 Secret 一致)。
+# 2026 世界杯活动已于 2026-07-21 归档，定时采集已停用。
+# 保留手动入口只用于确认归档状态，不再请求生产 API 或写入 D1。
 on:
-  schedule:
-    # 每 3 小时一次(整点)。频率保持保守,避免无意义地敲采集端点。
-    # 想临时更勤(如比赛日)就手动点 Run workflow,或临时调小这里。
-    - cron: '0 */3 * * *'
   workflow_dispatch: {}
 
 concurrency:
@@ -16,21 +10,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  collect:
-    name: Trigger collect
+  archived:
+    name: Archived activity
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: POST /api/wc/collect
-        env:
-          WC_COLLECT_SECRET: ${{ secrets.WC_COLLECT_SECRET }}
-        run: |
-          if [ -z "$WC_COLLECT_SECRET" ]; then
-            echo "::error::缺少仓库 Secret WC_COLLECT_SECRET"; exit 1
-          fi
-          code=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
-            -H "x-wc-secret: $WC_COLLECT_SECRET" \
-            https://2aran.com/api/wc/collect)
-          echo "HTTP $code"
-          cat /tmp/resp.json; echo
-          test "$code" = "200"
+      - name: Show archive status
+        run: echo "Agent World Cup 2026 archived on 2026-07-21; collection is disabled."

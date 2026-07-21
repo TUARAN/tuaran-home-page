@@ -5,10 +5,9 @@ import Link from 'next/link'
 /* ─── Hot Ticker Marquee ───
  *  顶部细长流动条，置于站点导航下、首页 hero 上方，滚动时吸顶。
  *  每条都是一个独立入口（各自跳不同目的地），用来给重点动作更明显的推荐位：
- *   1. 竞猜世界杯赢燃币  2. 资源库  3. 博主联盟（推广 / 兼职） 4. 微信社群
+ *   1. 资源库  2. 博主联盟（推广 / 兼职） 3. 微信社群
  */
 const TICKER_ITEMS = [
-  { icon: '⚽', label: '竞猜世界杯 · 赢燃币', cta: '去竞猜', href: '/agent-world-cup' },
   { icon: '📚', label: '海量资源任你取', cta: '看资源', href: '/articles?tab=resources' },
   { icon: '💬', label: '加站长微信 · 交友进社群', cta: '加微信', href: '/community' },
   {

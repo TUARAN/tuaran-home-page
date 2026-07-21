@@ -69,7 +69,6 @@ export default function sitemap() {
     ...COMMUNITY_TOPICS.map((topic) => topic.href),
     '/zhang-juzheng-book',
     '/writing-monetization-2026',
-    '/agent-world-cup',
     '/bookmarks/twitter',
     '/bookmarks/youtube',
     '/bookmarks/llm-tutorials',

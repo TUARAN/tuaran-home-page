@@ -1,5 +1,5 @@
 /**
- * 读取入口:页面 /agent-world-cup 调这里
+ * 读取入口:归档页 /archives/agent-world-cup 调这里（只读保留最后采集结果）
  * 一次拉齐 matches / standings / scorers / assists / cards / meta
  *
  * 设计:

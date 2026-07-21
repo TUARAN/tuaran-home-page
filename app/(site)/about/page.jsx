@@ -45,8 +45,8 @@ const introLines = [
   { icon: '💡', text: '专注前端工程化与 AI 智能体，深耕实战与技术社区共建' },
   {
     icon: '🧩',
-    text: 'OpenClaw 开源贡献者：PR #90517 已合并至 openclaw:main',
-    href: 'https://github.com/openclaw/openclaw/pull/90517',
+    text: 'OpenClaw 开源贡献者：2 个 PR 已合并至 openclaw:main',
+    href: 'https://github.com/openclaw/openclaw/pulls?q=is%3Apr+author%3ATUARAN+is%3Amerged',
   },
   { icon: '🌐', text: '个人主页：2aran.com', href: 'https://2aran.com' },
   {
@@ -61,7 +61,7 @@ const stats = [
   { value: '600w+', label: '全网阅读' },
   { value: '2', label: '出版作品' },
   { value: '6', label: '在维护站点' },
-  { value: '1', label: 'OpenClaw 合并 PR' },
+  { value: '2', label: 'OpenClaw 合并 PR' },
   { value: '2016', label: '起步至今' },
 ]
 
@@ -75,15 +75,15 @@ const timeline = [
   { year: '2024', label: '《AI Bots 通关指南》' },
   { year: '2025', label: '博主联盟 · 前端周看' },
   { year: '2026', label: '创立矩联科技' },
-  { year: '2026.07', label: 'OpenClaw PR 合并至 main' },
+  { year: '2026.07', label: 'OpenClaw 两个 PR 合入 main' },
 ]
 
 const openSourceHighlight = {
-  href: 'https://github.com/openclaw/openclaw/pull/90517',
-  title: 'OpenClaw PR #90517 · merged into main',
+  href: 'https://github.com/openclaw/openclaw/pull/98320',
+  title: '梅开二度 · OpenClaw PR #98320 merged into main',
   summary:
-    '修复 gateway 侧 web login 外部插件缺失提示：复用官方 external plugin repair hint 路径，在 provider 不可用时返回可执行的安装或 openclaw doctor --fix 指引。',
-  facts: ['2 commits', '+153 -5', 'gateway', 'web login', 'main'],
+    '修复 Feishu 图片和文件回复在引用消息被撤回或删除后无法送达的问题，让受安全条件保护的回退逻辑把媒体恢复为顶层消息。这是又一个值得珍藏的开源里程碑：珍视每一次贡献被接纳的荣誉，也会坚定地在开源路上走下去。',
+  facts: ['3 commits', '+168 -35', '5 files', 'Feishu', 'steipete merged', 'main'],
 }
 
 const socialLinks = [
@@ -324,13 +324,13 @@ export default function AboutPage() {
             target="_blank"
             rel="noreferrer"
             className="no-external-arrow group overflow-hidden rounded-2xl border border-[#1d2c3e] bg-[#05090f] no-underline shadow-[0_18px_56px_rgba(0,0,0,0.24)]"
-            aria-label="查看 OpenClaw PR #90517 合并截图"
+            aria-label="查看 OpenClaw PR #98320 合并截图"
           >
             <Image
-              src="/images/openclaw/pr-90517-merged.png"
-              alt="OpenClaw PR #90517 merged into main"
-              width={1312}
-              height={728}
+              src="/images/openclaw/pr-98320-merged.png"
+              alt="OpenClaw PR #98320 merged into main"
+              width={1880}
+              height={1466}
               sizes="(min-width: 1024px) 540px, 100vw"
               className="h-full min-h-[240px] w-full object-cover object-left-top opacity-95 transition duration-300 group-hover:scale-[1.015] group-hover:opacity-100"
             />

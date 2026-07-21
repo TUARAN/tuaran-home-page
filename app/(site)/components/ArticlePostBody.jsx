@@ -27,19 +27,46 @@ function renderText(node, key) {
   return output
 }
 
-function renderNodes(nodes, prefix = 'node') {
-  return (nodes || []).map((node, index) => renderNode(node, `${prefix}-${index}`))
+function headingId(index, text) {
+  const slug = String(text || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48)
+  return `section-${index + 1}${slug ? `-${slug}` : ''}`
 }
 
-function renderNode(node, key) {
+export function getArticlePostToc(content) {
+  const headings = []
+  function visit(nodes) {
+    for (const node of nodes || []) {
+      if (node?.type === 'heading' && (node.attrs?.level || 2) <= 3) {
+        const text = textContent(node).trim()
+        if (text) headings.push({ id: headingId(headings.length, text), text })
+      }
+      visit(node?.content)
+    }
+  }
+  visit(content?.content)
+  return headings
+}
+
+function renderNodes(nodes, prefix = 'node', context = { headingIndex: 0 }) {
+  return (nodes || []).map((node, index) => renderNode(node, `${prefix}-${index}`, context))
+}
+
+function renderNode(node, key, context) {
   if (!node) return null
   if (node.type === 'text') return <span key={key}>{renderText(node, key)}</span>
   if (node.type === 'hardBreak') return <br key={key} />
-  const children = renderNodes(node.content, key)
+  const children = renderNodes(node.content, key, context)
   if (node.type === 'paragraph') return <p key={key}>{children.length ? children : <br />}</p>
   if (node.type === 'heading') {
-    if (node.attrs?.level === 3) return <h3 key={key}>{children}</h3>
-    return <h2 key={key}>{children}</h2>
+    const id = headingId(context.headingIndex, textContent(node))
+    context.headingIndex += 1
+    if (node.attrs?.level === 3) return <h3 key={key} id={id} className="scroll-mt-24">{children}</h3>
+    return <h2 key={key} id={id} className="scroll-mt-24">{children}</h2>
   }
   if (node.type === 'bulletList') return <ul key={key}>{children}</ul>
   if (node.type === 'orderedList') return <ol key={key} start={node.attrs?.start || 1}>{children}</ol>

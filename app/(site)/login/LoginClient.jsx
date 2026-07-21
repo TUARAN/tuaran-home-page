@@ -142,7 +142,7 @@ export default function LoginClient() {
 
         <div className="mb-4 rounded-xl border border-[#e4d8c3] bg-white/55 px-3.5 py-2.5 text-xs leading-5 text-[#776b58] dark:border-[#344052] dark:bg-[#0d131b]/60 dark:text-gray-300">
           <p className="mb-1 font-semibold text-[#5f4617] dark:text-amber-100">免注册快速登录</p>
-          <p>已有账号直接登录；新邮箱设置密码即可继续。阅读记录和燃币会先保留，稍后再激活邮箱。</p>
+          <p>您可以先登录，稍后再激活邮箱，请记住首次设置的密码。</p>
         </div>
 
         <form onSubmit={login} className="space-y-5">

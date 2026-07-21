@@ -1,123 +1,204 @@
 # 涂阿燃的网络日志 · 2aran.com
 
-这是 [2aran.com](https://2aran.com) 的源码仓库。
+[2aran.com](https://2aran.com) 的生产源码：一个持续运行的个人网站、内容系统、AI Agent 工程实验场与站长工作台。
 
-**这个仓库开源不是为了让你部署一份**——它是个人网站，大量功能绑定作者自己的 Cloudflare、OAuth 与数据配置。开源是为了让你看到：一个前端 + AI Agent 工程师（同时是奶爸、是 founder），怎么把写作、调研、资源、工具和站内社区放进同一个 Web 应用，按"值得投入 20 年、每日复利"的方式持续迭代。
+这个仓库不是通用博客模板。公开页面可以在本地浏览，但登录、评论、燃币、后台、私域数据、邮件、OAuth、D1 与 R2 等能力依赖站长自己的 Cloudflare 和第三方服务配置。仓库公开的主要目的，是展示一个前端与 AI Agent 工程师如何把写作、调研、出版、开源贡献、产品、工具和长期项目放进同一套 Web 系统持续维护。
 
-一句话概括它在干嘛：**用 AI 把内容、作品和增长连起来的个人操作台，正在往「内容 + 资源 + 工具的分享与讨论平台」演进。**
+- 线上站点：[2aran.com](https://2aran.com)
+- 关于站长：[2aran.com/about](https://2aran.com/about)
+- 全站地图：[2aran.com/map](https://2aran.com/map)
+- 更新记录：[2aran.com/changelog](https://2aran.com/changelog)
+- 面向智能体的站点说明：[2aran.com/llms.txt](https://2aran.com/llms.txt)
 
-## 四个板块
+## 站长身份与可核验成果
 
-站点主导航就是站点的世界观，收敛为五个频道；资源作为内容下面的二级分组：
+涂阿燃（TUARAN，也使用“掘金安东尼”“安东尼404”等名字）是前端与 AI Agent 工程师、技术写作者和产品实践者。
 
-| 板块 | 里面有什么 |
-|---|---|
-| **内容** | 原创专栏、灵感流、网络日志、[Dad Stack](https://2aran.com/dad-stack)，公司 / 事项 / 人物三类 AI 协助深度调研，以及 [资源库](https://2aran.com/articles?tab=resources)：AI 与开发、人文与政经、外部收藏、职场资料、壁纸等原文与索引 |
-| **工具** | [工具库](https://2aran.com/tools)：可直接使用的站内工具、浏览器扩展与可视化富页面 |
-| **系统** | [作品展厅](https://2aran.com/works)：长期产品、AI 工程、Agent 项目与 Skill 能力中心 |
-| **圈子** | [讨论中心](https://2aran.com/community)：统一收纳留言、全站评论、热门讨论串、燃币与合作入口 |
-| **关于** | [关于本站](https://2aran.com/site)、[站点索引](https://2aran.com/map)、[更新记录](https://2aran.com/changelog)、公开的[访问数据](https://2aran.com/traffic) |
+- 《程序员成长手记》作者：技术图书，2023 年已出版。
+- 《AI Bots 通关指南》作者：电子小册，2024 年已发布。
+- OpenClaw Contributor：[PR #90517](https://github.com/openclaw/openclaw/pull/90517) 与 [PR #98320](https://github.com/openclaw/openclaw/pull/98320) 已合并至 `openclaw:main`。
+- 维护矩联科技、博主联盟、前端周看、AI 分发大师等产品与内容项目。
 
-## 设计上值得一看的几件事
+这里只列入站内有明确记录或可以从外部链接核验的事实；出版中、撰写中和计划中的项目不会计入已完成成果。
 
-如果你是来读代码或找灵感的，这些是本仓库比较有意思的设计决策：
+## 五个公开频道
 
-- **统一内容管线**：文章、调研、资源主题页归一成同一个 entry 形状（`lib/contentPipeline.js`），一个 contentKey 同时是评论的 key、燃币解锁的 key、相关阅读的检索键和阅读统计的键。挂一个组件，页面就进入整套互动体系。
-- **内容 metadata 进 D1**：`content_index` 表 + 后台一键同步，手工登记的内容条目不经构建部署直接出现在索引页——个人站也可以做到"发布不依赖 CI"。
-- **三层运行时并存**：静态 / ISR 页面（SEO 与速度）、Cloudflare Edge API（登录、评论、燃币，D1 存储）、浏览器端 WebGPU 推理（[/web-llm](https://2aran.com/web-llm)，模型跑在访客设备上，服务端零推理成本）。
-- **自定义 Edge 鉴权**：不用 NextAuth，GitHub / Google OAuth + HMAC 签名 Cookie 的轻量 session（`lib/edgeSession.js`），专为 Cloudflare Edge 运行时设计；游客评论走独立的 cookie 绑定，登录后自动合并历史。
-- **调研工作流**：调研以 Markdown 落盘（`research/`），frontmatter 约定风格、标签与 AI 协助标注；写作风格有唯一正本（`lib/researchStyleTemplates.js`）并在后台可视化。AI 是协助工具，署名永远是人。
-- **燃币（Ranbi）**：站内积分体系，签到、评论获取，解锁深度调研与资料消耗——内容平台激励闭环的最小实现。
-- **网站不调用任何大模型**：所有 AI 参与发生在写作与工程环节，线上站点本身零 LLM API 依赖（浏览器端推理除外，那跑在你自己的设备上）。
+主导航与 `/map` 共用 `lib/siteNav.js` 作为结构化数据源。导航项还可以按 `public`、`authed`、`owner` 三种受众动态控制可见性。
 
-## 值得一读
+| 频道 | 主要内容 |
+| --- | --- |
+| **内容** | [文章与分析](https://2aran.com/articles)、灵感流、前端周看、公司 / 人物 / 技术 / 商业分析，以及资源、书目、历史与外部收藏 |
+| **工具** | [工具库](https://2aran.com/tools)、浏览器扩展、桌面应用、端侧大模型、舆情与交易分析、多维交互页面 |
+| **系统** | [作品展厅](https://2aran.com/works)、[Skill 中心](https://2aran.com/skill-center)、[MCP 中心](https://2aran.com/mcp-center)、Prompt 中心和上下文记忆 |
+| **圈子** | [讨论中心](https://2aran.com/community)、燃币、专题圈子、合作说明，以及面向创作者和产品方的外部项目 |
+| **关于** | [关于本站](https://2aran.com/site)、[关于站长](https://2aran.com/about)、出版记录、内容规范、隐私政策、流量与更新日志 |
 
-调研与长文里比较有代表性的（全部免费）：
+## 当前能力
 
-- [苏轼人物调研：被贬到尽头，仍然把生活过成宇宙](https://2aran.com/articles/research/people/su-shi)
-- [埃隆·马斯克：把公司当火箭发射的人](https://2aran.com/people/elon-musk)（一页式交互体验页）
-- [张一鸣早期博客调研：怎样看《字节跳动方法论》](https://2aran.com/articles/research/people/zhang-yiming-early-blog-bytedance-methodology)
-- [人工智能先驱：六个把神经网络从冷宫带回王座的人](https://2aran.com/people/ai-pioneers)
-- [AI API 中转站灰色经济调研：暴利、注水与跑路链条](https://2aran.com/articles/research/topics/ai-api-relay-station-grey-economy)
-- [从 chat 任务到 agent loop：Anthropic 一线工程实践](https://2aran.com/articles/research/topics/chat-to-agent-loop-anthropic-practice)
-- [15 分钟了解大模型：从 Token、矩阵运算到 RAG 与 Agent](https://2aran.com/articles/research/topics/15-minutes-understand-large-language-models)
-- [从身体的一块淤青发现白血病：白血病深度调研](https://2aran.com/articles/research/topics/bruise-to-leukemia-deep-research)
-- [先有渠道，再有产品：我把一人公司的顺序搞反过一次](https://2aran.com/articles/research/topics/channel-before-product-solo-founder)
-- [中国 2000 元以下洗碗机市场调研](https://2aran.com/articles/research/topics/china-dishwasher-under-2k)（是的，什么都调研）
+### 内容与检索
 
-完整清单见[调研索引](https://2aran.com/articles?tab=research)，目前 110+ 篇。
+- 文章、研究、资源和多维页面由统一内容管线归档，`contentKey` 同时连接评论、点赞、燃币解锁、阅读统计与相关推荐。
+- `research/` 保存 Markdown 研究稿，`content/` 保存文章、资源和“前端周看”等结构化内容。
+- D1 `content_index` 支持后台同步与手工登记；部分内容无需重新构建即可进入文章索引。
+- 提供 Sitemap、RSS、`llms.txt`、结构化数据与 canonical URL，兼顾搜索引擎、读者和智能体检索。
+- 调研风格规则集中在 `lib/researchStyleTemplates.js`、`lib/researchStyleRules.json`，构建时会执行内容风格审计。
 
-## 资源精选
+### 账户、社区与权益
 
-- [置身 X 内](https://2aran.com/resources/shen-zhi-ding-nei) — 大厂职场文本存档合集（钉内 / 钉外 / 团内 / 米内）
-- [单篇封神的中国古典名篇](https://2aran.com/classical-masterpieces) — 凭一篇立住文学史地位的作品谱系
-- [儒释道 · 神仙体系](https://2aran.com/ru-shi-dao) — 三教人物 / 神祇体系一张结构图
-- [明清与三国历史笔记](https://2aran.com/history/ming-qing)
-- [中国政治体制](https://2aran.com/china-politics) — 当代中国研究资料
-- [大模型教程](https://2aran.com/bookmarks/llm-tutorials) / [AI 工具索引](https://2aran.com/bookmarks/ai-tools) / [开发资源索引](https://2aran.com/bookmarks/dev-resources)
-- [Codex 学习资源收集](https://2aran.com/resources/codex-learning-resource-map-yichen)
-- [RSS 订阅墙](https://2aran.com/resources/rss) — 我长期在读的博客与周刊
+- 自定义 Cloudflare Edge Session，不以 NextAuth 作为生产认证层。
+- 支持 GitHub、Google、微信 OAuth，以及邮箱验证码 / 密码注册登录。
+- 不按昵称、手机号或邮箱自动合并第三方身份；账号绑定通过显式授权完成。
+- 游客可以获得签名访客身份，登录后按规则承接历史互动数据。
+- 评论、讨论、通知、签到、燃币余额和资源解锁以 D1 为主要存储。
+- 站长身份由 `SITE_OWNER_IDS`、`SITE_OWNER_LOGINS`、`SITE_OWNER_EMAILS` 等白名单配置确认。
 
-## 工具精选
+### AI、Agent 与工具
 
-- [X 互关清理助手](https://2aran.com/resources/x-mutual-cleaner-extension) — 一键取消没有回关你的人（浏览器扩展）
-- [端侧大模型实验台](https://2aran.com/web-llm) — WebGPU 在浏览器里跑大模型，不上传任何数据
-- [Skill 中心](https://2aran.com/skill-center) — 模型与智能体能力货架
-- [MCP 中心](https://2aran.com/mcp-center) — 面向智能体的 OAuth 服务货架，登录授权后可查询最近更新与相关内容
-- [Agent 世界杯（存档）](https://2aran.com/archives/agent-world-cup) — 2026 世界杯赛程 / 分组 / 资讯活动存档
-- [站内转短](https://2aran.com/works#site-tools) — 短链与分享系统
-- [吃什么](https://2aran.com/eatwhat) — 今天点什么的小工具
-- [壁纸下载](https://2aran.com/resources/wallpapers)
-- 对外产品：[博主联盟](https://blogger-alliance.cn/)、[前端周看](https://frontendnext.com/)、[AI 分发大师](https://syncblog.cn/)
+- `/web-llm` 使用 WebGPU 和 Transformers.js 在访问者设备上运行模型，数据不需要上传到站点推理服务。
+- MCP 中心包含 OAuth 2.1 风格的授权端点和示例 MCP 服务，可让已授权智能体查询站内文章与天气工具。
+- 后台模型调度可以在配置 `DEEPSEEK_API_KEY` 后调用 DeepSeek；普通公开页面不依赖线上 LLM API 才能完成渲染和阅读。
+- Skill、Prompt、上下文记忆和作品展厅用于整理可复用的 Agent 工程能力，而不是只展示静态项目卡片。
 
-## 未来会怎样
+### 站长后台
 
-方向已经定了：从"个人作品集"走向**策展人式的分享与讨论平台**——内容和资源由站长供给（这是已验证的强项），社区做轻互动，跑通留存再谈共建。大致顺序：
+后台运行在 `admin.2aran.com`，并与公开站点使用独立的 Cloudflare Pages 构建目标。主要工作台包括：
 
-1. **留存优先**：邮件订阅（newsletter）、回访 / 评论转化等运营指标，把外部平台 400 万+ 阅读的流量真正留下来
-2. **内容层继续归一**：巨型话题页拆成数据 + 模板，全部内容进统一管线（工作底稿见 `ai-context/content-layer-refactor-plan.md`）
-3. **燃币权益做实**：深度调研分级解锁，配套反作弊与审核
-4. **再开放**：读者投稿资源 / 工具（走审核队列）、RSS 互推、社区周报
+- 内容编辑、内容索引、首页推荐、研究风格、前端周看和 RSS 管理；
+- 项目组合、规划中心、AI 工作区、模型调度、Ops、站点开发与上下文记忆；
+- D1 数据健康、站点设置、SEO、短链、活动归档和系统运维；
+- 用户、角色、封禁、燃币、资源权益和菜单权限；
+- 长期罗盘、加密信息库与私有 NSFW R2 媒体库。
 
-第一人称的判断与写作永远是地基；AI 协助调研会沉为资料层，不再是主打。
+规划中心使用“方向 → 项目 → 里程碑 → 任务”的层级管理长期项目，并保留历史事件、决策与依赖关系。
 
-## 技术栈
+## 架构概览
 
-- **框架**：Next.js 15 App Router + React 19（JavaScript，无 TypeScript）
-- **样式**：Tailwind CSS 3（页面宽度三档约定 + 浅色 / 深色 / 墨水屏三套阅读主题）
-- **平台**：Cloudflare Pages / Functions（`@cloudflare/next-on-pages`）+ D1 + R2
-- **认证**：自定义 Edge session（GitHub / Google OAuth + 签名 Cookie），邮箱验证码与密码登录
-- **自动化**：GitHub Actions 定时采集（舆情等进行中任务）、Wrangler 迁移；已结束活动转入后台存档管理
+| 层 | 实现 |
+| --- | --- |
+| Web | Next.js 15 App Router、React 19、JavaScript |
+| UI | Tailwind CSS 3、响应式布局、浅色 / 深色主题、中文 / 英文导航 |
+| 内容 | Markdown、JSON、构建期注册表、D1 内容索引 |
+| 运行时 | 静态生成 / ISR、Cloudflare Pages Functions、浏览器端 WebGPU |
+| 数据库 | Cloudflare D1，迁移文件位于 `migrations/` |
+| 文件存储 | `MEDIA` 公共 R2 桶与 `NSFW_MEDIA` 私有 R2 桶 |
+| 认证 | 自定义 HMAC Session、GitHub / Google / 微信 OAuth、邮箱登录 |
+| Agent 接口 | MCP 资源服务、OAuth 授权服务、`llms.txt`、RSS |
+| 自动化 | GitHub Actions、内容同步脚本、定时采集端点 |
+| 部署 | Cloudflare Pages，公开站与 Admin 子域拆分构建 |
 
-> 历史遗留：仓库中仍保留已废弃的 NextAuth 相关文件（`[...nextauth]` 路由返回 410）与本地版 `lib/stompDb.js`，线上均不使用。
+## 目录结构
 
-## 反馈方式
+```text
+app/
+  (site)/          公开页面与站点组件
+  (admin)/         站长后台
+  (web-llm)/       端侧大模型独立路由组
+  api/             Edge API、认证、MCP 与后台接口
+  .well-known/     OAuth / MCP 元数据端点
+content/           文章、资源、前端周看等内容数据
+research/          公司、人物、事项研究 Markdown
+lib/               内容、认证、D1、R2、SEO、规划与业务规则
+migrations/        Cloudflare D1 SQL 迁移
+public/            静态资源与公开生成数据
+scripts/           构建、同步、审计和维护脚本
+tests/             Node 测试，目前重点覆盖规划中心
+docs/              架构、部署与实现说明
+desktop/           Electron 桌面端外壳
+```
 
-优先通过 [Issues](https://github.com/TUARAN/tuaran-home-page/issues) 收集反馈：
+## 本地开发
 
-- 页面打不开、移动端错位、样式异常、链接失效
-- 文章或调研内容里的事实错误、错别字、表达不清
-- 可访问性、性能、SEO 改进建议
-- 新页面、新工具、新栏目想法
+### 环境要求
 
-请不要在 Issue 里提交 API key、token、密码、私人联系方式或其他敏感信息。
+- Node.js `>=22.12.0 <23`（仓库 `.nvmrc` 当前为 `22.12.0`）
+- npm 10+；CI 使用 `npm ci`
+- 如需运行完整数据能力，需要 Cloudflare D1 / R2 与对应第三方凭证
 
-## 开发者说明
+### 启动公开页面
 
-代码可以本地跑起来看（`npm install && npm run dev`），但登录、评论、燃币、采集、加密内容等功能依赖作者自己的 Cloudflare / OAuth / 邮件配置，外部开发者浏览代码通常不需要复刻。这不是通用 starter，Pull Request 会按站点定位与维护成本决定是否接受。
+```bash
+nvm use
+npm ci
+cp .env.example .env.local
+npm run dev
+```
+
+打开 [http://localhost:3000](http://localhost:3000)。没有配置 D1、OAuth 或邮件服务时，大部分静态内容仍可浏览；依赖云端绑定的登录、评论、后台与资源操作不可用或会返回明确的配置错误。
+
+### 常用检查
+
+```bash
+npm run lint
+npm run build:check
+npm run security:check
+npm run research:style-audit
+npm run test:planning
+```
+
+## 环境变量
+
+`.env.example` 给出本地开发的最小模板。不要提交 `.env.local`、`.dev.vars`、API Key、OAuth Secret、Cookie Secret 或生产数据库导出。
+
+| 类别 | 关键变量 |
+| --- | --- |
+| 站点与 Session | `NEXTAUTH_URL`、`NEXTAUTH_SECRET` |
+| OAuth | `GITHUB_ID`、`GITHUB_SECRET`、`GOOGLE_ID`、`GOOGLE_SECRET`、`WECHAT_APP_ID`、`WECHAT_APP_SECRET` |
+| 微信开关 | `WECHAT_LOGIN_ENABLED`、`NEXT_PUBLIC_WECHAT_LOGIN_ENABLED` |
+| 站长白名单 | `SITE_OWNER_IDS`、`SITE_OWNER_LOGINS`、`SITE_OWNER_EMAILS` |
+| 邮箱登录 | `EMAIL_CODE_SECRET`、`RESEND_API_KEY`、`EMAIL_FROM` |
+| Cloudflare | `DB`、`R2_PUBLIC_BASE`；生产环境还需要 `MEDIA`、`NSFW_MEDIA` bindings |
+| 调研加密 | `RESEARCH_ENCRYPTION_PASSWORD` |
+| 后台模型调度 | `DEEPSEEK_API_KEY`，可选 `DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL` |
+| 定时采集 | `PUBLIC_OPINION_COLLECT_SECRET` 等对应任务 Secret |
+| 广告 | `NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT` 与页面广告位变量 |
+
+`NEXTAUTH_*` 名称是历史兼容命名；生产登录实际由 `lib/edgeSession.js` 和 `/api/auth/*` 自定义路由处理。`/api/auth/[...nextauth]` 仅保留为返回 HTTP 410 的废弃兼容端点。
+
+## 构建与部署
+
+本仓库使用三种 Cloudflare Pages 构建模式：
+
+| 命令 | 用途 |
+| --- | --- |
+| `npm run pages:build:public` | `2aran.com` 公开站构建，临时排除 Admin 路由 |
+| `npm run pages:build:admin` | `admin.2aran.com` 后台构建，仅保留后台及必要认证接口，并校验 Worker 大小与路由边界 |
+| `npm run pages:build:all` | 完整构建，主要用于本地验证或应急 |
+
+详细拆分约束见 [`docs/cloudflare-split-plan.md`](docs/cloudflare-split-plan.md)。Cloudflare 绑定定义位于 `wrangler.toml`，D1 结构变更位于 `migrations/`。生产迁移与 Secret 配置应通过 Cloudflare 控制台或 Wrangler 在明确目标环境中执行，不应把真实凭证写入仓库。
+
+## 自动化与质量门禁
+
+- `.github/workflows/ci.yml` 在 `main` push 和 Pull Request 上执行 lint 与生产构建。
+- “前端周看”每日精选、每时新闻与周刊索引由独立 GitHub Actions 同步。
+- 舆情采集通过受 Secret 保护的生产端点定时触发。
+- 2026 Agent 世界杯活动已经归档，自动采集已停止，只保留手动归档状态工作流。
+- Git pre-push hook 会检查静态资源大小、敏感文件和 lint。
+
+## 反馈与贡献
+
+优先通过 [GitHub Issues](https://github.com/TUARAN/tuaran-home-page/issues) 反馈：
+
+- 页面错误、移动端错位、链接失效与可访问性问题；
+- 文章、调研或资源中的事实错误；
+- 性能、SEO、安全与工程改进建议；
+- 与站点定位一致的新工具或内容想法。
+
+不要在 Issue、日志、截图或提交中暴露 API Key、Token、密码、私人联系方式或其他敏感数据。Pull Request 是否接受，会结合个人站定位、数据依赖和长期维护成本判断。
 
 ## 许可证
 
-本仓库采用双许可证：
+本仓库采用双许可证说明：
 
-- **代码**：MIT License。适用于站点源码、组件、脚本、API 路由、配置和其他可执行代码。
-- **非代码内容**：除非另有说明，本站原创文字、调研笔记、资源整理、图片说明和其他非代码材料采用 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/)（CC BY-NC-SA 4.0）。
+- **代码**：MIT License，适用于站点源码、组件、脚本、API 路由和配置。
+- **非代码内容**：除非另有说明，原创文章、调研、资源整理和图片说明采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)。
 
-也就是说，代码可以按 MIT 协议学习、复用和改造；原创内容可以在署名、非商业、相同方式共享的前提下转载和改编。第三方链接、引用材料、商标、平台截图和外部资源仍归其原权利人所有。
+第三方链接、引用材料、商标、平台截图和外部资源仍归原权利人所有。
 
 ## 作者
 
-涂阿燃 / 掘金安东尼
+涂阿燃 / TUARAN / 掘金安东尼
 
 - 网站：[2aran.com](https://2aran.com)
-- 掘金：[掘金主页](https://juejin.cn/user/3544481219674541)
+- GitHub：[TUARAN](https://github.com/TUARAN)
+- 掘金：[涂阿燃的掘金主页](https://juejin.cn/user/1521379823340792)
+- 开源贡献：[OpenClaw PR #90517](https://github.com/openclaw/openclaw/pull/90517)、[OpenClaw PR #98320](https://github.com/openclaw/openclaw/pull/98320)

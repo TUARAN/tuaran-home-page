@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import Script from 'next/script'
 
-import ArticlePostBody from '../../components/ArticlePostBody'
+import ArticlePostBody, { getArticlePostToc } from '../../components/ArticlePostBody'
+import ArticleEngagementPanel from '../../components/ArticleEngagementPanel'
+import ArticleToc from '../../components/ArticleToc'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
 import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
@@ -35,9 +37,11 @@ export default function PublishedArticle({ article, siteUrl }) {
     publisher: { '@type': 'Person', name: '涂阿燃', url: siteUrl },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
   }
+  const articleKey = `article:${article.slug}`
+  const tocItems = getArticlePostToc(article.content)
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <Script id={`article-jsonld-db-${article.id}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(structuredData)}
       </Script>
@@ -76,13 +80,27 @@ export default function PublishedArticle({ article, siteUrl }) {
           </ArticleHeaderActions>
         </div>
       </header>
-      <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
-        <AuthorByline />
-      </aside>
-      {article.coverUrl ? <figure className="mb-10">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={article.coverUrl} alt={`${article.title} 封面`} className="h-auto w-full rounded-lg border border-[#eee] object-cover dark:border-gray-800" /></figure> : null}
-      <ArticlePostBody content={article.content} />
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+        <main className="min-w-0">
+          <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
+            <AuthorByline />
+          </aside>
+          {article.coverUrl ? (
+            <figure className="mb-10">
+              {/* 后台文章封面可以来自 Owner 自定义的 HTTPS/R2 域名，不限制在 Next Image 白名单。 */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={article.coverUrl} alt={`${article.title} 封面`} className="h-auto w-full rounded-lg border border-[#eee] object-cover dark:border-gray-800" />
+            </figure>
+          ) : null}
+          <div className="flex flex-col gap-6 md:flex-row">
+            <ArticleToc items={tocItems} />
+            <ArticlePostBody content={article.content} className="min-w-0 flex-1" />
+          </div>
+        </main>
+        <ArticleEngagementPanel articleKey={articleKey} />
+      </div>
       <div id="comments" className="scroll-mt-24">
-        <ArticleComments articleKey={`article:${article.slug}`} />
+        <ArticleComments articleKey={articleKey} />
       </div>
       <ArticleFooterCta />
     </div>

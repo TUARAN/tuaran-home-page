@@ -7,12 +7,14 @@ import ArticleHeaderActions from '../../components/ArticleHeaderActions'
 import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
+import ArticleEngagementPanel from '../../components/ArticleEngagementPanel'
+import ArticleToc from '../../components/ArticleToc'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
 import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
-import { renderMarkdown } from '../../../../lib/research/markdown'
+import { extractToc, renderMarkdown } from '../../../../lib/research/markdown'
 import PublishedArticle from './PublishedArticle'
 
 export const runtime = 'edge'
@@ -219,9 +221,9 @@ export default async function ArticleDetailPage({ params }) {
     : ''
   const publishedTime = toIsoDate(article.date)
   const enableDiaryToc = article.slug === 'diary-self-reflection'
-  const tocItems = []
+  const tocItems = article.markdown ? extractToc(normalizeArticleMarkdown(article.markdown)) : []
 
-  if (enableDiaryToc) {
+  if (!article.markdown) {
     article.content.forEach((paragraph, idx) => {
       const isDateString = typeof paragraph === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(paragraph.trim())
       const isDateObject = paragraph && typeof paragraph === 'object' && paragraph.date
@@ -231,6 +233,8 @@ export default async function ArticleDetailPage({ params }) {
         const label = isDateObject ? paragraph.label : ''
         const id = `section-${date}-${idx}`
         tocItems.push({ date, label: label || date, id })
+      } else if (paragraph && typeof paragraph === 'object' && paragraph.heading) {
+        tocItems.push({ text: paragraph.heading, id: `section-content-${idx}` })
       }
     })
   }
@@ -261,11 +265,13 @@ export default async function ArticleDetailPage({ params }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <Script id={`article-jsonld-${article.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(articleStructuredData)}
       </Script>
 
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+        <main className="min-w-0">
       {enableDiaryToc ? (
         <>
           <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
@@ -322,29 +328,9 @@ export default async function ArticleDetailPage({ params }) {
           </header>
 
           <div className="flex flex-col gap-6 md:flex-row">
-            {tocItems.length > 1 ? (
-              <aside className="hidden md:sticky md:top-24 md:block md:w-52 md:self-start shrink-0">
-                <nav className="toc-scroll-panel md:static">
-                  <div className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">
-                    目录
-                  </div>
-                  <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">
-                    {tocItems.map((item) => (
-                      <li key={item.id}>
-                        <a
-                          href={`#${item.id}`}
-                          className="font-bold text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
-                        >
-                          {item.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
-              </aside>
-            ) : null}
+            <ArticleToc items={tocItems} title="目录" />
 
-            <main className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
                 <AuthorByline />
               </aside>
@@ -391,7 +377,7 @@ export default async function ArticleDetailPage({ params }) {
           }
 
           if (paragraph && typeof paragraph === 'object' && paragraph.heading) {
-            return <h2 key={`${idx}-${paragraph.heading}`} className="mt-10 mb-4 text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug">{paragraph.heading}</h2>
+            return <h2 key={`${idx}-${paragraph.heading}`} id={`section-content-${idx}`} className="mt-10 mb-4 scroll-mt-24 text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug">{paragraph.heading}</h2>
           }
 
           const image = parseMarkdownImage(paragraph)
@@ -414,7 +400,7 @@ export default async function ArticleDetailPage({ params }) {
           return <p key={`${idx}-${paragraph}`}>{renderInlineBold(paragraph)}</p>
                 })}
               </article>
-            </main>
+            </div>
           </div>
         </>
       ) : (
@@ -473,6 +459,9 @@ export default async function ArticleDetailPage({ params }) {
             </div>
           </header>
 
+          <div className="flex flex-col gap-6 md:flex-row">
+            <ArticleToc items={tocItems} />
+            <div className="min-w-0 flex-1">
           <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
             <AuthorByline />
           </aside>
@@ -505,7 +494,7 @@ export default async function ArticleDetailPage({ params }) {
                 const label = isDateObject ? paragraph.label : ''
 
                 return (
-                  <div key={`${idx}-${date}-${label || 'no-label'}`} className="mt-10 mb-4">
+                  <div key={`${idx}-${date}-${label || 'no-label'}`} id={`section-${date}-${idx}`} className="mt-10 mb-4 scroll-mt-24">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       <h2 className="m-0 text-lg sm:text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug scroll-mt-24">
                         {label || date}
@@ -522,7 +511,7 @@ export default async function ArticleDetailPage({ params }) {
               }
 
               if (paragraph && typeof paragraph === 'object' && paragraph.heading) {
-                return <h2 key={`${idx}-${paragraph.heading}`} className="mt-10 mb-4 text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug">{paragraph.heading}</h2>
+                return <h2 key={`${idx}-${paragraph.heading}`} id={`section-content-${idx}`} className="mt-10 mb-4 scroll-mt-24 text-xl font-semibold text-[#444] dark:text-gray-200 leading-snug">{paragraph.heading}</h2>
               }
 
               const image = parseMarkdownImage(paragraph)
@@ -545,8 +534,13 @@ export default async function ArticleDetailPage({ params }) {
               return <p key={`${idx}`}>{renderInlineBold(paragraph)}</p>
             })}
           </article>
+            </div>
+          </div>
         </>
       )}
+        </main>
+        <ArticleEngagementPanel articleKey={`article:${article.slug}`} />
+      </div>
 
       <div id="comments" className="scroll-mt-24">
         <ArticleComments articleKey={`article:${article.slug}`} />

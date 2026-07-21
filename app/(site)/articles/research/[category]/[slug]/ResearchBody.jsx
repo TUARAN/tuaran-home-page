@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import ZoomableResearchMedia from '../../../../components/ZoomableResearchMedia'
+import ArticleToc from '../../../../components/ArticleToc'
 
 const QUERY_KEY = 'v'
 const VARIANT_EVENT = 'research:variant'
@@ -224,27 +225,7 @@ export default function ResearchBody({ variants }) {
       </div>
 
       <div className="flex flex-col gap-6 md:flex-row">
-        {active.toc?.length > 1 ? (
-          <aside className="hidden shrink-0 md:sticky md:top-24 md:block md:w-52 md:self-start">
-            <nav className="toc-scroll-panel md:static">
-              <div className="text-sm font-bold border-b border-[#eee] pb-2 mb-3 dark:border-gray-800 dark:text-gray-200">
-                文章目录
-              </div>
-              <ul className="text-sm text-[#666] space-y-2 dark:text-gray-300">
-                {active.toc.map((item) => (
-                  <li key={item.id}>
-                    <a
-                      href={`#${item.id}`}
-                      className="text-[#444] dark:text-gray-200 opacity-90 hover:opacity-100 underline underline-offset-4"
-                    >
-                      {item.text}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </aside>
-        ) : null}
+        <ArticleToc items={active.toc} />
 
         <div className="flex-1 min-w-0">
           <ZoomableResearchMedia contentKey={active.id} html={active.html} />

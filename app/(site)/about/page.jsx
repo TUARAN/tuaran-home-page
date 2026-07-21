@@ -7,9 +7,9 @@ import SharePageButton from '../components/SharePageButton'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '关于我',
+  title: '关于涂阿燃（TUARAN）｜前端与 AI 工程师、出版作者、OpenClaw Contributor',
   description:
-    '涂阿燃（tuaran / 掘金安东尼）：前端与 AI 工程化方向的开发者、技术写作者和产品实践者。',
+    '涂阿燃（TUARAN，掘金安东尼）是前端与 AI Agent 工程师、技术写作者和产品实践者，著有《程序员成长手记》《AI Bots 通关指南》，OpenClaw PR #90517、#98320 已合并至 main。',
   keywords: [
     '涂阿燃',
     'tuaran',
@@ -19,6 +19,12 @@ export const metadata = {
     '关于我',
     '前端工程师',
     'AI Agent',
+    '技术作者',
+    '程序员成长手记',
+    'AI Bots 通关指南',
+    'OpenClaw Contributor',
+    'OpenClaw PR 90517',
+    'OpenClaw PR 98320',
     '矩联科技',
     '博主联盟',
   ],
@@ -78,12 +84,88 @@ const timeline = [
   { year: '2026.07', label: 'OpenClaw 两个 PR 合入 main' },
 ]
 
-const openSourceHighlight = {
-  href: 'https://github.com/openclaw/openclaw/pull/98320',
-  title: '梅开二度 · OpenClaw PR #98320 merged into main',
-  summary:
-    '修复 Feishu 图片和文件回复在引用消息被撤回或删除后无法送达的问题，让受安全条件保护的回退逻辑把媒体恢复为顶层消息。这是又一个值得珍藏的开源里程碑：珍视每一次贡献被接纳的荣誉，也会坚定地在开源路上走下去。',
-  facts: ['3 commits', '+168 -35', '5 files', 'Feishu', 'steipete merged', 'main'],
+const openSourceHighlights = [
+  {
+    href: 'https://github.com/openclaw/openclaw/pull/98320',
+    number: '98320',
+    title: 'OpenClaw PR #98320 · Feishu 媒体回复回退',
+    summary:
+      '修复 Feishu 图片和文件回复在引用消息被撤回或删除后无法送达的问题，让受安全条件保护的回退逻辑把媒体恢复为顶层消息。该 PR 于 2026 年 7 月合并至 openclaw:main。',
+    facts: ['3 commits', '+168 -35', '5 files', 'Feishu', 'steipete merged', 'main'],
+    image: '/images/openclaw/pr-98320-merged.png',
+    imageWidth: 1880,
+    imageHeight: 1466,
+  },
+  {
+    href: 'https://github.com/openclaw/openclaw/pull/90517',
+    number: '90517',
+    title: 'OpenClaw PR #90517 · Web Login 插件缺失提示',
+    summary:
+      '修复 Gateway 侧 Web Login 缺少外部插件时的提示路径：复用官方 external plugin repair hint，在 provider 不可用时返回可执行的安装或 openclaw doctor --fix 指引。该 PR 于 2026 年 7 月合并至 openclaw:main。',
+    facts: ['2 commits', '+153 -5', 'gateway', 'web login', 'main'],
+    image: '/images/openclaw/pr-90517-merged.png',
+    imageWidth: 2624,
+    imageHeight: 1456,
+  },
+]
+
+const publishedWorks = [
+  {
+    title: '《程序员成长手记》',
+    type: '技术图书',
+    year: '2023',
+    status: '已出版',
+    description: '围绕程序员成长、工程实践与职业发展的技术作品。',
+    image: '/images/books/programmer-growth-notes.jpg',
+  },
+  {
+    title: '《AI Bots 通关指南》',
+    type: '电子小册',
+    year: '2024',
+    status: '已发布',
+    description: '围绕 AI Bot 与智能体从入门到实践的电子小册。',
+  },
+]
+
+const aboutStructuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Person',
+      '@id': 'https://2aran.com/about#person',
+      name: '涂阿燃',
+      alternateName: ['TUARAN', '掘金安东尼', '安东尼404', '安东尼与AI'],
+      url: 'https://2aran.com/about',
+      image: `https://2aran.com${AVATAR_PATH}`,
+      jobTitle: ['前端与 AI Agent 工程师', '技术写作者', '产品实践者'],
+      description:
+        '前端与 AI Agent 工程师、技术写作者和产品实践者。《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
+      knowsAbout: ['前端工程化', 'AI Agent', 'OpenClaw', '技术写作', '产品实践'],
+      sameAs: [
+        'https://github.com/TUARAN',
+        'https://juejin.cn/user/1521379823340792',
+        'https://blog.csdn.net/aifs2025',
+        'https://blog.51cto.com/u_15298598',
+      ],
+    },
+    ...publishedWorks.map((work) => ({
+      '@type': 'Book',
+      name: work.title.replace(/[《》]/g, ''),
+      author: { '@id': 'https://2aran.com/about#person' },
+      datePublished: work.year,
+      ...(work.type === '电子小册' ? { bookFormat: 'https://schema.org/EBook' } : {}),
+      url: 'https://2aran.com/publications',
+    })),
+    ...openSourceHighlights.map((item) => ({
+      '@type': 'SoftwareSourceCode',
+      name: item.title,
+      description: item.summary,
+      author: { '@id': 'https://2aran.com/about#person' },
+      codeRepository: item.href,
+      url: item.href,
+      programmingLanguage: 'TypeScript',
+    })),
+  ],
 }
 
 const socialLinks = [
@@ -140,6 +222,10 @@ const sectionInner = 'mx-auto w-full max-w-[1120px] px-4'
 export default function AboutPage() {
   return (
     <main className="about-page min-h-screen text-[#dbe6f0]" style={GRID_BG}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutStructuredData).replace(/</g, '\\u003c') }}
+      />
       {/* 霓虹光晕 */}
       <div
         aria-hidden="true"
@@ -293,48 +379,123 @@ export default function AboutPage() {
 
       {/* 开源贡献 */}
       <section className="border-t border-[#1c2a3c]" aria-label="开源贡献">
-        <div className={`grid grid-cols-1 gap-5 py-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] ${sectionInner}`}>
-          <div className="min-w-0">
-            <p className={kicker}>Open Source · 开源贡献</p>
-            <h2 className="mt-2 border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">
-              {openSourceHighlight.title}
-            </h2>
-            <p className="mt-3 text-[13.5px] leading-7 text-[#9aabc0]">{openSourceHighlight.summary}</p>
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {openSourceHighlight.facts.map((fact) => (
-                <span
-                  key={fact}
-                  className="rounded-md border border-[#243549] bg-[#0d1622] px-2.5 py-1 font-mono text-[11px] text-[#8ea3bb]"
+        <div className={`py-8 ${sectionInner}`}>
+          <p className={kicker}>Open Source · 开源贡献</p>
+          <h2 className="mt-2 border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">
+            两次贡献已合并至 OpenClaw 主分支
+          </h2>
+          <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
+            截至 2026 年 7 月，共有 2 个由 TUARAN 提交的 Pull Request 合并至 openclaw:main。每项记录均链接到公开的 GitHub PR 与合并截图。
+          </p>
+
+          <div className="mt-6 space-y-6">
+            {openSourceHighlights.map((item) => (
+              <article
+                key={item.number}
+                className="grid grid-cols-1 gap-5 rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/65 p-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] lg:p-5"
+              >
+                <div className="min-w-0 self-center">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5cd6c8]">
+                    Merged Pull Request · #{item.number}
+                  </p>
+                  <h3 className="mt-2 border-b-0 pb-0 font-mono text-[18px] font-bold leading-7 text-[#e2ecf6] sm:text-[21px]">
+                    {item.title}
+                  </h3>
+                  <p className="mt-3 text-[13.5px] leading-7 text-[#9aabc0]">{item.summary}</p>
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {item.facts.map((fact) => (
+                      <span
+                        key={fact}
+                        className="rounded-md border border-[#243549] bg-[#0d1622] px-2.5 py-1 font-mono text-[11px] text-[#8ea3bb]"
+                      >
+                        {fact}
+                      </span>
+                    ))}
+                  </div>
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow mt-5 inline-flex items-center rounded-md border border-[#2d4d61] bg-[#102032] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
+                  >
+                    查看 GitHub PR #{item.number} ↗
+                  </a>
+                </div>
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="no-external-arrow group max-h-[360px] overflow-hidden rounded-xl border border-[#1d2c3e] bg-[#05090f] no-underline"
+                  aria-label={`查看 OpenClaw PR #${item.number} 合并截图`}
                 >
-                  {fact}
-                </span>
-              ))}
-            </div>
-            <a
-              href={openSourceHighlight.href}
-              target="_blank"
-              rel="noreferrer"
-              className="no-external-arrow mt-5 inline-flex items-center rounded-md border border-[#2d4d61] bg-[#102032] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
-            >
-              查看合并记录 ↗
-            </a>
+                  <Image
+                    src={item.image}
+                    alt={`OpenClaw PR #${item.number} merged into main`}
+                    width={item.imageWidth}
+                    height={item.imageHeight}
+                    sizes="(min-width: 1024px) 520px, 100vw"
+                    className="h-full min-h-[240px] w-full object-cover object-left-top opacity-95 transition duration-300 group-hover:scale-[1.012] group-hover:opacity-100"
+                  />
+                </a>
+              </article>
+            ))}
           </div>
-          <a
-            href={openSourceHighlight.href}
-            target="_blank"
-            rel="noreferrer"
-            className="no-external-arrow group overflow-hidden rounded-2xl border border-[#1d2c3e] bg-[#05090f] no-underline shadow-[0_18px_56px_rgba(0,0,0,0.24)]"
-            aria-label="查看 OpenClaw PR #98320 合并截图"
+        </div>
+      </section>
+
+      {/* 出版作品 */}
+      <section className="border-t border-[#1c2a3c]" aria-label="出版作品">
+        <div className={`py-8 ${sectionInner}`}>
+          <p className={kicker}>Publications · 出版与发布</p>
+          <h2 className="mt-2 border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">
+            两项已完成的技术写作作品
+          </h2>
+          <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
+            这里仅列入已出版或已发布的作品，并区分技术图书与电子小册；已交稿、出版中或撰写中的项目不计入这两项成果。
+          </p>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+            {publishedWorks.map((work) => (
+              <article
+                key={work.title}
+                className="flex min-h-[220px] gap-4 rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/65 p-4"
+              >
+                {work.image ? (
+                  <Image
+                    src={work.image}
+                    alt={`${work.title}封面`}
+                    width={1080}
+                    height={1080}
+                    sizes="128px"
+                    className="h-32 w-32 shrink-0 rounded-xl border border-[#243549] object-cover sm:h-36 sm:w-36"
+                  />
+                ) : (
+                  <div className="flex h-32 w-32 shrink-0 flex-col justify-between rounded-xl border border-[#36526a] bg-[linear-gradient(145deg,#102031,#1f4056,#315f7c)] p-3 sm:h-36 sm:w-36" aria-hidden="true">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/60">E-Book</span>
+                    <strong className="text-[13px] leading-5 text-white">AI Bots<br />通关指南</strong>
+                    <span className="font-mono text-[9px] text-white/55">TUARAN</span>
+                  </div>
+                )}
+                <div className="min-w-0 self-center">
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="rounded-md border border-[#243549] bg-[#0d1622] px-2 py-0.5 font-mono text-[10px] text-[#7fe6da]">{work.status}</span>
+                    <span className="rounded-md border border-[#243549] bg-[#0d1622] px-2 py-0.5 font-mono text-[10px] text-[#8ea3bb]">{work.type}</span>
+                    <span className="rounded-md border border-[#243549] bg-[#0d1622] px-2 py-0.5 font-mono text-[10px] text-[#8ea3bb]">{work.year}</span>
+                  </div>
+                  <h3 className="mt-3 border-b-0 pb-0 text-[18px] font-bold leading-7 text-[#e2ecf6]">{work.title}</h3>
+                  <p className="mt-2 text-[13px] leading-6 text-[#9aabc0]">{work.description}</p>
+                  <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[#5f7088]">作者 · 涂阿燃 TUARAN</p>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <Link
+            href="/publications"
+            className="mt-5 inline-flex items-center rounded-md border border-[#2d4d61] bg-[#102032] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
           >
-            <Image
-              src="/images/openclaw/pr-98320-merged.png"
-              alt="OpenClaw PR #98320 merged into main"
-              width={1880}
-              height={1466}
-              sizes="(min-width: 1024px) 540px, 100vw"
-              className="h-full min-h-[240px] w-full object-cover object-left-top opacity-95 transition duration-300 group-hover:scale-[1.015] group-hover:opacity-100"
-            />
-          </a>
+            查看出版记录与进行中项目 →
+          </Link>
         </div>
       </section>
 

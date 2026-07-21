@@ -1407,6 +1407,27 @@
     background: color-mix(in srgb, var(--site-panel-strong) 46%, transparent);
   }
 
+  .home-achievement-open-button {
+    @apply flex min-w-0 flex-1 items-center gap-2.5 border-0 bg-transparent p-0 text-left;
+    color: var(--site-ink);
+  }
+
+  .home-achievement-pr-links {
+    @apply flex shrink-0 flex-col items-end gap-1 border-l pl-2 font-mono text-[9px] uppercase tracking-[0.08em];
+    border-color: var(--site-line);
+    color: var(--site-faint);
+  }
+
+  .home-achievement-pr-links a {
+    @apply rounded border px-1.5 py-0.5 no-underline transition;
+    border-color: var(--site-line);
+    color: var(--site-blue);
+  }
+
+  .home-achievement-pr-links a:hover {
+    border-color: var(--site-blue);
+  }
+
   .home-achievement-card {
     @apply flex w-full items-center gap-2.5 rounded-xl border p-2 text-left no-underline transition;
     border-color: var(--site-line);
@@ -1510,25 +1531,49 @@
     @apply block h-auto max-h-[72vh] w-full object-contain;
   }
 
+  .home-achievement-modal-switcher {
+    @apply border-b bg-white/[0.04] px-4 py-3 sm:px-5;
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .home-achievement-modal-switcher > p {
+    @apply mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white/60;
+  }
+
+  .home-achievement-modal-switcher-options {
+    @apply grid grid-cols-2 gap-2;
+  }
+
+  .home-achievement-proof-tab {
+    @apply flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-white/75 transition hover:bg-white/10 hover:text-white;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .home-achievement-proof-tab strong {
+    @apply text-[13px] font-semibold;
+  }
+
+  .home-achievement-proof-tab span {
+    @apply font-mono text-[11px];
+  }
+
+  .home-achievement-proof-tab.is-active {
+    color: #07110f;
+    border-color: #5cf0e0;
+    background: #5cf0e0;
+    box-shadow: 0 0 0 1px rgba(92, 240, 224, 0.18), 0 0 22px rgba(92, 240, 224, 0.16);
+  }
+
   .home-achievement-modal-foot {
     @apply flex flex-wrap items-center gap-2 border-t px-4 py-3 font-mono text-[11px] text-white/60 sm:px-5;
     border-color: rgba(255, 255, 255, 0.12);
   }
 
   .home-achievement-modal-foot span,
-  .home-achievement-modal-foot a,
-  .home-achievement-proof-tab {
+  .home-achievement-modal-foot a {
     @apply rounded-md border px-2 py-1 no-underline;
     border-color: rgba(255, 255, 255, 0.14);
-  }
-
-  .home-achievement-proof-tab {
-    @apply text-white/55 transition hover:bg-white/10 hover:text-white;
-  }
-
-  .home-achievement-proof-tab.is-active {
-    @apply bg-white/15 text-white;
-    border-color: rgba(255, 255, 255, 0.36);
   }
 
   .home-achievement-modal-foot a {
@@ -1536,6 +1581,14 @@
   }
 
   @media (max-width: 420px) {
+    .home-achievement-button {
+      @apply flex-wrap;
+    }
+
+    .home-achievement-pr-links {
+      @apply ml-[90px] w-full flex-row items-center border-l-0 pl-0;
+    }
+
     .home-social-priority-grid {
       @apply grid-cols-1;
     }

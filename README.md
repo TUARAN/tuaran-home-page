@@ -64,7 +64,7 @@
 - [端侧大模型实验台](https://2aran.com/web-llm) — WebGPU 在浏览器里跑大模型，不上传任何数据
 - [Skill 中心](https://2aran.com/skill-center) — 模型与智能体能力货架
 - [MCP 中心](https://2aran.com/mcp-center) — 面向智能体的 OAuth 服务货架，登录授权后可查询最近更新与相关内容
-- [Agent 世界杯](https://2aran.com/agent-world-cup) — 2026 世界杯赛程 / 分组 / 资讯，自动采集
+- [Agent 世界杯（存档）](https://2aran.com/archives/agent-world-cup) — 2026 世界杯赛程 / 分组 / 资讯活动存档
 - [站内转短](https://2aran.com/works#site-tools) — 短链与分享系统
 - [吃什么](https://2aran.com/eatwhat) — 今天点什么的小工具
 - [壁纸下载](https://2aran.com/resources/wallpapers)
@@ -87,7 +87,7 @@
 - **样式**：Tailwind CSS 3（页面宽度三档约定 + 浅色 / 深色 / 墨水屏三套阅读主题）
 - **平台**：Cloudflare Pages / Functions（`@cloudflare/next-on-pages`）+ D1 + R2
 - **认证**：自定义 Edge session（GitHub / Google OAuth + 签名 Cookie），邮箱验证码与密码登录
-- **自动化**：GitHub Actions 定时采集（舆情 / 世界杯）、Wrangler 迁移
+- **自动化**：GitHub Actions 定时采集（舆情等进行中任务）、Wrangler 迁移；已结束活动转入后台存档管理
 
 > 历史遗留：仓库中仍保留已废弃的 NextAuth 相关文件（`[...nextauth]` 路由返回 410）与本地版 `lib/stompDb.js`，线上均不使用。
 

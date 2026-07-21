@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-21",
+      "displayDate": "Jul 21",
+      "count": 5,
+      "highlights": [
+        "中国AI几乎追平美国，Kimi K3开源模型引发市场",
+        "Anthropic 与作家群体15亿美元版权和解获批",
+        "代理群（Agent Swarm）通过树状分解在构建 ",
+        "NVIDIA 发布 Cosmos 3 Edge：4B",
+        "Hugging Face 遭自主AI智能体入侵，用A"
+      ]
+    },
+    {
       "date": "2026-07-20",
       "displayDate": "Jul 20",
       "count": 4,
@@ -340,5 +352,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-20"
+  "latest": "2026-07-21"
 }

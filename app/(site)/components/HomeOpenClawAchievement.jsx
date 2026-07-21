@@ -28,15 +28,17 @@ const OPENCLAW_ACHIEVEMENTS = [
 ]
 
 export default function HomeOpenClawAchievement() {
-  const [activeAchievement, setActiveAchievement] = useState(null)
+  const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const activeAchievement = OPENCLAW_ACHIEVEMENTS[activeIndex]
 
   useEffect(() => {
-    if (!activeAchievement) return undefined
+    if (!open) return undefined
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
     function handleKeyDown(event) {
-      if (event.key === 'Escape') setActiveAchievement(null)
+      if (event.key === 'Escape') setOpen(false)
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -44,41 +46,41 @@ export default function HomeOpenClawAchievement() {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [activeAchievement])
+  }, [open])
 
   return (
     <>
-      {OPENCLAW_ACHIEVEMENTS.map((achievement) => (
-        <button
-          key={achievement.number}
-          type="button"
-          className="home-achievement-button"
-          onClick={() => setActiveAchievement(achievement)}
-        >
-          <span className="home-achievement-proof" aria-hidden="true">
-            <Image
-              src={achievement.image}
-              alt=""
-              width={achievement.imageWidth}
-              height={achievement.imageHeight}
-              sizes="80px"
-            />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="home-achievement-kicker">开源贡献 · PR #{achievement.number}</span>
-            <strong>{achievement.title}</strong>
-            <small>{achievement.summary}</small>
-          </span>
-        </button>
-      ))}
+      <button
+        type="button"
+        className="home-achievement-button"
+        onClick={() => {
+          setActiveIndex(0)
+          setOpen(true)
+        }}
+      >
+        <span className="home-achievement-proof" aria-hidden="true">
+          <Image
+            src={OPENCLAW_ACHIEVEMENTS[0].image}
+            alt=""
+            width={OPENCLAW_ACHIEVEMENTS[0].imageWidth}
+            height={OPENCLAW_ACHIEVEMENTS[0].imageHeight}
+            sizes="80px"
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="home-achievement-kicker">开源贡献 · 2 个 PR 已合入</span>
+          <strong>梅开二度：代码两度合入 OpenClaw 主分支</strong>
+          <small>从首次贡献到「龙虾之父」steipete 亲自合并，珍视每一次认可，坚定地在开源路上走下去。</small>
+        </span>
+      </button>
 
-      {activeAchievement ? createPortal(
+      {open ? createPortal(
         <div className="home-achievement-modal" role="dialog" aria-modal="true" aria-labelledby="openclaw-proof-title">
           <button
             type="button"
             className="home-achievement-modal-backdrop"
             aria-label="关闭 OpenClaw 合并截图"
-            onClick={() => setActiveAchievement(null)}
+            onClick={() => setOpen(false)}
           />
           <div className="home-achievement-modal-panel">
             <div className="home-achievement-modal-head">
@@ -86,7 +88,7 @@ export default function HomeOpenClawAchievement() {
                 <p>OpenClaw 合并证明</p>
                 <h2 id="openclaw-proof-title">{activeAchievement.title}</h2>
               </div>
-              <button type="button" onClick={() => setActiveAchievement(null)} aria-label="关闭弹窗">
+              <button type="button" onClick={() => setOpen(false)} aria-label="关闭弹窗">
                 ×
               </button>
             </div>
@@ -101,6 +103,17 @@ export default function HomeOpenClawAchievement() {
               />
             </a>
             <div className="home-achievement-modal-foot">
+              {OPENCLAW_ACHIEVEMENTS.map((achievement, index) => (
+                <button
+                  key={achievement.number}
+                  type="button"
+                  className={index === activeIndex ? 'home-achievement-proof-tab is-active' : 'home-achievement-proof-tab'}
+                  aria-pressed={index === activeIndex}
+                  onClick={() => setActiveIndex(index)}
+                >
+                  PR #{achievement.number}
+                </button>
+              ))}
               {activeAchievement.facts.map((fact) => <span key={fact}>{fact}</span>)}
               <a href={activeAchievement.url} target="_blank" rel="noreferrer" className="no-external-arrow">
                 查看 openclaw/openclaw#{activeAchievement.number} →

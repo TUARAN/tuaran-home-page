@@ -1516,9 +1516,19 @@
   }
 
   .home-achievement-modal-foot span,
-  .home-achievement-modal-foot a {
+  .home-achievement-modal-foot a,
+  .home-achievement-proof-tab {
     @apply rounded-md border px-2 py-1 no-underline;
     border-color: rgba(255, 255, 255, 0.14);
+  }
+
+  .home-achievement-proof-tab {
+    @apply text-white/55 transition hover:bg-white/10 hover:text-white;
+  }
+
+  .home-achievement-proof-tab.is-active {
+    @apply bg-white/15 text-white;
+    border-color: rgba(255, 255, 255, 0.36);
   }
 
   .home-achievement-modal-foot a {

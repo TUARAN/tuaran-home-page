@@ -1396,7 +1396,7 @@
   }
 
   .home-achievement-button {
-    @apply flex w-full flex-wrap items-center gap-x-2.5 gap-y-0.5 rounded-xl border p-2 text-left transition;
+    @apply relative flex w-full items-center gap-2.5 rounded-xl border p-2 text-left transition;
     border-color: var(--site-line);
     background: color-mix(in srgb, var(--site-panel-strong) 28%, transparent);
     color: var(--site-ink);
@@ -1408,13 +1408,16 @@
   }
 
   .home-achievement-open-button {
-    @apply flex w-full min-w-0 items-center gap-2.5 border-0 bg-transparent p-0 text-left;
-    color: var(--site-ink);
+    @apply absolute inset-0 z-0 h-full w-full cursor-pointer border-0 bg-transparent p-0;
+  }
+
+  .home-achievement-copy,
+  .home-achievement-proof {
+    @apply pointer-events-none relative z-[1];
   }
 
   .home-achievement-pr-links {
-    @apply ml-[90px] flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.08em];
-    color: var(--site-faint);
+    @apply pointer-events-auto ml-1 inline whitespace-nowrap;
   }
 
   .home-achievement-pr-links a {
@@ -1579,10 +1582,6 @@
   }
 
   @media (max-width: 420px) {
-    .home-achievement-pr-links {
-      @apply ml-[90px];
-    }
-
     .home-social-priority-grid {
       @apply grid-cols-1;
     }

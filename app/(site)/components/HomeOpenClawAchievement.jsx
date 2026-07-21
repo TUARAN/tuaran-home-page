@@ -56,45 +56,48 @@ export default function HomeOpenClawAchievement() {
         <button
           type="button"
           className="home-achievement-open-button"
+          aria-label="查看两次 OpenClaw 合并证明"
           onClick={() => {
             setActiveIndex(0)
             setOpen(true)
           }}
-        >
-          <span className="home-achievement-proof" aria-hidden="true">
-            <Image
-              src={OPENCLAW_ACHIEVEMENTS[0].image}
-              alt=""
-              width={OPENCLAW_ACHIEVEMENTS[0].imageWidth}
-              height={OPENCLAW_ACHIEVEMENTS[0].imageHeight}
-              sizes="80px"
-            />
+        />
+        <span className="home-achievement-proof" aria-hidden="true">
+          <Image
+            src={OPENCLAW_ACHIEVEMENTS[0].image}
+            alt=""
+            width={OPENCLAW_ACHIEVEMENTS[0].imageWidth}
+            height={OPENCLAW_ACHIEVEMENTS[0].imageHeight}
+            sizes="80px"
+          />
+        </span>
+        <span className="home-achievement-copy min-w-0 flex-1">
+          <span className="home-achievement-kicker">
+            开源贡献 · 2 个 PR 已合入
+            <span className="home-achievement-pr-links" aria-label="OpenClaw 合并记录">
+              （
+              <a
+                href={OPENCLAW_ACHIEVEMENTS[1].url}
+                target="_blank"
+                rel="noreferrer"
+                className="no-external-arrow"
+              >
+                #90517
+              </a>
+              <span aria-hidden="true"> · </span>
+              <a
+                href={OPENCLAW_ACHIEVEMENTS[0].url}
+                target="_blank"
+                rel="noreferrer"
+                className="no-external-arrow"
+              >
+                #98320
+              </a>
+              ）
+            </span>
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="home-achievement-kicker">开源贡献 · 2 个 PR 已合入</span>
-            <strong>两次向全球 Star 数最多的开源软件项目 OpenClaw 贡献代码，均成功被合并</strong>
-          </span>
-        </button>
-        <div className="home-achievement-pr-links" aria-label="OpenClaw 合并记录">
-          <span>合并记录：</span>
-          <a
-            href={OPENCLAW_ACHIEVEMENTS[1].url}
-            target="_blank"
-            rel="noreferrer"
-            className="no-external-arrow"
-          >
-            #90517
-          </a>
-          <span aria-hidden="true">·</span>
-          <a
-            href={OPENCLAW_ACHIEVEMENTS[0].url}
-            target="_blank"
-            rel="noreferrer"
-            className="no-external-arrow"
-          >
-            #98320
-          </a>
-        </div>
+          <strong>两次向全球 Star 数最多的开源软件项目 OpenClaw 贡献代码，均成功被合并</strong>
+        </span>
       </div>
 
       {open ? createPortal(

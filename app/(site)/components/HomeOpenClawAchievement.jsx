@@ -6,6 +6,7 @@ import Image from 'next/image'
 
 const OPENCLAW_ACHIEVEMENTS = [
   {
+    sequence: '第 2 次贡献',
     number: '98320',
     url: 'https://github.com/openclaw/openclaw/pull/98320',
     image: '/images/openclaw/pr-98320-merged.png',
@@ -16,6 +17,7 @@ const OPENCLAW_ACHIEVEMENTS = [
     facts: ['3 commits', '+168 -35', 'steipete merged', '主分支已合并'],
   },
   {
+    sequence: '第 1 次贡献',
     number: '90517',
     url: 'https://github.com/openclaw/openclaw/pull/90517',
     image: '/images/openclaw/pr-90517-merged.png',
@@ -50,29 +52,44 @@ export default function HomeOpenClawAchievement() {
 
   return (
     <>
-      <button
-        type="button"
-        className="home-achievement-button"
-        onClick={() => {
-          setActiveIndex(0)
-          setOpen(true)
-        }}
-      >
-        <span className="home-achievement-proof" aria-hidden="true">
-          <Image
-            src={OPENCLAW_ACHIEVEMENTS[0].image}
-            alt=""
-            width={OPENCLAW_ACHIEVEMENTS[0].imageWidth}
-            height={OPENCLAW_ACHIEVEMENTS[0].imageHeight}
-            sizes="80px"
-          />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="home-achievement-kicker">开源贡献 · 2 个 PR 已合入</span>
-          <strong>梅开二度：代码两度合入 OpenClaw 主分支</strong>
-          <small>从首次贡献到「龙虾之父」steipete 亲自合并，珍视每一次认可，坚定地在开源路上走下去。</small>
-        </span>
-      </button>
+      <div className="home-achievement-button">
+        <button
+          type="button"
+          className="home-achievement-open-button"
+          onClick={() => {
+            setActiveIndex(0)
+            setOpen(true)
+          }}
+        >
+          <span className="home-achievement-proof" aria-hidden="true">
+            <Image
+              src={OPENCLAW_ACHIEVEMENTS[0].image}
+              alt=""
+              width={OPENCLAW_ACHIEVEMENTS[0].imageWidth}
+              height={OPENCLAW_ACHIEVEMENTS[0].imageHeight}
+              sizes="80px"
+            />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="home-achievement-kicker">开源贡献 · 2 个 PR 已合入</span>
+            <strong>两次向全球 Star 数最多的开源软件项目 OpenClaw 贡献代码，均成功被合并</strong>
+          </span>
+        </button>
+        <div className="home-achievement-pr-links" aria-label="OpenClaw 合并记录">
+          <span>合并记录</span>
+          {[...OPENCLAW_ACHIEVEMENTS].reverse().map((achievement) => (
+            <a
+              key={achievement.number}
+              href={achievement.url}
+              target="_blank"
+              rel="noreferrer"
+              className="no-external-arrow"
+            >
+              #{achievement.number} ↗
+            </a>
+          ))}
+        </div>
+      </div>
 
       {open ? createPortal(
         <div className="home-achievement-modal" role="dialog" aria-modal="true" aria-labelledby="openclaw-proof-title">
@@ -92,6 +109,23 @@ export default function HomeOpenClawAchievement() {
                 ×
               </button>
             </div>
+            <div className="home-achievement-modal-switcher">
+              <p>切换查看两次合并证明</p>
+              <div className="home-achievement-modal-switcher-options">
+                {OPENCLAW_ACHIEVEMENTS.map((achievement, index) => (
+                  <button
+                    key={achievement.number}
+                    type="button"
+                    className={index === activeIndex ? 'home-achievement-proof-tab is-active' : 'home-achievement-proof-tab'}
+                    aria-pressed={index === activeIndex}
+                    onClick={() => setActiveIndex(index)}
+                  >
+                    <strong>{achievement.sequence}</strong>
+                    <span>PR #{achievement.number}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             <a href={activeAchievement.url} target="_blank" rel="noreferrer" className="no-external-arrow">
               <Image
                 src={activeAchievement.image}
@@ -103,17 +137,6 @@ export default function HomeOpenClawAchievement() {
               />
             </a>
             <div className="home-achievement-modal-foot">
-              {OPENCLAW_ACHIEVEMENTS.map((achievement, index) => (
-                <button
-                  key={achievement.number}
-                  type="button"
-                  className={index === activeIndex ? 'home-achievement-proof-tab is-active' : 'home-achievement-proof-tab'}
-                  aria-pressed={index === activeIndex}
-                  onClick={() => setActiveIndex(index)}
-                >
-                  PR #{achievement.number}
-                </button>
-              ))}
               {activeAchievement.facts.map((fact) => <span key={fact}>{fact}</span>)}
               <a href={activeAchievement.url} target="_blank" rel="noreferrer" className="no-external-arrow">
                 查看 openclaw/openclaw#{activeAchievement.number} →

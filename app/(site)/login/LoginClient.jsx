@@ -80,7 +80,7 @@ export default function LoginClient() {
         </p>
         <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">登录</h1>
         <p className="mb-8 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">
-          微信登录正在审核；Google、GitHub 和邮箱方式可正常使用。
+          使用 Google、GitHub 或邮箱继续。
         </p>
 
         {lastLoginMethod && LOGIN_METHOD_LABELS[lastLoginMethod] ? (
@@ -89,7 +89,7 @@ export default function LoginClient() {
           </p>
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className={`grid gap-3 ${WECHAT_LOGIN_ENABLED ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
           {WECHAT_LOGIN_ENABLED ? (
             <a
               href={`/api/auth/login?provider=wechat&returnTo=${encodeURIComponent(oauthReturnTo)}`}
@@ -102,11 +102,7 @@ export default function LoginClient() {
               <span>微信登录</span>
               {lastLoginMethod === 'wechat' ? <LastUsedBadge /> : null}
             </a>
-          ) : (
-            <span className="flex min-h-12 cursor-not-allowed items-center justify-center rounded-xl border border-dashed border-[#b7c7b2] bg-[#eff5ed] px-4 py-2.5 text-center text-sm font-medium text-[#597154] dark:border-[#3b5b40] dark:bg-[#16261a] dark:text-[#9ac596]">
-              微信登录 · 待开放
-            </span>
-          )}
+          ) : null}
           <a
             href={`/api/auth/login?provider=google&returnTo=${encodeURIComponent(oauthReturnTo)}`}
             className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-center text-sm font-medium no-underline transition hover:bg-[#e7e8e0] dark:hover:bg-[#19212b] ${
@@ -130,6 +126,13 @@ export default function LoginClient() {
             {lastLoginMethod === 'github' ? <LastUsedBadge /> : null}
           </a>
         </div>
+
+        {!WECHAT_LOGIN_ENABLED ? (
+          <p className="mb-0 mt-3 flex items-center justify-center gap-1.5 text-[11px] text-[#8a8b82] dark:text-[#788596]">
+            <span className="h-1 w-1 rounded-full bg-[#9eaa99] dark:bg-[#607365]" aria-hidden="true" />
+            微信登录待开放
+          </p>
+        ) : null}
 
         <div className="my-6 flex items-center gap-3 text-xs text-[#898a7f] dark:text-[#738095]">
           <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />

@@ -10,7 +10,35 @@ import { AdminPage } from './ui'
  * 旧控制台继续拥有各自的路由和数据边界；工作台负责按工作目标把它们收在一起，
  * 避免把技术对象、供应商名称和工作动作混排在侧边栏。
  */
-export default function WorkspaceHub({ title, description, eyebrow, flow, sections }) {
+function WorkspaceLinks({ items }) {
+  return (
+    <div className="border-y border-[#d9d9cf] dark:border-[#26313e]">
+      {items.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className="group -mx-2 flex items-start gap-4 border-t border-[#e4e4dc] px-2 py-5 transition-colors first:border-t-0 hover:bg-[#efeee7]/70 focus-visible:bg-[#efeee7]/70 focus-visible:outline-none dark:border-[#202b38] dark:hover:bg-[#131b25] dark:focus-visible:bg-[#131b25]"
+        >
+          <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center text-[#6b6d62] dark:text-[#aab6c8]">
+            <AdminIcon name={item.icon} size={19} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{item.title}</span>
+            <span className="mt-1 block text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{item.description}</span>
+            {item.note ? <span className="mt-2 block font-mono text-[10px] text-[#929487] dark:text-[#718096]">{item.note}</span> : null}
+          </span>
+          <IconArrowRight
+            size={15}
+            className="mt-1.5 shrink-0 text-[#a3a598] transition group-hover:translate-x-1 group-hover:text-[#55574e] dark:text-[#536173] dark:group-hover:text-[#aab6c8]"
+            aria-hidden="true"
+          />
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+export default function WorkspaceHub({ title, description, eyebrow, flow, items, sections = [] }) {
   return (
     <AdminPage title={title} description={description}>
       {flow?.length ? (
@@ -34,7 +62,9 @@ export default function WorkspaceHub({ title, description, eyebrow, flow, sectio
         </section>
       ) : null}
 
-      <div>
+      {items?.length ? <WorkspaceLinks items={items} /> : null}
+
+      {sections.length ? <div>
         {sections.map((section) => (
           <section
             key={section.title}
@@ -44,32 +74,10 @@ export default function WorkspaceHub({ title, description, eyebrow, flow, sectio
               <h2 className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{section.title}</h2>
               {section.description ? <p className="mt-2 text-[12px] leading-5 text-[#77796d] dark:text-gray-400">{section.description}</p> : null}
             </div>
-            <div className="border-y border-[#d9d9cf] dark:border-[#26313e]">
-              {section.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="group -mx-2 flex items-start gap-4 border-t border-[#e4e4dc] px-2 py-5 transition-colors first:border-t-0 hover:bg-[#efeee7]/70 focus-visible:bg-[#efeee7]/70 focus-visible:outline-none dark:border-[#202b38] dark:hover:bg-[#131b25] dark:focus-visible:bg-[#131b25]"
-                >
-                  <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center text-[#6b6d62] dark:text-[#aab6c8]">
-                    <AdminIcon name={item.icon} size={19} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{item.title}</span>
-                    <span className="mt-1 block text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{item.description}</span>
-                    {item.note ? <span className="mt-2 block font-mono text-[10px] text-[#929487] dark:text-[#718096]">{item.note}</span> : null}
-                  </span>
-                  <IconArrowRight
-                    size={15}
-                    className="mt-1.5 shrink-0 text-[#a3a598] transition group-hover:translate-x-1 group-hover:text-[#55574e] dark:text-[#536173] dark:group-hover:text-[#aab6c8]"
-                    aria-hidden="true"
-                  />
-                </Link>
-              ))}
-            </div>
+            <WorkspaceLinks items={section.items} />
           </section>
         ))}
-      </div>
+      </div> : null}
     </AdminPage>
   )
 }

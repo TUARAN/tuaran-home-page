@@ -4,9 +4,9 @@ export default function ProjectWorkspace() {
   return (
     <WorkspaceHub
       title="项目与工程"
-      description="用项目组合看方向，用工程工作台推进交付，并沉淀可持续复用的上下文资产。"
+      description="用项目组合看方向，让 AI 协同与工程工作台共同推进交付，并沉淀可持续复用的上下文资产。"
       eyebrow="从方向到沉淀"
-      flow={['项目治理', '工程推进', '资产沉淀']}
+      flow={['项目治理', 'AI 协同', '工程推进', '资产沉淀']}
       sections={[
         {
           title: '项目治理',
@@ -14,6 +14,13 @@ export default function ProjectWorkspace() {
           items: [
             { href: '/admin/planning', title: '规划中心', description: '统一记录全部项目的过去、当前焦点、未来里程碑与执行任务。', icon: 'planning' },
             { href: '/admin/portfolio', title: '项目总览', description: 'AI 项目台账、整合路线图与 Codex 工作区治理。', icon: 'portfolio' },
+          ],
+        },
+        {
+          title: 'AI 协同',
+          description: '把任务规划、模型选型、Agent 分派、自动化运行与调用审计接入项目交付。',
+          items: [
+            { href: '/admin/ai-workspace', title: 'AI 协同工作台', description: '统一进入任务规划、Agent 分派、自动化执行与调用审计闭环。', icon: 'modelDispatch' },
           ],
         },
         {

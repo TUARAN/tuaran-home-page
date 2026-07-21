@@ -76,18 +76,24 @@ export default function HomeOpenClawAchievement() {
           </span>
         </button>
         <div className="home-achievement-pr-links" aria-label="OpenClaw 合并记录">
-          <span>合并记录</span>
-          {[...OPENCLAW_ACHIEVEMENTS].reverse().map((achievement) => (
-            <a
-              key={achievement.number}
-              href={achievement.url}
-              target="_blank"
-              rel="noreferrer"
-              className="no-external-arrow"
-            >
-              #{achievement.number} ↗
-            </a>
-          ))}
+          <span>合并记录：</span>
+          <a
+            href={OPENCLAW_ACHIEVEMENTS[1].url}
+            target="_blank"
+            rel="noreferrer"
+            className="no-external-arrow"
+          >
+            #90517
+          </a>
+          <span aria-hidden="true">·</span>
+          <a
+            href={OPENCLAW_ACHIEVEMENTS[0].url}
+            target="_blank"
+            rel="noreferrer"
+            className="no-external-arrow"
+          >
+            #98320
+          </a>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import DistributeContentButton from '../components/DistributeContentButton'
@@ -220,6 +221,122 @@ const HEADLINE_ACCENT = {
   quote: '#f5a623',
 }
 
+function HeadlineSummary({ item, accent }) {
+  const summaryRef = useRef(null)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    const node = summaryRef.current
+    if (!node) return undefined
+
+    const updateOverflow = () => {
+      setIsOverflowing(node.scrollHeight > node.clientHeight + 1)
+    }
+
+    updateOverflow()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateOverflow)
+      return () => window.removeEventListener('resize', updateOverflow)
+    }
+
+    const observer = new ResizeObserver(updateOverflow)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [item.summary])
+
+  useEffect(() => {
+    if (!open) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  return (
+    <>
+      <div className="mt-4">
+        <p
+          ref={summaryRef}
+          className="mb-0 text-[15px] leading-7 text-[var(--site-muted)] lg:line-clamp-4"
+        >
+          {item.summary}
+        </p>
+        {isOverflowing ? (
+          <button
+            type="button"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border bg-[var(--site-bg)] px-3 py-1.5 text-[12px] font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            style={{ color: accent, borderColor: `${accent}55` }}
+            onClick={() => setOpen(true)}
+            aria-haspopup="dialog"
+          >
+            查看全文
+            <span aria-hidden="true">↗</span>
+          </button>
+        ) : null}
+      </div>
+
+      {open && typeof document !== 'undefined' ? createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-8" role="dialog" aria-modal="true" aria-labelledby={`headline-summary-${item.id}`}>
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
+            aria-label="关闭全文弹窗"
+            onClick={() => setOpen(false)}
+          />
+          <div className="relative flex max-h-[min(82vh,760px)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[var(--site-bg)] shadow-2xl shadow-black/35">
+            <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}55)` }} />
+            <div className="flex items-start justify-between gap-5 border-b border-[var(--site-line)] px-6 py-5 sm:px-8 sm:py-6">
+              <div className="min-w-0">
+                <span
+                  className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
+                  style={{ color: accent, background: `${accent}1a` }}
+                >
+                  头条 · {FEED_TYPE_META[item.type]?.label || ''}
+                </span>
+                <h2 id={`headline-summary-${item.id}`} className="mb-0 mt-3 border-b-0 pb-0 font-serif text-2xl leading-snug text-[var(--site-ink)] sm:text-3xl">
+                  {item.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--site-line)] text-xl leading-none text-[var(--site-muted)] transition hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]"
+                onClick={() => setOpen(false)}
+                aria-label="关闭全文弹窗"
+              >
+                ×
+              </button>
+            </div>
+            <div className="overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
+              <p className="mb-0 whitespace-pre-wrap text-[15px] leading-8 text-[var(--site-muted)] sm:text-base">
+                {item.summary}
+              </p>
+              {item.tags?.length ? (
+                <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--site-line)] pt-5">
+                  {item.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-[var(--site-panel-strong)] px-3 py-1 text-[11px] text-[var(--site-muted)]">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>,
+        document.body
+      ) : null}
+    </>
+  )
+}
+
 // 头条卡：占满整行，桌面端媒体在左、文案在右
 function HeadlineCard({ item }) {
   const accent = HEADLINE_ACCENT[item.type] || '#f5a623'
@@ -250,12 +367,7 @@ function HeadlineCard({ item }) {
           {item.quote || item.summary}
         </blockquote>
       ) : item.summary ? (
-        <p
-          className="mb-0 mt-4 text-[15px] leading-7 text-[var(--site-muted)] lg:line-clamp-4"
-          title={item.summary}
-        >
-          {item.summary}
-        </p>
+        <HeadlineSummary item={item} accent={accent} />
       ) : null}
       <PromptBlock prompt={item.prompt} />
       {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}

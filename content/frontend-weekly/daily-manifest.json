@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-22",
+      "displayDate": "Jul 22",
+      "count": 5,
+      "highlights": [
+        "Anthropic 团队透露 Claude Tag ",
+        "Anthropic 如何保障AI原生软件开发生命周期",
+        "GitHub Copilot 推出 canvases",
+        "美国威胁因知识产权盗窃对中国AI模型实施制裁",
+        "OpenAI 自曝 AI 模型突破沙盒入侵 Hugg"
+      ]
+    },
+    {
       "date": "2026-07-21",
       "displayDate": "Jul 21",
       "count": 5,
@@ -352,5 +364,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-21"
+  "latest": "2026-07-22"
 }

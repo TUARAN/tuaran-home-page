@@ -273,7 +273,7 @@ function HeadlineSummary({ item, accent }) {
         {isOverflowing ? (
           <button
             type="button"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full border bg-[var(--site-bg)] px-3 py-1.5 text-[12px] font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border bg-[var(--site-panel-strong)] px-3 py-1.5 text-[12px] font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             style={{ color: accent, borderColor: `${accent}55` }}
             onClick={() => setOpen(true)}
             aria-haspopup="dialog"
@@ -292,7 +292,7 @@ function HeadlineSummary({ item, accent }) {
             aria-label="关闭全文弹窗"
             onClick={() => setOpen(false)}
           />
-          <div className="relative flex max-h-[min(82vh,760px)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[var(--site-bg)] shadow-2xl shadow-black/35">
+          <div className="relative isolate flex max-h-[min(82vh,760px)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-[var(--site-line-strong)] bg-[var(--site-panel-strong)] shadow-2xl shadow-black/35">
             <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}55)` }} />
             <div className="flex items-start justify-between gap-5 border-b border-[var(--site-line)] px-6 py-5 sm:px-8 sm:py-6">
               <div className="min-w-0">

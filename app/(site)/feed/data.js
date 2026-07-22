@@ -55,6 +55,23 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'kimi-yang-zhilin-new-ai-entrepreneurs',
+    type: 'video',
+    title: 'AI 新贵，褪去了互联网江湖底色',
+    summary:
+      '看完 Kimi 创始人杨植麟的采访，一个鲜明感受扑面而来：这一批 AI 新贵，褪去了老一辈互联网企业家浓厚的江湖底色。你很难想象他们耗费心思琢磨宴席谁坐主位、鱼头朝向何处这类人情周旋。杨植麟的学术底子也足够耀眼，清华本科稳居年级第一，多门课程拿到满分，是实打实的天才。',
+    tags: ['Kimi', '杨植麟', 'AI 创业者', '月之暗面', '企业家'],
+    date: '2026-07-22',
+    time: '16:49',
+    src: feedMediaUrl('feed/kimi-yang-zhilin-interview-2026-07-22.mp4'),
+    poster: '/feed/posters/kimi-yang-zhilin-interview-2026-07-22.jpg',
+    aspect: '16/9',
+    source: {
+      label: '0xKevin00 / X',
+      href: 'https://x.com/0xKevin00/status/2079490178444616173',
+    },
+  },
+  {
     id: 'ai-fomo-big-tree',
     type: 'video',
     title: '被 AI FOMO 围住时，先看看这棵树',

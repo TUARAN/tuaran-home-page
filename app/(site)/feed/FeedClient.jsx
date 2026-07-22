@@ -13,7 +13,7 @@ function TypeBadge({ type }) {
   if (!meta) return null
   return (
     <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold"
+      className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold"
       style={{ color: meta.accent, background: `${meta.accent}1a` }}
     >
       {meta.label}
@@ -92,7 +92,7 @@ function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinit
               idleLabel="转发"
             />
           ) : null}
-          <ArticleActionsDropdown label="更多">
+          <ArticleActionsDropdown label="更多" placement="top">
             <DistributeContentButton
               title={item.title}
               summary={itemDistributeSummary(item)}
@@ -402,7 +402,7 @@ function VideoCard({ item }) {
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mt-3 flex items-center gap-2">
           <TypeBadge type={item.type} />
-          <h2 className="mb-0 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
+          <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
             <Link href={`/feed/${item.id}`} className="no-underline hover:underline">
               {item.title}
             </Link>
@@ -430,7 +430,7 @@ function ImageCard({ item }) {
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mt-3 flex items-center gap-2">
           <TypeBadge type={item.type} />
-          <h2 className="mb-0 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
+          <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
             <Link href={`/feed/${item.id}`} className="no-underline hover:underline">
               {item.title}
             </Link>
@@ -460,7 +460,7 @@ function LinkCard({ item }) {
           ) : null}
           <div className={`flex items-center gap-2 ${item.image ? 'mt-3' : ''}`}>
             <TypeBadge type={item.type} />
-            <h2 className="mb-0 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title} ↗</h2>
+            <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title} ↗</h2>
           </div>
         </a>
         {item.summary ? (

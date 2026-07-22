@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 
-export default function ArticleActionsDropdown({ label = '更多', children }) {
+export default function ArticleActionsDropdown({ label = '更多', children, placement = 'bottom' }) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
   const rootRef = useRef(null)
@@ -51,7 +51,11 @@ export default function ArticleActionsDropdown({ label = '更多', children }) {
         <span>{label}</span>
       </button>
       {open ? (
-        <div id={menuId} role="menu" className="article-actions-dropdown-menu">
+        <div
+          id={menuId}
+          role="menu"
+          className={`article-actions-dropdown-menu ${placement === 'top' ? 'article-actions-dropdown-menu-top' : ''}`}
+        >
           {children}
         </div>
       ) : null}

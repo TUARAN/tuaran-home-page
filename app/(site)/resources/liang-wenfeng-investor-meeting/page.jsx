@@ -35,18 +35,28 @@ export const metadata = {
 const summaryItems = [
   {
     number: '01',
-    title: '愿景、开源与克制',
-    text: '交流把“愿景驱动”视为组织核心，也把开源、合理定价和不追求短期利益最大化归为一种长期战略。',
+    title: '企业愿景与经营策略',
+    text: '公司以研发 AGI 为终极目标，创立初衷并非逐利上市，依靠愿景驱动团队，无硬性 KPI、采用双轨宽松组织模式，维持团队稳定是唯一核心利益；坚持克制战略，开源是主动选择而非妥协，模型开源版本与自用版本完全一致，定价以服务器 10 个月回本为标准，只追求合理利润，主动放弃争抢 C 端流量、视频生成等非主线业务，C 端、B 端 API 仅作为研发副产品。',
   },
   {
     number: '02',
-    title: 'AGI 是主线',
-    text: 'C 端用户和 B 端收入被视为通往 AGI 过程中的阶段性产出；讨论重点落在更强模型、推理、主动提问与持续学习。',
+    title: '技术路线与研发重心',
+    text: 'AI 发展遵循 CoT → Agent → 持续学习 → 模型自我迭代 → 具身智能的递进路径，持续学习是当下最核心待攻克难题，突破后能大幅加速模型自研；模型规模缩放存在明确收益，国内算力不足尚未触及缩放上限，Coding Agent 是现阶段优先落地方向，多模态、搜索仅作为辅助组件，世界模型、视频生成等不提升智能上限，暂不投入资源；高质量数据标注是和海外的主要技术差距，预计一年内补齐。',
   },
   {
     number: '03',
-    title: '主要瓶颈是算力',
-    text: '交流认为中美 AI 的核心差距更多来自算力资源而非人才，并看好国产 AI 芯片替代机会，同时指出当前产能仍是约束。',
+    title: '算力硬件与中美差距',
+    text: '中美 AI 核心差距为算力资源，国内仅能训练几十 B 激活规模模型，海外可训练 800B 超大模型；公司优先将融资资金全部采购显卡，现有 2 万张等效英伟达 H 卡、1.6 万张华为 950 卡，华为卡折算算力仅为英伟达的四分之一，硬件存在两年代差；自研 TileLang 编译语言可脱离 CUDA 生态，国产芯片生态一年内可验证成熟，长期瓶颈仅为产能，预计五年内解决；缩小差距依靠模型侧优化算力效率、硬件侧国产芯片迭代双向发力。',
+  },
+  {
+    number: '04',
+    title: '行业格局与商业化规划',
+    text: '国内基础大模型厂商数量过剩，行业后续会收敛至 3–4 家；人才紧缺只是短期现象，两三年会大量补齐；商业化以 B 端 API 为现金流保底，业务可支撑公司盈利乃至上市，公司不做全产业链垂直整合，开放基座模型交由合作伙伴开发垂类应用；全球 AI 长期竞争核心是成本、落地时间、产品体验，国内在成本与本土化产品上具备结构性优势。',
+  },
+  {
+    number: '05',
+    title: '发展时间规划',
+    text: '短期 1 年内国产算力生态落地、基础模型追平海外、启动 150B–250B 大模型训练；中期 1–3 年攻克持续学习技术、国产芯片产能逐步释放；长期 3–5 年算力产能瓶颈消除，实现模型自主迭代，最终落地具身智能，完成 AGI 完整闭环。',
   },
 ]
 
@@ -129,11 +139,16 @@ export default function LiangWenfengInvestorMeetingPage() {
             Quick Summary
           </p>
           <h2 id="summary-heading" className="mt-2 font-serif text-2xl font-semibold text-[#2b332d] dark:text-gray-100">
-            简单总结
+            核心总结
           </h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             {summaryItems.map((item) => (
-              <article key={item.number} className="rounded-2xl border border-[#e1e4df] bg-[#fafbf9] p-5 dark:border-gray-800 dark:bg-gray-900/60">
+              <article
+                key={item.number}
+                className={`rounded-2xl border border-[#e1e4df] bg-[#fafbf9] p-5 dark:border-gray-800 dark:bg-gray-900/60 ${
+                  item.number === '05' ? 'md:col-span-2' : ''
+                }`}
+              >
                 <span className="font-mono text-xs text-[#8b7551] dark:text-amber-400">{item.number}</span>
                 <h3 className="mt-2 text-base font-semibold text-[#303a33] dark:text-gray-100">{item.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-[#697169] dark:text-gray-400">{item.text}</p>

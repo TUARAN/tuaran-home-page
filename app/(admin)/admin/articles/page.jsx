@@ -5,14 +5,14 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '文章编辑器',
-  description: '在线撰写、保存草稿并发布精选文章。',
+  title: '内容管理',
+  description: '统一创作、登记和管理文章、调研与资源。',
   robots: { index: false, follow: false },
 }
 
 export default function AdminArticlesPage() {
   return (
-    <AdminPageGate label="文章编辑器" returnTo="/admin/articles" description="仅站长本人可管理文章。">
+    <AdminPageGate label="内容管理" returnTo="/admin/articles" description="统一管理内容创作、登记与发布状态，仅站长本人可见。">
       <ArticlesConsole />
     </AdminPageGate>
   )

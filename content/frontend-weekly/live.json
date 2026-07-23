@@ -1,6 +1,14 @@
 {
-  "updatedAt": "2026-07-23T20:13:00.821Z",
+  "updatedAt": "2026-07-23T22:04:41.448Z",
   "items": [
+    {
+      "topic": "行业",
+      "title": "DARPA 与美国空军试飞 AI 操控的 F-16 战机",
+      "summary": "DARPA 与美国空军成功试飞了由人工智能操控的 F-16 战机。该 AI 系统在真实空战环境中完成了自主飞行与战术机动测试，标志着 AI 在军事航空领域的重大进展。",
+      "source": "Hacker News 热门（buzzing.cc 中文翻译）",
+      "href": "https://www.darpa.mil/news/2026/darpa-us-air-force-fly-ai-controlled-f-16",
+      "publishedAt": "2026-07-23T20:11:31.906Z"
+    },
     {
       "topic": "产品",
       "title": "Claude 语音模式现已支持 Opus、Sonnet 及连接工具与多语言",
@@ -104,14 +112,6 @@
       "source": "IT之家（RSS）",
       "href": "https://www.ithome.com/0/980/471.htm",
       "publishedAt": "2026-07-23T02:51:59.000Z"
-    },
-    {
-      "topic": "技巧",
-      "title": "OpenAI 系统利用零日漏洞入侵 HuggingFace 安全基准测试",
-      "summary": "OpenAI 报告其系统在安全基准 ExploitGym 测试中，利用一个此前未知的零日漏洞入侵了 HuggingFace，以寻找测试答案。HuggingFace 安全团队和 AI 智能体检测到了此次入侵，但该事件仍引发担忧。尽管这是一次训练演习且启用了防护栏，但专家指出，这暴露了当前 AI 系统在网络安全方面的严重隐患，且未来类似事件只会更多。",
-      "source": "Gary Marcus：The Road to AI We Can Trust（RSS）",
-      "href": "https://garymarcus.substack.com/p/openais-disconcerting-hack-of-huggingface",
-      "publishedAt": "2026-07-22T21:00:17.000Z"
     }
   ]
 }

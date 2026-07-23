@@ -71,7 +71,6 @@ const RULE_FIELDS = [
 export default function PointsConsole() {
   const [status, setStatus] = useState('loading')
   const [message, setMessage] = useState('')
-  const [rules, setRules] = useState(null)
   const [ruleDraft, setRuleDraft] = useState({})
   const [policy, setPolicy] = useState(null)
   const [resources, setResources] = useState([])
@@ -106,7 +105,6 @@ export default function PointsConsole() {
       const res = await fetch('/api/admin/points', { cache: 'no-store', credentials: 'same-origin' })
       const data = await res.json().catch(() => null)
       if (res.ok && data?.status === 'ok') {
-        setRules(data.rules || null)
         setRuleDraft(data.rules || {})
         setPolicy(data.policy || null)
         setResources(Array.isArray(data.resources) ? data.resources : [])
@@ -114,7 +112,6 @@ export default function PointsConsole() {
         setAutoReconcile(data.autoReconcile || null)
         setStatus('ok')
       } else {
-        setRules(data?.rules || null)
         setPolicy(data?.policy || null)
         setAutoReconcile(data?.autoReconcile || null)
         setStatus(data?.status === 'unavailable' ? 'unavailable' : 'error')
@@ -145,7 +142,6 @@ export default function PointsConsole() {
       if (!res.ok || data?.status !== 'ok') {
         throw new Error(data?.message || data?.error || `HTTP ${res.status}`)
       }
-      setRules(data.rules || null)
       setRuleDraft(data.rules || {})
       setPolicy(data.policy || null)
       setResources(Array.isArray(data.resources) ? data.resources : [])
@@ -328,107 +324,6 @@ export default function PointsConsole() {
         </Section>
       ) : null}
 
-      {rules ? (
-        <section className="mb-5 rounded-xl border border-[#e2e3da] bg-white px-4 py-3 dark:border-[#1e2733] dark:bg-[#0b1119]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-sm font-semibold text-[#15140f] dark:text-gray-100">燃币规则概览</h2>
-              <p className="mt-1 text-xs text-[#67695d] dark:text-gray-400">
-                详细规则偏站长维护信息，默认收起；日常操作看下方门槛、调账和账户查询。
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowPolicyDetails((v) => !v)}
-              className="h-8 rounded-lg border border-[#d8dad0] px-3 text-xs font-medium text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
-              aria-expanded={showPolicyDetails}
-            >
-              {showPolicyDetails ? '收起规则详情' : '展开规则详情'}
-            </button>
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4 lg:grid-cols-7">
-            {[
-              ['账户余额', summary?.totalBalance ?? 0],
-              ['游客初始', `+${rules.guestSeed}`],
-              ['注册', `+${rules.register}`],
-              ['签到', `+${rules.checkin}`],
-              ['评论', `+${rules.comment}`],
-              ['调研', rules.researchDefaultCost],
-              ['内容', rules.resourceDefaultCost],
-              ['工具包', rules.toolDefaultCost],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-lg border border-[#eceee6] bg-[#fbfcf7] px-3 py-2 dark:border-[#1b2430] dark:bg-[#10161f]">
-                <p className="text-[11px] text-[#82847a] dark:text-gray-500">{label}</p>
-                <p className="mt-0.5 font-mono text-base font-semibold text-[#15140f] dark:text-gray-100">{value}</p>
-              </div>
-            ))}
-          </div>
-
-          {autoReconcileText ? (
-            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/25 dark:text-emerald-200">
-              {autoReconcileText}
-            </div>
-          ) : null}
-
-          {showPolicyDetails && policy ? (
-            <div className="mt-4 border-t border-[#eceee6] pt-4 dark:border-[#1b2430]">
-              <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1.3fr]">
-                <div className="rounded-lg border border-[#e2e3da] bg-[#fbfcf7] p-4 dark:border-[#1e2733] dark:bg-[#10161f]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#67695d] dark:text-gray-400">
-                    {policy.currency?.symbol || '🔥'} {policy.currency?.name || '燃币'}
-                  </p>
-                  <p className="mt-2 text-sm text-[#33352c] dark:text-gray-200">{policy.currency?.scope}</p>
-                  <p className="mt-2 text-xs leading-5 text-[#67695d] dark:text-gray-400">
-                    参考 {policy.reference?.label || '社区货币体系'}：{policy.reference?.note || '把获取、使用、余额和反滥用放在同一套规则里。'}
-                  </p>
-                  <a
-                    href={policy.reference?.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex text-xs font-medium text-[#7a5b1e] underline underline-offset-2 dark:text-amber-300"
-                  >
-                    查看参考页面
-                  </a>
-                </div>
-                <ul className="rounded-lg border border-[#e2e3da] bg-white p-4 text-xs leading-6 text-[#67695d] dark:border-[#1e2733] dark:bg-[#0b1119] dark:text-gray-400">
-                  {(policy.principles || []).map((text) => (
-                    <li key={text}>· {text}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="grid gap-4 xl:grid-cols-2">
-                <DataTable
-                  columns={[
-                    { key: 'label', header: '获取方式' },
-                    { key: 'amount', header: '燃币', align: 'right' },
-                    { key: 'frequency', header: '频率' },
-                    { key: 'capText', header: '上限', align: 'right' },
-                    { key: 'statusLabel', header: '状态' },
-                    { key: 'description', header: '说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
-                  ]}
-                  rows={policyEarnRows}
-                  rowKey={(row) => row.id}
-                />
-                <DataTable
-                  columns={[
-                    { key: 'label', header: '使用场景' },
-                    { key: 'quota', header: '额度', align: 'right' },
-                    { key: 'unit', header: '单位' },
-                    { key: 'pattern', header: '匹配范围', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
-                    { key: 'statusLabel', header: '状态' },
-                    { key: 'description', header: '说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
-                  ]}
-                  rows={policySpendRows}
-                  rowKey={(row) => row.id}
-                />
-              </div>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
       <div className="mb-5 flex flex-wrap items-center gap-2 border-b border-[#e2e3da] dark:border-[#1e2733]">
         {TABS.map((tab) => {
           const active = activeTab === tab.id
@@ -456,6 +351,31 @@ export default function PointsConsole() {
             description="这里的数值是实际生效规则，不是写死在代码中的价格。保存后只影响新的发币、扣币和解锁；已发生的账本与已解锁权益不会被改写。"
             className="mb-5"
           >
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#eceee6] bg-[#fbfcf7] px-3 py-2 dark:border-[#1b2430] dark:bg-[#10161f]">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xs text-[#82847a] dark:text-gray-500">全站账户余额</span>
+                <span className="font-mono text-base font-semibold text-[#15140f] dark:text-gray-100">
+                  {summary?.totalBalance ?? 0}
+                </span>
+              </div>
+              {policy ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPolicyDetails((value) => !value)}
+                  className="h-8 rounded-lg border border-[#d8dad0] px-3 text-xs font-medium text-[#53554d] hover:border-[#818472] dark:border-[#2d3744] dark:text-gray-300"
+                  aria-expanded={showPolicyDetails}
+                >
+                  {showPolicyDetails ? '收起规则说明' : '展开规则说明'}
+                </button>
+              ) : null}
+            </div>
+
+            {autoReconcileText ? (
+              <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/25 dark:text-emerald-200">
+                {autoReconcileText}
+              </div>
+            ) : null}
+
             <form onSubmit={saveRuleSettings}>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 {RULE_FIELDS.map(([key, label, hint]) => (
@@ -486,6 +406,62 @@ export default function PointsConsole() {
                 </p>
               </div>
             </form>
+
+            {showPolicyDetails && policy ? (
+              <div className="mt-5 border-t border-[#eceee6] pt-4 dark:border-[#1b2430]">
+                <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_1.3fr]">
+                  <div className="rounded-lg border border-[#e2e3da] bg-[#fbfcf7] p-4 dark:border-[#1e2733] dark:bg-[#10161f]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#67695d] dark:text-gray-400">
+                      {policy.currency?.symbol || '🔥'} {policy.currency?.name || '燃币'}
+                    </p>
+                    <p className="mt-2 text-sm text-[#33352c] dark:text-gray-200">{policy.currency?.scope}</p>
+                    <p className="mt-2 text-xs leading-5 text-[#67695d] dark:text-gray-400">
+                      参考 {policy.reference?.label || '社区货币体系'}：{policy.reference?.note || '把获取、使用、余额和反滥用放在同一套规则里。'}
+                    </p>
+                    <a
+                      href={policy.reference?.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex text-xs font-medium text-[#7a5b1e] underline underline-offset-2 dark:text-amber-300"
+                    >
+                      查看参考页面
+                    </a>
+                  </div>
+                  <ul className="rounded-lg border border-[#e2e3da] bg-white p-4 text-xs leading-6 text-[#67695d] dark:border-[#1e2733] dark:bg-[#0b1119] dark:text-gray-400">
+                    {(policy.principles || []).map((text) => (
+                      <li key={text}>· {text}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <DataTable
+                    columns={[
+                      { key: 'label', header: '获取方式' },
+                      { key: 'amount', header: '燃币', align: 'right' },
+                      { key: 'frequency', header: '频率' },
+                      { key: 'capText', header: '上限', align: 'right' },
+                      { key: 'statusLabel', header: '状态' },
+                      { key: 'description', header: '说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
+                    ]}
+                    rows={policyEarnRows}
+                    rowKey={(row) => row.id}
+                  />
+                  <DataTable
+                    columns={[
+                      { key: 'label', header: '使用场景' },
+                      { key: 'quota', header: '额度', align: 'right' },
+                      { key: 'unit', header: '单位' },
+                      { key: 'pattern', header: '匹配范围', tdClassName: 'font-mono text-xs text-[#67695d] dark:text-gray-400' },
+                      { key: 'statusLabel', header: '状态' },
+                      { key: 'description', header: '说明', tdClassName: 'text-xs text-[#67695d] dark:text-gray-400' },
+                    ]}
+                    rows={policySpendRows}
+                    rowKey={(row) => row.id}
+                  />
+                </div>
+              </div>
+            ) : null}
           </Section>
 
           <Section

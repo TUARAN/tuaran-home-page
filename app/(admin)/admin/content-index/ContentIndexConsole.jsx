@@ -190,7 +190,7 @@ export default function ContentIndexConsole() {
         </div>
       ) : null}
 
-      <section className="mb-8 rounded-lg border border-[#dee0db] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
+      <section id="manual-registration" className="mb-8 scroll-mt-6 rounded-lg border border-[#dee0db] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-[#333] dark:text-gray-200">构建期注册表 → D1</h2>

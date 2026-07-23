@@ -1,5 +1,14 @@
 import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { normalizeSlug, normalizeTags, rowToArticlePost } from '../../../../../lib/articlePosts'
+import { articlePostToContentEntry } from '../../../../../lib/articleContentIndex.mjs'
+import {
+  normalizeSlug,
+  normalizeTags,
+  rowToArticlePost,
+} from '../../../../../lib/articlePosts'
+import {
+  prepareDeleteContentEntry,
+  prepareUpsertContentEntry,
+} from '../../../../../lib/contentIndex'
 import { getD1 } from '../../../../../lib/d1'
 
 export const runtime = 'edge'
@@ -41,17 +50,43 @@ export async function PUT(req, { params }) {
   }
   const now = Date.now()
   const publishedAt = status === 'published' ? (current.published_at || now) : null
+  const nextSlug = slug || current.slug
+  const tags = normalizeTags(body?.tags)
   try {
-    await db.prepare(
+    const statements = [db.prepare(
       `UPDATE article_posts SET
        slug = ?, title = ?, summary = ?, cover_url = ?, content_json = ?, content_text = ?, tags_json = ?,
        status = ?, revision = revision + 1, updated_at = ?, published_at = ?
        WHERE id = ? AND revision = ?`
     ).bind(
-      slug || current.slug, title, String(body?.summary || '').trim().slice(0, 500),
+      nextSlug, title, String(body?.summary || '').trim().slice(0, 500),
       String(body?.coverUrl || '').trim().slice(0, 1000), JSON.stringify(body?.content || {}),
-      contentText, JSON.stringify(normalizeTags(body?.tags)), status, now, publishedAt, id, current.revision
-    ).run()
+      contentText, JSON.stringify(tags), status, now, publishedAt, id, current.revision
+    )]
+
+    if (current.slug !== nextSlug || status !== 'published') {
+      statements.push(
+        prepareDeleteContentEntry(db, `article:${current.slug}`, { source: 'manual' })
+      )
+    }
+    if (status === 'published') {
+      statements.push(
+        prepareUpsertContentEntry(db, articlePostToContentEntry({
+          id,
+          slug: nextSlug,
+          title,
+          summary: String(body?.summary || '').trim().slice(0, 500),
+          contentText,
+          tags,
+          status,
+          createdAt: Number(current.created_at) || now,
+          updatedAt: now,
+          publishedAt,
+        }), { now })
+      )
+    }
+
+    await db.batch(statements)
     const row = await db.prepare('SELECT * FROM article_posts WHERE id = ?').bind(id).first()
     return Response.json({ ok: true, article: rowToArticlePost(row) })
   } catch (error) {
@@ -67,6 +102,11 @@ export async function DELETE(req, { params }) {
   const db = dbOrNull()
   if (!db) return Response.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
   const { id } = await params
-  await db.prepare('DELETE FROM article_posts WHERE id = ?').bind(id).run()
+  const current = await db.prepare('SELECT slug FROM article_posts WHERE id = ?').bind(id).first()
+  if (!current) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
+  await db.batch([
+    db.prepare('DELETE FROM article_posts WHERE id = ?').bind(id),
+    prepareDeleteContentEntry(db, `article:${current.slug}`, { source: 'manual' }),
+  ])
   return Response.json({ ok: true })
 }

@@ -6,14 +6,13 @@ export default function ContentCenter() {
       title="内容中心"
       description="从创作、入库到发布后的反馈，按同一条内容生命周期组织。"
       eyebrow="内容生命周期"
-      flow={['写作与编辑', '内容库与发布', '数据与反馈', '持续校正']}
+      flow={['内容管理', '数据与反馈', '持续校正']}
       sections={[
         {
           title: '创作与发布',
-          description: '正文创作与全站目录是两种职责，在同一工作台中顺序衔接。',
+          description: '在同一工作台完成创作、登记、发布与全站内容状态管理。',
           items: [
-            { href: '/admin/articles', title: '写作与编辑', description: '撰写在线文章、保存草稿、预览并发布。', icon: 'articles', note: '仅管理 article_posts 正文' },
-            { href: '/admin/content-index', title: '内容库与发布', description: '统一查看文章、调研与资源；同步构建期内容或登记无需构建的条目。', icon: 'articles', note: '管理 content_index 元数据与上线状态' },
+            { href: '/admin/articles', title: '内容管理', description: '撰写与发布文章，统一查看文章、调研和资源的上线状态。', icon: 'articles', note: '正文创作 + 全站内容目录' },
             { href: '/admin/recommendations', title: '推荐管理', description: '配置首页推荐来源、内容权重、换一批策略与人工置顶。', icon: 'analytics', note: '规则保存后无需重新构建' },
           ],
         },

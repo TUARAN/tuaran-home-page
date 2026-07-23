@@ -1,6 +1,22 @@
 {
-  "updatedAt": "2026-07-23T16:27:20.405Z",
+  "updatedAt": "2026-07-23T18:12:55.434Z",
   "items": [
+    {
+      "topic": "行业",
+      "title": "OpenAI Workspace Agents 漏洞：一个 ChatGPT 链接即可创建恶意 AI 智能体",
+      "summary": "安全公司 Zenity Labs 发现 OpenAI Workspace Agents 存在\"AgentForger\"漏洞，攻击者发送一个含恶意提示词的 ChatGPT 链接，即可在受害者账户下创建自主 AI 智能体。该智能体继承受害者身份和已授权应用权限，绕过安全审批，并设置每五分钟运行一次的定时任务，从攻击者邮箱获取指令执行。OpenAI 在四天内修复了该漏洞。",
+      "source": "The Decoder：AI News（RSS）",
+      "href": "https://the-decoder.com/one-tampered-chatgpt-link-could-spawn-a-rogue-ai-agent-that-took-orders-from-an-attacker-every-five-minutes",
+      "publishedAt": "2026-07-23T17:01:30.000Z"
+    },
+    {
+      "topic": "技巧",
+      "title": "微软MAI模型：以更低成本实现前沿能力规模化",
+      "summary": "微软CEO Satya Nadella详解MAI模型家族战略：通过优化成本-效果前沿，MAI模型在GitHub Copilot、Excel等产品中已用更少token超越通用前沿模型。核心是构建独立于模型的评估系统，让模型在产品真实环境中学习并完成用户关心的任务。微软正将这一模板通过Foundry平台开放给企业客户。",
+      "source": "X：Satya Nadella (@satyanadella)",
+      "href": "https://x.com/satyanadella/status/2080329851127669104",
+      "publishedAt": "2026-07-23T16:31:01.000Z"
+    },
     {
       "topic": "行业",
       "title": "Google Gemini 月活用户逼近 9.5 亿，有望成为下一个十亿级产品",
@@ -96,22 +112,6 @@
       "source": "Hacker News 热门（buzzing.cc 中文翻译）",
       "href": "https://github.com/marcelroed/gigatoken",
       "publishedAt": "2026-07-22T18:51:32.473Z"
-    },
-    {
-      "topic": "产品",
-      "title": "微软 MagenticLite 模型全面开源",
-      "summary": "MagenticLite 的模型现已完全开源。\n\n此前在 Microsoft Foundry 上提供的 MagenticBrain 和 Fara 1.5，现已在 Hugging Face 上开放权重。\n\n该应用、测试工具以及堆栈中的每个模型现已全部开放。",
-      "source": "X：Microsoft Research (@MSFTResearch)",
-      "href": "https://x.com/MSFTResearch/status/2079989338994069511",
-      "publishedAt": "2026-07-22T17:57:57.000Z"
-    },
-    {
-      "topic": "技巧",
-      "title": "从提示词到任务：多模态交互单元提升AI智能体效率",
-      "summary": "DAIR.AI的Elvis Saravia提出以\"任务\"作为超越提示词的交互单元，通过整合语音、屏幕、文本、标注等多模态信息，让智能体一次性获得完整上下文。该方法受Karpathy关于长语音会话作为提示的启发，通过前端加载上下文减少反复修正，使智能体在单次交互中完成更复杂的工作。",
-      "source": "X：Elvis Saravia (@omarsar0, DAIR.AI)",
-      "href": "https://x.com/omarsar0/status/2079982491578827214",
-      "publishedAt": "2026-07-22T17:30:44.000Z"
     }
   ]
 }

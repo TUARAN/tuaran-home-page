@@ -3,12 +3,12 @@ import Link from 'next/link'
 
 import { AVATAR_PATH } from '../../../lib/avatar'
 import {
-  getOpenClawAchievementFacts,
   OPENCLAW_ACHIEVEMENT_COUNT,
   OPENCLAW_ACHIEVEMENTS,
   OPENCLAW_RESOLVED_ISSUES,
 } from '../../../lib/openClawAchievements'
 import SharePageButton from '../components/SharePageButton'
+import OpenClawAchievementsCarousel from './OpenClawAchievementsCarousel'
 
 export const dynamic = 'force-static'
 
@@ -368,58 +368,7 @@ export default function AboutPage() {
             截至 2026 年 7 月，共有 {OPENCLAW_ACHIEVEMENT_COUNT} 个由 TUARAN 提交的 Pull Request 合并至 openclaw:main，其中已明确关联并关闭 {OPENCLAW_RESOLVED_ISSUES.length} 个 issue（{OPENCLAW_RESOLVED_ISSUES.map((issue) => `#${issue.number}`).join('、')}）。每项记录均链接到公开的 GitHub PR 与合并截图。
           </p>
 
-          <div className="mt-6 space-y-6">
-            {OPENCLAW_ACHIEVEMENTS.map((item) => (
-              <article
-                key={item.number}
-                className="grid grid-cols-1 gap-5 rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/65 p-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] lg:p-5"
-              >
-                <div className="min-w-0 self-center">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5cd6c8]">
-                    Merged Pull Request · #{item.number}
-                  </p>
-                  <h3 className="mt-2 border-b-0 pb-0 font-mono text-[18px] font-bold leading-7 text-[#e2ecf6] sm:text-[21px]">
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 text-[13.5px] leading-7 text-[#9aabc0]">{item.summary}</p>
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {getOpenClawAchievementFacts(item).map((fact) => (
-                      <span
-                        key={fact}
-                        className="rounded-md border border-[#243549] bg-[#0d1622] px-2.5 py-1 font-mono text-[11px] text-[#8ea3bb]"
-                      >
-                        {fact}
-                      </span>
-                    ))}
-                  </div>
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow mt-5 inline-flex items-center rounded-md border border-[#2d4d61] bg-[#102032] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
-                  >
-                    查看 GitHub PR #{item.number} ↗
-                  </a>
-                </div>
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow group max-h-[360px] overflow-hidden rounded-xl border border-[#1d2c3e] bg-[#05090f] no-underline"
-                  aria-label={`查看 OpenClaw PR #${item.number} 合并截图`}
-                >
-                  <Image
-                    src={item.image}
-                    alt={`OpenClaw PR #${item.number} merged into main`}
-                    width={item.imageWidth}
-                    height={item.imageHeight}
-                    sizes="(min-width: 1024px) 520px, 100vw"
-                    className="h-full min-h-[240px] w-full object-cover object-left-top opacity-95 transition duration-300 group-hover:scale-[1.012] group-hover:opacity-100"
-                  />
-                </a>
-              </article>
-            ))}
-          </div>
+          <OpenClawAchievementsCarousel achievements={OPENCLAW_ACHIEVEMENTS} />
         </div>
       </section>
 

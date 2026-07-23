@@ -4,30 +4,11 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 
-const OPENCLAW_ACHIEVEMENTS = [
-  {
-    sequence: '第 2 次贡献',
-    number: '98320',
-    url: 'https://github.com/openclaw/openclaw/pull/98320',
-    image: '/images/openclaw/pr-98320-merged.png',
-    imageWidth: 1880,
-    imageHeight: 1466,
-    title: '梅开二度：代码再次合入 OpenClaw 主分支，由「龙虾之父」steipete 亲自合并',
-    summary: '又一个值得珍藏的开源里程碑。珍视每一次贡献被接纳的荣誉，也会坚定地在开源路上走下去。',
-    facts: ['3 commits', '+168 -35', 'steipete merged', '主分支已合并'],
-  },
-  {
-    sequence: '第 1 次贡献',
-    number: '90517',
-    url: 'https://github.com/openclaw/openclaw/pull/90517',
-    image: '/images/openclaw/pr-90517-merged.png',
-    imageWidth: 2624,
-    imageHeight: 1456,
-    title: '首次贡献代码至 OpenClaw，成功合入主分支',
-    summary: '从真实问题出发，让修复通过评审并进入主线，留下第一枚开源贡献坐标。',
-    facts: ['2 commits', '+153 -5', 'gateway', '主分支已合并'],
-  },
-]
+import {
+  getOpenClawAchievementFacts,
+  OPENCLAW_ACHIEVEMENT_COUNT,
+  OPENCLAW_ACHIEVEMENTS,
+} from '../../../lib/openClawAchievements'
 
 export default function HomeOpenClawAchievement() {
   const [open, setOpen] = useState(false)
@@ -56,7 +37,7 @@ export default function HomeOpenClawAchievement() {
         <button
           type="button"
           className="home-achievement-open-button"
-          aria-label="查看两次 OpenClaw 合并证明"
+          aria-label={`查看 ${OPENCLAW_ACHIEVEMENT_COUNT} 次 OpenClaw 合并证明`}
           onClick={() => {
             setActiveIndex(0)
             setOpen(true)
@@ -73,30 +54,26 @@ export default function HomeOpenClawAchievement() {
         </span>
         <span className="home-achievement-copy min-w-0 flex-1">
           <span className="home-achievement-kicker">
-            开源贡献 · 2 个 PR 已合入
+            开源贡献 · {OPENCLAW_ACHIEVEMENT_COUNT} 个 PR 已合入
             <span className="home-achievement-pr-links" aria-label="OpenClaw 合并记录">
               （
-              <a
-                href={OPENCLAW_ACHIEVEMENTS[1].url}
-                target="_blank"
-                rel="noreferrer"
-                className="no-external-arrow"
-              >
-                #90517
-              </a>
-              <span aria-hidden="true"> · </span>
-              <a
-                href={OPENCLAW_ACHIEVEMENTS[0].url}
-                target="_blank"
-                rel="noreferrer"
-                className="no-external-arrow"
-              >
-                #98320
-              </a>
+              {OPENCLAW_ACHIEVEMENTS.map((achievement, index) => (
+                <span key={achievement.number}>
+                  {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                  <a
+                    href={achievement.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="no-external-arrow"
+                  >
+                    #{achievement.number}
+                  </a>
+                </span>
+              ))}
               ）
             </span>
           </span>
-          <strong>开源贡献至全球 Star 数最多的开源软件项目 OpenClaw🦞，已有 2 次代码成功被合并。</strong>
+          <strong>开源贡献至全球 Star 数最多的开源软件项目 OpenClaw🦞，已有 {OPENCLAW_ACHIEVEMENT_COUNT} 次代码成功被合并。</strong>
         </span>
       </div>
 
@@ -119,7 +96,7 @@ export default function HomeOpenClawAchievement() {
               </button>
             </div>
             <div className="home-achievement-modal-switcher">
-              <p>切换查看两次合并证明</p>
+              <p>切换查看 {OPENCLAW_ACHIEVEMENT_COUNT} 次合并证明</p>
               <div className="home-achievement-modal-switcher-options">
                 {OPENCLAW_ACHIEVEMENTS.map((achievement, index) => (
                   <button
@@ -129,7 +106,7 @@ export default function HomeOpenClawAchievement() {
                     aria-pressed={index === activeIndex}
                     onClick={() => setActiveIndex(index)}
                   >
-                    <strong>{achievement.sequence}</strong>
+                    <strong>第 {achievement.order} 次贡献</strong>
                     <span>PR #{achievement.number}</span>
                   </button>
                 ))}
@@ -146,7 +123,7 @@ export default function HomeOpenClawAchievement() {
               />
             </a>
             <div className="home-achievement-modal-foot">
-              {activeAchievement.facts.map((fact) => <span key={fact}>{fact}</span>)}
+              {getOpenClawAchievementFacts(activeAchievement).map((fact) => <span key={fact}>{fact}</span>)}
               <a href={activeAchievement.url} target="_blank" rel="noreferrer" className="no-external-arrow">
                 查看 openclaw/openclaw#{activeAchievement.number} →
               </a>

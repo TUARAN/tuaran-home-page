@@ -2,6 +2,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { AVATAR_PATH } from '../../../lib/avatar'
+import {
+  getOpenClawAchievementFacts,
+  OPENCLAW_ACHIEVEMENT_COUNT,
+  OPENCLAW_ACHIEVEMENTS,
+  OPENCLAW_RESOLVED_ISSUES,
+} from '../../../lib/openClawAchievements'
 import SharePageButton from '../components/SharePageButton'
 
 export const dynamic = 'force-static'
@@ -9,7 +15,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '关于涂阿燃（TUARAN）｜前端与 AI 工程师、出版作者、OpenClaw Contributor',
   description:
-    '涂阿燃（TUARAN，掘金安东尼）是前端与 AI Agent 工程师、技术写作者和产品实践者，著有《程序员成长手记》《AI Bots 通关指南》，OpenClaw PR #90517、#98320 已合并至 main。',
+    `涂阿燃（TUARAN，掘金安东尼）是前端与 AI Agent 工程师、技术写作者和产品实践者，著有《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
   keywords: [
     '涂阿燃',
     'tuaran',
@@ -23,8 +29,7 @@ export const metadata = {
     '程序员成长手记',
     'AI Bots 通关指南',
     'OpenClaw Contributor',
-    'OpenClaw PR 90517',
-    'OpenClaw PR 98320',
+    ...OPENCLAW_ACHIEVEMENTS.map((item) => `OpenClaw PR ${item.number}`),
     '矩联科技',
     '博主联盟',
   ],
@@ -51,7 +56,7 @@ const introLines = [
   { icon: '💡', text: '专注前端工程化与 AI 智能体，深耕实战与技术社区共建' },
   {
     icon: '🧩',
-    text: 'OpenClaw 开源贡献者：2 个 PR 已合并至 openclaw:main',
+    text: `OpenClaw 开源贡献者：${OPENCLAW_ACHIEVEMENT_COUNT} 个 PR 已合并至 openclaw:main`,
     href: 'https://github.com/openclaw/openclaw/pulls?q=is%3Apr+author%3ATUARAN+is%3Amerged',
   },
   { icon: '🌐', text: '个人主页：2aran.com', href: 'https://2aran.com' },
@@ -67,7 +72,7 @@ const stats = [
   { value: '600w+', label: '全网阅读' },
   { value: '2', label: '出版作品' },
   { value: '6', label: '在维护站点' },
-  { value: '2', label: 'OpenClaw 合并 PR' },
+  { value: String(OPENCLAW_ACHIEVEMENT_COUNT), label: 'OpenClaw 合并 PR' },
   { value: '2016', label: '起步至今' },
 ]
 
@@ -81,32 +86,7 @@ const timeline = [
   { year: '2024', label: '《AI Bots 通关指南》' },
   { year: '2025', label: '博主联盟 · 前端周看' },
   { year: '2026', label: '创立矩联科技' },
-  { year: '2026.07', label: 'OpenClaw 两个 PR 合入 main' },
-]
-
-const openSourceHighlights = [
-  {
-    href: 'https://github.com/openclaw/openclaw/pull/98320',
-    number: '98320',
-    title: 'OpenClaw PR #98320 · Feishu 媒体回复回退',
-    summary:
-      '修复 Feishu 图片和文件回复在引用消息被撤回或删除后无法送达的问题，让受安全条件保护的回退逻辑把媒体恢复为顶层消息。该 PR 于 2026 年 7 月合并至 openclaw:main。',
-    facts: ['3 commits', '+168 -35', '5 files', 'Feishu', 'steipete merged', 'main'],
-    image: '/images/openclaw/pr-98320-merged.png',
-    imageWidth: 1880,
-    imageHeight: 1466,
-  },
-  {
-    href: 'https://github.com/openclaw/openclaw/pull/90517',
-    number: '90517',
-    title: 'OpenClaw PR #90517 · Web Login 插件缺失提示',
-    summary:
-      '修复 Gateway 侧 Web Login 缺少外部插件时的提示路径：复用官方 external plugin repair hint，在 provider 不可用时返回可执行的安装或 openclaw doctor --fix 指引。该 PR 于 2026 年 7 月合并至 openclaw:main。',
-    facts: ['2 commits', '+153 -5', 'gateway', 'web login', 'main'],
-    image: '/images/openclaw/pr-90517-merged.png',
-    imageWidth: 2624,
-    imageHeight: 1456,
-  },
+  { year: '2026.07', label: `OpenClaw ${OPENCLAW_ACHIEVEMENT_COUNT} 个 PR 合入 main` },
 ]
 
 const publishedWorks = [
@@ -156,13 +136,13 @@ const aboutStructuredData = {
       ...(work.type === '电子小册' ? { bookFormat: 'https://schema.org/EBook' } : {}),
       url: 'https://2aran.com/publications',
     })),
-    ...openSourceHighlights.map((item) => ({
+    ...OPENCLAW_ACHIEVEMENTS.map((item) => ({
       '@type': 'SoftwareSourceCode',
       name: item.title,
       description: item.summary,
       author: { '@id': 'https://2aran.com/about#person' },
-      codeRepository: item.href,
-      url: item.href,
+      codeRepository: item.url,
+      url: item.url,
       programmingLanguage: 'TypeScript',
     })),
   ],
@@ -382,14 +362,14 @@ export default function AboutPage() {
         <div className={`py-8 ${sectionInner}`}>
           <p className={kicker}>Open Source · 开源贡献</p>
           <h2 className="mt-2 border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">
-            两次贡献已合并至 OpenClaw 主分支
+            {OPENCLAW_ACHIEVEMENT_COUNT} 次贡献已合并至 OpenClaw 主分支
           </h2>
           <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
-            截至 2026 年 7 月，共有 2 个由 TUARAN 提交的 Pull Request 合并至 openclaw:main。每项记录均链接到公开的 GitHub PR 与合并截图。
+            截至 2026 年 7 月，共有 {OPENCLAW_ACHIEVEMENT_COUNT} 个由 TUARAN 提交的 Pull Request 合并至 openclaw:main，其中已明确关联并关闭 {OPENCLAW_RESOLVED_ISSUES.length} 个 issue（{OPENCLAW_RESOLVED_ISSUES.map((issue) => `#${issue.number}`).join('、')}）。每项记录均链接到公开的 GitHub PR 与合并截图。
           </p>
 
           <div className="mt-6 space-y-6">
-            {openSourceHighlights.map((item) => (
+            {OPENCLAW_ACHIEVEMENTS.map((item) => (
               <article
                 key={item.number}
                 className="grid grid-cols-1 gap-5 rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/65 p-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] lg:p-5"
@@ -403,7 +383,7 @@ export default function AboutPage() {
                   </h3>
                   <p className="mt-3 text-[13.5px] leading-7 text-[#9aabc0]">{item.summary}</p>
                   <div className="mt-4 flex flex-wrap gap-1.5">
-                    {item.facts.map((fact) => (
+                    {getOpenClawAchievementFacts(item).map((fact) => (
                       <span
                         key={fact}
                         className="rounded-md border border-[#243549] bg-[#0d1622] px-2.5 py-1 font-mono text-[11px] text-[#8ea3bb]"
@@ -413,7 +393,7 @@ export default function AboutPage() {
                     ))}
                   </div>
                   <a
-                    href={item.href}
+                    href={item.url}
                     target="_blank"
                     rel="noreferrer"
                     className="no-external-arrow mt-5 inline-flex items-center rounded-md border border-[#2d4d61] bg-[#102032] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
@@ -422,7 +402,7 @@ export default function AboutPage() {
                   </a>
                 </div>
                 <a
-                  href={item.href}
+                  href={item.url}
                   target="_blank"
                   rel="noreferrer"
                   className="no-external-arrow group max-h-[360px] overflow-hidden rounded-xl border border-[#1d2c3e] bg-[#05090f] no-underline"

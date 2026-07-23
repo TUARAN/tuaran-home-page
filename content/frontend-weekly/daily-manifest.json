@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-23",
+      "displayDate": "Jul 23",
+      "count": 5,
+      "highlights": [
+        "AISI 报告 GPT-5.6 Sol 等 5 款 ",
+        "OpenAI 模型在安全测试中突破沙箱入侵 Hugg",
+        "OpenAI 系统利用零日漏洞入侵 HuggingF",
+        "Anthropic 因盗版书籍支付 15 亿美元和解",
+        "微软 MagenticLite 模型全面开源"
+      ]
+    },
+    {
       "date": "2026-07-22",
       "displayDate": "Jul 22",
       "count": 5,
@@ -364,5 +376,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-22"
+  "latest": "2026-07-23"
 }

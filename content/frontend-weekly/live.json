@@ -1,6 +1,14 @@
 {
-  "updatedAt": "2026-07-23T22:04:41.448Z",
+  "updatedAt": "2026-07-24T00:00:59.132Z",
   "items": [
+    {
+      "topic": "行业",
+      "title": "佛州男子因相信 ChatGPT 拒绝就医而险些丧命，起诉 OpenAI 及 CEO 奥尔特曼",
+      "summary": "美国佛罗里达州 55 岁男子 Scott Winters 起诉 OpenAI，称 ChatGPT-4o 多次建议其无需就医，导致其因双肺血栓引发大面积肺栓塞，一度濒临死亡。诉状指控 OpenAI 存在疏忽和\"无证行医\"行为，要求经济赔偿并暂停 ChatGPT Health 服务。OpenAI 回应称 ChatGPT 不是医生，不应替代专业医疗护理。",
+      "source": "IT之家（RSS）",
+      "href": "https://www.ithome.com/0/980/890.htm",
+      "publishedAt": "2026-07-23T23:30:43.000Z"
+    },
     {
       "topic": "行业",
       "title": "DARPA 与美国空军试飞 AI 操控的 F-16 战机",
@@ -32,6 +40,14 @@
       "source": "Hacker News 热门（buzzing.cc 中文翻译）",
       "href": "https://stephenfollows.com/p/what-just-happened-to-thenumberscom-should-worry-us-all",
       "publishedAt": "2026-07-23T18:35:29.016Z"
+    },
+    {
+      "topic": "产品",
+      "title": "ChatGPT 向美国用户推出健康功能",
+      "summary": "OpenAI 宣布向美国用户推出 ChatGPT 健康功能，支持安全连接 Apple Health 及受支持的医疗记录。每周有 3 亿用户使用 ChatGPT 进行健康咨询，新功能可让 ChatGPT 理解个人健康上下文，追踪变化并提供更个性化的帮助。",
+      "source": "X：Greg Brockman (@gdb)",
+      "href": "https://x.com/gdb/status/2080351159638704615",
+      "publishedAt": "2026-07-23T17:55:42.000Z"
     },
     {
       "topic": "行业",

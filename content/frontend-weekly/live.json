@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-24T10:18:53.483Z",
+  "updatedAt": "2026-07-24T12:19:35.257Z",
   "items": [
     {
       "topic": "行业",
@@ -112,22 +112,6 @@
       "source": "X：通义千问 / Qwen (@Alibaba_Qwen)",
       "href": "https://x.com/Alibaba_Qwen/status/2080270065547809133",
       "publishedAt": "2026-07-23T12:33:27.000Z"
-    },
-    {
-      "topic": "论文",
-      "title": "MineExplorer：首个《我的世界》分钟级长程任务评测基准发布",
-      "summary": "美团 LongCat 团队发布 MineExplorer，这是首个在《我的世界》开放世界中实现分钟级长程任务的评测基准，包含 813 个人工验证实例。评测 18 款顶级多模态大模型发现，最强模型 Claude-Opus-4.6 整体任务成功率仅 41%，从 1 跳任务的 77% 骤降至 4 跳任务的 12%，近 60% 的失败源于导航失败。MineExplorer 已全面开源。",
-      "source": "公众号：龙猫LongCat（美团）",
-      "href": "https://mp.weixin.qq.com/s/P3yzceXkVxth7Q63nRfBLg",
-      "publishedAt": "2026-07-23T11:58:00.000Z"
-    },
-    {
-      "topic": "技巧",
-      "title": "昆仑万维方汉：Token堆不出AI原生组织，模型才是长期立足之本",
-      "summary": "昆仑万维CEO方汉在WAIC圆桌上指出，单纯堆砌Token消耗量无法衡量AI价值，模型能力需依赖Claude Code等Coding Agent建立的工程框架才能转化为生产力。他透露昆仑万维仍在持续训练模型，并将发布音乐、具身世界和游戏世界模型，认为模型与算力是AI公司长期立足的基础。方汉同时警示，AI编程带来的技术债可能导致生产事故增幅达数倍，代码审查与责任机制必须同步加强。",
-      "source": "公众号：昆仑万维（天工）",
-      "href": "https://mp.weixin.qq.com/s/TEAuv29LPgmjQG_rO3b_Ag",
-      "publishedAt": "2026-07-23T11:20:00.000Z"
     }
   ]
 }

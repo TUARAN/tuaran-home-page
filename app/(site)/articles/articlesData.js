@@ -737,83 +737,309 @@ MCP 统一了 Agent 调用能力的语言，但没有替我们消除系统设计
   },
   {
     slug: 'openclaw-pr-anthropic-image-normalization',
-    title: '如何给 OpenClaw 提 PR，并尽量走到被合并',
-    date: '2026-07-09',
+    title: '4 次被 OpenClaw 合并：从修一个提示，到修一条完整链路',
+    date: '2026-07-24',
     href: '',
+    homeCategory: '开源贡献',
+    tags: ['OpenClaw', '开源贡献', 'Pull Request', 'ClawSweeper', '工程实践'],
     summary:
-      '以 openclaw/openclaw PR #102339 为例，记录一次从定位真实问题、提交修复、补充行为证明，到根据机器人评审继续推进合并的过程。',
-    cover:
-      'https://images.unsplash.com/photo-1556075798-4825dfaaf498?auto=format&fit=crop&w=800&q=60',
-    content: [
-      {
-        date: '2026-07-09',
-        label: '先说结论',
-        category: '开源协作',
-      },
-      '这次给 OpenClaw 提的 PR 是 #102339，标题是 fix: normalize Anthropic unsupported inline images。',
-      'PR 地址：https://github.com/openclaw/openclaw/pull/102339',
-      '它解决的问题很具体：当 OpenClaw 把 TIFF、HEIC 等 Anthropic 不支持的图片格式传给 Claude 时，请求会因为 media_type 不合法而返回 400。OpenAI 或 Gemini 链路可能能吃下这些格式，但 Claude 原生多模态输入只接受 JPEG、PNG、GIF、WebP 这一类格式。',
-      '我的修复方向不是简单把 media_type 字符串改成 image/jpeg，而是在请求进入 Anthropic provider 和自定义 transport 之前，把不支持的图片字节真正转码成 Anthropic 支持的格式。',
-      '截至我记录这篇文章时，PR 还没有合并。它已经拿到了 proof: sufficient 标签，机器人认为真实行为证明是充分的，但合并状态是 dirty / conflicting，卡点在代码路径迁移：主分支里的 Anthropic provider 已经从旧的 src/llm/providers/anthropic.ts 迁移到了 packages/ai/src/providers/anthropic.ts。',
-      {
-        date: '2026-07-09',
-        label: '问题为什么成立',
-        category: '技术分析',
-      },
-      '一个好的开源 PR，第一步不是写代码，而是把问题讲清楚：谁会触发、在哪条链路触发、为什么现有代码一定会失败。',
-      '这次的根因是 Anthropic API 对图片 MIME 类型有明确限制，而 OpenClaw 当前请求构造逻辑会把传入图片的 mimeType 原样放进 Anthropic payload 的 media_type 字段。只要用户上传了 image/tiff、image/heic 这类格式，请求就可能在 Anthropic 侧被拒绝。',
-      '这里最容易犯的错，是把问题理解成「MIME 字符串不兼容」。如果只把 image/tiff 写成 image/jpeg，但图片字节还是 TIFF，本质上是在伪造类型。上游模型或服务端不一定总是宽容，后续也很容易变成更隐蔽的问题。',
-      '所以这个 PR 的核心判断是：修复边界应该放在 Anthropic 请求构造之前，并且必须同时规整 MIME 和图片字节。',
-      {
-        date: '2026-07-09',
-        label: '这个 PR 改了什么',
-        category: '技术实现',
-      },
-      'PR 新增了一个共享的 Anthropic inline image normalization helper，放在 src/media/anthropic-inline-images.ts。它的职责是判断当前图片是否已经是 Anthropic 支持格式；如果是，就保持不动；如果不是，就调用已有图片处理能力，把字节转码为支持格式，通常是 image/jpeg。',
-      '这个 helper 的意义在于把边界统一起来。用户直接上传图片是一条路径，tool-result 里返回图片又是另一条路径。如果两处各写一套 fallback，很容易出现一处修了、一处漏了，或者策略不一致。',
-      'PR 同时覆盖了 Anthropic provider payload、自定义 Anthropic transport payload 和共享 helper 的回归测试。也就是说，它不只是证明函数本身能跑，而是证明请求构造器最终发出去的 media_type 已经变成了 Anthropic 支持的类型。',
-      'PR body 里还补了一段本地 loopback proof：用真实的 streamSimpleAnthropic() 和 createAnthropicMessagesTransportStreamFn()，对接本地 127.0.0.1 服务捕获发出的 Anthropic 请求体。结果显示，同一份 TIFF 输入在 provider 和 transport 两条路径里都以 image/jpeg 发出，并且 stopReason 是 stop。',
-      {
-        date: '2026-07-09',
-        label: '机器人评审怎么看',
-        category: '评审反馈',
-      },
-      'ClawSweeper Bot 给这条 PR 的结论是 needs changes before merge。它的评价很有意思：证明质量很高，但补丁质量被路径问题拉低，所以总体只有 rating: silver shellfish。',
-      '机器人认可的部分是：这个方案比另一个竞争 PR #102337 更扎实。#102337 更像是 media_type fallback，而 #102339 做了真实字节转码。对于图片格式兼容问题，后者才是更完整的修复。',
-      '真正阻塞合并的点也很明确：PR 修改的是旧路径 src/llm/providers/anthropic.ts，但当前 main 分支的活跃 provider 已经在 packages/ai/src/providers/anthropic.ts。也就是说，如果 maintainers 直接处理冲突时保留旧路径改动，实际运行的 packaged Anthropic adapter 仍然没有被修掉。',
-      '这也是开源协作里非常常见的情况：你解决了真实问题，证明也够，但主分支在快速重构。PR 不是因为思路错被挡住，而是因为落点已经过期。',
-      {
-        date: '2026-07-09',
-        label: '接下来怎么推进合并',
-        category: '开源协作',
-      },
-      '下一步不是重新解释问题，而是机械地把 blocker 消掉。',
-      '第一，rebase 到 openclaw/main 最新提交，解决 dirty / conflicting 状态。',
-      '第二，把 provider 侧的修复和测试从 src/llm/providers/anthropic.ts 迁移到 packages/ai/src/providers/anthropic.ts 和对应测试文件。',
-      '第三，保留共享 helper，不要退回到只改 media_type 字符串。这个 PR 的核心价值正在于字节转码边界。',
-      '第四，按机器人给出的 acceptance criteria 重新跑测试：pnpm test packages/ai/src/providers/anthropic.test.ts src/agents/anthropic-transport-stream.test.ts src/media/anthropic-inline-images.test.ts。',
-      '第五，跑 changed check：pnpm check:changed -- packages/ai/src/providers/anthropic.ts packages/ai/src/providers/anthropic.test.ts src/agents/anthropic-transport-stream.ts src/agents/anthropic-transport-stream.test.ts src/media/anthropic-inline-images.ts src/media/anthropic-inline-images.test.ts。',
-      '最后，在 PR 评论里回复一句很具体的话：已 rebase 到最新 main，provider fix 已迁移到 packages/ai/src/providers/anthropic.ts，保留 byte transcode normalization，并附上最新测试输出。这样 maintainer 和机器人都能直接复核。',
-      {
-        date: '2026-07-09',
-        label: '怎么提高开源 PR 被合并概率',
-        category: '方法论',
-      },
-      '这次 PR 给我的经验是：开源项目里，一个 PR 想被合并，不只是「代码能跑」这么简单。它至少要同时满足四件事。',
-      '第一，问题要有明确边界。不要说「Anthropic 图片有 bug」，要说「unsupported inline image MIME 被原样传入 Anthropic media_type，导致 image/tiff / image/heic 请求失败」。',
-      '第二，修复要对根因负责。只改字符串是低成本修补，转码字节才是对格式兼容问题负责。',
-      '第三，证明要贴近真实链路。单元测试当然要有，但如果能用真实 provider / transport 加本地 loopback 捕获请求体，就能显著降低 maintainer 的判断成本。',
-      '第四，要追主分支结构。尤其是快速演进的 AI 项目，文件路径、包边界、provider 抽象都可能几天内变化。PR 开得越久，越要主动 rebase 和 retarget。',
-      '对外部贡献者来说，被合并的关键不是展示自己写了多少代码，而是持续降低维护者合并这段代码的风险。',
-      {
-        date: '2026-07-09',
-        label: '这次记录的意义',
-        category: '项目复盘',
-      },
-      '这条 PR 目前还处在 waiting on author，但它已经完成了最重要的一半：问题真实、方案正确、证明充分。',
-      '剩下的一半更像是工程协作基本功：跟上 main、移动代码落点、重新跑测试、把状态更新清楚。',
-      '这也是我想记录它的原因。开源贡献不是一次性把 patch 扔出去，而是一段围绕问题、证据、评审和维护者成本展开的协作过程。真正能被合并的 PR，往往不是最花哨的 PR，而是让维护者最容易相信、最容易验证、最容易接住的 PR。',
-    ],
+      '复盘我在 OpenClaw 主仓库被合并的 4 个 PR：每次遇到的问题、修复边界、评审后的持续改进、最终落地方式，以及 ClawSweeper 给出的可核查评级。',
+    cover: '/images/openclaw/pr-102537-merged.png',
+    markdown: String.raw`# 4 次被 OpenClaw 合并：从修一个提示，到修一条完整链路
+
+2026 年 7 月，我在 [OpenClaw](https://github.com/openclaw/openclaw) 主仓库先后有 4 个 PR 落入 \`main\`。
+
+它们分别涉及 Web Login、飞书、Tailscale 和 Anthropic。表面上看，这是 4 个互不相关的 bug。把评审记录放在一起看，会发现一条清楚的改进路径：补丁越来越重视边界、真实环境证明和维护者接手成本。
+
+这篇文章只采用 GitHub 上能复核的 PR、Issue、评论和落地提交。文中的“评分”引用 OpenClaw 的 ClawSweeper 评级。它衡量 PR 的合并准备度，不能等同于官方绩效分，也没有可核查的百分制换算。
+
+| 次序 | PR | 解决的问题 | 最终规模 | 合并时间（UTC） | ClawSweeper 最终评级 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | [#90517](https://github.com/openclaw/openclaw/pull/90517) | Web Login 缺少外部插件时只报通用错误 | 2 commits，2 files，+153/-5 | 2026-07-01 08:04 | 🐚 platinum hermit |
+| 2 | [#98320](https://github.com/openclaw/openclaw/pull/98320) | 飞书引用目标被撤回后，图片和文件丢失 | 3 commits，5 files，+168/-35 | 2026-07-21 05:52 | 🦞 diamond lobster |
+| 3 | [#91553](https://github.com/openclaw/openclaw/pull/91553) | Tailscale Serve 启动后首次状态探测竞态 | 6 commits，4 files，+147/-21 | 2026-07-21 15:43 | 🦞 diamond lobster |
+| 4 | [#102537](https://github.com/openclaw/openclaw/pull/102537) | Anthropic 不接受 HEIC、TIFF、BMP 内联图片 | 1 commit，11 files，+728/-41 | 2026-07-21 18:31 | 🦞 diamond lobster |
+
+## 1、第一次：让错误信息可以直接行动
+
+[Issue #83277](https://github.com/openclaw/openclaw/issues/83277) 来自一位 Windows 用户。
+
+他已经配置 WhatsApp，也安装并认证了 \`wacli\`。Dashboard 点击 “Show QR” 时，Gateway 仍然只返回一句：
+
+\`\`\`text
+web login provider is not available
+\`\`\`
+
+这句话描述了结果，却没有告诉用户下一步做什么。Issue 里的实际情况是 WhatsApp channel 插件没有注册。用户需要的是安装官方外部插件，或者运行 \`openclaw doctor --fix\`。
+
+### 解决思路
+
+[#90517](https://github.com/openclaw/openclaw/pull/90517) 复用了仓库已有的 official external plugin repair-hint helper。
+
+当 \`web.login.start\` 找不到已加载的二维码登录 provider 时，Gateway 会读取当前 channel 配置。若命中缺失的官方外部插件，就把安装命令和 \`doctor --fix\` 指引附在原错误后面。没有命中时，原来的通用错误仍然保留。
+
+这个落点很重要。提示放在 Gateway RPC 层，Dashboard 和其他 RPC 客户端都能得到同一份可执行信息。
+
+### 评审后改了什么
+
+第一版只处理了一个缺失 channel。
+
+评论者 [byungskers](https://github.com/openclaw/openclaw/pull/90517#issuecomment-4627745008) 指出一个边界：如果 WhatsApp、Feishu 等多个官方外部 channel 同时配置但都缺插件，代码会退回通用错误，所有操作指引再次丢失。
+
+我随后推送第二个提交。新逻辑会去重并拼接多个安装命令，同时保留 \`openclaw doctor --fix\`。测试也增加了 multi-missing 场景。
+
+接下来补的是行为证明。我从分支构建 OpenClaw \`2026.6.2\` tarball，在仓库外解压，用真实 packaged Gateway 调用 \`web.login.start\`。单个 WhatsApp 缺失和 WhatsApp + Feishu 同时缺失两种场景，都返回了完整安装指引。
+
+### 怎么被合并
+
+PR 于 2026 年 7 月 1 日落入 \`main\`，最终提交是 [\`fadf76d\`](https://github.com/openclaw/openclaw/commit/fadf76d05fbab8765ea8c63e70aa5da64bd5330d)，对应 Issue #83277 同时关闭。
+
+公开时间线里没有维护者写下 “Merged via squash” 说明。能确认的是，分支的 2 个提交最终收进 1 个 \`main\` 提交，提交作者显示为 TUARAN，提交者为 GitHub \`web-flow\`。
+
+ClawSweeper 最终给出：
+
+- Overall：🐚 platinum hermit
+- Proof：🦞 diamond lobster
+- Patch quality：🐚 platinum hermit
+- Result：ready for maintainer review
+
+真实 packaged Gateway 证明拿到了最高一档。总体评级停在 platinum hermit，机器人记录的主要风险是分支较旧，合并前仍需维护者刷新 mergeability 和检查。
+
+## 2、第二次：飞书媒体回复不能悄悄消失
+
+[Issue #98311](https://github.com/openclaw/openclaw/issues/98311) 是一个消息丢失问题。
+
+飞书里的文本和卡片回复已经走 \`sendReplyOrFallbackDirect\`。引用目标被撤回、删除或找不到时，只要安全策略允许，消息会降级为顶层发送。
+
+图片和文件走的是另一条路径。它们直接调用 reply API。飞书返回 \`230011\`（消息已撤回）或 \`231003\`（消息不存在）时，发送会抛错，媒体不会到达聊天。
+
+### 解决思路
+
+[#98320](https://github.com/openclaw/openclaw/pull/98320) 没有再造一套异常判断，而是让图片和文件复用已有的 \`sendReplyOrFallbackDirect\` 契约。
+
+同时保留 \`allowTopLevelReplyFallback\` 安全门。普通群聊或私聊可以在目标失效后恢复为顶层消息；原生 topic thread 没有明确许可时，仍然拒绝跨线程降级。
+
+修复覆盖两种错误形态：API 返回错误对象，以及 SDK 直接抛出异常。图片、文件和 dispatcher 的策略透传都有回归测试。
+
+### 评审后改了什么
+
+这个 PR 遇到了一次很典型的开源协作。
+
+另一个贡献者提交了同题 PR [#98329](https://github.com/openclaw/openclaw/pull/98329)，并主动比较两条分支。他后来关闭自己的方案，公开说明 #98320 的 diff 更窄，而且保住了 thread boundary guard。#98320 因此成为保留的 canonical branch。
+
+真正的阻塞项是“真实飞书环境证明”。ClawSweeper 在 7 月 1 日、5 日和 8 日的记录里都写着 \`needs real behavior proof before merge\`。
+
+7 月 16 日，我把分支刷新到当时的 \`main\`，在真实 Feishu Open Platform app 和配对收件人上测试：
+
+- 创建一条真实消息，再通过 API 撤回；
+- 让图片和文件分别引用这条已撤回消息；
+- 两次 reply 都收到 \`230011\`；
+- 两次都恢复为顶层消息；
+- 飞书服务端回读类型分别为 \`image\` 和 \`file\`；
+- 回执 message ID 与回读一致；
+- 证明消息最后全部删除。
+
+同一精确 head 上，126 个 focused tests 通过，格式检查和自动评审也通过。
+
+### 怎么被合并
+
+维护者 steipete 在 [合并评论](https://github.com/openclaw/openclaw/pull/98320#issuecomment-5030615653) 里明确写了 “Merged via squash”。
+
+Prepared head 是 \`dc9c348\`，最终落地提交是 [\`37ac5d6\`](https://github.com/openclaw/openclaw/commit/37ac5d671fbcabc7529e2e7f9876c264e86e6c33)。提交作者显示为 TUARAN，提交信息同时保留 Peter Steinberger 的 co-author。
+
+ClawSweeper 最终三项都是 🦞 diamond lobster：Overall、Proof、Patch quality 全部到顶。它仍然记录了两个剩余风险：精确合并门禁需要刷新，原生 topic thread 的拒绝边界由 focused tests 覆盖，没有在真实租户里制造可见 topic 场景。
+
+## 3、第三次：重试最难的是决定什么不能重试
+
+[Issue #42798](https://github.com/openclaw/openclaw/issues/42798) 描述了一个启动竞态。
+
+Gateway 配置 Tailscale Serve 时，会连续执行：
+
+1. 查找并验证 \`tailscale\`；
+2. 运行 \`tailscale serve --bg --yes\`；
+3. 立即运行 \`tailscale status --json\` 获取 hostname。
+
+第三步可能撞上本地 daemon 或 macOS service 尚未就绪。Gateway 通常仍能运行，但会丢掉派生的 Serve URL / origin，还会打印一条看起来很严重的命令失败日志。
+
+### 解决思路
+
+[#91553](https://github.com/openclaw/openclaw/pull/91553) 最终采用了一个很窄的重试策略：
+
+- 只在当前 Gateway 进程刚刚成功配置 Serve 后重试；
+- 普通 \`openclaw status\` 等调用仍然只探测一次；
+- 复用本次 Serve 已选中的同一个 Tailscale binary；
+- 使用仓库已有 \`retryAsync\`；
+- 总共 3 次尝试，固定间隔 500ms；
+- 只重试 Execa timeout，以及已识别的 daemon / macOS service 未就绪错误。
+
+缺少二进制、权限错误、JSON 损坏和其他异常会立即失败。这样可以避免把配置错误伪装成“多等一会儿就好”。
+
+### 评审后改了什么
+
+早期评审给了两个 P2：中间重试日志不应制造噪音，缺少 Tailscale binary 不能重试。
+
+后来分支历史发生冲突。我从当时的 \`main\` 重建 PR，只重新应用窄范围 status retry 和回归测试。ClawSweeper 随后又指出一个 P2：非暂态错误仍然可能进入重试。
+
+下一版补上错误分类，并把 helper 拆出，解决主文件 LOC guard。真实 macOS/Homebrew Tailscale 证明连续跑了 3 个 Serve cycle，每次都人为触发第一次 status timeout，第二次取回真实 hostname，并完成清理。
+
+最终版本又经过维护者改写：删除只使用一次的独立 retry module，把策略放回拥有该行为的 Tailscale integration module；调用范围进一步收窄到 Serve startup。PR 描述明确把这一段称为 maintainer rewrite。
+
+### 怎么被合并
+
+steipete 通过 squash 合并。Prepared head 是 \`97ee068\`，落地提交是 [\`3a5b276\`](https://github.com/openclaw/openclaw/commit/3a5b2764f8a5e98e574d4e45d6d782048d1306df)，Issue #42798 随后关闭。
+
+最终提交作者显示为 TUARAN，提交记录保留 TUARAN 与 Peter Steinberger 的共同署名。PR body 也明确写着 “Contributor: @TUARAN”。
+
+ClawSweeper 的 Overall、Proof、Patch quality 都是 🦞 diamond lobster。
+
+机器人同时保留两个风险说明。持续失败时，最坏路径可能达到 3 个 5 秒命令超时，加上两次 500ms 等待，约 16 秒；真实证明使用 macOS Homebrew userspace networking，没有覆盖 root launchd 或 Linux daemon。
+
+## 4、第四次：图片格式修复要同时管类型、字节和预算
+
+[Issue #102323](https://github.com/openclaw/openclaw/issues/102323) 指向 Anthropic 请求构造边界。
+
+Anthropic 的 base64 image block 只接受 JPEG、PNG、GIF 和 WebP。OpenClaw 当时会把限额以内的 HEIC、TIFF 或 BMP 直接传入 payload。
+
+代码里的 TypeScript \`as "image/jpeg" | ...\` 只影响类型检查，运行时字符串没有变化。于是 \`image/heic\` 仍会原样发给 Anthropic，整轮请求返回 400，用户得不到回复。
+
+问题还分布在两套 payload builder、两种图片来源上：
+
+- packaged Anthropic provider；
+- custom Anthropic transport；
+- 用户消息里的图片；
+- tool-result 返回的图片。
+
+### 解决思路
+
+[#102537](https://github.com/openclaw/openclaw/pull/102537) 把规整放在 Anthropic provider boundary。
+
+它会先检测真实字节，再参考声明 MIME。已支持格式保持原样；HEIC、TIFF 等转为 JPEG；BMP 走已有 Photon-capable PNG fallback。只改 \`media_type\` 会造成字节和声明不一致，所以这里执行的是真实转码。
+
+为了让 \`@openclaw/ai\` 不直接依赖 Rastermill，PR 增加了一个 optional、source-compatible host port。发布包消费者没有注入实现时，默认能力保持 inert identity；OpenClaw core 负责注入 byte-aware normalizer。
+
+这条路径还增加了两层预算：
+
+- 单张图片解码前后都受 10MB safety ceiling 约束；
+- 一个请求内的规整图片按顺序计入 64MB request-scope budget。
+
+非视觉模型和明确省略的图片走快速路径，不做无意义解码。
+
+### 评审后改了什么
+
+这次迭代最多。
+
+ClawSweeper 在 \`a92d003\` 上给出 P1：新增 host interface 必须保持 source compatibility。后续改成 optional capability，并提供默认实现。
+
+分支随后多次跟进 \`main\`。7 月 17 日刷新时解决了两处重叠冲突，同时保留主分支已有 media-payload guards。该 head 上：
+
+- 3 个 test shard 共 184 个测试通过；
+- core test typecheck 通过；
+- \`build-all\` 通过；
+- packaged user HEIC、tool-result TIFF、custom transport user HEIC 都以 \`image/jpeg\` 发出；
+- 三条 loopback 路径都得到 \`stopReason: stop\`。
+
+最终 PR 记录又更新为精确 rebased head 上 204 个测试通过，并补了一次真实官方 Anthropic API 证明：本地转成 TIFF 的仓库图片进入 OpenClaw 后，经 core host 规整，在 \`claude-haiku-4-5\` 上正常完成。
+
+维护者最终接受了这个 package/core seam。PR body 写明，原始修复来自 @TUARAN，replacement commit 保留贡献署名。
+
+### 怎么被合并
+
+steipete 通过 squash 合并。Prepared head 是 \`50acd5c\`，落地提交是 [\`3c32f32\`](https://github.com/openclaw/openclaw/commit/3c32f327a445c9bff90ca812d281330a3a64472c)，Issue #102323 同时关闭。
+
+最终提交作者显示为 TUARAN，Peter Steinberger 以 co-author 出现在提交信息中。
+
+ClawSweeper 最终给出：
+
+- Overall：🦞 diamond lobster
+- Proof：🦀 challenger crab
+- Patch quality：🦞 diamond lobster
+- Result：ready for maintainer review
+
+总体和补丁质量到达 diamond lobster，Proof 保持 challenger crab。机器人同时提示，这次合并建立了一个长期的 Anthropic host capability；独立使用 \`@openclaw/ai\`、又没有安装 OpenClaw host implementation 的消费者，会保留 identity normalizer，并在不支持的 MIME 上本地失败。这个架构边界需要 owner 明确接受。
+
+## 5、4 次提交里，真正持续改进了什么
+
+### 第一，证明从“测试通过”走向真实链路
+
+第一次用了仓库外的 packaged Gateway。
+
+第二次用了真实飞书租户、真实撤回、真实回读和清理。
+
+第三次连续跑真实 Tailscale Serve cycle。
+
+第四次先用 loopback 捕获真实 payload，最后补到官方 Anthropic API。
+
+单元测试回答代码是否按预期分支执行。真实行为证明回答用户链路是否真的恢复。OpenClaw 的评审明显更看重后一个问题。
+
+### 第二，修复范围越来越克制
+
+飞书 PR 复用了已有 fallback contract。
+
+Tailscale PR 把重试限制在“本进程刚完成 Serve 配置”这一刻，并明确排除永久错误。
+
+Anthropic PR 只在 provider boundary 规整格式，同时用 host port 保住 package/core 边界。
+
+范围克制并不等于改动行数少。#102537 有 11 个文件和 728 行新增，因为双 payload builder、用户图片、tool-result、格式检测、转码和预算必须形成一套闭环。
+
+### 第三，主动追主分支
+
+#91553 重建了冲突分支。
+
+#98320 刷新到当前 \`main\` 后重跑真实飞书证明。
+
+#102537 多次 rebase，并在冲突处理中保留 \`main\` 新增的 payload guards。
+
+快速仓库里的旧 PR 会不断失去上下文。持续刷新、重新验证和说明精确 head，本身就是贡献的一部分。
+
+### 第四，把评审意见变成可验证的新边界
+
+多个缺失插件、飞书 thread safety、Tailscale 非暂态错误、host interface source compatibility，都来自评审阶段。
+
+每次处理都增加了对应测试或真实证明。这样，评论不会停留在“已经修改”，而会变成仓库以后可以重复执行的约束。
+
+## 6、贡献评分应该怎样看
+
+从最终标签看，4 次 PR 的评级是：
+
+1. #90517：🐚 platinum hermit；
+2. #98320：🦞 diamond lobster；
+3. #91553：🦞 diamond lobster；
+4. #102537：🦞 diamond lobster。
+
+这个序列说明合并准备度在提高，但不能简单理解为个人能力从某个数字涨到另一个数字。
+
+ClawSweeper 会取 Proof 与 Patch quality 的较弱项，并叠加分支新旧、架构边界和剩余风险。#90517 的真实证明已经是 diamond lobster，总体仍被分支时效和 patch 风险压到 platinum hermit。#102537 的总体是 diamond lobster，Proof 却保留 challenger crab，因为它留下了需要 owner 接受的长期 host seam。
+
+更可靠的贡献证据有 4 类：
+
+- 4 个 PR 都进入 \`openclaw:main\`；
+- 4 个对应 Issue 都已关闭；
+- 最终落地提交都显示 TUARAN 为作者；
+- 评审提出的关键边界都有后续代码、测试或真实环境证明。
+
+## 7、这 4 次合并给我的结论
+
+开源贡献的核心工作，可以概括成一句很朴素的话：持续降低维护者接住这段代码的风险。
+
+问题要足够具体。修复要放在真正拥有这个行为的边界。测试要覆盖回归，真实证明要覆盖用户链路。主分支变化后，还要重新对齐并说明精确 head。
+
+最后的合并也可能带有维护者改写。#91553 明确经过 maintainer rewrite，#102537 使用 replacement commit。贡献没有因此消失。最终提交保留作者或 co-author，PR 时间线也留下原始思路、持续修正和验证过程。
+
+这比统计写了多少行代码更接近一次开源贡献的实际价值。
+
+## 资料与核查说明
+
+主要一手资料：
+
+- [PR #90517：Web Login missing external plugin hint](https://github.com/openclaw/openclaw/pull/90517) ｜ [Issue #83277](https://github.com/openclaw/openclaw/issues/83277) ｜ [落地提交 fadf76d](https://github.com/openclaw/openclaw/commit/fadf76d05fbab8765ea8c63e70aa5da64bd5330d)
+- [PR #98320：Feishu media reply fallback](https://github.com/openclaw/openclaw/pull/98320) ｜ [Issue #98311](https://github.com/openclaw/openclaw/issues/98311) ｜ [落地提交 37ac5d6](https://github.com/openclaw/openclaw/commit/37ac5d671fbcabc7529e2e7f9876c264e86e6c33)
+- [PR #91553：Tailscale status retry](https://github.com/openclaw/openclaw/pull/91553) ｜ [Issue #42798](https://github.com/openclaw/openclaw/issues/42798) ｜ [落地提交 3a5b276](https://github.com/openclaw/openclaw/commit/3a5b2764f8a5e98e574d4e45d6d782048d1306df)
+- [PR #102537：Anthropic inline image normalization](https://github.com/openclaw/openclaw/pull/102537) ｜ [Issue #102323](https://github.com/openclaw/openclaw/issues/102323) ｜ [落地提交 3c32f32](https://github.com/openclaw/openclaw/commit/3c32f327a445c9bff90ca812d281330a3a64472c)
+
+资料核对截至 2026 年 7 月 24 日。
+
+尚无公开证据可以确认 #90517 在 GitHub UI 中具体使用了哪一种合并按钮；本文只写可确认的“2 个分支提交最终落为 1 个 \`main\` 提交”。其余 3 个 PR 均有维护者 “Merged via squash” 的公开评论。
+`,
   },
   {
     slug: 'ocr-comparison-paddleocr-vl',

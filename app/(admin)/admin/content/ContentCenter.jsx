@@ -20,7 +20,6 @@ export default function ContentCenter() {
           title: '规范与运营',
           description: '发布前校正表达，发布后根据真实阅读与订阅行为继续调整。',
           items: [
-            { href: '/admin/research-style', title: '写作规范', description: '调研表达规则、禁用措辞与存量内容复核。', icon: 'researchStyle' },
             { href: '/admin/content-weekly', title: '数据与反馈', description: '阅读、点赞、月统计与评论跟进。', icon: 'analytics' },
             { href: '/admin/rss-feeds', title: 'RSS 与分发', description: '维护公开 RSS 订阅墙，并查看 RSS 请求记录。', icon: 'rss' },
           ],

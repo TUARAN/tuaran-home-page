@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T16:10:08.631Z",
+  "generatedAt": "2026-07-24T08:01:48.317Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -590,6 +590,18 @@
               "hash": "306b15a291915ef8460beb3ea50ed13e12e9681bd25405bc0bd16f97ca54fb1d",
               "path": "ai-context/README/2026-06-29T12-13-21-468Z.enc.json",
               "bytes": 1236
+            }
+          ]
+        },
+        "digital-human-deploy": {
+          "title": "digital-human-deploy",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-07-24T08:01:48.290Z",
+              "hash": "18cfc0d633cdf9705d9e9762ba952dc24ee0c915748594a807fe8a40f8330045",
+              "path": "ai-context/digital-human-deploy/2026-07-24T08-01-48-314Z.enc.json",
+              "bytes": 847
             }
           ]
         }

@@ -42,3 +42,12 @@ bucket_name = "tuaran-media"
 [[r2_buckets]]
 binding = "NSFW_MEDIA"
 bucket_name = "tuaran-nsfw-private"
+
+# 数字人口播私有媒体桶：照片、临时语音和生成视频均不得公开直连。
+[[r2_buckets]]
+binding = "AVATAR_MEDIA"
+bucket_name = "tuaran-avatar-private"
+
+# 数字人口播中文 TTS（@cf/myshell-ai/melotts）。
+[ai]
+binding = "AI"

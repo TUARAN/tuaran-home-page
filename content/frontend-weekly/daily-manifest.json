@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-24",
+      "displayDate": "Jul 24",
+      "count": 5,
+      "highlights": [
+        "昆仑万维方汉：Token堆不出AI原生组织，模型才是",
+        "OpenAI Workspace Agents 漏洞",
+        "佛州男子因相信 ChatGPT 拒绝就医而险些丧命，",
+        "ChatGPT 桌面版上线语音控制多智能体",
+        "ChatGPT 向美国用户推出健康功能"
+      ]
+    },
+    {
       "date": "2026-07-23",
       "displayDate": "Jul 23",
       "count": 5,
@@ -376,5 +388,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-23"
+  "latest": "2026-07-24"
 }

@@ -1094,6 +1094,22 @@
     color: var(--site-accent);
   }
 
+  .home-badge-pinned {
+    border-color: #9f3b28;
+    background: #a8442f;
+    color: #fffaf2;
+    box-shadow: 0 3px 10px rgb(138 48 31 / 20%);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+
+  .dark .home-badge-pinned {
+    border-color: #e18770;
+    background: #bd5039;
+    color: #fffaf2;
+    box-shadow: 0 3px 12px rgb(0 0 0 / 30%);
+  }
+
   .home-badge-column {
     border-color: var(--site-line);
     color: var(--site-muted);

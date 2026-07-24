@@ -7,7 +7,6 @@ import {
   IconDatabase,
   IconEdit,
   IconExternalLink,
-  IconFilePlus,
   IconPlus,
   IconTrash,
   IconTypography,
@@ -52,11 +51,9 @@ export default function ArticlesConsole() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [activePanel, setActivePanel] = useState('content')
-  const [activeIndexSection, setActiveIndexSection] = useState('content-index-sync')
 
   function openPanel(panel, anchorId) {
     setActivePanel(panel)
-    if (panel === 'index' && anchorId) setActiveIndexSection(anchorId)
     if (!anchorId) return
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
@@ -201,17 +198,10 @@ export default function ArticlesConsole() {
           </AdminButton>
           <AdminButton
             type="button"
-            variant={activePanel === 'index' && activeIndexSection === 'content-index-sync' ? 'default' : 'ghost'}
+            variant={activePanel === 'index' ? 'default' : 'ghost'}
             onClick={() => openPanel('index', 'content-index-sync')}
           >
-            <IconDatabase size={16} />索引维护
-          </AdminButton>
-          <AdminButton
-            type="button"
-            variant={activePanel === 'index' && activeIndexSection === 'manual-registration' ? 'default' : 'ghost'}
-            onClick={() => openPanel('index', 'manual-registration')}
-          >
-            <IconFilePlus size={16} />登记内容
+            <IconDatabase size={16} />索引与登记
           </AdminButton>
           <AdminButton href="/admin/articles/new" variant="primary"><IconPlus size={16} />写文章</AdminButton>
         </>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
+  IconArrowLeft,
   IconDatabase,
   IconEdit,
   IconExternalLink,
@@ -15,6 +16,8 @@ import {
 import AdminPage from '../../components/ui/AdminPage'
 import AdminButton from '../../components/ui/AdminButton'
 import Section from '../../components/ui/Section'
+import ContentIndexConsole from '../content-index/ContentIndexConsole'
+import ResearchStyleClient from '../research-style/ResearchStyleClient'
 
 const TYPE_LABELS = {
   article: '文章',
@@ -48,6 +51,19 @@ export default function ArticlesConsole() {
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [activePanel, setActivePanel] = useState('content')
+  const [activeIndexSection, setActiveIndexSection] = useState('content-index-sync')
+
+  function openPanel(panel, anchorId) {
+    setActivePanel(panel)
+    if (panel === 'index' && anchorId) setActiveIndexSection(anchorId)
+    if (!anchorId) return
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
+  }
 
   async function load() {
     setLoading(true)
@@ -171,23 +187,75 @@ export default function ArticlesConsole() {
       description={`共 ${counts.all} 条 · 已发布 ${counts.published} · 草稿 ${counts.draft} · 已下线 ${counts.retired}`}
       actions={(
         <>
-          <AdminButton href="/admin/research-style" variant="ghost"><IconTypography size={16} />写作规范</AdminButton>
-          <AdminButton href="/admin/content-index" variant="ghost"><IconDatabase size={16} />索引维护</AdminButton>
-          <AdminButton href="/admin/content-index#manual-registration"><IconFilePlus size={16} />登记内容</AdminButton>
+          {activePanel !== 'content' ? (
+            <AdminButton type="button" variant="ghost" onClick={() => setActivePanel('content')}>
+              <IconArrowLeft size={16} />内容列表
+            </AdminButton>
+          ) : null}
+          <AdminButton
+            type="button"
+            variant={activePanel === 'style' ? 'default' : 'ghost'}
+            onClick={() => openPanel('style')}
+          >
+            <IconTypography size={16} />写作规范
+          </AdminButton>
+          <AdminButton
+            type="button"
+            variant={activePanel === 'index' && activeIndexSection === 'content-index-sync' ? 'default' : 'ghost'}
+            onClick={() => openPanel('index', 'content-index-sync')}
+          >
+            <IconDatabase size={16} />索引维护
+          </AdminButton>
+          <AdminButton
+            type="button"
+            variant={activePanel === 'index' && activeIndexSection === 'manual-registration' ? 'default' : 'ghost'}
+            onClick={() => openPanel('index', 'manual-registration')}
+          >
+            <IconFilePlus size={16} />登记内容
+          </AdminButton>
           <AdminButton href="/admin/articles/new" variant="primary"><IconPlus size={16} />写文章</AdminButton>
         </>
       )}
     >
-      {error ? (
+      {activePanel === 'content' && error ? (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
           {error}
         </div>
       ) : null}
 
-      <Section
-        title="全部内容"
-        description="在线文章可直接编辑；构建期内容和手工登记内容统一在这里查看。"
-      >
+      {activePanel === 'style' ? (
+        <Section
+          title="写作规范"
+          description="调研表达规则、禁用措辞与存量内容复核；操作始终留在内容管理页面。"
+          actions={(
+            <AdminButton type="button" size="sm" onClick={() => setActivePanel('content')}>
+              <IconArrowLeft size={15} />返回内容列表
+            </AdminButton>
+          )}
+        >
+          <ResearchStyleClient embedded />
+        </Section>
+      ) : null}
+
+      {activePanel === 'index' ? (
+        <Section
+          title="索引维护与内容登记"
+          description="同步构建期内容、登记免构建条目，并维护条目的上线状态。"
+          actions={(
+            <AdminButton type="button" size="sm" onClick={() => setActivePanel('content')}>
+              <IconArrowLeft size={15} />返回内容列表
+            </AdminButton>
+          )}
+        >
+          <ContentIndexConsole embedded />
+        </Section>
+      ) : null}
+
+      {activePanel === 'content' ? (
+        <Section
+          title="全部内容"
+          description="在线文章可直接编辑；构建期内容和手工登记内容统一在这里查看。"
+        >
         <div className="mb-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
           <input
             type="search"
@@ -319,7 +387,8 @@ export default function ArticlesConsole() {
             )
           })}
         </div>
-      </Section>
+        </Section>
+      ) : null}
     </AdminPage>
   )
 }

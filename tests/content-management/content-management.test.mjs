@@ -23,6 +23,10 @@ const centerSource = await readFile(
   new URL('../../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url),
   'utf8'
 )
+const contentIndexSource = await readFile(
+  new URL('../../app/(admin)/admin/content-index/ContentIndexConsole.jsx', import.meta.url),
+  'utf8'
+)
 const backfillMigration = await readFile(
   new URL('../../migrations/0054_backfill_article_posts_content_index.sql', import.meta.url),
   'utf8'
@@ -125,5 +129,11 @@ test('admin exposes one content management entry and one unified list', () => {
   assert.match(consoleSource, /写文章/)
   assert.match(consoleSource, /登记内容/)
   assert.match(consoleSource, /索引维护/)
-  assert.match(consoleSource, /href="\/admin\/research-style"[^>]*>.*写作规范/)
+  assert.match(consoleSource, /<ResearchStyleClient embedded \/>/)
+  assert.match(consoleSource, /<ContentIndexConsole embedded \/>/)
+  assert.match(consoleSource, /setActivePanel\('content'\)/)
+  assert.doesNotMatch(consoleSource, /href="\/admin\/research-style"/)
+  assert.doesNotMatch(consoleSource, /href="\/admin\/content-index/)
+  assert.match(contentIndexSource, /id="content-index-sync"/)
+  assert.match(contentIndexSource, /id="manual-registration"[\s\S]*?<form onSubmit=\{handleAdd\}/)
 })

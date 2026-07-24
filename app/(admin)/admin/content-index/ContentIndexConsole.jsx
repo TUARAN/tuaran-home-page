@@ -4,6 +4,27 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AdminPage } from '../../components/ui'
 
+function ContentIndexFrame({ embedded, children }) {
+  if (embedded) return children
+  return (
+    <AdminPage
+      title="内容索引管理台"
+      description={
+        <>
+          统一内容索引（content_index）。「同步」把构建期注册表（文章 / 调研 / 资源）镜像进
+          D1；「手工登记」的条目无需构建即出现在{' '}
+          <a href="/articles" target="_blank" rel="noreferrer" className="underline underline-offset-4">
+            /articles
+          </a>{' '}
+          索引。需先在 Cloudflare 跑迁移 0035。
+        </>
+      }
+    >
+      {children}
+    </AdminPage>
+  )
+}
+
 const TYPE_OPTIONS = [
   { value: 'article', label: '文章（专栏）' },
   { value: 'research', label: '调研' },
@@ -33,7 +54,7 @@ function deriveContentKey(form) {
   return `${form.type}:${slug}`
 }
 
-export default function ContentIndexConsole() {
+export default function ContentIndexConsole({ embedded = false }) {
   const [entries, setEntries] = useState([])
   const [status, setStatus] = useState('loading')
   const [message, setMessage] = useState('')
@@ -170,27 +191,14 @@ export default function ContentIndexConsole() {
     'w-full rounded-md border border-[#dcdfe5] bg-white px-3 py-2 text-sm text-[#222] outline-none focus:border-[#9aa0aa] dark:border-[#2a3440] dark:bg-[#0f151d] dark:text-gray-100'
 
   return (
-    <AdminPage
-      title="内容索引管理台"
-      description={
-        <>
-          统一内容索引（content_index）。「同步」把构建期注册表（文章 / 调研 / 资源）镜像进
-          D1；「手工登记」的条目无需构建即出现在{' '}
-          <a href="/articles" target="_blank" rel="noreferrer" className="underline underline-offset-4">
-            /articles
-          </a>{' '}
-          索引。需先在 Cloudflare 跑迁移 0035。
-        </>
-      }
-    >
-
+    <ContentIndexFrame embedded={embedded}>
       {message ? (
         <div className="mb-4 rounded-lg border border-[#dbe4d6] bg-[#f3f8ef] px-4 py-2.5 text-sm text-[#3c5a2f] dark:border-[#2c3d2a] dark:bg-[#15200f] dark:text-[#a9cf92]">
           {message}
         </div>
       ) : null}
 
-      <section id="manual-registration" className="mb-8 scroll-mt-6 rounded-lg border border-[#dee0db] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
+      <section id="content-index-sync" className="mb-8 scroll-mt-6 rounded-lg border border-[#dee0db] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-[#333] dark:text-gray-200">构建期注册表 → D1</h2>
@@ -210,7 +218,7 @@ export default function ContentIndexConsole() {
         </div>
       </section>
 
-      <section className="mb-8 rounded-lg border border-[#dee0db] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
+      <section id="manual-registration" className="mb-8 scroll-mt-6 rounded-lg border border-[#dee0db] bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
         <h2 className="text-base font-semibold text-[#333] dark:text-gray-200">手工登记（发布不依赖构建）</h2>
         <form onSubmit={handleAdd} className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-sm text-[#555] dark:text-gray-400">
@@ -362,6 +370,6 @@ export default function ContentIndexConsole() {
           ) : null}
         </ul>
       </section>
-    </AdminPage>
+    </ContentIndexFrame>
   )
 }

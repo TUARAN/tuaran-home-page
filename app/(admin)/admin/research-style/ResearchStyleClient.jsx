@@ -6,6 +6,18 @@ import { RESEARCH_STYLE_TEMPLATES, UNIVERSAL_BAN_PHRASES } from '../../../../lib
 import { RESEARCH_STYLE_AUDIT } from '../../../../lib/research/styleAudit'
 import { AdminPage } from '../../components/ui'
 
+function ResearchStyleFrame({ embedded, children }) {
+  if (embedded) return children
+  return (
+    <AdminPage
+      title="内容风格库"
+      description="先定写法，再写内容。这里既是风格配置，也是存量文章的措辞复核入口。"
+    >
+      {children}
+    </AdminPage>
+  )
+}
+
 const STATUS_TONE = {
   active: 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200',
   available: 'border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200',
@@ -130,7 +142,7 @@ function TextList({ items, ordered = false }) {
   )
 }
 
-export default function ResearchStyleClient() {
+export default function ResearchStyleClient({ embedded = false }) {
   const styles = useMemo(() => [...RESEARCH_STYLE_TEMPLATES], [])
   const initial = styles.find((t) => t.status === 'active') || styles[0]
   const [selectedId, setSelectedId] = useState(initial?.id)
@@ -140,10 +152,7 @@ export default function ResearchStyleClient() {
   const totalFindings = RESEARCH_STYLE_AUDIT.fixCount + RESEARCH_STYLE_AUDIT.reviewCount
 
   return (
-    <AdminPage
-      title="内容风格库"
-      description="先定写法，再写内容。这里既是风格配置，也是存量文章的措辞复核入口。"
-    >
+    <ResearchStyleFrame embedded={embedded}>
       <section className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="rounded-2xl border border-[#caccc0] bg-white p-5 dark:border-[#2d3744] dark:bg-[#10161f]">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -228,7 +237,7 @@ export default function ResearchStyleClient() {
           <StyleCard style={selected} />
         </section>
       </div>
-    </AdminPage>
+    </ResearchStyleFrame>
   )
 }
 

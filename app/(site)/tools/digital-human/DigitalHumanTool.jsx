@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   IconAlertTriangle,
+  IconCheck,
   IconClock,
   IconDownload,
   IconPhotoUp,
@@ -14,6 +15,7 @@ import {
 } from '@tabler/icons-react'
 
 import { useSessionAccount } from '../../components/SessionProvider'
+import { digitalHumanErrorMessage } from '../../../../lib/digitalHuman/errors'
 
 const MAX_SCRIPT_CHARS = 200
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -21,9 +23,9 @@ const ACCEPT = 'image/png,image/jpeg,image/webp'
 const ACTIVE_STATUSES = new Set(['preparing', 'queued', 'processing'])
 
 const STATUS_META = {
-  preparing: { label: '正在生成语音', tone: 'amber' },
-  queued: { label: '等待生成', tone: 'sky' },
-  processing: { label: '正在驱动人物', tone: 'violet' },
+  preparing: { label: '正在准备素材', tone: 'amber' },
+  queued: { label: '已进入生成队列', tone: 'sky' },
+  processing: { label: '正在合成口播视频', tone: 'violet' },
   succeeded: { label: '生成完成', tone: 'emerald' },
   failed: { label: '生成失败', tone: 'rose' },
   canceled: { label: '已取消', tone: 'stone' },
@@ -37,6 +39,13 @@ const STATUS_TONES = {
   rose: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300',
   stone: 'border-stone-200 bg-stone-50 text-stone-600 dark:border-stone-800 dark:bg-stone-900/40 dark:text-stone-300',
 }
+
+const GENERATION_STAGES = [
+  { label: '上传素材', description: '正在安全上传照片' },
+  { label: '生成语音', description: '正在合成中文口播' },
+  { label: '进入队列', description: '等待 GPU 开始处理' },
+  { label: '合成视频', description: '生成嘴型与最终视频' },
+]
 
 async function safeJson(response) {
   const text = await response.text()
@@ -75,7 +84,15 @@ function displayError(data, status) {
   if (data?.error === 'MIGRATION_REQUIRED') return '数字人口播数据表尚未部署。'
   if (data?.error === 'DIGITAL_HUMAN_UNAVAILABLE') return data?.message || '数字人口播服务尚未配置完成。'
   if (data?.error === 'PROVIDER_NOT_CONFIGURED') return '数字人生成服务尚未配置。'
-  if (data?.error === 'TTS_FAILED') return '中文语音生成失败，请稍后再试。'
+  if (
+    data?.error === 'TTS_FAILED' ||
+    String(data?.error || '').startsWith('PROVIDER_')
+  ) {
+    return digitalHumanErrorMessage(data.error, data.detail)
+  }
+  if (/<!doctype html|<html[\s>]|<body[\s>]/i.test(String(data?.detail || ''))) {
+    return '服务返回异常，请稍后再试。'
+  }
   return data?.message || data?.detail || data?.error || `请求失败（${status}）`
 }
 
@@ -91,6 +108,105 @@ function StatusBadge({ status }) {
   )
 }
 
+function generationStage({ submitting, elapsedSeconds, status }) {
+  if (submitting) {
+    if (elapsedSeconds < 3) return 0
+    if (elapsedSeconds < 10) return 1
+    return 2
+  }
+  if (status === 'preparing') return 1
+  if (status === 'queued') return 2
+  return 3
+}
+
+function formatElapsed(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0)
+  if (safeSeconds < 60) return `${safeSeconds} 秒`
+  const minutes = Math.floor(safeSeconds / 60)
+  const remainder = safeSeconds % 60
+  return remainder ? `${minutes} 分 ${remainder} 秒` : `${minutes} 分钟`
+}
+
+function GenerationProgress({ submitting, status, elapsedSeconds }) {
+  const activeIndex = generationStage({ submitting, elapsedSeconds, status })
+  const stage = GENERATION_STAGES[activeIndex]
+  const progress = [18, 42, 68, 88][activeIndex]
+
+  return (
+    <div
+      className="flex min-h-[390px] flex-col items-center justify-center px-6 py-10 text-center"
+      aria-live="polite"
+    >
+      <div className="w-full max-w-[540px]">
+        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#d8c79f] bg-[#fff8e8] px-3 py-1.5 text-[12px] font-semibold text-[#76551e] dark:border-[#66512a] dark:bg-[#241c0d] dark:text-[#e5c47d]">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-25" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-current" />
+          </span>
+          {submitting ? '正在创建任务' : STATUS_META[status]?.label || '正在生成'}
+        </div>
+
+        <h3 className="mb-2 text-[20px] font-bold text-[#1f1b14] dark:text-white">
+          {stage.label}
+        </h3>
+        <p className="mb-6 text-[13px] leading-6 text-[#797469] dark:text-[#9da7b5]">
+          {stage.description}。已等待 {formatElapsed(elapsedSeconds)}
+        </p>
+
+        <div
+          className="mb-5 h-2 overflow-hidden rounded-full bg-[#e8e1d4] dark:bg-[#26313d]"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow={progress}
+        >
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#b98a32] via-[#8a6422] to-[#654816] transition-[width] duration-700 ease-out dark:from-[#f0d390] dark:via-[#d4ae66] dark:to-[#a47d37]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          {GENERATION_STAGES.map((item, index) => {
+            const complete = index < activeIndex
+            const active = index === activeIndex
+            return (
+              <div key={item.label} className="flex min-w-0 flex-col items-center gap-2">
+                <span
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-bold transition-colors ${
+                    complete
+                      ? 'border-[#8a6422] bg-[#8a6422] text-white dark:border-[#d4ae66] dark:bg-[#d4ae66] dark:text-[#17130d]'
+                      : active
+                        ? 'border-[#8a6422] bg-[#fff8e8] text-[#8a6422] shadow-[0_0_0_4px_rgba(138,100,34,0.10)] dark:border-[#d4ae66] dark:bg-[#241c0d] dark:text-[#e5c47d]'
+                        : 'border-[#d8d1c4] bg-white/60 text-[#999286] dark:border-[#33404e] dark:bg-[#111923] dark:text-[#748090]'
+                  }`}
+                >
+                  {complete ? <IconCheck size={15} stroke={2.4} /> : index + 1}
+                </span>
+                <span
+                  className={`truncate text-[11px] ${
+                    active || complete
+                      ? 'font-semibold text-[#4d402b] dark:text-[#d7c7a5]'
+                      : 'text-[#999286] dark:text-[#748090]'
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
+        <p className="mb-0 mt-7 text-[12px] leading-5 text-[#8a867c] dark:text-[#8995a5]">
+          {submitting
+            ? '任务创建完成前请保持当前页面打开。'
+            : '视频生成通常需要几分钟，可以离开页面，稍后回来查看。'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function DigitalHumanTool() {
   const fileInputRef = useRef(null)
   const { user, loading: userLoading, isOwner } = useSessionAccount()
@@ -101,6 +217,8 @@ export default function DigitalHumanTool() {
   const [consent, setConsent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitStartedAt, setSubmitStartedAt] = useState(0)
+  const [clockNow, setClockNow] = useState(() => Date.now())
   const [deletingId, setDeletingId] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -122,6 +240,22 @@ export default function DigitalHumanTool() {
     consent &&
     !submitting &&
     !activeJob
+  const working = submitting || Boolean(activeJob)
+  const workingStartedAt = submitting
+    ? submitStartedAt
+    : Number(activeJob?.createdAt || Date.now())
+  const elapsedSeconds = working
+    ? Math.max(0, Math.floor((clockNow - workingStartedAt) / 1000))
+    : 0
+  const submitButtonLabel = submitting
+    ? GENERATION_STAGES[generationStage({
+        submitting: true,
+        elapsedSeconds,
+        status: '',
+      })].label
+    : activeJob
+      ? STATUS_META[activeJob.status]?.label || '已有任务生成中'
+      : '生成数字人口播'
 
   const refreshJobs = useCallback(async () => {
     if (!isAuthed) {
@@ -161,7 +295,7 @@ export default function DigitalHumanTool() {
         setMessage('数字人口播已经生成完成。')
       }
       if (data.job.status === 'failed') {
-        setError(data.job.errorDetail || '数字人口播生成失败。')
+        setError(digitalHumanErrorMessage(data.job.errorCode, data.job.errorDetail))
       }
     } catch {
       // 轮询是 best-effort，下一次轮询或 webhook 仍可恢复状态。
@@ -182,6 +316,13 @@ export default function DigitalHumanTool() {
     const timer = window.setInterval(() => refreshJob(activeJob.id), 4000)
     return () => window.clearInterval(timer)
   }, [activeJob?.id, refreshJob])
+
+  useEffect(() => {
+    if (!working) return undefined
+    setClockNow(Date.now())
+    const timer = window.setInterval(() => setClockNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [working])
 
   useEffect(() => {
     return () => {
@@ -213,6 +354,8 @@ export default function DigitalHumanTool() {
   async function submit() {
     if (!canSubmit) return
     setSubmitting(true)
+    setSubmitStartedAt(Date.now())
+    setClockNow(Date.now())
     setError('')
     setMessage('')
 
@@ -242,6 +385,7 @@ export default function DigitalHumanTool() {
       setError(nextError?.message || '任务提交失败')
     } finally {
       setSubmitting(false)
+      setSubmitStartedAt(0)
     }
   }
 
@@ -387,8 +531,12 @@ export default function DigitalHumanTool() {
               onClick={submit}
               className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#8a6422] px-4 text-[14px] font-bold text-white transition hover:bg-[#6f5019] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#d4ae66] dark:text-[#14100a]"
             >
-              <IconSparkles size={18} />
-              {submitting ? '正在提交…' : activeJob ? '已有任务生成中' : '生成数字人口播'}
+              {submitting ? (
+                <span className="h-2 w-2 animate-pulse rounded-full bg-current" />
+              ) : (
+                <IconSparkles size={18} />
+              )}
+              {submitButtonLabel}
             </button>
           </div>
 
@@ -400,7 +548,22 @@ export default function DigitalHumanTool() {
           {error ? (
             <p className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] leading-5 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
               <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
-              <span>{error}</span>
+              <span>
+                {error}
+                {isOwner && error.includes('余额不足') ? (
+                  <>
+                    {' '}
+                    <a
+                      href="https://replicate.com/account/billing#billing"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-current underline underline-offset-2"
+                    >
+                      前往 Replicate 充值
+                    </a>
+                  </>
+                ) : null}
+              </span>
             </p>
           ) : null}
         </aside>
@@ -411,7 +574,13 @@ export default function DigitalHumanTool() {
               <h2 className="mb-0 text-[15px] font-bold">视频预览</h2>
               {activeJob ? <StatusBadge status={activeJob.status} /> : latestResult ? <StatusBadge status="succeeded" /> : null}
             </div>
-            {latestResult ? (
+            {working ? (
+              <GenerationProgress
+                submitting={submitting}
+                status={activeJob?.status || 'preparing'}
+                elapsedSeconds={elapsedSeconds}
+              />
+            ) : latestResult ? (
               <div className="p-4">
                 <video
                   key={`${latestResult.id}:${latestResult.updatedAt}`}
@@ -433,16 +602,6 @@ export default function DigitalHumanTool() {
                     下载 MP4
                   </a>
                 </div>
-              </div>
-            ) : activeJob ? (
-              <div className="flex min-h-[390px] flex-col items-center justify-center px-6 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/30 dark:text-violet-300">
-                  <IconRefresh size={30} className="animate-spin" />
-                </div>
-                <p className="mb-2 text-[16px] font-bold">{STATUS_META[activeJob.status]?.label}</p>
-                <p className="mb-0 max-w-md text-[13px] leading-6 text-[#797469] dark:text-[#9da7b5]">
-                  页面会自动刷新任务状态。首次唤醒模型可能需要等待更久，可以稍后回到本页查看。
-                </p>
               </div>
             ) : (
               <div className="flex min-h-[390px] flex-col items-center justify-center px-6 text-center">
@@ -506,7 +665,7 @@ export default function DigitalHumanTool() {
                       </p>
                       {job.status === 'failed' && job.errorDetail ? (
                         <p className="mb-0 mt-1 text-[11px] text-rose-600 dark:text-rose-300">
-                          {job.errorDetail}
+                          {digitalHumanErrorMessage(job.errorCode, job.errorDetail)}
                         </p>
                       ) : null}
                     </div>

@@ -41,6 +41,10 @@ const wrangler = await readFile(
   new URL('../../wrangler.toml', import.meta.url),
   'utf8'
 )
+const {
+  digitalHumanErrorMessage,
+  normalizeDigitalHumanProviderError,
+} = await import('../../lib/digitalHuman/errors.js')
 
 test('digital human migration enforces lifecycle states and useful indexes', () => {
   const db = new DatabaseSync(':memory:')
@@ -90,4 +94,41 @@ test('digital human bindings stay separate from public media storage', () => {
   assert.match(wrangler, /binding = "AVATAR_MEDIA"/)
   assert.match(wrangler, /bucket_name = "tuaran-avatar-private"/)
   assert.match(wrangler, /\[ai\][\s\S]*binding = "AI"/)
+})
+
+test('digital human provider errors never expose upstream HTML', () => {
+  assert.deepEqual(
+    normalizeDigitalHumanProviderError({
+      status: 402,
+      detail: 'You have insufficient credit to run this model.',
+    }),
+    {
+      code: 'PROVIDER_CREDIT_REQUIRED',
+      detail: '数字人生成服务余额不足，请充值后重试。',
+    }
+  )
+
+  const htmlFailure = normalizeDigitalHumanProviderError({
+    status: 0,
+    detail: '<!DOCTYPE html><html><body>proxy failure</body></html>',
+  })
+  assert.equal(htmlFailure.code, 'PROVIDER_INVALID_RESPONSE')
+  assert.doesNotMatch(htmlFailure.detail, /doctype|html/i)
+  assert.equal(
+    digitalHumanErrorMessage(
+      'PROVIDER_SUBMIT_FAILED',
+      'REPLICATE_402: You have insufficient credit'
+    ),
+    '数字人生成服务余额不足，请充值后重试。'
+  )
+})
+
+test('digital human waiting UI uses staged progress instead of a spinning refresh icon', () => {
+  assert.match(pageSource, /GENERATION_STAGES/)
+  assert.match(pageSource, /GenerationProgress/)
+  assert.match(pageSource, /上传素材/)
+  assert.match(pageSource, /生成语音/)
+  assert.match(pageSource, /进入队列/)
+  assert.match(pageSource, /合成视频/)
+  assert.doesNotMatch(pageSource, /IconRefresh size=\{30\} className="animate-spin"/)
 })

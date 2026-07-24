@@ -9,6 +9,7 @@ import {
   IconFilePlus,
   IconPlus,
   IconTrash,
+  IconTypography,
 } from '@tabler/icons-react'
 
 import AdminPage from '../../components/ui/AdminPage'
@@ -170,6 +171,7 @@ export default function ArticlesConsole() {
       description={`共 ${counts.all} 条 · 已发布 ${counts.published} · 草稿 ${counts.draft} · 已下线 ${counts.retired}`}
       actions={(
         <>
+          <AdminButton href="/admin/research-style" variant="ghost"><IconTypography size={16} />写作规范</AdminButton>
           <AdminButton href="/admin/content-index" variant="ghost"><IconDatabase size={16} />索引维护</AdminButton>
           <AdminButton href="/admin/content-index#manual-registration"><IconFilePlus size={16} />登记内容</AdminButton>
           <AdminButton href="/admin/articles/new" variant="primary"><IconPlus size={16} />写文章</AdminButton>

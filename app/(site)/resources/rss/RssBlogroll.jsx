@@ -44,7 +44,8 @@ export default function RssBlogroll({ fallback = [] }) {
     fetch('/api/rss-feeds', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (!cancelled && Array.isArray(d?.feeds) && d.feeds.length) setFeeds(d.feeds)
+        // 空数组也是后台的有效状态（例如全部下架），不能继续保留 SSR 内置种子。
+        if (!cancelled && Array.isArray(d?.feeds)) setFeeds(d.feeds)
       })
       .catch(() => {})
     return () => {

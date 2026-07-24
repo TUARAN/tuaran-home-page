@@ -1,4 +1,5 @@
 import { getD1 } from '../../../lib/d1'
+import { isPublishedRssRow } from '../../../lib/rssFeedVisibility'
 import { RSS_FEEDS_SEED } from '../../../lib/rssFeedsSeed'
 
 export const runtime = 'edge'
@@ -25,12 +26,14 @@ async function resolveFeed(id) {
   if (db) {
     try {
       const row = await db
-        .prepare('SELECT id, site_name, site_url, rss_url FROM rss_feeds WHERE id = ? AND published = 1')
+        .prepare('SELECT id, site_name, site_url, rss_url, published FROM rss_feeds WHERE id = ?')
         .bind(wanted)
         .first()
-      if (row?.rss_url) {
+      if (row?.rss_url && isPublishedRssRow(row)) {
         return { id: row.id, siteName: row.site_name || '', siteUrl: row.site_url || '', rssUrl: row.rss_url }
       }
+      // 查询成功代表 D1 已就绪；不存在或已下架都不能再回退到同名内置种子。
+      return null
     } catch {
       // 表不存在等异常 → 落到种子
     }

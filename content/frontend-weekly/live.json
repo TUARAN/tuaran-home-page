@@ -1,6 +1,14 @@
 {
-  "updatedAt": "2026-07-24T14:55:38.084Z",
+  "updatedAt": "2026-07-24T16:43:54.988Z",
   "items": [
+    {
+      "topic": "论文",
+      "title": "Anthropic 联合 Andon Labs 发布 Drone-Bench，评估 AI 模型自主操控无人机执行定位追踪任务的能力",
+      "summary": "Anthropic 与 Andon Labs 合作推出 Drone-Bench，用于测试 AI 模型自主操控四旋翼无人机在室内环境中定位并追踪指定人员的能力。该基准将任务分解为 3D 地图重建、定位、导航、目标检测与跟随五个子任务，并通过软件复现实现快速评估。实验表明，该任务链的难度足以区分不同智能水平的模型，并揭示 AI 在物理世界操控能力上的进步轨迹。",
+      "source": "Anthropic：Research（发表成果 · 网页）",
+      "href": "https://www.anthropic.com/research/project-pilot",
+      "publishedAt": "2026-07-24T15:25:45.300Z"
+    },
     {
       "topic": "模型",
       "title": "蚂蚁百灵发布Ling-3.0-flash原生混合推理模型",
@@ -91,14 +99,6 @@
     },
     {
       "topic": "产品",
-      "title": "Claude 语音模式现已支持 Opus、Sonnet 及连接工具与多语言",
-      "summary": "即日起，Claude 语音模式在 Opus、Sonnet 和 Haiku 上运行，并支持连接 Gmail、Slack 等工具及更多语言。用户可在对话中切换模型，语音模式默认沿用上次文本聊天使用的模型。该功能面向所有用户开放 beta 测试，免费版可使用 Haiku 及一个连接工具，付费版可访问更多模型和全部连接工具。",
-      "source": "Claude：Blog（网页）",
-      "href": "https://claude.com/blog/think-through-hard-problems-in-voice-mode",
-      "publishedAt": "2026-07-23T19:55:29.530Z"
-    },
-    {
-      "topic": "产品",
       "title": "ChatGPT 桌面版上线语音控制多智能体",
       "summary": "ChatGPT 语音功能现已登陆桌面应用。\n\n只需使用语音，即可控制你的电脑，并指挥在 ChatGPT Work 或 Codex 中运行的多个智能体。\n\n该功能由 GPT-Live 驱动，因此它能够同时在该应用中说话、聆听并协调工作。\n\n今日起，面向 macOS 和 Windows 平台的 Plus、Pro、Business、Edu 及 Enterprise 计划用户全球推送。",
       "source": "X：OpenAI (@OpenAI)",
@@ -128,14 +128,6 @@
       "source": "The Decoder：AI News（RSS）",
       "href": "https://the-decoder.com/one-tampered-chatgpt-link-could-spawn-a-rogue-ai-agent-that-took-orders-from-an-attacker-every-five-minutes",
       "publishedAt": "2026-07-23T17:01:30.000Z"
-    },
-    {
-      "topic": "技巧",
-      "title": "微软MAI模型：以更低成本实现前沿能力规模化",
-      "summary": "微软CEO Satya Nadella详解MAI模型家族战略：通过优化成本-效果前沿，MAI模型在GitHub Copilot、Excel等产品中已用更少token超越通用前沿模型。核心是构建独立于模型的评估系统，让模型在产品真实环境中学习并完成用户关心的任务。微软正将这一模板通过Foundry平台开放给企业客户。",
-      "source": "X：Satya Nadella (@satyanadella)",
-      "href": "https://x.com/satyanadella/status/2080329851127669104",
-      "publishedAt": "2026-07-23T16:31:01.000Z"
     }
   ]
 }

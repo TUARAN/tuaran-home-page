@@ -308,8 +308,8 @@ const SITE_RSS_COVERAGE = [
   {
     section: '富页面项目',
     path: '/zhang-juzheng-book、/ai-token-usage-research 等',
-    status: 'out',
-    note: '长期富页面，内容更新订阅者收不到。如需推送可单独建 item。',
+    status: 'in',
+    note: '公开富页面以摘要 + 站内入口推送；在 ENGINEERING_WORKS 更新 updated 后，用版本化 GUID 触发新通知。owner 私有页面不进入。',
   },
   {
     section: '工作台类',
@@ -320,8 +320,8 @@ const SITE_RSS_COVERAGE = [
   {
     section: '收藏 / 资源',
     path: '/bookmarks/*、/resources/*',
-    status: 'out',
-    note: '索引型，看是否想推。',
+    status: 'in',
+    note: 'HOME_RESOURCE_ITEMS 中这两类路径以摘要 + 站内入口推送；更新 updated 后，用版本化 GUID 触发新通知。',
   },
 ]
 

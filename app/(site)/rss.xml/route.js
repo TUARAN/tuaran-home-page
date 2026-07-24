@@ -3,6 +3,7 @@ import { getAllFeedItems } from '../feed/data'
 import { researchDateTimeIso } from '../../../lib/research/datetime'
 import { CATEGORY_META, getResearchEntry, listResearch } from '../../../lib/research/loader'
 import { renderMarkdown } from '../../../lib/research/markdown'
+import { listResourceRssEntries, listRichPageRssEntries } from '../../../lib/rssContentEntries'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600
@@ -109,6 +110,13 @@ function feedContentHtml(item) {
   return absolutize(parts.join('\n'))
 }
 
+function pageNotificationContentHtml(item) {
+  const parts = []
+  if (item.description) parts.push(`<p>${escapeXml(item.description)}</p>`)
+  parts.push(`<p><a href="${escapeXml(item.link)}">${escapeXml(item.ctaLabel || '打开页面')} →</a></p>`)
+  return parts.join('\n')
+}
+
 function buildItems() {
   // 1. 精选文章（剔除外链型）
   const postItems = articles
@@ -145,7 +153,26 @@ function buildItems() {
     contentHtml: feedContentHtml(item),
   }))
 
-  return [...postItems, ...researchItems, ...feedItems].sort((a, b) => {
+  // 4. 公开富页面：输出摘要 + 站内入口。更新注册表的 updated 后，版本化 GUID 会触发新通知。
+  const richPageItems = listRichPageRssEntries().map((item) => ({
+    ...item,
+    pubDate: toRfc822(item.publishedAt),
+    contentHtml: pageNotificationContentHtml(item),
+  }))
+
+  // 5. 收藏 / 资源：只收 /bookmarks/* 与 /resources/*，索引内容仍留在站内阅读。
+  const resourceItems = listResourceRssEntries().map((item) => ({
+    ...item,
+    pubDate: toRfc822(item.publishedAt),
+    contentHtml: pageNotificationContentHtml(item),
+  }))
+
+  const byLink = new Map()
+  for (const item of [...postItems, ...researchItems, ...feedItems, ...richPageItems, ...resourceItems]) {
+    if (!byLink.has(item.link)) byLink.set(item.link, item)
+  }
+
+  return [...byLink.values()].sort((a, b) => {
     return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
   })
 }
@@ -170,8 +197,8 @@ ${items
   .map(
     (it) => `    <item>
       <title>${escapeXml(it.title)}</title>
-      <link>${it.link}</link>
-      <guid isPermaLink="true">${it.link}</guid>
+      <link>${escapeXml(it.link)}</link>
+      <guid isPermaLink="${it.guid ? 'false' : 'true'}">${escapeXml(it.guid || it.link)}</guid>
       <description>${escapeXml(it.description || '')}</description>
 ${it.contentHtml ? `      <content:encoded><![CDATA[${cdata(it.contentHtml)}]]></content:encoded>\n` : ''}      <category>${escapeXml(it.category)}</category>
       <pubDate>${it.pubDate}</pubDate>

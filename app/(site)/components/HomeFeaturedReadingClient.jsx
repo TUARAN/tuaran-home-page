@@ -48,10 +48,11 @@ function storeBatchState(day, offset) {
   }
 }
 
-function FeaturedLink({ item }) {
+function FeaturedLink({ item, isPinned }) {
   const content = (
     <>
       <div className="home-reading-meta">
+        {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
         {item.isLatest ? <span className="home-badge home-badge-latest"><T zh="最新" en="Latest" /></span> : null}
         <span className={SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column}>{item.sectionLabel}</span>
         {item.tagLabel ? <span className="home-badge home-badge-muted">{item.tagLabel}</span> : null}
@@ -95,6 +96,7 @@ export default function HomeFeaturedReadingClient({ catalog }) {
     [catalog, normalizedQuery],
   )
   const displayedItems = normalizedQuery ? searchResults : items
+  const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
 
   useEffect(() => {
     let alive = true
@@ -245,7 +247,9 @@ export default function HomeFeaturedReadingClient({ catalog }) {
         </div>
       </div>
       <div className={`home-reading-list transition-opacity duration-200 ${changing ? 'opacity-55' : 'opacity-100'}`} aria-live="polite">
-        {displayedItems.map((item) => <FeaturedLink key={item.id} item={item} />)}
+        {displayedItems.map((item) => (
+          <FeaturedLink key={item.id} item={item} isPinned={pinnedIds.has(item.id)} />
+        ))}
         {normalizedQuery && !displayedItems.length ? (
           <div className="py-10 text-center text-[14px] text-[#77746a] dark:text-[#98a3b1]">
             没有找到与“{normalizedQuery}”匹配的内容

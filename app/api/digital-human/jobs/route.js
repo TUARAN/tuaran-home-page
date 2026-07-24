@@ -64,16 +64,38 @@ function dependenciesOrResponse() {
 
 function generationError(error) {
   const detail = String(error?.message || error)
-  if (detail.includes('REPLICATE_API_TOKEN')) {
-    return { code: 'PROVIDER_NOT_CONFIGURED', detail: '数字人生成服务尚未配置。' }
+  if (error?.code === 'PROVIDER_CREDIT_REQUIRED' || detail.includes('REPLICATE_402')) {
+    return {
+      code: 'PROVIDER_CREDIT_REQUIRED',
+      detail: '数字人生成服务余额不足，请充值后重试。',
+      status: 402,
+    }
   }
-  if (detail.includes('REPLICATE_')) {
-    return { code: 'PROVIDER_SUBMIT_FAILED', detail }
+  if (detail.includes('REPLICATE_API_TOKEN')) {
+    return {
+      code: 'PROVIDER_NOT_CONFIGURED',
+      detail: '数字人生成服务尚未配置。',
+      status: 503,
+    }
+  }
+  if (error?.code || detail.includes('REPLICATE_')) {
+    return {
+      code: String(error?.code || 'PROVIDER_SUBMIT_FAILED'),
+      detail:
+        error?.code && !detail.includes('<')
+          ? detail.replace(/^REPLICATE_\d+:\s*/, '')
+          : '数字人生成服务返回异常，请稍后再试。',
+      status: 502,
+    }
   }
   if (detail.includes('TTS_') || detail.includes('WORKERS_AI')) {
-    return { code: 'TTS_FAILED', detail }
+    return { code: 'TTS_FAILED', detail: '中文语音生成失败，请稍后再试。', status: 502 }
   }
-  return { code: 'GENERATION_SETUP_FAILED', detail }
+  return {
+    code: 'GENERATION_SETUP_FAILED',
+    detail: '数字人口播任务创建失败，请稍后再试。',
+    status: 502,
+  }
 }
 
 export async function GET(req) {
@@ -282,7 +304,7 @@ export async function POST(req) {
         message: '数字人口播任务创建失败，请稍后再试。',
         detail: normalized.detail,
       },
-      { status: normalized.code === 'PROVIDER_NOT_CONFIGURED' ? 503 : 502 }
+      { status: normalized.status || 502 }
     )
   }
 }

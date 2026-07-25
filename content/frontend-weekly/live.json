@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-25T09:48:20.018Z",
+  "updatedAt": "2026-07-25T11:11:03.021Z",
   "items": [
     {
       "topic": "行业",
@@ -88,14 +88,6 @@
       "source": "Hacker News 热门（buzzing.cc 中文翻译）",
       "href": "https://bfl.ai/blog/flux-3-mimic",
       "publishedAt": "2026-07-24T11:55:45.885Z"
-    },
-    {
-      "topic": "行业",
-      "title": "Kimi K3 在网络安全漏洞利用测试中大幅落后美国前沿模型，知识蒸馏或为原因",
-      "summary": "英国AI安全研究所与美国AI标准与创新中心联合评估显示，月之暗面的Kimi K3在ExploitBench基准上得分32.2%，远低于美国领先模型的76.2%，但优于智谱GLM-5.2的24.4%。",
-      "source": "The Decoder：AI News（RSS）",
-      "href": "https://the-decoder.com/kimi-k3-trails-frontier-us-models-by-a-wide-margin-on-cyber-exploits-and-distillation-may-explain-why",
-      "publishedAt": "2026-07-24T09:48:32.000Z"
     }
   ]
 }

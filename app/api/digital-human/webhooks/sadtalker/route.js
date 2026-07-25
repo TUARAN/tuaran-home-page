@@ -2,7 +2,7 @@ import { getD1 } from '../../../../../lib/d1'
 import { getAvatarR2 } from '../../../../../lib/r2'
 import { getDigitalHumanSigningSecret } from '../../../../../lib/digitalHuman/config'
 import { getDigitalHumanJob } from '../../../../../lib/digitalHuman/jobs'
-import { DIGITAL_HUMAN_REPLICATE_PROVIDER } from '../../../../../lib/digitalHuman/providerIds'
+import { DIGITAL_HUMAN_SELF_HOSTED_PROVIDER } from '../../../../../lib/digitalHuman/providerIds'
 import { applyDigitalHumanProviderUpdate } from '../../../../../lib/digitalHuman/results'
 import { verifyDigitalHumanSignature } from '../../../../../lib/digitalHuman/signing'
 
@@ -19,7 +19,7 @@ export async function POST(req) {
     verified = await verifyDigitalHumanSignature(getDigitalHumanSigningSecret(), {
       purpose: 'webhook',
       jobId,
-      kind: 'replicate',
+      kind: 'sadtalker',
       expires: url.searchParams.get('expires'),
       signature: url.searchParams.get('signature'),
     })
@@ -37,17 +37,16 @@ export async function POST(req) {
     return Response.json({ error: 'DIGITAL_HUMAN_UNAVAILABLE' }, { status: 503 })
   }
 
-  const raw = await req.text()
   let prediction = null
   try {
-    prediction = JSON.parse(raw)
+    prediction = await req.json()
   } catch {
     return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
   }
 
   const job = await getDigitalHumanJob(db, jobId)
   if (!job) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
-  if (job.provider !== DIGITAL_HUMAN_REPLICATE_PROVIDER) {
+  if (job.provider !== DIGITAL_HUMAN_SELF_HOSTED_PROVIDER) {
     return Response.json({ error: 'PROVIDER_MISMATCH' }, { status: 409 })
   }
   if (job.provider_job_id && prediction?.id !== job.provider_job_id) {

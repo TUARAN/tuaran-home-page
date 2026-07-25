@@ -4,32 +4,35 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   IconAlertTriangle,
   IconCheck,
+  IconCloud,
   IconClock,
   IconDownload,
   IconPhotoUp,
   IconPlayerPlay,
   IconRefresh,
+  IconServer,
   IconSparkles,
   IconTrash,
   IconVideo,
 } from '@tabler/icons-react'
 
 import { useSessionAccount } from '../../components/SessionProvider'
+import {
+  DIGITAL_HUMAN_GENERATION_STAGES,
+  DIGITAL_HUMAN_PROVIDER_COPY,
+  DIGITAL_HUMAN_STATUS_META,
+  DIGITAL_HUMAN_UI_COPY,
+} from '../../../../lib/digitalHuman/copy'
 import { digitalHumanErrorMessage } from '../../../../lib/digitalHuman/errors'
+import {
+  DIGITAL_HUMAN_REPLICATE_PROVIDER,
+  DIGITAL_HUMAN_SELF_HOSTED_PROVIDER,
+} from '../../../../lib/digitalHuman/providerIds'
 
 const MAX_SCRIPT_CHARS = 200
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 const ACCEPT = 'image/png,image/jpeg,image/webp'
 const ACTIVE_STATUSES = new Set(['preparing', 'queued', 'processing'])
-
-const STATUS_META = {
-  preparing: { label: '正在准备素材', tone: 'amber' },
-  queued: { label: '已进入生成队列', tone: 'sky' },
-  processing: { label: '正在合成口播视频', tone: 'violet' },
-  succeeded: { label: '生成完成', tone: 'emerald' },
-  failed: { label: '生成失败', tone: 'rose' },
-  canceled: { label: '已取消', tone: 'stone' },
-}
 
 const STATUS_TONES = {
   amber: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300',
@@ -40,11 +43,9 @@ const STATUS_TONES = {
   stone: 'border-stone-200 bg-stone-50 text-stone-600 dark:border-stone-800 dark:bg-stone-900/40 dark:text-stone-300',
 }
 
-const GENERATION_STAGES = [
-  { label: '上传素材', description: '正在安全上传照片' },
-  { label: '生成语音', description: '正在合成中文口播' },
-  { label: '进入队列', description: '等待 GPU 开始处理' },
-  { label: '合成视频', description: '生成嘴型与最终视频' },
+const PROVIDER_ORDER = [
+  DIGITAL_HUMAN_SELF_HOSTED_PROVIDER,
+  DIGITAL_HUMAN_REPLICATE_PROVIDER,
 ]
 
 async function safeJson(response) {
@@ -78,12 +79,12 @@ function formatTime(value) {
 }
 
 function displayError(data, status) {
-  if (data?.error === 'BETA_OWNER_ONLY') return '数字人口播目前处于站长内测阶段。'
-  if (data?.error === 'ACTIVE_JOB_EXISTS') return '已有一个任务正在生成，请等待它完成。'
+  if (data?.error === 'BETA_OWNER_ONLY') return DIGITAL_HUMAN_UI_COPY.ownerOnly
+  if (data?.error === 'ACTIVE_JOB_EXISTS') return DIGITAL_HUMAN_UI_COPY.activeTask
   if (data?.error === 'RATE_LIMITED') return '今天的生成次数已经用完。'
   if (data?.error === 'MIGRATION_REQUIRED') return '数字人口播数据表尚未部署。'
-  if (data?.error === 'DIGITAL_HUMAN_UNAVAILABLE') return data?.message || '数字人口播服务尚未配置完成。'
-  if (data?.error === 'PROVIDER_NOT_CONFIGURED') return '数字人生成服务尚未配置。'
+  if (data?.error === 'DIGITAL_HUMAN_UNAVAILABLE') return data?.message || DIGITAL_HUMAN_UI_COPY.unavailable
+  if (data?.error === 'PROVIDER_NOT_CONFIGURED') return data?.message || DIGITAL_HUMAN_UI_COPY.providerNotConfigured
   if (
     data?.error === 'TTS_FAILED' ||
     String(data?.error || '').startsWith('PROVIDER_')
@@ -97,7 +98,7 @@ function displayError(data, status) {
 }
 
 function StatusBadge({ status }) {
-  const meta = STATUS_META[status] || STATUS_META.failed
+  const meta = DIGITAL_HUMAN_STATUS_META[status] || DIGITAL_HUMAN_STATUS_META.failed
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${STATUS_TONES[meta.tone]}`}>
       {ACTIVE_STATUSES.has(status) ? (
@@ -129,7 +130,7 @@ function formatElapsed(seconds) {
 
 function GenerationProgress({ submitting, status, elapsedSeconds }) {
   const activeIndex = generationStage({ submitting, elapsedSeconds, status })
-  const stage = GENERATION_STAGES[activeIndex]
+  const stage = DIGITAL_HUMAN_GENERATION_STAGES[activeIndex]
   const progress = [18, 42, 68, 88][activeIndex]
 
   return (
@@ -143,7 +144,7 @@ function GenerationProgress({ submitting, status, elapsedSeconds }) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-25" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-current" />
           </span>
-          {submitting ? '正在创建任务' : STATUS_META[status]?.label || '正在生成'}
+          {submitting ? '正在创建任务' : DIGITAL_HUMAN_STATUS_META[status]?.label || '正在生成'}
         </div>
 
         <h3 className="mb-2 text-[20px] font-bold text-[#1f1b14] dark:text-white">
@@ -167,7 +168,7 @@ function GenerationProgress({ submitting, status, elapsedSeconds }) {
         </div>
 
         <div className="grid grid-cols-4 gap-2">
-          {GENERATION_STAGES.map((item, index) => {
+          {DIGITAL_HUMAN_GENERATION_STAGES.map((item, index) => {
             const complete = index < activeIndex
             const active = index === activeIndex
             return (
@@ -207,6 +208,79 @@ function GenerationProgress({ submitting, status, elapsedSeconds }) {
   )
 }
 
+function ProviderTabs({ value, availability, disabled, onChange }) {
+  return (
+    <div className="mx-auto max-w-[1180px] px-4 pb-5 sm:px-6 lg:px-8">
+      <div
+        className="grid gap-2 rounded-lg border border-[#ded8ca] bg-white/60 p-2 dark:border-[#252e38] dark:bg-[#101720]/70 sm:grid-cols-2"
+        role="tablist"
+        aria-label="数字人生成方式"
+      >
+        {PROVIDER_ORDER.map((provider) => {
+          const meta = DIGITAL_HUMAN_PROVIDER_COPY[provider]
+          const selected = value === provider
+          const configured = availability
+            ? Boolean(availability?.[provider]?.configured)
+            : null
+          const ProviderIcon = provider === DIGITAL_HUMAN_SELF_HOSTED_PROVIDER
+            ? IconServer
+            : IconCloud
+          return (
+            <button
+              key={provider}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              disabled={disabled}
+              onClick={() => onChange(provider)}
+              className={`flex min-h-[86px] items-start gap-3 rounded-md border px-4 py-3 text-left transition disabled:cursor-not-allowed ${
+                selected
+                  ? 'border-[#a57b2d] bg-[#fff9eb] shadow-[0_0_0_1px_rgba(165,123,45,0.14)] dark:border-[#d4ae66] dark:bg-[#241c0d]'
+                  : 'border-transparent hover:border-[#d8d1c4] hover:bg-white/70 dark:hover:border-[#33404e] dark:hover:bg-[#111a24]'
+              }`}
+            >
+              <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
+                selected
+                  ? 'bg-[#8a6422] text-white dark:bg-[#d4ae66] dark:text-[#17130d]'
+                  : 'bg-[#ebe5d9] text-[#696357] dark:bg-[#202b36] dark:text-[#aab4c2]'
+              }`}>
+                <ProviderIcon size={19} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-[14px] font-bold">{meta.label}</span>
+                  <span className="rounded-full border border-current/20 px-2 py-0.5 text-[10px] font-semibold opacity-75">
+                    {meta.badge}
+                  </span>
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      configured === true
+                        ? 'bg-emerald-500'
+                        : configured === false
+                          ? 'bg-stone-400'
+                          : 'bg-amber-400'
+                    }`}
+                    title={
+                      configured === true
+                        ? '已配置'
+                        : configured === false
+                          ? '未配置'
+                          : '登录后检测'
+                    }
+                  />
+                </span>
+                <span className="mt-1 block text-[11px] leading-5 text-[#716d63] dark:text-[#99a4b2]">
+                  {meta.description}
+                </span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function DigitalHumanTool() {
   const fileInputRef = useRef(null)
   const { user, loading: userLoading, isOwner } = useSessionAccount()
@@ -222,6 +296,8 @@ export default function DigitalHumanTool() {
   const [deletingId, setDeletingId] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [provider, setProvider] = useState(DIGITAL_HUMAN_SELF_HOSTED_PROVIDER)
+  const [providerAvailability, setProviderAvailability] = useState(null)
 
   const isAuthed = Boolean(user)
   const activeJob = useMemo(
@@ -232,12 +308,15 @@ export default function DigitalHumanTool() {
     () => jobs.find((job) => job.status === 'succeeded' && job.resultUrl) || null,
     [jobs]
   )
+  const providerReady = Boolean(providerAvailability?.[provider]?.configured)
+  const providerCopy = DIGITAL_HUMAN_PROVIDER_COPY[provider]
   const canSubmit =
     isAuthed &&
     selectedFile &&
     script.trim() &&
     script.trim().length <= MAX_SCRIPT_CHARS &&
     consent &&
+    providerReady &&
     !submitting &&
     !activeJob
   const working = submitting || Boolean(activeJob)
@@ -248,14 +327,14 @@ export default function DigitalHumanTool() {
     ? Math.max(0, Math.floor((clockNow - workingStartedAt) / 1000))
     : 0
   const submitButtonLabel = submitting
-    ? GENERATION_STAGES[generationStage({
+    ? DIGITAL_HUMAN_GENERATION_STAGES[generationStage({
         submitting: true,
         elapsedSeconds,
         status: '',
       })].label
     : activeJob
-      ? STATUS_META[activeJob.status]?.label || '已有任务生成中'
-      : '生成数字人口播'
+      ? DIGITAL_HUMAN_STATUS_META[activeJob.status]?.label || '已有任务生成中'
+      : providerCopy.button
 
   const refreshJobs = useCallback(async () => {
     if (!isAuthed) {
@@ -271,6 +350,7 @@ export default function DigitalHumanTool() {
       const data = await safeJson(response)
       if (!response.ok) throw new Error(displayError(data, response.status))
       setJobs(Array.isArray(data?.jobs) ? data.jobs : [])
+      setProviderAvailability(data?.providers || {})
       setError('')
     } catch (nextError) {
       setError(nextError?.message || '任务记录加载失败')
@@ -292,7 +372,7 @@ export default function DigitalHumanTool() {
         ...list.filter((job) => job.id !== data.job.id),
       ].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)))
       if (data.job.status === 'succeeded') {
-        setMessage('数字人口播已经生成完成。')
+        setMessage(DIGITAL_HUMAN_UI_COPY.taskCompleted)
       }
       if (data.job.status === 'failed') {
         setError(digitalHumanErrorMessage(data.job.errorCode, data.job.errorDetail))
@@ -306,6 +386,7 @@ export default function DigitalHumanTool() {
     if (!userLoading && isAuthed) refreshJobs()
     if (!userLoading && !isAuthed) {
       setJobs([])
+      setProviderAvailability(null)
       setError('')
     }
   }, [isAuthed, refreshJobs, userLoading])
@@ -364,6 +445,7 @@ export default function DigitalHumanTool() {
       form.set('file', selectedFile)
       form.set('script', script.trim())
       form.set('consent', consent ? 'true' : 'false')
+      form.set('provider', provider)
       const response = await fetch('/api/digital-human/jobs', {
         method: 'POST',
         credentials: 'same-origin',
@@ -374,7 +456,7 @@ export default function DigitalHumanTool() {
         throw new Error(displayError(data, response.status))
       }
       setJobs((list) => [data.job, ...list.filter((job) => job.id !== data.job.id)])
-      setMessage('任务已提交，可以留在本页等待生成。')
+      setMessage(DIGITAL_HUMAN_UI_COPY.taskSubmitted)
       setSelectedFile(null)
       setScript('')
       setConsent(false)
@@ -428,10 +510,10 @@ export default function DigitalHumanTool() {
               </span>
             </div>
             <h1 className="mb-3 font-serif text-[36px] font-bold leading-tight text-[#15130e] dark:text-white sm:text-[46px]">
-              数字人口播
+              {DIGITAL_HUMAN_UI_COPY.title}
             </h1>
             <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-              上传一张正面人物照片，输入中文文案，生成带语音和嘴型的口播视频。当前使用默认中文音色，单次文案最多 {MAX_SCRIPT_CHARS} 字。
+              {DIGITAL_HUMAN_UI_COPY.intro} 当前使用默认中文音色，单次文案最多 {MAX_SCRIPT_CHARS} 字。
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -451,6 +533,17 @@ export default function DigitalHumanTool() {
           </div>
         </div>
       </section>
+
+      <ProviderTabs
+        value={provider}
+        availability={providerAvailability}
+        disabled={Boolean(activeJob) || submitting}
+        onChange={(nextProvider) => {
+          setProvider(nextProvider)
+          setError('')
+          setMessage('')
+        }}
+      />
 
       <section className="mx-auto grid max-w-[1180px] gap-5 px-4 pb-12 sm:px-6 lg:grid-cols-[390px_minmax(0,1fr)] lg:px-8">
         <aside className="space-y-4">
@@ -538,6 +631,20 @@ export default function DigitalHumanTool() {
               )}
               {submitButtonLabel}
             </button>
+            {isAuthed && providerAvailability && !providerReady ? (
+              <p className="mb-0 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+                {providerCopy.unavailableHint}
+                {isOwner && provider === DIGITAL_HUMAN_SELF_HOSTED_PROVIDER ? (
+                  <span className="mt-1 block font-mono text-[10px]">
+                    SADTALKER_API_BASE_URL + SADTALKER_API_TOKEN
+                  </span>
+                ) : null}
+              </p>
+            ) : isAuthed && providerReady ? (
+              <p className="mb-0 mt-3 text-[11px] leading-5 text-[#797469] dark:text-[#9da7b5]">
+                {providerCopy.readyHint}
+              </p>
+            ) : null}
           </div>
 
           {message ? (
@@ -550,7 +657,7 @@ export default function DigitalHumanTool() {
               <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
               <span>
                 {error}
-                {isOwner && error.includes('余额不足') ? (
+                {isOwner && provider === DIGITAL_HUMAN_REPLICATE_PROVIDER && error.includes('余额不足') ? (
                   <>
                     {' '}
                     <a
@@ -656,6 +763,11 @@ export default function DigitalHumanTool() {
                     <div className="min-w-0 flex-1">
                       <div className="mb-1.5 flex flex-wrap items-center gap-2">
                         <StatusBadge status={job.status} />
+                        {DIGITAL_HUMAN_PROVIDER_COPY[job.provider] ? (
+                          <span className="rounded-full bg-[#eee8dc] px-2 py-1 text-[10px] font-semibold text-[#6d665a] dark:bg-[#202b36] dark:text-[#aab4c2]">
+                            {DIGITAL_HUMAN_PROVIDER_COPY[job.provider].shortLabel}
+                          </span>
+                        ) : null}
                         <span className="text-[11px] text-[#797469] dark:text-[#9da7b5]">
                           {formatTime(job.createdAt)}
                         </span>

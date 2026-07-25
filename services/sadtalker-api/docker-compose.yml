@@ -1,0 +1,21 @@
+services:
+  sadtalker-api:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - sadtalker-data:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  sadtalker-data:

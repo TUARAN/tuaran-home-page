@@ -29,8 +29,24 @@ const webhookRoute = await readFile(
   new URL('../../app/api/digital-human/webhooks/replicate/route.js', import.meta.url),
   'utf8'
 )
+const selfHostedWebhookRoute = await readFile(
+  new URL('../../app/api/digital-human/webhooks/sadtalker/route.js', import.meta.url),
+  'utf8'
+)
 const pageSource = await readFile(
   new URL('../../app/(site)/tools/digital-human/DigitalHumanTool.jsx', import.meta.url),
+  'utf8'
+)
+const providerSource = await readFile(
+  new URL('../../lib/digitalHuman/providers.js', import.meta.url),
+  'utf8'
+)
+const copySource = await readFile(
+  new URL('../../lib/digitalHuman/copy.js', import.meta.url),
+  'utf8'
+)
+const selfHostedService = await readFile(
+  new URL('../../services/sadtalker-api/app/main.py', import.meta.url),
   'utf8'
 )
 const toolItems = await readFile(
@@ -67,18 +83,39 @@ test('digital human migration enforces lifecycle states and useful indexes', () 
 })
 
 test('digital human API keeps long work asynchronous and private', () => {
-  assert.match(jobsRoute, /submitSadTalkerJob/)
+  assert.match(jobsRoute, /submitDigitalHumanProviderJob/)
   assert.match(jobsRoute, /status:\s*202/)
   assert.match(jobsRoute, /createSignedDigitalHumanUrl/)
   assert.match(jobsRoute, /MAX_DIGITAL_HUMAN_SCRIPT_CHARS/)
   assert.match(jobsRoute, /hasActiveDigitalHumanJob/)
-  assert.match(jobRoute, /getReplicatePrediction/)
-  assert.match(jobRoute, /applyReplicatePrediction/)
+  assert.match(jobRoute, /getDigitalHumanProviderJob/)
+  assert.match(jobRoute, /applyDigitalHumanProviderUpdate/)
   assert.match(assetRoute, /getAvatarR2/)
   assert.match(assetRoute, /verifyDigitalHumanSignature/)
   assert.match(assetRoute, /NOT_AUTHORIZED/)
   assert.match(webhookRoute, /PROVIDER_JOB_MISMATCH/)
-  assert.match(webhookRoute, /applyReplicatePrediction/)
+  assert.match(webhookRoute, /applyDigitalHumanProviderUpdate/)
+  assert.match(selfHostedWebhookRoute, /kind:\s*'sadtalker'/)
+  assert.match(selfHostedWebhookRoute, /PROVIDER_JOB_MISMATCH/)
+})
+
+test('digital human supports Replicate and self-hosted SadTalker through one contract', () => {
+  assert.match(providerSource, /replicate-sadtalker|DIGITAL_HUMAN_REPLICATE_PROVIDER/)
+  assert.match(providerSource, /self-hosted-sadtalker|DIGITAL_HUMAN_SELF_HOSTED_PROVIDER/)
+  assert.match(providerSource, /submitSelfHostedSadTalkerJob/)
+  assert.match(providerSource, /cancelDigitalHumanProviderJob/)
+  assert.match(jobsRoute, /form\.get\('provider'\)/)
+  assert.match(jobsRoute, /getDigitalHumanProviderAvailability/)
+  assert.match(pageSource, /role="tablist"/)
+  assert.match(pageSource, /ProviderTabs/)
+})
+
+test('self-hosted SadTalker service is asynchronous, authenticated, and allowlists inputs', () => {
+  assert.match(selfHostedService, /ThreadPoolExecutor\(max_workers=1/)
+  assert.match(selfHostedService, /Depends\(require_token\)/)
+  assert.match(selfHostedService, /ALLOWED_INPUT_HOSTS/)
+  assert.match(selfHostedService, /subprocess\.Popen/)
+  assert.match(selfHostedService, /notify_webhook/)
 })
 
 test('digital human tool is discoverable and includes consent and job polling', () => {
@@ -104,7 +141,7 @@ test('digital human provider errors never expose upstream HTML', () => {
     }),
     {
       code: 'PROVIDER_CREDIT_REQUIRED',
-      detail: '数字人生成服务余额不足，请充值后重试。',
+      detail: 'Replicate 余额不足，请充值后重试，或切换到自建 SadTalker。',
     }
   )
 
@@ -119,16 +156,16 @@ test('digital human provider errors never expose upstream HTML', () => {
       'PROVIDER_SUBMIT_FAILED',
       'REPLICATE_402: You have insufficient credit'
     ),
-    '数字人生成服务余额不足，请充值后重试。'
+    'Replicate 余额不足，请充值后重试，或切换到自建 SadTalker。'
   )
 })
 
 test('digital human waiting UI uses staged progress instead of a spinning refresh icon', () => {
-  assert.match(pageSource, /GENERATION_STAGES/)
+  assert.match(pageSource, /DIGITAL_HUMAN_GENERATION_STAGES/)
   assert.match(pageSource, /GenerationProgress/)
-  assert.match(pageSource, /上传素材/)
-  assert.match(pageSource, /生成语音/)
-  assert.match(pageSource, /进入队列/)
-  assert.match(pageSource, /合成视频/)
+  assert.match(copySource, /上传素材/)
+  assert.match(copySource, /生成语音/)
+  assert.match(copySource, /进入队列/)
+  assert.match(copySource, /合成视频/)
   assert.doesNotMatch(pageSource, /IconRefresh size=\{30\} className="animate-spin"/)
 })

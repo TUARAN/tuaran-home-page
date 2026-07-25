@@ -12,10 +12,12 @@ import {
   DIGITAL_HUMAN_IMAGE_EXTENSIONS,
   DIGITAL_HUMAN_IMAGE_TYPES,
   DIGITAL_HUMAN_INPUT_URL_TTL_MS,
-  DIGITAL_HUMAN_PROVIDER,
+  DIGITAL_HUMAN_DEFAULT_PROVIDER,
+  DIGITAL_HUMAN_PROVIDERS,
   DIGITAL_HUMAN_WEBHOOK_TTL_MS,
   MAX_DIGITAL_HUMAN_IMAGE_BYTES,
   MAX_DIGITAL_HUMAN_SCRIPT_CHARS,
+  getDigitalHumanProviderAvailability,
   getDigitalHumanSigningSecret,
   normalizeDigitalHumanScript,
   sanitizeDigitalHumanUserId,
@@ -29,7 +31,11 @@ import {
   queueDigitalHumanJob,
   rowToDigitalHumanJob,
 } from '../../../../lib/digitalHuman/jobs'
-import { submitSadTalkerJob } from '../../../../lib/digitalHuman/replicate'
+import {
+  digitalHumanWebhookKind,
+  submitDigitalHumanProviderJob,
+} from '../../../../lib/digitalHuman/providers'
+import { DIGITAL_HUMAN_SELF_HOSTED_PROVIDER } from '../../../../lib/digitalHuman/providerIds'
 import { createSignedDigitalHumanUrl } from '../../../../lib/digitalHuman/signing'
 import { synthesizeDigitalHumanSpeech } from '../../../../lib/digitalHuman/tts'
 
@@ -67,7 +73,7 @@ function generationError(error) {
   if (error?.code === 'PROVIDER_CREDIT_REQUIRED' || detail.includes('REPLICATE_402')) {
     return {
       code: 'PROVIDER_CREDIT_REQUIRED',
-      detail: '数字人生成服务余额不足，请充值后重试。',
+      detail: 'Replicate 余额不足，请充值后重试，或切换到自建 SadTalker。',
       status: 402,
     }
   }
@@ -78,7 +84,17 @@ function generationError(error) {
       status: 503,
     }
   }
-  if (error?.code || detail.includes('REPLICATE_')) {
+  if (
+    detail.includes('SADTALKER_API_BASE_URL') ||
+    detail.includes('SADTALKER_API_TOKEN')
+  ) {
+    return {
+      code: 'PROVIDER_NOT_CONFIGURED',
+      detail: '自建 SadTalker 服务尚未配置。',
+      status: 503,
+    }
+  }
+  if (error?.code || detail.includes('REPLICATE_') || detail.includes('SADTALKER_')) {
     return {
       code: String(error?.code || 'PROVIDER_SUBMIT_FAILED'),
       detail:
@@ -115,6 +131,7 @@ export async function GET(req) {
         maxImageBytes: MAX_DIGITAL_HUMAN_IMAGE_BYTES,
         dailyJobs: auth.isOwner ? 20 : 2,
       },
+      providers: getDigitalHumanProviderAvailability(),
       jobs,
     })
   } catch (error) {
@@ -147,6 +164,23 @@ export async function POST(req) {
   const file = form.get('file')
   const script = normalizeDigitalHumanScript(form.get('script'))
   const consent = String(form.get('consent') || '') === 'true'
+  const provider = String(form.get('provider') || DIGITAL_HUMAN_DEFAULT_PROVIDER).trim()
+
+  if (!DIGITAL_HUMAN_PROVIDERS.has(provider)) {
+    return Response.json(
+      { error: 'UNSUPPORTED_PROVIDER', message: '不支持当前数字人生成方式。' },
+      { status: 400 }
+    )
+  }
+  if (!getDigitalHumanProviderAvailability()[provider]?.configured) {
+    return Response.json(
+      {
+        error: 'PROVIDER_NOT_CONFIGURED',
+        message: '当前数字人生成方式尚未配置。',
+      },
+      { status: 503 }
+    )
+  }
 
   if (!file || typeof file === 'string' || typeof file.arrayBuffer !== 'function') {
     return Response.json({ error: 'IMAGE_REQUIRED', message: '请上传一张人物照片。' }, { status: 400 })
@@ -234,7 +268,7 @@ export async function POST(req) {
       sourceFileName: file.name || `source.${extension}`,
       sourceContentType: file.type,
       audioObjectKey,
-      provider: DIGITAL_HUMAN_PROVIDER,
+      provider,
     })
     recordCreated = true
 
@@ -254,7 +288,12 @@ export async function POST(req) {
     })
 
     const origin = new URL(req.url).origin
-    const inputExpires = Date.now() + DIGITAL_HUMAN_INPUT_URL_TTL_MS
+    // 自建 GPU 可能存在排队，给它更长的素材拉取窗口；素材一旦回传仍立即删除。
+    const inputExpires = Date.now() + (
+      provider === DIGITAL_HUMAN_SELF_HOSTED_PROVIDER
+        ? DIGITAL_HUMAN_WEBHOOK_TTL_MS
+        : DIGITAL_HUMAN_INPUT_URL_TTL_MS
+    )
     const sourceImageUrl = await createSignedDigitalHumanUrl(
       origin,
       `/api/digital-human/assets/${encodeURIComponent(id)}/source`,
@@ -268,19 +307,20 @@ export async function POST(req) {
       { purpose: 'asset', jobId: id, kind: 'audio', expires: inputExpires }
     )
     const webhookExpires = Date.now() + DIGITAL_HUMAN_WEBHOOK_TTL_MS
+    const webhookKind = digitalHumanWebhookKind(provider)
     const webhookUrl = await createSignedDigitalHumanUrl(
       origin,
-      `/api/digital-human/webhooks/replicate?job=${encodeURIComponent(id)}`,
+      `/api/digital-human/webhooks/${webhookKind}?job=${encodeURIComponent(id)}`,
       signingSecret,
-      { purpose: 'webhook', jobId: id, kind: 'replicate', expires: webhookExpires }
+      { purpose: 'webhook', jobId: id, kind: webhookKind, expires: webhookExpires }
     )
 
-    const prediction = await submitSadTalkerJob({
+    const prediction = await submitDigitalHumanProviderJob(provider, {
       sourceImageUrl,
       drivenAudioUrl,
       webhookUrl,
     })
-    if (!prediction?.id) throw new Error('REPLICATE_MISSING_PREDICTION_ID')
+    if (!prediction?.id) throw new Error('PROVIDER_MISSING_JOB_ID')
 
     await queueDigitalHumanJob(db, id, prediction.id, prediction.status)
     await cleanupRateLimits(db).catch(() => {})

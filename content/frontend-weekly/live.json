@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-25T07:17:52.394Z",
+  "updatedAt": "2026-07-25T09:48:20.018Z",
   "items": [
     {
       "topic": "行业",
@@ -96,14 +96,6 @@
       "source": "The Decoder：AI News（RSS）",
       "href": "https://the-decoder.com/kimi-k3-trails-frontier-us-models-by-a-wide-margin-on-cyber-exploits-and-distillation-may-explain-why",
       "publishedAt": "2026-07-24T09:48:32.000Z"
-    },
-    {
-      "topic": "技巧",
-      "title": "Claude-thermos：保持 Claude 会话缓存热度，避免重新编码费用",
-      "summary": "Claude-thermos 通过本地反向代理监控 Claude Code 会话，在主智能体因等待子智能体而空闲超过 5 分钟时，自动发送预热请求刷新提示缓存。实测约 185 次本地会话中，缓存过期导致的重新编码占账单约 22%。工具以 uvx 运行，支持自定义空闲阈值和预热间隔。",
-      "source": "Hacker News 热门（buzzing.cc 中文翻译）",
-      "href": "https://github.com/izeigerman/claude-thermos",
-      "publishedAt": "2026-07-24T09:47:29.601Z"
     }
   ]
 }

@@ -2,7 +2,8 @@ import { getD1 } from '../../../../../lib/d1'
 import { getAvatarR2 } from '../../../../../lib/r2'
 import { getDigitalHumanSigningSecret } from '../../../../../lib/digitalHuman/config'
 import { getDigitalHumanJob } from '../../../../../lib/digitalHuman/jobs'
-import { applyReplicatePrediction } from '../../../../../lib/digitalHuman/results'
+import { DIGITAL_HUMAN_REPLICATE_PROVIDER } from '../../../../../lib/digitalHuman/providerIds'
+import { applyDigitalHumanProviderUpdate } from '../../../../../lib/digitalHuman/results'
 import { verifyDigitalHumanSignature } from '../../../../../lib/digitalHuman/signing'
 
 export const runtime = 'edge'
@@ -46,12 +47,15 @@ export async function POST(req) {
 
   const job = await getDigitalHumanJob(db, jobId)
   if (!job) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
+  if (job.provider !== DIGITAL_HUMAN_REPLICATE_PROVIDER) {
+    return Response.json({ error: 'PROVIDER_MISMATCH' }, { status: 409 })
+  }
   if (job.provider_job_id && prediction?.id !== job.provider_job_id) {
     return Response.json({ error: 'PROVIDER_JOB_MISMATCH' }, { status: 409 })
   }
 
   try {
-    await applyReplicatePrediction({ db, bucket, job, prediction })
+    await applyDigitalHumanProviderUpdate({ db, bucket, job, prediction })
     return Response.json({ ok: true })
   } catch (error) {
     return Response.json(

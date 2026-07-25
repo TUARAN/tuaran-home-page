@@ -9,11 +9,11 @@ import {
   rowToDigitalHumanJob,
 } from '../../../../../lib/digitalHuman/jobs'
 import {
-  cancelReplicatePrediction,
-  getReplicatePrediction,
-} from '../../../../../lib/digitalHuman/replicate'
+  cancelDigitalHumanProviderJob,
+  getDigitalHumanProviderJob,
+} from '../../../../../lib/digitalHuman/providers'
 import {
-  applyReplicatePrediction,
+  applyDigitalHumanProviderUpdate,
   cleanupDigitalHumanInputs,
 } from '../../../../../lib/digitalHuman/results'
 
@@ -42,8 +42,8 @@ export async function GET(req, { params }) {
 
   if (!isDigitalHumanTerminalStatus(job.status) && job.provider_job_id) {
     try {
-      const prediction = await getReplicatePrediction(job.provider_job_id)
-      await applyReplicatePrediction({
+      const prediction = await getDigitalHumanProviderJob(job.provider, job.provider_job_id)
+      await applyDigitalHumanProviderUpdate({
         db: deps.db,
         bucket: deps.bucket,
         job,
@@ -70,7 +70,7 @@ export async function DELETE(req, { params }) {
 
   if (!isDigitalHumanTerminalStatus(job.status)) {
     if (job.provider_job_id) {
-      await cancelReplicatePrediction(job.provider_job_id).catch(() => {})
+      await cancelDigitalHumanProviderJob(job.provider, job.provider_job_id).catch(() => {})
     }
     await cancelDigitalHumanJobRecord(deps.db, job.id)
     await cleanupDigitalHumanInputs(deps.bucket, job)

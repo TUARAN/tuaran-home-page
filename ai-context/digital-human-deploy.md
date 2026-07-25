@@ -2,8 +2,12 @@
 
 更新日期：2026-07-24
 
-`/tools/digital-human` 使用 Cloudflare Workers AI 生成中文 MP3，使用 Replicate
-SadTalker 异步生成口播视频。照片、临时语音和结果视频存入私有 R2。
+`/tools/digital-human` 使用 Cloudflare Workers AI 生成中文 MP3，并支持两种异步视频提供方：
+
+- 自建 SadTalker：本机或自有 GPU 服务器，不产生第三方 API 费用。
+- Replicate SadTalker：云端按量付费，无需维护 GPU。
+
+照片、临时语音和结果视频统一存入私有 R2；切换提供方不会改变任务记录和下载方式。
 
 ## 必需配置
 
@@ -14,9 +18,12 @@ SadTalker 异步生成口播视频。照片、临时语音和结果视频存入�
    - Workers AI：`AI`
 3. 应用 `migrations/0056_digital_human_jobs.sql`。
 4. 添加加密 Secret：
-   - `REPLICATE_API_TOKEN`
    - `DIGITAL_HUMAN_SIGNING_SECRET`（建议 32 字节以上随机值）
-5. 重新部署 Pages。
+   - `REPLICATE_API_TOKEN`（使用 Replicate 时）
+   - `SADTALKER_API_TOKEN`（使用自建服务时，必须与服务端一致）
+5. 使用自建服务时添加 `SADTALKER_API_BASE_URL`，值为可由 Cloudflare 访问的 HTTPS 地址。
+   服务部署见 `services/sadtalker-api/README.md`。
+6. 重新部署 Pages。
 
 可选变量：
 

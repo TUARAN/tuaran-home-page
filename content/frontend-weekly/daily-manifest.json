@@ -1,6 +1,14 @@
 {
   "list": [
     {
+      "date": "2026-07-26",
+      "displayDate": "Jul 26",
+      "count": 1,
+      "highlights": [
+        "新报告揭示OpenAI在Hugging Face自主"
+      ]
+    },
+    {
       "date": "2026-07-25",
       "displayDate": "Jul 25",
       "count": 5,
@@ -400,5 +408,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-25"
+  "latest": "2026-07-26"
 }

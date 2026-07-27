@@ -20,7 +20,9 @@ export default function ProjectWorkspace() {
           title: 'AI 协同',
           description: '把任务规划、模型选型、Agent 分派、自动化运行与调用审计接入项目交付。',
           items: [
-            { href: '/admin/ai-workspace', title: 'AI 协同工作台', description: '统一进入任务规划、Agent 分派、自动化执行与调用审计闭环。', icon: 'modelDispatch' },
+            { href: '/admin/model-dispatch', title: '规划与分派', description: '任务拆解、模型选型、Agent 任务卡与执行 Prompt。', icon: 'modelDispatch', note: '原「Agent 协同测试」' },
+            { href: '/admin/ops', title: '自动化运行', description: '统一登记云端与本地自动化，追踪运行、产物、风险与审核。', icon: 'ops' },
+            { href: '/admin/deepseek-tasks', title: '调用记录与审计', description: '审阅 API 调用、Token 消耗、失败原因与后续处理状态。', icon: 'deepseekTasks', note: '原「LLM API 任务管理」' },
           ],
         },
         {

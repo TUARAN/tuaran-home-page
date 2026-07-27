@@ -41,35 +41,30 @@ const CHANNEL_STYLES = {
     accent: 'bg-[#8a5a14]',
     border: 'border-[#caccb9]',
     soft: 'bg-[#f3f4ec]',
-    text: 'text-[#7a4c10]',
   },
   tools: {
     label: 'Tools',
     accent: 'bg-[#2f6f73]',
     border: 'border-[#c7dfdd]',
     soft: 'bg-[#eef8f7]',
-    text: 'text-[#245b5f]',
   },
   systems: {
     label: 'Systems',
     accent: 'bg-[#3e6651]',
     border: 'border-[#c8d9cd]',
     soft: 'bg-[#f0f7f2]',
-    text: 'text-[#315440]',
   },
   community: {
     label: 'Community',
     accent: 'bg-[#6b5aa6]',
     border: 'border-[#d9d3f0]',
     soft: 'bg-[#f5f2ff]',
-    text: 'text-[#554789]',
   },
   about: {
     label: 'Identity',
     accent: 'bg-[#765662]',
     border: 'border-[#ded3d8]',
     soft: 'bg-[#f8f2f4]',
-    text: 'text-[#5e434e]',
   },
 }
 
@@ -121,19 +116,11 @@ function LevelCard({ level, title, count, desc, tone = 'default' }) {
   )
 }
 
-function CountPill({ children }) {
-  return (
-    <span className="rounded-full border border-[#d6d8cd] bg-white px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#606258] dark:border-[#2a3440] dark:bg-[#10161f] dark:text-[#aeb8c8]">
-      {children}
-    </span>
-  )
-}
-
 function itemHrefText(href) {
   return href.replace(/^https?:\/\//, '').replace(/\/$/, '')
 }
 
-function IndexLink({ item, compact = false }) {
+function IndexLink({ item }) {
   const body = (
     <>
       <span className="flex min-w-0 items-center gap-2">
@@ -157,7 +144,7 @@ function IndexLink({ item, compact = false }) {
           </span>
         ) : null}
       </span>
-      {!compact && item.desc ? (
+      {item.desc ? (
         <span className="mt-1 block text-[12px] leading-snug text-[#676960] dark:text-[#9aa4b4]">{item.desc}</span>
       ) : null}
       <span className="mt-1 block truncate font-mono text-[10px] tracking-[0.04em] text-[#a2a499] dark:text-[#657184]">
@@ -258,41 +245,32 @@ function ChannelSection({ channel, account, overrides }) {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <div className={`rounded-xl border ${style.border} ${style.soft} p-4 dark:border-[#2a3440] dark:bg-[#111821]`}>
-          <p className={`mb-3 font-mono text-[11px] uppercase tracking-[0.18em] ${style.text} dark:text-[#aeb8c8]`}>
-            Primary Path
-          </p>
-          <div className="space-y-2">
-            {primary.map((item) => (
-              <IndexLink key={item.href + item.label} item={item} compact />
-            ))}
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <CountPill>sections {visibleSections.length}</CountPill>
-            <CountPill>archive {summary.archive.length}</CountPill>
-            {summary.external.length ? <CountPill>external {summary.external.length}</CountPill> : null}
-            {summary.restricted.length ? <CountPill>restricted {summary.restricted.length}</CountPill> : null}
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {visibleSections.map((section) => (
-            <div key={section.title} className="rounded-xl border border-[#dfe0d8] bg-white/70 p-4 dark:border-[#232c36] dark:bg-[#10161f]">
+      <div className={`grid gap-4 ${visibleSections.length > 1 ? 'md:grid-cols-2' : ''}`}>
+        {visibleSections.map((section, index) => {
+          const fillsRow = visibleSections.length === 1
+            || (visibleSections.length % 2 === 1 && index === visibleSections.length - 1)
+          return (
+            <div
+              key={section.title}
+              className={[
+                'rounded-xl border border-[#dfe0d8] bg-white/70 p-4 dark:border-[#232c36] dark:bg-[#10161f]',
+                fillsRow && visibleSections.length > 1 ? 'md:col-span-2' : '',
+              ].join(' ')}
+            >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h3 className="mb-0 text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{section.title}</h3>
                 <span className="font-mono text-[10px] tracking-[0.12em] text-[#929487] dark:text-[#7f8a9b]">
                   {section.items.length} items
                 </span>
               </div>
-              <div className="grid gap-2">
+              <div className={`grid gap-2 ${fillsRow ? 'sm:grid-cols-2 xl:grid-cols-3' : ''}`}>
                 {section.items.map((item) => (
                   <IndexLink key={item.href + item.label} item={item} />
                 ))}
               </div>
             </div>
-          ))}
-        </div>
+          )
+        })}
       </div>
     </section>
   )
@@ -303,41 +281,39 @@ function PublicComponentsSection() {
 
   return (
     <section className="mb-10 border-t border-[#d4d6cc] py-8 dark:border-[#232c36]">
-      <div className="mb-5 grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <div>
-          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
-            Shared Components
-          </p>
-          <h2 className="mb-0 font-serif text-[1.6rem] font-semibold text-[#15140f] dark:text-gray-100">
-            全站公共组件
-          </h2>
-          <p className="mb-0 mt-3 text-[13px] leading-6 text-[#676960] dark:text-[#9aa4b4]">
-            页面优先复用这些站点级组件，以保持导航、目录、内容操作和权限反馈一致。当前登记 {componentCount} 个。
-          </p>
-        </div>
+      <div className="mb-5 max-w-3xl">
+        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
+          Shared Components
+        </p>
+        <h2 className="mb-0 font-serif text-[1.6rem] font-semibold text-[#15140f] dark:text-gray-100">
+          全站公共组件
+        </h2>
+        <p className="mb-0 mt-3 text-[13px] leading-6 text-[#676960] dark:text-[#9aa4b4]">
+          页面优先复用这些站点级组件，以保持导航、目录、内容操作和权限反馈一致。当前登记 {componentCount} 个。
+        </p>
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {SITE_PUBLIC_COMPONENT_GROUPS.map((group) => (
-            <article key={group.id} className="rounded-xl border border-[#dfe0d8] bg-white/70 p-4 dark:border-[#232c36] dark:bg-[#10161f]">
-              <div className="mb-1 flex items-baseline justify-between gap-3">
-                <h3 className="mb-0 text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{group.title}</h3>
-                <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#929487] dark:text-[#7f8a9b]">{group.titleEn}</span>
-              </div>
-              <p className="mb-3 text-[12px] leading-5 text-[#676960] dark:text-[#9aa4b4]">{group.description}</p>
-              <dl className="divide-y divide-[#e7e8e1] border-t border-[#e7e8e1] dark:divide-[#26313d] dark:border-[#26313d]">
-                {group.items.map((item) => (
-                  <div key={item.name} className="py-3">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <dt className="font-mono text-[12px] font-semibold text-[#245b5f] dark:text-[#77c6c2]">{item.name}</dt>
-                      <span className="rounded-full bg-[#f0f1eb] px-2 py-0.5 text-[10px] text-[#6c6e64] dark:bg-[#18212b] dark:text-[#94a0b1]">{item.scope}</span>
-                    </div>
-                    <dd className="mt-1 text-[12px] leading-5 text-[#56584e] dark:text-[#b9c2d0]">{item.role}</dd>
+      <div className="grid gap-4 md:grid-cols-2">
+        {SITE_PUBLIC_COMPONENT_GROUPS.map((group) => (
+          <article key={group.id} className="rounded-xl border border-[#dfe0d8] bg-white/70 p-4 dark:border-[#232c36] dark:bg-[#10161f]">
+            <div className="mb-1 flex items-baseline justify-between gap-3">
+              <h3 className="mb-0 text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{group.title}</h3>
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#929487] dark:text-[#7f8a9b]">{group.titleEn}</span>
+            </div>
+            <p className="mb-3 text-[12px] leading-5 text-[#676960] dark:text-[#9aa4b4]">{group.description}</p>
+            <dl className="divide-y divide-[#e7e8e1] border-t border-[#e7e8e1] dark:divide-[#26313d] dark:border-[#26313d]">
+              {group.items.map((item) => (
+                <div key={item.name} className="py-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <dt className="font-mono text-[12px] font-semibold text-[#245b5f] dark:text-[#77c6c2]">{item.name}</dt>
+                    <span className="rounded-full bg-[#f0f1eb] px-2 py-0.5 text-[10px] text-[#6c6e64] dark:bg-[#18212b] dark:text-[#94a0b1]">{item.scope}</span>
                   </div>
-                ))}
-              </dl>
-            </article>
-          ))}
-        </div>
+                  <dd className="mt-1 text-[12px] leading-5 text-[#56584e] dark:text-[#b9c2d0]">{item.role}</dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        ))}
       </div>
     </section>
   )

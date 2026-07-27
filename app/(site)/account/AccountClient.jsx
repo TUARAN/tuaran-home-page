@@ -45,7 +45,6 @@ export default function AccountClient() {
   const { loading, user } = useSessionAccount()
   const [activeTab, setActiveTab] = useState('overview')
   const [identities, setIdentities] = useState([])
-  const [guestIdentities, setGuestIdentities] = useState([])
   const [oauthGrants, setOauthGrants] = useState([])
   const [pointsInfo, setPointsInfo] = useState(null)
   const [platformId, setPlatformId] = useState('')
@@ -75,7 +74,6 @@ export default function AccountClient() {
         if (cancelled) return
         if (!identityResponse.ok) throw new Error(identityData?.error || 'LOAD_FAILED')
         setIdentities(Array.isArray(identityData?.identities) ? identityData.identities : [])
-        setGuestIdentities(Array.isArray(identityData?.guestIdentities) ? identityData.guestIdentities : [])
         setOauthGrants(Array.isArray(grantData?.grants) ? grantData.grants : [])
         setPointsInfo(pointsData?.authed ? pointsData : null)
         setPlatformId(identityData?.account?.platformId || user.id || '')
@@ -148,7 +146,7 @@ export default function AccountClient() {
   const tabs = [
     { id: 'overview', label: '资料概览' },
     { id: 'connections', label: '连接账号' },
-    { id: 'access', label: '授权与记录' },
+    { id: 'access', label: '授权管理' },
   ]
 
   return <main className="mx-auto w-full max-w-[1080px] px-4 py-10 sm:py-14">
@@ -312,8 +310,8 @@ export default function AccountClient() {
     ) : null}
 
     {activeTab === 'access' ? (
-      <div className="mt-8 grid gap-6 lg:grid-cols-2" role="tabpanel">
-        <section className="rounded-2xl border border-[var(--site-line)] p-5 sm:p-6">
+      <div className="mt-8" role="tabpanel">
+        <section className="max-w-2xl rounded-2xl border border-[var(--site-line)] p-5 sm:p-6">
           <h2 className="text-[17px] font-semibold text-[var(--site-ink)]">智能体授权</h2>
           <p className="mt-1 text-[13px] leading-6 text-[var(--site-muted)]">管理已获得本站 MCP 权限的客户端。</p>
           <div className="mt-5 border-t border-[var(--site-line)]">
@@ -324,14 +322,6 @@ export default function AccountClient() {
               </span>
               <button type="button" onClick={() => revokeOAuthGrant(grant.client_id)} disabled={Boolean(revokingClient)} className="text-[11px] text-[#a34f47] disabled:opacity-50">{revokingClient === grant.client_id ? '撤销中…' : '撤销访问'}</button>
             </div>) : <p className="py-4 text-[13px] text-[var(--site-muted)]">暂无已授权的 MCP 客户端。</p>}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-[var(--site-line)] p-5 sm:p-6">
-          <h2 className="text-[17px] font-semibold text-[var(--site-ink)]">游客身份记录</h2>
-          <p className="mt-1 text-[13px] leading-6 text-[var(--site-muted)]">登录前产生的游客记录会归入当前账号。</p>
-          <div className="mt-5 border-t border-[var(--site-line)]">
-            {guestIdentities.length ? guestIdentities.map((guest) => <div key={guest.id} className="break-all border-b border-[var(--site-line)] py-4 font-mono text-[11px] text-[var(--site-muted)]">{guest.id}</div>) : <p className="py-4 text-[13px] text-[var(--site-muted)]">暂无已关联的游客身份。</p>}
           </div>
         </section>
       </div>

@@ -199,12 +199,12 @@ export default function HomeFeaturedReadingClient({ catalog }) {
 
   return (
     <section className="home-featured-reading home-section">
-      <div className="home-section-heading">
+      <div className="home-section-heading home-featured-heading">
         <div>
           <p className="home-kicker">Start here</p>
           <h2 className="home-section-title"><T zh="先读这几篇" en="Start with these" /></h2>
         </div>
-        <div className={`flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto ${searchOpen ? 'sm:min-w-[22rem]' : ''}`}>
+        <div className={`flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:translate-y-2 ${searchOpen ? 'sm:min-w-[22rem]' : ''}`}>
           {searchOpen ? (
             <div className="relative order-3 w-full sm:order-none sm:flex-1">
               <IconSearch size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#858277] dark:text-[#8793a2]" aria-hidden="true" />
@@ -238,8 +238,8 @@ export default function HomeFeaturedReadingClient({ catalog }) {
             <IconRefresh size={15} className={`transition-transform duration-300 ${changing ? 'rotate-180' : 'group-hover:rotate-45'}`} aria-hidden="true" />
             <T zh="换一批" en="Refresh" />
           </button>
-          <div className="order-4 flex basis-full justify-end pt-1">
-            <p className="relative mb-0 inline-flex items-center gap-2 rounded-2xl border border-[#ded7c6] bg-[#fffaf0] px-3 py-1.5 text-[11px] font-medium leading-4 text-[#6f6757] shadow-[0_4px_14px_rgba(56,49,38,0.08)] before:absolute before:-top-[5px] before:right-5 before:h-2.5 before:w-2.5 before:rotate-45 before:border-l before:border-t before:border-[#ded7c6] before:bg-[#fffaf0] dark:border-[#36414e] dark:bg-[#18212c] dark:text-[#aeb9c7] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:before:border-[#36414e] dark:before:bg-[#18212c]">
+          <div className="order-4 flex basis-full justify-end pt-0.5">
+            <p className="relative mb-0 inline-flex items-center gap-2 rounded-2xl border border-[#ded7c6] bg-[#fffaf0] px-3 py-1 text-[11px] font-medium leading-4 text-[#6f6757] shadow-[0_4px_14px_rgba(56,49,38,0.08)] before:absolute before:-top-[5px] before:right-5 before:h-2.5 before:w-2.5 before:rotate-45 before:border-l before:border-t before:border-[#ded7c6] before:bg-[#fffaf0] dark:border-[#36414e] dark:bg-[#18212c] dark:text-[#aeb9c7] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:before:border-[#36414e] dark:before:bg-[#18212c]">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#a47a39] shadow-[0_0_0_3px_rgba(164,122,57,0.12)] dark:bg-[#c8a76d] dark:shadow-[0_0_0_3px_rgba(200,167,109,0.12)]" aria-hidden="true" />
               <T zh="点击 / 回车，一键刷新内容" en="Click / Enter to refresh in one step" />
             </p>

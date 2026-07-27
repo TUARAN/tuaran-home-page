@@ -1035,11 +1035,19 @@
   }
 
   .home-featured-reading {
-    @apply h-full pt-4 md:pt-5;
+    @apply h-full pt-4;
   }
 
   .home-featured-reading .home-section-title {
     @apply text-[1.45rem] md:text-[1.45rem];
+  }
+
+  .home-featured-reading .home-featured-heading {
+    @apply mb-3;
+  }
+
+  .home-featured-reading .home-kicker {
+    @apply mb-1.5;
   }
 
   .home-section-heading {

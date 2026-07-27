@@ -36,8 +36,6 @@ async function isPublishedArticle(db, slug) {
 }
 const MAX_KEYS = 100
 const HIT_WINDOW_MS = 60 * 60 * 1000
-// 90 天分析需要完整事件；多留 30 天缓冲，避免边界日清理造成缺口。
-const HIT_RETENTION_MS = 120 * 24 * 60 * 60 * 1000
 const MAX_ATTR_LENGTH = 120
 
 function cleanAttribution(value, max = MAX_ATTR_LENGTH) {
@@ -190,7 +188,14 @@ export async function GET(req) {
       const row = results[index]?.results?.[0]
       counts[item.key] = Math.max(0, Number(row?.pv) || 0)
     })
-    return Response.json({ counts })
+    return Response.json(
+      { counts },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=15, s-maxage=30, stale-while-revalidate=60',
+        },
+      },
+    )
   } catch {
     return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }
@@ -270,14 +275,6 @@ export async function POST(req) {
       )
       .bind(category, slug, now)
       .first()
-
-    await db
-      .prepare(
-        `DELETE FROM research_pv_hits
-         WHERE created_at < ?1`,
-      )
-      .bind(now - HIT_RETENTION_MS)
-      .run()
 
     const response = Response.json({
       key: entryKey,

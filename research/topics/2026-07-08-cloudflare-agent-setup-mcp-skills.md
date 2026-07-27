@@ -12,11 +12,11 @@ model: gpt-5
 pv: 0
 ---
 
-本文按 2026-07-08 11:28（Asia/Shanghai）前后访问 Cloudflare 官方地址整理。原始页面地址为 [https://developers.cloudflare.com/agent-setup/prompt.md](https://developers.cloudflare.com/agent-setup/prompt.md)，HTTP 响应为 `200`，`content-type` 为 `text/markdown; charset=utf-8`。涉及命令和服务器地址时，应以 Cloudflare 官方页面为准。
+按 2026-07-08 11:28（Asia/Shanghai）前后访问 Cloudflare 官方地址整理。原始页面地址为 [https://developers.cloudflare.com/agent-setup/prompt.md](https://developers.cloudflare.com/agent-setup/prompt.md)，HTTP 响应为 `200`，`content-type` 为 `text/markdown; charset=utf-8`。涉及命令和服务器地址时，应以 Cloudflare 官方页面为准。
 
 ## 一、结论
 
-Cloudflare 这份 Agent Setup 文档不是传统意义上的产品说明页，而是一份给 AI 编程代理读取和执行的环境配置提示词。它要解决的问题很具体：当开发者用 Codex、Claude Code、Cursor、Windsurf、OpenCode 或 GitHub Copilot 写 Cloudflare 项目时，代理不能只靠训练语料猜 Workers、Pages、D1、R2、Bindings、Builds、Observability 的最新用法，而应该接入 Cloudflare 提供的 Skills 和 MCP servers。
+Cloudflare 这份 Agent Setup 文档是一份给 AI 编程代理读取和执行的环境配置提示词。它要解决的问题很具体：当开发者用 Codex、Claude Code、Cursor、Windsurf、OpenCode 或 GitHub Copilot 写 Cloudflare 项目时，代理不能只靠训练语料猜 Workers、Pages、D1、R2、Bindings、Builds、Observability 的最新用法，而应该接入 Cloudflare 提供的 Skills 和 MCP servers。
 
 这件事有三个直接价值。
 
@@ -34,7 +34,7 @@ Cloudflare 这份 Agent Setup 文档不是传统意义上的产品说明页，�
 
 首先，页面位于 Cloudflare 官方开发者文档域名 `developers.cloudflare.com` 下，路径是 `/agent-setup/prompt.md`，而不是第三方博客、仓库 issue 或社区复制稿。
 
-其次，页面返回 Markdown 原文，且响应头显示由 Cloudflare 服务提供。它不是网页 UI 中的一段二次转述，而是可被代理直接抓取的提示词文件。
+其次，页面返回 Markdown 原文，且响应头显示由 Cloudflare 服务提供。它是可被代理直接抓取的提示词文件。
 
 第三，文档中列出的资源链接都指向对应生态的官方入口，包括 Anthropic Claude Code MCP 文档、Cursor MCP 文档、Windsurf MCP 文档、OpenCode MCP 文档、VS Code Copilot MCP 文档，以及 Cloudflare 自己的 Skills 和 MCP GitHub 仓库。
 
@@ -68,7 +68,7 @@ Codex 走命令式注册。流程是先安装 Skills，再用 `codex mcp add` �
 
 OpenCode、Windsurf、Cursor、GitHub Copilot 则主要是编辑对应的 MCP 配置文件。差异点在于配置字段名称：Windsurf 使用 `serverUrl`，Cursor / Copilot / 通用代理通常使用 `url`，OpenCode 使用 `"type": "remote"` 和 `"enabled": true` 这类结构。
 
-这说明 Cloudflare 的策略不是绑定单一代理，而是把 MCP server 做成远程标准入口，再按各家代理的配置格式分别接入。
+这说明 Cloudflare 的策略是把 MCP server 做成远程标准入口，再按各家代理的配置格式分别接入。
 
 ## 五、对本站开发的实际意义
 
@@ -86,7 +86,7 @@ OpenCode、Windsurf、Cursor、GitHub Copilot 则主要是编辑对应的 MCP �
 
 这份文档最值得注意的不是技术复杂度，而是权限边界。
 
-第一，安装 Skills 和注册 MCP servers 会改变代理的全局配置。对 Codex 来说，这通常不是某个项目内的改动，而是当前用户环境的能力变更。
+第一，安装 Skills 和注册 MCP servers 会改变代理的全局配置。对 Codex 来说，这通常是当前用户环境的能力变更。
 
 第二，OAuth 登录会把代理接到 Cloudflare 账户。后续如果工具权限足够，代理可能读取账户资源、项目配置、构建状态或观测数据。应该用最小权限账户或明确知道授权范围。
 

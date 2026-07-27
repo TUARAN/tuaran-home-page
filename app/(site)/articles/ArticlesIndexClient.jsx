@@ -39,14 +39,18 @@ const KIND_TAG_CLASS = {
 
 const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
 const RESEARCH_KINDS = new Set(RESEARCH_KIND_KEYS)
-const TAB_KEYS = ['picks', 'all', 'column', 'posts', 'works', 'research', 'companies', 'people', 'tech', 'business', 'other', 'topics', 'resources']
+const TAB_KEYS = ['picks', 'all', 'column', 'posts', 'works', 'research', 'engineering-cases', 'build-logs', 'companies', 'people', 'tech', 'business', 'other', 'topics', 'resources']
+const CONTENT_TYPE_BY_TAB = {
+  'engineering-cases': 'engineering_case',
+  'build-logs': 'build_log',
+}
 
 function getChannelForTab(activeTab) {
   if (activeTab === 'picks') return 'picks'
   if (activeTab === 'all') return 'all'
   if (activeTab === 'column' || activeTab === 'posts' || activeTab === 'works') return 'column'
   if (activeTab === 'resources') return 'resources'
-  if (activeTab === 'research' || RESEARCH_KINDS.has(activeTab) || activeTab === 'tech' || activeTab === 'business' || activeTab === 'other') return 'research'
+  if (activeTab === 'research' || CONTENT_TYPE_BY_TAB[activeTab] || RESEARCH_KINDS.has(activeTab) || activeTab === 'tech' || activeTab === 'business' || activeTab === 'other') return 'research'
   return 'all'
 }
 
@@ -105,6 +109,8 @@ function manualEntriesToItems(entries, existingItems) {
 
 const RESEARCH_TYPE_DEFS = [
   { key: 'research', label: '全部分析' },
+  { key: 'engineering-cases', label: '工程案例' },
+  { key: 'build-logs', label: '建站日志' },
   { key: 'companies', label: '公司' },
   { key: 'people', label: '人物' },
   { key: 'tech', label: '技术' },
@@ -557,6 +563,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     for (const item of items) {
       if (typeof base[item.kind] === 'number') base[item.kind] += 1
       if (RESEARCH_KINDS.has(item.kind)) base.research += 1
+      if (item.contentType === 'engineering_case') base['engineering-cases'] += 1
+      if (item.contentType === 'build_log') base['build-logs'] += 1
       if (item.kind === 'topics' && item.topicType === 'tech') base.tech += 1
       if (item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType)) base.business += 1
       if (item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType)) base.other += 1
@@ -673,6 +681,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         ? items.filter((item) => item.kind === 'posts' || item.kind === 'works')
         : tab === 'research'
         ? items.filter((item) => RESEARCH_KINDS.has(item.kind))
+        : CONTENT_TYPE_BY_TAB[tab]
+        ? items.filter((item) => item.contentType === CONTENT_TYPE_BY_TAB[tab])
         : tab === 'tech'
         ? items.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
         : tab === 'business'

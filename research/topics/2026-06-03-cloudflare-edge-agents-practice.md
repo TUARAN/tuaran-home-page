@@ -5,7 +5,7 @@ topic_type: tech
 tech_type: agents_automation
 date: 2026-06-03
 tags: [Cloudflare, Workers, Agents SDK, Durable Objects, Workflows, Vectorize, AI Gateway, MCP, 边缘计算, Agent]
-summary: 把 Workers + Durable Objects + Workflows + Vectorize + AI Gateway 这一套拼起来，Cloudflare 已经能在 300 个城市的边缘节点跑「带状态、能恢复、能调工具」的 Agent；本文从架构、代码、成本、坑四个角度写一份可落地的实战指南。
+summary: 把 Workers + Durable Objects + Workflows + Vectorize + AI Gateway 这一套拼起来，Cloudflare 已经能在 300 个城市的边缘节点跑「带状态、能恢复、能调工具」的 Agent；从架构、代码、成本、坑四个角度写一份可落地的实战指南。
 tldr: Cloudflare 把「带状态的 Agent」做成了一等公民——Durable Objects 当 actor、Workflows 当 saga、Agents SDK 当壳子，配合 AI Gateway 缓存/路由模型请求，是目前唯一把「全球分布 + 持久状态 + 模型路由 + 向量检索 + MCP server」凑齐的边缘平台。代价是：被锁定在 Workers runtime（Node 兼容是补丁不是原生）、CPU 时间硬上限 30 秒/请求、跨大区延迟仍受 Durable Object 单点位置影响。结论：跑「轻量、长尾、全球分布」的 Agent（客服、监控、个人助理、MCP server hosting）非常香；跑「单次推理重、需要本地 GPU 的训练任务」不要碰。
 assistance: claude-code
 model: claude-opus-4-7
@@ -262,7 +262,7 @@ npx wrangler deploy
 1. 在本站现有 Cloudflare 项目里加一个 `apps/mcp-server` Worker，把 `research/topics/*.md` 暴露成 MCP server，能让 Claude Desktop 直接查询站内调研。**这一步独立、低风险、有传播价值**。
 2. 用 Agents SDK 写一个最小 demo：站内悬浮按钮 → WebSocket → Durable Object → 调 Claude 总结当前文章。先跑通再决定要不要做大。
 3. **不投入**重型 Agent 后端（比如批量爬虫、长任务 pipeline）——这类需求量上来后会撞 CPU 30s 限制，到时改 Workflows 成本不小，初期用 Modal / Railway 起步更灵活。
-4. 写一篇本站的实战记录《把调研知识库变成 MCP server：30 行代码 + 1 个 Cloudflare Worker》，反过来给本调研做案例闭环。
+4. 写一篇本站的实战记录《把调研知识库变成 MCP server：30 行代码 + 1 个 Cloudflare Worker》，反过来形成案例闭环。
 
 风险评估：唯一需要警惕的是「DO 物化位置」对国内访问体验的影响。本站当前未做 ICP 备案，国内访问走的是 Cloudflare 海外 PoP（实测 HKG/NRT 居多）——关 VPN 也能开，只是延迟比国内 CDN 高一档（50–150ms），已经接受了这个 trade-off。若未来要做对延迟敏感的国内 toC Agent，再考虑备案 + 京东云合作版。
 

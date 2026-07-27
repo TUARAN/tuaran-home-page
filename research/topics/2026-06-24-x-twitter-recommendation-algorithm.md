@@ -44,7 +44,7 @@ pv: 0
 | 2026-01-20/21 | xAI 开源**全新** Grok-Transformer 推荐算法，承诺约每 4 周更新一次 | [xai-org/x-algorithm](https://github.com/xai-org/x-algorithm) · [@XEng 公告](https://x.com/XEng/status/2013471689087086804) |
 | 2026-05-15 | 该仓库重大更新：端到端推理管线、预训练模型产物、内容理解 Grox、广告混排等 | [xai-org/x-algorithm](https://github.com/xai-org/x-algorithm) |
 
-**两条主线要分清**：`twitter/the-algorithm`（2023 经典版，Scala 为主）与 `xai-org/x-algorithm`（2026 Grok 版，Rust 为主）是**两套不同的代码与范式**，不是同一仓库的迭代。下面两节分别拆。
+**两条主线要分清**：`twitter/the-algorithm`（2023 经典版，Scala 为主）与 `xai-org/x-algorithm`（2026 Grok 版，Rust 为主）是**两套不同的代码与范式**，不是同一仓库的迭代。
 
 ---
 
@@ -88,7 +88,7 @@ For You 时间线（约 50% 关注内 + 50% 关注外）
 
 ### 3.3 Heavy Ranker 在优化什么（排序目标）
 
-精排不是「预测一个分」，而是预测**多种互动的概率并加权求和**。2023 版公开代码里可见的相对权重（示意，方向比绝对值更重要）：
+精排是预测**多种互动的概率并加权求和**。2023 版公开代码里可见的相对权重（示意，方向比绝对值更重要）：
 
 | 预测的用户行为 | 相对权重（示意） | 含义 |
 |---|---|---|

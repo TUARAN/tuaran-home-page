@@ -6,7 +6,7 @@ tech_type: agents_automation
 date: 2026-07-02
 time: 23:08
 tags: [Agent, Agent Loop, Prompt Engineering, RAG, LangChain, MCP, Tool Use, ReAct, METR, 范式演化, 技术调研]
-summary: Agent loop 改的是控制权：LLM 应用六年来第一次把「下一步做什么、什么时候算完成」的判定权从开发者代码交到模型手里。本文沿这条控制权移交线梳理三代范式（Prompt 时代 → RAG/框架时代 → Agent loop 时代）与「上一代主角降级为新范式组件」的规律，并回答为什么结构 2022 年就有的循环，火在 2024-2026：模型单步准确率过阈值、MCP 标准化工具接口、编码场景先完成商业验证。
+summary: Agent loop 改的是控制权：LLM 应用六年来第一次把「下一步做什么、什么时候算完成」的判定权从开发者代码交到模型手里。沿这条控制权移交线梳理三代范式（Prompt 时代 → RAG/框架时代 → Agent loop 时代）与「上一代主角降级为新范式组件」的规律，并回答为什么结构 2022 年就有的循环，火在 2024-2026：模型单步准确率过阈值、MCP 标准化工具接口、编码场景先完成商业验证。
 tldr: Agent loop 的最小形态只是一个 while 循环：模型调工具、看结果、自己决定何时停。它与 prompt、RAG、LangChain 等生态名词的关系是换代关系——每一代的组织范式把上一代的主角吸收成自己的组件：prompt 工程转型为 system prompt 与工具描述设计，RAG 从架构中心降为 loop 里的检索工具，LangChain 干脆把 1.0 版核心重构成 agent loop。循环结构 2022 年（ReAct）就有、2023 年 AutoGPT 失败过一轮；这轮成立靠三件事同时到位：METR 口径下模型可完成任务时长翻倍周期从 7 个月加速到 4 个月、MCP 把工具集成从 N×M 变成 N+M、编码代理先赚到验证。
 assistance: claude-code
 model: claude-fable-5

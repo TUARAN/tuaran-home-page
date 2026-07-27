@@ -8,9 +8,9 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '燃币说明 · 留存、交流与资源权益',
+  title: '燃币说明 · 获取与使用资源权益',
   description:
-    '燃币是 2aran.com 的站内留存与友好交流机制：用于资源领取、活动参与和内容权益，不是为了收费。游客有试用额度，注册、签到、评论、活动和支持本站都可补充燃币。',
+    '查看燃币余额、获取方式、资源使用额度、解锁记录与永久权益。游客有试用额度，登录后可通过注册、签到、评论、活动和站长调整获得燃币。',
   keywords: ['燃币', '获取燃币', '涂阿燃', 'tuaran', '积分', '资源权益', '签到', '交流'],
   alternates: { canonical: '/ranbi' },
 }
@@ -42,17 +42,6 @@ export default async function RanbiPage() {
     `${row.cost} / ${row.unit}`,
     row.description,
   ])
-  const RESERVED_ROWS = POLICY.spendScenarios.filter((row) => row.status === 'reserved').map((row) => [
-    row.label,
-    row.cost == null ? '待定' : `${row.cost} / ${row.unit}`,
-    row.description,
-  ])
-  const DIMENSIONS = [
-    ['身份', '游客也有燃币（按匿名身份发放）；绑定登录后转为正式账号，额度更高、可签到可评论赚币。'],
-    ['获取', `自动发放 + 主动赚取两条线：游客 ${R.guestSeed}、注册 ${R.register} 是底子，签到 +${R.checkin}/天、评论 +${R.comment} 是细水长流。`],
-    ['使用', `文字内容统一 ${R.resourceDefaultCost}；工具包/安装包领取 ${R.toolDefaultCost}。进入内容或点击领取时自动扣减。`],
-    ['权益', '内容解锁一次、工具包领取一次后永久有效；壁纸和音乐等免费资源也会保留领取/打开记录。'],
-  ]
   return (
     <PageContainer width="narrow" className="py-12">
       <header className="mb-8 border-b border-[var(--site-line)] pb-6">
@@ -60,14 +49,14 @@ export default async function RanbiPage() {
           🔥 Ranbi · 燃币
         </div>
         <h1 className="font-serif text-[32px] leading-tight tracking-wide text-[var(--site-ink)] md:text-[38px]">
-          燃币说明
+          获取和使用资源权益
         </h1>
         <p className="mt-3 text-[14px] leading-7 text-[var(--site-muted)]">
-          燃币是本站的「留存与友好交流机制」。它不是为了把阅读变成收费，也不是 UGC 平台的积分排名；
-          它主要用来记录资源领取、活动参与和内容权益。设计它，是为了让认真读、认真评论、愿意支持本站的人更容易留下来。
+          燃币用于解锁站内内容、领取工具包并保存资源权益。游客可以直接使用试用额度；登录后可查看余额和记录，
+          通过注册、签到、有效评论、活动或站长调整继续获得燃币。
         </p>
         <p className="mt-2 text-[12px] leading-6 text-[var(--site-muted)]">
-          规则结构参考{' '}
+          获取、使用、余额明细和反滥用规则参考{' '}
           <a
             href={POLICY.reference.url}
             target="_blank"
@@ -85,14 +74,13 @@ export default async function RanbiPage() {
 
       <RanbiUnlocksPanel />
 
-      {/* 它是什么 */}
+      {/* 读者权益 */}
       <section className="mb-10">
-        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">一、它是什么</h2>
+        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">一、你能获得什么</h2>
         <p className="text-[14px] leading-7 text-[var(--site-muted)]">
-          一句话：<span className="font-medium text-[var(--site-ink)]">燃币 = 站内资源权益与参与记录</span>。
-          每个访客一来就有试用额度；读得多、聊得多、参与活动或支持本站，都可以继续补充。
-          它不做提现，也不做自动充值；如果确实因为图床、视频、模型请求、存储和带宽成本需要支持，
-          可以通过「支持本站」后私聊站长补充燃币。
+          <span className="font-medium text-[var(--site-ink)]">燃币对应站内资源权益与参与记录。</span>
+          每个访客都有试用额度；登录后，已解锁内容、已领取工具和余额流水会保留在账号中。
+          内容或工具只结算一次，之后可以长期打开。燃币不可提现，也没有自动充值入口。
         </p>
       </section>
 
@@ -152,39 +140,16 @@ export default async function RanbiPage() {
         </p>
       </section>
 
-      {/* 预留使用项 */}
+      {/* 权益记录 */}
       <section className="mb-10">
-        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">四、下一步预留</h2>
-        <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
-          <table className="w-full border-collapse text-[13px]">
-            <thead>
-              <tr className="bg-[var(--site-panel)]">
-                <Th>场景</Th>
-                <Th className="whitespace-nowrap">建议额度</Th>
-                <Th>说明</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {RESERVED_ROWS.map(([name, price, desc]) => (
-                <tr key={name} className="border-t border-[var(--site-line)]">
-                  <Td className="font-medium text-[var(--site-ink)]">{name}</Td>
-                  <Td className="whitespace-nowrap font-mono font-semibold text-[#7a5b1e] dark:text-amber-300">{price}</Td>
-                  <Td>{desc}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-3 text-[13px] leading-6 text-[var(--site-muted)]">
-          这些只是在规则层预留，未上线前不会实际使用燃币。未来若开放社区推荐、留言置顶或邀请码，会先接审核、风控和权益明细。
-        </p>
-      </section>
-
-      {/* 四个维度 */}
-      <section className="mb-10">
-        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">五、燃币的四个维度</h2>
+        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">四、权益如何保存</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {DIMENSIONS.map(([label, text], i) => (
+          {[
+            ['游客试用', `当前浏览器按匿名身份获得 ${R.guestSeed} 燃币，可以先体验内容解锁或工具领取。`],
+            ['登录归档', '登录时会把当前浏览器中的游客余额、评论和已解锁权益归入账号。'],
+            ['永久解锁', '同一内容或工具只结算一次，刷新、再次打开和从领取记录返回都不会重复使用燃币。'],
+            ['记录可查', '个人资料会显示余额、已解锁资源和领取记录；异常流水可以联系站长复核。'],
+          ].map(([label, text], i) => (
             <div key={label} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#7a5b1e] dark:text-amber-300">
                 {String(i + 1).padStart(2, '0')} · {label}
@@ -204,7 +169,7 @@ export default async function RanbiPage() {
           <li>· 调研、资料、资源内容统一 {R.resourceDefaultCost} / 篇；工具包 / 安装包 {R.toolDefaultCost} / 项，进入内容或领取时自动扣减，解锁后永久有效。</li>
           <li>· 壁纸、音乐等免费资源不消耗燃币，但领取/打开会进入“我的领取记录”。</li>
           <li>· 评论奖励每日最多 +{R.commentDailyCap}，流水可查、重复操作不重复记账。</li>
-          <li>· 支持本站可用于图床、视频、请求、存储和带宽成本；需要补充燃币可私聊站长。</li>
+          <li>· 余额或领取记录异常时，可附资源名称和页面链接联系站长复核。</li>
         </ul>
       </section>
     </PageContainer>

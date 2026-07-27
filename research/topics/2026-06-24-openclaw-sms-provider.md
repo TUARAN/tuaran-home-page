@@ -4,7 +4,7 @@ category: topics
 date: 2026-06-24
 time: 16:16
 tags: [OpenClaw, SMS, 短信, Twilio, Telnyx, Plivo, ClawdTalk, AI-Agent, CPaaS, 语音通话, 验证码, clawphone]
-summary: 拆解「OpenClaw 的 SMS 是哪家提供」这个问题——结论先行：OpenClaw 现在（2026.6.10 起）官方内置了一方 SMS channel `@openclaw/sms`，后端是 Twilio；此外 Telnyx 自己写了一方 channel，社区还补了大量 Twilio/自建方案与发短信 skill。本文按核心仓库与官方文档逐项标注证据状态。
+summary: 拆解「OpenClaw 的 SMS 是哪家提供」这个问题——结论先行：OpenClaw 现在（2026.6.10 起）官方内置了一方 SMS channel `@openclaw/sms`，后端是 Twilio；此外 Telnyx 自己写了一方 channel，社区还补了大量 Twilio/自建方案与发短信 skill。按核心仓库与官方文档逐项标注证据状态。
 tldr: 「OpenClaw 的短信」现在有官方答案：核心仓库内置的 `@openclaw/sms` channel 默认走 Twilio（2026-05-31 加入、随 2026.6.10 发行）。Telnyx 是另一条由 Telnyx 公司自建的一方 channel；要 Agent 主动外发的 skill、以及更省/托管路线，则靠生态。判断落在「内置默认 vs 自选 vs 社区」「channel vs skill」上。
 topic_type: tech
 tech_type: networking
@@ -102,7 +102,7 @@ Telnyx 在 OpenClaw 短信上有**两条需要区分**的呈现：
 
 ## 四、第二条一方 channel：Telnyx 自建插件——机制、公司背景与 vs Twilio
 
-> 区分两个「官方」：核心内置默认是 **`@openclaw/sms`（OpenClaw 官方写、Twilio 后端，见 §3.1）**；本节讲的 `telnyx-openclaw-sms-channel` 是 **Telnyx 公司自己写的另一条一方 channel**（不在核心仓库）。「channel」不等于「OpenClaw 自己发短信」——是某家有发短信资质的公司把它的 API 接成一个 OpenClaw channel。本节回答「Telnyx 凭什么也能做、它和 Twilio 啥区别」。
+> 区分两个「官方」：核心内置默认是 **`@openclaw/sms`（OpenClaw 官方写、Twilio 后端，见 §3.1）**；本节讲的 `telnyx-openclaw-sms-channel` 是 **Telnyx 公司自己写的另一条一方 channel**（不在核心仓库）。“channel”指某家有短信资质的公司把自己的 API 接入 OpenClaw。本节回答“Telnyx 凭什么也能做、它和 Twilio 有什么区别”。
 
 ### 4.1 机制：插件只是把 Telnyx Messaging API 包成一个 channel
 
@@ -117,7 +117,7 @@ Telnyx 在 OpenClaw 短信上有**两条需要区分**的呈现：
 
 ### 4.2 凭什么是 Telnyx：它本身是持牌运营商 + 自有网络
 
-Telnyx 能做这件事，不是因为它转接了别人的短信通道，而是**它自己就是一家持牌电信运营商（CPaaS），拥有自有 IP 网络、能直接签发号码并收发短信**。公司背景（公开信息）：
+Telnyx 能做这件事，是**它自己就是一家持牌电信运营商（CPaaS），拥有自有 IP 网络、能直接签发号码并收发短信**。公司背景（公开信息）：
 
 | 维度 | Telnyx | 证据状态 |
 |---|---|---|
@@ -127,7 +127,7 @@ Telnyx 能做这件事，不是因为它转接了别人的短信通道，而是*
 | 资本 | Techstars（2014）；投资方含 Founders Fund（Thiel）、Drive Capital、Pritzker；披露融资约 \$11M，以自举为主 | 已确认（口径见来源） |
 | 形态 | 未上市，约 270 人；近年把 AI 推理与电信层并置（语音 AI / 推理） | 自我披露 + 二手 |
 
-一句话：**Telnyx 不是「短信中间商」，而是「自己持牌、自己建网、用 API 卖出去」的运营商**——这正是它有底气写一个「官方内置 channel」、而不必再去接别人通道的原因。
+一句话：**Telnyx 是「自己持牌、自己建网、用 API 卖出去」的运营商**——这正是它有底气写一个「官方内置 channel」、而不必再去接别人通道的原因。
 
 ### 4.3 Telnyx vs Twilio：两家在 OpenClaw 里的角色差异
 
@@ -251,7 +251,7 @@ Telnyx / Twilio 的对比见第四节。生态里还有第三家 **Plivo**——
 - ClawdTalk 免费档「100 条/日 SMS」「\$12 / \$30 月费」为服务方自述，未做实测；beta 期条款可能变动。
 - team-telnyx 的 OpenClaw 插件均为 ⭐0–1 的早期仓库，是否进入稳定可用、是否有官方支持承诺，未对外披露。
 - ~~是否存在官方短信插件~~ —— **已确认存在**：核心仓库 `extensions/sms`（`@openclaw/sms`，Twilio 后端，2026-05-31 加入）。本文初稿曾误判「官方不带 SMS channel」，已据此全面更正。
-- `@openclaw/sms` 是否在某些发行/平台上「零配置自动启用」，还是一律需手填 Twilio 凭证——本文按 README 的 install 口径理解为后者，未在所有客户端实测。
+- `@openclaw/sms` 是否在某些发行/平台上「零配置自动启用」，还是一律需手填 Twilio 凭证——按 README 的 install 口径理解为后者，未在所有客户端实测。
 - 中国大陆号段 / 国内运营商短信合规路径，本文未覆盖（上述 Twilio/Telnyx/Plivo 均以海外 A2P 为主）。
 - 各社区插件的活跃度与维护承诺（clawphone、openclaw-sms-gateway）仅看了版本号与 commit 数，未评估长期可维护性。
 
@@ -259,7 +259,7 @@ Telnyx / Twilio 的对比见第四节。生态里还有第三家 **Plivo**——
 
 ## 八、收口
 
-**一种外部解读**：到 2026.6.10，「OpenClaw 的短信是哪家」有了官方答案——核心内置 `@openclaw/sms`，后端 **Twilio**（2026-05-31 收进框架）。在它之外，Telnyx 公司自建了另一条一方 channel（自有网络、低单价），托管的 ClawdTalk 自述 Powered by Telnyx，社区还补了大量 channel 与「主动外发」的 skill。所以更准确的说法不是「没官方」，而是「**官方内置默认是 Twilio，换承运 / 要 skill / 要托管再往生态走**」。这也提醒一点：OpenClaw 迭代极快，结论要以核心仓库当前版本为准——本文已据此从「官方缺位」更正为「官方内置 Twilio」。以上为分析视角，不是预测，也不是建议。
+**一种外部解读**：到 2026.6.10，「OpenClaw 的短信是哪家」有了官方答案——核心内置 `@openclaw/sms`，后端 **Twilio**（2026-05-31 收进框架）。在它之外，Telnyx 公司自建了另一条一方 channel（自有网络、低单价），托管的 ClawdTalk 自述 Powered by Telnyx，社区还补了大量 channel 与「主动外发」的 skill。所以更准确的说法是「**官方内置默认是 Twilio，换承运 / 要 skill / 要托管再往生态走**」。这也提醒一点：OpenClaw 迭代极快，结论要以核心仓库当前版本为准——本文已据此从「官方缺位」更正为「官方内置 Twilio」。以上为分析视角，不是预测，也不是建议。
 
 ### 信息来源与说明
 

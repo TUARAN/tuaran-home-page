@@ -98,7 +98,7 @@ requires_openai_auth = true
 
 ## 七、争议与风险
 
-- **协议翻译有损耗**：Responses API 里的 reasoning trace、tool-call 结构、`output_text` 拼装在翻译过程中是有损的。Codex 看到的"思考过程"不是 DeepSeek 原生的，而是网关组装出来的近似形态。复杂 agent 任务可能比直连 OpenAI 表现差一截。
+- **协议翻译有损耗**：Responses API 里的 reasoning trace、tool-call 结构、`output_text` 拼装在翻译过程中是有损的。Codex 看到的"思考过程"是网关组装出来的近似形态。复杂 agent 任务可能比直连 OpenAI 表现差一截。
 - **本地路由 = 本地中间人**：所有请求/响应都过 cc-switch 一遍。开源代码可审，但默认信任的前提是你跑的是从官方仓库构建的版本。仿冒站点已经出现过 —— 一定从 `farion1231/cc-switch` 装。
 - **DeepSeek 不在 Codex 官方支持矩阵里**：未来 Codex 协议升级（比如 Responses v2、新增字段），cc-switch 的翻译层需要跟着更新。版本断层时会有几天到几周的不可用窗口。
 - **不适合生产工作流**：API Key 储存、配置改写、自动重启都是 GUI 控制，没有 IaC / 配置版本管理。团队场景建议用直连或自建网关。

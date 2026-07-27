@@ -3,10 +3,11 @@ title: Next.js 个人站点首屏加载与 Cloudflare 部署性能优化复盘
 category: topics
 topic_type: tech
 tech_type: web_cloud
+content_type: engineering_case
 date: 2026-05-31
 tags: [Next.js, Cloudflare, 性能优化, 首屏加载, App Router, CDN, Middleware, Web Vitals]
 summary: 记录 2aran.com 本轮首屏加载、按需加载、项目体积与 Cloudflare 部署加速优化的完整过程：问题定位、架构拆分、缓存策略、middleware 收敛、图片优化、收益预估与后续评估。
-tldr: 本轮优化的核心不是让首页 First Load JS 立刻大幅下降，而是把主站和 /web-llm 从 layout 层解耦，减少全局 client 边界，收窄 middleware，补齐 Cloudflare 静态缓存，并明确首屏关键图片调度。预估首页冷启动提升 3% - 10%，二次访问和跨页面体感提升 10% - 30%，静态资源重复下载量可下降 50% - 95%。
+tldr: 本轮优化的核心是把主站和 /web-llm 从 layout 层解耦，减少全局 client 边界，收窄 middleware，补齐 Cloudflare 静态缓存，并明确首屏关键图片调度。预估首页冷启动提升 3% - 10%，二次访问和跨页面体感提升 10% - 30%，静态资源重复下载量可下降 50% - 95%。
 assistance: codex
 model: gpt-5
 pv: 0
@@ -107,7 +108,7 @@ matcher: ['/((?!_next/static|_next/image).*)']
 
 ## 四、解决思路
 
-本轮策略不是盲目压缩所有文件，而是按加载路径分层治理：
+本轮策略是按加载路径分层治理：
 
 1. 根 layout 最小化：只保留 HTML 外壳和真正全局的 metadata。
 2. 主站和重页面拆 route group：`(site)` 与 `(web-llm)` 分离。
@@ -552,7 +553,7 @@ npx update-browserslist-db@latest
 
 ## 十一、结论
 
-本轮优化不是一次“压缩 bundle 立刻少几十 KB”的改动，而是一次加载路径和架构边界优化。
+本轮完成的是加载路径和架构边界优化。
 
 最核心的结果：
 

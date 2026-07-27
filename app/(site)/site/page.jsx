@@ -8,7 +8,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '关于本站',
   description:
-    '2aran.com 是涂阿燃维护的个人内容与项目门户，不是 UGC 社区；这里支持围绕特定话题评论讨论、领取资源、参加活动，并用燃币做友好的留存和互动权益。',
+    '2aran.com 是涂阿燃维护的个人内容与项目门户，集中提供原创文章、专题分析、工程实践、资源权益与参与入口。',
   keywords: ['关于本站', '2aran.com', '涂阿燃', '燃币', '资源', '活动', '评论讨论'],
   alternates: { canonical: '/site' },
 }
@@ -20,7 +20,7 @@ const principles = [
   },
   {
     title: '轻互动',
-    body: '本站不是 UGC 平台，不追求让所有人自由发帖；但支持围绕具体文章、资源和活动进行评论、补充线索和友好讨论。',
+    body: '讨论围绕具体文章、资源和活动展开，读者可以评论、补充线索和交流经验；站点不开放自由发帖。',
   },
   {
     title: '资源与活动',
@@ -33,6 +33,14 @@ const participate = [
   ['领取资源', '用燃币解锁或领取站内整理的资料、插件、下载和专题内容。'],
   ['参加活动', '例如竞猜、社群活动、问卷或线下连接，后续会按主题逐步开放。'],
   ['私聊站长', '燃币不足、资源打不开、理由充分想补额度，都可以直接联系站长处理。'],
+]
+
+const contentGroups = [
+  ['文章与观点', '个人判断、写作方法与长期主题。', '/articles?tab=posts'],
+  ['分析与观察', '公司、人物、技术、市场与公共议题。', '/articles?tab=research'],
+  ['工程案例', '真实项目中的架构、部署、权限与性能实践。', '/articles?tab=engineering-cases'],
+  ['建站日志', '2aran.com 的产品选择、改造过程与阶段复盘。', '/articles?tab=build-logs'],
+  ['作品与实验', '可交互页面、工具、自动化与个人项目。', '/works'],
 ]
 
 function SectionIntro({ index, eyebrow, title, children }) {
@@ -54,9 +62,8 @@ export default function SiteAboutPage() {
           关于本站
         </h1>
         <p className="mt-4 max-w-[760px] text-[15px] leading-8 text-[var(--site-muted)]">
-          2aran.com 是涂阿燃维护的个人内容、项目和资源门户。它不是一个 UGC 社区，也不以“收费阅读”为目标；
-          更像一个长期开放的工作台：我负责持续整理内容和资源，读者可以围绕特定话题评论讨论、领取资料、参加活动，
-          并通过燃币保留自己的参与记录和资源权益。
+          2aran.com 是涂阿燃维护的个人内容、项目和资源门户，也是一张持续更新的个人工作台。
+          我负责整理内容和资源；读者可以阅读、评论、领取资料、参加活动，并通过燃币保留参与记录和资源权益。
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link href="/articles" className="rounded-full bg-[var(--site-ink)] px-4 py-2 text-sm font-medium text-white no-underline shadow-sm transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)] dark:text-[#0d0e0d]">
@@ -85,9 +92,24 @@ export default function SiteAboutPage() {
         </ol>
       </section>
 
-      <section className="grid gap-8 border-b border-[var(--site-line)] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
-        <SectionIntro index="02" eyebrow="PARTICIPATION" title="你可以怎样参与">
-          <p>参与不是来“生产内容给平台”，而是围绕已经存在的文章、资料和活动进行补充、讨论和连接。</p>
+      <section id="originals" className="scroll-mt-24 grid gap-8 border-b border-[var(--site-line)] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
+        <SectionIntro index="02" eyebrow="CONTENT" title="内容从哪里进入">
+          <p>原创内容、资料整理与个人实验按实际形态分开呈现，避免把所有长文都包装成同一种研究。</p>
+        </SectionIntro>
+        <div className="border-t border-[var(--site-line)]">
+          {contentGroups.map(([title, body, href]) => (
+            <Link key={title} href={href} className="grid gap-2 border-b border-[var(--site-line)] py-5 no-underline sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-5">
+              <h3 className="font-serif text-[20px] text-[var(--site-ink)]">{title}</h3>
+              <p className="text-[14px] leading-7 text-[var(--site-muted)]">{body}</p>
+              <span className="text-xs font-medium text-[var(--site-accent)]">进入 →</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section id="participation" className="scroll-mt-24 grid gap-8 border-b border-[var(--site-line)] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
+        <SectionIntro index="03" eyebrow="PARTICIPATION" title="你可以怎样参与">
+          <p>参与入口附着在具体文章、资料和活动上，用于补充、讨论和连接。</p>
           <p className="mt-3">站点会尽量把入口做得轻一些，让认真交流的人更容易留下来。</p>
         </SectionIntro>
         <dl className="border-t border-[var(--site-line)]">
@@ -101,12 +123,12 @@ export default function SiteAboutPage() {
         </dl>
       </section>
 
-      <section className="grid gap-8 py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
-        <SectionIntro index="03" eyebrow="RANBI" title="燃币不是收费墙" />
+      <section id="reader-rights" className="scroll-mt-24 grid gap-8 border-b border-[var(--site-line)] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
+        <SectionIntro index="04" eyebrow="RANBI" title="读者资源权益" />
         <div>
           <p className="max-w-3xl text-[15px] leading-8 text-[var(--site-muted)]">
             燃币是本站的留存和友好交流机制：游客有试用额度，登录后有起步额度，也可以通过签到、评论、活动或站长手动调整获得。它主要用来记录资源领取、活动参与和内容解锁，
-            不是为了把阅读变成收费。图床、视频、模型请求、存储和带宽确实会有成本；如果你愿意支持本站，也可以在支持后私聊站长调整燃币。
+            公开阅读不受影响；已解锁内容和已领取资源会保留在账号权益中。
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/ranbi" className="rounded-full bg-[#7a5b1e] px-4 py-2 text-sm font-medium text-white no-underline hover:bg-[#6a4f19] dark:bg-amber-700 dark:hover:bg-amber-600">
@@ -114,6 +136,23 @@ export default function SiteAboutPage() {
             </Link>
             <Link href="/donate" className="rounded-full border border-[#caa86a] px-4 py-2 text-sm font-medium text-[#7a5b1e] no-underline hover:bg-[#fbf7ee] dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-950/30">
               支持并补充燃币
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section id="editorial" className="scroll-mt-24 grid gap-8 py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
+        <SectionIntro index="05" eyebrow="POLICY" title="作者、来源与更正" />
+        <div className="max-w-3xl">
+          <p className="text-[15px] leading-8 text-[var(--site-muted)]">
+            署名内容由涂阿燃最终确认并承担发布责任。第三方材料保留来源；健康、金融和法律内容保留必要边界；影响主要结论的修订会留下说明。
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href="/editorial" className="rounded-full bg-[var(--site-ink)] px-4 py-2 text-sm font-medium text-white no-underline dark:text-[#0d0e0d]">
+              查看内容与更正政策
+            </Link>
+            <Link href="/help" className="rounded-full border border-[var(--site-line)] px-4 py-2 text-sm font-medium text-[var(--site-ink)] no-underline">
+              查看使用帮助
             </Link>
           </div>
         </div>

@@ -5,7 +5,7 @@ topic_type: industry
 date: 2026-06-26
 time: 10:20
 tags: [人工智能, OpenAI, GPT-5.6, 白宫, 特朗普政府, AI监管, Anthropic, Claude Mythos, 玻璃翼计划, 网络安全, 前沿模型, 行政令, The Information, TechCrunch]
-summary: 梳理 TechCrunch（援引 The Information）2026-06-25 的一则报道——特朗普政府以安全为由，要求 OpenAI 对新模型 GPT 5.6 采取「限量内测、逐个客户审批、数周后再公测」的发布方式。本文把报道内容与可独立确认的事实分开：绝大部分细节目前是单一信源、未经 OpenAI 与白宫官方确认；研判落在「受控发布」这一机制本身，不替任何一方定性动机。
+summary: 梳理 TechCrunch（援引 The Information）2026-06-25 的一则报道——特朗普政府以安全为由，要求 OpenAI 对新模型 GPT 5.6 采取「限量内测、逐个客户审批、数周后再公测」的发布方式。把报道内容与可独立确认的事实分开：绝大部分细节目前是单一信源、未经 OpenAI 与白宫官方确认；研判落在「受控发布」这一机制本身，不替任何一方定性动机。
 tldr: 据 TechCrunch / The Information，OpenAI 的 GPT 5.6 可能不走以往的公开发布，而是先定向给少数核心合作方、由国家网络总监办公室（ONCD）与科技政策办公室（OSTP）逐客户审核，进展顺利再数周后放开；这被描述为向 Anthropic「玻璃翼计划」式自愿管控靠拢。关键提醒：这是单篇媒体报道转述内部会议，OpenAI / 白宫均未公开证实，GPT 5.6、Claude Mythos、行政令细节本文都无法独立核实，请按「据报道」读。值得持续关注，但不宜当成已成定局的事实。
 assistance: claude-code
 model: claude-opus-4-8

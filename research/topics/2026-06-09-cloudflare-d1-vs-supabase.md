@@ -492,7 +492,7 @@ const supabase = createClient(url, anonKey) // 在 Worker 里暴露 anon key 也
 
 ### 5.1 选型阶段：第一句必须钉死的约束
 
-在打开 Cursor / Codex **之前**，用下面模板做「架构预审」——复制整段，只改括号部分：
+在打开 Cursor / Codex **之前**，用这份模板做「架构预审」——复制整段，只改括号部分：
 
 ```markdown
 ## 项目约束（必须遵守，不要擅自更换技术栈）

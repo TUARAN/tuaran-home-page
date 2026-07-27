@@ -12,7 +12,7 @@ model: claude-opus-4-7
 pv: 0
 ---
 
-把流传的一份「字节跳动 · 飞连团队 · AI Agent 应用开发岗二面」面经（10 道项目题 + 6 道八股 + 1 道算法）整理成可直接复用的「题面 + 解答 + 信号判断」结构。重点不是把每道题都答到极致，而是搞清楚**哪些题是真正的鉴别题**、**哪些点踩中加分、踩空直接挂**。
+把流传的一份「字节跳动 · 飞连团队 · AI Agent 应用开发岗二面」面经（10 道项目题 + 6 道八股 + 1 道算法）整理成可直接复用的「题面 + 解答 + 信号判断」结构。重点是搞清楚**哪些题是真正的鉴别题**、**哪些点踩中加分、踩空直接挂**。
 
 ## 一、是什么
 
@@ -42,7 +42,7 @@ pv: 0
 
 ### 2.3 八股题量不大但都是"信号题"
 
-Redis 四题问的不是 Redis 本身，而是「**你做 Agent 系统时知不知道用 Redis 存什么、怎么存**」。Transformer 基础和 SFT/RLHF/DPO 是确认你不是纯 prompt 调参党。算法题是底线——`merge two sorted lists` 答不出来直接结束。
+Redis 四题问的是「**你做 Agent 系统时知不知道用 Redis 存什么、怎么存**」。Transformer 基础和 SFT/RLHF/DPO 是确认你不是纯 prompt 调参党。算法题是底线——`merge two sorted lists` 答不出来直接结束。
 
 ## 三、关键玩家与生态
 
@@ -207,7 +207,7 @@ Redis 四题问的不是 Redis 本身，而是「**你做 Agent 系统时知不�
    - **auto-compact**：到阈值（如 90% context window）自动跑总结，保留最近 N 轮原文 + 历史摘要
    - **prompt cache**：Anthropic 的 5-min TTL prompt cache 让长 system prompt 不付每次 input cost
    - **chapter 切分**：长会话主动 mark chapter，未来检索更准
-   - **检索式记忆**：不是把所有历史塞 prompt，而是按相关性召回（typical 8K 历史 → 召回 2K 相关片段）
+   - **检索式记忆**：按相关性召回（typical 8K 历史 → 召回 2K 相关片段）
 
 **加分点**：说出 Claude Code 在 Opus 4.7 上推荐用 `claude-opus-4-7` model ID，并提到 prompt cache 5-min TTL 对 long-running session 的影响。
 

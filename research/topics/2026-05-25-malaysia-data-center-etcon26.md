@@ -3,7 +3,7 @@ title: 马来西亚数据中心市场与能源背景 + ETCon26 峰会调研
 category: topics
 date: 2026-05-25
 tags: [数据中心, 马来西亚, 能源转型, ETCon26, 出差准备, AI 基础设施]
-summary: 6.3–6.5 KLCC 召开的 ETCon26 由 TNB 主办，主题"Energy & AI"，对接马来西亚已超 6.4GW 的数据中心新增电力需求；本篇汇总市场/能源底盘 + 一份现场问题清单。
+summary: 6.3–6.5 KLCC 召开的 ETCon26 由 TNB 主办，主题"Energy & AI"，对接马来西亚已超 6.4GW 的数据中心新增电力需求；汇总市场/能源底盘 + 一份现场问题清单。
 tldr: Johor 占全国 70%+ 数据中心电力、Cyberjaya 是第二极；TNB 已签 6.4GW 数据中心供电、未来 5 年投 ~108 亿美元升级电网；2026 年起马政府限制"非 AI"型数据中心、加征水电费、强推 CRESS 绿电——出差前重点带问题，而非带答案。
 topic_type: industry
 assistance: claude-code

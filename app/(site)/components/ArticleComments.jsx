@@ -135,7 +135,7 @@ export default function ArticleComments({ articleKey }) {
   }
 
   return (
-    <section className="discussion-comments mx-auto mt-12 max-w-[72ch]">
+    <section className="discussion-comments mt-12 w-full">
       <div className="discussion-comments-header flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="discussion-eyebrow mb-1">Discussion</p>

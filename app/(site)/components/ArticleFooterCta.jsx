@@ -7,7 +7,7 @@ import NewsletterSignup from './NewsletterSignup'
  */
 export default function ArticleFooterCta() {
   return (
-    <aside className="mx-auto mt-12 max-w-[72ch] border-t border-[#dee0db] pt-8 dark:border-gray-800">
+    <aside className="mt-12 w-full border-t border-[#dee0db] pt-8 dark:border-gray-800">
       <div className="mb-4 flex items-baseline justify-between">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
           Stay in touch

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
+import ContentPvBeacon from '../components/ContentPvBeacon'
 import DistributeContentButton from '../components/DistributeContentButton'
 import SharePageButton from '../components/SharePageButton'
 import { FEED_TYPE_META } from './data'
@@ -36,18 +36,23 @@ function itemDistributeSummary(item) {
   return [item.summary || item.quote || '', item.prompt ? `提示词：\n${item.prompt}` : ''].filter(Boolean).join('\n\n')
 }
 
-function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinity }) {
+function MetaRow({ item, showShare = true, showPv = false, maxTags = Infinity }) {
   const tags = item.tags || []
   const visibleTags = Number.isFinite(maxTags) ? tags.slice(0, maxTags) : tags
   const hiddenTagCount = Math.max(0, tags.length - visibleTags.length)
-  const sourceLink = item.source?.href ? (
+  const source = item.source?.href
+    ? item.source
+    : item.type === 'link' && item.href
+      ? { href: item.href, label: '打开原文' }
+      : null
+  const sourceLink = source?.href ? (
     <a
-      href={item.source.href}
+      href={source.href}
       target="_blank"
       rel="noreferrer"
       className="article-action-button px-3 py-1 text-xs no-underline"
     >
-      <span>来源：{item.source.label || '链接'}</span>
+      <span>{source.label === '打开原文' ? source.label : `来源：${source.label || '链接'}`}</span>
       <span aria-hidden="true">↗</span>
     </a>
   ) : null
@@ -56,6 +61,12 @@ function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinit
     <div className="mt-5 flex flex-col gap-2 text-[11px] text-[var(--site-muted)]">
       <div className="flex min-w-0 items-center gap-x-2 gap-y-2 overflow-x-auto whitespace-nowrap pb-1">
         {item.date ? <time>{item.date}</time> : null}
+        {showPv ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <ContentPvBeacon category="feed" slug={item.id} display />
+          </>
+        ) : null}
         {visibleTags.length ? (
           <>
             <span aria-hidden="true">·</span>
@@ -75,14 +86,9 @@ function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinit
           </>
         ) : null}
       </div>
-      {sourceLink || showDetail || showShare ? (
+      {sourceLink || showShare ? (
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {sourceLink}
-          {showDetail ? (
-            <Link href={`/feed/${item.id}`} className="article-action-button px-3 py-1 text-xs no-underline">
-              查看
-            </Link>
-          ) : null}
           {showShare ? (
             <SharePageButton
               title={item.title}
@@ -110,8 +116,18 @@ function MetaRow({ item, showShare = true, showDetail = false, maxTags = Infinit
   )
 }
 
-function PromptBlock({ prompt }) {
+function PromptBlock({ prompt, expanded = false }) {
   if (!prompt) return null
+  if (expanded) {
+    return (
+      <section className="mt-5 border-t border-[var(--site-line)] pt-4">
+        <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-faint)]">完整提示词</h3>
+        <pre className="mb-0 mt-3 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-md bg-[var(--site-panel)] p-4 text-[12px] leading-6 text-[var(--site-muted)]">
+          {prompt}
+        </pre>
+      </section>
+    )
+  }
   return (
     <details className="mt-4 rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] p-3">
       <summary className="cursor-pointer text-[12px] font-semibold text-[var(--site-ink)]">
@@ -224,7 +240,6 @@ const HEADLINE_ACCENT = {
 function HeadlineSummary({ item, accent }) {
   const summaryRef = useRef(null)
   const [isOverflowing, setIsOverflowing] = useState(false)
-  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     const node = summaryRef.current
@@ -245,100 +260,30 @@ function HeadlineSummary({ item, accent }) {
     return () => observer.disconnect()
   }, [item.summary])
 
-  useEffect(() => {
-    if (!open) return undefined
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
-
   return (
-    <>
-      <div className="mt-4">
-        <p
-          ref={summaryRef}
-          className="mb-0 text-[15px] leading-7 text-[var(--site-muted)] lg:line-clamp-4"
+    <div className="mt-4">
+      <p
+        ref={summaryRef}
+        className="mb-0 text-[15px] leading-7 text-[var(--site-muted)] lg:line-clamp-4"
+      >
+        {item.summary}
+      </p>
+      {isOverflowing ? (
+        <Link
+          href={`/feed/${item.id}`}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full border bg-[var(--site-panel-strong)] px-3 py-1.5 text-[12px] font-semibold no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          style={{ color: accent, borderColor: `${accent}55` }}
         >
-          {item.summary}
-        </p>
-        {isOverflowing ? (
-          <button
-            type="button"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full border bg-[var(--site-panel-strong)] px-3 py-1.5 text-[12px] font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            style={{ color: accent, borderColor: `${accent}55` }}
-            onClick={() => setOpen(true)}
-            aria-haspopup="dialog"
-          >
-            查看全文
-            <span aria-hidden="true">↗</span>
-          </button>
-        ) : null}
-      </div>
-
-      {open && typeof document !== 'undefined' ? createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-8" role="dialog" aria-modal="true" aria-labelledby={`headline-summary-${item.id}`}>
-          <button
-            type="button"
-            className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
-            aria-label="关闭全文弹窗"
-            onClick={() => setOpen(false)}
-          />
-          <div className="relative isolate flex max-h-[min(82vh,760px)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-[var(--site-line-strong)] bg-[var(--site-panel-strong)] shadow-2xl shadow-black/35">
-            <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}55)` }} />
-            <div className="flex items-start justify-between gap-5 border-b border-[var(--site-line)] px-6 py-5 sm:px-8 sm:py-6">
-              <div className="min-w-0">
-                <span
-                  className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
-                  style={{ color: accent, background: `${accent}1a` }}
-                >
-                  头条 · {FEED_TYPE_META[item.type]?.label || ''}
-                </span>
-                <h2 id={`headline-summary-${item.id}`} className="mb-0 mt-3 border-b-0 pb-0 font-serif text-2xl leading-snug text-[var(--site-ink)] sm:text-3xl">
-                  {item.title}
-                </h2>
-              </div>
-              <button
-                type="button"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--site-line)] text-xl leading-none text-[var(--site-muted)] transition hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]"
-                onClick={() => setOpen(false)}
-                aria-label="关闭全文弹窗"
-              >
-                ×
-              </button>
-            </div>
-            <div className="overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
-              <p className="mb-0 whitespace-pre-wrap text-[15px] leading-8 text-[var(--site-muted)] sm:text-base">
-                {item.summary}
-              </p>
-              {item.tags?.length ? (
-                <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--site-line)] pt-5">
-                  {item.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-[var(--site-panel-strong)] px-3 py-1 text-[11px] text-[var(--site-muted)]">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>,
-        document.body
+          阅读全文
+          <span aria-hidden="true">→</span>
+        </Link>
       ) : null}
-    </>
+    </div>
   )
 }
 
 // 头条卡：占满整行，桌面端媒体在左、文案在右
-function HeadlineCard({ item }) {
+function HeadlineCard({ item, showPv = false, detailMode = false }) {
   const accent = HEADLINE_ACCENT[item.type] || '#f5a623'
   const media = <ItemMedia item={item} eager />
   const hasMedia = item.type === 'video' || item.type === 'image' || (item.type === 'link' && item.image)
@@ -350,29 +295,33 @@ function HeadlineCard({ item }) {
           className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em]"
           style={{ color: accent, background: `${accent}1a` }}
         >
-          头条 · {FEED_TYPE_META[item.type]?.label || ''}
+          {detailMode ? '灵感' : '头条'} · {FEED_TYPE_META[item.type]?.label || ''}
         </span>
       </div>
       <h2 className="mb-0 mt-3 border-b border-[var(--site-ink)] pb-2 font-serif text-[24px] leading-tight text-[var(--site-ink)] md:text-[28px]">
-        {item.type === 'link' && item.href ? (
-          <a href={item.href} target="_blank" rel="noreferrer" className="no-underline hover:underline">
-            {item.title} ↗
-          </a>
-        ) : (
+        {detailMode ? (
           item.title
+        ) : (
+          <Link href={`/feed/${item.id}`} className="no-underline hover:underline">
+            {item.title}
+          </Link>
         )}
       </h2>
       {item.type === 'quote' ? (
         <blockquote className="mt-4 border-l-2 pl-4 font-serif text-[18px] leading-8 text-[var(--site-ink)]" style={{ borderColor: accent }}>
           {item.quote || item.summary}
         </blockquote>
+      ) : detailMode && item.summary ? (
+        <p className="mb-0 mt-4 whitespace-pre-wrap text-[15px] leading-8 text-[var(--site-muted)] sm:text-base">
+          {item.summary}
+        </p>
       ) : item.summary ? (
         <HeadlineSummary item={item} accent={accent} />
       ) : null}
-      <PromptBlock prompt={item.prompt} />
+      <PromptBlock prompt={item.prompt} expanded={detailMode} />
       {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
       <div className="mt-auto">
-        <MetaRow item={item} />
+        <MetaRow item={item} showPv={showPv} />
       </div>
     </div>
   )
@@ -412,7 +361,7 @@ function VideoCard({ item }) {
           <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
         ) : null}
         <div className="mt-auto">
-          <MetaRow item={item} showDetail maxTags={3} />
+          <MetaRow item={item} maxTags={3} />
         </div>
       </div>
     </article>
@@ -422,11 +371,13 @@ function VideoCard({ item }) {
 function ImageCard({ item }) {
   return (
     <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#6c5ce7]/50">
-      <MediaFrame aspect={item.aspect}>
-        {/* 静态资源，沿用站内 <img> 约定 */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="absolute inset-0 h-full w-full object-cover" src={item.src} alt={item.title} loading="lazy" />
-      </MediaFrame>
+      <Link href={`/feed/${item.id}`} className="block no-underline">
+        <MediaFrame aspect={item.aspect}>
+          {/* 静态资源，沿用站内 <img> 约定 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="absolute inset-0 h-full w-full object-cover" src={item.src} alt={item.title} loading="lazy" />
+        </MediaFrame>
+      </Link>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mt-3 flex items-center gap-2">
           <TypeBadge type={item.type} />
@@ -440,7 +391,7 @@ function ImageCard({ item }) {
           <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
         ) : null}
         <div className="mt-auto">
-          <MetaRow item={item} showDetail maxTags={3} />
+          <MetaRow item={item} maxTags={3} />
         </div>
       </div>
     </article>
@@ -451,23 +402,27 @@ function LinkCard({ item }) {
   return (
     <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors hover:border-[#00a978]/50">
       <div className="flex min-h-0 flex-1 flex-col p-4">
-        <a href={item.href} target="_blank" rel="noreferrer" className="block no-underline">
+        <div className="block">
           {item.image ? (
-            <MediaFrame aspect={item.aspect || '16/9'}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="absolute inset-0 h-full w-full object-cover" src={item.image} alt={item.title} loading="lazy" />
-            </MediaFrame>
+            <Link href={`/feed/${item.id}`} className="block no-underline">
+              <MediaFrame aspect={item.aspect || '16/9'}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="absolute inset-0 h-full w-full object-cover" src={item.image} alt={item.title} loading="lazy" />
+              </MediaFrame>
+            </Link>
           ) : null}
           <div className={`flex items-center gap-2 ${item.image ? 'mt-3' : ''}`}>
             <TypeBadge type={item.type} />
-            <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">{item.title} ↗</h2>
+            <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
+              <Link href={`/feed/${item.id}`} className="no-underline hover:underline">{item.title}</Link>
+            </h2>
           </div>
-        </a>
+        </div>
         {item.summary ? (
           <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
         ) : null}
         <div className="mt-auto">
-          <MetaRow item={item} showDetail maxTags={3} />
+          <MetaRow item={item} maxTags={3} />
         </div>
       </div>
     </article>
@@ -478,14 +433,16 @@ function QuoteCard({ item }) {
   return (
     <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[#f5a623]/50">
       <div className="mb-3"><TypeBadge type={item.type} /></div>
-      <blockquote className="line-clamp-6 border-l-2 border-[#f5a623] pl-4 font-serif text-[17px] leading-8 text-[var(--site-ink)]">
-        {item.quote || item.summary}
-      </blockquote>
+      <Link href={`/feed/${item.id}`} className="block no-underline">
+        <blockquote className="line-clamp-6 border-l-2 border-[#f5a623] pl-4 font-serif text-[17px] leading-8 text-[var(--site-ink)]">
+          {item.quote || item.summary}
+        </blockquote>
+      </Link>
       {item.author ? (
         <p className="mb-0 mt-3 text-right text-[12px] text-[var(--site-muted)]">—— {item.author}</p>
       ) : null}
       <div className="mt-auto">
-        <MetaRow item={item} showDetail maxTags={3} />
+        <MetaRow item={item} maxTags={3} />
       </div>
     </article>
   )
@@ -542,7 +499,7 @@ function LoadMoreTrigger({ hasMore, onLoadMore, remainingCount }) {
   )
 }
 
-export default function FeedClient({ items, typesPresent, featuredItemId = '' }) {
+export default function FeedClient({ items, typesPresent, featuredItemId = '', detailMode = false }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [hashFeaturedItemId, setHashFeaturedItemId] = useState('')
   const [visibleCount, setVisibleCount] = useState(INITIAL_RENDER_COUNT)
@@ -582,6 +539,63 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '' })
 
   const chips = [{ key: 'all', label: '全部' }, ...typesPresent.map((t) => ({ key: t, label: FEED_TYPE_META[t]?.label || t }))]
 
+  if (detailMode) {
+    const selectedIndex = items.findIndex((item) => item.id === featuredItemId)
+    const selected = selectedIndex >= 0 ? items[selectedIndex] : null
+    if (!selected) return null
+    const newer = selectedIndex > 0 ? items[selectedIndex - 1] : null
+    const older = selectedIndex < items.length - 1 ? items[selectedIndex + 1] : null
+    const related = [
+      ...items.filter((item) => item.id !== selected.id && item.type === selected.type),
+      ...items.filter((item) => item.id !== selected.id && item.type !== selected.type),
+    ].slice(0, 3)
+
+    return (
+      <div>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--site-line)] pb-4">
+          <Link href="/feed" className="text-[13px] font-medium text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)]">
+            ← 返回灵感流
+          </Link>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-faint)]">
+            Inspiration Detail · 灵感详情
+          </span>
+        </div>
+
+        <HeadlineCard item={selected} showPv detailMode />
+
+        <nav className="mt-5 grid gap-3 sm:grid-cols-2" aria-label="前后灵感">
+          {newer ? (
+            <Link href={`/feed/${newer.id}`} className="rounded-xl border border-[var(--site-line)] p-4 no-underline transition hover:border-[var(--site-line-strong)]">
+              <span className="text-[11px] text-[var(--site-faint)]">← 更新一条</span>
+              <span className="mt-1 block line-clamp-2 font-serif text-[15px] text-[var(--site-ink)]">{newer.title}</span>
+            </Link>
+          ) : <span />}
+          {older ? (
+            <Link href={`/feed/${older.id}`} className="rounded-xl border border-[var(--site-line)] p-4 text-right no-underline transition hover:border-[var(--site-line-strong)]">
+              <span className="text-[11px] text-[var(--site-faint)]">更早一条 →</span>
+              <span className="mt-1 block line-clamp-2 font-serif text-[15px] text-[var(--site-ink)]">{older.title}</span>
+            </Link>
+          ) : null}
+        </nav>
+
+        {related.length ? (
+          <section className="mt-10 border-t border-[var(--site-line)] pt-6">
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-faint)]">Related</p>
+                <h2 className="mt-1 border-0 p-0 font-serif text-xl text-[var(--site-ink)]">继续看看</h2>
+              </div>
+              <Link href="/feed" className="text-xs text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)]">全部灵感 →</Link>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((item) => <FeedCard key={item.id} item={item} />)}
+            </div>
+          </section>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div>
       {/* 类型筛选 */}
@@ -615,7 +629,9 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '' })
       ) : (
         <div className="space-y-5">
           {/* 首条作为头条，占满整行大版面 */}
-          <HeadlineCard item={visibleItems[0]} />
+          <HeadlineCard
+            item={visibleItems[0]}
+          />
 
           {visibleItems.length > 1 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

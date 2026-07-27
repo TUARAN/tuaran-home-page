@@ -1,6 +1,14 @@
 {
-  "updatedAt": "2026-07-26T23:06:19.021Z",
+  "updatedAt": "2026-07-27T03:16:33.645Z",
   "items": [
+    {
+      "topic": "技巧",
+      "title": "用AI Skill自动生成可协作HTML PPT",
+      "summary": "Vista 基于 bento PPT 改造了一个 Skill，输入内容或主题即可自动生成可编辑、在线演示并支持协作的 HTML PPT。安装指令为 `npx skills add joeseesun/qiaomu-bento-ppt`，推荐使用 Kimi K3 或 Opus 4.8+ 等前端审美好的模型。",
+      "source": "X：Vista (@vista8)",
+      "href": "https://x.com/vista8/status/2081568902241513786",
+      "publishedAt": "2026-07-27T02:34:34.000Z"
+    },
     {
       "topic": "产品",
       "title": "Suno 推出多项新功能，含MIDI导出等",
@@ -40,14 +48,6 @@
       "source": "Hacker News 热门（buzzing.cc 中文翻译）",
       "href": "https://github.com/slvDev/esp32-ai",
       "publishedAt": "2026-07-26T03:54:52.332Z"
-    },
-    {
-      "topic": "产品",
-      "title": "xAI 发布 Grok CLI 并支持 /tutorial 命令",
-      "summary": "下载 Grok Build 并输入 /tutorial\n\nhttp://X.ai/cli",
-      "source": "X：Elon Musk (@elonmusk, xAI)",
-      "href": "https://x.com/elonmusk/status/2081174079969632347",
-      "publishedAt": "2026-07-26T00:25:41.000Z"
     }
   ]
 }

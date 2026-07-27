@@ -304,7 +304,7 @@ function NotificationList({ notifications, markNotificationsRead, onNavigate, em
 }
 
 function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef }) {
-  const { locale } = useLocale()
+  const { locale, setLocale } = useLocale()
   const { resolvedTheme, setTheme } = useTheme()
   const [languageOpen, setLanguageOpen] = useState(false)
   const returnTo = getReturnPath(pathname)

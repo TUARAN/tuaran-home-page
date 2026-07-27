@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   IconBell,
   IconBook2,
+  IconCheck,
   IconChevronRight,
   IconDeviceDesktop,
   IconLanguage,
@@ -226,16 +227,12 @@ function getReturnPath(pathname) {
   return pathname || '/'
 }
 
-function AccountAvatar({ user, isOwner, loading, size = 'sm' }) {
-  return <UserAvatar user={user} size={size} isOwner={isOwner} loading={loading} />
-}
-
 function AccountIdentity({ user, isOwner, loading, size = 'sm' }) {
   const { locale } = useLocale()
   const isLg = size === 'lg'
   return (
     <div className={`flex min-w-0 items-center ${isLg ? 'gap-3' : 'gap-2.5'}`}>
-      <AccountAvatar user={user} isOwner={isOwner} loading={loading} size={size} />
+      <UserAvatar user={user} size={size} isOwner={isOwner} loading={loading} />
       <div className="flex min-w-0 flex-1 items-center">
         <p
           className={[
@@ -309,6 +306,7 @@ function NotificationList({ notifications, markNotificationsRead, onNavigate, em
 function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef }) {
   const { locale } = useLocale()
   const { resolvedTheme, setTheme } = useTheme()
+  const [languageOpen, setLanguageOpen] = useState(false)
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
@@ -316,13 +314,17 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
   const unread = Number(notifications?.unread) || 0
   const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
 
+  useEffect(() => {
+    if (!isOpen) setLanguageOpen(false)
+  }, [isOpen])
+
   if (!loading && !user) {
     return (
       <Link
         href={loginHref}
         className="site-account-button"
       >
-        <AccountAvatar loading={false} />
+        <UserAvatar loading={false} />
         {pick(locale, '登录', 'Sign in')}
       </Link>
     )
@@ -348,7 +350,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
         aria-label={pick(locale, '打开个人菜单', 'Open account menu')}
         className="site-account-avatar-button"
       >
-        <AccountAvatar user={user} isOwner={isOwner} loading={loading} size="md" />
+        <UserAvatar user={user} isOwner={isOwner} loading={loading} size="md" />
       </button>
 
       {isOpen ? (
@@ -389,15 +391,52 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
             <button
               type="button"
               className="site-account-menu-item"
-              onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}
+              onClick={() => setLanguageOpen((value) => !value)}
+              aria-expanded={languageOpen}
+              aria-controls="site-account-language-options"
             >
               <IconLanguage size={20} stroke={1.65} aria-hidden="true" />
               <span>{pick(locale, '语言', 'Language')}</span>
               <span className="ml-auto flex items-center gap-1.5 text-xs text-[var(--site-faint)]">
                 {locale === 'en' ? 'English' : '中文'}
-                <IconChevronRight size={16} stroke={1.7} aria-hidden="true" />
+                <IconChevronRight
+                  size={16}
+                  stroke={1.7}
+                  className={`transition-transform ${languageOpen ? 'rotate-90' : ''}`}
+                  aria-hidden="true"
+                />
               </span>
             </button>
+            {languageOpen ? (
+              <div id="site-account-language-options" className="mx-2 mb-1 grid grid-cols-2 gap-1 rounded-lg bg-[var(--site-panel)] p-1">
+                {[
+                  { id: 'zh', label: '中文' },
+                  { id: 'en', label: 'English' },
+                ].map((option) => {
+                  const selected = locale === option.id
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => {
+                        setLocale(option.id)
+                        setLanguageOpen(false)
+                      }}
+                      aria-pressed={selected}
+                      className={[
+                        'flex items-center justify-between rounded-md px-2.5 py-2 text-left text-[12px] transition',
+                        selected
+                          ? 'bg-[var(--site-panel-strong)] font-semibold text-[var(--site-ink)] shadow-sm'
+                          : 'text-[var(--site-muted)] hover:bg-[var(--site-panel-strong)] hover:text-[var(--site-ink)]',
+                      ].join(' ')}
+                    >
+                      {option.label}
+                      {selected ? <IconCheck size={14} stroke={2} aria-hidden="true" /> : null}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
             <button
               type="button"
               className="site-account-menu-item"
@@ -457,7 +496,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
     return (
       <div className="site-mobile-card mb-4 flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-3">
         <div className="flex items-center gap-3">
-          <AccountAvatar loading={false} />
+          <UserAvatar loading={false} />
           <div>
             <p className="site-menu-title text-[13.5px] font-semibold">{pick(locale, '未登录', 'Not signed in')}</p>
             <p className="site-menu-desc mt-0.5 text-[11.5px]">{pick(locale, '登录后可评论 / 私域', 'Sign in to comment / private area')}</p>

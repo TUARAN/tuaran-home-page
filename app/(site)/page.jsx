@@ -295,47 +295,6 @@ function ArrowIcon() {
   )
 }
 
-function HomeFeaturedLinkItem({ item }) {
-  const content = (
-    <>
-      <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
-        {item.isLatest ? <span className="home-badge home-badge-latest"><T zh="最新" en="Latest" /></span> : null}
-        <span className={SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column}>
-          {item.sectionLabel}
-        </span>
-        {item.tagLabel ? <span className="home-badge home-badge-muted">{item.tagLabel}</span> : null}
-        {item.date ? <time className="home-item-date">{item.date}</time> : null}
-      </div>
-      <p className="mb-0 line-clamp-2 text-[18px] font-semibold leading-7 text-[#191813] transition-colors group-hover:text-[#6c4c1f] dark:text-[#f2f3ed] dark:group-hover:text-[#d5d8c4] md:text-[20px] md:leading-8">
-        {item.title}
-      </p>
-      {item.summary ? (
-        <p className="mb-0 mt-2 line-clamp-2 text-[14px] leading-7 text-[#686a5f] dark:text-[#9ca6b4] md:text-[15px]">
-          {item.summary}
-        </p>
-      ) : null}
-    </>
-  )
-
-  const className = 'home-reading-item group no-underline'
-  if (item.external || isExternalHref(item.href)) {
-    return (
-      <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`}>
-        {content}
-      </a>
-    )
-  }
-  return (
-    <Link href={item.href} className={className}>
-      {content}
-    </Link>
-  )
-}
-
-function FeaturedReading({ items }) {
-  return <HomeFeaturedReadingClient catalog={items} />
-}
-
 function ClassicFeaturedLinkItem({ item }) {
   const className =
     'group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f4f0f8] dark:hover:bg-[#18202a]'
@@ -919,7 +878,7 @@ function PolishedHomePage({ featuredPicks }) {
         <HotTickerBar />
       </div>
       <div className="home-main-grid">
-        <FeaturedReading items={featuredPicks} />
+        <HomeFeaturedReadingClient catalog={featuredPicks} />
 
         <aside className="home-side-stack">
           <ProfileCard />

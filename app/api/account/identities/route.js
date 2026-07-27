@@ -1,6 +1,5 @@
 import { getUserFromRequest } from '../../../../lib/edgeSession'
 import {
-  listAccountGuestIdentities,
   listAccountIdentities,
   unbindIdentityFromUser,
 } from '../../../../lib/accountIdentities'
@@ -11,11 +10,8 @@ export const dynamic = 'force-dynamic'
 export async function GET(req) {
   const user = await getUserFromRequest(req)
   if (!user?.id) return Response.json({ error: 'LOGIN_REQUIRED' }, { status: 401 })
-  const [identities, guestIdentities] = await Promise.all([
-    listAccountIdentities(user.id),
-    listAccountGuestIdentities(user.id),
-  ])
-  return Response.json({ account: { platformId: user.id }, identities, guestIdentities })
+  const identities = await listAccountIdentities(user.id)
+  return Response.json({ account: { platformId: user.id }, identities })
 }
 
 export async function DELETE(req) {

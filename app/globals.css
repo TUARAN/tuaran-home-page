@@ -1077,11 +1077,11 @@
   }
 
   .home-reading-item {
-    @apply block px-0 py-6 first:pt-0 last:pb-0;
+    @apply block px-0 py-4 first:pt-0 last:pb-0;
   }
 
   .home-reading-meta {
-    @apply mb-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5;
+    @apply mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1;
   }
 
   .home-badge {
@@ -2249,6 +2249,108 @@
     border-color: color-mix(in srgb, var(--site-accent) 50%, transparent);
     background-color: color-mix(in srgb, var(--site-panel-strong) 48%, transparent);
     color: var(--site-ink);
+  }
+
+  .site-account-notification-button {
+    @apply relative inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors;
+    color: var(--site-muted);
+  }
+
+  .site-account-notification-button > span {
+    position: absolute;
+    right: -0.15rem;
+    top: -0.15rem;
+  }
+
+  .site-account-notification-button:hover {
+    background-color: color-mix(in srgb, var(--site-panel-strong) 58%, transparent);
+    color: var(--site-ink);
+  }
+
+  .site-account-avatar-button {
+    @apply inline-flex rounded-full transition-transform hover:-translate-y-0.5;
+  }
+
+  .site-account-notification-button:focus-visible,
+  .site-account-avatar-button:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--site-accent) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  .site-account-popover {
+    border-color: color-mix(in srgb, var(--site-line-strong) 82%, transparent);
+    background-color: var(--site-panel-strong);
+    color: var(--site-ink);
+    box-shadow: 0 18px 40px rgba(39, 34, 27, 0.16), 0 3px 10px rgba(39, 34, 27, 0.08);
+  }
+
+  .dark .site-account-popover {
+    border-color: var(--site-line-strong);
+    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.45);
+  }
+
+  .site-account-name {
+    font-size: 1.15rem;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+  }
+
+  .site-account-section {
+    border-top: 1px solid var(--site-line);
+    padding: 0.55rem 0.65rem;
+  }
+
+  .site-account-menu-item {
+    @apply flex w-full items-center gap-4 rounded-xl px-3.5 py-3 text-left text-[16px] font-medium no-underline transition-colors;
+    color: var(--site-ink);
+  }
+
+  .site-account-menu-item:visited {
+    color: var(--site-ink);
+  }
+
+  .site-account-menu-item:hover {
+    background-color: color-mix(in srgb, var(--site-line) 52%, transparent);
+    color: var(--site-ink);
+    text-decoration: none;
+  }
+
+  .site-account-menu-item-danger,
+  .site-account-menu-item-danger:visited {
+    color: #ef4444;
+  }
+
+  .site-account-menu-item-danger:hover {
+    background-color: color-mix(in srgb, #ef4444 9%, transparent);
+    color: #dc2626;
+  }
+
+  .site-account-popover .site-notification-item {
+    color: var(--site-ink);
+  }
+
+  .site-account-popover .site-notification-item:visited,
+  .site-account-popover .site-notification-item:hover {
+    color: var(--site-ink);
+  }
+
+  .site-account-popover .site-notification-item:hover {
+    border-color: var(--site-line);
+    background-color: color-mix(in srgb, var(--site-line) 38%, transparent);
+  }
+
+  .site-account-popover .site-notification-item-unread {
+    border-color: color-mix(in srgb, var(--site-accent) 24%, var(--site-line));
+    background-color: color-mix(in srgb, var(--site-accent) 7%, transparent);
+  }
+
+  .site-account-popover .site-notification-title {
+    color: var(--site-ink);
+  }
+
+  .site-account-popover .site-notification-body,
+  .site-account-popover .site-notification-time {
+    color: var(--site-faint);
   }
 
   .site-dropdown-panel {

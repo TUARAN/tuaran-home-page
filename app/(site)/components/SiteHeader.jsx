@@ -2,7 +2,19 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  IconBell,
+  IconBook2,
+  IconChevronRight,
+  IconDeviceDesktop,
+  IconLanguage,
+  IconLayoutDashboard,
+  IconLogout,
+  IconMessageCircle,
+  IconUser,
+} from '@tabler/icons-react'
 
 import SettingsButton from './SettingsButton'
 import UserAvatar from './UserAvatar'
@@ -296,6 +308,7 @@ function NotificationList({ notifications, markNotificationsRead, onNavigate, em
 
 function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef }) {
   const { locale } = useLocale()
+  const { resolvedTheme, setTheme } = useTheme()
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
@@ -316,77 +329,118 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
   }
 
   return (
-    <div className="relative" ref={accountRef}>
+    <div className="relative flex items-center gap-1.5" ref={accountRef}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={pick(locale, '查看通知', 'View notifications')}
+        aria-expanded={isOpen}
+        className="site-account-notification-button"
+      >
+        <IconBell size={21} stroke={1.7} aria-hidden="true" />
+        <NotificationBadge count={unread} />
+      </button>
       <button
         type="button"
         onClick={onToggle}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        className="site-account-button px-2"
+        aria-label={pick(locale, '打开个人菜单', 'Open account menu')}
+        className="site-account-avatar-button"
       >
-        <AccountAvatar user={user} isOwner={isOwner} loading={loading} />
-        <span>{loading ? pick(locale, '检查中', 'Checking…') : getAccountId(user)}</span>
-        <NotificationBadge count={unread} />
-        <ChevronDown />
+        <AccountAvatar user={user} isOwner={isOwner} loading={loading} size="md" />
       </button>
 
       {isOpen ? (
-        <div className="site-dropdown-panel absolute right-0 top-full z-[130] mt-2 w-[min(92vw,360px)] overflow-hidden rounded-2xl border">
-          <div className="site-dropdown-strip border-b px-3.5 py-3">
-            <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
+        <div className="site-account-popover absolute right-0 top-full z-[130] mt-3 w-[min(92vw,382px)] overflow-hidden rounded-[18px] border">
+          <div className="site-account-name px-6 py-5">
+            {loading
+              ? pick(locale, '检查登录状态…', 'Checking sign-in…')
+              : `@${String(getAccountId(user)).replace(/^@/, '')}`}
           </div>
-          <div className="border-b border-[var(--site-line)] px-2 py-2">
-            <div className="mb-1.5 flex items-center justify-between px-1.5">
-              <p className="site-menu-desc mb-0 font-mono text-[10px] uppercase tracking-[0.16em]">
-                {pick(locale, '通知', 'Notifications')}
-              </p>
-              <NotificationBadge count={unread} />
+          <div className="site-account-section">
+            <AccountPopoverLink href="/account" onClick={onClose} icon={IconUser}>
+              {pick(locale, '个人资料', 'Profile')}
+            </AccountPopoverLink>
+            <AccountPopoverLink href="/community" onClick={onClose} icon={IconMessageCircle}>
+              {pick(locale, '讨论中心', 'Discussion hub')}
+            </AccountPopoverLink>
+            <AccountPopoverLink href="/site" onClick={onClose} icon={IconBook2}>
+              {pick(locale, '帮助与文档', 'Help & documentation')}
+            </AccountPopoverLink>
+          </div>
+          {notifications?.items?.length ? (
+            <div className="site-account-section px-3 py-3">
+              <div className="mb-1 flex items-center justify-between px-2">
+                <p className="m-0 text-xs text-[var(--site-faint)]">
+                  {pick(locale, '最近通知', 'Recent notifications')}
+                </p>
+                <NotificationBadge count={unread} />
+              </div>
+              <NotificationList
+                notifications={notifications}
+                markNotificationsRead={markNotificationsRead}
+                onNavigate={onClose}
+                emptyLabel={pick(locale, '暂无新的评论回复。', 'No comment replies yet.')}
+              />
             </div>
-            <NotificationList
-              notifications={notifications}
-              markNotificationsRead={markNotificationsRead}
-              onNavigate={onClose}
-              emptyLabel={pick(locale, '暂无新的评论回复。', 'No comment replies yet.')}
-            />
+          ) : null}
+          <div className="site-account-section">
+            <button
+              type="button"
+              className="site-account-menu-item"
+              onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}
+            >
+              <IconLanguage size={25} stroke={1.65} aria-hidden="true" />
+              <span>{pick(locale, '语言', 'Language')}</span>
+              <span className="ml-auto flex items-center gap-2 text-sm text-[var(--site-faint)]">
+                {locale === 'en' ? 'English' : '中文'}
+                <IconChevronRight size={20} stroke={1.7} aria-hidden="true" />
+              </span>
+            </button>
+            <button
+              type="button"
+              className="site-account-menu-item"
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            >
+              <IconDeviceDesktop size={25} stroke={1.65} aria-hidden="true" />
+              <span>{pick(locale, '主题', 'Theme')}</span>
+              <span className="ml-auto flex items-center gap-2 text-sm text-[var(--site-faint)]">
+                {resolvedTheme === 'dark' ? pick(locale, '深色', 'Dark') : pick(locale, '浅色', 'Light')}
+                <IconChevronRight size={20} stroke={1.7} aria-hidden="true" />
+              </span>
+            </button>
           </div>
-          <div className="px-1.5 py-1.5">
+          <div className="site-account-section">
             {showAdminLink ? (
-              <Link
+              <AccountPopoverLink
                 href={SITE_ADMIN_NAV_LINK.href}
                 onClick={onClose}
-                className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+                icon={IconLayoutDashboard}
               >
-                <span>{navLabel(SITE_ADMIN_NAV_LINK, locale)}</span>
-                <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
-              </Link>
+                {navLabel(SITE_ADMIN_NAV_LINK, locale)}
+              </AccountPopoverLink>
             ) : null}
-            <Link
-              href="/account"
-              onClick={onClose}
-              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
-            >
-              <span>{pick(locale, '账号中心', 'Account center')}</span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
-            </Link>
-            <Link
-              href="/community"
-              onClick={onClose}
-              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
-            >
-              <span>{pick(locale, '讨论中心', 'Discussion hub')}</span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
-            </Link>
             <a
               href={logoutHref}
-              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+              className="site-account-menu-item site-account-menu-item-danger"
             >
+              <IconLogout size={25} stroke={1.65} aria-hidden="true" />
               <span>{pick(locale, '退出登录', 'Sign out')}</span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
             </a>
           </div>
         </div>
       ) : null}
     </div>
+  )
+}
+
+function AccountPopoverLink({ href, onClick, icon: Icon, children }) {
+  return (
+    <Link href={href} onClick={onClick} className="site-account-menu-item">
+      <Icon size={25} stroke={1.65} aria-hidden="true" />
+      <span>{children}</span>
+    </Link>
   )
 }
 
@@ -615,7 +669,7 @@ export default function SiteHeader() {
                 </div>
               ))}
             </nav>
-            <SettingsButton />
+            {!account.loading && !account.user ? <SettingsButton /> : null}
             <AccountMenu
               account={account}
               isOpen={accountOpen}

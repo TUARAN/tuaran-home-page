@@ -58,8 +58,8 @@ function FeaturedLink({ item, isPinned }) {
         {item.tagLabel ? <span className="home-badge home-badge-muted">{item.tagLabel}</span> : null}
         {item.date ? <time className="home-item-date">{item.date}</time> : null}
       </div>
-      <p className="mb-0 line-clamp-2 text-[18px] font-semibold leading-7 text-[#191813] transition-colors group-hover:text-[#6c4c1f] dark:text-[#f2f3ed] dark:group-hover:text-[#d5d8c4] md:text-[20px] md:leading-8">{item.title}</p>
-      {item.summary ? <p className="mb-0 mt-2 line-clamp-2 text-[14px] leading-7 text-[#686a5f] dark:text-[#9ca6b4] md:text-[15px]">{item.summary}</p> : null}
+      <p className="mb-0 line-clamp-2 text-[18px] font-semibold leading-7 text-[#191813] transition-colors group-hover:text-[#6c4c1f] dark:text-[#f2f3ed] dark:group-hover:text-[#d5d8c4] md:text-[20px] md:leading-7">{item.title}</p>
+      {item.summary ? <p className="mb-0 mt-1.5 line-clamp-2 text-[14px] leading-6 text-[#686a5f] dark:text-[#9ca6b4] md:text-[15px]">{item.summary}</p> : null}
     </>
   )
   const className = 'home-reading-item group no-underline'

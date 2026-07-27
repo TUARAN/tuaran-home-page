@@ -2290,18 +2290,18 @@
   }
 
   .site-account-name {
-    font-size: 1.15rem;
-    font-weight: 650;
-    letter-spacing: -0.015em;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0;
   }
 
   .site-account-section {
     border-top: 1px solid var(--site-line);
-    padding: 0.55rem 0.65rem;
+    padding: 0.35rem 0.45rem;
   }
 
   .site-account-menu-item {
-    @apply flex w-full items-center gap-4 rounded-xl px-3.5 py-3 text-left text-[16px] font-medium no-underline transition-colors;
+    @apply flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[14px] font-medium leading-5 no-underline transition-colors;
     color: var(--site-ink);
   }
 

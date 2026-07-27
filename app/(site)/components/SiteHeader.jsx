@@ -337,7 +337,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
         aria-expanded={isOpen}
         className="site-account-notification-button"
       >
-        <IconBell size={21} stroke={1.7} aria-hidden="true" />
+        <IconBell size={19} stroke={1.7} aria-hidden="true" />
         <NotificationBadge count={unread} />
       </button>
       <button
@@ -352,8 +352,8 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
       </button>
 
       {isOpen ? (
-        <div className="site-account-popover absolute right-0 top-full z-[130] mt-3 w-[min(92vw,382px)] overflow-hidden rounded-[18px] border">
-          <div className="site-account-name px-6 py-5">
+        <div className="site-account-popover absolute right-0 top-full z-[130] mt-2 w-[min(92vw,320px)] overflow-hidden rounded-[14px] border">
+          <div className="site-account-name px-4 py-3">
             {loading
               ? pick(locale, '检查登录状态…', 'Checking sign-in…')
               : `@${String(getAccountId(user)).replace(/^@/, '')}`}
@@ -365,7 +365,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
             <AccountPopoverLink href="/community" onClick={onClose} icon={IconMessageCircle}>
               {pick(locale, '讨论中心', 'Discussion hub')}
             </AccountPopoverLink>
-            <AccountPopoverLink href="/site" onClick={onClose} icon={IconBook2}>
+            <AccountPopoverLink href="/help" onClick={onClose} icon={IconBook2}>
               {pick(locale, '帮助与文档', 'Help & documentation')}
             </AccountPopoverLink>
           </div>
@@ -391,11 +391,11 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               className="site-account-menu-item"
               onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}
             >
-              <IconLanguage size={25} stroke={1.65} aria-hidden="true" />
+              <IconLanguage size={20} stroke={1.65} aria-hidden="true" />
               <span>{pick(locale, '语言', 'Language')}</span>
-              <span className="ml-auto flex items-center gap-2 text-sm text-[var(--site-faint)]">
+              <span className="ml-auto flex items-center gap-1.5 text-xs text-[var(--site-faint)]">
                 {locale === 'en' ? 'English' : '中文'}
-                <IconChevronRight size={20} stroke={1.7} aria-hidden="true" />
+                <IconChevronRight size={16} stroke={1.7} aria-hidden="true" />
               </span>
             </button>
             <button
@@ -403,11 +403,11 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               className="site-account-menu-item"
               onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             >
-              <IconDeviceDesktop size={25} stroke={1.65} aria-hidden="true" />
+              <IconDeviceDesktop size={20} stroke={1.65} aria-hidden="true" />
               <span>{pick(locale, '主题', 'Theme')}</span>
-              <span className="ml-auto flex items-center gap-2 text-sm text-[var(--site-faint)]">
+              <span className="ml-auto flex items-center gap-1.5 text-xs text-[var(--site-faint)]">
                 {resolvedTheme === 'dark' ? pick(locale, '深色', 'Dark') : pick(locale, '浅色', 'Light')}
-                <IconChevronRight size={20} stroke={1.7} aria-hidden="true" />
+                <IconChevronRight size={16} stroke={1.7} aria-hidden="true" />
               </span>
             </button>
           </div>
@@ -425,7 +425,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               href={logoutHref}
               className="site-account-menu-item site-account-menu-item-danger"
             >
-              <IconLogout size={25} stroke={1.65} aria-hidden="true" />
+              <IconLogout size={20} stroke={1.65} aria-hidden="true" />
               <span>{pick(locale, '退出登录', 'Sign out')}</span>
             </a>
           </div>
@@ -438,7 +438,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
 function AccountPopoverLink({ href, onClick, icon: Icon, children }) {
   return (
     <Link href={href} onClick={onClick} className="site-account-menu-item">
-      <Icon size={25} stroke={1.65} aria-hidden="true" />
+      <Icon size={20} stroke={1.65} aria-hidden="true" />
       <span>{children}</span>
     </Link>
   )

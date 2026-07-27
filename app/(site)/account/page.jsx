@@ -1,8 +1,8 @@
 import AccountClient from './AccountClient'
 
 export const metadata = {
-  title: '账号中心',
-  description: '管理 2aran.com 账号已绑定的登录方式。',
+  title: '个人资料',
+  description: '查看 2aran.com 账号资料、燃币余额、已解锁资源，并管理登录方式与授权。',
   robots: { index: false, follow: false },
 }
 

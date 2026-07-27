@@ -31,12 +31,18 @@ const KEPT_SITE_ENTRIES = new Set([
 // SessionProvider always calls me/nav-config and calls notifications for a
 // signed-in owner. Auth routes stay available so preview/custom-domain auth
 // flows keep working without depending on the public Pages project.
+// Keep only the interactive notifications endpoint; the weekly-summary child
+// is a public-site scheduled endpoint and must stay out of the Admin Worker.
+const KEPT_API_DIRECTORY_ENTRIES = new Map([
+  ['notifications', new Set(['route.js'])],
+])
+
 const KEPT_API_ENTRIES = new Set([
   'admin',
   'auth',
   'me',
   'nav-config',
-  'notifications',
+  ...KEPT_API_DIRECTORY_ENTRIES.keys(),
   'private-records',
   'site-settings',
 ])
@@ -134,6 +140,18 @@ function excludePublicPaths() {
       path.join(stashRoot, 'api', name),
       `app/api/${name}`,
     )
+  }
+
+  for (const [directory, keptEntries] of KEPT_API_DIRECTORY_ENTRIES) {
+    for (const name of listEntries(path.join(apiRoot, directory))) {
+      if (keptEntries.has(name)) continue
+      const relativePath = path.join(directory, name)
+      moveEntry(
+        path.join(apiRoot, relativePath),
+        path.join(stashRoot, 'api', relativePath),
+        `app/api/${relativePath}`,
+      )
+    }
   }
 
   moveEntry(webLlmRoot, path.join(stashRoot, 'web-llm'), 'app/(web-llm)')

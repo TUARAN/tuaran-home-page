@@ -45,6 +45,7 @@ export function buildKnowledgeItems() {
       date: article.date || '',
       sortKey: researchSortKey(article.date),
       href: isExternalHref(article.href) ? article.href : path,
+      ...(!isExternalHref(article.href) ? { pvKey: `article/${article.slug}`, pv: null } : {}),
     }
   })
 

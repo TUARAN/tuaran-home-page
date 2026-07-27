@@ -11,7 +11,7 @@ function formatPv(pv) {
 
 /**
  * 阅读统计探针：挂载时给 /api/research-pv 记一次访问。
- * 用于资料/资源主题页与灵感流（调研文章用 ResearchPvCounter）。
+ * 统一用于精选文章、调研、资料、资源主题页与灵感流。
  *
  * - 默认 display=false：无界面，只上报、渲染 null（保持旧用法不变）。
  * - display=true：把返回的阅读量渲染成「阅读量 N」，用于资源页页头露出数字。
@@ -19,8 +19,10 @@ function formatPv(pv) {
  * 去重：服务端按「访客指纹 + 1 小时桶」幂等；客户端再用 sessionStorage 10 秒节流，避免同会话刷量。
  * 节流命中时若需展示数字，改用只读 GET 取当前计数，绝不重复 POST 刷量。
  */
-export default function ContentPvBeacon({ category, slug, display = false }) {
-  const [pv, setPv] = useState(null)
+export default function ContentPvBeacon({ category, slug, display = false, initialPv }) {
+  const hasInitialPv = Number.isFinite(initialPv)
+  const [pv, setPv] = useState(hasInitialPv ? Math.max(0, initialPv) : null)
+  const [loading, setLoading] = useState(!hasInitialPv)
 
   useEffect(() => {
     if (!category || !slug) return
@@ -66,8 +68,12 @@ export default function ContentPvBeacon({ category, slug, display = false }) {
           if (!cancelled && typeof value === 'number') setPv(value)
         })
         .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
     } catch {
       // 统计失败不影响页面
+      setLoading(false)
     }
 
     return () => {
@@ -77,5 +83,19 @@ export default function ContentPvBeacon({ category, slug, display = false }) {
 
   if (!display) return null
 
-  return <span>阅读量 {pv === null ? '…' : formatPv(pv)}</span>
+  if (loading && pv === null) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span>阅读量</span>
+        <span
+          className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#bbb] border-t-transparent dark:border-gray-500 dark:border-t-transparent"
+          aria-hidden="true"
+        />
+        <span className="sr-only">阅读量加载中</span>
+      </span>
+    )
+  }
+
+  if (pv === null) return <span>阅读量 --</span>
+  return <span>阅读量 {formatPv(pv)}</span>
 }

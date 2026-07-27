@@ -1,11 +1,11 @@
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { articles } from '../articlesData'
+import ArticleDetailHeader from '../../components/ArticleDetailHeader'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
-import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ArticleEngagementPanel from '../../components/ArticleEngagementPanel'
 import ArticleToc from '../../components/ArticleToc'
@@ -97,6 +97,11 @@ function articleContentToMarkdown(article, articleUrl) {
 
 function normalizeArticleMarkdown(markdown) {
   return String(markdown || '').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+}
+
+function readingMinutes(text) {
+  const length = String(text || '').replace(/\s+/g, '').length
+  return Math.max(1, Math.ceil(length / 500))
 }
 
 export async function generateMetadata({ params }) {
@@ -265,75 +270,67 @@ export default async function ArticleDetailPage({ params }) {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-8">
       <Script id={`article-jsonld-${article.slug}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(articleStructuredData)}
       </Script>
 
+      <ArticleDetailHeader
+        categoryHref="/articles?tab=posts"
+        categoryLabel="精选文章"
+        dateLabel={article.date}
+        dateTime={publishedTime || article.date}
+        readingMinutes={readingMinutes(articleMarkdown)}
+        pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
+        metaExtras={article.sourceUrl || isExternalHref(article.href) ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <a
+              href={article.sourceUrl || article.href}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-4"
+            >
+              {article.sourceUrl ? '同步来源' : '原文'}
+            </a>
+          </>
+        ) : null}
+        actions={(
+          <ArticleHeaderActions
+            title={article.title}
+            text={article.summary}
+            url={articleUrl}
+            className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
+          >
+            <CopyMarkdownButton markdown={articleMarkdown} />
+            <DistributeContentButton
+              title={article.title}
+              summary={article.summary}
+              markdown={articleMarkdown}
+              images={article.cover ? [article.cover] : []}
+              url={articleUrl}
+              category="article"
+              slug={article.slug}
+              tags={article.tags || []}
+              kindLabel="文章"
+              allowArticle
+            />
+          </ArticleHeaderActions>
+        )}
+        title={article.title}
+        summary={article.summary}
+        summaryLabel="TL;DR"
+        tags={article.tags || []}
+      />
+
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-        <main className="min-w-0 lg:contents">
+        <main className="min-w-0">
       {enableDiaryToc ? (
         <>
-          <header className="mb-8 min-w-0 border-b border-[#eee] pb-2 dark:border-gray-800 lg:col-span-2 lg:mb-0">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h1 className="text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
-                <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
-                <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
-                  <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                    返回列表
-                  </Link>
-                  {article.sourceUrl ? (
-                    <a
-                      href={article.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                    >
-                      掘金同步来源
-                    </a>
-                  ) : isExternalHref(article.href) ? (
-                    <a
-                      href={article.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                    >
-                      原文阅读
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-              <ArticleHeaderActions
-                title={article.title}
-                text={article.summary}
-                url={articleUrl}
-                className="mt-3 shrink-0 sm:mt-0"
-              >
-                <CopyMarkdownButton markdown={articleMarkdown} />
-                <DistributeContentButton
-                    title={article.title}
-                    summary={article.summary}
-                    markdown={articleMarkdown}
-                    images={article.cover ? [article.cover] : []}
-                    url={articleUrl}
-                    category="article"
-                    slug={article.slug}
-                    tags={[]}
-                    kindLabel="文章"
-                    allowArticle
-                />
-              </ArticleHeaderActions>
-            </div>
-          </header>
-
           <div className="min-w-0 flex flex-col gap-6 md:flex-row">
             <ArticleToc items={tocItems} title="目录" />
 
             <div className="min-w-0 flex-1">
-              <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
-                <AuthorByline />
-              </aside>
               {article.cover ? (
                 <div className="mb-8 max-w-3xl mx-auto">
                   <Image
@@ -405,68 +402,9 @@ export default async function ArticleDetailPage({ params }) {
         </>
       ) : (
         <>
-          <header className="mb-8 min-w-0 border-b border-[#eee] pb-2 dark:border-gray-800 lg:col-span-2 lg:mb-0">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h1 className="mt-2 text-2xl text-[#444] dark:text-gray-200 leading-snug">{article.title}</h1>
-                <div className="mt-2 text-sm text-[#999] dark:text-gray-400">{article.date}</div>
-                <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{article.summary}</p>
-                <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
-                  <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                    返回列表
-                  </Link>
-                  {article.sourceUrl ? (
-                    <a
-                      href={article.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                    >
-                      掘金同步来源
-                    </a>
-                  ) : isExternalHref(article.href) ? (
-                    <a
-                      href={article.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="opacity-80 hover:opacity-100 underline underline-offset-4"
-                    >
-                      原文阅读
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-              <ArticleHeaderActions
-                title={article.title}
-                text={article.summary}
-                url={articleUrl}
-                className="mt-3 shrink-0 sm:mt-0"
-              >
-                <CopyMarkdownButton markdown={articleMarkdown} />
-                <DistributeContentButton
-                    title={article.title}
-                    summary={article.summary}
-                    markdown={articleMarkdown}
-                    images={article.cover ? [article.cover] : []}
-                    url={articleUrl}
-                    category="article"
-                    slug={article.slug}
-                    tags={[]}
-                    kindLabel="文章"
-                    allowArticle
-                />
-              </ArticleHeaderActions>
-            </div>
-          </header>
-
           <div className="min-w-0 flex flex-col gap-6 md:flex-row">
             <ArticleToc items={tocItems} />
             <div className="min-w-0 flex-1">
-          <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
-            <AuthorByline />
-          </aside>
-
-
           {article.cover ? (
             <div className="mb-8 max-w-3xl mx-auto">
               <Image

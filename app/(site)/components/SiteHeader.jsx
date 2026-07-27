@@ -289,7 +289,7 @@ function NotificationList({ notifications, markNotificationsRead, onNavigate, em
           >
             <span className="min-w-0 flex-1">
               <span className="site-notification-title">
-                {item.actorUserName || '有人'} 回复了你
+                {item.title || `${item.actorUserName || '有人'} 回复了你`}
               </span>
               <span className="site-notification-body">
                 {item.articleTitle ? `${item.articleTitle} · ` : ''}{item.messageExcerpt || '查看详情'}

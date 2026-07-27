@@ -78,6 +78,8 @@ function manualEntriesToItems(entries, existingItems) {
     const pvKey =
       entry.type === 'research' && MANUAL_RESEARCH_TAG[entry.category] && entry.slug
         ? `${entry.category}/${entry.slug}`
+        : entry.type === 'article' && entry.slug
+        ? `article/${entry.slug}`
         : entry.type === 'resource' && entry.slug
         ? `resource/${entry.slug}`
         : ''

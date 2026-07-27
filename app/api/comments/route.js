@@ -9,6 +9,8 @@ import { getUserFromRequest } from '../../../lib/edgeSession'
 import { getUserRole } from '../../../lib/userDirectory'
 import { GUEST_USER_PREFIX, getOrIssueGuest, guestDisplayName } from '../../../lib/guestSession'
 import { awardComment } from '../../../lib/points'
+import { isOwnerUser } from '../../../lib/ownerAuth'
+import { notifyOwner } from '../../../lib/siteNotifications'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -190,6 +192,25 @@ export async function POST(req) {
         )
         .run()
         .catch(() => {})
+    }
+
+    if (insert?.id != null) {
+      await notifyOwner(db, {
+        type: 'content_comment',
+        actor: {
+          id: userId,
+          provider: userProvider,
+          name: userName,
+          image: userImage,
+          isOwner: !isGuest && isOwnerUser(user),
+        },
+        articleKey,
+        commentId: insert.id,
+        replyToCommentId: replyTarget?.id || 0,
+        messageExcerpt: commentExcerpt(message),
+        createdAt,
+        skipRecipientUserId: replyTarget?.user_id || '',
+      }).catch(() => {})
     }
 
     // 有效评论奖励燃币（仅登录用户，游客零燃币）；best-effort，不阻断评论。

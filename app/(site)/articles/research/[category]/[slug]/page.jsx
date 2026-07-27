@@ -15,8 +15,10 @@ import {
 } from '../../../../../../lib/research/loader'
 import { avatarAbsoluteUrl } from '../../../../../../lib/avatar'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
-import { AUTHOR_INTRO_MARKDOWN, AuthorByline } from '../../../../components/ArticleAuthorIntro'
+import { AUTHOR_INTRO_MARKDOWN } from '../../../../components/ArticleAuthorIntro'
+import ArticleDetailHeader from '../../../../components/ArticleDetailHeader'
 import ArticleComments from '../../../../components/ArticleComments'
+import ContentPvBeacon from '../../../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import ArticleEngagementPanel from '../../../../components/ArticleEngagementPanel'
 import ArticleHeaderActions from '../../../../components/ArticleHeaderActions'
@@ -26,7 +28,6 @@ import DownloadPptButton from './DownloadPptButton'
 import EncryptedArticle from './EncryptedArticle'
 import ResearchBody from './ResearchBody'
 import RanbiPaywall from '../../../../components/RanbiPaywall'
-import ResearchPvCounter from './ResearchPvCounter'
 import LifeTrafficTest from './LifeTrafficTest'
 import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 
@@ -223,18 +224,22 @@ export default async function ResearchDetailPage({ params }) {
         {JSON.stringify(breadcrumbData)}
       </Script>
 
-      <header className="research-article-header mb-8 border-b pb-4">
-        <div className="research-article-meta flex flex-wrap items-center gap-2 text-xs">
-          <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-            文章与分析
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link
-            href={categoryHref}
-            className="opacity-80 hover:opacity-100 underline underline-offset-4"
-          >
-            {categoryLabel}
-          </Link>
+      <ArticleDetailHeader
+        categoryHref={categoryHref}
+        categoryLabel={categoryLabel}
+        dateLabel={entry.dateLabel || entry.date}
+        dateTime={entry.dateTimeIso || entry.date}
+        readingMinutes={entry.readingMinutes}
+        pvNode={(
+          <ContentPvBeacon
+            category={entry.category}
+            slug={entry.slug}
+            display
+            initialPv={entry.pv}
+          />
+        )}
+        metaExtras={(
+          <>
           {entry.companyType && COMPANY_TYPE_META[entry.companyType] ? (
             <>
               <span aria-hidden="true">·</span>
@@ -265,12 +270,6 @@ export default async function ResearchDetailPage({ params }) {
               </Link>
             </>
           ) : null}
-          {entry.dateLabel || entry.date ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <time dateTime={entry.dateTimeIso || entry.date}>{entry.dateLabel || entry.date}</time>
-            </>
-          ) : null}
           {entry.version ? (
             <>
               <span aria-hidden="true">·</span>
@@ -287,14 +286,6 @@ export default async function ResearchDetailPage({ params }) {
               </span>
             </>
           ) : null}
-          {entry.readingMinutes ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{entry.readingMinutes} min read</span>
-            </>
-          ) : null}
-          <span aria-hidden="true">·</span>
-          <ResearchPvCounter category={entry.category} slug={entry.slug} initialPv={entry.pv} />
           {entry.showAssistance && assistance && !isEncrypted ? (
             <>
               <span aria-hidden="true">·</span>
@@ -303,6 +294,9 @@ export default async function ResearchDetailPage({ params }) {
               </Link>
             </>
           ) : null}
+          </>
+        )}
+        actions={(
           <ArticleHeaderActions
             title={entry.title}
             text={entry.summary || entry.tldr || entry.title}
@@ -331,36 +325,12 @@ export default async function ResearchDetailPage({ params }) {
                   variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
             />
           </ArticleHeaderActions>
-        </div>
-        <h1 className="research-article-title mt-3 text-2xl leading-snug">{entry.title}</h1>
-        <aside className="research-summary-box mt-4 border-l-2 px-4 py-3 text-sm leading-7">
-          <AuthorByline />
-          {entry.tldr ? (
-            <div className="research-summary-divider mt-2 border-t pt-3">
-              <span className="research-summary-label mr-2 font-mono text-[10px] uppercase tracking-[0.18em]">
-                TL;DR
-              </span>
-              {entry.tldr}
-            </div>
-          ) : entry.summary ? (
-            <div className="research-summary-divider mt-2 border-t pt-3">
-              {entry.summary}
-            </div>
-          ) : null}
-        </aside>
-        {entry.tags?.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {entry.tags.map((tag) => (
-              <span
-                key={tag}
-                className="research-pill px-2 py-0.5 text-[11px]"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </header>
+        )}
+        title={entry.title}
+        summary={entry.tldr || entry.summary}
+        summaryLabel={entry.tldr ? 'TL;DR' : ''}
+        tags={entry.tags || []}
+      />
 
       {showRebuttalPersonalityTest && !isEncrypted ? <RebuttalPersonalityTest /> : null}
 

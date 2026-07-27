@@ -2,6 +2,7 @@ import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { resolveArticleKey, resolveContentKey } from '../../../../lib/articleLinks'
 import { getD1 } from '../../../../lib/d1'
 import { CONTENT_TYPE_GROUP } from '../../../../lib/contentRegistry'
+import { readingVisitorName } from '../../../../lib/readingVisitorIdentity.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -247,15 +248,19 @@ export async function GET(req) {
       pv: Number(row.pv) || 0,
       uv: Number(row.uv) || 0,
     })
-    const mapVisitor = (row) => ({
-      key: row.visitor_key || '',
-      type: row.visitor_type || 'anonymous',
-      provider: row.user_provider || '',
-      name: row.user_name || (row.visitor_type === 'guest' ? '游客' : '匿名访客'),
-      pv: Number(row.pv) || 0,
-      contentCount: Number(row.content_count) || 0,
-      lastSeen: Number(row.last_seen) || 0,
-    })
+    const mapVisitor = (row) => {
+      const key = row.visitor_key || ''
+      const type = row.visitor_type || 'anonymous'
+      return {
+        key,
+        type,
+        provider: row.user_provider || '',
+        name: readingVisitorName({ visitorType: type, visitorKey: key, userName: row.user_name || '' }),
+        pv: Number(row.pv) || 0,
+        contentCount: Number(row.content_count) || 0,
+        lastSeen: Number(row.last_seen) || 0,
+      }
+    }
     const likes = likeRows.map((row) => {
       const resolved = resolveArticleKey(row.article_key)
       const total = Number(row.total) || 0

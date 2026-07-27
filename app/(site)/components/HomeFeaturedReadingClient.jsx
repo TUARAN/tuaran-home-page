@@ -9,6 +9,7 @@ import {
   chooseHomeRecommendationBatch,
   DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS,
   getHomeRecommendationBatchNumber,
+  HOME_RECOMMENDATION_MAX_BATCH_SIZE,
   mergeHomeRecommendationSettings,
   searchHomeRecommendationCatalog,
 } from '../../../lib/homeRecommendationEngine'
@@ -48,7 +49,7 @@ function storeBatchState(day, offset) {
   }
 }
 
-function FeaturedLink({ item, isPinned }) {
+function FeaturedLink({ item, isPinned, desktopOnly = false }) {
   const content = (
     <>
       <div className="home-reading-meta">
@@ -62,7 +63,7 @@ function FeaturedLink({ item, isPinned }) {
       {item.summary ? <p className="mb-0 mt-1.5 line-clamp-2 text-[14px] leading-6 text-[#686a5f] dark:text-[#9ca6b4] md:text-[15px]">{item.summary}</p> : null}
     </>
   )
-  const className = 'home-reading-item group no-underline'
+  const className = `home-reading-item group no-underline ${desktopOnly ? 'hidden md:block' : ''}`
   return item.external || item.href?.startsWith('http')
     ? <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`}>{content}</a>
     : <Link href={item.href} className={className}>{content}</Link>
@@ -92,7 +93,7 @@ export default function HomeFeaturedReadingClient({ catalog }) {
   )
   const normalizedQuery = query.trim()
   const searchResults = useMemo(
-    () => searchHomeRecommendationCatalog(catalog, normalizedQuery, 10),
+    () => searchHomeRecommendationCatalog(catalog, normalizedQuery, HOME_RECOMMENDATION_MAX_BATCH_SIZE),
     [catalog, normalizedQuery],
   )
   const displayedItems = normalizedQuery ? searchResults : items
@@ -247,8 +248,13 @@ export default function HomeFeaturedReadingClient({ catalog }) {
         </div>
       </div>
       <div className={`home-reading-list transition-opacity duration-200 ${changing ? 'opacity-55' : 'opacity-100'}`} aria-live="polite">
-        {displayedItems.map((item) => (
-          <FeaturedLink key={item.id} item={item} isPinned={pinnedIds.has(item.id)} />
+        {displayedItems.map((item, index) => (
+          <FeaturedLink
+            key={item.id}
+            item={item}
+            isPinned={pinnedIds.has(item.id)}
+            desktopOnly={!normalizedQuery && index >= 10}
+          />
         ))}
         {normalizedQuery && !displayedItems.length ? (
           <div className="py-10 text-center text-[14px] text-[#77746a] dark:text-[#98a3b1]">

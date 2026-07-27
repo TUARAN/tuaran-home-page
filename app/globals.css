@@ -1085,11 +1085,11 @@
   }
 
   .home-reading-item {
-    @apply block px-0 py-4 first:pt-0 last:pb-0;
+    @apply block px-0 py-3.5 first:pt-0 last:pb-0;
   }
 
   .home-reading-meta {
-    @apply mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1;
+    @apply mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1;
   }
 
   .home-badge {

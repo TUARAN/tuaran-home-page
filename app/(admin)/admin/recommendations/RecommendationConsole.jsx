@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { IconDeviceFloppy, IconRefresh, IconSearch } from '@tabler/icons-react'
 
 import { AdminButton, AdminPage } from '../../components/ui'
+import {
+  HOME_RECOMMENDATION_MAX_BATCH_SIZE,
+  HOME_RECOMMENDATION_MIN_BATCH_SIZE,
+} from '../../../../lib/homeRecommendationEngine'
 
 const SOURCE_META = {
   feed: { label: '灵感', description: '短内容、动态和最近记录' },
@@ -14,7 +18,7 @@ const SOURCE_META = {
 
 const EMPTY_SETTINGS = {
   enabled: true,
-  batchSize: 10,
+  batchSize: HOME_RECOMMENDATION_MIN_BATCH_SIZE,
   autoRotateHours: 12,
   rotationMode: 'random',
   avoidImmediateRepeats: true,
@@ -73,7 +77,7 @@ export default function RecommendationConsole() {
   function togglePinned(id) {
     const exists = settings.pinnedIds.includes(id)
     const next = exists ? settings.pinnedIds.filter((item) => item !== id) : [...settings.pinnedIds, id]
-    update({ pinnedIds: next.slice(0, 12) })
+    update({ pinnedIds: next.slice(0, HOME_RECOMMENDATION_MAX_BATCH_SIZE) })
   }
 
   async function save() {
@@ -149,8 +153,8 @@ export default function RecommendationConsole() {
                 disabled={loading}
                 onChange={(avoidImmediateRepeats) => update({ avoidImmediateRepeats })}
               />
-              <Field label="每批展示数量" help="允许 10–12 条">
-                <input type="number" min="10" max="12" value={settings.batchSize} onChange={(event) => update({ batchSize: Number(event.target.value) })} className={inputClass} />
+              <Field label="每批展示数量" help={`允许 ${HOME_RECOMMENDATION_MIN_BATCH_SIZE}–${HOME_RECOMMENDATION_MAX_BATCH_SIZE} 条`}>
+                <input type="number" min={HOME_RECOMMENDATION_MIN_BATCH_SIZE} max={HOME_RECOMMENDATION_MAX_BATCH_SIZE} value={settings.batchSize} onChange={(event) => update({ batchSize: Number(event.target.value) })} className={inputClass} />
               </Field>
               <Field label="自动轮换间隔" help="默认 12 小时，允许 1–168 小时">
                 <div className="relative">

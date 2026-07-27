@@ -749,10 +749,6 @@ MCP 统一了 Agent 调用能力的语言，但没有替我们消除系统设计
 
 2026 年 7 月，我在 [OpenClaw](https://github.com/openclaw/openclaw) 主仓库先后有 4 个 PR 落入 \`main\`。
 
-它们分别涉及 Web Login、飞书、Tailscale 和 Anthropic。表面上看，这是 4 个互不相关的 bug。把评审记录放在一起看，会发现一条清楚的改进路径：补丁越来越重视边界、真实环境证明和维护者接手成本。
-
-这篇文章只采用 GitHub 上能复核的 PR、Issue、评论和落地提交。文中的“评分”引用 OpenClaw 的 ClawSweeper 评级。它衡量 PR 的合并准备度，不能等同于官方绩效分，也没有可核查的百分制换算。
-
 | 次序 | PR | 解决的问题 | 最终规模 | 合并时间（UTC） | ClawSweeper 最终评级 |
 | --- | --- | --- | --- | --- | --- |
 | 1 | [#90517](https://github.com/openclaw/openclaw/pull/90517) | Web Login 缺少外部插件时只报通用错误 | 2 commits，2 files，+153/-5 | 2026-07-01 08:04 | 🐚 platinum hermit |
@@ -1037,8 +1033,6 @@ ClawSweeper 会取 Proof 与 Patch quality 的较弱项，并叠加分支新旧�
 - [PR #102537：Anthropic inline image normalization](https://github.com/openclaw/openclaw/pull/102537) ｜ [Issue #102323](https://github.com/openclaw/openclaw/issues/102323) ｜ [落地提交 3c32f32](https://github.com/openclaw/openclaw/commit/3c32f327a445c9bff90ca812d281330a3a64472c)
 
 资料核对截至 2026 年 7 月 24 日。
-
-尚无公开证据可以确认 #90517 在 GitHub UI 中具体使用了哪一种合并按钮；本文只写可确认的“2 个分支提交最终落为 1 个 \`main\` 提交”。其余 3 个 PR 均有维护者 “Merged via squash” 的公开评论。
 `,
   },
   {

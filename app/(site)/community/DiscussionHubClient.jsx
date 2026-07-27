@@ -188,7 +188,7 @@ function NotificationPanel() {
     return (
       <>
         <p className="mb-3 text-sm text-[var(--site-muted)]">
-          登录后，别人回复你的评论会出现在顶部账号菜单，也会跳转到具体评论。
+          登录后，评论回复和与你相关的站内通知会出现在顶部账号菜单。
         </p>
         <Link href="/login?returnTo=%2Fcommunity" className="discussion-primary-link">
           登录查看通知
@@ -220,8 +220,11 @@ function NotificationPanel() {
               onClick={() => item.id && markNotificationsRead?.({ id: item.id })}
               className="block rounded-xl border border-[var(--site-line)] px-3 py-2 no-underline hover:no-underline"
             >
+              <p className="mb-1 line-clamp-1 text-xs font-medium text-[var(--site-ink)]">
+                {item.title || '新的站内通知'}
+              </p>
               <p className="mb-1 line-clamp-2 text-xs leading-5 text-[var(--site-muted)]">
-                {item.messageExcerpt || '有人回复了你的评论'}
+                {item.messageExcerpt || '查看详情'}
               </p>
               <p className="mb-1 line-clamp-1 text-[11px] text-[var(--site-faint)]">
                 {item.articleTitle}
@@ -234,7 +237,7 @@ function NotificationPanel() {
         </div>
       ) : (
         <p className="mb-0 text-sm text-[var(--site-muted)]">
-          还没有新的评论回复。你回复别人或在文章底部留言后，这里会跟顶部账号菜单同步。
+          还没有新的站内通知。这里会与顶部账号菜单同步。
         </p>
       )}
     </div>

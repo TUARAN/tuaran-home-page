@@ -1,0 +1,38 @@
+name: Weekly summary notification
+
+on:
+  schedule:
+    # GitHub Actions 使用 UTC；每周一 01:00 UTC = 上海时间周一 09:00。
+    - cron: '0 1 * * 1'
+  workflow_dispatch: {}
+
+concurrency:
+  group: weekly-summary-notification
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Create weekly site summary notification
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/notifications/weekly-summary
+        env:
+          WEEKLY_SUMMARY_SECRET: ${{ secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+        run: |
+          if [ -z "$WEEKLY_SUMMARY_SECRET" ]; then
+            echo "::error::缺少仓库 Secret WEEKLY_SUMMARY_SECRET（也未配置兼容回退 PUBLIC_OPINION_COLLECT_SECRET）"
+            exit 1
+          fi
+
+          code=$(curl -sS --retry 2 --retry-delay 5 \
+            -o /tmp/weekly-summary-response.json \
+            -w '%{http_code}' \
+            -X POST \
+            -H "x-weekly-summary-secret: $WEEKLY_SUMMARY_SECRET" \
+            https://2aran.com/api/notifications/weekly-summary)
+
+          echo "HTTP $code"
+          cat /tmp/weekly-summary-response.json
+          echo
+          test "$code" = "200"

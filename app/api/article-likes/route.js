@@ -6,6 +6,8 @@ import {
   rateLimitResponse,
 } from '../../../lib/abuseControls'
 import { getUserFromRequest } from '../../../lib/edgeSession'
+import { isOwnerUser } from '../../../lib/ownerAuth'
+import { notifyOwner } from '../../../lib/siteNotifications'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -106,14 +108,31 @@ export async function POST(req) {
         .bind(articleKey, voterKey)
         .run()
     } else {
-      await db
+      const inserted = await db
         .prepare(
           `INSERT INTO article_likes (article_key, voter_key, user_id, created_at)
            VALUES (?1, ?2, ?3, ?4)
-           ON CONFLICT(article_key, voter_key) DO NOTHING`
+           ON CONFLICT(article_key, voter_key) DO NOTHING
+           RETURNING id`
         )
         .bind(articleKey, voterKey, user?.id ? String(user.id) : null, Date.now())
-        .run()
+        .first()
+
+      if (inserted?.id) {
+        await notifyOwner(db, {
+          type: 'content_like',
+          actor: {
+            id: user?.id || voterKey,
+            provider: user?.provider || 'guest',
+            name: user?.name || user?.login || '一位访客',
+            image: user?.image || null,
+            isOwner: isOwnerUser(user),
+          },
+          articleKey,
+          commentId: inserted.id,
+          messageExcerpt: '点赞了这篇内容',
+        }).catch(() => {})
+      }
     }
 
     await cleanupRateLimits(db).catch(() => {})

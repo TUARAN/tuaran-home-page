@@ -5,24 +5,35 @@ import { getUserFromRequest } from '../../../lib/edgeSession'
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-function notificationHref(articleKey, commentId, metaMap) {
+function notificationHref(type, articleKey, commentId, metaMap) {
+  if (type === 'weekly_summary') return '/admin/content-weekly?days=7'
   const resolved = resolveContentKeyLite(articleKey, metaMap)
   if (!resolved.href) return null
-  return `${resolved.href}#comment-${commentId || 'comments'}`
+  if (type === 'content_like') return resolved.href
+  return commentId ? `${resolved.href}#comment-${commentId}` : `${resolved.href}#comments`
+}
+
+function notificationTitle(type, actorName) {
+  if (type === 'content_like') return `${actorName || '有人'} 点赞了你的内容`
+  if (type === 'content_comment') return `${actorName || '有人'} 评论了你的内容`
+  if (type === 'weekly_summary') return '上周站点总结已生成'
+  return `${actorName || '有人'} 回复了你`
 }
 
 function mapNotification(row, metaMap) {
+  const type = row.type || 'comment_reply'
   const article = resolveContentKeyLite(row.article_key, metaMap)
   return {
     id: Number(row.id),
-    type: row.type || 'comment_reply',
+    type,
+    title: notificationTitle(type, row.actor_user_name),
     actorUserId: row.actor_user_id || '',
     actorUserProvider: row.actor_user_provider || '',
     actorUserName: row.actor_user_name || '',
     actorUserImage: row.actor_user_image || '',
     articleKey: row.article_key || '',
-    articleTitle: article.title,
-    href: notificationHref(row.article_key, row.comment_id, metaMap),
+    articleTitle: type === 'weekly_summary' ? '内容数据与反馈' : article.title,
+    href: notificationHref(type, row.article_key, row.comment_id, metaMap),
     commentId: Number(row.comment_id) || null,
     replyToCommentId: Number(row.reply_to_comment_id) || null,
     messageExcerpt: row.message_excerpt || '',

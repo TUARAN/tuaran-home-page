@@ -1,19 +1,34 @@
-import Link from 'next/link'
 import Script from 'next/script'
 
 import ArticlePostBody, { getArticlePostToc } from '../../components/ArticlePostBody'
+import ArticleDetailHeader from '../../components/ArticleDetailHeader'
 import ArticleEngagementPanel from '../../components/ArticleEngagementPanel'
 import ArticleToc from '../../components/ArticleToc'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
-import { AuthorByline } from '../../components/ArticleAuthorIntro'
 import ArticleComments from '../../components/ArticleComments'
+import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 
 function dateLabel(value) {
   if (!value) return ''
-  return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(value))
+  const date = new Date(value)
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date)
+  const valueOf = (type) => parts.find((part) => part.type === type)?.value || ''
+  return `${valueOf('year')}-${valueOf('month')}-${valueOf('day')} ${valueOf('hour')}:${valueOf('minute')}`
+}
+
+function readingMinutes(text) {
+  const length = String(text || '').replace(/\s+/g, '').length
+  return Math.max(1, Math.ceil(length / 500))
 }
 
 export default function PublishedArticle({ article, siteUrl }) {
@@ -41,28 +56,23 @@ export default function PublishedArticle({ article, siteUrl }) {
   const tocItems = getArticlePostToc(article.content)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-8">
       <Script id={`article-jsonld-db-${article.id}`} type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(structuredData)}
       </Script>
-      <header className="mb-8 border-b border-[#eee] pb-5 dark:border-gray-800">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="font-serif text-3xl font-semibold leading-snug text-[#333] dark:text-gray-100">{article.title}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#888] dark:text-gray-400">
-              <time dateTime={publishedTime}>{dateLabel(article.publishedAt)}</time>
-              {article.tags.map((tag) => <span key={tag} className="rounded-full border border-[#ddd] px-2 py-0.5 text-xs dark:border-gray-700">{tag}</span>)}
-            </div>
-            {article.summary ? <p className="mt-4 text-sm leading-7 text-[#666] dark:text-gray-300">{article.summary}</p> : null}
-            <div className="mt-4">
-              <Link href="/articles?tab=posts" className="text-sm text-[#666] underline underline-offset-4 dark:text-gray-300">返回精选文章</Link>
-            </div>
-          </div>
+      <ArticleDetailHeader
+        categoryHref="/articles?tab=posts"
+        categoryLabel="精选文章"
+        dateLabel={dateLabel(article.publishedAt)}
+        dateTime={publishedTime}
+        readingMinutes={readingMinutes(article.contentText)}
+        pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
+        actions={(
           <ArticleHeaderActions
             title={article.title}
             text={article.summary || article.contentText.slice(0, 160)}
             url={url}
-            className="mt-3 shrink-0 sm:mt-0"
+            className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
           >
             <CopyMarkdownButton markdown={markdown} />
             <DistributeContentButton
@@ -78,13 +88,14 @@ export default function PublishedArticle({ article, siteUrl }) {
               allowArticle
             />
           </ArticleHeaderActions>
-        </div>
-      </header>
+        )}
+        title={article.title}
+        summary={article.summary}
+        summaryLabel="TL;DR"
+        tags={article.tags}
+      />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <main className="min-w-0">
-          <aside className="mb-8 border-l-2 border-[#b7791f] bg-[#ebede3] px-4 py-3 dark:border-[#9ba475] dark:bg-[#1c1d15]">
-            <AuthorByline />
-          </aside>
           {article.coverUrl ? (
             <figure className="mb-10">
               {/* 后台文章封面可以来自 Owner 自定义的 HTTPS/R2 域名，不限制在 Next Image 白名单。 */}

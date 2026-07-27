@@ -1,7 +1,11 @@
 import { getD1 } from '../../../lib/d1'
 import { RESEARCH_CATEGORIES } from '../../../lib/research/categories'
 import { RESEARCH_ENTRY_KEY_SET } from '../../../lib/research/catalog'
-import { CONTENT_PV_CATEGORIES, CONTENT_PV_KEY_SET } from '../../../lib/contentRegistry'
+import {
+  CONTENT_PV_CATEGORIES,
+  CONTENT_PV_KEY_SET,
+  STATIC_ARTICLE_PV_KEY_SET,
+} from '../../../lib/contentRegistry'
 import { getUserFromRequest } from '../../../lib/edgeSession'
 import { GUEST_USER_PREFIX, getOrIssueGuest, guestDisplayName } from '../../../lib/guestSession'
 
@@ -14,7 +18,21 @@ const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,120}$/i
 
 /** 这个 key 是否在可统计白名单（调研条目或登记过的内容页） */
 function isTrackableKey(key) {
-  return RESEARCH_ENTRY_KEY_SET.has(key) || CONTENT_PV_KEY_SET.has(key)
+  return RESEARCH_ENTRY_KEY_SET.has(key)
+    || CONTENT_PV_KEY_SET.has(key)
+    || STATIC_ARTICLE_PV_KEY_SET.has(key)
+}
+
+async function isPublishedArticle(db, slug) {
+  try {
+    const row = await db
+      .prepare("SELECT 1 AS found FROM article_posts WHERE slug = ?1 AND status = 'published' LIMIT 1")
+      .bind(slug)
+      .first()
+    return Boolean(row?.found)
+  } catch {
+    return false
+  }
 }
 const MAX_KEYS = 100
 const HIT_WINDOW_MS = 60 * 60 * 1000
@@ -142,7 +160,7 @@ export async function GET(req) {
     .split(',')
     .map(parseKey)
     .filter(Boolean)
-    .filter((item) => isTrackableKey(item.key))
+    .filter((item) => isTrackableKey(item.key) || item.category === 'article')
     .slice(0, MAX_KEYS)
 
   if (!keys.length) {
@@ -192,15 +210,15 @@ export async function POST(req) {
     return Response.json({ error: 'INVALID_RESEARCH_ENTRY' }, { status: 400 })
   }
   const entryKey = `${category}/${slug}`
-  if (!isTrackableKey(entryKey)) {
-    return Response.json({ error: 'CONTENT_ENTRY_NOT_FOUND' }, { status: 404 })
-  }
-
   let db
   try {
     db = getD1()
   } catch {
     return dbUnavailable()
+  }
+
+  if (!isTrackableKey(entryKey) && !(category === 'article' && await isPublishedArticle(db, slug))) {
+    return Response.json({ error: 'CONTENT_ENTRY_NOT_FOUND' }, { status: 404 })
   }
 
   try {

@@ -124,17 +124,20 @@ export function SessionProvider({ children }) {
     function onFocus() {
       refresh()
       refreshNav()
+      refreshNotifications()
     }
     function onVisibility() {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         refresh()
         refreshNav()
+        refreshNotifications()
       }
     }
     function onPageShow(event) {
       if (event.persisted) {
         refresh()
         refreshNav()
+        refreshNotifications()
       }
     }
     function onSessionRefresh() { refresh() }
@@ -151,18 +154,21 @@ export function SessionProvider({ children }) {
       window.removeEventListener(REFRESH_EVENT, onSessionRefresh)
       window.removeEventListener(NAV_REFRESH_EVENT, onNavRefresh)
     }
-  }, [refresh, refreshNav])
+  }, [refresh, refreshNav, refreshNotifications])
 
   useEffect(() => {
     if (state.loading) return
     if (state.user?.id) {
       refreshNotifications()
+      const timer = window.setInterval(refreshNotifications, 60_000)
+      return () => window.clearInterval(timer)
     } else {
       setState((prev) => ({
         ...prev,
         notifications: { unread: 0, items: [], status: 'anonymous' },
       }))
     }
+    return undefined
   }, [state.loading, state.user?.id, refreshNotifications])
 
   return (

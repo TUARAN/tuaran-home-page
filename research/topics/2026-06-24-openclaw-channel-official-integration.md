@@ -19,13 +19,13 @@ pv: 0
 
 - **做出来**：写一个带 `openclaw.plugin.json` manifest、声明 `channel` 契约（id / 配置 schema / 入站 / 出站 / allowlist）的插件，发到 **ClawHub**（或 npm），用户 `openclaw plugins install` 即可用。这条路对任何人开放。
 - **被官方集成**：CONTRIBUTING 原文——「**Most features are not accepted and should be third party plugins instead**」。所以「进核心」是例外，不是默认。它分四档（见第三节），越往核心越要 maintainer 背书。
-- **关键变量不是代码质量本身，而是「有没有人在核心侧愿意为它负责」**：OpenClaw 设了领域 maintainer（如 Channels、甚至专门的「中文 channel」维护者），一个 channel 进 bundled 档，往往对应某位 maintainer 把它纳入了职责。
+- **关键变量是「有没有人在核心侧愿意为它负责」**：OpenClaw 设了领域 maintainer（如 Channels、甚至专门的「中文 channel」维护者），一个 channel 进 bundled 档，往往对应某位 maintainer 把它纳入了职责。
 
 ---
 
 ## 二、前提：在 OpenClaw 里，channel 就是插件
 
-要回答「怎么被集成」，先得知道 channel 在架构上是什么：它不是核心写死的特性，而是**构建在公开 plugin-SDK 上的插件**，通过 Gateway 接入。每个 channel 声明一个 `channel` 契约：
+要回答「怎么被集成」，先得知道 channel 在架构上是什么：它是**构建在公开 plugin-SDK 上的插件**，通过 Gateway 接入。每个 channel 声明一个 `channel` 契约：
 
 - **`openclaw.plugin.json` manifest**：每个原生插件**必须**在根目录带它，OpenClaw 用它**在不执行插件代码的前提下**校验配置；manifest 缺失/非法直接判为插件错误。
 - **channel 字段**：`id`（命名空间唯一键）、`label`、`docsPath`、配置 schema、入站（webhook / WebSocket）、出站（send）、allowlist / pairing、group policy。
@@ -37,7 +37,7 @@ pv: 0
 
 ## 三、四档分发机制（事实层）
 
-`docs/channels/index.md` 给每个 channel 都标了分发档位。归并后是**四档**（官方文档实际用了 bundled / official / downloadable / external 几个标签，本文按「离核心远近」收敛为四档）：
+`docs/channels/index.md` 给每个 channel 都标了分发档位。归并后是**四档**（官方文档实际用了 bundled / official / downloadable / external 几个标签，按「离核心远近」收敛为四档）：
 
 | 档位 | 含义 | 编译产物在哪 | 怎么得到 | 谁维护 | 代表 channel |
 |---|---|---|---|---|---|

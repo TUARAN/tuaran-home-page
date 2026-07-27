@@ -6,7 +6,7 @@ tech_type: ai_coding
 date: 2026-06-24
 tags: [Reasonix, DeepSeek, AI编码, Coding Agent, 前缀缓存, MCP, Go, 推理链, Tool-Call, 工具调用]
 summary: 以 DeepSeek 前缀缓存为切入点，深入剖析 Reasonix 1.0（Go 重写）的三大技术支柱——Cache-First Loop、R1 Thought Harvesting、Tool-Call Repair；拆解其双模型协作、Checkpoints/Rewind 机制与权限沙盒设计；并与 Claude Code、Cursor、Aider 做横向对比。结论：对高频 DeepSeek 用户，缓存命中率可达 85%～99.8%，等量任务成本约为 Claude Code 的 1/20。
-tldr: Reasonix 不是"又一个通用 Agent 框架"，而是把 DeepSeek 的字节级前缀缓存工程化到极致的专属 CLI 工具。它的 Cache-First Loop 用三区上下文模型（不可变前缀 / 只追加日志 / 易失暂存）保证每次请求前缀字节对齐；R1 Thought Harvesting 把推理链从展示副产品变为结构化规划信号；Tool-Call Repair 内置四个修复模块兜住 DeepSeek 的 function calling 已知 bug。1.0 版本从 TypeScript 重写为 Go，单静态二进制、冷启动 <10ms。同等任务下成本约 Claude Code 的 1/20，SWE-bench 准确率 80.6%（Claude Sonnet 83.2%）。
+tldr: Reasonix 是把 DeepSeek 的字节级前缀缓存工程化到极致的专属 CLI 工具。它的 Cache-First Loop 用三区上下文模型（不可变前缀 / 只追加日志 / 易失暂存）保证每次请求前缀字节对齐；R1 Thought Harvesting 把推理链从展示副产品变为结构化规划信号；Tool-Call Repair 内置四个修复模块兜住 DeepSeek 的 function calling 已知 bug。1.0 版本从 TypeScript 重写为 Go，单静态二进制、冷启动 <10ms。同等任务下成本约 Claude Code 的 1/20，SWE-bench 准确率 80.6%（Claude Sonnet 83.2%）。
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0
@@ -24,7 +24,7 @@ pv: 0
 
 ## 一、项目概览
 
-**Reasonix**（`esengine/DeepSeek-Reasonix`）是一款面向终端的 **DeepSeek 原生 AI 编码代理（Coding Agent）**。它不是通用的多模型 Agent 框架，而是刻意"做窄"——专为 DeepSeek 系列模型（V3/V4/R1 系列）深度优化，围绕 DeepSeek 独有的 **字节级前缀缓存（prefix-cache）** 机制做工程，把理论成本优势转化为可落地的极致性价比。
+**Reasonix**（`esengine/DeepSeek-Reasonix`）是一款面向终端的 **DeepSeek 原生 AI 编码代理（Coding Agent）**。它是刻意"做窄"——专为 DeepSeek 系列模型（V3/V4/R1 系列）深度优化，围绕 DeepSeek 独有的 **字节级前缀缓存（prefix-cache）** 机制做工程，把理论成本优势转化为可落地的极致性价比。
 
 项目在 2026 年上半年增长迅猛，在 oosmetrics 的开源项目 velocity 榜单上同时占据：
 
@@ -602,10 +602,10 @@ Reasonix 1.0 将整个代码库从 TypeScript（Node.js）重写为 Go，这是�
 
 ## 十五、总结
 
-Reasonix 的核心价值主张非常清晰：**在 DeepSeek 生态内把成本优势工程化到极致**。它不是要做一个"最通用"的 Agent 框架，而是刻意做窄，把一件事做到最好——让 DeepSeek 前缀缓存真正能用，并把 R1 的推理能力真正利用起来。
+Reasonix 的核心价值主张非常清晰：**在 DeepSeek 生态内把成本优势工程化到极致**。它是刻意做窄，把一件事做到最好——让 DeepSeek 前缀缓存真正能用，并把 R1 的推理能力真正利用起来。
 
 从技术角度看，三大 Pillar 的设计是扎实的工程工作：
-- **Cache-First Loop** 不是小技巧，而是一套完整的上下文架构哲学（不可变性 + 追加性 + 隔离性）
+- **Cache-First Loop** 是一套完整的上下文架构哲学（不可变性 + 追加性 + 隔离性）
 - **R1 Thought Harvesting** 将推理链从"展示给用户看的副产品"变成"可结构化利用的规划信号"
 - **Tool-Call Repair** 解决的是真实存在的 API 兼容问题，而非假想问题
 

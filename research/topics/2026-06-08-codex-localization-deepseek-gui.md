@@ -65,8 +65,6 @@ DeepSeek-GUI 看起来只是「又一个 LLM 客户端」，但它代表的是 2
 | **C. 协议翻译网关**（Adapter）| 在本地起一个网关做协议格式转换 | cc-switch local routing（v3.16+）、ccx、CodexBridge | 解决「Responses ↔ Chat Completions 不兼容」的硬问题 |
 | **D. 重写 CLI agent**（Provider-agnostic）| 自己实现一个 CLI agent，不绑任何家 | OpenCode、CodeWhale、claude-code-from-scratch | 工程量最大，灵活度最高 |
 
-下面把每个具体项目拆开：
-
 #### [qiuzhi2046/Qclaw](https://github.com/qiuzhi2046/Qclaw)
 
 | 维度 | 值 |
@@ -103,7 +101,7 @@ DeepSeek-GUI 某种意义上是 Qclaw 思路的延续：**桌面化的 Claw 模�
 | 思路 | Provider-agnostic，从一开始就不绑定任何模型厂商 |
 | 国产模型 | 直接连任意 OpenAI 兼容端点（DeepSeek、Qwen 私有部署、Ollama 本地）|
 
-不是"伪装成 Claude Code"，而是从设计上就承认"CLI agent 是 commodity"。[Walter Fan 的实测博客](https://www.fanyamin.com/claude-code-ping-ti-opencode-deepseekqwen.html)展示了 opencode + DeepSeek 的实际工作流。
+从设计上就承认"CLI agent 是 commodity"。[Walter Fan 的实测博客](https://www.fanyamin.com/claude-code-ping-ti-opencode-deepseekqwen.html)展示了 opencode + DeepSeek 的实际工作流。
 
 #### [Hmbown/CodeWhale](https://github.com/Hmbown/CodeWhale)
 
@@ -111,7 +109,7 @@ DeepSeek-GUI 某种意义上是 Qclaw 思路的延续：**桌面化的 Claw 模�
 
 #### [Windy3f3f3f3f/claude-code-from-scratch](https://github.com/Windy3f3f3f3f/claude-code-from-scratch)
 
-不是工具而是**教学项目**：用 ~4000 行 TypeScript/Python 从零复刻 Claude Code 核心架构。13 章教程覆盖 Agent Loop / 13 个 tool / 四层上下文压缩 / 语义记忆召回 / Skill 系统 / 多 Agent / MCP 集成。
+**教学项目**：用 ~4000 行 TypeScript/Python 从零复刻 Claude Code 核心架构。13 章教程覆盖 Agent Loop / 13 个 tool / 四层上下文压缩 / 语义记忆召回 / Skill 系统 / 多 Agent / MCP 集成。
 
 这是"路线 D 的极致形态"——不做产品，做认知反向工程。对想理解 coding agent 内部机制的人价值极高。
 

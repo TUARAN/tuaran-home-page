@@ -9,6 +9,7 @@ export const metadata = {
   alternates: {
     canonical: '/articles/creation-calendar',
   },
+  robots: { index: false, follow: true },
 }
 
 export default function CreationCalendarPage() {

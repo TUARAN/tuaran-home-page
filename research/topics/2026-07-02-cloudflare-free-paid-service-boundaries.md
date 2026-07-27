@@ -6,7 +6,7 @@ tech_type: web_cloud
 date: 2026-07-02
 tags: [Cloudflare, Workers, Pages, R2, D1, KV, Zero Trust, CDN, WAF, 成本模型, 边缘计算]
 summary: Cloudflare 的免费层不是一个简单的试用版，而是一套覆盖 DNS、CDN、安全和轻量开发者平台的基础设施入口；真正的付费边界出现在 SLA、合规、安全深度、团队治理、日志留存和按量资源消耗上。
-tldr: Cloudflare 免费层适合个人站、静态站、早期 MVP、轻量 API、低频 Worker、少量对象存储和 50 人以内 Zero Trust PoC。付费层买的不是“能不能用”，而是确定性：更高运行上限、SLA、合规、安全能力、长期日志、团队支持和按量扩容。生产系统要把套餐费和 Workers、R2、D1、KV、DO、AI、Images、Logs 等按量费用分开建模。
+tldr: Cloudflare 免费层适合个人站、静态站、早期 MVP、轻量 API、低频 Worker、少量对象存储和 50 人以内 Zero Trust PoC。付费层买的是确定性：更高运行上限、SLA、合规、安全能力、长期日志、团队支持和按量扩容。生产系统要把套餐费和 Workers、R2、D1、KV、DO、AI、Images、Logs 等按量费用分开建模。
 assistance: codex
 model: gpt-5
 pv: 0
@@ -137,7 +137,7 @@ KV 当前免费层包括 1GB 存储、每天 100,000 读、每天 1,000 写/删/
 
 D1 当前免费层包括 5GB 总存储、每天 500 万行读、每天 100,000 行写。它适合边缘 SQLite 场景，比如个人站内容索引、评论、轻量用户系统、后台配置。边界在写入量、数据库体积、查询模式和迁移管理。
 
-Durable Objects 免费层包括每天 100,000 请求和一定 Duration/存储额度。它不是通用数据库，而是强一致 actor。一个聊天室、一个用户会话、一个协同文档、一个 Agent 状态机，都是它的好场景。不要用它做跨用户大表分析。
+Durable Objects 免费层包括每天 100,000 请求和一定 Duration/存储额度。它是强一致 actor。一个聊天室、一个用户会话、一个协同文档、一个 Agent 状态机，都是它的好场景。不要用它做跨用户大表分析。
 
 判断规则可以很简单：
 
@@ -225,7 +225,7 @@ Cloudflare 免费层已经有基础 DDoS 和基础 WAF 能力，对普通网站�
 
 ## 十三、Registrar、Turnstile、Email Routing：看似边缘，其实很实用
 
-Cloudflare Registrar 不是免费送域名，而是按成本价注册和续费，Cloudflare 官方强调不加价，并提供 WHOIS 隐私保护、DNSSEC、DNS/CDN/SSL 集成。它适合已经把 DNS 放在 Cloudflare 的个人和公司。
+Cloudflare Registrar 按成本价提供注册和续费，Cloudflare 官方强调不加价，并提供 WHOIS 隐私保护、DNSSEC、DNS/CDN/SSL 集成。它适合已经把 DNS 放在 Cloudflare 的个人和公司。
 
 Turnstile 是免费的 CAPTCHA 替代方案。它对登录、注册、评论、表单、下载页、后台入口很有用，尤其适合不想牺牲用户体验的网站。
 
@@ -286,7 +286,7 @@ Email Routing 适合把自定义域名邮箱转发到现有邮箱，比如 `hi@e
 
 推荐：Workers Paid + Durable Objects + Queues/Workflows + D1/R2 + Vectorize + AI Gateway。
 
-原因：AI 应用通常不是请求数贵，而是模型调用贵、状态管理复杂、日志和重试重要。免费层适合原型，但不要按免费层设计生产上限。
+原因：AI 应用通常是模型调用贵、状态管理复杂、日志和重试重要。免费层适合原型，但不要按免费层设计生产上限。
 
 付费触发点：模型费、Workers CPU、DO Duration、Vectorize 查询维度、R2 操作、Browser Rendering、日志事件。
 

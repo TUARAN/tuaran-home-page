@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSessionAccount } from './SessionProvider'
 
 const DEFAULT_ARTICLE_SYNCBLOG_URL = 'https://syncblog.cn/md/#content-sync'
 const DEFAULT_OPINION_SYNCBLOG_URL = 'https://syncblog.cn/#opinion-sync'
@@ -77,6 +78,7 @@ export default function DistributeContentButton({
   kindLabel = '内容',
   allowArticle = false,
 }) {
+  const { loading, isOwner } = useSessionAccount()
   const modes = allowArticle ? ['article', 'opinion'] : ['opinion']
   const [states, setStates] = useState({ article: 'idle', opinion: 'idle' })
 
@@ -286,6 +288,10 @@ export default function DistributeContentButton({
       </svg>
     )
   }
+
+  // SyncBlog 是站长的发布工作流，不属于读者操作。
+  // 读者侧的分享、复制 Markdown、下载等按钮由各自组件继续提供。
+  if (loading || !isOwner) return null
 
   return (
     <>

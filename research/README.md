@@ -48,7 +48,7 @@ tags: [AI, 大模型, 公司]
 summary: 一句话概述本篇调研要回答的问题与结论。
 tldr: 不写则回退用 summary；想突出与 summary 不同的一句话总结时填这里。
 topic_type: market           # 仅 topics 用：industry | tech | product | market | thesis
-content_type: analysis       # opinion | analysis | practice | guide | fact_check | profile | archive | research
+content_type: analysis       # opinion | analysis | engineering_case | build_log | practice | guide | fact_check | profile | archive | research
 assistance: claude-code      # 协助工具：claude-code | cursor | codex | doubao | gemini | gpt | manual
 model: claude-opus-4-7       # 底层模型 ID（可选，仅作内部记录）
 show_assistance: false       # 默认不展示；多版本对照或确有披露必要时才开启
@@ -67,7 +67,7 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 | `summary` | ⭕ | 一句话摘要，列表页展示 |
 | `tldr` | ⭕ | 详情页顶部 TL;DR 框使用；不写则回退 `summary` 或正文首段 |
 | `topic_type` | ⭕ | 仅 `topics` 用，二级类型：`industry` 行业 / `tech` 技术 / `product` 产品 / `market` 市场 / `thesis` 观点 |
-| `content_type` | ⭕ | 面向读者的内容形态；不写时会根据分类推断。观点类优先用 `opinion`，实操复盘用 `practice` |
+| `content_type` | ⭕ | 面向读者的内容形态；不写时会根据分类推断。真实项目落地用 `engineering_case`，本站建设与运营复盘用 `build_log`，避免与公司、人物和公共议题共用同一种研究包装 |
 | `assistance` | ⭕ | 协助工具的内部记录。旧文章的 `source` 字段仍兼容读取；工具不是作者，也不决定公开内容类型 |
 | `model` | ⭕ | 底层模型 ID，仅作内部追溯，不作为作者或文章来源 |
 | `show_assistance` | ⭕ | 是否在前台展示协助信息，默认 `false`；多版本对照等确有必要的页面可设为 `true` |

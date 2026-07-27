@@ -7,6 +7,7 @@ summary: 梳理 2aran.com 当前私有功能的鉴权体系：统一登录态、
 tldr: 这套体系经历过三轮迭代：第一轮把"每个工具各写一套登录"统一成"`tuaran_session + ownerAuth`"；第二轮把"每个页面组件各自 fetch `/api/me`"统一成 `SessionProvider` 单一上下文，解决登录状态在不同页面之间割裂的问题；第三轮把"哪些菜单对谁可见"从硬编码改成每项菜单的 `audience` 字段 + D1 `nav_overrides` 表，站长可以在 `/agent-ops/nav-admin` 后台动态调整。市面通行做法是 RBAC + feature flag + headless CMS 三块组合；单站长场景下这套轻量方案在保留同等表达力的同时省掉了 80% 的开销。
 topic_type: tech
 tech_type: security_identity
+content_type: engineering_case
 assistance: codex
 model: gpt-5
 pv: 0
@@ -39,7 +40,7 @@ pv: 0
 
 ### 1. `edgeSession`：统一登录态
 
-主站用 `tuaran_session` 作为统一登录 cookie。它不是普通随机字符串，而是一个用 `NEXTAUTH_SECRET` 签名的 session token。
+主站用 `tuaran_session` 作为统一登录 cookie。它是一个用 `NEXTAUTH_SECRET` 签名的 session token。
 
 它负责几件事：
 
@@ -138,7 +139,7 @@ API 层使用 `getOwnerUserFromRequest(req)`。这意味着：
 
 ### 4. 自动化控制台 / Agent Ops
 
-自动化控制台更特殊，因为它不是纯主站页面，而是本机 `agent-ops` 服务通过 `ops.2aran.com` 暴露出来。
+自动化控制台更特殊，因为它是本机 `agent-ops` 服务通过 `ops.2aran.com` 暴露出来。
 
 它要同时满足两个要求：
 
@@ -159,7 +160,7 @@ API 层使用 `getOwnerUserFromRequest(req)`。这意味着：
 
 这里的关键是 `NEXTAUTH_SECRET`。Agent Ops 必须拿到和主站一致的 `NEXTAUTH_SECRET`，才能验证主站签发的 `tuaran_session`。
 
-这不是把主站逻辑复制一遍，而是让独立服务接受同一个签名事实：这个浏览器已经被 2aran.com 认证为 owner。
+这是让独立服务接受同一个签名事实：这个浏览器已经被 2aran.com 认证为 owner。
 
 ### 5. 加密调研文章
 
@@ -171,7 +172,7 @@ API 层使用 `getOwnerUserFromRequest(req)`。这意味着：
 - 内容层：通过后仍然只给密文 payload，明文需要在浏览器本地输入口令解密；
 - SEO 层：加密调研不进入公开索引，避免把私域标题页当公开内容推广。
 
-这不是用登录态替代加密，而是在加密外面补上统一门禁。owner session 负责“谁能进入解密界面”，文章口令负责“谁能读明文”。
+这是在加密外面补上统一门禁。owner session 负责“谁能进入解密界面”，文章口令负责“谁能读明文”。
 
 ### 6. 长期罗盘
 
@@ -263,7 +264,7 @@ Agent Ops 要复用主站 session，必须配置同一个 `NEXTAUTH_SECRET`。
 - 访问 `ops.2aran.com` 仍被要求本地口令；
 - 共享 session 不生效。
 
-这不是 cookie 问题，而是签名校验缺少 secret。
+这是签名校验缺少 secret。
 
 ### 4. 长期罗盘需要独立看待密钥恢复
 

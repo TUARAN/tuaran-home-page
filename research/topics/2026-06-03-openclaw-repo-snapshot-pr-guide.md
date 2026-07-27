@@ -133,7 +133,7 @@ pv: 0
 ### 2026-06-01 → 2026-06-03：2026.6.2 发布后加固
 
 - 当前版本 **2026.6.2**，`package.json` 项目名 **openclaw**。
-- 主线已不是单点新功能，而是**发布后稳定化**：
+- 主线已是**发布后稳定化**：
   - Gateway health/auth diagnostics；
   - Codex startup timeout cleanup；
   - Telegram progress draft reasoning；

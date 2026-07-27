@@ -87,6 +87,7 @@ export const metadata = {
   alternates: {
     canonical: '/context-memory',
   },
+  robots: { index: false, follow: false },
 }
 
 export default function ContextMemoryPage() {

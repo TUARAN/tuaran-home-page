@@ -137,7 +137,11 @@ export default async function ResearchDetailPage({ params }) {
   const categoryLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
   const topicTypeLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
   const showTopicType = topicTypeLabel && topicTypeLabel !== categoryLabel
-  const categoryHref = entry.category === 'topics'
+  const categoryHref = entry.contentType === 'engineering_case'
+    ? '/articles?tab=engineering-cases'
+    : entry.contentType === 'build_log'
+      ? '/articles?tab=build-logs'
+      : entry.category === 'topics'
     ? entry.topicType === 'tech'
       ? '/articles?tab=tech'
       : '/articles?tab=other'

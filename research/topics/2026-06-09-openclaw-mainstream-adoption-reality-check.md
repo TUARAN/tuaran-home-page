@@ -3,7 +3,7 @@ title: OpenClaw 火爆半年后：普通人真的用了吗？
 category: topics
 date: 2026-06-09
 tags: [OpenClaw, AI Agent, 普及率, 开发者工具, Codex, Hermes]
-summary: GitHub 346K 星、3.2M 月活、925% 月增长，开发者圈的 OpenClaw 看起来如日中天。但从「主力工具份额 <1%」「样本量低于报告阈值」「典型月成本 $15-120」「Codex+Hermes 通吃」四个角度看，它在普通人群体里的真实渗透接近零。本文用四道墙 —— 命令行门槛 / 长任务幻觉 / Token 经济 / 强竞品挤压 —— 论证为什么 OpenClaw 至少在 2026 这个时点上，不会成为「普通人的 AI 助理」。
+summary: GitHub 346K 星、3.2M 月活、925% 月增长，开发者圈的 OpenClaw 看起来如日中天。但从「主力工具份额 <1%」「样本量低于报告阈值」「典型月成本 $15-120」「Codex+Hermes 通吃」四个角度看，它在普通人群体里的真实渗透接近零。用四道墙 —— 命令行门槛 / 长任务幻觉 / Token 经济 / 强竞品挤压 —— 论证为什么 OpenClaw 至少在 2026 这个时点上，不会成为「普通人的 AI 助理」。
 tldr: 开发者主力工具份额里 Claude Code 28% + Cursor 24% 拿走过半，OpenClaw 与 Kilo / Manus Desktop / Devin 一起挤在 <1% 那一档；Cline / OpenClaw 调研样本量低到不到报告阈值（n=38-72）；典型月成本 $15-120 vs ChatGPT Plus 平价 $20、Copilot $10 平价 flat fee；Hermes Agent 把 Codex 当引擎、自己当壳，OpenAI 第一方 + 智能 shell 的组合把开源 CLI agent 的生态位压得更窄。普通人对 24/7 长任务的需求接近不存在，命令行依然是劝退首墙。
 topic_type: tech
 tech_type: agents_automation
@@ -21,7 +21,7 @@ model: claude-opus-4-7
 - **38M 月访问量**、**3.2M 月活用户**、**500K+ 运行实例**、**44K+ ClawHub Skills**（[gradually.ai](https://www.gradually.ai/en/openclaw-statistics/) 与 [getpanto.ai](https://www.getpanto.ai/blog/openclaw-ai-platform-statistics)）
 - **2026 年 2-3 月环比月增长 925%**（[reinventing.ai](https://insights.reinventing.ai/articles/openclaw-real-world-productivity-adoption-2026-02-17)）
 
-数字怎么看都"火爆"。但**这套数字描述的是开发者圈层内部的扩张速度**——不是渗透到普通人群体的速度。本文要论证的就是这两者的鸿沟。
+数字怎么看都"火爆"。但**这套数字描述的是开发者圈层内部的扩张速度**——不是渗透到普通人群体的速度。重点讨论的就是这两者的鸿沟。
 
 ## 二、为什么重要
 
@@ -35,7 +35,7 @@ model: claude-opus-4-7
 
 OpenClaw 现在是第三类。它能不能从第三类走到第二类（开发者主力），再走到第一类（普通人助理），需要拆解阻力是什么。
 
-**站长的假设**：四道墙它都跨不过去。下面逐条论证。
+**站长的假设**：四道墙它都跨不过去。逐条论证。
 
 ## 三、四道墙
 
@@ -164,7 +164,7 @@ Cline 的设计哲学是「**零 markup，你付实际成本**」——这对开
 
 ## 六、个人结论
 
-**一句话定性**：OpenClaw 在 2026 年是「开发者圈的标杆开源 agent」，但**不是、且短期内不会成为「普通人的 AI 助理」**。开发者圈层内部 3.2M 月活已经接近这个生态位的天花板（全球程序员 ~3000 万 × 10% 渗透 = 300 万量级，OpenClaw 已经达到这个量级），再往外扩需要换形态——不是更好的 CLI，而是变成 ChatGPT 那样的「说话即用」产品。
+**一句话定性**：OpenClaw 在 2026 年是「开发者圈的标杆开源 agent」，但**短期内不会成为「普通人的 AI 助理」**。开发者圈层内部 3.2M 月活已经接近这个生态位的天花板（全球程序员 ~3000 万 × 10% 渗透 = 300 万量级，OpenClaw 已经达到这个量级）；进一步扩张需要变成 ChatGPT 那样“说话即用”的产品。
 
 **站长的四个判断哪些被验证、哪些需要修正**：
 

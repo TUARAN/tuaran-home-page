@@ -4,6 +4,7 @@ import {
   ENGINEERING_WORK_CATEGORIES,
   ENGINEERING_WORKS,
   getRichPagePresentation,
+  getRichPagePvKey,
 } from '../../../lib/engineeringWorks'
 
 export const dynamic = 'force-static'
@@ -44,6 +45,7 @@ export default function RichPagesPage() {
         const presentation = getRichPagePresentation(work)
         return {
           ...work,
+          pvKey: getRichPagePvKey(work),
           actionLabel: '进入',
           mobileBadge: { label: presentation.label, mono: false },
           badges: [

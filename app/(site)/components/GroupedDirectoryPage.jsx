@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -35,7 +38,15 @@ export function DirectoryBadge({ badge }) {
   )
 }
 
-function DirectoryRow({ item, actionLabel }) {
+function formatPv(pv) {
+  if (pv === null || typeof pv === 'undefined') return '-'
+  const n = Number(pv)
+  if (!Number.isFinite(n) || n < 0) return '-'
+  if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '')} 万`
+  return String(n)
+}
+
+function DirectoryRow({ item, actionLabel, pv }) {
   const badges = item.badges || []
 
   return (
@@ -49,6 +60,11 @@ function DirectoryRow({ item, actionLabel }) {
             {item.title}
           </h3>
           {item.mobileBadge ? <span className="md:hidden"><DirectoryBadge badge={item.mobileBadge} /></span> : null}
+          {item.pvKey ? (
+            <span className="font-mono text-[10px] text-[#8a877d] dark:text-[#7e8a9b] md:hidden">
+              阅读量 {formatPv(pv)}
+            </span>
+          ) : null}
           <span className="ml-auto text-[13px] font-semibold text-[#8a6422] transition group-hover:text-[#3a2c14] dark:text-[#d4ae66] dark:group-hover:text-[#f2d8a5] md:hidden">
             {item.actionLabel || actionLabel} →
           </span>
@@ -60,6 +76,7 @@ function DirectoryRow({ item, actionLabel }) {
 
       <div className="hidden min-w-0 flex-wrap items-center gap-1.5 md:flex md:justify-end">
         {badges.map((badge) => <DirectoryBadge key={`${item.id}-${badge.label}`} badge={badge} />)}
+        {item.pvKey ? <DirectoryBadge badge={{ label: `阅读量 ${formatPv(pv)}`, mono: false }} /> : null}
         <span className="ml-1 text-[13px] font-semibold text-[#8a6422] transition group-hover:text-[#3a2c14] dark:text-[#d4ae66] dark:group-hover:text-[#f2d8a5]">
           {item.actionLabel || actionLabel} →
         </span>
@@ -77,6 +94,30 @@ export default function GroupedDirectoryPage({
   actionLabel = '打开',
 }) {
   const total = sections.reduce((count, section) => count + section.items.length, 0)
+  const pvKeys = useMemo(
+    () => Array.from(new Set(
+      sections.flatMap((section) => section.items.map((item) => item.pvKey).filter(Boolean)),
+    )),
+    [sections],
+  )
+  const pvKeySignature = pvKeys.join(',')
+  const [pvCounts, setPvCounts] = useState({})
+
+  useEffect(() => {
+    if (!pvKeySignature) return undefined
+
+    let cancelled = false
+    fetch(`/api/research-pv?keys=${encodeURIComponent(pvKeySignature)}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.counts) setPvCounts(data.counts)
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
+  }, [pvKeySignature])
 
   return (
     <main className="min-h-screen bg-[#f2efe7] text-[#171611] dark:bg-[#0d0f12] dark:text-gray-100">
@@ -127,7 +168,12 @@ export default function GroupedDirectoryPage({
 
               <div className="divide-y divide-[#e8e1d5] overflow-hidden rounded-lg border border-[#ded8ca] bg-white/60 dark:divide-[#252e38] dark:border-[#252e38] dark:bg-[#101720]/[0.72]">
                 {section.items.map((item) => (
-                  <DirectoryRow key={item.id} item={item} actionLabel={actionLabel} />
+                  <DirectoryRow
+                    key={item.id}
+                    item={item}
+                    actionLabel={actionLabel}
+                    pv={item.pvKey ? pvCounts[item.pvKey] : null}
+                  />
                 ))}
               </div>
             </section>

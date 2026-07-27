@@ -1,5 +1,9 @@
 import { articles } from './articlesData'
-import { ENGINEERING_WORK_CATEGORIES, ENGINEERING_WORKS } from '../../../lib/engineeringWorks'
+import {
+  ENGINEERING_WORK_CATEGORIES,
+  ENGINEERING_WORKS,
+  getRichPagePvKey,
+} from '../../../lib/engineeringWorks'
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
 import { CONTENT_PV_ENTRIES } from '../../../lib/contentRegistry'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
@@ -111,6 +115,8 @@ export function buildKnowledgeItems() {
     date: p.date,
     sortKey: researchSortKey(p.date),
     href: p.href,
+    pvKey: getRichPagePvKey(p),
+    pv: null,
     canvasId: p.canvasId || null,
   }))
 

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 
 import { buildChangelogPeriods, CHANGELOG_PERIOD_VIEWS } from '../../../lib/changelogPeriods'
+import { getChangelogPeriodSummary } from '../../../lib/changelogPeriodSummaries'
 
 function ChangelogItemList({ items, markerClass }) {
   if (!items?.length) return null
@@ -49,6 +50,59 @@ function ChangelogSections({ entry }) {
           <p className="text-[13px] leading-6 text-[var(--site-faint)]">（暂无后续计划）</p>
         )}
       </section>
+    </div>
+  )
+}
+
+function ChangelogEntry({ entry }) {
+  return (
+    <article className="py-4 first:pt-0 last:pb-0">
+      <h3 className="font-serif text-[18px] font-semibold text-[var(--site-ink)]">
+        {entry.title}
+      </h3>
+      <p className="mt-1 text-[13.5px] leading-6 text-[var(--site-muted)]">{entry.summary}</p>
+      <ChangelogSections entry={entry} />
+    </article>
+  )
+}
+
+function PeriodSummary({ period, view }) {
+  const summary = getChangelogPeriodSummary(period, view)
+  const activeWeeks = new Set(period.entries.map((entry) => entry.week)).size
+
+  return (
+    <div>
+      <article className="rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_65%,transparent)] p-4 md:p-5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-accent)]">
+          Period Synthesis · 周期总结
+        </p>
+        <h3 className="mt-2 font-serif text-[20px] font-semibold leading-snug text-[var(--site-ink)]">
+          {summary.title}
+        </h3>
+        <p className="mt-2 text-[13.5px] leading-7 text-[var(--site-muted)]">{summary.summary}</p>
+        {summary.highlights?.length ? (
+          <ul className="mt-4 grid gap-2 md:grid-cols-3">
+            {summary.highlights.map((highlight, index) => (
+              <li key={highlight} className="rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] p-3 text-[12.5px] leading-6 text-[var(--site-muted)]">
+                <span className="mr-2 font-mono text-[10px] text-[var(--site-accent)]">{String(index + 1).padStart(2, '0')}</span>
+                {highlight}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="mt-4 border-l-2 border-[var(--site-accent)] pl-3 text-[12.5px] leading-6 text-[var(--site-muted)]">
+          <span className="font-semibold text-[var(--site-ink)]">阶段判断：</span>{summary.signal}
+        </p>
+      </article>
+
+      <details className="mt-3 rounded-xl border border-[var(--site-line)] px-4 py-3">
+        <summary className="cursor-pointer text-[12px] font-medium text-[var(--site-muted)]">
+          展开查看 {activeWeeks} 周、{period.entries.length} 次原始更新
+        </summary>
+        <div className="mt-4 divide-y divide-[var(--site-line)] border-t border-[var(--site-line)] pt-4">
+          {period.entries.map((entry) => <ChangelogEntry key={entry.version} entry={entry} />)}
+        </div>
+      </details>
     </div>
   )
 }
@@ -115,17 +169,13 @@ export default function ChangelogTimelineClient({ entries }) {
               ) : null}
             </div>
 
-            <div className="divide-y divide-[var(--site-line)]">
-              {period.entries.map((entry) => (
-                <article key={entry.version} className="py-4 first:pt-0 last:pb-0">
-                  <h3 className="font-serif text-[18px] font-semibold text-[var(--site-ink)]">
-                    {entry.title}
-                  </h3>
-                  <p className="mt-1 text-[13.5px] leading-6 text-[var(--site-muted)]">{entry.summary}</p>
-                  <ChangelogSections entry={entry} />
-                </article>
-              ))}
-            </div>
+            {view === 'week' ? (
+              <div className="divide-y divide-[var(--site-line)]">
+                {period.entries.map((entry) => <ChangelogEntry key={entry.version} entry={entry} />)}
+              </div>
+            ) : (
+              <PeriodSummary period={period} view={view} />
+            )}
           </li>
         ))}
       </ol>

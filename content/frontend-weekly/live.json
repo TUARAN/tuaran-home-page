@@ -1,6 +1,54 @@
 {
-  "updatedAt": "2026-07-27T14:35:56.991Z",
+  "updatedAt": "2026-07-27T16:57:56.280Z",
   "items": [
+    {
+      "topic": "技巧",
+      "title": "GitHub Copilot app 入门指南：多 Agent 会话工作区与 Canvas 预览",
+      "summary": "GitHub Copilot app 将 AI 编码工具升级为多 Agent 会话工作区，支持同时管理多个任务线程而不丢失进度。用户可为每个会话绑定项目上下文，通过 `/create-canvas` 命令在浏览器 Canvas 中预览 UI 并直接点选修改，还能启用 Agent Merge 自动处理 PR 审查反馈和合并冲突。",
+      "source": "GitHub Blog",
+      "href": "https://github.blog/ai-and-ml/github-copilot/github-copilot-app-for-beginners-getting-started",
+      "publishedAt": "2026-07-27T16:00:00.000Z"
+    },
+    {
+      "topic": "行业",
+      "title": "Google AI Overviews 搜索结果出现率升至43%",
+      "summary": "Google AI Overviews 在搜索结果中的出现率一年内从15%升至43%，AI Mode月访问量从1.26亿增至2.79亿。用户搜索长度增加，正从短关键词转向更长的自然对话式查询。",
+      "source": "TechCrunch：AI（RSS）",
+      "href": "https://techcrunch.com/2026/07/27/googles-ai-search-is-rapidly-becoming-the-default-new-data-shows",
+      "publishedAt": "2026-07-27T15:57:12.000Z"
+    },
+    {
+      "topic": "模型",
+      "title": "Kimi K3 上线 Modal，支持无损加速推理",
+      "summary": "很高兴 @modal 成为 Kimi K3 的 Day 0 发布合作伙伴！\n\n他们为 K3 的架构训练了自定义 DFlash 投机器，实现更快推理且无质量损失。",
+      "source": "X：Kimi.ai (@Kimi_Moonshot)",
+      "href": "https://x.com/Kimi_Moonshot/status/2081767591887122564",
+      "publishedAt": "2026-07-27T15:44:05.000Z"
+    },
+    {
+      "topic": "产品",
+      "title": "Kimi K3 开源分布式智能体环境 AgentENV",
+      "summary": "我们与 kvcache-ai 合作开源了 AgentENV。\n\nAgentENV 是一个用于大规模运行智能体环境的分布式系统。其组件为 Kimi K3 的智能体强化学习训练提供支持，具备快速快照、恢复和分支功能，适用于大规模并行智能体工作流。\n\n在 GitHub 上探索：http://github.com/kvcache-ai/AgentEnv",
+      "source": "X：Kimi.ai (@Kimi_Moonshot)",
+      "href": "https://x.com/Kimi_Moonshot/status/2081762978391843020",
+      "publishedAt": "2026-07-27T15:25:45.000Z"
+    },
+    {
+      "topic": "模型",
+      "title": "Kimi K3 开源：2.8T MoE 模型与技术报告",
+      "summary": "Kimi 发布其最强模型 Kimi K3，这是一个 2.8T 参数的 MoE 模型，具备原生视觉理解和 1M token 上下文窗口。新架构实现了每单位计算 2.5 倍的智能提升。除模型权重外，Kimi 还开源了高性能注意力内核、MoE 通信库及大规模智能体运行环境基础设施。",
+      "source": "X：Kimi.ai (@Kimi_Moonshot)",
+      "href": "https://x.com/Kimi_Moonshot/status/2081760186235289764",
+      "publishedAt": "2026-07-27T15:14:40.000Z"
+    },
+    {
+      "topic": "行业",
+      "title": "NVIDIA 等多家行业领袖联合成立 Open Secure AI Alliance，推动 AI 安全与防御开源化",
+      "summary": "NVIDIA、Microsoft、Hugging Face、IBM 等数十家机构联合成立 Open Secure AI Alliance，旨在通过开源模型、工具和框架构建可审查、可定制的 AI 安全防御体系。",
+      "source": "NVIDIA Blog（RSS）",
+      "href": "https://blogs.nvidia.com/blog/open-secure-ai-alliance",
+      "publishedAt": "2026-07-27T09:00:07.000Z"
+    },
     {
       "topic": "技巧",
       "title": "当编码不再是瓶颈：Berkeley RDI 提出软件自主开发三级框架",

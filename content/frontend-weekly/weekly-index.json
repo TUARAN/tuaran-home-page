@@ -1,7 +1,940 @@
 {
-  "updatedAt": "2026-07-27T05:27:37.776Z",
+  "updatedAt": "2026-07-28T04:45:15.044Z",
   "source": "TUARAN/frontend-weekly-digest-cn",
   "issues": [
+    {
+      "id": 476,
+      "title": "前端周刊第476期",
+      "recommendation": "本期聚焦前端性能优化、CSS动画新特性、JavaScript状态管理以及框架更新，涵盖实用工具和设计模式。适合开发者了解最新技术趋势并提升项目开发效率。\n\n---",
+      "sections": [
+        {
+          "title": "🧭 Web Dev",
+          "items": [
+            {
+              "title": "如何阅读 GTmetrix 报告并优化 WordPress 速度",
+              "href": "https://wp-rocket.me/blog/gtmetrix/",
+              "summary": "介绍如何通过 GTmetrix 分析 WordPress 性能问题并进行优化，适合关注网站速度的开发者。"
+            },
+            {
+              "title": "你的表单真的需要下拉列表吗？",
+              "href": "https://www.nngroup.com/articles/dropdown-list/",
+              "summary": "探讨表单设计中下拉列表的适用场景及替代方案，帮助提升用户体验。"
+            },
+            {
+              "title": "在 Webflow 中构建实时 3D 体验",
+              "href": "https://tympanus.net/codrops/2026/07/22/building-ridgeline-engineering-a-real-time-3d-experience-in-webflow/",
+              "summary": "展示如何在 Webflow 中实现实时 3D 交互，适合对创意开发感兴趣的开发者。"
+            },
+            {
+              "title": "从基础原则理解微前端",
+              "href": "https://medium.com/@andrew.redican.mejia/microfrontends-from-first-principles-178aafe02ce5",
+              "summary": "阐述微前端的核心概念及应用场景，适合希望深入了解该架构的开发者。"
+            }
+          ]
+        },
+        {
+          "title": "🎨 CSS",
+          "items": [
+            {
+              "title": "动画时间线：scroll() 替代滚动 JavaScript",
+              "href": "https://agustinbarrientos.com/writing/senior-eye/animation-timeline-scroll/",
+              "summary": "介绍 CSS 新特性 animation-timeline: scroll()，简化滚动动画的实现。"
+            },
+            {
+              "title": "使用 text-fit 实现响应式 ASCII 艺术",
+              "href": "https://css-tip.com/ascii-art/",
+              "summary": "展示如何用 CSS 创建响应式 ASCII 艺术，适合对创意设计感兴趣的开发者。"
+            },
+            {
+              "title": "像印刷页面一样设置排版",
+              "href": "https://www.carmenansio.com/articles/editorial-typography-css/",
+              "summary": "探讨如何用 CSS 实现印刷风格的排版设计，提升网页视觉效果。"
+            },
+            {
+              "title": "CSS Infinity 的使用场景",
+              "href": "https://nerdy.dev/css-infinity-use-cases",
+              "summary": "介绍 CSS Infinity 的应用场景，扩展开发者的设计思路。"
+            },
+            {
+              "title": "需要绘制三角形时，试试圆锥渐变",
+              "href": "https://master.dev/blog/when-you-need-to-make-a-triangle-think-conic-gradients/",
+              "summary": "展示如何用 CSS 圆锥渐变创建三角形，简化图形设计。"
+            },
+            {
+              "title": "我的关注：highlight API、text-indent 和 font-family: math",
+              "href": "https://utilitybend.com/blog/under-my-radar-highlight-text-indent-and-font-family-math",
+              "summary": "分享 CSS 的几个实用功能，帮助开发者优化文本样式。"
+            },
+            {
+              "title": "使用 CSS 的 animation-composition 避免重复声明",
+              "href": "https://master.dev/blog/using-animation-composition-in-css-to-avoid-redeclaring-other-values/",
+              "summary": "介绍如何通过 animation-composition 优化动画代码的可维护性。"
+            },
+            {
+              "title": "基于时间的背景颜色过渡：Temporal 和 CSS color-mix",
+              "href": "https://localghost.dev/blog/time-based-background-colour-transitions-with-temporal-and-css-color-mix/",
+              "summary": "展示如何结合 Temporal 和 CSS color-mix 实现动态背景颜色过渡。"
+            }
+          ]
+        },
+        {
+          "title": "💡 JavaScripts",
+          "items": [
+            {
+              "title": "Fetch 不够用",
+              "href": "https://www.jasnell.me/posts/fetch-is-not-enough",
+              "summary": "探讨 Fetch API 的局限性及替代方案，适合关注数据请求的开发者。"
+            },
+            {
+              "title": "管理的绝对状态",
+              "href": "https://infrequently.org/2026/07/state-management/",
+              "summary": "分析 JavaScript 状态管理的现状及发展方向，适合框架开发者参考。"
+            },
+            {
+              "title": "多数 JavaScript 开发者在面试中误解 == 的原因",
+              "href": "https://medium.com/@dheeraj.bartwal91/most-javascript-developers-get-wrong-in-interviews-not-because-its-hard-729901790e2d",
+              "summary": "探讨 JavaScript 中 == 的常见误区，帮助开发者备战面试。"
+            },
+            {
+              "title": "Angular 22 正式采用 Signal-First：更新内容一览",
+              "href": "https://javascript.plainenglish.io/angular-22-is-officially-signal-first-heres-everything-that-changed-here-s-what-changes-in-ng-b026fd81a3a4",
+              "summary": "总结 Angular 22 的最新特性及变化，适合框架用户了解更新细节。"
+            },
+            {
+              "title": "React Hook Form 避免状态，TanStack Form 作用域化状态",
+              "href": "https://www.adarsha.dev/blog/react-hook-form-and-tanstack-form-state-models",
+              "summary": "比较两种表单管理库的状态模型，帮助开发者选择合适工具。"
+            },
+            {
+              "title": "Props、Composers 和 Providers：我们正在趋向的组合模式",
+              "href": "https://backstage.orus.eu/react-composition-patterns-at-orus/",
+              "summary": "探讨 React 中的组合模式，帮助开发者优化组件设计。"
+            },
+            {
+              "title": "React Flight 协议的攻击与防御：反序列化漏洞",
+              "href": "https://www.smashingmagazine.com/2026/07/weaponizing-defending-react-flight-protocol/",
+              "summary": "分析 React Flight 协议的安全问题及防御策略，适合关注安全的开发者。"
+            },
+            {
+              "title": "介绍 microcharts：React 的文字大小图表",
+              "href": "https://meetguns.com/blog/microcharts-word-sized-charts",
+              "summary": "展示如何用 microcharts 创建小型图表，适合数据可视化场景。"
+            },
+            {
+              "title": "如何在生产环境中发现 Next.js 的内存泄漏",
+              "href": "https://xabierlameiro.com/blog/nextjs/nextjs-memory-leak-in-production",
+              "summary": "分享排查 Next.js 内存泄漏的方法，适合优化性能的开发者。"
+            }
+          ]
+        }
+      ],
+      "source": "https://github.com/TUARAN/frontend-weekly-digest-cn/blob/main/weekly/476/%E5%89%8D%E7%AB%AF%E5%91%A8%E5%88%8A%E7%AC%AC476%E6%9C%9F.md"
+    },
+    {
+      "id": 475,
+      "title": "前端周刊第475期",
+      "recommendation": "本期周刊涵盖了 API 生命周期、HTML保护机制、CSS容器查询、JavaScript模块系统等多个主题，适合前端开发者深入了解最新技术趋势和实践。内容包括工具迁移、动画设计、组件测试等实用指南，帮助开发者优化项目和提升技能。\n\n---",
+      "sections": [
+        {
+          "title": "🧭 Web Dev",
+          "items": [
+            {
+              "title": "API 令牌生命周期：从生成到泄露",
+              "href": "https://www.jstools.space/blog/api-token-lifecycle/",
+              "summary": "了解 API 令牌的完整生命周期，帮助开发者更好地管理和保护 API 访问权限。"
+            },
+            {
+              "title": "为 Polyfills 辩护",
+              "href": "https://lea.verou.me/blog/2026/polyfills/",
+              "summary": "探讨 Polyfills 的价值与作用，适合开发者思考如何平衡兼容性与性能。"
+            },
+            {
+              "title": "aria-expanded 的使用场景",
+              "href": "https://piccalil.li/blog/use-cases-for-aria-expanded/",
+              "summary": "介绍 aria-expanded 属性的应用场景，帮助开发者提升网页的可访问性。"
+            },
+            {
+              "title": "保护 HTML 内容防止复制",
+              "href": "https://jsdev.space/howto/protect-from-copying/",
+              "summary": "分享防止 HTML 内容被复制的技术方法，适合需要保护原创内容的开发者。"
+            },
+            {
+              "title": "如何在 Go 中使用 HTMX",
+              "href": "https://www.alexedwards.net/blog/how-i-use-htmx-with-go",
+              "summary": "展示 HTMX 与 Go 的结合使用，适合后端开发者了解前端集成方案。"
+            },
+            {
+              "title": "Trionn 的架构：整合 GSAP、Three.js、Lenis 和 Web Audio",
+              "href": "https://tympanus.net/codrops/2026/07/15/the-architecture-behind-trionn-coordinating-gsap-three-js-lenis-and-web-audio/",
+              "summary": "分析复杂动画和音频项目的架构设计，适合对多媒体开发感兴趣的开发者。"
+            },
+            {
+              "title": "我们还需要构建工具吗？",
+              "href": "https://olliewilliams.xyz/blog/no-build/",
+              "summary": "探讨现代前端开发是否仍需构建工具，适合关注开发流程优化的读者。"
+            },
+            {
+              "title": "Vite 7 生产迁移：从 esbuild 到 Rolldown 和 Oxc",
+              "href": "https://www.sitepoint.com/vite-7-production-migration-rolldown-oxc-build-optimization/",
+              "summary": "介绍 Vite 7 的构建优化迁移过程，适合关注工具升级的开发者。"
+            },
+            {
+              "title": "使用 Codemod 自动化 ESLint 迁移",
+              "href": "https://eslint.org/blog/2026/07/eslint-codemod-migrations/",
+              "summary": "分享通过 Codemod 工具简化 ESLint 迁移的经验，适合团队协作场景。"
+            },
+            {
+              "title": "何时“阻塞”主线程是合理的",
+              "href": "https://www.smashingmagazine.com/2026/07/when-makes-sense-block-main-thread/",
+              "summary": "探讨主线程阻塞的合理场景，帮助开发者优化性能与用户体验。"
+            },
+            {
+              "title": "使用 Lighthouse 实现网站最佳实践",
+              "href": "https://www.debugbear.com/blog/lighthouse-best-practices",
+              "summary": "介绍如何通过 Lighthouse 工具优化网站性能，适合关注质量提升的开发者。"
+            }
+          ]
+        },
+        {
+          "title": "🎨 CSS",
+          "items": [
+            {
+              "title": "OKHST：用于真实界面的可预测颜色生成",
+              "href": "https://tenphi.me/blog/okhst-predictable-color-generation/",
+              "summary": "探索 OKHST 颜色模型的应用，适合对设计系统感兴趣的开发者。"
+            },
+            {
+              "title": "CSS 容器查询与子网格：构建上下文感知组件布局",
+              "href": "https://www.sitepoint.com/css-container-queries-subgrid-component-layouts-2026/",
+              "summary": "介绍容器查询和子网格的使用，适合开发复杂响应式布局的场景。"
+            },
+            {
+              "title": "使用 sibling-index() 实现进出动画",
+              "href": "https://master.dev/blog/in-n-out-animation-using-sibling-index/",
+              "summary": "分享基于 sibling-index() 的动画设计技巧，适合提升交互效果的开发者。"
+            },
+            {
+              "title": "重写 Sticky Detector 的经验教训",
+              "href": "https://master.dev/blog/lessons-learned-rewriting-a-sticky-detector/",
+              "summary": "总结重写 Sticky Detector 的实践经验，适合优化滚动交互的开发者。"
+            },
+            {
+              "title": "如何使用 CSS contrast-color() 实现自动对比",
+              "href": "https://blog.logrocket.com/css-contrast-color-auto-contrast/",
+              "summary": "介绍 contrast-color() 的应用场景，帮助开发者提升设计的可读性。"
+            },
+            {
+              "title": "用 CSS 子网格重建 FIFA 排名布局",
+              "href": "https://ishadeed.com/article/fifa-layout/",
+              "summary": "展示如何利用 CSS 子网格实现复杂布局，适合对网格系统感兴趣的开发者。"
+            }
+          ]
+        },
+        {
+          "title": "💡 JavaScripts",
+          "items": [
+            {
+              "title": "TypeScript 5.8 生产迁移：采用 Node.js 23+ 可擦除语法",
+              "href": "https://www.sitepoint.com/typescript-58-migration-erasable-syntax-node-23-production/",
+              "summary": "介绍 TypeScript 5.8 的迁移细节，适合关注语言特性更新的开发者。"
+            },
+            {
+              "title": "掌握 JavaScript 字符串算法",
+              "href": "https://jsdev.space/javascript-string-algorithms/",
+              "summary": "分享字符串处理的算法技巧，适合优化数据操作的开发者。"
+            },
+            {
+              "title": "在 Angular Signal Forms 中实现异步验证",
+              "href": "https://www.telerik.com/blogs/async-validation-angular-signal-forms",
+              "summary": "介绍如何在 Angular 表单中实现异步验证，适合框架用户深入学习。"
+            },
+            {
+              "title": "在 Vue 中使用 TanStack Query 实现乐观更新",
+              "href": "https://www.telerik.com/blogs/optimistic-updates-tanstack-query-vue",
+              "summary": "探讨 TanStack Query 在 Vue 项目中的应用，适合提升数据交互性能的开发者。"
+            },
+            {
+              "title": "模块系统：ES Modules 与 CommonJS 的比较",
+              "href": "https://medium.com/codetodeploy/the-module-system-es-modules-vs-commonjs-c903a3cee6a7",
+              "summary": "分析两种模块系统的优缺点，适合理解现代 JavaScript 架构的开发者。"
+            },
+            {
+              "title": "Preact 中的异步 Hydration",
+              "href": "https://jovidecroock.com/blog/resumed-hydration-preact/",
+              "summary": "探讨 Preact 框架中的异步 Hydration 技术，适合优化渲染性能的开发者。"
+            },
+            {
+              "title": "测试 React 服务器组件：Vitest 异步边界与 Mock 策略",
+              "href": "https://www.sitepoint.com/testing-react-server-components-vitest-async-boundaries-mock/",
+              "summary": "分享测试 React 服务器组件的实践技巧，适合关注测试优化的开发者。"
+            },
+            {
+              "title": "TanStack Router v1：从 React Router 迁移到类型安全的基于文件路由",
+              "href": "https://www.sitepoint.com/tanstack-router-v1-migration-react-router-file-based/",
+              "summary": "介绍 TanStack Router 的迁移过程，适合关注路由系统优化的开发者。"
+            },
+            {
+              "title": "React 中的装饰器模式：实用指南",
+              "href": "https://jsdev.space/howto/decorator-pattern-frontend/",
+              "summary": "探讨装饰器模式在 React 项目中的应用，适合提升组件复用性的开发者。"
+            }
+          ]
+        }
+      ],
+      "source": "https://github.com/TUARAN/frontend-weekly-digest-cn/blob/main/weekly/475/%E5%89%8D%E7%AB%AF%E5%91%A8%E5%88%8A%E7%AC%AC475%E6%9C%9F.md"
+    },
+    {
+      "id": 474,
+      "title": "前端周刊第474期",
+      "recommendation": "本期周刊涵盖了前端开发的多个重要领域，包括 Web 开发、CSS 和 JavaScript 的最新动态。内容既有技术深度，又有实际应用指导，适合开发者全面提升技能。\n\n---",
+      "sections": [
+        {
+          "title": "🧭 Web Dev",
+          "items": [
+            {
+              "title": "逆向工程 ChatGPT：OpenAI 如何支持十亿用户",
+              "href": "https://performance.dev/chatgpt",
+              "summary": "文章探讨了 ChatGPT 的 Web 实现及其支持大规模用户的技术基础，对高并发系统的开发者很有启发。"
+            },
+            {
+              "title": "TypeScript 7.0 发布",
+              "href": "https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/",
+              "summary": "TypeScript 7.0 带来了新特性和改进，是前端开发者不可错过的更新。"
+            },
+            {
+              "title": "前端领域的变化：你错过了什么",
+              "href": "https://davidpoblador.com/deep-dives/what-happened-to-the-frontend/",
+              "summary": "总结了前端技术的最新趋势和变化，适合了解行业动态的开发者阅读。"
+            },
+            {
+              "title": "代理化 Web 的未来",
+              "href": "https://bandarra.me/posts/the-agentic-web",
+              "summary": "探讨了 Web 的代理化趋势及其潜在影响，为未来技术发展提供了新视角。"
+            },
+            {
+              "title": "如何利用 GTmetrix MCP 和 AI 优化电商性能",
+              "href": "https://gtmetrix.com/blog/how-growth-by-sabir-uses-gtmetrix-mcp-and-ai-to-optimize-performance-across-200-ecommerce-brands/",
+              "summary": "分享了 GTmetrix 和 AI 在电商性能优化中的实际应用案例，值得性能优化从业者参考。"
+            },
+            {
+              "title": "虚空开发：2026 年 6 月回顾",
+              "href": "https://voidzero.dev/posts/whats-new-jun-2026",
+              "summary": "总结了 6 月的技术动态和开发者社区的热点内容，适合快速了解趋势。"
+            },
+            {
+              "title": "Vite+ Beta 发布",
+              "href": "https://voidzero.dev/posts/announcing-vite-plus-beta",
+              "summary": "Vite+ 的 Beta 版本发布，带来了新功能和改进，适合关注构建工具的开发者。"
+            },
+            {
+              "title": "Edge 开发者更新：布局间隙、键盘无障碍和 PWA 迁移",
+              "href": "https://blogs.windows.com/msedgedev/2026/07/07/new-in-edge-for-developers-style-layout-gaps-improve-keyboard-accessibility-and-migrate-your-pwa-to-a-new-origin/",
+              "summary": "介绍了 Microsoft Edge 的新功能更新，帮助开发者提升用户体验。"
+            },
+            {
+              "title": "用轻量化技术创建沉浸式 WebGL 体验",
+              "href": "https://tympanus.net/codrops/2026/07/10/the-sleepers-creating-an-atmospheric-webgl-experience-with-lightweight-techniques/",
+              "summary": "展示了如何使用轻量化方法构建高效的 WebGL 体验，适合对图形开发感兴趣的读者。"
+            },
+            {
+              "title": "用 Three.js 构建交互式波传播立方体网格",
+              "href": "https://tympanus.net/codrops/2026/07/09/building-an-interactive-wave-propagation-cube-grid-with-three-js/",
+              "summary": "通过 Three.js 构建动态波传播效果的教程，适合学习 3D 可视化的开发者。"
+            },
+            {
+              "title": "使用 Blender 相机路径、Three.js 和 GSAP 构建滚动驱动的 3D 画廊",
+              "href": "https://tympanus.net/codrops/2026/07/07/building-a-scroll-driven-3d-gallery-using-a-blender-camera-path-with-three-js-and-gsap/",
+              "summary": "结合多种工具实现滚动驱动的 3D 效果，适合探索动画和 3D 开发的读者。"
+            }
+          ]
+        },
+        {
+          "title": "🎨 CSS",
+          "items": [
+            {
+              "title": "关于锚定界面设计",
+              "href": "https://karlkoch.me/writing/on-anchored-interfaces",
+              "summary": "分析了锚定界面的设计原则和应用场景，提供了实用的设计建议。"
+            },
+            {
+              "title": "锚点定位入门",
+              "href": "https://www.joshwcomeau.com/css/anchor-positioning/",
+              "summary": "详细介绍了 CSS 中锚点定位的基础知识，适合初学者学习。"
+            },
+            {
+              "title": "强大的 CSS border-shape 属性即将到来！",
+              "href": "https://css-tricks.com/get-ready-for-the-powerful-css-border-shape-property/",
+              "summary": "预览了即将推出的 CSS border-shape 属性及其潜在用例，值得关注。"
+            },
+            {
+              "title": "CSS 中的边界感知样式",
+              "href": "https://master.dev/blog/boundary-aware-styling-in-css/",
+              "summary": "探讨了如何在 CSS 中实现边界感知样式，提升设计灵活性。"
+            },
+            {
+              "title": "如何让交互元素不可见但可访问",
+              "href": "https://master.dev/blog/how-to-make-an-interactive-element-invisible-but-accessible/",
+              "summary": "提供了在隐藏交互元素的同时保持其可访问性的技巧，兼顾设计与可用性。"
+            },
+            {
+              "title": "CSS @layer 的水平思考",
+              "href": "https://master.dev/blog/thinking-horizontally-in-css-layer/",
+              "summary": "介绍了 CSS @layer 的使用方式及其在样式管理中的优势。"
+            },
+            {
+              "title": "2026 年的现代 CSS：你可以删除的 JavaScript",
+              "href": "https://www.alexcloudstar.com/blog/modern-css-2026-features/",
+              "summary": "总结了 2026 年 CSS 的新特性及其对减少 JavaScript 依赖的影响。"
+            },
+            {
+              "title": "CSS 缓动：从入门到精通",
+              "href": "https://www.carmenansio.com/articles/css-easing-explained",
+              "summary": "深入解析了 CSS 缓动函数的原理及其在动画中的应用。"
+            }
+          ]
+        },
+        {
+          "title": "💡 JavaScripts",
+          "items": [
+            {
+              "title": "ECMAScript 2026 的新特性",
+              "href": "https://pawelgrzybek.com/whats-new-in-ecmascript-2026/",
+              "summary": "介绍了 ECMAScript 2026 的新功能，帮助开发者了解 JavaScript 的最新进展。"
+            },
+            {
+              "title": "你在大型项目中放弃的 React 模式",
+              "href": "https://www.reddit.com/r/reactjs/comments/1uqqy52/whats_one_react_pattern_you_stopped_using_after/",
+              "summary": "讨论了在大型 React 项目中被淘汰的设计模式，为开发者提供实践经验。"
+            },
+            {
+              "title": "React 编译器解析",
+              "href": "https://neciudan.dev/react-compiler-explained",
+              "summary": "介绍了 React 编译器的工作原理及其在开发中的作用。"
+            },
+            {
+              "title": "Proxy 和 Reflect",
+              "href": "https://piccalil.li/blog/proxy-and-reflect/",
+              "summary": "讲解了 JavaScript 中 Proxy 和 Reflect 的基本用法及其应用场景。"
+            },
+            {
+              "title": "Angular Signal Forms 入门",
+              "href": "https://www.telerik.com/blogs/getting-started-angular-signal-forms",
+              "summary": "提供了关于 Angular Signal Forms 的入门教程，适合框架开发者学习。"
+            },
+            {
+              "title": "用 React 构建实时无人机地面控制站",
+              "href": "https://medium.com/@bytescribe/building-a-real-time-drone-ground-control-station-in-react-46e76adf12a3",
+              "summary": "展示了如何使用 React 构建一个实时控制系统，适合对物联网开发感兴趣的读者。"
+            }
+          ]
+        }
+      ],
+      "source": "https://github.com/TUARAN/frontend-weekly-digest-cn/blob/main/weekly/474/%E5%89%8D%E7%AB%AF%E5%91%A8%E5%88%8A%E7%AC%AC474%E6%9C%9F.md"
+    },
+    {
+      "id": 473,
+      "title": "前端周刊第473期",
+      "recommendation": "本期周刊涵盖了前端开发、CSS设计和JavaScript技术的最新动态，提供了从语义网到WebGPU的多样化内容，适合不同层次的开发者阅读。\n\n---",
+      "sections": [
+        {
+          "title": "🧭 Web Dev",
+          "items": [
+            {
+              "title": "关于语义网的探讨",
+              "href": "https://karlkoch.me/writing/on-the-semantic-web",
+              "summary": "语义网是未来网络的一部分，它旨在让数据更易于机器理解。了解其发展方向可以帮助开发者更好地设计数据结构。"
+            },
+            {
+              "title": "Safari MCP服务器介绍",
+              "href": "https://webkit.org/blog/18136/introducing-the-safari-mcp-server-for-web-developers/",
+              "summary": "Safari MCP服务器为开发者提供了新的工具支持，优化了浏览器与服务器之间的通信流程，是提升开发效率的有力工具。"
+            },
+            {
+              "title": "Dan Abramov加入Next.js团队",
+              "href": "https://bsky.app/profile/danabra.mov/post/3mp5b3nd3ws2k",
+              "summary": "React核心开发者Dan Abramov以兼职形式加入Next.js团队，这可能为框架带来新的技术突破和社区支持。"
+            },
+            {
+              "title": "Lighthouse评估网站是否适配AI代理",
+              "href": "https://techhub.iodigital.com/articles/is-your-site-ready-for-ai-agents-lighthouse-now-has-an-answer",
+              "summary": "Lighthouse新增功能帮助开发者评估网站对AI代理的适配程度，为未来的AI应用场景做好准备。"
+            },
+            {
+              "title": "Google I/O 2026：Web UI新动态",
+              "href": "https://developer.chrome.com/blog/new-in-web-ui-io26?hl=en",
+              "summary": "Google I/O 2026展示了Web UI领域的最新技术更新，包括性能优化和用户体验改进，值得关注。"
+            },
+            {
+              "title": "HTML元素的引入",
+              "href": "https://developer.chrome.com/blog/usermedia-html-element",
+              "summary": "新的HTML元素简化了用户媒体权限管理，为开发者提供了更安全和直观的解决方案。"
+            },
+            {
+              "title": "Chrome优化摄像头权限管理",
+              "href": "https://blog.invidelabs.com/chrome-usermedia-html-element/",
+              "summary": "Chrome通过新的HTML元素改进了摄像头权限管理，减少了应用层面的复杂性，提升了用户体验。"
+            },
+            {
+              "title": "TypeScript成为GitHub最受欢迎语言",
+              "href": "https://www.syncfusion.com/blogs/post/typescript-github-most-used-language",
+              "summary": "TypeScript凭借其强类型和开发效率优势，成为GitHub上最受欢迎的语言，反映了其在前端开发中的重要性。"
+            },
+            {
+              "title": "npm依赖的安全风险",
+              "href": "https://blog.logrocket.com/npm-dependencies-bigger-security-risk-your-code/",
+              "summary": "文章探讨了npm依赖可能带来的安全问题，提醒开发者在选择第三方库时需更加谨慎。"
+            },
+            {
+              "title": "a11y.quest：提升无障碍技能的128个问题",
+              "href": "https://a11y.quest/",
+              "summary": "通过回答这些问题，开发者可以系统性地提升无障碍设计能力，改善用户体验。"
+            },
+            {
+              "title": "无障碍设计是一种运营能力",
+              "href": "https://www.smashingmagazine.com/2026/06/why-accessibility-operational-capability-not-feature/",
+              "summary": "文章强调无障碍设计不仅是功能，更是一种运营能力，值得开发者从战略角度重视。"
+            },
+            {
+              "title": "使用WebGPU和原生JavaScript构建持久页面过渡",
+              "href": "https://tympanus.net/codrops/2026/06/30/building-persistent-page-transitions-with-webgpu-and-vanilla-javascript/",
+              "summary": "WebGPU结合JavaScript实现流畅的页面过渡效果，为开发者提供了新的视觉设计可能。"
+            },
+            {
+              "title": "Quake1移植：用HTML/CSS渲染3D几何",
+              "href": "https://cssquake.com/",
+              "summary": "通过PolyCSS技术，Quake1实现了无需WebGL或Canvas的3D渲染，为前端开发打开了新思路。"
+            },
+            {
+              "title": "数字运动员的3D工作流探索",
+              "href": "https://tympanus.net/codrops/2026/07/01/sculpting-a-digital-athlete-capturing-stefanos-tsitsipas-beyond-the-court/",
+              "summary": "从摄影测量到动画优化，文章展示了完整的3D工作流，为数字角色开发提供了参考。"
+            },
+            {
+              "title": "无需GPU的WebGL实现",
+              "href": "https://microlink.io/blog/webgl-without-a-gpu",
+              "summary": "探索如何在没有GPU支持的情况下实现WebGL渲染，为设备受限的场景提供解决方案。"
+            }
+          ]
+        },
+        {
+          "title": "🎨 CSS",
+          "items": [
+            {
+              "title": "纯CSS实现故障文本效果",
+              "href": "https://code.geohack.top/post/building-a-glitch-text-effect-with-nothing-but-css",
+              "summary": "利用CSS技术实现动态的故障文本效果，展示了CSS在视觉设计中的潜力。"
+            },
+            {
+              "title": "background-clip功能升级",
+              "href": "https://css-tip.com/background-clip/",
+              "summary": "background-clip属性迎来新功能，进一步提升了背景裁剪的灵活性和表现力。"
+            },
+            {
+              "title": "利用progress()实现流体排版",
+              "href": "https://master.dev/blog/fluid-typography-with-progress/",
+              "summary": "progress()函数为流体排版提供了新的实现方式，简化了响应式设计的复杂度。"
+            },
+            {
+              "title": "告别传统CSS：现代特性推荐",
+              "href": "https://jsdev.space/modern-css-features/",
+              "summary": "文章列举了现代CSS特性，帮助开发者摆脱传统写法，提升代码效率和可维护性。"
+            },
+            {
+              "title": "CSS状态与JavaScript事件的界限变迁",
+              "href": "https://css-tricks.com/css-states-and-javascript-events/",
+              "summary": "分析CSS状态与JavaScript事件的交互关系，为开发者提供更清晰的设计思路。"
+            },
+            {
+              "title": "修复全屏CSS布局问题",
+              "href": "https://dbushell.com/2026/07/03/fixing-full-bleed-css/",
+              "summary": "文章探讨了全屏布局中的常见问题，并提供了实用的解决方案。"
+            },
+            {
+              "title": "Goldilocks自定义选择框高度",
+              "href": "https://jakearchibald.com/2026/goldilocks-select-height/",
+              "summary": "Goldilocks方法提供了一种灵活的选择框高度调整方式，提升了表单设计的用户体验。"
+            }
+          ]
+        },
+        {
+          "title": "💡 JavaScripts",
+          "items": [
+            {
+              "title": "不同的Hydration和渲染策略",
+              "href": "https://neciudan.dev/hydration-and-rendering-strategies",
+              "summary": "探讨了多种Hydration和渲染策略，为开发者优化前端性能提供了参考。"
+            },
+            {
+              "title": "Cloudflare Workers与TanStack Start的结合",
+              "href": "https://master.dev/blog/cloudflare-workers-and-hyperdrive-with-tanstack-start/",
+              "summary": "文章介绍了Cloudflare Workers与TanStack Start的整合应用，为边缘计算提供了新的可能性。"
+            },
+            {
+              "title": "Hydration不匹配的隐藏成本",
+              "href": "https://3perf.com/blog/hydration-mismatch/",
+              "summary": "Hydration不匹配可能导致性能问题，文章分析了其影响及解决方法。"
+            },
+            {
+              "title": "Next.js 16.3的AI改进",
+              "href": "https://nextjs.org/blog/next-16-3-ai-improvements",
+              "summary": "Next.js 16.3增强了AI支持功能，为开发者提供了更智能的工具和框架。"
+            },
+            {
+              "title": "Rolldown移除Rust React编译器集成",
+              "href": "https://socket.dev/blog/rolldown-pulls-rust-react-compiler-integration",
+              "summary": "由于二进制文件体积增加，Rolldown决定移除Rust React编译器集成，反映了性能优化的权衡。"
+            },
+            {
+              "title": "React测试面试问题解析",
+              "href": "https://howtotestfrontend.com/resources/react-testing-interview-questions",
+              "summary": "文章汇总了React测试相关的常见面试问题，为开发者提供了备考指南。"
+            },
+            {
+              "title": "React编译器处理记忆化的实际问题",
+              "href": "https://blog.logrocket.com/react-compiler-memoization-what-actually-broke/",
+              "summary": "探讨了React编译器在记忆化处理中的问题，为开发者提供了实践经验。"
+            },
+            {
+              "title": "修复Next.js中的RSC Hydration不匹配",
+              "href": "https://blog.logrocket.com/how-fix-rsc-hydration-mismatches-next-js/",
+              "summary": "文章提供了修复Next.js中RSC Hydration不匹配问题的具体方法，提升了应用稳定性。"
+            },
+            {
+              "title": "Angular 22 HostDirectives去重机制解析",
+              "href": "https://itnext.io/angular-22-hostdirectives-de-duplication-explained-d2e8791f2e03",
+              "summary": "HostDirectives功能优化了Angular组件的重复定义问题，提升了代码结构的简洁性。"
+            },
+            {
+              "title": "Angular 22状态管理：Signals、SignalStore或NgRx",
+              "href": "https://abp.io/community/articles/angular-22-state-management-signals-signalstore-or-ngrx-yq8zg0nw#gsc.tab=0",
+              "summary": "文章比较了Angular 22中的三种状态管理方式，为开发者提供了选择依据。"
+            }
+          ]
+        }
+      ],
+      "source": "https://github.com/TUARAN/frontend-weekly-digest-cn/blob/main/weekly/473/%E5%89%8D%E7%AB%AF%E5%91%A8%E5%88%8A%E7%AC%AC473%E6%9C%9F.md"
+    },
+    {
+      "id": 472,
+      "title": "前端周刊第472期",
+      "recommendation": "本期周刊涵盖了前端开发的多个重要领域，包括 Astro 7.0 发布、SVG 的局限性、Cloudflare Workers 的应用等。此外，还深入探讨了现代 CSS 主题、WebSocket 性能对比、React 最新功能等内容。适合关注前沿技术和实践的开发者阅读。\n\n---",
+      "sections": [
+        {
+          "title": "🧭 Web Dev",
+          "items": [
+            {
+              "title": "Astro 7.0 发布",
+              "href": "https://astro.build/blog/astro-7/",
+              "summary": "Astro 7.0 带来了新的功能和优化，是构建静态网站的又一重要更新。"
+            },
+            {
+              "title": "SVG 的不足之处",
+              "href": "https://patrickbrosset.com/articles/2026-06-22-whats-missing-from-svg/",
+              "summary": "探讨 SVG 在现代 Web 开发中的局限性，并提出改进建议。"
+            },
+            {
+              "title": "Cloudflare Workers 入门",
+              "href": "https://master.dev/blog/introduction-to-cloudflare-workers-for-web-apps/",
+              "summary": "了解如何使用 Cloudflare Workers 构建高性能的 Web 应用。"
+            },
+            {
+              "title": "WebMCP：为 AI 代理优化网站",
+              "href": "https://www.debugbear.com/blog/webmcp",
+              "summary": "介绍如何优化网站以更好地支持 AI 代理的交互。"
+            },
+            {
+              "title": "2026 核心网络指标：修复交互到下次绘制",
+              "href": "https://www.sitepoint.com/core-web-vitals-2026-fix-interaction-to-next-paint/",
+              "summary": "分析最新的核心网络指标更新及其优化方法。"
+            },
+            {
+              "title": "Shopify 春季版背后的 Web 体验设计",
+              "href": "https://tympanus.net/codrops/2026/06/26/engineering-the-web-experience-behind-shopifys-spring-26-edition-everywhere/",
+              "summary": "揭秘 Shopify 最新版本的 Web 体验设计与工程实践。"
+            },
+            {
+              "title": "Podium：将跑步变成故事的网站",
+              "href": "https://tympanus.net/codrops/2026/06/23/podium-building-a-website-where-running-becomes-storytelling/",
+              "summary": "探索如何通过设计和技术将跑步体验转化为叙事。"
+            },
+            {
+              "title": "使用视图过渡为对话框添加动画",
+              "href": "https://pqina.nl/blog/animating-the-dialog-element-using-view-transitions/",
+              "summary": "学习如何使用视图过渡 API 为对话框元素实现流畅动画。"
+            }
+          ]
+        },
+        {
+          "title": "🎨 CSS",
+          "items": [
+            {
+              "title": "现代 CSS 主题：light-dark()、contrast-color() 和样式查询",
+              "href": "https://una.im/modern-css-theming/",
+              "summary": "介绍 CSS 中的新功能，帮助实现更灵活的主题切换和样式适配。"
+            },
+            {
+              "title": "探索 Gap 装饰",
+              "href": "https://master.dev/blog/lets-play-with-gap-decorations/",
+              "summary": "展示如何使用 CSS gap 属性创建有趣的装饰效果。"
+            },
+            {
+              "title": "CSS 中的 random() 实验",
+              "href": "https://polypane.app/blog/experimenting-with-random-in-css/",
+              "summary": "探讨 CSS 中 random() 函数的潜力及其应用场景。"
+            },
+            {
+              "title": "通过锚点定位改进卡片模式",
+              "href": "https://thatemil.com/blog/clickable-surface-expansion-using-anchor-position/",
+              "summary": "研究如何利用锚点定位优化卡片组件的交互体验。"
+            },
+            {
+              "title": "基于滚动驱动的反向滚动动画",
+              "href": "https://css-tricks.com/scroll-driven-animations-opposing-scroll-directions/",
+              "summary": "学习如何通过 CSS 实现基于滚动方向的动画效果。"
+            },
+            {
+              "title": "网格布局中的 WCAG 2.4.3 问题",
+              "href": "https://matuzo.at/blog/2026/grid-lanes-accessibility",
+              "summary": "分析网格布局在无障碍性上的潜在问题及解决方案。"
+            },
+            {
+              "title": "波浪形输入范围滑块",
+              "href": "https://css-tip.com/wiggly-range-slider/",
+              "summary": "展示如何使用 CSS 创建动态的波浪形滑块效果。"
+            },
+            {
+              "title": "CSS 容器查询与子网格：布局三部曲",
+              "href": "https://www.sitepoint.com/css-container-queries-subgrid-the-layout-trilogy-thats-now-in-every-browser/",
+              "summary": "总结容器查询和子网格的功能及其在现代浏览器中的支持情况。"
+            }
+          ]
+        },
+        {
+          "title": "💡 JavaScripts",
+          "items": [
+            {
+              "title": "Node.js 五大 WebSocket 服务性能对比",
+              "href": "https://evilmartians.com/chronicles/choose-your-fighter-benchmarking-5-websocket-servers-for-nodejs",
+              "summary": "通过基准测试比较不同 WebSocket 服务的性能表现。"
+            },
+            {
+              "title": "Babel 8 发布：仅支持 ESM，移除 ES5 默认支持",
+              "href": "https://babeljs.io/blog/2026/06/16/8.0.0/",
+              "summary": "Babel 8 的发布标志着对现代 JavaScript 的进一步支持和优化。"
+            },
+            {
+              "title": "使用 TanStack Query 处理 Vue 中的变更",
+              "href": "https://www.telerik.com/blogs/handling-mutations-tanstack-query-vue",
+              "summary": "介绍如何在 Vue 项目中利用 TanStack Query 高效管理数据变更。"
+            },
+            {
+              "title": "Bulletproof React：GitHub 上最受欢迎的 React 架构",
+              "href": "https://jsdev.space/bulletproof-react-architecture-guide/",
+              "summary": "探讨 Bulletproof React 架构为何成为开发者的热门选择。"
+            },
+            {
+              "title": "Linear 从 styled-components 迁移到 StyleX",
+              "href": "https://www.skovhus.dev/blog/moving-linear-from-styled-components-to-stylex",
+              "summary": "分享 Linear 在样式管理上的技术迁移经验。"
+            },
+            {
+              "title": "TanStack Table：一次重构节省 90% 内存",
+              "href": "https://tanstack.com/blog/tanstack-table-v9-memory-performance",
+              "summary": "展示 TanStack Table 的性能优化背后的技术细节。"
+            },
+            {
+              "title": "React 编译器：消除手动性能优化工作",
+              "href": "https://www.sitepoint.com/react-compiler-eliminating-manual-performance-work/",
+              "summary": "介绍 React 编译器如何自动化性能优化任务。"
+            },
+            {
+              "title": "Next.js 16：Turbopack、React 编译器与缓存",
+              "href": "https://www.sitepoint.com/nextjs-16-turbopack-react-compiler-cache/",
+              "summary": "概述 Next.js 16 的新特性及其对开发效率的提升。"
+            },
+            {
+              "title": "深入解析 React：虚拟 DOM、协调与 Fiber",
+              "href": "https://medium.com/@ddhote780/react-behind-the-scenes-virtual-dom-reconciliation-render-phase-commit-phase-fiber-explained-c7625609491a",
+              "summary": "详细剖析 React 的核心机制及其工作原理。"
+            },
+            {
+              "title": "为 React 编写自定义渲染器",
+              "href": "https://www.callstack.com/blog/writing-custom-renderers-for-react",
+              "summary": "了解如何为 React 创建自定义渲染器以满足特定需求。"
+            },
+            {
+              "title": "React 19 的 useOptimistic 和 useActionState",
+              "href": "https://www.sitepoint.com/react-19s-useoptimistic-and-useactionstate-replacing-80-of-your-state-boilerplate/",
+              "summary": "探讨 React 19 新特性如何简化状态管理代码。"
+            }
+          ]
+        }
+      ],
+      "source": "https://github.com/TUARAN/frontend-weekly-digest-cn/blob/main/weekly/472/%E5%89%8D%E7%AB%AF%E5%91%A8%E5%88%8A%E7%AC%AC472%E6%9C%9F.md"
+    },
+    {
+      "id": 471,
+      "title": "前端周刊第471期",
+      "recommendation": "本期涵盖了前端开发、CSS、JavaScript等领域的最新动态与技术探索，内容包括 TypeScript 7.0 RC 发布、CSS 动画新特性、React 和 Angular 的最新进展，以及 SVG 图表构建等实用技巧。适合关注前沿技术和提升开发技能的读者。\n\n---",
+      "sections": [
+        {
+          "title": "🧭 Web Dev",
+          "items": [
+            {
+              "title": "使用代码示例构建 SVG 图表",
+              "href": "https://www.sitepoint.com/how-to-build-svg-charts-for-web-applications-a-developer-s-guide/",
+              "summary": "SVG 图表在现代 Web 应用中非常实用，本文提供了构建 SVG 图表的开发指南，适合需要可视化数据的开发者。"
+            },
+            {
+              "title": "MDN MCP 服务器介绍",
+              "href": "https://developer.mozilla.org/en-US/blog/introducing-mdn-mcp-server/",
+              "summary": "MDN 推出的 MCP 服务器旨在优化开发者体验，提供更高效的文档访问方式，适合关注开发工具的读者。"
+            },
+            {
+              "title": "GTmetrix MCP：功能与意义",
+              "href": "https://gtmetrix.com/blog/gtmetrix-mcp/",
+              "summary": "GTmetrix MCP 的发布为性能分析提供了新工具，帮助开发者更好地优化网站性能。"
+            },
+            {
+              "title": "TypeScript 7.0 RC 发布",
+              "href": "https://devblogs.microsoft.com/typescript/announcing-typescript-7-0-rc/",
+              "summary": "TypeScript 7.0 RC 带来了新特性和改进，适合关注 TypeScript 演进的开发者。"
+            },
+            {
+              "title": "探索滚动触发的 3D 图像旋转效果",
+              "href": "https://tympanus.net/codrops/2026/06/18/exploring-3d-image-rotations-on-scroll/",
+              "summary": "滚动触发的 3D 图像旋转效果为页面交互设计提供了创意灵感，适合探索动画技术的开发者。"
+            },
+            {
+              "title": "使用 Web 标准实现暗模式",
+              "href": "https://olliewilliams.xyz/blog/dark-mode/",
+              "summary": "本文探讨了如何利用 Web 标准实现暗模式，适合需要提升用户体验的开发者。"
+            },
+            {
+              "title": "Bun 的 Rust 重写在 Prisma Compute 中的应用",
+              "href": "https://www.prisma.io/blog/bun-rust-rewrite-prisma-compute",
+              "summary": "Bun 的 Rust 重写展示了性能优化的潜力，适合关注后端工具的开发者。"
+            },
+            {
+              "title": "ariaNotify() 的魅力",
+              "href": "https://css-tricks.com/the-siren-song-of-arianotify/",
+              "summary": "ariaNotify() 是提升无障碍设计的重要工具，适合关注可访问性技术的开发者。"
+            },
+            {
+              "title": "轻松构建 Astro 博客",
+              "href": "https://zellwk.com/blog/real-astro-blog-made-easy/",
+              "summary": "Astro 提供了简单高效的博客构建方式，适合需要快速搭建博客的开发者。"
+            }
+          ]
+        },
+        {
+          "title": "🎨 CSS",
+          "items": [
+            {
+              "title": "自定义 Select 的黄金法则",
+              "href": "https://webkit.org/blog/18117/the-golden-rule-of-customizable-select/",
+              "summary": "本文探讨了自定义 Select 的最佳实践，适合关注表单设计的开发者。"
+            },
+            {
+              "title": "View Transition：attr() 与 match-element 的选择",
+              "href": "https://www.bram.us/2026/06/19/view-transition-name-attr-or-match-element/",
+              "summary": "本文对 View Transition 的新特性进行了分析，适合探索动画技术的开发者。"
+            },
+            {
+              "title": "进出动画：View Transition 第三部分",
+              "href": "https://master.dev/blog/in-n-out-animations-view-transitions-part-3-3/",
+              "summary": "本文是 View Transition 系列的最后一部分，深入探讨动画设计的细节。"
+            },
+            {
+              "title": "滚动触发动画的初探",
+              "href": "https://css-tricks.com/css-scroll-triggered-animations-first-look/",
+              "summary": "滚动触发动画为页面交互设计提供了新思路，适合关注 CSS 动画的开发者。"
+            },
+            {
+              "title": "CSS Day 2026 回顾",
+              "href": "https://techhub.iodigital.com/articles/this-was-css-day-2026-a-dive-in-css-geekism",
+              "summary": "CSS Day 2026 展示了前沿技术和创新应用，适合关注 CSS 社区动态的读者。"
+            },
+            {
+              "title": "CSS @function 的作用域",
+              "href": "https://master.dev/blog/the-scope-of-css-function/",
+              "summary": "CSS @function 提供了灵活的样式定义方式，适合探索 CSS 新特性的开发者。"
+            },
+            {
+              "title": "CSS 网格轨道中的对齐方式",
+              "href": "https://patrickbrosset.com/articles/2026-06-19-alignment-in-css-grid-lanes/",
+              "summary": "本文深入探讨了 CSS 网格布局中的对齐技巧，适合提升布局技能的开发者。"
+            },
+            {
+              "title": "动态节点连接（纯 CSS 图表）",
+              "href": "https://css-tip.com/node-connection/",
+              "summary": "纯 CSS 实现动态节点连接图表，为数据可视化提供了新思路。"
+            }
+          ]
+        },
+        {
+          "title": "💡 JavaScripts",
+          "items": [
+            {
+              "title": "prop-for-that：让 CSS 读取 JS 状态",
+              "href": "https://prop-for-that.netlify.app/",
+              "summary": "prop-for-that 提供了让 CSS 读取 JS 状态的解决方案，适合探索前端状态管理的开发者。"
+            },
+            {
+              "title": "事件录制与回放",
+              "href": "https://kaleidawave.blog/posts/recording-and-replaying-events/",
+              "summary": "事件录制与回放技术为调试和用户行为分析提供了新工具。"
+            },
+            {
+              "title": "React vs Angular 2026：如何选择",
+              "href": "https://www.zfort.com/blog/react-vs-angular-2026-which-to-choose",
+              "summary": "本文对比了 React 和 Angular 的最新发展，适合框架选择时参考。"
+            },
+            {
+              "title": "React Router v8 发布",
+              "href": "https://remix.run/blog/react-router-v8",
+              "summary": "React Router v8 带来了新特性，适合关注路由管理的开发者。"
+            },
+            {
+              "title": "类型化多态 React 组件",
+              "href": "https://kittygiraudel.com/2026/06/19/typed-polymorphic-react-component/",
+              "summary": "类型化多态组件为 React 开发提供了更灵活的解决方案，适合关注类型系统的开发者。"
+            },
+            {
+              "title": "在 Next.js 中构建小型后端层",
+              "href": "https://jsdev.space/howto/nextjs-route-handlers-mini-backend/",
+              "summary": "本文介绍了如何在 Next.js 中实现后端功能，适合探索全栈开发的读者。"
+            },
+            {
+              "title": "2026 React 面试问题汇总",
+              "href": "https://jsdev.space/react-interview-questions-2026/",
+              "summary": "本文汇总了 React 开发者在面试中可能遇到的问题，适合准备面试的开发者。"
+            },
+            {
+              "title": "从零理解 React 19 的 useActionState",
+              "href": "https://jsdev.space/howto/react19-useactionstate-guide/",
+              "summary": "本文详细解析了 React 19 的 useActionState，适合关注 React 新特性的开发者。"
+            },
+            {
+              "title": "当 React Hooks 不再扩展：迁移到 Zustand",
+              "href": "https://orizens.com/blog/2026-06-18-zustand/",
+              "summary": "Zustand 为复杂状态管理提供了新选择，适合需要优化状态管理的开发者。"
+            },
+            {
+              "title": "Angular 22：linkedSignal() 支持写回状态",
+              "href": "https://itnext.io/angular-22-linkedsignal-can-now-write-back-to-state-01966be1e125",
+              "summary": "Angular 22 的 linkedSignal() 提供了更强大的状态管理功能，适合关注框架演进的开发者。"
+            },
+            {
+              "title": "Angular 信号实践：构建信号优先表单",
+              "href": "https://www.infoworld.com/article/4185924/angular-signals-in-practice-building-a-signal-first-form-in-angular.html",
+              "summary": "本文展示了如何在 Angular 中使用信号构建表单，适合探索新开发模式的读者。"
+            }
+          ]
+        }
+      ],
+      "source": "https://github.com/TUARAN/frontend-weekly-digest-cn/blob/main/weekly/471/%E5%89%8D%E7%AB%AF%E5%91%A8%E5%88%8A%E7%AC%AC471%E6%9C%9F.md"
+    },
     {
       "id": 470,
       "title": "前端周刊第470期",

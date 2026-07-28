@@ -737,17 +737,17 @@ MCP 统一了 Agent 调用能力的语言，但没有替我们消除系统设计
   },
   {
     slug: 'openclaw-pr-anthropic-image-normalization',
-    title: '4 次被 OpenClaw 合并：从修一个提示，到修一条完整链路',
-    date: '2026-07-24',
+    title: '5 次被 OpenClaw 合并：从修一个提示，到修一条完整链路',
+    date: '2026-07-28',
     href: '',
     homeCategory: '开源贡献',
     tags: ['OpenClaw', '开源贡献', 'Pull Request', 'ClawSweeper', '工程实践'],
     summary:
-      '复盘我在 OpenClaw 主仓库被合并的 4 个 PR：每次遇到的问题、修复边界、评审后的持续改进、最终落地方式，以及 ClawSweeper 给出的可核查评级。',
-    cover: '/images/openclaw/pr-102537-merged.png',
-    markdown: String.raw`# 4 次被 OpenClaw 合并：从修一个提示，到修一条完整链路
+      '复盘我在 OpenClaw 主仓库被合并的 5 个 PR：每次遇到的问题、修复边界、评审后的持续改进、最终落地方式，以及 ClawSweeper 给出的可核查评级。',
+    cover: '/images/openclaw/pr-113200-merged.png',
+    markdown: String.raw`# 5 次被 OpenClaw 合并：从修一个提示，到修一条完整链路
 
-2026 年 7 月，我在 [OpenClaw](https://github.com/openclaw/openclaw) 主仓库先后有 4 个 PR 落入 \`main\`。
+2026 年 7 月，我在 [OpenClaw](https://github.com/openclaw/openclaw) 主仓库先后有 5 个 PR 落入 \`main\`。
 
 | 次序 | PR | 解决的问题 | 最终规模 | 合并时间（UTC） | ClawSweeper 最终评级 |
 | --- | --- | --- | --- | --- | --- |
@@ -755,6 +755,7 @@ MCP 统一了 Agent 调用能力的语言，但没有替我们消除系统设计
 | 2 | [#98320](https://github.com/openclaw/openclaw/pull/98320) | 飞书引用目标被撤回后，图片和文件丢失 | 3 commits，5 files，+168/-35 | 2026-07-21 05:52 | 🦞 diamond lobster |
 | 3 | [#91553](https://github.com/openclaw/openclaw/pull/91553) | Tailscale Serve 启动后首次状态探测竞态 | 6 commits，4 files，+147/-21 | 2026-07-21 15:43 | 🦞 diamond lobster |
 | 4 | [#102537](https://github.com/openclaw/openclaw/pull/102537) | Anthropic 不接受 HEIC、TIFF、BMP 内联图片 | 1 commit，11 files，+728/-41 | 2026-07-21 18:31 | 🦞 diamond lobster |
+| 5 | [#113200](https://github.com/openclaw/openclaw/pull/113200) | Doctor 忽略已配置的插件加载路径并重复安装 | 1 commit，3 files，+89/-14 | 2026-07-28 03:06 | 🐚 platinum hermit |
 
 ## 1、第一次：让错误信息可以直接行动
 
@@ -953,7 +954,52 @@ ClawSweeper 最终给出：
 
 总体和补丁质量到达 diamond lobster，Proof 保持 challenger crab。机器人同时提示，这次合并建立了一个长期的 Anthropic host capability；独立使用 \`@openclaw/ai\`、又没有安装 OpenClaw host implementation 的消费者，会保留 identity normalizer，并在不支持的 MIME 上本地失败。这个架构边界需要 owner 明确接受。
 
-## 5、4 次提交里，真正持续改进了什么
+## 5、第五次：自定义插件路径也要进入 Doctor 的判断
+
+[Issue #113143](https://github.com/openclaw/openclaw/issues/113143) 描述了 OpenClaw \`2026.7.1\` 的启动回归。
+
+用户把 \`@openclaw/kilocode-provider\` 安装在自定义目录，并通过 \`plugins.load.paths\` 明确配置加载位置。插件已经能够被发现，Doctor 却因为找不到托管安装记录，再次执行 npm 安装。Docker 容器里的 npm cache 不可写时，这个多余动作返回 \`EACCES\`，Gateway 无法启动。
+
+### 解决思路
+
+[#113200](https://github.com/openclaw/openclaw/pull/113200) 同时修改 Doctor 的健康检查和修复路径。
+
+两条路径都会区分三个状态：
+
+- 已通过配置路径发现插件，且没有托管安装记录：视为已存在，不触发重装；
+- 存在托管安装记录，但对应内容缺失或损坏：继续进入原有修复流程；
+- 插件确实未被发现：保持缺失插件的安装与提示行为。
+
+健康检查和 \`--fix\` 使用同一条判断，避免一边报告正常、另一边又执行安装。新增的集成测试覆盖配置路径发现、健康检测和修复行为。
+
+### 怎么证明真实启动链路恢复
+
+我在精确 head \`58bdb576\` 上构建 Gateway，解包已发布的 \`@openclaw/kilocode-provider@2026.7.1\`，只通过 \`plugins.load.paths\` 指向插件目录，并故意让 npm cache 不可写。
+
+启动后：
+
+- \`/healthz\` 返回 live；
+- \`/readyz\` 没有失败项；
+- \`plugins.list\` 显示 kilocode 已安装、启用，来源为 config；
+- 配置中仍然没有托管安装记录；
+- 日志中没有重复安装、\`npm view\` 失败或 \`EACCES\`。
+
+focused tests 共 85 项通过，格式检查、构建和自动评审也通过。
+
+### 怎么被合并
+
+steipete 通过 squash 合并。Prepared head 是 \`58bdb576\`，落地提交是 [\`5723d36\`](https://github.com/openclaw/openclaw/commit/5723d36b46a808f6bc5bf53ff2703c2fcfeb731e)，Issue #113143 同时关闭。
+
+ClawSweeper 最终给出：
+
+- Overall：🐚 platinum hermit
+- Proof：🦞 diamond lobster
+- Patch quality：🐚 platinum hermit
+- Result：ready for maintainer review
+
+真实 Gateway 证明达到 diamond lobster。总体评级保留在 platinum hermit，因为这次改动触及 Doctor 的兼容性判断：必须确保“无托管记录且已发现”才跳过安装，已有但损坏的托管记录仍要继续修复。最终合并保留了这组对称判断。
+
+## 6、5 次提交里，真正持续改进了什么
 
 ### 第一，证明从“测试通过”走向真实链路
 
@@ -965,6 +1011,8 @@ ClawSweeper 最终给出：
 
 第四次先用 loopback 捕获真实 payload，最后补到官方 Anthropic API。
 
+第五次使用已发布插件、配置加载路径和不可写 npm cache，验证 Gateway 可以进入 ready 状态且不会重复安装。
+
 单元测试回答代码是否按预期分支执行。真实行为证明回答用户链路是否真的恢复。OpenClaw 的评审明显更看重后一个问题。
 
 ### 第二，修复范围越来越克制
@@ -974,6 +1022,8 @@ ClawSweeper 最终给出：
 Tailscale PR 把重试限制在“本进程刚完成 Serve 配置”这一刻，并明确排除永久错误。
 
 Anthropic PR 只在 provider boundary 规整格式，同时用 host port 保住 package/core 边界。
+
+#113200 则让 Doctor 同时读取插件发现结果和托管安装记录，保持健康检测与修复路径一致。
 
 范围克制并不等于改动行数少。#102537 有 11 个文件和 728 行新增，因为双 payload builder、用户图片、tool-result、格式检测、转码和预算必须形成一套闭环。
 
@@ -985,35 +1035,38 @@ Anthropic PR 只在 provider boundary 规整格式，同时用 host port 保住 
 
 #102537 多次 rebase，并在冲突处理中保留 \`main\` 新增的 payload guards。
 
+#113200 刷新到合并前的主分支，并在精确 head 上重跑构建、测试和真实 Gateway 证明。
+
 快速仓库里的旧 PR 会不断失去上下文。持续刷新、重新验证和说明精确 head，本身就是贡献的一部分。
 
 ### 第四，把评审意见变成可验证的新边界
 
-多个缺失插件、飞书 thread safety、Tailscale 非暂态错误、host interface source compatibility，都来自评审阶段。
+多个缺失插件、飞书 thread safety、Tailscale 非暂态错误、host interface source compatibility，以及托管安装记录的损坏修复边界，都来自评审阶段。
 
 每次处理都增加了对应测试或真实证明。这样，评论不会停留在“已经修改”，而会变成仓库以后可以重复执行的约束。
 
-## 6、贡献评分应该怎样看
+## 7、贡献评分应该怎样看
 
-从最终标签看，4 次 PR 的评级是：
+从最终标签看，5 次 PR 的评级是：
 
 1. #90517：🐚 platinum hermit；
 2. #98320：🦞 diamond lobster；
 3. #91553：🦞 diamond lobster；
-4. #102537：🦞 diamond lobster。
+4. #102537：🦞 diamond lobster；
+5. #113200：🐚 platinum hermit。
 
 这个序列说明合并准备度在提高，但不能简单理解为个人能力从某个数字涨到另一个数字。
 
-ClawSweeper 会取 Proof 与 Patch quality 的较弱项，并叠加分支新旧、架构边界和剩余风险。#90517 的真实证明已经是 diamond lobster，总体仍被分支时效和 patch 风险压到 platinum hermit。#102537 的总体是 diamond lobster，Proof 却保留 challenger crab，因为它留下了需要 owner 接受的长期 host seam。
+ClawSweeper 会取 Proof 与 Patch quality 的较弱项，并叠加分支新旧、架构边界和剩余风险。#90517 的真实证明已经是 diamond lobster，总体仍被分支时效和 patch 风险压到 platinum hermit。#102537 的总体是 diamond lobster，Proof 却保留 challenger crab，因为它留下了需要 owner 接受的长期 host seam。#113200 的真实证明同样达到 diamond lobster，兼容性敏感的 Doctor 安装判断让总体与补丁质量保留在 platinum hermit。
 
 更可靠的贡献证据有 4 类：
 
-- 4 个 PR 都进入 \`openclaw:main\`；
-- 4 个对应 Issue 都已关闭；
+- 5 个 PR 都进入 \`openclaw:main\`；
+- 5 个对应 Issue 都已关闭；
 - 最终落地提交都显示 TUARAN 为作者；
 - 评审提出的关键边界都有后续代码、测试或真实环境证明。
 
-## 7、这 4 次合并给我的结论
+## 8、这 5 次合并给我的结论
 
 开源贡献的核心工作，可以概括成一句很朴素的话：持续降低维护者接住这段代码的风险。
 
@@ -1031,8 +1084,9 @@ ClawSweeper 会取 Proof 与 Patch quality 的较弱项，并叠加分支新旧�
 - [PR #98320：Feishu media reply fallback](https://github.com/openclaw/openclaw/pull/98320) ｜ [Issue #98311](https://github.com/openclaw/openclaw/issues/98311) ｜ [落地提交 37ac5d6](https://github.com/openclaw/openclaw/commit/37ac5d671fbcabc7529e2e7f9876c264e86e6c33)
 - [PR #91553：Tailscale status retry](https://github.com/openclaw/openclaw/pull/91553) ｜ [Issue #42798](https://github.com/openclaw/openclaw/issues/42798) ｜ [落地提交 3a5b276](https://github.com/openclaw/openclaw/commit/3a5b2764f8a5e98e574d4e45d6d782048d1306df)
 - [PR #102537：Anthropic inline image normalization](https://github.com/openclaw/openclaw/pull/102537) ｜ [Issue #102323](https://github.com/openclaw/openclaw/issues/102323) ｜ [落地提交 3c32f32](https://github.com/openclaw/openclaw/commit/3c32f327a445c9bff90ca812d281330a3a64472c)
+- [PR #113200：Doctor honors configured plugin load paths](https://github.com/openclaw/openclaw/pull/113200) ｜ [Issue #113143](https://github.com/openclaw/openclaw/issues/113143) ｜ [落地提交 5723d36](https://github.com/openclaw/openclaw/commit/5723d36b46a808f6bc5bf53ff2703c2fcfeb731e)
 
-资料核对截至 2026 年 7 月 24 日。
+资料核对截至 2026 年 7 月 28 日。
 `,
   },
   {

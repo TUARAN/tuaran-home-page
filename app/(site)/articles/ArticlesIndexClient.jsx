@@ -1009,67 +1009,67 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                 />
               ))}
             </FilterRow>
-            {tab === 'companies' ? (
+            {tab === 'research' || tab === 'companies' ? (
               <FilterRow label="公司分类" ariaLabel="公司观察分类" orientation={orientation}>
                 {COMPANY_TYPE_DEFS.map((t) => (
                   <FilterChip
                     key={t.key}
                     label={t.label}
                     count={companyTypeCounts[t.key] ?? 0}
-                    active={companyType === t.key}
+                    active={tab === 'companies' && companyType === t.key}
                     onClick={() => selectCompanyType(t.key)}
                   />
                 ))}
               </FilterRow>
             ) : null}
-            {tab === 'other' ? (
-              <FilterRow label="其他分类" ariaLabel="其他内容分类" orientation={orientation}>
-                {OTHER_TOPIC_TYPE_DEFS.map((t) => (
-                  <FilterChip
-                    key={t.key}
-                    label={t.label}
-                    count={otherTopicTypeCounts[t.key] ?? 0}
-                    active={topicType === t.key}
-                    onClick={() => selectTopicType('other', t.key)}
-                  />
-                ))}
-              </FilterRow>
-            ) : null}
-            {tab === 'business' ? (
-              <FilterRow label="商业分类" ariaLabel="商业内容分类" orientation={orientation}>
-                {BUSINESS_TOPIC_TYPE_DEFS.map((t) => (
-                  <FilterChip
-                    key={t.key}
-                    label={t.label}
-                    count={businessTopicTypeCounts[t.key] ?? 0}
-                    active={topicType === t.key}
-                    onClick={() => selectTopicType('business', t.key)}
-                  />
-                ))}
-              </FilterRow>
-            ) : null}
-            {tab === 'people' ? (
+            {tab === 'research' || tab === 'people' ? (
               <FilterRow label="人物分类" ariaLabel="人物内容分类" orientation={orientation}>
                 {PEOPLE_TYPE_DEFS.map((t) => (
                   <FilterChip
                     key={t.key}
                     label={t.label}
                     count={peopleTypeCounts[t.key] ?? 0}
-                    active={peopleType === t.key}
+                    active={tab === 'people' && peopleType === t.key}
                     onClick={() => selectPeopleType(t.key)}
                   />
                 ))}
               </FilterRow>
             ) : null}
-            {tab === 'tech' ? (
+            {tab === 'research' || tab === 'tech' ? (
               <FilterRow label="技术分类" ariaLabel="技术内容分类" orientation={orientation}>
                 {TECH_TYPE_DEFS.map((t) => (
                   <FilterChip
                     key={t.key}
                     label={t.label}
                     count={techTypeCounts[t.key] ?? 0}
-                    active={techType === t.key}
+                    active={tab === 'tech' && techType === t.key}
                     onClick={() => selectTechType(t.key)}
+                  />
+                ))}
+              </FilterRow>
+            ) : null}
+            {tab === 'research' || tab === 'business' ? (
+              <FilterRow label="商业分类" ariaLabel="商业内容分类" orientation={orientation}>
+                {BUSINESS_TOPIC_TYPE_DEFS.map((t) => (
+                  <FilterChip
+                    key={t.key}
+                    label={t.label}
+                    count={businessTopicTypeCounts[t.key] ?? 0}
+                    active={tab === 'business' && topicType === t.key}
+                    onClick={() => selectTopicType('business', t.key)}
+                  />
+                ))}
+              </FilterRow>
+            ) : null}
+            {tab === 'research' || tab === 'other' ? (
+              <FilterRow label="其他分类" ariaLabel="其他内容分类" orientation={orientation}>
+                {OTHER_TOPIC_TYPE_DEFS.map((t) => (
+                  <FilterChip
+                    key={t.key}
+                    label={t.label}
+                    count={otherTopicTypeCounts[t.key] ?? 0}
+                    active={tab === 'other' && topicType === t.key}
+                    onClick={() => selectTopicType('other', t.key)}
                   />
                 ))}
               </FilterRow>

@@ -59,7 +59,7 @@ function DownloadButton({ className = '' }) {
       download
       className={`inline-flex min-h-11 items-center justify-center rounded-full border border-[#0f1419] bg-[#0f1419] px-5 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#2f3336] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200 ${className}`}
     >
-      下载 Chrome 插件 v0.1.11
+      下载 Chrome 插件 v0.1.12
     </a>
   )
 }

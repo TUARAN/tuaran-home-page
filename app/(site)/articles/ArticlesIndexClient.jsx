@@ -413,7 +413,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (nextTab === 'tech' && nextTechType !== 'all') params.set('tech_type', nextTechType)
     if (nextTab === 'resources' && nextResourceType !== 'all') params.set('resource_type', nextResourceType)
     if (nextTab === 'resources' && nextResourceGroup !== 'all') params.set('resource_group', nextResourceGroup)
-    if ((nextTab === 'posts' || nextTab === 'works') && nextColumnCategory !== 'all') {
+    if (
+      (nextTab === 'column' || nextTab === 'posts' || nextTab === 'works')
+      && nextColumnCategory !== 'all'
+    ) {
       params.set('column_category', nextColumnCategory)
     }
     if (nextTab === 'all' && nextAllContentType !== 'all') {
@@ -576,10 +579,14 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const activeChannel = getChannelForTab(tab)
 
   const columnCategoryDefs = useMemo(() => {
-    if (tab !== 'posts' && tab !== 'works') return []
+    if (tab !== 'column' && tab !== 'posts' && tab !== 'works') return []
     const categoryMap = new Map()
     for (const item of items) {
-      if (item.kind !== tab || !item.columnCategory) continue
+      const belongsToActiveColumn =
+        tab === 'column'
+          ? item.kind === 'posts' || item.kind === 'works'
+          : item.kind === tab
+      if (!belongsToActiveColumn || !item.columnCategory) continue
       categoryMap.set(item.columnCategory, {
         key: item.columnCategory,
         label: item.columnCategoryLabel || item.columnCategory,
@@ -587,15 +594,22 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       })
     }
     return [
-      { key: 'all', label: tab === 'posts' ? '全部文章' : '全部页面' },
+      {
+        key: 'all',
+        label: tab === 'posts' ? '全部文章' : tab === 'works' ? '全部页面' : '全部专栏',
+      },
       ...Array.from(categoryMap.values()).sort((a, b) => a.order - b.order),
     ]
   }, [items, tab])
 
   const columnCategoryCounts = useMemo(() => {
     const base = { all: 0 }
-    if (tab !== 'posts' && tab !== 'works') return base
-    const columnItems = items.filter((item) => item.kind === tab)
+    if (tab !== 'column' && tab !== 'posts' && tab !== 'works') return base
+    const columnItems = items.filter((item) =>
+      tab === 'column'
+        ? item.kind === 'posts' || item.kind === 'works'
+        : item.kind === tab,
+    )
     base.all = columnItems.length
     for (const item of columnItems) {
       if (item.columnCategory) {
@@ -614,7 +628,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (activeChannel === 'column') {
       const col = COLUMN_TAB_DEFS.find((t) => t.key === tab)
       if (col && col.key !== 'column') parts.push(col.label)
-      if ((tab === 'posts' || tab === 'works') && columnCategory !== 'all') {
+      if (
+        (tab === 'column' || tab === 'posts' || tab === 'works')
+        && columnCategory !== 'all'
+      ) {
         parts.push(
           columnCategoryDefs.find((category) => category.key === columnCategory)?.label || columnCategory,
         )
@@ -691,7 +708,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         ? items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
         : items.filter((item) => item.kind === tab)
     let typeFiltered = tabItems
-    if ((tab === 'posts' || tab === 'works') && columnCategory !== 'all') {
+    if (
+      (tab === 'column' || tab === 'posts' || tab === 'works')
+      && columnCategory !== 'all'
+    ) {
       typeFiltered = typeFiltered.filter((item) => item.columnCategory === columnCategory)
     }
     if (tab === 'companies' && companyType !== 'all') {
@@ -952,23 +972,27 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                 多维页面专页 →
               </Link>
             </FilterRow>
-            {tab === 'posts' || tab === 'works' ? (
-              <FilterRow
-                label={tab === 'posts' ? '文章分类' : '页面分类'}
-                ariaLabel={tab === 'posts' ? '精选文章分类' : '多维页面分类'}
-                orientation={orientation}
-              >
-                {columnCategoryDefs.map((category) => (
-                  <FilterChip
-                    key={category.key}
-                    label={category.label}
-                    count={columnCategoryCounts[category.key] ?? 0}
-                    active={columnCategory === category.key}
-                    onClick={() => selectColumnCategory(category.key)}
-                  />
-                ))}
-              </FilterRow>
-            ) : null}
+            <FilterRow
+              label={tab === 'posts' ? '文章分类' : tab === 'works' ? '页面分类' : '专栏分类'}
+              ariaLabel={
+                tab === 'posts'
+                  ? '精选文章分类'
+                  : tab === 'works'
+                  ? '多维页面分类'
+                  : '专栏分类'
+              }
+              orientation={orientation}
+            >
+              {columnCategoryDefs.map((category) => (
+                <FilterChip
+                  key={category.key}
+                  label={category.label}
+                  count={columnCategoryCounts[category.key] ?? 0}
+                  active={columnCategory === category.key}
+                  onClick={() => selectColumnCategory(category.key)}
+                />
+              ))}
+            </FilterRow>
           </>
         ) : null}
 

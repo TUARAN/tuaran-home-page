@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-28",
+      "displayDate": "Jul 28",
+      "count": 5,
+      "highlights": [
+        "用Claude和Python构建技能驱动的金融分析智",
+        "GitHub Copilot 发布\"Harness\"",
+        "GitHub Copilot app 入门指南：多 ",
+        "Anthropic 澄清立场：从未主张全面禁止开源权",
+        "OpenAI 称越来越多员工用 ChatGPT 做其"
+      ]
+    },
+    {
       "date": "2026-07-27",
       "displayDate": "Jul 27",
       "count": 3,
@@ -418,5 +430,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-27"
+  "latest": "2026-07-28"
 }

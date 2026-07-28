@@ -1,0 +1,59 @@
+{
+  "date": "2026-07-28",
+  "displayDate": "Jul 28",
+  "count": 5,
+  "highlights": [
+    "用Claude和Python构建技能驱动的金融分析智",
+    "GitHub Copilot 发布\"Harness\"",
+    "GitHub Copilot app 入门指南：多 ",
+    "Anthropic 澄清立场：从未主张全面禁止开源权",
+    "OpenAI 称越来越多员工用 ChatGPT 做其"
+  ],
+  "items": [
+    {
+      "num": "01",
+      "topic": "AI Coding",
+      "title": "用Claude和Python构建技能驱动的金融分析智能体",
+      "summary": "本教程基于Anthropic的financial-services仓库，用纯Python复现其技能驱动架构。通过解析SKILL.md文件构建可搜索技能注册表，并创建可复用SkillAgent，将金融分析剧本注入Anthropic Messages API，支持迭代工具调用循环。",
+      "reason": "对 AI 开发与前端工具链有潜在影响，值得持续跟踪",
+      "href": "https://www.marktechpost.com/2026/07/27/designing-skill-driven-financial-analysis-agents-with-claude-python-mcp-connectors-and-automated-deliverables",
+      "source": "MarkTechPost（RSS）"
+    },
+    {
+      "num": "02",
+      "topic": "AI Coding",
+      "title": "GitHub Copilot 发布\"Harness\"工作流：用单一工具完成原型、规划、实现与代码审查",
+      "summary": "GitHub Copilot 推出\"Harness\"工作流，让开发者通过单一 AI 工具完成从原型设计、规划、实现到代码审查的完整软件开发流程，无需追逐多种新 AI 工具。该工作流强调实用性与集成性，旨在减少工具切换带来的效率损耗。",
+      "reason": "新能力发布直接影响开发者工具链，值得第一时间关注",
+      "href": "https://github.blog/ai-and-ml/github-copilot/the-harness-is-all-you-need-mostly",
+      "source": "GitHub Blog"
+    },
+    {
+      "num": "03",
+      "topic": "AI Coding",
+      "title": "GitHub Copilot app 入门指南：多 Agent 会话工作区与 Canvas 预览",
+      "summary": "GitHub Copilot app 将 AI 编码工具升级为多 Agent 会话工作区，支持同时管理多个任务线程而不丢失进度。用户可为每个会话绑定项目上下文，通过 `/create-canvas` 命令在浏览器 Canvas 中预览 UI 并直接点选修改，还能启用 Agent Merge 自动处理 PR 审查反馈和合并冲突。",
+      "reason": "对 AI 开发与前端工具链有潜在影响，值得持续跟踪",
+      "href": "https://github.blog/ai-and-ml/github-copilot/github-copilot-app-for-beginners-getting-started",
+      "source": "GitHub Blog"
+    },
+    {
+      "num": "04",
+      "topic": "AI Coding",
+      "title": "Anthropic 澄清立场：从未主张全面禁止开源权重模型，支持芯片出口管制与安全测试",
+      "summary": "Anthropic CEO Dario Amodei 明确表示公司从未主张禁止开源权重模型，并认为不具备危险能力的开源权重模型是公共产品。他提出三项实际措施：对华芯片出口管制、打击工业级知识蒸馏、对所有足够强大的模型进行强制性安全测试。Amodei 指出，保护主义禁令无法解决其最担忧的国家安全威胁，包括威权政府利用更强大 AI 实现军事优势或深度监控。",
+      "reason": "新能力发布直接影响开发者工具链，值得第一时间关注",
+      "href": "https://www.anthropic.com/news/position-open-weights-models",
+      "source": "Anthropic：Newsroom（网页）"
+    },
+    {
+      "num": "05",
+      "topic": "AI Coding",
+      "title": "OpenAI 称越来越多员工用 ChatGPT 做其他岗位的工作",
+      "summary": "OpenAI 分析超 80 万条与工作相关的 ChatGPT 消息后发现，43.5% 的岗位特定查询涉及另一职业，营销和工程任务交叉最多。用户用 AI 处理合同审查、数据分析、网站故障排查等原由专家负责的工作。OpenAI 认为这是岗位职责正在变化的早期信号，该趋势在缺乏专业团队的小公司尤为明显。",
+      "reason": "行业数据与评测为技术选型提供参考",
+      "href": "https://the-decoder.com/openai-says-more-workers-are-using-chatgpt-to-do-other-peoples-jobs",
+      "source": "The Decoder：AI News（RSS）"
+    }
+  ]
+}

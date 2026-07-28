@@ -56,7 +56,7 @@ function MenuItem({ item, onNavigate }) {
   const { locale } = useLocale()
   const label = navLabel(item, locale)
   const desc = navDesc(item, locale)
-  const base = 'site-menu-item'
+  const base = `site-menu-item${item.featured ? ' site-menu-item-featured' : ''}`
   const inner = (
     <>
       <span className="site-menu-dot mt-1 h-1.5 w-1.5 shrink-0 rounded-full transition-colors" />
@@ -77,6 +77,11 @@ function MenuItem({ item, onNavigate }) {
           </span>
         ) : null}
       </span>
+      {item.featured ? (
+        <span className="site-menu-overview-arrow self-center text-base leading-none" aria-hidden="true">
+          →
+        </span>
+      ) : null}
     </>
   )
 
@@ -98,6 +103,20 @@ function MenuItem({ item, onNavigate }) {
       {inner}
     </Link>
   )
+}
+
+function splitChannelMenuSections(sections) {
+  const featuredItems = sections.flatMap((section) =>
+    section.items.filter((item) => item.featured)
+  )
+  const regularSections = sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.featured),
+    }))
+    .filter((section) => section.items.length > 0)
+
+  return { featuredItems, regularSections }
 }
 
 const TIER_SECTION_STYLES = {
@@ -131,6 +150,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
   const { locale } = useLocale()
   const closeTimerRef = useRef(null)
   const sections = getChannelNavSections(channel, account, navOverrides)
+  const { featuredItems, regularSections } = splitChannelMenuSections(sections)
   const positionClass =
     align === 'right'
       ? 'right-0'
@@ -194,7 +214,14 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
           className={`absolute top-full z-[120] w-[min(calc(100vw-1rem),440px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${positionClass}`}
         >
           <div className="site-dropdown-panel rounded-2xl border p-3">
-            {sections.map((section) => {
+            {featuredItems.length ? (
+              <div className="site-menu-overview mb-2 rounded-xl">
+                {featuredItems.map((item) => (
+                  <MenuItem key={item.href + item.label} item={item} onNavigate={onClose} />
+                ))}
+              </div>
+            ) : null}
+            {regularSections.map((section) => {
               const tier = getTierStyle(section.title)
               return (
                 <div
@@ -779,6 +806,7 @@ export default function SiteHeader() {
           {SITE_CHANNELS.map((channel) => {
             const expanded = openMobileChannel === channel.key
             const sections = getChannelNavSections(channel, account, account?.navOverrides)
+            const { featuredItems, regularSections } = splitChannelMenuSections(sections)
             return (
               <div key={channel.key} className="site-mobile-card rounded-2xl border">
                 <button
@@ -794,7 +822,18 @@ export default function SiteHeader() {
                 </button>
                 {expanded ? (
                   <div className="site-mobile-section-divider space-y-2 border-t px-2 pb-3 pt-2">
-                    {sections.map((section) => {
+                    {featuredItems.length ? (
+                      <div className="site-menu-overview rounded-xl">
+                        {featuredItems.map((item) => (
+                          <MenuItem
+                            key={item.href + item.label}
+                            item={item}
+                            onNavigate={() => setMobileMenuOpen(false)}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                    {regularSections.map((section) => {
                       const tier = getTierStyle(section.title)
                       return (
                         <div key={section.title} className={`rounded-xl px-2 pb-1 pt-2 ${tier.wrap}`}>

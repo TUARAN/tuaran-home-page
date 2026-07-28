@@ -16,7 +16,7 @@
 
 - 《程序员成长手记》作者：技术图书，2023 年已出版。
 - 《AI Bots 通关指南》作者：电子小册，2024 年已发布。
-- OpenClaw Contributor：[PR #90517](https://github.com/openclaw/openclaw/pull/90517) 与 [PR #98320](https://github.com/openclaw/openclaw/pull/98320) 已合并至 `openclaw:main`。
+- OpenClaw Contributor：已有 5 个 PR 合并至 `openclaw:main`（[#90517](https://github.com/openclaw/openclaw/pull/90517)、[#98320](https://github.com/openclaw/openclaw/pull/98320)、[#91553](https://github.com/openclaw/openclaw/pull/91553)、[#102537](https://github.com/openclaw/openclaw/pull/102537)、[#113200](https://github.com/openclaw/openclaw/pull/113200)）。
 - 维护矩联科技、博主联盟、前端周看、AI 分发大师等产品与内容项目。
 
 这里只列入站内有明确记录或可以从外部链接核验的事实；出版中、撰写中和计划中的项目不会计入已完成成果。
@@ -201,4 +201,4 @@ npm run test:planning
 - 网站：[2aran.com](https://2aran.com)
 - GitHub：[TUARAN](https://github.com/TUARAN)
 - 掘金：[涂阿燃的掘金主页](https://juejin.cn/user/1521379823340792)
-- 开源贡献：[OpenClaw PR #90517](https://github.com/openclaw/openclaw/pull/90517)、[OpenClaw PR #98320](https://github.com/openclaw/openclaw/pull/98320)
+- 开源贡献：[OpenClaw PR #90517](https://github.com/openclaw/openclaw/pull/90517)、[#98320](https://github.com/openclaw/openclaw/pull/98320)、[#91553](https://github.com/openclaw/openclaw/pull/91553)、[#102537](https://github.com/openclaw/openclaw/pull/102537)、[#113200](https://github.com/openclaw/openclaw/pull/113200)

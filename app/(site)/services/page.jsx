@@ -105,7 +105,7 @@ const caseStudies = [
     problem: '关注列表难以识别未回关账号，手工核对和取消关注成本高。',
     action: '设计本地扫描、结果确认和批量操作流程，把最终决定留给用户。',
     deliverable: 'Chrome 扩展、使用说明、版本包与站内下载页。',
-    result: '已发布至 v0.1.11，可直接下载使用，并保留明确的确认步骤与操作边界。',
+    result: '已发布至 v0.1.12，可直接下载使用，并保留明确的确认步骤与操作边界。',
     href: '/resources/x-mutual-cleaner-extension',
   },
 ]

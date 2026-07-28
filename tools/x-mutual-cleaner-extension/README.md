@@ -2,7 +2,8 @@
 
 本目录是一个本地 Chrome Manifest V3 扩展，用来清理 X/Twitter 的 Following 列表。
 
-它只在 `x.com` / `twitter.com` 页面注入一个右下角面板。
+内容脚本只访问 `x.com` / `twitter.com`。右下角面板仅在 Following、Followers 和 Verified Followers
+列表页显示；通过 X 的站内导航离开这些页面时会自动隐藏，回到对应列表页时会自动显示。
 
 主功能：你登录 X 并打开自己的 Following 页面后，点击「取消未回关」，扩展会自动向下刷列表，逐个点击没有显示 `Follows you` / `关注了你` 的账号右侧 `Following` 按钮；如果 X 弹出确认框，会继续点击 `Unfollow` / `取消关注`。
 

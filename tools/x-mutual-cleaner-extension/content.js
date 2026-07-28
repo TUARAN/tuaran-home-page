@@ -14,6 +14,7 @@
   const FOLLOW_BACK_ERROR_COOLDOWN_MS = 30000;
   const SCROLL_DELAY_MS = 450;
   const MAX_STALLED_SCROLLS = 4;
+  const LOCATION_CHECK_INTERVAL_MS = 500;
 
   const FOLLOWING_RE = /^(Following|正在关注)$/i;
   const FOLLOW_BACK_RE = /^(Follow back|回关)$/i;
@@ -37,6 +38,7 @@
     seenHandles: new Set(),
     skippedHandles: new Set()
   };
+  let activePathname = null;
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -116,6 +118,10 @@
 
   function isFollowersPage() {
     return /^\/[^/]+\/(followers|verified_followers)\/?$/.test(window.location.pathname);
+  }
+
+  function isSupportedPage() {
+    return isFollowingPage() || isFollowersPage();
   }
 
   function looksLoggedIn() {
@@ -904,7 +910,7 @@
   }
 
   function renderPanel() {
-    if (document.getElementById(PANEL_ID)) return;
+    if (!isSupportedPage() || document.getElementById(PANEL_ID)) return;
 
     const panel = document.createElement("section");
     panel.id = PANEL_ID;
@@ -965,11 +971,47 @@
     panel.querySelector('[data-xmc-mode="targetFollow"]').addEventListener("click", runTargetFollow);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", renderPanel, { once: true });
-  } else {
+  function syncPanelForLocation({ force = false } = {}) {
+    const pathname = window.location.pathname;
+    if (!force && pathname === activePathname) return;
+
+    const pageChanged = activePathname !== null && pathname !== activePathname;
+    activePathname = pathname;
+
+    if (pageChanged && state.running && !state.stopping) {
+      state.stopping = true;
+      setStatus("页面已切换，正在停止当前任务");
+      setButtons();
+    }
+
+    if (!isSupportedPage()) {
+      document.getElementById(PANEL_ID)?.remove();
+      return;
+    }
+
     renderPanel();
   }
+
+  function watchLocationChanges() {
+    for (const methodName of ["pushState", "replaceState"]) {
+      const originalMethod = window.history[methodName];
+      window.history[methodName] = function (...args) {
+        const result = originalMethod.apply(this, args);
+        window.queueMicrotask(() => syncPanelForLocation());
+        return result;
+      };
+    }
+
+    window.addEventListener("popstate", () => syncPanelForLocation());
+    window.setInterval(() => syncPanelForLocation(), LOCATION_CHECK_INTERVAL_MS);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => syncPanelForLocation({ force: true }), { once: true });
+  } else {
+    syncPanelForLocation({ force: true });
+  }
+  watchLocationChanges();
 
   document.addEventListener("visibilitychange", () => {
     if (!state.running || state.stopping) return;

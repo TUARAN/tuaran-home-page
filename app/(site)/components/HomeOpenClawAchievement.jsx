@@ -55,23 +55,6 @@ export default function HomeOpenClawAchievement() {
         <span className="home-achievement-copy min-w-0 flex-1">
           <span className="home-achievement-kicker">
             开源贡献 · {OPENCLAW_ACHIEVEMENT_COUNT} 个 PR 已合入
-            <span className="home-achievement-pr-links" aria-label="OpenClaw 合并记录">
-              （
-              {OPENCLAW_ACHIEVEMENTS.map((achievement, index) => (
-                <span key={achievement.number}>
-                  {index > 0 ? <span aria-hidden="true"> · </span> : null}
-                  <a
-                    href={achievement.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow"
-                  >
-                    #{achievement.number}
-                  </a>
-                </span>
-              ))}
-              ）
-            </span>
           </span>
           <strong>开源贡献至全球 Star 数最多的开源软件项目 OpenClaw🦞，已有 {OPENCLAW_ACHIEVEMENT_COUNT} 次代码成功被合并。</strong>
         </span>

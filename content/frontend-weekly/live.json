@@ -1,6 +1,22 @@
 {
-  "updatedAt": "2026-07-28T04:10:27.322Z",
+  "updatedAt": "2026-07-28T07:39:28.903Z",
   "items": [
+    {
+      "topic": "行业",
+      "title": "德里高等法院裁定 OpenAI 利用 ANI 内容训练 AI 未侵犯版权",
+      "summary": "德里高等法院认定 OpenAI 利用亚洲国际新闻（ANI）社的内容训练人工智能不构成侵犯版权。法官 Amit Bansal 认为该行为符合印度《版权法》中研究类\"合理使用\"例外情形，且 ANI 未能证明 ChatGPT 直接复制其受版权保护内容。法院同时指出，现阶段颁布临时禁令将不利于印度正在开发的 LLM 及大量免费使用 ChatGPT 的用户。",
+      "source": "IT之家（RSS）",
+      "href": "https://www.ithome.com/0/982/520.htm",
+      "publishedAt": "2026-07-28T06:21:07.000Z"
+    },
+    {
+      "topic": "模型",
+      "title": "FeyNoBg 发布：开源自动背景去除模型，在四项基准上达到 SOTA",
+      "summary": "Feyn Labs 推出 FeyNoBg，一个用于自动背景去除的 SOTA 模型。它在八个基准测试中的四项上取得最佳 S-measure 分数，其余四项与领先者差距在 2% 以内。该模型基于 BiRefNet 架构，参数量从 222M 扩展至 263M，同时开源了训练库 NoBg，模型和代码分别可在 Hugging Face 和 GitHub 获取。",
+      "source": "Hacker News 热门（buzzing.cc 中文翻译）",
+      "href": "https://usefeyn.com/blog/feynobg",
+      "publishedAt": "2026-07-28T04:57:13.190Z"
+    },
     {
       "topic": "技巧",
       "title": "如何评估不同 LLM 提供商在延迟、吞吐量和正常运行时间上的性能",

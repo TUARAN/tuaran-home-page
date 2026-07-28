@@ -2378,34 +2378,17 @@
     background-color: #22211d;
   }
 
-  .site-menu-overview {
-    border: 1px solid #3b372f;
-    background:
-      linear-gradient(120deg, color-mix(in srgb, #c1c6a8 9%, transparent), transparent 58%),
-      #22211d;
-  }
-
-  .site-menu-overview .site-menu-item-featured {
-    min-height: 58px;
-    padding: 0.75rem 0.875rem;
-  }
-
-  .site-menu-overview .site-menu-dot {
-    background-color: #c1c6a8;
-  }
-
-  .site-menu-overview-arrow {
-    color: #c1c6a8;
-    transition: transform 0.15s ease;
-  }
-
-  .site-menu-overview .site-menu-item-featured:hover .site-menu-overview-arrow {
-    transform: translateX(2px);
-  }
-
   .site-menu-item {
     @apply flex items-start gap-3 rounded-xl px-3 py-2 no-underline transition-colors;
     color: var(--site-ink);
+  }
+
+  .site-menu-item-featured {
+    background-color: color-mix(in srgb, #c1c6a8 7%, transparent);
+  }
+
+  .site-menu-item-featured .site-menu-dot {
+    background-color: #c1c6a8;
   }
 
   /* 下拉面板与移动抽屉始终是深底（#151410），内部文字固定用浅色，

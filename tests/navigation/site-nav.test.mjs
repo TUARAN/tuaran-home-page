@@ -14,7 +14,7 @@ test('RSS subscription is a visible second-level item in the public content navi
   assert.match(source, /p\?\.startsWith\('\/resources'\)/)
 })
 
-test('every public channel defines one featured overview entry', () => {
+test('every public channel defines one featured overview entry in its grid', () => {
   const featuredEntries = source.match(/^\s+\{[^\n]*featured: true/gm) || []
   assert.equal(featuredEntries.length, 5)
   assert.match(source, /href: '\/articles'[^}\n]*featured: true/)

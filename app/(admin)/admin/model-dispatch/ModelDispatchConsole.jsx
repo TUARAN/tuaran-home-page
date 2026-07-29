@@ -309,8 +309,8 @@ export default function ModelDispatchConsole() {
 
   return (
     <AdminPage
-      title="DeepSeek 流式规划与 Agent 分派"
-      description="先由 DeepSeek V4 Pro 流式拆解任务，生成按环节组织的 plan；每个环节都要标注执行模型、依据、预估 token、成本和耗时，再分派给对应 agent。"
+      title="AI 规划与 Agent 分派"
+      description="面向跨项目的大型任务、局部小任务和临时问题，由 AI 流式拆解并生成可执行的 Agent 分派方案。"
     >
       <div className="space-y-5">
         <section className="grid gap-3 lg:grid-cols-4">

@@ -186,7 +186,7 @@ export default function PlanningCenter() {
       <div ref={backgroundRef} data-planning-modal-background data-planning-focus-fallback tabIndex={-1}>
         <AdminPage
       title="规划中心"
-      description="把全部项目的过去、现在与未来放在同一条主线上。"
+      description="统筹全部项目的过去、现在与未来，也处理当前需要解决的小问题。"
       actions={(
         <>
           <AdminButton type="button" onClick={() => setImportPanel(true)}>
@@ -199,6 +199,16 @@ export default function PlanningCenter() {
       )}
         >
           <div className="flex flex-col gap-4">
+        <section className="flex flex-col gap-3 rounded-xl border bg-[var(--admin-surface-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="ai-planning-entry-title">
+          <div>
+            <h2 id="ai-planning-entry-title" className="m-0 text-sm font-semibold">AI 参与规划与分派</h2>
+            <p className="mb-0 mt-1 text-xs leading-5 text-[var(--admin-muted)]">大型任务、小型任务或临时问题，都可以交给 AI 协助拆解、选择模型并生成 Agent 任务卡。</p>
+          </div>
+          <AdminButton href="/admin/model-dispatch" className="shrink-0">
+            开始 AI 规划
+          </AdminButton>
+        </section>
+
         <div role="tablist" aria-label="规划中心视图" className="flex flex-wrap gap-2">
           {PLANNING_TABS.map((tab) => (
             <button

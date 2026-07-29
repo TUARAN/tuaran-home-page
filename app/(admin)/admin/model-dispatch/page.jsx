@@ -5,8 +5,8 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Agent 协同测试',
-  description: 'Admin 专属多代码大模型智能 Agent 协同测试、审计与策略迭代控制台。',
+  title: 'AI 规划与分派',
+  description: '规划中心内的 AI 任务拆解、模型选型与 Agent 分派工具。',
   robots: {
     index: false,
     follow: false,
@@ -17,9 +17,9 @@ export const metadata = {
 export default async function AdminModelDispatchPage() {
   return (
     <AdminPageGate
-      label="Agent 协同测试"
+      label="AI 规划与分派"
       returnTo="/admin/model-dispatch"
-      description="Admin 专属 Agent 协同测试、执行审计与策略迭代闭环，仅站长本人可见。"
+      description="规划中心内的 AI 任务拆解、模型选型与 Agent 分派工具，仅站长本人可见。"
     >
       <ModelDispatchConsole />
     </AdminPageGate>

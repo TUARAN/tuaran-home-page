@@ -4,23 +4,22 @@ export default function ProjectWorkspace() {
   return (
     <WorkspaceHub
       title="项目与工程"
-      description="用项目组合看方向，让 AI 协同与工程工作台共同推进交付，并沉淀可持续复用的上下文资产。"
+      description="由规划中心统筹项目全局，让 AI 参与大小任务的拆解与分派，再由工程工作台推进交付。"
       eyebrow="从方向到沉淀"
-      flow={['项目治理', 'AI 协同', '工程推进', '资产沉淀']}
+      flow={['全局规划', 'AI 参与拆解', '工程推进', '资产沉淀']}
       sections={[
         {
           title: '项目治理',
-          description: '跨项目判断优先级、路线图与工作区归属。',
+          description: '从规划中心判断跨项目优先级、路线图与工作区归属。',
           items: [
-            { href: '/admin/planning', title: '规划中心', description: '统一记录全部项目的过去、当前焦点、未来里程碑与执行任务。', icon: 'planning' },
+            { href: '/admin/planning', title: '规划中心', description: '统筹全部项目的过去、当前焦点与未来，并让 AI 参与大小任务的规划与分派。', icon: 'planning' },
             { href: '/admin/portfolio', title: '项目总览', description: 'AI 项目台账、整合路线图与 Codex 工作区治理。', icon: 'portfolio' },
           ],
         },
         {
-          title: 'AI 协同',
-          description: '把任务规划、模型选型、Agent 分派、自动化运行与调用审计接入项目交付。',
+          title: '执行与审计',
+          description: '承接规划中心的任务输出，追踪自动化运行、模型调用与执行结果。',
           items: [
-            { href: '/admin/model-dispatch', title: '规划与分派', description: '任务拆解、模型选型、Agent 任务卡与执行 Prompt。', icon: 'modelDispatch', note: '原「Agent 协同测试」' },
             { href: '/admin/ops', title: '自动化运行', description: '统一登记云端与本地自动化，追踪运行、产物、风险与审核。', icon: 'ops' },
             { href: '/admin/deepseek-tasks', title: '调用记录与审计', description: '审阅 API 调用、Token 消耗、失败原因与后续处理状态。', icon: 'deepseekTasks', note: '原「LLM API 任务管理」' },
           ],

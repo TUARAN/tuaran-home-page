@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '规划中心',
-  description: '统一记录全部项目的过去、当前焦点、未来里程碑与执行任务。',
+  description: '统筹全部项目的过去、当前焦点与未来，并让 AI 参与大小任务的规划、拆解与分派。',
   robots: { index: false, follow: false },
 }
 
@@ -15,7 +15,7 @@ export default function AdminPlanningPage() {
     <AdminPageGate
       label="规划中心"
       returnTo="/admin/planning"
-      description="统一记录全部项目的过去、当前焦点、未来里程碑与执行任务，仅站长本人可见。"
+      description="统筹全部项目并让 AI 参与大小任务的规划、拆解与分派，仅站长本人可见。"
     >
       <PlanningCenter />
     </AdminPageGate>

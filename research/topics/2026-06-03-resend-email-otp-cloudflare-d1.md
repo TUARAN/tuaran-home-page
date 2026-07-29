@@ -3,12 +3,14 @@ title: 邮箱登录与 Resend 邮件验证码配置经验（SyncBlog 实战）
 category: topics
 topic_type: tech
 tech_type: security_identity
+content_type: engineering_case
 date: 2026-06-03
 tags: [Resend, Cloudflare, Workers, D1, 邮箱验证码, OTP, 认证, SyncBlog, DNS, PBKDF2]
 summary: SyncBlog 从 GitHub OAuth 切到「邮箱+密码+6 位验证码」登录的完整实战记录——含接口设计、D1 表结构、Resend 域名验证、Cloudflare DNS 自动授权、Worker secrets 管理与上线踩坑清单。
 tldr: 把登录从 GitHub OAuth 换成自管邮箱体系，主要为了去掉「必须有 GitHub 账号」这道门槛。技术栈选 Cloudflare Workers + D1 + Resend——Resend 的 Cloudflare 集成把 SPF/DKIM/MX 一键写入，发件域名验证从「半天来回」压到「3 分钟点完」。最大的坑是 EMAIL_FROM 必须用已验证子域、CNAME 必须 DNS only 不开橙云、SESSION_SECRET 一旦换全员重登。
 assistance: claude-code
 model: claude-opus-4-7
+review_ready: true
 pv: 0
 ---
 
@@ -387,4 +389,4 @@ PBKDF2-SHA256 是 Web Crypto API 唯一原生支持的密码哈希算法，是 W
 - 站内调研：[基于 Cloudflare 的边缘智能体开发实战](/articles/research/topics/cloudflare-edge-agents-practice)（Cloudflare Workers/D1/Workers AI 体系总览）
 - 站内调研：[Next.js + Cloudflare 性能优化](/articles/research/topics/nextjs-cloudflare-performance-optimization)
 
-> 写作说明：本文基于 SyncBlog 实际上线过程整理，由 TUARAN 在 Claude Code（Opus 4.7）协助下成文。所有 DNS 记录、Resend 接口、Wrangler 命令均按 2026-06 当时实际版本记录，未来 API/UI 可能微调，落地前请对照各服务最新文档。
+> 适用范围：DNS 记录、Resend 接口和 Wrangler 命令均来自 SyncBlog 在 2026-06 的实际上线版本。服务 API 与界面可能调整，实施前需对照最新官方文档。

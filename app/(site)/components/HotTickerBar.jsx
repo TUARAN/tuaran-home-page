@@ -4,19 +4,12 @@ import Link from 'next/link'
 
 /* ─── Hot Ticker Marquee ───
  *  顶部细长流动条，置于站点导航下、首页 hero 上方，滚动时吸顶。
- *  每条都是一个独立入口（各自跳不同目的地），用来给重点动作更明显的推荐位：
- *   1. 资源库  2. 博主联盟（推广 / 兼职） 3. 微信社群
+ *  每条都是一个独立入口（各自跳不同目的地），集中推荐已完成人工复核的核心内容。
  */
 const TICKER_ITEMS = [
-  { icon: '📚', label: '海量资源任你取', cta: '看资源', href: '/articles?tab=resources' },
-  { icon: '💬', label: '加站长微信 · 交友进社群', cta: '加微信', href: '/community' },
-  {
-    icon: '🤝',
-    label: '推广 AI 产品 / 兼职赚钱',
-    cta: '博主联盟',
-    href: 'https://blogger-alliance.cn/',
-    external: true,
-  },
+  { icon: '📝', label: '工程实践与专题分析', cta: '看文章', href: '/articles' },
+  { icon: '🧭', label: '了解作者与长期方向', cta: '关于我', href: '/about' },
+  { icon: '🧪', label: '原创项目与交互作品', cta: '看作品', href: '/works' },
 ]
 
 function TickerItem({ item, focusable = true }) {

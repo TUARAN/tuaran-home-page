@@ -133,7 +133,7 @@ function buildItems() {
       }
     })
 
-  // 2. 公司 / 事项调研（全文走 content:encoded；加密文章只出摘要）
+  // 2. 公开分析（全文走 content:encoded；加密内容只输出摘要）
   const researchItems = listResearch().map((entry) => ({
     title: entry.title,
     link: `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`,

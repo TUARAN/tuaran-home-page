@@ -37,8 +37,12 @@ export default function sitemap() {
   const staticRoutes = [
     '',
     '/about',
+    '/contact',
     '/editorial',
+    '/privacy',
+    '/publications',
     '/services',
+    '/site',
     '/articles',
     '/frontend-weekly',
     '/rich-pages',

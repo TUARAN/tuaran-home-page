@@ -15,7 +15,7 @@ const KPI = [
   { label: '目标体量', value: '12 章 / 18 万字', note: '附录 + 时间线 + 关系图 + 金句卡' },
   { label: '连载篇数', value: '20 篇', note: '先连载、再合稿、最后成书' },
   { label: '工程母稿', value: 'Markdown', note: '统一 chapter 模板，方便多形态输出' },
-  { label: '目标周期', value: '12 个月', note: '调研 3 月 + 连载 6 月 + 成稿 3 月' },
+  { label: '目标周期', value: '12 个月', note: '史料研读 3 月 + 连载 6 月 + 成稿 3 月' },
   { label: '出版形态', value: '纸书 + 电子书 + 网页连载', note: '同一母稿三轨发布' },
 ]
 
@@ -274,9 +274,9 @@ const FACT_CHECKLIST = [
 ]
 
 const TWELVE_MONTH = [
-  { month: 'M1', phase: '调研', deliverable: '通读《明史·张居正传》《万历十五年》《张居正大传》《中国历代政治得失》；做 30 张人物卡 + 50 张事件卡' },
-  { month: 'M2', phase: '调研', deliverable: '《张太岳集》核心奏疏精读；建立 timeline.csv 与 relationship-map.md' },
-  { month: 'M3', phase: '调研→样章', deliverable: '完成 3 篇试读：考成法、三角联盟、夺情；公开发布看反馈' },
+  { month: 'M1', phase: '史料研读', deliverable: '通读《明史·张居正传》《万历十五年》《张居正大传》《中国历代政治得失》；做 30 张人物卡 + 50 张事件卡' },
+  { month: 'M2', phase: '史料研读', deliverable: '《张太岳集》核心奏疏精读；建立 timeline.csv 与 relationship-map.md' },
+  { month: 'M3', phase: '研读→样章', deliverable: '完成 3 篇试读：考成法、三角联盟、夺情；公开发布看反馈' },
   { month: 'M4', phase: '连载', deliverable: '正式开始 20 篇连载（每月 4 篇），同步打磨写作语调' },
   { month: 'M5', phase: '连载', deliverable: '完成连载第 5-8 篇；建立读者邮件列表 / 微信群' },
   { month: 'M6', phase: '连载', deliverable: '完成连载第 9-12 篇；同步整理金句卡与配图' },
@@ -345,8 +345,8 @@ const RISKS = [
   },
   {
     risk: '执行节奏失控',
-    detail: '12 个月里同时做调研、连载、改稿、出版，很容易某一段掉链。',
-    mitigation: '只把"M1-M3 调研"和"M9-M10 合稿"作为强约束；连载允许节奏微调；每月最后一周复盘',
+    detail: '12 个月里同时做史料研读、连载、改稿、出版，很容易某一段掉链。',
+    mitigation: '只把“M1-M3 史料研读”和“M9-M10 合稿”作为强约束；连载允许节奏微调；每月最后一周复盘',
   },
   {
     risk: '出版谈判被动',
@@ -387,7 +387,7 @@ export default function ZhangJuzhengBookPage() {
       <header className="mb-10 border-b border-[#eee] dark:border-gray-800 pb-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#888] dark:text-gray-400">
           <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-2 py-[1px]">
-            专题调研 · 写作创作
+            人物分析 · 写作创作
           </span>
           <span>·</span>
           <time dateTime="2026-05-30">2026-05-30 立项</time>
@@ -794,7 +794,7 @@ export default function ZhangJuzhengBookPage() {
               </table>
             </div>
             <p className="mt-3 text-xs text-[#888] dark:text-gray-400">
-              强约束：M1-M3 调研、M9-M10 合稿；其他阶段允许节奏微调；每月最后一周复盘。
+              强约束：M1-M3 史料研读、M9-M10 合稿；其他阶段允许节奏微调；每月最后一周复盘。
             </p>
           </section>
 

@@ -308,7 +308,7 @@ export default function WebLlmPageClient() {
 
   const clearAllLocalChats = useCallback(async () => {
     if (!dbRef.current) return
-    const ok = window.confirm('确认清空本页保存在浏览器 IndexedDB 里的全部本地对话和图片？这个操作不可恢复。')
+    const ok = window.confirm('确认清空浏览器 IndexedDB 里的全部本地对话和图片？这个操作不可恢复。')
     if (!ok) return
     await clearChats(dbRef.current)
     setChats([])
@@ -641,7 +641,7 @@ export default function WebLlmPageClient() {
           <div className="edge-side-brand">
             <p className="eyebrow">On-device AI</p>
             <h2>端侧大模型</h2>
-            <p>本页实验台只在浏览器本地运行模型；对话与图片会保存到本机 IndexedDB。</p>
+            <p>模型只在浏览器本地运行；对话与图片保存在本机 IndexedDB。</p>
           </div>
           <div className="side-actions">
             <button id="new-chat-btn" type="button" onClick={createNewChat} disabled={!dbReady}>
@@ -874,7 +874,7 @@ export default function WebLlmPageClient() {
           <header className="edge-section-head">
             <p className="eyebrow">Model Matrix</p>
             <h2>端侧模型矩阵</h2>
-            <p className="edge-section-sub">下面是适合端侧观察的主流小模型线，体积会随框架、量化和上下文长度浮动。</p>
+            <p className="edge-section-sub">可观察的主流端侧小模型列于此处，体积会随框架、量化和上下文长度浮动。</p>
           </header>
           <div className="edge-table-wrap">
             <table className="edge-table">
@@ -893,7 +893,7 @@ export default function WebLlmPageClient() {
         <section className="edge-section edge-section-reading" aria-label="延伸阅读">
           <header className="edge-section-head"><p className="eyebrow">References</p><h2>延伸阅读</h2></header>
           <ul className="edge-reading-list">
-            <li><span className="edge-reading-tag">站内</span><Link href="/articles/research/topics/qwen3-5-edge-deployment">Qwen3.5 系列模型端侧部署调研</Link></li>
+            <li><span className="edge-reading-tag">站内</span><Link href="/articles/research/topics/qwen3-5-edge-deployment">Qwen3.5 系列模型端侧部署分析</Link></li>
             <li><span className="edge-reading-tag">官方</span><a href="https://huggingface.co/docs/transformers.js/index" target="_blank" rel="noreferrer">transformers.js 官方文档</a></li>
             <li><span className="edge-reading-tag">生态</span><a href="https://github.com/mlc-ai/web-llm" target="_blank" rel="noreferrer">MLC WebLLM</a></li>
             <li><span className="edge-reading-tag">生态</span><a href="https://github.com/ggerganov/llama.cpp" target="_blank" rel="noreferrer">llama.cpp</a></li>

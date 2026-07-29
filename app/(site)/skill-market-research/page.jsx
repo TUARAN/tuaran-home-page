@@ -86,9 +86,9 @@ export default function SkillMarketResearchPage() {
         <div className="mx-auto grid w-full max-w-[1120px] gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_320px] md:py-14">
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#65665c] dark:text-gray-400">
-              <Link href="/rich-pages" className="underline-offset-4 hover:underline">多维页面</Link>
+              <Link href="/works" className="underline-offset-4 hover:underline">作品展厅</Link>
               <span>/</span>
-              <span>Skill 市场调研</span>
+              <span>Skill 市场分析</span>
             </div>
             <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#677963] dark:text-[#96af91]">
               Skill Market Research · 2026-06-05
@@ -103,7 +103,7 @@ export default function SkillMarketResearchPage() {
           </div>
           <div className="flex flex-col justify-between gap-5 rounded-2xl border border-[#cbcdc1] bg-white/[0.62] p-5 dark:border-[#293544] dark:bg-white/[0.04]">
             <SharePageButton
-              title="Skill 上架、宣发与回流工程调研"
+              title="Skill 上架、宣发与回流工程分析"
               text="一个 Skill 如何从文件变成多维页面：制作、上架、宣发、回流。"
               url="/skill-market-research"
             />
@@ -215,7 +215,7 @@ export default function SkillMarketResearchPage() {
 
       <section className="border-t border-[#d7d8cf] bg-white dark:border-[#202938] dark:bg-[#0f1620]">
         <div className="mx-auto w-full max-w-[1120px] px-4 py-10">
-          <SectionTitle eyebrow="Sources" title="调研来源" desc="来源保留为可继续追踪的入口，后续适合按 GitHub star、下载量、案例数继续补数据。" />
+          <SectionTitle eyebrow="Sources" title="信息来源" desc="来源保留为可继续追踪的入口，可继续按 GitHub star、下载量和案例数补充核验。" />
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {SOURCES.map(([name, href]) => (
               <a key={href} href={href} target="_blank" rel="noreferrer" className="rounded-lg border border-[#d3d5cb] bg-[#f2f3ef] px-4 py-3 text-sm text-[#52534b] no-underline transition hover:border-[#acae9f] hover:text-[#4c5e48] dark:border-[#293544] dark:bg-[#101820] dark:text-gray-300 dark:hover:border-[#3c4c5e] dark:hover:text-[#96af91]">

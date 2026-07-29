@@ -181,9 +181,9 @@ const friendLinks = [
   },
   {
     label: '我的 RSS 订阅墙',
-    href: '/resources/rss',
-    desc: '我长期订阅和推荐的博客入口，也欢迎互换 RSS 与个人站链接。',
-    tag: 'Blogroll',
+    href: '/rss.xml',
+    desc: '订阅本站最新的工程实践、专题分析和原创文章。',
+    tag: 'RSS',
     internal: true,
   },
 ]

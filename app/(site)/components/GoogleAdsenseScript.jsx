@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 
 import { getPublicSiteSettings } from './siteSettingsClient'
+import { isAdsenseReviewPath } from '../../../lib/adsenseReviewPolicy'
 
 const GOOGLE_ADSENSE_CLIENT =
   process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT || 'ca-pub-7037125126940820'
@@ -18,12 +19,7 @@ export default function GoogleAdsenseScript() {
     async function loadScript() {
       const settings = await getPublicSiteSettings()
       if (cancelled || !settings?.ads?.scriptEnabled || !GOOGLE_ADSENSE_CLIENT) return
-      const isResearchDetail = /^\/articles\/research\/(companies|topics|people)\/[^/]+$/.test(pathname || '')
-      const isArticleDetail = /^\/articles\/[^/]+$/.test(pathname || '') && ![
-        '/articles/creation-calendar',
-        '/articles/year-summary',
-      ].includes(pathname)
-      if (pathname !== '/' && !isResearchDetail && !isArticleDetail) return
+      if (!isAdsenseReviewPath(pathname)) return
       if (document.getElementById(SCRIPT_ID)) return
 
       const script = document.createElement('script')

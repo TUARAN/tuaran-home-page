@@ -11,10 +11,11 @@ tech_type: web_cloud
 content_type: engineering_case
 assistance: codex
 model: gpt-5
+review_ready: true
 pv: 0
 ---
 
-本文讨论 2aran.com 站内的燃币、文章 / 资料解锁和工具包下载，不涉及现金充值、提现或法币支付。文中“缓存”指 Workers isolate 内存中的短缓存；它是读优化，不承担权限正本。
+适用范围是 2aran.com 站内的燃币、文章 / 资料解锁和工具包下载，不涉及现金充值、提现或法币支付。“缓存”指 Workers isolate 内存中的短缓存，只承担读优化，不承担权限正本。
 
 ## 一、先给结论
 

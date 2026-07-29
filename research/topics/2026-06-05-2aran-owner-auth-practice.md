@@ -1,5 +1,5 @@
 ---
-title: 2aran.com 私有功能鉴权逻辑调研：统一 owner session、菜单权限化与端到端加密边界
+title: 2aran.com 私有功能鉴权工程分析：统一 owner session、菜单权限化与端到端加密边界
 category: topics
 date: 2026-06-05
 tags: [2aran.com, 鉴权, owner session, 菜单权限, Cloudflare, Next.js, 私有工具, Agent Ops, 端到端加密, 后台管理]
@@ -10,6 +10,7 @@ tech_type: security_identity
 content_type: engineering_case
 assistance: codex
 model: gpt-5
+review_ready: true
 pv: 0
 ---
 
@@ -69,7 +70,7 @@ pv: 0
 - `PRIVATE_VAULT_OWNER_EMAILS`
 - fallback owner login / email
 
-这说明 owner 不是某一个页面的概念，而是全站私有能力的统一身份边界。
+这说明 owner 是全站私有能力的统一身份边界，不能只在某一个页面内判断。
 
 当前核心函数是：
 
@@ -433,7 +434,7 @@ Agent Ops 要复用主站 session，必须配置同一个 `NEXTAUTH_SECRET`。
 
 主流方案：
 
-- **NextAuth (Auth.js)**：Next.js 生态里最常见，提供 `useSession()` hook + SessionProvider，本质上就是我手写的那一套。
+- **NextAuth (Auth.js)**：Next.js 生态里最常见，提供 `useSession()` hook + SessionProvider，整体结构与我手写的方案相近。
 - **Auth0 / Clerk / WorkOS**：托管身份服务，提供完整的 UI + 后端 + 用户管理，按 MAU 计费。
 - **Supabase Auth / Firebase Auth**：随数据库一起提供身份系统，便于"用户 ↔ 数据"建模。
 

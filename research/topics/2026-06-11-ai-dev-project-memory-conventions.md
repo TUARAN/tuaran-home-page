@@ -1,15 +1,17 @@
 ---
-title: AI 开发项目「记忆功能」调研：行业如何分层设置与管理仓库指令、会话记忆与外挂记忆
+title: AI 开发项目「记忆功能」分析：行业如何分层设置与管理仓库指令、会话记忆与外挂记忆
 category: topics
 date: 2026-06-11
 time: 21:58
 tags: [AI 记忆, CLAUDE.md, AGENTS.md, Cursor Rules, Copilot instructions, Memory Bank, MCP, Mem0, Letta, Zep, Claude Code, 上下文工程, 知识管理, 开发工作流]
-summary: 起点是本站今晚的一次自查：调研写作规则同时存在于本地记忆库、仓库 lib 文件、slash command、README 四个地方，重复且有漂移风险。本文调研行业同行怎么解决同一个问题——AI 辅助开发项目的「记忆功能」通常怎么分层、放在哪里、怎么管理：仓库指令文件（CLAUDE.md / AGENTS.md / Cursor Rules / Copilot instructions）、工具自动维护的本机会话记忆（Claude Code auto memory / Cursor Memories）、外挂记忆基础设施（MCP memory / Mem0 / Letta / Zep）。信息来源为各工具官方文档、公开报道，以及我作为一个 Claude Code 会话对自身记忆机制的第一手观察。
+summary: 起点是 2aran.com 的一次工程自查：写作规则同时存在于本地记忆库、仓库 lib 文件、slash command 和 README，重复且有漂移风险。行业常见方案把 AI 辅助开发项目的记忆分为仓库指令文件（CLAUDE.md / AGENTS.md / Cursor Rules / Copilot instructions）、工具自动维护的本机会话记忆（Claude Code auto memory / Cursor Memories）和外挂记忆基础设施（MCP memory / Mem0 / Letta / Zep）。信息来源包括各工具官方文档、公开报道和 Claude Code 会话记忆的实际使用观察。
 tldr: 行业把「记忆」收敛成三层，分层标准只有一个——这条信息该跟着谁走：跟仓库走的进指令文件（git 版本化、团队共享）；跟人走的进工具本机记忆（自动维护、不进仓库）；跟账号/产品走的进外挂记忆数据库（跨工具检索）。管理上的共识是「单一正本 + 指针引用 + 按需加载」，最大的反模式是同一条规则复制多处。以上为基于公开资料与一手使用观察的整理，不构成对任何工具的优劣判定。
 topic_type: tech
 tech_type: ai_coding
+content_type: engineering_case
 assistance: claude-code
 model: fable5
+review_ready: true
 pv: 0
 ---
 
@@ -154,18 +156,18 @@ memory-bank/
 
 ## 六、未能验证的事实清单
 
-以下信息未能在本调研中独立核实，引用时请注意口径：
+以下信息尚未独立核实，引用时需注意口径：
 
 - **「AGENTS.md 已被 20,000+ 仓库采用」**：来自 agents.md 官方站与 InfoQ 报道的宣传口径，未见独立统计
 - **各记忆框架的 benchmark 数字**（如 LongMemEval 上 Zep ≈63.8% vs Mem0 ≈49.0%）：均为**厂商自报或厂商委托口径**，不同框架的测试条件不可比
 - **「启用异步记忆整理后某法律 AI 公司任务完成率提升 6 倍」**：单一报道转述，未见当事公司一手披露
-- **Cursor「Memories」功能的具体存储位置与管理粒度**：官方文档公开细节有限，本文未展开
+- **Cursor「Memories」功能的具体存储位置与管理粒度**：官方文档公开细节有限，暂不纳入结论
 - **「旧版 .cursorrules 在 Agent 模式下被忽略」**：来自多篇社区文章交叉印证，未在 Cursor 官方文档中找到明确表述
-- 各工具的行为细节随版本快速变化，本文事实层以 2026-06 调研时点的公开文档为准
+- 各工具的行为细节随版本快速变化，事实层以 2026-06 核验时点的公开文档为准
 
 ## 七、信息来源与说明
 
-- 本文整理仓库指令文件、工具本机会话记忆和外挂记忆基础设施三类惯例，事实层以各工具官方文档为准。Claude Code 记忆机制包含第一手观察；各记忆框架的 benchmark 数字属于厂商自报口径，未独立核验。资料截至 2026-06-11。
+- 分析覆盖仓库指令文件、工具本机会话记忆和外挂记忆基础设施三类惯例，事实层以各工具官方文档为准。Claude Code 记忆机制包含实际使用观察；各记忆框架的 benchmark 数字属于厂商自报口径，未独立核验。资料截至 2026-06-11。
 
 ### 官方文档（一手）
 - [How Claude remembers your project — Claude Code Docs](https://code.claude.com/docs/en/memory)

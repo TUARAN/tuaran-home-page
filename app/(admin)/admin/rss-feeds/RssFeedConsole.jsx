@@ -291,7 +291,7 @@ const SITE_RSS_COVERAGE = [
     section: '公司观察 / 专题 / 人物',
     path: '/articles/research/*',
     status: 'in',
-    note: 'listResearch() 全文进；加密文章只出摘要，明文不进静态产物。',
+    note: '仅 review_ready=true 的人工复核内容全文进入；其余内容不进入公开发现源。',
   },
   {
     section: '灵感流',

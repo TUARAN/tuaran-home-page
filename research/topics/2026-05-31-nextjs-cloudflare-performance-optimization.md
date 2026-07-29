@@ -10,6 +10,7 @@ summary: 记录 2aran.com 本轮首屏加载、按需加载、项目体积与 Cl
 tldr: 本轮优化的核心是把主站和 /web-llm 从 layout 层解耦，减少全局 client 边界，收窄 middleware，补齐 Cloudflare 静态缓存，并明确首屏关键图片调度。预估首页冷启动提升 3% - 10%，二次访问和跨页面体感提升 10% - 30%，静态资源重复下载量可下降 50% - 95%。
 assistance: codex
 model: gpt-5
+review_ready: true
 pv: 0
 ---
 

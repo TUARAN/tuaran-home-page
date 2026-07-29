@@ -1,38 +1,37 @@
 import Link from 'next/link'
 
 import PageContainer from '../components/PageContainer'
-import RanbiBalance from '../components/RanbiBalance'
 
 export const dynamic = 'force-static'
 
 export const metadata = {
   title: '关于本站',
   description:
-    '2aran.com 是涂阿燃维护的个人内容与项目门户，集中提供原创文章、专题分析、工程实践、资源权益与参与入口。',
-  keywords: ['关于本站', '2aran.com', '涂阿燃', '燃币', '资源', '活动', '评论讨论'],
+    '2aran.com 是涂阿燃维护的前端与 AI 工程个人站，集中呈现原创文章、项目复盘、专题分析和交互作品。',
+  keywords: ['关于本站', '2aran.com', '涂阿燃', '前端工程', 'AI 工程', '原创文章', '项目复盘'],
   alternates: { canonical: '/site' },
 }
 
 const principles = [
   {
     title: '内容先行',
-    body: '这里首先是一个个人内容和项目门户：文章、调研、资源、作品和阶段性实验都由站长整理维护。',
+    body: '文章、分析、作品和阶段性实验都由站长选题、核验、维护，并尽量给出来源或工程证据。',
   },
   {
     title: '轻互动',
     body: '讨论围绕具体文章、资源和活动展开，读者可以评论、补充线索和交流经验；站点不开放自由发帖。',
   },
   {
-    title: '资源与活动',
-    body: '部分资料、下载、专题页和活动入口会集中在这里，方便长期读者领取、回看和参与。',
+    title: '持续更正',
+    body: '事实变化、来源失效或主要判断需要修订时，会更新正文并保留必要说明。',
   },
 ]
 
 const participate = [
-  ['评论讨论', '在文章、调研、资源页下补充观点、经验和问题，围绕具体话题交流。'],
-  ['领取资源', '用燃币解锁或领取站内整理的资料、插件、下载和专题内容。'],
-  ['参加活动', '例如竞猜、社群活动、问卷或线下连接，后续会按主题逐步开放。'],
-  ['私聊站长', '燃币不足、资源打不开、理由充分想补额度，都可以直接联系站长处理。'],
+  ['补充事实', '在具体文章下补充一手经历、公开资料和可核验线索。'],
+  ['指出错误', '通过联系方式说明错误位置和依据，重要更正会同步到正文。'],
+  ['讨论实践', '围绕架构、部署、性能、内容工程和 AI 工具链交流具体问题。'],
+  ['联系合作', '技术咨询、内容分析、工程协作和出版相关事项可以直接联系站长。'],
 ]
 
 const contentGroups = [
@@ -62,21 +61,20 @@ export default function SiteAboutPage() {
           关于本站
         </h1>
         <p className="mt-4 max-w-[760px] text-[15px] leading-8 text-[var(--site-muted)]">
-          2aran.com 是涂阿燃维护的个人内容、项目和资源门户，也是一张持续更新的个人工作台。
-          我负责整理内容和资源；读者可以阅读、评论、领取资料、参加活动，并通过燃币保留参与记录和资源权益。
+          2aran.com 是涂阿燃维护的前端与 AI 工程个人站，记录真实项目、开源贡献、技术选型和长期专题。
+          内容由我选题、核验并承担最终责任；辅助工具用于资料整理、校对和表达，不替代作者判断。
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link href="/articles" className="rounded-full bg-[var(--site-ink)] px-4 py-2 text-sm font-medium text-white no-underline shadow-sm transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)] dark:text-[#0d0e0d]">
             进入知识库
           </Link>
-          <Link href="/ranbi" className="rounded-full border border-[var(--site-line)] px-4 py-2 text-sm font-medium text-[var(--site-ink)] no-underline hover:bg-[var(--site-panel)]">
-            了解燃币
+          <Link href="/editorial" className="rounded-full border border-[var(--site-line)] px-4 py-2 text-sm font-medium text-[var(--site-ink)] no-underline hover:bg-[var(--site-panel)]">
+            内容说明
           </Link>
-          <Link href="/donate" className="rounded-full border border-[#caa86a] px-4 py-2 text-sm font-medium text-[#7a5b1e] no-underline hover:bg-[#fbf7ee] dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-950/30">
-            支持本站
+          <Link href="/contact" className="rounded-full border border-[#caa86a] px-4 py-2 text-sm font-medium text-[#7a5b1e] no-underline hover:bg-[#fbf7ee] dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-950/30">
+            联系站长
           </Link>
         </div>
-        <RanbiBalance className="mt-5" />
       </header>
 
       <section className="grid gap-8 border-b border-[var(--site-line)] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
@@ -124,18 +122,18 @@ export default function SiteAboutPage() {
       </section>
 
       <section id="reader-rights" className="scroll-mt-24 grid gap-8 border-b border-[var(--site-line)] py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
-        <SectionIntro index="04" eyebrow="RANBI" title="读者资源权益" />
+        <SectionIntro index="04" eyebrow="READING" title="阅读与引用" />
         <div>
           <p className="max-w-3xl text-[15px] leading-8 text-[var(--site-muted)]">
-            燃币是本站的留存和友好交流机制：游客有试用额度，登录后有起步额度，也可以通过签到、评论、活动或站长手动调整获得。它主要用来记录资源领取、活动参与和内容解锁，
-            公开阅读不受影响；已解锁内容和已领取资源会保留在账号权益中。
+            精选文章和专题分析可直接阅读。引用时请保留作者、标题和原始链接；涉及第三方数据、图片或代码时，
+            还需要遵守原始来源的许可。隐私、Cookie 和广告相关处理以隐私政策为准。
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/ranbi" className="rounded-full bg-[#7a5b1e] px-4 py-2 text-sm font-medium text-white no-underline hover:bg-[#6a4f19] dark:bg-amber-700 dark:hover:bg-amber-600">
-              查看燃币说明
+            <Link href="/privacy" className="rounded-full bg-[#7a5b1e] px-4 py-2 text-sm font-medium text-white no-underline hover:bg-[#6a4f19] dark:bg-amber-700 dark:hover:bg-amber-600">
+              查看隐私政策
             </Link>
-            <Link href="/donate" className="rounded-full border border-[#caa86a] px-4 py-2 text-sm font-medium text-[#7a5b1e] no-underline hover:bg-[#fbf7ee] dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-950/30">
-              支持并补充燃币
+            <Link href="/contact" className="rounded-full border border-[#caa86a] px-4 py-2 text-sm font-medium text-[#7a5b1e] no-underline hover:bg-[#fbf7ee] dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-950/30">
+              联系与更正
             </Link>
           </div>
         </div>
@@ -151,8 +149,8 @@ export default function SiteAboutPage() {
             <Link href="/editorial" className="rounded-full bg-[var(--site-ink)] px-4 py-2 text-sm font-medium text-white no-underline dark:text-[#0d0e0d]">
               查看内容与更正政策
             </Link>
-            <Link href="/help" className="rounded-full border border-[var(--site-line)] px-4 py-2 text-sm font-medium text-[var(--site-ink)] no-underline">
-              查看使用帮助
+            <Link href="/contact" className="rounded-full border border-[var(--site-line)] px-4 py-2 text-sm font-medium text-[var(--site-ink)] no-underline">
+              提交问题
             </Link>
           </div>
         </div>

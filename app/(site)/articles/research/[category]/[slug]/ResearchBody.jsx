@@ -220,7 +220,7 @@ export default function ResearchBody({ variants }) {
           ].join(' ')}
           title={speechSupported ? '' : '当前浏览器不支持语音朗读'}
         >
-          {isSpeaking ? '停止朗读' : '朗读本文'}
+          {isSpeaking ? '停止朗读' : '朗读正文'}
         </button>
       </div>
 

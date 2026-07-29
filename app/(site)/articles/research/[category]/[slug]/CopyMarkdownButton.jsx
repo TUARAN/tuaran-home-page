@@ -39,7 +39,7 @@ export default function CopyMarkdownButton({ markdown }) {
       type="button"
       onClick={handleCopy}
       aria-live="polite"
-      title="复制本篇文章的 Markdown 源码"
+      title="复制文章的 Markdown 源码"
       className="article-action-button px-3 py-1 text-xs"
     >
       {copied ? (

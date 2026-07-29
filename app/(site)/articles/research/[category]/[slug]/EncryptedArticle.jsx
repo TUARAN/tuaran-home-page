@@ -97,7 +97,7 @@ export default function EncryptedArticle({ payload, storageKey }) {
         </svg>
       </div>
 
-      <h2 className="mt-4 text-lg text-[#444] dark:text-gray-200">本篇调研已加密</h2>
+      <h2 className="mt-4 text-lg text-[#444] dark:text-gray-200">内容已加密</h2>
       <p className="mt-2 text-sm leading-relaxed text-[#666] dark:text-gray-400">
         输入密码以查看完整内容。解密在你的浏览器本地完成，密码不会上传。
       </p>

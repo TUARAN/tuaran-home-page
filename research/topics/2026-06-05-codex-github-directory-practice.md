@@ -1,5 +1,5 @@
 ---
-title: 用 Codex 整理本地 GitHub 项目目录：一次 68G 到 30G 的实践调研
+title: 用 Codex 整理本地 GitHub 项目目录：一次 68G 到 30G 的实践复盘
 category: topics
 date: 2026-06-05
 tags: [Codex, 项目管理, 本地工程治理, Git, 自动化]
@@ -10,6 +10,7 @@ tech_type: ai_coding
 content_type: engineering_case
 assistance: codex
 model: gpt-5
+review_ready: true
 pv: 0
 ---
 

@@ -3,16 +3,18 @@ title: OpenClaw 仓库现状快照（2025-11 → 2026-06）与外部贡献者提
 category: topics
 topic_type: tech
 tech_type: agents_automation
+content_type: engineering_case
 date: 2026-06-03
 tags: [OpenClaw, AI Agent, 开源贡献, MCP, 多渠道 Gateway, ClawSweeper]
 summary: 把 OpenClaw 从 warelay 原型到 2026.6.2 的演化拆成七个月度主节点，附一份"外部贡献者怎么稳过一单 PR"的实操清单。
 tldr: OpenClaw 的主线已经从"消息中继"换成"多渠道 AI agent runtime + 插件 SDK + Gateway 安全边界"。外部贡献者要稳过 PR，关键是看 ClawSweeper 标签、做纯函数级小修、按格式写 Real behavior proof。
 assistance: claude-code
 model: claude-opus-4-7
+review_ready: true
 pv: 0
 ---
 
-> **写在前面**：本文是一个时间切片快照。OpenClaw 的提交节奏极快，5 月一个月超过 7000 commit；任何"当前主线"的判断都只对 2026-06-03 这一刻成立。若你在更晚的时间读，先去看 `CHANGELOG.md` 最新一段，再回来对照。
+> **时间边界**：数据是截至 2026-06-03 的时间切片。OpenClaw 的提交节奏极快，5 月一个月超过 7000 commit；任何“当前主线”的判断都只对该核验时点成立。阅读时应先查看 `CHANGELOG.md` 最新版本，再对照当时状态。
 
 ## 一、是什么
 

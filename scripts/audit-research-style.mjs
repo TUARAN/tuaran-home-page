@@ -131,7 +131,8 @@ for (const category of categories) {
         const context = contexts[lineIndex]
         const specialProtection = rule.id === 'empty-self-reference'
           ? selfReferenceProtection(relativePath, line)
-          : rule.id === 'false-contrast' && relativePath === SELF_REFERENCE_STUDY
+          : (rule.id === 'false-contrast' || rule.id === 'model-self-reference')
+              && relativePath === SELF_REFERENCE_STUDY
             ? 'subject-matter'
           : ''
         const protectedReason = context !== 'author' ? context : specialProtection

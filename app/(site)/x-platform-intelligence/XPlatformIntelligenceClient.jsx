@@ -374,7 +374,7 @@ export default function XPlatformIntelligenceClient() {
           </details>
 
           <footer className="mt-12 flex flex-col gap-6 border-t border-black/15 pt-8 text-xs leading-6 text-[#6f6b62] dark:border-white/15 dark:text-gray-500 sm:flex-row sm:items-end sm:justify-between">
-            <p className="max-w-2xl">本页是季度决策快照，不是实时监控。编辑判断与事实观察分开存储；口径冲突保持并列，证据不足保持为空。核验日期：2026-07-20。</p>
+            <p className="max-w-2xl">数据是季度决策快照，不提供实时监控。编辑判断与事实观察分开存储；口径冲突保持并列，证据不足保持为空。核验日期：2026-07-20。</p>
             <a href="#decision" className="inline-flex items-center gap-2 font-semibold text-[#292823] dark:text-gray-300">回到经营判断 <ArrowRight size={15} /></a>
           </footer>
         </section>

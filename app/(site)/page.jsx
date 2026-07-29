@@ -278,9 +278,9 @@ const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 const CLASSIC_SITE_HERO_TAGLINE_EN = `${SITE_HERO_TITLE_EN}: ${SITE_HERO_TAGLINE_EN}`
 
 const PROFILE_LINKS = [
-  { href: '/context-memory', label: '上下文记忆', labelEn: 'Context Memory' },
+  { href: '/articles', label: '文章与分析', labelEn: 'Writing & Analysis' },
   { href: '/publications', label: '出版作品', labelEn: 'Publications' },
-  { href: '/map', label: '全站地图', labelEn: 'Site Map' },
+  { href: '/site', label: '站点说明', labelEn: 'About This Site' },
 ]
 
 function isExternalHref(href) {
@@ -799,10 +799,10 @@ function ClassicHomePage({ featuredPicks }) {
                   </div>
                 </blockquote>
                 <Link
-                  href="/context-memory"
+                  href="/articles"
                   className="mt-2 inline-flex items-center rounded-full border border-[#d6d0df] bg-white/[0.78] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#625d70] no-underline transition hover:border-[#b9a6c9] hover:text-[#20172f] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
                 >
-                  <T zh="我的上下文记忆" en="My context memory" />
+                  <T zh="查看精选内容" en="Explore selected writing" />
                 </Link>
               </div>
               <div className="mt-5 border-t border-[#dee0db] pt-4 dark:border-gray-800/80">
@@ -811,10 +811,10 @@ function ClassicHomePage({ featuredPicks }) {
                     More
                   </p>
                   <Link
-                    href="/map"
+                    href="/site"
                     className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#646655] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#acaf9d]"
                   >
-                    <T zh="地图 →" en="Map →" />
+                    <T zh="站点说明 →" en="About this site →" />
                   </Link>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

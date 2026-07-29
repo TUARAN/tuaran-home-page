@@ -120,7 +120,7 @@ export async function generateMetadata({ params }) {
 
   if (researchRedirect) {
     return {
-      title: `调研文章 · ${SITE_TITLE}`,
+      title: `分析文章 · ${SITE_TITLE}`,
       alternates: { canonical: `${SITE_URL}${researchRedirect}` },
       robots: { index: false, follow: true },
     }

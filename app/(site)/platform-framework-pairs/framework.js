@@ -43,7 +43,7 @@ export const FRAMEWORK_SECTIONS = [
     number: '04',
     title: '三家动机解构：先发的是 AI 公司',
     body:
-      'Anthropic 是先发：Claude Code 6 个月做到 $1B run-rate，AI 编码工具核心依赖 runtime，与其租别家不如自己拿下。Bun 的 all-in-one toolkit 形态本就为快速 dev loop 优化，正好对口 AI agent 工作流。Cloudflare 是回应：deployment 平台层被 AI 公司釜底抽薪后，必须从工具链上游反包 —— Vite 在下游所有框架（含 React / Svelte / Solid）都有立足点。Vercel 是存量：九年 Next.js 绑定已经验证商业模型，问题是接下来怎么不被 Anthropic + CF 夹击。',
+      'Anthropic 是先发：Claude Code 6 个月做到 $1B run-rate，AI 编码工具核心依赖 runtime，与其租别家不如自己拿下。Bun 的 all-in-one toolkit 形态本就为快速 dev loop 优化，正好对口 AI agent 工作流。Cloudflare 是回应：deployment 平台层被 AI 公司釜底抽薪后，必须从工具链上游反包 —— Vite 在下游所有框架（含 React / Svelte / Solid）都有立足点。Vercel 是存量：九年 Next.js 绑定已经验证商业模型，关键在于如何避免被 Anthropic + CF 夹击。',
     accent: 'highlight',
   },
   {

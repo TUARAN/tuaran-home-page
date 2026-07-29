@@ -276,7 +276,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (params?.get('tech_type')) return 'tech'
     if (params?.get('topic_type')) return getTabForTopicType(params.get('topic_type'))
     if (params?.get('people_type')) return 'people'
-    return 'all'
+    return 'picks'
   }
   const initialTab = (() => {
     return normalizeTabFromParams(searchParams)
@@ -321,6 +321,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const requestedPvKeys = useRef(new Set())
   const [isPending, startTransition] = useTransition()
+  const catalogItems = items
 
   useEffect(() => {
     let alive = true
@@ -562,8 +563,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   const counts = useMemo(() => {
     const base = Object.fromEntries(TAB_KEYS.map((k) => [k, 0]))
-    base.all = items.length
-    for (const item of items) {
+    base.all = catalogItems.length
+    for (const item of catalogItems) {
       if (typeof base[item.kind] === 'number') base[item.kind] += 1
       if (RESEARCH_KINDS.has(item.kind)) base.research += 1
       if (item.contentType === 'engineering_case') base['engineering-cases'] += 1
@@ -574,14 +575,14 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     }
     base.column = (base.posts || 0) + (base.works || 0)
     return base
-  }, [items])
+  }, [catalogItems])
 
   const activeChannel = getChannelForTab(tab)
 
   const columnCategoryDefs = useMemo(() => {
     if (tab !== 'column' && tab !== 'posts' && tab !== 'works') return []
     const categoryMap = new Map()
-    for (const item of items) {
+    for (const item of catalogItems) {
       const belongsToActiveColumn =
         tab === 'column'
           ? item.kind === 'posts' || item.kind === 'works'
@@ -600,12 +601,12 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       },
       ...Array.from(categoryMap.values()).sort((a, b) => a.order - b.order),
     ]
-  }, [items, tab])
+  }, [catalogItems, tab])
 
   const columnCategoryCounts = useMemo(() => {
     const base = { all: 0 }
     if (tab !== 'column' && tab !== 'posts' && tab !== 'works') return base
-    const columnItems = items.filter((item) =>
+    const columnItems = catalogItems.filter((item) =>
       tab === 'column'
         ? item.kind === 'posts' || item.kind === 'works'
         : item.kind === tab,
@@ -617,7 +618,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       }
     }
     return base
-  }, [items, tab])
+  }, [catalogItems, tab])
 
   const breadcrumb = useMemo(() => {
     if (tab === 'all') return null
@@ -670,43 +671,43 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
     const allTabItems =
       allContentType === 'all'
-        ? items
+        ? catalogItems
         : allContentType === 'column'
-        ? items.filter((item) => item.kind === 'posts' || item.kind === 'works')
+        ? catalogItems.filter((item) => item.kind === 'posts' || item.kind === 'works')
         : allContentType === 'research'
-        ? items.filter((item) => RESEARCH_KINDS.has(item.kind))
+        ? catalogItems.filter((item) => RESEARCH_KINDS.has(item.kind))
         : allContentType === 'tech'
-        ? items.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
+        ? catalogItems.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
         : allContentType === 'business'
-        ? items.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
+        ? catalogItems.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
         : allContentType === 'other'
-        ? items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
+        ? catalogItems.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
         : allContentType.startsWith('resource-')
-        ? items.filter((item) => {
+        ? catalogItems.filter((item) => {
             const groupKey = allContentType.slice('resource-'.length)
             const group = RESOURCE_GROUP_DEFS.find((entry) => entry.key === groupKey)
             return item.kind === 'resources' && group?.typeKeys.includes(item.resourceType)
           })
-        : items.filter((item) => item.kind === allContentType)
+        : catalogItems.filter((item) => item.kind === allContentType)
 
     const tabItems =
       tab === 'all'
         ? allTabItems
         : tab === 'picks'
-        ? items
+        ? catalogItems
         : tab === 'column'
-        ? items.filter((item) => item.kind === 'posts' || item.kind === 'works')
+        ? catalogItems.filter((item) => item.kind === 'posts' || item.kind === 'works')
         : tab === 'research'
-        ? items.filter((item) => RESEARCH_KINDS.has(item.kind))
+        ? catalogItems.filter((item) => RESEARCH_KINDS.has(item.kind))
         : CONTENT_TYPE_BY_TAB[tab]
-        ? items.filter((item) => item.contentType === CONTENT_TYPE_BY_TAB[tab])
+        ? catalogItems.filter((item) => item.contentType === CONTENT_TYPE_BY_TAB[tab])
         : tab === 'tech'
-        ? items.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
+        ? catalogItems.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
         : tab === 'business'
-        ? items.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
+        ? catalogItems.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
         : tab === 'other'
-        ? items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
-        : items.filter((item) => item.kind === tab)
+        ? catalogItems.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
+        : catalogItems.filter((item) => item.kind === tab)
     let typeFiltered = tabItems
     if (
       (tab === 'column' || tab === 'posts' || tab === 'works')
@@ -743,7 +744,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         .toLowerCase()
       return combined.includes(normalizedQuery)
     })
-  }, [items, tab, allContentType, columnCategory, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query])
+  }, [catalogItems, tab, allContentType, columnCategory, companyType, topicType, peopleType, techType, resourceType, resourceGroup, query])
 
   const paginatedItems = useMemo(
     () => visible.slice(0, visibleCount),
@@ -797,7 +798,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   const companyTypeCounts = useMemo(() => {
     const base = Object.fromEntries(COMPANY_TYPE_KEYS.map((k) => [k, 0]))
-    const companyItems = items.filter((item) => item.kind === 'companies')
+    const companyItems = catalogItems.filter((item) => item.kind === 'companies')
     base.all = companyItems.length
     for (const item of companyItems) {
       if (item.companyType && typeof base[item.companyType] === 'number') {
@@ -805,11 +806,11 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       }
     }
     return base
-  }, [items])
+  }, [catalogItems])
 
   const businessTopicTypeCounts = useMemo(() => {
     const base = Object.fromEntries(TOPIC_TYPE_KEYS.map((k) => [k, 0]))
-    const topicItems = items.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
+    const topicItems = catalogItems.filter((item) => item.kind === 'topics' && BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
     base.all = topicItems.length
     for (const item of topicItems) {
       if (item.topicType && typeof base[item.topicType] === 'number') {
@@ -817,11 +818,11 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       }
     }
     return base
-  }, [items])
+  }, [catalogItems])
 
   const otherTopicTypeCounts = useMemo(() => {
     const base = Object.fromEntries(TOPIC_TYPE_KEYS.map((k) => [k, 0]))
-    const topicItems = items.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
+    const topicItems = catalogItems.filter((item) => item.kind === 'topics' && item.topicType !== 'tech' && !BUSINESS_TOPIC_TYPE_KEYS.includes(item.topicType))
     base.all = topicItems.length
     for (const item of topicItems) {
       if (item.topicType && typeof base[item.topicType] === 'number') {
@@ -829,11 +830,11 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       }
     }
     return base
-  }, [items])
+  }, [catalogItems])
 
   const peopleTypeCounts = useMemo(() => {
     const base = Object.fromEntries(PEOPLE_TYPE_KEYS.map((k) => [k, 0]))
-    const peopleItems = items.filter((item) => item.kind === 'people')
+    const peopleItems = catalogItems.filter((item) => item.kind === 'people')
     base.all = peopleItems.length
     for (const item of peopleItems) {
       if (item.peopleType && typeof base[item.peopleType] === 'number') {
@@ -841,11 +842,11 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       }
     }
     return base
-  }, [items])
+  }, [catalogItems])
 
   const techTypeCounts = useMemo(() => {
     const base = Object.fromEntries(TECH_TYPE_KEYS.map((k) => [k, 0]))
-    const techItems = items.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
+    const techItems = catalogItems.filter((item) => item.kind === 'topics' && item.topicType === 'tech')
     base.all = techItems.length
     for (const item of techItems) {
       if (item.techType && typeof base[item.techType] === 'number') {
@@ -853,11 +854,11 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       }
     }
     return base
-  }, [items])
+  }, [catalogItems])
 
   const resourceTypeCounts = useMemo(() => {
     const base = Object.fromEntries(RESOURCE_TYPE_KEYS.map((k) => [k, 0]))
-    const resourceItems = items.filter((item) => item.kind === 'resources')
+    const resourceItems = catalogItems.filter((item) => item.kind === 'resources')
     base.all = resourceItems.length
     for (const item of resourceItems) {
       if (item.resourceType && typeof base[item.resourceType] === 'number') {
@@ -865,10 +866,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       }
     }
     return base
-  }, [items])
+  }, [catalogItems])
 
   const resourceGroupCounts = useMemo(() => {
-    const resourceItems = items.filter((item) => item.kind === 'resources')
+    const resourceItems = catalogItems.filter((item) => item.kind === 'resources')
     const base = Object.fromEntries(RESOURCE_GROUP_KEYS.map((key) => [key, 0]))
     base.all = resourceItems.length
     for (const group of RESOURCE_GROUP_DEFS) {
@@ -876,7 +877,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       base[group.key] = resourceItems.filter((item) => group.typeKeys.includes(item.resourceType)).length
     }
     return base
-  }, [items])
+  }, [catalogItems])
 
   const visibleResourceTypeDefs = useMemo(
     () => getResourceTypeDefsForGroup(resourceGroup),
@@ -884,8 +885,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   )
 
   const readingHighlights = useMemo(() => {
-    const publicItems = items.filter((item) => !item.encrypted)
-    const latestItems = publicItems.slice(0, 3)
+    const publicItems = catalogItems.filter((item) => !item.encrypted)
+    const reviewReadyItems = publicItems.filter((item) => item.reviewReady)
+    const latestItems = reviewReadyItems.slice(0, 3)
     const latestIds = new Set(latestItems.map((item) => item.id || item.href))
     return [
       {
@@ -896,24 +898,25 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       {
         title: '推荐分析',
         desc: '技术、市场与公司观察中的作者判断。',
-        items: publicItems
+        items: reviewReadyItems
           .filter((item) => !latestIds.has(item.id || item.href) && RESEARCH_KINDS.has(item.kind))
           .slice(0, 3),
       },
       {
         title: '代表作品',
         desc: '个人判断、多维页面和长期项目。',
-        items: publicItems
+        items: reviewReadyItems
           .filter((item) => !latestIds.has(item.id || item.href) && (item.kind === 'posts' || item.kind === 'works'))
           .slice(0, 3),
       },
     ].filter((section) => section.items.length > 0)
-  }, [items])
+  }, [catalogItems])
 
   const picksCount = useMemo(
     () => readingHighlights.reduce((sum, section) => sum + section.items.length, 0),
     [readingHighlights],
   )
+  const visibleChannelDefs = CHANNEL_DEFS
 
   const showReadingHighlights = tab === 'picks' && !query.trim()
   const showArticleList = tab !== 'picks' || Boolean(query.trim())
@@ -1158,7 +1161,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           role="tablist"
           className="flex gap-1.5 overflow-x-auto rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 sm:grid sm:grid-cols-5 sm:overflow-visible dark:border-gray-800 dark:bg-[#151a22]"
         >
-          {CHANNEL_DEFS.map((channel) => {
+          {visibleChannelDefs.map((channel) => {
             const active = activeChannel === channel.key
             const count =
               channel.key === 'picks'

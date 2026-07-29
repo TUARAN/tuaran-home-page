@@ -289,4 +289,4 @@ npx wrangler deploy
 - Vercel AI SDK vs Agents SDK 对比文章（社区）
 - 站内相关调研：[Next.js + Cloudflare 性能优化](/articles/research/topics/nextjs-cloudflare-performance-optimization)、[端侧 Agent 开发课程市场分析](/articles/research/topics/edge-agent-dev-course)
 
-> 写作说明：本文骨架与代码片段由 TUARAN 在 Claude Code（Opus 4.7）协助下整理，所有架构选型与"个人结论"为人工判断。代码骨架基于 2026-06 的 `agents@0.1.x` 与 `wrangler@4.x`，API 仍在演进，落地前请对照官方文档锁版本。
+> 适用范围：代码骨架基于 2026-06 的 `agents@0.1.x` 与 `wrangler@4.x`，架构取舍来自 TUARAN 的工程判断。相关 API 仍在演进，实施前需对照官方文档锁定版本。

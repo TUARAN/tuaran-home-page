@@ -11,11 +11,12 @@ content_type: build_log
 assistance: codex
 model: gpt-5.5
 show_assistance: false
+review_ready: true
 ad_eligible: false
 pv: 0
 ---
 
-本文于 2026-07-14 根据 Google AdSense、Google Publisher Policies 和 Google Search Central 官方资料，以及 2aran.com 线上页面与代码整理。Google 没有公开“至少多少篇、每篇多少字、日访问量多少”的通过公式。下面会把官方明文规则与我的整改判断分开，不把社区经验写成官方门槛。
+信息截至 2026-07-14，依据 Google AdSense、Google Publisher Policies、Google Search Central 官方资料以及 2aran.com 线上页面与代码核验。Google 没有公开“至少多少篇、每篇多少字、日访问量多少”的通过公式。官方明文规则与我的整改判断分开呈现，社区经验不作为官方门槛。
 
 ![Google AdSense 网站审核提示“低价值内容”，要求站长参考最低内容要求、独特内容与用户体验、内容贫乏和网站站长质量指南](/research/google-adsense-low-value-content-rejection/adsense-low-value-content.png)
 

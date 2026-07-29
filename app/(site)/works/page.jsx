@@ -41,9 +41,9 @@ export default function WorksPage() {
         <Link href="/articles" className="font-semibold text-[#171611] no-underline hover:opacity-65 dark:text-white">
           /articles
         </Link>
-        ，工具在{' '}
-        <Link href="/tools" className="font-semibold text-[#171611] no-underline hover:opacity-65 dark:text-white">
-          /tools
+        ，作者与项目背景见{' '}
+        <Link href="/about" className="font-semibold text-[#171611] no-underline hover:opacity-65 dark:text-white">
+          /about
         </Link>。
       </footer>
     </main>

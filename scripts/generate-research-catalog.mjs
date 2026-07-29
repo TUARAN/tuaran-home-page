@@ -70,6 +70,7 @@ for (const category of categories) {
     const tags = parseTagList(data.tags)
     const hasAssessment = data.assessment === 'true' || data.has_assessment === 'true'
     const encrypted = data.encrypted === 'true' || data.encrypted_source === 'true'
+    const reviewReady = data.review_ready === 'true'
     entryMeta[key] = {
       category,
       slug,
@@ -80,6 +81,7 @@ for (const category of categories) {
       ...(tags.length ? { tags } : {}),
       ...(hasAssessment ? { hasAssessment: true } : {}),
       ...(encrypted ? { encrypted: true } : {}),
+      ...(reviewReady ? { reviewReady: true } : {}),
     }
   }
 }
@@ -94,6 +96,18 @@ ${keys.map((key) => `  '${key}',`).join('\n')}
 ]
 
 export const RESEARCH_ENTRY_KEY_SET = new Set(RESEARCH_ENTRY_KEYS)
+
+export const RESEARCH_REVIEW_READY_KEYS = [
+${metaEntries.filter(([, meta]) => meta.reviewReady).map(([key]) => `  '${key}',`).join('\n')}
+]
+
+export const RESEARCH_REVIEW_READY_KEY_SET = new Set(RESEARCH_REVIEW_READY_KEYS)
+
+export const RESEARCH_REVIEW_READY_PATHS = [
+${metaEntries.filter(([, meta]) => meta.reviewReady).map(([, meta]) => `  '/articles/research/${meta.category}/${meta.slug}',`).join('\n')}
+]
+
+export const RESEARCH_REVIEW_READY_PATH_SET = new Set(RESEARCH_REVIEW_READY_PATHS)
 
 export const RESEARCH_ARTICLE_REDIRECTS = {
 ${redirectEntries.map(([slug, href]) => `  '${slug}': '${href}',`).join('\n')}

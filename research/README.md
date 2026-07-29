@@ -52,6 +52,7 @@ content_type: analysis       # opinion | analysis | engineering_case | build_log
 assistance: claude-code      # 协助工具：claude-code | cursor | codex | doubao | gemini | gpt | manual
 model: claude-opus-4-7       # 底层模型 ID（可选，仅作内部记录）
 show_assistance: false       # 默认不展示；多版本对照或确有披露必要时才开启
+review_ready: false          # 人工完成原创性、证据、来源与风险复核后才能改为 true
 ad_eligible: false           # 人工完成广告政策审查后才能改为 true
 pv: 0                        # 阅读量（可选，列表页与详情页展示）
 ---
@@ -71,6 +72,7 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 | `assistance` | ⭕ | 协助工具的内部记录。旧文章的 `source` 字段仍兼容读取；工具不是作者，也不决定公开内容类型 |
 | `model` | ⭕ | 底层模型 ID，仅作内部追溯，不作为作者或文章来源 |
 | `show_assistance` | ⭕ | 是否在前台展示协助信息，默认 `false`；多版本对照等确有必要的页面可设为 `true` |
+| `review_ready` | ⭕ | 是否进入 AdSense 复审重点与验证脚本范围，默认 `false`。只有具备明确作者增量、可核验证据、来源与人工复核记录的内容才能开启；不影响 sitemap、RSS、llms、搜索索引或站内推荐 |
 | `ad_eligible` | ⭕ | 是否进入人工广告白名单，默认 `false`；健康、金融、政治、儿童和互动内容完成政策审查前不得开启 |
 | `pv` | ⭕ | 阅读量，填非负整数；不填时按 `0` 展示 |
 
@@ -81,6 +83,16 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 正文的唯一写作正本是 [`lib/researchStyleTemplates.js`](../lib/researchStyleTemplates.js)，在后台的 `/admin/research-style` 可查看。不要从本 README 或旧文章复述风格规则。
 
 写作顺序固定为：**选风格 → 先列事实与来源 → 写结构分析 / 外部研判 → 跑措辞审计 → 人工复核。**
+
+`review_ready: true` 不是“文章已经发布”的同义词。开启前必须同时满足：
+
+1. 作者增量明确：包含亲历、代码、数据、截图、实测、独立模型或可辨认的专业判断；
+2. 关键事实有一手来源，估算、推断和未能验证的内容已明确标注；
+3. 标题、摘要和正文兑现同一个问题，没有批量模板痕迹或无关扩写；
+4. 已完成人工事实复核、风险复核和页面阅读体验检查；
+5. 健康、金融、法律、政治、儿童、转载档案和纯互动页面默认不得进入复审白名单。
+
+`review_ready` 只控制 AdSense 复审重点与验证脚本范围，不控制 SEO 发现或索引；`ad_eligible` 继续控制审核通过后的实际广告投放。两者不得合并。
 
 - 未指定时使用「默认分析风格」；人味、周刊解释、投研备忘、资料档案等风格按主题选用。
 - 事实与研判必须分开；没有公开证据的内容写入「未能验证」，不要补成结论。

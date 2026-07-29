@@ -7,6 +7,7 @@ import {
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
 import { CONTENT_PV_ENTRIES } from '../../../lib/contentRegistry'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
+import { isAdsenseReviewPath } from '../../../lib/adsenseReviewPolicy'
 
 // 资源页 href → 阅读统计 key（仅登记进 contentRegistry 的资源才有阅读量）
 const RESOURCE_PV_KEY_BY_HREF = new Map(
@@ -49,6 +50,7 @@ export function buildKnowledgeItems() {
       date: article.date || '',
       sortKey: researchSortKey(article.date),
       href: isExternalHref(article.href) ? article.href : path,
+      reviewReady: !isExternalHref(article.href) && isAdsenseReviewPath(path),
       ...(!isExternalHref(article.href) ? { pvKey: `article/${article.slug}`, pv: null } : {}),
     }
   })
@@ -69,6 +71,7 @@ export function buildKnowledgeItems() {
       peopleType: entry.peopleType || '',
       techType: entry.techType || '',
       contentType: entry.contentType || 'analysis',
+      reviewReady: entry.reviewReady || false,
       version: entry.version || '',
       title: entry.title,
       summary: entry.tldr || entry.summary,
@@ -115,6 +118,7 @@ export function buildKnowledgeItems() {
     date: p.date,
     sortKey: researchSortKey(p.date),
     href: p.href,
+    reviewReady: isAdsenseReviewPath(p.href),
     pvKey: getRichPagePvKey(p),
     pv: null,
     canvasId: p.canvasId || null,

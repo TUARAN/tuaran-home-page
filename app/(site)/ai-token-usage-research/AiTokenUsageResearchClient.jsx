@@ -10,7 +10,7 @@ import SharePageButton from '../components/SharePageButton'
 const SHARE_URL = 'https://2aran.com/ai-token-usage-research'
 
 // 分发用：纯 markdown 版本（同步到 syncblog.cn）。不会在站点上直接渲染，仅供 DistributeMarkdownButton 携带。
-const DISTRIBUTE_MARKDOWN = `# AI Token 用量与花费强度调研
+const DISTRIBUTE_MARKDOWN = `# AI Token 用量与花费强度分析
 
 > 用 0.1B / 0.45B / 10B / 20B tokens/day 四个锚点，把日常重度使用、极重度个人自报、agent-heavy 自动化跑批放到同一条强度尺上：既看成本，也看行为可信度与 vibe coding 能力。
 
@@ -83,7 +83,7 @@ token 区间跨 5 个数量级，横轴用对数刻度。
 | 长会话跨文件重构 | 30% |
 | 反复注入仓库上下文和测试日志 | 30% |
 | 多窗口并行探索方案 | 20% |
-| 文档、调研、写作辅助 | 10% |
+| 文档、分析、写作辅助 | 10% |
 | 失败重试与上下文污染 | 10% |
 
 **判断**：如果 10B/day 是真的，他大概率不是"手速快"，而是会组织 AI 系统：会拆任务、开并发、让 agent 读仓库、跑测试、回收结果。这确实是一种 vibe coding 能力。
@@ -252,7 +252,7 @@ const PROFILES = [
   },
   {
     value: 'research',
-    label: '调研写作 · 缓存读取 55% / 新增输入 30% / 输出 15%',
+    label: '分析写作 · 缓存读取 55% / 新增输入 30% / 输出 15%',
     cacheShare: 0.55,
     freshShare: 0.3,
     outputShare: 0.15,
@@ -284,7 +284,7 @@ const TYPICAL_SCENARIOS = {
       { name: '长会话跨文件重构', share: 30 },
       { name: '反复注入仓库上下文和测试日志', share: 30 },
       { name: '多窗口并行探索方案', share: 20 },
-      { name: '文档、调研、写作辅助', share: 10 },
+      { name: '文档、分析、写作辅助', share: 10 },
       { name: '失败重试与上下文污染', share: 10 },
     ],
   },
@@ -547,30 +547,30 @@ export default function AiTokenUsageResearchClient() {
     <main className="mx-auto w-full max-w-[1120px] space-y-10 px-4 py-10">
       <header className="space-y-3 border-b border-[#d7d9cd] pb-6 dark:border-gray-800">
         <div className="flex items-start justify-between gap-4">
-          <p className="text-xs tracking-wide text-[#7e7e76] dark:text-gray-500">专题调研 · AI 调研</p>
+          <p className="text-xs tracking-wide text-[#7e7e76] dark:text-gray-500">实测分析 · AI 工程</p>
           <div className="flex shrink-0 items-center gap-2">
             <SharePageButton
-              title="AI Token 用量与花费强度调研"
+              title="AI Token 用量与花费强度分析"
               text="0.1B、0.45B、10B、20B tokens/day 分别意味着什么？看成本、可信度、OpenClaw 对照和 vibe coding 能力信号。"
               url="/ai-token-usage-research"
             />
             <ArticleActionsDropdown label="更多">
               <DistributeMarkdownButton
-                title="AI Token 用量与花费强度调研"
+                title="AI Token 用量与花费强度分析"
                 summary="用 0.1B / 0.45B / 10B / 20B tokens/day 四个锚点，把日常重度使用、极重度个人自报、agent-heavy 自动化跑批放到同一条强度尺上。"
                 markdown={DISTRIBUTE_MARKDOWN}
                 url={SHARE_URL}
                 category="ai"
                 slug="ai-token-usage-research"
                 tags={DISTRIBUTE_TAGS}
-                kindLabel="调研"
+                kindLabel="分析"
                 allowArticle
               />
             </ArticleActionsDropdown>
           </div>
         </div>
         <h1 className="text-3xl font-semibold text-[#222] dark:text-gray-100">
-          AI Token 用量与花费强度调研
+          AI Token 用量与花费强度分析
         </h1>
         <p className="text-sm leading-7 text-[#505048] dark:text-gray-300">
           用 0.1B / 0.45B / 10B / 20B tokens/day 四个锚点，把日常重度使用、极重度个人自报、agent-heavy 自动化跑批放到同一条强度尺上：既看成本，也看行为可信度与 vibe coding 能力。
@@ -888,11 +888,11 @@ export default function AiTokenUsageResearchClient() {
           </li>
         </ul>
         <div className="mt-3 flex flex-wrap gap-4 text-sm">
-          <Link href="/rich-pages" className="underline decoration-[#a3a889] underline-offset-2">
-            返回多维页面列表
+          <Link href="/works" className="underline decoration-[#a3a889] underline-offset-2">
+            返回作品展厅
           </Link>
-          <Link href="/skill-center/llm-productivity-directives" className="underline decoration-[#a3a889] underline-offset-2">
-            相关：大模型增效指令 Skill
+          <Link href="/articles" className="underline decoration-[#a3a889] underline-offset-2">
+            继续阅读文章与分析
           </Link>
         </div>
       </section>

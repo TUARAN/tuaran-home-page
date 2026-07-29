@@ -11,6 +11,7 @@ tldr: 这次升级改变的是 MCP 的协议内核。每个请求独立携带版
 assistance: codex
 model: gpt-5
 show_assistance: false
+review_ready: true
 ad_eligible: false
 pv: 0
 ---

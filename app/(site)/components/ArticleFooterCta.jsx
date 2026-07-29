@@ -32,14 +32,14 @@ export default function ArticleFooterCta() {
         </a>
 
         <Link
-          href="/community"
+          href="/contact"
           className="group flex items-baseline gap-3 rounded-xl border border-[#dee0db] bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:border-[#c2c4b7] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-600"
         >
           <span className="text-[18px]" aria-hidden="true">💬</span>
           <div className="flex-1">
-            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">加入社群 →</div>
+            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">联系与讨论 →</div>
             <p className="mt-0.5 text-[12px] leading-5 text-[#666] dark:text-gray-400">
-              微信小红书读者群，不焦虑，慢节奏
+              提交问题、补充资料或讨论合作
             </p>
           </div>
         </Link>

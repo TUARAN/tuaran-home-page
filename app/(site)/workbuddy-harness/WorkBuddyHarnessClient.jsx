@@ -102,7 +102,7 @@ export default function WorkBuddyHarnessClient() {
         <div className={styles.heroGrid} aria-hidden="true" />
         <div className={styles.shell}>
           <nav className={styles.crumbs} aria-label="面包屑">
-            <Link href="/articles">知识库</Link><span>/</span><Link href="/rich-pages">多维页面</Link><span>/</span><span>WorkBuddy Harness</span>
+            <Link href="/articles">知识库</Link><span>/</span><Link href="/works">作品展厅</Link><span>/</span><span>WorkBuddy Harness</span>
           </nav>
 
           <div className={styles.heroLayout}>

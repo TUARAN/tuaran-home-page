@@ -75,7 +75,7 @@ export async function generateMetadata({ params }) {
   const ogImage = buildArticleOgUrl({
     title,
     description,
-    category: CATEGORY_META[entry.category]?.label || '调研',
+    category: CATEGORY_META[entry.category]?.label || '分析',
     date: entry.date,
   })
 
@@ -293,6 +293,14 @@ export default async function ResearchDetailPage({ params }) {
               <span aria-hidden="true">·</span>
               <span className="research-pill research-pill-accent">
                 测评
+              </span>
+            </>
+          ) : null}
+          {entry.reviewReady ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="research-pill research-pill-accent">
+                编辑精选
               </span>
             </>
           ) : null}

@@ -91,7 +91,7 @@ export default function WisdomFrontierClient() {
 
           <div className="relative">
             <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#7c715f] dark:text-[#ada28f]">
-              <Link href="/rich-pages" className="hover:text-[var(--site-ink)]">多维页面</Link>
+              <Link href="/works" className="hover:text-[var(--site-ink)]">作品展厅</Link>
               <span>/</span>
               <span>长期知识工程</span>
               <span>/</span>
@@ -235,8 +235,8 @@ export default function WisdomFrontierClient() {
         </section>
 
         <section className="mt-8 grid gap-4 md:grid-cols-2">
-          <Link href="/community" className="group rounded-2xl border border-[var(--site-line)] p-5 no-underline hover:no-underline"><IconMessageCircle size={20} className="text-[var(--site-accent)]" /><h2 className="mt-4 text-base font-semibold text-[var(--site-ink)]">讨论：什么才算人类智慧的边界？</h2><p className="mt-2 text-sm leading-6 text-[var(--site-muted)]">进入讨论中心查看全站评论动态，或在本页留下问题、补充与不同意见。</p><span className="mt-4 inline-block text-xs font-semibold text-[var(--site-accent)]">进入讨论中心 <span className="inline-block transition-transform group-hover:translate-x-1">→</span></span></Link>
-          <Link href="/rich-pages" className="group rounded-2xl border border-[var(--site-line)] p-5 no-underline hover:no-underline"><IconTrophy size={20} className="text-[#9b7435]" /><h2 className="mt-4 text-base font-semibold text-[var(--site-ink)]">继续探索多维页面</h2><p className="mt-2 text-sm leading-6 text-[var(--site-muted)]">从数据图谱、专题调研到可交互工具，继续探索可阅读、可筛选、可操作的页面。</p><span className="mt-4 inline-block text-xs font-semibold text-[var(--site-accent)]">返回多维页面 <span className="inline-block transition-transform group-hover:translate-x-1">→</span></span></Link>
+          <Link href="/contact" className="group rounded-2xl border border-[var(--site-line)] p-5 no-underline hover:no-underline"><IconMessageCircle size={20} className="text-[var(--site-accent)]" /><h2 className="mt-4 text-base font-semibold text-[var(--site-ink)]">讨论：什么才算人类智慧的边界？</h2><p className="mt-2 text-sm leading-6 text-[var(--site-muted)]">可以补充资料、指出疏漏，或提出不同意见。</p><span className="mt-4 inline-block text-xs font-semibold text-[var(--site-accent)]">联系站长 <span className="inline-block transition-transform group-hover:translate-x-1">→</span></span></Link>
+          <Link href="/works" className="group rounded-2xl border border-[var(--site-line)] p-5 no-underline hover:no-underline"><IconTrophy size={20} className="text-[#9b7435]" /><h2 className="mt-4 text-base font-semibold text-[var(--site-ink)]">继续探索原创作品</h2><p className="mt-2 text-sm leading-6 text-[var(--site-muted)]">从数据图谱、专题分析到可交互工具，继续探索可阅读、可筛选、可操作的页面。</p><span className="mt-4 inline-block text-xs font-semibold text-[var(--site-accent)]">返回作品展厅 <span className="inline-block transition-transform group-hover:translate-x-1">→</span></span></Link>
         </section>
       </PageContainer>
     </>

@@ -12,6 +12,7 @@ content_type: analysis
 assistance: codex
 model: gpt-5
 show_assistance: false
+review_ready: true
 ad_eligible: false
 pv: 0
 ---

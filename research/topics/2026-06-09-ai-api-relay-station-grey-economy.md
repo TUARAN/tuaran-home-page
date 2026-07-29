@@ -1,5 +1,5 @@
 ---
-title: AI API 中转站灰色经济调研：暴利、注水与跑路链条
+title: AI API 中转站灰色经济分析：暴利、注水与跑路链条
 category: topics
 date: 2026-06-09
 tags: [AI, API, 中转站, 灰色产业, OpenAI, Anthropic, Claude, ChatGPT, 安全风险, 套利]
@@ -11,8 +11,8 @@ model: claude-opus-4-7
 pv: 0
 ---
 
-> 📌 **触发**：本篇起点是 X 用户 @ai_xiaomu（黄小木）2026-05-04 的爆款长推《API 中转站，比贩毒还赚》，单条 66.8 万浏览。
-> 内容立场鲜明、数字耸动，本文把它当作**一手观察 + 行业内部人士陈述**对待，结合公开材料做交叉核验与中立点评。
+> 📌 **触发**：X 用户 @ai_xiaomu（黄小木）2026-05-04 发布长推《API 中转站，比贩毒还赚》，单条获得 66.8 万浏览。
+> 该内容立场鲜明、数字耸动，只能作为**一手观察 + 行业内部人士陈述**；相关判断还需结合公开材料交叉核验。
 
 ## 一、是什么
 
@@ -280,5 +280,5 @@ API 中转站是 2024–2026 年 AI 应用层最典型的「**门槛差价 + 信
 
 ### 关联调研
 
-- [深圳市智惠云 & 云代理合伙人模式调研](../companies/2026-06-09-shenzhen-zhihuiyun-tech.md)（云资源转售的另一种姿势：传统 IaaS 渠道分销）
-- [中国个人所得税 9 大税目调研](2026-06-09-china-personal-income-tax-2026.md)（中转站站长 / 合伙人如果赚到钱，绕不开的税务问题）
+- [深圳市智惠云与云代理合伙人模式分析](/articles/research/companies/shenzhen-zhihuiyun-tech)（云资源转售的另一种姿势：传统 IaaS 渠道分销）
+- [中国个人所得税 9 大税目分析](/articles/research/topics/china-personal-income-tax-2026)（中转站站长 / 合伙人如果赚到钱，绕不开的税务问题）

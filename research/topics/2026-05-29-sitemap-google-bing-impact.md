@@ -10,6 +10,7 @@ summary: 面向不想投入 SEO/GEO 预算的个人站，给出一套“先内�
 tldr: 零预算 SEO/GEO 不等于佛系更新，而是把有限精力押在高收益动作：稳定产出可检索内容、统一 URL 与内链结构、提交并维护 sitemap/robots、持续看索引漏斗。sitemap.xml 是必要基础设施，但只是整套免费方法中的一环。
 assistance: cursor
 model: composer-2.5
+review_ready: true
 pv: 0
 ---
 
@@ -338,7 +339,7 @@ LLM 把"被引用"从 SEO 的副产物变成了一个独立的目标。它的判
 
 如果只能带走一句：
 
-> **零预算 SEO/GEO 真正的杠杆不是 sitemap.xml，而是"每周都还在写"的那个你。sitemap.xml 只是让爬虫不至于错过你写的东西。**
+> **零预算 SEO/GEO 真正的杠杆，是持续写出值得被检索的内容。sitemap.xml 负责让爬虫不至于错过这些内容。**
 
 把它当地基修扎实，然后回到内容本身——这是 2026 年个人站还能跑得动的唯一现实路径。
 

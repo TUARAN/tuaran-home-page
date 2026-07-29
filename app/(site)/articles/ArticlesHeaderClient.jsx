@@ -44,7 +44,7 @@ function normalizeTabFromParams(params) {
   if (params?.get('company_type')) return 'companies'
   if (params?.get('topic_type')) return 'topics'
   if (params?.get('people_type')) return 'people'
-  return 'all'
+  return 'picks'
 }
 
 export default function ArticlesHeaderClient() {
@@ -60,7 +60,7 @@ export default function ArticlesHeaderClient() {
             {pageCopy.title}
           </h1>
           <p className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6] md:whitespace-nowrap">
-            <strong>抗拒营销制造的焦虑裹挟，遇事溯源辨真；资讯万千，唯有能利己受益，方有价值。</strong>
+            工程实践、作者判断与公开资料核验放在一起，明确区分事实、推断和待确认信息。
           </p>
         </div>
       </div>

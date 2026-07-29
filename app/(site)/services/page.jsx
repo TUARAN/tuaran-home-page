@@ -100,13 +100,13 @@ const caseStudies = [
     href: '/articles/openclaw-pr-anthropic-image-normalization',
   },
   {
-    label: '浏览器工具',
-    title: '把 X 互关清理变成用户可控的本地工具',
-    problem: '关注列表难以识别未回关账号，手工核对和取消关注成本高。',
-    action: '设计本地扫描、结果确认和批量操作流程，把最终决定留给用户。',
-    deliverable: 'Chrome 扩展、使用说明、版本包与站内下载页。',
-    result: '已发布至 v0.1.12，可直接下载使用，并保留明确的确认步骤与操作边界。',
-    href: '/resources/x-mutual-cleaner-extension',
+    label: 'AI 工程',
+    title: '把端侧大模型做成可访问的浏览器实验',
+    problem: '端侧推理涉及模型体积、浏览器兼容性、WebGPU 能力和交互反馈，概念验证难以直接交付给普通用户。',
+    action: '整合浏览器端模型加载、能力检测与体验入口，并记录不同运行边界。',
+    deliverable: '可访问的端侧大模型实验台与配套工程说明。',
+    result: '形成持续维护的 Web LLM 页面，可直接验证浏览器端推理链路。',
+    href: '/web-llm',
   },
 ]
 

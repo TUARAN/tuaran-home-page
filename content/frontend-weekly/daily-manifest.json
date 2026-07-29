@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-29",
+      "displayDate": "Jul 29",
+      "count": 5,
+      "highlights": [
+        "OpenAI 发布 Codex 安全 CLI 与 S",
+        "OpenAI 失控模型二次入侵 Modal 客户",
+        "在 M1 Max 上运行 2.8T 参数的 Kimi",
+        "1100多名AI员工联名呼吁美国政府控制AI发展速度",
+        "Gemini API Managed Agents "
+      ]
+    },
+    {
       "date": "2026-07-28",
       "displayDate": "Jul 28",
       "count": 5,
@@ -430,5 +442,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-28"
+  "latest": "2026-07-29"
 }

@@ -24,6 +24,7 @@ function TypeBadge({ type }) {
 const ALL_FILTER_ACCENT = '#7352a2'
 const INITIAL_RENDER_COUNT = 7
 const RENDER_BATCH_SIZE = 6
+const VIDEO_PRELOAD_ROOT_MARGIN = '320px 0px'
 
 function itemShareText(item) {
   return [
@@ -152,28 +153,85 @@ function MediaFrame({ aspect = '16/9', children, frameRef }) {
   )
 }
 
+function useNearViewport(rootMargin = '0px') {
+  const ref = useRef(null)
+  const [isNear, setIsNear] = useState(false)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node || isNear) return undefined
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsNear(true)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setIsNear(true)
+        observer.disconnect()
+      },
+      { rootMargin, threshold: 0.01 }
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [isNear, rootMargin])
+
+  return [ref, isNear]
+}
+
 function LazyVideo({ item, eager = false }) {
-  const [activated, setActivated] = useState(eager)
-  const shouldLoad = eager || activated
+  const [frameRef, isNearViewport] = useNearViewport(VIDEO_PRELOAD_ROOT_MARGIN)
+  const videoRef = useRef(null)
+  const [activated, setActivated] = useState(false)
+  const [canPlay, setCanPlay] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
+  // Pages 冷缓存的 Range 请求可能退化为整文件 200；只对支持稳定 Range 的远端媒体预热。
+  const canWarmMetadata = /^https?:\/\//i.test(item.src)
+  const shouldLoad = eager || activated || (canWarmMetadata && isNearViewport)
+
+  useEffect(() => {
+    if (!activated || eager || !videoRef.current) return
+    const playRequest = videoRef.current.play()
+    if (playRequest?.catch) playRequest.catch(() => {})
+  }, [activated, eager])
 
   return (
-    <MediaFrame aspect={item.aspect}>
+    <MediaFrame aspect={item.aspect} frameRef={frameRef}>
       {shouldLoad ? (
         <video
-          className="absolute inset-0 h-full w-full object-contain"
+          ref={videoRef}
+          className={`absolute inset-0 h-full w-full object-contain transition-opacity ${
+            eager || activated ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
           src={item.src}
           poster={item.poster || undefined}
           controls
-          preload="metadata"
+          preload={activated ? 'auto' : 'metadata'}
           playsInline
           autoPlay={activated && !eager}
+          onCanPlay={() => {
+            setCanPlay(true)
+            setLoadFailed(false)
+          }}
+          onPlaying={() => setCanPlay(true)}
+          onWaiting={() => {
+            if (activated) setCanPlay(false)
+          }}
+          onError={() => setLoadFailed(true)}
           aria-label={item.title}
         />
-      ) : (
+      ) : null}
+      {!eager && !activated ? (
         <button
           type="button"
           className="absolute inset-0 block h-full w-full overflow-hidden bg-[#282824] text-left text-white"
-          onClick={() => setActivated(true)}
+          onClick={() => {
+            setLoadFailed(false)
+            setActivated(true)
+          }}
           aria-label={`加载视频：${item.title}`}
         >
           {item.poster ? (
@@ -204,7 +262,23 @@ function LazyVideo({ item, eager = false }) {
             </span>
           ) : null}
         </button>
-      )}
+      ) : null}
+      {(eager || activated) && (!canPlay || loadFailed) ? (
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden bg-black text-white"
+          role="status"
+          aria-live="polite"
+        >
+          {item.poster ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="absolute inset-0 h-full w-full object-contain opacity-75" src={item.poster} alt="" />
+          ) : null}
+          <span className="absolute inset-0 bg-black/35" aria-hidden="true" />
+          <span className="relative rounded-full bg-black/65 px-3 py-1.5 text-xs font-medium backdrop-blur-sm">
+            {loadFailed ? '视频加载失败，请稍后重试' : '正在加载视频…'}
+          </span>
+        </div>
+      ) : null}
     </MediaFrame>
   )
 }

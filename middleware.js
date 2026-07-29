@@ -105,6 +105,6 @@ export function middleware(request) {
 export const config = {
   matcher: [
     '/ads.txt',
-    '/((?!_next/static|_next/image|favicon.ico|site.webmanifest|robots.txt|.*\\.(?:png|jpg|jpeg|webp|svg|ico|mp3|xml|txt)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|site.webmanifest|robots.txt|.*\\.(?:png|jpg|jpeg|webp|svg|ico|mp3|mp4|webm|m4v|xml|txt)$).*)',
   ],
 }

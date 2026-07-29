@@ -14,6 +14,7 @@ import {
   listResearchByCategory,
 } from '../../../../../../lib/research/loader'
 import { avatarAbsoluteUrl } from '../../../../../../lib/avatar'
+import { buildArticleOgUrl } from '../../../../../../lib/articleOg'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
 import { AUTHOR_INTRO_MARKDOWN } from '../../../../components/ArticleAuthorIntro'
 import ArticleDetailHeader from '../../../../components/ArticleDetailHeader'
@@ -71,9 +72,12 @@ export async function generateMetadata({ params }) {
   const title = entry.title
   const description = entry.summary || `${CATEGORY_META[entry.category]?.label || ''}：${entry.title}`
   const isEncrypted = entry.encrypted
-  // 分享卡片：永远走同目录 opengraph-image.jsx 动态生成（头像 + 标题 + 摘要），
-  // 不再依赖文内 cover（多为 Unsplash 经 wsrv.nl 代理，Twitterbot 拉不稳定）。
-  // 文内 cover 保留为页面视觉，与 OG 分工。
+  const ogImage = buildArticleOgUrl({
+    title,
+    description,
+    category: CATEGORY_META[entry.category]?.label || '调研',
+    date: entry.date,
+  })
 
   return {
     title,
@@ -93,11 +97,13 @@ export async function generateMetadata({ params }) {
       locale: 'zh_CN',
       type: 'article',
       publishedTime: entry.dateTimeIso ? new Date(entry.dateTimeIso).toISOString() : entry.date ? new Date(entry.date).toISOString() : undefined,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `${title} 分享卡片` }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
+      images: [ogImage],
     },
   }
 }

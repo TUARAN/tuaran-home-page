@@ -11,9 +11,9 @@ import ArticleEngagementPanel from '../../components/ArticleEngagementPanel'
 import ArticleToc from '../../components/ArticleToc'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
-import { avatarAbsoluteUrl } from '../../../../lib/avatar'
 import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
 import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
+import { buildArticleOgUrl } from '../../../../lib/articleOg'
 import { extractToc, renderMarkdown } from '../../../../lib/research/markdown'
 import PublishedArticle from './PublishedArticle'
 
@@ -22,7 +22,6 @@ export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 
 const SITE_URL = 'https://2aran.com'
-const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 
 function toIsoDate(dateString) {
@@ -130,6 +129,14 @@ export async function generateMetadata({ params }) {
   if (publishedArticle) {
     const url = `${SITE_URL}/articles/${publishedArticle.slug}`
     const description = publishedArticle.summary || publishedArticle.contentText.slice(0, 160)
+    const ogImage = buildArticleOgUrl({
+      title: publishedArticle.title,
+      description,
+      category: '文章',
+      date: publishedArticle.publishedAt
+        ? new Date(publishedArticle.publishedAt).toISOString().slice(0, 10)
+        : '',
+    })
     const publishedTime = publishedArticle.publishedAt
       ? new Date(publishedArticle.publishedAt).toISOString()
       : undefined
@@ -146,13 +153,13 @@ export async function generateMetadata({ params }) {
         locale: 'zh_CN',
         type: 'article',
         publishedTime,
-        images: [publishedArticle.coverUrl || AVATAR_URL],
+        images: [{ url: ogImage, width: 1200, height: 630, alt: `${publishedArticle.title} 分享卡片` }],
       },
       twitter: {
         card: 'summary_large_image',
         title: publishedArticle.title,
         description,
-        images: [publishedArticle.coverUrl || AVATAR_URL],
+        images: [ogImage],
       },
     }
   }
@@ -161,6 +168,12 @@ export async function generateMetadata({ params }) {
   const title = article.title
   const description = article.summary
   const publishedTime = toIsoDate(article.date)
+  const ogImage = buildArticleOgUrl({
+    title,
+    description,
+    category: article.homeCategory || '文章',
+    date: article.date,
+  })
 
   return {
     title,
@@ -188,15 +201,13 @@ export async function generateMetadata({ params }) {
       locale: 'zh_CN',
       type: 'article',
       publishedTime: publishedTime || undefined,
-      images: article.cover
-        ? [{ url: article.cover, alt: `${article.title} 封面` }]
-        : [{ url: AVATAR_URL, width: 512, height: 512, alt: '涂阿燃（掘金安东尼）头像' }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `${article.title} 分享卡片` }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [article.cover || AVATAR_URL],
+      images: [ogImage],
     },
   }
 }

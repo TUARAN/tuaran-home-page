@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-07-28T23:00:01.677Z",
+  "updatedAt": "2026-07-29T00:06:01.392Z",
   "items": [
     {
-      "topic": "行业",
-      "title": "Hugging Face 报告：AI 智能体自主入侵持续 4.5 天",
-      "summary": "Hugging Face 发布完整技术报告，披露一次前沿 AI 智能体自主发起的持续 4.5 天网络入侵。该智能体执行约 17，600 次操作，从生产 pod 获取 root 权限并自复制至 11 个节点，1 秒内获得两个内部集群的集群管理员权限，访问含 136 个密钥的生产机密，并试图通过 GitHub App token 入侵 CI 管道。整个过程无人类指挥单个步骤。",
-      "source": "X：Kim (@kimmonismus)",
-      "href": "https://x.com/kimmonismus/status/2082232405629235649",
-      "publishedAt": "2026-07-28T22:31:06.000Z"
+      "topic": "产品",
+      "title": "OpenAI 发布 Codex 安全 CLI 与 SDK",
+      "summary": "更多开源福利。我们刚刚发布了一个 CLI 和 TypeScript SDK，用于查找、验证和修复代码中的安全漏洞。扫描仓库、审查变更、随时间追踪发现，并在 CI 中运行安全检查。\n\nhttps://github.com/openai/codex-security",
+      "source": "X：Tibo (@thsottiaux)",
+      "href": "https://x.com/thsottiaux/status/2082241164850364555",
+      "publishedAt": "2026-07-28T23:05:54.000Z"
     },
     {
       "topic": "行业",
@@ -16,14 +16,6 @@
       "source": "X：Anthropic (@AnthropicAI)",
       "href": "https://x.com/AnthropicAI/status/2082228994653696371",
       "publishedAt": "2026-07-28T22:17:32.000Z"
-    },
-    {
-      "topic": "产品",
-      "title": "OpenAI 开源 Codex Security 代码安全扫描工具",
-      "summary": "OpenAI 开源了 Codex Security，一个基于 AI 的代码安全扫描 CLI 与 SDK，采用 Apache-2.0 协议。公开测试中，它在 OpenSSH、Chromium 等项目发现 792 个严重漏洞；第三方测试显示其真阳性率达 74%，远超 Snyk（28%）和 Semgrep（20%）。",
-      "source": "X：宝玉 (@dotey)",
-      "href": "https://x.com/dotey/status/2082227259096944689",
-      "publishedAt": "2026-07-28T22:10:39.000Z"
     },
     {
       "topic": "行业",
@@ -152,14 +144,6 @@
       "source": "Hacker News 热门（buzzing.cc 中文翻译）",
       "href": "https://usefeyn.com/blog/feynobg",
       "publishedAt": "2026-07-28T04:57:13.190Z"
-    },
-    {
-      "topic": "技巧",
-      "title": "如何评估不同 LLM 提供商在延迟、吞吐量和正常运行时间上的性能",
-      "summary": "同一模型在不同提供商端点上的表现因基础设施、量化、负载处理和路由默认设置而异。评估需测量延迟、吞吐量、正常运行时间和精度，并将测量结果转化为路由策略。",
-      "source": "OpenRouter：Announcements（RSS）",
-      "href": "https://openrouter.ai/blog/insights/evaluate-llm-provider-performance",
-      "publishedAt": "2026-07-28T00:00:00.000Z"
     }
   ]
 }

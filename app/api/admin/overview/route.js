@@ -8,7 +8,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 /**
- * Dashboard 总览聚合：用户数 / PV / D1 状态 / 最近活动。
+ * Dashboard 总览聚合：用户数 / PV / UV / D1 状态 / 最近活动。
  * 复用各业务模块的取数函数，不另起一套查询。Ops 健康仍由
  * /api/admin/ops-console 单独提供（dashboard 并行取）。
  */
@@ -41,18 +41,32 @@ export async function GET(req) {
       badges: {},
       users: { count: null },
       pv: { total: null, today: null },
+      uv: { total: null, today: null },
       db: { status: 'unavailable', tables: null, name: null },
       recent: { users: [], style },
     })
   }
 
   try {
-    const [users, dbSnap, pvTotalRow, pvTodayRow] = await Promise.all([
+    const [users, dbSnap, pvTotalRow, pvTodayRow, uvRow] = await Promise.all([
       listSiteUsers(db).catch(() => []),
       getD1QuickStatus(db).catch(() => ({ status: 'error', tableCount: null })),
       db.prepare('SELECT COALESCE(SUM(pv), 0) AS total FROM research_pv').first().catch(() => null),
       db
         .prepare('SELECT COUNT(*) AS today FROM research_pv_hits WHERE created_at >= ?1')
+        .bind(startOfShanghaiTodayMs())
+        .first()
+        .catch(() => null),
+      db
+        .prepare(
+          `SELECT
+             COUNT(DISTINCT CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END) AS total,
+             COUNT(DISTINCT CASE
+               WHEN created_at >= ?1
+               THEN CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END
+             END) AS today
+           FROM research_pv_hits`
+        )
         .bind(startOfShanghaiTodayMs())
         .first()
         .catch(() => null),
@@ -75,6 +89,10 @@ export async function GET(req) {
       pv: {
         total: Math.max(0, Number(pvTotalRow?.total) || 0),
         today: Math.max(0, Number(pvTodayRow?.today) || 0),
+      },
+      uv: {
+        total: Math.max(0, Number(uvRow?.total) || 0),
+        today: Math.max(0, Number(uvRow?.today) || 0),
       },
       db: {
         status: dbSnap?.status || 'unknown',

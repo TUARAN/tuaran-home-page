@@ -1,9 +1,15 @@
 import { ImageResponse } from 'next/og'
+import { RESEARCH_ENTRY_META } from '../../../lib/research/catalog'
 
 export const runtime = 'edge'
 
 const SIZE = { width: 1200, height: 630 }
 const SKYLINE = [116, 174, 132, 226, 156, 288, 188, 242, 148, 328, 204, 266, 176, 220]
+const RESEARCH_CATEGORY_LABELS = {
+  companies: '公司',
+  topics: '主题',
+  people: '人物',
+}
 
 function clean(value, maxLength) {
   const text = String(value || '').replace(/\s+/g, ' ').trim()
@@ -13,10 +19,17 @@ function clean(value, maxLength) {
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const title = clean(searchParams.get('title'), 72) || '涂阿燃的网络日志'
-  const description = clean(searchParams.get('description'), 140)
-  const category = clean(searchParams.get('category'), 18) || '文章'
-  const date = clean(searchParams.get('date'), 20)
+  const key = clean(searchParams.get('key'), 180)
+  const keyedEntry = key && Object.prototype.hasOwnProperty.call(RESEARCH_ENTRY_META, key)
+    ? RESEARCH_ENTRY_META[key]
+    : null
+  const title = clean(keyedEntry?.title || searchParams.get('title'), 72) || '涂阿燃的网络日志'
+  const description = clean(keyedEntry?.summary || searchParams.get('description'), 140)
+  const category = clean(
+    (keyedEntry && RESEARCH_CATEGORY_LABELS[keyedEntry.category]) || searchParams.get('category'),
+    18,
+  ) || '文章'
+  const date = clean(keyedEntry?.date || searchParams.get('date'), 20)
 
   return new ImageResponse(
     (

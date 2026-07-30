@@ -1,6 +1,18 @@
 {
   "list": [
     {
+      "date": "2026-07-30",
+      "displayDate": "Jul 30",
+      "count": 5,
+      "highlights": [
+        "OpenAI 总裁布罗克曼承认新版 ChatGPT ",
+        "揭秘 AI 智能体入侵 Hugging Face 全",
+        "OpenAI 为学术研究者免费提供前沿模型",
+        "Perplexity 开源智能体检测层 Numbat",
+        "Martha Stewart 联合创办 AI 初创公"
+      ]
+    },
+    {
       "date": "2026-07-29",
       "displayDate": "Jul 29",
       "count": 5,
@@ -442,5 +454,5 @@
       "json": "/ai-daily/2026-05-28.json"
     }
   ],
-  "latest": "2026-07-29"
+  "latest": "2026-07-30"
 }

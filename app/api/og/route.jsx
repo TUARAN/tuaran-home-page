@@ -3,6 +3,7 @@ import { ImageResponse } from 'next/og'
 export const runtime = 'edge'
 
 const SIZE = { width: 1200, height: 630 }
+const SKYLINE = [116, 174, 132, 226, 156, 288, 188, 242, 148, 328, 204, 266, 176, 220]
 
 function clean(value, maxLength) {
   const text = String(value || '').replace(/\s+/g, ' ').trim()
@@ -12,7 +13,6 @@ function clean(value, maxLength) {
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const cityImageUrl = new URL('/images/home/guangzhou-skyline-banner.jpg', request.url).toString()
   const title = clean(searchParams.get('title'), 72) || '涂阿燃的网络日志'
   const description = clean(searchParams.get('description'), 140)
   const category = clean(searchParams.get('category'), 18) || '文章'
@@ -24,6 +24,7 @@ export async function GET(request) {
         style={{
           width: '100%',
           height: '100%',
+          boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -31,37 +32,56 @@ export async function GET(request) {
           position: 'relative',
           overflow: 'hidden',
           color: '#f6f0e2',
-          background: '#09141d',
+          background: '#07141f',
           fontFamily: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif',
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={cityImageUrl}
-          width={1200}
-          height={630}
-          alt=""
+        <div
           style={{
             position: 'absolute',
-            left: -1,
-            top: -1,
-            width: 1202,
-            height: 632,
-            objectFit: 'cover',
-            objectPosition: 'center',
-            zIndex: '0',
+            right: -140,
+            top: -220,
+            width: 650,
+            height: 650,
+            borderRadius: 999,
+            background: 'radial-gradient(circle, rgba(52, 137, 159, 0.42) 0%, rgba(52, 137, 159, 0) 70%)',
           }}
         />
         <div
           style={{
             position: 'absolute',
+            right: 38,
+            bottom: 0,
+            width: 760,
+            height: 340,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            gap: 10,
+            opacity: 0.2,
+          }}
+        >
+          {SKYLINE.map((height, index) => (
+            <div
+              key={`${height}-${index}`}
+              style={{
+                display: 'flex',
+                width: index % 3 === 0 ? 44 : 30,
+                height,
+                borderTop: '2px solid rgba(226, 177, 92, 0.72)',
+                background: 'linear-gradient(180deg, rgba(169, 211, 220, 0.54), rgba(82, 137, 151, 0.08))',
+              }}
+            />
+          ))}
+        </div>
+        <div
+          style={{
+            position: 'absolute',
             left: 0,
-            top: 0,
-            width: 1200,
-            height: 630,
-            background:
-              'linear-gradient(90deg, rgba(3, 11, 18, 0.92) 0%, rgba(5, 16, 25, 0.84) 58%, rgba(6, 18, 27, 0.56) 100%)',
-            zIndex: '1',
+            bottom: 0,
+            width: '100%',
+            height: 220,
+            background: 'linear-gradient(180deg, rgba(7, 18, 28, 0), rgba(4, 12, 19, 0.76))',
           }}
         />
 
@@ -74,7 +94,6 @@ export async function GET(request) {
             fontSize: 21,
             letterSpacing: '0.12em',
             color: '#e2b15c',
-            zIndex: '2',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -91,7 +110,6 @@ export async function GET(request) {
             gap: 24,
             position: 'relative',
             maxWidth: 1030,
-            zIndex: '2',
           }}
         >
           <div
@@ -131,7 +149,6 @@ export async function GET(request) {
             borderTop: '1px solid rgba(196, 215, 218, 0.22)',
             fontSize: 19,
             color: '#d4dde0',
-            zIndex: '2',
           }}
         >
           <span style={{ fontSize: 22, fontWeight: 600, color: '#f6f0e2' }}>

@@ -33,7 +33,7 @@ export function middleware(request) {
 
   // 分享图片是公开、可缓存资源。不要为爬虫响应写语言 Cookie，否则 Cloudflare
   // 会把每次抓取都当作动态响应，放大 ImageResponse 的冷启动延迟。
-  if (pathname === '/api/og') {
+  if (pathname === '/api/og' || pathname === '/social-card') {
     return NextResponse.next()
   }
 

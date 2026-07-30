@@ -31,6 +31,12 @@ export function middleware(request) {
   const { pathname } = request.nextUrl
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
 
+  // 分享图片是公开、可缓存资源。不要为爬虫响应写语言 Cookie，否则 Cloudflare
+  // 会把每次抓取都当作动态响应，放大 ImageResponse 的冷启动延迟。
+  if (pathname === '/api/og') {
+    return NextResponse.next()
+  }
+
   if (pathname === '/ads.txt') {
     return new Response(ADS_TXT, {
       headers: {

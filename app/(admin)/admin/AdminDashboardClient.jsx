@@ -110,6 +110,7 @@ export default function AdminDashboardClient() {
   }, [])
 
   const pv = overview?.pv
+  const uv = overview?.uv
   const users = overview?.users
   const db = overview?.db
   const recentUsers = overview?.recent?.users || []
@@ -132,7 +133,7 @@ export default function AdminDashboardClient() {
         </div>
       ) : null}
 
-      <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-7 grid grid-cols-2 gap-3 xl:grid-cols-5">
         <StatCard
           label="注册用户"
           value={users?.count != null ? users.count : '—'}
@@ -145,6 +146,12 @@ export default function AdminDashboardClient() {
           value={pv?.today != null ? pv.today : '—'}
           sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')}` : '调研文章阅读量'}
           icon="analytics"
+        />
+        <StatCard
+          label="今日 UV"
+          value={uv?.today != null ? uv.today : '—'}
+          sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者数'}
+          icon="users"
         />
         <StatCard
           label="D1 数据库"

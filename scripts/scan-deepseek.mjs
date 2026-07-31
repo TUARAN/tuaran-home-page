@@ -79,7 +79,6 @@ async function requestOnce({ env, resolvedModel, messages, temperature, maxToken
         messages,
         temperature,
         max_tokens: maxTokens,
-        reasoning_effort: 'low',
         ...(responseFormat ? { response_format: responseFormat } : {}),
       }),
     })

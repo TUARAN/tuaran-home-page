@@ -892,7 +892,7 @@ export default function AiTokenUsageResearchClient() {
             返回作品展厅
           </Link>
           <Link href="/articles" className="underline decoration-[#a3a889] underline-offset-2">
-            继续阅读文章与分析
+            继续浏览统一内容目录
           </Link>
         </div>
       </section>

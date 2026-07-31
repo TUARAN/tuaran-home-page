@@ -13,6 +13,7 @@
 | [web-llm-integration-notes.md](web-llm-integration-notes.md) | /web-llm 与参考项目的对照与维护原则 | 维护 /web-llm 前必读 |
 | [web-llm-port-handoff.md](web-llm-port-handoff.md) | Web LLM 1:1 移植手册（跨站点复用） | 给其它仓库/新 session 用的迁移指南 |
 | [site-tools-shortener.md](site-tools-shortener.md) | 站内工具「转短」设计记录 | 维护短链功能时引用 |
+| [content-information-architecture.md](content-information-architecture.md) | 内容分类契约、治理规则与新访客起点指标 | 修改导航、目录、分类或行为埋点前引用 |
 
 ## archive/（已完成的一次性记录，仅作历史追溯）
 

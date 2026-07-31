@@ -6,6 +6,12 @@ import {
 } from '../../../lib/engineeringWorks'
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
 import { CONTENT_PV_ENTRIES } from '../../../lib/contentRegistry'
+import {
+  taxonomyForArticle,
+  taxonomyForInteractive,
+  taxonomyForResearch,
+  taxonomyForResource,
+} from '../../../lib/contentTaxonomy'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
 import { isAdsenseReviewPath } from '../../../lib/adsenseReviewPolicy'
 
@@ -36,20 +42,45 @@ function getArticleCategory(article) {
 }
 
 export function buildKnowledgeItems() {
+  const fixedSeriesItems = [
+    {
+      id: 'series:frontend_weekly',
+      kind: 'resources',
+      tagLabel: '固定系列',
+      contentKind: 'resource',
+      subjects: ['ai_dev', 'web_cloud'],
+      entityType: '',
+      delivery: 'subscribe',
+      series: 'frontend_weekly',
+      title: '前端周看',
+      summary: '前端、AI Agent 与大模型工程情报，包含周刊、每日精选和持续更新。',
+      date: '',
+      sortKey: '',
+      href: '/frontend-weekly',
+    },
+  ]
+
   const postItems = articles.map((article) => {
     const path = article.slug === 'diary-self-reflection' ? '/diary' : `/articles/${article.slug}`
     const columnCategory = getArticleCategory(article)
+    const href = isExternalHref(article.href) ? article.href : path
     return {
       id: `post:${article.slug || article.href || article.title}`,
       kind: 'posts',
-      tagLabel: '精选',
+      tagLabel: '文章',
       columnCategory,
       columnCategoryLabel: columnCategory,
+      ...taxonomyForArticle({
+        category: columnCategory,
+        slug: article.slug,
+        href,
+        title: article.title,
+      }),
       title: article.title,
       summary: article.summary,
       date: article.date || '',
       sortKey: researchSortKey(article.date),
-      href: isExternalHref(article.href) ? article.href : path,
+      href,
       reviewReady: !isExternalHref(article.href) && isAdsenseReviewPath(path),
       ...(!isExternalHref(article.href) ? { pvKey: `article/${article.slug}`, pv: null } : {}),
     }
@@ -71,6 +102,7 @@ export function buildKnowledgeItems() {
       peopleType: entry.peopleType || '',
       techType: entry.techType || '',
       contentType: entry.contentType || 'analysis',
+      ...taxonomyForResearch(entry),
       reviewReady: entry.reviewReady || false,
       version: entry.version || '',
       title: entry.title,
@@ -95,6 +127,7 @@ export function buildKnowledgeItems() {
       kind: 'resources',
       tagLabel: p.tagLabel || '资源库',
       resourceType: p.resourceType || 'other',
+      ...taxonomyForResource(p),
       title: p.title,
       summary: p.summary,
       date: p.date,
@@ -108,11 +141,12 @@ export function buildKnowledgeItems() {
   const worksItems = ENGINEERING_WORKS.map((p) => ({
     id: `work:${p.href}`,
     kind: 'works',
-    tagLabel: p.kind ? `多维页面 · ${p.kind}` : '多维页面',
+    tagLabel: p.kind ? `互动专题 · ${p.kind}` : '互动专题',
     columnCategory: p.category || 'uncategorized',
     columnCategoryLabel:
       ENGINEERING_WORK_CATEGORIES.find((category) => category.id === p.category)?.title || '未分类',
     columnCategoryOrder: ENGINEERING_WORK_CATEGORIES.findIndex((category) => category.id === p.category),
+    ...taxonomyForInteractive(p),
     title: p.title,
     summary: p.summary,
     date: p.date,
@@ -125,6 +159,7 @@ export function buildKnowledgeItems() {
   }))
 
   return [
+    ...fixedSeriesItems,
     ...postItems,
     ...worksItems,
     ...researchItems,

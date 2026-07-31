@@ -8,16 +8,24 @@ function isExternalHref(href) {
 }
 
 function DirectoryLink({ item, className, children }) {
+  const analyticsProps = item.analyticsEvent ? {
+    'data-analytics-event': item.analyticsEvent,
+    'data-analytics-surface': item.analyticsSurface || 'grouped_directory',
+    'data-analytics-destination-kind': item.analyticsDestinationKind || 'page',
+    'data-analytics-destination-id': item.id || item.href,
+    'data-analytics-action': item.analyticsAction || 'open',
+    'data-analytics-delivery': item.analyticsDelivery || '',
+  } : {}
   if (item.external || isExternalHref(item.href)) {
     return (
-      <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`}>
+      <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`} {...analyticsProps}>
         {children}
       </a>
     )
   }
 
   return (
-    <Link href={item.href} className={className}>
+    <Link href={item.href} className={className} {...analyticsProps}>
       {children}
     </Link>
   )

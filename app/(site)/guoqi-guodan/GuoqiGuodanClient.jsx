@@ -209,7 +209,7 @@ export default function GuoqiGuodanClient() {
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,.65fr)] lg:items-end">
             <div>
               <div className="mb-7 flex flex-wrap items-center gap-2">
-                <Link href="/rich-pages" className="rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[11px] font-bold text-white/75 no-underline hover:bg-white/10">多维页面</Link>
+                <Link href="/rich-pages" className="rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[11px] font-bold text-white/75 no-underline hover:bg-white/10">互动专题</Link>
                 <span className="rounded-full border border-[#d9a64e]/35 bg-[#d9a64e]/10 px-3 py-1.5 text-[11px] font-bold text-[#edc883]">国企贸易合规专题</span>
                 <span className="font-mono text-[10px] text-white/45">UPDATED 2026.07.18</span>
               </div>

@@ -50,7 +50,7 @@ export default function ArticleFooterCta() {
         >
           <span className="text-[18px]" aria-hidden="true">📚</span>
           <div className="flex-1">
-            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">文章与分析 →</div>
+            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">统一内容目录 →</div>
             <p className="mt-0.5 text-[12px] leading-5 text-[#666] dark:text-gray-400">
               原创文章 + 技术实践 + 专题分析 + 人物观察
             </p>

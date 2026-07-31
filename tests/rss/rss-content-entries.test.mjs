@@ -29,7 +29,8 @@ test('public rich pages become versioned RSS notifications', () => {
   assert.equal(entries[0].link, 'https://2aran.com/public-page')
   assert.equal(entries[0].publishedAt, '2026-07-24T12:30:00+08:00')
   assert.match(entries[0].guid, /^urn:2aran:rss:rich-page:/)
-  assert.equal(entries[0].category, '多维页面')
+  assert.equal(entries[0].category, '互动专题')
+  assert.equal(entries[0].ctaLabel, '打开互动专题')
 })
 
 test('changing updated creates a new rich-page GUID while keeping the permalink', () => {

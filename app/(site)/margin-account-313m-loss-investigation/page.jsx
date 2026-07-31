@@ -31,7 +31,7 @@ export default function MarginAccountInvestigationPage() {
       <main className={styles.page}>
         <header className={styles.hero}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
-            <Link href="/articles">文章与分析</Link><span>/</span><Link href="/rich-pages">多维页面</Link><span>/</span><span>财经截图调查</span>
+            <Link href="/articles">统一内容目录</Link><span>/</span><Link href="/rich-pages">互动专题</Link><span>/</span><span>财经截图调查</span>
           </nav>
           <p className={styles.kicker}>FINANCIAL FORENSICS · 2026-07-21</p>
           <h1>月亏3.13亿：一张两融截图背后的十亿级资金谜局</h1>

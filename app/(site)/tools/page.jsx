@@ -38,6 +38,10 @@ export default function ToolsPage() {
       }
       return {
         ...item,
+        analyticsEvent: 'tool_start',
+        analyticsSurface: 'tool_directory',
+        analyticsDestinationKind: 'tool',
+        analyticsAction: 'open',
         mobileBadge: statusBadge,
         badges: [
           statusBadge,

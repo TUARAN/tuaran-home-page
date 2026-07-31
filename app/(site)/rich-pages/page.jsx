@@ -12,24 +12,24 @@ export const dynamic = 'force-static'
 const PAGE_URL = 'https://2aran.com/rich-pages'
 
 export const metadata = {
-  title: '多维页面',
+  title: '互动专题',
   description:
-    '涂阿燃的多维页面专页：把调研、宣发、内容展示和可交互工具做成同一个可阅读、可操作、可传播的页面系统。',
+    '可阅读、可筛选、可操作的互动专题与内容作品。',
   alternates: {
     canonical: '/rich-pages',
   },
   openGraph: {
     type: 'website',
     siteName: '2aran.com',
-    title: '多维页面',
-    description: '过去、现在、未来：可交互调研、可交互宣发、可交互内容展示的页面方法论与案例库。',
+    title: '互动专题',
+    description: '把数据、分析和工具组织成可阅读、可筛选、可操作的内容。',
     url: PAGE_URL,
     locale: 'zh_CN',
   },
   twitter: {
     card: 'summary_large_image',
-    title: '多维页面',
-    description: '把调研、宣发和内容展示做成可交互页面系统。',
+    title: '互动专题',
+    description: '可阅读、可筛选、可操作的内容作品。',
     creator: '@Anthony404',
     site: '@Anthony404',
   },
@@ -45,6 +45,9 @@ export default function RichPagesPage() {
         const presentation = getRichPagePresentation(work)
         return {
           ...work,
+          analyticsEvent: 'entry_click',
+          analyticsSurface: 'interactive_directory',
+          analyticsDestinationKind: 'interactive',
           pvKey: getRichPagePvKey(work),
           actionLabel: '进入',
           mobileBadge: { label: presentation.label, mono: false },
@@ -56,7 +59,7 @@ export default function RichPagesPage() {
                 ? 'border-[#6d5d82] bg-[#2f2146] text-white dark:border-[#75698a] dark:bg-[#c1c6a8] dark:text-[#171611]'
                 : '',
             },
-            { label: work.kind || '多维页面', mono: false },
+            { label: work.kind || '互动专题', mono: false },
             { label: work.date },
             ...(work.badge ? [{
               label: work.badge,
@@ -70,13 +73,13 @@ export default function RichPagesPage() {
   return (
     <GroupedDirectoryPage
       eyebrow="Rich Pages"
-      title="多维页面"
+      title="互动专题"
       description={(
         <p className="mb-0">
-          多维页面是一种可交互的内容页面。相比传统图文，它能更直观、更有层次地呈现数据，并通过丰富的交互方式，让信息更易探索和理解。
+          数据、分析和工具可以在同一页面中阅读、筛选和操作，适合呈现传统图文难以表达的关系。
         </p>
       )}
-      headerActions={<SharePageButton title="多维页面" text="可阅读、可筛选、可操作的内容页。" url={PAGE_URL} size="sm" />}
+      headerActions={<SharePageButton title="互动专题" text="可阅读、可筛选、可操作的内容页。" url={PAGE_URL} size="sm" />}
       sections={sections}
       actionLabel="进入"
     />

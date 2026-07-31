@@ -2,62 +2,58 @@
 
 import { useSearchParams } from 'next/navigation'
 
-const PAGE_COPY = {
-  all: {
-    title: '文章与分析',
-  },
-  column: {
-    title: '创作库',
-  },
-  posts: {
-    title: '精选文章',
-  },
-  works: {
-    title: '多维页面',
-  },
-  research: {
-    title: '分析',
-  },
-  companies: {
-    title: '公司观察',
-  },
-  topics: {
-    title: '专题',
-  },
-  people: {
-    title: '人物',
-  },
-  resources: {
-    title: '资源库',
-  },
+const GROUP_TITLES = {
+  all: '统一内容目录',
+  article: '文章',
+  analysis: '深度分析',
+  practice: '工程实践',
+  resource: '资源与档案',
 }
 
-const TAB_KEYS = Object.keys(PAGE_COPY)
+const LEGACY_GROUPS = {
+  column: 'article',
+  posts: 'article',
+  research: 'analysis',
+  companies: 'analysis',
+  people: 'analysis',
+  topics: 'analysis',
+  tech: 'analysis',
+  business: 'analysis',
+  other: 'analysis',
+  works: 'practice',
+  'engineering-cases': 'practice',
+  'build-logs': 'practice',
+  resources: 'resource',
+}
 
-function normalizeTabFromParams(params) {
-  const fromUrl = params?.get('tab')
-  if (TAB_KEYS.includes(fromUrl)) return fromUrl
-  if (params?.get('resource_type') || params?.get('resource_group')) return 'resources'
-  if (params?.get('company_type')) return 'companies'
-  if (params?.get('topic_type')) return 'topics'
-  if (params?.get('people_type')) return 'people'
-  return 'all'
+function normalizeGroup(params) {
+  const group = params?.get('group')
+  if (GROUP_TITLES[group]) return group
+  const kind = params?.get('kind')
+  if (kind === 'article') return 'article'
+  if (['practice', 'guide', 'interactive'].includes(kind)) return 'practice'
+  if (['resource', 'archive'].includes(kind)) return 'resource'
+  if (['analysis', 'profile', 'fact_check'].includes(kind)) return 'analysis'
+  if (params?.get('entity') || params?.get('company_industry') || params?.get('company_role')) return 'analysis'
+  const delivery = params?.get('delivery')
+  if (['subscribe', 'download', 'watch_listen', 'external'].includes(delivery)) return 'resource'
+  if (delivery === 'interact') return 'practice'
+  return LEGACY_GROUPS[params?.get('tab')] || 'all'
 }
 
 export default function ArticlesHeaderClient() {
   const searchParams = useSearchParams()
-  const activeTab = normalizeTabFromParams(searchParams)
-  const pageCopy = PAGE_COPY[activeTab] || PAGE_COPY.all
+  const activeGroup = normalizeGroup(searchParams)
 
   return (
     <header className="mb-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
-            {pageCopy.title}
+            {GROUP_TITLES[activeGroup]}
           </h1>
           <p className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6] md:whitespace-nowrap">
-            工程实践、作者判断与公开资料核验放在一起，明确区分事实、推断和待确认信息。
+            先按用途进入，再用内容形态、主题、研究对象、使用方式和固定系列交叉筛选。
           </p>
         </div>
       </div>

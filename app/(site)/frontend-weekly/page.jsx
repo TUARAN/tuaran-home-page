@@ -8,6 +8,6 @@ export const metadata = {
 }
 
 export default function FrontendWeeklyPage() {
-  const { weekly, daily, live } = getFrontendWeeklyData()
-  return <FrontendWeeklyClient weekly={weekly} daily={daily} live={live} />
+  const { weekly, daily, live, dailyEntries } = getFrontendWeeklyData()
+  return <FrontendWeeklyClient weekly={weekly} daily={daily} live={live} dailyEntries={dailyEntries} />
 }

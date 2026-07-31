@@ -164,7 +164,7 @@ npm run test:planning
 | `npm run pages:build:admin` | `admin.2aran.com` 后台构建，仅保留后台及必要认证接口，并校验 Worker 大小与路由边界 |
 | `npm run pages:build:all` | 完整构建，主要用于本地验证或应急 |
 
-详细拆分约束见 [`docs/cloudflare-split-plan.md`](docs/cloudflare-split-plan.md)。Cloudflare 绑定定义位于 `wrangler.toml`，D1 结构变更位于 `migrations/`。生产迁移与 Secret 配置应通过 Cloudflare 控制台或 Wrangler 在明确目标环境中执行，不应把真实凭证写入仓库。
+详细拆分约束见 [`docs/cloudflare-split-plan.md`](docs/cloudflare-split-plan.md)，前端周刊高频数据拆分见 [`docs/frontend-weekly-data-pipeline.md`](docs/frontend-weekly-data-pipeline.md)。Cloudflare 绑定定义位于 `wrangler.toml`，D1 结构变更位于 `migrations/`。生产迁移与 Secret 配置应通过 Cloudflare 控制台或 Wrangler 在明确目标环境中执行，不应把真实凭证写入仓库。
 
 ## 自动化与质量门禁
 

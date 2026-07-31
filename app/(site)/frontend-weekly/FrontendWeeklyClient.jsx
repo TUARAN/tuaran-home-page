@@ -86,21 +86,27 @@ function WeeklyPanel({ issues }) {
   </ReadingLayout>
 }
 
-function DailyPanel({ manifest }) {
+function DailyPanel({ manifest, fallbackEntries }) {
   const [date, setDate] = useState(manifest.latest || manifest.list?.[0]?.date || '')
-  const [entry, setEntry] = useState(null)
+  const [entry, setEntry] = useState(date ? fallbackEntries?.[date] || null : null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!date) return
     let active = true
     setLoading(true)
-    fetch(`/frontend-weekly/daily/${encodeURIComponent(date)}.json`, { cache: 'no-store' })
+    fetch(`/api/frontend-weekly/daily/${encodeURIComponent(date)}`, { cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : null))
-      .then((data) => { if (active) setEntry(data) })
+      .then((data) => {
+        if (!active) return
+        setEntry(data || fallbackEntries?.[date] || null)
+      })
+      .catch(() => {
+        if (active) setEntry(fallbackEntries?.[date] || null)
+      })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [date])
+  }, [date, fallbackEntries])
 
   if (!date) return <Empty text="每日精选将在首次自动更新后显示。" />
   return <ReadingLayout aside={<>
@@ -156,21 +162,39 @@ function Empty({ text }) {
   return <div className="border border-dashed border-[#cfd2c8] p-12 text-center text-sm text-[#777] dark:border-[#3b4654] dark:text-[#aeb5c0]">{text}</div>
 }
 
-export default function FrontendWeeklyClient({ weekly, daily, live }) {
+export default function FrontendWeeklyClient({ weekly, daily, live, dailyEntries = {} }) {
   const [tab, setTab] = useState('weekly')
+  const [remote, setRemote] = useState({ weekly, daily, live })
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/frontend-weekly', { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!active || !data?.ok) return
+        setRemote({
+          weekly: data.weekly?.issues?.length ? data.weekly : weekly,
+          daily: data.daily?.list?.length ? data.daily : daily,
+          live: data.live?.items?.length ? data.live : live,
+        })
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [weekly, daily, live])
+
   return <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
     <header className="border-b border-[#dedfd6] pb-7 dark:border-[#293342]">
       <p className="text-xs font-semibold tracking-[0.18em] text-[#78886a]">CONTENT / FRONTEND WEEKLY</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">前端周看</h1>
-      <p className={`mt-3 max-w-2xl text-[15px] leading-7 ${muted}`}>把前端周刊、AI 每日精选和每时新闻放进本站的内容流：沿用本站阅读体验，内容自动同步更新。</p>
+      <p className={`mt-3 max-w-2xl text-[15px] leading-7 ${muted}`}>前端周刊、AI 每日精选和每时新闻统一收录，内容自动更新，可按期查阅。</p>
     </header>
     <nav className="mt-6 flex gap-2 overflow-auto pb-1" aria-label="前端周看内容类型">
       {TABS.map((item) => <button type="button" key={item.key} onClick={() => setTab(item.key)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${tab === item.key ? 'border-[#25301e] bg-[#25301e] text-white dark:border-[#b9cf9a] dark:bg-[#b9cf9a] dark:text-[#182014]' : 'border-[#d9d8ce] text-[#5d5f57] hover:border-[#aebba3] dark:border-[#354153] dark:text-[#c7ccd4]'}`}>{item.label}<span className="ml-2 text-xs opacity-65">{item.note}</span></button>)}
     </nav>
     <div className="mt-6">
-      {tab === 'weekly' ? <WeeklyPanel issues={weekly.issues || []} /> : null}
-      {tab === 'daily' ? <DailyPanel manifest={daily} /> : null}
-      {tab === 'live' ? <LivePanel live={live} /> : null}
+      {tab === 'weekly' ? <WeeklyPanel key={remote.weekly.updatedAt || 'weekly'} issues={remote.weekly.issues || []} /> : null}
+      {tab === 'daily' ? <DailyPanel key={remote.daily.latest || 'daily'} manifest={remote.daily} fallbackEntries={dailyEntries} /> : null}
+      {tab === 'live' ? <LivePanel live={remote.live} /> : null}
     </div>
   </main>
 }

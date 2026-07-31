@@ -13,9 +13,9 @@ import OpenClawAchievementsCarousel from './OpenClawAchievementsCarousel'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '关于涂阿燃（TUARAN）｜前端与 AI 工程师、出版作者、OpenClaw Contributor',
+  title: '关于涂阿燃（TUARAN）｜FDE、KOL、OPC',
   description:
-    `涂阿燃（TUARAN，掘金安东尼）是前端与 AI Agent 工程师、技术写作者和产品实践者，著有《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
+    `涂阿燃（TUARAN，掘金安东尼）的三个主要身份是 FDE、社区 KOL 和 OPC，长期研究与交付 AI Agent，著有《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
   keywords: [
     '涂阿燃',
     'tuaran',
@@ -42,13 +42,33 @@ export const metadata = {
 }
 
 const identityTags = [
-  '程序员',
-  '项目经理 · PMP',
-  '技术博主',
-  '出版作者',
-  'OpenClaw Contributor',
-  '矩联科技创始人',
-  '茉莉奶爸',
+  { label: 'FDE', href: '/about#fde', title: 'AI 前沿部署工程师' },
+  { label: 'KOL', href: '/about#kol', title: '社区 KOL' },
+  { label: 'OPC', href: '/about#opc', title: '个人公司' },
+]
+
+const identityProfiles = [
+  {
+    id: 'fde',
+    label: 'FDE',
+    title: 'AI 前沿部署工程师',
+    description:
+      '研究 AI Agent、模型工具协议与上下文工程，也把这些能力接进真实产品。从原型到部署、鉴权、测试和维护，最后看它能不能稳定解决问题。',
+  },
+  {
+    id: 'kol',
+    label: 'KOL',
+    title: '社区 KOL',
+    description:
+      '长期写技术文章、做社区分享，也参与开源协作。把亲手做过的事情讲清楚，说明哪些工具好用、哪些判断还要再等等。',
+  },
+  {
+    id: 'opc',
+    label: 'OPC',
+    title: '个人公司',
+    description:
+      '用公司的方式经营一个人的能力，把工程经验、内容和社区连接整理成站点、产品与服务，并对交付和收入负责。',
+  },
 ]
 
 const introLines = [
@@ -117,9 +137,9 @@ const aboutStructuredData = {
       alternateName: ['TUARAN', '掘金安东尼', '安东尼404', '安东尼与AI'],
       url: 'https://2aran.com/about',
       image: `https://2aran.com${AVATAR_PATH}`,
-      jobTitle: ['前端与 AI Agent 工程师', '技术写作者', '产品实践者'],
+      jobTitle: ['AI 前沿部署工程师', '社区 KOL', '个人公司经营者'],
       description:
-        '前端与 AI Agent 工程师、技术写作者和产品实践者。《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
+        'FDE、社区 KOL 和 OPC。《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
       knowsAbout: ['前端工程化', 'AI Agent', 'OpenClaw', '技术写作', '产品实践'],
       sameAs: [
         'https://github.com/TUARAN',
@@ -231,7 +251,7 @@ export default function AboutPage() {
             </Link>
             <SharePageButton
               title="关于我 · 涂阿燃 TUARAN"
-              text="涂阿燃（tuaran / 掘金安东尼）：前端与 AI 工程化方向的开发者、技术写作者和产品实践者。"
+              text="涂阿燃（tuaran / 掘金安东尼）：FDE、社区 KOL、OPC。"
               url="/about"
               exactUrl
               size="md"
@@ -299,14 +319,48 @@ export default function AboutPage() {
 
             <div className="mt-5 flex flex-wrap gap-1.5">
               {identityTags.map((tag) => (
-                <span
-                  key={tag}
+                <Link
+                  key={tag.label}
+                  href={tag.href}
+                  title={tag.title}
                   className="rounded-md border border-[#243549] bg-[#0d1622] px-2.5 py-1 font-mono text-[11px] text-[#8ea3bb]"
                 >
-                  {tag}
-                </span>
+                  {tag.label}
+                </Link>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 三个身份 */}
+      <section className="border-t border-[#1c2a3c]" aria-labelledby="identity-heading">
+        <div className={`py-8 ${sectionInner}`}>
+          <p className={kicker}>Identity · 三个身份</p>
+          <h2
+            id="identity-heading"
+            className="mt-2 border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]"
+          >
+            我现在主要在做什么
+          </h2>
+          <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
+            写代码、研究 AI Agent、维护社区，也做产品和商业项目。FDE、KOL、OPC 分别对应工程、社区和经营，是目前最准确的三个身份。
+          </p>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            {identityProfiles.map((profile) => (
+              <article
+                key={profile.id}
+                id={profile.id}
+                className="scroll-mt-24 rounded-xl border border-[#1d2c3e] bg-[#0b1320]/80 p-5"
+              >
+                <div className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#5cf0e0]">
+                  {profile.label}
+                </div>
+                <h3 className="mt-2 text-[16px] font-semibold text-[#e2ecf6]">{profile.title}</h3>
+                <p className="mt-2 text-[13px] leading-6 text-[#9aabc0]">{profile.description}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>

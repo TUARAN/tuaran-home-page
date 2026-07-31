@@ -7,13 +7,25 @@ import Link from 'next/link'
  */
 
 export const AUTHOR_INTRO_MARKDOWN =
-  '> 作者：[涂阿燃（TUARAN）｜前端与 AI 工程师、出版作者](https://2aran.com/about)'
+  '> 作者：[涂阿燃（TUARAN）](https://2aran.com/about)｜[FDE](https://2aran.com/about#fde) / [KOL](https://2aran.com/about#kol) / [OPC](https://2aran.com/about#opc)'
 
 export function AuthorByline() {
   return (
     <p className="research-author-muted mb-0 text-[12px] leading-5">
       <Link href="/about" rel="author" className="research-author-link no-underline">
-        作者：涂阿燃（TUARAN）｜前端与 AI 工程师、出版作者
+        作者：涂阿燃（TUARAN）
+      </Link>
+      <span aria-hidden="true">｜</span>
+      <Link href="/about#fde" className="research-author-link no-underline">
+        FDE
+      </Link>
+      <span aria-hidden="true"> / </span>
+      <Link href="/about#kol" className="research-author-link no-underline">
+        KOL
+      </Link>
+      <span aria-hidden="true"> / </span>
+      <Link href="/about#opc" className="research-author-link no-underline">
+        OPC
       </Link>
     </p>
   )

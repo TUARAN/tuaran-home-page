@@ -67,7 +67,11 @@ export default function SharePageButton({ title, text, fullText, url, size = 'sm
           body: JSON.stringify({ url: targetUrl, title, mode: 'share' }),
         })
         const data = await res.json().catch(() => null)
-        if (res.ok && data?.item?.short) shareUrl = data.item.short
+        if (res.ok && data?.item?.short) {
+          const versionedShortUrl = new URL(data.item.short, window.location.origin)
+          versionedShortUrl.searchParams.set('share', Date.now().toString(36))
+          shareUrl = versionedShortUrl.toString()
+        }
       } catch {
         // 分享不能被转短失败阻断，保留原链接继续走原生分享 / 复制。
       }

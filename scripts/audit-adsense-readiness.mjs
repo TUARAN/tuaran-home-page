@@ -1,6 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+if (process.env.ADMIN_PAGES_BUILD === '1') {
+  console.log('AdSense readiness audit skipped for Admin Pages build')
+  process.exit(0)
+}
+
 const root = process.cwd()
 const researchRoot = path.join(root, 'research')
 const categories = ['companies', 'topics', 'people']

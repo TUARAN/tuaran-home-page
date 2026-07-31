@@ -22,8 +22,9 @@ flowchart LR
   A --> H[收尾<br/>step summary + 建待修 Issue]
   H -->|无 high/medium| N[只留报告]
   H -->|有可修项| I[GitHub Issue 待修清单]
-  I --> F[Agent 修复<br/>开独立分支 + 测试]
-  F --> P[Draft PR<br/>描述引用 Issue]
+  I --> F[自动修复<br/>scan-fix-pr 保守修复 + build:check]
+  F -->|有改动且构建通过| P[Draft PR<br/>描述引用 Issue]
+  F -->|无安全确定性修复| N2[保留 Issue 转人工]
   P --> M[站长 merge]
 ```
 
@@ -91,6 +92,21 @@ severity 四级：`high` / `medium` / `low` / `info`。只有 high/medium 会触
 - 修复后运行相关测试与 `npm run build:check`。
 - 开 Draft PR，描述引用对应 Issue；merge 由站长人工完成。
 - 完成后在 Issue 勾选对应项；与巡检无关的改动一律不混入。
+
+## 自动修复与 Draft PR（闭环末端）
+
+每个 workflow 在创建待修清单 Issue 后，会自动运行 `scripts/scan-fix-pr.mjs`：
+
+- **security**：`npm audit fix`（仅向后兼容的安全升级），构建通过后开 Draft PR 引用 Issue；
+- **design**：为扫描标记且同行可确定的 `<img>` 补 `alt=""`，构建通过后开 Draft PR；
+- **performance**：暂无安全、确定性的自动修复，保留 Issue 转人工（后续接入 Agent 修复）。
+
+流程约束：
+
+- 分支统一为 `codex/<type>-scan-<日期>`；同名分支已有开放 PR 时跳过；
+- 必须通过 `npm run build:check` 才推送并开 PR；失败则不开 PR、工作流标红，提示人工处理；
+- PR 一律是 **Draft**，merge 永远由站长人工完成；
+- `npm audit fix` 只做非破坏性升级，涉及 major 升级或架构调整的问题仍留在 Issue 中由 Agent/人工处理。
 
 ## 本地运行
 

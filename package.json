@@ -38,6 +38,7 @@
     "autopilot:scan:performance": "node scripts/scan-performance.mjs",
     "autopilot:scan:design": "node scripts/scan-design.mjs",
     "autopilot:analyze": "node scripts/scan-analyze.mjs",
+    "autopilot:fix": "node scripts/scan-fix-pr.mjs",
     "autopilot:handoff": "node scripts/scan-handoff.mjs",
     "snapshot-memory": "node scripts/snapshot-memory.mjs",
     "mcp:stdio": "node tools/mcp-stdio-demo/server.mjs",

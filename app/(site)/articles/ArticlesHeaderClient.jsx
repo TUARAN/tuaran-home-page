@@ -60,25 +60,27 @@ export default function ArticlesHeaderClient() {
         <h1 className="shrink-0 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
           内容导航
         </h1>
-        <p aria-live="polite" className="min-w-0 flex-1 truncate text-[12px] text-[#85877d] dark:text-[#737f91] md:text-[13px]">
-          <q>{quote.text}</q>
-          <cite className="ml-1 not-italic">— {quote.author}</cite>
-        </p>
-        <button
-          type="button"
-          onClick={refreshQuote}
-          disabled={isRefreshing}
-          aria-label={isRefreshing ? '正在刷新名言' : '刷新名言'}
-          title="换一句名言"
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center self-center rounded-full text-[#85877d] transition-colors hover:bg-black/[0.05] hover:text-[#4f5149] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a4a88e] disabled:cursor-wait dark:text-[#737f91] dark:hover:bg-white/[0.08] dark:hover:text-gray-300"
-        >
-          <IconRefresh
-            size={15}
-            stroke={1.8}
-            aria-hidden="true"
-            className={isRefreshing ? 'animate-spin' : ''}
-          />
-        </button>
+        <div className="flex min-w-0 items-center gap-0.5">
+          <p aria-live="polite" className="min-w-0 truncate text-[12px] text-[#85877d] dark:text-[#737f91] md:text-[13px]">
+            <q>{quote.text}</q>
+            <cite className="ml-1 not-italic">— {quote.author}</cite>
+          </p>
+          <button
+            type="button"
+            onClick={refreshQuote}
+            disabled={isRefreshing}
+            aria-label={isRefreshing ? '正在刷新名言' : '刷新名言'}
+            title="换一句名言"
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#85877d] transition-colors hover:bg-black/[0.05] hover:text-[#4f5149] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a4a88e] disabled:cursor-wait dark:text-[#737f91] dark:hover:bg-white/[0.08] dark:hover:text-gray-300"
+          >
+            <IconRefresh
+              size={14}
+              stroke={1.8}
+              aria-hidden="true"
+              className={isRefreshing ? 'animate-spin' : ''}
+            />
+          </button>
+        </div>
       </div>
     </header>
   )

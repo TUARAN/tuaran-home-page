@@ -7,7 +7,7 @@
 | 层级 | 正本 | 内容 |
 | --- | --- | --- |
 | 产品与读取层 | `TUARAN/tuaran-home-page` | 页面、只读 API、OIDC 写入端点、数据契约、测试和 fallback |
-| 编辑与生产层 | `TUARAN/frontend-weekly-digest-cn` | 周刊 Markdown、抓取与筛选脚本、GitHub Actions |
+| 编辑与生产层 | `TUARAN/frontend-weekly-digest-cn` | 周刊 Markdown、抓取与筛选脚本、Cloudflare Worker Cron、人工补发 Actions |
 | 运行数据层 | Cloudflare R2 `tuaran-content-feed` | 实时流、每日快照、每日索引和周刊索引 |
 
 高频生成数据不再写回两个产品仓库。编辑后的周刊 Markdown 继续保留 Git 历史。
@@ -27,9 +27,16 @@ frontend-weekly/
 - `daily/index.json` 由写入端点合并，最多保留 400 条。
 - `weekly/index.json` 在周刊同步任务完成后更新。
 
+## 调度
+
+- Cloudflare Worker `frontend-weekly-feed` 每小时抓取一次 AI HOT 并覆盖实时流。
+- 北京时间 09:00 的同一轮任务额外生成每日快照并更新每日索引。
+- GitHub Actions 不再承担实时流和每日精选的生产调度，只保留人工补发入口。
+- 周刊同步属于低频编辑任务，完成 Markdown 更新后发布周刊索引。
+
 ## 鉴权
 
-`POST /api/frontend-weekly/ingest` 只接受 GitHub Actions OIDC Token。Token 必须同时满足：
+人工补发使用 `POST /api/frontend-weekly/ingest`，接口只接受 GitHub Actions OIDC Token。Token 必须同时满足：
 
 - issuer 为 `https://token.actions.githubusercontent.com`；
 - audience 为 `https://2aran.com/api/frontend-weekly/ingest`；
@@ -56,8 +63,8 @@ frontend-weekly/
 
 排查顺序：
 
-1. 查看 `frontend-weekly-digest-cn` 对应 Actions 是否取得 OIDC Token。
-2. 检查写入端点是否返回 `401`、`400` 或 `503`。
+1. 查看 Cloudflare Worker `frontend-weekly-feed` 的 Cron 与运行日志。
+2. 人工补发时检查 Actions 是否取得 OIDC Token，以及写入端点是否返回 `401`、`400` 或 `503`。
 3. 用 Wrangler 检查 R2 对象：
 
    ```bash

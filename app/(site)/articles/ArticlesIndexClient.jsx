@@ -96,10 +96,12 @@ function filtersFromParams(params) {
     params?.get('group') || groupFromLegacy || inferredGroup,
     CONTENT_GROUP_KEYS,
   )
+  const subjectParam = params?.get('subject')
+  const subjectFromLegacy = subjectParam === 'product_business' ? 'business_market' : subjectParam
 
   return {
     group,
-    subject: normalizeEnum(params?.get('subject') || legacyResource.subject, ['all', ...SUBJECT_KEYS]),
+    subject: normalizeEnum(subjectFromLegacy || legacyResource.subject, ['all', ...SUBJECT_KEYS]),
     query: params?.get('q') || '',
   }
 }

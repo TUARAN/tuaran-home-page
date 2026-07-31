@@ -189,7 +189,7 @@ export default function NetworkAccessGuideClient() {
             <div>
               <div className="mb-6 flex flex-wrap items-center gap-2 text-[11px] font-bold">
                 <Link href="/rich-pages" className="rounded-full border border-[#bdc9be] bg-white/55 px-3 py-1.5 text-[#496058] no-underline hover:border-[#6a8b7f] dark:border-white/10 dark:bg-white/5 dark:text-[#a5b7b0]">
-                  多维页面
+                  互动专题
                 </Link>
                 <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-emerald-800 dark:text-emerald-300">
                   公开资料核验版

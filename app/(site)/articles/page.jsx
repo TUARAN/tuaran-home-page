@@ -8,9 +8,9 @@ import { buildKnowledgeItems } from './buildKnowledgeItems'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '文章与分析',
+  title: '统一内容目录',
   description:
-    '涂阿燃（tuaran）结合本人实践、公开资料与询证形成的工程分析、技术文章和交互作品。',
+    '按内容形态、主题、研究对象、使用方式和固定系列浏览文章、分析、工程实践、互动专题与资源。',
   keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '原创文章', '技术实践', '工程分析', '资料核验', 'AI'],
   alternates: {
     canonical: '/articles',
@@ -29,10 +29,10 @@ function ArticlesHeaderFallback() {
   return (
     <header className="mb-4">
       <h1 className="font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
-        文章与分析
+        统一内容目录
       </h1>
       <p className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
-        工程实践、作者判断与公开资料核验放在一起，明确区分事实、推断和待确认信息。
+        先按用途进入，再用内容形态、主题、研究对象、使用方式和固定系列交叉筛选。
       </p>
     </header>
   )

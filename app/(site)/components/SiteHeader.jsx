@@ -32,6 +32,7 @@ import {
   navSectionTitle,
 } from '../../../lib/siteNav'
 import { getTagToneClass } from '../../../lib/tagTone'
+import { trackSiteEvent } from '../../../lib/siteAnalytics'
 
 const DESKTOP_CHANNEL_GROUPS = [
   SITE_CHANNELS.slice(0, 3),
@@ -57,6 +58,19 @@ function MenuItem({ item, onNavigate }) {
   const label = navLabel(item, locale)
   const desc = navDesc(item, locale)
   const base = `site-menu-item${item.featured ? ' site-menu-item-featured' : ''}`
+  const destinationKind = item.href.startsWith('/articles')
+    ? 'content'
+    : item.href.startsWith('/resources')
+      ? 'resource'
+      : item.href.startsWith('/tools')
+        ? 'tool'
+        : 'page'
+  const analyticsProps = {
+    'data-analytics-event': 'entry_click',
+    'data-analytics-surface': 'global_nav',
+    'data-analytics-destination-kind': destinationKind,
+    'data-analytics-destination-id': item.href.slice(0, 120),
+  }
   const inner = (
     <>
       <span className="site-menu-dot mt-1 h-1.5 w-1.5 shrink-0 rounded-full transition-colors" />
@@ -88,19 +102,32 @@ function MenuItem({ item, onNavigate }) {
         rel="noreferrer"
         className={`${base} no-external-arrow`}
         onClick={onNavigate}
+        {...analyticsProps}
       >
         {inner}
       </a>
     )
   }
   return (
-    <Link href={item.href} className={base} onClick={onNavigate}>
+    <Link href={item.href} className={base} onClick={onNavigate} {...analyticsProps}>
       {inner}
     </Link>
   )
 }
 
 const TIER_SECTION_STYLES = {
+  '入口': {
+    wrap: 'site-tier-section site-tier-column',
+    title: 'site-tier-title site-tier-title-column',
+  },
+  '按用途': {
+    wrap: 'site-tier-section site-tier-research',
+    title: 'site-tier-title site-tier-title-research',
+  },
+  '按主题': {
+    wrap: 'site-tier-section site-tier-archive',
+    title: 'site-tier-title site-tier-title-archive',
+  },
   '创作': {
     wrap: 'site-tier-section site-tier-column',
     title: 'site-tier-title site-tier-title-column',
@@ -120,6 +147,10 @@ const TIER_SECTION_STYLES = {
   '资源': {
     wrap: 'site-tier-section site-tier-archive',
     title: 'site-tier-title site-tier-title-archive',
+  },
+  '互动专题': {
+    wrap: 'site-tier-section site-tier-column',
+    title: 'site-tier-title site-tier-title-column',
   },
 }
 
@@ -164,6 +195,12 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
 
   function handleToggleClick() {
     clearCloseTimer()
+    if (!isOpen) {
+      trackSiteEvent('menu_open', {
+        surface: 'global_nav',
+        destination_id: channel.key,
+      })
+    }
     onToggle.toggle()
   }
 

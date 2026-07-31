@@ -4,6 +4,7 @@ import LayoutChrome from './components/LayoutChrome'
 import { LocaleProvider } from './components/LocaleProvider'
 import { SessionProvider } from './components/SessionProvider'
 import { ThemeProvider } from './components/ThemeProvider'
+import SiteBehaviorAnalytics from './components/SiteBehaviorAnalytics'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃的网络日志'
@@ -33,11 +34,13 @@ export default function SiteLayout({ children }) {
       <Script
         src="https://cloud.umami.is/script.js"
         data-website-id="8bb48b09-3e10-4ec1-9bbe-c55c87418fa9"
+        data-auto-track="true"
         strategy="afterInteractive"
       />
       <ThemeProvider>
         <LocaleProvider>
           <SessionProvider>
+            <SiteBehaviorAnalytics />
             <LayoutChrome>{children}</LayoutChrome>
           </SessionProvider>
         </LocaleProvider>

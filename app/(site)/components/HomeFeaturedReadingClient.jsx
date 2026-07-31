@@ -13,6 +13,7 @@ import {
   mergeHomeRecommendationSettings,
   searchHomeRecommendationCatalog,
 } from '../../../lib/homeRecommendationEngine'
+import { trackSiteEvent } from '../../../lib/siteAnalytics'
 import { T } from './LocaleProvider'
 
 const DAILY_BATCH_STORAGE_KEY = 'tuaran:home-recommendation-batch'
@@ -49,7 +50,7 @@ function storeBatchState(day, offset) {
   }
 }
 
-function FeaturedLink({ item, isPinned, desktopOnly = false }) {
+function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0 }) {
   const content = (
     <>
       <div className="home-reading-meta">
@@ -64,9 +65,16 @@ function FeaturedLink({ item, isPinned, desktopOnly = false }) {
     </>
   )
   const className = `home-reading-item group no-underline ${desktopOnly ? 'hidden md:block' : ''}`
+  const analyticsProps = {
+    'data-analytics-event': fromSearch ? 'search_result_click' : 'entry_click',
+    'data-analytics-surface': fromSearch ? 'home_search' : 'home_recommendation',
+    'data-analytics-destination-kind': item.section || 'content',
+    'data-analytics-destination-id': item.id,
+    'data-analytics-position': position,
+  }
   return item.external || item.href?.startsWith('http')
-    ? <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`}>{content}</a>
-    : <Link href={item.href} className={className}>{content}</Link>
+    ? <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`} {...analyticsProps}>{content}</a>
+    : <Link href={item.href} className={className} {...analyticsProps}>{content}</Link>
 }
 
 export default function HomeFeaturedReadingClient({ catalog }) {
@@ -155,8 +163,14 @@ export default function HomeFeaturedReadingClient({ catalog }) {
 
   const viewAllResults = useCallback(() => {
     if (!normalizedQuery) return
+    trackSiteEvent('search_submit', {
+      query_length: normalizedQuery.length,
+      results_count: searchResults.length,
+      zero_results: searchResults.length === 0,
+      scope_group: 'home',
+    })
     router.push(`/articles?q=${encodeURIComponent(normalizedQuery)}`)
-  }, [normalizedQuery, router])
+  }, [normalizedQuery, router, searchResults.length])
 
   const handleSearchKeyDown = useCallback((event) => {
     if (event.key === 'Escape') {
@@ -254,6 +268,8 @@ export default function HomeFeaturedReadingClient({ catalog }) {
             item={item}
             isPinned={pinnedIds.has(item.id)}
             desktopOnly={!normalizedQuery && index >= 10}
+            fromSearch={Boolean(normalizedQuery)}
+            position={index + 1}
           />
         ))}
         {normalizedQuery && !displayedItems.length ? (

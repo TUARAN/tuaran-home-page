@@ -99,7 +99,7 @@ export default function ReportClient() {
       <section className={styles.hero}>
         <div className={styles.heroGrid}>
           <div>
-            <div className={styles.breadcrumb}>多维页面 / 前沿行业研究 / 2026-07-21</div>
+            <div className={styles.breadcrumb}>互动专题 / 前沿行业研究 / 2026-07-21</div>
             <p className={styles.eyebrow}>AI Agent Communications Industry Report</p>
             <h1>AI 智能体通信能力行业报告</h1>
             <p className={styles.lede}>

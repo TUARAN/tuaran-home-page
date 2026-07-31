@@ -94,7 +94,7 @@ export default function SkillMarketResearchPage() {
               Skill Market Research · 2026-06-05
             </p>
             <h1 className="mt-4 max-w-4xl font-serif text-[34px] font-semibold leading-tight text-[#1a1b17] dark:text-gray-100 md:text-[52px]">
-              一个 Skill 如何从文件变成多维页面
+              一个 Skill 如何从文件变成互动专题
             </h1>
             <p className="mt-5 max-w-3xl text-[15px] leading-8 text-[#464840] dark:text-gray-300">
               结论很直接：Skill 的竞争不在“提示词写得多漂亮”，而在能否形成一条闭环链路：
@@ -104,7 +104,7 @@ export default function SkillMarketResearchPage() {
           <div className="flex flex-col justify-between gap-5 rounded-2xl border border-[#cbcdc1] bg-white/[0.62] p-5 dark:border-[#293544] dark:bg-white/[0.04]">
             <SharePageButton
               title="Skill 上架、宣发与回流工程分析"
-              text="一个 Skill 如何从文件变成多维页面：制作、上架、宣发、回流。"
+              text="一个 Skill 如何从文件变成互动专题：制作、上架、宣发、回流。"
               url="/skill-market-research"
             />
             <div className="grid grid-cols-2 gap-3">

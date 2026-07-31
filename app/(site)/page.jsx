@@ -42,40 +42,49 @@ const SECTION_BADGE_CLASS = {
 
 const START_PATHS = [
   {
-    id: 'knowledge',
-    href: '/articles',
-    label: '读文章',
-    labelEn: 'Read',
-    title: '从判断和长期写作开始',
-    titleEn: 'Start with judgment & long-form writing',
-    desc: '原创文章、技术实践、专题分析和长期整理的资源，按阅读价值重新组织。',
-    descEn: 'Original writing, technical practice, analysis and long-term archives, organized by reading value.',
-    meta: 'Writing · Analysis · Archive',
-    icon: IconFileText,
+    id: 'learn-ai',
+    href: '/articles?subject=ai_dev',
+    title: '学习 AI 工程',
+    titleEn: 'Learn AI engineering',
+    desc: '从模型、Agent、AI 编程和工程实践开始。',
+    descEn: 'Start with models, agents, AI coding and engineering.',
+    icon: IconCode,
   },
   {
-    id: 'works',
-    href: '/works',
-    label: '看项目',
-    labelEn: 'Projects',
-    title: '看我把想法做成系统',
-    titleEn: 'See ideas turned into systems',
-    desc: '可视化页面、AI 工具、长期工程和私域工作台，保留能反复演进的作品。',
-    descEn: 'Visual pages, AI tools, long-running projects and private workbenches that keep evolving.',
-    meta: 'Systems · Tools · Interfaces',
+    id: 'companies',
+    href: '/articles?entity=company',
+    title: '了解一家公司',
+    titleEn: 'Understand a company',
+    desc: '查看公司画像、产品位置和商业分析。',
+    descEn: 'Explore company profiles, products and business analysis.',
+    icon: IconEye,
+  },
+  {
+    id: 'practice',
+    href: '/articles?group=practice',
+    title: '查看工程实践',
+    titleEn: 'Browse engineering practice',
+    desc: '真实案例、建站记录、指南和互动专题。',
+    descEn: 'Cases, build logs, guides and interactives.',
     icon: IconCodeCircle,
   },
   {
-    id: 'collaborate',
-    href: '/services',
-    label: '聊合作',
-    labelEn: 'Collaborate',
-    title: '让内容、产品和增长连起来',
-    titleEn: 'Connect content, product and growth',
-    desc: '技术内容、产品分析、创作者增长和 AI 工程化协作，适合需要长期判断的项目。',
-    descEn: 'Tech content, product research, creator growth and AI engineering — for projects that need long-term judgment.',
-    meta: 'Consulting · Content · Growth',
-    icon: IconUsers,
+    id: 'resources',
+    href: '/articles?group=resource',
+    title: '寻找工具和资料',
+    titleEn: 'Find tools and resources',
+    desc: '按使用方式查找档案、下载和外部资源。',
+    descEn: 'Find archives, downloads and external resources by use.',
+    icon: IconFileText,
+  },
+  {
+    id: 'subscribe',
+    href: '/articles?delivery=subscribe',
+    title: '订阅技术动态',
+    titleEn: 'Subscribe to tech updates',
+    desc: '进入周刊、RSS 和持续更新的内容系列。',
+    descEn: 'Open newsletters, RSS feeds and recurring series.',
+    icon: IconCloud,
   },
 ]
 
@@ -278,7 +287,7 @@ const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 const CLASSIC_SITE_HERO_TAGLINE_EN = `${SITE_HERO_TITLE_EN}: ${SITE_HERO_TAGLINE_EN}`
 
 const PROFILE_LINKS = [
-  { href: '/articles', label: '文章与分析', labelEn: 'Writing & Analysis' },
+  { href: '/articles', label: '内容目录', labelEn: 'Content Directory' },
   { href: '/publications', label: '出版作品', labelEn: 'Publications' },
   { href: '/site', label: '站点说明', labelEn: 'About This Site' },
 ]
@@ -377,7 +386,14 @@ function ClassicFeaturedSection({ items }) {
 function StartPathCard({ item }) {
   const Icon = item.icon
   return (
-    <Link href={item.href} className="home-entry-link group no-underline">
+    <Link
+      href={item.href}
+      className="home-entry-link group no-underline"
+      data-analytics-event="entry_click"
+      data-analytics-surface="start_path"
+      data-analytics-destination-kind="content"
+      data-analytics-destination-id={item.id}
+    >
       <span className={`home-entry-icon home-entry-icon-${item.id}`} aria-hidden="true">
         <Icon size={18} stroke={1.8} />
       </span>
@@ -885,11 +901,11 @@ function PolishedHomePage({ featuredPicks }) {
 
           <BuilderAndSignalsPanel />
 
-          <section className="home-section home-entry-panel">
+          <section id="start-here" className="home-section home-entry-panel scroll-mt-24">
             <div className="home-section-heading compact">
               <div>
-                <p className="home-kicker">Entries</p>
-                <h2 className="home-section-title"><T zh="几个入口" en="Entries" /></h2>
+                <p className="home-kicker">Start Here</p>
+                <h2 className="home-section-title"><T zh="从这里开始" en="Start here" /></h2>
               </div>
             </div>
             <div className="home-entry-list">

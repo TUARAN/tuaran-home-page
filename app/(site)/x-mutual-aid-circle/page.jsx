@@ -146,7 +146,7 @@ export default function XMutualAidCirclePage() {
         <header className="border-b border-[#2f3336] pb-8">
           <div className="flex flex-wrap items-center gap-2 text-xs text-[#71767b]">
             <Link href="/rich-pages" className="underline underline-offset-4 opacity-80 hover:text-[#e7e9ea] hover:opacity-100">
-              多维页面
+              互动专题
             </Link>
             <span aria-hidden="true">·</span>
             <Link href="/community" className="underline underline-offset-4 opacity-80 hover:text-[#e7e9ea] hover:opacity-100">
@@ -196,7 +196,7 @@ export default function XMutualAidCirclePage() {
                 category="resource"
                 slug={RESOURCE_SLUG}
                 tags={['Twitter', 'X 平台', '社群', '工具']}
-                kindLabel="多维页面"
+                kindLabel="互动专题"
               />
             </ArticleActionsDropdown>
           </div>

@@ -1,0 +1,50 @@
+name: Autopilot · Design scan
+
+on:
+  schedule:
+    # 每月 1 日 01:17 UTC = 北京 09:17
+    - cron: '17 1 1 * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: autopilot-design-scan
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan:
+    name: Scan and report
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Run design scan
+        run: node scripts/scan-design.mjs
+
+      - name: DeepSeek analysis
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: node scripts/scan-analyze.mjs design
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-scan-report
+          path: data/audits/design-*.json
+          if-no-files-found: error
+
+      - name: Summarize and file issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/scan-handoff.mjs design

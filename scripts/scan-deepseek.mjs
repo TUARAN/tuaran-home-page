@@ -39,13 +39,64 @@ export function getScanDeepSeekEnv() {
 
 function extractJson(text) {
   const value = String(text || '').trim()
-  if (!value) throw new Error('DeepSeek 返回空内容')
+  if (!value) {
+    throw Object.assign(new Error('DeepSeek 返回空内容'), { code: 'DEEPSEEK_EMPTY_RESPONSE' })
+  }
   try {
     return JSON.parse(value)
   } catch {
     const match = value.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('DeepSeek 返回里找不到 JSON')
-    return JSON.parse(match[0])
+    if (!match) {
+      throw Object.assign(
+        new Error(`DeepSeek 返回里找不到 JSON（前 200 字符：${value.slice(0, 200)}）`),
+        { code: 'DEEPSEEK_JSON_NOT_FOUND' },
+      )
+    }
+    try {
+      return JSON.parse(match[0])
+    } catch (error) {
+      throw Object.assign(
+        new Error(`DeepSeek JSON 解析失败：${error.message}（前 200 字符：${value.slice(0, 200)}）`),
+        { code: 'DEEPSEEK_JSON_PARSE_FAILED' },
+      )
+    }
+  }
+}
+
+async function requestOnce({ env, resolvedModel, messages, temperature, maxTokens, responseFormat, timeoutMs }) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(`${env.baseUrl}/chat/completions`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        authorization: `Bearer ${env.apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: resolvedModel,
+        messages,
+        temperature,
+        max_tokens: maxTokens,
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+      }),
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      throw Object.assign(
+        new Error(data?.error?.message || data?.message || 'DeepSeek API 请求失败'),
+        { code: 'DEEPSEEK_API_FAILED', status: res.status },
+      )
+    }
+    return data
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw Object.assign(new Error('DeepSeek API 超时'), { code: 'DEEPSEEK_API_TIMEOUT' })
+    }
+    throw error
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -67,45 +118,50 @@ export async function callScanDeepSeekJson({
   }
   const resolvedModel = model || env.model || pickScanModel({ type, issues })
 
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(`${env.baseUrl}/chat/completions`, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: {
-        authorization: `Bearer ${env.apiKey}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: resolvedModel,
+  const RETRYABLE_CODES = new Set([
+    'DEEPSEEK_EMPTY_RESPONSE',
+    'DEEPSEEK_JSON_NOT_FOUND',
+    'DEEPSEEK_JSON_PARSE_FAILED',
+  ])
+  let lastError = null
+  for (const withJsonMode of [true, false]) {
+    try {
+      const data = await requestOnce({
+        env,
+        resolvedModel,
         messages,
         temperature,
-        max_tokens: maxTokens,
-        response_format: { type: 'json_object' },
-      }),
-    })
-    const data = await res.json().catch(() => null)
-    if (!res.ok) {
-      throw Object.assign(
-        new Error(data?.error?.message || data?.message || 'DeepSeek API 请求失败'),
-        { code: 'DEEPSEEK_API_FAILED', status: res.status },
-      )
+        maxTokens,
+        responseFormat: withJsonMode ? { type: 'json_object' } : null,
+        timeoutMs,
+      })
+      const message = data?.choices?.[0]?.message || {}
+      const content = String(message.content || '')
+      if (!content) {
+        throw Object.assign(
+          new Error(
+            `DeepSeek 返回空内容（finish_reason=${data?.choices?.[0]?.finish_reason ?? '未知'}，` +
+            `usage=${JSON.stringify(data?.usage ?? null)}，` +
+            `raw=${JSON.stringify(data ?? {}).slice(0, 600)}）`,
+          ),
+          { code: 'DEEPSEEK_EMPTY_RESPONSE' },
+        )
+      }
+      return {
+        ok: true,
+        model: resolvedModel,
+        content,
+        usage: data?.usage || null,
+        json: extractJson(content),
+      }
+    } catch (error) {
+      lastError = error
+      if (withJsonMode && RETRYABLE_CODES.has(error.code)) {
+        console.warn(`[scan-deepseek] JSON 输出模式失败（${error.code}），改用普通文本重试一次`)
+        continue
+      }
+      throw error
     }
-    const content = data?.choices?.[0]?.message?.content || ''
-    return {
-      ok: true,
-      model: resolvedModel,
-      content,
-      usage: data?.usage || null,
-      json: extractJson(content),
-    }
-  } catch (error) {
-    if (error?.name === 'AbortError') {
-      throw Object.assign(new Error('DeepSeek API 超时'), { code: 'DEEPSEEK_API_TIMEOUT' })
-    }
-    throw error
-  } finally {
-    clearTimeout(timer)
   }
+  throw lastError
 }

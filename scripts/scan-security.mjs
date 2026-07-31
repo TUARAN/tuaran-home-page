@@ -57,7 +57,11 @@ try {
   }
   for (const [name, v] of entries.slice(0, 25)) {
     if (v.severity === 'none') continue
-    const severity = v.severity === 'critical' ? 'high' : v.severity
+    // npm audit 严重度与本站口径对齐：critical→high、moderate→medium
+    const severity =
+      v.severity === 'critical' ? 'high'
+        : v.severity === 'moderate' ? 'medium'
+          : v.severity
     const via = Array.isArray(v.via)
       ? v.via.map((x) => (typeof x === 'string' ? x : x.title)).filter(Boolean).join('；')
       : ''

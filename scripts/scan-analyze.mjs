@@ -32,6 +32,7 @@ const system = `你是 2aran.com（涂阿燃的个人站：Next.js 15 App Router
 2. 按「修复性价比 × 风险」为值得修的项目排序；
 3. 为每个值得修的项目给出具体动作、PR 标题与分支名（codex/<type>-scan-<日期> 风格）；
 4. 汇总值得注意的风险。
+输出紧凑：actions 数组最多 20 项，每项 reason 不超过 80 字，整体控制在 6000 token 以内。
 只输出严格 JSON，不要 markdown、代码围栏或解释。`
 
 const user = [

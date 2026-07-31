@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   CONTENT_GROUP_KEYS,
+  CONTENT_GROUP_META,
   CONTENT_KIND_KEYS,
   COMPANY_INDUSTRY_KEYS,
   COMPANY_ROLE_KEYS,
@@ -21,6 +22,7 @@ import {
 
 test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.deepEqual(CONTENT_GROUP_KEYS, ['all', 'article', 'analysis', 'practice', 'resource'])
+  assert.equal(CONTENT_GROUP_META.article.label, '精选')
   assert.ok(CONTENT_KIND_KEYS.includes('interactive'))
   assert.ok(SUBJECT_KEYS.includes('ai_dev'))
   assert.ok(SUBJECT_KEYS.includes('product_experience'))
@@ -134,8 +136,9 @@ test('directory labels reflect the selected subject and suppress redundant entit
   assert.equal(isEntityTypeRedundant('company', ['company_research']), true)
   assert.equal(isEntityTypeRedundant('product', ['product_experience', 'business_market']), true)
   assert.equal(isEntityTypeRedundant('person', ['people_profiles']), true)
+  assert.equal(isEntityTypeRedundant('technology', ['ai_dev']), true)
+  assert.equal(isEntityTypeRedundant('technology', ['web_cloud']), true)
   assert.equal(isEntityTypeRedundant('industry', ['business_market']), false)
-  assert.equal(isEntityTypeRedundant('technology', ['ai_dev']), false)
 })
 
 test('taxonomy validation rejects overloaded or incomplete records', () => {

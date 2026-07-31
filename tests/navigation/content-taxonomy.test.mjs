@@ -21,6 +21,10 @@ test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.deepEqual(CONTENT_GROUP_KEYS, ['all', 'article', 'analysis', 'practice', 'resource'])
   assert.ok(CONTENT_KIND_KEYS.includes('interactive'))
   assert.ok(SUBJECT_KEYS.includes('ai_dev'))
+  assert.ok(SUBJECT_KEYS.includes('product_experience'))
+  assert.ok(SUBJECT_KEYS.includes('business_market'))
+  assert.ok(SUBJECT_KEYS.includes('company_research'))
+  assert.ok(!SUBJECT_KEYS.includes('product_business'))
   assert.ok(ENTITY_TYPE_KEYS.includes('company'))
   assert.ok(COMPANY_INDUSTRY_KEYS.includes('software_development'))
   assert.ok(COMPANY_ROLE_KEYS.includes('ecosystem_platform'))
@@ -54,8 +58,28 @@ test('legacy content sources map to complete reader-facing taxonomy records', ()
   assert.equal(records[1].entityType, 'company')
   assert.equal(records[1].companyIndustry, 'software_development')
   assert.equal(records[1].companyRole, 'ecosystem_platform')
+  assert.deepEqual(records[1].subjects, ['company_research'])
   assert.equal(records[3].delivery, 'subscribe')
   assert.equal(records[4].contentKind, 'interactive')
+})
+
+test('product and business subjects have separate inference rules', () => {
+  assert.deepEqual(
+    taxonomyForResearch({ category: 'topics', topicType: 'product' }).subjects,
+    ['product_experience'],
+  )
+  assert.deepEqual(
+    taxonomyForResearch({ category: 'topics', topicType: 'market' }).subjects,
+    ['business_market'],
+  )
+  assert.deepEqual(
+    taxonomyForInteractive({ title: '产品体验与用户需求地图' }).subjects,
+    ['product_experience'],
+  )
+  assert.deepEqual(
+    taxonomyForInteractive({ title: '公司市场增长地图' }).subjects,
+    ['business_market'],
+  )
 })
 
 test('taxonomy validation rejects overloaded or incomplete records', () => {

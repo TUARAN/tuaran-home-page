@@ -40,17 +40,17 @@ jobs:
           fi
 
       - name: Run performance scan
-        if: steps.parity.outputs.skip != 'true'
+        if: github.event_name != 'schedule' || steps.parity.outputs.skip != 'true'
         run: node scripts/scan-performance.mjs
 
       - name: DeepSeek analysis
-        if: steps.parity.outputs.skip != 'true'
+        if: github.event_name != 'schedule' || steps.parity.outputs.skip != 'true'
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: node scripts/scan-analyze.mjs performance
 
       - name: Upload report
-        if: steps.parity.outputs.skip != 'true'
+        if: github.event_name != 'schedule' || steps.parity.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: performance-scan-report
@@ -58,7 +58,7 @@ jobs:
           if-no-files-found: error
 
       - name: Summarize and file issue
-        if: steps.parity.outputs.skip != 'true'
+        if: github.event_name != 'schedule' || steps.parity.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/scan-handoff.mjs performance

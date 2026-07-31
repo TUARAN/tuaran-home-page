@@ -40,11 +40,6 @@ export function middleware(request) {
     })
   }
 
-  // 短链由路由直接解析。不要给社交爬虫附加语言 Cookie，以免预览抓取退化成动态站点卡片。
-  if (pathname.startsWith('/s/')) {
-    return NextResponse.next()
-  }
-
   const legacyAdminTarget = ADMIN_LEGACY_REDIRECTS[pathname]
   if (legacyAdminTarget) {
     const url = request.nextUrl.clone()

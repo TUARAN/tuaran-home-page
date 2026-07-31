@@ -258,7 +258,7 @@ export default function ArticlesConsole() {
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value)}
             className={filterClass}
-            aria-label="按内容类型筛选"
+            aria-label="按类型筛选"
           >
             <option value="all">全部类型</option>
             {Object.entries(TYPE_LABELS).map(([value, label]) => (

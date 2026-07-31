@@ -188,7 +188,7 @@ export default function FrontendWeeklyClient({ weekly, daily, live, dailyEntries
       <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">前端周看</h1>
       <p className={`mt-3 max-w-2xl text-[15px] leading-7 ${muted}`}>前端周刊、AI 每日精选和每时新闻统一收录，内容自动更新，可按期查阅。</p>
     </header>
-    <nav className="mt-6 flex gap-2 overflow-auto pb-1" aria-label="前端周看内容类型">
+    <nav className="mt-6 flex gap-2 overflow-auto pb-1" aria-label="前端周看类型">
       {TABS.map((item) => <button type="button" key={item.key} onClick={() => setTab(item.key)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${tab === item.key ? 'border-[#25301e] bg-[#25301e] text-white dark:border-[#b9cf9a] dark:bg-[#b9cf9a] dark:text-[#182014]' : 'border-[#d9d8ce] text-[#5d5f57] hover:border-[#aebba3] dark:border-[#354153] dark:text-[#c7ccd4]'}`}>{item.label}<span className="ml-2 text-xs opacity-65">{item.note}</span></button>)}
     </nav>
     <div className="mt-6">

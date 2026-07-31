@@ -32,7 +32,7 @@ function ArticlesHeaderFallback() {
         统一内容目录
       </h1>
       <p className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
-        从主题开始浏览，再按内容类型细分；分析对象和资源获取方式会在需要时出现。
+        从主题开始浏览，再按类型细分；分析对象和资源获取方式会在需要时出现。
       </p>
     </header>
   )

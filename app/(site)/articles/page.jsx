@@ -29,7 +29,7 @@ function ArticlesHeaderFallback() {
   return (
     <header className="mb-4">
       <h1 className="font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
-        推荐入口
+        文章与分析
       </h1>
       <p className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
         工程实践、作者判断与公开资料核验放在一起，明确区分事实、推断和待确认信息。
@@ -42,7 +42,7 @@ function ArticlesIndexFallback({ items }) {
   return (
     <section aria-labelledby="articles-fallback-title">
       <h2 id="articles-fallback-title" className="mb-3 text-lg font-semibold text-[#29232f] dark:text-gray-100">
-        近期精选
+        全部内容
       </h2>
       <ul className="grid list-none gap-3 p-0 md:grid-cols-2">
         {items.slice(0, 12).map((item) => (

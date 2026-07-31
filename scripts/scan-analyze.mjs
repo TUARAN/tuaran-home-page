@@ -42,7 +42,18 @@ const user = [
   '{ "summary": "一句话总评", "priorityIds": ["按修复优先级从高到低排列的 issueId"], "actions": [{ "issueId": "与报告 issues[].id 一致", "priority": "high|medium|low|noise", "reason": "为什么值得/不值得修", "suggestedAction": "具体修复动作", "prTitle": "PR 标题", "branch": "分支名" }], "noiseIds": ["判定为噪音的 issueId"], "recommendedPrCount": 数字, "risks": ["风险提示"] }',
   '',
   '巡检报告：',
-  JSON.stringify(report.issues.slice(0, 60), null, 2),
+  JSON.stringify(
+    report.issues.slice(0, 40).map((issue) => ({
+      id: issue.id,
+      severity: issue.severity,
+      title: issue.title,
+      detail: String(issue.detail || '').slice(0, 160),
+      evidence: (issue.evidence || []).slice(0, 2).map((item) => String(item).slice(0, 100)),
+      tags: issue.tags || [],
+    })),
+    null,
+    2,
+  ),
 ].join('\n')
 
 let analysis

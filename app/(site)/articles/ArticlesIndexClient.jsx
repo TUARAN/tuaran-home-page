@@ -15,7 +15,9 @@ import {
   SERIES_META,
   SUBJECT_KEYS,
   SUBJECT_META,
+  getDisplaySubject,
   getContentGroup,
+  isEntityTypeRedundant,
   taxonomyForManualEntry,
 } from '../../../lib/contentTaxonomy'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
@@ -529,6 +531,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                       item={nextItem}
                       position={index + 1}
                       fromSearch={Boolean(filters.query)}
+                      selectedSubject={filters.subject}
                     />
                   )
                 })}
@@ -613,9 +616,11 @@ function FilterChip({ label, active, onClick }) {
   )
 }
 
-function ArticleRow({ item, position, fromSearch }) {
+function ArticleRow({ item, position, fromSearch, selectedSubject = 'all' }) {
   const external = isExternalHref(item.href)
   const group = getContentGroup(item.contentKind)
+  const displaySubject = getDisplaySubject(item.subjects, selectedSubject)
+  const showEntityType = item.entityType && !isEntityTypeRedundant(item.entityType, item.subjects)
   const analyticsEvent = fromSearch
     ? 'search_result_click'
     : group === 'resource'
@@ -653,12 +658,12 @@ function ArticleRow({ item, position, fromSearch }) {
             >
               {CONTENT_KIND_META[item.contentKind]?.label || item.tagLabel || '内容'}
             </span>
-            {item.subjects?.[0] ? (
+            {displaySubject ? (
               <span className="inline-flex rounded-full border border-transparent px-1.5 py-[1px] text-[11px] text-[#817789] dark:text-gray-400">
-                {SUBJECT_META[item.subjects[0]]?.label}
+                {SUBJECT_META[displaySubject]?.label}
               </span>
             ) : null}
-            {item.entityType ? (
+            {showEntityType ? (
               <span className="inline-flex rounded-full border border-transparent px-1.5 py-[1px] text-[11px] text-[#817789] dark:text-gray-400">
                 {ENTITY_TYPE_META[item.entityType]?.label}
               </span>

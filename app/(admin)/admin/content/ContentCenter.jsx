@@ -14,6 +14,7 @@ export default function ContentCenter() {
           items: [
             { href: '/admin/articles', title: '内容管理', description: '撰写与发布文章，统一查看文章、调研和资源的上线状态。', icon: 'articles', note: '正文创作 + 全站内容目录' },
             { href: '/admin/recommendations', title: '推荐管理', description: '配置首页推荐来源、内容权重、换一批策略与人工置顶。', icon: 'analytics', note: '规则保存后无需重新构建' },
+            { href: '/admin/quotes', title: '名言管理', description: '维护目录页随机展示的短名言、作者、出处与启用状态。', icon: 'researchStyle', note: '100 条公版原典种子' },
           ],
         },
         {

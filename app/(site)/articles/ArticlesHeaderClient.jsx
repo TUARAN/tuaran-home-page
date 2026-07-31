@@ -1,6 +1,16 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTheme } from 'next-themes'
+
+const DEFAULT_QUOTE = {
+  id: 'laozi-first-step',
+  text: '千里之行，始于足下。',
+  author: '老子',
+}
+
+const LAST_QUOTE_KEY = 'articles:last-quote'
 
 const GROUP_TITLES = {
   all: '统一内容目录',
@@ -43,7 +53,35 @@ function normalizeGroup(params) {
 
 export default function ArticlesHeaderClient() {
   const searchParams = useSearchParams()
+  const { resolvedTheme } = useTheme()
   const activeGroup = normalizeGroup(searchParams)
+  const [quote, setQuote] = useState(DEFAULT_QUOTE)
+
+  useEffect(() => {
+    if (!resolvedTheme) return
+
+    const controller = new AbortController()
+    const previousQuote = window.sessionStorage.getItem(LAST_QUOTE_KEY) || DEFAULT_QUOTE.id
+
+    fetch(`/api/quotes?exclude=${encodeURIComponent(previousQuote)}`, {
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('QUOTE_REQUEST_FAILED')
+        return response.json()
+      })
+      .then((nextQuote) => {
+        if (!nextQuote?.id || !nextQuote?.text || !nextQuote?.author) return
+        window.sessionStorage.setItem(LAST_QUOTE_KEY, nextQuote.id)
+        setQuote(nextQuote)
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') window.sessionStorage.setItem(LAST_QUOTE_KEY, DEFAULT_QUOTE.id)
+      })
+
+    return () => controller.abort()
+  }, [resolvedTheme])
 
   return (
     <header className="mb-4">
@@ -52,9 +90,10 @@ export default function ArticlesHeaderClient() {
           <h1 className="font-serif text-2xl md:text-3xl font-semibold tracking-wide text-[#222] dark:text-gray-100">
             {GROUP_TITLES[activeGroup]}
           </h1>
-          <p className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6] md:whitespace-nowrap">
-            从主题开始浏览，再按类型细分；分析对象和资源获取方式会在需要时出现。
-          </p>
+          <figure className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
+            <blockquote>“{quote.text}”</blockquote>
+            <figcaption className="mt-0.5 text-[12px] text-[#85877d] dark:text-[#737f91]">— {quote.author}</figcaption>
+          </figure>
         </div>
       </div>
     </header>

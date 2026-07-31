@@ -37,12 +37,12 @@ test('directory measures search, filters and result outcomes without sending raw
   assert.doesNotMatch(directorySource, /trackSiteEvent\('search_submit',[\s\S]{0,300}\bquery:/)
 })
 
-test('directory presents topic first and reveals only relevant secondary filters', () => {
-  const topicIndex = directorySource.indexOf('<FilterRow label="主题"')
-  const typeIndex = directorySource.indexOf('<FilterRow label="类型"')
+test('directory exposes only topic and type filters, in that order', () => {
+  const topicIndex = directorySource.indexOf('<FilterRow label="内容主题"')
+  const typeIndex = directorySource.indexOf('<FilterRow label="内容类型"')
   assert.ok(topicIndex >= 0 && topicIndex < typeIndex)
-  assert.match(directorySource, /filters\.group === 'analysis' && availableEntities\.length/)
-  assert.match(directorySource, /filters\.group === 'resource' && availableDeliveries\.length/)
+  assert.equal(directorySource.match(/<FilterRow /g)?.length, 2)
+  assert.doesNotMatch(directorySource, /label="系列"|label="细分类型"|label="分析对象"|label="获取方式"/)
   assert.match(directorySource, /aria-label="已选筛选条件"/)
   assert.doesNotMatch(directorySource, /<FilterChip[\s\S]{0,120}\bcount=/)
   assert.doesNotMatch(directorySource, /全部主题|全部对象|全部方式|多维筛选/)

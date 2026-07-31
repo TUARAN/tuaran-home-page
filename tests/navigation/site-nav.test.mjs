@@ -5,13 +5,13 @@ import test from 'node:test'
 const source = await readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8')
 
 test('public content navigation is organized by entry, topic and type', () => {
-  const topicIndex = source.indexOf("title: '按主题'")
-  const typeIndex = source.indexOf("title: '类型'")
+  const topicIndex = source.indexOf("title: '内容主题'")
+  const typeIndex = source.indexOf("title: '内容类型'")
   assert.match(source, /title: '入口'[\s\S]*href: '\/#start-here'/)
-  assert.match(source, /title: '按主题'[\s\S]*href: '\/articles\?subject=ai_dev'/)
+  assert.match(source, /title: '内容主题'[\s\S]*href: '\/articles\?subject=ai_dev'/)
   assert.match(source, /href: '\/articles\?subject=life_family'/)
-  assert.match(source, /title: '类型'[\s\S]*href: '\/articles\?group=article'/)
-  assert.match(source, /title: '类型'[\s\S]*href: '\/articles\?group=resource'/)
+  assert.match(source, /title: '内容类型'[\s\S]*href: '\/articles\?group=article'/)
+  assert.match(source, /title: '内容类型'[\s\S]*href: '\/articles\?group=resource'/)
   assert.ok(topicIndex >= 0 && topicIndex < typeIndex)
   assert.doesNotMatch(source, /title: '按用途'/)
   assert.doesNotMatch(source, /label: '学习与入门'|label: '深度理解'|label: '获取资料'/)

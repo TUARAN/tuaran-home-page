@@ -7,21 +7,14 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import {
   CONTENT_GROUP_KEYS,
   CONTENT_GROUP_META,
-  COMPANY_INDUSTRY_KEYS,
   COMPANY_INDUSTRY_META,
-  COMPANY_ROLE_KEYS,
   COMPANY_ROLE_META,
-  CONTENT_KIND_KEYS,
   CONTENT_KIND_META,
-  DELIVERY_KEYS,
   DELIVERY_META,
-  ENTITY_TYPE_KEYS,
   ENTITY_TYPE_META,
-  SERIES_KEYS,
   SERIES_META,
   SUBJECT_KEYS,
   SUBJECT_META,
-  companyFacetsForLegacyType,
   getContentGroup,
   taxonomyForManualEntry,
 } from '../../../lib/contentTaxonomy'
@@ -51,13 +44,9 @@ const LEGACY_TAB_TO_GROUP = {
 
 const LEGACY_RESOURCE_TO_FACETS = {
   'ai-dev': { subject: 'ai_dev' },
-  'ai-music': { subject: 'content_creation', delivery: 'watch_listen' },
+  'ai-music': { subject: 'content_creation' },
   'humanities-politics': { subject: 'humanities_history' },
-  rss: { delivery: 'subscribe' },
-  twitter: { delivery: 'external' },
-  youtube: { delivery: 'watch_listen' },
   workplace: { subject: 'workplace_org' },
-  'visual-assets': { delivery: 'download' },
 }
 
 const KIND_TAG_CLASS = {
@@ -88,37 +77,21 @@ function filtersFromParams(params) {
   const legacyTab = params?.get('tab') || ''
   const legacyResource = LEGACY_RESOURCE_TO_FACETS[params?.get('resource_type')] || {}
   const groupFromLegacy = LEGACY_TAB_TO_GROUP[legacyTab] || ''
-  const kindFromLegacy =
-    legacyTab === 'works'
-      ? 'interactive'
-      : legacyTab === 'engineering-cases' || legacyTab === 'build-logs'
-        ? 'practice'
-        : legacyTab === 'posts'
-          ? 'article'
-          : ''
-  const entityFromLegacy =
-    legacyTab === 'companies' || params?.get('company_type')
-      ? 'company'
-      : legacyTab === 'people' || params?.get('people_type')
-        ? 'person'
-        : ''
-  const legacyCompanyFacets = companyFacetsForLegacyType(params?.get('company_type'))
-  const kind = normalizeEnum(params?.get('kind') || kindFromLegacy, ['all', ...CONTENT_KIND_KEYS])
-  const entity = normalizeEnum(params?.get('entity') || entityFromLegacy, ['all', ...ENTITY_TYPE_KEYS])
-  const delivery = normalizeEnum(
-    params?.get('delivery') || legacyResource.delivery,
-    ['all', ...DELIVERY_KEYS],
-  )
+  const kind = params?.get('kind')
+  const entity = params?.get('entity') || params?.get('company_type') || params?.get('people_type')
+  const delivery = params?.get('delivery')
   const inferredGroup =
-    kind !== 'all'
+    kind
       ? getContentGroup(kind)
-      : entity !== 'all'
+      : entity || params?.get('company_industry') || params?.get('company_role')
         ? 'analysis'
         : ['subscribe', 'download', 'watch_listen', 'external'].includes(delivery)
           ? 'resource'
           : delivery === 'interact'
             ? 'practice'
-            : ''
+            : params?.get('resource_type')
+              ? 'resource'
+              : ''
   const group = normalizeEnum(
     params?.get('group') || groupFromLegacy || inferredGroup,
     CONTENT_GROUP_KEYS,
@@ -126,19 +99,7 @@ function filtersFromParams(params) {
 
   return {
     group,
-    kind,
     subject: normalizeEnum(params?.get('subject') || legacyResource.subject, ['all', ...SUBJECT_KEYS]),
-    entity,
-    companyIndustry: normalizeEnum(
-      params?.get('company_industry') || legacyCompanyFacets.companyIndustry,
-      ['all', ...COMPANY_INDUSTRY_KEYS],
-    ),
-    companyRole: normalizeEnum(
-      params?.get('company_role') || legacyCompanyFacets.companyRole,
-      ['all', ...COMPANY_ROLE_KEYS],
-    ),
-    delivery,
-    series: normalizeEnum(params?.get('series'), ['all', ...SERIES_KEYS]),
     query: params?.get('q') || '',
   }
 }
@@ -146,13 +107,7 @@ function filtersFromParams(params) {
 function buildDirectoryUrl(filters) {
   const params = new URLSearchParams()
   if (filters.group !== 'all') params.set('group', filters.group)
-  if (filters.kind !== 'all') params.set('kind', filters.kind)
   if (filters.subject !== 'all') params.set('subject', filters.subject)
-  if (filters.entity !== 'all') params.set('entity', filters.entity)
-  if (filters.companyIndustry !== 'all') params.set('company_industry', filters.companyIndustry)
-  if (filters.companyRole !== 'all') params.set('company_role', filters.companyRole)
-  if (filters.delivery !== 'all') params.set('delivery', filters.delivery)
-  if (filters.series !== 'all') params.set('series', filters.series)
   const query = String(filters.query || '').trim()
   if (query) params.set('q', query)
   const suffix = params.toString()
@@ -225,13 +180,7 @@ function facetCounts(items, filters, resetKeys, getter, keys) {
 
 function itemMatches(item, filters) {
   if (filters.group !== 'all' && getContentGroup(item.contentKind) !== filters.group) return false
-  if (filters.kind !== 'all' && item.contentKind !== filters.kind) return false
   if (filters.subject !== 'all' && !item.subjects?.includes(filters.subject)) return false
-  if (filters.entity !== 'all' && item.entityType !== filters.entity) return false
-  if (filters.companyIndustry !== 'all' && item.companyIndustry !== filters.companyIndustry) return false
-  if (filters.companyRole !== 'all' && item.companyRole !== filters.companyRole) return false
-  if (filters.delivery !== 'all' && item.delivery !== filters.delivery) return false
-  if (filters.series !== 'all' && item.series !== filters.series) return false
   const query = String(filters.query || '').trim().toLowerCase()
   if (!query) return true
   const searchable = [
@@ -304,19 +253,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     () => facetCounts(
       catalogItems,
       filters,
-      ['group', 'kind', 'entity', 'companyIndustry', 'companyRole', 'delivery'],
+      ['group'],
       (item) => getContentGroup(item.contentKind),
       CONTENT_GROUP_KEYS,
-    ),
-    [catalogItems, filters],
-  )
-  const kindCounts = useMemo(
-    () => facetCounts(
-      catalogItems,
-      filters,
-      ['kind'],
-      (item) => item.contentKind,
-      CONTENT_KIND_KEYS,
     ),
     [catalogItems, filters],
   )
@@ -330,57 +269,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     ),
     [catalogItems, filters],
   )
-  const entityCounts = useMemo(
-    () => facetCounts(
-      catalogItems,
-      filters,
-      ['entity', 'companyIndustry', 'companyRole'],
-      (item) => item.entityType,
-      ENTITY_TYPE_KEYS,
-    ),
-    [catalogItems, filters],
-  )
-  const companyIndustryCounts = useMemo(
-    () => facetCounts(
-      catalogItems,
-      filters,
-      ['companyIndustry'],
-      (item) => item.companyIndustry,
-      COMPANY_INDUSTRY_KEYS,
-    ),
-    [catalogItems, filters],
-  )
-  const companyRoleCounts = useMemo(
-    () => facetCounts(
-      catalogItems,
-      filters,
-      ['companyRole'],
-      (item) => item.companyRole,
-      COMPANY_ROLE_KEYS,
-    ),
-    [catalogItems, filters],
-  )
-  const deliveryCounts = useMemo(
-    () => facetCounts(
-      catalogItems,
-      filters,
-      ['delivery'],
-      (item) => item.delivery,
-      DELIVERY_KEYS,
-    ),
-    [catalogItems, filters],
-  )
-  const seriesCounts = useMemo(
-    () => facetCounts(
-      catalogItems,
-      filters,
-      ['series'],
-      (item) => item.series,
-      SERIES_KEYS,
-    ),
-    [catalogItems, filters],
-  )
-
   const visible = useMemo(
     () => catalogItems.filter((item) => itemMatches(item, filters)),
     [catalogItems, filters],
@@ -392,19 +280,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function applyFilters(patch, facet, value) {
     const next = { ...filters, ...patch }
-    if (Object.prototype.hasOwnProperty.call(patch, 'group')) {
-      next.kind = 'all'
-      if (patch.group !== 'analysis') {
-        next.entity = 'all'
-        next.companyIndustry = 'all'
-        next.companyRole = 'all'
-      }
-      if (patch.group !== 'resource') next.delivery = 'all'
-    }
-    if (Object.prototype.hasOwnProperty.call(patch, 'entity') && patch.entity !== 'company') {
-      next.companyIndustry = 'all'
-      next.companyRole = 'all'
-    }
     setFilters(next)
     setQueryInput(next.query)
     setVisibleCount(PAGE_SIZE)
@@ -450,30 +325,13 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function clearAllFilters() {
     applyFilters({
       group: 'all',
-      kind: 'all',
       subject: 'all',
-      entity: 'all',
-      companyIndustry: 'all',
-      companyRole: 'all',
-      delivery: 'all',
-      series: 'all',
     }, 'all', 'clear')
   }
 
   const availableGroups = CONTENT_GROUP_KEYS.filter(
     (key) => key !== 'all' && groupCounts[key] > 0,
   )
-  const availableKinds = CONTENT_KIND_KEYS.filter(
-    (key) => getContentGroup(key) === filters.group && kindCounts[key] > 0,
-  )
-  const availableEntities = ENTITY_TYPE_KEYS.filter((key) => entityCounts[key] > 0)
-  const availableCompanyIndustries = COMPANY_INDUSTRY_KEYS.filter(
-    (key) => companyIndustryCounts[key] >= 3,
-  )
-  const availableCompanyRoles = COMPANY_ROLE_KEYS.filter((key) => companyRoleCounts[key] >= 2)
-  const availableDeliveries = ['download', 'subscribe', 'watch_listen', 'external']
-    .filter((key) => deliveryCounts[key] > 0)
-  const availableSeries = SERIES_KEYS.filter((key) => seriesCounts[key] > 0)
 
   const activeFilters = [
     filters.subject !== 'all'
@@ -488,48 +346,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           key: 'group',
           label: CONTENT_GROUP_META[filters.group]?.label,
           patch: { group: 'all' },
-        }
-      : null,
-    filters.kind !== 'all'
-      ? {
-          key: 'kind',
-          label: CONTENT_KIND_META[filters.kind]?.label,
-          patch: { kind: 'all' },
-        }
-      : null,
-    filters.entity !== 'all'
-      ? {
-          key: 'entity',
-          label: ENTITY_TYPE_META[filters.entity]?.label,
-          patch: { entity: 'all' },
-        }
-      : null,
-    filters.companyIndustry !== 'all'
-      ? {
-          key: 'companyIndustry',
-          label: COMPANY_INDUSTRY_META[filters.companyIndustry]?.label,
-          patch: { companyIndustry: 'all' },
-        }
-      : null,
-    filters.companyRole !== 'all'
-      ? {
-          key: 'companyRole',
-          label: COMPANY_ROLE_META[filters.companyRole]?.label,
-          patch: { companyRole: 'all' },
-        }
-      : null,
-    filters.delivery !== 'all'
-      ? {
-          key: 'delivery',
-          label: DELIVERY_META[filters.delivery]?.label,
-          patch: { delivery: 'all' },
-        }
-      : null,
-    filters.series !== 'all'
-      ? {
-          key: 'series',
-          label: SERIES_META[filters.series]?.label,
-          patch: { series: 'all' },
         }
       : null,
   ].filter(Boolean)
@@ -572,7 +388,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function Filters({ orientation = 'inline' }) {
     return (
       <div className="space-y-4">
-        <FilterRow label="主题" ariaLabel="按主题筛选" orientation={orientation}>
+        <FilterRow label="内容主题" ariaLabel="按内容主题筛选" orientation={orientation}>
           <FilterChip
             label="不限"
             active={filters.subject === 'all'}
@@ -588,7 +404,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           ))}
         </FilterRow>
 
-        <FilterRow label="类型" ariaLabel="按类型筛选" orientation={orientation}>
+        <FilterRow label="内容类型" ariaLabel="按内容类型筛选" orientation={orientation}>
           <FilterChip
             label="不限"
             active={filters.group === 'all'}
@@ -604,113 +420,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           ))}
         </FilterRow>
 
-        {filters.group !== 'all' && availableKinds.length > 1 ? (
-          <FilterRow label="细分类型" ariaLabel="按细分类型筛选" orientation={orientation}>
-            <FilterChip
-              label="不限"
-              active={filters.kind === 'all'}
-              onClick={() => applyFilters({ kind: 'all' }, 'kind', 'all')}
-            />
-            {availableKinds.map((key) => (
-              <FilterChip
-                key={key}
-                label={CONTENT_KIND_META[key].label}
-                active={filters.kind === key}
-                onClick={() => applyFilters({ kind: key }, 'kind', key)}
-              />
-            ))}
-          </FilterRow>
-        ) : null}
-
-        {filters.group === 'analysis' && availableEntities.length ? (
-          <FilterRow label="分析对象" ariaLabel="按分析对象筛选" orientation={orientation}>
-            <FilterChip
-              label="不限"
-              active={filters.entity === 'all'}
-              onClick={() => applyFilters({ entity: 'all' }, 'entity', 'all')}
-            />
-            {availableEntities.map((key) => (
-              <FilterChip
-                key={key}
-                label={ENTITY_TYPE_META[key].label}
-                active={filters.entity === key}
-                onClick={() => applyFilters({ entity: key }, 'entity', key)}
-              />
-            ))}
-          </FilterRow>
-        ) : null}
-
-        {filters.entity === 'company' && availableCompanyIndustries.length ? (
-          <FilterRow label="公司行业" ariaLabel="按公司行业筛选" orientation={orientation}>
-            <FilterChip
-              label="不限"
-              active={filters.companyIndustry === 'all'}
-              onClick={() => applyFilters({ companyIndustry: 'all' }, 'company_industry', 'all')}
-            />
-            {availableCompanyIndustries.map((key) => (
-              <FilterChip
-                key={key}
-                label={COMPANY_INDUSTRY_META[key].label}
-                active={filters.companyIndustry === key}
-                onClick={() => applyFilters({ companyIndustry: key }, 'company_industry', key)}
-              />
-            ))}
-          </FilterRow>
-        ) : null}
-
-        {filters.entity === 'company' && availableCompanyRoles.length ? (
-          <FilterRow label="公司角色" ariaLabel="按公司生态角色筛选" orientation={orientation}>
-            <FilterChip
-              label="不限"
-              active={filters.companyRole === 'all'}
-              onClick={() => applyFilters({ companyRole: 'all' }, 'company_role', 'all')}
-            />
-            {availableCompanyRoles.map((key) => (
-              <FilterChip
-                key={key}
-                label={COMPANY_ROLE_META[key].label}
-                active={filters.companyRole === key}
-                onClick={() => applyFilters({ companyRole: key }, 'company_role', key)}
-              />
-            ))}
-          </FilterRow>
-        ) : null}
-
-        {filters.group === 'resource' && availableDeliveries.length ? (
-          <FilterRow label="获取方式" ariaLabel="按资源获取方式筛选" orientation={orientation}>
-            <FilterChip
-              label="不限"
-              active={filters.delivery === 'all'}
-              onClick={() => applyFilters({ delivery: 'all' }, 'delivery', 'all')}
-            />
-            {availableDeliveries.map((key) => (
-              <FilterChip
-                key={key}
-                label={DELIVERY_META[key].label}
-                active={filters.delivery === key}
-                onClick={() => applyFilters({ delivery: key }, 'delivery', key)}
-              />
-            ))}
-          </FilterRow>
-        ) : null}
-
-        {availableSeries.length ? (
-          <FilterRow label="系列" ariaLabel="按固定系列筛选" orientation={orientation}>
-            <FilterChip
-              label="不限"
-              active={filters.series === 'all'}
-              onClick={() => applyFilters({ series: 'all' }, 'series', 'all')}
-            />
-            {availableSeries.map((key) => (
-              <FilterChip
-                key={key}
-                label={SERIES_META[key].label}
-                active={filters.series === key}
-                onClick={() => applyFilters({ series: key }, 'series', key)}
-              />
-            ))}
-          </FilterRow>
-        ) : null}
       </div>
     )
   }

@@ -120,7 +120,7 @@ const TIER_SECTION_STYLES = {
     wrap: 'site-tier-section site-tier-column',
     title: 'site-tier-title site-tier-title-column',
   },
-  '类型': {
+  '内容类型': {
     wrap: 'site-tier-section site-tier-research',
     title: 'site-tier-title site-tier-title-research',
   },

@@ -24,7 +24,7 @@ import CanvasOriginBadge from '../components/CanvasOriginBadge'
 
 const PAGE_SIZE = 24
 
-const SEARCH_SUGGESTIONS = ['AI Agent', 'MCP', 'Cloudflare', 'OpenAI', '工程实践']
+const SEARCH_SUGGESTIONS = ['AI Agent', '资源', '公司调研', '工程实践']
 
 const LEGACY_TAB_TO_GROUP = {
   column: 'article',

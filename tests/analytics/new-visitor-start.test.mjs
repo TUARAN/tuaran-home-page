@@ -31,6 +31,7 @@ test('directory measures search, filters and result outcomes without sending raw
   assert.match(directorySource, /results_count:/)
   assert.match(directorySource, /zero_results:/)
   assert.match(directorySource, /const SEARCH_SUGGESTIONS = \[/)
+  assert.match(directorySource, /const SEARCH_SUGGESTIONS = \['AI Agent', '资源', '公司调研', '工程实践'\]/)
   assert.match(directorySource, /runSearch\(query, 'suggested'\)/)
   assert.doesNotMatch(directorySource, /aria-label="内容用途"/)
   assert.match(directorySource, /data-analytics-event=\{analyticsEvent\}/)

@@ -10,9 +10,11 @@ export const PRO_MODEL = 'deepseek-v4-pro'
 
 // 模型路由规则：简单的任务用 flash，复杂的任务用 pro。
 // - 安全分诊永远按复杂处理（误判成本高，涉及漏洞与权限边界）；
-// - 报告存在 high 发现、high+medium 达 5 项、或总发现达 20 项 → 复杂；
+// - 报告存在 high 发现、high+medium 达 3 项、或总发现达 8 项 → 复杂；
 // - 其余例行分诊（少量 low/info）→ 简单。
 // - DEEPSEEK_MODEL 显式配置时优先于规则。
+// 注意：flash 在 token 预算内更容易把额度全部用于推理，简单任务失败时由
+// scan-analyze 自动回退到 pro（见 scripts/scan-analyze.mjs）。
 export function pickScanModel({ type, issues = [] }) {
   if (process.env.DEEPSEEK_MODEL) return process.env.DEEPSEEK_MODEL
   let high = 0
@@ -24,8 +26,8 @@ export function pickScanModel({ type, issues = [] }) {
   const complex =
     type === 'security' ||
     high > 0 ||
-    high + medium >= 5 ||
-    issues.length >= 20
+    high + medium >= 3 ||
+    issues.length >= 8
   return complex ? PRO_MODEL : FLASH_MODEL
 }
 

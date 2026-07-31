@@ -11,7 +11,7 @@ import {
   writeStepSummary,
   aiAnalysisMarkdown,
 } from './scan-utils.mjs'
-import { callScanDeepSeekJson, pickScanModel } from './scan-deepseek.mjs'
+import { callScanDeepSeekJson, pickScanModel, FLASH_MODEL, PRO_MODEL } from './scan-deepseek.mjs'
 
 const VALID_TYPES = new Set(['security', 'performance', 'design'])
 const type = process.argv[2]
@@ -57,27 +57,24 @@ const user = [
   ),
 ].join('\n')
 
-let analysis
-try {
-  const resolvedModel = pickScanModel({ type: report.type, issues: report.issues })
-  console.log(`[scan-analyze] 模型路由：${resolvedModel}`)
+async function runAnalysis(model) {
+  console.log(`[scan-analyze] 模型路由：${model}`)
   const result = await callScanDeepSeekJson({
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    model: resolvedModel,
+    model,
   })
   const json = result.json || {}
   const actions = Array.isArray(json.actions) ? json.actions.slice(0, 8) : []
-  analysis = {
+  return {
     status: 'ok',
     model: result.model,
     generatedAt: new Date().toISOString(),
     usage: result.usage || null,
     summary: String(json.summary || '').slice(0, 500),
     priorityIds: Array.isArray(json.priorityIds) ? json.priorityIds.slice(0, 30) : [],
-    // 分支名与 PR 标题由代码确定性生成，不占用模型输出
     actions: actions.map((action) => ({
       issueId: action.issueId,
       priority: action.priority,
@@ -90,14 +87,39 @@ try {
     recommendedPrCount: Number(json.recommendedPrCount) || 0,
     risks: Array.isArray(json.risks) ? json.risks.map(String).slice(0, 10) : [],
   }
-} catch (error) {
+}
+
+function failedAnalysis(error) {
   const code = error?.code || 'DEEPSEEK_CALL_FAILED'
-  analysis = {
+  return {
     status: code === 'MISSING_DEEPSEEK_API_KEY' ? 'skipped' : 'failed',
     code,
     reason: String(error?.message || error).slice(0, 300),
   }
-  console.warn(`[scan-analyze] DeepSeek 未参与分析（${code}）：${analysis.reason}`)
+}
+
+const FLASH_FALLBACK_CODES = new Set([
+  'DEEPSEEK_EMPTY_RESPONSE',
+  'DEEPSEEK_JSON_NOT_FOUND',
+  'DEEPSEEK_JSON_PARSE_FAILED',
+])
+const firstModel = pickScanModel({ type: report.type, issues: report.issues })
+let analysis
+try {
+  analysis = await runAnalysis(firstModel)
+} catch (error) {
+  if (firstModel === FLASH_MODEL && FLASH_FALLBACK_CODES.has(error?.code)) {
+    console.warn(`[scan-analyze] ${FLASH_MODEL} 分析失败（${error.code}），改用 ${PRO_MODEL} 重试一次`)
+    try {
+      analysis = await runAnalysis(PRO_MODEL)
+    } catch (fallbackError) {
+      analysis = failedAnalysis(fallbackError)
+      console.warn(`[scan-analyze] ${PRO_MODEL} 重试也失败（${fallbackError.code}）：${analysis.reason}`)
+    }
+  } else {
+    analysis = failedAnalysis(error)
+    console.warn(`[scan-analyze] DeepSeek 未参与分析（${analysis.code}）：${analysis.reason}`)
+  }
 }
 
 report.aiAnalysis = analysis

@@ -259,6 +259,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [pvLoaded, setPvLoaded] = useState(false)
   const requestedPvKeys = useRef(new Set())
   const [isPending, startTransition] = useTransition()
+  const catalogItems = items
 
   useEffect(() => {
     let alive = true
@@ -293,49 +294,49 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   }, [searchParams])
 
   const groupCounts = useMemo(
-    () => countBy(items, (item) => getContentGroup(item.contentKind), CONTENT_GROUP_KEYS),
-    [items],
+    () => countBy(catalogItems, (item) => getContentGroup(item.contentKind), CONTENT_GROUP_KEYS),
+    [catalogItems],
   )
   const kindCounts = useMemo(
-    () => countBy(items, (item) => item.contentKind, CONTENT_KIND_KEYS),
-    [items],
+    () => countBy(catalogItems, (item) => item.contentKind, CONTENT_KIND_KEYS),
+    [catalogItems],
   )
   const subjectCounts = useMemo(
-    () => countBy(items, (item) => item.subjects || [], SUBJECT_KEYS),
-    [items],
+    () => countBy(catalogItems, (item) => item.subjects || [], SUBJECT_KEYS),
+    [catalogItems],
   )
   const entityCounts = useMemo(
-    () => countBy(items, (item) => item.entityType, ENTITY_TYPE_KEYS),
-    [items],
+    () => countBy(catalogItems, (item) => item.entityType, ENTITY_TYPE_KEYS),
+    [catalogItems],
   )
   const companyIndustryCounts = useMemo(
     () => countBy(
-      items.filter((item) => item.entityType === 'company'),
+      catalogItems.filter((item) => item.entityType === 'company'),
       (item) => item.companyIndustry,
       COMPANY_INDUSTRY_KEYS,
     ),
-    [items],
+    [catalogItems],
   )
   const companyRoleCounts = useMemo(
     () => countBy(
-      items.filter((item) => item.entityType === 'company'),
+      catalogItems.filter((item) => item.entityType === 'company'),
       (item) => item.companyRole,
       COMPANY_ROLE_KEYS,
     ),
-    [items],
+    [catalogItems],
   )
   const deliveryCounts = useMemo(
-    () => countBy(items, (item) => item.delivery, DELIVERY_KEYS),
-    [items],
+    () => countBy(catalogItems, (item) => item.delivery, DELIVERY_KEYS),
+    [catalogItems],
   )
   const seriesCounts = useMemo(
-    () => countBy(items, (item) => item.series, SERIES_KEYS),
-    [items],
+    () => countBy(catalogItems, (item) => item.series, SERIES_KEYS),
+    [catalogItems],
   )
 
   const visible = useMemo(
-    () => items.filter((item) => itemMatches(item, filters)),
-    [items, filters],
+    () => catalogItems.filter((item) => itemMatches(item, filters)),
+    [catalogItems, filters],
   )
   const paginatedItems = useMemo(
     () => visible.slice(0, visibleCount),
@@ -353,7 +354,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     trackSiteEvent('filter_apply', {
       facet,
       value,
-      result_count: items.filter((item) => itemMatches(item, next)).length,
+      result_count: catalogItems.filter((item) => itemMatches(item, next)).length,
     })
     startTransition(() => {
       router.replace(buildDirectoryUrl(next), { scroll: false })
@@ -363,7 +364,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function submitSearch(event) {
     event.preventDefault()
     const next = { ...filters, query: queryInput.trim() }
-    const resultCount = items.filter((item) => itemMatches(item, next)).length
+    const resultCount = catalogItems.filter((item) => itemMatches(item, next)).length
     setFilters(next)
     setVisibleCount(PAGE_SIZE)
     trackSiteEvent('search_submit', {
@@ -444,7 +445,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         <FilterRow label="内容形态" ariaLabel="按内容形态筛选" orientation={orientation}>
           <FilterChip
             label="全部形态"
-            count={filters.group === 'all' ? items.length : groupCounts[filters.group]}
+            count={filters.group === 'all' ? catalogItems.length : groupCounts[filters.group]}
             active={filters.kind === 'all'}
             onClick={() => applyFilters({ kind: 'all' }, 'kind', 'all')}
           />
@@ -462,7 +463,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         <FilterRow label="主题" ariaLabel="按主题筛选" orientation={orientation}>
           <FilterChip
             label="全部主题"
-            count={items.length}
+            count={catalogItems.length}
             active={filters.subject === 'all'}
             onClick={() => applyFilters({ subject: 'all' }, 'subject', 'all')}
           />

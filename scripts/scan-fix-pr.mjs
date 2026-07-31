@@ -44,6 +44,7 @@ if (!actionable.length) {
 const date = report.generatedAt.slice(0, 10)
 const branch = `codex/${type}-scan-${date}`
 const prTitle = `[autopilot] ${type} 巡检 ${date}：自动修复`
+const npmRegistry = process.env.NPM_REGISTRY || ''
 
 function git(args, options = {}) {
   return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...options })
@@ -75,7 +76,9 @@ try {
 const changedFiles = []
 if (type === 'security') {
   console.log('[scan-fix-pr] 运行 npm audit fix（仅向后兼容修复）…')
-  execFileSync('npm', ['audit', 'fix', '--no-fund', '--no-audit'], { stdio: 'inherit' })
+  const auditArgs = ['audit', 'fix', '--no-fund', '--no-audit']
+  if (npmRegistry) auditArgs.push('--registry', npmRegistry)
+  execFileSync('npm', auditArgs, { stdio: 'inherit' })
   changedFiles.push('package.json', 'package-lock.json')
 } else if (type === 'design') {
   console.log('[scan-fix-pr] 为扫描标记的 <img> 补 alt="" …')

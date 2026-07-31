@@ -9,7 +9,9 @@ import {
   DELIVERY_KEYS,
   ENTITY_TYPE_KEYS,
   SUBJECT_KEYS,
+  getDisplaySubject,
   getContentGroup,
+  isEntityTypeRedundant,
   taxonomyForArticle,
   taxonomyForInteractive,
   taxonomyForResearch,
@@ -118,6 +120,22 @@ test('explicit subjects override legacy inference and preserve primary-subject o
     }).subjects,
     ['ai_dev', 'business_market'],
   )
+})
+
+test('directory labels reflect the selected subject and suppress redundant entity labels', () => {
+  assert.equal(
+    getDisplaySubject(['web_cloud', 'content_creation'], 'content_creation'),
+    'content_creation',
+  )
+  assert.equal(
+    getDisplaySubject(['business_market', 'content_creation'], 'all'),
+    'business_market',
+  )
+  assert.equal(isEntityTypeRedundant('company', ['company_research']), true)
+  assert.equal(isEntityTypeRedundant('product', ['product_experience', 'business_market']), true)
+  assert.equal(isEntityTypeRedundant('person', ['people_profiles']), true)
+  assert.equal(isEntityTypeRedundant('industry', ['business_market']), false)
+  assert.equal(isEntityTypeRedundant('technology', ['ai_dev']), false)
 })
 
 test('taxonomy validation rejects overloaded or incomplete records', () => {

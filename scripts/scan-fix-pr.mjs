@@ -78,7 +78,17 @@ if (type === 'security') {
   console.log('[scan-fix-pr] 运行 npm audit fix（仅向后兼容修复）…')
   const auditArgs = ['audit', 'fix', '--no-fund', '--no-audit']
   if (npmRegistry) auditArgs.push('--registry', npmRegistry)
-  execFileSync('npm', auditArgs, { stdio: 'inherit' })
+  try {
+    execFileSync('npm', auditArgs, { stdio: 'inherit' })
+  } catch (error) {
+    // npm audit fix 在仍有无法安全修复的漏洞时退出码为 1：
+    // 安全修复本身可能已生效，剩余项需要人工评估，不视为失败。
+    if (error.status === 1) {
+      console.log('[scan-fix-pr] npm audit fix 完成（仍有需要人工评估的漏洞，可安全修复项已应用）。')
+    } else {
+      throw error
+    }
+  }
   changedFiles.push('package.json', 'package-lock.json')
 } else if (type === 'design') {
   console.log('[scan-fix-pr] 为扫描标记的 <img> 补 alt="" …')

@@ -97,7 +97,7 @@ severity 四级：`high` / `medium` / `low` / `info`。只有 high/medium 会触
 
 每个 workflow 在创建待修清单 Issue 后，会自动运行 `scripts/scan-fix-pr.mjs`：
 
-- **security**：`npm audit fix`（仅向后兼容的安全升级），构建通过后开 Draft PR 引用 Issue；
+- **security**：`npm audit fix`（仅向后兼容的安全升级；仍有剩余漏洞时 npm 退出码为 1，脚本视为「已应用安全修复、剩余项转人工」而非失败），构建通过后开 Draft PR 引用 Issue；
 - **design**：为扫描标记且同行可确定的 `<img>` 补 `alt=""`，构建通过后开 Draft PR；
 - **performance**：暂无安全、确定性的自动修复，保留 Issue 转人工（后续接入 Agent 修复）。
 

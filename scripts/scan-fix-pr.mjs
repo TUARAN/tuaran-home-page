@@ -79,8 +79,13 @@ if (type === 'security') {
   const auditArgs = ['audit', 'fix', '--no-fund', '--no-audit']
   if (npmRegistry) auditArgs.push('--registry', npmRegistry)
   try {
-    execFileSync('npm', auditArgs, { stdio: 'inherit' })
+    execFileSync('npm', auditArgs, { stdio: 'inherit', timeout: 300000 })
   } catch (error) {
+    if (error.killed) {
+      console.error('[scan-fix-pr] npm audit fix 超时（5 分钟），跳过自动修复，保留 Issue 转人工。')
+      git(['checkout', 'main'])
+      process.exit(1)
+    }
     // npm audit fix 在仍有无法安全修复的漏洞时退出码为 1：
     // 安全修复本身可能已生效，剩余项需要人工评估，不视为失败。
     if (error.status === 1) {

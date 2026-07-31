@@ -312,8 +312,8 @@ export default function ContentWeeklyClient() {
         <Section title="阅读来源" description="UTM 优先，其次按引荐域名归为搜索、社交、外部引荐、站内或直接访问。">
           <SourceList rows={data?.sources} loading={loading} />
         </Section>
-        <Section title="内容类型分布" description="分析、资源与灵感在当前周期的阅读贡献。">
-          {loading ? <LoadingRows /> : data?.byType?.length ? <div className="space-y-3">{data.byType.map((row) => <div key={row.type} className="flex items-center justify-between rounded-xl border border-[#e8e8e1] px-3 py-3 dark:border-[#222d3a]"><div><p className="text-sm font-medium text-[#171611] dark:text-gray-100">{row.type}</p><p className="mt-0.5 text-[10px] text-[#9a9b92]">上期 {number(row.previousPv)} PV</p></div><div className="flex items-center gap-3"><strong>{number(row.pv)} <span className="text-[10px] font-normal text-[#9a9b92]">PV</span></strong><Delta value={row.delta} /></div></div>)}</div> : <EmptyState title="暂无类型数据" description="有阅读后会显示内容类型贡献。" />}
+        <Section title="类型分布" description="分析、资源与灵感在当前周期的阅读贡献。">
+          {loading ? <LoadingRows /> : data?.byType?.length ? <div className="space-y-3">{data.byType.map((row) => <div key={row.type} className="flex items-center justify-between rounded-xl border border-[#e8e8e1] px-3 py-3 dark:border-[#222d3a]"><div><p className="text-sm font-medium text-[#171611] dark:text-gray-100">{row.type}</p><p className="mt-0.5 text-[10px] text-[#9a9b92]">上期 {number(row.previousPv)} PV</p></div><div className="flex items-center gap-3"><strong>{number(row.pv)} <span className="text-[10px] font-normal text-[#9a9b92]">PV</span></strong><Delta value={row.delta} /></div></div>)}</div> : <EmptyState title="暂无类型数据" description="有阅读后会显示各类型的贡献。" />}
         </Section>
       </div>
 

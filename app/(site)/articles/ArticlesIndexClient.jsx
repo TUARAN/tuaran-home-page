@@ -588,7 +588,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           ))}
         </FilterRow>
 
-        <FilterRow label="内容类型" ariaLabel="按内容类型筛选" orientation={orientation}>
+        <FilterRow label="类型" ariaLabel="按类型筛选" orientation={orientation}>
           <FilterChip
             label="不限"
             active={filters.group === 'all'}

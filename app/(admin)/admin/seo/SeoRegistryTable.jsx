@@ -35,7 +35,7 @@ export default function SeoRegistryTable({ pages }) {
   return (
     <>
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <nav aria-label="SEO 内容类型" className="flex flex-wrap gap-1.5">
+        <nav aria-label="SEO 类型" className="flex flex-wrap gap-1.5">
           {TYPE_FILTERS.map((filter) => (
             <button
               key={filter.key}

@@ -39,7 +39,7 @@ test('directory measures search, filters and result outcomes without sending raw
 
 test('directory presents topic first and reveals only relevant secondary filters', () => {
   const topicIndex = directorySource.indexOf('<FilterRow label="主题"')
-  const typeIndex = directorySource.indexOf('<FilterRow label="内容类型"')
+  const typeIndex = directorySource.indexOf('<FilterRow label="类型"')
   assert.ok(topicIndex >= 0 && topicIndex < typeIndex)
   assert.match(directorySource, /filters\.group === 'analysis' && availableEntities\.length/)
   assert.match(directorySource, /filters\.group === 'resource' && availableDeliveries\.length/)

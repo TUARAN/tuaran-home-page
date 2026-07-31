@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-25T02:32:53.249Z",
+  "generatedAt": "2026-07-31T02:39:51.451Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -590,6 +590,12 @@
               "hash": "306b15a291915ef8460beb3ea50ed13e12e9681bd25405bc0bd16f97ca54fb1d",
               "path": "ai-context/README/2026-06-29T12-13-21-468Z.enc.json",
               "bytes": 1236
+            },
+            {
+              "ts": "2026-07-31T02:39:51.409Z",
+              "hash": "ec3bb12b9554c0a00db91a3aa177467a96e11743699edd76c138269c4c09a317",
+              "path": "ai-context/README/2026-07-31T02-39-51-429Z.enc.json",
+              "bytes": 1358
             }
           ]
         },
@@ -608,6 +614,18 @@
               "hash": "46018b5bbe4d07671c08b3140766c2f62bf31d6b52d2d6468c13c7e56f1b3ecb",
               "path": "ai-context/digital-human-deploy/2026-07-25T02-32-53-246Z.enc.json",
               "bytes": 1109
+            }
+          ]
+        },
+        "content-information-architecture": {
+          "title": "content-information-architecture",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-07-31T02:39:51.432Z",
+              "hash": "b14332bbd376b4466420bb44c6a89a6b812d9254397c28139636afeae63433f5",
+              "path": "ai-context/content-information-architecture/2026-07-31T02-39-51-449Z.enc.json",
+              "bytes": 2409
             }
           ]
         }

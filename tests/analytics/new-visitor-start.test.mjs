@@ -39,10 +39,10 @@ test('directory measures search, filters and result outcomes without sending raw
 })
 
 test('directory exposes only topic and type filters, in that order', () => {
-  const topicIndex = directorySource.indexOf('<FilterRow label="内容主题"')
-  const typeIndex = directorySource.indexOf('<FilterRow label="内容类型"')
+  const topicIndex = directorySource.indexOf('label="内容主题"')
+  const typeIndex = directorySource.indexOf('label="内容类型"')
   assert.ok(topicIndex >= 0 && topicIndex < typeIndex)
-  assert.equal(directorySource.match(/<FilterRow /g)?.length, 2)
+  assert.equal(directorySource.match(/<FilterRow\b/g)?.length, 2)
   assert.doesNotMatch(directorySource, /label="系列"|label="细分类型"|label="分析对象"|label="获取方式"/)
   assert.match(directorySource, /const SUBJECT_DISPLAY_GROUPS = \[/)
   assert.match(directorySource, /技术与开发/)
@@ -52,6 +52,9 @@ test('directory exposes only topic and type filters, in that order', () => {
   assert.match(directorySource, /CONTENT_GROUP_KEYS\.filter\(\(key\) => key !== 'all'\)/)
   assert.doesNotMatch(directorySource, /subjectCounts\[key\] > 0|groupCounts\[key\] > 0/)
   assert.doesNotMatch(directorySource, /<details|展开筛选|收起筛选/)
+  assert.doesNotMatch(directorySource, /label="不限"/)
+  assert.match(directorySource, /onReset=\{\(\) => applyFilters\(\{ subject: 'all' \}/)
+  assert.match(directorySource, /onReset=\{\(\) => applyFilters\(\{ group: 'all' \}/)
   assert.match(directorySource, /subjectParam === 'product_business' \? 'business_market'/)
   assert.match(directorySource, /aria-label="已选筛选条件"/)
   assert.doesNotMatch(directorySource, /<FilterChip[\s\S]{0,120}\bcount=/)

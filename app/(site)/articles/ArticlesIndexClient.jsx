@@ -352,13 +352,14 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   function Filters({ orientation = 'inline' }) {
     return (
       <div className="space-y-4">
-        <FilterRow label="内容主题" ariaLabel="按内容主题筛选" orientation={orientation}>
+        <FilterRow
+          label="内容主题"
+          ariaLabel="按内容主题筛选"
+          orientation={orientation}
+          active={filters.subject === 'all'}
+          onReset={() => applyFilters({ subject: 'all' }, 'subject', 'all')}
+        >
           <div className="w-full space-y-2.5">
-            <FilterChip
-              label="不限"
-              active={filters.subject === 'all'}
-              onClick={() => applyFilters({ subject: 'all' }, 'subject', 'all')}
-            />
             {SUBJECT_DISPLAY_GROUPS.map((group) => (
               <div key={group.label}>
                 <span className="mb-1 block px-1 text-[10px] font-medium tracking-[0.08em] text-[#aaa1ae] dark:text-[#69758a]">
@@ -379,12 +380,13 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           </div>
         </FilterRow>
 
-        <FilterRow label="内容类型" ariaLabel="按内容类型筛选" orientation={orientation}>
-          <FilterChip
-            label="不限"
-            active={filters.group === 'all'}
-            onClick={() => applyFilters({ group: 'all' }, 'group', 'all')}
-          />
+        <FilterRow
+          label="内容类型"
+          ariaLabel="按内容类型筛选"
+          orientation={orientation}
+          active={filters.group === 'all'}
+          onReset={() => applyFilters({ group: 'all' }, 'group', 'all')}
+        >
           {availableGroups.map((key) => (
             <FilterChip
               key={key}
@@ -553,13 +555,28 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   )
 }
 
-function FilterRow({ label, ariaLabel, orientation = 'inline', children }) {
+function FilterRow({ label, ariaLabel, orientation = 'inline', active, onReset, children }) {
+  const labelButton = (
+    <button
+      type="button"
+      onClick={onReset}
+      aria-pressed={active}
+      title={`查看全部${label.replace('内容', '')}`}
+      className={[
+        'rounded-md text-left font-medium transition-colors hover:text-[#49345f] dark:hover:text-gray-100',
+        active
+          ? 'text-[#49345f] dark:text-[#d8c5f3]'
+          : 'text-[#82788e] dark:text-[#7f8aa0]',
+      ].join(' ')}
+    >
+      {label}
+    </button>
+  )
+
   if (orientation === 'stack') {
     return (
       <div className="min-w-0">
-        <span className="mb-1.5 block text-[11px] font-medium tracking-[0.04em] text-[#82788e] dark:text-[#7f8aa0]">
-          {label}
-        </span>
+        <div className="mb-1.5 text-[11px] tracking-[0.04em]">{labelButton}</div>
         <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">
           {children}
         </nav>
@@ -568,7 +585,7 @@ function FilterRow({ label, ariaLabel, orientation = 'inline', children }) {
   }
   return (
     <div className="grid min-w-0 grid-cols-[4.25rem_minmax(0,1fr)] items-start gap-x-3 sm:grid-cols-[4.75rem_minmax(0,1fr)]">
-      <span className="pt-1.5 text-xs leading-5 text-[#82788e] dark:text-[#7f8aa0]">{label}</span>
+      <div className="pt-1.5 text-xs leading-5">{labelButton}</div>
       <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">
         {children}
       </nav>

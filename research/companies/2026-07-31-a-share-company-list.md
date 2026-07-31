@@ -3,7 +3,7 @@ title: A 股上市公司全名单
 category: companies
 company_type: a_share_pool
 date: 2026-07-31
-time: 15:30
+time: 15:45
 tags: [A股, 上市公司, 上海证券交易所, 深圳证券交易所, 北京证券交易所, 公司名单]
 summary: "截至 2026-07-31 的 A 股上市公司候选池，共 5485 家，覆盖沪市、深市与北交所。"
 tldr: "A 股公司观察候选池当前收录 5485 家公司；名单按证券代码排序。"
@@ -5534,5 +5534,5 @@ pv: 0
 - [深圳证券交易所股票列表](https://www.szse.cn/market/product/stock/list/index.html)
 - [北京证券交易所股票列表](https://www.bse.cn/nq/listedcompany.html)
 - [巨潮资讯公司列表](https://www.cninfo.com.cn/new/data/szse_stock.json)
-- 结构化基表来自巨潮资讯公司列表，腾讯行情状态用于剔除已终止上市的历史证券；抓取时间为 2026-07-31T07:30:09.610Z。
+- 结构化基表来自巨潮资讯公司列表，腾讯行情状态用于剔除已终止上市的历史证券；抓取时间为 2026-07-31T07:45:25.073Z。
 - 名单适合选题与检索，不能替代交易所公告、上市公司公告或证券交易终端。

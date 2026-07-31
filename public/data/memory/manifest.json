@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T07:23:25.543Z",
+  "generatedAt": "2026-07-31T09:21:35.836Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -625,6 +625,12 @@
               "ts": "2026-07-31T02:39:51.432Z",
               "hash": "b14332bbd376b4466420bb44c6a89a6b812d9254397c28139636afeae63433f5",
               "path": "ai-context/content-information-architecture/2026-07-31T02-39-51-449Z.enc.json",
+              "bytes": 2409
+            },
+            {
+              "ts": "2026-07-31T09:21:35.816Z",
+              "hash": "f50eb334206e1729c92acb81a2617b099922476d00b8d86f55dfd93f2156a05e",
+              "path": "ai-context/content-information-architecture/2026-07-31T09-21-35-834Z.enc.json",
               "bytes": 2409
             }
           ]

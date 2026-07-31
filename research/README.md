@@ -18,6 +18,8 @@ research/                     # 保留旧目录名，避免破坏链接和构建
 │   └── 2026-05-15-mcp-protocol.md
 ├── people/                   # 人物观察
 │   └── 2026-06-05-dangnian-mingyue.md
+├── templates/                # 自动化写作模板，不参与文章加载
+│   └── a-share-company-research.md
 └── README.md                 # 本文件
 ```
 
@@ -140,6 +142,21 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 ```
 
 让 Claude Code 按本约定生成 frontmatter 完整、章节齐备的 MD 并落到正确目录。
+
+### A 股公司观察流水线
+
+```bash
+npm run a-share:sync
+npm run a-share:pick
+npm run a-share:status
+```
+
+- `a-share:sync` 更新公司池并重建 A 股上市公司名单文章。
+- `a-share:pick` 返回下一家待调研公司；未完成的选题会优先重试。
+- 完成文章后运行
+  `npm run a-share:complete -- --code <证券代码> --file <文章路径>`。
+- 通用模板位于 `research/templates/a-share-company-research.md`，模板版本随结构升级递增。
+- 自动生成稿必须保持 `review_ready: false`，且不会自动提交或发布。
 
 ## 上线流程
 

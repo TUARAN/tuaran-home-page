@@ -7,7 +7,8 @@ const source = await readFile(new URL('../../lib/siteNav.js', import.meta.url), 
 test('public content navigation is organized by entry, topic and type', () => {
   const topicIndex = source.indexOf("title: '内容主题'")
   const typeIndex = source.indexOf("title: '内容类型'")
-  assert.match(source, /title: '入口'[\s\S]*href: '\/#start-here'/)
+  assert.match(source, /title: '入口'[\s\S]*href: '\/articles'/)
+  assert.doesNotMatch(source, /href: '\/#start-here'|label: '从这里开始'/)
   assert.match(source, /title: '内容主题'[\s\S]*href: '\/articles\?subject=ai_dev'/)
   assert.match(source, /href: '\/articles\?subject=product_experience'[\s\S]*label: '产品与体验'/)
   assert.match(source, /href: '\/articles\?subject=business_market'[\s\S]*label: '商业与市场'/)
@@ -31,8 +32,7 @@ test('different taxonomy dimensions are not presented as one resource hierarchy'
 
 test('every public channel defines one featured overview entry in its grid', () => {
   const featuredEntries = source.match(/^\s+\{[^\n]*featured: true/gm) || []
-  assert.equal(featuredEntries.length, 5)
-  assert.match(source, /href: '\/#start-here'[^}\n]*featured: true/)
+  assert.equal(featuredEntries.length, 4)
   assert.match(source, /href: '\/tools'[^}\n]*featured: true/)
   assert.match(source, /href: '\/works'[^}\n]*featured: true/)
   assert.match(source, /href: '\/community'[^}\n]*featured: true/)

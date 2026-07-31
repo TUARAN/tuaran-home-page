@@ -26,6 +26,13 @@ const PAGE_SIZE = 24
 
 const SEARCH_SUGGESTIONS = ['AI Agent', '资源', '公司调研', '工程实践']
 
+const SUBJECT_DISPLAY_GROUPS = [
+  { label: '技术与开发', keys: ['ai_dev', 'web_cloud'] },
+  { label: '产品与商业', keys: ['product_experience', 'business_market', 'company_research'] },
+  { label: '创作与工作', keys: ['content_creation', 'workplace_org'] },
+  { label: '人文与生活', keys: ['humanities_history', 'life_family'] },
+]
+
 const LEGACY_TAB_TO_GROUP = {
   column: 'article',
   posts: 'article',
@@ -158,28 +165,6 @@ function manualEntriesToItems(entries, existingItems) {
   return items
 }
 
-function countBy(items, getter, keys) {
-  const counts = Object.fromEntries(keys.map((key) => [key, 0]))
-  counts.all = items.length
-  for (const item of items) {
-    const values = getter(item)
-    for (const value of Array.isArray(values) ? values : [values]) {
-      if (value && typeof counts[value] === 'number') counts[value] += 1
-    }
-  }
-  return counts
-}
-
-function facetCounts(items, filters, resetKeys, getter, keys) {
-  const contextualFilters = { ...filters }
-  for (const key of resetKeys) contextualFilters[key] = 'all'
-  return countBy(
-    items.filter((item) => itemMatches(item, contextualFilters)),
-    getter,
-    keys,
-  )
-}
-
 function itemMatches(item, filters) {
   if (filters.group !== 'all' && getContentGroup(item.contentKind) !== filters.group) return false
   if (filters.subject !== 'all' && !item.subjects?.includes(filters.subject)) return false
@@ -211,7 +196,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [items, setItems] = useState(staticItems)
   const [filters, setFilters] = useState(initialFilters)
   const [queryInput, setQueryInput] = useState(initialFilters.query)
-  const [filtersOpen, setFiltersOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [pvCounts, setPvCounts] = useState({})
   const [pvLoaded, setPvLoaded] = useState(false)
@@ -251,26 +235,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     setQueryInput(next.query)
   }, [searchParams])
 
-  const groupCounts = useMemo(
-    () => facetCounts(
-      catalogItems,
-      filters,
-      ['group'],
-      (item) => getContentGroup(item.contentKind),
-      CONTENT_GROUP_KEYS,
-    ),
-    [catalogItems, filters],
-  )
-  const subjectCounts = useMemo(
-    () => facetCounts(
-      catalogItems,
-      filters,
-      ['subject'],
-      (item) => item.subjects || [],
-      SUBJECT_KEYS,
-    ),
-    [catalogItems, filters],
-  )
   const visible = useMemo(
     () => catalogItems.filter((item) => itemMatches(item, filters)),
     [catalogItems, filters],
@@ -331,9 +295,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     }, 'all', 'clear')
   }
 
-  const availableGroups = CONTENT_GROUP_KEYS.filter(
-    (key) => key !== 'all' && groupCounts[key] > 0,
-  )
+  const availableGroups = CONTENT_GROUP_KEYS.filter((key) => key !== 'all')
 
   const activeFilters = [
     filters.subject !== 'all'
@@ -391,19 +353,30 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     return (
       <div className="space-y-4">
         <FilterRow label="内容主题" ariaLabel="按内容主题筛选" orientation={orientation}>
-          <FilterChip
-            label="不限"
-            active={filters.subject === 'all'}
-            onClick={() => applyFilters({ subject: 'all' }, 'subject', 'all')}
-          />
-          {SUBJECT_KEYS.filter((key) => subjectCounts[key] > 0).map((key) => (
+          <div className="w-full space-y-2.5">
             <FilterChip
-              key={key}
-              label={SUBJECT_META[key].label}
-              active={filters.subject === key}
-              onClick={() => applyFilters({ subject: key }, 'subject', key)}
+              label="不限"
+              active={filters.subject === 'all'}
+              onClick={() => applyFilters({ subject: 'all' }, 'subject', 'all')}
             />
-          ))}
+            {SUBJECT_DISPLAY_GROUPS.map((group) => (
+              <div key={group.label}>
+                <span className="mb-1 block px-1 text-[10px] font-medium tracking-[0.08em] text-[#aaa1ae] dark:text-[#69758a]">
+                  {group.label}
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {group.keys.map((key) => (
+                    <FilterChip
+                      key={key}
+                      label={SUBJECT_META[key].label}
+                      active={filters.subject === key}
+                      onClick={() => applyFilters({ subject: key }, 'subject', key)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </FilterRow>
 
         <FilterRow label="内容类型" ariaLabel="按内容类型筛选" orientation={orientation}>
@@ -491,22 +464,14 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         </aside>
 
         <div className="mt-3 min-w-0 space-y-4 lg:mt-0">
-          <details
-            open={filtersOpen}
-            onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
-            className="group rounded-lg border border-[#e8e2ef] bg-white/80 text-xs lg:hidden dark:border-gray-800 dark:bg-[#121821]"
-          >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+          <section className="rounded-lg border border-[#e8e2ef] bg-white/80 text-xs lg:hidden dark:border-gray-800 dark:bg-[#121821]">
+            <div className="border-b border-[#eee6f1] px-3 py-2 dark:border-gray-800">
               <span className="font-medium text-[#20172f] dark:text-gray-100">筛选内容</span>
-              <span className="shrink-0 text-[#675d72] dark:text-gray-300">
-                <span className="group-open:hidden">展开筛选</span>
-                <span className="hidden group-open:inline">收起筛选</span>
-              </span>
-            </summary>
-            <div className="border-t border-[#e8e2ef] px-3 py-3 dark:border-gray-800">
+            </div>
+            <div className="px-3 py-3">
               <Filters />
             </div>
-          </details>
+          </section>
 
           {activeFilters.length ? (
             <div

@@ -106,7 +106,7 @@ export async function callScanDeepSeekJson({
   type,
   issues,
   temperature = 0.2,
-  maxTokens = 8192,
+  maxTokens = 4096,
   timeoutMs = 90000,
 } = {}) {
   const env = getScanDeepSeekEnv()

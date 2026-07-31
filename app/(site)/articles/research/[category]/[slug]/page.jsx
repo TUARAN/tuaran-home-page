@@ -31,10 +31,14 @@ import ResearchBody from './ResearchBody'
 import RanbiPaywall from '../../../../components/RanbiPaywall'
 import LifeTrafficTest from './LifeTrafficTest'
 import RebuttalPersonalityTest from './RebuttalPersonalityTest'
+import AShareCompanyList from './AShareCompanyList'
+import aShareSnapshot from '../../../../../../data/a-shares/companies.json'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
+const A_SHARE_LIST_SLUG = 'a-share-company-list'
+const A_SHARE_PAGE_SIZE = 100
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
@@ -116,11 +120,12 @@ export default async function ResearchDetailPage({ params }) {
   if (entry.slug !== slug) redirect(`/articles/research/${entry.category}/${entry.slug}`)
 
   const isEncrypted = entry.encrypted
+  const isAShareCompanyList = entry.category === 'companies' && entry.slug === A_SHARE_LIST_SLUG
   const assistance = entry.assistance || entry.source || ''
   const variantList = isEncrypted ? [] : Array.isArray(entry.variants) && entry.variants.length > 0
     ? entry.variants
     : [{ id: assistance || 'claude-code', label: '', content: entry.content }]
-  const renderedVariants = isEncrypted
+  const renderedVariants = isEncrypted || isAShareCompanyList
     ? []
     : variantList.map((variant, index) => ({
         id: variant.id,
@@ -134,7 +139,7 @@ export default async function ResearchDetailPage({ params }) {
         toc: extractToc(variant.content),
       }))
   // 一键复制/分发用的 Markdown：标题 + 正文 + 配图（不含 YAML frontmatter）；加密文章不提供
-  const markdownDoc = isEncrypted ? '' : buildResearchMarkdownDocument(entry.content, {
+  const markdownDoc = isEncrypted || isAShareCompanyList ? '' : buildResearchMarkdownDocument(entry.content, {
     images: entry.images || [],
     seed: `${entry.category}:${entry.slug}:${variantList[0]?.id || assistance || 'assistance'}`,
     title: entry.title,
@@ -156,6 +161,25 @@ export default async function ResearchDetailPage({ params }) {
   const articleKey = `research:${entry.category}:${entry.slug}`
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
   const showRebuttalPersonalityTest = entry.category === 'topics' && entry.slug === 'rebuttal-personality-communication-pattern'
+  const companyListHeading = '\n## 公司名单\n'
+  const companyListFooterHeading = '\n## 信息来源与说明\n'
+  const companyListStart = isAShareCompanyList ? entry.content.indexOf(companyListHeading) : -1
+  const companyListFooterStart = isAShareCompanyList ? entry.content.indexOf(companyListFooterHeading) : -1
+  const companyListIntro = isAShareCompanyList && companyListStart >= 0
+    ? entry.content.slice(0, companyListStart)
+    : ''
+  const companyListFooter = isAShareCompanyList && companyListFooterStart >= 0
+    ? entry.content.slice(companyListFooterStart)
+    : ''
+  const initialCompanyPage = isAShareCompanyList
+    ? {
+        page: 1,
+        pageSize: A_SHARE_PAGE_SIZE,
+        total: aShareSnapshot.companies.length,
+        totalPages: Math.ceil(aShareSnapshot.companies.length / A_SHARE_PAGE_SIZE),
+        companies: aShareSnapshot.companies.slice(0, A_SHARE_PAGE_SIZE),
+      }
+    : null
 
   // 相关阅读：同 category 其它条目，最近 3 篇
   const relatedPool = listResearchByCategory(entry.category).filter((e) => e.slug !== entry.slug)
@@ -322,8 +346,9 @@ export default async function ResearchDetailPage({ params }) {
             actionsEnabled={!isEncrypted}
             className="mt-2 sm:mt-0 sm:ml-auto lg:flex-nowrap"
           >
-            <CopyMarkdownButton markdown={markdownDoc} />
-            <DistributeMarkdownButton
+            {!isAShareCompanyList ? <>
+              <CopyMarkdownButton markdown={markdownDoc} />
+              <DistributeMarkdownButton
                   title={entry.title}
                   summary={entry.tldr || entry.summary || ''}
                   markdown={markdownDoc}
@@ -335,13 +360,14 @@ export default async function ResearchDetailPage({ params }) {
                   kindLabel={entry.contentTypeLabel || '文章'}
                   allowArticle
             />
-            <DownloadPptButton
+              <DownloadPptButton
                   title={entry.title}
                   subtitle={entry.tldr || entry.summary || ''}
                   fileBaseName={entry.slug}
                   images={entry.images || []}
                   variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
-            />
+              />
+            </> : null}
           </ArticleHeaderActions>
         )}
         title={entry.title}
@@ -360,6 +386,12 @@ export default async function ResearchDetailPage({ params }) {
             <EncryptedArticle
               payload={entry.encryptedPayload}
               storageKey={`research-dec:${entry.category}:${entry.slug}`}
+            />
+          ) : isAShareCompanyList ? (
+            <AShareCompanyList
+              introHtml={renderMarkdown(companyListIntro)}
+              footerHtml={renderMarkdown(companyListFooter)}
+              initialPage={initialCompanyPage}
             />
           ) : (
             <RanbiPaywall resourceKey={articleKey} unitLabel="文章">

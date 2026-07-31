@@ -7,7 +7,7 @@
 | 任务 | 频率 | 扫描范围 | 修复 PR 示例 | 分支前缀 |
 | --- | --- | --- | --- | --- |
 | security-scan | 每周一 09:17（北京） | npm audit 依赖漏洞、被 Git 跟踪的敏感文件、安全响应头静态检查 | 升级依赖、清理敏感文件、补 HSTS/CSP 配置 | `codex/security-scan-<日期>` |
-| perf-scan | 每两周周三 09:17（北京，偶数 ISO 周） | public/ 资源体积、超大源文件/内联数据、本地构建 chunk | 压缩图片、数据外移 JSON/R2、拆包、调缓存 | `codex/perf-scan-<日期>` |
+| perf-scan | 每两周周三 09:17（北京，偶数 ISO 周；手动触发不受周次限制） | public/ 资源体积、超大源文件/内联数据、本地构建 chunk | 压缩图片、数据外移 JSON/R2、拆包、调缓存 | `codex/perf-scan-<日期>` |
 | design-scan | 每月 1 日 09:17（北京） | Tailwind 透明度类与主题 token、img alt 可访问性启发式 | 修透明度类、补 alt、统一设计 token | `codex/design-scan-<日期>` |
 
 错峰原因：三个任务共用同一仓库，同一天并发会抢分支、制造冲突。三个任务都支持 `workflow_dispatch` 手动触发。

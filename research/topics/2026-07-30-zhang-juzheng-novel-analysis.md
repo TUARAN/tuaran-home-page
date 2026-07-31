@@ -7,6 +7,7 @@ tags: [张居正, 熊召政, 茅盾文学奖, 历史小说, 万历新政, 改革
 summary: 半年多上下班听完熊召政的四卷本《张居正》，重新梳理改革、权力、规则、用人和人亡政息之间的关系。
 tldr: 这部小说最打动我的，是它写出了一个人怎样把衰弱的国家机器重新推起来；最让我警惕的，也是所有成果都压在这个人身上。
 topic_type: thesis
+subjects: [humanities_history]
 content_type: analysis
 assistance: codex
 show_assistance: false

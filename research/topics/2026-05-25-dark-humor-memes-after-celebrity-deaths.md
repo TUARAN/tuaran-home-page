@@ -2,6 +2,7 @@
 title: 公众人物去世后的地狱笑话传播调研：科比与张雪峰案例
 category: topics
 topic_type: thesis
+subjects: [humanities_history, content_creation]
 date: 2026-05-25
 tags: [地狱笑话, 网络迷因, 公众人物, 科比, 张雪峰, AI 视频, 去神圣化]
 summary: 以科比和张雪峰去世后的网络玩梗为样本，核验基本事实，梳理“41 岁”“牢字辈”“争议人格”“AI 二创”等元素如何进入地狱笑话传播。

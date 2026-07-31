@@ -2,6 +2,7 @@
 title: 美国新潮跨性别文化调研：从青年审美到制度冲突
 category: topics
 topic_type: thesis
+subjects: [humanities_history]
 date: 2026-06-27
 time: 14:04
 tags: [美国, 跨性别, LGBTQ, 青年文化, 社交媒体, 身份政治, 文化战争, 性别表达, 公共政策]

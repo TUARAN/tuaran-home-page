@@ -55,6 +55,8 @@ test('directory exposes only topic and type filters, in that order', () => {
   assert.doesNotMatch(directorySource, /label="不限"/)
   assert.match(directorySource, /onReset=\{\(\) => applyFilters\(\{ subject: 'all' \}/)
   assert.match(directorySource, /onReset=\{\(\) => applyFilters\(\{ group: 'all' \}/)
+  assert.match(directorySource, /data-filter-reset/)
+  assert.match(directorySource, /border-0 bg-transparent p-0/)
   assert.match(directorySource, /subjectParam === 'product_business' \? 'business_market'/)
   assert.match(directorySource, /aria-label="已选筛选条件"/)
   assert.doesNotMatch(directorySource, /<FilterChip[\s\S]{0,120}\bcount=/)
@@ -65,6 +67,12 @@ test('home offers stable goal-based start paths and marks their surface', () => 
   for (const id of ['learn-ai', 'companies', 'practice', 'resources', 'subscribe']) {
     assert.match(homeSource, new RegExp(`id: '${id}'`))
   }
+  assert.match(homeSource, /href: '\/articles\?subject=ai_dev'[\s\S]*title: 'AI 与开发'/)
+  assert.match(homeSource, /href: '\/articles\?subject=company_research'[\s\S]*title: '公司调研'/)
+  assert.match(homeSource, /href: '\/articles\?group=practice'[\s\S]*title: '工程实践'/)
+  assert.match(homeSource, /href: '\/articles\?group=resource'[\s\S]*title: '资源'/)
+  assert.match(homeSource, /href: '\/frontend-weekly'[\s\S]*title: '前端周看'/)
+  assert.doesNotMatch(homeSource, /\?entity=company|\?delivery=subscribe|按使用方式/)
   assert.match(homeSource, /id="start-here"/)
   assert.match(homeSource, /data-analytics-surface="start_path"/)
 })

@@ -560,10 +560,12 @@ function FilterRow({ label, ariaLabel, orientation = 'inline', active, onReset, 
     <button
       type="button"
       onClick={onReset}
-      aria-pressed={active}
+      aria-label={`查看全部${label.replace('内容', '')}`}
+      data-filter-reset
+      data-active={active ? 'true' : 'false'}
       title={`查看全部${label.replace('内容', '')}`}
       className={[
-        'rounded-md text-left font-medium transition-colors hover:text-[#49345f] dark:hover:text-gray-100',
+        'border-0 bg-transparent p-0 text-left font-medium transition-colors hover:text-[#49345f] hover:underline hover:underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c78a3] dark:hover:text-gray-100',
         active
           ? 'text-[#49345f] dark:text-[#d8c5f3]'
           : 'text-[#82788e] dark:text-[#7f8aa0]',

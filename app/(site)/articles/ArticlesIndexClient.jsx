@@ -213,6 +213,16 @@ function countBy(items, getter, keys) {
   return counts
 }
 
+function facetCounts(items, filters, resetKeys, getter, keys) {
+  const contextualFilters = { ...filters }
+  for (const key of resetKeys) contextualFilters[key] = 'all'
+  return countBy(
+    items.filter((item) => itemMatches(item, contextualFilters)),
+    getter,
+    keys,
+  )
+}
+
 function itemMatches(item, filters) {
   if (filters.group !== 'all' && getContentGroup(item.contentKind) !== filters.group) return false
   if (filters.kind !== 'all' && item.contentKind !== filters.kind) return false
@@ -291,44 +301,84 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   }, [searchParams])
 
   const groupCounts = useMemo(
-    () => countBy(catalogItems, (item) => getContentGroup(item.contentKind), CONTENT_GROUP_KEYS),
-    [catalogItems],
+    () => facetCounts(
+      catalogItems,
+      filters,
+      ['group', 'kind', 'entity', 'companyIndustry', 'companyRole', 'delivery'],
+      (item) => getContentGroup(item.contentKind),
+      CONTENT_GROUP_KEYS,
+    ),
+    [catalogItems, filters],
   )
   const kindCounts = useMemo(
-    () => countBy(catalogItems, (item) => item.contentKind, CONTENT_KIND_KEYS),
-    [catalogItems],
+    () => facetCounts(
+      catalogItems,
+      filters,
+      ['kind'],
+      (item) => item.contentKind,
+      CONTENT_KIND_KEYS,
+    ),
+    [catalogItems, filters],
   )
   const subjectCounts = useMemo(
-    () => countBy(catalogItems, (item) => item.subjects || [], SUBJECT_KEYS),
-    [catalogItems],
+    () => facetCounts(
+      catalogItems,
+      filters,
+      ['subject'],
+      (item) => item.subjects || [],
+      SUBJECT_KEYS,
+    ),
+    [catalogItems, filters],
   )
   const entityCounts = useMemo(
-    () => countBy(catalogItems, (item) => item.entityType, ENTITY_TYPE_KEYS),
-    [catalogItems],
+    () => facetCounts(
+      catalogItems,
+      filters,
+      ['entity', 'companyIndustry', 'companyRole'],
+      (item) => item.entityType,
+      ENTITY_TYPE_KEYS,
+    ),
+    [catalogItems, filters],
   )
   const companyIndustryCounts = useMemo(
-    () => countBy(
-      catalogItems.filter((item) => item.entityType === 'company'),
+    () => facetCounts(
+      catalogItems,
+      filters,
+      ['companyIndustry'],
       (item) => item.companyIndustry,
       COMPANY_INDUSTRY_KEYS,
     ),
-    [catalogItems],
+    [catalogItems, filters],
   )
   const companyRoleCounts = useMemo(
-    () => countBy(
-      catalogItems.filter((item) => item.entityType === 'company'),
+    () => facetCounts(
+      catalogItems,
+      filters,
+      ['companyRole'],
       (item) => item.companyRole,
       COMPANY_ROLE_KEYS,
     ),
-    [catalogItems],
+    [catalogItems, filters],
   )
   const deliveryCounts = useMemo(
-    () => countBy(catalogItems, (item) => item.delivery, DELIVERY_KEYS),
-    [catalogItems],
+    () => facetCounts(
+      catalogItems,
+      filters,
+      ['delivery'],
+      (item) => item.delivery,
+      DELIVERY_KEYS,
+    ),
+    [catalogItems, filters],
   )
   const seriesCounts = useMemo(
-    () => countBy(catalogItems, (item) => item.series, SERIES_KEYS),
-    [catalogItems],
+    () => facetCounts(
+      catalogItems,
+      filters,
+      ['series'],
+      (item) => item.series,
+      SERIES_KEYS,
+    ),
+    [catalogItems, filters],
   )
 
   const visible = useMemo(
@@ -342,8 +392,18 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function applyFilters(patch, facet, value) {
     const next = { ...filters, ...patch }
-    if (patch.group && patch.group !== 'all') {
-      if (next.kind !== 'all' && getContentGroup(next.kind) !== patch.group) next.kind = 'all'
+    if (Object.prototype.hasOwnProperty.call(patch, 'group')) {
+      next.kind = 'all'
+      if (patch.group !== 'analysis') {
+        next.entity = 'all'
+        next.companyIndustry = 'all'
+        next.companyRole = 'all'
+      }
+      if (patch.group !== 'resource') next.delivery = 'all'
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'entity') && patch.entity !== 'company') {
+      next.companyIndustry = 'all'
+      next.companyRole = 'all'
     }
     setFilters(next)
     setQueryInput(next.query)
@@ -387,29 +447,92 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     applyFilters({ query: '' }, 'search', 'clear')
   }
 
-  const availableKinds = CONTENT_KIND_KEYS.filter((key) => {
-    if (!kindCounts[key]) return false
-    return filters.group === 'all' || getContentGroup(key) === filters.group
-  })
+  function clearAllFilters() {
+    applyFilters({
+      group: 'all',
+      kind: 'all',
+      subject: 'all',
+      entity: 'all',
+      companyIndustry: 'all',
+      companyRole: 'all',
+      delivery: 'all',
+      series: 'all',
+    }, 'all', 'clear')
+  }
+
+  const availableGroups = CONTENT_GROUP_KEYS.filter(
+    (key) => key !== 'all' && groupCounts[key] > 0,
+  )
+  const availableKinds = CONTENT_KIND_KEYS.filter(
+    (key) => getContentGroup(key) === filters.group && kindCounts[key] > 0,
+  )
   const availableEntities = ENTITY_TYPE_KEYS.filter((key) => entityCounts[key] > 0)
   const availableCompanyIndustries = COMPANY_INDUSTRY_KEYS.filter(
     (key) => companyIndustryCounts[key] >= 3,
   )
   const availableCompanyRoles = COMPANY_ROLE_KEYS.filter((key) => companyRoleCounts[key] >= 2)
-  const availableDeliveries = DELIVERY_KEYS.filter((key) => deliveryCounts[key] > 0)
+  const availableDeliveries = ['download', 'subscribe', 'watch_listen', 'external']
+    .filter((key) => deliveryCounts[key] > 0)
   const availableSeries = SERIES_KEYS.filter((key) => seriesCounts[key] > 0)
 
-  const activeLabels = [
-    filters.group !== 'all' ? CONTENT_GROUP_META[filters.group]?.label : '',
-    filters.kind !== 'all' ? CONTENT_KIND_META[filters.kind]?.label : '',
-    filters.subject !== 'all' ? SUBJECT_META[filters.subject]?.label : '',
-    filters.entity !== 'all' ? ENTITY_TYPE_META[filters.entity]?.label : '',
-    filters.companyIndustry !== 'all' ? COMPANY_INDUSTRY_META[filters.companyIndustry]?.label : '',
-    filters.companyRole !== 'all' ? COMPANY_ROLE_META[filters.companyRole]?.label : '',
-    filters.delivery !== 'all' ? DELIVERY_META[filters.delivery]?.label : '',
-    filters.series !== 'all' ? SERIES_META[filters.series]?.label : '',
+  const activeFilters = [
+    filters.subject !== 'all'
+      ? {
+          key: 'subject',
+          label: SUBJECT_META[filters.subject]?.label,
+          patch: { subject: 'all' },
+        }
+      : null,
+    filters.group !== 'all'
+      ? {
+          key: 'group',
+          label: CONTENT_GROUP_META[filters.group]?.label,
+          patch: { group: 'all' },
+        }
+      : null,
+    filters.kind !== 'all'
+      ? {
+          key: 'kind',
+          label: CONTENT_KIND_META[filters.kind]?.label,
+          patch: { kind: 'all' },
+        }
+      : null,
+    filters.entity !== 'all'
+      ? {
+          key: 'entity',
+          label: ENTITY_TYPE_META[filters.entity]?.label,
+          patch: { entity: 'all' },
+        }
+      : null,
+    filters.companyIndustry !== 'all'
+      ? {
+          key: 'companyIndustry',
+          label: COMPANY_INDUSTRY_META[filters.companyIndustry]?.label,
+          patch: { companyIndustry: 'all' },
+        }
+      : null,
+    filters.companyRole !== 'all'
+      ? {
+          key: 'companyRole',
+          label: COMPANY_ROLE_META[filters.companyRole]?.label,
+          patch: { companyRole: 'all' },
+        }
+      : null,
+    filters.delivery !== 'all'
+      ? {
+          key: 'delivery',
+          label: DELIVERY_META[filters.delivery]?.label,
+          patch: { delivery: 'all' },
+        }
+      : null,
+    filters.series !== 'all'
+      ? {
+          key: 'series',
+          label: SERIES_META[filters.series]?.label,
+          patch: { series: 'all' },
+        }
+      : null,
   ].filter(Boolean)
-  const currentFilterLabel = activeLabels.join(' / ') || '全部内容'
   const searchSuggestions = SEARCH_SUGGESTIONS.filter((query) =>
     catalogItems.some((item) => itemMatches(item, { ...filters, query })),
   )
@@ -448,29 +571,10 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   function Filters({ orientation = 'inline' }) {
     return (
-      <div className="space-y-3">
-        <FilterRow label="内容形态" ariaLabel="按内容形态筛选" orientation={orientation}>
-          <FilterChip
-            label="全部形态"
-            count={filters.group === 'all' ? catalogItems.length : groupCounts[filters.group]}
-            active={filters.kind === 'all'}
-            onClick={() => applyFilters({ kind: 'all' }, 'kind', 'all')}
-          />
-          {availableKinds.map((key) => (
-            <FilterChip
-              key={key}
-              label={CONTENT_KIND_META[key].label}
-              count={kindCounts[key]}
-              active={filters.kind === key}
-              onClick={() => applyFilters({ kind: key, group: getContentGroup(key) }, 'kind', key)}
-            />
-          ))}
-        </FilterRow>
-
+      <div className="space-y-4">
         <FilterRow label="主题" ariaLabel="按主题筛选" orientation={orientation}>
           <FilterChip
-            label="全部主题"
-            count={catalogItems.length}
+            label="不限"
             active={filters.subject === 'all'}
             onClick={() => applyFilters({ subject: 'all' }, 'subject', 'all')}
           />
@@ -478,38 +582,59 @@ export default function ArticlesIndexClient({ items: staticItems }) {
             <FilterChip
               key={key}
               label={SUBJECT_META[key].label}
-              count={subjectCounts[key]}
               active={filters.subject === key}
               onClick={() => applyFilters({ subject: key }, 'subject', key)}
             />
           ))}
         </FilterRow>
 
-        {availableEntities.length ? (
-          <FilterRow label="研究对象" ariaLabel="按研究对象筛选" orientation={orientation}>
+        <FilterRow label="内容类型" ariaLabel="按内容类型筛选" orientation={orientation}>
+          <FilterChip
+            label="不限"
+            active={filters.group === 'all'}
+            onClick={() => applyFilters({ group: 'all' }, 'group', 'all')}
+          />
+          {availableGroups.map((key) => (
             <FilterChip
-              label="全部对象"
-              count={entityCounts.all}
-                active={filters.entity === 'all'}
-                onClick={() => applyFilters({
-                  entity: 'all',
-                  companyIndustry: 'all',
-                  companyRole: 'all',
-                }, 'entity', 'all')}
+              key={key}
+              label={CONTENT_GROUP_META[key].label}
+              active={filters.group === key}
+              onClick={() => applyFilters({ group: key }, 'group', key)}
+            />
+          ))}
+        </FilterRow>
+
+        {filters.group !== 'all' && availableKinds.length > 1 ? (
+          <FilterRow label="细分类型" ariaLabel="按细分类型筛选" orientation={orientation}>
+            <FilterChip
+              label="不限"
+              active={filters.kind === 'all'}
+              onClick={() => applyFilters({ kind: 'all' }, 'kind', 'all')}
+            />
+            {availableKinds.map((key) => (
+              <FilterChip
+                key={key}
+                label={CONTENT_KIND_META[key].label}
+                active={filters.kind === key}
+                onClick={() => applyFilters({ kind: key }, 'kind', key)}
+              />
+            ))}
+          </FilterRow>
+        ) : null}
+
+        {filters.group === 'analysis' && availableEntities.length ? (
+          <FilterRow label="分析对象" ariaLabel="按分析对象筛选" orientation={orientation}>
+            <FilterChip
+              label="不限"
+              active={filters.entity === 'all'}
+              onClick={() => applyFilters({ entity: 'all' }, 'entity', 'all')}
             />
             {availableEntities.map((key) => (
               <FilterChip
                 key={key}
                 label={ENTITY_TYPE_META[key].label}
-                count={entityCounts[key]}
                 active={filters.entity === key}
-                onClick={() => applyFilters({
-                  entity: key,
-                  ...(key === 'all' ? {} : { group: 'analysis', kind: 'all' }),
-                  ...(key === 'company'
-                    ? {}
-                    : { companyIndustry: 'all', companyRole: 'all' }),
-                }, 'entity', key)}
+                onClick={() => applyFilters({ entity: key }, 'entity', key)}
               />
             ))}
           </FilterRow>
@@ -518,8 +643,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         {filters.entity === 'company' && availableCompanyIndustries.length ? (
           <FilterRow label="公司行业" ariaLabel="按公司行业筛选" orientation={orientation}>
             <FilterChip
-              label="全部行业"
-              count={companyIndustryCounts.all}
+              label="不限"
               active={filters.companyIndustry === 'all'}
               onClick={() => applyFilters({ companyIndustry: 'all' }, 'company_industry', 'all')}
             />
@@ -527,7 +651,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               <FilterChip
                 key={key}
                 label={COMPANY_INDUSTRY_META[key].label}
-                count={companyIndustryCounts[key]}
                 active={filters.companyIndustry === key}
                 onClick={() => applyFilters({ companyIndustry: key }, 'company_industry', key)}
               />
@@ -538,8 +661,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         {filters.entity === 'company' && availableCompanyRoles.length ? (
           <FilterRow label="公司角色" ariaLabel="按公司生态角色筛选" orientation={orientation}>
             <FilterChip
-              label="全部角色"
-              count={companyRoleCounts.all}
+              label="不限"
               active={filters.companyRole === 'all'}
               onClick={() => applyFilters({ companyRole: 'all' }, 'company_role', 'all')}
             />
@@ -547,7 +669,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               <FilterChip
                 key={key}
                 label={COMPANY_ROLE_META[key].label}
-                count={companyRoleCounts[key]}
                 active={filters.companyRole === key}
                 onClick={() => applyFilters({ companyRole: key }, 'company_role', key)}
               />
@@ -555,36 +676,28 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           </FilterRow>
         ) : null}
 
-        <FilterRow label="使用方式" ariaLabel="按使用方式筛选" orientation={orientation}>
-          <FilterChip
-            label="全部方式"
-            count={deliveryCounts.all}
-            active={filters.delivery === 'all'}
-            onClick={() => applyFilters({ delivery: 'all' }, 'delivery', 'all')}
-          />
-          {availableDeliveries.map((key) => (
+        {filters.group === 'resource' && availableDeliveries.length ? (
+          <FilterRow label="获取方式" ariaLabel="按资源获取方式筛选" orientation={orientation}>
             <FilterChip
-              key={key}
-              label={DELIVERY_META[key].label}
-              count={deliveryCounts[key]}
-              active={filters.delivery === key}
-              onClick={() => applyFilters({
-                delivery: key,
-                ...(['subscribe', 'download', 'watch_listen', 'external'].includes(key)
-                  ? { group: 'resource', kind: 'all' }
-                  : key === 'interact'
-                    ? { group: 'practice', kind: 'all' }
-                    : {}),
-              }, 'delivery', key)}
+              label="不限"
+              active={filters.delivery === 'all'}
+              onClick={() => applyFilters({ delivery: 'all' }, 'delivery', 'all')}
             />
-          ))}
-        </FilterRow>
+            {availableDeliveries.map((key) => (
+              <FilterChip
+                key={key}
+                label={DELIVERY_META[key].label}
+                active={filters.delivery === key}
+                onClick={() => applyFilters({ delivery: key }, 'delivery', key)}
+              />
+            ))}
+          </FilterRow>
+        ) : null}
 
         {availableSeries.length ? (
           <FilterRow label="系列" ariaLabel="按固定系列筛选" orientation={orientation}>
             <FilterChip
-              label="全部系列"
-              count={seriesCounts.all}
+              label="不限"
               active={filters.series === 'all'}
               onClick={() => applyFilters({ series: 'all' }, 'series', 'all')}
             />
@@ -592,9 +705,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               <FilterChip
                 key={key}
                 label={SERIES_META[key].label}
-                count={seriesCounts[key]}
                 active={filters.series === key}
-                onClick={() => applyFilters({ series: key, group: 'all', kind: 'all' }, 'series', key)}
+                onClick={() => applyFilters({ series: key }, 'series', key)}
               />
             ))}
           </FilterRow>
@@ -611,7 +723,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
             type="search"
             value={queryInput}
             onChange={(event) => setQueryInput(event.target.value)}
-            placeholder={`在${currentFilterLabel}中搜索标题、主题或对象`}
+            placeholder="搜索标题、主题或对象"
             aria-label="搜索统一内容目录"
             className="min-w-0 flex-1 rounded-lg border border-[#cfc6dc] bg-white px-3.5 py-2.5 text-sm text-[#20172f] outline-none transition-colors placeholder:text-[#9a93a3] focus:border-[var(--site-accent)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
           />
@@ -660,11 +772,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       <div className="lg:grid lg:grid-cols-[236px_minmax(0,1fr)] lg:items-start lg:gap-6">
         <aside className="hidden self-start rounded-lg border border-[#e8e2ef] bg-white/80 p-3 lg:block lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto dark:border-gray-800 dark:bg-[#121821]">
           <div className="mb-3 border-b border-[#eee6f1] pb-2 dark:border-gray-800">
-            <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-[#958aa1] dark:text-gray-500">
-              多维筛选
-            </span>
-            <span className="mt-1 block truncate text-xs font-medium text-[#20172f] dark:text-gray-100">
-              {currentFilterLabel}
+            <span className="block text-sm font-semibold text-[#20172f] dark:text-gray-100">
+              筛选内容
             </span>
           </div>
           <Filters orientation="stack" />
@@ -677,9 +786,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
             className="group rounded-lg border border-[#e8e2ef] bg-white/80 text-xs lg:hidden dark:border-gray-800 dark:bg-[#121821]"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
-              <span className="min-w-0 truncate font-medium text-[#20172f] dark:text-gray-100">
-                {currentFilterLabel}
-              </span>
+              <span className="font-medium text-[#20172f] dark:text-gray-100">筛选内容</span>
               <span className="shrink-0 text-[#675d72] dark:text-gray-300">
                 <span className="group-open:hidden">展开筛选</span>
                 <span className="hidden group-open:inline">收起筛选</span>
@@ -689,6 +796,34 @@ export default function ArticlesIndexClient({ items: staticItems }) {
               <Filters />
             </div>
           </details>
+
+          {activeFilters.length ? (
+            <div
+              aria-label="已选筛选条件"
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-[#e8e2ef] bg-white/65 px-3 py-2 text-xs dark:border-gray-800 dark:bg-[#121821]/80"
+            >
+              <span className="text-[#958aa1] dark:text-gray-500">已选</span>
+              {activeFilters.map((filter) => (
+                <button
+                  key={filter.key}
+                  type="button"
+                  onClick={() => applyFilters(filter.patch, filter.key, 'clear')}
+                  className="inline-flex items-center gap-1 rounded-full bg-[#f1edf5] px-2.5 py-1 text-[#49345f] transition-colors hover:bg-white dark:bg-[#1f1830] dark:text-[#d8c5f3] dark:hover:bg-[#292036]"
+                  aria-label={`移除筛选：${filter.label}`}
+                >
+                  <span>{filter.label}</span>
+                  <span aria-hidden="true">×</span>
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="text-[#817789] underline-offset-4 hover:text-[#20172f] hover:underline dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                清除筛选
+              </button>
+            </div>
+          ) : null}
 
           <section
             className={`space-y-4 transition-opacity duration-150 ${isPending ? 'opacity-60' : 'opacity-100'}`}
@@ -765,7 +900,7 @@ function FilterRow({ label, ariaLabel, orientation = 'inline', children }) {
   )
 }
 
-function FilterChip({ label, count, active, onClick }) {
+function FilterChip({ label, active, onClick }) {
   return (
     <button
       type="button"
@@ -779,9 +914,6 @@ function FilterChip({ label, count, active, onClick }) {
       ].join(' ')}
     >
       <span className="whitespace-nowrap">{label}</span>
-      <span className="font-mono text-[10px] tabular-nums text-[#958aa1] dark:text-[#667287]">
-        ({count})
-      </span>
     </button>
   )
 }

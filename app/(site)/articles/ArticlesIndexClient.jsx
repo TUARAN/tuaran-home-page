@@ -31,10 +31,7 @@ import CanvasOriginBadge from '../components/CanvasOriginBadge'
 
 const PAGE_SIZE = 24
 
-const GROUP_DEFS = ['all', 'article', 'analysis', 'practice', 'resource'].map((key) => ({
-  key,
-  label: CONTENT_GROUP_META[key].label,
-}))
+const SEARCH_SUGGESTIONS = ['AI Agent', 'MCP', 'Cloudflare', 'OpenAI', '工程实践']
 
 const LEGACY_TAB_TO_GROUP = {
   column: 'article',
@@ -361,21 +358,28 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     })
   }
 
-  function submitSearch(event) {
-    event.preventDefault()
-    const next = { ...filters, query: queryInput.trim() }
+  function runSearch(rawQuery, source) {
+    const query = String(rawQuery || '').trim()
+    const next = { ...filters, query }
     const resultCount = catalogItems.filter((item) => itemMatches(item, next)).length
+    setQueryInput(query)
     setFilters(next)
     setVisibleCount(PAGE_SIZE)
     trackSiteEvent('search_submit', {
-      query_length: next.query.length,
+      query_length: query.length,
       results_count: resultCount,
       zero_results: resultCount === 0,
       scope_group: next.group,
+      source,
     })
     startTransition(() => {
       router.replace(buildDirectoryUrl(next), { scroll: false })
     })
+  }
+
+  function submitSearch(event) {
+    event.preventDefault()
+    runSearch(queryInput, 'typed')
   }
 
   function clearSearch() {
@@ -406,6 +410,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     filters.series !== 'all' ? SERIES_META[filters.series]?.label : '',
   ].filter(Boolean)
   const currentFilterLabel = activeLabels.join(' / ') || '全部内容'
+  const searchSuggestions = SEARCH_SUGGESTIONS.filter((query) =>
+    catalogItems.some((item) => itemMatches(item, { ...filters, query })),
+  )
 
   const visiblePvKeys = useMemo(
     () => Array.from(new Set(paginatedItems.map((item) => item.pvKey).filter(Boolean))),
@@ -598,49 +605,19 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   return (
     <div className="articles-index-stone space-y-5">
-      <section className="-mx-1 space-y-3 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-3 shadow-[0_8px_24px_rgba(76,58,96,0.08)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none">
-        <nav
-          aria-label="内容用途"
-          role="tablist"
-          className="flex gap-1.5 overflow-x-auto rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 sm:grid sm:grid-cols-5 sm:overflow-visible dark:border-gray-800 dark:bg-[#151a22]"
-        >
-          {GROUP_DEFS.map((group) => {
-            const active = filters.group === group.key
-            return (
-              <button
-                key={group.key}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => applyFilters({ group: group.key, kind: 'all' }, 'group', group.key)}
-                className={[
-                  'inline-flex min-h-9 min-w-[5.5rem] shrink-0 items-center justify-center rounded-md px-2.5 py-2 text-sm transition-all duration-150 sm:min-w-0',
-                  active
-                    ? 'bg-white font-semibold text-[#20172f] shadow-sm ring-1 ring-[#d9cfe8] dark:bg-[#1e2630] dark:text-gray-100 dark:ring-transparent'
-                    : 'text-[#696071] hover:bg-white/70 hover:text-[#20172f] dark:text-gray-400 dark:hover:bg-[#1e2630]/70 dark:hover:text-gray-100',
-                ].join(' ')}
-              >
-                {group.label}
-                <span className="ml-1 font-mono text-[11px] text-[#8d8495] dark:text-gray-500">
-                  ({groupCounts[group.key] ?? 0})
-                </span>
-              </button>
-            )
-          })}
-        </nav>
-
-        <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
+      <section className="-mx-1 space-y-2.5 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-3 shadow-[0_8px_24px_rgba(76,58,96,0.08)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none">
+        <form onSubmit={submitSearch} className="flex items-center gap-2">
           <input
             type="search"
             value={queryInput}
             onChange={(event) => setQueryInput(event.target.value)}
-            placeholder="搜索标题、摘要、主题或对象"
+            placeholder={`在${currentFilterLabel}中搜索标题、主题或对象`}
             aria-label="搜索统一内容目录"
-            className="min-w-[220px] flex-1 rounded-md border border-[#cfc6dc] bg-white px-3 py-2 text-sm text-[#20172f] outline-none transition-colors placeholder:text-[#9a93a3] focus:border-[var(--site-accent)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
+            className="min-w-0 flex-1 rounded-lg border border-[#cfc6dc] bg-white px-3.5 py-2.5 text-sm text-[#20172f] outline-none transition-colors placeholder:text-[#9a93a3] focus:border-[var(--site-accent)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
           />
           <button
             type="submit"
-            className="rounded-md border border-[#cfc6dc] bg-[#f4f0f8] px-3 py-2 text-sm text-[#49345f] transition-colors hover:border-[var(--site-accent)] hover:text-[#20172f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
+            className="shrink-0 rounded-lg border border-[#cfc6dc] bg-[#f4f0f8] px-4 py-2.5 text-sm font-medium text-[#49345f] transition-colors hover:border-[var(--site-accent)] hover:text-[#20172f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
           >
             搜索
           </button>
@@ -648,12 +625,36 @@ export default function ArticlesIndexClient({ items: staticItems }) {
             <button
               type="button"
               onClick={clearSearch}
-              className="rounded-md border border-transparent px-2 py-2 text-sm text-[#817789] transition-colors hover:text-[#20172f] dark:text-gray-400 dark:hover:text-gray-200"
+              className="hidden shrink-0 rounded-md border border-transparent px-2 py-2 text-sm text-[#817789] transition-colors hover:text-[#20172f] sm:block dark:text-gray-400 dark:hover:text-gray-200"
             >
               清空
             </button>
           ) : null}
         </form>
+        {searchSuggestions.length ? (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-0.5 text-xs">
+            <span className="text-[#958aa1] dark:text-gray-500">推荐搜索</span>
+            {searchSuggestions.map((query) => (
+              <button
+                key={query}
+                type="button"
+                onClick={() => runSearch(query, 'suggested')}
+                className="rounded-full border border-transparent bg-[#f1edf5] px-2.5 py-1 text-[#675d72] transition-colors hover:border-[#cfc3e2] hover:bg-white hover:text-[#20172f] dark:bg-[#171d26] dark:text-gray-400 dark:hover:border-gray-700 dark:hover:text-gray-100"
+              >
+                {query}
+              </button>
+            ))}
+            {queryInput || filters.query ? (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="text-[#817789] underline-offset-4 hover:text-[#20172f] hover:underline sm:hidden dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                清空搜索
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <div className="lg:grid lg:grid-cols-[236px_minmax(0,1fr)] lg:items-start lg:gap-6">

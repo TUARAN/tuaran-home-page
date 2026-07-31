@@ -73,8 +73,6 @@ export async function generateMetadata({ params }) {
   const description = entry.summary || `${CATEGORY_META[entry.category]?.label || ''}：${entry.title}`
   const isEncrypted = entry.encrypted
   const ogImage = buildArticleOgUrl({
-    key: `${entry.category}/${entry.slug}`,
-    version: [entry.date, entry.time].filter(Boolean).join(' '),
     title,
     description,
     category: CATEGORY_META[entry.category]?.label || '分析',

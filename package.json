@@ -23,6 +23,7 @@
     "lint": "node scripts/check-tailwind-opacity-classes.mjs && next lint",
     "style:check": "node scripts/check-tailwind-opacity-classes.mjs",
     "research:style-audit": "node scripts/audit-research-style.mjs",
+    "taxonomy:audit": "node scripts/generate-research-catalog.mjs && node --test tests/navigation/content-taxonomy.test.mjs",
     "a-share:sync": "node scripts/manage-a-share-research.mjs sync",
     "a-share:pick": "node scripts/manage-a-share-research.mjs pick",
     "a-share:complete": "node scripts/manage-a-share-research.mjs complete",

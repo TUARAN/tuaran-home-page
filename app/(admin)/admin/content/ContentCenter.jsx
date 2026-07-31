@@ -21,6 +21,7 @@ export default function ContentCenter() {
           title: '规范与运营',
           description: '发布前校正表达，发布后根据真实阅读与订阅行为继续调整。',
           items: [
+            { href: '/admin/content-taxonomy', title: '分类管理', description: '维护分类定义，查看主题分布与待治理内容，持续校正分类边界。', icon: 'researchStyle', note: '稳定 ID + 主题定义 + 分类审计' },
             { href: '/admin/content-weekly', title: '数据与反馈', description: '阅读、点赞、月统计与评论跟进。', icon: 'analytics' },
             { href: '/admin/rss-feeds', title: 'RSS 与分发', description: '维护公开 RSS 订阅墙，并查看 RSS 请求记录。', icon: 'rss' },
           ],

@@ -2,6 +2,7 @@
 title: 帕金森定律调研：给多少时间，工作就膨胀到多少
 category: topics
 topic_type: thesis
+subjects: [workplace_org, humanities_history]
 date: 2026-07-01
 time: 11:20
 tags: [帕金森定律, 时间管理, 官僚组织, 生产力, 管理学, Parkinson, 组织膨胀, deadline]

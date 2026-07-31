@@ -2,6 +2,7 @@
 title: 毛泽东知识分子理论调研：如何区分知识分子与社会主义知识分子
 category: topics
 topic_type: thesis
+subjects: [humanities_history]
 date: 2026-06-22
 time: 09:33
 tags: [毛泽东, 知识分子, 社会主义知识分子, 无产阶级知识分子, 工人阶级, 阶级分析, 思想改造, 又红又专, 工农结合, 延安整风, 反右运动, 知识生产, 人工智能, 平台社会, 公共知识分子]

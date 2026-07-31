@@ -2,6 +2,7 @@
 title: 深圳前海区域发展史调研：从南头海、蛇口工业区到120.56平方公里深港合作区
 category: topics
 topic_type: thesis
+subjects: [humanities_history, business_market]
 date: 2026-06-21
 time: 11:06
 tags: [深圳前海, 前海发展史, 深港合作, 粤港澳大湾区, 前海自贸区, 蛇口, 宝安, 南山, 区域经济, 人口, 企业, 金融, 现代服务业, 制度创新, 城市规划, 深中通道, 香港青年创业]

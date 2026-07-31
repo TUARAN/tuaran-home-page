@@ -24,6 +24,7 @@ test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.ok(SUBJECT_KEYS.includes('product_experience'))
   assert.ok(SUBJECT_KEYS.includes('business_market'))
   assert.ok(SUBJECT_KEYS.includes('company_research'))
+  assert.ok(SUBJECT_KEYS.includes('people_profiles'))
   assert.ok(!SUBJECT_KEYS.includes('product_business'))
   assert.ok(ENTITY_TYPE_KEYS.includes('company'))
   assert.ok(COMPANY_INDUSTRY_KEYS.includes('software_development'))
@@ -31,6 +32,17 @@ test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.ok(DELIVERY_KEYS.includes('subscribe'))
   assert.equal(getContentGroup('profile'), 'analysis')
   assert.equal(getContentGroup('guide'), 'practice')
+})
+
+test('people research has a dedicated reader-facing subject', () => {
+  assert.deepEqual(
+    taxonomyForResearch({ category: 'people' }).subjects,
+    ['people_profiles'],
+  )
+  assert.equal(
+    validateTaxonomyRecord(taxonomyForResearch({ category: 'people' })).length,
+    0,
+  )
 })
 
 test('legacy content sources map to complete reader-facing taxonomy records', () => {
@@ -79,6 +91,32 @@ test('product and business subjects have separate inference rules', () => {
   assert.deepEqual(
     taxonomyForInteractive({ title: '公司市场增长地图' }).subjects,
     ['business_market'],
+  )
+})
+
+test('explicit subjects override legacy inference and preserve primary-subject order', () => {
+  assert.deepEqual(
+    taxonomyForInteractive({
+      category: 'data-visualization',
+      title: 'X 值不值得做？创作者经营情报',
+      subjects: ['content_creation', 'business_market'],
+    }).subjects,
+    ['content_creation', 'business_market'],
+  )
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'topics',
+      topicType: 'thesis',
+      subjects: ['ai_dev', 'business_market'],
+    }).subjects,
+    ['ai_dev', 'business_market'],
+  )
+  assert.deepEqual(
+    taxonomyForResource({
+      resourceType: 'humanities-politics',
+      subjects: ['ai_dev', 'business_market'],
+    }).subjects,
+    ['ai_dev', 'business_market'],
   )
 })
 

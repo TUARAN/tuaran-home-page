@@ -2,6 +2,7 @@
 title: 广深高速与广州—深圳交通走廊深度调研：一条高速如何长成世界级城市群骨架
 category: topics
 topic_type: thesis
+subjects: [humanities_history, business_market]
 date: 2026-06-21
 time: 11:23
 tags: [广深高速, 京港澳高速, 广深公路, 广深沿江高速, 广深铁路, 广深港高铁, 穗深城际, 广州交通, 东莞交通, 深圳交通, 虎门大桥, 南沙大桥, 深中通道, 狮子洋通道, 粤港澳大湾区, 珠江口, 高速公路, 城际铁路, 区域经济, 交通史]

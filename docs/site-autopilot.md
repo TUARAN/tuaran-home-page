@@ -43,9 +43,10 @@ flowchart LR
 **模型路由规则：简单的任务用 `deepseek-v4-flash`，复杂的任务用 `deepseek-v4-pro`。** 判定依据：
 
 - 安全分诊永远按复杂处理（误判成本高，涉及漏洞与权限边界）；
-- 报告存在 high 发现、high+medium 达 5 项、或总发现达 20 项 → 复杂；
+- 报告存在 high 发现、high+medium 达 3 项、或总发现达 8 项 → 复杂；
 - 其余例行分诊（少量 low/info）→ 简单；
-- `DEEPSEEK_MODEL` 显式配置时优先于规则。
+- `DEEPSEEK_MODEL` 显式配置时优先于规则；
+- 简单任务被路由到 flash 但分析失败（空内容/解析失败）时，自动改用 pro 重试一次。
 
 分诊结果写回报告文件的 `aiAnalysis` 字段，随 step summary 与待修 Issue 一起呈现。
 

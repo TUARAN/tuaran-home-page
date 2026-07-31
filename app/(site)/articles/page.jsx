@@ -10,7 +10,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '统一内容目录',
   description:
-    '按内容形态、主题、研究对象、使用方式和固定系列浏览文章、分析、工程实践、互动专题与资源。',
+    '按内容主题和内容类型浏览文章、分析、工程实践与资源。',
   keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '原创文章', '技术实践', '工程分析', '资料核验', 'AI'],
   alternates: {
     canonical: '/articles',
@@ -31,9 +31,10 @@ function ArticlesHeaderFallback() {
       <h1 className="font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
         统一内容目录
       </h1>
-      <p className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
-        从主题开始浏览，再按类型细分；分析对象和资源获取方式会在需要时出现。
-      </p>
+      <figure className="mt-2 text-[13.5px] leading-[1.8] text-[#5c5e52] dark:text-[#9aa5b6]">
+        <blockquote>“千里之行，始于足下。”</blockquote>
+        <figcaption className="mt-0.5 text-[12px] text-[#85877d] dark:text-[#737f91]">— 老子</figcaption>
+      </figure>
     </header>
   )
 }

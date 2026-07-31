@@ -37,7 +37,7 @@ export function GET() {
     `- [Skill 中心](${SITE_URL}/skill-center): 面向智能体的可复用能力、工作流与安装说明`,
     `- [MCP 中心](${SITE_URL}/mcp-center): 可供智能体连接的公开服务与配置说明`,
     `- [Prompt 中心](${SITE_URL}/prompt-center): 面向智能体的提示词经验、任务模板与工程参考`,
-    `- [统一内容目录](${SITE_URL}/articles): 先按主题浏览，再按类型、分析对象或资源获取方式筛选`,
+    `- [统一内容目录](${SITE_URL}/articles): 按内容主题和内容类型浏览`,
     `- [内容说明](${SITE_URL}/editorial): 作者责任、工具使用与更正机制`,
     `- [RSS](${SITE_URL}/rss.xml): 订阅源`,
     '',

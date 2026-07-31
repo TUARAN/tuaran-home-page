@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T02:39:51.451Z",
+  "generatedAt": "2026-07-31T07:23:25.543Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -626,6 +626,18 @@
               "hash": "b14332bbd376b4466420bb44c6a89a6b812d9254397c28139636afeae63433f5",
               "path": "ai-context/content-information-architecture/2026-07-31T02-39-51-449Z.enc.json",
               "bytes": 2409
+            }
+          ]
+        },
+        "a-share-company-research-automation": {
+          "title": "a-share-company-research-automation",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-07-31T07:23:25.521Z",
+              "hash": "7daecfabb0b2beeb29542faa8377db27a722eb08eb77e74a61544ddf4c9a8b3d",
+              "path": "ai-context/a-share-company-research-automation/2026-07-31T07-23-25-539Z.enc.json",
+              "bytes": 1261
             }
           ]
         }

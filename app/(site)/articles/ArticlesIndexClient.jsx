@@ -14,7 +14,6 @@ import {
 } from '../../../lib/research/categories'
 
 const CHANNEL_DEFS = [
-  { key: 'picks', label: '推荐' },
   { key: 'all', label: '全部' },
   { key: 'column', label: '专栏' },
   { key: 'research', label: '分析' },
@@ -39,14 +38,13 @@ const KIND_TAG_CLASS = {
 
 const RESEARCH_KIND_KEYS = ['companies', 'topics', 'people']
 const RESEARCH_KINDS = new Set(RESEARCH_KIND_KEYS)
-const TAB_KEYS = ['picks', 'all', 'column', 'posts', 'works', 'research', 'engineering-cases', 'build-logs', 'companies', 'people', 'tech', 'business', 'other', 'topics', 'resources']
+const TAB_KEYS = ['all', 'column', 'posts', 'works', 'research', 'engineering-cases', 'build-logs', 'companies', 'people', 'tech', 'business', 'other', 'topics', 'resources']
 const CONTENT_TYPE_BY_TAB = {
   'engineering-cases': 'engineering_case',
   'build-logs': 'build_log',
 }
 
 function getChannelForTab(activeTab) {
-  if (activeTab === 'picks') return 'picks'
   if (activeTab === 'all') return 'all'
   if (activeTab === 'column' || activeTab === 'posts' || activeTab === 'works') return 'column'
   if (activeTab === 'resources') return 'resources'
@@ -276,7 +274,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     if (params?.get('tech_type')) return 'tech'
     if (params?.get('topic_type')) return getTabForTopicType(params.get('topic_type'))
     if (params?.get('people_type')) return 'people'
-    return 'picks'
+    return 'all'
   }
   const initialTab = (() => {
     return normalizeTabFromParams(searchParams)
@@ -464,8 +462,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       if (channelKey === 'all' && allContentType !== 'all') selectAllContentType('all')
       return
     }
-    if (channelKey === 'picks') selectTab('picks')
-    else if (channelKey === 'all') selectTab('all')
+    if (channelKey === 'all') selectTab('all')
     else if (channelKey === 'column') selectTab('column')
     else if (channelKey === 'research') selectTab('research')
     else if (channelKey === 'resources') selectTab('resources')
@@ -667,8 +664,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   }, [tab, activeChannel, columnCategory, columnCategoryDefs, companyType, topicType, peopleType, techType, resourceType, resourceGroup])
 
   const visible = useMemo(() => {
-    if (tab === 'picks' && !query.trim()) return []
-
     const allTabItems =
       allContentType === 'all'
         ? catalogItems
@@ -693,8 +688,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     const tabItems =
       tab === 'all'
         ? allTabItems
-        : tab === 'picks'
-        ? catalogItems
         : tab === 'column'
         ? catalogItems.filter((item) => item.kind === 'posts' || item.kind === 'works')
         : tab === 'research'
@@ -884,43 +877,8 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     [resourceGroup],
   )
 
-  const readingHighlights = useMemo(() => {
-    const publicItems = catalogItems.filter((item) => !item.encrypted)
-    const reviewReadyItems = publicItems.filter((item) => item.reviewReady)
-    const latestItems = reviewReadyItems.slice(0, 3)
-    const latestIds = new Set(latestItems.map((item) => item.id || item.href))
-    return [
-      {
-        title: '最新内容',
-        desc: '刚发布的文章、分析与工程记录。',
-        items: latestItems,
-      },
-      {
-        title: '推荐分析',
-        desc: '技术、市场与公司观察中的作者判断。',
-        items: reviewReadyItems
-          .filter((item) => !latestIds.has(item.id || item.href) && RESEARCH_KINDS.has(item.kind))
-          .slice(0, 3),
-      },
-      {
-        title: '代表作品',
-        desc: '个人判断、多维页面和长期项目。',
-        items: reviewReadyItems
-          .filter((item) => !latestIds.has(item.id || item.href) && (item.kind === 'posts' || item.kind === 'works'))
-          .slice(0, 3),
-      },
-    ].filter((section) => section.items.length > 0)
-  }, [catalogItems])
-
-  const picksCount = useMemo(
-    () => readingHighlights.reduce((sum, section) => sum + section.items.length, 0),
-    [readingHighlights],
-  )
   const visibleChannelDefs = CHANNEL_DEFS
 
-  const showReadingHighlights = tab === 'picks' && !query.trim()
-  const showArticleList = tab !== 'picks' || Boolean(query.trim())
-  const hasAdvancedFilters = activeChannel !== 'picks'
   const allContentTypeLabel = ALL_CONTENT_FILTER_GROUPS
     .flatMap((group) => group.items)
     .find((item) => item.key === allContentType)?.label
@@ -1112,7 +1070,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     )
   }
 
-  const listContent = showArticleList ? (
+  const listContent = (
     <section
       className={[
         'space-y-4 transition-opacity duration-150',
@@ -1151,7 +1109,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         </div>
       )}
     </section>
-  ) : null
+  )
 
   return (
     <div className="articles-index-stone space-y-5">
@@ -1159,14 +1117,12 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         <nav
           aria-label="知识库频道"
           role="tablist"
-          className="flex gap-1.5 overflow-x-auto rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 sm:grid sm:grid-cols-5 sm:overflow-visible dark:border-gray-800 dark:bg-[#151a22]"
+          className="flex gap-1.5 overflow-x-auto rounded-lg border border-[#ddd6e7] bg-[#eee9f3] p-1 sm:grid sm:grid-cols-4 sm:overflow-visible dark:border-gray-800 dark:bg-[#151a22]"
         >
           {visibleChannelDefs.map((channel) => {
             const active = activeChannel === channel.key
             const count =
-              channel.key === 'picks'
-                ? picksCount
-                : channel.key === 'all'
+              channel.key === 'all'
                 ? counts.all
                 : channel.key === 'column'
                 ? counts.column
@@ -1242,8 +1198,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         </form>
       </section>
 
-      {hasAdvancedFilters ? (
-        <div className="lg:grid lg:grid-cols-[236px_minmax(0,1fr)] lg:items-start lg:gap-6">
+      <div className="lg:grid lg:grid-cols-[236px_minmax(0,1fr)] lg:items-start lg:gap-6">
           <aside className="hidden self-start rounded-lg border border-[#e8e2ef] bg-white/80 p-3 lg:block lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto dark:border-gray-800 dark:bg-[#121821]">
             <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#eee6f1] pb-2 dark:border-gray-800">
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#958aa1] dark:text-gray-500">
@@ -1297,13 +1252,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
             {listContent}
           </div>
-        </div>
-      ) : (
-        <>
-          {showReadingHighlights ? <ReadingHighlights sections={readingHighlights} /> : null}
-          {listContent}
-        </>
-      )}
+      </div>
     </div>
   )
 }
@@ -1505,76 +1454,6 @@ function ArticleRow({ item }) {
           </div>
         ) : null}
       </div>
-    </Link>
-  )
-}
-
-function ReadingHighlights({ sections }) {
-  return (
-    <section className="rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4 shadow-[0_12px_36px_rgba(76,58,96,0.06)] dark:border-gray-800 dark:bg-[#0f141b]">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8e8798] dark:text-[#8e9ab0]">
-            Start Here
-          </p>
-          <h2 className="mt-1 border-b-0 pb-0 text-[18px] font-semibold text-[#20172f] dark:text-gray-100">
-            阅读起点
-          </h2>
-        </div>
-        <Link
-          href="/services"
-          className="rounded-full border border-[#cfc6dc] bg-white px-3 py-1 text-[12px] text-[#49345f] no-underline transition hover:border-[var(--site-accent)] hover:text-[#20172f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500"
-        >
-          合作 / 咨询 →
-        </Link>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-3">
-        {sections.map((section) => (
-          <div key={section.title} className="rounded-xl border border-[#e5deec] bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
-            <div className="mb-2">
-              <h3 className="text-[14px] font-semibold text-[#20172f] dark:text-gray-100">{section.title}</h3>
-              <p className="mt-0.5 text-[11px] leading-5 text-[#716779] dark:text-gray-400">{section.desc}</p>
-            </div>
-            <div className="space-y-2">
-              {section.items.map((item) => (
-                <HighlightLink key={item.id || item.href} item={item} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function HighlightLink({ item }) {
-  const external = isExternalHref(item.href)
-  return (
-    <Link
-      href={item.href}
-      {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      className="group block rounded-lg px-2 py-1.5 no-underline transition hover:bg-[#f4f0f8] dark:hover:bg-[#151d27]"
-    >
-      <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-        <span
-          className={[
-            'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-1.5 py-px text-[10px]',
-            KIND_TAG_CLASS[item.kind] || KIND_TAG_CLASS.people,
-          ].join(' ')}
-        >
-          {item.tagLabel}
-        </span>
-        <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
-        {item.dateLabel || item.date ? (
-          <span className="shrink-0 whitespace-nowrap font-mono text-[10px] text-[#958aa1] dark:text-gray-500">
-            {item.dateLabel || item.date}
-          </span>
-        ) : null}
-      </div>
-      <p className="mb-0 line-clamp-2 text-[13px] font-medium leading-5 text-[#20172f] group-hover:text-[#120b1f] dark:text-gray-100 dark:group-hover:text-white">
-        {item.title}
-      </p>
     </Link>
   )
 }

@@ -3,9 +3,6 @@
 import { useSearchParams } from 'next/navigation'
 
 const PAGE_COPY = {
-  picks: {
-    title: '推荐入口',
-  },
   all: {
     title: '文章与分析',
   },
@@ -44,7 +41,7 @@ function normalizeTabFromParams(params) {
   if (params?.get('company_type')) return 'companies'
   if (params?.get('topic_type')) return 'topics'
   if (params?.get('people_type')) return 'people'
-  return 'picks'
+  return 'all'
 }
 
 export default function ArticlesHeaderClient() {

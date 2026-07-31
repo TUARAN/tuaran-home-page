@@ -76,14 +76,14 @@ const body = [
 ].join('\n')
 
 try {
-  const number = gh([
+  const url = gh([
     'issue', 'create',
     '--repo', process.env.GITHUB_REPOSITORY,
     '--title', title,
     '--body', body,
-    '--json', 'number',
-    '--jq', '.number',
   ])
+  const match = String(url).match(/issues\/(\d+)/)
+  const number = match ? match[1] : url
   console.log(`[scan-handoff] 已创建待修清单 Issue #${number}`)
 } catch (error) {
   console.error(`[scan-handoff] 创建 Issue 失败：${String(error.stderr || error.message)}`)

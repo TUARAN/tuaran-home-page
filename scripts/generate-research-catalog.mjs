@@ -39,6 +39,8 @@ function parseTagList(value) {
     .filter(Boolean)
 }
 
+const parseInlineList = parseTagList
+
 for (const category of categories) {
   const dir = path.join(root, 'research', category)
   let files = []
@@ -71,6 +73,7 @@ for (const category of categories) {
     const hasAssessment = data.assessment === 'true' || data.has_assessment === 'true'
     const encrypted = data.encrypted === 'true' || data.encrypted_source === 'true'
     const reviewReady = data.review_ready === 'true'
+    const subjects = parseInlineList(data.subjects)
     entryMeta[key] = {
       category,
       slug,
@@ -82,6 +85,11 @@ for (const category of categories) {
       ...(hasAssessment ? { hasAssessment: true } : {}),
       ...(encrypted ? { encrypted: true } : {}),
       ...(reviewReady ? { reviewReady: true } : {}),
+      ...(subjects.length ? { subjects } : {}),
+      ...(data.content_type ? { contentType: data.content_type } : {}),
+      ...(data.topic_type ? { topicType: data.topic_type } : {}),
+      ...(data.tech_type ? { techType: data.tech_type } : {}),
+      ...(data.company_type ? { companyType: data.company_type } : {}),
     }
   }
 }

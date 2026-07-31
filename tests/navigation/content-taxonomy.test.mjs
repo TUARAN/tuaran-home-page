@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import {
@@ -19,6 +20,11 @@ import {
   taxonomyForResource,
   validateTaxonomyRecord,
 } from '../../lib/contentTaxonomy.js'
+import {
+  SUBJECT_GOVERNANCE_LIST,
+  TAXONOMY_DIMENSIONS,
+  TAXONOMY_GOVERNANCE_RULES,
+} from '../../lib/contentTaxonomyGovernance.js'
 
 test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.deepEqual(CONTENT_GROUP_KEYS, ['all', 'article', 'analysis', 'practice', 'resource'])
@@ -156,4 +162,35 @@ test('taxonomy validation rejects overloaded or incomplete records', () => {
       'delivery 必须是受控单选值',
     ],
   )
+})
+
+test('every reader-facing subject has a governed definition and stable id', () => {
+  assert.deepEqual(
+    SUBJECT_GOVERNANCE_LIST.map((subject) => subject.id),
+    SUBJECT_KEYS,
+  )
+  for (const subject of SUBJECT_GOVERNANCE_LIST) {
+    assert.equal(subject.status, 'active')
+    assert.ok(subject.definition.length > 10)
+    assert.ok(subject.includes.length >= 2)
+    assert.ok(subject.excludes.length >= 2)
+    assert.ok(subject.aliases.length >= 1)
+  }
+  assert.deepEqual(
+    TAXONOMY_DIMENSIONS.map((dimension) => dimension.id),
+    ['contentKind', 'subjects', 'entityType', 'delivery', 'series'],
+  )
+  assert.ok(TAXONOMY_GOVERNANCE_RULES.length >= 5)
+})
+
+test('taxonomy manager is registered in the content center', async () => {
+  const [contentCenter, adminRoutes, adminPage] = await Promise.all([
+    readFile(new URL('../../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/adminRoutes.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(admin)/admin/content-taxonomy/ContentTaxonomyClient.jsx', import.meta.url), 'utf8'),
+  ])
+  assert.match(contentCenter, /\/admin\/content-taxonomy/)
+  assert.match(adminRoutes, /\/admin\/content-taxonomy/)
+  assert.match(adminPage, /存量内容审计/)
+  assert.match(adminPage, /系统推断/)
 })

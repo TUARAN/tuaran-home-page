@@ -1,0 +1,102 @@
+#!/bin/sh
+set -eu
+
+mode="${1:-}"
+codex_dir="${CODEX_HOME:-$HOME/.codex}"
+config_path="$codex_dir/config.toml"
+models_path="$codex_dir/models.json"
+codex_bin="/Applications/ChatGPT.app/Contents/Resources/codex"
+
+case "$mode" in
+  gpt|deepseek) ;;
+  *)
+    echo "Usage: $0 gpt|deepseek" >&2
+    exit 2
+    ;;
+esac
+
+[ -f "$config_path" ] || {
+  echo "Codex config not found: $config_path" >&2
+  exit 1
+}
+
+if [ "$mode" = "deepseek" ]; then
+  [ -f "$models_path" ] || {
+    echo "DeepSeek model catalog not found: $models_path" >&2
+    exit 1
+  }
+  grep -q '^\[model_providers\.deepseek\]$' "$config_path" || {
+    echo "DeepSeek provider is not configured." >&2
+    exit 1
+  }
+  grep -Eq '^experimental_bearer_token = "sk-[A-Za-z0-9_-]+"$' "$config_path" || {
+    echo "DeepSeek API key is missing or invalid." >&2
+    exit 1
+  }
+fi
+
+backup_path="$config_path.before-provider-switch"
+temp_path=$(mktemp "$config_path.switch.XXXXXX")
+trap 'rm -f "$temp_path"' EXIT HUP INT TERM
+cp "$config_path" "$backup_path"
+
+awk -v mode="$mode" -v models="$models_path" '
+function emit_settings() {
+  if (mode == "gpt") {
+    print "model = \"gpt-5.6-sol\""
+    print "model_provider = \"openai\""
+    print "model_reasoning_effort = \"medium\""
+    print "service_tier = \"priority\""
+  } else {
+    print "model = \"deepseek-v4-flash\""
+    print "model_provider = \"deepseek\""
+    print "preferred_auth_method = \"apikey\""
+    print "forced_login_method = \"api\""
+    print "model_reasoning_effort = \"high\""
+    print "model_catalog_json = \"" models "\""
+  }
+  print ""
+}
+BEGIN {
+  emit_settings()
+  in_table = 0
+  target["model"] = 1
+  target["model_provider"] = 1
+  target["preferred_auth_method"] = 1
+  target["forced_login_method"] = 1
+  target["model_reasoning_effort"] = 1
+  target["model_catalog_json"] = 1
+  target["service_tier"] = 1
+}
+{
+  if (!in_table && $0 ~ /^[[:space:]]*\[/) {
+    in_table = 1
+  }
+  if (!in_table && $0 ~ /^[[:space:]]*[A-Za-z0-9_-]+[[:space:]]*=/) {
+    key = $0
+    sub(/=.*/, "", key)
+    gsub(/[[:space:]]/, "", key)
+    if (target[key]) {
+      next
+    }
+  }
+  print
+}
+' "$config_path" > "$temp_path"
+
+chmod 600 "$temp_path"
+mv "$temp_path" "$config_path"
+trap - EXIT HUP INT TERM
+
+if [ -x "$codex_bin" ]; then
+  "$codex_bin" features list >/dev/null
+else
+  codex features list >/dev/null
+fi
+
+if [ "$mode" = "gpt" ]; then
+  echo "Codex default provider is now OpenAI / GPT-5.6 Sol."
+else
+  echo "Codex default provider is now DeepSeek / DeepSeek-V4-Flash."
+fi
+echo "Fully quit and reopen Codex Desktop to apply the change."

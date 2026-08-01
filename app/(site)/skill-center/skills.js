@@ -3,8 +3,10 @@
  */
 import { RENWEI_WRITING_SKILL } from './renweiWritingSkill'
 import { DREAM_SKIN_REINSTALL_SKILL } from './dreamSkinReinstallSkill'
+import { CODEX_MODEL_SWITCHER_SKILL } from './codexModelSwitcherSkill'
 
 export const PUBLISHED_SKILLS = [
+  CODEX_MODEL_SWITCHER_SKILL,
   DREAM_SKIN_REINSTALL_SKILL,
   {
     id: 'ruanyifeng-weekly-style',

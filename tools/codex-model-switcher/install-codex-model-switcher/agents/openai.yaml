@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex 模型切换器安装器"
+  short_description: "在 macOS 安装并配置 Codex 模型切换器"
+  default_prompt: "Use $install-codex-model-switcher to install and configure the Codex model switcher on this Mac."

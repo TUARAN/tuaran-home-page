@@ -72,6 +72,18 @@ export function SkillFileButton({ filename, content }) {
 export function SkillBundleButton({ skill }) {
   const [state, setState] = useState('idle')
 
+  if (skill.codex.packageUrl) {
+    return (
+      <a
+        href={skill.codex.packageUrl}
+        download
+        className="inline-flex items-center gap-1 rounded-full border border-[#8b5a1f] bg-[#8b5a1f] px-3 py-1.5 font-mono text-xs text-white no-underline transition-colors hover:bg-[#724817] hover:!no-underline dark:border-[#a1ab76] dark:bg-[#a1ab76] dark:text-[#1a1207] dark:hover:bg-[#9ba475]"
+      >
+        ↓ {skill.codex.packageLabel || '下载完整 Skill'}
+      </a>
+    )
+  }
+
   async function handleDownloadAll() {
     setState('working')
     try {

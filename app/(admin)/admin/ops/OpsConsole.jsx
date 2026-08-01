@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AdminButton, AdminPage, StatusPill } from '../../components/ui'
 
@@ -101,6 +101,7 @@ export default function OpsConsoleClient() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState('')
   const [copyError, setCopyError] = useState('')
+  const [repositoryFilter, setRepositoryFilter] = useState('all')
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -122,11 +123,28 @@ export default function OpsConsoleClient() {
   }, [refresh])
 
   const tone = toneFor(status?.status)
-  const registry = status?.registry || []
-  const cloudAutomations = status?.cloudAutomations || []
-  const localAutomations = status?.localAutomations || []
-  const recentRuns = status?.recentRuns || []
-  const stats = status?.stats || {}
+  const registry = useMemo(() => status?.registry || [], [status?.registry])
+  const repositoryOptions = useMemo(
+    () => Array.from(new Set(registry.map((item) => item.repository).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [registry]
+  )
+  const filteredRegistry = useMemo(
+    () => repositoryFilter === 'all' ? registry : registry.filter((item) => item.repository === repositoryFilter),
+    [registry, repositoryFilter]
+  )
+  const cloudAutomations = filteredRegistry.filter((item) => item.scope === 'cloud')
+  const localAutomations = filteredRegistry.filter((item) => item.scope === 'local')
+  const recentRuns = (status?.recentRuns || []).filter(
+    (run) => repositoryFilter === 'all' || run.repository === repositoryFilter
+  )
+  const stats = repositoryFilter === 'all'
+    ? status?.stats || {}
+    : {
+        totalTasks: filteredRegistry.length,
+        cloudTasks: cloudAutomations.length,
+        localTasks: localAutomations.length,
+        reviewRequired: filteredRegistry.filter((item) => item.reviewRequired).length,
+      }
 
   const copyText = useCallback(async (key, text) => {
     setCopyError('')
@@ -217,6 +235,26 @@ export default function OpsConsoleClient() {
         <Stat label="需人工审核" value={loading ? '—' : stats.reviewRequired ?? '—'} />
       </section>
 
+      <section className="mb-5 rounded-xl border border-[#d5d7cd] bg-white/70 p-4 dark:border-[#252e39] dark:bg-[#10161f]">
+        <label htmlFor="ops-repository-filter" className="block text-xs font-medium text-[#686962] dark:text-gray-400">
+          项目仓库
+        </label>
+        <select
+          id="ops-repository-filter"
+          value={repositoryFilter}
+          onChange={(event) => setRepositoryFilter(event.target.value)}
+          className="mt-2 w-full rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-sm text-[#15140f] outline-none focus:border-[#a37b3c] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-100 sm:max-w-sm"
+          aria-label="按项目仓库筛选"
+        >
+          <option value="all">全部项目仓库（{registry.length}）</option>
+          {repositoryOptions.map((repository) => (
+            <option key={repository} value={repository}>
+              {repository}（{registry.filter((item) => item.repository === repository).length}）
+            </option>
+          ))}
+        </select>
+      </section>
+
       <section className="mb-5 grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-[#d5d7cd] bg-white/70 p-5 dark:border-[#252e39] dark:bg-[#10161f]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -238,6 +276,7 @@ export default function OpsConsoleClient() {
             {cloudAutomations.map((item) => (
               <AutomationCard key={item.id} item={item} copied={copied} onCopy={copyText} />
             ))}
+            {!loading && !cloudAutomations.length ? <EmptyFilterResult /> : null}
           </div>
         </div>
 
@@ -261,6 +300,7 @@ export default function OpsConsoleClient() {
             {localAutomations.map((item) => (
               <AutomationCard key={item.id} item={item} copied={copied} onCopy={copyText} />
             ))}
+            {!loading && !localAutomations.length ? <EmptyFilterResult /> : null}
           </div>
         </div>
       </section>
@@ -271,16 +311,17 @@ export default function OpsConsoleClient() {
             <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">Automation Registry 字段</h2>
             <p className="mt-1 text-sm text-[#686962] dark:text-gray-400">所有自动化统一按固定字段入库，后续再接真实运行状态回写。</p>
           </div>
-          <AdminButton type="button" size="sm" onClick={() => copyText('registry', JSON.stringify(registry, null, 2))} disabled={!registry.length}>
+          <AdminButton type="button" size="sm" onClick={() => copyText('registry', JSON.stringify(filteredRegistry, null, 2))} disabled={!filteredRegistry.length}>
             {copied === 'registry' ? '已复制' : '复制完整台账'}
           </AdminButton>
         </div>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left text-sm">
+          <table className="w-full min-w-[1080px] border-separate border-spacing-0 text-left text-sm">
             <thead>
               <tr className="text-[11px] uppercase tracking-[0.12em] text-[#7a7c70] dark:text-[#8e9ab0]">
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">id</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">名称</th>
+                <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">项目仓库</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">云端或本地</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">触发频率</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">入口</th>
@@ -293,10 +334,11 @@ export default function OpsConsoleClient() {
               </tr>
             </thead>
             <tbody>
-              {registry.map((item) => (
+              {filteredRegistry.map((item) => (
                 <tr key={item.id} className="align-top">
                   <td className="border-b border-[#f0f1ea] px-3 py-3 font-mono text-xs text-[#686962] dark:border-[#1c2632] dark:text-gray-400">{item.id}</td>
                   <td className="border-b border-[#f0f1ea] px-3 py-3 font-medium text-[#15140f] dark:border-[#1c2632] dark:text-gray-100">{item.name}</td>
+                  <td className="border-b border-[#f0f1ea] px-3 py-3 font-mono text-xs dark:border-[#1c2632]">{item.repository || '—'}</td>
                   <td className="border-b border-[#f0f1ea] px-3 py-3 dark:border-[#1c2632]">{scopeText(item.scope)}</td>
                   <td className="border-b border-[#f0f1ea] px-3 py-3 dark:border-[#1c2632]">{item.trigger}</td>
                   <td className="max-w-[180px] border-b border-[#f0f1ea] px-3 py-3 font-mono text-xs dark:border-[#1c2632]">{item.entry}</td>
@@ -308,6 +350,9 @@ export default function OpsConsoleClient() {
                   <td className="border-b border-[#f0f1ea] px-3 py-3 dark:border-[#1c2632]">{item.reviewRequired ? '是' : '否'}</td>
                 </tr>
               ))}
+              {!loading && !filteredRegistry.length ? (
+                <tr><td colSpan={12} className="px-3 py-8 text-center text-sm text-[#77796d] dark:text-gray-400">没有符合筛选条件的自动化。</td></tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -323,6 +368,7 @@ export default function OpsConsoleClient() {
                 <div>
                   <h3 className="text-sm font-semibold text-[#15140f] dark:text-gray-100">{run.taskName}</h3>
                   <p className="mt-1 font-mono text-[11px] text-[#77796d] dark:text-gray-500">{run.taskId}</p>
+                  <p className="mt-1 font-mono text-[11px] text-[#77796d] dark:text-gray-500">{run.repository || '未关联仓库'}</p>
                 </div>
                 <StatusPill tone={runTone(run.status)} size="sm">{statusText(run.status)}</StatusPill>
               </div>
@@ -340,6 +386,7 @@ export default function OpsConsoleClient() {
               </div>
             </article>
           ))}
+          {!loading && !recentRuns.length ? <EmptyFilterResult /> : null}
         </div>
       </section>
 
@@ -375,6 +422,7 @@ function AutomationCard({ item, copied, onCopy }) {
       </div>
       <p className="mt-3 text-sm leading-6 text-[#54554e] dark:text-gray-300">{item.description}</p>
       <div className="mt-3 grid gap-2 text-xs text-[#686962] dark:text-gray-400 sm:grid-cols-2">
+        <InfoLine label="仓库" value={item.repository} mono />
         <InfoLine label="触发" value={item.trigger} />
         <InfoLine label="最近" value={item.lastRun} />
         <InfoLine label="成功率" value={item.successRate} />
@@ -404,6 +452,10 @@ function AutomationCard({ item, copied, onCopy }) {
       </div>
     </article>
   )
+}
+
+function EmptyFilterResult() {
+  return <p className="py-6 text-center text-sm text-[#77796d] dark:text-gray-400">该项目仓库暂无记录。</p>
 }
 
 function InfoLine({ label, value, mono = false }) {

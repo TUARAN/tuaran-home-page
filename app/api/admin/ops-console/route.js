@@ -21,12 +21,17 @@ export async function GET(req) {
     registryText: registryEntryText(item),
     latestRun: OPS_RECENT_RUNS.find((run) => run.taskId === item.id) || null,
   }))
+  const repositoryByTask = new Map(registry.map((item) => [item.id, item.repository]))
+  const recentRuns = OPS_RECENT_RUNS.map((run) => ({
+    ...run,
+    repository: run.repository || repositoryByTask.get(run.taskId) || null,
+  }))
   const cloudAutomations = registry.filter((item) => item.scope === 'cloud')
   const localAutomations = registry.filter((item) => item.scope === 'local')
   const autoRunItems = registry.filter((item) => item.autoRun)
   const reviewRequiredItems = registry.filter((item) => item.reviewRequired)
-  const pendingReviewRuns = OPS_RECENT_RUNS.filter((run) => run.reviewStatus === 'pending_review')
-  const successRuns = OPS_RECENT_RUNS.filter((run) => run.status === 'success')
+  const pendingReviewRuns = recentRuns.filter((run) => run.reviewStatus === 'pending_review')
+  const successRuns = recentRuns.filter((run) => run.status === 'success')
 
   return Response.json({
     status: 'reachable',
@@ -41,17 +46,17 @@ export async function GET(req) {
     registry,
     cloudAutomations,
     localAutomations,
-    recentRuns: OPS_RECENT_RUNS,
+    recentRuns,
     stats: {
       totalTasks: registry.length,
       cloudTasks: cloudAutomations.length,
       localTasks: localAutomations.length,
       autoRun: autoRunItems.length,
       reviewRequired: reviewRequiredItems.length,
-      recentRuns: OPS_RECENT_RUNS.length,
+      recentRuns: recentRuns.length,
       successRuns: successRuns.length,
       pendingReview: pendingReviewRuns.length,
-      artifacts: OPS_RECENT_RUNS.reduce((sum, run) => sum + (run.artifacts || []).length, 0),
+      artifacts: recentRuns.reduce((sum, run) => sum + (run.artifacts || []).length, 0),
     },
   })
 }

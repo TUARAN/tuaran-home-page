@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-02T01:34:53.780Z",
-  "snapshotDate": "2026-08-02",
-  "snapshotTime": "09:34",
+  "generatedAt": "2026-08-03T01:15:08.452Z",
+  "snapshotDate": "2026-08-03",
+  "snapshotTime": "09:15",
   "source": {
     "provider": "巨潮资讯公司列表 + 腾讯行情状态核验",
     "companyList": "https://www.cninfo.com.cn/new/data/szse_stock.json",
@@ -13,16 +13,16 @@
       "BSE": "https://www.bse.cn/nq/listedcompany.html"
     }
   },
-  "count": 5485,
+  "count": 5486,
   "counts": {
     "exchanges": {
       "BSE": 332,
       "SSE": 2317,
-      "SZSE": 2836
+      "SZSE": 2837
     },
     "boards": {
       "bse": 332,
-      "chinext": 1376,
+      "chinext": 1377,
       "main": 3162,
       "star": 615
     }
@@ -13365,6 +13365,14 @@
       "boardName": "创业板"
     },
     {
+      "code": "300237",
+      "name": "ST美晨",
+      "exchange": "SZSE",
+      "exchangeName": "深圳证券交易所",
+      "board": "chinext",
+      "boardName": "创业板"
+    },
+    {
       "code": "300238",
       "name": "冠昊生物",
       "exchange": "SZSE",
@@ -24150,7 +24158,7 @@
     },
     {
       "code": "600238",
-      "name": "*ST椰岛",
+      "name": "ST椰岛",
       "exchange": "SSE",
       "exchangeName": "上海证券交易所",
       "board": "main",
@@ -25286,7 +25294,7 @@
     },
     {
       "code": "600439",
-      "name": "瑞贝卡",
+      "name": "ST瑞贝卡",
       "exchange": "SSE",
       "exchangeName": "上海证券交易所",
       "board": "main",

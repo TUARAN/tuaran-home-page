@@ -46,73 +46,35 @@ pv: 0
 
 ```mermaid
 flowchart TD
-    A["GitHub Actions<br/>每天定时执行 5 次"] --> B["同步上游<br/>openclaw/openclaw → TUARAN/moltbot"]
+  T["GitHub Actions<br/>每天 5 次定时 / 手动触发"] --> G{"是否允许发布？"}
+  G -- "定时任务或 publish=true" --> S["同步上游 main<br/>必要时生成 fork 内同步 PR"]
+  G -- "publish=false 安全实跑" --> K["跳过同步和发布"]
+  S --> C["Checkout 确定的代码 SHA"]
+  K --> C
 
-    B --> C{"上游是否有更新？"}
-    C -- "有" --> D["创建或更新<br/>上游同步 PR"]
-    C -- "没有" --> E["进入代码巡检"]
+  C --> R["构建受信 OpenClaw Runtime<br/>独立 worktree + 依赖物理复制 + 只读锁定"]
+  OKEY["OPENCODE_API_KEY"] --> R
+  DKEY["DEEPSEEK_API_KEY"] --> R
+  R --> A["OpenClaw Agent Runtime"]
 
-    D --> E
+  A --> P["主线路<br/>OpenCode Go / deepseek-v4-pro"]
+  P --> D{"调用成功？"}
+  D -- "成功" --> W["修复候选工作区<br/>Docker 沙箱 / 可写"]
+  D -- "402、429、超时或服务故障" --> F["备用线路<br/>DeepSeek 官方 API / deepseek-v4-pro"]
+  F --> W
 
-    E --> F["准备只读上下文<br/>Issue、代码、测试、仓库规则"]
-    F --> G["OpenClaw Agent 运行时"]
-    G --> H["OpenCode Go API"]
-    H --> I["DeepSeek V4 Pro<br/>第一轮：分析与修复"]
+  W --> V["确定性补丁策略校验"]
+  V --> Q["独立只读 AI 复核<br/>同样采用 OpenCode Go → DeepSeek 官方故障转移"]
+  Q --> X["离线 Docker 验证<br/>仓库只读、网络关闭"]
+  X --> B["打包结果 Artifact"]
 
-    I --> J{"巡检结论"}
-    J -- "没有可靠问题" --> K["No Action<br/>记录结果，不发布"]
-    J -- "只能确认问题" --> L["Issue Only<br/>整理问题与证据"]
-    J -- "可以安全修复" --> M["Fix Ready<br/>生成代码补丁与测试"]
-
-    M --> N["确定性安全策略"]
-    N --> N1["限制修改文件数与代码行数"]
-    N --> N2["禁止修改密钥、安全、发布等敏感区域"]
-    N --> N3["禁止可执行文件、子模块和异常 Git 状态"]
-
-    N1 --> O["第二个隔离的 OpenClaw Agent"]
-    N2 --> O
-    N3 --> O
-
-    O --> H
-    H --> P["DeepSeek V4 Pro<br/>第二轮：独立代码复审"]
-
-    P --> Q{"复审是否通过？"}
-    Q -- "不通过" --> R["停止发布<br/>保存 finding 和运行产物"]
-    Q -- "通过" --> S["断网只读 Docker 验证"]
-
-    S --> T["格式检查"]
-    S --> U["定向 Vitest 测试"]
-    S --> V["Git Diff 与补丁完整性检查"]
-
-    T --> W{"所有验证通过？"}
-    U --> W
-    V --> W
-
-    W -- "否" --> R
-    W -- "是" --> X{"发布开关"}
-
-    X -- "publish=false<br/>人工安全验证" --> Y["只上传 Artifact<br/>不创建 Issue 或 PR"]
-    X -- "定时任务 publish=true" --> Z{"结果类型"}
-
-    Z -- "Issue Only" --> AA["在 fork 创建或更新 Issue"]
-    Z -- "Fix Ready" --> AB["在 fork 创建修复分支"]
-    AB --> AC["创建 Issue"]
-    AC --> AD["创建关联 PR"]
-    AD --> AE["等待你检查与合并"]
-
-    K --> AF["GitHub Actions 运行记录"]
-    R --> AF
-    Y --> AF
-    AA --> AF
-    AE --> AF
-
-    subgraph Billing["模型与计费"]
-        H
-        BA["OpenCode Go 订阅额度"]
-        BB["Zen 余额 $19.89<br/>超过 Go 限额后备用"]
-        BA --> H
-        BB --> H
-    end
+  B --> H{"本次允许发布？"}
+  H -- "否" --> N["结束<br/>不创建 Issue / PR"]
+  H -- "是" --> U["独立 Publish Job"]
+  U --> I["无法安全修复<br/>创建或更新 fork Issue"]
+  U --> PR["修复并验证通过<br/>创建或更新 fork PR"]
+  I --> M["由你评估后决定是否向上游提 Issue"]
+  PR --> M2["由你定时合并到 fork<br/>再决定是否向上游提 PR"]
 ```
 
 `no-action` 表示证据不足或没有可执行问题，只保留审计产物。`issue-only` 表示发现了值得记录的问题，但现有证据不足以安全修改。`fix-ready` 才会进入测试、复审和发布链路。

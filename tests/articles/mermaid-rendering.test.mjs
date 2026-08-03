@@ -7,7 +7,8 @@ import { renderMarkdown } from '../../lib/research/markdown.js'
 test('mermaid fenced blocks become renderable diagram containers', () => {
   const html = renderMarkdown('```mermaid\ngraph TD\n  A --> B\n```')
 
-  assert.match(html, /<pre class="mermaid-diagram" data-mermaid-diagram/)
+  assert.match(html, /<figure class="mermaid-diagram" data-mermaid-diagram/)
+  assert.match(html, /<pre class="mermaid-diagram__source">/)
   assert.match(html, /<code>graph TD\n  A --&gt; B<\/code>/)
   assert.doesNotMatch(html, /language-mermaid/)
 })
@@ -34,4 +35,9 @@ test('Mermaid runtime stays out of the Cloudflare Worker bundle', async () => {
 
   assert.match(renderer, /cdn\.jsdelivr\.net\/npm\/mermaid@11\.16\.0\/dist\/mermaid\.min\.js/)
   assert.doesNotMatch(renderer, /import\(['"]mermaid['"]\)/)
+  for (const action of ['zoom-out', 'zoom-in', 'reset', 'fullscreen']) {
+    assert.match(renderer, new RegExp(`createControl\\('${action}'`))
+  }
+  assert.match(renderer, /requestFullscreen/)
+  assert.match(renderer, /data-mermaid-fullscreen/)
 })

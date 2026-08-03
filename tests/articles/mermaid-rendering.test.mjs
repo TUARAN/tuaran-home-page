@@ -35,9 +35,12 @@ test('Mermaid runtime stays out of the Cloudflare Worker bundle', async () => {
 
   assert.match(renderer, /cdn\.jsdelivr\.net\/npm\/mermaid@11\.16\.0\/dist\/mermaid\.min\.js/)
   assert.doesNotMatch(renderer, /import\(['"]mermaid['"]\)/)
-  for (const action of ['zoom-out', 'zoom-in', 'reset', 'fullscreen']) {
+  for (const action of ['zoom-out', 'zoom-in', 'reset', 'copy', 'fullscreen']) {
     assert.match(renderer, new RegExp(`createControl\\('${action}'`))
   }
+  assert.match(renderer, /navigator\.clipboard/)
+  assert.match(renderer, /pointerdown/)
+  assert.match(renderer, /scrollLeft/)
   assert.match(renderer, /requestFullscreen/)
   assert.match(renderer, /data-mermaid-fullscreen/)
 })

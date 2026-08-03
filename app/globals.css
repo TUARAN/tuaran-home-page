@@ -3389,6 +3389,13 @@
     opacity: 0.4;
   }
 
+  .prose-tuaran .mermaid-diagram__control[data-mermaid-action='copy'] {
+    width: auto;
+    min-width: 3rem;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+  }
+
   .dark .prose-tuaran .mermaid-diagram__control {
     border-color: #364252;
     background: #202a37;
@@ -3419,6 +3426,16 @@
     padding: 1rem;
     background: white;
     scrollbar-gutter: stable;
+  }
+
+  .prose-tuaran .mermaid-diagram__viewport[data-mermaid-pannable='true'] {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .prose-tuaran .mermaid-diagram__viewport[data-mermaid-dragging='true'] {
+    cursor: grabbing;
   }
 
   .dark .prose-tuaran .mermaid-diagram__viewport {

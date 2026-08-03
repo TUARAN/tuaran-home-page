@@ -5,10 +5,36 @@ import { useTheme } from 'next-themes'
 
 let mermaidModulePromise
 let diagramSequence = 0
+const MERMAID_SCRIPT_SRC = 'https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.min.js'
 
 function loadMermaid() {
   if (!mermaidModulePromise) {
-    mermaidModulePromise = import('mermaid').then((module) => module.default)
+    mermaidModulePromise = new Promise((resolve, reject) => {
+      if (window.mermaid) {
+        resolve(window.mermaid)
+        return
+      }
+
+      const existingScript = document.querySelector(`script[src="${MERMAID_SCRIPT_SRC}"]`)
+      const script = existingScript || document.createElement('script')
+      const handleLoad = () => {
+        if (window.mermaid) resolve(window.mermaid)
+        else reject(new Error('Mermaid loaded without exposing window.mermaid'))
+      }
+      const handleError = () => reject(new Error('Failed to load Mermaid'))
+
+      script.addEventListener('load', handleLoad, { once: true })
+      script.addEventListener('error', handleError, { once: true })
+      if (!existingScript) {
+        script.src = MERMAID_SCRIPT_SRC
+        script.async = true
+        script.dataset.mermaidRuntime = 'true'
+        document.head.appendChild(script)
+      }
+    }).catch((error) => {
+      mermaidModulePromise = null
+      throw error
+    })
   }
   return mermaidModulePromise
 }

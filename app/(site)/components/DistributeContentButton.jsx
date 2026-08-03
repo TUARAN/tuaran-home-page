@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSessionAccount } from './SessionProvider'
 
 const DEFAULT_ARTICLE_SYNCBLOG_URL = 'https://syncblog.cn/md/#content-sync'
@@ -81,6 +81,8 @@ export default function DistributeContentButton({
   const { loading, isOwner } = useSessionAccount()
   const modes = allowArticle ? ['article', 'opinion'] : ['opinion']
   const [states, setStates] = useState({ article: 'idle', opinion: 'idle' })
+  const [xState, setXState] = useState('idle')
+  const xPublishingRef = useRef(false)
 
   function flash(mode, next) {
     setStates((prev) => ({ ...prev, [mode]: next }))
@@ -240,6 +242,39 @@ export default function DistributeContentButton({
     handleArticleDistribute()
   }
 
+  async function handleOwnerDistribute() {
+    if (xPublishingRef.current) return
+    xPublishingRef.current = true
+    setXState('publishing')
+    try {
+      const response = await fetch('/api/distribution/x', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, summary, url: resolveCanonicalUrl(url) }),
+      })
+      const result = await response.json().catch(() => null)
+      if (!response.ok || !result?.post?.url) {
+        console.warn('X 分发失败:', result?.error, result?.detail)
+        window.alert?.(
+          result?.error === 'X_NOT_CONFIGURED'
+            ? 'X 分发尚未配置，请先设置服务端 API Key 与 Access Token。'
+            : `X 分发失败${result?.detail ? `：${result.detail}` : '，请稍后重试。'}`,
+        )
+        setXState('failed')
+        return
+      }
+      setXState('sent')
+      window.open(result.post.url, '_blank', 'noopener,noreferrer')
+    } catch {
+      window.alert?.('X 分发请求失败，请检查网络后重试。')
+      setXState('failed')
+    } finally {
+      xPublishingRef.current = false
+      setTimeout(() => setXState('idle'), 3200)
+    }
+  }
+
   function getLabel(mode) {
     const state = states[mode]
     const idleLabel = mode === 'opinion' ? '分发观点' : '分发文章'
@@ -312,6 +347,19 @@ export default function DistributeContentButton({
           <span>{getLabel(mode)}</span>
         </button>
       ))}
+      {allowArticle ? (
+        <button
+          type="button"
+          onClick={handleOwnerDistribute}
+          disabled={xState === 'publishing'}
+          aria-live="polite"
+          title="由站长账号直接发布到 X"
+          className="article-action-button px-3 py-1 text-xs disabled:cursor-wait disabled:opacity-60"
+        >
+          <DistributeIcon active={xState === 'sent'} />
+          <span>{xState === 'publishing' ? '正在分发' : xState === 'sent' ? '已发布到 X' : xState === 'failed' ? '分发失败' : '站长分发'}</span>
+        </button>
+      ) : null}
     </>
   )
 }

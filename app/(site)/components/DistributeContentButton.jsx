@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import ArticleActionsDropdown from './ArticleActionsDropdown'
 import { useSessionAccount } from './SessionProvider'
 
 const DEFAULT_ARTICLE_SYNCBLOG_URL = 'https://syncblog.cn/md/#content-sync'
@@ -10,6 +11,7 @@ const GENERIC_READY_TYPE = 'MD_IMPORT_READY'
 const ARTICLE_IMPORT_TYPE = 'SYNCBLOG_IMPORT_ARTICLE'
 const OPINION_IMPORT_TYPE = 'MD_IMPORT_OPINION'
 const OPINION_RESULT_TYPE = 'MD_IMPORT_RESULT'
+const X_ARTICLE_COMPOSE_URL = 'https://x.com/compose/articles'
 
 function getTargetOrigin(targetUrl) {
   try {
@@ -82,6 +84,7 @@ export default function DistributeContentButton({
   const modes = allowArticle ? ['article', 'opinion'] : ['opinion']
   const [states, setStates] = useState({ article: 'idle', opinion: 'idle' })
   const [xState, setXState] = useState('idle')
+  const [xArticleState, setXArticleState] = useState('idle')
   const xPublishingRef = useRef(false)
 
   function flash(mode, next) {
@@ -275,6 +278,30 @@ export default function DistributeContentButton({
     }
   }
 
+  async function handleOwnerArticleDistribute() {
+    const articleDraft = String(markdown || '').trim()
+    if (!articleDraft) {
+      window.alert?.('当前文章没有可分发的 Markdown 正文。')
+      setXArticleState('failed')
+      setTimeout(() => setXArticleState('idle'), 3200)
+      return
+    }
+
+    const articleWindow = window.open('', 'x-article-compose')
+    if (articleWindow) {
+      articleWindow.opener = null
+      articleWindow.location.replace(X_ARTICLE_COMPOSE_URL)
+    }
+    const copied = await copyText(articleDraft)
+    if (!articleWindow) {
+      window.alert?.(copied
+        ? '文章 Markdown 已复制，请允许弹出窗口后打开 X Articles 编辑器。'
+        : '无法打开 X Articles 编辑器，请允许弹出窗口后重试。')
+    }
+    setXArticleState(copied ? 'copied' : 'failed')
+    setTimeout(() => setXArticleState('idle'), 3200)
+  }
+
   function getLabel(mode) {
     const state = states[mode]
     const idleLabel = mode === 'opinion' ? '分发观点' : '分发文章'
@@ -348,17 +375,31 @@ export default function DistributeContentButton({
         </button>
       ))}
       {allowArticle ? (
-        <button
-          type="button"
-          onClick={handleOwnerDistribute}
-          disabled={xState === 'publishing'}
-          aria-live="polite"
-          title="由站长账号直接发布到 X"
-          className="article-action-button px-3 py-1 text-xs disabled:cursor-wait disabled:opacity-60"
-        >
-          <DistributeIcon active={xState === 'sent'} />
-          <span>{xState === 'publishing' ? '正在分发' : xState === 'sent' ? '已发布到 X' : xState === 'failed' ? '分发失败' : '站长分发'}</span>
-        </button>
+        <ArticleActionsDropdown label="站长分发至 X" closeOnSelect>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleOwnerDistribute}
+            disabled={xState === 'publishing'}
+            aria-live="polite"
+            title="由站长账号通过 X API 直接发布 Post"
+            className="article-action-button px-3 py-1 text-xs disabled:cursor-wait disabled:opacity-60"
+          >
+            <DistributeIcon active={xState === 'sent'} />
+            <span>{xState === 'publishing' ? '正在发布 Post' : xState === 'sent' ? 'Post 已发布' : xState === 'failed' ? 'Post 分发失败' : 'Post'}</span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleOwnerArticleDistribute}
+            aria-live="polite"
+            title="复制文章 Markdown 并打开 X Articles 编辑器"
+            className="article-action-button px-3 py-1 text-xs"
+          >
+            <DistributeIcon active={xArticleState === 'copied'} />
+            <span>{xArticleState === 'copied' ? '已复制，前往 X 文章' : xArticleState === 'failed' ? '文章分发失败' : '文章'}</span>
+          </button>
+        </ArticleActionsDropdown>
       ) : null}
     </>
   )

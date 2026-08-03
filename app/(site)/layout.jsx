@@ -4,6 +4,7 @@ import LayoutChrome from './components/LayoutChrome'
 import { LocaleProvider } from './components/LocaleProvider'
 import { SessionProvider } from './components/SessionProvider'
 import { ThemeProvider } from './components/ThemeProvider'
+import MermaidRenderer from './components/MermaidRenderer'
 import SiteBehaviorAnalytics from './components/SiteBehaviorAnalytics'
 
 const SITE_URL = 'https://2aran.com'
@@ -41,6 +42,7 @@ export default function SiteLayout({ children }) {
         <LocaleProvider>
           <SessionProvider>
             <SiteBehaviorAnalytics />
+            <MermaidRenderer />
             <LayoutChrome>{children}</LayoutChrome>
           </SessionProvider>
         </LocaleProvider>

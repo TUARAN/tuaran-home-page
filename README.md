@@ -149,6 +149,7 @@ npm run test:planning
 | Cloudflare | `DB`、`R2_PUBLIC_BASE`；生产环境还需要 `MEDIA`、`NSFW_MEDIA` bindings |
 | 调研加密 | `RESEARCH_ENCRYPTION_PASSWORD` |
 | 后台模型调度 | `DEEPSEEK_API_KEY`，可选 `DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL` |
+| X 站长分发 | `X_API_KEY`、`X_API_KEY_SECRET`、`X_ACCESS_TOKEN`、`X_ACCESS_TOKEN_SECRET` |
 | 定时采集 | `PUBLIC_OPINION_COLLECT_SECRET` 等对应任务 Secret |
 | 广告 | `NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT` 与页面广告位变量 |
 

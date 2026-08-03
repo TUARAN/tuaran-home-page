@@ -45,6 +45,77 @@ pv: 0
   → 在 fork 中生成 PR，等待人工审核
 ```
 
+```mermaid
+flowchart TD
+    A["GitHub Actions<br/>每天定时执行 5 次"] --> B["同步上游<br/>openclaw/openclaw → TUARAN/moltbot"]
+
+    B --> C{"上游是否有更新？"}
+    C -- "有" --> D["创建或更新<br/>上游同步 PR"]
+    C -- "没有" --> E["进入代码巡检"]
+
+    D --> E
+
+    E --> F["准备只读上下文<br/>Issue、代码、测试、仓库规则"]
+    F --> G["OpenClaw Agent 运行时"]
+    G --> H["OpenCode Go API"]
+    H --> I["DeepSeek V4 Pro<br/>第一轮：分析与修复"]
+
+    I --> J{"巡检结论"}
+    J -- "没有可靠问题" --> K["No Action<br/>记录结果，不发布"]
+    J -- "只能确认问题" --> L["Issue Only<br/>整理问题与证据"]
+    J -- "可以安全修复" --> M["Fix Ready<br/>生成代码补丁与测试"]
+
+    M --> N["确定性安全策略"]
+    N --> N1["限制修改文件数与代码行数"]
+    N --> N2["禁止修改密钥、安全、发布等敏感区域"]
+    N --> N3["禁止可执行文件、子模块和异常 Git 状态"]
+
+    N1 --> O["第二个隔离的 OpenClaw Agent"]
+    N2 --> O
+    N3 --> O
+
+    O --> H
+    H --> P["DeepSeek V4 Pro<br/>第二轮：独立代码复审"]
+
+    P --> Q{"复审是否通过？"}
+    Q -- "不通过" --> R["停止发布<br/>保存 finding 和运行产物"]
+    Q -- "通过" --> S["断网只读 Docker 验证"]
+
+    S --> T["格式检查"]
+    S --> U["定向 Vitest 测试"]
+    S --> V["Git Diff 与补丁完整性检查"]
+
+    T --> W{"所有验证通过？"}
+    U --> W
+    V --> W
+
+    W -- "否" --> R
+    W -- "是" --> X{"发布开关"}
+
+    X -- "publish=false<br/>人工安全验证" --> Y["只上传 Artifact<br/>不创建 Issue 或 PR"]
+    X -- "定时任务 publish=true" --> Z{"结果类型"}
+
+    Z -- "Issue Only" --> AA["在 fork 创建或更新 Issue"]
+    Z -- "Fix Ready" --> AB["在 fork 创建修复分支"]
+    AB --> AC["创建 Issue"]
+    AC --> AD["创建关联 PR"]
+    AD --> AE["等待你检查与合并"]
+
+    K --> AF["GitHub Actions 运行记录"]
+    R --> AF
+    Y --> AF
+    AA --> AF
+    AE --> AF
+
+    subgraph Billing["模型与计费"]
+        H
+        BA["OpenCode Go 订阅额度"]
+        BB["Zen 余额 $19.89<br/>超过 Go 限额后备用"]
+        BA --> H
+        BB --> H
+    end
+```
+
 `no-action` 表示证据不足或没有可执行问题，只保留审计产物。`issue-only` 表示发现了值得记录的问题，但现有证据不足以安全修改。`fix-ready` 才会进入测试、复审和发布链路。
 
 上游 Issue、标题、代码和提交信息都按不可信输入处理。模型在无网络、只读根文件系统、权限裁剪的 Docker 沙箱里运行，最多续跑 3 轮，每轮最多 15 分钟。repair 阶段使用只读 GitHub 权限，发布阶段单独授权。

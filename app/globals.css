@@ -3329,6 +3329,15 @@
     @apply dark:[&_.research-inline-diagram_.mm-leaf]:fill-[#161513] dark:[&_.research-inline-diagram_.mm-leaf]:stroke-[#2c2d2b];
     @apply dark:[&_.research-inline-diagram_.mm-leaf_text]:fill-[#b4b6b1];
     @apply dark:[&_.research-inline-diagram_.mm-line]:stroke-[#41423f];
+
+    @apply [&_.mermaid-diagram]:my-8 [&_.mermaid-diagram]:w-full [&_.mermaid-diagram]:max-w-full;
+    @apply [&_.mermaid-diagram]:overflow-x-auto [&_.mermaid-diagram]:rounded-md [&_.mermaid-diagram]:border;
+    @apply [&_.mermaid-diagram]:border-[#dee0db] dark:[&_.mermaid-diagram]:border-gray-800;
+    @apply [&_.mermaid-diagram]:bg-white dark:[&_.mermaid-diagram]:bg-gray-900;
+    @apply [&_.mermaid-diagram]:p-4 [&_.mermaid-diagram]:text-center;
+    @apply [&_.mermaid-diagram_svg]:mx-auto [&_.mermaid-diagram_svg]:block [&_.mermaid-diagram_svg]:h-auto [&_.mermaid-diagram_svg]:max-w-full;
+    @apply [&_.mermaid-diagram_code]:block [&_.mermaid-diagram_code]:whitespace-pre [&_.mermaid-diagram_code]:text-left;
+    @apply [&_.mermaid-diagram[data-mermaid-error]]:bg-[#fff7f7] dark:[&_.mermaid-diagram[data-mermaid-error]]:bg-[#24191b];
   }
 
   .research-media-viewer .research-inline-diagram {

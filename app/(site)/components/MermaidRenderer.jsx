@@ -7,6 +7,7 @@ let mermaidModulePromise
 let diagramSequence = 0
 let fallbackFullscreenDiagram = null
 let fallbackBodyOverflow = ''
+let activeDrag = null
 const MERMAID_SCRIPT_SRC = 'https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.min.js'
 const MIN_ZOOM = 0.5
 const MAX_ZOOM = 3
@@ -68,6 +69,80 @@ function createControl(action, symbol, label, title = label) {
   return button
 }
 
+async function copyText(value) {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    await navigator.clipboard.writeText(value)
+    return
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = value
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const copied = document.execCommand('copy')
+  textarea.remove()
+  if (!copied) throw new Error('Browser rejected the copy command')
+}
+
+async function copyDiagramSource(diagram, button) {
+  const source = diagram.dataset.mermaidSource || ''
+  if (!source) throw new Error('Mermaid source is empty')
+  await copyText(source)
+
+  button.textContent = '已复制'
+  button.setAttribute('aria-label', 'Mermaid 源码已复制')
+  button.title = '已复制'
+  resetCopyControl(button)
+}
+
+function resetCopyControl(button) {
+  window.setTimeout(() => {
+    if (!button.isConnected) return
+    button.textContent = '源码'
+    button.setAttribute('aria-label', '复制 Mermaid 源码')
+    button.title = '复制 Mermaid 源码'
+  }, 1600)
+}
+
+function startDrag(event) {
+  if (event.button !== 0 || activeDrag) return
+  const viewport = event.target?.closest?.('[data-mermaid-viewport]')
+  if (!viewport) return
+  const canPan = viewport.scrollWidth > viewport.clientWidth + 1
+    || viewport.scrollHeight > viewport.clientHeight + 1
+  if (!canPan) return
+
+  activeDrag = {
+    viewport,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    scrollLeft: viewport.scrollLeft,
+    scrollTop: viewport.scrollTop,
+  }
+  viewport.dataset.mermaidDragging = 'true'
+  viewport.setPointerCapture?.(event.pointerId)
+  event.preventDefault()
+}
+
+function moveDrag(event) {
+  if (!activeDrag || activeDrag.pointerId !== event.pointerId) return
+  activeDrag.viewport.scrollLeft = activeDrag.scrollLeft - (event.clientX - activeDrag.startX)
+  activeDrag.viewport.scrollTop = activeDrag.scrollTop - (event.clientY - activeDrag.startY)
+  event.preventDefault()
+}
+
+function finishDrag(event) {
+  if (!activeDrag || (event && activeDrag.pointerId !== event.pointerId)) return
+  const { viewport, pointerId } = activeDrag
+  if (viewport.hasPointerCapture?.(pointerId)) viewport.releasePointerCapture(pointerId)
+  viewport.removeAttribute('data-mermaid-dragging')
+  activeDrag = null
+}
+
 function updateZoom(diagram, value) {
   const zoom = clampZoom(Number(value) || 1)
   const stage = diagram.querySelector('[data-mermaid-stage]')
@@ -92,6 +167,9 @@ function updateZoom(diagram, value) {
   if (viewport) {
     requestAnimationFrame(() => {
       viewport.scrollLeft = Math.max(0, centerRatio * viewport.scrollWidth - viewport.clientWidth / 2)
+      const canPan = viewport.scrollWidth > viewport.clientWidth + 1
+        || viewport.scrollHeight > viewport.clientHeight + 1
+      viewport.dataset.mermaidPannable = String(canPan)
     })
   }
 }
@@ -156,14 +234,15 @@ function enhanceDiagram(diagram) {
   zoomLabel.setAttribute('aria-live', 'polite')
   const zoomIn = createControl('zoom-in', '+', '放大图表')
   const reset = createControl('reset', '↺', '重置缩放', '恢复为 100%')
+  const copy = createControl('copy', '源码', '复制 Mermaid 源码')
   const fullscreen = createControl('fullscreen', '⛶', '全屏查看')
-  toolbar.append(zoomOut, zoomLabel, zoomIn, reset, fullscreen)
+  toolbar.append(zoomOut, zoomLabel, zoomIn, reset, copy, fullscreen)
 
   const viewport = document.createElement('div')
   viewport.className = 'mermaid-diagram__viewport not-prose'
   viewport.dataset.mermaidViewport = 'true'
   viewport.tabIndex = 0
-  viewport.setAttribute('aria-label', 'Mermaid 图表，可使用工具栏或按住 Ctrl/Command 滚动缩放')
+  viewport.setAttribute('aria-label', 'Mermaid 图表，可拖拽平移，或使用工具栏和 Ctrl/Command 滚轮缩放')
 
   const stage = document.createElement('div')
   stage.className = 'mermaid-diagram__stage'
@@ -253,6 +332,15 @@ export default function MermaidRenderer() {
       if (control.dataset.mermaidAction === 'zoom-out') updateZoom(diagram, zoom - ZOOM_STEP)
       if (control.dataset.mermaidAction === 'zoom-in') updateZoom(diagram, zoom + ZOOM_STEP)
       if (control.dataset.mermaidAction === 'reset') updateZoom(diagram, 1)
+      if (control.dataset.mermaidAction === 'copy') {
+        copyDiagramSource(diagram, control).catch((error) => {
+          control.textContent = '失败'
+          control.setAttribute('aria-label', '复制失败')
+          control.title = '复制失败，请重试'
+          resetCopyControl(control)
+          console.error('Copy Mermaid source failed', error)
+        })
+      }
       if (control.dataset.mermaidAction === 'fullscreen') {
         toggleFullscreen(diagram).catch((error) => console.error('Mermaid fullscreen failed', error))
       }
@@ -274,6 +362,10 @@ export default function MermaidRenderer() {
 
     document.addEventListener('click', handleClick)
     document.addEventListener('wheel', handleWheel, { passive: false })
+    document.addEventListener('pointerdown', startDrag)
+    document.addEventListener('pointermove', moveDrag)
+    document.addEventListener('pointerup', finishDrag)
+    document.addEventListener('pointercancel', finishDrag)
     document.addEventListener('fullscreenchange', syncFullscreenControls)
     window.addEventListener('keydown', handleKeyDown)
 
@@ -282,8 +374,13 @@ export default function MermaidRenderer() {
       observer.disconnect()
       document.removeEventListener('click', handleClick)
       document.removeEventListener('wheel', handleWheel)
+      document.removeEventListener('pointerdown', startDrag)
+      document.removeEventListener('pointermove', moveDrag)
+      document.removeEventListener('pointerup', finishDrag)
+      document.removeEventListener('pointercancel', finishDrag)
       document.removeEventListener('fullscreenchange', syncFullscreenControls)
       window.removeEventListener('keydown', handleKeyDown)
+      finishDrag()
       closeFallbackFullscreen()
     }
   }, [resolvedTheme])

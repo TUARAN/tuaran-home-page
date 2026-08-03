@@ -16,6 +16,7 @@ import {
 import { avatarAbsoluteUrl } from '../../../../../../lib/avatar'
 import { buildArticleOgUrl } from '../../../../../../lib/articleOg'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
+import { buildResearchShareTitle, isAShareCompanyObservation } from '../../../../../../lib/research/shareTitle'
 import { AUTHOR_INTRO_MARKDOWN } from '../../../../components/ArticleAuthorIntro'
 import ArticleDetailHeader from '../../../../components/ArticleDetailHeader'
 import ArticleComments from '../../../../components/ArticleComments'
@@ -74,10 +75,11 @@ export async function generateMetadata({ params }) {
 
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
   const title = entry.title
+  const shareTitle = buildResearchShareTitle(entry)
   const description = entry.summary || `${CATEGORY_META[entry.category]?.label || ''}：${entry.title}`
   const isEncrypted = entry.encrypted
   const ogImage = buildArticleOgUrl({
-    title,
+    title: shareTitle,
     description,
     category: CATEGORY_META[entry.category]?.label || '分析',
     date: entry.date,
@@ -94,18 +96,18 @@ export async function generateMetadata({ params }) {
       googleBot: { index: !isEncrypted, follow: !isEncrypted },
     },
     openGraph: {
-      title,
+      title: shareTitle,
       description,
       url,
       siteName: SITE_TITLE,
       locale: 'zh_CN',
       type: 'article',
       publishedTime: entry.dateTimeIso ? new Date(entry.dateTimeIso).toISOString() : entry.date ? new Date(entry.date).toISOString() : undefined,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${title} 分享卡片` }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: `${shareTitle} 分享卡片` }],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: shareTitle,
       description,
       images: [ogImage],
     },
@@ -158,6 +160,10 @@ export default async function ResearchDetailPage({ params }) {
       : '/articles?tab=other'
     : `/articles?tab=${entry.category}`
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
+  const shareTitle = buildResearchShareTitle(entry)
+  const shareText = isAShareCompanyObservation(entry)
+    ? shareTitle
+    : entry.summary || entry.tldr || entry.title
   const articleKey = `research:${entry.category}:${entry.slug}`
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
   const showRebuttalPersonalityTest = entry.category === 'topics' && entry.slug === 'rebuttal-personality-communication-pattern'
@@ -340,8 +346,8 @@ export default async function ResearchDetailPage({ params }) {
         )}
         actions={(
           <ArticleHeaderActions
-            title={entry.title}
-            text={entry.summary || entry.tldr || entry.title}
+            title={shareTitle}
+            text={shareText}
             url={url}
             actionsEnabled={!isEncrypted}
             className="mt-2 sm:mt-0 sm:ml-auto lg:flex-nowrap"

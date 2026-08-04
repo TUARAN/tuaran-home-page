@@ -17,7 +17,8 @@ test('greeting date label uses Asia/Shanghai day of month', () => {
 test('builds the fixed morning greeting with today date injected', () => {
   const text = buildMorningGreeting({ now: new Date('2026-08-05T00:30:00.000Z') })
   assert.ok(text.startsWith('大家早上好！向各位领导问好！'))
-  assert.ok(text.includes('今日是8月5号'))
+  assert.ok(text.includes('今天是8月5号'))
+  assert.ok(text.includes('chovy！\n新一天一起加油～\n冷知识：关注数多只能说明这人努力+实诚'))
   assert.ok(text.includes('冷知识：关注数多只能说明这人努力+实诚'))
   assert.ok(!text.includes('{date}'))
   assert.ok(!text.includes('xxx'))

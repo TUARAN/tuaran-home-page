@@ -1,3 +1,5 @@
+import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
+
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import {
   AGENT_OPS_EXTERNAL_URL,
@@ -7,25 +9,101 @@ import {
   OPS_RECENT_RUNS,
   registryEntryText,
 } from '../../../../lib/adminOpsRegistry'
+import {
+  MORNING_GREETING_ID,
+  MORNING_GREETING_LAST_RUN_KEY,
+  MORNING_GREETING_SETTING_KEY,
+  isAutomationPaused,
+} from '../../../../lib/morningGreeting'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+
+async function readSetting(db, key) {
+  const { results } = await db.prepare('SELECT value FROM site_settings WHERE key = ?1').bind(key).all()
+  return results?.[0]?.value ?? null
+}
+
+async function writeSetting(db, key, value, updatedBy) {
+  await db
+    .prepare(
+      `INSERT INTO site_settings (key, value, updated_at, updated_by)
+       VALUES (?1, ?2, ?3, ?4)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
+    )
+    .bind(key, value, Date.now(), String(updatedBy || 'admin'))
+    .run()
+}
+
+function formatLastRun(payload) {
+  if (!payload) return null
+  const at = Number(payload.at || 0)
+  const label = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(at || Date.now())
+  return payload.ok ? `${label} 成功` : `${label} 失败${payload.error ? `（${payload.error}）` : ''}`
+}
 
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
 
   const startedAt = Date.now()
+  const db = getOptionalRequestContext()?.env?.DB || null
+  let greetingState = null
+  let greetingLastRun = null
+  if (db) {
+    try {
+      greetingState = await readSetting(db, MORNING_GREETING_SETTING_KEY)
+    } catch {
+      greetingState = null
+    }
+    try {
+      greetingLastRun = JSON.parse((await readSetting(db, MORNING_GREETING_LAST_RUN_KEY)) || 'null')
+    } catch {
+      greetingLastRun = null
+    }
+  }
+
   const registry = AUTOMATION_REGISTRY.map((item) => ({
     ...item,
+    ...(item.id === MORNING_GREETING_ID
+      ? {
+          status: isAutomationPaused(greetingState) ? 'paused' : 'running',
+          pausable: true,
+          lastRun: formatLastRun(greetingLastRun) || item.lastRun,
+        }
+      : {}),
     registryText: registryEntryText(item),
     latestRun: OPS_RECENT_RUNS.find((run) => run.taskId === item.id) || null,
   }))
   const repositoryByTask = new Map(registry.map((item) => [item.id, item.repository]))
-  const recentRuns = OPS_RECENT_RUNS.map((run) => ({
-    ...run,
-    repository: run.repository || repositoryByTask.get(run.taskId) || null,
-  }))
+  const recentRuns = [
+    ...(greetingLastRun
+      ? [
+          {
+            id: `x-morning-greeting-${greetingLastRun.at || Date.now()}`,
+            taskId: MORNING_GREETING_ID,
+            taskName: 'X 每日早安问候',
+            repository: 'tuaran-home-page',
+            status: greetingLastRun.ok ? 'success' : 'failed',
+            reviewStatus: 'not_required',
+            startedAt: new Date(Number(greetingLastRun.at || Date.now())).toISOString(),
+            durationMs: null,
+            artifacts: greetingLastRun.postUrl ? [greetingLastRun.postUrl] : [greetingLastRun.error || 'X 发帖'],
+          },
+        ]
+      : []),
+    ...OPS_RECENT_RUNS.map((run) => ({
+      ...run,
+      repository: run.repository || repositoryByTask.get(run.taskId) || null,
+    })),
+  ]
   const cloudAutomations = registry.filter((item) => item.scope === 'cloud')
   const localAutomations = registry.filter((item) => item.scope === 'local')
   const autoRunItems = registry.filter((item) => item.autoRun)
@@ -59,4 +137,35 @@ export async function GET(req) {
       artifacts: recentRuns.reduce((sum, run) => sum + (run.artifacts || []).length, 0),
     },
   })
+}
+
+export async function POST(req) {
+  const guard = await getOwnerOrReject(req)
+  if (!guard.ok) return guard.response
+
+  let body
+  try {
+    body = await req.json()
+  } catch {
+    return Response.json({ ok: false, error: 'INVALID_JSON' }, { status: 400 })
+  }
+
+  const id = String(body?.id || '')
+  const action = String(body?.action || '')
+  if (id !== MORNING_GREETING_ID || !['pause', 'resume'].includes(action)) {
+    return Response.json({ ok: false, error: 'UNSUPPORTED_ACTION' }, { status: 400 })
+  }
+
+  const db = getOptionalRequestContext()?.env?.DB
+  if (!db) {
+    return Response.json({ ok: false, error: 'D1_UNAVAILABLE' }, { status: 503 })
+  }
+
+  const next = action === 'pause' ? 'paused' : 'running'
+  try {
+    await writeSetting(db, MORNING_GREETING_SETTING_KEY, next, guard.user?.name || 'admin')
+  } catch {
+    return Response.json({ ok: false, error: 'WRITE_FAILED' }, { status: 500 })
+  }
+  return Response.json({ ok: true, id, status: next })
 }

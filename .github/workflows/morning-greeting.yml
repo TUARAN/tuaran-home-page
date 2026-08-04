@@ -1,0 +1,42 @@
+name: Morning greeting to X
+
+on:
+  schedule:
+    # 每天北京时间 08:00（GitHub Actions 使用 UTC）
+    - cron: '0 0 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: morning-greeting
+  cancel-in-progress: false
+
+jobs:
+  post:
+    name: Publish morning greeting to X
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/distribution/x/greeting
+        env:
+          MORNING_GREETING_SECRET: ${{ secrets.MORNING_GREETING_SECRET }}
+        run: |
+          if [ -z "$MORNING_GREETING_SECRET" ]; then
+            echo "::error::缺少仓库 Secret MORNING_GREETING_SECRET"
+            exit 1
+          fi
+
+          code=$(curl -sS --retry 2 --retry-delay 5 \
+            -o /tmp/morning-greeting.json \
+            -w '%{http_code}' \
+            -X POST \
+            -H "x-morning-greeting-secret: $MORNING_GREETING_SECRET" \
+            https://2aran.com/api/distribution/x/greeting)
+
+          echo "HTTP $code"
+          cat /tmp/morning-greeting.json
+          echo
+          if [ "$code" = "423" ]; then
+            echo "后台已暂停该自动化，本次跳过（视为成功，不发布）。"
+            exit 0
+          fi
+          test "$code" = "201"

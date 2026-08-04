@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-03T01:15:08.452Z",
-  "snapshotDate": "2026-08-03",
-  "snapshotTime": "09:15",
+  "generatedAt": "2026-08-04T01:14:32.336Z",
+  "snapshotDate": "2026-08-04",
+  "snapshotTime": "09:14",
   "source": {
     "provider": "巨潮资讯公司列表 + 腾讯行情状态核验",
     "companyList": "https://www.cninfo.com.cn/new/data/szse_stock.json",
@@ -13365,14 +13365,6 @@
       "boardName": "创业板"
     },
     {
-      "code": "300237",
-      "name": "ST美晨",
-      "exchange": "SZSE",
-      "exchangeName": "深圳证券交易所",
-      "board": "chinext",
-      "boardName": "创业板"
-    },
-    {
       "code": "300238",
       "name": "冠昊生物",
       "exchange": "SZSE",
@@ -13879,6 +13871,14 @@
     {
       "code": "300310",
       "name": "宜通世纪",
+      "exchange": "SZSE",
+      "exchangeName": "深圳证券交易所",
+      "board": "chinext",
+      "boardName": "创业板"
+    },
+    {
+      "code": "300311",
+      "name": "ST任子行",
       "exchange": "SZSE",
       "exchangeName": "深圳证券交易所",
       "board": "chinext",
@@ -25814,7 +25814,7 @@
     },
     {
       "code": "600530",
-      "name": "交大昂立",
+      "name": "ST交昂",
       "exchange": "SSE",
       "exchangeName": "上海证券交易所",
       "board": "main",

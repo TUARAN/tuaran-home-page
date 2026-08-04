@@ -46,6 +46,10 @@ export async function GET(req) {
   const user = await getUserFromRequest(req)
   if (!user?.id) return Response.json({ items: [], unread: 0, status: 'anonymous' })
 
+  const url = new URL(req.url)
+  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 20))
+  const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0)
+
   let db
   try {
     db = getD1()
@@ -54,7 +58,7 @@ export async function GET(req) {
   }
 
   try {
-    const [itemsResult, unreadRow] = await Promise.all([
+    const [itemsResult, countRow, unreadRow] = await Promise.all([
       db
         .prepare(
           `SELECT id, type, actor_user_id, actor_user_provider, actor_user_name, actor_user_image,
@@ -62,10 +66,18 @@ export async function GET(req) {
            FROM comment_notifications
            WHERE recipient_user_id = ?1
            ORDER BY created_at DESC
-           LIMIT 20`
+           LIMIT ?2 OFFSET ?3`
+        )
+        .bind(String(user.id), limit, offset)
+        .all(),
+      db
+        .prepare(
+          `SELECT COUNT(*) AS total
+           FROM comment_notifications
+           WHERE recipient_user_id = ?1`
         )
         .bind(String(user.id))
-        .all(),
+        .first(),
       db
         .prepare(
           `SELECT COUNT(*) AS unread
@@ -83,10 +95,11 @@ export async function GET(req) {
     return Response.json({
       status: 'ok',
       unread: Number(unreadRow?.unread) || 0,
+      total: Number(countRow?.total) || 0,
       items: (itemsResult?.results || []).map((row) => mapNotification(row, metaMap)),
     })
   } catch {
-    return Response.json({ items: [], unread: 0, status: 'error' }, { status: 500 })
+    return Response.json({ items: [], unread: 0, total: 0, status: 'error' }, { status: 500 })
   }
 }
 

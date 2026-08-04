@@ -47,6 +47,7 @@ function statusText(status) {
       success: '成功',
       failed: '失败',
       running: '运行中',
+      paused: '已暂停',
       never_run: '未运行',
     }[status] || status || '未运行'
   )
@@ -101,6 +102,7 @@ export default function OpsConsoleClient() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState('')
   const [copyError, setCopyError] = useState('')
+  const [togglingId, setTogglingId] = useState('')
   const [repositoryFilter, setRepositoryFilter] = useState('all')
 
   const refresh = useCallback(async () => {
@@ -180,6 +182,29 @@ export default function OpsConsoleClient() {
       setCopyError(e?.message || 'COPY_FAILED')
     }
   }, [])
+
+  const togglePause = useCallback(
+    async (item) => {
+      const action = item.status === 'paused' ? 'resume' : 'pause'
+      setTogglingId(item.id)
+      try {
+        const res = await fetch('/api/admin/ops-console', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action, id: item.id }),
+        })
+        const data = await safeJson(res)
+        if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
+        await refresh()
+      } catch (e) {
+        setError(e?.message || 'TOGGLE_FAILED')
+      } finally {
+        setTogglingId('')
+      }
+    },
+    [refresh],
+  )
 
   return (
     <AdminPage
@@ -274,7 +299,14 @@ export default function OpsConsoleClient() {
 
           <div className="mt-4 grid gap-3">
             {cloudAutomations.map((item) => (
-              <AutomationCard key={item.id} item={item} copied={copied} onCopy={copyText} />
+              <AutomationCard
+                key={item.id}
+                item={item}
+                copied={copied}
+                onCopy={copyText}
+                onToggle={togglePause}
+                toggling={togglingId === item.id}
+              />
             ))}
             {!loading && !cloudAutomations.length ? <EmptyFilterResult /> : null}
           </div>
@@ -298,7 +330,14 @@ export default function OpsConsoleClient() {
 
           <div className="mt-4 grid gap-3">
             {localAutomations.map((item) => (
-              <AutomationCard key={item.id} item={item} copied={copied} onCopy={copyText} />
+              <AutomationCard
+                key={item.id}
+                item={item}
+                copied={copied}
+                onCopy={copyText}
+                onToggle={togglePause}
+                toggling={togglingId === item.id}
+              />
             ))}
             {!loading && !localAutomations.length ? <EmptyFilterResult /> : null}
           </div>
@@ -331,6 +370,7 @@ export default function OpsConsoleClient() {
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">风险</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">自动执行</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">人工审核</th>
+                <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">状态</th>
               </tr>
             </thead>
             <tbody>
@@ -348,10 +388,24 @@ export default function OpsConsoleClient() {
                   <td className="border-b border-[#f0f1ea] px-3 py-3 dark:border-[#1c2632]"><StatusPill tone={riskTone(item.riskLevel)} size="sm">{riskText(item.riskLevel)}</StatusPill></td>
                   <td className="border-b border-[#f0f1ea] px-3 py-3 dark:border-[#1c2632]">{item.autoRun ? '是' : '否'}</td>
                   <td className="border-b border-[#f0f1ea] px-3 py-3 dark:border-[#1c2632]">{item.reviewRequired ? '是' : '否'}</td>
+                  <td className="border-b border-[#f0f1ea] px-3 py-3 dark:border-[#1c2632]">
+                    {item.pausable ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusPill tone={item.status === 'paused' ? 'danger' : 'success'} size="sm">
+                          {statusText(item.status)}
+                        </StatusPill>
+                        <AdminButton type="button" size="sm" onClick={() => togglePause(item)} disabled={togglingId === item.id}>
+                          {togglingId === item.id ? '处理中…' : item.status === 'paused' ? '恢复' : '暂停'}
+                        </AdminButton>
+                      </div>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                 </tr>
               ))}
               {!loading && !filteredRegistry.length ? (
-                <tr><td colSpan={12} className="px-3 py-8 text-center text-sm text-[#77796d] dark:text-gray-400">没有符合筛选条件的自动化。</td></tr>
+                <tr><td colSpan={13} className="px-3 py-8 text-center text-sm text-[#77796d] dark:text-gray-400">没有符合筛选条件的自动化。</td></tr>
               ) : null}
             </tbody>
           </table>
@@ -408,7 +462,7 @@ export default function OpsConsoleClient() {
   )
 }
 
-function AutomationCard({ item, copied, onCopy }) {
+function AutomationCard({ item, copied, onCopy, onToggle, toggling }) {
   return (
     <article className="rounded-lg border border-[#d9dbd1] bg-[#fbfbf7] p-4 dark:border-[#263142] dark:bg-[#0c1118]">
       <div className="flex items-start justify-between gap-3">
@@ -416,9 +470,16 @@ function AutomationCard({ item, copied, onCopy }) {
           <h3 className="text-sm font-semibold text-[#15140f] dark:text-gray-100">{item.name}</h3>
           <p className="mt-1 font-mono text-xs text-[#77796d] dark:text-gray-500">{item.id}</p>
         </div>
-        <StatusPill tone={item.scope === 'cloud' ? 'info' : 'neutral'} size="sm">
-          {scopeText(item.scope)}
-        </StatusPill>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <StatusPill tone={item.scope === 'cloud' ? 'info' : 'neutral'} size="sm">
+            {scopeText(item.scope)}
+          </StatusPill>
+          {item.pausable ? (
+            <StatusPill tone={item.status === 'paused' ? 'danger' : 'success'} size="sm">
+              {statusText(item.status)}
+            </StatusPill>
+          ) : null}
+        </div>
       </div>
       <p className="mt-3 text-sm leading-6 text-[#54554e] dark:text-gray-300">{item.description}</p>
       <div className="mt-3 grid gap-2 text-xs text-[#686962] dark:text-gray-400 sm:grid-cols-2">
@@ -444,6 +505,11 @@ function AutomationCard({ item, copied, onCopy }) {
         <AdminButton type="button" size="sm" onClick={() => onCopy(item.id, item.registryText)}>
           {copied === item.id ? '已复制' : '复制任务字段'}
         </AdminButton>
+        {item.pausable ? (
+          <AdminButton type="button" size="sm" onClick={() => onToggle(item)} disabled={toggling}>
+            {toggling ? '处理中…' : item.status === 'paused' ? '恢复执行' : '暂停'}
+          </AdminButton>
+        ) : null}
         {String(item.entry || '').startsWith('http') ? (
           <AdminButton href={item.entry} target="_blank" rel="noreferrer" size="sm">
             打开入口

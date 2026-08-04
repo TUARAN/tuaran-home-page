@@ -240,6 +240,13 @@ function NotificationPanel() {
           还没有新的站内通知。这里会与顶部账号菜单同步。
         </p>
       )}
+      <Link
+        href="/notifications"
+        className="discussion-text-link mt-3 inline-flex items-center gap-1 text-xs"
+      >
+        查看全部通知
+        <span aria-hidden="true">→</span>
+      </Link>
     </div>
   )
 }

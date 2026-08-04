@@ -404,26 +404,35 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
             <AccountPopoverLink href="/community" onClick={onClose} icon={IconMessageCircle}>
               {pick(locale, '讨论中心', 'Discussion hub')}
             </AccountPopoverLink>
+            <AccountPopoverLink href="/notifications" onClick={onClose} icon={IconBell}>
+              {pick(locale, '通知中心', 'Notifications')}
+            </AccountPopoverLink>
             <AccountPopoverLink href="/help" onClick={onClose} icon={IconBook2}>
               {pick(locale, '帮助与文档', 'Help & documentation')}
             </AccountPopoverLink>
           </div>
-          {notifications?.items?.length ? (
-            <div className="site-account-section px-3 py-3">
-              <div className="mb-1 flex items-center justify-between px-2">
-                <p className="m-0 text-xs text-[var(--site-faint)]">
-                  {pick(locale, '最近通知', 'Recent notifications')}
-                </p>
-                <NotificationBadge count={unread} />
-              </div>
-              <NotificationList
-                notifications={notifications}
-                markNotificationsRead={markNotificationsRead}
-                onNavigate={onClose}
-                emptyLabel={pick(locale, '暂无新的评论回复。', 'No comment replies yet.')}
-              />
+          <div className="site-account-section px-3 py-3">
+            <div className="mb-1 flex items-center justify-between px-2">
+              <p className="m-0 text-xs text-[var(--site-faint)]">
+                {pick(locale, '最近通知', 'Recent notifications')}
+              </p>
+              <NotificationBadge count={unread} />
             </div>
-          ) : null}
+            <NotificationList
+              notifications={notifications}
+              markNotificationsRead={markNotificationsRead}
+              onNavigate={onClose}
+              emptyLabel={pick(locale, '暂无新的评论回复。', 'No comment replies yet.')}
+            />
+            <Link
+              href="/notifications"
+              onClick={onClose}
+              className="mt-1 flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium text-[var(--site-faint)] transition-colors hover:bg-[#2b2924] hover:text-[#f1f0ea]"
+            >
+              <span>{pick(locale, '查看全部通知', 'View all notifications')}</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
           <div className="site-account-section">
             <button
               type="button"
@@ -599,6 +608,14 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
             >
               <span>{pick(locale, '讨论中心', 'Discussion hub')}</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+            </Link>
+            <Link
+              href="/notifications"
+              onClick={onNavigate}
+              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+            >
+              <span>{pick(locale, '通知中心', 'Notification center')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
             </Link>
           <a

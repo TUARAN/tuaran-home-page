@@ -1,7 +1,7 @@
 ---
 template_id: a-share-company-research
-template_version: 1
-template_updated: 2026-07-31
+template_version: 2
+template_updated: 2026-08-05
 style_id: default-research
 ---
 
@@ -13,7 +13,7 @@ style_id: default-research
 
 ```yaml
 ---
-title: "{{COMPANY_NAME}}（{{STOCK_CODE}}）公司观察"
+title: "阿燃调研：每天一家A股上市公司 —— {{COMPANY_NAME}}（{{STOCK_CODE}}）公司观察"
 category: companies
 company_type: a_share
 stock_code: "{{STOCK_CODE}}"
@@ -28,7 +28,7 @@ content_type: analysis
 assistance: codex
 model: gpt-5.6
 research_template: a-share-company-research
-research_template_version: 1
+research_template_version: 2
 sources_as_of: "{{SOURCES_AS_OF}}"
 show_assistance: false
 review_ready: false

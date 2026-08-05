@@ -55,6 +55,39 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'cloudflare-wallet-agentic-internet',
+    type: 'quote',
+    title: 'Cloudflare 给 AI 智能体配了一只钱包',
+    summary:
+      'Cloudflare 发布钱包体系，为 AI 智能体提供可编程支付、虚拟预算和可读身份。智能体可以自主试用 API、MCP 工具和数字内容，人类负责设定消费边界。',
+    quote: `Cloudflare 给 AI 智能体配了一只钱包。
+
+这听起来像支付功能，实际补上了智能体进入互联网商业世界所缺的三块基础设施：稳定身份、原生支付，以及自主采购服务的能力。
+
+过去，智能体想调用一个 API，往往要跳转人类登录页、注册账号、绑定支付方式、生成 API Key。流程走到一半，通常还得把任务交还给人类。
+
+Cloudflare 的方案是：账户主钱包负责充值和管理，虚拟钱包分配给具体智能体。主账户可以设置消费限额、单笔上限、服务商白名单，智能体则拿着预算自主购买 API、MCP 工具和数字内容。
+
+这很像给员工发公司卡：主钱包是公司账户，虚拟钱包是员工卡，预算规则是风控制度。
+
+有了小额支付，智能体可以拿着 10 美元预算，批量测试几十个 API，比较价格、速度和效果，再选择长期使用的服务。人类只需要规定边界，不必审批每一步。
+
+Cloudflare 还给钱包配了可读身份，例如：
+
+research.example.cloudflare.pay
+
+服务商可以知道这个智能体属于哪个账户或组织。智能体拥有身份、预算和支付能力之后，就可能从“调用工具的程序”变成真正的服务采购者。
+
+网页是为人设计的，API 是为程序设计的。钱包，可能是智能体真正进入商业世界的门票。
+
+I just reserved my Cloudflare Wallet tag: http://[tuaran.cloudflare.pay](https://t.co/sIkiS7SYc0).
+
+Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
+    tags: ['Cloudflare', 'AI Agent', '智能体互联网', 'x402', '支付', 'MCP'],
+    date: '2026-08-05',
+    time: '09:00',
+  },
+  {
     id: 'kimi-yang-zhilin-new-ai-entrepreneurs',
     type: 'video',
     title: 'AI 新贵，褪去了互联网江湖底色',

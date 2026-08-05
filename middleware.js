@@ -22,7 +22,6 @@ function applyDefaultLocaleCookie(request, response) {
 }
 
 const CANONICAL_HOST = '2aran.com'
-const GPTPLUS_HOST = 'gptplus.2aran.com'
 const OPS_LEGACY_HOST = 'ops.2aran.com'
 const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
 const LEGACY_PATHS = new Set(['/weekly', '/articles/diary-self-reflection'])
@@ -39,12 +38,6 @@ export function middleware(request) {
         'Cache-Control': 'public, max-age=3600',
       },
     })
-  }
-
-  if (host === GPTPLUS_HOST && pathname === '/') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/gptplus'
-    return NextResponse.rewrite(url)
   }
 
   const legacyAdminTarget = ADMIN_LEGACY_REDIRECTS[pathname]

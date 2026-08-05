@@ -10,11 +10,11 @@ import GoogleAdsenseScript from './(site)/components/GoogleAdsenseScript'
  */
 const THEME_SETTINGS_VERSION = '2026-06-30-eink-darkhome'
 
-const SITE_URL = 'https://gptplus.2aran.com'
+const SITE_URL = 'https://2aran.com'
 const SOCIAL_PREVIEW_URL = `${SITE_URL}/og.png`
 // 分享平台会单独显示来源域名；标题和摘要只承载必要信息，避免与域名、站长名重复。
-const SITE_TITLE = 'ChatGPT 充值服务 | GPT Plus｜PRO 充值'
-const SITE_DESCRIPTION = 'ChatGPT Plus 与 Pro 订阅充值服务，正规渠道，快速到账。'
+const SITE_TITLE = '涂阿燃的网络日志'
+const SITE_DESCRIPTION = '前端与 AI 工程、技术情报、知识库与调研。'
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: {

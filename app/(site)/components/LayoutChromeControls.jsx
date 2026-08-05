@@ -10,7 +10,7 @@ import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
 
-const HIDE_CHROME_PATHS = new Set(['/', '/about', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
+const HIDE_CHROME_PATHS = new Set(['/gptplus', '/about', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
 
 function useChromeVisibility() {
   const pathname = usePathname()

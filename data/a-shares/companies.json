@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-04T01:14:32.336Z",
-  "snapshotDate": "2026-08-04",
+  "generatedAt": "2026-08-05T01:14:31.482Z",
+  "snapshotDate": "2026-08-05",
   "snapshotTime": "09:14",
   "source": {
     "provider": "巨潮资讯公司列表 + 腾讯行情状态核验",
@@ -13,15 +13,15 @@
       "BSE": "https://www.bse.cn/nq/listedcompany.html"
     }
   },
-  "count": 5486,
+  "count": 5487,
   "counts": {
     "exchanges": {
-      "BSE": 332,
+      "BSE": 333,
       "SSE": 2317,
       "SZSE": 2837
     },
     "boards": {
-      "bse": 332,
+      "bse": 333,
       "chinext": 1377,
       "main": 3162,
       "star": 615
@@ -5750,7 +5750,7 @@
     },
     {
       "code": "002214",
-      "name": "*ST大立",
+      "name": "大立科技",
       "exchange": "SZSE",
       "exchangeName": "深圳证券交易所",
       "board": "main",
@@ -13878,7 +13878,7 @@
     },
     {
       "code": "300311",
-      "name": "ST任子行",
+      "name": "任子行",
       "exchange": "SZSE",
       "exchangeName": "深圳证券交易所",
       "board": "chinext",
@@ -41503,6 +41503,14 @@
     {
       "code": "920037",
       "name": "广信科技",
+      "exchange": "BSE",
+      "exchangeName": "北京证券交易所",
+      "board": "bse",
+      "boardName": "北交所"
+    },
+    {
+      "code": "920038",
+      "name": "森合高科",
       "exchange": "BSE",
       "exchangeName": "北京证券交易所",
       "board": "bse",

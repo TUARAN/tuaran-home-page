@@ -67,6 +67,7 @@ export default function PublishedArticle({ article, siteUrl }) {
         dateTime={publishedTime}
         readingMinutes={readingMinutes(article.contentText)}
         pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
+        ownerMeta={{ author: '涂阿燃（TUARAN）' }}
         actions={(
           <ArticleHeaderActions
             title={article.title}

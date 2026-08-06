@@ -47,12 +47,12 @@ test('hasSourceSection 识别来源节', () => {
   assert.equal(hasSourceSection('## 一、先给结论\n内容'), false)
 })
 
-test('draftToArticleContent 把 review_ready 置 true 且保留其余内容', () => {
+test('draftToArticleContent 保持 review_ready: false 且保留其余内容', () => {
   const article = draftToArticleContent(DRAFT)
-  assert.match(article, /^review_ready:\s*true\s*$/mu)
+  assert.match(article, /^review_ready:\s*false\s*$/mu)
   assert.match(article, /^ad_eligible:\s*false\s*$/mu)
   assert.match(article, /四川黄金/)
-  assert.throws(() => draftToArticleContent(article), /review_ready: false/)
+  assert.throws(() => draftToArticleContent(article.replace(/^review_ready:\s*false\s*$/mu, 'review_ready: true')), /review_ready: false/)
 })
 
 test('stripPreamble 清除模型检索前的前置杂文', () => {
@@ -61,7 +61,7 @@ test('stripPreamble 清除模型检索前的前置杂文', () => {
   assert.match(clean, /^---\r?\n/)
   assert.equal(stripPreamble(DRAFT), DRAFT)
   const article = draftToArticleContent(dirty)
-  assert.match(article, /^review_ready:\s*true\s*$/mu)
+  assert.match(article, /^review_ready:\s*false\s*$/mu)
   assert.equal(validatePublishContent(article, { code: '001337', name: '四川黄金' }), true)
 })
 
@@ -76,7 +76,7 @@ test('publishFileName / publishSlug 生成发布文件名与文章 slug', () => 
 test('validatePublishContent 通过已复核发布稿并拦截缺项', () => {
   const article = draftToArticleContent(DRAFT)
   assert.equal(validatePublishContent(article, { code: '001337', name: '四川黄金' }), true)
-  assert.throws(() => validatePublishContent(article.replace(/^review_ready:\s*true\s*$/mu, 'review_ready: false'), { code: '001337', name: '四川黄金' }), /review_ready/)
+  assert.throws(() => validatePublishContent(article.replace(/^review_ready:\s*false\s*$/mu, 'review_ready: true'), { code: '001337', name: '四川黄金' }), /review_ready/)
   assert.throws(() => validatePublishContent(article.replace(/^ad_eligible:\s*false\s*$/mu, 'ad_eligible: true'), { code: '001337', name: '四川黄金' }), /ad_eligible/)
   assert.throws(() => validatePublishContent(article.replace('## 十、信息来源与说明', '## 十、随便写写'), { code: '001337', name: '四川黄金' }), /来源/)
   assert.throws(() => validatePublishContent(article.replaceAll('四川黄金', '另一家公司'), { code: '001337', name: '四川黄金' }), /公司名/)

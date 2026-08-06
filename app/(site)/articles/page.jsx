@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
-import Link from 'next/link'
 
+import ArticleListItem from './ArticleListItem'
 import ArticlesHeaderClient from './ArticlesHeaderClient'
 import ArticlesIndexClient from './ArticlesIndexClient'
 import { buildKnowledgeItems } from './buildKnowledgeItems'
@@ -42,28 +42,26 @@ function ArticlesHeaderFallback() {
 }
 
 function ArticlesIndexFallback({ items }) {
+  // 与客户端目录保持同一行式布局（复用 ArticleListItem），
+  // 避免静态 HTML 先出现卡片网格、hydration 后再切换成行式列表的样式跳变。
   return (
-    <section aria-labelledby="articles-fallback-title">
-      <h2 id="articles-fallback-title" className="mb-3 text-lg font-semibold text-[#29232f] dark:text-gray-100">
-        全部内容
-      </h2>
-      <ul className="grid list-none gap-3 p-0 md:grid-cols-2">
-        {items.slice(0, 12).map((item) => (
-          <li key={item.id} className="rounded-xl border border-[#e3dfe7] bg-white/70 p-4 dark:border-[#333039] dark:bg-[#17161a]">
-            <Link href={item.href} className="font-semibold leading-6 text-[#2b2137] no-underline hover:underline dark:text-gray-100">
-              {item.title}
-            </Link>
-            {item.summary ? (
-              <p className="mt-2 line-clamp-3 text-[13px] leading-6 text-[#66606d] dark:text-gray-400">
-                {item.summary}
-              </p>
-            ) : null}
-            {item.date ? (
-              <p className="mt-2 font-mono text-[10px] text-[#8c8494] dark:text-gray-500">{item.date}</p>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+    <section
+      aria-label="全部内容"
+      className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65"
+    >
+      {items.slice(0, 24).map((item, index) => {
+        // 静态 fallback 不加载阅读量，去掉 pv 字段避免展示过期的“阅读量 0 / -”
+        const fallbackItem = { ...item }
+        delete fallbackItem.pv
+        delete fallbackItem.pvKey
+        return (
+          <ArticleListItem
+            key={item.id}
+            item={fallbackItem}
+            position={index + 1}
+          />
+        )
+      })}
     </section>
   )
 }

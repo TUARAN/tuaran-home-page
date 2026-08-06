@@ -1,6 +1,6 @@
 # A 股公司观察自动化设计
 
-更新日期：2026-07-31
+更新日期：2026-08-06
 
 ## 目标
 
@@ -13,6 +13,36 @@
 3. `npm run a-share:pick` 优先返回尚未完成的选择；没有待完成项时，从未研究公司中随机选择一家。
 4. 自动化读取 `research/templates/a-share-company-research.md` 和当前生效的 `lib/researchStyleTemplates.js`，检索一手资料并写文章。
 5. 文章通过最小校验后，运行 `npm run a-share:complete -- --code <代码> --file <文章路径>` 标记完成。
+
+## 线上自动化（2026-08-06 起）
+
+本地流程的云端替代：`lib/aShareResearch.js` + `lib/aShareResearchCore.js`，由 GitHub Actions 定时
+POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴权）触发，状态全部落 D1。
+
+- 公司池存 `a_share_pool`，快照元信息存 `a_share_pool_snapshot`；默认 7 天过期才重同步
+  （巨潮资讯公司列表 + 腾讯行情批量核验，校验口径与本地脚本一致）。
+- 每日选题写 `a_share_selections`，草稿写 `a_share_drafts`，运行记录写 `a_share_run_log`。
+- 草稿生成走 DeepSeek（`callDeepSeek`，source=`a-share-research` / taskType=`daily-draft`），
+  调用自动进入 `deepseek_tasks` 台账；后台 `/admin/a-share-research` 可查看草稿与运行日志。
+- 单次 Worker 请求有墙钟限制，长文本生成采用「分次续跑」：草稿未完成时下一次触发继续同一家公司，
+  最多重试 5 次，失败不重复选题（与本地幂等约定一致）。
+- 自动生成稿保持 `review_ready: false` / `ad_eligible: false`；在线草稿由站长在后台复核，
+  确认后按仓库发布规则提交，自动化不提交、不推送、不发布。
+- 定时触发见 `.github/workflows/a-share-research.yml`（北京时间 01:00 / 01:20 / 01:40）。
+
+需要新增的 Cloudflare Pages Secret：`A_SHARE_COLLECT_SECRET`（与 GitHub 仓库 Secret 同值）；
+未配置时路由回退复用 `WEEKLY_SUMMARY_SECRET` / `PUBLIC_OPINION_COLLECT_SECRET`。
+
+## DeepSeek 密钥管理
+
+自 2026-08-06 起，`lib/deepseek.js` 不再只认环境变量：
+
+- `deepseek_keys` 表（迁移 0059）保存可管理密钥，明文用 `DEEPSEEK_KEYS_ENC_SECRET`
+  （AES-GCM，任意长度主密钥经 SHA-256 派生）加密落库，界面只显示掩码。
+- 每个密钥可绑定任务（source / taskType），解析优先级：
+  精确绑定 > source 绑定 > 全局兜底（空绑定）> 环境变量 `DEEPSEEK_API_KEY`。
+- 调用记录通过 `deepseek_tasks.key_id` 关联密钥，`/admin/deepseek-tasks` 可切换
+  「调用记录 / 密钥管理」标签页查看。
 
 ## 文件职责
 

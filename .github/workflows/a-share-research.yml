@@ -1,0 +1,43 @@
+name: A-share research daily
+
+# A 股公司观察在线自动化：每天北京时间 01:00 / 01:20 / 01:40 触发三次。
+# 单次 Cloudflare 请求有墙钟限制，草稿生成拆成多次续跑：
+# 选题后草稿未完成时，下一次触发继续同一家公司，天然幂等。
+on:
+  schedule:
+    - cron: '0,20,40 17 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: a-share-research
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    name: POST /api/cron/a-share-research
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger online automation
+        env:
+          A_SHARE_COLLECT_SECRET: ${{ secrets.A_SHARE_COLLECT_SECRET }}
+          PUBLIC_OPINION_COLLECT_SECRET: ${{ secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+        run: |
+          # 优先专用 Secret；未配置时复用舆情采集 Secret（与线上回退链一致）。
+          TRIGGER_SECRET="${A_SHARE_COLLECT_SECRET:-$PUBLIC_OPINION_COLLECT_SECRET}"
+          if [ -z "$TRIGGER_SECRET" ]; then
+            echo "::error::缺少仓库 Secret A_SHARE_COLLECT_SECRET（或 PUBLIC_OPINION_COLLECT_SECRET）"
+            exit 1
+          fi
+
+          code=$(curl -sS --retry 2 --retry-delay 8 \
+            -o /tmp/a-share-research.json \
+            -w '%{http_code}' \
+            -X POST \
+            -H "x-a-share-secret: $TRIGGER_SECRET" \
+            https://2aran.com/api/cron/a-share-research)
+
+          echo "HTTP $code"
+          cat /tmp/a-share-research.json
+          echo
+          test "$code" = "200"

@@ -29,6 +29,8 @@
     "a-share:complete": "node scripts/manage-a-share-research.mjs complete",
     "a-share:status": "node scripts/manage-a-share-research.mjs status",
     "a-share:test": "node --test scripts/test-a-share-research.mjs",
+    "test:a-share-core": "node --test tests/a-share-research-core.test.mjs",
+    "test:deepseek-keys": "node --test tests/deepseek-keys.test.mjs",
     "adsense:audit": "node scripts/audit-adsense-readiness.mjs",
     "adsense:deployment": "node scripts/audit-adsense-deployment.mjs",
     "adsense:links": "node scripts/audit-adsense-link-graph.mjs",

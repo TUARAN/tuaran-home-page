@@ -32,6 +32,8 @@ function rowToTask(row) {
     actorId: row.actor_id,
     actorName: row.actor_name,
     model: row.model,
+    keyId: row.key_id,
+    keyName: row.key_name,
     inputSummary: row.input_summary,
     resultSummary: row.result_summary,
     metadata,
@@ -74,6 +76,7 @@ export async function GET(req) {
   const execution = params.get('execution') || ''
   const management = params.get('management') || ''
   const source = String(params.get('source') || '').trim().slice(0, 100)
+  const keyId = String(params.get('key') || '').trim().slice(0, 120)
   const limit = Math.min(Math.max(Number(params.get('limit')) || 100, 1), 200)
   if (execution && !EXECUTION_STATUSES.has(execution)) {
     return Response.json({ error: 'INVALID_EXECUTION_STATUS' }, { status: 400 })
@@ -95,6 +98,10 @@ export async function GET(req) {
   if (source) {
     clauses.push('source = ?')
     binds.push(source)
+  }
+  if (keyId) {
+    clauses.push('key_id = ?')
+    binds.push(keyId)
   }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
 

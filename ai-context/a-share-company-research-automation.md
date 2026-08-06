@@ -23,10 +23,15 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
   逐行 INSERT 5000+ 家会超限，`a_share_pool` 表保留但不参与写入）；默认 7 天过期才重同步
   （巨潮资讯公司列表 + 腾讯行情批量核验，校验口径与本地脚本一致）。
 - 每日选题写 `a_share_selections`，草稿写 `a_share_drafts`，运行记录写 `a_share_run_log`。
-- 草稿生成走 DeepSeek（`callDeepSeek`，source=`a-share-research` / taskType=`daily-draft`），
-  调用自动进入 `deepseek_tasks` 台账；后台 `/admin/a-share-research` 可查看草稿与运行日志。
+- 草稿生成走 DeepSeek **Responses API**（`callDeepSeekResponses`，source=`a-share-research` /
+  taskType=`daily-draft`），启用服务端 `web_search` 联网检索：模型可在起草时检索主营业务、
+  最新财报、公告新闻等公开信息，引用来源写进「十、信息来源与说明」，检索次数与引用数记入
+  `deepseek_tasks` 台账 metadata；调用记录自动进台账，后台 `/admin/a-share-research` 可查看
+  草稿与运行日志，`/admin/deepseek-tasks` 可查看每次调用的联网检索情况。
 - 起草按站内路由规则默认用 `deepseek-v4-flash`（结构化简单任务，单次请求墙钟内可完成）；
-  并显式关闭思考模式（`thinking: disabled`，V4 默认会把 token 花在 reasoning_content 上）；
+  并显式关闭思考模式（Responses API 用 `reasoning: { effort: "none" }`；老
+  `/chat/completions` 的 `thinking: disabled` 同样保留给其他调用方；V4 默认会把 token 花在
+  reasoning_content 上，不关则墙钟内写不完正文）；
   密钥绑定里给该任务配置 `default_model` 或设置 `DEEPSEEK_MODEL` 可覆盖。
 - 单次 Worker 请求有墙钟限制，长文本生成采用「分次续跑」：草稿未完成时下一次触发继续同一家公司，
   最多重试 5 次，失败不重复选题（与本地幂等约定一致）。
@@ -36,6 +41,8 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
 
 需要新增的 Cloudflare Pages Secret：`A_SHARE_COLLECT_SECRET`（与 GitHub 仓库 Secret 同值）；
 未配置时路由回退复用 `WEEKLY_SUMMARY_SECRET` / `PUBLIC_OPINION_COLLECT_SECRET`。
+路由鉴权为「任一已配置 secret 均可放行」，因此 GitHub Actions 侧即使没配专用 Secret、
+回退到 `PUBLIC_OPINION_COLLECT_SECRET` 也能触发。
 
 ## DeepSeek 密钥管理
 

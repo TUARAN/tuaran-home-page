@@ -72,6 +72,14 @@ function TaskDetail({ task, note, setNote, saving, onSave }) {
         <div>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
             <div><dt className="text-[#82847a]">模型</dt><dd className="mt-0.5 break-all">{task.model || '—'}</dd></div>
+            <div>
+              <dt className="text-[#82847a]">联网检索</dt>
+              <dd className="mt-0.5">
+                {task.metadata?.webSearch?.enabled
+                  ? `${Number(task.metadata.webSearch.calls) || 0} 次 / 引用 ${Number(task.metadata.webSearch.citations) || 0} 条`
+                  : '未启用'}
+              </dd>
+            </div>
             <div><dt className="text-[#82847a]">使用密钥</dt><dd className="mt-0.5 break-all">{task.keyName || task.keyId || '—'}</dd></div>
             <div><dt className="text-[#82847a]">调用人</dt><dd className="mt-0.5">{task.actorName || task.actorId || '—'}</dd></div>
             <div><dt className="text-[#82847a]">Prompt Token</dt><dd className="mt-0.5">{task.promptTokens}</dd></div>
@@ -253,6 +261,9 @@ export default function DeepSeekTasksClient() {
                             <StatusPill tone={executionMeta.tone} size="sm">{executionMeta.label}</StatusPill>
                             <span className="text-[11px] text-[#82847a]">{task.source} · {task.taskType}</span>
                             {task.keyName ? <span className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{task.keyName}</span> : null}
+                            {task.metadata?.webSearch?.enabled ? (
+                              <span className="rounded-md bg-[#e9f2e4] px-1.5 py-0.5 text-[11px] text-[#3e6b2f] dark:bg-[#12240e] dark:text-[#9fd08a]">联网检索 {Number(task.metadata.webSearch.calls) || 0} 次</span>
+                            ) : null}
                           </div>
                           <h3 className="mt-1.5 truncate text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{task.title || '未命名任务'}</h3>
                           <p className="mt-1 truncate text-[12px] text-[#67695d] dark:text-gray-400">{task.resultSummary || task.inputSummary || '暂无摘要'}</p>

@@ -20,16 +20,19 @@ function safeEqual(left, right) {
 
 async function handle(request) {
   const env = getOptionalRequestContext()?.env || {}
-  const requiredSecret = String(
-    env.A_SHARE_COLLECT_SECRET
-      || env.WEEKLY_SUMMARY_SECRET
-      || env.PUBLIC_OPINION_COLLECT_SECRET
-      || process.env.A_SHARE_COLLECT_SECRET
-      || '',
-  ).trim()
+  // 任一已配置 secret 均可放行：GitHub Actions 侧有专用 A_SHARE_COLLECT_SECRET 时用专用值，
+  // 未配置时回退 PUBLIC_OPINION_COLLECT_SECRET（与仓库现有其他定时任务同一回退链）。
+  const configuredSecrets = [
+    env.A_SHARE_COLLECT_SECRET,
+    env.WEEKLY_SUMMARY_SECRET,
+    env.PUBLIC_OPINION_COLLECT_SECRET,
+    process.env.A_SHARE_COLLECT_SECRET,
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
   const suppliedSecret = request.headers.get(HEADER_SECRET) || ''
 
-  if (!requiredSecret) {
+  if (!configuredSecrets.length) {
     return Response.json(
       {
         ok: false,
@@ -39,7 +42,7 @@ async function handle(request) {
       { status: 503 },
     )
   }
-  if (!safeEqual(suppliedSecret, requiredSecret)) {
+  if (!configuredSecrets.some((secret) => safeEqual(suppliedSecret, secret))) {
     return Response.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 })
   }
   if (!env.DB) {

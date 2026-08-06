@@ -19,7 +19,8 @@
 本地流程的云端替代：`lib/aShareResearch.js` + `lib/aShareResearchCore.js`，由 GitHub Actions 定时
 POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴权）触发，状态全部落 D1。
 
-- 公司池存 `a_share_pool`，快照元信息存 `a_share_pool_snapshot`；默认 7 天过期才重同步
+- 公司池完整 JSON 存 `a_share_pool_snapshot.content`（D1 单行；免费计划 D1 每次调用限 50 个查询，
+  逐行 INSERT 5000+ 家会超限，`a_share_pool` 表保留但不参与写入）；默认 7 天过期才重同步
   （巨潮资讯公司列表 + 腾讯行情批量核验，校验口径与本地脚本一致）。
 - 每日选题写 `a_share_selections`，草稿写 `a_share_drafts`，运行记录写 `a_share_run_log`。
 - 草稿生成走 DeepSeek（`callDeepSeek`，source=`a-share-research` / taskType=`daily-draft`），

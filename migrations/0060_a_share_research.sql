@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS a_share_drafts (
   deepseek_task_id TEXT NOT NULL DEFAULT '',
   attempt_count INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'reviewed', 'rejected')),
+    CHECK (status IN ('generating', 'pending', 'reviewed', 'rejected')),
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );

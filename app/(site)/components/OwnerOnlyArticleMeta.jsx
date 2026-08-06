@@ -1,13 +1,21 @@
 'use client'
 
+import { useId } from 'react'
+import { IconLock } from '@tabler/icons-react'
+
 import { useSessionAccount } from './SessionProvider'
-import OwnerOnlyMark from './OwnerOnlyMark'
 
 /**
  * 文章头部的站长专属作者信息（内部记录）：
- * 作者、协助工具、模型 ID 等只展示给站长本人，普通访客不渲染。
- * 自身带「仅站长可见」标记，与其他站长专属元素共用同一套视觉体系。
+ * 平时只显示一个紧凑小徽标（作者），悬停 / 聚焦时弹出完整记录
+ * （作者、协助工具、模型 ID、版本）；普通访客不渲染。
  */
+function shortAuthor(author) {
+  if (!author) return ''
+  const match = String(author).match(/[（(]([^）)]+)[）)]/)
+  return match ? match[1] : String(author)
+}
+
 export default function OwnerOnlyArticleMeta({
   author = '涂阿燃（TUARAN）',
   assistance = '',
@@ -15,6 +23,7 @@ export default function OwnerOnlyArticleMeta({
   assistanceLabel = '',
   version = '',
 }) {
+  const popoverId = useId()
   const { loading, isOwner } = useSessionAccount()
   // loading 期间不渲染，避免非站长先看到再消失的闪烁
   if (loading || !isOwner) return null
@@ -31,15 +40,18 @@ export default function OwnerOnlyArticleMeta({
     <>
       <span aria-hidden="true">·</span>
       <span
-        className="owner-only-meta"
+        className="owner-only-pill"
+        tabIndex={0}
         title="站长内部记录：作者、协助工具与模型 ID，仅本人可见"
+        aria-describedby={popoverId}
       >
-        <OwnerOnlyMark />
-        {parts.map((part) => (
-          <span key={part} className="owner-only-meta-text">
-            {part}
-          </span>
-        ))}
+        <IconLock size={10} strokeWidth={2.2} aria-hidden="true" />
+        <span>作者 {shortAuthor(author)}</span>
+        <span id={popoverId} role="tooltip" className="owner-only-popover">
+          {parts.map((part) => (
+            <span key={part}>{part}</span>
+          ))}
+        </span>
       </span>
     </>
   )

@@ -3261,36 +3261,55 @@
     background-color: var(--site-panel-strong);
   }
 
-  /* 站长（owner）专属可见元素：统一虚线琥珀框 + 锁形徽标，与公开 UI 明显区分 */
-  .owner-only-mark {
+  /* 站长（owner）专属可见元素：紧凑琥珀小徽标，悬停 / 聚焦弹出内部记录 */
+  .owner-only-pill {
     @apply inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-[1px] text-[10px] font-semibold no-underline;
+    position: relative;
     border-color: color-mix(in srgb, #f59e0b 55%, var(--site-line));
     background-color: color-mix(in srgb, #f59e0b 12%, var(--site-panel));
     color: color-mix(in srgb, #b45309 88%, var(--site-ink));
     white-space: nowrap;
+    cursor: help;
   }
 
-  .dark .owner-only-mark {
+  .dark .owner-only-pill {
     border-color: color-mix(in srgb, #fbbf24 60%, var(--site-line));
     background-color: color-mix(in srgb, #f59e0b 14%, var(--site-panel));
     color: #fcd34d;
   }
 
-  .owner-only-meta {
-    @apply inline-flex flex-wrap items-center gap-1.5 rounded-lg border border-dashed px-2 py-1 text-[11px] leading-5 no-underline;
+  .owner-only-popover {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 40;
+    display: grid;
+    gap: 0.2rem;
+    min-width: 9rem;
+    max-width: min(17rem, calc(100vw - 2rem));
+    padding: 0.5rem 0.7rem;
     border-color: color-mix(in srgb, #f59e0b 45%, var(--site-line));
-    background-color: color-mix(in srgb, #f59e0b 7%, var(--site-panel));
-    color: color-mix(in srgb, #b45309 80%, var(--site-ink));
+    border-style: dashed;
+    border-width: 1px;
+    border-radius: 0.6rem;
+    background: var(--site-panel-strong);
+    box-shadow: 0 14px 34px color-mix(in srgb, #000 16%, transparent);
+    color: var(--site-muted);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.6;
+    white-space: normal;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
   }
 
-  .dark .owner-only-meta {
-    border-color: color-mix(in srgb, #fbbf24 50%, var(--site-line));
-    background-color: color-mix(in srgb, #f59e0b 10%, var(--site-panel));
-    color: #fde68a;
-  }
-
-  .owner-only-meta-text {
-    font-variant-numeric: tabular-nums;
+  .owner-only-pill:hover .owner-only-popover,
+  .owner-only-pill:focus-within .owner-only-popover {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .article-action-button.owner-only-action {

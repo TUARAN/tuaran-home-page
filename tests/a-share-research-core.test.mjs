@@ -126,7 +126,7 @@ test('buildDraftPrompt 包含公司信息、十个小节与风格约束', () => 
   const user = messages[1]
   assert.match(system.content, /不得编造/)
   assert.match(system.content, /web_search/)
-  assert.match(system.content, /最多执行 3 次联网检索/)
+  assert.match(system.content, /最多执行 2 次联网检索/)
   assert.match(user.content, /浦发银行/)
   assert.match(user.content, /600000/)
   assert.match(user.content, /## 九、未能验证/)

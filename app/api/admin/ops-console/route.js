@@ -83,6 +83,27 @@ export async function GET(req) {
     latestRun: OPS_RECENT_RUNS.find((run) => run.taskId === item.id) || null,
   }))
   const repositoryByTask = new Map(registry.map((item) => [item.id, item.repository]))
+  let aShareRuns = []
+  if (db) {
+    try {
+      const { results } = await db
+        .prepare('SELECT * FROM a_share_run_log ORDER BY ran_at DESC LIMIT 6')
+        .all()
+      aShareRuns = (results || []).map((row) => ({
+        id: `a-share-${row.id}-${row.ran_at}`,
+        taskId: 'a-share-research-daily',
+        taskName: `A 股公司观察${row.company_name ? `：${row.company_name}（${row.code}）` : ''}`,
+        repository: 'tuaran-home-page',
+        status: row.status === 'ok' ? 'success' : row.status === 'failed' ? 'failed' : 'skipped',
+        reviewStatus: row.status === 'ok' && row.action === 'draft' ? 'pending_review' : 'not_required',
+        startedAt: new Date(Number(row.ran_at) || Date.now()).toISOString(),
+        durationMs: Number(row.duration_ms) || null,
+        artifacts: row.draft_id ? [`草稿 ${row.draft_id}`] : [],
+      }))
+    } catch {
+      aShareRuns = []
+    }
+  }
   const recentRuns = [
     ...(greetingLastRun
       ? [
@@ -99,6 +120,7 @@ export async function GET(req) {
           },
         ]
       : []),
+    ...aShareRuns,
     ...OPS_RECENT_RUNS.map((run) => ({
       ...run,
       repository: run.repository || repositoryByTask.get(run.taskId) || null,

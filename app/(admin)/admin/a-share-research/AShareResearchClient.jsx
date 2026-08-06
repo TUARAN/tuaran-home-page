@@ -7,12 +7,14 @@ import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } fro
 const DRAFT_STATUS_META = {
   pending: { label: '待复核', tone: 'warning' },
   reviewed: { label: '已复核', tone: 'success' },
+  published: { label: '已发布', tone: 'success' },
   rejected: { label: '已退回', tone: 'danger' },
 }
 
 const ACTION_LABELS = {
   'pool-sync': '公司池同步',
   draft: '选题起草',
+  publish: '后台发布',
 }
 
 function formatDate(value) {
@@ -69,6 +71,29 @@ export default function AShareResearchClient() {
       await refresh()
     } catch (updateError) {
       setError(updateError?.message || '草稿状态更新失败。')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function publishDraft(draft) {
+    const confirmed = window.confirm(
+      `确认发布「${draft.title || draft.name}」？\n\n将把草稿写入 research/companies/ 并提交推送 main，触发线上构建。`,
+    )
+    if (!confirmed) return
+    setSaving(true)
+    setError('')
+    try {
+      const response = await fetch('/api/admin/a-share-research/publish', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: draft.id }),
+      })
+      const payload = await safeJson(response)
+      if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      await refresh()
+    } catch (publishError) {
+      setError(publishError?.message || '发布失败，草稿已保留为已复核，可稍后重试。')
     } finally {
       setSaving(false)
     }
@@ -137,8 +162,19 @@ export default function AShareResearchClient() {
                       <AdminButton type="button" variant="ghost" onClick={() => copyDraft(draft)}>{copied === draft.id ? '已复制' : '复制全文'}</AdminButton>
                       {draft.status === 'pending' ? (
                         <>
-                          <AdminButton type="button" variant="primary" onClick={() => setDraftStatus(draft, 'reviewed')} disabled={saving}>标记已复核</AdminButton>
+                          <AdminButton type="button" variant="primary" onClick={() => publishDraft(draft)} disabled={saving}>复核并发布</AdminButton>
                           <AdminButton type="button" variant="ghost" onClick={() => setDraftStatus(draft, 'rejected')} disabled={saving}>退回</AdminButton>
+                        </>
+                      ) : null}
+                      {draft.status === 'reviewed' ? (
+                        <AdminButton type="button" variant="primary" onClick={() => publishDraft(draft)} disabled={saving}>发布</AdminButton>
+                      ) : null}
+                      {draft.status === 'published' ? (
+                        <>
+                          <AdminButton href={`/articles/research/companies/a-share-${draft.code}`} target="_blank" rel="noreferrer" size="sm">查看文章</AdminButton>
+                          {draft.publishCommit ? (
+                            <AdminButton href={`https://github.com/TUARAN/tuaran-home-page/commit/${draft.publishCommit}`} target="_blank" rel="noreferrer" size="sm">提交 {draft.publishCommit.slice(0, 7)}</AdminButton>
+                          ) : null}
                         </>
                       ) : null}
                     </div>

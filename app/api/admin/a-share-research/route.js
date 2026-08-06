@@ -64,6 +64,8 @@ export async function GET(req) {
         deepseekTaskId: row.deepseek_task_id,
         attemptCount: Number(row.attempt_count) || 0,
         status: row.status,
+        publishCommit: row.publish_commit || '',
+        publishAt: row.publish_at || null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       })),

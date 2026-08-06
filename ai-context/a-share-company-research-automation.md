@@ -26,6 +26,7 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
 - 草稿生成走 DeepSeek（`callDeepSeek`，source=`a-share-research` / taskType=`daily-draft`），
   调用自动进入 `deepseek_tasks` 台账；后台 `/admin/a-share-research` 可查看草稿与运行日志。
 - 起草按站内路由规则默认用 `deepseek-v4-flash`（结构化简单任务，单次请求墙钟内可完成）；
+  并显式关闭思考模式（`thinking: disabled`，V4 默认会把 token 花在 reasoning_content 上）；
   密钥绑定里给该任务配置 `default_model` 或设置 `DEEPSEEK_MODEL` 可覆盖。
 - 单次 Worker 请求有墙钟限制，长文本生成采用「分次续跑」：草稿未完成时下一次触发继续同一家公司，
   最多重试 5 次，失败不重复选题（与本地幂等约定一致）。

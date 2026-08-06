@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T09:21:35.836Z",
+  "generatedAt": "2026-08-06T02:52:24.084Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -596,6 +596,12 @@
               "hash": "ec3bb12b9554c0a00db91a3aa177467a96e11743699edd76c138269c4c09a317",
               "path": "ai-context/README/2026-07-31T02-39-51-429Z.enc.json",
               "bytes": 1358
+            },
+            {
+              "ts": "2026-08-06T01:42:28.790Z",
+              "hash": "6e7cbeb3372c95977eb8060eab7bcb02f10b7e5862330a2f7f3f1afa89138919",
+              "path": "ai-context/README/2026-08-06T01-42-28-808Z.enc.json",
+              "bytes": 1601
             }
           ]
         },
@@ -644,6 +650,48 @@
               "hash": "7daecfabb0b2beeb29542faa8377db27a722eb08eb77e74a61544ddf4c9a8b3d",
               "path": "ai-context/a-share-company-research-automation/2026-07-31T07-23-25-539Z.enc.json",
               "bytes": 1261
+            },
+            {
+              "ts": "2026-08-06T01:42:28.811Z",
+              "hash": "816de7151377566155528d7f988c8d257f1e66ef2720670344835f1f0b858ceb",
+              "path": "ai-context/a-share-company-research-automation/2026-08-06T01-42-28-828Z.enc.json",
+              "bytes": 2562
+            },
+            {
+              "ts": "2026-08-06T01:55:48.168Z",
+              "hash": "fad168884d4332909106be612986ef8f5bd4169b21a05316df12f15aa077d6de",
+              "path": "ai-context/a-share-company-research-automation/2026-08-06T01-55-48-185Z.enc.json",
+              "bytes": 2633
+            },
+            {
+              "ts": "2026-08-06T02:12:12.659Z",
+              "hash": "d373ef48704e0d0acdb0f960b06ec2a6dcd99b4dad8ee3209befe3fb797da11b",
+              "path": "ai-context/a-share-company-research-automation/2026-08-06T02-12-12-678Z.enc.json",
+              "bytes": 2745
+            },
+            {
+              "ts": "2026-08-06T02:24:01.064Z",
+              "hash": "dee28c73d14efecaec06b04630ef98f2b4d6ea1165a39947cf001785b949505a",
+              "path": "ai-context/a-share-company-research-automation/2026-08-06T02-24-01-082Z.enc.json",
+              "bytes": 2817
+            },
+            {
+              "ts": "2026-08-06T02:52:24.059Z",
+              "hash": "c353504c53f8fe127ca9b9de2f04e73ad10215706fcf584889f898626a4bd360",
+              "path": "ai-context/a-share-company-research-automation/2026-08-06T02-52-24-080Z.enc.json",
+              "bytes": 3184
+            }
+          ]
+        },
+        "deepseek-key-management": {
+          "title": "deepseek-key-management",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-06T01:42:28.829Z",
+              "hash": "aaac0dd11e564ec17d8d48b8ad9a9b1eee9e171132707dd83fa06e6af4d59282",
+              "path": "ai-context/deepseek-key-management/2026-08-06T01-42-28-845Z.enc.json",
+              "bytes": 1400
             }
           ]
         }

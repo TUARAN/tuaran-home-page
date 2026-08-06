@@ -82,7 +82,6 @@ export default function DistributeContentButton({
   allowArticle = false,
 }) {
   const { loading, isOwner } = useSessionAccount()
-  const modes = allowArticle ? ['article', 'opinion'] : ['opinion']
   const [states, setStates] = useState({ article: 'idle', opinion: 'idle' })
   const [xState, setXState] = useState('idle')
   const [xArticleState, setXArticleState] = useState('idle')
@@ -305,7 +304,7 @@ export default function DistributeContentButton({
 
   function getLabel(mode) {
     const state = states[mode]
-    const idleLabel = mode === 'opinion' ? '分发观点' : '分发文章'
+    const idleLabel = mode === 'opinion' ? '分发观点至 SyncBlog' : '分发文章至 SyncBlog'
     return state === 'sent'
       ? '已发送到分发'
       : state === 'copied'
@@ -352,40 +351,44 @@ export default function DistributeContentButton({
     )
   }
 
-  // SyncBlog 是站长的发布工作流，不属于读者操作。
+  // SyncBlog 与 X 分发都是站长的发布工作流，不属于读者操作。
   // 读者侧的分享、复制 Markdown、下载等按钮由各自组件继续提供。
   if (loading || !isOwner) return null
 
   return (
-    <>
-      {modes.map((mode) => (
-        <button
-          key={mode}
-          type="button"
-          onClick={() => handleDistribute(mode)}
-          aria-live="polite"
-          title={
-            mode === 'opinion'
-              ? '发送到 syncblog.cn 观点分发页；若先选中正文，会优先分发选中文本'
-              : '发送到 syncblog.cn 文章分发页'
-          }
-          className="article-action-button owner-only-action px-3 py-1 text-xs"
-        >
+    <ArticleActionsDropdown
+      label={(
+        <span className="inline-flex items-center gap-1">
           <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
-          <DistributeIcon active={states[mode] === 'sent'} />
-          <span>{getLabel(mode)}</span>
-        </button>
-      ))}
+          站长分发
+        </span>
+      )}
+      triggerClassName="owner-only-action"
+    >
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => handleDistribute('article')}
+        aria-live="polite"
+        title="发送到 syncblog.cn 文章分发页"
+        className="article-action-button owner-only-action px-3 py-1 text-xs"
+      >
+        <DistributeIcon active={states.article === 'sent'} />
+        <span>{getLabel('article')}</span>
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => handleDistribute('opinion')}
+        aria-live="polite"
+        title="发送到 syncblog.cn 观点分发页；若先选中正文，会优先分发选中文本"
+        className="article-action-button owner-only-action px-3 py-1 text-xs"
+      >
+        <DistributeIcon active={states.opinion === 'sent'} />
+        <span>{getLabel('opinion')}</span>
+      </button>
       {allowArticle ? (
-        <ArticleActionsDropdown
-          label={(
-            <span className="inline-flex items-center gap-1">
-              <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
-              站长分发
-            </span>
-          )}
-          closeOnSelect
-        >
+        <>
           <button
             type="button"
             role="menuitem"
@@ -395,9 +398,8 @@ export default function DistributeContentButton({
             title="由站长账号通过 X API 直接发布 Post"
             className="article-action-button owner-only-action px-3 py-1 text-xs disabled:cursor-wait disabled:opacity-60"
           >
-            <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
             <DistributeIcon active={xState === 'sent'} />
-            <span>{xState === 'publishing' ? '正在发布 Post' : xState === 'sent' ? 'Post 已发布' : xState === 'failed' ? 'Post 分发失败' : 'Post'}</span>
+            <span>{xState === 'publishing' ? '正在发布 Post' : xState === 'sent' ? 'Post 已发布' : xState === 'failed' ? 'Post 分发失败' : '发布 Post 至 X'}</span>
           </button>
           <button
             type="button"
@@ -407,12 +409,11 @@ export default function DistributeContentButton({
             title="复制文章 Markdown 并打开 X Articles 编辑器"
             className="article-action-button owner-only-action px-3 py-1 text-xs"
           >
-            <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
             <DistributeIcon active={xArticleState === 'copied'} />
-            <span>{xArticleState === 'copied' ? '已复制，前往 X 文章' : xArticleState === 'failed' ? '文章分发失败' : '文章'}</span>
+            <span>{xArticleState === 'copied' ? '已复制，前往 X 文章' : xArticleState === 'failed' ? '文章分发失败' : '发布文章至 X'}</span>
           </button>
-        </ArticleActionsDropdown>
+        </>
       ) : null}
-    </>
+    </ArticleActionsDropdown>
   )
 }

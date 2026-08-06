@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { AuthorByline } from './ArticleAuthorIntro'
+import OwnerOnlyArticleMeta from './OwnerOnlyArticleMeta'
 
 export default function ArticleDetailHeader({
   categoryHref,
@@ -10,6 +11,7 @@ export default function ArticleDetailHeader({
   readingMinutes,
   pvNode,
   metaExtras,
+  ownerMeta,
   actions,
   title,
   summary,
@@ -48,6 +50,7 @@ export default function ArticleDetailHeader({
             {pvNode}
           </>
         ) : null}
+        {ownerMeta ? <OwnerOnlyArticleMeta {...ownerMeta} /> : null}
         {actions}
       </div>
 

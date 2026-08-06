@@ -3261,6 +3261,60 @@
     background-color: var(--site-panel-strong);
   }
 
+  /* 站长（owner）专属可见元素：统一虚线琥珀框 + 锁形徽标，与公开 UI 明显区分 */
+  .owner-only-mark {
+    @apply inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-[1px] text-[10px] font-semibold no-underline;
+    border-color: color-mix(in srgb, #f59e0b 55%, var(--site-line));
+    background-color: color-mix(in srgb, #f59e0b 12%, var(--site-panel));
+    color: color-mix(in srgb, #b45309 88%, var(--site-ink));
+    white-space: nowrap;
+  }
+
+  .dark .owner-only-mark {
+    border-color: color-mix(in srgb, #fbbf24 60%, var(--site-line));
+    background-color: color-mix(in srgb, #f59e0b 14%, var(--site-panel));
+    color: #fcd34d;
+  }
+
+  .owner-only-meta {
+    @apply inline-flex flex-wrap items-center gap-1.5 rounded-lg border border-dashed px-2 py-1 text-[11px] leading-5 no-underline;
+    border-color: color-mix(in srgb, #f59e0b 45%, var(--site-line));
+    background-color: color-mix(in srgb, #f59e0b 7%, var(--site-panel));
+    color: color-mix(in srgb, #b45309 80%, var(--site-ink));
+  }
+
+  .dark .owner-only-meta {
+    border-color: color-mix(in srgb, #fbbf24 50%, var(--site-line));
+    background-color: color-mix(in srgb, #f59e0b 10%, var(--site-panel));
+    color: #fde68a;
+  }
+
+  .owner-only-meta-text {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .article-action-button.owner-only-action {
+    border-color: color-mix(in srgb, #f59e0b 55%, var(--site-line));
+    background-color: color-mix(in srgb, #f59e0b 10%, var(--site-panel));
+    color: color-mix(in srgb, #b45309 88%, var(--site-ink));
+  }
+
+  .article-action-button.owner-only-action:hover {
+    border-color: #f59e0b;
+    color: #b45309;
+  }
+
+  .dark .article-action-button.owner-only-action {
+    border-color: color-mix(in srgb, #fbbf24 60%, var(--site-line));
+    background-color: color-mix(in srgb, #f59e0b 14%, var(--site-panel));
+    color: #fcd34d;
+  }
+
+  .dark .article-action-button.owner-only-action:hover {
+    border-color: #fbbf24;
+    color: #fde68a;
+  }
+
   .toc-scroll-panel {
     @apply border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900 md:sticky;
     top: 6rem;

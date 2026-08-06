@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { IconLock } from '@tabler/icons-react'
 import ArticleActionsDropdown from './ArticleActionsDropdown'
 import { useSessionAccount } from './SessionProvider'
 
@@ -368,14 +369,23 @@ export default function DistributeContentButton({
               ? '发送到 syncblog.cn 观点分发页；若先选中正文，会优先分发选中文本'
               : '发送到 syncblog.cn 文章分发页'
           }
-          className="article-action-button px-3 py-1 text-xs"
+          className="article-action-button owner-only-action px-3 py-1 text-xs"
         >
+          <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
           <DistributeIcon active={states[mode] === 'sent'} />
           <span>{getLabel(mode)}</span>
         </button>
       ))}
       {allowArticle ? (
-        <ArticleActionsDropdown label="站长分发至 X" closeOnSelect>
+        <ArticleActionsDropdown
+          label={(
+            <span className="inline-flex items-center gap-1">
+              <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
+              站长分发
+            </span>
+          )}
+          closeOnSelect
+        >
           <button
             type="button"
             role="menuitem"
@@ -383,8 +393,9 @@ export default function DistributeContentButton({
             disabled={xState === 'publishing'}
             aria-live="polite"
             title="由站长账号通过 X API 直接发布 Post"
-            className="article-action-button px-3 py-1 text-xs disabled:cursor-wait disabled:opacity-60"
+            className="article-action-button owner-only-action px-3 py-1 text-xs disabled:cursor-wait disabled:opacity-60"
           >
+            <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
             <DistributeIcon active={xState === 'sent'} />
             <span>{xState === 'publishing' ? '正在发布 Post' : xState === 'sent' ? 'Post 已发布' : xState === 'failed' ? 'Post 分发失败' : 'Post'}</span>
           </button>
@@ -394,8 +405,9 @@ export default function DistributeContentButton({
             onClick={handleOwnerArticleDistribute}
             aria-live="polite"
             title="复制文章 Markdown 并打开 X Articles 编辑器"
-            className="article-action-button px-3 py-1 text-xs"
+            className="article-action-button owner-only-action px-3 py-1 text-xs"
           >
+            <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
             <DistributeIcon active={xArticleState === 'copied'} />
             <span>{xArticleState === 'copied' ? '已复制，前往 X 文章' : xArticleState === 'failed' ? '文章分发失败' : '文章'}</span>
           </button>

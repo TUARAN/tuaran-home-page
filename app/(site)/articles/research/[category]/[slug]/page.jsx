@@ -344,6 +344,13 @@ export default async function ResearchDetailPage({ params }) {
           ) : null}
           </>
         )}
+        ownerMeta={{
+          author: '涂阿燃（TUARAN）',
+          assistance: entry.assistance,
+          assistanceLabel: entry.assistanceLabel,
+          model: entry.model,
+          version: entry.version,
+        }}
         actions={(
           <ArticleHeaderActions
             title={shareTitle}

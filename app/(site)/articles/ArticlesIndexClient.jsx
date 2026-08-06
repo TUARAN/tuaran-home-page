@@ -1,9 +1,9 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
+import ArticleListItem from './ArticleListItem'
 import {
   CONTENT_GROUP_KEYS,
   CONTENT_GROUP_META,
@@ -15,14 +15,11 @@ import {
   SERIES_META,
   SUBJECT_KEYS,
   SUBJECT_META,
-  getDisplaySubject,
   getContentGroup,
-  isEntityTypeRedundant,
   taxonomyForManualEntry,
 } from '../../../lib/contentTaxonomy'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
-import CanvasOriginBadge from '../components/CanvasOriginBadge'
 
 const PAGE_SIZE = 24
 
@@ -56,26 +53,6 @@ const LEGACY_RESOURCE_TO_FACETS = {
   'ai-music': { subject: 'content_creation' },
   'humanities-politics': { subject: 'humanities_history' },
   workplace: { subject: 'workplace_org' },
-}
-
-const KIND_TAG_CLASS = {
-  article: 'border-[#d9d4e2] bg-white/60 text-[#625a6f] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
-  analysis: 'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#30454b] dark:bg-[#172329] dark:text-[#b8dce5]',
-  practice: 'border-[#cfc3e2] bg-[#f3eff9] text-[#72539b] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#d8c5f3]',
-  resource: 'border-[#d6d0df] bg-[#f4f2f8] text-[#625d70] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
-}
-
-function isExternalHref(href) {
-  return typeof href === 'string' && href.startsWith('http')
-}
-
-function formatPv(pv) {
-  if (pv === null || typeof pv === 'undefined') return '-'
-  const number = Number(pv)
-  if (!Number.isFinite(number) || number < 0) return '-'
-  if (number === 0) return '0'
-  if (number >= 10000) return `${(number / 10000).toFixed(number >= 100000 ? 0 : 1).replace(/\.0$/, '')} 万`
-  return String(number)
 }
 
 function normalizeEnum(value, keys, fallback = 'all') {
@@ -526,7 +503,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                     ? { ...item, pv: livePv, pvLoading: pvKey !== '' && !pvLoaded }
                     : item
                   return (
-                    <ArticleRow
+                    <ArticleListItem
                       key={item.id || `${item.kind}:${item.href}:${item.title}`}
                       item={nextItem}
                       position={index + 1}
@@ -613,96 +590,5 @@ function FilterChip({ label, active, onClick }) {
     >
       <span className="whitespace-nowrap">{label}</span>
     </button>
-  )
-}
-
-function ArticleRow({ item, position, fromSearch, selectedSubject = 'all' }) {
-  const external = isExternalHref(item.href)
-  const group = getContentGroup(item.contentKind)
-  const displaySubject = getDisplaySubject(item.subjects, selectedSubject)
-  const showEntityType = item.entityType && !isEntityTypeRedundant(item.entityType, item.subjects)
-  const analyticsEvent = fromSearch
-    ? 'search_result_click'
-    : group === 'resource'
-      ? 'resource_action'
-      : 'entry_click'
-
-  return (
-    <Link
-      href={item.href}
-      {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      data-analytics-event={analyticsEvent}
-      data-analytics-surface={fromSearch ? 'directory_search' : 'directory'}
-      data-analytics-destination-kind={item.contentKind}
-      data-analytics-destination-id={item.id}
-      data-analytics-subject={item.subjects?.[0] || ''}
-      data-analytics-delivery={item.delivery || ''}
-      data-analytics-action={group === 'resource' ? 'open' : ''}
-      data-analytics-position={position}
-      className="article-row group block border-b border-[#e8e2ef] bg-transparent no-underline transition-colors last:border-b-0 hover:bg-white/80 hover:no-underline dark:border-gray-800 dark:hover:bg-[#151d27]"
-    >
-      <div className="grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_136px] sm:px-5">
-        <div className="min-w-0">
-          <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="shrink-0 text-sm text-[#a39aac]">▪</span>
-            {item.dateLabel || item.date ? (
-              <span className="shrink-0 whitespace-nowrap text-xs text-[#958aa1] dark:text-gray-400">
-                {item.dateLabel || item.date}
-              </span>
-            ) : null}
-            <span
-              className={[
-                'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-2 py-[1px] text-[11px]',
-                KIND_TAG_CLASS[group] || KIND_TAG_CLASS.article,
-              ].join(' ')}
-            >
-              {CONTENT_KIND_META[item.contentKind]?.label || item.tagLabel || '内容'}
-            </span>
-            {displaySubject ? (
-              <span className="inline-flex rounded-full border border-transparent px-1.5 py-[1px] text-[11px] text-[#817789] dark:text-gray-400">
-                {SUBJECT_META[displaySubject]?.label}
-              </span>
-            ) : null}
-            {showEntityType ? (
-              <span className="inline-flex rounded-full border border-transparent px-1.5 py-[1px] text-[11px] text-[#817789] dark:text-gray-400">
-                {ENTITY_TYPE_META[item.entityType]?.label}
-              </span>
-            ) : null}
-            <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
-          </div>
-          <h2 className="ml-5 line-clamp-2 text-[17px] font-semibold leading-7 text-[#20172f] transition-colors group-hover:text-[#120b1f] dark:text-gray-100 dark:group-hover:text-white">
-            {item.title}
-          </h2>
-          {item.summary ? (
-            <p className="ml-5 mt-2 line-clamp-2 text-sm leading-relaxed text-[#6b6472] transition-colors group-hover:text-[#3c3149] dark:text-gray-300 dark:group-hover:text-gray-200">
-              {item.summary}
-            </p>
-          ) : null}
-          <div className="ml-5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#958aa1] dark:text-gray-400">
-            <span>{external ? '打开来源 →' : item.delivery === 'interact' ? '开始探索 →' : '打开内容 →'}</span>
-            {item.readingMinutes ? <span className="font-mono text-[11px]">· {item.readingMinutes} min</span> : null}
-            {'pv' in item ? (
-              <span className="font-mono text-[11px]">· 阅读量 {item.pvLoading ? '-' : formatPv(item.pv)}</span>
-            ) : null}
-          </div>
-        </div>
-        {item.image ? (
-          <div className="relative h-28 overflow-hidden rounded-md border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 sm:h-24 sm:w-[136px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.image.src}
-              alt={item.image.alt || `${item.title} 配图`}
-              loading="lazy"
-              decoding="async"
-              onError={(event) => {
-                const box = event.currentTarget.parentElement
-                if (box) box.style.display = 'none'
-              }}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            />
-          </div>
-        ) : null}
-      </div>
-    </Link>
   )
 }

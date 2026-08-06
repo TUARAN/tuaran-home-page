@@ -7,6 +7,7 @@ export default function ArticleActionsDropdown({
   children,
   placement = 'bottom',
   closeOnSelect = false,
+  triggerClassName = '',
 }) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
@@ -35,7 +36,7 @@ export default function ArticleActionsDropdown({
     <div ref={rootRef} className="article-actions-dropdown">
       <button
         type="button"
-        className="article-action-button px-3 py-1 text-xs"
+        className={`article-action-button px-3 py-1 text-xs ${triggerClassName}`}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}

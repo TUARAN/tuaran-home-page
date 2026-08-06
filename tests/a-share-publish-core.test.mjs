@@ -6,6 +6,7 @@ import {
   hasSourceSection,
   publishFileName,
   publishSlug,
+  stripPreamble,
   validatePublishContent,
 } from '../lib/aSharePublishCore.js'
 
@@ -52,6 +53,16 @@ test('draftToArticleContent 把 review_ready 置 true 且保留其余内容', ()
   assert.match(article, /^ad_eligible:\s*false\s*$/mu)
   assert.match(article, /四川黄金/)
   assert.throws(() => draftToArticleContent(article), /review_ready: false/)
+})
+
+test('stripPreamble 清除模型检索前的前置杂文', () => {
+  const dirty = `我先检索一下。\n我已获得关键信息，开始撰写。\n\n${DRAFT}`
+  const clean = stripPreamble(dirty)
+  assert.match(clean, /^---\r?\n/)
+  assert.equal(stripPreamble(DRAFT), DRAFT)
+  const article = draftToArticleContent(dirty)
+  assert.match(article, /^review_ready:\s*true\s*$/mu)
+  assert.equal(validatePublishContent(article, { code: '001337', name: '四川黄金' }), true)
 })
 
 test('publishFileName / publishSlug 生成发布文件名与文章 slug', () => {

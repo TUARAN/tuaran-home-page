@@ -45,15 +45,21 @@ test('parseResponsesOutput 抽取正文、引用与检索结果', () => {
   assert.equal(parsed.citations[0].title, '浦发银行 2025 年报')
 })
 
-test('parseResponsesOutput 兼容多段正文与空响应', () => {
+test('parseResponsesOutput 兼容多段正文、多消息取最终回答与空响应', () => {
   const raw = {
     status: 'completed',
     output: [
-      { type: 'message', content: [{ type: 'output_text', text: '第一段' }] },
-      { type: 'message', content: [{ type: 'output_text', text: '第二段', annotations: [] }] },
+      { type: 'message', content: [{ type: 'output_text', text: '我先检索一下。' }] },
+      {
+        type: 'message',
+        content: [
+          { type: 'output_text', text: '## 一、先给结论' },
+          { type: 'output_text', text: '\n最终回答正文。', annotations: [] },
+        ],
+      },
     ],
   }
-  assert.equal(parseResponsesOutput(raw).content, '第一段\n第二段')
+  assert.equal(parseResponsesOutput(raw).content, '## 一、先给结论\n\n最终回答正文。')
   assert.deepEqual(parseResponsesOutput({}).content, '')
   assert.deepEqual(parseResponsesOutput({}).citations, [])
   assert.equal(parseResponsesOutput({}).webSearchCalls, 0)

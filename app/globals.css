@@ -85,6 +85,18 @@
   border-color: var(--admin-line-soft);
 }
 
+/* 长列表页固定头部：钉在 AdminTopbar（h-14 = 56px）下方，
+   背景用画布色 + 毛玻璃，滚动时内容不会从标题区透出。 */
+.admin-page__header--sticky {
+  position: sticky;
+  top: 56px;
+  z-index: 20;
+  margin-inline: 0;
+  background: color-mix(in srgb, var(--admin-canvas) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
 .admin-page__title,
 .admin-section__title {
   color: var(--admin-ink);

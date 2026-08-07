@@ -78,6 +78,8 @@ export async function GET(req) {
   const source = String(params.get('source') || '').trim().slice(0, 100)
   const keyId = String(params.get('key') || '').trim().slice(0, 120)
   const limit = Math.min(Math.max(Number(params.get('limit')) || 100, 1), 200)
+  const parsedOffset = Number.parseInt(params.get('offset') || '0', 10)
+  const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0
   if (execution && !EXECUTION_STATUSES.has(execution)) {
     return Response.json({ error: 'INVALID_EXECUTION_STATUS' }, { status: 400 })
   }
@@ -106,10 +108,11 @@ export async function GET(req) {
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
 
   try {
-    const [taskResult, stats, sourceResult] = await Promise.all([
+    const totalStatement = db.prepare(`SELECT COUNT(*) AS total FROM deepseek_tasks ${where}`)
+    const [taskResult, stats, sourceResult, totalRow] = await Promise.all([
       db
-        .prepare(`SELECT * FROM deepseek_tasks ${where} ORDER BY created_at DESC LIMIT ?`)
-        .bind(...binds, limit)
+        .prepare(`SELECT * FROM deepseek_tasks ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+        .bind(...binds, limit, offset)
         .all(),
       db
         .prepare(
@@ -125,6 +128,7 @@ export async function GET(req) {
         .bind(startOfChinaToday())
         .first(),
       db.prepare('SELECT DISTINCT source FROM deepseek_tasks WHERE source != ? ORDER BY source').bind('').all(),
+      binds.length ? totalStatement.bind(...binds).first() : totalStatement.first(),
     ])
 
     return Response.json({
@@ -139,6 +143,9 @@ export async function GET(req) {
         totalTokens: Number(stats?.total_tokens) || 0,
       },
       sources: (sourceResult?.results || []).map((row) => row.source),
+      total: Number(totalRow?.total) || 0,
+      offset,
+      limit,
       tasks: (taskResult?.results || []).map(rowToTask),
     })
   } catch (error) {

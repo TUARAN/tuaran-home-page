@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   IconArrowLeft,
@@ -12,9 +12,7 @@ import {
   IconTypography,
 } from '@tabler/icons-react'
 
-import AdminPage from '../../components/ui/AdminPage'
-import AdminButton from '../../components/ui/AdminButton'
-import Section from '../../components/ui/Section'
+import { AdminButton, AdminPage, AdminPagination, Section } from '../../components/ui'
 import ContentIndexConsole from '../content-index/ContentIndexConsole'
 import ResearchStyleClient from '../research-style/ResearchStyleClient'
 
@@ -36,21 +34,18 @@ function formatTime(value) {
   return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 
-function toTimestamp(entry) {
-  if (entry.updatedAt) return Number(entry.updatedAt)
-  const parsed = Date.parse(entry.date)
-  return Number.isNaN(parsed) ? 0 : parsed
-}
-
 export default function ArticlesConsole() {
-  const [articles, setArticles] = useState([])
-  const [entries, setEntries] = useState([])
+  const [items, setItems] = useState([])
+  const [total, setTotal] = useState(0)
+  const [counts, setCounts] = useState(null)
+  const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [activePanel, setActivePanel] = useState('content')
+  const PAGE_SIZE = 20
 
   function openPanel(panel, anchorId) {
     setActivePanel(panel)
@@ -62,82 +57,44 @@ export default function ArticlesConsole() {
     })
   }
 
-  async function load() {
+  const loadList = useCallback(async (nextOffset = 0) => {
     setLoading(true)
     setError('')
     try {
-      const [articlesRes, indexRes] = await Promise.all([
-        fetch('/api/admin/articles', { cache: 'no-store' }),
-        fetch('/api/admin/content-index', { cache: 'no-store' }),
-      ])
-      const [articlesData, indexData] = await Promise.all([articlesRes.json(), indexRes.json()])
-      if (!articlesRes.ok) {
-        throw new Error(articlesData?.detail || articlesData?.error || '文章读取失败')
+      const params = new URLSearchParams({
+        q: query.trim(),
+        type: typeFilter,
+        status: statusFilter,
+        offset: String(nextOffset),
+        limit: String(PAGE_SIZE),
+      })
+      const res = await fetch(`/api/admin/content-list?${params}`, { cache: 'no-store' })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || data?.status !== 'ok') {
+        throw new Error(data?.detail || data?.message || data?.error || `HTTP_${res.status}`)
       }
-      setArticles(articlesData.articles || [])
-      if (indexRes.ok) {
-        setEntries(indexData.entries || [])
-      } else {
-        setEntries([])
-        setError(`在线文章已加载；内容索引暂不可用：${indexData?.message || indexData?.error || '读取失败'}`)
-      }
-      if (articlesData.status === 'unavailable') setError('当前环境没有 D1 绑定。')
+      setItems(Array.isArray(data.items) ? data.items : [])
+      setTotal(Number(data.total) || 0)
+      setCounts(data.counts || null)
+      setOffset(nextOffset)
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }
+  }, [query, typeFilter, statusFilter])
 
-  useEffect(() => { load() }, [])
-
-  const items = useMemo(() => {
-    const articleKeys = new Set(articles.map((article) => `article:${article.slug}`))
-    const articleItems = articles.map((article) => ({
-      key: `article-post:${article.id}`,
-      entity: 'article-post',
-      contentKey: `article:${article.slug}`,
-      type: 'article',
-      source: 'editor',
-      title: article.title || '未命名草稿',
-      href: `/articles/${article.slug}`,
-      status: article.status,
-      updatedAt: article.updatedAt,
-      article,
-    }))
-    const indexItems = entries
-      .filter((entry) => !articleKeys.has(entry.contentKey))
-      .map((entry) => ({
-        ...entry,
-        key: `content-index:${entry.contentKey}`,
-        entity: 'content-index',
-      }))
-    return [...articleItems, ...indexItems].sort((a, b) => toTimestamp(b) - toTimestamp(a))
-  }, [articles, entries])
-
-  const visibleItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-    return items.filter((item) => {
-      if (typeFilter !== 'all' && item.type !== typeFilter) return false
-      if (statusFilter !== 'all' && item.status !== statusFilter) return false
-      if (!normalizedQuery) return true
-      return `${item.title} ${item.contentKey} ${item.summary || ''}`.toLowerCase().includes(normalizedQuery)
-    })
-  }, [items, query, statusFilter, typeFilter])
-
-  const counts = useMemo(() => ({
-    all: items.length,
-    draft: items.filter((item) => item.status === 'draft').length,
-    published: items.filter((item) => item.status === 'published').length,
-    retired: items.filter((item) => item.status === 'retired').length,
-  }), [items])
+  // 搜索防抖 + 筛选变化自动回到第一页
+  useEffect(() => {
+    const timer = setTimeout(() => loadList(0), query.trim() ? 350 : 0)
+    return () => clearTimeout(timer)
+  }, [query, typeFilter, statusFilter, loadList])
 
   async function removeArticle(article) {
     if (!window.confirm(`确认删除“${article.title || '未命名草稿'}”？此操作不可恢复。`)) return
     const res = await fetch(`/api/admin/articles/${article.id}`, { method: 'DELETE' })
     if (res.ok) {
-      setArticles((current) => current.filter((item) => item.id !== article.id))
-      setEntries((current) => current.filter((item) => item.contentKey !== `article:${article.slug}`))
+      await loadList(offset)
     } else {
       setError('删除失败，请稍后重试。')
     }
@@ -153,9 +110,7 @@ export default function ArticlesConsole() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.message || data?.error || '状态更新失败')
-      setEntries((current) => current.map((item) => (
-        item.contentKey === entry.contentKey ? { ...item, status: nextStatus } : item
-      )))
+      await loadList(offset)
     } catch (err) {
       setError(err.message)
     }
@@ -169,7 +124,7 @@ export default function ArticlesConsole() {
         { method: 'DELETE' }
       )
       if (!res.ok) throw new Error('删除失败')
-      setEntries((current) => current.filter((item) => item.contentKey !== entry.contentKey))
+      await loadList(offset)
     } catch (err) {
       setError(err.message)
     }
@@ -181,7 +136,8 @@ export default function ArticlesConsole() {
   return (
     <AdminPage
       title="内容管理"
-      description={`共 ${counts.all} 条 · 已发布 ${counts.published} · 草稿 ${counts.draft} · 已下线 ${counts.retired}`}
+      description={`共 ${counts?.all ?? '…'} 条 · 已发布 ${counts?.published ?? '…'} · 草稿 ${counts?.draft ?? '…'} · 已下线 ${counts?.retired ?? '…'}`}
+      stickyHeader
       actions={(
         <>
           {activePanel !== 'content' ? (
@@ -279,15 +235,15 @@ export default function ArticlesConsole() {
         </div>
 
         {loading ? <p className="text-sm text-[#67695d] dark:text-gray-400">加载中…</p> : null}
-        {!loading && !items.length ? (
+        {!loading && !total ? (
           <p className="py-8 text-center text-sm text-[#77796e] dark:text-gray-400">还没有内容。</p>
         ) : null}
-        {!loading && items.length && !visibleItems.length ? (
+        {!loading && total && !items.length ? (
           <p className="py-8 text-center text-sm text-[#77796e] dark:text-gray-400">没有符合筛选条件的内容。</p>
         ) : null}
 
         <div className="divide-y divide-[#eceee6] dark:divide-[#1b2430]">
-          {visibleItems.map((item) => {
+          {items.map((item) => {
             const isArticlePost = item.entity === 'article-post'
             const isManualEntry = item.entity === 'content-index' && item.source === 'manual'
             return (
@@ -377,6 +333,13 @@ export default function ArticlesConsole() {
             )
           })}
         </div>
+        <AdminPagination
+          total={total}
+          offset={offset}
+          limit={PAGE_SIZE}
+          onOffsetChange={loadList}
+          loading={loading}
+        />
         </Section>
       ) : null}
     </AdminPage>

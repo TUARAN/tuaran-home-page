@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { AdminPage } from '../../components/ui'
+import { AdminPage, AdminPagination } from '../../components/ui'
 
 function ContentIndexFrame({ embedded, children }) {
   if (embedded) return children
@@ -62,6 +62,8 @@ export default function ContentIndexConsole({ embedded = false }) {
   const [syncing, setSyncing] = useState(false)
   const [sourceFilter, setSourceFilter] = useState('manual')
   const [form, setForm] = useState(EMPTY_FORM)
+  const [pageOffset, setPageOffset] = useState(0)
+  const PAGE_SIZE = 50
 
   const load = useCallback(async () => {
     try {
@@ -91,6 +93,13 @@ export default function ContentIndexConsole({ embedded = false }) {
     if (sourceFilter === 'all') return entries
     return entries.filter((e) => e.source === sourceFilter)
   }, [entries, sourceFilter])
+
+  const pageItems = visible.slice(pageOffset, pageOffset + PAGE_SIZE)
+
+  function switchSource(nextSource) {
+    setSourceFilter(nextSource)
+    setPageOffset(0)
+  }
 
   function setField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -300,7 +309,7 @@ export default function ContentIndexConsole({ embedded = false }) {
               <button
                 key={s}
                 type="button"
-                onClick={() => setSourceFilter(s)}
+                onClick={() => switchSource(s)}
                 className={`rounded-full border px-3 py-1 transition ${
                   sourceFilter === s
                     ? 'border-[#9ca08c] bg-[#f3f2ec] text-[#15140f] dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100'
@@ -321,7 +330,7 @@ export default function ContentIndexConsole({ embedded = false }) {
         ) : null}
 
         <ul className="mt-3 divide-y divide-[#eceee9] dark:divide-gray-800">
-          {visible.map((entry) => (
+          {pageItems.map((entry) => (
             <li key={entry.contentKey} className="flex flex-wrap items-center gap-2 py-2.5">
               <span className="font-mono text-[11px] text-[#999] dark:text-gray-500">
                 {entry.contentKey}
@@ -369,6 +378,12 @@ export default function ContentIndexConsole({ embedded = false }) {
             <li className="py-3 text-sm text-[#888] dark:text-gray-500">暂无条目，先点「一键同步」或手工登记。</li>
           ) : null}
         </ul>
+        <AdminPagination
+          total={visible.length}
+          offset={pageOffset}
+          limit={PAGE_SIZE}
+          onOffsetChange={setPageOffset}
+        />
       </section>
     </ContentIndexFrame>
   )

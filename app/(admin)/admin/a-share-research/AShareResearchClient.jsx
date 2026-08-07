@@ -37,6 +37,30 @@ export default function AShareResearchClient() {
   const [saving, setSaving] = useState(false)
   const [openId, setOpenId] = useState('')
   const [copied, setCopied] = useState('')
+  const [logs, setLogs] = useState([])
+  const [logTotal, setLogTotal] = useState(0)
+  const [logsLoading, setLogsLoading] = useState(true)
+  const [logsLoadingMore, setLogsLoadingMore] = useState(false)
+  const [logsError, setLogsError] = useState('')
+
+  const loadLogs = useCallback(async (offset, { append = false } = {}) => {
+    if (append) setLogsLoadingMore(true)
+    else setLogsLoading(true)
+    setLogsError('')
+    try {
+      const response = await fetch(`/api/admin/a-share-research/logs?offset=${offset}&limit=20`, { cache: 'no-store' })
+      const payload = await safeJson(response)
+      if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      const rows = Array.isArray(payload?.logs) ? payload.logs : []
+      setLogs((prev) => (append ? [...prev, ...rows] : rows))
+      setLogTotal(Number(payload?.total) || 0)
+    } catch (fetchError) {
+      setLogsError(fetchError?.message || '运行日志读取失败。')
+    } finally {
+      if (append) setLogsLoadingMore(false)
+      else setLogsLoading(false)
+    }
+  }, [])
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -46,12 +70,13 @@ export default function AShareResearchClient() {
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
+      await loadLogs(0)
     } catch (fetchError) {
       setError(fetchError?.message || 'A 股研究数据读取失败。')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [loadLogs])
 
   useEffect(() => {
     refresh()
@@ -110,7 +135,7 @@ export default function AShareResearchClient() {
   }
 
   const drafts = data?.drafts || []
-  const logs = data?.logs || []
+  const hasMoreLogs = logs.length < logTotal
 
   return (
     <AdminPage
@@ -189,25 +214,50 @@ export default function AShareResearchClient() {
         )}
       </Section>
 
-      <Section title="运行日志" description="线上定时任务最近 20 次执行记录；失败项会自动重试同一家公司。" className="mt-4">
-        {!loading && !logs.length ? (
+      <Section
+        title="运行日志"
+        description="线上定时任务按时间倒序分页记录；失败项会自动重试同一家公司。"
+        className="mt-4"
+        actions={<span className="text-[12px] text-[#82847a]">共 {logsLoading ? '…' : logTotal} 条</span>}
+      >
+        {logsLoading ? (
+          <p className="py-4 text-center text-[12px] text-[#82847a]">日志加载中…</p>
+        ) : logsError ? (
+          <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+            {logsError}
+          </p>
+        ) : !logs.length ? (
           <EmptyState title="暂无运行记录" description="定时任务首次触发后会出现在这里。" />
         ) : (
-          <div className="space-y-1.5">
-            {logs.map((log) => (
-              <div key={log.id} className="flex flex-col gap-1 rounded-lg border border-[#e6e7df] px-3 py-2 text-[12px] dark:border-[#243041] lg:flex-row lg:items-center">
-                <StatusPill tone={log.status === 'ok' ? 'success' : log.status === 'skipped' ? 'neutral' : 'danger'} size="sm">
-                  {log.status === 'ok' ? '成功' : log.status === 'skipped' ? '跳过' : '失败'}
-                </StatusPill>
-                <span className="min-w-0 flex-1 truncate">
-                  {ACTION_LABELS[log.action] || log.action}
-                  {log.companyName ? ` · ${log.companyName}（${log.code}）` : ''}
-                  {log.error ? <span className="ml-1 text-rose-600 dark:text-rose-300">· {log.error}</span> : null}
-                </span>
-                <span className="text-[#82847a]">{formatDate(log.ranAt)} · {(Number(log.durationMs) / 1000).toFixed(1)} 秒</span>
+          <>
+            <div className="space-y-1.5">
+              {logs.map((log) => (
+                <div key={log.id} className="flex flex-col gap-1 rounded-lg border border-[#e6e7df] px-3 py-2 text-[12px] dark:border-[#243041] lg:flex-row lg:items-center">
+                  <StatusPill tone={log.status === 'ok' ? 'success' : log.status === 'skipped' ? 'neutral' : 'danger'} size="sm">
+                    {log.status === 'ok' ? '成功' : log.status === 'skipped' ? '跳过' : '失败'}
+                  </StatusPill>
+                  <span className="min-w-0 flex-1 truncate">
+                    {ACTION_LABELS[log.action] || log.action}
+                    {log.companyName ? ` · ${log.companyName}（${log.code}）` : ''}
+                    {log.error ? <span className="ml-1 text-rose-600 dark:text-rose-300">· {log.error}</span> : null}
+                  </span>
+                  <span className="text-[#82847a]">{formatDate(log.ranAt)} · {(Number(log.durationMs) / 1000).toFixed(1)} 秒</span>
+                </div>
+              ))}
+            </div>
+            {hasMoreLogs ? (
+              <div className="mt-3 text-center">
+                <AdminButton
+                  type="button"
+                  variant="ghost"
+                  onClick={() => loadLogs(logs.length, { append: true })}
+                  disabled={logsLoadingMore}
+                >
+                  {logsLoadingMore ? '加载中…' : `加载更多（还有 ${logTotal - logs.length} 条）`}
+                </AdminButton>
               </div>
-            ))}
-          </div>
+            ) : null}
+          </>
         )}
       </Section>
     </AdminPage>

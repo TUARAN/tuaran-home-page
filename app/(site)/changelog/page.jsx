@@ -6,6 +6,7 @@ import {
   EARLIEST_CHANGELOG as earliest,
   LATEST_CHANGELOG as latest,
 } from '../../../lib/changelogData'
+import { ENGINEERING_CONVENTIONS } from '../../../lib/engineeringConventions'
 
 export const dynamic = 'force-static'
 
@@ -99,6 +100,39 @@ export default function ChangelogPage() {
         </summary>
         <ul className="mt-5 grid gap-3 sm:grid-cols-2">
           {DESIGN_PRINCIPLES.map((p, idx) => (
+            <li
+              key={p.title}
+              className="rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_50%,transparent)] p-4"
+            >
+              <p className="flex items-baseline gap-2 font-serif text-[15px] font-semibold text-[var(--site-ink)]">
+                <span className="font-mono text-[11px] text-[var(--site-accent)]">
+                  {String(idx + 1).padStart(2, '0')}
+                </span>
+                {p.title}
+              </p>
+              <p className="mt-1.5 text-[13px] leading-6 text-[var(--site-muted)]">{p.body}</p>
+            </li>
+          ))}
+        </ul>
+      </details>
+
+      <details
+        id="engineering-conventions"
+        className="mt-4 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_60%,transparent)] p-5 md:p-6"
+      >
+        <summary className="cursor-pointer">
+          <span className="block font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--site-faint)]">
+            Engineering Conventions · 工程规范
+          </span>
+          <span className="mt-1 block border-b-0 pb-0 font-serif text-xl font-semibold tracking-wide text-[var(--site-ink)] md:text-2xl">
+            后台与自动化的统一规矩
+          </span>
+          <span className="mt-1 block max-w-3xl text-[13.5px] leading-7 text-[var(--site-muted)]">
+            把反复出现的分页、通知、告警、样式与凭证约定抽象成可执行规则，后续新增页面和自动化先对照这里。
+          </span>
+        </summary>
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+          {ENGINEERING_CONVENTIONS.map((p, idx) => (
             <li
               key={p.title}
               className="rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_50%,transparent)] p-4"

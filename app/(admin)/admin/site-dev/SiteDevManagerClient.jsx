@@ -227,7 +227,7 @@ function WorkItemCard({ item, source, projects, onPatch, savingId }) {
           href={item.url || undefined}
           target="_blank"
           rel="noreferrer"
-          className="min-w-0 text-[13px] font-semibold leading-5 text-[#15140f] hover:text-[#8a6422] dark:text-gray-100 dark:hover:text-[#d4ae66]"
+          className="line-clamp-2 min-w-0 text-[13px] font-semibold leading-5 text-[#15140f] hover:text-[#8a6422] dark:text-gray-100 dark:hover:text-[#d4ae66]"
         >
           {item.number ? `#${item.number} ` : ''}
           {item.title}
@@ -296,14 +296,14 @@ function WorkBoard({ items, sources, projects, onPatch, savingId }) {
   }
 
   return (
-    <div className="grid gap-3 xl:grid-cols-5">
+    <div className="grid items-start gap-3 xl:grid-cols-5">
       {Object.entries(STATUS_META).map(([status, meta]) => (
-        <section key={status} className="min-w-0 rounded-xl border border-[#e2e3da] bg-white/70 dark:border-[#1e2733] dark:bg-[#10161f]/70">
+        <section key={status} className="flex min-w-0 flex-col rounded-xl border border-[#e2e3da] bg-white/70 dark:border-[#1e2733] dark:bg-[#10161f]/70">
           <header className="flex items-center justify-between border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">
             <StatusPill tone={meta.tone} size="sm">{meta.label}</StatusPill>
             <span className="text-[12px] text-[#82847a] dark:text-gray-500">{grouped[status].length}</span>
           </header>
-          <div className="space-y-2 p-2">
+          <div className="max-h-[max(420px,calc(100vh-15rem))] min-h-[180px] space-y-2 overflow-y-auto p-2">
             {grouped[status].slice(0, 20).map((item) => (
               <WorkItemCard
                 key={item.id}

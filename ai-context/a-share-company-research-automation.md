@@ -38,6 +38,9 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
 - 自动生成稿保持 `review_ready: false` / `ad_eligible: false`；在线草稿由站长在后台复核，
   确认后按仓库发布规则提交，自动化不提交、不推送、不发布。
 - 定时触发见 `.github/workflows/a-share-research.yml`（北京时间 01:00 / 01:20 / 01:40）。
+- 定时任务失败时（含 GitHub Actions runner 未接单、端点返回非 200），工作流会调用
+  `POST /api/automation/alert` 向站长消息中心写入「自动化监控」通知（幂等按 workflow+runId 去重，
+  鉴权复用 `AUTOMATION_ALERT_SECRET` / `WEEKLY_SUMMARY_SECRET` / `PUBLIC_OPINION_COLLECT_SECRET` 回退链）。
 
 需要新增的 Cloudflare Pages Secret：`A_SHARE_COLLECT_SECRET`（与 GitHub 仓库 Secret 同值）；
 未配置时路由回退复用 `WEEKLY_SUMMARY_SECRET` / `PUBLIC_OPINION_COLLECT_SECRET`。

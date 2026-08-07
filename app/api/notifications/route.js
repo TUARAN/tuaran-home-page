@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 
 function notificationHref(type, articleKey, commentId, metaMap) {
   if (type === 'weekly_summary') return '/admin/content-weekly?days=7'
+  if (type === 'automation_monitor') return '/admin/ops'
   const resolved = resolveContentKeyLite(articleKey, metaMap)
   if (!resolved.href) return null
   if (type === 'content_like') return resolved.href
@@ -17,6 +18,7 @@ function notificationTitle(type, actorName) {
   if (type === 'content_like') return `${actorName || '有人'} 点赞了你的内容`
   if (type === 'content_comment') return `${actorName || '有人'} 评论了你的内容`
   if (type === 'weekly_summary') return '上周站点总结已生成'
+  if (type === 'automation_monitor') return `${actorName || '自动化任务'} 运行失败`
   return `${actorName || '有人'} 回复了你`
 }
 
@@ -32,7 +34,7 @@ function mapNotification(row, metaMap) {
     actorUserName: row.actor_user_name || '',
     actorUserImage: row.actor_user_image || '',
     articleKey: row.article_key || '',
-    articleTitle: type === 'weekly_summary' ? '内容数据与反馈' : article.title,
+    articleTitle: type === 'weekly_summary' ? '内容数据与反馈' : type === 'automation_monitor' ? '' : article.title,
     href: notificationHref(type, row.article_key, row.comment_id, metaMap),
     commentId: Number(row.comment_id) || null,
     replyToCommentId: Number(row.reply_to_comment_id) || null,
@@ -49,6 +51,14 @@ export async function GET(req) {
   const url = new URL(req.url)
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 20))
   const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0)
+  const type = String(url.searchParams.get('type') || '')
+  let where = 'recipient_user_id = ?1'
+  const whereParams = [String(user.id)]
+  if (type === 'automation') {
+    where += " AND type = 'automation_monitor'"
+  } else if (type === 'interaction') {
+    where += " AND type != 'automation_monitor'"
+  }
 
   let db
   try {
@@ -64,27 +74,27 @@ export async function GET(req) {
           `SELECT id, type, actor_user_id, actor_user_provider, actor_user_name, actor_user_image,
                   article_key, comment_id, reply_to_comment_id, message_excerpt, read_at, created_at
            FROM comment_notifications
-           WHERE recipient_user_id = ?1
+           WHERE ${where}
            ORDER BY created_at DESC
            LIMIT ?2 OFFSET ?3`
         )
-        .bind(String(user.id), limit, offset)
+        .bind(...whereParams, limit, offset)
         .all(),
       db
         .prepare(
           `SELECT COUNT(*) AS total
            FROM comment_notifications
-           WHERE recipient_user_id = ?1`
+           WHERE ${where}`
         )
-        .bind(String(user.id))
+        .bind(...whereParams)
         .first(),
       db
         .prepare(
           `SELECT COUNT(*) AS unread
            FROM comment_notifications
-           WHERE recipient_user_id = ?1 AND read_at IS NULL`
+           WHERE ${where} AND read_at IS NULL`
         )
-        .bind(String(user.id))
+        .bind(...whereParams)
         .first(),
     ])
     const metaMap = await loadContentKeyMeta(

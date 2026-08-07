@@ -7,11 +7,21 @@ import {
   greetingDateLabel,
   greetingWithinLimit,
   isAutomationPaused,
+  shanghaiDateKey,
 } from '../lib/morningGreeting.js'
 
 test('greeting date label uses Asia/Shanghai day of month', () => {
   const label = greetingDateLabel({ now: new Date('2026-08-05T00:30:00.000Z') })
   assert.equal(label, '8月5号')
+})
+
+test('shanghai date key uses Asia/Shanghai calendar day', () => {
+  // 北京时间 8/5 08:30 = UTC 8/5 00:30
+  assert.equal(shanghaiDateKey(new Date('2026-08-05T00:30:00.000Z')), '2026-08-05')
+  // UTC 8/4 17:00 = 北京时间 8/5 01:00，应归属 8/5
+  assert.equal(shanghaiDateKey(new Date('2026-08-04T17:00:00.000Z')), '2026-08-05')
+  // UTC 8/5 15:59 = 北京时间 8/5 23:59，应归属 8/5
+  assert.equal(shanghaiDateKey(new Date('2026-08-05T15:59:00.000Z')), '2026-08-05')
 })
 
 test('builds the fixed morning greeting with today date injected', () => {

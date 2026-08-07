@@ -8,6 +8,12 @@ import { useSessionAccount } from '../components/SessionProvider'
 const PAGE_SIZE = 20
 const LOGIN_HREF = '/login?returnTo=%2Fnotifications'
 
+const FILTER_TABS = [
+  { id: 'all', label: '全部' },
+  { id: 'interaction', label: '互动' },
+  { id: 'automation', label: '自动化监控' },
+]
+
 function relativeTime(ts) {
   const n = Number(ts)
   if (!n) return ''
@@ -94,18 +100,20 @@ export default function NotificationsClient() {
   const [status, setStatus] = useState('idle')
   const [loadingMore, setLoadingMore] = useState(false)
   const [markingAll, setMarkingAll] = useState(false)
+  const [filter, setFilter] = useState('all')
   const requestIdRef = useRef(0)
 
   const fetchPage = useCallback(async (offset, requestId) => {
+    const typeParam = filter !== 'all' ? `&type=${filter}` : ''
     const res = await fetch(
-      `/api/notifications?limit=${PAGE_SIZE}&offset=${offset}`,
+      `/api/notifications?limit=${PAGE_SIZE}&offset=${offset}${typeParam}`,
       { cache: 'no-store', credentials: 'same-origin' }
     )
     const json = await res.json().catch(() => null)
     if (!res.ok || !json) throw new Error('load failed')
     if (requestId !== requestIdRef.current) return null
     return json
-  }, [])
+  }, [filter])
 
   useEffect(() => {
     if (!user?.id) return
@@ -127,7 +135,7 @@ export default function NotificationsClient() {
       alive = false
       requestIdRef.current += 1
     }
-  }, [user?.id, fetchPage])
+  }, [user?.id, filter, fetchPage])
 
   const refresh = useCallback(() => {
     if (!user?.id) return
@@ -223,6 +231,25 @@ export default function NotificationsClient() {
         </p>
       </header>
 
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {FILTER_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setFilter(tab.id)}
+            disabled={status === 'loading'}
+            className={[
+              'rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50',
+              filter === tab.id
+                ? 'border-[var(--site-accent)] bg-[var(--site-accent)] text-[var(--site-panel)]'
+                : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-muted)] hover:bg-[var(--site-panel-strong)]',
+            ].join(' ')}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="mb-0 text-sm text-[var(--site-muted)]">
           {total > 0 ? (
@@ -280,7 +307,9 @@ export default function NotificationsClient() {
         <div className="rounded-2xl border border-dashed border-[var(--site-line)] px-6 py-12 text-center">
           <p className="mb-1 text-base font-semibold text-[var(--site-ink)]">还没有新的站内通知</p>
           <p className="mb-0 text-sm leading-6 text-[var(--site-muted)]">
-            有人在你的内容下评论、回复或点赞时，会出现在这里。
+            {filter === 'automation'
+              ? '定时自动化任务运行失败时，监控提醒会出现在这里。'
+              : '有人在你的内容下评论、回复或点赞时，会出现在这里。'}
           </p>
         </div>
       ) : (

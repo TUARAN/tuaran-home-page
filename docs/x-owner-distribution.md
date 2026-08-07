@@ -37,8 +37,9 @@ X_ACCESS_TOKEN_SECRET=
 
 ## X 每日早安问候（自动化）
 
-- 触发：每天北京时间 08:00，由 GitHub Actions 定时任务 `morning-greeting.yml` 调用站内接口 `POST /api/distribution/x/greeting`；也可以在 Actions 页面手动触发。
+- 触发：每天北京时间 08:00 / 08:20 / 08:40，由 GitHub Actions 定时任务 `morning-greeting.yml` 调用站内接口 `POST /api/distribution/x/greeting`；也可以在 Actions 页面手动触发。接口按北京时间自然日幂等：当天已成功发布则返回 `200 skipped`，补跑触发点不会重复发帖。
 - 文案：模板固定于 `lib/morningGreeting.js`，其中「今日是 X月X号」按当天（Asia/Shanghai）自动替换，其余文字保持站长暂定内容；发布前做 280 字符权重校验。
 - 鉴权：接口校验请求头 `x-morning-greeting-secret`，必须与 Cloudflare Pages 环境变量 `MORNING_GREETING_SECRET` 相同；该密钥同时配置为 GitHub 仓库 Secret，供定时任务使用。
 - 开关：站长可在后台「自动化控制台」一键暂停/恢复。暂停后接口返回 `423 PAUSED`，定时任务视为“跳过”而不会发布任何内容；恢复后次日按计划自动发布。
 - 记录：每次发帖结果（成功/失败、帖子链接）写入 `site_settings` 的 `automation.x_morning_greeting.last_run`，展示在自动化控制台的最近运行里。
+- 告警：定时任务失败时，`morning-greeting.yml` 会调用 `POST /api/automation/alert` 向站长消息中心写入一条「自动化监控」通知（`x-automation-alert-secret`，复用 `AUTOMATION_ALERT_SECRET` / `WEEKLY_SUMMARY_SECRET` / `PUBLIC_OPINION_COLLECT_SECRET` 回退链）。

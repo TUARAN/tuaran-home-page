@@ -36,3 +36,33 @@ jobs:
           cat /tmp/weekly-summary-response.json
           echo
           test "$code" = "200"
+
+      - name: Notify owner of failure
+        if: failure()
+        env:
+          ALERT_SECRET: ${{ secrets.AUTOMATION_ALERT_SECRET || secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          BODY=$(python3 - <<'PY'
+          import json, os
+          detail = ""
+          try:
+              detail = open("/tmp/weekly-summary-response.json").read().strip()[:300]
+          except OSError:
+              pass
+          print(json.dumps({
+              "workflow": "weekly-summary-notification",
+              "taskName": "周总结通知",
+              "runId": os.environ.get("GITHUB_RUN_ID", ""),
+              "runUrl": os.environ.get("RUN_URL", ""),
+              "status": "failed",
+              "error": detail,
+          }, ensure_ascii=False))
+          PY
+          )
+          curl -sS --retry 2 --retry-delay 5 --fail-with-body \
+            -X POST \
+            -H "x-automation-alert-secret: $ALERT_SECRET" \
+            -H "content-type: application/json" \
+            -d "$BODY" \
+            https://2aran.com/api/automation/alert || echo "alert delivery failed (non-fatal)"

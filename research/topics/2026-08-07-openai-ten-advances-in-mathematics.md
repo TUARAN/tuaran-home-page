@@ -11,6 +11,7 @@ tags: [OpenAI, Astra, 数学, 理论计算机科学, Lean, Erdős 问题, 大模
 summary: OpenAI 于 8 月 1 日确认下一代模型系列 Astra，公布其内部版本在十个数学与理论计算机科学开放问题上的成果。逐题说明背景与声称，梳理 Connes 争议、2000 美元成本口径与数学界的规则之争。
 tldr: 十项成果是待审的候选成果：249 页论文与 Lean 4 证书已公开，独立复核与争论正在发生（Connes 反例次日遭挑战）。能被确认的变化是前沿证明的边际搜索成本降到约 2000 美元量级，验证端成为稀缺。
 assistance: codex
+model: deepseek-v4-flash
 show_assistance: false
 review_ready: false
 ad_eligible: false

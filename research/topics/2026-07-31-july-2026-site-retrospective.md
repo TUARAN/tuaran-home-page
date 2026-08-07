@@ -10,7 +10,7 @@ topic_type: thesis
 subjects: [web_cloud, content_creation]
 content_type: build_log
 assistance: codex
-model: gpt-5
+model: deepseek-v4-flash
 show_assistance: false
 review_ready: false
 ad_eligible: false

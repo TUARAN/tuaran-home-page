@@ -10,6 +10,7 @@ topic_type: thesis
 subjects: [humanities_history]
 content_type: analysis
 assistance: codex
+model: deepseek-v4-flash
 show_assistance: false
 review_ready: false
 ad_eligible: false

@@ -10,7 +10,7 @@ topic_type: market
 subjects: [workplace_org, business_market]
 content_type: analysis
 assistance: codex
-model: gpt-5
+model: deepseek-v4-flash
 show_assistance: false
 review_ready: false
 ad_eligible: false

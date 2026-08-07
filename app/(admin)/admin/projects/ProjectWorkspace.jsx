@@ -30,6 +30,7 @@ export default function ProjectWorkspace() {
           description: '本站的研发推进与技术架构放在同一个工程语境中。',
           items: [
             { href: '/admin/site-dev', title: '开发与发布', description: '同步 GitHub / npm、处理 Issue 待办并跟进发布状态。', icon: 'siteDev' },
+            { href: '/admin/integrations', title: '集成与 API Keys', description: '统一登记外部服务凭证、Webhook 与定时任务端点。', icon: 'integrations' },
             { href: '/admin/cloudflare-personal-site-map', title: '站点架构', description: '查看 Cloudflare 架构、public/admin/API 边界与演进方向。', icon: 'database' },
           ],
         },

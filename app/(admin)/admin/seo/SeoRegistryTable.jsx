@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
-import { StatusPill } from '../../components/ui'
+import { AdminPagination, StatusPill } from '../../components/ui'
 
 const TYPE_FILTERS = [
   { key: 'all', label: '全部' },
@@ -15,6 +15,8 @@ const TYPE_FILTERS = [
 export default function SeoRegistryTable({ pages }) {
   const [type, setType] = useState('all')
   const [query, setQuery] = useState('')
+  const [pageOffset, setPageOffset] = useState(0)
+  const PAGE_SIZE = 30
 
   const counts = useMemo(() => Object.fromEntries(
     TYPE_FILTERS.map((filter) => [
@@ -32,6 +34,18 @@ export default function SeoRegistryTable({ pages }) {
     })
   }, [pages, query, type])
 
+  const pageItems = visiblePages.slice(pageOffset, pageOffset + PAGE_SIZE)
+
+  function switchType(nextType) {
+    setType(nextType)
+    setPageOffset(0)
+  }
+
+  function switchQuery(nextQuery) {
+    setQuery(nextQuery)
+    setPageOffset(0)
+  }
+
   return (
     <>
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -40,7 +54,7 @@ export default function SeoRegistryTable({ pages }) {
             <button
               key={filter.key}
               type="button"
-              onClick={() => setType(filter.key)}
+              onClick={() => switchType(filter.key)}
               className={`rounded-full border px-3 py-1.5 text-[11.5px] transition ${
                 type === filter.key
                   ? 'border-[#7f6b98] bg-[#ede7f3] font-semibold text-[#392b49] dark:border-[#8f83a1] dark:bg-[#292333] dark:text-gray-100'
@@ -56,7 +70,7 @@ export default function SeoRegistryTable({ pages }) {
           <input
             type="search"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => switchQuery(event.target.value)}
             placeholder="标题、路径、分类"
             className="min-w-0 flex-1 bg-transparent text-[12px] text-[#303129] outline-none placeholder:text-[#a5a79d] dark:text-gray-200"
           />
@@ -64,7 +78,7 @@ export default function SeoRegistryTable({ pages }) {
       </div>
 
       <p className="mb-3 text-[11px] text-[#85877c] dark:text-[#78869a]">
-        当前显示 {visiblePages.length} / {pages.length} 个内容页面
+        当前显示 {pageItems.length} / {visiblePages.length} 个内容页面（筛选自 {pages.length}）
       </p>
 
       <div className="max-h-[720px] overflow-auto rounded-lg border border-[#e4e5dc] dark:border-[#263142]">
@@ -82,7 +96,7 @@ export default function SeoRegistryTable({ pages }) {
             </tr>
           </thead>
           <tbody>
-            {visiblePages.map((page) => (
+            {pageItems.map((page) => (
               <tr key={page.id} className="border-b border-[#eceee6] last:border-0 dark:border-[#1b2430]">
                 <td className="max-w-[300px] px-3 py-3">
                   <a href={page.href} target="_blank" rel="noreferrer" className="font-medium text-[#22231e] hover:underline dark:text-gray-200">{page.title}</a>
@@ -110,6 +124,12 @@ export default function SeoRegistryTable({ pages }) {
           </tbody>
         </table>
       </div>
+      <AdminPagination
+        total={visiblePages.length}
+        offset={pageOffset}
+        limit={PAGE_SIZE}
+        onOffsetChange={setPageOffset}
+      />
     </>
   )
 }

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   AdminButton,
   AdminPage,
+  AdminPagination,
   EmptyState,
   Section,
   StatCard,
@@ -122,11 +123,13 @@ export default function DeepSeekTasksClient() {
   const [selectedId, setSelectedId] = useState('')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
+  const [offset, setOffset] = useState(0)
+  const PAGE_SIZE = 50
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (nextOffset = 0) => {
     setLoading(true)
     setError('')
-    const params = new URLSearchParams({ limit: '100' })
+    const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(nextOffset) })
     if (execution) params.set('execution', execution)
     if (management) params.set('management', management)
     if (source) params.set('source', source)
@@ -136,6 +139,7 @@ export default function DeepSeekTasksClient() {
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
+      setOffset(nextOffset)
     } catch (fetchError) {
       setError(fetchError?.message || '任务记录读取失败。')
     } finally {
@@ -225,7 +229,7 @@ export default function DeepSeekTasksClient() {
           <Section
             title="调用记录"
             description="执行状态自动更新；审阅状态、优先级和备注由后台维护。"
-            actions={<span className="text-[12px] text-[#82847a]">当前 {tasks.length} 条</span>}
+            actions={<span className="text-[12px] text-[#82847a]">共 {Number(data?.total) || 0} 条</span>}
           >
             <Toolbar className="mb-4">
               <select className={CONTROL_CLASS} value={execution} onChange={(event) => setExecution(event.target.value)} aria-label="执行状态">
@@ -285,6 +289,13 @@ export default function DeepSeekTasksClient() {
                 })}
               </div>
             )}
+            <AdminPagination
+              total={Number(data?.total) || 0}
+              offset={offset}
+              limit={PAGE_SIZE}
+              onOffsetChange={refresh}
+              loading={loading}
+            />
           </Section>
 
           <TaskDetail task={selectedTask} note={note} setNote={setNote} saving={saving} onSave={() => updateTask(selectedTask.id, { managementNote: note })} />

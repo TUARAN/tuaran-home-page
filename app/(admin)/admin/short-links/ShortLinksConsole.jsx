@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-import { AdminPage } from '../../components/ui'
+import { AdminPage, AdminPagination } from '../../components/ui'
 
 async function safeJson(res) {
   try {
@@ -40,37 +40,44 @@ export default function ShortLinksConsole() {
   const [search, setSearch] = useState('')
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
+  const [total, setTotal] = useState(0)
+  const [offset, setOffset] = useState(0)
+  const PAGE_SIZE = 20
 
-  const fetchData = useCallback(async (q = search) => {
+  const fetchData = useCallback(async (q, nextOffset = 0) => {
     setError('')
     try {
-      const params = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''
-      const res = await fetch(`/api/admin/short-links${params}`, {
+      const params = new URLSearchParams({
+        q: q.trim(),
+        offset: String(nextOffset),
+        limit: String(PAGE_SIZE),
+      })
+      const res = await fetch(`/api/admin/short-links?${params}`, {
         cache: 'no-store',
         credentials: 'same-origin',
       })
       const data = await safeJson(res)
       if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
       setItems(Array.isArray(data?.items) ? data.items : [])
+      setTotal(Number(data?.total) || 0)
+      setOffset(nextOffset)
       setStats(data?.stats || null)
     } catch (e) {
       setError(e?.message || 'FETCH_FAILED')
     } finally {
       setLoading(false)
     }
-  }, [search])
+  }, [])
 
   useEffect(() => {
     fetchData('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const filtered = useMemo(() => items, [items])
-
   async function handleSearch(e) {
     e.preventDefault()
     setLoading(true)
-    await fetchData(search)
+    await fetchData(search, 0)
   }
 
   async function handleCreate(e) {
@@ -91,7 +98,7 @@ export default function ShortLinksConsole() {
       setNotice(data.reused ? '已存在同 URL 短链，已复用。' : '短链已创建。')
       setUrl('')
       setTitle('')
-      await fetchData(search)
+      await fetchData(search, 0)
     } catch (e) {
       setError(e?.message || 'CREATE_FAILED')
     } finally {
@@ -111,7 +118,7 @@ export default function ShortLinksConsole() {
       })
       const data = await safeJson(res)
       if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
-      setItems((prev) => prev.filter((item) => item.id !== id))
+      await fetchData(search, offset)
       setNotice('短链已删除。')
     } catch (e) {
       setError(e?.message || 'DELETE_FAILED')
@@ -199,7 +206,7 @@ export default function ShortLinksConsole() {
             onClick={() => {
               setSearch('')
               setLoading(true)
-              fetchData('')
+              fetchData('', 0)
             }}
             className="rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-sm font-medium text-[#53554d] hover:bg-[#edefe7] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300 dark:hover:bg-[#151c25]"
           >
@@ -225,14 +232,14 @@ export default function ShortLinksConsole() {
                   加载中…
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : items.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-3 py-8 text-center text-sm text-[#858779] dark:text-[#8e9ab0]">
                   没有短链记录
                 </td>
               </tr>
             ) : (
-              filtered.map((item) => (
+              items.map((item) => (
                 <tr key={item.id} className="border-t border-[#dfe0d8] dark:border-[#252e39]">
                   <td className="px-3 py-3 align-top">
                     <a href={item.short} target="_blank" rel="noreferrer" className="no-external-arrow font-mono text-sm font-semibold text-sky-700 hover:opacity-80 dark:text-sky-300">
@@ -281,6 +288,16 @@ export default function ShortLinksConsole() {
           </tbody>
         </table>
       </div>
+      <AdminPagination
+        total={total}
+        offset={offset}
+        limit={PAGE_SIZE}
+        onOffsetChange={(nextOffset) => {
+          setLoading(true)
+          fetchData(search, nextOffset)
+        }}
+        loading={loading}
+      />
     </AdminPage>
   )
 }

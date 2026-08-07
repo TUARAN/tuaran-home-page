@@ -3,6 +3,7 @@ import { validatePublicHttpUrl } from '../../../../lib/abuseControls'
 import { getD1 } from '../../../../lib/d1'
 import {
   createOrReuseShortLink,
+  countShortLinks,
   deleteShortLink,
   getShortLinkStats,
   listShortLinks,
@@ -36,12 +37,17 @@ export async function GET(req) {
   if (!db) return dbUnavailableResponse()
 
   const { searchParams } = new URL(req.url)
-  const items = await listShortLinks(db, {
-    q: searchParams.get('q') || '',
-    limit: Number(searchParams.get('limit')) || 200,
-  })
+  const q = searchParams.get('q') || ''
+  const parsedOffset = Number.parseInt(searchParams.get('offset') || '0', 10)
+  const parsedLimit = Number.parseInt(searchParams.get('limit') || '20', 10)
+  const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(100, parsedLimit) : 20
+  const [items, total] = await Promise.all([
+    listShortLinks(db, { q, limit, offset }),
+    countShortLinks(db, { q }),
+  ])
   const stats = await getShortLinkStats(db)
-  return Response.json({ items, stats })
+  return Response.json({ items, total, offset, limit, stats })
 }
 
 export async function POST(req) {

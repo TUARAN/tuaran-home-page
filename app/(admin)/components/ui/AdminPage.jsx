@@ -1,8 +1,10 @@
 /**
  * 统一的后台页面容器：标题区 + 描述 + 操作槽 + 一致的边距/宽度。
  * 所有 admin 子控制台都套这层，消除「各写各的 <main>」。
+ * stickyHeader：把标题 + 右上角操作区固定在顶部（钉在 AdminTopbar 下方），
+ * 适用于长列表页（如内容管理），避免滚动后头部“一会显示一会又消失”。
  */
-export default function AdminPage({ title, description, actions, children, compact = false }) {
+export default function AdminPage({ title, description, actions, children, compact = false, stickyHeader = false }) {
   return (
     <main
       className={`admin-page mx-auto w-full ${
@@ -10,7 +12,11 @@ export default function AdminPage({ title, description, actions, children, compa
       }`}
     >
       {!compact ? (
-        <header className="admin-page__header mb-6 flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <header
+          className={`admin-page__header mb-6 flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between ${
+            stickyHeader ? 'admin-page__header--sticky' : ''
+          }`}
+        >
           <div className="min-w-0">
             <h1 className="admin-page__title font-serif text-[1.55rem] font-semibold tracking-[-0.02em] md:text-[1.75rem]">
               {title}

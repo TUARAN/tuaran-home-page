@@ -26,21 +26,26 @@ const ROADMAP_META = {
 function StrategyLayer({ layer }) {
   const meta = STATUS_META[layer.status] || STATUS_META.planned
   return (
-    <article className="rounded-lg border border-[#e2e3da] bg-[#fbfcf8] p-4 dark:border-[#243040] dark:bg-[#0d131b]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <article className="border-b border-[#e2e3da] py-3 last:border-0 dark:border-[#243040]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{layer.name}</h3>
-          <p className="mb-0 mt-1 text-[12.5px] leading-6 text-[#67695d] dark:text-gray-400">{layer.scope}</p>
+          <h3 className="text-[13px] font-semibold text-[#15140f] dark:text-gray-100">{layer.name}</h3>
+          <p className="mb-0 mt-0.5 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{layer.scope}</p>
         </div>
         <StatusPill tone={meta.tone} size="sm">{meta.label}</StatusPill>
       </div>
-      <div className="mt-3 rounded-md bg-[#f0f1e9] px-3 py-2 font-mono text-[10.5px] leading-5 text-[#6f7166] dark:bg-[#151c26] dark:text-[#8f9bad]">
+      <div className="mt-2 font-mono text-[10.5px] leading-5 text-[#6f7166] dark:text-[#8f9bad]">
         {layer.source}
       </div>
-      <ul className="mb-0 mt-3 space-y-1.5 text-[12px] leading-5 text-[#55574f] dark:text-gray-400">
-        {layer.rules.map((rule) => <li key={rule}>· {rule}</li>)}
+      <ul className="mb-0 mt-1.5 space-y-1 text-[11.5px] leading-5 text-[#55574f] dark:text-gray-400">
+        {layer.rules.map((rule) => (
+          <li key={rule} className="flex gap-1.5">
+            <span className="shrink-0 text-[#9a9c8e] dark:text-[#5d6b80]" aria-hidden="true">·</span>
+            <span>{rule}</span>
+          </li>
+        ))}
       </ul>
-      <p className="mb-0 mt-3 text-[10.5px] uppercase tracking-[0.12em] text-[#96988d] dark:text-[#657286]">Owner · {layer.owner}</p>
+      <p className="mb-0 mt-1.5 text-[10px] uppercase tracking-[0.14em] text-[#96988d] dark:text-[#657286]">Owner · {layer.owner}</p>
     </article>
   )
 }

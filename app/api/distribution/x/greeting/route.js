@@ -6,6 +6,7 @@ import {
   buildMorningGreeting,
   greetingWithinLimit,
   isAutomationPaused,
+  shanghaiDateKey,
 } from '../../../../../lib/morningGreeting'
 import { getXCredentials, publishXPost } from '../../../../../lib/xDistribution'
 
@@ -59,6 +60,27 @@ export async function POST(req) {
       }
     } catch {
       // D1 不可用时按“运行中”放行，发布失败由 X 凭据环节兜底。
+    }
+    try {
+      // 当天已成功发布则直接跳过（补跑触发点用）：同一自然日不重复发帖。
+      const lastRunRaw = await readSetting(db, MORNING_GREETING_LAST_RUN_KEY)
+      if (lastRunRaw) {
+        const lastRun = JSON.parse(lastRunRaw)
+        if (lastRun?.ok && shanghaiDateKey(lastRun.at) === shanghaiDateKey()) {
+          return Response.json(
+            {
+              ok: true,
+              skipped: true,
+              reason: 'already_posted_today',
+              postId: lastRun.postId || '',
+              postUrl: lastRun.postUrl || '',
+            },
+            { status: 200 },
+          )
+        }
+      }
+    } catch {
+      // 上次记录缺失或无法解析时按“未发布”处理，允许重试。
     }
   }
 

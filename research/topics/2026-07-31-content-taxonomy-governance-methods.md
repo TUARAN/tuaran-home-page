@@ -10,7 +10,7 @@ topic_type: product
 subjects: [content_creation, product_experience]
 content_type: engineering_case
 assistance: codex
-model: gpt-5
+model: deepseek-v4-flash
 show_assistance: false
 review_ready: false
 ad_eligible: false

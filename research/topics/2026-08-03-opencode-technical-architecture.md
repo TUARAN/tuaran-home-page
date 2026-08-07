@@ -11,7 +11,7 @@ tags: [OpenCode, AI Coding, Coding Agent, OpenCode Zen, 模型网关, MCP, LSP, 
 summary: OpenCode 把编码 Agent 做成运行在本地的 HTTP 服务，让 TUI、桌面端、Web 与 IDE 共享会话、工具和项目状态；AI SDK、Models.dev、LSP、MCP、Skills 与细粒度权限构成它的多模型扩展体系。
 tldr: OpenCode 的核心是一套本地优先、客户端与服务端分离的开源 Agent 运行时。模型可以替换，TUI、桌面端、Web 和 IDE 共享同一套会话与工具协议。它的优势是开放和可嵌入，主要风险来自多模型兼容成本、默认权限偏宽以及高权限本地服务的网络暴露。
 assistance: codex
-model: gpt-5
+model: deepseek-v4-flash
 show_assistance: false
 review_ready: false
 ad_eligible: false

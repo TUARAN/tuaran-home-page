@@ -11,7 +11,7 @@ tags: [DeepSeek, OpenCode Go, GitHub Actions, AI Agent, 自动修复, Docker 沙
 summary: 一套每天触发 5 次的 AI 代码巡检与自动修复系统已经完成安全链路和成本基线；由于尚无正式合并的自动修复，当前只能启动 30 天试运行，按接受成果、审核时间和维护成本核算 ROI。
 tldr: 公开仓库的标准 GitHub Actions runner 费用接近零，DeepSeek V4 Pro 的单次实测模型用量约为 0.02—0.10 美元，触发独立复审后可能升至 0.10—0.20 美元。系统目前有 6 次部署调试运行、2 次有效模型调用和 0 个正式合并成果，运营 ROI 尚无有效样本。
 assistance: codex
-model: gpt-5
+model: deepseek-v4-flash
 show_assistance: false
 review_ready: false
 ad_eligible: false

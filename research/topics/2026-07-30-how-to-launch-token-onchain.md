@@ -9,7 +9,7 @@ tags: [区块链, 智能合约, ERC-20, BEP-20, BNB Chain, DEX, 流动性, 代�
 summary: 拆解代币标准、合约权限、初始分配、联合曲线、DEX 流动性和链上核验之间的关系，并说明主网上线前必须解决的安全与合规问题。
 tldr: 部署 ERC-20 合约只完成了资产登记；一枚代币要形成公开市场，还要完成初始分配、价格发现、流动性供给、权限治理和链上信息披露。对境内主体而言，2026 年监管通知已明确禁止未经同意在境内开展代币发行融资，并严格限制境内主体及其控制的境外主体在境外发行虚拟货币，因此技术验证应停留在测试网或获得明确监管许可的封闭场景。
 assistance: codex
-model: gpt-5
+model: deepseek-v4-flash
 show_assistance: false
 review_ready: false
 ad_eligible: false

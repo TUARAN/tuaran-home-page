@@ -6,8 +6,10 @@ import {
   buildMorningGreeting,
   greetingWithinLimit,
   isAutomationPaused,
+  pickMorningGreetingTemplate,
   shanghaiDateKey,
 } from '../../../../../lib/morningGreeting'
+import { listEnabledMorningGreetingTexts } from '../../../../../lib/morningGreetingTemplates'
 import { getXCredentials, publishXPost } from '../../../../../lib/xDistribution'
 
 export const runtime = 'edge'
@@ -84,7 +86,17 @@ export async function POST(req) {
     }
   }
 
-  const text = buildMorningGreeting()
+  // 模板以后台 morning_greeting_templates 为准，按日期稳定随机选一条；
+  // 表不可用或为空时回退代码默认池。
+  let pickedTemplate = null
+  if (db) {
+    try {
+      pickedTemplate = pickMorningGreetingTemplate(await listEnabledMorningGreetingTexts(db))
+    } catch {
+      pickedTemplate = null
+    }
+  }
+  const text = buildMorningGreeting({ template: pickedTemplate })
   if (!greetingWithinLimit(text)) {
     return Response.json({ ok: false, error: 'TEXT_TOO_LONG' }, { status: 400 })
   }

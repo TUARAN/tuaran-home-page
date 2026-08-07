@@ -22,6 +22,7 @@ export default function ProjectWorkspace() {
           items: [
             { href: '/admin/ops', title: '自动化运行', description: '统一登记云端与本地自动化，追踪运行、产物、风险与审核。', icon: 'ops' },
             { href: '/admin/a-share-research', title: 'A 股研究自动化', description: '线上每日选题、DeepSeek 联网检索草稿、复核发布与运行日志。', icon: 'aShareResearch' },
+            { href: '/admin/morning-greeting', title: '推特问早自动化', description: '管理早安文案模板，每天随机选一条发布到 X。', icon: 'morningGreeting' },
             { href: '/admin/deepseek-tasks', title: '调用记录与审计', description: '审阅 API 调用、Token 消耗、失败原因与后续处理状态。', icon: 'deepseekTasks', note: '原「LLM API 任务管理」' },
           ],
         },

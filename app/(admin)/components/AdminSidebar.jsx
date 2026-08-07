@@ -53,6 +53,7 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
               </p>
             ) : null}
             {group.items.map((item) => {
+              if (item.sidebar === false) return null
               const active = isActiveAdminPath(pathname, item.href, item.activePaths)
               const badge = item.badgeKey && badges ? badges[item.badgeKey] : null
               // 「主站页面」外链：在 admin 子域上点它本会被 301 回跳，改成直接指 canonical host + 新标签打开。

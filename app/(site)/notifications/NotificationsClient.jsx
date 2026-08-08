@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useSessionAccount } from '../components/SessionProvider'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 const LOGIN_HREF = '/login?returnTo=%2Fnotifications'
 
 const FILTER_TABS = [
@@ -102,6 +102,9 @@ export default function NotificationsClient() {
   const [markingAll, setMarkingAll] = useState(false)
   const [filter, setFilter] = useState('all')
   const requestIdRef = useRef(0)
+  const loadingMoreRef = useRef(false)
+  const loadMoreRef = useRef(null)
+  const sentinelRef = useRef(null)
 
   const fetchPage = useCallback(async (offset, requestId) => {
     const typeParam = filter !== 'all' ? `&type=${filter}` : ''
@@ -155,9 +158,10 @@ export default function NotificationsClient() {
   }, [user?.id, fetchPage])
 
   const loadMore = async () => {
-    if (loadingMore) return
-    const requestId = ++requestIdRef.current
+    if (loadingMoreRef.current) return
+    loadingMoreRef.current = true
     setLoadingMore(true)
+    const requestId = ++requestIdRef.current
     try {
       const json = await fetchPage(items.length, requestId)
       if (!json) return
@@ -171,9 +175,28 @@ export default function NotificationsClient() {
     } catch {
       // 保留已加载内容，下次点击再重试
     } finally {
+      loadingMoreRef.current = false
       setLoadingMore(false)
     }
   }
+
+  useEffect(() => {
+    loadMoreRef.current = loadMore
+  })
+
+  // 下滑到列表底部附近自动加载下一页（每页 10 条）。
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) loadMoreRef.current()
+      },
+      { rootMargin: '320px 0px' }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [status, items.length, total])
 
   const markAllRead = async () => {
     if (markingAll) return
@@ -320,18 +343,25 @@ export default function NotificationsClient() {
             ))}
           </div>
           {items.length < total ? (
-            <div className="mt-5 text-center">
-              <button
-                type="button"
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="rounded-full border border-[var(--site-line)] px-5 py-2 text-sm font-medium text-[var(--site-ink)] transition-colors hover:border-[var(--site-muted)] hover:bg-[var(--site-panel-strong)] disabled:opacity-50"
-              >
-                {loadingMore
-                  ? '加载中…'
-                  : `加载更多（还有 ${Math.max(0, total - items.length)} 条）`}
-              </button>
+            <div ref={sentinelRef} className="mt-5 flex min-h-10 items-center justify-center text-center">
+              {loadingMore ? (
+                <span className="text-sm text-[var(--site-faint)]">加载中…</span>
+              ) : typeof IntersectionObserver === 'undefined' ? (
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  className="rounded-full border border-[var(--site-line)] px-5 py-2 text-sm font-medium text-[var(--site-ink)] transition-colors hover:border-[var(--site-muted)] hover:bg-[var(--site-panel-strong)]"
+                >
+                  加载更多（还有 {Math.max(0, total - items.length)} 条）
+                </button>
+              ) : (
+                <span className="text-xs text-[var(--site-faint)]">继续下滑加载更多</span>
+              )}
             </div>
+          ) : total > 0 ? (
+            <p className="mt-5 text-center text-xs text-[var(--site-faint)]">
+              已加载全部 {total} 条
+            </p>
           ) : null}
         </>
       )}

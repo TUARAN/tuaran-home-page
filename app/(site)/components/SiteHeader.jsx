@@ -305,7 +305,7 @@ function formatNotificationTime(ts) {
 }
 
 function NotificationList({ notifications, markNotificationsRead, onNavigate, emptyLabel }) {
-  const items = Array.isArray(notifications?.items) ? notifications.items.slice(0, 5) : []
+  const items = Array.isArray(notifications?.items) ? notifications.items.slice(0, 2) : []
   if (!items.length) {
     return <p className="site-notification-empty">{emptyLabel}</p>
   }

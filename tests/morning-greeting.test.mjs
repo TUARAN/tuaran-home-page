@@ -8,9 +8,11 @@ import {
   greetingDateLabel,
   greetingWithinLimit,
   isAutomationPaused,
+  normalizeGreetingNewlines,
   pickMorningGreetingTemplate,
   shanghaiDateKey,
 } from '../lib/morningGreeting.js'
+import { rowToTemplate } from '../lib/morningGreetingTemplates.js'
 
 test('greeting date label uses Asia/Shanghai day of month', () => {
   const label = greetingDateLabel({ now: new Date('2026-08-05T00:30:00.000Z') })
@@ -33,6 +35,24 @@ test('builds a morning greeting with today date injected and no chovy', () => {
   assert.ok(!text.toLowerCase().includes('chovy'))
   assert.match(text, /^(大家早上好|早上好|早安)！/)
   assert.ok(text.includes('冷知识'))
+})
+
+test('normalizeGreetingNewlines turns literal \\n into real newlines', () => {
+  assert.equal(normalizeGreetingNewlines('早安！\\n今天也要保持好奇。\\n冷知识：～'), '早安！\n今天也要保持好奇。\n冷知识：～')
+  assert.equal(normalizeGreetingNewlines(null), '')
+})
+
+test('buildMorningGreeting normalizes legacy literal \\n templates', () => {
+  const legacy = '早安！今天是{date}。\\n今天也要保持好奇。\\n冷知识：那些看起来毫不费力的人，只是把练习藏在了别人看不到的地方～'
+  const built = buildMorningGreeting({ now: new Date('2026-08-08T00:30:00.000Z'), template: legacy })
+  assert.ok(built.includes('今天是8月8号'))
+  assert.ok(!built.includes('\\n'))
+  assert.equal(built.split('\n').length, 3)
+})
+
+test('rowToTemplate normalizes legacy literal \\n from D1 rows', () => {
+  const row = rowToTemplate({ id: 1, text: '早安！\\n冷知识：～', enabled: 1, sort_order: 0, created_at: 0, updated_at: 0 })
+  assert.equal(row.text, '早安！\n冷知识：～')
 })
 
 test('all 10 greeting templates are well-formed and within X post weight limit', () => {

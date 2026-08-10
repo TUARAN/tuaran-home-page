@@ -16,6 +16,13 @@ import {
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
 import { T } from './LocaleProvider'
 
+const SKELETON_ITEMS = Array.from({ length: 14 }, (_, index) => ({
+  id: `recommendation-skeleton-${index}`,
+  titleWidth: `${72 + ((index * 11) % 24)}%`,
+  summaryWidth: `${58 + ((index * 17) % 34)}%`,
+  summaryTailWidth: `${36 + ((index * 13) % 28)}%`,
+}))
+
 const SECTION_BADGE_CLASS = {
   column: 'home-badge home-badge-column',
   research: 'home-badge home-badge-research',
@@ -220,25 +227,48 @@ export default function HomeFeaturedReadingClient({ catalog }) {
           )}
         </div>
       </div>
-      <div
-        className={`home-reading-list transition-opacity duration-200 ${recommendationsReady ? (changing ? 'opacity-55' : 'opacity-100') : 'invisible opacity-0'}`}
-        aria-busy={!recommendationsReady}
-        aria-hidden={!recommendationsReady}
-        aria-live="polite"
-      >
-        {displayedItems.map((item, index) => (
-          <FeaturedLink
-            key={item.id}
-            item={item}
-            isPinned={batchOffset === 0 && pinnedIds.has(item.id)}
-            desktopOnly={!normalizedQuery && index >= 10}
-            fromSearch={Boolean(normalizedQuery)}
-            position={index + 1}
-          />
-        ))}
-        {normalizedQuery && !displayedItems.length ? (
-          <div className="py-10 text-center text-[14px] text-[#77746a] dark:text-[#98a3b1]">
-            没有找到与“{normalizedQuery}”匹配的内容
+      <div className="relative" aria-busy={!recommendationsReady}>
+        <div
+          className={`home-reading-list transition-opacity duration-200 ${recommendationsReady ? (changing ? 'opacity-55' : 'opacity-100') : 'invisible opacity-0'}`}
+          aria-hidden={!recommendationsReady}
+          aria-live="polite"
+        >
+          {displayedItems.map((item, index) => (
+            <FeaturedLink
+              key={item.id}
+              item={item}
+              isPinned={batchOffset === 0 && pinnedIds.has(item.id)}
+              desktopOnly={!normalizedQuery && index >= 10}
+              fromSearch={Boolean(normalizedQuery)}
+              position={index + 1}
+            />
+          ))}
+          {normalizedQuery && !displayedItems.length ? (
+            <div className="py-10 text-center text-[14px] text-[#77746a] dark:text-[#98a3b1]">
+              没有找到与“{normalizedQuery}”匹配的内容
+            </div>
+          ) : null}
+        </div>
+        {!recommendationsReady ? (
+          <div className="home-reading-skeleton" role="status" aria-label="正在加载推荐内容">
+            {SKELETON_ITEMS.map((item, index) => (
+              <div
+                key={item.id}
+                className={`home-reading-skeleton-item ${index >= 10 ? 'hidden md:block' : ''}`}
+                style={{ '--skeleton-index': index }}
+                aria-hidden="true"
+              >
+                <div className="home-reading-skeleton-meta">
+                  <span className="home-skeleton-block w-12" />
+                  <span className="home-skeleton-block w-16" />
+                  <span className="home-skeleton-block w-20" />
+                </div>
+                <span className="home-skeleton-block home-skeleton-title" style={{ width: item.titleWidth }} />
+                <span className="home-skeleton-block home-skeleton-summary" style={{ width: item.summaryWidth }} />
+                <span className="home-skeleton-block home-skeleton-summary-tail" style={{ width: item.summaryTailWidth }} />
+              </div>
+            ))}
+            <span className="sr-only">正在加载推荐内容</span>
           </div>
         ) : null}
       </div>

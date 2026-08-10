@@ -1100,6 +1100,58 @@
     @apply block px-0 py-3.5 first:pt-0 last:pb-0;
   }
 
+  .home-reading-skeleton {
+    @apply absolute inset-0 divide-y overflow-hidden;
+    border-color: var(--site-line);
+  }
+
+  .home-reading-skeleton-item {
+    @apply px-0 py-3.5 first:pt-0 last:pb-0;
+  }
+
+  .home-reading-skeleton-meta {
+    @apply mb-2 flex items-center gap-2;
+  }
+
+  .home-skeleton-block {
+    @apply block h-4 rounded-full;
+    background: color-mix(in srgb, var(--site-line-strong) 72%, var(--site-panel-strong));
+    animation: home-skeleton-breathe 1.8s ease-in-out infinite;
+    animation-delay: calc(var(--skeleton-index, 0) * 65ms);
+  }
+
+  .home-reading-skeleton-meta .home-skeleton-block {
+    @apply h-[18px];
+  }
+
+  .home-skeleton-title {
+    @apply h-5 max-w-[94%];
+  }
+
+  .home-skeleton-summary {
+    @apply mt-2 h-3.5 max-w-[88%];
+  }
+
+  .home-skeleton-summary-tail {
+    @apply mt-1.5 h-3.5 max-w-[64%];
+  }
+
+  @keyframes home-skeleton-breathe {
+    0%, 100% {
+      opacity: 0.38;
+    }
+    50% {
+      opacity: 0.86;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-skeleton-block {
+      animation: none;
+      opacity: 0.58;
+    }
+  }
+
   .home-reading-meta {
     @apply mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1;
   }

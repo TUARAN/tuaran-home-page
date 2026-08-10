@@ -8,12 +8,13 @@ const [pageSource, clientSource, skeletonSource] = await Promise.all([
   readFile(new URL('../../app/(site)/articles/ArticlesIndexSkeleton.jsx', import.meta.url), 'utf8'),
 ])
 
-test('articles keeps one skeleton through hydration and supplemental catalog loading', () => {
-  assert.match(pageSource, /fallback={<ArticlesIndexSkeleton \/>}/)
-  assert.doesNotMatch(pageSource, /ArticlesIndexFallback|ArticleListItem/)
+test('articles keeps crawlable static content while supplemental catalog data loads', () => {
+  assert.match(pageSource, /fallback={<ArticlesIndexFallback items={items} \/>}/)
+  assert.match(pageSource, /function ArticlesIndexFallback\(\{ items \}\)/)
+  assert.match(pageSource, /items\.slice\(0, 24\)/)
   assert.match(clientSource, /const \[catalogReady, setCatalogReady\] = useState\(false\)/)
   assert.match(clientSource, /\.finally\(\(\) =>[\s\S]*setCatalogReady\(true\)/)
-  assert.match(clientSource, /if \(!catalogReady\) return <ArticlesIndexSkeleton \/>/)
+  assert.doesNotMatch(clientSource, /return <ArticlesIndexSkeleton \/>/)
 })
 
 test('articles skeleton preserves search, filter, and first-page row geometry', () => {

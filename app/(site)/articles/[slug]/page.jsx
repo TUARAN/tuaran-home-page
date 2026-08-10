@@ -298,7 +298,7 @@ export default async function ArticleDetailPage({ params }) {
         dateTime={publishedTime || article.date}
         readingMinutes={readingMinutes(articleMarkdown)}
         pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
-        ownerMeta={{ author: '涂阿燃（TUARAN）' }}
+        ownerMeta={{ author: 'TUARAN' }}
         metaExtras={article.sourceUrl || isExternalHref(article.href) ? (
           <>
             <span aria-hidden="true">·</span>

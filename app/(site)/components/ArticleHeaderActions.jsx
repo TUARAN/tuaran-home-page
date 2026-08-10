@@ -21,16 +21,21 @@ export default function ArticleHeaderActions({
         <RssButton label="RSS" />
       </div>
       {actionsEnabled && children && !loading && isOwner ? (
-        <div className="article-owner-actions" aria-label="站长工具">
-          <span className="article-owner-actions-label">
+        <details className="article-owner-actions">
+          <summary className="article-owner-actions-trigger" aria-label="展开站长工具">
             <svg viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2.5" y="6" width="9" height="6.5" rx="2" />
               <path d="M4.5 6V4.5a2.5 2.5 0 0 1 5 0V6" />
             </svg>
             <span>站长</span>
-          </span>
-          <div className="article-owner-actions-tools">{children}</div>
-        </div>
+            <svg className="article-owner-actions-chevron" viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m3.5 5.5 3.5 3 3.5-3" />
+            </svg>
+          </summary>
+          <div className="article-owner-actions-popover" aria-label="站长工具">
+            <div className="article-owner-actions-tools">{children}</div>
+          </div>
+        </details>
       ) : null}
     </div>
   )

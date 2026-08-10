@@ -5,11 +5,9 @@ import Link from 'next/link'
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import {
   CONTENT_KIND_META,
-  ENTITY_TYPE_META,
   SUBJECT_META,
   getContentGroup,
   getDisplaySubject,
-  isEntityTypeRedundant,
 } from '../../../lib/contentTaxonomy'
 
 const KIND_TAG_CLASS = {
@@ -42,7 +40,6 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
   const external = isExternalHref(item.href)
   const group = getContentGroup(item.contentKind)
   const displaySubject = getDisplaySubject(item.subjects, selectedSubject)
-  const showEntityType = item.entityType && !isEntityTypeRedundant(item.entityType, item.subjects)
   const analyticsEvent = fromSearch
     ? 'search_result_click'
     : group === 'resource'
@@ -73,23 +70,18 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
               </span>
             ) : null}
             {displaySubject ? (
-              <span className="inline-flex rounded-md border border-[#cdb6df] bg-[#f4eafa] px-2 py-[2px] text-[11px] font-medium text-[#65417f] dark:border-[#523968] dark:bg-[#24182f] dark:text-[#d9bdec]">
+              <span className="inline-flex rounded-md border border-[#d9d2df] bg-[#f5f1f7] px-2 py-[2px] text-[11px] text-[#6f6478] dark:border-[#373d48] dark:bg-[#181d25] dark:text-[#aeb5c0]">
                 主题 · {SUBJECT_META[displaySubject]?.label}
               </span>
             ) : null}
             <span
               className={[
-                'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-2 py-[2px] text-[11px] font-medium',
+                'inline-flex max-w-full min-w-0 shrink items-center truncate rounded-full border px-2 py-[2px] text-[11px]',
                 KIND_TAG_CLASS[group] || KIND_TAG_CLASS.article,
               ].join(' ')}
             >
               类型 · {CONTENT_KIND_META[item.contentKind]?.label || item.tagLabel || '内容'}
             </span>
-            {showEntityType ? (
-              <span className="inline-flex rounded-full border border-transparent px-1.5 py-[1px] text-[11px] text-[#817789] dark:text-gray-400">
-                {ENTITY_TYPE_META[item.entityType]?.label}
-              </span>
-            ) : null}
             <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
           </div>
           <h2 className="ml-5 line-clamp-2 text-[17px] font-semibold leading-7 text-[#20172f] transition-colors group-hover:text-[#120b1f] dark:text-gray-100 dark:group-hover:text-white">

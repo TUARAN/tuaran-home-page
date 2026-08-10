@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
-import { CONTENT_KIND_META, SUBJECT_META, taxonomyForResearch } from '../../../../lib/contentTaxonomy'
+import { CONTENT_GROUP_META, SUBJECT_META, getContentGroup, taxonomyForResearch } from '../../../../lib/contentTaxonomy'
 import {
   SUBJECT_GOVERNANCE_LIST,
   TAXONOMY_DIMENSIONS,
@@ -119,7 +119,7 @@ export default function ContentTaxonomyClient() {
             {filtered.map((entry) => (
               <article key={entry.key} className="grid gap-2 px-4 py-3 hover:bg-[#fafaf6] dark:hover:bg-[#0e131c] md:grid-cols-[minmax(0,1fr)_220px_100px] md:items-center">
                 <div className="min-w-0"><a href={entry.href} target="_blank" rel="noreferrer" className="block truncate text-[13px] font-semibold text-[#15140f] hover:underline dark:text-gray-100">{entry.title}</a><p className="mt-1 truncate font-mono text-[9px] text-[#858779]">{entry.key}</p></div>
-                <div className="flex flex-wrap gap-1.5">{entry.subjects.map((id) => <span key={id} className="rounded-full border border-[#d8d8cc] px-2 py-0.5 text-[10px] text-[#51514a] dark:border-[#384352] dark:text-gray-300">{SUBJECT_META[id]?.label || id}</span>)}<span className="rounded-full border border-[#d8d8cc] px-2 py-0.5 text-[10px] text-[#858779] dark:border-[#384352]">{CONTENT_KIND_META[entry.contentKind]?.label}</span></div>
+                <div className="flex flex-wrap gap-1.5">{entry.subjects.map((id) => <span key={id} className="rounded-full border border-[#d8d8cc] px-2 py-0.5 text-[10px] text-[#51514a] dark:border-[#384352] dark:text-gray-300">{SUBJECT_META[id]?.label || id}</span>)}<span className="rounded-full border border-[#d8d8cc] px-2 py-0.5 text-[10px] text-[#858779] dark:border-[#384352]">{CONTENT_GROUP_META[getContentGroup(entry.contentKind)]?.label}</span></div>
                 <span className={`w-fit rounded-full px-2 py-1 font-mono text-[9px] ${entry.explicit ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200' : 'bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200'}`}>{entry.explicit ? '人工显式' : '系统推断'}</span>
               </article>
             ))}

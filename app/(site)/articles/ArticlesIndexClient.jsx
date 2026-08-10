@@ -4,12 +4,12 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import ArticleListItem from './ArticleListItem'
+import ArticlesIndexSkeleton from './ArticlesIndexSkeleton'
 import {
   CONTENT_GROUP_KEYS,
   CONTENT_GROUP_META,
   COMPANY_INDUSTRY_META,
   COMPANY_ROLE_META,
-  CONTENT_KIND_META,
   DELIVERY_META,
   ENTITY_TYPE_META,
   SERIES_META,
@@ -130,7 +130,7 @@ function manualEntriesToItems(entries, existingItems) {
     items.push({
       id: `content-db:${entry.contentKey}`,
       kind,
-      tagLabel: CONTENT_KIND_META[taxonomy.contentKind]?.label || '内容',
+      tagLabel: CONTENT_GROUP_META[getContentGroup(taxonomy.contentKind)]?.label || '内容',
       title: entry.title,
       summary: entry.summary || '',
       date: entry.date || '',
@@ -154,7 +154,7 @@ function itemMatches(item, filters) {
     item.summary,
     item.tagLabel,
     item.date,
-    CONTENT_KIND_META[item.contentKind]?.label,
+    CONTENT_GROUP_META[getContentGroup(item.contentKind)]?.label,
     ...(item.subjects || []).map((subject) => SUBJECT_META[subject]?.label),
     ENTITY_TYPE_META[item.entityType]?.label,
     COMPANY_INDUSTRY_META[item.companyIndustry]?.label,
@@ -173,6 +173,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const searchParams = useSearchParams()
   const initialFilters = filtersFromParams(searchParams)
   const [items, setItems] = useState(staticItems)
+  const [catalogReady, setCatalogReady] = useState(false)
   const [filters, setFilters] = useState(initialFilters)
   const [queryInput, setQueryInput] = useState(initialFilters.query)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -191,18 +192,22 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       fetch('/api/content?source=manual', { cache: 'no-store' })
         .then((response) => (response.ok ? response.json() : null))
         .catch(() => null),
-    ]).then(([articlesData, contentData]) => {
-      if (!alive) return
-      const dbArticles = Array.isArray(articlesData?.articles) ? articlesData.articles : []
-      const base = [...staticItems, ...dbArticles]
-      const manualItems = manualEntriesToItems(contentData?.entries, base)
-      if (!dbArticles.length && !manualItems.length) return
-      setItems(
-        [...base, ...manualItems].sort((a, b) =>
-          compareSortKeyDesc(a.sortKey, b.sortKey, a.id, b.id),
-        ),
-      )
-    })
+    ])
+      .then(([articlesData, contentData]) => {
+        if (!alive) return
+        const dbArticles = Array.isArray(articlesData?.articles) ? articlesData.articles : []
+        const base = [...staticItems, ...dbArticles]
+        const manualItems = manualEntriesToItems(contentData?.entries, base)
+        if (!dbArticles.length && !manualItems.length) return
+        setItems(
+          [...base, ...manualItems].sort((a, b) =>
+            compareSortKeyDesc(a.sortKey, b.sortKey, a.id, b.id),
+          ),
+        )
+      })
+      .finally(() => {
+        if (alive) setCatalogReady(true)
+      })
     return () => {
       alive = false
     }
@@ -303,6 +308,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const visiblePvKeySignature = visiblePvKeys.join(',')
 
   useEffect(() => {
+    if (!catalogReady) return undefined
     const keys = (visiblePvKeySignature ? visiblePvKeySignature.split(',') : [])
       .filter((key) => !requestedPvKeys.current.has(key))
     if (!keys.length) {
@@ -326,7 +332,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     return () => {
       cancelled = true
     }
-  }, [visiblePvKeySignature])
+  }, [catalogReady, visiblePvKeySignature])
+
+  if (!catalogReady) return <ArticlesIndexSkeleton />
 
   function Filters({ orientation = 'inline' }) {
     return (

@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import ArticleListItem from './ArticleListItem'
-import ArticlesIndexSkeleton from './ArticlesIndexSkeleton'
 import {
   CONTENT_GROUP_KEYS,
   CONTENT_GROUP_META,
@@ -333,8 +332,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       cancelled = true
     }
   }, [catalogReady, visiblePvKeySignature])
-
-  if (!catalogReady) return <ArticlesIndexSkeleton />
 
   function Filters({ orientation = 'inline' }) {
     return (

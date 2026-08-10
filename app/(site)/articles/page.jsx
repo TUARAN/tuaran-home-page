@@ -1,8 +1,8 @@
 import { Suspense } from 'react'
 
+import ArticleListItem from './ArticleListItem'
 import ArticlesHeaderClient from './ArticlesHeaderClient'
 import ArticlesIndexClient from './ArticlesIndexClient'
-import ArticlesIndexSkeleton from './ArticlesIndexSkeleton'
 import { buildKnowledgeItems } from './buildKnowledgeItems'
 
 export const dynamic = 'force-static'
@@ -41,6 +41,28 @@ function ArticlesHeaderFallback() {
   )
 }
 
+function ArticlesIndexFallback({ items }) {
+  return (
+    <section
+      aria-label="全部内容"
+      className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65"
+    >
+      {items.slice(0, 24).map((item, index) => {
+        const fallbackItem = { ...item }
+        delete fallbackItem.pv
+        delete fallbackItem.pvKey
+        return (
+          <ArticleListItem
+            key={item.id}
+            item={fallbackItem}
+            position={index + 1}
+          />
+        )
+      })}
+    </section>
+  )
+}
+
 export default function ArticlesPage() {
   const items = buildKnowledgeItems()
 
@@ -50,7 +72,7 @@ export default function ArticlesPage() {
         <ArticlesHeaderClient />
       </Suspense>
 
-      <Suspense fallback={<ArticlesIndexSkeleton />}>
+      <Suspense fallback={<ArticlesIndexFallback items={items} />}>
         <ArticlesIndexClient items={items} />
       </Suspense>
     </main>

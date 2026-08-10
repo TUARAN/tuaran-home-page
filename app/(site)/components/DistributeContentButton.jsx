@@ -10,9 +10,9 @@ const DEFAULT_OPINION_SYNCBLOG_URL = 'https://syncblog.cn/#opinion-sync'
 const READY_TYPE = 'SYNCBLOG_IMPORT_READY'
 const GENERIC_READY_TYPE = 'MD_IMPORT_READY'
 const ARTICLE_IMPORT_TYPE = 'SYNCBLOG_IMPORT_ARTICLE'
-const IMPORT_RESULT_TYPE = 'MD_IMPORT_RESULT'
 const OPINION_IMPORT_TYPE = 'MD_IMPORT_OPINION'
 const OPINION_RESULT_TYPE = 'MD_IMPORT_RESULT'
+const CSDN_ARTICLE_COMPOSE_URL = 'https://editor.csdn.net/md/'
 const X_ARTICLE_COMPOSE_URL = 'https://x.com/compose/articles'
 
 function getTargetOrigin(targetUrl) {
@@ -223,79 +223,23 @@ export default function DistributeContentButton({
       return
     }
 
-    const localSyncblogUrl = 'http://localhost:5173/md/#content-sync'
-    const targetUrl =
-      process.env.NEXT_PUBLIC_SYNCBLOG_IMPORT_URL
-      || (isLocalSite() ? localSyncblogUrl : DEFAULT_ARTICLE_SYNCBLOG_URL)
-    const targetOrigin = getTargetOrigin(targetUrl)
-    const win = window.open(targetUrl, 'syncblog-csdn-distribute')
-
-    if (!win) {
-      const copied = await copyPlainText(articleDraft)
-      flash('csdn', copied ? 'blocked' : 'failed')
-      return
+    // 必须在用户点击的同步调用栈里先发起剪贴板写入，避免打开新页面后丢失权限。
+    const copyPromise = copyPlainText(articleDraft)
+    const articleWindow = window.open('', 'csdn-article-compose')
+    if (articleWindow) {
+      articleWindow.opener = null
+      articleWindow.location.replace(CSDN_ARTICLE_COMPOSE_URL)
     }
 
-    const requestId = `csdn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    const payload = {
-      ...buildCommonPayload(),
-      type: ARTICLE_IMPORT_TYPE,
-      requestId,
-      coverImage: images[0] || null,
-      images,
-      markdown: articleDraft,
-      platforms: ['csdn'],
-      directPublish: true,
+    const copied = await copyPromise
+    if (!articleWindow) {
+      window.alert?.(copied
+        ? 'Markdown 已复制，请允许弹出窗口后打开 CSDN 编辑器。'
+        : '无法复制正文或打开 CSDN 编辑器，请检查剪贴板与弹窗权限后重试。')
+    } else if (!copied) {
+      window.alert?.('CSDN 编辑器已打开，但正文复制失败，请检查浏览器剪贴板权限后重试。')
     }
-
-    let delivered = false
-    let attempts = 0
-
-    const cleanup = () => {
-      clearInterval(timer)
-      clearTimeout(timeout)
-      window.removeEventListener('message', onMessage)
-    }
-
-    const send = () => {
-      if (delivered || win.closed) return
-      attempts += 1
-      win.postMessage(payload, targetOrigin)
-      if (attempts >= 20) {
-        cleanup()
-        copyPlainText(articleDraft).then((copied) => flash('csdn', copied ? 'copied' : 'failed'))
-      }
-    }
-
-    const onMessage = (event) => {
-      if (event.origin !== targetOrigin) return
-
-      if ((event.data?.type === READY_TYPE || event.data?.type === GENERIC_READY_TYPE) && !delivered) {
-        delivered = true
-        clearInterval(timer)
-        win.postMessage(payload, targetOrigin)
-        return
-      }
-
-      if (event.data?.type === IMPORT_RESULT_TYPE && event.data?.requestId === requestId) {
-        cleanup()
-        if (event.data.ok) {
-          flash('csdn', 'sent')
-        } else {
-          console.warn('CSDN 分发失败:', event.data.reason)
-          window.alert?.(`CSDN 分发失败${event.data.reason ? `：${event.data.reason}` : '，请检查 SyncBlog 插件和 CSDN 登录状态。'}`)
-          flash('csdn', 'failed')
-        }
-      }
-    }
-
-    window.addEventListener('message', onMessage)
-    const timer = setInterval(send, 500)
-    const timeout = setTimeout(() => {
-      cleanup()
-      flash('csdn', delivered ? 'failed' : 'copied')
-    }, 45000)
-    send()
+    flash('csdn', copied ? 'copied' : 'failed')
   }
 
   function handleDistribute(mode) {
@@ -348,20 +292,24 @@ export default function DistributeContentButton({
       return
     }
 
+    // 和单独的“复制为 X 图文”共用同一复制能力，并在跳转前发起写入。
+    const copyPromise = copyRichText({
+      html,
+      text: markdownToPlainText(articleDraft),
+    })
     const articleWindow = window.open('', 'x-article-compose')
     if (articleWindow) {
       articleWindow.opener = null
       articleWindow.location.replace(X_ARTICLE_COMPOSE_URL)
     }
-    const copyResult = await copyRichText({
-      html,
-      text: markdownToPlainText(articleDraft),
-    })
+    const copyResult = await copyPromise
     const copied = copyResult.copied
     if (!articleWindow) {
       window.alert?.(copied
         ? `${copyResult.format === 'rich' ? '文章富文本' : '文章纯文本'}已复制，请允许弹出窗口后打开 X Articles 编辑器。`
         : '无法打开 X Articles 编辑器，请允许弹出窗口后重试。')
+    } else if (!copied) {
+      window.alert?.('X Articles 编辑器已打开，但正文复制失败，请检查浏览器剪贴板权限后重试。')
     }
     const missingImages = (copyResult.imageCount || 0) - (copyResult.embeddedImages || 0)
     if (copied && missingImages > 0) {
@@ -387,6 +335,18 @@ export default function DistributeContentButton({
           : state === 'failed'
             ? '分发失败'
             : idleLabel
+  }
+
+  function PluginRequirementBadge({ required = false }) {
+    return (
+      <span
+        className={`ml-auto rounded-full border px-1.5 py-0.5 text-[9px] font-semibold leading-none ${required
+          ? 'border-amber-400/60 bg-amber-400/10 text-amber-700 dark:text-amber-300'
+          : 'border-emerald-400/60 bg-emerald-400/10 text-emerald-700 dark:text-emerald-300'}`}
+      >
+        {required ? '需要浏览器插件' : '无需浏览器插件'}
+      </span>
+    )
   }
 
   function DistributeIcon({ active }) {
@@ -443,6 +403,7 @@ export default function DistributeContentButton({
       >
         <DistributeIcon active={states.article === 'sent'} />
         <span>{getLabel('article')}</span>
+        <PluginRequirementBadge />
       </button>
       <button
         type="button"
@@ -454,6 +415,7 @@ export default function DistributeContentButton({
       >
         <DistributeIcon active={states.opinion === 'sent'} />
         <span>{getLabel('opinion')}</span>
+        <PluginRequirementBadge />
       </button>
       {allowArticle ? (
         <button
@@ -461,11 +423,12 @@ export default function DistributeContentButton({
           role="menuitem"
           onClick={handleCsdnDistribute}
           aria-live="polite"
-          title="通过 SyncBlog 插件打开 CSDN Markdown 编辑器并填充文章草稿"
+          title="复制 Markdown 正文并打开 CSDN 编辑器；无需安装浏览器插件"
           className="article-action-button owner-only-action px-3 py-1 text-xs"
         >
-          <DistributeIcon active={states.csdn === 'sent'} />
+          <DistributeIcon active={states.csdn === 'copied'} />
           <span>{getLabel('csdn')}</span>
+          <PluginRequirementBadge />
         </button>
       ) : null}
       {allowArticle ? (
@@ -481,6 +444,7 @@ export default function DistributeContentButton({
           >
             <DistributeIcon active={xState === 'sent'} />
             <span>{xState === 'publishing' ? '正在发布 Post' : xState === 'sent' ? 'Post 已发布' : xState === 'failed' ? 'Post 分发失败' : '发布 Post 至 X'}</span>
+            <PluginRequirementBadge />
           </button>
           <button
             type="button"
@@ -492,6 +456,7 @@ export default function DistributeContentButton({
           >
             <DistributeIcon active={xArticleState === 'copied'} />
             <span>{xArticleState === 'copied' ? '图文已复制，前往 X' : xArticleState === 'partial' ? '正文已复制，图片需补充' : xArticleState === 'failed' ? '文章分发失败' : '发布文章至 X'}</span>
+            <PluginRequirementBadge />
           </button>
         </>
       ) : null}

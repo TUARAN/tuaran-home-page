@@ -5,9 +5,7 @@ import Script from 'next/script'
 import {
   CATEGORY_META,
   COMPANY_TYPE_META,
-  TECH_TYPE_META,
   RESEARCH_CATEGORIES,
-  TOPIC_TYPE_META,
   getAllResearchParams,
   getResearchEntry,
   listResearch,
@@ -150,8 +148,6 @@ export default async function ResearchDetailPage({ params }) {
   })
   const xArticleHtml = markdownDoc ? renderMarkdown(markdownDoc) : ''
   const categoryLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
-  const topicTypeLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
-  const showTopicType = topicTypeLabel && topicTypeLabel !== categoryLabel
   const categoryHref = entry.contentType === 'engineering_case'
     ? '/articles?tab=engineering-cases'
     : entry.contentType === 'build_log'
@@ -291,25 +287,6 @@ export default async function ResearchDetailPage({ params }) {
                 className="research-pill research-pill-blue"
               >
                 {COMPANY_TYPE_META[entry.companyType].label}
-              </Link>
-            </>
-          ) : null}
-          {showTopicType ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className="research-pill research-pill-accent">
-                {topicTypeLabel}
-              </span>
-            </>
-          ) : null}
-          {entry.techType && TECH_TYPE_META[entry.techType] ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <Link
-                href={`/articles?tab=tech&tech_type=${entry.techType}`}
-                className="research-pill research-pill-accent"
-              >
-                {TECH_TYPE_META[entry.techType].label}
               </Link>
             </>
           ) : null}

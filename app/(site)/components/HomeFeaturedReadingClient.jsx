@@ -82,7 +82,9 @@ export default function HomeFeaturedReadingClient({ catalog }) {
   const searchInputRef = useRef(null)
   const pageLoadHandledRef = useRef(false)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
+  const [settingsReady, setSettingsReady] = useState(false)
   const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
+  const [automaticBatchReady, setAutomaticBatchReady] = useState(false)
   const [batchOffset, setBatchOffset] = useState(0)
   const [batchStateReady, setBatchStateReady] = useState(false)
   const [changing, setChanging] = useState(false)
@@ -106,27 +108,34 @@ export default function HomeFeaturedReadingClient({ catalog }) {
   )
   const displayedItems = normalizedQuery ? searchResults : items
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
+  const recommendationsReady = settingsReady && automaticBatchReady && batchStateReady
 
   useEffect(() => {
     let alive = true
     fetch('/api/recommendations/home', { cache: 'no-store' })
       .then((response) => response.ok ? response.json() : null)
-      .then((data) => { if (alive && data?.settings) setSettings(mergeHomeRecommendationSettings(data.settings)) })
-      .catch(() => {})
+      .then((data) => {
+        if (!alive) return
+        if (data?.settings) setSettings(mergeHomeRecommendationSettings(data.settings))
+        setSettingsReady(true)
+      })
+      .catch(() => { if (alive) setSettingsReady(true) })
     return () => { alive = false }
   }, [])
 
   useEffect(() => {
+    if (!settingsReady) return undefined
     let timer
     const intervalMs = settings.autoRotateHours * 60 * 60 * 1000
     const syncAutomaticBatch = () => {
       setAutomaticBatchNumber(getHomeRecommendationBatchNumber(settings.autoRotateHours))
+      setAutomaticBatchReady(true)
       const remaining = intervalMs - (Date.now() % intervalMs)
       timer = window.setTimeout(syncAutomaticBatch, remaining + 100)
     }
     syncAutomaticBatch()
     return () => window.clearTimeout(timer)
-  }, [settings.autoRotateHours])
+  }, [settings.autoRotateHours, settingsReady])
 
   useEffect(() => {
     if (pageLoadHandledRef.current) return
@@ -238,7 +247,7 @@ export default function HomeFeaturedReadingClient({ catalog }) {
               </button>
             </div>
           ) : (
-            <button type="button" onClick={openSearch} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white" aria-label="展开推荐搜索">
+            <button type="button" onClick={openSearch} disabled={!recommendationsReady} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] disabled:cursor-wait disabled:opacity-45 dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white" aria-label="展开推荐搜索">
               <IconSearch size={15} aria-hidden="true" />
               <T zh="搜索" en="Search" />
             </button>
@@ -246,7 +255,7 @@ export default function HomeFeaturedReadingClient({ catalog }) {
           <button
             type="button"
             onClick={changeBatch}
-            disabled={Boolean(normalizedQuery) || eligibleCount <= items.length || changing}
+            disabled={!recommendationsReady || Boolean(normalizedQuery) || eligibleCount <= items.length || changing}
             className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] disabled:cursor-not-allowed disabled:opacity-45 dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white"
             aria-label={normalizedQuery ? '搜索时暂停换一批' : '换一批推荐内容'}
           >
@@ -261,7 +270,12 @@ export default function HomeFeaturedReadingClient({ catalog }) {
           </div>
         </div>
       </div>
-      <div className={`home-reading-list transition-opacity duration-200 ${changing ? 'opacity-55' : 'opacity-100'}`} aria-live="polite">
+      <div
+        className={`home-reading-list transition-opacity duration-200 ${recommendationsReady ? (changing ? 'opacity-55' : 'opacity-100') : 'invisible opacity-0'}`}
+        aria-busy={!recommendationsReady}
+        aria-hidden={!recommendationsReady}
+        aria-live="polite"
+      >
         {displayedItems.map((item, index) => (
           <FeaturedLink
             key={item.id}

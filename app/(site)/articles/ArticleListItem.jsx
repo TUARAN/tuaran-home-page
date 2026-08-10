@@ -70,7 +70,7 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
               </span>
             ) : null}
             {displaySubject ? (
-              <span className="inline-flex rounded-md border border-[#d8d5ce] bg-transparent px-2 py-[2px] text-[11px] text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]">
+              <span className="inline-flex rounded-full border border-[#d8d5ce] bg-transparent px-2 py-[2px] text-[11px] text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]">
                 {SUBJECT_META[displaySubject]?.label}
               </span>
             ) : null}

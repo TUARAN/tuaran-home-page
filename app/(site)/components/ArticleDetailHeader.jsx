@@ -36,7 +36,7 @@ export default function ArticleDetailHeader({
             <span aria-hidden="true">·</span>
             <Link
               href={`/articles?subject=${subjectId}`}
-              className="rounded-md border border-[#d8d5ce] bg-transparent px-2 py-0.5 text-[11px] text-[#6f6b63] no-underline transition hover:border-[#bdb8ae] hover:text-[#3f3b35] dark:border-[#373d48] dark:text-[#aeb5c0]"
+              className="rounded-full border border-[#d8d5ce] bg-transparent px-2 py-0.5 text-[11px] text-[#6f6b63] no-underline transition hover:border-[#bdb8ae] hover:text-[#3f3b35] dark:border-[#373d48] dark:text-[#aeb5c0]"
             >
               {subjectLabel}
             </Link>

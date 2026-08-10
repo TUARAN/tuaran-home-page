@@ -10,6 +10,7 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
+import { renderMarkdown } from '../../../../lib/research/markdown'
 
 function dateLabel(value) {
   if (!value) return ''
@@ -40,6 +41,7 @@ export default function PublishedArticle({ article, siteUrl }) {
     article.contentText || '',
     `原文：${url}`,
   ].filter(Boolean).join('\n\n')
+  const xArticleHtml = renderMarkdown(markdown)
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -75,11 +77,12 @@ export default function PublishedArticle({ article, siteUrl }) {
             url={url}
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
           >
-            <CopyMarkdownButton markdown={markdown} />
+            <CopyMarkdownButton markdown={markdown} html={xArticleHtml} />
             <DistributeContentButton
               title={article.title}
               summary={article.summary || article.contentText.slice(0, 160)}
               markdown={markdown}
+              html={xArticleHtml}
               images={article.coverUrl ? [article.coverUrl] : []}
               url={url}
               category="article"

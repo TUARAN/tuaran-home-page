@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { IconLock } from '@tabler/icons-react'
 import ArticleActionsDropdown from './ArticleActionsDropdown'
 import { useSessionAccount } from './SessionProvider'
+import { copyPlainText, copyRichText, markdownToPlainText } from '../../../lib/contentClipboard'
 
 const DEFAULT_ARTICLE_SYNCBLOG_URL = 'https://syncblog.cn/md/#content-sync'
 const DEFAULT_OPINION_SYNCBLOG_URL = 'https://syncblog.cn/#opinion-sync'
@@ -45,34 +46,11 @@ function resolveOpinionEntry() {
   return DEFAULT_OPINION_SYNCBLOG_URL
 }
 
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    // navigator.clipboard 不可用时退化到 execCommand。
-  }
-
-  const ta = document.createElement('textarea')
-  ta.value = text
-  ta.style.position = 'fixed'
-  ta.style.opacity = '0'
-  document.body.appendChild(ta)
-  ta.select()
-  try {
-    document.execCommand('copy')
-    return true
-  } catch {
-    return false
-  } finally {
-    document.body.removeChild(ta)
-  }
-}
-
 export default function DistributeContentButton({
   title,
   summary,
   markdown,
+  html,
   images = [],
   url,
   category,
@@ -196,7 +174,7 @@ export default function DistributeContentButton({
     }
 
     if (!win) {
-      const copied = await copyText(fallbackText)
+      const copied = await copyPlainText(fallbackText)
       flash('article', copied ? 'blocked' : 'failed')
       return
     }
@@ -218,7 +196,7 @@ export default function DistributeContentButton({
       win.postMessage(payload, targetOrigin)
       if (attempts >= 20) {
         clearInterval(timer)
-        copyText(fallbackText).then((copied) => flash('article', copied ? 'copied' : 'failed'))
+        copyPlainText(fallbackText).then((copied) => flash('article', copied ? 'copied' : 'failed'))
       }
     }
 
@@ -292,10 +270,14 @@ export default function DistributeContentButton({
       articleWindow.opener = null
       articleWindow.location.replace(X_ARTICLE_COMPOSE_URL)
     }
-    const copied = await copyText(articleDraft)
+    const copyResult = await copyRichText({
+      html,
+      text: markdownToPlainText(articleDraft),
+    })
+    const copied = copyResult.copied
     if (!articleWindow) {
       window.alert?.(copied
-        ? '文章 Markdown 已复制，请允许弹出窗口后打开 X Articles 编辑器。'
+        ? `${copyResult.format === 'rich' ? '文章富文本' : '文章纯文本'}已复制，请允许弹出窗口后打开 X Articles 编辑器。`
         : '无法打开 X Articles 编辑器，请允许弹出窗口后重试。')
     }
     setXArticleState(copied ? 'copied' : 'failed')
@@ -406,7 +388,7 @@ export default function DistributeContentButton({
             role="menuitem"
             onClick={handleOwnerArticleDistribute}
             aria-live="polite"
-            title="复制文章 Markdown 并打开 X Articles 编辑器"
+            title="复制 X 可直接粘贴的富文本并打开 X Articles 编辑器"
             className="article-action-button owner-only-action px-3 py-1 text-xs"
           >
             <DistributeIcon active={xArticleState === 'copied'} />

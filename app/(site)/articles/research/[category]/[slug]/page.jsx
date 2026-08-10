@@ -147,6 +147,7 @@ export default async function ResearchDetailPage({ params }) {
     title: entry.title,
     intro: AUTHOR_INTRO_MARKDOWN,
   })
+  const xArticleHtml = markdownDoc ? renderMarkdown(markdownDoc) : ''
   const categoryLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
   const topicTypeLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
   const showTopicType = topicTypeLabel && topicTypeLabel !== categoryLabel
@@ -360,11 +361,12 @@ export default async function ResearchDetailPage({ params }) {
             className="mt-2 sm:mt-0 sm:ml-auto lg:flex-nowrap"
           >
             {!isAShareCompanyList ? <>
-              <CopyMarkdownButton markdown={markdownDoc} />
+              <CopyMarkdownButton markdown={markdownDoc} html={xArticleHtml} />
               <DistributeMarkdownButton
                   title={entry.title}
                   summary={entry.tldr || entry.summary || ''}
                   markdown={markdownDoc}
+                  html={xArticleHtml}
                   images={entry.images || []}
                   url={url}
                   category={entry.category}

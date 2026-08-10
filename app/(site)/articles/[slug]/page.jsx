@@ -232,6 +232,7 @@ export default async function ArticleDetailPage({ params }) {
 
   const articleUrl = `${SITE_URL}/articles/${article.slug}`
   const articleMarkdown = articleContentToMarkdown(article, articleUrl)
+  const xArticleHtml = renderMarkdown(articleMarkdown)
   const articleMarkdownHtml = article.markdown
     ? renderMarkdown(normalizeArticleMarkdown(article.markdown), { seed: `article:${article.slug}`, title: article.title })
     : ''
@@ -314,11 +315,12 @@ export default async function ArticleDetailPage({ params }) {
             url={articleUrl}
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
           >
-            <CopyMarkdownButton markdown={articleMarkdown} />
+            <CopyMarkdownButton markdown={articleMarkdown} html={xArticleHtml} />
             <DistributeContentButton
               title={article.title}
               summary={article.summary}
               markdown={articleMarkdown}
+              html={xArticleHtml}
               images={article.cover ? [article.cover] : []}
               url={articleUrl}
               category="article"

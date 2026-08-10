@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { IconLock } from '@tabler/icons-react'
 import ArticleActionsDropdown from './ArticleActionsDropdown'
 import { useSessionAccount } from './SessionProvider'
 import { copyPlainText, copyRichText, markdownToPlainText } from '../../../lib/contentClipboard'
@@ -280,7 +279,11 @@ export default function DistributeContentButton({
         ? `${copyResult.format === 'rich' ? '文章富文本' : '文章纯文本'}已复制，请允许弹出窗口后打开 X Articles 编辑器。`
         : '无法打开 X Articles 编辑器，请允许弹出窗口后重试。')
     }
-    setXArticleState(copied ? 'copied' : 'failed')
+    const missingImages = (copyResult.imageCount || 0) - (copyResult.embeddedImages || 0)
+    if (copied && missingImages > 0) {
+      window.alert?.(`正文已复制；有 ${missingImages} 张图片因跨域或体积限制无法写入剪贴板，请在 X 中手动补充。`)
+    }
+    setXArticleState(copied ? (missingImages > 0 ? 'partial' : 'copied') : 'failed')
     setTimeout(() => setXArticleState('idle'), 3200)
   }
 
@@ -334,17 +337,12 @@ export default function DistributeContentButton({
   }
 
   // SyncBlog 与 X 分发都是站长的发布工作流，不属于读者操作。
-  // 读者侧的分享、复制 Markdown、下载等按钮由各自组件继续提供。
+  // 读者侧只保留分享与 RSS；复制、PPT 和分发由父级统一收进站长工具区。
   if (loading || !isOwner) return null
 
   return (
     <ArticleActionsDropdown
-      label={(
-        <span className="inline-flex items-center gap-1">
-          <IconLock size={11} strokeWidth={2.2} aria-hidden="true" />
-          站长分发
-        </span>
-      )}
+      label="分发"
       triggerClassName="owner-only-action"
     >
       <button
@@ -392,7 +390,7 @@ export default function DistributeContentButton({
             className="article-action-button owner-only-action px-3 py-1 text-xs"
           >
             <DistributeIcon active={xArticleState === 'copied'} />
-            <span>{xArticleState === 'copied' ? '已复制，前往 X 文章' : xArticleState === 'failed' ? '文章分发失败' : '发布文章至 X'}</span>
+            <span>{xArticleState === 'copied' ? '图文已复制，前往 X' : xArticleState === 'partial' ? '正文已复制，图片需补充' : xArticleState === 'failed' ? '文章分发失败' : '发布文章至 X'}</span>
           </button>
         </>
       ) : null}

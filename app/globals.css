@@ -1109,9 +1109,18 @@
   }
 
   .home-badge-latest {
-    border-color: color-mix(in srgb, var(--site-accent) 38%, var(--site-line));
-    background: color-mix(in srgb, var(--site-accent) 12%, transparent);
-    color: var(--site-accent);
+    border-color: #26734d;
+    background: #2f855a;
+    color: #f6fff9;
+    box-shadow: 0 3px 10px rgb(35 112 73 / 18%);
+    font-weight: 700;
+  }
+
+  .dark .home-badge-latest {
+    border-color: #69c792;
+    background: #327b55;
+    color: #f4fff8;
+    box-shadow: 0 3px 12px rgb(0 0 0 / 28%);
   }
 
   .home-badge-pinned {
@@ -3217,9 +3226,72 @@
 
   .article-action-button {
     @apply inline-flex shrink-0 items-center gap-1.5 rounded-full border transition-colors;
+    min-height: 2rem;
     border-color: var(--site-line);
     background-color: color-mix(in srgb, var(--site-panel-strong) 86%, transparent);
     color: var(--site-muted);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .article-header-actions {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .article-reader-actions,
+  .article-owner-actions,
+  .article-owner-actions-tools {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .article-owner-actions {
+    max-width: 100%;
+    padding: 0.22rem;
+    border: 1px solid color-mix(in srgb, var(--site-accent) 38%, var(--site-line));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--site-accent) 7%, var(--site-panel-strong));
+  }
+
+  .article-owner-actions-label {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.3rem;
+    padding-left: 0.55rem;
+    color: var(--site-accent-strong);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .article-owner-actions-label svg {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+
+  .article-owner-actions-tools {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .article-owner-actions-tools::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .article-header-actions {
+      width: auto;
+      justify-content: flex-end;
+    }
   }
 
   .article-action-button:visited {
@@ -3247,7 +3319,9 @@
     right: 0;
     top: calc(100% + 0.45rem);
     z-index: 60;
-    min-width: 8.5rem;
+    width: max-content;
+    min-width: 11.5rem;
+    max-width: min(21rem, calc(100vw - 2rem));
     display: grid;
     gap: 0.35rem;
     padding: 0.45rem;
@@ -3267,6 +3341,7 @@
     justify-content: flex-start;
     border-radius: 0.65rem;
     background-color: transparent;
+    white-space: nowrap;
   }
 
   .article-actions-dropdown-menu .article-action-button:hover {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { markdownToPlainText } from '../lib/contentClipboard.js'
+import { copyRichText, markdownToPlainText } from '../lib/contentClipboard.js'
 
 test('markdownToPlainText removes presentation markers but keeps readable structure', () => {
   const markdown = [
@@ -39,4 +39,34 @@ test('markdownToPlainText preserves fenced code without the fence', () => {
     markdownToPlainText('```js\nconst answer = 42\n```'),
     'const answer = 42',
   )
+})
+
+test('copyRichText reports images when rich clipboard support is unavailable', async () => {
+  const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+  let copiedText = ''
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: {
+      clipboard: {
+        writeText: async (value) => { copiedText = value },
+      },
+    },
+  })
+
+  try {
+    const result = await copyRichText({
+      html: '<p>正文</p><img src="https://example.com/cover.png" alt="封面">',
+      text: '正文',
+    })
+    assert.deepEqual(result, {
+      copied: true,
+      format: 'plain',
+      imageCount: 1,
+      embeddedImages: 0,
+    })
+    assert.equal(copiedText, '正文')
+  } finally {
+    if (navigatorDescriptor) Object.defineProperty(globalThis, 'navigator', navigatorDescriptor)
+    else delete globalThis.navigator
+  }
 })

@@ -232,7 +232,11 @@ export default async function ArticleDetailPage({ params }) {
 
   const articleUrl = `${SITE_URL}/articles/${article.slug}`
   const articleMarkdown = articleContentToMarkdown(article, articleUrl)
-  const xArticleHtml = renderMarkdown(articleMarkdown)
+  const xArticleHtml = renderMarkdown(articleMarkdown, {
+    images: article.cover ? [{ src: article.cover, alt: `${article.title} 封面` }] : [],
+    seed: `article:${article.slug}`,
+    title: article.title,
+  })
   const articleMarkdownHtml = article.markdown
     ? renderMarkdown(normalizeArticleMarkdown(article.markdown), { seed: `article:${article.slug}`, title: article.title })
     : ''

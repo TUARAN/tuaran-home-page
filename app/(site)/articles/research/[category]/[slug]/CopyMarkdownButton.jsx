@@ -17,17 +17,17 @@ export default function CopyMarkdownButton({ markdown, html }) {
     const result = format === 'rich'
       ? await copyRichText({ html, text: plainText })
       : await copyPlainText(format === 'markdown' ? markdown : plainText)
-    if (format === 'rich' && result?.copied) flash(result.format === 'rich' ? 'rich' : 'plain')
+    if (format === 'rich' && result?.copied) {
+      flash(result.format === 'rich' ? 'rich' : 'plain')
+      const missingImages = (result.imageCount || 0) - (result.embeddedImages || 0)
+      if (missingImages > 0) {
+        window.alert?.(`正文已复制；有 ${missingImages} 张图片因跨域或体积限制无法写入剪贴板，请手动补充。`)
+      }
+    }
     else if (result) flash(format)
   }
 
-  const label = copied === 'rich'
-    ? '已复制 X 富文本'
-    : copied === 'plain'
-      ? '已复制纯文本'
-      : copied === 'markdown'
-        ? '已复制 Markdown'
-        : '复制'
+  const label = copied ? '已复制' : '复制'
 
   return (
     <ArticleActionsDropdown label={label} closeOnSelect>
@@ -39,7 +39,7 @@ export default function CopyMarkdownButton({ markdown, html }) {
         className="article-action-button px-3 py-1 text-xs"
       >
         <CopyIcon />
-        <span>复制为 X 富文本</span>
+        <span>{copied === 'rich' ? 'X 图文已复制' : '复制为 X 图文'}</span>
       </button>
       <button
         type="button"

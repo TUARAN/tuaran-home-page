@@ -41,7 +41,11 @@ export default function PublishedArticle({ article, siteUrl }) {
     article.contentText || '',
     `原文：${url}`,
   ].filter(Boolean).join('\n\n')
-  const xArticleHtml = renderMarkdown(markdown)
+  const xArticleHtml = renderMarkdown(markdown, {
+    images: article.coverUrl ? [{ src: article.coverUrl, alt: `${article.title} 封面` }] : [],
+    seed: `article:${article.slug}`,
+    title: article.title,
+  })
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'Article',

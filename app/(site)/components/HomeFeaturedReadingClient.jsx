@@ -16,38 +16,11 @@ import {
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
 import { T } from './LocaleProvider'
 
-const DAILY_BATCH_STORAGE_KEY = 'tuaran:home-recommendation-batch'
-
 const SECTION_BADGE_CLASS = {
   column: 'home-badge home-badge-column',
   research: 'home-badge home-badge-research',
   resources: 'home-badge home-badge-resource',
   feed: 'home-badge home-badge-feed',
-}
-
-function getLocalDayKey(date = new Date()) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function readStoredBatchState() {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(DAILY_BATCH_STORAGE_KEY) || 'null')
-    if (!value || typeof value.day !== 'string' || !Number.isSafeInteger(value.offset) || value.offset < 0) return null
-    return value
-  } catch {
-    return null
-  }
-}
-
-function storeBatchState(day, offset) {
-  try {
-    window.localStorage.setItem(DAILY_BATCH_STORAGE_KEY, JSON.stringify({ day, offset }))
-  } catch {
-    // Storage can be unavailable in private/restricted browser contexts.
-  }
 }
 
 function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0 }) {
@@ -80,26 +53,36 @@ function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false,
 export default function HomeFeaturedReadingClient({ catalog }) {
   const router = useRouter()
   const searchInputRef = useRef(null)
-  const pageLoadHandledRef = useRef(false)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
   const [settingsReady, setSettingsReady] = useState(false)
   const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
   const [automaticBatchReady, setAutomaticBatchReady] = useState(false)
   const [batchOffset, setBatchOffset] = useState(0)
-  const [batchStateReady, setBatchStateReady] = useState(false)
   const [changing, setChanging] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const batchNumber = automaticBatchNumber + batchOffset
   const previousIds = useMemo(
     () => batchNumber > 0
-      ? chooseHomeRecommendationBatch(catalog, settings, batchNumber - 1, []).map((item) => item.id)
+      ? chooseHomeRecommendationBatch(
+        catalog,
+        settings,
+        batchNumber - 1,
+        [],
+        { includeHighlights: batchOffset === 1 },
+      ).map((item) => item.id)
       : [],
-    [batchNumber, catalog, settings],
+    [batchNumber, batchOffset, catalog, settings],
   )
   const items = useMemo(
-    () => chooseHomeRecommendationBatch(catalog, settings, batchNumber, previousIds),
-    [batchNumber, catalog, previousIds, settings],
+    () => chooseHomeRecommendationBatch(
+      catalog,
+      settings,
+      batchNumber,
+      previousIds,
+      { includeHighlights: batchOffset === 0 },
+    ),
+    [batchNumber, batchOffset, catalog, previousIds, settings],
   )
   const normalizedQuery = query.trim()
   const searchResults = useMemo(
@@ -108,7 +91,7 @@ export default function HomeFeaturedReadingClient({ catalog }) {
   )
   const displayedItems = normalizedQuery ? searchResults : items
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
-  const recommendationsReady = settingsReady && automaticBatchReady && batchStateReady
+  const recommendationsReady = settingsReady && automaticBatchReady
 
   useEffect(() => {
     let alive = true
@@ -136,23 +119,6 @@ export default function HomeFeaturedReadingClient({ catalog }) {
     syncAutomaticBatch()
     return () => window.clearTimeout(timer)
   }, [settings.autoRotateHours, settingsReady])
-
-  useEffect(() => {
-    if (pageLoadHandledRef.current) return
-    pageLoadHandledRef.current = true
-
-    const today = getLocalDayKey()
-    const stored = readStoredBatchState()
-    const nextOffset = stored ? stored.offset + 1 : 0
-    setBatchOffset(nextOffset)
-    storeBatchState(today, nextOffset)
-    setBatchStateReady(true)
-  }, [])
-
-  useEffect(() => {
-    if (!batchStateReady) return
-    storeBatchState(getLocalDayKey(), batchOffset)
-  }, [batchOffset, batchStateReady])
 
   const changeBatch = useCallback(() => {
     setChanging(true)
@@ -252,22 +218,6 @@ export default function HomeFeaturedReadingClient({ catalog }) {
               <T zh="搜索" en="Search" />
             </button>
           )}
-          <button
-            type="button"
-            onClick={changeBatch}
-            disabled={!recommendationsReady || Boolean(normalizedQuery) || eligibleCount <= items.length || changing}
-            className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] disabled:cursor-not-allowed disabled:opacity-45 dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white"
-            aria-label={normalizedQuery ? '搜索时暂停换一批' : '换一批推荐内容'}
-          >
-            <IconRefresh size={15} className={`transition-transform duration-300 ${changing ? 'rotate-180' : 'group-hover:rotate-45'}`} aria-hidden="true" />
-            <T zh="换一批" en="Refresh" />
-          </button>
-          <div className="order-4 flex basis-full justify-end pt-0.5">
-            <p className="relative mb-0 inline-flex items-center gap-2 rounded-2xl border border-[#ded7c6] bg-[#fffaf0] px-3 py-1 text-[11px] font-medium leading-4 text-[#6f6757] shadow-[0_4px_14px_rgba(56,49,38,0.08)] before:absolute before:-top-[5px] before:right-5 before:h-2.5 before:w-2.5 before:rotate-45 before:border-l before:border-t before:border-[#ded7c6] before:bg-[#fffaf0] dark:border-[#36414e] dark:bg-[#18212c] dark:text-[#aeb9c7] dark:shadow-[0_4px_14px_rgba(0,0,0,0.2)] dark:before:border-[#36414e] dark:before:bg-[#18212c]">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#a47a39] shadow-[0_0_0_3px_rgba(164,122,57,0.12)] dark:bg-[#c8a76d] dark:shadow-[0_0_0_3px_rgba(200,167,109,0.12)]" aria-hidden="true" />
-              <T zh="点击 / 回车，一键刷新内容" en="Click / Enter to refresh in one step" />
-            </p>
-          </div>
         </div>
       </div>
       <div
@@ -280,7 +230,7 @@ export default function HomeFeaturedReadingClient({ catalog }) {
           <FeaturedLink
             key={item.id}
             item={item}
-            isPinned={pinnedIds.has(item.id)}
+            isPinned={batchOffset === 0 && pinnedIds.has(item.id)}
             desktopOnly={!normalizedQuery && index >= 10}
             fromSearch={Boolean(normalizedQuery)}
             position={index + 1}
@@ -292,6 +242,23 @@ export default function HomeFeaturedReadingClient({ catalog }) {
           </div>
         ) : null}
       </div>
+      {!normalizedQuery && eligibleCount > items.length ? (
+        <div className="mt-6 flex flex-col items-center gap-3 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540]">
+          <p className="mb-0 text-[12px] font-medium tracking-[0.08em] text-[#77746a] dark:text-[#98a3b1]">
+            <T zh="已经看到这里了，再发现一些内容" en="You made it here. Discover something else" />
+          </p>
+          <button
+            type="button"
+            onClick={changeBatch}
+            disabled={!recommendationsReady || changing}
+            className="group inline-flex h-10 items-center gap-2 rounded-full border border-[#cfc7b6] bg-[#fffaf0] px-5 text-[13px] font-semibold text-[#5f563f] shadow-[0_5px_18px_rgba(56,49,38,0.08)] transition hover:-translate-y-0.5 hover:border-[#9e8c68] hover:text-[#2c2a23] disabled:cursor-wait disabled:opacity-45 dark:border-[#3a4654] dark:bg-[#18212c] dark:text-[#c2ccd8] dark:shadow-[0_5px_18px_rgba(0,0,0,0.2)] dark:hover:border-[#69788a] dark:hover:text-white"
+            aria-label="换一批首页推荐内容"
+          >
+            <IconRefresh size={16} className={`transition-transform duration-300 ${changing ? 'rotate-180' : 'group-hover:rotate-45'}`} aria-hidden="true" />
+            <T zh="换一批" en="Show me more" />
+          </button>
+        </div>
+      ) : null}
       {normalizedQuery && displayedItems.length ? (
         <div className="mt-5 flex justify-center border-t border-[#ded9cc] pt-5 dark:border-[#2c3540]">
           <button type="button" onClick={viewAllResults} className="inline-flex h-9 items-center rounded-full border border-[#d7d2c4] bg-white/70 px-4 text-[13px] font-medium text-[#5d594f] transition hover:border-[#8e846f] hover:text-[#211f1a] dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white">

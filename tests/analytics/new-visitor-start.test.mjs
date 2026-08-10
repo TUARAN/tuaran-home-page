@@ -64,12 +64,13 @@ test('directory exposes only topic and type filters, in that order', () => {
 })
 
 test('home offers stable goal-based start paths and marks their surface', () => {
-  for (const id of ['learn-ai', 'companies', 'practice', 'resources', 'subscribe']) {
+  for (const id of ['learn-ai', 'companies', 'practice', 'interactive', 'resources', 'subscribe']) {
     assert.match(homeSource, new RegExp(`id: '${id}'`))
   }
   assert.match(homeSource, /href: '\/articles\?subject=ai_dev'[\s\S]*title: 'AI 与开发'/)
   assert.match(homeSource, /href: '\/articles\?subject=company_research'[\s\S]*title: '公司调研'/)
   assert.match(homeSource, /href: '\/articles\?group=practice'[\s\S]*title: '工程实践'/)
+  assert.match(homeSource, /href: '\/articles\?group=interactive'[\s\S]*title: '互动专题'/)
   assert.match(homeSource, /href: '\/articles\?group=resource'[\s\S]*title: '资源'/)
   assert.match(homeSource, /href: '\/frontend-weekly'[\s\S]*title: '前端周看'/)
   assert.doesNotMatch(homeSource, /\?entity=company|\?delivery=subscribe|按使用方式/)

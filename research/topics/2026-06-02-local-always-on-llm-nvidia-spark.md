@@ -2,7 +2,7 @@
 title: 如果你真能 7×24 小时运行最顶级的大模型，你会想用它来干嘛
 category: topics
 topic_type: thesis
-subjects: [ai_dev, business_market]
+subjects: [ai_dev]
 date: 2026-06-02
 tags: [NVIDIA, RTX Spark, DGX Spark, COMPUTEX 2026, 本地大模型, AI PC, Agent, Wintel, ARM, CUDA, Apple Silicon]
 summary: 2026 COMPUTEX 上 NVIDIA 与微软联手发布 RTX Spark 笔记本 / 桌面 / 工作站三种形态，把"AI PC"从概念变成有具体规格、价格区间和 Agent 工作流的产品线。这篇围绕真实发布会内容，算清自养 vs 租云的账，再看 Wintel 与 Apple 谁被打到哪里。

@@ -15,6 +15,7 @@ import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
 import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
 import { buildArticleOgUrl } from '../../../../lib/articleOg'
 import { extractToc, renderMarkdown } from '../../../../lib/research/markdown'
+import { taxonomyForArticle } from '../../../../lib/contentTaxonomy'
 import PublishedArticle from './PublishedArticle'
 
 export const runtime = 'edge'
@@ -292,6 +293,12 @@ export default async function ArticleDetailPage({ params }) {
       </Script>
 
       <ArticleDetailHeader
+        taxonomy={taxonomyForArticle({
+          category: article.homeCategory,
+          slug: article.slug,
+          href: article.href,
+          title: article.title,
+        })}
         categoryHref="/articles?tab=posts"
         categoryLabel="精选文章"
         dateLabel={article.date}

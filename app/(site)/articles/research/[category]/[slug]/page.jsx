@@ -34,6 +34,7 @@ import LifeTrafficTest from './LifeTrafficTest'
 import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 import AShareCompanyList from './AShareCompanyList'
 import aShareSnapshot from '../../../../../../data/a-shares/companies.json'
+import { taxonomyForResearch } from '../../../../../../lib/contentTaxonomy'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -266,6 +267,7 @@ export default async function ResearchDetailPage({ params }) {
       </Script>
 
       <ArticleDetailHeader
+        taxonomy={taxonomyForResearch(entry)}
         categoryHref={categoryHref}
         categoryLabel={categoryLabel}
         dateLabel={entry.dateLabel || entry.date}

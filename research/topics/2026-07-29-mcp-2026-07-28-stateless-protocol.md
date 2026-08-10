@@ -3,6 +3,7 @@ title: MCP 2026-07-28：无状态协议如何改变部署、交互与迁移
 category: topics
 topic_type: tech
 content_type: analysis
+subjects: [ai_dev]
 date: 2026-07-29
 time: 09:05
 tags: [MCP, Model Context Protocol, 无状态协议, AI Agent, Serverless, 边缘计算, OAuth, SDK]

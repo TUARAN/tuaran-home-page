@@ -10,7 +10,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '统一内容目录',
   description:
-    '按内容主题和内容类型浏览文章、分析、工程实践与资源。',
+    '按唯一主题和内容类型浏览精选文章、分析、工程实践、互动专题与资源。',
   keywords: ['涂阿燃', 'tuaran', '掘金安东尼', '安东尼404', '原创文章', '技术实践', '工程分析', '资料核验', 'AI'],
   alternates: {
     canonical: '/articles',

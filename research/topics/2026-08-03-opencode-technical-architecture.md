@@ -3,7 +3,7 @@ title: OpenCode 技术分析：本地 Agent、客户端/服务端架构与多模
 category: topics
 topic_type: tech
 tech_type: ai_coding
-subjects: [ai_dev, product_experience, business_market]
+subjects: [ai_dev]
 content_type: analysis
 date: 2026-08-03
 time: 10:45

@@ -2,7 +2,7 @@
 title: 粉丝经济定义调研：关注数为什么不是粉丝数
 category: topics
 topic_type: thesis
-subjects: [content_creation, business_market]
+subjects: [content_creation]
 date: 2026-05-25
 tags: [粉丝经济, 创作者经济, 注意力经济, 私域, 内容平台, 社群]
 summary: 重新定义粉丝经济：关注只是低成本订阅动作，不能直接等同于粉丝、影响力或商业价值；真正的粉丝经济应按注意力、信任、行动和付费能力分层衡量。

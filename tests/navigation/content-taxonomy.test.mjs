@@ -11,6 +11,7 @@ import {
   DELIVERY_KEYS,
   ENTITY_TYPE_KEYS,
   SUBJECT_KEYS,
+  assertCompleteContentTaxonomy,
   getDisplaySubject,
   getContentGroup,
   isEntityTypeRedundant,
@@ -25,9 +26,12 @@ import {
   TAXONOMY_DIMENSIONS,
   TAXONOMY_GOVERNANCE_RULES,
 } from '../../lib/contentTaxonomyGovernance.js'
+import { ENGINEERING_WORKS } from '../../lib/engineeringWorks.js'
+import { HOME_RESOURCE_ITEMS } from '../../lib/homeResourceItems.js'
+import { RESEARCH_ENTRY_META } from '../../lib/research/catalog.js'
 
 test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
-  assert.deepEqual(CONTENT_GROUP_KEYS, ['all', 'article', 'analysis', 'practice', 'resource'])
+  assert.deepEqual(CONTENT_GROUP_KEYS, ['all', 'article', 'analysis', 'practice', 'interactive', 'resource'])
   assert.equal(CONTENT_GROUP_META.article.label, '精选')
   assert.ok(CONTENT_KIND_KEYS.includes('interactive'))
   assert.ok(SUBJECT_KEYS.includes('ai_dev'))
@@ -42,6 +46,7 @@ test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.ok(DELIVERY_KEYS.includes('subscribe'))
   assert.equal(getContentGroup('profile'), 'analysis')
   assert.equal(getContentGroup('guide'), 'practice')
+  assert.equal(getContentGroup('interactive'), 'interactive')
 })
 
 test('people research has a dedicated reader-facing subject', () => {
@@ -85,6 +90,21 @@ test('legacy content sources map to complete reader-facing taxonomy records', ()
   assert.equal(records[4].contentKind, 'interactive')
 })
 
+test('every research, interactive, and resource entry resolves to exactly one theme and one type', () => {
+  const records = [
+    ...Object.values(RESEARCH_ENTRY_META).map((entry) => ({ ...entry, ...taxonomyForResearch(entry) })),
+    ...ENGINEERING_WORKS.map((entry) => ({ ...entry, ...taxonomyForInteractive(entry) })),
+    ...HOME_RESOURCE_ITEMS.map((entry) => ({ ...entry, ...taxonomyForResource(entry) })),
+  ]
+
+  assert.ok(records.length > 0)
+  assert.equal(assertCompleteContentTaxonomy(records), records)
+  for (const record of records) {
+    assert.equal(record.subjects.length, 1, record.title)
+    assert.ok(record.contentKind, record.title)
+  }
+})
+
 test('product and business subjects have separate inference rules', () => {
   assert.deepEqual(
     taxonomyForResearch({ category: 'topics', topicType: 'product' }).subjects,
@@ -104,14 +124,14 @@ test('product and business subjects have separate inference rules', () => {
   )
 })
 
-test('explicit subjects override legacy inference and preserve primary-subject order', () => {
+test('explicit subjects override legacy inference and normalize to one theme', () => {
   assert.deepEqual(
     taxonomyForInteractive({
       category: 'data-visualization',
       title: 'X 值不值得做？创作者经营情报',
       subjects: ['content_creation', 'business_market'],
     }).subjects,
-    ['content_creation', 'business_market'],
+    ['content_creation'],
   )
   assert.deepEqual(
     taxonomyForResearch({
@@ -119,14 +139,14 @@ test('explicit subjects override legacy inference and preserve primary-subject o
       topicType: 'thesis',
       subjects: ['ai_dev', 'business_market'],
     }).subjects,
-    ['ai_dev', 'business_market'],
+    ['ai_dev'],
   )
   assert.deepEqual(
     taxonomyForResource({
       resourceType: 'humanities-politics',
       subjects: ['ai_dev', 'business_market'],
     }).subjects,
-    ['ai_dev', 'business_market'],
+    ['ai_dev'],
   )
 })
 
@@ -157,10 +177,19 @@ test('taxonomy validation rejects overloaded or incomplete records', () => {
     }),
     [
       'contentKind 必须是受控单选值',
-      'subjects 必须包含 1–3 个主题',
+      'subjects 必须且只能包含 1 个主题',
       'entityType 包含未知对象类型',
       'delivery 必须是受控单选值',
     ],
+  )
+  assert.throws(
+    () => assertCompleteContentTaxonomy([{
+      id: 'bad-record',
+      contentKind: 'article',
+      subjects: ['ai_dev', 'web_cloud'],
+      delivery: 'read',
+    }]),
+    /内容分类审计失败.*bad-record/s,
   )
 })
 

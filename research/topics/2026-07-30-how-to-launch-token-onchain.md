@@ -3,6 +3,7 @@ title: 如何上链发币：代币合约、发行曲线与流动性市场的完�
 category: topics
 topic_type: tech
 content_type: analysis
+subjects: [web_cloud]
 date: 2026-07-30
 time: 14:21
 tags: [区块链, 智能合约, ERC-20, BEP-20, BNB Chain, DEX, 流动性, 代币发行, Web3安全]

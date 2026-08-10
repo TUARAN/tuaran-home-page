@@ -2,7 +2,7 @@
 title: 国资企业职级 ↔ 现代公务员 ↔ 明朝官阶 三级对照调研（以中国移动为例）
 category: topics
 topic_type: thesis
-subjects: [humanities_history, workplace_org]
+subjects: [humanities_history]
 date: 2026-05-20
 tags: [职级对照, 央企, 中国移动, 公务员, 明朝官制, 制度类比]
 summary: 以中国移动为央企样本，把"基层员工 → 室经理 → 部门总 → 公司总 → 集团总"五级链路与现代公务员职级、明朝官阶建立权责类比，形成统一口径。

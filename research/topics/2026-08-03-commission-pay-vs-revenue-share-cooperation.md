@@ -7,7 +7,7 @@ tags: [底薪提成, 纯分成, 劳动关系, 合作协议, 销售, 用工合规
 summary: 底薪和分成决定收入计算方式，实际用工与管理方式决定法律关系；选择方案时需要同时核算现金流、社保福利、获客成本、回款风险和管理边界。
 tldr: 无底薪、签合作协议或注册个体工商户，都不能单独排除劳动关系。需要坐班、打卡、接受排班奖惩并持续从事企业业务的岗位，更接近劳动用工；能够自主获客、定价、安排时间并承担经营成本的合作方，才具备独立合作的主要特征。
 topic_type: market
-subjects: [workplace_org, business_market]
+subjects: [workplace_org]
 content_type: analysis
 assistance: codex
 model: deepseek-v4-flash

@@ -7,7 +7,7 @@ tags: [个人站, 月度复盘, Git, 内容系统, 阅读体验, MCP, 独立开�
 summary: 基于 2026 年 7 月 Git 记录复盘 2aran.com 的变化：账号、资源权益、OAuth、内容索引和阅读数据逐步接通，前端周刊、MCP、规划中心、X 情报与数字人工具上线；导航、文章详情、公开入口和内容措辞也开始统一。
 tldr: 7 月的主要变化是把已经存在的内容、账号、资源和工具连成可用链路。读者更容易找到内容、管理账号、领取资源并完成互动；智能体可以通过受控 OAuth 查询公开文章；后台与公开站继续隔离。功能仍然增长很快，8 月更需要处理自动提交噪音、入口重叠、部署回归和长期维护成本。
 topic_type: thesis
-subjects: [web_cloud, content_creation]
+subjects: [web_cloud]
 content_type: build_log
 assistance: codex
 model: deepseek-v4-flash

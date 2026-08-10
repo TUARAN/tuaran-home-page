@@ -3255,6 +3255,7 @@
   .article-owner-actions {
     max-width: 100%;
     padding: 0.22rem;
+    overflow: visible;
     border: 1px solid color-mix(in srgb, var(--site-accent) 38%, var(--site-line));
     border-radius: 999px;
     background: color-mix(in srgb, var(--site-accent) 7%, var(--site-panel-strong));
@@ -3279,12 +3280,39 @@
   }
 
   .article-owner-actions-tools {
-    overflow-x: auto;
-    scrollbar-width: none;
+    overflow: visible;
+    padding-left: 0.4rem;
+    border-left: 1px solid color-mix(in srgb, var(--site-line-strong) 72%, transparent);
   }
 
-  .article-owner-actions-tools::-webkit-scrollbar {
-    display: none;
+  .article-owner-actions-tools > .article-actions-dropdown > .article-action-button,
+  .article-owner-actions-tools > .article-action-button {
+    border-color: transparent;
+    border-radius: 0.65rem;
+    background: transparent;
+  }
+
+  .article-owner-actions-tools > .article-actions-dropdown > .article-action-button:hover,
+  .article-owner-actions-tools > .article-action-button:hover {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--site-accent) 10%, transparent);
+  }
+
+  .article-owner-actions-tools > * + * {
+    box-shadow: inset 1px 0 color-mix(in srgb, var(--site-line-strong) 72%, transparent);
+  }
+
+  @media (max-width: 639px) {
+    .article-owner-actions {
+      width: 100%;
+      align-items: flex-start;
+      border-radius: 1rem;
+    }
+
+    .article-owner-actions-tools {
+      flex: 1;
+      flex-wrap: wrap;
+    }
   }
 
   @media (min-width: 640px) {

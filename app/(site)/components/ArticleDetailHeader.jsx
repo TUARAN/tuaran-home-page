@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { AuthorByline } from './ArticleAuthorIntro'
 import OwnerOnlyArticleMeta from './OwnerOnlyArticleMeta'
-import { CONTENT_KIND_META, SUBJECT_META, getContentGroup } from '../../../lib/contentTaxonomy'
+import { CONTENT_GROUP_META, SUBJECT_META, getContentGroup } from '../../../lib/contentTaxonomy'
 
 export default function ArticleDetailHeader({
   categoryHref,
@@ -23,7 +23,7 @@ export default function ArticleDetailHeader({
   const subjectId = taxonomy?.subjects?.[0]
   const groupId = taxonomy?.contentKind ? getContentGroup(taxonomy.contentKind) : ''
   const subjectLabel = SUBJECT_META[subjectId]?.label
-  const typeLabel = CONTENT_KIND_META[taxonomy?.contentKind]?.label
+  const typeLabel = CONTENT_GROUP_META[groupId]?.label
 
   return (
     <header className="research-article-header mb-8 border-b pb-4">
@@ -36,15 +36,15 @@ export default function ArticleDetailHeader({
             <span aria-hidden="true">·</span>
             <Link
               href={`/articles?subject=${subjectId}`}
-              className="rounded-md border border-[#d9d2df] bg-[#f5f1f7] px-2 py-0.5 text-[11px] text-[#6f6478] no-underline transition hover:border-[#bcb1c5] hover:text-[#403747] dark:border-[#373d48] dark:bg-[#181d25] dark:text-[#aeb5c0]"
+              className="rounded-md border border-[#d8d5ce] bg-transparent px-2 py-0.5 text-[11px] text-[#6f6b63] no-underline transition hover:border-[#bdb8ae] hover:text-[#3f3b35] dark:border-[#373d48] dark:text-[#aeb5c0]"
             >
-              主题 · {subjectLabel}
+              {subjectLabel}
             </Link>
             <Link
               href={`/articles?group=${groupId}`}
               className="rounded-full border border-[#d8d5ce] bg-transparent px-2 py-0.5 text-[11px] text-[#6f6b63] no-underline transition hover:border-[#bdb8ae] hover:text-[#3f3b35] dark:border-[#373d48] dark:text-[#aeb5c0]"
             >
-              类型 · {typeLabel}
+              {typeLabel}
             </Link>
           </>
         ) : (

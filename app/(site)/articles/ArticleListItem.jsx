@@ -4,18 +4,18 @@ import Link from 'next/link'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
 import {
-  CONTENT_KIND_META,
+  CONTENT_GROUP_META,
   SUBJECT_META,
   getContentGroup,
   getDisplaySubject,
 } from '../../../lib/contentTaxonomy'
 
 const KIND_TAG_CLASS = {
-  article: 'border-[#d9d4e2] bg-white/60 text-[#625a6f] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
-  analysis: 'border-[#c7dce4] bg-[#edf6f8] text-[#3f6878] dark:border-[#30454b] dark:bg-[#172329] dark:text-[#b8dce5]',
-  practice: 'border-[#cfc3e2] bg-[#f3eff9] text-[#72539b] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#d8c5f3]',
-  interactive: 'border-[#9dd7dc] bg-[#e7f8f9] text-[#176b72] dark:border-[#285158] dark:bg-[#102428] dark:text-[#9edfe3]',
-  resource: 'border-[#d6d0df] bg-[#f4f2f8] text-[#625d70] dark:border-[#3a372f] dark:bg-[#24231f] dark:text-[#d7d4ca]',
+  article: 'border-[#d8d5ce] bg-transparent text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]',
+  analysis: 'border-[#d8d5ce] bg-transparent text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]',
+  practice: 'border-[#d8d5ce] bg-transparent text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]',
+  interactive: 'border-[#d8d5ce] bg-transparent text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]',
+  resource: 'border-[#d8d5ce] bg-transparent text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]',
 }
 
 function isExternalHref(href) {
@@ -70,8 +70,8 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
               </span>
             ) : null}
             {displaySubject ? (
-              <span className="inline-flex rounded-md border border-[#d9d2df] bg-[#f5f1f7] px-2 py-[2px] text-[11px] text-[#6f6478] dark:border-[#373d48] dark:bg-[#181d25] dark:text-[#aeb5c0]">
-                主题 · {SUBJECT_META[displaySubject]?.label}
+              <span className="inline-flex rounded-md border border-[#d8d5ce] bg-transparent px-2 py-[2px] text-[11px] text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]">
+                {SUBJECT_META[displaySubject]?.label}
               </span>
             ) : null}
             <span
@@ -80,7 +80,7 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
                 KIND_TAG_CLASS[group] || KIND_TAG_CLASS.article,
               ].join(' ')}
             >
-              类型 · {CONTENT_KIND_META[item.contentKind]?.label || item.tagLabel || '内容'}
+              {CONTENT_GROUP_META[group]?.label || '内容'}
             </span>
             <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
           </div>

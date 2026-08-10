@@ -1,8 +1,8 @@
 import { Suspense } from 'react'
 
-import ArticleListItem from './ArticleListItem'
 import ArticlesHeaderClient from './ArticlesHeaderClient'
 import ArticlesIndexClient from './ArticlesIndexClient'
+import ArticlesIndexSkeleton from './ArticlesIndexSkeleton'
 import { buildKnowledgeItems } from './buildKnowledgeItems'
 
 export const dynamic = 'force-static'
@@ -41,31 +41,6 @@ function ArticlesHeaderFallback() {
   )
 }
 
-function ArticlesIndexFallback({ items }) {
-  // 与客户端目录保持同一行式布局（复用 ArticleListItem），
-  // 避免静态 HTML 先出现卡片网格、hydration 后再切换成行式列表的样式跳变。
-  return (
-    <section
-      aria-label="全部内容"
-      className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65"
-    >
-      {items.slice(0, 24).map((item, index) => {
-        // 静态 fallback 不加载阅读量，去掉 pv 字段避免展示过期的“阅读量 0 / -”
-        const fallbackItem = { ...item }
-        delete fallbackItem.pv
-        delete fallbackItem.pvKey
-        return (
-          <ArticleListItem
-            key={item.id}
-            item={fallbackItem}
-            position={index + 1}
-          />
-        )
-      })}
-    </section>
-  )
-}
-
 export default function ArticlesPage() {
   const items = buildKnowledgeItems()
 
@@ -75,7 +50,7 @@ export default function ArticlesPage() {
         <ArticlesHeaderClient />
       </Suspense>
 
-      <Suspense fallback={<ArticlesIndexFallback items={items} />}>
+      <Suspense fallback={<ArticlesIndexSkeleton />}>
         <ArticlesIndexClient items={items} />
       </Suspense>
     </main>

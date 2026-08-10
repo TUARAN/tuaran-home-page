@@ -32,6 +32,10 @@ import { RESEARCH_ENTRY_META } from '../../lib/research/catalog.js'
 
 test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.deepEqual(CONTENT_GROUP_KEYS, ['all', 'article', 'analysis', 'practice', 'interactive', 'resource'])
+  assert.deepEqual(
+    CONTENT_GROUP_KEYS.filter((key) => key !== 'all').map((key) => CONTENT_GROUP_META[key].label),
+    ['精选', '分析', '实践', '互动', '资源'],
+  )
   assert.equal(CONTENT_GROUP_META.article.label, '精选')
   assert.ok(CONTENT_KIND_KEYS.includes('interactive'))
   assert.ok(SUBJECT_KEYS.includes('ai_dev'))

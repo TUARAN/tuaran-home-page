@@ -10,6 +10,7 @@ const DEFAULT_OPINION_SYNCBLOG_URL = 'https://syncblog.cn/#opinion-sync'
 const READY_TYPE = 'SYNCBLOG_IMPORT_READY'
 const GENERIC_READY_TYPE = 'MD_IMPORT_READY'
 const ARTICLE_IMPORT_TYPE = 'SYNCBLOG_IMPORT_ARTICLE'
+const IMPORT_RESULT_TYPE = 'MD_IMPORT_RESULT'
 const OPINION_IMPORT_TYPE = 'MD_IMPORT_OPINION'
 const OPINION_RESULT_TYPE = 'MD_IMPORT_RESULT'
 const X_ARTICLE_COMPOSE_URL = 'https://x.com/compose/articles'
@@ -59,7 +60,7 @@ export default function DistributeContentButton({
   allowArticle = false,
 }) {
   const { loading, isOwner } = useSessionAccount()
-  const [states, setStates] = useState({ article: 'idle', opinion: 'idle' })
+  const [states, setStates] = useState({ article: 'idle', opinion: 'idle', csdn: 'idle' })
   const [xState, setXState] = useState('idle')
   const [xArticleState, setXArticleState] = useState('idle')
   const xPublishingRef = useRef(false)
@@ -214,6 +215,89 @@ export default function DistributeContentButton({
     send()
   }
 
+  async function handleCsdnDistribute() {
+    const articleDraft = String(markdown || '').trim()
+    if (!articleDraft) {
+      window.alert?.('当前文章没有可分发的 Markdown 正文。')
+      flash('csdn', 'failed')
+      return
+    }
+
+    const localSyncblogUrl = 'http://localhost:5173/md/#content-sync'
+    const targetUrl =
+      process.env.NEXT_PUBLIC_SYNCBLOG_IMPORT_URL
+      || (isLocalSite() ? localSyncblogUrl : DEFAULT_ARTICLE_SYNCBLOG_URL)
+    const targetOrigin = getTargetOrigin(targetUrl)
+    const win = window.open(targetUrl, 'syncblog-csdn-distribute')
+
+    if (!win) {
+      const copied = await copyPlainText(articleDraft)
+      flash('csdn', copied ? 'blocked' : 'failed')
+      return
+    }
+
+    const requestId = `csdn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const payload = {
+      ...buildCommonPayload(),
+      type: ARTICLE_IMPORT_TYPE,
+      requestId,
+      coverImage: images[0] || null,
+      images,
+      markdown: articleDraft,
+      platforms: ['csdn'],
+      directPublish: true,
+    }
+
+    let delivered = false
+    let attempts = 0
+
+    const cleanup = () => {
+      clearInterval(timer)
+      clearTimeout(timeout)
+      window.removeEventListener('message', onMessage)
+    }
+
+    const send = () => {
+      if (delivered || win.closed) return
+      attempts += 1
+      win.postMessage(payload, targetOrigin)
+      if (attempts >= 20) {
+        cleanup()
+        copyPlainText(articleDraft).then((copied) => flash('csdn', copied ? 'copied' : 'failed'))
+      }
+    }
+
+    const onMessage = (event) => {
+      if (event.origin !== targetOrigin) return
+
+      if ((event.data?.type === READY_TYPE || event.data?.type === GENERIC_READY_TYPE) && !delivered) {
+        delivered = true
+        clearInterval(timer)
+        win.postMessage(payload, targetOrigin)
+        return
+      }
+
+      if (event.data?.type === IMPORT_RESULT_TYPE && event.data?.requestId === requestId) {
+        cleanup()
+        if (event.data.ok) {
+          flash('csdn', 'sent')
+        } else {
+          console.warn('CSDN 分发失败:', event.data.reason)
+          window.alert?.(`CSDN 分发失败${event.data.reason ? `：${event.data.reason}` : '，请检查 SyncBlog 插件和 CSDN 登录状态。'}`)
+          flash('csdn', 'failed')
+        }
+      }
+    }
+
+    window.addEventListener('message', onMessage)
+    const timer = setInterval(send, 500)
+    const timeout = setTimeout(() => {
+      cleanup()
+      flash('csdn', delivered ? 'failed' : 'copied')
+    }, 45000)
+    send()
+  }
+
   function handleDistribute(mode) {
     if (mode === 'opinion') {
       handleOpinionDistribute()
@@ -289,9 +373,13 @@ export default function DistributeContentButton({
 
   function getLabel(mode) {
     const state = states[mode]
-    const idleLabel = mode === 'opinion' ? '分发观点至 SyncBlog' : '分发文章至 SyncBlog'
+    const idleLabel = mode === 'opinion'
+      ? '分发观点至 SyncBlog'
+      : mode === 'csdn'
+        ? '分发文章至 CSDN'
+        : '分发文章至 SyncBlog'
     return state === 'sent'
-      ? '已发送到分发'
+      ? mode === 'csdn' ? '已填充 CSDN 草稿' : '已发送到分发'
       : state === 'copied'
         ? '已复制，去粘贴'
         : state === 'blocked'
@@ -367,6 +455,19 @@ export default function DistributeContentButton({
         <DistributeIcon active={states.opinion === 'sent'} />
         <span>{getLabel('opinion')}</span>
       </button>
+      {allowArticle ? (
+        <button
+          type="button"
+          role="menuitem"
+          onClick={handleCsdnDistribute}
+          aria-live="polite"
+          title="通过 SyncBlog 插件打开 CSDN Markdown 编辑器并填充文章草稿"
+          className="article-action-button owner-only-action px-3 py-1 text-xs"
+        >
+          <DistributeIcon active={states.csdn === 'sent'} />
+          <span>{getLabel('csdn')}</span>
+        </button>
+      ) : null}
       {allowArticle ? (
         <>
           <button

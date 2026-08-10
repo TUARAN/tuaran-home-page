@@ -3278,15 +3278,13 @@
 
   .article-action-button {
     @apply inline-flex shrink-0 items-center gap-1.5 rounded-full border;
-    min-height: 2.25rem;
-    border-color: color-mix(in srgb, var(--site-line-strong) 76%, transparent);
-    background-color: color-mix(in srgb, var(--site-panel-strong) 92%, transparent);
+    min-height: 2rem;
+    border-color: var(--site-line);
+    background-color: transparent;
     color: var(--site-muted);
-    box-shadow: 0 1px 2px color-mix(in srgb, #000 5%, transparent);
     line-height: 1;
     white-space: nowrap;
-    transition: border-color 0.18s ease, background-color 0.18s ease,
-      color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
   }
 
   .article-header-actions {
@@ -3299,7 +3297,6 @@
   }
 
   .article-reader-actions,
-  .article-owner-actions,
   .article-owner-actions-tools {
     display: inline-flex;
     min-width: 0;
@@ -3307,63 +3304,87 @@
     gap: 0.4rem;
   }
 
-  .article-reader-actions > .article-action-button {
-    min-height: 2.75rem;
-    padding-right: 1rem;
-    padding-left: 1rem;
-  }
-
   .article-owner-actions {
-    max-width: 100%;
-    min-height: 2.75rem;
-    padding: 0.25rem;
-    overflow: visible;
-    border: 1px solid color-mix(in srgb, var(--site-line-strong) 84%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--site-panel-strong) 94%, transparent);
-    box-shadow: 0 4px 14px color-mix(in srgb, #000 6%, transparent),
-      inset 0 1px color-mix(in srgb, #fff 42%, transparent);
-  }
-
-  .article-owner-actions-label {
-    display: inline-flex;
+    position: relative;
     flex: none;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0 0.65rem 0 0.55rem;
-    color: var(--site-ink);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
   }
 
-  .article-owner-actions-label svg {
+  .article-owner-actions-trigger {
+    display: inline-flex;
+    min-height: 2rem;
+    cursor: pointer;
+    list-style: none;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--site-accent) 36%, var(--site-line));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--site-accent) 5%, transparent);
+    color: var(--site-accent-strong);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .article-owner-actions-trigger::-webkit-details-marker {
+    display: none;
+  }
+
+  .article-owner-actions-trigger:hover {
+    border-color: color-mix(in srgb, var(--site-accent) 58%, var(--site-line));
+    background: color-mix(in srgb, var(--site-accent) 9%, transparent);
+  }
+
+  .article-owner-actions-trigger:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--site-accent) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  .article-owner-actions-trigger svg {
     width: 0.8rem;
     height: 0.8rem;
+  }
+
+  .article-owner-actions-chevron {
+    transition: transform 0.15s ease;
+  }
+
+  .article-owner-actions[open] .article-owner-actions-chevron {
+    transform: rotate(180deg);
+  }
+
+  .article-owner-actions-popover {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    z-index: 50;
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 2rem));
+    padding: 0.3rem;
+    border: 1px solid var(--site-line);
+    border-radius: 0.75rem;
+    background: var(--site-panel-strong);
+    box-shadow: 0 12px 28px color-mix(in srgb, #000 12%, transparent);
   }
 
   .article-owner-actions-tools {
     overflow: visible;
     gap: 0;
-    padding-left: 0.2rem;
-    border-left: 1px solid color-mix(in srgb, var(--site-line-strong) 72%, transparent);
   }
 
   .article-owner-actions-tools > .article-actions-dropdown > .article-action-button,
   .article-owner-actions-tools > .article-action-button {
     border-color: transparent;
-    border-radius: 0.7rem;
+    border-radius: 0.5rem;
     background: transparent;
-    box-shadow: none;
   }
 
   .article-owner-actions-tools > .article-actions-dropdown > .article-action-button:hover,
   .article-owner-actions-tools > .article-action-button:hover {
     border-color: transparent;
     background: color-mix(in srgb, var(--site-accent) 9%, var(--site-panel-strong));
-    box-shadow: none;
-    transform: none;
   }
 
   .article-owner-actions-tools > * + * {
@@ -3371,14 +3392,12 @@
   }
 
   @media (max-width: 639px) {
-    .article-owner-actions {
-      width: 100%;
-      align-items: flex-start;
-      border-radius: 1rem;
+    .article-owner-actions-popover {
+      right: auto;
+      left: 0;
     }
 
     .article-owner-actions-tools {
-      flex: 1;
       flex-wrap: wrap;
     }
   }
@@ -3396,15 +3415,8 @@
 
   .article-action-button:hover {
     border-color: var(--site-line-strong);
-    background-color: var(--site-panel-strong);
+    background-color: color-mix(in srgb, var(--site-panel-strong) 72%, transparent);
     color: var(--site-ink);
-    box-shadow: 0 5px 14px color-mix(in srgb, #000 9%, transparent);
-    transform: translateY(-1px);
-  }
-
-  .article-action-button:active {
-    box-shadow: 0 1px 3px color-mix(in srgb, #000 7%, transparent);
-    transform: translateY(0);
   }
 
   .article-action-button:focus-visible {

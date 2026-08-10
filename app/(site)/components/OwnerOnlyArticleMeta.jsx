@@ -17,7 +17,7 @@ function shortAuthor(author) {
 }
 
 export default function OwnerOnlyArticleMeta({
-  author = '涂阿燃（TUARAN）',
+  author = 'TUARAN',
   assistance = '',
   model = '',
   assistanceLabel = '',

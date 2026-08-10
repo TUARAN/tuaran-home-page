@@ -346,7 +346,7 @@ export default async function ResearchDetailPage({ params }) {
           </>
         )}
         ownerMeta={{
-          author: '涂阿燃（TUARAN）',
+          author: 'TUARAN',
           assistance: entry.assistance,
           assistanceLabel: entry.assistanceLabel,
           model: entry.model,

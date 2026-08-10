@@ -81,5 +81,7 @@ test('validatePublishContent 通过已复核发布稿并拦截缺项', () => {
   assert.throws(() => validatePublishContent(article.replace('## 十、信息来源与说明', '## 十、随便写写'), { code: '001337', name: '四川黄金' }), /来源/)
   assert.throws(() => validatePublishContent(article.replaceAll('四川黄金', '另一家公司'), { code: '001337', name: '四川黄金' }), /公司名/)
   assert.throws(() => validatePublishContent(article, { code: '000001', name: '四川黄金' }), /stock_code/)
+  const unclosedFrontmatter = article.replace('\n---\n\n## 一、先给结论', '\n\n## 一、先给结论')
+  assert.throws(() => validatePublishContent(unclosedFrontmatter, { code: '001337', name: '四川黄金' }), /frontmatter 未闭合/)
   assert.throws(() => validatePublishContent('太短', { code: '001337', name: '四川黄金' }), /过短/)
 })

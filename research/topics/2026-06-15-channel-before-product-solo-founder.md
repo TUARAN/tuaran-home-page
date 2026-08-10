@@ -7,7 +7,7 @@ tags: [独立创业, 一人公司, indie hacker, 渠道, 内容创业, audience-
 summary: 一篇第一人称的方法论。我曾经信「产品够好，用户自会来」，把时间全砸在打磨功能上，上架后无人问津。这篇讲我后来为什么把顺序反过来——先有渠道，再有产品，并附上几组对得上这个体感的公开数据。
 tldr: 产品做得不够极致，很少是头号死因；没人要、卖不出去才是。公开数据里，独立产品将近一半收入是零。代码 AI 能帮你写，好想法也能被复刻，但「让市场记住我」没人替得了你。所以我的顺序变了：先有渠道，再有产品，哪怕只有几千粉丝，做产品也自带种子用户和验证场。这是我的方法论，不是给所有人的处方。
 topic_type: thesis
-subjects: [business_market, content_creation, product_experience]
+subjects: [business_market]
 assistance: claude-code
 model: claude-opus-4-8
 pv: 0

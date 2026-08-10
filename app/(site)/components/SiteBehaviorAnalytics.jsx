@@ -28,7 +28,7 @@ function contentKindForPath(pathname) {
   if (pathname?.startsWith('/articles/')) return 'article'
   if (pathname?.startsWith('/resources/')) return 'resource'
   if (pathname?.startsWith('/tools/')) return 'tool'
-  if (pathname === '/rich-pages') return 'interactive'
+  if (pathname === '/rich-pages' || pathname === '/adsense-content-check') return 'interactive'
   return ''
 }
 

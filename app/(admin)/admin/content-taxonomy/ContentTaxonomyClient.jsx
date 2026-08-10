@@ -44,8 +44,7 @@ export default function ContentTaxonomyClient() {
   const subjectCounts = useMemo(() => Object.fromEntries(Object.keys(SUBJECT_META).map((id) => [
     id,
     {
-      total: entries.filter((entry) => entry.subjects.includes(id)).length,
-      primary: entries.filter((entry) => entry.subjects[0] === id).length,
+      total: entries.filter((entry) => entry.subjects[0] === id).length,
     },
   ])), [entries])
 
@@ -86,7 +85,7 @@ export default function ContentTaxonomyClient() {
                   <code className="text-[10px] text-[#858779]">{item.id}</code>
                 </div>
                 <span className="rounded-full bg-[#f0efe7] px-2 py-1 font-mono text-[10px] text-[#51514a] dark:bg-[#202936] dark:text-gray-300">
-                  {subjectCounts[item.id].primary} 主 / {subjectCounts[item.id].total} 总
+                  {subjectCounts[item.id].total} 条
                 </span>
               </div>
               <p className="mt-3 text-[13px] leading-6 text-[#51514a] dark:text-gray-300">{item.definition}</p>
@@ -102,7 +101,7 @@ export default function ContentTaxonomyClient() {
 
       <section className="mt-6 rounded-2xl border border-[#caccc0] bg-white p-5 dark:border-[#2d3744] dark:bg-[#10161f]">
         <h2 className="text-lg font-semibold text-[#15140f] dark:text-gray-100">存量内容审计</h2>
-        <p className="mt-1 text-[12px] leading-6 text-[#73746a] dark:text-[#9aa3b3]">优先处理“系统推断”，把确认后的 1–3 个主题写入 Markdown frontmatter。</p>
+        <p className="mt-1 text-[12px] leading-6 text-[#73746a] dark:text-[#9aa3b3]">优先处理“系统推断”，把确认后的唯一主题写入 Markdown frontmatter。</p>
         <div className="mt-4 grid gap-2 md:grid-cols-[minmax(220px,1fr)_180px_160px]">
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题或 slug" className="rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#15140f] dark:border-[#2d3744] dark:bg-[#0e131c]" />
           <select value={subject} onChange={(event) => setSubject(event.target.value)} className="rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-[13px] dark:border-[#2d3744] dark:bg-[#0e131c]">

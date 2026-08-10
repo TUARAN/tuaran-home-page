@@ -7,6 +7,7 @@ import {
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
 import { CONTENT_PV_ENTRIES } from '../../../lib/contentRegistry'
 import {
+  assertCompleteContentTaxonomy,
   taxonomyForArticle,
   taxonomyForInteractive,
   taxonomyForResearch,
@@ -48,7 +49,7 @@ export function buildKnowledgeItems() {
       kind: 'resources',
       tagLabel: '固定系列',
       contentKind: 'resource',
-      subjects: ['ai_dev', 'web_cloud'],
+      subjects: ['ai_dev'],
       entityType: '',
       delivery: 'subscribe',
       series: 'frontend_weekly',
@@ -158,11 +159,13 @@ export function buildKnowledgeItems() {
     canvasId: p.canvasId || null,
   }))
 
-  return [
+  const items = [
     ...fixedSeriesItems,
     ...postItems,
     ...worksItems,
     ...researchItems,
     ...resourceItems,
   ].sort((a, b) => compareSortKeyDesc(a.sortKey, b.sortKey, a.id, b.id))
+
+  return assertCompleteContentTaxonomy(items)
 }

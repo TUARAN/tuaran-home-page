@@ -3,7 +3,7 @@ title: OpenAI 公布十项数学与理论计算机科学进展：Astra、2000 �
 category: topics
 topic_type: tech
 tech_type: models_compute
-subjects: [ai_dev, business_market]
+subjects: [ai_dev]
 content_type: analysis
 date: 2026-08-07
 time: 11:30

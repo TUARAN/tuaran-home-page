@@ -3,7 +3,7 @@ title: 每天巡检 5 次的 AI 自动修复：DeepSeek、GitHub Actions 与 30 
 category: topics
 topic_type: tech
 tech_type: agents_automation
-subjects: [ai_dev, web_cloud, business_market]
+subjects: [ai_dev]
 content_type: engineering_case
 date: 2026-08-03
 time: 11:24

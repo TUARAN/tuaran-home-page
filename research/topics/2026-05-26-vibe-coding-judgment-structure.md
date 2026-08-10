@@ -2,7 +2,7 @@
 title: Vibe Coding 真香也真险：一次幻觉漂移，足以吃掉全部效率红利
 category: topics
 topic_type: thesis
-subjects: [ai_dev, web_cloud]
+subjects: [ai_dev]
 date: 2026-05-26
 tags: [Vibe Coding, AI 编程, 架构师, 判断力, 技术管理, 安全设计, UI设计]
 summary: Vibe coding 确实提高了开发效率，但一次幻觉漂移或一次安全漏洞就可能让团队把收益全部吐回去。从架构师在 AI 时代最关键的“判断力结构”切入，给出可落地的五道治理关口。

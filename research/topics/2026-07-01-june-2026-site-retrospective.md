@@ -7,7 +7,7 @@ tags: [个人站, 复盘, Git, 内容系统, 独立开发, Agent 工程]
 summary: 这是基于 2aran.com 2026 年 6 月 Git 记录形成的月度复盘：6 月一共 484 次提交，新增 62 篇分析与核验，重点从页面展示转向内容生产、资源分发、燃币体系、后台运营、自动采集和作品展厅。核心思路是把个人站做成一个能持续生产、分发、收费、复盘的个人操作系统。
 tldr: 6 月我做的是把 2aran.com 从作品集推向运营台：内容有研究库和灵感流，资源有燃币门槛和下载页，后台能看数据、管用户、调燃币，自动化开始采集 RSS、舆情、世界杯和交易快照。背后的思路是先把个人能力产品化，再把内容、工具、社群和商业闭环接起来。7 月要继续收敛：少做散页面，多做可复用的资源、插件、分发工具和转化路径。
 topic_type: thesis
-subjects: [web_cloud, content_creation]
+subjects: [web_cloud]
 content_type: build_log
 assistance: codex
 model: gpt-5

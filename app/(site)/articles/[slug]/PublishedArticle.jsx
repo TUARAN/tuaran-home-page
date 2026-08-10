@@ -11,6 +11,7 @@ import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { renderMarkdown } from '../../../../lib/research/markdown'
+import { taxonomyForArticle } from '../../../../lib/contentTaxonomy'
 
 function dateLabel(value) {
   if (!value) return ''
@@ -67,6 +68,7 @@ export default function PublishedArticle({ article, siteUrl }) {
         {JSON.stringify(structuredData)}
       </Script>
       <ArticleDetailHeader
+        taxonomy={taxonomyForArticle(article)}
         categoryHref="/articles?tab=posts"
         categoryLabel="精选文章"
         dateLabel={dateLabel(article.publishedAt)}

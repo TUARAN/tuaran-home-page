@@ -44,7 +44,7 @@ const LEGACY_TAB_TO_GROUP = {
   other: 'analysis',
   'engineering-cases': 'practice',
   'build-logs': 'practice',
-  works: 'practice',
+  works: 'interactive',
   resources: 'resource',
 }
 
@@ -74,7 +74,7 @@ function filtersFromParams(params) {
         : ['subscribe', 'download', 'watch_listen', 'external'].includes(delivery)
           ? 'resource'
           : delivery === 'interact'
-            ? 'practice'
+            ? 'interactive'
             : params?.get('resource_type')
               ? 'resource'
               : ''
@@ -333,6 +333,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       <div className="space-y-4">
         <FilterRow
           label="内容主题"
+          index="01"
+          help="这篇内容主要在讲什么"
+          tone="subject"
           ariaLabel="按内容主题筛选"
           orientation={orientation}
           active={filters.subject === 'all'}
@@ -349,6 +352,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                     <FilterChip
                       key={key}
                       label={SUBJECT_META[key].label}
+                      tone="subject"
                       active={filters.subject === key}
                       onClick={() => applyFilters({ subject: key }, 'subject', key)}
                     />
@@ -361,6 +365,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
         <FilterRow
           label="内容类型"
+          index="02"
+          help="这篇内容采用什么形式"
+          tone="kind"
           ariaLabel="按内容类型筛选"
           orientation={orientation}
           active={filters.group === 'all'}
@@ -370,6 +377,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
             <FilterChip
               key={key}
               label={CONTENT_GROUP_META[key].label}
+              tone="kind"
               active={filters.group === key}
               onClick={() => applyFilters({ group: key }, 'group', key)}
             />
@@ -535,7 +543,13 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   )
 }
 
-function FilterRow({ label, ariaLabel, orientation = 'inline', active, onReset, children }) {
+function FilterRow({ label, index, help, tone, ariaLabel, orientation = 'inline', active, onReset, children }) {
+  const toneClass = tone === 'subject'
+    ? 'border-[#d8c7e8] bg-[#faf6ff] dark:border-[#47365c] dark:bg-[#1b1425]'
+    : 'border-[#bcdde0] bg-[#f2fbfb] dark:border-[#285158] dark:bg-[#102428]'
+  const indexClass = tone === 'subject'
+    ? 'bg-[#6f4d8f] text-white dark:bg-[#9a78bd] dark:text-[#160f20]'
+    : 'bg-[#26777d] text-white dark:bg-[#54aeb4] dark:text-[#071a1c]'
   const labelButton = (
     <button
       type="button"
@@ -545,9 +559,9 @@ function FilterRow({ label, ariaLabel, orientation = 'inline', active, onReset, 
       data-active={active ? 'true' : 'false'}
       title={`查看全部${label.replace('内容', '')}`}
       className={[
-        'border-0 bg-transparent p-0 text-left font-medium transition-colors hover:text-[#49345f] hover:underline hover:underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c78a3] dark:hover:text-gray-100',
+        'border-0 bg-transparent p-0 text-left text-sm font-semibold transition-colors hover:underline hover:underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c78a3] dark:hover:text-gray-100',
         active
-          ? 'text-[#49345f] dark:text-[#d8c5f3]'
+          ? tone === 'subject' ? 'text-[#55346f] dark:text-[#d8c5f3]' : 'text-[#17636a] dark:text-[#9edfe3]'
           : 'text-[#82788e] dark:text-[#7f8aa0]',
       ].join(' ')}
     >
@@ -557,25 +571,44 @@ function FilterRow({ label, ariaLabel, orientation = 'inline', active, onReset, 
 
   if (orientation === 'stack') {
     return (
-      <div className="min-w-0">
-        <div className="mb-1.5 text-[11px] tracking-[0.04em]">{labelButton}</div>
+      <section className={`min-w-0 rounded-xl border p-3 ${toneClass}`}>
+        <div className="mb-2.5 flex items-start gap-2">
+          <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md font-mono text-[10px] font-bold ${indexClass}`}>{index}</span>
+          <div>
+            <div>{labelButton}</div>
+            <p className="mt-0.5 text-[10px] leading-4 text-[#817789] dark:text-[#8e99aa]">{help}</p>
+          </div>
+        </div>
         <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">
           {children}
         </nav>
-      </div>
+      </section>
     )
   }
   return (
-    <div className="grid min-w-0 grid-cols-[4.25rem_minmax(0,1fr)] items-start gap-x-3 sm:grid-cols-[4.75rem_minmax(0,1fr)]">
-      <div className="pt-1.5 text-xs leading-5">{labelButton}</div>
+    <section className={`grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-3 rounded-xl border p-3 ${toneClass}`}>
+      <div className="flex items-start gap-2">
+        <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md font-mono text-[10px] font-bold ${indexClass}`}>{index}</span>
+        <div>
+          <div>{labelButton}</div>
+          <p className="mt-0.5 text-[10px] leading-4 text-[#817789] dark:text-[#8e99aa]">{help}</p>
+        </div>
+      </div>
       <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">
         {children}
       </nav>
-    </div>
+    </section>
   )
 }
 
-function FilterChip({ label, active, onClick }) {
+function FilterChip({ label, tone, active, onClick }) {
+  const stateClass = tone === 'subject'
+    ? active
+      ? 'border-[#8a64a9] bg-[#6f4d8f] font-medium text-white dark:border-[#b89bd2] dark:bg-[#8a64a9]'
+      : 'border-[#dfd1ea] bg-white/70 text-[#664f77] hover:border-[#ad8fc5] hover:bg-white dark:border-[#3d304c] dark:bg-[#21192b] dark:text-[#cdbbdd]'
+    : active
+      ? 'border-[#31858b] bg-[#26777d] font-medium text-white dark:border-[#70c2c7] dark:bg-[#31858b]'
+      : 'border-[#c9e3e5] bg-white/70 text-[#356b70] hover:border-[#74b4b9] hover:bg-white dark:border-[#27484d] dark:bg-[#142d31] dark:text-[#a9d8db]'
   return (
     <button
       type="button"
@@ -583,9 +616,7 @@ function FilterChip({ label, active, onClick }) {
       aria-pressed={active}
       className={[
         'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors',
-        active
-          ? 'border-[#cfc3e2] bg-[#f3eff9] font-medium text-[#49345f] dark:border-[#3c2f57] dark:bg-[#1f1830] dark:text-[#d8c5f3]'
-          : 'border-transparent text-[#696071] hover:bg-[#f4f0f8] hover:text-[#20172f] dark:text-[#9aa6b8] dark:hover:bg-[#151d27] dark:hover:text-gray-100',
+        stateClass,
       ].join(' ')}
     >
       <span className="whitespace-nowrap">{label}</span>

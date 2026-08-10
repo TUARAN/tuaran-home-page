@@ -2,7 +2,7 @@
 title: X 停掉流量分成，推出原创内容奖励计划
 category: topics
 topic_type: product
-subjects: [content_creation, business_market]
+subjects: [content_creation]
 content_type: analysis
 date: 2026-08-08
 time: 09:36

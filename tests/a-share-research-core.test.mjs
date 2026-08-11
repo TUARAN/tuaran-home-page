@@ -134,4 +134,7 @@ test('buildDraftPrompt 包含公司信息、十个小节与风格约束', () => 
   assert.match(user.content, /不是 X，而是 Y/)
   assert.match(user.content, /3081.23/)
   assert.match(user.content, /URL 只能来自本次检索结果/)
+  assert.match(user.content, /逐层穿透至最终控制人/)
+  assert.match(user.content, /省级、市级或区县级/)
+  assert.match(user.content, /research_template_version: 3/)
 })

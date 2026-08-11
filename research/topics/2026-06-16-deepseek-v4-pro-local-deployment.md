@@ -250,7 +250,7 @@ git clone https://github.com/oobabooga/text-generation-webui && cd text-generati
 | H100 80GB | ~3.35 TB/s | ~515 tok/s | **~200–320 tok/s** | FP8 原生更快 |
 | H200 141GB | ~4.8 TB/s | ~740 tok/s | **~300–450 tok/s** | 单卡可放 Q4/Q5 Flash |
 
-> **V4-Pro（激活 49B）**：即便在能装下的 8×H200 节点上，单流解码因激活参数 ~4× 于 Flash，**单请求 token/s 约为 Flash 的 1/3~1/4**；Pro 的价值在批量并发摊薄，不在单流快。
+> **V4-Pro（激活 49B）**：即便在能装下的 8×H200 节点上，单流解码因激活参数约为 Flash 的 4 倍，**单请求 token/s 约为 Flash 的 1/3—1/4**；Pro 的价值在批量并发摊薄，不在单流快。
 
 ### 6.2 并发用户数（估算，V4-Flash，2×H200 原生 FP4+FP8，开 PagedAttention + 连续批处理）
 

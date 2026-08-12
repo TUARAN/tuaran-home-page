@@ -1,10 +1,10 @@
 # A 股公司观察自动化设计
 
-更新日期：2026-08-06
+更新日期：2026-08-12
 
 ## 目标
 
-维护一个可追溯的 A 股上市公司候选池。每天最多选择一家公司，按当前通用模板生成一篇待人工复核的公司观察文章。
+维护一个可追溯的 A 股上市公司候选池。每天最多选择一家公司，按当前通用模板生成一篇公司观察文章，并提供 3 天人工复核窗口。
 
 ## 数据流
 
@@ -33,11 +33,13 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
   `/chat/completions` 的 `thinking: disabled` 同样保留给其他调用方；V4 默认会把 token 花在
   reasoning_content 上，不关则墙钟内写不完正文）；
   密钥绑定里给该任务配置 `default_model` 或设置 `DEEPSEEK_MODEL` 可覆盖。
-- 单次 Worker 请求有墙钟限制，长文本生成采用「分次续跑」：草稿未完成时下一次触发继续同一家公司，
-  最多重试 5 次，失败不重复选题（与本地幂等约定一致）。
-- 自动生成稿保持 `review_ready: false` / `ad_eligible: false`；在线草稿由站长在后台复核，
-  确认后按仓库发布规则提交，自动化不提交、不推送、不发布。
-- 定时触发见 `.github/workflows/a-share-research.yml`（北京时间 01:00 / 01:20 / 01:40）。
+- 单次 Worker 请求有墙钟限制；草稿未完成时后续调度继续同一家公司，最多重试 5 次，
+  失败不重复选题（与本地幂等约定一致）。
+- 自动生成稿保持 `review_ready: false` / `ad_eligible: false`。草稿进入 `pending` 后提供 72 小时复核窗口；
+  站长可提前发布或将其退回为 `rejected`。每日调度先检查过期稿，每次最多自动发布最早到期的一篇，
+  已复核、已退回和已发布稿不会进入自动发布。自动发布失败时恢复 `pending` 并保留原到期时间，后续调度重试。
+- 人工发布与自动发布共用 `lib/aSharePublisher.js`，通过 GitHub Contents API 提交 `main`，随后由 Cloudflare Pages 构建上线。
+- 定时触发见 `.github/workflows/a-share-research.yml`（每天北京时间 01:00）。
 - 定时任务失败时（含 GitHub Actions runner 未接单、端点返回非 200），工作流会调用
   `POST /api/automation/alert` 向站长消息中心写入「自动化监控」通知（幂等按 workflow+runId 去重，
   鉴权复用 `AUTOMATION_ALERT_SECRET` / `WEEKLY_SUMMARY_SECRET` / `PUBLIC_OPINION_COLLECT_SECRET` 回退链）。
@@ -74,7 +76,8 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
 - 已有文章通过 frontmatter 的 `stock_code` 识别，即使状态文件重建，也不会再次抽取。
 - 同步数据少于 5000 家、多于 8000 家或缺少任一交易所时，拒绝覆盖旧快照。
 - 自动生成文章固定使用 `review_ready: false` 和 `ad_eligible: false`。
-- 自动化不提交、不推送、不发布文章；站长复核后按仓库发布规则处理。
+- 在线草稿进入待复核满 72 小时仍未处理时自动发布；站长在到期前退回可阻止发布。
+- 每次定时运行最多自动发布一篇最早到期草稿，状态占用与 GitHub 提交保持幂等，避免人工发布和定时发布重复执行。
 
 ## 模板升级
 

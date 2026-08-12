@@ -1,5 +1,6 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
+import { autoPublishAt } from '../../../../lib/aSharePublishCore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -66,6 +67,7 @@ export async function GET(req) {
         status: row.status,
         publishCommit: row.publish_commit || '',
         publishAt: row.publish_at || null,
+        autoPublishAt: row.status === 'pending' ? autoPublishAt(row) : null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       })),

@@ -8,13 +8,16 @@ import {
   IconPhotoUp,
   IconTrash,
   IconUpload,
+  IconVideo,
 } from '@tabler/icons-react'
 
 import { useSessionAccount } from '../../components/SessionProvider'
 
 const COST = 5
-const MAX_BYTES = 10 * 1024 * 1024
-const ACCEPT = 'image/png,image/jpeg,image/webp,image/avif,image/gif'
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024
+const ACCEPT = 'image/png,image/jpeg,image/webp,image/avif,image/gif,video/mp4,video/webm,video/quicktime'
+const ALLOWED_TYPES = new Set(ACCEPT.split(','))
 
 async function safeJson(res) {
   const text = await res.text()
@@ -47,26 +50,53 @@ function formatTime(ts) {
   }
 }
 
-function imageMarkdown(image) {
-  return `![${image.fileName || 'image'}](${image.url})`
+function isVideo(media) {
+  return media?.isVideo || String(media?.contentType || '').startsWith('video/')
 }
 
-function imageHtml(image) {
-  const alt = String(image.fileName || 'image').replace(/"/g, '&quot;')
-  return `<img src="${image.url}" alt="${alt}" />`
+function mediaMarkdown(media) {
+  if (isVideo(media)) return `[${media.fileName || 'video'}](${media.url})`
+  return `![${media.fileName || 'image'}](${media.url})`
 }
 
-function imageShareUrl(image) {
-  return image?.shareUrl || image?.sharePath || image?.url || ''
+function mediaHtml(media) {
+  const name = String(media.fileName || (isVideo(media) ? 'video' : 'image')).replace(/"/g, '&quot;')
+  if (isVideo(media)) return `<video src="${media.url}" controls preload="metadata">${name}</video>`
+  return `<img src="${media.url}" alt="${name}" />`
 }
 
-function readImageSize(file) {
+function mediaShareUrl(media) {
+  return media?.shareUrl || media?.sharePath || media?.url || ''
+}
+
+function readMediaSize(file) {
   return new Promise((resolve) => {
-    if (!file || typeof Image === 'undefined') {
+    if (!file) {
       resolve({ width: null, height: null })
       return
     }
     const url = URL.createObjectURL(file)
+    if (file.type?.startsWith('video/')) {
+      const video = document.createElement('video')
+      video.preload = 'metadata'
+      video.onloadedmetadata = () => {
+        const width = video.videoWidth || null
+        const height = video.videoHeight || null
+        URL.revokeObjectURL(url)
+        resolve({ width, height })
+      }
+      video.onerror = () => {
+        URL.revokeObjectURL(url)
+        resolve({ width: null, height: null })
+      }
+      video.src = url
+      return
+    }
+    if (typeof Image === 'undefined') {
+      URL.revokeObjectURL(url)
+      resolve({ width: null, height: null })
+      return
+    }
     const img = new Image()
     img.onload = () => {
       const width = img.naturalWidth || null
@@ -159,12 +189,13 @@ export default function ImageHostingTool() {
     setMessage('')
     setCopied('')
     if (!file) return
-    if (!file.type?.startsWith('image/')) {
-      setError('请选择图片文件')
+    if (!ALLOWED_TYPES.has(file.type)) {
+      setError('请选择 JPG、PNG、WebP、AVIF、GIF、MP4、WebM 或 MOV 文件')
       return
     }
-    if (file.size > MAX_BYTES) {
-      setError('图片不能超过 10 MB')
+    const maxBytes = file.type.startsWith('video/') ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES
+    if (file.size > maxBytes) {
+      setError(`${file.type.startsWith('video/') ? '视频' : '图片'}不能超过 ${formatSize(maxBytes)}`)
       return
     }
     if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -184,7 +215,7 @@ export default function ImageHostingTool() {
     setCopied('')
 
     try {
-      const { width, height } = await readImageSize(selectedFile)
+      const { width, height } = await readMediaSize(selectedFile)
       const form = new FormData()
       form.set('file', selectedFile)
       if (width) form.set('width', String(width))
@@ -201,7 +232,13 @@ export default function ImageHostingTool() {
           throw new Error(`燃币不足，还差 ${data.need || COST} 枚`)
         }
         if (data?.error === 'MIGRATION_REQUIRED') {
-          throw new Error('图床表还没有应用迁移')
+          throw new Error('媒体托管数据表还没有应用迁移')
+        }
+        if (data?.error === 'FILE_TOO_LARGE') {
+          throw new Error(`文件不能超过 ${formatSize(data.maxBytes)}`)
+        }
+        if (data?.error === 'UNSUPPORTED_TYPE') {
+          throw new Error('不支持这种文件格式')
         }
         throw new Error(data?.message || data?.error || `HTTP_${res.status}`)
       }
@@ -259,10 +296,10 @@ export default function ImageHostingTool() {
               Ranbi Tool
             </p>
             <h1 className="mb-3 font-serif text-[36px] font-bold leading-tight text-[#15130e] dark:text-white sm:text-[46px]">
-              图床
+              图片 / 视频床
             </h1>
             <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-              上传图片后生成公开分享页，朋友打开能看图，也能回到 2aran 使用图床。仅登录用户可用，每张图片消耗 {COST} 燃币。
+              上传图片或视频后生成公开分享页和文件直链。仅登录用户可用，每个文件消耗 {COST} 燃币；图片最大 10 MB，视频最大 50 MB。
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -294,7 +331,7 @@ export default function ImageHostingTool() {
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="mb-0 text-[15px] font-bold">上传</h2>
-              <span className="text-[12px] text-[#797469] dark:text-[#9da7b5]">PNG/JPG/WebP/GIF</span>
+              <span className="text-[12px] text-[#797469] dark:text-[#9da7b5]">图片 10 MB · 视频 50 MB</span>
             </div>
             <input
               ref={fileInputRef}
@@ -309,18 +346,26 @@ export default function ImageHostingTool() {
               disabled={!isAuthed}
               className="flex min-h-[150px] w-full flex-col items-center justify-center gap-3 rounded-md border border-dashed border-[#cfc5b6] bg-[#fffdf8] px-4 text-center transition hover:border-[#b89143] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#33404e] dark:bg-[#0b1118] dark:hover:border-[#607086]"
             >
-              <IconPhotoUp size={34} className="text-[#8a6422] dark:text-[#d4ae66]" />
+              {selectedFile?.type?.startsWith('video/') ? (
+                <IconVideo size={34} className="text-[#8a6422] dark:text-[#d4ae66]" />
+              ) : (
+                <IconPhotoUp size={34} className="text-[#8a6422] dark:text-[#d4ae66]" />
+              )}
               <span className="text-[14px] font-semibold text-[#28241d] dark:text-gray-100">
-                {selectedFile ? selectedFile.name : isAuthed ? '点击选择或拖入图片' : '登录后上传图片'}
+                {selectedFile ? selectedFile.name : isAuthed ? '点击选择或拖入图片 / 视频' : '登录后上传媒体'}
               </span>
               <span className="text-[12px] text-[#7a766b] dark:text-[#9da7b5]">
-                {selectedMeta || '单张不超过 10 MB'}
+                {selectedMeta || '图片：JPG/PNG/WebP/AVIF/GIF · 视频：MP4/WebM/MOV'}
               </span>
             </button>
             {previewUrl ? (
               <div className="mt-3 overflow-hidden rounded-md border border-[#ded8ca] bg-white dark:border-[#252e38] dark:bg-[#0b1118]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewUrl} alt="待上传图片预览" className="max-h-[260px] w-full object-contain" />
+                {selectedFile?.type?.startsWith('video/') ? (
+                  <video src={previewUrl} controls preload="metadata" className="max-h-[260px] w-full object-contain" />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={previewUrl} alt="待上传图片预览" className="max-h-[260px] w-full object-contain" />
+                )}
               </div>
             ) : null}
             <button
@@ -350,7 +395,7 @@ export default function ImageHostingTool() {
               <h2 className="mb-3 text-[15px] font-bold">最近链接</h2>
               <div className="grid gap-2">
                 <a
-                  href={imageShareUrl(latest)}
+                  href={mediaShareUrl(latest)}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#25221b] px-3 text-[13px] font-semibold text-white no-underline transition hover:bg-[#3a3428] dark:bg-[#e8d7b4] dark:text-[#17130d]"
@@ -360,7 +405,7 @@ export default function ImageHostingTool() {
                 </a>
                 <button
                   type="button"
-                  onClick={() => copyText(`share:${latest.id}`, imageShareUrl(latest))}
+                  onClick={() => copyText(`share:${latest.id}`, mediaShareUrl(latest))}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d8d1c4] bg-white/70 px-3 text-[13px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                 >
                   <IconLink size={17} />
@@ -372,11 +417,11 @@ export default function ImageHostingTool() {
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d8d1c4] bg-white/70 px-3 text-[13px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                 >
                   <IconCopy size={17} />
-                  {copied === `url:${latest.id}` ? '已复制直链' : '复制图片直链'}
+                  {copied === `url:${latest.id}` ? '已复制直链' : `复制${isVideo(latest) ? '视频' : '图片'}直链`}
                 </button>
                 <button
                   type="button"
-                  onClick={() => copyText(`md:${latest.id}`, imageMarkdown(latest))}
+                  onClick={() => copyText(`md:${latest.id}`, mediaMarkdown(latest))}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d8d1c4] bg-white/70 px-3 text-[13px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                 >
                   <IconMarkdown size={17} />
@@ -384,7 +429,7 @@ export default function ImageHostingTool() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => copyText(`html:${latest.id}`, imageHtml(latest))}
+                  onClick={() => copyText(`html:${latest.id}`, mediaHtml(latest))}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d8d1c4] bg-white/70 px-3 text-[13px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                 >
                   <IconCopy size={17} />
@@ -398,14 +443,14 @@ export default function ImageHostingTool() {
         <div className="min-h-[620px] rounded-lg border border-[#ded8ca] bg-white/[0.68] dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
           <div className="flex h-12 items-center justify-between border-b border-[#e7dfd1] px-4 dark:border-[#252e38]">
             <h2 className="mb-0 text-[15px] font-bold">上传记录</h2>
-            <span className="text-[12px] text-[#7a766b] dark:text-[#9da7b5]">{images.length} 张</span>
+            <span className="text-[12px] text-[#7a766b] dark:text-[#9da7b5]">{images.length} 个文件</span>
           </div>
 
           {!isAuthed && !userLoading ? (
             <div className="flex min-h-[420px] flex-col items-center justify-center px-6 text-center">
               <IconPhotoUp size={42} className="mb-3 text-[#8a6422] dark:text-[#d4ae66]" />
               <p className="mb-3 text-[15px] font-semibold text-[#28241d] dark:text-gray-100">
-                登录后使用图床
+                登录后使用图片 / 视频床
               </p>
               <button
                 type="button"
@@ -428,13 +473,17 @@ export default function ImageHostingTool() {
               {images.map((image) => (
                 <article key={image.id} className="grid gap-3 p-4 sm:grid-cols-[150px_minmax(0,1fr)]">
                   <a
-                    href={imageShareUrl(image)}
+                    href={mediaShareUrl(image)}
                     target="_blank"
                     rel="noreferrer"
                     className="no-external-arrow block overflow-hidden rounded-md border border-[#ded8ca] bg-white dark:border-[#252e38] dark:bg-[#0b1118]"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image.url} alt={image.fileName || 'image'} loading="lazy" className="h-[104px] w-full object-cover" />
+                    {isVideo(image) ? (
+                      <video src={image.url} preload="metadata" muted playsInline className="h-[104px] w-full bg-black object-cover" />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={image.url} alt={image.fileName || 'image'} loading="lazy" className="h-[104px] w-full object-cover" />
+                    )}
                   </a>
                   <div className="min-w-0">
                     <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
@@ -446,16 +495,16 @@ export default function ImageHostingTool() {
                       </span>
                     </div>
                     <p className="mb-2 break-all font-mono text-[11px] leading-5 text-[#7a766b] dark:text-[#9da7b5]">
-                      {imageShareUrl(image)}
+                      {mediaShareUrl(image)}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full border border-[#ded8ca] px-2 py-0.5 text-[11px] text-[#68645a] dark:border-[#303947] dark:text-[#aab4c2]">
-                        {formatSize(image.sizeBytes)}
+                        {isVideo(image) ? '视频 · ' : '图片 · '}{formatSize(image.sizeBytes)}
                         {image.width && image.height ? ` · ${image.width}×${image.height}` : ''}
                       </span>
                       <button
                         type="button"
-                        onClick={() => copyText(`share:${image.id}`, imageShareUrl(image))}
+                        onClick={() => copyText(`share:${image.id}`, mediaShareUrl(image))}
                         className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#d8d1c4] bg-white/70 px-2.5 text-[12px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                       >
                         <IconLink size={15} />
@@ -467,11 +516,11 @@ export default function ImageHostingTool() {
                         className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#d8d1c4] bg-white/70 px-2.5 text-[12px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                       >
                         <IconCopy size={15} />
-                        图片直链
+                        {isVideo(image) ? '视频' : '图片'}直链
                       </button>
                       <button
                         type="button"
-                        onClick={() => copyText(`md:${image.id}`, imageMarkdown(image))}
+                        onClick={() => copyText(`md:${image.id}`, mediaMarkdown(image))}
                         className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#d8d1c4] bg-white/70 px-2.5 text-[12px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
                       >
                         <IconMarkdown size={15} />

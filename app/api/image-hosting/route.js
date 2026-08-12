@@ -1,6 +1,11 @@
 import { getD1 } from '../../../lib/d1'
 import { getUserFromRequest } from '../../../lib/edgeSession'
-import { rowToHostedImage } from '../../../lib/hostedImages'
+import {
+  HOSTED_MEDIA_EXTENSIONS,
+  hostedMediaKind,
+  hostedMediaMaxBytes,
+  rowToHostedImage,
+} from '../../../lib/hostedImages'
 import { award, getPointRules, spendPoints } from '../../../lib/points'
 import { getR2 } from '../../../lib/r2'
 import { getUserRole } from '../../../lib/userDirectory'
@@ -14,26 +19,11 @@ import {
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const MAX_BYTES = 10 * 1024 * 1024
 const LIST_LIMIT = 50
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
 
-const ALLOWED_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/avif',
-  'image/gif',
-])
-
-const EXT_BY_TYPE = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/avif': 'avif',
-  'image/gif': 'gif',
-}
+const ALLOWED_TYPES = new Set(Object.keys(HOSTED_MEDIA_EXTENSIONS))
 
 function dbOrResponse() {
   try {
@@ -41,7 +31,7 @@ function dbOrResponse() {
   } catch {
     return {
       response: Response.json(
-        { error: 'DB_UNAVAILABLE', message: '图床需要 Cloudflare D1 绑定。' },
+        { error: 'DB_UNAVAILABLE', message: '图片 / 视频床需要 Cloudflare D1 绑定。' },
         { status: 503 }
       ),
     }
@@ -54,7 +44,7 @@ function r2OrResponse() {
   } catch {
     return {
       response: Response.json(
-        { error: 'STORAGE_UNAVAILABLE', message: '图床需要 Cloudflare R2 MEDIA 绑定。' },
+        { error: 'STORAGE_UNAVAILABLE', message: '图片 / 视频床需要 Cloudflare R2 MEDIA 绑定。' },
         { status: 503 }
       ),
     }
@@ -66,7 +56,7 @@ async function requireUser(req) {
   if (!user?.id) {
     return {
       response: Response.json(
-        { error: 'LOGIN_REQUIRED', message: '请先登录后再使用图床。' },
+        { error: 'LOGIN_REQUIRED', message: '请先登录后再使用图片 / 视频床。' },
         { status: 401 }
       ),
     }
@@ -151,13 +141,16 @@ export async function POST(req) {
     if (!ALLOWED_TYPES.has(contentType)) {
       return Response.json({ error: 'UNSUPPORTED_TYPE', detail: contentType }, { status: 415 })
     }
-    if (file.size > MAX_BYTES) {
-      return Response.json({ error: 'FILE_TOO_LARGE', maxBytes: MAX_BYTES }, { status: 413 })
+    const maxBytes = hostedMediaMaxBytes(contentType)
+    if (file.size > maxBytes) {
+      return Response.json({ error: 'FILE_TOO_LARGE', maxBytes }, { status: 413 })
     }
 
     const id = crypto.randomUUID()
-    const ext = EXT_BY_TYPE[contentType] || 'bin'
-    objectKey = `images/hosted/${auth.userId.replace(/[^a-zA-Z0-9_-]/g, '_')}/${id}.${ext}`
+    const mediaType = hostedMediaKind(contentType)
+    const ext = HOSTED_MEDIA_EXTENSIONS[contentType] || 'bin'
+    const prefix = mediaType === 'video' ? 'videos' : 'images'
+    objectKey = `${prefix}/hosted/${auth.userId.replace(/[^a-zA-Z0-9_-]/g, '_')}/${id}.${ext}`
     const width = Number(form.get('width')) || null
     const height = Number(form.get('height')) || null
     const now = Date.now()

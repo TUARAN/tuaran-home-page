@@ -140,7 +140,7 @@ export default function AShareResearchClient() {
   return (
     <AdminPage
       title="A 股研究自动化"
-      description="每天由线上定时任务选题并调用 DeepSeek 起草公司观察，草稿自动保持待复核状态，站长确认后才进入内容管线。"
+      description="每天由线上定时任务选题并调用 DeepSeek 起草公司观察；草稿待复核满 3 天仍未处理时自动发布。"
       actions={<AdminButton type="button" onClick={refresh} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -159,7 +159,7 @@ export default function AShareResearchClient() {
 
       <Section
         title="自动生成草稿"
-        description="内容为 DeepSeek 依据公司池与实时行情生成的初稿，财务数据可能缺失，务必人工复核后再发布。"
+        description="内容为 DeepSeek 依据公司池与实时行情生成的初稿。请在 3 天内复核发布或退回；到期仍为待复核状态时，系统会自动发布。"
         actions={<span className="text-[12px] text-[#82847a]">最近 {drafts.length} 篇</span>}
       >
         {!loading && !drafts.length ? (
@@ -181,6 +181,7 @@ export default function AShareResearchClient() {
                       <p className="mt-1 text-[12px] text-[#67695d] dark:text-gray-400">
                         {draft.attemptCount ? `生成尝试 ${draft.attemptCount} 次 · ` : ''}
                         {draft.deepseekTaskId ? `DeepSeek 台账 ${draft.deepseekTaskId.slice(0, 8)}…` : '尚未完成生成'}
+                        {draft.status === 'pending' && draft.autoPublishAt ? ` · ${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })} 后自动发布` : ''}
                       </p>
                     </button>
                     <div className="flex flex-wrap items-center gap-2">

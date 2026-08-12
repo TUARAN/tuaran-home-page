@@ -2,8 +2,11 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  AUTO_PUBLISH_DELAY_MS,
+  autoPublishAt,
   draftToArticleContent,
   hasSourceSection,
+  isAutoPublishDue,
   publishFileName,
   publishSlug,
   stripPreamble,
@@ -45,6 +48,18 @@ const DRAFT = [
 test('hasSourceSection 识别来源节', () => {
   assert.equal(hasSourceSection(DRAFT), true)
   assert.equal(hasSourceSection('## 一、先给结论\n内容'), false)
+})
+
+test('待复核满 3 天才允许自动发布', () => {
+  const pendingAt = Date.UTC(2026, 7, 1, 1, 0, 0)
+  const draft = { status: 'pending', updated_at: pendingAt }
+  assert.equal(AUTO_PUBLISH_DELAY_MS, 72 * 60 * 60 * 1000)
+  assert.equal(autoPublishAt(draft), pendingAt + AUTO_PUBLISH_DELAY_MS)
+  assert.equal(isAutoPublishDue(draft, pendingAt + AUTO_PUBLISH_DELAY_MS - 1), false)
+  assert.equal(isAutoPublishDue(draft, pendingAt + AUTO_PUBLISH_DELAY_MS), true)
+  assert.equal(isAutoPublishDue({ ...draft, status: 'reviewed' }, pendingAt + AUTO_PUBLISH_DELAY_MS), false)
+  assert.equal(isAutoPublishDue({ ...draft, status: 'rejected' }, pendingAt + AUTO_PUBLISH_DELAY_MS), false)
+  assert.equal(autoPublishAt({ status: 'pending', updated_at: null }), null)
 })
 
 test('draftToArticleContent 保持 review_ready: false 且保留其余内容', () => {

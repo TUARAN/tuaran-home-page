@@ -6,7 +6,7 @@ import { IconCopy, IconExternalLink, IconPhotoUp } from '@tabler/icons-react'
 
 import SharePageButton from '../../components/SharePageButton'
 
-export default function ImageShareActions({ title, shareText, sharePath, imageUrl }) {
+export default function ImageShareActions({ title, shareText, sharePath, mediaUrl, isVideo = false }) {
   const [copied, setCopied] = useState('')
 
   async function copyText(key, text) {
@@ -41,7 +41,7 @@ export default function ImageShareActions({ title, shareText, sharePath, imageUr
         className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d8d1c4] bg-white/70 px-3 text-[13px] font-semibold text-[#28241d] no-underline transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
       >
         <IconPhotoUp size={17} />
-        使用图床
+        使用图片 / 视频床
       </Link>
       <SharePageButton
         title={title}
@@ -49,7 +49,7 @@ export default function ImageShareActions({ title, shareText, sharePath, imageUr
         url={sharePath}
         exactUrl
         size="md"
-        idleLabel="分享图片"
+        idleLabel={`分享${isVideo ? '视频' : '图片'}`}
       />
       <button
         type="button"
@@ -61,11 +61,11 @@ export default function ImageShareActions({ title, shareText, sharePath, imageUr
       </button>
       <button
         type="button"
-        onClick={() => copyText('image', imageUrl)}
+        onClick={() => copyText('media', mediaUrl)}
         className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d8d1c4] bg-white/70 px-3 text-[13px] font-semibold text-[#28241d] transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
       >
         <IconCopy size={17} />
-        {copied === 'image' ? '已复制直链' : '复制图片直链'}
+        {copied === 'media' ? '已复制直链' : `复制${isVideo ? '视频' : '图片'}直链`}
       </button>
     </div>
   )

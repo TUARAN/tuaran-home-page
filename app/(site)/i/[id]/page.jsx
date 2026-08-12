@@ -58,7 +58,7 @@ export async function generateMetadata({ params }) {
   const result = await readHostedImage(id)
   if (!result.row) {
     return {
-      title: '图片不存在 · 2aran 图床',
+      title: '媒体不存在 · 2aran 图片 / 视频床',
       robots: { index: false, follow: true },
     }
   }
@@ -66,33 +66,38 @@ export async function generateMetadata({ params }) {
   const title = hostedImageTitle(result.row)
   const image = rowToHostedImage(result.row)
   const shareUrl = hostedImageShareUrl(id)
-  const description = '这张图片由 2aran 图床托管。'
+  const mediaLabel = image.isVideo ? '视频' : '图片'
+  const description = `这个${mediaLabel}由 2aran 图片 / 视频床托管。`
+
+  const social = image.isVideo
+    ? {}
+    : {
+        images: [{
+          url: image.url,
+          width: image.width || 1200,
+          height: image.height || 630,
+          alt: title,
+        }],
+      }
 
   return {
-    title: `${title} · 2aran 图床`,
+    title: `${title} · 2aran 图片 / 视频床`,
     description,
     alternates: {
       canonical: hostedImageSharePath(id),
     },
     openGraph: {
-      title: `${title} · 2aran 图床`,
+      title: `${title} · 2aran 图片 / 视频床`,
       description,
       url: shareUrl,
       type: 'article',
-      images: [
-        {
-          url: image.url,
-          width: image.width || 1200,
-          height: image.height || 630,
-          alt: title,
-        },
-      ],
+      ...social,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} · 2aran 图床`,
+      title: `${title} · 2aran 图片 / 视频床`,
       description,
-      images: [image.url],
+      ...(image.isVideo ? {} : { images: [image.url] }),
     },
   }
 }
@@ -110,13 +115,13 @@ export default async function HostedImageSharePage({ params }) {
       <main className="min-h-screen bg-[#f2efe7] px-4 py-12 text-[#171611] dark:bg-[#0d0f12] dark:text-gray-100 sm:px-6">
         <section className="mx-auto max-w-[760px] border-t border-[#d8d1c4] pt-8 dark:border-[#27313d]">
           <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#8a6422] dark:text-[#d4ae66]">
-            2aran Image Hosting
+            2aran Media Hosting
           </p>
           <h1 className="mb-3 font-serif text-[34px] font-bold leading-tight text-[#15130e] dark:text-white">
-            图床服务暂不可用
+            图片 / 视频床暂不可用
           </h1>
           <p className="mb-6 text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-            当前运行环境还没有可用的图床数据表或 D1 绑定。
+            当前运行环境还没有可用的媒体数据表或 D1 绑定。
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
@@ -129,7 +134,7 @@ export default async function HostedImageSharePage({ params }) {
               href="/tools/image-hosting"
               className="inline-flex h-10 items-center rounded-md border border-[#d8d1c4] bg-white/70 px-4 text-[13px] font-semibold text-[#28241d] no-underline transition hover:bg-white dark:border-[#2b3643] dark:bg-[#111a24] dark:text-gray-100"
             >
-              使用图床
+              使用图片 / 视频床
             </Link>
           </div>
         </section>
@@ -139,12 +144,13 @@ export default async function HostedImageSharePage({ params }) {
 
   const image = rowToHostedImage(result.row)
   const title = hostedImageTitle(result.row)
+  const mediaLabel = image.isVideo ? '视频' : '图片'
   const meta = [
     formatSize(image.sizeBytes),
     image.width && image.height ? `${image.width}×${image.height}` : '',
     formatTime(image.createdAt),
   ].filter(Boolean)
-  const shareText = `我用 2aran 图床分享了一张图片：${title}`
+  const shareText = `我用 2aran 图片 / 视频床分享了一个${mediaLabel}：${title}`
 
   return (
     <main className="min-h-screen bg-[#f2efe7] text-[#171611] dark:bg-[#0d0f12] dark:text-gray-100">
@@ -152,13 +158,13 @@ export default async function HostedImageSharePage({ params }) {
         <div className="grid gap-4 border-b border-[#d8d1c4] pb-5 dark:border-[#27313d] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
             <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#8a6422] dark:text-[#d4ae66]">
-              2aran Image Hosting
+              2aran Media Hosting
             </p>
             <h1 className="mb-3 font-serif text-[34px] font-bold leading-tight text-[#15130e] dark:text-white sm:text-[42px]">
               {title}
             </h1>
             <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-              图片由 2aran 图床托管。你可以查看原图、复制链接，或回到网站上传自己的图片。
+              {mediaLabel}由 2aran 图片 / 视频床托管。你可以{image.isVideo ? '在线播放' : '查看原图'}、复制链接，或上传自己的媒体文件。
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-[12px] text-[#7a766b] dark:text-[#9da7b5]">
@@ -176,24 +182,35 @@ export default async function HostedImageSharePage({ params }) {
 
       <section className="mx-auto grid max-w-[1180px] gap-5 px-4 pb-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_330px] lg:px-8">
         <div className="overflow-hidden rounded-lg border border-[#ded8ca] bg-white dark:border-[#252e38] dark:bg-[#101720]">
-          <a href={image.url} target="_blank" rel="noreferrer" className="no-external-arrow block">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          {image.isVideo ? (
+            <video
               src={image.url}
-              alt={title}
-              className="max-h-[76vh] min-h-[260px] w-full object-contain"
+              controls
+              playsInline
+              preload="metadata"
+              className="max-h-[76vh] min-h-[260px] w-full bg-black object-contain"
             />
-          </a>
+          ) : (
+            <a href={image.url} target="_blank" rel="noreferrer" className="no-external-arrow block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image.url}
+                alt={title}
+                className="max-h-[76vh] min-h-[260px] w-full object-contain"
+              />
+            </a>
+          )}
         </div>
 
         <aside className="space-y-4">
           <div className="rounded-lg border border-[#ded8ca] bg-white/[0.68] p-4 dark:border-[#252e38] dark:bg-[#101720]/[0.78]">
-            <h2 className="mb-3 text-[15px] font-bold">分享这张图</h2>
+            <h2 className="mb-3 text-[15px] font-bold">分享这个{mediaLabel}</h2>
             <ImageShareActions
-              title={`${title} · 2aran 图床`}
+              title={`${title} · 2aran 图片 / 视频床`}
               shareText={shareText}
               sharePath={image.sharePath}
-              imageUrl={image.url}
+              mediaUrl={image.url}
+              isVideo={image.isVideo}
             />
           </div>
 
@@ -202,7 +219,7 @@ export default async function HostedImageSharePage({ params }) {
               Powered by 2aran
             </p>
             <p className="mb-0 text-[13px] leading-6 text-[#68645a] dark:text-[#aab4c2]">
-              2aran 图床面向登录用户开放，上传后自动生成可传播的图片页，用来分享截图、资料图和临时素材。
+              2aran 图片 / 视频床面向登录用户开放，上传后自动生成公开分享页和文件直链。
             </p>
           </div>
         </aside>

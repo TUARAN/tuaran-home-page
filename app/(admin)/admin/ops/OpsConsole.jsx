@@ -40,9 +40,11 @@ function statusText(status) {
       success: '成功',
       failed: '失败',
       running: '运行中',
+      active: '已启用',
+      on_demand: '按需运行',
       paused: '已暂停',
       never_run: '未运行',
-    }[status] || status || '未运行'
+    }[status] || status || '状态未知'
   )
 }
 
@@ -322,7 +324,7 @@ export default function OpsConsoleClient() {
           <table className="w-full min-w-[880px] border-separate border-spacing-0 text-left text-[13px]">
             <thead>
               <tr className="text-[11px] uppercase tracking-[0.1em] text-[#858779] dark:text-[#8e9ab0]">
-                <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">状态</th>
+                <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">调度状态</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">名称</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">环境</th>
                 <th className="border-b border-[#e6e7df] px-3 py-2 dark:border-[#263142]">触发</th>
@@ -389,7 +391,7 @@ export default function OpsConsoleClient() {
       </section>
 
       <p className="mt-4 text-[12px] leading-6 text-[#858779] dark:text-gray-500">
-        自动化先统一登记到 Registry（字段固定），再接入真实运行状态回写；云端任务重点管 API 限流、触发频率和回滚，本地任务重点管人工审核、产物落盘和权限边界。
+        调度状态表示任务是否已启用：定时任务在两次触发之间仍显示“已启用”，仅有实时执行记录时才使用“运行中”；“按需运行”表示由人工触发。最近一次执行结果见“最近运行”。
       </p>
     </AdminPage>
   )
@@ -403,7 +405,7 @@ function FragmentRow({ item, open, toggling, copied, onToggle, onCopy, onOpen })
         className={`cursor-pointer transition ${open ? 'bg-[#f4f5ee] dark:bg-[#151d29]' : 'hover:bg-[#f8f9f3] dark:hover:bg-[#131b26]'}`}
       >
         <td className="border-b border-[#f0f1ea] px-3 py-2.5 dark:border-[#1c2632]">
-          <StatusPill tone={item.status === 'paused' ? 'danger' : item.status === 'running' ? 'success' : 'neutral'} size="sm">
+          <StatusPill tone={item.status === 'paused' ? 'danger' : item.status === 'active' || item.status === 'running' ? 'success' : 'neutral'} size="sm">
             {statusText(item.status)}
           </StatusPill>
         </td>

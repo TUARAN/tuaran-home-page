@@ -7,6 +7,7 @@ import {
   AGENT_OPS_ROOT,
   AUTOMATION_REGISTRY,
   OPS_RECENT_RUNS,
+  automationScheduleStatus,
   registryEntryText,
 } from '../../../../lib/adminOpsRegistry'
 import {
@@ -70,18 +71,21 @@ export async function GET(req) {
     }
   }
 
-  const registry = AUTOMATION_REGISTRY.map((item) => ({
-    ...item,
-    ...(item.id === MORNING_GREETING_ID
-      ? {
-          status: isAutomationPaused(greetingState) ? 'paused' : 'running',
-          pausable: true,
-          lastRun: formatLastRun(greetingLastRun) || item.lastRun,
-        }
-      : {}),
-    registryText: registryEntryText(item),
-    latestRun: OPS_RECENT_RUNS.find((run) => run.taskId === item.id) || null,
-  }))
+  const registry = AUTOMATION_REGISTRY.map((item) => {
+    const resolved = {
+      ...item,
+      status: automationScheduleStatus(item),
+      ...(item.id === MORNING_GREETING_ID
+        ? {
+            status: isAutomationPaused(greetingState) ? 'paused' : 'active',
+            pausable: true,
+            lastRun: formatLastRun(greetingLastRun) || item.lastRun,
+          }
+        : {}),
+      latestRun: OPS_RECENT_RUNS.find((run) => run.taskId === item.id) || null,
+    }
+    return { ...resolved, registryText: registryEntryText(resolved) }
+  })
   const repositoryByTask = new Map(registry.map((item) => [item.id, item.repository]))
   let aShareRuns = []
   if (db) {

@@ -105,7 +105,13 @@ test('validateDraft 校验草稿安全边界', () => {
   ].join('\n')
   assert.doesNotThrow(() => validateDraft(good))
   assert.throws(() => validateDraft('太短'), /过短/)
+  assert.throws(() => validateDraft(`模型说明\n${good}`), /frontmatter 开头/)
+  assert.throws(
+    () => validateDraft(good.replace('\n---\n## 一、先给结论', '\n## 一、先给结论')),
+    /frontmatter 未闭合/,
+  )
   assert.throws(() => validateDraft(good.replace('review_ready: false', 'review_ready: true')), /review_ready/)
+  assert.throws(() => validateDraft(good.replace('ad_eligible: false', 'ad_eligible: true')), /ad_eligible/)
   assert.throws(() => validateDraft(good.replace('## 十、信息来源与说明', '## 十、随便写写')), /来源/)
   assert.throws(() => validateDraft(good.replace('## 一、先给结论', '## 一、先给结论 {{COMPANY_NAME}}')), /占位符/)
 })

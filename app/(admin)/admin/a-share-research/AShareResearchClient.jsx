@@ -6,6 +6,7 @@ import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } fro
 
 const DRAFT_STATUS_META = {
   generating: { label: '生成中', tone: 'info' },
+  failed: { label: '生成失败', tone: 'danger' },
   pending: { label: '待复核', tone: 'warning' },
   reviewed: { label: '已复核', tone: 'success' },
   published: { label: '已发布', tone: 'success' },
@@ -15,6 +16,7 @@ const DRAFT_STATUS_META = {
 const DRAFT_FILTERS = [
   { id: 'all', label: '全部' },
   { id: 'generating', label: '生成中' },
+  { id: 'failed', label: '生成失败' },
   { id: 'pending', label: '待复核' },
   { id: 'reviewed', label: '已复核' },
   { id: 'published', label: '已发布' },
@@ -246,7 +248,9 @@ export default function AShareResearchClient() {
                         <h3 className="mt-1.5 truncate text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{draft.title || `${draft.name}（${draft.code}）`}</h3>
                         <p className="mt-1 text-[12px] text-[#67695d] dark:text-gray-400">
                           {draft.attemptCount ? `生成尝试 ${draft.attemptCount} 次 · ` : ''}
-                          {draft.deepseekTaskId ? `DeepSeek 台账 ${draft.deepseekTaskId.slice(0, 8)}…` : '尚未完成生成'}
+                          {draft.status === 'failed'
+                            ? `失败原因：${draft.generationError || '生成服务未返回可用草稿，将自动重试'}`
+                            : draft.deepseekTaskId ? `DeepSeek 台账 ${draft.deepseekTaskId.slice(0, 8)}…` : '尚未完成生成'}
                           {draft.status === 'pending' && draft.autoPublishAt ? ` · ${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })} 后自动发布` : ''}
                         </p>
                       </button>

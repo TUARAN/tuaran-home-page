@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import {
   buildDraftPrompt,
   classifyCompany,
+  draftGenerationDecision,
   normalizeCompanies,
   parseQuote,
   pickBestCompany,
@@ -11,6 +12,25 @@ import {
   validateDraft,
   validateSnapshot,
 } from '../lib/aShareResearchCore.js'
+
+test('draftGenerationDecision 区分完成、锁定、失败重试和耗尽', () => {
+  const now = Date.UTC(2026, 7, 13, 2, 0, 0)
+  assert.deepEqual(draftGenerationDecision(null, now), { action: 'attempt' })
+  assert.deepEqual(draftGenerationDecision({ status: 'pending' }, now), { action: 'done' })
+  assert.deepEqual(draftGenerationDecision({ status: 'published' }, now), { action: 'stop' })
+  assert.deepEqual(
+    draftGenerationDecision({ status: 'failed', attempt_count: 1, updated_at: now }, now),
+    { action: 'attempt' },
+  )
+  assert.deepEqual(
+    draftGenerationDecision({ status: 'generating', attempt_count: 1, updated_at: now - 60_000 }, now),
+    { action: 'locked', retryAfterMs: 9 * 60_000 },
+  )
+  assert.deepEqual(
+    draftGenerationDecision({ status: 'failed', attempt_count: 5, updated_at: now }, now),
+    { action: 'exhausted', attempts: 5 },
+  )
+})
 
 test('classifyCompany 覆盖三大交易所板块', () => {
   assert.equal(classifyCompany('600000').exchange, 'SSE')

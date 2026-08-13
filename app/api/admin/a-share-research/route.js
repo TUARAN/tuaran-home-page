@@ -6,7 +6,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const DRAFT_STATUSES = new Set(['pending', 'reviewed', 'rejected'])
-const DRAFT_FILTER_STATUSES = new Set(['generating', 'pending', 'reviewed', 'published', 'rejected'])
+const DRAFT_FILTER_STATUSES = new Set(['generating', 'failed', 'pending', 'reviewed', 'published', 'rejected'])
 
 function unavailable() {
   return Response.json(
@@ -56,6 +56,7 @@ export async function GET(req) {
       pending: pending ? { code: pending.code, name: pending.name, selectedAt: pending.selected_at, selectionDate: pending.selection_date } : null,
       draftStats: {
         generating: countByStatus.generating || 0,
+        failed: countByStatus.failed || 0,
         pending: countByStatus.pending || 0,
         reviewed: countByStatus.reviewed || 0,
         published: countByStatus.published || 0,
@@ -73,6 +74,7 @@ export async function GET(req) {
         styleId: row.style_id,
         deepseekTaskId: row.deepseek_task_id,
         attemptCount: Number(row.attempt_count) || 0,
+        generationError: row.generation_error || '',
         status: row.status,
         publishCommit: row.publish_commit || '',
         publishAt: row.publish_at || null,

@@ -403,7 +403,7 @@ export default function DistributeContentButton({
       >
         <DistributeIcon active={states.article === 'sent'} />
         <span>{getLabel('article')}</span>
-        <PluginRequirementBadge />
+        <PluginRequirementBadge required />
       </button>
       <button
         type="button"
@@ -415,7 +415,7 @@ export default function DistributeContentButton({
       >
         <DistributeIcon active={states.opinion === 'sent'} />
         <span>{getLabel('opinion')}</span>
-        <PluginRequirementBadge />
+        <PluginRequirementBadge required />
       </button>
       {allowArticle ? (
         <button

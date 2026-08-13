@@ -193,7 +193,10 @@ export default function AShareResearchClient() {
                         </>
                       ) : null}
                       {draft.status === 'reviewed' ? (
-                        <AdminButton type="button" variant="primary" onClick={() => publishDraft(draft)} disabled={saving}>发布</AdminButton>
+                        <>
+                          <AdminButton type="button" variant="primary" onClick={() => publishDraft(draft)} disabled={saving}>发布</AdminButton>
+                          <AdminButton type="button" variant="ghost" onClick={() => setDraftStatus(draft, 'rejected')} disabled={saving}>退回</AdminButton>
+                        </>
                       ) : null}
                       {draft.status === 'published' ? (
                         <>

@@ -9,9 +9,11 @@ import {
   isAutoPublishDue,
   publishFileName,
   publishSlug,
+  repairUnclosedFrontmatter,
   stripPreamble,
   validatePublishContent,
 } from '../lib/aSharePublishCore.js'
+import { autoPublishOldestDueDraft } from '../lib/aSharePublisher.js'
 
 const DRAFT = [
   '---',
@@ -80,6 +82,15 @@ test('stripPreamble 清除模型检索前的前置杂文', () => {
   assert.equal(validatePublishContent(article, { code: '001337', name: '四川黄金' }), true)
 })
 
+test('repairUnclosedFrontmatter 保守修复历史草稿缺失的结束标记', () => {
+  const unclosed = DRAFT.replace('\n---\n\n## 一、先给结论', '\n\n## 一、先给结论')
+  const repaired = repairUnclosedFrontmatter(unclosed)
+  assert.match(repaired, /pv: 0\n---\n\n## 一、先给结论/u)
+  assert.equal(validatePublishContent(draftToArticleContent(unclosed), { code: '001337', name: '四川黄金' }), true)
+  assert.equal(repairUnclosedFrontmatter('没有 frontmatter\n## 一、正文'), '没有 frontmatter\n## 一、正文')
+  assert.equal(repairUnclosedFrontmatter(DRAFT), DRAFT)
+})
+
 test('publishFileName / publishSlug 生成发布文件名与文章 slug', () => {
   const fileName = publishFileName({ draft_date: '2026-08-06', code: '001337' })
   assert.equal(fileName, '2026-08-06-a-share-001337.md')
@@ -99,4 +110,47 @@ test('validatePublishContent 通过已复核发布稿并拦截缺项', () => {
   const unclosedFrontmatter = article.replace('\n---\n\n## 一、先给结论', '\n\n## 一、先给结论')
   assert.throws(() => validatePublishContent(unclosedFrontmatter, { code: '001337', name: '四川黄金' }), /frontmatter 未闭合/)
   assert.throws(() => validatePublishContent('太短', { code: '001337', name: '四川黄金' }), /过短/)
+})
+
+test('autoPublishOldestDueDraft 自动退回历史坏稿并解除队列阻塞', async () => {
+  const now = Date.now()
+  const invalidDraft = {
+    id: 'ashare-invalid',
+    code: '688558',
+    name: '国盛智科',
+    draft_date: '2026-08-10',
+    status: 'pending',
+    updated_at: now - AUTO_PUBLISH_DELAY_MS - 1,
+    content: `---\nreview_ready: false\nad_eligible: false\n${'坏稿内容'.repeat(80)}\n## 十、信息来源与说明\n来源`,
+  }
+  const rejected = []
+  const logs = []
+  const claimed = []
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...values) {
+          return {
+            async all() {
+              assert.match(sql, /LIMIT 20/)
+              return { results: [invalidDraft] }
+            },
+            async run() {
+              if (sql.includes("SET status = 'rejected'")) rejected.push(values[1])
+              if (sql.includes("SET status = 'reviewed'")) claimed.push(values[0])
+              if (sql.includes('INSERT INTO a_share_run_log')) logs.push(values)
+              return { meta: { changes: 1 } }
+            },
+          }
+        },
+      }
+    },
+  }
+
+  const result = await autoPublishOldestDueDraft({ db, env: { A_SHARE_PUBLISH_TOKEN: 'test-token' }, now })
+  assert.equal(result.reason, 'invalid-content-rejected')
+  assert.deepEqual(rejected, [invalidDraft.id])
+  assert.deepEqual(claimed, [])
+  assert.equal(result.rejectedInvalidDrafts[0].code, invalidDraft.code)
+  assert.equal(logs.length, 1)
 })

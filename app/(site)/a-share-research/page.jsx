@@ -1,5 +1,6 @@
 import AShareResearchClient from './AShareResearchClient'
 import { listResearch } from '../../../lib/research/loader'
+import { isAShareCompanyObservation } from '../../../lib/research/shareTitle'
 
 export const metadata = {
   title: 'A股调研 · 每天一家上市公司',
@@ -32,7 +33,7 @@ function exchangeOf(code) {
 
 export default function AShareResearchPage() {
   const items = listResearch()
-    .filter((entry) => entry.category === 'companies' && (entry.companyType === 'a_share' || entry.slug.includes('a-share-')))
+    .filter(isAShareCompanyObservation)
     .map((entry) => {
       const stockCode = stockCodeOf(entry)
       return {

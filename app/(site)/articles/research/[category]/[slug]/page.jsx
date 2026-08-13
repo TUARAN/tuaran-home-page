@@ -14,7 +14,7 @@ import {
 import { avatarAbsoluteUrl } from '../../../../../../lib/avatar'
 import { buildArticleOgUrl } from '../../../../../../lib/articleOg'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
-import { buildResearchShareTitle, isAShareCompanyObservation } from '../../../../../../lib/research/shareTitle'
+import { buildResearchShareTitle, isAShareCompanyObservation, isAShareResearchEntry } from '../../../../../../lib/research/shareTitle'
 import { AUTHOR_INTRO_MARKDOWN } from '../../../../components/ArticleAuthorIntro'
 import ArticleDetailHeader from '../../../../components/ArticleDetailHeader'
 import ArticleComments from '../../../../components/ArticleComments'
@@ -148,7 +148,10 @@ export default async function ResearchDetailPage({ params }) {
   })
   const xArticleHtml = markdownDoc ? renderMarkdown(markdownDoc) : ''
   const categoryLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
-  const categoryHref = entry.contentType === 'engineering_case'
+  const isAShareResearch = isAShareResearchEntry(entry)
+  const categoryHref = isAShareResearch
+    ? '/a-share-research'
+    : entry.contentType === 'engineering_case'
     ? '/articles?tab=engineering-cases'
     : entry.contentType === 'build_log'
       ? '/articles?tab=build-logs'
@@ -188,10 +191,12 @@ export default async function ResearchDetailPage({ params }) {
   // 相关阅读：同 category 其它条目，最近 3 篇
   const relatedPool = listResearchByCategory(entry.category).filter((e) => e.slug !== entry.slug)
   const related =
-    entry.category === 'companies' && entry.companyType
+    isAShareResearch
+      ? relatedPool.filter(isAShareCompanyObservation).slice(0, 3)
+      : entry.category === 'companies'
       ? [
-          ...relatedPool.filter((e) => e.companyType === entry.companyType),
-          ...relatedPool.filter((e) => e.companyType !== entry.companyType),
+          ...relatedPool.filter((e) => !isAShareResearchEntry(e) && entry.companyType && e.companyType === entry.companyType),
+          ...relatedPool.filter((e) => !isAShareResearchEntry(e) && (!entry.companyType || e.companyType !== entry.companyType)),
         ].slice(0, 3)
       : relatedPool.slice(0, 3)
 
@@ -265,7 +270,7 @@ export default async function ResearchDetailPage({ params }) {
       <ArticleDetailHeader
         taxonomy={taxonomyForResearch(entry)}
         categoryHref={categoryHref}
-        categoryLabel={categoryLabel}
+        categoryLabel={isAShareResearch ? 'A股调研' : categoryLabel}
         dateLabel={entry.dateLabel || entry.date}
         dateTime={entry.dateTimeIso || entry.date}
         readingMinutes={entry.readingMinutes}
@@ -279,7 +284,7 @@ export default async function ResearchDetailPage({ params }) {
         )}
         metaExtras={(
           <>
-          {entry.companyType && COMPANY_TYPE_META[entry.companyType] ? (
+          {!isAShareResearch && entry.companyType && COMPANY_TYPE_META[entry.companyType] ? (
             <>
               <span aria-hidden="true">·</span>
               <Link

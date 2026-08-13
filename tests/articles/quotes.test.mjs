@@ -40,9 +40,7 @@ test('article header refreshes its quote when the resolved theme changes', () =>
   assert.doesNotMatch(headerSource, /从主题开始浏览|会在需要时出现/)
 })
 
-test('article header exposes an accessible quote refresh button', () => {
-  assert.match(headerSource, /onClick=\{refreshQuote\}/)
-  assert.match(headerSource, /disabled=\{isRefreshing\}/)
-  assert.match(headerSource, /aria-label=\{isRefreshing \? '正在刷新名言' : '刷新名言'\}/)
-  assert.match(headerSource, /className=\{isRefreshing \? 'animate-spin' : ''\}/)
+test('article header does not expose manual quote refresh controls', () => {
+  assert.doesNotMatch(headerSource, /onClick=\{refreshQuote\}/)
+  assert.doesNotMatch(headerSource, /换一句名言|刷新名言|IconRefresh/)
 })

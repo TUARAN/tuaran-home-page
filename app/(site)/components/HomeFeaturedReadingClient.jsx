@@ -225,6 +225,18 @@ export default function HomeFeaturedReadingClient({ catalog }) {
               <T zh="搜索" en="Search" />
             </button>
           )}
+          {!normalizedQuery && eligibleCount > items.length ? (
+            <button
+              type="button"
+              onClick={changeBatch}
+              disabled={!recommendationsReady || changing}
+              className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] disabled:cursor-wait disabled:opacity-45 dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white"
+              aria-label="换一批首页推荐内容"
+            >
+              <IconRefresh size={15} className={`transition-transform duration-300 ${changing ? 'rotate-180' : 'group-hover:rotate-45'}`} aria-hidden="true" />
+              <T zh="换一批" en="Show me more" />
+            </button>
+          ) : null}
         </div>
       </div>
       <div className="relative" aria-busy={!recommendationsReady}>

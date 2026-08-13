@@ -1,7 +1,7 @@
 name: A-share research daily
 
 # A 股公司观察在线自动化：每天北京时间 01:00 触发一次；先检查满 3 天未复核稿，再处理当天一家公司。
-# 若单次运行未完成或失败，当天停止并报告，不再追加定时触发或另选公司。
+# 同一家公司单次未完成时有限续跑；不会另选公司，最多请求 3 次。
 on:
   schedule:
     - cron: '0 17 * * *'
@@ -15,7 +15,7 @@ jobs:
   trigger:
     name: POST /api/cron/a-share-research
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Trigger online automation
         env:
@@ -29,17 +29,41 @@ jobs:
             exit 1
           fi
 
-          code=$(curl -sS --retry 2 --retry-delay 8 \
-            -o /tmp/a-share-research.json \
-            -w '%{http_code}' \
-            -X POST \
-            -H "x-a-share-secret: $TRIGGER_SECRET" \
-            https://2aran.com/api/cron/a-share-research)
+          for attempt in 1 2 3; do
+            code=$(curl -sS --retry 2 --retry-delay 8 \
+              -o /tmp/a-share-research.json \
+              -w '%{http_code}' \
+              -X POST \
+              -H "x-a-share-secret: $TRIGGER_SECRET" \
+              https://2aran.com/api/cron/a-share-research)
 
-          echo "HTTP $code"
-          cat /tmp/a-share-research.json
-          echo
-          test "$code" = "200"
+            echo "请求 $attempt/3 · HTTP $code"
+            cat /tmp/a-share-research.json
+            echo
+
+            if [ "$code" = "200" ]; then
+              phase=$(jq -r '.phase // ""' /tmp/a-share-research.json)
+              if [ "$phase" != "generation-locked" ] && [ "$phase" != "pool-synced" ]; then
+                exit 0
+              fi
+              if [ "$phase" = "generation-locked" ]; then
+                retry_ms=$(jq -r '.retryAfterMs // 600000' /tmp/a-share-research.json)
+                wait_seconds=$(( (retry_ms + 999) / 1000 ))
+              else
+                wait_seconds=5
+              fi
+            else
+              wait_seconds=30
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "等待 ${wait_seconds} 秒后续跑同一家公司。"
+              sleep "$wait_seconds"
+            fi
+          done
+
+          echo "::error::A 股草稿连续 3 次仍未完成"
+          exit 1
 
       - name: Notify owner of failure
         if: failure()

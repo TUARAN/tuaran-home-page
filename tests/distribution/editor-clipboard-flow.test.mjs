@@ -43,5 +43,6 @@ test('distribution actions expose browser-plugin requirement badges', async () =
 
   assert.match(source, /需要浏览器插件/)
   assert.match(source, /无需浏览器插件/)
-  assert.ok((source.match(/<PluginRequirementBadge \/>/g) || []).length >= 5)
+  assert.equal((source.match(/<PluginRequirementBadge required \/>/g) || []).length, 2)
+  assert.ok((source.match(/<PluginRequirementBadge \/>/g) || []).length >= 3)
 })

@@ -5,16 +5,32 @@ import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
 
 const DRAFT_STATUS_META = {
+  generating: { label: '生成中', tone: 'info' },
   pending: { label: '待复核', tone: 'warning' },
   reviewed: { label: '已复核', tone: 'success' },
   published: { label: '已发布', tone: 'success' },
   rejected: { label: '已退回', tone: 'danger' },
 }
 
+const DRAFT_FILTERS = [
+  { id: 'all', label: '全部' },
+  { id: 'generating', label: '生成中' },
+  { id: 'pending', label: '待复核' },
+  { id: 'reviewed', label: '已复核' },
+  { id: 'published', label: '已发布' },
+  { id: 'rejected', label: '已退回' },
+]
+
 const ACTION_LABELS = {
   'pool-sync': '公司池同步',
   draft: '选题起草',
   publish: '后台发布',
+}
+
+const TEMPLATE_VERSION_URLS = {
+  1: 'https://github.com/TUARAN/tuaran-home-page/blob/a1f8bb9513efb8abe4890aa2deb113a1a1837e63/research/templates/a-share-company-research.md',
+  2: 'https://github.com/TUARAN/tuaran-home-page/blob/0f7bf54ae9c2d147430bf111de85c8a8175d6ee9%5E/research/templates/a-share-company-research.md',
+  3: 'https://github.com/TUARAN/tuaran-home-page/blob/d794a2790138e0c9e4f55e129acafeb6a27d6765/research/templates/a-share-company-research.md',
 }
 
 function formatDate(value) {
@@ -37,6 +53,7 @@ export default function AShareResearchClient() {
   const [saving, setSaving] = useState(false)
   const [openId, setOpenId] = useState('')
   const [copied, setCopied] = useState('')
+  const [draftFilter, setDraftFilter] = useState('all')
   const [logs, setLogs] = useState([])
   const [logTotal, setLogTotal] = useState(0)
   const [logsLoading, setLogsLoading] = useState(true)
@@ -66,7 +83,8 @@ export default function AShareResearchClient() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/admin/a-share-research', { cache: 'no-store' })
+      const query = draftFilter === 'all' ? '' : `?status=${encodeURIComponent(draftFilter)}`
+      const response = await fetch(`/api/admin/a-share-research${query}`, { cache: 'no-store' })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
@@ -76,7 +94,7 @@ export default function AShareResearchClient() {
     } finally {
       setLoading(false)
     }
-  }, [loadLogs])
+  }, [draftFilter, loadLogs])
 
   useEffect(() => {
     refresh()
@@ -135,6 +153,9 @@ export default function AShareResearchClient() {
   }
 
   const drafts = data?.drafts || []
+  const draftStats = data?.draftStats || {}
+  const totalDrafts = Object.values(draftStats).reduce((total, count) => total + (Number(count) || 0), 0)
+  const activeFilterLabel = DRAFT_FILTERS.find((filter) => filter.id === draftFilter)?.label || '全部'
   const hasMoreLogs = logs.length < logTotal
 
   return (
@@ -160,10 +181,36 @@ export default function AShareResearchClient() {
       <Section
         title="自动生成草稿"
         description="内容为 DeepSeek 依据公司池与实时行情生成的初稿。请在 3 天内复核发布或退回；到期仍为待复核状态时，系统会自动发布。"
-        actions={<span className="text-[12px] text-[#82847a]">最近 {drafts.length} 篇</span>}
+        actions={<span className="text-[12px] text-[#82847a]">{activeFilterLabel} · 显示 {drafts.length} 篇</span>}
       >
+        <div className="mb-3 flex flex-wrap items-center gap-2" aria-label="草稿状态筛选">
+          <span className="mr-1 text-[12px] text-[#67695d] dark:text-gray-400">筛选：</span>
+          {DRAFT_FILTERS.map((filter) => {
+            const count = filter.id === 'all' ? totalDrafts : Number(draftStats[filter.id]) || 0
+            const active = draftFilter === filter.id
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => {
+                  setOpenId('')
+                  setDraftFilter(filter.id)
+                }}
+                aria-pressed={active}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition ${
+                  active
+                    ? 'border-[#15140f] bg-[#15140f] text-white dark:border-gray-100 dark:bg-gray-100 dark:text-[#0e0e0a]'
+                    : 'border-[#d9dacd] bg-white text-[#51514a] hover:border-[#929487] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300 dark:hover:border-[#596579]'
+                }`}
+              >
+                {filter.label}
+                <span className={active ? 'opacity-70' : 'text-[#8a8c80] dark:text-gray-500'}>{count}</span>
+              </button>
+            )
+          })}
+        </div>
         {!loading && !drafts.length ? (
-          <EmptyState title="暂无草稿" description="线上定时任务首次选题后会出现在这里。" />
+          <EmptyState title={`暂无${activeFilterLabel}草稿`} description={draftFilter === 'all' ? '线上定时任务首次选题后会出现在这里。' : '可以切换其它状态查看草稿。'} />
         ) : (
           <div className="space-y-2">
             {drafts.map((draft) => {
@@ -172,18 +219,38 @@ export default function AShareResearchClient() {
               return (
                 <article key={draft.id} className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                    <button type="button" onClick={() => setOpenId(open ? '' : draft.id)} className="min-w-0 flex-1 text-left">
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusPill tone={statusMeta.tone} size="sm">{statusMeta.label}</StatusPill>
-                        <span className="text-[11px] text-[#82847a]">{draft.draftDate} · {draft.code} · {draft.templateVersion ? `模板 v${draft.templateVersion}` : ''}</span>
+                        <span className="text-[11px] text-[#82847a]">
+                          {draft.draftDate} · {draft.code}
+                          {draft.templateVersion ? (
+                            <>
+                              {' · '}
+                              {TEMPLATE_VERSION_URLS[draft.templateVersion] ? (
+                                <a
+                                  href={TEMPLATE_VERSION_URLS[draft.templateVersion]}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="underline decoration-dotted underline-offset-2 transition hover:text-[#15140f] dark:hover:text-gray-100"
+                                  title={`查看 A 股公司观察模板 v${draft.templateVersion}`}
+                                >
+                                  模板 v{draft.templateVersion}
+                                </a>
+                              ) : `模板 v${draft.templateVersion}`}
+                            </>
+                          ) : null}
+                        </span>
                       </div>
-                      <h3 className="mt-1.5 truncate text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{draft.title || `${draft.name}（${draft.code}）`}</h3>
-                      <p className="mt-1 text-[12px] text-[#67695d] dark:text-gray-400">
-                        {draft.attemptCount ? `生成尝试 ${draft.attemptCount} 次 · ` : ''}
-                        {draft.deepseekTaskId ? `DeepSeek 台账 ${draft.deepseekTaskId.slice(0, 8)}…` : '尚未完成生成'}
-                        {draft.status === 'pending' && draft.autoPublishAt ? ` · ${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })} 后自动发布` : ''}
-                      </p>
-                    </button>
+                      <button type="button" onClick={() => setOpenId(open ? '' : draft.id)} className="block w-full text-left">
+                        <h3 className="mt-1.5 truncate text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{draft.title || `${draft.name}（${draft.code}）`}</h3>
+                        <p className="mt-1 text-[12px] text-[#67695d] dark:text-gray-400">
+                          {draft.attemptCount ? `生成尝试 ${draft.attemptCount} 次 · ` : ''}
+                          {draft.deepseekTaskId ? `DeepSeek 台账 ${draft.deepseekTaskId.slice(0, 8)}…` : '尚未完成生成'}
+                          {draft.status === 'pending' && draft.autoPublishAt ? ` · ${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })} 后自动发布` : ''}
+                        </p>
+                      </button>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <AdminButton type="button" variant="ghost" onClick={() => copyDraft(draft)}>{copied === draft.id ? '已复制' : '复制全文'}</AdminButton>
                       {draft.status === 'pending' ? (

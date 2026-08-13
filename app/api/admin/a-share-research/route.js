@@ -6,6 +6,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const DRAFT_STATUSES = new Set(['pending', 'reviewed', 'rejected'])
+const DRAFT_FILTER_STATUSES = new Set(['generating', 'pending', 'reviewed', 'published', 'rejected'])
 
 function unavailable() {
   return Response.json(
@@ -29,10 +30,15 @@ export async function GET(req) {
   }
 
   try {
+    const requestedStatus = new URL(req.url).searchParams.get('status') || ''
+    const draftStatus = DRAFT_FILTER_STATUSES.has(requestedStatus) ? requestedStatus : ''
+    const draftsQuery = draftStatus
+      ? db.prepare('SELECT * FROM a_share_drafts WHERE status = ? ORDER BY created_at DESC LIMIT 30').bind(draftStatus)
+      : db.prepare('SELECT * FROM a_share_drafts ORDER BY created_at DESC LIMIT 30')
     const [snapshot, pending, drafts, logs, draftStats] = await Promise.all([
       db.prepare('SELECT * FROM a_share_pool_snapshot WHERE id = 1').first(),
       db.prepare("SELECT * FROM a_share_selections WHERE status = 'selected' LIMIT 1").first(),
-      db.prepare('SELECT * FROM a_share_drafts ORDER BY created_at DESC LIMIT 30').all(),
+      draftsQuery.all(),
       db.prepare('SELECT * FROM a_share_run_log ORDER BY ran_at DESC LIMIT 20').all(),
       db
         .prepare(
@@ -49,10 +55,13 @@ export async function GET(req) {
         : null,
       pending: pending ? { code: pending.code, name: pending.name, selectedAt: pending.selected_at, selectionDate: pending.selection_date } : null,
       draftStats: {
+        generating: countByStatus.generating || 0,
         pending: countByStatus.pending || 0,
         reviewed: countByStatus.reviewed || 0,
+        published: countByStatus.published || 0,
         rejected: countByStatus.rejected || 0,
       },
+      draftFilter: draftStatus || 'all',
       drafts: (drafts?.results || []).map((row) => ({
         id: row.id,
         code: row.code,

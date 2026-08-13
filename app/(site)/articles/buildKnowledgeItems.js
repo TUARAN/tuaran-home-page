@@ -59,6 +59,21 @@ export function buildKnowledgeItems() {
       sortKey: '',
       href: '/frontend-weekly',
     },
+    {
+      id: 'series:a_share_research',
+      kind: 'companies',
+      tagLabel: '固定系列',
+      contentKind: 'profile',
+      subjects: ['company_research'],
+      entityType: 'company',
+      delivery: 'read',
+      series: 'a_share_research',
+      title: 'A股调研',
+      summary: '每天观察一家 A 股上市公司，关注业务、财务、治理、估值与风险。',
+      date: '',
+      sortKey: '',
+      href: '/a-share-research',
+    },
   ]
 
   const postItems = articles.map((article) => {

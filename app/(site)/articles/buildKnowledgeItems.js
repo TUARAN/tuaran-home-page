@@ -15,6 +15,7 @@ import {
 } from '../../../lib/contentTaxonomy'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
 import { isAdsenseReviewPath } from '../../../lib/adsenseReviewPolicy'
+import { isAShareResearchEntry } from '../../../lib/research/shareTitle'
 
 // 资源页 href → 阅读统计 key（仅登记进 contentRegistry 的资源才有阅读量）
 const RESOURCE_PV_KEY_BY_HREF = new Map(
@@ -63,9 +64,9 @@ export function buildKnowledgeItems() {
       id: 'series:a_share_research',
       kind: 'companies',
       tagLabel: '固定系列',
-      contentKind: 'profile',
-      subjects: ['company_research'],
-      entityType: 'company',
+      contentKind: 'analysis',
+      subjects: ['business_market'],
+      entityType: '',
       delivery: 'read',
       series: 'a_share_research',
       title: 'A股调研',
@@ -102,7 +103,7 @@ export function buildKnowledgeItems() {
     }
   })
 
-  const researchItems = listResearch().map((entry) => {
+  const researchItems = listResearch().filter((entry) => !isAShareResearchEntry(entry)).map((entry) => {
     const baseLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
     const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
     const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label

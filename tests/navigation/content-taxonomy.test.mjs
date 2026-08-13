@@ -64,6 +64,16 @@ test('people research has a dedicated reader-facing subject', () => {
   )
 })
 
+test('A股系列使用商业市场主题，不占用公司调研主题', () => {
+  const taxonomy = taxonomyForResearch({
+    category: 'companies',
+    slug: 'a-share-603679',
+    contentType: 'analysis',
+  })
+  assert.deepEqual(taxonomy.subjects, ['business_market'])
+  assert.equal(taxonomy.series, 'a_share_research')
+})
+
 test('legacy content sources map to complete reader-facing taxonomy records', () => {
   const records = [
     taxonomyForArticle({ category: '工程化', slug: 'hello-world' }),

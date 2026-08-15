@@ -339,7 +339,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         <FilterRow
           label="内容主题"
           index="01"
-          help="这篇内容主要在讲什么"
           tone="subject"
           ariaLabel="按内容主题筛选"
           orientation={orientation}
@@ -371,7 +370,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
         <FilterRow
           label="内容类型"
           index="02"
-          help="这篇内容采用什么形式"
           tone="kind"
           ariaLabel="按内容类型筛选"
           orientation={orientation}
@@ -548,7 +546,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   )
 }
 
-function FilterRow({ label, index, help, tone, ariaLabel, orientation = 'inline', active, onReset, children }) {
+function FilterRow({ label, index, tone, ariaLabel, orientation = 'inline', active, onReset, children }) {
   const toneClass = tone === 'subject'
     ? 'border-[#d8c7e8] bg-[#faf6ff] dark:border-[#47365c] dark:bg-[#1b1425]'
     : 'border-[#bcdde0] bg-[#f2fbfb] dark:border-[#285158] dark:bg-[#102428]'
@@ -581,7 +579,6 @@ function FilterRow({ label, index, help, tone, ariaLabel, orientation = 'inline'
           <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md font-mono text-[10px] font-bold ${indexClass}`}>{index}</span>
           <div>
             <div>{labelButton}</div>
-            <p className="mt-0.5 text-[10px] leading-4 text-[#817789] dark:text-[#8e99aa]">{help}</p>
           </div>
         </div>
         <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -596,7 +593,6 @@ function FilterRow({ label, index, help, tone, ariaLabel, orientation = 'inline'
         <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md font-mono text-[10px] font-bold ${indexClass}`}>{index}</span>
         <div>
           <div>{labelButton}</div>
-          <p className="mt-0.5 text-[10px] leading-4 text-[#817789] dark:text-[#8e99aa]">{help}</p>
         </div>
       </div>
       <nav aria-label={ariaLabel} className="flex min-w-0 flex-wrap items-center gap-1.5">

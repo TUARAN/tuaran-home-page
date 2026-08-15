@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T01:13:53.209Z",
+  "generatedAt": "2026-08-12T08:39:31.517Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -638,6 +638,12 @@
               "hash": "f50eb334206e1729c92acb81a2617b099922476d00b8d86f55dfd93f2156a05e",
               "path": "ai-context/content-information-architecture/2026-07-31T09-21-35-834Z.enc.json",
               "bytes": 2409
+            },
+            {
+              "ts": "2026-08-10T08:18:47.190Z",
+              "hash": "030ec61d3e4d5c70c9fd277250e0dd20149abc0aa2777b337d3f78d8189bd03a",
+              "path": "ai-context/content-information-architecture/2026-08-10T08-18-47-209Z.enc.json",
+              "bytes": 2452
             }
           ]
         },
@@ -686,6 +692,12 @@
               "hash": "0aaf147c22596675247ac4ad9e6c649c41a37a9a52457b91813e3f3f2e7d6d75",
               "path": "ai-context/a-share-company-research-automation/2026-08-07T01-13-53-204Z.enc.json",
               "bytes": 3412
+            },
+            {
+              "ts": "2026-08-12T08:39:31.495Z",
+              "hash": "10ca9fb2718ab577513412c3eea9f468c0b9234614f3ee837ad365e346e0f99d",
+              "path": "ai-context/a-share-company-research-automation/2026-08-12T08-39-31-512Z.enc.json",
+              "bytes": 3658
             }
           ]
         },

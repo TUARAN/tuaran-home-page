@@ -25,6 +25,7 @@ import HomeFeaturedReadingClient from './components/HomeFeaturedReadingClient'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
+import { getLatestFeedItems } from './feed/data'
 
 const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
@@ -273,7 +274,6 @@ const ORDERED_SOCIAL_MEDIA_LINKS = SOCIAL_MEDIA_LINKS
   .map((item, index) => ({ ...item, priority: index < 3, rank: index + 1 }))
 
 const PRIMARY_SOCIAL_MEDIA_LINKS = ORDERED_SOCIAL_MEDIA_LINKS.slice(0, 3)
-const SECONDARY_SOCIAL_MEDIA_LINKS = ORDERED_SOCIAL_MEDIA_LINKS.slice(3)
 
 const SOCIAL_MEDIA_TOTALS = {
   followers: '3.5w+',
@@ -283,9 +283,9 @@ const SOCIAL_MEDIA_TOTALS = {
 const HOME_ACHIEVEMENT_LINKS = [
   {
     href: '/publications',
-    kicker: '出版写作',
-    title: '已出版 / 发布 2 本技术作品',
-    desc: '《程序员成长手记》《AI Bots 通关指南》作者',
+    title: '技术作品出版 · 2 本',
+    compact: true,
+    emoji: '📖',
     image: '/images/books/programmer-growth-notes.jpg',
     imageAlt: '《程序员成长手记》书籍封面',
     icon: IconFileText,
@@ -294,12 +294,6 @@ const HOME_ACHIEVEMENT_LINKS = [
 
 const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 const CLASSIC_SITE_HERO_TAGLINE_EN = `${SITE_HERO_TITLE_EN}: ${SITE_HERO_TAGLINE_EN}`
-
-const PROFILE_LINKS = [
-  { href: '/articles', label: '内容目录', labelEn: 'Content Directory' },
-  { href: '/publications', label: '出版作品', labelEn: 'Publications' },
-  { href: '/site', label: '站点说明', labelEn: 'About This Site' },
-]
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -500,7 +494,16 @@ function SocialMediaCard({ item }) {
 
 function AchievementMiniCard({ item }) {
   const Icon = item.icon
-  const content = (
+  const content = item.compact ? (
+    <>
+      {item.image ? (
+        <span className="home-achievement-compact-media" aria-hidden="true">
+          <Image src={item.image} alt="" width={48} height={48} sizes="36px" />
+        </span>
+      ) : null}
+      <strong>{item.emoji ? `${item.emoji} ` : ''}{item.title}</strong>
+    </>
+  ) : (
     <>
       {item.image ? (
         <span className="home-achievement-media-slot">
@@ -523,14 +526,14 @@ function AchievementMiniCard({ item }) {
 
   if (isExternalHref(item.href)) {
     return (
-      <a href={item.href} target="_blank" rel="noreferrer" className="home-achievement-card no-external-arrow">
+      <a href={item.href} target="_blank" rel="noreferrer" className={`home-achievement-card no-external-arrow ${item.compact ? 'is-compact' : ''}`}>
         {content}
       </a>
     )
   }
 
   return (
-    <Link href={item.href} className="home-achievement-card">
+    <Link href={item.href} className={`home-achievement-card ${item.compact ? 'is-compact' : ''}`}>
       {content}
     </Link>
   )
@@ -542,7 +545,7 @@ function BuilderAndSignalsPanel() {
       <div className="home-section-heading compact">
         <div>
           <p className="home-kicker">Builder</p>
-          <h2 className="home-section-title"><T zh="我正在经营的" en="What I'm building" /></h2>
+          <h2 className="home-section-title"><T zh="正在做" en="Building" /></h2>
         </div>
       </div>
 
@@ -566,23 +569,16 @@ function BuilderAndSignalsPanel() {
 
       <div className="home-builder-group">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="home-builder-subtitle mb-0"><T zh="内容影响力 · 站长其他社媒" en="Reach · More channels" /></p>
+          <p className="home-builder-subtitle mb-0">
+            <T zh={`主要平台 · ${SOCIAL_MEDIA_TOTALS.followers} 关注`} en={`Main channels · ${SOCIAL_MEDIA_TOTALS.followers} followers`} />
+          </p>
           <Link href="/about" className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--site-faint)] no-underline hover:text-[var(--site-ink)]">
             <T zh="履历 →" en="About →" />
           </Link>
         </div>
-        <div className="home-social-total" aria-label="Content channel totals">
-          <span><IconUsers size={13} stroke={1.8} aria-hidden="true" /><T zh="总关注" en="Followers" /> {SOCIAL_MEDIA_TOTALS.followers}</span>
-          <span><IconEye size={13} stroke={1.8} aria-hidden="true" /><T zh="全网阅读" en="Views" /> {SOCIAL_MEDIA_TOTALS.reads}</span>
-        </div>
         <div className="home-social-grid">
           <div className="home-social-priority-grid">
             {PRIMARY_SOCIAL_MEDIA_LINKS.map((item) => (
-              <SocialMediaCard key={item.label} item={item} />
-            ))}
-          </div>
-          <div className="home-social-secondary-grid">
-            {SECONDARY_SOCIAL_MEDIA_LINKS.map((item) => (
               <SocialMediaCard key={item.label} item={item} />
             ))}
           </div>
@@ -594,7 +590,16 @@ function BuilderAndSignalsPanel() {
 
 function ProfileCard() {
   return (
-    <section className="home-profile" aria-label="Profile">
+    <section id="personal" className="home-profile scroll-mt-24" aria-label="Profile">
+      <div className="home-profile-heading">
+        <div>
+          <p className="home-kicker">03 · About</p>
+          <h2 className="home-section-title"><T zh="站长" en="Site owner" /></h2>
+        </div>
+        <Link href="/about" className="home-section-more no-underline">
+          <T zh="更多" en="More" /> <span aria-hidden="true">→</span>
+        </Link>
+      </div>
       <div className="home-profile-top">
         <div className="home-avatar-wrap">
           <Image
@@ -611,35 +616,68 @@ function ProfileCard() {
           <p className="home-profile-name"><T zh="涂阿燃" en="TUARAN" /></p>
           <p className="home-profile-role">
             <T
-              zh={<>FDE・KOL・OPC｜<FounderCompanyText /></>}
-              en={<>FDE · KOL · OPC | <FounderCompanyText /></>}
-            />
-          </p>
-          <p className="home-profile-company">
-            <T
-              zh="记录 AI 实践、社会洞察、生活随笔"
-              en="AI practice, social insights, life notes"
+              zh="AI 加速且放大我的观察"
+              en="AI accelerates and amplifies my observations"
             />
           </p>
         </div>
       </div>
-      <blockquote>
-        <p>
-          <T
-            zh="选一件值得投入 20 年 的事，每日复利，高频迭代。"
-            en="Pick one thing worth 20 years, compound it daily, iterate fast."
-          />
-        </p>
-        <div className="home-days">
-          <DaysSince />
-        </div>
-      </blockquote>
-      <div className="home-profile-links">
-        {PROFILE_LINKS.map((link) => (
-          <Link key={link.href} href={link.href} className="no-underline">
-            <T zh={link.label} en={link.labelEn} />
+      <div className="home-profile-days">
+        <DaysSince compact />
+      </div>
+    </section>
+  )
+}
+
+function FeedThumbnail({ src }) {
+  // 灵感源同时包含本地与远端媒体，原生图片避免为每个来源维护 Next Image 域名白名单。
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" loading="lazy" />
+}
+
+function InspirationCard({ inspiration }) {
+  const formattedDate = inspiration.date.replaceAll('-', '.')
+  const thumbnail = inspiration.poster || inspiration.image || (inspiration.type === 'image' ? inspiration.src : '')
+
+  return (
+    <article className="home-inspiration-item">
+      <header className="home-inspiration-meta">
+        <time dateTime={inspiration.date}>{formattedDate}</time>
+      </header>
+      <Link href={`/feed/${inspiration.id}`} className="home-inspiration-title no-underline">
+        {inspiration.title}
+      </Link>
+      <div className={`home-inspiration-body ${thumbnail ? 'has-thumbnail' : ''}`}>
+        {thumbnail ? (
+          <Link href={`/feed/${inspiration.id}`} className="home-inspiration-thumbnail no-underline" aria-label={`查看灵感：${inspiration.title}`}>
+            <FeedThumbnail src={thumbnail} />
           </Link>
-        ))}
+        ) : null}
+        <div className="min-w-0">
+          <p className="home-inspiration-copy">
+            {inspiration.summary || inspiration.quote}
+          </p>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function HomeInspirations({ items }) {
+  return (
+    <section id="inspirations" className="home-section home-inspirations scroll-mt-24">
+      <div className="home-section-heading compact">
+        <div>
+          <p className="home-kicker">02 · Sparks</p>
+          <h2 className="home-section-title"><T zh="灵感" en="Inspiration" /></h2>
+          <p className="home-section-description"><T zh="随手记下的发现、念头与启发" en="Quick discoveries, ideas, and sparks" /></p>
+        </div>
+        <Link href="/feed" className="home-section-more no-underline">
+          <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+      <div className="home-inspiration-list">
+        {items.map((inspiration) => <InspirationCard key={inspiration.id} inspiration={inspiration} />)}
       </div>
     </section>
   )
@@ -895,7 +933,7 @@ function ClassicHomePage({ featuredPicks }) {
   )
 }
 
-function PolishedHomePage({ featuredPicks }) {
+function PolishedHomePage({ featuredPicks, inspirations }) {
   return (
     <main className="home-polished-root home-page">
       <div className="home-backdrop" aria-hidden="true" />
@@ -904,6 +942,8 @@ function PolishedHomePage({ featuredPicks }) {
       </div>
       <div className="home-main-grid">
         <HomeFeaturedReadingClient catalog={featuredPicks} />
+
+        <HomeInspirations items={inspirations} />
 
         <aside className="home-side-stack">
           <ProfileCard />
@@ -956,6 +996,7 @@ function PolishedHomePage({ featuredPicks }) {
 
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
+  const inspirations = getLatestFeedItems(10)
 
-  return <PolishedHomePage featuredPicks={featuredPicks} />
+  return <PolishedHomePage featuredPicks={featuredPicks} inspirations={inspirations} />
 }

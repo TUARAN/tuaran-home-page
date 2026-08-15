@@ -195,11 +195,12 @@ export default function HomeFeaturedReadingClient({ catalog }) {
   if (!settings.enabled || !items.length) return null
 
   return (
-    <section className="home-featured-reading home-section">
+    <section id="articles" className="home-featured-reading home-section scroll-mt-24">
       <div className="home-section-heading home-featured-heading">
         <div>
-          <p className="home-kicker">Start here</p>
-          <h2 className="home-section-title"><T zh="先读这几篇" en="Start with these" /></h2>
+          <p className="home-kicker">01 · Writing</p>
+          <h2 className="home-section-title"><T zh="文章" en="Articles" /></h2>
+          <p className="home-section-description"><T zh="完整的研究、实践记录与长期写作" en="Research, field notes, and long-form writing" /></p>
         </div>
         <div className={`flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:translate-y-2 ${searchOpen ? 'sm:min-w-[22rem]' : ''}`}>
           {searchOpen ? (

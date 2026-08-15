@@ -46,6 +46,7 @@ export default function sitemap() {
     '/articles',
     '/frontend-weekly',
     '/a-share-research',
+    '/spacex',
     '/rich-pages',
     '/works',
     '/tools',

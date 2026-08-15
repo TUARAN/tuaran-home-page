@@ -17,6 +17,7 @@ const PROVIDER_LABELS = {
   github: 'GitHub',
   google: 'Google',
   email: '邮箱密码',
+  credential: '登录凭证',
 }
 const WECHAT_LOGIN_ENABLED = process.env.NEXT_PUBLIC_WECHAT_LOGIN_ENABLED === 'true'
 
@@ -284,11 +285,11 @@ export default function AccountClient() {
             {loadError ? <p className="py-4 text-sm text-[#a34f47]">{loadError}</p> : null}
             {!loadError && !identitiesLoaded ? <p className="py-4 text-sm text-[var(--site-muted)]">正在读取登录方式…</p> : null}
             {identities.map((identity) => {
-              const canUnbind = identity.provider !== 'email' && identities.length > 1
+              const canUnbind = !['email', 'credential'].includes(identity.provider) && identities.length > 1
               return <div key={`${identity.provider}:${identity.provider_account_id}`} className="flex items-center gap-3 border-b border-[var(--site-line)] py-4">
                 <span className="min-w-16 text-[14px] font-medium text-[var(--site-ink)]">{identityName(identity)}</span>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-[var(--site-muted)]">{identity.provider_name || identity.provider_login || '已绑定'}</span>
-                {identity.provider === 'email' ? <span className="text-[11px] text-[var(--site-faint)]">邮箱凭据</span> : canUnbind ? <button type="button" onClick={() => unbind(identity.provider)} disabled={Boolean(unlinking)} className="text-[11px] text-[#a34f47] disabled:opacity-50">{unlinking === identity.provider ? '解绑中…' : '解绑'}</button> : <span className="text-[11px] text-[var(--site-faint)]">主要方式</span>}
+                {identity.provider === 'email' ? <span className="text-[11px] text-[var(--site-faint)]">邮箱凭据</span> : identity.provider === 'credential' ? <span className="text-[11px] text-[var(--site-faint)]">由站长管理</span> : canUnbind ? <button type="button" onClick={() => unbind(identity.provider)} disabled={Boolean(unlinking)} className="text-[11px] text-[#a34f47] disabled:opacity-50">{unlinking === identity.provider ? '解绑中…' : '解绑'}</button> : <span className="text-[11px] text-[var(--site-faint)]">主要方式</span>}
               </div>
             })}
           </div>

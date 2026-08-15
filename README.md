@@ -46,8 +46,9 @@
 ### 账户、社区与权益
 
 - 自定义 Cloudflare Edge Session，不以 NextAuth 作为生产认证层。
-- 支持 GitHub、Google、微信 OAuth，以及邮箱验证码 / 密码注册登录。
+- 支持 GitHub、Google、微信 OAuth，邮箱验证码 / 密码，以及站长签发的登录凭证。
 - 不按昵称、手机号或邮箱自动合并第三方身份；账号绑定通过显式授权完成。
+- 登录凭证由本地 CLI 写入 D1，数据库只保存 PBKDF2 哈希；凭证登录后可在账号中心绑定 GitHub 或 Google。
 - 游客可以获得签名访客身份，登录后按规则承接历史互动数据。
 - 评论、讨论、通知、签到、燃币余额和资源解锁以 D1 为主要存储。
 - 站长身份由 `SITE_OWNER_IDS`、`SITE_OWNER_LOGINS`、`SITE_OWNER_EMAILS` 等白名单配置确认。
@@ -154,6 +155,16 @@ npm run test:planning
 | 广告 | `NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT` 与页面广告位变量 |
 
 `NEXTAUTH_*` 名称是历史兼容命名；生产登录实际由 `lib/edgeSession.js` 和 `/api/auth/*` 自定义路由处理。`/api/auth/[...nextauth]` 仅保留为返回 HTTP 410 的废弃兼容端点。
+
+新增生产站长凭证前，先应用 D1 迁移，再从本地明确写入远程数据库：
+
+```bash
+npx wrangler d1 migrations apply tuaran-me --remote
+npm run credential:add -- --remote --owner
+```
+
+CLI 会优先把凭证关联到已有 GitHub `tuaran` 身份；明文凭证只显示一次，不得写入仓库。普通邀请凭证可使用 `--label`、`--name`、`--expires-days`，或用 `--user-id acct_xxx` 明确关联已有账号。
+需要撤销时，从凭证前两段取得公开 ID（例如 `cred_xxxxxxxxxxxx`），执行 `npm run credential:disable -- --remote cred_xxxxxxxxxxxx`；停用操作不需要也不接受明文凭证。
 
 ## 构建与部署
 

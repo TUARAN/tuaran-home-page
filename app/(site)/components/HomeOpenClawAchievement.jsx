@@ -33,7 +33,7 @@ export default function HomeOpenClawAchievement() {
 
   return (
     <>
-      <div className="home-achievement-button">
+      <div className="home-achievement-button is-compact">
         <button
           type="button"
           className="home-achievement-open-button"
@@ -49,14 +49,11 @@ export default function HomeOpenClawAchievement() {
             alt=""
             width={OPENCLAW_ACHIEVEMENTS[0].imageWidth}
             height={OPENCLAW_ACHIEVEMENTS[0].imageHeight}
-            sizes="80px"
+            sizes="36px"
           />
         </span>
         <span className="home-achievement-copy min-w-0 flex-1">
-          <span className="home-achievement-kicker">
-            开源贡献 · {OPENCLAW_ACHIEVEMENT_COUNT} 个 PR 已合入
-          </span>
-          <strong>开源贡献至全球 Star 数最多的开源软件项目 OpenClaw🦞，已有 {OPENCLAW_ACHIEVEMENT_COUNT} 次代码成功被合并。</strong>
+          <strong>🦞 OpenClaw 项目仓库共建</strong>
         </span>
       </div>
 

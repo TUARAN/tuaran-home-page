@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { normalizeReturnTo } from '../../../lib/returnTo'
 
 const ERROR_MESSAGES = {
+  INVALID_CREDENTIAL: '凭证无效、已过期或已停用。',
   INVALID_CREDENTIALS: '邮箱或密码不正确。',
   INVALID_PASSWORD: '第一次使用这个邮箱时，密码长度需要至少 8 位。',
   LOGIN_FAILED: '登录失败，请稍后再试。',
@@ -17,6 +18,7 @@ const LOGIN_METHOD_LABELS = {
   github: 'GitHub',
   wechat: '微信',
   email: '邮箱',
+  credential: '凭证',
 }
 
 function getReturnTo() {
@@ -42,8 +44,10 @@ function LastUsedBadge() {
 export default function LoginClient() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [credential, setCredential] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [credentialError, setCredentialError] = useState('')
   const [oauthReturnTo, setOauthReturnTo] = useState('/')
   const [lastLoginMethod, setLastLoginMethod] = useState('')
 
@@ -56,6 +60,7 @@ export default function LoginClient() {
     event.preventDefault()
     setSubmitting(true)
     setError('')
+    setCredentialError('')
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -72,6 +77,27 @@ export default function LoginClient() {
     }
   }
 
+  async function loginWithCredential(event) {
+    event.preventDefault()
+    setSubmitting(true)
+    setError('')
+    setCredentialError('')
+    try {
+      const response = await fetch('/api/auth/credential', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data?.error || 'LOGIN_FAILED')
+      window.location.href = getReturnTo()
+    } catch (err) {
+      setCredentialError(ERROR_MESSAGES[err.message] || ERROR_MESSAGES.LOGIN_FAILED)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-12 sm:py-20">
       <section className="rounded-3xl border border-[#d5d7cd] bg-[#f6f8f3] p-6 shadow-[0_20px_60px_rgba(82,69,45,0.08)] dark:border-[#293241] dark:bg-[#111821] sm:p-8">
@@ -80,7 +106,7 @@ export default function LoginClient() {
         </p>
         <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">登录</h1>
         <p className="mb-8 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">
-          使用 Google、GitHub 或邮箱继续。
+          使用 Google、GitHub、凭证或邮箱继续。
         </p>
 
         {lastLoginMethod && LOGIN_METHOD_LABELS[lastLoginMethod] ? (
@@ -133,6 +159,36 @@ export default function LoginClient() {
             微信登录待开放
           </p>
         ) : null}
+
+        <div className="my-6 flex items-center gap-3 text-xs text-[#898a7f] dark:text-[#738095]">
+          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
+          <span>或使用凭证</span>
+          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
+        </div>
+
+        <form onSubmit={loginWithCredential} className="space-y-3">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-[#35362f] dark:text-gray-200">登录凭证</span>
+            <input
+              type="password"
+              autoComplete="off"
+              required
+              value={credential}
+              onChange={(event) => setCredential(event.target.value)}
+              placeholder="输入站长签发的凭证"
+              className="w-full rounded-xl border border-[#caccc0] bg-white px-3.5 py-2.5 font-mono text-sm text-[#1a1b17] outline-none transition focus:border-[#a37b3c] focus:ring-2 focus:ring-[#a7ac8d]/30 dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
+            />
+          </label>
+          {credentialError ? <p className="text-sm text-[#a34f47] dark:text-[#b5a09b]">{credentialError}</p> : null}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#a37b3c] px-4 py-3 text-sm font-medium text-[#6d481d] transition hover:bg-[#efe5d4] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#a98752] dark:text-[#e5bd7a] dark:hover:bg-amber-950/40"
+          >
+            <span>{submitting ? '处理中…' : '凭证登录'}</span>
+            {lastLoginMethod === 'credential' ? <LastUsedBadge /> : null}
+          </button>
+        </form>
 
         <div className="my-6 flex items-center gap-3 text-xs text-[#898a7f] dark:text-[#738095]">
           <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />

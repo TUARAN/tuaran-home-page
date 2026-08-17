@@ -619,16 +619,16 @@ function ProfileCard() {
             <T
               zh={
                 <>
-                  <span>输入决定输出</span>
+                  <span className="home-profile-role-line">输入决定输出</span>
                   <span className="home-profile-role-pause">，</span>
-                  <span>输出暴露输入</span>
+                  <span className="home-profile-role-line home-profile-role-line-end">输出暴露输入</span>
                 </>
               }
               en={
                 <>
-                  <span>Input shapes output</span>
+                  <span className="home-profile-role-line">Input shapes output</span>
                   <span className="home-profile-role-pause">;</span>{' '}
-                  <span>output reveals input</span>
+                  <span className="home-profile-role-line home-profile-role-line-end">output reveals input</span>
                 </>
               }
             />

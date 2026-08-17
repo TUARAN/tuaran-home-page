@@ -80,6 +80,7 @@ export default function sitemap() {
     '/bookmarks/ai-tools',
     '/resources/rss',
     '/resources/ai-music',
+    '/resources/niu-lai-movie',
     '/resources/liang-wenfeng-investor-meeting',
     '/resources/ai-learning-library',
     '/resources/edge-agent-development',

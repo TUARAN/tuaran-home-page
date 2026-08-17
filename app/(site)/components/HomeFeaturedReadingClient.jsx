@@ -27,7 +27,6 @@ const SECTION_BADGE_CLASS = {
   column: 'home-badge home-badge-column',
   research: 'home-badge home-badge-research',
   resources: 'home-badge home-badge-resource',
-  feed: 'home-badge home-badge-feed',
 }
 
 function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0 }) {
@@ -100,7 +99,7 @@ export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
   const recommendationsReady = settingsReady && automaticBatchReady
 
-  // 在浏览器绘制前同步两列，避免文章先显现、灵感晚一帧切换。
+  // 在浏览器绘制前同步推荐列表，避免配置读取完成前发生内容切换。
   useLayoutEffect(() => {
     onReadyChange?.(recommendationsReady)
   }, [onReadyChange, recommendationsReady])
@@ -169,7 +168,7 @@ export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
     }
   }, [clearSearch, normalizedQuery, viewAllResults])
 
-  const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled !== false).length
+  const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled === true).length
 
   useEffect(() => {
     const handlePageKeyDown = (event) => {

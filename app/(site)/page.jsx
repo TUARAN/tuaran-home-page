@@ -617,8 +617,20 @@ function ProfileCard() {
           <p className="home-profile-name"><T zh="涂阿燃" en="TUARAN" /></p>
           <p className="home-profile-role">
             <T
-              zh="AI 加速且放大我的观察"
-              en="AI accelerates and amplifies my observations"
+              zh={
+                <>
+                  <span>输入决定输出</span>
+                  <span className="home-profile-role-pause">，</span>
+                  <span>输出暴露输入</span>
+                </>
+              }
+              en={
+                <>
+                  <span>Input shapes output</span>
+                  <span className="home-profile-role-pause">;</span>{' '}
+                  <span>output reveals input</span>
+                </>
+              }
             />
           </p>
         </div>

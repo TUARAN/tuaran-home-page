@@ -2,12 +2,13 @@ import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import {
   MORNING_GREETING_ID,
-  MORNING_GREETING_LAST_RUN_KEY,
   MORNING_GREETING_SETTING_KEY,
+  greetingLastRunKey,
   isAutomationPaused,
 } from '../../../../lib/morningGreeting'
 import {
   deleteMorningGreetingTemplate,
+  greetingTemplateStats,
   listMorningGreetingTemplates,
   upsertMorningGreetingTemplate,
 } from '../../../../lib/morningGreetingTemplates'
@@ -48,33 +49,45 @@ export async function GET(req) {
     return Response.json({ status: 'unavailable', message: '当前运行环境没有 D1 绑定。' }, { status: 503 })
   }
 
+  const url = new URL(req.url)
+  const parsedOffset = Number.parseInt(url.searchParams.get('offset') || '0', 10)
+  const parsedLimit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
+  const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 50) : 20
+  const period = String(url.searchParams.get('period') || 'all')
+  const query = String(url.searchParams.get('q') || '').trim().slice(0, 100)
+
   try {
-    const [templates, state, lastRunRaw] = await Promise.all([
-      listMorningGreetingTemplates(db),
+    const [templatePage, stats, state, morningRaw, noonRaw, eveningRaw] = await Promise.all([
+      listMorningGreetingTemplates(db, { offset, limit, period, query }),
+      greetingTemplateStats(db),
       readSetting(db, MORNING_GREETING_SETTING_KEY),
-      readSetting(db, MORNING_GREETING_LAST_RUN_KEY),
+      readSetting(db, greetingLastRunKey('morning')),
+      readSetting(db, greetingLastRunKey('noon')),
+      readSetting(db, greetingLastRunKey('evening')),
     ])
-    let lastRun = null
-    try {
-      lastRun = JSON.parse(lastRunRaw || 'null')
-    } catch {
-      lastRun = null
+    const lastRuns = {}
+    for (const [key, raw] of [['morning', morningRaw], ['noon', noonRaw], ['evening', eveningRaw]]) {
+      try {
+        lastRuns[key] = JSON.parse(raw || 'null')
+      } catch {
+        lastRuns[key] = null
+      }
     }
-    const enabledCount = templates.filter((item) => item.enabled).length
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
-      templates,
+      templates: templatePage.items,
+      total: templatePage.total,
+      offset,
+      limit,
       paused: isAutomationPaused(state),
-      lastRun,
-      stats: {
-        total: templates.length,
-        enabled: enabledCount,
-      },
+      lastRuns,
+      stats,
     })
   } catch (error) {
     return Response.json(
-      { status: 'error', message: '问早模板读取失败。', detail: String(error?.message || error) },
+      { status: 'error', message: '每日问候模板读取失败。', detail: String(error?.message || error) },
       { status: 500 },
     )
   }
@@ -94,6 +107,8 @@ export async function POST(req) {
     const result = await upsertMorningGreetingTemplate(db, {
       id: Number(body.id) || 0,
       text: String(body.text || ''),
+      period: String(body.period || 'morning'),
+      contentKind: String(body.contentKind || 'reflection'),
       enabled: body.enabled !== false,
       sortOrder: Number(body.sortOrder) || 0,
     })

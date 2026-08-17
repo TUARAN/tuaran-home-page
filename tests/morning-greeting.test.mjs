@@ -2,6 +2,10 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  DAILY_GREETING_TEMPLATES,
+  buildDailyGreeting,
+  greetingLastRunKey,
+  greetingPeriodForDate,
   MORNING_GREETING_TEMPLATE,
   MORNING_GREETING_TEMPLATES,
   buildMorningGreeting,
@@ -9,6 +13,7 @@ import {
   greetingWithinLimit,
   isAutomationPaused,
   normalizeGreetingNewlines,
+  pickDailyGreetingTemplate,
   pickMorningGreetingTemplate,
   shanghaiDateKey,
 } from '../lib/morningGreeting.js'
@@ -28,13 +33,13 @@ test('shanghai date key uses Asia/Shanghai calendar day', () => {
   assert.equal(shanghaiDateKey(new Date('2026-08-05T15:59:00.000Z')), '2026-08-05')
 })
 
-test('builds a morning greeting with today date injected and no chovy', () => {
+test('builds a morning greeting with today date injected', () => {
   const text = buildMorningGreeting({ now: new Date('2026-08-05T00:30:00.000Z') })
   assert.ok(text.includes('今天是8月5号'))
   assert.ok(!text.includes('{date}'))
   assert.ok(!text.toLowerCase().includes('chovy'))
   assert.match(text, /^(大家早上好|早上好|早安)！/)
-  assert.ok(text.includes('冷知识'))
+  assert.ok(text.split('\n').length >= 2)
 })
 
 test('normalizeGreetingNewlines turns literal \\n into real newlines', () => {
@@ -55,16 +60,40 @@ test('rowToTemplate normalizes legacy literal \\n from D1 rows', () => {
   assert.equal(row.text, '早安！\n冷知识：～')
 })
 
-test('all 10 greeting templates are well-formed and within X post weight limit', () => {
-  assert.equal(MORNING_GREETING_TEMPLATES.length, 10)
+test('all 100 daily greeting templates cover three periods and fit X limit', () => {
+  assert.equal(DAILY_GREETING_TEMPLATES.length, 100)
+  assert.equal(MORNING_GREETING_TEMPLATES.length, 34)
   assert.equal(MORNING_GREETING_TEMPLATE, MORNING_GREETING_TEMPLATES[0])
-  for (const template of MORNING_GREETING_TEMPLATES) {
-    assert.match(template, /^(大家早上好|早上好|早安)！/)
-    assert.ok(template.includes('{date}'))
-    assert.ok(!template.toLowerCase().includes('chovy'))
-    const filled = template.replace('{date}', '12月31号')
-    assert.ok(greetingWithinLimit(filled), `模板超重：${template.slice(0, 20)}…`)
+  assert.deepEqual(
+    Object.fromEntries(['morning', 'noon', 'evening'].map((period) => [period, DAILY_GREETING_TEMPLATES.filter((item) => item.period === period).length])),
+    { morning: 34, noon: 33, evening: 33 },
+  )
+  for (const template of DAILY_GREETING_TEMPLATES) {
+    assert.match(template.text, /^(早安|午安|晚安)！/)
+    assert.ok(template.text.includes('{date}'))
+    assert.ok(['quote', 'story', 'reflection'].includes(template.contentKind))
+    assert.ok(greetingWithinLimit(template.text.replace('{date}', '12月31号')), `模板超重：${template.text.slice(0, 20)}…`)
   }
+})
+
+test('period is inferred in Asia/Shanghai and each period has its own idempotency key', () => {
+  assert.equal(greetingPeriodForDate(new Date('2026-08-05T00:00:00Z')), 'morning')
+  assert.equal(greetingPeriodForDate(new Date('2026-08-05T04:00:00Z')), 'noon')
+  assert.equal(greetingPeriodForDate(new Date('2026-08-05T14:00:00Z')), 'evening')
+  assert.notEqual(greetingLastRunKey('morning'), greetingLastRunKey('noon'))
+})
+
+test('builds the requested greeting period', () => {
+  const now = new Date('2026-08-05T04:00:00Z')
+  assert.match(buildDailyGreeting({ now, period: 'noon' }), /^午安！/)
+  assert.match(buildDailyGreeting({ now, period: 'evening' }), /^晚安！/)
+})
+
+test('daily picker accepts a D1 text pool already filtered for noon or evening', () => {
+  assert.equal(
+    pickDailyGreetingTemplate(['午安！数据库自定义模板。'], { period: 'noon', now: new Date('2026-08-05T04:00:00Z') }),
+    '午安！数据库自定义模板。',
+  )
 })
 
 test('template pick is deterministic per shanghai day and varies across days', () => {

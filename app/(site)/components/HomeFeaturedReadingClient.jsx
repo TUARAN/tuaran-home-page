@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import {
   chooseHomeRecommendationBatch,
@@ -57,7 +57,7 @@ function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false,
     : <Link href={item.href} className={className} {...analyticsProps}>{content}</Link>
 }
 
-export default function HomeFeaturedReadingClient({ catalog }) {
+export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
   const router = useRouter()
   const searchInputRef = useRef(null)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
@@ -99,6 +99,11 @@ export default function HomeFeaturedReadingClient({ catalog }) {
   const displayedItems = normalizedQuery ? searchResults : items
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
   const recommendationsReady = settingsReady && automaticBatchReady
+
+  // 在浏览器绘制前同步两列，避免文章先显现、灵感晚一帧切换。
+  useLayoutEffect(() => {
+    onReadyChange?.(recommendationsReady)
+  }, [onReadyChange, recommendationsReady])
 
   useEffect(() => {
     let alive = true

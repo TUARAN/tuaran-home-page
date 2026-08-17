@@ -21,7 +21,7 @@ import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
 import HotTickerBar from './components/HotTickerBar'
-import HomeFeaturedReadingClient from './components/HomeFeaturedReadingClient'
+import HomePrimaryColumnsClient from './components/HomePrimaryColumnsClient'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
@@ -31,7 +31,6 @@ const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
 const MATRIXLINK_URL = 'https://matrixlink.tech/'
 const HOME_PINNED_INSPIRATION_IDS = ['gemma-4-agent-vllm-challenge']
-const HOME_PINNED_INSPIRATION_ID_SET = new Set(HOME_PINNED_INSPIRATION_IDS)
 
 export const dynamic = 'force-static'
 
@@ -631,69 +630,6 @@ function ProfileCard() {
   )
 }
 
-function FeedThumbnail({ src }) {
-  // 灵感源同时包含本地与远端媒体，原生图片避免为每个来源维护 Next Image 域名白名单。
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" loading="lazy" />
-}
-
-function InspirationCard({ inspiration, isPinned = false }) {
-  const formattedDate = inspiration.date.replaceAll('-', '.')
-  const thumbnail = inspiration.poster || inspiration.image || (inspiration.type === 'image' ? inspiration.src : '')
-
-  return (
-    <article className="home-inspiration-item">
-      <header className="home-inspiration-meta">
-        {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
-        <time dateTime={inspiration.date}>{formattedDate}</time>
-      </header>
-      <Link href={`/feed/${inspiration.id}`} className="home-inspiration-title no-underline">
-        {inspiration.title}
-      </Link>
-      <div className={`home-inspiration-body ${thumbnail ? 'has-thumbnail' : ''}`}>
-        {thumbnail ? (
-          <Link href={`/feed/${inspiration.id}`} className="home-inspiration-thumbnail no-underline" aria-label={`查看灵感：${inspiration.title}`}>
-            <FeedThumbnail src={thumbnail} />
-          </Link>
-        ) : null}
-        <div className="min-w-0">
-          <p className="home-inspiration-copy">
-            {inspiration.summary || inspiration.quote}
-          </p>
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function HomeInspirations({ items }) {
-  return (
-    <section id="inspirations" className="home-section home-inspirations scroll-mt-24">
-      <div className="home-section-heading compact">
-        <div className="w-full">
-          <p className="home-kicker">02 · Sparks</p>
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 className="home-section-title"><T zh="灵感" en="Inspiration" /></h2>
-            <Link href="/feed" className="home-section-more no-underline">
-              <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-          <p className="home-section-description"><T zh="随手记下的发现、念头与启发" en="Quick discoveries, ideas, and sparks" /></p>
-        </div>
-      </div>
-      <div className="home-inspiration-list">
-        {items.map((inspiration) => (
-          <InspirationCard
-            key={inspiration.id}
-            inspiration={inspiration}
-            isPinned={HOME_PINNED_INSPIRATION_ID_SET.has(inspiration.id)}
-          />
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function CompanyOfficialLink({ children }) {
   return (
     <a
@@ -952,9 +888,11 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         <HotTickerBar />
       </div>
       <div className="home-main-grid">
-        <HomeFeaturedReadingClient catalog={featuredPicks} />
-
-        <HomeInspirations items={inspirations} />
+        <HomePrimaryColumnsClient
+          catalog={featuredPicks}
+          inspirations={inspirations}
+          pinnedInspirationIds={HOME_PINNED_INSPIRATION_IDS}
+        />
 
         <aside className="home-side-stack">
           <ProfileCard />

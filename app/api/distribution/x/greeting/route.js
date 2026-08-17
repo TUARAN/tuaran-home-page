@@ -1,12 +1,14 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import {
-  MORNING_GREETING_LAST_RUN_KEY,
   MORNING_GREETING_SETTING_KEY,
-  buildMorningGreeting,
+  buildDailyGreeting,
+  greetingLastRunKey,
+  greetingPeriodForDate,
   greetingWithinLimit,
   isAutomationPaused,
-  pickMorningGreetingTemplate,
+  normalizeGreetingPeriod,
+  pickDailyGreetingTemplate,
   shanghaiDateKey,
 } from '../../../../../lib/morningGreeting'
 import { listEnabledMorningGreetingTexts } from '../../../../../lib/morningGreetingTemplates'
@@ -50,6 +52,15 @@ export async function POST(req) {
     return Response.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 })
   }
 
+  const requestedPeriod = new URL(req.url).searchParams.get('period')
+  const period = requestedPeriod
+    ? normalizeGreetingPeriod(requestedPeriod, '')
+    : greetingPeriodForDate()
+  if (!period) {
+    return Response.json({ ok: false, error: 'INVALID_PERIOD', detail: 'period 仅支持 morning、noon、evening。' }, { status: 400 })
+  }
+  const lastRunKey = greetingLastRunKey(period)
+
   const db = env.DB || null
   if (db) {
     try {
@@ -64,8 +75,8 @@ export async function POST(req) {
       // D1 不可用时按“运行中”放行，发布失败由 X 凭据环节兜底。
     }
     try {
-      // 当天已成功发布则直接跳过（补跑触发点用）：同一自然日不重复发帖。
-      const lastRunRaw = await readSetting(db, MORNING_GREETING_LAST_RUN_KEY)
+      // 同一自然日的同一时段只成功发布一次；三个时段分别记录，互不阻断。
+      const lastRunRaw = await readSetting(db, lastRunKey)
       if (lastRunRaw) {
         const lastRun = JSON.parse(lastRunRaw)
         if (lastRun?.ok && shanghaiDateKey(lastRun.at) === shanghaiDateKey()) {
@@ -74,6 +85,7 @@ export async function POST(req) {
               ok: true,
               skipped: true,
               reason: 'already_posted_today',
+              period,
               postId: lastRun.postId || '',
               postUrl: lastRun.postUrl || '',
             },
@@ -86,17 +98,17 @@ export async function POST(req) {
     }
   }
 
-  // 模板以后台 morning_greeting_templates 为准，按日期稳定随机选一条；
+  // 模板以后台 morning_greeting_templates 为准，按“日期 + 时段”稳定随机选一条；
   // 表不可用或为空时回退代码默认池。
   let pickedTemplate = null
   if (db) {
     try {
-      pickedTemplate = pickMorningGreetingTemplate(await listEnabledMorningGreetingTexts(db))
+      pickedTemplate = pickDailyGreetingTemplate(await listEnabledMorningGreetingTexts(db, period), { period })
     } catch {
       pickedTemplate = null
     }
   }
-  const text = buildMorningGreeting({ template: pickedTemplate })
+  const text = buildDailyGreeting({ period, template: pickedTemplate })
   if (!greetingWithinLimit(text)) {
     return Response.json({ ok: false, error: 'TEXT_TOO_LONG' }, { status: 400 })
   }
@@ -106,8 +118,8 @@ export async function POST(req) {
     if (db) {
       await writeSetting(
         db,
-        MORNING_GREETING_LAST_RUN_KEY,
-        JSON.stringify({ at: Date.now(), ok: false, error: result.error }),
+        lastRunKey,
+        JSON.stringify({ at: Date.now(), ok: false, period, error: result.error }),
         'automation',
       ).catch(() => {})
     }
@@ -115,12 +127,12 @@ export async function POST(req) {
   }
 
   if (db) {
-    await writeSetting(
-      db,
-      MORNING_GREETING_LAST_RUN_KEY,
-      JSON.stringify({ at: Date.now(), ok: true, postId: result.post.id, postUrl: result.post.url }),
-      'automation',
-    ).catch(() => {})
+    const run = JSON.stringify({ at: Date.now(), ok: true, period, postId: result.post.id, postUrl: result.post.url })
+    await Promise.all([
+      writeSetting(db, lastRunKey, run, 'automation'),
+      // 保留旧的“最新一次运行”键，供现有运维控制台继续展示。
+      writeSetting(db, 'automation.x_morning_greeting.last_run', run, 'automation'),
+    ]).catch(() => {})
   }
-  return Response.json({ ok: true, post: result.post, text }, { status: 201 })
+  return Response.json({ ok: true, period, post: result.post, text }, { status: 201 })
 }

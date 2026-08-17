@@ -114,7 +114,7 @@ export async function GET(req) {
           {
             id: `x-morning-greeting-${greetingLastRun.at || Date.now()}`,
             taskId: MORNING_GREETING_ID,
-            taskName: 'X 每日早安问候',
+            taskName: 'X 每日问候',
             repository: 'tuaran-home-page',
             status: greetingLastRun.ok ? 'success' : 'failed',
             reviewStatus: 'not_required',

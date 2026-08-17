@@ -1,19 +1,27 @@
-name: Morning greeting to X
+name: Daily greetings to X
 
 on:
   schedule:
-    # 每天北京时间 08:00 / 08:20 / 08:40（GitHub Actions 使用 UTC）。
-    # 端点按北京时间自然日幂等：当天已成功发布则返回 200 跳过，用于补跑。
+    # 早安 08:00、午安 12:00、晚安 22:00；每组 20 分钟补跑一次（UTC）。
     - cron: '0,20,40 0 * * *'
-  workflow_dispatch: {}
+    - cron: '0,20,40 4 * * *'
+    - cron: '0,20,40 14 * * *'
+  workflow_dispatch:
+    inputs:
+      period:
+        description: Greeting period
+        required: true
+        type: choice
+        default: morning
+        options: [morning, noon, evening]
 
 concurrency:
-  group: morning-greeting
+  group: daily-greeting-${{ github.event.schedule || inputs.period }}
   cancel-in-progress: false
 
 jobs:
   post:
-    name: Publish morning greeting to X
+    name: Publish daily greeting to X
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -26,12 +34,19 @@ jobs:
             exit 1
           fi
 
+          case "${{ github.event.schedule }}" in
+            "0,20,40 4 * * *") PERIOD="noon" ;;
+            "0,20,40 14 * * *") PERIOD="evening" ;;
+            "") PERIOD="${{ inputs.period }}" ;;
+            *) PERIOD="morning" ;;
+          esac
+
           code=$(curl -sS --retry 2 --retry-delay 5 \
             -o /tmp/morning-greeting.json \
             -w '%{http_code}' \
             -X POST \
             -H "x-morning-greeting-secret: $MORNING_GREETING_SECRET" \
-            https://2aran.com/api/distribution/x/greeting)
+            "https://2aran.com/api/distribution/x/greeting?period=$PERIOD")
 
           echo "HTTP $code"
           cat /tmp/morning-greeting.json
@@ -59,7 +74,7 @@ jobs:
               pass
           print(json.dumps({
               "workflow": "morning-greeting",
-              "taskName": "X 每日早安问候",
+              "taskName": "X 每日问候（早安 / 午安 / 晚安）",
               "runId": os.environ.get("GITHUB_RUN_ID", ""),
               "runUrl": os.environ.get("RUN_URL", ""),
               "status": "failed",

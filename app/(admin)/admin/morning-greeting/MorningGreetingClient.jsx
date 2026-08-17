@@ -2,24 +2,33 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
+import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
 
-const inputClass =
-  'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-5 text-[#3f4039] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-200'
+const PAGE_SIZE = 20
+const PERIODS = [
+  { id: 'all', label: '全部时段' },
+  { id: 'morning', label: '早安' },
+  { id: 'noon', label: '午安' },
+  { id: 'evening', label: '晚安' },
+]
+const KINDS = [
+  { id: 'quote', label: '名言' },
+  { id: 'story', label: '故事' },
+  { id: 'reflection', label: '随想' },
+]
+
+const inputClass = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-5 text-[#3f4039] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-200'
+const periodLabel = (period) => PERIODS.find((item) => item.id === period)?.label || period
+const kindLabel = (kind) => KINDS.find((item) => item.id === kind)?.label || kind
 
 async function safeJson(response) {
-  try {
-    return await response.json()
-  } catch {
-    return null
-  }
+  try { return await response.json() } catch { return null }
 }
 
 function formatTime(value) {
   if (!value) return '—'
   const date = new Date(Number(value))
-  if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('zh-CN', { hour12: false })
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('zh-CN', { hour12: false })
 }
 
 export default function MorningGreetingClient() {
@@ -29,254 +38,150 @@ export default function MorningGreetingClient() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [drafts, setDrafts] = useState({})
-  const [newText, setNewText] = useState('')
+  const [period, setPeriod] = useState('all')
+  const [query, setQuery] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [offset, setOffset] = useState(0)
+  const [newTemplate, setNewTemplate] = useState({ text: '', period: 'morning', contentKind: 'quote' })
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async ({ nextOffset = offset, nextPeriod = period, nextQuery = query } = {}) => {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/admin/morning-greeting', { cache: 'no-store' })
+      const params = new URLSearchParams({ offset: String(nextOffset), limit: String(PAGE_SIZE), period: nextPeriod })
+      if (nextQuery) params.set('q', nextQuery)
+      const response = await fetch(`/api/admin/morning-greeting?${params}`, { cache: 'no-store' })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.message || payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
+      setOffset(nextOffset)
+      setPeriod(nextPeriod)
+      setQuery(nextQuery)
     } catch (fetchError) {
-      setError(fetchError?.message || '问早模板读取失败。')
+      setError(fetchError?.message || '每日问候模板读取失败。')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [offset, period, query])
 
-  useEffect(() => {
-    refresh()
-  }, [refresh])
+  useEffect(() => { refresh() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const templates = data?.templates || []
-  const lastRun = data?.lastRun || null
   const stats = data?.stats || {}
+  const lastRuns = data?.lastRuns || {}
 
-  async function saveTemplate(template, { text, enabled }) {
-    setSaving(true)
-    setError('')
-    setNotice('')
+  async function saveTemplate(template, changes = {}) {
+    setSaving(true); setError(''); setNotice('')
     try {
+      const draft = drafts[template.id] || {}
       const response = await fetch('/api/admin/morning-greeting', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          id: template.id,
-          text: text ?? template.text,
-          enabled,
-          sortOrder: template.sortOrder,
-        }),
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...template, ...draft, ...changes }),
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      setDrafts((current) => { const next = { ...current }; delete next[template.id]; return next })
       setNotice('模板已保存。')
       await refresh()
-    } catch (saveError) {
-      setError(saveError?.message || '保存失败。')
-    } finally {
-      setSaving(false)
-    }
+    } catch (saveError) { setError(saveError?.message || '保存失败。') } finally { setSaving(false) }
   }
 
   async function addTemplate(event) {
     event.preventDefault()
-    if (!newText.trim()) {
-      setError('文案不能为空。')
-      return
-    }
-    setSaving(true)
-    setError('')
-    setNotice('')
+    if (!newTemplate.text.trim()) return setError('文案不能为空。')
+    setSaving(true); setError(''); setNotice('')
     try {
       const response = await fetch('/api/admin/morning-greeting', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          text: newText,
-          enabled: true,
-          sortOrder: templates.length,
-        }),
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...newTemplate, enabled: true, sortOrder: stats.byPeriod?.[newTemplate.period]?.total || 0 }),
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      setNewTemplate((current) => ({ ...current, text: '' }))
       setNotice('已新增模板。')
-      setNewText('')
-      await refresh()
-    } catch (addError) {
-      setError(addError?.message || '新增失败。')
-    } finally {
-      setSaving(false)
-    }
+      await refresh({ nextOffset: 0, nextPeriod: newTemplate.period, nextQuery: '' })
+      setSearchInput('')
+    } catch (addError) { setError(addError?.message || '新增失败。') } finally { setSaving(false) }
   }
 
   async function removeTemplate(template) {
     if (!window.confirm('确认删除这条文案？删除后不会再被随机选中。')) return
-    setSaving(true)
-    setError('')
-    setNotice('')
+    setSaving(true); setError(''); setNotice('')
     try {
       const response = await fetch(`/api/admin/morning-greeting?id=${template.id}`, { method: 'DELETE' })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.error || `HTTP_${response.status}`)
       setNotice('已删除。')
-      await refresh()
-    } catch (deleteError) {
-      setError(deleteError?.message || '删除失败。')
-    } finally {
-      setSaving(false)
-    }
+      await refresh({ nextOffset: templates.length === 1 ? Math.max(0, offset - PAGE_SIZE) : offset })
+    } catch (deleteError) { setError(deleteError?.message || '删除失败。') } finally { setSaving(false) }
   }
 
   async function togglePause() {
-    setSaving(true)
-    setError('')
-    setNotice('')
+    setSaving(true); setError(''); setNotice('')
     try {
       const response = await fetch('/api/admin/morning-greeting', {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ action: data?.paused ? 'resume' : 'pause' }),
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.error || `HTTP_${response.status}`)
-      setNotice(data?.paused ? '已恢复运行，明天 08:00 起自动发布。' : '已暂停，定时触发将跳过发布。')
+      setNotice(data?.paused ? '已恢复每日三次问候。' : '已暂停，三个时段都不会发布。')
       await refresh()
-    } catch (pauseError) {
-      setError(pauseError?.message || '状态切换失败。')
-    } finally {
-      setSaving(false)
-    }
+    } catch (pauseError) { setError(pauseError?.message || '状态切换失败。') } finally { setSaving(false) }
+  }
+
+  function changeDraft(id, key, value) {
+    setDrafts((current) => ({ ...current, [id]: { ...(current[id] || {}), [key]: value } }))
   }
 
   return (
     <AdminPage
-      title="推特问早自动化"
-      description="每天北京时间 08:00 / 08:20 / 08:40 由 GitHub Actions 触发，按日期稳定随机选一条启用的文案发布到 X；当天已发布则自动跳过（幂等补跑）。"
-      actions={
-        <AdminButton type="button" onClick={refresh} disabled={loading}>
-          {loading ? '刷新中…' : '刷新'}
-        </AdminButton>
-      }
+      title="X 每日问候"
+      description="每天北京时间 08:00、12:00、22:00 各发布一条；每个时段从自己的启用模板中按日期稳定随机选择，重试不会重复发帖。"
+      actions={<><AdminButton type="button" onClick={togglePause} disabled={saving || loading} variant={data?.paused ? 'primary' : 'ghost'}>{data?.paused ? '恢复运行' : '暂停自动化'}</AdminButton><AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton></>}
     >
-      {data?.status === 'unavailable' ? (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          当前环境没有 D1 绑定，无法读取模板。
-        </div>
-      ) : null}
-      {error ? (
-        <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div>
-      ) : null}
-      {notice ? (
-        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div>
-      ) : null}
+      {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
+      {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="模板总数" value={loading ? '—' : stats.total || 0} />
-        <StatCard label="启用中" value={loading ? '—' : stats.enabled || 0} tone="success" />
-        <StatCard
-          label="自动化状态"
-          value={loading ? '—' : data?.paused ? '已暂停' : '运行中'}
-          tone={data?.paused ? 'warning' : 'success'}
-        />
-        <StatCard
-          label="上次发布"
-          value={loading ? '—' : lastRun?.ok ? '成功' : lastRun ? '失败' : '暂无'}
-          tone={lastRun?.ok ? 'success' : lastRun ? 'danger' : 'neutral'}
-          sub={lastRun ? formatTime(lastRun.at) : '尚未发布'}
-        />
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard label="模板总数" value={loading ? '—' : stats.total || 0} sub={`启用 ${stats.enabled || 0} 条`} />
+        {['morning', 'noon', 'evening'].map((item) => <StatCard key={item} label={`${periodLabel(item)}模板`} value={loading ? '—' : stats.byPeriod?.[item]?.total || 0} sub={`启用 ${stats.byPeriod?.[item]?.enabled || 0} 条`} tone="success" />)}
+        <StatCard label="自动化状态" value={loading ? '—' : data?.paused ? '已暂停' : '每日 3 条'} tone={data?.paused ? 'warning' : 'success'} />
       </div>
 
-      <Section
-        title="文案模板"
-        description="每天按日期随机选一条发布；保留 {date} 占位符，发布时会替换为当天日期。"
-        className="mt-4"
-        actions={
-          <StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">
-            {data?.paused ? '已暂停' : '运行中'}
-          </StatusPill>
-        }
-      >
-        <form onSubmit={addTemplate} className="mb-4 rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
-          <label className="mb-1.5 block text-[12px] font-semibold text-[#15140f] dark:text-gray-100">新增文案</label>
-          <div className="flex flex-col gap-2 lg:flex-row">
-            <textarea
-              value={newText}
-              onChange={(event) => setNewText(event.target.value)}
-              rows={2}
-              placeholder={'例如：早安！今天是{date}。新一天，继续保持节奏～'}
-              className={inputClass}
-            />
-            <AdminButton type="submit" variant="primary" disabled={saving || !newText.trim()}>
-              {saving ? '保存中…' : '新增'}
-            </AdminButton>
-          </div>
+      <Section title="新增问候" description="{date} 会在发布时替换为当天日期；新模板会自动进入对应时段的随机池。">
+        <form onSubmit={addTemplate} className="grid gap-3 lg:grid-cols-[130px_130px_1fr_auto] lg:items-end">
+          <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">时段<select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={`${inputClass} mt-1.5`}>{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+          <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">内容类型<select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={`${inputClass} mt-1.5`}>{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+          <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">文案<textarea value={newTemplate.text} onChange={(event) => setNewTemplate((current) => ({ ...current, text: event.target.value }))} rows={3} placeholder={'例如：午安！今天是{date}。\n《论语》说……'} className={`${inputClass} mt-1.5`} /></label>
+          <AdminButton type="submit" variant="primary" disabled={saving || !newTemplate.text.trim()}>{saving ? '保存中…' : '新增模板'}</AdminButton>
         </form>
-
-        {!loading && !templates.length ? (
-          <EmptyState title="还没有文案模板" description="新增第一条文案后，问早自动化会从中随机选择。" />
-        ) : (
-          <div className="space-y-2">
-            {templates.map((template, index) => (
-              <div key={template.id} className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
-                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[11px] text-[#82847a] dark:text-gray-500">#{index + 1}</span>
-                  <StatusPill tone={template.enabled ? 'success' : 'neutral'} size="sm" icon={false}>
-                    {template.enabled ? '启用' : '停用'}
-                  </StatusPill>
-                  <span className="text-[11px] text-[#94968b] dark:text-gray-500">更新于 {formatTime(template.updatedAt)}</span>
-                </div>
-                <textarea
-                  value={drafts[template.id] ?? template.text}
-                  onChange={(event) => setDrafts((prev) => ({ ...prev, [template.id]: event.target.value }))}
-                  rows={2}
-                  className={inputClass}
-                />
-                <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => saveTemplate(template, { text: drafts[template.id] ?? template.text, enabled: !template.enabled })}
-                    className="rounded-lg border border-[#caccc0] px-2.5 py-1 text-[11.5px] text-[#63645a] hover:bg-[#edefe7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]"
-                  >
-                    {template.enabled ? '停用' : '启用'}
-                  </button>
-                  <AdminButton type="button" size="sm" variant="ghost" disabled={saving} onClick={() => saveTemplate(template, { text: drafts[template.id] ?? template.text, enabled: template.enabled })}>
-                    保存修改
-                  </AdminButton>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => removeTemplate(template)}
-                    className="rounded-lg border border-rose-200 px-2.5 py-1 text-[11.5px] text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/40"
-                  >
-                    删除
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </Section>
 
-      <Section title="上次发布" className="mt-4">
-        {lastRun ? (
-          <div className="flex flex-col gap-1 text-[12.5px] leading-6 text-[#67695d] dark:text-gray-400">
-            <p className="mb-0">
-              时间：{formatTime(lastRun.at)} · 结果：
-              <StatusPill tone={lastRun.ok ? 'success' : 'danger'} size="sm">{lastRun.ok ? '成功' : '失败'}</StatusPill>
-            </p>
-            {lastRun.postUrl ? (
-              <a href={lastRun.postUrl} target="_blank" rel="noreferrer" className="break-all text-sky-700 hover:underline dark:text-sky-300">
-                {lastRun.postUrl}
-              </a>
-            ) : null}
-            {lastRun.error ? <p className="mb-0 break-words text-rose-600 dark:text-rose-300">{lastRun.error}</p> : null}
-          </div>
-        ) : (
-          <p className="mb-0 text-[13px] text-[#82847a] dark:text-gray-500">暂无发布记录。</p>
-        )}
+      <Section title="模板库" description="共 100 条默认样本，支持按时段筛选、搜索、逐条修改和停用。" className="mt-4" actions={<StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>}>
+        <div className="mb-4 flex flex-col gap-2 md:flex-row">
+          <div className="flex flex-wrap gap-2">{PERIODS.map((item) => <button key={item.id} type="button" onClick={() => { setSearchInput(''); refresh({ nextOffset: 0, nextPeriod: item.id, nextQuery: '' }) }} className={`rounded-full border px-3 py-1.5 text-xs ${period === item.id ? 'border-[#15140f] bg-[#15140f] text-white dark:border-white dark:bg-white dark:text-black' : 'border-[#d8dad0] text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-gray-300 dark:hover:bg-[#151c25]'}`}>{item.label}</button>)}</div>
+          <form className="ml-auto flex w-full gap-2 md:max-w-md" onSubmit={(event) => { event.preventDefault(); refresh({ nextOffset: 0, nextQuery: searchInput.trim() }) }}><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="搜索名言、人物或故事" className={inputClass} /><AdminButton type="submit" disabled={loading}>搜索</AdminButton></form>
+        </div>
+
+        {!loading && !templates.length ? <EmptyState title="没有匹配的文案" description="换一个关键词或时段试试。" /> : <div className="grid gap-3 xl:grid-cols-2">{templates.map((template) => {
+          const draft = drafts[template.id] || {}
+          return <article key={template.id} className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
+            <div className="mb-3 flex flex-wrap items-center gap-2"><StatusPill tone={template.period === 'morning' ? 'warning' : template.period === 'noon' ? 'success' : 'neutral'} size="sm" icon={false}>{periodLabel(template.period)}</StatusPill><span className="rounded-full bg-[#eceee6] px-2 py-0.5 text-[11px] text-[#67695d] dark:bg-[#19212c] dark:text-gray-400">{kindLabel(template.contentKind)}</span><StatusPill tone={template.enabled ? 'success' : 'neutral'} size="sm" icon={false}>{template.enabled ? '启用' : '停用'}</StatusPill><span className="ml-auto font-mono text-[10px] text-[#94968b]">#{template.id}</span></div>
+            <textarea value={draft.text ?? template.text} onChange={(event) => changeDraft(template.id, 'text', event.target.value)} rows={4} className={inputClass} />
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <select value={draft.period ?? template.period} onChange={(event) => changeDraft(template.id, 'period', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+              <select value={draft.contentKind ?? template.contentKind} onChange={(event) => changeDraft(template.id, 'contentKind', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+              <span className="text-[10px] text-[#94968b]">{formatTime(template.updatedAt)}</span>
+              <div className="ml-auto flex gap-2"><button type="button" disabled={saving} onClick={() => saveTemplate(template, { enabled: !template.enabled })} className="rounded-lg border border-[#caccc0] px-2.5 py-1 text-[11.5px] text-[#63645a] hover:bg-[#edefe7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6]">{template.enabled ? '停用' : '启用'}</button><AdminButton type="button" size="sm" variant="ghost" disabled={saving} onClick={() => saveTemplate(template)}>保存</AdminButton><button type="button" disabled={saving} onClick={() => removeTemplate(template)} className="rounded-lg border border-rose-200 px-2.5 py-1 text-[11.5px] text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">删除</button></div>
+            </div>
+          </article>
+        })}</div>}
+        <AdminPagination total={data?.total || 0} offset={offset} limit={PAGE_SIZE} onOffsetChange={(nextOffset) => refresh({ nextOffset })} loading={loading} />
+      </Section>
+
+      <Section title="今日三个时段" description="每个时段独立幂等；失败可在该时段的后续补跑点重试。" className="mt-4">
+        <div className="grid gap-3 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-xl border border-[#e2e4da] p-4 dark:border-[#243041]"><div className="mb-2 flex items-center justify-between"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-1 text-xs text-[#82847a]">{formatTime(run?.at)}</p>{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 break-words text-xs text-rose-600">{run.error}</p> : null}</div> })}</div>
       </Section>
     </AdminPage>
   )

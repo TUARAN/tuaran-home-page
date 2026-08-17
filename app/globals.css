@@ -878,17 +878,33 @@
   }
 
   .home-profile-role {
-    @apply font-serif text-[13px] font-medium leading-6;
-    color: color-mix(in srgb, var(--site-ink) 82%, var(--site-muted));
-    letter-spacing: 0.035em;
+    @apply relative mt-2 flex w-fit flex-col text-[15px] font-semibold;
+    padding: 0.15rem 0;
+    color: color-mix(in srgb, var(--site-ink) 90%, var(--site-muted));
+    font-family: "Kaiti SC", STKaiti, KaiTi, "Songti SC", STSong, serif;
+    font-variant-east-asian: proportional-width;
+    line-height: 1.55;
+    letter-spacing: 0.12em;
+    text-shadow: 0 1px 0 color-mix(in srgb, var(--page-bg) 72%, transparent);
   }
 
-  .home-profile-role > span:not(.home-profile-role-pause) {
+  .home-profile-role-line {
+    position: relative;
     white-space: nowrap;
   }
 
+  .home-profile-role-line-end {
+    margin-left: 0.8em;
+  }
+
   .home-profile-role-pause {
-    color: var(--site-accent);
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
   }
 
   .home-company-link {

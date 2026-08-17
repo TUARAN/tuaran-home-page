@@ -1207,6 +1207,39 @@
     border-color: var(--site-line);
   }
 
+  .home-inspiration-skeleton {
+    @apply absolute inset-0 divide-y overflow-hidden;
+    border-color: var(--site-line);
+  }
+
+  .home-inspiration-skeleton-item {
+    @apply py-4 first:pt-4 last:pb-0;
+  }
+
+  .home-inspiration-skeleton-date {
+    @apply h-3 w-16;
+  }
+
+  .home-inspiration-skeleton-title {
+    @apply mt-2 h-4 max-w-[94%];
+  }
+
+  .home-inspiration-skeleton-body {
+    @apply mt-2;
+  }
+
+  .home-inspiration-skeleton-body.has-thumbnail {
+    @apply grid grid-cols-[88px_minmax(0,1fr)] items-start gap-3 xl:grid-cols-[108px_minmax(0,1fr)];
+  }
+
+  .home-inspiration-skeleton-thumbnail {
+    @apply aspect-[4/3] h-auto w-full rounded-lg;
+  }
+
+  .home-inspiration-skeleton-copy {
+    @apply mb-2 h-3.5 max-w-full last:mb-0;
+  }
+
   .home-inspiration-item {
     @apply py-4 first:pt-4 last:pb-0;
   }

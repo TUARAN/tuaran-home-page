@@ -877,6 +877,20 @@
     color: var(--site-muted);
   }
 
+  .home-profile-role {
+    @apply font-serif text-[13px] font-medium leading-6;
+    color: color-mix(in srgb, var(--site-ink) 82%, var(--site-muted));
+    letter-spacing: 0.035em;
+  }
+
+  .home-profile-role > span:not(.home-profile-role-pause) {
+    white-space: nowrap;
+  }
+
+  .home-profile-role-pause {
+    color: var(--site-accent);
+  }
+
   .home-company-link {
     color: inherit;
     text-decoration-line: underline;

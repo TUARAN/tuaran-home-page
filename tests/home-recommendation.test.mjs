@@ -5,7 +5,7 @@ import { chooseHomeRecommendationBatch } from '../lib/homeRecommendationEngine.j
 
 const catalog = Array.from({ length: 40 }, (_, index) => ({
   id: `item-${index}`,
-  section: ['feed', 'column', 'research', 'resources'][index % 4],
+  section: ['column', 'research', 'resources'][index % 3],
   sortKey: String(100 - index).padStart(3, '0'),
   title: `内容 ${index}`,
 }))
@@ -42,4 +42,31 @@ test('home recommendation highlights appear only in the initial batch', () => {
     refreshed.filter((item) => initial.some((previous) => previous.id === item.id)),
     [],
   )
+})
+
+test('home recommendation excludes inspiration items even when legacy input contains them', () => {
+  const legacyCatalog = [
+    {
+      id: 'feed:legacy-inspiration',
+      section: 'feed',
+      sortKey: '999',
+      title: '旧灵感',
+    },
+    ...catalog,
+  ]
+  const batch = chooseHomeRecommendationBatch(
+    legacyCatalog,
+    {
+      batchSize: 14,
+      sources: {
+        feed: { enabled: true, weight: 10 },
+      },
+      pinnedIds: ['feed:legacy-inspiration'],
+    },
+    100,
+  )
+
+  assert.equal(batch.length, 14)
+  assert.equal(batch.some((item) => item.section === 'feed'), false)
+  assert.equal(batch.some((item) => item.id === 'feed:legacy-inspiration'), false)
 })

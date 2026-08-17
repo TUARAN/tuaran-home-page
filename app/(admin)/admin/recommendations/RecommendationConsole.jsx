@@ -10,7 +10,6 @@ import {
 } from '../../../../lib/homeRecommendationEngine'
 
 const SOURCE_META = {
-  feed: { label: '灵感', description: '短内容、动态和最近记录' },
   column: { label: '创作', description: '原创文章与精选长文' },
   research: { label: '分析', description: '公司、事项与专题调研' },
   resources: { label: '资源', description: '资料库、工具和长期整理' },
@@ -117,7 +116,7 @@ export default function RecommendationConsole() {
     return sorted.filter((item) => `${item.title} ${item.sectionLabel} ${item.tagLabel || ''}`.toLowerCase().includes(keyword))
   }, [catalog, query, settings.pinnedIds])
 
-  const enabledCandidates = catalog.filter((item) => settings.sources[item.section]?.enabled !== false).length
+  const enabledCandidates = catalog.filter((item) => settings.sources[item.section]?.enabled === true).length
 
   return (
     <AdminPage

@@ -1191,11 +1191,15 @@
   }
 
   .home-inspirations {
-    @apply h-full min-w-0 overflow-hidden pt-5 md:px-5 md:pt-5;
+    @apply h-full min-w-0 overflow-hidden pt-4 md:px-5 md:pt-4;
   }
 
   .home-inspirations .home-section-title {
     @apply text-[1.45rem];
+  }
+
+  .home-inspirations .home-kicker {
+    @apply mb-1.5;
   }
 
   .home-inspirations .home-section-heading {

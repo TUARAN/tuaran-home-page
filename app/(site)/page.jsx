@@ -670,14 +670,16 @@ function HomeInspirations({ items }) {
   return (
     <section id="inspirations" className="home-section home-inspirations scroll-mt-24">
       <div className="home-section-heading compact">
-        <div>
+        <div className="w-full">
           <p className="home-kicker">02 · Sparks</p>
-          <h2 className="home-section-title"><T zh="灵感" en="Inspiration" /></h2>
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="home-section-title"><T zh="灵感" en="Inspiration" /></h2>
+            <Link href="/feed" className="home-section-more no-underline">
+              <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
+            </Link>
+          </div>
           <p className="home-section-description"><T zh="随手记下的发现、念头与启发" en="Quick discoveries, ideas, and sparks" /></p>
         </div>
-        <Link href="/feed" className="home-section-more no-underline">
-          <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
-        </Link>
       </div>
       <div className="home-inspiration-list">
         {items.map((inspiration) => (

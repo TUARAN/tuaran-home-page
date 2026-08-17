@@ -25,11 +25,13 @@ import HomeFeaturedReadingClient from './components/HomeFeaturedReadingClient'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
-import { getLatestFeedItems } from './feed/data'
+import { getFeedItemsWithPinned } from './feed/data'
 
 const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
 const MATRIXLINK_URL = 'https://matrixlink.tech/'
+const HOME_PINNED_INSPIRATION_IDS = ['gemma-4-agent-vllm-challenge']
+const HOME_PINNED_INSPIRATION_ID_SET = new Set(HOME_PINNED_INSPIRATION_IDS)
 
 export const dynamic = 'force-static'
 
@@ -635,13 +637,14 @@ function FeedThumbnail({ src }) {
   return <img src={src} alt="" loading="lazy" />
 }
 
-function InspirationCard({ inspiration }) {
+function InspirationCard({ inspiration, isPinned = false }) {
   const formattedDate = inspiration.date.replaceAll('-', '.')
   const thumbnail = inspiration.poster || inspiration.image || (inspiration.type === 'image' ? inspiration.src : '')
 
   return (
     <article className="home-inspiration-item">
       <header className="home-inspiration-meta">
+        {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
         <time dateTime={inspiration.date}>{formattedDate}</time>
       </header>
       <Link href={`/feed/${inspiration.id}`} className="home-inspiration-title no-underline">
@@ -677,7 +680,13 @@ function HomeInspirations({ items }) {
         </Link>
       </div>
       <div className="home-inspiration-list">
-        {items.map((inspiration) => <InspirationCard key={inspiration.id} inspiration={inspiration} />)}
+        {items.map((inspiration) => (
+          <InspirationCard
+            key={inspiration.id}
+            inspiration={inspiration}
+            isPinned={HOME_PINNED_INSPIRATION_ID_SET.has(inspiration.id)}
+          />
+        ))}
       </div>
     </section>
   )
@@ -996,7 +1005,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
-  const inspirations = getLatestFeedItems(10)
+  const inspirations = getFeedItemsWithPinned(HOME_PINNED_INSPIRATION_IDS, 10)
 
   return <PolishedHomePage featuredPicks={featuredPicks} inspirations={inspirations} />
 }

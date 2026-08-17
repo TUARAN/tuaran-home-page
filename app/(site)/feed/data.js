@@ -279,6 +279,17 @@ export function getLatestFeedItems(count = 1) {
   return getAllFeedItems().slice(0, Math.max(0, count))
 }
 
+/** 按指定顺序置顶若干条目，其余条目继续按时间倒序 */
+export function getFeedItemsWithPinned(pinnedIds = [], count = 1) {
+  const items = getAllFeedItems()
+  const itemsById = new Map(items.map((item) => [item.id, item]))
+  const pinned = [...new Set(pinnedIds)].map((id) => itemsById.get(id)).filter(Boolean)
+  const pinnedIdSet = new Set(pinned.map((item) => item.id))
+
+  return [...pinned, ...items.filter((item) => !pinnedIdSet.has(item.id))]
+    .slice(0, Math.max(0, count))
+}
+
 /** 内容类型在列表里的出现顺序（用于筛选 chips） */
 export function getFeedTypesPresent() {
   const present = new Set(FEED_ITEMS.map((i) => i.type))

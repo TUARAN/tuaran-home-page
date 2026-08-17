@@ -737,17 +737,17 @@ MCP 统一了 Agent 调用能力的语言，但没有替我们消除系统设计
   },
   {
     slug: 'openclaw-pr-anthropic-image-normalization',
-    title: '5 次被 OpenClaw 合并：从修一个提示，到修一条完整链路',
-    date: '2026-07-28',
+    title: '6 次被 OpenClaw 合并：从修一个提示，到修一条完整链路',
+    date: '2026-08-15',
     href: '',
     homeCategory: '开源贡献',
     tags: ['OpenClaw', '开源贡献', 'Pull Request', 'ClawSweeper', '工程实践'],
     summary:
-      '复盘我在 OpenClaw 主仓库被合并的 5 个 PR：每次遇到的问题、修复边界、评审后的持续改进、最终落地方式，以及 ClawSweeper 给出的可核查评级。',
-    cover: '/images/openclaw/pr-113200-merged.png',
-    markdown: String.raw`# 5 次被 OpenClaw 合并：从修一个提示，到修一条完整链路
+      '复盘我在 OpenClaw 主仓库被合并的 6 个 PR：每次遇到的问题、修复边界、评审后的持续改进与最终落地方式。',
+    cover: '/images/openclaw/pr-120104-merged.png',
+    markdown: String.raw`# 6 次被 OpenClaw 合并：从修一个提示，到修一条完整链路
 
-2026 年 7 月，我在 [OpenClaw](https://github.com/openclaw/openclaw) 主仓库先后有 5 个 PR 落入 \`main\`。
+截至 2026 年 8 月，我在 [OpenClaw](https://github.com/openclaw/openclaw) 主仓库先后有 6 个 PR 落入 \`main\`。
 
 | 次序 | PR | 解决的问题 | 最终规模 | 合并时间（UTC） | ClawSweeper 最终评级 |
 | --- | --- | --- | --- | --- | --- |
@@ -756,6 +756,7 @@ MCP 统一了 Agent 调用能力的语言，但没有替我们消除系统设计
 | 3 | [#91553](https://github.com/openclaw/openclaw/pull/91553) | Tailscale Serve 启动后首次状态探测竞态 | 6 commits，4 files，+147/-21 | 2026-07-21 15:43 | 🦞 diamond lobster |
 | 4 | [#102537](https://github.com/openclaw/openclaw/pull/102537) | Anthropic 不接受 HEIC、TIFF、BMP 内联图片 | 1 commit，11 files，+728/-41 | 2026-07-21 18:31 | 🦞 diamond lobster |
 | 5 | [#113200](https://github.com/openclaw/openclaw/pull/113200) | Doctor 忽略已配置的插件加载路径并重复安装 | 1 commit，3 files，+89/-14 | 2026-07-28 03:06 | 🐚 platinum hermit |
+| 6 | [#120104](https://github.com/openclaw/openclaw/pull/120104) | 入站处理错误被当作普通放弃，超过重试上限后仍阻塞同通道消息 | 1 commit，3 files，+76/-7 | 2026-08-15 04:17 | — |
 
 ## 1、第一次：让错误信息可以直接行动
 
@@ -999,7 +1000,39 @@ ClawSweeper 最终给出：
 
 真实 Gateway 证明达到 diamond lobster。总体评级保留在 platinum hermit，因为这次改动触及 Doctor 的兼容性判断：必须确保“无托管记录且已发现”才跳过安装，已有但损坏的托管记录仍要继续修复。最终合并保留了这组对称判断。
 
-## 6、5 次提交里，真正持续改进了什么
+## 6、第六次：让真实处理错误进入有限重试
+
+[PR #120104](https://github.com/openclaw/openclaw/pull/120104) 关联 [Issue #108865](https://github.com/openclaw/openclaw/issues/108865)，处理的是 Channel 入站队列里的错误结算问题。
+
+排队消息可能在回复通道接管前处理失败。Discord 已经把真实错误传给 \`fanInChannelIngressLifecycles().abandon(error)\`，共享 fan-in helper 却丢弃了这个参数，继续调用 \`onAbandoned\`。确定性失败因此会以 \`turn-abandoned\` 回到 pending；即使超过配置的重试上限，同一 lane 后面的消息仍会被它持续阻塞。
+
+### 解决思路
+
+修复保持了现有生命周期契约：
+
+- 无参数调用 \`abandon()\` 时，仍按可重放的“未接管”结果调用 \`onAbandoned\`；
+- 带错误调用 \`abandon(error)\` 时，改为把原始错误传给 \`onFailed\`；
+- 已有的失败策略继续负责有限重试和 dead-letter，不增加新的 API、配置、数据结构或依赖。
+
+生产代码最终只改了 2 行。关键点是把错误送回已经拥有重试上限的边界，取消和普通放弃的行为保持不变。
+
+### 怎么证明同一 lane 恢复
+
+新增的 Discord 回归测试使用真实 SQLite 入站队列、Discord ingress monitor、fan-in settlement 和消息运行队列。测试先为一条 poison event 写入 7 次历史失败，再注入第 8 次确定性处理错误，同时在同一 lane 后面放入一条正常消息。
+
+修复前，poison row 继续停在 pending，后续消息没有执行。修复后，它以 \`retry-limit-exceeded\` 进入 dead-letter，后续消息随即完成。相关测试结果为：
+
+- \`src/plugin-sdk/channel-ingress-runtime.test.ts\`：7 passed；
+- \`extensions/discord/src/monitor/message-handler.queue.test.ts\`：23 passed；
+- \`git diff --check\`：passed。
+
+### 怎么被合并
+
+PR 于 2026 年 8 月 15 日由 steipete 合并至 \`main\`。最终提交是 [\`66d7833\`](https://github.com/openclaw/openclaw/commit/66d7833c3c88e6ff664a1fdea40d2a503c7269dc)，提交记录保留 Peter Steinberger 与 TUARAN 的共同署名。
+
+GitHub 将 #108865 记录为关联问题，没有把它列入该 PR 的自动关闭项，因此站内“已明确关联并关闭的 issue”仍按前 5 个统计。
+
+## 7、6 次提交里，真正持续改进了什么
 
 ### 第一，证明从“测试通过”走向真实链路
 
@@ -1013,6 +1046,8 @@ ClawSweeper 最终给出：
 
 第五次使用已发布插件、配置加载路径和不可写 npm cache，验证 Gateway 可以进入 ready 状态且不会重复安装。
 
+第六次直接使用真实 SQLite 入站队列和 Discord 消息运行队列，证明 poison row 达到重试上限后进入 dead-letter，同一 lane 的后续消息可以继续处理。
+
 单元测试回答代码是否按预期分支执行。真实行为证明回答用户链路是否真的恢复。OpenClaw 的评审明显更看重后一个问题。
 
 ### 第二，修复范围越来越克制
@@ -1024,6 +1059,8 @@ Tailscale PR 把重试限制在“本进程刚完成 Serve 配置”这一刻，
 Anthropic PR 只在 provider boundary 规整格式，同时用 host port 保住 package/core 边界。
 
 #113200 则让 Doctor 同时读取插件发现结果和托管安装记录，保持健康检测与修复路径一致。
+
+#120104 把带错误的放弃结算送回已有失败策略，生产改动维持在 2 行，避免建立第二套重试机制。
 
 范围克制并不等于改动行数少。#102537 有 11 个文件和 728 行新增，因为双 payload builder、用户图片、tool-result、格式检测、转码和预算必须形成一套闭环。
 
@@ -1037,6 +1074,8 @@ Anthropic PR 只在 provider boundary 规整格式，同时用 host port 保住 
 
 #113200 刷新到合并前的主分支，并在精确 head 上重跑构建、测试和真实 Gateway 证明。
 
+#120104 根据当前 \`main\` 已落地的 debounce 修复重写方案，把修改点收回实际拥有 fan-in 生命周期的共享 helper。
+
 快速仓库里的旧 PR 会不断失去上下文。持续刷新、重新验证和说明精确 head，本身就是贡献的一部分。
 
 ### 第四，把评审意见变成可验证的新边界
@@ -1045,9 +1084,9 @@ Anthropic PR 只在 provider boundary 规整格式，同时用 host port 保住 
 
 每次处理都增加了对应测试或真实证明。这样，评论不会停留在“已经修改”，而会变成仓库以后可以重复执行的约束。
 
-## 7、贡献评分应该怎样看
+## 8、贡献评分应该怎样看
 
-从最终标签看，5 次 PR 的评级是：
+前 5 次 PR 的最终评级是：
 
 1. #90517：🐚 platinum hermit；
 2. #98320：🦞 diamond lobster；
@@ -1055,18 +1094,20 @@ Anthropic PR 只在 provider boundary 规整格式，同时用 host port 保住 
 4. #102537：🦞 diamond lobster；
 5. #113200：🐚 platinum hermit。
 
+#120104 的公开合并事实、代码规模和测试结果已经单独列出，不把缺少最终公开评级记录的第 6 次贡献强行加入这个序列。
+
 这个序列说明合并准备度在提高，但不能简单理解为个人能力从某个数字涨到另一个数字。
 
 ClawSweeper 会取 Proof 与 Patch quality 的较弱项，并叠加分支新旧、架构边界和剩余风险。#90517 的真实证明已经是 diamond lobster，总体仍被分支时效和 patch 风险压到 platinum hermit。#102537 的总体是 diamond lobster，Proof 却保留 challenger crab，因为它留下了需要 owner 接受的长期 host seam。#113200 的真实证明同样达到 diamond lobster，兼容性敏感的 Doctor 安装判断让总体与补丁质量保留在 platinum hermit。
 
 更可靠的贡献证据有 4 类：
 
-- 5 个 PR 都进入 \`openclaw:main\`；
-- 5 个对应 Issue 都已关闭；
+- 6 个 PR 都进入 \`openclaw:main\`；
+- 前 5 个对应 Issue 已关闭，第 6 个 PR 关联 #108865，但未由该 PR 自动关闭；
 - 最终落地提交都显示 TUARAN 为作者；
 - 评审提出的关键边界都有后续代码、测试或真实环境证明。
 
-## 8、这 5 次合并给我的结论
+## 9、这 6 次合并给我的结论
 
 开源贡献的核心工作，可以概括成一句很朴素的话：持续降低维护者接住这段代码的风险。
 
@@ -1085,8 +1126,9 @@ ClawSweeper 会取 Proof 与 Patch quality 的较弱项，并叠加分支新旧�
 - [PR #91553：Tailscale status retry](https://github.com/openclaw/openclaw/pull/91553) ｜ [Issue #42798](https://github.com/openclaw/openclaw/issues/42798) ｜ [落地提交 3a5b276](https://github.com/openclaw/openclaw/commit/3a5b2764f8a5e98e574d4e45d6d782048d1306df)
 - [PR #102537：Anthropic inline image normalization](https://github.com/openclaw/openclaw/pull/102537) ｜ [Issue #102323](https://github.com/openclaw/openclaw/issues/102323) ｜ [落地提交 3c32f32](https://github.com/openclaw/openclaw/commit/3c32f327a445c9bff90ca812d281330a3a64472c)
 - [PR #113200：Doctor honors configured plugin load paths](https://github.com/openclaw/openclaw/pull/113200) ｜ [Issue #113143](https://github.com/openclaw/openclaw/issues/113143) ｜ [落地提交 5723d36](https://github.com/openclaw/openclaw/commit/5723d36b46a808f6bc5bf53ff2703c2fcfeb731e)
+- [PR #120104：Bound errored ingress settlements](https://github.com/openclaw/openclaw/pull/120104) ｜ [Issue #108865](https://github.com/openclaw/openclaw/issues/108865) ｜ [落地提交 66d7833](https://github.com/openclaw/openclaw/commit/66d7833c3c88e6ff664a1fdea40d2a503c7269dc)
 
-资料核对截至 2026 年 7 月 28 日。
+资料核对截至 2026 年 8 月 17 日。
 `,
   },
   {

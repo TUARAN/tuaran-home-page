@@ -15,6 +15,7 @@ import {
 } from '@tabler/icons-react'
 
 import { QUESTION_BANK_2026, QUESTION_BANK_META } from '../../../lib/questionBank2026'
+import { buildExamQuestions } from '../../../lib/quizExam'
 import styles from './quiz.module.css'
 
 const LETTERS = ['A', 'B', 'C', 'D']
@@ -41,15 +42,6 @@ function isCorrect(question, value) {
     return normalizeFillAnswer(value) === normalizeFillAnswer(question.answerText)
   }
   return value === question?.answer
-}
-
-function shuffle(items) {
-  const copy = [...items]
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1))
-    ;[copy[index], copy[target]] = [copy[target], copy[index]]
-  }
-  return copy
 }
 
 function formatTime(value) {
@@ -162,13 +154,8 @@ export default function QuizClient() {
   }
 
   function startExam() {
-    const fillQuestion = QUESTION_BANK_2026.find((question) => question.type === 'fill')
-    const choiceQuestions = QUESTION_BANK_2026.filter((question) => question.type !== 'fill')
     setMode('exam')
-    setQuestions([
-      ...shuffle(choiceQuestions).slice(0, examSize - (fillQuestion ? 1 : 0)),
-      ...(fillQuestion ? [fillQuestion] : []),
-    ])
+    setQuestions(buildExamQuestions(QUESTION_BANK_2026, examSize))
     setAnswers({})
     setRevealedAnswers({})
     setCurrent(0)
@@ -244,7 +231,7 @@ export default function QuizClient() {
             <div className={styles.modeIndex}>02</div>
             <div className={styles.modeIcon}><IconTargetArrow size={25} stroke={1.7} /></div>
             <h2>考试模式</h2>
-            <p>随机抽题、限时作答，交卷后统一显示成绩和错题。</p>
+            <p>随机抽题、随机打乱选项、限时作答，交卷后统一显示成绩和错题。</p>
             <div className={styles.examPicker} role="group" aria-label="考试题数">
               {[20, 50, 101].map((size) => (
                 <button

@@ -12,6 +12,15 @@ import {
   shanghaiDateKey,
 } from '../../../../../lib/morningGreeting'
 import { listEnabledMorningGreetingTexts } from '../../../../../lib/morningGreetingTemplates'
+import {
+  DAILY_GREETING_LLM_PROMPT_KEY,
+  DAILY_GREETING_MODE_KEY,
+  buildGreetingLlmMessages,
+  normalizeGeneratedGreeting,
+  normalizeGreetingGenerationMode,
+  normalizeGreetingLlmIntent,
+} from '../../../../../lib/dailyGreetingLlm'
+import { callDeepSeek } from '../../../../../lib/deepseek'
 import { getXCredentials, publishXPost } from '../../../../../lib/xDistribution'
 
 export const runtime = 'edge'
@@ -98,19 +107,85 @@ export async function POST(req) {
     }
   }
 
-  // 模板以后台 morning_greeting_templates 为准，按“日期 + 时段”稳定随机选一条；
-  // 表不可用或为空时回退代码默认池。
-  let pickedTemplate = null
+  let generationMode = 'llm'
+  let llmIntent = ''
   if (db) {
     try {
-      pickedTemplate = pickDailyGreetingTemplate(await listEnabledMorningGreetingTexts(db, period), { period })
+      const [modeRaw, intentRaw] = await Promise.all([
+        readSetting(db, DAILY_GREETING_MODE_KEY),
+        readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
+      ])
+      generationMode = normalizeGreetingGenerationMode(modeRaw)
+      llmIntent = normalizeGreetingLlmIntent(intentRaw)
     } catch {
-      pickedTemplate = null
+      // 配置缺失或暂时无法读取时沿用产品默认值：LLM 意图模式。
+      generationMode = 'llm'
     }
   }
-  const text = buildDailyGreeting({ period, template: pickedTemplate })
+
+  let text = ''
+  let generation = null
+  if (generationMode === 'llm') {
+    try {
+      generation = await callDeepSeek({
+        env,
+        messages: buildGreetingLlmMessages({ intent: llmIntent, period }),
+        temperature: 0.85,
+        maxTokens: 256,
+        timeoutMs: 45_000,
+        taskDefaultModel: 'deepseek-v4-flash',
+        disableThinking: true,
+        task: {
+          source: 'x-daily-greeting',
+          taskType: 'direct-post-copy',
+          title: `X 每日问候：${period}`,
+          actorId: 'cron:x-daily-greeting',
+          actorName: '线上定时自动化',
+          inputSummary: `时段：${period}；意图：${llmIntent.slice(0, 500)}`,
+          metadata: { period, directPublish: true },
+        },
+      })
+      text = normalizeGeneratedGreeting(generation.content)
+      if (!text) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
+    } catch (error) {
+      const errorCode = String(error?.code || 'LLM_GENERATION_FAILED')
+      if (db) {
+        await writeSetting(
+          db,
+          lastRunKey,
+          JSON.stringify({ at: Date.now(), ok: false, period, mode: generationMode, stage: 'generation', error: errorCode }),
+          'automation',
+        ).catch(() => {})
+      }
+      const status = errorCode === 'MISSING_DEEPSEEK_API_KEY' ? 503 : 502
+      return Response.json(
+        { ok: false, error: errorCode, detail: error?.message || 'DeepSeek 文案生成失败。', period, mode: generationMode },
+        { status },
+      )
+    }
+  } else {
+    // 模板以后台 morning_greeting_templates 为准，按“日期 + 时段”稳定随机选一条；
+    // 表不可用或为空时回退代码默认池。
+    let pickedTemplate = null
+    if (db) {
+      try {
+        pickedTemplate = pickDailyGreetingTemplate(await listEnabledMorningGreetingTexts(db, period), { period })
+      } catch {
+        pickedTemplate = null
+      }
+    }
+    text = buildDailyGreeting({ period, template: pickedTemplate })
+  }
   if (!greetingWithinLimit(text)) {
-    return Response.json({ ok: false, error: 'TEXT_TOO_LONG' }, { status: 400 })
+    if (db) {
+      await writeSetting(
+        db,
+        lastRunKey,
+        JSON.stringify({ at: Date.now(), ok: false, period, mode: generationMode, stage: 'validation', error: 'TEXT_TOO_LONG' }),
+        'automation',
+      ).catch(() => {})
+    }
+    return Response.json({ ok: false, error: 'TEXT_TOO_LONG', period, mode: generationMode }, { status: 400 })
   }
 
   const result = await publishXPost(text, { credentials: getXCredentials(env) })
@@ -119,7 +194,7 @@ export async function POST(req) {
       await writeSetting(
         db,
         lastRunKey,
-        JSON.stringify({ at: Date.now(), ok: false, period, error: result.error }),
+        JSON.stringify({ at: Date.now(), ok: false, period, mode: generationMode, stage: 'publish', error: result.error }),
         'automation',
       ).catch(() => {})
     }
@@ -127,12 +202,28 @@ export async function POST(req) {
   }
 
   if (db) {
-    const run = JSON.stringify({ at: Date.now(), ok: true, period, postId: result.post.id, postUrl: result.post.url })
+    const run = JSON.stringify({
+      at: Date.now(),
+      ok: true,
+      period,
+      mode: generationMode,
+      postId: result.post.id,
+      postUrl: result.post.url,
+      model: generation?.model || '',
+      deepseekTaskId: generation?.taskId || '',
+    })
     await Promise.all([
       writeSetting(db, lastRunKey, run, 'automation'),
       // 保留旧的“最新一次运行”键，供现有运维控制台继续展示。
       writeSetting(db, 'automation.x_morning_greeting.last_run', run, 'automation'),
     ]).catch(() => {})
   }
-  return Response.json({ ok: true, period, post: result.post, text }, { status: 201 })
+  return Response.json({
+    ok: true,
+    period,
+    mode: generationMode,
+    model: generation?.model || '',
+    post: result.post,
+    text,
+  }, { status: 201 })
 }

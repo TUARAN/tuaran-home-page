@@ -43,6 +43,8 @@ export default function MorningGreetingClient() {
   const [searchInput, setSearchInput] = useState('')
   const [offset, setOffset] = useState(0)
   const [newTemplate, setNewTemplate] = useState({ text: '', period: 'morning', contentKind: 'quote' })
+  const [generationMode, setGenerationMode] = useState('llm')
+  const [llmIntent, setLlmIntent] = useState('')
 
   const refresh = useCallback(async ({ nextOffset = offset, nextPeriod = period, nextQuery = query } = {}) => {
     setLoading(true)
@@ -54,6 +56,8 @@ export default function MorningGreetingClient() {
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.message || payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
+      setGenerationMode(payload.generationMode || 'llm')
+      setLlmIntent(payload.llmIntent || '')
       setOffset(nextOffset)
       setPeriod(nextPeriod)
       setQuery(nextQuery)
@@ -130,6 +134,21 @@ export default function MorningGreetingClient() {
     } catch (pauseError) { setError(pauseError?.message || '状态切换失败。') } finally { setSaving(false) }
   }
 
+  async function saveGenerationSettings() {
+    if (!llmIntent.trim()) return setError('LLM 意图不能为空。')
+    setSaving(true); setError(''); setNotice('')
+    try {
+      const response = await fetch('/api/admin/morning-greeting', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'save-generation', mode: generationMode, intent: llmIntent }),
+      })
+      const payload = await safeJson(response)
+      if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      setNotice(generationMode === 'llm' ? '已切换到 LLM 意图模式；下个时段将生成文案后直接发推。' : '已切换到模板库模式。')
+      await refresh()
+    } catch (saveError) { setError(saveError?.message || '生成方式保存失败。') } finally { setSaving(false) }
+  }
+
   function changeDraft(id, key, value) {
     setDrafts((current) => ({ ...current, [id]: { ...(current[id] || {}), [key]: value } }))
   }
@@ -137,19 +156,37 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 每日问候"
-      description="每天北京时间 08:00、12:00、22:00 各发布一条；每个时段从自己的启用模板中按日期稳定随机选择，重试不会重复发帖。"
+      description="每天北京时间 08:00、12:00、22:00 各发布一条；可在模板库和 DeepSeek Flash 意图生成之间切换，重试不会重复发帖。"
       actions={<><AdminButton type="button" onClick={togglePause} disabled={saving || loading} variant={data?.paused ? 'primary' : 'ghost'}>{data?.paused ? '恢复运行' : '暂停自动化'}</AdminButton><AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton></>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <Section title="文案生成方式" description="选择模板库，或让 DeepSeek Flash 按意图生成最终文案。LLM 文案生成后直接发推，不进入人工审核。">
+        <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+          <div className="grid grid-cols-2 gap-2 self-start rounded-xl bg-[#f0f1eb] p-1.5 dark:bg-[#151c25]">
+            {[
+              { id: 'template', label: '模板库', hint: '稳定随机' },
+              { id: 'llm', label: 'LLM 意图', hint: '实时生成' },
+            ].map((item) => <button key={item.id} type="button" onClick={() => setGenerationMode(item.id)} className={`rounded-lg px-3 py-3 text-left transition ${generationMode === item.id ? 'bg-white text-[#25261f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:text-[#3f4039] dark:text-gray-400 dark:hover:text-gray-200'}`}><span className="block text-sm font-semibold">{item.label}</span><span className="mt-0.5 block text-[11px]">{item.hint}</span></button>)}
+          </div>
+          <div>
+            <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">意图（提示语）<textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={5} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={`${inputClass} mt-1.5`} /></label>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">系统会自动补充当前日期、早安 / 午安 / 晚安时段、纯文案输出和 X 长度限制；这里只需要写你的内容意图。</p>
+              <AdminButton type="button" variant="primary" disabled={saving || loading || !llmIntent.trim()} onClick={saveGenerationSettings}>{saving ? '保存中…' : '保存并应用'}</AdminButton>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <div className="mb-4 mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard label="模板总数" value={loading ? '—' : stats.total || 0} sub={`启用 ${stats.enabled || 0} 条`} />
         {['morning', 'noon', 'evening'].map((item) => <StatCard key={item} label={`${periodLabel(item)}模板`} value={loading ? '—' : stats.byPeriod?.[item]?.total || 0} sub={`启用 ${stats.byPeriod?.[item]?.enabled || 0} 条`} tone="success" />)}
-        <StatCard label="自动化状态" value={loading ? '—' : data?.paused ? '已暂停' : '每日 3 条'} tone={data?.paused ? 'warning' : 'success'} />
+        <StatCard label="自动化状态" value={loading ? '—' : data?.paused ? '已暂停' : generationMode === 'llm' ? 'LLM 直发' : '模板直发'} tone={data?.paused ? 'warning' : 'success'} />
       </div>
 
-      <Section title="新增问候" description="{date} 会在发布时替换为当天日期；新模板会自动进入对应时段的随机池。">
+      <Section title="新增问候" description="{date} 会在发布时替换为当天日期；新模板会自动进入对应时段的随机池。模板可随时维护，只有切到模板库模式时才参与发布。">
         <form onSubmit={addTemplate} className="grid gap-3 lg:grid-cols-[130px_130px_1fr_auto] lg:items-end">
           <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">时段<select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={`${inputClass} mt-1.5`}>{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
           <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">内容类型<select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={`${inputClass} mt-1.5`}>{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
@@ -181,7 +218,7 @@ export default function MorningGreetingClient() {
       </Section>
 
       <Section title="今日三个时段" description="每个时段独立幂等；失败可在该时段的后续补跑点重试。" className="mt-4">
-        <div className="grid gap-3 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-xl border border-[#e2e4da] p-4 dark:border-[#243041]"><div className="mb-2 flex items-center justify-between"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-1 text-xs text-[#82847a]">{formatTime(run?.at)}</p>{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 break-words text-xs text-rose-600">{run.error}</p> : null}</div> })}</div>
+        <div className="grid gap-3 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-xl border border-[#e2e4da] p-4 dark:border-[#243041]"><div className="mb-2 flex items-center justify-between"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-1 text-xs text-[#82847a]">{formatTime(run?.at)}{run?.mode ? ` · ${run.mode === 'llm' ? 'LLM 意图' : '模板库'}` : ''}</p>{run?.model ? <p className="mb-1 text-[10px] text-[#94968b]">{run.model}</p> : null}{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 break-words text-xs text-rose-600">{run.error}</p> : null}</div> })}</div>
       </Section>
     </AdminPage>
   )

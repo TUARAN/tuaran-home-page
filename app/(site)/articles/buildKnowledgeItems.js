@@ -43,7 +43,7 @@ function getArticleCategory(article) {
   return '工程化'
 }
 
-export function buildKnowledgeItems() {
+export function buildKnowledgeItems({ includeOwner = false } = {}) {
   const fixedSeriesItems = [
     {
       id: 'series:frontend_weekly',
@@ -155,7 +155,9 @@ export function buildKnowledgeItems() {
     }
   })
 
-  const worksItems = ENGINEERING_WORKS.map((p) => ({
+  const worksItems = ENGINEERING_WORKS
+    .filter((p) => includeOwner || p.audience !== 'owner')
+    .map((p) => ({
     id: `work:${p.href}`,
     kind: 'works',
     tagLabel: p.kind ? `互动专题 · ${p.kind}` : '互动专题',
@@ -173,6 +175,7 @@ export function buildKnowledgeItems() {
     pvKey: getRichPagePvKey(p),
     pv: null,
     canvasId: p.canvasId || null,
+    audience: p.audience || 'public',
   }))
 
   const items = [

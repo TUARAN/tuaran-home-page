@@ -78,7 +78,7 @@
 
 .modeGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border-bottom: 1px solid var(--quiz-line);
 }
 
@@ -99,23 +99,36 @@ button.modeCard {
   transition: background-color .2s ease, color .2s ease;
 }
 
-button.modeCard:hover {
+button.modeCard:not(:disabled):hover {
   background: var(--quiz-red);
   color: #fff;
 }
 
-button.modeCard:hover p,
-button.modeCard:hover .modeIndex {
+button.modeCard:not(:disabled):hover p,
+button.modeCard:not(:disabled):hover .modeIndex {
   color: rgba(255, 255, 255, .72);
 }
 
-button.modeCard:hover .modeIcon {
+button.modeCard:not(:disabled):hover .modeIcon {
   border-color: rgba(255, 255, 255, .35);
 }
 
 .examCard {
-  border-right: 0;
   background: #ebe4d8;
+}
+
+.wrongCard {
+  border-right: 0;
+  background: #e6e9df;
+}
+
+.wrongCard:disabled {
+  cursor: default;
+}
+
+.wrongCard:disabled .modeAction {
+  color: var(--quiz-muted);
+  opacity: .75;
 }
 
 .modeIndex {
@@ -162,6 +175,18 @@ button.modeCard:hover .modeIcon {
   border-bottom: 1px solid currentColor;
   font-size: 14px;
   font-weight: 700;
+}
+
+.wrongCount {
+  display: block;
+  margin-top: 25px;
+  color: var(--quiz-red);
+  font-size: 12px;
+}
+
+.wrongCount strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 25px;
 }
 
 .examPicker {
@@ -326,15 +351,57 @@ button.modeCard:hover .modeIcon {
 .questionTitle {
   margin: 30px 0 38px;
   font-family: var(--font-serif), "Songti SC", serif;
-  font-size: clamp(25px, 3vw, 38px);
+  font-size: clamp(21px, 2vw, 29px);
   font-weight: 600;
   letter-spacing: -.02em;
-  line-height: 1.55;
+  line-height: 1.65;
 }
 
 .optionList {
   display: grid;
   gap: 12px;
+}
+
+.fillAnswerWrap {
+  position: relative;
+}
+
+.fillAnswerWrap label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--quiz-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fillAnswerWrap textarea {
+  width: 100%;
+  min-height: 210px;
+  resize: vertical;
+  padding: 18px 20px 34px;
+  border: 1px solid var(--quiz-line);
+  border-radius: 3px;
+  outline: none;
+  background: #fffdf8;
+  color: var(--quiz-ink);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.9;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.fillAnswerWrap textarea:focus {
+  border-color: var(--quiz-red);
+  box-shadow: 0 0 0 3px rgba(158, 31, 47, .1);
+}
+
+.fillAnswerWrap > span {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  color: var(--quiz-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
 }
 
 .option {
@@ -788,7 +855,8 @@ button.modeCard:hover .modeIcon {
 
   .questionTitle {
     margin: 24px 0 28px;
-    font-size: 24px;
+    font-size: 20px;
+    line-height: 1.65;
   }
 
   .option {
@@ -836,16 +904,18 @@ button.modeCard:hover .modeIcon {
 
 :global(.dark) .modeCard,
 :global(.dark) .reviewItem,
-:global(.dark) .option {
+:global(.dark) .option,
+:global(.dark) .fillAnswerWrap textarea {
   background: #1d1b18;
 }
 
 :global(.dark) .examCard,
+:global(.dark) .wrongCard,
 :global(.dark) .navigator {
   background: #24211d;
 }
 
-:global(.dark) button.modeCard:hover {
+:global(.dark) button.modeCard:not(:disabled):hover {
   background: #8e2330;
 }
 

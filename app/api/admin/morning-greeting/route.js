@@ -162,12 +162,11 @@ export async function PATCH(req) {
     const mode = normalizeGreetingGenerationMode(rawMode, '')
     const intent = String(body?.intent || '').replace(/\r\n?/g, '\n').trim()
     if (!mode) return Response.json({ error: 'INVALID_GENERATION_MODE' }, { status: 400 })
-    if (!intent) return Response.json({ error: 'LLM_INTENT_REQUIRED' }, { status: 400 })
+    if (mode === 'llm' && !intent) return Response.json({ error: 'LLM_INTENT_REQUIRED' }, { status: 400 })
     if (intent.length > 4000) return Response.json({ error: 'LLM_INTENT_TOO_LONG' }, { status: 400 })
-    await Promise.all([
-      writeSetting(db, DAILY_GREETING_MODE_KEY, mode, guard.user?.name || 'admin'),
-      writeSetting(db, DAILY_GREETING_LLM_PROMPT_KEY, intent, guard.user?.name || 'admin'),
-    ])
+    const writes = [writeSetting(db, DAILY_GREETING_MODE_KEY, mode, guard.user?.name || 'admin')]
+    if (intent) writes.push(writeSetting(db, DAILY_GREETING_LLM_PROMPT_KEY, intent, guard.user?.name || 'admin'))
+    await Promise.all(writes)
     return Response.json({ ok: true, mode, intent })
   }
   if (action !== 'pause' && action !== 'resume') {

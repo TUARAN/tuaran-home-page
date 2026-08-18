@@ -2,11 +2,12 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-const [clientSource, pageSource, worksSource, directorySource] = await Promise.all([
+const [clientSource, pageSource, worksSource, directorySource, quizPageSource] = await Promise.all([
   readFile(new URL('../../app/(site)/adsense-content-check/AdSenseContentCheckClient.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/adsense-content-check/page.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../lib/engineeringWorks.js', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url), 'utf8'),
+  readFile(new URL('../../app/(site)/quiz/page.jsx', import.meta.url), 'utf8'),
 ])
 
 test('AdSense policy summary is implemented as a registered interactive page', () => {
@@ -24,4 +25,9 @@ test('AdSense policy summary is implemented as a registered interactive page', (
 test('legacy and delivery-based interactive links resolve to the independent group', () => {
   assert.match(directorySource, /works: 'interactive'/)
   assert.match(directorySource, /delivery === 'interact'[\s\S]*\? 'interactive'/)
+})
+
+test('2026 quiz is registered in the interactive directory and tracks page views', () => {
+  assert.match(worksSource, /id: 'quiz'[\s\S]*category: 'learning-tool'[\s\S]*href: '\/quiz'/)
+  assert.match(quizPageSource, /ContentPvBeacon category="rich-page" slug="quiz"/)
 })

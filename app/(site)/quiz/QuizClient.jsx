@@ -8,6 +8,7 @@ import {
   IconCheck,
   IconClock,
   IconFlag,
+  IconNotebook,
   IconRefresh,
   IconTargetArrow,
   IconX,
@@ -17,10 +18,29 @@ import { QUESTION_BANK_2026, QUESTION_BANK_META } from '../../../lib/questionBan
 import styles from './quiz.module.css'
 
 const LETTERS = ['A', 'B', 'C', 'D']
+const WRONG_BOOK_STORAGE_KEY = 'quiz:wrong-book:2026:v1'
 const EXAM_CONFIG = {
   20: 30 * 60,
   50: 60 * 60,
-  100: 120 * 60,
+  101: 120 * 60,
+}
+
+function normalizeFillAnswer(value) {
+  return String(value || '')
+    .replace(/[\s，。；、！？“”‘’：,.!?;:'"]/g, '')
+    .trim()
+}
+
+function isAnswered(question, value) {
+  if (question?.type === 'fill') return Boolean(String(value || '').trim())
+  return Number.isInteger(value)
+}
+
+function isCorrect(question, value) {
+  if (question?.type === 'fill') {
+    return normalizeFillAnswer(value) === normalizeFillAnswer(question.answerText)
+  }
+  return value === question?.answer
 }
 
 function shuffle(items) {
@@ -45,22 +65,67 @@ export default function QuizClient() {
   const [questions, setQuestions] = useState(QUESTION_BANK_2026)
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState({})
+  const [revealedAnswers, setRevealedAnswers] = useState({})
+  const [wrongQuestionIds, setWrongQuestionIds] = useState([])
+  const [wrongBookReady, setWrongBookReady] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [timeLeft, setTimeLeft] = useState(EXAM_CONFIG[20])
 
   const currentQuestion = questions[current]
-  const answeredCount = Object.keys(answers).length
+  const answeredCount = questions.reduce(
+    (total, question) => total + (isAnswered(question, answers[question.id]) ? 1 : 0),
+    0,
+  )
   const correctCount = useMemo(
-    () => questions.reduce((total, question) => total + (answers[question.id] === question.answer ? 1 : 0), 0),
+    () => questions.reduce((total, question) => total + (isCorrect(question, answers[question.id]) ? 1 : 0), 0),
     [answers, questions],
   )
   const wrongQuestions = useMemo(
-    () => questions.filter((question) => answers[question.id] !== question.answer),
+    () => questions.filter((question) => !isCorrect(question, answers[question.id])),
     [answers, questions],
   )
   const progress = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0
 
-  const finishExam = useCallback(() => setSubmitted(true), [])
+  const finishExam = useCallback(() => {
+    const wrongIds = questions
+      .filter((question) => !isCorrect(question, answers[question.id]))
+      .map((question) => question.id)
+    setWrongQuestionIds((previous) => Array.from(new Set([...previous, ...wrongIds])))
+    setSubmitted(true)
+  }, [answers, questions])
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(WRONG_BOOK_STORAGE_KEY) || '[]')
+      const validIds = Array.isArray(stored)
+        ? stored.filter((id) => QUESTION_BANK_2026.some((question) => question.id === Number(id))).map(Number)
+        : []
+      setWrongQuestionIds(Array.from(new Set(validIds)))
+    } catch {
+      setWrongQuestionIds([])
+    } finally {
+      setWrongBookReady(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!wrongBookReady) return
+    window.localStorage.setItem(WRONG_BOOK_STORAGE_KEY, JSON.stringify(wrongQuestionIds))
+  }, [wrongBookReady, wrongQuestionIds])
+
+  useEffect(() => {
+    if (!['learn', 'review'].includes(mode) || !currentQuestion) return
+    const value = answers[currentQuestion.id]
+    if (!isAnswered(currentQuestion, value)) return
+    if (currentQuestion.type === 'fill' && !revealedAnswers[currentQuestion.id]) return
+
+    const correct = isCorrect(currentQuestion, value)
+    setWrongQuestionIds((previous) => {
+      if (!correct) return previous.includes(currentQuestion.id) ? previous : [...previous, currentQuestion.id]
+      if (mode !== 'review') return previous
+      return previous.filter((id) => id !== currentQuestion.id)
+    })
+  }, [answers, currentQuestion, mode, revealedAnswers])
 
   useEffect(() => {
     if (mode !== 'exam' || submitted) return undefined
@@ -75,8 +140,9 @@ export default function QuizClient() {
   useEffect(() => {
     if (mode === 'home' || submitted) return undefined
     function onKeyDown(event) {
+      if (['INPUT', 'TEXTAREA'].includes(event.target?.tagName)) return
       const option = Number(event.key) - 1
-      if (option >= 0 && option <= 3 && currentQuestion) {
+      if (option >= 0 && option <= 3 && currentQuestion?.type !== 'fill') {
         setAnswers((previous) => ({ ...previous, [currentQuestion.id]: option }))
       }
       if (event.key === 'ArrowLeft') setCurrent((value) => Math.max(0, value - 1))
@@ -90,29 +156,54 @@ export default function QuizClient() {
     setMode('learn')
     setQuestions(QUESTION_BANK_2026)
     setAnswers({})
+    setRevealedAnswers({})
     setCurrent(0)
     setSubmitted(false)
   }
 
   function startExam() {
+    const fillQuestion = QUESTION_BANK_2026.find((question) => question.type === 'fill')
+    const choiceQuestions = QUESTION_BANK_2026.filter((question) => question.type !== 'fill')
     setMode('exam')
-    setQuestions(shuffle(QUESTION_BANK_2026).slice(0, examSize))
+    setQuestions([
+      ...shuffle(choiceQuestions).slice(0, examSize - (fillQuestion ? 1 : 0)),
+      ...(fillQuestion ? [fillQuestion] : []),
+    ])
     setAnswers({})
+    setRevealedAnswers({})
     setCurrent(0)
     setSubmitted(false)
     setTimeLeft(EXAM_CONFIG[examSize])
   }
 
+  function startWrongReview() {
+    const wrongQuestions = QUESTION_BANK_2026.filter((question) => wrongQuestionIds.includes(question.id))
+    if (!wrongQuestions.length) return
+    setMode('review')
+    setQuestions(wrongQuestions)
+    setAnswers({})
+    setRevealedAnswers({})
+    setCurrent(0)
+    setSubmitted(false)
+  }
+
   function returnHome() {
     setMode('home')
     setAnswers({})
+    setRevealedAnswers({})
     setCurrent(0)
     setSubmitted(false)
   }
 
   function choose(optionIndex) {
-    if (!currentQuestion || submitted) return
+    if (!currentQuestion || currentQuestion.type === 'fill' || submitted) return
     setAnswers((previous) => ({ ...previous, [currentQuestion.id]: optionIndex }))
+  }
+
+  function updateFillAnswer(value) {
+    if (!currentQuestion || currentQuestion.type !== 'fill' || submitted) return
+    setAnswers((previous) => ({ ...previous, [currentQuestion.id]: value }))
+    setRevealedAnswers((previous) => ({ ...previous, [currentQuestion.id]: false }))
   }
 
   function nextQuestion() {
@@ -132,9 +223,9 @@ export default function QuizClient() {
             <div className={styles.heroCopy}>
               <p>完整收录《{QUESTION_BANK_META.source.replace('.doc', '')}》内容。先在学习模式逐题巩固，再用考试模式检验掌握程度。</p>
               <div className={styles.metrics} aria-label="题库信息">
-                <span><strong>100</strong> 道单选题</span>
+                <span><strong>101</strong> 道题目</span>
                 <span><strong>3</strong> 个知识板块</span>
-                <span><strong>2</strong> 种答题模式</span>
+                <span><strong>3</strong> 种学习模式</span>
               </div>
             </div>
           </div>
@@ -155,7 +246,7 @@ export default function QuizClient() {
             <h2>考试模式</h2>
             <p>随机抽题、限时作答，交卷后统一显示成绩和错题。</p>
             <div className={styles.examPicker} role="group" aria-label="考试题数">
-              {[20, 50, 100].map((size) => (
+              {[20, 50, 101].map((size) => (
                 <button
                   key={size}
                   type="button"
@@ -170,6 +261,26 @@ export default function QuizClient() {
               开始考试 · {EXAM_CONFIG[examSize] / 60} 分钟 <IconArrowRight size={18} />
             </button>
           </div>
+
+          <button
+            type="button"
+            className={`${styles.modeCard} ${styles.wrongCard}`}
+            onClick={startWrongReview}
+            disabled={!wrongQuestionIds.length}
+          >
+            <div className={styles.modeIndex}>03</div>
+            <div className={styles.modeIcon}><IconNotebook size={25} stroke={1.7} /></div>
+            <h2>错题学习</h2>
+            <p>集中复习学习和考试中答错的题目。再次答对后，题目会自动移出错题本。</p>
+            <span className={styles.wrongCount}>
+              <strong>{wrongQuestionIds.length}</strong>
+              {wrongQuestionIds.length ? ' 道待复习' : ' 暂无错题'}
+            </span>
+            <span className={styles.modeAction}>
+              {wrongQuestionIds.length ? '开始复习' : '完成答题后自动收录'}
+              {wrongQuestionIds.length ? <IconArrowRight size={18} /> : null}
+            </span>
+          </button>
         </section>
 
         <section className={styles.syllabus}>
@@ -184,7 +295,7 @@ export default function QuizClient() {
             <p>中国移动及互联网公司发展定位与党建工作。</p>
           </div>
           <div>
-            <span>74—100</span>
+            <span>74—101</span>
             <h3>纪律与作风</h3>
             <p>党纪学习、监督执纪、八项规定与政绩观。</p>
           </div>
@@ -207,6 +318,7 @@ export default function QuizClient() {
           <p className={styles.resultLead}>
             答对 {correctCount} 题，答错或未答 {wrongQuestions.length} 题。
             {score >= 90 ? '掌握得很扎实，继续保持。' : score >= 75 ? '基础不错，集中复习错题会更稳。' : '建议回到学习模式逐题巩固。'}
+            {wrongQuestions.length ? ' 错题已自动收录到错题学习。' : ''}
           </p>
           <div className={styles.resultActions}>
             <button type="button" className={styles.primaryButton} onClick={startExam}><IconRefresh size={17} /> 再考一次</button>
@@ -225,9 +337,18 @@ export default function QuizClient() {
                 <div className={styles.reviewNumber}>原题 {String(question.id).padStart(3, '0')}</div>
                 <h3>{question.question}</h3>
                 <p className={styles.wrongAnswer}>
-                  你的答案：{answers[question.id] === undefined ? '未作答' : `${LETTERS[answers[question.id]]}. ${question.options[answers[question.id]]}`}
+                  你的答案：{!isAnswered(question, answers[question.id])
+                    ? '未作答'
+                    : question.type === 'fill'
+                      ? answers[question.id]
+                      : `${LETTERS[answers[question.id]]}. ${question.options[answers[question.id]]}`}
                 </p>
-                <p className={styles.rightAnswer}><IconCheck size={17} /> 正确答案：{LETTERS[question.answer]}. {question.options[question.answer]}</p>
+                <p className={styles.rightAnswer}>
+                  <IconCheck size={17} />
+                  参考答案：{question.type === 'fill'
+                    ? question.answerText
+                    : `${LETTERS[question.answer]}. ${question.options[question.answer]}`}
+                </p>
               </article>
             ))}
           </div>
@@ -237,16 +358,21 @@ export default function QuizClient() {
   }
 
   const selected = answers[currentQuestion.id]
-  const isLearning = mode === 'learn'
-  const showFeedback = isLearning && selected !== undefined
+  const isLearning = mode === 'learn' || mode === 'review'
+  const isWrongReview = mode === 'review'
+  const isFillQuestion = currentQuestion.type === 'fill'
+  const showFeedback = isLearning && (
+    isFillQuestion ? Boolean(revealedAnswers[currentQuestion.id]) : isAnswered(currentQuestion, selected)
+  )
+  const currentIsCorrect = isCorrect(currentQuestion, selected)
 
   return (
     <main className={`${styles.page} ${styles.quizPage}`}>
       <header className={styles.quizHeader}>
         <button type="button" className={styles.textButton} onClick={returnHome}><IconArrowLeft size={17} /> 退出</button>
         <div className={styles.headerTitle}>
-          <span>{isLearning ? 'LEARNING MODE' : 'EXAM MODE'}</span>
-          <strong>{isLearning ? '学习模式' : `${questions.length} 题考试`}</strong>
+          <span>{isWrongReview ? 'WRONG BOOK' : isLearning ? 'LEARNING MODE' : 'EXAM MODE'}</span>
+          <strong>{isWrongReview ? '错题学习' : isLearning ? '学习模式' : `${questions.length} 题考试`}</strong>
         </div>
         <div className={styles.headerStatus}>
           {isLearning ? <><IconBook2 size={17} /> 已完成 {answeredCount}/{questions.length}</> : <><IconClock size={17} /> {formatTime(timeLeft)}</>}
@@ -262,18 +388,32 @@ export default function QuizClient() {
           <div className={styles.questionMeta}>
             <span>第 {current + 1} 题 / {questions.length}</span>
             <span>{currentQuestion.category}</span>
-            <span>单选题</span>
+            <span>{isFillQuestion ? '填空题' : '单选题'}</span>
           </div>
           <h1 className={styles.questionTitle}>{currentQuestion.question}</h1>
 
-          <div className={styles.optionList} role="radiogroup" aria-label="答案选项">
+          {isFillQuestion ? (
+            <div className={styles.fillAnswerWrap}>
+              <label htmlFor={`fill-answer-${currentQuestion.id}`}>请在下方完整默写</label>
+              <textarea
+                id={`fill-answer-${currentQuestion.id}`}
+                value={selected || ''}
+                onChange={(event) => updateFillAnswer(event.target.value)}
+                rows={8}
+                spellCheck={false}
+                placeholder="我志愿加入中国共产党……"
+              />
+              <span>{String(selected || '').replace(/\s/g, '').length} 字</span>
+            </div>
+          ) : (
+            <div className={styles.optionList} role="radiogroup" aria-label="答案选项">
             {currentQuestion.options.map((option, optionIndex) => {
               const chosen = selected === optionIndex
               const correct = showFeedback && currentQuestion.answer === optionIndex
               const wrong = showFeedback && chosen && !correct
               return (
                 <button
-                  key={option}
+                  key={`${currentQuestion.id}-${optionIndex}`}
                   type="button"
                   role="radio"
                   aria-checked={chosen}
@@ -287,12 +427,17 @@ export default function QuizClient() {
                 </button>
               )
             })}
-          </div>
+            </div>
+          )}
 
           {showFeedback ? (
-            <div className={selected === currentQuestion.answer ? styles.feedbackCorrect : styles.feedbackWrong} role="status">
-              <strong>{selected === currentQuestion.answer ? '回答正确' : '再记一遍正确答案'}</strong>
-              <span>{LETTERS[currentQuestion.answer]}. {currentQuestion.options[currentQuestion.answer]}</span>
+            <div className={currentIsCorrect ? styles.feedbackCorrect : styles.feedbackWrong} role="status">
+              <strong>{currentIsCorrect
+                ? isWrongReview ? '回答正确，已移出错题本' : '回答正确'
+                : isWrongReview ? '仍需复习，保留在错题本' : '请对照参考答案再记一遍'}</strong>
+              <span>{isFillQuestion
+                ? currentQuestion.answerText
+                : `${LETTERS[currentQuestion.answer]}. ${currentQuestion.options[currentQuestion.answer]}`}</span>
             </div>
           ) : null}
 
@@ -300,10 +445,23 @@ export default function QuizClient() {
             <button type="button" className={styles.secondaryButton} disabled={current === 0} onClick={() => setCurrent((value) => Math.max(0, value - 1))}>
               <IconArrowLeft size={17} /> 上一题
             </button>
-            {mode === 'exam' && current === questions.length - 1 ? (
+            {isLearning && isFillQuestion && !showFeedback ? (
+              <button
+                type="button"
+                className={styles.primaryButton}
+                disabled={!isAnswered(currentQuestion, selected)}
+                onClick={() => setRevealedAnswers((previous) => ({ ...previous, [currentQuestion.id]: true }))}
+              >
+                核对答案 <IconCheck size={17} />
+              </button>
+            ) : mode === 'exam' && current === questions.length - 1 ? (
               <button type="button" className={styles.submitButton} onClick={finishExam}><IconFlag size={17} /> 交卷</button>
+            ) : isLearning && current === questions.length - 1 ? (
+              <button type="button" className={styles.primaryButton} onClick={returnHome}>
+                完成学习 <IconCheck size={17} />
+              </button>
             ) : (
-              <button type="button" className={styles.primaryButton} disabled={isLearning && selected === undefined} onClick={nextQuestion}>
+              <button type="button" className={styles.primaryButton} disabled={isLearning && !isAnswered(currentQuestion, selected)} onClick={nextQuestion}>
                 下一题 <IconArrowRight size={17} />
               </button>
             )}
@@ -319,9 +477,9 @@ export default function QuizClient() {
           <div className={styles.numberGrid}>
             {questions.map((question, index) => {
               const answer = answers[question.id]
-              const answered = answer !== undefined
-              const answerCorrect = isLearning && answered && answer === question.answer
-              const answerWrong = isLearning && answered && answer !== question.answer
+              const answered = isAnswered(question, answer)
+              const answerCorrect = isLearning && answered && isCorrect(question, answer)
+              const answerWrong = isLearning && answered && !isCorrect(question, answer)
               return (
                 <button
                   key={question.id}

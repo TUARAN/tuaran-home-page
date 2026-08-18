@@ -6,8 +6,10 @@ import {
   getRichPagePresentation,
   getRichPagePvKey,
 } from '../../../lib/engineeringWorks'
+import { getOwnerPageState } from '../../../lib/adminPageAuth'
 
-export const dynamic = 'force-static'
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 const PAGE_URL = 'https://2aran.com/rich-pages'
 
@@ -35,12 +37,15 @@ export const metadata = {
   },
 }
 
-export default function RichPagesPage() {
+export default async function RichPagesPage() {
+  const { state } = await getOwnerPageState()
+  const canViewOwnerContent = state === 'owner'
   const sections = ENGINEERING_WORK_CATEGORIES.map((category) => ({
     ...category,
     titleEn: category.id.replaceAll('-', ' '),
     items: ENGINEERING_WORKS
       .filter((work) => work.category === category.id)
+      .filter((work) => work.audience !== 'owner' || canViewOwnerContent)
       .map((work) => {
         const presentation = getRichPagePresentation(work)
         return {
@@ -50,7 +55,13 @@ export default function RichPagesPage() {
           analyticsDestinationKind: 'interactive',
           pvKey: getRichPagePvKey(work),
           actionLabel: '进入',
-          mobileBadge: { label: presentation.label, mono: false },
+          mobileBadge: work.audience === 'owner'
+            ? {
+                label: '仅站长',
+                mono: false,
+                className: 'border-[#9e1f2f] bg-[#f8e9e8] text-[#741522] dark:border-[#8f3c47] dark:bg-[#321b1e] dark:text-[#f28a94]',
+              }
+            : { label: presentation.label, mono: false },
           badges: [
             {
               label: presentation.label,
@@ -61,6 +72,14 @@ export default function RichPagesPage() {
             },
             { label: work.kind || '互动专题', mono: false },
             { label: work.date },
+            ...(work.tags || [])
+              .filter((tag) => tag !== '仅站长')
+              .slice(0, 4)
+              .map((tag) => ({ label: tag, mono: false })),
+            ...(work.audience === 'owner' ? [{
+              label: '仅站长',
+              className: 'border-[#9e1f2f] bg-[#f8e9e8] text-[#741522] dark:border-[#8f3c47] dark:bg-[#321b1e] dark:text-[#f28a94]',
+            }] : []),
             ...(work.badge ? [{
               label: work.badge,
               className: 'border-[#c9b27c] bg-[#fff8e8] text-[#7a581b] dark:border-[#5b4824] dark:bg-[#241d12] dark:text-[#e7c77f]',

@@ -5,7 +5,7 @@ import { AdminButton, EmptyState, Section, StatusPill } from '../../components/u
 
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-6 text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
-const EMPTY_FORM = { name: '', baseUrl: '', defaultModel: '', token: '', status: 'active', note: '' }
+const EMPTY_FORM = { name: '', baseUrl: '', defaultModel: '', authType: 'none', token: '', clientId: '', clientSecret: '', status: 'active', note: '' }
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—'
@@ -61,7 +61,10 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
       name: provider.name || '',
       baseUrl: provider.baseUrl || '',
       defaultModel: provider.defaultModel || '',
+      authType: provider.authType || 'none',
       token: '',
+      clientId: '',
+      clientSecret: '',
       status: provider.status || 'active',
       note: provider.note || '',
     })
@@ -144,7 +147,7 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
         actions={!formVisible ? <AdminButton type="button" variant="primary" onClick={startCreate}>新增服务</AdminButton> : null}
       >
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-5 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          线上站点不能访问 192.168.x.x 或 NAS 局域网地址。请先通过 Cloudflare Tunnel 等方式提供 HTTPS 域名，并在 NAS 入口的反向代理配置 Bearer 鉴权；不要把 Ollama 11434 端口直接暴露到公网。
+          线上站点不能访问 192.168.x.x 或 NAS 局域网地址。请通过 Cloudflare Tunnel 提供 HTTPS 域名，并优先使用 Access Service Token；不要把 Ollama 11434 端口直接暴露到公网。
         </div>
         <div className="mb-3 text-[12px] text-[#82847a]">共 {providers.length} 个服务，{activeCount} 个启用</div>
         {loading ? <p className="py-4 text-sm text-[#82847a]">加载中…</p> : !providers.length ? (
@@ -168,7 +171,7 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
                       <span>{provider.usage.calls.toLocaleString()} 次调用</span>
                       <span>{provider.usage.totalTokens.toLocaleString()} tokens</span>
                       <span>最近测试 {formatDate(provider.lastCheckedAt)}</span>
-                      <span>鉴权 {provider.authHint || '未配置'}</span>
+                      <span>鉴权 {provider.authType === 'cloudflare_access' ? `Cloudflare Access · ${provider.authHint || '已配置'}` : provider.authType === 'bearer' ? `Bearer · ${provider.authHint || '已配置'}` : '无'}</span>
                     </div>
                     {provider.lastCheckDetail ? <p className="mt-1.5 text-[12px] text-[#67695d] dark:text-gray-400">{provider.lastCheckDetail}</p> : null}
                   </div>
@@ -186,12 +189,17 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
       </Section>
 
       {formVisible ? (
-        <Section title={editingId ? '编辑 Ollama 服务' : '新增 Ollama 服务'} description="端点需兼容 /v1/chat/completions；访问令牌留空表示不发送 Authorization。" className="mt-4" actions={<AdminButton type="button" variant="ghost" onClick={resetForm}>取消</AdminButton>}>
+        <Section title={editingId ? '编辑 Ollama 服务' : '新增 Ollama 服务'} description="端点需兼容 /v1/chat/completions；Cloudflare Access 凭证只会加密保存并由服务端发送。" className="mt-4" actions={<AdminButton type="button" variant="ghost" onClick={resetForm}>取消</AdminButton>}>
           <div className="grid gap-4 lg:grid-cols-2">
             <label className="text-[12px] text-[#67695d]">名称 *<input className={`${INPUT_CLASS} mt-1`} value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="例如：家中 NAS · Qwen3" /></label>
             <label className="text-[12px] text-[#67695d]">HTTPS Base URL *<input className={`${INPUT_CLASS} mt-1`} value={form.baseUrl} onChange={(event) => setForm((prev) => ({ ...prev, baseUrl: event.target.value }))} placeholder="https://ollama.example.com" /></label>
             <label className="text-[12px] text-[#67695d]">默认模型 *<input className={`${INPUT_CLASS} mt-1`} value={form.defaultModel} onChange={(event) => setForm((prev) => ({ ...prev, defaultModel: event.target.value }))} placeholder="qwen3:8b" /></label>
-            <label className="text-[12px] text-[#67695d]">Bearer 访问令牌{editingId ? '（留空保持不变）' : '（可选）'}<input type="password" autoComplete="off" className={`${INPUT_CLASS} mt-1`} value={form.token} onChange={(event) => setForm((prev) => ({ ...prev, token: event.target.value }))} placeholder="Access 单请求头值或反向代理 Token" /></label>
+            <label className="text-[12px] text-[#67695d]">鉴权方式<select className={`${CONTROL_CLASS} mt-1 w-full`} value={form.authType} onChange={(event) => setForm((prev) => ({ ...prev, authType: event.target.value, token: '', clientId: '', clientSecret: '' }))}><option value="none">无鉴权</option><option value="bearer">Bearer Token</option><option value="cloudflare_access">Cloudflare Access Service Token</option></select></label>
+            {form.authType === 'bearer' ? <label className="text-[12px] text-[#67695d]">Bearer 访问令牌{editingId ? '（留空保持不变）' : ' *'}<input type="password" autoComplete="off" className={`${INPUT_CLASS} mt-1`} value={form.token} onChange={(event) => setForm((prev) => ({ ...prev, token: event.target.value }))} /></label> : null}
+            {form.authType === 'cloudflare_access' ? <>
+              <label className="text-[12px] text-[#67695d]">CF-Access-Client-Id{editingId ? '（两项均留空保持不变）' : ' *'}<input type="password" autoComplete="off" className={`${INPUT_CLASS} mt-1`} value={form.clientId} onChange={(event) => setForm((prev) => ({ ...prev, clientId: event.target.value }))} /></label>
+              <label className="text-[12px] text-[#67695d]">CF-Access-Client-Secret{editingId ? '（两项均留空保持不变）' : ' *'}<input type="password" autoComplete="off" className={`${INPUT_CLASS} mt-1`} value={form.clientSecret} onChange={(event) => setForm((prev) => ({ ...prev, clientSecret: event.target.value }))} /></label>
+            </> : null}
             <label className="text-[12px] text-[#67695d]">状态<select className={`${CONTROL_CLASS} mt-1 w-full`} value={form.status} onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}><option value="active">启用</option><option value="disabled">停用</option></select></label>
             <label className="text-[12px] text-[#67695d]">备注<input className={`${INPUT_CLASS} mt-1`} maxLength={500} value={form.note} onChange={(event) => setForm((prev) => ({ ...prev, note: event.target.value }))} placeholder="NAS、显卡、上下文长度、用途等" /></label>
           </div>

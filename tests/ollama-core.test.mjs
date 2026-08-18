@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { normalizeOllamaBaseUrl, ollamaChatUrl, parseOllamaChatResponse } from '../lib/ollamaCore.js'
+import { buildOllamaAuthHeaders, normalizeOllamaBaseUrl, ollamaChatUrl, parseOllamaChatResponse } from '../lib/ollamaCore.js'
 
 test('Ollama Base URL 规范化并补 OpenAI 兼容路径', () => {
   assert.equal(normalizeOllamaBaseUrl('https://ollama.example.com/v1/'), 'https://ollama.example.com')
@@ -24,4 +24,21 @@ test('解析 OpenAI 兼容的 Ollama 响应', () => {
     content: 'pong',
     usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
   })
+})
+
+test('构建 Ollama Bearer 与 Cloudflare Access 鉴权头', () => {
+  assert.deepEqual(buildOllamaAuthHeaders({ type: 'none' }), {})
+  assert.deepEqual(buildOllamaAuthHeaders({ type: 'bearer', token: 'abc' }), {
+    authorization: 'Bearer abc',
+  })
+  assert.deepEqual(buildOllamaAuthHeaders({
+    type: 'cloudflare_access', clientId: 'client-id', clientSecret: 'client-secret',
+  }), {
+    'CF-Access-Client-Id': 'client-id',
+    'CF-Access-Client-Secret': 'client-secret',
+  })
+  assert.throws(
+    () => buildOllamaAuthHeaders({ type: 'cloudflare_access', clientId: 'client-id' }),
+    /CLOUDFLARE_ACCESS_CREDENTIALS_MISSING/,
+  )
 })

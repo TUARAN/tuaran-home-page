@@ -94,7 +94,6 @@ export default function sitemap() {
     '/diary',
     '/donate',
     '/eatwhat',
-    '/messages',
     '/history/ming-qing',
     '/classical-masterpieces',
     '/ru-shi-dao',

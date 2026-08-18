@@ -359,6 +359,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
     return (
       <Link
         href={loginHref}
+        rel="nofollow"
         className="site-account-button"
       >
         <UserAvatar loading={false} />
@@ -550,6 +551,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
         </div>
         <Link
           href={loginHref}
+          rel="nofollow"
           onClick={onNavigate}
           className="site-account-button shrink-0 px-3 py-1.5 text-[12px]"
         >

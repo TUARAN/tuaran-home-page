@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed } from './lib/adminRoutes'
 import { LOCALE_COOKIE, localeFromAcceptLanguage, localeFromCountry } from './lib/i18n'
+import { getLegacyPathRedirect, shouldNoindexPath } from './lib/indexingPolicy'
 
 /**
  * 首次访问按 IP 国家码（Cloudflare 的 cf-ipcountry）决定默认语言：
@@ -24,7 +25,6 @@ function applyDefaultLocaleCookie(request, response) {
 const CANONICAL_HOST = '2aran.com'
 const OPS_LEGACY_HOST = 'ops.2aran.com'
 const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
-const LEGACY_PATHS = new Set(['/weekly', '/articles/diary-self-reflection'])
 const ADS_TXT = 'google.com, pub-7037125126940820, DIRECT, f08c47fec0942fa0\n'
 
 export function middleware(request) {
@@ -70,13 +70,13 @@ export function middleware(request) {
   }
 
   const shouldCanonicalizeHost = LEGACY_HOSTS.has(host)
-  const shouldRedirectLegacyPath = LEGACY_PATHS.has(pathname)
+  const legacyPathRedirect = getLegacyPathRedirect(pathname)
   const shouldRedirectPoetry = pathname === '/poetry'
   const shouldRedirectThreeKingdoms = pathname === '/history/three-kingdoms'
   const shouldRedirectLongCompass = pathname === '/about/long-compass' || pathname.startsWith('/about/long-compass/')
   const shouldRedirectXMutualAidCircle = pathname === '/resources/x-mutual-aid-circle'
 
-  if (shouldCanonicalizeHost || shouldRedirectLegacyPath || shouldRedirectPoetry || shouldRedirectThreeKingdoms || shouldRedirectLongCompass || shouldRedirectXMutualAidCircle) {
+  if (shouldCanonicalizeHost || legacyPathRedirect || shouldRedirectPoetry || shouldRedirectThreeKingdoms || shouldRedirectLongCompass || shouldRedirectXMutualAidCircle) {
     const url = request.nextUrl.clone()
     if (shouldCanonicalizeHost) {
       url.protocol = 'https'
@@ -91,13 +91,17 @@ export function middleware(request) {
       url.pathname = pathname.replace(/^\/about\/long-compass/, '/long-compass')
     } else if (shouldRedirectXMutualAidCircle) {
       url.pathname = '/x-mutual-aid-circle'
-    } else if (shouldRedirectLegacyPath) {
-      url.pathname = '/diary'
+    } else if (legacyPathRedirect) {
+      url.pathname = legacyPathRedirect.pathname
+      url.hash = legacyPathRedirect.hash || ''
     }
     return NextResponse.redirect(url, 301)
   }
 
   const response = NextResponse.next()
+  if (shouldNoindexPath(pathname)) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  }
   applyDefaultLocaleCookie(request, response)
   return response
 }

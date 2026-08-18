@@ -186,10 +186,15 @@ requireSource(
   /index: !isEncrypted/,
   '公开分析详情页必须保持可索引，加密内容除外',
 )
-forbidSource(
+requireSource(
   'middleware.js',
-  /X-Robots-Tag/,
-  'middleware 不得按 AdSense 复审状态批量添加 noindex',
+  /shouldNoindexPath\(pathname\)[\s\S]*X-Robots-Tag/,
+  'middleware 的 noindex 响应头必须由独立索引策略控制',
+)
+forbidSource(
+  'lib/indexingPolicy.js',
+  /adsense|reviewReady|isAdsenseReviewPath/i,
+  '索引策略不得耦合 AdSense 复审范围',
 )
 requireSource(
   'lib/adsenseReviewPolicy.js',

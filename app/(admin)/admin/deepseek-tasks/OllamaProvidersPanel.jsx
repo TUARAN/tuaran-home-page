@@ -143,7 +143,7 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
 
       <Section
         title="NAS · Ollama 服务"
-        description="配置可由 Cloudflare 访问的 Ollama OpenAI 兼容端点；测试与后续业务调用统一进入调用台账。"
+        description="配置可由 Cloudflare 访问的 Ollama API；测试与后续业务调用统一进入调用台账。"
         actions={!formVisible ? <AdminButton type="button" variant="primary" onClick={startCreate}>新增服务</AdminButton> : null}
       >
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-5 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
@@ -189,7 +189,7 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
       </Section>
 
       {formVisible ? (
-        <Section title={editingId ? '编辑 Ollama 服务' : '新增 Ollama 服务'} description="端点需兼容 /v1/chat/completions；Cloudflare Access 凭证只会加密保存并由服务端发送。" className="mt-4" actions={<AdminButton type="button" variant="ghost" onClick={resetForm}>取消</AdminButton>}>
+        <Section title={editingId ? '编辑 Ollama 服务' : '新增 Ollama 服务'} description="端点需提供 Ollama 原生 Chat API；Cloudflare Access 凭证只会加密保存并由服务端发送。" className="mt-4" actions={<AdminButton type="button" variant="ghost" onClick={resetForm}>取消</AdminButton>}>
           <div className="grid gap-4 lg:grid-cols-2">
             <label className="text-[12px] text-[#67695d]">名称 *<input className={`${INPUT_CLASS} mt-1`} value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="例如：家中 NAS · Qwen3" /></label>
             <label className="text-[12px] text-[#67695d]">HTTPS Base URL *<input className={`${INPUT_CLASS} mt-1`} value={form.baseUrl} onChange={(event) => setForm((prev) => ({ ...prev, baseUrl: event.target.value }))} placeholder="https://ollama.example.com" /></label>

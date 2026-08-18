@@ -40,4 +40,6 @@ test('rich pages report visits and the directory batch-loads counts', async () =
   assert.match(frame, /<ContentPvBeacon category=\{pvCategory\} slug=\{pvSlug\} \/>/)
   assert.match(directory, /fetch\(`\/api\/research-pv\?keys=/)
   assert.match(directory, /阅读量 \$\{formatPv\(pv\)\}/)
+  assert.match(directory, /md:grid-cols-\[minmax\(260px,0\.9fr\)_minmax\(0,1\.1fr\)\]/)
+  assert.doesNotMatch(directory, /minmax\(280px,auto\)/)
 })

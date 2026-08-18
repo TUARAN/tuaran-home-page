@@ -8,6 +8,7 @@ import {
 } from '../../lib/indexingPolicy.js'
 
 const root = new URL('../../', import.meta.url)
+const adminPagesBuild = process.env.ADMIN_PAGES_BUILD === '1'
 
 test('private, authentication, API, and raw PDF routes are excluded from indexing', () => {
   for (const pathname of [
@@ -42,7 +43,9 @@ test('legacy reader routes resolve through real HTTP redirects', () => {
   assert.equal(getLegacyPathRedirect('/community'), null)
 })
 
-test('authentication variants have explicit canonical and noindex metadata', async () => {
+test('authentication variants have explicit canonical and noindex metadata', {
+  skip: adminPagesBuild ? 'public site routes are intentionally excluded from the Admin Pages build' : false,
+}, async () => {
   const [login, register, account] = await Promise.all([
     readFile(new URL('app/(site)/login/page.jsx', root), 'utf8'),
     readFile(new URL('app/(site)/register/page.jsx', root), 'utf8'),
@@ -57,7 +60,9 @@ test('authentication variants have explicit canonical and noindex metadata', asy
   assert.match(account, /robots:[\s\S]*index: false[\s\S]*follow: false/)
 })
 
-test('crawler discovery and sitemap rules do not recreate parameter duplicates or soft redirects', async () => {
+test('crawler discovery and sitemap rules do not recreate parameter duplicates or soft redirects', {
+  skip: adminPagesBuild ? 'public site routes are intentionally excluded from the Admin Pages build' : false,
+}, async () => {
   const [header, middleware, sitemap] = await Promise.all([
     readFile(new URL('app/(site)/components/SiteHeader.jsx', root), 'utf8'),
     readFile(new URL('middleware.js', root), 'utf8'),

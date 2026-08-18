@@ -1,3 +1,4 @@
+import ContentPvBeacon from '../components/ContentPvBeacon'
 import QuizClient from './QuizClient'
 
 export const dynamic = 'force-static'
@@ -8,5 +9,10 @@ export const metadata = {
 }
 
 export default function QuizPage() {
-  return <QuizClient />
+  return (
+    <>
+      <ContentPvBeacon category="rich-page" slug="quiz" />
+      <QuizClient />
+    </>
+  )
 }

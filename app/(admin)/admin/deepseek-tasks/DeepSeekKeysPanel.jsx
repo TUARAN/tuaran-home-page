@@ -203,6 +203,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
         title="环境变量默认密钥"
         description="兼容既有部署的兜底密钥，不需要数据库存储；建议后续迁移到可管理的数据库密钥。"
         className="mb-4"
+        actions={<span className="text-[12px] text-[#82847a]">当前合计 {keys.length + (data?.envKeyConfigured ? 1 : 0)} 个 Key</span>}
       >
         <div className="flex flex-wrap items-center gap-3 text-[13px]">
           <StatusPill tone={data?.envKeyConfigured ? 'success' : 'danger'} size="sm">
@@ -222,7 +223,10 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
         description="Key 加密存储，列表只显示掩码；可为每个任务绑定具体密钥，调用记录自动关联。"
         actions={
           !formVisible ? (
-            <AdminButton type="button" variant="primary" onClick={startCreate}>新增密钥</AdminButton>
+            <div className="flex items-center gap-3">
+              <span className="text-[12px] text-[#82847a]">共 {keys.length} 个，{keys.filter((key) => key.status === 'active').length} 个启用</span>
+              <AdminButton type="button" variant="primary" onClick={startCreate}>新增密钥</AdminButton>
+            </div>
           ) : null
         }
       >

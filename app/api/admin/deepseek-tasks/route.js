@@ -34,6 +34,9 @@ function rowToTask(row) {
     model: row.model,
     keyId: row.key_id,
     keyName: row.key_name,
+    provider: row.provider || 'deepseek',
+    providerId: row.provider_id || '',
+    providerName: row.provider_name || (row.provider === 'ollama' ? 'Ollama' : 'DeepSeek'),
     inputSummary: row.input_summary,
     resultSummary: row.result_summary,
     metadata,
@@ -57,6 +60,7 @@ function unavailableResponse() {
     generatedAt: Date.now(),
     stats: { total: 0, today: 0, succeeded: 0, failed: 0, running: 0, totalTokens: 0 },
     sources: [],
+    providers: [],
     tasks: [],
   })
 }
@@ -77,6 +81,8 @@ export async function GET(req) {
   const management = params.get('management') || ''
   const source = String(params.get('source') || '').trim().slice(0, 100)
   const keyId = String(params.get('key') || '').trim().slice(0, 120)
+  const provider = String(params.get('provider') || '').trim().slice(0, 40)
+  const providerId = String(params.get('providerId') || '').trim().slice(0, 120)
   const limit = Math.min(Math.max(Number(params.get('limit')) || 100, 1), 200)
   const parsedOffset = Number.parseInt(params.get('offset') || '0', 10)
   const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0
@@ -105,11 +111,19 @@ export async function GET(req) {
     clauses.push('key_id = ?')
     binds.push(keyId)
   }
+  if (provider) {
+    clauses.push('provider = ?')
+    binds.push(provider)
+  }
+  if (providerId) {
+    clauses.push('provider_id = ?')
+    binds.push(providerId)
+  }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
 
   try {
     const totalStatement = db.prepare(`SELECT COUNT(*) AS total FROM deepseek_tasks ${where}`)
-    const [taskResult, stats, sourceResult, totalRow] = await Promise.all([
+    const [taskResult, stats, sourceResult, providerResult, totalRow] = await Promise.all([
       db
         .prepare(`SELECT * FROM deepseek_tasks ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
         .bind(...binds, limit, offset)
@@ -128,6 +142,7 @@ export async function GET(req) {
         .bind(startOfChinaToday())
         .first(),
       db.prepare('SELECT DISTINCT source FROM deepseek_tasks WHERE source != ? ORDER BY source').bind('').all(),
+      db.prepare("SELECT provider, COUNT(*) AS count FROM deepseek_tasks GROUP BY provider ORDER BY provider").all(),
       binds.length ? totalStatement.bind(...binds).first() : totalStatement.first(),
     ])
 
@@ -143,6 +158,11 @@ export async function GET(req) {
         totalTokens: Number(stats?.total_tokens) || 0,
       },
       sources: (sourceResult?.results || []).map((row) => row.source),
+      providers: (providerResult?.results || []).map((row) => ({
+        id: row.provider || 'deepseek',
+        label: row.provider === 'ollama' ? 'NAS · Ollama' : 'DeepSeek',
+        count: Number(row.count) || 0,
+      })),
       total: Number(totalRow?.total) || 0,
       offset,
       limit,

@@ -1,6 +1,6 @@
 # DeepSeek 密钥管理
 
-更新日期：2026-08-06
+更新日期：2026-08-18
 
 ## 目标
 
@@ -52,3 +52,17 @@
 - 任何接口都不返回完整 Key 或密文；台账不落完整 Prompt。
 - 解密只在 Edge 调用层发生，不写入日志。
 - 停用密钥不删除行，调用历史通过冗余 `key_name` 保持可读。
+
+## NAS / Ollama 扩展
+
+迁移 `0071_llm_providers.sql` 把后台扩为统一模型调用管理：
+
+- `llm_providers` 保存 NAS Ollama 的名称、HTTPS Base URL、默认模型、状态、健康检查与使用统计；
+- 可选 Bearer Token 继续使用 `DEEPSEEK_KEYS_ENC_SECRET` 加密，接口只返回掩码；
+- `deepseek_tasks` 增加 `provider` / `provider_id` / `provider_name`，旧记录默认归为 DeepSeek；
+- `/admin/deepseek-tasks` 增加「NAS · Ollama」标签页，可新增、编辑、停用、测试与查看调用；
+- `callOllama` 通过 Ollama 的 OpenAI 兼容 `/v1/chat/completions` 调用，成功、失败、Token 与耗时进入同一台账。
+
+Cloudflare Edge 不能直接访问 NAS 的局域网地址。上线前需用 Cloudflare Tunnel 等方式把 Ollama 映射为 HTTPS 域名，并在 NAS 入口用反向代理 Bearer 鉴权保护。11434 端口不得直接暴露到公网。
+
+上线顺序：先执行 `migrations/0071_llm_providers.sql`，再部署代码；部署后在后台添加服务并执行一次测试调用。现有业务不会自动改走 NAS，需要逐项显式接入 `callOllama`。

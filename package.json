@@ -31,6 +31,7 @@
     "a-share:test": "node --test scripts/test-a-share-research.mjs",
     "test:a-share-core": "node --test tests/a-share-research-core.test.mjs",
     "test:deepseek-keys": "node --test tests/deepseek-keys.test.mjs",
+    "test:ollama": "node --test tests/ollama-core.test.mjs",
     "credential:add": "node scripts/manage-login-credentials.mjs",
     "credential:disable": "node scripts/manage-login-credentials.mjs --disable",
     "test:credentials": "node --test tests/credential-auth.test.mjs",

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
+import { buildExamQuestions } from '../../lib/quizExam.js'
+
 const [clientSource, pageSource, worksSource, directorySource, quizPageSource, quizClientSource, questionBankSource, richPagesSource, builderSource, seoSource] = await Promise.all([
   readFile(new URL('../../app/(site)/adsense-content-check/AdSenseContentCheckClient.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/adsense-content-check/page.jsx', import.meta.url), 'utf8'),
@@ -43,15 +45,35 @@ test('2026 quiz is owner-only, tagged, gated, and hidden from public discovery',
   assert.match(questionBankSource, /"id": 101,[\s\S]*"type": "fill"[\s\S]*"question": "请完整默写中国共产党入党誓词。"/)
   assert.match(quizClientSource, /isFillQuestion[\s\S]*fillAnswerWrap[\s\S]*核对答案/)
   assert.match(quizClientSource, /normalizeFillAnswer/)
-  assert.match(quizClientSource, /choiceQuestions[\s\S]*fillQuestion \? \[fillQuestion\] : \[\]/)
   assert.match(quizClientSource, /WRONG_BOOK_STORAGE_KEY = 'quiz:wrong-book:2026:v1'/)
   assert.match(quizClientSource, /localStorage\.setItem\(WRONG_BOOK_STORAGE_KEY/)
   assert.match(quizClientSource, /setMode\('review'\)[\s\S]*setQuestions\(wrongQuestions\)/)
   assert.match(quizClientSource, /回答正确，已移出错题本/)
+  assert.match(quizClientSource, /buildExamQuestions\(QUESTION_BANK_2026, examSize\)/)
+  assert.match(quizClientSource, /随机抽题、随机打乱选项、限时作答/)
   assert.match(quizPageSource, /robots:[\s\S]*index: false[\s\S]*follow: false/)
   assert.match(richPagesSource, /work\.audience !== 'owner' \|\| canViewOwnerContent/)
   assert.match(richPagesSource, /label: '仅站长'/)
   assert.match(richPagesSource, /work\.tags \|\| \[\][\s\S]*filter\(\(tag\) => tag !== '仅站长'\)/)
   assert.match(builderSource, /includeOwner = false[\s\S]*includeOwner \|\| p\.audience !== 'owner'/)
   assert.match(seoSource, /work\.audience === 'owner'[\s\S]*index: false, follow: false/)
+})
+
+test('exam preparation shuffles options while preserving the correct answer', () => {
+  const sourceQuestions = [
+    { id: 1, type: 'choice', options: ['甲', '乙', '丙', '丁'], answer: 2 },
+    { id: 2, type: 'choice', options: ['一', '二', '三', '四'], answer: 0 },
+    { id: 3, type: 'fill', answerText: '填空答案' },
+  ]
+
+  const examQuestions = buildExamQuestions(sourceQuestions, 3, () => 0)
+  const firstChoice = examQuestions.find((question) => question.id === 1)
+  const secondChoice = examQuestions.find((question) => question.id === 2)
+
+  assert.notDeepEqual(firstChoice.options, sourceQuestions[0].options)
+  assert.notDeepEqual(secondChoice.options, sourceQuestions[1].options)
+  assert.equal(firstChoice.options[firstChoice.answer], '丙')
+  assert.equal(secondChoice.options[secondChoice.answer], '一')
+  assert.equal(examQuestions.at(-1).type, 'fill')
+  assert.deepEqual(sourceQuestions[0].options, ['甲', '乙', '丙', '丁'])
 })

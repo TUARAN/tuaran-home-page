@@ -34,7 +34,9 @@ test('legacy and delivery-based interactive links resolve to the independent gro
 
 test('2026 quiz is owner-only, tagged, gated, and hidden from public discovery', () => {
   assert.match(worksSource, /id: 'quiz'[\s\S]*category: 'learning-tool'[\s\S]*audience: 'owner'[\s\S]*tags: \['党建知识', '题库', '学习模式', '考试模式', '仅站长'\]/)
-  assert.match(quizPageSource, /AdminPageGate[\s\S]*returnTo="\/quiz"/)
+  assert.match(quizPageSource, /getOwnerPageState\(\)[\s\S]*state !== 'owner'/)
+  assert.match(quizPageSource, /PrivateVaultGate[\s\S]*returnTo="\/quiz"/)
+  assert.doesNotMatch(quizPageSource, /\(admin\)/)
   assert.match(quizPageSource, /ContentPvBeacon category="rich-page" slug="quiz"/)
   assert.match(quizClientSource, /key=\{`\$\{currentQuestion\.id\}-\$\{optionIndex\}`\}/)
   assert.doesNotMatch(quizClientSource, /key=\{option\}/)

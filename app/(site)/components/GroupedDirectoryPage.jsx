@@ -60,7 +60,7 @@ function DirectoryRow({ item, actionLabel, pv }) {
   return (
     <DirectoryLink
       item={item}
-      className="group grid gap-1 px-3.5 py-3 no-underline transition hover:bg-[#fffdf7] dark:hover:bg-[#121b26] md:grid-cols-[minmax(0,1fr)_minmax(280px,auto)] md:items-center"
+      className="group grid gap-3 px-3.5 py-3 no-underline transition hover:bg-[#fffdf7] dark:hover:bg-[#121b26] md:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.1fr)] md:items-start"
     >
       <div className="min-w-0 md:pr-4">
         <div className="mb-1 flex flex-wrap items-center gap-2">

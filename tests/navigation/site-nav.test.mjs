@@ -16,7 +16,7 @@ test('public content navigation is organized by entry, topic and type', () => {
   assert.doesNotMatch(source, /product_business|产品与商业/)
   assert.match(source, /href: '\/articles\?subject=life_family'/)
   assert.match(source, /title: '内容类型'[\s\S]*href: '\/articles\?group=article'/)
-  assert.match(source, /title: '内容类型'[\s\S]*href: '\/articles\?group=interactive'/)
+  assert.match(source, /title: '内容类型'[\s\S]*href: '\/rich-pages'[^}\n]*label: '互动'/)
   assert.match(source, /title: '内容类型'[\s\S]*href: '\/articles\?group=resource'/)
   assert.ok(topicIndex >= 0 && topicIndex < typeIndex)
   assert.doesNotMatch(source, /title: '按用途'/)

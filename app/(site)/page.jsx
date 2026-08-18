@@ -72,7 +72,7 @@ const START_PATHS = [
   },
   {
     id: 'interactive',
-    href: '/articles?group=interactive',
+    href: '/rich-pages',
     title: '互动专题',
     titleEn: 'Interactives',
     desc: '可阅读、可筛选、可操作的内容作品。',

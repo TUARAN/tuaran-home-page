@@ -135,7 +135,7 @@ export default function MorningGreetingClient() {
   }
 
   async function saveGenerationSettings() {
-    if (!llmIntent.trim()) return setError('LLM 意图不能为空。')
+    if (generationMode === 'llm' && !llmIntent.trim()) return setError('LLM 意图不能为空。')
     setSaving(true); setError(''); setNotice('')
     try {
       const response = await fetch('/api/admin/morning-greeting', {
@@ -164,19 +164,32 @@ export default function MorningGreetingClient() {
 
       <Section title="文案生成方式" description="选择模板库，或让 DeepSeek Flash 按意图生成最终文案。LLM 文案生成后直接发推，不进入人工审核。">
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-          <div className="grid grid-cols-2 gap-2 self-start rounded-xl bg-[#f0f1eb] p-1.5 dark:bg-[#151c25]">
+          <div role="tablist" aria-label="文案生成方式" className="grid grid-cols-2 gap-2 self-start rounded-xl bg-[#f0f1eb] p-1.5 dark:bg-[#151c25]">
             {[
               { id: 'template', label: '模板库', hint: '稳定随机' },
               { id: 'llm', label: 'LLM 意图', hint: '实时生成' },
-            ].map((item) => <button key={item.id} type="button" onClick={() => setGenerationMode(item.id)} className={`rounded-lg px-3 py-3 text-left transition ${generationMode === item.id ? 'bg-white text-[#25261f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:text-[#3f4039] dark:text-gray-400 dark:hover:text-gray-200'}`}><span className="block text-sm font-semibold">{item.label}</span><span className="mt-0.5 block text-[11px]">{item.hint}</span></button>)}
+            ].map((item) => <button key={item.id} id={`generation-tab-${item.id}`} type="button" role="tab" aria-selected={generationMode === item.id} aria-controls={`generation-panel-${item.id}`} onClick={() => setGenerationMode(item.id)} className={`rounded-lg px-3 py-3 text-left transition ${generationMode === item.id ? 'bg-white text-[#25261f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:text-[#3f4039] dark:text-gray-400 dark:hover:text-gray-200'}`}><span className="block text-sm font-semibold">{item.label}</span><span className="mt-0.5 block text-[11px]">{item.hint}</span></button>)}
           </div>
-          <div>
-            <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">意图（提示语）<textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={5} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={`${inputClass} mt-1.5`} /></label>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">系统会自动补充当前日期、早安 / 午安 / 晚安时段、纯文案输出和 X 长度限制；这里只需要写你的内容意图。</p>
-              <AdminButton type="button" variant="primary" disabled={saving || loading || !llmIntent.trim()} onClick={saveGenerationSettings}>{saving ? '保存中…' : '保存并应用'}</AdminButton>
+          {generationMode === 'llm' ? (
+            <div id="generation-panel-llm" role="tabpanel" aria-labelledby="generation-tab-llm">
+              <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">意图（提示语）<textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={5} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={`${inputClass} mt-1.5`} /></label>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">系统会自动补充当前日期、早安 / 午安 / 晚安时段、纯文案输出和 X 长度限制；这里只需要写你的内容意图。</p>
+                <AdminButton type="button" variant="primary" disabled={saving || loading || !llmIntent.trim()} onClick={saveGenerationSettings}>{saving ? '保存中…' : '保存并应用'}</AdminButton>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div id="generation-panel-template" role="tabpanel" aria-labelledby="generation-tab-template" className="flex min-h-[148px] flex-col justify-between rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
+              <div>
+                <p className="mb-1 text-[13px] font-semibold text-[#34352f] dark:text-gray-200">从已启用模板中随机发布</p>
+                <p className="m-0 text-[11px] leading-5 text-[#85877c]">每个发布时段会从对应的早安、午安或晚安模板池中随机选择一条；可在下方模板库新增、修改、停用或删除文案。</p>
+                <p className="mb-0 mt-3 text-[12px] text-[#63655b] dark:text-gray-300">当前共启用 <strong className="text-[#25261f] dark:text-white">{stats.enabled || 0}</strong> 条模板：早安 {stats.byPeriod?.morning?.enabled || 0} 条、午安 {stats.byPeriod?.noon?.enabled || 0} 条、晚安 {stats.byPeriod?.evening?.enabled || 0} 条。</p>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <AdminButton type="button" variant="primary" disabled={saving || loading} onClick={saveGenerationSettings}>{saving ? '保存中…' : '保存并应用'}</AdminButton>
+              </div>
+            </div>
+          )}
         </div>
       </Section>
 

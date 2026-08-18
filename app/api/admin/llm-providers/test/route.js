@@ -18,7 +18,8 @@ export async function POST(req) {
       providerId,
       messages: [{ role: 'user', content: '只回复两个字：正常' }],
       temperature: 0,
-      maxTokens: 16,
+      maxTokens: 64,
+      reasoningEffort: 'none',
       timeoutMs: 30000,
       task: {
         source: 'admin-llm-provider',

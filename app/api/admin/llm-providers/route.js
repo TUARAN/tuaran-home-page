@@ -7,6 +7,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const STATUSES = new Set(['active', 'disabled'])
+const AUTH_TYPES = new Set(['none', 'bearer', 'cloudflare_access'])
 
 function unavailable(error) {
   return Response.json({
@@ -26,7 +27,9 @@ function mapRow(row, usage = {}) {
     name: row.name,
     baseUrl: row.base_url,
     defaultModel: row.default_model,
+    authType: row.auth_type || (row.auth_cipher ? 'bearer' : 'none'),
     authHint: row.auth_hint,
+    authSecondaryHint: row.auth_secondary_hint || '',
     status: row.status,
     note: row.note,
     lastCheckedAt: Number(row.last_checked_at) || null,
@@ -80,11 +83,19 @@ export async function POST(req) {
   const name = cleanText(body?.name, 80)
   const model = cleanText(body?.defaultModel, 160)
   const token = cleanText(body?.token, 2000)
+  const clientId = cleanText(body?.clientId, 2000)
+  const clientSecret = cleanText(body?.clientSecret, 2000)
+  const authType = cleanText(body?.authType || (token ? 'bearer' : 'none'), 40)
   const note = cleanText(body?.note, 500)
   const status = body?.status || 'active'
   if (!name) return Response.json({ error: 'MISSING_NAME' }, { status: 400 })
   if (!model) return Response.json({ error: 'MISSING_DEFAULT_MODEL' }, { status: 400 })
   if (!STATUSES.has(status)) return Response.json({ error: 'INVALID_STATUS' }, { status: 400 })
+  if (!AUTH_TYPES.has(authType)) return Response.json({ error: 'INVALID_AUTH_TYPE' }, { status: 400 })
+  if (authType === 'bearer' && !token) return Response.json({ error: 'MISSING_BEARER_TOKEN' }, { status: 400 })
+  if (authType === 'cloudflare_access' && (!clientId || !clientSecret)) {
+    return Response.json({ error: 'MISSING_CLOUDFLARE_ACCESS_CREDENTIALS' }, { status: 400 })
+  }
   let baseUrl
   try {
     baseUrl = normalizeOllamaBaseUrl(body?.baseUrl)
@@ -92,18 +103,27 @@ export async function POST(req) {
     return Response.json({ error: error.message }, { status: 400 })
   }
   const secret = cleanText(getKeyStoreEnv().DEEPSEEK_KEYS_ENC_SECRET, 10000)
-  if (token && !secret) return Response.json({ error: 'LLM_KEYS_ENC_SECRET_NOT_CONFIGURED' }, { status: 503 })
+  if (authType !== 'none' && !secret) return Response.json({ error: 'LLM_KEYS_ENC_SECRET_NOT_CONFIGURED' }, { status: 503 })
 
   try {
     const db = getD1()
     const now = Date.now()
     const id = crypto.randomUUID()
-    const cipher = token ? await encryptApiKey(token, secret) : ''
+    const primaryCredential = authType === 'cloudflare_access' ? clientId : authType === 'bearer' ? token : ''
+    const secondaryCredential = authType === 'cloudflare_access' ? clientSecret : ''
+    const cipher = primaryCredential ? await encryptApiKey(primaryCredential, secret) : ''
+    const secondaryCipher = secondaryCredential ? await encryptApiKey(secondaryCredential, secret) : ''
     await db.prepare(
       `INSERT INTO llm_providers
-        (id, provider_type, name, base_url, default_model, auth_hint, auth_cipher, status, note, created_at, updated_at)
-       VALUES (?, 'ollama', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).bind(id, name, baseUrl, model, token ? maskApiKey(token) : '', cipher, status, note, now, now).run()
+        (id, provider_type, name, base_url, default_model, auth_type, auth_hint, auth_cipher,
+         auth_secondary_hint, auth_secondary_cipher, status, note, created_at, updated_at)
+       VALUES (?, 'ollama', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      id, name, baseUrl, model, authType,
+      primaryCredential ? maskApiKey(primaryCredential) : '', cipher,
+      secondaryCredential ? '已安全保存' : '', secondaryCipher,
+      status, note, now, now,
+    ).run()
     return Response.json({ ok: true, id, createdAt: now }, { status: 201 })
   } catch (error) {
     return unavailable(error)
@@ -117,6 +137,15 @@ export async function PATCH(req) {
   const id = cleanText(body?.id, 120)
   if (!id) return Response.json({ error: 'MISSING_ID' }, { status: 400 })
   if (body?.status != null && !STATUSES.has(body.status)) return Response.json({ error: 'INVALID_STATUS' }, { status: 400 })
+  if (body?.authType != null && !AUTH_TYPES.has(body.authType)) return Response.json({ error: 'INVALID_AUTH_TYPE' }, { status: 400 })
+
+  let existing
+  try {
+    existing = await getD1().prepare("SELECT * FROM llm_providers WHERE id = ? AND provider_type = 'ollama'").bind(id).first()
+  } catch (error) {
+    return unavailable(error)
+  }
+  if (!existing) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
 
   const sets = ['updated_at = ?']
   const binds = [Date.now()]
@@ -142,12 +171,45 @@ export async function PATCH(req) {
     sets.push('status = ?')
     binds.push(body.status)
   }
-  const token = body?.token == null ? null : cleanText(body.token, 2000)
-  if (token) {
+  const token = cleanText(body?.token, 2000)
+  const clientId = cleanText(body?.clientId, 2000)
+  const clientSecret = cleanText(body?.clientSecret, 2000)
+  const authType = body?.authType == null
+    ? (existing.auth_type || (existing.auth_cipher ? 'bearer' : 'none'))
+    : cleanText(body.authType, 40)
+  if (body?.authType != null || token || clientId || clientSecret) {
     const secret = cleanText(getKeyStoreEnv().DEEPSEEK_KEYS_ENC_SECRET, 10000)
-    if (!secret) return Response.json({ error: 'LLM_KEYS_ENC_SECRET_NOT_CONFIGURED' }, { status: 503 })
-    sets.push('auth_cipher = ?', 'auth_hint = ?')
-    binds.push(await encryptApiKey(token, secret), maskApiKey(token))
+    if (authType !== 'none' && !secret) return Response.json({ error: 'LLM_KEYS_ENC_SECRET_NOT_CONFIGURED' }, { status: 503 })
+    const previousType = existing.auth_type || (existing.auth_cipher ? 'bearer' : 'none')
+    if (authType === 'none') {
+      sets.push('auth_type = ?', 'auth_cipher = ?', 'auth_hint = ?', 'auth_secondary_cipher = ?', 'auth_secondary_hint = ?')
+      binds.push('none', '', '', '', '')
+    } else if (authType === 'bearer') {
+      if (!token && previousType !== 'bearer') return Response.json({ error: 'MISSING_BEARER_TOKEN' }, { status: 400 })
+      sets.push('auth_type = ?', 'auth_secondary_cipher = ?', 'auth_secondary_hint = ?')
+      binds.push('bearer', '', '')
+      if (token) {
+        sets.push('auth_cipher = ?', 'auth_hint = ?')
+        binds.push(await encryptApiKey(token, secret), maskApiKey(token))
+      }
+    } else {
+      const credentialsProvided = Boolean(clientId && clientSecret)
+      if (!credentialsProvided && previousType !== 'cloudflare_access') {
+        return Response.json({ error: 'MISSING_CLOUDFLARE_ACCESS_CREDENTIALS' }, { status: 400 })
+      }
+      if (Boolean(clientId) !== Boolean(clientSecret)) {
+        return Response.json({ error: 'INCOMPLETE_CLOUDFLARE_ACCESS_CREDENTIALS' }, { status: 400 })
+      }
+      sets.push('auth_type = ?')
+      binds.push('cloudflare_access')
+      if (credentialsProvided) {
+        sets.push('auth_cipher = ?', 'auth_hint = ?', 'auth_secondary_cipher = ?', 'auth_secondary_hint = ?')
+        binds.push(
+          await encryptApiKey(clientId, secret), maskApiKey(clientId),
+          await encryptApiKey(clientSecret, secret), '已安全保存',
+        )
+      }
+    }
   }
   if (sets.length === 1) return Response.json({ error: 'NO_FIELDS' }, { status: 400 })
   binds.push(id)

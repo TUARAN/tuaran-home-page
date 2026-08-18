@@ -3,18 +3,7 @@
 import { useState } from 'react'
 
 const R2_MEDIA_BASE = 'https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev'
-const videoChunks = Array.from({ length: 22 }, (_, index) => ({
-  src: `${R2_MEDIA_BASE}/resources/niu-lai/chunks/niu-lai-${String(index + 1).padStart(2, '0')}.mp4`,
-}))
-
-const videoChapters = [
-  { label: '第 1 章', range: '00:00–16:00', startChunk: 0 },
-  { label: '第 2 章', range: '16:00–32:00', startChunk: 4 },
-  { label: '第 3 章', range: '32:00–48:00', startChunk: 8 },
-  { label: '第 4 章', range: '48:00–64:00', startChunk: 12 },
-  { label: '第 5 章', range: '64:00–80:00', startChunk: 16 },
-  { label: '第 6 章', range: '80:00–86:51', startChunk: 20 },
-]
+const VIDEO_SRC = `${R2_MEDIA_BASE}/resources/niu-lai/niu-lai-full-2026.mp4`
 
 const reviewSteps = [
   {
@@ -63,40 +52,21 @@ const questions = [
 ]
 
 export function NiuLaiVideoPlayer() {
-  const [currentChunk, setCurrentChunk] = useState(0)
-  const [autoContinue, setAutoContinue] = useState(false)
-  const current = videoChunks[currentChunk]
-  const currentChapter = videoChapters.findLastIndex((chapter) => currentChunk >= chapter.startChunk)
-
-  function selectChapter(index) {
-    setAutoContinue(false)
-    setCurrentChunk(videoChapters[index].startChunk)
-  }
-
-  function playNextChunk() {
-    if (currentChunk >= videoChunks.length - 1) return
-    setAutoContinue(true)
-    setCurrentChunk((index) => index + 1)
-  }
-
   return (
-    <section className="overflow-hidden rounded-[28px] border border-white/15 bg-[#090c0a] shadow-2xl shadow-black/25" aria-label="《牛来》原片分段播放器">
+    <section className="overflow-hidden rounded-[28px] border border-white/15 bg-[#090c0a] shadow-2xl shadow-black/25" aria-label="《牛来》原片播放器">
       <div className="relative aspect-[20/9] min-h-[220px] w-full bg-black sm:min-h-[360px] lg:min-h-[430px]">
         <video
-          key={current.src}
-          src={current.src}
+          src={VIDEO_SRC}
           controls
           playsInline
           preload="metadata"
-          autoPlay={autoContinue}
-          onEnded={playNextChunk}
           className="h-full w-full bg-black object-contain"
-          aria-label={`《牛来》原片第 ${currentChunk + 1} 个播放切片`}
+          aria-label="《牛来》电影原片"
         >
           你的浏览器不支持 HTML5 视频播放。
         </video>
         <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[10px] text-white/75 backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:py-1.5 sm:text-[11px]">
-          原片画质 · {currentChunk + 1} / 22
+          原片画质 · 86:51
         </div>
         <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[10px] text-white/75 backdrop-blur sm:right-4 sm:top-4 sm:px-3 sm:py-1.5 sm:text-[11px]">
           大智提供
@@ -104,24 +74,7 @@ export function NiuLaiVideoPlayer() {
       </div>
 
       <div className="border-t border-white/10 bg-[#101411] px-3 py-3 sm:px-4">
-        <div className="flex gap-2 overflow-x-auto pb-1" aria-label="选择《牛来》播放分段">
-          {videoChapters.map((chapter, index) => {
-            const selected = index === currentChapter
-            return (
-              <button
-                key={chapter.label}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => selectChapter(index)}
-                className={`shrink-0 rounded-xl border px-3 py-2 text-left transition ${selected ? 'border-[#d6c78d] bg-[#d6c78d] text-[#171a17]' : 'border-white/10 bg-white/5 text-white/70 hover:border-white/25 hover:text-white'}`}
-              >
-                <span className="block text-xs font-semibold">{chapter.label}</span>
-                <span className={`mt-0.5 block font-mono text-[9px] ${selected ? 'text-black/55' : 'text-white/40'}`}>{chapter.range}</span>
-              </button>
-            )
-          })}
-        </div>
-        <p className="mt-2 px-1 text-[11px] leading-5 text-white/45">保持原始 1920×864 画面与码率；底层无损切成 22 个短片传输，当前切片播放完毕后自动续播，章节按钮用于快速跳转。</p>
+        <p className="px-1 text-[11px] leading-5 text-white/45">完整原片保持 1920×864 画面与原始码率，支持在 86 分 51 秒的完整时间轴上直接拖动；播放器只预载媒体信息，不会主动下载整部影片。</p>
       </div>
     </section>
   )

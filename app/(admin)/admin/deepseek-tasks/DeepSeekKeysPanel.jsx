@@ -10,7 +10,13 @@ const KNOWN_SOURCES = [
   'a-share-research',
   'admin-model-dispatch',
   'stock-analysis',
-  'public-opinion',
+  'x-daily-greeting',
+]
+const DEEPSEEK_SHARED_USES = [
+  { name: 'AI 规划台', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
+  { name: 'A 股研究自动化', source: 'a-share-research', taskTypes: ['daily-draft'] },
+  { name: '股票横向分析', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
+  { name: 'X 每日问候文案', source: 'x-daily-greeting', taskTypes: ['direct-post-copy'] },
 ]
 
 const EMPTY_FORM = {
@@ -212,10 +218,37 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
           {data?.envKeyConfigured ? (
             <code className="rounded-md bg-[#f0f1e9] px-2 py-1 font-mono text-[12px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{data.envKeyHint}</code>
           ) : (
-            <span className="text-[#82847a]">DEEPSEEK_API_KEY 未配置，线上调用将失败。</span>
+            <span className="text-[#82847a]">当前 Admin 运行环境未检测到 DEEPSEEK_API_KEY；公开站及其他运行环境不在此页检测范围。</span>
           )}
           <span className="text-[12px] text-[#82847a]">只作为任务未绑定密钥时的回退</span>
         </div>
+      </Section>
+
+      <Section
+        title="DeepSeek 公用密钥"
+        description="这些功能默认共用 DEEPSEEK_API_KEY；这里只展示用途占位，不代表当前运行环境已经配置 Key。"
+        className="mb-4"
+        actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length} 个使用场景</span>}
+      >
+        <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill tone="neutral" size="sm">公共兜底</StatusPill>
+            <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">DEEPSEEK_API_KEY</span>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {DEEPSEEK_SHARED_USES.map((item) => (
+              <div key={item.source} className="rounded-md bg-[#f7f7f2] px-2.5 py-2 dark:bg-[#111a25]">
+                <div className="text-[13px] font-medium text-[#3f4039] dark:text-gray-200">{item.name}</div>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.source}</code>
+                  {item.taskTypes.map((taskType) => (
+                    <code key={taskType} className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">{taskType}</code>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
       </Section>
 
       <Section

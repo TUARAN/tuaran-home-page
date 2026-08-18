@@ -13,6 +13,7 @@ import {
   Toolbar,
 } from '../../components/ui'
 import DeepSeekKeysPanel from './DeepSeekKeysPanel'
+import OllamaProvidersPanel from './OllamaProvidersPanel'
 
 const EXECUTION_META = {
   running: { label: '运行中', tone: 'info' },
@@ -73,6 +74,7 @@ function TaskDetail({ task, note, setNote, saving, onSave }) {
         <div>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
             <div><dt className="text-[#82847a]">模型</dt><dd className="mt-0.5 break-all">{task.model || '—'}</dd></div>
+            <div><dt className="text-[#82847a]">模型服务</dt><dd className="mt-0.5 break-all">{task.providerName || (task.provider === 'ollama' ? 'NAS · Ollama' : 'DeepSeek')}</dd></div>
             <div>
               <dt className="text-[#82847a]">联网检索</dt>
               <dd className="mt-0.5">
@@ -120,6 +122,8 @@ export default function DeepSeekTasksClient() {
   const [management, setManagement] = useState('')
   const [source, setSource] = useState('')
   const [keyFilter, setKeyFilter] = useState('')
+  const [providerFilter, setProviderFilter] = useState('')
+  const [providerIdFilter, setProviderIdFilter] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
@@ -134,6 +138,8 @@ export default function DeepSeekTasksClient() {
     if (management) params.set('management', management)
     if (source) params.set('source', source)
     if (keyFilter) params.set('key', keyFilter)
+    if (providerFilter) params.set('provider', providerFilter)
+    if (providerIdFilter) params.set('providerId', providerIdFilter)
     try {
       const response = await fetch(`/api/admin/deepseek-tasks?${params}`, { cache: 'no-store' })
       const payload = await safeJson(response)
@@ -145,7 +151,7 @@ export default function DeepSeekTasksClient() {
     } finally {
       setLoading(false)
     }
-  }, [execution, management, source, keyFilter])
+  }, [execution, management, source, keyFilter, providerFilter, providerIdFilter])
 
   useEffect(() => {
     refresh()
@@ -186,8 +192,8 @@ export default function DeepSeekTasksClient() {
 
   return (
     <AdminPage
-      title="DeepSeek 管理"
-      description="统一管理 DeepSeek API 密钥、任务绑定与调用记录；完整 Key 与 Prompt 不会写入台账。"
+      title="模型调用管理"
+      description="统一管理 DeepSeek API、NAS Ollama 服务与调用记录；完整密钥和 Prompt 不会写入台账。"
       actions={
         <>
           <AdminButton href="/admin/model-dispatch" variant="primary">AI 规划台</AdminButton>
@@ -204,13 +210,23 @@ export default function DeepSeekTasksClient() {
           调用记录
         </button>
         <button type="button" className={`${TAB_CLASS} ${tab === 'keys' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('keys')}>
-          密钥管理
+          DeepSeek 密钥
+        </button>
+        <button type="button" className={`${TAB_CLASS} ${tab === 'ollama' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('ollama')}>
+          NAS · Ollama
         </button>
       </div>
 
       {tab === 'keys' ? (
         <DeepSeekKeysPanel onViewCalls={(keyId) => {
           setKeyFilter(keyId)
+          setTab('records')
+        }} />
+      ) : tab === 'ollama' ? (
+        <OllamaProvidersPanel onViewCalls={(providerId) => {
+          setProviderFilter('ollama')
+          setProviderIdFilter(providerId)
+          setKeyFilter('')
           setTab('records')
         }} />
       ) : (
@@ -244,15 +260,20 @@ export default function DeepSeekTasksClient() {
                 <option value="">全部来源</option>
                 {(data?.sources || []).map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
+              <select className={CONTROL_CLASS} value={providerFilter} onChange={(event) => { setProviderFilter(event.target.value); setProviderIdFilter('') }} aria-label="模型服务">
+                <option value="">全部模型服务</option>
+                {(data?.providers || []).map((item) => <option key={item.id} value={item.id}>{item.label}（{item.count}）</option>)}
+              </select>
               <select className={CONTROL_CLASS} value={keyFilter} onChange={(event) => setKeyFilter(event.target.value)} aria-label="使用密钥">
                 <option value="">全部密钥</option>
                 {[...knownKeys.entries()].map(([id, name]) => <option key={id} value={id}>{name}</option>)}
                 {keyFilter && !knownKeys.has(keyFilter) ? <option value={keyFilter}>{keyFilter}</option> : null}
               </select>
+              {providerIdFilter ? <button type="button" className={CONTROL_CLASS} onClick={() => setProviderIdFilter('')}>清除 Ollama 服务筛选</button> : null}
             </Toolbar>
 
             {!loading && !tasks.length ? (
-              <EmptyState title="暂无 DeepSeek 任务记录" description="完成迁移后，新调用会自动进入这里。" />
+              <EmptyState title="暂无模型调用记录" description="完成迁移后，DeepSeek 与 Ollama 新调用会自动进入这里。" />
             ) : (
               <div className="space-y-2">
                 {tasks.map((task) => {
@@ -264,6 +285,9 @@ export default function DeepSeekTasksClient() {
                           <div className="flex flex-wrap items-center gap-2">
                             <StatusPill tone={executionMeta.tone} size="sm">{executionMeta.label}</StatusPill>
                             <span className="text-[11px] text-[#82847a]">{task.source} · {task.taskType}</span>
+                            <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${task.provider === 'ollama' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300' : 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300'}`}>
+                              {task.providerName || (task.provider === 'ollama' ? 'NAS · Ollama' : 'DeepSeek')}
+                            </span>
                             {task.keyName ? <span className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{task.keyName}</span> : null}
                             {task.metadata?.webSearch?.enabled ? (
                               <span className="rounded-md bg-[#e9f2e4] px-1.5 py-0.5 text-[11px] text-[#3e6b2f] dark:bg-[#12240e] dark:text-[#9fd08a]">联网检索 {Number(task.metadata.webSearch.calls) || 0} 次</span>

@@ -18,6 +18,13 @@ import {
   shanghaiDateKey,
 } from '../lib/morningGreeting.js'
 import { rowToTemplate } from '../lib/morningGreetingTemplates.js'
+import {
+  DEFAULT_DAILY_GREETING_LLM_INTENT,
+  buildGreetingLlmMessages,
+  normalizeGeneratedGreeting,
+  normalizeGreetingGenerationMode,
+  normalizeGreetingLlmIntent,
+} from '../lib/dailyGreetingLlm.js'
 
 test('greeting date label uses Asia/Shanghai day of month', () => {
   const label = greetingDateLabel({ now: new Date('2026-08-05T00:30:00.000Z') })
@@ -116,4 +123,31 @@ test('pause state parsing treats only paused as paused', () => {
   assert.equal(isAutomationPaused(' running '), false)
   assert.equal(isAutomationPaused(null), false)
   assert.equal(isAutomationPaused(''), false)
+})
+
+test('LLM generation mode is the default while saved template mode remains supported', () => {
+  assert.equal(normalizeGreetingGenerationMode('llm'), 'llm')
+  assert.equal(normalizeGreetingGenerationMode('template'), 'template')
+  assert.equal(normalizeGreetingGenerationMode('unknown'), 'llm')
+  assert.equal(normalizeGreetingLlmIntent('  写得轻松一点  '), '写得轻松一点')
+  assert.equal(normalizeGreetingLlmIntent(''), DEFAULT_DAILY_GREETING_LLM_INTENT)
+})
+
+test('LLM prompt includes current period, date, and editable intent', () => {
+  const messages = buildGreetingLlmMessages({
+    intent: '围绕今天先完成一件小事来写。',
+    period: 'noon',
+    now: new Date('2026-08-18T04:00:00.000Z'),
+  })
+  assert.equal(messages.length, 2)
+  assert.match(messages[0].content, /只输出最终文案/)
+  assert.match(messages[1].content, /当前时段：午安/)
+  assert.match(messages[1].content, /当前日期：8月18号/)
+  assert.match(messages[1].content, /围绕今天先完成一件小事来写/)
+})
+
+test('generated greeting cleanup removes wrappers without rewriting copy', () => {
+  assert.equal(normalizeGeneratedGreeting('```text\n午安！先好好吃饭。\n```'), '午安！先好好吃饭。')
+  assert.equal(normalizeGeneratedGreeting('最终文案：晚安，今天辛苦了。'), '晚安，今天辛苦了。')
+  assert.equal(normalizeGeneratedGreeting('“早安，慢慢开始。”'), '早安，慢慢开始。')
 })

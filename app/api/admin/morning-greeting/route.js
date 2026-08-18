@@ -7,6 +7,13 @@ import {
   isAutomationPaused,
 } from '../../../../lib/morningGreeting'
 import {
+  DAILY_GREETING_LLM_PROMPT_KEY,
+  DAILY_GREETING_MODE_KEY,
+  DEFAULT_DAILY_GREETING_LLM_INTENT,
+  normalizeGreetingGenerationMode,
+  normalizeGreetingLlmIntent,
+} from '../../../../lib/dailyGreetingLlm'
+import {
   deleteMorningGreetingTemplate,
   greetingTemplateStats,
   listMorningGreetingTemplates,
@@ -58,10 +65,12 @@ export async function GET(req) {
   const query = String(url.searchParams.get('q') || '').trim().slice(0, 100)
 
   try {
-    const [templatePage, stats, state, morningRaw, noonRaw, eveningRaw] = await Promise.all([
+    const [templatePage, stats, state, modeRaw, intentRaw, morningRaw, noonRaw, eveningRaw] = await Promise.all([
       listMorningGreetingTemplates(db, { offset, limit, period, query }),
       greetingTemplateStats(db),
       readSetting(db, MORNING_GREETING_SETTING_KEY),
+      readSetting(db, DAILY_GREETING_MODE_KEY),
+      readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
       readSetting(db, greetingLastRunKey('morning')),
       readSetting(db, greetingLastRunKey('noon')),
       readSetting(db, greetingLastRunKey('evening')),
@@ -82,6 +91,8 @@ export async function GET(req) {
       offset,
       limit,
       paused: isAutomationPaused(state),
+      generationMode: normalizeGreetingGenerationMode(modeRaw),
+      llmIntent: normalizeGreetingLlmIntent(intentRaw, DEFAULT_DAILY_GREETING_LLM_INTENT),
       lastRuns,
       stats,
     })
@@ -146,6 +157,19 @@ export async function PATCH(req) {
 
   const body = await req.json().catch(() => null)
   const action = String(body?.action || '')
+  if (action === 'save-generation') {
+    const rawMode = String(body?.mode || '').trim().toLowerCase()
+    const mode = normalizeGreetingGenerationMode(rawMode, '')
+    const intent = String(body?.intent || '').replace(/\r\n?/g, '\n').trim()
+    if (!mode) return Response.json({ error: 'INVALID_GENERATION_MODE' }, { status: 400 })
+    if (!intent) return Response.json({ error: 'LLM_INTENT_REQUIRED' }, { status: 400 })
+    if (intent.length > 4000) return Response.json({ error: 'LLM_INTENT_TOO_LONG' }, { status: 400 })
+    await Promise.all([
+      writeSetting(db, DAILY_GREETING_MODE_KEY, mode, guard.user?.name || 'admin'),
+      writeSetting(db, DAILY_GREETING_LLM_PROMPT_KEY, intent, guard.user?.name || 'admin'),
+    ])
+    return Response.json({ ok: true, mode, intent })
+  }
   if (action !== 'pause' && action !== 'resume') {
     return Response.json({ error: 'UNSUPPORTED_ACTION' }, { status: 400 })
   }

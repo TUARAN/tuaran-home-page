@@ -9,6 +9,7 @@ import {
 import {
   DAILY_GREETING_LLM_PROMPT_KEY,
   DAILY_GREETING_MODE_KEY,
+  DAILY_GREETING_OLLAMA_PROVIDER_KEY,
   DEFAULT_DAILY_GREETING_LLM_INTENT,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
@@ -58,19 +59,26 @@ export async function GET(req) {
 
   const url = new URL(req.url)
   const parsedOffset = Number.parseInt(url.searchParams.get('offset') || '0', 10)
-  const parsedLimit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
+  const parsedLimit = Number.parseInt(url.searchParams.get('limit') || '10', 10)
   const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0
-  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 50) : 20
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 50) : 10
   const period = String(url.searchParams.get('period') || 'all')
   const query = String(url.searchParams.get('q') || '').trim().slice(0, 100)
 
   try {
-    const [templatePage, stats, state, modeRaw, intentRaw, morningRaw, noonRaw, eveningRaw] = await Promise.all([
+    const [templatePage, stats, state, modeRaw, intentRaw, ollamaProviderRaw, ollamaProviderRows, morningRaw, noonRaw, eveningRaw] = await Promise.all([
       listMorningGreetingTemplates(db, { offset, limit, period, query }),
       greetingTemplateStats(db),
       readSetting(db, MORNING_GREETING_SETTING_KEY),
       readSetting(db, DAILY_GREETING_MODE_KEY),
       readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
+      readSetting(db, DAILY_GREETING_OLLAMA_PROVIDER_KEY),
+      db.prepare(
+        `SELECT id, name, default_model
+         FROM llm_providers
+         WHERE provider_type = 'ollama' AND status = 'active'
+         ORDER BY CASE WHEN default_model LIKE 'qwen3.5:%' THEN 0 ELSE 1 END, updated_at DESC`,
+      ).all(),
       readSetting(db, greetingLastRunKey('morning')),
       readSetting(db, greetingLastRunKey('noon')),
       readSetting(db, greetingLastRunKey('evening')),
@@ -83,6 +91,10 @@ export async function GET(req) {
         lastRuns[key] = null
       }
     }
+    const ollamaProviders = (ollamaProviderRows.results || []).map((row) => ({ id: row.id, name: row.name, model: row.default_model }))
+    const ollamaProviderId = ollamaProviders.some((provider) => provider.id === ollamaProviderRaw)
+      ? String(ollamaProviderRaw)
+      : String(ollamaProviders[0]?.id || '')
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
@@ -93,6 +105,8 @@ export async function GET(req) {
       paused: isAutomationPaused(state),
       generationMode: normalizeGreetingGenerationMode(modeRaw),
       llmIntent: normalizeGreetingLlmIntent(intentRaw, DEFAULT_DAILY_GREETING_LLM_INTENT),
+      ollamaProviders,
+      ollamaProviderId,
       lastRuns,
       stats,
     })
@@ -161,13 +175,22 @@ export async function PATCH(req) {
     const rawMode = String(body?.mode || '').trim().toLowerCase()
     const mode = normalizeGreetingGenerationMode(rawMode, '')
     const intent = String(body?.intent || '').replace(/\r\n?/g, '\n').trim()
+    const ollamaProviderId = String(body?.ollamaProviderId || '').trim()
     if (!mode) return Response.json({ error: 'INVALID_GENERATION_MODE' }, { status: 400 })
-    if (mode === 'llm' && !intent) return Response.json({ error: 'LLM_INTENT_REQUIRED' }, { status: 400 })
+    if (mode !== 'template' && !intent) return Response.json({ error: 'LLM_INTENT_REQUIRED' }, { status: 400 })
+    if (mode === 'ollama' && !ollamaProviderId) return Response.json({ error: 'OLLAMA_PROVIDER_REQUIRED' }, { status: 400 })
     if (intent.length > 4000) return Response.json({ error: 'LLM_INTENT_TOO_LONG' }, { status: 400 })
     const writes = [writeSetting(db, DAILY_GREETING_MODE_KEY, mode, guard.user?.name || 'admin')]
     if (intent) writes.push(writeSetting(db, DAILY_GREETING_LLM_PROMPT_KEY, intent, guard.user?.name || 'admin'))
+    if (mode === 'ollama') {
+      const provider = await db.prepare(
+        `SELECT id FROM llm_providers WHERE id = ? AND provider_type = 'ollama' AND status = 'active'`,
+      ).bind(ollamaProviderId).first()
+      if (!provider) return Response.json({ error: 'OLLAMA_PROVIDER_NOT_FOUND' }, { status: 400 })
+      writes.push(writeSetting(db, DAILY_GREETING_OLLAMA_PROVIDER_KEY, ollamaProviderId, guard.user?.name || 'admin'))
+    }
     await Promise.all(writes)
-    return Response.json({ ok: true, mode, intent })
+    return Response.json({ ok: true, mode, intent, ollamaProviderId })
   }
   if (action !== 'pause' && action !== 'resume') {
     return Response.json({ error: 'UNSUPPORTED_ACTION' }, { status: 400 })

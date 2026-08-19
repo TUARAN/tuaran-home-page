@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import {
@@ -125,10 +126,12 @@ test('pause state parsing treats only paused as paused', () => {
   assert.equal(isAutomationPaused(''), false)
 })
 
-test('LLM generation mode is the default while saved template mode remains supported', () => {
-  assert.equal(normalizeGreetingGenerationMode('llm'), 'llm')
+test('DeepSeek is the default while Ollama, templates, and the legacy LLM value remain supported', () => {
+  assert.equal(normalizeGreetingGenerationMode('deepseek'), 'deepseek')
+  assert.equal(normalizeGreetingGenerationMode('ollama'), 'ollama')
+  assert.equal(normalizeGreetingGenerationMode('llm'), 'deepseek')
   assert.equal(normalizeGreetingGenerationMode('template'), 'template')
-  assert.equal(normalizeGreetingGenerationMode('unknown'), 'llm')
+  assert.equal(normalizeGreetingGenerationMode('unknown'), 'deepseek')
   assert.equal(normalizeGreetingLlmIntent('  写得轻松一点  '), '写得轻松一点')
   assert.equal(normalizeGreetingLlmIntent(''), DEFAULT_DAILY_GREETING_LLM_INTENT)
 })
@@ -150,4 +153,21 @@ test('generated greeting cleanup removes wrappers without rewriting copy', () =>
   assert.equal(normalizeGeneratedGreeting('```text\n午安！先好好吃饭。\n```'), '午安！先好好吃饭。')
   assert.equal(normalizeGeneratedGreeting('最终文案：晚安，今天辛苦了。'), '晚安，今天辛苦了。')
   assert.equal(normalizeGeneratedGreeting('“早安，慢慢开始。”'), '早安，慢慢开始。')
+})
+
+test('自动任务支持三种生成模式，模板管理使用每页十条的扁平列表', async () => {
+  const [clientSource, adminRouteSource, cronRouteSource] = await Promise.all([
+    readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/admin/morning-greeting/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/distribution/x/greeting/route.js', import.meta.url), 'utf8'),
+  ])
+
+  assert.match(clientSource, /const PAGE_SIZE = 10/)
+  assert.match(clientSource, /id: 'deepseek'/)
+  assert.match(clientSource, /id: 'ollama'/)
+  assert.match(clientSource, /id: 'template'/)
+  assert.match(clientSource, /divide-y divide-\[#e2e4da\]/)
+  assert.match(adminRouteSource, /DAILY_GREETING_OLLAMA_PROVIDER_KEY/)
+  assert.match(cronRouteSource, /callDeepSeek\(/)
+  assert.match(cronRouteSource, /callOllama\(/)
 })

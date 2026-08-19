@@ -2,6 +2,7 @@ import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
+import { callDeepSeek } from '../../../../lib/deepseek'
 import { callOllama } from '../../../../lib/ollama'
 import {
   X_AI_NEWS_LAST_RUN_KEY,
@@ -84,20 +85,19 @@ export async function POST(req) {
   if (!body || !action) return Response.json({ ok: false, error: 'INVALID_REQUEST' }, { status: 400 })
 
   if (action === 'generate') {
+    const providerType = String(body.providerType || 'ollama').trim().toLowerCase()
     const providerId = String(body.providerId || '').trim()
     const brief = normalizeXAiNewsBrief(body.brief)
-    if (!providerId) return Response.json({ ok: false, error: 'OLLAMA_PROVIDER_REQUIRED' }, { status: 400 })
+    if (!['deepseek', 'ollama'].includes(providerType)) return Response.json({ ok: false, error: 'INVALID_PROVIDER_TYPE' }, { status: 400 })
+    if (providerType === 'ollama' && !providerId) return Response.json({ ok: false, error: 'OLLAMA_PROVIDER_REQUIRED' }, { status: 400 })
     if (brief.length < 8) return Response.json({ ok: false, error: 'AI_NEWS_BRIEF_TOO_SHORT' }, { status: 400 })
     if (brief.length > 4000) return Response.json({ ok: false, error: 'AI_NEWS_BRIEF_TOO_LONG' }, { status: 400 })
 
     try {
-      const result = await callOllama({
-        providerId,
+      const generationArgs = {
         messages: buildXAiNewsMessages({ brief }),
         temperature: 0.35,
         maxTokens: 256,
-        reasoningEffort: 'none',
-        timeoutMs: 120_000,
         task: {
           source: 'x-ai-news',
           taskType: 'manual-copy-generation',
@@ -105,9 +105,22 @@ export async function POST(req) {
           actorId: guard.user?.id || guard.user?.login || '',
           actorName: guard.user?.name || guard.user?.login || 'TUARAN',
           inputSummary: `站长已核实素材：${brief.slice(0, 500)}`,
-          metadata: { manualPublish: true },
+          metadata: { manualPublish: true, providerType },
         },
-      })
+      }
+      const result = providerType === 'deepseek'
+        ? await callDeepSeek({
+            ...generationArgs,
+            timeoutMs: 45_000,
+            taskDefaultModel: 'deepseek-v4-flash',
+            disableThinking: true,
+          })
+        : await callOllama({
+            ...generationArgs,
+            providerId,
+            reasoningEffort: 'none',
+            timeoutMs: 120_000,
+          })
       const draft = validateXAiNewsDraft(result.content)
       if (!draft.ok) {
         return Response.json(
@@ -120,8 +133,9 @@ export async function POST(req) {
         draft: draft.text,
         weight: draft.weight,
         model: result.model,
-        providerId: result.providerId,
-        providerName: result.providerName,
+        providerType,
+        providerId: result.providerId || '',
+        providerName: result.providerName || 'DeepSeek Flash',
         taskId: result.taskId,
         usage: result.usage || null,
       })

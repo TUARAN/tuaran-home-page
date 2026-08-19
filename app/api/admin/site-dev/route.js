@@ -97,6 +97,15 @@ function rowToWorkItem(row) {
   }
 }
 
+function rowToWorkItemDetail(row) {
+  const item = rowToWorkItem(row)
+  const raw = safeJson(row.raw_json, {})
+  return {
+    ...item,
+    body: typeof raw?.body === 'string' ? raw.body : item.bodyExcerpt,
+  }
+}
+
 function rowToProject(row) {
   return {
     id: row.id,
@@ -551,6 +560,13 @@ export async function GET(req) {
   }
 
   try {
+    const itemId = new URL(req.url).searchParams.get('itemId')?.trim()
+    if (itemId) {
+      await ensureTables(db)
+      const row = await db.prepare('SELECT * FROM site_dev_work_items WHERE id = ?').bind(itemId).first()
+      if (!row) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
+      return Response.json({ item: rowToWorkItemDetail(row) })
+    }
     return Response.json(await readDashboard(db))
   } catch (error) {
     return Response.json(

@@ -197,41 +197,45 @@ export default function MorningGreetingClient() {
       </Section>
 
       <div className="mb-4 mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard label="模板总数" value={loading ? '—' : stats.total || 0} sub={`启用 ${stats.enabled || 0} 条`} />
-        {['morning', 'noon', 'evening'].map((item) => <StatCard key={item} label={`${periodLabel(item)}模板`} value={loading ? '—' : stats.byPeriod?.[item]?.total || 0} sub={`启用 ${stats.byPeriod?.[item]?.enabled || 0} 条`} tone="success" />)}
+        {generationMode === 'template' ? <>
+          <StatCard label="模板总数" value={loading ? '—' : stats.total || 0} sub={`启用 ${stats.enabled || 0} 条`} />
+          {['morning', 'noon', 'evening'].map((item) => <StatCard key={item} label={`${periodLabel(item)}模板`} value={loading ? '—' : stats.byPeriod?.[item]?.total || 0} sub={`启用 ${stats.byPeriod?.[item]?.enabled || 0} 条`} tone="success" />)}
+        </> : null}
         <StatCard label="自动化状态" value={loading ? '—' : data?.paused ? '已暂停' : generationMode === 'llm' ? 'LLM 直发' : '模板直发'} tone={data?.paused ? 'warning' : 'success'} />
       </div>
 
-      <Section title="新增问候" description="{date} 会在发布时替换为当天日期；新模板会自动进入对应时段的随机池。模板可随时维护，只有切到模板库模式时才参与发布。">
-        <form onSubmit={addTemplate} className="grid gap-3 lg:grid-cols-[130px_130px_1fr_auto] lg:items-end">
-          <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">时段<select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={`${inputClass} mt-1.5`}>{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-          <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">内容类型<select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={`${inputClass} mt-1.5`}>{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-          <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">文案<textarea value={newTemplate.text} onChange={(event) => setNewTemplate((current) => ({ ...current, text: event.target.value }))} rows={3} placeholder={'例如：午安！今天是{date}。\n《论语》说……'} className={`${inputClass} mt-1.5`} /></label>
-          <AdminButton type="submit" variant="primary" disabled={saving || !newTemplate.text.trim()}>{saving ? '保存中…' : '新增模板'}</AdminButton>
-        </form>
-      </Section>
+      {generationMode === 'template' ? <>
+        <Section title="新增问候" description="{date} 会在发布时替换为当天日期；新模板会自动进入对应时段的随机池。模板可随时维护，只有切到模板库模式时才参与发布。">
+          <form onSubmit={addTemplate} className="grid gap-3 lg:grid-cols-[130px_130px_1fr_auto] lg:items-end">
+            <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">时段<select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={`${inputClass} mt-1.5`}>{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+            <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">内容类型<select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={`${inputClass} mt-1.5`}>{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+            <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">文案<textarea value={newTemplate.text} onChange={(event) => setNewTemplate((current) => ({ ...current, text: event.target.value }))} rows={3} placeholder={'例如：午安！今天是{date}。\n《论语》说……'} className={`${inputClass} mt-1.5`} /></label>
+            <AdminButton type="submit" variant="primary" disabled={saving || !newTemplate.text.trim()}>{saving ? '保存中…' : '新增模板'}</AdminButton>
+          </form>
+        </Section>
 
-      <Section title="模板库" description="共 100 条默认样本，支持按时段筛选、搜索、逐条修改和停用。" className="mt-4" actions={<StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>}>
-        <div className="mb-4 flex flex-col gap-2 md:flex-row">
-          <div className="flex flex-wrap gap-2">{PERIODS.map((item) => <button key={item.id} type="button" onClick={() => { setSearchInput(''); refresh({ nextOffset: 0, nextPeriod: item.id, nextQuery: '' }) }} className={`rounded-full border px-3 py-1.5 text-xs ${period === item.id ? 'border-[#15140f] bg-[#15140f] text-white dark:border-white dark:bg-white dark:text-black' : 'border-[#d8dad0] text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-gray-300 dark:hover:bg-[#151c25]'}`}>{item.label}</button>)}</div>
-          <form className="ml-auto flex w-full gap-2 md:max-w-md" onSubmit={(event) => { event.preventDefault(); refresh({ nextOffset: 0, nextQuery: searchInput.trim() }) }}><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="搜索名言、人物或故事" className={inputClass} /><AdminButton type="submit" disabled={loading}>搜索</AdminButton></form>
-        </div>
+        <Section title="模板库" description="共 100 条默认样本，支持按时段筛选、搜索、逐条修改和停用。" className="mt-4" actions={<StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>}>
+          <div className="mb-4 flex flex-col gap-2 md:flex-row">
+            <div className="flex flex-wrap gap-2">{PERIODS.map((item) => <button key={item.id} type="button" onClick={() => { setSearchInput(''); refresh({ nextOffset: 0, nextPeriod: item.id, nextQuery: '' }) }} className={`rounded-full border px-3 py-1.5 text-xs ${period === item.id ? 'border-[#15140f] bg-[#15140f] text-white dark:border-white dark:bg-white dark:text-black' : 'border-[#d8dad0] text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-gray-300 dark:hover:bg-[#151c25]'}`}>{item.label}</button>)}</div>
+            <form className="ml-auto flex w-full gap-2 md:max-w-md" onSubmit={(event) => { event.preventDefault(); refresh({ nextOffset: 0, nextQuery: searchInput.trim() }) }}><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="搜索名言、人物或故事" className={inputClass} /><AdminButton type="submit" disabled={loading}>搜索</AdminButton></form>
+          </div>
 
-        {!loading && !templates.length ? <EmptyState title="没有匹配的文案" description="换一个关键词或时段试试。" /> : <div className="grid gap-3 xl:grid-cols-2">{templates.map((template) => {
-          const draft = drafts[template.id] || {}
-          return <article key={template.id} className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
-            <div className="mb-3 flex flex-wrap items-center gap-2"><StatusPill tone={template.period === 'morning' ? 'warning' : template.period === 'noon' ? 'success' : 'neutral'} size="sm" icon={false}>{periodLabel(template.period)}</StatusPill><span className="rounded-full bg-[#eceee6] px-2 py-0.5 text-[11px] text-[#67695d] dark:bg-[#19212c] dark:text-gray-400">{kindLabel(template.contentKind)}</span><StatusPill tone={template.enabled ? 'success' : 'neutral'} size="sm" icon={false}>{template.enabled ? '启用' : '停用'}</StatusPill><span className="ml-auto font-mono text-[10px] text-[#94968b]">#{template.id}</span></div>
-            <textarea value={draft.text ?? template.text} onChange={(event) => changeDraft(template.id, 'text', event.target.value)} rows={4} className={inputClass} />
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <select value={draft.period ?? template.period} onChange={(event) => changeDraft(template.id, 'period', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
-              <select value={draft.contentKind ?? template.contentKind} onChange={(event) => changeDraft(template.id, 'contentKind', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
-              <span className="text-[10px] text-[#94968b]">{formatTime(template.updatedAt)}</span>
-              <div className="ml-auto flex gap-2"><button type="button" disabled={saving} onClick={() => saveTemplate(template, { enabled: !template.enabled })} className="rounded-lg border border-[#caccc0] px-2.5 py-1 text-[11.5px] text-[#63645a] hover:bg-[#edefe7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6]">{template.enabled ? '停用' : '启用'}</button><AdminButton type="button" size="sm" variant="ghost" disabled={saving} onClick={() => saveTemplate(template)}>保存</AdminButton><button type="button" disabled={saving} onClick={() => removeTemplate(template)} className="rounded-lg border border-rose-200 px-2.5 py-1 text-[11.5px] text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">删除</button></div>
-            </div>
-          </article>
-        })}</div>}
-        <AdminPagination total={data?.total || 0} offset={offset} limit={PAGE_SIZE} onOffsetChange={(nextOffset) => refresh({ nextOffset })} loading={loading} />
-      </Section>
+          {!loading && !templates.length ? <EmptyState title="没有匹配的文案" description="换一个关键词或时段试试。" /> : <div className="grid gap-3 xl:grid-cols-2">{templates.map((template) => {
+            const draft = drafts[template.id] || {}
+            return <article key={template.id} className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
+              <div className="mb-3 flex flex-wrap items-center gap-2"><StatusPill tone={template.period === 'morning' ? 'warning' : template.period === 'noon' ? 'success' : 'neutral'} size="sm" icon={false}>{periodLabel(template.period)}</StatusPill><span className="rounded-full bg-[#eceee6] px-2 py-0.5 text-[11px] text-[#67695d] dark:bg-[#19212c] dark:text-gray-400">{kindLabel(template.contentKind)}</span><StatusPill tone={template.enabled ? 'success' : 'neutral'} size="sm" icon={false}>{template.enabled ? '启用' : '停用'}</StatusPill><span className="ml-auto font-mono text-[10px] text-[#94968b]">#{template.id}</span></div>
+              <textarea value={draft.text ?? template.text} onChange={(event) => changeDraft(template.id, 'text', event.target.value)} rows={4} className={inputClass} />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <select value={draft.period ?? template.period} onChange={(event) => changeDraft(template.id, 'period', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+                <select value={draft.contentKind ?? template.contentKind} onChange={(event) => changeDraft(template.id, 'contentKind', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+                <span className="text-[10px] text-[#94968b]">{formatTime(template.updatedAt)}</span>
+                <div className="ml-auto flex gap-2"><button type="button" disabled={saving} onClick={() => saveTemplate(template, { enabled: !template.enabled })} className="rounded-lg border border-[#caccc0] px-2.5 py-1 text-[11.5px] text-[#63645a] hover:bg-[#edefe7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6]">{template.enabled ? '停用' : '启用'}</button><AdminButton type="button" size="sm" variant="ghost" disabled={saving} onClick={() => saveTemplate(template)}>保存</AdminButton><button type="button" disabled={saving} onClick={() => removeTemplate(template)} className="rounded-lg border border-rose-200 px-2.5 py-1 text-[11.5px] text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">删除</button></div>
+              </div>
+            </article>
+          })}</div>}
+          <AdminPagination total={data?.total || 0} offset={offset} limit={PAGE_SIZE} onOffsetChange={(nextOffset) => refresh({ nextOffset })} loading={loading} />
+        </Section>
+      </> : null}
 
       <Section title="今日三个时段" description="每个时段独立幂等；失败可在该时段的后续补跑点重试。" className="mt-4">
         <div className="grid gap-3 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-xl border border-[#e2e4da] p-4 dark:border-[#243041]"><div className="mb-2 flex items-center justify-between"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-1 text-xs text-[#82847a]">{formatTime(run?.at)}{run?.mode ? ` · ${run.mode === 'llm' ? 'LLM 意图' : '模板库'}` : ''}</p>{run?.model ? <p className="mb-1 text-[10px] text-[#94968b]">{run.model}</p> : null}{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 break-words text-xs text-rose-600">{run.error}</p> : null}</div> })}</div>

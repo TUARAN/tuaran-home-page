@@ -14,6 +14,7 @@ const REQUIRED_ROUTES = [
   '/admin/context-memory',
   '/admin/long-compass',
   '/admin/planning',
+  '/api/admin/deepseek-tasks/local-sync',
   '/api/admin/planning',
   '/api/admin/planning/import',
   '/api/me',

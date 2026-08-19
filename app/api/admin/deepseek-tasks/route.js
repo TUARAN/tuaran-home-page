@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 const EXECUTION_STATUSES = new Set(['running', 'succeeded', 'failed'])
 const MANAGEMENT_STATUSES = new Set(['pending', 'reviewing', 'approved', 'archived'])
 const PRIORITIES = new Set(['low', 'normal', 'high'])
+const EXECUTION_SCOPES = new Set(['cloud', 'local'])
 const DAY_MS = 24 * 60 * 60 * 1000
 const CHINA_OFFSET_MS = 8 * 60 * 60 * 1000
 
@@ -37,6 +38,7 @@ function rowToTask(row) {
     provider: row.provider || 'deepseek',
     providerId: row.provider_id || '',
     providerName: row.provider_name || (row.provider === 'ollama' ? 'Ollama' : 'DeepSeek'),
+    executionScope: row.execution_scope || 'cloud',
     inputSummary: row.input_summary,
     resultSummary: row.result_summary,
     metadata,
@@ -58,7 +60,7 @@ function unavailableResponse() {
   return Response.json({
     status: 'unavailable',
     generatedAt: Date.now(),
-    stats: { total: 0, today: 0, succeeded: 0, failed: 0, running: 0, totalTokens: 0 },
+    stats: { total: 0, today: 0, succeeded: 0, failed: 0, running: 0, cloud: 0, local: 0, totalTokens: 0 },
     sources: [],
     providers: [],
     tasks: [],
@@ -83,6 +85,7 @@ export async function GET(req) {
   const keyId = String(params.get('key') || '').trim().slice(0, 120)
   const provider = String(params.get('provider') || '').trim().slice(0, 40)
   const providerId = String(params.get('providerId') || '').trim().slice(0, 120)
+  const scope = String(params.get('scope') || '').trim().slice(0, 20)
   const limit = Math.min(Math.max(Number(params.get('limit')) || 100, 1), 200)
   const parsedOffset = Number.parseInt(params.get('offset') || '0', 10)
   const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0
@@ -91,6 +94,9 @@ export async function GET(req) {
   }
   if (management && !MANAGEMENT_STATUSES.has(management)) {
     return Response.json({ error: 'INVALID_MANAGEMENT_STATUS' }, { status: 400 })
+  }
+  if (scope && !EXECUTION_SCOPES.has(scope)) {
+    return Response.json({ error: 'INVALID_EXECUTION_SCOPE' }, { status: 400 })
   }
 
   const clauses = []
@@ -119,6 +125,10 @@ export async function GET(req) {
     clauses.push('provider_id = ?')
     binds.push(providerId)
   }
+  if (scope) {
+    clauses.push('execution_scope = ?')
+    binds.push(scope)
+  }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
 
   try {
@@ -136,6 +146,8 @@ export async function GET(req) {
              SUM(CASE WHEN execution_status = 'succeeded' THEN 1 ELSE 0 END) AS succeeded,
              SUM(CASE WHEN execution_status = 'failed' THEN 1 ELSE 0 END) AS failed,
              SUM(CASE WHEN execution_status = 'running' THEN 1 ELSE 0 END) AS running,
+             SUM(CASE WHEN execution_scope = 'cloud' THEN 1 ELSE 0 END) AS cloud,
+             SUM(CASE WHEN execution_scope = 'local' THEN 1 ELSE 0 END) AS local,
              COALESCE(SUM(total_tokens), 0) AS total_tokens
            FROM deepseek_tasks`,
         )
@@ -155,6 +167,8 @@ export async function GET(req) {
         succeeded: Number(stats?.succeeded) || 0,
         failed: Number(stats?.failed) || 0,
         running: Number(stats?.running) || 0,
+        cloud: Number(stats?.cloud) || 0,
+        local: Number(stats?.local) || 0,
         totalTokens: Number(stats?.total_tokens) || 0,
       },
       sources: (sourceResult?.results || []).map((row) => row.source),

@@ -249,7 +249,7 @@ export default function OpsConsoleClient() {
 
   return (
     <AdminPage
-      title="自动化运行"
+      title="自动化台账"
       description="云端与本地自动化统一登记；列表紧凑展示，点击任意一行查看详情。"
       actions={
         <div className="flex flex-wrap gap-2">

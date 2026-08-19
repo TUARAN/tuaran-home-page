@@ -17,7 +17,7 @@ test('AI planning belongs to planning center instead of project workspace', asyn
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/model-dispatch'/)
   assert.match(planningCenter, /AI 参与规划与分派/)
   assert.match(planningCenter, /href="\/admin\/model-dispatch"/)
-  assert.match(projectWorkspace, /href: '\/admin\/ops', title: '自动化运行'/)
+  assert.match(projectWorkspace, /href: '\/admin\/ops', title: '自动化台账'/)
   assert.match(projectWorkspace, /href: '\/admin\/deepseek-tasks', title: '调用记录与审计'/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/ai-workspace'/)
 })

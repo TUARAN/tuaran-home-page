@@ -30,6 +30,7 @@ const MANAGEMENT_LABELS = {
 
 const PRIORITY_LABELS = { low: '低', normal: '普通', high: '高' }
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
+const PAGE_SIZE = 50
 
 function formatDate(value) {
   if (!value) return '—'
@@ -128,7 +129,6 @@ export default function DeepSeekTasksClient() {
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [offset, setOffset] = useState(0)
-  const PAGE_SIZE = 50
 
   const refresh = useCallback(async (nextOffset = 0) => {
     setLoading(true)
@@ -145,7 +145,7 @@ export default function DeepSeekTasksClient() {
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
-      setOffset(nextOffset)
+      setOffset(Number(payload?.offset) || 0)
     } catch (fetchError) {
       setError(fetchError?.message || '任务记录读取失败。')
     } finally {
@@ -175,7 +175,7 @@ export default function DeepSeekTasksClient() {
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
-      await refresh()
+      await refresh(offset)
     } catch (updateError) {
       setError(updateError?.message || '任务更新失败。')
     } finally {
@@ -198,7 +198,7 @@ export default function DeepSeekTasksClient() {
         <>
           <AdminButton href="/admin/model-dispatch" variant="primary">AI 规划台</AdminButton>
           {tab === 'records' ? (
-            <AdminButton type="button" onClick={refresh} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>
+            <AdminButton type="button" onClick={() => refresh(offset)} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>
           ) : null}
         </>
       }

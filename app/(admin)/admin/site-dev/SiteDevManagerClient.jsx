@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   AdminButton,
@@ -218,69 +218,127 @@ function SourceList({ sources, projects, onSync, syncingId }) {
   )
 }
 
-function WorkItemCard({ item, source, projects, onPatch, savingId }) {
+function WorkItemCard({ item, onOpen }) {
   const priority = PRIORITY_META[item.priority] || PRIORITY_META.normal
   return (
-    <article className="rounded-lg border border-[#e2e3da] bg-[#fbfcf8] p-3 dark:border-[#243040] dark:bg-[#0d131b]">
+    <button
+      type="button"
+      onClick={() => onOpen(item.id)}
+      className="block w-full rounded-lg border border-[#e2e3da] bg-[#fbfcf8] p-3 text-left transition hover:border-[#b8bbad] hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8a6422]/30 dark:border-[#243040] dark:bg-[#0d131b] dark:hover:border-[#405066] dark:hover:bg-[#111a25]"
+      aria-label={`查看待办：${item.title}`}
+    >
       <div className="flex items-start justify-between gap-3">
-        <a
-          href={item.url || undefined}
-          target="_blank"
-          rel="noreferrer"
-          className="line-clamp-2 min-w-0 text-[13px] font-semibold leading-5 text-[#15140f] hover:text-[#8a6422] dark:text-gray-100 dark:hover:text-[#d4ae66]"
-        >
+        <span className="line-clamp-3 min-w-0 text-[13px] font-semibold leading-5 text-[#15140f] dark:text-gray-100">
           {item.number ? `#${item.number} ` : ''}
           {item.title}
-        </a>
+        </span>
         <StatusPill tone={item.type === 'pr' ? 'info' : 'neutral'} size="sm" icon={false}>
           {item.type}
         </StatusPill>
       </div>
-      {item.bodyExcerpt ? (
-        <p className="mb-0 mt-2 line-clamp-2 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">{item.bodyExcerpt}</p>
-      ) : null}
-      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <StatusPill tone={priority.tone} size="sm" icon={false}>{priority.label}</StatusPill>
-        {item.labels.slice(0, 3).map((label) => (
+        {item.labels.slice(0, 2).map((label) => (
           <span key={label} className="rounded-full bg-white px-2 py-0.5 text-[11px] text-[#67695d] dark:bg-[#151c26] dark:text-gray-400">
             {label}
           </span>
         ))}
+        {item.labels.length > 2 ? <span className="text-[11px] text-[#8b8d82] dark:text-gray-500">+{item.labels.length - 2}</span> : null}
       </div>
-      <p className="mb-0 mt-3 text-[11px] leading-5 text-[#8b8d82] dark:text-gray-500">
-        {projectName(projects, item.projectId)} · {sourceTitle(source)} · {formatDate(item.externalUpdatedAt || item.updatedAt)}
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <select
-          value={item.localStatus}
-          onChange={(event) => onPatch(item.id, { localStatus: event.target.value })}
-          className={CONTROL_CLASS}
-          disabled={savingId === item.id}
-        >
-          {Object.entries(STATUS_META).map(([value, meta]) => (
-            <option key={value} value={value}>
-              {meta.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={item.priority}
-          onChange={(event) => onPatch(item.id, { priority: event.target.value })}
-          className={CONTROL_CLASS}
-          disabled={savingId === item.id}
-        >
-          {Object.entries(PRIORITY_META).map(([value, meta]) => (
-            <option key={value} value={value}>
-              {meta.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    </article>
+      <span className="mt-2 block text-[11px] text-[#8b8d82] dark:text-gray-500">点击查看全部内容</span>
+    </button>
+  )
+}
+
+function WorkItemModal({ item, source, projects, onPatch, savingId, onClose }) {
+  const closeRef = useRef(null)
+  const savingRef = useRef(savingId)
+  const [body, setBody] = useState(item.bodyExcerpt || '')
+  const [loadingBody, setLoadingBody] = useState(true)
+  savingRef.current = savingId
+
+  useEffect(() => {
+    let active = true
+    setBody(item.bodyExcerpt || '')
+    setLoadingBody(true)
+    fetch(`/api/admin/site-dev?itemId=${encodeURIComponent(item.id)}`, { cache: 'no-store' })
+      .then(safeJson)
+      .then((payload) => {
+        if (active && typeof payload?.item?.body === 'string') setBody(payload.item.body)
+      })
+      .finally(() => {
+        if (active) setLoadingBody(false)
+      })
+    return () => { active = false }
+  }, [item.id, item.bodyExcerpt])
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    closeRef.current?.focus()
+    function handleKeyDown(event) {
+      if (event.key === 'Escape' && savingRef.current !== item.id) onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [item.id, onClose])
+
+  const priority = PRIORITY_META[item.priority] || PRIORITY_META.normal
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="work-item-modal-title">
+      <button type="button" tabIndex={-1} className="absolute inset-0 bg-black/45" aria-label="关闭待办详情" onClick={() => { if (savingId !== item.id) onClose() }} />
+      <section className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl border border-[#e2e3da] bg-white shadow-2xl dark:border-[#2b3644] dark:bg-[#10161f] sm:max-w-2xl sm:rounded-2xl">
+        <header className="flex items-start justify-between gap-4 border-b border-[#eceee6] p-4 dark:border-[#1b2430] sm:p-5">
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <StatusPill tone={item.type === 'pr' ? 'info' : 'neutral'} size="sm" icon={false}>{item.type}</StatusPill>
+              <StatusPill tone={priority.tone} size="sm" icon={false}>{priority.label}</StatusPill>
+            </div>
+            <h2 id="work-item-modal-title" className="m-0 break-words text-lg font-semibold leading-7 text-[#15140f] dark:text-gray-100">
+              {item.number ? `#${item.number} ` : ''}{item.title}
+            </h2>
+          </div>
+          <AdminButton ref={closeRef} type="button" size="sm" onClick={onClose} disabled={savingId === item.id}>关闭</AdminButton>
+        </header>
+        <div className="overflow-y-auto p-4 sm:p-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
+              状态
+              <select value={item.localStatus} onChange={(event) => onPatch(item.id, { localStatus: event.target.value })} className={`${CONTROL_CLASS} mt-1 w-full`} disabled={savingId === item.id}>
+                {Object.entries(STATUS_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
+              </select>
+            </label>
+            <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
+              优先级
+              <select value={item.priority} onChange={(event) => onPatch(item.id, { priority: event.target.value })} className={`${CONTROL_CLASS} mt-1 w-full`} disabled={savingId === item.id}>
+                {Object.entries(PRIORITY_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <dl className="mt-4 grid gap-x-4 gap-y-2 text-[12px] leading-5 text-[#67695d] dark:text-gray-400 sm:grid-cols-2">
+            <div><dt className="inline text-[#8b8d82]">项目：</dt><dd className="inline">{projectName(projects, item.projectId)}</dd></div>
+            <div><dt className="inline text-[#8b8d82]">来源：</dt><dd className="inline">{sourceTitle(source)}</dd></div>
+            <div><dt className="inline text-[#8b8d82]">作者：</dt><dd className="inline">{item.author || '—'}</dd></div>
+            <div><dt className="inline text-[#8b8d82]">更新时间：</dt><dd className="inline">{formatDate(item.externalUpdatedAt || item.updatedAt)}</dd></div>
+          </dl>
+          {item.labels.length ? <div className="mt-4 flex flex-wrap gap-1.5">{item.labels.map((label) => <span key={label} className="rounded-full bg-[#f3f4ee] px-2 py-1 text-[11px] text-[#67695d] dark:bg-[#151c26] dark:text-gray-400">{label}</span>)}</div> : null}
+          <div className="mt-5 rounded-xl bg-[#f7f8f3] p-4 dark:bg-[#0d131b]">
+            <p className="m-0 whitespace-pre-wrap break-words text-[13px] leading-6 text-[#3f4039] dark:text-gray-300">{body || '没有正文内容。'}</p>
+            {loadingBody ? <p className="mb-0 mt-2 text-[11px] text-[#8b8d82] dark:text-gray-500">正在读取完整内容…</p> : null}
+          </div>
+          {item.url ? <div className="mt-4 flex justify-end"><AdminButton href={item.url} target="_blank" rel="noreferrer">在 GitHub 打开</AdminButton></div> : null}
+        </div>
+      </section>
+    </div>
   )
 }
 
 function WorkBoard({ items, sources, projects, onPatch, savingId }) {
+  const [selectedItemId, setSelectedItemId] = useState('')
+  const closeModal = useCallback(() => setSelectedItemId(''), [])
   const sourceMap = useMemo(() => new Map(sources.map((source) => [source.id, source])), [sources])
   const grouped = useMemo(() => {
     const map = Object.fromEntries(Object.keys(STATUS_META).map((status) => [status, []]))
@@ -290,13 +348,15 @@ function WorkBoard({ items, sources, projects, onPatch, savingId }) {
     }
     return map
   }, [items])
+  const selectedItem = items.find((item) => item.id === selectedItemId)
 
   if (!items.length) {
     return <EmptyState title="还没有同步到待办" description="绑定 GitHub 仓库后点同步，open issue / PR 会进入 Inbox。" />
   }
 
   return (
-    <div className="grid items-start gap-3 xl:grid-cols-5">
+    <>
+    <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-5">
       {Object.entries(STATUS_META).map(([status, meta]) => (
         <section key={status} className="flex min-w-0 flex-col rounded-xl border border-[#e2e3da] bg-white/70 dark:border-[#1e2733] dark:bg-[#10161f]/70">
           <header className="flex items-center justify-between border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">
@@ -308,16 +368,24 @@ function WorkBoard({ items, sources, projects, onPatch, savingId }) {
               <WorkItemCard
                 key={item.id}
                 item={item}
-                source={sourceMap.get(item.sourceId)}
-                projects={projects}
-                onPatch={onPatch}
-                savingId={savingId}
+                onOpen={setSelectedItemId}
               />
             ))}
           </div>
         </section>
       ))}
     </div>
+    {selectedItem ? (
+      <WorkItemModal
+        item={selectedItem}
+        source={sourceMap.get(selectedItem.sourceId)}
+        projects={projects}
+        onPatch={onPatch}
+        savingId={savingId}
+        onClose={closeModal}
+      />
+    ) : null}
+    </>
   )
 }
 

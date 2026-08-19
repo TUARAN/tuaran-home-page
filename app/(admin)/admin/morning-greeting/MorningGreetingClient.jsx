@@ -158,9 +158,6 @@ export default function MorningGreetingClient() {
     setDrafts((current) => ({ ...current, [id]: { ...(current[id] || {}), [key]: value } }))
   }
 
-  const activeGenerationMode = data?.generationMode || generationMode
-  const isTemplateMode = generationMode === 'template'
-
   return (
     <AdminPage
       title="X 发布任务"
@@ -220,26 +217,39 @@ export default function MorningGreetingClient() {
             )}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="自动化状态" value={loading ? '—' : data?.paused ? '已暂停' : `${generationModeLabel(activeGenerationMode)} 直发`} tone={data?.paused ? 'warning' : 'success'} />
-            <StatCard label="运行模式" value={generationModeLabel(activeGenerationMode)} sub={isTemplateMode ? '模板库随机发布' : '按意图生成并直接发布'} />
-            {generationMode === 'template' ? <StatCard label="模板总数" value={loading ? '—' : `${stats.total || 0} 条`} sub={`启用 ${stats.enabled || 0} 条`} /> : null}
-          </div>
+          {generationMode === 'template' ? (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard label="模板总数" value={loading ? '—' : `${stats.total || 0} 条`} sub={`启用 ${stats.enabled || 0} 条`} />
+            </div>
+          ) : null}
 
           {generationMode === 'template' ? <>
             <Section title="新增问候" description="{date} 会在发布时替换为当天日期；新模板会自动进入对应时段的随机池。模板可随时维护，只有切到模板库模式时才参与发布。">
-              <form onSubmit={addTemplate} className="grid gap-3 lg:grid-cols-[130px_130px_1fr_auto] lg:items-end">
-                <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">时段<select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={`${inputClass} mt-1.5`}>{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-                <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">内容类型<select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={`${inputClass} mt-1.5`}>{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-                <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">文案<textarea value={newTemplate.text} onChange={(event) => setNewTemplate((current) => ({ ...current, text: event.target.value }))} rows={3} placeholder={'例如：午安！今天是{date}。\n《论语》说……'} className={`${inputClass} mt-1.5`} /></label>
-                <AdminButton type="submit" variant="primary" disabled={saving || !newTemplate.text.trim()}>{saving ? '保存中…' : '新增模板'}</AdminButton>
+              <form onSubmit={addTemplate} className="grid gap-3 lg:grid-cols-[130px_130px_1fr_auto] items-end">
+                <label className="flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
+                  时段
+                  <select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={inputClass}>
+                    {PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
+                  内容类型
+                  <select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={inputClass}>
+                    {KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
+                  文案
+                  <textarea value={newTemplate.text} onChange={(event) => setNewTemplate((current) => ({ ...current, text: event.target.value }))} rows={3} placeholder={'例如：午安！今天是{date}。\n《论语》说……'} className={inputClass} />
+                </label>
+                <AdminButton type="submit" variant="primary" disabled={saving || !newTemplate.text.trim()} className="self-end">{saving ? '保存中…' : '新增模板'}</AdminButton>
               </form>
             </Section>
 
             <Section title="模板库" description="每页显示 10 条，支持按时段筛选、搜索、修改和停用。" className="mt-4" actions={<StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>}>
               <div className="mb-4 flex flex-col gap-2 md:flex-row">
                 <div className="flex flex-wrap gap-2">{PERIODS.map((item) => <button key={item.id} type="button" onClick={() => { setSearchInput(''); refresh({ nextOffset: 0, nextPeriod: item.id, nextQuery: '' }) }} className={`rounded-full border px-3 py-1.5 text-xs ${period === item.id ? 'border-[#15140f] bg-[#15140f] text-white dark:border-white dark:bg-white dark:text-black' : 'border-[#d8dad0] text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-gray-300 dark:hover:bg-[#151c25]'}`}>{item.label}</button>)}</div>
-                <form className="ml-auto flex w-full gap-2 md:max-w-md" onSubmit={(event) => { event.preventDefault(); refresh({ nextOffset: 0, nextQuery: searchInput.trim() }) }}><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="搜索名言、人物或故事" className={inputClass} /><AdminButton type="submit" disabled={loading}>搜索</AdminButton></form>
+                <form className="ml-auto flex w-full items-end gap-2 md:max-w-md" onSubmit={(event) => { event.preventDefault(); refresh({ nextOffset: 0, nextQuery: searchInput.trim() }) }}><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="搜索名言、人物或故事" className={inputClass} /><AdminButton type="submit" disabled={loading} className="self-end">搜索</AdminButton></form>
               </div>
 
               {!loading && !templates.length ? <EmptyState title="没有匹配的文案" description="换一个关键词或时段试试。" /> : <div className="overflow-hidden rounded-xl border border-[#e2e4da] bg-[#fbfbf8] divide-y divide-[#e2e4da] dark:border-[#243041] dark:bg-[#0f141d] dark:divide-[#243041]">{templates.map((template) => {

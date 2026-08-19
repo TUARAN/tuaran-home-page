@@ -7,6 +7,7 @@ import { AdminButton, Section, StatusPill } from '../../components/ui'
 
 const inputClass = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-5 text-[#3f4039] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-200'
 const fieldClass = 'mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200'
+const modeTabClass = 'rounded-lg px-3 py-2.5 text-left transition'
 
 async function safeJson(response) {
   try { return await response.json() } catch { return null }
@@ -57,12 +58,22 @@ export default function XAiNewsPanel() {
   useEffect(() => { refresh() }, [refresh])
 
   const providers = data?.providers || []
-  const providerType = generatorId === 'deepseek' ? 'deepseek' : 'ollama'
+  const providerType = generatorId.startsWith('ollama:') ? 'ollama' : 'deepseek'
   const providerId = providerType === 'ollama' ? generatorId.replace(/^ollama:/, '') : ''
   const selectedProvider = providers.find((item) => item.id === providerId)
   const generatorName = providerType === 'deepseek' ? 'DeepSeek Flash' : selectedProvider?.name || 'NAS Ollama'
   const draftWeight = useMemo(() => weightedLength(draft), [draft])
-  const canPublish = Boolean(draft.trim()) && draftWeight <= 280 && !publishing && !generating
+  const hasDraft = Boolean(draft.trim())
+  const canPublish = hasDraft && draftWeight <= 280 && !publishing && !generating
+
+  function selectMode(mode) {
+    if (mode === 'deepseek') {
+      setGeneratorId('deepseek')
+      return
+    }
+    const nextId = providerId || providers[0]?.id || ''
+    setGeneratorId(nextId ? `ollama:${nextId}` : 'ollama:')
+  }
 
   async function generateDraft() {
     if (!generatorId || (providerType === 'ollama' && !providerId)) return setError('请选择生成模型。')
@@ -115,33 +126,107 @@ export default function XAiNewsPanel() {
   return (
     <Section
       title="手动任务"
-      description="粘贴已核实的 AI 资讯素材，选择 DeepSeek Flash 或 NAS Ollama Qwen 生成草稿；草稿可编辑，确认后才会发布到 X。"
+      description="粘贴已核实素材，生成草稿后确认才会发到 X。"
       className="mb-4"
-      actions={<StatusPill tone="success" size="sm">DeepSeek + {providers.length} 个 Ollama 服务</StatusPill>}
+      actions={
+        lastRun ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <StatusPill tone={lastRun.ok ? 'success' : 'danger'} size="sm">最近发布{lastRun.ok ? '成功' : '失败'}</StatusPill>
+            <span className="text-[11px] text-[#82847a]">{formatTime(lastRun.at)}</span>
+            {lastRun.postUrl ? <a href={lastRun.postUrl} target="_blank" rel="noreferrer" className="text-[12px] text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}
+          </div>
+        ) : (
+          <span className="text-[12px] text-[#82847a]">DeepSeek · {providers.length} 个 NAS 服务可用</span>
+        )
+      }
     >
       {error ? <div role="alert" className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <div className="flex flex-col">
-          <Field label="生成模型"><select value={generatorId} onChange={(event) => setGeneratorId(event.target.value)} disabled={loading || generating || publishing} className={inputClass}><option value="deepseek">DeepSeek Flash</option>{providers.map((provider) => <option key={provider.id} value={`ollama:${provider.id}`}>NAS Ollama · {provider.name} · {provider.model}</option>)}</select></Field>
-          <Field className="mb-0" label="已核实的资讯素材 / 主题"><textarea value={brief} onChange={(event) => setBrief(event.target.value)} rows={8} maxLength={4000} placeholder={'粘贴你已确认的事实、数字、来源链接或要点。\n模型不会代替你核实事实，因此不要只写“今天有什么 AI 新闻”。'} className={inputClass} /></Field>
-          <div className="mt-3 flex flex-wrap items-end gap-3">
-            <AdminButton type="button" variant="primary" onClick={generateDraft} className="self-end" disabled={loading || generating || publishing || !generatorId || brief.trim().length < 8}>{generating ? '生成中…' : `调用 ${providerType === 'deepseek' ? 'DeepSeek' : 'Qwen'} 生成草稿`}</AdminButton>
-            <span className="text-[11px] text-[#85877c]">NAS 冷启动可能需要 30–120 秒；生成记录会进入“调用记录与审计”。</span>
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end">
+        <div className="min-w-0 flex-1">
+          <p className="mb-1.5 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">生成模型</p>
+          <div role="tablist" aria-label="生成模型" className="grid max-w-md grid-cols-2 gap-1 rounded-xl bg-[#f0f1eb] p-1.5 dark:bg-[#151c25]">
+            {[
+              { id: 'deepseek', label: 'DeepSeek', hint: 'Flash' },
+              { id: 'ollama', label: 'Ollama', hint: 'NAS Qwen' },
+            ].map((item) => {
+              const selected = providerType === item.id
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  disabled={loading || generating || publishing}
+                  onClick={() => selectMode(item.id)}
+                  className={`${modeTabClass} ${selected ? 'bg-white text-[#25261f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:text-[#3f4039] dark:text-gray-400 dark:hover:text-gray-200'}`}
+                >
+                  <span className="block text-sm font-semibold">{item.label}</span>
+                  <span className="mt-0.5 block text-[11px]">{item.hint}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
+        {providerType === 'ollama' ? (
+          <Field className="mb-0 lg:w-80" label="NAS 服务">
+            <select
+              value={providerId}
+              onChange={(event) => setGeneratorId(`ollama:${event.target.value}`)}
+              disabled={loading || generating || publishing}
+              className={inputClass}
+            >
+              {!providers.length ? <option value="">暂无可用服务</option> : null}
+              {providers.map((provider) => (
+                <option key={provider.id} value={provider.id}>NAS Ollama · {provider.name} · {provider.model}</option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
+      </div>
 
-        <div className="flex flex-col">
-          <Field label="可编辑发布草稿"><textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={8} placeholder="生成结果会出现在这里；也可以直接粘贴并手动发布。" className={inputClass} /></Field>
-          <div className="mt-2 flex flex-wrap items-end gap-3">
-            <span className={`font-mono text-[11px] ${draftWeight > 280 ? 'text-rose-600' : 'text-[#85877c]'}`}>X 加权长度 {draftWeight} / 280</span>
-            {generation?.taskId ? <Link href="/admin/deepseek-tasks" className="text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看生成审计</Link> : null}
-            <div className="ml-auto"><AdminButton type="button" variant="primary" className="self-end" onClick={publishDraft} disabled={!canPublish}>{publishing ? '发布中…' : '确认并发布到 X'}</AdminButton></div>
-          </div>
-          {lastRun ? <div className="mt-4 rounded-lg border border-[#e2e4da] bg-[#fbfbf8] px-3 py-2 text-xs dark:border-[#243041] dark:bg-[#0f141d]"><div className="flex flex-wrap items-center gap-2"><StatusPill tone={lastRun.ok ? 'success' : 'danger'} size="sm">最近发布{lastRun.ok ? '成功' : '失败'}</StatusPill><span className="text-[#82847a]">{formatTime(lastRun.at)}</span>{lastRun.postUrl ? <a href={lastRun.postUrl} target="_blank" rel="noreferrer" className="text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}</div>{lastRun.error ? <p className="mb-0 mt-2 text-rose-600">{lastRun.error}</p> : null}</div> : null}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Field className="mb-0" label="1. 已核实的资讯素材 / 主题">
+          <textarea
+            value={brief}
+            onChange={(event) => setBrief(event.target.value)}
+            rows={8}
+            maxLength={4000}
+            placeholder={'粘贴你已确认的事实、数字、来源链接或要点。\n模型不会代替你核实事实，因此不要只写“今天有什么 AI 新闻”。'}
+            className={inputClass}
+          />
+        </Field>
+        <Field className="mb-0" label="2. 可编辑发布草稿">
+          <textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            rows={8}
+            placeholder="生成结果会出现在这里；也可以直接粘贴并手动发布。"
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[#e2e4da] pt-3 dark:border-[#243041]">
+        <AdminButton
+          type="button"
+          variant={hasDraft ? 'default' : 'primary'}
+          onClick={generateDraft}
+          disabled={loading || generating || publishing || !generatorId || (providerType === 'ollama' && !providerId) || brief.trim().length < 8}
+        >
+          {generating ? '生成中…' : `调用 ${providerType === 'deepseek' ? 'DeepSeek' : 'Qwen'} 生成草稿`}
+        </AdminButton>
+        <span className="text-[11px] text-[#85877c]">NAS 冷启动可能需要 30–120 秒；生成记录会进入调用审计。</span>
+        {generation?.taskId ? <Link href="/admin/deepseek-tasks" className="text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看生成审计</Link> : null}
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          <span className={`font-mono text-[11px] ${draftWeight > 280 ? 'text-rose-600' : 'text-[#85877c]'}`}>X 加权长度 {draftWeight} / 280</span>
+          <AdminButton type="button" variant="primary" onClick={publishDraft} disabled={!canPublish}>
+            {publishing ? '发布中…' : '确认并发布到 X'}
+          </AdminButton>
         </div>
       </div>
+      {lastRun?.error ? <p className="mb-0 mt-3 text-xs text-rose-600">{lastRun.error}</p> : null}
     </Section>
   )
 }

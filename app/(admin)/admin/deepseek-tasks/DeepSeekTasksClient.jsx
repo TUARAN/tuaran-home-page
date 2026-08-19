@@ -196,13 +196,28 @@ export default function DeepSeekTasksClient() {
     if (task.keyId) knownKeys.set(task.keyId, task.keyName || task.keyId)
   }
   const TAB_CLASS = 'h-9 rounded-lg px-4 text-[13px] font-medium transition'
-  const isRecordTab = tab === 'records' || tab === 'mac-records'
+  const isRecordTab = ['records', 'cloud-records', 'mac-records'].includes(tab)
 
   function openAllRecords() {
     setScopeFilter('')
     setSource('')
+    setProviderFilter('')
     setProviderIdFilter('')
+    setKeyFilter('')
+    setExecution('')
+    setManagement('')
     setTab('records')
+  }
+
+  function openCloudRecords() {
+    setScopeFilter('cloud')
+    setSource('')
+    setProviderFilter('')
+    setProviderIdFilter('')
+    setKeyFilter('')
+    setExecution('')
+    setManagement('')
+    setTab('cloud-records')
   }
 
   function openMacRecords() {
@@ -211,7 +226,34 @@ export default function DeepSeekTasksClient() {
     setProviderFilter('ollama')
     setProviderIdFilter('')
     setKeyFilter('')
+    setExecution('')
+    setManagement('')
     setTab('mac-records')
+  }
+
+  function onScopeChange(nextScope) {
+    setScopeFilter(nextScope)
+    if (nextScope === 'local') {
+      openMacRecords()
+      return
+    }
+    if (nextScope === 'cloud') {
+      openCloudRecords()
+      return
+    }
+    openAllRecords()
+  }
+
+  function getRecordTitle() {
+    if (tab === 'cloud-records') return '云调用记录'
+    if (tab === 'mac-records') return '本地调用记录'
+    return '调用记录'
+  }
+
+  function getRecordDescription() {
+    if (tab === 'cloud-records') return '仅显示云端模型调用台账。'
+    if (tab === 'mac-records') return '仅显示 Mac 发起的 NAS Qwen 本地调用台账。'
+    return '执行状态自动更新；审阅状态、优先级和备注由后台维护。'
   }
 
   return (
@@ -229,19 +271,28 @@ export default function DeepSeekTasksClient() {
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
 
-      <div className="mb-4 flex gap-1 rounded-xl border border-[#e6e7df] bg-[#f6f7f0] p-1 dark:border-[#243041] dark:bg-[#10161f]">
-        <button type="button" className={`${TAB_CLASS} ${tab === 'records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openAllRecords}>
-          调用记录
-        </button>
-        <button type="button" className={`${TAB_CLASS} ${tab === 'mac-records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openMacRecords}>
-          Mac调用 NAS Qwen 记录
-        </button>
-        <button type="button" className={`${TAB_CLASS} ${tab === 'keys' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('keys')}>
-          DeepSeek 密钥
-        </button>
-        <button type="button" className={`${TAB_CLASS} ${tab === 'ollama' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('ollama')}>
-          NAS · Ollama
-        </button>
+      <div className="mb-4 space-y-2">
+        <div className="flex gap-1 rounded-xl border border-[#e6e7df] bg-[#f6f7f0] p-1 dark:border-[#243041] dark:bg-[#10161f]">
+          <span className="mx-1 inline-flex items-center rounded-md bg-[#f0f1e9] px-2 py-1 text-[12px] text-[#4b4d45] dark:bg-[#1b2532] dark:text-gray-400">调用记录</span>
+          <button type="button" className={`${TAB_CLASS} ${tab === 'records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openAllRecords}>
+            全部
+          </button>
+          <button type="button" className={`${TAB_CLASS} ${tab === 'cloud-records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openCloudRecords}>
+            云调用
+          </button>
+          <button type="button" className={`${TAB_CLASS} ${tab === 'mac-records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openMacRecords}>
+            本地调用
+          </button>
+        </div>
+        <div className="flex gap-1 rounded-xl border border-[#e6e7df] bg-[#f6f7f0] p-1 dark:border-[#243041] dark:bg-[#10161f]">
+          <span className="mx-1 inline-flex items-center rounded-md bg-[#f0f1e9] px-2 py-1 text-[12px] text-[#4b4d45] dark:bg-[#1b2532] dark:text-gray-400">模型管理</span>
+          <button type="button" className={`${TAB_CLASS} ${tab === 'keys' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('keys')}>
+            DeepSeek 密钥
+          </button>
+          <button type="button" className={`${TAB_CLASS} ${tab === 'ollama' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('ollama')}>
+            NAS · Ollama
+          </button>
+        </div>
       </div>
 
       {tab === 'keys' ? (
@@ -249,7 +300,7 @@ export default function DeepSeekTasksClient() {
           setKeyFilter(keyId)
           setScopeFilter('cloud')
           setSource('')
-          setTab('records')
+          setTab('cloud-records')
         }} />
       ) : tab === 'ollama' ? (
         <OllamaProvidersPanel onViewCalls={(providerId) => {
@@ -258,7 +309,7 @@ export default function DeepSeekTasksClient() {
           setScopeFilter('cloud')
           setSource('')
           setKeyFilter('')
-          setTab('records')
+          setTab('cloud-records')
         }} />
       ) : (
         <>
@@ -276,8 +327,8 @@ export default function DeepSeekTasksClient() {
           </div>
 
           <Section
-            title="调用记录"
-            description="执行状态自动更新；审阅状态、优先级和备注由后台维护。"
+            title={getRecordTitle()}
+            description={getRecordDescription()}
             actions={<span className="text-[12px] text-[#82847a]">共 {Number(data?.total) || 0} 条</span>}
           >
             <Toolbar className="mb-4">
@@ -285,7 +336,7 @@ export default function DeepSeekTasksClient() {
                 <option value="">全部执行状态</option>
                 {Object.entries(EXECUTION_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
               </select>
-              <select className={CONTROL_CLASS} value={scopeFilter} onChange={(event) => { setScopeFilter(event.target.value); if (tab === 'mac-records' && event.target.value !== 'local') setTab('records') }} aria-label="调用位置">
+              <select className={CONTROL_CLASS} value={scopeFilter} onChange={(event) => onScopeChange(event.target.value)} aria-label="调用位置">
                 <option value="">全部调用位置</option>
                 <option value="cloud">云调用</option>
                 <option value="local">本地调用</option>

@@ -95,6 +95,8 @@ function TaskDetail({ task, note, setNote, saving, onSave }) {
             <div><dt className="text-[#82847a]">输出 Token</dt><dd className="mt-0.5">{task.completionTokens}</dd></div>
             <div><dt className="text-[#82847a]">耗时</dt><dd className="mt-0.5">{formatDuration(task.durationMs)}</dd></div>
             <div><dt className="text-[#82847a]">完成时间</dt><dd className="mt-0.5">{formatDate(task.finishedAt)}</dd></div>
+            <div><dt className="text-[#82847a]">优先级</dt><dd className="mt-0.5">{PRIORITY_LABELS[task.priority] || task.priority || '—'}</dd></div>
+            <div><dt className="text-[#82847a]">管理状态</dt><dd className="mt-0.5">{MANAGEMENT_LABELS[task.managementStatus] || task.managementStatus || '—'}</dd></div>
           </dl>
           <label className="mt-5 block text-[12px] text-[#67695d] dark:text-gray-400" htmlFor="management-note">
             管理备注
@@ -195,8 +197,9 @@ export default function DeepSeekTasksClient() {
   for (const task of tasks) {
     if (task.keyId) knownKeys.set(task.keyId, task.keyName || task.keyId)
   }
-  const TAB_CLASS = 'h-9 rounded-lg px-4 text-[13px] font-medium transition'
-  const isRecordTab = ['records', 'cloud-records', 'mac-records'].includes(tab)
+  const PAGE_TAB_CLASS = 'h-9 rounded-md px-4 text-[13px] font-medium transition'
+  const SCOPE_PILL_CLASS = 'h-8 rounded-md px-3 text-[12px] font-medium transition'
+  const isRecordTab = tab === 'records'
 
   function openAllRecords() {
     setScopeFilter('')
@@ -217,7 +220,7 @@ export default function DeepSeekTasksClient() {
     setKeyFilter('')
     setExecution('')
     setManagement('')
-    setTab('cloud-records')
+    setTab('records')
   }
 
   function openMacRecords() {
@@ -228,71 +231,68 @@ export default function DeepSeekTasksClient() {
     setKeyFilter('')
     setExecution('')
     setManagement('')
-    setTab('mac-records')
-  }
-
-  function onScopeChange(nextScope) {
-    setScopeFilter(nextScope)
-    if (nextScope === 'local') {
-      openMacRecords()
-      return
-    }
-    if (nextScope === 'cloud') {
-      openCloudRecords()
-      return
-    }
-    openAllRecords()
+    setTab('records')
   }
 
   function getRecordTitle() {
-    if (tab === 'cloud-records') return '云调用记录'
-    if (tab === 'mac-records') return '本地调用记录'
+    if (scopeFilter === 'cloud') return '云调用记录'
+    if (scopeFilter === 'local') return '本地调用记录'
     return '调用记录'
   }
 
   function getRecordDescription() {
-    if (tab === 'cloud-records') return '仅显示云端模型调用台账。'
-    if (tab === 'mac-records') return '仅显示 Mac 发起的 NAS Qwen 本地调用台账。'
-    return '执行状态自动更新；审阅状态、优先级和备注由后台维护。'
+    if (scopeFilter === 'cloud') return '仅显示云端模型调用。'
+    if (scopeFilter === 'local') return '仅显示 Mac 发起的 NAS Qwen 本地调用。'
+    return '点开一条可看摘要、耗时和备注。'
   }
+
+  const resultTone = Number(stats.failed) > 0 ? 'danger' : 'success'
 
   return (
     <AdminPage
       title="模型调用管理"
-      description="统一管理云端模型调用与 Mac 发起的本地 NAS Qwen 调用；Access 密钥和本地 SQLite 原始记录不会上传，线上只保存长度受限的调用摘要。"
+      description="查看云端与 Mac 发起的 NAS Qwen 调用摘要。密钥和本地 SQLite 原始记录不会上传。"
       actions={
         <>
-          <AdminButton href="/admin/model-dispatch" variant="primary">AI 规划台</AdminButton>
+          <AdminButton href="/admin/model-dispatch">AI 规划台</AdminButton>
           {isRecordTab ? (
-            <AdminButton type="button" onClick={() => refresh(offset)} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>
+            <AdminButton type="button" variant="primary" onClick={() => refresh(offset)} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>
           ) : null}
         </>
       }
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
 
-      <div className="mb-4 space-y-2">
-        <div className="flex gap-1 rounded-xl border border-[#e6e7df] bg-[#f6f7f0] p-1 dark:border-[#243041] dark:bg-[#10161f]">
-          <span className="mx-1 inline-flex items-center rounded-md bg-[#f0f1e9] px-2 py-1 text-[12px] text-[#4b4d45] dark:bg-[#1b2532] dark:text-gray-400">调用记录</span>
-          <button type="button" className={`${TAB_CLASS} ${tab === 'records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openAllRecords}>
-            全部
-          </button>
-          <button type="button" className={`${TAB_CLASS} ${tab === 'cloud-records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openCloudRecords}>
-            云调用
-          </button>
-          <button type="button" className={`${TAB_CLASS} ${tab === 'mac-records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openMacRecords}>
-            本地调用
-          </button>
-        </div>
-        <div className="flex gap-1 rounded-xl border border-[#e6e7df] bg-[#f6f7f0] p-1 dark:border-[#243041] dark:bg-[#10161f]">
-          <span className="mx-1 inline-flex items-center rounded-md bg-[#f0f1e9] px-2 py-1 text-[12px] text-[#4b4d45] dark:bg-[#1b2532] dark:text-gray-400">模型管理</span>
-          <button type="button" className={`${TAB_CLASS} ${tab === 'keys' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('keys')}>
-            DeepSeek 密钥
-          </button>
-          <button type="button" className={`${TAB_CLASS} ${tab === 'ollama' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('ollama')}>
-            NAS · Ollama
-          </button>
-        </div>
+      <div
+        role="tablist"
+        aria-label="模型调用管理"
+        className="mb-4 grid max-w-xl grid-cols-3 overflow-hidden rounded-lg border border-[#d5d7cd] bg-[#f7f8f2] p-1 dark:border-[#2a3544] dark:bg-[#0d131b]"
+      >
+        {[
+          { id: 'records', label: '调用记录' },
+          { id: 'keys', label: 'DeepSeek 密钥' },
+          { id: 'ollama', label: 'NAS · Ollama' },
+        ].map((item) => {
+          const active = tab === item.id
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={`${PAGE_TAB_CLASS} ${active ? 'bg-[#2f3027] text-white shadow-sm dark:bg-gray-100 dark:text-[#111]' : 'text-[#626459] hover:bg-white dark:text-[#9aa6b6] dark:hover:bg-[#151c25]'}`}
+              onClick={() => {
+                if (item.id === 'records') {
+                  if (!isRecordTab) openAllRecords()
+                  return
+                }
+                setTab(item.id)
+              }}
+            >
+              {item.label}
+            </button>
+          )
+        })}
       </div>
 
       {tab === 'keys' ? (
@@ -300,7 +300,7 @@ export default function DeepSeekTasksClient() {
           setKeyFilter(keyId)
           setScopeFilter('cloud')
           setSource('')
-          setTab('cloud-records')
+          setTab('records')
         }} />
       ) : tab === 'ollama' ? (
         <OllamaProvidersPanel onViewCalls={(providerId) => {
@@ -309,20 +309,16 @@ export default function DeepSeekTasksClient() {
           setScopeFilter('cloud')
           setSource('')
           setKeyFilter('')
-          setTab('cloud-records')
+          setTab('records')
         }} />
       ) : (
         <>
           {data?.status === 'unavailable' ? <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">D1 不可用或迁移 0025 尚未部署，当前无法读取任务记录。</div> : null}
 
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-8">
-            <StatCard label="累计调用" value={loading ? '—' : stats.total || 0} icon="deepseekTasks" />
-            <StatCard label="今日调用" value={loading ? '—' : stats.today || 0} />
-            <StatCard label="云调用" value={loading ? '—' : stats.cloud || 0} />
-            <StatCard label="本地调用" value={loading ? '—' : stats.local || 0} tone="success" />
-            <StatCard label="成功" value={loading ? '—' : stats.succeeded || 0} tone="success" />
-            <StatCard label="失败" value={loading ? '—' : stats.failed || 0} tone="danger" />
-            <StatCard label="运行中" value={loading ? '—' : stats.running || 0} tone="info" />
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="今日调用" value={loading ? '—' : stats.today || 0} sub={`累计 ${stats.total || 0}`} icon="deepseekTasks" />
+            <StatCard label="成功" value={loading ? '—' : stats.succeeded || 0} sub={`失败 ${stats.failed || 0} · 运行中 ${stats.running || 0}`} tone={loading ? 'neutral' : resultTone} />
+            <StatCard label="云调用" value={loading ? '—' : stats.cloud || 0} sub={`本地调用 ${stats.local || 0}`} />
             <StatCard label="累计 Token" value={loading ? '—' : Number(stats.totalTokens || 0).toLocaleString()} />
           </div>
 
@@ -332,14 +328,14 @@ export default function DeepSeekTasksClient() {
             actions={<span className="text-[12px] text-[#82847a]">共 {Number(data?.total) || 0} 条</span>}
           >
             <Toolbar className="mb-4">
+              <div role="tablist" aria-label="调用位置" className="flex rounded-lg bg-[#f0f1eb] p-1 dark:bg-[#151c25]">
+                <button type="button" role="tab" aria-selected={!scopeFilter} className={`${SCOPE_PILL_CLASS} ${!scopeFilter ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:text-[#3f4039] dark:text-gray-400'}`} onClick={openAllRecords}>全部</button>
+                <button type="button" role="tab" aria-selected={scopeFilter === 'cloud'} className={`${SCOPE_PILL_CLASS} ${scopeFilter === 'cloud' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:text-[#3f4039] dark:text-gray-400'}`} onClick={openCloudRecords}>云调用</button>
+                <button type="button" role="tab" aria-selected={scopeFilter === 'local'} className={`${SCOPE_PILL_CLASS} ${scopeFilter === 'local' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:text-[#3f4039] dark:text-gray-400'}`} onClick={openMacRecords}>本地调用</button>
+              </div>
               <select className={CONTROL_CLASS} value={execution} onChange={(event) => setExecution(event.target.value)} aria-label="执行状态">
                 <option value="">全部执行状态</option>
                 {Object.entries(EXECUTION_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
-              </select>
-              <select className={CONTROL_CLASS} value={scopeFilter} onChange={(event) => onScopeChange(event.target.value)} aria-label="调用位置">
-                <option value="">全部调用位置</option>
-                <option value="cloud">云调用</option>
-                <option value="local">本地调用</option>
               </select>
               <select className={CONTROL_CLASS} value={management} onChange={(event) => setManagement(event.target.value)} aria-label="管理状态">
                 <option value="">全部管理状态</option>
@@ -368,32 +364,25 @@ export default function DeepSeekTasksClient() {
                 {tasks.map((task) => {
                   const executionMeta = EXECUTION_META[task.executionStatus] || { label: task.executionStatus, tone: 'neutral' }
                   const scopeMeta = SCOPE_META[task.executionScope] || SCOPE_META.cloud
+                  const providerLabel = task.providerName || (task.provider === 'ollama' ? 'NAS · Ollama' : 'DeepSeek')
                   return (
                     <article key={task.id} className={`rounded-lg border p-3 transition ${selectedId === task.id ? 'border-[#818472] bg-[#fafbf6] dark:border-[#4a5568] dark:bg-[#0e141d]' : 'border-[#e6e7df] dark:border-[#243041]'}`}>
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                         <button type="button" onClick={() => setSelectedId(selectedId === task.id ? '' : task.id)} className="min-w-0 flex-1 text-left">
-                          <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="truncate text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{task.title || '未命名任务'}</h3>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px] text-[#67695d] dark:text-gray-400">
                             <StatusPill tone={executionMeta.tone} size="sm">{executionMeta.label}</StatusPill>
-                            <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${scopeMeta.className}`}>{scopeMeta.label}</span>
-                            <span className="text-[11px] text-[#82847a]">{task.source} · {task.taskType}</span>
-                            <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${task.provider === 'ollama' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300' : 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300'}`}>
-                              {task.providerName || (task.provider === 'ollama' ? 'NAS · Ollama' : 'DeepSeek')}
-                            </span>
-                            {task.keyName ? <span className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{task.keyName}</span> : null}
-                            {task.metadata?.webSearch?.enabled ? (
-                              <span className="rounded-md bg-[#e9f2e4] px-1.5 py-0.5 text-[11px] text-[#3e6b2f] dark:bg-[#12240e] dark:text-[#9fd08a]">联网检索 {Number(task.metadata.webSearch.calls) || 0} 次</span>
-                            ) : null}
+                            <span>{scopeMeta.label}</span>
+                            <span>· {providerLabel}</span>
+                            <span>· {task.source} · {task.taskType}</span>
+                            {task.metadata?.webSearch?.enabled ? <span>· 联网检索 {Number(task.metadata.webSearch.calls) || 0} 次</span> : null}
                           </div>
-                          <h3 className="mt-1.5 truncate text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{task.title || '未命名任务'}</h3>
-                          <p className="mt-1 truncate text-[12px] text-[#67695d] dark:text-gray-400">{task.resultSummary || task.inputSummary || '暂无摘要'}</p>
+                          <p className="mt-1 truncate text-[12px] text-[#82847a] dark:text-gray-500">{task.resultSummary || task.inputSummary || '暂无摘要'}</p>
                         </button>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="w-24 text-right font-mono text-[11px] text-[#82847a]">{task.totalTokens.toLocaleString()} tokens</span>
                           <span className="w-20 text-right text-[11px] text-[#82847a]">{formatDuration(task.durationMs)}</span>
                           <span className="w-32 text-right text-[11px] text-[#82847a]">{formatDate(task.createdAt)}</span>
-                          <select className={CONTROL_CLASS} value={task.priority} disabled={saving} onChange={(event) => updateTask(task.id, { priority: event.target.value })} aria-label={`${task.title}优先级`}>
-                            {Object.entries(PRIORITY_LABELS).map(([value, label]) => <option key={value} value={value}>优先级：{label}</option>)}
-                          </select>
                           <select className={CONTROL_CLASS} value={task.managementStatus} disabled={saving} onChange={(event) => updateTask(task.id, { managementStatus: event.target.value })} aria-label={`${task.title}管理状态`}>
                             {Object.entries(MANAGEMENT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                           </select>

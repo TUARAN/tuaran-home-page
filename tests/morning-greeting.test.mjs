@@ -166,6 +166,8 @@ test('自动任务支持三种生成模式，模板管理使用每页十条的�
   assert.match(clientSource, /id: 'deepseek'/)
   assert.match(clientSource, /id: 'ollama'/)
   assert.match(clientSource, /id: 'template'/)
+  assert.match(clientSource, /问候模板库/)
+  assert.match(clientSource, /切换尚未生效/)
   assert.match(clientSource, /divide-y divide-\[#e2e4da\]/)
   assert.match(adminRouteSource, /DAILY_GREETING_OLLAMA_PROVIDER_KEY/)
   assert.match(cronRouteSource, /callDeepSeek\(/)

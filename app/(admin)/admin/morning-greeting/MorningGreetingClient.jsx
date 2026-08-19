@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
+import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPill } from '../../components/ui'
 import XAiNewsPanel from './XAiNewsPanel'
 
 const PAGE_SIZE = 10
@@ -22,6 +22,7 @@ const inputClass = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2
 const periodLabel = (period) => PERIODS.find((item) => item.id === period)?.label || period
 const kindLabel = (kind) => KINDS.find((item) => item.id === kind)?.label || kind
 const generationModeLabel = (mode) => ({ deepseek: 'DeepSeek Flash', ollama: 'Ollama Qwen', template: '模板库', llm: 'DeepSeek Flash' })[mode] || mode
+const fieldClass = 'mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200'
 
 async function safeJson(response) {
   try { return await response.json() } catch { return null }
@@ -31,6 +32,10 @@ function formatTime(value) {
   if (!value) return '—'
   const date = new Date(Number(value))
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('zh-CN', { hour12: false })
+}
+
+function Field({ label, className = '', children }) {
+  return <label className={`${fieldClass} ${className}`.trim()}>{label}{children}</label>
 }
 
 export default function MorningGreetingClient() {
@@ -191,13 +196,13 @@ export default function MorningGreetingClient() {
           <div className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
             {generationMode !== 'template' ? (
               <div id={`generation-panel-${generationMode}`} role="tabpanel" aria-labelledby={`generation-tab-${generationMode}`}>
-                {generationMode === 'ollama' ? <label className="mb-3 block text-[12px] font-semibold text-[#34352f] dark:text-gray-200">NAS Ollama 服务
-                  <select value={ollamaProviderId} onChange={(event) => setOllamaProviderId(event.target.value)} className={`${inputClass} mt-1.5`}>
+                {generationMode === 'ollama' ? <Field label="NAS Ollama 服务">
+                  <select value={ollamaProviderId} onChange={(event) => setOllamaProviderId(event.target.value)} className={inputClass}>
                     {!data?.ollamaProviders?.length ? <option value="">暂无可用服务</option> : null}
                     {(data?.ollamaProviders || []).map((provider) => <option key={provider.id} value={provider.id}>{provider.name} · {provider.model}</option>)}
                   </select>
-                </label> : null}
-                <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">意图（提示语）<textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={5} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={`${inputClass} mt-1.5`} /></label>
+                </Field> : null}
+                <Field className="mb-0" label="意图（提示语）"><textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={5} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={inputClass} /></Field>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">系统会自动补充日期、当前时段、纯文案输出和 X 长度限制；这里只需要写内容意图。</p>
                   <AdminButton type="button" variant="primary" disabled={saving || loading || !llmIntent.trim() || (generationMode === 'ollama' && !ollamaProviderId)} onClick={saveGenerationSettings}>{saving ? '保存中…' : '保存并应用'}</AdminButton>
@@ -217,31 +222,12 @@ export default function MorningGreetingClient() {
             )}
           </div>
 
-          {generationMode === 'template' ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard label="模板总数" value={loading ? '—' : `${stats.total || 0} 条`} sub={`启用 ${stats.enabled || 0} 条`} />
-            </div>
-          ) : null}
-
           {generationMode === 'template' ? <>
             <Section title="新增问候" description="{date} 会在发布时替换为当天日期；新模板会自动进入对应时段的随机池。模板可随时维护，只有切到模板库模式时才参与发布。">
               <form onSubmit={addTemplate} className="grid gap-3 lg:grid-cols-[130px_130px_1fr_auto] items-end">
-                <label className="flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
-                  时段
-                  <select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={inputClass}>
-                    {PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
-                  内容类型
-                  <select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={inputClass}>
-                    {KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
-                  文案
-                  <textarea value={newTemplate.text} onChange={(event) => setNewTemplate((current) => ({ ...current, text: event.target.value }))} rows={3} placeholder={'例如：午安！今天是{date}。\n《论语》说……'} className={inputClass} />
-                </label>
+                <Field label="时段"><select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={inputClass}>{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></Field>
+                <Field label="内容类型"><select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={inputClass}>{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></Field>
+                <Field className="mb-0" label="文案"><textarea value={newTemplate.text} onChange={(event) => setNewTemplate((current) => ({ ...current, text: event.target.value }))} rows={3} placeholder={'例如：午安！今天是{date}。\n《论语》说……'} className={inputClass} /></Field>
                 <AdminButton type="submit" variant="primary" disabled={saving || !newTemplate.text.trim()} className="self-end">{saving ? '保存中…' : '新增模板'}</AdminButton>
               </form>
             </Section>
@@ -254,12 +240,12 @@ export default function MorningGreetingClient() {
 
               {!loading && !templates.length ? <EmptyState title="没有匹配的文案" description="换一个关键词或时段试试。" /> : <div className="overflow-hidden rounded-xl border border-[#e2e4da] bg-[#fbfbf8] divide-y divide-[#e2e4da] dark:border-[#243041] dark:bg-[#0f141d] dark:divide-[#243041]">{templates.map((template) => {
                 const draft = drafts[template.id] || {}
-                return <article key={template.id} className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-                  <div className="min-w-0">
+                return <article key={template.id} className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch">
+                  <div className="min-w-0 flex flex-col gap-2">
                     <div className="mb-2 flex flex-wrap items-center gap-2"><StatusPill tone={template.enabled ? 'success' : 'neutral'} size="sm" icon={false}>{template.enabled ? '启用' : '停用'}</StatusPill><span className="text-[11px] text-[#77796e]">{periodLabel(template.period)} · {kindLabel(template.contentKind)}</span><span className="font-mono text-[10px] text-[#94968b]">#{template.id}</span></div>
                     <textarea value={draft.text ?? template.text} onChange={(event) => changeDraft(template.id, 'text', event.target.value)} rows={2} className={inputClass} />
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <div className="flex min-h-[82px] flex-wrap items-end justify-end gap-2 lg:min-h-[84px]">
                     <select aria-label="时段" value={draft.period ?? template.period} onChange={(event) => changeDraft(template.id, 'period', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
                     <select aria-label="内容类型" value={draft.contentKind ?? template.contentKind} onChange={(event) => changeDraft(template.id, 'contentKind', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
                     <button type="button" disabled={saving} onClick={() => saveTemplate(template, { enabled: !template.enabled })} className="rounded-lg border border-[#caccc0] px-2.5 py-1 text-[11.5px] text-[#63645a] hover:bg-[#edefe7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6]">{template.enabled ? '停用' : '启用'}</button>

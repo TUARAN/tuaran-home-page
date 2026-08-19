@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminButton, Section, StatusPill } from '../../components/ui'
 
 const inputClass = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-5 text-[#3f4039] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-200'
+const fieldClass = 'mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200'
 
 async function safeJson(response) {
   try { return await response.json() } catch { return null }
@@ -19,6 +20,10 @@ function formatTime(value) {
   if (!value) return '—'
   const date = new Date(Number(value))
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('zh-CN', { hour12: false })
+}
+
+function Field({ label, className = '', children }) {
+  return <label className={`${fieldClass} ${className}`.trim()}>{label}{children}</label>
 }
 
 export default function XAiNewsPanel() {
@@ -119,17 +124,8 @@ export default function XAiNewsPanel() {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="flex flex-col">
-          <label className="mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
-            生成模型
-            <select value={generatorId} onChange={(event) => setGeneratorId(event.target.value)} disabled={loading || generating || publishing} className={inputClass}>
-              <option value="deepseek">DeepSeek Flash</option>
-              {providers.map((provider) => <option key={provider.id} value={`ollama:${provider.id}`}>NAS Ollama · {provider.name} · {provider.model}</option>)}
-            </select>
-          </label>
-          <label className="mb-0 flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
-            已核实的资讯素材 / 主题
-            <textarea value={brief} onChange={(event) => setBrief(event.target.value)} rows={8} maxLength={4000} placeholder={'粘贴你已确认的事实、数字、来源链接或要点。\n模型不会代替你核实事实，因此不要只写“今天有什么 AI 新闻”。'} className={inputClass} />
-          </label>
+          <Field label="生成模型"><select value={generatorId} onChange={(event) => setGeneratorId(event.target.value)} disabled={loading || generating || publishing} className={inputClass}><option value="deepseek">DeepSeek Flash</option>{providers.map((provider) => <option key={provider.id} value={`ollama:${provider.id}`}>NAS Ollama · {provider.name} · {provider.model}</option>)}</select></Field>
+          <Field className="mb-0" label="已核实的资讯素材 / 主题"><textarea value={brief} onChange={(event) => setBrief(event.target.value)} rows={8} maxLength={4000} placeholder={'粘贴你已确认的事实、数字、来源链接或要点。\n模型不会代替你核实事实，因此不要只写“今天有什么 AI 新闻”。'} className={inputClass} /></Field>
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <AdminButton type="button" variant="primary" onClick={generateDraft} className="self-end" disabled={loading || generating || publishing || !generatorId || brief.trim().length < 8}>{generating ? '生成中…' : `调用 ${providerType === 'deepseek' ? 'DeepSeek' : 'Qwen'} 生成草稿`}</AdminButton>
             <span className="text-[11px] text-[#85877c]">NAS 冷启动可能需要 30–120 秒；生成记录会进入“调用记录与审计”。</span>
@@ -137,10 +133,7 @@ export default function XAiNewsPanel() {
         </div>
 
         <div className="flex flex-col">
-          <label className="mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">
-            可编辑发布草稿
-            <textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={8} placeholder="生成结果会出现在这里；也可以直接粘贴并手动发布。" className={inputClass} />
-          </label>
+          <Field label="可编辑发布草稿"><textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={8} placeholder="生成结果会出现在这里；也可以直接粘贴并手动发布。" className={inputClass} /></Field>
           <div className="mt-2 flex flex-wrap items-end gap-3">
             <span className={`font-mono text-[11px] ${draftWeight > 280 ? 'text-rose-600' : 'text-[#85877c]'}`}>X 加权长度 {draftWeight} / 280</span>
             {generation?.taskId ? <Link href="/admin/deepseek-tasks" className="text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看生成审计</Link> : null}

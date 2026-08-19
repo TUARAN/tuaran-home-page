@@ -6,6 +6,12 @@ import { AdminButton, EmptyState, Section, StatusPill } from '../../components/u
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-6 text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const EMPTY_FORM = { name: '', baseUrl: '', defaultModel: '', authType: 'none', token: '', clientId: '', clientSecret: '', status: 'active', note: '' }
+const OLLAMA_USES = [
+  { name: 'X AI 资讯草稿', source: 'x-ai-news', taskTypes: ['manual-copy-generation'], scope: 'cloud' },
+  { name: 'X 每日问候文案', source: 'x-daily-greeting', taskTypes: ['direct-post-copy'], scope: 'cloud' },
+  { name: '服务连通测试', source: 'admin-llm-provider', taskTypes: ['connection-test'], scope: 'cloud' },
+  { name: 'Mac 本地聊天', source: 'mac-nas-qwen', taskTypes: ['chat'], scope: 'local' },
+]
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—'
@@ -140,6 +146,38 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
     <>
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
+
+      <Section
+        title="NAS · Ollama 使用场景"
+        description="统一展示调用 NAS Qwen 的业务用途；云调用由线上站点发起，本地调用由 Mac 发起并将摘要同步到调用台账。"
+        className="mb-4"
+        actions={<span className="text-[12px] text-[#82847a]">{OLLAMA_USES.length} 个使用场景</span>}
+      >
+        <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill tone="success" size="sm">NAS 自托管</StatusPill>
+            <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">Ollama · Qwen</span>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {OLLAMA_USES.map((item) => (
+              <div key={item.source} className="rounded-md bg-[#f7f7f2] px-2.5 py-2 dark:bg-[#111a25]">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-[13px] font-medium text-[#3f4039] dark:text-gray-200">{item.name}</div>
+                  <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${item.scope === 'local' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'}`}>
+                    {item.scope === 'local' ? '本地调用' : '云调用'}
+                  </span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.source}</code>
+                  {item.taskTypes.map((taskType) => (
+                    <code key={taskType} className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">{taskType}</code>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
+      </Section>
 
       <Section
         title="NAS · Ollama 服务"

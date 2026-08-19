@@ -29,6 +29,10 @@ const MANAGEMENT_LABELS = {
 }
 
 const PRIORITY_LABELS = { low: '低', normal: '普通', high: '高' }
+const SCOPE_META = {
+  cloud: { label: '云调用', className: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300' },
+  local: { label: '本地调用', className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' },
+}
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const PAGE_SIZE = 50
 
@@ -76,6 +80,7 @@ function TaskDetail({ task, note, setNote, saving, onSave }) {
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
             <div><dt className="text-[#82847a]">模型</dt><dd className="mt-0.5 break-all">{task.model || '—'}</dd></div>
             <div><dt className="text-[#82847a]">模型服务</dt><dd className="mt-0.5 break-all">{task.providerName || (task.provider === 'ollama' ? 'NAS · Ollama' : 'DeepSeek')}</dd></div>
+            <div><dt className="text-[#82847a]">调用位置</dt><dd className="mt-0.5">{SCOPE_META[task.executionScope]?.label || '云调用'}</dd></div>
             <div>
               <dt className="text-[#82847a]">联网检索</dt>
               <dd className="mt-0.5">
@@ -125,6 +130,7 @@ export default function DeepSeekTasksClient() {
   const [keyFilter, setKeyFilter] = useState('')
   const [providerFilter, setProviderFilter] = useState('')
   const [providerIdFilter, setProviderIdFilter] = useState('')
+  const [scopeFilter, setScopeFilter] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
@@ -140,6 +146,7 @@ export default function DeepSeekTasksClient() {
     if (keyFilter) params.set('key', keyFilter)
     if (providerFilter) params.set('provider', providerFilter)
     if (providerIdFilter) params.set('providerId', providerIdFilter)
+    if (scopeFilter) params.set('scope', scopeFilter)
     try {
       const response = await fetch(`/api/admin/deepseek-tasks?${params}`, { cache: 'no-store' })
       const payload = await safeJson(response)
@@ -151,7 +158,7 @@ export default function DeepSeekTasksClient() {
     } finally {
       setLoading(false)
     }
-  }, [execution, management, source, keyFilter, providerFilter, providerIdFilter])
+  }, [execution, management, source, keyFilter, providerFilter, providerIdFilter, scopeFilter])
 
   useEffect(() => {
     refresh()
@@ -189,15 +196,32 @@ export default function DeepSeekTasksClient() {
     if (task.keyId) knownKeys.set(task.keyId, task.keyName || task.keyId)
   }
   const TAB_CLASS = 'h-9 rounded-lg px-4 text-[13px] font-medium transition'
+  const isRecordTab = tab === 'records' || tab === 'mac-records'
+
+  function openAllRecords() {
+    setScopeFilter('')
+    setSource('')
+    setProviderIdFilter('')
+    setTab('records')
+  }
+
+  function openMacRecords() {
+    setScopeFilter('local')
+    setSource('mac-nas-qwen')
+    setProviderFilter('ollama')
+    setProviderIdFilter('')
+    setKeyFilter('')
+    setTab('mac-records')
+  }
 
   return (
     <AdminPage
       title="模型调用管理"
-      description="统一管理 DeepSeek API、NAS Ollama 服务与调用记录；完整密钥和 Prompt 不会写入台账。"
+      description="统一管理云端模型调用与 Mac 发起的本地 NAS Qwen 调用；Access 密钥和本地 SQLite 原始记录不会上传，线上只保存长度受限的调用摘要。"
       actions={
         <>
           <AdminButton href="/admin/model-dispatch" variant="primary">AI 规划台</AdminButton>
-          {tab === 'records' ? (
+          {isRecordTab ? (
             <AdminButton type="button" onClick={() => refresh(offset)} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>
           ) : null}
         </>
@@ -206,8 +230,11 @@ export default function DeepSeekTasksClient() {
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
 
       <div className="mb-4 flex gap-1 rounded-xl border border-[#e6e7df] bg-[#f6f7f0] p-1 dark:border-[#243041] dark:bg-[#10161f]">
-        <button type="button" className={`${TAB_CLASS} ${tab === 'records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('records')}>
+        <button type="button" className={`${TAB_CLASS} ${tab === 'records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openAllRecords}>
           调用记录
+        </button>
+        <button type="button" className={`${TAB_CLASS} ${tab === 'mac-records' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={openMacRecords}>
+          Mac调用 NAS Qwen 记录
         </button>
         <button type="button" className={`${TAB_CLASS} ${tab === 'keys' ? 'bg-white text-[#15140f] shadow-sm dark:bg-[#1b2532] dark:text-gray-100' : 'text-[#82847a] hover:text-[#3f4039] dark:hover:text-gray-300'}`} onClick={() => setTab('keys')}>
           DeepSeek 密钥
@@ -220,12 +247,16 @@ export default function DeepSeekTasksClient() {
       {tab === 'keys' ? (
         <DeepSeekKeysPanel onViewCalls={(keyId) => {
           setKeyFilter(keyId)
+          setScopeFilter('cloud')
+          setSource('')
           setTab('records')
         }} />
       ) : tab === 'ollama' ? (
         <OllamaProvidersPanel onViewCalls={(providerId) => {
           setProviderFilter('ollama')
           setProviderIdFilter(providerId)
+          setScopeFilter('cloud')
+          setSource('')
           setKeyFilter('')
           setTab('records')
         }} />
@@ -233,9 +264,11 @@ export default function DeepSeekTasksClient() {
         <>
           {data?.status === 'unavailable' ? <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">D1 不可用或迁移 0025 尚未部署，当前无法读取任务记录。</div> : null}
 
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-8">
             <StatCard label="累计调用" value={loading ? '—' : stats.total || 0} icon="deepseekTasks" />
             <StatCard label="今日调用" value={loading ? '—' : stats.today || 0} />
+            <StatCard label="云调用" value={loading ? '—' : stats.cloud || 0} />
+            <StatCard label="本地调用" value={loading ? '—' : stats.local || 0} tone="success" />
             <StatCard label="成功" value={loading ? '—' : stats.succeeded || 0} tone="success" />
             <StatCard label="失败" value={loading ? '—' : stats.failed || 0} tone="danger" />
             <StatCard label="运行中" value={loading ? '—' : stats.running || 0} tone="info" />
@@ -251,6 +284,11 @@ export default function DeepSeekTasksClient() {
               <select className={CONTROL_CLASS} value={execution} onChange={(event) => setExecution(event.target.value)} aria-label="执行状态">
                 <option value="">全部执行状态</option>
                 {Object.entries(EXECUTION_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
+              </select>
+              <select className={CONTROL_CLASS} value={scopeFilter} onChange={(event) => { setScopeFilter(event.target.value); if (tab === 'mac-records' && event.target.value !== 'local') setTab('records') }} aria-label="调用位置">
+                <option value="">全部调用位置</option>
+                <option value="cloud">云调用</option>
+                <option value="local">本地调用</option>
               </select>
               <select className={CONTROL_CLASS} value={management} onChange={(event) => setManagement(event.target.value)} aria-label="管理状态">
                 <option value="">全部管理状态</option>
@@ -278,12 +316,14 @@ export default function DeepSeekTasksClient() {
               <div className="space-y-2">
                 {tasks.map((task) => {
                   const executionMeta = EXECUTION_META[task.executionStatus] || { label: task.executionStatus, tone: 'neutral' }
+                  const scopeMeta = SCOPE_META[task.executionScope] || SCOPE_META.cloud
                   return (
                     <article key={task.id} className={`rounded-lg border p-3 transition ${selectedId === task.id ? 'border-[#818472] bg-[#fafbf6] dark:border-[#4a5568] dark:bg-[#0e141d]' : 'border-[#e6e7df] dark:border-[#243041]'}`}>
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                         <button type="button" onClick={() => setSelectedId(selectedId === task.id ? '' : task.id)} className="min-w-0 flex-1 text-left">
                           <div className="flex flex-wrap items-center gap-2">
                             <StatusPill tone={executionMeta.tone} size="sm">{executionMeta.label}</StatusPill>
+                            <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${scopeMeta.className}`}>{scopeMeta.label}</span>
                             <span className="text-[11px] text-[#82847a]">{task.source} · {task.taskType}</span>
                             <span className={`rounded-md px-1.5 py-0.5 text-[11px] ${task.provider === 'ollama' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300' : 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300'}`}>
                               {task.providerName || (task.provider === 'ollama' ? 'NAS · Ollama' : 'DeepSeek')}

@@ -24,6 +24,8 @@ WC_DATA_SOURCE = "openfootball"
 # 该值必须作为 Cloudflare Secret 配置，不要写入本文件。
 # 周总结端点优先使用 WEEKLY_SUMMARY_SECRET；未配置时兼容复用
 # PUBLIC_OPINION_COLLECT_SECRET，避免现有定时任务环境需要重复配置。
+# Mac → NAS Qwen 本地调用同步使用 LOCAL_LLM_SYNC_SECRET；
+# 该值只作为 Cloudflare Secret 配置，并与本机 sync.env 中的值保持一致。
 
 # Used for D1 migrations / local development.
 # In Cloudflare Pages, you can also set the D1 binding in the dashboard.

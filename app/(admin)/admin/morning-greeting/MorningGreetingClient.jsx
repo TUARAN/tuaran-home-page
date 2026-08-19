@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
+import XAiNewsPanel from './XAiNewsPanel'
 
 const PAGE_SIZE = 20
 const PERIODS = [
@@ -155,12 +156,14 @@ export default function MorningGreetingClient() {
 
   return (
     <AdminPage
-      title="X 每日问候"
-      description="每天北京时间 08:00、12:00、22:00 各发布一条；可在模板库和 DeepSeek Flash 意图生成之间切换，重试不会重复发帖。"
+      title="X 发布任务"
+      description="手动生成并发布 AI 资讯，同时管理每天 08:00、12:00、22:00 的自动问候；所有模型调用和发布结果均可追踪。"
       actions={<><AdminButton type="button" onClick={togglePause} disabled={saving || loading} variant={data?.paused ? 'primary' : 'ghost'}>{data?.paused ? '恢复运行' : '暂停自动化'}</AdminButton><AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton></>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
+
+      <XAiNewsPanel />
 
       <Section title="文案生成方式" description="选择模板库，或让 DeepSeek Flash 按意图生成最终文案。LLM 文案生成后直接发推，不进入人工审核。">
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
 import XAiNewsPanel from './XAiNewsPanel'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 const PERIODS = [
   { id: 'all', label: '全部时段' },
   { id: 'morning', label: '早安' },
@@ -21,6 +21,7 @@ const KINDS = [
 const inputClass = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-5 text-[#3f4039] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-200'
 const periodLabel = (period) => PERIODS.find((item) => item.id === period)?.label || period
 const kindLabel = (kind) => KINDS.find((item) => item.id === kind)?.label || kind
+const generationModeLabel = (mode) => ({ deepseek: 'DeepSeek Flash', ollama: 'Ollama Qwen', template: '模板库', llm: 'DeepSeek Flash' })[mode] || mode
 
 async function safeJson(response) {
   try { return await response.json() } catch { return null }
@@ -44,8 +45,9 @@ export default function MorningGreetingClient() {
   const [searchInput, setSearchInput] = useState('')
   const [offset, setOffset] = useState(0)
   const [newTemplate, setNewTemplate] = useState({ text: '', period: 'morning', contentKind: 'quote' })
-  const [generationMode, setGenerationMode] = useState('llm')
+  const [generationMode, setGenerationMode] = useState('deepseek')
   const [llmIntent, setLlmIntent] = useState('')
+  const [ollamaProviderId, setOllamaProviderId] = useState('')
 
   const refresh = useCallback(async ({ nextOffset = offset, nextPeriod = period, nextQuery = query } = {}) => {
     setLoading(true)
@@ -57,8 +59,9 @@ export default function MorningGreetingClient() {
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.message || payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
-      setGenerationMode(payload.generationMode || 'llm')
+      setGenerationMode(payload.generationMode || 'deepseek')
       setLlmIntent(payload.llmIntent || '')
+      setOllamaProviderId(payload.ollamaProviderId || '')
       setOffset(nextOffset)
       setPeriod(nextPeriod)
       setQuery(nextQuery)
@@ -136,16 +139,17 @@ export default function MorningGreetingClient() {
   }
 
   async function saveGenerationSettings() {
-    if (generationMode === 'llm' && !llmIntent.trim()) return setError('LLM 意图不能为空。')
+    if (generationMode !== 'template' && !llmIntent.trim()) return setError('生成意图不能为空。')
+    if (generationMode === 'ollama' && !ollamaProviderId) return setError('请选择 NAS Ollama 服务。')
     setSaving(true); setError(''); setNotice('')
     try {
       const response = await fetch('/api/admin/morning-greeting', {
         method: 'PATCH', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'save-generation', mode: generationMode, intent: llmIntent }),
+        body: JSON.stringify({ action: 'save-generation', mode: generationMode, intent: llmIntent, ollamaProviderId }),
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
-      setNotice(generationMode === 'llm' ? '已切换到 LLM 意图模式；下个时段将生成文案后直接发推。' : '已切换到模板库模式。')
+      setNotice(generationMode === 'template' ? '已切换到模板库模式。' : `已切换到 ${generationModeLabel(generationMode)}；下个时段将生成文案后直接发推。`)
       await refresh()
     } catch (saveError) { setError(saveError?.message || '生成方式保存失败。') } finally { setSaving(false) }
   }
@@ -157,7 +161,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="手动生成并发布 AI 资讯，同时管理每天 08:00、12:00、22:00 的自动问候；所有模型调用和发布结果均可追踪。"
+      description="集中管理手动 AI 资讯发布与每天 08:00、12:00、22:00 的自动问候；生成模型、模板和发布结果均可追踪。"
       actions={<><AdminButton type="button" onClick={togglePause} disabled={saving || loading} variant={data?.paused ? 'primary' : 'ghost'}>{data?.paused ? '恢复运行' : '暂停自动化'}</AdminButton><AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton></>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -165,20 +169,27 @@ export default function MorningGreetingClient() {
 
       <XAiNewsPanel />
 
-      <Section title="文案生成方式" description="选择模板库，或让 DeepSeek Flash 按意图生成最终文案。LLM 文案生成后直接发推，不进入人工审核。">
-        <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-          <div role="tablist" aria-label="文案生成方式" className="grid grid-cols-2 gap-2 self-start rounded-xl bg-[#f0f1eb] p-1.5 dark:bg-[#151c25]">
+      <Section title="自动任务" description="每天早、中、晚自动生成并发布问候。可选择 DeepSeek Flash、NAS Ollama Qwen 或模板库；模型文案生成后直接发布，不进入人工审核。">
+        <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
+          <div role="tablist" aria-label="自动问候生成方式" className="grid grid-cols-3 gap-2 self-start rounded-xl bg-[#f0f1eb] p-1.5 dark:bg-[#151c25]">
             {[
+              { id: 'deepseek', label: 'DeepSeek', hint: 'Flash' },
+              { id: 'ollama', label: 'Ollama', hint: 'NAS Qwen' },
               { id: 'template', label: '模板库', hint: '稳定随机' },
-              { id: 'llm', label: 'LLM 意图', hint: '实时生成' },
             ].map((item) => <button key={item.id} id={`generation-tab-${item.id}`} type="button" role="tab" aria-selected={generationMode === item.id} aria-controls={`generation-panel-${item.id}`} onClick={() => setGenerationMode(item.id)} className={`rounded-lg px-3 py-3 text-left transition ${generationMode === item.id ? 'bg-white text-[#25261f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:text-[#3f4039] dark:text-gray-400 dark:hover:text-gray-200'}`}><span className="block text-sm font-semibold">{item.label}</span><span className="mt-0.5 block text-[11px]">{item.hint}</span></button>)}
           </div>
-          {generationMode === 'llm' ? (
-            <div id="generation-panel-llm" role="tabpanel" aria-labelledby="generation-tab-llm">
+          {generationMode !== 'template' ? (
+            <div id={`generation-panel-${generationMode}`} role="tabpanel" aria-labelledby={`generation-tab-${generationMode}`}>
+              {generationMode === 'ollama' ? <label className="mb-3 block text-[12px] font-semibold text-[#34352f] dark:text-gray-200">NAS Ollama 服务
+                <select value={ollamaProviderId} onChange={(event) => setOllamaProviderId(event.target.value)} className={`${inputClass} mt-1.5`}>
+                  {!data?.ollamaProviders?.length ? <option value="">暂无可用服务</option> : null}
+                  {(data?.ollamaProviders || []).map((provider) => <option key={provider.id} value={provider.id}>{provider.name} · {provider.model}</option>)}
+                </select>
+              </label> : null}
               <label className="text-[12px] font-semibold text-[#34352f] dark:text-gray-200">意图（提示语）<textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={5} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={`${inputClass} mt-1.5`} /></label>
               <div className="mt-2 flex flex-wrap items-center gap-3">
-                <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">系统会自动补充当前日期、早安 / 午安 / 晚安时段、纯文案输出和 X 长度限制；这里只需要写你的内容意图。</p>
-                <AdminButton type="button" variant="primary" disabled={saving || loading || !llmIntent.trim()} onClick={saveGenerationSettings}>{saving ? '保存中…' : '保存并应用'}</AdminButton>
+                <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">系统会自动补充日期、当前时段、纯文案输出和 X 长度限制；这里只需要写内容意图。</p>
+                <AdminButton type="button" variant="primary" disabled={saving || loading || !llmIntent.trim() || (generationMode === 'ollama' && !ollamaProviderId)} onClick={saveGenerationSettings}>{saving ? '保存中…' : '保存并应用'}</AdminButton>
               </div>
             </div>
           ) : (
@@ -201,7 +212,7 @@ export default function MorningGreetingClient() {
           <StatCard label="模板总数" value={loading ? '—' : stats.total || 0} sub={`启用 ${stats.enabled || 0} 条`} />
           {['morning', 'noon', 'evening'].map((item) => <StatCard key={item} label={`${periodLabel(item)}模板`} value={loading ? '—' : stats.byPeriod?.[item]?.total || 0} sub={`启用 ${stats.byPeriod?.[item]?.enabled || 0} 条`} tone="success" />)}
         </> : null}
-        <StatCard label="自动化状态" value={loading ? '—' : data?.paused ? '已暂停' : generationMode === 'llm' ? 'LLM 直发' : '模板直发'} tone={data?.paused ? 'warning' : 'success'} />
+        <StatCard label="自动化状态" value={loading ? '—' : data?.paused ? '已暂停' : `${generationModeLabel(generationMode)} 直发`} tone={data?.paused ? 'warning' : 'success'} />
       </div>
 
       {generationMode === 'template' ? <>
@@ -214,22 +225,25 @@ export default function MorningGreetingClient() {
           </form>
         </Section>
 
-        <Section title="模板库" description="共 100 条默认样本，支持按时段筛选、搜索、逐条修改和停用。" className="mt-4" actions={<StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>}>
+        <Section title="模板库" description="每页显示 10 条，支持按时段筛选、搜索、修改和停用。" className="mt-4" actions={<StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>}>
           <div className="mb-4 flex flex-col gap-2 md:flex-row">
             <div className="flex flex-wrap gap-2">{PERIODS.map((item) => <button key={item.id} type="button" onClick={() => { setSearchInput(''); refresh({ nextOffset: 0, nextPeriod: item.id, nextQuery: '' }) }} className={`rounded-full border px-3 py-1.5 text-xs ${period === item.id ? 'border-[#15140f] bg-[#15140f] text-white dark:border-white dark:bg-white dark:text-black' : 'border-[#d8dad0] text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:text-gray-300 dark:hover:bg-[#151c25]'}`}>{item.label}</button>)}</div>
             <form className="ml-auto flex w-full gap-2 md:max-w-md" onSubmit={(event) => { event.preventDefault(); refresh({ nextOffset: 0, nextQuery: searchInput.trim() }) }}><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="搜索名言、人物或故事" className={inputClass} /><AdminButton type="submit" disabled={loading}>搜索</AdminButton></form>
           </div>
 
-          {!loading && !templates.length ? <EmptyState title="没有匹配的文案" description="换一个关键词或时段试试。" /> : <div className="grid gap-3 xl:grid-cols-2">{templates.map((template) => {
+          {!loading && !templates.length ? <EmptyState title="没有匹配的文案" description="换一个关键词或时段试试。" /> : <div className="overflow-hidden rounded-xl border border-[#e2e4da] bg-[#fbfbf8] divide-y divide-[#e2e4da] dark:border-[#243041] dark:bg-[#0f141d] dark:divide-[#243041]">{templates.map((template) => {
             const draft = drafts[template.id] || {}
-            return <article key={template.id} className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
-              <div className="mb-3 flex flex-wrap items-center gap-2"><StatusPill tone={template.period === 'morning' ? 'warning' : template.period === 'noon' ? 'success' : 'neutral'} size="sm" icon={false}>{periodLabel(template.period)}</StatusPill><span className="rounded-full bg-[#eceee6] px-2 py-0.5 text-[11px] text-[#67695d] dark:bg-[#19212c] dark:text-gray-400">{kindLabel(template.contentKind)}</span><StatusPill tone={template.enabled ? 'success' : 'neutral'} size="sm" icon={false}>{template.enabled ? '启用' : '停用'}</StatusPill><span className="ml-auto font-mono text-[10px] text-[#94968b]">#{template.id}</span></div>
-              <textarea value={draft.text ?? template.text} onChange={(event) => changeDraft(template.id, 'text', event.target.value)} rows={4} className={inputClass} />
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <select value={draft.period ?? template.period} onChange={(event) => changeDraft(template.id, 'period', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
-                <select value={draft.contentKind ?? template.contentKind} onChange={(event) => changeDraft(template.id, 'contentKind', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
-                <span className="text-[10px] text-[#94968b]">{formatTime(template.updatedAt)}</span>
-                <div className="ml-auto flex gap-2"><button type="button" disabled={saving} onClick={() => saveTemplate(template, { enabled: !template.enabled })} className="rounded-lg border border-[#caccc0] px-2.5 py-1 text-[11.5px] text-[#63645a] hover:bg-[#edefe7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6]">{template.enabled ? '停用' : '启用'}</button><AdminButton type="button" size="sm" variant="ghost" disabled={saving} onClick={() => saveTemplate(template)}>保存</AdminButton><button type="button" disabled={saving} onClick={() => removeTemplate(template)} className="rounded-lg border border-rose-200 px-2.5 py-1 text-[11.5px] text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">删除</button></div>
+            return <article key={template.id} className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <div className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-center gap-2"><StatusPill tone={template.enabled ? 'success' : 'neutral'} size="sm" icon={false}>{template.enabled ? '启用' : '停用'}</StatusPill><span className="text-[11px] text-[#77796e]">{periodLabel(template.period)} · {kindLabel(template.contentKind)}</span><span className="font-mono text-[10px] text-[#94968b]">#{template.id}</span></div>
+                <textarea value={draft.text ?? template.text} onChange={(event) => changeDraft(template.id, 'text', event.target.value)} rows={2} className={inputClass} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                <select aria-label="时段" value={draft.period ?? template.period} onChange={(event) => changeDraft(template.id, 'period', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+                <select aria-label="内容类型" value={draft.contentKind ?? template.contentKind} onChange={(event) => changeDraft(template.id, 'contentKind', event.target.value)} className="rounded-lg border border-[#d8dad0] bg-white px-2 py-1.5 text-xs dark:border-[#2d3744] dark:bg-[#10161f]">{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+                <button type="button" disabled={saving} onClick={() => saveTemplate(template, { enabled: !template.enabled })} className="rounded-lg border border-[#caccc0] px-2.5 py-1 text-[11.5px] text-[#63645a] hover:bg-[#edefe7] disabled:opacity-50 dark:border-[#2d3744] dark:text-[#9aa6b6]">{template.enabled ? '停用' : '启用'}</button>
+                <AdminButton type="button" size="sm" variant="ghost" disabled={saving} onClick={() => saveTemplate(template)}>保存</AdminButton>
+                <button type="button" disabled={saving} onClick={() => removeTemplate(template)} className="rounded-lg border border-rose-200 px-2.5 py-1 text-[11.5px] text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">删除</button>
               </div>
             </article>
           })}</div>}
@@ -238,7 +252,7 @@ export default function MorningGreetingClient() {
       </> : null}
 
       <Section title="今日三个时段" description="每个时段独立幂等；失败可在该时段的后续补跑点重试。" className="mt-4">
-        <div className="grid gap-3 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-xl border border-[#e2e4da] p-4 dark:border-[#243041]"><div className="mb-2 flex items-center justify-between"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-1 text-xs text-[#82847a]">{formatTime(run?.at)}{run?.mode ? ` · ${run.mode === 'llm' ? 'LLM 意图' : '模板库'}` : ''}</p>{run?.model ? <p className="mb-1 text-[10px] text-[#94968b]">{run.model}</p> : null}{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 break-words text-xs text-rose-600">{run.error}</p> : null}</div> })}</div>
+        <div className="grid gap-3 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-xl border border-[#e2e4da] p-4 dark:border-[#243041]"><div className="mb-2 flex items-center justify-between"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-1 text-xs text-[#82847a]">{formatTime(run?.at)}{run?.mode ? ` · ${generationModeLabel(run.mode)}` : ''}</p>{run?.model ? <p className="mb-1 text-[10px] text-[#94968b]">{run.model}</p> : null}{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="break-all text-xs text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 break-words text-xs text-rose-600">{run.error}</p> : null}</div> })}</div>
       </Section>
     </AdminPage>
   )

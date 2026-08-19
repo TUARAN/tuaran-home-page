@@ -15,12 +15,14 @@ import { listEnabledMorningGreetingTexts } from '../../../../../lib/morningGreet
 import {
   DAILY_GREETING_LLM_PROMPT_KEY,
   DAILY_GREETING_MODE_KEY,
+  DAILY_GREETING_OLLAMA_PROVIDER_KEY,
   buildGreetingLlmMessages,
   normalizeGeneratedGreeting,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
 } from '../../../../../lib/dailyGreetingLlm'
 import { callDeepSeek } from '../../../../../lib/deepseek'
+import { callOllama } from '../../../../../lib/ollama'
 import { getXCredentials, publishXPost } from '../../../../../lib/xDistribution'
 
 export const runtime = 'edge'
@@ -107,34 +109,47 @@ export async function POST(req) {
     }
   }
 
-  let generationMode = 'llm'
+  let generationMode = 'deepseek'
   let llmIntent = ''
+  let ollamaProviderId = ''
   if (db) {
     try {
-      const [modeRaw, intentRaw] = await Promise.all([
+      const [modeRaw, intentRaw, providerRaw] = await Promise.all([
         readSetting(db, DAILY_GREETING_MODE_KEY),
         readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
+        readSetting(db, DAILY_GREETING_OLLAMA_PROVIDER_KEY),
       ])
       generationMode = normalizeGreetingGenerationMode(modeRaw)
       llmIntent = normalizeGreetingLlmIntent(intentRaw)
+      ollamaProviderId = String(providerRaw || '').trim()
+      if (generationMode === 'ollama') {
+        const savedProvider = ollamaProviderId
+          ? await db.prepare(
+              `SELECT id FROM llm_providers WHERE id = ? AND provider_type = 'ollama' AND status = 'active'`,
+            ).bind(ollamaProviderId).first()
+          : null
+        const provider = savedProvider || await db.prepare(
+          `SELECT id FROM llm_providers
+           WHERE provider_type = 'ollama' AND status = 'active'
+           ORDER BY CASE WHEN default_model LIKE 'qwen3.5:%' THEN 0 ELSE 1 END, updated_at DESC
+           LIMIT 1`,
+        ).first()
+        ollamaProviderId = String(provider?.id || '')
+      }
     } catch {
-      // 配置缺失或暂时无法读取时沿用产品默认值：LLM 意图模式。
-      generationMode = 'llm'
+      // 配置缺失或暂时无法读取时沿用产品默认值：DeepSeek 意图模式。
+      generationMode = 'deepseek'
     }
   }
 
   let text = ''
   let generation = null
-  if (generationMode === 'llm') {
+  if (generationMode === 'deepseek' || generationMode === 'ollama') {
     try {
-      generation = await callDeepSeek({
-        env,
+      const generationArgs = {
         messages: buildGreetingLlmMessages({ intent: llmIntent, period }),
         temperature: 0.85,
         maxTokens: 256,
-        timeoutMs: 45_000,
-        taskDefaultModel: 'deepseek-v4-flash',
-        disableThinking: true,
         task: {
           source: 'x-daily-greeting',
           taskType: 'direct-post-copy',
@@ -142,9 +157,23 @@ export async function POST(req) {
           actorId: 'cron:x-daily-greeting',
           actorName: '线上定时自动化',
           inputSummary: `时段：${period}；意图：${llmIntent.slice(0, 500)}`,
-          metadata: { period, directPublish: true },
+          metadata: { period, directPublish: true, generationMode },
         },
-      })
+      }
+      generation = generationMode === 'ollama'
+        ? await callOllama({
+            ...generationArgs,
+            providerId: ollamaProviderId,
+            reasoningEffort: 'none',
+            timeoutMs: 120_000,
+          })
+        : await callDeepSeek({
+            ...generationArgs,
+            env,
+            timeoutMs: 45_000,
+            taskDefaultModel: 'deepseek-v4-flash',
+            disableThinking: true,
+          })
       text = normalizeGeneratedGreeting(generation.content)
       if (!text) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
     } catch (error) {
@@ -157,9 +186,9 @@ export async function POST(req) {
           'automation',
         ).catch(() => {})
       }
-      const status = errorCode === 'MISSING_DEEPSEEK_API_KEY' ? 503 : 502
+      const status = ['MISSING_DEEPSEEK_API_KEY', 'MISSING_OLLAMA_PROVIDER', 'OLLAMA_PROVIDER_NOT_FOUND'].includes(errorCode) ? 503 : 502
       return Response.json(
-        { ok: false, error: errorCode, detail: error?.message || 'DeepSeek 文案生成失败。', period, mode: generationMode },
+        { ok: false, error: errorCode, detail: error?.message || '模型文案生成失败。', period, mode: generationMode },
         { status },
       )
     }
@@ -211,6 +240,8 @@ export async function POST(req) {
       postUrl: result.post.url,
       model: generation?.model || '',
       deepseekTaskId: generation?.taskId || '',
+      providerId: generation?.providerId || '',
+      providerName: generation?.providerName || (generationMode === 'deepseek' ? 'DeepSeek Flash' : ''),
     })
     await Promise.all([
       writeSetting(db, lastRunKey, run, 'automation'),
@@ -223,6 +254,8 @@ export async function POST(req) {
     period,
     mode: generationMode,
     model: generation?.model || '',
+    providerId: generation?.providerId || '',
+    providerName: generation?.providerName || (generationMode === 'deepseek' ? 'DeepSeek Flash' : ''),
     post: result.post,
     text,
   }, { status: 201 })

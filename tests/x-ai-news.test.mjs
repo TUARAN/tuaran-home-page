@@ -26,7 +26,7 @@ test('清理模型包裹并验证 X 加权长度', () => {
   assert.equal(tooLong.weight, X_AI_NEWS_MAX_WEIGHT + 2)
 })
 
-test('后台任务将 NAS 生成与 X 发布拆成两次手动操作', async () => {
+test('后台手动任务可切换 DeepSeek 与 NAS Ollama，并将生成和发布拆开', async () => {
   const [routeSource, panelSource] = await Promise.all([
     readFile(new URL('../app/api/admin/x-ai-news/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/morning-greeting/XAiNewsPanel.jsx', import.meta.url), 'utf8'),
@@ -34,8 +34,12 @@ test('后台任务将 NAS 生成与 X 发布拆成两次手动操作', async () 
 
   assert.match(routeSource, /action === 'generate'/)
   assert.match(routeSource, /callOllama\(/)
+  assert.match(routeSource, /callDeepSeek\(/)
+  assert.match(routeSource, /providerType === 'deepseek'/)
   assert.match(routeSource, /reasoningEffort: 'none'/)
   assert.match(routeSource, /action === 'publish'/)
   assert.match(routeSource, /publishXPost\(/)
   assert.match(panelSource, /window\.confirm\(/)
+  assert.match(panelSource, /value="deepseek"/)
+  assert.match(panelSource, /value=\{`ollama:\$\{provider\.id\}`\}/)
 })

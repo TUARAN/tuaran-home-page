@@ -45,7 +45,7 @@ function ArticlesIndexFallback({ items }) {
   return (
     <section
       aria-label="全部内容"
-      className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65"
+      className="h5-feed-list overflow-hidden border-y border-[var(--site-line)] bg-transparent md:bg-white/45 md:dark:bg-[#101721]/65"
     >
       {items.slice(0, 24).map((item, index) => {
         const fallbackItem = { ...item }

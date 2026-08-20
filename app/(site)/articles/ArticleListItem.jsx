@@ -58,9 +58,9 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
       data-analytics-delivery={item.delivery || ''}
       data-analytics-action={group === 'resource' ? 'open' : ''}
       data-analytics-position={position}
-      className="article-row group block border-b border-[#e8e2ef] bg-transparent no-underline transition-colors last:border-b-0 hover:bg-white/80 hover:no-underline dark:border-gray-800 dark:hover:bg-[#151d27]"
+      className="h5-feed-row article-row group block border-b border-[var(--site-line)] bg-transparent no-underline transition-colors last:border-b-0 hover:bg-white/80 hover:no-underline dark:hover:bg-[#151d27]"
     >
-      <div className={`grid items-start gap-3 px-3 py-2.5 md:gap-4 md:px-5 md:py-4 ${item.image ? 'grid-cols-[minmax(0,1fr)_72px] md:grid-cols-[minmax(0,1fr)_136px]' : ''}`}>
+      <div className={`h5-feed-row-body grid items-start gap-3 px-[0.9rem] py-[0.7rem] md:gap-4 md:px-5 md:py-4 ${item.image ? 'grid-cols-[minmax(0,1fr)_72px] md:grid-cols-[minmax(0,1fr)_136px]' : ''}`}>
         <div className="min-w-0">
           <div className="mb-2 hidden min-w-0 flex-wrap items-center gap-x-2 gap-y-1 md:flex">
             <span className="shrink-0 text-sm text-[#a39aac]">▪</span>
@@ -84,15 +84,15 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
             </span>
             <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
           </div>
-          <h2 className="line-clamp-2 text-[16px] font-semibold leading-snug text-[#20172f] transition-colors group-hover:text-[#120b1f] md:ml-5 md:text-[17px] md:leading-7 dark:text-gray-100 dark:group-hover:text-white">
+          <h2 className="h5-feed-title line-clamp-2 text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)] md:ml-5 md:text-[17px] md:leading-7">
             {item.title}
           </h2>
           {item.summary ? (
-            <p className="mt-1 line-clamp-1 text-[13px] leading-5 text-[#6b6472] transition-colors group-hover:text-[#3c3149] md:ml-5 md:mt-2 md:line-clamp-2 md:text-sm md:leading-relaxed dark:text-gray-300 dark:group-hover:text-gray-200">
+            <p className="h5-feed-summary mt-1 line-clamp-1 text-[13px] leading-5 text-[var(--site-muted)] transition-colors md:ml-5 md:mt-2 md:line-clamp-2 md:text-sm md:leading-relaxed">
               {item.summary}
             </p>
           ) : null}
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-[#958aa1] md:ml-5 md:mt-2 md:gap-x-3 md:text-[13px] dark:text-gray-400">
+          <div className="h5-feed-meta mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-[var(--site-faint)] md:ml-5 md:mt-2 md:gap-x-3 md:text-[13px]">
             <span className="hidden md:inline">{external ? '打开来源 →' : item.delivery === 'interact' ? '开始探索 →' : '打开内容 →'}</span>
             {item.dateLabel || item.date ? (
               <span className="md:hidden">{item.dateLabel || item.date}</span>
@@ -104,7 +104,7 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
           </div>
         </div>
         {item.image ? (
-          <div className="relative h-[72px] overflow-hidden rounded-[4px] border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 md:h-24 md:w-[136px] md:rounded-md">
+          <div className="h5-feed-thumb relative h-[72px] overflow-hidden rounded-[4px] border border-[var(--site-line)] bg-[var(--site-panel)] dark:bg-gray-950 md:h-24 md:w-[136px] md:rounded-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={item.image.src}

@@ -60,23 +60,21 @@ function DirectoryRow({ item, actionLabel, pv }) {
   return (
     <DirectoryLink
       item={item}
-      className="group grid gap-1 px-3 py-2.5 no-underline transition hover:bg-[#fffdf7] dark:hover:bg-[#121b26] md:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.1fr)] md:items-start md:gap-3 md:px-3.5 md:py-3"
+      className="h5-feed-row group grid gap-1 px-0 py-[0.7rem] no-underline transition hover:bg-[color-mix(in_srgb,var(--site-panel-strong)_55%,transparent)] md:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.1fr)] md:items-start md:gap-3 md:px-3.5 md:py-3 dark:hover:bg-[#121b26]"
     >
       <div className="min-w-0 md:pr-4">
-        <div className="mb-1 flex flex-wrap items-center gap-2">
-          <h3 className="mb-0 text-[15px] font-semibold leading-snug text-[#1d1a16] transition group-hover:text-[#2f6f73] dark:text-white dark:group-hover:text-[#77c6c2] md:text-[15px] md:font-bold">
-            {item.title}
-          </h3>
-          {item.mobileBadge ? <span className="md:hidden"><DirectoryBadge badge={item.mobileBadge} /></span> : null}
-          {item.pvKey ? (
-            <span className="font-mono text-[10px] text-[#8a877d] dark:text-[#7e8a9b] md:hidden">
-              阅读量 {formatPv(pv)}
-            </span>
-          ) : null}
+        <h3 className="h5-feed-title mb-0 text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition group-hover:text-[var(--site-accent-strong)] md:text-[15px] md:font-bold">
+          {item.title}
+        </h3>
+        {item.summary ? (
+          <p className="h5-feed-summary mb-0 mt-1 line-clamp-1 overflow-hidden text-[13px] leading-5 text-[var(--site-muted)] md:line-clamp-none md:overflow-visible md:leading-6">
+            {item.summary}
+          </p>
+        ) : null}
+        <div className="h5-feed-meta mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[var(--site-faint)] md:hidden">
+          {item.mobileBadge ? <DirectoryBadge badge={item.mobileBadge} /> : null}
+          {item.pvKey ? <span>阅读量 {formatPv(pv)}</span> : null}
         </div>
-        <p className="mb-0 line-clamp-1 overflow-hidden text-[13px] leading-5 text-[#68665e] dark:text-[#a4adba] md:line-clamp-none md:overflow-visible md:leading-6">
-          {item.summary}
-        </p>
       </div>
 
       <div className="hidden min-w-0 flex-wrap items-center gap-1.5 md:flex md:justify-end">
@@ -125,19 +123,19 @@ export default function GroupedDirectoryPage({
   }, [pvKeySignature])
 
   return (
-    <main className="h5-directory-page min-h-screen bg-[#f2efe7] text-[#171611] dark:bg-[#0d0f12] dark:text-gray-100">
-      <header className="mx-auto max-w-[1100px] px-4 pb-2 pt-3 md:pb-4 md:pt-9 sm:px-6 lg:px-8">
-        <p className="mb-3 hidden font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#8a6422] dark:text-[#d4ae66] md:block">
+    <main className="h5-directory-page min-h-screen bg-[var(--page-bg)] text-[var(--site-ink)]">
+      <header className="mx-auto hidden max-w-[1100px] px-4 pb-4 pt-9 md:block sm:px-6 lg:px-8">
+        <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#8a6422] dark:text-[#d4ae66]">
           {eyebrow}
         </p>
-        <div className="flex flex-col gap-1 md:gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="mb-0 text-[18px] font-bold leading-tight text-[#15130e] dark:text-white md:mb-3 md:font-serif md:text-[38px] lg:text-[48px]">
+            <h1 className="mb-3 font-serif text-[38px] font-bold leading-tight text-[#15130e] dark:text-white md:text-[48px]">
               {title}
             </h1>
-            <div className="hidden max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be] md:block">{description}</div>
+            <div className="max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">{description}</div>
           </div>
-          <div className="hidden shrink-0 flex-wrap items-center gap-3 text-sm md:flex">
+          <div className="flex shrink-0 flex-wrap items-center gap-3 text-sm">
             <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8a877d] dark:text-[#7e8a9b]">
               {sections.length} 类 · {total} 项
             </span>
@@ -146,21 +144,22 @@ export default function GroupedDirectoryPage({
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1100px] px-4 py-2 md:py-5 sm:px-6 lg:px-8">
-        <div className="space-y-4 md:space-y-6">
+      <div className="h5-feed-shell mx-auto max-w-[1100px] px-[0.9rem] py-1 md:px-6 md:py-5 lg:px-8">
+        <div className="space-y-1 md:space-y-6">
           {sections.map((section) => (
             <section
               key={section.id}
               id={section.anchor || section.id}
-              className="scroll-mt-[calc(var(--site-header-height)+16px)] grid gap-2 border-t border-[#d8d1c4] pt-4 dark:border-[#27313d] md:gap-3 md:pt-6 lg:grid-cols-[220px_minmax(0,1fr)]"
+              className="scroll-mt-[calc(var(--site-header-height)+16px)] md:grid md:gap-3 md:border-t md:border-[#d8d1c4] md:pt-6 md:dark:border-[#27313d] lg:grid-cols-[220px_minmax(0,1fr)]"
             >
               <div>
-                <div className="sticky top-[calc(var(--site-header-height)+16px)]">
+                <p className="h5-feed-label mb-0 md:hidden">{section.title}</p>
+                <div className="sticky top-[calc(var(--site-header-height)+16px)] hidden md:block">
                   <p className="mb-1 hidden font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a6422] dark:text-[#d4ae66] lg:block">
                     {section.titleEn}
                   </p>
                   <div className="flex items-baseline gap-2 lg:block">
-                    <h2 className="mb-0 text-[13px] font-semibold md:text-[20px] md:font-bold">{section.title}</h2>
+                    <h2 className="mb-0 text-[20px] font-bold">{section.title}</h2>
                     <span className="text-[12px] text-[#8a877d] dark:text-[#7e8a9b] lg:mt-1 lg:block">
                       {section.items.length} 个
                     </span>
@@ -171,7 +170,7 @@ export default function GroupedDirectoryPage({
                 </div>
               </div>
 
-              <div className="divide-y divide-[#e8e1d5] overflow-hidden rounded-lg border border-[#ded8ca] bg-white/60 dark:divide-[#252e38] dark:border-[#252e38] dark:bg-[#101720]/[0.72]">
+              <div className="h5-feed-list md:divide-y md:divide-[#e8e1d5] md:overflow-hidden md:rounded-lg md:border md:border-[#ded8ca] md:bg-white/60 md:dark:divide-[#252e38] md:dark:border-[#252e38] md:dark:bg-[#101720]/[0.72]">
                 {section.items.map((item) => (
                   <DirectoryRow
                     key={item.id}

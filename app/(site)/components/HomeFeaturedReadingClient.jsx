@@ -40,11 +40,12 @@ function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false,
         {item.tagLabel ? <span className="home-badge home-badge-muted">{item.tagLabel}</span> : null}
         {item.date ? <time className="home-item-date">{item.date}</time> : null}
       </div>
-      <p className="mb-0 line-clamp-2 text-[16px] font-semibold leading-snug text-[#191813] transition-colors group-hover:text-[#6c4c1f] dark:text-[#f2f3ed] dark:group-hover:text-[#d5d8c4] md:text-[20px] md:leading-7">{item.title}</p>
-      {item.summary ? <p className="mb-0 mt-1 line-clamp-1 text-[13px] leading-5 text-[#686a5f] dark:text-[#9ca6b4] md:mt-1.5 md:line-clamp-2 md:text-[15px] md:leading-6">{item.summary}</p> : null}
+      <p className="h5-feed-title mb-0 line-clamp-2 text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)] md:text-[20px] md:leading-7">{item.title}</p>
+      {item.summary ? <p className="h5-feed-summary mb-0 mt-1 line-clamp-1 text-[13px] leading-5 text-[var(--site-muted)] md:mt-1.5 md:line-clamp-2 md:text-[15px] md:leading-6">{item.summary}</p> : null}
+      {item.date ? <time className="h5-feed-meta mt-1 block text-[11px] text-[var(--site-faint)] md:hidden">{item.date}</time> : null}
     </>
   )
-  const className = `home-reading-item group no-underline ${desktopOnly ? 'hidden md:block' : ''}`
+  const className = `h5-feed-row home-reading-item group no-underline ${desktopOnly ? 'hidden md:block' : ''}`
   const analyticsProps = {
     'data-analytics-event': fromSearch ? 'search_result_click' : 'entry_click',
     'data-analytics-surface': fromSearch ? 'home_search' : 'home_recommendation',

@@ -1,14 +1,18 @@
 {
+  "id": "https://2aran.com/",
   "name": "2aran.com · 涂阿燃网络日志",
-  "short_name": "2aran.com",
-  "description": "2aran.com 是涂阿燃（tuaran / 掘金安东尼）的个人主页与网络日志：技术观察、AI 工程化、知识库与调研。",
+  "short_name": "2aran",
+  "description": "涂阿燃的网络日志：前端与 AI 工程、技术情报、知识库与调研。",
   "lang": "zh-CN",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait",
   "theme_color": "#f8f5f0",
   "background_color": "#f8f5f0",
+  "categories": ["news", "education", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -55,10 +59,10 @@
       "description": "正在做的 AI 项目集合"
     },
     {
-      "name": "上下文记忆",
-      "short_name": "记忆",
-      "url": "/context-memory",
-      "description": "我的 4 层上下文记忆"
+      "name": "讨论中心",
+      "short_name": "圈子",
+      "url": "/community",
+      "description": "留言、评论与社群入口"
     }
   ]
 }

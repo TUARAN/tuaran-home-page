@@ -10,6 +10,7 @@ import {
   IconCheck,
   IconChevronRight,
   IconDeviceDesktop,
+  IconDeviceMobile,
   IconLanguage,
   IconLayoutDashboard,
   IconLogout,
@@ -20,6 +21,7 @@ import {
 import SettingsButton from './SettingsButton'
 import UserAvatar from './UserAvatar'
 import { useLocale } from './LocaleProvider'
+import { usePwaInstall } from './PwaInstallGuide'
 import { useSessionAccount } from './SessionProvider'
 import { pick } from '../../../lib/i18n'
 import {
@@ -643,6 +645,7 @@ export default function SiteHeader() {
   const [openMobileChannel, setOpenMobileChannel] = useState(null)
   const [accountOpen, setAccountOpen] = useState(false)
   const account = useSessionAccount()
+  const { installed, openGuide: openInstallGuide } = usePwaInstall()
   const navWrapRef = useRef(null)
   const accountRef = useRef(null)
   const searchParams = useMemo(() => new URLSearchParams(searchString), [searchString])
@@ -717,10 +720,10 @@ export default function SiteHeader() {
   return (
     <>
       <header className="site-header fixed left-0 right-0 top-0 z-[120] w-full border-b backdrop-blur">
-        <div className="mx-auto flex h-[var(--site-header-height)] w-full max-w-[1880px] items-center justify-between gap-4 px-4 py-1 sm:px-6 lg:px-10">
-          <Link href="/" className="group flex min-w-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
+        <div className="mx-auto flex h-[var(--site-header-height)] w-full max-w-[1880px] items-center justify-between gap-2 px-3 py-1 sm:px-6 sm:gap-4 lg:px-10">
+          <Link href="/" className="group flex min-w-0 shrink-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <span className="site-brand-mark" aria-hidden="true">T</span>
-            <div className="inline-flex min-w-0 flex-col leading-tight">
+            <div className="hidden min-w-0 flex-col leading-tight min-[420px]:inline-flex">
               <span className="site-brand-text font-serif text-base font-semibold tracking-wide sm:text-lg">
                 TUARAN
               </span>
@@ -729,6 +732,18 @@ export default function SiteHeader() {
               </span>
             </div>
           </Link>
+
+          <form action="/articles" method="get" role="search" className="site-mobile-search min-w-0 flex-1 md:hidden">
+            <label className="sr-only" htmlFor="site-mobile-search-q">{pick(locale, '搜索内容', 'Search')}</label>
+            <input
+              id="site-mobile-search-q"
+              type="search"
+              name="q"
+              placeholder={pick(locale, '搜索文章、调研、资源', 'Search articles, research, resources')}
+              defaultValue={searchParams.get('q') || ''}
+              autoComplete="off"
+            />
+          </form>
 
           <div className="hidden items-center gap-3 md:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
@@ -775,7 +790,7 @@ export default function SiteHeader() {
             />
           </div>
 
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-1 md:hidden">
             <SettingsButton />
             <button
               type="button"
@@ -810,7 +825,7 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'fixed inset-0 z-30 bg-[color-mix(in_srgb,var(--site-accent-strong)_18%,transparent)] transition-opacity duration-200 md:hidden',
+          'fixed inset-0 z-[115] bg-[color-mix(in_srgb,var(--site-accent-strong)_18%,transparent)] transition-opacity duration-200 md:hidden',
           mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
         onClick={() => setMobileMenuOpen(false)}
@@ -819,7 +834,7 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'site-mobile-drawer fixed right-0 top-[var(--site-header-height)] z-[120] max-h-[calc(100vh-var(--site-header-height))] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 md:hidden',
+          'site-mobile-drawer fixed right-0 top-[calc(var(--site-header-height)+env(safe-area-inset-top,0px))] z-[120] max-h-[calc(100dvh-var(--site-header-height)-var(--site-tabbar-height)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 md:hidden',
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
@@ -831,6 +846,22 @@ export default function SiteHeader() {
           pathname={pathname}
           onNavigate={() => setMobileMenuOpen(false)}
         />
+        {!installed ? (
+          <button
+            type="button"
+            className="site-mobile-card mb-4 flex w-full items-center justify-between gap-3 rounded-2xl border px-3.5 py-3 text-left"
+            onClick={() => {
+              setMobileMenuOpen(false)
+              openInstallGuide()
+            }}
+          >
+            <span className="flex items-center gap-2.5">
+              <IconDeviceMobile size={18} stroke={1.7} aria-hidden="true" />
+              <span className="site-menu-title text-[13.5px] font-medium">{pick(locale, '添加到桌面', 'Add to Home Screen')}</span>
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+          </button>
+        ) : null}
         <nav aria-label={pick(locale, '移动端主导航', 'Mobile navigation')} className="flex flex-col gap-1.5">
           {SITE_CHANNELS.map((channel) => {
             const expanded = openMobileChannel === channel.key

@@ -17,6 +17,11 @@ function formatDate(value) {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—'
 }
 
+function formatModelOption(model) {
+  const size = model.size > 0 ? ` · ${(model.size / (1024 ** 3)).toFixed(1)} GiB` : ''
+  return `${model.displayName || model.name} — ${model.name}${size}`
+}
+
 async function safeJson(response) {
   try { return await response.json() } catch { return null }
 }
@@ -26,6 +31,9 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testingId, setTestingId] = useState('')
+  const [savingDefaultId, setSavingDefaultId] = useState('')
+  const [modelStates, setModelStates] = useState({})
+  const [selectedModels, setSelectedModels] = useState({})
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [editingId, setEditingId] = useState('')
@@ -48,6 +56,38 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
   }, [])
 
   useEffect(() => { refresh() }, [refresh])
+
+  const loadModels = useCallback(async (provider, { announce = false } = {}) => {
+    setModelStates((prev) => ({
+      ...prev,
+      [provider.id]: { ...(prev[provider.id] || {}), loading: true, error: '' },
+    }))
+    if (announce) {
+      setError('')
+      setNotice('')
+    }
+    try {
+      const response = await fetch(`/api/admin/llm-providers/models?id=${encodeURIComponent(provider.id)}`, { cache: 'no-store' })
+      const payload = await safeJson(response)
+      if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      setModelStates((prev) => ({ ...prev, [provider.id]: { models: payload.models || [], loading: false, error: '' } }))
+      setSelectedModels((prev) => ({ ...prev, [provider.id]: prev[provider.id] || provider.defaultModel }))
+      if (announce) setNotice(`${provider.name} 的模型列表已刷新。`)
+    } catch (modelError) {
+      const message = modelError?.message || 'Ollama 模型列表读取失败。'
+      setModelStates((prev) => ({
+        ...prev,
+        [provider.id]: { ...(prev[provider.id] || {}), loading: false, error: message },
+      }))
+      if (announce) setError(message)
+    }
+  }, [])
+
+  useEffect(() => {
+    for (const provider of data?.providers || []) {
+      if (!modelStates[provider.id]) loadModels(provider)
+    }
+  }, [data?.providers, loadModels, modelStates])
 
   function resetForm() {
     setEditingId('')
@@ -139,6 +179,32 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
     }
   }
 
+  async function setDefaultModel(provider) {
+    const model = String(selectedModels[provider.id] || provider.defaultModel || '').trim()
+    if (!model || model === provider.defaultModel) return
+    if (!window.confirm('切换默认模型会影响 X AI 资讯草稿、每日问候和服务测试等云调用，是否继续？')) return
+
+    setSavingDefaultId(provider.id)
+    setError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/admin/llm-providers', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: provider.id, defaultModel: model }),
+      })
+      const payload = await safeJson(response)
+      if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      setSelectedModels((prev) => ({ ...prev, [provider.id]: model }))
+      setNotice(`${provider.name} 的默认模型已切换为 ${model}。后续云调用将使用该模型。`)
+      await refresh()
+    } catch (saveError) {
+      setError(saveError?.message || '默认模型切换失败。')
+    } finally {
+      setSavingDefaultId('')
+    }
+  }
+
   const providers = data?.providers || []
   const activeCount = providers.filter((item) => item.status === 'active').length
 
@@ -202,8 +268,43 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
                         {provider.lastCheckStatus === 'succeeded' ? '连通' : provider.lastCheckStatus === 'failed' ? '异常' : '未测试'}
                       </StatusPill>
                       <strong className="text-[14px] text-[#15140f] dark:text-gray-100">{provider.name}</strong>
-                      <code className="text-[11px] text-[#67695d] dark:text-gray-300">{provider.defaultModel}</code>
                     </div>
+                    {(() => {
+                      const modelState = modelStates[provider.id] || {}
+                      const installedModels = modelState.models || []
+                      const models = installedModels.some((item) => item.name === provider.defaultModel)
+                        ? installedModels
+                        : [{ name: provider.defaultModel, displayName: provider.defaultModel, size: 0 }, ...installedModels]
+                      const selectedModel = selectedModels[provider.id] || provider.defaultModel
+                      return (
+                        <div className="mt-3 rounded-lg bg-[#f7f7f2] p-2.5 dark:bg-[#111a25]">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                            <label className="min-w-0 flex-1 text-[12px] text-[#67695d] dark:text-gray-300">
+                              默认模型
+                              <select
+                                aria-label={`${provider.name} 默认模型`}
+                                className={`${CONTROL_CLASS} mt-1 w-full`}
+                                value={selectedModel}
+                                disabled={modelState.loading || !models.length}
+                                onChange={(event) => setSelectedModels((prev) => ({ ...prev, [provider.id]: event.target.value }))}
+                              >
+                                {models.map((model) => <option key={model.name} value={model.name}>{formatModelOption(model)}</option>)}
+                              </select>
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              <AdminButton type="button" variant="ghost" disabled={modelState.loading} onClick={() => loadModels(provider, { announce: true })}>
+                                {modelState.loading ? '刷新中…' : '刷新模型列表'}
+                              </AdminButton>
+                              <AdminButton type="button" variant="primary" disabled={savingDefaultId === provider.id || selectedModel === provider.defaultModel} onClick={() => setDefaultModel(provider)}>
+                                {savingDefaultId === provider.id ? '切换中…' : '设为默认'}
+                              </AdminButton>
+                            </div>
+                          </div>
+                          {modelState.error ? <p className="mt-2 text-[12px] text-rose-700 dark:text-rose-300">{modelState.error} 当前默认模型仍为 {provider.defaultModel}。</p> : null}
+                          {/^qwen3\.8-27b(?::|$)/i.test(selectedModel) ? <p className="mt-2 text-[12px] text-amber-700 dark:text-amber-300">27B 模型使用 4096 上下文并按单请求执行；冷启动可能需要 60–90 秒。</p> : null}
+                        </div>
+                      )
+                    })()}
                     <p className="mt-1.5 break-all font-mono text-[12px] text-[#82847a]">{provider.baseUrl}</p>
                     <div className="mt-1 flex flex-wrap gap-x-3 text-[12px] text-[#82847a]">
                       <span>{provider.usage.calls.toLocaleString()} 次调用</span>

@@ -21,15 +21,16 @@ function cleanText(value, length) {
 }
 
 function mapRow(row, usage = {}) {
+  const authType = row.auth_type || (row.auth_cipher ? 'bearer' : 'none')
   return {
     id: row.id,
     type: row.provider_type,
     name: row.name,
     baseUrl: row.base_url,
     defaultModel: row.default_model,
-    authType: row.auth_type || (row.auth_cipher ? 'bearer' : 'none'),
-    authHint: row.auth_hint,
-    authSecondaryHint: row.auth_secondary_hint || '',
+    authType,
+    authHint: authType === 'cloudflare_access' ? '已安全保存' : row.auth_hint,
+    authSecondaryHint: authType === 'cloudflare_access' ? '已安全保存' : (row.auth_secondary_hint || ''),
     status: row.status,
     note: row.note,
     lastCheckedAt: Number(row.last_checked_at) || null,

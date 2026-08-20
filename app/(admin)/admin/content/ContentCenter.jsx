@@ -23,7 +23,7 @@ export default function ContentCenter() {
           items: [
             { href: '/admin/content-taxonomy', title: '分类管理', description: '维护分类定义，查看主题分布与待治理内容，持续校正分类边界。', icon: 'researchStyle', note: '稳定 ID + 主题定义 + 分类审计' },
             { href: '/admin/content-weekly', title: '数据与反馈', description: '阅读、点赞、月统计与评论跟进。', icon: 'analytics' },
-            { href: '/admin/engagement-bots', title: '路过互动', description: '管理人设、随机点赞、DeepSeek 评论与运行记录。前台身份显示为「路过」。', icon: 'ops', note: '默认关闭' },
+            { href: '/admin/engagement-bots', title: '路过互动', description: '管理人设、每日随机点赞、DeepSeek 评论与运行记录。前台身份显示为「路过」。', icon: 'ops', note: '每天 10:23' },
             { href: '/admin/rss-feeds', title: 'RSS 与分发', description: '维护公开 RSS 订阅墙，并查看 RSS 请求记录。', icon: 'rss' },
           ],
         },

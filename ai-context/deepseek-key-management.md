@@ -1,6 +1,6 @@
 # DeepSeek 密钥管理
 
-更新日期：2026-08-18
+更新日期：2026-08-20
 
 ## 目标
 
@@ -31,6 +31,14 @@
 2. source 绑定：`taskType` 留空；
 3. 全局兜底：`bound_tasks` 为空数组；
 4. 环境变量默认密钥 `DEEPSEEK_API_KEY`（兼容旧部署）。
+
+## 运行环境边界
+
+- `admin.2aran.com` 与 `2aran.com` 是两个 Cloudflare Pages 项目，环境变量和 Secret 不会自动同步。
+- AI 规划台运行在 Admin 项目；A 股研究、股票横向分析、X 每日问候和路过互动定时任务运行在公开站项目。
+- 路过互动的“立即运行”走 Admin 项目，每天 10:23 的定时运行走公开站项目，因此两种入口可能得到不同的密钥检测结果。
+- GitHub Actions Repository Secrets 只在工作流步骤内可见；工作流通过 HTTP 触发站内接口时，不会自动把 `DEEPSEEK_API_KEY` 传给 Cloudflare Worker。
+- `deepseek_keys` 数据库记录可以通过共享 D1 复用，但每个 Cloudflare 项目都必须配置相同的 `DEEPSEEK_KEYS_ENC_SECRET` 才能解密。后台页面只能确认当前 Admin 环境，不能代替公开站健康检查。
 
 ## 后台
 

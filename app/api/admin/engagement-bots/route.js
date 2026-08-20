@@ -1,6 +1,9 @@
+import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
+
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
-import { DEFAULT_ENGAGEMENT_BOTS, DEFAULT_ENGAGEMENT_BOT_SETTINGS } from '../../../../lib/engagementBot'
+import { hasUsableDeepSeekKey } from '../../../../lib/deepseekKeys'
+import { DEFAULT_ENGAGEMENT_BOTS, DEFAULT_ENGAGEMENT_BOT_SETTINGS, ENGAGEMENT_BOT_SOURCE } from '../../../../lib/engagementBot'
 import {
   createEngagementBot,
   deleteEngagementBot,
@@ -28,10 +31,11 @@ async function readBody(request) {
   }
 }
 
-function previewOverview() {
+function previewOverview(adminDeepSeekConfigured = false) {
   const now = Date.now()
   return {
     persistent: false,
+    adminDeepSeekConfigured,
     settings: { ...DEFAULT_ENGAGEMENT_BOT_SETTINGS, contentPrefixes: [...DEFAULT_ENGAGEMENT_BOT_SETTINGS.contentPrefixes] },
     bots: DEFAULT_ENGAGEMENT_BOTS.map((bot, index) => ({
       id: index + 1,
@@ -59,14 +63,20 @@ function previewOverview() {
 export async function GET(request) {
   const auth = await getOwnerOrReject(request)
   if (!auth.ok) return auth.response
+  const env = getOptionalRequestContext()?.env || {}
+  const adminDeepSeekConfigured = await hasUsableDeepSeekKey({
+    env,
+    source: ENGAGEMENT_BOT_SOURCE,
+    taskType: 'comment',
+  }).catch(() => false)
   const db = dbOrNull()
-  if (!db) return Response.json(previewOverview())
+  if (!db) return Response.json(previewOverview(adminDeepSeekConfigured))
   try {
     const overview = await getEngagementBotOverview(db)
-    return Response.json(overview)
+    return Response.json({ ...overview, adminDeepSeekConfigured })
   } catch (error) {
     if (String(error?.message || error).includes('no such table')) {
-      return Response.json(previewOverview())
+      return Response.json(previewOverview(adminDeepSeekConfigured))
     }
     return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }

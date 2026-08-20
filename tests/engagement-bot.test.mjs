@@ -19,12 +19,12 @@ import {
   shouldSkipRun,
 } from '../lib/engagementBot.js'
 
-test('default settings stay off and keep a sparse cadence', () => {
+test('default settings enable one daily interaction attempt without skipping the run', () => {
   const settings = parseStoredEngagementBotSettings('')
-  assert.equal(settings.enabled, false)
+  assert.equal(settings.enabled, true)
   assert.equal(settings.likesPerRun, 2)
   assert.equal(settings.commentsPerRun, 1)
-  assert.ok(settings.skipProbability > 0)
+  assert.equal(settings.skipProbability, 0)
   assert.deepEqual(settings.contentPrefixes, ['article:', 'research:'])
   assert.equal(DEFAULT_ENGAGEMENT_BOTS.length, 10)
 })

@@ -39,8 +39,13 @@ test('engagement bot admin is owner-only and can run plus CRUD', () => {
   }
   assert.match(runApiSource, /getOwnerOrReject/)
   assert.match(runApiSource, /runEngagementBot/)
+  assert.match(runApiSource, /hasUsableDeepSeekKey/)
+  assert.match(runApiSource, /ADMIN_DEEPSEEK_NOT_CONFIGURED/)
+  assert.match(apiSource, /adminDeepSeekConfigured/)
   assert.match(consoleSource, /路过互动/)
   assert.match(consoleSource, /立即运行/)
+  assert.match(consoleSource, /!adminDeepSeekConfigured/)
+  assert.match(consoleSource, /“立即运行”已停用/)
   assert.match(centerSource, /href: '\/admin\/engagement-bots'/)
 })
 
@@ -55,6 +60,16 @@ test('cron uses shared secret header and DeepSeek comment source', () => {
   assert.match(workflowSource, /api\/cron\/engagement-bot/)
   assert.match(keysPanelSource, /'engagement-bot'/)
   assert.match(keysPanelSource, /路过互动评论/)
+})
+
+test('workflow runs once a day at 10:23 Beijing time and documents split runtimes', () => {
+  assert.deepEqual([...workflowSource.matchAll(/- cron:/g)].length, 1)
+  assert.match(workflowSource, /cron: '23 2 \* \* \*'/)
+  assert.match(consoleSource, /每天 10:23/)
+  assert.match(consoleSource, /2aran\.com/)
+  assert.match(consoleSource, /admin\.2aran\.com/)
+  assert.match(keysPanelSource, /DeepSeek 运行位置/)
+  assert.match(keysPanelSource, /运行环境彼此隔离/)
 })
 
 test('public comments label readers as 路过 without saying 机器人', () => {

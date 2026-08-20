@@ -6,23 +6,29 @@ import Link from 'next/link'
 import { ADMIN_NAV_GROUPS, ADMIN_PLANNED, ADMIN_HOST, CANONICAL_HOST, isActiveAdminPath } from '../../../lib/adminRoutes'
 import { AdminIcon } from '../../../lib/adminIcons'
 
-const OPEN_MENUS_KEY = 'admin:nav:open-menus:v2'
+const OPEN_SECTIONS_KEY = 'admin:nav:open-sections:v3'
 
-function expandableMenuIds() {
+function sectionMenuId(item, section) {
+  return `${item.href}#${section.id}`
+}
+
+function expandableSectionIds() {
   return ADMIN_NAV_GROUPS.flatMap((group) =>
-    group.items.filter((item) => item.children?.length).map((item) => item.href)
+    group.items.flatMap((item) =>
+      (item.sections || []).map((section) => sectionMenuId(item, section))
+    )
   )
 }
 
-function activeMenuIds(pathname) {
+function activeSectionIds(pathname) {
   return ADMIN_NAV_GROUPS.flatMap((group) =>
-    group.items
-      .filter(
-        (item) =>
-          item.children?.length &&
-          isActiveAdminPath(pathname, item.href, item.activePaths)
-      )
-      .map((item) => item.href)
+    group.items.flatMap((item) =>
+      (item.sections || [])
+        .filter((section) =>
+          section.items.some((child) => isActiveAdminPath(pathname, child.href))
+        )
+        .map((section) => sectionMenuId(item, section))
+    )
   )
 }
 
@@ -32,8 +38,14 @@ function navItemClass(active) {
     : 'text-[#53554d] hover:bg-[#ecede5] hover:text-[#15140f] dark:text-gray-300 dark:hover:bg-[#151c26] dark:hover:text-gray-100'
 }
 
-function NavItemInner({ item, collapsed, badge, active, externalHop }) {
-  return (
+function DirectNavItem({ item, pathname, collapsed, badges, onNavigate, onAdminHost }) {
+  const active = isActiveAdminPath(pathname, item.href, item.activePaths)
+  const badge = item.badgeKey && badges ? badges[item.badgeKey] : null
+  const externalHop = item.external && onAdminHost
+  const className = `group mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition ${navItemClass(
+    active
+  )} ${collapsed ? 'justify-center' : ''}`
+  const inner = (
     <>
       <AdminIcon name={item.icon} size={18} />
       {collapsed ? null : <span className="truncate">{item.label}</span>}
@@ -55,19 +67,44 @@ function NavItemInner({ item, collapsed, badge, active, externalHop }) {
       ) : null}
     </>
   )
+
+  if (externalHop) {
+    return (
+      <a
+        href={`https://${CANONICAL_HOST}${item.href}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onNavigate}
+        title={`${item.label}（主站新标签打开）`}
+        className={className}
+      >
+        {inner}
+      </a>
+    )
+  }
+
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      aria-current={active ? 'page' : undefined}
+      title={item.label}
+      className={className}
+    >
+      {inner}
+    </Link>
+  )
 }
 
 /**
  * 后台两级导航面板：
- *  - 分组 label 仅作视觉分隔
- *  - items 是一级菜单，children 是可展开的二级菜单
- *  - collapsed：仅图标（桌面折叠）
- *  - badges：{ [badgeKey]: number }，来自 /api/admin/overview
- *  - onNavigate：移动端抽屉里点击后关闭
+ *  - 工作区名称（内容中心等）与普通分组 label 都只作区隔标题
+ *  - sections 是可展开的一级菜单，section.items 是二级入口
+ *  - collapsed：仅图标（桌面折叠），此时工作区回落为聚合页图标入口
  */
 export default function AdminSidebar({ pathname, collapsed = false, badges = null, onNavigate }) {
   const [onAdminHost, setOnAdminHost] = useState(false)
-  const [openMenus, setOpenMenus] = useState(expandableMenuIds)
+  const [openSections, setOpenSections] = useState(expandableSectionIds)
 
   useEffect(() => {
     if (typeof window !== 'undefined') setOnAdminHost(window.location.hostname === ADMIN_HOST)
@@ -75,25 +112,24 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
 
   useEffect(() => {
     try {
-      const saved = JSON.parse(window.localStorage.getItem(OPEN_MENUS_KEY) || 'null')
-      if (Array.isArray(saved)) setOpenMenus(saved)
+      const saved = JSON.parse(window.localStorage.getItem(OPEN_SECTIONS_KEY) || 'null')
+      if (Array.isArray(saved)) setOpenSections(saved)
     } catch {}
   }, [])
 
-  // 进入二级页面时确保所属一级菜单可见；其他一级菜单默认保持展开。
   useEffect(() => {
-    const activeIds = activeMenuIds(pathname)
+    const activeIds = activeSectionIds(pathname)
     if (!activeIds.length) return
-    setOpenMenus((previous) => Array.from(new Set([...previous, ...activeIds])))
+    setOpenSections((previous) => Array.from(new Set([...previous, ...activeIds])))
   }, [pathname])
 
-  function toggleMenu(menuId) {
-    setOpenMenus((previous) => {
-      const next = previous.includes(menuId)
-        ? previous.filter((id) => id !== menuId)
-        : [...previous, menuId]
+  function toggleSection(sectionId) {
+    setOpenSections((previous) => {
+      const next = previous.includes(sectionId)
+        ? previous.filter((id) => id !== sectionId)
+        : [...previous, sectionId]
       try {
-        window.localStorage.setItem(OPEN_MENUS_KEY, JSON.stringify(next))
+        window.localStorage.setItem(OPEN_SECTIONS_KEY, JSON.stringify(next))
       } catch {}
       return next
     })
@@ -120,118 +156,107 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="后台模块">
-        {ADMIN_NAV_GROUPS.map((group) => (
-          <div key={group.id} className="mb-1.5">
-            {group.label && !collapsed ? (
-              <p className="px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[#9a9c8e] dark:text-[#5d6b80]">
-                {group.label}
-              </p>
-            ) : null}
+        {ADMIN_NAV_GROUPS.map((group) => {
+          const containsWorkspaces = group.items.some((item) => item.sections?.length)
 
-            {group.items.map((item) => {
-              if (item.sidebar === false) return null
+          return (
+            <div key={group.id} className="mb-1.5">
+              {group.label && !collapsed && !containsWorkspaces ? (
+                <p className="px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[#9a9c8e] dark:text-[#5d6b80]">
+                  {group.label}
+                </p>
+              ) : null}
 
-              const children = item.children || []
-              const hasChildren = children.length > 0 && !collapsed
-              const menuOpen = hasChildren && openMenus.includes(item.href)
-              const parentPageActive = isActiveAdminPath(pathname, item.href)
-              const parentTreeActive = isActiveAdminPath(pathname, item.href, item.activePaths)
-              const badge = item.badgeKey && badges ? badges[item.badgeKey] : null
-              const externalHop = item.external && onAdminHost
-              const itemClassName = `group flex min-w-0 items-center gap-2.5 px-2.5 py-2 text-[13px] font-medium transition ${navItemClass(
-                parentPageActive
-              )} ${collapsed ? 'justify-center rounded-lg' : hasChildren ? 'flex-1 rounded-l-lg' : 'rounded-lg'}`
+              {group.items.map((item) => {
+                if (item.sidebar === false) return null
 
-              const inner = (
-                <NavItemInner
-                  item={item}
-                  collapsed={collapsed}
-                  badge={badge}
-                  active={parentPageActive}
-                  externalHop={externalHop}
-                />
-              )
+                if (!item.sections?.length || collapsed) {
+                  return (
+                    <DirectNavItem
+                      key={item.href}
+                      item={item}
+                      pathname={pathname}
+                      collapsed={collapsed}
+                      badges={badges}
+                      onNavigate={onNavigate}
+                      onAdminHost={onAdminHost}
+                    />
+                  )
+                }
 
-              return (
-                <div key={item.href} className="mb-0.5">
-                  <div className={`flex rounded-lg ${parentTreeActive && !parentPageActive ? 'text-[#15140f] dark:text-gray-100' : ''}`}>
-                    {externalHop ? (
-                      <a
-                        href={`https://${CANONICAL_HOST}${item.href}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={onNavigate}
-                        title={`${item.label}（主站新标签打开）`}
-                        className={itemClassName}
-                      >
-                        {inner}
-                      </a>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        onClick={onNavigate}
-                        aria-current={parentPageActive ? 'page' : undefined}
-                        title={item.label}
-                        className={itemClassName}
-                      >
-                        {inner}
-                      </Link>
-                    )}
+                return (
+                  <section key={item.href} className="mb-2">
+                    <p className="px-2 pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[#9a9c8e] dark:text-[#5d6b80]">
+                      {item.label}
+                    </p>
 
-                    {hasChildren ? (
-                      <button
-                        type="button"
-                        onClick={() => toggleMenu(item.href)}
-                        aria-label={`${menuOpen ? '收起' : '展开'}${item.label}`}
-                        aria-expanded={menuOpen}
-                        aria-controls={`admin-submenu-${group.id}-${item.href.split('/').pop()}`}
-                        className="flex w-9 shrink-0 items-center justify-center rounded-r-lg text-[#77796d] transition hover:bg-[#ecede5] hover:text-[#15140f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a1ab76]/60 dark:text-gray-400 dark:hover:bg-[#151c26] dark:hover:text-gray-100"
-                      >
-                        <AdminIcon
-                          name="chevronDown"
-                          size={15}
-                          stroke={1.8}
-                          className={`transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`}
-                        />
-                      </button>
-                    ) : null}
-                  </div>
+                    {item.sections.map((section) => {
+                      const sectionId = sectionMenuId(item, section)
+                      const sectionOpen = openSections.includes(sectionId)
+                      const sectionActive = section.items.some((child) =>
+                        isActiveAdminPath(pathname, child.href)
+                      )
+                      const panelId = `admin-section-${section.id}-${item.href.split('/').pop()}`
 
-                  {hasChildren ? (
-                    <div
-                      id={`admin-submenu-${group.id}-${item.href.split('/').pop()}`}
-                      className={`grid transition-[grid-template-rows,opacity] duration-200 ${
-                        menuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-60'
-                      }`}
-                    >
-                      <div className="overflow-hidden">
-                        <div className="ml-[18px] border-l border-[#e2e3da] pb-1 pl-3 pt-1 dark:border-[#26313e]">
-                          {children.map((child) => {
-                            const childActive = isActiveAdminPath(pathname, child.href)
-                            return (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                onClick={onNavigate}
-                                aria-current={childActive ? 'page' : undefined}
-                                title={child.label}
-                                className={`mb-0.5 flex items-center rounded-md px-2 py-1.5 text-[12px] font-medium transition ${navItemClass(
-                                  childActive
-                                )}`}
-                              >
-                                <span className="truncate">{child.label}</span>
-                              </Link>
-                            )
-                          })}
+                      return (
+                        <div key={sectionId} className="mb-0.5">
+                          <button
+                            type="button"
+                            onClick={() => toggleSection(sectionId)}
+                            aria-expanded={sectionOpen}
+                            aria-controls={panelId}
+                            className={`flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[13px] font-semibold transition hover:bg-[#ecede5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a1ab76]/60 dark:hover:bg-[#151c26] ${
+                              sectionActive
+                                ? 'text-[#15140f] dark:text-gray-100'
+                                : 'text-[#53554d] dark:text-gray-300'
+                            }`}
+                          >
+                            <span className="truncate">{section.label}</span>
+                            <AdminIcon
+                              name="chevronDown"
+                              size={15}
+                              stroke={1.8}
+                              className={`ml-auto shrink-0 transition-transform duration-200 ${sectionOpen ? 'rotate-180' : ''}`}
+                            />
+                          </button>
+
+                          <div
+                            id={panelId}
+                            className={`grid transition-[grid-template-rows,opacity] duration-200 ${
+                              sectionOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-60'
+                            }`}
+                          >
+                            <div className="overflow-hidden">
+                              <div className="ml-[18px] border-l border-[#e2e3da] pb-1 pl-3 pt-1 dark:border-[#26313e]">
+                                {section.items.map((child) => {
+                                  const childActive = isActiveAdminPath(pathname, child.href)
+                                  return (
+                                    <Link
+                                      key={child.href}
+                                      href={child.href}
+                                      onClick={onNavigate}
+                                      aria-current={childActive ? 'page' : undefined}
+                                      title={child.label}
+                                      className={`mb-0.5 flex items-center rounded-md px-2 py-1.5 text-[12px] font-medium transition ${navItemClass(
+                                        childActive
+                                      )}`}
+                                    >
+                                      <span className="truncate">{child.label}</span>
+                                    </Link>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              )
-            })}
-          </div>
-        ))}
+                      )
+                    })}
+                  </section>
+                )
+              })}
+            </div>
+          )
+        })}
 
         {collapsed ? null : (
           <div className="mt-3 border-t border-[#eceee6] pt-2 dark:border-[#1b2430]">

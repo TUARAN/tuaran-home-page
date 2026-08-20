@@ -5,6 +5,7 @@ import {
   extractJson,
   getDeepSeekEnv,
 } from '../../../../../../lib/deepseek'
+import { resolveDeepSeekKey } from '../../../../../../lib/deepseekKeys'
 import { createDeepSeekTask, finishDeepSeekTask } from '../../../../../../lib/deepseekTasks'
 
 export const runtime = 'edge'
@@ -102,9 +103,14 @@ export async function POST(req) {
   const task = body?.task || {}
   const strategyVersion = body?.strategyVersion || 'dispatch-admin-orchestrator-v1.2.0'
   const env = getDeepSeekEnv()
-  const apiKey = env.DEEPSEEK_API_KEY
-  const baseUrl = String(env.DEEPSEEK_BASE_URL || DEEPSEEK_DEFAULT_BASE_URL).replace(/\/+$/, '')
-  const model = env.DEEPSEEK_MODEL || DEEPSEEK_DEFAULT_MODEL
+  const key = await resolveDeepSeekKey({
+    env,
+    source: 'admin-model-dispatch',
+    taskType: 'planning-stream',
+  })
+  const apiKey = key.apiKey
+  const baseUrl = String(key.baseUrl || env.DEEPSEEK_BASE_URL || DEEPSEEK_DEFAULT_BASE_URL).replace(/\/+$/, '')
+  const model = key.model || env.DEEPSEEK_MODEL || DEEPSEEK_DEFAULT_MODEL
   const startedAt = Date.now()
   const taskRecordId = await createDeepSeekTask({
     source: 'admin-model-dispatch',
@@ -113,6 +119,8 @@ export async function POST(req) {
     actorId: guard.user?.id,
     actorName: guard.user?.name || guard.user?.login,
     model,
+    keyId: key.keyId,
+    keyName: key.keyName,
     inputSummary: task.demand || task.context || '',
     metadata: { strategyVersion, repo: task.repo || '', streaming: true },
     startedAt,

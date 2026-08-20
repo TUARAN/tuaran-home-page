@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import {
   IconCheck,
   IconPlayerPlay,
@@ -326,7 +327,7 @@ export default function EngagementBotsClient() {
               </Field>
               <p className="text-[12px] leading-5 text-[#858779]">
                 评论会记入 DeepSeek 任务台账，可在
-                <a className="mx-1 underline underline-offset-2" href="/admin/deepseek-tasks">模型任务</a>
+                <Link className="mx-1 underline underline-offset-2" href="/admin/deepseek-tasks">模型任务</Link>
                 里把密钥绑定到 source = engagement-bot。
               </p>
               <AdminButton type="submit" variant="primary" disabled={saving || !persistent}>

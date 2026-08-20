@@ -80,7 +80,8 @@ function HomeInspirations({ items, pinnedIds, ready }) {
 
   return (
     <section id="inspirations" className="home-section home-inspirations scroll-mt-24">
-      <div className="home-section-heading compact">
+      <p className="h5-feed-label md:hidden">灵感</p>
+      <div className="home-section-heading compact hidden md:flex">
         <div className="w-full">
           <p className="home-kicker">02 · Sparks</p>
           <div className="flex items-baseline justify-between gap-4">

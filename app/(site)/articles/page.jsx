@@ -27,7 +27,7 @@ export const metadata = {
 
 function ArticlesHeaderFallback() {
   return (
-    <header className="mb-4">
+    <header className="mb-4 hidden md:block">
       <div className="flex min-w-0 flex-nowrap items-baseline gap-3 overflow-hidden">
         <h1 className="shrink-0 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
           内容导航
@@ -67,7 +67,7 @@ export default function ArticlesPage() {
   const items = buildKnowledgeItems()
 
   return (
-    <main className="w-full max-w-[1120px] mx-auto px-4 py-10">
+    <main className="h5-articles-page mx-auto w-full max-w-[1120px] px-0 py-2 md:px-4 md:py-10">
       <Suspense fallback={<ArticlesHeaderFallback />}>
         <ArticlesHeaderClient />
       </Suspense>

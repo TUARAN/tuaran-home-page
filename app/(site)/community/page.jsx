@@ -23,7 +23,7 @@ export const metadata = {
 
 export default function CommunityPage() {
   return (
-    <PageContainer className="py-8 md:py-10">
+    <PageContainer className="py-3 md:py-10">
       <DiscussionHubClient />
     </PageContainer>
   )

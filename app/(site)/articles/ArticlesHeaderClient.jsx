@@ -51,7 +51,7 @@ export default function ArticlesHeaderClient() {
   }, [refreshQuote, resolvedTheme])
 
   return (
-    <header className="mb-4">
+    <header className="mb-4 hidden md:block">
       <div className="flex min-w-0 flex-nowrap items-baseline gap-3 overflow-hidden">
         <h1 className="shrink-0 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
           内容导航

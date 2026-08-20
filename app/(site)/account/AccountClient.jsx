@@ -134,10 +134,10 @@ export default function AccountClient() {
   }
 
   if (!loading && !user) {
-    return <main className="mx-auto w-full max-w-xl px-4 py-12 sm:py-20">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#7a5b1e] dark:text-amber-300">Account</p>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#1a1b17] dark:text-gray-100">账号中心</h1>
-      <p className="mt-4 max-w-md text-sm leading-7 text-[#65665d] dark:text-[#9aa6b6]">请先登录，再绑定微信或查看账号的登录方式。</p>
+    return <main className="h5-account-page mx-auto w-full max-w-xl px-4 py-6 md:py-8 lg:py-20">
+      <p className="hidden text-[11px] font-bold uppercase tracking-[0.18em] text-[#7a5b1e] dark:text-amber-300 md:block">Account</p>
+      <h1 className="text-xl font-semibold tracking-tight text-[#1a1b17] dark:text-gray-100 md:mt-3 md:text-3xl">账号中心</h1>
+      <p className="mt-2 max-w-md text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6] md:mt-4 md:leading-7">请先登录，再绑定微信或查看账号的登录方式。</p>
       <Link href="/login?returnTo=/account" className="mt-6 inline-flex rounded-full bg-[#1f242b] px-4 py-2.5 text-sm font-medium text-white no-underline transition hover:bg-[#353c46]">去登录</Link>
     </main>
   }
@@ -150,13 +150,13 @@ export default function AccountClient() {
     { id: 'access', label: '授权管理' },
   ]
 
-  return <main className="mx-auto w-full max-w-[1080px] px-4 py-10 sm:py-14">
+  return <main className="h5-account-page mx-auto w-full max-w-[1080px] px-3 py-4 md:px-4 md:py-6 lg:py-14">
     <header>
-      <h1 className="text-[32px] font-semibold tracking-tight text-[var(--site-ink)] sm:text-[38px]">个人资料</h1>
-      <p className="mt-2 text-[14px] text-[var(--site-muted)]">管理站内身份、燃币权益与登录方式。</p>
+      <h1 className="text-[20px] font-semibold tracking-tight text-[var(--site-ink)] md:text-[32px] lg:text-[38px]">个人资料</h1>
+      <p className="mt-2 hidden text-[14px] text-[var(--site-muted)] md:block">管理站内身份、燃币权益与登录方式。</p>
     </header>
 
-    <div className="mt-9 flex gap-7 overflow-x-auto border-b border-[var(--site-line)]" role="tablist" aria-label="个人资料分类">
+    <div className="mt-4 flex gap-5 overflow-x-auto border-b border-[var(--site-line)] md:mt-9 md:gap-7" role="tablist" aria-label="个人资料分类">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -179,14 +179,14 @@ export default function AccountClient() {
     {actionError ? <p className="mt-6 border-l-2 border-[#a34f47] py-1 pl-4 text-sm text-[#a34f47]">{actionError}</p> : null}
 
     {activeTab === 'overview' ? (
-      <div className="mt-8 space-y-6" role="tabpanel">
-        <section className="rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_62%,transparent)] p-5 sm:p-6">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <UserAvatar user={user} isOwner={false} size={72} />
+      <div className="mt-4 space-y-3 md:mt-8 md:space-y-6" role="tabpanel">
+        <section className="rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_62%,transparent)] p-3 md:rounded-2xl md:p-5 lg:p-6">
+          <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:gap-5">
+            <UserAvatar user={user} isOwner={false} size={56} />
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-medium text-[var(--site-faint)]">我的站内账号</p>
-              <h2 className="mt-1 truncate text-[20px] font-semibold text-[var(--site-ink)]">{user?.name || user?.login || '已登录用户'}</h2>
-              <p className="mt-1 truncate font-mono text-[13px] text-[var(--site-muted)]">
+              <p className="hidden text-[12px] font-medium text-[var(--site-faint)] md:block">我的站内账号</p>
+              <h2 className="truncate text-[16px] font-semibold text-[var(--site-ink)] md:mt-1 md:text-[20px]">{user?.name || user?.login || '已登录用户'}</h2>
+              <p className="mt-0.5 truncate font-mono text-[12px] text-[var(--site-muted)] md:mt-1 md:text-[13px]">
                 @{user?.login || user?.email || user?.id}
               </p>
             </div>
@@ -205,29 +205,29 @@ export default function AccountClient() {
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-3" aria-label="账号权益概览">
+        <section className="account-metric-grid grid grid-cols-3 gap-2 md:gap-4" aria-label="账号权益概览">
           {[
             { label: '当前燃币', value: pointsLoaded ? (pointsInfo?.balance ?? 0) : '—', suffix: '枚', icon: IconCoin },
             { label: '已解锁资源', value: pointsLoaded ? unlocks.length : '—', suffix: '项', icon: IconLockOpen },
             { label: '资源领取记录', value: pointsLoaded ? resourceEvents.length : '—', suffix: '次', icon: IconDownload },
           ].map((metric) => {
             const Icon = metric.icon
-            return <div key={metric.label} className="rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_55%,transparent)] p-5">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[13px] text-[var(--site-muted)]">{metric.label}</p>
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--site-green)_11%,var(--site-panel))] text-[var(--site-green)]">
+            return <div key={metric.label} className="rounded-lg border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_55%,transparent)] p-2.5 md:rounded-2xl md:p-5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] text-[var(--site-muted)] md:text-[13px]">{metric.label}</p>
+                <span className="hidden h-8 w-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--site-green)_11%,var(--site-panel))] text-[var(--site-green)] md:inline-flex">
                   <Icon size={17} stroke={1.7} aria-hidden="true" />
                 </span>
               </div>
-              <p className="mt-5 text-[28px] font-semibold leading-none text-[var(--site-ink)]">
+              <p className="mt-2 text-[18px] font-semibold leading-none text-[var(--site-ink)] md:mt-5 md:text-[28px]">
                 {metric.value}
-                <span className="ml-1.5 text-[12px] font-medium text-[var(--site-faint)]">{metric.suffix}</span>
+                <span className="ml-1 text-[11px] font-medium text-[var(--site-faint)] md:ml-1.5 md:text-[12px]">{metric.suffix}</span>
               </p>
             </div>
           })}
         </section>
 
-        <section className="rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_58%,transparent)] p-5 sm:p-6">
+        <section className="rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_58%,transparent)] p-3 md:rounded-2xl md:p-5 lg:p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-[17px] font-semibold text-[var(--site-ink)]">已解锁资源</h2>
@@ -277,8 +277,8 @@ export default function AccountClient() {
     ) : null}
 
     {activeTab === 'connections' ? (
-      <div className="mt-8 grid gap-6 lg:grid-cols-2" role="tabpanel">
-        <section className="rounded-2xl border border-[var(--site-line)] p-5 sm:p-6">
+      <div className="mt-4 grid gap-3 lg:grid-cols-2 md:mt-8 md:gap-6" role="tabpanel">
+        <section className="rounded-xl border border-[var(--site-line)] p-3 md:rounded-2xl md:p-5 lg:p-6">
           <h2 className="text-[17px] font-semibold text-[var(--site-ink)]">已连接账号</h2>
           <p className="mt-1 text-[13px] leading-6 text-[var(--site-muted)]">这些方式均可登录同一个站内账号。</p>
           <div className="mt-5 border-t border-[var(--site-line)]">
@@ -295,7 +295,7 @@ export default function AccountClient() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--site-line)] p-5 sm:p-6">
+        <section className="rounded-xl border border-[var(--site-line)] p-3 md:rounded-2xl md:p-5 lg:p-6">
           <h2 className="text-[17px] font-semibold text-[var(--site-ink)]">添加登录方式</h2>
           <p className="mt-1 text-[13px] leading-6 text-[var(--site-muted)]">第三方身份只作为登录凭据，不会自动合并不同账号。</p>
           <div className="mt-5 border-t border-[var(--site-line)]">
@@ -311,8 +311,8 @@ export default function AccountClient() {
     ) : null}
 
     {activeTab === 'access' ? (
-      <div className="mt-8" role="tabpanel">
-        <section className="max-w-2xl rounded-2xl border border-[var(--site-line)] p-5 sm:p-6">
+      <div className="mt-4 md:mt-8" role="tabpanel">
+        <section className="max-w-2xl rounded-xl border border-[var(--site-line)] p-3 md:rounded-2xl md:p-5 lg:p-6">
           <h2 className="text-[17px] font-semibold text-[var(--site-ink)]">智能体授权</h2>
           <p className="mt-1 text-[13px] leading-6 text-[var(--site-muted)]">管理已获得本站 MCP 权限的客户端。</p>
           <div className="mt-5 border-t border-[var(--site-line)]">

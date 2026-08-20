@@ -917,7 +917,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
   return (
     <main className="home-polished-root home-page">
       <div className="home-backdrop" aria-hidden="true" />
-      <div className="relative z-[1] mb-3 px-4 sm:px-0">
+      <div className="relative z-[1] mb-3 hidden px-4 sm:px-0 md:block">
         <HotTickerBar />
       </div>
       <HomeMobileChannels />
@@ -972,7 +972,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         </aside>
       </div>
 
-      <SiteFooter className="home-footer" />
+      <SiteFooter className="home-footer hidden md:block" />
     </main>
   )
 }

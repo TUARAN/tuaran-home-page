@@ -11,6 +11,10 @@ const directorySource = await readFile(
   new URL('../../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url),
   'utf8',
 )
+const directoryItemSource = await readFile(
+  new URL('../../app/(site)/articles/ArticleListItem.jsx', import.meta.url),
+  'utf8',
+)
 const homeSource = await readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8')
 
 test('new visitor start measurement has an explicit qualified behavior threshold', () => {
@@ -34,7 +38,7 @@ test('directory measures search, filters and result outcomes without sending raw
   assert.match(directorySource, /const SEARCH_SUGGESTIONS = \['AI Agent', '资源', '公司调研', '工程实践'\]/)
   assert.match(directorySource, /runSearch\(query, 'suggested'\)/)
   assert.doesNotMatch(directorySource, /aria-label="内容用途"/)
-  assert.match(directorySource, /data-analytics-event=\{analyticsEvent\}/)
+  assert.match(directoryItemSource, /data-analytics-event=\{analyticsEvent\}/)
   assert.doesNotMatch(directorySource, /trackSiteEvent\('search_submit',[\s\S]{0,300}\bquery:/)
 })
 

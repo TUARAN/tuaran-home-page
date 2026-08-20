@@ -74,11 +74,11 @@ function DiscussionItem({ item }) {
         </time>
       </div>
 
-      <p className="mb-0 mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-[var(--site-muted)]">
+      <p className="mb-0 mt-2 line-clamp-2 whitespace-pre-wrap text-[13px] leading-5 text-[var(--site-muted)] md:mt-3 md:line-clamp-3 md:text-sm md:leading-6">
         {item.message}
       </p>
 
-      <div className="mt-3 flex min-w-0 items-center justify-between gap-3 border-t border-[var(--site-line)] pt-3">
+      <div className="mt-2 flex min-w-0 items-center justify-between gap-3 border-t border-[var(--site-line)] pt-2 md:mt-3 md:pt-3">
         <span className="min-w-0 truncate text-xs text-[var(--site-faint)]">
           评论在：{item.articleTitle}
         </span>
@@ -148,13 +148,16 @@ function QrEntry({ item, primary = false }) {
 
 function TopicCircleCard({ topic }) {
   return (
-    <Link href={topic.href} className="discussion-topic-card no-underline hover:no-underline">
-      <h3 className="mb-0 border-0 p-0 text-base font-semibold text-[var(--site-ink)]">
-        {topic.label}
-      </h3>
-      <p className="mb-0 mt-2 text-sm leading-6 text-[var(--site-muted)]">
-        {topic.desc}
-      </p>
+    <Link href={topic.href} className="discussion-topic-card flex items-center justify-between gap-3 no-underline hover:no-underline">
+      <div className="min-w-0">
+        <h3 className="mb-0 border-0 p-0 text-[15px] font-semibold text-[var(--site-ink)] md:text-base">
+          {topic.label}
+        </h3>
+        <p className="mb-0 mt-2 hidden text-sm leading-6 text-[var(--site-muted)] md:block">
+          {topic.desc}
+        </p>
+      </div>
+      <span className="shrink-0 text-[12px] text-[var(--site-faint)] md:hidden">进入</span>
     </Link>
   )
 }
@@ -280,7 +283,7 @@ export default function DiscussionHubClient() {
   }, [data.status, loading])
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="h5-community-page grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
       <main className="min-w-0">
         <section className="discussion-hero">
           <p className="discussion-eyebrow">Community Feed</p>
@@ -288,44 +291,44 @@ export default function DiscussionHubClient() {
           <p>
             留言也是讨论的一部分。这里统一收纳给站长的留言、全站公开评论、回复通知和社群入口。
           </p>
-          <div className="discussion-stats">
+          <div className="discussion-stats hidden md:grid">
             <Stat value={stats.comments ?? '—'} label="全部评论" />
             <Stat value={stats.weekComments ?? '—'} label="近 7 天" />
             <Stat value={stats.participants ?? '—'} label="参与者" />
           </div>
         </section>
 
-        <section className="mt-6" aria-labelledby="topic-circles-title">
-          <div className="mb-3">
+        <section className="mt-4 md:mt-6" aria-labelledby="topic-circles-title">
+          <div className="mb-2 md:mb-3">
             <p className="discussion-eyebrow mb-1">Topic Circles</p>
-            <h2 id="topic-circles-title" className="mb-0 border-0 p-0 text-lg">专题圈子</h2>
-            <p className="mb-0 mt-1 text-sm text-[var(--site-muted)]">
+            <h2 id="topic-circles-title" className="mb-0 border-0 p-0 text-[15px] md:text-lg">专题圈子</h2>
+            <p className="mb-0 mt-1 hidden text-sm text-[var(--site-muted)] md:block">
               三个平台，找到同路创作者。
             </p>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="h5-topic-list divide-y divide-[var(--site-line)] overflow-hidden rounded-lg border border-[var(--site-line)] md:grid md:grid-cols-3 md:gap-3 md:divide-y-0 md:overflow-visible md:rounded-none md:border-0">
             {DISCUSSION_COMMUNITY_TOPICS.map((topic) => (
               <TopicCircleCard key={topic.id} topic={topic} />
             ))}
           </div>
         </section>
 
-        <section id="message" className="mt-6 scroll-mt-24">
-          <div className="mb-3">
+        <section id="message" className="mt-4 scroll-mt-24 md:mt-6">
+          <div className="mb-2 md:mb-3">
             <p className="discussion-eyebrow mb-1">Message</p>
-            <h2 className="mb-0 border-0 p-0 text-lg">留下想法</h2>
-            <p className="mb-0 mt-1 text-sm text-[var(--site-muted)]">
+            <h2 className="mb-0 border-0 p-0 text-[15px] md:text-lg">留下想法</h2>
+            <p className="mb-0 mt-1 hidden text-sm text-[var(--site-muted)] md:block">
               可以写近况、建议、问题或合作想法，最新留言也会在这里展示。
             </p>
           </div>
           <StompPanel />
         </section>
 
-        <section className="mt-6">
-          <div className="mb-3 flex items-end justify-between gap-3">
+        <section className="mt-4 md:mt-6">
+          <div className="mb-2 flex items-end justify-between gap-3 md:mb-3">
             <div>
               <p className="discussion-eyebrow mb-1">Live</p>
-              <h2 className="mb-0 border-0 p-0 text-lg">最新 10 条评论</h2>
+              <h2 className="mb-0 border-0 p-0 text-[15px] md:text-lg">最新 10 条评论</h2>
             </div>
             <a href="#message" className="discussion-text-link">留下想法</a>
           </div>
@@ -333,7 +336,7 @@ export default function DiscussionHubClient() {
           {loading ? (
             <div className="discussion-empty">正在加载最新评论...</div>
           ) : hasItems ? (
-            <div className="space-y-3">
+            <div className="space-y-0 divide-y divide-[var(--site-line)] md:space-y-3 md:divide-y-0">
               {data.items.map((item) => (
                 <DiscussionItem key={item.id} item={item} />
               ))}

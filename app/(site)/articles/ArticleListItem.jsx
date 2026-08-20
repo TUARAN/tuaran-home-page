@@ -60,9 +60,9 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
       data-analytics-position={position}
       className="article-row group block border-b border-[#e8e2ef] bg-transparent no-underline transition-colors last:border-b-0 hover:bg-white/80 hover:no-underline dark:border-gray-800 dark:hover:bg-[#151d27]"
     >
-      <div className="grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_136px] sm:px-5">
+      <div className={`grid items-start gap-3 px-3 py-2.5 md:gap-4 md:px-5 md:py-4 ${item.image ? 'grid-cols-[minmax(0,1fr)_72px] md:grid-cols-[minmax(0,1fr)_136px]' : ''}`}>
         <div className="min-w-0">
-          <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="mb-2 hidden min-w-0 flex-wrap items-center gap-x-2 gap-y-1 md:flex">
             <span className="shrink-0 text-sm text-[#a39aac]">▪</span>
             {item.dateLabel || item.date ? (
               <span className="shrink-0 whitespace-nowrap text-xs text-[#958aa1] dark:text-gray-400">
@@ -84,24 +84,27 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
             </span>
             <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
           </div>
-          <h2 className="ml-5 line-clamp-2 text-[17px] font-semibold leading-7 text-[#20172f] transition-colors group-hover:text-[#120b1f] dark:text-gray-100 dark:group-hover:text-white">
+          <h2 className="line-clamp-2 text-[16px] font-semibold leading-snug text-[#20172f] transition-colors group-hover:text-[#120b1f] md:ml-5 md:text-[17px] md:leading-7 dark:text-gray-100 dark:group-hover:text-white">
             {item.title}
           </h2>
           {item.summary ? (
-            <p className="ml-5 mt-2 line-clamp-2 text-sm leading-relaxed text-[#6b6472] transition-colors group-hover:text-[#3c3149] dark:text-gray-300 dark:group-hover:text-gray-200">
+            <p className="mt-1 line-clamp-1 text-[13px] leading-5 text-[#6b6472] transition-colors group-hover:text-[#3c3149] md:ml-5 md:mt-2 md:line-clamp-2 md:text-sm md:leading-relaxed dark:text-gray-300 dark:group-hover:text-gray-200">
               {item.summary}
             </p>
           ) : null}
-          <div className="ml-5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#958aa1] dark:text-gray-400">
-            <span>{external ? '打开来源 →' : item.delivery === 'interact' ? '开始探索 →' : '打开内容 →'}</span>
-            {item.readingMinutes ? <span className="font-mono text-[11px]">· {item.readingMinutes} min</span> : null}
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11px] text-[#958aa1] md:ml-5 md:mt-2 md:gap-x-3 md:text-[13px] dark:text-gray-400">
+            <span className="hidden md:inline">{external ? '打开来源 →' : item.delivery === 'interact' ? '开始探索 →' : '打开内容 →'}</span>
+            {item.dateLabel || item.date ? (
+              <span className="md:hidden">{item.dateLabel || item.date}</span>
+            ) : null}
+            {item.readingMinutes ? <span className="hidden font-mono text-[11px] md:inline">· {item.readingMinutes} min</span> : null}
             {'pv' in item ? (
-              <span className="font-mono text-[11px]">· 阅读量 {item.pvLoading ? '-' : formatPv(item.pv)}</span>
+              <span className="font-mono text-[11px]">{item.dateLabel || item.date ? ' · ' : ''}阅读量 {item.pvLoading ? '-' : formatPv(item.pv)}</span>
             ) : null}
           </div>
         </div>
         {item.image ? (
-          <div className="relative h-28 overflow-hidden rounded-md border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 sm:h-24 sm:w-[136px]">
+          <div className="relative h-[72px] overflow-hidden rounded-[4px] border border-[#ded8e4] bg-[#f3eff7] dark:border-gray-800 dark:bg-gray-950 md:h-24 md:w-[136px] md:rounded-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={item.image.src}

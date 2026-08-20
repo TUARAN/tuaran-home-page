@@ -391,9 +391,50 @@ export default function ArticlesIndexClient({ items: staticItems }) {
     )
   }
 
+  function MobileFilterStrip() {
+    return (
+      <div className="h5-article-chips md:hidden">
+        <div className="h5-chip-row" aria-label="按内容类型筛选">
+          <FilterChip
+            label="全部"
+            tone="kind"
+            active={filters.group === 'all'}
+            onClick={() => applyFilters({ group: 'all' }, 'group', 'all')}
+          />
+          {availableGroups.map((key) => (
+            <FilterChip
+              key={key}
+              label={CONTENT_GROUP_META[key].label}
+              tone="kind"
+              active={filters.group === key}
+              onClick={() => applyFilters({ group: key }, 'group', key)}
+            />
+          ))}
+        </div>
+        <div className="h5-chip-row" aria-label="按主题筛选">
+          <FilterChip
+            label="全部"
+            tone="subject"
+            active={filters.subject === 'all'}
+            onClick={() => applyFilters({ subject: 'all' }, 'subject', 'all')}
+          />
+          {SUBJECT_DISPLAY_GROUPS.flatMap((group) => group.keys).map((key) => (
+            <FilterChip
+              key={key}
+              label={SUBJECT_META[key].label}
+              tone="subject"
+              active={filters.subject === key}
+              onClick={() => applyFilters({ subject: key }, 'subject', key)}
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="articles-index-stone space-y-5">
-      <section className="-mx-1 space-y-2.5 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-3 shadow-[0_8px_24px_rgba(76,58,96,0.08)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none">
+      <section className="hidden space-y-2.5 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-3 shadow-[0_8px_24px_rgba(76,58,96,0.08)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none md:block">
         <form onSubmit={submitSearch} className="flex items-center gap-2">
           <input
             type="search"
@@ -455,8 +496,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           <Filters orientation="stack" />
         </aside>
 
-        <div className="mt-3 min-w-0 space-y-4 lg:mt-0">
-          <section className="rounded-lg border border-[#e8e2ef] bg-white/80 text-xs lg:hidden dark:border-gray-800 dark:bg-[#121821]">
+        <div className="min-w-0 space-y-4 md:mt-3 lg:mt-0">
+          <MobileFilterStrip />
+          <section className="mt-3 hidden rounded-lg border border-[#e8e2ef] bg-white/80 text-xs md:block lg:hidden dark:border-gray-800 dark:bg-[#121821]">
             <div className="border-b border-[#eee6f1] px-3 py-2 dark:border-gray-800">
               <span className="font-medium text-[#20172f] dark:text-gray-100">筛选内容</span>
             </div>
@@ -468,7 +510,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
           {activeFilters.length ? (
             <div
               aria-label="已选筛选条件"
-              className="flex flex-wrap items-center gap-2 rounded-lg border border-[#e8e2ef] bg-white/65 px-3 py-2 text-xs dark:border-gray-800 dark:bg-[#121821]/80"
+              className="hidden flex-wrap items-center gap-2 rounded-lg border border-[#e8e2ef] bg-white/65 px-3 py-2 text-xs md:flex dark:border-gray-800 dark:bg-[#121821]/80"
             >
               <span className="text-[#958aa1] dark:text-gray-500">已选</span>
               {activeFilters.map((filter) => (

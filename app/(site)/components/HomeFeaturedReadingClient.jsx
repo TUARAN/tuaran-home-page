@@ -14,6 +14,7 @@ import {
   searchHomeRecommendationCatalog,
 } from '../../../lib/homeRecommendationEngine'
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
+import H5PullToRefresh from './H5PullToRefresh'
 import { T } from './LocaleProvider'
 
 const SKELETON_ITEMS = Array.from({ length: 14 }, (_, index) => ({
@@ -32,15 +33,15 @@ const SECTION_BADGE_CLASS = {
 function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0 }) {
   const content = (
     <>
-      <div className="home-reading-meta">
+      <div className="home-reading-meta hidden md:flex">
         {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
         {item.isLatest ? <span className="home-badge home-badge-latest"><T zh="最新" en="Latest" /></span> : null}
         <span className={SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column}>{item.sectionLabel}</span>
         {item.tagLabel ? <span className="home-badge home-badge-muted">{item.tagLabel}</span> : null}
         {item.date ? <time className="home-item-date">{item.date}</time> : null}
       </div>
-      <p className="mb-0 line-clamp-2 text-[18px] font-semibold leading-7 text-[#191813] transition-colors group-hover:text-[#6c4c1f] dark:text-[#f2f3ed] dark:group-hover:text-[#d5d8c4] md:text-[20px] md:leading-7">{item.title}</p>
-      {item.summary ? <p className="mb-0 mt-1.5 line-clamp-2 text-[14px] leading-6 text-[#686a5f] dark:text-[#9ca6b4] md:text-[15px]">{item.summary}</p> : null}
+      <p className="mb-0 line-clamp-2 text-[16px] font-semibold leading-snug text-[#191813] transition-colors group-hover:text-[#6c4c1f] dark:text-[#f2f3ed] dark:group-hover:text-[#d5d8c4] md:text-[20px] md:leading-7">{item.title}</p>
+      {item.summary ? <p className="mb-0 mt-1 line-clamp-1 text-[13px] leading-5 text-[#686a5f] dark:text-[#9ca6b4] md:mt-1.5 md:line-clamp-2 md:text-[15px] md:leading-6">{item.summary}</p> : null}
     </>
   )
   const className = `home-reading-item group no-underline ${desktopOnly ? 'hidden md:block' : ''}`
@@ -134,7 +135,12 @@ export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
   const changeBatch = useCallback(() => {
     setChanging(true)
     setBatchOffset((value) => value + 1)
-    window.setTimeout(() => setChanging(false), 260)
+    return new Promise((resolve) => {
+      window.setTimeout(() => {
+        setChanging(false)
+        resolve()
+      }, 260)
+    })
   }, [])
 
   const openSearch = useCallback(() => {
@@ -199,8 +205,9 @@ export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
   if (!settings.enabled || !items.length) return null
 
   return (
+    <H5PullToRefresh onRefresh={changeBatch} disabled={!recommendationsReady || changing || Boolean(normalizedQuery)}>
     <section id="articles" className="home-featured-reading home-section scroll-mt-24">
-      <div className="home-section-heading home-featured-heading">
+      <div className="home-section-heading home-featured-heading hidden md:flex">
         <div>
           <p className="home-kicker">01 · Writing</p>
           <h2 className="home-section-title"><T zh="文章" en="Articles" /></h2>
@@ -290,7 +297,7 @@ export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
         ) : null}
       </div>
       {!normalizedQuery && eligibleCount > items.length ? (
-        <div className="mt-6 flex flex-col items-center gap-3 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540]">
+        <div className="h5-batch-more mt-6 hidden flex-col items-center gap-3 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540] md:flex">
           <p className="mb-0 text-[12px] font-medium tracking-[0.08em] text-[#77746a] dark:text-[#98a3b1]">
             <T zh="已经看到这里了，再发现一些内容" en="You made it here. Discover something else" />
           </p>
@@ -314,5 +321,6 @@ export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
         </div>
       ) : null}
     </section>
+    </H5PullToRefresh>
   )
 }

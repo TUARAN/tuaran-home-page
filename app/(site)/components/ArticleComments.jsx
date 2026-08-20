@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSessionAccount } from './SessionProvider'
 import UserAvatar from './UserAvatar'
 import RanbiBalance from './RanbiBalance'
+import { commentProviderLabel } from '../../../lib/userDisplayName'
+import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/engagementBot'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -28,12 +30,6 @@ function formatTime(ts) {
   } catch {
     return ''
   }
-}
-
-function providerLabel(provider) {
-  if (provider === 'google') return 'Google'
-  if (provider === 'guest') return '游客'
-  return 'GitHub'
 }
 
 function mentionName(name) {
@@ -260,11 +256,15 @@ export default function ArticleComments({ articleKey }) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
-                    <UserAvatar seed={item.user_name || item.user_id || 'guest'} size="sm" title={item.user_name} />
+                    <UserAvatar
+                      seed={item.user_name || item.user_id || 'guest'}
+                      size="sm"
+                      title={item.user_provider === READER_PROVIDER ? `${item.user_name} · ${PUBLIC_READER_HINT}` : item.user_name}
+                    />
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium text-[var(--site-ink)]">{item.user_name}</div>
                       <div className="text-[11px] text-[var(--site-faint)]">
-                        {providerLabel(item.user_provider)}
+                        {commentProviderLabel(item.user_provider)}
                       </div>
                     </div>
                   </div>

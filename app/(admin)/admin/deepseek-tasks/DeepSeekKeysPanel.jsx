@@ -245,25 +245,6 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
       ) : null}
 
       <Section
-        title="Admin 环境变量默认密钥"
-        description="admin.2aran.com 既有部署的兜底密钥，不需要数据库存储；GitHub Actions 的仓库密钥单独记录在下方。"
-        className="mb-4"
-        actions={<span className="text-[12px] text-[#82847a]">当前 Admin 合计 {keys.length + (data?.envKeyConfigured ? 1 : 0)} 个 Key</span>}
-      >
-        <div className="flex flex-wrap items-center gap-3 text-[13px]">
-          <StatusPill tone={data?.envKeyConfigured ? 'success' : 'danger'} size="sm">
-            {data?.envKeyConfigured ? '已配置' : '未配置'}
-          </StatusPill>
-          {data?.envKeyConfigured ? (
-            <code className="rounded-md bg-[#f0f1e9] px-2 py-1 font-mono text-[12px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{data.envKeyHint}</code>
-          ) : (
-            <span className="text-[#82847a]">当前 Admin 运行环境未检测到 DEEPSEEK_API_KEY；公开站及其他运行环境不在此页检测范围。</span>
-          )}
-          <span className="text-[12px] text-[#82847a]">仅在没有启用中的数据库密钥时使用</span>
-        </div>
-      </Section>
-
-      <Section
         title="DeepSeek 运行位置"
         description="站点任务和 GitHub Actions 使用相同的变量名，但运行环境彼此隔离。下方分别记录密钥所在环境及对应任务。"
         className="mb-4"

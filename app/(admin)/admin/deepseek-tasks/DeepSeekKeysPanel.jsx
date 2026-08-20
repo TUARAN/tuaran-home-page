@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { DEEPSEEK_SHARED_SOURCES } from '../../../../lib/deepseekKeysCore'
+import { DEEPSEEK_SHARED_SOURCES, DEEPSEEK_SITE_MODEL } from '../../../../lib/deepseekKeysCore'
 import { AdminButton, EmptyState, Section, StatusPill } from '../../components/ui'
 
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
@@ -225,7 +225,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
 
       <Section
         title="全站共用密钥"
-        description="路过互动、A 股研究、问候文案等默认用同一把 DeepSeek 密钥。有启用中的数据库密钥时用它，不必再为每个任务单独绑定。"
+        description="路过互动、A 股研究、问候文案等默认用同一把密钥。名称只是备注，全站实际调用 deepseek-v4-flash。"
         className="mb-4"
         actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length} 个使用场景</span>}
       >
@@ -240,6 +240,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
               <>
                 <StatusPill tone="success" size="sm">数据库密钥</StatusPill>
                 <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{siteKey.name || '未命名密钥'}</span>
+                <code className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 font-mono text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">{DEEPSEEK_SITE_MODEL}</code>
                 <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{siteKey.keyHint}</code>
               </>
             ) : data?.envKeyConfigured ? (
@@ -307,7 +308,10 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
                       <span>{key.usage.totalTokens.toLocaleString()} tokens</span>
                       <span>最近使用 {formatDate(key.lastUsedAt)}</span>
                       {key.baseUrl ? <span className="font-mono">{key.baseUrl}</span> : null}
-                      {key.defaultModel ? <span className="font-mono">{key.defaultModel}</span> : null}
+                      <span className="font-mono">实际调用 {DEEPSEEK_SITE_MODEL}</span>
+                      {key.defaultModel && key.defaultModel !== DEEPSEEK_SITE_MODEL ? (
+                        <span>密钥备注模型 {key.defaultModel}（不再生效）</span>
+                      ) : null}
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1">
                       {activeKeys.length <= 1 && key.status === 'active' ? (
@@ -341,7 +345,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
           <div className="grid gap-4 lg:grid-cols-2">
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
               名称 *
-              <input className={`${INPUT_CLASS} mt-1`} value={form.name} maxLength={80} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="例如：主站 DeepSeek Pro" />
+              <input className={`${INPUT_CLASS} mt-1`} value={form.name} maxLength={80} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="例如：主站 DeepSeek Flash" />
             </label>
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
               API Key {editingId ? '' : '*'}{editingId ? '（留空保持不变）' : ''}
@@ -364,7 +368,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
               <input className={`${INPUT_CLASS} mt-1`} value={form.baseUrl} onChange={(event) => setForm((prev) => ({ ...prev, baseUrl: event.target.value }))} placeholder="https://api.deepseek.com" />
             </label>
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
-              默认模型（可选）
+              默认模型（可选，全站实际调用不受此字段影响）
               <input className={`${INPUT_CLASS} mt-1`} value={form.defaultModel} onChange={(event) => setForm((prev) => ({ ...prev, defaultModel: event.target.value }))} placeholder="deepseek-v4-flash" />
             </label>
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">

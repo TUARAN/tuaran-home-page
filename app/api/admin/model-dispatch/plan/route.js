@@ -94,6 +94,7 @@ export async function POST(req) {
       temperature: 0.2,
       maxTokens: 4096,
       timeoutMs: 60000,
+      taskDefaultModel: 'deepseek-v4-flash',
       task: {
         source: 'admin-model-dispatch',
         taskType: 'planning',

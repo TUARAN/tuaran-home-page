@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
 import { DISCUSSION_COMMUNITY_TOPICS } from '../../../lib/communityTopics'
+import { commentProviderLabel } from '../../../lib/userDisplayName'
+import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/engagementBot'
 import { useSessionAccount } from '../components/SessionProvider'
 import StompPanel from '../components/StompPanel'
 import UserAvatar from '../components/UserAvatar'
@@ -38,12 +40,6 @@ function formatTime(ts) {
   }
 }
 
-function providerLabel(provider) {
-  if (provider === 'google') return 'Google'
-  if (provider === 'guest') return '游客'
-  return 'GitHub'
-}
-
 function Stat({ value, label }) {
   return (
     <div className="discussion-stat">
@@ -58,13 +54,17 @@ function DiscussionItem({ item }) {
     <article className="discussion-feed-item">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <UserAvatar seed={item.userName || item.userId || 'guest'} size="sm" title={item.userName} />
+          <UserAvatar
+            seed={item.userName || item.userId || 'guest'}
+            size="sm"
+            title={item.userProvider === READER_PROVIDER ? `${item.userName} · ${PUBLIC_READER_HINT}` : item.userName}
+          />
           <div className="min-w-0">
             <p className="mb-0 truncate text-sm font-semibold text-[var(--site-ink)]">
               {item.userName || '用户'}
             </p>
             <p className="mb-0 text-[11px] text-[var(--site-faint)]">
-              {providerLabel(item.userProvider)}
+              {commentProviderLabel(item.userProvider)}
               {item.replyToUserName ? ` · 回复 @${item.replyToUserName}` : ''}
             </p>
           </div>
@@ -148,9 +148,9 @@ function QrEntry({ item, primary = false }) {
 
 function TopicCircleCard({ topic }) {
   return (
-    <Link href={topic.href} className="discussion-topic-card flex items-center justify-between gap-3 no-underline hover:no-underline">
+    <Link href={topic.href} className="h5-feed-row discussion-topic-card flex items-center justify-between gap-3 no-underline hover:no-underline">
       <div className="min-w-0">
-        <h3 className="mb-0 border-0 p-0 text-[15px] font-semibold text-[var(--site-ink)] md:text-base">
+        <h3 className="h5-feed-title mb-0 border-0 p-0 text-[16px] font-semibold text-[var(--site-ink)] md:text-base">
           {topic.label}
         </h3>
         <p className="mb-0 mt-2 hidden text-sm leading-6 text-[var(--site-muted)] md:block">

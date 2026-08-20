@@ -1,0 +1,79 @@
+name: Engagement bot
+
+# 路过互动：每天北京时间 10:23 / 14:41 / 19:07 / 22:33 各试一次。
+# 后台关闭时接口直接跳过；开启后仍有随机跳过，避免整点刷屏。
+on:
+  schedule:
+    - cron: '23 2 * * *'
+    - cron: '41 6 * * *'
+    - cron: '7 11 * * *'
+    - cron: '33 14 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: engagement-bot
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    name: POST /api/cron/engagement-bot
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger engagement bot
+        env:
+          ENGAGEMENT_BOT_SECRET: ${{ secrets.ENGAGEMENT_BOT_SECRET }}
+          PUBLIC_OPINION_COLLECT_SECRET: ${{ secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          WEEKLY_SUMMARY_SECRET: ${{ secrets.WEEKLY_SUMMARY_SECRET }}
+        run: |
+          TRIGGER_SECRET="${ENGAGEMENT_BOT_SECRET:-${WEEKLY_SUMMARY_SECRET:-$PUBLIC_OPINION_COLLECT_SECRET}}"
+          if [ -z "$TRIGGER_SECRET" ]; then
+            echo "::error::缺少仓库 Secret ENGAGEMENT_BOT_SECRET（或 WEEKLY_SUMMARY_SECRET / PUBLIC_OPINION_COLLECT_SECRET）"
+            exit 1
+          fi
+
+          code=$(curl -sS --retry 2 --retry-delay 8 \
+            -o /tmp/engagement-bot.json \
+            -w '%{http_code}' \
+            -X POST \
+            -H "x-engagement-bot-secret: $TRIGGER_SECRET" \
+            https://2aran.com/api/cron/engagement-bot)
+
+          echo "HTTP $code"
+          cat /tmp/engagement-bot.json
+          echo
+
+          if [ "$code" != "200" ]; then
+            echo "::error::路过互动触发失败"
+            exit 1
+          fi
+
+      - name: Notify owner of failure
+        if: failure()
+        env:
+          ALERT_SECRET: ${{ secrets.AUTOMATION_ALERT_SECRET || secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          BODY=$(python3 - <<'PY'
+          import json, os
+          detail = ""
+          try:
+              detail = open("/tmp/engagement-bot.json").read().strip()[:300]
+          except OSError:
+              pass
+          print(json.dumps({
+              "workflow": "engagement-bot",
+              "taskName": "路过互动",
+              "runId": os.environ.get("GITHUB_RUN_ID", ""),
+              "runUrl": os.environ.get("RUN_URL", ""),
+              "status": "failed",
+              "error": detail,
+          }, ensure_ascii=False))
+          PY
+          )
+          curl -sS --retry 2 --retry-delay 5 --fail-with-body \
+            -X POST \
+            -H "x-automation-alert-secret: $ALERT_SECRET" \
+            -H "content-type: application/json" \
+            -d "$BODY" \
+            https://2aran.com/api/automation/alert || echo "alert delivery failed (non-fatal)"

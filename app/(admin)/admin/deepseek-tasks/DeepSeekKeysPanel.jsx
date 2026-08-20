@@ -9,12 +9,14 @@ const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-
 const KNOWN_SOURCES = [
   'a-share-research',
   'admin-model-dispatch',
+  'engagement-bot',
   'stock-analysis',
   'x-daily-greeting',
 ]
 const DEEPSEEK_SHARED_USES = [
   { name: 'AI 规划台', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
   { name: 'A 股研究自动化', source: 'a-share-research', taskTypes: ['daily-draft'] },
+  { name: '路过互动评论', source: 'engagement-bot', taskTypes: ['comment'] },
   { name: '股票横向分析', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
   { name: 'X 每日问候文案', source: 'x-daily-greeting', taskTypes: ['direct-post-copy'] },
 ]

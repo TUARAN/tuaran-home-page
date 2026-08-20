@@ -39,6 +39,7 @@ function Field({ label, className = '', children }) {
 }
 
 export default function MorningGreetingClient() {
+  const [activeTask, setActiveTask] = useState('manual')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -177,19 +178,46 @@ export default function MorningGreetingClient() {
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
 
-      <XAiNewsPanel />
+      <div role="tablist" aria-label="X 发布任务类型" className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-[#e9ebe3] p-1.5 dark:bg-[#151c25]">
+        {[
+          { id: 'manual', label: '手动任务', description: 'AI 资讯生成与发布' },
+          { id: 'automatic', label: '自动任务', description: '定时问候与模板' },
+        ].map((task) => {
+          const active = activeTask === task.id
+          return (
+            <button
+              key={task.id}
+              id={`task-tab-${task.id}`}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              aria-controls={`task-panel-${task.id}`}
+              onClick={() => setActiveTask(task.id)}
+              className={`rounded-lg px-4 py-3 text-left transition ${active ? 'bg-white text-[#25261f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:bg-white/50 hover:text-[#3f4039] dark:text-gray-400 dark:hover:bg-[#1c2633] dark:hover:text-gray-200'}`}
+            >
+              <span className="block text-sm font-semibold">{task.label}</span>
+              <span className="mt-0.5 block text-[11px]">{task.description}</span>
+            </button>
+          )
+        })}
+      </div>
 
-      <Section
-        title="自动任务"
-        description="每天早、中、晚自动发布问候。模型文案生成后直接发出，不经人工审核。"
-        className="mb-4"
-        actions={
-          <>
-            <StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>
-            <AdminButton type="button" onClick={togglePause} disabled={saving || loading} variant={data?.paused ? 'primary' : 'ghost'}>{data?.paused ? '恢复运行' : '暂停自动化'}</AdminButton>
-          </>
-        }
-      >
+      <div id="task-panel-manual" role="tabpanel" aria-labelledby="task-tab-manual" hidden={activeTask !== 'manual'}>
+        <XAiNewsPanel />
+      </div>
+
+      <div id="task-panel-automatic" role="tabpanel" aria-labelledby="task-tab-automatic" hidden={activeTask !== 'automatic'}>
+        <Section
+          title="自动任务"
+          description="每天早、中、晚自动发布问候。模型文案生成后直接发出，不经人工审核。"
+          className="mb-4"
+          actions={
+            <>
+              <StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>
+              <AdminButton type="button" onClick={togglePause} disabled={saving || loading} variant={data?.paused ? 'primary' : 'ghost'}>{data?.paused ? '恢复运行' : '暂停自动化'}</AdminButton>
+            </>
+          }
+        >
         <div className="space-y-4">
           <div>
             <p className="mb-2 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">今日三个时段</p>
@@ -255,9 +283,9 @@ export default function MorningGreetingClient() {
             )}
           </div>
         </div>
-      </Section>
+        </Section>
 
-      <Section title="问候模板库" description="{date} 会在发布时替换为当天日期。模板可随时维护，只有自动任务切到模板库并保存后才参与发布。">
+        <Section title="问候模板库" description="{date} 会在发布时替换为当天日期。模板可随时维护，只有自动任务切到模板库并保存后才参与发布。">
         <form onSubmit={addTemplate} className="mb-4 grid items-end gap-3 rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-3 lg:grid-cols-[130px_130px_1fr_auto] dark:border-[#243041] dark:bg-[#0f141d]">
           <Field className="mb-0" label="时段"><select value={newTemplate.period} onChange={(event) => setNewTemplate((current) => ({ ...current, period: event.target.value }))} className={inputClass}>{PERIODS.slice(1).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></Field>
           <Field className="mb-0" label="内容类型"><select value={newTemplate.contentKind} onChange={(event) => setNewTemplate((current) => ({ ...current, contentKind: event.target.value }))} className={inputClass}>{KINDS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></Field>
@@ -287,7 +315,8 @@ export default function MorningGreetingClient() {
           </article>
         })}</div>}
         <AdminPagination total={data?.total || 0} offset={offset} limit={PAGE_SIZE} onOffsetChange={(nextOffset) => refresh({ nextOffset })} loading={loading} />
-      </Section>
+        </Section>
+      </div>
     </AdminPage>
   )
 }

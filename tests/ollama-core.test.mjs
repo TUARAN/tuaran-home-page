@@ -45,6 +45,24 @@ test('规范化 Ollama 模型列表，不保留摘要或凭据信息', () => {
   }])
 })
 
+test('模型展示名使用标签中的友好参数规模，同时保留 NAS 上报的精确规模', () => {
+  assert.deepEqual(normalizeOllamaModels({ models: [
+    {
+      name: 'qwen3.5:9b',
+      size: 1,
+      details: { parameter_size: '9.7B', quantization_level: 'Q4_K_M' },
+    },
+    {
+      name: 'qwen3.8-27b:ud-iq2-s',
+      size: 2,
+      details: { parameter_size: '26.9B', quantization_level: 'IQ2_S' },
+    },
+  ] }).map(({ name, displayName, parameterSize }) => ({ name, displayName, parameterSize })), [
+    { name: 'qwen3.5:9b', displayName: 'Qwen 3.5 9B · Q4_K_M', parameterSize: '9.7B' },
+    { name: 'qwen3.8-27b:ud-iq2-s', displayName: 'Qwen 3.8 27B · IQ2_S', parameterSize: '26.9B' },
+  ])
+})
+
 test('Ollama Base URL 拒绝 HTTP、认证信息与明显内网地址', () => {
   assert.throws(() => normalizeOllamaBaseUrl('http://nas.example.com:11434'), /OLLAMA_HTTPS_REQUIRED/)
   assert.throws(() => normalizeOllamaBaseUrl('https://user:pass@nas.example.com'), /INVALID_BASE_URL/)

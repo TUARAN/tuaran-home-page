@@ -306,7 +306,7 @@ export default function DiscussionHubClient() {
               三个平台，找到同路创作者。
             </p>
           </div>
-          <div className="h5-topic-list divide-y divide-[var(--site-line)] overflow-hidden rounded-lg border border-[var(--site-line)] md:grid md:grid-cols-3 md:gap-3 md:divide-y-0 md:overflow-visible md:rounded-none md:border-0">
+          <div className="h5-topic-list divide-y divide-[var(--site-line)] md:grid md:grid-cols-3 md:gap-3 md:divide-y-0">
             {DISCUSSION_COMMUNITY_TOPICS.map((topic) => (
               <TopicCircleCard key={topic.id} topic={topic} />
             ))}

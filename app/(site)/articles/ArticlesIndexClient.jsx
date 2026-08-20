@@ -546,7 +546,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                   : '这个组合暂时没有内容，可以清除部分筛选条件。'}
               </div>
             ) : (
-              <div className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65">
+              <div className="h5-feed-list overflow-hidden border-y border-[var(--site-line)] bg-transparent md:bg-white/45 md:dark:bg-[#101721]/65">
                 {paginatedItems.map((item, index) => {
                   const pvKey = item.pvKey || ''
                   const livePv = pvKey && Object.prototype.hasOwnProperty.call(pvCounts, pvKey)

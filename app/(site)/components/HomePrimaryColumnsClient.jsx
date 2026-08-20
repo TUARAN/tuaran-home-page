@@ -25,24 +25,27 @@ function InspirationCard({ inspiration, isPinned = false }) {
   const thumbnail = inspiration.poster || inspiration.image || (inspiration.type === 'image' ? inspiration.src : '')
 
   return (
-    <article className="home-inspiration-item">
-      <header className="home-inspiration-meta">
+    <article className="h5-feed-row home-inspiration-item">
+      <header className="home-inspiration-meta hidden md:flex">
         {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
         <time dateTime={inspiration.date}>{formattedDate}</time>
       </header>
-      <Link href={`/feed/${inspiration.id}`} className="home-inspiration-title no-underline">
-        {inspiration.title}
-      </Link>
       <div className={`home-inspiration-body ${thumbnail ? 'has-thumbnail' : ''}`}>
         {thumbnail ? (
-          <Link href={`/feed/${inspiration.id}`} className="home-inspiration-thumbnail no-underline" aria-label={`查看灵感：${inspiration.title}`}>
+          <Link href={`/feed/${inspiration.id}`} className="h5-feed-thumb home-inspiration-thumbnail no-underline" aria-label={`查看灵感：${inspiration.title}`}>
             <FeedThumbnail src={thumbnail} />
           </Link>
         ) : null}
         <div className="min-w-0">
-          <p className="home-inspiration-copy">
+          <Link href={`/feed/${inspiration.id}`} className="h5-feed-title home-inspiration-title no-underline">
+            {inspiration.title}
+          </Link>
+          <p className="h5-feed-summary home-inspiration-copy">
             {inspiration.summary || inspiration.quote}
           </p>
+          <time className="h5-feed-meta mt-1 block text-[11px] text-[var(--site-faint)] md:hidden" dateTime={inspiration.date}>
+            {formattedDate}
+          </time>
         </div>
       </div>
     </article>
@@ -59,11 +62,10 @@ function InspirationSkeleton() {
           style={{ '--skeleton-index': index }}
           aria-hidden="true"
         >
-          <span className="home-skeleton-block home-inspiration-skeleton-date" />
-          <span className="home-skeleton-block home-inspiration-skeleton-title" style={{ width: item.titleWidth }} />
           <div className={`home-inspiration-skeleton-body ${item.hasThumbnail ? 'has-thumbnail' : ''}`}>
             {item.hasThumbnail ? <span className="home-skeleton-block home-inspiration-skeleton-thumbnail" /> : null}
             <div>
+              <span className="home-skeleton-block home-inspiration-skeleton-title" style={{ width: item.titleWidth }} />
               <span className="home-skeleton-block home-inspiration-skeleton-copy" style={{ width: item.copyWidth }} />
               <span className="home-skeleton-block home-inspiration-skeleton-copy" style={{ width: item.copyTailWidth }} />
             </div>

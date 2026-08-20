@@ -10,10 +10,7 @@ const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-
 const KNOWN_SOURCES = DEEPSEEK_SHARED_SOURCES
 const DEEPSEEK_SHARED_USES = [
   { name: 'AI 规划台', runtime: 'Admin · admin.2aran.com', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
-  { name: 'A 股研究自动化', runtime: '公开站 · 2aran.com', source: 'a-share-research', taskTypes: ['daily-draft'] },
-  { name: '路过互动评论', runtime: '定时：2aran.com · 每天 10:23；手动：admin.2aran.com', source: 'engagement-bot', taskTypes: ['comment'] },
   { name: '股票横向分析', runtime: '公开站 · 2aran.com', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
-  { name: 'X 每日问候文案', runtime: '公开站 · 2aran.com', source: 'x-daily-greeting', taskTypes: ['direct-post-copy'] },
 ]
 const DEEPSEEK_GITHUB_ACTIONS_USES = [
   {
@@ -33,6 +30,29 @@ const DEEPSEEK_GITHUB_ACTIONS_USES = [
     schedule: '每周一 · 北京时间 09:17',
     workflow: 'security-scan.yml',
     taskType: 'security',
+  },
+]
+const DEEPSEEK_GITHUB_TRIGGERED_USES = [
+  {
+    name: 'A 股研究自动化',
+    schedule: '每天 · 北京时间 01:00',
+    workflow: 'a-share-research.yml',
+    source: 'a-share-research',
+    taskTypes: ['daily-draft'],
+  },
+  {
+    name: '路过互动评论',
+    schedule: '每天 · 北京时间 10:23；支持 Admin 手动运行',
+    workflow: 'engagement-bot.yml',
+    source: 'engagement-bot',
+    taskTypes: ['comment'],
+  },
+  {
+    name: 'X 每日问候文案',
+    schedule: '每天早、中、晚定时触发',
+    workflow: 'morning-greeting.yml',
+    source: 'x-daily-greeting',
+    taskTypes: ['direct-post-copy'],
   },
 ]
 
@@ -247,7 +267,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
         title="DeepSeek 运行位置"
         description="站点任务和 GitHub Actions 使用相同的变量名，但运行环境彼此隔离。下方分别记录密钥所在环境及对应任务。"
         className="mb-4"
-        actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length + DEEPSEEK_GITHUB_ACTIONS_USES.length} 个使用场景</span>}
+        actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length + DEEPSEEK_GITHUB_ACTIONS_USES.length + DEEPSEEK_GITHUB_TRIGGERED_USES.length} 个使用场景</span>}
       >
         <div className="space-y-3">
           <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
@@ -257,9 +277,8 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
               <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">DEEPSEEK_API_KEY</code>
               <span className="text-[11px] text-[#82847a] dark:text-gray-400">仓库配置已核验 · 2026-07-31 更新</span>
             </div>
-            <p className="mt-2 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">
-              该 Secret 直接注入以下扫描工作流的 DeepSeek analysis 步骤，不供 2aran.com 或 admin.2aran.com 运行时读取。
-            </p>
+            <div className="mt-3 text-[12px] font-medium text-[#67695d] dark:text-gray-300">直接读取仓库 DEEPSEEK_API_KEY</div>
+            <p className="mt-1 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">以下扫描工作流在 GitHub Actions 内直接执行 DeepSeek analysis。</p>
             <div className="mt-3 grid gap-2 md:grid-cols-3">
               {DEEPSEEK_GITHUB_ACTIONS_USES.map((item) => (
                 <a
@@ -276,6 +295,34 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.workflow}</code>
                     <code className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">scan-analyze · {item.taskType}</code>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            <div className="mt-4 border-t border-[#e6e7df] pt-3 text-[12px] font-medium text-[#67695d] dark:border-[#243041] dark:text-gray-300">Actions 定时触发，DeepSeek 在站点执行</div>
+            <p className="mt-1 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">
+              以下工作流使用各自的触发密钥调用 2aran.com；DeepSeek 密钥仍由站点运行环境读取。
+            </p>
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              {DEEPSEEK_GITHUB_TRIGGERED_USES.map((item) => (
+                <a
+                  key={item.workflow}
+                  href={`https://github.com/TUARAN/tuaran-home-page/actions/workflows/${item.workflow}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-md bg-[#f7f7f2] px-2.5 py-2 transition-colors hover:bg-[#f0f1e9] dark:bg-[#111a25] dark:hover:bg-[#172230]"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[13px] font-medium text-[#3f4039] dark:text-gray-200">{item.name}</span>
+                    <span className="text-[11px] text-[#82847a] dark:text-gray-400">{item.schedule}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.workflow}</code>
+                    <code className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">{item.source}</code>
+                    {item.taskTypes.map((taskType) => (
+                      <code key={taskType} className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">{taskType}</code>
+                    ))}
                   </div>
                 </a>
               ))}

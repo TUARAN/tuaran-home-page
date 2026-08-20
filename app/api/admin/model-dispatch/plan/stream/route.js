@@ -6,6 +6,7 @@ import {
   getDeepSeekEnv,
 } from '../../../../../../lib/deepseek'
 import { resolveDeepSeekKey } from '../../../../../../lib/deepseekKeys'
+import { resolveDeepSeekModel } from '../../../../../../lib/deepseekKeysCore'
 import { createDeepSeekTask, finishDeepSeekTask } from '../../../../../../lib/deepseekTasks'
 
 export const runtime = 'edge'
@@ -110,7 +111,10 @@ export async function POST(req) {
   })
   const apiKey = key.apiKey
   const baseUrl = String(key.baseUrl || env.DEEPSEEK_BASE_URL || DEEPSEEK_DEFAULT_BASE_URL).replace(/\/+$/, '')
-  const model = key.model || env.DEEPSEEK_MODEL || DEEPSEEK_DEFAULT_MODEL
+  const model = resolveDeepSeekModel({
+    taskDefaultModel: 'deepseek-v4-flash',
+    fallback: DEEPSEEK_DEFAULT_MODEL,
+  })
   const startedAt = Date.now()
   const taskRecordId = await createDeepSeekTask({
     source: 'admin-model-dispatch',

@@ -134,6 +134,7 @@ export async function GET(request) {
       temperature: 0.2,
       maxTokens: 1800,
       timeoutMs: 60000,
+      taskDefaultModel: 'deepseek-v4-flash',
       task: {
         source: 'stock-analysis',
         taskType: 'horizontal-analysis',

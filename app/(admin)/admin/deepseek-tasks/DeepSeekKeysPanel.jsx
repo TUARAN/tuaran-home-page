@@ -365,7 +365,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
             </label>
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
               默认模型（可选）
-              <input className={`${INPUT_CLASS} mt-1`} value={form.defaultModel} onChange={(event) => setForm((prev) => ({ ...prev, defaultModel: event.target.value }))} placeholder="deepseek-v4-pro" />
+              <input className={`${INPUT_CLASS} mt-1`} value={form.defaultModel} onChange={(event) => setForm((prev) => ({ ...prev, defaultModel: event.target.value }))} placeholder="deepseek-v4-flash" />
             </label>
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
               状态

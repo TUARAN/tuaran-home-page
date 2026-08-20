@@ -9,6 +9,7 @@ import {
   parseBindings,
   pickBestKeyRow,
   pickResolvedKeyRow,
+  resolveDeepSeekModel,
 } from '../lib/deepseekKeysCore.js'
 
 test('maskApiKey 只保留首尾各 4 位', () => {
@@ -75,4 +76,21 @@ test('无绑定匹配时可用最近更新的启用密钥作全站兜底', () =>
   assert.equal(pickResolvedKeyRow(rows, 'custom-private-job', 'run'), null)
   assert.equal(pickResolvedKeyRow(rows, 'custom-private-job', 'run', { allowLastResort: true }).id, 'site-key')
   assert.equal(pickResolvedKeyRow([], 'engagement-bot', 'comment', { allowLastResort: true }), null)
+})
+
+test('全站默认 flash，密钥 default_model 不会改成 pro', () => {
+  assert.equal(
+    resolveDeepSeekModel({
+      taskDefaultModel: 'deepseek-v4-flash',
+    }),
+    'deepseek-v4-flash',
+  )
+  assert.equal(resolveDeepSeekModel({}), 'deepseek-v4-flash')
+  assert.equal(
+    resolveDeepSeekModel({
+      model: 'deepseek-v4-pro',
+      taskDefaultModel: 'deepseek-v4-flash',
+    }),
+    'deepseek-v4-pro',
+  )
 })

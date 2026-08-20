@@ -22,6 +22,7 @@ import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
 import HotTickerBar from './components/HotTickerBar'
 import HomePrimaryColumnsClient from './components/HomePrimaryColumnsClient'
+import { HOME_MOBILE_CHANNELS } from '../../lib/siteMobileNav'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
@@ -295,6 +296,26 @@ const HOME_ACHIEVEMENT_LINKS = [
 
 const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 const CLASSIC_SITE_HERO_TAGLINE_EN = `${SITE_HERO_TITLE_EN}: ${SITE_HERO_TAGLINE_EN}`
+
+function HomeMobileChannels() {
+  return (
+    <nav className="home-mobile-channels md:hidden" aria-label="首页频道">
+      {HOME_MOBILE_CHANNELS.map((item) => (
+        <Link
+          key={item.key}
+          href={item.href}
+          className={item.key === 'feed' ? 'is-active' : undefined}
+          data-analytics-event="entry_click"
+          data-analytics-surface="home_mobile_channel"
+          data-analytics-destination-kind="page"
+          data-analytics-destination-id={item.key}
+        >
+          <T zh={item.label} en={item.labelEn} />
+        </Link>
+      ))}
+    </nav>
+  )
+}
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -896,9 +917,10 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
   return (
     <main className="home-polished-root home-page">
       <div className="home-backdrop" aria-hidden="true" />
-      <div className="relative z-[1] mb-4">
+      <div className="relative z-[1] mb-3 px-4 sm:px-0">
         <HotTickerBar />
       </div>
+      <HomeMobileChannels />
       <div className="home-main-grid">
         <HomePrimaryColumnsClient
           catalog={featuredPicks}
@@ -906,7 +928,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
           pinnedInspirationIds={HOME_PINNED_INSPIRATION_IDS}
         />
 
-        <aside className="home-side-stack">
+        <aside className="home-side-stack hidden lg:block">
           <ProfileCard />
 
           <BuilderAndSignalsPanel />

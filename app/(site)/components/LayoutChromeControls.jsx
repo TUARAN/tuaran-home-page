@@ -6,8 +6,10 @@ import { usePathname } from 'next/navigation'
 import BackToTopButton from './BackToTopButton'
 import CommunityLoginPrompt from './CommunityLoginPrompt'
 import EmailActivationPrompt from './EmailActivationPrompt'
+import PwaInstallGuide from './PwaInstallGuide'
 import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
+import SiteMobileTabBar from './SiteMobileTabBar'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
 
 const HIDE_CHROME_PATHS = new Set(['/about', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
@@ -40,12 +42,13 @@ export default function LayoutChromeControls() {
   if (hideChrome) return showHomeButton ? <RichPageHomeButton /> : null
 
   return (
-    <>
+    <PwaInstallGuide>
       <SiteHeader />
       <EmailActivationPrompt />
       <CommunityLoginPrompt />
       <BackToTopButton />
-    </>
+      <SiteMobileTabBar />
+    </PwaInstallGuide>
   )
 }
 

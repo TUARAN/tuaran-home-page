@@ -75,6 +75,24 @@ export const metadata = {
       'msvalidate.01': 'D0E13573AD7CC149454EB7427AB531A3',
     },
   },
+  appleWebApp: {
+    capable: true,
+    title: '2aran',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8f5f0' },
+    { media: '(prefers-color-scheme: dark)', color: '#11100e' },
+  ],
 }
 
 export default function RootLayout({ children }) {

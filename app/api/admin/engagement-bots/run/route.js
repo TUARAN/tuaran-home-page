@@ -2,6 +2,8 @@ import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { getOwnerOrReject } from '../../../../../lib/adminAuth'
 import { getD1 } from '../../../../../lib/d1'
+import { hasUsableDeepSeekKey } from '../../../../../lib/deepseekKeys'
+import { ENGAGEMENT_BOT_SOURCE } from '../../../../../lib/engagementBot'
 import { runEngagementBot } from '../../../../../lib/engagementBotRun'
 
 export const runtime = 'edge'
@@ -29,9 +31,25 @@ export async function POST(request) {
   }
 
   try {
+    const env = getOptionalRequestContext()?.env || {}
+    const adminDeepSeekConfigured = await hasUsableDeepSeekKey({
+      env,
+      source: ENGAGEMENT_BOT_SOURCE,
+      taskType: 'comment',
+    })
+    if (!adminDeepSeekConfigured) {
+      return Response.json(
+        {
+          ok: false,
+          error: 'ADMIN_DEEPSEEK_NOT_CONFIGURED',
+          detail: 'admin.2aran.com 当前没有可用的 DeepSeek 密钥。',
+        },
+        { status: 503 },
+      )
+    }
     const result = await runEngagementBot({
       db,
-      env: getOptionalRequestContext()?.env,
+      env,
       triggeredBy: 'admin',
       force: body?.force !== false,
     })

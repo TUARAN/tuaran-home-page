@@ -9,11 +9,11 @@ const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 te
 const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-6 text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const KNOWN_SOURCES = DEEPSEEK_SHARED_SOURCES
 const DEEPSEEK_SHARED_USES = [
-  { name: 'AI 规划台', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
-  { name: 'A 股研究自动化', source: 'a-share-research', taskTypes: ['daily-draft'] },
-  { name: '路过互动评论', source: 'engagement-bot', taskTypes: ['comment'] },
-  { name: '股票横向分析', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
-  { name: 'X 每日问候文案', source: 'x-daily-greeting', taskTypes: ['direct-post-copy'] },
+  { name: 'AI 规划台', runtime: 'Admin · admin.2aran.com', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
+  { name: 'A 股研究自动化', runtime: '公开站 · 2aran.com', source: 'a-share-research', taskTypes: ['daily-draft'] },
+  { name: '路过互动评论', runtime: '定时：2aran.com · 每天 10:23；手动：admin.2aran.com', source: 'engagement-bot', taskTypes: ['comment'] },
+  { name: '股票横向分析', runtime: '公开站 · 2aran.com', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
+  { name: 'X 每日问候文案', runtime: '公开站 · 2aran.com', source: 'x-daily-greeting', taskTypes: ['direct-post-copy'] },
 ]
 
 const EMPTY_FORM = {
@@ -224,8 +224,8 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
       </Section>
 
       <Section
-        title="全站共用密钥"
-        description="路过互动、A 股研究、问候文案等默认用同一把密钥。名称只是备注，全站实际调用 deepseek-v4-flash。"
+        title="DeepSeek 运行位置"
+        description="这些任务使用相同的变量名和密钥解析代码，但运行环境彼此隔离。Admin 页面只能检测 admin.2aran.com，不能判断 2aran.com 或 GitHub Actions 是否已配置。"
         className="mb-4"
         actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length} 个使用场景</span>}
       >
@@ -234,18 +234,18 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
             {loading ? (
               <>
                 <StatusPill tone="neutral" size="sm">读取中</StatusPill>
-                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">正在确认全站密钥</span>
+                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">正在确认当前 Admin 环境</span>
               </>
             ) : siteKey ? (
               <>
-                <StatusPill tone="success" size="sm">数据库密钥</StatusPill>
+                <StatusPill tone="success" size="sm">Admin 检测到数据库记录</StatusPill>
                 <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{siteKey.name || '未命名密钥'}</span>
                 <code className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 font-mono text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">{DEEPSEEK_SITE_MODEL}</code>
                 <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{siteKey.keyHint}</code>
               </>
             ) : data?.envKeyConfigured ? (
               <>
-                <StatusPill tone="neutral" size="sm">环境变量兜底</StatusPill>
+                <StatusPill tone="success" size="sm">Admin 环境变量</StatusPill>
                 <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">DEEPSEEK_API_KEY</span>
                 {data.envKeyHint ? (
                   <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{data.envKeyHint}</code>
@@ -254,14 +254,17 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
             ) : (
               <>
                 <StatusPill tone="danger" size="sm">未配置</StatusPill>
-                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">还没有可用的 DeepSeek 密钥</span>
+                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">当前 Admin 环境没有可用的 DeepSeek 密钥</span>
               </>
             )}
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {DEEPSEEK_SHARED_USES.map((item) => (
               <div key={item.source} className="rounded-md bg-[#f7f7f2] px-2.5 py-2 dark:bg-[#111a25]">
-                <div className="text-[13px] font-medium text-[#3f4039] dark:text-gray-200">{item.name}</div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-[13px] font-medium text-[#3f4039] dark:text-gray-200">{item.name}</div>
+                  <span className="text-[11px] text-[#82847a] dark:text-gray-400">{item.runtime}</span>
+                </div>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.source}</code>
                   {item.taskTypes.map((taskType) => (
@@ -276,7 +279,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
 
       <Section
         title="数据库密钥"
-        description="Key 加密存储，列表只显示掩码。只有一把启用密钥时全站共用；绑定只在有多把密钥时用来指定例外。"
+        description="Key 加密存储在共享 D1，列表只显示掩码。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET；仅凭 Admin 页面无法证明公开站能够解密。"
         actions={
           !formVisible ? (
             <div className="flex items-center gap-3">
@@ -315,7 +318,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1">
                       {activeKeys.length <= 1 && key.status === 'active' ? (
-                        <span className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">全站共用</span>
+                        <span className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">默认候选</span>
                       ) : null}
                       <BindingChips bindings={key.bindings} />
                     </div>
@@ -385,7 +388,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
           </div>
 
           <div className="mt-4">
-            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（当前全站共用一把密钥时不必逐项绑定；source 必填，taskType 留空表示该来源全部任务，全部留空表示全局兜底）</p>
+            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（source 必填，taskType 留空表示该来源全部任务；全部留空表示数据库全局兜底。跨运行环境仍需分别配置解密主密钥）</p>
             <div className="mt-2 space-y-2">
               {form.bindings.map((binding, index) => (
                 <div key={index} className="flex flex-wrap items-center gap-2">

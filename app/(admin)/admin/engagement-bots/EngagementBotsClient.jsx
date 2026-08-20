@@ -60,10 +60,10 @@ function actionLabel(item) {
 export default function EngagementBotsClient() {
   const [bots, setBots] = useState([])
   const [settings, setSettings] = useState({
-    enabled: false,
+    enabled: true,
     likesPerRun: 2,
     commentsPerRun: 1,
-    skipProbability: 0.28,
+    skipProbability: 0,
     cooldownHours: 72,
     maxCommentChars: 72,
     contentPrefixes: ['article:', 'research:'],
@@ -76,6 +76,7 @@ export default function EngagementBotsClient() {
   const [saving, setSaving] = useState(false)
   const [running, setRunning] = useState(false)
   const [persistent, setPersistent] = useState(true)
+  const [adminDeepSeekConfigured, setAdminDeepSeekConfigured] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -99,6 +100,7 @@ export default function EngagementBotsClient() {
       setRuns(Array.isArray(data?.runs) ? data.runs : [])
       setStats(data?.stats || { bots: 0, enabledBots: 0, likesToday: 0, commentsToday: 0, failedToday: 0 })
       setPersistent(data?.persistent !== false)
+      setAdminDeepSeekConfigured(data?.adminDeepSeekConfigured === true)
     } catch (reason) {
       setError(reason?.message || 'FETCH_FAILED')
     } finally {
@@ -231,14 +233,19 @@ export default function EngagementBotsClient() {
   return (
     <AdminPage
       title="路过互动"
-      description="前台人设显示为「路过」，不出现机器人字样。评论走全站共用的 DeepSeek 密钥，点赞与评论不发站长通知、不记燃币。默认关闭。"
+      description="每天 10:23（北京时间）随机点赞并生成短评。定时任务在 2aran.com 运行，立即运行在 admin.2aran.com 运行；两边分别读取各自的 DeepSeek 密钥。前台身份显示为「路过」，不发站长通知、不记燃币。"
       actions={
         <>
           <AdminButton onClick={load} disabled={loading || saving || running}>
             <IconRefresh size={15} />
             重新读取
           </AdminButton>
-          <AdminButton variant="primary" onClick={runNow} disabled={!persistent || running || saving}>
+          <AdminButton
+            variant="primary"
+            onClick={runNow}
+            disabled={!persistent || running || saving || !adminDeepSeekConfigured}
+            title={!adminDeepSeekConfigured ? 'admin.2aran.com 当前没有可用的 DeepSeek 密钥' : undefined}
+          >
             <IconPlayerPlay size={15} />
             {running ? '运行中…' : '立即运行'}
           </AdminButton>
@@ -246,6 +253,9 @@ export default function EngagementBotsClient() {
       }
     >
       {!persistent ? <Notice tone="warning">当前为本地预览数据；部署并应用 D1 迁移 0074 后才能保存和运行。</Notice> : null}
+      {!loading && !adminDeepSeekConfigured ? (
+        <Notice tone="warning">admin.2aran.com 当前没有配置可用的 DeepSeek 密钥，“立即运行”已停用；每天 10:23 的 2aran.com 定时任务不受影响。</Notice>
+      ) : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
       {message ? <Notice tone="success">{message}</Notice> : null}
 
@@ -263,7 +273,7 @@ export default function EngagementBotsClient() {
 
       <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
         <div className="space-y-6">
-          <Section title="运行设置" description="关闭后定时任务仍会打接口，但不会写点赞或评论。立即运行会忽略关闭状态和随机跳过，方便试一次。">
+          <Section title="运行设置" description="GitHub Actions 每天 10:23（北京时间）触发一次。关闭后接口直接跳过；立即运行会忽略关闭状态和随机跳过，方便试一次。">
             <form onSubmit={saveSettings} className="space-y-4">
               <label className="flex items-center gap-2 text-sm text-[#55574e] dark:text-gray-300">
                 <input
@@ -326,7 +336,7 @@ export default function EngagementBotsClient() {
                 />
               </Field>
               <p className="text-[12px] leading-5 text-[#858779]">
-                评论走全站共用的 DeepSeek 密钥，并记入
+                定时评论读取 2aran.com 的 DeepSeek 密钥，立即运行读取 admin.2aran.com 的密钥；调用统一记入
                 <Link className="mx-1 underline underline-offset-2" href="/admin/deepseek-tasks">模型任务</Link>
                 台账。
               </p>

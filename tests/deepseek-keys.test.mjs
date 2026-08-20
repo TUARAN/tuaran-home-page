@@ -57,7 +57,7 @@ test('pickBestKeyRow 精确绑定 > source 绑定 > 全局兜底', () => {
   assert.equal(pickBestKeyRow(rows, 'stock-analysis', 'horizontal-analysis').id, 'global')
 })
 
-test('公用任务共用已绑定到任一公用 source 的密钥', () => {
+test('共享 D1 中的公用任务可复用已绑定到任一公用 source 的数据库密钥', () => {
   const rows = [row('site-key', [{ source: 'a-share-research' }, { source: 'x-daily-greeting' }])]
   assert.equal(isDeepSeekSharedSource('engagement-bot'), true)
   assert.equal(pickBestKeyRow(rows, 'engagement-bot', 'comment').id, 'site-key')
@@ -71,7 +71,7 @@ test('pickBestKeyRow 非公用 source 无匹配时返回 null', () => {
   assert.equal(pickBestKeyRow([], 'a-share-research', 'daily-draft'), null)
 })
 
-test('无绑定匹配时可用最近更新的启用密钥作全站兜底', () => {
+test('无绑定匹配时可用最近更新的启用记录作数据库兜底', () => {
   const rows = [row('site-key', [{ source: 'a-share-research' }])]
   assert.equal(pickResolvedKeyRow(rows, 'custom-private-job', 'run'), null)
   assert.equal(pickResolvedKeyRow(rows, 'custom-private-job', 'run', { allowLastResort: true }).id, 'site-key')

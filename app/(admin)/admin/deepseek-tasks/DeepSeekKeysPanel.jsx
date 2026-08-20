@@ -15,6 +15,26 @@ const DEEPSEEK_SHARED_USES = [
   { name: '股票横向分析', runtime: '公开站 · 2aran.com', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
   { name: 'X 每日问候文案', runtime: '公开站 · 2aran.com', source: 'x-daily-greeting', taskTypes: ['direct-post-copy'] },
 ]
+const DEEPSEEK_GITHUB_ACTIONS_USES = [
+  {
+    name: '设计扫描',
+    schedule: '每月 1 日 · 北京时间 09:17',
+    workflow: 'design-scan.yml',
+    taskType: 'design',
+  },
+  {
+    name: '性能扫描',
+    schedule: '每两周周三 · 北京时间 09:17',
+    workflow: 'perf-scan.yml',
+    taskType: 'performance',
+  },
+  {
+    name: '安全扫描',
+    schedule: '每周一 · 北京时间 09:17',
+    workflow: 'security-scan.yml',
+    taskType: 'security',
+  },
+]
 
 const EMPTY_FORM = {
   name: '',
@@ -205,10 +225,10 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
       ) : null}
 
       <Section
-        title="环境变量默认密钥"
-        description="兼容既有部署的兜底密钥，不需要数据库存储；建议后续迁移到可管理的数据库密钥。"
+        title="Admin 环境变量默认密钥"
+        description="admin.2aran.com 既有部署的兜底密钥，不需要数据库存储；GitHub Actions 的仓库密钥单独记录在下方。"
         className="mb-4"
-        actions={<span className="text-[12px] text-[#82847a]">当前合计 {keys.length + (data?.envKeyConfigured ? 1 : 0)} 个 Key</span>}
+        actions={<span className="text-[12px] text-[#82847a]">当前 Admin 合计 {keys.length + (data?.envKeyConfigured ? 1 : 0)} 个 Key</span>}
       >
         <div className="flex flex-wrap items-center gap-3 text-[13px]">
           <StatusPill tone={data?.envKeyConfigured ? 'success' : 'danger'} size="sm">
@@ -225,56 +245,91 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
 
       <Section
         title="DeepSeek 运行位置"
-        description="这些任务使用相同的变量名和密钥解析代码，但运行环境彼此隔离。Admin 页面只能检测 admin.2aran.com，不能判断 2aran.com 或 GitHub Actions 是否已配置。"
+        description="站点任务和 GitHub Actions 使用相同的变量名，但运行环境彼此隔离。下方分别记录密钥所在环境及对应任务。"
         className="mb-4"
-        actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length} 个使用场景</span>}
+        actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length + DEEPSEEK_GITHUB_ACTIONS_USES.length} 个使用场景</span>}
       >
-        <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
-          <div className="flex flex-wrap items-center gap-2">
-            {loading ? (
-              <>
-                <StatusPill tone="neutral" size="sm">读取中</StatusPill>
-                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">正在确认当前 Admin 环境</span>
-              </>
-            ) : siteKey ? (
-              <>
-                <StatusPill tone="success" size="sm">Admin 检测到数据库记录</StatusPill>
-                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{siteKey.name || '未命名密钥'}</span>
-                <code className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 font-mono text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">{DEEPSEEK_SITE_MODEL}</code>
-                <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{siteKey.keyHint}</code>
-              </>
-            ) : data?.envKeyConfigured ? (
-              <>
-                <StatusPill tone="success" size="sm">Admin 环境变量</StatusPill>
-                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">DEEPSEEK_API_KEY</span>
-                {data.envKeyHint ? (
-                  <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{data.envKeyHint}</code>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <StatusPill tone="danger" size="sm">未配置</StatusPill>
-                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">当前 Admin 环境没有可用的 DeepSeek 密钥</span>
-              </>
-            )}
-          </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
-            {DEEPSEEK_SHARED_USES.map((item) => (
-              <div key={item.source} className="rounded-md bg-[#f7f7f2] px-2.5 py-2 dark:bg-[#111a25]">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-[13px] font-medium text-[#3f4039] dark:text-gray-200">{item.name}</div>
-                  <span className="text-[11px] text-[#82847a] dark:text-gray-400">{item.runtime}</span>
+        <div className="space-y-3">
+          <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusPill tone="success" size="sm">已配置</StatusPill>
+              <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">GitHub Actions 仓库密钥</span>
+              <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">DEEPSEEK_API_KEY</code>
+              <span className="text-[11px] text-[#82847a] dark:text-gray-400">仓库配置已核验 · 2026-07-31 更新</span>
+            </div>
+            <p className="mt-2 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">
+              该 Secret 直接注入以下扫描工作流的 DeepSeek analysis 步骤，不供 2aran.com 或 admin.2aran.com 运行时读取。
+            </p>
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              {DEEPSEEK_GITHUB_ACTIONS_USES.map((item) => (
+                <a
+                  key={item.workflow}
+                  href={`https://github.com/TUARAN/tuaran-home-page/actions/workflows/${item.workflow}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-md bg-[#f7f7f2] px-2.5 py-2 transition-colors hover:bg-[#f0f1e9] dark:bg-[#111a25] dark:hover:bg-[#172230]"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[13px] font-medium text-[#3f4039] dark:text-gray-200">{item.name}</span>
+                    <span className="text-[11px] text-[#82847a] dark:text-gray-400">{item.schedule}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.workflow}</code>
+                    <code className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">scan-analyze · {item.taskType}</code>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </article>
+
+          <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
+            <div className="mb-2 text-[12px] font-medium text-[#67695d] dark:text-gray-300">站点运行环境</div>
+            <div className="flex flex-wrap items-center gap-2">
+              {loading ? (
+                <>
+                  <StatusPill tone="neutral" size="sm">读取中</StatusPill>
+                  <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">正在确认当前 Admin 环境</span>
+                </>
+              ) : siteKey ? (
+                <>
+                  <StatusPill tone="success" size="sm">Admin 检测到数据库记录</StatusPill>
+                  <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{siteKey.name || '未命名密钥'}</span>
+                  <code className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 font-mono text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">{DEEPSEEK_SITE_MODEL}</code>
+                  <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{siteKey.keyHint}</code>
+                </>
+              ) : data?.envKeyConfigured ? (
+                <>
+                  <StatusPill tone="success" size="sm">Admin 环境变量</StatusPill>
+                  <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">DEEPSEEK_API_KEY</span>
+                  {data.envKeyHint ? (
+                    <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{data.envKeyHint}</code>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <StatusPill tone="danger" size="sm">未配置</StatusPill>
+                  <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">当前 Admin 环境没有可用的 DeepSeek 密钥</span>
+                </>
+              )}
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {DEEPSEEK_SHARED_USES.map((item) => (
+                <div key={item.source} className="rounded-md bg-[#f7f7f2] px-2.5 py-2 dark:bg-[#111a25]">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-[13px] font-medium text-[#3f4039] dark:text-gray-200">{item.name}</div>
+                    <span className="text-[11px] text-[#82847a] dark:text-gray-400">{item.runtime}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.source}</code>
+                    {item.taskTypes.map((taskType) => (
+                      <code key={taskType} className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">{taskType}</code>
+                    ))}
+                  </div>
                 </div>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.source}</code>
-                  {item.taskTypes.map((taskType) => (
-                    <code key={taskType} className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">{taskType}</code>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
+              ))}
+            </div>
+          </article>
+        </div>
       </Section>
 
       <Section

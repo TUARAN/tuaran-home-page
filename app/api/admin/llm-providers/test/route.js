@@ -20,7 +20,7 @@ export async function POST(req) {
       temperature: 0,
       maxTokens: 64,
       reasoningEffort: 'none',
-      // NAS 上的 9B 模型首次加载需要从磁盘读取数 GB 权重，30 秒不足以完成冷启动。
+      // NAS 模型首次加载需要从磁盘读取数 GB 权重，27B 冷启动可能需要 60–90 秒。
       // callOllama 会把上限钳制在 120 秒，避免测试请求无限挂起。
       timeoutMs: 120000,
       task: {

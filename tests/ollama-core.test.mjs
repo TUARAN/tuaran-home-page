@@ -4,9 +4,11 @@ import assert from 'node:assert/strict'
 import {
   buildOllamaAuthHeaders,
   buildOllamaChatRequest,
+  normalizeOllamaModels,
   normalizeOllamaBaseUrl,
   ollamaChatUrl,
   ollamaNativeChatUrl,
+  ollamaTagsUrl,
   parseOllamaChatResponse,
 } from '../lib/ollamaCore.js'
 
@@ -14,6 +16,33 @@ test('Ollama Base URL 规范化并补 OpenAI 兼容路径', () => {
   assert.equal(normalizeOllamaBaseUrl('https://ollama.example.com/v1/'), 'https://ollama.example.com')
   assert.equal(ollamaChatUrl('https://ollama.example.com/ai/'), 'https://ollama.example.com/ai/v1/chat/completions')
   assert.equal(ollamaNativeChatUrl('https://ollama.example.com/ai/'), 'https://ollama.example.com/ai/api/chat')
+  assert.equal(ollamaTagsUrl('https://ollama.example.com/ai/'), 'https://ollama.example.com/ai/api/tags')
+})
+
+test('27B 模型请求限制为 4096 上下文', () => {
+  const request = buildOllamaChatRequest({
+    model: 'qwen3.8-27b',
+    messages: [{ role: 'user', content: 'ping' }],
+    temperature: 0,
+    maxTokens: 64,
+  })
+  assert.equal(request.options.num_ctx, 4096)
+  assert.equal(buildOllamaChatRequest({ model: 'qwen3.5:9b', messages: [], maxTokens: 1 }).options.num_ctx, undefined)
+})
+
+test('规范化 Ollama 模型列表，不保留摘要或凭据信息', () => {
+  assert.deepEqual(normalizeOllamaModels({ models: [{
+    name: 'qwen3.8-27b',
+    size: 10_234,
+    digest: 'private-digest',
+    details: { parameter_size: '27B', quantization_level: 'IQ2_S', family: 'qwen3' },
+  }] }), [{
+    name: 'qwen3.8-27b',
+    displayName: 'Qwen 3.8 27B · IQ2_S',
+    size: 10_234,
+    parameterSize: '27B',
+    quantizationLevel: 'IQ2_S',
+  }])
 })
 
 test('Ollama Base URL 拒绝 HTTP、认证信息与明显内网地址', () => {

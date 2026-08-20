@@ -231,7 +231,7 @@ export default function EngagementBotsClient() {
   return (
     <AdminPage
       title="路过互动"
-      description="前台人设显示为「路过」，不出现机器人字样。评论走 DeepSeek 公用接口（source: engagement-bot），点赞与评论不发站长通知、不记燃币。默认关闭。"
+      description="前台人设显示为「路过」，不出现机器人字样。评论走全站共用的 DeepSeek 密钥，点赞与评论不发站长通知、不记燃币。默认关闭。"
       actions={
         <>
           <AdminButton onClick={load} disabled={loading || saving || running}>
@@ -326,9 +326,9 @@ export default function EngagementBotsClient() {
                 />
               </Field>
               <p className="text-[12px] leading-5 text-[#858779]">
-                评论会记入 DeepSeek 任务台账，可在
+                评论走全站共用的 DeepSeek 密钥，并记入
                 <Link className="mx-1 underline underline-offset-2" href="/admin/deepseek-tasks">模型任务</Link>
-                里把密钥绑定到 source = engagement-bot。
+                台账。
               </p>
               <AdminButton type="submit" variant="primary" disabled={saving || !persistent}>
                 <IconCheck size={15} />

@@ -4,9 +4,11 @@ import assert from 'node:assert/strict'
 import {
   decryptApiKey,
   encryptApiKey,
+  isDeepSeekSharedSource,
   maskApiKey,
   parseBindings,
   pickBestKeyRow,
+  pickResolvedKeyRow,
 } from '../lib/deepseekKeysCore.js'
 
 test('maskApiKey 只保留首尾各 4 位', () => {
@@ -54,8 +56,23 @@ test('pickBestKeyRow 精确绑定 > source 绑定 > 全局兜底', () => {
   assert.equal(pickBestKeyRow(rows, 'stock-analysis', 'horizontal-analysis').id, 'global')
 })
 
-test('pickBestKeyRow 无匹配时返回 null', () => {
+test('公用任务共用已绑定到任一公用 source 的密钥', () => {
+  const rows = [row('site-key', [{ source: 'a-share-research' }, { source: 'x-daily-greeting' }])]
+  assert.equal(isDeepSeekSharedSource('engagement-bot'), true)
+  assert.equal(pickBestKeyRow(rows, 'engagement-bot', 'comment').id, 'site-key')
+  assert.equal(pickBestKeyRow(rows, 'stock-analysis', 'horizontal-analysis').id, 'site-key')
+  assert.equal(pickBestKeyRow(rows, 'admin-model-dispatch', 'planning').id, 'site-key')
+})
+
+test('pickBestKeyRow 非公用 source 无匹配时返回 null', () => {
   const rows = [row('source-only', [{ source: 'a-share-research' }])]
-  assert.equal(pickBestKeyRow(rows, 'stock-analysis', 'horizontal-analysis'), null)
+  assert.equal(pickBestKeyRow(rows, 'custom-private-job', 'run'), null)
   assert.equal(pickBestKeyRow([], 'a-share-research', 'daily-draft'), null)
+})
+
+test('无绑定匹配时可用最近更新的启用密钥作全站兜底', () => {
+  const rows = [row('site-key', [{ source: 'a-share-research' }])]
+  assert.equal(pickResolvedKeyRow(rows, 'custom-private-job', 'run'), null)
+  assert.equal(pickResolvedKeyRow(rows, 'custom-private-job', 'run', { allowLastResort: true }).id, 'site-key')
+  assert.equal(pickResolvedKeyRow([], 'engagement-bot', 'comment', { allowLastResort: true }), null)
 })

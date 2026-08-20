@@ -2,17 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+import { DEEPSEEK_SHARED_SOURCES } from '../../../../lib/deepseekKeysCore'
 import { AdminButton, EmptyState, Section, StatusPill } from '../../components/ui'
 
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-6 text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
-const KNOWN_SOURCES = [
-  'a-share-research',
-  'admin-model-dispatch',
-  'engagement-bot',
-  'stock-analysis',
-  'x-daily-greeting',
-]
+const KNOWN_SOURCES = DEEPSEEK_SHARED_SOURCES
 const DEEPSEEK_SHARED_USES = [
   { name: 'AI 规划台', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
   { name: 'A 股研究自动化', source: 'a-share-research', taskTypes: ['daily-draft'] },
@@ -192,6 +187,8 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
   }
 
   const keys = data?.keys || []
+  const activeKeys = keys.filter((key) => key.status === 'active')
+  const siteKey = activeKeys[0] || null
 
   return (
     <>
@@ -222,20 +219,43 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
           ) : (
             <span className="text-[#82847a]">当前 Admin 运行环境未检测到 DEEPSEEK_API_KEY；公开站及其他运行环境不在此页检测范围。</span>
           )}
-          <span className="text-[12px] text-[#82847a]">只作为任务未绑定密钥时的回退</span>
+          <span className="text-[12px] text-[#82847a]">仅在没有启用中的数据库密钥时使用</span>
         </div>
       </Section>
 
       <Section
-        title="DeepSeek 公用密钥"
-        description="这些功能默认共用 DEEPSEEK_API_KEY；这里只展示用途占位，不代表当前运行环境已经配置 Key。"
+        title="全站共用密钥"
+        description="路过互动、A 股研究、问候文案等默认用同一把 DeepSeek 密钥。有启用中的数据库密钥时用它，不必再为每个任务单独绑定。"
         className="mb-4"
         actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length} 个使用场景</span>}
       >
         <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusPill tone="neutral" size="sm">公共兜底</StatusPill>
-            <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">DEEPSEEK_API_KEY</span>
+            {loading ? (
+              <>
+                <StatusPill tone="neutral" size="sm">读取中</StatusPill>
+                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">正在确认全站密钥</span>
+              </>
+            ) : siteKey ? (
+              <>
+                <StatusPill tone="success" size="sm">数据库密钥</StatusPill>
+                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{siteKey.name || '未命名密钥'}</span>
+                <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{siteKey.keyHint}</code>
+              </>
+            ) : data?.envKeyConfigured ? (
+              <>
+                <StatusPill tone="neutral" size="sm">环境变量兜底</StatusPill>
+                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">DEEPSEEK_API_KEY</span>
+                {data.envKeyHint ? (
+                  <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{data.envKeyHint}</code>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <StatusPill tone="danger" size="sm">未配置</StatusPill>
+                <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">还没有可用的 DeepSeek 密钥</span>
+              </>
+            )}
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {DEEPSEEK_SHARED_USES.map((item) => (
@@ -255,7 +275,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
 
       <Section
         title="数据库密钥"
-        description="Key 加密存储，列表只显示掩码；可为每个任务绑定具体密钥，调用记录自动关联。"
+        description="Key 加密存储，列表只显示掩码。只有一把启用密钥时全站共用；绑定只在有多把密钥时用来指定例外。"
         actions={
           !formVisible ? (
             <div className="flex items-center gap-3">
@@ -289,7 +309,10 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
                       {key.baseUrl ? <span className="font-mono">{key.baseUrl}</span> : null}
                       {key.defaultModel ? <span className="font-mono">{key.defaultModel}</span> : null}
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-1">
+                      {activeKeys.length <= 1 && key.status === 'active' ? (
+                        <span className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">全站共用</span>
+                      ) : null}
                       <BindingChips bindings={key.bindings} />
                     </div>
                     {key.note ? <p className="mt-1.5 text-[12px] text-[#67695d] dark:text-gray-400">{key.note}</p> : null}
@@ -358,7 +381,7 @@ export default function DeepSeekKeysPanel({ onViewCalls }) {
           </div>
 
           <div className="mt-4">
-            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（source 必填，taskType 留空表示该来源全部任务；全部留空表示全局兜底）</p>
+            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（当前全站共用一把密钥时不必逐项绑定；source 必填，taskType 留空表示该来源全部任务，全部留空表示全局兜底）</p>
             <div className="mt-2 space-y-2">
               {form.bindings.map((binding, index) => (
                 <div key={index} className="flex flex-wrap items-center gap-2">

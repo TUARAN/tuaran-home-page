@@ -23,6 +23,8 @@ import {
   DAILY_GREETING_MODE_KEY,
   DAILY_GREETING_OLLAMA_PROVIDER_KEY,
   buildGreetingLlmMessages,
+  buildGreetingLengthRepairMessages,
+  fitGeneratedGreetingToXLimit,
   normalizeGeneratedGreeting,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
@@ -198,6 +200,45 @@ export async function POST(req) {
           })
       text = normalizeGeneratedGreeting(generation.content)
       if (!text) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
+
+      if (!greetingWithinLimit(text)) {
+        try {
+          const repairArgs = {
+            ...generationArgs,
+            messages: buildGreetingLengthRepairMessages({ text }),
+            temperature: 0.2,
+            maxTokens: 192,
+            task: {
+              ...generationArgs.task,
+              title: `${generationArgs.task.title}（限长压缩）`,
+              inputSummary: `原始文案 X 加权长度超限；${generationArgs.task.inputSummary}`,
+              metadata: { ...generationArgs.task.metadata, lengthRepair: true },
+            },
+          }
+          const repaired = generationMode === 'ollama'
+            ? await callOllama({
+                ...repairArgs,
+                providerId: ollamaProviderId,
+                reasoningEffort: 'none',
+                timeoutMs: 120_000,
+              })
+            : await callDeepSeek({
+                ...repairArgs,
+                env,
+                timeoutMs: 45_000,
+                taskDefaultModel: 'deepseek-v4-flash',
+                disableThinking: true,
+              })
+          const repairedText = normalizeGeneratedGreeting(repaired.content)
+          if (repairedText) {
+            text = repairedText
+            generation = repaired
+          }
+        } catch {
+          // 压缩调用失败时继续使用原文，由下方确定性限长兜底，避免定时任务整次失败。
+        }
+      }
+      text = fitGeneratedGreetingToXLimit(text).text
     } catch (error) {
       const errorCode = String(error?.code || 'LLM_GENERATION_FAILED')
       if (db) {

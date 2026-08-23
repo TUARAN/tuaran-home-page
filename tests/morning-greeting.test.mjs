@@ -22,6 +22,8 @@ import { rowToTemplate } from '../lib/morningGreetingTemplates.js'
 import {
   DEFAULT_DAILY_GREETING_LLM_INTENT,
   buildGreetingLlmMessages,
+  buildGreetingLengthRepairMessages,
+  fitGeneratedGreetingToXLimit,
   normalizeGeneratedGreeting,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
@@ -155,6 +157,19 @@ test('generated greeting cleanup removes wrappers without rewriting copy', () =>
   assert.equal(normalizeGeneratedGreeting('“早安，慢慢开始。”'), '早安，慢慢开始。')
 })
 
+test('overlong generated copy gets a focused rewrite prompt and a deterministic X-safe fallback', () => {
+  const original = `愚公每天挖山。${'后来邻人也来帮忙，大家一点点把石土运走。'.repeat(12)}坚持会让遥远的目标变得可以抵达。`
+  const messages = buildGreetingLengthRepairMessages({ text: original })
+  assert.equal(messages.length, 2)
+  assert.match(messages[0].content, /不超过 240/)
+  assert.match(messages[1].content, /原文：/)
+
+  const fitted = fitGeneratedGreetingToXLimit(original)
+  assert.equal(fitted.adjusted, true)
+  assert.ok(greetingWithinLimit(fitted.text))
+  assert.match(fitted.text, /[。！？…]$/)
+})
+
 test('自动任务支持三种生成模式，模板管理收敛为三条固定编辑位', async () => {
   const [clientSource, adminRouteSource, cronRouteSource] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8'),
@@ -173,4 +188,6 @@ test('自动任务支持三种生成模式，模板管理收敛为三条固定�
   assert.match(adminRouteSource, /FIXED_TEMPLATE_SLOTS/)
   assert.match(cronRouteSource, /callDeepSeek\(/)
   assert.match(cronRouteSource, /callOllama\(/)
+  assert.match(cronRouteSource, /buildGreetingLengthRepairMessages/)
+  assert.match(cronRouteSource, /fitGeneratedGreetingToXLimit/)
 })

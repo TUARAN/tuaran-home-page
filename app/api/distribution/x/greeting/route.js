@@ -13,6 +13,12 @@ import {
 } from '../../../../../lib/morningGreeting'
 import { listEnabledMorningGreetingTexts } from '../../../../../lib/morningGreetingTemplates'
 import {
+  buildCultureStoryMessages,
+  cultureStoryCategory,
+  cultureStoryLastRunKey,
+  normalizeCultureStorySlot,
+} from '../../../../../lib/dailyCultureStory'
+import {
   DAILY_GREETING_LLM_PROMPT_KEY,
   DAILY_GREETING_MODE_KEY,
   DAILY_GREETING_OLLAMA_PROVIDER_KEY,
@@ -47,6 +53,7 @@ async function writeSetting(db, key, value, updatedBy) {
 }
 
 export async function POST(req) {
+  const requestNow = new Date()
   const env = getOptionalRequestContext()?.env || {}
   const expectedSecret = String(env.MORNING_GREETING_SECRET || process.env.MORNING_GREETING_SECRET || '').trim()
   if (!expectedSecret) {
@@ -63,14 +70,23 @@ export async function POST(req) {
     return Response.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 })
   }
 
-  const requestedPeriod = new URL(req.url).searchParams.get('period')
+  const searchParams = new URL(req.url).searchParams
+  const requestedStorySlot = searchParams.get('story')
+  const storySlot = requestedStorySlot ? normalizeCultureStorySlot(requestedStorySlot) : ''
+  if (requestedStorySlot && !storySlot) {
+    return Response.json({ ok: false, error: 'INVALID_STORY_SLOT', detail: 'story 仅支持 culture_morning、culture_afternoon、culture_evening。' }, { status: 400 })
+  }
+  const isCultureStory = Boolean(storySlot)
+  const requestedPeriod = searchParams.get('period')
   const period = requestedPeriod
     ? normalizeGreetingPeriod(requestedPeriod, '')
     : greetingPeriodForDate()
-  if (!period) {
+  if (!isCultureStory && !period) {
     return Response.json({ ok: false, error: 'INVALID_PERIOD', detail: 'period 仅支持 morning、noon、evening。' }, { status: 400 })
   }
-  const lastRunKey = greetingLastRunKey(period)
+  const runSlot = storySlot || period
+  const storyCategory = isCultureStory ? cultureStoryCategory({ slot: storySlot, now: requestNow }) : ''
+  const lastRunKey = isCultureStory ? cultureStoryLastRunKey(storySlot) : greetingLastRunKey(period)
 
   const db = env.DB || null
   if (db) {
@@ -86,17 +102,17 @@ export async function POST(req) {
       // D1 不可用时按“运行中”放行，发布失败由 X 凭据环节兜底。
     }
     try {
-      // 同一自然日的同一时段只成功发布一次；三个时段分别记录，互不阻断。
+      // 同一自然日的同一时段只成功发布一次；六个时段分别记录，互不阻断。
       const lastRunRaw = await readSetting(db, lastRunKey)
       if (lastRunRaw) {
         const lastRun = JSON.parse(lastRunRaw)
-        if (lastRun?.ok && shanghaiDateKey(lastRun.at) === shanghaiDateKey()) {
+        if (lastRun?.ok && shanghaiDateKey(lastRun.at) === shanghaiDateKey(requestNow)) {
           return Response.json(
             {
               ok: true,
               skipped: true,
               reason: 'already_posted_today',
-              period,
+              period: runSlot,
               postId: lastRun.postId || '',
               postUrl: lastRun.postUrl || '',
             },
@@ -141,23 +157,29 @@ export async function POST(req) {
       generationMode = 'deepseek'
     }
   }
+  // 固定模板只适用于早午晚安；文化短故事始终实时生成。
+  if (isCultureStory && generationMode === 'template') generationMode = 'deepseek'
 
   let text = ''
   let generation = null
   if (generationMode === 'deepseek' || generationMode === 'ollama') {
     try {
       const generationArgs = {
-        messages: buildGreetingLlmMessages({ intent: llmIntent, period }),
+        messages: isCultureStory
+          ? buildCultureStoryMessages({ slot: storySlot, now: requestNow })
+          : buildGreetingLlmMessages({ intent: llmIntent, period }),
         temperature: 0.85,
-        maxTokens: 256,
+        maxTokens: isCultureStory ? 384 : 256,
         task: {
           source: 'x-daily-greeting',
           taskType: 'direct-post-copy',
-          title: `X 每日问候：${period}`,
+          title: isCultureStory ? `X 文化短故事：${storySlot}` : `X 每日问候：${period}`,
           actorId: 'cron:x-daily-greeting',
           actorName: '线上定时自动化',
-          inputSummary: `时段：${period}；意图：${llmIntent.slice(0, 500)}`,
-          metadata: { period, directPublish: true, generationMode },
+          inputSummary: isCultureStory
+            ? `时段：${storySlot}；类别：${storyCategory}`
+            : `时段：${period}；意图：${llmIntent.slice(0, 500)}`,
+          metadata: { period: runSlot, contentType: isCultureStory ? 'culture-story' : 'greeting', directPublish: true, generationMode },
         },
       }
       generation = generationMode === 'ollama'
@@ -182,19 +204,18 @@ export async function POST(req) {
         await writeSetting(
           db,
           lastRunKey,
-          JSON.stringify({ at: Date.now(), ok: false, period, mode: generationMode, stage: 'generation', error: errorCode }),
+          JSON.stringify({ at: Date.now(), ok: false, period: runSlot, mode: generationMode, stage: 'generation', error: errorCode }),
           'automation',
         ).catch(() => {})
       }
       const status = ['MISSING_DEEPSEEK_API_KEY', 'MISSING_OLLAMA_PROVIDER', 'OLLAMA_PROVIDER_NOT_FOUND'].includes(errorCode) ? 503 : 502
       return Response.json(
-        { ok: false, error: errorCode, detail: error?.message || '模型文案生成失败。', period, mode: generationMode },
+        { ok: false, error: errorCode, detail: error?.message || '模型文案生成失败。', period: runSlot, mode: generationMode },
         { status },
       )
     }
   } else {
-    // 模板以后台 morning_greeting_templates 为准，按“日期 + 时段”稳定随机选一条；
-    // 表不可用或为空时回退代码默认池。
+    // 问候模板以后台 morning_greeting_templates 为准；表不可用或为空时回退代码默认值。
     let pickedTemplate = null
     if (db) {
       try {
@@ -210,11 +231,11 @@ export async function POST(req) {
       await writeSetting(
         db,
         lastRunKey,
-        JSON.stringify({ at: Date.now(), ok: false, period, mode: generationMode, stage: 'validation', error: 'TEXT_TOO_LONG' }),
+        JSON.stringify({ at: Date.now(), ok: false, period: runSlot, mode: generationMode, stage: 'validation', error: 'TEXT_TOO_LONG' }),
         'automation',
       ).catch(() => {})
     }
-    return Response.json({ ok: false, error: 'TEXT_TOO_LONG', period, mode: generationMode }, { status: 400 })
+    return Response.json({ ok: false, error: 'TEXT_TOO_LONG', period: runSlot, mode: generationMode }, { status: 400 })
   }
 
   const result = await publishXPost(text, { credentials: getXCredentials(env) })
@@ -223,7 +244,7 @@ export async function POST(req) {
       await writeSetting(
         db,
         lastRunKey,
-        JSON.stringify({ at: Date.now(), ok: false, period, mode: generationMode, stage: 'publish', error: result.error }),
+        JSON.stringify({ at: Date.now(), ok: false, period: runSlot, mode: generationMode, stage: 'publish', error: result.error }),
         'automation',
       ).catch(() => {})
     }
@@ -234,7 +255,9 @@ export async function POST(req) {
     const run = JSON.stringify({
       at: Date.now(),
       ok: true,
-      period,
+      period: runSlot,
+      contentType: isCultureStory ? 'culture-story' : 'greeting',
+      category: storyCategory,
       mode: generationMode,
       postId: result.post.id,
       postUrl: result.post.url,
@@ -251,7 +274,9 @@ export async function POST(req) {
   }
   return Response.json({
     ok: true,
-    period,
+    period: runSlot,
+    contentType: isCultureStory ? 'culture-story' : 'greeting',
+    category: storyCategory,
     mode: generationMode,
     model: generation?.model || '',
     providerId: generation?.providerId || '',

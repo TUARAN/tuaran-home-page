@@ -2,18 +2,21 @@ name: Daily greetings to X
 
 on:
   schedule:
-    # 早安 08:00、午安 12:00、晚安 22:00；每组 20 分钟补跑一次（UTC）。
+    # 问候 08:00 / 12:00 / 22:00，文化短故事 10:00 / 16:00 / 20:00；每组 20、40 分钟补跑（UTC）。
     - cron: '0,20,40 0 * * *'
+    - cron: '0,20,40 2 * * *'
     - cron: '0,20,40 4 * * *'
+    - cron: '0,20,40 8 * * *'
+    - cron: '0,20,40 12 * * *'
     - cron: '0,20,40 14 * * *'
   workflow_dispatch:
     inputs:
       period:
-        description: Greeting period
+        description: Greeting period or culture story slot
         required: true
         type: choice
         default: morning
-        options: [morning, noon, evening]
+        options: [morning, noon, evening, culture_morning, culture_afternoon, culture_evening]
 
 concurrency:
   group: daily-greeting-${{ github.event.schedule || inputs.period }}
@@ -35,18 +38,27 @@ jobs:
           fi
 
           case "${{ github.event.schedule }}" in
+            "0,20,40 2 * * *") PERIOD="culture_morning" ;;
             "0,20,40 4 * * *") PERIOD="noon" ;;
+            "0,20,40 8 * * *") PERIOD="culture_afternoon" ;;
+            "0,20,40 12 * * *") PERIOD="culture_evening" ;;
             "0,20,40 14 * * *") PERIOD="evening" ;;
             "") PERIOD="${{ inputs.period }}" ;;
             *) PERIOD="morning" ;;
           esac
+
+          if [[ "$PERIOD" == culture_* ]]; then
+            QUERY="story=$PERIOD"
+          else
+            QUERY="period=$PERIOD"
+          fi
 
           code=$(curl -sS --retry 2 --retry-delay 5 \
             -o /tmp/morning-greeting.json \
             -w '%{http_code}' \
             -X POST \
             -H "x-morning-greeting-secret: $MORNING_GREETING_SECRET" \
-            "https://2aran.com/api/distribution/x/greeting?period=$PERIOD")
+            "https://2aran.com/api/distribution/x/greeting?$QUERY")
 
           echo "HTTP $code"
           cat /tmp/morning-greeting.json
@@ -74,7 +86,7 @@ jobs:
               pass
           print(json.dumps({
               "workflow": "morning-greeting",
-              "taskName": "X 每日问候（早安 / 午安 / 晚安）",
+              "taskName": "X 每日自动发布（问候 / 文化短故事）",
               "runId": os.environ.get("GITHUB_RUN_ID", ""),
               "runUrl": os.environ.get("RUN_URL", ""),
               "status": "failed",

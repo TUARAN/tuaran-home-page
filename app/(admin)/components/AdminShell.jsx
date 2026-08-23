@@ -5,13 +5,13 @@ import { usePathname } from 'next/navigation'
 
 import AdminSidebar from './AdminSidebar'
 import AdminTopbar from './AdminTopbar'
-import { resolveActiveAdminItem } from '../../../lib/adminRoutes'
+import { resolveAdminTrail } from '../../../lib/adminRoutes'
 
 const COLLAPSE_KEY = 'admin:nav:collapsed'
 
 export default function AdminShell({ children }) {
   const pathname = usePathname() || '/admin'
-  const activeItem = resolveActiveAdminItem(pathname)
+  const activeTrail = resolveAdminTrail(pathname)
 
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -37,6 +37,20 @@ export default function AdminShell({ children }) {
   useEffect(() => {
     setMobileOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setMobileOpen(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [mobileOpen])
 
   // 侧栏徽标计数（best-effort，端点未就绪时静默）
   useEffect(() => {
@@ -69,12 +83,18 @@ export default function AdminShell({ children }) {
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute inset-y-0 left-0 w-[256px] border-r border-[#e6e7df] shadow-xl dark:border-[#1b2430]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="后台导航"
+            className="absolute inset-y-0 left-0 w-[280px] max-w-[86vw] border-r border-[#e6e7df] shadow-xl dark:border-[#1b2430]"
+          >
             <AdminSidebar
               pathname={pathname}
               collapsed={false}
               badges={badges}
               onNavigate={() => setMobileOpen(false)}
+              onClose={() => setMobileOpen(false)}
             />
           </div>
         </div>
@@ -86,7 +106,7 @@ export default function AdminShell({ children }) {
         }`}
       >
         <AdminTopbar
-          activeItem={activeItem}
+          activeTrail={activeTrail}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
           onOpenMobile={() => setMobileOpen(true)}

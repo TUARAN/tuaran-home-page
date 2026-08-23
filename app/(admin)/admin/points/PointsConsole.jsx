@@ -314,7 +314,7 @@ export default function PointsConsole() {
 
   return (
     <AdminPage
-      title="燃币管理"
+      title="燃币与权益"
       description="集中管理燃币规则、单资源例外价格和人工调账。流水只在查询具体登录账户时显示。"
       actions={actions}
     >

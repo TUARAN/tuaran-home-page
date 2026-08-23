@@ -211,7 +211,7 @@ export default function AdminDashboardClient() {
         </Section>
       </div>
 
-      <Section title="全部控制台" description="左侧导航也可直达；这里按域汇总。">
+      <Section title="工作区" description="按工作目标进入对应管理域；具体功能在工作区内继续选择。">
         <div className="grid gap-2.5 sm:grid-cols-2">
           {ADMIN_CONSOLE_ITEMS.map((item) => {
             const externalHop = item.external && onAdminHost

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { IconMenu2, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand, IconChevronRight, IconShieldLock } from '@tabler/icons-react'
 
 import { AdminIcon } from '../../../lib/adminIcons'
@@ -22,9 +23,10 @@ const ENV_TONE = {
   local: 'border-[#d8dad0] bg-[#f1f2ea] text-[#67695d] dark:border-[#263142] dark:bg-[#151c26] dark:text-gray-400',
 }
 
-export default function AdminTopbar({ activeItem, collapsed, onToggleCollapse, onOpenMobile }) {
+export default function AdminTopbar({ activeTrail = [], collapsed, onToggleCollapse, onOpenMobile }) {
   const env = useEnvLabel()
-  const isOverview = activeItem?.href === '/admin'
+  const activeItem = activeTrail[activeTrail.length - 1]
+  const isOverview = activeTrail.length === 1 && activeItem?.href === '/admin'
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-[#e6e7df] bg-white/90 px-3 backdrop-blur dark:border-[#1b2430] dark:bg-[#0f141c]/95 md:px-5">
@@ -51,14 +53,37 @@ export default function AdminTopbar({ activeItem, collapsed, onToggleCollapse, o
         </button>
 
         <nav aria-label="面包屑" className="flex min-w-0 items-center gap-1.5 text-[13px]">
-          <span className="hidden text-[#9a9c8e] dark:text-[#5d6b80] sm:inline">后台</span>
-          {!isOverview ? (
-            <IconChevronRight size={14} className="hidden text-[#c2c4b8] dark:text-[#3a4757] sm:inline" aria-hidden="true" />
+          {isOverview ? null : (
+            <>
+              <Link href="/admin" className="hidden text-[#858779] transition hover:text-[#15140f] dark:text-[#718096] dark:hover:text-gray-100 sm:inline">
+                后台
+              </Link>
+              <IconChevronRight size={14} className="hidden shrink-0 text-[#c2c4b8] dark:text-[#3a4757] sm:inline" aria-hidden="true" />
+            </>
+          )}
+          {activeTrail.map((item, index) => {
+            const current = index === activeTrail.length - 1
+            return (
+              <span key={`${item.href}-${index}`} className={`min-w-0 items-center gap-1.5 ${current ? 'flex' : 'hidden sm:flex'}`}>
+                {index > 0 ? (
+                  <IconChevronRight size={14} className="shrink-0 text-[#c2c4b8] dark:text-[#3a4757]" aria-hidden="true" />
+                ) : null}
+                {current ? (
+                  <span className="flex min-w-0 items-center gap-1.5 font-medium text-[#15140f] dark:text-gray-100">
+                    <AdminIcon name={item.icon} size={16} />
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                ) : (
+                  <Link href={item.href} className="truncate text-[#858779] transition hover:text-[#15140f] dark:text-[#718096] dark:hover:text-gray-100">
+                    {item.label}
+                  </Link>
+                )}
+              </span>
+            )
+          })}
+          {!activeTrail.length ? (
+            <span className="font-medium text-[#15140f] dark:text-gray-100">后台总览</span>
           ) : null}
-          <span className="flex min-w-0 items-center gap-1.5 font-medium text-[#15140f] dark:text-gray-100">
-            {activeItem ? <AdminIcon name={activeItem.icon} size={16} /> : null}
-            <span className="truncate">{activeItem?.label || '后台总览'}</span>
-          </span>
         </nav>
       </div>
 

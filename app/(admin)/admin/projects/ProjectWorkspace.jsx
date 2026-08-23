@@ -4,7 +4,7 @@ export default function ProjectWorkspace() {
   return (
     <WorkspaceHub
       title="项目与工程"
-      description="由规划中心统筹项目全局，让 AI 参与大小任务的拆解与分派，再由工程工作台推进交付。"
+      description="由规划中心统筹项目全局，再由工程工作台推进开发、发布与架构沉淀。"
       eyebrow="从方向到沉淀"
       flow={['全局规划', 'AI 参与拆解', '工程推进', '资产沉淀']}
       sections={[
@@ -14,16 +14,7 @@ export default function ProjectWorkspace() {
           items: [
             { href: '/admin/planning', title: '规划中心', description: '统筹全部项目的过去、当前焦点与未来，并让 AI 参与大小任务的规划与分派。', icon: 'planning' },
             { href: '/admin/portfolio', title: '项目总览', description: 'AI 项目台账、整合路线图与 Codex 工作区治理。', icon: 'portfolio' },
-          ],
-        },
-        {
-          title: 'AI执行&人工审计',
-          description: '承接规划中心的任务输出，追踪自动化运行、模型调用与执行结果。',
-          items: [
-            { href: '/admin/ops', title: '自动化台账', description: '统一登记云端与本地自动化，追踪运行、产物、风险与审核。', icon: 'ops' },
-            { href: '/admin/a-share-research', title: 'A 股研究自动化', description: '线上每日选题、DeepSeek 联网检索草稿、3 天复核窗口、自动发布与运行日志。', icon: 'aShareResearch' },
-            { href: '/admin/morning-greeting', title: 'X 发布任务', description: '手动发布 AI 资讯，同时管理每日三次问候和三次文化短故事。', icon: 'morningGreeting' },
-            { href: '/admin/deepseek-tasks', title: '模型管理', description: '管理模型服务、密钥与调用记录，审阅 Token 消耗和失败原因。', icon: 'deepseekTasks' },
+            { href: '/admin/model-dispatch', title: 'AI 规划与分派', description: '把规划中心中的任务拆解为模型和 Agent 可执行的分派方案。', icon: 'modelDispatch' },
           ],
         },
         {

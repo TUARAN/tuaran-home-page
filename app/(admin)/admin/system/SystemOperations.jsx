@@ -3,7 +3,7 @@ import WorkspaceHub from '../../components/WorkspaceHub'
 export default function SystemOperations() {
   return (
     <WorkspaceHub
-      title="系统运维"
+      title="站点运维"
       description="统一处理站点运行、配置治理、访问工具与资产生命周期。"
       eyebrow="从观测到治理"
       flow={['检查运行状态', '调整站点策略', '记录与归档']}

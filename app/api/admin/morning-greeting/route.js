@@ -14,9 +14,8 @@ import {
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
 } from '../../../../lib/dailyGreetingLlm'
+import { cultureStoryLastRunKey } from '../../../../lib/dailyCultureStory'
 import {
-  deleteMorningGreetingTemplate,
-  greetingTemplateStats,
   listMorningGreetingTemplates,
   upsertMorningGreetingTemplate,
 } from '../../../../lib/morningGreetingTemplates'
@@ -57,18 +56,22 @@ export async function GET(req) {
     return Response.json({ status: 'unavailable', message: '当前运行环境没有 D1 绑定。' }, { status: 503 })
   }
 
-  const url = new URL(req.url)
-  const parsedOffset = Number.parseInt(url.searchParams.get('offset') || '0', 10)
-  const parsedLimit = Number.parseInt(url.searchParams.get('limit') || '10', 10)
-  const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0
-  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 50) : 10
-  const period = String(url.searchParams.get('period') || 'all')
-  const query = String(url.searchParams.get('q') || '').trim().slice(0, 100)
-
   try {
-    const [templatePage, stats, state, modeRaw, intentRaw, ollamaProviderRaw, ollamaProviderRows, morningRaw, noonRaw, eveningRaw] = await Promise.all([
-      listMorningGreetingTemplates(db, { offset, limit, period, query }),
-      greetingTemplateStats(db),
+    const [
+      templatePage,
+      state,
+      modeRaw,
+      intentRaw,
+      ollamaProviderRaw,
+      ollamaProviderRows,
+      morningRaw,
+      noonRaw,
+      eveningRaw,
+      cultureMorningRaw,
+      cultureAfternoonRaw,
+      cultureEveningRaw,
+    ] = await Promise.all([
+      listMorningGreetingTemplates(db),
       readSetting(db, MORNING_GREETING_SETTING_KEY),
       readSetting(db, DAILY_GREETING_MODE_KEY),
       readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
@@ -82,6 +85,9 @@ export async function GET(req) {
       readSetting(db, greetingLastRunKey('morning')),
       readSetting(db, greetingLastRunKey('noon')),
       readSetting(db, greetingLastRunKey('evening')),
+      readSetting(db, cultureStoryLastRunKey('culture_morning')),
+      readSetting(db, cultureStoryLastRunKey('culture_afternoon')),
+      readSetting(db, cultureStoryLastRunKey('culture_evening')),
     ])
     const lastRuns = {}
     for (const [key, raw] of [['morning', morningRaw], ['noon', noonRaw], ['evening', eveningRaw]]) {
@@ -89,6 +95,18 @@ export async function GET(req) {
         lastRuns[key] = JSON.parse(raw || 'null')
       } catch {
         lastRuns[key] = null
+      }
+    }
+    const cultureRuns = {}
+    for (const [key, raw] of [
+      ['culture_morning', cultureMorningRaw],
+      ['culture_afternoon', cultureAfternoonRaw],
+      ['culture_evening', cultureEveningRaw],
+    ]) {
+      try {
+        cultureRuns[key] = JSON.parse(raw || 'null')
+      } catch {
+        cultureRuns[key] = null
       }
     }
     const ollamaProviders = (ollamaProviderRows.results || []).map((row) => ({ id: row.id, name: row.name, model: row.default_model }))
@@ -100,15 +118,13 @@ export async function GET(req) {
       generatedAt: Date.now(),
       templates: templatePage.items,
       total: templatePage.total,
-      offset,
-      limit,
       paused: isAutomationPaused(state),
       generationMode: normalizeGreetingGenerationMode(modeRaw),
       llmIntent: normalizeGreetingLlmIntent(intentRaw, DEFAULT_DAILY_GREETING_LLM_INTENT),
       ollamaProviders,
       ollamaProviderId,
       lastRuns,
-      stats,
+      cultureRuns,
     })
   } catch (error) {
     return Response.json(
@@ -127,15 +143,12 @@ export async function POST(req) {
 
   const body = await req.json().catch(() => null)
   if (!body) return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
+  if (!Number(body.id)) return Response.json({ error: 'FIXED_TEMPLATE_SLOTS' }, { status: 400 })
 
   try {
     const result = await upsertMorningGreetingTemplate(db, {
       id: Number(body.id) || 0,
       text: String(body.text || ''),
-      period: String(body.period || 'morning'),
-      contentKind: String(body.contentKind || 'reflection'),
-      enabled: body.enabled !== false,
-      sortOrder: Number(body.sortOrder) || 0,
     })
     if (!result.ok) {
       return Response.json({ error: result.error }, { status: result.error === 'NOT_FOUND' ? 404 : 400 })
@@ -152,14 +165,7 @@ export async function POST(req) {
 export async function DELETE(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
-
-  const db = dbOrNull()
-  if (!db) return Response.json({ status: 'unavailable', message: 'D1 不可用。' }, { status: 503 })
-
-  const id = Number(new URL(req.url).searchParams.get('id') || 0)
-  const result = await deleteMorningGreetingTemplate(db, id)
-  if (!result.ok) return Response.json({ error: result.error || 'NOT_FOUND' }, { status: 404 })
-  return Response.json({ ok: true, id })
+  return Response.json({ error: 'FIXED_TEMPLATE_SLOTS' }, { status: 405 })
 }
 
 export async function PATCH(req) {

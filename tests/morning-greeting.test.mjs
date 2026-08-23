@@ -68,13 +68,13 @@ test('rowToTemplate normalizes legacy literal \\n from D1 rows', () => {
   assert.equal(row.text, '早安！\n冷知识：～')
 })
 
-test('all 100 daily greeting templates cover three periods and fit X limit', () => {
-  assert.equal(DAILY_GREETING_TEMPLATES.length, 100)
-  assert.equal(MORNING_GREETING_TEMPLATES.length, 34)
+test('three editable daily greeting defaults cover morning, noon, and evening', () => {
+  assert.equal(DAILY_GREETING_TEMPLATES.length, 3)
+  assert.equal(MORNING_GREETING_TEMPLATES.length, 1)
   assert.equal(MORNING_GREETING_TEMPLATE, MORNING_GREETING_TEMPLATES[0])
   assert.deepEqual(
     Object.fromEntries(['morning', 'noon', 'evening'].map((period) => [period, DAILY_GREETING_TEMPLATES.filter((item) => item.period === period).length])),
-    { morning: 34, noon: 33, evening: 33 },
+    { morning: 1, noon: 1, evening: 1 },
   )
   for (const template of DAILY_GREETING_TEMPLATES) {
     assert.match(template.text, /^(早安|午安|晚安)！/)
@@ -104,14 +104,14 @@ test('daily picker accepts a D1 text pool already filtered for noon or evening',
   )
 })
 
-test('template pick is deterministic per shanghai day and varies across days', () => {
+test('the fixed morning template is stable across shanghai days', () => {
   const day1a = pickMorningGreetingTemplate(MORNING_GREETING_TEMPLATES, { now: new Date('2026-08-05T00:30:00.000Z') })
   const day1b = pickMorningGreetingTemplate(MORNING_GREETING_TEMPLATES, { now: new Date('2026-08-05T15:00:00.000Z') })
   const day2 = pickMorningGreetingTemplate(MORNING_GREETING_TEMPLATES, { now: new Date('2026-08-06T00:30:00.000Z') })
   assert.equal(day1a, day1b)
   assert.ok(MORNING_GREETING_TEMPLATES.includes(day1a))
   assert.ok(MORNING_GREETING_TEMPLATES.includes(day2))
-  assert.notEqual(day1a, day2)
+  assert.equal(day1a, day2)
 })
 
 test('template pick falls back to defaults when pool is empty', () => {
@@ -155,21 +155,22 @@ test('generated greeting cleanup removes wrappers without rewriting copy', () =>
   assert.equal(normalizeGeneratedGreeting('“早安，慢慢开始。”'), '早安，慢慢开始。')
 })
 
-test('自动任务支持三种生成模式，模板管理使用每页十条的扁平列表', async () => {
+test('自动任务支持三种生成模式，模板管理收敛为三条固定编辑位', async () => {
   const [clientSource, adminRouteSource, cronRouteSource] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/morning-greeting/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/distribution/x/greeting/route.js', import.meta.url), 'utf8'),
   ])
 
-  assert.match(clientSource, /const PAGE_SIZE = 10/)
+  assert.match(clientSource, /fetch\('\/api\/admin\/morning-greeting'/)
   assert.match(clientSource, /id: 'deepseek'/)
   assert.match(clientSource, /id: 'ollama'/)
   assert.match(clientSource, /id: 'template'/)
-  assert.match(clientSource, /问候模板库/)
+  assert.match(clientSource, /title="三条问候"/)
   assert.match(clientSource, /切换尚未生效/)
-  assert.match(clientSource, /divide-y divide-\[#e2e4da\]/)
+  assert.doesNotMatch(clientSource, /新增模板|删除这条文案|AdminPagination/)
   assert.match(adminRouteSource, /DAILY_GREETING_OLLAMA_PROVIDER_KEY/)
+  assert.match(adminRouteSource, /FIXED_TEMPLATE_SLOTS/)
   assert.match(cronRouteSource, /callDeepSeek\(/)
   assert.match(cronRouteSource, /callOllama\(/)
 })

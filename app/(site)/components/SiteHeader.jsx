@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -52,6 +53,32 @@ function ChevronDown() {
         strokeLinejoin="round"
       />
     </svg>
+  )
+}
+
+function SpaceXNavLink({ active }) {
+  return (
+    <Link
+      href="/spacex"
+      aria-label="SpaceX"
+      aria-current={active ? 'page' : undefined}
+      className={[
+        'group flex h-8 items-center rounded-full px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--site-accent)]',
+        active ? 'bg-[var(--site-panel-strong)]' : 'hover:bg-[var(--site-panel)]',
+      ].join(' ')}
+      data-analytics-event="entry_click"
+      data-analytics-surface="global_nav"
+      data-analytics-destination-kind="page"
+      data-analytics-destination-id="/spacex"
+    >
+      <Image
+        src="/images/brand/spacex-logo.webp"
+        alt="SpaceX"
+        width={3840}
+        height={480}
+        className="h-auto w-[72px] opacity-70 transition-opacity group-hover:opacity-100 dark:invert"
+      />
+    </Link>
   )
 }
 
@@ -776,6 +803,7 @@ export default function SiteHeader() {
                       />
                     )
                   })}
+                  {groupIndex === 0 ? <SpaceXNavLink active={pathname?.startsWith('/spacex')} /> : null}
                 </div>
               ))}
             </nav>

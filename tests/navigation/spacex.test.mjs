@@ -4,13 +4,18 @@ import test from 'node:test'
 
 import { getSpacexTimeline, normalizeLl2Launch } from '../../lib/spacexTimeline.js'
 
-test('SpaceX is a content submenu and a sitemap route', async () => {
-  const [nav, sitemap] = await Promise.all([
+test('SpaceX has a standalone header entry and remains a sitemap route', async () => {
+  const [nav, mobileNav, header, sitemap] = await Promise.all([
     readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/siteMobileNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/sitemap.js', import.meta.url), 'utf8'),
   ])
 
-  assert.match(nav, /href: '\/spacex'.*label: 'SpaceX'/)
+  assert.doesNotMatch(nav, /href: '\/spacex'.*label: 'SpaceX'/)
+  assert.doesNotMatch(mobileNav, /key: 'spacex'/)
+  assert.match(header, /href="\/spacex"/)
+  assert.match(header, /spacex-logo\.webp/)
   assert.match(sitemap, /'\/spacex'/)
 })
 

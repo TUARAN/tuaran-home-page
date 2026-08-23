@@ -1,6 +1,12 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
-import { FAMOUS_QUOTES } from '../../../../lib/famousQuotes'
+import { callDeepSeek } from '../../../../lib/deepseek'
+import { callOllama, listOllamaModels } from '../../../../lib/ollama'
+import {
+  QUOTE_GENERATION_MODELS,
+  buildQuoteGenerationMessages,
+  parseGeneratedQuotes,
+} from '../../../../lib/quoteGeneration'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -27,46 +33,6 @@ function rowToQuote(row) {
   }
 }
 
-function seedToQuote(item, index) {
-  return {
-    ...item,
-    sortOrder: FAMOUS_QUOTES.length - index,
-    createdAt: 0,
-    updatedAt: 0,
-  }
-}
-
-async function ensureSeeded(db) {
-  const marker = await db
-    .prepare(`SELECT value FROM site_settings WHERE key = 'quotes.seed.version'`)
-    .first()
-  if (marker?.value) return
-  const now = Date.now()
-  const statements = FAMOUS_QUOTES.map((item, index) => db
-    .prepare(
-      `INSERT OR IGNORE INTO famous_quotes
-       (id, text, author, source, source_url, enabled, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)`
-    )
-    .bind(
-      item.id,
-      item.text,
-      item.author,
-      item.source,
-      item.sourceUrl,
-      FAMOUS_QUOTES.length - index,
-      now,
-      now,
-    ))
-  statements.push(db
-    .prepare(
-      `INSERT OR REPLACE INTO site_settings (key, value, updated_at, updated_by)
-       VALUES ('quotes.seed.version', '1', ?, 'quote-admin')`
-    )
-    .bind(now))
-  await db.batch(statements)
-}
-
 function readBody(request) {
   return request.json().catch(() => null)
 }
@@ -90,12 +56,12 @@ export async function GET(request) {
     return Response.json({
       status: 'preview',
       persistent: false,
-      quotes: FAMOUS_QUOTES.map(seedToQuote),
+      quotes: [],
+      generationModels: QUOTE_GENERATION_MODELS,
     })
   }
 
   try {
-    await ensureSeeded(db)
     const result = await db
       .prepare(
         `SELECT id, text, author, source, source_url, enabled, sort_order, created_at, updated_at
@@ -107,6 +73,7 @@ export async function GET(request) {
       status: 'ok',
       persistent: true,
       quotes: (result?.results || []).map(rowToQuote),
+      generationModels: QUOTE_GENERATION_MODELS,
     })
   } catch (error) {
     return Response.json({
@@ -124,6 +91,7 @@ export async function POST(request) {
   if (!db) return Response.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
   const body = await readBody(request)
   if (!body) return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
+  if (body.action === 'generate') return generateCandidates({ db, body, user: guard.user })
   const item = cleanQuote(body)
   if (!item.text || !item.author) {
     return Response.json({ error: 'TEXT_AND_AUTHOR_REQUIRED' }, { status: 400 })
@@ -142,6 +110,137 @@ export async function POST(request) {
     return Response.json({ ok: true, quote: { id, ...item, createdAt: now, updatedAt: now } })
   } catch (error) {
     return Response.json({ error: 'QUOTE_WRITE_FAILED', detail: String(error?.message || error) }, { status: 500 })
+  }
+}
+
+async function generateCandidates({ db, body, user }) {
+  const direction = String(body?.direction || '').trim().slice(0, 240)
+  const [providerResult, quoteResult] = await Promise.all([
+    db.prepare(
+      `SELECT id, name, default_model
+       FROM llm_providers
+       WHERE provider_type = 'ollama' AND status = 'active'
+       ORDER BY updated_at DESC`,
+    ).all(),
+    db.prepare(
+      `SELECT text FROM famous_quotes
+       ORDER BY updated_at DESC
+       LIMIT 80`,
+    ).all(),
+  ])
+  const providers = providerResult?.results || []
+  const messages = buildQuoteGenerationMessages({
+    direction,
+    existingQuotes: (quoteResult?.results || []).map((row) => row.text),
+  })
+  const task = {
+    source: 'quote-admin',
+    taskType: 'quote-candidate-generation',
+    title: '原创短句候选生成',
+    actorId: user?.id || user?.login || '',
+    actorName: user?.name || user?.login || 'TUARAN',
+    inputSummary: direction || '自由选择日常经验角度',
+    metadata: { manualReviewRequired: true, maxAttempts: 3 },
+  }
+  const attempts = []
+
+  const localAttempts = [
+    { model: QUOTE_GENERATION_MODELS.primary, family: /^qwen3\.8-27b(?::|$)/i, timeoutMs: 120_000 },
+    { model: QUOTE_GENERATION_MODELS.secondary, family: /^qwen3\.5:9b(?::|$)/i, timeoutMs: 90_000 },
+  ]
+  const modelListCache = new Map()
+
+  async function resolveLocalTarget(attempt) {
+    const provider = providers.find((item) => attempt.family.test(String(item.default_model || '')))
+      || providers[0]
+      || null
+    if (!provider) return null
+    if (attempt.family.test(String(provider.default_model || ''))) {
+      return { provider, model: provider.default_model }
+    }
+    if (!modelListCache.has(provider.id)) {
+      modelListCache.set(
+        provider.id,
+        listOllamaModels(provider.id, { timeoutMs: 12_000 }).catch(() => ({ models: [] })),
+      )
+    }
+    const available = await modelListCache.get(provider.id)
+    const installed = available.models.find((item) => attempt.family.test(item.name))
+    return { provider, model: installed?.name || attempt.model }
+  }
+
+  for (const attempt of localAttempts) {
+    const target = await resolveLocalTarget(attempt)
+    if (!target) {
+      attempts.push({ provider: 'ollama', model: attempt.model, ok: false, error: 'OLLAMA_PROVIDER_NOT_CONFIGURED' })
+      continue
+    }
+    try {
+      const result = await callOllama({
+        providerId: target.provider.id,
+        model: target.model,
+        messages,
+        temperature: 0.7,
+        maxTokens: 420,
+        reasoningEffort: 'none',
+        timeoutMs: attempt.timeoutMs,
+        task: { ...task, metadata: { ...task.metadata, fallbackStage: attempts.length + 1 } },
+      })
+      const quotes = parseGeneratedQuotes(result.content)
+      attempts.push({ provider: 'ollama', model: result.model || attempt.model, ok: true })
+      return Response.json({
+        ok: true,
+        quotes,
+        provider: 'ollama',
+        providerName: result.providerName || target.provider.name,
+        model: result.model || target.model,
+        taskId: result.taskId,
+        attempts,
+      })
+    } catch (error) {
+      attempts.push({
+        provider: 'ollama',
+        model: target.model,
+        ok: false,
+        error: error?.code || error?.message || 'OLLAMA_CALL_FAILED',
+      })
+    }
+  }
+
+  try {
+    const result = await callDeepSeek({
+      messages,
+      temperature: 0.7,
+      maxTokens: 420,
+      timeoutMs: 45_000,
+      taskDefaultModel: QUOTE_GENERATION_MODELS.fallback,
+      disableThinking: true,
+      task: { ...task, metadata: { ...task.metadata, fallbackStage: 3 } },
+    })
+    const quotes = parseGeneratedQuotes(result.content)
+    attempts.push({ provider: 'deepseek', model: result.model || QUOTE_GENERATION_MODELS.fallback, ok: true })
+    return Response.json({
+      ok: true,
+      quotes,
+      provider: 'deepseek',
+      providerName: 'DeepSeek',
+      model: result.model || QUOTE_GENERATION_MODELS.fallback,
+      taskId: result.taskId,
+      attempts,
+    })
+  } catch (error) {
+    attempts.push({
+      provider: 'deepseek',
+      model: QUOTE_GENERATION_MODELS.fallback,
+      ok: false,
+      error: error?.code || error?.message || 'DEEPSEEK_CALL_FAILED',
+    })
+    return Response.json({
+      ok: false,
+      error: 'QUOTE_GENERATION_FAILED',
+      detail: '27B、9B 与 DeepSeek 均未生成可用候选。',
+      attempts,
+    }, { status: 502 })
   }
 }
 

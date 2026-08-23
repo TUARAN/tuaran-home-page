@@ -1,19 +1,7 @@
 import { getD1 } from '../../../lib/d1'
-import { DEFAULT_FAMOUS_QUOTE, FAMOUS_QUOTES } from '../../../lib/famousQuotes'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
-
-function randomIndex(length) {
-  const value = new Uint32Array(1)
-  crypto.getRandomValues(value)
-  return value[0] % length
-}
-
-function fallbackQuote(exclude) {
-  const candidates = FAMOUS_QUOTES.filter((quote) => quote.enabled && quote.id !== exclude)
-  return candidates[randomIndex(candidates.length)] || DEFAULT_FAMOUS_QUOTE
-}
 
 function serialize(row) {
   return {
@@ -45,7 +33,7 @@ export async function GET(request) {
     quote = null
   }
 
-  return Response.json(quote ? serialize(quote) : fallbackQuote(exclude), {
+  return Response.json(quote ? serialize(quote) : null, {
     headers: {
       'Cache-Control': 'no-store',
     },

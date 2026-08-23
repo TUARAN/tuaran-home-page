@@ -250,7 +250,7 @@ export default function DeepSeekTasksClient() {
 
   return (
     <AdminPage
-      title="模型调用管理"
+      title="模型管理"
       description="查看云端与 Mac 发起的 NAS Qwen 调用摘要。密钥和本地 SQLite 原始记录不会上传。"
       actions={
         <>
@@ -265,7 +265,7 @@ export default function DeepSeekTasksClient() {
 
       <div
         role="tablist"
-        aria-label="模型调用管理"
+        aria-label="模型管理"
         className="mb-4 grid max-w-xl grid-cols-3 overflow-hidden rounded-lg border border-[#d5d7cd] bg-[#f7f8f2] p-1 dark:border-[#2a3544] dark:bg-[#0d131b]"
       >
         {[

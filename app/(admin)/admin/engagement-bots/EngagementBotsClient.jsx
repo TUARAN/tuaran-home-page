@@ -11,7 +11,16 @@ import {
   IconX,
 } from '@tabler/icons-react'
 
-import { AdminButton, AdminPage, DataTable, Section, StatCard, StatusPill } from '../../components/ui'
+import { AdminButton, AdminPage, AdminPagination, DataTable, Section, StatCard, StatusPill } from '../../components/ui'
+
+const RIGHT_PANELS = [
+  { id: 'bots', label: '人设' },
+  { id: 'runs', label: '最近运行' },
+  { id: 'actions', label: '动作记录' },
+]
+const BOTS_PAGE_SIZE = 5
+const RUNS_PAGE_SIZE = 6
+const ACTIONS_PAGE_SIZE = 10
 
 const EMPTY_FORM = {
   id: '',
@@ -79,6 +88,10 @@ export default function EngagementBotsClient() {
   const [adminDeepSeekConfigured, setAdminDeepSeekConfigured] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [rightPanel, setRightPanel] = useState('bots')
+  const [botsOffset, setBotsOffset] = useState(0)
+  const [runsOffset, setRunsOffset] = useState(0)
+  const [actionsOffset, setActionsOffset] = useState(0)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -116,6 +129,27 @@ export default function EngagementBotsClient() {
     () => (Array.isArray(settings.contentPrefixes) ? settings.contentPrefixes.join(', ') : ''),
     [settings.contentPrefixes],
   )
+  const visibleBots = useMemo(() => bots.slice(botsOffset, botsOffset + BOTS_PAGE_SIZE), [bots, botsOffset])
+  const visibleRuns = useMemo(() => runs.slice(runsOffset, runsOffset + RUNS_PAGE_SIZE), [runs, runsOffset])
+  const visibleActions = useMemo(() => actions.slice(actionsOffset, actionsOffset + ACTIONS_PAGE_SIZE), [actions, actionsOffset])
+
+  useEffect(() => {
+    if (botsOffset >= bots.length && botsOffset > 0) {
+      setBotsOffset(Math.max(0, Math.floor((bots.length - 1) / BOTS_PAGE_SIZE) * BOTS_PAGE_SIZE))
+    }
+  }, [bots.length, botsOffset])
+
+  useEffect(() => {
+    if (runsOffset >= runs.length && runsOffset > 0) {
+      setRunsOffset(Math.max(0, Math.floor((runs.length - 1) / RUNS_PAGE_SIZE) * RUNS_PAGE_SIZE))
+    }
+  }, [runs.length, runsOffset])
+
+  useEffect(() => {
+    if (actionsOffset >= actions.length && actionsOffset > 0) {
+      setActionsOffset(Math.max(0, Math.floor((actions.length - 1) / ACTIONS_PAGE_SIZE) * ACTIONS_PAGE_SIZE))
+    }
+  }, [actions.length, actionsOffset])
 
   async function saveSettings(event) {
     event.preventDefault()
@@ -406,10 +440,32 @@ export default function EngagementBotsClient() {
           </Section>
         </div>
 
-        <div className="space-y-6">
-          <Section title="人设" description="前台评论会显示昵称，身份行是「路过」。">
+        <div className="min-w-0">
+          <div className="mb-3 flex flex-wrap gap-2 rounded-xl border border-[#e2e3da] bg-[#f5f5ef] p-1.5 dark:border-[#27313d] dark:bg-[#0c1118]" role="tablist" aria-label="路过互动记录分区">
+            {RIGHT_PANELS.map((panel) => (
+              <button
+                key={panel.id}
+                type="button"
+                role="tab"
+                aria-selected={rightPanel === panel.id}
+                onClick={() => setRightPanel(panel.id)}
+                className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
+                  rightPanel === panel.id
+                    ? 'bg-white text-[#25251f] shadow-sm dark:bg-[#18212c] dark:text-white'
+                    : 'text-[#77786d] hover:text-[#25251f] dark:text-gray-400 dark:hover:text-white'
+                }`}
+              >
+                {panel.label}
+                <span className="ml-1.5 text-[10px] opacity-60">
+                  {panel.id === 'bots' ? bots.length : panel.id === 'runs' ? runs.length : actions.length}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {rightPanel === 'bots' ? <Section title="人设" description="前台评论会显示昵称，身份行是「路过」。">
             <div className="divide-y divide-[#e7e4da] dark:divide-[#27313d]">
-              {bots.map((item) => (
+              {visibleBots.map((item) => (
                 <article key={item.id} className={`grid gap-3 py-4 first:pt-0 sm:grid-cols-[1fr_auto] sm:items-center ${item.enabled ? '' : 'opacity-55'}`}>
                   <div className="min-w-0">
                     <p className="font-medium text-[#292a24] dark:text-gray-100">
@@ -438,11 +494,12 @@ export default function EngagementBotsClient() {
               ))}
               {!loading && !bots.length ? <p className="py-10 text-center text-sm text-[#858779]">还没有人设</p> : null}
             </div>
-          </Section>
+            <AdminPagination total={bots.length} offset={botsOffset} limit={BOTS_PAGE_SIZE} onOffsetChange={setBotsOffset} loading={loading} />
+          </Section> : null}
 
-          <Section title="最近运行" description="含定时跳过。失败的评论可在模型任务里核对 DeepSeek 返回。">
+          {rightPanel === 'runs' ? <Section title="最近运行" description="含定时跳过。失败的评论可在模型任务里核对 DeepSeek 返回。">
             <DataTable
-              rows={runs}
+              rows={visibleRuns}
               rowKey={(row) => row.id}
               empty={<p className="py-8 text-center text-sm text-[#858779]">还没有运行记录</p>}
               columns={[
@@ -458,11 +515,12 @@ export default function EngagementBotsClient() {
                 { key: 'failed', header: '失败', render: (row) => row.failed },
               ]}
             />
-          </Section>
+            <AdminPagination total={runs.length} offset={runsOffset} limit={RUNS_PAGE_SIZE} onOffsetChange={setRunsOffset} loading={loading} />
+          </Section> : null}
 
-          <Section title="动作记录">
+          {rightPanel === 'actions' ? <Section title="动作记录" description="按时间倒序查看最近的点赞与评论。">
             <DataTable
-              rows={actions}
+              rows={visibleActions}
               rowKey={(row) => row.id}
               empty={<p className="py-8 text-center text-sm text-[#858779]">还没有点赞或评论记录</p>}
               columns={[
@@ -483,7 +541,8 @@ export default function EngagementBotsClient() {
                 },
               ]}
             />
-          </Section>
+            <AdminPagination total={actions.length} offset={actionsOffset} limit={ACTIONS_PAGE_SIZE} onOffsetChange={setActionsOffset} loading={loading} />
+          </Section> : null}
         </div>
       </div>
     </AdminPage>

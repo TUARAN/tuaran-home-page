@@ -234,7 +234,7 @@ export default function InformationConsole() {
         </Section>
       ) : (
         <div className="space-y-5">
-          <Section title={editingId ? '编辑 Apple ID' : '新增 Apple ID'} description="保存前会在浏览器本地完成加密。">
+          <Section title={editingId ? '编辑密钥' : '新增密钥'} description="保存前会在浏览器本地完成加密。">
             <form onSubmit={save} className="space-y-4">
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="名称">
@@ -298,6 +298,7 @@ export default function InformationConsole() {
                         {answers.friend ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">朋友</dt><dd className="break-all font-mono">{visible ? answers.friend : '••••••'}</dd></div> : null}
                         {answers.work ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">工作</dt><dd className="break-all font-mono">{visible ? answers.work : '••••••'}</dd></div> : null}
                         {answers.parents ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">父母</dt><dd className="break-all font-mono">{visible ? answers.parents : '••••••'}</dd></div> : null}
+                        {plain.notes ? <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#77796e]">备注</dt><dd className="min-w-0 whitespace-pre-wrap break-words">{plain.notes}</dd></div> : null}
                       </dl>
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button type="button" onClick={() => copy(plain.account, '账号')} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制账号</button>

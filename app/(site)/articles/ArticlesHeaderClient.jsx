@@ -3,24 +3,18 @@
 import { useTheme } from 'next-themes'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const DEFAULT_QUOTE = {
-  id: 'laozi-first-step',
-  text: '千里之行，始于足下。',
-  author: '老子',
-}
-
 const LAST_QUOTE_KEY = 'articles:last-quote'
 
 export default function ArticlesHeaderClient() {
   const { resolvedTheme } = useTheme()
-  const [quote, setQuote] = useState(DEFAULT_QUOTE)
+  const [quote, setQuote] = useState(null)
   const requestRef = useRef(null)
 
   const refreshQuote = useCallback(async () => {
     requestRef.current?.abort()
     const controller = new AbortController()
     requestRef.current = controller
-    const previousQuote = window.sessionStorage.getItem(LAST_QUOTE_KEY) || DEFAULT_QUOTE.id
+    const previousQuote = window.sessionStorage.getItem(LAST_QUOTE_KEY) || ''
 
     try {
       const response = await fetch(`/api/quotes?exclude=${encodeURIComponent(previousQuote)}`, {
@@ -35,7 +29,7 @@ export default function ArticlesHeaderClient() {
       window.sessionStorage.setItem(LAST_QUOTE_KEY, nextQuote.id)
       setQuote(nextQuote)
     } catch (error) {
-      if (error.name !== 'AbortError') window.sessionStorage.setItem(LAST_QUOTE_KEY, DEFAULT_QUOTE.id)
+      if (error.name !== 'AbortError') setQuote(null)
     } finally {
       if (requestRef.current === controller) {
         requestRef.current = null
@@ -56,12 +50,12 @@ export default function ArticlesHeaderClient() {
         <h1 className="shrink-0 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
           内容导航
         </h1>
-        <div className="min-w-0">
+        {quote ? <div className="min-w-0">
           <p aria-live="polite" className="min-w-0 truncate text-[12px] text-[#85877d] dark:text-[#737f91] md:w-[clamp(14rem,26vw,18rem)] md:shrink-0 md:text-[13px]">
             <q>{quote.text}</q>
             <cite className="ml-1 not-italic">— {quote.author}</cite>
           </p>
-        </div>
+        </div> : null}
       </div>
     </header>
   )

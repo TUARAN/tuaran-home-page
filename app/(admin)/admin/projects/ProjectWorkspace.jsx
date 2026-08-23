@@ -22,8 +22,8 @@ export default function ProjectWorkspace() {
           items: [
             { href: '/admin/ops', title: '自动化台账', description: '统一登记云端与本地自动化，追踪运行、产物、风险与审核。', icon: 'ops' },
             { href: '/admin/a-share-research', title: 'A 股研究自动化', description: '线上每日选题、DeepSeek 联网检索草稿、3 天复核窗口、自动发布与运行日志。', icon: 'aShareResearch' },
-            { href: '/admin/morning-greeting', title: 'X 发布任务', description: '手动生成并发布 NAS Qwen AI 资讯，同时管理每日三次问候。', icon: 'morningGreeting' },
-            { href: '/admin/deepseek-tasks', title: '调用记录与审计', description: '审阅 API 调用、Token 消耗、失败原因与后续处理状态。', icon: 'deepseekTasks', note: '原「LLM API 任务管理」' },
+            { href: '/admin/morning-greeting', title: 'X 发布任务', description: '手动发布 AI 资讯，同时管理每日三次问候和三次文化短故事。', icon: 'morningGreeting' },
+            { href: '/admin/deepseek-tasks', title: '模型管理', description: '管理模型服务、密钥与调用记录，审阅 Token 消耗和失败原因。', icon: 'deepseekTasks' },
           ],
         },
         {

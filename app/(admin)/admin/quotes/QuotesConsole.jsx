@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { IconCheck, IconEdit, IconPlus, IconRefresh, IconSearch, IconTrash, IconX } from '@tabler/icons-react'
+import { IconCheck, IconEdit, IconPlus, IconRefresh, IconSearch, IconSparkles, IconTrash, IconX } from '@tabler/icons-react'
 
 import { AdminButton, AdminPage } from '../../components/ui'
 
@@ -19,6 +19,10 @@ export default function QuotesConsole() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [direction, setDirection] = useState('')
+  const [candidates, setCandidates] = useState([])
+  const [generationMeta, setGenerationMeta] = useState(null)
   const [persistent, setPersistent] = useState(true)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -49,6 +53,36 @@ export default function QuotesConsole() {
   }, [query, quotes])
 
   const enabledCount = quotes.filter((item) => item.enabled).length
+
+  async function generate() {
+    setGenerating(true)
+    setCandidates([])
+    setGenerationMeta(null)
+    setError('')
+    setMessage('')
+    try {
+      const response = await fetch('/api/admin/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ action: 'generate', direction }),
+      })
+      const data = await readJson(response)
+      if (!response.ok) throw new Error(data?.detail || data?.error || `HTTP_${response.status}`)
+      setCandidates(Array.isArray(data?.quotes) ? data.quotes : [])
+      setGenerationMeta(data)
+    } catch (reason) {
+      setError(reason?.message || 'QUOTE_GENERATION_FAILED')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  function chooseCandidate(candidate) {
+    setForm({ ...EMPTY_FORM, ...candidate, id: '' })
+    setMessage('候选已载入编辑区，确认后再保存。')
+    setError('')
+  }
 
   function edit(item) {
     setForm({ ...EMPTY_FORM, ...item })
@@ -122,7 +156,7 @@ export default function QuotesConsole() {
   return (
     <AdminPage
       title="名言管理"
-      description={`管理目录页随机名言。共 ${quotes.length} 条，启用 ${enabledCount} 条；刷新页面或切换主题时会排除上一条后随机展示。`}
+      description={`管理目录页随机短句。共 ${quotes.length} 条，启用 ${enabledCount} 条；模型只生成候选，确认保存后才会公开展示。`}
       actions={<AdminButton onClick={load} disabled={loading || saving}><IconRefresh size={15} />重新读取</AdminButton>}
     >
       {!persistent ? <Notice tone="warning">当前为本地预览数据；部署并应用 D1 迁移后才能保存修改。</Notice> : null}
@@ -131,6 +165,38 @@ export default function QuotesConsole() {
 
       <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
         <section className="self-start rounded-xl border border-[#d9dbd0] bg-white p-5 shadow-sm dark:border-[#252e39] dark:bg-[#10161f] xl:sticky xl:top-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <IconSparkles size={17} className="text-violet-600 dark:text-violet-300" />
+              <h2 className="text-base font-semibold text-[#20211c] dark:text-gray-100">生成原创候选</h2>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[#77796e] dark:text-gray-400">
+              每次最多依次调用 Qwen3.8 27B、Qwen3.5 9B、DeepSeek 各一次，成功后立即停止。
+            </p>
+            <Field label="可选写作方向">
+              <input maxLength={240} value={direction} onChange={(event) => setDirection(event.target.value)} className={inputClass} placeholder="例如：长期学习中的耐心" />
+            </Field>
+            <AdminButton type="button" variant="primary" onClick={generate} disabled={generating || !persistent} className="mt-3">
+              <IconSparkles size={15} />{generating ? '生成中…' : '生成 3 条候选'}
+            </AdminButton>
+            {generationMeta ? (
+              <p className="mt-2 text-xs text-[#77796e] dark:text-gray-400">
+                本次使用 {generationMeta.providerName || generationMeta.provider} · {generationMeta.model}，共尝试 {generationMeta.attempts?.length || 1} 次。
+              </p>
+            ) : null}
+            {candidates.length ? (
+              <div className="mt-3 space-y-2">
+                {candidates.map((candidate) => (
+                  <button key={candidate.text} type="button" onClick={() => chooseCandidate(candidate)} className="block w-full rounded-lg border border-violet-100 bg-violet-50/60 px-3 py-2 text-left font-serif text-sm leading-6 text-[#292a24] transition hover:border-violet-300 dark:border-violet-950 dark:bg-violet-950/20 dark:text-gray-100 dark:hover:border-violet-700">
+                    “{candidate.text}”
+                    <span className="mt-1 block font-sans text-[11px] text-violet-700 dark:text-violet-300">载入编辑区</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="my-5 border-t border-[#e7e4da] dark:border-[#27313d]" />
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-[#20211c] dark:text-gray-100">{form.id ? '编辑名言' : '新增名言'}</h2>
             {form.id ? <button type="button" onClick={() => setForm(EMPTY_FORM)} className="text-[#858779] hover:text-[#25251f] dark:hover:text-white" aria-label="取消编辑"><IconX size={18} /></button> : null}

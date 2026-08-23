@@ -44,9 +44,9 @@ function formatTime(ts) {
   }
 }
 
-export default function UsersConsole() {
+export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('users')
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [users, setUsers] = useState([])
   const [status, setStatus] = useState('loading')
   const [message, setMessage] = useState('')
@@ -98,6 +98,12 @@ export default function UsersConsole() {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    if (mode !== 'all') return
+    const requestedTab = new URLSearchParams(window.location.search).get('tab')
+    if (['users', 'guests', 'mcp'].includes(requestedTab)) setActiveTab(requestedTab)
+  }, [mode])
 
   const refreshMcpGrants = useCallback(async () => {
     setMcpStatus('loading')
@@ -343,6 +349,14 @@ export default function UsersConsole() {
 
   function goToPoints(userId, view) {
     router.push(`/admin/points?userId=${encodeURIComponent(userId)}&view=${view}`)
+  }
+
+  function selectTab(value) {
+    setActiveTab(value)
+    const url = new URL(window.location.href)
+    if (value === 'users') url.searchParams.delete('tab')
+    else url.searchParams.set('tab', value)
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
   }
 
   const columns = [
@@ -660,8 +674,12 @@ export default function UsersConsole() {
 
   return (
     <AdminPage
-      title="用户管理"
-      description="管理登录用户、角色、游客身份与 MCP 授权。燃币流水和调账统一跳转到燃币管理。"
+      title={mode === 'mcp' ? '授权管理' : '账号与身份'}
+      description={
+        mode === 'mcp'
+          ? '管理用户与 MCP OAuth 客户端之间的授权和撤销关系。'
+          : '管理登录账号、角色、游客身份与 MCP 授权。燃币流水和调账统一进入燃币与权益。'
+      }
       actions={
         <AdminButton onClick={refreshActive} disabled={activeLoading}>
           <IconRefresh size={16} aria-hidden="true" />
@@ -669,17 +687,17 @@ export default function UsersConsole() {
         </AdminButton>
       }
     >
-      <div className="mb-5 flex flex-wrap gap-2">
-        <button type="button" className={tabCls('users')} onClick={() => setActiveTab('users')}>
+      {mode === 'all' ? <div className="mb-5 flex flex-wrap gap-2">
+        <button type="button" className={tabCls('users')} onClick={() => selectTab('users')}>
           登录用户
         </button>
-        <button type="button" className={tabCls('guests')} onClick={() => setActiveTab('guests')}>
+        <button type="button" className={tabCls('guests')} onClick={() => selectTab('guests')}>
           游客管理
         </button>
-        <button type="button" className={tabCls('mcp')} onClick={() => setActiveTab('mcp')}>
+        <button type="button" className={tabCls('mcp')} onClick={() => selectTab('mcp')}>
           MCP 授权
         </button>
-      </div>
+      </div> : null}
 
       {activeTab === 'users' && (status === 'unavailable' || status === 'error') ? (
         <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">

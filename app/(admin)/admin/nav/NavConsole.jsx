@@ -130,7 +130,7 @@ export default function NavAdminClient() {
 
   return (
     <AdminPage
-      title="菜单权限管理"
+      title="菜单可见性"
       description="这里列出全站所有菜单 item。每一项的「可见用户」决定它是否出现在主导航、移动端菜单和 /map 全站索引里。这里只控制菜单展示，页面本身的 owner gate 不受影响——把私域页面设成 public 也只是让链接出现在菜单中，访客点进去仍然被 gate 拦截。"
     >
 

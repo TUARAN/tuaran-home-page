@@ -5,8 +5,8 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '私域与分享',
-  description: '长期罗盘强私密 + 密码保护分享分发入口。',
+  title: '长期罗盘',
+  description: '浏览器本地解密的强私密个人内容库。',
   robots: {
     index: false,
     follow: false,
@@ -17,9 +17,9 @@ export const metadata = {
 export default async function AdminLongCompassPage() {
   return (
     <AdminPageGate
-      label="私域与分享"
+      label="长期罗盘"
       returnTo="/admin/long-compass"
-      description="一个入口同时管理长期罗盘强私密内容和密码保护分享内容，仅站长本人可见。"
+      description="数据库仅存密文，输入口令后只在浏览器本地解密，仅站长本人可见。"
     >
       <LongCompassAdminTabs />
     </AdminPageGate>

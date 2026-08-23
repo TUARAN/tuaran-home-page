@@ -38,7 +38,30 @@ function WorkspaceLinks({ items }) {
   )
 }
 
-export default function WorkspaceHub({ title, description, eyebrow, flow, items, sections = [] }) {
+function PlannedCards({ items }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => (
+        <article
+          key={item.title}
+          className="rounded-lg border border-dashed border-[#caccc0] bg-[#fafbf7] px-4 py-3 dark:border-[#2d3744] dark:bg-[#0d131b]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="text-[13px] font-semibold text-[#53554d] dark:text-gray-300">{item.title}</h3>
+            <span className="shrink-0 rounded-full bg-[#eeefe7] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-[#858779] dark:bg-[#17202b] dark:text-[#718096]">
+              规划中
+            </span>
+          </div>
+          {item.description ? (
+            <p className="mt-1.5 text-[11.5px] leading-5 text-[#77796d] dark:text-gray-500">{item.description}</p>
+          ) : null}
+        </article>
+      ))}
+    </div>
+  )
+}
+
+export default function WorkspaceHub({ title, description, eyebrow, flow, items, sections = [], planned = [] }) {
   return (
     <AdminPage title={title} description={description}>
       {flow?.length ? (
@@ -78,6 +101,18 @@ export default function WorkspaceHub({ title, description, eyebrow, flow, items,
           </section>
         ))}
       </div> : null}
+
+      {planned.length ? (
+        <section className="mt-8 border-t border-[#d9d9cf] pt-7 dark:border-[#26313e]">
+          <div className="mb-4">
+            <h2 className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">规划中的能力</h2>
+            <p className="mt-1 text-[12px] leading-5 text-[#77796d] dark:text-gray-400">
+              先保留职责和边界；功能可用后再进入侧边栏。
+            </p>
+          </div>
+          <PlannedCards items={planned} />
+        </section>
+      ) : null}
     </AdminPage>
   )
 }

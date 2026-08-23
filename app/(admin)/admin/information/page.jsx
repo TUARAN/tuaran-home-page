@@ -5,7 +5,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '信息管理',
+  title: '信息保险库',
   description: '端到端加密保存账号、密保与其他敏感信息。',
   robots: {
     index: false,
@@ -17,7 +17,7 @@ export const metadata = {
 export default function AdminInformationPage() {
   return (
     <AdminPageGate
-      label="信息管理"
+      label="信息保险库"
       returnTo="/admin/information"
       description="仅站长本人可访问；所有敏感字段在浏览器本地加密和解密。"
     >

@@ -5,7 +5,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '用户管理',
+  title: '账号与身份',
   description: '登录用户目录 / 角色、游客身份与 MCP 授权。',
   robots: {
     index: false,
@@ -17,7 +17,7 @@ export const metadata = {
 export default async function AdminUsersPage() {
   return (
     <AdminPageGate
-      label="用户管理"
+      label="账号与身份"
       returnTo="/admin/users"
       description="站点用户目录、角色、游客身份与 MCP 授权管理，仅站长本人可见。"
     >

@@ -30,6 +30,24 @@ test('draftGenerationDecision 区分完成、锁定、失败重试和耗尽', ()
     draftGenerationDecision({ status: 'failed', attempt_count: 5, updated_at: now }, now),
     { action: 'exhausted', attempts: 5 },
   )
+  assert.deepEqual(
+    draftGenerationDecision({
+      status: 'failed',
+      attempt_count: 5,
+      generation_error: '草稿 frontmatter 未闭合（缺少结束标记 ---）。',
+      updated_at: now,
+    }, now),
+    { action: 'attempt' },
+  )
+  assert.deepEqual(
+    draftGenerationDecision({
+      status: 'failed',
+      attempt_count: 6,
+      generation_error: '草稿 frontmatter 未闭合（缺少结束标记 ---）。',
+      updated_at: now,
+    }, now),
+    { action: 'exhausted', attempts: 6 },
+  )
 })
 
 test('classifyCompany 覆盖三大交易所板块', () => {
@@ -157,6 +175,7 @@ test('buildDraftPrompt 包含公司信息、十个小节与风格约束', () => 
   assert.match(user.content, /600000/)
   assert.match(user.content, /## 九、未能验证/)
   assert.match(user.content, /review_ready: false/)
+  assert.match(user.content, /两条 `---` 都不可省略/)
   assert.match(user.content, /不是 X，而是 Y/)
   assert.match(user.content, /3081.23/)
   assert.match(user.content, /URL 只能来自本次检索结果/)

@@ -2,7 +2,6 @@ import Link from 'next/link'
 
 import WorksMuseumClient from './WorksMuseumClient'
 import {
-  FEATURED_WORK_ITEM_IDS,
   WORK_ITEMS,
   WORK_TYPE_META,
   getWorkItemsByType,
@@ -20,7 +19,6 @@ export const metadata = {
 }
 
 export default function WorksPage() {
-  const featuredItems = FEATURED_WORK_ITEM_IDS.map((id) => WORK_ITEMS.find((item) => item.id === id)).filter(Boolean)
   const sections = WORK_TYPE_META.map((type) => ({
     ...type,
     items: getWorkItemsByType(type.id),
@@ -30,7 +28,6 @@ export default function WorksPage() {
   return (
     <main className="bg-[#ece8df] text-[#171611] dark:bg-[#0d0e0d] dark:text-gray-100">
       <WorksMuseumClient
-        featuredItems={featuredItems}
         sections={sections}
         items={WORK_ITEMS}
         operatingCount={operatingCount}

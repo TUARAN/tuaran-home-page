@@ -17,7 +17,7 @@ test('H5 feed hides search and batch buttons in favor of pull-to-refresh', async
     readFile(new URL('../app/(site)/components/HomeFeaturedReadingClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../app/(site)/components/GroupedDirectoryPage.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/components/ShowcaseDirectory.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/articles/ArticleListItem.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/community/DiscussionHubClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/account/AccountClient.jsx', import.meta.url), 'utf8'),
@@ -31,10 +31,10 @@ test('H5 feed hides search and batch buttons in favor of pull-to-refresh', async
   assert.match(articlesSource, /hidden space-y-2.5[\s\S]*搜索标题、主题或对象/)
   assert.match(listSource, /h5-feed-row/)
   assert.match(listSource, /grid-cols-\[minmax\(0,1fr\)_72px\]/)
-  assert.match(directorySource, /h5-directory-page/)
-  assert.match(directorySource, /h5-feed-row/)
-  assert.match(directorySource, /h5-feed-list/)
-  assert.match(directorySource, /h5-feed-label mb-0 md:hidden/)
+  assert.match(directorySource, /sm:grid-cols-2 lg:grid-cols-3/)
+  assert.match(directorySource, /flex max-w-\[1176px\] flex-col gap-3 lg:flex-row/)
+  assert.match(directorySource, /searchPlaceholder/)
+  assert.match(directorySource, /clearFilters/)
   assert.match(readingSource, /h5-feed-row home-reading-item/)
   assert.match(communitySource, /h5-community-page/)
   assert.match(communitySource, /h5-topic-list/)

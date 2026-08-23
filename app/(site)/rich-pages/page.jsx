@@ -1,5 +1,4 @@
-import SharePageButton from '../components/SharePageButton'
-import GroupedDirectoryPage from '../components/GroupedDirectoryPage'
+import RichPagesDirectory from './RichPagesDirectory'
 import {
   ENGINEERING_WORK_CATEGORIES,
   ENGINEERING_WORKS,
@@ -40,67 +39,22 @@ export const metadata = {
 export default async function RichPagesPage() {
   const { state } = await getOwnerPageState()
   const canViewOwnerContent = state === 'owner'
-  const sections = ENGINEERING_WORK_CATEGORIES.map((category) => ({
-    ...category,
-    titleEn: category.id.replaceAll('-', ' '),
-    items: ENGINEERING_WORKS
-      .filter((work) => work.category === category.id)
-      .filter((work) => work.audience !== 'owner' || canViewOwnerContent)
-      .map((work) => {
-        const presentation = getRichPagePresentation(work)
-        return {
-          ...work,
-          analyticsEvent: 'entry_click',
-          analyticsSurface: 'interactive_directory',
-          analyticsDestinationKind: 'interactive',
-          pvKey: getRichPagePvKey(work),
-          actionLabel: '进入',
-          mobileBadge: work.audience === 'owner'
-            ? {
-                label: '仅站长',
-                mono: false,
-                className: 'border-[#9e1f2f] bg-[#f8e9e8] text-[#741522] dark:border-[#8f3c47] dark:bg-[#321b1e] dark:text-[#f28a94]',
-              }
-            : { label: presentation.label, mono: false },
-          badges: [
-            {
-              label: presentation.label,
-              mono: false,
-              className: presentation.id === 'feature'
-                ? 'border-[#6d5d82] bg-[#2f2146] text-white dark:border-[#75698a] dark:bg-[#c1c6a8] dark:text-[#171611]'
-                : '',
-            },
-            { label: work.kind || '互动专题', mono: false },
-            { label: work.date },
-            ...(work.tags || [])
-              .filter((tag) => tag !== '仅站长')
-              .slice(0, 4)
-              .map((tag) => ({ label: tag, mono: false })),
-            ...(work.audience === 'owner' ? [{
-              label: '仅站长',
-              className: 'border-[#9e1f2f] bg-[#f8e9e8] text-[#741522] dark:border-[#8f3c47] dark:bg-[#321b1e] dark:text-[#f28a94]',
-            }] : []),
-            ...(work.badge ? [{
-              label: work.badge,
-              className: 'border-[#c9b27c] bg-[#fff8e8] text-[#7a581b] dark:border-[#5b4824] dark:bg-[#241d12] dark:text-[#e7c77f]',
-            }] : []),
-          ],
-        }
-      }),
-  })).filter((section) => section.items.length > 0)
+  const categoryLabels = Object.fromEntries(ENGINEERING_WORK_CATEGORIES.map((category) => [category.id, category.title]))
+  const works = ENGINEERING_WORKS
+    .filter((work) => work.audience !== 'owner' || canViewOwnerContent)
+    .map((work) => {
+      const presentation = getRichPagePresentation(work)
+      return {
+        ...work,
+        categoryLabel: categoryLabels[work.category] || '互动专题',
+        presentation: presentation.id,
+        presentationLabel: presentation.label,
+        pvKey: getRichPagePvKey(work),
+      }
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))
 
   return (
-    <GroupedDirectoryPage
-      eyebrow="Rich Pages"
-      title="互动专题"
-      description={(
-        <p className="mb-0">
-          数据、分析和工具可以在同一页面中阅读、筛选和操作，适合呈现传统图文难以表达的关系。
-        </p>
-      )}
-      headerActions={<SharePageButton title="互动专题" text="可阅读、可筛选、可操作的内容页。" url={PAGE_URL} size="sm" />}
-      sections={sections}
-      actionLabel="进入"
-    />
+    <RichPagesDirectory works={works} categories={ENGINEERING_WORK_CATEGORIES} />
   )
 }

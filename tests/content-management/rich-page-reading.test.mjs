@@ -13,7 +13,7 @@ const RICH_PAGE_FRAME_PATH = new URL(
 )
 const CONTENT_REGISTRY_PATH = new URL('../../lib/contentRegistry.js', import.meta.url)
 const DIRECTORY_PATH = new URL(
-  '../../app/(site)/components/GroupedDirectoryPage.jsx',
+  '../../app/(site)/components/ShowcaseDirectory.jsx',
   import.meta.url,
 )
 
@@ -39,7 +39,7 @@ test('rich pages report visits and the directory batch-loads counts', async () =
   assert.match(frame, /getRichPagePvKey\(work\)/)
   assert.match(frame, /<ContentPvBeacon category=\{pvCategory\} slug=\{pvSlug\} \/>/)
   assert.match(directory, /fetch\(`\/api\/research-pv\?keys=/)
-  assert.match(directory, /阅读量 \$\{formatPv\(pv\)\}/)
-  assert.match(directory, /md:grid-cols-\[minmax\(260px,0\.9fr\)_minmax\(0,1\.1fr\)\]/)
+  assert.match(directory, /阅读量 \{formatPv\(pv\)\}/)
+  assert.match(directory, /md:grid-cols-\[280px_minmax\(0,1fr\)\]/)
   assert.doesNotMatch(directory, /minmax\(280px,auto\)/)
 })

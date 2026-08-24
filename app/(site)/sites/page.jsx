@@ -8,7 +8,7 @@ export const dynamic = 'force-static'
 
 export const metadata = {
   title: '二级站点',
-  description: '涂阿燃正在维护的独立站点入口：矩联科技、博主联盟、前端周看、AI分发大师与 Open Claude Code。',
+  description: '2aran.com 的公开子域站点入口：GPT Plus 充值与中国诗词。',
   alternates: { canonical: '/sites' },
 }
 
@@ -44,7 +44,7 @@ export default function SecondarySitesPage() {
           二级站点
         </h1>
         <p className="mt-4 max-w-[760px] text-[15px] leading-8 text-[var(--site-muted)]">
-          从 2aran.com 延伸出的独立产品、技术情报站和工程专题。每个站点有自己的主题和使用场景，由涂阿燃持续维护。
+          2aran.com 下可公开访问的子域站点。仅收录面向访客的内容与服务站点，不包含后台、内部工具和接口域名。
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <span className="rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-1.5 font-mono text-[11px] text-[var(--site-muted)]">

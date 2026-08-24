@@ -15,6 +15,7 @@ import {
   normalizeGreetingLlmIntent,
 } from '../../../../lib/dailyGreetingLlm'
 import { cultureStoryLastRunKey } from '../../../../lib/dailyCultureStory'
+import { X_ARTICLE_TASK_SETTING_KEY } from '../../../../lib/xArticleExtension'
 import {
   listMorningGreetingTemplates,
   upsertMorningGreetingTemplate,
@@ -47,6 +48,10 @@ async function writeSetting(db, key, value, updatedBy) {
     .run()
 }
 
+function parseJsonSetting(value) {
+  try { return JSON.parse(value || 'null') } catch { return null }
+}
+
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
@@ -70,6 +75,7 @@ export async function GET(req) {
       cultureMorningRaw,
       cultureAfternoonRaw,
       cultureEveningRaw,
+      xArticleRaw,
     ] = await Promise.all([
       listMorningGreetingTemplates(db),
       readSetting(db, MORNING_GREETING_SETTING_KEY),
@@ -88,6 +94,7 @@ export async function GET(req) {
       readSetting(db, cultureStoryLastRunKey('culture_morning')),
       readSetting(db, cultureStoryLastRunKey('culture_afternoon')),
       readSetting(db, cultureStoryLastRunKey('culture_evening')),
+      readSetting(db, X_ARTICLE_TASK_SETTING_KEY),
     ])
     const lastRuns = {}
     for (const [key, raw] of [['morning', morningRaw], ['noon', noonRaw], ['evening', eveningRaw]]) {
@@ -125,6 +132,7 @@ export async function GET(req) {
       ollamaProviderId,
       lastRuns,
       cultureRuns,
+      xArticleRun: parseJsonSetting(xArticleRaw),
     })
   } catch (error) {
     return Response.json(

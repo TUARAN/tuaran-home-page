@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
-import XAiNewsPanel from './XAiNewsPanel'
 
 const PERIODS = [
   { id: 'morning', label: '早安' },
@@ -40,7 +39,6 @@ function Field({ label, className = '', children }) {
 }
 
 export default function MorningGreetingClient() {
-  const [activeTask, setActiveTask] = useState('manual')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -74,6 +72,7 @@ export default function MorningGreetingClient() {
   const templates = data?.templates || []
   const lastRuns = data?.lastRuns || {}
   const cultureRuns = data?.cultureRuns || {}
+  const xArticleRun = data?.xArticleRun || null
 
   async function saveTemplate(template) {
     setSaving(true); setError(''); setNotice('')
@@ -100,7 +99,7 @@ export default function MorningGreetingClient() {
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.error || `HTTP_${response.status}`)
-      setNotice(data?.paused ? '已恢复每日六个时段。' : '已暂停，六个时段都不会发布。')
+      setNotice(data?.paused ? '已恢复全部自动任务。' : '已暂停，所有自动发布都不会执行。')
       await refresh()
     } catch (pauseError) { setError(pauseError?.message || '状态切换失败。') } finally { setSaving(false) }
   }
@@ -133,44 +132,15 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="手动发一条已核实的 AI 资讯，或管理每天六个时段的自动问候与文化短故事。"
+      description="管理每日问候、文化短故事和 X 长文章自动发布。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
 
-      <div role="tablist" aria-label="X 发布任务类型" className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-[#e9ebe3] p-1.5 dark:bg-[#151c25]">
-        {[
-          { id: 'manual', label: '手动任务', description: 'AI 资讯生成与发布' },
-          { id: 'automatic', label: '自动任务', description: '定时问候与模板' },
-        ].map((task) => {
-          const active = activeTask === task.id
-          return (
-            <button
-              key={task.id}
-              id={`task-tab-${task.id}`}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              aria-controls={`task-panel-${task.id}`}
-              onClick={() => setActiveTask(task.id)}
-              className={`rounded-lg px-4 py-3 text-left transition ${active ? 'bg-white text-[#25261f] shadow-sm dark:bg-[#253041] dark:text-white' : 'text-[#77796e] hover:bg-white/50 hover:text-[#3f4039] dark:text-gray-400 dark:hover:bg-[#1c2633] dark:hover:text-gray-200'}`}
-            >
-              <span className="block text-sm font-semibold">{task.label}</span>
-              <span className="mt-0.5 block text-[11px]">{task.description}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      <div id="task-panel-manual" role="tabpanel" aria-labelledby="task-tab-manual" hidden={activeTask !== 'manual'}>
-        <XAiNewsPanel />
-      </div>
-
-      <div id="task-panel-automatic" role="tabpanel" aria-labelledby="task-tab-automatic" hidden={activeTask !== 'automatic'}>
-        <Section
+      <Section
           title="自动任务"
-          description="每天自动发布三条问候和三条文化短故事。模型文案生成后直接发出，不经人工审核。"
+          description="每天自动发布三条问候、三条文化短故事和一篇 X Article，不经人工审核。"
           className="mb-4"
           actions={
             <>
@@ -189,6 +159,27 @@ export default function MorningGreetingClient() {
             <p className="mb-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">文化短故事 · 10:00 / 16:00 / 20:00</p>
             <p className="mb-2 text-[11px] leading-5 text-[#85877c]">每条约 105—130 个汉字，讲清故事和含义。15 条循环配比：国学哲思 40%、中华寓言或历史故事 40%、国外童话或寓言 20%。问候选择模板方式时，文化短故事仍由 DeepSeek 生成。</p>
             <div className="grid gap-2 md:grid-cols-3">{CULTURE_STORY_SLOTS.map((item) => { const run = cultureRuns[item.id]; return <div key={item.id} className="rounded-lg border border-[#e2e4da] px-3 py-2.5 dark:border-[#243041]"><div className="flex items-center justify-between gap-2"><strong className="text-sm">{item.label}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-0 mt-1 text-[11px] text-[#82847a]">{item.time}{run?.at ? ` · ${formatTime(run.at)}` : ''}{run?.category ? ` · ${CULTURE_CATEGORY_LABELS[run.category] || run.category}` : ''}</p>{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 mt-1 break-words text-[11px] text-rose-600">{run.error}</p> : null}</div> })}</div>
+          </div>
+
+          <div>
+            <p className="mb-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">X 长文章 · 14:00</p>
+            <p className="mb-2 text-[11px] leading-5 text-[#85877c]">浏览器插件每天随机领取一篇站内文章，保留兼容的链接、排版和图片后发布到 X Articles；领取、图片上传或页面加载失败会自动重试。</p>
+            <div className="rounded-lg border border-[#e2e4da] px-3 py-2.5 dark:border-[#243041]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <strong className="text-sm">{xArticleRun?.title || '等待插件领取'}</strong>
+                <StatusPill
+                  tone={xArticleRun?.status === 'published' ? 'success' : ['failed', 'uncertain'].includes(xArticleRun?.status) ? 'danger' : 'neutral'}
+                  size="sm"
+                >
+                  {xArticleRun?.status === 'published' ? '成功' : xArticleRun?.status === 'failed' ? '等待重试' : xArticleRun?.status === 'uncertain' ? '待确认' : xArticleRun ? '已领取' : '暂无'}
+                </StatusPill>
+              </div>
+              <p className="mb-0 mt-1 text-[11px] text-[#82847a]">
+                14:00{xArticleRun?.updatedAt || xArticleRun?.createdAt ? ` · ${formatTime(xArticleRun.updatedAt || xArticleRun.createdAt)}` : ''}{xArticleRun?.attempts ? ` · 尝试 ${xArticleRun.attempts} 次` : ''}
+              </p>
+              {xArticleRun?.xArticleUrl ? <a href={xArticleRun.xArticleUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看 X Article</a> : null}
+              {xArticleRun?.detail ? <p className="mb-0 mt-1 break-words text-[11px] text-[#77796e] dark:text-gray-400">{xArticleRun.detail}</p> : null}
+            </div>
           </div>
 
           <div>
@@ -265,7 +256,6 @@ export default function MorningGreetingClient() {
           </article>
         })}</div>
         </Section>
-      </div>
     </AdminPage>
   )
 }

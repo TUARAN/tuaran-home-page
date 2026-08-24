@@ -67,7 +67,7 @@ test('模型调用管理展示云调用、本地调用与 Mac 专用入口', asy
   assert.match(client, /DeepSeek 密钥/)
   assert.match(client, /NAS · Ollama/)
   assert.match(ollamaPanel, /NAS · Ollama 使用场景/)
-  assert.match(ollamaPanel, /X AI 资讯草稿/)
+  assert.match(ollamaPanel, /X 每日问候文案/)
   assert.match(ollamaPanel, /Mac 本地聊天/)
   assert.match(ollamaPanel, /item\.scope === 'local'/)
   assert.match(route, /params\.get\('scope'\)/)

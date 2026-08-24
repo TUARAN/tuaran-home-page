@@ -21,7 +21,7 @@ export default function AutomationWorkspace() {
           description: '管理有明确输入、审核窗口和发布结果的自动内容任务。',
           items: [
             { href: '/admin/a-share-research', title: 'A 股研究自动化', description: '每日选题、联网检索草稿、复核窗口、自动发布与运行日志。', icon: 'aShareResearch' },
-            { href: '/admin/morning-greeting', title: 'X 发布任务', description: '管理 AI 资讯、每日问候与文化短故事的发布任务。', icon: 'morningGreeting' },
+            { href: '/admin/morning-greeting', title: 'X 发布任务', description: '管理每日问候、文化短故事和 X 长文章自动发布。', icon: 'morningGreeting' },
           ],
         },
       ]}

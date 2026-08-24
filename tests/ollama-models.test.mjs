@@ -37,16 +37,15 @@ test('服务卡片通过现有 PATCH 切换默认模型，并保留刷新失败�
   assert.match(panel, /llm-providers\/models\?id=/)
   assert.match(panel, /method: 'PATCH'/)
   assert.match(panel, /JSON\.stringify\(\{ id: provider\.id, defaultModel: model \}\)/)
-  assert.match(panel, /切换默认模型会影响 X AI 资讯草稿、每日问候和服务测试等云调用，是否继续？/)
+  assert.match(panel, /切换默认模型会影响每日问候和服务测试等云调用，是否继续？/)
   assert.match(panel, /当前默认模型仍为 \{provider\.defaultModel\}/)
   assert.match(panel, /刷新模型列表/)
 })
 
 test('业务调用与台账继续使用服务端解析后的默认模型', async () => {
-  const [ollama, tasks, xAiNews, morningGreeting, testRoute] = await Promise.all([
+  const [ollama, tasks, morningGreeting, testRoute] = await Promise.all([
     read('../lib/ollama.js'),
     read('../lib/deepseekTasks.js'),
-    read('../app/api/admin/x-ai-news/route.js'),
     read('../app/api/admin/morning-greeting/route.js'),
     read('../app/api/admin/llm-providers/test/route.js'),
   ])
@@ -54,7 +53,6 @@ test('业务调用与台账继续使用服务端解析后的默认模型', async
   assert.match(ollama, /model \|\| row\.default_model/)
   assert.match(ollama, /model: resolvedModel/)
   assert.match(tasks, /text\(model, 160\)/)
-  assert.match(xAiNews, /model: row\.default_model/)
   assert.match(morningGreeting, /model: row\.default_model/)
   assert.match(testRoute, /model: result\.model/)
 })

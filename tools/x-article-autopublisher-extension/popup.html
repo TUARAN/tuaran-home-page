@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>X Article 自动发布</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <h1>X Article 自动发布</h1>
+      <p id="status" class="status">读取状态中…</p>
+      <label><span>领取密钥</span><input id="secret" type="password" autocomplete="off" placeholder="X_ARTICLE_EXTENSION_SECRET" /></label>
+      <div class="grid">
+        <label><span>北京时间</span><input id="hour" type="number" min="0" max="23" value="14" /></label>
+        <label><span>重试（分钟）</span><input id="retry" type="number" min="5" max="180" value="15" /></label>
+      </div>
+      <label class="toggle"><input id="enabled" type="checkbox" checked /><span>启用每日自动发布</span></label>
+      <div class="actions">
+        <button id="save" type="button">保存设置</button>
+        <button id="run" type="button" class="secondary">立即检查</button>
+      </div>
+      <p class="note">浏览器需保持运行并已登录 X。插件会保留安全链接和基础排版，并确认正文图片上传完成后再发布。</p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

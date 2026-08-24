@@ -7,7 +7,6 @@ const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 te
 const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-6 text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const EMPTY_FORM = { name: '', baseUrl: '', defaultModel: '', authType: 'none', token: '', clientId: '', clientSecret: '', status: 'active', note: '' }
 const OLLAMA_USES = [
-  { name: 'X AI 资讯草稿', source: 'x-ai-news', taskTypes: ['manual-copy-generation'], scope: 'cloud' },
   { name: 'X 每日问候文案', source: 'x-daily-greeting', taskTypes: ['direct-post-copy'], scope: 'cloud' },
   { name: '服务连通测试', source: 'admin-llm-provider', taskTypes: ['connection-test'], scope: 'cloud' },
   { name: 'Mac 本地聊天', source: 'mac-nas-qwen', taskTypes: ['chat'], scope: 'local' },
@@ -182,7 +181,7 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
   async function setDefaultModel(provider) {
     const model = String(selectedModels[provider.id] || provider.defaultModel || '').trim()
     if (!model || model === provider.defaultModel) return
-    if (!window.confirm('切换默认模型会影响 X AI 资讯草稿、每日问候和服务测试等云调用，是否继续？')) return
+    if (!window.confirm('切换默认模型会影响每日问候和服务测试等云调用，是否继续？')) return
 
     setSavingDefaultId(provider.id)
     setError('')

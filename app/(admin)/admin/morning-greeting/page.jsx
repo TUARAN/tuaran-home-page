@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'X 发布任务',
-  description: '手动生成并发布 NAS Qwen AI 资讯，同时管理早安、午安、晚安自动问候。',
+  description: '管理自动发布的每日问候、文化短故事和 X 长文章。',
   robots: { index: false, follow: false },
 }
 
@@ -15,7 +15,7 @@ export default function AdminMorningGreetingPage() {
     <AdminPageGate
       label="X 发布任务"
       returnTo="/admin/morning-greeting"
-      description="管理 NAS Qwen AI 资讯手动发布、问候模板与每日三次 X 自动发布，仅站长本人可见。"
+      description="管理每日问候、文化短故事和 X 长文章自动发布，仅站长本人可见。"
     >
       <MorningGreetingClient />
     </AdminPageGate>

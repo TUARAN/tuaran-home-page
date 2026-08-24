@@ -11,6 +11,7 @@ const TICKER_ITEMS = [
   { icon: '🧭', label: '了解作者与长期方向', cta: '关于我', href: '/about' },
   { icon: '🧪', label: '原创项目与交互作品', cta: '看作品', href: '/works' },
   { icon: '💬', label: '交友进社群', cta: '进圈子', href: '/community' },
+  { icon: '🏛️', label: '中国诗词·历代诗文资料库', cta: '读诗词', href: 'https://poemcn.2aran.com/', external: true },
   { icon: '⚡', label: '低价 CodeX 直冲', cta: '去充值', href: 'https://gptplus.2aran.com', external: true },
 ]
 

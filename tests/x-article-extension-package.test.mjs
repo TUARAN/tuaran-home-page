@@ -40,6 +40,9 @@ test('文章抽取保留安全链接、基础排版和图片位置', async () =>
   assert.match(siteSource, /images\.length >= 20/)
   assert.match(siteSource, /document\.querySelector\("article\.prose-tuaran"\)\s*\n\s*\|\|/)
   assert.match(siteSource, /node\.closest\(EXCLUDE_SELECTOR\)/)
+  assert.match(siteSource, /isGeneratedTocItem/)
+  assert.match(siteSource, /isSamePageHashLink/)
+  assert.match(siteSource, /\.toc-scroll-panel/)
   assert.doesNotMatch(siteSource, /querySelector\("article\.prose-tuaran, \.prose-tuaran, main article, main"\)/)
   assert.doesNotMatch(siteSource, /main > figure img, main > div > img/)
 })
@@ -79,4 +82,25 @@ test('图片经后台下载后调用 X 自身上传处理器，并校验上传�
   assert.match(mainWorld, /X_IMAGE_MARKER_REMAINED/)
   assert.match(isolated, /uploadedImages/)
   assert.match(isolated, /X_IMAGE_COUNT_MISMATCH/)
+})
+
+test('插件已接入浏览器扩展集合、工具库和独立下载介绍页', async () => {
+  const manifest = JSON.parse(await read('manifest.json'))
+  const workItems = await readFile(new URL('../lib/workItems.js', import.meta.url), 'utf8')
+  const toolItems = await readFile(new URL('../lib/toolItems.js', import.meta.url), 'utf8')
+  const catalog = await readFile(new URL('../lib/resourceCatalog.js', import.meta.url), 'utf8')
+  const registry = await readFile(new URL('../lib/contentRegistry.js', import.meta.url), 'utf8')
+  const sitemap = await readFile(new URL('../app/(site)/sitemap.js', import.meta.url), 'utf8')
+  const resourcePage = await readFile(
+    new URL('../app/(site)/resources/x-article-autopublisher-extension/page.jsx', import.meta.url),
+    'utf8',
+  )
+
+  for (const source of [workItems, toolItems, catalog, registry, sitemap]) {
+    assert.match(source, /x-article-autopublisher-extension/)
+  }
+  assert.match(catalog, new RegExp(`x-article-autopublisher-extension-v${manifest.version.replaceAll('.', '\\.')}\\.zip`))
+  assert.ok(resourcePage.includes(`const VERSION = '${manifest.version}'`))
+  assert.match(resourcePage, /领取密钥有什么用/)
+  assert.match(resourcePage, /Chrome 需要保持运行/)
 })

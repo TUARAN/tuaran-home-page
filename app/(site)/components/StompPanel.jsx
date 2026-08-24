@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { IconArrowUp, IconBrandGithub } from '@tabler/icons-react'
+import { useMemo, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
 import UserAvatar from './UserAvatar'
@@ -11,67 +12,36 @@ async function safeJson(res) {
   try {
     return JSON.parse(text)
   } catch {
-    return { error: 'NON_JSON_RESPONSE', detail: text.slice(0, 120) }
+    return { error: 'NON_JSON_RESPONSE' }
   }
 }
 
-function formatTime(ts) {
-  try {
-    return new Date(ts).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return ''
-  }
+const ERROR_MESSAGES = {
+  UNAUTHORIZED: '登录状态已失效，请重新登录。',
+  EMPTY_MESSAGE: '写点内容再发布。',
+  MESSAGE_TOO_LONG: '留言不能超过 280 字。',
+  RATE_LIMITED: '发布得有点快，稍后再试。',
+  INTERNAL_SERVER_ERROR: '暂时没有发布成功，请稍后重试。',
 }
 
-export default function StompPanel() {
+export default function StompPanel({ onPublished }) {
   const { user, loading: userLoading } = useSessionAccount()
-  const [items, setItems] = useState([])
   const [message, setMessage] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-
-  const isAuthed = !!user
-
-  const remaining = useMemo(() => 280 - message.trim().length, [message])
-
-  async function refresh() {
-    setError('')
-    try {
-      const res = await fetch('/api/stomp?limit=30', { cache: 'no-store' })
-      const data = await safeJson(res)
-      if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
-      setItems(Array.isArray(data?.items) ? data.items : [])
-    } catch (e) {
-      setError(e?.message || 'FETCH_FAILED')
-    }
-  }
-
-  useEffect(() => {
-    refresh()
-  }, [])
+  const remaining = useMemo(() => 280 - message.length, [message])
 
   function login() {
-    const returnTo = window.location.pathname || '/'
+    const returnTo = `${window.location.pathname}#community-feed-title`
     window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`
   }
 
-  function logout() {
-    const returnTo = window.location.pathname || '/'
-    window.location.href = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  }
-
-  async function submit(e) {
-    e.preventDefault()
+  async function submit(event) {
+    event.preventDefault()
     const trimmed = message.trim()
-    if (!trimmed) return
+    if (!trimmed || submitting) return
 
-    setLoading(true)
+    setSubmitting(true)
     setError('')
     try {
       const res = await fetch('/api/stomp', {
@@ -81,107 +51,53 @@ export default function StompPanel() {
       })
       const data = await safeJson(res)
       if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
-
       setMessage('')
-      await refresh()
-    } catch (e) {
-      setError(e?.message || 'POST_FAILED')
+      onPublished?.(data?.item)
+    } catch (cause) {
+      setError(ERROR_MESSAGES[cause?.message] || '暂时没有发布成功，请稍后重试。')
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
   return (
-    <section className="rounded-xl border border-gray-200/70 bg-white/80 p-4 text-sm shadow-sm backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900/70">
-      <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={refresh}
-            className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-0.5 text-[12px] text-gray-700 hover:bg-white dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
-          >
-            刷新
-          </button>
-
-          {isAuthed ? (
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-0.5 text-[12px] text-gray-700 hover:bg-white dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
-            >
-              退出
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={userLoading}
-              onClick={login}
-              className="rounded-full border border-gray-200/70 bg-white/80 px-3 py-0.5 text-[12px] text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
-            >
-              GitHub 登录
-            </button>
-          )}
+    <section className="community-composer" aria-labelledby="community-composer-title">
+      <div className="community-composer-head">
+        <div>
+          <p className="community-kicker">SAY HELLO</p>
+          <h3 id="community-composer-title">留下想法</h3>
+        </div>
+        {user ? <UserAvatar user={user} size="sm" /> : null}
       </div>
 
-      {isAuthed ? (
-        <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-[12px] text-gray-600 dark:text-gray-300">
-            <UserAvatar user={user} size="xs" />
-            <span>{user?.name || user?.login || '已登录'}</span>
-          </div>
-
+      {user ? (
+        <form onSubmit={submit}>
           <textarea
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={3}
+            onChange={(event) => setMessage(event.target.value)}
+            rows={4}
             maxLength={280}
-            placeholder="登录后可以留言（最多 280 字）"
-            className="w-full rounded-lg border border-gray-200/70 bg-white/80 p-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-gray-200 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200 dark:focus:ring-gray-700"
+            placeholder="分享近况、问题或合作想法…"
+            aria-label="圈子留言"
           />
-
-          <div className="flex items-center justify-between">
-            <span className={`text-[12px] ${remaining < 0 ? 'text-red-600' : 'text-gray-500'} dark:text-gray-400`}>
-              {remaining} 字
-            </span>
-            <button
-              type="submit"
-              disabled={loading || !message.trim() || remaining < 0}
-              className="rounded-full border border-gray-200/70 bg-white/80 px-4 py-1 text-[12px] text-gray-700 shadow-sm hover:bg-white disabled:opacity-60 dark:border-gray-700/60 dark:bg-gray-900/70 dark:text-gray-200"
-            >
-              {loading ? '发送中…' : '留言'}
+          <div className="community-composer-foot">
+            <span>{remaining}</span>
+            <button type="submit" disabled={submitting || !message.trim()}>
+              {submitting ? '发布中…' : '发布'} <IconArrowUp size={15} aria-hidden="true" />
             </button>
           </div>
         </form>
       ) : (
-        <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-300">
-          先用 GitHub 登录，才能在面板里留言。
-        </p>
+        <div className="community-login-prompt">
+          <p>登录后，可以在圈子里公开留言。</p>
+          <button type="button" onClick={login} disabled={userLoading}>
+            <IconBrandGithub size={17} aria-hidden="true" />
+            {userLoading ? '正在检查…' : '使用 GitHub 登录'}
+          </button>
+        </div>
       )}
 
-      {error ? (
-        <p className="mt-3 text-[12px] text-red-600">{error}</p>
-      ) : null}
-
-      <div className="mt-4">
-        <div className="mb-2 text-[12px] text-gray-500 dark:text-gray-400">最新留言</div>
-        {items.length ? (
-          <ul className="space-y-2">
-            {items.map((it) => (
-              <li key={it.id} className="rounded-lg border border-gray-200/70 bg-white/60 p-2 dark:border-gray-700/60 dark:bg-gray-900/50">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <UserAvatar seed={it.user_name || it.user_id || 'guest'} size="xs" title={it.user_name} />
-                    <span className="text-[12px] text-gray-700 dark:text-gray-200">{it.user_name}</span>
-                  </div>
-                  <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatTime(it.created_at)}</span>
-                </div>
-                <div className="mt-1 whitespace-pre-wrap text-gray-700 dark:text-gray-200">{it.message}</div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-[12px] text-gray-500 dark:text-gray-400">还没有留言，来留下第一条吧。</div>
-        )}
-      </div>
+      {error ? <p className="community-composer-error" role="alert">{error}</p> : null}
     </section>
   )
 }

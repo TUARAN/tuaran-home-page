@@ -182,7 +182,7 @@ export default function MorningGreetingClient() {
         <div className="space-y-4">
           <div>
             <p className="mb-2 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">问候 · 08:00 / 12:00 / 22:00</p>
-            <div className="grid gap-2 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-lg border border-[#e2e4da] px-3 py-2.5 dark:border-[#243041]"><div className="flex items-center justify-between gap-2"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-0 mt-1 text-[11px] text-[#82847a]">{formatTime(run?.at)}{run?.mode ? ` · ${generationModeLabel(run.mode)}` : ''}{run?.model ? ` · ${run.model}` : ''}</p>{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 mt-1 break-words text-[11px] text-rose-600">{run.error}</p> : null}</div> })}</div>
+            <div className="grid gap-2 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-lg border border-[#e2e4da] px-3 py-2.5 dark:border-[#243041]"><div className="flex items-center justify-between gap-2"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-0 mt-1 text-[11px] text-[#82847a]">{formatTime(run?.at)}{run?.mode ? ` · ${generationModeLabel(run.mode)}` : ''}{run?.styleLabel ? ` · ${run.styleLabel}` : ''}{run?.model ? ` · ${run.model}` : ''}</p>{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 mt-1 break-words text-[11px] text-rose-600">{run.error}</p> : null}</div> })}</div>
           </div>
 
           <div>
@@ -234,7 +234,7 @@ export default function MorningGreetingClient() {
                 </Field> : null}
                 <Field className="mb-0" label="意图（提示语）"><textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={4} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={inputClass} /></Field>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">系统会自动补上日期、当前时段和 X 长度限制；这里只写内容意图。</p>
+                  <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">每次从人间烟火、轻松俏皮、诗意留白、微小行动、好奇联想中随机选择一种，再由当前模型结合日期、时段和内容意图生成。</p>
                   <AdminButton type="button" variant="primary" disabled={saving || loading || !isGenerationDirty || !llmIntent.trim() || (generationMode === 'ollama' && !ollamaProviderId)} onClick={saveGenerationSettings}>{saving ? '保存中…' : isGenerationDirty ? '保存并应用' : '已应用'}</AdminButton>
                 </div>
               </div>

@@ -20,6 +20,7 @@ import {
 } from '../lib/morningGreeting.js'
 import { rowToTemplate } from '../lib/morningGreetingTemplates.js'
 import {
+  DAILY_GREETING_STYLES,
   DEFAULT_DAILY_GREETING_LLM_INTENT,
   buildGreetingLlmMessages,
   buildGreetingLengthRepairMessages,
@@ -27,6 +28,7 @@ import {
   normalizeGeneratedGreeting,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
+  pickDailyGreetingStyle,
 } from '../lib/dailyGreetingLlm.js'
 
 test('greeting date label uses Asia/Shanghai day of month', () => {
@@ -139,16 +141,30 @@ test('DeepSeek is the default while Ollama, templates, and the legacy LLM value 
 })
 
 test('LLM prompt includes current period, date, and editable intent', () => {
+  const style = DAILY_GREETING_STYLES[2]
   const messages = buildGreetingLlmMessages({
     intent: '围绕今天先完成一件小事来写。',
     period: 'noon',
     now: new Date('2026-08-18T04:00:00.000Z'),
+    style,
   })
   assert.equal(messages.length, 2)
   assert.match(messages[0].content, /只输出最终文案/)
   assert.match(messages[1].content, /当前时段：午安/)
   assert.match(messages[1].content, /当前日期：8月18号/)
+  assert.match(messages[1].content, new RegExp(`本次风格：${style.label}`))
+  assert.match(messages[1].content, new RegExp(style.direction.slice(0, 12)))
   assert.match(messages[1].content, /围绕今天先完成一件小事来写/)
+})
+
+test('five greeting styles are distinct and selected across the full random range', () => {
+  assert.equal(DAILY_GREETING_STYLES.length, 5)
+  assert.equal(new Set(DAILY_GREETING_STYLES.map((style) => style.id)).size, 5)
+  assert.equal(new Set(DAILY_GREETING_STYLES.map((style) => style.label)).size, 5)
+  assert.deepEqual(
+    [0, 0.2, 0.4, 0.6, 0.999999].map((value) => pickDailyGreetingStyle({ random: () => value }).id),
+    DAILY_GREETING_STYLES.map((style) => style.id),
+  )
 })
 
 test('generated greeting cleanup removes wrappers without rewriting copy', () => {
@@ -190,4 +206,6 @@ test('自动任务支持三种生成模式，模板管理收敛为三条固定�
   assert.match(cronRouteSource, /callOllama\(/)
   assert.match(cronRouteSource, /buildGreetingLengthRepairMessages/)
   assert.match(cronRouteSource, /fitGeneratedGreetingToXLimit/)
+  assert.match(cronRouteSource, /pickDailyGreetingStyle/)
+  assert.match(cronRouteSource, /styleLabel/)
 })

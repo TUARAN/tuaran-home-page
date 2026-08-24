@@ -40,6 +40,7 @@ export default function sitemap() {
     '/help',
     '/publications',
     '/services',
+    '/sites',
     '/articles',
     '/frontend-weekly',
     '/a-share-research',

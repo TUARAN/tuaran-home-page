@@ -32,7 +32,7 @@ export default function ArticleFooterCta() {
         </a>
 
         <Link
-          href="/contact"
+          href="/help#contact"
           className="group flex items-baseline gap-3 rounded-xl border border-[#dee0db] bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:border-[#c2c4b7] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-600"
         >
           <span className="text-[18px]" aria-hidden="true">💬</span>

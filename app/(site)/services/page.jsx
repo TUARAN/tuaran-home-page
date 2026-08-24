@@ -88,7 +88,7 @@ const caseStudies = [
     action: '统一 contentKey、内容索引、相关阅读、评论、阅读统计与订阅链路。',
     deliverable: '知识库、内容管线、RSS、Newsletter 与后台同步工具。',
     result: '目前统一索引 160+ 条内容，调研、资源和原创文章可以按同一套结构持续发布。',
-    href: '/site',
+    href: '/help#about-site',
   },
   {
     label: '开源协作',

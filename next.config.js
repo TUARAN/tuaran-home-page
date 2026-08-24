@@ -79,6 +79,31 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/site',
+        destination: '/help#about-site',
+        permanent: true,
+      },
+      {
+        source: '/map',
+        destination: '/help#site-map',
+        permanent: true,
+      },
+      {
+        source: '/editorial',
+        destination: '/help#editorial',
+        permanent: true,
+      },
+      {
+        source: '/privacy',
+        destination: '/help#privacy',
+        permanent: true,
+      },
+      {
+        source: '/contact',
+        destination: '/help#contact',
+        permanent: true,
+      },
+      {
         // 「智慧边界」已从资源库迁移到多维页面
         source: '/resources/wisdom-frontier',
         destination: '/wisdom-frontier',

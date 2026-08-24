@@ -854,7 +854,7 @@ function ClassicHomePage({ featuredPicks }) {
                     More
                   </p>
                   <Link
-                    href="/site"
+                    href="/help#about-site"
                     className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#646655] no-underline opacity-80 transition-opacity hover:opacity-100 dark:text-[#acaf9d]"
                   >
                     <T zh="站点说明 →" en="About this site →" />

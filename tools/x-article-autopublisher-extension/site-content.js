@@ -2,7 +2,7 @@
   "use strict";
 
   const BLOCK_SELECTOR = "h2, h3, h4, p, li, blockquote, pre, table, img";
-  const EXCLUDE_SELECTOR = "script, style, nav, footer, aside, button, form, iframe, .not-prose, [aria-hidden='true'], [data-x-article-exclude]";
+  const EXCLUDE_SELECTOR = "script, style, nav, footer, aside, button, form, iframe, .not-prose, .toc-scroll-panel, [data-toc-item-id], [data-toc-subitem-id], [aria-hidden='true'], [data-x-article-exclude]";
   const STYLE_BY_TAG = { B: "Bold", STRONG: "Bold", I: "Italic", EM: "Italic", S: "Strikethrough", DEL: "Strikethrough", CODE: "Code" };
 
   function cleanText(value) {
@@ -86,6 +86,31 @@
     };
   }
 
+  function isSamePageHashLink(anchor) {
+    const raw = String(anchor?.getAttribute("href") || "").trim();
+    if (raw.startsWith("#")) return raw.length > 1;
+    try {
+      const url = new URL(raw, location.href);
+      return Boolean(url.hash) && url.origin === location.origin && url.pathname === location.pathname && url.search === location.search;
+    } catch {
+      return false;
+    }
+  }
+
+  function isGeneratedTocItem(node) {
+    if (node.tagName !== "LI") return false;
+    const list = node.closest("ul, ol");
+    if (!list) return false;
+    const items = Array.from(list.children).filter((item) => item.tagName === "LI");
+    if (items.length < 2) return false;
+    return items.every((item) => {
+      const anchors = Array.from(item.querySelectorAll("a"));
+      return anchors.length === 1
+        && isSamePageHashLink(anchors[0])
+        && cleanText(item.textContent) === cleanText(anchors[0].textContent);
+    });
+  }
+
   function extractArticle() {
     const source = document.querySelector("article.prose-tuaran")
       || document.querySelector("article.article-post-body")
@@ -100,6 +125,7 @@
     for (const node of nodes) {
       const excludedAncestor = node.closest(EXCLUDE_SELECTOR);
       if (excludedAncestor && excludedAncestor !== source) continue;
+      if (isGeneratedTocItem(node)) continue;
       const parentBlock = node.parentElement?.closest(BLOCK_SELECTOR);
       if (node.tagName !== "IMG" && parentBlock && source.contains(parentBlock)) continue;
       if (node.tagName === "IMG") {

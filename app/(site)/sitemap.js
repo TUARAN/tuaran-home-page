@@ -86,6 +86,7 @@ export default function sitemap() {
     '/resources/codex-learning-resource-map-yichen',
     '/resources/shen-zhi-ding-nei',
     '/resources/wallpapers',
+    '/resources/x-article-autopublisher-extension',
     '/resources/x-mutual-cleaner-extension',
     '/resources/x-tweet-to-pdf-extension',
     '/community',

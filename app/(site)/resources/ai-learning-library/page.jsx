@@ -102,7 +102,7 @@ export default function AiLearningLibraryPage() {
             <a href={`${AI_LEARNING_LIBRARY_META.sourceRepo}/commit/${AI_LEARNING_LIBRARY_META.sourceCommit}`} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-[#333] dark:hover:text-gray-200">
               {AI_LEARNING_LIBRARY_META.sourceCommit.slice(0, 7)}
             </a>
-            。版权反馈可前往 <Link href="/contact" className="underline underline-offset-4 hover:text-[#333] dark:hover:text-gray-200">联系页面</Link>。
+            。版权反馈可前往 <Link href="/help#contact" className="underline underline-offset-4 hover:text-[#333] dark:hover:text-gray-200">联系说明</Link>。
           </p>
         </footer>
       </PageContainer>

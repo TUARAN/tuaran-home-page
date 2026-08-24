@@ -322,7 +322,7 @@ export default async function ResearchDetailPage({ params }) {
           {entry.showAssistance && assistance && !isEncrypted ? (
             <>
               <span aria-hidden="true">·</span>
-              <Link href="/editorial" className="underline decoration-dotted underline-offset-4">
+              <Link href="/help#editorial" className="underline decoration-dotted underline-offset-4">
                 协助：{entry.assistanceLabel || entry.sourceLabel || 'TUARAN'}
               </Link>
             </>

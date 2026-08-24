@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3efe5" />
+    <meta
+      name="description"
+      content="中国诗词——持续扩充的古诗词与文言文数据库。浏览诗文、名句、作者与古籍。"
+    />
+    <title>中国诗词｜古诗词与文言文</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="paper-noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#top" aria-label="中国诗词首页">
+          <span class="brand-seal">词</span>
+          <span class="brand-name">中国诗词</span>
+        </a>
+
+        <nav class="main-nav" aria-label="主导航">
+          <button class="nav-item is-active" data-section="推荐">推荐</button>
+          <button class="nav-item" data-section="诗文">诗文</button>
+          <button class="nav-item" data-section="名句">名句</button>
+          <button class="nav-item" data-section="古籍">古籍</button>
+          <button class="nav-item" data-section="作者">作者</button>
+          <button class="nav-item" data-section="字词">字词</button>
+        </nav>
+
+        <div class="header-actions">
+          <button class="icon-button" id="themeToggle" aria-label="切换深色模式" title="切换深色模式">
+            <span aria-hidden="true">◐</span>
+          </button>
+          <button class="login-button" id="loginButton">登录</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="heroTitle">
+        <div class="hero-mountains" aria-hidden="true">
+          <span class="mountain mountain-one"></span>
+          <span class="mountain mountain-two"></span>
+          <span class="mountain mountain-three"></span>
+          <span class="sun"></span>
+        </div>
+        <div class="hero-content">
+          <p class="eyebrow">中华诗词开放资料库</p>
+          <h1 id="heroTitle">在千年文字里，<br />与古人重逢。</h1>
+          <p class="hero-copy">从先秦到明清，持续收录、校验和分类的一座中文诗词资料库。</p>
+
+          <form class="search-box" id="searchForm" role="search">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input
+              id="searchInput"
+              name="q"
+              type="search"
+              autocomplete="off"
+              placeholder="搜索诗文、作者或名句"
+              aria-label="搜索诗文、作者或名句"
+            />
+            <button type="submit">搜索</button>
+          </form>
+
+          <div class="quick-searches" aria-label="热门搜索">
+            <span>试试：</span>
+            <button data-query="李白">李白</button>
+            <button data-query="明月">明月</button>
+            <button data-query="宋词">宋词</button>
+            <button data-query="山水">山水</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="page-shell">
+        <section class="content-column" aria-live="polite">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker" id="sectionKicker">今日推荐</p>
+              <h2 id="sectionTitle">值得慢慢读的诗文</h2>
+            </div>
+            <span class="result-count" id="resultCount"></span>
+          </div>
+
+          <div class="filter-row" id="filterRow" aria-label="内容筛选">
+            <button class="filter-chip is-active" data-dynasty="全部">全部</button>
+            <button class="filter-chip" data-dynasty="唐代">唐代</button>
+            <button class="filter-chip" data-dynasty="宋代">宋代</button>
+            <button class="filter-chip" data-dynasty="魏晋">魏晋</button>
+          </div>
+
+          <div class="filter-row filter-row-secondary" aria-label="体裁筛选">
+            <button class="filter-chip is-active" data-genre="全部">全体裁</button>
+            <button class="filter-chip" data-genre="诗">诗</button>
+            <button class="filter-chip" data-genre="词">词</button>
+            <button class="filter-chip" data-genre="曲">曲</button>
+          </div>
+
+          <div class="poem-list" id="poemList">
+            <div class="loading-card">正在翻开诗卷…</div>
+          </div>
+
+          <button class="load-more" id="loadMore" hidden>再读十二篇</button>
+
+          <div class="empty-state" id="emptyState" hidden>
+            <span>未</span>
+            <h3>没有找到相关诗文</h3>
+            <p>换一个关键词，或清除筛选后再看看。</p>
+            <button id="clearSearch">清除筛选</button>
+          </div>
+        </section>
+
+        <aside class="sidebar">
+          <section class="daily-card">
+            <div class="daily-card-head">
+              <span>今日一句</span>
+              <button id="nextQuote" aria-label="换一句">换一句 ↻</button>
+            </div>
+            <blockquote id="dailyQuote"></blockquote>
+            <cite id="dailySource"></cite>
+            <div class="ink-branch" aria-hidden="true"></div>
+          </section>
+
+          <section class="side-panel">
+            <div class="side-panel-title">
+              <h2>热门作者</h2>
+              <button class="text-link" data-section-link="作者">全部</button>
+            </div>
+            <div class="author-list" id="authorList"></div>
+          </section>
+
+          <section class="side-panel">
+            <div class="side-panel-title"><h2>分类浏览</h2></div>
+            <div class="category-grid">
+              <button data-query="山水"><span>山水</span><small>江山入诗</small></button>
+              <button data-query="思乡"><span>思乡</span><small>故园千里</small></button>
+              <button data-query="春天"><span>春日</span><small>花鸟风月</small></button>
+              <button data-query="人生"><span>旷达</span><small>一蓑烟雨</small></button>
+            </div>
+          </section>
+
+          <p class="source-note" id="sourceNote">收录公共领域古典作品与开放数据，并保存来源及许可信息。</p>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <a class="footer-brand" href="#top"><span>词</span>中国诗词</a>
+        <p>读古人文章，见天地与自己。</p>
+      </div>
+      <p>© <span id="year"></span> poemcn.2aran.com</p>
+    </footer>
+
+    <dialog class="login-dialog" id="loginDialog">
+      <button class="dialog-close" id="closeLogin" aria-label="关闭">×</button>
+        <span class="dialog-seal">词</span>
+      <h2>留下你的阅读足迹</h2>
+      <p>收藏、笔记和阅读进度功能正在准备中。</p>
+      <button class="dialog-primary" id="dialogOkay">知道了</button>
+    </dialog>
+
+    <div class="toast" id="toast" role="status"></div>
+  </body>
+</html>

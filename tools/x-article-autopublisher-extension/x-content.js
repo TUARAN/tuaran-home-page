@@ -114,7 +114,7 @@
     return Boolean(await waitFor(titleEditor, 20000));
   }
 
-  async function publish({ taskId, title, body, html, images = [] }) {
+  async function publish({ taskId, title, body, blocks = [], images = [] }) {
     title = String(title || "").trim().slice(0, 100);
     body = String(body || "").trim().slice(0, 80000);
     if (!title || !body) return { ok: false, error: "EMPTY_ARTICLE" };
@@ -126,12 +126,13 @@
     if (titleBox.matches("input, textarea")) setNativeValue(titleBox, title);
     else setEditableText(titleBox, title);
     const richResult = await writeRichBody({
-      html: String(html || "").trim() || `<p>${body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n+/g, "</p><p>")}</p>`,
+      blocks,
       body,
       images,
     });
     if (!richResult?.ok) return { ok: false, error: richResult?.error || "X_RICH_BODY_WRITE_FAILED" };
     if (Number(richResult.uploadedImages) !== images.length) return { ok: false, error: "X_IMAGE_COUNT_MISMATCH" };
+    if (bodyBox.innerText.includes("[[2ARAN_IMAGE_")) return { ok: false, error: "X_IMAGE_MARKER_REMAINED" };
     await sleep(1500);
 
     const publishButton = await waitFor(() => findButton(/^(Publish|发布)$/i), 15000);
@@ -161,6 +162,11 @@
   }
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.type === "inspect-x-article-editor") {
+      const title = titleEditor();
+      sendResponse({ title: String(title?.value || title?.innerText || title?.textContent || "").trim() });
+      return false;
+    }
     if (message?.type !== "publish-x-article") return false;
     publish(message).then(sendResponse).catch((error) => sendResponse({ ok: false, error: String(error?.message || error) }));
     return true;

@@ -153,11 +153,11 @@ function bytesToBase64(bytes) {
 }
 
 function imageFileName(image, index, mime) {
-  const fallbackExtension = ({ "image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp" })[mime] || "jpg";
+  const fallbackExtension = ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" })[mime] || "jpg";
   try {
     const raw = decodeURIComponent(new URL(image.src).pathname.split("/").pop() || "");
     const clean = raw.replace(/[^a-z0-9._-]+/gi, "-").slice(-100);
-    if (/\.(?:jpe?g|png|gif|webp)$/i.test(clean)) return clean;
+    if (/\.(?:jpe?g|png|webp)$/i.test(clean)) return clean;
   } catch {}
   return `article-image-${index + 1}.${fallbackExtension}`;
 }
@@ -169,7 +169,7 @@ async function prepareImages(article) {
     const response = await fetch(image.src, { credentials: "omit", cache: "no-store" });
     if (!response.ok) throw new Error(`ARTICLE_IMAGE_HTTP_${response.status}_${index + 1}`);
     const mime = String(response.headers.get("content-type") || "").split(";")[0].toLowerCase();
-    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mime)) throw new Error(`ARTICLE_IMAGE_FORMAT_UNSUPPORTED_${index + 1}`);
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) throw new Error(`ARTICLE_IMAGE_FORMAT_UNSUPPORTED_${index + 1}`);
     const buffer = await response.arrayBuffer();
     if (!buffer.byteLength || buffer.byteLength > 8 * 1024 * 1024) throw new Error(`ARTICLE_IMAGE_SIZE_INVALID_${index + 1}`);
     prepared.push({
@@ -183,15 +183,34 @@ async function prepareImages(article) {
   return { ...article, images: prepared };
 }
 
-async function publishArticle(task, article) {
-  const tab = await chrome.tabs.create({ url: COMPOSE_URL, active: true });
+async function findReusableDraft(task, draftTabId) {
+  if (draftTabId) {
+    const saved = await chrome.tabs.get(draftTabId).catch(() => null);
+    if (saved && /x\.com\/compose\/articles\/(?:edit\/)?/i.test(saved.url || "")) return saved;
+  }
+  const tabs = await chrome.tabs.query({ url: ["https://x.com/compose/articles/edit/*", "https://twitter.com/compose/articles/edit/*"] });
+  for (const tab of tabs.reverse()) {
+    const info = await chrome.tabs.sendMessage(tab.id, { type: "inspect-x-article-editor" }).catch(() => null);
+    if (String(info?.title || "").trim() === String(task.title || "").trim()) return tab;
+  }
+  return null;
+}
+
+async function publishArticle(task, article, draftTabId) {
+  const reusable = await findReusableDraft(task, draftTabId);
+  const tab = reusable || await chrome.tabs.create({ url: COMPOSE_URL, active: true });
+  if (reusable) await chrome.tabs.update(tab.id, { active: true });
   await waitForTab(tab.id);
-  return sendMessageWithRetry(tab.id, {
+  await setState({ draftTabId: tab.id, detail: reusable ? "正在修复并复用现有 X Article 草稿…" : "正在写入新的 X Article 草稿…" });
+  const result = await sendMessageWithRetry(tab.id, {
     type: "publish-x-article",
     taskId: task.id,
     title: article.title,
-    body: article.body
+    body: article.body,
+    blocks: article.blocks,
+    images: article.images,
   }, { attempts: 15, delayMs: 1500 });
+  return { ...result, draftTabId: tab.id };
 }
 
 async function runAutomation({ force = false } = {}) {
@@ -224,7 +243,7 @@ async function runAutomation({ force = false } = {}) {
       await setState({ status: "running", detail: `正在准备文章格式与 ${extracted.images?.length || 0} 张图片…`, task, attempt });
       const article = await prepareImages(extracted);
       await setState({ status: "running", detail: "链接、排版和图片已准备，正在打开 X Articles 编辑器…", task, attempt });
-      const result = await publishArticle(task, article);
+      const result = await publishArticle(task, article, state.draftTabId);
       if (!result?.ok) {
         const status = result?.submissionStarted ? "uncertain" : "failed";
         throw Object.assign(new Error(result?.error || "X_ARTICLE_PUBLISH_FAILED"), { publishStatus: status });
@@ -235,6 +254,7 @@ async function runAutomation({ force = false } = {}) {
         successDate: clock.date,
         task,
         xArticleUrl: result.xArticleUrl || "",
+        draftTabId: null,
         attempt
       });
       await reportTask(settings.secret, {

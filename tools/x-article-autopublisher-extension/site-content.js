@@ -2,7 +2,8 @@
   "use strict";
 
   const BLOCK_SELECTOR = "h2, h3, h4, p, li, blockquote, pre, table, img";
-  const INLINE_TAGS = new Set(["A", "B", "STRONG", "I", "EM", "S", "DEL", "CODE", "BR"]);
+  const EXCLUDE_SELECTOR = "script, style, nav, footer, aside, button, form, iframe, .not-prose, [aria-hidden='true'], [data-x-article-exclude]";
+  const STYLE_BY_TAG = { B: "Bold", STRONG: "Bold", I: "Italic", EM: "Italic", S: "Strikethrough", DEL: "Strikethrough", CODE: "Code" };
 
   function cleanText(value) {
     return String(value || "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
@@ -17,48 +18,62 @@
     }
   }
 
-  function sanitizeInline(source) {
-    const wrapper = document.createElement("span");
-    function append(node, target) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        target.append(document.createTextNode(node.textContent || ""));
-        return;
-      }
+  function inlineContent(source) {
+    let text = "";
+    const inlineStyleRanges = [];
+    const links = [];
+    function appendText(value) {
+      const next = String(value || "").replace(/\s+/g, " ");
+      if (!next) return;
+      text += text.endsWith(" ") && next.startsWith(" ") ? next.slice(1) : next;
+    }
+    function visit(node) {
+      if (node.nodeType === Node.TEXT_NODE) return appendText(node.textContent);
       if (node.nodeType !== Node.ELEMENT_NODE || node.tagName === "IMG") return;
-      const allowed = INLINE_TAGS.has(node.tagName);
-      const next = allowed ? document.createElement(node.tagName.toLowerCase()) : target;
-      if (allowed && node.tagName === "A") {
-        const href = safeUrl(node.getAttribute("href"));
-        if (href) next.setAttribute("href", href);
-        else return Array.from(node.childNodes).forEach((child) => append(child, target));
+      if (node.tagName === "BR") return appendText(" ");
+      const start = text.length;
+      Array.from(node.childNodes).forEach(visit);
+      const length = text.length - start;
+      const style = STYLE_BY_TAG[node.tagName];
+      if (style && length) inlineStyleRanges.push({ offset: start, length, style });
+      if (node.tagName === "A" && length) {
+        const url = safeUrl(node.getAttribute("href"));
+        if (url) links.push({ offset: start, length, url });
       }
-      if (allowed) target.append(next);
-      Array.from(node.childNodes).forEach((child) => append(child, next));
     }
-    Array.from(source.childNodes).forEach((child) => append(child, wrapper));
-    return wrapper.innerHTML.trim();
+    Array.from(source.childNodes).forEach(visit);
+    const leading = text.length - text.trimStart().length;
+    const resultText = text.trim();
+    const adjust = (range) => {
+      const start = Math.max(0, range.offset - leading);
+      const end = Math.min(resultText.length, range.offset + range.length - leading);
+      return end > start ? { ...range, offset: start, length: end - start } : null;
+    };
+    return {
+      text: resultText,
+      inlineStyleRanges: inlineStyleRanges.map(adjust).filter(Boolean),
+      links: links.map(adjust).filter(Boolean),
+    };
   }
 
-  function escapeHtml(value) {
-    return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
-
-  function blockHtml(node) {
-    const inner = sanitizeInline(node);
-    const text = cleanText(node.innerText || node.textContent || "");
-    if (!text && !inner) return null;
-    if (/^H[2-4]$/.test(node.tagName)) return { html: `<${node.tagName.toLowerCase()}>${inner}</${node.tagName.toLowerCase()}>`, plain: text };
-    if (node.tagName === "LI") return { html: `<ul><li>${inner}</li></ul>`, plain: `• ${text}` };
-    if (node.tagName === "BLOCKQUOTE") return { html: `<blockquote>${inner}</blockquote>`, plain: `> ${text}` };
-    if (node.tagName === "PRE") return { html: `<pre>${inner || escapeHtml(text)}</pre>`, plain: text };
+  function blocksFromNode(node) {
     if (node.tagName === "TABLE") {
-      const rows = Array.from(node.querySelectorAll("tr")).map((row) => (
-        Array.from(row.querySelectorAll("th, td")).map((cell) => cleanText(cell.textContent)).filter(Boolean).join(" ｜ ")
-      )).filter(Boolean);
-      const tableText = rows.join("\n");
-      return tableText ? { html: `<pre>${escapeHtml(tableText)}</pre>`, plain: tableText } : null;
+      return Array.from(node.querySelectorAll("tr")).map((row, index) => {
+        const text = Array.from(row.querySelectorAll("th, td")).map((cell) => cleanText(cell.textContent)).filter(Boolean).join(" ｜ ");
+        return text ? { type: index === 0 ? "header-four" : "unstyled", text, inlineStyleRanges: [], links: [] } : null;
+      }).filter(Boolean);
     }
-    return { html: `<p>${inner}</p>`, plain: text };
+    const content = inlineContent(node);
+    if (!content.text) return [];
+    const type = /^H[2-4]$/.test(node.tagName)
+      ? `header-${{ H2: "two", H3: "three", H4: "four" }[node.tagName]}`
+      : node.tagName === "LI"
+        ? (node.closest("ol") ? "ordered-list-item" : "unordered-list-item")
+        : node.tagName === "BLOCKQUOTE"
+          ? "blockquote"
+          : "unstyled";
+    if (node.tagName === "PRE") content.inlineStyleRanges.push({ offset: 0, length: content.text.length, style: "Code" });
+    return [{ type, ...content }];
   }
 
   function imageItem(node, index) {
@@ -72,37 +87,35 @@
   }
 
   function extractArticle() {
-    const source = document.querySelector("article.prose-tuaran, .prose-tuaran, main article, main");
+    const source = document.querySelector("article.prose-tuaran")
+      || document.querySelector("article.article-post-body")
+      || document.querySelector("main article")
+      || document.querySelector(".prose-tuaran")
+      || document.querySelector("main");
     if (!source) return null;
-    const nodes = [];
-    const cover = document.querySelector("main > figure img, main > div > img");
-    if (cover && !source.contains(cover)) nodes.push(cover);
-    nodes.push(...source.querySelectorAll(BLOCK_SELECTOR));
+    const nodes = Array.from(source.querySelectorAll(BLOCK_SELECTOR));
 
-    const html = [];
-    const plain = [];
+    const blocks = [];
     const images = [];
     for (const node of nodes) {
-      if (node.matches("script, style, nav, footer, aside, button, form, iframe, .not-prose, [aria-hidden='true'], [data-x-article-exclude]")) continue;
+      const excludedAncestor = node.closest(EXCLUDE_SELECTOR);
+      if (excludedAncestor && excludedAncestor !== source) continue;
       const parentBlock = node.parentElement?.closest(BLOCK_SELECTOR);
       if (node.tagName !== "IMG" && parentBlock && source.contains(parentBlock)) continue;
       if (node.tagName === "IMG") {
+        if (images.length >= 20) continue;
         const image = imageItem(node, images.length);
         if (!image || images.some((item) => item.src === image.src)) continue;
         images.push(image);
-        html.push(`<p>${image.marker}</p>`);
-        plain.push(image.marker);
+        blocks.push({ type: "unstyled", text: image.marker, inlineStyleRanges: [], links: [] });
         continue;
       }
-      const block = blockHtml(node);
-      if (!block) continue;
-      html.push(block.html);
-      plain.push(block.plain);
+      blocks.push(...blocksFromNode(node));
     }
     return {
-      html: html.join("\n"),
-      body: cleanText(plain.join("\n\n")).slice(0, 80000),
-      images: images.slice(0, 20),
+      blocks,
+      body: cleanText(blocks.filter((block) => !block.text.startsWith("[[2ARAN_IMAGE_")).map((block) => block.text).join("\n\n")).slice(0, 80000),
+      images,
     };
   }
 
@@ -114,7 +127,7 @@
       ok: Boolean(title && extracted?.body),
       title,
       body: extracted?.body || "",
-      html: extracted?.html || "",
+      blocks: extracted?.blocks || [],
       images: extracted?.images || [],
       error: !extracted?.body ? "ARTICLE_BODY_NOT_FOUND" : "",
     });

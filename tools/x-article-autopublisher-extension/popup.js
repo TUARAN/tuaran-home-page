@@ -7,7 +7,6 @@ const elements = {
   hour: document.querySelector("#hour"),
   retry: document.querySelector("#retry"),
   enabled: document.querySelector("#enabled"),
-  save: document.querySelector("#save"),
   run: document.querySelector("#run")
 };
 
@@ -20,8 +19,9 @@ function statusText(state) {
 }
 
 async function load() {
-  const saved = await chrome.storage.local.get(["settings", "state"]);
+  const saved = await chrome.storage.local.get(["settings", "state", "extensionSecret"]);
   const settings = { ...DEFAULTS, ...(saved.settings || {}) };
+  settings.secret = saved.extensionSecret || settings.secret;
   elements.secret.value = settings.secret;
   elements.hour.value = settings.publishHour;
   elements.retry.value = settings.retryMinutes;
@@ -30,30 +30,29 @@ async function load() {
 }
 
 async function save() {
+  const saved = await chrome.storage.local.get(["settings", "extensionSecret"]);
+  const secret = elements.secret.value.trim() || saved.extensionSecret || saved.settings?.secret || "";
   const settings = {
     enabled: elements.enabled.checked,
-    secret: elements.secret.value.trim(),
+    secret,
     publishHour: Math.max(0, Math.min(23, Number(elements.hour.value) || 14)),
     retryMinutes: Math.max(5, Math.min(180, Number(elements.retry.value) || 15))
   };
-  await chrome.storage.local.set({ settings });
+  await chrome.storage.local.set({ settings, extensionSecret: secret });
   return settings;
 }
 
-async function act(kind) {
-  elements.save.disabled = true;
+async function saveAndRun() {
   elements.run.disabled = true;
   try {
     await save();
-    const result = await chrome.runtime.sendMessage({ type: kind });
+    const result = await chrome.runtime.sendMessage({ type: "run-now" });
     if (result?.error) elements.status.textContent = `执行失败\n${result.error}`;
     await load();
   } finally {
-    elements.save.disabled = false;
     elements.run.disabled = false;
   }
 }
 
-elements.save.addEventListener("click", () => act("settings-updated"));
-elements.run.addEventListener("click", () => act("run-now"));
+elements.run.addEventListener("click", saveAndRun);
 load();

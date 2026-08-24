@@ -9,10 +9,9 @@ input[type="password"], input[type="number"] { box-sizing: border-box; width: 10
 .toggle { display: flex; align-items: center; gap: 8px; }
 .actions { display: flex; gap: 8px; margin-top: 12px; }
 button { flex: 1; border: 0; border-radius: 999px; background: #20211c; color: #fff; padding: 10px 12px; font-weight: 700; cursor: pointer; }
-button.secondary { border: 1px solid #c9c6bb; background: #fff; color: #33342e; }
 button:disabled { cursor: wait; opacity: .6; }
 .note { margin: 13px 0 0; color: #747267; font-size: 11px; line-height: 18px; }
 @media (prefers-color-scheme: dark) {
   body { background: #11161d; color: #eef1f5; }
-  .status, input[type="password"], input[type="number"], button.secondary { border-color: #303946; background: #18202a; color: #eef1f5; }
+  .status, input[type="password"], input[type="number"] { border-color: #303946; background: #18202a; color: #eef1f5; }
 }

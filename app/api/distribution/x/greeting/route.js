@@ -28,6 +28,7 @@ import {
   normalizeGeneratedGreeting,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
+  pickDailyGreetingStyle,
 } from '../../../../../lib/dailyGreetingLlm'
 import { callDeepSeek } from '../../../../../lib/deepseek'
 import { callOllama } from '../../../../../lib/ollama'
@@ -161,6 +162,9 @@ export async function POST(req) {
   }
   // 固定模板只适用于早午晚安；文化短故事始终实时生成。
   if (isCultureStory && generationMode === 'template') generationMode = 'deepseek'
+  const greetingStyle = !isCultureStory && generationMode !== 'template'
+    ? pickDailyGreetingStyle()
+    : null
 
   let text = ''
   let generation = null
@@ -169,7 +173,7 @@ export async function POST(req) {
       const generationArgs = {
         messages: isCultureStory
           ? buildCultureStoryMessages({ slot: storySlot, now: requestNow })
-          : buildGreetingLlmMessages({ intent: llmIntent, period }),
+          : buildGreetingLlmMessages({ intent: llmIntent, period, now: requestNow, style: greetingStyle }),
         temperature: 0.85,
         maxTokens: isCultureStory ? 384 : 256,
         task: {
@@ -180,8 +184,14 @@ export async function POST(req) {
           actorName: '线上定时自动化',
           inputSummary: isCultureStory
             ? `时段：${storySlot}；类别：${storyCategory}`
-            : `时段：${period}；意图：${llmIntent.slice(0, 500)}`,
-          metadata: { period: runSlot, contentType: isCultureStory ? 'culture-story' : 'greeting', directPublish: true, generationMode },
+            : `时段：${period}；风格：${greetingStyle.label}；意图：${llmIntent.slice(0, 500)}`,
+          metadata: {
+            period: runSlot,
+            contentType: isCultureStory ? 'culture-story' : 'greeting',
+            directPublish: true,
+            generationMode,
+            greetingStyle: greetingStyle?.id || '',
+          },
         },
       }
       generation = generationMode === 'ollama'
@@ -245,7 +255,16 @@ export async function POST(req) {
         await writeSetting(
           db,
           lastRunKey,
-          JSON.stringify({ at: Date.now(), ok: false, period: runSlot, mode: generationMode, stage: 'generation', error: errorCode }),
+          JSON.stringify({
+            at: Date.now(),
+            ok: false,
+            period: runSlot,
+            mode: generationMode,
+            style: greetingStyle?.id || '',
+            styleLabel: greetingStyle?.label || '',
+            stage: 'generation',
+            error: errorCode,
+          }),
           'automation',
         ).catch(() => {})
       }
@@ -272,7 +291,16 @@ export async function POST(req) {
       await writeSetting(
         db,
         lastRunKey,
-        JSON.stringify({ at: Date.now(), ok: false, period: runSlot, mode: generationMode, stage: 'validation', error: 'TEXT_TOO_LONG' }),
+        JSON.stringify({
+          at: Date.now(),
+          ok: false,
+          period: runSlot,
+          mode: generationMode,
+          style: greetingStyle?.id || '',
+          styleLabel: greetingStyle?.label || '',
+          stage: 'validation',
+          error: 'TEXT_TOO_LONG',
+        }),
         'automation',
       ).catch(() => {})
     }
@@ -285,7 +313,16 @@ export async function POST(req) {
       await writeSetting(
         db,
         lastRunKey,
-        JSON.stringify({ at: Date.now(), ok: false, period: runSlot, mode: generationMode, stage: 'publish', error: result.error }),
+        JSON.stringify({
+          at: Date.now(),
+          ok: false,
+          period: runSlot,
+          mode: generationMode,
+          style: greetingStyle?.id || '',
+          styleLabel: greetingStyle?.label || '',
+          stage: 'publish',
+          error: result.error,
+        }),
         'automation',
       ).catch(() => {})
     }
@@ -300,6 +337,8 @@ export async function POST(req) {
       contentType: isCultureStory ? 'culture-story' : 'greeting',
       category: storyCategory,
       mode: generationMode,
+      style: greetingStyle?.id || '',
+      styleLabel: greetingStyle?.label || '',
       postId: result.post.id,
       postUrl: result.post.url,
       model: generation?.model || '',
@@ -319,6 +358,8 @@ export async function POST(req) {
     contentType: isCultureStory ? 'culture-story' : 'greeting',
     category: storyCategory,
     mode: generationMode,
+    style: greetingStyle?.id || '',
+    styleLabel: greetingStyle?.label || '',
     model: generation?.model || '',
     providerId: generation?.providerId || '',
     providerName: generation?.providerName || (generationMode === 'deepseek' ? 'DeepSeek Flash' : ''),

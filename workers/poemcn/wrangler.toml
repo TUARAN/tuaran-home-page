@@ -1,0 +1,28 @@
+name = "poemcn"
+main = "src/index.js"
+compatibility_date = "2026-08-24"
+workers_dev = true
+
+[[routes]]
+pattern = "poemcn.2aran.com"
+custom_domain = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+html_handling = "auto-trailing-slash"
+not_found_handling = "single-page-application"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "china-poetry"
+database_id = "ad1634af-1bd6-485b-a465-b48a81c9414e"
+migrations_dir = "migrations"
+
+[observability]
+enabled = true
+head_sampling_rate = 1

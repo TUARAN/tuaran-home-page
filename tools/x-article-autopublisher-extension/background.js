@@ -162,25 +162,51 @@ function imageFileName(image, index, mime) {
   return `article-image-${index + 1}.${fallbackExtension}`;
 }
 
-async function prepareImages(article) {
-  const prepared = [];
-  for (let index = 0; index < (article.images || []).length; index += 1) {
-    const image = article.images[index];
-    const response = await fetch(image.src, { credentials: "omit", cache: "no-store" });
-    if (!response.ok) throw new Error(`ARTICLE_IMAGE_HTTP_${response.status}_${index + 1}`);
+async function prepareImage(image, index) {
+  const sources = Array.from(new Set([...(image.sources || []), image.src].filter(Boolean)));
+  let retryableError = null;
+  for (const src of sources) {
+    let response = null;
+    try {
+      response = await fetch(src, { credentials: "omit", cache: "no-store" });
+    } catch (error) {
+      retryableError = new Error(`ARTICLE_IMAGE_FETCH_FAILED_${index + 1}_${String(error?.message || error)}`);
+      continue;
+    }
+    if (!response.ok) {
+      if (response.status >= 500 || [408, 425, 429].includes(response.status)) {
+        retryableError = new Error(`ARTICLE_IMAGE_HTTP_${response.status}_${index + 1}`);
+      }
+      continue;
+    }
     const mime = String(response.headers.get("content-type") || "").split(";")[0].toLowerCase();
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) throw new Error(`ARTICLE_IMAGE_FORMAT_UNSUPPORTED_${index + 1}`);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mime)) continue;
     const buffer = await response.arrayBuffer();
-    if (!buffer.byteLength || buffer.byteLength > 8 * 1024 * 1024) throw new Error(`ARTICLE_IMAGE_SIZE_INVALID_${index + 1}`);
-    prepared.push({
+    if (!buffer.byteLength || buffer.byteLength > 8 * 1024 * 1024) continue;
+    return {
       marker: image.marker,
       alt: image.alt,
       mime,
-      fileName: imageFileName(image, index, mime),
+      fileName: imageFileName({ ...image, src }, index, mime),
       base64: bytesToBase64(new Uint8Array(buffer)),
-    });
+    };
   }
-  return { ...article, images: prepared };
+  if (retryableError) throw retryableError;
+  return null;
+}
+
+async function prepareImages(article) {
+  const prepared = [];
+  const skippedImages = [];
+  for (let index = 0; index < (article.images || []).length; index += 1) {
+    const image = article.images[index];
+    const result = await prepareImage(image, index);
+    if (result) prepared.push(result);
+    else skippedImages.push({ marker: image.marker, alt: image.alt || "", reason: "SOURCE_UNAVAILABLE" });
+  }
+  const skippedMarkers = new Set(skippedImages.map((image) => image.marker));
+  const blocks = (article.blocks || []).filter((block) => !skippedMarkers.has(String(block?.text || "").trim()));
+  return { ...article, blocks, images: prepared, skippedImages };
 }
 
 async function findReusableDraft(task, draftTabId) {
@@ -242,7 +268,8 @@ async function runAutomation({ force = false } = {}) {
       const extracted = await extractArticle(task);
       await setState({ status: "running", detail: `正在准备文章格式与 ${extracted.images?.length || 0} 张图片…`, task, attempt });
       const article = await prepareImages(extracted);
-      await setState({ status: "running", detail: "链接、排版和图片已准备，正在打开 X Articles 编辑器…", task, attempt });
+      const skippedNote = article.skippedImages.length ? `，已跳过 ${article.skippedImages.length} 张失效图片` : "";
+      await setState({ status: "running", detail: `链接、排版和图片已准备${skippedNote}，正在打开 X Articles 编辑器…`, task, attempt });
       const result = await publishArticle(task, article, state.draftTabId);
       if (!result?.ok) {
         const status = result?.submissionStarted ? "uncertain" : "failed";
@@ -250,7 +277,7 @@ async function runAutomation({ force = false } = {}) {
       }
       await setState({
         status: "published",
-        detail: `今日已发布《${task.title}》。`,
+        detail: `今日已发布《${task.title}》${skippedNote}。`,
         successDate: clock.date,
         task,
         xArticleUrl: result.xArticleUrl || "",
@@ -260,7 +287,7 @@ async function runAutomation({ force = false } = {}) {
       await reportTask(settings.secret, {
         taskId: task.id,
         status: "published",
-        detail: result.detail || "X Articles 页面确认发布成功。",
+        detail: `${result.detail || "X Articles 页面确认发布成功。"}${skippedNote}`,
         xArticleUrl: result.xArticleUrl || "",
         attempt
       }).catch(async (reportError) => {

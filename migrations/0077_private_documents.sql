@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS private_documents (
   slug TEXT PRIMARY KEY,
   title TEXT NOT NULL DEFAULT '',
+  -- JSON 序列化的 AES-GCM 密文信封；禁止写入正文明文。
   content TEXT NOT NULL DEFAULT '',
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL

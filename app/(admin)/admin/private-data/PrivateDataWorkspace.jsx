@@ -14,6 +14,7 @@ export default function PrivateDataWorkspace() {
           items: [
             { href: '/admin/long-compass', title: '长期罗盘', description: '强私密个人内容库，在浏览器本地输入口令后解密。', icon: 'compass', note: '客户端解密 · 服务端密文' },
             { href: '/admin/flower-diary', title: '采花日记', description: '按时间线、筛选表格和聚合画像回看私人体验记录。', icon: 'flower', note: '客户端解密 · 只读看板' },
+            { href: '/admin/self-regulation', title: '锻炼与自控', description: '整理欲望、压力与行为记录，追踪触发链、风险边界和四周行动。', icon: 'wellbeing', note: 'owner-only · 结构化复盘' },
             { href: '/admin/information', title: '信息保险库', description: '加密保存账号、密码、密保答案和其他敏感资料。', icon: 'information', note: 'AES-GCM · 口令不上传' },
           ],
         },

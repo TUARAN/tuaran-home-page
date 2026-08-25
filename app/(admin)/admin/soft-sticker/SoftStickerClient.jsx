@@ -16,7 +16,7 @@ import {
 
 import { decryptPayload } from '../../../../lib/longCompass/crypto'
 import { AdminPage, Section, StatCard } from '../../components/ui'
-import { FLOWER_DIARY_ENVELOPE } from './seed'
+import { SOFT_STICKER_ENVELOPE } from './seed'
 
 const CONTROL_CLASS =
   'h-10 rounded-lg border border-[#caccc0] bg-white px-3 text-sm text-[#34362f] outline-none transition focus:border-[#92713d] focus:ring-2 focus:ring-[#92713d]/10 dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-100'
@@ -347,7 +347,7 @@ function TableView({ rows }) {
   )
 }
 
-export default function FlowerDiaryClient() {
+export default function SoftStickerClient() {
   const [rows, setRows] = useState([])
   const [unlocked, setUnlocked] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -356,19 +356,19 @@ export default function FlowerDiaryClient() {
   const [filters, setFilters] = useState({ query: '', year: 'all', place: 'all', minScore: '0', spendTier: 'all', sort: 'newest' })
 
   async function unlock(password) {
-    if (!FLOWER_DIARY_ENVELOPE) {
+    if (!SOFT_STICKER_ENVELOPE) {
       setError('日记密文尚未写入。')
       return
     }
     setBusy(true)
     setError('')
     try {
-      const plain = await decryptPayload(FLOWER_DIARY_ENVELOPE, password.trim())
+      const plain = await decryptPayload(SOFT_STICKER_ENVELOPE, password.trim())
       if (plain?.schemaVersion !== 1 || !Array.isArray(plain.records)) throw new Error('INVALID_DIARY_SCHEMA')
       setRows(plain.records)
       setUnlocked(true)
     } catch {
-      setError('口令错误，无法解密采花日记。')
+      setError('口令错误，无法解密 SoftSticker。')
     } finally {
       setBusy(false)
     }
@@ -408,12 +408,12 @@ export default function FlowerDiaryClient() {
 
   return (
     <AdminPage
-      title="采花日记"
+      title="SoftSticker"
       description="私人体验记录的只读复盘页。解锁后可按年份、区域、评分和花费筛选，并在画像、时间线与明细表之间切换。"
       actions={unlocked ? <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300"><IconLock size={13} />已在本地解锁</span> : null}
     >
       {!unlocked ? (
-        <UnlockPanel onUnlock={unlock} busy={busy} error={error} total={FLOWER_DIARY_ENVELOPE ? 27 : 0} />
+        <UnlockPanel onUnlock={unlock} busy={busy} error={error} total={SOFT_STICKER_ENVELOPE ? 27 : 0} />
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">

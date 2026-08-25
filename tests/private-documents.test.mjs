@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { encryptPayload } from '../lib/longCompass/crypto.js'
-import { decryptPrivateDocumentContent } from '../lib/privateDocuments.js'
+import { decryptPrivateDocumentContent, parsePrivateDocumentEnvelope } from '../lib/privateDocuments.js'
 
 test('private document content round-trips through an encrypted envelope', async () => {
   const password = 'test-only-password'
@@ -15,6 +15,7 @@ test('private document content round-trips through an encrypted envelope', async
     await decryptPrivateDocumentContent(JSON.stringify(envelope), password),
     '# private\n\nbody'
   )
+  assert.deepEqual(parsePrivateDocumentEnvelope(JSON.stringify(envelope)), envelope)
   await assert.rejects(
     decryptPrivateDocumentContent(JSON.stringify(envelope), 'wrong-password'),
     /PRIVATE_DOCUMENT_DECRYPT_FAILED/

@@ -1,57 +1,11 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
-import { decryptPrivateDocumentContent } from '../../../../lib/privateDocuments'
-import { renderMarkdown } from '../../../../lib/research/markdown'
+import { parsePrivateDocumentEnvelope } from '../../../../lib/privateDocuments'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const DOCUMENT_SLUG = 'self-regulation-memoir'
-const PASSWORD_ITERATIONS = 310000
-const PASSWORD_SALT = '0Cw53n1tKTI1pQAdzS9afg=='
-const PASSWORD_HASH = 'wqUSqOv/alXKGdg1ykG2vgouvO+1EiOt6HitG4efJ3o='
-
-function base64ToBytes(value) {
-  const binary = atob(value)
-  const bytes = new Uint8Array(binary.length)
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
-  return bytes
-}
-
-function safeEqual(left, right) {
-  if (left.length !== right.length) return false
-  let difference = 0
-  for (let index = 0; index < left.length; index += 1) difference |= left[index] ^ right[index]
-  return difference === 0
-}
-
-async function verifyPassword(password) {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(password),
-    'PBKDF2',
-    false,
-    ['deriveBits']
-  )
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: 'PBKDF2',
-      hash: 'SHA-256',
-      salt: base64ToBytes(PASSWORD_SALT),
-      iterations: PASSWORD_ITERATIONS,
-    },
-    key,
-    256
-  )
-  return safeEqual(new Uint8Array(bits), base64ToBytes(PASSWORD_HASH))
-}
-
-function normalizePrivateMarkdown(markdown) {
-  return String(markdown || '').replace(/<aside>\s*([\s\S]*?)\s*<\/aside>/gi, (_match, body) => {
-    const quote = String(body || '').trim().split(/\r?\n/).map((line) => `> ${line}`).join('\n')
-    return `\n\n${quote}\n\n`
-  })
-}
 
 function json(body, status = 200) {
   return Response.json(body, {
@@ -63,17 +17,6 @@ function json(body, status = 200) {
 export async function POST(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
-
-  let body
-  try {
-    body = await req.json()
-  } catch {
-    return json({ error: 'INVALID_JSON' }, 400)
-  }
-
-  const password = String(body?.password || '').trim()
-  if (!password || password.length > 256) return json({ error: 'INVALID_PASSWORD' }, 400)
-  if (!(await verifyPassword(password))) return json({ error: 'WRONG_PASSWORD' }, 403)
 
   let db
   try {
@@ -88,13 +31,12 @@ export async function POST(req) {
       .bind(DOCUMENT_SLUG)
       .first()
     if (!row) return json({ error: 'DOCUMENT_NOT_FOUND' }, 404)
-
-    const markdown = await decryptPrivateDocumentContent(row.content, password)
+    parsePrivateDocumentEnvelope(row.content)
 
     return json({
       status: 'ok',
       title: String(row.title || '回忆录'),
-      html: renderMarkdown(normalizePrivateMarkdown(markdown), { breaks: true }),
+      encryptedContent: String(row.content),
       updatedAt: Number(row.updated_at) || 0,
     })
   } catch (error) {

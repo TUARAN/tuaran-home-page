@@ -1,18 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { IconBarbell, IconFlower } from '@tabler/icons-react'
+import { IconBarbell, IconFlower, IconHeart } from '@tabler/icons-react'
 
+import StrawberryProfile from '../person-strawberry/StrawberryProfile'
 import SelfRegulationClient from '../self-regulation/SelfRegulationClient'
 import SoftStickerClient from './SoftStickerClient'
 
 const TABS = [
   { id: 'records', label: '体验记录', description: '时间线、筛选表格与画像看板', icon: IconFlower },
   { id: 'self-regulation', label: '锻炼与自控', description: '回忆录、触发因素与行动复盘', icon: IconBarbell },
+  { id: 'strawberry', label: '草莓专题', description: '关系时间线、人物画像与资金账目', icon: IconHeart },
 ]
 
 export default function SoftStickerWorkspace({ initialTab = 'records' }) {
-  const [activeTab, setActiveTab] = useState(initialTab === 'self-regulation' ? 'self-regulation' : 'records')
+  const [activeTab, setActiveTab] = useState(
+    ['records', 'self-regulation', 'strawberry'].includes(initialTab) ? initialTab : 'records'
+  )
 
   function selectTab(tab) {
     setActiveTab(tab)
@@ -25,7 +29,7 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
   return (
     <>
       <div className="admin-page mx-auto w-full px-4 pt-5 sm:px-5 md:px-6">
-        <div className="grid gap-2 rounded-xl border border-[#dedfd6] bg-[#f5f4ee] p-1.5 dark:border-[#26303c] dark:bg-[#111821] sm:grid-cols-2" role="tablist" aria-label="SoftSticker 私密空间">
+        <div className="grid gap-2 rounded-xl border border-[#dedfd6] bg-[#f5f4ee] p-1.5 dark:border-[#26303c] dark:bg-[#111821] sm:grid-cols-3" role="tablist" aria-label="SoftSticker 私密空间">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const active = activeTab === tab.id
@@ -54,6 +58,9 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
       </div>
       <div hidden={activeTab !== 'self-regulation'} aria-hidden={activeTab !== 'self-regulation'}>
         <SelfRegulationClient />
+      </div>
+      <div hidden={activeTab !== 'strawberry'} aria-hidden={activeTab !== 'strawberry'}>
+        <StrawberryProfile />
       </div>
     </>
   )

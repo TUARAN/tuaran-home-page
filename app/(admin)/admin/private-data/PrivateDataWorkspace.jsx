@@ -13,8 +13,7 @@ export default function PrivateDataWorkspace() {
           description: '口令只在浏览器内使用，服务器保存无法直接读取的密文。',
           items: [
             { href: '/admin/long-compass', title: '长期罗盘', description: '强私密个人内容库，在浏览器本地输入口令后解密。', icon: 'compass', note: '客户端解密 · 服务端密文' },
-            { href: '/admin/soft-sticker', title: 'SoftSticker', description: '在体验记录与锻炼自控两个 Tab 间切换，分别查看画像看板和行为复盘。', icon: 'flower', note: '双 Tab · 独立口令' },
-            { href: '/admin/person-strawberry', title: '草莓专题', description: '按自述可信度、联系时间线和资金账目复盘一段长期私人关系。', icon: 'personProfile', note: 'owner-only · 身份线索已脱敏' },
+            { href: '/admin/soft-sticker', title: 'SoftSticker', description: '集中查看体验记录、锻炼自控和草莓专题，按三个 Tab 切换。', icon: 'flower', note: '三 Tab · 私密工作区' },
             { href: '/admin/information', title: '信息保险库', description: '加密保存账号、密码、密保答案和其他敏感资料。', icon: 'information', note: 'AES-GCM · 口令不上传' },
           ],
         },

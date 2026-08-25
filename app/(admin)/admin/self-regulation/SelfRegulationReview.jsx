@@ -154,7 +154,7 @@ function PlanCard({ item, index }) {
   )
 }
 
-export default function SelfRegulationReview() {
+export default function SelfRegulationReview({ memoir }) {
   return (
     <AdminPage
       title="锻炼与自控"
@@ -182,6 +182,13 @@ export default function SelfRegulationReview() {
             </div>
           </div>
         </section>
+
+        <Section title={memoir?.title || '回忆录'} description={`私密原文 · ${memoir?.updatedLabel || '已解锁'}`}>
+          <article
+            className="prose prose-sm max-w-none text-[#45473f] dark:prose-invert dark:text-gray-300 prose-headings:font-serif prose-headings:text-[#1f201b] dark:prose-headings:text-gray-100 prose-p:leading-8 prose-li:leading-8 prose-blockquote:border-l-[#7f8863] prose-blockquote:text-[#5e6156] dark:prose-blockquote:text-gray-400"
+            dangerouslySetInnerHTML={{ __html: memoir?.html || '' }}
+          />
+        </Section>
 
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <StatCard label="记录跨度" value="3+ 年" sub="2022—2025" icon="planning" />

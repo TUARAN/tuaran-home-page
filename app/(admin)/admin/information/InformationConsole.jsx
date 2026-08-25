@@ -272,7 +272,7 @@ export default function InformationConsole() {
             </form>
           </Section>
 
-          <Section title="Apple ID 账户" description={`共 ${records.length} 条；密码与密保默认隐藏。`}>
+          <Section title="密钥记录" description={`共 ${records.length} 条；密码与密保默认隐藏。`}>
             {records.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">暂无记录。</p>
             ) : (

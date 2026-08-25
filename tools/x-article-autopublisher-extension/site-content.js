@@ -77,11 +77,29 @@
   }
 
   function imageItem(node, index) {
-    const src = safeUrl(node.currentSrc || node.getAttribute("src"));
-    if (!src) return null;
+    const candidates = [
+      node.currentSrc,
+      node.getAttribute("src"),
+      node.getAttribute("data-src"),
+      ...String(node.getAttribute("srcset") || "").split(",").map((item) => item.trim().split(/\s+/)[0]),
+    ];
+    const sources = [];
+    const addSource = (value) => {
+      const url = safeUrl(value);
+      if (!url || sources.includes(url)) return;
+      sources.push(url);
+      try {
+        const parsed = new URL(url);
+        const embedded = parsed.searchParams.get("url");
+        if (embedded && (parsed.hostname === "wsrv.nl" || parsed.pathname === "/_next/image")) addSource(embedded);
+      } catch {}
+    };
+    candidates.forEach(addSource);
+    if (!sources.length) return null;
     return {
       marker: `[[2ARAN_IMAGE_${index}]]`,
-      src,
+      src: sources[0],
+      sources,
       alt: cleanText(node.getAttribute("alt") || `文章配图 ${index + 1}`).slice(0, 1000),
     };
   }

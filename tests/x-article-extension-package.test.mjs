@@ -68,7 +68,12 @@ test('图片经后台下载后调用 X 自身上传处理器，并校验上传�
   const background = await read('background.js')
   const mainWorld = await read('main-world.js')
   const isolated = await read('x-content.js')
+  const siteSource = await read('site-content.js')
   assert.match(background, /prepareImages/)
+  assert.match(background, /prepareImage/)
+  assert.match(background, /skippedImages/)
+  assert.match(background, /SOURCE_UNAVAILABLE/)
+  assert.match(background, /ARTICLE_IMAGE_FETCH_FAILED/)
   assert.match(background, /8 \* 1024 \* 1024/)
   assert.match(background, /blocks: article\.blocks/)
   assert.match(background, /images: article\.images/)
@@ -82,6 +87,9 @@ test('图片经后台下载后调用 X 自身上传处理器，并校验上传�
   assert.match(mainWorld, /X_IMAGE_MARKER_REMAINED/)
   assert.match(isolated, /uploadedImages/)
   assert.match(isolated, /X_IMAGE_COUNT_MISMATCH/)
+  assert.match(siteSource, /sources/)
+  assert.match(siteSource, /wsrv\.nl/)
+  assert.match(siteSource, /\/_next\/image/)
 })
 
 test('插件已接入浏览器扩展集合、工具库和独立下载介绍页', async () => {

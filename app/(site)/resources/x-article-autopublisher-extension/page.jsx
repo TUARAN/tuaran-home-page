@@ -12,7 +12,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-article-autopublisher-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-article-autopublisher-extension&file=extension-zip'
-const VERSION = '0.2.5'
+const VERSION = '0.2.6'
 
 const title = 'X Article 自动发布：每天定时发布一篇长文章'
 const description =

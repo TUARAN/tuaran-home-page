@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "2aran X Article Auto Publisher",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Fetch one 2aran article every day and publish it as a formatted X Article with links and images.",
   "permissions": ["alarms", "storage", "tabs"],
   "host_permissions": [

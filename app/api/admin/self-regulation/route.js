@@ -1,5 +1,6 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
+import { decryptPrivateDocumentContent } from '../../../../lib/privateDocuments'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 
 export const runtime = 'edge'
@@ -88,10 +89,12 @@ export async function POST(req) {
       .first()
     if (!row) return json({ error: 'DOCUMENT_NOT_FOUND' }, 404)
 
+    const markdown = await decryptPrivateDocumentContent(row.content, password)
+
     return json({
       status: 'ok',
       title: String(row.title || '回忆录'),
-      html: renderMarkdown(normalizePrivateMarkdown(row.content), { breaks: true }),
+      html: renderMarkdown(normalizePrivateMarkdown(markdown), { breaks: true }),
       updatedAt: Number(row.updated_at) || 0,
     })
   } catch (error) {

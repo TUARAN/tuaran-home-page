@@ -64,6 +64,16 @@ function mean(rows, key) {
   return rows.reduce((sum, row) => sum + Number(row[key] || 0), 0) / rows.length
 }
 
+function meanKnown(rows, key) {
+  const values = rows
+    .map((row) => row[key])
+    .filter((value) => value !== null && value !== undefined && value !== '')
+    .map(Number)
+    .filter(Number.isFinite)
+  if (!values.length) return null
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
 function matchesSpendTier(spend, tier) {
   if (tier === 'under-500') return spend < 500
   if (tier === '500-799') return spend >= 500 && spend < 800
@@ -334,6 +344,7 @@ export default function SoftStickerClient({ rows }) {
 
   const totalSpend = filteredRows.reduce((sum, row) => sum + Number(row.spend || 0), 0)
   const topScoreCount = filteredRows.filter((row) => row.score >= 8).length
+  const averageDuration = meanKnown(filteredRows, 'durationMinutes')
 
   const views = [
     { id: 'profile', label: '画像看板', icon: IconChartBar },
@@ -353,7 +364,7 @@ export default function SoftStickerClient({ rows }) {
             <StatCard label="累计花费" value={`¥${money(totalSpend)}`} sub="按当前筛选口径" icon="analytics" tone="warning" />
             <StatCard label="平均评分" value={filteredRows.length ? decimal(mean(filteredRows, 'score')) : '—'} sub="10 分制" icon="chartLine" tone="success" />
             <StatCard label="高分记录" value={topScoreCount} sub="评分 ≥ 8" icon="audit" tone="success" />
-            <StatCard label="平均耗时" value={filteredRows.length ? `${Math.round(mean(filteredRows, 'durationMinutes'))} min` : '—'} sub="区间按中值计算" icon="planning" />
+            <StatCard label="平均耗时" value={averageDuration === null ? '—' : `${Math.round(averageDuration)} min`} sub="未记录的耗时不计入平均值" icon="planning" />
           </div>
 
           <FilterBar filters={filters} setFilters={setFilters} years={years} places={places} count={filteredRows.length} total={rows.length} />

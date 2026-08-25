@@ -43,6 +43,7 @@ import {
   IconChevronDown,
   IconFlower,
   IconBarbell,
+  IconUserSearch,
 } from '@tabler/icons-react'
 
 const ICONS = {
@@ -81,6 +82,7 @@ const ICONS = {
   chevronDown: IconChevronDown,
   flower: IconFlower,
   wellbeing: IconBarbell,
+  personProfile: IconUserSearch,
 }
 
 export function AdminIcon({ name, size = 18, stroke = 1.6, className, ...rest }) {

@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { IconBarbell, IconFlower, IconHeart, IconLock } from '@tabler/icons-react'
 
 import { decryptPayload } from '../../../../lib/longCompass/crypto'
+import { decryptPrivateDocumentContent, normalizePrivateMarkdown } from '../../../../lib/privateDocuments'
+import { renderMarkdown } from '../../../../lib/research/markdown'
 import { AdminPage, Section } from '../../components/ui'
 import StrawberryProfile from '../person-strawberry/StrawberryProfile'
 import SelfRegulationClient from '../self-regulation/SelfRegulationClient'
@@ -67,12 +69,17 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
           credentials: 'same-origin',
           cache: 'no-store',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: sharedPassword }),
+          body: JSON.stringify({}),
         })
         const data = await response.json().catch(() => null)
-        if (response.status === 403) throw new Error('统一口令的服务端配置尚未同步。')
         if (response.ok && data?.status === 'ok') {
-          memoir = { ...data, updatedLabel: formatUpdatedAt(data.updatedAt) }
+          const markdown = await decryptPrivateDocumentContent(data.encryptedContent, sharedPassword)
+          memoir = {
+            title: data.title,
+            html: renderMarkdown(normalizePrivateMarkdown(markdown), { breaks: true }),
+            updatedAt: data.updatedAt,
+            updatedLabel: formatUpdatedAt(data.updatedAt),
+          }
         } else if (data?.error === 'DOCUMENT_NOT_FOUND') {
           memoirError = '回忆录尚未写入私密文档库。'
         } else if (data?.error === 'DB_UNAVAILABLE') {
@@ -81,7 +88,9 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
           memoirError = data?.error || `回忆录读取失败（HTTP ${response.status}）。`
         }
       } catch (memoirRequestError) {
-        if (String(memoirRequestError?.message || '').includes('配置尚未同步')) throw memoirRequestError
+        if (memoirRequestError?.message === 'PRIVATE_DOCUMENT_DECRYPT_FAILED') {
+          throw new Error('统一口令与回忆录密文不匹配。')
+        }
         memoirError = String(memoirRequestError?.message || memoirRequestError)
       }
 
@@ -89,7 +98,7 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
       setPassword('')
     } catch (unlockError) {
       setError(
-        unlockError?.message === '统一口令的服务端配置尚未同步。'
+        unlockError?.message === '统一口令与回忆录密文不匹配。'
           ? unlockError.message
           : '口令错误，无法解锁 SoftSticker。'
       )
@@ -126,7 +135,7 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
           </form>
           {error ? <p className="mt-3 text-sm text-rose-600 dark:text-rose-300">{error}</p> : null}
           <p className="mt-4 max-w-2xl text-xs leading-6 text-[#7a7c71] dark:text-gray-500">
-            口令在浏览器内解密体验记录，同时发送到 Edge 校验锻炼与自控文档；页面刷新后需重新输入。
+            口令只在浏览器内解密体验记录与回忆录，不会发送到服务器；页面刷新后需重新输入。
           </p>
         </Section>
       </AdminPage>

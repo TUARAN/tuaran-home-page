@@ -8,7 +8,7 @@ export const dynamic = 'force-static'
 
 export const metadata = {
   title: '二级站点',
-  description: '2aran.com 的公开子域站点入口：GPT Plus 充值与中国诗词。',
+  description: '2aran.com 的公开子域站点入口：AI 排行榜、GPT Plus 充值与中国诗词。',
   alternates: { canonical: '/sites' },
 }
 

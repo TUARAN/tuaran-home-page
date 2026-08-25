@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { IconArrowUpRight, IconExternalLink, IconNetwork } from '@tabler/icons-react'
 
 import { SECONDARY_SITES } from '../../../lib/secondarySites'
+import { getDomainRecord } from '../../../lib/domainRegistry'
 import PageContainer from '../components/PageContainer'
 
 export const dynamic = 'force-static'
@@ -46,6 +47,9 @@ export default function SecondarySitesPage() {
         <p className="mt-4 max-w-[760px] text-[15px] leading-8 text-[var(--site-muted)]">
           2aran.com 下可公开访问的子域站点。仅收录面向访客的内容与服务站点，不包含后台、内部工具和接口域名。
         </p>
+        <p className="mt-3 max-w-[820px] border-l-2 border-[var(--site-green)] pl-4 text-[13px] leading-7 text-[var(--site-muted)]">
+          部署形态按运行边界选择：纯展示与轻交互复用主站；需要独立 API、数据库、定时任务或发布节奏时单独部署。
+        </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <span className="rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-1.5 font-mono text-[11px] text-[var(--site-muted)]">
             {SECONDARY_SITES.length} 个公开站点
@@ -59,7 +63,10 @@ export default function SecondarySitesPage() {
       </header>
 
       <section className="grid gap-4 py-8 md:grid-cols-2 md:py-10" aria-label="二级站点列表">
-        {SECONDARY_SITES.map((site, index) => (
+        {SECONDARY_SITES.map((site, index) => {
+          const infrastructure = getDomainRecord(site.domain)
+          const isActivating = infrastructure?.status === 'activating'
+          return (
           <a
             key={site.id}
             href={site.href}
@@ -80,8 +87,23 @@ export default function SecondarySitesPage() {
               </span>
             </div>
 
+            <div className="mt-4 flex flex-wrap items-center gap-2 font-mono text-[10px]">
+              <span className={`rounded-full px-2.5 py-1 ${isActivating ? 'bg-[#f4ead4] text-[#8a5a14] dark:bg-[#2b2415] dark:text-[#d6b56f]' : 'bg-[#e5ece4] text-[#374d34] dark:bg-[#1a2e18] dark:text-[#a3c2a0]'}`}>
+                {isActivating ? '激活中' : '已上线'}
+              </span>
+              <span className="rounded-full border border-[var(--site-line)] px-2.5 py-1 text-[var(--site-faint)]">
+                {infrastructure?.proxy === 'proxied' ? 'Cloudflare 已代理' : 'DNS only'}
+              </span>
+            </div>
+
             <p className="mt-5 text-[15px] font-medium leading-7 text-[var(--site-ink)]">{site.desc}</p>
             <p className="mt-2 flex-1 text-[13px] leading-7 text-[var(--site-muted)]">{site.detail}</p>
+
+            <div className="mt-5 rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-green)_5%,transparent)] px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--site-green)]">部署形态</p>
+              <p className="mt-1.5 text-[12px] font-semibold text-[var(--site-ink)]">{site.deployment}</p>
+              <p className="mt-1 text-[11px] leading-5 text-[var(--site-muted)]">{site.deploymentDetail}</p>
+            </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[var(--site-line)] pt-4">
               {site.tags.map((tag) => (
@@ -94,7 +116,8 @@ export default function SecondarySitesPage() {
               </span>
             </div>
           </a>
-        ))}
+          )
+        })}
       </section>
 
       <footer className="border-t border-[var(--site-line)] pt-6 text-[13px] leading-7 text-[var(--site-muted)]">

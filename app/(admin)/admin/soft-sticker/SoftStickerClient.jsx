@@ -14,9 +14,7 @@ import {
   IconWallet,
 } from '@tabler/icons-react'
 
-import { decryptPayload } from '../../../../lib/longCompass/crypto'
 import { AdminPage, Section, StatCard } from '../../components/ui'
-import { SOFT_STICKER_ENVELOPE } from './seed'
 
 const CONTROL_CLASS =
   'h-10 rounded-lg border border-[#caccc0] bg-white px-3 text-sm text-[#34362f] outline-none transition focus:border-[#92713d] focus:ring-2 focus:ring-[#92713d]/10 dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-100'
@@ -119,46 +117,6 @@ function BarList({ items, valueLabel = (item) => `${item.count} 条` }) {
         </div>
       ))}
     </div>
-  )
-}
-
-function UnlockPanel({ onUnlock, busy, error, total }) {
-  const [password, setPassword] = useState('')
-
-  async function submit(event) {
-    event.preventDefault()
-    await onUnlock(password)
-    setPassword('')
-  }
-
-  return (
-    <Section title="解锁日记" description="口令只在当前浏览器内参与 AES-GCM 解密，不会发送到服务器。">
-      <div className="flex max-w-2xl items-start gap-3 rounded-xl border border-[#e5dfd2] bg-[#fbf8f1] p-4 dark:border-[#3a3023] dark:bg-[#18150f]">
-        <IconLock size={20} className="mt-0.5 shrink-0 text-[#98733d]" aria-hidden="true" />
-        <div className="text-sm leading-6 text-[#5b5549] dark:text-[#c9c0b1]">
-          <p className="font-medium text-[#302d27] dark:text-gray-100">双层私密保护</p>
-          <p className="mt-1">页面先经过站长身份校验；通过后仍只能取得密文。正确口令解锁后，筛选与统计全部在本地完成。</p>
-        </div>
-      </div>
-      <form onSubmit={submit} className="mt-4 flex max-w-xl flex-col gap-3 sm:flex-row">
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="current-password"
-          className={`${CONTROL_CLASS} min-w-0 flex-1`}
-          placeholder={`输入日记口令${total ? ` · ${total} 条密文记录` : ''}`}
-        />
-        <button
-          type="submit"
-          disabled={busy || !password.trim()}
-          className="h-10 shrink-0 rounded-lg bg-[#171610] px-5 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-100 dark:text-[#10161f]"
-        >
-          {busy ? '解锁中…' : '解锁看板'}
-        </button>
-      </form>
-      {error ? <p className="mt-3 text-sm text-rose-600 dark:text-rose-300">{error}</p> : null}
-    </Section>
   )
 }
 
@@ -347,32 +305,9 @@ function TableView({ rows }) {
   )
 }
 
-export default function SoftStickerClient() {
-  const [rows, setRows] = useState([])
-  const [unlocked, setUnlocked] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+export default function SoftStickerClient({ rows }) {
   const [view, setView] = useState('profile')
   const [filters, setFilters] = useState({ query: '', year: 'all', place: 'all', minScore: '0', spendTier: 'all', sort: 'newest' })
-
-  async function unlock(password) {
-    if (!SOFT_STICKER_ENVELOPE) {
-      setError('日记密文尚未写入。')
-      return
-    }
-    setBusy(true)
-    setError('')
-    try {
-      const plain = await decryptPayload(SOFT_STICKER_ENVELOPE, password.trim())
-      if (plain?.schemaVersion !== 1 || !Array.isArray(plain.records)) throw new Error('INVALID_DIARY_SCHEMA')
-      setRows(plain.records)
-      setUnlocked(true)
-    } catch {
-      setError('口令错误，无法解密 SoftSticker。')
-    } finally {
-      setBusy(false)
-    }
-  }
 
   const years = useMemo(() => [...new Set(rows.map((row) => String(row.year)))].sort((a, b) => Number(b) - Number(a)), [rows])
   const places = useMemo(() => [...new Set(rows.map((row) => row.place))].sort((a, b) => a.localeCompare(b, 'zh-CN')), [rows])
@@ -410,12 +345,9 @@ export default function SoftStickerClient() {
     <AdminPage
       title="SoftSticker"
       description="私人体验记录的只读复盘页。解锁后可按年份、区域、评分和花费筛选，并在画像、时间线与明细表之间切换。"
-      actions={unlocked ? <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300"><IconLock size={13} />已在本地解锁</span> : null}
+      actions={<span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300"><IconLock size={13} />统一口令已解锁</span>}
     >
-      {!unlocked ? (
-        <UnlockPanel onUnlock={unlock} busy={busy} error={error} total={SOFT_STICKER_ENVELOPE ? 27 : 0} />
-      ) : (
-        <div className="space-y-5">
+      <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
             <StatCard label="记录数" value={filteredRows.length} sub={`全部 ${rows.length} 条`} icon="flower" />
             <StatCard label="累计花费" value={`¥${money(totalSpend)}`} sub="按当前筛选口径" icon="analytics" tone="warning" />
@@ -458,8 +390,7 @@ export default function SoftStickerClient() {
               <TableView rows={filteredRows} />
             </Section>
           )}
-        </div>
-      )}
+      </div>
     </AdminPage>
   )
 }

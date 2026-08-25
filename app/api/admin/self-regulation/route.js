@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 const DOCUMENT_SLUG = 'self-regulation-memoir'
 const PASSWORD_ITERATIONS = 310000
 const PASSWORD_SALT = '0Cw53n1tKTI1pQAdzS9afg=='
-const PASSWORD_HASH = 'nw3OwRB6k5aXDT4PClY6HC9iWyqdYPnq089GyPsWtLQ='
+const PASSWORD_HASH = 'wqUSqOv/alXKGdg1ykG2vgouvO+1EiOt6HitG4efJ3o='
 
 function base64ToBytes(value) {
   const binary = atob(value)

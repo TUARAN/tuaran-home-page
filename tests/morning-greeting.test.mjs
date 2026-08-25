@@ -10,6 +10,7 @@ import {
   MORNING_GREETING_TEMPLATE,
   MORNING_GREETING_TEMPLATES,
   buildMorningGreeting,
+  greetingCalendarLabel,
   greetingDateLabel,
   greetingWithinLimit,
   isAutomationPaused,
@@ -34,6 +35,11 @@ import {
 test('greeting date label uses Asia/Shanghai day of month', () => {
   const label = greetingDateLabel({ now: new Date('2026-08-05T00:30:00.000Z') })
   assert.equal(label, '8月5号')
+})
+
+test('greeting calendar label keeps the Shanghai date and weekday together', () => {
+  const label = greetingCalendarLabel({ now: new Date('2026-08-25T00:30:00.000Z') })
+  assert.equal(label, '2026年8月25日，星期二')
 })
 
 test('shanghai date key uses Asia/Shanghai calendar day', () => {
@@ -140,7 +146,7 @@ test('DeepSeek is the default while Ollama, templates, and the legacy LLM value 
   assert.equal(normalizeGreetingLlmIntent(''), DEFAULT_DAILY_GREETING_LLM_INTENT)
 })
 
-test('LLM prompt includes current period, date, and editable intent', () => {
+test('LLM prompt includes current period, exact calendar date, weekday, and editable intent', () => {
   const style = DAILY_GREETING_STYLES[2]
   const messages = buildGreetingLlmMessages({
     intent: '围绕今天先完成一件小事来写。',
@@ -151,7 +157,8 @@ test('LLM prompt includes current period, date, and editable intent', () => {
   assert.equal(messages.length, 2)
   assert.match(messages[0].content, /只输出最终文案/)
   assert.match(messages[1].content, /当前时段：午安/)
-  assert.match(messages[1].content, /当前日期：8月18号/)
+  assert.match(messages[0].content, /日期或星期.*严格使用.*当前日历信息/)
+  assert.match(messages[1].content, /当前日历：2026年8月18日，星期二/)
   assert.match(messages[1].content, new RegExp(`本次风格：${style.label}`))
   assert.match(messages[1].content, new RegExp(style.direction.slice(0, 12)))
   assert.match(messages[1].content, /围绕今天先完成一件小事来写/)

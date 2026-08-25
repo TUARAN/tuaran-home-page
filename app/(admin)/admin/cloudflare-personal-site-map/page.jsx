@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { DOMAIN_REGISTRY, DOMAIN_REGISTRY_UPDATED_AT } from '../../../../lib/domainRegistry'
 import AdminPageGate from '../../components/AdminPageGate'
 import { AdminPage } from '../../components/ui'
 import {
@@ -40,6 +41,7 @@ export const metadata = {
 
 const SECTIONS = [
   { id: 'overview', label: '概览' },
+  { id: 'domains', label: '域名看板' },
   { id: 'runtime', label: '运行时边界' },
   { id: 'arch', label: '技术架构' },
   { id: 'security', label: '安全防御' },
@@ -48,6 +50,22 @@ const SECTIONS = [
   { id: 'cloudflare', label: 'Cloudflare 对照' },
   { id: 'stack', label: '最小栈' },
 ]
+
+const DOMAIN_STATUS_META = {
+  active: { label: '已上线', className: 'bg-[#e5ece4] text-[#374d34] dark:bg-[#1a2e18] dark:text-[#a3c2a0]' },
+  activating: { label: '激活中', className: 'bg-[#f4ead4] text-[#8a5a14] dark:bg-[#2b2415] dark:text-[#d6b56f]' },
+  legacy: { label: '兼容保留', className: 'bg-[#e2e4dc] text-[#51514a] dark:bg-[#1c1d1b] dark:text-[#9c9c96]' },
+}
+
+const DOMAIN_AUDIENCE_LABEL = {
+  public: '公开访问',
+  private: '内部 / 受控',
+}
+
+function DomainStatusPill({ status }) {
+  const meta = DOMAIN_STATUS_META[status] || DOMAIN_STATUS_META.legacy
+  return <span className={`inline-flex rounded-full px-2.5 py-1 font-mono text-[10px] font-semibold ${meta.className}`}>{meta.label}</span>
+}
 
 function VerdictPill({ verdict }) {
   const meta = VERDICT_META[verdict] || VERDICT_META.skip
@@ -213,6 +231,60 @@ function CloudflarePersonalSiteMapContent() {
               <p className="mt-2 text-[12px] leading-6 text-[#51514a] dark:text-gray-400">{item.detail}</p>
             </article>
           ))}
+        </div>
+      </Section>
+
+      <Section
+        id="domains"
+        title="域名与运行面看板"
+        description={`配置快照更新于 ${DOMAIN_REGISTRY_UPDATED_AT}。状态分开记录 DNS 代理、承载目标、访问范围与生命周期；“已代理”不等同于证书已经激活。`}
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: '域名 / 入口', value: DOMAIN_REGISTRY.length, detail: 'Pages、Worker 与 Tunnel 合计' },
+            { label: '公开入口', value: DOMAIN_REGISTRY.filter((item) => item.audience === 'public').length, detail: '普通访客可访问' },
+            { label: '内部入口', value: DOMAIN_REGISTRY.filter((item) => item.audience === 'private').length, detail: '后台、NAS 与运维' },
+            { label: '待完成', value: DOMAIN_REGISTRY.filter((item) => item.status === 'activating').length, detail: '证书或验证仍在进行' },
+          ].map((item) => (
+            <div key={item.label} className="rounded-md border border-[#dee0d6] bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#767869] dark:text-gray-500">{item.label}</p>
+              <p className="mt-2 font-serif text-[28px] font-semibold tabular-nums text-[#15140f] dark:text-gray-100">{item.value}</p>
+              <p className="mt-1 text-[11px] text-[#63655f] dark:text-gray-500">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5">
+          <DataTable
+            headers={['域名 / 职责', '记录与目标', '承载', '范围', '代理', '状态 / 核验说明']}
+            rows={DOMAIN_REGISTRY.map((item) => [
+              <div key={`${item.id}-domain`}>
+                <a href={`https://${item.domain}`} target="_blank" rel="noreferrer" className="font-mono text-[12px] font-semibold text-[#334d73] no-underline hover:underline dark:text-[#9db8e8]">{item.domain}</a>
+                <p className="mt-1 text-[11px] text-[#63655f] dark:text-gray-500">{item.role}</p>
+              </div>,
+              <div key={`${item.id}-target`}>
+                <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#767869] dark:text-gray-500">{item.recordType}</p>
+                <p className="mt-1 font-mono text-[11px] text-[#262724] dark:text-gray-300">{item.target}</p>
+              </div>,
+              <div key={`${item.id}-platform`}>
+                <p className="text-[12px] font-medium">{item.platform}</p>
+                <p className="mt-1 font-mono text-[10px] text-[#767869] dark:text-gray-500">{item.project}</p>
+              </div>,
+              <div key={`${item.id}-audience`}>
+                <p>{DOMAIN_AUDIENCE_LABEL[item.audience]}</p>
+                <p className="mt-1 font-mono text-[10px] uppercase text-[#767869] dark:text-gray-500">{item.lifecycle === 'legacy' ? 'legacy' : 'production'}</p>
+              </div>,
+              <span key={`${item.id}-proxy`} className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium text-[#8a5a14] dark:text-[#d6b56f]"><i className="h-2 w-2 rounded-full bg-[#f48120]" />已代理</span>,
+              <div key={`${item.id}-status`} className="min-w-[190px]">
+                <DomainStatusPill status={item.status} />
+                <p className="mt-2 text-[11px] leading-5 text-[#63655f] dark:text-gray-500">{item.statusDetail}</p>
+              </div>,
+            ])}
+          />
+        </div>
+
+        <div className="mt-4 rounded-md border border-[#d3e0d0] bg-[#f2f6f1] px-4 py-3 text-[12px] leading-6 text-[#374d34] dark:border-[#293628] dark:bg-[#141f14] dark:text-[#a3c2a0]">
+          rank.2aran.com 已完成代理 DNS、Pages 自定义域、证书与 HTTP 验证，当前记录为“已上线”。
         </div>
       </Section>
 

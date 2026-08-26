@@ -110,11 +110,11 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
   if (!unlocked) {
     return (
       <AdminPage
-        title="SoftSticker"
+        title="软贴空间"
         description="一个统一口令保护体验记录、锻炼与自控和草莓专题。"
         actions={<span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"><IconLock size={13} />统一门禁</span>}
       >
-        <Section title="解锁 SoftSticker" description="输入一次口令即可访问全部三个 Tab；切换期间无需再次验证。">
+        <Section title="解锁空间" description="输入一次口令即可访问全部三个 Tab；切换期间无需再次验证。">
           <form onSubmit={unlock} className="flex max-w-xl flex-col gap-3 sm:flex-row">
             <input
               type="password"

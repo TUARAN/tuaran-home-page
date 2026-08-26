@@ -206,7 +206,7 @@ export default function InformationConsole() {
 
   return (
     <AdminPage
-      title="信息保险库"
+      title="信息金库"
       description="账号、密码、密保答案等字段只在当前浏览器内解密；服务器和数据库只接触 AES-GCM 密文。"
     >
       {status === 'loading' ? (

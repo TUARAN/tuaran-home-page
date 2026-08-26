@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import {
   IconBook2,
   IconHome2,
@@ -25,9 +26,35 @@ const TAB_ICONS = {
 export default function SiteMobileTabBar() {
   const pathname = usePathname()
   const { locale } = useLocale()
+  const [hidden, setHidden] = useState(false)
+  const lastScrollY = useRef(0)
+
+  useEffect(() => {
+    setHidden(false)
+    lastScrollY.current = window.scrollY
+    let frame = 0
+
+    const handleScroll = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        const nextScrollY = Math.max(0, window.scrollY)
+        const delta = nextScrollY - lastScrollY.current
+        if (nextScrollY < 32) setHidden(false)
+        else if (Math.abs(delta) >= 8) setHidden(delta > 0)
+        lastScrollY.current = nextScrollY
+        frame = 0
+      })
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [pathname])
 
   return (
-    <nav className="site-mobile-tabbar md:hidden" aria-label={pick(locale, '底部导航', 'Tab bar')}>
+    <nav className={`site-mobile-tabbar md:hidden ${hidden ? 'is-hidden' : ''}`} aria-label={pick(locale, '底部导航', 'Tab bar')}>
       {SITE_MOBILE_TABS.map((tab) => {
         const Icon = TAB_ICONS[tab.icon] || IconHome2
         const active = Boolean(tab.match(pathname))

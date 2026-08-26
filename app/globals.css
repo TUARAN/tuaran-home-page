@@ -2572,6 +2572,12 @@
     background: color-mix(in srgb, var(--site-panel-strong) 92%, transparent);
     backdrop-filter: blur(16px) saturate(1.05);
     -webkit-backdrop-filter: blur(16px) saturate(1.05);
+    transition: transform 180ms ease;
+    will-change: transform;
+  }
+
+  .site-mobile-tabbar.is-hidden {
+    transform: translateY(100%);
   }
 
   .site-mobile-tabbar a {
@@ -2766,7 +2772,15 @@
 
   @media (max-width: 767px) {
     body:has(.site-mobile-tabbar) {
-      padding-bottom: calc(var(--site-tabbar-height) + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(var(--site-tabbar-height) + env(safe-area-inset-bottom, 0px) + 1rem);
+    }
+
+    html:has(.site-mobile-tabbar) {
+      scroll-padding-bottom: calc(var(--site-tabbar-height) + env(safe-area-inset-bottom, 0px) + 1rem);
+    }
+
+    .back-to-top-button {
+      display: none;
     }
 
     .home-backdrop {
@@ -4727,21 +4741,22 @@
       border-radius: 0.85rem;
     }
 
-    .community-hero-copy { padding: 1.5rem 1.2rem 1.7rem; }
+    .community-hero-copy { padding: 1.2rem 1rem 1.25rem; }
 
     .community-hero h1 {
-      margin-top: 1rem;
-      font-size: 4.2rem;
+      margin-top: 0.65rem;
+      font-size: 3rem;
+      line-height: 0.95;
     }
 
     .community-hero-lead {
       max-width: 17rem;
-      margin-top: 1rem;
+      margin-top: 0.65rem;
       font-size: 0.95rem;
       line-height: 1.65;
     }
 
-    .community-hero-actions { margin-top: 1.4rem; }
+    .community-hero-actions { margin-top: 1rem; }
 
     .community-primary-button,
     .community-secondary-button {
@@ -4749,7 +4764,11 @@
       padding: 0.55rem 0.85rem;
     }
 
-    .community-section { padding-top: 3.25rem; }
+    .community-hero-side { padding: 0.9rem 0.75rem; }
+
+    .community-stats { padding-top: 0; }
+
+    .community-section { padding-top: 2.25rem; }
 
     .community-section-head {
       display: block;
@@ -4766,7 +4785,7 @@
     .community-topic-grid { gap: 0.7rem; }
 
     .community-topic-card {
-      min-height: 12.5rem;
+      min-height: 10.25rem;
       border-radius: 0.8rem;
       padding: 1rem;
     }
@@ -4803,6 +4822,101 @@
     .community-join-backdrop { align-items: flex-end; padding: 0.5rem; }
     .community-join-grid { grid-template-columns: 1fr; }
     .community-qr-image { width: 5rem; height: 5rem; }
+
+    .showcase-card {
+      display: grid;
+      grid-template-columns: 7.25rem minmax(0, 1fr);
+      min-height: 10.5rem;
+      border-radius: 0.8rem;
+    }
+
+    .showcase-card .showcase-cover {
+      height: 100%;
+      min-height: 10.5rem;
+      aspect-ratio: auto;
+    }
+
+    .showcase-card .showcase-cover-inner {
+      padding: 0.85rem;
+    }
+
+    .showcase-card .showcase-cover-inner p {
+      max-width: 100%;
+      font-size: 15px;
+    }
+
+    .showcase-card .showcase-cover-inner > div:last-child > span {
+      display: none;
+    }
+
+    .showcase-card-body {
+      min-width: 0;
+      padding: 0.9rem;
+    }
+
+    .showcase-card-body h2 {
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .showcase-card-body > p {
+      margin-top: 0.5rem;
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .showcase-card-body > div:last-child {
+      margin-top: 0.65rem;
+      padding-top: 0.55rem;
+    }
+
+    .prose-tuaran {
+      overflow-wrap: anywhere;
+      font-size: 16px;
+      line-height: 1.78;
+    }
+
+    .prose-tuaran p {
+      margin-top: 0.85rem;
+      margin-bottom: 0.85rem;
+      line-height: 1.78;
+    }
+
+    .prose-tuaran h2 {
+      margin-top: 2rem;
+      margin-bottom: 0.8rem;
+      font-size: 1.45rem;
+      line-height: 1.35;
+    }
+
+    .prose-tuaran h3 {
+      margin-top: 1.6rem;
+      margin-bottom: 0.65rem;
+      font-size: 1.2rem;
+      line-height: 1.4;
+    }
+
+  }
+
+  @media (max-width: 479px) {
+    .site-brand-mark,
+    .header-icon-link {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .site-header > div {
+      gap: 0.35rem;
+      padding-right: 0.6rem;
+      padding-left: 0.6rem;
+    }
+
+    .site-mobile-search input {
+      height: 2rem;
+      padding-right: 0.7rem;
+      padding-left: 0.7rem;
+      font-size: 12px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -70,11 +70,11 @@ function Cover({ item, visuals, compact = false }) {
   const Icon = ICONS[visual?.icon] || IconTools
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${visual?.cover || 'from-[#e8e4dc] to-[#f5f3ee] text-[#655e52] dark:from-[#24282c] dark:to-[#15191d] dark:text-[#c4c8cc]'} ${compact ? 'h-full min-h-[132px]' : 'aspect-[16/9]'}`}>
+    <div className={`showcase-cover relative overflow-hidden bg-gradient-to-br ${visual?.cover || 'from-[#e8e4dc] to-[#f5f3ee] text-[#655e52] dark:from-[#24282c] dark:to-[#15191d] dark:text-[#c4c8cc]'} ${compact ? 'h-full min-h-[132px]' : 'aspect-[16/9]'}`}>
       <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full border border-current opacity-10" />
       <div className="absolute -bottom-14 -left-8 h-36 w-36 rounded-full bg-current opacity-[0.06] blur-2xl" />
       <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(currentColor_1px,transparent_1px),linear-gradient(90deg,currentColor_1px,transparent_1px)] [background-size:28px_28px]" />
-      <div className="relative flex h-full flex-col justify-between p-5">
+      <div className="showcase-cover-inner relative flex h-full flex-col justify-between p-5">
         <div className="flex items-center justify-between gap-3">
           <span className="font-mono text-[10px] font-black tracking-[0.2em] opacity-70">{visual?.eyebrow || 'OPEN'}</span>
           <Icon size={compact ? 22 : 26} stroke={1.6} aria-hidden="true" />
@@ -115,9 +115,9 @@ function Metric({ item, pv }) {
 
 function Card({ item, pv, visuals, config }) {
   return (
-    <ItemLink item={item} config={config} className="group overflow-hidden rounded-2xl border border-[#d8d9d5] bg-white/70 text-[var(--site-ink)] no-underline shadow-[0_1px_0_rgba(20,20,20,0.03)] transition duration-200 hover:-translate-y-1 hover:border-[#aeb1aa] hover:shadow-[0_14px_34px_rgba(34,31,25,0.10)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967]">
+    <ItemLink item={item} config={config} className="showcase-card group overflow-hidden rounded-2xl border border-[#d8d9d5] bg-white/70 text-[var(--site-ink)] no-underline shadow-[0_1px_0_rgba(20,20,20,0.03)] transition duration-200 hover:-translate-y-1 hover:border-[#aeb1aa] hover:shadow-[0_14px_34px_rgba(34,31,25,0.10)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967]">
       <Cover item={item} visuals={visuals} />
-      <div className="p-5">
+      <div className="showcase-card-body p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <ItemMeta item={item} />
@@ -191,7 +191,7 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
 
   return (
     <main className="min-h-screen bg-[var(--page-bg)] text-[var(--site-ink)]">
-      <div className="mx-auto max-w-[1240px] px-4 pb-16 pt-8 sm:px-6 md:pt-12 lg:px-8">
+      <div className="mx-auto max-w-[1240px] px-3 pb-16 pt-5 sm:px-6 md:pt-12 lg:px-8">
         <header className="flex flex-col gap-7 border-b border-[#d9d9d4] pb-8 dark:border-[#2b333e] md:flex-row md:items-end md:justify-between">
           <div>
             <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#8a6422] dark:text-[#d4ae66]">{config.eyebrow}</p>

@@ -28,7 +28,7 @@ function formatTime(value) {
 }
 
 function ReadingLayout({ aside, children }) {
-  return <div className="grid gap-6 lg:grid-cols-[252px_minmax(0,1fr)]">
+  return <div className="grid gap-4 lg:grid-cols-[252px_minmax(0,1fr)] lg:gap-6">
     <aside className={`${shell} h-fit p-3`}>{aside}</aside>
     {children}
   </div>
@@ -61,8 +61,8 @@ function WeeklyPanel({ issues }) {
       <span className="sr-only">搜索周刊</span>
       <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索期号或主题" className="w-full rounded-lg border border-[#d9d8ce] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#596a4b] dark:border-[#354153] dark:bg-[#0d131b]" />
     </label>
-    <div className="mt-3 max-h-[560px] space-y-1 overflow-auto pr-1">
-      {filtered.map((item) => <button type="button" key={item.id} onClick={() => setSelectedId(item.id)} className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition ${item.id === issue?.id ? 'bg-[#25301e] text-white dark:bg-[#b9cf9a] dark:text-[#182014]' : 'text-[#4f504b] hover:bg-[#eceee5] dark:text-[#c7ccd4] dark:hover:bg-[#202b37]'}`}>
+    <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:block lg:max-h-[560px] lg:space-y-1 lg:overflow-y-auto lg:pr-1">
+      {filtered.map((item) => <button type="button" key={item.id} onClick={() => setSelectedId(item.id)} className={`w-[148px] shrink-0 rounded-lg px-3 py-2 text-left text-[13px] transition lg:w-full lg:py-2.5 lg:text-sm ${item.id === issue?.id ? 'bg-[#25301e] text-white dark:bg-[#b9cf9a] dark:text-[#182014]' : 'bg-[var(--site-panel)] text-[#4f504b] hover:bg-[#eceee5] dark:text-[#c7ccd4] dark:hover:bg-[#202b37] lg:bg-transparent'}`}>
         <span className="font-medium">{item.title}</span>
         <span className="mt-0.5 block text-xs opacity-70">{item.sections?.reduce((total, section) => total + section.items.length, 0) || 0} 篇精选</span>
       </button>)}
@@ -111,8 +111,8 @@ function DailyPanel({ manifest, fallbackEntries }) {
   if (!date) return <Empty text="每日精选将在首次自动更新后显示。" />
   return <ReadingLayout aside={<>
     <p className="px-3 pt-2 text-xs font-semibold tracking-[0.14em] text-[#78886a]">ARCHIVE</p>
-    <div className="mt-2 max-h-[560px] space-y-1 overflow-auto pr-1">
-      {manifest.list.map((item) => <button type="button" key={item.date} onClick={() => setDate(item.date)} className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition ${item.date === date ? 'bg-[#25301e] text-white dark:bg-[#b9cf9a] dark:text-[#182014]' : 'text-[#4f504b] hover:bg-[#eceee5] dark:text-[#c7ccd4] dark:hover:bg-[#202b37]'}`}>
+    <div className="mt-2 flex gap-2 overflow-x-auto pb-1 lg:block lg:max-h-[560px] lg:space-y-1 lg:overflow-y-auto lg:pr-1">
+      {manifest.list.map((item) => <button type="button" key={item.date} onClick={() => setDate(item.date)} className={`w-[132px] shrink-0 rounded-lg px-3 py-2 text-left text-[13px] transition lg:w-full lg:py-2.5 lg:text-sm ${item.date === date ? 'bg-[#25301e] text-white dark:bg-[#b9cf9a] dark:text-[#182014]' : 'bg-[var(--site-panel)] text-[#4f504b] hover:bg-[#eceee5] dark:text-[#c7ccd4] dark:hover:bg-[#202b37] lg:bg-transparent'}`}>
         <span className="font-medium">{item.displayDate || item.date}</span>
         <span className="mt-0.5 block text-xs opacity-70">{item.count} 条精选</span>
       </button>)}
@@ -182,12 +182,12 @@ export default function FrontendWeeklyClient({ weekly, daily, live, dailyEntries
     return () => { active = false }
   }, [weekly, daily, live])
 
-  return <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:py-6">
+  return <main className="mx-auto max-w-6xl px-3 py-4 sm:px-6 lg:py-6">
     <h1 className="sr-only">前端周看</h1>
-    <nav className="flex gap-2 overflow-auto pb-1" aria-label="前端周看类型">
-      {TABS.map((item) => <button type="button" key={item.key} onClick={() => setTab(item.key)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ${tab === item.key ? 'border-[#25301e] bg-[#25301e] text-white dark:border-[#b9cf9a] dark:bg-[#b9cf9a] dark:text-[#182014]' : 'border-[#d9d8ce] text-[#5d5f57] hover:border-[#aebba3] dark:border-[#354153] dark:text-[#c7ccd4]'}`}>{item.label}<span className="ml-2 text-xs opacity-65">{item.note}</span></button>)}
+    <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="前端周看类型">
+      {TABS.map((item) => <button type="button" key={item.key} onClick={() => setTab(item.key)} className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] transition sm:px-4 sm:text-sm ${tab === item.key ? 'border-[#25301e] bg-[#25301e] text-white dark:border-[#b9cf9a] dark:bg-[#b9cf9a] dark:text-[#182014]' : 'border-[#d9d8ce] text-[#5d5f57] hover:border-[#aebba3] dark:border-[#354153] dark:text-[#c7ccd4]'}`}>{item.label}<span className="ml-1.5 text-[11px] opacity-65 sm:ml-2 sm:text-xs">{item.note}</span></button>)}
     </nav>
-    <div className="mt-6">
+    <div className="mt-4 sm:mt-6">
       {tab === 'weekly' ? <WeeklyPanel key={remote.weekly.updatedAt || 'weekly'} issues={remote.weekly.issues || []} /> : null}
       {tab === 'daily' ? <DailyPanel key={remote.daily.latest || 'daily'} manifest={remote.daily} fallbackEntries={dailyEntries} /> : null}
       {tab === 'live' ? <LivePanel live={remote.live} /> : null}

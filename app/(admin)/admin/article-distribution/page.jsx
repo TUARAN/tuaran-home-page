@@ -22,7 +22,10 @@ export default async function AdminArticleDistributionPage({ searchParams }) {
       returnTo={returnTo}
       description="文章选择、平台登录态和草稿写入仅站长本人可操作。"
     >
-      <ArticleDistributionClient requestedContentKey={requestedContentKey} />
+      <ArticleDistributionClient
+        key={requestedContentKey || 'default'}
+        requestedContentKey={requestedContentKey}
+      />
     </AdminPageGate>
   )
 }

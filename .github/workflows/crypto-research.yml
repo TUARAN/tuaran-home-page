@@ -1,0 +1,66 @@
+name: Crypto research daily
+
+# 每天北京时间 01:30，按市值选择一个尚未完成的加密资产；同步池后允许续跑同一选题。
+on:
+  schedule:
+    - cron: '30 17 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: crypto-research
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    name: POST /api/cron/crypto-research
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Trigger online automation
+        env:
+          CRYPTO_RESEARCH_SECRET: ${{ secrets.CRYPTO_RESEARCH_SECRET }}
+          A_SHARE_COLLECT_SECRET: ${{ secrets.A_SHARE_COLLECT_SECRET }}
+          PUBLIC_OPINION_COLLECT_SECRET: ${{ secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+        run: |
+          TRIGGER_SECRET="${CRYPTO_RESEARCH_SECRET:-${A_SHARE_COLLECT_SECRET:-$PUBLIC_OPINION_COLLECT_SECRET}}"
+          if [ -z "$TRIGGER_SECRET" ]; then
+            echo "::error::缺少 CRYPTO_RESEARCH_SECRET（或可回退的 A_SHARE_COLLECT_SECRET / PUBLIC_OPINION_COLLECT_SECRET）"
+            exit 1
+          fi
+          for attempt in 1 2 3; do
+            code=$(curl -sS --retry 2 --retry-delay 8 \
+              -o /tmp/crypto-research.json -w '%{http_code}' -X POST \
+              -H "x-crypto-research-secret: $TRIGGER_SECRET" \
+              https://2aran.com/api/cron/crypto-research)
+            echo "请求 $attempt/3 · HTTP $code"
+            cat /tmp/crypto-research.json
+            echo
+            if [ "$code" = "200" ]; then
+              phase=$(jq -r '.phase // ""' /tmp/crypto-research.json)
+              if [ "$phase" != "generation-locked" ] && [ "$phase" != "pool-synced" ]; then exit 0; fi
+              if [ "$phase" = "generation-locked" ]; then
+                retry_ms=$(jq -r '.retryAfterMs // 600000' /tmp/crypto-research.json)
+                wait_seconds=$(( (retry_ms + 999) / 1000 ))
+              else
+                wait_seconds=5
+              fi
+            else
+              wait_seconds=30
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep "$wait_seconds"; fi
+          done
+          echo "::error::加密调研草稿连续 3 次仍未完成"
+          exit 1
+
+      - name: Notify owner of failure
+        if: failure()
+        env:
+          ALERT_SECRET: ${{ secrets.AUTOMATION_ALERT_SECRET || secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ ! -f /tmp/crypto-research.json ]; then : > /tmp/crypto-research.json; fi
+          BODY=$(jq -n --arg url "$RUN_URL" --rawfile detail /tmp/crypto-research.json \
+            '{workflow:"crypto-research",taskName:"加密调研自动化",runUrl:$url,status:"failed",error:($detail[0:300])}')
+          curl -sS --retry 2 --fail-with-body -X POST \
+            -H "x-automation-alert-secret: $ALERT_SECRET" -H "content-type: application/json" \
+            -d "$BODY" https://2aran.com/api/automation/alert || echo "alert delivery failed (non-fatal)"

@@ -88,6 +88,7 @@ export async function GET(req) {
   })
   const repositoryByTask = new Map(registry.map((item) => [item.id, item.repository]))
   let aShareRuns = []
+  let cryptoRuns = []
   if (db) {
     try {
       const { results } = await db
@@ -108,6 +109,24 @@ export async function GET(req) {
       aShareRuns = []
     }
   }
+  if (db) {
+    try {
+      const { results } = await db.prepare('SELECT * FROM crypto_run_log ORDER BY ran_at DESC LIMIT 6').all()
+      cryptoRuns = (results || []).map((row) => ({
+        id: `crypto-${row.id}-${row.ran_at}`,
+        taskId: 'crypto-research-daily',
+        taskName: `加密资产观察${row.coin_name ? `：${row.coin_name}（${row.symbol}）` : ''}`,
+        repository: 'tuaran-home-page',
+        status: row.status === 'ok' ? 'success' : row.status === 'failed' ? 'failed' : 'skipped',
+        reviewStatus: row.status === 'ok' && row.action === 'draft' ? 'pending_review' : 'not_required',
+        startedAt: new Date(Number(row.ran_at) || Date.now()).toISOString(),
+        durationMs: Number(row.duration_ms) || null,
+        artifacts: row.draft_id ? [`草稿 ${row.draft_id}`] : [],
+      }))
+    } catch {
+      cryptoRuns = []
+    }
+  }
   const recentRuns = [
     ...(greetingLastRun
       ? [
@@ -125,6 +144,7 @@ export async function GET(req) {
         ]
       : []),
     ...aShareRuns,
+    ...cryptoRuns,
     ...OPS_RECENT_RUNS.map((run) => ({
       ...run,
       repository: run.repository || repositoryByTask.get(run.taskId) || null,

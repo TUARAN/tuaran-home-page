@@ -15,6 +15,7 @@ import {
   normalizeGreetingLlmIntent,
 } from '../../../../lib/dailyGreetingLlm'
 import { cultureStoryLastRunKey } from '../../../../lib/dailyCultureStory'
+import { xCommunityLastRunKey } from '../../../../lib/xCommunityPosts'
 import {
   listMorningGreetingTemplates,
   upsertMorningGreetingTemplate,
@@ -78,6 +79,9 @@ export async function GET(req) {
       cultureMorningRaw,
       cultureAfternoonRaw,
       cultureEveningRaw,
+      communityFriendsRaw,
+      communityLearningRaw,
+      communityGrowthRaw,
     ] = await Promise.all([
       listMorningGreetingTemplates(db),
       readSetting(db, MORNING_GREETING_SETTING_KEY),
@@ -96,6 +100,9 @@ export async function GET(req) {
       readSetting(db, cultureStoryLastRunKey('culture_morning')),
       readSetting(db, cultureStoryLastRunKey('culture_afternoon')),
       readSetting(db, cultureStoryLastRunKey('culture_evening')),
+      readSetting(db, xCommunityLastRunKey('community_friends')),
+      readSetting(db, xCommunityLastRunKey('community_learning')),
+      readSetting(db, xCommunityLastRunKey('community_growth')),
     ])
     const lastRuns = {}
     for (const [key, raw] of [['morning', morningRaw], ['noon', noonRaw], ['evening', eveningRaw]]) {
@@ -117,13 +124,25 @@ export async function GET(req) {
         cultureRuns[key] = null
       }
     }
+    const communityRuns = {}
+    for (const [key, raw] of [
+      ['community_friends', communityFriendsRaw],
+      ['community_learning', communityLearningRaw],
+      ['community_growth', communityGrowthRaw],
+    ]) {
+      try {
+        communityRuns[key] = JSON.parse(raw || 'null')
+      } catch {
+        communityRuns[key] = null
+      }
+    }
     const ollamaProviders = (ollamaProviderRows.results || []).map((row) => ({ id: row.id, name: row.name, model: row.default_model }))
     const ollamaProviderId = ollamaProviders.some((provider) => provider.id === ollamaProviderRaw)
       ? String(ollamaProviderRaw)
       : String(ollamaProviders[0]?.id || '')
     let xApiCost
     try {
-      xApiCost = await getXApiCostSummary(db, { postsPerDay: 6 })
+      xApiCost = await getXApiCostSummary(db, { postsPerDay: 9 })
     } catch {
       // 数据库迁移尚未执行时仍展示官方单价与固定日程预算。
       xApiCost = {
@@ -133,8 +152,8 @@ export async function GET(req) {
         todayMicroUsd: 0,
         monthPosts: 0,
         monthMicroUsd: 0,
-        projected30DayPosts: 180,
-        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: 6, days: 30 }),
+        projected30DayPosts: 270,
+        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: 9, days: 30 }),
         trackedSince: null,
       }
     }
@@ -150,6 +169,7 @@ export async function GET(req) {
       ollamaProviderId,
       lastRuns,
       cultureRuns,
+      communityRuns,
       xApiCost: {
         ...xApiCost,
         postCreateMicroUsd: X_API_POST_CREATE_COST_MICRO_USD,

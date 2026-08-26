@@ -16,6 +16,11 @@ const CULTURE_STORY_SLOTS = [
   { id: 'culture_afternoon', label: '下午短故事', time: '16:00' },
   { id: 'culture_evening', label: '晚间短故事', time: '20:00' },
 ]
+const COMMUNITY_POST_SLOTS = [
+  { id: 'community_friends', label: '认识蓝朋友', time: '09:00' },
+  { id: 'community_learning', label: '互相学习', time: '15:00' },
+  { id: 'community_growth', label: '携手成长', time: '19:00' },
+]
 const CULTURE_CATEGORY_LABELS = {
   guoxue: '国学哲思',
   chinese_story: '中华寓言 / 历史',
@@ -28,6 +33,7 @@ const fieldClass = 'mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34
 const TIMELINE_FILTERS = [
   { id: 'all', label: '全部任务' },
   { id: 'greeting', label: '问候' },
+  { id: 'community', label: '朋友图文' },
   { id: 'culture', label: '文化短故事' },
 ]
 const STATUS_FILTERS = [
@@ -99,15 +105,15 @@ function TimelineNode({ item }) {
   )
 }
 
-function TaskTimeline({ lastRuns, cultureRuns }) {
+function TaskTimeline({ lastRuns, cultureRuns, communityRuns }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
 
   const items = useMemo(() => {
     const greetingItems = [
       { id: 'morning', label: '早安', schedule: '08:00', column: 1 },
-      { id: 'noon', label: '午安', schedule: '12:00', column: 3 },
-      { id: 'evening', label: '晚安', schedule: '22:00', column: 8 },
+      { id: 'noon', label: '午安', schedule: '12:00', column: 4 },
+      { id: 'evening', label: '晚安', schedule: '22:00', column: 9 },
     ].map((item) => {
       const run = lastRuns[item.id]
       return {
@@ -127,7 +133,7 @@ function TaskTimeline({ lastRuns, cultureRuns }) {
       return {
         ...item,
         schedule: item.time,
-        column: [2, 5, 7][index],
+        column: [3, 6, 8][index],
         type: 'culture',
         typeLabel: '文化短故事',
         state: runState(run),
@@ -138,8 +144,24 @@ function TaskTimeline({ lastRuns, cultureRuns }) {
         costMicroUsd: run?.xApiCostMicroUsd,
       }
     })
-    return [...greetingItems, ...cultureItems].sort((a, b) => a.column - b.column)
-  }, [cultureRuns, lastRuns])
+    const communityItems = COMMUNITY_POST_SLOTS.map((item, index) => {
+      const run = communityRuns[item.id]
+      return {
+        ...item,
+        schedule: item.time,
+        column: [2, 5, 7][index],
+        type: 'community',
+        typeLabel: '朋友图文',
+        state: runState(run),
+        recordedAt: run?.at,
+        meta: [run?.theme, run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),
+        link: run?.postUrl,
+        detail: run?.error,
+        costMicroUsd: run?.xApiCostMicroUsd,
+      }
+    })
+    return [...greetingItems, ...communityItems, ...cultureItems].sort((a, b) => a.column - b.column)
+  }, [communityRuns, cultureRuns, lastRuns])
 
   const visibleItems = items.filter((item) => (
     (typeFilter === 'all' || item.type === typeFilter)
@@ -177,11 +199,11 @@ function TaskTimeline({ lastRuns, cultureRuns }) {
       </div>
 
       <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
-        <div className="relative grid min-w-[1420px] grid-cols-8 gap-3 px-2 pb-1">
+        <div className="relative grid min-w-[1620px] grid-cols-9 gap-3 px-2 pb-1">
           <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
           {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
           {!visibleItems.length ? (
-            <div className="col-span-8 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
+            <div className="col-span-9 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
               当前筛选下没有任务节点。
             </div>
           ) : null}
@@ -197,7 +219,7 @@ function XApiCostPanel({ cost }) {
   const metrics = [
     { label: '今日已发生', value: formatUsd(cost.todayMicroUsd), detail: `${cost.todayPosts || 0} 次成功发布` },
     { label: '本月已发生', value: formatUsd(cost.monthMicroUsd), detail: `${cost.monthPosts || 0} 次成功发布` },
-    { label: '30 天预计', value: formatUsd(cost.projected30DayMicroUsd, 2), detail: `${cost.projected30DayPosts || 180} 次纯文本发布` },
+    { label: '30 天预计', value: formatUsd(cost.projected30DayMicroUsd, 2), detail: `${cost.projected30DayPosts || 270} 次发帖` },
   ]
   return (
     <section className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]" aria-labelledby="x-api-cost-title">
@@ -223,7 +245,7 @@ function XApiCostPanel({ cost }) {
         <span>价格核对于 {cost.pricingCheckedAt}</span>
       </div>
       <p className="mb-0 mt-1 text-[10px] leading-5 text-[#96988e] dark:text-gray-500">
-        仅统计 X 发帖接口，不含 DeepSeek 等文案生成成本；30 天预计按每天 6 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
+        仅统计 X 发帖接口，不含图片上传端点和 DeepSeek 等文案生成成本；30 天预计按每天 9 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
       </p>
       {!cost.available ? <p className="mb-0 mt-1 text-[10px] text-amber-700 dark:text-amber-300">成本流水表尚未启用；部署数据库迁移后开始累计实际金额。</p> : null}
     </section>
@@ -264,6 +286,7 @@ export default function MorningGreetingClient() {
   const templates = data?.templates || []
   const lastRuns = data?.lastRuns || {}
   const cultureRuns = data?.cultureRuns || {}
+  const communityRuns = data?.communityRuns || {}
 
   async function saveTemplate(template) {
     setSaving(true); setError(''); setNotice('')
@@ -323,7 +346,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="管理每日问候和文化短故事的全自动发布。"
+      description="管理每日问候、朋友图文和文化短故事的全自动发布。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -331,7 +354,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天全自动发布三条问候和三条文化短故事，不经人工审核。"
+          description="每天全自动发布三条问候、三条朋友图文和三条文化短故事，不经人工审核。"
           className="mb-4"
           actions={
             <>
@@ -341,7 +364,7 @@ export default function MorningGreetingClient() {
           }
         >
         <div className="space-y-4">
-          <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} />
+          <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} communityRuns={communityRuns} />
           <XApiCostPanel cost={data?.xApiCost} />
 
           <div>

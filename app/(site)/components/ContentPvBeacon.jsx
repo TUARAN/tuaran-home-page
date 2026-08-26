@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { LoadingSpinner } from '../../components/loading/LoadingPrimitives'
 
 const DISPLAY_TIMEOUT_MS = 3_000
 const PV_CACHE_TTL_MS = 30_000
@@ -153,10 +154,7 @@ export default function ContentPvBeacon({ category, slug, display = false, initi
     return (
       <span className="inline-flex items-center gap-1.5">
         <span>阅读量</span>
-        <span
-          className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#bbb] border-t-transparent dark:border-gray-500 dark:border-t-transparent"
-          aria-hidden="true"
-        />
+        <LoadingSpinner size="sm" />
         <span className="sr-only">阅读量加载中</span>
       </span>
     )

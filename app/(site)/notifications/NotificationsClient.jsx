@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useSessionAccount } from '../components/SessionProvider'
+import { LoadingDots, LoadingState, Skeleton } from '../../components/loading/LoadingPrimitives'
 
 const PAGE_SIZE = 10
 const LOGIN_HREF = '/login?returnTo=%2Fnotifications'
@@ -225,7 +226,7 @@ export default function NotificationsClient() {
   }
 
   if (loading) {
-    return <p className="py-8 text-center text-sm text-[var(--site-muted)]">正在检查登录状态…</p>
+    return <LoadingState label="正在检查登录状态" />
   }
 
   if (!user) {
@@ -311,11 +312,11 @@ export default function NotificationsClient() {
       </div>
 
       {status === 'loading' ? (
-        <div className="space-y-3">
+        <div className="space-y-3" role="status" aria-label="正在加载通知">
           {[0, 1, 2].map((index) => (
-            <div
+            <Skeleton
               key={index}
-              className="h-24 animate-pulse rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)]"
+              className="h-24 rounded-2xl border border-[var(--site-line)]"
             />
           ))}
         </div>
@@ -345,7 +346,7 @@ export default function NotificationsClient() {
           {items.length < total ? (
             <div ref={sentinelRef} className="mt-5 flex min-h-10 items-center justify-center text-center">
               {loadingMore ? (
-                <span className="text-sm text-[var(--site-faint)]">加载中…</span>
+                <LoadingDots label="正在加载更多通知" className="text-[var(--site-faint)]" />
               ) : typeof IntersectionObserver === 'undefined' ? (
                 <button
                   type="button"

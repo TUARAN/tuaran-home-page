@@ -3,6 +3,193 @@
 @tailwind utilities;
 
 /*
+ * 统一加载动效。视觉语言参考 Amicro 的 FluidSkeleton、SmoothRing、
+ * PulseDots 与 TextShimmer（MIT），项目适配规则见 docs/loading-motion-system.md。
+ */
+:root {
+  --loading-duration-skeleton: 1.6s;
+  --loading-duration-spinner: 0.9s;
+  --loading-duration-dots: 1.2s;
+  --loading-stagger: 120ms;
+  --loading-track: color-mix(in srgb, var(--site-line, #ded8e4) 78%, transparent);
+  --loading-surface: color-mix(in srgb, var(--site-panel-strong, #fff) 74%, var(--site-line, #ded8e4));
+  --loading-highlight: color-mix(in srgb, white 72%, var(--site-accent, #7352a2));
+  --loading-ink: var(--site-accent, #7352a2);
+}
+
+.dark {
+  --loading-track: color-mix(in srgb, var(--site-line, #2e2b25) 86%, transparent);
+  --loading-surface: color-mix(in srgb, var(--site-panel-strong, #211f1a) 82%, #3c3944);
+  --loading-highlight: color-mix(in srgb, var(--site-accent, #c1c6a8) 30%, transparent);
+  --loading-ink: var(--site-accent, #c1c6a8);
+}
+
+.admin-shell {
+  --loading-track: color-mix(in srgb, var(--admin-line) 82%, transparent);
+  --loading-surface: color-mix(in srgb, var(--admin-surface-subtle) 82%, var(--admin-line));
+  --loading-highlight: color-mix(in srgb, white 66%, var(--admin-focus));
+  --loading-ink: var(--admin-focus);
+}
+
+.dark .admin-shell {
+  --loading-highlight: color-mix(in srgb, var(--admin-focus) 42%, transparent);
+}
+
+.loading-spinner {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--loading-ink);
+  vertical-align: -0.125em;
+}
+
+.loading-spinner--sm { width: 0.875rem; height: 0.875rem; }
+.loading-spinner--md { width: 1.5rem; height: 1.5rem; }
+.loading-spinner--lg { width: 2.25rem; height: 2.25rem; }
+
+.loading-spinner svg {
+  width: 100%;
+  height: 100%;
+  animation: loading-spin var(--loading-duration-spinner) linear infinite;
+}
+
+.loading-spinner circle {
+  fill: none;
+  stroke-width: 2.75;
+}
+
+.loading-spinner__track { stroke: var(--loading-track); }
+
+.loading-spinner__arc {
+  stroke: currentColor;
+  stroke-dasharray: 34 82;
+  stroke-linecap: round;
+}
+
+.loading-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 1.75rem;
+  color: currentColor;
+}
+
+.loading-dots > span {
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 999px;
+  background: currentColor;
+  animation: loading-dot var(--loading-duration-dots) ease-in-out infinite;
+}
+
+.loading-dots > span:nth-child(2) { animation-delay: var(--loading-stagger); }
+.loading-dots > span:nth-child(3) { animation-delay: calc(var(--loading-stagger) * 2); }
+
+.loading-text {
+  position: relative;
+  display: inline-block;
+  color: inherit;
+}
+
+.loading-text::after {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: var(--loading-ink);
+  content: attr(data-text);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 50%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 50%, transparent 100%);
+  -webkit-mask-position: 100% 0;
+  mask-position: 100% 0;
+  -webkit-mask-size: 200% 100%;
+  mask-size: 200% 100%;
+  animation: loading-text-shimmer var(--loading-duration-skeleton) linear infinite;
+}
+
+.loading-state {
+  display: flex;
+  min-height: 8rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  color: var(--site-muted, var(--admin-muted, #68636f));
+  text-align: left;
+}
+
+.admin-shell .loading-state { color: var(--admin-muted); }
+
+.loading-state--compact {
+  min-height: 0;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.loading-state__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.875rem;
+}
+
+.loading-state__detail {
+  color: var(--site-faint, var(--admin-muted, #706a78));
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.loading-skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--loading-surface);
+}
+
+.loading-skeleton::after,
+.loading-skeleton-scope :where(.loading-skeleton-item)::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(100deg, transparent 24%, var(--loading-highlight) 48%, transparent 72%);
+  transform: translateX(-120%);
+  animation: loading-skeleton-flow var(--loading-duration-skeleton) linear infinite;
+  will-change: transform;
+}
+
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loading-dot {
+  0%, 100% { opacity: 0.22; transform: translateY(0); }
+  50% { opacity: 0.95; transform: translateY(-0.12rem); }
+}
+
+@keyframes loading-skeleton-flow {
+  to { transform: translateX(120%); }
+}
+
+@keyframes loading-text-shimmer {
+  to { -webkit-mask-position: -100% 0; mask-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner svg,
+  .loading-dots > span,
+  .loading-text::after,
+  .loading-skeleton::after,
+  .loading-skeleton-scope :where(.loading-skeleton-item)::after {
+    animation: none;
+  }
+
+  .loading-dots > span { opacity: 0.58; transform: none; }
+  .loading-text::after { display: none; }
+  .loading-skeleton::after,
+  .loading-skeleton-scope :where(.loading-skeleton-item)::after { opacity: 0.35; transform: none; }
+}
+
+/*
  * 多维页面只有两套页面壳：
  * 1. site：复用主站导航、页脚、背景和 1120px 内容宽度；
  * 2. feature：全宽沉浸式画布，统一使用深色基底，页面内部只负责内容编排。

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-12T08:39:31.517Z",
+  "generatedAt": "2026-08-20T07:58:02.705Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -710,6 +710,18 @@
               "hash": "aaac0dd11e564ec17d8d48b8ad9a9b1eee9e171132707dd83fa06e6af4d59282",
               "path": "ai-context/deepseek-key-management/2026-08-06T01-42-28-845Z.enc.json",
               "bytes": 1400
+            },
+            {
+              "ts": "2026-08-20T01:20:52.672Z",
+              "hash": "45599f810ccb9a61fb67f24d8d004dfd86f052d551cdb82276692c36b6211916",
+              "path": "ai-context/deepseek-key-management/2026-08-20T01-20-52-690Z.enc.json",
+              "bytes": 2073
+            },
+            {
+              "ts": "2026-08-20T07:58:02.683Z",
+              "hash": "ea9a3c59400ba21f07b33065c7e6e090cfea1da5ec683e55d010960c112a8c9d",
+              "path": "ai-context/deepseek-key-management/2026-08-20T07-58-02-701Z.enc.json",
+              "bytes": 2529
             }
           ]
         }

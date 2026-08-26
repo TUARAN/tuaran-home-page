@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { readFile } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 
 import {
   ARTICLE_DISTRIBUTION_PLATFORMS,
@@ -39,7 +39,17 @@ test('后台自动化工作区和导航都登记文章一键分发', async () =>
   for (const source of [workspace, routes]) assert.match(source, /\/admin\/article-distribution/)
   assert.match(page, /window\.\$cose\.addTask/)
   assert.match(page, /草稿模式/)
+  assert.match(page, /2aran-article-distributor-extension-v1\.3\.6\.zip/)
+  assert.match(page, /下载 Chrome 插件/)
   assert.match(page, /不会自动点击平台的“发布”按钮/)
   assert.match(articleRoute, /getOwnerOrReject/)
   assert.match(articleRoute, /\^\\\/articles\\\//)
+})
+
+test('自动化页面提供可下载的 Chrome 扩展包', async () => {
+  const archive = new URL('../public/downloads/2aran-article-distributor-extension-v1.3.6.zip', import.meta.url)
+  const info = await stat(archive)
+  const header = await readFile(archive).then((buffer) => buffer.subarray(0, 4).toString('hex'))
+  assert.ok(info.size > 100_000)
+  assert.equal(header, '504b0304')
 })

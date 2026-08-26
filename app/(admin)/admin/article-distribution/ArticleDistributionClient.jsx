@@ -5,6 +5,7 @@ import {
   IconBrandX,
   IconCheck,
   IconClipboard,
+  IconDownload,
   IconExternalLink,
   IconRefresh,
   IconRocket,
@@ -23,6 +24,9 @@ import StatusPill from '../../components/ui/StatusPill'
 const PLATFORM_ICONS = {
   twitter: IconBrandX,
 }
+
+const EXTENSION_VERSION = '1.3.6'
+const EXTENSION_DOWNLOAD_URL = '/downloads/2aran-article-distributor-extension-v1.3.6.zip'
 
 const SOURCE_SELECTORS = [
   'article.prose-tuaran',
@@ -405,11 +409,19 @@ export default function ArticleDistributionClient() {
             </div>
             <p className="mb-0 mt-3 text-sm leading-6 text-[#53554d] dark:text-gray-300">{message}</p>
             <div className="mt-4 flex flex-wrap gap-2">
+              <AdminButton href={EXTENSION_DOWNLOAD_URL} download prefetch={false}>
+                <IconDownload size={15} /> 下载 Chrome 插件 v{EXTENSION_VERSION}
+              </AdminButton>
               <AdminButton type="button" onClick={prepareArticle} disabled={loading || !selectedItem}>载入并预检</AdminButton>
               <AdminButton type="button" onClick={copyArticle} disabled={loading || !selectedItem}>
                 <IconClipboard size={15} /> 复制文章
               </AdminButton>
             </div>
+            <ol className="mb-0 mt-4 list-decimal space-y-1 pl-5 text-xs leading-5 text-[#7b7d72] dark:text-gray-500">
+              <li>下载并解压 ZIP。</li>
+              <li>打开 Chrome 的扩展程序页面，开启开发者模式。</li>
+              <li>选择“加载已解压的扩展程序”，载入解压后的目录，再刷新当前页面。</li>
+            </ol>
           </Section>
 
           <Section title="逐平台结果" description="成功表示已写入编辑器；最终发布状态以平台页面为准。">

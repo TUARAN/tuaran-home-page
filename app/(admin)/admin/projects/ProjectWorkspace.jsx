@@ -12,9 +12,8 @@ export default function ProjectWorkspace() {
           title: '项目治理',
           description: '从规划中心判断跨项目优先级、路线图与工作区归属。',
           items: [
-            { href: '/admin/planning', title: '规划中心', description: '统筹全部项目的过去、当前焦点与未来，并让 AI 参与大小任务的规划与分派。', icon: 'planning' },
+            { href: '/admin/planning', title: '规划中心', description: '按执行状态筛选项目事项，并在同一页面使用 AI 规划与 Agent 分派。', icon: 'planning' },
             { href: '/admin/portfolio', title: '项目总览', description: 'AI 项目台账、整合路线图与 Codex 工作区治理。', icon: 'portfolio' },
-            { href: '/admin/model-dispatch', title: '规划分派', description: '把规划中心中的任务拆解为模型和 Agent 可执行的分派方案。', icon: 'modelDispatch' },
           ],
         },
         {

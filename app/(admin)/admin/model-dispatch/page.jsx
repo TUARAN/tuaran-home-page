@@ -1,5 +1,4 @@
-import AdminPageGate from '../../components/AdminPageGate'
-import ModelDispatchConsole from './ModelDispatchConsole'
+import { redirect } from 'next/navigation'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -15,13 +14,5 @@ export const metadata = {
 }
 
 export default async function AdminModelDispatchPage() {
-  return (
-    <AdminPageGate
-      label="规划分派"
-      returnTo="/admin/model-dispatch"
-      description="规划中心内的 AI 任务拆解、模型选型与 Agent 分派工具，仅站长本人可见。"
-    >
-      <ModelDispatchConsole />
-    </AdminPageGate>
-  )
+  redirect('/admin/planning?tab=dispatch')
 }

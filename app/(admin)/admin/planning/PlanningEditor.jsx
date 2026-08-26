@@ -21,10 +21,10 @@ const ENTITY_LABELS = {
   dependency: '依赖关系',
 }
 const STATUS_OPTIONS = {
-  direction: [['planned', '待规划'], ['active', '进行中'], ['paused', '已暂停'], ['completed', '已完成'], ['archived', '已归档']],
-  'project-profile': [['active', '进行中'], ['paused', '已暂停'], ['archived', '已归档']],
-  milestone: [['planned', '待规划'], ['active', '进行中'], ['blocked', '受阻'], ['completed', '已完成'], ['cancelled', '已取消'], ['archived', '已归档']],
-  task: [['planned', '待规划'], ['doing', '处理中'], ['blocked', '受阻'], ['done', '已完成'], ['cancelled', '已取消'], ['archived', '已归档']],
+  direction: [['planned', '待执行'], ['active', '执行中'], ['paused', '已暂停'], ['completed', '已完成'], ['archived', '已归档']],
+  'project-profile': [['active', '执行中'], ['paused', '已暂停'], ['archived', '已归档']],
+  milestone: [['planned', '待执行'], ['active', '执行中'], ['blocked', '受阻'], ['completed', '已完成'], ['cancelled', '已取消'], ['archived', '已归档']],
+  task: [['planned', '待执行'], ['doing', '执行中'], ['blocked', '受阻'], ['done', '已完成'], ['cancelled', '已取消'], ['archived', '已归档']],
   decision: [['open', '待决策'], ['decided', '已决策'], ['superseded', '已替代']],
 }
 const DEFAULT_STATUS = { direction: 'planned', 'project-profile': 'active', milestone: 'planned', task: 'planned', decision: 'open' }

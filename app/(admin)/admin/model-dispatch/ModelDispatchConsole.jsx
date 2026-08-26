@@ -210,7 +210,7 @@ function formatStreamError(payload) {
   return parts.filter(Boolean).join(' · ') || 'DEEPSEEK_STREAM_FAILED'
 }
 
-export default function ModelDispatchConsole() {
+export default function ModelDispatchConsole({ embedded = false }) {
   const [form, setForm] = useState(initialForm)
   const [plan, setPlan] = useState(emptyPlan)
   const [raw, setRaw] = useState('')
@@ -307,12 +307,8 @@ export default function ModelDispatchConsole() {
     }
   }
 
-  return (
-    <AdminPage
-      title="AI 规划与 Agent 分派"
-      description="面向跨项目的大型任务、局部小任务和临时问题，由 AI 流式拆解并生成可执行的 Agent 分派方案。"
-    >
-      <div className="space-y-5">
+  const content = (
+      <div className="space-y-5 pt-1">
         <section className="grid gap-3 lg:grid-cols-4">
           <FlowStep index="1" title="录入需求" body="填写任务、仓库、上下文、隐私、时效和并发。" />
           <FlowStep index="2" title="流式规划" body="DeepSeek 边输出边展示，避免长时间白屏。" active={status === 'loading' || status === 'streaming'} />
@@ -531,6 +527,15 @@ export default function ModelDispatchConsole() {
           </Section>
         </section>
       </div>
+  )
+
+  if (embedded) return content
+  return (
+    <AdminPage
+      title="AI 规划与 Agent 分派"
+      description="面向跨项目的大型任务、局部小任务和临时问题，由 AI 流式拆解并生成可执行的 Agent 分派方案。"
+    >
+      {content}
     </AdminPage>
   )
 }

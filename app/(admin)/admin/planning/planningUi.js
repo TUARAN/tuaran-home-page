@@ -1,12 +1,12 @@
 export const PLANNING_STATUS_META = {
-  planned: { label: '待规划', tone: 'neutral' },
-  active: { label: '进行中', tone: 'info' },
+  planned: { label: '待执行', tone: 'neutral' },
+  active: { label: '执行中', tone: 'info' },
   paused: { label: '已暂停', tone: 'warning' },
   completed: { label: '已完成', tone: 'success' },
   archived: { label: '已归档', tone: 'neutral' },
   blocked: { label: '受阻', tone: 'danger' },
   cancelled: { label: '已取消', tone: 'neutral' },
-  doing: { label: '处理中', tone: 'info' },
+  doing: { label: '执行中', tone: 'info' },
   done: { label: '已完成', tone: 'success' },
   open: { label: '待决策', tone: 'warning' },
   decided: { label: '已决策', tone: 'success' },
@@ -14,10 +14,11 @@ export const PLANNING_STATUS_META = {
 }
 
 export const PLANNING_TABS = [
-  { id: 'overview', label: '三时态总览' },
+  { id: 'overview', label: '执行总览' },
   { id: 'roadmap', label: '组合路线图' },
   { id: 'tree', label: '规划树' },
   { id: 'history', label: '历史与决策' },
+  { id: 'dispatch', label: 'AI 规划分派' },
 ]
 
 export const PLANNING_WINDOWS = [
@@ -204,6 +205,59 @@ export function buildOverviewModel(snapshot = {}, directionId = '') {
     future,
     stats,
   }
+}
+
+export function planningExecutionStage(status) {
+  if (status === 'planned') return 'pending'
+  if (status === 'active' || status === 'doing') return 'running'
+  if (status === 'blocked') return 'blocked'
+  if (status === 'completed' || status === 'done') return 'completed'
+  return 'other'
+}
+
+export function buildExecutionBoardModel(snapshot = {}, filters = {}) {
+  const index = createSnapshotIndex(snapshot)
+  const directionId = filters.directionId || ''
+  const projectId = filters.projectId || 'all'
+  const entityType = filters.entityType || 'all'
+  const query = String(filters.query || '').trim().toLowerCase()
+  const stage = filters.stage || 'all'
+  const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 }
+  const groups = { pending: [], running: [], blocked: [], completed: [], other: [] }
+
+  const allItems = [
+    ...(snapshot.milestones || []).map((item) => ({ ...item, entityType: 'milestone' })),
+    ...(snapshot.tasks || []).map((item) => ({ ...item, entityType: 'task' })),
+  ]
+    .filter((item) => matchesDirection(item, directionId, index))
+    .map((item) => enrichOverviewItem(item, index))
+
+  const counts = allItems.reduce((result, item) => {
+    const itemStage = planningExecutionStage(item.status)
+    result.all += 1
+    result[itemStage] += 1
+    return result
+  }, { all: 0, pending: 0, running: 0, blocked: 0, completed: 0, other: 0 })
+
+  for (const item of allItems) {
+    const itemStage = planningExecutionStage(item.status)
+    if (projectId !== 'all' && item.projectId !== projectId) continue
+    if (entityType !== 'all' && item.entityType !== entityType) continue
+    if (stage !== 'all' && itemStage !== stage) continue
+    if (query && !`${item.title || ''} ${item.projectName || ''}`.toLowerCase().includes(query)) continue
+    groups[itemStage].push(item)
+  }
+
+  for (const items of Object.values(groups)) {
+    items.sort((left, right) => (
+      (priorityOrder[left.priority] ?? 9) - (priorityOrder[right.priority] ?? 9)
+      || Number(left.targetAt ?? Number.MAX_SAFE_INTEGER) - Number(right.targetAt ?? Number.MAX_SAFE_INTEGER)
+      || String(left.title || '').localeCompare(String(right.title || ''), 'zh-CN')
+    ))
+  }
+
+  const projects = (snapshot.projects || []).filter((item) => !directionId || item.directionId === directionId)
+  return { counts, groups, projects }
 }
 
 export function isPlanningArchived(item) {

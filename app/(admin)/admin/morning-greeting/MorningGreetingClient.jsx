@@ -17,9 +17,9 @@ const CULTURE_STORY_SLOTS = [
   { id: 'culture_evening', label: '晚间短故事', time: '20:00' },
 ]
 const COMMUNITY_POST_SLOTS = [
-  { id: 'community_friends', label: '认识蓝朋友', time: '09:00' },
-  { id: 'community_learning', label: '互相学习', time: '15:00' },
-  { id: 'community_growth', label: '携手成长', time: '19:00' },
+  { id: 'community_friends', label: '认识新朋友', time: '09:00' },
+  { id: 'community_learning', label: '寻找同好', time: '15:00' },
+  { id: 'community_growth', label: '结伴成长', time: '19:00' },
 ]
 const CULTURE_CATEGORY_LABELS = {
   guoxue: '国学哲思',

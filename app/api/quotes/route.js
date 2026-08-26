@@ -23,7 +23,7 @@ export async function GET() {
         `SELECT id, text, author, source, source_url
          FROM famous_quotes
          WHERE enabled = 1
-         ORDER BY updated_at DESC
+         ORDER BY RANDOM()
          LIMIT 1`
       )
       .first()

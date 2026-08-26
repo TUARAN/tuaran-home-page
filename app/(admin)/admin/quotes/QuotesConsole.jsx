@@ -12,6 +12,8 @@ async function readJson(response) {
 export default function QuotesConsole() {
   const [prompt, setPrompt] = useState('')
   const [quote, setQuote] = useState(null)
+  const [quotes, setQuotes] = useState([])
+  const [quoteCount, setQuoteCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [persistent, setPersistent] = useState(true)
@@ -26,6 +28,8 @@ export default function QuotesConsole() {
       const data = await readJson(response)
       if (!response.ok) throw new Error(data?.message || data?.error || `HTTP_${response.status}`)
       setQuote(data?.quote || null)
+      setQuotes(Array.isArray(data?.quotes) ? data.quotes : [])
+      setQuoteCount(Number(data?.quoteCount) || 0)
       setPersistent(data?.persistent !== false)
     } catch (reason) {
       setError(reason?.message || 'FETCH_FAILED')
@@ -54,7 +58,10 @@ export default function QuotesConsole() {
       const data = await readJson(response)
       if (!response.ok) throw new Error(data?.detail || data?.error || `HTTP_${response.status}`)
       setQuote(data?.quote || null)
-      setMessage('已生成并展示。')
+      setQuotes((current) => data?.quote ? [data.quote, ...current.filter((item) => item.id !== data.quote.id)] : current)
+      if (data?.quote) setQuoteCount((current) => current + 1)
+      setMessage('已生成并加入名言池，前台会随机展示。')
+      setPrompt('')
     } catch (reason) {
       setError(reason?.message || 'QUOTE_GENERATION_FAILED')
     } finally {
@@ -63,7 +70,7 @@ export default function QuotesConsole() {
   }
 
   return (
-    <AdminPage title="名言生成" description="输入提示语，大模型生成一句原创短句并立即展示。">
+    <AdminPage title="名言生成" description="每天自动生成原创短句并留档，前台从名言池随机展示。">
       <div className="mx-auto max-w-3xl space-y-5">
         {!persistent ? <Notice tone="warning">当前环境没有可写入的 D1 数据库。</Notice> : null}
         {error ? <Notice tone="error">{error}</Notice> : null}
@@ -84,18 +91,40 @@ export default function QuotesConsole() {
             />
           </label>
           <AdminButton type="submit" variant="primary" disabled={generating || !persistent || !prompt.trim()} className="mt-4">
-            <IconSparkles size={15} />{generating ? '生成中…' : '生成并展示'}
+            <IconSparkles size={15} />{generating ? '生成中…' : '生成并入库'}
           </AdminButton>
         </form>
 
         <section className="rounded-xl border border-[#d9dbd0] bg-white p-6 shadow-sm dark:border-[#252e39] dark:bg-[#10161f]">
-          <p className="text-xs font-medium text-[#858779] dark:text-gray-500">当前展示</p>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-xs font-medium text-[#858779] dark:text-gray-500">最新生成</p>
+            <p className="text-xs text-[#858779] dark:text-gray-500">名言池 {quoteCount} 条</p>
+          </div>
           {loading ? <p className="mt-4 text-sm text-[#858779]">读取中…</p> : quote ? (
             <blockquote className="mt-4 font-serif text-xl leading-9 text-[#292a24] dark:text-gray-100">
               “{quote.text}”
               <footer className="mt-2 font-sans text-sm text-[#858779] dark:text-gray-500">— {quote.author}</footer>
             </blockquote>
           ) : <p className="mt-4 text-sm text-[#858779] dark:text-gray-500">尚未生成</p>}
+        </section>
+
+        <section className="rounded-xl border border-[#d9dbd0] bg-white p-6 shadow-sm dark:border-[#252e39] dark:bg-[#10161f]">
+          <p className="text-xs font-medium text-[#858779] dark:text-gray-500">生成记录</p>
+          {loading ? null : quotes.length ? (
+            <div className="mt-4 divide-y divide-[#eceee7] dark:divide-[#252e39]">
+              {quotes.map((item) => (
+                <article key={item.id} className="py-4 first:pt-0 last:pb-0">
+                  <p className="font-serif text-base leading-7 text-[#292a24] dark:text-gray-100">“{item.text}”</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#858779] dark:text-gray-500">
+                    <span>{item.generationTrigger === 'automation' ? '自动生成' : '手动生成'}</span>
+                    {item.generationModel ? <span>{item.generationModel}</span> : null}
+                    {item.createdAt ? <time dateTime={new Date(item.createdAt).toISOString()}>{new Date(item.createdAt).toLocaleString('zh-CN')}</time> : null}
+                  </div>
+                  {item.generationPrompt ? <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#9a9c91] dark:text-gray-600">提示语：{item.generationPrompt}</p> : null}
+                </article>
+              ))}
+            </div>
+          ) : <p className="mt-4 text-sm text-[#858779] dark:text-gray-500">暂无记录</p>}
         </section>
       </div>
     </AdminPage>

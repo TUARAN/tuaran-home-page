@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '名言生成',
-  description: '根据提示语生成并展示一句原创短句。',
+  description: '自动生成原创短句、保留记录并随机展示。',
   robots: { index: false, follow: false },
 }
 
@@ -15,7 +15,7 @@ export default function QuotesAdminPage() {
     <AdminPageGate
       label="名言生成"
       returnTo="/admin/quotes"
-      description="根据提示语生成并立即展示一句原创短句，仅站长本人可用。"
+      description="自动生成原创短句、保留记录并随机展示，仅站长本人可用。"
     >
       <QuotesConsole />
     </AdminPageGate>

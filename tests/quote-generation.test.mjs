@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   QUOTE_GENERATION_MODELS,
+  buildAutomatedQuotePrompt,
   buildQuoteGenerationMessages,
   parseGeneratedQuotes,
 } from '../lib/quoteGeneration.js'
@@ -22,6 +23,17 @@ test('quote prompt passes the requested direction to the model without a stock t
     secondary: 'qwen3.5:9b',
     fallback: 'deepseek-v4-flash',
   })
+})
+
+test('automated quote prompt uses the date and excludes recent pool entries', () => {
+  const prompt = buildAutomatedQuotePrompt({
+    dateKey: '2026-08-26',
+    recentQuotes: ['耐心会把模糊的问题磨出清楚的边界'],
+  })
+  assert.match(prompt, /2026-08-26/)
+  assert.match(prompt, /自行选择一个具体角度/)
+  assert.match(prompt, /不要重复或近似/)
+  assert.match(prompt, /耐心会把模糊的问题磨出清楚的边界/)
 })
 
 test('quote parser returns only one valid generated result and owns attribution', () => {

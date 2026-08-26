@@ -22,6 +22,7 @@ export default function AutomationWorkspace() {
           items: [
             { href: '/admin/a-share-research', title: 'A 股研究自动化', description: '每日选题、联网检索草稿、复核窗口、自动发布与运行日志。', icon: 'aShareResearch' },
             { href: '/admin/morning-greeting', title: 'X 发布任务', description: '管理每日问候和文化短故事的全自动发布。', icon: 'morningGreeting' },
+            { href: '/admin/article-distribution', title: '文章一键分发', description: '选择站内文章，通过浏览器插件写入六个平台草稿。', icon: 'share' },
           ],
         },
       ]}

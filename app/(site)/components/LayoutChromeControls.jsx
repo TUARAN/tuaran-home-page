@@ -13,15 +13,17 @@ import SiteMobileTabBar from './SiteMobileTabBar'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
 
 const HIDE_CHROME_PATHS = new Set(['/about', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
+const HIDE_HEADER_PATHS = new Set(['/spacex'])
 
 function useChromeVisibility() {
   const pathname = usePathname()
   const richPage = getRichPageByPath(pathname)
   const isFeaturePage = getRichPagePresentation(richPage).id === 'feature'
   const hideChrome = HIDE_CHROME_PATHS.has(pathname) || isFeaturePage
+  const hideHeader = HIDE_HEADER_PATHS.has(pathname)
   const showHomeButton = isFeaturePage || pathname === '/archives/agent-world-cup'
 
-  return { hideChrome, showHomeButton, pathname }
+  return { hideChrome, hideHeader, showHomeButton, pathname }
 }
 
 function RichPageHomeButton() {
@@ -37,13 +39,13 @@ function RichPageHomeButton() {
 }
 
 export default function LayoutChromeControls() {
-  const { hideChrome, showHomeButton } = useChromeVisibility()
+  const { hideChrome, hideHeader, showHomeButton } = useChromeVisibility()
 
   if (hideChrome) return showHomeButton ? <RichPageHomeButton /> : null
 
   return (
     <PwaInstallGuide>
-      <SiteHeader />
+      {hideHeader ? null : <SiteHeader />}
       <EmailActivationPrompt />
       <CommunityLoginPrompt />
       <BackToTopButton />

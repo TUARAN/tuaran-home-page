@@ -45,7 +45,7 @@ export default function LayoutChromeControls() {
 
   return (
     <PwaInstallGuide>
-      {hideHeader ? null : <SiteHeader />}
+      {hideHeader ? <RichPageHomeButton /> : <SiteHeader />}
       <EmailActivationPrompt />
       <CommunityLoginPrompt />
       <BackToTopButton />

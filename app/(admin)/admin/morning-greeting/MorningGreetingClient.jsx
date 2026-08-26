@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
 
+const formatUsd = (microUsd, minimumFractionDigits = 3) => `$${(Math.max(0, Number(microUsd) || 0) / 1_000_000).toLocaleString('en-US', { minimumFractionDigits, maximumFractionDigits: 3 })}`
+
 const PERIODS = [
   { id: 'morning', label: '早安' },
   { id: 'noon', label: '午安' },
@@ -89,6 +91,7 @@ function TimelineNode({ item }) {
           {item.recordedAt ? `执行 ${formatTime(item.recordedAt)}` : '尚无执行记录'}
         </p>
         {item.meta ? <p className="mb-0 mt-1 break-words text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">{item.meta}</p> : null}
+        {item.costMicroUsd ? <p className="mb-0 mt-1 text-[11px] font-medium tabular-nums text-[#5f6257] dark:text-gray-300">X API {formatUsd(item.costMicroUsd)} / 次</p> : null}
         {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 内容 ↗</a> : null}
         {item.detail ? <p className={`mb-0 mt-2 break-words text-[11px] leading-5 ${isAttention ? 'text-rose-600 dark:text-rose-300' : 'text-[#77796e] dark:text-gray-400'}`}>{item.detail}</p> : null}
       </div>
@@ -116,6 +119,7 @@ function TaskTimeline({ lastRuns, cultureRuns }) {
         meta: [run?.mode && generationModeLabel(run.mode), run?.styleLabel, run?.model].filter(Boolean).join(' · '),
         link: run?.postUrl,
         detail: run?.error,
+        costMicroUsd: run?.xApiCostMicroUsd,
       }
     })
     const cultureItems = CULTURE_STORY_SLOTS.map((item, index) => {
@@ -131,6 +135,7 @@ function TaskTimeline({ lastRuns, cultureRuns }) {
         meta: run?.category ? CULTURE_CATEGORY_LABELS[run.category] || run.category : '',
         link: run?.postUrl,
         detail: run?.error,
+        costMicroUsd: run?.xApiCostMicroUsd,
       }
     })
     return [...greetingItems, ...cultureItems].sort((a, b) => a.column - b.column)
@@ -184,6 +189,44 @@ function TaskTimeline({ lastRuns, cultureRuns }) {
       </div>
       <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴按北京时间排列；卡片展示每个时段最近一次执行记录，左右滑动可查看完整日程。</p>
     </div>
+  )
+}
+
+function XApiCostPanel({ cost }) {
+  if (!cost) return null
+  const metrics = [
+    { label: '今日已发生', value: formatUsd(cost.todayMicroUsd), detail: `${cost.todayPosts || 0} 次成功发布` },
+    { label: '本月已发生', value: formatUsd(cost.monthMicroUsd), detail: `${cost.monthPosts || 0} 次成功发布` },
+    { label: '30 天预计', value: formatUsd(cost.projected30DayMicroUsd, 2), detail: `${cost.projected30DayPosts || 180} 次纯文本发布` },
+  ]
+  return (
+    <section className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]" aria-labelledby="x-api-cost-title">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 id="x-api-cost-title" className="m-0 text-[13px] font-semibold text-[#34352f] dark:text-gray-100">X API 成本</h3>
+          <p className="mb-0 mt-1 text-[11px] leading-5 text-[#85877c]">成功发帖后自动入账；重复回调按 Post ID 去重。</p>
+        </div>
+        <a href={cost.pricingSourceUrl} target="_blank" rel="noreferrer" className="text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 官方价格 ↗</a>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="rounded-lg border border-[#e5e7de] bg-white px-3 py-2.5 dark:border-[#293545] dark:bg-[#10161f]">
+            <p className="m-0 text-[10px] text-[#85877c] dark:text-gray-500">{metric.label}</p>
+            <p className="mb-0 mt-1 text-lg font-semibold tabular-nums text-[#2f302a] dark:text-gray-100">{metric.value}</p>
+            <p className="mb-0 mt-0.5 text-[10px] text-[#96988e] dark:text-gray-500">{metric.detail}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] leading-5 text-[#6f7167] dark:text-gray-400">
+        <span>纯文本 {formatUsd(cost.postCreateMicroUsd)} / 次</span>
+        <span>含 URL {formatUsd(cost.postCreateWithUrlMicroUsd, 3)} / 次</span>
+        <span>价格核对于 {cost.pricingCheckedAt}</span>
+      </div>
+      <p className="mb-0 mt-1 text-[10px] leading-5 text-[#96988e] dark:text-gray-500">
+        仅统计 X 发帖接口，不含 DeepSeek 等文案生成成本；30 天预计按每天 6 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
+      </p>
+      {!cost.available ? <p className="mb-0 mt-1 text-[10px] text-amber-700 dark:text-amber-300">成本流水表尚未启用；部署数据库迁移后开始累计实际金额。</p> : null}
+    </section>
   )
 }
 
@@ -299,6 +342,7 @@ export default function MorningGreetingClient() {
         >
         <div className="space-y-4">
           <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} />
+          <XApiCostPanel cost={data?.xApiCost} />
 
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">

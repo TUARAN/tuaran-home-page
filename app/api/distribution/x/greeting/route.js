@@ -33,6 +33,7 @@ import {
 import { callDeepSeek } from '../../../../../lib/deepseek'
 import { callOllama } from '../../../../../lib/ollama'
 import { getXCredentials, publishXPost } from '../../../../../lib/xDistribution'
+import { recordXApiPostCost, xPostCreatePricing } from '../../../../../lib/xApiCost'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -330,8 +331,10 @@ export async function POST(req) {
   }
 
   if (db) {
+    const publishedAt = Date.now()
+    const xApiPricing = xPostCreatePricing(text)
     const run = JSON.stringify({
-      at: Date.now(),
+      at: publishedAt,
       ok: true,
       period: runSlot,
       contentType: isCultureStory ? 'culture-story' : 'greeting',
@@ -345,12 +348,21 @@ export async function POST(req) {
       deepseekTaskId: generation?.taskId || '',
       providerId: generation?.providerId || '',
       providerName: generation?.providerName || (generationMode === 'deepseek' ? 'DeepSeek Flash' : ''),
+      xApiPricingKey: xApiPricing.key,
+      xApiCostMicroUsd: xApiPricing.microUsd,
     })
-    await Promise.all([
+    await Promise.allSettled([
       writeSetting(db, lastRunKey, run, 'automation'),
       // 保留旧的“最新一次运行”键，供现有运维控制台继续展示。
       writeSetting(db, 'automation.x_morning_greeting.last_run', run, 'automation'),
-    ]).catch(() => {})
+      recordXApiPostCost(db, {
+        postId: result.post.id,
+        slot: runSlot,
+        contentType: isCultureStory ? 'culture-story' : 'greeting',
+        text,
+        createdAt: publishedAt,
+      }),
+    ])
   }
   return Response.json({
     ok: true,

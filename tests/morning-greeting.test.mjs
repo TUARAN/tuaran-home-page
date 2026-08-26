@@ -31,6 +31,12 @@ import {
   normalizeGreetingLlmIntent,
   pickDailyGreetingStyle,
 } from '../lib/dailyGreetingLlm.js'
+import {
+  X_API_POST_CREATE_COST_MICRO_USD,
+  X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
+  projectedXPostCost,
+  xPostCreatePricing,
+} from '../lib/xApiCost.js'
 
 test('greeting date label uses Asia/Shanghai day of month', () => {
   const label = greetingDateLabel({ now: new Date('2026-08-05T00:30:00.000Z') })
@@ -136,6 +142,20 @@ test('pause state parsing treats only paused as paused', () => {
   assert.equal(isAutomationPaused(''), false)
 })
 
+test('X API 发帖成本按正文是否包含 URL 自动分类', () => {
+  assert.deepEqual(xPostCreatePricing('早安，今天也要好好生活。'), {
+    key: 'post_create',
+    label: '发帖（不含 URL）',
+    microUsd: X_API_POST_CREATE_COST_MICRO_USD,
+  })
+  assert.deepEqual(xPostCreatePricing('阅读全文：https://2aran.com/articles/demo'), {
+    key: 'post_create_with_url',
+    label: '发帖（含 URL）',
+    microUsd: X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
+  })
+  assert.equal(projectedXPostCost({ postsPerDay: 6, days: 30 }), 2_700_000)
+})
+
 test('DeepSeek is the default while Ollama, templates, and the legacy LLM value remain supported', () => {
   assert.equal(normalizeGreetingGenerationMode('deepseek'), 'deepseek')
   assert.equal(normalizeGreetingGenerationMode('ollama'), 'ollama')
@@ -216,6 +236,9 @@ test('自动任务支持三种生成模式，模板管理收敛为三条固定�
   assert.match(cronRouteSource, /fitGeneratedGreetingToXLimit/)
   assert.match(cronRouteSource, /pickDailyGreetingStyle/)
   assert.match(cronRouteSource, /styleLabel/)
+  assert.match(cronRouteSource, /recordXApiPostCost/)
+  assert.match(clientSource, /X API 成本/)
+  assert.match(clientSource, /30 天预计/)
 })
 
 test('自动任务总览使用横向时间轴并支持类型与状态筛选', async () => {

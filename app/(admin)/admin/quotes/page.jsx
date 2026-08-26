@@ -5,17 +5,17 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '名言管理',
-  description: '管理统一内容目录随机展示的短名言。',
+  title: '名言生成',
+  description: '根据提示语生成并展示一句原创短句。',
   robots: { index: false, follow: false },
 }
 
 export default function QuotesAdminPage() {
   return (
     <AdminPageGate
-      label="名言管理"
+      label="名言生成"
       returnTo="/admin/quotes"
-      description="管理公开目录随机展示的名言，仅站长本人可见。"
+      description="根据提示语生成并立即展示一句原创短句，仅站长本人可用。"
     >
       <QuotesConsole />
     </AdminPageGate>

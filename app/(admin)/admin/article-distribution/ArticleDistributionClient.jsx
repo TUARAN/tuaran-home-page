@@ -156,6 +156,11 @@ function platformStatusTone(status) {
   return 'neutral'
 }
 
+function contentKeyFromLocation(fallback = '') {
+  if (typeof window === 'undefined') return fallback
+  return new URLSearchParams(window.location.search).get('contentKey')?.trim() || fallback
+}
+
 export default function ArticleDistributionClient({ requestedContentKey = '' }) {
   const [items, setItems] = useState([])
   const [query, setQuery] = useState(requestedContentKey)
@@ -207,8 +212,8 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
       const nextItems = (payload.items || []).filter((item) => ['article', 'research'].includes(item.type) && /^\/articles\//.test(item.href))
       setItems(nextItems)
       setSelectedKey((current) => {
-        if (preferredContentKey && nextItems.some((item) => item.contentKey === preferredContentKey)) {
-          return preferredContentKey
+        if (preferredContentKey) {
+          return nextItems.some((item) => item.contentKey === preferredContentKey) ? preferredContentKey : ''
         }
         return nextItems.some((item) => item.contentKey === current) ? current : (nextItems[0]?.contentKey || '')
       })
@@ -220,7 +225,9 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
   }, [])
 
   useEffect(() => {
-    loadItems(requestedContentKey, requestedContentKey)
+    const targetContentKey = contentKeyFromLocation(requestedContentKey)
+    setQuery(targetContentKey)
+    loadItems(targetContentKey, targetContentKey)
     detectPlugin()
     window.addEventListener('cose-ready', detectPlugin)
     return () => window.removeEventListener('cose-ready', detectPlugin)

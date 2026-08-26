@@ -1,5 +1,15 @@
 'use client'
 
+import {
+  IconArrowRight,
+  IconBrandGithub,
+  IconBrandGoogle,
+  IconBrandWechat,
+  IconChevronDown,
+  IconEye,
+  IconEyeOff,
+  IconKey,
+} from '@tabler/icons-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -35,11 +45,41 @@ function getCookie(name) {
 
 function LastUsedBadge() {
   return (
-    <span className="rounded-full bg-[#efe5d4] px-2 py-0.5 text-[10px] font-semibold text-[#8b5a1f] dark:bg-amber-950/60 dark:text-[#d7a85c]">
+    <span className="absolute right-4 rounded-full bg-[#f1e4d9] px-2 py-1 text-[10px] font-semibold tracking-wide text-[#9c553d] dark:bg-[#4a2c27] dark:text-[#e3a58e] sm:right-5">
       上次使用
     </span>
   )
 }
+
+function Divider({ children }) {
+  return (
+    <div className="my-8 flex items-center gap-3 text-sm text-[#74736d] dark:text-[#949b9d]">
+      <span className="h-px flex-1 bg-[#d6d3cc] dark:bg-[#343c43]" aria-hidden="true" />
+      <span className="shrink-0 bg-[#fbfaf7] px-1 dark:bg-[#10161b]">{children}</span>
+      <span className="h-px flex-1 bg-[#d6d3cc] dark:bg-[#343c43]" aria-hidden="true" />
+    </div>
+  )
+}
+
+function SocialLogin({ href, icon, label, lastUsed }) {
+  return (
+    <a
+      href={href}
+      className={`relative flex min-h-14 items-center justify-center gap-3 rounded-lg border bg-transparent px-4 py-3 text-center text-base font-semibold no-underline transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5795f]/45 dark:text-gray-100 sm:min-h-16 ${
+        lastUsed
+          ? 'border-[#c47a63] text-[#171714] shadow-[0_0_0_1px_rgba(196,122,99,0.12)] dark:border-[#c9846e]'
+          : 'border-[#d1cec7] text-[#171714] hover:border-[#aaa69d] hover:bg-white dark:border-[#3a4249] dark:hover:border-[#616b73] dark:hover:bg-[#171e24]'
+      }`}
+    >
+      {icon}
+      <span>使用 {label} 继续</span>
+      {lastUsed ? <LastUsedBadge /> : null}
+    </a>
+  )
+}
+
+const inputClassName =
+  'w-full rounded-lg border border-[#ccc9c1] bg-transparent px-4 py-3.5 text-base text-[#171714] outline-none transition placeholder:text-[#85837d] hover:border-[#aaa69d] focus:border-[#1b1b19] focus:ring-1 focus:ring-[#1b1b19] dark:border-[#3a4249] dark:text-gray-100 dark:placeholder:text-[#778087] dark:hover:border-[#616b73] dark:focus:border-[#d8d4ca] dark:focus:ring-[#d8d4ca]'
 
 export default function LoginClient() {
   const [email, setEmail] = useState('')
@@ -50,6 +90,8 @@ export default function LoginClient() {
   const [credentialError, setCredentialError] = useState('')
   const [oauthReturnTo, setOauthReturnTo] = useState('/')
   const [lastLoginMethod, setLastLoginMethod] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showCredential, setShowCredential] = useState(false)
 
   useEffect(() => {
     setOauthReturnTo(getReturnTo())
@@ -98,154 +140,162 @@ export default function LoginClient() {
     }
   }
 
+  const registerHref = `/register?returnTo=${encodeURIComponent(oauthReturnTo)}`
+
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-12 sm:py-20">
-      <section className="rounded-3xl border border-[#d5d7cd] bg-[#f6f8f3] p-6 shadow-[0_20px_60px_rgba(82,69,45,0.08)] dark:border-[#293241] dark:bg-[#111821] sm:p-8">
-        <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-[#9a7b45] dark:text-[#929870]">
-          Account
-        </p>
-        <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">登录</h1>
-        <p className="mb-8 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">
-          使用 Google、GitHub、凭证或邮箱继续。
-        </p>
+    <main className="min-h-[calc(100svh-var(--site-header-height))] border-l border-[#dedbd4] bg-[#fbfaf7] px-5 py-14 dark:border-[#242d34] dark:bg-[#10161b] sm:px-10 sm:py-20 lg:py-24">
+      <section className="mx-auto w-full max-w-2xl">
+        <div className="mb-14 h-1.5 w-20 bg-[#d5795f] dark:bg-[#c97861]" aria-hidden="true" />
+
+        <header className="mb-10">
+          <h1 className="mb-3 font-serif text-5xl font-semibold leading-none tracking-[-0.06em] text-[#151513] dark:text-[#f2efe8] sm:text-6xl">
+            登录
+          </h1>
+          <p className="mb-0 text-base text-[#676660] dark:text-[#9ba2a5] sm:text-lg">
+            没有账号？{' '}
+            <Link
+              href={registerHref}
+              className="font-semibold text-[#55544f] underline decoration-[#8b8982] underline-offset-[6px] transition hover:text-[#151513] dark:text-[#c3c5c3] dark:hover:text-white"
+            >
+              注册
+            </Link>
+          </p>
+        </header>
 
         {lastLoginMethod && LOGIN_METHOD_LABELS[lastLoginMethod] ? (
-          <p className="mb-3 rounded-xl border border-[#e4d8c3] bg-white/65 px-3.5 py-2 text-xs text-[#776b58] dark:border-[#344052] dark:bg-[#0d131b]/70 dark:text-gray-300">
-            上次你使用的是 <span className="font-semibold text-[#8b5a1f] dark:text-[#d7a85c]">{LOGIN_METHOD_LABELS[lastLoginMethod]}</span> 登录。
+          <p className="mb-5 text-sm text-[#77756e] dark:text-[#959da1]" aria-live="polite">
+            上次使用 <span className="font-semibold text-[#9c553d] dark:text-[#dfa08b]">{LOGIN_METHOD_LABELS[lastLoginMethod]}</span> 登录
           </p>
         ) : null}
 
-        <div className={`grid gap-3 ${WECHAT_LOGIN_ENABLED ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+        <Divider>或继续使用</Divider>
+
+        <div className="grid gap-3">
           {WECHAT_LOGIN_ENABLED ? (
-            <a
+            <SocialLogin
               href={`/api/auth/login?provider=wechat&returnTo=${encodeURIComponent(oauthReturnTo)}`}
-              className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-center text-sm font-medium no-underline transition hover:bg-[#e7e8e0] dark:hover:bg-[#19212b] ${
-                lastLoginMethod === 'wechat'
-                  ? 'border-[#a37b3c] bg-white text-[#1f211b] shadow-sm dark:border-[#d7a85c] dark:bg-[#151d26] dark:text-gray-100'
-                  : 'border-[#caccc0] text-[#35362f] dark:border-[#344052] dark:text-gray-200'
-              }`}
-            >
-              <span>微信登录</span>
-              {lastLoginMethod === 'wechat' ? <LastUsedBadge /> : null}
-            </a>
-          ) : null}
-          <a
-            href={`/api/auth/login?provider=google&returnTo=${encodeURIComponent(oauthReturnTo)}`}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-center text-sm font-medium no-underline transition hover:bg-[#e7e8e0] dark:hover:bg-[#19212b] ${
-              lastLoginMethod === 'google'
-                ? 'border-[#a37b3c] bg-white text-[#1f211b] shadow-sm dark:border-[#d7a85c] dark:bg-[#151d26] dark:text-gray-100'
-                : 'border-[#caccc0] text-[#35362f] dark:border-[#344052] dark:text-gray-200'
-            }`}
-          >
-            <span>Google 登录</span>
-            {lastLoginMethod === 'google' ? <LastUsedBadge /> : null}
-          </a>
-          <a
-            href={`/api/auth/login?provider=github&returnTo=${encodeURIComponent(oauthReturnTo)}`}
-            className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-center text-sm font-medium no-underline transition hover:bg-[#e7e8e0] dark:hover:bg-[#19212b] ${
-              lastLoginMethod === 'github'
-                ? 'border-[#a37b3c] bg-white text-[#1f211b] shadow-sm dark:border-[#d7a85c] dark:bg-[#151d26] dark:text-gray-100'
-                : 'border-[#caccc0] text-[#35362f] dark:border-[#344052] dark:text-gray-200'
-            }`}
-          >
-            <span>GitHub 登录</span>
-            {lastLoginMethod === 'github' ? <LastUsedBadge /> : null}
-          </a>
-        </div>
-
-        {!WECHAT_LOGIN_ENABLED ? (
-          <p className="mb-0 mt-3 flex items-center justify-center gap-1.5 text-[11px] text-[#8a8b82] dark:text-[#788596]">
-            <span className="h-1 w-1 rounded-full bg-[#9eaa99] dark:bg-[#607365]" aria-hidden="true" />
-            微信登录待开放
-          </p>
-        ) : null}
-
-        <div className="my-6 flex items-center gap-3 text-xs text-[#898a7f] dark:text-[#738095]">
-          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
-          <span>或使用凭证</span>
-          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
-        </div>
-
-        <form onSubmit={loginWithCredential} className="space-y-3">
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-[#35362f] dark:text-gray-200">登录凭证</span>
-            <input
-              type="password"
-              autoComplete="off"
-              required
-              value={credential}
-              onChange={(event) => setCredential(event.target.value)}
-              placeholder="输入站长签发的凭证"
-              className="w-full rounded-xl border border-[#caccc0] bg-white px-3.5 py-2.5 font-mono text-sm text-[#1a1b17] outline-none transition focus:border-[#a37b3c] focus:ring-2 focus:ring-[#a7ac8d]/30 dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
+              icon={<IconBrandWechat size={25} stroke={1.8} className="text-[#07a443]" aria-hidden="true" />}
+              label="微信"
+              lastUsed={lastLoginMethod === 'wechat'}
             />
-          </label>
-          {credentialError ? <p className="text-sm text-[#a34f47] dark:text-[#b5a09b]">{credentialError}</p> : null}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#a37b3c] px-4 py-3 text-sm font-medium text-[#6d481d] transition hover:bg-[#efe5d4] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#a98752] dark:text-[#e5bd7a] dark:hover:bg-amber-950/40"
-          >
-            <span>{submitting ? '处理中…' : '凭证登录'}</span>
-            {lastLoginMethod === 'credential' ? <LastUsedBadge /> : null}
-          </button>
-        </form>
-
-        <div className="my-6 flex items-center gap-3 text-xs text-[#898a7f] dark:text-[#738095]">
-          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
-          <span>或创建邮箱临时账号</span>
-          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
+          ) : null}
+          <SocialLogin
+            href={`/api/auth/login?provider=github&returnTo=${encodeURIComponent(oauthReturnTo)}`}
+            icon={<IconBrandGithub size={25} stroke={1.8} aria-hidden="true" />}
+            label="GitHub"
+            lastUsed={lastLoginMethod === 'github'}
+          />
+          <SocialLogin
+            href={`/api/auth/login?provider=google&returnTo=${encodeURIComponent(oauthReturnTo)}`}
+            icon={<IconBrandGoogle size={25} stroke={2.2} className="text-[#4285f4]" aria-hidden="true" />}
+            label="Google"
+            lastUsed={lastLoginMethod === 'google'}
+          />
         </div>
 
-        <div className="mb-4 rounded-xl border border-[#e4d8c3] bg-white/55 px-3.5 py-2.5 text-xs leading-5 text-[#776b58] dark:border-[#344052] dark:bg-[#0d131b]/60 dark:text-gray-300">
-          <p className="mb-1 font-semibold text-[#5f4617] dark:text-amber-100">免注册快速登录</p>
-          <p>您可以先登录，稍后再激活邮箱，请记住首次设置的密码。</p>
-        </div>
-
-        <form onSubmit={login} className="space-y-5">
+        <form onSubmit={login} className="mt-8 space-y-6">
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-[#35362f] dark:text-gray-200">邮箱</span>
+            <span className="mb-2 block text-base font-semibold text-[#1b1b18] dark:text-gray-100">电子邮箱</span>
             <input
               type="email"
               autoComplete="email"
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              className="w-full rounded-xl border border-[#caccc0] bg-white px-3.5 py-2.5 text-sm text-[#1a1b17] outline-none transition focus:border-[#a37b3c] focus:ring-2 focus:ring-[#a7ac8d]/30 dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
+              placeholder="输入您的电子邮箱"
+              className={inputClassName}
             />
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-[#35362f] dark:text-gray-200">密码</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="第一次使用请设置至少 8 位密码"
-              className="w-full rounded-xl border border-[#caccc0] bg-white px-3.5 py-2.5 text-sm text-[#1a1b17] outline-none transition focus:border-[#a37b3c] focus:ring-2 focus:ring-[#a7ac8d]/30 dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
-            />
+            <span className="mb-2 block text-base font-semibold text-[#1b1b18] dark:text-gray-100">密码</span>
+            <span className="relative block">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="输入密码"
+                className={`${inputClassName} pr-14`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute inset-y-0 right-0 flex w-14 items-center justify-center text-[#74726c] transition hover:text-[#171714] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d5795f] dark:text-[#969da0] dark:hover:text-white"
+                aria-label={showPassword ? '隐藏密码' : '显示密码'}
+              >
+                {showPassword ? <IconEyeOff size={23} stroke={1.7} /> : <IconEye size={23} stroke={1.7} />}
+              </button>
+            </span>
           </label>
 
-          {error ? <p className="text-sm text-[#a34f47] dark:text-[#b5a09b]">{error}</p> : null}
+          {error ? (
+            <p className="rounded-md bg-[#f7e8e4] px-3.5 py-2.5 text-sm text-[#963f35] dark:bg-[#442620] dark:text-[#e9a99e]" role="alert">
+              {error}
+            </p>
+          ) : null}
 
           <button
             type="submit"
             disabled={submitting}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8b5a1f] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#734817] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#d7a85c] dark:text-[#1d160d] dark:hover:bg-[#9aa170]"
+            className="flex min-h-14 w-full items-center justify-center gap-3 rounded-md bg-[#181817] px-5 py-3.5 text-base font-semibold text-white transition hover:bg-[#33322f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5795f] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#f1eee7] dark:text-[#151513] dark:hover:bg-white dark:focus-visible:ring-offset-[#10161b]"
           >
-            <span>{submitting ? '处理中…' : '邮箱继续'}</span>
-            {lastLoginMethod === 'email' ? <LastUsedBadge /> : null}
+            <IconArrowRight size={23} stroke={1.9} aria-hidden="true" />
+            <span>{submitting ? '登录中…' : '登录'}</span>
+            {lastLoginMethod === 'email' ? <span className="sr-only">上次使用</span> : null}
           </button>
         </form>
 
-        <p className="mb-0 mt-6 text-center text-sm text-[#65665d] dark:text-[#9aa6b6]">
-          想先完成邮箱验证？{' '}
-          <Link href="/register" className="font-medium text-[#8b5a1f] dark:text-[#d7a85c]">
-            邮箱注册
-          </Link>
-        </p>
+        <div className="mt-8 border-t border-[#d6d3cc] pt-6 dark:border-[#343c43]">
+          <button
+            type="button"
+            onClick={() => setShowCredential((value) => !value)}
+            className="flex w-full items-center justify-between gap-4 text-left text-sm font-medium text-[#66645e] transition hover:text-[#171714] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d5795f]/45 dark:text-[#9ca3a6] dark:hover:text-white"
+            aria-expanded={showCredential}
+            aria-controls="credential-login"
+          >
+            <span className="flex items-center gap-2">
+              <IconKey size={19} stroke={1.7} aria-hidden="true" />
+              使用站长签发的登录凭证
+              {lastLoginMethod === 'credential' ? (
+                <span className="rounded-full bg-[#f1e4d9] px-2 py-0.5 text-[10px] font-semibold text-[#9c553d] dark:bg-[#4a2c27] dark:text-[#e3a58e]">
+                  上次使用
+                </span>
+              ) : null}
+            </span>
+            <IconChevronDown
+              size={19}
+              stroke={1.7}
+              className={`shrink-0 transition-transform ${showCredential ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
+
+          {showCredential ? (
+            <form id="credential-login" onSubmit={loginWithCredential} className="mt-5 space-y-3">
+              <label className="sr-only" htmlFor="login-credential">登录凭证</label>
+              <input
+                id="login-credential"
+                type="password"
+                autoComplete="off"
+                required
+                value={credential}
+                onChange={(event) => setCredential(event.target.value)}
+                placeholder="输入站长签发的凭证"
+                className={`${inputClassName} font-mono text-sm`}
+              />
+              {credentialError ? <p className="text-sm text-[#963f35] dark:text-[#e9a99e]" role="alert">{credentialError}</p> : null}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-md border border-[#aaa69d] px-4 py-3 text-sm font-semibold text-[#24231f] transition hover:border-[#171714] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#505960] dark:text-gray-100 dark:hover:border-[#8a949b] dark:hover:bg-[#171e24]"
+              >
+                {submitting ? '验证中…' : '使用凭证登录'}
+              </button>
+            </form>
+          ) : null}
+        </div>
       </section>
     </main>
   )

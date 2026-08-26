@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { IconArrowUpRight, IconExternalLink, IconNetwork } from '@tabler/icons-react'
+import { IconArrowUpRight, IconNetwork } from '@tabler/icons-react'
 
 import { SECONDARY_SITES } from '../../../lib/secondarySites'
 import { getDomainRecord } from '../../../lib/domainRegistry'
@@ -62,7 +62,7 @@ export default function SecondarySitesPage() {
         </div>
       </header>
 
-      <section className="grid gap-4 py-8 md:grid-cols-2 md:py-10" aria-label="二级站点列表">
+      <section className="divide-y divide-[var(--site-line)] py-6 md:py-8" aria-label="二级站点列表">
         {SECONDARY_SITES.map((site, index) => {
           const infrastructure = getDomainRecord(site.domain)
           const isActivating = infrastructure?.status === 'activating'
@@ -72,49 +72,33 @@ export default function SecondarySitesPage() {
             href={site.href}
             target="_blank"
             rel="noreferrer"
-            className="no-external-arrow group flex min-h-[250px] flex-col rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-6 no-underline transition hover:-translate-y-0.5 hover:border-[var(--site-line-strong)] hover:shadow-[0_18px_48px_rgba(36,40,32,0.08)] md:p-7 dark:hover:shadow-[0_18px_48px_rgba(0,0,0,0.24)]"
+            className="no-external-arrow group relative grid gap-4 py-5 pr-12 no-underline transition-colors hover:bg-[color-mix(in_srgb,var(--site-green)_4%,transparent)] md:grid-cols-[52px_minmax(170px,0.8fr)_minmax(260px,1.3fr)_auto] md:items-center md:px-4 md:py-6"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--site-faint)]">
-                  {String(index + 1).padStart(2, '0')} · {site.category}
-                </p>
-                <h2 className="mt-3 text-[23px] font-semibold text-[var(--site-ink)]">{site.label}</h2>
-                <p className="mt-1 font-mono text-[11px] text-[var(--site-faint)]">{site.domain}</p>
-              </div>
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--site-line)] text-[var(--site-muted)] transition group-hover:border-[var(--site-green)] group-hover:bg-[var(--site-green)] group-hover:text-white">
-                <IconArrowUpRight size={19} stroke={1.7} aria-hidden="true" />
-              </span>
+            <p className="font-mono text-[10px] tracking-[0.16em] text-[var(--site-faint)]">
+              {String(index + 1).padStart(2, '0')}
+            </p>
+
+            <div>
+              <p className="text-[10px] font-medium text-[var(--site-green)]">{site.category}</p>
+              <h2 className="mt-1 text-[19px] font-semibold text-[var(--site-ink)]">{site.label}</h2>
+              <p className="mt-0.5 font-mono text-[10px] text-[var(--site-faint)]">{site.domain}</p>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 font-mono text-[10px]">
-              <span className={`rounded-full px-2.5 py-1 ${isActivating ? 'bg-[#f4ead4] text-[#8a5a14] dark:bg-[#2b2415] dark:text-[#d6b56f]' : 'bg-[#e5ece4] text-[#374d34] dark:bg-[#1a2e18] dark:text-[#a3c2a0]'}`}>
-                {isActivating ? '激活中' : '已上线'}
-              </span>
-              <span className="rounded-full border border-[var(--site-line)] px-2.5 py-1 text-[var(--site-faint)]">
-                {infrastructure?.proxy === 'proxied' ? 'Cloudflare 已代理' : 'DNS only'}
-              </span>
-            </div>
-
-            <p className="mt-5 text-[15px] font-medium leading-7 text-[var(--site-ink)]">{site.desc}</p>
-            <p className="mt-2 flex-1 text-[13px] leading-7 text-[var(--site-muted)]">{site.detail}</p>
-
-            <div className="mt-5 rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-green)_5%,transparent)] px-4 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--site-green)]">部署形态</p>
-              <p className="mt-1.5 text-[12px] font-semibold text-[var(--site-ink)]">{site.deployment}</p>
-              <p className="mt-1 text-[11px] leading-5 text-[var(--site-muted)]">{site.deploymentDetail}</p>
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[var(--site-line)] pt-4">
-              {site.tags.map((tag) => (
-                <span key={tag} className="rounded-md bg-[color-mix(in_srgb,var(--site-green)_8%,transparent)] px-2 py-1 text-[10px] text-[var(--site-muted)]">
-                  {tag}
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium leading-6 text-[var(--site-ink)]">{site.desc}</p>
+              <p className="mt-1 line-clamp-1 text-[12px] leading-5 text-[var(--site-muted)]">{site.detail}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[9px] text-[var(--site-faint)]">
+                <span className={isActivating ? 'text-[#8a5a14] dark:text-[#d6b56f]' : 'text-[var(--site-green)]'}>
+                  ● {isActivating ? '激活中' : '已上线'}
                 </span>
-              ))}
-              <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-[var(--site-accent)]">
-                访问站点 <IconExternalLink size={13} stroke={1.7} aria-hidden="true" />
-              </span>
+                <span>{infrastructure?.proxy === 'proxied' ? 'Cloudflare 已代理' : 'DNS only'}</span>
+                <span>{site.deployment}</span>
+              </div>
             </div>
+
+            <span className="absolute right-0 top-5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--site-line)] text-[var(--site-muted)] transition group-hover:border-[var(--site-green)] group-hover:bg-[var(--site-green)] group-hover:text-white md:static">
+              <IconArrowUpRight size={16} stroke={1.7} aria-hidden="true" />
+            </span>
           </a>
           )
         })}

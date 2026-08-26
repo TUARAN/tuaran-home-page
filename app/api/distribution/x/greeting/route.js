@@ -19,10 +19,10 @@ import {
   normalizeCultureStorySlot,
 } from '../../../../../lib/dailyCultureStory'
 import {
-  X_COMMUNITY_SLOTS,
   buildXCommunityMessages,
   normalizeXCommunitySlot,
   normalizeXCommunityText,
+  pickXCommunityVariant,
   xCommunityLastRunKey,
 } from '../../../../../lib/xCommunityPosts'
 import {
@@ -100,7 +100,7 @@ export async function POST(req) {
     return Response.json({ ok: false, error: 'AMBIGUOUS_CONTENT_TYPE' }, { status: 400 })
   }
   const isCommunityPost = Boolean(communitySlot)
-  const communityTheme = isCommunityPost ? X_COMMUNITY_SLOTS[communitySlot] : null
+  const communityVariant = isCommunityPost ? pickXCommunityVariant({ slot: communitySlot, now: requestNow }) : null
   const requestedPeriod = searchParams.get('period')
   const period = requestedPeriod
     ? normalizeGreetingPeriod(requestedPeriod, '')
@@ -199,7 +199,7 @@ export async function POST(req) {
         messages: isCultureStory
           ? buildCultureStoryMessages({ slot: storySlot, now: requestNow })
           : isCommunityPost
-            ? buildXCommunityMessages({ slot: communitySlot, now: requestNow })
+            ? buildXCommunityMessages({ slot: communitySlot, now: requestNow, variant: communityVariant })
             : buildGreetingLlmMessages({ intent: llmIntent, period, now: requestNow, style: greetingStyle }),
         temperature: 0.85,
         maxTokens: isCultureStory ? 384 : 256,
@@ -216,7 +216,7 @@ export async function POST(req) {
           inputSummary: isCultureStory
             ? `时段：${storySlot}；类别：${storyCategory}`
             : isCommunityPost
-              ? `时段：${communitySlot}；主题：${communityTheme.label}；标签：${communityTheme.tags.join(' ')}`
+              ? `时段：${communitySlot}；场景：${communityVariant.label}；标签：${communityVariant.tags.join(' ')}`
               : `时段：${period}；风格：${greetingStyle.label}；意图：${llmIntent.slice(0, 500)}`,
           metadata: {
             period: runSlot,
@@ -339,14 +339,14 @@ export async function POST(req) {
     }
     return Response.json({ ok: false, error: 'TEXT_TOO_LONG', period: runSlot, mode: generationMode }, { status: 400 })
   }
-  if (isCommunityPost) text = normalizeXCommunityText(text, communitySlot)
+  if (isCommunityPost) text = normalizeXCommunityText(text, communitySlot, 280, communityVariant)
 
   const credentials = getXCredentials(env)
   let mediaId = ''
   if (isCommunityPost) {
     let imageResponse
     try {
-      imageResponse = await fetch(new URL(communityTheme.imagePath, req.url))
+      imageResponse = await fetch(new URL(communityVariant.imagePath, req.url))
     } catch {
       imageResponse = null
     }
@@ -403,8 +403,8 @@ export async function POST(req) {
       period: runSlot,
       contentType: isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : 'greeting',
       category: storyCategory,
-      theme: communityTheme?.label || '',
-      imagePath: communityTheme?.imagePath || '',
+      theme: communityVariant?.label || '',
+      imagePath: communityVariant?.imagePath || '',
       mediaId,
       mode: generationMode,
       style: greetingStyle?.id || '',
@@ -436,8 +436,8 @@ export async function POST(req) {
     period: runSlot,
     contentType: isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : 'greeting',
     category: storyCategory,
-    theme: communityTheme?.label || '',
-    imagePath: communityTheme?.imagePath || '',
+    theme: communityVariant?.label || '',
+    imagePath: communityVariant?.imagePath || '',
     mode: generationMode,
     style: greetingStyle?.id || '',
     styleLabel: greetingStyle?.label || '',

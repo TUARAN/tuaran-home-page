@@ -68,7 +68,7 @@ export default function ContentTaxonomyClient() {
         <Stat label="待治理" value={entries.length - explicitCount} note="仍依赖旧字段推断" />
       </dl>
 
-      <section className="mt-6 rounded-2xl border border-[#caccc0] bg-[#fafaf6] p-5 dark:border-[#2d3744] dark:bg-[#0e131c]">
+      <section className="mt-6 rounded-2xl border border-[#caccc0] bg-[#fafaf6] p-4 dark:border-[#2d3744] dark:bg-[#0e131c]">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858779]">受控词表</p>
@@ -76,24 +76,24 @@ export default function ContentTaxonomyClient() {
           </div>
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-[10px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">10 个启用主题</span>
         </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <div className="mt-3 grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
           {SUBJECT_GOVERNANCE_LIST.map((item) => (
-            <article key={item.id} className="rounded-xl border border-[#e1e1d6] bg-white p-4 dark:border-[#2d3744] dark:bg-[#10161f]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">{item.label}</h3>
-                  <code className="text-[10px] text-[#858779]">{item.id}</code>
+            <article key={item.id} className="rounded-lg border border-[#e1e1d6] bg-white p-3 dark:border-[#2d3744] dark:bg-[#10161f]">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-[14px] font-semibold leading-5 text-[#15140f] dark:text-gray-100">{item.label}</h3>
+                  <code className="block truncate text-[9px] leading-4 text-[#858779]">{item.id}</code>
                 </div>
-                <span className="rounded-full bg-[#f0efe7] px-2 py-1 font-mono text-[10px] text-[#51514a] dark:bg-[#202936] dark:text-gray-300">
+                <span className="shrink-0 rounded-full bg-[#f0efe7] px-2 py-0.5 font-mono text-[9px] text-[#51514a] dark:bg-[#202936] dark:text-gray-300">
                   {subjectCounts[item.id].total} 条
                 </span>
               </div>
-              <p className="mt-3 text-[13px] leading-6 text-[#51514a] dark:text-gray-300">{item.definition}</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div><p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">纳入</p><p className="mt-1 text-[11px] leading-5 text-[#73746a] dark:text-[#9aa3b3]">{item.includes.join('、')}</p></div>
-                <div><p className="text-[11px] font-semibold text-rose-700 dark:text-rose-300">排除</p><p className="mt-1 text-[11px] leading-5 text-[#73746a] dark:text-[#9aa3b3]">{item.excludes.join('、')}</p></div>
+              <p className="mt-2 text-[11px] leading-5 text-[#51514a] dark:text-gray-300">{item.definition}</p>
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-[#efefe8] pt-2 dark:border-[#27313d]">
+                <div><p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">纳入</p><p className="mt-0.5 text-[10px] leading-[1.45] text-[#73746a] dark:text-[#9aa3b3]">{item.includes.join('、')}</p></div>
+                <div><p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">排除</p><p className="mt-0.5 text-[10px] leading-[1.45] text-[#73746a] dark:text-[#9aa3b3]">{item.excludes.join('、')}</p></div>
               </div>
-              <p className="mb-0 mt-3 text-[10px] text-[#858779]">别名：{item.aliases.join('、')}</p>
+              <p className="mb-0 mt-2 truncate text-[9px] text-[#858779]" title={`别名：${item.aliases.join('、')}`}>别名：{item.aliases.join('、')}</p>
             </article>
           ))}
         </div>

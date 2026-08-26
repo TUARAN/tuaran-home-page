@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
 
@@ -23,6 +23,19 @@ const inputClass = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2
 const periodLabel = (period) => PERIODS.find((item) => item.id === period)?.label || period
 const generationModeLabel = (mode) => ({ deepseek: 'DeepSeek Flash', ollama: 'Ollama Qwen', template: '模板库', llm: 'DeepSeek Flash' })[mode] || mode
 const fieldClass = 'mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200'
+const TIMELINE_FILTERS = [
+  { id: 'all', label: '全部任务' },
+  { id: 'greeting', label: '问候' },
+  { id: 'culture', label: '文化短故事' },
+  { id: 'article', label: 'X 长文章' },
+]
+const STATUS_FILTERS = [
+  { id: 'all', label: '全部状态' },
+  { id: 'success', label: '成功' },
+  { id: 'running', label: '进行中' },
+  { id: 'attention', label: '需处理' },
+  { id: 'empty', label: '无记录' },
+]
 
 async function safeJson(response) {
   try { return await response.json() } catch { return null }
@@ -36,6 +49,168 @@ function formatTime(value) {
 
 function Field({ label, className = '', children }) {
   return <label className={`${fieldClass} ${className}`.trim()}>{label}{children}</label>
+}
+
+function runState(run) {
+  if (!run) return { key: 'empty', label: '无记录', tone: 'neutral' }
+  return run.ok
+    ? { key: 'success', label: '成功', tone: 'success' }
+    : { key: 'attention', label: '失败', tone: 'danger' }
+}
+
+function articleState(run) {
+  if (!run) return { key: 'empty', label: '无记录', tone: 'neutral' }
+  if (run.status === 'published') return { key: 'success', label: '成功', tone: 'success' }
+  if (run.status === 'failed') return { key: 'attention', label: '等待重试', tone: 'danger' }
+  if (run.status === 'uncertain') return { key: 'attention', label: '待确认', tone: 'danger' }
+  return { key: 'running', label: '已领取', tone: 'info' }
+}
+
+function TimelineNode({ item }) {
+  const isAttention = item.state.key === 'attention'
+  return (
+    <article
+      className="relative min-w-0 pt-12"
+      style={{ gridColumn: `${item.column} / span 1` }}
+      aria-label={`${item.schedule} ${item.label}，${item.state.label}`}
+    >
+      <time className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap text-[12px] font-semibold tabular-nums text-[#4f5148] dark:text-gray-300">
+        {item.schedule}
+      </time>
+      <span
+        className={`absolute left-1/2 top-[25px] z-10 h-3.5 w-3.5 -translate-x-1/2 rounded-full border-[3px] border-white ring-2 dark:border-[#10161f] ${
+          item.state.key === 'success'
+            ? 'bg-emerald-500 ring-emerald-200 dark:ring-emerald-900'
+            : isAttention
+              ? 'bg-rose-500 ring-rose-200 dark:ring-rose-900'
+              : item.state.key === 'running'
+                ? 'bg-sky-500 ring-sky-200 dark:ring-sky-900'
+                : 'bg-[#b8baaf] ring-[#e2e4da] dark:bg-[#566171] dark:ring-[#293545]'
+        }`}
+        aria-hidden="true"
+      />
+      <div className={`mt-1 h-full rounded-xl border bg-white p-3 shadow-[0_8px_24px_rgba(40,42,33,0.04)] dark:bg-[#0f141d] ${isAttention ? 'border-rose-200 dark:border-rose-900' : 'border-[#e2e4da] dark:border-[#243041]'}`}>
+        <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="mb-0 text-[10px] font-medium tracking-[0.08em] text-[#96988e] dark:text-gray-500">{item.typeLabel}</p>
+            <h3 className="mt-0.5 truncate text-[13px] font-semibold text-[#2f302a] dark:text-gray-100" title={item.label}>{item.label}</h3>
+          </div>
+          <StatusPill tone={item.state.tone} size="sm">{item.state.label}</StatusPill>
+        </div>
+        <p className="mb-0 text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">
+          {item.recordedAt ? `执行 ${formatTime(item.recordedAt)}` : '尚无执行记录'}
+        </p>
+        {item.meta ? <p className="mb-0 mt-1 break-words text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">{item.meta}</p> : null}
+        {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 内容 ↗</a> : null}
+        {item.detail ? <p className={`mb-0 mt-2 break-words text-[11px] leading-5 ${isAttention ? 'text-rose-600 dark:text-rose-300' : 'text-[#77796e] dark:text-gray-400'}`}>{item.detail}</p> : null}
+      </div>
+    </article>
+  )
+}
+
+function TaskTimeline({ lastRuns, cultureRuns, xArticleRun }) {
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+
+  const items = useMemo(() => {
+    const greetingItems = [
+      { id: 'morning', label: '早安', schedule: '08:00', column: 1 },
+      { id: 'noon', label: '午安', schedule: '12:00', column: 3 },
+      { id: 'evening', label: '晚安', schedule: '22:00', column: 8 },
+    ].map((item) => {
+      const run = lastRuns[item.id]
+      return {
+        ...item,
+        type: 'greeting',
+        typeLabel: '问候',
+        state: runState(run),
+        recordedAt: run?.at,
+        meta: [run?.mode && generationModeLabel(run.mode), run?.styleLabel, run?.model].filter(Boolean).join(' · '),
+        link: run?.postUrl,
+        detail: run?.error,
+      }
+    })
+    const cultureItems = CULTURE_STORY_SLOTS.map((item, index) => {
+      const run = cultureRuns[item.id]
+      return {
+        ...item,
+        schedule: item.time,
+        column: [2, 5, 7][index],
+        type: 'culture',
+        typeLabel: '文化短故事',
+        state: runState(run),
+        recordedAt: run?.at,
+        meta: run?.category ? CULTURE_CATEGORY_LABELS[run.category] || run.category : '',
+        link: run?.postUrl,
+        detail: run?.error,
+      }
+    })
+    const xState = articleState(xArticleRun)
+    const articleItem = {
+      id: 'x-article',
+      label: xArticleRun?.title || '等待插件领取',
+      schedule: '14:00',
+      column: 4,
+      type: 'article',
+      typeLabel: 'X 长文章',
+      state: xState,
+      recordedAt: xArticleRun?.updatedAt || xArticleRun?.createdAt,
+      meta: xArticleRun?.attempts ? `尝试 ${xArticleRun.attempts} 次` : '',
+      link: xArticleRun?.xArticleUrl,
+      detail: xArticleRun?.detail,
+    }
+    return [...greetingItems, ...cultureItems, articleItem].sort((a, b) => a.column - b.column)
+  }, [cultureRuns, lastRuns, xArticleRun])
+
+  const visibleItems = items.filter((item) => (
+    (typeFilter === 'all' || item.type === typeFilter)
+    && (statusFilter === 'all' || item.state.key === statusFilter)
+  ))
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-col gap-3 border-b border-[#eceee5] pb-4 dark:border-[#202b39] xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-wrap gap-1.5" aria-label="按任务类型筛选">
+          {TIMELINE_FILTERS.map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              aria-pressed={typeFilter === filter.id}
+              onClick={() => setTypeFilter(filter.id)}
+              className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition ${typeFilter === filter.id ? 'border-[#303229] bg-[#303229] text-white dark:border-gray-200 dark:bg-gray-100 dark:text-[#111827]' : 'border-[#d8dad0] bg-white text-[#66685e] hover:border-[#9a9d90] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-400'}`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <label htmlFor="timeline-status-filter" className="text-[12px] text-[#7b7d73] dark:text-gray-400">执行状态</label>
+          <select
+            id="timeline-status-filter"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-8 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[12px] text-[#4f5148] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-300"
+          >
+            {STATUS_FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label}</option>)}
+          </select>
+          <span className="whitespace-nowrap text-[11px] tabular-nums text-[#96988e]">{visibleItems.length} / {items.length} 个节点</span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
+        <div className="relative grid min-w-[1420px] grid-cols-8 gap-3 px-2 pb-1">
+          <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
+          {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
+          {!visibleItems.length ? (
+            <div className="col-span-8 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
+              当前筛选下没有任务节点。
+            </div>
+          ) : null}
+        </div>
+      </div>
+      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴按北京时间排列；卡片展示每个时段最近一次执行记录，左右滑动可查看完整日程。</p>
+    </div>
+  )
 }
 
 export default function MorningGreetingClient() {
@@ -150,37 +325,7 @@ export default function MorningGreetingClient() {
           }
         >
         <div className="space-y-4">
-          <div>
-            <p className="mb-2 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">问候 · 08:00 / 12:00 / 22:00</p>
-            <div className="grid gap-2 md:grid-cols-3">{['morning', 'noon', 'evening'].map((item) => { const run = lastRuns[item]; return <div key={item} className="rounded-lg border border-[#e2e4da] px-3 py-2.5 dark:border-[#243041]"><div className="flex items-center justify-between gap-2"><strong className="text-sm">{periodLabel(item)}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-0 mt-1 text-[11px] text-[#82847a]">{formatTime(run?.at)}{run?.mode ? ` · ${generationModeLabel(run.mode)}` : ''}{run?.styleLabel ? ` · ${run.styleLabel}` : ''}{run?.model ? ` · ${run.model}` : ''}</p>{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 mt-1 break-words text-[11px] text-rose-600">{run.error}</p> : null}</div> })}</div>
-          </div>
-
-          <div>
-            <p className="mb-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">文化短故事 · 10:00 / 16:00 / 20:00</p>
-            <p className="mb-2 text-[11px] leading-5 text-[#85877c]">每条约 105—130 个汉字，讲清故事和含义。15 条循环配比：国学哲思 40%、中华寓言或历史故事 40%、国外童话或寓言 20%。问候选择模板方式时，文化短故事仍由 DeepSeek 生成。</p>
-            <div className="grid gap-2 md:grid-cols-3">{CULTURE_STORY_SLOTS.map((item) => { const run = cultureRuns[item.id]; return <div key={item.id} className="rounded-lg border border-[#e2e4da] px-3 py-2.5 dark:border-[#243041]"><div className="flex items-center justify-between gap-2"><strong className="text-sm">{item.label}</strong><StatusPill tone={run?.ok ? 'success' : run ? 'danger' : 'neutral'} size="sm">{run?.ok ? '成功' : run ? '失败' : '暂无'}</StatusPill></div><p className="mb-0 mt-1 text-[11px] text-[#82847a]">{item.time}{run?.at ? ` · ${formatTime(run.at)}` : ''}{run?.category ? ` · ${CULTURE_CATEGORY_LABELS[run.category] || run.category}` : ''}</p>{run?.postUrl ? <a href={run.postUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看 X 帖子</a> : null}{run?.error ? <p className="mb-0 mt-1 break-words text-[11px] text-rose-600">{run.error}</p> : null}</div> })}</div>
-          </div>
-
-          <div>
-            <p className="mb-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200">X 长文章 · 14:00</p>
-            <p className="mb-2 text-[11px] leading-5 text-[#85877c]">浏览器插件每天随机领取一篇站内文章，保留兼容的链接、排版和图片后发布到 X Articles；领取、图片上传或页面加载失败会自动重试。</p>
-            <div className="rounded-lg border border-[#e2e4da] px-3 py-2.5 dark:border-[#243041]">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <strong className="text-sm">{xArticleRun?.title || '等待插件领取'}</strong>
-                <StatusPill
-                  tone={xArticleRun?.status === 'published' ? 'success' : ['failed', 'uncertain'].includes(xArticleRun?.status) ? 'danger' : 'neutral'}
-                  size="sm"
-                >
-                  {xArticleRun?.status === 'published' ? '成功' : xArticleRun?.status === 'failed' ? '等待重试' : xArticleRun?.status === 'uncertain' ? '待确认' : xArticleRun ? '已领取' : '暂无'}
-                </StatusPill>
-              </div>
-              <p className="mb-0 mt-1 text-[11px] text-[#82847a]">
-                14:00{xArticleRun?.updatedAt || xArticleRun?.createdAt ? ` · ${formatTime(xArticleRun.updatedAt || xArticleRun.createdAt)}` : ''}{xArticleRun?.attempts ? ` · 尝试 ${xArticleRun.attempts} 次` : ''}
-              </p>
-              {xArticleRun?.xArticleUrl ? <a href={xArticleRun.xArticleUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block break-all text-[11px] text-sky-700 hover:underline dark:text-sky-300">查看 X Article</a> : null}
-              {xArticleRun?.detail ? <p className="mb-0 mt-1 break-words text-[11px] text-[#77796e] dark:text-gray-400">{xArticleRun.detail}</p> : null}
-            </div>
-          </div>
+          <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} xArticleRun={xArticleRun} />
 
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">

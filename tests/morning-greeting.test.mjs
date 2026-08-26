@@ -209,6 +209,7 @@ test('自动任务支持三种生成模式，模板管理收敛为三条固定�
   assert.doesNotMatch(clientSource, /新增模板|删除这条文案|AdminPagination/)
   assert.match(adminRouteSource, /DAILY_GREETING_OLLAMA_PROVIDER_KEY/)
   assert.match(adminRouteSource, /FIXED_TEMPLATE_SLOTS/)
+  assert.doesNotMatch(adminRouteSource, /X_ARTICLE_TASK_SETTING_KEY|xArticleRun/)
   assert.match(cronRouteSource, /callDeepSeek\(/)
   assert.match(cronRouteSource, /callOllama\(/)
   assert.match(cronRouteSource, /buildGreetingLengthRepairMessages/)
@@ -227,4 +228,5 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   assert.match(clientSource, /08:00/)
   assert.match(clientSource, /22:00/)
   assert.match(clientSource, /visibleItems\.length} \/ {items\.length} 个节点/)
+  assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)
 })

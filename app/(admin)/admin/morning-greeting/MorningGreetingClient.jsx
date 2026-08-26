@@ -27,12 +27,10 @@ const TIMELINE_FILTERS = [
   { id: 'all', label: '全部任务' },
   { id: 'greeting', label: '问候' },
   { id: 'culture', label: '文化短故事' },
-  { id: 'article', label: 'X 长文章' },
 ]
 const STATUS_FILTERS = [
   { id: 'all', label: '全部状态' },
   { id: 'success', label: '成功' },
-  { id: 'running', label: '进行中' },
   { id: 'attention', label: '需处理' },
   { id: 'empty', label: '无记录' },
 ]
@@ -58,14 +56,6 @@ function runState(run) {
     : { key: 'attention', label: '失败', tone: 'danger' }
 }
 
-function articleState(run) {
-  if (!run) return { key: 'empty', label: '无记录', tone: 'neutral' }
-  if (run.status === 'published') return { key: 'success', label: '成功', tone: 'success' }
-  if (run.status === 'failed') return { key: 'attention', label: '等待重试', tone: 'danger' }
-  if (run.status === 'uncertain') return { key: 'attention', label: '待确认', tone: 'danger' }
-  return { key: 'running', label: '已领取', tone: 'info' }
-}
-
 function TimelineNode({ item }) {
   const isAttention = item.state.key === 'attention'
   return (
@@ -83,9 +73,7 @@ function TimelineNode({ item }) {
             ? 'bg-emerald-500 ring-emerald-200 dark:ring-emerald-900'
             : isAttention
               ? 'bg-rose-500 ring-rose-200 dark:ring-rose-900'
-              : item.state.key === 'running'
-                ? 'bg-sky-500 ring-sky-200 dark:ring-sky-900'
-                : 'bg-[#b8baaf] ring-[#e2e4da] dark:bg-[#566171] dark:ring-[#293545]'
+              : 'bg-[#b8baaf] ring-[#e2e4da] dark:bg-[#566171] dark:ring-[#293545]'
         }`}
         aria-hidden="true"
       />
@@ -108,7 +96,7 @@ function TimelineNode({ item }) {
   )
 }
 
-function TaskTimeline({ lastRuns, cultureRuns, xArticleRun }) {
+function TaskTimeline({ lastRuns, cultureRuns }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -145,22 +133,8 @@ function TaskTimeline({ lastRuns, cultureRuns, xArticleRun }) {
         detail: run?.error,
       }
     })
-    const xState = articleState(xArticleRun)
-    const articleItem = {
-      id: 'x-article',
-      label: xArticleRun?.title || '等待插件领取',
-      schedule: '14:00',
-      column: 4,
-      type: 'article',
-      typeLabel: 'X 长文章',
-      state: xState,
-      recordedAt: xArticleRun?.updatedAt || xArticleRun?.createdAt,
-      meta: xArticleRun?.attempts ? `尝试 ${xArticleRun.attempts} 次` : '',
-      link: xArticleRun?.xArticleUrl,
-      detail: xArticleRun?.detail,
-    }
-    return [...greetingItems, ...cultureItems, articleItem].sort((a, b) => a.column - b.column)
-  }, [cultureRuns, lastRuns, xArticleRun])
+    return [...greetingItems, ...cultureItems].sort((a, b) => a.column - b.column)
+  }, [cultureRuns, lastRuns])
 
   const visibleItems = items.filter((item) => (
     (typeFilter === 'all' || item.type === typeFilter)
@@ -247,7 +221,6 @@ export default function MorningGreetingClient() {
   const templates = data?.templates || []
   const lastRuns = data?.lastRuns || {}
   const cultureRuns = data?.cultureRuns || {}
-  const xArticleRun = data?.xArticleRun || null
 
   async function saveTemplate(template) {
     setSaving(true); setError(''); setNotice('')
@@ -307,7 +280,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="管理每日问候、文化短故事和 X 长文章自动发布。"
+      description="管理每日问候和文化短故事的全自动发布。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -315,7 +288,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天自动发布三条问候、三条文化短故事和一篇 X Article，不经人工审核。"
+          description="每天全自动发布三条问候和三条文化短故事，不经人工审核。"
           className="mb-4"
           actions={
             <>
@@ -325,7 +298,7 @@ export default function MorningGreetingClient() {
           }
         >
         <div className="space-y-4">
-          <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} xArticleRun={xArticleRun} />
+          <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} />
 
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">

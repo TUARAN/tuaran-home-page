@@ -750,7 +750,7 @@ export default function SiteHeader() {
         <div className="mx-auto flex h-[var(--site-header-height)] w-full max-w-[1880px] items-center justify-between gap-2 px-3 py-1 sm:px-6 sm:gap-4 lg:px-10">
           <Link href="/" className="group flex min-w-0 shrink-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
             <span className="site-brand-mark" aria-hidden="true">T</span>
-            <div className="hidden min-w-0 flex-col leading-tight min-[420px]:inline-flex">
+            <div className="hidden min-w-0 flex-col leading-tight sm:inline-flex">
               <span className="site-brand-text font-serif text-base font-semibold tracking-wide sm:text-lg">
                 TUARAN
               </span>

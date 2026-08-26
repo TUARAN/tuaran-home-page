@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
+import { Skeleton } from '../../components/loading/LoadingPrimitives'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -82,7 +83,7 @@ export default function RanbiGate({ resourceKey, children, preview = null, title
 
   // 资源未配置门槛，或已解锁 → 直接给全文
   if (state.loading || userLoading) {
-    return <div className="my-6 h-24 animate-pulse rounded-xl bg-[#eef0ea] dark:bg-gray-800/60" />
+    return <Skeleton as="div" className="my-6 h-24 rounded-xl" role="status" aria-label="正在检查内容权益" />
   }
   if (state.exists === false || state.unlocked) {
     return <>{children}</>

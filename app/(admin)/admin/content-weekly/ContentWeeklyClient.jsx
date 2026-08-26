@@ -12,6 +12,7 @@ import {
 } from '@tabler/icons-react'
 
 import { AdminButton, AdminPage, EmptyState, Section } from '../../components/ui'
+import { LoadingSpinner, Skeleton } from '../../../components/loading/LoadingPrimitives'
 
 const PERIODS = [
   { days: 1, label: '今日' },
@@ -199,7 +200,7 @@ function AudiencePanel({ data, loading }) {
 }
 
 function LoadingRows() {
-  return <div className="space-y-2" aria-label="加载中"><div className="h-10 animate-pulse rounded-lg bg-[#efeee8] dark:bg-[#18212c]" /><div className="h-10 animate-pulse rounded-lg bg-[#f3f2ed] dark:bg-[#141c26]" /><div className="h-10 animate-pulse rounded-lg bg-[#f6f5f1] dark:bg-[#111821]" /></div>
+  return <div className="space-y-2" role="status" aria-label="正在加载数据"><Skeleton className="h-10 rounded-lg" /><Skeleton className="h-10 rounded-lg" /><Skeleton className="h-10 rounded-lg" /></div>
 }
 
 function CommentFollowUp({ comments, loading, deletingId, onDelete }) {
@@ -282,7 +283,7 @@ export default function ContentWeeklyClient() {
     <AdminPage
       title="阅读分析"
       description={`按内容、读者与来源交叉观察阅读表现。PV 按「访客 + 内容 + 1 小时」去重；UV 按登录账号或稳定游客身份去重，时区为北京时间。`}
-      actions={<div className="flex flex-wrap items-center gap-2"><PeriodSwitcher days={days} onChange={changePeriod} disabled={loading} /><AdminButton type="button" onClick={() => refresh(days)} disabled={loading}><span className="inline-flex items-center gap-1.5"><IconRefresh size={14} className={loading ? 'animate-spin' : ''} />{loading ? '计算中' : '刷新'}</span></AdminButton></div>}
+      actions={<div className="flex flex-wrap items-center gap-2"><PeriodSwitcher days={days} onChange={changePeriod} disabled={loading} /><AdminButton type="button" onClick={() => refresh(days)} disabled={loading}><span className="inline-flex items-center gap-1.5">{loading ? <LoadingSpinner size="sm" /> : <IconRefresh size={14} />}{loading ? '计算中' : '刷新'}</span></AdminButton></div>}
     >
       {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200">{error}</div> : null}
       {data?.status === 'unavailable' ? <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">当前环境没有连接统计数据库，部署后才会显示真实数据。</div> : null}

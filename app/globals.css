@@ -5023,15 +5023,33 @@
     color: var(--site-muted);
   }
 
-  .research-author-link {
-    color: var(--site-blue);
+  .research-author-avatar {
+    border: 1px solid color-mix(in srgb, var(--site-accent) 30%, var(--site-line));
+    background-color: var(--site-panel);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--site-accent) 7%, transparent);
   }
 
-  .research-author-link:visited {
-    color: var(--site-blue);
+  .research-author-name {
+    color: var(--site-ink);
   }
 
-  .research-author-link:hover {
+  .research-author-name:visited {
+    color: var(--site-ink);
+  }
+
+  .research-author-name:hover {
+    color: var(--site-accent-strong);
+  }
+
+  .research-author-profile-link {
+    color: var(--site-accent);
+  }
+
+  .research-author-profile-link:visited {
+    color: var(--site-accent);
+  }
+
+  .research-author-profile-link:hover {
     color: var(--site-accent-strong);
   }
 

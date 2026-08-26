@@ -15,7 +15,7 @@ export default function AdminMorningGreetingPage() {
     <AdminPageGate
       label="X 发布任务"
       returnTo="/admin/morning-greeting"
-      description="管理每日问候和文化短故事的全自动发布，仅站长本人可见。"
+      description="管理每日问候、朋友图文和文化短故事的全自动发布，仅站长本人可见。"
     >
       <MorningGreetingClient />
     </AdminPageGate>

@@ -245,10 +245,12 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   const clientSource = await readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8')
 
   assert.match(clientSource, /aria-label="每日自动发布横向时间轴"/)
-  assert.match(clientSource, /grid-cols-8/)
+  assert.match(clientSource, /grid-cols-9/)
   assert.match(clientSource, /按任务类型筛选/)
   assert.match(clientSource, /timeline-status-filter/)
   assert.match(clientSource, /08:00/)
+  assert.match(clientSource, /09:00/)
+  assert.match(clientSource, /朋友图文/)
   assert.match(clientSource, /22:00/)
   assert.match(clientSource, /visibleItems\.length} \/ {items\.length} 个节点/)
   assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)

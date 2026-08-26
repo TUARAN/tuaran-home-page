@@ -5,6 +5,7 @@ import {
   buildXArticlePost,
   createXOAuth1Header,
   publishXPost,
+  uploadXMedia,
   weightedTextLength,
 } from '../../lib/xDistribution.js'
 
@@ -70,4 +71,49 @@ test('publishes through the official X create-post endpoint', async () => {
     ok: true,
     post: { id: '123', text: 'hello', url: 'https://x.com/i/web/status/123' },
   })
+})
+
+test('uploads an image and attaches its media id to the X post', async () => {
+  const credentials = {
+    consumerKey: 'consumer-key',
+    consumerSecret: 'consumer-secret',
+    accessToken: 'access-token',
+    accessTokenSecret: 'access-secret',
+  }
+  let uploadRequest = null
+  const upload = await uploadXMedia(new Blob(['jpeg-bytes'], { type: 'image/jpeg' }), {
+    credentials,
+    nonce: 'upload-nonce',
+    timestamp: 1700000000,
+    fetchImpl: async (url, init) => {
+      uploadRequest = { url, init }
+      return new Response(JSON.stringify({ data: { id: 'media-456' } }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    },
+  })
+
+  assert.equal(uploadRequest.url, 'https://api.x.com/2/media/upload')
+  assert.equal(uploadRequest.init.method, 'POST')
+  assert.match(uploadRequest.init.headers.Authorization, /^OAuth /)
+  assert.ok(uploadRequest.init.body instanceof FormData)
+  assert.deepEqual(upload, { ok: true, mediaId: 'media-456' })
+
+  let postBody = null
+  const published = await publishXPost('一起学习。#互相学习 #共同进步', {
+    credentials,
+    mediaIds: [upload.mediaId],
+    nonce: 'post-nonce',
+    timestamp: 1700000001,
+    fetchImpl: async (_url, init) => {
+      postBody = JSON.parse(init.body)
+      return new Response(JSON.stringify({ data: { id: 'post-789' } }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    },
+  })
+  assert.deepEqual(postBody.media, { media_ids: ['media-456'] })
+  assert.equal(published.ok, true)
 })

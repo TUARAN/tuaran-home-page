@@ -19,13 +19,31 @@ test('admin navigation exposes seven stable workspaces without duplicate dashboa
 test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/content-taxonomy').map((item) => item.label), ['内容', '分类管理'])
   assert.deepEqual(resolveAdminTrail('/admin/deepseek-tasks').map((item) => item.label), ['自动化', '模型服务'])
-  assert.deepEqual(resolveAdminTrail('/admin/model-dispatch').map((item) => item.label), ['项目与工程', 'AI 规划与分派'])
+  assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['自动化', '名言生成'])
+  assert.deepEqual(resolveAdminTrail('/admin/engagement-bots').map((item) => item.label), ['自动化', '路过互动'])
+  assert.deepEqual(resolveAdminTrail('/admin/model-dispatch').map((item) => item.label), ['项目与工程', '规划分派'])
   assert.deepEqual(resolveAdminTrail('/admin/points').map((item) => item.label), ['用户与权限', '燃币与权益'])
   assert.deepEqual(resolveAdminTrail('/admin/access/grants').map((item) => item.label), ['用户与权限', '授权管理'])
-  assert.deepEqual(resolveAdminTrail('/admin/share').map((item) => item.label), ['私密数据', '密码保护分享'])
+  assert.deepEqual(resolveAdminTrail('/admin/share').map((item) => item.label), ['私密数据', '加密分享'])
   assert.deepEqual(resolveAdminTrail('/admin/self-regulation').map((item) => item.label), ['私密数据'])
   assert.deepEqual(resolveAdminTrail('/admin/person-strawberry').map((item) => item.label), ['私密数据'])
-  assert.deepEqual(resolveAdminTrail('/admin/nsfw').map((item) => item.label), ['私密数据', '私有媒体库'])
+  assert.deepEqual(resolveAdminTrail('/admin/nsfw').map((item) => item.label), ['私密数据', '私密媒体'])
+})
+
+test('private data navigation titles use four Chinese characters', () => {
+  const privateData = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/private-data')
+  const titles = privateData.sections.flatMap((section) => section.items.map((item) => item.label))
+
+  assert.deepEqual(titles, ['长期罗盘', '软贴空间', '信息金库', '加密分享', '交易分析', '私密媒体'])
+  assert.ok(titles.every((title) => Array.from(title).length === 4))
+})
+
+test('project navigation titles use four Chinese characters', () => {
+  const projects = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/projects')
+  const titles = projects.sections.flatMap((section) => section.items.map((item) => item.label))
+
+  assert.deepEqual(titles, ['规划中心', '项目总览', '规划分派', '开发发布', '集成密钥', '站点架构', '上下文库'])
+  assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 
 test('previously hidden admin routes have explicit child entries', () => {

@@ -6,7 +6,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: '上下文记忆',
+  title: '上下文库',
   description: 'Claude Code / 仓库 ai-context 的加密记忆快照与版本时间线。',
   robots: {
     index: false,
@@ -18,12 +18,12 @@ export const metadata = {
 export default async function AdminContextMemoryPage() {
   return (
     <AdminPageGate
-      label="上下文记忆"
+      label="上下文库"
       returnTo="/admin/context-memory"
       description="Claude Code / 仓库 ai-context 的加密记忆快照与版本时间线，仅站长本人可解密。"
     >
       <AdminPage
-        title="上下文记忆"
+        title="上下文库"
         description="Claude Code / 仓库 ai-context 的加密记忆快照与版本时间线。"
       >
         <section className="rounded-2xl border border-[#dfe2da] bg-white/80 p-4 shadow-sm dark:border-[#1b2836] dark:bg-[#101820]/90 md:p-5">

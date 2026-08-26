@@ -13,15 +13,15 @@ export default function PrivateDataWorkspace() {
           description: '口令只在浏览器内使用，服务器保存无法直接读取的密文。',
           items: [
             { href: '/admin/long-compass', title: '长期罗盘', description: '强私密个人内容库，在浏览器本地输入口令后解密。', icon: 'compass', note: '客户端解密 · 服务端密文' },
-            { href: '/admin/soft-sticker', title: 'SoftSticker', description: '集中查看体验记录、锻炼自控和草莓专题，按三个 Tab 切换。', icon: 'flower', note: '三 Tab · 私密工作区' },
-            { href: '/admin/information', title: '信息保险库', description: '加密保存账号、密码、密保答案和其他敏感资料。', icon: 'information', note: 'AES-GCM · 口令不上传' },
+            { href: '/admin/soft-sticker', title: '软贴空间', description: '集中查看体验记录、锻炼自控和草莓专题，按三个 Tab 切换。', icon: 'flower', note: '三 Tab · 私密工作区' },
+            { href: '/admin/information', title: '信息金库', description: '加密保存账号、密码、密保答案和其他敏感资料。', icon: 'information', note: 'AES-GCM · 口令不上传' },
           ],
         },
         {
           title: '加密分发',
           description: '用于需要交付给他人的受控内容，不与个人密文混用。',
           items: [
-            { href: '/admin/share', title: '密码保护分享', description: '创建密码保护链接、设置有效期并管理现有分享。', icon: 'share', note: '公开端只返回密文' },
+            { href: '/admin/share', title: '加密分享', description: '创建密码保护链接、设置有效期并管理现有分享。', icon: 'share', note: '公开端只返回密文' },
           ],
         },
         {
@@ -35,7 +35,7 @@ export default function PrivateDataWorkspace() {
           title: '私有资产',
           description: '文件只存入私有 R2，通过 owner-only 接口预览与下载。',
           items: [
-            { href: '/admin/nsfw', title: '私有媒体库', description: '管理受限图片与视频的上传、预览、归档和删除。', icon: 'nsfw', note: '私有 R2 · 不生成公开 URL' },
+            { href: '/admin/nsfw', title: '私密媒体', description: '管理受限图片与视频的上传、预览、归档和删除。', icon: 'nsfw', note: '私有 R2 · 不生成公开 URL' },
           ],
         },
       ]}

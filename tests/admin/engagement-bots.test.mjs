@@ -18,7 +18,7 @@ const hubSource = await readFile(
   'utf8',
 )
 const centerSource = await readFile(
-  new URL('../../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url),
+  new URL('../../app/(admin)/admin/automation/AutomationWorkspace.jsx', import.meta.url),
   'utf8',
 )
 const migrationSource = await readFile(new URL('../../migrations/0074_engagement_bots.sql', import.meta.url), 'utf8')

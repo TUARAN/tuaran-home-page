@@ -354,7 +354,7 @@ export default function SoftStickerClient({ rows }) {
 
   return (
     <AdminPage
-      title="SoftSticker"
+      title="软贴空间"
       description="私人体验记录的只读复盘页。解锁后可按年份、区域、评分和花费筛选，并在画像、时间线与明细表之间切换。"
       actions={<span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300"><IconLock size={13} />统一口令已解锁</span>}
     >

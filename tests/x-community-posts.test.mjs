@@ -30,11 +30,12 @@ test('three community image slots cover friends, learning, and growth', async ()
 
 test('community copy keeps only the two configured tags and remains X-safe', () => {
   const text = normalizeXCommunityText(
-    `${'欢迎分享你最近在学习和实践的一件小事，我们可以交换经验，认识彼此。'.repeat(10)} #随便写的标签`,
+    `${'欢迎分享你最近在学习和实践的一件小事，我们可以交换经验，认识彼此。'.repeat(10)}#互相学习 #随便写的标签`,
     'community_learning',
   )
   assert.match(text, /#互相学习 #共同进步$/)
   assert.doesNotMatch(text, /#随便写的标签/)
+  assert.equal(text.match(/#互相学习/g)?.length, 1)
   assert.ok([...text].reduce((weight, character) => weight + (character.codePointAt(0) <= 0x7f ? 1 : 2), 0) <= 280)
 })
 

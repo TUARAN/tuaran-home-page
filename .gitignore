@@ -48,6 +48,9 @@ pids
 *.seed
 *.pid.lock
 
+# Orphaned local memory snapshot (not referenced by public/data/memory/manifest.json)
+/public/data/memory/ai-context/deepseek-key-management/2026-08-18T08-02-39-073Z.enc.json
+
 # 前端周刊高频运行数据已迁至 R2；仓库只保留人工更新的 fallback。
 /content/frontend-weekly/*
 !/content/frontend-weekly/fallback.json

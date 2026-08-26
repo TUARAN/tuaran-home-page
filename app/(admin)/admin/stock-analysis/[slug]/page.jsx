@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import AdminPageGate from '../../../components/AdminPageGate'
-import StockAnalysisClient from '../StockAnalysisClient'
+import StockAnalysisClientLoader from '../StockAnalysisClientLoader'
 import {
   getSiblingSlugs,
   getSnapshotBySlug,
@@ -71,7 +71,7 @@ export default function SnapshotDetailPage({ params }) {
         </div>
       </nav>
 
-      <StockAnalysisClient record={R} />
+      <StockAnalysisClientLoader record={R} />
     </AdminPageGate>
   )
 }

@@ -7,6 +7,7 @@ import {
   buildQuoteGenerationMessages,
   parseGeneratedQuotes,
 } from '../../../../lib/quoteGeneration'
+import { insertGeneratedQuote, QUOTE_SELECT_COLUMNS, quoteRowToJson } from '../../../../lib/quoteStore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -16,20 +17,6 @@ function dbOrNull() {
     return getD1()
   } catch {
     return null
-  }
-}
-
-function rowToQuote(row) {
-  return {
-    id: row.id,
-    text: row.text,
-    author: row.author,
-    source: row.source || '',
-    sourceUrl: row.source_url || '',
-    enabled: Boolean(row.enabled),
-    sortOrder: Number(row.sort_order) || 0,
-    createdAt: Number(row.created_at) || 0,
-    updatedAt: Number(row.updated_at) || 0,
   }
 }
 
@@ -46,30 +33,36 @@ export async function GET(request) {
       status: 'preview',
       persistent: false,
       quote: null,
+      quotes: [],
+      quoteCount: 0,
       generationModels: QUOTE_GENERATION_MODELS,
     })
   }
 
   try {
-    const row = await db
+    const result = await db
       .prepare(
-        `SELECT id, text, author, source, source_url, enabled, sort_order, created_at, updated_at
+        `SELECT ${QUOTE_SELECT_COLUMNS}
          FROM famous_quotes
          WHERE enabled = 1
          ORDER BY updated_at DESC
-         LIMIT 1`
+         LIMIT 100`
       )
-      .first()
+      .all()
+    const quotes = (result?.results || []).map(quoteRowToJson)
+    const countRow = await db.prepare('SELECT COUNT(*) AS count FROM famous_quotes WHERE enabled = 1').first()
     return Response.json({
       status: 'ok',
       persistent: true,
-      quote: row ? rowToQuote(row) : null,
+      quote: quotes[0] || null,
+      quotes,
+      quoteCount: Number(countRow?.count) || 0,
       generationModels: QUOTE_GENERATION_MODELS,
     })
   } catch (error) {
     return Response.json({
       error: 'QUOTES_READ_FAILED',
-      message: '名言表不可用，请先应用 0057_famous_quotes.sql。',
+      message: '名言表不可用，请确认已应用 0057 与 0080 数据库迁移。',
       detail: String(error?.message || error),
     }, { status: 500 })
   }
@@ -84,35 +77,10 @@ export async function POST(request) {
   if (!body) return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
   const prompt = String(body?.prompt || '').trim().slice(0, 500)
   if (!prompt) return Response.json({ error: 'PROMPT_REQUIRED' }, { status: 400 })
-  return generateAndPublish({ db, prompt, user: guard.user })
+  return generateAndRecord({ db, prompt, user: guard.user })
 }
 
-async function publishGeneratedQuote(db, generated) {
-  const id = crypto.randomUUID()
-  const now = Date.now()
-  const quote = {
-    id,
-    text: generated.text,
-    author: 'TUARAN',
-    source: '大模型生成',
-    sourceUrl: '',
-    enabled: true,
-    sortOrder: 0,
-    createdAt: now,
-    updatedAt: now,
-  }
-  await db.batch([
-    db.prepare('DELETE FROM famous_quotes'),
-    db.prepare(
-      `INSERT INTO famous_quotes
-       (id, text, author, source, source_url, enabled, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?)`,
-    ).bind(id, quote.text, quote.author, quote.source, quote.sourceUrl, now, now),
-  ])
-  return quote
-}
-
-async function generateAndPublish({ db, prompt, user }) {
+async function generateAndRecord({ db, prompt, user }) {
   const providerResult = await db.prepare(
       `SELECT id, name, default_model
        FROM llm_providers
@@ -128,7 +96,7 @@ async function generateAndPublish({ db, prompt, user }) {
     actorId: user?.id || user?.login || '',
     actorName: user?.name || user?.login || 'TUARAN',
     inputSummary: prompt,
-    metadata: { publishImmediately: true, maxAttempts: 3 },
+    metadata: { addToPool: true, maxAttempts: 3 },
   }
   const attempts = []
 
@@ -174,7 +142,11 @@ async function generateAndPublish({ db, prompt, user }) {
         timeoutMs: attempt.timeoutMs,
         task: { ...task, metadata: { ...task.metadata, fallbackStage: attempts.length + 1 } },
       })
-      const quote = await publishGeneratedQuote(db, parseGeneratedQuotes(result.content)[0])
+      const quote = await insertGeneratedQuote(db, parseGeneratedQuotes(result.content)[0], {
+        prompt,
+        trigger: 'manual',
+        model: result.model || target.model,
+      })
       attempts.push({ provider: 'ollama', model: result.model || attempt.model, ok: true })
       return Response.json({
         ok: true,
@@ -205,7 +177,11 @@ async function generateAndPublish({ db, prompt, user }) {
       disableThinking: true,
       task: { ...task, metadata: { ...task.metadata, fallbackStage: 3 } },
     })
-    const quote = await publishGeneratedQuote(db, parseGeneratedQuotes(result.content)[0])
+    const quote = await insertGeneratedQuote(db, parseGeneratedQuotes(result.content)[0], {
+      prompt,
+      trigger: 'manual',
+      model: result.model || QUOTE_GENERATION_MODELS.fallback,
+    })
     attempts.push({ provider: 'deepseek', model: result.model || QUOTE_GENERATION_MODELS.fallback, ok: true })
     return Response.json({
       ok: true,

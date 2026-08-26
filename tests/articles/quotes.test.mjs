@@ -8,16 +8,16 @@ const headerSource = await readFile(
 )
 const routeSource = await readFile(new URL('../../app/api/quotes/route.js', import.meta.url), 'utf8')
 
-test('quote API returns the latest generated quote and disables caching', () => {
+test('quote API returns a random enabled generated quote and disables caching', () => {
   assert.match(routeSource, /WHERE enabled = 1/)
-  assert.match(routeSource, /ORDER BY updated_at DESC/)
+  assert.match(routeSource, /ORDER BY RANDOM\(\)/)
   assert.match(routeSource, /quote \? serialize\(quote\) : null/)
   assert.doesNotMatch(routeSource, /famousQuotes/)
-  assert.doesNotMatch(routeSource, /ORDER BY RANDOM|exclude/)
+  assert.doesNotMatch(routeSource, /exclude/)
   assert.match(routeSource, /'Cache-Control': 'no-store'/)
 })
 
-test('article header reads the single current quote', () => {
+test('article header reads one random quote from the public API', () => {
   assert.match(headerSource, /useTheme\(\)/)
   assert.match(headerSource, /fetch\('\/api\/quotes'/)
   assert.match(headerSource, /\[refreshQuote, resolvedTheme\]/)

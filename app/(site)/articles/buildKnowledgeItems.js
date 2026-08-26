@@ -75,6 +75,21 @@ export function buildKnowledgeItems({ includeOwner = false } = {}) {
       sortKey: '',
       href: '/a-share-research',
     },
+    {
+      id: 'series:crypto_research',
+      kind: 'topics',
+      tagLabel: '固定系列',
+      contentKind: 'analysis',
+      subjects: ['business_market'],
+      entityType: '',
+      delivery: 'read',
+      series: 'crypto_research',
+      title: '加密调研',
+      summary: '按市值每天观察一个加密资产，关注背景、技术、代币经济、治理、安全与监管。',
+      date: '',
+      sortKey: '',
+      href: '/crypto-research',
+    },
   ]
 
   const postItems = articles.map((article) => {

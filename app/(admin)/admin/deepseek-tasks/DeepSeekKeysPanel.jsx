@@ -41,6 +41,13 @@ const DEEPSEEK_GITHUB_TRIGGERED_USES = [
     taskTypes: ['daily-draft'],
   },
   {
+    name: '加密调研自动化',
+    schedule: '每天 · 北京时间 01:30',
+    workflow: 'crypto-research.yml',
+    source: 'crypto-research',
+    taskTypes: ['daily-draft'],
+  },
+  {
     name: '路过互动评论',
     schedule: '每天 · 北京时间 10:23；支持 Admin 手动运行',
     workflow: 'engagement-bot.yml',

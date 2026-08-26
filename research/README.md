@@ -160,6 +160,12 @@ npm run a-share:status
 - 通用模板位于 `research/templates/a-share-company-research.md`，模板版本随结构升级递增。
 - 自动生成稿必须保持 `review_ready: false`，且不会自动提交或发布。
 
+### 加密资产观察流水线
+
+- 线上任务每天北京时间 01:30 刷新 CoinGecko 市值前 250 名，并选择尚未完成的最高市值币种。
+- 专用模板位于 `research/templates/crypto-asset-research.md`，覆盖背景、发展、技术、用途、代币经济、市场、治理、安全、监管与风险。
+- 草稿进入 `/admin/crypto-research` 复核；保持 `review_ready: false` 与 `ad_eligible: false`，不提供投资建议。
+
 ## 上线流程
 
 ```bash

@@ -288,8 +288,8 @@ const HOME_ACHIEVEMENT_LINKS = [
     title: '技术作品出版 · 2 本',
     compact: true,
     emoji: '📖',
-    image: '/images/books/programmer-growth-notes.jpg',
-    imageAlt: '《程序员成长手记》书籍封面',
+    image: '/images/books/ai-bots-guide.png',
+    imageAlt: '《扣子：AI Bots 通关指南》掘金小册封面',
     icon: IconFileText,
   },
 ]

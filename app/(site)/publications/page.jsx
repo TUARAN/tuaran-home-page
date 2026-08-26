@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 import PageContainer from '../components/PageContainer'
 
@@ -8,8 +9,8 @@ export const metadata = {
 }
 
 const publicationItems = [
-  { title: '《程序员成长手记》', type: '技术图书', period: '2022-2023', status: '已出版' },
-  { title: '《AI Bots 通关指南》', type: '电子小册', period: '2024', status: '已发布' },
+  { title: '《程序员成长手记》', type: '技术图书', period: '2022-2023', status: '已出版', image: '/images/books/programmer-growth-notes.jpg' },
+  { title: '《AI Bots 通关指南》', type: '电子小册', period: '2024', status: '已发布', image: '/images/books/ai-bots-guide.png' },
   { title: '《5 小时吃透大模型》', type: '技术图书', period: '2024-2025', status: '已交稿 · 出版中' },
   { title: '《智能体实战（扣子 · n8n · Dify）》', type: '联合创作', period: '2025-2026', status: '撰写中' },
   { title: '《Seedance 2.0 电影级 AI 视频创作指南》', type: '联合创作', period: '2026 上半年', status: '已交稿 · 出版中' },
@@ -18,21 +19,19 @@ const publicationItems = [
 
 const coverStyles = {
   程序员成长手记: {
-    subtitle: '工程成长与职业进阶',
     accent: 'from-[#3f2f1a] via-[#6c4a23] to-[#b87a2a]',
   },
   'AI Bots 通关指南': {
-    subtitle: '从 0 到 1 的智能体实战',
     accent: 'from-[#132331] via-[#1f3d53] to-[#3f6f93]',
   },
 }
 
 export default function PublicationsPage() {
   const publishedBooks = publicationItems.filter((item) => item.status.includes('已出版') || item.status.includes('已发布'))
-  const placeholderCovers = publishedBooks.map((item) => ({
+  const publishedCovers = publishedBooks.map((item) => ({
     title: item.title.replace(/[《》]/g, ''),
-    subtitle: coverStyles[item.title.replace(/[《》]/g, '')]?.subtitle || item.type,
     accent: coverStyles[item.title.replace(/[《》]/g, '')]?.accent || 'from-[#2a2f36] via-[#39424d] to-[#566273]',
+    image: item.image,
   }))
 
   return (
@@ -59,26 +58,29 @@ export default function PublicationsPage() {
         <div className="mb-5 rounded-2xl border border-[#d9dad2] bg-white p-4 dark:border-[#2a3440] dark:bg-[#111923]">
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.18em] text-[#858779] dark:text-[#9ca5b5]">
-              已出版作品封面（占位）
+              已出版作品封面
             </p>
             <span className="font-mono text-[10px] tracking-[0.12em] text-[#858779] dark:text-[#8e9ab0]">
-              共 {placeholderCovers.length} 本 · 可横向滑动
+              共 {publishedCovers.length} 本 · 可横向滑动
             </span>
           </div>
           <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1">
-            {placeholderCovers.map((book) => (
+            {publishedCovers.map((book) => (
               <div
                 key={book.title}
-                className={`w-[min(56vw,230px)] shrink-0 snap-start rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} p-2.5 shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}
+                className={`w-[min(56vw,230px)] shrink-0 snap-start overflow-hidden rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}
               >
-                <div className="flex aspect-[3/4] flex-col justify-between rounded-lg border border-white/[0.18] bg-black/[0.12] p-2.5">
-                  <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/75">Book</span>
-                  <div>
-                    <h3 className="mb-1 font-serif text-[14px] font-semibold leading-[1.35] text-white">{book.title}</h3>
-                    <p className="mb-0 text-[10px] leading-4 text-white/85">{book.subtitle}</p>
+                {book.image ? (
+                  <div className="relative aspect-[3/4] bg-[#101722]">
+                    <Image
+                      src={book.image}
+                      alt={`《${book.title}》封面`}
+                      fill
+                      sizes="(max-width: 768px) 56vw, 230px"
+                      className="object-contain"
+                    />
                   </div>
-                  <span className="font-mono text-[9px] tracking-[0.12em] text-white/65">TUARAN</span>
-                </div>
+                ) : null}
               </div>
             ))}
           </div>

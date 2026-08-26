@@ -19,6 +19,14 @@ import {
   listMorningGreetingTemplates,
   upsertMorningGreetingTemplate,
 } from '../../../../lib/morningGreetingTemplates'
+import {
+  X_API_POST_CREATE_COST_MICRO_USD,
+  X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
+  X_API_PRICING_CHECKED_AT,
+  X_API_PRICING_SOURCE_URL,
+  getXApiCostSummary,
+  projectedXPostCost,
+} from '../../../../lib/xApiCost'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -113,6 +121,23 @@ export async function GET(req) {
     const ollamaProviderId = ollamaProviders.some((provider) => provider.id === ollamaProviderRaw)
       ? String(ollamaProviderRaw)
       : String(ollamaProviders[0]?.id || '')
+    let xApiCost
+    try {
+      xApiCost = await getXApiCostSummary(db, { postsPerDay: 6 })
+    } catch {
+      // 数据库迁移尚未执行时仍展示官方单价与固定日程预算。
+      xApiCost = {
+        available: false,
+        currency: 'USD',
+        todayPosts: 0,
+        todayMicroUsd: 0,
+        monthPosts: 0,
+        monthMicroUsd: 0,
+        projected30DayPosts: 180,
+        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: 6, days: 30 }),
+        trackedSince: null,
+      }
+    }
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
@@ -125,6 +150,13 @@ export async function GET(req) {
       ollamaProviderId,
       lastRuns,
       cultureRuns,
+      xApiCost: {
+        ...xApiCost,
+        postCreateMicroUsd: X_API_POST_CREATE_COST_MICRO_USD,
+        postCreateWithUrlMicroUsd: X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
+        pricingCheckedAt: X_API_PRICING_CHECKED_AT,
+        pricingSourceUrl: X_API_PRICING_SOURCE_URL,
+      },
     })
   } catch (error) {
     return Response.json(

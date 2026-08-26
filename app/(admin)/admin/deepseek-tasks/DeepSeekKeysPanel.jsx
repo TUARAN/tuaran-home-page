@@ -10,7 +10,7 @@ const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-
 const KNOWN_SOURCES = DEEPSEEK_SHARED_SOURCES
 const DEEPSEEK_SHARED_USES = [
   { name: 'AI 规划台', runtime: 'Admin · admin.2aran.com', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
-  { name: '股票横向分析', runtime: '公开站 · 2aran.com', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
+  { name: '股票横向分析', runtime: '后台 · Owner-only', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
 ]
 const DEEPSEEK_GITHUB_ACTIONS_USES = [
   {

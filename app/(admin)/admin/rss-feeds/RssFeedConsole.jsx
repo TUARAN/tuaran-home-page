@@ -313,7 +313,7 @@ const SITE_RSS_COVERAGE = [
   },
   {
     section: '工作台类',
-    path: '/public-opinion、/stock-analysis',
+    path: '/public-opinion、/admin/stock-analysis',
     status: 'out-ok',
     note: 'owner-facing / 自动采集，不进 RSS 是有意为之。',
   },

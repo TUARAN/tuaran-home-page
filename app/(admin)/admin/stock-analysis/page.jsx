@@ -1,7 +1,9 @@
+import AdminPageGate from '../../components/AdminPageGate'
 import SnapshotIndexClient from './SnapshotIndexClient'
 import { getAllSnapshotsSummary, getAllWeeklyAdvice } from './data'
 
-export const dynamic = 'force-static'
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '交易分析快照库 · 多标的 · 分钟级',
@@ -18,17 +20,23 @@ export const metadata = {
     '快照库',
     '分钟级',
   ],
-  alternates: {
-    canonical: '/stock-analysis',
-  },
   robots: {
     index: false,
     follow: false,
+    googleBot: { index: false, follow: false },
   },
 }
 
 export default function StockAnalysisIndexPage() {
   const summaries = getAllSnapshotsSummary()
   const weeklyAdvices = getAllWeeklyAdvice()
-  return <SnapshotIndexClient summaries={summaries} weeklyAdvices={weeklyAdvices} />
+  return (
+    <AdminPageGate
+      label="交易分析"
+      returnTo="/admin/stock-analysis"
+      description="交易快照、横向分析与风险信号仅站长本人可见。"
+    >
+      <SnapshotIndexClient summaries={summaries} weeklyAdvices={weeklyAdvices} />
+    </AdminPageGate>
+  )
 }

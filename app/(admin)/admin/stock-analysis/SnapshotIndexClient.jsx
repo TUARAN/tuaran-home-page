@@ -403,7 +403,7 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvices = [] }) {
     setHorizontalAnalysis(null)
 
     try {
-      const response = await fetch(`/api/stock-analysis/horizontal-analysis?category=${encodeURIComponent(analysisCategory)}`)
+      const response = await fetch(`/api/admin/stock-analysis/horizontal-analysis?category=${encodeURIComponent(analysisCategory)}`)
       const payload = await response.json().catch(() => null)
       if (!response.ok) throw new Error(payload?.error || '横向分析生成失败。')
       setHorizontalAnalysis(payload)
@@ -626,7 +626,7 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvices = [] }) {
             return (
               <Link
                 key={s.slug}
-                href={`/stock-analysis/${s.slug}`}
+                href={`/admin/stock-analysis/${s.slug}`}
                 className="group block rounded-xl border border-[#d7d9cf] dark:border-[#2b3644] bg-white dark:bg-[#111923] p-5 hover:border-[#00e5a0] transition-colors"
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
@@ -710,7 +710,7 @@ export default function SnapshotIndexClient({ summaries, weeklyAdvices = [] }) {
       {/* Footer hint */}
       <div className="mt-10 pt-6 border-t border-[#d7d9cf] dark:border-[#2b3644] text-center text-[11px] text-[var(--site-muted)]">
         所有快照数据均来源于公开交易所 API · 本分析仅供参考，不构成投资建议<br />
-        新增快照：在 <code className="px-1.5 py-0.5 rounded bg-[var(--site-panel)] text-[12px]">app/(site)/stock-analysis/data.js</code> 中追加一条 <code className="px-1 py-0.5 rounded bg-[var(--site-panel)] text-[12px]">STOCK_ANALYSIS_RECORDS</code> 即可
+        新增快照：在 <code className="px-1.5 py-0.5 rounded bg-[var(--site-panel)] text-[12px]">app/(admin)/admin/stock-analysis/data.js</code> 中追加一条 <code className="px-1 py-0.5 rounded bg-[var(--site-panel)] text-[12px]">STOCK_ANALYSIS_RECORDS</code> 即可
       </div>
         </div>
       </div>

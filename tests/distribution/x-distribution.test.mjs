@@ -98,6 +98,7 @@ test('uploads an image and attaches its media id to the X post', async () => {
   assert.equal(uploadRequest.init.method, 'POST')
   assert.match(uploadRequest.init.headers.Authorization, /^OAuth /)
   assert.ok(uploadRequest.init.body instanceof FormData)
+  assert.equal(uploadRequest.init.body.get('media_category'), 'tweet_image')
   assert.deepEqual(upload, { ok: true, mediaId: 'media-456' })
 
   let postBody = null

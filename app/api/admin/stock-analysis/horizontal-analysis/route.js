@@ -1,6 +1,7 @@
-import { getRecentSnapshotsByCategory } from '../../../(site)/stock-analysis/data'
-import { callDeepSeekJson } from '../../../../lib/deepseek'
-import { enrichDeepSeekTask } from '../../../../lib/deepseekTasks'
+import { getRecentSnapshotsByCategory } from '../../../../(admin)/admin/stock-analysis/data'
+import { getOwnerOrReject } from '../../../../../lib/adminAuth'
+import { callDeepSeekJson } from '../../../../../lib/deepseek'
+import { enrichDeepSeekTask } from '../../../../../lib/deepseekTasks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -106,6 +107,9 @@ function normalizeAnalysis(value) {
 }
 
 export async function GET(request) {
+  const guard = await getOwnerOrReject(request)
+  if (!guard.ok) return guard.response
+
   const searchParams = new URL(request.url).searchParams
   if (searchParams.size !== 1 || !searchParams.has('category')) {
     return Response.json({ error: '请求参数不合法。' }, { status: 400 })
@@ -139,8 +143,8 @@ export async function GET(request) {
         source: 'stock-analysis',
         taskType: 'horizontal-analysis',
         title: `${categoryLabel}最近快照横向分析`,
-        actorId: 'public',
-        actorName: '公开页面访客',
+        actorId: String(guard.user?.id || 'owner'),
+        actorName: guard.user?.name || guard.user?.login || '站长',
         inputSummary: `横向对比 ${snapshots.length} 个快照：${snapshots[snapshots.length - 1].date} 至 ${snapshots[0].date}`,
         metadata: { categoryId, snapshotCount: snapshots.length },
       },

@@ -3,7 +3,7 @@
  *
  * 每条记录 = 一次完整的「多维度交易分析」快照，精确到分钟。
  * 旧版页面以"日"为粒度（一天内变化巨大），现在统一在数组里维护，
- * 通过 /stock-analysis 索引页 + /stock-analysis/[slug] 详情页访问。
+ * 通过 /admin/stock-analysis 索引页 + /admin/stock-analysis/[slug] 详情页访问。
  *
  * 字段约定（统一 schema，便于后续脚本批量生成）：
  * - id          内部稳定 ID

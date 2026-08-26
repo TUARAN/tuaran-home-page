@@ -125,6 +125,7 @@ const publishedWorks = [
     year: '2024',
     status: '已发布',
     description: '围绕 AI Bot 与智能体从入门到实践的电子小册。',
+    image: '/images/books/ai-bots-guide.png',
   },
 ]
 
@@ -155,6 +156,7 @@ const aboutStructuredData = {
       author: { '@id': 'https://2aran.com/about#person' },
       datePublished: work.year,
       ...(work.type === '电子小册' ? { bookFormat: 'https://schema.org/EBook' } : {}),
+      ...(work.image ? { image: `https://2aran.com${work.image}` } : {}),
       url: 'https://2aran.com/publications',
     })),
     ...OPENCLAW_ACHIEVEMENTS.map((item) => ({
@@ -447,7 +449,7 @@ export default function AboutPage() {
                     width={1080}
                     height={1080}
                     sizes="128px"
-                    className="h-32 w-32 shrink-0 rounded-xl border border-[#243549] object-cover sm:h-36 sm:w-36"
+                    className="h-32 w-32 shrink-0 rounded-xl border border-[#243549] bg-[#0d1622] object-contain sm:h-36 sm:w-36"
                   />
                 ) : (
                   <div className="flex h-32 w-32 shrink-0 flex-col justify-between rounded-xl border border-[#36526a] bg-[linear-gradient(145deg,#102031,#1f4056,#315f7c)] p-3 sm:h-36 sm:w-36" aria-hidden="true">

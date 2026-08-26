@@ -153,9 +153,9 @@ const SOCIAL_MEDIA_LINKS = [
     href: 'https://x.com/tarsixseveneig1',
     label: 'X 平台',
     labelEn: 'X',
-    followers: '2k',
-    followersCount: 2000,
-    reads: '100w+',
+    followers: '5.1k',
+    followersCount: 5100,
+    reads: '200w',
     icon: IconBrandX,
   },
   {

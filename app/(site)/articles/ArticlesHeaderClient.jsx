@@ -3,8 +3,6 @@
 import { useTheme } from 'next-themes'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const LAST_QUOTE_KEY = 'articles:last-quote'
-
 export default function ArticlesHeaderClient() {
   const { resolvedTheme } = useTheme()
   const [quote, setQuote] = useState(null)
@@ -14,10 +12,8 @@ export default function ArticlesHeaderClient() {
     requestRef.current?.abort()
     const controller = new AbortController()
     requestRef.current = controller
-    const previousQuote = window.sessionStorage.getItem(LAST_QUOTE_KEY) || ''
-
     try {
-      const response = await fetch(`/api/quotes?exclude=${encodeURIComponent(previousQuote)}`, {
+      const response = await fetch('/api/quotes', {
         cache: 'no-store',
         signal: controller.signal,
       })
@@ -26,7 +22,6 @@ export default function ArticlesHeaderClient() {
       const nextQuote = await response.json()
       if (!nextQuote?.id || !nextQuote?.text || !nextQuote?.author) return
 
-      window.sessionStorage.setItem(LAST_QUOTE_KEY, nextQuote.id)
       setQuote(nextQuote)
     } catch (error) {
       if (error.name !== 'AbortError') setQuote(null)

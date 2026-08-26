@@ -13,8 +13,7 @@ function serialize(row) {
   }
 }
 
-export async function GET(request) {
-  const exclude = new URL(request.url).searchParams.get('exclude')
+export async function GET() {
   let quote = null
 
   try {
@@ -23,11 +22,10 @@ export async function GET(request) {
       .prepare(
         `SELECT id, text, author, source, source_url
          FROM famous_quotes
-         WHERE enabled = 1 AND id != ?
-         ORDER BY RANDOM()
+         WHERE enabled = 1
+         ORDER BY updated_at DESC
          LIMIT 1`
       )
-      .bind(exclude || '')
       .first()
   } catch {
     quote = null

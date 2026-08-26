@@ -8,20 +8,21 @@ const headerSource = await readFile(
 )
 const routeSource = await readFile(new URL('../../app/api/quotes/route.js', import.meta.url), 'utf8')
 
-test('quote API avoids the previous quote and disables caching', () => {
-  assert.match(routeSource, /id != \?/)
-  assert.match(routeSource, /ORDER BY RANDOM\(\)/)
+test('quote API returns the latest generated quote and disables caching', () => {
+  assert.match(routeSource, /WHERE enabled = 1/)
+  assert.match(routeSource, /ORDER BY updated_at DESC/)
   assert.match(routeSource, /quote \? serialize\(quote\) : null/)
   assert.doesNotMatch(routeSource, /famousQuotes/)
+  assert.doesNotMatch(routeSource, /ORDER BY RANDOM|exclude/)
   assert.match(routeSource, /'Cache-Control': 'no-store'/)
 })
 
-test('article header refreshes its quote when the resolved theme changes', () => {
+test('article header reads the single current quote', () => {
   assert.match(headerSource, /useTheme\(\)/)
-  assert.match(headerSource, /window\.sessionStorage\.getItem\(LAST_QUOTE_KEY\)/)
-  assert.match(headerSource, /fetch\(`\/api\/quotes\?exclude=/)
+  assert.match(headerSource, /fetch\('\/api\/quotes'/)
   assert.match(headerSource, /\[refreshQuote, resolvedTheme\]/)
   assert.match(headerSource, /quote \? <div/)
+  assert.doesNotMatch(headerSource, /sessionStorage|exclude=/)
   assert.doesNotMatch(headerSource, /千里之行/)
   assert.doesNotMatch(headerSource, /从主题开始浏览|会在需要时出现/)
 })

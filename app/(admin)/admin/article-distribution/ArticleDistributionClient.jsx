@@ -156,9 +156,9 @@ function platformStatusTone(status) {
   return 'neutral'
 }
 
-export default function ArticleDistributionClient() {
+export default function ArticleDistributionClient({ requestedContentKey = '' }) {
   const [items, setItems] = useState([])
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(requestedContentKey)
   const [selectedKey, setSelectedKey] = useState('')
   const [selectedPlatforms, setSelectedPlatforms] = useState(() => ARTICLE_DISTRIBUTION_PLATFORMS.map((item) => item.id))
   const [plugin, setPlugin] = useState({ ready: false, version: '' })
@@ -196,7 +196,7 @@ export default function ArticleDistributionClient() {
     setMessage(`插件已连接${extension.version ? `（v${extension.version}）` : ''}，可写入平台草稿。`)
   }, [])
 
-  const loadItems = useCallback(async (search = '') => {
+  const loadItems = useCallback(async (search = '', preferredContentKey = '') => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ type: 'all', status: 'published', limit: '100' })
@@ -206,7 +206,12 @@ export default function ArticleDistributionClient() {
       if (!response.ok) throw new Error(payload?.detail || payload?.error || '内容读取失败')
       const nextItems = (payload.items || []).filter((item) => ['article', 'research'].includes(item.type) && /^\/articles\//.test(item.href))
       setItems(nextItems)
-      setSelectedKey((current) => nextItems.some((item) => item.contentKey === current) ? current : (nextItems[0]?.contentKey || ''))
+      setSelectedKey((current) => {
+        if (preferredContentKey && nextItems.some((item) => item.contentKey === preferredContentKey)) {
+          return preferredContentKey
+        }
+        return nextItems.some((item) => item.contentKey === current) ? current : (nextItems[0]?.contentKey || '')
+      })
     } catch (error) {
       setMessage(error.message || '内容读取失败。')
     } finally {
@@ -215,11 +220,11 @@ export default function ArticleDistributionClient() {
   }, [])
 
   useEffect(() => {
-    loadItems()
+    loadItems(requestedContentKey, requestedContentKey)
     detectPlugin()
     window.addEventListener('cose-ready', detectPlugin)
     return () => window.removeEventListener('cose-ready', detectPlugin)
-  }, [detectPlugin, loadItems])
+  }, [detectPlugin, loadItems, requestedContentKey])
 
   useEffect(() => {
     setArticle(null)

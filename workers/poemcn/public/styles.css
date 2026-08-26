@@ -417,6 +417,153 @@ button {
   gap: 16px;
 }
 
+.poem-list.is-collection {
+  margin-top: 24px;
+}
+
+.collection-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.quote-card {
+  padding: 30px 34px 25px 76px;
+}
+
+.quote-card blockquote {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.85;
+}
+
+.quote-card p {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.collection-index {
+  position: absolute;
+  top: 33px;
+  left: 28px;
+  color: var(--seal);
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+}
+
+.collection-card button,
+.quote-card > button {
+  border: 0;
+  background: transparent;
+  color: var(--moss-deep);
+  cursor: pointer;
+  font-family: system-ui, sans-serif;
+}
+
+.quote-card > button {
+  position: absolute;
+  right: 26px;
+  bottom: 24px;
+  font-size: 12px;
+}
+
+.author-card {
+  width: 100%;
+  padding: 20px 24px;
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+
+.author-card .author-avatar {
+  width: 46px;
+  height: 46px;
+  font-size: 18px;
+}
+
+.author-card strong,
+.author-card small {
+  display: block;
+}
+
+.author-card small,
+.author-card > span:last-child {
+  color: var(--ink-soft);
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+}
+
+.book-card {
+  min-height: 112px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.book-mark {
+  width: 48px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(168, 71, 55, 0.35);
+  color: var(--seal);
+}
+
+.book-card h3,
+.book-card p {
+  margin: 0;
+}
+
+.book-card h3 {
+  font-size: 20px;
+}
+
+.book-card p {
+  margin-top: 5px;
+  color: var(--ink-soft);
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+}
+
+.glossary-card {
+  padding: 24px 27px;
+}
+
+.glossary-card > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.glossary-card strong {
+  font-size: 22px;
+}
+
+.glossary-card span {
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+}
+
+.glossary-card p {
+  margin: 10px 0;
+  color: var(--ink-soft);
+}
+
+.glossary-card button {
+  padding: 0;
+  font-size: 12px;
+}
+
 .poem-card,
 .loading-card {
   border: 1px solid var(--line);
@@ -1070,6 +1217,27 @@ body.dark .poem-lines {
 
   .poem-card {
     padding: 23px 20px 17px;
+  }
+
+  .quote-card {
+    padding: 25px 22px 54px 48px;
+  }
+
+  .quote-card blockquote {
+    font-size: 18px;
+  }
+
+  .collection-index {
+    top: 28px;
+    left: 18px;
+  }
+
+  .author-card {
+    grid-template-columns: 42px 1fr;
+  }
+
+  .author-card > span:last-child {
+    display: none;
   }
 
   .poem-title-wrap h3 {

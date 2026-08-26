@@ -9,6 +9,7 @@ const state = {
   page: 1,
   quoteIndex: 0,
   stats: null,
+  hasMore: false,
 };
 
 const elements = {
@@ -17,6 +18,7 @@ const elements = {
   dailyQuote: document.querySelector("#dailyQuote"),
   dailySource: document.querySelector("#dailySource"),
   emptyState: document.querySelector("#emptyState"),
+  filterPanel: document.querySelector("#filterPanel"),
   poemList: document.querySelector("#poemList"),
   loadMore: document.querySelector("#loadMore"),
   resultCount: document.querySelector("#resultCount"),
@@ -88,18 +90,104 @@ function poemTemplate(poem) {
     </article>`;
 }
 
-function renderPoems({ append = false } = {}) {
-  const html = state.poems.map(poemTemplate).join("");
-  if (append) elements.poemList.insertAdjacentHTML("beforeend", html);
-  else elements.poemList.innerHTML = html;
+function quoteTemplate(poem, line, index) {
+  return `
+    <article class="collection-card quote-card">
+      <span class="collection-index">${String(index + 1).padStart(2, "0")}</span>
+      <blockquote>${escapeHtml(line)}</blockquote>
+      <p>—— ${escapeHtml(poem.author)}《${escapeHtml(poem.title)}》</p>
+      <button data-open-poem="${escapeHtml(poem.title)}">读全诗</button>
+    </article>`;
+}
+
+function authorTemplate(author) {
+  return `
+    <button class="collection-card author-card" data-open-poem="${escapeHtml(author.name)}">
+      <span class="author-avatar">${escapeHtml(author.name.slice(0, 1))}</span>
+      <span><strong>${escapeHtml(author.name)}</strong><small>${escapeHtml(author.dynasty)}</small></span>
+      <span>${Number(author.count).toLocaleString("zh-CN")} 篇</span>
+    </button>`;
+}
+
+function bookTemplate(source) {
+  const status = source.status === "active" ? "持续收录" : "暂缓收录";
+  return `
+    <article class="collection-card book-card">
+      <span class="book-mark">籍</span>
+      <div>
+        <h3>${escapeHtml(source.label)}</h3>
+        <p>${status} · 已导入 ${Number(source.imported_count || 0).toLocaleString("zh-CN")} 篇</p>
+      </div>
+    </article>`;
+}
+
+function glossaryEntries() {
+  return state.poems.flatMap((poem) => {
+    if (!poem.note) return [];
+    return poem.note
+      .split(/[。；]/)
+      .map((item) => item.trim())
+      .filter((item) => item.includes("："))
+      .map((item) => {
+        const [term, ...description] = item.split("：");
+        return { term, description: description.join("："), poem };
+      });
+  });
+}
+
+function glossaryTemplate(entry) {
+  return `
+    <article class="collection-card glossary-card">
+      <div><strong>${escapeHtml(entry.term)}</strong><span>${escapeHtml(entry.poem.dynasty)}</span></div>
+      <p>${escapeHtml(entry.description)}</p>
+      <button data-open-poem="${escapeHtml(entry.poem.title)}">出自《${escapeHtml(entry.poem.title)}》</button>
+    </article>`;
+}
+
+function renderContent() {
   const total = Number(state.stats?.poemCount || state.poems.length);
-  const visibleCount = elements.poemList.querySelectorAll(".poem-card").length;
-  elements.resultCount.textContent = state.query || state.dynasty !== "全部" || state.genre !== "全部"
-    ? `当前 ${visibleCount} 篇`
-    : `已收录 ${total.toLocaleString("zh-CN")} 篇`;
-  elements.emptyState.hidden = append || state.poems.length > 0;
-  elements.poemList.hidden = !append && state.poems.length === 0;
-  elements.loadMore.hidden = state.poems.length < 12;
+  const filtered = state.query || state.dynasty !== "全部" || state.genre !== "全部";
+  let html = "";
+  let count = 0;
+  let unit = "篇";
+
+  elements.filterPanel.hidden = ["古籍", "作者", "字词"].includes(state.section);
+
+  if (state.section === "名句") {
+    const entries = state.poems
+      .map((poem) => ({ poem, line: poem.excerpt.find(Boolean) }))
+      .filter((entry) => entry.line);
+    html = entries.map((entry, index) => quoteTemplate(entry.poem, entry.line, index)).join("");
+    count = entries.length;
+    unit = "句";
+  } else if (state.section === "古籍") {
+    const sources = state.stats?.sources || [];
+    html = sources.map(bookTemplate).join("");
+    count = sources.length;
+    unit = "部";
+  } else if (state.section === "作者") {
+    html = state.authors.map(authorTemplate).join("");
+    count = state.authors.length;
+    unit = "位";
+  } else if (state.section === "字词") {
+    const entries = glossaryEntries();
+    html = entries.map(glossaryTemplate).join("");
+    count = entries.length;
+    unit = "条";
+  } else {
+    const poems = state.section === "推荐" ? state.poems.slice(0, 6) : state.poems;
+    html = poems.map(poemTemplate).join("");
+    count = poems.length;
+  }
+
+  elements.poemList.innerHTML = html;
+  elements.poemList.classList.toggle("is-collection", !["推荐", "诗文"].includes(state.section));
+  elements.resultCount.textContent = state.section === "诗文" && !filtered
+    ? `已收录 ${total.toLocaleString("zh-CN")} 篇`
+    : `当前 ${count.toLocaleString("zh-CN")} ${unit}`;
+  elements.emptyState.hidden = count > 0;
+  elements.poemList.hidden = count === 0;
+  elements.loadMore.hidden = !["诗文", "名句"].includes(state.section) || !state.hasMore;
 }
 
 function renderAuthors() {
@@ -160,11 +248,12 @@ async function loadContent({ scroll = false, append = false } = {}) {
     const response = await fetch(`/api/content?${params}`);
     if (!response.ok) throw new Error("request failed");
     const data = await response.json();
-    state.poems = data.poems;
+    state.hasMore = data.poems.length === 12;
+    state.poems = append ? [...state.poems, ...data.poems] : data.poems;
     state.authors = data.authors;
     state.quotes = data.quotes;
     state.stats = data.stats;
-    renderPoems({ append });
+    renderContent();
     renderAuthors();
     renderQuote();
     renderStats();
@@ -179,9 +268,14 @@ async function loadContent({ scroll = false, append = false } = {}) {
 }
 
 function applyQuery(query) {
+  state.section = "诗文";
   state.query = query.trim();
   state.page = 1;
   elements.searchInput.value = state.query;
+  document.querySelectorAll("[data-section]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.section === state.section);
+  });
+  updateSectionCopy();
   loadContent({ scroll: true });
 }
 
@@ -199,7 +293,26 @@ document.addEventListener("click", async (event) => {
       button.classList.toggle("is-active", button === navButton);
     });
     updateSectionCopy();
+    renderContent();
     document.querySelector(".page-shell").scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+
+  const sectionLink = event.target.closest("[data-section-link]");
+  if (sectionLink) {
+    state.section = sectionLink.dataset.sectionLink;
+    document.querySelectorAll("[data-section]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.section === state.section);
+    });
+    updateSectionCopy();
+    renderContent();
+    document.querySelector(".page-shell").scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+
+  const openPoemButton = event.target.closest("[data-open-poem]");
+  if (openPoemButton) {
+    applyQuery(openPoemButton.dataset.openPoem);
     return;
   }
 

@@ -67,6 +67,32 @@ test('overview groups filtered items once using the snapshot generation time', a
   assert.deepEqual(model.stats, { completed: 1, focus: 1, blocked: 0, overdue: 0, decisions: 1 })
 })
 
+test('execution board defaults can separate pending, running, blocked and completed work', async () => {
+  const { buildExecutionBoardModel, planningExecutionStage } = await loadPlanningUi()
+  const snapshot = {
+    directions: [{ id: 'direction:a' }],
+    projects: [{ id: 'profile:a', projectId: 'project:a', directionId: 'direction:a', name: 'Project A' }],
+    milestones: [
+      { id: 'milestone:pending', directionId: 'direction:a', projectId: 'project:a', title: 'Pending milestone', status: 'planned', priority: 'normal' },
+      { id: 'milestone:running', directionId: 'direction:a', projectId: 'project:a', title: 'Running milestone', status: 'active', priority: 'high' },
+      { id: 'milestone:done', directionId: 'direction:a', projectId: 'project:a', title: 'Done milestone', status: 'completed', priority: 'normal' },
+    ],
+    tasks: [
+      { id: 'task:blocked', milestoneId: 'milestone:running', title: 'Blocked task', status: 'blocked', priority: 'critical' },
+      { id: 'task:doing', milestoneId: 'milestone:running', title: 'Doing task', status: 'doing', priority: 'normal' },
+    ],
+  }
+
+  const all = buildExecutionBoardModel(snapshot, { directionId: 'direction:a' })
+  assert.deepEqual(all.counts, { all: 5, pending: 1, running: 2, blocked: 1, completed: 1, other: 0 })
+  assert.deepEqual(all.groups.running.map((item) => item.id), ['milestone:running', 'task:doing'])
+  assert.equal(planningExecutionStage('planned'), 'pending')
+  assert.equal(planningExecutionStage('done'), 'completed')
+
+  const filtered = buildExecutionBoardModel(snapshot, { stage: 'running', entityType: 'task', query: 'doing' })
+  assert.deepEqual(filtered.groups.running.map((item) => item.id), ['task:doing'])
+})
+
 test('editor helpers preselect hierarchy and emit only supported API fields', async () => {
   const {
     buildInitialPlanningForm,
@@ -141,9 +167,11 @@ test('overview and editor sources retain accessibility and workflow contracts', 
   ])
 
   assert.match(overview, /<StatusPill/)
-  assert.match(overview, /完成任务或补录历史后，这里会形成时间线。/)
-  assert.match(overview, /还没有当前焦点；开始一个计划，或添加进行中的任务。/)
-  assert.match(overview, /还没有未来计划；创建里程碑来明确下一步。/)
+  assert.match(overview, /执行状态筛选/)
+  assert.match(overview, /按项目筛选/)
+  assert.match(overview, /按事项类型筛选/)
+  assert.match(overview, /开始执行/)
+  assert.match(overview, /标记完成/)
   assert.match(editor, /aria-label="关闭编辑器"/)
   assert.match(editor, /openTaskIds/)
   assert.match(editor, /onOpenTree/)
@@ -159,6 +187,8 @@ test('overview and editor sources retain accessibility and workflow contracts', 
   assert.doesNotMatch(center, /dependency[^\n]*快速添加/)
   assert.match(center, /\{PLANNING_TABS\.map\(\(tab\) => \(/)
   assert.match(center, /hidden=\{activeTab !== tab\.id\}/)
+  assert.match(center, /<ModelDispatchConsole embedded \/>/)
+  assert.match(center, /changeStatus/)
 
   const treeHandler = center.match(/onOpenTree=\{\(\) => \{([\s\S]*?)\}\}/)?.[1] || ''
   assert.match(treeHandler, /setActiveTab\('tree'\)/)

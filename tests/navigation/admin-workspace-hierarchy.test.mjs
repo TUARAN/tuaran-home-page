@@ -11,16 +11,16 @@ const automationWorkspace = await readFile(
   'utf8'
 )
 
-test('AI planning belongs to planning center instead of project workspace', async () => {
+test('AI planning is embedded in planning center instead of a separate project workspace entry', async () => {
   const planningCenter = await readFile(
     new URL('../../app/(admin)/admin/planning/PlanningCenter.jsx', import.meta.url),
     'utf8'
   )
 
   assert.match(projectWorkspace, /href: '\/admin\/planning', title: '规划中心'/)
-  assert.match(projectWorkspace, /href: '\/admin\/model-dispatch'/)
-  assert.match(planningCenter, /AI 参与规划与分派/)
-  assert.match(planningCenter, /href="\/admin\/model-dispatch"/)
+  assert.doesNotMatch(projectWorkspace, /href: '\/admin\/model-dispatch'/)
+  assert.match(planningCenter, /ModelDispatchConsole/)
+  assert.match(planningCenter, /<ModelDispatchConsole embedded \/>/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/ops'/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/deepseek-tasks'/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/ai-workspace'/)

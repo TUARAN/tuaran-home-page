@@ -9,8 +9,9 @@ import PlanningImportPanel from './PlanningImportPanel'
 import PlanningRoadmap from './PlanningRoadmap'
 import PlanningTree from './PlanningTree'
 import TriStateOverview from './TriStateOverview'
+import ModelDispatchConsole from '../model-dispatch/ModelDispatchConsole'
 import usePlanningModal from './planningModalFocus'
-import { PLANNING_TABS, PLANNING_WINDOWS, planningRequest } from './planningUi'
+import { PLANNING_TABS, planningRequest } from './planningUi'
 
 const EMPTY_SNAPSHOT = {
   directions: [], projects: [], projectCatalog: [], milestones: [], tasks: [],
@@ -60,9 +61,8 @@ function QuickAddChooser({ backgroundRef, onChoose, onClose }) {
   )
 }
 
-export default function PlanningCenter() {
-  const [activeTab, setActiveTab] = useState('overview')
-  const [window, setWindow] = useState('month')
+export default function PlanningCenter({ initialTab = 'overview' }) {
+  const [activeTab, setActiveTab] = useState(() => PLANNING_TABS.some((item) => item.id === initialTab) ? initialTab : 'overview')
   const [directionId, setDirectionId] = useState('')
   const [snapshot, setSnapshot] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -71,13 +71,11 @@ export default function PlanningCenter() {
   const [importPanel, setImportPanel] = useState(false)
   const backgroundRef = useRef(null)
 
-  const safeWindow = PLANNING_WINDOWS.some((item) => item.id === window) ? window : 'month'
-
   const reload = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const nextSnapshot = await planningRequest(`/api/admin/planning?window=${encodeURIComponent(safeWindow)}`, {
+      const nextSnapshot = await planningRequest('/api/admin/planning?window=month', {
         cache: 'no-store',
       })
       setSnapshot(nextSnapshot)
@@ -86,7 +84,7 @@ export default function PlanningCenter() {
     } finally {
       setLoading(false)
     }
-  }, [safeWindow])
+  }, [])
 
   const mutate = useCallback(async (path, options) => {
     const result = await planningRequest(path, options)
@@ -176,10 +174,26 @@ export default function PlanningCenter() {
     }
   }, [mutate])
 
+  const changeStatus = useCallback(async (item, status) => {
+    const now = Date.now()
+    const changes = { status }
+    if ((status === 'active' || status === 'doing') && !item.startAt) changes.startAt = now
+    if (status === 'completed' || status === 'done') changes.completedAt = now
+    if (item.entityType === 'task' && item.status === 'blocked' && (status === 'doing' || status === 'done')) changes.blockedReason = ''
+    try {
+      await mutate('/api/admin/planning', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity: item.entityType, id: item.id, changes }),
+      })
+    } catch (statusError) {
+      setError(statusError)
+    }
+  }, [mutate])
+
   const changeDirection = useCallback((nextDirectionId) => {
     setDirectionId(nextDirectionId)
-    void reload()
-  }, [reload])
+  }, [])
 
   return (
     <>
@@ -199,16 +213,6 @@ export default function PlanningCenter() {
       )}
         >
           <div className="flex flex-col gap-4">
-        <section className="flex flex-col gap-3 rounded-xl border bg-[var(--admin-surface-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="ai-planning-entry-title">
-          <div>
-            <h2 id="ai-planning-entry-title" className="m-0 text-sm font-semibold">AI 参与规划与分派</h2>
-            <p className="mb-0 mt-1 text-xs leading-5 text-[var(--admin-muted)]">大型任务、小型任务或临时问题，都可以交给 AI 协助拆解、选择模型并生成 Agent 任务卡。</p>
-          </div>
-          <AdminButton href="/admin/model-dispatch" className="shrink-0">
-            开始 AI 规划
-          </AdminButton>
-        </section>
-
         <div role="tablist" aria-label="规划中心视图" className="flex flex-wrap gap-2">
           {PLANNING_TABS.map((tab) => (
             <button
@@ -249,13 +253,10 @@ export default function PlanningCenter() {
               <TriStateOverview
                 snapshot={visibleSnapshot}
                 directionId={directionId}
-                window={safeWindow}
                 onDirectionChange={changeDirection}
-                onWindowChange={(nextWindow) => {
-                  if (PLANNING_WINDOWS.some((item) => item.id === nextWindow)) setWindow(nextWindow)
-                }}
                 onEdit={openEdit}
                 onCreate={openCreate}
+                onStatusChange={changeStatus}
               />
             ) : null}
             {tab.id === 'roadmap' && snapshot ? <PlanningRoadmap snapshot={visibleSnapshot} onEdit={openEdit} /> : null}
@@ -270,6 +271,7 @@ export default function PlanningCenter() {
               />
             ) : null}
             {tab.id === 'history' && snapshot ? <PlanningHistory snapshot={visibleSnapshot} /> : null}
+            {tab.id === 'dispatch' ? <ModelDispatchConsole embedded /> : null}
           </div>
         ))}
           </div>

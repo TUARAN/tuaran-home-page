@@ -21,7 +21,6 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/deepseek-tasks').map((item) => item.label), ['自动化', '模型服务'])
   assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['自动化', '名言生成'])
   assert.deepEqual(resolveAdminTrail('/admin/engagement-bots').map((item) => item.label), ['自动化', '路过互动'])
-  assert.deepEqual(resolveAdminTrail('/admin/model-dispatch').map((item) => item.label), ['项目与工程', '规划分派'])
   assert.deepEqual(resolveAdminTrail('/admin/points').map((item) => item.label), ['用户与权限', '燃币与权益'])
   assert.deepEqual(resolveAdminTrail('/admin/access/grants').map((item) => item.label), ['用户与权限', '授权管理'])
   assert.deepEqual(resolveAdminTrail('/admin/share').map((item) => item.label), ['私密数据', '加密分享'])
@@ -42,13 +41,13 @@ test('project navigation titles use four Chinese characters', () => {
   const projects = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/projects')
   const titles = projects.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['规划中心', '项目总览', '规划分派', '开发发布', '集成密钥', '站点架构', '上下文库'])
+  assert.deepEqual(titles, ['规划中心', '项目总览', '开发发布', '集成密钥', '站点架构', '上下文库'])
   assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 
 test('previously hidden admin routes have explicit child entries', () => {
   const hrefs = new Set(ADMIN_NAV_CHILD_ITEMS.map((item) => item.matchPath || item.href))
-  for (const href of ['/admin/content-index', '/admin/research-style', '/admin/model-dispatch', '/admin/share', '/admin/wallpapers']) {
+  for (const href of ['/admin/content-index', '/admin/research-style', '/admin/share', '/admin/wallpapers']) {
     assert.ok(hrefs.has(href), `${href} should be present in the admin navigation registry`)
   }
 })

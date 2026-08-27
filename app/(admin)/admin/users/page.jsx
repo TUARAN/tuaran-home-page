@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import UsersConsole from './UsersConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '账号与身份',
   description: '登录用户目录 / 角色、游客身份与 MCP 授权。',

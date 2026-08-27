@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import SettingsConsole from './SettingsConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '站点设置',
   description: '管理站点级功能开关与第三方脚本。',

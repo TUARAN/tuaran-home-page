@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ProjectWorkspace from './ProjectWorkspace'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '项目与工程',
   description: '项目治理、本站开发与架构管理。',

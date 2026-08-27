@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import SystemOperations from './SystemOperations'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '站点运维',
   description: '数据健康与自动化运行管理。',

@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import InformationConsole from './InformationConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '信息金库',
   description: '端到端加密保存账号、密保与其他敏感信息。',

@@ -19,7 +19,7 @@
     "pages:build": "npm run pages:build:admin",
     "pages:build:all": "npx @cloudflare/next-on-pages@1.13.16 && node scripts/patch-pages-routes.cjs",
     "pages:build:admin": "node scripts/build-admin-pages.cjs && node scripts/verify-admin-pages-build.cjs && node scripts/patch-pages-routes.cjs",
-    "pages:build:public": "node scripts/build-public-pages.cjs",
+    "pages:build:public": "node scripts/build-public-pages.cjs && node scripts/verify-public-pages-build.cjs && node scripts/patch-pages-routes.cjs",
     "lint": "node scripts/check-tailwind-opacity-classes.mjs && next lint",
     "style:check": "node scripts/check-tailwind-opacity-classes.mjs",
     "research:style-audit": "node scripts/audit-research-style.mjs",

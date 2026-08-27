@@ -28,9 +28,34 @@ Admin build watch path policy:
 
 Current commands:
 
-- `npm run pages:build` / `npm run pages:build:admin`: admin-only build, keeps `app/(admin)`, admin/auth APIs, and `/api/me`, `/api/nav-config`, `/api/notifications`, `/api/private-records`, `/api/site-settings`. It also verifies required runtime routes, checks client API references, rejects leaked public routes, and enforces the 3 MiB Worker budget.
+- `npm run pages:build` / `npm run pages:build:admin`: admin-only build, keeps `app/(admin)`, admin/auth APIs, and `/api/me`, `/api/nav-config`, `/api/notifications`, `/api/private-records`, `/api/site-settings`. Static-safe Admin pages are prerendered; Middleware verifies the owner session before returning `/admin`, nested Admin routes, or direct Admin RSC payloads. APIs retain their own owner checks. The verifier rejects unexpected dynamic Admin pages and enforces a 2.5 MiB repository budget below Cloudflare's 3 MiB hard limit.
 - `npm run pages:build:all`: full build for local verification or emergency use.
-- `npm run pages:build:public`: public-only build, excludes admin routes.
+- `npm run pages:build:public`: public-only build, excludes admin routes, reports the largest Worker modules, and enforces a 2.75 MiB repository budget.
+
+### 2026-08-27 Admin page staticization
+
+The previous Admin build generated one Edge function for every Admin page because each page declared `runtime = 'edge'` and `force-dynamic`, while `AdminPageGate` read `headers()` and `cookies()` during page rendering. That left only about 0.035 MiB below the Cloudflare Free limit.
+
+Authorization now runs at two independent boundaries:
+
+1. `middleware.js` verifies the shared `.2aran.com` session before returning Admin HTML or RSC content. Anonymous and non-owner requests are redirected to the canonical login flow with the full Admin return URL.
+2. Every protected API continues to verify the owner independently. Page authorization is never treated as API authorization.
+
+Pages that only render a client workspace are prerendered and remain behind Middleware. Five routes still need Edge rendering because they consume request-time search or dynamic path parameters:
+
+- `/admin/article-distribution`
+- `/admin/articles/[id]/edit`
+- `/admin/planning`
+- `/admin/soft-sticker`
+- `/admin/stock-analysis/[slug]`
+
+Measured Admin result after the change:
+
+- Edge routes: 114 → 70
+- Worker gzip: 2.965 MiB → 1.843 MiB
+- Cloudflare Free-limit headroom: 0.035 MiB → 1.157 MiB
+
+Both builds print the ten largest gzip contributors so future growth has an attributable owner instead of appearing only as a deployment failure.
 
 Cutover checklist:
 

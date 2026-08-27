@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import LongCompassAdminTabs from './LongCompassAdminTabs'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '长期罗盘',
   description: '浏览器本地解密的强私密个人内容库。',

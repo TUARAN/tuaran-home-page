@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ShortLinksConsole from './ShortLinksConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '短链管理',
   description: '管理站内分享短链与原始 URL 映射。',

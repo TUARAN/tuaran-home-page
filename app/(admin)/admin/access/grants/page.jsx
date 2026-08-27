@@ -1,9 +1,6 @@
 import AdminPageGate from '../../../components/AdminPageGate'
 import UsersConsole from '../../users/UsersConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '授权管理',
   description: '管理用户与 MCP OAuth 客户端之间的授权关系。',

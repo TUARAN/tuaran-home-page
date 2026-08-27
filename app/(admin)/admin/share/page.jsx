@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ShareAdminClient from './ShareConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '加密分享',
   description: '后台明文管理，公开链接密码保护分享。',

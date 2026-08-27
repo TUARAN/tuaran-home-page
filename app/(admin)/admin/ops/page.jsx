@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import OpsConsoleClient from './OpsConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '自动化控制台',
   description: '站内自动化控制台，仅站长本人可访问。',

@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import NsfwConsole from './NsfwConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '私密媒体',
   description: '仅站长可访问的私有 R2 媒体管理台。',

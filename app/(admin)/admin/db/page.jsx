@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import DbAdminClient from './DbConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '数据库管理',
   description: 'D1 状态 / 表统计 / 数据量。',

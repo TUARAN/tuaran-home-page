@@ -2,7 +2,6 @@ import AdminPageGate from '../../components/AdminPageGate'
 import ArticleDistributionClient from './ArticleDistributionClient'
 
 export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '文章一键分发',

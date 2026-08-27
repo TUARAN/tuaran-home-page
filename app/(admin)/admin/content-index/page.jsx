@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ContentIndexConsole from './ContentIndexConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '内容索引管理台',
   description: 'D1 内容索引：同步构建期注册表 + 手工登记新内容 metadata。',

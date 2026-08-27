@@ -1,0 +1,11 @@
+{
+  "name": "workbuddy-resource-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm dlx wrangler@4.126.0 dev --port 8788",
+    "deploy": "pnpm dlx wrangler@4.126.0 deploy",
+    "test": "node --experimental-sqlite --test tests/*.test.mjs",
+    "types": "pnpm dlx wrangler@4.126.0 types"
+  }
+}

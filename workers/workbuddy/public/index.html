@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#13150f" />
+    <meta name="description" content="WorkBuddy 中文资源库：案例、教程、Prompt 模板与自动化实战，使用燃币解锁后永久阅读和下载。" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>WorkBuddy 资源库｜2aran</title>
+  </head>
+  <body>
+    <div class="page-grain" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="WorkBuddy 资源库首页">
+        <span class="brand-mark"><span></span><span></span><span></span></span>
+        <span>WorkBuddy</span>
+        <small>资源库</small>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <a href="#resources">全部资源</a>
+        <a href="#how-it-works">如何使用</a>
+        <a href="https://2aran.com/ranbi">燃币说明</a>
+        <a href="https://2aran.com/account" target="_blank" rel="noopener">登录 / 账号</a>
+      </nav>
+      <button class="balance-pill" id="balanceButton" type="button" aria-label="查看燃币余额">
+        <span class="fire-dot">🔥</span>
+        <span id="balanceText">读取中</span>
+      </button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span></span> WORK SMARTER WITH WORKBUDDY</div>
+          <h1>把好用的方法，<br /><em>装进你的工作流。</em></h1>
+          <p>案例、教程、Prompt 模板和自动化实战集中整理。找到需要的资源，使用少量燃币解锁，之后可以反复阅读和下载。</p>
+          <div class="hero-actions">
+            <a class="primary-button" href="#resources">开始找资源 <span>↘</span></a>
+            <a class="text-button" href="#how-it-works">第一次来？看看怎么用</a>
+          </div>
+          <div class="trust-row">
+            <span><b data-guest-seed>50</b> 游客初始燃币</span>
+            <i></i>
+            <span><b>永久</b> 解锁权益</span>
+            <i></i>
+            <span><b>持续</b> 补充更新</span>
+          </div>
+        </div>
+
+        <div class="hero-art" aria-hidden="true">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="folder-back"></div>
+          <div class="folder-card card-a"><span>01</span><b>PROMPT<br />PLAYBOOK</b></div>
+          <div class="folder-card card-b"><span>02</span><b>AUTOMATION<br />CASES</b></div>
+          <div class="folder-front">
+            <div class="folder-label"><small>THE WORK KIT</small><strong>WB.</strong></div>
+            <div class="folder-sticker">READY<br />TO USE</div>
+          </div>
+          <div class="spark spark-a">✦</div>
+          <div class="spark spark-b">✦</div>
+        </div>
+      </section>
+
+      <section class="resource-section" id="resources">
+        <div class="section-heading">
+          <div>
+            <span class="section-index">01 / RESOURCE LIBRARY</span>
+            <h2>挑一个，今天就用起来</h2>
+          </div>
+          <p>资源正在持续整理。真实文件导入前会标记为“待导入”，不消耗燃币。</p>
+        </div>
+
+        <div class="search-panel">
+          <label class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="搜索案例、教程、Prompt 或知识库……" autocomplete="off" />
+            <kbd>⌘ K</kbd>
+          </label>
+          <div class="filter-list" id="categoryFilters" aria-label="资源分类"></div>
+        </div>
+
+        <div class="result-meta">
+          <span id="resultCount">正在读取资源…</span>
+          <button class="sort-button" type="button" id="featuredOnly">精选优先 <span>↓</span></button>
+        </div>
+
+        <div class="resource-grid" id="resourceGrid" aria-live="polite">
+          <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+        </div>
+        <div class="empty-state" id="emptyState" hidden>
+          <span>⌕</span><h3>没有找到匹配资源</h3><p>换个关键词，或者看看其他分类。</p>
+        </div>
+        <button class="load-more" id="loadMore" type="button" hidden>加载更多资源 ↓</button>
+      </section>
+
+      <section class="how-section" id="how-it-works">
+        <div class="how-title">
+          <span class="section-index">02 / HOW IT WORKS</span>
+          <h2>不用注册，也能先看看</h2>
+          <p>当前没有等级门槛。游客第一次访问会获得 <span data-guest-seed>50</span> 燃币，可以直接解锁资源；登录主站账号后，解锁权益可绑定账号保存，余额按主站规则结算。</p>
+        </div>
+        <div class="steps">
+          <article><span>01</span><div class="step-icon">⌕</div><h3>找到资源</h3><p>按分类浏览，或直接搜索你正在处理的任务。</p></article>
+          <article><span>02</span><div class="step-icon">🔥</div><h3>燃币解锁</h3><p>确认价格后解锁一次，同一资源不会重复扣除。</p></article>
+          <article><span>03</span><div class="step-icon">↧</div><h3>阅读与下载</h3><p>文件到位后可以在线阅读，也可以保存到本地反复使用。</p></article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand footer-brand" href="/"><span class="brand-mark"><span></span><span></span><span></span></span><span>WorkBuddy</span></a>
+      <p>实用资源，整理给真正要把工作做完的人。</p>
+      <div><a href="https://2aran.com">2aran.com</a><a href="https://2aran.com/ranbi">燃币说明</a></div>
+    </footer>
+
+    <dialog class="resource-dialog" id="resourceDialog">
+      <button class="dialog-close" id="dialogClose" type="button" aria-label="关闭">×</button>
+      <div id="dialogContent"></div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

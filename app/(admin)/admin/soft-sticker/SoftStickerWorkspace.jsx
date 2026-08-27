@@ -6,6 +6,11 @@ import { IconBarbell, IconCompass, IconFlower, IconHeart, IconLock } from '@tabl
 import { decryptPayload, fetchEncryptedRecords, migrate } from '../../../../lib/longCompass'
 import { decryptPrivateDocumentContent, normalizePrivateMarkdown } from '../../../../lib/privateDocuments'
 import { renderMarkdown } from '../../../../lib/research/markdown'
+import {
+  createSoftStickerUnlockError,
+  getSoftStickerUnlockErrorMessage,
+  SOFT_STICKER_UNLOCK_ERRORS,
+} from '../../../../lib/softStickerAccess'
 import { AdminPage, Section } from '../../components/ui'
 import StrawberryProfile from '../person-strawberry/StrawberryProfile'
 import SelfRegulationClient from '../self-regulation/SelfRegulationClient'
@@ -59,9 +64,22 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
     setBusy(true)
     setError('')
     try {
-      if (!SOFT_STICKER_ENVELOPE) throw new Error('体验记录密文尚未写入。')
-      const plain = await decryptPayload(SOFT_STICKER_ENVELOPE, sharedPassword)
-      if (plain?.schemaVersion !== 1 || !Array.isArray(plain.records)) throw new Error('INVALID_DIARY_SCHEMA')
+      if (!SOFT_STICKER_ENVELOPE) {
+        throw createSoftStickerUnlockError(SOFT_STICKER_UNLOCK_ERRORS.recordsSchema)
+      }
+
+      let plain
+      try {
+        plain = await decryptPayload(SOFT_STICKER_ENVELOPE, sharedPassword)
+      } catch (recordsDecryptError) {
+        throw createSoftStickerUnlockError(
+          SOFT_STICKER_UNLOCK_ERRORS.records,
+          recordsDecryptError
+        )
+      }
+      if (plain?.schemaVersion !== 1 || !Array.isArray(plain.records)) {
+        throw createSoftStickerUnlockError(SOFT_STICKER_UNLOCK_ERRORS.recordsSchema)
+      }
 
       let compass = { encryptedItems: [], records: [], error: '' }
       let compassResult = null
@@ -82,8 +100,11 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
             records: compassRecords,
             error: '',
           }
-        } catch {
-          throw new Error('统一口令与长期罗盘密文不匹配。')
+        } catch (compassDecryptError) {
+          throw createSoftStickerUnlockError(
+            SOFT_STICKER_UNLOCK_ERRORS.compass,
+            compassDecryptError
+          )
         }
       } else if (compassResult) {
         const messages = {
@@ -121,7 +142,10 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
         }
       } catch (memoirRequestError) {
         if (memoirRequestError?.message === 'PRIVATE_DOCUMENT_DECRYPT_FAILED') {
-          throw new Error('统一口令与回忆录密文不匹配。')
+          throw createSoftStickerUnlockError(
+            SOFT_STICKER_UNLOCK_ERRORS.memoir,
+            memoirRequestError
+          )
         }
         memoirError = String(memoirRequestError?.message || memoirRequestError)
       }
@@ -129,12 +153,7 @@ export default function SoftStickerWorkspace({ initialTab = 'records' }) {
       setUnlocked({ records: plain.records, memoir, memoirError, compass })
       setPassword('')
     } catch (unlockError) {
-      setError(
-        unlockError?.message === '统一口令与回忆录密文不匹配。' ||
-        unlockError?.message === '统一口令与长期罗盘密文不匹配。'
-          ? unlockError.message
-          : '口令错误，无法解锁软贴空间。'
-      )
+      setError(getSoftStickerUnlockErrorMessage(unlockError))
     } finally {
       setBusy(false)
     }

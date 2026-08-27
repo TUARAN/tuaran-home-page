@@ -49,6 +49,7 @@
     "autopilot:fix": "node scripts/scan-fix-pr.mjs",
     "autopilot:handoff": "node scripts/scan-handoff.mjs",
     "snapshot-memory": "node scripts/snapshot-memory.mjs",
+    "soft-sticker:rekey": "node --no-warnings scripts/rekey-soft-sticker.mjs",
     "mcp:stdio": "node tools/mcp-stdio-demo/server.mjs",
     "mcp:stdio:check": "node scripts/test-mcp-stdio-demo.mjs",
     "x-intelligence:check": "node scripts/test-x-platform-intelligence-model.mjs && node scripts/test-x-platform-intelligence-filters.mjs && node scripts/test-x-platform-intelligence-selectors.mjs",
@@ -86,7 +87,8 @@
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.1.3",
     "postcss": "8.5.16",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "wrangler": "4.105.0"
   },
   "overrides": {
     "postcss": "8.5.16",

@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import SiteDevManagerClient from './SiteDevManagerClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '本站开发管理',
   description: 'GitHub / npm 项目进度、Issue 待办与开源发布状态管理。',

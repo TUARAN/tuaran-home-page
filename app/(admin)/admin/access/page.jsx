@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import AccessWorkspace from './AccessWorkspace'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '用户与权限',
   description: '账号身份、授权关系、燃币权益与菜单可见性。',

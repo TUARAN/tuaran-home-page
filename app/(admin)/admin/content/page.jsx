@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ContentCenter from './ContentCenter'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '内容',
   description: '内容创作、索引发布、规范与运营反馈。',

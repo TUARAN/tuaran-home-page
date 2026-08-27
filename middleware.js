@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 
 import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed } from './lib/adminRoutes'
+import { getUserFromRequest } from './lib/edgeSession'
 import { LOCALE_COOKIE, localeFromAcceptLanguage, localeFromCountry } from './lib/i18n'
 import { getLegacyPathRedirect, shouldNoindexPath } from './lib/indexingPolicy'
+import { isAdminLocalPreviewEnabled } from './lib/adminLocalPreview'
+import { isOwnerUser } from './lib/ownerAuth'
 
 /**
  * 首次访问按 IP 国家码（Cloudflare 的 cf-ipcountry）决定默认语言：
@@ -28,7 +31,27 @@ const OPS_LEGACY_HOST = 'ops.2aran.com'
 const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
 const ADS_TXT = 'google.com, pub-7037125126940820, DIRECT, f08c47fec0942fa0\n'
 
-export function middleware(request) {
+function adminLoginUrl(request) {
+  const returnTo = `https://${ADMIN_HOST}${request.nextUrl.pathname}${request.nextUrl.search}`
+  const url = new URL('/login', `https://${CANONICAL_HOST}`)
+  url.searchParams.set('returnTo', returnTo)
+  return url
+}
+
+function isAdminPageRequest(pathname) {
+  return pathname === '/admin'
+    || pathname === '/admin.rsc'
+    || pathname.startsWith('/admin/')
+}
+
+async function requireAdminPageOwner(request) {
+  if (isAdminLocalPreviewEnabled()) return null
+  const user = await getUserFromRequest(request)
+  if (isOwnerUser(user)) return null
+  return NextResponse.redirect(adminLoginUrl(request), 307)
+}
+
+export async function middleware(request) {
   const { pathname } = request.nextUrl
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
 
@@ -66,6 +89,17 @@ export function middleware(request) {
       const url = new URL(pathname + request.nextUrl.search, `https://${CANONICAL_HOST}`)
       return NextResponse.redirect(url)
     }
+    if (isAdminPageRequest(pathname)) {
+      const rejection = await requireAdminPageOwner(request)
+      if (rejection) return rejection
+    }
+  }
+
+  // Cloudflare preview deployments use a *.pages.dev host. Keep the same
+  // owner boundary there; only explicit local preview mode may bypass it.
+  if (host !== CANONICAL_HOST && host !== ADMIN_HOST && isAdminPageRequest(pathname)) {
+    const rejection = await requireAdminPageOwner(request)
+    if (rejection) return rejection
   }
 
   if (host === OPS_LEGACY_HOST) {
@@ -73,7 +107,7 @@ export function middleware(request) {
     return NextResponse.redirect(url, 301)
   }
 
-  if (host === CANONICAL_HOST && (pathname === '/admin' || pathname.startsWith('/admin/'))) {
+  if (host === CANONICAL_HOST && isAdminPageRequest(pathname)) {
     const url = new URL(pathname + request.nextUrl.search, `https://${ADMIN_HOST}`)
     return NextResponse.redirect(url, 302)
   }

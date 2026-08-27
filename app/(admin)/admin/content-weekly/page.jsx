@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ContentWeeklyClient from './ContentWeeklyClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '阅读分析',
   description: '多维阅读分析：今日排行、读者与游客、来源归因、内容表现及 7/30/90 天趋势，仅站长本人可访问。',

@@ -2,7 +2,6 @@ import AdminPageGate from '../../components/AdminPageGate'
 import PlanningCenter from './PlanningCenter'
 
 export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '规划中心',

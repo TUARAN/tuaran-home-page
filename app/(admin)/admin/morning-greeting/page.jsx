@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import MorningGreetingClient from './MorningGreetingClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: 'X 发布任务',
   description: '管理全自动发布的每日问候、社区内容和美区英文帖。',

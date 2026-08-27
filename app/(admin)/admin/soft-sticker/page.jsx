@@ -2,7 +2,6 @@ import AdminPageGate from '../../components/AdminPageGate'
 import SoftStickerWorkspace from './SoftStickerWorkspace'
 
 export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '软贴空间',

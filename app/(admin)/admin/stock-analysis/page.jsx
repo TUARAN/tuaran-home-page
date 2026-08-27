@@ -2,9 +2,6 @@ import AdminPageGate from '../../components/AdminPageGate'
 import SnapshotIndexClient from './SnapshotIndexClient'
 import { getAllSnapshotsSummary, getAllWeeklyAdvice } from './data'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '交易分析快照库 · 多标的 · 分钟级',
   description:

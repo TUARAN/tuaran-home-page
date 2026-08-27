@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import RssFeedConsole from './RssFeedConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: 'RSS 订阅管理台',
   description: '维护资源页公开展示的 RSS 订阅墙，并查看本站 RSS 请求记录。',

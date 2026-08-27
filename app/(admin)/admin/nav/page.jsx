@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import NavAdminClient from './NavConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '菜单可见性',
   description: '设置每个菜单项对谁可见。',

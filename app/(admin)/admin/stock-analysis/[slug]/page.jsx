@@ -8,7 +8,6 @@ import {
 } from '../data'
 
 export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
 export const metadata = {
   title: '交易分析快照',
   description: '仅站长可访问的交易分析快照。',

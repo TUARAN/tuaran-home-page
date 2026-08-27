@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ProjectPortfolioConsole from './PortfolioConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: 'AI 项目管理台',
   description: '项目治理 / 整合路线图。',

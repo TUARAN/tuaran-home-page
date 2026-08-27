@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ReverseLabClient from './ReverseLabClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '逆向测试',
   description: '安全、可复盘的逆向学习路线、基础实验与知识测试。',

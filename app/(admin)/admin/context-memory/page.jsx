@@ -2,9 +2,6 @@ import AdminPageGate from '../../components/AdminPageGate'
 import MemoryVault from '../../../(site)/context-memory/MemoryVault'
 import { AdminPage } from '../../components/ui'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '上下文库',
   description: 'Claude Code / 仓库 ai-context 的加密记忆快照与版本时间线。',

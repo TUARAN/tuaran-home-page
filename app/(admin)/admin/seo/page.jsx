@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import SeoManagementConsole from './SeoManagementConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: 'SEO 管理',
   description: '站点 SEO 策略、页面覆盖、Sitemap 与演进治理控制台。',

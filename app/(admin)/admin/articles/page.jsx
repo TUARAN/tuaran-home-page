@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ArticlesConsole from './ArticlesConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '内容管理',
   description: '统一创作、登记和管理文章、调研与资源。',

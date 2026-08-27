@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import ContentTaxonomyClient from './ContentTaxonomyClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '分类管理',
   description: '维护内容分类定义，审计主题覆盖与推断内容。',

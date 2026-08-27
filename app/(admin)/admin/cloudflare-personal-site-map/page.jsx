@@ -30,9 +30,6 @@ import {
   WORKER_BUNDLE_METRICS,
 } from './data'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: SHARE_COPY.title,
   description: SHARE_COPY.lead,

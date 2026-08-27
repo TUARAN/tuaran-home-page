@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import PrivateDataWorkspace from './PrivateDataWorkspace'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '私密数据',
   description: '个人密文、私密分析、密码保护分享与私有媒体资产。',

@@ -1,9 +1,6 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import RecommendationConsole from './RecommendationConsole'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '推荐管理',
   description: '管理首页推荐来源、轮换规则、批次大小与置顶内容。',

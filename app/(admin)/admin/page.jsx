@@ -1,9 +1,6 @@
 import AdminPageGate from '../components/AdminPageGate'
 import AdminDashboardClient from './AdminDashboardClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: '后台总览',
   description: '2aran.com 站长控制台统一入口。',

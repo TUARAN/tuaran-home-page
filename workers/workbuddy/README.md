@@ -24,11 +24,9 @@
 pnpm dlx wrangler@4.126.0 d1 migrations apply tuaran-me --local --config workers/workbuddy/wrangler.jsonc
 ```
 
-在 `workers/workbuddy/.dev.vars` 写入与主站一致的本地签名 Secret（该文件已被 `.gitignore` 排除）：
+无需配置任何主站签名密钥。Worker 通过固定 HTTPS 地址 `https://2aran.com/api/workbuddy/session` 让主站验证会话，仅转发 `tuaran_session` / `tuaran_guest` 两个 Cookie；签名与旧账号映射始终在主站完成。主站接口不可用时，阅读目录仍可使用，扣币和文件访问会拒绝执行。
 
-```dotenv
-NEXTAUTH_SECRET=本地开发签名密钥
-```
+本地开发同样调用主站验证接口，需要联网；数据库和文件仍默认使用本地模拟。测试通过模拟主站响应运行，不依赖网络或线上账号。
 
 启动：
 
@@ -63,11 +61,10 @@ VALUES
 
 ## 线上初始化与部署
 
-先创建私有桶，再给 Worker 配置和主站相同的会话签名 Secret：
+先发布主站新增的 `/api/workbuddy/session` 接口，再创建私有桶。WorkBuddy **不需要** `NEXTAUTH_SECRET`，也不用寻找、复制或重置主站密钥：
 
 ```bash
 pnpm dlx wrangler@4.126.0 r2 bucket create workbuddy-private
-pnpm dlx wrangler@4.126.0 secret put NEXTAUTH_SECRET --config workers/workbuddy/wrangler.jsonc
 ```
 
 再迁移和部署：
@@ -86,4 +83,4 @@ node --experimental-sqlite --test workers/workbuddy/tests/*.test.mjs tests/rank-
 pnpm dlx wrangler@4.126.0 deploy --dry-run --config workers/workbuddy/wrangler.jsonc
 ```
 
-测试使用内存 SQLite 执行真实 SQL，覆盖并发幂等、透支保护、失败回滚、共享价格、旧账号映射、禁用账号、文件缺失、受控下载和分页。不会改动线上数据。
+测试使用内存 SQLite 执行真实 SQL，覆盖主站验证协议、上游故障拒绝访问、Cookie 最小转发、禁用账号、并发幂等、透支保护、失败回滚、共享价格、文件缺失、受控下载和分页。不会改动线上数据。

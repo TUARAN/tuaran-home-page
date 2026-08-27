@@ -1,24 +1,75 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { signToken, verifyToken } from '../src/auth.js'
+import { resolveActor } from '../src/auth.js'
+import { mainSessionRoute } from './main-session-helper.mjs'
 import { listResources } from '../src/database.js'
 import { isTrustedMutation, parseByteRange, safeSegment } from '../src/index.js'
 
-test('shared HS256 tokens round-trip and reject tampering', async () => {
-  const secret = 'test-secret-with-enough-entropy'
-  const token = await signToken({ user: { id: 'github:42' }, exp: Math.floor(Date.now() / 1000) + 60 }, secret)
-  assert.equal((await verifyToken(token, secret)).user.id, 'github:42')
-  // Change meaningful signature bits; the last base64url character includes padding bits.
-  const parts = token.split('.')
-  parts[2] = `${parts[2][0] === 'A' ? 'B' : 'A'}${parts[2].slice(1)}`
-  assert.equal(await verifyToken(parts.join('.'), secret), null)
-  assert.equal(await verifyToken(token, 'different-secret'), null)
+test('Worker forwards only session cookies to the fixed main endpoint, never trusting client identity', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(url, 'https://2aran.com/api/workbuddy/session')
+    assert.equal(options.headers.cookie, 'tuaran_session=opaque; tuaran_guest=opaque2')
+    assert.equal(options.headers.authorization, undefined)
+    assert.equal(options.redirect, 'error')
+    assert.equal(options.cache, 'no-store')
+    return Response.json({ version: 1, userId: 'acct_verified', isGuest: false, name: 'Verified' })
+  })
+  const actor = await resolveActor(new Request('https://workbuddy.2aran.com/api/me?userId=admin', {
+    headers: { cookie: 'analytics=private; tuaran_session=opaque; tuaran_guest=opaque2', authorization: 'secret', 'x-user-id': 'admin' },
+  }), { MAIN_SITE_URL: 'https://evil.example' })
+  assert.equal(actor.userId, 'acct_verified')
 })
 
-test('expired session tokens are rejected', async () => {
-  const token = await signToken({ exp: Math.floor(Date.now() / 1000) - 1 }, 'secret')
-  assert.equal(await verifyToken(token, 'secret'), null)
+test('invalid, unavailable, redirected or malformed upstream responses fail closed', async (t) => {
+  for (const response of [
+    new Response(null, { status: 302, headers: { location: 'https://evil.example' } }),
+    new Response('offline', { status: 503 }), new Response('<html>login</html>'),
+    Response.json({ userId: 'admin' }), Response.json({ version: 1, userId: 'acct_demo', isGuest: true, name: 'x' }),
+    new Response('{', { headers: { 'content-type': 'application/json' } }),
+  ]) {
+    t.mock.method(globalThis, 'fetch', async () => response)
+    assert.equal((await resolveActor(new Request('https://workbuddy.2aran.com/api/me'))).status, 503)
+  }
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('timeout') })
+  assert.equal((await resolveActor(new Request('https://workbuddy.2aran.com/api/me'))).status, 503)
+})
+
+test('only main-issued guest cookies are returned with safe production or localhost scope', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json(
+    { version: 1, userId: 'guest:main-verified', isGuest: true, name: '游客' },
+    { headers: { 'set-cookie': 'site-lang=zh; Expires=Fri, 27 Aug 2027 09:58:20 GMT; Path=/, tuaran_guest=signed.token.value; Path=/; HttpOnly' } },
+  ))
+  const prod = await resolveActor(new Request('https://workbuddy.2aran.com/api/me'))
+  assert.match(prod.setCookie, /HttpOnly; SameSite=Lax; Secure; Domain=.2aran.com$/)
+  const local = await resolveActor(new Request('http://localhost:8788/api/me'))
+  assert.doesNotMatch(local.setCookie, /Domain|Secure/)
+  t.mock.method(globalThis, 'fetch', async () => Response.json(
+    { version: 1, userId: 'guest:main-verified', isGuest: true, name: '游客' },
+    { headers: { 'set-cookie': 'tuaran_session=unexpected; Path=/' } },
+  ))
+  assert.equal((await resolveActor(new Request('https://workbuddy.2aran.com/api/me'))).setCookie, null)
+})
+
+test('main route uses canonical verifier, does not cache or expose secrets, and fails closed without services', async () => {
+  let hasSecret = true
+  let dbAvailable = true
+  const GET = mainSessionRoute({
+    getSecrets: () => ({ sessionSecret: hasSecret ? 'never-return-this' : null }),
+    getD1: () => dbAvailable ? { prepare: () => ({ bind: () => ({ first: async () => ({ role: 'member' }) }) }) } : null,
+    getUserFromRequest: async () => ({ id: 'acct_canonical', name: 'User', email: 'private@example.com' }),
+    getOrIssueGuest: async () => { throw new Error('must not issue guest for signed-in user') },
+  })
+  const req = new Request('https://2aran.com/api/workbuddy/session?userId=admin')
+  const response = await GET(req)
+  assert.equal(response.headers.get('cache-control'), 'private, no-store')
+  assert.equal(response.headers.get('access-control-allow-origin'), null)
+  assert.deepEqual(await response.json(), { version: 1, userId: 'acct_canonical', isGuest: false, name: 'User' })
+  hasSecret = false
+  assert.equal((await GET(req)).status, 503)
+  hasSecret = true
+  dbAvailable = false
+  assert.equal((await GET(req)).status, 503)
 })
 
 test('API path segments allow expected slugs only', () => {

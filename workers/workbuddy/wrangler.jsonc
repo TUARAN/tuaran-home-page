@@ -33,8 +33,7 @@
     }
   ],
   "vars": {
-    "MAIN_SITE_URL": "https://2aran.com",
-    "COOKIE_DOMAIN": ".2aran.com"
+    "MAIN_SITE_URL": "https://2aran.com"
   },
   "observability": {
     "enabled": true,

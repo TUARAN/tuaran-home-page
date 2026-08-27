@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Known non-secret browser and test fixtures"
+regexTarget = "match"
+regexes = [
+  '''A2HS_STORAGE_KEY\s*=\s*['"]tuaran-a2hs-dismissed-until['"]''',
+  '''visitorKey:\s*['"]A1B2C3D4E5F6['"]''',
+]

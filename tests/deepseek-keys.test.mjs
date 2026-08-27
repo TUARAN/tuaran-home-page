@@ -20,7 +20,7 @@ test('maskApiKey 只保留首尾各 4 位', () => {
 
 test('encrypt/decrypt API Key 往返一致', async () => {
   const secret = 'unit-test-master-secret-0123456789abcdef'
-  const key = 'sk-proj-abcdef1234567890'
+  const key = 'sk-proj-abcdef1234567890' // gitleaks:allow — fixed non-production test fixture
   const cipher = await encryptApiKey(key, secret)
   assert.ok(cipher.includes('"v":1'))
   assert.ok(!cipher.includes(key))

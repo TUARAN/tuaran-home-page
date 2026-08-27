@@ -34,7 +34,7 @@ test('creates a deterministic OAuth 1.0a authorization header', async () => {
 
   assert.equal(
     header,
-    'OAuth oauth_consumer_key="consumer-key", oauth_nonce="fixed-nonce", oauth_signature="j3NoV0%2FjiMd%2B7hgeJNOGyLtj%2Fhc%3D", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1700000000", oauth_token="access-token", oauth_version="1.0"',
+    'OAuth oauth_consumer_key="consumer-key", oauth_nonce="fixed-nonce", oauth_signature="j3NoV0%2FjiMd%2B7hgeJNOGyLtj%2Fhc%3D", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1700000000", oauth_token="access-token", oauth_version="1.0"', // gitleaks:allow — deterministic fixture signature
   )
 })
 

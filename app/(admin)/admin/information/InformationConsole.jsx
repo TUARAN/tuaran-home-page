@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { decryptPayload, encryptPayload } from '../../../../lib/longCompass/crypto'
 import { AdminPage, Section } from '../../components/ui'
@@ -85,6 +85,26 @@ export default function InformationConsole() {
   const [editingId, setEditingId] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
   const [revealedId, setRevealedId] = useState('')
+  const [query, setQuery] = useState('')
+
+  const filteredRecords = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase()
+    if (!normalizedQuery) return records
+
+    return records.filter((record) => {
+      const plain = record.plain
+      const searchableValues = [
+        plain.label,
+        plain.account,
+        plain.birthday,
+        plain.notes,
+        plain.securityAnswers.friend,
+        plain.securityAnswers.work,
+        plain.securityAnswers.parents,
+      ]
+      return searchableValues.some((value) => String(value || '').toLocaleLowerCase().includes(normalizedQuery))
+    })
+  }, [query, records])
 
   const load = useCallback(async () => {
     setStatus('loading')
@@ -272,12 +292,35 @@ export default function InformationConsole() {
             </form>
           </Section>
 
-          <Section title="密钥记录" description={`共 ${records.length} 条；密码与密保默认隐藏。`}>
+          <Section
+            title="密钥记录"
+            description={query.trim() ? `找到 ${filteredRecords.length} / ${records.length} 条；搜索仅在当前浏览器内进行。` : `共 ${records.length} 条；密码与密保默认隐藏。`}
+          >
+            <div className="mb-4 flex max-w-2xl items-center gap-2">
+              <label className="min-w-0 flex-1">
+                <span className="sr-only">搜索信息金库记录</span>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className={INPUT_CLASS}
+                  placeholder="搜索名称、账号、生日、密保答案或备注"
+                  autoComplete="off"
+                />
+              </label>
+              {query ? (
+                <button type="button" onClick={() => setQuery('')} className="shrink-0 rounded-lg border border-[#caccc0] px-3 py-2 text-sm dark:border-[#2d3744]">
+                  清空
+                </button>
+              ) : null}
+            </div>
             {records.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">暂无记录。</p>
+            ) : filteredRecords.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">没有匹配的记录。</p>
             ) : (
               <div className="grid gap-3 lg:grid-cols-2">
-                {records.map((record) => {
+                {filteredRecords.map((record) => {
                   const visible = revealedId === record.id
                   const plain = record.plain
                   const answers = plain.securityAnswers

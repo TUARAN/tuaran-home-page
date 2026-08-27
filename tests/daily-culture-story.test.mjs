@@ -48,5 +48,5 @@ test('workflow schedules all three culture story slots with retries', async () =
   assert.match(workflow, /'0,20,40 12 \* \* \*'/)
   assert.match(workflow, /QUERY="story=\$PERIOD"/)
   assert.match(route, /buildCultureStoryMessages/)
-  assert.match(route, /contentType: isCultureStory \? 'culture-story' : 'greeting'/)
+  assert.match(route, /const contentType = isCultureStory \? 'culture-story'/)
 })

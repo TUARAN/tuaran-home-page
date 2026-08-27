@@ -21,6 +21,11 @@ const COMMUNITY_POST_SLOTS = [
   { id: 'community_learning', label: '寻找同好', time: '15:00' },
   { id: 'community_growth', label: '结伴成长', time: '19:00' },
 ]
+const US_AUDIENCE_SLOTS = [
+  { id: 'us_morning', label: 'US morning', time: '23:00' },
+  { id: 'us_midday', label: 'US midday', time: '次日 03:00' },
+  { id: 'us_evening', label: 'US afternoon', time: '次日 07:00' },
+]
 const CULTURE_CATEGORY_LABELS = {
   guoxue: '国学哲思',
   chinese_story: '中华寓言 / 历史',
@@ -35,6 +40,7 @@ const TIMELINE_FILTERS = [
   { id: 'greeting', label: '问候' },
   { id: 'community', label: '朋友图文' },
   { id: 'culture', label: '文化短故事' },
+  { id: 'us', label: '美区英文' },
 ]
 const STATUS_FILTERS = [
   { id: 'all', label: '全部状态' },
@@ -105,7 +111,7 @@ function TimelineNode({ item }) {
   )
 }
 
-function TaskTimeline({ lastRuns, cultureRuns, communityRuns }) {
+function TaskTimeline({ lastRuns, cultureRuns, communityRuns, usRuns }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -160,8 +166,24 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns }) {
         costMicroUsd: run?.xApiCostMicroUsd,
       }
     })
-    return [...greetingItems, ...communityItems, ...cultureItems].sort((a, b) => a.column - b.column)
-  }, [communityRuns, cultureRuns, lastRuns])
+    const usItems = US_AUDIENCE_SLOTS.map((item, index) => {
+      const run = usRuns[item.id]
+      return {
+        ...item,
+        schedule: item.time,
+        column: [10, 11, 12][index],
+        type: 'us',
+        typeLabel: '美区英文',
+        state: runState(run),
+        recordedAt: run?.at,
+        meta: [run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),
+        link: run?.postUrl,
+        detail: run?.error,
+        costMicroUsd: run?.xApiCostMicroUsd,
+      }
+    })
+    return [...greetingItems, ...communityItems, ...cultureItems, ...usItems].sort((a, b) => a.column - b.column)
+  }, [communityRuns, cultureRuns, lastRuns, usRuns])
 
   const visibleItems = items.filter((item) => (
     (typeFilter === 'all' || item.type === typeFilter)
@@ -199,11 +221,11 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns }) {
       </div>
 
       <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
-        <div className="relative grid min-w-[1620px] grid-cols-9 gap-3 px-2 pb-1">
+        <div className="relative grid min-w-[2160px] grid-cols-12 gap-3 px-2 pb-1">
           <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
           {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
           {!visibleItems.length ? (
-            <div className="col-span-9 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
+            <div className="col-span-12 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
               当前筛选下没有任务节点。
             </div>
           ) : null}
@@ -219,7 +241,7 @@ function XApiCostPanel({ cost }) {
   const metrics = [
     { label: '今日已发生', value: formatUsd(cost.todayMicroUsd), detail: `${cost.todayPosts || 0} 次成功发布` },
     { label: '本月已发生', value: formatUsd(cost.monthMicroUsd), detail: `${cost.monthPosts || 0} 次成功发布` },
-    { label: '30 天预计', value: formatUsd(cost.projected30DayMicroUsd, 2), detail: `${cost.projected30DayPosts || 270} 次发帖` },
+    { label: '30 天预计', value: formatUsd(cost.projected30DayMicroUsd, 2), detail: `${cost.projected30DayPosts || 360} 次发帖` },
   ]
   return (
     <section className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]" aria-labelledby="x-api-cost-title">
@@ -245,7 +267,7 @@ function XApiCostPanel({ cost }) {
         <span>价格核对于 {cost.pricingCheckedAt}</span>
       </div>
       <p className="mb-0 mt-1 text-[10px] leading-5 text-[#96988e] dark:text-gray-500">
-        仅统计 X 发帖接口，不含图片上传端点和 DeepSeek 等文案生成成本；30 天预计按每天 9 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
+        仅统计 X 发帖接口，不含图片上传端点和 DeepSeek 等文案生成成本；30 天预计按每天 12 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
       </p>
       {!cost.available ? <p className="mb-0 mt-1 text-[10px] text-amber-700 dark:text-amber-300">成本流水表尚未启用；部署数据库迁移后开始累计实际金额。</p> : null}
     </section>
@@ -287,6 +309,7 @@ export default function MorningGreetingClient() {
   const lastRuns = data?.lastRuns || {}
   const cultureRuns = data?.cultureRuns || {}
   const communityRuns = data?.communityRuns || {}
+  const usRuns = data?.usRuns || {}
 
   async function saveTemplate(template) {
     setSaving(true); setError(''); setNotice('')
@@ -346,7 +369,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="管理每日问候、朋友图文和文化短故事的全自动发布。"
+      description="管理每日问候、朋友图文、文化短故事和美区英文帖的全自动发布。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -354,7 +377,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天全自动发布三条问候、三条朋友图文和三条文化短故事，不经人工审核。"
+          description="每天全自动发布三条问候、三条朋友图文、三条文化短故事和三条美区英文帖，不经人工审核。"
           className="mb-4"
           actions={
             <>
@@ -364,7 +387,7 @@ export default function MorningGreetingClient() {
           }
         >
         <div className="space-y-4">
-          <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} communityRuns={communityRuns} />
+          <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} communityRuns={communityRuns} usRuns={usRuns} />
           <XApiCostPanel cost={data?.xApiCost} />
 
           <div>

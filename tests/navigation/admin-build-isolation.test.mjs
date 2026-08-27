@@ -34,3 +34,8 @@ test('build verification keeps both Workers below repository safety budgets', ()
   assert.match(publicVerifierSource, /PUBLIC_WORKER_BUDGET = 2\.75 \* MIB/)
   assert.match(publicVerifierSource, /unexpectedly contains Admin routes/)
 })
+
+test('admin build verification follows the merged long compass entry point', () => {
+  assert.match(adminVerifierSource, /ALLOWED_DYNAMIC_ADMIN_PAGES[\s\S]*['"]\/admin\/soft-sticker['"]/)
+  assert.doesNotMatch(adminVerifierSource, /REQUIRED_PRERENDERED_ROUTES[\s\S]*['"]\/admin\/long-compass['"]/)
+})

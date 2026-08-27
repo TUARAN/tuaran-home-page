@@ -24,7 +24,6 @@ const REQUIRED_EDGE_ROUTES = [
 const REQUIRED_PRERENDERED_ROUTES = [
   '/admin',
   '/admin/context-memory',
-  '/admin/long-compass',
 ]
 
 const ALLOWED_DYNAMIC_ADMIN_PAGES = new Set([

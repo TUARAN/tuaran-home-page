@@ -21,6 +21,7 @@ export default function SystemOperations() {
           description: '维护页面发现能力、分享入口与内容资产生命周期。',
           items: [
             { href: '/admin/seo', title: 'SEO 管理', description: '维护 SEO 策略、页面覆盖、Sitemap 与演进治理。', icon: 'seo' },
+            { href: '/admin/security-self-check', title: '涉密自检', description: '记录仓库公开前的秘密、隐私、架构信息与历史风险判断。', icon: 'audit', note: '公开前审计 · 风险分级' },
             { href: '/admin/short-links', title: '短链管理', description: '管理全站分享短链映射、搜索与点击统计。', icon: 'share' },
             { href: '/admin/archives', title: '存档管理', description: '处理活动页面下线、归档入口与保留资产台账。', icon: 'archive' },
           ],

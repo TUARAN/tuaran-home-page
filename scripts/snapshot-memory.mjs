@@ -47,6 +47,7 @@ const KDF_ITER = 200000
 const KEY_BYTES = 32 // AES-256
 const SALT_BYTES = 16
 const IV_BYTES = 12 // AES-GCM 标准 IV
+const MIN_PASSPHRASE_LENGTH = 24
 
 function readPassphrase() {
   const env = process.env.TUARAN_MEMORY_KEY
@@ -147,6 +148,15 @@ function main() {
     console.error('[snapshot-memory] no passphrase found.')
     console.error('  Set env: export TUARAN_MEMORY_KEY="your-long-passphrase"')
     console.error('  Or write to ~/.tuaran-memory-key (chmod 600).')
+    process.exit(1)
+  }
+  if (passphrase.length < MIN_PASSPHRASE_LENGTH) {
+    const message = `[snapshot-memory] passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters; refusing to publish offline-guessable ciphertext.`
+    if (ifChanged) {
+      console.warn(message)
+      process.exit(0)
+    }
+    console.error(message)
     process.exit(1)
   }
 

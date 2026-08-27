@@ -17,6 +17,7 @@ import {
 import { cultureStoryLastRunKey } from '../../../../lib/dailyCultureStory'
 import { xCommunityLastRunKey } from '../../../../lib/xCommunityPosts'
 import { xUsAudienceLastRunKey } from '../../../../lib/xUsAudiencePosts'
+import { xCryptoLastRunKey } from '../../../../lib/xCryptoPosts'
 import {
   listMorningGreetingTemplates,
   upsertMorningGreetingTemplate,
@@ -86,6 +87,9 @@ export async function GET(req) {
       usMorningRaw,
       usMiddayRaw,
       usEveningRaw,
+      cryptoKnowledgeRaw,
+      cryptoMarketRaw,
+      cryptoPeopleRaw,
     ] = await Promise.all([
       listMorningGreetingTemplates(db),
       readSetting(db, MORNING_GREETING_SETTING_KEY),
@@ -110,6 +114,9 @@ export async function GET(req) {
       readSetting(db, xUsAudienceLastRunKey('us_morning')),
       readSetting(db, xUsAudienceLastRunKey('us_midday')),
       readSetting(db, xUsAudienceLastRunKey('us_evening')),
+      readSetting(db, xCryptoLastRunKey('crypto_knowledge')),
+      readSetting(db, xCryptoLastRunKey('crypto_market')),
+      readSetting(db, xCryptoLastRunKey('crypto_people')),
     ])
     const lastRuns = {}
     for (const [key, raw] of [['morning', morningRaw], ['noon', noonRaw], ['evening', eveningRaw]]) {
@@ -155,13 +162,25 @@ export async function GET(req) {
         usRuns[key] = null
       }
     }
+    const cryptoRuns = {}
+    for (const [key, raw] of [
+      ['crypto_knowledge', cryptoKnowledgeRaw],
+      ['crypto_market', cryptoMarketRaw],
+      ['crypto_people', cryptoPeopleRaw],
+    ]) {
+      try {
+        cryptoRuns[key] = JSON.parse(raw || 'null')
+      } catch {
+        cryptoRuns[key] = null
+      }
+    }
     const ollamaProviders = (ollamaProviderRows.results || []).map((row) => ({ id: row.id, name: row.name, model: row.default_model }))
     const ollamaProviderId = ollamaProviders.some((provider) => provider.id === ollamaProviderRaw)
       ? String(ollamaProviderRaw)
       : String(ollamaProviders[0]?.id || '')
     let xApiCost
     try {
-      xApiCost = await getXApiCostSummary(db, { postsPerDay: 12 })
+      xApiCost = await getXApiCostSummary(db, { postsPerDay: 15 })
     } catch {
       // 数据库迁移尚未执行时仍展示官方单价与固定日程预算。
       xApiCost = {
@@ -171,8 +190,8 @@ export async function GET(req) {
         todayMicroUsd: 0,
         monthPosts: 0,
         monthMicroUsd: 0,
-        projected30DayPosts: 360,
-        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: 12, days: 30 }),
+        projected30DayPosts: 450,
+        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: 15, days: 30 }),
         trackedSince: null,
       }
     }
@@ -190,6 +209,7 @@ export async function GET(req) {
       cultureRuns,
       communityRuns,
       usRuns,
+      cryptoRuns,
       xApiCost: {
         ...xApiCost,
         postCreateMicroUsd: X_API_POST_CREATE_COST_MICRO_USD,

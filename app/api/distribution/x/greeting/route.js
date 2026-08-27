@@ -32,6 +32,12 @@ import {
   xUsAudienceLastRunKey,
 } from '../../../../../lib/xUsAudiencePosts'
 import {
+  buildXCryptoMessages,
+  normalizeXCryptoSlot,
+  pickXCryptoTopic,
+  xCryptoLastRunKey,
+} from '../../../../../lib/xCryptoPosts'
+import {
   DAILY_GREETING_LLM_PROMPT_KEY,
   DAILY_GREETING_MODE_KEY,
   DAILY_GREETING_OLLAMA_PROVIDER_KEY,
@@ -110,29 +116,41 @@ export async function POST(req) {
       { status: 400 },
     )
   }
-  if ([Boolean(isCultureStory), Boolean(communitySlot), Boolean(usSlot)].filter(Boolean).length > 1) {
+  const requestedCryptoSlot = searchParams.get('crypto')
+  const cryptoSlot = requestedCryptoSlot ? normalizeXCryptoSlot(requestedCryptoSlot) : ''
+  if (requestedCryptoSlot && !cryptoSlot) {
+    return Response.json(
+      { ok: false, error: 'INVALID_CRYPTO_SLOT', detail: 'crypto 仅支持 crypto_knowledge、crypto_market、crypto_people。' },
+      { status: 400 },
+    )
+  }
+  if ([Boolean(isCultureStory), Boolean(communitySlot), Boolean(usSlot), Boolean(cryptoSlot)].filter(Boolean).length > 1) {
     return Response.json({ ok: false, error: 'AMBIGUOUS_CONTENT_TYPE' }, { status: 400 })
   }
   const isCommunityPost = Boolean(communitySlot)
   const isUsPost = Boolean(usSlot)
+  const isCryptoPost = Boolean(cryptoSlot)
   const communityVariant = isCommunityPost ? pickXCommunityVariant({ slot: communitySlot, now: requestNow }) : null
+  const cryptoTopic = isCryptoPost ? pickXCryptoTopic({ slot: cryptoSlot, now: requestNow }) : ''
   const requestedPeriod = searchParams.get('period')
   const period = requestedPeriod
     ? normalizeGreetingPeriod(requestedPeriod, '')
     : greetingPeriodForDate()
-  if (!isCultureStory && !isCommunityPost && !isUsPost && !period) {
+  if (!isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && !period) {
     return Response.json({ ok: false, error: 'INVALID_PERIOD', detail: 'period 仅支持 morning、noon、evening。' }, { status: 400 })
   }
-  const runSlot = storySlot || communitySlot || usSlot || period
-  const contentType = isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : isUsPost ? 'us-english' : 'greeting'
+  const runSlot = storySlot || communitySlot || cryptoSlot || usSlot || period
+  const contentType = isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : isCryptoPost ? 'crypto-insight' : isUsPost ? 'us-english' : 'greeting'
   const storyCategory = isCultureStory ? cultureStoryCategory({ slot: storySlot, now: requestNow }) : ''
   const lastRunKey = isCultureStory
     ? cultureStoryLastRunKey(storySlot)
     : isCommunityPost
       ? xCommunityLastRunKey(communitySlot)
-      : isUsPost
-        ? xUsAudienceLastRunKey(usSlot)
-        : greetingLastRunKey(period)
+      : isCryptoPost
+        ? xCryptoLastRunKey(cryptoSlot)
+        : isUsPost
+          ? xUsAudienceLastRunKey(usSlot)
+          : greetingLastRunKey(period)
 
   const db = env.DB || null
   if (db) {
@@ -148,7 +166,7 @@ export async function POST(req) {
       // D1 不可用时按“运行中”放行，发布失败由 X 凭据环节兜底。
     }
     try {
-      // 同一自然日的同一时段只成功发布一次；十二个时段分别记录，互不阻断。
+      // 同一自然日的同一时段只成功发布一次；十五个时段分别记录，互不阻断。
       const lastRunRaw = await readSetting(db, lastRunKey)
       if (lastRunRaw) {
         const lastRun = JSON.parse(lastRunRaw)
@@ -203,9 +221,9 @@ export async function POST(req) {
       generationMode = 'deepseek'
     }
   }
-  // 固定模板只适用于早午晚安；文化短故事和朋友图文始终实时生成。
-  if ((isCultureStory || isCommunityPost || isUsPost) && generationMode === 'template') generationMode = 'deepseek'
-  const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && generationMode !== 'template'
+  // 固定模板只适用于早午晚安；其余任务始终实时生成。
+  if ((isCultureStory || isCommunityPost || isUsPost || isCryptoPost) && generationMode === 'template') generationMode = 'deepseek'
+  const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && generationMode !== 'template'
     ? pickDailyGreetingStyle()
     : null
 
@@ -218,9 +236,11 @@ export async function POST(req) {
           ? buildCultureStoryMessages({ slot: storySlot, now: requestNow })
           : isCommunityPost
             ? buildXCommunityMessages({ slot: communitySlot, now: requestNow, variant: communityVariant })
-            : isUsPost
-              ? buildXUsAudienceMessages({ slot: usSlot, now: requestNow })
-            : buildGreetingLlmMessages({ intent: llmIntent, period, now: requestNow, style: greetingStyle }),
+            : isCryptoPost
+              ? buildXCryptoMessages({ slot: cryptoSlot, now: requestNow })
+              : isUsPost
+                ? buildXUsAudienceMessages({ slot: usSlot, now: requestNow })
+                : buildGreetingLlmMessages({ intent: llmIntent, period, now: requestNow, style: greetingStyle }),
         temperature: 0.85,
         maxTokens: isCultureStory ? 384 : 256,
         task: {
@@ -230,18 +250,22 @@ export async function POST(req) {
             ? `X 文化短故事：${storySlot}`
             : isCommunityPost
               ? `X 朋友图文帖：${communitySlot}`
-              : isUsPost
-                ? `X 美区英文帖：${usSlot}`
-              : `X 每日问候：${period}`,
+              : isCryptoPost
+                ? `X 加密内容：${cryptoSlot}`
+                : isUsPost
+                  ? `X 美区英文帖：${usSlot}`
+                  : `X 每日问候：${period}`,
           actorId: 'cron:x-daily-greeting',
           actorName: '线上定时自动化',
           inputSummary: isCultureStory
             ? `时段：${storySlot}；类别：${storyCategory}`
             : isCommunityPost
               ? `时段：${communitySlot}；场景：${communityVariant.label}；标签：${communityVariant.tags.join(' ')}`
-              : isUsPost
-                ? `时段：${usSlot}；语言：美式英语；受众：美国开发者、AI 用户、独立创作者`
-              : `时段：${period}；风格：${greetingStyle.label}；意图：${llmIntent.slice(0, 500)}`,
+              : isCryptoPost
+                ? `时段：${cryptoSlot}；主题：${cryptoTopic}；边界：不喊单、不承诺收益`
+                : isUsPost
+                  ? `时段：${usSlot}；语言：美式英语；受众：美国开发者、AI 用户、独立创作者`
+                  : `时段：${period}；风格：${greetingStyle.label}；意图：${llmIntent.slice(0, 500)}`,
           metadata: {
             period: runSlot,
             contentType,
@@ -430,6 +454,7 @@ export async function POST(req) {
       contentType,
       category: storyCategory,
       theme: communityVariant?.label || '',
+      topic: cryptoTopic,
       imagePath: communityVariant?.imagePath || '',
       mediaId,
       mode: generationMode,
@@ -463,6 +488,7 @@ export async function POST(req) {
     contentType,
     category: storyCategory,
     theme: communityVariant?.label || '',
+    topic: cryptoTopic,
     imagePath: communityVariant?.imagePath || '',
     mode: generationMode,
     style: greetingStyle?.id || '',

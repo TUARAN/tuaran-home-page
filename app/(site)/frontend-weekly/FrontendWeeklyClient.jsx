@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { LoadingState } from '../../components/loading/LoadingPrimitives'
 
 const TABS = [
   { key: 'weekly', label: '前端周刊', note: '每周更新' },
@@ -120,7 +121,7 @@ function DailyPanel({ manifest, fallbackEntries }) {
   </>}>
     <article className={`${shell} min-w-0 p-5 sm:p-7`}>
       <SectionHeading eyebrow="AI DAILY" title="每日精选" description="AI Coding 与具身智能的高密度追踪，每日 09:00 自动更新。" />
-      {loading ? <p className="py-16 text-center text-sm text-[#777]">加载中…</p> : entry ? <ol className={`mt-6 divide-y border-t ${rule}`}>
+      {loading ? <LoadingState label="正在加载每日精选" /> : entry ? <ol className={`mt-6 divide-y border-t ${rule}`}>
         {entry.items.map((item) => <li key={item.num} className={`py-5 first:pt-4 ${rule}`}>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#85877f]">
             <span className="font-semibold text-[#4f633f] dark:text-[#c0d6ac]">{item.topic}</span>

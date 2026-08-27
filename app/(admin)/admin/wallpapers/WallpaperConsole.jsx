@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { AdminButton, AdminPage, Section } from '../../components/ui'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const CATEGORIES = [
   { value: 'misc', label: '综合 Misc' },
@@ -210,7 +211,7 @@ export default function WallpaperConsole() {
 
       <Section title="壁纸库" description={`当前共 ${items.length} 张壁纸`} className="mt-6">
         {status === 'loading' ? (
-          <p className="text-sm text-neutral-500">加载中…</p>
+          <LoadingState label="正在加载壁纸资源" compact />
         ) : status === 'unavailable' ? (
           <p className="text-sm text-amber-600">{message || '存储未就绪'}</p>
         ) : status === 'error' ? (

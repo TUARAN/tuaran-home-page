@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, EmptyState, Section, StatusPill } from '../../components/ui'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-6 text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
@@ -253,7 +254,7 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
           线上站点不能访问 192.168.x.x 或 NAS 局域网地址。请通过 Cloudflare Tunnel 提供 HTTPS 域名，并优先使用 Access Service Token；不要把 Ollama 11434 端口直接暴露到公网。
         </div>
         <div className="mb-3 text-[12px] text-[#82847a]">共 {providers.length} 个服务，{activeCount} 个启用</div>
-        {loading ? <p className="py-4 text-sm text-[#82847a]">加载中…</p> : !providers.length ? (
+        {loading ? <LoadingState label="正在加载 Ollama 服务" compact className="py-4" /> : !providers.length ? (
           <EmptyState title="暂无 Ollama 服务" description="添加 NAS 的 HTTPS 端点后，可在这里测试调用并查看 Token、耗时与失败原因。" />
         ) : (
           <div className="space-y-2">

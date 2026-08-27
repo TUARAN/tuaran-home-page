@@ -17,6 +17,7 @@ import {
 import AdminPage from '../../components/ui/AdminPage'
 import AdminButton from '../../components/ui/AdminButton'
 import ArticlePostBody from '../../../(site)/components/ArticlePostBody'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const EMPTY_DOC = { type: 'doc', content: [{ type: 'paragraph' }] }
 
@@ -181,7 +182,7 @@ export default function ArticleEditor({ articleId = '' }) {
   return (
     <AdminPage title={id ? '编辑文章' : '写文章'} description={saveLabel} actions={<><AdminButton href="/admin/articles">返回列表</AdminButton><AdminButton onClick={() => setPreview((v) => !v)}><IconEye size={16} />{preview ? '关闭预览' : '预览'}</AdminButton><AdminButton disabled={saving} onClick={() => persist(status)}>保存</AdminButton>{status === 'published' ? <AdminButton disabled={saving} onClick={() => persist('draft')}>转为草稿</AdminButton> : <AdminButton variant="primary" disabled={saving} onClick={() => persist('published')}><IconUpload size={16} />发布</AdminButton>}</>}>
       {error ? <div className="mb-4 flex items-start justify-between rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200"><span>{error}</span><button onClick={() => setError('')}><IconX size={16} /></button></div> : null}
-      {!loaded ? <p className="text-sm text-[#67695d]">加载中…</p> : (
+      {!loaded ? <LoadingState label="正在加载文章编辑器" /> : (
         <div className={`grid gap-5 ${preview ? 'lg:grid-cols-2' : ''}`}>
           <div className="min-w-0 space-y-4">
             <div className="rounded-xl border border-[#e2e3da] bg-white p-4 dark:border-[#1e2733] dark:bg-[#10161f]">

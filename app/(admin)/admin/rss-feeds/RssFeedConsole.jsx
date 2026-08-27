@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { AdminButton, AdminPage } from '../../components/ui'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const EMPTY_FORM = {
   siteName: '',
@@ -221,7 +222,7 @@ export default function RssFeedConsole() {
 
       <div className="rounded-xl border border-[#e2e3da] bg-white dark:border-[#1e2733] dark:bg-[#10161f]">
         {status === 'loading' ? (
-          <p className="p-4 text-sm text-[#82847a] dark:text-gray-500">加载中…</p>
+          <LoadingState label="正在加载 RSS 源" />
         ) : items.length === 0 ? (
           <p className="p-4 text-sm text-[#82847a] dark:text-gray-500">
             {status === 'ok' ? '还没有订阅，先在上面添加一条。' : message || '暂不可用'}

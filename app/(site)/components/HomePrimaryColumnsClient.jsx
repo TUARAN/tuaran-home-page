@@ -63,11 +63,11 @@ function InspirationSkeleton() {
           aria-hidden="true"
         >
           <div className={`home-inspiration-skeleton-body ${item.hasThumbnail ? 'has-thumbnail' : ''}`}>
-            {item.hasThumbnail ? <span className="home-skeleton-block home-inspiration-skeleton-thumbnail" /> : null}
+            {item.hasThumbnail ? <span className="home-skeleton-block loading-skeleton home-inspiration-skeleton-thumbnail" /> : null}
             <div>
-              <span className="home-skeleton-block home-inspiration-skeleton-title" style={{ width: item.titleWidth }} />
-              <span className="home-skeleton-block home-inspiration-skeleton-copy" style={{ width: item.copyWidth }} />
-              <span className="home-skeleton-block home-inspiration-skeleton-copy" style={{ width: item.copyTailWidth }} />
+              <span className="home-skeleton-block loading-skeleton home-inspiration-skeleton-title" style={{ width: item.titleWidth }} />
+              <span className="home-skeleton-block loading-skeleton home-inspiration-skeleton-copy" style={{ width: item.copyWidth }} />
+              <span className="home-skeleton-block loading-skeleton home-inspiration-skeleton-copy" style={{ width: item.copyTailWidth }} />
             </div>
           </div>
         </div>

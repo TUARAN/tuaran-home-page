@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { LoadingState } from '../../components/loading/LoadingPrimitives'
 import { JUEJIN_ACTIVITY_SNAPSHOT } from '../../../lib/juejin/activitySnapshot'
 
 const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
@@ -259,8 +260,8 @@ export default function KnowledgeHeatmapClient({
             </div>
           </>
         ) : (
-          <section className="rounded-md border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_72%,transparent)] p-3 text-xs text-[var(--site-muted)]">
-            热力图加载中…
+          <section className="rounded-md border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_72%,transparent)] p-3">
+            <LoadingState label="正在加载热力图" compact />
           </section>
         )
       ) : null}

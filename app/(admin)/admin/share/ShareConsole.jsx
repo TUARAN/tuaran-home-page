@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { decryptPayload, encryptPayload } from '../../../../lib/longCompass/crypto'
 import { SHARED_NOTE_MAX_CONTENT_LENGTH } from '../../../../lib/shareContent'
 import { AdminPage } from '../../components/ui'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const LEGACY_SHARE_PASSWORD = '123123'
 const MAX_EMBEDDED_IMAGE_BYTES = 600 * 1024
@@ -264,7 +265,7 @@ export default function ShareAdminClient({ embedded = false }) {
           <p className="mb-3 text-sm text-[#a34f47] dark:text-[#b5a09b]">{listError}</p>
         ) : null}
         {loadingList ? (
-          <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">加载中…</p>
+          <LoadingState label="正在加载分享记录" compact />
         ) : items.length === 0 ? (
           <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">还没有任何分享。</p>
         ) : (

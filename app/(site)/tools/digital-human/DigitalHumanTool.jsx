@@ -17,6 +17,7 @@ import {
 } from '@tabler/icons-react'
 
 import { useSessionAccount } from '../../components/SessionProvider'
+import { LoadingSpinner, LoadingState } from '../../../components/loading/LoadingPrimitives'
 import {
   DIGITAL_HUMAN_GENERATION_STAGES,
   DIGITAL_HUMAN_PROVIDER_COPY,
@@ -102,7 +103,7 @@ function StatusBadge({ status }) {
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${STATUS_TONES[meta.tone]}`}>
       {ACTIVE_STATUSES.has(status) ? (
-        <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+        <LoadingSpinner size="sm" className="mr-1.5" />
       ) : null}
       {meta.label}
     </span>
@@ -625,7 +626,7 @@ export default function DigitalHumanTool() {
               className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#8a6422] px-4 text-[14px] font-bold text-white transition hover:bg-[#6f5019] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#d4ae66] dark:text-[#14100a]"
             >
               {submitting ? (
-                <span className="h-2 w-2 animate-pulse rounded-full bg-current" />
+                <LoadingSpinner size="sm" />
               ) : (
                 <IconSparkles size={18} />
               )}
@@ -730,7 +731,7 @@ export default function DigitalHumanTool() {
                 disabled={!isAuthed || loading}
                 className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#d8d1c4] px-2.5 text-[11px] font-semibold disabled:opacity-50 dark:border-[#33404e]"
               >
-                <IconRefresh size={14} className={loading ? 'animate-spin' : ''} />
+                {loading ? <LoadingSpinner size="sm" /> : <IconRefresh size={14} />}
                 刷新
               </button>
             </div>
@@ -748,7 +749,7 @@ export default function DigitalHumanTool() {
                 </button>
               </div>
             ) : loading && jobs.length === 0 ? (
-              <p className="px-4 py-12 text-center text-[13px] text-[#797469] dark:text-[#9da7b5]">正在加载…</p>
+              <LoadingState label="正在加载生成记录" />
             ) : jobs.length === 0 ? (
               <p className="px-4 py-12 text-center text-[13px] text-[#797469] dark:text-[#9da7b5]">
                 {isOwner ? '还没有生成记录。' : '数字人口播目前处于站长内测阶段。'}

@@ -15,6 +15,7 @@ import {
 import { AdminButton, AdminPage, AdminPagination, Section } from '../../components/ui'
 import ContentIndexConsole from '../content-index/ContentIndexConsole'
 import ResearchStyleClient from '../research-style/ResearchStyleClient'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const TYPE_LABELS = {
   article: '文章',
@@ -234,7 +235,7 @@ export default function ArticlesConsole() {
           </select>
         </div>
 
-        {loading ? <p className="text-sm text-[#67695d] dark:text-gray-400">加载中…</p> : null}
+        {loading ? <LoadingState label="正在加载文章列表" compact /> : null}
         {!loading && !total ? (
           <p className="py-8 text-center text-sm text-[#77796e] dark:text-gray-400">还没有内容。</p>
         ) : null}

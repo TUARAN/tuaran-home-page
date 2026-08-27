@@ -12,6 +12,7 @@ import TriStateOverview from './TriStateOverview'
 import ModelDispatchConsole from '../model-dispatch/ModelDispatchConsole'
 import usePlanningModal from './planningModalFocus'
 import { PLANNING_TABS, planningRequest } from './planningUi'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const EMPTY_SNAPSHOT = {
   directions: [], projects: [], projectCatalog: [], milestones: [], tasks: [],
@@ -237,7 +238,7 @@ export default function PlanningCenter({ initialTab = 'overview' }) {
           </div>
         ) : null}
 
-        {loading && !snapshot ? <div className="rounded-xl border px-4 py-8 text-sm text-[var(--admin-muted)]">正在加载规划快照…</div> : null}
+        {loading && !snapshot ? <div className="rounded-xl border"><LoadingState label="正在加载规划快照" /></div> : null}
         {loading && snapshot ? <p className="mb-0 text-xs text-[var(--admin-muted)]">正在更新，保留上次成功加载的数据。</p> : null}
         {!loading && !snapshot && !error ? <div className="rounded-xl border px-4 py-8 text-sm text-[var(--admin-muted)]">暂无规划数据，可先初始化或快速添加。</div> : null}
 

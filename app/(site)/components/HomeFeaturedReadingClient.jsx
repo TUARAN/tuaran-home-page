@@ -284,13 +284,13 @@ export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
                 aria-hidden="true"
               >
                 <div className="home-reading-skeleton-meta">
-                  <span className="home-skeleton-block w-12" />
-                  <span className="home-skeleton-block w-16" />
-                  <span className="home-skeleton-block w-20" />
+                  <span className="home-skeleton-block loading-skeleton w-12" />
+                  <span className="home-skeleton-block loading-skeleton w-16" />
+                  <span className="home-skeleton-block loading-skeleton w-20" />
                 </div>
-                <span className="home-skeleton-block home-skeleton-title" style={{ width: item.titleWidth }} />
-                <span className="home-skeleton-block home-skeleton-summary" style={{ width: item.summaryWidth }} />
-                <span className="home-skeleton-block home-skeleton-summary-tail" style={{ width: item.summaryTailWidth }} />
+                <span className="home-skeleton-block loading-skeleton home-skeleton-title" style={{ width: item.titleWidth }} />
+                <span className="home-skeleton-block loading-skeleton home-skeleton-summary" style={{ width: item.summaryWidth }} />
+                <span className="home-skeleton-block loading-skeleton home-skeleton-summary-tail" style={{ width: item.summaryTailWidth }} />
               </div>
             ))}
             <span className="sr-only">正在加载推荐内容</span>

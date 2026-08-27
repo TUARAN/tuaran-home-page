@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const KIND_LABELS = {
   secret: '密钥',
@@ -193,7 +194,7 @@ export default function IntegrationsClient() {
         description="全站代码里实际依赖的外部服务。环境变量芯片表示 Cloudflare Pages 侧的配置状态。"
       >
         {loading ? (
-          <p className="text-sm text-[#67695d] dark:text-gray-400">加载中…</p>
+          <LoadingState label="正在加载集成配置" compact />
         ) : (
           <div className="space-y-2">
             {services.map((service) => (

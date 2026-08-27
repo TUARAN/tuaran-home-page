@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { LoadingState } from '../../components/loading/LoadingPrimitives'
 import RanbiPaywall from '../components/RanbiPaywall'
 import ContentPvBeacon from '../components/ContentPvBeacon'
 
@@ -180,7 +181,7 @@ function ReadingIndexContent() {
         </div>
       </section>
 
-      <Suspense fallback={<div className="mt-8 text-sm text-[#666] dark:text-gray-400">加载书库分类…</div>}>
+      <Suspense fallback={<LoadingState label="正在加载书库分类" className="mt-8" />}>
         <ReadingTabs categories={readingCategories} reviews={readingReviews} />
       </Suspense>
     </main>

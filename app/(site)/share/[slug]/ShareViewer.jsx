@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 import { decryptPayload } from '../../../../lib/longCompass/crypto'
 import { PROSE_CLASS, renderMarkdown } from '../../long-compass/components/markdown'
@@ -140,7 +141,7 @@ export default function ShareViewer({ slug }) {
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
           Encrypted Share
         </p>
-        <p className="mt-3 text-sm text-[#63645a] dark:text-[#9aa6b6]">加载中…</p>
+        <LoadingState label="正在读取加密分享" detail="内容会在当前浏览器中解密。" className="mt-3" />
       </main>
     )
   }

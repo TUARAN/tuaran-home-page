@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AdminPage, AdminPagination } from '../../components/ui'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 function ContentIndexFrame({ embedded, children }) {
   if (embedded) return children
@@ -323,7 +324,7 @@ export default function ContentIndexConsole({ embedded = false }) {
         </div>
 
         {status === 'loading' ? (
-          <p className="mt-4 text-sm text-[#888] dark:text-gray-500">加载中…</p>
+          <LoadingState label="正在加载内容索引" compact className="mt-4" />
         ) : null}
         {status === 'error' ? (
           <p className="mt-4 text-sm text-amber-700 dark:text-amber-300">{message}</p>

@@ -154,6 +154,7 @@
   background: linear-gradient(100deg, transparent 24%, var(--loading-highlight) 48%, transparent 72%);
   transform: translateX(-120%);
   animation: loading-skeleton-flow var(--loading-duration-skeleton) linear infinite;
+  animation-delay: calc(var(--skeleton-index, 0) * 65ms);
   will-change: transform;
 }
 
@@ -1554,8 +1555,6 @@
   .home-skeleton-block {
     @apply block h-4 rounded-full;
     background: color-mix(in srgb, var(--site-line-strong) 72%, var(--site-panel-strong));
-    animation: home-skeleton-breathe 1.8s ease-in-out infinite;
-    animation-delay: calc(var(--skeleton-index, 0) * 65ms);
   }
 
   .home-reading-skeleton-meta .home-skeleton-block {
@@ -1572,22 +1571,6 @@
 
   .home-skeleton-summary-tail {
     @apply mt-1.5 h-3.5 max-w-[64%];
-  }
-
-  @keyframes home-skeleton-breathe {
-    0%, 100% {
-      opacity: 0.38;
-    }
-    50% {
-      opacity: 0.86;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .home-skeleton-block {
-      animation: none;
-      opacity: 0.58;
-    }
   }
 
   .home-reading-meta {

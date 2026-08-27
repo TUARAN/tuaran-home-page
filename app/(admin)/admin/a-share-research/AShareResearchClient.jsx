@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
+import { LoadingDots, LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const DRAFT_STATUS_META = {
   generating: { label: '生成中', tone: 'info' },
@@ -296,7 +297,7 @@ export default function AShareResearchClient() {
         actions={<span className="text-[12px] text-[#82847a]">共 {logsLoading ? '…' : logTotal} 条</span>}
       >
         {logsLoading ? (
-          <p className="py-4 text-center text-[12px] text-[#82847a]">日志加载中…</p>
+          <LoadingState label="正在加载运行日志" compact className="py-4" />
         ) : logsError ? (
           <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
             {logsError}
@@ -328,7 +329,7 @@ export default function AShareResearchClient() {
                   onClick={() => loadLogs(logs.length, { append: true })}
                   disabled={logsLoadingMore}
                 >
-                  {logsLoadingMore ? '加载中…' : `加载更多（还有 ${logTotal - logs.length} 条）`}
+                  {logsLoadingMore ? <LoadingDots label="正在加载更多日志" /> : `加载更多（还有 ${logTotal - logs.length} 条）`}
                 </AdminButton>
               </div>
             ) : null}

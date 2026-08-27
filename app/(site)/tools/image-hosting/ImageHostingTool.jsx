@@ -12,6 +12,7 @@ import {
 } from '@tabler/icons-react'
 
 import { useSessionAccount } from '../../components/SessionProvider'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const COST = 5
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
@@ -461,9 +462,7 @@ export default function ImageHostingTool() {
               </button>
             </div>
           ) : loading ? (
-            <p className="px-4 py-10 text-center text-[13px] text-[#7a766b] dark:text-[#9da7b5]">
-              正在加载…
-            </p>
+            <LoadingState label="正在加载文件记录" />
           ) : images.length === 0 ? (
             <p className="px-4 py-10 text-center text-[13px] text-[#7a766b] dark:text-[#9da7b5]">
               还没有上传记录。

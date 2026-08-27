@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { IconCopy, IconLink, IconRefresh, IconTrash } from '@tabler/icons-react'
 
 import { useSessionAccount } from '../../components/SessionProvider'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -261,9 +262,7 @@ export default function ShortLinkTool() {
               </p>
             </div>
           ) : loading ? (
-            <p className="px-4 py-10 text-center text-[13px] text-[#7a766b] dark:text-[#9da7b5]">
-              正在加载…
-            </p>
+            <LoadingState label="正在加载短链记录" />
           ) : sortedRecords.length === 0 ? (
             <p className="px-4 py-10 text-center text-[13px] text-[#7a766b] dark:text-[#9da7b5]">
               还没有短链记录。

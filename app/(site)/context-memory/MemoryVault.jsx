@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { LoadingState } from '../../components/loading/LoadingPrimitives'
 
 import { renderMarkdown } from '../../../lib/research/markdown'
 
@@ -171,7 +172,7 @@ export default function MemoryVault() {
 
   if (!manifest) {
     return (
-      <div className="text-sm text-[#676a5f] dark:text-gray-400">manifest 加载中…</div>
+      <LoadingState label="正在加载记忆索引" compact />
     )
   }
 

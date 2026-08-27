@@ -83,7 +83,7 @@ export default function RanbiGate({ resourceKey, children, preview = null, title
 
   // 资源未配置门槛，或已解锁 → 直接给全文
   if (state.loading || userLoading) {
-    return <Skeleton as="div" className="my-6 h-24 rounded-xl" role="status" aria-label="正在检查内容权益" />
+    return <div className="my-6" role="status" aria-label="正在检查内容权益"><Skeleton as="div" className="h-24 rounded-xl" /><span className="sr-only">正在检查内容权益</span></div>
   }
   if (state.exists === false || state.unlocked) {
     return <>{children}</>

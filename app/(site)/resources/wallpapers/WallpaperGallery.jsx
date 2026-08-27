@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { useLocale } from '../../components/LocaleProvider'
+import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 import { pick } from '../../../../lib/i18n'
 
 const CATEGORY_LABELS = {
@@ -75,9 +76,7 @@ export default function WallpaperGallery() {
 
   if (status === 'loading') {
     return (
-      <p className="py-16 text-center text-sm text-neutral-500 dark:text-neutral-400">
-        {pick(locale, '正在加载壁纸…', 'Loading wallpapers…')}
-      </p>
+      <LoadingState label={pick(locale, '正在加载壁纸', 'Loading wallpapers')} />
     )
   }
 

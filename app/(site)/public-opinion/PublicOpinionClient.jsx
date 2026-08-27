@@ -11,6 +11,7 @@ import {
   IconTopologyStar3,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { LoadingSpinner } from '../../components/loading/LoadingPrimitives'
 
 import {
   buildPublicOpinionSnapshot,
@@ -576,7 +577,7 @@ export default function PublicOpinionClient({
             disabled={isRefreshing}
             className="inline-flex min-h-10 items-center justify-center gap-2 border border-[#20343c] bg-[#20343c] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[#2e4c57] dark:border-[#d6dbc5] dark:bg-[#d6dbc5] dark:text-[#141914] dark:hover:bg-[#e6ead6]"
           >
-            <IconRefresh className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+            {isRefreshing ? <LoadingSpinner size="sm" /> : <IconRefresh className="h-4 w-4" aria-hidden="true" />}
             {isRefreshing ? '刷新中' : '刷新数据'}
           </button>
         </div>

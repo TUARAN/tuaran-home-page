@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { LoadingDots } from '../../../../components/loading/LoadingPrimitives'
 
 const STATUS = {
   returning: {
@@ -75,7 +76,7 @@ export default function OAuthAuthorizationComplete() {
 
         {status === 'returning' ? (
           <div className="mt-6 flex items-center justify-center gap-2 text-xs text-[#77796d] dark:text-gray-400" role="status" aria-live="polite">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[#8b5a1f] dark:bg-[#d7a85c]" />
+            <LoadingDots />
             正在唤起客户端…
           </div>
         ) : null}

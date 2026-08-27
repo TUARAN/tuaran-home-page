@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import {
   IconBook2, IconCoin, IconEdit, IconFileText, IconHistory, IconHome,
-  IconMail, IconMap2, IconMessageCircle, IconRocket, IconShieldLock, IconUserCircle,
+  IconLoader2, IconMail, IconMap2, IconMessageCircle, IconPalette, IconRocket,
+  IconShieldLock, IconUserCircle,
 } from '@tabler/icons-react'
 
+import { LoadingDots, LoadingSpinner, Skeleton } from '../../components/loading/LoadingPrimitives'
 import { SITE_CHANNELS, isItemVisibleForAccount } from '../../../lib/siteNav'
 import PageContainer from '../components/PageContainer'
 
@@ -93,6 +95,33 @@ const HELP_SECTIONS = [
         ],
         note: '外部收藏会跳到第三方网站，其可用性和隐私规则由对应服务决定。',
         actions: [{ href: '#contact', label: '反馈问题' }],
+      },
+    ],
+  },
+  {
+    id: 'design', title: '界面与设计', items: [
+      {
+        id: 'design-language', title: '站点设计语言', description: '了解全站共同使用的页面壳、颜色、排版、组件与可访问性原则。', icon: IconPalette,
+        steps: [
+          '主站以内容阅读为中心，使用统一导航、页脚、纸张感背景和 1120px 内容宽度；后台使用独立的数据密集型页面壳。',
+          '颜色按正文、辅助文字、边界、表面和强调等语义令牌使用，深色模式保持相同信息层级，不在页面里重复发明近似颜色。',
+          '长文与编辑性标题使用衬线气质，控件和数据使用清晰的无衬线排版，编号与短标签可使用等宽字体。',
+          '列表、卡片、空状态、错误状态和等待状态复用共享组件；新增页面先沿用现有结构，再判断是否需要扩展设计系统。',
+          '所有交互都要支持键盘操作、清晰焦点、状态文案和减少动态偏好，不能只靠颜色或动画传达结果。',
+        ],
+        note: '界面设计服务于阅读、查找和操作。专题页可以有独立气质，但导航、状态反馈和可访问性规则保持一致。',
+      },
+      {
+        id: 'loading-motion', title: '加载与等待反馈', description: '页面、区块、内联与按钮使用同一套克制的加载语言。', icon: IconLoader2,
+        steps: [
+          '页面切换使用接近最终结构的流体骨架，先稳定布局，再显示真实内容。',
+          '图表、列表和鉴权等独立区块使用平滑圆环与具体文案，让等待对象保持明确。',
+          '加载更多和窄区域使用三点节奏；提交、保存和刷新按钮使用小圆环并暂时禁用重复操作。',
+          '可获得真实进度时直接显示进度条；未知进度才使用循环动效。',
+          '减少动态模式下停止循环，屏幕阅读器仍能获得正在执行的任务名称。',
+        ],
+        demo: 'loading',
+        note: '动效参考 Amicro 的开源组件语言，并按本站色彩、性能与无障碍要求重新实现；站点不加载额外 Motion 运行时。',
       },
     ],
   },
@@ -198,6 +227,25 @@ function DocumentationArticle({ item, index }) {
 
     {item.note ? <p className="ml-12 mt-5 max-w-3xl border-l-2 border-[var(--site-line-strong)] bg-[color-mix(in_srgb,var(--site-panel)_70%,transparent)] px-4 py-3 text-[13px] leading-6 text-[var(--site-muted)]"><strong className="mr-2 font-semibold text-[var(--site-ink)]">注意</strong>{item.note}</p> : null}
 
+    {item.demo === 'loading' ? <div className="ml-12 mt-5 grid max-w-3xl gap-3 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 sm:grid-cols-3">
+      <div className="rounded-lg border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">
+        <p className="mb-4 text-[11px] font-medium text-[var(--site-faint)]">结构骨架</p>
+        <div className="space-y-2" aria-label="骨架动效示例">
+          <Skeleton className="h-4 w-3/5 rounded-full" />
+          <Skeleton className="h-3 w-full rounded-full" />
+          <Skeleton className="h-3 w-4/5 rounded-full" />
+        </div>
+      </div>
+      <div className="flex min-h-28 flex-col rounded-lg border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">
+        <p className="mb-4 text-[11px] font-medium text-[var(--site-faint)]">区块等待</p>
+        <div className="flex flex-1 items-center gap-2 text-[13px] text-[var(--site-muted)]"><LoadingSpinner label="正在加载示例" />正在加载</div>
+      </div>
+      <div className="flex min-h-28 flex-col rounded-lg border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">
+        <p className="mb-4 text-[11px] font-medium text-[var(--site-faint)]">内联等待</p>
+        <div className="flex flex-1 items-center text-[var(--site-accent)]"><LoadingDots label="正在加载更多示例" /></div>
+      </div>
+    </div> : null}
+
     {item.linkGroups?.length ? <div className="ml-12 mt-6 grid gap-3 sm:grid-cols-2">{item.linkGroups.map((group) => <details key={group.title} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 open:sm:col-span-2">
       <summary className="cursor-pointer text-[14px] font-semibold text-[var(--site-ink)]">{group.title}<span className="ml-2 text-[11px] font-normal text-[var(--site-faint)]">{group.links.length} 个入口</span></summary>
       <div className="mt-3 grid gap-x-5 gap-y-3 border-t border-[var(--site-line)] pt-3 sm:grid-cols-2">{group.links.map((link) => <Link key={`${group.title}-${link.href}`} href={link.href} target={link.external ? '_blank' : undefined} rel={link.external ? 'noreferrer' : undefined} className="min-w-0 text-[13px] no-underline hover:text-[var(--site-accent)]">
@@ -220,7 +268,7 @@ export default function HelpPage() {
           <div className="inline-flex items-center gap-2 text-[12px] font-semibold text-[var(--site-green)]"><IconRocket size={17} stroke={1.7} aria-hidden="true" />站点指南</div>
           <h1 className="mt-3 font-serif text-[34px] font-semibold leading-tight text-[var(--site-ink)] md:text-[42px]">站点帮助</h1>
           <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[var(--site-muted)]">关于本站、使用方法、全站导航、内容规则、隐私政策和联系方式集中在当前页。使用左侧目录直接定位，不需要在多份相似说明之间来回查找。</p>
-          <p className="mt-3 text-[12px] text-[var(--site-faint)]">共 {articleCount} 个主题 · 最后整理：2026 年 8 月 24 日</p>
+          <p className="mt-3 text-[12px] text-[var(--site-faint)]">共 {articleCount} 个主题 · 最后整理：2026 年 8 月 27 日</p>
         </header>
         <div className="mt-2">{HELP_SECTIONS.map((section) => <section key={section.id} id={section.id} className="scroll-mt-24 pt-9 md:pt-11">
           <div className="mb-5 flex items-center gap-3"><h2 className="shrink-0 text-[12px] font-semibold tracking-[0.08em] text-[var(--site-muted)]">{section.title}</h2><span className="h-px flex-1 bg-[var(--site-line)]" aria-hidden="true" /></div>

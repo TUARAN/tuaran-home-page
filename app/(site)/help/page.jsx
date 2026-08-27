@@ -6,6 +6,7 @@ import {
 } from '@tabler/icons-react'
 
 import { LoadingDots, LoadingSpinner, Skeleton } from '../../components/loading/LoadingPrimitives'
+import { ENGINEERING_CONVENTIONS } from '../../../lib/engineeringConventions'
 import { SITE_CHANNELS, isItemVisibleForAccount } from '../../../lib/siteNav'
 import PageContainer from '../components/PageContainer'
 
@@ -23,6 +24,37 @@ const SITE_MAP_GROUPS = SITE_CHANNELS.map((channel) => ({
     .filter((item) => isItemVisibleForAccount(item, null, null))
     .map((item) => ({ href: item.href, label: item.label, description: item.desc, external: item.external }))),
 }))
+
+const DESIGN_PRINCIPLES = [
+  {
+    title: 'Token 优先，组件不写死颜色',
+    body: '全站颜色走一套语义 token（--site-ink / muted / faint / line / panel / accent / green 等），浅、深、经典三套主题各定义一次。组件只引用 token，不再散落 hex；想调色只改根变量，全站跟随。',
+  },
+  {
+    title: '暖中性基底 + 克制点缀',
+    body: '以暖灰（浅色）、暖近黑（深色）作基底，鼠尾草绿与赭紫只做少量点缀。一个页面不堆多种强色，让信息层级而非颜色抢注意力。',
+  },
+  {
+    title: '一处定义，处处跟随',
+    body: '主题与阅读底色的切换只动根变量，不逐组件改写。阅读底色（reading-bg）仅在亮色主题生效，暗色恒用自身深色基底——切换主题不会把浅底卡死在暗色上。',
+  },
+  {
+    title: '内容优先，视觉克制',
+    body: '列表与卡片低饱和、弱投影、细边框，正文与标题是主角。装饰性渐变、光晕只在首页等少数门面出现，内容页保持安静。',
+  },
+  {
+    title: '资源页不用卡片网格',
+    body: '资料、书单、索引类页面优先使用长文、目录、表格、分隔线列表和紧凑链接组织信息；不要把每个条目都做成圆角卡片，也不要用大面积卡片堆叠替代内容结构。',
+  },
+  {
+    title: '三档宽度 + 三态主题',
+    body: '页面宽度收敛为 narrow / standard / wide 三档，主题统一为浅、深、经典三态。跨页沿用同一套度量与色板，避免每页各写一套。',
+  },
+  {
+    title: '可达性是底线',
+    body: '保证文字对比度、保留 focus-visible 键盘轮廓、尊重 prefers-reduced-motion。好看不能以牺牲可读、可操作为代价。',
+  },
+]
 
 const HELP_SECTIONS = [
   {
@@ -101,15 +133,10 @@ const HELP_SECTIONS = [
   {
     id: 'design', title: '界面与设计', items: [
       {
-        id: 'design-language', title: '站点设计语言', description: '了解全站共同使用的页面壳、颜色、排版、组件与可访问性原则。', icon: IconPalette,
-        steps: [
-          '主站以内容阅读为中心，使用统一导航、页脚、纸张感背景和 1120px 内容宽度；后台使用独立的数据密集型页面壳。',
-          '颜色按正文、辅助文字、边界、表面和强调等语义令牌使用，深色模式保持相同信息层级，不在页面里重复发明近似颜色。',
-          '长文与编辑性标题使用衬线气质，控件和数据使用清晰的无衬线排版，编号与短标签可使用等宽字体。',
-          '列表、卡片、空状态、错误状态和等待状态复用共享组件；新增页面先沿用现有结构，再判断是否需要扩展设计系统。',
-          '所有交互都要支持键盘操作、清晰焦点、状态文案和减少动态偏好，不能只靠颜色或动画传达结果。',
-        ],
-        note: '界面设计服务于阅读、查找和操作。专题页可以有独立气质，但导航、状态反馈和可访问性规则保持一致。',
+        id: 'design-language', title: '这个站点配色与样式的取舍', description: '用一套尽量小的规则，让浅色、深色、经典三套主题保持一致并便于维护。', icon: IconPalette,
+        steps: [],
+        rules: DESIGN_PRINCIPLES,
+        note: '专题页可以有独立气质，但导航、状态反馈和可访问性规则保持一致。',
       },
       {
         id: 'loading-motion', title: '加载与等待反馈', description: '页面、区块、内联与按钮使用同一套克制的加载语言。', icon: IconLoader2,
@@ -122,6 +149,11 @@ const HELP_SECTIONS = [
         ],
         demo: 'loading',
         note: '动效参考 Amicro 的开源组件语言，并按本站色彩、性能与无障碍要求重新实现；站点不加载额外 Motion 运行时。',
+      },
+      {
+        id: 'engineering-conventions', title: '后台与自动化的统一规矩', description: '分页、通知、告警、样式与凭证使用同一套可执行约定。', icon: IconRocket,
+        steps: [],
+        rules: ENGINEERING_CONVENTIONS,
       },
     ],
   },
@@ -221,9 +253,14 @@ function DocumentationArticle({ item, index }) {
       </div>
     </div>
 
-    <ol className="mt-5 space-y-3 pl-12">{item.steps.map((step, stepIndex) => <li key={step} className="grid max-w-3xl grid-cols-[24px_minmax(0,1fr)] gap-2 text-[14px] leading-7 text-[var(--site-muted)]">
+    {item.steps.length ? <ol className="mt-5 space-y-3 pl-12">{item.steps.map((step, stepIndex) => <li key={step} className="grid max-w-3xl grid-cols-[24px_minmax(0,1fr)] gap-2 text-[14px] leading-7 text-[var(--site-muted)]">
       <span className="font-mono text-[11px] text-[var(--site-faint)]">{String(stepIndex + 1).padStart(2, '0')}</span><span>{step}</span>
-    </li>)}</ol>
+    </li>)}</ol> : null}
+
+    {item.rules?.length ? <ol className="ml-12 mt-5 grid max-w-3xl gap-3 sm:grid-cols-2">{item.rules.map((rule, ruleIndex) => <li key={rule.title} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4">
+      <p className="flex items-baseline gap-2 text-[14px] font-semibold leading-6 text-[var(--site-ink)]"><span className="font-mono text-[10px] text-[var(--site-accent)]">{String(ruleIndex + 1).padStart(2, '0')}</span>{rule.title}</p>
+      <p className="mt-1.5 text-[13px] leading-6 text-[var(--site-muted)]">{rule.body}</p>
+    </li>)}</ol> : null}
 
     {item.note ? <p className="ml-12 mt-5 max-w-3xl border-l-2 border-[var(--site-line-strong)] bg-[color-mix(in_srgb,var(--site-panel)_70%,transparent)] px-4 py-3 text-[13px] leading-6 text-[var(--site-muted)]"><strong className="mr-2 font-semibold text-[var(--site-ink)]">注意</strong>{item.note}</p> : null}
 

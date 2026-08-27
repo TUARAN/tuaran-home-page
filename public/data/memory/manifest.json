@@ -1,0 +1,431 @@
+{
+  "generatedAt": "2026-08-27T01:52:41.730Z",
+  "kdf": {
+    "algorithm": "PBKDF2-SHA256",
+    "iterations": 200000,
+    "keyBits": 256
+  },
+  "cipher": "AES-GCM",
+  "sources": {
+    "claude": {
+      "label": "Claude Code 项目记忆",
+      "description": "~/.claude/projects/…/memory/ 下的跨会话项目级记忆",
+      "files": {
+        "MEMORY": {
+          "title": "MEMORY",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:39.694Z",
+              "hash": "37e73d49748596b3edc5e9aa0e8e9bf2f110a16c6dfcbc5a21eb0bbebaf9b382",
+              "path": "claude/MEMORY/2026-08-27T01-52-39-751Z.enc.json",
+              "bytes": 3185
+            }
+          ]
+        },
+        "automation-strategy": {
+          "title": "automation-strategy",
+          "description": "站长的自动化总方针——优先云端、LLM 步骤统一用 DeepSeek V4 Pro；做/改任何自动化任务前先读",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:39.760Z",
+              "hash": "b8ad3593cfa6d18d337676dc02880a9cf7ee4ce1c1afba626633c6e332d40e05",
+              "path": "claude/automation-strategy/2026-08-27T01-52-39-814Z.enc.json",
+              "bytes": 1278
+            }
+          ]
+        },
+        "content-pipeline-and-index": {
+          "title": "content-pipeline-and-index",
+          "description": "统一内容管线 + D1 内容索引（migration 0035 需手动跑）+ 5 频道导航，2026-07-02 落地",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:39.816Z",
+              "hash": "a57c774808fc0355126a550ed37a381fd3314c6a0620b0543ac665465c86d35f",
+              "path": "claude/content-pipeline-and-index/2026-08-27T01-52-39-871Z.enc.json",
+              "bytes": 1306
+            }
+          ]
+        },
+        "content-strategy-first-person-pivot": {
+          "title": "content-strategy-first-person-pivot",
+          "description": "站长已认同「2026 年内容杠杆点应从 AI 协助调研转向第一人称叙事」；与其继续生产 AI 味文章，不如帮他识别什么内容只有他能写",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:39.873Z",
+              "hash": "6fb4491b59a9ceb5a80eabd8287c0066f2dcfe16ef9c14d1b11f456da338e217",
+              "path": "claude/content-strategy-first-person-pivot/2026-08-27T01-52-39-943Z.enc.json",
+              "bytes": 1620
+            }
+          ]
+        },
+        "eink-reading-palette": {
+          "title": "eink-reading-palette",
+          "description": "墨水屏护眼配色 data-reading=eink 机制；以及深底面板内文字必须用固定浅色、不能跟随 --site-ink",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:39.945Z",
+              "hash": "75ffbe054d2fa20fc5755d8d4bb2bb3231180d8de9487e0ebac3e3725b923711",
+              "path": "claude/eink-reading-palette/2026-08-27T01-52-40-004Z.enc.json",
+              "bytes": 2257
+            }
+          ]
+        },
+        "feedback-ai-cliche-phrases": {
+          "title": "feedback-ai-cliche-phrases",
+          "description": "AI 腔套话公理级禁语（全风格通用），正本在 researchStyleTemplates.js 的 UNIVERSAL_BAN_PHRASES；动笔前先读",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.006Z",
+              "hash": "093dda8d7a330b988717a10a4720d42c21b88c651a0df321d9bfa891478f04d0",
+              "path": "claude/feedback-ai-cliche-phrases/2026-08-27T01-52-40-060Z.enc.json",
+              "bytes": 1194
+            }
+          ]
+        },
+        "feedback-examples-are-not-axes": {
+          "title": "feedback-examples-are-not-axes",
+          "description": "站长随口举例的对比对象不是穷举也不是靶子——别排成并列坐标，也别在文中反驳他的提法，要自己找立论角度",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.062Z",
+              "hash": "12d7b6eeb2ba74c2f03cc89b1528b6fab309ccb8a5444422cc4d15e1a8748731",
+              "path": "claude/feedback-examples-are-not-axes/2026-08-27T01-52-40-101Z.enc.json",
+              "bytes": 680
+            }
+          ]
+        },
+        "feedback-research-tone": {
+          "title": "feedback-research-tone",
+          "description": "写公司/产品调研时不要用推测当事实陈述，尤其涉及对方\\\"还没赚到钱\\\"\\\"假装\\\"\\\"0 投入\\\"这类判断",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.102Z",
+              "hash": "159820811a920b5af351ace023de1abbed8dd250f816915086ae9ed0c89015af",
+              "path": "claude/feedback-research-tone/2026-08-27T01-52-40-142Z.enc.json",
+              "bytes": 1530
+            }
+          ]
+        },
+        "guest-and-ranbi-feature": {
+          "title": "guest-and-ranbi-feature",
+          "description": "游客评论 + 燃币（积分）体系已落代码，但要站长在 Cloudflare 手动跑 migration 0027/0028 才生效",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.144Z",
+              "hash": "cc5c2b6bf58fc4c939f3dba781ce0112dea355da74a0debed7bdba1ae6d5f56e",
+              "path": "claude/guest-and-ranbi-feature/2026-08-27T01-52-40-194Z.enc.json",
+              "bytes": 2159
+            }
+          ]
+        },
+        "i18n-shell-and-home": {
+          "title": "i18n-shell-and-home",
+          "description": "站点中英双语的范围、机制与关键约束（2026-06-14 落地）",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.197Z",
+              "hash": "7ca30d854e7b0df9a4cf3cc309232f642d9ea52dac8c701733979f121772d18f",
+              "path": "claude/i18n-shell-and-home/2026-08-27T01-52-40-251Z.enc.json",
+              "bytes": 1220
+            }
+          ]
+        },
+        "layout-width-tiers": {
+          "title": "layout-width-tiers",
+          "description": "全站内容容器宽度的三档约定与 PageContainer 组件，新建/改页面时套用",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.253Z",
+              "hash": "5dd844abf1e73f8a0b98272f1c61a48882daa72cb98b62129c2b9e295905afa6",
+              "path": "claude/layout-width-tiers/2026-08-27T01-52-40-312Z.enc.json",
+              "bytes": 902
+            }
+          ]
+        },
+        "openclaw-verify-against-core-repo": {
+          "title": "openclaw-verify-against-core-repo",
+          "description": "调研 OpenClaw 任何「官方有没有 X」时，必须核 openclaw/openclaw 核心仓库，别信 web 搜索摘要",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.314Z",
+              "hash": "4a424cc658e35f7915745b2d96e3766f6f3ca21667cb9b02f84a262761381ad6",
+              "path": "claude/openclaw-verify-against-core-repo/2026-08-27T01-52-40-368Z.enc.json",
+              "bytes": 908
+            }
+          ]
+        },
+        "research-style-template-v3": {
+          "title": "research-style-template-v3",
+          "description": "调研写作规则的唯一正本在 lib/researchStyleTemplates.js 的 active 版本（当前 v4 开篇瘦身版，文件名 v3 为历史命名）；动笔前先读它，不要凭记忆复述规则",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.370Z",
+              "hash": "beca4dcde51dccfccf6dc9efc4eefbb41c4f8020d474167e161fa9aaca49f82f",
+              "path": "claude/research-style-template-v3/2026-08-27T01-52-40-430Z.enc.json",
+              "bytes": 1127
+            }
+          ]
+        },
+        "research-variant-labels": {
+          "title": "research-variant-labels",
+          "description": "研究文章 variant 切换器的工具标签命名约定 —— Claude Code 标 Opus 4.7、Codex 标 GPT-5.5、Cursor 不带版本号",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.432Z",
+              "hash": "a5c70d1b816f298ff3a6397c6dc5a9a84982894eb6e1222f57fa41fbe063911d",
+              "path": "claude/research-variant-labels/2026-08-27T01-52-40-485Z.enc.json",
+              "bytes": 978
+            }
+          ]
+        },
+        "rss-blogroll-feature": {
+          "title": "rss-blogroll-feature",
+          "description": "RSS 订阅墙（/resources/rss + /admin/rss-feeds，D1）代码已落，需站长手动跑 migration 0031；排查订阅加不上/不显示先查迁移",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.487Z",
+              "hash": "ebd8848a933d47b6c8dfc3d551548442cccae67d49af3b546bde84a5a934be5f",
+              "path": "claude/rss-blogroll-feature/2026-08-27T01-52-40-540Z.enc.json",
+              "bytes": 1246
+            }
+          ]
+        },
+        "shen-zhi-x-nei-hub": {
+          "title": "shen-zhi-x-nei-hub",
+          "description": "置身X内合集页结构、四篇构成，以及\\\"置身德内\\\"不存在（用置身米内替代）的结论",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.541Z",
+              "hash": "a68529619f2919e630c600ef5aa692c619ab53a8d26e3c8d90c129ea09e987f7",
+              "path": "claude/shen-zhi-x-nei-hub/2026-08-27T01-52-40-580Z.enc.json",
+              "bytes": 811
+            }
+          ]
+        },
+        "site-review-doc": {
+          "title": "site-review 文档存在性指针",
+          "description": "仓库内 ai-context/site-review-2026-05-17.md 存有一份犀利的站点审查报告（10 大问题诊断 + 一年路线图）",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.581Z",
+              "hash": "43b7ddf88656eb968fe5e9dfd2e5b66f8c5df02e216fb57f37c79b50711569bb",
+              "path": "claude/site-review-doc/2026-08-27T01-52-40-620Z.enc.json",
+              "bytes": 595
+            }
+          ]
+        },
+        "user-positioning": {
+          "title": "user-positioning",
+          "description": "站长真实定位与自我审视陷阱——「非精英路径中年技术人」是优势不是包袱；不要套用清北/大厂叙事评价自己",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.621Z",
+              "hash": "620058ebd247e93bfec4fb20a3d83a196ebf0036aab2b5fb88b4b729906ac8fe",
+              "path": "claude/user-positioning/2026-08-27T01-52-40-671Z.enc.json",
+              "bytes": 800
+            }
+          ]
+        },
+        "vibe-coding-research-versions": {
+          "title": "vibe-coding-research-versions",
+          "description": "\\\"vibe coding 时代架构师判断力结构\\\"调研采用文章内多版本切换器（同一篇 .md 用 <!-- variant:xxx --> 切分），目前并存 Cursor 版与 Claude Code 版",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.676Z",
+              "hash": "223b446099f5dea8a6065abaeb7a55ae0088db2a8e971b604b89cfe40091d284",
+              "path": "claude/vibe-coding-research-versions/2026-08-27T01-52-40-732Z.enc.json",
+              "bytes": 1510
+            }
+          ]
+        },
+        "wallpaper-resource-feature": {
+          "title": "wallpaper-resource-feature",
+          "description": "壁纸资源库功能（R2+D1）已落代码，但依赖站长在 Cloudflare 控制台的手动配置才能真正可用",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.734Z",
+              "hash": "148d149d6133290f7b68000c2b5931fb3b9d402d81df51bea9242e1a4ffe2958",
+              "path": "claude/wallpaper-resource-feature/2026-08-27T01-52-40-793Z.enc.json",
+              "bytes": 882
+            }
+          ]
+        },
+        "world-cup-feature": {
+          "title": "world-cup-feature",
+          "description": "/agent-world-cup 自动采集的数据源、无 key 事实与上线手动步骤；页面空/STALE 先查这里",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.794Z",
+              "hash": "b72f4ede6fb46dd6bc8d22c4b4a196403eb614bfa9319c9aaba4f49c2e2290b5",
+              "path": "claude/world-cup-feature/2026-08-27T01-52-40-847Z.enc.json",
+              "bytes": 1821
+            }
+          ]
+        },
+        "wrangler-proxy-workaround": {
+          "title": "wrangler-proxy-workaround",
+          "description": "本机代理会掐断 wrangler 到 dash.cloudflare.com 的连接，需清空代理变量再执行",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.850Z",
+              "hash": "f2bb22030e3378376f0b4a891c7841d475db3088ef21c85eca5e4146c52621a0",
+              "path": "claude/wrangler-proxy-workaround/2026-08-27T01-52-40-902Z.enc.json",
+              "bytes": 641
+            }
+          ]
+        },
+        "x-mutual-aid-circle-page": {
+          "title": "x-mutual-aid-circle-page",
+          "description": "/resources/x-mutual-aid-circle 是「X 互帮互助」圈子品牌页；二维码文件 public/qrcode-x-group.jpg 每 7 天过期需站长手动覆盖，2026-07-03 落码时还是占位图",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.907Z",
+              "hash": "6eef6c5b4681d2d0faab27a888d1cbe89658d10125d5828ab7fff486b787908e",
+              "path": "claude/x-mutual-aid-circle-page/2026-08-27T01-52-40-952Z.enc.json",
+              "bytes": 800
+            }
+          ]
+        }
+      }
+    },
+    "ai-context": {
+      "label": "仓库 ai-context/",
+      "description": "仓库内长期保存的架构 / 规划 / 审查文档",
+      "files": {
+        "README": {
+          "title": "README",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:40.957Z",
+              "hash": "6e7cbeb3372c95977eb8060eab7bcb02f10b7e5862330a2f7f3f1afa89138919",
+              "path": "ai-context/README/2026-08-27T01-52-41-005Z.enc.json",
+              "bytes": 1601
+            }
+          ]
+        },
+        "a-share-company-research-automation": {
+          "title": "a-share-company-research-automation",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.007Z",
+              "hash": "10ca9fb2718ab577513412c3eea9f468c0b9234614f3ee837ad365e346e0f99d",
+              "path": "ai-context/a-share-company-research-automation/2026-08-27T01-52-41-049Z.enc.json",
+              "bytes": 3658
+            }
+          ]
+        },
+        "architecture": {
+          "title": "architecture",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.050Z",
+              "hash": "ccdf20708973081cd6c67c725056977d6d97aea0ab4ba8f64ebeb57924145cfd",
+              "path": "ai-context/architecture/2026-08-27T01-52-41-090Z.enc.json",
+              "bytes": 5873
+            }
+          ]
+        },
+        "content-information-architecture": {
+          "title": "content-information-architecture",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.091Z",
+              "hash": "030ec61d3e4d5c70c9fd277250e0dd20149abc0aa2777b337d3f78d8189bd03a",
+              "path": "ai-context/content-information-architecture/2026-08-27T01-52-41-130Z.enc.json",
+              "bytes": 2452
+            }
+          ]
+        },
+        "content-layer-refactor-plan": {
+          "title": "content-layer-refactor-plan",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.132Z",
+              "hash": "25835b0693482c4fb43d9cddbfe317876abf6b40d7e41dc8541da8f406356e3d",
+              "path": "ai-context/content-layer-refactor-plan/2026-08-27T01-52-41-184Z.enc.json",
+              "bytes": 4419
+            }
+          ]
+        },
+        "deepseek-key-management": {
+          "title": "deepseek-key-management",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.186Z",
+              "hash": "ea9a3c59400ba21f07b33065c7e6e090cfea1da5ec683e55d010960c112a8c9d",
+              "path": "ai-context/deepseek-key-management/2026-08-27T01-52-41-242Z.enc.json",
+              "bytes": 2529
+            }
+          ]
+        },
+        "digital-human-deploy": {
+          "title": "digital-human-deploy",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.244Z",
+              "hash": "46018b5bbe4d07671c08b3140766c2f62bf31d6b52d2d6468c13c7e56f1b3ecb",
+              "path": "ai-context/digital-human-deploy/2026-08-27T01-52-41-302Z.enc.json",
+              "bytes": 1109
+            }
+          ]
+        },
+        "site-review-2026-05-17": {
+          "title": "site-review-2026-05-17",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.303Z",
+              "hash": "ce675df71f20137a4d1cd6f3a5345fa1891d018f0f9c9672c8b89146de7965df",
+              "path": "ai-context/site-review-2026-05-17/2026-08-27T01-52-41-353Z.enc.json",
+              "bytes": 6507
+            }
+          ]
+        },
+        "site-tools-shortener": {
+          "title": "site-tools-shortener",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.358Z",
+              "hash": "1d94d1b16e4db88715901f46edd32e96ea98ccdde6627d6ac27b3b6754cd82ab",
+              "path": "ai-context/site-tools-shortener/2026-08-27T01-52-41-405Z.enc.json",
+              "bytes": 5261
+            }
+          ]
+        },
+        "web-llm-integration-notes": {
+          "title": "web-llm-integration-notes",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.412Z",
+              "hash": "4551a45406a79bb9d080fa17a30c64b50fdfb42a03ae3d3f8c60768f346b9e13",
+              "path": "ai-context/web-llm-integration-notes/2026-08-27T01-52-41-591Z.enc.json",
+              "bytes": 4039
+            }
+          ]
+        },
+        "web-llm-port-handoff": {
+          "title": "web-llm-port-handoff",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-08-27T01:52:41.593Z",
+              "hash": "b84b59dfb6e43c6f500d4802c67570ea7ac69e8f9f32f9edc6bf3debcdf15948",
+              "path": "ai-context/web-llm-port-handoff/2026-08-27T01-52-41-728Z.enc.json",
+              "bytes": 7913
+            }
+          ]
+        }
+      }
+    }
+  }
+}

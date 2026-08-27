@@ -40,7 +40,7 @@ export default function SecuritySelfCheckPage() {
           <StatCard label="检查日期" value={SECURITY_SELF_CHECK_UPDATED_AT} sub="本次为只读人工审计快照" icon="audit" tone="info" />
           <StatCard label="确认明文凭据" value="0" sub="未发现生产 Key、密码、Cookie 或 .env 明文" icon="information" tone="success" />
           <StatCard label="已接受公开" value={ACCEPTED_PUBLIC_METADATA.length} sub="策略、架构与运营元数据三组" icon="seo" tone="success" />
-          <StatCard label="公开前事项" value={PUBLICATION_BLOCKERS.length} sub="处理、确认或复核后再作决定" icon="audit" tone="warning" />
+          <StatCard label="处理记录" value={PUBLICATION_BLOCKERS.length} sub="三项公开前风险均已完成处理" icon="audit" tone="success" />
         </div>
 
         <Section
@@ -76,14 +76,14 @@ export default function SecuritySelfCheckPage() {
 
         <Section
           className="mt-5"
-          title="公开前仍有合理性的暂缓项"
-          description="重点不在策略是否见光，而在第三方权利、密码学暴露面和无法撤回的历史公开。"
+          title="公开前处理记录"
+          description="重点不在策略是否见光，而在第三方权利、密码学暴露面和无法撤回的历史公开。三项现已完成。"
         >
           <div className="space-y-3">
             {PUBLICATION_BLOCKERS.map((item) => (
-              <article key={item.title} className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+              <article key={item.title} className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
                 <div className="flex flex-wrap items-center gap-2">
-                  <StatusPill tone="warning" size="sm">{item.level}</StatusPill>
+                  <StatusPill tone="success" size="sm">{item.level}</StatusPill>
                   <h3 className="font-semibold text-[#2b2c28] dark:text-gray-100">{item.title}</h3>
                 </div>
                 <dl className="mt-3 grid gap-2 text-[13px] leading-6 md:grid-cols-[5rem_minmax(0,1fr)]">

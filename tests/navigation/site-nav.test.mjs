@@ -40,3 +40,11 @@ test('every public channel defines one featured overview entry in its grid', () 
   assert.match(source, /href: '\/help'[^}\n]*featured: true/)
   assert.match(source, /href: '\/sites'[^}\n]*label: '二级站点'/)
 })
+
+test('about navigation shows changelog immediately after site help', () => {
+  assert.match(
+    source,
+    /href: '\/help'[^}\n]*label: '站点帮助'[^\n]*\n\s*\{ href: '\/changelog', label: '更新记录'[^}\n]*\}/,
+  )
+  assert.doesNotMatch(source, /href: '\/changelog'[^}\n]*nav: false/)
+})

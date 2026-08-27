@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  GENERATION_TIMEOUT_MS,
   buildCryptoDraftPrompt,
   draftGenerationDecision,
   normalizeMarketCoins,
@@ -16,6 +17,10 @@ const bitcoin = {
   market_cap: 2_000_000_000_000, circulating_supply: 20_000_000, total_supply: 20_000_000,
   max_supply: 21_000_000, last_updated: '2026-08-26T00:00:00Z',
 }
+
+test('allows enough time for web-search research generation', () => {
+  assert.ok(GENERATION_TIMEOUT_MS >= 90_000)
+})
 
 test('normalizes and orders CoinGecko market rows by market-cap rank', () => {
   const coins = normalizeMarketCoins([

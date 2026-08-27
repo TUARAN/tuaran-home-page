@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
+import AdminPagination from '../../components/ui/AdminPagination'
+
+const LOG_PAGE_SIZE = 20
 
 const STATUS = {
   generating: ['生成中', 'info'], failed: ['生成失败', 'danger'], pending: ['待复核', 'warning'],
@@ -19,26 +22,43 @@ async function json(response) {
 export default function CryptoResearchClient() {
   const [data, setData] = useState(null)
   const [logs, setLogs] = useState([])
+  const [logTotal, setLogTotal] = useState(0)
+  const [logOffset, setLogOffset] = useState(0)
+  const [logsLoading, setLogsLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [openId, setOpenId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const refresh = useCallback(async () => {
+  const loadOverview = useCallback(async () => {
     setLoading(true); setError('')
     try {
       const query = filter === 'all' ? '' : `?status=${filter}`
-      const [overview, logData] = await Promise.all([
-        fetch(`/api/admin/crypto-research${query}`, { cache: 'no-store' }).then(json),
-        fetch('/api/admin/crypto-research/logs?limit=30', { cache: 'no-store' }).then(json),
-      ])
-      setData(overview); setLogs(logData.logs || [])
+      const overview = await fetch(`/api/admin/crypto-research${query}`, { cache: 'no-store' }).then(json)
+      setData(overview)
     } catch (cause) { setError(cause.message || '读取失败。') }
     finally { setLoading(false) }
   }, [filter])
 
-  useEffect(() => { refresh() }, [refresh])
+  const loadLogs = useCallback(async (nextOffset = 0) => {
+    setLogsLoading(true); setError('')
+    try {
+      const params = new URLSearchParams({ limit: String(LOG_PAGE_SIZE), offset: String(nextOffset) })
+      const logData = await fetch(`/api/admin/crypto-research/logs?${params}`, { cache: 'no-store' }).then(json)
+      setLogs(logData.logs || [])
+      setLogTotal(Number(logData.total) || 0)
+      setLogOffset(Number(logData.offset) || 0)
+    } catch (cause) { setError(cause.message || '运行日志读取失败。') }
+    finally { setLogsLoading(false) }
+  }, [])
+
+  const refresh = useCallback(async () => {
+    await Promise.all([loadOverview(), loadLogs(logOffset)])
+  }, [loadOverview, loadLogs, logOffset])
+
+  useEffect(() => { loadOverview() }, [loadOverview])
+  useEffect(() => { loadLogs(0) }, [loadLogs])
 
   async function mutate(draft, action) {
     setSaving(true); setError('')
@@ -80,6 +100,7 @@ export default function CryptoResearchClient() {
                 <p className="mt-1 text-xs text-[#67695d] dark:text-gray-400">{draft.status === 'failed' ? draft.generationError : draft.autoPublishAt ? `${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { hour12: false })} 后自动发布` : `生成尝试 ${draft.attemptCount} 次`}</p>
               </button>
               <div className="flex flex-wrap gap-2">
+                {draft.status === 'failed' ? <AdminButton variant="primary" onClick={() => mutate(draft, 'retry')} disabled={saving}>重新生成</AdminButton> : null}
                 {['pending', 'reviewed'].includes(draft.status) ? <AdminButton variant="primary" onClick={() => mutate(draft, 'publish')} disabled={saving}>发布</AdminButton> : null}
                 {['pending', 'reviewed'].includes(draft.status) ? <AdminButton variant="ghost" onClick={() => mutate(draft, 'rejected')} disabled={saving}>退回</AdminButton> : null}
                 {draft.status === 'published' ? <AdminButton href={`/articles/research/topics/crypto-${draft.coinId}`} target="_blank">查看文章</AdminButton> : null}
@@ -90,8 +111,9 @@ export default function CryptoResearchClient() {
         })}
       </div>}
     </Section>
-    <Section title="运行日志" description="同步、起草和发布记录按时间倒序展示。" className="mt-4">
-      {!logs.length ? <EmptyState title="暂无运行记录" description="首次触发后会出现在这里。" /> : <div className="space-y-1.5">{logs.map((log) => <div key={log.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-[#e6e7df] px-3 py-2 text-xs dark:border-[#243041]"><StatusPill tone={log.status === 'ok' ? 'success' : log.status === 'failed' ? 'danger' : 'neutral'} size="sm">{log.status === 'ok' ? '成功' : log.status === 'failed' ? '失败' : '跳过'}</StatusPill><span className="min-w-0 flex-1 truncate">{log.action}{log.coinName ? ` · #${log.coinId} ${log.coinName}（${log.symbol}）` : ''}{log.error ? ` · ${log.error}` : ''}</span><time className="text-[#82847a]">{new Date(log.ranAt).toLocaleString('zh-CN', { hour12: false })}</time></div>)}</div>}
+    <Section title="运行日志" description="同步、起草和发布记录按时间倒序分页展示。" className="mt-4" actions={<span className="text-xs text-[#82847a]">共 {logsLoading ? '…' : logTotal} 条</span>}>
+      {!logsLoading && !logs.length ? <EmptyState title="暂无运行记录" description="首次触发后会出现在这里。" /> : <div className="space-y-1.5">{logs.map((log) => <div key={log.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-[#e6e7df] px-3 py-2 text-xs dark:border-[#243041]"><StatusPill tone={log.status === 'ok' ? 'success' : log.status === 'failed' ? 'danger' : 'neutral'} size="sm">{log.status === 'ok' ? '成功' : log.status === 'failed' ? '失败' : '跳过'}</StatusPill><span className="min-w-0 flex-1 truncate">{log.action}{log.coinName ? ` · #${log.coinId} ${log.coinName}（${log.symbol}）` : ''}{log.error ? ` · ${log.error}` : ''}</span><time className="text-[#82847a]">{new Date(log.ranAt).toLocaleString('zh-CN', { hour12: false })}</time></div>)}</div>}
+      <AdminPagination total={logTotal} offset={logOffset} limit={LOG_PAGE_SIZE} onOffsetChange={loadLogs} loading={logsLoading} />
     </Section>
   </AdminPage>
 }

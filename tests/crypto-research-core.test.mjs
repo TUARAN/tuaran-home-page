@@ -63,6 +63,19 @@ test('allows one recovery attempt for drafts exhausted by the legacy short timeo
   }).action, 'exhausted')
 })
 
+test('allows one recovery attempt for the legacy quoted-category validation failure', () => {
+  assert.equal(draftGenerationDecision({
+    status: 'failed',
+    attempt_count: 6,
+    generation_error: '草稿缺少或错误：category。',
+  }).action, 'attempt')
+  assert.equal(draftGenerationDecision({
+    status: 'failed',
+    attempt_count: 7,
+    generation_error: '草稿缺少或错误：category。',
+  }).action, 'exhausted')
+})
+
 test('prompt carries market rank, template and investment-safety constraints', () => {
   const coin = normalizeMarketCoins([bitcoin])[0]
   const prompt = buildCryptoDraftPrompt({ coin, style: { id: 'default-research', label: '默认分析风格' }, now: new Date('2026-08-26T00:00:00Z') })
@@ -81,6 +94,16 @@ test('validates complete crypto draft and rejects mismatched coin id', () => {
   const content = `---\ntitle: Bitcoin\ncategory: topics\ncrypto_type: asset\ncoin_id: "bitcoin"\nsymbol: "BTC"\nmarket_cap_rank: 1\nreview_ready: false\nad_eligible: false\n---\n\n${sections.map((section) => `## ${section}\n${'有效内容。'.repeat(12)}`).join('\n\n')}`
   assert.equal(validateCryptoDraft(content, { id: 'bitcoin', name: 'Bitcoin' }), true)
   assert.throws(() => validateCryptoDraft(content, { id: 'ethereum' }), /不一致/)
+})
+
+test('accepts quoted topics category in valid YAML frontmatter', () => {
+  const sections = [
+    '一、先给结论', '二、起源、背景与发展时间线', '三、技术机制与网络结构', '四、用途、生态与价值来源',
+    '五、代币经济与供给结构', '六、市场位置与历史表现', '七、治理、安全与关键依赖', '八、监管与合规环境',
+    '九、催化因素、主要风险与外部研判', '十、信息来源与未能验证',
+  ]
+  const content = `---\ntitle: Bitcoin\ncategory: "topics"\ncrypto_type: asset\ncoin_id: "bitcoin"\nsymbol: "BTC"\nmarket_cap_rank: 1\nreview_ready: false\nad_eligible: false\n---\n\n${sections.map((section) => `## ${section}\n${'有效内容。'.repeat(12)}`).join('\n\n')}`
+  assert.equal(validateCryptoDraft(content, { id: 'bitcoin', name: 'Bitcoin' }), true)
 })
 
 test('publishing uses stable crypto slug and three-day review window', () => {

@@ -56,11 +56,12 @@ jobs:
         if: failure()
         env:
           ALERT_SECRET: ${{ secrets.AUTOMATION_ALERT_SECRET || secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           if [ ! -f /tmp/crypto-research.json ]; then : > /tmp/crypto-research.json; fi
-          BODY=$(jq -n --arg url "$RUN_URL" --rawfile detail /tmp/crypto-research.json \
-            '{workflow:"crypto-research",taskName:"加密调研自动化",runUrl:$url,status:"failed",error:($detail[0:300])}')
+          BODY=$(jq -n --arg runId "$GITHUB_RUN_ID" --arg url "$RUN_URL" --rawfile detail /tmp/crypto-research.json \
+            '{workflow:"crypto-research",taskName:"加密调研自动化",runId:$runId,runUrl:$url,status:"failed",error:($detail[0:300])}')
           curl -sS --retry 2 --fail-with-body -X POST \
             -H "x-automation-alert-secret: $ALERT_SECRET" -H "content-type: application/json" \
             -d "$BODY" https://2aran.com/api/automation/alert || echo "alert delivery failed (non-fatal)"

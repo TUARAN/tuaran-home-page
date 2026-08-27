@@ -53,9 +53,18 @@ export async function PATCH(req) {
   const body = await req.json().catch(() => null)
   const id = String(body?.id || '').trim()
   const status = String(body?.status || '').trim()
-  if (!id || !MUTABLE.has(status)) return Response.json({ error: 'INVALID_INPUT' }, { status: 400 })
+  if (!id || (!MUTABLE.has(status) && status !== 'retry')) return Response.json({ error: 'INVALID_INPUT' }, { status: 400 })
   let db
   try { db = getD1() } catch { return unavailable() }
+  if (status === 'retry') {
+    const result = await db.prepare(
+      `UPDATE crypto_drafts
+       SET attempt_count = 0, status = 'failed', generation_error = '', content = '', deepseek_task_id = '', updated_at = ?
+       WHERE id = ? AND status = 'failed'`,
+    ).bind(Date.now(), id).run()
+    if (!result?.meta?.changes) return Response.json({ error: 'FAILED_DRAFT_NOT_FOUND' }, { status: 404 })
+    return Response.json({ ok: true, id, status: 'retry' })
+  }
   const result = await db.prepare('UPDATE crypto_drafts SET status = ?, updated_at = ? WHERE id = ?').bind(status, Date.now(), id).run()
   if (!result?.meta?.changes) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
   return Response.json({ ok: true, id, status })

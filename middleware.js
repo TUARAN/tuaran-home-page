@@ -50,7 +50,9 @@ export function middleware(request) {
   const legacyAdminTarget = ADMIN_LEGACY_REDIRECTS[pathname]
   if (legacyAdminTarget) {
     const url = request.nextUrl.clone()
-    url.pathname = legacyAdminTarget
+    const [targetPathname, targetSearch = ''] = legacyAdminTarget.split('?')
+    url.pathname = targetPathname
+    url.search = targetSearch ? `?${targetSearch}` : ''
     return NextResponse.redirect(url, 301)
   }
 

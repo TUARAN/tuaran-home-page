@@ -50,6 +50,19 @@ test('generation decision locks recent work and retries failed work', () => {
   assert.equal(draftGenerationDecision({ status: 'failed', attempt_count: 1, updated_at: now }, now).action, 'attempt')
 })
 
+test('allows one recovery attempt for drafts exhausted by the legacy short timeout', () => {
+  assert.equal(draftGenerationDecision({
+    status: 'failed',
+    attempt_count: 5,
+    generation_error: 'DeepSeek API 超时',
+  }).action, 'attempt')
+  assert.equal(draftGenerationDecision({
+    status: 'failed',
+    attempt_count: 5,
+    generation_error: '草稿缺少章节',
+  }).action, 'exhausted')
+})
+
 test('prompt carries market rank, template and investment-safety constraints', () => {
   const coin = normalizeMarketCoins([bitcoin])[0]
   const prompt = buildCryptoDraftPrompt({ coin, style: { id: 'default-research', label: '默认分析风格' }, now: new Date('2026-08-26T00:00:00Z') })

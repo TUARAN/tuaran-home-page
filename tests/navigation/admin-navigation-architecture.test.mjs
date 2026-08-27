@@ -4,6 +4,7 @@ import test from 'node:test'
 
 import {
   ADMIN_CONSOLE_ITEMS,
+  ADMIN_LEGACY_REDIRECTS,
   ADMIN_NAV_CHILD_ITEMS,
   resolveAdminTrail,
 } from '../../lib/adminRoutes.js'
@@ -50,6 +51,21 @@ test('previously hidden admin routes have explicit child entries', () => {
   for (const href of ['/admin/content-index', '/admin/research-style', '/admin/share', '/admin/wallpapers']) {
     assert.ok(hrefs.has(href), `${href} should be present in the admin navigation registry`)
   }
+})
+
+test('merged admin tools redirect in middleware without dedicated edge pages', async () => {
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(ADMIN_LEGACY_REDIRECTS).filter(([path]) => path.startsWith('/admin/'))),
+    {
+      '/admin/ai-workspace': '/admin/automation',
+      '/admin/model-dispatch': '/admin/planning?tab=dispatch',
+      '/admin/person-strawberry': '/admin/soft-sticker?tab=strawberry',
+      '/admin/self-regulation': '/admin/soft-sticker?tab=self-regulation',
+    }
+  )
+  const middlewareSource = await readFile(new URL('../../middleware.js', import.meta.url), 'utf8')
+  assert.match(middlewareSource, /legacyAdminTarget\.split\('\?'\)/)
+  assert.match(middlewareSource, /url\.search = targetSearch/)
 })
 
 test('sidebar expands only the active workspace and restores the current item into view', async () => {

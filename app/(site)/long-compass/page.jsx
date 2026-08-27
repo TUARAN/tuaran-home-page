@@ -1,4 +1,4 @@
-import LongCompassClient from './LongCompassClient'
+import { redirect } from 'next/navigation'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -14,5 +14,5 @@ export const metadata = {
 }
 
 export default function LongCompassPage() {
-  return <LongCompassClient />
+  redirect('https://admin.2aran.com/admin/soft-sticker?tab=long-compass')
 }

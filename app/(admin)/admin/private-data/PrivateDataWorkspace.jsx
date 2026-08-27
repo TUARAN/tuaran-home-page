@@ -12,9 +12,8 @@ export default function PrivateDataWorkspace() {
           title: '个人密文',
           description: '口令只在浏览器内使用，服务器保存无法直接读取的密文。',
           items: [
-            { href: '/admin/long-compass', title: '长期罗盘', description: '强私密个人内容库，在浏览器本地输入口令后解密。', icon: 'compass', note: '客户端解密 · 服务端密文' },
-            { href: '/admin/soft-sticker', title: '软贴空间', description: '集中查看体验记录、锻炼自控和草莓专题，按三个 Tab 切换。', icon: 'flower', note: '三 Tab · 私密工作区' },
             { href: '/admin/information', title: '信息金库', description: '加密保存账号、密码、密保答案和其他敏感资料。', icon: 'information', note: 'AES-GCM · 口令不上传' },
+            { href: '/admin/soft-sticker', title: '软贴空间', description: '集中查看从 Notion 备份整理出的体验记录、自控复盘、关系专题和长期档案。', icon: 'flower', note: '统一口令 · 四 Tab' },
           ],
         },
         {

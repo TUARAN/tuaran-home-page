@@ -19,14 +19,19 @@ export default function LongCompassClient({
   eyebrow = 'Long Compass',
   description = DEFAULT_DESCRIPTION,
   embedded = false,
+  initialEncryptedItems = null,
+  initialRecords = null,
 }) {
-  const [loading, setLoading] = useState(true)
+  const preUnlocked = Array.isArray(initialRecords)
+  const [loading, setLoading] = useState(!preUnlocked)
   const [authError, setAuthError] = useState('')
   const [user, setUser] = useState(null)
-  const [encryptedItems, setEncryptedItems] = useState([])
+  const [encryptedItems, setEncryptedItems] = useState(
+    Array.isArray(initialEncryptedItems) ? initialEncryptedItems : []
+  )
   const [password, setPassword] = useState('')
-  const [unlocked, setUnlocked] = useState(false)
-  const [records, setRecords] = useState([])
+  const [unlocked, setUnlocked] = useState(preUnlocked)
+  const [records, setRecords] = useState(preUnlocked ? initialRecords : [])
   const [activeView, setActiveView] = useState('records')
   const [activeKind, setActiveKind] = useState('snapshot')
   const [expandedRecordId, setExpandedRecordId] = useState(null)
@@ -59,6 +64,7 @@ export default function LongCompassClient({
 
   // ---- 拉密文记录 ----
   useEffect(() => {
+    if (preUnlocked) return undefined
     ;(async () => {
       try {
         const result = await fetchEncryptedRecords()
@@ -73,7 +79,7 @@ export default function LongCompassClient({
         setLoading(false)
       }
     })()
-  }, [])
+  }, [preUnlocked])
 
   // ---- 解锁 ----
   async function handleUnlock(e) {

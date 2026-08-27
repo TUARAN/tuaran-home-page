@@ -11,7 +11,7 @@ test('Worker forwards only session cookies to the fixed main endpoint, never tru
     assert.equal(url, 'https://2aran.com/api/workbuddy/session')
     assert.equal(options.headers.cookie, 'tuaran_session=opaque; tuaran_guest=opaque2')
     assert.equal(options.headers.authorization, undefined)
-    assert.equal(options.redirect, 'error')
+    assert.equal(options.redirect, 'manual')
     assert.equal(options.cache, 'no-store')
     return Response.json({ version: 1, userId: 'acct_verified', isGuest: false, name: 'Verified' })
   })

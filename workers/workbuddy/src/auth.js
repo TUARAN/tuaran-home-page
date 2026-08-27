@@ -4,6 +4,12 @@ const SESSION_ENDPOINT = 'https://2aran.com/api/workbuddy/session'
 const COOKIE_NAMES = new Set(['tuaran_session', 'tuaran_guest'])
 const UNAVAILABLE = { error: 'AUTH_UNAVAILABLE', status: 503 }
 
+function unavailable(reason, status) {
+  // Never log cookies, tokens, identity payloads or signing material.
+  console.warn(JSON.stringify({ event: 'workbuddy_auth_unavailable', reason, upstreamStatus: status }))
+  return { ...UNAVAILABLE }
+}
+
 function forwardedCookies(request) {
   return (request.headers.get('cookie') || '').split(';').map((part) => part.trim())
     .filter((part) => COOKIE_NAMES.has(part.split('=')[0])).join('; ')
@@ -29,19 +35,21 @@ export async function resolveActor(request) {
     const response = await fetch(SESSION_ENDPOINT, {
       method: 'GET',
       headers: { cookie: forwardedCookies(request), accept: 'application/json' },
-      redirect: 'error',
+      // workerd rejects redirect: 'error'; manual + !ok rejects redirects
+      // without forwarding session cookies to a redirected destination.
+      redirect: 'manual',
       cache: 'no-store',
       signal: AbortSignal.timeout(8000),
     })
     if (response.status === 403) return { error: 'USER_BLOCKED', status: 403 }
-    if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) return { ...UNAVAILABLE }
+    if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) return unavailable('upstream_response', response.status)
     const data = await response.json()
     if (data.version !== 1 || typeof data.userId !== 'string' || !data.userId || data.userId.length > 256
       || typeof data.isGuest !== 'boolean' || data.isGuest !== data.userId.startsWith('guest:')
-      || typeof data.name !== 'string') return { ...UNAVAILABLE }
+      || typeof data.name !== 'string') return unavailable('invalid_identity', response.status)
     return { userId: data.userId, isGuest: data.isGuest, name: data.name.slice(0, 100), setCookie: guestCookie(response, request) }
-  } catch {
+  } catch (error) {
     // A main-site outage must not create a new identity or grant file access.
-    return { ...UNAVAILABLE }
+    return unavailable(error?.name || 'request_failed')
   }
 }

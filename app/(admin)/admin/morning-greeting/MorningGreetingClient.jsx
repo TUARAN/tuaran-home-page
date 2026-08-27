@@ -76,7 +76,7 @@ function TimelineNode({ item }) {
     <article
       className="relative min-w-0 pt-12"
       style={{ gridColumn: `${item.column} / span 1` }}
-      aria-label={`${item.schedule} ${item.label}，${item.state.label}`}
+      aria-label={`${item.schedule} ${item.label}${item.hasImage ? '，带图片' : ''}，${item.state.label}`}
     >
       <time className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap text-[12px] font-semibold tabular-nums text-[#4f5148] dark:text-gray-300">
         {item.schedule}
@@ -94,7 +94,14 @@ function TimelineNode({ item }) {
       <div className={`mt-1 h-full rounded-xl border bg-white p-3 shadow-[0_8px_24px_rgba(40,42,33,0.04)] dark:bg-[#0f141d] ${isAttention ? 'border-rose-200 dark:border-rose-900' : 'border-[#e2e4da] dark:border-[#243041]'}`}>
         <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="mb-0 text-[10px] font-medium tracking-[0.08em] text-[#96988e] dark:text-gray-500">{item.typeLabel}</p>
+            <div className="mb-0 flex flex-wrap items-center gap-1.5">
+              <p className="m-0 text-[10px] font-medium tracking-[0.08em] text-[#96988e] dark:text-gray-500">{item.typeLabel}</p>
+              {item.hasImage ? (
+                <span className="inline-flex items-center rounded-full border border-violet-300 bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold tracking-normal text-violet-800 dark:border-violet-700 dark:bg-violet-950/70 dark:text-violet-200">
+                  <span aria-hidden="true">🖼️</span>&nbsp;带图片
+                </span>
+              ) : null}
+            </div>
             <h3 className="mt-0.5 truncate text-[13px] font-semibold text-[#2f302a] dark:text-gray-100" title={item.label}>{item.label}</h3>
           </div>
           <StatusPill tone={item.state.tone} size="sm">{item.state.label}</StatusPill>
@@ -158,6 +165,7 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, usRuns }) {
         column: [2, 5, 7][index],
         type: 'community',
         typeLabel: '朋友图文',
+        hasImage: true,
         state: runState(run),
         recordedAt: run?.at,
         meta: [run?.theme, run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),

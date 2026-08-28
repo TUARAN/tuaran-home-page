@@ -411,15 +411,6 @@ document.querySelector("#themeToggle").addEventListener("click", () => {
   localStorage.setItem("poemcn-theme", document.body.classList.contains("dark") ? "dark" : "light");
 });
 
-const loginDialog = document.querySelector("#loginDialog");
-document.querySelector("#loginButton").addEventListener("click", () => loginDialog.showModal());
-document.querySelector("#closeLogin").addEventListener("click", () => loginDialog.close());
-document.querySelector("#dialogOkay").addEventListener("click", () => loginDialog.close());
-
-loginDialog.addEventListener("click", (event) => {
-  if (event.target === loginDialog) loginDialog.close();
-});
-
 if (localStorage.getItem("poemcn-theme") === "dark") document.body.classList.add("dark");
 document.querySelector("#year").textContent = new Date().getFullYear();
 loadContent();

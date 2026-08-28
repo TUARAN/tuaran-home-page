@@ -12,6 +12,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/app.js" defer></script>
+    <script src="/account.js" defer></script>
   </head>
   <body>
     <div class="paper-noise" aria-hidden="true"></div>
@@ -35,7 +36,7 @@
           <button class="icon-button" id="themeToggle" aria-label="切换深色模式" title="切换深色模式">
             <span aria-hidden="true">◐</span>
           </button>
-          <button class="login-button" id="loginButton">登录</button>
+          <a class="login-button" id="loginButton" href="https://2aran.com/login?returnTo=https%3A%2F%2Fpoemcn.2aran.com%2F">登录</a>
         </div>
       </div>
     </header>
@@ -158,12 +159,16 @@
       <p>© <span id="year"></span> poemcn.2aran.com</p>
     </footer>
 
-    <dialog class="login-dialog" id="loginDialog">
+    <dialog class="login-dialog" id="loginDialog" aria-labelledby="accountName" aria-describedby="accountStatus">
       <button class="dialog-close" id="closeLogin" aria-label="关闭">×</button>
         <span class="dialog-seal">词</span>
-      <h2>留下你的阅读足迹</h2>
-      <p>收藏、笔记和阅读进度功能正在准备中。</p>
-      <button class="dialog-primary" id="dialogOkay">知道了</button>
+      <h2 id="accountName">2aran.com 账号</h2>
+      <p id="accountStatus" role="status">与 2aran.com 共用登录状态。</p>
+      <div class="account-actions">
+        <a class="dialog-primary" id="accountLink" href="https://2aran.com/login?returnTo=https%3A%2F%2Fpoemcn.2aran.com%2F">前往主站登录</a>
+        <button class="account-secondary" id="retryAccount" hidden>重试</button>
+        <a class="account-secondary" id="logoutLink" href="https://2aran.com/api/auth/logout?returnTo=https%3A%2F%2Fpoemcn.2aran.com%2F" hidden>退出所有子站登录</a>
+      </div>
     </dialog>
 
     <div class="toast" id="toast" role="status"></div>

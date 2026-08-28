@@ -146,7 +146,10 @@ test('archiving preserves the site and requires active relationships to be disab
   const site = current.sites.find((item) => item.id === 'poemcn')
   const action = { type: 'save-site', site: { ...site, status: 'archived' } }
   assert.throws(() => changeSiteRegistry(current, action), /归档前请停用/)
-  const disabled = changeSiteRegistry(current, edgeAction('poemcn', 'main', 'parent', 'disabled'))
+  const withoutParent = changeSiteRegistry(current, edgeAction('poemcn', 'main', 'parent', 'disabled'))
+  assert.throws(() => changeSiteRegistry(withoutParent, action), /归档前请停用/)
+  const disabled = changeSiteRegistry(withoutParent, edgeAction('poemcn', 'main', 'account', 'disabled'))
+  assert.ok(!current.relations.some((edge) => edge.source === 'poemcn' && edge.type === 'points'))
   const archived = changeSiteRegistry(disabled, action)
   assert.equal(archived.sites.length, current.sites.length)
   assert.equal(archived.sites.find((item) => item.id === 'poemcn').status, 'archived')

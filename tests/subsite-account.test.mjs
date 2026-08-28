@@ -28,7 +28,7 @@ function services(overrides = {}) {
 }
 
 test('approved child domains preserve login return paths; deceptive domains are rejected', () => {
-  for (const host of ['weekly.2aran.com', 'syncblog.2aran.com']) {
+  for (const host of ['weekly.2aran.com', 'syncblog.2aran.com', 'poemcn.2aran.com']) {
     assert.equal(normalizeReturnTo(`https://${host}/editor?q=1#draft`), `https://${host}/editor?q=1#draft`)
   }
   for (const value of ['https://weekly.2aran.com.evil.test', 'https://evil.2aran.com', '//evil.test', 'https://weekly.2aran.com@evil.test', 'https://user:pass@weekly.2aran.com/', 'http://weekly.2aran.com']) {
@@ -36,6 +36,21 @@ test('approved child domains preserve login return paths; deceptive domains are 
   }
   assert.equal(normalizeReturnTo('/articles?a=1#x'), '/articles?a=1#x')
   assert.equal(normalizeReturnTo('https://admin.2aran.com/admin'), 'https://admin.2aran.com/admin')
+})
+
+test('poetry shares the canonical session through an exact credentialed origin', async () => {
+  const source = 'https://poemcn.2aran.com'
+  const { api } = services()
+  const response = await handleSubsiteSession(request('GET', source), api)
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), source)
+  assert.equal(response.headers.get('Access-Control-Allow-Credentials'), 'true')
+  assert.equal((await response.json()).user.id, 'acct_real')
+  assert.equal(subsitePreflight(request('OPTIONS', source, { 'Access-Control-Request-Method': 'GET' }), 'GET').status, 204)
+  for (const bad of ['https://poemcn.2aran.com.evil.test', 'http://poemcn.2aran.com', 'https://poemcn.workers.dev']) {
+    assert.equal((await handleSubsiteSession(request('GET', bad), api)).status, 403)
+    assert.equal(normalizeReturnTo(`${bad}/?q=1`), '/')
+  }
 })
 
 test('session exposes only verified identity and the canonical balance, without private profile fields', async () => {

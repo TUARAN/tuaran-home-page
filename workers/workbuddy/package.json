@@ -6,6 +6,7 @@
     "dev": "pnpm dlx wrangler@4.126.0 dev --port 8788",
     "deploy": "pnpm dlx wrangler@4.126.0 deploy",
     "test": "node --experimental-sqlite --test tests/*.test.mjs",
+    "skins:build": "node scripts/build-skin-packs.mjs",
     "types": "pnpm dlx wrangler@4.126.0 types"
   }
 }

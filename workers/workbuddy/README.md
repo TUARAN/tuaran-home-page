@@ -8,6 +8,25 @@
 
 ## 能力
 
+### 换肤工坊（2026-08-28 本地预览，未发布）
+
+`/skins/` 独立页面；先直接展示 ¥19.9 微信收款码，再引导添加微信 `atar24`，提示“马上响应”。不使用联系弹窗，不接入支付 API，不伪造付款成功；人工查账后通过微信发包。微信收款码复用主站 `public/donate-wechat.jpg`，加好友码复用 GPT Plus 的 `qrcodewechat3.png`。不影响资源库燃币权益。
+
+方案、用户最新要求和上线门槛见 `SKIN-PLAN.md`。四套原创主题使用 [WorkBuddy Theme Manager](https://github.com/comeonzhj/WorkBuddy-theme-skill) 的单主题 ZIP 协议，保留 MIT 来源说明，无上游游戏素材。预览标记为设计稿，当前没有实机兼容承诺，页面保留 noindex 和请勿付款提示。
+
+构建主题交付包（需 Node 22、Python 3 + Pillow、系统 zip/unzip；测试也会验证实际打包）：
+
+```bash
+node workers/workbuddy/scripts/build-skin-packs.mjs
+node --experimental-sqlite --test workers/workbuddy/tests/*.test.mjs
+```
+
+输出为 `workers/workbuddy/dist/skin-packs/` 的四个独立 ZIP、安装说明和 SHA-256 清单；该目录被 Git 忽略，不属于 `public/`，不得作为公开静态资源部署。每个 ZIP 包含主题配置、CSS、1200×750 设计预览和许可说明，无脚本。`saleReady: false` 和空 `testedWorkBuddy` 如实记录未完成实机测试。
+
+正式发布收款页面前，必须确认实机导入/切换/恢复、收款码可用、客服值守及退款规则，然后统一更新 `SKIN-PLAN.md`、页面提示和交付说明。仅删除提示不能算完成验证。
+
+### 资源库
+
 - D1 驱动的资源列表、搜索、分类和详情页，每页 24 项，支持加载更多
 - 复用 `tuaran_session` / `tuaran_guest`，主站账号无需重新注册
 - 游客首次默认获得 50 燃币，读取主站 `ranbi.guestSeed` 规则，无角色门槛

@@ -34,11 +34,11 @@ async function fixture(t) {
   return { sqlite, db, services, invoke: (req) => handleSiteManagement(req, services) }
 }
 
-test('registry seeds the existing sites and separates planned integration from active relationships', () => {
+test('registry seeds the existing sites with verified account and points relationships', () => {
   const registry = createSiteRegistry()
   const expectedIds = new Set(['main', ...SECONDARY_SITES.map((site) => site.id), ...DOMAIN_REGISTRY.map((site) => site.id)])
   assert.deepEqual(new Set(registry.sites.map((site) => site.id)), expectedIds)
-  assert.equal(registry.relations.find((edge) => edge.source === 'weekly' && edge.type === 'account').status, 'planned')
+  assert.equal(registry.relations.find((edge) => edge.source === 'weekly' && edge.type === 'account').status, 'active')
   assert.equal(registry.relations.find((edge) => edge.source === 'workbuddy' && edge.type === 'points').status, 'active')
   assert.equal(registry.relations.find((edge) => edge.source === 'rank' && edge.type === 'deployment').target, 'main')
 })

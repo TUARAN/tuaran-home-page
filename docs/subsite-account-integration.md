@@ -1,29 +1,26 @@
 # 前端周看 / AI 分发大师子站接入
 
-## Latest deployment status
+## 当前状态（2026-08-28）
 
-### Directory information update
+- `weekly.2aran.com` 已绑定 Pages `fwdc`；CNAME 指向 `fwdc.pages.dev`，开启代理，TTL 自动。DNS 与 HTTPS 均已验证。
+- `syncblog.2aran.com` 已绑定 Worker `md`。原域 `frontendnext.com`、`syncblog.cn` 仍返回 HTTP 200，原账号与 AI 额度保留。
+- 主站首页、`/sites`、`/about` 已使用两个新子域的入口和产品说明；周刊页脚增加返回主站的链接。
+- 后台子站台账已用原值比较更新至 revision 3，并回读确认：两个子站的账号与燃币关系均为已接入，其他条目保持不变。
+- 真实 Chrome 会话验证：周刊自动识别主站登录用户；在周刊签到获得 5 燃币；主站账户页和分发大师显示相同的新余额，分发大师同时显示已签到。
+- 线上匿名会话、余额、CORS、预检和未授权签到检查通过。最新 main 整合版本通过 69 项相关测试和完整公开站 Pages 构建。
+- 未启用任何新增燃币扣费；没有自动合并旧账号，没有为用户创建新工作区。
 
-Final integrated deployment: `https://cdb9fb2e.tuaran.pages.dev`, based on `4ea3138f24242a02a05f0711ba9e2af32ce90f1c`. It preserves the later Long Compass and X image changes. All 60 selected tests passed; live HTML checks for `/`, `/sites`, and `/about` passed. Earlier deployments below are historical.
+### 仍需由用户按实际需要完成
 
-The homepage, `/sites`, and `/about` now share the two product descriptions from `lib/secondarySites.js`. Weekly retains its original working URL and an explicit pending-domain label. SyncBlog includes the shared-account scope and preservation of existing AI quotas.
+AI 分发大师首次使用时，已有旧账号的用户自行输入旧账号邮箱和密码进行验证关联；没有旧账号的用户可创建工作区。此次没有替用户执行这些身份变更，也没有进行向第三方平台发布文章的测试。现有会话共享和真实签到已验证；全新 OAuth 登录、退出流程和浏览器扩展分发仍未进行生产端到端测试。
 
-The admin registry was initialized only because no saved registry existed. Its Weekly and SyncBlog descriptions and statuses were read back from D1. No account, balance, permission, or existing registry edit was overwritten.
+### 发布与源码
 
-The updated isolated release uses commit `13b86417c9592f82247e6875e515bdf923ed17cd`. All 27 relevant tests and the full public Pages build passed. Generated HTML for all three public pages was checked. DNS creation still requires a connection with DNS edit permission; Chrome navigation also timed out.
+主站整合基线为 `61aa22368e031725e4d3dfbf0916e72d523c1119`，包含另一任务提交的子站接入提交 `cbeb9d10`、WorkBuddy、燃币说明和后台归档更新。最终版本及验收信息以 `subsite-release-2026-08-28.json` 为准。
 
-- Main production deployment: `5783a38d-a5b1-4f09-99eb-c862cd4001a8`, based on `e8536c2933877955696008de0b92794a41ca1f6a`. Confirmed through Cloudflare API.
-- Previous production deployment: `3e1838d9-b286-4fb9-a5c6-bab855177af0`.
-- Main account APIs and SyncBlog are deployed. Eleven core HTTP checks passed, including shared guest balance, trusted CORS, preflight, and rejection of unauthenticated checkin and untrusted origins.
-- Weekly Pages domain registration succeeded. Domain ID: `22b60205-394c-473f-8f10-c0be5d52c334`. Status: pending, CNAME record not set.
-- Both Wrangler OAuth and the Cloudflare connector lack DNS write access. Required record in the 2aran.com zone: CNAME `weekly` to `fwdc.pages.dev`, proxied, automatic TTL.
-- Weekly client deployment and public link changes remain on hold until DNS and HTTPS work.
-- Real authenticated browser tests remain incomplete. Browser control timed out. The legacy SyncBlog domain check failed during Python TLS negotiation; this is not recorded as a passing check.
-- No new charges, automatic account linking, git commit, or git push.
+子站接入源码已提交并推送至各自的 `origin/main`：前端周看 `8cb653361aea92b1b82c84bfca19bd10379a3f5a`，AI 分发大师 `acb47536a8e7dfe68aaf2beac7de35e32cbde608`。主站最新关系状态、对应测试和本记录随同一个收尾提交保存。以上手动部署版本是此前线上验收的快照；Git 推送触发的后续自动部署应另查构建状态。
 
-This section supersedes the historical progress notes below.
-
-核查日期：2026-08-28。用户已确认子域名称、保留旧权益，并先接入统一登录、余额和签到；新增扣费另行定价。AI 分发大师子域与增加型关联表已发布；主站接口三次发布均因网络失败，尚未发布成功；前端周看构建通过，已获域名绑定授权，但 Cloudflare 连接超时。具体发布版本与验收记录见 `subsite-release-2026-08-28.json`。
+下文保留设计、接口契约与历史执行记录；与上述当前状态冲突的进度描述按历史记录处理。
 
 ## 目标与部署边界
 

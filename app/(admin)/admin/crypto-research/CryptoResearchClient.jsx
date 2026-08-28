@@ -84,7 +84,7 @@ export default function CryptoResearchClient() {
       <StatCard label="待复核" value={stats.pending || 0} tone="warning" />
       <StatCard label="已发布" value={stats.published || 0} tone="success" />
     </div>
-    <Section title="自动生成草稿" description="市场数字来自选题当日 CoinGecko 快照；历史、技术、治理、安全与监管信息由联网检索补充。">
+    <Section title="自动生成草稿" description="请在草稿进入待复核后的 72 小时内发布或退回；到期仍待复核的草稿，在后续每日北京时间 01:30 调度时自动发布，每次最多一篇。退回可阻止自动发布，发布失败会保留原到期时间重试。">
       <div className="mb-3 flex flex-wrap gap-2">
         {FILTERS.map(([id, label]) => <button key={id} type="button" onClick={() => setFilter(id)} className={`rounded-full border px-3 py-1.5 text-xs ${filter === id ? 'border-[#15140f] bg-[#15140f] text-white dark:border-gray-100 dark:bg-gray-100 dark:text-black' : 'border-[#d9dacd] dark:border-[#2d3744]'}`}>{label} · {id === 'all' ? total : stats[id] || 0}</button>)}
       </div>
@@ -97,7 +97,7 @@ export default function CryptoResearchClient() {
               <button className="min-w-0 flex-1 text-left" onClick={() => setOpenId(open ? '' : draft.id)}>
                 <div className="flex items-center gap-2"><StatusPill tone={tone} size="sm">{label}</StatusPill><span className="text-xs text-[#82847a]">#{draft.marketCapRank} · {draft.symbol} · {draft.draftDate} · 模板 v{draft.templateVersion}</span></div>
                 <h3 className="mt-2 truncate text-sm font-semibold">{draft.name}（{draft.symbol}）</h3>
-                <p className="mt-1 text-xs text-[#67695d] dark:text-gray-400">{draft.status === 'failed' ? draft.generationError : draft.autoPublishAt ? `${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { hour12: false })} 后自动发布` : `生成尝试 ${draft.attemptCount} 次`}</p>
+                <p className="mt-1 text-xs text-[#67695d] dark:text-gray-400">{draft.status === 'failed' ? draft.generationError : draft.autoPublishAt ? `${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}（北京时间）到期，后续调度自动发布` : `生成尝试 ${draft.attemptCount} 次`}</p>
               </button>
               <div className="flex flex-wrap gap-2">
                 {draft.status === 'failed' ? <AdminButton variant="primary" onClick={() => mutate(draft, 'retry')} disabled={saving}>重新生成</AdminButton> : null}

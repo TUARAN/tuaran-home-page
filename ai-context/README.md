@@ -16,6 +16,7 @@
 | [content-information-architecture.md](content-information-architecture.md) | 内容分类契约、治理规则与新访客起点指标 | 修改导航、目录、分类或行为埋点前引用 |
 | [a-share-company-research-automation.md](a-share-company-research-automation.md) | A 股公司观察本地 + 线上自动化设计与数据流 | 维护 A 股研究流水线时引用 |
 | [deepseek-key-management.md](deepseek-key-management.md) | DeepSeek 密钥管理、任务绑定与调用记录设计 | 维护 DeepSeek 调用层 / 密钥时引用 |
+| [x-post-images.md](x-post-images.md) | X 自动发布配图、R2 素材池、失败重试和上线顺序 | 维护 X 自动发布及素材预览时引用 |
 
 ## archive/（已完成的一次性记录，仅作历史追溯）
 

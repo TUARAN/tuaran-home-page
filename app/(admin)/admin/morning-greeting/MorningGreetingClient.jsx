@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import XImagePool from './XImagePool'
+
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
 
 const formatUsd = (microUsd, minimumFractionDigits = 3) => `$${(Math.max(0, Number(microUsd) || 0) / 1_000_000).toLocaleString('en-US', { minimumFractionDigits, maximumFractionDigits: 3 })}`
@@ -115,6 +117,7 @@ function TimelineNode({ item }) {
         <p className="mb-0 text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">
           {item.recordedAt ? `执行 ${formatTime(item.recordedAt)}` : '尚无执行记录'}
         </p>
+        {item.imageUrl ? <a href={item.imageUrl} target="_blank" rel="noreferrer" aria-label={`预览${item.label}配图`} className="mt-2 block overflow-hidden rounded-lg"><img src={item.imageUrl} alt={`${item.label}配图`} loading="lazy" className="aspect-[4/3] w-full object-cover" /></a> : <p className="mb-0 mt-2 text-[11px] text-[#96988e]">{item.recordedAt ? '该次记录无配图' : '执行时生成配图'}</p>}
         {item.meta ? <p className="mb-0 mt-1 break-words text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">{item.meta}</p> : null}
         {item.costMicroUsd ? <p className="mb-0 mt-1 text-[11px] font-medium tabular-nums text-[#5f6257] dark:text-gray-300">X API {formatUsd(item.costMicroUsd)} / 次</p> : null}
         {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 内容 ↗</a> : null}
@@ -139,6 +142,8 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
         ...item,
         type: 'greeting',
         typeLabel: '问候',
+        hasImage: Boolean(run?.imagePath),
+        imageUrl: run?.imagePath || '',
         state: runState(run),
         recordedAt: run?.at,
         meta: [run?.mode && generationModeLabel(run.mode), run?.styleLabel, run?.model].filter(Boolean).join(' · '),
@@ -155,6 +160,8 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
         column: [3, 7, 10][index],
         type: 'culture',
         typeLabel: '文化短故事',
+        hasImage: Boolean(run?.imagePath),
+        imageUrl: run?.imagePath || '',
         state: runState(run),
         recordedAt: run?.at,
         meta: run?.category ? CULTURE_CATEGORY_LABELS[run.category] || run.category : '',
@@ -171,7 +178,8 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
         column: [2, 6, 9][index],
         type: 'community',
         typeLabel: '朋友图文',
-        hasImage: true,
+        hasImage: Boolean(run?.imagePath),
+        imageUrl: run?.imagePath || '',
         state: runState(run),
         recordedAt: run?.at,
         meta: [run?.theme, run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),
@@ -188,6 +196,8 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
         column: [4, 8, 11][index],
         type: 'crypto',
         typeLabel: '加密观点',
+        hasImage: Boolean(run?.imagePath),
+        imageUrl: run?.imagePath || '',
         state: runState(run),
         recordedAt: run?.at,
         meta: [run?.topic, run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),
@@ -204,6 +214,8 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
         column: [13, 14, 15][index],
         type: 'us',
         typeLabel: '美区英文',
+        hasImage: Boolean(run?.imagePath),
+        imageUrl: run?.imagePath || '',
         state: runState(run),
         recordedAt: run?.at,
         meta: [run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),
@@ -297,7 +309,7 @@ function XApiCostPanel({ cost }) {
         <span>价格核对于 {cost.pricingCheckedAt}</span>
       </div>
       <p className="mb-0 mt-1 text-[10px] leading-5 text-[#96988e] dark:text-gray-500">
-        仅统计 X 发帖接口，不含图片上传端点和 DeepSeek 等文案生成成本；30 天预计按每天 15 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
+        仅统计 X 发帖接口，不含图片生成、图片上传、R2 存储和 DeepSeek 文案及提示词生成成本；30 天预计按每天 15 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
       </p>
       {!cost.available ? <p className="mb-0 mt-1 text-[10px] text-amber-700 dark:text-amber-300">成本流水表尚未启用；部署数据库迁移后开始累计实际金额。</p> : null}
     </section>
@@ -408,17 +420,18 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天全自动发布三条问候、三条朋友图文、三条文化短故事、三条加密观点和三条美区英文帖，不经人工审核。"
+          description="每天全自动发布三条问候、三条朋友图文、三条文化短故事、三条加密观点和三条美区英文帖，每条生成配图后直接发布，不经人工审核。"
           className="mb-4"
           actions={
             <>
-              <StatusPill tone={data?.paused ? 'warning' : 'success'} size="sm">{data?.paused ? '已暂停' : '运行中'}</StatusPill>
-              <AdminButton type="button" onClick={togglePause} disabled={saving || loading} variant={data?.paused ? 'primary' : 'ghost'}>{data?.paused ? '恢复运行' : '暂停自动化'}</AdminButton>
+              <StatusPill tone={!data ? 'neutral' : data.paused ? 'warning' : 'success'} size="sm">{!data ? '状态未读取' : data.paused ? '已暂停' : '运行中'}</StatusPill>
+              <AdminButton type="button" onClick={togglePause} disabled={saving || loading || !data} variant={data?.paused ? 'primary' : 'ghost'}>{data?.paused ? '恢复运行' : '暂停自动化'}</AdminButton>
             </>
           }
         >
         <div className="space-y-4">
           <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} communityRuns={communityRuns} cryptoRuns={cryptoRuns} usRuns={usRuns} />
+          <XImagePool />
           <XApiCostPanel cost={data?.xApiCost} />
 
           <div>

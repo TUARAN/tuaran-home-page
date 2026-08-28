@@ -30,7 +30,7 @@ test('secondary sites explain their intentionally different deployment boundarie
 })
 
 test('domain registry records DNS, runtime, audience, and activation separately', () => {
-  assert.equal(DOMAIN_REGISTRY.length, 8)
+  assert.equal(DOMAIN_REGISTRY.length, 10)
   assert.equal(new Set(DOMAIN_REGISTRY.map((item) => item.domain)).size, DOMAIN_REGISTRY.length)
   assert.ok(DOMAIN_REGISTRY.every((item) => item.target && item.platform && item.audience && item.proxy && item.status))
   assert.deepEqual(

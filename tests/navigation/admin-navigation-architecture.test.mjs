@@ -43,7 +43,7 @@ test('project navigation titles use four Chinese characters', () => {
   const projects = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/projects')
   const titles = projects.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['规划中心', '项目总览', '开发发布', '集成密钥', '站点架构', '上下文库'])
+  assert.deepEqual(titles, ['规划中心', '项目总览', '开发发布', '二级站点', '集成密钥', '站点架构', '上下文库'])
   assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 

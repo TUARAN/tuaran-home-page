@@ -27,6 +27,10 @@ import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
 import { getFeedItemsWithPinned } from './feed/data'
+import { SECONDARY_SITES } from '../../lib/secondarySites'
+
+const weeklySite = SECONDARY_SITES.find((site) => site.id === 'weekly')
+const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
 
 const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
@@ -111,21 +115,21 @@ const PRODUCT_LINKS = [
     icon: IconUsers,
   },
   {
-    href: 'https://frontendnext.com/',
+    href: weeklySite.href,
     id: 'frontendnext',
     label: '前端周看',
     labelEn: 'Frontend Weekly',
-    desc: '前端、AI Agent 与大模型工程情报',
-    descEn: 'Intel on frontend, AI Agents and LLM engineering',
+    desc: weeklySite.desc,
+    descEn: weeklySite.descEn,
     icon: IconCode,
   },
   {
-    href: 'https://syncblog.cn/',
+    href: syncblogSite.href,
     id: 'syncblog',
-    label: 'AI分发大师',
+    label: syncblogSite.label,
     labelEn: 'SyncBlog',
-    desc: '一次创作，多平台自动同步分发',
-    descEn: 'Write once, auto-sync across platforms',
+    desc: syncblogSite.desc,
+    descEn: syncblogSite.descEn,
     icon: IconFileText,
   },
 ]
@@ -745,7 +749,7 @@ function ClassicHomePage({ featuredPicks }) {
                   </span>
                 </a>
                 <a
-                  href="https://frontendnext.com/"
+                  href={weeklySite.href}
                   target="_blank"
                   rel="noreferrer"
                   className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
@@ -764,12 +768,12 @@ function ClassicHomePage({ featuredPicks }) {
                       <span className="font-mono text-[12px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
                     <span className="mt-1 text-[15px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
-                      <T zh="前端 / AI Agent / 大模型 · 技术情报站" en="Frontend / AI Agent / LLM · tech intel" />
+                      <T zh={weeklySite.desc} en={weeklySite.descEn} />
                     </span>
                   </span>
                 </a>
                 <a
-                  href="https://syncblog.cn/"
+                  href={syncblogSite.href}
                   target="_blank"
                   rel="noreferrer"
                   className="classic-home-hero-cta-secondary no-external-arrow group inline-flex w-full items-center gap-4 rounded-xl border px-5 py-4 no-underline hover:-translate-y-0.5 sm:w-auto sm:min-w-[320px] sm:max-w-[400px]"
@@ -788,7 +792,7 @@ function ClassicHomePage({ featuredPicks }) {
                       <span className="font-mono text-[12px] tracking-[0.08em] opacity-60">↗</span>
                     </span>
                     <span className="mt-1 text-[15px] leading-snug" style={{ color: 'var(--hero-card-subtext)' }}>
-                      <T zh="一次创作 / 多平台同步 / 自动分发" en="Write once / multi-platform sync / auto distribute" />
+                      <T zh={syncblogSite.desc} en={syncblogSite.descEn} />
                     </span>
                   </span>
                 </a>

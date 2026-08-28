@@ -547,6 +547,7 @@ export default function AboutPage() {
                     </span>
                   </div>
                   <p className="mt-1 text-[12px] leading-5 text-[#7186a0]">{c.desc}</p>
+                  {c.accessNote && <p className="mt-2 text-[11px] leading-5 text-[#8ea3bb]">{c.accessNote}</p>}
                 </a>
               ))}
             </div>

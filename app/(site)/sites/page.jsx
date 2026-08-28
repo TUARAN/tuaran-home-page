@@ -9,7 +9,7 @@ export const dynamic = 'force-static'
 
 export const metadata = {
   title: '二级站点',
-  description: '2aran.com 的公开子域站点入口：AI 排行榜、GPT Plus 充值与中国诗词。',
+  description: '前端周看、AI 分发大师、AI 排行榜、中国诗词与 WorkBuddy 资源入口。',
   alternates: { canonical: '/sites' },
 }
 
@@ -45,10 +45,10 @@ export default function SecondarySitesPage() {
           二级站点
         </h1>
         <p className="mt-4 max-w-[760px] text-[15px] leading-8 text-[var(--site-muted)]">
-          2aran.com 下可公开访问的子域站点。仅收录面向访客的内容与服务站点，不包含后台、内部工具和接口域名。
+          浏览技术周刊、使用创作工具、查阅诗词和学习资源。迁移中的站点保留原站入口。
         </p>
         <p className="mt-3 max-w-[820px] border-l-2 border-[var(--site-green)] pl-4 text-[13px] leading-7 text-[var(--site-muted)]">
-          部署形态按运行边界选择：纯展示与轻交互复用主站；需要独立 API、数据库、定时任务或发布节奏时单独部署。
+          各站的账号与燃币支持范围见对应说明。AI 分发大师保留原账号权益，燃币余额与签到使用主站账户。
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <span className="rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-1.5 font-mono text-[11px] text-[var(--site-muted)]">
@@ -65,7 +65,7 @@ export default function SecondarySitesPage() {
       <section className="divide-y divide-[var(--site-line)] py-6 md:py-8" aria-label="二级站点列表">
         {SECONDARY_SITES.map((site, index) => {
           const infrastructure = getDomainRecord(site.domain)
-          const isActivating = infrastructure?.status === 'activating'
+          const isActive = infrastructure?.status === 'active'
           return (
           <a
             key={site.id}
@@ -87,12 +87,12 @@ export default function SecondarySitesPage() {
             <div className="min-w-0">
               <p className="text-[13px] font-medium leading-6 text-[var(--site-ink)]">{site.desc}</p>
               <p className="mt-1 line-clamp-1 text-[12px] leading-5 text-[var(--site-muted)]">{site.detail}</p>
+              {site.accessNote && <p className="mt-2 text-[12px] leading-6 text-[var(--site-muted)]">{site.accessNote}</p>}
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[9px] text-[var(--site-faint)]">
-                <span className={isActivating ? 'text-[#8a5a14] dark:text-[#d6b56f]' : 'text-[var(--site-green)]'}>
-                  ● {isActivating ? '激活中' : '已上线'}
+                <span className={isActive ? 'text-[var(--site-green)]' : 'text-[#8a5a14] dark:text-[#d6b56f]'}>
+                  ● {isActive ? '已上线' : '子域待启用'}
                 </span>
-                <span>{infrastructure?.proxy === 'proxied' ? 'Cloudflare 已代理' : 'DNS only'}</span>
-                <span>{site.deployment}</span>
+                <span>{site.actionLabel || '打开子站'}</span>
               </div>
             </div>
 

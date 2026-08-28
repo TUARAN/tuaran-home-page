@@ -1,0 +1,325 @@
+{
+  "date": "2026-08-28",
+  "scope": "weekly.2aran.com and syncblog.2aran.com; shared login, balance and checkin; no new charges",
+  "rollback": {
+    "main_pages_deployment": "34d4d64c-1cd0-48d6-8ae5-b303b9ea0d41",
+    "weekly_pages_deployment": "8be9518a-4d46-4990-b8ad-f9dbced67c1e",
+    "syncblog_worker_version": "3533ee66-91c0-4edb-a89f-de8b5ca803c8",
+    "syncblog_d1_bookmark": "000000ec-00000000-000050d5-8c7e42ca59d6b71b6756758e6733fa50",
+    "main_pages_deployment_before_publish": "056b186f-14ef-46e3-ad34-1b7b6eae9167",
+    "main_pages_deployment_before_info_update": "84807114-39d3-47b9-af74-d9a4e1cbd9f9"
+  },
+  "legacy_accounts_before": {
+    "email": 4,
+    "active_paid": 0
+  },
+  "main_release": {
+    "baseline": "4ea3138f24242a02a05f0711ba9e2af32ce90f1c",
+    "files": [
+      "lib/returnTo.js",
+      "lib/subsiteOrigins.js",
+      "lib/subsiteAccount.js",
+      "lib/frontendWeeklyData.js",
+      "lib/secondarySites.js",
+      "lib/domainRegistry.js",
+      "app/api/subsites/session/route.js",
+      "app/api/subsites/checkin/route.js",
+      "tests/subsite-account.test.mjs",
+      "tests/rank-site.test.mjs",
+      "app/(site)/page.jsx"
+    ],
+    "deployed": true,
+    "attempts": 3,
+    "blocker": null,
+    "canonical_deployment_last_verified": "056b186f-14ef-46e3-ad34-1b7b6eae9167",
+    "isolated_artifact": "/private/tmp/tuaran-subsites-release-20260828-v5/.vercel/output/static",
+    "held_links": [
+      "weekly.2aran.com"
+    ],
+    "worker_gzip_mib": 2.611,
+    "worker_budget_headroom_mib": 0.139,
+    "replacement_release": {
+      "baseline": "e8536c2933877955696008de0b92794a41ca1f6a",
+      "files": [
+        "lib/returnTo.js",
+        "lib/subsiteOrigins.js",
+        "lib/subsiteAccount.js",
+        "lib/frontendWeeklyData.js",
+        "lib/secondarySites.js",
+        "app/api/subsites/session/route.js",
+        "app/api/subsites/checkin/route.js",
+        "tests/subsite-account.test.mjs",
+        "app/(site)/page.jsx"
+      ],
+      "held_until_dns_ready": "weekly home links and secondary site entry",
+      "path": "/private/tmp/tuaran-subsites-release-20260828-v2",
+      "full_pages_build": true,
+      "tests_passed": 27,
+      "worker_gzip_mib": 2.613,
+      "worker_budget_headroom_mib": 0.137,
+      "deployed": false
+    },
+    "deployment_id": "5783a38d-a5b1-4f09-99eb-c862cd4001a8",
+    "deployment_url": "https://cdb9fb2e.tuaran.pages.dev"
+  },
+  "status": "Main account APIs, homepage, sites directory, about page and admin registry updated. Weekly CNAME remains blocked by DNS write access.",
+  "migration": {
+    "file": "md/apps/web/migrations/0007_platform_account_links.sql",
+    "applied": true,
+    "bookmark": "000000ed-00000008-000050d5-8c9f51d219a06b55794a0a499a11b004"
+  },
+  "syncblog": {
+    "deployed_version": "39f555b5-d983-4a4b-be2a-40ca4e6a6116",
+    "hostname": "syncblog.2aran.com",
+    "https": 200,
+    "anonymous_auth": {
+      "user": null,
+      "platform": null
+    }
+  },
+  "weekly": {
+    "built": true,
+    "deployed": false,
+    "domain_bound": false,
+    "blocker": "Wrangler and connector lack DNS write access",
+    "authorization": {
+      "granted": true,
+      "scope": "Read local Wrangler OAuth credential only for official Cloudflare API requests binding weekly.2aran.com to fwdc and corresponding CNAME; never output or persist credential"
+    },
+    "binding_attempts_after_authorization": 2,
+    "domain_registered": true,
+    "domain_status": "pending"
+  },
+  "verification": {
+    "main_tests_passed": 14,
+    "syncblog_tests_passed": 8,
+    "main_full_pages_build": true,
+    "syncblog_typecheck_lint_build_dryrun": true,
+    "weekly_full_static_build": true,
+    "main_production_session_wallet_checkin": "11 core checks passed after final deployment; authenticated browser tests pending",
+    "authenticated_browser_e2e": "not completed: browser navigation timeouts",
+    "cose_distribution": "not completed",
+    "no_new_coin_charges": true,
+    "no_automatic_account_links": true,
+    "latest_baseline_tests_passed": 27,
+    "live_http": {
+      "verified_at": "2026-08-28T07:00:41.849809+00:00",
+      "checks": [
+        {
+          "test": "weekly credentialed session",
+          "status": 200,
+          "expected": 200,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": "https://weekly.2aran.com",
+            "Access-Control-Allow-Credentials": "true",
+            "Vary": "Origin, Cookie"
+          },
+          "body": {
+            "version": 1,
+            "user": null,
+            "isGuest": true,
+            "balance": 50,
+            "checkedInToday": false
+          }
+        },
+        {
+          "test": "syncblog same guest session",
+          "status": 200,
+          "expected": 200,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": "https://syncblog.2aran.com",
+            "Access-Control-Allow-Credentials": "true",
+            "Vary": "Origin, Cookie"
+          },
+          "body": {
+            "version": 1,
+            "user": null,
+            "isGuest": true,
+            "balance": 50,
+            "checkedInToday": false
+          }
+        },
+        {
+          "test": "canonical main wallet",
+          "status": 200,
+          "expected": 200,
+          "headers": {
+            "Cache-Control": null,
+            "Access-Control-Allow-Origin": null,
+            "Access-Control-Allow-Credentials": null,
+            "Vary": null
+          },
+          "body": {
+            "authed": false,
+            "isGuest": true,
+            "balance": 50,
+            "checkedInToday": false,
+            "rules": {
+              "guestSeed": 50,
+              "register": 100,
+              "checkin": 5,
+              "pendingCheckinLimit": 3,
+              "comment": 5,
+              "commentDailyCap": 50,
+              "researchDefaultCost": 5,
+              "resourceDefaultCost": 5,
+              "toolDefaultCost": 10,
+              "imageHostingUpload": 5
+            }
+          }
+        },
+        {
+          "test": "guest cannot check in",
+          "status": 401,
+          "expected": 401,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": "https://syncblog.2aran.com",
+            "Access-Control-Allow-Credentials": "true",
+            "Vary": "Origin, Cookie"
+          },
+          "body": {
+            "error": "UNAUTHORIZED"
+          }
+        },
+        {
+          "test": "untrusted read origin",
+          "status": 403,
+          "expected": 403,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": null,
+            "Access-Control-Allow-Credentials": null,
+            "Vary": "Origin, Cookie"
+          },
+          "body": {
+            "error": "ORIGIN_NOT_ALLOWED"
+          }
+        },
+        {
+          "test": "untrusted write origin",
+          "status": 403,
+          "expected": 403,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": null,
+            "Access-Control-Allow-Credentials": null,
+            "Vary": "Origin, Cookie"
+          },
+          "body": {
+            "error": "ORIGIN_NOT_ALLOWED"
+          }
+        },
+        {
+          "test": "missing write origin",
+          "status": 403,
+          "expected": 403,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": null,
+            "Access-Control-Allow-Credentials": null,
+            "Vary": "Origin, Cookie"
+          },
+          "body": {
+            "error": "ORIGIN_NOT_ALLOWED"
+          }
+        },
+        {
+          "test": "trusted preflight",
+          "status": 204,
+          "expected": 204,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": "https://syncblog.2aran.com",
+            "Access-Control-Allow-Credentials": "true",
+            "Vary": "Origin, Cookie, Access-Control-Request-Method, Access-Control-Request-Headers"
+          }
+        },
+        {
+          "test": "untrusted preflight",
+          "status": 403,
+          "expected": 403,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": null,
+            "Access-Control-Allow-Credentials": null,
+            "Vary": "Origin, Cookie"
+          },
+          "body": {
+            "error": "ORIGIN_OR_METHOD_NOT_ALLOWED"
+          }
+        },
+        {
+          "test": "syncblog new host",
+          "status": 200,
+          "expected": 200,
+          "headers": {
+            "Cache-Control": "public, max-age=0, must-revalidate",
+            "Access-Control-Allow-Origin": null,
+            "Access-Control-Allow-Credentials": null,
+            "Vary": null
+          }
+        },
+        {
+          "test": "syncblog anonymous auth",
+          "status": 200,
+          "expected": 200,
+          "headers": {
+            "Cache-Control": "private, no-store",
+            "Access-Control-Allow-Origin": null,
+            "Access-Control-Allow-Credentials": null,
+            "Vary": "Cookie"
+          },
+          "body": {
+            "user": null,
+            "platform": null
+          }
+        }
+      ],
+      "passed": 11,
+      "limits": [
+        "No authenticated browser E2E; browser navigation timed out",
+        "No account linking or paid operations performed",
+        "weekly Pages domain added; DNS write permission unavailable"
+      ]
+    }
+  },
+  "git": {
+    "committed": false,
+    "pushed": false
+  },
+  "site_information": {
+    "manifest": {
+      "baseline": "4ea3138f24242a02a05f0711ba9e2af32ce90f1c",
+      "path": "/private/tmp/tuaran-subsites-release-20260828-v5",
+      "files": [
+        "lib/returnTo.js",
+        "lib/subsiteOrigins.js",
+        "lib/subsiteAccount.js",
+        "lib/frontendWeeklyData.js",
+        "lib/secondarySites.js",
+        "lib/domainRegistry.js",
+        "lib/secondarySiteRegistry.js",
+        "app/api/subsites/session/route.js",
+        "app/api/subsites/checkin/route.js",
+        "tests/subsite-account.test.mjs",
+        "app/(site)/sites/page.jsx",
+        "app/(site)/about/page.jsx",
+        "app/(site)/page.jsx"
+      ]
+    },
+    "tests_passed": 60,
+    "registry_persisted": true,
+    "registry_bookmark": "000040ee-00000006-000050d5-e51d6db3e1c78273629133bfb5171f72",
+    "pages": [
+      "/",
+      "/sites",
+      "/about"
+    ],
+    "deployed": true,
+    "deployment_url": "https://cdb9fb2e.tuaran.pages.dev",
+    "live_pages_verified": true
+  }
+}

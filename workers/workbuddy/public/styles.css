@@ -192,7 +192,14 @@ footer > div { display: flex; gap: 24px; font-size: 10px; color: #c2c3bb; }
 .access-button:disabled { cursor: default; background: #aaa99f; border-color: #aaa99f; }
 .access-button.unlocked { background: var(--acid); color: var(--ink); border-color: var(--ink); }
 .file-list { margin-top: 15px; display: grid; gap: 8px; }
-.file-link { display: flex; justify-content: space-between; align-items: center; padding: 11px; border: 1px solid var(--line); background: var(--paper); font-size: 10px; font-weight: 700; }
+.resource-files { grid-column: 1 / -1; min-width: 0; }
+.resource-files h3 { margin: 0; font-size: 15px; }
+.course-player video { display: block; width: 100%; max-height: 420px; background: #111; }
+.course-player p { font-size: 12px; line-height: 1.7; }
+.file-link { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid var(--line); background: var(--paper); font-size: 12px; font-weight: 700; }
+.file-link > span:first-child { overflow-wrap: anywhere; }
+.file-actions { display: flex; flex-shrink: 0; gap: 16px; align-items: center; }
+.file-actions button { border: 0; padding: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; }
 .status-line { display: flex; justify-content: space-between; padding-top: 15px; margin-top: 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
 .toast { position: fixed; z-index: 100; left: 50%; bottom: 28px; transform: translate(-50%, 20px); background: var(--ink); color: white; padding: 12px 18px; font-size: 11px; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: .2s; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }

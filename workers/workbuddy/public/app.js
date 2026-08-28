@@ -144,11 +144,15 @@ async function loadMe() {
 
 function fileActions(resource, access) {
   if (!access.unlocked || !resource.files?.length) return ''
-  return `<div class="file-list">${resource.files.map((file) => {
+  const hasVideo = resource.files.some((file) => file.contentType.startsWith('video/'))
+  return `<section class="resource-files"><h3>资源文件</h3>${hasVideo ? '<div id="coursePlayer" class="course-player" hidden><p id="courseTitle"></p><video id="courseVideo" controls playsinline preload="none"></video><p>播放失败时可下载到本地观看。</p></div>' : ''}<div class="file-list">${resource.files.map((file) => {
     const base = `/api/resources/${encodeURIComponent(resource.slug)}/files/${encodeURIComponent(file.id)}`
-    const readLink = file.delivery !== 'download' ? `<a href="${base}?mode=read" target="_blank" rel="noopener">阅读 ↗</a>` : ''
+    const video = file.contentType.startsWith('video/')
+    const readLink = file.delivery === 'download' ? '' : video
+      ? `<button type="button" data-play-video="${base}?mode=read" data-video-title="${escapeHtml(file.label)}">播放 ▷</button>`
+      : `<a href="${base}?mode=read" target="_blank" rel="noopener">${file.contentType.startsWith('image/') ? '查看' : '阅读'} ↗</a>`
     return `<div class="file-link"><span>${escapeHtml(file.label)} ${formatSize(file.sizeBytes)}</span><span class="file-actions">${readLink}<a href="${base}?mode=download">下载 ↓</a></span></div>`
-  }).join('')}</div>`
+  }).join('')}</div></section>`
 }
 
 function detailTemplate(resource, access) {
@@ -174,10 +178,10 @@ function detailTemplate(resource, access) {
         <div class="access-price">🔥 ${resource.costPoints} <span>燃币 / 永久</span></div>
         <p class="access-note">${access.unlocked ? '这项资源已经属于你，重复打开不会再次消耗燃币。' : noFile ? '文件还没有导入。为避免空解锁，当前不会扣除燃币。' : `当前余额 ${access.balance} 燃币，确认后立即获得永久访问权限。`}</p>
         <button class="access-button ${access.unlocked ? 'unlocked' : ''}" id="unlockButton" type="button" ${(noFile || access.unlocked) ? 'disabled' : ''}>${buttonText}</button>
-        ${fileActions(resource, access)}
         <div class="status-line"><span>当前余额</span><b>${access.balance} 🔥</b></div>
         <div class="status-line"><span>文件状态</span><b>${noFile ? '待导入' : `${resource.fileCount} 个可用`}</b></div>
       </aside>
+      ${fileActions(resource, access)}
     </div>`
 }
 
@@ -225,6 +229,7 @@ async function unlockCurrent(resource) {
 }
 
 function closeDialog(useHistory = true) {
+  document.querySelector('#courseVideo')?.pause()
   if (dialog.open) dialog.close()
   document.body.classList.remove('dialog-open')
   state.activeSlug = null
@@ -232,6 +237,18 @@ function closeDialog(useHistory = true) {
 }
 
 let searchTimer
+dialogContent.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-play-video]')
+  if (!button) return
+  const player = document.querySelector('#coursePlayer')
+  const video = document.querySelector('#courseVideo')
+  if (!player || !video) return
+  document.querySelector('#courseTitle').textContent = button.dataset.videoTitle
+  player.hidden = false
+  video.src = button.dataset.playVideo
+  video.play().catch(() => showToast('点击播放器继续播放，或下载到本地观看'))
+  player.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+})
 searchInput.addEventListener('input', () => {
   state.search = searchInput.value
   clearTimeout(searchTimer)

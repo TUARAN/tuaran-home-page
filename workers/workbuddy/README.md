@@ -4,7 +4,7 @@
 
 主站 `tuaran-media` 已启用公开读取，不能用于燃币受控文件。新桶不得启用 r2.dev 或公开自定义域。
 
-2026-08-27 已部署到 `https://workbuddy.2aran.com`。主站身份验证接口已上线，共用游客余额、Cookie 验证、空资源不扣币和来源校验均通过线上联调。目前六项资源尚未导入原文件。
+2026-08-27 已部署到 `https://workbuddy.2aran.com`。主站身份验证接口已上线，共用游客余额、Cookie 验证、空资源不扣币和来源校验均通过线上联调。初次上线时六项资源为待导入目录。
 
 ## 能力
 
@@ -14,6 +14,7 @@
 - 同一资源只扣一次燃币，永久保留解锁权益
 - 文件尚未导入时禁止空解锁
 - PDF 等文件支持 R2 流式输出和浏览器 Range 请求
+- 视频课程按课序列出，单播放器按需加载，支持拖动进度与分节下载；关闭详情时暂停播放
 - 资源详情链接可直接访问：`/resource/<slug>`
 
 ## 本地运行
@@ -38,7 +39,31 @@ pnpm dlx wrangler@4.126.0 dev --config workers/workbuddy/wrangler.jsonc --port 8
 
 ## 导入真实资源
 
-1. 确认资源的传播授权、实际标题和内容；当前六项是根据截图建立的待导入目录，介绍文案仍需与原件核对。
+### 2026-08-28 原件清单
+
+已完成线上导入与部署，版本 `34b1022d-33cf-4586-b756-9c8fd4e76cc7`。61 个文件全部回读校验 SHA-256；线上核对 11 项详情和 61 条文件记录，并以独立测试游客验证 PDF / 视频的未解锁拒绝访问、重复解锁不扣币、文件首尾 Range 与下载响应。25 项自动测试通过。存储桶未绑定公开域名，r2.dev 公开访问保持关闭。
+
+`imports/2026-08-28.json` 记录 11 项资源、61 个原文件：10 份 PDF（共 308 页）、50 节 MP4（约 308 分钟）和 1 张原资料附带说明图片。图片中的联系方式属于原资料提供方，不作为本站联系方式。原件保留在站长指定目录，不进入 Git 或公开静态目录。
+
+导入脚本逐一校验本地 SHA-256，上传至内容哈希命名的私有 R2 key，再完整下载回读比对。全部通过后才生成 `catalog.sql`，不会自行修改线上数据库。输出目录的 `verified.json` 记录进度，重跑时已记录对象仍会回读核验。
+
+```bash
+node workers/workbuddy/scripts/import-resources.mjs \
+  '/Users/tuaran/Downloads/WORKBUDDY 保姆级学习手册+视频' \
+  workers/workbuddy/imports/2026-08-28.json \
+  /private/tmp/workbuddy-import
+
+# 确认全部 61 个文件核验通过后执行；不要提前登记未到位的文件。
+pnpm dlx wrangler@4.126.0 d1 execute tuaran-me --remote \
+  --config workers/workbuddy/wrangler.jsonc \
+  --file /private/tmp/workbuddy-import/catalog.sql
+```
+
+原有资源 ID、slug、resource_key 保持不变。已存在的价格、发布状态、首次发布时间与解锁权益不会被导入覆盖；新增 PDF 沿用 5 燃币，整套视频沿用 10 燃币。文件清单可重复导入，不产生重复记录。
+
+### 其他批次
+
+1. 确认资源的传播授权、实际标题和内容，并与原件核对介绍文案。
 2. 将文件上传到 `workbuddy-private` 的 `workbuddy/<slug>/` 前缀。
 3. 在 `workbuddy_resources` 新增或更新资源元数据。
 4. 在 `workbuddy_files` 登记 R2 `object_key`、文件名、类型和交付方式。

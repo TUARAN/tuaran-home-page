@@ -1,10 +1,48 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { runInNewContext } from 'node:vm'
 
 import { resolveActor } from '../src/auth.js'
 import { mainSessionRoute } from './main-session-helper.mjs'
 import { listResources } from '../src/database.js'
 import { isTrustedMutation, parseByteRange, safeSegment } from '../src/index.js'
+
+test('import manifest preserves all originals and orders the 50 lessons', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../imports/2026-08-28.json', import.meta.url), 'utf8'))
+  assert.equal(manifest.resources.length, 11)
+  assert.equal(manifest.files.length, 61)
+  assert.equal(new Set(manifest.files.map((f) => f.objectKey)).size, 61)
+  assert.equal(new Set(manifest.files.map((f) => f.source)).size, 61)
+  const videos = manifest.files.filter((f) => f.contentType === 'video/mp4')
+  assert.deepEqual(videos.map((f) => f.sortOrder), Array.from({ length: 50 }, (_, n) => n + 1))
+  for (const file of manifest.files) {
+    assert.ok(manifest.resources.some((r) => r.id === file.resourceId))
+    assert.match(file.sha256, /^[a-f0-9]{64}$/)
+    assert.ok(file.objectKey.includes(file.sha256.slice(0, 16)))
+    assert.ok(file.sizeBytes > 0)
+  }
+})
+
+test('file actions keep locked URLs hidden and render an on-demand course player', () => {
+  const source = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8')
+  // Evaluate the actual pure render functions without executing browser startup.
+  const pick = (name, next) => source.slice(source.indexOf(`function ${name}(`), source.indexOf(`function ${next}(`))
+  const context = {}
+  runInNewContext(pick('escapeHtml', 'showToast') + pick('formatSize', 'renderFilters') + pick('fileActions', 'detailTemplate'), context)
+  const resource = { slug: 'course', files: [
+    { id: '01', label: '<lesson>', contentType: 'video/mp4', delivery: 'both', sizeBytes: 1000 },
+    { id: 'pdf', label: 'PDF', contentType: 'application/pdf', delivery: 'both', sizeBytes: 1000 },
+  ] }
+  assert.equal(context.fileActions(resource, { unlocked: false }), '')
+  const html = context.fileActions(resource, { unlocked: true })
+  assert.match(html, /preload="none"/)
+  assert.match(html, /data-play-video="\/api\/resources\/course\/files\/01\?mode=read"/)
+  assert.match(html, /&lt;lesson&gt;/)
+  assert.match(html, /pdf\?mode=read/)
+  assert.equal((html.match(/mode=download/g) || []).length, 2)
+  assert.doesNotMatch(html, /<video[^>]+src=/)
+})
 
 test('Worker forwards only session cookies to the fixed main endpoint, never trusting client identity', async (t) => {
   t.mock.method(globalThis, 'fetch', async (url, options) => {

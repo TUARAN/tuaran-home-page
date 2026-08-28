@@ -175,6 +175,29 @@ test('API reads shared prices and only streams files after an explicit unlock', 
   sql.close()
 })
 
+test('video playback requires unlock and supports seeking without a second charge', async (t) => {
+  const { call, sql, objects } = setup(t)
+  sql.exec(`INSERT INTO workbuddy_files (id,resource_id,label,object_key,file_name,content_type,delivery,created_at)
+    VALUES ('lesson-01','wb-video','第一节','private/lesson.mp4','第一节.mp4','video/mp4','both',1)`)
+  objects.set('private/lesson.mp4', 'test-video-content')
+  const me = await call('/api/me')
+  const headers = { cookie: me.headers.get('set-cookie').split(';')[0], origin: 'https://workbuddy.2aran.com' }
+  const path = '/api/resources/workbuddy-workplace-video-course'
+  assert.equal((await call(`${path}/files/lesson-01?mode=read`, { headers })).status, 403)
+  const unlocked = await (await call(`${path}/unlock`, { method: 'POST', headers })).json()
+  assert.equal(unlocked.balance, 40)
+  const partial = await call(`${path}/files/lesson-01?mode=read`, { headers: { ...headers, range: 'bytes=5-9' } })
+  assert.equal(partial.status, 206)
+  assert.equal(partial.headers.get('content-type'), 'video/mp4')
+  assert.equal(partial.headers.get('content-range'), 'bytes 5-9/18')
+  assert.match(partial.headers.get('content-disposition'), /^inline;/)
+  assert.equal(await partial.text(), 'video')
+  const download = await call(`${path}/files/lesson-01?mode=download`, { headers })
+  assert.match(download.headers.get('content-disposition'), /^attachment;/)
+  assert.equal((await (await call('/api/me', { headers })).json()).balance, 40)
+  sql.close()
+})
+
 test('server-side search and pagination include resources beyond the first page', async (t) => {
   const { call, sql } = setup(t)
   const insert = sql.prepare("INSERT INTO workbuddy_resources (id, slug, resource_key, title, status, updated_at) VALUES (?,?,?,?, 'published', 1)")

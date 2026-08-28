@@ -1586,7 +1586,7 @@
     padding: 0 5px;
     border-color: var(--site-line);
     border-radius: 4px;
-    background: color-mix(in srgb, var(--site-muted) 5%, transparent);
+    background: color-mix(in srgb, var(--site-accent) 16%, transparent);
     color: var(--site-muted);
     box-shadow: none;
     font-size: 9px;
@@ -1598,7 +1598,7 @@
   .dark .home-badge-latest,
   .dark .home-badge-pinned {
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-muted) 8%, transparent);
+    background: color-mix(in srgb, var(--site-accent) 22%, transparent);
     color: var(--site-muted);
   }
 

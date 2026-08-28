@@ -54,8 +54,13 @@ const content = {
   },
 };
 
-function setup({ pending = false } = {}) {
+function setup({ pending = false, initialData = null } = {}) {
   const ids = new Map([...html.matchAll(/id="([^"]+)"/g)].map((match) => [match[1], element()]));
+  if (initialData) {
+    const data = element();
+    data.textContent = JSON.stringify(initialData);
+    ids.set("poemInitialData", data);
+  }
   const sections = [...html.matchAll(/data-section="([^"]+)"/g)]
     .map((match) => element({ section: match[1] }));
   const document = element();
@@ -65,13 +70,15 @@ function setup({ pending = false } = {}) {
   let resolveRequest;
   const response = { ok: true, json: async () => structuredClone(content) };
   const request = pending ? new Promise((resolve) => { resolveRequest = resolve; }) : Promise.resolve(response);
+  let fetches = 0;
   runInNewContext(script, {
     document, URLSearchParams, setTimeout, clearTimeout,
     localStorage: { getItem: () => null },
-    fetch: () => request,
+    fetch: () => { fetches += 1; return request; },
   });
   return {
     ids, sections,
+    fetchCount: () => fetches,
     click: (target) => document.dispatch("click", { target }),
     select: (name) => document.dispatch("click", { target: sections.find((item) => item.dataset.section === name) }),
     resolve: () => resolveRequest(response),
@@ -104,6 +111,15 @@ test("all six navigation tabs render their own content and controls", async () =
   await ui.select("推荐");
   assert.match(ui.ids.get("poemList").innerHTML, /class="poem-card"/);
   assert.equal(ui.ids.get("poemList").classList.contains("is-collection"), false);
+});
+
+test("server bootstrap keeps crawlable poem links and does not refetch initial content", async () => {
+  const ui = setup({ initialData: content });
+  await ui.flush();
+  assert.equal(ui.fetchCount(), 0);
+  assert.match(ui.ids.get("poemList").innerHTML, /href="\/poems\/poem-0"/);
+  await ui.select("作者");
+  assert.match(ui.ids.get("poemList").innerHTML, /author-card/);
 });
 
 test("sidebar author navigation switches the list as well as the active tab", async () => {

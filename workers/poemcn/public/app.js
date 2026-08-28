@@ -67,7 +67,7 @@ function poemTemplate(poem) {
     <article class="poem-card" data-poem-id="${escapeHtml(poem.id)}">
       <div class="poem-header">
         <div class="poem-title-wrap">
-          <h3>${escapeHtml(poem.title)}</h3>
+          <h3><a href="/poems/${encodeURIComponent(poem.id)}">${escapeHtml(poem.title)}</a></h3>
           <p>${escapeHtml(poem.author)} · ${escapeHtml(poem.dynasty)}</p>
         </div>
         <span class="dynasty-mark">${escapeHtml(poem.dynasty.replace("代", ""))}</span>
@@ -413,4 +413,30 @@ document.querySelector("#themeToggle").addEventListener("click", () => {
 
 if (localStorage.getItem("poemcn-theme") === "dark") document.body.classList.add("dark");
 document.querySelector("#year").textContent = new Date().getFullYear();
-loadContent();
+const initialData = document.querySelector("#poemInitialData");
+if (initialData) {
+  try {
+    const data = JSON.parse(initialData.textContent);
+    state.poems = data.poems;
+    state.authors = data.authors;
+    state.quotes = data.quotes;
+    state.stats = data.stats;
+    state.hasMore = data.poems.length === 12;
+    if (data.filters) {
+      state.query = data.filters.query;
+      state.dynasty = data.filters.dynasty;
+      state.genre = data.filters.genre;
+      state.page = data.filters.page;
+      if (state.query || state.dynasty !== "全部" || state.genre !== "全部" || state.page > 1) {
+        state.section = "诗文";
+        elements.searchInput.value = state.query;
+        document.querySelectorAll("[data-section]").forEach(button => button.classList.toggle("is-active", button.dataset.section === state.section));
+        updateSectionCopy();
+      }
+    }
+    renderContent();
+    renderAuthors();
+    renderQuote();
+    renderStats();
+  } catch { loadContent(); }
+} else { loadContent(); }

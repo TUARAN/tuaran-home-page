@@ -1,6 +1,17 @@
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 40;
 
+export async function getSitemapBuckets(db, size) {
+  const result = await db.prepare("SELECT DISTINCT CAST((rowid - 1) / ? AS INTEGER) AS bucket FROM poems ORDER BY bucket").bind(size).all();
+  return result.results.map(row => row.bucket);
+}
+
+export async function getSitemapPoems(db, bucket, size) {
+  const result = await db.prepare("SELECT id, updated_at FROM poems WHERE rowid > ? AND rowid <= ? ORDER BY rowid LIMIT ?")
+    .bind(bucket * size, (bucket + 1) * size, size).all();
+  return result.results;
+}
+
 function parseJson(value, fallback = []) {
   try {
     return JSON.parse(value);

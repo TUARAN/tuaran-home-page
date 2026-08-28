@@ -10,9 +10,9 @@ custom_domain = true
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/", "/index.html", "/api/*", "/poems/*", "/robots.txt", "/sitemap.xml", "/sitemaps/*"]
 html_handling = "auto-trailing-slash"
-not_found_handling = "single-page-application"
+not_found_handling = "404-page"
 
 [triggers]
 crons = ["*/15 * * * *"]

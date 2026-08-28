@@ -195,6 +195,53 @@ button {
   padding: 76px 0 68px;
 }
 
+.hero h1 span {
+  display: inline-block;
+  font-size: clamp(20px, 3vw, 30px);
+  line-height: 1.6;
+}
+
+.reading-page {
+  width: min(820px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 56px 0 80px;
+}
+
+.reading-breadcrumb {
+  margin: 20px 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.reading-poem h1 {
+  margin: 12px 0;
+  font-size: clamp(24px, 5vw, 38px);
+  overflow-wrap: anywhere;
+}
+
+.reading-poem .poem-lines {
+  margin: 32px 0;
+  line-height: 2;
+}
+
+.reading-notes,
+.reading-source {
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+
+.reading-notes h2,
+.reading-source h2 {
+  font-size: 18px;
+}
+
+.reading-notes p {
+  white-space: pre-line;
+}
+
 .eyebrow,
 .section-kicker {
   margin: 0 0 8px;

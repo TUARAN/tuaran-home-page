@@ -163,14 +163,17 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
                   评论 / 每日签到补燃币
                 </a>
                 <Link
-                  href="/donate"
+                  href="/ranbi#earn"
                   className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-5 py-2 text-sm font-medium text-white hover:bg-[#6a4f19] dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
                 >
-                  支持本站并私聊调整
+                  免费获取 / 联系站长补充
                 </Link>
               </div>
             )}
           </div>
+          <p className="mt-3 text-xs text-[#8a7a55] dark:text-amber-300/80">
+            燃币不支持充值，领取与补充无需捐助或赞助。
+          </p>
         </div>
       ) : null}
 

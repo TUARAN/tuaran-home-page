@@ -72,7 +72,7 @@ export default function RanbiBalance({ className = '' }) {
   const isGuest = !info.authed
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
       <span
         className="inline-flex items-center gap-1 rounded-full bg-[#fbf3df] px-2.5 py-1 text-xs font-medium text-[#7a5b1e] dark:bg-amber-950/30 dark:text-amber-200"
         title="燃币余额"
@@ -93,11 +93,14 @@ export default function RanbiBalance({ className = '' }) {
           onClick={checkin}
           disabled={busy || info.checkedInToday}
           className="rounded-full border border-gray-200/80 bg-white/80 px-3 py-1 text-xs text-gray-700 hover:bg-white disabled:opacity-60 dark:border-gray-700/70 dark:bg-gray-900/70 dark:text-gray-200"
-          title={info.checkedInToday ? '今天已签到' : `签到 +${info?.rules?.checkin ?? 5} 燃币`}
+          title={info.checkedInToday ? '今天已签到' : `免费领取 +${info?.rules?.checkin ?? 5} 燃币`}
         >
           {info.checkedInToday ? '已签到' : '签到'}
         </button>
       )}
+      <Link href="/ranbi#earn" className="text-[11px] text-[#8a7a55] underline underline-offset-2 dark:text-amber-300/80" title="燃币不支持充值，可免费领取或联系站长补充">
+        获取燃币
+      </Link>
       {hint ? <span className="text-[11px] text-[#8a7a55] dark:text-amber-300/70">{hint}</span> : null}
     </div>
   )

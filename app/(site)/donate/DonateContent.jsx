@@ -8,37 +8,41 @@ const copy = {
   zh: {
     title: '支持本站',
     intro:
-      '如果这些文章、项目、资源和实验内容对你有帮助，欢迎支持本站的长期维护。支持会优先用于图床、视频、模型请求、存储、带宽和内容整理成本；如果需要补充燃币，也可以支持后私聊站长说明账号。',
+      '如果这些文章、项目和资源对你有帮助，欢迎通过捐助或赞助支持站长。支持完全自愿，将用于内容创作、存储、带宽和网站维护。',
     home: '返回首页',
     articles: '看看文章',
+    ranbi: '免费获取燃币',
+    contact: '联系站长',
     lang: 'EN',
     pay: 'WeChat Pay',
     paragraphs: [
-      '2aran.com 不是收费阅读站，也不是 UGC 平台。这里更像一个长期维护的个人内容与资源工作台：文章、调研、插件、资料、活动和评论讨论，都围绕具体主题展开。',
-      '站点长期运行会产生真实成本：图片与文件存储、视频素材、Cloudflare R2、模型请求、数据采集、带宽和域名服务。支持不是强制门槛，而是让这些内容可以继续更新、继续开放。',
-      '燃币主要用于留存、友好交流和资源权益。如果你因为活动、资源领取或内容解锁需要补充燃币，可以支持后私聊站长，说明账号和理由；理由充分，一切好说。',
+      '捐助和赞助用于支持内容更新与资源维护，包括图片与文件存储、视频、模型请求、数据采集、带宽和域名服务。',
+      '燃币不支持充值，也不通过捐助或赞助兑换。免费获取方式和补充规则统一见“燃币说明”。',
+      '燃币不足时可以直接联系站长，说明账号和用途，申请免费补充；不需要先捐助或赞助。获取燃币、使用资源与是否支持站长无关。',
     ],
     thanksTitle: '感谢支持',
     thanks:
-      '你的支持会优先用于内容创作、网站维护、图床/视频/请求/存储/带宽成本，以及更多新项目的尝试。需要补充燃币时，请支持后私聊站长处理。',
+      '感谢你帮助分担内容创作与网站维护成本。是否捐助或赞助，由你自行决定。',
     qrAlt: '微信收款码',
   },
   en: {
     title: 'Support This Site',
     intro:
-      'If my articles, projects, resources, or experiments have been helpful, you can support the long-term maintenance of this site. Support helps cover image hosting, video, model requests, storage, bandwidth, and curation costs. If you need more Ranbi, message me after supporting the site.',
+      'If my articles, projects, or resources have helped you, you are welcome to donate or sponsor the site. Support is entirely voluntary and helps cover content creation, storage, bandwidth, and maintenance.',
     home: 'Back Home',
     articles: 'Read Articles',
+    ranbi: 'Get Free Ranbi',
+    contact: 'Contact the Owner',
     lang: '中文',
     pay: 'WeChat Pay',
     paragraphs: [
-      '2aran.com is not a paid-reading site or a UGC platform. It is a personal content and resource workspace: articles, research, plugins, references, activities, and comment discussions are organized around specific topics.',
-      'Running the site has real costs: image and file hosting, video assets, Cloudflare R2, model requests, data collection, bandwidth, and domains. Support is not a mandatory gate; it helps keep the work updated and accessible.',
-      'Ranbi is mainly for retention, friendly participation, and resource access. If you need more Ranbi for an activity or resource, message me after supporting the site with your account and reason.',
+      'Donations and sponsorships help cover content updates, file and image hosting, video, model requests, data collection, bandwidth, and domains.',
+      'Ranbi cannot be purchased or exchanged for donations or sponsorships. See the Ranbi guide for free earning methods and balance assistance.',
+      'If you need more Ranbi, contact the owner directly with your account and intended use to request a free adjustment. Donations and sponsorships are not required to obtain Ranbi or use resources.',
     ],
     thanksTitle: 'Thanks for Your Support',
     thanks:
-      'Your support will primarily go toward content creation, site maintenance, image/video/request/storage/bandwidth costs, and new experiments. If you need more Ranbi, message me after supporting the site.',
+      'Thank you for helping cover content creation and site maintenance. Whether to donate or sponsor is entirely your choice.',
     qrAlt: 'WeChat payment QR code',
   },
 }
@@ -62,6 +66,12 @@ export default function DonateContent() {
               </Link>
               <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                 {t.articles}
+              </Link>
+              <Link href="/ranbi#earn" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                {t.ranbi}
+              </Link>
+              <Link href="/help#contact" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+                {t.contact}
               </Link>
             </div>
           </div>

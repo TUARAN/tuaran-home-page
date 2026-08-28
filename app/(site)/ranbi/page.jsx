@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import PageContainer from '../components/PageContainer'
 import RanbiBalance from '../components/RanbiBalance'
 import RanbiUnlocksPanel from './RanbiUnlocksPanel'
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: '燃币说明 · 获取与使用资源权益',
   description:
-    '查看燃币余额、获取方式、资源使用额度、解锁记录与永久权益。游客有试用额度，登录后可通过注册、签到、评论、活动和站长调整获得燃币。',
+    '燃币不支持充值，可点击领取、参与活动和游戏免费获取，也可联系站长补充。查看余额、领取规则和资源权益；捐助或赞助完全自愿，与燃币获取分开。',
   keywords: ['燃币', '获取燃币', '涂阿燃', 'tuaran', '积分', '资源权益', '签到', '交流'],
   alternates: { canonical: '/ranbi' },
 }
@@ -52,8 +53,9 @@ export default async function RanbiPage() {
           获取和使用资源权益
         </h1>
         <p className="mt-3 text-[14px] leading-7 text-[var(--site-muted)]">
-          燃币用于解锁站内内容、领取工具包并保存资源权益。游客可以直接使用试用额度；登录后可查看余额和记录，
-          通过注册、签到、有效评论、活动或站长调整继续获得燃币。
+          燃币用于解锁站内内容、领取工具包并保存资源权益。
+          <strong className="text-[var(--site-ink)]">燃币不支持充值。</strong>
+          可通过点击领取、参与活动、玩游戏等免费方式获得，也可以联系站长补充。
         </p>
         <p className="mt-2 text-[12px] leading-6 text-[var(--site-muted)]">
           获取、使用、余额明细和反滥用规则参考{' '}
@@ -80,13 +82,19 @@ export default async function RanbiPage() {
         <p className="text-[14px] leading-7 text-[var(--site-muted)]">
           <span className="font-medium text-[var(--site-ink)]">燃币对应站内资源权益与参与记录。</span>
           每个访客都有试用额度；登录后，已解锁内容、已领取工具和余额流水会保留在账号中。
-          内容或工具只结算一次，之后可以长期打开。燃币不可提现，也没有自动充值入口。
+          内容或工具只结算一次，之后可以长期打开。燃币不可提现，也不支持充值或真实货币兑换。
         </p>
       </section>
 
       {/* 怎么赚 */}
-      <section className="mb-10">
+      <section id="earn" className="mb-10 scroll-mt-24">
         <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">二、怎么获得</h2>
+        <p className="mb-4 text-[14px] leading-7 text-[var(--site-muted)]">
+          游客首次访问获得试用额度；登录后可点击签到免费领取，也可通过有效评论、已开放的活动和游戏获取。
+          活动与游戏奖励按各项目规则发放。余额不够用时，可以{' '}
+          <Link href="/help#contact" className="underline underline-offset-2">联系站长</Link>
+          ，说明账号和用途，申请免费补充。
+        </p>
         <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
           <table className="w-full border-collapse text-[13px]">
             <thead>
@@ -158,6 +166,17 @@ export default async function RanbiPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* 自愿支持，与燃币获取分开 */}
+      <section id="support" className="mb-10 scroll-mt-24">
+        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">五、如何支持站长</h2>
+        <p className="text-[14px] leading-7 text-[var(--site-muted)]">
+          如果内容或资源对你有帮助，欢迎通过{' '}
+          <Link href="/donate" className="underline underline-offset-2">捐助或赞助</Link>
+          {' '}支持站长。支持完全自愿，用于内容创作和网站维护。
+          捐助、赞助与燃币领取和补充分开，不兑换燃币，也不是免费获取和使用资源的前提。
+        </p>
       </section>
 
       {/* 速查 */}

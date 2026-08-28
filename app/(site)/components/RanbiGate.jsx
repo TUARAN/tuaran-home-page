@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 
 import { useSessionAccount } from './SessionProvider'
 import { Skeleton } from '../../components/loading/LoadingPrimitives'
@@ -124,6 +125,9 @@ export default function RanbiGate({ resourceKey, children, preview = null, title
           </div>
         )}
 
+        <p className="mt-3 text-xs text-[#8a7a55] dark:text-amber-300/80">
+          燃币不支持充值。<Link href="/ranbi#earn" className="underline underline-offset-2">免费获取或联系站长补充</Link>
+        </p>
         {error ? <p className="mt-3 text-xs text-rose-600 dark:text-rose-400">{error}</p> : null}
       </div>
     </div>

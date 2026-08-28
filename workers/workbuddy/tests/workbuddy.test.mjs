@@ -44,6 +44,49 @@ test('file actions keep locked URLs hidden and render an on-demand course player
   assert.doesNotMatch(html, /<video[^>]+src=/)
 })
 
+test('account navigation starts neutral and follows the same identity as the balance', async () => {
+  const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8')
+  assert.match(html, /<a[^>]*id="accountLink"[^>]*href="https:\/\/2aran\.com\/account"[^>]*>账号<\/a>/)
+  const source = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8')
+  assert.match(source, /const accountLink = document\.querySelector\('#accountLink'\)/)
+  const accountLink = { textContent: '账号' }
+  const balanceText = { textContent: '读取中' }
+  const guestSeed = { textContent: '' }
+  let payload = { isGuest: false, balance: 9116, guestSeed: 50 }
+  let failure = null
+  const context = {
+    state: { me: null }, accountLink, balanceText,
+    document: { querySelectorAll: () => [guestSeed] },
+    fetch: async (url) => {
+      assert.equal(url, '/api/me')
+      if (failure === 'network') throw new Error('offline')
+      return { ok: failure !== 'http', json: async () => payload }
+    },
+  }
+  runInNewContext(source.slice(source.indexOf('async function loadMe()'), source.indexOf('function fileActions(')), context)
+
+  await context.loadMe()
+  assert.equal(accountLink.textContent, '账号中心')
+  assert.equal(balanceText.textContent, '9116 燃币')
+  assert.equal(guestSeed.textContent, 50)
+
+  payload = { isGuest: true, balance: 50, guestSeed: 50 }
+  await context.loadMe()
+  assert.equal(accountLink.textContent, '登录 / 注册')
+  assert.equal(balanceText.textContent, '50 燃币')
+
+  payload = { isGuest: false, balance: 9116, guestSeed: 50 }
+  await context.loadMe()
+  assert.equal(accountLink.textContent, '账号中心')
+
+  for (const error of ['http', 'network']) {
+    failure = error
+    await context.loadMe()
+    assert.equal(accountLink.textContent, '账号')
+    assert.equal(balanceText.textContent, '燃币暂不可用')
+  }
+})
+
 test('Worker forwards only session cookies to the fixed main endpoint, never trusting client identity', async (t) => {
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     assert.equal(url, 'https://2aran.com/api/workbuddy/session')

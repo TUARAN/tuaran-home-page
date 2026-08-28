@@ -22,6 +22,7 @@ const emptyState = document.querySelector('#emptyState')
 const dialog = document.querySelector('#resourceDialog')
 const dialogContent = document.querySelector('#dialogContent')
 const balanceText = document.querySelector('#balanceText')
+const accountLink = document.querySelector('#accountLink')
 const toast = document.querySelector('#toast')
 const loadMore = document.querySelector('#loadMore')
 
@@ -135,9 +136,11 @@ async function loadMe() {
     const response = await fetch('/api/me')
     if (!response.ok) throw new Error('me failed')
     state.me = await response.json()
+    accountLink.textContent = state.me.isGuest ? '登录 / 注册' : '账号中心'
     balanceText.textContent = `${state.me.balance} 燃币`
     document.querySelectorAll('[data-guest-seed]').forEach((element) => { element.textContent = state.me.guestSeed })
   } catch {
+    accountLink.textContent = '账号'
     balanceText.textContent = '燃币暂不可用'
   }
 }

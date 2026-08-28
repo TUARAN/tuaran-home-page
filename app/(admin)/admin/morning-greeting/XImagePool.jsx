@@ -52,7 +52,7 @@ export default function XImagePool() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 id="x-image-pool-title" className="m-0 text-sm font-semibold">图片资源池</h3>
-          <p className="mb-0 mt-1 text-xs leading-6 text-[#77796e] dark:text-gray-400">每条推文先限时生成一张；失败随机取同主题 R2 旧图。上传失败保留素材，重试复用原图和文案。</p>
+          <p className="mb-0 mt-1 text-xs leading-6 text-[#77796e] dark:text-gray-400">每条新配图随机二选一（各 50%）：生成优先、素材兜底；或直接取同主题备用素材。生图随机使用动漫、日式浮世绘、赛博朋克、抽象、现代主义、水彩、剪纸或黑白摄影。上传失败重试复用原图和文案。</p>
           <p className="m-0 text-[11px] leading-6 text-[#77796e] dark:text-gray-400">新图：R2 / tuaran-media / images/x-posts/ · 记录：D1 · 在线生成：FLUX.1 schnell · 备用素材：本地批量生成后上传</p>
         </div>
         <AdminButton size="sm" onClick={() => setRevision((value) => value + 1)} disabled={busy}>{busy ? '读取中…' : '刷新素材'}</AdminButton>
@@ -75,7 +75,7 @@ export default function XImagePool() {
             <div className="flex justify-between gap-2 text-xs"><span>{TYPES.find(([value]) => value === item.contentType)?.[1]}</span><span className={item.status === 'published' ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}>{item.status ? STATES[item.status] || item.status : '备用素材'}</span></div>
             <p className="m-0 text-[11px] text-gray-500">{item.label || `${item.date} · ${item.slot}`}</p>
             <p className="m-0 line-clamp-3 whitespace-pre-wrap text-xs leading-5">{item.text || item.label || '等待生成文案'}</p>
-            {item.status ? <p className="m-0 text-[11px] text-gray-500">{item.source === 'pool' ? '配图来源：R2 同主题随机回退' : '配图来源：本次生成'}</p> : null}
+            {item.status && item.imageUrl ? <p className="m-0 text-[11px] text-gray-500">{item.source === 'pool' ? (item.fallbackError ? '配图来源：生成失败，同主题素材兜底' : '配图来源：直接随机选用备用素材') : '配图来源：本次生成'}</p> : null}
             {item.error ? <p className="m-0 break-words text-xs text-rose-600">{item.error}</p> : null}
             {['publishing', 'publish-unknown'].includes(item.status) ? <p className="m-0 text-xs text-amber-700 dark:text-amber-300">请到 X 核对是否发布成功；为避免重复发帖，已停止本时段自动重试。</p> : null}
             <div className="flex flex-wrap gap-3 text-xs text-sky-700 dark:text-sky-300">
@@ -88,7 +88,7 @@ export default function XImagePool() {
       {view === 'runs' && data?.nextCursor ? <div className="mt-3 text-center"><AdminButton disabled={busy} onClick={() => load(data.nextCursor)}>{busy ? '读取中…' : '加载更多'}</AdminButton></div> : null}
       <details className="mt-4 border-t border-[#e2e4da] pt-3 dark:border-[#293545]">
         <summary className="cursor-pointer text-xs font-medium">历史固定素材 · {data?.legacy?.length || 10} 张 · 存放在仓库，未迁入 R2</summary>
-        <p className="text-xs text-gray-500">保留旧图供查看；新任务使用生成配图。</p>
+        <p className="text-xs text-gray-500">保留旧图供查看；新任务随机选择在线生成或 R2 备用素材，不使用这些历史固定素材。</p>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">{(data?.legacy || []).map((item) => <button key={item.id} type="button" className="overflow-hidden rounded-lg border text-left dark:border-[#293545]" onClick={() => setPreview(item)}><img src={item.imageUrl} alt={item.label} loading="lazy" className="aspect-square w-full object-cover" /><span className="block p-2 text-xs">{item.label}</span></button>)}</div>
       </details>
       <dialog ref={dialog} onClose={() => setPreview(null)} className="max-h-[90vh] w-[min(900px,92vw)] overflow-y-auto rounded-2xl bg-white p-4 text-[#34352f] backdrop:bg-black/60 dark:bg-[#10161f] dark:text-gray-100" aria-label="配图详情">

@@ -435,9 +435,9 @@ export async function POST(req) {
     stage = 'image-generation'
     const image = await prepareXImage({
       db, bucket: env.MEDIA, ai: env.AI, asset,
-      createPrompt: async () => {
+      createPrompt: async (style) => {
         const brief = await callDeepSeek({
-          env, messages: buildXImageBriefMessages({ text, contentType, slot: runSlot }),
+          env, messages: buildXImageBriefMessages({ text, contentType, slot: runSlot, style }),
           maxTokens: 320, temperature: 0.7, timeoutMs: 45_000,
           taskDefaultModel: 'deepseek-v4-flash', disableThinking: true,
           task: { source: 'x-daily-greeting', taskType: 'image-prompt', title: `X 配图：${runSlot}`,

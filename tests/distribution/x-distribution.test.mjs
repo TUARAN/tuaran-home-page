@@ -175,7 +175,7 @@ test('images persist to R2, retries reuse them, and list pagination retains hist
   const { db, bucket, objects } = await assetFixture(t)
   const asset = await assetLibrary.claimXAsset(db, { date: '2026-08-28', slot: 'morning', contentType: 'greeting' })
   let generated = 0
-  const input = { db, bucket, asset, ai: { run: async () => { generated++; return { image: PNG } } }, createPrompt: async () => 'Morning light on a coffee cup.' }
+  const input = { db, bucket, asset, random: () => 0, ai: { run: async () => { generated++; return { image: PNG } } }, createPrompt: async () => 'Morning light on a coffee cup.' }
   const image = await assetLibrary.prepareXImage(input)
   assert.equal(image.type, 'image/png')
   assert.equal(objects.size, 1)
@@ -190,7 +190,7 @@ test('images persist to R2, retries reuse them, and list pagination retains hist
   assert.equal(older.items[0].date, '2026-08-28')
   assert.match(older.items[0].imageUrl, /^\/api\/admin\/morning-greeting\/assets\//)
   objects.clear()
-  await assert.rejects(assetLibrary.prepareXImage(input), /GENERATION_AND_POOL_UNAVAILABLE/)
+  await assert.rejects(assetLibrary.prepareXImage(input), /STORED_OBJECT_MISSING/)
   assert.equal(generated, 1)
 })
 
@@ -207,6 +207,7 @@ async function cronFixture(t, overrides = {}) {
   const env = { DB: fixture.db, MEDIA: fixture.bucket, MORNING_GREETING_SECRET: 'test-secret', AI: { run: async () => { calls.images++; return { image: PNG } } } }
   const dependencies = {
     ...assetLibrary, ...greetings, ...greetingLlm, ...culture, ...community, ...usPosts, ...cryptoPosts,
+    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, random: () => 0 }),
     getOptionalRequestContext: () => ({ env }),
     getXCredentials: () => ({ configured: true }),
     listEnabledMorningGreetingTexts: async () => [],
@@ -329,6 +330,140 @@ async function seedPool(fixture, type = 'greeting', id = 'pool-one') {
     VALUES (?,?,?,?,?,?,?,?,?)`).run(id, type, id, key, 'image/png', bytes.length, 'Codex imagegen', 'Quiet scene', Date.now())
   return key
 }
+
+test('image briefs randomize art direction independently of the post category', () => {
+  const styles = [/anime/i, /Japanese.*woodblock/i, /cyberpunk/i, /abstract/i, /modernis/i, /watercolor/i, /paper.cut/i, /monochrome.*photograph/i]
+  for (const contentType of assetLibrary.X_ASSET_TYPES) {
+    for (const [index, expected] of styles.entries()) {
+      const messages = assetLibrary.buildXImageBriefMessages({ text: 'A shared meal.', contentType, slot: 'morning', random: () => index / 8 })
+      assert.match(messages[0].content, expected)
+      assert.match(messages[0].content, /No text/)
+      assert.equal(JSON.parse(messages[1].content).post, 'A shared meal.')
+      if (contentType === 'crypto-insight') assert.match(messages[0].content, /no price chart/i)
+    }
+  }
+})
+
+test('random values on both sides of 0.5 choose generation or direct same-theme pool use', async (t) => {
+  for (const value of [0, 0.499999, 0.5, 0.999999]) {
+    const fixture = await assetFixture(t)
+    const key = await seedPool(fixture)
+    await seedPool(fixture, 'crypto-insight', 'other-theme')
+    const asset = await assetLibrary.claimXAsset(fixture.db, { date: '2026-08-28', slot: 'morning', contentType: 'greeting' })
+    let images = 0
+    let prompts = 0
+    let submittedPrompt = ''
+    const image = await assetLibrary.prepareXImage({ ...fixture, asset, random: () => value,
+      ai: { run: async (_model, args) => { images++; submittedPrompt = args.prompt; return { image: PNG } } },
+      createPrompt: async () => { prompts++; return 'A cup on a table.' },
+    })
+    assert.ok(image.size)
+    if (value < 0.5) {
+      assert.equal(images, 1)
+      assert.equal(prompts, 1)
+      assert.equal(asset.row.asset_source, 'generated')
+      assert.notEqual(asset.row.object_key, key)
+      assert.match(submittedPrompt, value === 0 ? /anime/i : /abstract/i)
+      assert.equal(submittedPrompt, asset.row.prompt)
+    } else {
+      assert.equal(images, 0)
+      assert.equal(prompts, 0)
+      assert.equal(asset.row.object_key, key)
+      assert.equal(asset.row.asset_source, 'pool')
+      assert.equal(asset.row.fallback_error, '')
+      assert.equal(fixture.objects.size, 2)
+    }
+    const reused = await assetLibrary.prepareXImage({ ...fixture, asset,
+      random: () => assert.fail('A saved image must be reused before drawing a new strategy'),
+      createPrompt: () => assert.fail('Do not regenerate a saved image'),
+    })
+    assert.deepEqual(await reused.arrayBuffer(), await image.arrayBuffer())
+  }
+})
+
+test('direct pool selection uses only enabled curated assets and randomizes the chosen asset', async (t) => {
+  const fixture = await assetFixture(t)
+  await seedPool(fixture, 'greeting', 'a-disabled')
+  fixture.sqlite.exec('UPDATE x_image_pool SET enabled = 0')
+  await seedPool(fixture, 'greeting', 'b-first')
+  const key = await seedPool(fixture, 'greeting', 'c-second')
+  await seedPool(fixture, 'crypto-insight', 'z-other-theme')
+  const old = await assetLibrary.claimXAsset(fixture.db, { date: '9999-08-27', slot: 'morning', contentType: 'greeting' })
+  await assetLibrary.updateXAsset(fixture.db, old, { status: 'published', object_key: 'old-generated.png', mime_type: 'image/png' })
+  fixture.objects.set('old-generated.png', Uint8Array.from(Buffer.from(PNG, 'base64')))
+  const asset = await assetLibrary.claimXAsset(fixture.db, { date: '2026-08-28', slot: 'morning', contentType: 'greeting' })
+  await assetLibrary.prepareXImage({ ...fixture, asset, random: () => 0.999999 })
+  assert.equal(asset.row.object_key, key)
+  assert.equal(assetLibrary.xAssetView(asset.row).fallbackError, '')
+})
+
+test('generation draws style separately from strategy and passes the same direction to the brief and image model', async (t) => {
+  const fixture = await assetFixture(t)
+  const asset = await assetLibrary.claimXAsset(fixture.db, { date: '2026-08-28', slot: 'morning', contentType: 'greeting' })
+  const draws = [0.1, 0.9]
+  let briefStyle = ''
+  let modelPrompt = ''
+  await assetLibrary.prepareXImage({ ...fixture, asset, random: () => draws.shift(),
+    createPrompt: async (style) => { briefStyle = style; return 'A shared breakfast.' },
+    ai: { run: async (_model, args) => { modelPrompt = args.prompt; return { image: PNG } } },
+  })
+  assert.match(briefStyle, /Monochrome editorial photography/)
+  assert.ok(modelPrompt.startsWith(briefStyle))
+  assert.match(modelPrompt, /A shared breakfast/)
+  assert.equal(asset.row.prompt, modelPrompt)
+  assert.deepEqual(draws, [])
+})
+
+test('direct pool selection skips missing objects but cannot commit after lease expiry', async (t) => {
+  const fixture = await assetFixture(t)
+  const missing = await seedPool(fixture, 'greeting', 'a-missing')
+  const good = await seedPool(fixture, 'greeting', 'b-good')
+  fixture.objects.delete(missing)
+  const asset = await assetLibrary.claimXAsset(fixture.db, { date: '2026-08-28', slot: 'morning', contentType: 'greeting' })
+  const draws = [0.75, 0]
+  await assetLibrary.prepareXImage({ ...fixture, asset, random: () => draws.shift() })
+  assert.equal(asset.row.object_key, good)
+  assert.equal(asset.row.fallback_error, '')
+  const expired = await assetLibrary.claimXAsset(fixture.db, { date: '2026-08-29', slot: 'morning', contentType: 'greeting' })
+  fixture.sqlite.exec('UPDATE x_post_assets SET lease_until = 0')
+  await assert.rejects(assetLibrary.prepareXImage({ ...fixture, asset: expired, random: () => 0.75 }), /LEASE_LOST/)
+  assert.equal(fixture.sqlite.prepare('SELECT object_key FROM x_post_assets WHERE id = ?').get(expired.row.id).object_key, '')
+})
+
+test('direct pool failures never generate an image or send a text-only post', async (t) => {
+  const fixture = await cronFixture(t, {
+    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, random: () => 0.75 }),
+  })
+  assert.equal((await fixture.invoke()).status, 502)
+  assert.equal(fixture.sqlite.prepare('SELECT error FROM x_post_assets').get().error, 'X_IMAGE_POOL_UNAVAILABLE')
+  const key = await seedPool(fixture)
+  fixture.objects.delete(key)
+  assert.equal((await fixture.invoke()).status, 502)
+  assert.equal(fixture.sqlite.prepare('SELECT error FROM x_post_assets').get().error, 'X_IMAGE_POOL_OBJECT_MISSING')
+  assert.equal(fixture.calls.images, 0)
+  assert.equal(fixture.calls.upload, 0)
+  assert.equal(fixture.calls.publish, 0)
+})
+
+test('all five task types can publish directly from the pool without generating prompts or images', async (t) => {
+  const fixture = await cronFixture(t, {
+    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, random: () => 0.75 }),
+    callDeepSeek: async (args) => {
+      assert.notEqual(args.task.taskType, 'image-prompt')
+      return { content: 'Make a small thing today. Share what you learned.', model: 'test-model' }
+    },
+  })
+  for (const type of assetLibrary.X_ASSET_TYPES) await seedPool(fixture, type, `pool-${type}`)
+  for (const query of ['period=morning', 'community=community_friends', 'story=culture_morning', 'crypto=crypto_knowledge', 'us=us_morning']) {
+    const response = await fixture.invoke(query)
+    assert.equal(response.status, 201, JSON.stringify(await response.clone().json()))
+  }
+  assert.equal(fixture.calls.images, 0)
+  assert.equal(fixture.calls.publish, 5)
+  assert.equal(fixture.objects.size, 5)
+  const rows = fixture.sqlite.prepare('SELECT asset_source, fallback_error FROM x_post_assets').all()
+  assert.ok(rows.every((row) => row.asset_source === 'pool' && row.fallback_error === ''))
+})
 
 test('generation failure chooses only a same-theme R2 pool image and reuses it on retry', async (t) => {
   let uploads = 0

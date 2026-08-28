@@ -86,12 +86,17 @@ export default function InformationConsole() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [revealedId, setRevealedId] = useState('')
   const [query, setQuery] = useState('')
+  const [recordView, setRecordView] = useState('active')
+
+  const archivedCount = records.filter((record) => record.archivedAt != null).length
+  const viewCount = recordView === 'archived' ? archivedCount : records.length - archivedCount
 
   const filteredRecords = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase()
-    if (!normalizedQuery) return records
 
     return records.filter((record) => {
+      if ((record.archivedAt != null) !== (recordView === 'archived')) return false
+      if (!normalizedQuery) return true
       const plain = record.plain
       const searchableValues = [
         plain.label,
@@ -104,7 +109,7 @@ export default function InformationConsole() {
       ]
       return searchableValues.some((value) => String(value || '').toLocaleLowerCase().includes(normalizedQuery))
     })
-  }, [query, records])
+  }, [query, records, recordView])
 
   const load = useCallback(async () => {
     setStatus('loading')
@@ -151,6 +156,7 @@ export default function InformationConsole() {
   }
 
   function startEdit(record) {
+    if (busy || record.archivedAt != null) return
     setEditingId(record.id)
     setForm(plainToForm(record.plain))
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -178,16 +184,20 @@ export default function InformationConsole() {
         ),
       })
       const data = await res.json()
-      if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP_${res.status}`)
+      if (!res.ok || !data?.ok) throw new Error(data?.message || data?.error || `HTTP_${res.status}`)
       if (editingId) {
         setRecords((current) =>
           current.map((item) =>
             item.id === editingId ? { ...item, payload, plain, updatedAt: data.updatedAt } : item
           )
         )
+        setEncryptedItems((current) => current.map((item) =>
+          item.id === editingId ? { ...item, payload, updatedAt: data.updatedAt } : item
+        ))
       } else {
         setRecords((current) => [{ ...data.item, plain }, ...current])
         setEncryptedItems((current) => [data.item, ...current])
+        setRecordView('active')
       }
       resetForm()
       setMessage(editingId ? '记录已更新并重新加密。' : '记录已加密保存。')
@@ -198,8 +208,42 @@ export default function InformationConsole() {
     }
   }
 
+  async function changeArchive(record) {
+    if (busy) return
+    const action = record.archivedAt != null ? 'restore' : 'archive'
+    setBusy(true)
+    setMessage('')
+    try {
+      const res = await fetch('/api/admin/information', {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: record.id, action }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.ok) throw new Error(data?.message || data?.error || `HTTP_${res.status}`)
+      const updateItems = (current) => current.map((item) =>
+        item.id === record.id ? { ...item, archivedAt: data.archivedAt, updatedAt: data.updatedAt } : item
+      )
+      setRecords(updateItems)
+      setEncryptedItems(updateItems)
+      if (editingId === record.id) resetForm()
+      setRevealedId('')
+      setMessage(action === 'archive' ? '记录已归档，可在「已归档」中恢复或删除。' : '记录已恢复到「未归档」。')
+    } catch (error) {
+      setMessage(`操作失败：${error?.message || error}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function remove(record) {
-    if (!confirm(`删除「${record.plain.label || record.plain.account}」？`)) return
+    if (busy) return
+    if (record.archivedAt == null) {
+      setMessage('请先归档记录，再删除。')
+      return
+    }
+    if (!confirm(`删除已归档记录「${record.plain.label || record.plain.account}」？删除后无法在信息金库中恢复。`)) return
     setBusy(true)
     setMessage('')
     try {
@@ -208,9 +252,11 @@ export default function InformationConsole() {
         credentials: 'same-origin',
       })
       const data = await res.json()
-      if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP_${res.status}`)
+      if (!res.ok || !data?.ok) throw new Error(data?.message || data?.error || `HTTP_${res.status}`)
       setRecords((current) => current.filter((item) => item.id !== record.id))
       setEncryptedItems((current) => current.filter((item) => item.id !== record.id))
+      if (editingId === record.id) resetForm()
+      if (revealedId === record.id) setRevealedId('')
       setMessage('记录已删除。')
     } catch (error) {
       setMessage(`删除失败：${error?.message || error}`)
@@ -233,7 +279,7 @@ export default function InformationConsole() {
         <p className="text-sm text-[#67695d] dark:text-gray-400">正在读取加密信息库…</p>
       ) : status === 'error' ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
-          {message} 请确认已应用 <code>0053_private_information_records.sql</code>。
+          {message} 请确认已应用 <code>0053_private_information_records.sql</code> 和 <code>0084_private_information_archive.sql</code>。
         </div>
       ) : !unlocked ? (
         <Section title="解锁信息库" description={`当前共有 ${encryptedItems.length} 条密文记录。口令不会发送到服务器。`}>
@@ -287,15 +333,28 @@ export default function InformationConsole() {
                   {busy ? '保存中…' : editingId ? '保存修改' : '加密保存'}
                 </button>
                 {editingId ? <button type="button" onClick={resetForm} className="rounded-lg border border-[#caccc0] px-4 py-2 text-sm dark:border-[#2d3744]">取消</button> : null}
-                {message ? <span className="text-sm text-[#67695d] dark:text-gray-400">{message}</span> : null}
               </div>
             </form>
           </Section>
 
           <Section
             title="密钥记录"
-            description={query.trim() ? `找到 ${filteredRecords.length} / ${records.length} 条；搜索仅在当前浏览器内进行。` : `共 ${records.length} 条；密码与密保默认隐藏。`}
+            description={query.trim() ? `当前分类找到 ${filteredRecords.length} / ${viewCount} 条；搜索仅在当前浏览器内进行。` : `共 ${records.length} 条；密码与密保默认隐藏。记录需先归档，才能删除。`}
           >
+            {message ? <p role="status" className="mb-3 text-sm text-[#67695d] dark:text-gray-400">{message}</p> : null}
+            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="记录归档状态">
+              {[['active', '未归档', records.length - archivedCount], ['archived', '已归档', archivedCount]].map(([value, label, count]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={recordView === value}
+                  onClick={() => { setRecordView(value); setRevealedId('') }}
+                  className={`rounded-lg border px-3 py-2 text-sm ${recordView === value ? 'border-[#15140f] bg-[#15140f] text-white dark:border-gray-100 dark:bg-gray-100 dark:text-[#10161f]' : 'border-[#caccc0] dark:border-[#2d3744]'}`}
+                >
+                  {label}（{count}）
+                </button>
+              ))}
+            </div>
             <div className="mb-4 flex max-w-2xl items-center gap-2">
               <label className="min-w-0 flex-1">
                 <span className="sr-only">搜索信息金库记录</span>
@@ -317,11 +376,12 @@ export default function InformationConsole() {
             {records.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">暂无记录。</p>
             ) : filteredRecords.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">没有匹配的记录。</p>
+              <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">{query.trim() ? '没有匹配的记录。' : recordView === 'archived' ? '暂无已归档记录。' : '暂无未归档记录，可切换到「已归档」查看。'}</p>
             ) : (
               <div className="grid gap-3 lg:grid-cols-2">
                 {filteredRecords.map((record) => {
                   const visible = revealedId === record.id
+                  const archived = record.archivedAt != null
                   const plain = record.plain
                   const answers = plain.securityAnswers
                   return (
@@ -329,6 +389,7 @@ export default function InformationConsole() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h3 className="font-semibold text-[#15140f] dark:text-gray-100">{plain.label || 'Apple ID'}</h3>
+                          {archived ? <p className="mt-1 text-xs text-[#77796e] dark:text-gray-400">已归档 · {new Date(record.archivedAt).toLocaleString('zh-CN')}</p> : null}
                           <p className="mt-1 break-all font-mono text-sm text-[#53554d] dark:text-gray-300">{plain.account}</p>
                         </div>
                         <button type="button" onClick={() => setRevealedId(visible ? '' : record.id)} className="shrink-0 rounded-md border border-[#caccc0] px-2.5 py-1 text-xs dark:border-[#2d3744]">
@@ -346,8 +407,9 @@ export default function InformationConsole() {
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button type="button" onClick={() => copy(plain.account, '账号')} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制账号</button>
                         <button type="button" onClick={() => copy(plain.password, '密码')} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">复制密码</button>
-                        <button type="button" onClick={() => startEdit(record)} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs dark:border-[#2d3744]">编辑</button>
-                        <button type="button" disabled={busy} onClick={() => remove(record)} className="rounded-md border border-rose-300 px-2 py-1 text-xs text-rose-700 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">删除</button>
+                        {!archived ? <button type="button" disabled={busy} onClick={() => startEdit(record)} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs disabled:opacity-50 dark:border-[#2d3744]">编辑</button> : null}
+                        <button type="button" disabled={busy} onClick={() => changeArchive(record)} className="rounded-md border border-[#caccc0] px-2 py-1 text-xs disabled:opacity-50 dark:border-[#2d3744]">{archived ? '恢复' : '归档'}</button>
+                        {archived ? <button type="button" disabled={busy} onClick={() => remove(record)} className="rounded-md border border-rose-300 px-2 py-1 text-xs text-rose-700 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">删除</button> : null}
                       </div>
                     </article>
                   )

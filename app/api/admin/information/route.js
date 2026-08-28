@@ -24,6 +24,7 @@ function serializeRow(row) {
       payload: JSON.parse(row.encrypted_payload),
       createdAt: Number(row.created_at) || 0,
       updatedAt: Number(row.updated_at) || 0,
+      archivedAt: row.archived_at == null ? null : Number(row.archived_at),
     }
   } catch {
     return null
@@ -46,7 +47,7 @@ export async function GET(req) {
   try {
     const result = await db
       .prepare(
-        `SELECT id, category, encrypted_payload, created_at, updated_at
+        `SELECT id, category, encrypted_payload, created_at, updated_at, archived_at
          FROM private_information_records
          WHERE user_id = ? AND deleted_at IS NULL
          ORDER BY updated_at DESC`
@@ -94,7 +95,7 @@ export async function POST(req) {
       .run()
     return Response.json({
       ok: true,
-      item: { id, category, payload: body.payload, createdAt: now, updatedAt: now },
+      item: { id, category, payload: body.payload, createdAt: now, updatedAt: now, archivedAt: null },
     })
   } catch (error) {
     return Response.json(
@@ -118,19 +119,46 @@ export async function PATCH(req) {
   }
   const id = String(body?.id || '').trim()
   if (!id) return Response.json({ error: 'INVALID_ID' }, { status: 400 })
-  if (!isValidEnvelope(body?.payload)) return Response.json({ error: 'INVALID_ENVELOPE' }, { status: 400 })
+  const action = body?.action
+  if (action !== undefined && !['archive', 'restore'].includes(action)) {
+    return Response.json({ error: 'INVALID_ACTION' }, { status: 400 })
+  }
+  if (action && body?.payload !== undefined) {
+    return Response.json({ error: 'INVALID_ACTION_PAYLOAD' }, { status: 400 })
+  }
+  if (!action && !isValidEnvelope(body?.payload)) return Response.json({ error: 'INVALID_ENVELOPE' }, { status: 400 })
   const now = Date.now()
 
   try {
+    if (action) {
+      const archivedAt = action === 'archive' ? now : null
+      const result = await db
+        .prepare(
+          `UPDATE private_information_records
+           SET archived_at = ?, updated_at = ?
+           WHERE id = ? AND user_id = ? AND deleted_at IS NULL`
+        )
+        .bind(archivedAt, now, id, String(guard.user.id))
+        .run()
+      if (!result?.meta?.changes) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
+      return Response.json({ ok: true, archivedAt, updatedAt: now })
+    }
     const result = await db
       .prepare(
         `UPDATE private_information_records
          SET encrypted_payload = ?, updated_at = ?
-         WHERE id = ? AND user_id = ? AND deleted_at IS NULL`
+         WHERE id = ? AND user_id = ? AND deleted_at IS NULL AND archived_at IS NULL`
       )
       .bind(JSON.stringify(body.payload), now, id, String(guard.user.id))
       .run()
-    if (!result?.meta?.changes) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
+    if (!result?.meta?.changes) {
+      const existing = await db.prepare(
+        'SELECT id FROM private_information_records WHERE id = ? AND user_id = ? AND deleted_at IS NULL'
+      ).bind(id, String(guard.user.id)).first()
+      return existing
+        ? Response.json({ error: 'RECORD_ARCHIVED', message: '请先恢复归档记录再编辑。' }, { status: 409 })
+        : Response.json({ error: 'NOT_FOUND' }, { status: 404 })
+    }
     return Response.json({ ok: true, updatedAt: now })
   } catch (error) {
     return Response.json(
@@ -154,11 +182,18 @@ export async function DELETE(req) {
       .prepare(
         `UPDATE private_information_records
          SET deleted_at = ?, updated_at = ?
-         WHERE id = ? AND user_id = ? AND deleted_at IS NULL`
+         WHERE id = ? AND user_id = ? AND deleted_at IS NULL AND archived_at IS NOT NULL`
       )
       .bind(now, now, id, String(guard.user.id))
       .run()
-    if (!result?.meta?.changes) return Response.json({ error: 'NOT_FOUND' }, { status: 404 })
+    if (!result?.meta?.changes) {
+      const existing = await db.prepare(
+        'SELECT id FROM private_information_records WHERE id = ? AND user_id = ? AND deleted_at IS NULL'
+      ).bind(id, String(guard.user.id)).first()
+      return existing
+        ? Response.json({ error: 'ARCHIVE_REQUIRED', message: '请先归档记录，再删除。' }, { status: 409 })
+        : Response.json({ error: 'NOT_FOUND' }, { status: 404 })
+    }
     return Response.json({ ok: true })
   } catch (error) {
     return Response.json(

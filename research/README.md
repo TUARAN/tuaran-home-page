@@ -52,7 +52,7 @@ tldr: 不写则回退用 summary；想突出与 summary 不同的一句话总结
 topic_type: market           # 仅 topics 用：industry | tech | product | market | thesis
 subjects: [business_market]  # 可选，显式主题；首项是卡片主分类，值见 lib/contentTaxonomy.js
 content_type: analysis       # opinion | analysis | engineering_case | build_log | practice | guide | fact_check | profile | archive | research
-assistance: claude-code      # 协助工具：claude-code | cursor | codex | doubao | gemini | gpt | manual
+assistance: claude-code      # 协助工具：claude-code | cursor | codex | workbuddy | doubao | gemini | gpt | manual
 model: claude-opus-4-7       # 底层模型 ID（可选，仅作内部记录）
 show_assistance: false       # 默认不展示；多版本对照或确有披露必要时才开启
 review_ready: false          # 人工完成原创性、证据、来源与风险复核后才能改为 true
@@ -81,6 +81,14 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 | `pv` | ⭕ | 阅读量，填非负整数；不填时按 `0` 展示 |
 
 > 📐 **阅读时长**由 loader 自动按字数估算（中文 ~300 字/分钟），不需要在 frontmatter 写。
+
+### 同题多版本
+
+同一篇文章可用独占一行的 `<!-- variant:workbuddy -->` 分隔不同协助工具版本。
+分隔符前的正文默认使用 `assistance` 指定的工具；后续版本 ID 对应
+`lib/research/loader.js` 的 `VARIANT_LABELS`。设置 `show_assistance: true`，
+详情页会显示版本切换，目录与正文同步更新；`?v=workbuddy` 可直达对应版本。
+各版本独立保留来源与证据边界，作者仍统一为 TUARAN。
 
 ## 写作风格与审计（必读）
 

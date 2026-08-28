@@ -11,6 +11,7 @@ import {
 
 import { useSessionAccount } from '../components/SessionProvider'
 import UserAvatar from '../components/UserAvatar'
+import AccountUnlocksPanel from './AccountUnlocksPanel'
 
 const PROVIDER_LABELS = {
   wechat: '微信',
@@ -137,7 +138,7 @@ export default function AccountClient() {
     return <main className="h5-account-page mx-auto w-full max-w-xl px-4 py-6 md:py-8 lg:py-20">
       <p className="hidden text-[11px] font-bold uppercase tracking-[0.18em] text-[#7a5b1e] dark:text-amber-300 md:block">Account</p>
       <h1 className="text-xl font-semibold tracking-tight text-[#1a1b17] dark:text-gray-100 md:mt-3 md:text-3xl">账号中心</h1>
-      <p className="mt-2 max-w-md text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6] md:mt-4 md:leading-7">请先登录，再绑定微信或查看账号的登录方式。</p>
+      <p className="mt-2 max-w-md text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6] md:mt-4 md:leading-7">请先登录，再查看个人资料、解锁记录或管理登录方式。</p>
       <Link href="/login?returnTo=/account" className="mt-6 inline-flex rounded-full bg-[#1f242b] px-4 py-2.5 text-sm font-medium text-white no-underline transition hover:bg-[#353c46]">去登录</Link>
     </main>
   }
@@ -146,6 +147,7 @@ export default function AccountClient() {
   const resourceEvents = Array.isArray(pointsInfo?.resourceEvents) ? pointsInfo.resourceEvents : []
   const tabs = [
     { id: 'overview', label: '资料概览' },
+    { id: 'unlocks', label: '我已解锁' },
     { id: 'connections', label: '连接账号' },
     { id: 'access', label: '授权管理' },
   ]
@@ -237,42 +239,20 @@ export default function AccountClient() {
               查看燃币说明
             </Link>
           </div>
-          {!pointsLoaded ? (
-            <p className="mt-6 text-[13px] text-[var(--site-muted)]">正在读取资源记录…</p>
-          ) : unlocks.length ? (
-            <ul className="mt-5 divide-y divide-[var(--site-line)]">
-              {unlocks.slice(0, 6).map((item) => (
-                <li key={`${item.resourceKey}:${item.unlockedAt}`}>
-                  {item.href ? (
-                    <Link href={item.href} className="group flex items-center gap-4 py-3.5 text-[var(--site-ink)] no-underline">
-                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--site-panel)] text-[var(--site-green)]">
-                        <IconLockOpen size={17} stroke={1.7} aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[14px] font-medium">{item.title}</span>
-                        <span className="mt-0.5 block text-[11px] text-[var(--site-faint)]">{item.typeLabel} · {formatTime(item.unlockedAt)}</span>
-                      </span>
-                      <IconArrowRight size={16} className="shrink-0 text-[var(--site-faint)] transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                    </Link>
-                  ) : (
-                    <div className="flex items-center gap-4 py-3.5">
-                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--site-panel)] text-[var(--site-green)]"><IconLockOpen size={17} /></span>
-                      <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[var(--site-ink)]">{item.title}</span>
-                      <span className="text-[11px] text-[var(--site-faint)]">{formatTime(item.unlockedAt)}</span>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="mt-6 rounded-xl bg-[var(--site-panel)] px-4 py-5">
-              <p className="text-[13px] leading-6 text-[var(--site-muted)]">当前账号还没有解锁资源。打开带燃币权益的调研或资源后，会自动记录在这里。</p>
-              <Link href="/articles?tab=resources" className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--site-accent)] no-underline">
-                浏览资源库 <IconArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() => setActiveTab('unlocks')}
+            className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--site-accent)] hover:underline"
+          >
+            查看解锁和领取记录 <IconArrowRight size={14} aria-hidden="true" />
+          </button>
         </section>
+      </div>
+    ) : null}
+
+    {activeTab === 'unlocks' ? (
+      <div className="mt-4 md:mt-8" role="tabpanel">
+        <AccountUnlocksPanel loaded={pointsLoaded} data={pointsInfo} />
       </div>
     ) : null}
 

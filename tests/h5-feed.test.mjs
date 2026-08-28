@@ -42,3 +42,20 @@ test('H5 feed hides search and batch buttons in favor of pull-to-refresh', async
   assert.match(accountSource, /h5-account-page/)
   assert.match(accountSource, /account-metric-grid/)
 })
+
+test('unlocked resources and claim history live in their own profile tab', async () => {
+  const [accountSource, panelSource, ranbiSource] = await Promise.all([
+    readFile(new URL('../app/(site)/account/AccountClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/account/AccountUnlocksPanel.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/ranbi/page.jsx', import.meta.url), 'utf8'),
+  ])
+  assert.match(accountSource, /id: 'unlocks', label: '我已解锁'/)
+  assert.match(accountSource, /activeTab === 'unlocks'[\s\S]*?<AccountUnlocksPanel loaded=\{pointsLoaded\} data=\{pointsInfo\}/)
+  assert.match(accountSource, /onClick=\{\(\) => setActiveTab\('unlocks'\)\}/)
+  assert.doesNotMatch(accountSource, /unlocks\.slice|unlocks\.map/)
+  assert.match(panelSource, /unlocks\.map/)
+  assert.match(panelSource, /我的领取记录[\s\S]*resourceEvents\.map/)
+  assert.doesNotMatch(panelSource, /fetch\(/)
+  assert.doesNotMatch(ranbiSource, /UnlocksPanel|我已解锁|我的领取记录<\/h/)
+  assert.match(ranbiSource, /<RanbiBalance/)
+})

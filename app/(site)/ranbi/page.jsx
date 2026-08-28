@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import PageContainer from '../components/PageContainer'
 import RanbiBalance from '../components/RanbiBalance'
-import RanbiUnlocksPanel from './RanbiUnlocksPanel'
 import { getD1 } from '../../../lib/d1'
 import { getPointPolicy, getPointRules } from '../../../lib/points'
 
@@ -73,8 +72,6 @@ export default async function RanbiPage() {
           <RanbiBalance />
         </div>
       </header>
-
-      <RanbiUnlocksPanel />
 
       {/* 读者权益 */}
       <section className="mb-10">

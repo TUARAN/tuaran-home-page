@@ -1,17 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-
-async function safeJson(res) {
-  const text = await res.text()
-  if (!text) return null
-  try {
-    return JSON.parse(text)
-  } catch {
-    return null
-  }
-}
 
 function formatTime(ts) {
   if (!ts) return '—'
@@ -28,28 +17,8 @@ function formatTime(ts) {
   }
 }
 
-export default function RanbiUnlocksPanel() {
-  const [state, setState] = useState({ status: 'loading', data: null })
-
-  useEffect(() => {
-    let alive = true
-    async function load() {
-      try {
-        const res = await fetch('/api/points/me', { cache: 'no-store', credentials: 'same-origin' })
-        const data = await safeJson(res)
-        if (!alive) return
-        setState({ status: res.ok ? 'ok' : 'error', data })
-      } catch (error) {
-        if (alive) setState({ status: 'error', data: { message: String(error?.message || error) } })
-      }
-    }
-    load()
-    return () => {
-      alive = false
-    }
-  }, [])
-
-  if (state.status === 'loading') {
+export default function AccountUnlocksPanel({ loaded, data }) {
+  if (!loaded) {
     return (
       <section className="mb-10 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4">
         <h2 className="font-serif text-[20px] text-[var(--site-ink)]">我已解锁</h2>
@@ -58,20 +27,13 @@ export default function RanbiUnlocksPanel() {
     )
   }
 
-  const data = state.data || {}
-  if (!data.authed) {
+  if (!data?.authed || data.dbUnavailable) {
     return (
       <section className="mb-10 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4">
         <h2 className="font-serif text-[20px] text-[var(--site-ink)]">我已解锁</h2>
         <p className="mt-2 text-[13px] leading-6 text-[var(--site-muted)]">
-          登录后可以在这里查看自己已经解锁过的页面和资源；游客解锁记录会在绑定登录时迁移到正式账号。
+          暂时无法读取解锁和领取记录，请稍后刷新重试。
         </p>
-        <Link
-          href="/login"
-          className="mt-3 inline-flex rounded-full border border-[#caa86a] px-3 py-1.5 text-xs font-medium text-[#7a5b1e] no-underline hover:bg-[#fbf3df] dark:border-amber-800 dark:text-amber-200"
-        >
-          登录 / 注册
-        </Link>
       </section>
     )
   }

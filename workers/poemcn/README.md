@@ -2,7 +2,11 @@
 
 独立部署的古诗文阅读与数据采集站，目标域名为 `poemcn.2aran.com`。
 
+主站的 Cloudflare Pages 构建不会发布这个 Worker。修改 `workers/poemcn/` 后，需单独测试并部署，确保线上脚本与页面同步更新：
+
 ```bash
+npm --prefix workers/poemcn test
+npx wrangler deploy --dry-run --config workers/poemcn/wrangler.toml
 npx wrangler dev --config workers/poemcn/wrangler.toml
 npx wrangler deploy --config workers/poemcn/wrangler.toml
 ```

@@ -11,6 +11,7 @@ import StatusPanel from './components/StatusPanel'
 import ThemeFilter from './components/ThemeFilter'
 import Timeline from './components/Timeline'
 import UnlockForm from './components/UnlockForm'
+import WealthView from './components/WealthView'
 
 const DEFAULT_DESCRIPTION = '站长的长期资产、行动框架与阶段复盘 —— 加密私域，仅作者本人可见。'
 
@@ -240,6 +241,19 @@ export default function LongCompassClient({
               >
                 财务视图
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeView === 'wealth'}
+                onClick={() => handleViewChange('wealth')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  activeView === 'wealth'
+                    ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
+                    : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                }`}
+              >
+                财产管理
+              </button>
             </div>
             {activeView === 'records' ? (
               <>
@@ -273,7 +287,9 @@ export default function LongCompassClient({
           </div>
 
           <div className="mt-4">
-            {activeView === 'finance' ? (
+            {activeView === 'wealth' ? (
+              <WealthView records={records} />
+            ) : activeView === 'finance' ? (
               <FinanceView records={records} />
             ) : currentRecords.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-6 text-sm text-[#717367] dark:border-gray-700 dark:text-gray-400">

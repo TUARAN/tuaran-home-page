@@ -8,6 +8,7 @@
 crypto.js        Web Crypto API 包装：encryptPayload / decryptPayload / isValidEnvelope
 schema.js        明文 payload 形状：KINDS / migrate / validatePlain
 api.js           客户端 fetch：fetchEncryptedRecords
+loans.js         从已解锁表格提取贷款快照、本金分位计算、分析材料
 index.js         统一导出
 ```
 
@@ -16,7 +17,7 @@ index.js         统一导出
 | 维度 | 谁管 | 当前 | 何时 +1 |
 |---|---|---|---|
 | envelope 版本 (`payload.v`) | `crypto.js` | 1 | 换算法 / 改 KDF / 加 AAD |
-| plain schema 版本 (`plain.schemaVersion`) | `schema.js` | 1 | 加字段 / 改字段语义 |
+| plain schema 版本 (`plain.schemaVersion`) | `schema.js` | 2 | 加字段 / 改字段语义 |
 
 迁移路径：
 - `decryptPayload(envelope, pw)` → 拿到 plain
@@ -38,3 +39,30 @@ index.js         统一导出
 3. **加新 API（如分页 / 单条 fetch）** → 改 `api.js`，组件保持不变
 4. **换加密算法** → 改 `crypto.js`：`envelopeVersion` +1，新旧分支共存一段时间
 5. **完全新的内容形态**（如多块结构化 content）→ Tier 4，先升 schema、再做 UI 适配
+
+## 财产管理 / 贷款快照
+
+继续使用 v2 的 Markdown content，不增加明文字段或写入 API。财产管理只读取解锁后的 snapshot；每次选择一份完整盘点，不累加不同日期的同一笔贷款。
+
+识别契约（表头须完全一致）：
+
+- 元数据：`快照日期`（YYYY-MM-DD）、可选的 `原图加权年化`、`原图预计月供(元)`。
+- 唯一的贷款表：`机构/产品`、`原始本金(元)`、`待还本金(元)`、`年化估算`、`状态`；可加 `借款日期`、`还款方式`、`剩余期数`、`备注`。
+- 可选计划表：`计划月份`、`原图计划金额(元)`、`原图项目`。仅作未核实的原图摘录。
+
+本金按整数分计算，金额最多两位小数；不能识别的金额保留为空并暂停汇总。余额加权年化排除零余额贷款，仍是原表利率的算术估算，不是合同实际 APR。历史图表模块保持原来的整元口径。
+
+大模型功能当前为可审阅、可复制的分析材料，默认隐藏机构名，但金额仍为敏感数据。不调用模型，不保存到浏览器存储，不自动外发，不执行还款。完整原文保留当时策略，不从旧快照推断当前现金、净资产或到期日。
+
+### 增量导入
+
+把一个或多个 v2 原始记录放在 Git 忽略的 `private/` JSON 数组文件中（与 `private/long-compass-seed.json` 形状一致）：
+
+```sh
+node scripts/append-long-compass.mjs private/your-snapshot.json --validate-only
+node scripts/append-long-compass.mjs private/your-snapshot.json
+```
+
+第二条命令在本地 TTY 无回显读取统一解锁口令。先解密验证现有罗盘、检测同标题同时间记录，然后仅追加密文并回读验证。不会重建、覆盖或删除历史记录；重复导入会跳过，内容冲突则拒绝。导入文件须自行并入本地原始种子以便恢复。远端操作需要已登录 Cloudflare 的 Wrangler；不要同时运行多个导入进程。SQL 临时文件仅含密文并限制权限。
+
+页面仍为站长鉴权后的只读界面。前端代码发布与私密数据导入是两件事；本地文件存在不等于线上已保存。

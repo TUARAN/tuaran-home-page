@@ -333,30 +333,6 @@ function ArrowIcon() {
   )
 }
 
-function WorkBuddyEntry() {
-  return (
-    <a
-      href="https://workbuddy.2aran.com/"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="home-workbuddy-entry no-external-arrow"
-      data-analytics-event="entry_click"
-      data-analytics-surface="home_workbuddy"
-      data-analytics-destination-kind="external"
-      data-analytics-destination-id="workbuddy"
-    >
-      <span className="home-workbuddy-icon" aria-hidden="true">✦</span>
-      <span className="home-workbuddy-copy">
-        <strong>WorkBuddy <T zh="资源库" en="Library" /></strong>
-        <small><T zh="学习手册 · 视频课程" en="Learning guides · Video courses" /></small>
-      </span>
-      <span className="home-workbuddy-action">
-        <T zh="去看看" en="Explore" /> <ArrowIcon />
-      </span>
-    </a>
-  )
-}
-
 function ClassicFeaturedLinkItem({ item }) {
   const className =
     'group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f4f0f8] dark:hover:bg-[#18202a]'
@@ -721,8 +697,6 @@ function ClassicHomePage({ featuredPicks }) {
         <HotTickerBar />
       </div>
 
-      <WorkBuddyEntry />
-
       <section className="mb-14 flex-1">
         <header className="classic-home-hero relative mb-12 overflow-hidden rounded-[28px] border px-6 py-7 md:px-12 md:py-10">
           <div className="classic-home-hero-glow pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block" />
@@ -951,7 +925,6 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         <HotTickerBar />
       </div>
       <HomeMobileChannels />
-      <WorkBuddyEntry />
       <div className="home-main-grid">
         <HomePrimaryColumnsClient
           catalog={featuredPicks}

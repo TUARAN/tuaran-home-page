@@ -8,6 +8,7 @@ import Link from 'next/link'
  */
 const TICKER_ITEMS = [
   { icon: '📝', label: '工程实践与专题分析', cta: '看文章', href: '/articles' },
+  { icon: '📚', label: 'WorkBuddy 学习手册 · 视频课程', cta: '看资源', href: 'https://workbuddy.2aran.com/', external: true, analyticsId: 'workbuddy' },
   { icon: '🧭', label: '了解作者与长期方向', cta: '关于我', href: '/about' },
   { icon: '🧪', label: '原创项目与交互作品', cta: '看作品', href: '/works' },
   { icon: '💬', label: '交友进社群', cta: '进圈子', href: '/community' },
@@ -30,7 +31,18 @@ function TickerItem({ item, focusable = true }) {
   )
   const cls = 'hot-ticker-item group/item inline-flex shrink-0 items-center gap-1.5 no-underline hover:no-underline'
   return item.external ? (
-    <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${cls}`} aria-label={item.label} tabIndex={focusable ? undefined : -1}>
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`no-external-arrow ${cls}`}
+      aria-label={item.label}
+      tabIndex={focusable ? undefined : -1}
+      data-analytics-event={item.analyticsId ? 'entry_click' : undefined}
+      data-analytics-surface={item.analyticsId ? `home_${item.analyticsId}` : undefined}
+      data-analytics-destination-kind={item.analyticsId ? 'external' : undefined}
+      data-analytics-destination-id={item.analyticsId}
+    >
       {inner}
     </a>
   ) : (

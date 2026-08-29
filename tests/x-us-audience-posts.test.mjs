@@ -33,6 +33,9 @@ test('US audience prompt requires natural English and grounded builder content',
     assert.match(messages[0].content, /natural American English/)
     assert.match(messages[0].content, /builders, developers, AI users, indie makers/)
     assert.match(messages[0].content, /Do not invent personal credentials/)
+    assert.match(messages[0].content, /crisp, defensible opinion/)
+    assert.match(messages[0].content, /earn likes without asking for them/)
+    assert.match(messages[0].content, /choice, a tradeoff, or firsthand experience/)
     assert.match(messages[0].content, /never exceed X’s 280 weighted-character limit/)
     assert.match(messages[1].content, new RegExp(X_US_AUDIENCE_SLOTS[slot].audienceTime.replaceAll('/', '\\/')))
   }

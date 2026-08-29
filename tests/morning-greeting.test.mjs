@@ -179,6 +179,8 @@ test('LLM prompt includes current period, exact calendar date, weekday, and edit
   })
   assert.equal(messages.length, 2)
   assert.match(messages[0].content, /只输出最终文案/)
+  assert.match(messages[0].content, /自然点赞的理由/)
+  assert.match(messages[0].content, /能让人讲选择或亲历的问题/)
   assert.match(messages[1].content, /当前时段：午安/)
   assert.match(messages[0].content, /日期或星期.*严格使用.*当前日历信息/)
   assert.match(messages[1].content, /当前日历：2026年8月18日，星期二/)
@@ -248,7 +250,7 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   const clientSource = await readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8')
 
   assert.match(clientSource, /aria-label="每日自动发布横向时间轴"/)
-  assert.match(clientSource, /grid-cols-15/)
+  assert.match(clientSource, /grid-cols-10/)
   assert.match(clientSource, /按任务类型筛选/)
   assert.match(clientSource, /timeline-status-filter/)
   assert.match(clientSource, /08:00/)
@@ -256,9 +258,7 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   assert.match(clientSource, /朋友交流/)
   assert.match(clientSource, /11:00/)
   assert.match(clientSource, /17:00/)
-  assert.match(clientSource, /21:00/)
   assert.match(clientSource, /加密观点/)
-  assert.match(clientSource, /22:00/)
   assert.match(clientSource, /次日 03:00/)
   assert.match(clientSource, /次日 07:00/)
   assert.match(clientSource, /美区英文/)
@@ -266,12 +266,12 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)
 })
 
-test('daily posting times keep all 15 baselines, vary by date, and stay within 30 minutes', async () => {
-  assert.equal(X_POST_SLOTS.length, 15)
+test('daily posting times keep the ten focused baselines, vary by date, and stay within 30 minutes', async () => {
+  assert.equal(X_POST_SLOTS.length, 10)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
   assert.deepEqual(day.map((task) => task.time), [
-    '08:00', '12:00', '22:00', '10:00', '16:00', '20:00',
-    '09:00', '15:00', '19:00', '11:00', '17:00', '21:00', '23:00', '03:00', '07:00',
+    '08:00', '10:00', '20:00', '09:00', '15:00',
+    '11:00', '17:00', '23:00', '03:00', '07:00',
   ])
   assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
   const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))

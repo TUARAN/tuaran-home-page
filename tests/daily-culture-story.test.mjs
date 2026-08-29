@@ -34,7 +34,9 @@ test('culture story prompt asks for a clear sourced X-length story', () => {
   assert.equal(messages.length, 2)
   assert.match(messages[0].content, /105—130 个汉字/)
   assert.match(messages[0].content, /加权长度必须不超过 280/)
-  assert.match(messages[0].content, /故事或观念.*点明道理/s)
+  assert.match(messages[0].content, /鲜明、可辩论的判断/)
+  assert.match(messages[0].content, /自然点赞的理由/)
+  assert.match(messages[0].content, /结尾提出一个读者能结合现实选择或经历回答的问题/)
   assert.match(messages[1].content, /国学哲思 40%.*中华寓言或历史小故事 40%.*国外童话或寓言 20%/s)
 })
 

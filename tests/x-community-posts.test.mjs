@@ -42,20 +42,19 @@ test('three community slots rotate through ten distinct image-and-copy variants'
   assert.equal(new Set(fourDays).size, 4)
 })
 
-test('community copy keeps only the two configured tags and remains X-safe', () => {
+test('community copy removes hashtags and remains X-safe', () => {
   const text = normalizeXCommunityText(
     `${'欢迎分享你最近在学习和实践的一件小事，我们可以交换经验，认识彼此。'.repeat(10)}#互相学习 #随便写的标签`,
     'community_learning',
     280,
     X_COMMUNITY_VARIANTS.find((item) => item.id === 'knowledge_exchange'),
   )
-  assert.match(text, /#互相学习 #交个朋友$/)
+  assert.doesNotMatch(text, /#/)
   assert.doesNotMatch(text, /#随便写的标签/)
-  assert.equal(text.match(/#互相学习/g)?.length, 1)
   assert.ok([...text].reduce((weight, character) => weight + (character.codePointAt(0) <= 0x7f ? 1 : 2), 0) <= 280)
 })
 
-test('community copy prompt requires a concrete invitation and exact theme tags', () => {
+test('community copy prompt requires a sharp opening and concrete invitation', () => {
   for (const item of X_COMMUNITY_VARIANTS) {
     const messages = buildXCommunityMessages({
       slot: item.slot,
@@ -67,7 +66,9 @@ test('community copy prompt requires a concrete invitation and exact theme tags'
     assert.match(messages[0].content, /不要只写“互关”“求关注”/)
     assert.match(messages[0].content, /使用第一人称/)
     assert.match(messages[0].content, /不要以“早安”/)
-    assert.match(messages[0].content, new RegExp(item.tags.join(' ')))
+    assert.match(messages[0].content, /鲜明偏好或判断/)
+    assert.match(messages[0].content, /自然点赞的理由/)
+    assert.match(messages[0].content, /不要使用任何话题标签/)
     assert.match(messages[1].content, new RegExp(item.label))
     assert.match(messages[1].content, new RegExp(item.question.slice(0, 8)))
   }

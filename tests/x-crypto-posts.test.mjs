@@ -31,6 +31,9 @@ test('crypto topics rotate and prompts enforce grounded investment boundaries', 
     assert.equal(messages.length, 2)
     assert.match(messages[0].content, /不要编造实时价格/)
     assert.match(messages[0].content, /不给具体买卖指令/)
+    assert.match(messages[0].content, /首句挑战一个常见误区/)
+    assert.match(messages[0].content, /自然点赞的理由/)
+    assert.match(messages[0].content, /具体二选一或经验型问题/)
     assert.match(messages[0].content, /仅供信息交流，不构成投资建议/)
     assert.match(messages[1].content, new RegExp(X_CRYPTO_POST_SLOTS[slot].time))
   }

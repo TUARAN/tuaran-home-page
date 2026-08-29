@@ -180,7 +180,7 @@ export async function GET(req) {
       : String(ollamaProviders[0]?.id || '')
     let xApiCost
     try {
-      xApiCost = await getXApiCostSummary(db, { postsPerDay: 15 })
+      xApiCost = await getXApiCostSummary(db, { postsPerDay: 10 })
     } catch {
       // 数据库迁移尚未执行时仍展示官方单价与固定日程预算。
       xApiCost = {
@@ -190,8 +190,8 @@ export async function GET(req) {
         todayMicroUsd: 0,
         monthPosts: 0,
         monthMicroUsd: 0,
-        projected30DayPosts: 450,
-        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: 15, days: 30 }),
+        projected30DayPosts: 300,
+        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: 10, days: 30 }),
         trackedSince: null,
       }
     }

@@ -15,13 +15,11 @@ const PERIODS = [
 ]
 const CULTURE_STORY_SLOTS = [
   { id: 'culture_morning', label: '上午短故事', time: '10:00' },
-  { id: 'culture_afternoon', label: '下午短故事', time: '16:00' },
   { id: 'culture_evening', label: '晚间短故事', time: '20:00' },
 ]
 const COMMUNITY_POST_SLOTS = [
   { id: 'community_friends', label: '认识新朋友', time: '09:00' },
   { id: 'community_learning', label: '寻找同好', time: '15:00' },
-  { id: 'community_growth', label: '结伴成长', time: '19:00' },
 ]
 const US_AUDIENCE_SLOTS = [
   { id: 'us_morning', label: 'US morning', time: '23:00' },
@@ -31,7 +29,6 @@ const US_AUDIENCE_SLOTS = [
 const CRYPTO_POST_SLOTS = [
   { id: 'crypto_knowledge', label: '加密知识', time: '11:00' },
   { id: 'crypto_market', label: '币与走势观点', time: '17:00' },
-  { id: 'crypto_people', label: '加密人物与投资理念', time: '21:00' },
 ]
 const CULTURE_CATEGORY_LABELS = {
   guoxue: '国学哲思',
@@ -134,8 +131,6 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
   const items = useMemo(() => {
     const greetingItems = [
       { id: 'morning', label: '早安', schedule: '08:00', column: 1 },
-      { id: 'noon', label: '午安', schedule: '12:00', column: 5 },
-      { id: 'evening', label: '晚安', schedule: '22:00', column: 12 },
     ].map((item) => {
       const run = lastRuns[item.id]
       return {
@@ -157,7 +152,7 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
       return {
         ...item,
         schedule: item.time,
-        column: [3, 7, 10][index],
+        column: [3, 7][index],
         type: 'culture',
         typeLabel: '文化短故事',
         hasImage: Boolean(run?.imagePath),
@@ -175,7 +170,7 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
       return {
         ...item,
         schedule: item.time,
-        column: [2, 6, 9][index],
+        column: [2, 5][index],
         type: 'community',
         typeLabel: '朋友交流',
         hasImage: Boolean(run?.imagePath),
@@ -193,7 +188,7 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
       return {
         ...item,
         schedule: item.time,
-        column: [4, 8, 11][index],
+        column: [4, 6][index],
         type: 'crypto',
         typeLabel: '加密观点',
         hasImage: Boolean(run?.imagePath),
@@ -211,7 +206,7 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
       return {
         ...item,
         schedule: item.time,
-        column: [13, 14, 15][index],
+        column: [8, 9, 10][index],
         type: 'us',
         typeLabel: '美区英文',
         hasImage: Boolean(run?.imagePath),
@@ -263,11 +258,11 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
       </div>
 
       <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
-        <div className="relative grid min-w-[2700px] grid-cols-15 gap-3 px-2 pb-1">
+        <div className="relative grid min-w-[1800px] grid-cols-10 gap-3 px-2 pb-1">
           <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
           {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
           {!visibleItems.length ? (
-            <div className="col-span-15 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
+            <div className="col-span-10 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
               当前筛选下没有任务节点。
             </div>
           ) : null}
@@ -283,7 +278,7 @@ function XApiCostPanel({ cost }) {
   const metrics = [
     { label: '今日已发生', value: formatUsd(cost.todayMicroUsd), detail: `${cost.todayPosts || 0} 次成功发布` },
     { label: '本月已发生', value: formatUsd(cost.monthMicroUsd), detail: `${cost.monthPosts || 0} 次成功发布` },
-    { label: '30 天预计', value: formatUsd(cost.projected30DayMicroUsd, 2), detail: `${cost.projected30DayPosts || 450} 次发帖` },
+    { label: '30 天预计', value: formatUsd(cost.projected30DayMicroUsd, 2), detail: `${cost.projected30DayPosts || 300} 次发帖` },
   ]
   return (
     <section className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]" aria-labelledby="x-api-cost-title">
@@ -309,7 +304,7 @@ function XApiCostPanel({ cost }) {
         <span>价格核对于 {cost.pricingCheckedAt}</span>
       </div>
       <p className="mb-0 mt-1 text-[10px] leading-5 text-[#96988e] dark:text-gray-500">
-        仅统计 X 发帖接口，不含图片生成、图片上传、R2 存储和 DeepSeek 文案及提示词生成成本；30 天预计按每天 15 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
+        仅统计 X 发帖接口，不含图片生成、图片上传、R2 存储和 DeepSeek 文案及提示词生成成本；30 天预计按每天 10 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
       </p>
       {!cost.available ? <p className="mb-0 mt-1 text-[10px] text-amber-700 dark:text-amber-300">成本流水表尚未启用；部署数据库迁移后开始累计实际金额。</p> : null}
     </section>
@@ -420,7 +415,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天全自动发布三条问候、三条朋友交流、三条文化短故事、三条加密观点和三条美区英文帖，各时段前后 30 分钟随机浮动，图文和纯文本各 50% 概率，直接发布，不经人工审核。"
+          description="每天全自动发布 10 条：一条晨间问候、两条朋友交流、两条文化短故事、两条加密观点和三条美区英文帖。每条用鲜明判断开场，以具体问题收尾；各时段前后 30 分钟随机浮动，图文和纯文本各 50% 概率，直接发布，不经人工审核。"
           className="mb-4"
           actions={
             <>

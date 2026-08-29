@@ -306,11 +306,11 @@ test('all five task types can publish text without AI, R2 or media upload', asyn
     assert.equal((await response.json()).imagePath, '')
     assert.equal((await invoke(`${slot.query}=${slot.id}`)).status, 200)
   }
-  assert.equal(publishes, 15)
+  assert.equal(publishes, postingSchedule.X_POST_SLOTS.length)
   assert.equal(calls.images, 0)
   assert.equal(calls.upload, 0)
   const rows = sqlite.prepare('SELECT * FROM x_post_assets').all()
-  assert.equal(rows.length, 15)
+  assert.equal(rows.length, postingSchedule.X_POST_SLOTS.length)
   assert.ok(rows.every((row) => row.asset_source === 'text' && row.status === 'published'))
 })
 

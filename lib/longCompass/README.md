@@ -40,6 +40,16 @@ index.js         统一导出
 4. **换加密算法** → 改 `crypto.js`：`envelopeVersion` +1，新旧分支共存一段时间
 5. **完全新的内容形态**（如多块结构化 content）→ Tier 4，先升 schema、再做 UI 适配
 
+## 财务总览 / 资产负债表
+
+财务总览采用四层阅读结构：`资产负债表`、`家庭账户`、`个人账户`、`负债管理`。资产负债表是从已解锁历史记录生成的阅读投影，不新增明文字段，也不把不同日期的数据伪装成同日审计报表。
+
+- 家庭账户读取「时点｜估算资产」与「类型｜估算」表格。
+- 个人账户读取「资产｜金额」流动性表格及收入/年终奖时间线。
+- 负债读取最新一份完整贷款快照，不叠加不同日期的余额。
+- 缺少的银行、支付、投资、公司账户与流动负债保留为「待补录」，不按零元处理，也不进入合计。
+- 临时净资产与负债率只对已识别金额计算；只要资产日期不同或金额带约数，页面必须保留历史估算提示。
+
 ## 负债管理 / 贷款快照
 
 继续使用 v2 的 Markdown content，不增加明文字段或写入 API。负债管理只读取解锁后的资产快照；每次选择一份完整盘点，不累加不同日期的同一笔贷款。
@@ -59,11 +69,11 @@ index.js         统一导出
 把一个或多个 v2 原始记录放在 Git 忽略的 `private/` JSON 数组文件中（与 `private/long-compass-seed.json` 形状一致）：
 
 ```sh
-node scripts/append-long-compass.mjs private/your-snapshot.json --validate-only
-node scripts/append-long-compass.mjs private/your-snapshot.json
+node --no-warnings scripts/append-long-compass.mjs private/your-snapshot.json --validate-only
+node --no-warnings scripts/append-long-compass.mjs private/your-snapshot.json
 ```
 
-第二条命令在本地 TTY 无回显读取统一解锁口令。先解密验证现有罗盘、检测同标题同时间记录，然后仅追加密文并回读验证。不会重建、覆盖或删除历史记录；重复导入会跳过，内容冲突则拒绝。导入文件须自行并入本地原始种子以便恢复。远端操作需要已登录 Cloudflare 的 Wrangler；不要同时运行多个导入进程。SQL 临时文件仅含密文并限制权限。
+第二条命令在本地 TTY 无回显读取统一解锁口令。它只解密一条稳定的验密锚点，以及与待导入记录「同类型、同时间」的重复候选；不会下载或解密全库。确认后只加密、追加新记录并定向回读验证，不会重建、重加密、覆盖或删除历史记录；重复导入会跳过，内容冲突则拒绝。导入文件须自行并入本地原始种子以便恢复。远端操作需要已登录 Cloudflare 的 Wrangler；不要同时运行多个导入进程。SQL 临时文件仅含密文并限制权限。
 
 导入工具会通过 `site_users` 把站长的历史 GitHub 身份解析为当前 `platform_id`，读写必须落在页面 API 使用的同一平台账号下；无法解析账号时直接中止，不回退到旧身份分区。
 

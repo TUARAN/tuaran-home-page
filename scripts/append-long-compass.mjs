@@ -77,25 +77,44 @@ function readOwnerId() {
   return resolvePrivateRecordOwner(parseWranglerRows(wrangler(['--command', ownerLookupSql(), '--json'])))
 }
 
-function readRows(ownerId) {
+function readAnchor(ownerId) {
   const owner = escapeSqlLiteral(ownerId)
-  return parseWranglerRows(wrangler(['--command', `SELECT id, record_kind, encrypted_payload FROM private_records WHERE user_id = '${owner}' AND deleted_at IS NULL ORDER BY id;`, '--json']))
+  return parseWranglerRows(wrangler(['--command', `SELECT id, record_kind, encrypted_payload FROM private_records WHERE user_id = '${owner}' AND deleted_at IS NULL ORDER BY id LIMIT 1;`, '--json']))[0] || null
 }
 
-export async function appendRecords(sources, password, { read, write, ownerId }) {
+export function candidatePredicate(sources) {
+  const keys = new Set()
+  for (const source of sources) {
+    if (!isValidKind(source?.kind) || !Number.isSafeInteger(source?.plain?.updatedAt) || source.plain.updatedAt <= 0) throw new Error('Invalid candidate metadata')
+    keys.add(`(record_kind = '${source.kind}' AND updated_at = ${source.plain.updatedAt})`)
+  }
+  return [...keys].join(' OR ') || '0'
+}
+
+function readCandidates(ownerId, sources) {
+  const owner = escapeSqlLiteral(ownerId)
+  const predicate = candidatePredicate(sources)
+  return parseWranglerRows(wrangler(['--command', `SELECT id, record_kind, encrypted_payload, updated_at FROM private_records WHERE user_id = '${owner}' AND deleted_at IS NULL AND (${predicate}) ORDER BY id;`, '--json']))
+}
+
+export async function appendRecords(sources, password, { readAnchor: loadAnchor, readCandidates: loadCandidates, write, ownerId }) {
   if (!ownerId) throw new Error('缺少长期罗盘所属的平台账号，拒绝写入。')
-  const before = await read()
-  if (!before.length) throw new Error('远端没有可验证口令的现有记录，拒绝初始化。')
+  const anchor = await loadAnchor()
+  if (!anchor) throw new Error('远端没有可验证口令的现有记录，拒绝初始化。')
+  try { migrate(await decryptPayload(JSON.parse(anchor.encrypted_payload), password)) }
+  catch { throw new Error('统一口令无法解锁长期罗盘验密锚点，未写入。') }
+
+  const before = await loadCandidates(sources)
   const existing = []
   try {
     for (const row of before) existing.push({ kind: row.record_kind, plain: migrate(await decryptPayload(JSON.parse(row.encrypted_payload), password)) })
-  } catch { throw new Error('统一口令无法解锁全部现有罗盘记录，未写入。') }
+  } catch { throw new Error('同类型、同时间的候选记录无法解锁，未写入。') }
   const pending = pendingSources(sources, existing)
   if (!pending.length) return 0
   const inserts = []
   for (const source of pending) inserts.push({ ...source, envelope: await encryptPayload(source.plain, password) })
   await write(inserts.map((item) => insertStatement(item.envelope, item.kind, item.plain.updatedAt, ownerId)).join('\n'))
-  const after = await read()
+  const after = await loadCandidates(pending)
   for (const item of inserts) {
     const matches = after.filter((row) => row.encrypted_payload === JSON.stringify(item.envelope) && row.record_kind === item.kind)
     if (matches.length !== 1) throw new Error('写入后回读验证失败；可重跑以核对，但不要删除历史记录。')
@@ -122,7 +141,8 @@ async function main() {
   const ownerId = readOwnerId()
   const count = await appendRecords(sources, password, {
     ownerId,
-    read: () => readRows(ownerId),
+    readAnchor: () => readAnchor(ownerId),
+    readCandidates: (items) => readCandidates(ownerId, items),
     write(sql) {
       const directory = fs.mkdtempSync(path.join(ROOT, 'private/compass-import-'))
       fs.chmodSync(directory, 0o700)

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { buildLoanAnalysisBrief, extractLoanSnapshots, parseLoanNumber } from '../lib/longCompass/loans.js'
-import { appendRecords, normalizeSource, pendingSources } from '../scripts/append-long-compass.mjs'
+import { appendRecords, candidatePredicate, normalizeSource, pendingSources } from '../scripts/append-long-compass.mjs'
 import { decryptPayload, encryptPayload } from '../lib/longCompass/crypto.js'
 import { resolvePrivateRecordOwner } from '../scripts/private-record-owner.mjs'
 
@@ -102,17 +102,18 @@ test('append encrypts, verifies readback, and safely retries without writing twi
   const password = 'synthetic-test-password'
   const ownerId = resolvePrivateRecordOwner([{ owner_id: 'acct_synthetic' }])
   const initial = fixture().plain
-  const rows = [{ id: 1, record_kind: 'snapshot', encrypted_payload: JSON.stringify(await encryptPayload(initial, password)) }]
+  const rows = [{ id: 1, record_kind: 'snapshot', updated_at: 1, encrypted_payload: JSON.stringify(await encryptPayload(initial, password)) }]
   const source = normalizeSource({ ...fixture('2026-02-01').plain, kind: 'snapshot', updatedAt: 2 })
   let writes = 0
   const io = {
-    read: () => rows,
+    readAnchor: () => rows[0],
+    readCandidates: (items) => rows.filter((row) => items.some((item) => item.kind === row.record_kind && item.plain.updatedAt === row.updated_at)),
     write: (sql) => {
       writes += 1
       assert.doesNotMatch(sql, /示例甲|synthetic-test-password|DELETE|UPDATE/)
       const match = /SELECT 'acct_synthetic', 'snapshot', '([^']+)', 2, 2/.exec(sql)
       assert.ok(match)
-      rows.push({ id: 2, record_kind: 'snapshot', encrypted_payload: match[1] })
+      rows.push({ id: 2, record_kind: 'snapshot', updated_at: 2, encrypted_payload: match[1] })
     },
   }
   assert.equal(await appendRecords([source], password, { ...io, ownerId }), 1)
@@ -121,7 +122,15 @@ test('append encrypts, verifies readback, and safely retries without writing twi
   assert.equal(writes, 1)
   await assert.rejects(appendRecords([source], 'wrong-password', { ...io, ownerId }), /未写入/)
   assert.equal(writes, 1)
-  await assert.rejects(appendRecords([source], password, { ownerId, read: () => [rows[0]], write: () => {} }), /回读验证失败/)
+  await assert.rejects(appendRecords([source], password, { ownerId, readAnchor: () => rows[0], readCandidates: () => [], write: () => {} }), /回读验证失败/)
+})
+
+test('append candidate query is limited to kind and historical timestamp', () => {
+  const first = normalizeSource({ ...fixture().plain, kind: 'snapshot', updatedAt: 10 })
+  const second = normalizeSource({ ...fixture().plain, kind: 'snapshot', updatedAt: 10 })
+  const third = normalizeSource({ ...fixture().plain, kind: 'snapshot', updatedAt: 11 })
+  assert.equal(candidatePredicate([first, second, third]), "(record_kind = 'snapshot' AND updated_at = 10) OR (record_kind = 'snapshot' AND updated_at = 11)")
+  assert.throws(() => candidatePredicate([{ kind: 'snapshot', plain: { updatedAt: 0 } }]), /Invalid candidate metadata/)
 })
 
 test('private record owner resolves to the canonical platform account', () => {

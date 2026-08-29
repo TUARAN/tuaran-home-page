@@ -21,16 +21,30 @@ test('rank subdomain rewrites its root to the isolated rank route', async () => 
   assert.match(middleware, /NextResponse\.rewrite\(url\)/)
 })
 
+test('private bookmarks subdomain rewrites its root to the owner-only navigator', async () => {
+  const middleware = await readFile(new URL('../middleware.js', import.meta.url), 'utf8')
+  assert.match(middleware, /BOOKMARKS_HOST = 'bookmarks\.2aran\.com'/)
+  assert.match(middleware, /host === BOOKMARKS_HOST && pathname === '\/'/)
+  assert.match(middleware, /url\.pathname = '\/bookmark-nav'/)
+})
+
 test('secondary sites explain their intentionally different deployment boundaries', () => {
   const sites = Object.fromEntries(SECONDARY_SITES.map((site) => [site.id, site]))
   assert.match(sites.rank.deployment, /主站 Pages/)
+  assert.equal(sites.bookmarks.href, 'https://bookmarks.2aran.com/')
+  assert.match(sites.bookmarks.accessNote, /仅站长/)
   assert.match(sites.gptplus.deployment, /独立静态站/)
   assert.match(sites.poemcn.deployment, /独立 Worker/)
+  assert.deepEqual(
+    SECONDARY_SITES.filter((site) => site.deploymentKind === 'independent-worker').map((site) => site.id),
+    ['syncblog', 'poemcn', 'workbuddy'],
+  )
+  assert.ok(SECONDARY_SITES.every((site) => site.deploymentKind))
   assert.ok(SECONDARY_SITES.every((site) => site.deploymentDetail))
 })
 
 test('domain registry records DNS, runtime, audience, and activation separately', () => {
-  assert.equal(DOMAIN_REGISTRY.length, 10)
+  assert.equal(DOMAIN_REGISTRY.length, 11)
   assert.equal(new Set(DOMAIN_REGISTRY.map((item) => item.domain)).size, DOMAIN_REGISTRY.length)
   assert.ok(DOMAIN_REGISTRY.every((item) => item.target && item.platform && item.audience && item.proxy && item.status))
   assert.deepEqual(
@@ -40,5 +54,13 @@ test('domain registry records DNS, runtime, audience, and activation separately'
       status: getDomainRecord('rank.2aran.com').status,
     },
     { target: 'tuaran.pages.dev', proxy: 'proxied', status: 'active' },
+  )
+  assert.deepEqual(
+    {
+      target: getDomainRecord('bookmarks.2aran.com').target,
+      audience: getDomainRecord('bookmarks.2aran.com').audience,
+      status: getDomainRecord('bookmarks.2aran.com').status,
+    },
+    { target: 'tuaran.pages.dev', audience: 'private', status: 'active' },
   )
 })

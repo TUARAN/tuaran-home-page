@@ -28,7 +28,7 @@ function services(overrides = {}) {
 }
 
 test('approved child domains preserve login return paths; deceptive domains are rejected', () => {
-  for (const host of ['weekly.2aran.com', 'syncblog.2aran.com', 'poemcn.2aran.com']) {
+  for (const host of ['weekly.2aran.com', 'syncblog.2aran.com', 'poemcn.2aran.com', 'bookmarks.2aran.com']) {
     assert.equal(normalizeReturnTo(`https://${host}/editor?q=1#draft`), `https://${host}/editor?q=1#draft`)
   }
   for (const value of ['https://weekly.2aran.com.evil.test', 'https://evil.2aran.com', '//evil.test', 'https://weekly.2aran.com@evil.test', 'https://user:pass@weekly.2aran.com/', 'http://weekly.2aran.com']) {

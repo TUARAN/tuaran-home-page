@@ -9,7 +9,7 @@ export const dynamic = 'force-static'
 
 export const metadata = {
   title: '二级站点',
-  description: '前端周看、AI 分发大师、AI 排行榜、中国诗词与 WorkBuddy 资源入口。',
+  description: '技术周刊、创作工具、AI 排行榜、私人书签导航、中国诗词与 WorkBuddy 资源入口。',
   alternates: { canonical: '/sites' },
 }
 
@@ -26,7 +26,14 @@ const siteListSchema = {
   })),
 }
 
+const DEPLOYMENT_LABELS = {
+  'independent-worker': '独立 Worker',
+  'independent-pages': '独立 Pages',
+  'shared-pages': '复用主站 Pages',
+}
+
 export default function SecondarySitesPage() {
+  const independentWorkerCount = SECONDARY_SITES.filter((site) => site.deploymentKind === 'independent-worker').length
   return (
     <PageContainer className="py-10 md:py-14">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteListSchema) }} />
@@ -52,7 +59,10 @@ export default function SecondarySitesPage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <span className="rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-1.5 font-mono text-[11px] text-[var(--site-muted)]">
-            {SECONDARY_SITES.length} 个公开站点
+            {SECONDARY_SITES.length} 个二级站点
+          </span>
+          <span className="rounded-full border border-[#9bb8a0] bg-[#edf6ee] px-3 py-1.5 font-mono text-[11px] font-semibold text-[#32633b] dark:border-[#446b4c] dark:bg-[#142319] dark:text-[#9ed0a7]">
+            {independentWorkerCount} 个独立 Worker
           </span>
           {[...new Set(SECONDARY_SITES.map((site) => site.category))].map((category) => (
             <span key={category} className="rounded-full border border-[var(--site-line)] px-3 py-1.5 text-[11px] text-[var(--site-faint)]">
@@ -79,7 +89,14 @@ export default function SecondarySitesPage() {
             </p>
 
             <div>
-              <p className="text-[10px] font-medium text-[var(--site-green)]">{site.category}</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-medium text-[var(--site-green)]">{site.category}</span>
+                <span className={`rounded-full border px-2 py-0.5 font-mono text-[9px] font-semibold ${site.deploymentKind === 'independent-worker'
+                  ? 'border-[#8caf93] bg-[#edf6ee] text-[#32633b] dark:border-[#446b4c] dark:bg-[#142319] dark:text-[#9ed0a7]'
+                  : 'border-[var(--site-line)] bg-[var(--site-panel)] text-[var(--site-faint)]'}`}>
+                  {DEPLOYMENT_LABELS[site.deploymentKind] || site.deployment}
+                </span>
+              </div>
               <h2 className="mt-1 text-[19px] font-semibold text-[var(--site-ink)]">{site.label}</h2>
               <p className="mt-0.5 font-mono text-[10px] text-[var(--site-faint)]">{site.domain}</p>
             </div>
@@ -87,6 +104,7 @@ export default function SecondarySitesPage() {
             <div className="min-w-0">
               <p className="text-[13px] font-medium leading-6 text-[var(--site-ink)]">{site.desc}</p>
               <p className="mt-1 line-clamp-1 text-[12px] leading-5 text-[var(--site-muted)]">{site.detail}</p>
+              <p className="mt-2 font-mono text-[10px] leading-5 text-[var(--site-faint)]">部署：{site.deployment}</p>
               {site.accessNote && <p className="mt-2 text-[12px] leading-6 text-[var(--site-muted)]">{site.accessNote}</p>}
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[9px] text-[var(--site-faint)]">
                 <span className={isActive ? 'text-[var(--site-green)]' : 'text-[#8a5a14] dark:text-[#d6b56f]'}>

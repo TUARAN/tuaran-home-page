@@ -112,6 +112,12 @@ export default function RootLayout({ children }) {
           href="/rss.xml"
         />
         <script
+          defer
+          src="https://vibecafe.ai/telemetry/v1.js"
+          data-vc-product-id="cmtdnddxq00000bjnah8p87ji"
+          data-vc-auth-key="vc_web_Jaq0FZ9ACy3O3NkF-m8nAF-zMT2pJGpsfguVa424aEU"
+        />
+        <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var root=document.documentElement;var SV='${THEME_SETTINGS_VERSION}';if(localStorage.getItem('theme-settings-version')!==SV){localStorage.removeItem('theme');localStorage.removeItem('reading-palette');localStorage.removeItem('site-ui-mode');localStorage.removeItem('reading-bg');localStorage.setItem('theme-settings-version',SV);}root.dataset.ui='polished';var rp=localStorage.getItem('reading-palette');var eink=rp!=='default';if(eink){root.dataset.reading='eink';}var th=localStorage.getItem('theme');var v=localStorage.getItem('reading-bg');if(v==='#f1f2ee'){localStorage.removeItem('reading-bg');v='';}if(v&&th==='light'&&!eink){root.style.setProperty('--page-bg',v);}var lm=document.cookie.match(/(?:^|; )site-lang=([^;]+)/);var lang=lm?decodeURIComponent(lm[1]):'';if(lang==='en'||lang==='zh'){root.dataset.lang=lang;root.lang=lang==='en'?'en':'zh-CN';}}catch(e){}})();`,
           }}

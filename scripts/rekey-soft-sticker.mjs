@@ -12,10 +12,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { decryptPayload, encryptPayload } from '../lib/longCompass/crypto.js'
 import { CURRENT_PLAIN_VERSION } from '../lib/longCompass/schema.js'
 import { SOFT_STICKER_ENVELOPE } from '../app/(admin)/admin/soft-sticker/seed.js'
+import { ownerLookupSql, resolvePrivateRecordOwner } from './private-record-owner.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DATABASE = 'tuaran-me'
-const OWNER_ID = 'github:25968749'
 const MEMOIR_SLUG = 'self-regulation-memoir'
 const SEED_PATH = path.join(ROOT, 'app/(admin)/admin/soft-sticker/seed.js')
 const COMPASS_SOURCE_PATH = path.join(ROOT, 'private/long-compass-seed.json')
@@ -224,11 +224,13 @@ async function recoverSources() {
     throw new Error('长期罗盘原始种子为空或格式异常。')
   }
 
+  const ownerId = resolvePrivateRecordOwner(queryRemote(ownerLookupSql()))
+  const owner = escapeSqlLiteral(ownerId)
   const oldCompassRows = queryRemote(
-    `SELECT id, encrypted_payload FROM private_records WHERE user_id = '${OWNER_ID}' AND deleted_at IS NULL ORDER BY id;`
+    `SELECT id, encrypted_payload FROM private_records WHERE user_id = '${owner}' AND deleted_at IS NULL ORDER BY id;`
   )
 
-  return { recordsPlain, memoirPlain, memoirRow: memoirRows[0], compassSource, oldCompassRows }
+  return { recordsPlain, memoirPlain, memoirRow: memoirRows[0], compassSource, oldCompassRows, ownerId }
 }
 
 async function main() {
@@ -294,10 +296,10 @@ async function main() {
 
   const sql = [
     `UPDATE private_documents SET content = ${envelopeSql(nextMemoirEnvelope)} WHERE slug = '${MEMOIR_SLUG}';`,
-    `DELETE FROM private_records WHERE user_id = '${OWNER_ID}';`,
+    `DELETE FROM private_records WHERE user_id = '${escapeSqlLiteral(recovered.ownerId)}';`,
     ...nextCompassRows.map(
       (row) =>
-        `INSERT INTO private_records (user_id, record_kind, encrypted_payload, created_at, updated_at) VALUES ('${OWNER_ID}', '${escapeSqlLiteral(row.kind)}', ${envelopeSql(row.envelope)}, ${row.createdAt}, ${row.updatedAt});`
+        `INSERT INTO private_records (user_id, record_kind, encrypted_payload, created_at, updated_at) VALUES ('${escapeSqlLiteral(recovered.ownerId)}', '${escapeSqlLiteral(row.kind)}', ${envelopeSql(row.envelope)}, ${row.createdAt}, ${row.updatedAt});`
     ),
     '',
   ].join('\n')
@@ -318,7 +320,7 @@ async function main() {
     `SELECT content FROM private_documents WHERE slug = '${MEMOIR_SLUG}' LIMIT 1;`
   )
   const verifiedCompassRows = queryRemote(
-    `SELECT encrypted_payload FROM private_records WHERE user_id = '${OWNER_ID}' AND deleted_at IS NULL ORDER BY id;`
+    `SELECT encrypted_payload FROM private_records WHERE user_id = '${escapeSqlLiteral(recovered.ownerId)}' AND deleted_at IS NULL ORDER BY id;`
   )
   await decryptPayload(JSON.parse(verifiedMemoirRows[0].content), unifiedPassword)
   for (const row of verifiedCompassRows) {

@@ -7,9 +7,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { decryptPayload, encryptPayload } from '../lib/longCompass/crypto.js'
 import { CURRENT_PLAIN_VERSION, isValidKind, migrate, validatePlain } from '../lib/longCompass/schema.js'
 import { parseWranglerRows, escapeSqlLiteral } from './rekey-soft-sticker.mjs'
+import { ownerLookupSql, resolvePrivateRecordOwner } from './private-record-owner.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const OWNER = 'github:25968749'
 
 export function normalizeSource(source) {
   if (!isValidKind(source?.kind) || !validatePlain(source).ok || !Number.isSafeInteger(source.updatedAt) || source.updatedAt <= 0) throw new Error('记录类型、正文或历史时间无效。')
@@ -28,10 +28,11 @@ export function pendingSources(sources, existing) {
   return pending
 }
 
-export function insertStatement(envelope, kind, recordedAt) {
-  if (!isValidKind(kind) || !Number.isSafeInteger(recordedAt) || recordedAt <= 0) throw new Error('Invalid insert metadata')
+export function insertStatement(envelope, kind, recordedAt, ownerId) {
+  if (!isValidKind(kind) || !Number.isSafeInteger(recordedAt) || recordedAt <= 0 || !ownerId) throw new Error('Invalid insert metadata')
   const payload = escapeSqlLiteral(JSON.stringify(envelope))
-  return `INSERT INTO private_records (user_id, record_kind, encrypted_payload, created_at, updated_at) SELECT '${OWNER}', '${kind}', '${payload}', ${recordedAt}, ${recordedAt} WHERE NOT EXISTS (SELECT 1 FROM private_records WHERE user_id = '${OWNER}' AND encrypted_payload = '${payload}');`
+  const owner = escapeSqlLiteral(ownerId)
+  return `INSERT INTO private_records (user_id, record_kind, encrypted_payload, created_at, updated_at) SELECT '${owner}', '${kind}', '${payload}', ${recordedAt}, ${recordedAt} WHERE NOT EXISTS (SELECT 1 FROM private_records WHERE user_id = '${owner}' AND encrypted_payload = '${payload}');`
 }
 
 function promptPassword() {
@@ -72,11 +73,17 @@ function wrangler(args) {
   return result.stdout
 }
 
-function readRows() {
-  return parseWranglerRows(wrangler(['--command', `SELECT id, record_kind, encrypted_payload FROM private_records WHERE user_id = '${OWNER}' AND deleted_at IS NULL ORDER BY id;`, '--json']))
+function readOwnerId() {
+  return resolvePrivateRecordOwner(parseWranglerRows(wrangler(['--command', ownerLookupSql(), '--json'])))
 }
 
-export async function appendRecords(sources, password, { read, write }) {
+function readRows(ownerId) {
+  const owner = escapeSqlLiteral(ownerId)
+  return parseWranglerRows(wrangler(['--command', `SELECT id, record_kind, encrypted_payload FROM private_records WHERE user_id = '${owner}' AND deleted_at IS NULL ORDER BY id;`, '--json']))
+}
+
+export async function appendRecords(sources, password, { read, write, ownerId }) {
+  if (!ownerId) throw new Error('缺少长期罗盘所属的平台账号，拒绝写入。')
   const before = await read()
   if (!before.length) throw new Error('远端没有可验证口令的现有记录，拒绝初始化。')
   const existing = []
@@ -87,7 +94,7 @@ export async function appendRecords(sources, password, { read, write }) {
   if (!pending.length) return 0
   const inserts = []
   for (const source of pending) inserts.push({ ...source, envelope: await encryptPayload(source.plain, password) })
-  await write(inserts.map((item) => insertStatement(item.envelope, item.kind, item.plain.updatedAt)).join('\n'))
+  await write(inserts.map((item) => insertStatement(item.envelope, item.kind, item.plain.updatedAt, ownerId)).join('\n'))
   const after = await read()
   for (const item of inserts) {
     const matches = after.filter((row) => row.encrypted_payload === JSON.stringify(item.envelope) && row.record_kind === item.kind)
@@ -112,8 +119,10 @@ async function main() {
   if (validateOnly) { console.log(`✓ ${sources.length} 条记录校验通过；未连接远端。`); return }
   const password = await promptPassword()
   if (!password) throw new Error('口令不能为空。')
+  const ownerId = readOwnerId()
   const count = await appendRecords(sources, password, {
-    read: readRows,
+    ownerId,
+    read: () => readRows(ownerId),
     write(sql) {
       const directory = fs.mkdtempSync(path.join(ROOT, 'private/compass-import-'))
       fs.chmodSync(directory, 0o700)

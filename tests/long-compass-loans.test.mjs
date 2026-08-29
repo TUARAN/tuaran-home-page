@@ -3,6 +3,7 @@ import test from 'node:test'
 import { buildLoanAnalysisBrief, extractLoanSnapshots, parseLoanNumber } from '../lib/longCompass/loans.js'
 import { appendRecords, normalizeSource, pendingSources } from '../scripts/append-long-compass.mjs'
 import { decryptPayload, encryptPayload } from '../lib/longCompass/crypto.js'
+import { resolvePrivateRecordOwner } from '../scripts/private-record-owner.mjs'
 
 // Synthetic fixtures only: never place the owner's balances in public source.
 function fixture(date = '2026-01-05') {
@@ -99,6 +100,7 @@ test('append normalization preserves historical time; duplicate or conflicting s
 
 test('append encrypts, verifies readback, and safely retries without writing twice', async () => {
   const password = 'synthetic-test-password'
+  const ownerId = resolvePrivateRecordOwner([{ owner_id: 'acct_synthetic' }])
   const initial = fixture().plain
   const rows = [{ id: 1, record_kind: 'snapshot', encrypted_payload: JSON.stringify(await encryptPayload(initial, password)) }]
   const source = normalizeSource({ ...fixture('2026-02-01').plain, kind: 'snapshot', updatedAt: 2 })
@@ -108,16 +110,22 @@ test('append encrypts, verifies readback, and safely retries without writing twi
     write: (sql) => {
       writes += 1
       assert.doesNotMatch(sql, /示例甲|synthetic-test-password|DELETE|UPDATE/)
-      const match = /SELECT 'github:25968749', 'snapshot', '([^']+)', 2, 2/.exec(sql)
+      const match = /SELECT 'acct_synthetic', 'snapshot', '([^']+)', 2, 2/.exec(sql)
       assert.ok(match)
       rows.push({ id: 2, record_kind: 'snapshot', encrypted_payload: match[1] })
     },
   }
-  assert.equal(await appendRecords([source], password, io), 1)
+  assert.equal(await appendRecords([source], password, { ...io, ownerId }), 1)
   assert.equal((await decryptPayload(JSON.parse(rows[1].encrypted_payload), password)).updatedAt, 2)
-  assert.equal(await appendRecords([source], password, io), 0)
+  assert.equal(await appendRecords([source], password, { ...io, ownerId }), 0)
   assert.equal(writes, 1)
-  await assert.rejects(appendRecords([source], 'wrong-password', io), /未写入/)
+  await assert.rejects(appendRecords([source], 'wrong-password', { ...io, ownerId }), /未写入/)
   assert.equal(writes, 1)
-  await assert.rejects(appendRecords([source], password, { read: () => [rows[0]], write: () => {} }), /回读验证失败/)
+  await assert.rejects(appendRecords([source], password, { ownerId, read: () => [rows[0]], write: () => {} }), /回读验证失败/)
+})
+
+test('private record owner resolves to the canonical platform account', () => {
+  assert.equal(resolvePrivateRecordOwner([{ owner_id: 'acct_123' }]), 'acct_123')
+  assert.throws(() => resolvePrivateRecordOwner([]), /拒绝读写/)
+  assert.throws(() => resolvePrivateRecordOwner([{ owner_id: 'github:25968749' }]), /拒绝读写/)
 })

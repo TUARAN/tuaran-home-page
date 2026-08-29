@@ -28,11 +28,11 @@ export const metadata = {
 function ArticlesHeaderFallback() {
   return (
     <header className="mb-4 hidden md:block">
-      <div className="flex min-w-0 flex-nowrap items-baseline gap-3 overflow-hidden">
+      <div className="flex min-w-0 items-baseline gap-3">
         <h1 className="shrink-0 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
           内容导航
         </h1>
-        <p className="min-w-0 truncate text-[12px] text-[#85877d] dark:text-[#737f91] md:text-[13px]">
+        <p className="min-w-0 flex-1 text-[12px] leading-5 text-[#85877d] dark:text-[#737f91] md:text-[13px]">
           <q>千里之行，始于足下。</q>
           <cite className="ml-1 not-italic">— 老子</cite>
         </p>

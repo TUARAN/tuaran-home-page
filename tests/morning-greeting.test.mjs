@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { X_POST_SLOTS, xPostingSchedule, isXPostDue } from '../lib/xPostingSchedule.js'
+import { runXAutoPosts } from '../scripts/run-x-auto-posts.mjs'
+
 
 import {
   DAILY_GREETING_TEMPLATES,
@@ -250,7 +253,7 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   assert.match(clientSource, /timeline-status-filter/)
   assert.match(clientSource, /08:00/)
   assert.match(clientSource, /09:00/)
-  assert.match(clientSource, /朋友图文/)
+  assert.match(clientSource, /朋友交流/)
   assert.match(clientSource, /11:00/)
   assert.match(clientSource, /17:00/)
   assert.match(clientSource, /21:00/)
@@ -261,4 +264,52 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   assert.match(clientSource, /美区英文/)
   assert.match(clientSource, /visibleItems\.length} \/ {items\.length} 个节点/)
   assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)
+})
+
+test('daily posting times keep all 15 baselines, vary by date, and stay within 30 minutes', async () => {
+  assert.equal(X_POST_SLOTS.length, 15)
+  const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
+  assert.deepEqual(day.map((task) => task.time), [
+    '08:00', '12:00', '22:00', '10:00', '16:00', '20:00',
+    '09:00', '15:00', '19:00', '11:00', '17:00', '21:00', '23:00', '03:00', '07:00',
+  ])
+  assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
+  const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))
+  assert.notDeepEqual(day.map((task) => task.offsetMinutes), nextDay.map((task) => task.offsetMinutes))
+  for (const task of [...day, ...nextDay]) {
+    assert.ok(Number.isInteger(task.offsetMinutes))
+    assert.ok(Math.abs(task.offsetMinutes) <= 30)
+    assert.equal(task.scheduledAt - task.baselineAt, task.offsetMinutes * 60_000)
+  }
+})
+
+test('schedule windows start at the target and reject expired or next-day triggers', async () => {
+  const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 28, 16)))
+  assert.ok(day.every((task) => task.date === '2026-08-29'))
+  for (const task of day) {
+    assert.equal(isXPostDue(task, new Date(task.scheduledAt - 1)), false)
+    assert.equal(isXPostDue(task, new Date(task.scheduledAt)), true)
+    assert.equal(isXPostDue(task, new Date(task.scheduledAt + 60 * 60_000 + 1)), false)
+  }
+  const late = day.find((task) => task.id === 'us_morning')
+  assert.equal(isXPostDue(late, new Date(Date.UTC(2026, 7, 29, 16))), false)
+})
+
+test('scheduler calls only due tasks, carries their date, and isolates request failures', async () => {
+  const requests = []
+  const results = await runXAutoPosts({
+    now: new Date(Date.UTC(2026, 7, 29, 2)),
+    secret: 'test-secret',
+    fetchImpl: async (url, init) => {
+      const query = new URL(url).searchParams
+      assert.equal(query.get('scheduledDate'), '2026-08-29')
+      assert.equal(init.headers['x-morning-greeting-secret'], 'test-secret')
+      requests.push(query)
+      if (query.has('community')) throw new Error('network unavailable')
+      return Response.json({ ok: true }, { status: 201 })
+    },
+  })
+  assert.equal(requests.length, 2)
+  assert.deepEqual(results.map((result) => result.slot).sort(), ['community_friends', 'culture_morning'])
+  assert.equal(results.filter((result) => result.ok).length, 1)
 })

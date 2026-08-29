@@ -52,8 +52,9 @@ import {
 import { callDeepSeek } from '../../../../../lib/deepseek'
 import { callOllama } from '../../../../../lib/ollama'
 import { getXCredentials, publishXPost, uploadXMedia } from '../../../../../lib/xDistribution'
-import { claimXAsset, releaseXAsset, updateXAsset, prepareXImage, buildXImageBriefMessages, assetError, xAssetView } from '../../../../../lib/xPostAssets'
+import { claimXAsset, releaseXAsset, updateXAsset, saveXPostDraft, prepareXImage, buildXImageBriefMessages, assetError, xAssetView } from '../../../../../lib/xPostAssets'
 import { recordXApiPostCost, xPostCreatePricing } from '../../../../../lib/xApiCost'
+import { xPostingSchedule, isXPostDue } from '../../../../../lib/xPostingSchedule'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -141,6 +142,13 @@ export async function POST(req) {
     return Response.json({ ok: false, error: 'INVALID_PERIOD', detail: 'period 仅支持 morning、noon、evening。' }, { status: 400 })
   }
   const runSlot = storySlot || communitySlot || cryptoSlot || usSlot || period
+  const scheduledDate = searchParams.get('scheduledDate')
+  const schedule = scheduledDate
+    ? (await xPostingSchedule(requestNow)).find((item) => item.id === runSlot)
+    : null
+  if (scheduledDate && (scheduledDate !== schedule.date || !isXPostDue(schedule, requestNow))) {
+    return Response.json({ ok: true, skipped: true, reason: 'outside_schedule_window' })
+  }
   const contentType = isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : isCryptoPost ? 'crypto-insight' : isUsPost ? 'us-english' : 'greeting'
   const storyCategory = isCultureStory ? cultureStoryCategory({ slot: storySlot, now: requestNow }) : ''
   const lastRunKey = isCultureStory
@@ -172,7 +180,8 @@ export async function POST(req) {
       const lastRunRaw = await readSetting(db, lastRunKey)
       if (lastRunRaw) {
         const lastRun = JSON.parse(lastRunRaw)
-        if (lastRun?.ok && shanghaiDateKey(lastRun.at) === shanghaiDateKey(requestNow)) {
+        const lastRunDate = lastRun?.date || shanghaiDateKey(lastRun?.at)
+        if (lastRun?.ok && lastRunDate === shanghaiDateKey(requestNow)) {
           return Response.json(
             {
               ok: true,
@@ -431,30 +440,33 @@ export async function POST(req) {
     }
     if (isCommunityPost) text = normalizeXCommunityText(text, communitySlot, 280, communityVariant)
 
-    await updateXAsset(db, asset, { text })
-    stage = 'image-generation'
-    const image = await prepareXImage({
-      db, bucket: env.MEDIA, ai: env.AI, asset,
-      createPrompt: async (style) => {
-        const brief = await callDeepSeek({
-          env, messages: buildXImageBriefMessages({ text, contentType, slot: runSlot, style }),
-          maxTokens: 320, temperature: 0.7, timeoutMs: 45_000,
-          taskDefaultModel: 'deepseek-v4-flash', disableThinking: true,
-          task: { source: 'x-daily-greeting', taskType: 'image-prompt', title: `X 配图：${runSlot}`,
-            actorId: 'cron:x-daily-greeting', inputSummary: text,
-            metadata: { assetId: asset.row.id, contentType } },
-        })
-        return brief.content
-      },
-    })
-    stage = 'media-upload'
-    const upload = await uploadXMedia(image, { credentials })
-    if (!upload.ok) throw assetError(upload.error, upload.status)
-    const mediaId = upload.mediaId
+    const postFormat = await saveXPostDraft(db, asset, { text })
+    let mediaId = ''
+    if (postFormat === 'image') {
+      stage = 'image-generation'
+      const image = await prepareXImage({
+        db, bucket: env.MEDIA, ai: env.AI, asset,
+        createPrompt: async (style) => {
+          const brief = await callDeepSeek({
+            env, messages: buildXImageBriefMessages({ text, contentType, slot: runSlot, style }),
+            maxTokens: 320, temperature: 0.7, timeoutMs: 45_000,
+            taskDefaultModel: 'deepseek-v4-flash', disableThinking: true,
+            task: { source: 'x-daily-greeting', taskType: 'image-prompt', title: `X 配图：${runSlot}`,
+              actorId: 'cron:x-daily-greeting', inputSummary: text,
+              metadata: { assetId: asset.row.id, contentType } },
+          })
+          return brief.content
+        },
+      })
+      stage = 'media-upload'
+      const upload = await uploadXMedia(image, { credentials })
+      if (!upload.ok) throw assetError(upload.error, upload.status)
+      mediaId = upload.mediaId
+    }
     // Persist intent BEFORE sending to X. An ambiguous response must not auto-repost.
     stage = 'publish'
     await updateXAsset(db, asset, { status: 'publishing', media_id: mediaId, error: '' })
-    const result = await publishXPost(text, { credentials, mediaIds: [mediaId] })
+    const result = await publishXPost(text, { credentials, mediaIds: mediaId ? [mediaId] : [] })
     if (!result.ok) {
       const uncertain = result.error === 'X_UNREACHABLE' || !result.xStatus || result.xStatus >= 500 || result.xStatus < 400
       await updateXAsset(db, asset, { status: uncertain ? 'publish-unknown' : 'failed', error: result.error })
@@ -485,6 +497,9 @@ export async function POST(req) {
       const publishedAt = Date.now()
       const xApiPricing = xPostCreatePricing(text)
       const run = JSON.stringify({
+        date: asset.row.date_key,
+        postFormat,
+        scheduledAt: schedule?.scheduledAt || null,
         at: publishedAt,
         ok: true,
         period: runSlot,

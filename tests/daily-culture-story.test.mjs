@@ -43,10 +43,7 @@ test('workflow schedules all three culture story slots with retries', async () =
     readFile(new URL('../.github/workflows/morning-greeting.yml', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/distribution/x/greeting/route.js', import.meta.url), 'utf8'),
   ])
-  assert.match(workflow, /'0,20,40 2 \* \* \*'/)
-  assert.match(workflow, /'0,20,40 8 \* \* \*'/)
-  assert.match(workflow, /'0,20,40 12 \* \* \*'/)
-  assert.match(workflow, /QUERY="story=\$PERIOD"/)
+  assert.match(workflow, /node scripts\/run-x-auto-posts.mjs/)
   assert.match(route, /buildCultureStoryMessages/)
   assert.match(route, /const contentType = isCultureStory \? 'culture-story'/)
 })

@@ -2,22 +2,8 @@ name: Daily greetings to X
 
 on:
   schedule:
-    # 问候 08:00 / 12:00 / 22:00，朋友图文帖 09:00 / 15:00 / 19:00，文化短故事 10:00 / 16:00 / 20:00，加密观点 11:00 / 17:00 / 21:00，美区英文帖 23:00 / 03:00 / 07:00；每组 20、40 分钟补跑（UTC）。
-    - cron: '0,20,40 0 * * *'
-    - cron: '0,20,40 1 * * *'
-    - cron: '0,20,40 2 * * *'
-    - cron: '0,20,40 3 * * *'
-    - cron: '0,20,40 4 * * *'
-    - cron: '0,20,40 7 * * *'
-    - cron: '0,20,40 8 * * *'
-    - cron: '0,20,40 9 * * *'
-    - cron: '0,20,40 11 * * *'
-    - cron: '0,20,40 12 * * *'
-    - cron: '0,20,40 13 * * *'
-    - cron: '0,20,40 14 * * *'
-    - cron: '0,20,40 15 * * *'
-    - cron: '0,20,40 19 * * *'
-    - cron: '0,20,40 23 * * *'
+    # 每 5 分钟检查当天随机排程；API 按上海日与时段去重。
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       period:
@@ -27,6 +13,9 @@ on:
         default: morning
         options: [morning, noon, evening, community_friends, community_learning, community_growth, culture_morning, culture_afternoon, culture_evening, crypto_knowledge, crypto_market, crypto_people, us_morning, us_midday, us_evening]
 
+permissions:
+  contents: read
+
 concurrency:
   group: daily-greeting-${{ github.event.schedule || inputs.period }}
   cancel-in-progress: false
@@ -35,66 +24,20 @@ jobs:
   post:
     name: Publish daily greeting to X
     runs-on: ubuntu-latest
-    # 文案、配图、上传依次执行；重试由下一个 20 分钟补跑触发。
+    # 到期任务并行执行；失败由后续轮询补跑，最多延续计划时间后一小时。
     timeout-minutes: 12
     steps:
-      - name: POST /api/distribution/x/greeting
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Publish due X posts
         env:
           MORNING_GREETING_SECRET: ${{ secrets.MORNING_GREETING_SECRET }}
-        run: |
-          if [ -z "$MORNING_GREETING_SECRET" ]; then
-            echo "::error::缺少仓库 Secret MORNING_GREETING_SECRET"
-            exit 1
-          fi
-
-          case "${{ github.event.schedule }}" in
-            "0,20,40 1 * * *") PERIOD="community_friends" ;;
-            "0,20,40 2 * * *") PERIOD="culture_morning" ;;
-            "0,20,40 3 * * *") PERIOD="crypto_knowledge" ;;
-            "0,20,40 4 * * *") PERIOD="noon" ;;
-            "0,20,40 7 * * *") PERIOD="community_learning" ;;
-            "0,20,40 8 * * *") PERIOD="culture_afternoon" ;;
-            "0,20,40 9 * * *") PERIOD="crypto_market" ;;
-            "0,20,40 11 * * *") PERIOD="community_growth" ;;
-            "0,20,40 12 * * *") PERIOD="culture_evening" ;;
-            "0,20,40 13 * * *") PERIOD="crypto_people" ;;
-            "0,20,40 14 * * *") PERIOD="evening" ;;
-            "0,20,40 15 * * *") PERIOD="us_morning" ;;
-            "0,20,40 19 * * *") PERIOD="us_midday" ;;
-            "0,20,40 23 * * *") PERIOD="us_evening" ;;
-            "") PERIOD="${{ inputs.period }}" ;;
-            *) PERIOD="morning" ;;
-          esac
-
-          if [[ "$PERIOD" == culture_* ]]; then
-            QUERY="story=$PERIOD"
-          elif [[ "$PERIOD" == community_* ]]; then
-            QUERY="community=$PERIOD"
-          elif [[ "$PERIOD" == crypto_* ]]; then
-            QUERY="crypto=$PERIOD"
-          elif [[ "$PERIOD" == us_* ]]; then
-            QUERY="us=$PERIOD"
-          else
-            QUERY="period=$PERIOD"
-          fi
-
-          code=$(curl -sS --connect-timeout 15 --max-time 540 \
-            -o /tmp/morning-greeting.json \
-            -w '%{http_code}' \
-            -X POST \
-            -H "x-morning-greeting-secret: $MORNING_GREETING_SECRET" \
-            "https://2aran.com/api/distribution/x/greeting?$QUERY")
-
-          echo "HTTP $code"
-          cat /tmp/morning-greeting.json
-          echo
-          if [ "$code" = "423" ]; then
-            echo "后台已暂停该自动化，本次跳过（视为成功，不发布）。"
-            exit 0
-          fi
-          if [ "$code" != "201" ] && [ "$code" != "200" ]; then
-            exit 1
-          fi
+          MANUAL_PERIOD: ${{ inputs.period }}
+        run: node scripts/run-x-auto-posts.mjs
 
       - name: Notify owner of failure
         if: failure()
@@ -111,7 +54,7 @@ jobs:
               pass
           print(json.dumps({
               "workflow": "morning-greeting",
-              "taskName": "X 每日自动发布（问候 / 朋友图文 / 文化短故事 / 加密观点 / 美区英文）",
+              "taskName": "X 每日自动发布（问候 / 朋友交流 / 文化短故事 / 加密观点 / 美区英文）",
               "runId": os.environ.get("GITHUB_RUN_ID", ""),
               "runUrl": os.environ.get("RUN_URL", ""),
               "status": "failed",

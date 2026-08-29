@@ -43,10 +43,7 @@ test('workflow schedules all three US English slots with retries', async () => {
     readFile(new URL('../.github/workflows/morning-greeting.yml', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/distribution/x/greeting/route.js', import.meta.url), 'utf8'),
   ])
-  assert.match(workflow, /'0,20,40 15 \* \* \*'/)
-  assert.match(workflow, /'0,20,40 19 \* \* \*'/)
-  assert.match(workflow, /'0,20,40 23 \* \* \*'/)
-  assert.match(workflow, /QUERY="us=\$PERIOD"/)
+  assert.match(workflow, /node scripts\/run-x-auto-posts.mjs/)
   assert.match(route, /buildXUsAudienceMessages/)
   assert.match(route, /contentType = .*'us-english'/)
 })

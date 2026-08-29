@@ -45,7 +45,7 @@ const fieldClass = 'mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34
 const TIMELINE_FILTERS = [
   { id: 'all', label: '全部任务' },
   { id: 'greeting', label: '问候' },
-  { id: 'community', label: '朋友图文' },
+  { id: 'community', label: '朋友交流' },
   { id: 'culture', label: '文化短故事' },
   { id: 'crypto', label: '加密观点' },
   { id: 'us', label: '美区英文' },
@@ -87,7 +87,7 @@ function TimelineNode({ item }) {
       aria-label={`${item.schedule} ${item.label}${item.hasImage ? '，带图片' : ''}，${item.state.label}`}
     >
       <time className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap text-[12px] font-semibold tabular-nums text-[#4f5148] dark:text-gray-300">
-        {item.schedule}
+        {item.schedule} ±30分钟
       </time>
       <span
         className={`absolute left-1/2 top-[25px] z-10 h-3.5 w-3.5 -translate-x-1/2 rounded-full border-[3px] border-white ring-2 dark:border-[#10161f] ${
@@ -117,7 +117,7 @@ function TimelineNode({ item }) {
         <p className="mb-0 text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">
           {item.recordedAt ? `执行 ${formatTime(item.recordedAt)}` : '尚无执行记录'}
         </p>
-        {item.imageUrl ? <a href={item.imageUrl} target="_blank" rel="noreferrer" aria-label={`预览${item.label}配图`} className="mt-2 block overflow-hidden rounded-lg"><img src={item.imageUrl} alt={`${item.label}配图`} loading="lazy" className="aspect-[4/3] w-full object-cover" /></a> : <p className="mb-0 mt-2 text-[11px] text-[#96988e]">{item.recordedAt ? '该次记录无配图' : '执行时生成配图'}</p>}
+        {item.imageUrl ? <a href={item.imageUrl} target="_blank" rel="noreferrer" aria-label={`预览${item.label}配图`} className="mt-2 block overflow-hidden rounded-lg"><img src={item.imageUrl} alt={`${item.label}配图`} loading="lazy" className="aspect-[4/3] w-full object-cover" /></a> : <p className="mb-0 mt-2 text-[11px] text-[#96988e]">{item.recordedAt ? (item.state.key === 'success' ? '纯文本' : '该次记录无配图') : '图文 / 纯文本随机'}</p>}
         {item.meta ? <p className="mb-0 mt-1 break-words text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">{item.meta}</p> : null}
         {item.costMicroUsd ? <p className="mb-0 mt-1 text-[11px] font-medium tabular-nums text-[#5f6257] dark:text-gray-300">X API {formatUsd(item.costMicroUsd)} / 次</p> : null}
         {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 内容 ↗</a> : null}
@@ -177,7 +177,7 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
         schedule: item.time,
         column: [2, 6, 9][index],
         type: 'community',
-        typeLabel: '朋友图文',
+        typeLabel: '朋友交流',
         hasImage: Boolean(run?.imagePath),
         imageUrl: run?.imagePath || '',
         state: runState(run),
@@ -273,7 +273,7 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
           ) : null}
         </div>
       </div>
-      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴按北京时间排列；卡片展示每个时段最近一次执行记录，左右滑动可查看完整日程。</p>
+      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间基准节点，每天在前后 30 分钟内随机安排；每 5 分钟检查到期任务，调度延迟或失败补跑可能更晚。卡片展示最近一次执行记录。</p>
     </div>
   )
 }
@@ -412,7 +412,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="管理每日问候、朋友图文、文化短故事、加密观点和美区英文帖的全自动发布。"
+      description="管理每日问候、朋友交流、文化短故事、加密观点和美区英文帖的全自动发布。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -420,7 +420,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天全自动发布三条问候、三条朋友图文、三条文化短故事、三条加密观点和三条美区英文帖，每条生成配图后直接发布，不经人工审核。"
+          description="每天全自动发布三条问候、三条朋友交流、三条文化短故事、三条加密观点和三条美区英文帖，各时段前后 30 分钟随机浮动，图文和纯文本各 50% 概率，直接发布，不经人工审核。"
           className="mb-4"
           actions={
             <>

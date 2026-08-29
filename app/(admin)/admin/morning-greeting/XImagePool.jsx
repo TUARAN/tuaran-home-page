@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AdminButton } from '../../components/ui'
 
-const TYPES = [['', '全部类型'], ['greeting', '问候'], ['community-image', '朋友图文'], ['culture-story', '文化短故事'], ['crypto-insight', '加密观点'], ['us-english', '美区英文']]
+const TYPES = [['', '全部类型'], ['greeting', '问候'], ['community-image', '朋友交流'], ['culture-story', '文化短故事'], ['crypto-insight', '加密观点'], ['us-english', '美区英文']]
 const STATES = { pending: '待生成', generating: '生成中', ready: '待发布', failed: '失败待重试', publishing: '发布中 / 待核对', 'publish-unknown': '结果待核对', published: '已发布' }
 const selectClass = 'rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-xs dark:border-[#2d3744] dark:bg-[#10161f]'
 
@@ -48,16 +48,22 @@ export default function XImagePool() {
   }, [preview])
 
   return (
-    <section aria-labelledby="x-image-pool-title" className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <details aria-labelledby="x-image-pool-title" className="group/image-pool rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-600 [&::-webkit-details-marker]:hidden">
+        <h3 id="x-image-pool-title" className="m-0 text-sm font-semibold">图片资源池</h3>
+        <span className="text-xs text-[#77796e] dark:text-gray-400">
+          <span className="group-open/image-pool:hidden">展开 ▾</span>
+          <span className="hidden group-open/image-pool:inline">收起 ▴</span>
+        </span>
+      </summary>
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 id="x-image-pool-title" className="m-0 text-sm font-semibold">图片资源池</h3>
-          <p className="mb-0 mt-1 text-xs leading-6 text-[#77796e] dark:text-gray-400">每条新配图随机二选一（各 50%）：生成优先、素材兜底；或直接取同主题备用素材。生图随机使用动漫、日式浮世绘、赛博朋克、抽象、现代主义、水彩、剪纸或黑白摄影。上传失败重试复用原图和文案。</p>
+          <p className="mb-0 mt-1 text-xs leading-6 text-[#77796e] dark:text-gray-400">每条先随机选择图文或纯文本（各 50%）。图文的新配图再随机二选一（各 50%）：生成优先、素材兜底；或直接取同主题备用素材。生图随机使用动漫、日式浮世绘、赛博朋克、抽象、现代主义、水彩、剪纸或黑白摄影。上传失败重试复用原图和文案。</p>
           <p className="m-0 text-[11px] leading-6 text-[#77796e] dark:text-gray-400">新图：R2 / tuaran-media / images/x-posts/ · 记录：D1 · 在线生成：FLUX.1 schnell · 备用素材：本地批量生成后上传</p>
         </div>
         <AdminButton size="sm" onClick={() => setRevision((value) => value + 1)} disabled={busy}>{busy ? '读取中…' : '刷新素材'}</AdminButton>
       </div>
-      {data?.config && (!data.config.aiConfigured || !data.config.storageConfigured) ? <p role="alert" className="text-xs text-amber-700 dark:text-amber-300">当前环境缺少 {!data.config.aiConfigured ? 'AI ' : ''}{!data.config.storageConfigured ? 'MEDIA ' : ''}绑定；请同时核对公开站发布环境的绑定。生图不可用时尝试素材池；图片均不可用时不会发送纯文字。</p> : null}
+      {data?.config && (!data.config.aiConfigured || !data.config.storageConfigured) ? <p role="alert" className="text-xs text-amber-700 dark:text-amber-300">当前环境缺少 {!data.config.aiConfigured ? 'AI ' : ''}{!data.config.storageConfigured ? 'MEDIA ' : ''}绑定；请同时核对公开站发布环境的绑定。生图不可用时尝试素材池；图文任务的图片均不可用时停止该次发布；随机选中的纯文本任务不依赖这些绑定。</p> : null}
       {data?.available === false ? <p role="alert" className="text-xs text-amber-700 dark:text-amber-300">{data.error}</p> : null}
       <div className="my-3 flex flex-wrap gap-2">
         <AdminButton size="sm" variant={view === 'pool' ? 'primary' : 'ghost'} onClick={() => setView('pool')}>备用素材池（{data?.pool?.length || 0}）</AdminButton>
@@ -70,7 +76,7 @@ export default function XImagePool() {
       {data?.available && !(view === 'pool' ? data.pool : data.items).length ? <p className="rounded-lg border border-dashed p-6 text-center text-sm text-gray-500">当前筛选下暂无素材。备用池由批量上传登记；每次发推的图片保留在生成与发布记录中。</p> : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {((view === 'pool' ? data?.pool : data?.items) || []).map((item) => <article key={item.id} className="overflow-hidden rounded-xl border border-[#e2e4da] bg-white dark:border-[#293545] dark:bg-[#10161f]">
-          {item.imageUrl ? <button type="button" className="block w-full" onClick={() => setPreview(item)} aria-label={`预览 ${item.date} ${item.slot} 配图`}><img src={item.imageUrl} alt={`${TYPES.find(([value]) => value === item.contentType)?.[1] || '推文'}配图`} loading="lazy" className="aspect-[4/3] w-full object-cover" /></button> : <div className="flex aspect-[4/3] items-center justify-center bg-[#f0f1eb] text-sm text-gray-500 dark:bg-[#192332]">{STATES[item.status] || item.status}</div>}
+          {item.imageUrl ? <button type="button" className="block w-full" onClick={() => setPreview(item)} aria-label={`预览 ${item.date} ${item.slot} 配图`}><img src={item.imageUrl} alt={`${TYPES.find(([value]) => value === item.contentType)?.[1] || '推文'}配图`} loading="lazy" className="aspect-[4/3] w-full object-cover" /></button> : <div className="flex aspect-[4/3] items-center justify-center bg-[#f0f1eb] text-sm text-gray-500 dark:bg-[#192332]">{item.source === 'text' ? '纯文本' : STATES[item.status] || item.status}</div>}
           <div className="space-y-2 p-3">
             <div className="flex justify-between gap-2 text-xs"><span>{TYPES.find(([value]) => value === item.contentType)?.[1]}</span><span className={item.status === 'published' ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}>{item.status ? STATES[item.status] || item.status : '备用素材'}</span></div>
             <p className="m-0 text-[11px] text-gray-500">{item.label || `${item.date} · ${item.slot}`}</p>
@@ -94,6 +100,6 @@ export default function XImagePool() {
       <dialog ref={dialog} onClose={() => setPreview(null)} className="max-h-[90vh] w-[min(900px,92vw)] overflow-y-auto rounded-2xl bg-white p-4 text-[#34352f] backdrop:bg-black/60 dark:bg-[#10161f] dark:text-gray-100" aria-label="配图详情">
         {preview ? <><div className="mb-3 flex justify-between gap-3"><strong>{preview.label || `${preview.date} · ${preview.slot}`}</strong><button type="button" onClick={() => setPreview(null)} className="rounded border px-3 py-1 text-sm">关闭</button></div><img src={preview.imageUrl} alt={preview.label || '推文生成配图'} className="max-h-[60vh] w-full object-contain" /><p className="whitespace-pre-wrap text-sm">{preview.text}</p><p className="break-all text-xs text-gray-500">{preview.storage} {preview.objectKey || ''}</p>{preview.model ? <p className="text-xs">{preview.model} · {(preview.sizeBytes / 1024).toFixed(0)} KB</p> : null}{preview.prompt ? <details><summary className="cursor-pointer text-xs">生成提示词</summary><p className="text-xs leading-6">{preview.prompt}</p></details> : null}</> : null}
       </dialog>
-    </section>
+    </details>
   )
 }

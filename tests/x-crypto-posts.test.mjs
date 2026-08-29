@@ -41,10 +41,7 @@ test('workflow and distribution route support all three crypto tasks', async () 
     readFile(new URL('../.github/workflows/morning-greeting.yml', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/distribution/x/greeting/route.js', import.meta.url), 'utf8'),
   ])
-  assert.match(workflow, /'0,20,40 3 \* \* \*'/)
-  assert.match(workflow, /'0,20,40 9 \* \* \*'/)
-  assert.match(workflow, /'0,20,40 13 \* \* \*'/)
-  assert.match(workflow, /QUERY="crypto=\$PERIOD"/)
+  assert.match(workflow, /node scripts\/run-x-auto-posts.mjs/)
   assert.match(route, /buildXCryptoMessages/)
   assert.match(route, /contentType = .*'crypto-insight'/)
 })

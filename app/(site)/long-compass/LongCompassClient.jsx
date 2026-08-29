@@ -226,7 +226,7 @@ export default function LongCompassClient({
                     : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
                 }`}
               >
-                原始记录
+                记录档案
               </button>
               <button
                 type="button"
@@ -239,7 +239,7 @@ export default function LongCompassClient({
                     : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
                 }`}
               >
-                财务视图
+                财务总览
               </button>
               <button
                 type="button"
@@ -252,7 +252,7 @@ export default function LongCompassClient({
                     : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
                 }`}
               >
-                财产管理
+                负债管理
               </button>
             </div>
             {activeView === 'records' ? (

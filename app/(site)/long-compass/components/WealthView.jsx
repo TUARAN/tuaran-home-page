@@ -16,8 +16,8 @@ export default function WealthView({ records }) {
     <section className="space-y-5 text-[#35362f] dark:text-gray-200">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-gray-400">Wealth & obligations</p>
-          <h2 className="mt-2 font-serif text-2xl font-semibold">财产管理</h2>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-gray-400">Debt & repayment</p>
+          <h2 className="mt-2 font-serif text-2xl font-semibold">贷款与还款</h2>
           <p className={`mt-2 ${muted}`}>从贷款盘点开始，逐次保存余额与判断。历史本金、当前快照和未核实估算分别呈现。</p>
         </div>
         {snapshot ? <label className={muted}>历史快照
@@ -120,7 +120,7 @@ function AnalysisBrief({ snapshot }) {
   }
   return <section className={`${panel} border-[#bdc9b5] dark:border-[#42533b]`}>
     <p className="text-[10px] uppercase tracking-[0.18em] text-[#718a65]">Review with an LLM</p>
-    <h3 className="mt-1 font-serif text-lg font-semibold">大模型辅助财产管理</h3>
+    <h3 className="mt-1 font-serif text-lg font-semibold">大模型辅助负债分析</h3>
     <p className={`mt-2 ${muted}`}>先审阅数据，再复制给你选择的模型。此处只整理分析材料，不调用模型、不自动上传、不执行交易或还款。现金、收入和必要支出未补齐前，不生成具体提前还款金额。</p>
     <label className="mt-3 flex items-center gap-2 text-xs"><input type="checkbox" checked={anonymize} onChange={(event) => { setAnonymize(event.target.checked); setNotice('') }} />隐藏机构名称（金额仍属敏感信息）</label>
     <label className="mt-3 block text-xs">分析材料预览<textarea readOnly value={brief} rows={10} className="mt-2 w-full rounded-lg border border-[#dee0db] bg-[#fafbf8] p-3 font-mono text-xs leading-6 dark:border-gray-700 dark:bg-[#0c1118]" /></label>

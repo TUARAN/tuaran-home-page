@@ -117,7 +117,7 @@ export default function StatusPanel({
           <li>① 改 <code className="font-mono text-[12px]">private/seeds/{'{kind}'}/xxx.md</code> 正文（frontmatter 一般不动）</li>
           <li>② <code className="font-mono text-[12px]">node private/build-seed.mjs</code> → 装配回 seed.json</li>
           <li>③ <code className="font-mono text-[12px]">node private/seed-to-d1.mjs --reset</code> → stdin 输口令 → 加密 → wrangler 写 D1</li>
-          <li>· 财务视图会识别 Markdown 表格中的「时点｜估算资产」「时点｜总额」「年份｜年终金额」等明确列名</li>
+          <li>· 财务总览会识别 Markdown 表格中的「时点｜估算资产」「时点｜总额」「年份｜年终金额」等明确列名</li>
           <li className="opacity-70">⚠ 当前为「全量重加密」：改 1 条也会重导全部 26 条（密文一次性置换）</li>
           <li>· 模块化：加密 / schema / API 归 <code className="font-mono text-[12px]">lib/longCompass</code></li>
           <li>

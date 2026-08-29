@@ -30,7 +30,7 @@ export default function FinanceView({ records }) {
   if (!data.series.length && !data.liquidity.length && !data.householdFlows.length) {
     return (
       <section className="rounded-lg border border-dashed border-[#c5c7bb] px-4 py-7 text-sm leading-7 text-[#717367] dark:border-gray-700 dark:text-gray-400">
-        还没有识别到可视化数据。财务视图只读取带明确表头的 Markdown 表格，例如「时点｜估算资产」或「年份｜年终金额」。
+        还没有识别到可汇总的数据。财务总览只读取带明确表头的 Markdown 表格，例如「时点｜估算资产」或「年份｜年终金额」。
       </section>
     )
   }
@@ -39,9 +39,9 @@ export default function FinanceView({ records }) {
     <section className="space-y-6">
       <header className="border-b border-[#dee0db] pb-4 dark:border-gray-800">
         <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
-          Parsed from unlocked records
+          Financial overview
         </p>
-        <h2 className="mt-2 font-serif text-xl font-semibold text-[#15140f] dark:text-gray-100">财务视图</h2>
+        <h2 className="mt-2 font-serif text-xl font-semibold text-[#15140f] dark:text-gray-100">家庭财务趋势</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[#62645a] dark:text-gray-400">
           从原始 Markdown 表格提取时间节点与金额，用于观察趋势和结构；这是阅读辅助，不替代记账或财产确认。
         </p>

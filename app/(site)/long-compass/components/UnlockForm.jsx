@@ -39,7 +39,7 @@ export default function UnlockForm({ encryptedCount, password, onPasswordChange,
           7 年个人长期档案（2018–2026），由 <strong>Opus 4.7 High</strong> 于 2026-06-02 重新提炼为 26 条结构化章节：
         </p>
         <ul className="mt-3 space-y-1.5">
-          <li>· <strong>6 条 资产现状</strong> — 债务时间线、收入曲线、家庭账户、投资沉默成本、流动性、矩联科技</li>
+          <li>· <strong>6 条 资产快照</strong> — 债务时间线、收入曲线、家庭账户、投资沉默成本、流动性、矩联科技</li>
           <li>· <strong>8 条 行动框架</strong> — 信用观 / 博弈 / 写作 / 打工 / 极简 / 债务重组 / 2026 收入结构 / 家庭沟通</li>
           <li>· <strong>12 条 阶段复盘</strong> — 按年从 2018 排到 2026 + 4 个跨年专题</li>
         </ul>

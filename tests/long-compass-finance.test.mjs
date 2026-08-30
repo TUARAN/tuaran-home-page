@@ -23,7 +23,8 @@ test('financial overview keeps household and personal account sources separate',
 | 资产 | 金额 | 流动性 |
 | --- | --- | --- |
 | 活期账户 | 2w | 高 |
-| 长期账户 | 8w | 低 |`),
+| 长期账户 | 8w | 低 |
+| 已清空账户 | 0元 | — |`),
     record('示例收入与年终奖', `| 年份 | 年终金额 |
 | --- | --- |
 | 2025 | 3w |`),
@@ -32,6 +33,7 @@ test('financial overview keeps household and personal account sources separate',
   assert.equal(data.householdAssets.at(-1).value, 200000)
   assert.equal(data.householdFlows.length, 1)
   assert.deepEqual(data.liquidity.map((item) => item.value), [20000, 80000])
+  assert.doesNotMatch(data.liquidity.map((item) => item.label).join(','), /已清空账户/)
   assert.equal(data.bonus.at(-1).value, 30000)
 })
 

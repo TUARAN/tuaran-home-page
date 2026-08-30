@@ -4,6 +4,8 @@ import test from 'node:test'
 import {
   GENERATION_TIMEOUT_MS,
   buildCryptoDraftPrompt,
+  canUseCryptoPoolFallback,
+  coingeckoRetryAfterMs,
   draftGenerationDecision,
   normalizeMarketCoins,
   pickHighestRankedUnresearched,
@@ -20,6 +22,28 @@ const bitcoin = {
 
 test('allows enough time for web-search research generation', () => {
   assert.ok(GENERATION_TIMEOUT_MS >= 90_000)
+})
+
+test('normalizes CoinGecko Retry-After seconds and HTTP dates', () => {
+  const now = Date.parse('2026-08-30T00:00:00Z')
+  assert.equal(coingeckoRetryAfterMs('45', now), 45_000)
+  assert.equal(coingeckoRetryAfterMs('Sun, 30 Aug 2026 00:02:00 GMT', now), 120_000)
+  assert.equal(coingeckoRetryAfterMs('', now), 60_000)
+})
+
+test('uses only complete and recent snapshots as a CoinGecko rate-limit fallback', () => {
+  const now = Date.parse('2026-08-30T00:00:00Z')
+  const coins = normalizeMarketCoins(Array.from({ length: 100 }, (_, index) => ({
+    ...bitcoin,
+    id: `coin-${index + 1}`,
+    symbol: `c${index + 1}`,
+    name: `Coin ${index + 1}`,
+    market_cap_rank: index + 1,
+    market_cap: 1_000_000 - index,
+  })))
+  assert.equal(canUseCryptoPoolFallback({ generatedAt: now - 24 * 60 * 60 * 1000, coins, now }), true)
+  assert.equal(canUseCryptoPoolFallback({ generatedAt: now - 8 * 24 * 60 * 60 * 1000, coins, now }), false)
+  assert.equal(canUseCryptoPoolFallback({ generatedAt: now - 24 * 60 * 60 * 1000, coins: coins.slice(0, 99), now }), false)
 })
 
 test('normalizes and orders CoinGecko market rows by market-cap rank', () => {

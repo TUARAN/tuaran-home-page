@@ -26,7 +26,13 @@ async function handle(request) {
     return Response.json({ ok: true, ...result })
   } catch (error) {
     console.error('[crypto-research] failed:', error)
-    return Response.json({ ok: false, error: String(error?.message || error).slice(0, 2000) }, { status: 500 })
+    const status = error?.status === 429 ? 429 : 500
+    const retryAfterMs = status === 429 ? Math.max(1000, Number(error?.retryAfterMs) || 60_000) : undefined
+    const headers = retryAfterMs ? { 'retry-after': String(Math.ceil(retryAfterMs / 1000)) } : undefined
+    return Response.json(
+      { ok: false, error: String(error?.message || error).slice(0, 2000), ...(retryAfterMs ? { retryAfterMs } : {}) },
+      { status, headers },
+    )
   }
 }
 

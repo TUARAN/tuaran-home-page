@@ -29,7 +29,7 @@ jobs:
             exit 1
           fi
           for attempt in 1 2 3; do
-            code=$(curl -sS --retry 2 --retry-delay 8 \
+            code=$(curl -sS \
               -o /tmp/crypto-research.json -w '%{http_code}' -X POST \
               -H "x-crypto-research-secret: $TRIGGER_SECRET" \
               https://2aran.com/api/cron/crypto-research)
@@ -45,8 +45,11 @@ jobs:
               else
                 wait_seconds=5
               fi
+            elif [ "$code" = "429" ]; then
+              retry_ms=$(jq -r '.retryAfterMs // 60000' /tmp/crypto-research.json)
+              wait_seconds=$(( (retry_ms + 999) / 1000 ))
             else
-              wait_seconds=30
+              wait_seconds=$(( attempt * 30 ))
             fi
             if [ "$attempt" -lt 3 ]; then sleep "$wait_seconds"; fi
           done

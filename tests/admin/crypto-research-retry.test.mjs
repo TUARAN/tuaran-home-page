@@ -26,3 +26,9 @@ test('失败通知携带告警接口要求的 runId', () => {
   assert.match(workflowSource, /GITHUB_RUN_ID: \$\{\{ github\.run_id \}\}/)
   assert.match(workflowSource, /runId:\$runId/)
 })
+
+test('CoinGecko 限流由外层循环退避，curl 不在短间隔内重复请求', () => {
+  assert.doesNotMatch(workflowSource, /code=\$\(curl -sS --retry/)
+  assert.match(workflowSource, /\[ "\$code" = "429" \]/)
+  assert.match(workflowSource, /\.retryAfterMs \/\/ 60000/)
+})

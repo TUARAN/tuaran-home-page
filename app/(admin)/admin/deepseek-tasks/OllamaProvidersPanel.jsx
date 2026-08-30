@@ -39,6 +39,12 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
   const [editingId, setEditingId] = useState('')
   const [formVisible, setFormVisible] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [testProviderId, setTestProviderId] = useState('')
+  const [testModel, setTestModel] = useState('')
+  const [testPrompt, setTestPrompt] = useState('请用一句话介绍你自己，并说明当前模型名称。')
+  const [directTesting, setDirectTesting] = useState(false)
+  const [directTestError, setDirectTestError] = useState('')
+  const [directTestResult, setDirectTestResult] = useState(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -88,6 +94,14 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
       if (!modelStates[provider.id]) loadModels(provider)
     }
   }, [data?.providers, loadModels, modelStates])
+
+  useEffect(() => {
+    const providers = data?.providers || []
+    if (testProviderId && providers.some((provider) => provider.id === testProviderId)) return
+    const provider = providers.find((item) => item.status === 'active') || providers[0]
+    setTestProviderId(provider?.id || '')
+    setTestModel(provider?.defaultModel || '')
+  }, [data?.providers, testProviderId])
 
   function resetForm() {
     setEditingId('')
@@ -205,8 +219,36 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
     }
   }
 
+  async function runDirectTest() {
+    if (!testProviderId || !testModel || !testPrompt.trim()) return
+    setDirectTesting(true)
+    setDirectTestError('')
+    setDirectTestResult(null)
+    try {
+      const response = await fetch('/api/admin/llm-providers/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: testProviderId, model: testModel, prompt: testPrompt }),
+      })
+      const payload = await safeJson(response)
+      if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      setDirectTestResult(payload)
+      await refresh()
+    } catch (testError) {
+      setDirectTestError(testError?.message || 'Ollama 直接调用失败。')
+    } finally {
+      setDirectTesting(false)
+    }
+  }
+
   const providers = data?.providers || []
   const activeCount = providers.filter((item) => item.status === 'active').length
+  const directTestProvider = providers.find((item) => item.id === testProviderId)
+  const directTestModelState = modelStates[testProviderId] || {}
+  const installedTestModels = directTestModelState.models || []
+  const directTestModels = directTestProvider && !installedTestModels.some((item) => item.name === directTestProvider.defaultModel)
+    ? [{ name: directTestProvider.defaultModel, displayName: directTestProvider.defaultModel, size: 0 }, ...installedTestModels]
+    : installedTestModels
 
   return (
     <>
@@ -325,6 +367,87 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
             ))}
           </div>
         )}
+      </Section>
+
+      <Section
+        title="Ollama 直接调用测试"
+        description="直接选择已安装模型并发送提示词，用真实生成结果分别验证两个模型；每次调用会进入调用台账。"
+        className="mt-4"
+      >
+        {!providers.length ? (
+          <EmptyState title="暂无可测试服务" description="先新增并启用 Ollama 服务，再进行直接调用。" />
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+            <div className="space-y-3">
+              <label className="block text-[12px] text-[#67695d] dark:text-gray-300">
+                Ollama 服务
+                <select
+                  className={`${CONTROL_CLASS} mt-1 w-full`}
+                  value={testProviderId}
+                  onChange={(event) => {
+                    const providerId = event.target.value
+                    const provider = providers.find((item) => item.id === providerId)
+                    setTestProviderId(providerId)
+                    setTestModel(provider?.defaultModel || '')
+                    setDirectTestError('')
+                    setDirectTestResult(null)
+                  }}
+                >
+                  {providers.map((provider) => <option key={provider.id} value={provider.id}>{provider.name}{provider.status !== 'active' ? '（已停用）' : ''}</option>)}
+                </select>
+              </label>
+              <label className="block text-[12px] text-[#67695d] dark:text-gray-300">
+                测试模型
+                <select
+                  className={`${CONTROL_CLASS} mt-1 w-full`}
+                  value={testModel}
+                  disabled={directTestModelState.loading || !directTestModels.length}
+                  onChange={(event) => {
+                    setTestModel(event.target.value)
+                    setDirectTestError('')
+                    setDirectTestResult(null)
+                  }}
+                >
+                  {directTestModels.map((model) => <option key={model.name} value={model.name}>{formatModelOption(model)}</option>)}
+                </select>
+              </label>
+              <div className="flex items-center justify-between gap-3 text-[12px] text-[#82847a]">
+                <span>{directTestModelState.loading ? '正在读取模型…' : `发现 ${installedTestModels.length} 个已安装模型`}</span>
+                {directTestProvider ? <button type="button" className="font-medium text-[#397a68] hover:underline dark:text-emerald-300" onClick={() => loadModels(directTestProvider, { announce: false })}>刷新</button> : null}
+              </div>
+              {directTestModelState.error ? <p className="text-[12px] text-rose-700 dark:text-rose-300">{directTestModelState.error}</p> : null}
+            </div>
+            <div>
+              <label className="block text-[12px] text-[#67695d] dark:text-gray-300">
+                测试提示词
+                <textarea
+                  className={`${INPUT_CLASS} mt-1 min-h-28 resize-y`}
+                  maxLength={8000}
+                  value={testPrompt}
+                  onChange={(event) => setTestPrompt(event.target.value)}
+                  placeholder="输入要直接发送给 Ollama 的内容"
+                />
+              </label>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-[12px] text-[#82847a]">最多 8,000 字符，单次最多生成 1,024 tokens。</span>
+                <AdminButton type="button" variant="primary" disabled={directTesting || directTestProvider?.status !== 'active' || !testModel || !testPrompt.trim()} onClick={runDirectTest}>
+                  {directTesting ? '调用中…' : '直接调用'}
+                </AdminButton>
+              </div>
+            </div>
+          </div>
+        )}
+        {directTestError ? <div role="alert" className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{directTestError}</div> : null}
+        {directTestResult ? (
+          <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-emerald-800 dark:text-emerald-200">
+              <strong>{directTestResult.model}</strong>
+              <span>{directTestResult.durationMs?.toLocaleString()} ms</span>
+              <span>{directTestResult.usage?.total_tokens?.toLocaleString() || 0} tokens</span>
+            </div>
+            <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-[13px] leading-6 text-[#25261f] dark:text-gray-100">{directTestResult.content}</pre>
+          </div>
+        ) : null}
       </Section>
 
       {formVisible ? (

@@ -56,3 +56,22 @@ test('业务调用与台账继续使用服务端解析后的默认模型', async
   assert.match(morningGreeting, /model: row\.default_model/)
   assert.match(testRoute, /model: result\.model/)
 })
+
+test('Ollama 直接测试区可选择已发现模型、输入提示词并展示真实响应', async () => {
+  const [panel, chatRoute] = await Promise.all([
+    read('../app/(admin)/admin/deepseek-tasks/OllamaProvidersPanel.jsx'),
+    read('../app/api/admin/llm-providers/chat/route.js'),
+  ])
+
+  assert.match(panel, /Ollama 直接调用测试/)
+  assert.match(panel, /直接选择已安装模型并发送提示词/)
+  assert.match(panel, /\/api\/admin\/llm-providers\/chat/)
+  assert.match(panel, /body: JSON\.stringify\(\{ id: testProviderId, model: testModel, prompt: testPrompt \}\)/)
+  assert.match(panel, /directTestResult\.usage\?\.total_tokens/)
+  assert.match(chatRoute, /getOwnerOrReject\(req\)/)
+  assert.match(chatRoute, /model = cleanText\(body\?\.model, 160\)/)
+  assert.match(chatRoute, /prompt = cleanText\(body\?\.prompt, 8000\)/)
+  assert.match(chatRoute, /callOllama\(\{/)
+  assert.match(chatRoute, /model,/)
+  assert.match(chatRoute, /taskType: 'direct-test'/)
+})

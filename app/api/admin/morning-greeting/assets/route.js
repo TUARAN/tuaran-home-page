@@ -1,7 +1,7 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 import { getOwnerOrReject } from '../../../../../lib/adminAuth'
 import { getD1 } from '../../../../../lib/d1'
-import { listXAssets, listXImagePool, X_ASSET_TYPES, X_IMAGE_MODEL } from '../../../../../lib/xPostAssets'
+import { listXAssets, listXImagePool, X_ASSET_TYPES } from '../../../../../lib/xPostAssets'
 import { X_COMMUNITY_VARIANTS } from '../../../../../lib/xCommunityPosts'
 
 export const runtime = 'edge'
@@ -18,7 +18,7 @@ export async function GET(req) {
   }
   const env = getOptionalRequestContext()?.env || {}
   const legacy = X_COMMUNITY_VARIANTS.map((item) => ({ id: item.id, label: item.label, imageUrl: item.imagePath, storage: '仓库 · public/images/x-community' }))
-  const config = { aiConfigured: Boolean(env.AI), storageConfigured: Boolean(env.MEDIA), model: X_IMAGE_MODEL, bucket: 'tuaran-media', prefix: 'images/x-posts/' }
+  const config = { strategy: 'pool-only', storageConfigured: Boolean(env.MEDIA), bucket: 'tuaran-media', prefix: 'images/x-posts/' }
   try {
     const db = getD1()
     const [page, pool] = await Promise.all([

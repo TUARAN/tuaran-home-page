@@ -52,7 +52,7 @@ import {
 import { callDeepSeek } from '../../../../../lib/deepseek'
 import { callOllama } from '../../../../../lib/ollama'
 import { getXCredentials, publishXPost, uploadXMedia } from '../../../../../lib/xDistribution'
-import { claimXAsset, releaseXAsset, updateXAsset, saveXPostDraft, prepareXImage, buildXImageBriefMessages, assetError, xAssetView } from '../../../../../lib/xPostAssets'
+import { claimXAsset, releaseXAsset, updateXAsset, saveXPostDraft, prepareXImage, assetError, xAssetView } from '../../../../../lib/xPostAssets'
 import { recordXApiPostCost, xPostCreatePricing } from '../../../../../lib/xApiCost'
 import { xPostingSchedule, isXPostDue } from '../../../../../lib/xPostingSchedule'
 
@@ -443,20 +443,9 @@ export async function POST(req) {
     const postFormat = await saveXPostDraft(db, asset, { text })
     let mediaId = ''
     if (postFormat === 'image') {
-      stage = 'image-generation'
+      stage = 'image-selection'
       const image = await prepareXImage({
-        db, bucket: env.MEDIA, ai: env.AI, asset,
-        createPrompt: async (style) => {
-          const brief = await callDeepSeek({
-            env, messages: buildXImageBriefMessages({ text, contentType, slot: runSlot, style }),
-            maxTokens: 320, temperature: 0.7, timeoutMs: 45_000,
-            taskDefaultModel: 'deepseek-v4-flash', disableThinking: true,
-            task: { source: 'x-daily-greeting', taskType: 'image-prompt', title: `X 配图：${runSlot}`,
-              actorId: 'cron:x-daily-greeting', inputSummary: text,
-              metadata: { assetId: asset.row.id, contentType } },
-          })
-          return brief.content
-        },
+        db, bucket: env.MEDIA, asset,
       })
       stage = 'media-upload'
       const upload = await uploadXMedia(image, { credentials })

@@ -85,6 +85,7 @@ async function callGreetingModel(selection, args, env) {
     return callOllama({
       ...args,
       providerId: target.providerId,
+      model: target.model || undefined,
       reasoningEffort: 'none',
       timeoutMs: 120_000,
     })

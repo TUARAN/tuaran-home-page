@@ -23,6 +23,7 @@ import {
   shanghaiDateKey,
 } from '../lib/morningGreeting.js'
 import { rowToTemplate } from '../lib/morningGreetingTemplates.js'
+import { buildModelSelectionOptions } from '../lib/modelSelection.js'
 import {
   DAILY_GREETING_STYLES,
   DEFAULT_DAILY_GREETING_LLM_INTENT,
@@ -35,6 +36,7 @@ import {
   normalizeGreetingModelSelections,
   orderGreetingModelSelections,
   parseGreetingModelSelection,
+  greetingModelSelectionId,
   pickDailyGreetingStyle,
 } from '../lib/dailyGreetingLlm.js'
 import {
@@ -175,8 +177,19 @@ test('DeepSeek is the default, legacy template mode exits to DeepSeek, and Ollam
 test('model selections accept up to two providers and migrate legacy settings', () => {
   assert.deepEqual(normalizeGreetingModelSelections(['deepseek', 'ollama:nas-1', 'ollama:nas-2']), ['deepseek', 'ollama:nas-1'])
   assert.deepEqual(normalizeGreetingModelSelections(null, { fallbackMode: 'ollama', fallbackProviderId: 'nas-1' }), ['ollama:nas-1'])
-  assert.deepEqual(parseGreetingModelSelection('ollama:nas-1'), { id: 'ollama:nas-1', provider: 'ollama', providerId: 'nas-1' })
+  assert.deepEqual(parseGreetingModelSelection('ollama:nas-1'), { id: 'ollama:nas-1', provider: 'ollama', providerId: 'nas-1', model: '' })
+  const exactModel = greetingModelSelectionId({ provider: 'ollama', providerId: 'nas-1', model: 'qwen3.5:9b' })
+  assert.equal(exactModel, 'ollama:nas-1:qwen3.5%3A9b')
+  assert.equal(parseGreetingModelSelection(exactModel).model, 'qwen3.5:9b')
   assert.deepEqual(orderGreetingModelSelections(['deepseek', 'ollama:nas-1'], 'slot-a').sort(), ['deepseek', 'ollama:nas-1'])
+  const options = buildModelSelectionOptions({ providers: [{
+    id: 'nas-1',
+    name: '绿联 DXP4800 Plus · Ollama',
+    defaultModel: 'qwen3.5:9b',
+    models: [{ name: 'qwen3.5:9b' }, { name: 'qwen3.8:27b' }],
+  }] })
+  assert.deepEqual(options.map((option) => option.model), ['deepseek-v4-flash', 'qwen3.5:9b', 'qwen3.8:27b'])
+  assert.ok(options.every((option) => !option.hint.includes('Ollama · Ollama')))
 })
 
 test('LLM prompt includes current period, exact calendar date, weekday, and editable intent', () => {
@@ -243,6 +256,7 @@ test('自动任务使用共用模型组件选择最多两个模型，并退出�
   assert.doesNotMatch(clientSource, /generation-tab|title="三条问候"|id: 'template'/)
   assert.match(selectorSource, /已选 \{selected\.length\} \/ \{max\}/)
   assert.match(selectorSource, /首选模型调用失败时/)
+  assert.match(selectorSource, /buildAdminModelOptions/)
   assert.match(adminRouteSource, /DAILY_GREETING_MODEL_SELECTIONS_KEY/)
   assert.match(adminRouteSource, /INVALID_MODEL_SELECTIONS/)
   assert.doesNotMatch(adminRouteSource, /FIXED_TEMPLATE_SLOTS|upsertMorningGreetingTemplate/)

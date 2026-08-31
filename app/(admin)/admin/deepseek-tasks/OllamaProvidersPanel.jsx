@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, EmptyState, Section, StatusPill } from '../../components/ui'
+import ModelSelector, { buildAdminModelOptions } from '../../components/ModelSelector'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
@@ -15,11 +16,6 @@ const OLLAMA_USES = [
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—'
-}
-
-function formatModelOption(model) {
-  const size = model.size > 0 ? ` · ${(model.size / (1024 ** 3)).toFixed(1)} GiB` : ''
-  return `${model.displayName || model.name} — ${model.name}${size}`
 }
 
 async function safeJson(response) {
@@ -246,9 +242,17 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
   const directTestProvider = providers.find((item) => item.id === testProviderId)
   const directTestModelState = modelStates[testProviderId] || {}
   const installedTestModels = directTestModelState.models || []
-  const directTestModels = directTestProvider && !installedTestModels.some((item) => item.name === directTestProvider.defaultModel)
-    ? [{ name: directTestProvider.defaultModel, displayName: directTestProvider.defaultModel, size: 0 }, ...installedTestModels]
-    : installedTestModels
+  const directModelOptions = buildAdminModelOptions({
+    includeDeepSeek: false,
+    providers: providers.map((provider) => ({ ...provider, models: modelStates[provider.id]?.models || [] })),
+  })
+  const directSelectedOption = directModelOptions.find((option) => option.providerId === testProviderId && option.model === testModel)
+  const editingProvider = providers.find((provider) => provider.id === editingId)
+  const editingModelOptions = editingProvider ? buildAdminModelOptions({
+    includeDeepSeek: false,
+    providers: [{ ...editingProvider, models: modelStates[editingProvider.id]?.models || [] }],
+  }) : []
+  const editingSelectedOption = editingModelOptions.find((option) => option.model === form.defaultModel)
 
   return (
     <>
@@ -314,25 +318,28 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
                     {(() => {
                       const modelState = modelStates[provider.id] || {}
                       const installedModels = modelState.models || []
-                      const models = installedModels.some((item) => item.name === provider.defaultModel)
-                        ? installedModels
-                        : [{ name: provider.defaultModel, displayName: provider.defaultModel, size: 0 }, ...installedModels]
                       const selectedModel = selectedModels[provider.id] || provider.defaultModel
+                      const modelOptions = buildAdminModelOptions({
+                        includeDeepSeek: false,
+                        providers: [{ ...provider, models: installedModels }],
+                      })
+                      const selectedOption = modelOptions.find((option) => option.model === selectedModel) || modelOptions[0]
                       return (
                         <div className="mt-3 rounded-lg bg-[#f7f7f2] p-2.5 dark:bg-[#111a25]">
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                            <label className="min-w-0 flex-1 text-[12px] text-[#67695d] dark:text-gray-300">
-                              默认模型
-                              <select
-                                aria-label={`${provider.name} 默认模型`}
-                                className={`${CONTROL_CLASS} mt-1 w-full`}
-                                value={selectedModel}
-                                disabled={modelState.loading || !models.length}
-                                onChange={(event) => setSelectedModels((prev) => ({ ...prev, [provider.id]: event.target.value }))}
-                              >
-                                {models.map((model) => <option key={model.name} value={model.name}>{formatModelOption(model)}</option>)}
-                              </select>
-                            </label>
+                            <div className="min-w-0 flex-1">
+                              <ModelSelector
+                                compact
+                                label={`${provider.name} 默认模型`}
+                                options={modelOptions}
+                                value={selectedOption ? [selectedOption.id] : []}
+                                disabled={modelState.loading}
+                                onChange={(ids) => {
+                                  const option = modelOptions.find((item) => item.id === ids[0])
+                                  if (option) setSelectedModels((prev) => ({ ...prev, [provider.id]: option.model }))
+                                }}
+                              />
+                            </div>
                             <div className="flex flex-wrap gap-2">
                               <AdminButton type="button" variant="ghost" disabled={modelState.loading} onClick={() => loadModels(provider, { announce: true })}>
                                 {modelState.loading ? '刷新中…' : '刷新模型列表'}
@@ -379,38 +386,21 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
         ) : (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
             <div className="space-y-3">
-              <label className="block text-[12px] text-[#67695d] dark:text-gray-300">
-                Ollama 服务
-                <select
-                  className={`${CONTROL_CLASS} mt-1 w-full`}
-                  value={testProviderId}
-                  onChange={(event) => {
-                    const providerId = event.target.value
-                    const provider = providers.find((item) => item.id === providerId)
-                    setTestProviderId(providerId)
-                    setTestModel(provider?.defaultModel || '')
-                    setDirectTestError('')
-                    setDirectTestResult(null)
-                  }}
-                >
-                  {providers.map((provider) => <option key={provider.id} value={provider.id}>{provider.name}{provider.status !== 'active' ? '（已停用）' : ''}</option>)}
-                </select>
-              </label>
-              <label className="block text-[12px] text-[#67695d] dark:text-gray-300">
-                测试模型
-                <select
-                  className={`${CONTROL_CLASS} mt-1 w-full`}
-                  value={testModel}
-                  disabled={directTestModelState.loading || !directTestModels.length}
-                  onChange={(event) => {
-                    setTestModel(event.target.value)
-                    setDirectTestError('')
-                    setDirectTestResult(null)
-                  }}
-                >
-                  {directTestModels.map((model) => <option key={model.name} value={model.name}>{formatModelOption(model)}</option>)}
-                </select>
-              </label>
+              <ModelSelector
+                compact
+                label="测试模型"
+                options={directModelOptions}
+                value={directSelectedOption ? [directSelectedOption.id] : []}
+                disabled={directTestModelState.loading}
+                onChange={(ids) => {
+                  const option = directModelOptions.find((item) => item.id === ids[0])
+                  if (!option) return
+                  setTestProviderId(option.providerId)
+                  setTestModel(option.model)
+                  setDirectTestError('')
+                  setDirectTestResult(null)
+                }}
+              />
               <div className="flex items-center justify-between gap-3 text-[12px] text-[#82847a]">
                 <span>{directTestModelState.loading ? '正在读取模型…' : `发现 ${installedTestModels.length} 个已安装模型`}</span>
                 {directTestProvider ? <button type="button" className="font-medium text-[#397a68] hover:underline dark:text-emerald-300" onClick={() => loadModels(directTestProvider, { announce: false })}>刷新</button> : null}
@@ -455,7 +445,18 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
           <div className="grid gap-4 lg:grid-cols-2">
             <label className="text-[12px] text-[#67695d]">名称 *<input className={`${INPUT_CLASS} mt-1`} value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="例如：家中 NAS · Qwen3" /></label>
             <label className="text-[12px] text-[#67695d]">HTTPS Base URL *<input className={`${INPUT_CLASS} mt-1`} value={form.baseUrl} onChange={(event) => setForm((prev) => ({ ...prev, baseUrl: event.target.value }))} placeholder="https://ollama.example.com" /></label>
-            <label className="text-[12px] text-[#67695d]">默认模型 *<input className={`${INPUT_CLASS} mt-1`} value={form.defaultModel} onChange={(event) => setForm((prev) => ({ ...prev, defaultModel: event.target.value }))} placeholder="qwen3:8b" /></label>
+            {editingProvider ? (
+              <ModelSelector
+                compact
+                label="默认模型"
+                options={editingModelOptions}
+                value={editingSelectedOption ? [editingSelectedOption.id] : []}
+                onChange={(ids) => {
+                  const option = editingModelOptions.find((item) => item.id === ids[0])
+                  if (option) setForm((prev) => ({ ...prev, defaultModel: option.model }))
+                }}
+              />
+            ) : <label className="text-[12px] text-[#67695d]">初始模型 *<input className={`${INPUT_CLASS} mt-1`} value={form.defaultModel} onChange={(event) => setForm((prev) => ({ ...prev, defaultModel: event.target.value }))} placeholder="首次连接前填写，例如 qwen3:8b" /></label>}
             <label className="text-[12px] text-[#67695d]">鉴权方式<select className={`${CONTROL_CLASS} mt-1 w-full`} value={form.authType} onChange={(event) => setForm((prev) => ({ ...prev, authType: event.target.value, token: '', clientId: '', clientSecret: '' }))}><option value="none">无鉴权</option><option value="bearer">Bearer Token</option><option value="cloudflare_access">Cloudflare Access Service Token</option></select></label>
             {form.authType === 'bearer' ? <label className="text-[12px] text-[#67695d]">Bearer 访问令牌{editingId ? '（留空保持不变）' : ' *'}<input type="password" autoComplete="off" className={`${INPUT_CLASS} mt-1`} value={form.token} onChange={(event) => setForm((prev) => ({ ...prev, token: event.target.value }))} /></label> : null}
             {form.authType === 'cloudflare_access' ? <>

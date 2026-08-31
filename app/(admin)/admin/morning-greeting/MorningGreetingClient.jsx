@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import XImagePool from './XImagePool'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
-import ModelSelector from '../../components/ModelSelector'
+import ModelSelector, { buildAdminModelOptions } from '../../components/ModelSelector'
 
 const formatUsd = (microUsd, minimumFractionDigits = 3) => `$${(Math.max(0, Number(microUsd) || 0) / 1_000_000).toLocaleString('en-US', { minimumFractionDigits, maximumFractionDigits: 3 })}`
 
@@ -373,18 +373,12 @@ export default function MorningGreetingClient() {
   const appliedModelIds = data?.selectedModelIds || ['deepseek']
   const isGenerationDirty = JSON.stringify(selectedModelIds) !== JSON.stringify(appliedModelIds)
     || llmIntent !== (data?.llmIntent || '')
-  const modelOptions = [
-    { id: 'deepseek', label: 'DeepSeek', hint: 'Flash · 线上 API' },
-    ...(data?.ollamaProviders || []).map((provider) => ({
-      id: `ollama:${provider.id}`,
-      label: provider.model || 'Ollama',
-      hint: `${provider.name} · Ollama`,
-    })),
-  ]
+  const modelOptions = buildAdminModelOptions({ providers: data?.ollamaProviders || [] })
   const appliedModelLabel = modelOptions
     .filter((option) => appliedModelIds.includes(option.id))
     .map((option) => option.label)
     .join(' + ') || 'DeepSeek'
+  const modelListErrors = (data?.ollamaProviders || []).filter((provider) => provider.modelListError)
 
   return (
     <AdminPage
@@ -417,6 +411,7 @@ export default function MorningGreetingClient() {
               {isGenerationDirty ? <span className="text-[11px] text-amber-700 dark:text-amber-300">选择尚未生效，保存后用于下一次自动发布</span> : null}
             </div>
             <ModelSelector options={modelOptions} value={selectedModelIds} onChange={setSelectedModelIds} max={2} disabled={saving || loading} />
+            {modelListErrors.length ? <p role="alert" className="mb-0 mt-2 text-[11px] leading-5 text-amber-700 dark:text-amber-300">{modelListErrors.map((provider) => provider.name).join('、')} 的实时模型列表读取失败，当前只显示已保存的默认模型；恢复连接后刷新即可。</p> : null}
             <div className="mt-4 border-t border-[#e2e4da] pt-4 dark:border-[#243041]">
               <Field className="mb-0" label="意图（提示语）"><textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={4} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={inputClass} /></Field>
               <div className="mt-2 flex flex-wrap items-center gap-3">

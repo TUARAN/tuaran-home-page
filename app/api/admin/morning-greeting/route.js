@@ -16,7 +16,9 @@ import {
   normalizeGreetingLlmIntent,
   normalizeGreetingModelSelections,
   parseGreetingModelSelection,
+  greetingModelSelectionId,
 } from '../../../../lib/dailyGreetingLlm'
+import { listOllamaModels } from '../../../../lib/ollama'
 import { cultureStoryLastRunKey } from '../../../../lib/dailyCultureStory'
 import { xCommunityLastRunKey } from '../../../../lib/xCommunityPosts'
 import { xUsAudienceLastRunKey } from '../../../../lib/xUsAudiencePosts'
@@ -173,14 +175,34 @@ export async function GET(req) {
         cryptoRuns[key] = null
       }
     }
-    const ollamaProviders = (ollamaProviderRows.results || []).map((row) => ({ id: row.id, name: row.name, model: row.default_model }))
+    const ollamaProviders = await Promise.all((ollamaProviderRows.results || []).map(async (row) => {
+      try {
+        const result = await listOllamaModels(row.id)
+        return { id: row.id, name: row.name, defaultModel: row.default_model, models: result.models, modelListError: '' }
+      } catch (error) {
+        return { id: row.id, name: row.name, defaultModel: row.default_model, models: [], modelListError: String(error?.message || error) }
+      }
+    }))
     const ollamaProviderId = ollamaProviders.some((provider) => provider.id === ollamaProviderRaw)
       ? String(ollamaProviderRaw)
       : String(ollamaProviders[0]?.id || '')
-    const availableModelIds = new Set(['deepseek', ...ollamaProviders.map((provider) => `ollama:${provider.id}`)])
+    const availableModelIds = new Set([
+      'deepseek',
+      ...ollamaProviders.flatMap((provider) => {
+        const models = provider.models.some((model) => model.name === provider.defaultModel)
+          ? provider.models
+          : [{ name: provider.defaultModel }, ...provider.models].filter((model) => model.name)
+        return models.map((model) => greetingModelSelectionId({ provider: 'ollama', providerId: provider.id, model: model.name }))
+      }),
+    ])
     const selectedModelIds = normalizeGreetingModelSelections(modelSelectionsRaw, {
       fallbackMode: modeRaw,
       fallbackProviderId: ollamaProviderId,
+    }).map((id) => {
+      const target = parseGreetingModelSelection(id)
+      if (target?.provider !== 'ollama' || target.model) return id
+      const provider = ollamaProviders.find((item) => item.id === target.providerId)
+      return greetingModelSelectionId({ provider: 'ollama', providerId: target.providerId, model: provider?.defaultModel })
     }).filter((id) => availableModelIds.has(id))
     let xApiCost
     try {
@@ -247,17 +269,22 @@ export async function PATCH(req) {
     }
     if (!intent) return Response.json({ error: 'LLM_INTENT_REQUIRED' }, { status: 400 })
     if (intent.length > 4000) return Response.json({ error: 'LLM_INTENT_TOO_LONG' }, { status: 400 })
-    const ollamaProviderIds = modelIds.filter((id) => id.startsWith('ollama:')).map((id) => id.slice(7))
+    const ollamaTargets = modelIds.map(parseGreetingModelSelection).filter((target) => target?.provider === 'ollama')
+    const ollamaProviderIds = [...new Set(ollamaTargets.map((target) => target.providerId))]
+    if (ollamaTargets.some((target) => !target.model)) return Response.json({ error: 'OLLAMA_MODEL_REQUIRED' }, { status: 400 })
     if (ollamaProviderIds.length) {
       const placeholders = ollamaProviderIds.map(() => '?').join(', ')
       const provider = await db.prepare(
         `SELECT COUNT(*) AS count FROM llm_providers WHERE id IN (${placeholders}) AND provider_type = 'ollama' AND status = 'active'`,
       ).bind(...ollamaProviderIds).first()
       if (Number(provider?.count || 0) !== ollamaProviderIds.length) return Response.json({ error: 'OLLAMA_PROVIDER_NOT_FOUND' }, { status: 400 })
+      const discovered = await Promise.all(ollamaProviderIds.map((providerId) => listOllamaModels(providerId)))
+      const available = new Set(discovered.flatMap((result) => result.models.map((model) => greetingModelSelectionId({ provider: 'ollama', providerId: result.providerId, model: model.name }))))
+      if (modelIds.some((id) => id.startsWith('ollama:') && !available.has(id))) return Response.json({ error: 'OLLAMA_MODEL_NOT_FOUND' }, { status: 400 })
     }
     const primary = modelIds[0]
     const mode = primary === 'deepseek' ? 'deepseek' : 'ollama'
-    const ollamaProviderId = primary.startsWith('ollama:') ? primary.slice(7) : ollamaProviderIds[0] || ''
+    const ollamaProviderId = parseGreetingModelSelection(primary)?.providerId || ollamaProviderIds[0] || ''
     const writes = [
       writeSetting(db, DAILY_GREETING_MODEL_SELECTIONS_KEY, JSON.stringify(modelIds), guard.user?.name || 'admin'),
       writeSetting(db, DAILY_GREETING_MODE_KEY, mode, guard.user?.name || 'admin'),

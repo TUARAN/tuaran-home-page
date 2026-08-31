@@ -1,5 +1,7 @@
 'use client'
 
+export { buildModelSelectionOptions as buildAdminModelOptions } from '../../../lib/modelSelection'
+
 /**
  * 后台任务共用的模型多选器。业务页面只负责提供可用模型和持久化结果，
  * 选择上限、选中态和无障碍语义统一留在这里。
@@ -11,6 +13,7 @@ export default function ModelSelector({
   max = 2,
   disabled = false,
   label = '选择生成模型',
+  compact = false,
 }) {
   const selected = Array.isArray(value) ? value : []
 
@@ -21,6 +24,23 @@ export default function ModelSelector({
       return
     }
     if (selected.length < max) onChange([...selected, id])
+  }
+
+  if (compact) {
+    return (
+      <label className="block text-[12px] text-[#67695d] dark:text-gray-300">
+        {label}
+        <select
+          className="mt-1 h-9 w-full rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200"
+          value={selected[0] || ''}
+          disabled={disabled || !options.length}
+          onChange={(event) => onChange(event.target.value ? [event.target.value] : [])}
+        >
+          {!options.length ? <option value="">暂无可用模型</option> : null}
+          {options.map((option) => <option key={option.id} value={option.id}>{option.label} — {option.hint}</option>)}
+        </select>
+      </label>
+    )
   }
 
   return (

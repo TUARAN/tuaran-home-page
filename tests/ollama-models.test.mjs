@@ -42,7 +42,7 @@ test('服务卡片通过现有 PATCH 切换默认模型，并保留刷新失败�
   assert.match(panel, /刷新模型列表/)
 })
 
-test('业务调用与台账继续使用服务端解析后的默认模型', async () => {
+test('业务调用既支持默认模型，也支持任务显式选择已安装模型', async () => {
   const [ollama, tasks, morningGreeting, testRoute] = await Promise.all([
     read('../lib/ollama.js'),
     read('../lib/deepseekTasks.js'),
@@ -53,7 +53,8 @@ test('业务调用与台账继续使用服务端解析后的默认模型', async
   assert.match(ollama, /model \|\| row\.default_model/)
   assert.match(ollama, /model: resolvedModel/)
   assert.match(tasks, /text\(model, 160\)/)
-  assert.match(morningGreeting, /model: row\.default_model/)
+  assert.match(morningGreeting, /listOllamaModels\(row\.id\)/)
+  assert.match(morningGreeting, /greetingModelSelectionId/)
   assert.match(testRoute, /model: result\.model/)
 })
 
@@ -65,6 +66,8 @@ test('Ollama 直接测试区可选择已发现模型、输入提示词并展示�
 
   assert.match(panel, /Ollama 直接调用测试/)
   assert.match(panel, /直接选择已安装模型并发送提示词/)
+  assert.match(panel, /ModelSelector/)
+  assert.match(panel, /buildAdminModelOptions/)
   assert.match(panel, /\/api\/admin\/llm-providers\/chat/)
   assert.match(panel, /body: JSON\.stringify\(\{ id: testProviderId, model: testModel, prompt: testPrompt \}\)/)
   assert.match(panel, /directTestResult\.usage\?\.total_tokens/)

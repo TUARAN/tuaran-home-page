@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { IconCalendarStats } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 
 const MS_PER_DAY = 86_400_000
@@ -50,7 +51,7 @@ export default function DaysSince({
   if (compact) {
     return (
       <div className="group block w-full rounded-md px-1.5 py-1 transition-colors hover:bg-[#e1e3d7] dark:hover:bg-[#1a222c]">
-        <div className="days-since-row is-compact flex items-baseline justify-center whitespace-nowrap font-mono text-[#797b70] dark:text-[#8e9ab0]">
+        <div className="days-since-row is-compact flex items-center justify-center whitespace-nowrap font-mono text-[#797b70] dark:text-[#8e9ab0]">
           <a
             href={href}
             target="_blank"
@@ -67,12 +68,13 @@ export default function DaysSince({
               ↗
             </span>
           </a>
-          <span aria-hidden="true" className="text-[#aaac9f] dark:text-[#5a6a7e]">·</span>
           <Link
             href="/articles/creation-calendar"
-            className="shrink-0 text-[#6f725f] !no-underline transition-colors hover:text-[#5a4725] hover:!no-underline dark:text-[#a5aa92] dark:hover:text-[#c6c9b4]"
+            aria-label="查看创作日历"
+            title="查看创作日历"
+            className="ml-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[#8a6b2e]/35 bg-[#8a6b2e] text-[#fffaf0] shadow-sm !no-underline transition hover:-translate-y-0.5 hover:bg-[#6f5525] hover:shadow-md hover:!no-underline dark:border-[#c6c9b4]/30 dark:bg-[#a7ad89] dark:text-[#18202a] dark:hover:bg-[#c6c9b4]"
           >
-            创作日历 →
+            <IconCalendarStats size={15} stroke={1.9} aria-hidden="true" />
           </Link>
         </div>
         <div className="mt-1.5 h-[3px] w-full overflow-hidden rounded-full bg-[#d4d7c7] dark:bg-[#252d36]">

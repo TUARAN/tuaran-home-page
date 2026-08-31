@@ -6,11 +6,33 @@ import {
   buildOllamaChatRequest,
   normalizeOllamaModels,
   normalizeOllamaBaseUrl,
+  ollamaUpstreamError,
   ollamaChatUrl,
   ollamaNativeChatUrl,
   ollamaTagsUrl,
   parseOllamaChatResponse,
 } from '../lib/ollamaCore.js'
+
+test('将 Cloudflare Tunnel 源站错误转换为可操作的 Ollama 错误', () => {
+  assert.deepEqual(ollamaUpstreamError(502), {
+    code: 'OLLAMA_ORIGIN_UNAVAILABLE',
+    message: 'Cloudflare Tunnel 已连接，但 NAS Ollama 源站不可达。请检查 NAS 上的 Ollama 服务以及 Tunnel 到 11434 端口的转发。',
+    status: 503,
+    upstreamStatus: 502,
+  })
+  assert.deepEqual(ollamaUpstreamError(524), {
+    code: 'OLLAMA_ORIGIN_TIMEOUT',
+    message: 'NAS Ollama 已收到请求，但模型加载或生成超过 Cloudflare 等待时间。请先在 NAS 上预热模型后重试。',
+    status: 504,
+    upstreamStatus: 524,
+  })
+  assert.deepEqual(ollamaUpstreamError(401, { error: 'bad token' }), {
+    code: 'OLLAMA_API_FAILED',
+    message: 'bad token',
+    status: 401,
+    upstreamStatus: 401,
+  })
+})
 
 test('Ollama Base URL 规范化并补 OpenAI 兼容路径', () => {
   assert.equal(normalizeOllamaBaseUrl('https://ollama.example.com/v1/'), 'https://ollama.example.com')

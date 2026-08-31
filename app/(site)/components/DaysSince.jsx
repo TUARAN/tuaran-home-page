@@ -30,7 +30,7 @@ function computeProgress(sinceISO, years) {
 
 export default function DaysSince({
   sinceISO = '2019-03-11',
-  years = 20,
+  years = 30,
   href = 'https://juejin.cn/post/6844903794283642887',
   label = '持续内容创作',
   compact = false,

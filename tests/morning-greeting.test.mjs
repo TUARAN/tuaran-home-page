@@ -32,6 +32,9 @@ import {
   normalizeGeneratedGreeting,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
+  normalizeGreetingModelSelections,
+  orderGreetingModelSelections,
+  parseGreetingModelSelection,
   pickDailyGreetingStyle,
 } from '../lib/dailyGreetingLlm.js'
 import {
@@ -159,14 +162,21 @@ test('X API 发帖成本按正文是否包含 URL 自动分类', () => {
   assert.equal(projectedXPostCost({ postsPerDay: 6, days: 30 }), 2_700_000)
 })
 
-test('DeepSeek is the default while Ollama, templates, and the legacy LLM value remain supported', () => {
+test('DeepSeek is the default, legacy template mode exits to DeepSeek, and Ollama remains supported', () => {
   assert.equal(normalizeGreetingGenerationMode('deepseek'), 'deepseek')
   assert.equal(normalizeGreetingGenerationMode('ollama'), 'ollama')
   assert.equal(normalizeGreetingGenerationMode('llm'), 'deepseek')
-  assert.equal(normalizeGreetingGenerationMode('template'), 'template')
+  assert.equal(normalizeGreetingGenerationMode('template'), 'deepseek')
   assert.equal(normalizeGreetingGenerationMode('unknown'), 'deepseek')
   assert.equal(normalizeGreetingLlmIntent('  写得轻松一点  '), '写得轻松一点')
   assert.equal(normalizeGreetingLlmIntent(''), DEFAULT_DAILY_GREETING_LLM_INTENT)
+})
+
+test('model selections accept up to two providers and migrate legacy settings', () => {
+  assert.deepEqual(normalizeGreetingModelSelections(['deepseek', 'ollama:nas-1', 'ollama:nas-2']), ['deepseek', 'ollama:nas-1'])
+  assert.deepEqual(normalizeGreetingModelSelections(null, { fallbackMode: 'ollama', fallbackProviderId: 'nas-1' }), ['ollama:nas-1'])
+  assert.deepEqual(parseGreetingModelSelection('ollama:nas-1'), { id: 'ollama:nas-1', provider: 'ollama', providerId: 'nas-1' })
+  assert.deepEqual(orderGreetingModelSelections(['deepseek', 'ollama:nas-1'], 'slot-a').sort(), ['deepseek', 'ollama:nas-1'])
 })
 
 test('LLM prompt includes current period, exact calendar date, weekday, and editable intent', () => {
@@ -218,25 +228,31 @@ test('overlong generated copy gets a focused rewrite prompt and a deterministic 
   assert.match(fitted.text, /[。！？…]$/)
 })
 
-test('自动任务支持三种生成模式，模板管理收敛为三条固定编辑位', async () => {
-  const [clientSource, adminRouteSource, cronRouteSource] = await Promise.all([
+test('自动任务使用共用模型组件选择最多两个模型，并退出固定文案模板模式', async () => {
+  const [clientSource, selectorSource, adminRouteSource, cronRouteSource] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/components/ModelSelector.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/morning-greeting/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/distribution/x/greeting/route.js', import.meta.url), 'utf8'),
   ])
 
   assert.match(clientSource, /fetch\('\/api\/admin\/morning-greeting'/)
-  assert.match(clientSource, /id: 'deepseek'/)
-  assert.match(clientSource, /id: 'ollama'/)
-  assert.match(clientSource, /id: 'template'/)
-  assert.match(clientSource, /title="三条问候"/)
-  assert.match(clientSource, /切换尚未生效/)
-  assert.doesNotMatch(clientSource, /新增模板|删除这条文案|AdminPagination/)
+  assert.match(clientSource, /ModelSelector/)
+  assert.match(clientSource, /max=\{2\}/)
+  assert.match(clientSource, /modelIds: selectedModelIds/)
+  assert.doesNotMatch(clientSource, /generation-tab|title="三条问候"|id: 'template'/)
+  assert.match(selectorSource, /已选 \{selected\.length\} \/ \{max\}/)
+  assert.match(selectorSource, /首选模型调用失败时/)
+  assert.match(adminRouteSource, /DAILY_GREETING_MODEL_SELECTIONS_KEY/)
+  assert.match(adminRouteSource, /INVALID_MODEL_SELECTIONS/)
+  assert.doesNotMatch(adminRouteSource, /FIXED_TEMPLATE_SLOTS|upsertMorningGreetingTemplate/)
   assert.match(adminRouteSource, /DAILY_GREETING_OLLAMA_PROVIDER_KEY/)
-  assert.match(adminRouteSource, /FIXED_TEMPLATE_SLOTS/)
   assert.doesNotMatch(adminRouteSource, /X_ARTICLE_TASK_SETTING_KEY|xArticleRun/)
   assert.match(cronRouteSource, /callDeepSeek\(/)
   assert.match(cronRouteSource, /callOllama\(/)
+  assert.match(cronRouteSource, /orderGreetingModelSelections/)
+  assert.match(cronRouteSource, /for \(const selection of orderedModelSelections\)/)
+  assert.doesNotMatch(cronRouteSource, /listEnabledMorningGreetingTexts|pickDailyGreetingTemplate/)
   assert.match(cronRouteSource, /buildGreetingLengthRepairMessages/)
   assert.match(cronRouteSource, /fitGeneratedGreetingToXLimit/)
   assert.match(cronRouteSource, /pickDailyGreetingStyle/)

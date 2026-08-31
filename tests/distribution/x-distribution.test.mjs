@@ -289,6 +289,35 @@ test('all five task types select fixed pool images, publish them, then skip repe
   assert.equal(objects.size, 5)
 })
 
+test('two selected copy models fail over from the first model to the second', async (t) => {
+  let deepseekCalls = 0
+  let ollamaCalls = 0
+  const { invoke, sqlite } = await cronFixture(t, {
+    orderGreetingModelSelections: (items) => items,
+    callDeepSeek: async () => {
+      deepseekCalls++
+      throw Object.assign(new Error('temporary upstream failure'), { code: 'DEEPSEEK_UNAVAILABLE' })
+    },
+    callOllama: async ({ providerId }) => {
+      ollamaCalls++
+      assert.equal(providerId, 'nas-1')
+      return { content: '今天先做一件具体的小事。你准备从哪一步开始？', model: 'qwen-test', providerId }
+    },
+  })
+  sqlite.prepare('INSERT INTO site_settings (key, value) VALUES (?, ?)').run(
+    greetingLlm.DAILY_GREETING_MODEL_SELECTIONS_KEY,
+    JSON.stringify(['deepseek', 'ollama:nas-1']),
+  )
+
+  const response = await invoke()
+  assert.equal(response.status, 201)
+  const payload = await response.json()
+  assert.equal(payload.mode, 'ollama')
+  assert.equal(payload.modelSelection, 'ollama:nas-1')
+  assert.equal(deepseekCalls, 1)
+  assert.equal(ollamaCalls, 1)
+})
+
 test('all five task types can publish text without AI, R2 or media upload', async (t) => {
   let publishes = 0
   const { invoke, env, calls, sqlite } = await cronFixture(t, {

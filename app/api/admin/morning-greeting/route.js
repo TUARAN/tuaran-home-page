@@ -8,20 +8,19 @@ import {
 } from '../../../../lib/morningGreeting'
 import {
   DAILY_GREETING_LLM_PROMPT_KEY,
+  DAILY_GREETING_MODEL_SELECTIONS_KEY,
   DAILY_GREETING_MODE_KEY,
   DAILY_GREETING_OLLAMA_PROVIDER_KEY,
   DEFAULT_DAILY_GREETING_LLM_INTENT,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
+  normalizeGreetingModelSelections,
+  parseGreetingModelSelection,
 } from '../../../../lib/dailyGreetingLlm'
 import { cultureStoryLastRunKey } from '../../../../lib/dailyCultureStory'
 import { xCommunityLastRunKey } from '../../../../lib/xCommunityPosts'
 import { xUsAudienceLastRunKey } from '../../../../lib/xUsAudiencePosts'
 import { xCryptoLastRunKey } from '../../../../lib/xCryptoPosts'
-import {
-  listMorningGreetingTemplates,
-  upsertMorningGreetingTemplate,
-} from '../../../../lib/morningGreetingTemplates'
 import {
   X_API_POST_CREATE_COST_MICRO_USD,
   X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
@@ -69,11 +68,11 @@ export async function GET(req) {
 
   try {
     const [
-      templatePage,
       state,
       modeRaw,
       intentRaw,
       ollamaProviderRaw,
+      modelSelectionsRaw,
       ollamaProviderRows,
       morningRaw,
       noonRaw,
@@ -91,11 +90,11 @@ export async function GET(req) {
       cryptoMarketRaw,
       cryptoPeopleRaw,
     ] = await Promise.all([
-      listMorningGreetingTemplates(db),
       readSetting(db, MORNING_GREETING_SETTING_KEY),
       readSetting(db, DAILY_GREETING_MODE_KEY),
       readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
       readSetting(db, DAILY_GREETING_OLLAMA_PROVIDER_KEY),
+      readSetting(db, DAILY_GREETING_MODEL_SELECTIONS_KEY),
       db.prepare(
         `SELECT id, name, default_model
          FROM llm_providers
@@ -178,6 +177,11 @@ export async function GET(req) {
     const ollamaProviderId = ollamaProviders.some((provider) => provider.id === ollamaProviderRaw)
       ? String(ollamaProviderRaw)
       : String(ollamaProviders[0]?.id || '')
+    const availableModelIds = new Set(['deepseek', ...ollamaProviders.map((provider) => `ollama:${provider.id}`)])
+    const selectedModelIds = normalizeGreetingModelSelections(modelSelectionsRaw, {
+      fallbackMode: modeRaw,
+      fallbackProviderId: ollamaProviderId,
+    }).filter((id) => availableModelIds.has(id))
     let xApiCost
     try {
       xApiCost = await getXApiCostSummary(db, { postsPerDay: 10 })
@@ -198,10 +202,9 @@ export async function GET(req) {
     return Response.json({
       status: 'ok',
       generatedAt: Date.now(),
-      templates: templatePage.items,
-      total: templatePage.total,
       paused: isAutomationPaused(state),
       generationMode: normalizeGreetingGenerationMode(modeRaw),
+      selectedModelIds: selectedModelIds.length ? selectedModelIds : ['deepseek'],
       llmIntent: normalizeGreetingLlmIntent(intentRaw, DEFAULT_DAILY_GREETING_LLM_INTENT),
       ollamaProviders,
       ollamaProviderId,
@@ -220,44 +223,10 @@ export async function GET(req) {
     })
   } catch (error) {
     return Response.json(
-      { status: 'error', message: '每日问候模板读取失败。', detail: String(error?.message || error) },
+      { status: 'error', message: 'X 发布配置读取失败。', detail: String(error?.message || error) },
       { status: 500 },
     )
   }
-}
-
-export async function POST(req) {
-  const guard = await getOwnerOrReject(req)
-  if (!guard.ok) return guard.response
-
-  const db = dbOrNull()
-  if (!db) return Response.json({ status: 'unavailable', message: 'D1 不可用。' }, { status: 503 })
-
-  const body = await req.json().catch(() => null)
-  if (!body) return Response.json({ error: 'INVALID_JSON' }, { status: 400 })
-  if (!Number(body.id)) return Response.json({ error: 'FIXED_TEMPLATE_SLOTS' }, { status: 400 })
-
-  try {
-    const result = await upsertMorningGreetingTemplate(db, {
-      id: Number(body.id) || 0,
-      text: String(body.text || ''),
-    })
-    if (!result.ok) {
-      return Response.json({ error: result.error }, { status: result.error === 'NOT_FOUND' ? 404 : 400 })
-    }
-    return Response.json({ ok: true, id: result.id }, { status: 201 })
-  } catch (error) {
-    return Response.json(
-      { error: 'TEMPLATE_UPSERT_FAILED', detail: String(error?.message || error) },
-      { status: 500 },
-    )
-  }
-}
-
-export async function DELETE(req) {
-  const guard = await getOwnerOrReject(req)
-  if (!guard.ok) return guard.response
-  return Response.json({ error: 'FIXED_TEMPLATE_SLOTS' }, { status: 405 })
 }
 
 export async function PATCH(req) {
@@ -270,25 +239,33 @@ export async function PATCH(req) {
   const body = await req.json().catch(() => null)
   const action = String(body?.action || '')
   if (action === 'save-generation') {
-    const rawMode = String(body?.mode || '').trim().toLowerCase()
-    const mode = normalizeGreetingGenerationMode(rawMode, '')
     const intent = String(body?.intent || '').replace(/\r\n?/g, '\n').trim()
-    const ollamaProviderId = String(body?.ollamaProviderId || '').trim()
-    if (!mode) return Response.json({ error: 'INVALID_GENERATION_MODE' }, { status: 400 })
-    if (mode !== 'template' && !intent) return Response.json({ error: 'LLM_INTENT_REQUIRED' }, { status: 400 })
-    if (mode === 'ollama' && !ollamaProviderId) return Response.json({ error: 'OLLAMA_PROVIDER_REQUIRED' }, { status: 400 })
-    if (intent.length > 4000) return Response.json({ error: 'LLM_INTENT_TOO_LONG' }, { status: 400 })
-    const writes = [writeSetting(db, DAILY_GREETING_MODE_KEY, mode, guard.user?.name || 'admin')]
-    if (intent) writes.push(writeSetting(db, DAILY_GREETING_LLM_PROMPT_KEY, intent, guard.user?.name || 'admin'))
-    if (mode === 'ollama') {
-      const provider = await db.prepare(
-        `SELECT id FROM llm_providers WHERE id = ? AND provider_type = 'ollama' AND status = 'active'`,
-      ).bind(ollamaProviderId).first()
-      if (!provider) return Response.json({ error: 'OLLAMA_PROVIDER_NOT_FOUND' }, { status: 400 })
-      writes.push(writeSetting(db, DAILY_GREETING_OLLAMA_PROVIDER_KEY, ollamaProviderId, guard.user?.name || 'admin'))
+    const requestedModelIds = Array.isArray(body?.modelIds) ? body.modelIds.map((id) => String(id || '').trim()) : []
+    const modelIds = normalizeGreetingModelSelections(requestedModelIds)
+    if (!requestedModelIds.length || requestedModelIds.length > 2 || requestedModelIds.some((id) => !parseGreetingModelSelection(id)) || modelIds.length !== requestedModelIds.length) {
+      return Response.json({ error: 'INVALID_MODEL_SELECTIONS' }, { status: 400 })
     }
+    if (!intent) return Response.json({ error: 'LLM_INTENT_REQUIRED' }, { status: 400 })
+    if (intent.length > 4000) return Response.json({ error: 'LLM_INTENT_TOO_LONG' }, { status: 400 })
+    const ollamaProviderIds = modelIds.filter((id) => id.startsWith('ollama:')).map((id) => id.slice(7))
+    if (ollamaProviderIds.length) {
+      const placeholders = ollamaProviderIds.map(() => '?').join(', ')
+      const provider = await db.prepare(
+        `SELECT COUNT(*) AS count FROM llm_providers WHERE id IN (${placeholders}) AND provider_type = 'ollama' AND status = 'active'`,
+      ).bind(...ollamaProviderIds).first()
+      if (Number(provider?.count || 0) !== ollamaProviderIds.length) return Response.json({ error: 'OLLAMA_PROVIDER_NOT_FOUND' }, { status: 400 })
+    }
+    const primary = modelIds[0]
+    const mode = primary === 'deepseek' ? 'deepseek' : 'ollama'
+    const ollamaProviderId = primary.startsWith('ollama:') ? primary.slice(7) : ollamaProviderIds[0] || ''
+    const writes = [
+      writeSetting(db, DAILY_GREETING_MODEL_SELECTIONS_KEY, JSON.stringify(modelIds), guard.user?.name || 'admin'),
+      writeSetting(db, DAILY_GREETING_MODE_KEY, mode, guard.user?.name || 'admin'),
+      writeSetting(db, DAILY_GREETING_LLM_PROMPT_KEY, intent, guard.user?.name || 'admin'),
+    ]
+    if (ollamaProviderId) writes.push(writeSetting(db, DAILY_GREETING_OLLAMA_PROVIDER_KEY, ollamaProviderId, guard.user?.name || 'admin'))
     await Promise.all(writes)
-    return Response.json({ ok: true, mode, intent, ollamaProviderId })
+    return Response.json({ ok: true, modelIds, intent })
   }
   if (action !== 'pause' && action !== 'resume') {
     return Response.json({ error: 'UNSUPPORTED_ACTION' }, { status: 400 })

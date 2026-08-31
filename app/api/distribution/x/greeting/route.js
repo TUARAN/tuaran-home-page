@@ -2,16 +2,13 @@ import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import {
   MORNING_GREETING_SETTING_KEY,
-  buildDailyGreeting,
   greetingLastRunKey,
   greetingPeriodForDate,
   greetingWithinLimit,
   isAutomationPaused,
   normalizeGreetingPeriod,
-  pickDailyGreetingTemplate,
   shanghaiDateKey,
 } from '../../../../../lib/morningGreeting'
-import { listEnabledMorningGreetingTexts } from '../../../../../lib/morningGreetingTemplates'
 import {
   buildCultureStoryMessages,
   cultureStoryCategory,
@@ -39,6 +36,7 @@ import {
 } from '../../../../../lib/xCryptoPosts'
 import {
   DAILY_GREETING_LLM_PROMPT_KEY,
+  DAILY_GREETING_MODEL_SELECTIONS_KEY,
   DAILY_GREETING_MODE_KEY,
   DAILY_GREETING_OLLAMA_PROVIDER_KEY,
   buildGreetingLlmMessages,
@@ -47,6 +45,9 @@ import {
   normalizeGeneratedGreeting,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
+  normalizeGreetingModelSelections,
+  orderGreetingModelSelections,
+  parseGreetingModelSelection,
   pickDailyGreetingStyle,
 } from '../../../../../lib/dailyGreetingLlm'
 import { callDeepSeek } from '../../../../../lib/deepseek'
@@ -75,6 +76,26 @@ async function writeSetting(db, key, value, updatedBy) {
     )
     .bind(key, value, Date.now(), String(updatedBy || 'automation'))
     .run()
+}
+
+async function callGreetingModel(selection, args, env) {
+  const target = parseGreetingModelSelection(selection)
+  if (!target) throw Object.assign(new Error('模型选择无效'), { code: 'INVALID_MODEL_SELECTION' })
+  if (target.provider === 'ollama') {
+    return callOllama({
+      ...args,
+      providerId: target.providerId,
+      reasoningEffort: 'none',
+      timeoutMs: 120_000,
+    })
+  }
+  return callDeepSeek({
+    ...args,
+    env,
+    timeoutMs: 45_000,
+    taskDefaultModel: 'deepseek-v4-flash',
+    disableThinking: true,
+  })
 }
 
 export async function POST(req) {
@@ -238,22 +259,23 @@ export async function POST(req) {
   async function runWithAsset() {
     let generationMode = 'deepseek'
     let llmIntent = ''
-    let ollamaProviderId = ''
+    let modelSelections = ['deepseek']
     if (db) {
       try {
-        const [modeRaw, intentRaw, providerRaw] = await Promise.all([
+        const [modeRaw, intentRaw, providerRaw, selectionsRaw] = await Promise.all([
           readSetting(db, DAILY_GREETING_MODE_KEY),
           readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
           readSetting(db, DAILY_GREETING_OLLAMA_PROVIDER_KEY),
+          readSetting(db, DAILY_GREETING_MODEL_SELECTIONS_KEY),
         ])
         generationMode = normalizeGreetingGenerationMode(modeRaw)
         llmIntent = normalizeGreetingLlmIntent(intentRaw)
-        ollamaProviderId = String(providerRaw || '').trim()
+        let legacyProviderId = String(providerRaw || '').trim()
         if (generationMode === 'ollama') {
-          const savedProvider = ollamaProviderId
+          const savedProvider = legacyProviderId
             ? await db.prepare(
                 `SELECT id FROM llm_providers WHERE id = ? AND provider_type = 'ollama' AND status = 'active'`,
-              ).bind(ollamaProviderId).first()
+              ).bind(legacyProviderId).first()
             : null
           const provider = savedProvider || await db.prepare(
             `SELECT id FROM llm_providers
@@ -261,16 +283,22 @@ export async function POST(req) {
              ORDER BY CASE WHEN default_model LIKE 'qwen3.5:%' THEN 0 ELSE 1 END, updated_at DESC
              LIMIT 1`,
           ).first()
-          ollamaProviderId = String(provider?.id || '')
+          legacyProviderId = String(provider?.id || '')
         }
+        modelSelections = normalizeGreetingModelSelections(selectionsRaw, {
+          fallbackMode: generationMode,
+          fallbackProviderId: legacyProviderId,
+        })
       } catch {
         // 配置缺失或暂时无法读取时沿用产品默认值：DeepSeek 意图模式。
         generationMode = 'deepseek'
+        modelSelections = ['deepseek']
       }
     }
-    // 固定模板只适用于早午晚安；其余任务始终实时生成。
-    if ((isCultureStory || isCommunityPost || isUsPost || isCryptoPost) && generationMode === 'template') generationMode = 'deepseek'
-    const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && generationMode !== 'template'
+    const orderedModelSelections = orderGreetingModelSelections(modelSelections, `${shanghaiDateKey(requestNow)}:${runSlot}`)
+    let activeModelSelection = orderedModelSelections[0] || 'deepseek'
+    generationMode = parseGreetingModelSelection(activeModelSelection)?.provider || 'deepseek'
+    const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost
       ? pickDailyGreetingStyle()
       : null
 
@@ -278,7 +306,7 @@ export async function POST(req) {
     let generation = null
     if (text) {
       // Resume the saved draft so retries keep the image and copy together.
-    } else if (generationMode === 'deepseek' || generationMode === 'ollama') {
+    } else {
       try {
         const generationArgs = {
           messages: isCultureStory
@@ -324,22 +352,29 @@ export async function POST(req) {
             },
           },
         }
-        generation = generationMode === 'ollama'
-          ? await callOllama({
+        let generationError = null
+        for (const selection of orderedModelSelections) {
+          try {
+            const targetMode = parseGreetingModelSelection(selection)?.provider || 'deepseek'
+            activeModelSelection = selection
+            generationMode = targetMode
+            const candidate = await callGreetingModel(selection, {
               ...generationArgs,
-              providerId: ollamaProviderId,
-              reasoningEffort: 'none',
-              timeoutMs: 120_000,
-            })
-          : await callDeepSeek({
-              ...generationArgs,
-              env,
-              timeoutMs: 45_000,
-              taskDefaultModel: 'deepseek-v4-flash',
-              disableThinking: true,
-            })
-        text = normalizeGeneratedGreeting(generation.content)
-        if (!text) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
+              task: {
+                ...generationArgs.task,
+                metadata: { ...generationArgs.task.metadata, generationMode: targetMode, modelSelection: selection },
+              },
+            }, env)
+            const candidateText = normalizeGeneratedGreeting(candidate.content)
+            if (!candidateText) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
+            generation = candidate
+            text = candidateText
+            break
+          } catch (error) {
+            generationError = error
+          }
+        }
+        if (!generation) throw generationError || Object.assign(new Error('没有可用的生成模型'), { code: 'NO_AVAILABLE_MODEL' })
 
         if (!greetingWithinLimit(text)) {
           try {
@@ -357,20 +392,7 @@ export async function POST(req) {
                 metadata: { ...generationArgs.task.metadata, lengthRepair: true },
               },
             }
-            const repaired = generationMode === 'ollama'
-              ? await callOllama({
-                  ...repairArgs,
-                  providerId: ollamaProviderId,
-                  reasoningEffort: 'none',
-                  timeoutMs: 120_000,
-                })
-              : await callDeepSeek({
-                  ...repairArgs,
-                  env,
-                  timeoutMs: 45_000,
-                  taskDefaultModel: 'deepseek-v4-flash',
-                  disableThinking: true,
-                })
+            const repaired = await callGreetingModel(activeModelSelection, repairArgs, env)
             const repairedText = normalizeGeneratedGreeting(repaired.content)
             if (repairedText) {
               text = repairedText
@@ -392,6 +414,7 @@ export async function POST(req) {
               ok: false,
               period: runSlot,
               mode: generationMode,
+              modelSelection: activeModelSelection,
               style: greetingStyle?.id || '',
               styleLabel: greetingStyle?.label || '',
               stage: 'generation',
@@ -406,17 +429,6 @@ export async function POST(req) {
           { status },
         )
       }
-    } else {
-      // 问候模板以后台 morning_greeting_templates 为准；表不可用或为空时回退代码默认值。
-      let pickedTemplate = null
-      if (db) {
-        try {
-          pickedTemplate = pickDailyGreetingTemplate(await listEnabledMorningGreetingTexts(db, period), { period })
-        } catch {
-          pickedTemplate = null
-        }
-      }
-      text = buildDailyGreeting({ period, template: pickedTemplate })
     }
     if (!greetingWithinLimit(text)) {
       if (db) {
@@ -503,6 +515,7 @@ export async function POST(req) {
         fallbackError: asset.row.fallback_error,
         mediaId,
         mode: generationMode,
+        modelSelection: activeModelSelection,
         style: greetingStyle?.id || '',
         styleLabel: greetingStyle?.label || '',
         postId: result.post.id,
@@ -540,6 +553,7 @@ export async function POST(req) {
       imageSource: asset.row.asset_source,
       fallbackError: asset.row.fallback_error,
       mode: generationMode,
+      modelSelection: activeModelSelection,
       style: greetingStyle?.id || '',
       styleLabel: greetingStyle?.label || '',
       model: generation?.model || '',

@@ -46,7 +46,6 @@ import {
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
   normalizeGreetingModelSelections,
-  orderGreetingModelSelections,
   parseGreetingModelSelection,
   pickDailyGreetingStyle,
 } from '../../../../../lib/dailyGreetingLlm'
@@ -260,7 +259,7 @@ export async function POST(req) {
   async function runWithAsset() {
     let generationMode = 'deepseek'
     let llmIntent = ''
-    let modelSelections = ['deepseek']
+    let activeModelSelection = 'deepseek'
     if (db) {
       try {
         const [modeRaw, intentRaw, providerRaw, selectionsRaw] = await Promise.all([
@@ -286,18 +285,17 @@ export async function POST(req) {
           ).first()
           legacyProviderId = String(provider?.id || '')
         }
-        modelSelections = normalizeGreetingModelSelections(selectionsRaw, {
+        const legacySelections = normalizeGreetingModelSelections(selectionsRaw, {
           fallbackMode: generationMode,
           fallbackProviderId: legacyProviderId,
         })
+        activeModelSelection = legacySelections[0] || 'deepseek'
       } catch {
         // 配置缺失或暂时无法读取时沿用产品默认值：DeepSeek 意图模式。
         generationMode = 'deepseek'
-        modelSelections = ['deepseek']
+        activeModelSelection = 'deepseek'
       }
     }
-    const orderedModelSelections = orderGreetingModelSelections(modelSelections, `${shanghaiDateKey(requestNow)}:${runSlot}`)
-    let activeModelSelection = orderedModelSelections[0] || 'deepseek'
     generationMode = parseGreetingModelSelection(activeModelSelection)?.provider || 'deepseek'
     const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost
       ? pickDailyGreetingStyle()
@@ -353,29 +351,15 @@ export async function POST(req) {
             },
           },
         }
-        let generationError = null
-        for (const selection of orderedModelSelections) {
-          try {
-            const targetMode = parseGreetingModelSelection(selection)?.provider || 'deepseek'
-            activeModelSelection = selection
-            generationMode = targetMode
-            const candidate = await callGreetingModel(selection, {
-              ...generationArgs,
-              task: {
-                ...generationArgs.task,
-                metadata: { ...generationArgs.task.metadata, generationMode: targetMode, modelSelection: selection },
-              },
-            }, env)
-            const candidateText = normalizeGeneratedGreeting(candidate.content)
-            if (!candidateText) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
-            generation = candidate
-            text = candidateText
-            break
-          } catch (error) {
-            generationError = error
-          }
-        }
-        if (!generation) throw generationError || Object.assign(new Error('没有可用的生成模型'), { code: 'NO_AVAILABLE_MODEL' })
+        generation = await callGreetingModel(activeModelSelection, {
+          ...generationArgs,
+          task: {
+            ...generationArgs.task,
+            metadata: { ...generationArgs.task.metadata, modelSelection: activeModelSelection },
+          },
+        }, env)
+        text = normalizeGeneratedGreeting(generation.content)
+        if (!text) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
 
         if (!greetingWithinLimit(text)) {
           try {

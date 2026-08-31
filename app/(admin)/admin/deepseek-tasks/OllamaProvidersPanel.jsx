@@ -329,13 +329,13 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                             <div className="min-w-0 flex-1">
                               <ModelSelector
-                                compact
+                                variant="compact"
                                 label={`${provider.name} 默认模型`}
                                 options={modelOptions}
-                                value={selectedOption ? [selectedOption.id] : []}
+                                value={selectedOption?.id || ''}
                                 disabled={modelState.loading}
-                                onChange={(ids) => {
-                                  const option = modelOptions.find((item) => item.id === ids[0])
+                                onChange={(id) => {
+                                  const option = modelOptions.find((item) => item.id === id)
                                   if (option) setSelectedModels((prev) => ({ ...prev, [provider.id]: option.model }))
                                 }}
                               />
@@ -387,13 +387,13 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
             <div className="space-y-3">
               <ModelSelector
-                compact
+                variant="compact"
                 label="测试模型"
                 options={directModelOptions}
-                value={directSelectedOption ? [directSelectedOption.id] : []}
+                value={directSelectedOption?.id || ''}
                 disabled={directTestModelState.loading}
-                onChange={(ids) => {
-                  const option = directModelOptions.find((item) => item.id === ids[0])
+                onChange={(id) => {
+                  const option = directModelOptions.find((item) => item.id === id)
                   if (!option) return
                   setTestProviderId(option.providerId)
                   setTestModel(option.model)
@@ -447,12 +447,12 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
             <label className="text-[12px] text-[#67695d]">HTTPS Base URL *<input className={`${INPUT_CLASS} mt-1`} value={form.baseUrl} onChange={(event) => setForm((prev) => ({ ...prev, baseUrl: event.target.value }))} placeholder="https://ollama.example.com" /></label>
             {editingProvider ? (
               <ModelSelector
-                compact
+                variant="compact"
                 label="默认模型"
                 options={editingModelOptions}
-                value={editingSelectedOption ? [editingSelectedOption.id] : []}
-                onChange={(ids) => {
-                  const option = editingModelOptions.find((item) => item.id === ids[0])
+                value={editingSelectedOption?.id || ''}
+                onChange={(id) => {
+                  const option = editingModelOptions.find((item) => item.id === id)
                   if (option) setForm((prev) => ({ ...prev, defaultModel: option.model }))
                 }}
               />

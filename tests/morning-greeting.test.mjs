@@ -34,7 +34,6 @@ import {
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
   normalizeGreetingModelSelections,
-  orderGreetingModelSelections,
   parseGreetingModelSelection,
   greetingModelSelectionId,
   pickDailyGreetingStyle,
@@ -174,14 +173,13 @@ test('DeepSeek is the default, legacy template mode exits to DeepSeek, and Ollam
   assert.equal(normalizeGreetingLlmIntent(''), DEFAULT_DAILY_GREETING_LLM_INTENT)
 })
 
-test('model selections accept up to two providers and migrate legacy settings', () => {
-  assert.deepEqual(normalizeGreetingModelSelections(['deepseek', 'ollama:nas-1', 'ollama:nas-2']), ['deepseek', 'ollama:nas-1'])
+test('automation model selection accepts one model and migrates legacy settings', () => {
+  assert.deepEqual(normalizeGreetingModelSelections(['deepseek', 'ollama:nas-1', 'ollama:nas-2']), ['deepseek'])
   assert.deepEqual(normalizeGreetingModelSelections(null, { fallbackMode: 'ollama', fallbackProviderId: 'nas-1' }), ['ollama:nas-1'])
   assert.deepEqual(parseGreetingModelSelection('ollama:nas-1'), { id: 'ollama:nas-1', provider: 'ollama', providerId: 'nas-1', model: '' })
   const exactModel = greetingModelSelectionId({ provider: 'ollama', providerId: 'nas-1', model: 'qwen3.5:9b' })
   assert.equal(exactModel, 'ollama:nas-1:qwen3.5%3A9b')
   assert.equal(parseGreetingModelSelection(exactModel).model, 'qwen3.5:9b')
-  assert.deepEqual(orderGreetingModelSelections(['deepseek', 'ollama:nas-1'], 'slot-a').sort(), ['deepseek', 'ollama:nas-1'])
   const options = buildModelSelectionOptions({ providers: [{
     id: 'nas-1',
     name: '绿联 DXP4800 Plus · Ollama',
@@ -241,31 +239,39 @@ test('overlong generated copy gets a focused rewrite prompt and a deterministic 
   assert.match(fitted.text, /[。！？…]$/)
 })
 
-test('自动任务使用共用模型组件选择最多两个模型，并退出固定文案模板模式', async () => {
-  const [clientSource, selectorSource, adminRouteSource, cronRouteSource] = await Promise.all([
+test('自动化模块使用共用样式的单选模型组件，并退出固定文案模板模式', async () => {
+  const [clientSource, automationSelectorSource, selectorSource, modelRouteSource, adminRouteSource, cronRouteSource, topbarSource] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/admin/morning-greeting/AutomationModelSelector.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/components/ModelSelector.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/admin/morning-greeting/model-selection/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/morning-greeting/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/distribution/x/greeting/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/components/AdminTopbar.jsx', import.meta.url), 'utf8'),
   ])
 
   assert.match(clientSource, /fetch\('\/api\/admin\/morning-greeting'/)
-  assert.match(clientSource, /ModelSelector/)
-  assert.match(clientSource, /max=\{2\}/)
-  assert.match(clientSource, /modelIds: selectedModelIds/)
+  assert.match(clientSource, /AutomationModelSelector/)
+  assert.doesNotMatch(clientSource, /selectedModelIds|max=\{2\}/)
   assert.doesNotMatch(clientSource, /generation-tab|title="三条问候"|id: 'template'/)
-  assert.match(selectorSource, /已选 \{selected\.length\} \/ \{max\}/)
-  assert.match(selectorSource, /首选模型调用失败时/)
+  assert.match(automationSelectorSource, /X 自动发布模型/)
+  assert.match(automationSelectorSource, /其他页面各自保存模型选择/)
+  assert.match(automationSelectorSource, /api\/admin\/morning-greeting\/model-selection/)
+  assert.match(automationSelectorSource, /ModelSelector/)
+  assert.match(selectorSource, /<select/)
+  assert.doesNotMatch(selectorSource, /selected\.length|max|首选模型调用失败时/)
   assert.match(selectorSource, /buildAdminModelOptions/)
-  assert.match(adminRouteSource, /DAILY_GREETING_MODEL_SELECTIONS_KEY/)
-  assert.match(adminRouteSource, /INVALID_MODEL_SELECTIONS/)
+  assert.match(modelRouteSource, /DAILY_GREETING_MODEL_SELECTIONS_KEY/)
+  assert.match(modelRouteSource, /JSON\.stringify\(\[modelId\]\)/)
+  assert.match(modelRouteSource, /listOllamaModels\(row\.id\)/)
+  assert.doesNotMatch(adminRouteSource, /INVALID_MODEL_SELECTIONS|modelIds/)
   assert.doesNotMatch(adminRouteSource, /FIXED_TEMPLATE_SLOTS|upsertMorningGreetingTemplate/)
-  assert.match(adminRouteSource, /DAILY_GREETING_OLLAMA_PROVIDER_KEY/)
   assert.doesNotMatch(adminRouteSource, /X_ARTICLE_TASK_SETTING_KEY|xArticleRun/)
+  assert.doesNotMatch(topbarSource, /AutomationModelSelector|GlobalModelSelector/)
   assert.match(cronRouteSource, /callDeepSeek\(/)
   assert.match(cronRouteSource, /callOllama\(/)
-  assert.match(cronRouteSource, /orderGreetingModelSelections/)
-  assert.match(cronRouteSource, /for \(const selection of orderedModelSelections\)/)
+  assert.doesNotMatch(cronRouteSource, /orderGreetingModelSelections|for \(const selection of orderedModelSelections\)/)
+  assert.match(cronRouteSource, /activeModelSelection = legacySelections\[0\]/)
   assert.doesNotMatch(cronRouteSource, /listEnabledMorningGreetingTexts|pickDailyGreetingTemplate/)
   assert.match(cronRouteSource, /buildGreetingLengthRepairMessages/)
   assert.match(cronRouteSource, /fitGeneratedGreetingToXLimit/)

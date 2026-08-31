@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import XImagePool from './XImagePool'
+import AutomationModelSelector from './AutomationModelSelector'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
-import ModelSelector, { buildAdminModelOptions } from '../../components/ModelSelector'
 
 const formatUsd = (microUsd, minimumFractionDigits = 3) => `$${(Math.max(0, Number(microUsd) || 0) / 1_000_000).toLocaleString('en-US', { minimumFractionDigits, maximumFractionDigits: 3 })}`
 
@@ -312,7 +312,6 @@ export default function MorningGreetingClient() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [selectedModelIds, setSelectedModelIds] = useState(['deepseek'])
   const [llmIntent, setLlmIntent] = useState('')
 
   const refresh = useCallback(async () => {
@@ -323,7 +322,6 @@ export default function MorningGreetingClient() {
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.message || payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
-      setSelectedModelIds(payload.selectedModelIds?.length ? payload.selectedModelIds : ['deepseek'])
       setLlmIntent(payload.llmIntent || '')
     } catch (fetchError) {
       setError(fetchError?.message || 'X 发布配置读取失败。')
@@ -355,30 +353,21 @@ export default function MorningGreetingClient() {
   }
 
   async function saveGenerationSettings() {
-    if (!selectedModelIds.length || selectedModelIds.length > 2) return setError('请选择 1—2 个模型。')
     if (!llmIntent.trim()) return setError('生成意图不能为空。')
     setSaving(true); setError(''); setNotice('')
     try {
       const response = await fetch('/api/admin/morning-greeting', {
         method: 'PATCH', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'save-generation', modelIds: selectedModelIds, intent: llmIntent }),
+        body: JSON.stringify({ action: 'save-generation', intent: llmIntent }),
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
-      setNotice(`已应用 ${selectedModelIds.length} 个模型；下一次自动发布开始按新配置生成。`)
+      setNotice('提示语已保存；下一次自动发布开始使用新配置。')
       await refresh()
     } catch (saveError) { setError(saveError?.message || '生成方式保存失败。') } finally { setSaving(false) }
   }
 
-  const appliedModelIds = data?.selectedModelIds || ['deepseek']
-  const isGenerationDirty = JSON.stringify(selectedModelIds) !== JSON.stringify(appliedModelIds)
-    || llmIntent !== (data?.llmIntent || '')
-  const modelOptions = buildAdminModelOptions({ providers: data?.ollamaProviders || [] })
-  const appliedModelLabel = modelOptions
-    .filter((option) => appliedModelIds.includes(option.id))
-    .map((option) => option.label)
-    .join(' + ') || 'DeepSeek'
-  const modelListErrors = (data?.ollamaProviders || []).filter((provider) => provider.modelListError)
+  const isGenerationDirty = llmIntent !== (data?.llmIntent || '')
 
   return (
     <AdminPage
@@ -388,6 +377,8 @@ export default function MorningGreetingClient() {
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
+
+      <AutomationModelSelector />
 
       <Section
           title="自动任务"
@@ -406,17 +397,12 @@ export default function MorningGreetingClient() {
           <XApiCostPanel cost={data?.xApiCost} />
 
           <div className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span className="text-[11px] text-[#85877c]">当前生效：{appliedModelLabel}</span>
-              {isGenerationDirty ? <span className="text-[11px] text-amber-700 dark:text-amber-300">选择尚未生效，保存后用于下一次自动发布</span> : null}
-            </div>
-            <ModelSelector options={modelOptions} value={selectedModelIds} onChange={setSelectedModelIds} max={2} disabled={saving || loading} />
-            {modelListErrors.length ? <p role="alert" className="mb-0 mt-2 text-[11px] leading-5 text-amber-700 dark:text-amber-300">{modelListErrors.map((provider) => provider.name).join('、')} 的实时模型列表读取失败，当前只显示已保存的默认模型；恢复连接后刷新即可。</p> : null}
-            <div className="mt-4 border-t border-[#e2e4da] pt-4 dark:border-[#243041]">
+            <p className="mb-4 mt-0 text-[11px] leading-5 text-[#85877c]">文案生成使用自动化模块顶部的“当前模型”。</p>
+            <div>
               <Field className="mb-0" label="意图（提示语）"><textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={4} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={inputClass} /></Field>
               <div className="mt-2 flex flex-wrap items-center gap-3">
-                <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">每次从五种写作方向中选择一种，再由已选模型结合日期、时段和内容意图生成。</p>
-                <AdminButton type="button" variant="primary" disabled={saving || loading || !isGenerationDirty || !llmIntent.trim() || !selectedModelIds.length} onClick={saveGenerationSettings}>{saving ? '保存中…' : isGenerationDirty ? '保存并应用' : '已应用'}</AdminButton>
+                <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">每次从五种写作方向中选择一种，再由当前模型结合日期、时段和内容意图生成。</p>
+                <AdminButton type="button" variant="primary" disabled={saving || loading || !isGenerationDirty || !llmIntent.trim()} onClick={saveGenerationSettings}>{saving ? '保存中…' : isGenerationDirty ? '保存并应用' : '已应用'}</AdminButton>
               </div>
             </div>
           </div>

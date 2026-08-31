@@ -289,14 +289,13 @@ test('all five task types select fixed pool images, publish them, then skip repe
   assert.equal(objects.size, 5)
 })
 
-test('two selected copy models fail over from the first model to the second', async (t) => {
+test('automation uses its one selected Ollama model', async (t) => {
   let deepseekCalls = 0
   let ollamaCalls = 0
   const { invoke, sqlite } = await cronFixture(t, {
-    orderGreetingModelSelections: (items) => items,
     callDeepSeek: async () => {
       deepseekCalls++
-      throw Object.assign(new Error('temporary upstream failure'), { code: 'DEEPSEEK_UNAVAILABLE' })
+      throw new Error('DeepSeek should not be selected')
     },
     callOllama: async ({ providerId, model }) => {
       ollamaCalls++
@@ -307,7 +306,7 @@ test('two selected copy models fail over from the first model to the second', as
   })
   sqlite.prepare('INSERT INTO site_settings (key, value) VALUES (?, ?)').run(
     greetingLlm.DAILY_GREETING_MODEL_SELECTIONS_KEY,
-    JSON.stringify(['deepseek', greetingLlm.greetingModelSelectionId({ provider: 'ollama', providerId: 'nas-1', model: 'qwen3.5:9b' })]),
+    JSON.stringify([greetingLlm.greetingModelSelectionId({ provider: 'ollama', providerId: 'nas-1', model: 'qwen3.5:9b' })]),
   )
 
   const response = await invoke()
@@ -315,7 +314,7 @@ test('two selected copy models fail over from the first model to the second', as
   const payload = await response.json()
   assert.equal(payload.mode, 'ollama')
   assert.equal(payload.modelSelection, 'ollama:nas-1:qwen3.5%3A9b')
-  assert.equal(deepseekCalls, 1)
+  assert.equal(deepseekCalls, 0)
   assert.equal(ollamaCalls, 1)
 })
 

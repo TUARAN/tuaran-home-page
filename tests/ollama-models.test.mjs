@@ -43,18 +43,19 @@ test('服务卡片通过现有 PATCH 切换默认模型，并保留刷新失败�
 })
 
 test('业务调用既支持默认模型，也支持任务显式选择已安装模型', async () => {
-  const [ollama, tasks, morningGreeting, testRoute] = await Promise.all([
+  const [ollama, tasks, automationModels, testRoute] = await Promise.all([
     read('../lib/ollama.js'),
     read('../lib/deepseekTasks.js'),
-    read('../app/api/admin/morning-greeting/route.js'),
+    read('../app/api/admin/morning-greeting/model-selection/route.js'),
     read('../app/api/admin/llm-providers/test/route.js'),
   ])
 
   assert.match(ollama, /model \|\| row\.default_model/)
   assert.match(ollama, /model: resolvedModel/)
   assert.match(tasks, /text\(model, 160\)/)
-  assert.match(morningGreeting, /listOllamaModels\(row\.id\)/)
-  assert.match(morningGreeting, /greetingModelSelectionId/)
+  assert.match(automationModels, /listOllamaModels\(row\.id\)/)
+  assert.match(automationModels, /buildModelSelectionOptions/)
+  assert.match(automationModels, /JSON\.stringify\(\[modelId\]\)/)
   assert.match(testRoute, /model: result\.model/)
 })
 

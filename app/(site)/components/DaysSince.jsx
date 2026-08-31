@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 const MS_PER_DAY = 86_400_000
@@ -44,32 +45,62 @@ export default function DaysSince({
   const { days, total, pct } = state
   const daysFmt = days.toLocaleString('en-US')
   const totalFmt = total.toLocaleString('en-US')
+  const title = `${label} · 起点 ${sinceISO} · ${years} 年目标 · ${pct.toFixed(1)}%`
+
+  if (compact) {
+    return (
+      <div className="group block w-full rounded-md px-1.5 py-1 transition-colors hover:bg-[#e1e3d7] dark:hover:bg-[#1a222c]">
+        <div className="days-since-row is-compact flex items-baseline justify-center whitespace-nowrap font-mono text-[#797b70] dark:text-[#8e9ab0]">
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            title={title}
+            className="no-external-arrow inline-flex items-baseline gap-1 !no-underline hover:!no-underline"
+          >
+            <span className="font-semibold text-[#5a4725] dark:text-[#c6c9b4]">{daysFmt} / {totalFmt} 天</span>
+            <span className="text-[#858876] dark:text-[#8e9ab0]">· {years}年内容创作计划</span>
+            <span
+              aria-hidden="true"
+              className="font-mono text-[10px] text-[#aaac9f] transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#5a4725] dark:text-[#5a6a7e] dark:group-hover:text-[#c6c9b4]"
+            >
+              ↗
+            </span>
+          </a>
+          <span aria-hidden="true" className="text-[#aaac9f] dark:text-[#5a6a7e]">·</span>
+          <Link
+            href="/articles/creation-calendar"
+            className="shrink-0 text-[#6f725f] !no-underline transition-colors hover:text-[#5a4725] hover:!no-underline dark:text-[#a5aa92] dark:hover:text-[#c6c9b4]"
+          >
+            创作日历 →
+          </Link>
+        </div>
+        <div className="mt-1.5 h-[3px] w-full overflow-hidden rounded-full bg-[#d4d7c7] dark:bg-[#252d36]">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#c69755] to-[#8a6b2e] transition-all dark:from-[#9aa27a] dark:to-[#c6c9b4]"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      title={`${label} · 起点 ${sinceISO} · ${years} 年目标 · ${pct.toFixed(1)}%`}
+      title={title}
       className="no-external-arrow group block w-full rounded-md px-1.5 py-1 !no-underline transition-colors hover:bg-[#e1e3d7] hover:!no-underline dark:hover:bg-[#1a222c]"
     >
-      <div className={`days-since-row flex items-baseline justify-center gap-1.5 font-mono text-[11px] tracking-[0.08em] text-[#797b70] dark:text-[#8e9ab0] ${compact ? 'is-compact' : ''}`}>
-        {compact ? (
-          <>
-            <span className="font-semibold text-[#5a4725] dark:text-[#c6c9b4]">{daysFmt} / {totalFmt} 天</span>
-            <span className="text-[#858876] dark:text-[#8e9ab0]">· {years}年内容创作计划</span>
-          </>
-        ) : (
-          <>
-            <span className="font-semibold text-[#5a4725] dark:text-[#c6c9b4]">{daysFmt}</span>
-            <span>天</span>
-            <span className="text-[#aaac9f] dark:text-[#5a6a7e]">·</span>
-            <span className="text-[10px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
-              since
-            </span>
-            <span>{sinceISO}</span>
-          </>
-        )}
+      <div className="days-since-row flex items-baseline justify-center gap-1.5 font-mono text-[11px] tracking-[0.08em] text-[#797b70] dark:text-[#8e9ab0]">
+        <span className="font-semibold text-[#5a4725] dark:text-[#c6c9b4]">{daysFmt}</span>
+        <span>天</span>
+        <span className="text-[#aaac9f] dark:text-[#5a6a7e]">·</span>
+        <span className="text-[10px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
+          since
+        </span>
+        <span>{sinceISO}</span>
         <span
           aria-hidden="true"
           className="ml-0.5 font-mono text-[10px] text-[#aaac9f] transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#5a4725] dark:text-[#5a6a7e] dark:group-hover:text-[#c6c9b4]"

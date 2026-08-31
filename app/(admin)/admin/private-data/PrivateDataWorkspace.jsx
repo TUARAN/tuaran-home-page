@@ -12,6 +12,7 @@ export default function PrivateDataWorkspace() {
           title: '个人密文',
           description: '口令只在浏览器内使用，服务器保存无法直接读取的密文。',
           items: [
+            { href: '/admin/personal-profile', title: '个人画像', description: '记录人格偏好、成长方向、创作价值闭环与 90 天演进路线。', icon: 'personProfile', note: 'Owner-only · 持续校准' },
             { href: '/admin/information', title: '信息金库', description: '加密保存账号、密码、密保答案和其他敏感资料。', icon: 'information', note: 'AES-GCM · 口令不上传' },
             { href: '/admin/soft-sticker', title: '软贴空间', description: '集中查看从 Notion 备份整理出的体验记录、自控复盘、关系专题和长期档案。', icon: 'flower', note: '统一口令 · 四 Tab' },
           ],

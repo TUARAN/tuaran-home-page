@@ -25,6 +25,7 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/points').map((item) => item.label), ['用户与权限', '燃币与权益'])
   assert.deepEqual(resolveAdminTrail('/admin/access/grants').map((item) => item.label), ['用户与权限', '授权管理'])
   assert.deepEqual(resolveAdminTrail('/admin/security-self-check').map((item) => item.label), ['站点运维', '涉密自检'])
+  assert.deepEqual(resolveAdminTrail('/admin/personal-profile').map((item) => item.label), ['私密数据', '个人画像'])
   assert.deepEqual(resolveAdminTrail('/admin/share').map((item) => item.label), ['私密数据', '加密分享'])
   assert.deepEqual(resolveAdminTrail('/admin/self-regulation').map((item) => item.label), ['私密数据'])
   assert.deepEqual(resolveAdminTrail('/admin/person-strawberry').map((item) => item.label), ['私密数据'])
@@ -35,7 +36,7 @@ test('private data navigation titles use four Chinese characters', () => {
   const privateData = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/private-data')
   const titles = privateData.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体'])
+  assert.deepEqual(titles, ['个人画像', '信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体'])
   assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 
@@ -49,7 +50,7 @@ test('project navigation titles use four Chinese characters', () => {
 
 test('previously hidden admin routes have explicit child entries', () => {
   const hrefs = new Set(ADMIN_NAV_CHILD_ITEMS.map((item) => item.matchPath || item.href))
-  for (const href of ['/admin/content-index', '/admin/research-style', '/admin/share', '/admin/wallpapers']) {
+  for (const href of ['/admin/content-index', '/admin/research-style', '/admin/share', '/admin/wallpapers', '/admin/personal-profile']) {
     assert.ok(hrefs.has(href), `${href} should be present in the admin navigation registry`)
   }
 })

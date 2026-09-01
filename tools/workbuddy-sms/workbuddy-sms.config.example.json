@@ -1,0 +1,27 @@
+{
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 8789
+  },
+  "agent": {
+    "mode": "mock",
+    "baseUrl": "http://127.0.0.1:8080",
+    "timeoutMs": 120000
+  },
+  "channel": {
+    "provider": "mock",
+    "from": null,
+    "relayBaseUrl": null,
+    "pollIntervalMs": 2000
+  },
+  "policy": {
+    "allowedSenders": ["self-demo"],
+    "maxInboundChars": 500,
+    "maxOutboundChars": 240,
+    "maxEventsPerHour": 20,
+    "stopWords": ["STOP", "TD", "T", "N", "退订", "暂停服务"]
+  },
+  "storage": {
+    "path": "./var/workbuddy-sms.sqlite"
+  }
+}

@@ -57,6 +57,8 @@
     "soft-sticker:rekey": "node --no-warnings scripts/rekey-soft-sticker.mjs",
     "mcp:stdio": "node tools/mcp-stdio-demo/server.mjs",
     "mcp:stdio:check": "node scripts/test-mcp-stdio-demo.mjs",
+    "workbuddy-sms:test": "node --experimental-sqlite --test tools/workbuddy-sms/tests/*.test.mjs",
+    "workbuddy-sms-relay:test": "node --test workers/workbuddy-sms-relay/tests/*.test.mjs",
     "x-intelligence:check": "node scripts/test-x-platform-intelligence-model.mjs && node scripts/test-x-platform-intelligence-filters.mjs && node scripts/test-x-platform-intelligence-selectors.mjs",
     "test:planning": "node --test tests/planning/*.test.mjs"
   },

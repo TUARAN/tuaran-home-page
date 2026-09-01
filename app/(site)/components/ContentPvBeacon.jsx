@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { LoadingSpinner } from '../../components/loading/LoadingPrimitives'
+import { MIN_QUALIFIED_READING_MS } from '../../../lib/readingAnalyticsQuality.mjs'
 
 const DISPLAY_TIMEOUT_MS = 3_000
 const PV_CACHE_TTL_MS = 30_000
@@ -50,14 +51,14 @@ function writeCachedPv(key, value) {
 }
 
 /**
- * 阅读统计探针：挂载时给 /api/research-pv 记一次访问。
+ * 阅读统计探针：页面可见且累计活跃达到门槛后，给 /api/research-pv 记一次有效阅读。
  * 统一用于精选文章、调研、资料、资源主题页与灵感流。
  *
  * - 默认 display=false：无界面，只上报、渲染 null（保持旧用法不变）。
  * - display=true：把返回的阅读量渲染成「阅读量 N」，用于资源页页头露出数字。
  *
- * 展示与写入解耦：只读 GET 立即读取当前数字，POST 独立后台上报，不再阻塞界面。
- * 去重：服务端按「访客指纹 + 1 小时桶」幂等；客户端再用 sessionStorage 10 秒节流，避免同会话刷量。
+ * 展示与写入解耦：只读 GET 立即读取当前数字，合格 POST 独立后台上报，不阻塞界面。
+ * 去重：服务端按「身份 + 内容 + 1 小时桶」幂等；客户端再用 sessionStorage 节流。
  */
 export default function ContentPvBeacon({ category, slug, display = false, initialPv }) {
   const hasInitialPv = Number.isFinite(initialPv)
@@ -71,6 +72,7 @@ export default function ContentPvBeacon({ category, slug, display = false, initi
     }
     let cancelled = false
     const key = `${category}/${slug}`
+    let engagementTimer = null
 
     const applyPv = (value) => {
       const nextPv = normalizePv(value)
@@ -110,14 +112,21 @@ export default function ContentPvBeacon({ category, slug, display = false, initi
         })
     }
 
-    // 统计写入与展示请求并行执行；它的延迟或失败不再控制 loading 状态。
-    try {
-      const storageKey = `content-pv-hit:${category}:${slug}`
-      const now = Date.now()
-      const last = Number(window.sessionStorage.getItem(storageKey)) || 0
-      const throttled = now - last < 10_000
+    // 只有页面真实可见满 8 秒才上报。它的延迟或失败不控制阅读量展示状态。
+    let visibleMs = 0
+    let submitted = false
+    engagementTimer = window.setInterval(() => {
+      if (cancelled || submitted || document.visibilityState !== 'visible') return
+      visibleMs += 1_000
+      if (visibleMs < MIN_QUALIFIED_READING_MS) return
+      submitted = true
+      window.clearInterval(engagementTimer)
 
-      if (!throttled) {
+      try {
+        const storageKey = `content-pv-hit:${category}:${slug}`
+        const now = Date.now()
+        const last = Number(window.sessionStorage.getItem(storageKey)) || 0
+        if (now - last < 10_000) return
         window.sessionStorage.setItem(storageKey, String(now))
         fetch('/api/research-pv', {
           method: 'POST',
@@ -126,6 +135,9 @@ export default function ContentPvBeacon({ category, slug, display = false, initi
           body: JSON.stringify({
             category,
             slug,
+            signal: 'content_read_v2',
+            engagedMs: visibleMs,
+            visibilityState: document.visibilityState,
             referrer: document.referrer || '',
             utmSource: new URLSearchParams(window.location.search).get('utm_source') || '',
             utmMedium: new URLSearchParams(window.location.search).get('utm_medium') || '',
@@ -136,13 +148,14 @@ export default function ContentPvBeacon({ category, slug, display = false, initi
           .then((res) => (res.ok ? res.json() : null))
           .then((data) => applyPv(data?.pv))
           .catch(() => {})
+      } catch {
+        // 统计失败不影响页面
       }
-    } catch {
-      // 统计失败不影响页面
-    }
+    }, 1_000)
 
     return () => {
       cancelled = true
+      if (engagementTimer !== null) window.clearInterval(engagementTimer)
       controller?.abort()
       if (timeoutId !== null) window.clearTimeout(timeoutId)
     }

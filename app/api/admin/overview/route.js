@@ -51,9 +51,9 @@ export async function GET(req) {
     const [users, dbSnap, pvTotalRow, pvTodayRow, uvRow] = await Promise.all([
       listSiteUsers(db).catch(() => []),
       getD1QuickStatus(db).catch(() => ({ status: 'error', tableCount: null })),
-      db.prepare('SELECT COALESCE(SUM(pv), 0) AS total FROM research_pv').first().catch(() => null),
+      db.prepare("SELECT COUNT(*) AS total FROM research_pv_hits WHERE quality = 'qualified'").first().catch(() => null),
       db
-        .prepare('SELECT COUNT(*) AS today FROM research_pv_hits WHERE created_at >= ?1')
+        .prepare("SELECT COUNT(*) AS today FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1")
         .bind(startOfShanghaiTodayMs())
         .first()
         .catch(() => null),
@@ -65,7 +65,7 @@ export async function GET(req) {
                WHEN created_at >= ?1
                THEN CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END
              END) AS today
-           FROM research_pv_hits`
+           FROM research_pv_hits WHERE quality = 'qualified'`
         )
         .bind(startOfShanghaiTodayMs())
         .first()

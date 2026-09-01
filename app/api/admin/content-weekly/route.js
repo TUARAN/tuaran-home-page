@@ -3,6 +3,7 @@ import { resolveArticleKey, resolveContentKey } from '../../../../lib/articleLin
 import { getD1 } from '../../../../lib/d1'
 import { CONTENT_TYPE_GROUP } from '../../../../lib/contentRegistry'
 import { readingVisitorName } from '../../../../lib/readingVisitorIdentity.mjs'
+import { equalComparisonWindow } from '../../../../lib/analyticsSources.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -100,8 +101,9 @@ export async function GET(req) {
 
   const now = Date.now()
   const todayStart = shanghaiDayStart(now)
-  const periodStart = todayStart - (days - 1) * DAY_MS
-  const previousStart = periodStart - days * DAY_MS
+  const comparisonWindow = equalComparisonWindow(days, now)
+  const periodStart = comparisonWindow.currentStart
+  const previousStart = comparisonWindow.previousStart
   const visitorKey = visitorKeySql()
 
   try {
@@ -127,24 +129,25 @@ export async function GET(req) {
     ] = await Promise.all([
       db.prepare(
         `SELECT
-           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
-           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
-           COUNT(DISTINCT CASE WHEN created_at >= ?1 THEN ${visitorKey} END) AS uv,
-           COUNT(DISTINCT CASE WHEN created_at >= ?2 AND created_at < ?1 THEN ${visitorKey} END) AS previous_uv
+           SUM(CASE WHEN quality = 'qualified' AND created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
+           SUM(CASE WHEN quality = 'qualified' AND created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
+           COUNT(DISTINCT CASE WHEN quality = 'qualified' AND created_at >= ?1 THEN ${visitorKey} END) AS uv,
+           COUNT(DISTINCT CASE WHEN quality = 'qualified' AND created_at >= ?2 AND created_at < ?1 THEN ${visitorKey} END) AS previous_uv,
+           SUM(CASE WHEN quality <> 'qualified' AND created_at >= ?1 THEN 1 ELSE 0 END) AS excluded_pv
          FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3`,
       ).bind(periodStart, previousStart, now).first(),
       db.prepare(
         `SELECT COUNT(*) AS returning_count FROM (
            SELECT ${visitorKey} AS visitor_key
            FROM research_pv_hits
-           WHERE created_at >= ?1 AND created_at <= ?2
+           WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
            GROUP BY visitor_key
            HAVING COUNT(DISTINCT CAST((created_at + ?3) / ?4 AS INTEGER)) >= 2
          )`,
       ).bind(periodStart, now, SHANGHAI_TZ_OFFSET_MS, DAY_MS).first(),
       db.prepare(
         `SELECT CAST((created_at + ?1) / ?2 AS INTEGER) AS day_key, COUNT(*) AS pv
-         FROM research_pv_hits WHERE created_at >= ?3 AND created_at <= ?4
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?3 AND created_at <= ?4
          GROUP BY day_key ORDER BY day_key ASC`,
       ).bind(SHANGHAI_TZ_OFFSET_MS, DAY_MS, periodStart, now).all().then((r) => r.results || []),
       db.prepare(
@@ -152,7 +155,7 @@ export async function GET(req) {
            SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
            SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
            COUNT(DISTINCT CASE WHEN created_at >= ?1 THEN ${visitorKey} END) AS uv
-         FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?2 AND created_at <= ?3
          GROUP BY category, slug
          HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
          ORDER BY pv DESC, uv DESC LIMIT ?4`,
@@ -161,18 +164,18 @@ export async function GET(req) {
         `SELECT category,
            SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
            SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv
-         FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3 GROUP BY category`,
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?2 AND created_at <= ?3 GROUP BY category`,
       ).bind(periodStart, previousStart, now).all().then((r) => r.results || []),
       db.prepare(
         `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
            COUNT(DISTINCT ${visitorKey}) AS uv
-         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
          GROUP BY source, medium, campaign, referrer_host
          ORDER BY pv DESC, uv DESC LIMIT ?3`,
       ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
       db.prepare(
         `SELECT visitor_type, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
-         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
          GROUP BY visitor_type ORDER BY pv DESC`,
       ).bind(periodStart, now).all().then((r) => r.results || []),
       db.prepare(
@@ -180,22 +183,22 @@ export async function GET(req) {
            MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
            MAX(user_name) AS user_name, COUNT(*) AS pv,
            COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
-         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
          GROUP BY visitor_key ORDER BY pv DESC, last_seen DESC LIMIT ?3`,
       ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
       db.prepare(
         `SELECT COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
-         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2`,
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2`,
       ).bind(todayStart, now).first(),
       db.prepare(
         `SELECT category, slug, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv, 0 AS previous_pv
-         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
          GROUP BY category, slug ORDER BY pv DESC, uv DESC LIMIT ?3`,
       ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
       db.prepare(
         `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
            COUNT(DISTINCT ${visitorKey}) AS uv
-         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
          GROUP BY source, medium, campaign, referrer_host ORDER BY pv DESC LIMIT 8`,
       ).bind(todayStart, now).all().then((r) => r.results || []),
       db.prepare(
@@ -203,7 +206,7 @@ export async function GET(req) {
            MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
            MAX(user_name) AS user_name, COUNT(*) AS pv,
            COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
-         FROM research_pv_hits WHERE created_at >= ?1 AND created_at <= ?2
+         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
          GROUP BY visitor_key ORDER BY last_seen DESC LIMIT ?3`,
       ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
       db.prepare(
@@ -234,7 +237,7 @@ export async function GET(req) {
            SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_total
          FROM newsletter_subscribers WHERE status = 'active'`,
       ).bind(periodStart).first().catch(() => null),
-      db.prepare('SELECT MIN(created_at) AS available_from, MAX(created_at) AS available_to FROM research_pv_hits').first(),
+      db.prepare("SELECT MIN(created_at) AS available_from, MAX(created_at) AS available_to FROM research_pv_hits WHERE quality = 'qualified'").first(),
     ])
 
     const pv = Number(overviewRow?.pv) || 0
@@ -292,6 +295,7 @@ export async function GET(req) {
         uv, previousUv: Number(overviewRow?.previous_uv) || 0,
         returning, returnRate: uv ? returning / uv : 0,
         viewsPerVisitor: uv ? pv / uv : 0,
+        excludedLegacyPv: Number(overviewRow?.excluded_pv) || 0,
       },
       series: buildSeries(seriesRows, periodStart, days),
       topContent: resolveReadRows(contentRows),

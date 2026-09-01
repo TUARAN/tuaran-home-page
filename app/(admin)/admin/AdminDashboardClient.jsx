@@ -142,13 +142,13 @@ export default function AdminDashboardClient() {
           href="/admin/users"
         />
         <StatCard
-          label="今日 PV"
+          label="今日有效阅读"
           value={pv?.today != null ? pv.today : '—'}
-          sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')}` : '调研文章阅读量'}
+          sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')} 篇次` : '合格内容阅读'}
           icon="analytics"
         />
         <StatCard
-          label="今日 UV"
+          label="今日内容读者"
           value={uv?.today != null ? uv.today : '—'}
           sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者数'}
           icon="users"

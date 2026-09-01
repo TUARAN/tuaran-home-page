@@ -1,10 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import {
   IconArrowDownRight,
   IconArrowUpRight,
+  IconChartBar,
   IconClock,
+  IconCloud,
+  IconDatabase,
   IconEye,
   IconRefresh,
   IconRoute,
@@ -39,6 +43,14 @@ function number(value, digits = 0) {
 
 function percent(value) {
   return `${Math.round((Number(value) || 0) * 1000) / 10}%`
+}
+
+function bytes(value) {
+  const amount = Number(value) || 0
+  if (amount < 1024) return `${number(amount)} B`
+  if (amount < 1024 ** 2) return `${number(amount / 1024, 1)} KB`
+  if (amount < 1024 ** 3) return `${number(amount / 1024 ** 2, 1)} MB`
+  return `${number(amount / 1024 ** 3, 1)} GB`
 }
 
 function formatDateTime(value, withDate = true) {
@@ -106,6 +118,105 @@ function PeriodSwitcher({ days, onChange, disabled }) {
         </button>
       ))}
     </div>
+  )
+}
+
+function SourceState({ source, children }) {
+  if (!source || source.status === 'unconfigured') {
+    const required = source?.required || []
+    return (
+      <div className="rounded-xl border border-dashed border-[#d6d8cf] bg-[#f8f8f4] p-3 text-xs leading-5 text-[#74766d] dark:border-[#2c3745] dark:bg-[#0d141d] dark:text-gray-400">
+        <p>{source?.message || '尚未接入实时数据。'}</p>
+        {required.length ? <p className="mt-1 font-mono text-[10px] text-[#989a90]">{required.join(' · ')}</p> : null}
+        <Link href="/admin/integrations" className="mt-2 inline-block font-medium text-[#536d63] hover:underline dark:text-emerald-400">查看集成配置 →</Link>
+      </div>
+    )
+  }
+  if (source.status === 'error') {
+    return <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">读取失败：{source.message}</div>
+  }
+  return children
+}
+
+function SourceMetric({ label, value, unit, sub }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-medium text-[#8c8e84] dark:text-gray-600">{label}</p>
+      <p className="mt-1 truncate text-xl font-semibold tracking-[-0.02em] text-[#171611] dark:text-gray-100">{value}<span className="ml-1 text-[10px] font-normal text-[#92948a]">{unit}</span></p>
+      {sub ? <p className="mt-1 truncate text-[10px] text-[#9a9c92] dark:text-gray-600">{sub}</p> : null}
+    </div>
+  )
+}
+
+function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading }) {
+  const umami = sourceData?.sources?.umami
+  const cloudflare = sourceData?.sources?.cloudflare
+  const definitions = sourceData?.definitions || []
+  const umamiViews = Number(umami?.current?.views) || 0
+  const qualifiedReads = Number(contentOverview?.pv) || 0
+  const edgeRequests = Number(cloudflare?.current?.requests) || 0
+
+  return (
+    <>
+      <Section
+        title="统一统计总览"
+        description="站点访问以 Umami 为主，内容消费以自建有效阅读为主，Cloudflare 只用于流量、安全和容量诊断。三层数据不可直接相加。"
+        className="mb-4"
+      >
+        <div className="grid gap-3 xl:grid-cols-3">
+          <article className="rounded-2xl border border-blue-200/70 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-950/20">
+            <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-700 dark:text-blue-300">主口径 · 站点访问</p><h3 className="mt-1 text-sm font-semibold">Umami</h3></div><IconChartBar size={19} className="text-blue-500" /></div>
+            <SourceState source={umami}>
+              <div className="grid grid-cols-3 gap-3">
+                <SourceMetric label="访客" value={loading ? '—' : number(umami?.current?.visitors)} unit="人" sub={`上期 ${number(umami?.previous?.visitors)}`} />
+                <SourceMetric label="访问" value={loading ? '—' : number(umami?.current?.visits)} unit="次" sub={`跳出 ${percent(umami?.current?.bounceRate)}`} />
+                <SourceMetric label="浏览" value={loading ? '—' : number(umami?.current?.views)} unit="次" sub={`上期 ${number(umami?.previous?.views)}`} />
+              </div>
+            </SourceState>
+          </article>
+
+          <article className="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
+            <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">主口径 · 内容消费</p><h3 className="mt-1 text-sm font-semibold">自建 D1</h3></div><IconDatabase size={19} className="text-emerald-500" /></div>
+            <div className="grid grid-cols-3 gap-3">
+              <SourceMetric label="有效阅读" value={loading ? '—' : number(contentOverview?.pv)} unit="篇次" sub={`上期 ${number(contentOverview?.previousPv)}`} />
+              <SourceMetric label="独立读者" value={loading ? '—' : number(contentOverview?.uv)} unit="人" sub="合格事件去重" />
+              <SourceMetric label="人均阅读" value={loading ? '—' : number(contentOverview?.viewsPerVisitor, 1)} unit="篇次" sub="有效阅读 / 读者" />
+            </div>
+            {contentOverview?.excludedLegacyPv > 0 ? <p className="mt-3 text-[10px] leading-4 text-amber-700 dark:text-amber-300">当前周期另有 {number(contentOverview.excludedLegacyPv)} 条旧版未验证事件，已从主指标排除。</p> : null}
+          </article>
+
+          <article className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4 dark:border-stone-800 dark:bg-stone-950/20">
+            <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-600 dark:text-stone-400">诊断口径 · 边缘流量</p><h3 className="mt-1 text-sm font-semibold">Cloudflare</h3></div><IconCloud size={19} className="text-stone-500" /></div>
+            <SourceState source={cloudflare}>
+              <div className="grid grid-cols-3 gap-3">
+                <SourceMetric label="请求" value={loading ? '—' : number(cloudflare?.current?.requests)} unit="条" sub={`上期 ${number(cloudflare?.previous?.requests)}`} />
+                <SourceMetric label="入口" value={loading ? '—' : number(cloudflare?.current?.visits)} unit="Visit" sub="Referer 规则" />
+                <SourceMetric label="传输" value={loading ? '—' : bytes(cloudflare?.current?.bytes)} unit="" sub="边缘响应字节" />
+              </div>
+              {cloudflare?.spike ? <p className="mt-3 text-[10px] leading-4 text-rose-700 dark:text-rose-300">检测到 {cloudflare.spike.date} 请求尖峰：{number(cloudflare.spike.requests)}，约为其余日期中位数的 {number(cloudflare.spike.multiple, 1)} 倍。优先按爬虫、攻击、资产热链或循环请求排查。</p> : null}
+            </SourceState>
+          </article>
+        </div>
+
+        {!loading && umami?.status === 'ok' && cloudflare?.status === 'ok' ? (
+          <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+            <p className="rounded-xl bg-[#f5f5f0] px-3 py-2 text-[#6d6f66] dark:bg-[#111923] dark:text-gray-400">Cloudflare 请求 / Umami 浏览：<strong className="text-[#25251f] dark:text-gray-200">{umamiViews ? number(edgeRequests / umamiViews, 1) : '—'}×</strong>。这个倍数反映每次页面浏览产生的资产/API 请求与自动流量，不是漏记率。</p>
+            <p className="rounded-xl bg-[#f5f5f0] px-3 py-2 text-[#6d6f66] dark:bg-[#111923] dark:text-gray-400">有效内容阅读 / Umami 浏览：<strong className="text-[#25251f] dark:text-gray-200">{umamiViews ? percent(qualifiedReads / umamiViews) : '—'}</strong>。分母覆盖全站，分子只覆盖白名单内容页且需活跃 8 秒。</p>
+          </div>
+        ) : null}
+      </Section>
+
+      <details className="mb-4 rounded-2xl border border-[#dfe1d8] bg-white/60 p-4 dark:border-[#273240] dark:bg-[#0d141d]">
+        <summary className="cursor-pointer text-sm font-semibold text-[#292921] dark:text-gray-100">指标字典与差异说明</summary>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[780px] border-collapse text-left text-xs">
+            <thead><tr className="border-b border-[#e3e4dc] text-[10px] uppercase tracking-[0.12em] text-[#92948a] dark:border-[#283341]"><th className="pb-2 pr-4 font-medium">指标</th><th className="pb-2 pr-4 font-medium">来源 / 角色</th><th className="pb-2 pr-4 font-medium">计算口径</th><th className="pb-2 font-medium">边界</th></tr></thead>
+            <tbody>{definitions.map((item) => <tr key={item.id} className="border-b border-[#ededE7] last:border-0 dark:border-[#202a36]"><td className="py-3 pr-4 font-medium text-[#24241f] dark:text-gray-100">{item.label}</td><td className="py-3 pr-4 text-[#66685f] dark:text-gray-400">{item.source}<span className="ml-1.5 rounded bg-[#efefe9] px-1.5 py-0.5 text-[9px] dark:bg-[#1b2531]">{item.role}</span></td><td className="py-3 pr-4 leading-5 text-[#66685f] dark:text-gray-400">{item.definition}</td><td className="py-3 leading-5 text-[#8b6d42] dark:text-amber-300">{item.caveat}</td></tr>)}</tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-[10px] text-[#95978d] dark:text-gray-600">所有周期均以北京时间起点计算；环比使用与当前窗口完全相同的已过时长。Cloudflare 日分组由其 API 按 UTC 返回，仅周期总数与另外两套按北京时间严格对齐。</p>
+      </details>
+    </>
   )
 }
 
@@ -242,6 +353,7 @@ function LikedContentList({ likes, loading }) {
 export default function ContentWeeklyClient() {
   const [days, setDays] = useState(7)
   const [data, setData] = useState(null)
+  const [sourceData, setSourceData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [deletingCommentId, setDeletingCommentId] = useState(null)
@@ -249,10 +361,18 @@ export default function ContentWeeklyClient() {
   const refresh = useCallback(async (nextDays = days) => {
     setLoading(true); setError('')
     try {
-      const res = await fetch(`/api/admin/content-weekly?days=${nextDays}`, { cache: 'no-store', credentials: 'same-origin' })
-      const json = await safeJson(res)
-      if (!res.ok) throw new Error(json?.detail || json?.error || `HTTP_${res.status}`)
-      setData(json)
+      const [contentResponse, sourceResponse] = await Promise.all([
+        fetch(`/api/admin/content-weekly?days=${nextDays}`, { cache: 'no-store', credentials: 'same-origin' }),
+        fetch(`/api/admin/analytics-sources?days=${nextDays}`, { cache: 'no-store', credentials: 'same-origin' }),
+      ])
+      const [contentPayload, sourcePayload] = await Promise.all([
+        safeJson(contentResponse),
+        safeJson(sourceResponse),
+      ])
+      if (!contentResponse.ok) throw new Error(contentPayload?.detail || contentPayload?.error || `CONTENT_HTTP_${contentResponse.status}`)
+      if (!sourceResponse.ok) throw new Error(sourcePayload?.detail || sourcePayload?.error || `SOURCES_HTTP_${sourceResponse.status}`)
+      setData(contentPayload)
+      setSourceData(sourcePayload)
     } catch (e) { setError(e?.message || 'FETCH_FAILED') } finally { setLoading(false) }
   }, [days])
 
@@ -281,17 +401,19 @@ export default function ContentWeeklyClient() {
 
   return (
     <AdminPage
-      title="阅读分析"
-      description={`按内容、读者与来源交叉观察阅读表现。PV 按「访客 + 内容 + 1 小时」去重；UV 按登录账号或稳定游客身份去重，时区为北京时间。`}
+      title="数据统计"
+      description="集中查看站点访问、有效内容阅读与边缘流量。主指标与诊断指标分层展示，所有差异都按来源、覆盖范围、去重规则和时间窗解释。"
       actions={<div className="flex flex-wrap items-center gap-2"><PeriodSwitcher days={days} onChange={changePeriod} disabled={loading} /><AdminButton type="button" onClick={() => refresh(days)} disabled={loading}><span className="inline-flex items-center gap-1.5">{loading ? <LoadingSpinner size="sm" /> : <IconRefresh size={14} />}{loading ? '计算中' : '刷新'}</span></AdminButton></div>}
     >
       {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200">{error}</div> : null}
       {data?.status === 'unavailable' ? <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">当前环境没有连接统计数据库，部署后才会显示真实数据。</div> : null}
       {data?.status === 'ok' && !data.window?.complete && days > 7 ? <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">{label}维度已启用，但历史明细此前只保留约 8 天；当前最早可用数据为 {formatDateTime(data.window?.availableFrom)}，30/90 天数据会从本次升级后逐日补齐。</div> : null}
 
+      <UnifiedAnalyticsOverview sourceData={sourceData} contentOverview={overview} loading={loading} />
+
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={IconEye} eyebrow={`${label}阅读`} value={loading ? '—' : number(overview.pv)} unit="PV" detail={`上期 ${number(overview.previousPv)}`} delta={overview.pv - overview.previousPv} accent="ink" />
-        <MetricCard icon={IconUsers} eyebrow="独立读者" value={loading ? '—' : number(overview.uv)} unit="UV" detail={`上期 ${number(overview.previousUv)}`} delta={overview.uv - overview.previousUv} accent="blue" />
+        <MetricCard icon={IconEye} eyebrow={`${label}有效阅读`} value={loading ? '—' : number(overview.pv)} unit="篇次" detail={`等长上期 ${number(overview.previousPv)}`} delta={overview.pv - overview.previousPv} accent="ink" />
+        <MetricCard icon={IconUsers} eyebrow="独立内容读者" value={loading ? '—' : number(overview.uv)} unit="人" detail={`等长上期 ${number(overview.previousUv)}`} delta={overview.uv - overview.previousUv} accent="blue" />
         <MetricCard icon={IconClock} eyebrow="回访读者" value={loading ? '—' : number(overview.returning)} unit="人" detail={`跨 ≥ 2 个自然日 · ${percent(overview.returnRate)}`} accent="emerald" />
         <MetricCard icon={IconRoute} eyebrow="人均阅读" value={loading ? '—' : number(overview.viewsPerVisitor, 1)} unit="篇次" detail={`${label} PV / UV`} accent="stone" />
       </div>

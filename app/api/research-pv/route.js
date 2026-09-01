@@ -8,6 +8,7 @@ import {
 } from '../../../lib/contentRegistry'
 import { getUserFromRequest } from '../../../lib/edgeSession'
 import { GUEST_USER_PREFIX, getOrIssueGuest, guestDisplayName } from '../../../lib/guestSession'
+import { assessReadingHit } from '../../../lib/readingAnalyticsQuality.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -226,6 +227,17 @@ export async function POST(req) {
     return Response.json({ error: 'CONTENT_ENTRY_NOT_FOUND' }, { status: 404 })
   }
 
+  const quality = assessReadingHit({
+    host: req.headers.get('host'),
+    origin: req.headers.get('origin'),
+    secFetchSite: req.headers.get('sec-fetch-site'),
+    userAgent: req.headers.get('user-agent'),
+    body,
+  })
+  if (!quality.qualified) {
+    return Response.json({ key: entryKey, counted: false, reason: quality.reason }, { status: 202 })
+  }
+
   try {
     const now = Date.now()
     const bucket = Math.floor(now / HIT_WINDOW_MS)
@@ -235,15 +247,17 @@ export async function POST(req) {
     const hitKey = `${entryKey}:${visitorHash}:${bucket}`
     const hit = await db
       .prepare(
-        `INSERT OR IGNORE INTO research_pv_hits
+         `INSERT OR IGNORE INTO research_pv_hits
            (hit_key, category, slug, visitor_hash, bucket, created_at,
-            user_id, user_provider, user_name, visitor_type, source, medium, campaign, referrer_host)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
+            user_id, user_provider, user_name, visitor_type, source, medium, campaign, referrer_host,
+            quality, engaged_ms)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)`,
       )
       .bind(
         hitKey, category, slug, visitorHash, bucket, now,
         identity.userId, identity.userProvider, identity.userName, identity.visitorType,
         attribution.source, attribution.medium, attribution.campaign, attribution.referrerHost,
+        'qualified', quality.engagedMs,
       )
       .run()
 

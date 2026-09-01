@@ -1,5 +1,5 @@
 import { getD1 } from '../../../lib/d1'
-import { BOOKMARK_CATEGORIES, summarizeBookmarks } from '../../../lib/bookmarkNavigation.mjs'
+import { BOOKMARK_CATEGORIES, dedupeBookmarks, summarizeBookmarks } from '../../../lib/bookmarkNavigation.mjs'
 import { getPrivateVaultUser } from '../../../lib/privateVaultAuth'
 
 export const runtime = 'edge'
@@ -59,8 +59,7 @@ function validateEntries(input) {
     throw new BookmarkImportError(`书签数量须在 1–${MAX_BOOKMARKS} 条之间。`)
   }
   const ids = new Set()
-  const urlById = new Map()
-  return input.map((raw, index) => {
+  const entries = input.map((raw, index) => {
     const id = text(raw?.id, 64)
     const title = text(raw?.title, 500)
     const url = text(raw?.url, 4000)
@@ -78,22 +77,18 @@ function validateEntries(input) {
     const riskFlags = Array.isArray(raw?.riskFlags)
       ? [...new Set(raw.riskFlags.map((flag) => text(flag, 60)).filter(Boolean))].slice(0, 12)
       : []
-    const duplicateOf = text(raw?.duplicateOf, 64) || null
-    if (duplicateOf && (!ids.has(duplicateOf) || urlById.get(duplicateOf) !== url)) {
-      throw new BookmarkImportError(`第 ${index + 1} 条书签的重复关系无效。`)
-    }
     const entry = {
       id, title, url,
       domain: text(raw?.domain, 253),
       folderPath,
       addedAt: text(raw?.addedAt, 32) || null,
       category,
-      duplicateOf,
+      duplicateOf: null,
       riskFlags,
     }
-    urlById.set(id, url)
     return entry
   })
+  return dedupeBookmarks(entries)
 }
 
 function sameOrigin(req) {
@@ -126,20 +121,23 @@ export async function GET(req) {
        ORDER BY position ASC`
     ).bind(userId, active.import_id).all()
 
+    const items = dedupeBookmarks((result?.results || []).map(serializeItem))
+    const summary = summarizeBookmarks(items)
+
     return json({
       import: {
         id: active.import_id,
         sourceName: active.source_name,
         sourceSha256: active.source_sha256,
         sourceFolderCount: active.source_folder_count,
-        total: active.total_count,
-        uniqueUrls: active.unique_url_count,
-        duplicateEntries: active.duplicate_count,
-        categoryCounts: parseJson(active.category_counts, {}),
-        risks: parseJson(active.risk_counts, {}),
+        total: summary.total,
+        uniqueUrls: summary.uniqueUrls,
+        duplicateEntries: 0,
+        categoryCounts: summary.categoryCounts,
+        risks: summary.risks,
         activatedAt: active.activated_at,
       },
-      items: (result?.results || []).map(serializeItem),
+      items,
       categories: BOOKMARK_CATEGORIES,
     })
   } catch {

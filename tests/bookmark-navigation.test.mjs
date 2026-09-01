@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
 
-import { parseChromeBookmarks, summarizeBookmarks } from '../lib/bookmarkNavigation.mjs'
+import { dedupeBookmarks, parseChromeBookmarks, summarizeBookmarks } from '../lib/bookmarkNavigation.mjs'
 
 const fixture = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
 <DL><p>
@@ -21,24 +21,33 @@ const fixture = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
   </DL><p>
 </DL><p>`
 
-test('完整解析层级、实体、重复关系和风险标记', () => {
+test('完整解析层级和实体，直接去除重复链接且不单独标记 HTTP', () => {
   const entries = parseChromeBookmarks(fixture)
-  assert.equal(entries.length, 3)
+  assert.equal(entries.length, 2)
   assert.equal(entries[0].title, 'ChatGPT & OpenAI')
   assert.deepEqual(entries[0].folderPath, ['书签栏', 'AI'])
   assert.equal(entries[0].category, 'ai')
-  assert.equal(entries[1].duplicateOf, entries[0].id)
-  assert.equal(entries[2].category, 'work')
-  assert.deepEqual(entries[2].riskFlags.sort(), ['direct-host', 'insecure-http', 'management-entry', 'sensitive-query'])
+  assert.equal(entries[1].category, 'work')
+  assert.deepEqual(entries[1].riskFlags.sort(), ['direct-host', 'management-entry', 'sensitive-query'])
 })
 
 test('汇总分类数量与总数守恒', () => {
   const entries = parseChromeBookmarks(fixture)
   const summary = summarizeBookmarks(entries)
-  assert.equal(summary.total, 3)
+  assert.equal(summary.total, 2)
   assert.equal(summary.uniqueUrls, 2)
-  assert.equal(summary.duplicateEntries, 1)
-  assert.equal(Object.values(summary.categoryCounts).reduce((sum, count) => sum + count, 0), 3)
+  assert.equal(summary.duplicateEntries, 0)
+  assert.equal(Object.values(summary.categoryCounts).reduce((sum, count) => sum + count, 0), 2)
+})
+
+test('旧数据读取时去重并移除已有 HTTP 标记', () => {
+  const entries = dedupeBookmarks([
+    { id: 'first', url: 'http://example.com/', riskFlags: ['insecure-http'] },
+    { id: 'second', url: 'http://example.com/', duplicateOf: 'first', riskFlags: ['insecure-http'] },
+  ])
+  assert.deepEqual(entries, [
+    { id: 'first', url: 'http://example.com/', duplicateOf: null, riskFlags: [] },
+  ])
 })
 
 test('D1 schema keeps one active import per owner and preserves versioned items', async () => {

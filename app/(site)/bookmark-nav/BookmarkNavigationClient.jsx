@@ -30,10 +30,8 @@ function BookmarkCard({ item }) {
             {item.title}
           </a>
           <p className="truncate text-[10px] leading-4 text-[#858a81] dark:text-gray-500">{item.domain || item.url}</p>
-          {item.duplicateOf || item.riskFlags?.length ? <div className="mt-1 flex min-h-4 items-center gap-1 text-[9px]">
-            {item.duplicateOf ? <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">重复</span> : null}
-            {item.riskFlags?.includes('insecure-http') ? <span className="rounded bg-orange-50 px-1.5 py-0.5 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200">HTTP</span> : null}
-            {item.riskFlags?.some((flag) => flag !== 'insecure-http') ? <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-800 dark:bg-red-950/40 dark:text-red-200">私人入口</span> : null}
+          {item.riskFlags?.length ? <div className="mt-1 flex min-h-4 items-center gap-1 text-[9px]">
+            <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-800 dark:bg-red-950/40 dark:text-red-200">私人入口</span>
           </div> : null}
         </div>
         <span className="absolute right-2 top-2 text-[10px] text-[#9ba097] opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100 dark:text-gray-600" aria-hidden="true">↗</span>
@@ -73,7 +71,6 @@ export default function BookmarkNavigationClient() {
     const needle = query.trim().toLowerCase()
     return data.items.filter((item) => {
       if (category !== 'all' && item.category !== category) return false
-      if (special === 'duplicates' && !item.duplicateOf) return false
       if (special === 'risk' && !item.riskFlags?.length) return false
       if (!needle) return true
       return `${item.title} ${item.url} ${item.domain} ${(item.folderPath || []).join(' ')}`.toLowerCase().includes(needle)
@@ -115,7 +112,6 @@ export default function BookmarkNavigationClient() {
             <p><strong className="mr-1 font-medium text-[#444a41] dark:text-gray-200">{data.import.uniqueUrls}</strong>唯一链接</p>
             <p><strong className="mr-1 font-medium text-[#444a41] dark:text-gray-200">{data.import.sourceFolderCount}</strong>文件夹</p>
             <span className="hidden h-3 w-px bg-[#d6dad2] dark:bg-gray-700 sm:block" aria-hidden="true" />
-            <p className={data.import.duplicateEntries ? 'text-amber-700 dark:text-amber-300' : ''}>{data.import.duplicateEntries} 条重复</p>
             <p className={riskTotal ? 'text-red-700 dark:text-red-300' : ''}>{riskTotal} 个风险标记</p>
             <p className="ml-auto hidden max-w-56 truncate text-[#989d94] dark:text-gray-600 md:block" title={data.import.sourceName}>{data.import.sourceName}</p>
           </section>
@@ -135,7 +131,6 @@ export default function BookmarkNavigationClient() {
               </label>
               <select value={special} onChange={(event) => setSpecial(event.target.value)} aria-label="筛选书签状态" className="h-12 max-w-[9rem] border-0 border-l border-[#e2e5df] bg-transparent px-3 text-xs text-[#52584f] outline-none dark:border-gray-800 dark:text-gray-300 sm:max-w-none sm:text-sm">
                 <option value="all">全部状态</option>
-                <option value="duplicates">只看重复记录</option>
                 <option value="risk">只看风险入口</option>
               </select>
               <span className="hidden h-12 min-w-[5.5rem] items-center justify-center border-l border-[#e2e5df] px-3 text-xs tabular-nums text-[#858b81] dark:border-gray-800 dark:text-gray-500 sm:flex">

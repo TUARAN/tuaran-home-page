@@ -63,6 +63,15 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/admin/blogger-eye',
+        headers: [
+          {
+            key: 'Permissions-Policy',
+            value: 'loopback-network=(self)',
+          },
+        ],
+      },
+      {
         source: '/web-llm',
         headers: webLlmHeaders,
       },

@@ -11,6 +11,7 @@ import {
 } from '@tabler/icons-react'
 
 import { AdminButton, AdminPage, Section, StatCard, StatusPill } from '../../components/ui'
+import { bloggerEyeConnectionFailure, queryBloggerEyeLoopbackPermission } from '../../../../lib/bloggerEyeBrowser.mjs'
 
 const STORAGE_KEY = 'admin:blogger-eye:v1'
 const DEFAULT_SERVICE_URL = 'http://127.0.0.1:5177'
@@ -72,16 +73,33 @@ export default function BloggerEyeConsole() {
   const [preview, setPreview] = useState('访问后的页面文本预览会显示在这里。')
   const [logs, setLogs] = useState([])
   const [busy, setBusy] = useState(false)
+  const [permissionState, setPermissionState] = useState('unknown')
   const proxies = useMemo(() => parseProxies(proxyText), [proxyText])
 
   const addLog = useCallback((ok, detail, proxy = '') => {
     setLogs((items) => [{ id: `${Date.now()}-${Math.random()}`, at: new Date(), ok, detail, proxy: maskProxy(proxy) }, ...items].slice(0, 80))
   }, [])
 
-  const checkService = useCallback(async (value, writeLog = true) => {
+  const checkService = useCallback(async (value, writeLog = true, requestPermission = false) => {
     const base = safeServiceUrl(value)
     if (!base) {
       setService({ state: 'offline', message: '地址无效' })
+      return
+    }
+    const permission = await queryBloggerEyeLoopbackPermission(window.navigator.permissions)
+    setPermissionState(permission.state)
+    if (permission.state === 'denied') {
+      const failure = bloggerEyeConnectionFailure(permission.state)
+      setService({ state: failure.state, message: failure.message, detail: failure.detail })
+      if (writeLog) addLog(false, failure.detail)
+      return
+    }
+    if (permission.state === 'prompt' && !requestPermission) {
+      setService({
+        state: 'permission',
+        message: '待授权',
+        detail: '点击“授权并连接”，并在 Chrome 提示中允许本站访问本机服务。',
+      })
       return
     }
     setService({ state: 'checking', message: '检测中' })
@@ -90,10 +108,14 @@ export default function BloggerEyeConsole() {
       const data = await response.json()
       if (!response.ok || !data.ok) throw new Error(data.error || '服务未就绪')
       setService({ state: 'online', message: '已连接' })
+      setPermissionState('granted')
       if (writeLog) addLog(true, `已连接本机服务 ${base}`)
     } catch {
-      setService({ state: 'offline', message: '未启动' })
-      if (writeLog) addLog(false, '无法连接小眼睛后台服务，请检查常驻服务状态')
+      const latestPermission = await queryBloggerEyeLoopbackPermission(window.navigator.permissions)
+      setPermissionState(latestPermission.state)
+      const failure = bloggerEyeConnectionFailure(latestPermission.state)
+      setService({ state: failure.state, message: failure.message, detail: failure.detail })
+      if (writeLog) addLog(false, failure.detail)
     }
   }, [addLog])
 
@@ -110,6 +132,12 @@ export default function BloggerEyeConsole() {
       void checkService(DEFAULT_SERVICE_URL, false)
     }
   }, [checkService])
+
+  useEffect(() => {
+    if (service.state !== 'offline') return undefined
+    const timer = window.setInterval(() => void checkService(serviceUrl, false), 10_000)
+    return () => window.clearInterval(timer)
+  }, [checkService, service.state, serviceUrl])
 
   function saveLocal() {
     const normalizedServiceUrl = safeServiceUrl(serviceUrl)
@@ -235,7 +263,18 @@ export default function BloggerEyeConsole() {
     URL.revokeObjectURL(url)
   }
 
-  const serviceTone = service.state === 'online' ? 'success' : service.state === 'offline' ? 'danger' : 'neutral'
+  const serviceTone = service.state === 'online'
+    ? 'success'
+    : service.state === 'permission'
+      ? 'warning'
+      : ['offline', 'denied'].includes(service.state)
+        ? 'danger'
+        : 'neutral'
+  const connectionButtonLabel = service.state === 'permission'
+    ? '授权并连接'
+    : service.state === 'online'
+      ? '检测连接'
+      : '重新连接'
 
   return (
     <AdminPage
@@ -254,15 +293,20 @@ export default function BloggerEyeConsole() {
         <Section
           title="本机服务"
           description="服务由 macOS 自动管理并随登录启动，只绑定 127.0.0.1；无需单独打开终端。"
-          actions={<AdminButton type="button" size="sm" disabled={busy} onClick={() => void checkService(serviceUrl)}><IconActivityHeartbeat size={15} />检测连接</AdminButton>}
+          actions={<AdminButton type="button" size="sm" disabled={busy} onClick={() => void checkService(serviceUrl, true, true)}><IconActivityHeartbeat size={15} />{connectionButtonLabel}</AdminButton>}
         >
+          {service.detail ? (
+            <div className={`mb-4 rounded-lg border px-3 py-2.5 text-[11px] leading-5 ${service.state === 'permission' ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300' : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300'}`}>
+              {service.detail}
+            </div>
+          ) : null}
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,.7fr)] lg:items-end">
             <Field label="服务地址" hint="只接受 localhost / 127.0.0.1；修改端口时同步设置 BLOGGER_EYE_PORT。">
               <input className={inputClass} value={serviceUrl} onChange={(event) => setServiceUrl(event.target.value)} spellCheck={false} />
             </Field>
             <div className="rounded-lg border border-[#dedfd5] bg-[#fafaf6] px-3 py-2.5 dark:border-[#2d3744] dark:bg-[#0e131c]">
               <p className="font-mono text-[10px] text-[#858779] dark:text-[#8e9ab0]">运行方式</p>
-              <p className="mt-1 text-[12px] font-semibold text-[#15140f] dark:text-gray-100">macOS 登录后自动启动 · 异常退出自动恢复</p>
+              <p className="mt-1 text-[12px] font-semibold text-[#15140f] dark:text-gray-100">macOS 登录后自动启动 · 异常退出自动恢复{permissionState === 'granted' ? ' · 浏览器已授权' : ''}</p>
             </div>
           </div>
         </Section>

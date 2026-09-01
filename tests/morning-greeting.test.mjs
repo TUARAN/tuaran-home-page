@@ -25,7 +25,9 @@ import {
 import { rowToTemplate } from '../lib/morningGreetingTemplates.js'
 import { buildModelSelectionOptions } from '../lib/modelSelection.js'
 import {
+  DAILY_GREETING_FORMATS,
   DAILY_GREETING_STYLES,
+  DAILY_GREETING_VOICES,
   DEFAULT_DAILY_GREETING_LLM_INTENT,
   buildGreetingLlmMessages,
   buildGreetingLengthRepairMessages,
@@ -36,7 +38,9 @@ import {
   normalizeGreetingModelSelections,
   parseGreetingModelSelection,
   greetingModelSelectionId,
+  pickDailyGreetingFormat,
   pickDailyGreetingStyle,
+  pickDailyGreetingVoice,
 } from '../lib/dailyGreetingLlm.js'
 import {
   X_API_POST_CREATE_COST_MICRO_USD,
@@ -192,32 +196,65 @@ test('automation model selection accepts one model and migrates legacy settings'
 
 test('LLM prompt includes current period, exact calendar date, weekday, and editable intent', () => {
   const style = DAILY_GREETING_STYLES[2]
+  const voice = DAILY_GREETING_VOICES[3]
+  const format = DAILY_GREETING_FORMATS[4]
   const messages = buildGreetingLlmMessages({
     intent: '围绕今天先完成一件小事来写。',
     period: 'noon',
     now: new Date('2026-08-18T04:00:00.000Z'),
     style,
+    voice,
+    format,
   })
   assert.equal(messages.length, 2)
   assert.match(messages[0].content, /只输出最终文案/)
   assert.match(messages[0].content, /自然点赞的理由/)
-  assert.match(messages[0].content, /能让人讲选择或亲历的问题/)
+  assert.match(messages[0].content, /内容视角、人格声线和文本结构/)
   assert.match(messages[1].content, /当前时段：午安/)
   assert.match(messages[0].content, /日期或星期.*严格使用.*当前日历信息/)
   assert.match(messages[1].content, /当前日历：2026年8月18日，星期二/)
-  assert.match(messages[1].content, new RegExp(`本次风格：${style.label}`))
+  assert.match(messages[1].content, new RegExp(`本次内容视角：${style.label}`))
   assert.match(messages[1].content, new RegExp(style.direction.slice(0, 12)))
+  assert.match(messages[1].content, new RegExp(`本次人格声线：${voice.label}`))
+  assert.match(messages[1].content, new RegExp(voice.direction.slice(0, 12)))
+  assert.match(messages[1].content, new RegExp(`本次文本结构：${format.label}`))
+  assert.match(messages[1].content, new RegExp(format.direction.slice(0, 12)))
   assert.match(messages[1].content, /围绕今天先完成一件小事来写/)
 })
 
-test('five greeting styles are distinct and selected across the full random range', () => {
-  assert.equal(DAILY_GREETING_STYLES.length, 5)
-  assert.equal(new Set(DAILY_GREETING_STYLES.map((style) => style.id)).size, 5)
-  assert.equal(new Set(DAILY_GREETING_STYLES.map((style) => style.label)).size, 5)
+test('greeting content, voice, and format pools create distinct randomized combinations', () => {
+  assert.equal(DAILY_GREETING_STYLES.length, 10)
+  assert.equal(DAILY_GREETING_VOICES.length, 6)
+  assert.equal(DAILY_GREETING_FORMATS.length, 8)
+  assert.equal(new Set(DAILY_GREETING_STYLES.map((item) => item.id)).size, DAILY_GREETING_STYLES.length)
+  assert.equal(new Set(DAILY_GREETING_VOICES.map((item) => item.id)).size, DAILY_GREETING_VOICES.length)
+  assert.equal(new Set(DAILY_GREETING_FORMATS.map((item) => item.id)).size, DAILY_GREETING_FORMATS.length)
+  assert.equal(DAILY_GREETING_STYLES.length * DAILY_GREETING_VOICES.length * DAILY_GREETING_FORMATS.length, 480)
+
+  const valuesAcross = (length) => Array.from({ length }, (_, index) => index / length)
   assert.deepEqual(
-    [0, 0.2, 0.4, 0.6, 0.999999].map((value) => pickDailyGreetingStyle({ random: () => value }).id),
-    DAILY_GREETING_STYLES.map((style) => style.id),
+    valuesAcross(DAILY_GREETING_STYLES.length).map((value) => pickDailyGreetingStyle({ random: () => value }).id),
+    DAILY_GREETING_STYLES.map((item) => item.id),
   )
+  assert.deepEqual(
+    valuesAcross(DAILY_GREETING_VOICES.length).map((value) => pickDailyGreetingVoice({ random: () => value }).id),
+    DAILY_GREETING_VOICES.map((item) => item.id),
+  )
+  assert.deepEqual(
+    valuesAcross(DAILY_GREETING_FORMATS.length).map((value) => pickDailyGreetingFormat({ random: () => value }).id),
+    DAILY_GREETING_FORMATS.map((item) => item.id),
+  )
+})
+
+test('default greeting intent has a personal voice and the migration preserves custom settings', async () => {
+  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /TUARAN/)
+  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /真实的人/)
+  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /持续制造变化/)
+
+  const migration = await readFile(new URL('../migrations/0086_richer_daily_greeting_intent.sql', import.meta.url), 'utf8')
+  assert.match(migration, /UPDATE site_settings/)
+  assert.match(migration, /WHERE key = 'automation\.x_morning_greeting\.llm_intent'/)
+  assert.match(migration, /AND value = '写一条自然、真诚的中文日常问候/)
 })
 
 test('generated greeting cleanup removes wrappers without rewriting copy', () => {

@@ -399,9 +399,9 @@ export default function MorningGreetingClient() {
           <div className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
             <p className="mb-4 mt-0 text-[11px] leading-5 text-[#85877c]">文案生成使用自动化模块顶部的“当前模型”。</p>
             <div>
-              <Field className="mb-0" label="意图（提示语）"><textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={4} maxLength={4000} placeholder="告诉模型希望写出什么样的问候文案" className={inputClass} /></Field>
+              <Field className="mb-0" label="意图（提示语）"><textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={10} maxLength={4000} placeholder="定义账号气质、取材偏好、表达边界和希望避开的套路" className={inputClass} /></Field>
               <div className="mt-2 flex flex-wrap items-center gap-3">
-                <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">每次从五种写作方向中选择一种，再由当前模型结合日期、时段和内容意图生成。</p>
+                <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">每次分别随机一种内容视角、人格声线和文本结构，再结合日期、时段与站长意图生成；组合超过 400 种。</p>
                 <AdminButton type="button" variant="primary" disabled={saving || loading || !isGenerationDirty || !llmIntent.trim()} onClick={saveGenerationSettings}>{saving ? '保存中…' : isGenerationDirty ? '保存并应用' : '已应用'}</AdminButton>
               </div>
             </div>

@@ -44,3 +44,9 @@ test('site chrome mounts the mobile tab bar and add-to-home guide', () => {
   assert.match(manifestSource, /"display": "standalone"/)
   assert.match(manifestSource, /"short_name": "2aran"/)
 })
+
+test('bookmark navigation hides the site header on both the route and rewritten subdomain', () => {
+  assert.match(chromeSource, /HIDE_HEADER_PATHS = new Set\(\['\/spacex', '\/bookmark-nav'\]\)/)
+  assert.match(chromeSource, /BOOKMARKS_HOST = 'bookmarks\.2aran\.com'/)
+  assert.match(chromeSource, /HIDE_HEADER_PATHS\.has\(pathname\) \|\| isBookmarksHost/)
+})

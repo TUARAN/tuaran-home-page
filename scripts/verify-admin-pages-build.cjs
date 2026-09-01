@@ -38,6 +38,17 @@ const ALLOWED_DYNAMIC_ADMIN_PAGES = new Set([
 // execute a request. Keep explicit exceptions narrow so new missing APIs fail.
 const NON_RUNTIME_API_REFERENCES = new Set(['/api/subscribe'])
 
+// BloggerEyeConsole talks directly to the loopback-only companion service
+// configured in that page. These paths are runtime requests, but they are not
+// routes that belong in the deployed Admin Worker.
+const EXTERNAL_SERVICE_API_REFERENCES = new Set([
+  '/api/health',
+  '/api/ip',
+  '/api/visit',
+  '/api/91http/extract',
+  '/api/91http/extract-visit',
+])
+
 function isAllowedRoute(route) {
   return route === '/middleware'
     || route.startsWith('/admin')
@@ -106,7 +117,9 @@ const clientApiReferences = collectClientApiReferences(
   path.join(root, '.vercel', 'output', 'static', '_next', 'static'),
 )
 const missingClientApis = [...clientApiReferences].filter(
-  (apiPath) => !NON_RUNTIME_API_REFERENCES.has(apiPath) && !routes.includes(apiPath),
+  (apiPath) => !NON_RUNTIME_API_REFERENCES.has(apiPath)
+    && !EXTERNAL_SERVICE_API_REFERENCES.has(apiPath)
+    && !routes.includes(apiPath),
 )
 if (missingClientApis.length) {
   throw new Error(`Admin client references API routes missing from the build: ${missingClientApis.join(', ')}`)

@@ -39,3 +39,11 @@ test('admin build verification follows the merged long compass entry point', () 
   assert.match(adminVerifierSource, /ALLOWED_DYNAMIC_ADMIN_PAGES[\s\S]*['"]\/admin\/soft-sticker['"]/)
   assert.doesNotMatch(adminVerifierSource, /REQUIRED_PRERENDERED_ROUTES[\s\S]*['"]\/admin\/long-compass['"]/)
 })
+
+test('admin build verification excludes loopback companion APIs from Worker routes', () => {
+  assert.match(adminVerifierSource, /EXTERNAL_SERVICE_API_REFERENCES/)
+  for (const route of ['/api/health', '/api/ip', '/api/visit', '/api/91http/extract', '/api/91http/extract-visit']) {
+    assert.match(adminVerifierSource, new RegExp(`['"]${route}['"]`))
+  }
+  assert.match(adminVerifierSource, /!EXTERNAL_SERVICE_API_REFERENCES\.has\(apiPath\)/)
+})

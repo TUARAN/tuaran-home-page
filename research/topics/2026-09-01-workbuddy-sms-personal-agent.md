@@ -1,11 +1,11 @@
 ---
-title: 把 WorkBuddy 个人专家接到短信：本地智能体的实现路线
+title: 用短信操纵本地 WorkBuddy：运营商直连与云通信平台方案
 category: topics
 date: 2026-09-01
 time: 10:13
-tags: [WorkBuddy, 智能体, 短信, 飞书, lark-cli, 本地计算, Agent Skills]
-summary: WorkBuddy 已具备专家、Skill、记忆、远程助理和本地执行能力；飞书可用 WorkBuddy 原生助理或 lark-cli 长连接，短信则通过本地 sms-cli 对接运营商短信网关。
-tldr: 先用 WorkBuddy 原生飞书助理验证需求；短信 MVP 使用运营商分配的企业通道，由本地 sms-cli 通过 CMPP、SGIP 或 SMGP 接收 MO、提交 MT、处理 REPORT，再桥接 CodeBuddy CLI HTTP API/SSE。
+tags: [WorkBuddy, CodeBuddy CLI, 智能体, 短信, 腾讯云短信, Twilio, Agent Skills]
+summary: 一套通过普通短信调用本地 WorkBuddy 能力的双路线方案：企业优先直连运营商网关；个人或小团队通过腾讯云、阿里云、Twilio 等云通信平台接入，再由本地 CLI 执行专家与 Skills。
+tldr: 企业已有服务代码和网关账号时，优先通过 CMPP、SGIP 或 SMGP 直连；拿不到运营商端口时，使用云通信平台承接上行、下行和回调。本地桥接程序只访问 127.0.0.1 上的 CodeBuddy HTTP API，并把 SSE 事件转换成安全的进度摘要，不向短信发送模型原始思维链。
 topic_type: tech
 subjects: [ai_dev]
 content_type: analysis
@@ -18,16 +18,17 @@ pv: 0
 
 ## 一、先给结论
 
-这套产品可以实现，当前最稳妥的落点是“用户自有执行节点”：模型调用、专家、Skill、文件、凭证、会话和长期记忆都由用户电脑上的智能体进程管理；公网只保留短信收发、消息排队和设备在线状态，不在云端运行另一个智能体。
+这套产品可以实现，推荐采用“运营商直连优先、云通信平台兜底”的双路线。模型调用、专家、Skill、文件、凭证、会话和长期记忆都由用户电脑上的智能体进程管理；公网只保留短信收发、消息排队和设备在线状态，不在云端运行另一个智能体。
 
-关键判断有六个：
+关键判断有七个：
 
 1. WorkBuddy 已经提供远程助理，支持微信、企业微信、QQ、钉钉和飞书。官方列表暂未包含短信。微信助理已经能在手机端发起任务、补充指令、批准操作并接收结果，适合先验证“用户是否愿意从消息入口调用本地专家”。
 2. WorkBuddy 5.4.5 已为微信、企微助理加入逐字流式输出；CodeBuddy CLI 也提供 `stream-json`、REST Runs 和 SSE。技术上可以持续获得进度事件。
-3. 短信不适合逐字转发。长短信会被拆分成多个协议包和计费条目，具体字数、编码、内容审核、频率和资费以签约运营商的业务规则为准。产品应发送“已收到—需要确认—已完成”这类状态摘要，完整过程留在 WorkBuddy 或一个受保护的本地/网页详情页。
-4. 公开资料没有证明 WorkBuddy 桌面端向第三方开放了可直接接入短信的通用 API。CodeBuddy CLI 有公开 Beta HTTP API、Agent SDK、自定义 Agent、Skills、会话恢复和定时任务，适合作为本地桥接层。不要依赖 GUI 自动点击、抓包或私有 RPC。
-5. WorkBuddy 与 CodeBuddy CLI 的配置和记忆已经分目录保存。CLI 路线可以复刻专家、Skills、项目上下文和本地记忆，但不能假定它自动继承 WorkBuddy 账号里的云端用户画像。若“原样使用 WorkBuddy 记忆”是硬条件，应先推动官方增加短信助理通道，或继续使用现有微信助理。
-6. `larksuite/cli` 可以预装到用户电脑，充当飞书通道和飞书工具箱。它支持 WebSocket 实时事件、NDJSON、消息回复、消息编辑和 26 个 Agent Skills。它无法让普通短信直接进入飞书，但可以先把对话窗口迁到飞书，并把飞书的短信/电话加急作为关键消息的补充触达。
+3. 企业若已经获得服务代码、网关账号和网络条件，优先使用 CMPP、SGIP 或 SMGP 直连。它能控制 MO、MT、REPORT、重试和路由，也减少对单一云聚合商 API 的依赖。
+4. 个人或小团队通常无法直接申请运营商网关。腾讯云短信、阿里云短信、Twilio 等平台可以提供发送 API 和上行回调，但中国大陆个人主体仍可能受实名报备、签名、模板和业务类型限制。云平台降低技术门槛，不等于自动取得双向短信经营条件。
+5. 短信不适合逐字转发。长短信会被拆分成多个协议包和计费条目，具体字数、编码、内容审核、频率和资费以签约运营商或云平台规则为准。产品应发送“已收到—需要确认—已完成”这类状态摘要，完整过程留在 WorkBuddy 或一个受保护的本地/网页详情页。
+6. 公开资料没有证明 WorkBuddy 桌面端向第三方开放了可直接接入短信的通用 API。CodeBuddy CLI 有公开 Beta HTTP API、Agent SDK、自定义 Agent、Skills、会话恢复和定时任务，适合作为本地桥接层。不要依赖 GUI 自动点击、抓包或私有 RPC。
+7. WorkBuddy 与 CodeBuddy CLI 的配置和记忆已经分目录保存。CLI 路线可以复刻专家、Skills、项目上下文和本地记忆，但不能假定它自动继承 WorkBuddy 账号里的云端用户画像。若“原样使用 WorkBuddy 记忆”是硬条件，应推动官方增加短信助理通道，或继续使用现有微信、飞书助理。
 
 这份方案聚焦“一名用户、一台本地节点、一个私人专家”。短信/RCS 的行业与资质问题可继续查阅[站内早期通道调研](/articles/research/topics/workbuddy-sms-rcs-channel)；多人短信群、云端控制面和分布式 Agent 见[双向短信群方案](/articles/research/topics/workbuddy-sms-distributed-agent-messaging-architecture)。
 
@@ -39,13 +40,17 @@ pv: 0
 用户手机
    │ 上行短信
    ▼
-运营商 SMSC / 短信网关
-   │ CMPP / SGIP / SMGP：MO、MT、REPORT
+短信入口
+   ├─ 企业直连：运营商 SMSC / CMPP / SGIP / SMGP
+   └─ 云通信：腾讯云 / 阿里云 / Twilio Webhook
    ▼
-用户侧 sms-cli 守护进程 ── 长连接、心跳、重连、流控、编解码、去重
-   │ 本地事件队列
+通道接入层 ── 验签、去重、回执、限流、加密离线队列
+   │ 用户电脑主动领取消息，不开放公网入站端口
    ▼
-用户电脑：SMS Bridge → CodeBuddy CLI / WorkBuddy 能力 → 专家 + Skills + MCP + 本地文件
+用户电脑：SMS Bridge → 127.0.0.1 → CodeBuddy CLI / WorkBuddy 能力
+                                         │
+                                         ▼
+                              专家 + Skills + MCP + 本地文件
    │
    ├─ SSE 进度事件 → 合并、限频 → 短信状态通知
    └─ 最终答案 → 压缩摘要 → 短信下发
@@ -53,9 +58,81 @@ pv: 0
 
 运营商直连通常由企业或服务提供商获得接入账号、服务代码、网关地址、协议版本和网络访问条件。具体是否要求固定出口 IP、专线或 VPN，以及资质、内容、频率和计费规则，均以签约运营商和省级通道的书面约定为准。它不是给普通手机号直接开放的个人 API。
 
-本地节点只连接运营商短信网关和回环地址上的 Agent API，不需要把 WorkBuddy 或 CodeBuddy 的 HTTP 端口暴露到公网。若运营商要求专线接入，可以把 `sms-cli gateway` 部署在用户控制的企业网络或边缘主机，用户电脑再通过双向认证的出站连接领取事件；该网关只做协议转换和离线排队，不运行用户专家，也不持有用户文件凭证。
+个人用户缺少运营商端口时，由云通信平台承担号码或短信通道、运营商连接、发送 API、上行回复和状态回调。用户电脑通过出站长轮询或 WebSocket 从通道接入层领取消息。云端只做通信和短期排队，不运行用户专家，也不持有用户文件凭证。
 
-## 三、WorkBuddy 已经具备哪些底座
+本地节点只访问回环地址上的 Agent API，不需要把 WorkBuddy 或 CodeBuddy 的 HTTP 端口暴露到公网。若运营商要求专线接入，可以把 `sms-cli gateway` 部署在用户控制的企业网络或边缘主机，用户电脑再通过双向认证的出站连接领取事件。
+
+## 三、双路线怎么选：直连优先，云平台降低门槛
+
+| 路线 | 适用对象 | 得到什么 | 主要门槛 | 结论 |
+|---|---|---|---|---|
+| CMPP / SGIP / SMGP 直连 | 已有企业资质、服务代码和运营商网关账号 | MO、MT、REPORT、协议流控和路由控制 | 商务开通、网络条件、协议联调、运维 | 长期主路线 |
+| 腾讯云短信 | 中国大陆企业或有企业授权的团队 | 发送 API、短信回复回调、控制台和审核流程 | 实名认证、资质、签名、模板、运营商报备 | 国内云平台优先评估 |
+| 阿里云短信 | 已使用阿里云体系的企业 | 发送 API、`SmsUp` HTTP/队列上行 | 资质、签名、模板、密钥和业务审核 | 国内备选 |
+| Twilio | 海外用户和快速 PoC | 可编程号码、入站 Webhook、发送 API、状态回调 | 试用限制、地区与号码政策 | 最快验证海外闭环 |
+
+### 腾讯云能不能解决个人没有运营商端口的问题
+
+技术接入层面可以。腾讯云替用户处理与运营商之间的大部分协议连接，开发者通过 HTTPS API 发送短信，通过回复回调接收用户上行，不需要自己实现 CMPP、SGIP 或 SMGP。
+
+业务开通层面需要按主体判断。腾讯云国内短信快速入门要求完成账号认证、资质、签名和正文模板配置。官方身份与签名说明显示，中国大陆个人认证主体的个人签名无法完成运营商实名报备；企业资料、网站或 App 所属主体及相应授权链路更适合正式服务。个人用户注册腾讯云账号后，不应承诺一定能立即获得一个支持自由双向 AI 对话的短信通道。
+
+因此，安装向导可以这样分流：
+
+1. 用户有企业服务代码和网关账号：进入运营商直连配置；
+2. 用户有企业主体或企业授权：优先打开腾讯云短信开通页，准备资质、签名和模板；
+3. 用户只有个人身份、目标在海外：引导使用 Twilio 试用号码完成 PoC；
+4. 用户只有个人身份、目标在中国大陆：先使用 WorkBuddy 微信或飞书助理验证需求，同时申请合规云短信通道，不宣传“个人手机号直接变成短信机器人”。
+
+阿里云的逻辑相近：发送 API 必须在后端使用，AccessKey 不能放入客户端提示词；上行回复由 `SmsUp` 推送到 HTTP 地址或消息队列。两家国内平台都需要确认真实业务样例是否允许开放式 AI 问答、过程通知和用户回复。
+
+### 云平台接入也不要暴露用户电脑
+
+云平台需要一个公开 HTTPS 回调地址。推荐把回调放在 Cloudflare Workers、腾讯云函数或阿里云函数计算等托管环境，再让本地桥接程序主动取消息。开发测试阶段可以使用临时隧道，正式版本不应要求用户长期运行 ngrok，也不应把本地 `8080` 端口映射到公网。
+
+云端事件只保存最小字段：供应商消息 ID、用户别名、密文正文、接收时间、设备 ID 和过期时间。默认 24 小时过期；本地领取成功后尽快删除正文。供应商密钥保存在云端 Secret 管理或用户本机系统钥匙串，不进入 Agent 上下文。
+
+## 四、本地 CLI 要做到快速安装
+
+CodeBuddy CLI 官方提供 Homebrew、npm 和原生安装器。安装器应自动识别环境，普通用户只需选择一种方式：
+
+```bash
+# macOS
+brew install Tencent-CodeBuddy/tap/codebuddy-code
+
+# 已有 Node.js 18.20 或更高版本
+npm install -g @tencent-ai/codebuddy-code
+
+# macOS / Linux 原生安装器（Beta）
+curl -fsSL https://www.codebuddy.cn/cli/install.sh | bash
+
+codebuddy --version
+```
+
+首次运行 `codebuddy` 后按界面完成登录。短信桥可以设计成三条命令；以下名称是建议开发的产品接口，不代表已经发布的 npm 包：
+
+```bash
+npx @tuaran/workbuddy-sms init
+workbuddy-sms doctor
+workbuddy-sms start
+```
+
+`init` 向导依次完成通道选择、官方注册页跳转、凭证保存、手机号验证码绑定、专家/Skills 选择、自检短信和系统保活。macOS 使用 LaunchAgent，Windows 使用 Windows Service，Linux 使用 systemd 用户服务。用户不需要理解 Webhook、SSE、服务代码或协议序列号。
+
+`doctor` 应给出明确动作：
+
+```text
+✓ CodeBuddy CLI 已安装并登录
+✓ Agent API 只监听 127.0.0.1
+✓ 腾讯云凭证与回调验签通过
+✓ 控制手机号已完成验证码绑定
+✓ 上行 → 本地执行 → 下行自检成功
+! 电脑休眠后无法执行：建议开启接电时保持唤醒
+```
+
+通道凭证必须保存到 macOS Keychain、Windows Credential Manager 或 Linux Secret Service。配置文件只记录 Secret 引用，安装命令和日志均不打印密钥。
+
+## 五、WorkBuddy 已经具备哪些底座
 
 | 能力 | 已确认的公开能力 | 对短信方案的意义 |
 |---|---|---|
@@ -86,7 +163,7 @@ personal-expert/
 
 `settings.json` 可将该专家设为主 Agent。每个 Skill 应声明输入、输出、可访问目录、是否联网和是否具有副作用。来源不明的 Skill 不应获得 Shell、文件写入或凭证权限；自定义 Agent/Skill 的 frontmatter Hook 默认也会被安全闸门拒绝。
 
-## 四、“思考过程持续返回”应拆成两件事
+## 六、“思考过程持续返回”应拆成两件事
 
 ### 1. 技术上的流式事件
 
@@ -107,7 +184,7 @@ CodeBuddy CLI 支持 `--output-format stream-json --include-partial-messages`。
 
 进度合并器建议设置三个阈值：首条确认在 5 秒内发出；同一任务的阶段消息至少间隔 60 秒；默认最多发送 3 条进度短信和 1 条最终短信。其余事件写入本地审计日志。
 
-## 五、短信通道是最大的现实约束
+## 七、短信通道是最大的现实约束
 
 ### 双向通信
 
@@ -137,7 +214,7 @@ CodeBuddy CLI 支持 `--output-format stream-json --include-partial-messages`。
 
 WorkBuddy 的 HTTP API 包含执行进程、终端和文件读写能力，默认要求密码认证；绑定非回环地址时强制认证。生产实现应让 API 只监听 `127.0.0.1`，由同机桥接进程访问。公网层不得直接转发任意 `/api/v1/*` 请求。
 
-## 六、记忆怎么保留
+## 八、记忆怎么保留
 
 记忆要按作用域拆开，否则一个错误摘要可能长期污染用户画像。
 
@@ -153,7 +230,7 @@ WorkBuddy 当前每晚从会话中整理记忆，支持查看、编辑、删除�
 
 稳妥的同步规则是单向、可见、可撤销：用户从 WorkBuddy 导出或人工确认一份画像摘要，写入 CLI 用户记忆；短信对话中新产生的候选记忆先进入“待确认”列表，不自动反写 WorkBuddy 云端画像。
 
-## 七、定时机制与离线处理
+## 九、定时机制与离线处理
 
 WorkBuddy 桌面自动化会在本地保存任务名称、提示词、调度规则、工作目录和状态，并以当前登录身份调用模型、工具、MCP 和连接器。CLI HTTP API 也能创建 `durable: true` 的定时任务。两者都依赖本机在线、Agent 进程运行和网络可用。
 
@@ -167,7 +244,7 @@ WorkBuddy 桌面自动化会在本地保存任务名称、提示词、调度规�
 4. 超过 2 分钟仍未开始，向用户返回“设备离线/繁忙”；
 5. 定时任务执行完成后只发送摘要，失败则发送可重试的任务号。
 
-## 八、WorkBuddy 路线与豆包/扣子路线
+## 十、WorkBuddy 路线与豆包/扣子路线
 
 | 维度 | WorkBuddy / CodeBuddy 本地节点 | 豆包模型或扣子智能体 API |
 |---|---|---|
@@ -190,7 +267,7 @@ Twilio 可以发送应用交给它的任何合规文本，因此开发者可以�
 
 海外经验支持的产品承诺应限定为“在短信里持续看到可审计的进度”。若 WorkBuddy 后续公开稳定的执行事件，桥接层可以转发其状态、工具调用和阶段总结；若只提供最终输出，Twilio 或运营商短信通道都无法补出 WorkBuddy 的思考过程。
 
-## 九、larksuite/cli 能否作为预装通道
+## 十一、larksuite/cli 能否作为预装通道
 
 可以。它更适合先把对话窗口放到飞书，短信保留为通知或加急通道。
 
@@ -270,25 +347,25 @@ lark-cli auth status
 
 第一版采用 WorkBuddy 原生飞书助理，验证专家、记忆、权限和远程对话是否符合预期。第二版需要产品级定制时，再把 `lark-cli` 预装进本地节点。此时飞书承担主对话界面，短信只用于离线、超时、关键提醒和电话加急。
 
-## 十、可以做一个 Agent 原生的 sms-cli
+## 十二、可以做一个 Agent 原生的统一 sms-cli
 
-短信业务更适合拥有自己的 CLI。`lark-cli` 可以作为交互与安全设计的参考，不能代替短信通道。
+短信业务更适合拥有自己的 CLI。`lark-cli` 可以作为交互与安全设计的参考，不能代替短信通道。统一 `sms-cli` 同时支持运营商协议和云通信 API，上层 Agent 不需要感知供应商差异。
 
 ### 1. 产品定位
 
-`sms-cli` 是运行在用户控制环境中的运营商短信网关客户端。它不负责大模型推理，也不管理专家记忆；它把 CMPP、SGIP、SMGP 的连接、报文和状态差异收敛成稳定的本地命令与事件流：
+`sms-cli` 是运行在用户控制环境中的短信通道客户端。它不负责大模型推理，也不管理专家记忆；它把 CMPP、SGIP、SMGP 和云平台 Webhook/API 的连接、事件与状态差异收敛成稳定的本地命令：
 
 ```text
 WorkBuddy / CodeBuddy / 其他本地 Agent
                  │
                  ▼
-        sms-cli + SMS Skills
-      ┌──────────┼──────────┐
-      ▼          ▼          ▼
- CmppAdapter SgipAdapter SmgpAdapter
-      │          │          │
-   中国移动     中国联通     中国电信
-      └────── 运营商短信网关 ──────┘
+              sms-cli + SMS Skills
+       ┌─────────────┴─────────────┐
+       ▼                           ▼
+ CarrierGateway               CloudGateway
+ CMPP / SGIP / SMGP     Tencent / Aliyun / Twilio
+       │                           │
+       └──────── 短信网络 ─────────┘
 ```
 
 同一套核心库还可以提供 MCP Server。CLI 适合本地 Agent、Shell 管道、守护进程和诊断；MCP 适合跨 Agent 的结构化工具调用。两种入口共用凭证、策略、幂等库和 `CarrierGateway` 适配器，避免出现两套发送逻辑。
@@ -296,10 +373,15 @@ WorkBuddy / CodeBuddy / 其他本地 Agent
 ### 2. 第一版命令面
 
 ```bash
-# 用户安装与配置；只添加实际签约的通道
+# 企业直连；只添加实际签约的通道
 sms-cli gateway add mobile-main --protocol cmpp3
 sms-cli gateway add unicom-main --protocol sgip12
 sms-cli gateway add telecom-main --protocol smgp3
+
+# 云通信平台；凭证从系统 Secret 存储读取
+sms-cli gateway add tencent-main --provider tencent-cloud
+sms-cli gateway add aliyun-main --provider aliyun
+sms-cli gateway add twilio-main --provider twilio
 sms-cli auth status
 sms-cli doctor
 
@@ -341,9 +423,9 @@ sms-cli daemon stop
 
 父进程等待固定的 `[sms-event] ready` 标记后再读取 stdout。这样 WorkBuddy Skill、CodeBuddy Agent、systemd 和 LaunchAgent 都能可靠判断消费者是否已经建立连接。
 
-### 3. 运营商网关适配层
+### 3. 运营商与云平台适配层
 
-第一版按实际签约通道只实现一种协议，接口稳定后再增加另外两种：
+上层统一使用 `SubmitMT()`、`ReceiveMO()`、`ReceiveReport()` 和 `HealthCheck()`。运营商适配器维护 TCP 长连接；云平台适配器负责 HTTPS API、Webhook 验签、回调去重和状态码归一。第一版按真实用户选择实现一个适配器，接口稳定后再扩展：
 
 ```text
 CarrierGateway
@@ -356,9 +438,19 @@ CarrierGateway
 └── HealthCheck()
 ```
 
+```text
+CloudGateway
+├── VerifyWebhook()
+├── SubmitMessage()
+├── ReceiveUpstream()
+├── ReceiveStatusCallback()
+├── NormalizeProviderError()
+└── HealthCheck()
+```
+
 守护进程维护运营商网关的持久 TCP 会话，负责鉴权、心跳、断线重连、序列号、窗口与流控、超时重试、字符编码、长短信拆分/重组，以及 MO 和 REPORT 的确认应答。协议处理与 Agent 执行必须解耦：收到上行包后先写入本地 SQLite 并按协议及时应答，再异步投递给 Agent，避免模型执行时间拖垮网关连接。
 
-若运营商接入点不能从用户电脑直接访问，可把协议连接器部署到用户控制的企业网络。连接器收到 MO/REPORT 后写入加密队列，本地 `sms-cli daemon` 通过出站长连接领取；MT 反向提交到连接器。该节点仍然只保存最小通道事件，不运行专家。
+若运营商接入点不能从用户电脑直接访问，或使用云平台 Webhook，可把通道连接器部署到用户控制的企业网络或云函数。连接器收到 MO/REPORT 后写入加密队列，本地 `sms-cli daemon` 通过出站长连接领取；MT 反向提交到连接器。该节点仍然只保存最小通道事件，不运行专家。
 
 ### 4. 配套 Skills
 
@@ -416,7 +508,7 @@ sms-cli send
 
 因此，`sms-cli` 的第一个可用版本应限定为“企业资质下的一名已绑定用户，用短信询问自己的本地专家”。它具备清楚的闭环，也能验证最核心的个人智能服务形态。
 
-## 十一、分四步落地
+## 十三、分四步落地
 
 ### 第 0 阶段：两周内验证需求
 
@@ -434,13 +526,13 @@ sms-cli send
 
 在一台测试电脑安装 CodeBuddy CLI，加载同一套专家插件。实现一个本地 `sms-bridge`：
 
-1. 使用已签约通道的 CMPP、SGIP 或 SMGP 建立连接，完成鉴权、心跳与自动重连；
-2. 接收 MO 后先落库并按协议应答，再校验白名单、事件 ID、指令长度和速率；
+1. 企业已有运营商端口时，使用 CMPP、SGIP 或 SMGP 建立连接；个人或小团队使用已经通过审核的腾讯云、阿里云或 Twilio 通道；
+2. 接收 MO 或云平台上行回调后先验签、落库并应答，再校验白名单、事件 ID、指令长度和速率；
 3. 将手机号映射到固定会话 ID；
 4. 调用本机 `/api/v1/runs`；
 5. 读取 SSE，生成阶段摘要；
-6. 通过 `SubmitMT()` 发送已批准样式的进度和最终摘要；
-7. 接收 REPORT，SQLite 保存协议消息、Run、提交响应、送达和审批状态，不保存模型凭证明文。
+6. 通过统一 `SubmitMT()` 发送已批准样式的进度和最终摘要；
+7. 接收 REPORT 或云平台状态回调，SQLite 保存通道消息、Run、提交响应、送达和审批状态，不保存模型凭证明文。
 
 首版只开放无副作用能力：资料查询、个人知识库问答、日程查看、文本总结和提醒。文件写入、外部消息发送和 Shell 执行暂不开放。
 
@@ -450,20 +542,20 @@ sms-cli send
 
 这一阶段再评估是否向 WorkBuddy 申请原生短信助理能力。原生接入一旦开放，可以复用同一套专家、助理会话、审批 UI 和 WorkBuddy 用户画像，维护成本会明显下降。
 
-## 十二、需要先验证的八个问题
+## 十四、需要先验证的八个问题
 
-1. 目标运营商能否给该企业开通双向短信、分配服务代码，并书面允许个人专家问答和过程通知这一业务类型；
+1. 目标运营商或云通信平台能否为该主体开通双向短信，并书面允许个人专家问答和过程通知这一业务类型；
 2. WorkBuddy 专家包能否无损投影到 CodeBuddy CLI 插件，尤其是专有 Skill 和连接器；
 3. REST Run 的 SSE 中实际包含哪些稳定事件，权限请求能否可靠映射为 `awaiting_approval`；
 4. WorkBuddy 记忆是否存在官方导出接口，CLI 是否有受支持的导入方式；
 5. 同一 Agent 会话在短信、CLI 和 WorkBuddy 桌面之间能否共享或恢复；
 6. WorkBuddy / CodeBuddy 的个人订阅条款是否允许把该节点包装成面向其他用户的服务。
 7. 飞书自建应用能否在目标用户的租户中顺利创建、发布并取得最小权限；短信/电话加急是否包含在用户套餐内及其实际限额。
-8. 测试通道实际交付的是 CMPP、SGIP 还是 SMGP 哪个版本；连接方式、并发窗口、长短信、MO、REPORT、服务代码和扩展码能否支持连续多轮问答。
+8. 测试通道实际交付的是 CMPP、SGIP、SMGP 还是云平台 Webhook/API；连接方式、并发窗口、长短信、MO、REPORT、号码或服务代码能否支持连续多轮问答。
 
-公开文档目前只能证明各模块分别存在，不能证明第 1～6 项已经形成一条官方支持的端到端链路。MVP 应使用运营商交付的测试账号、真实服务代码、批准的消息样例和只读 Skill 做一轮实测，再决定是否产品化。
+公开文档目前只能证明各模块分别存在，不能证明第 1～6 项已经形成一条官方支持的端到端链路。MVP 应使用运营商或云通信平台交付的测试账号、真实号码或服务代码、批准的消息样例和只读 Skill 做一轮实测，再决定是否产品化。
 
-## 十三、信息来源与说明
+## 十五、信息来源与说明
 
 - [WorkBuddy 助理（远程任务）](https://www.codebuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Assistant)：支持平台、完整执行记录、单会话和安全边界。
 - [WorkBuddy 微信助理接入指南](https://www.codebuddy.cn/docs/workbuddy/WeixinBot-Guide)：本地执行、远程审批、常开主机和一对一绑定。
@@ -471,13 +563,18 @@ sms-cli send
 - [WorkBuddy 默认权限与安全沙箱](https://www.codebuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Permission-Modes)：高风险操作确认及完全访问风险。
 - [WorkBuddy 记忆](https://www.codebuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Memory)：记忆提取、管理和隐私范围。
 - [CodeBuddy Code HTTP API Beta](https://www.codebuddy.cn/docs/cli/http-api)：REST Runs、SSE、ACP、认证、插件和持久化定时任务。
+- [CodeBuddy CLI 安装](https://www.codebuddy.cn/docs/cli/installation)：npm、Homebrew、原生安装器、版本检查与更新。
+- [CodeBuddy Channels Beta](https://www.codebuddy.cn/docs/cli/channels)与[通道参考](https://www.codebuddy.cn/docs/cli/channels-reference)：把 Webhook 或外部事件推入运行中的会话，并通过工具双向回复。
 - [CodeBuddy 插件参考](https://www.codebuddy.cn/docs/cli/plugins-reference)：Agent、Skills、Hooks、MCP 及安全闸门。
 - [CodeBuddy Agent SDK](https://www.codebuddy.cn/docs/cli/sdk)与[记忆管理](https://www.codebuddy.cn/docs/cli/memory)：配置来源、会话及本地记忆位置。
 - [Twilio Messaging Webhooks](https://www.twilio.com/docs/usage/webhooks/messaging-webhooks)：入站短信 Webhook、TwiML 回复和送达状态回调。
+- [Twilio Programmable Messaging Quickstart](https://www.twilio.com/docs/messaging/quickstart)与[试用账户说明](https://www.twilio.com/docs/usage/tutorials/how-to-use-your-free-trial-account)：号码开通、已验证收件人、地区与试用限制。
 - [Twilio Agent Connect](https://www.twilio.com/en-us/blog/products/launches/agent-connect)与[官方 Quickstart](https://www.twilio.com/docs/conversations/agent-connect/quickstart)：自托管 Agent 接入 SMS、语音和会话上下文的官方路线。
 - [Twilio ChatGPT SMS 教程](https://www.twilio.com/en-us/blog/building-chatbot-chatgpt-api-twilio-programmable-sms-python)：早期以 Flask Webhook 自建短信 AI 对话的公开案例。
 - [Twilio SkyOwl Airlines 参考架构](https://www.twilio.com/en-us/blog/developers/tutorials/integrations/ai-twilio-agent-connect-amazon-bedrock-agentcore)：短信与语音共用 Agent、身份和长期记忆的多通道案例。
 - [中国移动北京云 MAS](https://service.bj.10086.cn/m/style/5Gzt1/sub1_11.html)：集团短信产品支持 Web、SDK、CMPP 等接入方式。
+- [腾讯云国内短信快速入门](https://cloud.tencent.com/document/product/382/37745)、[认证主体与签名限制](https://cloud.tencent.com/document/product/382/13444/)与[短信回复回调](https://intl.cloud.tencent.com/zh/document/product/382/35605)：资质、签名模板、实名报备和上行回调。
+- [阿里云短信 API](https://help.aliyun.com/zh/sms/getting-started/use-sms-api)、[签名规范](https://help.aliyun.com/zh/sms/user-guide/signature-specifications-1)与[SmsUp 上行回调](https://help.aliyun.com/zh/sms/developer-reference/receipt-message-faq)：后端发送、AccessKey 安全、签名要求和回复推送。
 - [中国联通合作方门户：短信协议](https://prm.chinaunicom.com/portal/information/hzyd/index.xhtml?type=sms)：列出 SGIP 协议及联网、鉴权相关资料入口。
 - [CMPP 3.0 协议文档镜像](https://www.kannel.org/~tolj/specs/CMPP2/CMPP-v30.pdf)：用于核对连接、消息头、提交、上行和状态报告报文；最终以运营商交付版本为准。
 - [go-sms-protocol](https://github.com/hujm2023/go-sms-protocol)：可参考的开源 Go 协议库，覆盖 CMPP 2.0/3.0、SGIP 1.2、SMGP 3.0 和 SMPP；它不是运营商官方 SDK，上线前需做协议一致性与压力测试。
@@ -489,4 +586,4 @@ sms-cli send
 - [站内：WorkBuddy + 消息（SMS / 5G 消息）](/articles/research/topics/workbuddy-sms-rcs-channel)：短信通道、资质、成本与替代方案。
 - [站内：WorkBuddy 接入双向短信群](/articles/research/topics/workbuddy-sms-distributed-agent-messaging-architecture)：多人短信桥、云端控制面和分布式 Agent。
 
-资料截至 2026 年 9 月 1 日。有关 WorkBuddy 与 CodeBuddy CLI 记忆互通、运营商直连接入条件、消息内容审批、商业授权和权限事件格式的结论仍需实测或向对应方书面确认。
+资料截至 2026 年 9 月 1 日。有关 WorkBuddy 与 CodeBuddy CLI 记忆互通、运营商直连接入条件、云通信平台对开放式 AI 问答的审核、商业授权和权限事件格式的结论仍需实测或向对应方书面确认。

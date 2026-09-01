@@ -291,6 +291,7 @@ test('自动化模块使用共用样式的单选模型组件，并退出固定�
   assert.match(clientSource, /AutomationModelSelector/)
   assert.doesNotMatch(clientSource, /selectedModelIds|max=\{2\}/)
   assert.doesNotMatch(clientSource, /generation-tab|title="三条问候"|id: 'template'/)
+  assert.doesNotMatch(clientSource, /意图（提示语）|saveGenerationSettings|组合超过 400 种/)
   assert.match(automationSelectorSource, /X 自动发布模型/)
   assert.match(automationSelectorSource, /其他页面各自保存模型选择/)
   assert.match(automationSelectorSource, /api\/admin\/morning-greeting\/model-selection/)

@@ -31,9 +31,7 @@ const CULTURE_CATEGORY_LABELS = {
   chinese_story: '中华寓言 / 历史',
   foreign_fable: '国外童话 / 寓言',
 }
-const inputClass = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-5 text-[#3f4039] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#0f141d] dark:text-gray-200'
 const generationModeLabel = (mode) => ({ deepseek: 'DeepSeek Flash', ollama: 'Ollama Qwen', template: '模板库', llm: 'DeepSeek Flash' })[mode] || mode
-const fieldClass = 'mb-3 flex flex-col gap-1 text-[12px] font-semibold text-[#34352f] dark:text-gray-200'
 const TIMELINE_FILTERS = [
   { id: 'all', label: '全部任务' },
   { id: 'greeting', label: '问候' },
@@ -57,10 +55,6 @@ function formatTime(value) {
   if (!value) return '—'
   const date = new Date(Number(value))
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('zh-CN', { hour12: false })
-}
-
-function Field({ label, className = '', children }) {
-  return <label className={`${fieldClass} ${className}`.trim()}>{label}{children}</label>
 }
 
 function runState(run) {
@@ -312,7 +306,6 @@ export default function MorningGreetingClient() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [llmIntent, setLlmIntent] = useState('')
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -322,7 +315,6 @@ export default function MorningGreetingClient() {
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.message || payload?.detail || payload?.error || `HTTP_${response.status}`)
       setData(payload)
-      setLlmIntent(payload.llmIntent || '')
     } catch (fetchError) {
       setError(fetchError?.message || 'X 发布配置读取失败。')
     } finally {
@@ -352,23 +344,6 @@ export default function MorningGreetingClient() {
     } catch (pauseError) { setError(pauseError?.message || '状态切换失败。') } finally { setSaving(false) }
   }
 
-  async function saveGenerationSettings() {
-    if (!llmIntent.trim()) return setError('生成意图不能为空。')
-    setSaving(true); setError(''); setNotice('')
-    try {
-      const response = await fetch('/api/admin/morning-greeting', {
-        method: 'PATCH', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'save-generation', intent: llmIntent }),
-      })
-      const payload = await safeJson(response)
-      if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
-      setNotice('提示语已保存；下一次自动发布开始使用新配置。')
-      await refresh()
-    } catch (saveError) { setError(saveError?.message || '生成方式保存失败。') } finally { setSaving(false) }
-  }
-
-  const isGenerationDirty = llmIntent !== (data?.llmIntent || '')
-
   return (
     <AdminPage
       title="X 发布任务"
@@ -395,17 +370,6 @@ export default function MorningGreetingClient() {
           <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} communityRuns={communityRuns} cryptoRuns={cryptoRuns} usRuns={usRuns} />
           <XImagePool />
           <XApiCostPanel cost={data?.xApiCost} />
-
-          <div className="rounded-xl border border-[#e2e4da] bg-[#fbfbf8] p-4 dark:border-[#243041] dark:bg-[#0f141d]">
-            <p className="mb-4 mt-0 text-[11px] leading-5 text-[#85877c]">文案生成使用自动化模块顶部的“当前模型”。</p>
-            <div>
-              <Field className="mb-0" label="意图（提示语）"><textarea value={llmIntent} onChange={(event) => setLlmIntent(event.target.value)} rows={10} maxLength={4000} placeholder="定义账号气质、取材偏好、表达边界和希望避开的套路" className={inputClass} /></Field>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                <p className="m-0 flex-1 text-[11px] leading-5 text-[#85877c]">每次分别随机一种内容视角、人格声线和文本结构，再结合日期、时段与站长意图生成；组合超过 400 种。</p>
-                <AdminButton type="button" variant="primary" disabled={saving || loading || !isGenerationDirty || !llmIntent.trim()} onClick={saveGenerationSettings}>{saving ? '保存中…' : isGenerationDirty ? '保存并应用' : '已应用'}</AdminButton>
-              </div>
-            </div>
-          </div>
         </div>
         </Section>
     </AdminPage>

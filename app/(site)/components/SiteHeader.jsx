@@ -191,6 +191,8 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
   const { locale } = useLocale()
   const closeTimerRef = useRef(null)
   const sections = getChannelNavSections(channel, account, navOverrides)
+  const landingItem = sections[0]?.items[0]
+  const landingHref = landingItem?.href || channel.href
   const positionClass =
     align === 'right'
       ? 'right-0'
@@ -222,7 +224,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
     closeTimerRef.current = setTimeout(() => onToggle.close(), 120)
   }
 
-  function handleToggleClick() {
+  function handleTriggerFocus() {
     clearCloseTimer()
     if (!isOpen) {
       trackSiteEvent('menu_open', {
@@ -230,7 +232,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
         destination_id: channel.key,
       })
     }
-    onToggle.toggle()
+    onToggle.open()
   }
 
   return (
@@ -239,20 +241,26 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <button
-        type="button"
+      <Link
+        href={landingHref}
         ref={triggerRef}
-        onClick={handleToggleClick}
+        onClick={onClose}
+        onFocus={handleTriggerFocus}
         aria-haspopup="true"
         aria-expanded={isOpen}
+        aria-current={isActive ? 'page' : undefined}
         className={[
           'site-nav-trigger',
           isActive ? 'site-nav-trigger-active' : '',
         ].join(' ')}
+        data-analytics-event="entry_click"
+        data-analytics-surface="global_nav"
+        data-analytics-destination-kind="page"
+        data-analytics-destination-id={landingHref}
       >
         {navLabel(channel, locale)}
         <ChevronDown />
-      </button>
+      </Link>
 
       {isOpen ? (
         <div

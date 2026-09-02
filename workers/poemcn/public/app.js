@@ -213,8 +213,7 @@ function renderQuote() {
 
 function renderStats() {
   if (!state.stats) return;
-  const active = state.stats.sources?.filter((source) => source.status === "active").length || 0;
-  elements.sourceNote.textContent = `已收录 ${Number(state.stats.poemCount).toLocaleString("zh-CN")} 篇、${Number(state.stats.authorCount).toLocaleString("zh-CN")} 位作者；${active} 个数据源由机器人持续补充。每条记录保留来源与许可。`;
+  elements.sourceNote.textContent = `已收录 ${Number(state.stats.poemCount).toLocaleString("zh-CN")} 篇诗文；诗库按数据集版本离线更新，不再持续抓取。每条记录保留来源与许可。`;
 }
 
 function updateSectionCopy() {

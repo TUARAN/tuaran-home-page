@@ -1,0 +1,7 @@
+{
+  "maxEstimatedD1RowsWritten": 50000,
+  "maxR2Objects": 2000,
+  "maxR2Bytes": 268435456,
+  "maxD1SqlBytes": 268435456,
+  "d1WriteSafetyMultiplier": 12
+}

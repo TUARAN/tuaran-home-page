@@ -104,7 +104,7 @@ export function normalizeRecord(raw, source, fileName, rowIndex) {
     categories: [...new Set([source.dynasty, source.genre, form, ...sourceCategories, ...themes])],
     note,
     sourceKey: `chinese-poetry:${source.source_key}`,
-    sourceUrl: `https://github.com/${REPOSITORY}/blob/${BRANCH}/${encodePath(source.directory)}/${encodeURIComponent(fileName)}`,
+    sourceUrl: `https://github.com/${REPOSITORY}/blob/${source.commit || BRANCH}/${encodePath(source.directory)}/${encodeURIComponent(fileName)}`,
     sourceLicense: LICENSE,
     sourceRecordId,
     fingerprint: fingerprint(`${title}\n${author}\n${contentText}`),
@@ -164,14 +164,14 @@ function insertStatement(db, poem) {
   );
 }
 
-async function insertPoems(db, poems) {
-  const before = await db.prepare("SELECT COUNT(*) AS count FROM poems").first();
+export async function insertPoems(db, poems) {
+  let imported = 0;
   for (let index = 0; index < poems.length; index += 50) {
     const batch = poems.slice(index, index + 50);
-    await db.batch(batch.map((poem) => insertStatement(db, poem)));
+    const results = await db.batch(batch.map((poem) => insertStatement(db, poem)));
+    imported += results.reduce((total, result) => total + Math.max(0, Number(result?.meta?.changes || 0)), 0);
   }
-  const after = await db.prepare("SELECT COUNT(*) AS count FROM poems").first();
-  return Math.max(0, Number(after?.count || 0) - Number(before?.count || 0));
+  return imported;
 }
 
 async function selectSource(db) {

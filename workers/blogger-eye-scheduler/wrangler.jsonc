@@ -1,0 +1,34 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "blogger-eye-scheduler",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "2aran.com/_internal/blogger-eye/*",
+      "zone_name": "2aran.com"
+    }
+  ],
+  "triggers": {
+    "crons": ["*/20 * * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tuaran-me",
+      "database_id": "9dd9a699-a708-46ca-8243-85fd12ff8d63",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "vars": {
+    "BLOGGER_EYE_TARGET_URL": "https://2aran.com",
+    "BLOGGER_EYE_RUNNERS": "[]"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  }
+}

@@ -8,12 +8,14 @@ import { renderPoem, renderHome, SITE_NAME, sitemapUrls } from "../src/seo.js";
 const template = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const schema = await readFile(new URL("../migrations/0001_initial.sql", import.meta.url), "utf8");
 const seeds = await readFile(new URL("../migrations/0002_seed.sql", import.meta.url), "utf8");
+const versionedIndex = await readFile(new URL("../migrations/0004_r2_versioned_index.sql", import.meta.url), "utf8");
 
 function fixture(t) {
   const sql = new DatabaseSync(":memory:");
   t.after(() => sql.close());
   sql.exec(schema);
   sql.exec(seeds);
+  sql.exec(versionedIndex);
   function statement(query, args = []) {
     return {
       bind(...values) { return statement(query, values); },
@@ -22,6 +24,7 @@ function fixture(t) {
     };
   }
   const env = { DB: { prepare: statement, batch: async list => Promise.all(list.map(item => item.all())) },
+    POEM_CONTENT: { async get() { return null; } },
     ASSETS: { async fetch(request) {
       assert.equal(request.headers.get("cookie"), null);
       return new URL(request.url).pathname === "/" ? new Response(template) : new Response("Not found", { status: 404 });

@@ -1,0 +1,78 @@
+name: Poemcn dataset build
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "chinese-poetry 的完整 40 位 commit SHA；留空则读取 upstream-lock.json"
+        required: false
+        type: string
+  schedule:
+    - cron: "23 3 1 * *"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/poemcn
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: release
+        name: Resolve immutable upstream commit
+        env:
+          REQUESTED_COMMIT: ${{ inputs.commit }}
+        run: |
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const lock = JSON.parse(fs.readFileSync("upstream-lock.json", "utf8"));
+            const commit = (process.env.REQUESTED_COMMIT || lock.commit || "").toLowerCase();
+            if (!commit) {
+              console.log("::notice::upstream-lock.json 尚未锁定完整 commit，本月构建安全跳过。");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "ready=false\n");
+              process.exit(0);
+            }
+            if (!/^[0-9a-f]{40}$/.test(commit)) throw new Error("上游版本必须是完整 40 位 commit SHA");
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `ready=true\ncommit=${commit}\n`);
+          '
+
+      - name: Fetch exact upstream checkout
+        if: steps.release.outputs.ready == 'true'
+        run: npm run dataset:fetch -- --commit "${{ steps.release.outputs.commit }}" --target "${RUNNER_TEMP}/chinese-poetry"
+
+      - name: Restore previous catalog for delta
+        if: steps.release.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          artifact_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '[.artifacts[] | select(.expired == false and (.name | startswith("poemcn-")))] | sort_by(.created_at) | last | .id // empty')"
+          if [[ -n "${artifact_id}" ]]; then
+            mkdir -p "${RUNNER_TEMP}/poemcn-baseline"
+            gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > "${RUNNER_TEMP}/poemcn-baseline.zip"
+            unzip -q "${RUNNER_TEMP}/poemcn-baseline.zip" -d "${RUNNER_TEMP}/poemcn-baseline"
+          else
+            echo "No previous release artifact; delta will use an empty baseline."
+          fi
+
+      - name: Build release, delta, stats and sitemaps
+        if: steps.release.outputs.ready == 'true'
+        run: |
+          build_args=(--commit "${{ steps.release.outputs.commit }}" --source-dir "${RUNNER_TEMP}/chinese-poetry" --output "${RUNNER_TEMP}/poemcn-release")
+          if [[ -f "${RUNNER_TEMP}/poemcn-baseline/catalog.ndjson" ]]; then
+            build_args+=(--baseline-catalog "${RUNNER_TEMP}/poemcn-baseline/catalog.ndjson")
+          fi
+          npm run dataset:build -- "${build_args[@]}"
+
+      - name: Upload immutable release candidate
+        if: steps.release.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: poemcn-${{ steps.release.outputs.commit }}
+          path: ${{ runner.temp }}/poemcn-release
+          if-no-files-found: error
+          retention-days: 60

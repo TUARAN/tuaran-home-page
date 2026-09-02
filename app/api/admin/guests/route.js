@@ -1,6 +1,6 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
-import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
+import { getGuestDirectoryStats, listGuestDirectory } from '../../../../lib/guestDirectory'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -10,74 +10,6 @@ function dbOrNull() {
     return getD1()
   } catch {
     return null
-  }
-}
-
-function toNumber(value) {
-  return Number(value || 0)
-}
-
-function firstNonZero(...values) {
-  const nums = values.map((v) => Number(v || 0)).filter((v) => v > 0)
-  return nums.length ? Math.min(...nums) : 0
-}
-
-function lastNonZero(...values) {
-  const nums = values.map((v) => Number(v || 0)).filter((v) => v > 0)
-  return nums.length ? Math.max(...nums) : 0
-}
-
-function normalizeGuest(row) {
-  const firstSeenAt = firstNonZero(
-    row.first_ledger_at,
-    row.first_unlock_at,
-    row.first_comment_at,
-    row.bound_at,
-    row.points_updated_at
-  )
-  const lastSeenAt = lastNonZero(
-    row.last_ledger_at,
-    row.last_unlock_at,
-    row.last_comment_at,
-    row.bound_at,
-    row.points_updated_at
-  )
-  const spent = Math.abs(toNumber(row.spent))
-  return {
-    userId: row.user_id,
-    gid: String(row.user_id || '').replace(/^guest:/, ''),
-    balance: toNumber(row.balance),
-    earned: toNumber(row.earned),
-    spent,
-    ledgerCount: toNumber(row.ledger_count),
-    unlockCount: toNumber(row.unlock_count),
-    commentCount: toNumber(row.comment_count),
-    firstSeenAt,
-    lastSeenAt,
-    boundUserId: row.bound_user_id || '',
-    boundAt: toNumber(row.bound_at),
-    latestLedger: row.latest_ledger_id
-      ? {
-          id: row.latest_ledger_id,
-          delta: toNumber(row.latest_delta),
-          reason: row.latest_reason || '',
-          ref: row.latest_ref || '',
-          createdAt: toNumber(row.latest_created_at),
-        }
-      : null,
-  }
-}
-
-function normalizeStats(row) {
-  return {
-    total: toNumber(row?.total),
-    active: toNumber(row?.active),
-    bound: toNumber(row?.bound),
-    totalBalance: toNumber(row?.total_balance),
-    totalEarned: toNumber(row?.total_earned),
-    totalSpent: toNumber(row?.total_spent),
-    unlocks: toNumber(row?.unlocks),
-    comments: toNumber(row?.comments),
   }
 }
 
@@ -96,183 +28,22 @@ export async function GET(req) {
 
   try {
     const url = new URL(req.url)
-    const detailUserId = String(url.searchParams.get('userId') || '').trim()
-    const guestsResult = await db
-      .prepare(
-        `WITH guest_ids AS (
-           SELECT user_id FROM user_points WHERE user_id LIKE 'guest:%'
-           UNION
-           SELECT user_id FROM point_ledger WHERE user_id LIKE 'guest:%'
-           UNION
-           SELECT user_id FROM resource_unlocks WHERE user_id LIKE 'guest:%'
-           UNION
-           SELECT user_id FROM article_comments WHERE user_id LIKE 'guest:%'
-           UNION
-           SELECT 'guest:' || gid AS user_id FROM guest_bindings
-         ),
-         ledger_rollup AS (
-           SELECT
-             user_id,
-             COUNT(*) AS ledger_count,
-             MIN(created_at) AS first_ledger_at,
-             MAX(created_at) AS last_ledger_at,
-             SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END) AS earned,
-             SUM(CASE WHEN delta < 0 THEN delta ELSE 0 END) AS spent
-           FROM point_ledger
-           WHERE user_id LIKE 'guest:%'
-           GROUP BY user_id
-         ),
-         latest_ledger AS (
-           SELECT pl.id, pl.user_id, pl.delta, pl.reason, pl.ref, pl.created_at
-           FROM point_ledger pl
-           INNER JOIN (
-             SELECT user_id, MAX(id) AS id
-             FROM point_ledger
-             WHERE user_id LIKE 'guest:%'
-             GROUP BY user_id
-           ) latest ON latest.id = pl.id
-         ),
-         unlock_rollup AS (
-           SELECT
-             user_id,
-             COUNT(*) AS unlock_count,
-             MIN(unlocked_at) AS first_unlock_at,
-             MAX(unlocked_at) AS last_unlock_at
-           FROM resource_unlocks
-           WHERE user_id LIKE 'guest:%'
-           GROUP BY user_id
-         ),
-         comment_rollup AS (
-           SELECT
-             user_id,
-             COUNT(*) AS comment_count,
-             MIN(created_at) AS first_comment_at,
-             MAX(created_at) AS last_comment_at
-           FROM article_comments
-           WHERE user_id LIKE 'guest:%'
-           GROUP BY user_id
-         )
-         SELECT
-           g.user_id,
-           COALESCE(up.balance, 0) AS balance,
-           up.updated_at AS points_updated_at,
-           gb.user_id AS bound_user_id,
-           gb.bound_at,
-           lr.ledger_count,
-           lr.first_ledger_at,
-           lr.last_ledger_at,
-           lr.earned,
-           lr.spent,
-           ur.unlock_count,
-           ur.first_unlock_at,
-           ur.last_unlock_at,
-           cr.comment_count,
-           cr.first_comment_at,
-           cr.last_comment_at,
-           ll.id AS latest_ledger_id,
-           ll.delta AS latest_delta,
-           ll.reason AS latest_reason,
-           ll.ref AS latest_ref,
-           ll.created_at AS latest_created_at
-         FROM guest_ids g
-         LEFT JOIN user_points up ON up.user_id = g.user_id
-         LEFT JOIN guest_bindings gb ON ('guest:' || gb.gid) = g.user_id
-         LEFT JOIN ledger_rollup lr ON lr.user_id = g.user_id
-         LEFT JOIN latest_ledger ll ON ll.user_id = g.user_id
-         LEFT JOIN unlock_rollup ur ON ur.user_id = g.user_id
-         LEFT JOIN comment_rollup cr ON cr.user_id = g.user_id
-         ORDER BY COALESCE(lr.last_ledger_at, ur.last_unlock_at, cr.last_comment_at, gb.bound_at, up.updated_at, 0) DESC
-         LIMIT 1000`
-      )
-      .all()
-
-    const statsResult = await db
-      .prepare(
-        `WITH guest_ids AS (
-           SELECT user_id FROM user_points WHERE user_id LIKE 'guest:%'
-           UNION
-           SELECT user_id FROM point_ledger WHERE user_id LIKE 'guest:%'
-           UNION
-           SELECT user_id FROM resource_unlocks WHERE user_id LIKE 'guest:%'
-           UNION
-           SELECT user_id FROM article_comments WHERE user_id LIKE 'guest:%'
-           UNION
-           SELECT 'guest:' || gid AS user_id FROM guest_bindings
-         ),
-         ledger_rollup AS (
-           SELECT
-             user_id,
-             SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END) AS earned,
-             SUM(CASE WHEN delta < 0 THEN delta ELSE 0 END) AS spent
-           FROM point_ledger
-           WHERE user_id LIKE 'guest:%'
-           GROUP BY user_id
-         ),
-         unlock_rollup AS (
-           SELECT
-             user_id,
-             COUNT(*) AS unlock_count
-           FROM resource_unlocks
-           WHERE user_id LIKE 'guest:%'
-           GROUP BY user_id
-         ),
-         comment_rollup AS (
-           SELECT
-             user_id,
-             COUNT(*) AS comment_count
-           FROM article_comments
-           WHERE user_id LIKE 'guest:%'
-           GROUP BY user_id
-         )
-         SELECT
-           COUNT(*) AS total,
-           SUM(CASE WHEN gb.user_id IS NULL THEN 1 ELSE 0 END) AS active,
-           SUM(CASE WHEN gb.user_id IS NOT NULL THEN 1 ELSE 0 END) AS bound,
-           SUM(COALESCE(up.balance, 0)) AS total_balance,
-           SUM(COALESCE(lr.earned, 0)) AS total_earned,
-           SUM(ABS(COALESCE(lr.spent, 0))) AS total_spent,
-           SUM(COALESCE(ur.unlock_count, 0)) AS unlocks,
-           SUM(COALESCE(cr.comment_count, 0)) AS comments
-         FROM guest_ids g
-         LEFT JOIN user_points up ON up.user_id = g.user_id
-         LEFT JOIN guest_bindings gb ON ('guest:' || gb.gid) = g.user_id
-         LEFT JOIN ledger_rollup lr ON lr.user_id = g.user_id
-         LEFT JOIN unlock_rollup ur ON ur.user_id = g.user_id
-         LEFT JOIN comment_rollup cr ON cr.user_id = g.user_id`
-      )
-      .first()
-
-    const guests = (guestsResult?.results || []).map(normalizeGuest)
-    let guestDetail = null
-    if (detailUserId) {
-      if (!detailUserId.startsWith('guest:')) {
-        return Response.json({ status: 'error', error: 'INVALID_GUEST_ID' }, { status: 400 })
-      }
-      const guest = guests.find((item) => item.userId === detailUserId)
-      if (!guest) {
-        return Response.json({ status: 'error', error: 'GUEST_NOT_FOUND' }, { status: 404 })
-      }
-      const unlocks = await listUnlocksForUser(db, detailUserId, { limit: 300 })
-      guestDetail = {
-        guest,
-        unlocks,
-        movedToAccount: guest.boundUserId || '',
-      }
-    }
-    return Response.json({
-      status: 'ok',
-      generatedAt: Date.now(),
-      stats: normalizeStats(statsResult),
-      guests,
-      guestDetail,
-    })
+    const [directory, stats] = await Promise.all([
+      listGuestDirectory(db, {
+        limit: url.searchParams.get('limit'),
+        status: url.searchParams.get('status'),
+        cursor: url.searchParams.get('cursor'),
+      }),
+      getGuestDirectoryStats(db),
+    ])
+    return Response.json({ status: 'ok', generatedAt: Date.now(), stats, ...directory })
   } catch (error) {
     return Response.json(
       {
         status: 'error',
         generatedAt: Date.now(),
-        error: 'GUESTS_READ_FAILED',
-        message: '游客目录读取失败（迁移 0027 / 0028 是否已应用？）。',
+        error: 'GUEST_DIRECTORY_READ_FAILED',
+        message: '游客物化目录读取失败（迁移 0088 是否已应用？）。',
         detail: String(error?.message || error),
       },
       { status: 500 }
@@ -283,6 +54,5 @@ export async function GET(req) {
 export async function POST(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
-
   return Response.json({ error: 'GUEST_POINTS_UNSUPPORTED' }, { status: 400 })
 }

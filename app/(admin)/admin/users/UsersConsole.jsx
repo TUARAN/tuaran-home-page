@@ -74,6 +74,9 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
   const [guestDetail, setGuestDetail] = useState(null)
   const [guestDetailTarget, setGuestDetailTarget] = useState(null)
   const [guestDetailStatus, setGuestDetailStatus] = useState('idle')
+  const [guestPage, setGuestPage] = useState({ hasMore: false, nextCursor: '' })
+  const [guestCurrentCursor, setGuestCurrentCursor] = useState('')
+  const [guestCursorHistory, setGuestCursorHistory] = useState([])
 
   const refresh = useCallback(async () => {
     setStatus('loading')
@@ -125,15 +128,20 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
     if (activeTab === 'mcp' && mcpStatus === 'idle') refreshMcpGrants()
   }, [activeTab, mcpStatus, refreshMcpGrants])
 
-  const refreshGuests = useCallback(async () => {
+  const loadGuestPage = useCallback(async (cursor = '', history = []) => {
     setGuestStatus('loading')
     setGuestMessage('')
     try {
-      const res = await fetch('/api/admin/guests', { cache: 'no-store', credentials: 'same-origin' })
+      const params = new URLSearchParams({ limit: '30', status: guestFilter })
+      if (cursor) params.set('cursor', cursor)
+      const res = await fetch(`/api/admin/guests?${params}`, { cache: 'no-store', credentials: 'same-origin' })
       const data = await res.json().catch(() => null)
       if (res.ok && data?.status === 'ok' && Array.isArray(data.guests)) {
         setGuests(data.guests)
         setGuestStats(data.stats || null)
+        setGuestPage(data.page || { hasMore: false, nextCursor: '' })
+        setGuestCurrentCursor(cursor)
+        setGuestCursorHistory(history)
         setGuestStatus('ok')
       } else {
         setGuestStatus(data?.status === 'unavailable' ? 'unavailable' : 'error')
@@ -143,13 +151,15 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
       setGuestStatus('error')
       setGuestMessage(String(error?.message || error))
     }
-  }, [])
+  }, [guestFilter])
+
+  const refreshGuests = useCallback(() => loadGuestPage('', []), [loadGuestPage])
 
   useEffect(() => {
-    if (activeTab === 'guests' && guestStatus === 'idle') {
+    if (activeTab === 'guests') {
       refreshGuests()
     }
-  }, [activeTab, guestStatus, refreshGuests])
+  }, [activeTab, refreshGuests])
 
   const stats = useMemo(() => {
     const counts = { total: users.length, member: 0, trusted: 0, blocked: 0, owner: 0, totalBalance: 0, totalUnlocks: 0 }
@@ -181,8 +191,6 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
   const filteredGuests = useMemo(() => {
     const q = guestQuery.trim().toLowerCase()
     return guests.filter((guest) => {
-      if (guestFilter === 'active' && guest.boundUserId) return false
-      if (guestFilter === 'bound' && !guest.boundUserId) return false
       if (!q) return true
       const u = displayNameForUserId(guest.userId)
       return [
@@ -198,7 +206,7 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
         .toLowerCase()
         .includes(q)
     })
-  }, [guests, guestFilter, guestQuery])
+  }, [guests, guestQuery])
 
   const usersById = useMemo(() => Object.fromEntries(users.map((user) => [user.id, user])), [users])
 
@@ -314,7 +322,7 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
     setGuestDetail(null)
     setGuestMessage('')
     try {
-      const res = await fetch(`/api/admin/guests?userId=${encodeURIComponent(guest.userId)}`, {
+      const res = await fetch(`/api/admin/guests/${encodeURIComponent(guest.userId)}`, {
         cache: 'no-store',
         credentials: 'same-origin',
       })
@@ -811,7 +819,7 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
                   value={guestQuery}
                   onChange={(event) => setGuestQuery(event.target.value)}
                   type="search"
-                  placeholder="搜索昵称 / guest ID / 绑定用户"
+                  placeholder="筛选当前页昵称 / guest ID"
                   className="w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-1.5 text-sm outline-none focus:border-[#15140f] dark:border-[#2d3744] dark:bg-[#0d1218] dark:text-gray-100 dark:focus:border-[#4a5568] sm:w-72"
                 />
                 <div className="flex flex-wrap gap-1.5">
@@ -863,6 +871,31 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
                 />
               }
             />
+
+            <div className="flex items-center justify-between border-t border-[#e2e3da] px-4 py-3 text-xs text-[#67695d] dark:border-[#1e2733] dark:text-gray-400">
+              <span>每页最多 30 位游客，仅筛选当前页数据</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={guestStatus === 'loading' || guestCursorHistory.length === 0}
+                  onClick={() => {
+                    const history = guestCursorHistory.slice(0, -1)
+                    loadGuestPage(guestCursorHistory[guestCursorHistory.length - 1] || '', history)
+                  }}
+                  className="rounded-md border border-[#d8dad0] px-2.5 py-1 disabled:opacity-40 dark:border-[#2d3744]"
+                >
+                  上一页
+                </button>
+                <button
+                  type="button"
+                  disabled={guestStatus === 'loading' || !guestPage.hasMore || !guestPage.nextCursor}
+                  onClick={() => loadGuestPage(guestPage.nextCursor, [...guestCursorHistory, guestCurrentCursor])}
+                  className="rounded-md border border-[#d8dad0] px-2.5 py-1 disabled:opacity-40 dark:border-[#2d3744]"
+                >
+                  下一页
+                </button>
+              </div>
+            </div>
 
           </Section>
 

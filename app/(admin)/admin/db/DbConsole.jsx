@@ -54,6 +54,32 @@ function stateLabel(snapshot) {
   return '异常'
 }
 
+const POEMCN_RELEASE_COMMANDS = [
+  {
+    title: '1. 一次性准备线上资源',
+    note: '限额恢复后执行。R2 bucket 已存在时不要重复创建；先完成 migration，再部署读取新表的 Worker。',
+    command: `npx wrangler r2 bucket create poemcn-content --config workers/poemcn/wrangler.toml
+npx wrangler d1 migrations apply china-poetry --remote --config workers/poemcn/wrangler.toml`,
+  },
+  {
+    title: '2. 固定上游版本并离线构建',
+    note: '必须填写完整 40 位 commit SHA；禁止使用 master、tag 或短 SHA。需要真实增量时传入上一版 catalog。',
+    command: `npm --prefix workers/poemcn run dataset:fetch -- --commit <40位SHA> --target /private/tmp/chinese-poetry
+npm --prefix workers/poemcn run dataset:build -- --commit <40位SHA> --source-dir /private/tmp/chinese-poetry --baseline-catalog /path/to/previous/catalog.ndjson --output /private/tmp/poemcn-release`,
+  },
+  {
+    title: '3. 先做零写入预检',
+    note: '检查 manifest、delta 和预算结论。该命令不会上传 R2，也不会写 D1。',
+    command: `npm --prefix workers/poemcn run dataset:publish -- --manifest /private/tmp/poemcn-release/manifest.json --database china-poetry --bucket poemcn-content`,
+  },
+  {
+    title: '4. 人工确认后发布',
+    note: '脚本按 R2 → 未激活 D1 索引 → 行数/查询计划验证 → 最后激活的顺序执行；任一预算超限都会在远端写入前停止。',
+    command: `npm --prefix workers/poemcn run dataset:publish -- --manifest /private/tmp/poemcn-release/manifest.json --database china-poetry --bucket poemcn-content --apply --confirm-version <manifest.version>
+npx wrangler deploy --config workers/poemcn/wrangler.toml`,
+  },
+]
+
 export default function DbAdminClient() {
   const [snapshot, setSnapshot] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -61,6 +87,9 @@ export default function DbAdminClient() {
   const [search, setSearch] = useState('')
   const [group, setGroup] = useState('all')
   const [selectedTable, setSelectedTable] = useState('')
+  const [tableDetails, setTableDetails] = useState({})
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState('')
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -70,7 +99,8 @@ export default function DbAdminClient() {
       const data = await safeJson(res)
       if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
       setSnapshot(data)
-      setSelectedTable((current) => current || (Array.isArray(data?.tables) && data.tables[0] ? data.tables[0].name : ''))
+      setSelectedTable('')
+      setTableDetails({})
     } catch (e) {
       setError(e?.message || 'FETCH_FAILED')
     } finally {
@@ -81,6 +111,26 @@ export default function DbAdminClient() {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  const openTable = useCallback(async (tableName) => {
+    setSelectedTable(tableName)
+    setDetailError('')
+    if (tableDetails[tableName]) return
+    setDetailLoading(true)
+    try {
+      const res = await fetch(`/api/admin/db?table=${encodeURIComponent(tableName)}`, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await safeJson(res)
+      if (!res.ok || !data?.table) throw new Error(data?.error || `HTTP_${res.status}`)
+      setTableDetails((current) => ({ ...current, [tableName]: data.table }))
+    } catch (e) {
+      setDetailError(e?.message || 'TABLE_DETAIL_FAILED')
+    } finally {
+      setDetailLoading(false)
+    }
+  }, [tableDetails])
 
   const tables = useMemo(() => (Array.isArray(snapshot?.tables) ? snapshot.tables : []), [snapshot])
   const groups = useMemo(() => {
@@ -96,7 +146,8 @@ export default function DbAdminClient() {
     })
   }, [tables, search, group])
 
-  const selected = tables.find((table) => table.name === selectedTable) || filteredTables[0] || tables[0] || null
+  const selectedMeta = tables.find((table) => table.name === selectedTable) || null
+  const selected = selectedTable ? tableDetails[selectedTable] || selectedMeta : null
   const healthTone =
     snapshot?.status === 'connected'
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
@@ -105,7 +156,7 @@ export default function DbAdminClient() {
   return (
     <AdminPage
       title="数据库管理"
-      description="只读查看 Cloudflare D1 当前状态：表结构、行数、最近更新时间、文本体积估算和核心业务指标。这里不提供任意 SQL，不做删除或迁移。"
+      description="首屏只读取表目录。行数、字段、索引、最近记录和文本量仅在点开单表时查询，避免每次挂载扫描整库。"
       actions={
         <button
           type="button"
@@ -131,29 +182,11 @@ export default function DbAdminClient() {
         </div>
       ) : null}
 
-      <section className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="mb-5 grid gap-3 sm:grid-cols-3">
         <Stat label="连接状态" value={stateLabel(snapshot)} toneClass={healthTone} />
         <Stat label="表数量" value={formatNumber(snapshot?.tableCount)} hint={`预期 ${formatNumber(snapshot?.expectedTables)} 张`} />
-        <Stat label="总行数" value={formatNumber(snapshot?.totalRows)} />
-        <Stat label="文本量估算" value={formatBytes(snapshot?.approxTextBytes)} />
         <Stat label="刷新时间" value={formatTime(snapshot?.generatedAt)} compact />
       </section>
-
-      {snapshot?.summaries?.length ? (
-        <section className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          {snapshot.summaries.map((item) => (
-            <div key={item.key} className="rounded-xl border border-[#d5d7cd] bg-white/70 px-4 py-3 dark:border-[#252e39] dark:bg-[#10161f]">
-              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858779] dark:text-[#8e9ab0]">
-                {item.label}
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-[#15140f] dark:text-gray-100">
-                {formatNumber(item.value)} <span className="text-xs font-normal text-[#63645a] dark:text-[#9aa6b6]">{item.unit}</span>
-              </div>
-              <div className="mt-1 text-[11px] text-[#63645a] dark:text-[#9aa6b6]">{item.hint}</div>
-            </div>
-          ))}
-        </section>
-      ) : null}
 
       {(snapshot?.missingTables?.length || snapshot?.extraTables?.length) ? (
         <section className="mb-5 grid gap-3 md:grid-cols-2">
@@ -161,6 +194,8 @@ export default function DbAdminClient() {
           <ListNotice title="额外表" items={snapshot.extraTables} empty="无" />
         </section>
       ) : null}
+
+      <PoemcnMigrationRunbook />
 
       <section className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
@@ -185,22 +220,20 @@ export default function DbAdminClient() {
             <thead className="bg-[#edefe7] text-[12px] uppercase tracking-[0.12em] text-[#616454] dark:bg-[#151c25] dark:text-[#8e9ab0]">
               <tr>
                 <th className="px-3 py-2">表</th>
-                <th className="px-3 py-2">行数</th>
-                <th className="px-3 py-2">字段 / 索引</th>
-                <th className="px-3 py-2">最近记录</th>
-                <th className="px-3 py-2">文本量</th>
+                <th className="px-3 py-2">分组</th>
+                <th className="px-3 py-2 text-right">体检</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-[#858779] dark:text-[#8e9ab0]">
+                  <td colSpan={3} className="px-3 py-8 text-center text-sm text-[#858779] dark:text-[#8e9ab0]">
                     加载中…
                   </td>
                 </tr>
               ) : filteredTables.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-[#858779] dark:text-[#8e9ab0]">
+                  <td colSpan={3} className="px-3 py-8 text-center text-sm text-[#858779] dark:text-[#8e9ab0]">
                     没有匹配表
                   </td>
                 </tr>
@@ -208,9 +241,9 @@ export default function DbAdminClient() {
                 filteredTables.map((table) => (
                   <tr
                     key={table.name}
-                    onClick={() => setSelectedTable(table.name)}
+                    onClick={() => openTable(table.name)}
                     className={`cursor-pointer border-t border-[#dfe0d8] transition hover:bg-[#f3f4ef] dark:border-[#252e39] dark:hover:bg-[#151c25] ${
-                      selected?.name === table.name ? 'bg-[#f3f4ed] dark:bg-[#1b1c13]' : ''
+                      selectedTable === table.name ? 'bg-[#f3f4ed] dark:bg-[#1b1c13]' : ''
                     }`}
                   >
                     <td className="px-3 py-3 align-top">
@@ -228,18 +261,11 @@ export default function DbAdminClient() {
                       <div className="mt-1 font-mono text-[11px] text-[#858779] dark:text-[#8e9ab0]">{table.name}</div>
                       <div className="mt-1 text-[12px] text-[#63645a] dark:text-[#9aa6b6]">{table.description}</div>
                     </td>
-                    <td className="px-3 py-3 align-top font-mono text-sm text-[#15140f] dark:text-gray-100">
-                      {formatNumber(table.rowCount)}
-                    </td>
                     <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
-                      {formatNumber(table.columnsCount)} 字段 · {formatNumber(table.indexesCount)} 索引
+                      {table.group}
                     </td>
-                    <td className="px-3 py-3 align-top text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
-                      <div>{formatTime(table.recentValue)}</div>
-                      <div className="font-mono text-[10px] text-[#858779] dark:text-[#8e9ab0]">{table.recentColumn || 'no time column'}</div>
-                    </td>
-                    <td className="px-3 py-3 align-top font-mono text-xs text-[#63645a] dark:text-[#9aa6b6]">
-                      {formatBytes(table.approxTextBytes)}
+                    <td className="px-3 py-3 text-right align-top text-xs text-[#63645a] dark:text-[#9aa6b6]">
+                      {tableDetails[table.name] ? '已读取' : '点开检查'}
                     </td>
                   </tr>
                 ))
@@ -249,7 +275,11 @@ export default function DbAdminClient() {
         </div>
 
         <aside className="rounded-xl border border-[#d5d7cd] bg-white/70 p-4 dark:border-[#252e39] dark:bg-[#10161f]">
-          {selected ? (
+          {detailError ? (
+            <p className="text-sm text-rose-700 dark:text-rose-300">读取失败：{detailError}</p>
+          ) : selected && detailLoading && !tableDetails[selectedTable] ? (
+            <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">正在按需检查 {selected.name}…</p>
+          ) : selected && tableDetails[selectedTable] ? (
             <>
               <div className="mb-4">
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858779] dark:text-[#8e9ab0]">
@@ -289,11 +319,132 @@ export default function DbAdminClient() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-[#63645a] dark:text-[#9aa6b6]">选择一张表查看字段。</p>
+            <p className="text-sm leading-6 text-[#63645a] dark:text-[#9aa6b6]">点开一张表后才会执行该表的 COUNT、MAX、字段、索引和文本量检查。首次进入不会扫描业务表。</p>
           )}
         </aside>
       </section>
     </AdminPage>
+  )
+}
+
+function PoemcnMigrationRunbook() {
+  return (
+    <section className="mb-6 overflow-hidden rounded-xl border border-[#c9c4af] bg-[#fbfaf3] dark:border-[#3b3b2d] dark:bg-[#17170f]">
+      <div className="border-b border-[#ddd8c4] px-4 py-4 dark:border-[#353528]">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-semibold text-[#15140f] dark:text-gray-100">阿燃诗词数据库改造运行手册</h2>
+          <span className="rounded bg-[#e9e3c9] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#70582e] dark:bg-[#302b19] dark:text-[#d9bd78]">
+            独立 D1：china-poetry
+          </span>
+          <span className="rounded bg-[#dfe9dc] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#3f6538] dark:bg-[#19301b] dark:text-[#91c68b]">
+            生产运行时只读
+          </span>
+        </div>
+        <p className="mt-2 text-sm leading-6 text-[#616157] dark:text-[#a9b0a0]">
+          本页上方连接状态和下方表目录属于主站 D1，不包含诗词库。诗词站使用单独的 <code>china-poetry</code> D1 与 <code>poemcn-content</code> R2；是否完成线上迁移必须按下面步骤和 Cloudflare/Wrangler 结果确认。
+        </p>
+      </div>
+
+      <div className="grid gap-3 p-4 lg:grid-cols-2">
+        <RunbookStatus
+          title="仓库已经完成"
+          tone="ready"
+          items={[
+            'Worker 已移除 cron 与 scheduled 写入入口',
+            'D1 新索引只保存元数据、搜索字段和 R2 body_key',
+            '正文、统计与 sitemap 按 release 写入不可变 R2 分片',
+            '发布器具备预算、文件哈希、记录数与 EXPLAIN 校验',
+          ]}
+        />
+        <RunbookStatus
+          title="线上仍需人工确认"
+          tone="pending"
+          items={[
+            'D1 每日限额已经恢复',
+            'poemcn-content bucket 已创建',
+            '0004_r2_versioned_index migration 已应用',
+            '上游已锁定完整 40 位 SHA，release 已通过 dry-run',
+            '数据发布完成后 Worker 才切到新 binding/版本',
+          ]}
+        />
+      </div>
+
+      <details className="border-t border-[#ddd8c4] dark:border-[#353528]" open>
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[#34342e] dark:text-gray-200">
+          限额恢复后的标准执行顺序
+        </summary>
+        <div className="space-y-4 px-4 pb-4">
+          {POEMCN_RELEASE_COMMANDS.map((step) => (
+            <div key={step.title} className="rounded-lg border border-[#ddd8c4] bg-white/80 p-3 dark:border-[#353528] dark:bg-[#10160f]">
+              <h3 className="text-sm font-semibold text-[#25241f] dark:text-gray-100">{step.title}</h3>
+              <p className="mt-1 text-xs leading-5 text-[#68685d] dark:text-[#9fa795]">{step.note}</p>
+              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-[#20211d] px-3 py-2 font-mono text-[11px] leading-5 text-[#edf0e7]">
+                <code>{step.command}</code>
+              </pre>
+            </div>
+          ))}
+        </div>
+      </details>
+
+      <details className="border-t border-[#ddd8c4] dark:border-[#353528]">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[#34342e] dark:text-gray-200">
+          数据量过大时：新 D1 离线构建与切换
+        </summary>
+        <div className="px-4 pb-4 text-sm leading-6 text-[#616157] dark:text-[#a9b0a0]">
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>创建 <code>china-poetry-next</code>，只对新库执行 <code>0004_r2_versioned_index.sql</code>。</li>
+            <li>把发布命令的 <code>--database</code> 指向新库；不要修改正在服务的 binding。</li>
+            <li>确认发布器输出的记录数与三个查询计划，抽查标题搜索、分类搜索和若干 R2 详情。</li>
+            <li>验证通过后再修改 <code>wrangler.toml</code> 的 <code>DB.database_id</code> 并部署。</li>
+            <li>旧 D1 和旧 R2 release 暂不删除；回滚时恢复旧 database ID 并重新部署。</li>
+          </ol>
+          <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-md bg-[#20211d] px-3 py-2 font-mono text-[11px] leading-5 text-[#edf0e7]"><code>{`npx wrangler d1 create china-poetry-next
+npx wrangler d1 execute china-poetry-next --remote --file workers/poemcn/migrations/0004_r2_versioned_index.sql`}</code></pre>
+        </div>
+      </details>
+
+      <details className="border-t border-[#ddd8c4] dark:border-[#353528]">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[#34342e] dark:text-gray-200">
+          验收、停止条件与权威文档
+        </summary>
+        <div className="grid gap-3 px-4 pb-4 md:grid-cols-2">
+          <RunbookStatus
+            title="必须停止"
+            tone="danger"
+            items={[
+              '预算 decision.ok 不是 true',
+              '完整 commit、R2 对象哈希或 D1 记录数不一致',
+              'EXPLAIN 出现意外全表扫描或未使用预期索引',
+              'migration、R2 上传或任一抽查失败',
+            ]}
+          />
+          <div className="rounded-lg border border-[#ddd8c4] bg-white/80 p-3 text-sm leading-6 dark:border-[#353528] dark:bg-[#10160f]">
+            <b className="text-[#25241f] dark:text-gray-100">权威参考</b>
+            <div className="mt-1 flex flex-col items-start gap-1">
+              <a className="text-[#866125] underline underline-offset-2 dark:text-[#d5b36a]" href="https://github.com/TUARAN/tuaran-home-page/blob/main/workers/poemcn/README.md" target="_blank" rel="noreferrer">仓库完整运行手册</a>
+              <a className="text-[#866125] underline underline-offset-2 dark:text-[#d5b36a]" href="https://developers.cloudflare.com/d1/best-practices/use-indexes/" target="_blank" rel="noreferrer">Cloudflare D1 索引指南</a>
+              <span className="text-xs text-[#737367] dark:text-[#969e8d]">页面仅提供执行摘要；参数、预算和文件位置以当前仓库脚本、manifest 与 README 为准。</span>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+  )
+}
+
+function RunbookStatus({ title, items, tone }) {
+  const toneClass = tone === 'ready'
+    ? 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30'
+    : tone === 'danger'
+      ? 'border-rose-200 bg-rose-50/80 dark:border-rose-900 dark:bg-rose-950/30'
+      : 'border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/30'
+  return (
+    <div className={`rounded-lg border p-3 ${toneClass}`}>
+      <b className="text-sm text-[#25241f] dark:text-gray-100">{title}</b>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-[#616157] dark:text-[#a9b0a0]">
+        {items.map((item) => <li key={item}>{item}</li>)}
+      </ul>
+    </div>
   )
 }
 

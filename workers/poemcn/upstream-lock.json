@@ -1,0 +1,8 @@
+{
+  "repository": "chinese-poetry/chinese-poetry",
+  "branch": "master",
+  "commit": null,
+  "observedCommitPrefix": "b8594f8",
+  "observedAt": "2026-09-02",
+  "note": "发布前必须用 GitHub 返回的完整 40 位 SHA 替换 commit；禁止把分支名或短 SHA 当作锁定版本。"
+}

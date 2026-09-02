@@ -14,14 +14,16 @@ run_worker_first = ["/", "/index.html", "/api/*", "/poems/*", "/robots.txt", "/s
 html_handling = "auto-trailing-slash"
 not_found_handling = "404-page"
 
-[triggers]
-crons = ["*/15 * * * *"]
-
 [[d1_databases]]
 binding = "DB"
 database_name = "china-poetry"
 database_id = "ad1634af-1bd6-485b-a465-b48a81c9414e"
 migrations_dir = "migrations"
+
+# 正文、离线统计与 sitemap 使用不可变版本前缀写入此桶。
+[[r2_buckets]]
+binding = "POEM_CONTENT"
+bucket_name = "poemcn-content"
 
 [observability]
 enabled = true

@@ -30,6 +30,8 @@
     "blogger-eye:service:status": "node scripts/blogger-eye-service.mjs status",
     "blogger-eye:service:uninstall": "node scripts/blogger-eye-service.mjs uninstall",
     "blogger-eye:runner:test": "cd tools/blogger-eye-runner && python3 -m unittest -v test_runner.py",
+    "blogger-eye:scheduler:test": "node --test workers/blogger-eye-scheduler/tests/*.test.mjs tests/blogger-eye-cloud.test.mjs tests/blogger-eye-history.test.mjs",
+    "blogger-eye:scheduler:deploy": "cd workers/blogger-eye-scheduler && wrangler deploy",
     "a-share:sync": "node scripts/manage-a-share-research.mjs sync",
     "a-share:pick": "node scripts/manage-a-share-research.mjs pick",
     "a-share:complete": "node scripts/manage-a-share-research.mjs complete",

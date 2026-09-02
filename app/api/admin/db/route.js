@@ -1,6 +1,6 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
-import { getD1AdminSnapshot } from '../../../../lib/dbAdmin'
+import { getD1AdminSnapshot, getD1TableDetail } from '../../../../lib/dbAdmin'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -23,6 +23,12 @@ export async function GET(req) {
   }
 
   try {
+    const tableName = new URL(req.url).searchParams.get('table')
+    if (tableName) {
+      const table = await getD1TableDetail(db, tableName)
+      if (!table) return Response.json({ status: 'error', error: 'TABLE_NOT_FOUND' }, { status: 404 })
+      return Response.json({ status: 'ok', generatedAt: Date.now(), table })
+    }
     return Response.json(await getD1AdminSnapshot(db))
   } catch (error) {
     return Response.json(

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   IconActivityHeartbeat,
+  IconClockHour4,
   IconCloud,
   IconDownload,
   IconPlayerPlay,
@@ -33,6 +34,7 @@ export default function BloggerEyeConsole() {
   const [allowedHosts, setAllowedHosts] = useState([])
   const [runners, setRunners] = useState({ ready: false, count: 0, items: [] })
   const [regionalResults, setRegionalResults] = useState([])
+  const [scheduler, setScheduler] = useState({ ready: false, history: [] })
   const [targetUrl, setTargetUrl] = useState('https://2aran.com')
   const [metrics, setMetrics] = useState({ ip: '未检测', region: '未知', status: '等待中', duration: '—' })
   const [preview, setPreview] = useState('云端访问后的页面文本预览会显示在这里。')
@@ -57,6 +59,7 @@ export default function BloggerEyeConsole() {
       if (!response.ok || !data.ok) throw new Error(data.error || '云端服务未就绪')
       setAllowedHosts(Array.isArray(data.allowedHosts) ? data.allowedHosts : [])
       setRunners(data.runners || { ready: false, count: 0, items: [] })
+      setScheduler(data.scheduler || { ready: false, history: [] })
       setService({ state: 'online', message: '云端已连接', colo: data.colo || 'unknown' })
       setMetrics((current) => ({ ...current, region: data.colo || '未知' }))
       if (writeLog) addLog(true, `Cloudflare Edge 已连接 · ${data.colo || '未知节点'}`)
@@ -270,6 +273,49 @@ export default function BloggerEyeConsole() {
                 )
               })}
             </div>
+          )}
+        </Section>
+
+        <Section
+          title="后台定时检查"
+          description="独立 Cloudflare Worker 每 20 分钟执行一次；配置多个 Runner 后按游标轮换真实出口。"
+          actions={<StatusPill tone={scheduler.ready ? 'success' : 'neutral'}>{scheduler.ready ? scheduler.schedule : '待部署'}</StatusPill>}
+        >
+          {scheduler.lastRun?.mode === 'cloudflare-fixed-egress' ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+              当前使用 Cloudflare 固定跨 Zone 地址，只完成后台可用性检查；配置至少两个不同公网出口的 Runner 后才会进入真实轮换。
+            </div>
+          ) : null}
+          {!scheduler.ready ? (
+            <div className="flex items-start gap-3 rounded-lg border border-dashed border-[#caccc0] bg-[#fafaf6] px-4 py-4 dark:border-[#364252] dark:bg-[#0e131c]">
+              <IconClockHour4 className="mt-0.5 shrink-0 text-[#6f7166] dark:text-[#8e9ab0]" size={20} />
+              <div>
+                <p className="text-[12px] font-semibold text-[#15140f] dark:text-gray-100">定时记录尚未就绪</p>
+                <p className="mt-1 text-[11px] leading-5 text-[#77796d] dark:text-[#8e9ab0]">{scheduler.error || '等待 D1 迁移和独立 Worker 部署。'}</p>
+              </div>
+            </div>
+          ) : scheduler.history?.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-[11px]">
+                <thead className="border-b border-[#dedfd5] font-mono text-[10px] text-[#858779] dark:border-[#2d3744] dark:text-[#8e9ab0]">
+                  <tr><th className="px-2 py-2">时间</th><th className="px-2 py-2">节点</th><th className="px-2 py-2">出口 IP</th><th className="px-2 py-2">轮换</th><th className="px-2 py-2">结果</th><th className="px-2 py-2">耗时</th></tr>
+                </thead>
+                <tbody className="divide-y divide-[#e6e7df] dark:divide-[#26313e]">
+                  {scheduler.history.map((run) => (
+                    <tr key={run.id}>
+                      <td className="whitespace-nowrap px-2 py-2.5 font-mono text-[#77796d] dark:text-gray-400">{new Date(run.scheduledAt).toLocaleString()}</td>
+                      <td className="px-2 py-2.5 text-[#53554d] dark:text-gray-300">{run.runnerLabel || run.runnerId || 'Cloudflare Edge'}</td>
+                      <td className="px-2 py-2.5 font-mono text-[#53554d] dark:text-gray-300">{run.exitIp || '—'}</td>
+                      <td className="px-2 py-2.5"><StatusPill tone={run.ipChanged === true ? 'success' : run.ipChanged === false ? 'neutral' : 'neutral'}>{run.ipChanged === true ? '已变化' : run.ipChanged === false ? '未变化' : '首次/未知'}</StatusPill></td>
+                      <td className="px-2 py-2.5"><StatusPill tone={run.error ? 'danger' : run.httpStatus >= 200 && run.httpStatus < 400 ? 'success' : 'neutral'}>{run.error ? '失败' : `HTTP ${run.httpStatus || '—'}`}</StatusPill></td>
+                      <td className="whitespace-nowrap px-2 py-2.5 font-mono text-[#77796d] dark:text-gray-400">{run.durationMs || 0}ms</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="py-8 text-center text-[12px] text-[#929487]">定时任务已就绪，等待首次运行。</p>
           )}
         </Section>
 

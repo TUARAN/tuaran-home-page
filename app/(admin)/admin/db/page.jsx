@@ -3,7 +3,7 @@ import DbAdminClient from './DbConsole'
 
 export const metadata = {
   title: '数据库管理',
-  description: 'D1 状态 / 表统计 / 数据量。',
+  description: 'D1 状态、按需表体检与数据库迁移运行手册。',
   robots: {
     index: false,
     follow: false,

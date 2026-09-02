@@ -8,6 +8,7 @@ import {
   runBloggerEyeRegionalChecks,
   visitBloggerEyeTarget,
 } from '../../../../lib/bloggerEyeCloud.mjs'
+import { getBloggerEyeSchedulerSnapshot } from '../../../../lib/bloggerEyeHistory.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -41,6 +42,7 @@ export async function GET(req) {
   if (!guard.ok) return guard.response
 
   const context = cloudContext(req)
+  const scheduler = await getBloggerEyeSchedulerSnapshot(environment().DB)
   return Response.json({
     ok: true,
     state: 'online',
@@ -53,6 +55,7 @@ export async function GET(req) {
       count: context.runners.length,
       items: context.runners.map(({ id, label }) => ({ id, label })),
     },
+    scheduler,
   })
 }
 

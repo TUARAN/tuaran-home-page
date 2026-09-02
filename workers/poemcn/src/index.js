@@ -1,5 +1,13 @@
-import { runCrawler } from "./crawler.js";
-import { getAuthors, getPoem, getStats, queryPoems, getSitemapBuckets, getSitemapPoems } from "./database.js";
+import {
+  getAuthors,
+  getDatasetState,
+  getPoem,
+  getStats,
+  queryPoems,
+  getSitemapBuckets,
+  getSitemapPoems,
+  getStaticReleaseObject,
+} from "./database.js";
 import { quotes } from "./data.js";
 import { SITE_URL, SITEMAP_SIZE, renderHome, renderPoem, renderMissing, sitemapIndex, sitemapUrls } from "./seo.js";
 
@@ -19,15 +27,42 @@ function pageResponse(request, body, type = "text/html", status = 200, noindex =
   } });
 }
 
+async function staticSitemapResponse(request, env, key) {
+  const object = await getStaticReleaseObject(env.POEM_CONTENT, key);
+  if (!object) return null;
+  const headers = new Headers({
+    "Content-Type": "application/xml; charset=utf-8",
+    "Cache-Control": "public, max-age=3600, s-maxage=86400",
+    "X-Content-Type-Options": "nosniff",
+    ETag: object.httpEtag,
+  });
+  return new Response(request.method === "HEAD" ? null : object.body, { headers });
+}
+
 async function handlePage(request, url, env) {
   if (!["GET", "HEAD"].includes(request.method)) return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
   if (url.hostname.endsWith(".workers.dev")) return Response.redirect(SITE_URL + url.pathname + url.search, 301);
   if (url.pathname === "/index.html") return Response.redirect(SITE_URL + "/" + url.search, 301);
   if (url.pathname === "/robots.txt") return pageResponse(request, `User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${SITE_URL}/sitemap.xml\n`, "text/plain");
-  if (url.pathname === "/sitemap.xml") return pageResponse(request, sitemapIndex(await getSitemapBuckets(env.DB, SITEMAP_SIZE)), "application/xml");
-  if (url.pathname === "/sitemaps/pages.xml") return pageResponse(request, sitemapUrls(), "application/xml");
+  if (url.pathname === "/sitemap.xml") {
+    const state = await getDatasetState(env.DB);
+    const released = await staticSitemapResponse(request, env, state.sitemap_index_key);
+    return released || pageResponse(request, sitemapIndex(await getSitemapBuckets(env.DB, SITEMAP_SIZE)), "application/xml");
+  }
+  if (url.pathname === "/sitemaps/pages.xml") {
+    const state = await getDatasetState(env.DB);
+    const released = await staticSitemapResponse(request, env, state.sitemap_prefix ? `${state.sitemap_prefix}/pages.xml` : null);
+    return released || pageResponse(request, sitemapUrls(), "application/xml");
+  }
   const sitemap = url.pathname.match(/^\/sitemaps\/poems-(0|[1-9]\d{0,6})\.xml$/);
   if (sitemap) {
+    const state = await getDatasetState(env.DB);
+    const released = await staticSitemapResponse(
+      request,
+      env,
+      state.sitemap_prefix ? `${state.sitemap_prefix}/poems-${sitemap[1]}.xml` : null,
+    );
+    if (released) return released;
     const rows = await getSitemapPoems(env.DB, Number(sitemap[1]), SITEMAP_SIZE);
     return rows.length ? pageResponse(request, sitemapUrls(rows), "application/xml") : pageResponse(request, "Not found", "text/plain", 404, true);
   }
@@ -43,7 +78,7 @@ async function handlePage(request, url, env) {
   const path = url.pathname.match(/^\/poems\/([A-Za-z0-9_-]{1,160})(\/?)$/);
   if (path) {
     if (path[2]) return Response.redirect(`${SITE_URL}/poems/${path[1]}${url.search}`, 301);
-    const [template, poem] = await Promise.all([pageTemplate(env), getPoem(env.DB, path[1]) ]);
+    const [template, poem] = await Promise.all([pageTemplate(env), getPoem(env.DB, env.POEM_CONTENT, path[1]) ]);
     return poem ? pageResponse(request, renderPoem(template, poem)) : pageResponse(request, renderMissing(template), "text/html", 404, true);
   }
   return pageResponse(request, "Not found", "text/plain", 404, true);
@@ -75,7 +110,7 @@ async function handleApi(url, env) {
 
   if (url.pathname.startsWith("/api/poems/")) {
     const id = decodeURIComponent(url.pathname.split("/").pop());
-    const poem = await getPoem(env.DB, id);
+    const poem = await getPoem(env.DB, env.POEM_CONTENT, id);
     return poem ? json(poem) : json({ error: "未找到这篇诗文" }, { status: 404 });
   }
 
@@ -106,13 +141,5 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
-  },
-
-  async scheduled(controller, env, ctx) {
-    ctx.waitUntil(
-      runCrawler(env)
-        .then((result) => console.log("crawler_complete", JSON.stringify(result)))
-        .catch((error) => console.error("crawler_error", error)),
-    );
   },
 };

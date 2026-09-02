@@ -54,6 +54,7 @@ export default function sitemap() {
     '/tools/syncblog-publisher',
     '/tools/openclaw-pr-helper',
     '/tools/multi-ip',
+    '/tools/code-miner',
     '/browser-extensions',
     '/skill-center',
     '/mcp-center',

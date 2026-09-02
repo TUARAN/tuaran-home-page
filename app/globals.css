@@ -6138,6 +6138,98 @@ body:has(.x-mutual-page) footer a:hover {
   color: #5cf0e0;
 }
 
+.about-page {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+
+.about-beliefs {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.about-belief {
+  position: absolute;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3em;
+  white-space: nowrap;
+  font-family: var(--font-mono, ui-monospace), SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(2.75rem, 6.5vw, 6.75rem);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(92, 240, 224, 0.105);
+  text-shadow: 0 0 34px rgba(52, 224, 208, 0.035);
+}
+
+.about-belief-index {
+  padding-top: 0.15em;
+  font-size: 0.2em;
+  letter-spacing: 0.08em;
+  color: rgba(139, 156, 255, 0.16);
+  -webkit-text-stroke: 0;
+}
+
+.about-belief:nth-child(1) {
+  top: 4%;
+  left: 55%;
+  transform: rotate(4deg);
+}
+
+.about-belief:nth-child(2) {
+  top: 29%;
+  left: -4%;
+  transform: rotate(-5deg);
+}
+
+.about-belief:nth-child(3) {
+  top: 57%;
+  right: -2%;
+  font-size: clamp(4.5rem, 10vw, 10rem);
+  transform: rotate(7deg);
+}
+
+.about-belief:nth-child(4) {
+  top: 83%;
+  left: 9%;
+  transform: rotate(-4deg);
+}
+
+@media (max-width: 640px) {
+  .about-belief {
+    font-size: clamp(2.15rem, 11vw, 4rem);
+    -webkit-text-stroke-color: rgba(92, 240, 224, 0.09);
+  }
+
+  .about-belief:nth-child(1) {
+    top: 5%;
+    left: 26%;
+  }
+
+  .about-belief:nth-child(2) {
+    top: 31%;
+    left: -21%;
+  }
+
+  .about-belief:nth-child(3) {
+    top: 59%;
+    right: -18%;
+    font-size: clamp(4rem, 20vw, 6rem);
+  }
+
+  .about-belief:nth-child(4) {
+    top: 84%;
+    left: -8%;
+  }
+}
+
 .x-mutual-page .x-mutual-cta-button,
 .x-mutual-page .x-mutual-cta-button:visited {
   color: #ffffff;

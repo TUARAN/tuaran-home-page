@@ -14,9 +14,9 @@ import OpenClawAchievementsCarousel from './OpenClawAchievementsCarousel'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '关于涂阿燃（TUARAN）｜FDE、KOL、OPC',
+  title: '关于涂阿燃（TUARAN）｜FDE、KOL、矩联科技',
   description:
-    `涂阿燃（TUARAN，掘金安东尼）的三个主要身份是 FDE、社区 KOL 和 OPC，长期研究与交付 AI Agent，著有《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
+    `涂阿燃（TUARAN，掘金安东尼）是 AI 前沿部署工程师、社区 KOL 与矩联科技创始人，长期研究与交付 AI Agent，著有《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
   keywords: [
     '涂阿燃',
     'tuaran',
@@ -45,7 +45,7 @@ export const metadata = {
 const identityTags = [
   { label: 'FDE', href: '/about#fde', title: 'AI 前沿部署工程师' },
   { label: 'KOL', href: '/about#kol', title: '社区 KOL' },
-  { label: 'OPC', href: '/about#opc', title: '个人公司' },
+  { label: '矩联科技', href: '/about#matrixlink', title: '矩联科技' },
 ]
 
 const identityProfiles = [
@@ -64,12 +64,19 @@ const identityProfiles = [
       '长期写技术文章、做社区分享，也参与开源协作。把亲手做过的事情讲清楚，说明哪些工具好用、哪些判断还要再等等。',
   },
   {
-    id: 'opc',
-    label: 'OPC',
-    title: '个人公司',
+    id: 'matrixlink',
+    label: 'MatrixLink',
+    title: '矩联科技',
     description:
-      '用公司的方式经营一个人的能力，把工程经验、内容和社区连接整理成站点、产品与服务，并对交付和收入负责。',
+      '围绕 AI 开发者生态、创作者协作与技术服务建设矩联科技，把工程经验、内容与社区连接落到可交付的站点、产品与服务中。',
   },
+]
+
+const beliefs = [
+  { index: '01', lines: ['找到最高标的！', '先模仿，后成为！'] },
+  { index: '02', lines: ['让 AI 加速', '“自我迭代”！'] },
+  { index: '03', lines: ['万物上链！'] },
+  { index: '04', lines: ['好好睡觉！', '好好吃饭！'] },
 ]
 
 const introLines = [
@@ -139,9 +146,9 @@ const aboutStructuredData = {
       alternateName: ['TUARAN', '掘金安东尼', '安东尼404', '安东尼与AI'],
       url: 'https://2aran.com/about',
       image: `https://2aran.com${AVATAR_PATH}`,
-      jobTitle: ['AI 前沿部署工程师', '社区 KOL', '个人公司经营者'],
+      jobTitle: ['AI 前沿部署工程师', '社区 KOL', '矩联科技创始人'],
       description:
-        'FDE、社区 KOL 和 OPC。《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
+        'AI 前沿部署工程师、社区 KOL 与矩联科技创始人。《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
       knowsAbout: ['前端工程化', 'AI Agent', 'OpenClaw', '技术写作', '产品实践'],
       sameAs: [
         'https://github.com/TUARAN',
@@ -237,8 +244,31 @@ export default function AboutPage() {
         style={{ background: 'radial-gradient(circle, rgba(139,124,246,0.2), transparent 70%)' }}
       />
 
-      {/* 终端 chrome 顶栏 */}
-      <header className="sticky top-0 z-10 border-b border-[#1c2a3c] bg-[#080c15]/90 backdrop-blur">
+      <div className="about-beliefs" aria-hidden="true">
+        {beliefs.map((belief) => (
+          <div key={belief.index} className="about-belief">
+            <span className="about-belief-index">{belief.index}</span>
+            <span>
+              {belief.lines.map((line) => (
+                <span key={line} className="block">{line}</span>
+              ))}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="relative z-[1]">
+        <section className="sr-only" aria-labelledby="beliefs-heading">
+          <h2 id="beliefs-heading">信念与原则</h2>
+          <ol>
+            {beliefs.map((belief) => (
+              <li key={belief.index}>{belief.lines.join('')}</li>
+            ))}
+          </ol>
+        </section>
+
+        {/* 终端 chrome 顶栏 */}
+        <header className="sticky top-0 z-10 border-b border-[#1c2a3c] bg-[#080c15]/90 backdrop-blur">
         <div className={`flex items-center gap-2 py-3 ${sectionInner}`}>
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#ff5f57]" aria-hidden="true" />
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#febc2e]" aria-hidden="true" />
@@ -250,7 +280,7 @@ export default function AboutPage() {
             </Link>
             <SharePageButton
               title="关于我 · 涂阿燃 TUARAN"
-              text="涂阿燃（tuaran / 掘金安东尼）：FDE、社区 KOL、OPC。"
+              text="涂阿燃（tuaran / 掘金安东尼）：FDE、社区 KOL、矩联科技创始人。"
               url="/about"
               exactUrl
               size="md"
@@ -258,10 +288,10 @@ export default function AboutPage() {
             />
           </div>
         </div>
-      </header>
+        </header>
 
       {/* Hero：头像 + 介绍 */}
-      <section>
+        <section>
         <div className={`flex flex-col gap-6 py-8 sm:flex-row sm:items-start sm:gap-7 ${sectionInner}`}>
           <div className="relative w-28 shrink-0 sm:w-32">
             <div
@@ -330,10 +360,10 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </section>
+        </section>
 
       {/* 三个身份 */}
-      <section className="border-t border-[#1c2a3c]" aria-labelledby="identity-heading">
+        <section className="border-t border-[#1c2a3c]" aria-labelledby="identity-heading">
         <div className={`py-8 ${sectionInner}`}>
           <p className={kicker}>Identity · 三个身份</p>
           <h2
@@ -343,7 +373,7 @@ export default function AboutPage() {
             我现在主要在做什么
           </h2>
           <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
-            写代码、研究 AI Agent、维护社区，也做产品和商业项目。FDE、KOL、OPC 分别对应工程、社区和经营，是目前最准确的三个身份。
+            写代码、研究 AI Agent、维护社区，也做产品和商业项目。FDE、KOL 与矩联科技，分别对应工程实践、社区创作和公司业务。
           </p>
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -362,7 +392,7 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+        </section>
 
       {/* 数据带 */}
       <section className="border-t border-[#1c2a3c]" aria-label="一些数字">
@@ -624,6 +654,7 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+      </div>
     </main>
   )
 }

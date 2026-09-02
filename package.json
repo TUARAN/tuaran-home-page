@@ -56,6 +56,8 @@
     "autopilot:analyze": "node scripts/scan-analyze.mjs",
     "autopilot:fix": "node scripts/scan-fix-pr.mjs",
     "autopilot:handoff": "node scripts/scan-handoff.mjs",
+    "changelog:update": "node scripts/update-changelog.mjs",
+    "test:changelog": "node --test tests/changelog/*.test.mjs",
     "snapshot-memory": "node scripts/snapshot-memory.mjs",
     "soft-sticker:rekey": "node --no-warnings scripts/rekey-soft-sticker.mjs",
     "mcp:stdio": "node tools/mcp-stdio-demo/server.mjs",

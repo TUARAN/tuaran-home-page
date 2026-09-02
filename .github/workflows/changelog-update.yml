@@ -1,0 +1,78 @@
+name: Changelog · DeepSeek update
+
+on:
+  schedule:
+    # GitHub Actions 使用 UTC；每周三、周六 01:37 UTC = 北京时间 09:37。
+    - cron: '37 1 * * 3,6'
+  workflow_dispatch: {}
+
+concurrency:
+  group: changelog-deepseek-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: Read commits and update changelog
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Generate changelog with shared DeepSeek key
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
+        run: node scripts/update-changelog.mjs
+
+      - name: Verify changelog
+        run: node --test tests/changelog/*.test.mjs
+
+      - name: Commit and push changes
+        run: |
+          if git diff --quiet -- lib/changelogData.js lib/changelogPeriodSummaries.js; then
+            echo 'No changelog changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/changelogData.js lib/changelogPeriodSummaries.js
+          git commit -m "chore(changelog): update $(date -u +%F)"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Notify owner of failure
+        if: failure()
+        env:
+          ALERT_SECRET: ${{ secrets.AUTOMATION_ALERT_SECRET || secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$ALERT_SECRET" ]; then exit 0; fi
+          BODY=$(python3 - <<'PY'
+          import json, os
+          print(json.dumps({
+              'workflow': 'changelog-update',
+              'taskName': 'DeepSeek 更新日志',
+              'runId': os.environ.get('GITHUB_RUN_ID', ''),
+              'runUrl': os.environ.get('RUN_URL', ''),
+              'status': 'failed',
+              'error': '读取提交、生成摘要、校验或推送失败',
+          }, ensure_ascii=False))
+          PY
+          )
+          curl -sS --retry 2 --retry-delay 5 --fail-with-body \
+            -X POST \
+            -H "x-automation-alert-secret: $ALERT_SECRET" \
+            -H 'content-type: application/json' \
+            -d "$BODY" \
+            https://2aran.com/api/automation/alert || echo 'alert delivery failed (non-fatal)'

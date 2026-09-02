@@ -105,16 +105,15 @@ const stats = [
 ]
 
 const timeline = [
-  { year: '2016', label: '大学入门编程' },
-  { year: '2018', label: '华南师大毕业' },
-  { year: '2019', label: '大厂 · 技术写作' },
+  { year: '2016', label: '开始编程学习' },
+  { year: '2018', label: '本科毕业（华南师大）' },
+  { year: '2019', label: '入职某大厂（996.icu）· 开始技术写作' },
   { year: '2020', label: '掘金优秀作者' },
-  { year: '2021', label: '央企 · 拿下 PMP' },
-  { year: '2023', label: '《程序员成长手记》' },
-  { year: '2024', label: '《AI Bots 通关指南》' },
-  { year: '2025', label: '博主联盟 · 前端周看' },
-  { year: '2026', label: '创立矩联科技' },
-  { year: '2026.08', label: `OpenClaw ${OPENCLAW_ACHIEVEMENT_COUNT} 个 PR 合入 main` },
+  { year: '2021', label: '入职某央企（955.WLB）· 编程 + PMP 项目' },
+  { year: '2023', label: '出版《程序员成长手记》' },
+  { year: '2024', label: '发布《AI Bots 通关指南》' },
+  { year: '2025', label: '发起「博主联盟」· 共创「前端周刊」' },
+  { year: '2026', label: '矩联科技 · AI 共创' },
 ]
 
 const publishedWorks = [
@@ -440,7 +439,7 @@ export default function AboutPage() {
                   从过去走向现在
                 </h3>
                 <p className="mt-1 text-[12px] leading-5 text-[#eadcaf] drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] sm:text-[13px]">
-                  编程、写作、开源与创业，沿着同一条路持续向前。
+                  编程、写作、出版与共创，沿着同一条路持续向前。
                 </p>
               </div>
 
@@ -453,25 +452,20 @@ export default function AboutPage() {
                       key={`${item.year}-${item.label}`}
                       className={`relative min-h-[90px] rounded-xl border px-3 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:min-h-[104px] ${
                         isCurrent
-                          ? 'border-[#ffe08a] bg-[#fff2bd]/95 ring-2 ring-[#ffc94c]/70'
+                          ? 'col-span-2 flex flex-col justify-center border-[#ffe08a] bg-[#fff2bd]/95 ring-2 ring-[#ffc94c]/70'
                           : 'border-[#d7b86f]/70 bg-[#f5e4b8]/90'
                       }`}
                     >
                       <span
-                        className={`font-mono text-[18px] font-black tabular-nums sm:text-[21px] ${
-                          isCurrent ? 'text-[#a83f0b]' : 'text-[#173b3c]'
+                        className={`font-mono font-black tabular-nums ${
+                          isCurrent ? 'text-[23px] text-[#a83f0b] sm:text-[26px]' : 'text-[18px] text-[#173b3c] sm:text-[21px]'
                         }`}
                       >
                         {item.year}
                       </span>
-                      <p className="mt-1 text-[11px] font-semibold leading-[1.45] text-[#2d291f] sm:text-[12px]">
+                      <p className={`mt-1 font-semibold leading-[1.45] text-[#2d291f] ${isCurrent ? 'text-[13px] sm:text-[14px]' : 'text-[11px] sm:text-[12px]'}`}>
                         {item.label}
                       </p>
-                      {isCurrent ? (
-                        <span className="absolute right-2 top-2 rounded-full bg-[#a83f0b] px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-[#fff2bd]">
-                          now
-                        </span>
-                      ) : null}
                     </li>
                   )
                 })}

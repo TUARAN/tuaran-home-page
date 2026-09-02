@@ -32,7 +32,7 @@ export function GET() {
     `- [首页](${SITE_URL}/): 个人主页与网络日志`,
     `- [站点帮助](${SITE_URL}/help): 站点定位、使用方法、全站导航、内容规则、隐私政策与联系方式`,
     `- [关于站长](${SITE_URL}/about): 站长介绍与履历`,
-    `- [产品与作品](${SITE_URL}/works): 2aran 的独立产品、站内工具与工程作品总览`,
+    `- [产品集](${SITE_URL}/works): 2aran 的独立产品、站内工具与工程作品总览`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,
     `- [Skill 中心](${SITE_URL}/skill-center): 面向智能体的可复用能力、工作流与安装说明`,
     `- [MCP 中心](${SITE_URL}/mcp-center): 可供智能体连接的公开服务与配置说明`,

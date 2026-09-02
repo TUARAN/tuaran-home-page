@@ -14,9 +14,9 @@ import {
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '产品与作品',
+  title: '产品集',
   description:
-    '2aran 产品与作品总览：独立产品、站内工具、工程作品与实验集中在一处查看。',
+    '2aran 产品集：独立产品、站内工具、工程作品与实验集中在一处查看。',
   keywords: ['2aran', '产品', '工具', '作品', '独立开发'],
   alternates: {
     canonical: '/works',
@@ -72,12 +72,12 @@ const VISUALS = {
 
 const CONFIG = {
   eyebrow: '2aran Portfolio',
-  title: '产品与作品',
+  title: '产品集',
   description: '独立产品、站内工具、工程作品与实验集中在这里。产品保留必要的独立性，轻量工具默认在主站生长。',
   countLabel: '项',
-  filterAriaLabel: '筛选产品与作品',
+  filterAriaLabel: '筛选产品集',
   searchPlaceholder: '搜索产品、工具、作品或标签',
-  resultTitle: '全部产品与作品',
+  resultTitle: '全部作品',
   actionLabel: '打开',
   analyticsSurface: 'portfolio_directory',
   analyticsEvent: 'portfolio_open',

@@ -35,7 +35,7 @@ test('every public channel defines one featured overview entry in its grid', () 
   const featuredEntries = source.match(/^\s+\{[^\n]*featured: true/gm) || []
   assert.equal(featuredEntries.length, 4)
   assert.match(source, /href: '\/tools'[^}\n]*featured: true/)
-  assert.match(source, /href: '\/works'[^}\n]*label: '产品与作品'[^}\n]*featured: true/)
+  assert.match(source, /href: '\/works'[^}\n]*label: '产品集'[^}\n]*featured: true/)
   assert.match(source, /href: '\/community'[^}\n]*featured: true/)
   assert.match(source, /href: '\/help'[^}\n]*featured: true/)
   assert.doesNotMatch(source, /href: '\/sites'[^}\n]*label: '二级站点'/)

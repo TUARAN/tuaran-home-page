@@ -35,19 +35,28 @@ test('91HTTP responses support text, nested JSON and de-duplicate proxies', () =
   assert.deepEqual(parsed.proxies, ['http://5.6.7.8:9000'])
 })
 
-test('admin exposes blogger eye inside site operations and local service stays loopback-only', async () => {
+test('admin exposes a cloud-first blogger eye while the legacy service stays loopback-only', async () => {
   const system = ADMIN_NAV_GROUPS.flatMap((group) => group.items).find((item) => item.href === '/admin/system')
   assert.ok(system.activePaths.includes('/admin/blogger-eye'))
   assert.ok(system.sections.flatMap((section) => section.items).some((item) => item.href === '/admin/blogger-eye'))
   assert.deepEqual(resolveAdminTrail('/admin/blogger-eye').map((item) => item.label), ['站点运维', '小眼睛'])
-  const [page, server, service, packageJson] = await Promise.all([
+  const [page, consoleSource, route, server, service, packageJson] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/blogger-eye/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/admin/blogger-eye/BloggerEyeConsole.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/admin/blogger-eye/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../scripts/blogger-eye-server.mjs', import.meta.url), 'utf8'),
     readFile(new URL('../scripts/blogger-eye-service.mjs', import.meta.url), 'utf8'),
     readFile(new URL('../package.json', import.meta.url), 'utf8'),
   ])
   assert.match(page, /<AdminPageGate/)
   assert.match(page, /index: false/)
+  assert.match(consoleSource, /\/api\/admin\/blogger-eye/)
+  assert.doesNotMatch(consoleSource, /127\.0\.0\.1/)
+  assert.doesNotMatch(consoleSource, /91HTTP/)
+  assert.match(route, /export const runtime = 'edge'/)
+  assert.match(route, /getOwnerOrReject/)
+  assert.match(route, /parseBloggerEyeAllowedHosts/)
+  assert.match(route, /visitBloggerEyeTarget/)
   assert.match(server, /const host = '127\.0\.0\.1'/)
   assert.match(server, /allowedOrigins\.has/)
   assert.doesNotMatch(server, /0\.0\.0\.0/)

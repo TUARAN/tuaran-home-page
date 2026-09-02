@@ -3,7 +3,7 @@ import BloggerEyeConsole from './BloggerEyeConsole'
 
 export const metadata = {
   title: '小眼睛',
-  description: '通过本机代理服务检测出口 IP、提取 91HTTP 代理并轮换访问目标链接。',
+  description: '通过受控的云端节点检测出口 IP，并访问已授权的目标网站。',
   robots: { index: false, follow: false },
 }
 
@@ -12,7 +12,7 @@ export default function AdminBloggerEyePage() {
     <AdminPageGate
       label="小眼睛"
       returnTo="/admin/blogger-eye"
-      description="本机代理与轮换访问工具，仅站长本人可见。"
+      description="云端网站可用性与多地区测试工具，仅站长本人可见。"
     >
       <BloggerEyeConsole />
     </AdminPageGate>

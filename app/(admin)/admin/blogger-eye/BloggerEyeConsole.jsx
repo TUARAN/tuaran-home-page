@@ -1,55 +1,20 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   IconActivityHeartbeat,
+  IconCloud,
   IconDownload,
-  IconEye,
   IconPlayerPlay,
-  IconRefresh,
   IconServer,
+  IconWorld,
 } from '@tabler/icons-react'
 
 import { AdminButton, AdminPage, Section, StatCard, StatusPill } from '../../components/ui'
-import { bloggerEyeConnectionFailure, queryBloggerEyeLoopbackPermission } from '../../../../lib/bloggerEyeBrowser.mjs'
 
-const STORAGE_KEY = 'admin:blogger-eye:v1'
-const DEFAULT_SERVICE_URL = 'http://127.0.0.1:5177'
-const EMPTY_CONFIG = {
-  apiUrl: '',
-  tradeNo: '',
-  secret: '',
-  num: '5',
-  maxAttempts: '5',
-  protocol: '1',
-  province: '',
-  city: '',
-  tunnel: '',
-}
-
-function normalizeProxy(value) {
-  const trimmed = String(value || '').trim()
-  if (!trimmed) return ''
-  return /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`
-}
-
-function parseProxies(value) {
-  return [...new Set(String(value || '').split(/\r?\n/).map(normalizeProxy).filter(Boolean))]
-}
-
-function maskProxy(value) {
-  return String(value || '').replace(/(\/\/)([^/@:]+):([^/@]+)@/, '$1***:***@') || '直连'
-}
-
-function safeServiceUrl(value) {
-  try {
-    const url = new URL(value)
-    if (url.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) return ''
-    return url.origin
-  } catch {
-    return ''
-  }
-}
+const STORAGE_KEY = 'admin:blogger-eye:cloud:v2'
+const LEGACY_STORAGE_KEY = 'admin:blogger-eye:v1'
+const API_URL = '/api/admin/blogger-eye'
 
 function Field({ label, hint, children }) {
   return (
@@ -64,185 +29,145 @@ function Field({ label, hint, children }) {
 const inputClass = 'h-10 w-full rounded-lg border border-[#caccc0] bg-[#fafaf6] px-3 text-[12px] text-[#15140f] outline-none transition focus:border-[#6f7166] dark:border-[#2d3744] dark:bg-[#0e131c] dark:text-gray-100 dark:focus:border-[#718096]'
 
 export default function BloggerEyeConsole() {
-  const [serviceUrl, setServiceUrl] = useState(DEFAULT_SERVICE_URL)
-  const [service, setService] = useState({ state: 'checking', message: '检测中' })
-  const [targetUrl, setTargetUrl] = useState('')
-  const [proxyText, setProxyText] = useState('')
-  const [config, setConfig] = useState(EMPTY_CONFIG)
-  const [metrics, setMetrics] = useState({ ip: '未检测', mode: '直连', status: '等待中', proxy: '' })
-  const [preview, setPreview] = useState('访问后的页面文本预览会显示在这里。')
+  const [service, setService] = useState({ state: 'checking', message: '检测中', colo: 'unknown' })
+  const [allowedHosts, setAllowedHosts] = useState([])
+  const [runners, setRunners] = useState({ ready: false, count: 0, items: [] })
+  const [regionalResults, setRegionalResults] = useState([])
+  const [targetUrl, setTargetUrl] = useState('https://2aran.com')
+  const [metrics, setMetrics] = useState({ ip: '未检测', region: '未知', status: '等待中', duration: '—' })
+  const [preview, setPreview] = useState('云端访问后的页面文本预览会显示在这里。')
   const [logs, setLogs] = useState([])
   const [busy, setBusy] = useState(false)
-  const [permissionState, setPermissionState] = useState('unknown')
-  const proxies = useMemo(() => parseProxies(proxyText), [proxyText])
 
-  const addLog = useCallback((ok, detail, proxy = '') => {
-    setLogs((items) => [{ id: `${Date.now()}-${Math.random()}`, at: new Date(), ok, detail, proxy: maskProxy(proxy) }, ...items].slice(0, 80))
+  const addLog = useCallback((ok, detail, source = 'Cloudflare Edge') => {
+    setLogs((items) => [{
+      id: crypto.randomUUID(),
+      at: new Date(),
+      ok,
+      detail,
+      source,
+    }, ...items].slice(0, 80))
   }, [])
 
-  const checkService = useCallback(async (value, writeLog = true, requestPermission = false) => {
-    const base = safeServiceUrl(value)
-    if (!base) {
-      setService({ state: 'offline', message: '地址无效' })
-      return
-    }
-    const permission = await queryBloggerEyeLoopbackPermission(window.navigator.permissions)
-    setPermissionState(permission.state)
-    if (permission.state === 'denied') {
-      const failure = bloggerEyeConnectionFailure(permission.state)
-      setService({ state: failure.state, message: failure.message, detail: failure.detail })
-      if (writeLog) addLog(false, failure.detail)
-      return
-    }
-    if (permission.state === 'prompt' && !requestPermission) {
-      setService({
-        state: 'permission',
-        message: '待授权',
-        detail: '点击“授权并连接”，并在 Chrome 提示中允许本站访问本机服务。',
-      })
-      return
-    }
-    setService({ state: 'checking', message: '检测中' })
+  const checkCloud = useCallback(async (writeLog = true) => {
+    setService((current) => ({ ...current, state: 'checking', message: '检测中' }))
     try {
-      const response = await fetch(`${base}/api/health`, { cache: 'no-store' })
+      const response = await fetch(API_URL, { cache: 'no-store' })
       const data = await response.json()
-      if (!response.ok || !data.ok) throw new Error(data.error || '服务未就绪')
-      setService({ state: 'online', message: '已连接' })
-      setPermissionState('granted')
-      if (writeLog) addLog(true, `已连接本机服务 ${base}`)
-    } catch {
-      const latestPermission = await queryBloggerEyeLoopbackPermission(window.navigator.permissions)
-      setPermissionState(latestPermission.state)
-      const failure = bloggerEyeConnectionFailure(latestPermission.state)
-      setService({ state: failure.state, message: failure.message, detail: failure.detail })
-      if (writeLog) addLog(false, failure.detail)
+      if (!response.ok || !data.ok) throw new Error(data.error || '云端服务未就绪')
+      setAllowedHosts(Array.isArray(data.allowedHosts) ? data.allowedHosts : [])
+      setRunners(data.runners || { ready: false, count: 0, items: [] })
+      setService({ state: 'online', message: '云端已连接', colo: data.colo || 'unknown' })
+      setMetrics((current) => ({ ...current, region: data.colo || '未知' }))
+      if (writeLog) addLog(true, `Cloudflare Edge 已连接 · ${data.colo || '未知节点'}`)
+    } catch (error) {
+      setService({ state: 'offline', message: '云端不可用', detail: error.message, colo: 'unknown' })
+      if (writeLog) addLog(false, error.message)
     }
   }, [addLog])
 
   useEffect(() => {
     try {
-      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}')
-      const nextServiceUrl = safeServiceUrl(saved.serviceUrl) || DEFAULT_SERVICE_URL
-      setServiceUrl(nextServiceUrl)
-      setTargetUrl(typeof saved.targetUrl === 'string' ? saved.targetUrl : '')
-      setProxyText(typeof saved.proxyText === 'string' ? saved.proxyText : '')
-      setConfig({ ...EMPTY_CONFIG, ...(saved.config && typeof saved.config === 'object' ? saved.config : {}) })
-      void checkService(nextServiceUrl, false)
-    } catch {
-      void checkService(DEFAULT_SERVICE_URL, false)
-    }
-  }, [checkService])
+      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null')
+      const legacy = JSON.parse(window.localStorage.getItem(LEGACY_STORAGE_KEY) || 'null')
+      const savedTarget = saved?.targetUrl || legacy?.targetUrl
+      if (typeof savedTarget === 'string' && savedTarget.trim()) setTargetUrl(savedTarget)
+    } catch {}
+    void checkCloud(false)
+  }, [checkCloud])
 
-  useEffect(() => {
-    if (service.state !== 'offline') return undefined
-    const timer = window.setInterval(() => void checkService(serviceUrl, false), 10_000)
-    return () => window.clearInterval(timer)
-  }, [checkService, service.state, serviceUrl])
-
-  function saveLocal() {
-    const normalizedServiceUrl = safeServiceUrl(serviceUrl)
-    if (!normalizedServiceUrl) {
-      addLog(false, '本机服务地址只允许 http://localhost 或 http://127.0.0.1')
-      return false
-    }
-    const saved = { serviceUrl: normalizedServiceUrl, targetUrl, proxyText: proxies.join('\n'), config }
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
-    setServiceUrl(normalizedServiceUrl)
-    setProxyText(saved.proxyText)
-    addLog(true, '配置已保存到当前浏览器；未上传到站点服务器')
-    return true
-  }
-
-  async function request(path, options = {}) {
-    const base = safeServiceUrl(serviceUrl)
-    if (!base) throw new Error('本机服务地址无效')
-    const response = await fetch(`${base}${path}`, {
-      method: options.method || 'GET',
+  async function request(action, payload = {}) {
+    const response = await fetch(API_URL, {
+      method: 'POST',
       cache: 'no-store',
-      headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload }),
     })
     let data
-    try { data = await response.json() } catch { throw new Error('本机服务返回了无效响应') }
-    if (!response.ok || data.ok === false) throw new Error(data.error || data.visit?.error || '请求失败')
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('云端服务返回了无效响应')
+    }
+    if (!response.ok || !data.ok) throw new Error(data.error || '云端请求失败')
     return data
   }
 
-  async function detect(proxy = '') {
+  function saveTarget() {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ targetUrl: targetUrl.trim() }))
+    addLog(true, '目标链接已保存到当前浏览器')
+  }
+
+  async function detectCloudIp() {
     setBusy(true)
     try {
-      const result = await request('/api/ip', { method: 'POST', body: { proxy } })
-      setMetrics((current) => ({ ...current, ip: result.ip, mode: proxy ? '代理' : '直连', proxy }))
-      addLog(true, `出口 IP ${result.ip}`, proxy)
+      const result = await request('ip')
+      setMetrics((current) => ({
+        ...current,
+        ip: result.ip?.ip || '未知',
+        region: result.colo || current.region,
+        duration: `${result.ip?.durationMs ?? 0}ms`,
+      }))
+      addLog(true, `云端出口 IP ${result.ip?.ip || '未知'} · ${result.colo || '未知节点'}`)
     } catch (error) {
-      addLog(false, error.message, proxy)
+      addLog(false, error.message)
     } finally {
       setBusy(false)
     }
   }
 
-  async function visit(proxy = '', manageBusy = true) {
+  async function visit() {
     if (!targetUrl.trim()) {
       addLog(false, '请先填写目标链接')
-      return false
-    }
-    if (manageBusy) setBusy(true)
-    try {
-      const result = await request('/api/visit', { method: 'POST', body: { url: targetUrl.trim(), proxy } })
-      const status = `${result.visit.status || '未知'} · ${Number(result.visit.timeTotal || 0).toFixed(2)}s`
-      setMetrics({ ip: result.ip?.ip || '未知', mode: proxy ? '代理' : '直连', status, proxy })
-      setPreview(result.visit.preview || '访问成功，但没有可预览的文本内容。')
-      addLog(true, `IP ${result.ip?.ip || '未知'} · HTTP ${result.visit.status} · ${result.visit.effectiveUrl}`, proxy)
-      return true
-    } catch (error) {
-      setMetrics((current) => ({ ...current, status: '失败', proxy }))
-      setPreview(error.message)
-      addLog(false, error.message, proxy)
-      return false
-    } finally {
-      if (manageBusy) setBusy(false)
-    }
-  }
-
-  async function rotate() {
-    if (!proxies.length) {
-      addLog(false, '代理池为空')
       return
     }
     setBusy(true)
-    for (const proxy of proxies) await visit(proxy, false)
-    setBusy(false)
+    try {
+      const result = await request('visit', { url: targetUrl.trim() })
+      const duration = `${result.visit.durationMs ?? 0}ms`
+      const status = `HTTP ${result.visit.status || '未知'}`
+      setMetrics({
+        ip: result.ip?.ip || '未取得',
+        region: result.colo || '未知',
+        status,
+        duration,
+      })
+      setPreview(result.visit.preview || '访问成功，但没有可预览的文本内容。')
+      addLog(
+        true,
+        `${status} · ${duration} · ${result.visit.effectiveUrl}${result.visit.previewTruncated ? ' · 预览已截断' : ''}`,
+      )
+    } catch (error) {
+      setMetrics((current) => ({ ...current, status: '失败' }))
+      setPreview(error.message)
+      addLog(false, error.message)
+    } finally {
+      setBusy(false)
+    }
   }
 
-  async function extract(visitAfterExtract = false) {
+  async function runRegionalChecks() {
+    if (!targetUrl.trim()) {
+      addLog(false, '请先填写目标链接')
+      return
+    }
     setBusy(true)
+    setRegionalResults([])
     try {
-      if (visitAfterExtract && !targetUrl.trim()) throw new Error('请先填写目标链接')
-      const path = visitAfterExtract ? '/api/91http/extract-visit' : '/api/91http/extract'
-      const body = visitAfterExtract
-        ? { url: targetUrl.trim(), config, maxAttempts: config.maxAttempts }
-        : config
-      const result = await request(path, { method: 'POST', body })
-      if (visitAfterExtract) {
-        setProxyText((current) => [...new Set([...parseProxies(current), result.proxy])].join('\n'))
-        setMetrics({
-          ip: result.ip?.ip || '未知',
-          mode: '91HTTP',
-          status: `${result.visit.status || '未知'} · ${Number(result.visit.timeTotal || 0).toFixed(2)}s`,
-          proxy: result.proxy,
-        })
-        setPreview(result.visit.preview || '访问成功，但没有可预览的文本内容。')
-        for (const attempt of result.attempts || []) {
-          addLog(attempt.ok, attempt.ok ? `第 ${attempt.index} 次成功 · HTTP ${attempt.visit?.status}` : `第 ${attempt.index} 次失败 · ${attempt.error || attempt.visit?.error || '未知错误'}`, attempt.proxy)
-        }
-      } else {
-        const merged = [...new Set([...proxies, ...(result.proxies || [])])]
-        setProxyText(merged.join('\n'))
-        addLog(true, `从 91HTTP 提取 ${result.proxies.length} 条代理，代理池共 ${merged.length} 条`)
+      const result = await request('regional', { url: targetUrl.trim() })
+      const items = Array.isArray(result.results) ? result.results : []
+      setRegionalResults(items)
+      for (const item of items) {
+        addLog(
+          item.ok,
+          item.ok
+            ? `IP ${item.ip || '未知'} · HTTP ${item.status || '未知'} · ${item.durationMs || 0}ms`
+            : item.error || '地区检查失败',
+          item.label || item.id,
+        )
       }
     } catch (error) {
-      setPreview(error.message)
-      addLog(false, error.message, '91HTTP')
+      addLog(false, error.message, '地区 Runner')
     } finally {
       setBusy(false)
     }
@@ -251,131 +176,110 @@ export default function BloggerEyeConsole() {
   function downloadLogs() {
     if (!logs.length) return
     const cell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
-    const rows = [['time', 'status', 'proxy', 'detail'], ...logs.map((log) => [log.at.toISOString(), log.ok ? 'success' : 'failed', log.proxy, log.detail])]
+    const rows = [
+      ['time', 'status', 'source', 'detail'],
+      ...logs.map((log) => [log.at.toISOString(), log.ok ? 'success' : 'failed', log.source, log.detail]),
+    ]
     const blob = new Blob([`\ufeff${rows.map((row) => row.map(cell).join(',')).join('\n')}`], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `blogger-eye-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`
+    anchor.download = `blogger-eye-cloud-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`
     document.body.appendChild(anchor)
     anchor.click()
     anchor.remove()
     URL.revokeObjectURL(url)
   }
 
-  const serviceTone = service.state === 'online'
-    ? 'success'
-    : service.state === 'permission'
-      ? 'warning'
-      : ['offline', 'denied'].includes(service.state)
-        ? 'danger'
-        : 'neutral'
-  const connectionButtonLabel = service.state === 'permission'
-    ? '授权并连接'
-    : service.state === 'online'
-      ? '检测连接'
-      : '重新连接'
+  const serviceTone = service.state === 'online' ? 'success' : service.state === 'offline' ? 'danger' : 'neutral'
 
   return (
     <AdminPage
       title="小眼睛"
-      description="从后台连接仅监听本机的 Node 服务，用直连、代理池或 91HTTP 出口访问同一个目标链接。"
+      description="通过受控的云端节点检查已授权网站，不依赖本机常驻服务。"
       actions={<StatusPill tone={serviceTone}>{service.message}</StatusPill>}
     >
       <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="当前出口 IP" value={metrics.ip} />
-        <StatCard label="当前模式" value={metrics.mode} />
+        <StatCard label="云端出口 IP" value={metrics.ip} />
+        <StatCard label="执行节点" value={metrics.region} />
         <StatCard label="最近访问" value={metrics.status} />
-        <StatCard label="代理池" value={`${proxies.length} 条`} />
+        <StatCard label="响应耗时" value={metrics.duration} />
       </div>
 
       <div className="space-y-6">
         <Section
-          title="本机服务"
-          description="服务由 macOS 自动管理并随登录启动，只绑定 127.0.0.1；无需单独打开终端。"
-          actions={<AdminButton type="button" size="sm" disabled={busy} onClick={() => void checkService(serviceUrl, true, true)}><IconActivityHeartbeat size={15} />{connectionButtonLabel}</AdminButton>}
+          title="云端执行节点"
+          description="请求由 Cloudflare Edge 发出；浏览器无需本地网络权限，也无需启动 macOS 常驻服务。"
+          actions={<AdminButton type="button" size="sm" disabled={busy} onClick={() => void checkCloud(true)}><IconActivityHeartbeat size={15} />检测云端</AdminButton>}
         >
           {service.detail ? (
-            <div className={`mb-4 rounded-lg border px-3 py-2.5 text-[11px] leading-5 ${service.state === 'permission' ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300' : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300'}`}>
+            <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-[11px] leading-5 text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
               {service.detail}
             </div>
           ) : null}
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,.7fr)] lg:items-end">
-            <Field label="服务地址" hint="只接受 localhost / 127.0.0.1；修改端口时同步设置 BLOGGER_EYE_PORT。">
-              <input className={inputClass} value={serviceUrl} onChange={(event) => setServiceUrl(event.target.value)} spellCheck={false} />
-            </Field>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,.7fr)_minmax(0,1.3fr)]">
             <div className="rounded-lg border border-[#dedfd5] bg-[#fafaf6] px-3 py-2.5 dark:border-[#2d3744] dark:bg-[#0e131c]">
               <p className="font-mono text-[10px] text-[#858779] dark:text-[#8e9ab0]">运行方式</p>
-              <p className="mt-1 text-[12px] font-semibold text-[#15140f] dark:text-gray-100">macOS 登录后自动启动 · 异常退出自动恢复{permissionState === 'granted' ? ' · 浏览器已授权' : ''}</p>
+              <p className="mt-1 flex items-center gap-2 text-[12px] font-semibold text-[#15140f] dark:text-gray-100"><IconCloud size={15} />Cloudflare Edge · {service.colo || 'unknown'}</p>
+            </div>
+            <div className="rounded-lg border border-[#dedfd5] bg-[#fafaf6] px-3 py-2.5 dark:border-[#2d3744] dark:bg-[#0e131c]">
+              <p className="font-mono text-[10px] text-[#858779] dark:text-[#8e9ab0]">授权域名</p>
+              <p className="mt-1 break-all text-[12px] font-semibold text-[#15140f] dark:text-gray-100">{allowedHosts.length ? allowedHosts.join(' · ') : '等待云端返回配置'}</p>
             </div>
           </div>
         </Section>
 
-        <Section title="访问控制" description="目标链接保存在当前浏览器；请求由本机 curl 发出。">
-          <Field label="目标链接">
-            <input className={inputClass} type="url" value={targetUrl} onChange={(event) => setTargetUrl(event.target.value)} placeholder="https://example.com" autoComplete="off" />
+        <Section title="授权网站检查" description="仅允许访问后台配置的 HTTPS 域名；每次重定向都会重新校验目标。">
+          <Field label="目标链接" hint="新增域名需在 Cloudflare 环境变量 BLOGGER_EYE_ALLOWED_HOSTS 中登记。">
+            <input className={inputClass} type="url" value={targetUrl} onChange={(event) => setTargetUrl(event.target.value)} placeholder="https://2aran.com" autoComplete="off" />
           </Field>
           <div className="mt-4 flex flex-wrap gap-2">
-            <AdminButton type="button" variant="primary" disabled={busy} onClick={() => void visit()}><IconPlayerPlay size={15} />直连访问</AdminButton>
-            <AdminButton type="button" disabled={busy || !proxies.length} onClick={() => void visit(proxies[0])}><IconEye size={15} />首个代理访问</AdminButton>
-            <AdminButton type="button" disabled={busy || !proxies.length} onClick={() => void rotate()}><IconRefresh size={15} />自动轮换全部</AdminButton>
-            <AdminButton type="button" disabled={busy || !config.tunnel} onClick={() => void visit(config.tunnel)}>隧道访问</AdminButton>
-            <AdminButton type="button" disabled={busy} onClick={() => void detect()}><IconServer size={15} />检测直连 IP</AdminButton>
+            <AdminButton type="button" variant="primary" disabled={busy || service.state !== 'online'} onClick={() => void visit()}><IconPlayerPlay size={15} />云端访问</AdminButton>
+            <AdminButton type="button" disabled={busy || service.state !== 'online'} onClick={() => void detectCloudIp()}><IconServer size={15} />检测出口 IP</AdminButton>
+            <AdminButton type="button" size="sm" variant="ghost" onClick={saveTarget}>保存目标</AdminButton>
           </div>
         </Section>
 
         <Section
-          title="91HTTP 接入"
-          description="可填写订单号与 Secret，或粘贴 91HTTP 后台生成的完整 API 链接。凭据仅在明确保存后写入当前浏览器。"
-          actions={<AdminButton type="button" size="sm" onClick={saveLocal}>保存本机配置</AdminButton>}
+          title="多地区测试"
+          description="地区 Runner 按同一授权白名单执行检查，并汇总真实出口 IP、状态码和耗时。"
+          actions={runners.ready ? <AdminButton type="button" size="sm" disabled={busy} onClick={() => void runRegionalChecks()}><IconWorld size={15} />运行 {runners.count} 个地区</AdminButton> : null}
         >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Field label="完整 API 链接" hint="可选；设置后优先于 trade_no / secret。">
-              <input className={inputClass} type="password" value={config.apiUrl} onChange={(event) => setConfig((current) => ({ ...current, apiUrl: event.target.value }))} autoComplete="off" />
-            </Field>
-            <Field label="trade_no"><input className={inputClass} value={config.tradeNo} onChange={(event) => setConfig((current) => ({ ...current, tradeNo: event.target.value }))} autoComplete="off" /></Field>
-            <Field label="secret"><input className={inputClass} type="password" value={config.secret} onChange={(event) => setConfig((current) => ({ ...current, secret: event.target.value }))} autoComplete="off" /></Field>
-            <Field label="提取数量"><input className={inputClass} type="number" min="1" max="200" value={config.num} onChange={(event) => setConfig((current) => ({ ...current, num: event.target.value }))} /></Field>
-            <Field label="提取并访问次数"><input className={inputClass} type="number" min="1" max="50" value={config.maxAttempts} onChange={(event) => setConfig((current) => ({ ...current, maxAttempts: event.target.value }))} /></Field>
-            <Field label="协议">
-              <select className={inputClass} value={config.protocol} onChange={(event) => setConfig((current) => ({ ...current, protocol: event.target.value }))}><option value="1">HTTP</option><option value="2">SOCKS5</option></select>
-            </Field>
-            <Field label="省份"><input className={inputClass} value={config.province} onChange={(event) => setConfig((current) => ({ ...current, province: event.target.value }))} placeholder="可选" /></Field>
-            <Field label="城市"><input className={inputClass} value={config.city} onChange={(event) => setConfig((current) => ({ ...current, city: event.target.value }))} placeholder="可选" /></Field>
-          </div>
-          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <Field label="91HTTP 隧道代理"><input className={inputClass} type="password" value={config.tunnel} onChange={(event) => setConfig((current) => ({ ...current, tunnel: event.target.value }))} placeholder="http://user:pass@host:port" autoComplete="off" /></Field>
-            <div className="flex flex-wrap gap-2">
-              <AdminButton type="button" disabled={busy} onClick={() => void extract(false)}>提取到代理池</AdminButton>
-              <AdminButton type="button" variant="primary" disabled={busy} onClick={() => void extract(true)}>提取并访问</AdminButton>
+          {!runners.ready ? (
+            <div className="flex items-start gap-3 rounded-lg border border-dashed border-[#caccc0] bg-[#fafaf6] px-4 py-4 dark:border-[#364252] dark:bg-[#0e131c]">
+              <IconWorld className="mt-0.5 shrink-0 text-[#6f7166] dark:text-[#8e9ab0]" size={20} />
+              <div>
+                <p className="text-[12px] font-semibold text-[#15140f] dark:text-gray-100">地区 Runner 尚未绑定</p>
+                <p className="mt-1 text-[11px] leading-5 text-[#77796d] dark:text-[#8e9ab0]">部署 Runner 后，在 Cloudflare Secret 中登记地址和共享密钥即可启用；不会回退到本机代理。</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {runners.items.map((runner) => {
+                const result = regionalResults.find((item) => item.id === runner.id)
+                return (
+                  <div key={runner.id} className="rounded-lg border border-[#dedfd5] bg-[#fafaf6] px-3 py-3 dark:border-[#2d3744] dark:bg-[#0e131c]">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[12px] font-semibold text-[#15140f] dark:text-gray-100">{runner.label}</p>
+                      <StatusPill tone={!result ? 'neutral' : result.ok ? 'success' : 'danger'}>{!result ? '等待' : result.ok ? '成功' : '失败'}</StatusPill>
+                    </div>
+                    <p className="mt-2 font-mono text-[10px] leading-5 text-[#77796d] dark:text-[#8e9ab0]">
+                      {!result ? runner.id : result.ok ? `${result.ip || '未知 IP'} · HTTP ${result.status || '未知'} · ${result.durationMs || 0}ms` : result.error}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </Section>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <Section title="代理池" description="每行一个 HTTP / HTTPS / SOCKS4 / SOCKS5 代理；账号密码显示时会脱敏。">
-            <textarea
-              className="min-h-64 w-full resize-y rounded-lg border border-[#caccc0] bg-[#fafaf6] p-3 font-mono text-[12px] leading-6 text-[#15140f] outline-none focus:border-[#6f7166] dark:border-[#2d3744] dark:bg-[#0e131c] dark:text-gray-100"
-              value={proxyText}
-              onChange={(event) => setProxyText(event.target.value)}
-              spellCheck={false}
-              placeholder={'http://127.0.0.1:7890\nsocks5://127.0.0.1:9050\nuser:pass@1.2.3.4:8080'}
-            />
-            <div className="mt-3 flex flex-wrap gap-2">
-              <AdminButton type="button" size="sm" onClick={saveLocal}>保存代理池</AdminButton>
-              <AdminButton type="button" size="sm" disabled={busy || !proxies.length} onClick={() => void detect(proxies[0])}>检测首个代理</AdminButton>
-              <AdminButton type="button" size="sm" variant="ghost" onClick={() => setProxyText('')}>清空</AdminButton>
-            </div>
-          </Section>
-
-          <Section title="访问结果" description={metrics.proxy ? `当前代理：${maskProxy(metrics.proxy)}` : '当前为直连模式'}>
-            <pre className="min-h-64 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#dedfd5] bg-[#0e131c] p-3 font-mono text-[11px] leading-6 text-[#cbd5e1] dark:border-[#2d3744]">{preview}</pre>
-          </Section>
-        </div>
+        <Section title="访问结果" description="正文预览最多读取 64 KiB；二进制响应只显示类型。">
+          <pre className="min-h-64 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#dedfd5] bg-[#0e131c] p-3 font-mono text-[11px] leading-6 text-[#cbd5e1] dark:border-[#2d3744]">{preview}</pre>
+        </Section>
 
         <Section
           title="运行日志"
-          description={`当前保留 ${logs.length} 条本机操作记录。`}
+          description={`当前保留 ${logs.length} 条云端操作记录。`}
           actions={<div className="flex gap-2"><AdminButton type="button" size="sm" disabled={!logs.length} onClick={downloadLogs}><IconDownload size={14} />下载 CSV</AdminButton><AdminButton type="button" size="sm" variant="ghost" onClick={() => setLogs([])}>清空</AdminButton></div>}
         >
           {logs.length ? (
@@ -384,12 +288,12 @@ export default function BloggerEyeConsole() {
                 <li key={log.id} className="grid gap-1 py-2.5 text-[11px] sm:grid-cols-[48px_72px_minmax(120px,.45fr)_minmax(0,1fr)]">
                   <span className={log.ok ? 'font-semibold text-emerald-700 dark:text-emerald-400' : 'font-semibold text-rose-700 dark:text-rose-400'}>{log.ok ? '成功' : '失败'}</span>
                   <time className="font-mono text-[#929487]">{log.at.toLocaleTimeString()}</time>
-                  <span className="break-all font-mono text-[#77796d] dark:text-gray-400">{log.proxy}</span>
+                  <span className="break-all font-mono text-[#77796d] dark:text-gray-400">{log.source}</span>
                   <span className="break-all text-[#53554d] dark:text-gray-300">{log.detail}</span>
                 </li>
               ))}
             </ol>
-          ) : <p className="py-8 text-center text-[12px] text-[#929487]">检测、提取与访问操作会记录在这里。</p>}
+          ) : <p className="py-8 text-center text-[12px] text-[#929487]">检测和访问操作会记录在这里。</p>}
         </Section>
       </div>
     </AdminPage>

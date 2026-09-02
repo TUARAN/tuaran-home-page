@@ -14,6 +14,7 @@ export const PLANNING_STATUS_META = {
 }
 
 export const PLANNING_TABS = [
+  { id: 'todo', label: '待办清单' },
   { id: 'overview', label: '执行总览' },
   { id: 'roadmap', label: '组合路线图' },
   { id: 'tree', label: '规划树' },
@@ -258,6 +259,52 @@ export function buildExecutionBoardModel(snapshot = {}, filters = {}) {
 
   const projects = (snapshot.projects || []).filter((item) => !directionId || item.directionId === directionId)
   return { counts, groups, projects }
+}
+
+export function buildTodoBoardModel(snapshot = {}, filters = {}) {
+  const index = createSnapshotIndex(snapshot)
+  const query = String(filters.query || '').trim().toLowerCase()
+  const projectId = filters.projectId || 'all'
+  const includeCompleted = filters.includeCompleted !== false
+  const groups = { planned: [], doing: [], done: [] }
+  const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 }
+
+  const milestoneNames = new Map((snapshot.milestones || []).map((item) => [item.id, item.title]))
+  const tasks = (snapshot.tasks || [])
+    .filter((item) => !['archived', 'cancelled'].includes(item.status))
+    .map((item) => ({
+      ...enrichOverviewItem({ ...item, entityType: 'task' }, index),
+      milestoneName: milestoneNames.get(item.milestoneId) || '未命名里程碑',
+    }))
+    .filter((item) => projectId === 'all' || item.projectId === projectId)
+    .filter((item) => !query || `${item.title || ''} ${item.projectName || ''} ${item.milestoneName || ''}`.toLowerCase().includes(query))
+
+  for (const item of tasks) {
+    if (item.status === 'done') groups.done.push(item)
+    else if (item.status === 'doing' || item.status === 'blocked') groups.doing.push(item)
+    else groups.planned.push(item)
+  }
+
+  for (const items of Object.values(groups)) {
+    items.sort((left, right) => (
+      (priorityOrder[left.priority] ?? 9) - (priorityOrder[right.priority] ?? 9)
+      || Number(left.sortOrder || 0) - Number(right.sortOrder || 0)
+      || Number(left.targetAt ?? Number.MAX_SAFE_INTEGER) - Number(right.targetAt ?? Number.MAX_SAFE_INTEGER)
+      || String(left.title || '').localeCompare(String(right.title || ''), 'zh-CN')
+    ))
+  }
+
+  const visibleGroups = includeCompleted ? groups : { ...groups, done: [] }
+  return {
+    groups: visibleGroups,
+    counts: {
+      planned: groups.planned.length,
+      doing: groups.doing.length,
+      done: groups.done.length,
+      open: groups.planned.length + groups.doing.length,
+    },
+    projects: (snapshot.projects || []).filter((item) => !isPlanningArchived(item)),
+  }
 }
 
 export function isPlanningArchived(item) {

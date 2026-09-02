@@ -93,6 +93,31 @@ test('execution board defaults can separate pending, running, blocked and comple
   assert.deepEqual(filtered.groups.running.map((item) => item.id), ['task:doing'])
 })
 
+test('todo board reuses planning tasks and folds blocked work into the active column', async () => {
+  const { buildTodoBoardModel } = await loadPlanningUi()
+  const snapshot = {
+    projects: [{ id: 'profile:a', projectId: 'project:a', directionId: 'direction:a', name: 'Project A' }],
+    milestones: [{ id: 'milestone:a', directionId: 'direction:a', projectId: 'project:a', title: 'Launch' }],
+    tasks: [
+      { id: 'task:todo', milestoneId: 'milestone:a', title: 'Todo', status: 'planned', priority: 'normal' },
+      { id: 'task:blocked', milestoneId: 'milestone:a', title: 'Blocked', status: 'blocked', priority: 'critical' },
+      { id: 'task:done', milestoneId: 'milestone:a', title: 'Done', status: 'done', priority: 'normal' },
+      { id: 'task:cancelled', milestoneId: 'milestone:a', title: 'Cancelled', status: 'cancelled', priority: 'normal' },
+    ],
+  }
+
+  const model = buildTodoBoardModel(snapshot)
+  assert.deepEqual(model.groups.planned.map((item) => item.id), ['task:todo'])
+  assert.deepEqual(model.groups.doing.map((item) => item.id), ['task:blocked'])
+  assert.deepEqual(model.groups.done.map((item) => item.id), ['task:done'])
+  assert.deepEqual(model.counts, { planned: 1, doing: 1, done: 1, open: 2 })
+  assert.equal(model.groups.doing[0].milestoneName, 'Launch')
+
+  const hiddenDone = buildTodoBoardModel(snapshot, { includeCompleted: false, query: 'todo' })
+  assert.deepEqual(hiddenDone.groups.done, [])
+  assert.deepEqual(hiddenDone.groups.planned.map((item) => item.id), ['task:todo'])
+})
+
 test('editor helpers preselect hierarchy and emit only supported API fields', async () => {
   const {
     buildInitialPlanningForm,
@@ -165,6 +190,7 @@ test('overview and editor sources retain accessibility and workflow contracts', 
     readFile(new URL('../../app/(admin)/admin/planning/PlanningCenter.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(admin)/admin/planning/planningModalFocus.js', import.meta.url), 'utf8'),
   ])
+  const todoBoard = await readFile(new URL('../../app/(admin)/admin/planning/PlanningTodoBoard.jsx', import.meta.url), 'utf8')
 
   assert.match(overview, /<StatusPill/)
   assert.match(overview, /执行状态筛选/)
@@ -189,6 +215,12 @@ test('overview and editor sources retain accessibility and workflow contracts', 
   assert.match(center, /hidden=\{activeTab !== tab\.id\}/)
   assert.match(center, /<ModelDispatchConsole embedded \/>/)
   assert.match(center, /changeStatus/)
+  assert.match(center, /<PlanningTodoBoard/)
+  assert.match(center, /action: 'create-task'/)
+  assert.match(todoBoard, /draggable=\{!moving\}/)
+  assert.match(todoBoard, /onDrop=\{\(event\) => drop\(event, column\.id\)\}/)
+  assert.match(todoBoard, /显示已完成/)
+  assert.match(todoBoard, /记录会直接进入规划任务/)
 
   const treeHandler = center.match(/onOpenTree=\{\(\) => \{([\s\S]*?)\}\}/)?.[1] || ''
   assert.match(treeHandler, /setActiveTab\('tree'\)/)

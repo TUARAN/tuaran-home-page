@@ -7,6 +7,7 @@ import PlanningEditor from './PlanningEditor'
 import PlanningHistory from './PlanningHistory'
 import PlanningImportPanel from './PlanningImportPanel'
 import PlanningRoadmap from './PlanningRoadmap'
+import PlanningTodoBoard from './PlanningTodoBoard'
 import PlanningTree from './PlanningTree'
 import TriStateOverview from './TriStateOverview'
 import ModelDispatchConsole from '../model-dispatch/ModelDispatchConsole'
@@ -180,15 +181,35 @@ export default function PlanningCenter({ initialTab = 'overview' }) {
     const changes = { status }
     if ((status === 'active' || status === 'doing') && !item.startAt) changes.startAt = now
     if (status === 'completed' || status === 'done') changes.completedAt = now
-    if (item.entityType === 'task' && item.status === 'blocked' && (status === 'doing' || status === 'done')) changes.blockedReason = ''
+    if ((item.status === 'completed' || item.status === 'done') && status !== 'completed' && status !== 'done') changes.completedAt = null
+    if (item.entityType === 'task' && item.status === 'blocked' && ['planned', 'doing', 'done'].includes(status)) changes.blockedReason = ''
     try {
       await mutate('/api/admin/planning', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entity: item.entityType, id: item.id, changes }),
       })
+      return true
     } catch (statusError) {
       setError(statusError)
+      return false
+    }
+  }, [mutate])
+
+  const createQuickTask = useCallback(async (payload) => {
+    try {
+      await mutate('/api/admin/planning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create-task',
+          payload: { ...payload, status: 'planned', priority: 'normal' },
+        }),
+      })
+      return true
+    } catch (createError) {
+      setError(createError)
+      return false
     }
   }, [mutate])
 
@@ -200,8 +221,8 @@ export default function PlanningCenter({ initialTab = 'overview' }) {
     <>
       <div ref={backgroundRef} data-planning-modal-background data-planning-focus-fallback tabIndex={-1}>
         <AdminPage
-      title="规划中心"
-      description="统筹全部项目的过去、现在与未来，也处理当前需要解决的小问题。"
+      title="规划与待办"
+      description="待办、里程碑和长期方向共用同一套任务数据。"
       actions={(
         <>
           <AdminButton type="button" onClick={() => setImportPanel(true)}>
@@ -250,6 +271,14 @@ export default function PlanningCenter({ initialTab = 'overview' }) {
             hidden={activeTab !== tab.id}
             key={tab.id}
           >
+            {tab.id === 'todo' && snapshot ? (
+              <PlanningTodoBoard
+                snapshot={visibleSnapshot}
+                onCreateTask={createQuickTask}
+                onEdit={openEdit}
+                onStatusChange={changeStatus}
+              />
+            ) : null}
             {tab.id === 'overview' && snapshot ? (
               <TriStateOverview
                 snapshot={visibleSnapshot}

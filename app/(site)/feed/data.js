@@ -55,6 +55,23 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'world-labs-atlas-world-model',
+    type: 'video',
+    title: '一张图，生成一个可以自由探索的 3D 世界',
+    summary:
+      '李飞飞创办的 World Labs 发布了新一代世界模型 Atlas。它能从一张图片生成新视角和 3D 几何，补全镜头没有拍到的区域，让人从不同机位探索同一个场景；它还会同时建模空间与时间，用少量视频重构场景、改变观察视角，并模拟世界如何随时间演变。世界模型正在从生成画面走向生成可探索、可模拟的世界。',
+    tags: ['World Labs', 'Atlas', '李飞飞', '世界模型', '空间智能', '3D 生成'],
+    date: '2026-09-02',
+    time: '16:59',
+    src: feedMediaUrl('feed/world-labs-atlas-2026-09-02.mp4'),
+    poster: '/feed/posters/world-labs-atlas-2026-09-02.jpg',
+    aspect: '89/45',
+    source: {
+      label: 'World Labs',
+      href: 'https://www.worldlabs.ai/blog/atlas',
+    },
+  },
+  {
     id: 'cloudflare-wallet-agentic-internet',
     type: 'quote',
     title: 'Cloudflare 给 AI 智能体配了一只钱包',

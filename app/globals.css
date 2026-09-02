@@ -3255,8 +3255,32 @@
   }
 
   .site-nav-trigger {
+    position: relative;
     @apply inline-flex items-center gap-1 rounded-full border border-transparent px-2.5 py-1 text-sm font-medium no-underline transition-colors;
     color: var(--site-muted);
+  }
+
+  .site-nav-vip-badge {
+    position: absolute;
+    right: -1.05rem;
+    top: -0.75rem;
+    display: inline-flex;
+    min-width: 1.4rem;
+    height: 0.8rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, #d9a441 52%, transparent);
+    border-radius: 999px;
+    padding: 0 0.22rem;
+    background: linear-gradient(135deg, #fff0b8, #d9a441);
+    color: #563600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(117, 75, 0, 0.18);
+    pointer-events: none;
   }
 
   .site-nav-trigger:visited {

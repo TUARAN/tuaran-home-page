@@ -16,6 +16,7 @@ import {
   IconLayoutDashboard,
   IconLogout,
   IconMessageCircle,
+  IconRobot,
   IconUser,
 } from '@tabler/icons-react'
 
@@ -108,8 +109,9 @@ function MenuItem({ item, onNavigate }) {
           {label}
           {item.tag ? (
             <span
-              className={`rounded-full px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] ${getTagToneClass(item.tag)}`}
+              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.1em] ${getTagToneClass(item.tag)}`}
             >
+              {String(item.tag).toLowerCase() === 'auto' ? <IconRobot size={10} stroke={1.8} aria-hidden="true" /> : null}
               {item.tag}
             </span>
           ) : null}
@@ -258,7 +260,10 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
         data-analytics-destination-kind="page"
         data-analytics-destination-id={landingHref}
       >
-        {navLabel(channel, locale)}
+        <span className="relative">
+          {navLabel(channel, locale)}
+          {channel.key === 'community' ? <span className="site-nav-vip-badge">VIP</span> : null}
+        </span>
         <ChevronDown />
       </Link>
 

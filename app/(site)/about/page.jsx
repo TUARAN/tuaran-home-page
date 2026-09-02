@@ -411,8 +411,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 横向时间线 */}
-      <section className="border-t border-[#1c2a3c]" aria-label="成长时间线">
+      {/* 插画时间线 */}
+      <section id="timeline" className="scroll-mt-20 border-t border-[#1c2a3c]" aria-label="成长时间线">
         <div className={`py-8 ${sectionInner}`}>
           <div className="mb-4 flex items-baseline justify-between gap-2">
             <h2 className="font-mono text-[14px] font-bold text-[#e2ecf6]">
@@ -420,23 +420,69 @@ export default function AboutPage() {
             </h2>
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5f7088]">2016 — 2026</span>
           </div>
-          <ol className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-5 lg:grid-cols-10">
-            {timeline.map((item, i) => (
-              <li key={`${item.year}-${item.label}`} className="relative min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-[#34e0d0] shadow-[0_0_8px_rgba(52,224,208,0.8)]" aria-hidden="true" />
-                  {i < timeline.length - 1 ? (
-                    <span
-                      className="hidden h-px flex-1 bg-[linear-gradient(90deg,#2a4456,transparent)] lg:block"
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                </div>
-                <p className="mt-1.5 font-mono text-[12px] font-bold tabular-nums text-[#7fe6da]">{item.year}</p>
-                <p className="mt-0.5 text-[11px] leading-4 text-[#9aabc0]">{item.label}</p>
-              </li>
-            ))}
-          </ol>
+          <figure className="relative isolate overflow-hidden rounded-2xl border border-[#6b5125] bg-[#07131a] shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
+            <Image
+              src="/images/about/journey-timeline.webp"
+              alt=""
+              fill
+              sizes="(max-width: 1120px) 100vw, 1120px"
+              className="-z-20 object-cover object-center"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(4,15,20,0.14),rgba(4,13,18,0.28)_55%,rgba(4,12,16,0.58))]"
+            />
+
+            <div className="px-4 pb-5 pt-5 sm:px-6 sm:pb-7 sm:pt-6 lg:pr-[17%]">
+              <div className="mb-5 max-w-xl sm:mb-8">
+                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#ffd873]">The journey</p>
+                <h3 className="mt-1 text-[24px] font-black tracking-tight text-[#fff0b5] drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:text-[34px]">
+                  从过去走向现在
+                </h3>
+                <p className="mt-1 text-[12px] leading-5 text-[#eadcaf] drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] sm:text-[13px]">
+                  编程、写作、开源与创业，沿着同一条路持续向前。
+                </p>
+              </div>
+
+              <ol className="grid grid-cols-2 gap-2.5 sm:grid-cols-5 sm:gap-3">
+                {timeline.map((item, i) => {
+                  const isCurrent = i === timeline.length - 1
+
+                  return (
+                    <li
+                      key={`${item.year}-${item.label}`}
+                      className={`relative min-h-[90px] rounded-xl border px-3 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:min-h-[104px] ${
+                        isCurrent
+                          ? 'border-[#ffe08a] bg-[#fff2bd]/95 ring-2 ring-[#ffc94c]/70'
+                          : 'border-[#d7b86f]/70 bg-[#f5e4b8]/90'
+                      }`}
+                    >
+                      <span
+                        className={`font-mono text-[18px] font-black tabular-nums sm:text-[21px] ${
+                          isCurrent ? 'text-[#a83f0b]' : 'text-[#173b3c]'
+                        }`}
+                      >
+                        {item.year}
+                      </span>
+                      <p className="mt-1 text-[11px] font-semibold leading-[1.45] text-[#2d291f] sm:text-[12px]">
+                        {item.label}
+                      </p>
+                      {isCurrent ? (
+                        <span className="absolute right-2 top-2 rounded-full bg-[#a83f0b] px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-[#fff2bd]">
+                          now
+                        </span>
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ol>
+
+              <figcaption className="mt-5 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.18em] text-[#e6c86f] sm:text-[10px]">
+                <span className="h-px w-8 bg-[#e6c86f]/70" aria-hidden="true" />
+                知识 × 技术 × 影响力
+              </figcaption>
+            </div>
+          </figure>
         </div>
       </section>
 

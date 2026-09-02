@@ -868,7 +868,7 @@ function ClassicHomePage({ featuredPicks }) {
                   {[
                     { href: '/publications', label: '出版', labelEn: 'Books' },
                     { href: '/about', label: '站长', labelEn: 'Owner' },
-                    { href: '/works', label: '工具', labelEn: 'Tools' },
+                    { href: '/works', label: '产品', labelEn: 'Products' },
                   ].map((card) => (
                     <Link
                       key={card.href}

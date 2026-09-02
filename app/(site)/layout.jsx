@@ -6,6 +6,7 @@ import { SessionProvider } from './components/SessionProvider'
 import { ThemeProvider } from './components/ThemeProvider'
 import MermaidRenderer from './components/MermaidRenderer'
 import SiteBehaviorAnalytics from './components/SiteBehaviorAnalytics'
+import SiteStatusBanner from './components/SiteStatusBanner'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃的网络日志'
@@ -43,6 +44,7 @@ export default function SiteLayout({ children }) {
           <SessionProvider>
             <SiteBehaviorAnalytics />
             <MermaidRenderer />
+            <SiteStatusBanner />
             <LayoutChrome>{children}</LayoutChrome>
           </SessionProvider>
         </LocaleProvider>

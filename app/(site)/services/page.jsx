@@ -342,14 +342,16 @@ export default function ServicesPage() {
               <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">微信</span>
             </div>
             <div className="flex flex-col items-center gap-2 border border-[#d9dad2] bg-[#f9faf7] p-3 dark:border-[#303947] dark:bg-[#151c25]">
-              <Image
-                src="/qrcode_for_gh.jpg"
-                alt="公众号二维码"
-                width={96}
-                height={96}
-                className="h-24 w-24 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800"
-              />
-              <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">公众号</span>
+              <Link href="/donate" className="flex flex-col items-center gap-2 no-underline">
+                <Image
+                  src="/donate-wechat.jpg"
+                  alt="微信赞助收款码"
+                  width={96}
+                  height={131}
+                  className="h-[131px] w-24 rounded-sm border border-[#e5e5e5] bg-white object-contain dark:border-gray-800"
+                />
+                <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">赞助本站 · 请我喝咖啡</span>
+              </Link>
             </div>
           </div>
         </div>

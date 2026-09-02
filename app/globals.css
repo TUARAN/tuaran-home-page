@@ -2151,6 +2151,12 @@
     border-color: var(--site-line);
   }
 
+  .home-qr-grid img.home-donate-qr {
+    height: 120px;
+    width: 88px;
+    object-fit: contain;
+  }
+
   .home-qr-grid span {
     @apply mt-2 block font-mono text-[11px];
     color: var(--site-muted);

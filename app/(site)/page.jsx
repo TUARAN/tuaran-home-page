@@ -894,14 +894,14 @@ function ClassicHomePage({ featuredPicks }) {
                   </div>
                   <div className="flex flex-col items-center gap-1.5">
                     <Image
-                      src="/qrcode_for_gh.jpg"
-                      alt="公众号二维码"
+                      src="/donate-wechat.jpg"
+                      alt="微信赞助收款码"
                       width={80}
-                      height={80}
-                      className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
+                      height={109}
+                      className="h-[109px] w-20 rounded-sm border border-[#e5e5e5] bg-white object-contain dark:border-gray-800 dark:bg-gray-950"
                     />
-                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]"><T zh="公众号" en="WeChat OA" /></span>
-                    <span className="font-mono text-[10px] text-[#262724] dark:text-gray-200">2aran</span>
+                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]"><T zh="赞助本站" en="Support" /></span>
+                    <Link href="/donate" className="font-mono text-[10px] text-[#262724] underline-offset-2 hover:underline dark:text-gray-200"><T zh="请我喝咖啡" en="Buy me a coffee" /></Link>
                   </div>
                 </div>
               </div>
@@ -957,8 +957,8 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
               <h2><T zh="保持联系" en="Keep in touch" /></h2>
               <p>
                 <T
-                  zh="项目合作、产品交流，添加微信；长期观察、技术判断，订阅公众号。"
-                  en="For collaboration and product talk, add me on WeChat; for long-term notes and judgment, follow the official account."
+                  zh="项目合作、产品交流，添加微信；如果本站内容对你有帮助，也欢迎赞助本站，请我喝杯咖啡。"
+                  en="For collaboration and product talk, add me on WeChat. If this site has helped you, you can also support it by buying me a coffee."
                 />
               </p>
             </div>
@@ -968,8 +968,10 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
                 <span>atar24</span>
               </div>
               <div>
-                <Image src="/qrcode_for_gh.jpg" alt="公众号二维码" width={88} height={88} />
-                <span>2aran</span>
+                <Link href="/donate" className="no-external-arrow block no-underline">
+                  <Image className="home-donate-qr" src="/donate-wechat.jpg" alt="微信赞助收款码" width={88} height={120} />
+                  <span><T zh="请我喝咖啡" en="Buy me a coffee" /></span>
+                </Link>
               </div>
             </div>
           </section>

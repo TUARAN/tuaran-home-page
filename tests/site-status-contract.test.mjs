@@ -25,6 +25,14 @@ test('status banner stays below navigation overlays and wraps long incident copy
   assert.match(banner, /break-words/)
 })
 
+test('status banner can dismiss one incident without hiding future updates', async () => {
+  const banner = await read('../app/(site)/components/SiteStatusBanner.jsx')
+  assert.match(banner, /aria-label="关闭这条预警"/)
+  assert.match(banner, /localStorage\.setItem\(DISMISSED_STATUS_KEY, statusSignature\(status\)\)/)
+  assert.match(banner, /localStorage\.getItem\(DISMISSED_STATUS_KEY\) === statusSignature\(data\)/)
+  assert.match(banner, /status\.startedAt/)
+})
+
 test('monitor route is secret protected and status storage is independent from D1', async () => {
   const [monitor, store, workflow] = await Promise.all([
     read('../app/api/site-status/monitor/route.js'),

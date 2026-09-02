@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import {
   IconArrowRight,
@@ -18,20 +17,7 @@ import { commentProviderLabel } from '../../../lib/userDisplayName'
 import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/engagementBot'
 import StompPanel from '../components/StompPanel'
 import UserAvatar from '../components/UserAvatar'
-
-const WECHAT_QR_ITEM = {
-  src: '/qrcode-wechat.jpg',
-  label: '个人微信号',
-  desc: '群二维码失效时，加我并备注想加入的圈子。',
-  tag: '联系站长',
-}
-
-const GROUP_QR_ITEMS = [
-  { src: '/qrcode-x-group.jpg', label: 'X 互帮互助群', desc: '账号增长与创作者互助', tag: 'X' },
-  { src: '/qrcode-community1.jpg', label: '前端周刊群', desc: '前端、AI 工程与技术内容', tag: '技术' },
-  { src: '/qrcode-community2.jpg', label: '抽奖粉丝群', desc: '活动、福利和粉丝互动', tag: '活动' },
-  { src: '/qrcode-community3.jpg', label: 'AI 资讯群', desc: 'AI 产品、工具与案例', tag: 'AI' },
-]
+import CommunityMembershipCard from '../components/CommunityMembershipCard'
 
 const TOPIC_ACCENTS = {
   'x-mutual-aid-circle': '#1d9bf0',
@@ -144,36 +130,16 @@ function JoinPanel({ open, onClose }) {
         <div className="community-join-head">
           <div>
             <p className="community-kicker">JOIN THE CIRCLE</p>
-            <h2 id="join-panel-title">选择一个入口</h2>
-            <p>扫码加入对应社群；二维码失效时，可以先加站长微信。</p>
+            <h2 id="join-panel-title">付费加入圈子</h2>
+            <p>查看入圈费用、付款方式和人工核对流程。</p>
           </div>
           <button type="button" onClick={onClose} className="community-icon-button" aria-label="关闭加入面板">
             <IconX size={19} aria-hidden="true" />
           </button>
         </div>
 
-        <div className="community-join-contact">
-          <QrItem item={WECHAT_QR_ITEM} primary />
-        </div>
-        <div className="community-join-grid">
-          {GROUP_QR_ITEMS.map((item) => <QrItem key={item.src} item={item} />)}
-        </div>
+        <CommunityMembershipCard compact />
       </section>
-    </div>
-  )
-}
-
-function QrItem({ item, primary = false }) {
-  return (
-    <div className={`community-qr-item ${primary ? 'is-primary' : ''}`}>
-      <div className="community-qr-image">
-        <Image src={item.src} alt={item.label} width={120} height={120} sizes="120px" className="h-full w-full object-contain" />
-      </div>
-      <div className="min-w-0">
-        <span className="community-qr-tag">{item.tag}</span>
-        <h3>{item.label}</h3>
-        <p>{item.desc}</p>
-      </div>
     </div>
   )
 }
@@ -244,7 +210,7 @@ export default function DiscussionHubClient() {
                 浏览圈子 <IconArrowRight size={17} aria-hidden="true" />
               </a>
               <button type="button" className="community-secondary-button" onClick={() => setJoinOpen(true)}>
-                <IconQrcode size={17} aria-hidden="true" /> 加入社群
+                <IconQrcode size={17} aria-hidden="true" /> ¥99 / 年加入
               </button>
             </div>
           </div>
@@ -276,6 +242,10 @@ export default function DiscussionHubClient() {
               <TopicCircleCard key={topic.id} topic={topic} index={index} />
             ))}
           </div>
+        </section>
+
+        <section className="community-section" aria-label="付费入圈">
+          <CommunityMembershipCard id="join" />
         </section>
 
         <section className="community-section" aria-labelledby="community-feed-title">
@@ -332,8 +302,8 @@ export default function DiscussionHubClient() {
               <button type="button" className="community-join-card" onClick={() => setJoinOpen(true)}>
                 <span><IconSparkles size={18} aria-hidden="true" /></span>
                 <div>
-                  <strong>想进入微信群聊？</strong>
-                  <p>按主题选择社群，扫码即可加入。</p>
+                  <strong>付费加入微信群聊</strong>
+                  <p>¥99 / 年，付款核对后按主题拉群。</p>
                 </div>
                 <IconChevronRight size={18} aria-hidden="true" />
               </button>

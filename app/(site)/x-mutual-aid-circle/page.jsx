@@ -12,6 +12,7 @@ import PageContainer from '../components/PageContainer'
 import RanbiPaywall from '../components/RanbiPaywall'
 import RichPageJsonLd from '../components/RichPageJsonLd'
 import SharePageButton from '../components/SharePageButton'
+import CommunityMembershipCard from '../components/CommunityMembershipCard'
 import TimingHeatmapClient from './TimingHeatmapClient'
 
 export const dynamic = 'force-static'
@@ -19,8 +20,6 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-mutual-aid-circle'
 const RESOURCE_URL = `https://2aran.com/${RESOURCE_SLUG}`
 const EXTENSION_SHORT_URL = 'https://2aran.com/s/Os0WrDh'
-const GROUP_QR_SRC = '/qrcode-x-group.jpg'
-const OWNER_QR_SRC = '/qrcode-wechat.jpg'
 const PROFILE_SCREENSHOT_SRC = '/images/diary/x-blue-v-mutual-profile-2026-07-09.png'
 
 const title = 'X 互帮互助圈子：真实互动，一起把 X 流量玩明白'
@@ -302,85 +301,9 @@ export default function XMutualAidCirclePage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-[28px] border border-[#2f3336] bg-[#080808] p-6 shadow-[0_0_80px_rgba(29,155,240,0.10)] md:p-8">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,500px)] lg:items-start">
-            <div>
-              <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#1d9bf0]">
-                Join the Circle
-              </p>
-              <h2 className="m-0 mt-1 text-2xl font-semibold text-[#e7e9ea]">进 X 互帮互助群（微信）</h2>
-              <p className="m-0 mt-3 max-w-2xl text-sm leading-7 text-[#8b98a5]">
-                玩法很简单：你把优质推文发到群里，大家真心点赞、评论、转发，把每条推文最关键的前
-                30–60 分钟互动做起来；轮到别人发帖，你也搭把手。互相帮助涨曝光、涨粉丝，一起成长。
-              </p>
-
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="m-0 text-xs font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">
-                    群里怎么玩
-                  </p>
-                  <ul className="m-0 mt-2 list-none space-y-1.5 p-0 text-sm leading-6 text-[#c9d1d9]">
-                    <li>· 把你的优质推文发到群里</li>
-                    <li>· 大家真实点赞、评论、转发</li>
-                    <li>· 互相把早期互动做起来，一起涨曝光涨粉</li>
-                  </ul>
-                </div>
-                <div>
-                  <p className="m-0 text-xs font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">
-                    群规（必须遵守）
-                  </p>
-                  <ul className="m-0 mt-2 list-none space-y-1.5 p-0 text-sm leading-6 text-[#c9d1d9]">
-                    <li>· 只欢迎优质内容创作者</li>
-                    <li>· 真实互动，禁止纯刷量、广告、水军</li>
-                    <li>· 积极参与，共同进步</li>
-                  </ul>
-                </div>
-              </div>
-
-              <p className="m-0 mt-5 text-xs leading-6 text-[#71767b]">
-                二维码定期更新，扫不上时去
-                <Link href="/community" className="text-[#1d9bf0] underline underline-offset-4 hover:text-[#8ecdf8]">
-                  社群页
-                </Link>
-                取最新的，或加站长个人微信拉你进群。
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:justify-items-end">
-              <figure className="m-0 flex flex-col items-center gap-2">
-                <div className="flex min-h-[236px] w-full items-center justify-center overflow-hidden rounded-3xl border border-[#2f3336] bg-white p-2 shadow-[0_0_48px_rgba(29,155,240,0.16)] sm:w-[220px]">
-                  <Image
-                    src={GROUP_QR_SRC}
-                    alt="X 互帮互助微信群二维码"
-                    width={220}
-                    height={204}
-                    className="h-auto max-h-[220px] w-full object-contain"
-                    unoptimized
-                  />
-                </div>
-                <figcaption className="text-center text-xs text-[#71767b]">
-                  群聊二维码 · X 互帮互助
-                </figcaption>
-              </figure>
-
-              <figure className="m-0 flex flex-col items-center gap-2">
-                <div className="flex min-h-[236px] w-full items-center justify-center overflow-hidden rounded-3xl border border-[#2f3336] bg-white p-2 shadow-[0_0_48px_rgba(29,155,240,0.16)] sm:w-[220px]">
-                  <Image
-                    src={OWNER_QR_SRC}
-                    alt="站长个人微信二维码"
-                    width={220}
-                    height={298}
-                    className="h-auto max-h-[220px] w-auto max-w-full object-contain"
-                    unoptimized
-                  />
-                </div>
-                <figcaption className="text-center text-xs text-[#71767b]">
-                  站长个人微信 · 扫码拉你进群
-                </figcaption>
-              </figure>
-            </div>
-          </div>
-        </section>
+        <div id="join" className="mt-8 scroll-mt-24">
+          <CommunityMembershipCard compact />
+        </div>
 
         <section className="mt-12">
           <SectionHeading

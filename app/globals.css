@@ -4808,62 +4808,257 @@
     color: var(--site-muted);
   }
 
-  .community-join-contact { margin-top: 1.25rem; }
-
-  .community-join-grid {
+  .community-membership {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-  }
-
-  .community-qr-item {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 0.85rem;
-    border: 1px solid var(--site-line);
-    border-radius: 0.75rem;
-    padding: 0.75rem;
-    background: color-mix(in srgb, var(--site-panel) 74%, transparent);
-  }
-
-  .community-qr-item.is-primary {
-    border-color: color-mix(in srgb, var(--community-warm) 35%, var(--site-line));
-    background: color-mix(in srgb, var(--community-warm) 6%, var(--site-panel));
-  }
-
-  .community-qr-image {
-    width: 5.6rem;
-    height: 5.6rem;
-    flex: none;
     overflow: hidden;
-    border-radius: 0.45rem;
-    padding: 0.2rem;
-    background: #fff;
+    grid-template-columns: minmax(0, 1.2fr) minmax(15rem, 0.55fr);
+    border: 1px solid color-mix(in srgb, var(--community-warm, #d9b66f) 38%, var(--site-line));
+    border-radius: 1.15rem;
+    background: color-mix(in srgb, var(--site-panel-strong) 88%, transparent);
+    box-shadow: 0 24px 72px color-mix(in srgb, var(--site-shadow) 42%, transparent);
   }
 
-  .community-qr-tag {
-    color: var(--community-warm);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+  .community-membership-intro {
+    padding: clamp(1.25rem, 4vw, 2rem);
   }
 
-  .community-qr-item h3 {
-    margin: 0.25rem 0 0;
+  .community-membership-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-top: 0.45rem;
+  }
+
+  .community-membership-title-row h2 {
+    margin: 0;
     border: 0;
     padding: 0;
     color: var(--site-ink);
-    font-size: 13px;
+    font-size: clamp(1.65rem, 4vw, 2.35rem);
+    letter-spacing: -0.04em;
+    line-height: 1.15;
   }
 
-  .community-qr-item p {
-    margin: 0.25rem 0 0;
+  .community-membership-title-row p {
+    margin: 0.6rem 0 0;
+    color: var(--site-muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .community-membership-price {
+    display: flex;
+    flex: none;
+    align-items: baseline;
+    color: var(--site-ink);
+  }
+
+  .community-membership-price strong {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    letter-spacing: -0.07em;
+    line-height: 1;
+  }
+
+  .community-membership-price span {
+    margin-left: 0.2rem;
+    color: var(--site-faint);
+    font-size: 12px;
+  }
+
+  .community-membership-lists {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.6rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--site-line);
+  }
+
+  .community-membership-lists h3 {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    color: var(--site-ink);
+    font-size: 12px;
+  }
+
+  .community-membership-lists ul {
+    display: grid;
+    gap: 0.65rem;
+    margin: 0.8rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .community-membership-lists li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--site-muted);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .community-membership-lists li svg {
+    flex: none;
+    margin-top: 0.1rem;
+    color: #18a866;
+  }
+
+  .community-membership-dot {
+    width: 0.35rem;
+    height: 0.35rem;
+    flex: none;
+    margin-top: 0.4rem;
+    border-radius: 999px;
+    background: var(--community-warm, #d9b66f);
+  }
+
+  .community-membership-payment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border-left: 1px solid var(--site-line);
+    padding: 1.25rem;
+    background: color-mix(in srgb, #07c160 7%, var(--site-panel));
+  }
+
+  .community-membership-pay-head {
+    display: flex;
+    width: min(14rem, 100%);
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
+    color: var(--site-muted);
+    font-size: 10px;
+  }
+
+  .community-membership-pay-head strong {
+    color: #07a956;
+    font-size: 14px;
+  }
+
+  .community-membership-payment-qr {
+    width: min(14rem, 100%);
+    overflow: hidden;
+    aspect-ratio: 1279 / 1743;
+    border: 0.45rem solid #fff;
+    border-radius: 0.7rem;
+    background: #fff;
+  }
+
+  .community-membership-payment > p {
+    max-width: 14rem;
+    margin: 0.65rem 0 0;
+    color: var(--site-faint);
+    font-size: 9px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .community-membership-steps {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    border-top: 1px solid var(--site-line);
+    padding: 0;
+    list-style: none;
+  }
+
+  .community-membership-steps li {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 1.1rem;
+    border-right: 1px solid var(--site-line);
+  }
+
+  .community-membership-steps li:last-child { border-right: 0; }
+
+  .community-membership-steps li > svg {
+    flex: none;
+    margin-top: 0.1rem;
+    color: var(--community-warm, #d9b66f);
+  }
+
+  .community-membership-step-number {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.55rem;
+    color: color-mix(in srgb, var(--site-faint) 35%, transparent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .community-membership-steps strong {
+    display: block;
+    padding-right: 1.4rem;
+    color: var(--site-ink);
+    font-size: 11px;
+  }
+
+  .community-membership-steps p {
+    margin: 0.3rem 0 0;
+    color: var(--site-faint);
+    font-size: 10px;
+    line-height: 1.55;
+  }
+
+  .community-membership-contact {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 0.8rem;
+    border-top: 1px solid var(--site-line);
+    padding: 0.85rem 1.1rem;
+    background: color-mix(in srgb, var(--community-warm, #d9b66f) 7%, transparent);
+  }
+
+  .community-membership-owner-qr {
+    width: 3.2rem;
+    height: 3.2rem;
+    flex: none;
+    overflow: hidden;
+    border-radius: 0.4rem;
+    padding: 0.12rem;
+    background: #fff;
+  }
+
+  .community-membership-contact strong {
+    display: block;
+    color: var(--site-ink);
+    font-size: 11px;
+  }
+
+  .community-membership-contact p {
+    margin: 0.2rem 0 0;
     color: var(--site-faint);
     font-size: 10px;
     line-height: 1.5;
+  }
+
+  .community-membership.is-compact {
+    grid-template-columns: minmax(0, 1fr) 13rem;
+    margin-top: 1.25rem;
+  }
+
+  .community-membership.is-compact .community-membership-intro { padding: 1.1rem; }
+  .community-membership.is-compact .community-membership-title-row h2 { font-size: 1.45rem; }
+  .community-membership.is-compact .community-membership-price strong { font-size: 2rem; }
+  .community-membership.is-compact .community-membership-lists { gap: 1rem; margin-top: 1rem; padding-top: 1rem; }
+  .community-membership.is-compact .community-membership-payment { padding: 0.9rem; }
+  .community-membership.is-compact .community-membership-payment-qr { width: 10rem; }
+  .community-membership.is-compact .community-membership-pay-head { width: 10rem; }
+
+  .community-join-panel > .community-membership.is-compact {
+    margin-top: 1.25rem;
+    box-shadow: none;
   }
 
   @media (max-width: 900px) {
@@ -4898,6 +5093,11 @@
     }
 
     .community-thread-panel { display: none; }
+
+    .community-membership,
+    .community-membership.is-compact {
+      grid-template-columns: minmax(0, 1fr) 14rem;
+    }
   }
 
   @media (max-width: 640px) {
@@ -4986,8 +5186,42 @@
     }
 
     .community-join-backdrop { align-items: flex-end; padding: 0.5rem; }
-    .community-join-grid { grid-template-columns: 1fr; }
-    .community-qr-image { width: 5rem; height: 5rem; }
+    .community-membership,
+    .community-membership.is-compact {
+      grid-template-columns: 1fr;
+      border-radius: 0.85rem;
+    }
+
+    .community-membership-title-row { gap: 0.75rem; }
+    .community-membership-title-row h2 { font-size: 1.45rem; }
+    .community-membership-title-row p { font-size: 11px; }
+    .community-membership-price strong { font-size: 1.9rem; }
+    .community-membership-lists { grid-template-columns: 1fr; gap: 1rem; }
+
+    .community-membership-payment {
+      border-top: 1px solid var(--site-line);
+      border-left: 0;
+      padding: 1.1rem;
+    }
+
+    .community-membership-payment-qr,
+    .community-membership.is-compact .community-membership-payment-qr {
+      width: 11.5rem;
+    }
+
+    .community-membership-pay-head,
+    .community-membership.is-compact .community-membership-pay-head { width: 11.5rem; }
+
+    .community-membership-steps {
+      grid-template-columns: 1fr;
+    }
+
+    .community-membership-steps li {
+      border-right: 0;
+      border-bottom: 1px solid var(--site-line);
+    }
+
+    .community-membership-steps li:last-child { border-bottom: 0; }
 
     .showcase-card {
       display: grid;

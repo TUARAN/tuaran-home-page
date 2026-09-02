@@ -1,10 +1,10 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { COMMUNITY_TOPICS } from '../../../lib/communityTopics'
 import ContentEngagement from '../components/ContentEngagement'
 import PageContainer from '../components/PageContainer'
 import SharePageButton from '../components/SharePageButton'
+import CommunityMembershipCard from '../components/CommunityMembershipCard'
 
 const SHARED_RULES = [
   '真人、真实账号、真实经验，不交换账号密码。',
@@ -53,8 +53,8 @@ export default function CircleTopicPage({ topic }) {
               {topic.positioning}
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link href="/community#message" className="circle-topic-primary-link">
-                登记加入意向
+              <Link href="#join" className="circle-topic-primary-link">
+                付费加入圈子
               </Link>
               <SharePageButton
                 title={topic.label}
@@ -74,25 +74,9 @@ export default function CircleTopicPage({ topic }) {
           <InfoSection eyebrow="Ground rules" title="共同约定" items={SHARED_RULES} />
         </div>
 
-        <section className="circle-topic-join mt-6">
-          <div className="min-w-0 flex-1">
-            <p className="circle-topic-eyebrow">Join the circle</p>
-            <h2>先认识，再组局</h2>
-            <p className="mb-0 mt-3 max-w-2xl text-sm leading-7 text-[var(--site-muted)]">
-              这个圈子正在发起中。先在讨论区留下你的平台账号、内容方向和最想解决的问题；也可以加站长微信，备注“{topic.label}”。人数和方向合适后再拉群，避免建成无人说话的二维码仓库。
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link href="/community#message" className="circle-topic-primary-link">去讨论区登记</Link>
-              <Link href="/community" className="circle-topic-secondary-link">查看全部社群入口</Link>
-            </div>
-          </div>
-          <figure className="m-0 shrink-0 text-center">
-            <div className="circle-topic-qr">
-              <Image src="/qrcode-wechat.jpg" alt="站长个人微信二维码" width={132} height={178} className="h-full w-full object-contain" />
-            </div>
-            <figcaption className="mt-2 text-[11px] text-[var(--site-faint)]">微信 · atar24</figcaption>
-          </figure>
-        </section>
+        <div className="mt-6">
+          <CommunityMembershipCard compact id="join" />
+        </div>
 
         <section className="mt-10">
           <div className="mb-4 flex items-end justify-between gap-4">

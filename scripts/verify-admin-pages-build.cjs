@@ -34,9 +34,12 @@ const ALLOWED_DYNAMIC_ADMIN_PAGES = new Set([
   '/admin/stock-analysis/[slug]',
 ])
 
-// PortfolioConsole mentions this planned endpoint as documentation; it does not
-// execute a request. Keep explicit exceptions narrow so new missing APIs fail.
-const NON_RUNTIME_API_REFERENCES = new Set(['/api/subscribe'])
+// These endpoints appear in Admin UI documentation, but the browser does not
+// request them. Keep explicit exceptions narrow so new missing APIs fail.
+const NON_RUNTIME_API_REFERENCES = new Set([
+  '/api/site-status/monitor',
+  '/api/subscribe',
+])
 
 // BloggerEyeConsole talks directly to the loopback-only companion service
 // configured in that page. These paths are runtime requests, but they are not

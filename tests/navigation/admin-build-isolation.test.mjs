@@ -47,3 +47,9 @@ test('admin build verification excludes loopback companion APIs from Worker rout
   }
   assert.match(adminVerifierSource, /!EXTERNAL_SERVICE_API_REFERENCES\.has\(apiPath\)/)
 })
+
+test('admin build verification permits documented public scheduler APIs', () => {
+  assert.match(adminVerifierSource, /NON_RUNTIME_API_REFERENCES/)
+  assert.match(adminVerifierSource, /['"]\/api\/site-status\/monitor['"]/)
+  assert.match(adminVerifierSource, /!NON_RUNTIME_API_REFERENCES\.has\(apiPath\)/)
+})

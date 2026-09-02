@@ -14,6 +14,17 @@ test('site layout renders the status banner for all public routes', async () => 
   assert.match(banner, /aria-live=/)
 })
 
+test('status banner stays below navigation overlays and wraps long incident copy', async () => {
+  const [banner, header] = await Promise.all([
+    read('../app/(site)/components/SiteStatusBanner.jsx'),
+    read('../app/(site)/components/SiteHeader.jsx'),
+  ])
+  assert.match(banner, /z-\[110\]/)
+  assert.match(header, /site-header fixed[^\n]+z-\[120\]/)
+  assert.match(banner, /sm:flex-wrap/)
+  assert.match(banner, /break-words/)
+})
+
 test('monitor route is secret protected and status storage is independent from D1', async () => {
   const [monitor, store, workflow] = await Promise.all([
     read('../app/api/site-status/monitor/route.js'),

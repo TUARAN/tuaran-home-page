@@ -6,9 +6,9 @@ import { IconAlertTriangle, IconInfoCircle, IconTool } from '@tabler/icons-react
 const POLL_INTERVAL_MS = 60_000
 
 const TONES = {
-  info: 'border-blue-300/70 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100',
-  warning: 'border-amber-300/70 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100',
-  critical: 'border-rose-300/70 bg-rose-50 text-rose-950 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100',
+  info: 'border-blue-200/80 bg-[#f4f8fb] text-[#27475d] dark:border-blue-900/80 dark:bg-[#111c24] dark:text-blue-100',
+  warning: 'border-[#e6d6b5] bg-[#fbf7ed] text-[#523b24] dark:border-[#5a472a] dark:bg-[#211c14] dark:text-[#f2dfb7]',
+  critical: 'border-rose-200/80 bg-[#fff5f4] text-[#702f31] dark:border-rose-900/80 dark:bg-[#241517] dark:text-rose-100',
 }
 
 function BannerIcon({ status, severity }) {
@@ -46,19 +46,19 @@ export default function SiteStatusBanner() {
 
   return (
     <aside
-      className={`relative z-[160] border-b px-4 py-2.5 text-[13px] shadow-sm ${tone}`}
+      className={`relative z-[110] border-b px-3 py-2 text-[13px] shadow-[0_1px_8px_rgba(57,45,28,0.04)] sm:px-5 ${tone}`}
       role={status.severity === 'critical' ? 'alert' : 'status'}
       aria-live={status.severity === 'critical' ? 'assertive' : 'polite'}
     >
-      <div className="mx-auto flex w-full max-w-[1120px] items-start justify-center gap-2.5 sm:items-center">
-        <span className="mt-0.5 shrink-0 sm:mt-0">
+      <div className="mx-auto flex w-full max-w-[1280px] items-start gap-2.5 sm:items-center sm:justify-center">
+        <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-current/15 bg-white/45 sm:mt-0 dark:bg-white/5">
           <BannerIcon status={status.status} severity={status.severity} />
         </span>
-        <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
-          <strong className="font-semibold">{status.message}</strong>
-          {status.detail ? <span className="ml-1 opacity-80 sm:ml-0">{status.detail}</span> : null}
+        <div className="min-w-0 break-words leading-5 sm:flex sm:flex-wrap sm:items-baseline sm:justify-center sm:gap-x-3">
+          <strong className="block font-semibold sm:inline">{status.message}</strong>
+          {status.detail ? <span className="block opacity-75 sm:inline">{status.detail}</span> : null}
           {status.affectedServices?.length ? (
-            <span className="ml-1 opacity-70 sm:ml-0">受影响：{status.affectedServices.join('、')}</span>
+            <span className="mt-0.5 block text-[12px] opacity-70 sm:mt-0 sm:inline">受影响：{status.affectedServices.join('、')}</span>
           ) : null}
         </div>
       </div>

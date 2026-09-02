@@ -16,7 +16,7 @@ const STEPS = [
   },
   {
     icon: IconMessageCircleCheck,
-    title: '添加站长微信',
+    title: '添加作者微信',
     desc: '发送付款截图，并说明想加入的主题圈子。',
   },
   {
@@ -97,20 +97,47 @@ export default function CommunityMembershipCard({ compact = false, id }) {
       </ol>
 
       <div className="community-membership-contact">
-        <div className="community-membership-owner-qr">
+        <a
+          href={COMMUNITY_MEMBERSHIP.ownerQr}
+          target="_blank"
+          rel="noreferrer"
+          className="community-membership-owner-qr"
+          aria-label="查看作者微信二维码原图"
+        >
           <Image
             src={COMMUNITY_MEMBERSHIP.ownerQr}
-            alt="站长个人微信二维码"
+            alt="作者个人微信二维码"
             width={1074}
             height={1455}
-            sizes="96px"
+            sizes="(max-width: 900px) 136px, 176px"
             className="h-full w-full object-contain"
           />
+        </a>
+        <div className="community-membership-contact-copy">
+          <strong>付款后添加作者微信</strong>
+          <p>作者微信号：<b>{COMMUNITY_MEMBERSHIP.wechatId}</b></p>
+          <p>发送付款截图，并说明想加入的圈子。</p>
+          <span className="community-membership-owner-qr-hint">点击二维码可查看原图</span>
         </div>
-        <div>
-          <strong>付款后添加微信</strong>
-          <p>微信号：{COMMUNITY_MEMBERSHIP.wechatId} · 发送付款截图和想加入的圈子</p>
-        </div>
+        <aside className="community-membership-contact-guide" aria-label="添加作者微信消息示例">
+          <p className="community-membership-contact-guide-kicker">添加时这样说</p>
+          <blockquote>
+            你好，我已支付 {COMMUNITY_MEMBERSHIP.price} 元，微信昵称是 ______，想加入 ______ 主题圈子。
+          </blockquote>
+          <ul>
+            <li>附上付款截图</li>
+            <li>写清付款备注或微信昵称</li>
+            <li>说明希望加入的主题方向</li>
+          </ul>
+          <div className="community-membership-contact-benefits">
+            <p>加入后还可以获得</p>
+            <ul>
+              <li>独家资源整理</li>
+              <li>AI 工具与案例清单</li>
+              <li>选题、作品和账号反馈</li>
+            </ul>
+          </div>
+        </aside>
       </div>
     </section>
   )

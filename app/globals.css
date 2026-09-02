@@ -5035,36 +5035,133 @@
   }
 
   .community-membership-contact {
-    display: flex;
+    display: grid;
     grid-column: 1 / -1;
+    grid-template-columns: auto minmax(13rem, 0.7fr) minmax(22rem, 1.3fr);
     align-items: center;
-    gap: 0.8rem;
+    gap: 1.35rem;
     border-top: 1px solid var(--site-line);
-    padding: 0.85rem 1.1rem;
+    padding: 1.25rem 1.4rem;
     background: color-mix(in srgb, var(--community-warm, #d9b66f) 7%, transparent);
   }
 
   .community-membership-owner-qr {
-    width: 3.2rem;
-    height: 3.2rem;
+    width: clamp(8.5rem, 16vw, 11rem);
+    aspect-ratio: 1074 / 1455;
     flex: none;
+    display: block;
     overflow: hidden;
-    border-radius: 0.4rem;
-    padding: 0.12rem;
+    border: 1px solid color-mix(in srgb, var(--community-warm, #d9b66f) 42%, var(--site-line));
+    border-radius: 0.8rem;
+    padding: 0.3rem;
     background: #fff;
+    box-shadow: 0 0.75rem 2rem rgb(66 48 16 / 10%);
   }
 
   .community-membership-contact strong {
     display: block;
     color: var(--site-ink);
-    font-size: 11px;
+    font-size: 18px;
+    line-height: 1.35;
   }
 
   .community-membership-contact p {
-    margin: 0.2rem 0 0;
+    margin: 0.4rem 0 0;
+    color: var(--site-faint);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .community-membership-contact p b {
+    color: var(--site-ink);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 14px;
+  }
+
+  .community-membership-owner-qr-hint {
+    display: block;
+    margin-top: 0.75rem;
+    color: var(--site-faint);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .community-membership-contact-guide {
+    align-self: stretch;
+    border: 1px solid color-mix(in srgb, var(--community-warm, #d9b66f) 38%, var(--site-line));
+    border-radius: 0.8rem;
+    padding: 1.1rem 1.25rem;
+    background: color-mix(in srgb, var(--community-warm, #d9b66f) 8%, var(--site-panel));
+  }
+
+  .community-membership-contact-guide .community-membership-contact-guide-kicker {
+    margin: 0;
+    color: color-mix(in srgb, var(--community-warm, #b58a38) 76%, var(--site-ink));
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+  }
+
+  .community-membership-contact-guide blockquote {
+    margin: 0.75rem 0 0;
+    border-left: 2px solid var(--community-warm, #d9b66f);
+    padding: 0.2rem 0 0.2rem 0.8rem;
+    color: var(--site-ink);
+    font-size: 13px;
+    font-style: normal;
+    line-height: 1.7;
+  }
+
+  .community-membership-contact-guide ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 1rem;
+    margin: 0.9rem 0 0;
+    padding: 0;
     color: var(--site-faint);
     font-size: 10px;
     line-height: 1.5;
+    list-style: none;
+  }
+
+  .community-membership-contact-guide li::before {
+    content: '✓';
+    margin-right: 0.35rem;
+    color: #18a866;
+    font-weight: 700;
+  }
+
+  .community-membership-contact-benefits {
+    margin-top: 1rem;
+    border-top: 1px solid color-mix(in srgb, var(--community-warm, #d9b66f) 32%, var(--site-line));
+    padding-top: 0.85rem;
+  }
+
+  .community-membership-contact-benefits > p {
+    margin: 0;
+    color: var(--site-ink);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .community-membership-contact-benefits > ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+    margin-top: 0.6rem;
+  }
+
+  .community-membership-contact-benefits > ul > li {
+    border: 1px solid var(--site-line);
+    border-radius: 0.55rem;
+    padding: 0.55rem 0.65rem;
+    background: color-mix(in srgb, var(--site-panel) 86%, transparent);
+    color: var(--site-muted);
+    font-size: 10px;
+  }
+
+  .community-membership-contact-benefits > ul > li::before {
+    content: none;
   }
 
   .community-membership.is-compact {
@@ -5246,6 +5343,25 @@
     }
 
     .community-membership-steps li:last-child { border-bottom: 0; }
+
+    .community-membership-contact {
+      grid-template-columns: 8.5rem minmax(0, 1fr);
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .community-membership-owner-qr { width: 8.5rem; }
+    .community-membership-contact strong { font-size: 16px; }
+    .community-membership-contact p { font-size: 12px; }
+
+    .community-membership-contact-guide {
+      grid-column: 1 / -1;
+      padding: 1rem;
+    }
+
+    .community-membership-contact-guide blockquote { font-size: 12px; }
+    .community-membership-contact-benefits > ul { grid-template-columns: 1fr; }
 
     .showcase-card {
       display: grid;

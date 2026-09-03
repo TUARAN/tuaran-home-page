@@ -19,3 +19,10 @@ test('WorkBuddy shares the existing ticker and keeps its tracked external link',
   assert.match(ticker, /data-analytics-destination-id=\{item.analyticsId\}/)
   assert.match(ticker, /rel="noopener noreferrer"/)
 })
+
+test('Blogger Alliance promotion entry appears in the homepage ticker', () => {
+  assert.equal(ticker.match(/https:\/\/blogger-alliance\.cn\//g)?.length, 1)
+  assert.match(ticker, /label: '合作推广，找博主联盟'/)
+  assert.match(ticker, /cta: '找博主'/)
+  assert.match(ticker, /external: true, analyticsId: 'blogger-alliance'/)
+})

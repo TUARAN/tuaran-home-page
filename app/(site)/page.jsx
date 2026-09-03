@@ -12,6 +12,7 @@ import {
   IconCodeCircle,
   IconEye,
   IconFileText,
+  IconMessageCircle2,
   IconUsers,
 } from '@tabler/icons-react'
 
@@ -28,6 +29,7 @@ import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
 import { getFeedItemsWithPinned } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/secondarySites'
+import { OPINION_POSTS, getSentimentBucket } from '../../lib/publicOpinionData'
 
 const weeklySite = SECONDARY_SITES.find((site) => site.id === 'weekly')
 const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
@@ -104,35 +106,21 @@ const START_PATHS = [
   },
 ]
 
-const PRODUCT_LINKS = [
-  {
-    href: 'https://blogger-alliance.cn/',
-    id: 'blogger-alliance',
-    label: '博主联盟',
-    labelEn: 'Blogger Alliance',
-    desc: 'AI 产品方与技术博主的连接网络',
-    descEn: 'A network linking AI products and tech bloggers',
-    icon: IconUsers,
-  },
-  {
-    href: weeklySite.href,
-    id: 'frontendnext',
-    label: '前端周看',
-    labelEn: 'Frontend Weekly',
-    desc: weeklySite.desc,
-    descEn: weeklySite.descEn,
-    icon: IconCode,
-  },
-  {
-    href: syncblogSite.href,
-    id: 'syncblog',
-    label: syncblogSite.label,
-    labelEn: 'SyncBlog',
-    desc: syncblogSite.desc,
-    descEn: syncblogSite.descEn,
-    icon: IconFileText,
-  },
-]
+const HOME_OPINION_POST_IDS = new Set(['p01', 'p02', 'p05', 'p09', 'p13', 'p15'])
+const HOME_OPINION_POSTS = OPINION_POSTS.filter((post) => HOME_OPINION_POST_IDS.has(post.id))
+
+const HOME_OPINION_STANCES = {
+  support: { zh: '支持', en: 'Support' },
+  neutral: { zh: '中立', en: 'Neutral' },
+  question: { zh: '质疑', en: 'Question' },
+  oppose: { zh: '反对', en: 'Oppose' },
+}
+
+const HOME_OPINION_SENTIMENTS = {
+  positive: { zh: '正向', en: 'Positive' },
+  neutral: { zh: '中性', en: 'Neutral' },
+  negative: { zh: '负向', en: 'Negative' },
+}
 
 const SOCIAL_MEDIA_LINKS = [
   {
@@ -435,19 +423,34 @@ function StartPathCard({ item }) {
   )
 }
 
-function ProductLink({ item }) {
-  const Icon = item.icon
+function OpinionSample({ post, hidden = false }) {
+  const sentiment = getSentimentBucket(post.sentiment)
+
   return (
-    <a href={item.href} target="_blank" rel="noreferrer" className="home-product-link no-external-arrow group">
-      <span className={`home-product-icon home-product-icon-${item.id}`} aria-hidden="true">
-        <Icon size={18} stroke={1.8} />
+    <Link href="/public-opinion" className="home-opinion-sample no-external-arrow" tabIndex={hidden ? -1 : undefined}>
+      <span className="home-opinion-sample-meta">
+        <span>{post.platform}</span>
+        <span>{post.time}</span>
+        <span className={`is-${sentiment}`}>
+          <T zh={HOME_OPINION_SENTIMENTS[sentiment].zh} en={HOME_OPINION_SENTIMENTS[sentiment].en} />
+        </span>
+        <span className={`is-${post.stance}`}>
+          <T zh={HOME_OPINION_STANCES[post.stance].zh} en={HOME_OPINION_STANCES[post.stance].en} />
+        </span>
       </span>
-      <span className="home-product-copy">
-        <strong><T zh={item.label} en={item.labelEn} /></strong>
-        <small><T zh={item.desc} en={item.descEn} /></small>
-      </span>
-      <ArrowIcon />
-    </a>
+      <strong>{post.text}</strong>
+      <small><T zh={`核心观点：${post.viewpoint}`} en={`Viewpoint: ${post.viewpoint}`} /></small>
+    </Link>
+  )
+}
+
+function OpinionLoop({ hidden = false }) {
+  return (
+    <div className="home-opinion-loop" aria-hidden={hidden || undefined}>
+      {HOME_OPINION_POSTS.map((post) => (
+        <OpinionSample key={post.id} post={post} hidden={hidden} />
+      ))}
+    </div>
   )
 }
 
@@ -570,16 +573,30 @@ function BuilderAndSignalsPanel() {
     <section className="home-section home-builder-panel">
       <div className="home-section-heading compact">
         <div>
-          <p className="home-kicker">Builder</p>
-          <h2 className="home-section-title"><T zh="正在做" en="Building" /></h2>
+          <p className="home-kicker">Public Opinion</p>
+          <h2 className="home-section-title"><T zh="舆情分析" en="Opinion signals" /></h2>
         </div>
+        <Link href="/public-opinion" className="home-section-more no-underline">
+          <T zh="工作台" en="Dashboard" /> <span aria-hidden="true">→</span>
+        </Link>
       </div>
 
       <div className="home-builder-group">
-        <div className="home-product-list">
-          {PRODUCT_LINKS.map((item) => (
-            <ProductLink key={item.href} item={item} />
-          ))}
+        <div className="home-opinion-heading">
+          <span className="home-opinion-heading-icon" aria-hidden="true">
+            <IconMessageCircle2 size={16} stroke={1.8} />
+          </span>
+          <div>
+            <p><T zh="样本观点与立场识别" en="Sample viewpoints and stance detection" /></p>
+            <small><T zh="滚动查看公开讨论样本" en="Live samples from public discussions" /></small>
+          </div>
+          <span className="home-opinion-live"><T zh="滚动中" en="Live" /></span>
+        </div>
+        <div className="home-opinion-viewport">
+          <div className="home-opinion-track">
+            <OpinionLoop />
+            <OpinionLoop hidden />
+          </div>
         </div>
       </div>
 

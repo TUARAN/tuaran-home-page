@@ -8,6 +8,7 @@ import Link from 'next/link'
  */
 const TICKER_ITEMS = [
   { icon: '📝', label: '工程实践与专题分析', cta: '看文章', href: '/articles' },
+  { icon: '🤝', label: '合作推广，找博主联盟', cta: '找博主', href: 'https://blogger-alliance.cn/', external: true, analyticsId: 'blogger-alliance' },
   { icon: '📚', label: 'WorkBuddy 学习手册 · 视频课程', cta: '看资源', href: 'https://workbuddy.2aran.com/', external: true, analyticsId: 'workbuddy' },
   { icon: '🧭', label: '了解作者与长期方向', cta: '关于我', href: '/about' },
   { icon: '🧪', label: '原创项目与交互作品', cta: '看作品', href: '/works' },

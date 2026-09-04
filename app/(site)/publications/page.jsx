@@ -9,8 +9,8 @@ export const metadata = {
 }
 
 const publicationItems = [
-  { title: '《程序员成长手记》', type: '技术图书', period: '2022-2023', status: '已出版', image: '/images/books/programmer-growth-notes.jpg' },
-  { title: '《AI Bots 通关指南》', type: '电子小册', period: '2024', status: '已发布', image: '/images/books/ai-bots-guide.png' },
+  { title: '《程序员成长手记》', type: '技术图书', period: '2022-2023', status: '已出版', image: '/images/books/programmer-growth-notes.jpg', href: 'https://www.dedao.cn/ebook/detail?id=Lk89Yv4kyM12eaG795DmKAponOvLVWvoRl83ZzdbYxN84JQR6XgEqBPljrbpzARl' },
+  { title: '《AI Bots 通关指南》', type: '电子小册', period: '2024', status: '已发布', image: '/images/books/ai-bots-guide.png', href: 'https://juejin.cn/book/7351709145294176282' },
   { title: '《5 小时吃透大模型》', type: '技术图书', period: '2024-2025', status: '已交稿 · 出版中' },
   { title: '《智能体实战（扣子 · n8n · Dify）》', type: '联合创作', period: '2025-2026', status: '撰写中' },
   { title: '《Seedance 2.0 电影级 AI 视频创作指南》', type: '联合创作', period: '2026 上半年', status: '已交稿 · 出版中' },
@@ -32,6 +32,7 @@ export default function PublicationsPage() {
     title: item.title.replace(/[《》]/g, ''),
     accent: coverStyles[item.title.replace(/[《》]/g, '')]?.accent || 'from-[#2a2f36] via-[#39424d] to-[#566273]',
     image: item.image,
+    href: item.href,
   }))
 
   return (
@@ -61,14 +62,18 @@ export default function PublicationsPage() {
               已出版作品封面
             </p>
             <span className="font-mono text-[10px] tracking-[0.12em] text-[#858779] dark:text-[#8e9ab0]">
-              共 {publishedCovers.length} 本 · 可横向滑动
+              共 {publishedCovers.length} 本 · 点击封面查看 · 可横向滑动
             </span>
           </div>
           <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1">
             {publishedCovers.map((book) => (
-              <div
+              <a
                 key={book.title}
-                className={`w-[min(56vw,230px)] shrink-0 snap-start overflow-hidden rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}
+                href={book.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`查看《${book.title}》（新窗口打开）`}
+                className={`block w-[min(56vw,230px)] shrink-0 snap-start overflow-hidden rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} shadow-[0_10px_24px_rgba(54,45,28,0.22)] transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#546850] dark:border-[#334155] dark:focus-visible:outline-[#9fbf9b]`}
               >
                 {book.image ? (
                   <div className="relative aspect-[3/4] bg-[#101722]">
@@ -81,7 +86,7 @@ export default function PublicationsPage() {
                     />
                   </div>
                 ) : null}
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -99,7 +104,19 @@ export default function PublicationsPage() {
             <tbody>
               {publicationItems.map((item) => (
                 <tr key={item.title} className="border-t border-[#dedfd7] dark:border-[#2b3542]">
-                  <td className="px-4 py-3 text-[#272722] dark:text-gray-100">{item.title}</td>
+                  <td className="px-4 py-3 text-[#272722] dark:text-gray-100">
+                    {item.href ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-sm underline decoration-[#cbcdc0] underline-offset-4 hover:text-[#546850] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#546850] dark:hover:text-[#9fbf9b] dark:focus-visible:outline-[#9fbf9b]"
+                      >
+                        {item.title}<span aria-hidden="true"> ↗</span>
+                        <span className="sr-only">（新窗口打开）</span>
+                      </a>
+                    ) : item.title}
+                  </td>
                   <td className="px-4 py-3 text-[#5d5d55] dark:text-gray-300">{item.type}</td>
                   <td className="px-4 py-3 text-[#5d5d55] dark:text-gray-300">{item.period}</td>
                   <td className="px-4 py-3 text-[#546850] dark:text-[#9fbf9b]">{item.status}</td>

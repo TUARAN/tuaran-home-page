@@ -4,7 +4,10 @@ import {
   detectTrafficSpike,
   equalComparisonWindow,
   normalizeUmamiStats,
+  normalizeDailyUniqueIps,
+  shanghaiSeriesDate,
   summarizeCloudflareGroups,
+  VIBECAFE_ANALYTICS,
 } from '../../../../lib/analyticsSources.mjs'
 import { getIntegrationEnv } from '../../../../lib/integrationKeys'
 
@@ -28,6 +31,37 @@ async function readJson(response, source) {
   const payload = await response.json().catch(() => null)
   if (!response.ok) throw new Error(`${source}_HTTP_${response.status}`)
   return payload
+}
+
+async function loadDailyUniqueIps(env, window) {
+  const token = String(env.CLOUDFLARE_ANALYTICS_TOKEN || '').trim()
+  const zoneId = String(env.CLOUDFLARE_ZONE_ID || '').trim()
+  if (!token || !zoneId) return sourceUnavailable('cloudflare-ips', ['CLOUDFLARE_ANALYTICS_TOKEN', 'CLOUDFLARE_ZONE_ID'], '尚未接通独立 IP 统计，不能用 Umami UV 或阅读指纹替代。')
+  const endDate = new Date(window.currentEnd).toISOString().slice(0, 10)
+  const startDate = new Date(Date.parse(`${endDate}T00:00:00Z`) - (window.days - 1) * 86400000).toISOString().slice(0, 10)
+  try {
+    const response = await fetch(CLOUDFLARE_GRAPHQL_URL, {
+      method: 'POST', signal: AbortSignal.timeout(15_000),
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query DailyIps($zoneTag: string, $start: Date, $end: Date) {
+          viewer { zones(filter: {zoneTag: $zoneTag}) {
+            httpRequests1dGroups(limit: 100, filter: {date_geq: $start, date_leq: $end}) {
+              dimensions { date } uniq { uniques }
+            }
+          } }
+        }`,
+        variables: { zoneTag: zoneId, start: startDate, end: endDate },
+      }),
+    })
+    const payload = await readJson(response, 'CLOUDFLARE_IPS')
+    if (payload?.errors?.length) throw new Error('独立 IP 查询不可用：请检查 Analytics 权限、套餐和历史保留期，或缩短日期范围。')
+    const groups = payload?.data?.viewer?.zones?.[0]?.httpRequests1dGroups
+    if (!Array.isArray(groups)) throw new Error('Cloudflare 未返回独立 IP 数据')
+    const series = normalizeDailyUniqueIps(groups)
+    return { source: 'cloudflare-ips', status: 'ok', timezone: 'UTC', currentDate: endDate,
+      currentDayUniqueIps: series.find(row => row.date === endDate)?.uniqueIps ?? null, series }
+  } catch (error) { return sourceError('cloudflare-ips', String(error?.message || error)) }
 }
 
 async function loadUmami(env, window) {
@@ -64,7 +98,7 @@ async function loadUmami(env, window) {
       current,
       previous,
       series: pageviews.map((row) => ({
-        date: String(row.x || ''),
+        date: shanghaiSeriesDate(row.x),
         views: Math.max(0, Number(row.y) || 0),
         visitors: Math.max(0, sessionByTime.get(String(row.x)) || 0),
       })),
@@ -158,16 +192,17 @@ export async function GET(req) {
   const generatedAt = Date.now()
   const window = equalComparisonWindow(days, generatedAt)
   const env = getIntegrationEnv()
-  const [umami, cloudflare] = await Promise.all([
+  const [umami, cloudflare, cloudflareIps] = await Promise.all([
     loadUmami(env, window),
     loadCloudflare(env, window),
+    loadDailyUniqueIps(env, window),
   ])
 
   return Response.json({
     status: 'ok',
     generatedAt,
     window,
-    sources: { umami, cloudflare },
+    sources: { umami, cloudflare, cloudflareIps, vibecafe: VIBECAFE_ANALYTICS },
     definitions: ANALYTICS_METRIC_DEFINITIONS,
   }, {
     headers: { 'Cache-Control': 'private, no-store' },

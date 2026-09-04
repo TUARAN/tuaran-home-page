@@ -17,6 +17,8 @@ import {
 
 import { AdminButton, AdminPage, EmptyState, Section } from '../../components/ui'
 import { LoadingSpinner, Skeleton } from '../../../components/loading/LoadingPrimitives'
+import { ANALYTICS_METRIC_DEFINITIONS, VIBECAFE_ANALYTICS } from '../../../../lib/analyticsSources.mjs'
+import VibeCafeUvTest from './VibeCafeUvTest'
 
 const PERIODS = [
   { days: 1, label: '今日' },
@@ -37,12 +39,20 @@ async function safeJson(res) {
 }
 
 function number(value, digits = 0) {
+  if (value == null || !Number.isFinite(Number(value))) return '—'
   const n = Number(value) || 0
   return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: digits }).format(n)
 }
 
 function percent(value) {
+  if (value == null || !Number.isFinite(Number(value))) return '—'
   return `${Math.round((Number(value) || 0) * 1000) / 10}%`
+}
+
+function duration(value) {
+  if (value == null || !Number.isFinite(Number(value))) return '—'
+  const seconds = Math.max(0, Math.round(Number(value)))
+  return seconds < 60 ? `${seconds} 秒` : `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`
 }
 
 function bytes(value) {
@@ -151,19 +161,45 @@ function SourceMetric({ label, value, unit, sub }) {
 function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading }) {
   const umami = sourceData?.sources?.umami
   const cloudflare = sourceData?.sources?.cloudflare
-  const definitions = sourceData?.definitions || []
+  const definitions = sourceData?.definitions || ANALYTICS_METRIC_DEFINITIONS
+  const ips = sourceData?.sources?.cloudflareIps
+  const vibe = sourceData?.sources?.vibecafe || VIBECAFE_ANALYTICS
   const umamiViews = Number(umami?.current?.views) || 0
   const qualifiedReads = Number(contentOverview?.pv) || 0
   const edgeRequests = Number(cloudflare?.current?.requests) || 0
 
   return (
     <>
+      <Section title="每天多少人来、多少 IP、停留多久" description="访客是去重标识的估算，无法直接等同于真实人数。以下来源分别展示，不相加；缺失数据用 — 表示。" className="mb-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard icon={IconUsers} eyebrow="所选周期 · 浏览器访客" value={!loading && umami?.status === 'ok' ? number(umami.current.visitors) : '—'} unit="UV" detail="Umami · 不要求停留 8 秒" accent="blue" />
+          <MetricCard icon={IconEye} eyebrow="所选周期 · 页面浏览" value={!loading && umami?.status === 'ok' ? number(umami.current.views) : '—'} unit="PV" detail="Umami · 浏览器脚本上报" />
+          <MetricCard icon={IconClock} eyebrow="所选周期 · 平均访问时长" value={!loading && umami?.status === 'ok' && umami.current.visits > 0 ? duration(umami.current.averageVisitSeconds) : '—'} detail="Umami · 单页和末页可能漏计时长" />
+          <MetricCard icon={IconCloud} eyebrow={`UTC ${ips?.currentDate || '当日'} · 独立 IP`} value={!loading && ips?.status === 'ok' && ips.currentDayUniqueIps != null ? number(ips.currentDayUniqueIps) : '—'} unit="个" detail="Cloudflare · 含探测/爬虫 · 北京时间 08:00 起" />
+        </div>
+        <p className="mt-4 text-xs leading-6 text-[#66685f] dark:text-gray-400">Globalping 每 20 分钟发起一轮 HTTP 检查，正常每日 72 轮、约 144 次目标请求（不含重定向）。它不执行 JavaScript，不触发 Umami、VibeCafé 或自建有效阅读上报；边缘请求和独立 IP 则可能包含它。响应耗时也不等于访客停留时间。</p>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-[#dfe1d8] p-4 dark:border-[#273240]">
+            <h3 className="text-sm font-semibold">每日浏览器访客与浏览 · 北京时间</h3>
+            <SourceState source={umami}>
+              {umami?.series?.length ? <table className="mt-3 w-full text-left text-xs"><thead><tr><th className="py-2">日期</th><th>访客 UV</th><th>浏览 PV</th></tr></thead><tbody>{umami.series.map(row => <tr key={row.date}><td className="py-1.5">{row.date.slice(0, 10)}</td><td>{number(row.visitors)}</td><td>{number(row.views)}</td></tr>)}</tbody></table> : <p className="mt-3 text-xs">暂无每日统计记录。</p>}
+            </SourceState>
+          </div>
+          <div className="rounded-xl border border-[#dfe1d8] p-4 dark:border-[#273240]">
+            <h3 className="text-sm font-semibold">每日独立 IP · UTC</h3>
+            <p className="my-2 text-xs leading-5 text-[#77786f] dark:text-gray-400">UTC 一天对应北京时间当日 08:00 至次日 08:00。不同日期可能重复同一 IP，不能把每日数字相加当作总人数。</p>
+            <SourceState source={ips}>
+              {ips?.series?.length ? <table className="mt-3 w-full text-left text-xs"><thead><tr><th className="py-2">日期（UTC）</th><th>独立 IP</th></tr></thead><tbody>{ips.series.map(row => <tr key={row.date}><td className="py-1.5">{row.date}</td><td>{row.uniqueIps == null ? '—' : number(row.uniqueIps)}</td></tr>)}</tbody></table> : <p className="mt-3 text-xs">暂无独立 IP 记录，不能据此认定无人访问。</p>}
+            </SourceState>
+          </div>
+        </div>
+      </Section>
       <Section
         title="统一统计总览"
-        description="站点访问以 Umami 为主，内容消费以自建有效阅读为主，Cloudflare 只用于流量、安全和容量诊断。三层数据不可直接相加。"
+        description="Umami 看浏览器访问，自建统计看达到阅读门槛的内容访问，VibeCafé 提供补充采集，Cloudflare 看网络请求。"
         className="mb-4"
       >
-        <div className="grid gap-3 xl:grid-cols-3">
+        <div className="grid gap-3 xl:grid-cols-2">
           <article className="rounded-2xl border border-blue-200/70 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-950/20">
             <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-700 dark:text-blue-300">主口径 · 站点访问</p><h3 className="mt-1 text-sm font-semibold">Umami</h3></div><IconChartBar size={19} className="text-blue-500" /></div>
             <SourceState source={umami}>
@@ -173,6 +209,7 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading }) {
                 <SourceMetric label="浏览" value={loading ? '—' : number(umami?.current?.views)} unit="次" sub={`上期 ${number(umami?.previous?.views)}`} />
               </div>
             </SourceState>
+            <a href="https://cloud.umami.is/share/3mOsBgzrmb9wY8bI" target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs underline">打开现有 Umami 独立面板</a>
           </article>
 
           <article className="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
@@ -182,7 +219,16 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading }) {
               <SourceMetric label="独立读者" value={loading ? '—' : number(contentOverview?.uv)} unit="人" sub="合格事件去重" />
               <SourceMetric label="人均阅读" value={loading ? '—' : number(contentOverview?.viewsPerVisitor, 1)} unit="篇次" sub="有效阅读 / 读者" />
             </div>
+            <p className="mt-3 text-xs leading-5 text-[#66685f] dark:text-gray-400">内容页累计可见满 8 秒才上报，每个内容/请求指纹每小时最多一次。这是本站自定义门槛，不代表平均停留 8 秒，也不适用于 Umami 和 VibeCafé。</p>
             {contentOverview?.excludedLegacyPv > 0 ? <p className="mt-3 text-[10px] leading-4 text-amber-700 dark:text-amber-300">当前周期另有 {number(contentOverview.excludedLegacyPv)} 条旧版未验证事件，已从主指标排除。</p> : null}
+          </article>
+          <article className="rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900 dark:bg-violet-950/20">
+            <h3 className="text-sm font-semibold">VibeCafé</h3>
+            <p className="mt-2 text-xs font-medium">已安装采集脚本 · 报表尚未接入</p>
+            <p className="mt-2 text-xs leading-6 text-[#66685f] dark:text-gray-400">{vibe.message}</p>
+            <p className="mt-2 text-xs leading-6 text-[#66685f] dark:text-gray-400">浏览器为产品保存随机 visitorId，初次加载及网址变化时发送 pageview，无 8 秒等待。换 IP 通常保留 ID；清除存储或换浏览器可能产生新 ID。DNT/GPC 开启时不发送。当前脚本没有停留计时，后台去重周期和过滤规则尚未确认。</p>
+            <p className="mt-2 text-xs leading-6 text-[#66685f] dark:text-gray-400">脚本位于根布局，也可能覆盖后台访问；产品页访问和实际站点访问须以平台报表区分。</p>
+            <div className="mt-3 flex gap-4 text-xs underline"><a href={vibe.productUrl} target="_blank" rel="noreferrer">查看 VibeCafé 产品页</a><a href={vibe.scriptUrl} target="_blank" rel="noreferrer">核对采集脚本</a></div>
           </article>
 
           <article className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4 dark:border-stone-800 dark:bg-stone-950/20">
@@ -198,7 +244,7 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading }) {
           </article>
         </div>
 
-        {!loading && umami?.status === 'ok' && cloudflare?.status === 'ok' ? (
+        {!loading && contentOverview && umami?.status === 'ok' && cloudflare?.status === 'ok' ? (
           <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
             <p className="rounded-xl bg-[#f5f5f0] px-3 py-2 text-[#6d6f66] dark:bg-[#111923] dark:text-gray-400">Cloudflare 请求 / Umami 浏览：<strong className="text-[#25251f] dark:text-gray-200">{umamiViews ? number(edgeRequests / umamiViews, 1) : '—'}×</strong>。这个倍数反映每次页面浏览产生的资产/API 请求与自动流量，不是漏记率。</p>
             <p className="rounded-xl bg-[#f5f5f0] px-3 py-2 text-[#6d6f66] dark:bg-[#111923] dark:text-gray-400">有效内容阅读 / Umami 浏览：<strong className="text-[#25251f] dark:text-gray-200">{umamiViews ? percent(qualifiedReads / umamiViews) : '—'}</strong>。分母覆盖全站，分子只覆盖白名单内容页且需活跃 8 秒。</p>
@@ -206,7 +252,7 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading }) {
         ) : null}
       </Section>
 
-      <details className="mb-4 rounded-2xl border border-[#dfe1d8] bg-white/60 p-4 dark:border-[#273240] dark:bg-[#0d141d]">
+      <details open className="mb-4 rounded-2xl border border-[#dfe1d8] bg-white/60 p-4 dark:border-[#273240] dark:bg-[#0d141d]">
         <summary className="cursor-pointer text-sm font-semibold text-[#292921] dark:text-gray-100">指标字典与差异说明</summary>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[780px] border-collapse text-left text-xs">
@@ -214,7 +260,8 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading }) {
             <tbody>{definitions.map((item) => <tr key={item.id} className="border-b border-[#ededE7] last:border-0 dark:border-[#202a36]"><td className="py-3 pr-4 font-medium text-[#24241f] dark:text-gray-100">{item.label}</td><td className="py-3 pr-4 text-[#66685f] dark:text-gray-400">{item.source}<span className="ml-1.5 rounded bg-[#efefe9] px-1.5 py-0.5 text-[9px] dark:bg-[#1b2531]">{item.role}</span></td><td className="py-3 pr-4 leading-5 text-[#66685f] dark:text-gray-400">{item.definition}</td><td className="py-3 leading-5 text-[#8b6d42] dark:text-amber-300">{item.caveat}</td></tr>)}</tbody>
           </table>
         </div>
-        <p className="mt-3 text-[10px] text-[#95978d] dark:text-gray-600">所有周期均以北京时间起点计算；环比使用与当前窗口完全相同的已过时长。Cloudflare 日分组由其 API 按 UTC 返回，仅周期总数与另外两套按北京时间严格对齐。</p>
+        <p className="mt-3 text-[10px] text-[#95978d] dark:text-gray-600">Umami、自建阅读和边缘请求总量采用北京时间范围；环比比较相同已过时长。Cloudflare 日分组与每日独立 IP 使用 UTC，独立 IP 不提供跨日相加的总数。VibeCafé 报表的时间窗尚未核实。</p>
+        <div className="mt-3 flex flex-wrap gap-4 text-xs underline"><a href="https://docs.umami.is/docs/metric-definitions" target="_blank" rel="noreferrer">Umami 指标定义</a><a href="https://developers.cloudflare.com/analytics/graphql-api/features/data-sets/" target="_blank" rel="noreferrer">Cloudflare 数据集定义</a><a href={vibe.scriptUrl} target="_blank" rel="noreferrer">VibeCafé v1 采集脚本（2026-09-04 核对）</a></div>
       </details>
     </>
   )
@@ -351,7 +398,7 @@ function LikedContentList({ likes, loading }) {
 }
 
 export default function ContentWeeklyClient() {
-  const [days, setDays] = useState(7)
+  const [days, setDays] = useState(1)
   const [data, setData] = useState(null)
   const [sourceData, setSourceData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -394,8 +441,8 @@ export default function ContentWeeklyClient() {
     } catch (e) { setError(e?.message || 'COMMENT_DELETE_FAILED') } finally { setDeletingCommentId(null) }
   }, [days, refresh])
 
-  const overview = data?.overview || { pv: 0, previousPv: 0, uv: 0, previousUv: 0, returning: 0, returnRate: 0, viewsPerVisitor: 0 }
-  const today = data?.today || { pv: 0, uv: 0, topContent: [], sources: [], visitors: [] }
+  const overview = data?.status === 'ok' && data.overview ? data.overview : { pv: null, previousPv: null, uv: null, previousUv: null, returning: null, returnRate: null, viewsPerVisitor: null }
+  const today = data?.status === 'ok' && data.today ? data.today : { pv: null, uv: null, topContent: [], sources: [], visitors: [] }
   const todayAudience = useMemo(() => ({ breakdown: [], visitors: today.visitors || [] }), [today.visitors])
   const label = periodLabel(days)
 
@@ -409,11 +456,12 @@ export default function ContentWeeklyClient() {
       {data?.status === 'unavailable' ? <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">当前环境没有连接统计数据库，部署后才会显示真实数据。</div> : null}
       {data?.status === 'ok' && !data.window?.complete && days > 7 ? <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">{label}维度已启用，但历史明细此前只保留约 8 天；当前最早可用数据为 {formatDateTime(data.window?.availableFrom)}，30/90 天数据会从本次升级后逐日补齐。</div> : null}
 
-      <UnifiedAnalyticsOverview sourceData={sourceData} contentOverview={overview} loading={loading} />
+      <UnifiedAnalyticsOverview sourceData={sourceData} contentOverview={data?.status === 'ok' ? overview : null} loading={loading} />
+      <VibeCafeUvTest />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={IconEye} eyebrow={`${label}有效阅读`} value={loading ? '—' : number(overview.pv)} unit="篇次" detail={`等长上期 ${number(overview.previousPv)}`} delta={overview.pv - overview.previousPv} accent="ink" />
-        <MetricCard icon={IconUsers} eyebrow="独立内容读者" value={loading ? '—' : number(overview.uv)} unit="人" detail={`等长上期 ${number(overview.previousUv)}`} delta={overview.uv - overview.previousUv} accent="blue" />
+        <MetricCard icon={IconEye} eyebrow={`${label}有效阅读`} value={loading ? '—' : number(overview.pv)} unit="篇次" detail={`等长上期 ${number(overview.previousPv)}`} delta={overview.pv == null ? undefined : overview.pv - overview.previousPv} accent="ink" />
+        <MetricCard icon={IconUsers} eyebrow="独立内容读者" value={loading ? '—' : number(overview.uv)} unit="人" detail={`等长上期 ${number(overview.previousUv)}`} delta={overview.uv == null ? undefined : overview.uv - overview.previousUv} accent="blue" />
         <MetricCard icon={IconClock} eyebrow="回访读者" value={loading ? '—' : number(overview.returning)} unit="人" detail={`跨 ≥ 2 个自然日 · ${percent(overview.returnRate)}`} accent="emerald" />
         <MetricCard icon={IconRoute} eyebrow="人均阅读" value={loading ? '—' : number(overview.viewsPerVisitor, 1)} unit="篇次" detail={`${label} PV / UV`} accent="stone" />
       </div>

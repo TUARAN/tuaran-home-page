@@ -1,3 +1,5 @@
+import { checkViaGlobalping, GLOBALPING_REGIONS } from './globalping.js'
+
 const DEFAULT_TARGET_URL = 'https://2aran.com'
 const FIXED_CROSS_ZONE_WORKER_IP = '2a06:98c0:3600::103'
 const INTERNAL_ROUTE_PREFIX = '/_internal/blogger-eye'
@@ -207,12 +209,19 @@ async function checkDirect({ target, fetchImpl }) {
   }
 }
 
-export async function performCheck({ target, runners, runnerIndex, runnerSecret, fetchImpl = fetch }) {
+export async function performCheck({ target, runners, runnerIndex, runnerSecret, globalping = false, fetchImpl = fetch, sleep }) {
   const selection = selectRunner(runners, runnerIndex)
   if (selection.runner && runnerSecret) {
     return {
       result: await checkViaRunner({ runner: selection.runner, secret: runnerSecret, target, fetchImpl }),
       nextRunnerIndex: selection.nextRunnerIndex,
+    }
+  }
+  if (globalping) {
+    const selected = selectRunner(GLOBALPING_REGIONS, runnerIndex)
+    return {
+      result: await checkViaGlobalping({ target, region: selected.runner, fetchImpl, sleep }),
+      nextRunnerIndex: selected.nextRunnerIndex,
     }
   }
   return {
@@ -277,6 +286,9 @@ export async function runBloggerEyeSchedule(env, controller = {}) {
   const scheduledAt = Number(controller.scheduledTime) || startedAt
   const target = targetUrl(env.BLOGGER_EYE_TARGET_URL)
   const runners = parseRunnerConfig(env.BLOGGER_EYE_RUNNERS)
+  const globalping = env.BLOGGER_EYE_FREE_PROBES === 'globalping'
+    && !(runners.length && env.BLOGGER_EYE_RUNNER_SECRET)
+  const nodes = globalping ? GLOBALPING_REGIONS : runners
   let stateReadable = true
   let stateWarning = ''
   let state
@@ -286,7 +298,7 @@ export async function runBloggerEyeSchedule(env, controller = {}) {
     stateReadable = false
     stateWarning = errorText(error)
     state = {
-      next_runner_index: runnerIndexForTime(scheduledAt, runners.length),
+      next_runner_index: runnerIndexForTime(scheduledAt, nodes.length),
       last_runner_id: '',
       last_exit_ip: '',
     }
@@ -297,7 +309,7 @@ export async function runBloggerEyeSchedule(env, controller = {}) {
       error: stateWarning,
     }))
   }
-  const selection = selectRunner(runners, state.next_runner_index)
+  const selection = selectRunner(nodes, state.next_runner_index)
   const runnerMode = Boolean(selection.runner && env.BLOGGER_EYE_RUNNER_SECRET)
   if (stateReadable) {
     try {
@@ -324,6 +336,7 @@ export async function runBloggerEyeSchedule(env, controller = {}) {
       runners,
       runnerIndex: state.next_runner_index,
       runnerSecret: String(env.BLOGGER_EYE_RUNNER_SECRET || ''),
+      globalping,
     })
     const completedAt = Date.now()
     const ipChanged = result.exitIp && base.previousExitIp
@@ -346,9 +359,9 @@ export async function runBloggerEyeSchedule(env, controller = {}) {
     const run = {
       ...base,
       completedAt,
-      mode: runnerMode ? 'regional-runner' : 'cloudflare-edge',
+      mode: globalping ? 'globalping' : runnerMode ? 'regional-runner' : 'cloudflare-edge',
       runnerId: selection.runner?.id || '',
-      runnerLabel: selection.runner?.label || 'Cloudflare Edge',
+      runnerLabel: globalping ? `Globalping · ${selection.runner.label}` : selection.runner?.label || 'Cloudflare Edge',
       exitIp: '',
       ipChanged: null,
       httpStatus: 0,
@@ -373,13 +386,17 @@ export default {
     const runPath = url.pathname === '/run' || url.pathname === `${INTERNAL_ROUTE_PREFIX}/run`
     if (request.method === 'GET' && healthPath) {
       const runners = parseRunnerConfig(env.BLOGGER_EYE_RUNNERS)
+      const privateReady = runners.length > 0 && Boolean(env.BLOGGER_EYE_RUNNER_SECRET)
+      const freeProbes = env.BLOGGER_EYE_FREE_PROBES === 'globalping' && !privateReady
       return json({
         ok: true,
         service: 'blogger-eye-scheduler',
         schedule: 'every-20-minutes',
         target: targetUrl(env.BLOGGER_EYE_TARGET_URL),
         runnerCount: runners.length,
-        rotationReady: runners.length > 1 && Boolean(env.BLOGGER_EYE_RUNNER_SECRET),
+        rotationReady: freeProbes || (runners.length > 1 && privateReady),
+        freeProbeProvider: freeProbes ? 'globalping' : null,
+        freeProbeRegions: freeProbes ? GLOBALPING_REGIONS.map(({ label, country }) => ({ label, country })) : [],
         manualRunReady: Boolean(env.BLOGGER_EYE_MANUAL_SECRET),
       })
     }

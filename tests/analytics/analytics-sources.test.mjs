@@ -5,8 +5,30 @@ import {
   detectTrafficSpike,
   equalComparisonWindow,
   normalizeUmamiStats,
+  normalizeDailyUniqueIps,
+  shanghaiSeriesDate,
   summarizeCloudflareGroups,
 } from '../../lib/analyticsSources.mjs'
+
+test('daily visitor labels respect Shanghai midnight for offset-bearing API timestamps', () => {
+  assert.equal(shanghaiSeriesDate('2026-09-03T16:00:00Z'), '2026-09-04')
+  assert.equal(shanghaiSeriesDate('2026-09-04T00:00:00+08:00'), '2026-09-04')
+  assert.equal(shanghaiSeriesDate('2026-09-04'), '2026-09-04')
+  assert.equal(shanghaiSeriesDate('2026-09-04 00:00:00'), '2026-09-04')
+})
+
+test('daily unique IPs preserve missing values and never become a summed period UV', () => {
+  const result = normalizeDailyUniqueIps([
+    { dimensions: { date: '2026-09-04' }, uniq: { uniques: 12 } },
+    { dimensions: { date: '2026-09-02' }, uniq: { uniques: 0 } },
+    { dimensions: { date: '2026-09-03' }, uniq: {} },
+  ])
+  assert.deepEqual(result, [
+    { date: '2026-09-02', uniqueIps: 0 },
+    { date: '2026-09-03', uniqueIps: null },
+    { date: '2026-09-04', uniqueIps: 12 },
+  ])
+})
 
 test('comparison windows use the same elapsed duration', () => {
   const now = Date.UTC(2026, 8, 1, 4, 0, 0)

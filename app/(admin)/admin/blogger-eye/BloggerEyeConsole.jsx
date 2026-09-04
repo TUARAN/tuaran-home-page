@@ -252,8 +252,8 @@ export default function BloggerEyeConsole() {
             <div className="flex items-start gap-3 rounded-lg border border-dashed border-[#caccc0] bg-[#fafaf6] px-4 py-4 dark:border-[#364252] dark:bg-[#0e131c]">
               <IconWorld className="mt-0.5 shrink-0 text-[#6f7166] dark:text-[#8e9ab0]" size={20} />
               <div>
-                <p className="text-[12px] font-semibold text-[#15140f] dark:text-gray-100">地区 Runner 尚未绑定</p>
-                <p className="mt-1 text-[11px] leading-5 text-[#77796d] dark:text-[#8e9ab0]">部署 Runner 后，在 Cloudflare Secret 中登记地址和共享密钥即可启用；不会回退到本机代理。</p>
+                <p className="text-[12px] font-semibold text-[#15140f] dark:text-gray-100">自有地区 Runner 尚未绑定</p>
+                <p className="mt-1 text-[11px] leading-5 text-[#77796d] dark:text-[#8e9ab0]">手动多地区测试需要自有 Runner。后台定时检查可独立使用 Globalping 免费节点，运行记录见下方。</p>
               </div>
             </div>
           ) : (
@@ -278,13 +278,16 @@ export default function BloggerEyeConsole() {
 
         <Section
           title="后台定时检查"
-          description="独立 Cloudflare Worker 每 20 分钟执行一次；配置多个 Runner 后按游标轮换真实出口。"
+          description="每 20 分钟按地区轮换访问；支持 Globalping 免费探测节点或自有 Runner，按实际回显 IP 判断是否变化。"
           actions={<StatusPill tone={scheduler.ready ? 'success' : 'neutral'}>{scheduler.ready ? scheduler.schedule : '待部署'}</StatusPill>}
         >
           {scheduler.lastRun?.mode === 'cloudflare-fixed-egress' ? (
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
-              当前使用 Cloudflare 固定跨 Zone 地址，只完成后台可用性检查；配置至少两个不同公网出口的 Runner 后才会进入真实轮换。
+              最近一次仍为 Cloudflare 直连，固定跨 Zone 标识不能证明出口轮换。启用免费探测节点或多个自有 Runner 后，等待新的运行记录。
             </div>
+          ) : null}
+          {scheduler.lastRun?.mode === 'globalping' ? (
+            <p className="mb-4 text-[11px] leading-5 text-[#77796d] dark:text-[#8e9ab0]">Globalping 免费节点按地区轮换。出口 IP 取自同一探针访问目标域名 /cdn-cgi/trace 的回显；公共节点可能离线、限流或重复使用 IP，轮换状态以实测为准。</p>
           ) : null}
           {!scheduler.ready ? (
             <div className="flex items-start gap-3 rounded-lg border border-dashed border-[#caccc0] bg-[#fafaf6] px-4 py-4 dark:border-[#364252] dark:bg-[#0e131c]">

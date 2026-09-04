@@ -24,7 +24,8 @@
   ],
   "vars": {
     "BLOGGER_EYE_TARGET_URL": "https://2aran.com",
-    "BLOGGER_EYE_RUNNERS": "[]"
+    "BLOGGER_EYE_RUNNERS": "[]",
+    "BLOGGER_EYE_FREE_PROBES": "globalping"
   },
   "observability": {
     "enabled": true,

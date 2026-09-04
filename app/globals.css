@@ -3513,11 +3513,11 @@
     color: var(--site-ink);
   }
 
-  .site-menu-item-featured {
+  .site-menu-item-active {
     background-color: color-mix(in srgb, #c1c6a8 7%, transparent);
   }
 
-  .site-menu-item-featured .site-menu-dot {
+  .site-menu-item-active .site-menu-dot {
     background-color: #c1c6a8;
   }
 

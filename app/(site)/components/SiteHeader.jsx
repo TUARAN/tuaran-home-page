@@ -29,6 +29,7 @@ import { pick } from '../../../lib/i18n'
 import {
   SITE_ADMIN_NAV_LINK,
   SITE_CHANNELS,
+  getActiveNavHref,
   getChannelNavSections,
   isAdminNavVisible,
   navDesc,
@@ -83,11 +84,11 @@ function SpaceXNavLink({ active }) {
   )
 }
 
-function MenuItem({ item, onNavigate }) {
+function MenuItem({ item, onNavigate, active = false }) {
   const { locale } = useLocale()
   const label = navLabel(item, locale)
   const desc = navDesc(item, locale)
-  const base = `site-menu-item${item.featured ? ' site-menu-item-featured' : ''}`
+  const base = `site-menu-item${active ? ' site-menu-item-active' : ''}`
   const destinationKind = item.href.startsWith('/articles')
     ? 'content'
     : item.href.startsWith('/resources')
@@ -140,7 +141,7 @@ function MenuItem({ item, onNavigate }) {
     )
   }
   return (
-    <Link href={item.href} className={base} onClick={onNavigate} {...analyticsProps}>
+    <Link href={item.href} className={base} aria-current={active ? 'page' : undefined} onClick={onNavigate} {...analyticsProps}>
       {inner}
     </Link>
   )
@@ -189,10 +190,11 @@ function getTierStyle(title) {
   return TIER_SECTION_STYLES[title] || { wrap: 'site-tier-section', title: 'site-tier-title' }
 }
 
-function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerRef, align = 'center', account, navOverrides }) {
+function ChannelTrigger({ channel, isOpen, isActive, pathname, searchParams, onToggle, onClose, triggerRef, align = 'center', account, navOverrides }) {
   const { locale } = useLocale()
   const closeTimerRef = useRef(null)
   const sections = getChannelNavSections(channel, account, navOverrides)
+  const activeHref = isActive ? getActiveNavHref(sections, pathname, searchParams) : null
   const landingItem = sections[0]?.items[0]
   const landingHref = landingItem?.href || channel.href
   const positionClass =
@@ -285,7 +287,7 @@ function ChannelTrigger({ channel, isOpen, isActive, onToggle, onClose, triggerR
                   </p>
                   <div className="grid grid-cols-2 gap-1">
                     {section.items.map((item) => (
-                      <MenuItem key={item.href + item.label} item={item} onNavigate={onClose} />
+                      <MenuItem key={item.href + item.label} item={item} active={item.href === activeHref} onNavigate={onClose} />
                     ))}
                   </div>
                 </div>
@@ -804,6 +806,8 @@ export default function SiteHeader() {
                         channel={channel}
                         isOpen={isOpen}
                         isActive={isActive}
+                        pathname={pathname}
+                        searchParams={searchParams}
                         onToggle={{
                           open: () => setOpenChannel(channel.key),
                           close: () => setOpenChannel((cur) => (cur === channel.key ? null : cur)),
@@ -907,6 +911,7 @@ export default function SiteHeader() {
           {SITE_CHANNELS.map((channel) => {
             const expanded = openMobileChannel === channel.key
             const sections = getChannelNavSections(channel, account, account?.navOverrides)
+            const activeHref = channel.match(pathname, searchParams) ? getActiveNavHref(sections, pathname, searchParams) : null
             return (
               <div key={channel.key} className="site-mobile-card rounded-2xl border">
                 <button
@@ -934,6 +939,7 @@ export default function SiteHeader() {
                               <MenuItem
                                 key={item.href + item.label}
                                 item={item}
+                                active={item.href === activeHref}
                                 onNavigate={() => setMobileMenuOpen(false)}
                               />
                             ))}

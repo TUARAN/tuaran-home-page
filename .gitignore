@@ -94,6 +94,7 @@ jspm_packages/
 # Next.js build output
 .next
 .next-check/
+/public/generated/a-shares/
 
 # Vercel / next-on-pages build output
 .vercel/

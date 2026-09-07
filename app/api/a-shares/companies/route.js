@@ -1,9 +1,7 @@
-import snapshot from '../../../../data/a-shares/companies.json'
-
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const PAGE_SIZE = 100
+const STATIC_ROOT = '/generated/a-shares'
 
 function positiveInteger(value, fallback) {
   const parsed = Number.parseInt(value || '', 10)
@@ -12,23 +10,22 @@ function positiveInteger(value, fallback) {
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const total = snapshot.companies.length
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const page = Math.min(positiveInteger(searchParams.get('page'), 1), totalPages)
-  const start = (page - 1) * PAGE_SIZE
+  const indexResponse = await fetch(new URL(`${STATIC_ROOT}/index.json`, request.url))
+  if (!indexResponse.ok) {
+    return Response.json({ error: 'A_SHARE_SNAPSHOT_UNAVAILABLE' }, { status: 503 })
+  }
 
-  return Response.json(
-    {
-      page,
-      pageSize: PAGE_SIZE,
-      total,
-      totalPages,
-      companies: snapshot.companies.slice(start, start + PAGE_SIZE),
+  const { totalPages } = await indexResponse.json()
+  const page = Math.min(positiveInteger(searchParams.get('page'), 1), totalPages)
+  const pageResponse = await fetch(new URL(`${STATIC_ROOT}/page-${page}.json`, request.url))
+  if (!pageResponse.ok) {
+    return Response.json({ error: 'A_SHARE_PAGE_UNAVAILABLE' }, { status: 503 })
+  }
+
+  return new Response(pageResponse.body, {
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'public, max-age=3600, stale-while-revalidate=86400',
     },
-    {
-      headers: {
-        'cache-control': 'public, max-age=3600, stale-while-revalidate=86400',
-      },
-    },
-  )
+  })
 }

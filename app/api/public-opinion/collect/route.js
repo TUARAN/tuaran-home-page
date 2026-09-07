@@ -24,7 +24,7 @@ async function handle(request) {
 
   const log = (message) => console.log(`[public-opinion-collect] ${message}`)
   try {
-    const stats = await runPublicOpinionCollect({ db: env.DB, log })
+    const stats = await runPublicOpinionCollect({ db: env.DB, env, log })
     return Response.json({ ok: true, ...stats })
   } catch (error) {
     log(`failed: ${error.message}`)

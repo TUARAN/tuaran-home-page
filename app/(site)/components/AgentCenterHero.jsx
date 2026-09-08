@@ -6,6 +6,7 @@ const CENTERS = [
   { href: '/skill-center', label: 'Skill 中心', short: '怎么做' },
   { href: '/mcp-center', label: 'MCP 中心', short: '连什么' },
   { href: '/prompt-center', label: 'Prompt 中心', short: '怎么说' },
+  { href: '/workbuddy-publish-center', label: 'WorkBuddy 上架中心', short: '怎么上架' },
 ]
 
 export default function AgentCenterHero({ current, eyebrow, title, description, shareText }) {

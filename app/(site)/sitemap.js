@@ -58,6 +58,7 @@ export default function sitemap() {
     '/skill-center',
     '/mcp-center',
     '/prompt-center',
+    '/workbuddy-publish-center',
     '/cancers-overview',
     '/platform-framework-pairs',
     '/global-ai-governance',

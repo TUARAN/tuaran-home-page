@@ -37,6 +37,7 @@ export function GET() {
     `- [Skill 中心](${SITE_URL}/skill-center): 面向智能体的可复用能力、工作流与安装说明`,
     `- [MCP 中心](${SITE_URL}/mcp-center): 可供智能体连接的公开服务与配置说明`,
     `- [Prompt 中心](${SITE_URL}/prompt-center): 面向智能体的提示词经验、任务模板与工程参考`,
+    `- [WorkBuddy 上架中心](${SITE_URL}/workbuddy-publish-center): 关联站内 Skill、MCP 与 Prompt 的生态上架流程、材料清单和准备状态`,
     `- [统一内容目录](${SITE_URL}/articles): 按内容主题和内容类型浏览`,
     `- [内容说明](${SITE_URL}/help#editorial): 作者责任、工具使用与更正机制`,
     `- [RSS](${SITE_URL}/rss.xml): 订阅源`,

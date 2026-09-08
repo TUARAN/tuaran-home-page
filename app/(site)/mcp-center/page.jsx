@@ -112,7 +112,7 @@ function McpServiceCard({ service }) {
   const prompts = service.prompts || [service.prompt]
 
   return (
-    <article className="flex min-w-0 flex-col py-6">
+    <article id={service.name} className="flex min-w-0 scroll-mt-24 flex-col py-6">
       <header>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

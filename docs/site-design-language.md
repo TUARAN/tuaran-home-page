@@ -10,11 +10,14 @@
 
 ## 权威来源
 
+站长阅读入口：后台 `/admin/design`（设计与体验）；页面随部署读取文档正本。
+
 - 全站颜色、表面、间距与壳层令牌：`app/globals.css`。
 - 主站与后台页面壳：`app/(site)/layout.jsx`、`app/(admin)/layout.jsx` 及相关共享组件。
 - 站点导航与公开信息架构：`lib/siteNav.js`。
 - 后台可复用组件：`app/(admin)/components/ui/`。
 - 加载与等待反馈：[加载动效设计规范](./loading-motion-system.md)。
+- 页面问题与改造进度：[UI / 交互审计路线图](../ai-context/ui-ux-audit-roadmap.md)（2026-09-08，GPT6-Astra 记录；视觉复测范围与待验证项见文内）。
 - 调研内容风格不属于界面设计语言，继续以 `lib/researchStyleTemplates.js` 的 active 版本为准。
 
 代码与文档冲突时，以当前组件和设计令牌为准，并在同一次修改中更新对应文档。
@@ -65,4 +68,3 @@
 2. 需要新增模式时，先写清适用范围、状态和无障碍行为。
 3. 修改共享组件与令牌后，复核主站、后台、深色模式、移动端和减少动态模式。
 4. 同步更新本总纲、对应专项规范和 `/help` 的公开说明。
-

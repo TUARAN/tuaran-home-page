@@ -15,6 +15,7 @@
 | [site-tools-shortener.md](site-tools-shortener.md) | 站内工具「转短」设计记录 | 维护短链功能时引用 |
 | [content-information-architecture.md](content-information-architecture.md) | 内容分类契约、治理规则与新访客起点指标 | 修改导航、目录、分类或行为埋点前引用 |
 | [seo-geo-growth-roadmap.md](seo-geo-growth-roadmap.md) | SEO / GEO 现状审计、内容增长方向、分阶段任务与验收标准 | 2026-09-08 基线；后续搜索发现、AI 引用、阅读与留存改造时引用，进度以文内清单为准 |
+| [ui-ux-audit-roadmap.md](ui-ux-audit-roadmap.md) | UI / 交互页面问题、证据边界、10 项改造任务与复测矩阵 | 2026-09-08 首轮记录；视觉规范沿用 docs/site-design-language.md，移动端实测待完成 |
 | [a-share-company-research-automation.md](a-share-company-research-automation.md) | A 股公司观察本地 + 线上自动化设计与数据流 | 维护 A 股研究流水线时引用 |
 | [deepseek-key-management.md](deepseek-key-management.md) | DeepSeek 密钥管理、任务绑定与调用记录设计 | 维护 DeepSeek 调用层 / 密钥时引用 |
 | [x-post-images.md](x-post-images.md) | X 自动发布配图、R2 素材池、失败重试和上线顺序 | 维护 X 自动发布及素材预览时引用 |

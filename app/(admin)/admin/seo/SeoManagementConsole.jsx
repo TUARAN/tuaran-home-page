@@ -7,6 +7,7 @@ import {
 import { listPublishedArticlePosts } from '../../../../lib/articlePosts'
 import { AdminButton, AdminPage, Section, StatCard, StatusPill } from '../../components/ui'
 import SeoRegistryTable from './SeoRegistryTable'
+import SeoGrowthRoadmap from './SeoGrowthRoadmap'
 
 const STATUS_META = {
   stable: { label: '稳定运行', tone: 'success' },
@@ -61,12 +62,15 @@ export default async function SeoManagementConsole() {
       description="统一查看文章、分析、资源、多维页面的索引、Metadata、结构化数据、Sitemap 和演进策略。内容注册源与实际页面模板共同构成审计口径；后台负责发现问题和规划，避免未经评审直接修改线上 SEO。"
       actions={(
         <>
+          <AdminButton href="#growth-roadmap" size="sm">审计与改造路线图</AdminButton>
+          <AdminButton href="/admin/design" size="sm">设计与体验</AdminButton>
           <AdminButton href="/sitemap.xml" target="_blank" rel="noreferrer" size="sm">Sitemap</AdminButton>
           <AdminButton href="/robots.txt" target="_blank" rel="noreferrer" size="sm">Robots</AdminButton>
           <AdminButton href="/llms.txt" target="_blank" rel="noreferrer" size="sm">LLMs</AdminButton>
         </>
       )}
     >
+      <SeoGrowthRoadmap />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="内容 SEO 注册" value={totals.pages} sub={`多维页面 ${totals.richPages} · 文章 ${totals.articles} · 分析 ${totals.research} · 资源 ${totals.resources}`} icon="analytics" tone="info" />
         <StatCard label="Metadata 完整" value={`${totals.metadataReady}/${totals.pages}`} sub={`${totals.indexable} 个可索引 · ${totals.noindex} 个 noindex`} icon="articles" tone={totals.metadataReady === totals.pages ? 'success' : 'warning'} />

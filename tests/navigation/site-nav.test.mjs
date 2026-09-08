@@ -10,6 +10,7 @@ test('public content navigation is organized by entry, topic and type', () => {
   assert.match(source, /title: '入口'[\s\S]*href: '\/articles'/)
   assert.doesNotMatch(source, /href: '\/#start-here'|label: '从这里开始'/)
   assert.match(source, /title: '内容主题'[\s\S]*href: '\/articles\?subject=ai_dev'/)
+  assert.match(source, /title: '内容主题'[\s\S]*href: '\/articles\?subject=workbuddy'/)
   assert.match(source, /href: '\/articles\?subject=product_experience'[\s\S]*label: '产品与体验'/)
   assert.match(source, /href: '\/articles\?subject=business_market'[\s\S]*label: '商业与市场'/)
   assert.match(source, /href: '\/articles\?subject=company_research'[\s\S]*label: '公司调研'/)

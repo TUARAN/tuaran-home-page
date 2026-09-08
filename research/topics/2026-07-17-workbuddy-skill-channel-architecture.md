@@ -8,6 +8,7 @@ summary: 核验 WorkBuddy、CodeBuddy Code 与开源 Agent 框架后发现，纯
 tldr: 截至 2026 年 7 月，CodeBuddy Code 已公开 Channels Beta，自定义 channel 可通过特殊 MCP server 向运行中的会话推送事件，并用 reply 工具实现双向通信。Skill 适合放路由策略、格式转换和业务流程，不适合独自承担常驻连接、身份认证、可靠投递与会话隔离。桌面 WorkBuddy 已有多种官方 IM 接入和 Hook 插件，但自定义 channel 是否复用 CLI 的完整协议，仍需按版本实测。
 topic_type: tech
 tech_type: agents_automation
+subjects: [workbuddy]
 content_type: analysis
 assistance: codex
 model: gpt-5

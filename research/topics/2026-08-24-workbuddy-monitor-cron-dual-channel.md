@@ -7,7 +7,7 @@ tags: [WorkBuddy, CodeBuddy, Monitor, Cron, Webhook, 事件驱动, 定时任务,
 summary: 核查“Monitor 管即时、Cron 管兜底”是否属于 WorkBuddy 官方架构，并追溯它与事件监听、周期对账、Kubernetes 控制循环和 Webhook 补偿任务的关系。
 tldr: 截至 2026 年 8 月 24 日，腾讯官方资料可以确认 WorkBuddy 自动化和 CodeBuddy Code 的 Cron 工具，但没有找到名为 Monitor 的同级工具，也没有找到“双通道架构”这一官方术语。把事件监听作为低延迟路径、把周期扫描作为漏报补偿，是分布式系统的常见设计。两条路径必须汇入同一个幂等对账函数；如果都依赖同一台电脑和同一进程，它们只能降低逻辑漏检，无法提供真正的容灾。
 topic_type: tech
-subjects: [ai_dev]
+subjects: [workbuddy]
 content_type: fact_check
 assistance: codex
 show_assistance: false

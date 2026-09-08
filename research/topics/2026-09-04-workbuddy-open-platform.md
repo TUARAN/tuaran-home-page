@@ -7,7 +7,7 @@ tags: [WorkBuddy, 开放平台, Buddy应用, AI Agent, MCP, Skill, OpenClaw, Dif
 summary: 腾讯 WorkBuddy 于 2026 年 9 月 2 日上线开放平台。梳理 Buddy 应用、专家、Skill、连接器和硬件五类能力，解释 Open API 的授权与任务边界，对比扣子、Dify、OpenClaw，并给出开发者和已有平台的接入建议与 90 天验证计划。
 tldr: WorkBuddy 正把桌面办公 Agent 扩展为可被第三方调用、可承载行业应用的执行平台。开发者可向内提供技能和业务连接，也可向外调用本地助理与云端任务。适合先用一个高频场景验证交付价值；已有平台应保留客户数据、业务权限和交易规则，避免把完整产品押在尚待确认的分成、分发与服务承诺上。
 topic_type: product
-subjects: [ai_dev]
+subjects: [workbuddy]
 content_type: analysis
 assistance: codex
 show_assistance: false

@@ -7,7 +7,7 @@ tags: [WorkBuddy, CodeBuddy CLI, 智能体, 短信, 腾讯云短信, Twilio, Age
 summary: 一套通过普通短信调用本地 WorkBuddy 能力的双路线方案：企业优先直连运营商网关；个人或小团队通过腾讯云、阿里云、Twilio 等云通信平台接入，再由本地 CLI 执行专家与 Skills。
 tldr: 企业已有服务代码和网关账号时，优先通过 CMPP、SGIP 或 SMGP 直连；拿不到运营商端口时，使用云通信平台承接上行、下行和回调。本地桥接程序只访问 127.0.0.1 上的 CodeBuddy HTTP API，并把 SSE 事件转换成安全的进度摘要，不向短信发送模型原始思维链。
 topic_type: tech
-subjects: [ai_dev]
+subjects: [workbuddy]
 content_type: analysis
 assistance: codex
 show_assistance: false

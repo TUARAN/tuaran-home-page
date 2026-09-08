@@ -3,7 +3,7 @@ title: WorkBuddy 接入双向短信群：事件驱动消息服务与分布式智
 category: topics
 topic_type: tech
 tech_type: agents_automation
-subjects: [ai_dev]
+subjects: [workbuddy]
 content_type: analysis
 date: 2026-08-24
 time: 11:05

@@ -7,7 +7,7 @@ tags: [WorkBuddy, 腾讯, AI办公, 免费学习资源, 入门教程, 视频课�
 summary: 腾讯 WorkBuddy 免费学习资源整理：10 份 PDF 共 308 页，50 节视频约 5 小时 8 分钟。燃币可以免费领取，用于解锁手册、办公案例与课程，附产品近况和上手路线。
 tldr: 10 份 PDF、50 节视频，免费领取燃币即可解锁学习。先看入门指南，再用一份脱敏文件练习整理、分析或文档生成，把教程用在具体工作里。
 topic_type: product
-subjects: [ai_dev]
+subjects: [workbuddy]
 content_type: guide
 assistance: codex
 show_assistance: false

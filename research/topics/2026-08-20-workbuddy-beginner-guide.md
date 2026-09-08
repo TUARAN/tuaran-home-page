@@ -7,7 +7,7 @@ time: 09:35
 tags: [WorkBuddy, CodeBuddy, AI Agent, 办公自动化, Skill, 入门指南]
 summary: 把腾讯 WorkBuddy 从下载、第一次任务、三种模式，压成一份可复制指令的小白路径：先在电脑上把一件真实办公活干完，再决定要不要远程和自动化。
 tldr: 先从官网装桌面端、微信登录、给每个任务单独建文件夹。第一次用 Ask 看文件，确认无误再切 Craft 动手。发票、纪要、Word、PPT、Excel 都能直接丢提示词。远程助理、自定义 MCP 和专家团可以后装。
-subjects: [product_experience]
+subjects: [workbuddy]
 entityType: product
 content_type: guide
 assistance: cursor

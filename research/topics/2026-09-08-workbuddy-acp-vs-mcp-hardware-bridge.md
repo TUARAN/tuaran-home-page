@@ -8,7 +8,7 @@ summary: 以“ACP 短信桥接测试终端”的协议链路为例，核对 Wor
 tldr: WorkBuddy 公布的 ACP 接入链路先通过 Open API 获取任务的 link 与 token，再用 GET SSE 接收消息、POST JSON-RPC 发送 initialize、session/load 和 session/prompt。“ACP 短信桥接测试终端”按这条公开链路实现，定位是面向 WorkBuddy 的 ACP v1 最小客户端，尚未覆盖取消、自动重连、Schema 校验、ACP token 更新和完整权限请求分类。开放平台会按实际交付形态审核产品分类；只有桌面模拟器、平台服务和未来硬件设想时，不能作为硬件应用提交。硬件作为用户消息入口时优先用 ACP；硬件作为可被 Agent 调用的传感器或执行器时更适合做 MCP Server。
 topic_type: tech
 tech_type: agents_automation
-subjects: [ai_dev]
+subjects: [workbuddy]
 content_type: engineering_case
 assistance: codex
 model: gpt-5

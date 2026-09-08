@@ -25,7 +25,7 @@ const PAGE_SIZE = 24
 const SEARCH_SUGGESTIONS = ['AI Agent', '资源', '公司调研', '工程实践']
 
 const SUBJECT_DISPLAY_GROUPS = [
-  { label: '技术与开发', keys: ['ai_dev', 'web_cloud'] },
+  { label: '技术与开发', keys: ['workbuddy', 'ai_dev', 'web_cloud'] },
   { label: '产品与商业', keys: ['product_experience', 'business_market', 'company_research'] },
   { label: '创作与工作', keys: ['content_creation', 'workplace_org'] },
   { label: '人文与生活', keys: ['humanities_history', 'life_family'] },

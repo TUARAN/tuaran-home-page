@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import AgentCenterHero from '../components/AgentCenterHero'
 import PageContainer from '../components/PageContainer'
+import { WORKBUDDY_MARKETPLACE_ARTIFACTS } from '../../../lib/workbuddyMarketplaceArtifacts'
 
 export const dynamic = 'force-static'
 
@@ -121,6 +122,15 @@ function TextLink({ href, children, external = false }) {
   )
 }
 
+function formatBytes(bytes) {
+  return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`
+}
+
+const PACKAGE_GROUPS = [
+  ['Skill', '技能审核包', '每个 ZIP 以技能目录为根，包含 WorkBuddy 必填 frontmatter 和实际引用资源。'],
+  ['MCP', '连接器审核包', '每个 ZIP 只配置一个 MCP Server，包含双语元信息、调用说明和市场图标。'],
+]
+
 export default function WorkBuddyPublishCenterPage() {
   return (
     <PageContainer className="py-6 md:py-8">
@@ -195,6 +205,70 @@ export default function WorkBuddyPublishCenterPage() {
               <p className="mb-0 text-xs leading-5 text-[#62645b] dark:text-gray-400">{desc}</p>
               <span className="absolute bottom-4 right-5 text-sm text-[#9b8059] transition-transform group-hover:translate-x-1 dark:text-[#89956e]">→</span>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-10" aria-labelledby="downloads-title">
+        <div className="mb-5 grid gap-4 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+          <div>
+            <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#a1ab76]">Upload-ready archives</p>
+            <h2 id="downloads-title" className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">WorkBuddy ZIP 下载</h2>
+          </div>
+          <p className="mb-0 text-xs leading-5 text-[#66685f] dark:text-gray-400">共 {WORKBUDDY_MARKETPLACE_ARTIFACTS.length} 个独立包，均低于平台 3MB 限制并通过目录、敏感文件和绝对路径预检。状态说明的是“是否适合提交审核”，不影响下载。</p>
+        </div>
+
+        <div className="space-y-7">
+          {PACKAGE_GROUPS.map(([kind, title, description]) => {
+            const packages = WORKBUDDY_MARKETPLACE_ARTIFACTS.filter((artifact) => artifact.kind === kind)
+            return (
+              <section key={kind} aria-labelledby={`package-${kind.toLowerCase()}`} className="overflow-hidden border border-[#d2d2c8] dark:border-[#283443]">
+                <header className="grid gap-3 border-b border-[#d2d2c8] bg-[#efede5] px-5 py-4 dark:border-[#283443] dark:bg-[#111a24] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                  <div>
+                    <h3 id={`package-${kind.toLowerCase()}`} className="mb-1 border-b-0 pb-0 font-serif text-xl font-semibold text-[#202219] dark:text-gray-100">{title}</h3>
+                    <p className="mb-0 text-xs leading-5 text-[#5f6158] dark:text-gray-400">{description}</p>
+                  </div>
+                  <Pill>{packages.length} 个 ZIP</Pill>
+                </header>
+                <div className="divide-y divide-[#deded5] dark:divide-[#283443]">
+                  {packages.map((artifact, index) => (
+                    <article key={artifact.id} className="grid gap-4 px-5 py-5 transition-colors hover:bg-[#faf9f5] dark:hover:bg-[#101923] lg:grid-cols-[2.5rem_minmax(13rem,0.8fr)_minmax(16rem,1.2fr)_auto] lg:items-center">
+                      <span className="font-mono text-[10px] tracking-[0.12em] text-[#9a815e] dark:text-[#8d9873]">{String(index + 1).padStart(2, '0')}</span>
+                      <div className="min-w-0">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <h4 className="mb-0 border-b-0 pb-0 text-sm font-semibold text-[#25271f] dark:text-gray-100">{artifact.title}</h4>
+                          <Pill tone={artifact.readiness === 'ready' ? 'ready' : artifact.readiness === 'test-only' ? 'planned' : 'testing'}>{artifact.readinessLabel}</Pill>
+                        </div>
+                        <p className="mb-0 break-all font-mono text-[10px] leading-5 text-[#77796f] dark:text-gray-500">{artifact.id}</p>
+                      </div>
+                      <div>
+                        <p className="mb-2 text-xs leading-5 text-[#56584f] dark:text-gray-300">{artifact.note}</p>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[#85877c] dark:text-gray-500">
+                          <span>{formatBytes(artifact.bytes)}</span>
+                          <span title={artifact.sha256}>SHA-256 {artifact.sha256.slice(0, 10)}…</span>
+                          <Link href={artifact.sourceUrl} className="text-[#80521b] no-underline hover:underline dark:text-[#b9c57f]">关联来源 →</Link>
+                        </div>
+                      </div>
+                      <a href={artifact.downloadUrl} download className="inline-flex min-h-10 items-center justify-center border border-[#44463d] px-4 text-xs font-semibold text-[#2d2f27] no-underline transition-colors hover:bg-[#2d2f27] hover:text-white hover:!no-underline dark:border-[#7e8a91] dark:text-gray-100 dark:hover:bg-gray-100 dark:hover:text-[#10161d]">下载 ZIP ↓</a>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
+        </div>
+
+        <div className="mt-4 grid gap-px bg-[#d9d9cf] dark:bg-[#283443] sm:grid-cols-3">
+          {[
+            ['3MB', '单包上限', `当前最大包 ${formatBytes(Math.max(...WORKBUDDY_MARKETPLACE_ARTIFACTS.map((artifact) => artifact.bytes)))}`],
+            ['11 / 11', '结构预检', '根目录与必填文件完整'],
+            ['0', '打包凭据', '无 Token、Secret 与 .env'],
+          ].map(([value, label, note]) => (
+            <div key={label} className="bg-[#f6f5f0] px-5 py-4 dark:bg-[#0f1720]">
+              <strong className="block font-serif text-xl font-semibold text-[#28291f] dark:text-gray-100">{value}</strong>
+              <span className="mt-1 block text-xs font-medium text-[#4e5047] dark:text-gray-300">{label}</span>
+              <span className="mt-1 block text-[10px] text-[#77796f] dark:text-gray-500">{note}</span>
+            </div>
           ))}
         </div>
       </section>

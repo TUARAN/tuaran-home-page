@@ -64,6 +64,8 @@
     "mcp:stdio:check": "node scripts/test-mcp-stdio-demo.mjs",
     "workbuddy-sms:test": "node --experimental-sqlite --test tools/workbuddy-sms/tests/*.test.mjs",
     "workbuddy-sms-relay:test": "node --test workers/workbuddy-sms-relay/tests/*.test.mjs",
+    "workbuddy:package": "node scripts/build-workbuddy-marketplace.mjs",
+    "workbuddy:validate": "node scripts/build-workbuddy-marketplace.mjs --check",
     "x-intelligence:check": "node scripts/test-x-platform-intelligence-model.mjs && node scripts/test-x-platform-intelligence-filters.mjs && node scripts/test-x-platform-intelligence-selectors.mjs",
     "test:planning": "node --test tests/planning/*.test.mjs"
   },

@@ -775,14 +775,16 @@ export default function SiteHeader() {
             </div>
           </Link>
 
-          <p className="site-brand-slogan" aria-label="涂阿燃的网络日志｜这可能是全球第一个面向人与 AI 的中文上链博客。">
-            <span className="site-brand-slogan-title">
-              <span className="site-brand-slogan-name">涂阿燃的网络日志</span>
-              <span className="site-brand-slogan-divider" aria-hidden="true">｜</span>
-            </span>
+          <p className="site-brand-slogan" aria-label="这可能是全球第一个面向人与 AI 的中文上链博客。">
             <span className="site-brand-slogan-message">
+              <span aria-hidden="true">“</span>
               <span className="site-brand-slogan-claim">这可能是全球第一个面向人与 AI 的</span>
-              <strong>中文上链博客。</strong>
+              <strong>
+                <Link href="/onchain-blog" className="site-brand-slogan-link">
+                  中文上链博客。
+                </Link>
+              </strong>
+              <span aria-hidden="true">”</span>
             </span>
           </p>
 

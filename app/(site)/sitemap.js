@@ -46,6 +46,7 @@ export default function sitemap() {
     '/crypto-research',
     '/spacex',
     '/rich-pages',
+    '/onchain-blog',
     '/works',
     '/tools',
     '/tools/auto-commit',

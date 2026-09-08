@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACP 短信桥接台</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark"><i></i><i></i><i></i></span>
+        <span><strong>ACP Bridge</strong><small>短信桥接实验室</small></span>
+      </div>
+
+      <nav>
+        <button class="nav-item active" data-view="messages">
+          <svg viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
+          短信模拟器
+        </button>
+        <button class="nav-item" data-view="sessions">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v4H4V5Zm0 6h16v8H4v-8Z"/></svg>
+          WorkBuddy 会话
+        </button>
+        <button class="nav-item" data-view="events">
+          <svg viewBox="0 0 24 24"><path d="M4 18h3V8H4v10Zm6 0h4V4h-4v14Zm7 0h3v-7h-3v7Z"/></svg>
+          ACP 事件
+        </button>
+      </nav>
+
+      <div class="bridge-card">
+        <div><span id="dot"></span><strong id="status">检查中</strong></div>
+        <p>本地桥接服务</p>
+        <small>127.0.0.1:8799</small>
+        <a id="authorize" href="/oauth/start" hidden>连接 WorkBuddy</a>
+      </div>
+      <button class="settings-button" id="open-settings">
+        <svg viewBox="0 0 24 24"><path d="m9.5 3-.4 2a7 7 0 0 0-1.4.8L5.8 5 4 8l1.5 1.3a7 7 0 0 0 0 1.5L4 12l1.8 3 1.9-.8a7 7 0 0 0 1.4.8l.4 2h3l.4-2a7 7 0 0 0 1.4-.8l1.9.8 1.8-3-1.5-1.2a7 7 0 0 0 0-1.5L19 8l-1.8-3-1.9.8a7 7 0 0 0-1.4-.8l-.4-2h-3ZM11 8a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z"/></svg>
+        接入设置
+      </button>
+    </aside>
+
+    <section class="workspace">
+      <header class="conversation-header">
+        <div class="contact">
+          <span class="avatar">W</span>
+          <div><strong>WorkBuddy</strong><small><i></i> 通过本地 ACP 桥接</small></div>
+        </div>
+        <div class="header-actions">
+          <button id="refresh" title="刷新会话">
+            <svg viewBox="0 0 24 24"><path d="M19 7v4h-4M5 17v-4h4m9.4-4A7 7 0 0 0 6.2 6.2L5 9m.6 6A7 7 0 0 0 17.8 17.8L19 15"/></svg>
+          </button>
+          <button id="new-session">＋ 新会话</button>
+        </div>
+      </header>
+
+      <section class="messages-view view active" id="messages-view">
+        <div class="date-divider"><span>本地硬件模拟通道</span></div>
+        <div class="message-list" id="message-list">
+          <article class="message incoming">
+            <span class="bubble-avatar">W</span>
+            <div>
+              <div class="bubble">你好，我是通过 ACP 接入的 WorkBuddy。先在右侧选择一个会话，然后像发短信一样给我发送消息。</div>
+              <time>桥接台已就绪</time>
+            </div>
+          </article>
+        </div>
+        <div class="active-session" id="active"><span></span><p>尚未接入 WorkBuddy 会话</p></div>
+        <form class="composer" id="device-form">
+          <button type="button" class="attach" title="模拟硬件附件">＋</button>
+          <textarea id="device-text" required rows="1" placeholder="输入短信，按 Enter 发送…"></textarea>
+          <input id="device-id" value="sms-simulator-01" type="hidden">
+          <input id="bridge-key" type="hidden">
+          <button class="send" type="submit" title="发送">
+            <svg viewBox="0 0 24 24"><path d="m3 3 18 9-18 9 4-9-4-9Zm4.2 4.1L9.4 11h6.7L7.2 7.1Zm2.2 5.9-2.2 3.9 8.9-3.9H9.4Z"/></svg>
+          </button>
+        </form>
+      </section>
+
+      <section class="events-view view" id="events-view">
+        <div class="section-title"><div><span>LIVE</span><h2>ACP 实时事件</h2><p>流式消息、状态变化和权限请求</p></div><button id="clear">清空记录</button></div>
+        <div id="permissions"></div>
+        <div class="terminal"><div class="terminal-bar"><i></i><i></i><i></i><span>acp://local-bridge/events</span></div><pre id="console">等待桥接事件…</pre></div>
+      </section>
+    </section>
+
+    <aside class="session-panel">
+      <div class="panel-head"><div><small>ACTIVE ROUTE</small><h2>会话路由</h2></div><span class="shield">LOCAL</span></div>
+      <div class="flow-map">
+        <div><span class="flow-icon phone">SMS</span><p><strong>短信模拟器</strong><small>本地输入</small></p></div>
+        <i></i>
+        <div><span class="flow-icon bridge">ACP</span><p><strong>本地桥接</strong><small>安全转发</small></p></div>
+        <i></i>
+        <div><span class="flow-icon buddy">W</span><p><strong>WorkBuddy</strong><small>云端会话</small></p></div>
+      </div>
+      <div class="session-title"><h3>选择会话</h3><span id="task-count">0</span></div>
+      <div id="tasks" class="tasks"><p class="empty">暂无会话</p></div>
+      <div class="privacy-note">
+        <svg viewBox="0 0 24 24"><path d="M12 2 4.5 5v6c0 4.7 3.2 9 7.5 10.5 4.3-1.5 7.5-5.8 7.5-10.5V5L12 2Z"/></svg>
+        <p><strong>本地优先</strong><small>密钥与访问令牌不会交给模拟硬件。</small></p>
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="session-dialog">
+    <form id="create-form" method="dialog">
+      <div class="dialog-head"><div><small>NEW SESSION</small><h2>创建 WorkBuddy 会话</h2></div><button value="cancel">×</button></div>
+      <label>会话名称<input id="name" placeholder="短信硬件联调"></label>
+      <label>初始指令<textarea id="prompt" required placeholder="建立一个短信硬件联调会话，等待后续输入。"></textarea></label>
+      <div class="dialog-actions"><button value="cancel" type="button" data-close="session-dialog">取消</button><button type="submit">创建会话</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-dialog">
+    <form id="settings-form" method="dialog">
+      <div class="dialog-head"><div><small>LOCAL SETTINGS</small><h2>WorkBuddy 接入设置</h2></div><button value="cancel">×</button></div>
+      <label>运行模式<select id="setting-mode"><option value="mock">Mock 模拟模式</option><option value="real">Real 真实接入</option></select></label>
+      <label>Client ID<input id="setting-client-id" autocomplete="off" placeholder="app_xxx"></label>
+      <label>Client Secret<input id="setting-client-secret" type="password" autocomplete="new-password" placeholder="创建应用后填写"></label>
+      <label>OAuth 回调地址<input id="setting-redirect-uri" placeholder="http://localhost:8799/oauth/callback"></label>
+      <label>设备 Bridge Key<input id="setting-bridge-key" type="password" autocomplete="new-password"></label>
+      <p class="setting-hint">保存后桌面应用会自动重启。Client Secret 使用系统安全存储加密。</p>
+      <div class="dialog-actions"><button value="cancel" type="button" data-close="settings-dialog">取消</button><button type="submit">保存并重启</button></div>
+    </form>
+  </dialog>
+  <script src="./app.js" type="module"></script>
+</body>
+</html>

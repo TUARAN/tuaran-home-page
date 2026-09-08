@@ -1,6 +1,8 @@
 import AShareResearchClient from './AShareResearchClient'
+import { A_SHARE_RESEARCH_TEMPLATE_VERSION } from '../../../lib/aShareResearchCore'
 import { listResearch } from '../../../lib/research/loader'
 import { isAShareCompanyObservation } from '../../../lib/research/shareTitle'
+import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
 
 export const metadata = {
   title: 'A股调研 · 每天一家上市公司',
@@ -32,6 +34,8 @@ function exchangeOf(code) {
 }
 
 export default function AShareResearchPage() {
+  const activeStyle = RESEARCH_STYLE_TEMPLATES.find((template) => template.status === 'active')
+    || RESEARCH_STYLE_TEMPLATES[0]
   const items = listResearch()
     .filter(isAShareCompanyObservation)
     .map((entry) => {
@@ -50,5 +54,15 @@ export default function AShareResearchPage() {
       }
     })
 
-  return <AShareResearchClient items={items} />
+  return (
+    <AShareResearchClient
+      items={items}
+      researchMethod={{
+        templateVersion: A_SHARE_RESEARCH_TEMPLATE_VERSION,
+        styleLabel: activeStyle.label,
+        styleSummary: activeStyle.summary,
+        principles: activeStyle.principles.slice(0, 3),
+      }}
+    />
+  )
 }

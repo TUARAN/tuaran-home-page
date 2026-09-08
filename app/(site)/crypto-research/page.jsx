@@ -1,6 +1,8 @@
 import CryptoResearchClient from './CryptoResearchClient'
+import { CRYPTO_RESEARCH_TEMPLATE_VERSION } from '../../../lib/cryptoResearchCore'
 import { listResearch } from '../../../lib/research/loader'
 import { isCryptoAssetObservation } from '../../../lib/research/shareTitle'
+import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
 
 export const metadata = {
   title: '加密调研 · 每天一个加密资产',
@@ -14,6 +16,8 @@ function identityOf(entry) {
 }
 
 export default function CryptoResearchPage() {
+  const activeStyle = RESEARCH_STYLE_TEMPLATES.find((template) => template.status === 'active')
+    || RESEARCH_STYLE_TEMPLATES[0]
   const items = listResearch().filter(isCryptoAssetObservation).map((entry) => {
     const identity = identityOf(entry)
     return {
@@ -23,5 +27,15 @@ export default function CryptoResearchPage() {
       readingMinutes: entry.readingMinutes, href: `/articles/research/topics/${entry.slug}`,
     }
   })
-  return <CryptoResearchClient items={items} />
+  return (
+    <CryptoResearchClient
+      items={items}
+      researchMethod={{
+        templateVersion: CRYPTO_RESEARCH_TEMPLATE_VERSION,
+        styleLabel: activeStyle.label,
+        styleSummary: activeStyle.summary,
+        principles: activeStyle.principles.slice(0, 3),
+      }}
+    />
+  )
 }

@@ -14,10 +14,18 @@ test('A股调研 is a content submenu and a sitemap route', async () => {
 })
 
 test('A股调研 page aggregates existing company research', async () => {
-  const page = await readFile(new URL('../../app/(site)/a-share-research/page.jsx', import.meta.url), 'utf8')
+  const [page, client] = await Promise.all([
+    readFile(new URL('../../app/(site)/a-share-research/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(site)/a-share-research/AShareResearchClient.jsx', import.meta.url), 'utf8'),
+  ])
   assert.match(page, /listResearch\(\)/)
   assert.match(page, /filter\(isAShareCompanyObservation\)/)
   assert.match(page, /\/articles\/research\/companies\//)
+  assert.match(page, /A_SHARE_RESEARCH_TEMPLATE_VERSION/)
+  assert.match(page, /template\.status === 'active'/)
+  assert.match(client, /当前调研模板与策略/)
+  assert.match(client, /十段式公司观察/)
+  assert.match(client, /自动草稿保留 72 小时人工复核窗口/)
 })
 
 test('A股条目从普通公司调研目录和推荐链路中隔离', async () => {

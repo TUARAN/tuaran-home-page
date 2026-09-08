@@ -9,7 +9,14 @@ function yearMonth(date) {
   return /^\d{4}-\d{2}/.test(date || '') ? date.slice(0, 7) : '其他'
 }
 
-export default function AShareResearchClient({ items }) {
+const strategySteps = [
+  ['选题', '覆盖沪市、深市与北交所，经行情状态核验后，从尚未调研的公司中随机抽取；每天最多新增一家。'],
+  ['查证', '联网核对主营业务、最新业绩、控制权与近期公告；关键事实回到正式披露，无法确认的内容明确留空。'],
+  ['成稿', '按十段式公司观察模板整理业务、财务、治理、估值和风险，事实与外部研判分开书写。'],
+  ['复核', '自动草稿保留 72 小时人工复核窗口；未被退回的到期稿件按顺序发布，每次最多一篇。'],
+]
+
+export default function AShareResearchClient({ items, researchMethod }) {
   const [query, setQuery] = useState('')
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase()
@@ -43,6 +50,53 @@ export default function AShareResearchClient({ items }) {
           </dl>
         </div>
       </header>
+
+      <section className="mt-7 border-y border-[#d8d2ca] py-6 dark:border-[#303844]" aria-labelledby="research-method-title">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.16em] text-[#a33b32] dark:text-[#e58a80]">RESEARCH METHOD</p>
+            <h2 id="research-method-title" className="mt-2 text-2xl font-semibold tracking-tight">当前调研模板与策略</h2>
+          </div>
+          <p className={`max-w-xl text-sm leading-6 ${muted}`}>这里展示当前自动化实际采用的写作口径与执行流程，历史文章仍保留生成时的模板版本。</p>
+        </div>
+
+        <div className="mt-5 grid gap-px overflow-hidden rounded-xl border border-[#ddd8d0] bg-[#ddd8d0] dark:border-[#303844] dark:bg-[#303844] lg:grid-cols-[0.9fr_1.1fr]">
+          <article className="bg-[#faf8f4] p-5 dark:bg-[#111923] sm:p-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-[#a33b32] px-2.5 py-1 text-xs font-semibold text-white">模板 v{researchMethod.templateVersion}</span>
+              <span className={`text-xs ${muted}`}>a-share-company-research</span>
+            </div>
+            <h3 className="mt-4 text-lg font-semibold">十段式公司观察</h3>
+            <p className={`mt-2 text-sm leading-6 ${muted}`}>
+              从结论、公司身份和业务结构开始，继续核对财务、治理、估值、催化与风险，最后单列外部研判、未能验证和信息来源。
+            </p>
+            <div className="mt-5 border-t border-[#e3ded7] pt-4 dark:border-[#303844]">
+              <p className="text-xs font-semibold tracking-[0.12em] text-[#8d332c] dark:text-[#e58a80]">当前写作风格 · {researchMethod.styleLabel}</p>
+              <p className={`mt-2 text-sm leading-6 ${muted}`}>{researchMethod.styleSummary}</p>
+              <ul className={`mt-3 space-y-2 text-sm leading-6 ${muted}`}>
+                {researchMethod.principles.map((principle) => (
+                  <li key={principle} className="flex gap-2"><span aria-hidden="true" className="text-[#a33b32] dark:text-[#e58a80]">—</span><span>{principle}</span></li>
+                ))}
+              </ul>
+            </div>
+          </article>
+
+          <article className="bg-white p-5 dark:bg-[#0d131b] sm:p-6">
+            <p className="text-xs font-semibold tracking-[0.12em] text-[#8d332c] dark:text-[#e58a80]">调研策略</p>
+            <ol className="mt-4 grid gap-4 sm:grid-cols-2">
+              {strategySteps.map(([title, description], index) => (
+                <li key={title} className="grid grid-cols-[28px_minmax(0,1fr)] gap-3">
+                  <span className="font-mono text-xs font-semibold text-[#a33b32] dark:text-[#e58a80]">{String(index + 1).padStart(2, '0')}</span>
+                  <div>
+                    <h3 className="text-sm font-semibold">{title}</h3>
+                    <p className={`mt-1 text-sm leading-6 ${muted}`}>{description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </article>
+        </div>
+      </section>
 
       <div className="mt-7 grid gap-6 lg:grid-cols-[252px_minmax(0,1fr)]">
         <aside className="h-fit border border-[#ddd8d0] bg-white/60 p-4 dark:border-[#303844] dark:bg-[#111923]">

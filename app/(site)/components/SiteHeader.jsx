@@ -775,6 +775,17 @@ export default function SiteHeader() {
             </div>
           </Link>
 
+          <p className="site-brand-slogan" aria-label="涂阿燃的网络日志｜这可能是全球第一个面向人与 AI 的中文上链博客。">
+            <span className="site-brand-slogan-title">
+              <span className="site-brand-slogan-name">涂阿燃的网络日志</span>
+              <span className="site-brand-slogan-divider" aria-hidden="true">｜</span>
+            </span>
+            <span className="site-brand-slogan-message">
+              <span className="site-brand-slogan-claim">这可能是全球第一个面向人与 AI 的</span>
+              <strong>中文上链博客。</strong>
+            </span>
+          </p>
+
           <form action="/articles" method="get" role="search" className="site-mobile-search min-w-0 flex-1 md:hidden">
             <label className="sr-only" htmlFor="site-mobile-search-q">{pick(locale, '搜索内容', 'Search')}</label>
             <input

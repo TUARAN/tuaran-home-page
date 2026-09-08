@@ -6,7 +6,7 @@ import styles from './workbuddy-acp-bridge.module.css'
 export const dynamic = 'force-static'
 
 const PAGE_URL = 'https://2aran.com/tools/workbuddy-acp-bridge'
-const PREVIEW_URL = 'https://2aran.com/images/tools/workbuddy-acp-bridge/desktop-sms-bridge.png'
+const PREVIEW_URL = 'https://2aran.com/images/tools/workbuddy-acp-bridge/desktop-sms-bridge-v2.png'
 
 export const metadata = {
   title: 'ACP 短信桥接测试终端',
@@ -130,7 +130,7 @@ export default function WorkBuddyAcpBridgePage() {
 
         <figure className={styles.productShot}>
           <Image
-            src="/images/tools/workbuddy-acp-bridge/desktop-sms-bridge.png"
+            src="/images/tools/workbuddy-acp-bridge/desktop-sms-bridge-v2.png"
             width={2360}
             height={1640}
             priority

@@ -107,7 +107,7 @@ export default function OnchainBlogPage() {
                 </span>
                 <span className="font-mono text-[11px] tracking-[0.16em] text-[#857d71] dark:text-[#8f9aaa]">2ARAN CONTENT LEDGER</span>
               </div>
-              <h1 className="mt-6 max-w-4xl font-serif text-[42px] font-semibold leading-[1.08] tracking-[-0.025em] text-[#24211d] dark:text-[#f5f0e7] md:text-[68px]">
+              <h1 className="mt-6 max-w-4xl font-serif text-[36px] font-semibold leading-[1.12] tracking-[-0.025em] text-[#24211d] dark:text-[#f5f0e7] md:text-[54px]">
                 让每次公开发布，<br />都有可核验的内容凭证
               </h1>
               <p className="mt-6 max-w-3xl text-base leading-8 text-[#5b554d] dark:text-[#bbb3a8] md:text-lg">

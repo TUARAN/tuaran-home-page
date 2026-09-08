@@ -775,18 +775,20 @@ export default function SiteHeader() {
             </div>
           </Link>
 
-          <p className="site-brand-slogan" aria-label="这可能是全球第一个面向人与 AI 的中文上链博客。">
-            <span className="site-brand-slogan-message">
-              <span aria-hidden="true">“</span>
-              <span className="site-brand-slogan-claim">这可能是全球第一个面向人与 AI 的</span>
-              <strong>
-                <Link href="/onchain-blog" className="site-brand-slogan-link">
-                  中文上链博客。
-                </Link>
-              </strong>
-              <span aria-hidden="true">”</span>
-            </span>
-          </p>
+          {pathname === '/' ? (
+            <p className="site-brand-slogan" aria-label="这可能是全球第一个面向人与 AI 的中文上链博客。">
+              <span className="site-brand-slogan-message">
+                <span aria-hidden="true">“</span>
+                <span className="site-brand-slogan-claim">这可能是全球第一个面向人与 AI 的</span>
+                <strong>
+                  <Link href="/onchain-blog" className="site-brand-slogan-link">
+                    中文上链博客。
+                  </Link>
+                </strong>
+                <span aria-hidden="true">”</span>
+              </span>
+            </p>
+          ) : null}
 
           <form action="/articles" method="get" role="search" className="site-mobile-search min-w-0 flex-1 md:hidden">
             <label className="sr-only" htmlFor="site-mobile-search-q">{pick(locale, '搜索内容', 'Search')}</label>

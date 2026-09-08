@@ -129,11 +129,6 @@ export default function WorkBuddyAcpBridgePage() {
         </section>
 
         <figure className={styles.productShot}>
-          <div className={styles.shotBar}>
-            <span><i /><i /><i /></span>
-            <strong>真实桌面应用界面</strong>
-            <em>Mock 联调模式</em>
-          </div>
           <Image
             src="/images/tools/workbuddy-acp-bridge/desktop-sms-bridge.png"
             width={2360}
@@ -141,7 +136,7 @@ export default function WorkBuddyAcpBridgePage() {
             priority
             alt="ACP 短信桥接测试终端，左侧为短信模拟器，中间为消息窗口，右侧为 WorkBuddy 会话路由"
           />
-          <figcaption>当前截图为 Mock 联调模式；切换真实模式后，由用户完成 WorkBuddy OAuth 授权。</figcaption>
+          <figcaption><strong>真实桌面应用界面</strong><span>当前为 Mock 联调模式；切换真实模式后，由用户完成 WorkBuddy OAuth 授权。</span></figcaption>
         </figure>
 
         <section className={styles.section} id="workflow">

@@ -89,8 +89,10 @@ export default function HomeOpinionSignals() {
                 <span className={`is-${stance}`}><T {...STANCES[stance]} /></span>
               </span>
               <strong>{post.text}</strong>
-              <small>{post.viewpoint}</small>
-              <small><T zh="查看原文 ↗" en="Read source ↗" /></small>
+              <small>
+                <span className="min-w-0 flex-1 truncate">{post.viewpoint}</span>
+                <span className="shrink-0 whitespace-nowrap"><T zh="查看原文 ↗" en="Read source ↗" /></span>
+              </small>
             </a>
           )
         })}

@@ -1943,7 +1943,7 @@
   }
 
   .home-opinion-sample small {
-    @apply mt-1.5 block truncate text-[10px] leading-4;
+    @apply mt-1.5 flex items-center gap-2 text-[10px] leading-4;
     color: var(--site-muted);
   }
 

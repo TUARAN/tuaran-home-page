@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { IconMessageCircle2 } from '@tabler/icons-react'
+import { selectHomeOpinionPosts } from '../../../lib/homeOpinionSignals'
 import { getSentimentBucket } from '../../../lib/publicOpinionData'
 import { T } from './LocaleProvider'
 
@@ -53,7 +54,7 @@ export default function HomeOpinionSignals() {
   }, [])
 
   const posts = data?.source === 'd1'
-    ? data.posts.filter((post) => /^https?:\/\//i.test(post.url || '')).slice(0, 6)
+    ? selectHomeOpinionPosts(data.posts)
     : []
   const collectedAt = Number(data?.meta?.lastCollectAt)
   const updated = collectedAt > 0 && Number.isFinite(collectedAt)

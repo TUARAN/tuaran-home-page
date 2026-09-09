@@ -90,7 +90,11 @@ test('real frontmatter loader exposes normalized dates through detail and list e
   }
 })
 
-test('Open Graph, JSON-LD and sitemap consume the same loader fields', () => {
+test('Open Graph, JSON-LD and sitemap consume the same loader fields', {
+  skip: process.env.ADMIN_PAGES_BUILD === '1'
+    ? 'public site routes are intentionally excluded from the Admin Pages build'
+    : false,
+}, () => {
   const page = readFileSync(new URL('../../app/(site)/articles/research/[category]/[slug]/page.jsx', import.meta.url), 'utf8')
   const sitemap = readFileSync(new URL('../../app/(site)/sitemap.js', import.meta.url), 'utf8')
   assert.match(page, /publishedTime: entry\.publishedTime/)

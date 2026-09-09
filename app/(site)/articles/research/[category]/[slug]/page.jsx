@@ -101,7 +101,8 @@ export async function generateMetadata({ params }) {
       siteName: SITE_TITLE,
       locale: 'zh_CN',
       type: 'article',
-      publishedTime: entry.dateTimeIso ? new Date(entry.dateTimeIso).toISOString() : entry.date ? new Date(entry.date).toISOString() : undefined,
+      publishedTime: entry.publishedTime,
+      modifiedTime: entry.modifiedTime,
       images: [{ url: ogImage, width: 1200, height: 630, alt: `${shareTitle} 分享卡片` }],
     },
     twitter: {
@@ -203,23 +204,14 @@ export default async function ResearchDetailPage({ params }) {
         ].slice(0, 3)
       : relatedPool.slice(0, 3)
 
-  const publishedISO = entry.dateTimeIso
-    ? new Date(entry.dateTimeIso).toISOString()
-    : entry.date
-      ? new Date(entry.date).toISOString()
-      : undefined
-  const modifiedISO = entry.updated
-    ? new Date(entry.updated).toISOString()
-    : publishedISO
-
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: entry.title,
     description: entry.summary || undefined,
     inLanguage: 'zh-CN',
-    datePublished: publishedISO,
-    dateModified: modifiedISO,
+    datePublished: entry.publishedTime,
+    dateModified: entry.modifiedTime,
     keywords: entry.tags?.length ? entry.tags.join(', ') : undefined,
     author: {
       '@type': 'Person',

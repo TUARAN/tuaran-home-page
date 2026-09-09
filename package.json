@@ -49,7 +49,7 @@
     "adsense:links": "node scripts/audit-adsense-link-graph.mjs",
     "adsense:live": "node scripts/audit-adsense-deployment.mjs https://2aran.com && node scripts/audit-adsense-link-graph.mjs https://2aran.com && node scripts/audit-adsense-rendered-content.mjs https://2aran.com",
     "adsense:rendered": "node scripts/audit-adsense-rendered-content.mjs",
-    "seo:audit": "node --test tests/seo/indexing-policy.test.mjs",
+    "seo:audit": "node --test tests/seo/*.test.mjs",
     "autopilot:scan:security": "node scripts/scan-security.mjs",
     "autopilot:scan:performance": "node scripts/scan-performance.mjs",
     "autopilot:scan:design": "node scripts/scan-design.mjs",

@@ -274,22 +274,35 @@ export default function EngagementBotsClient() {
             <IconRefresh size={15} />
             重新读取
           </AdminButton>
-          <AdminButton
-            variant="primary"
-            onClick={runNow}
-            disabled={!persistent || running || saving || !adminDeepSeekConfigured}
-            title={!adminDeepSeekConfigured ? 'admin.2aran.com 当前没有可用的 DeepSeek 密钥' : undefined}
+          <span
+            className="group relative inline-flex"
+            tabIndex={!loading && !adminDeepSeekConfigured ? 0 : undefined}
+            aria-describedby={!loading && !adminDeepSeekConfigured ? 'run-now-tip' : undefined}
           >
-            <IconPlayerPlay size={15} />
-            {running ? '运行中…' : '立即运行'}
-          </AdminButton>
+            <AdminButton
+              variant="primary"
+              onClick={runNow}
+              disabled={!persistent || running || saving || !adminDeepSeekConfigured}
+            >
+              <IconPlayerPlay size={15} />
+              {running ? '运行中…' : '立即运行'}
+            </AdminButton>
+            {!loading && !adminDeepSeekConfigured ? (
+              <span
+                id="run-now-tip"
+                role="tooltip"
+                className="invisible absolute right-0 top-full z-50 w-72 max-w-[calc(100vw-2rem)] pt-2 group-hover:visible group-focus-within:visible"
+              >
+                <span className="block rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 shadow-lg dark:border-amber-800 dark:bg-gray-900 dark:text-amber-200">
+                  admin.2aran.com 当前没有配置可用的 DeepSeek 密钥，“立即运行”已停用；每天 10:23 的 2aran.com 定时任务不受影响。
+                </span>
+              </span>
+            ) : null}
+          </span>
         </>
       }
     >
       {!persistent ? <Notice tone="warning">当前为本地预览数据；部署并应用 D1 迁移 0074 后才能保存和运行。</Notice> : null}
-      {!loading && !adminDeepSeekConfigured ? (
-        <Notice tone="warning">admin.2aran.com 当前没有配置可用的 DeepSeek 密钥，“立即运行”已停用；每天 10:23 的 2aran.com 定时任务不受影响。</Notice>
-      ) : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
       {message ? <Notice tone="success">{message}</Notice> : null}
 

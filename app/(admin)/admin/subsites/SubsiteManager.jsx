@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { IconInfoCircle } from '@tabler/icons-react'
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
 import { RELATION_STATUSES, RELATION_TYPES, SITE_AUDIENCES, SITE_STATUSES, relationKey } from '../../../../lib/secondarySiteRegistry'
 
@@ -118,13 +119,20 @@ export default function SubsiteManager() {
   return (
     <AdminPage title="二级站管理" description="统一管理公开子站、内部服务与历史入口，维护部署资料、主从归属及账号、燃币、内容和服务依赖。"
       actions={<>
+        <span className="group relative inline-flex">
+          <AdminButton type="button" variant="ghost" aria-label="管理台账说明" aria-describedby="subsite-ledger-tip">
+            <IconInfoCircle size={16} />
+          </AdminButton>
+          <span id="subsite-ledger-tip" role="tooltip" className="invisible absolute left-0 top-full z-50 w-80 max-w-[calc(100vw-2rem)] pt-2 group-hover:visible group-focus-within:visible sm:left-auto sm:right-0">
+            <span className="block rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-xs leading-5 text-[#53554d] shadow-lg dark:border-[#34414f] dark:bg-[#10161f] dark:text-gray-300">
+              管理台账与线上配置分开维护。修改或归档不自动改变公开目录、DNS、部署、登录白名单和燃币计费；“已接入”是人工登记状态，不代表实时健康检查。
+            </span>
+          </span>
+        </span>
         <AdminButton href="https://2aran.com/sites" target="_blank" rel="noreferrer">公开目录 ↗</AdminButton>
         <AdminButton disabled={loading || saving} onClick={() => { if (discardAllowed()) { setNotice(''); refresh() } }}>刷新</AdminButton>
         <AdminButton variant="primary" disabled={disabled} onClick={() => choose(null)}>登记站点</AdminButton>
       </>}>
-      <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-        管理台账与线上配置分开维护。修改或归档不自动改变公开目录、DNS、部署、登录白名单和燃币计费；“已接入”是人工登记状态，不代表实时健康检查。
-      </p>
       {error && <p role="alert" className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{error}</p>}
       {notice && <p role="status" className="mb-4 text-sm text-emerald-700 dark:text-emerald-300">{notice}</p>}
       {data?.readOnly && <p role="status" className="mb-4 text-sm text-amber-700 dark:text-amber-300">{data.message}</p>}

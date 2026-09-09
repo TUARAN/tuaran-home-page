@@ -1,3 +1,4 @@
+import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import {
@@ -160,7 +161,7 @@ export async function GET(req) {
     }
     let xApiCost
     try {
-      xApiCost = await getXApiCostSummary(db, { postsPerDay: 10 })
+      xApiCost = await getXApiCostSummary(db, { postsPerDay: X_POST_SLOTS.length })
     } catch {
       // 数据库迁移尚未执行时仍展示官方单价与固定日程预算。
       xApiCost = {
@@ -171,7 +172,7 @@ export async function GET(req) {
         monthPosts: 0,
         monthMicroUsd: 0,
         projected30DayPosts: 300,
-        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: 10, days: 30 }),
+        projected30DayMicroUsd: projectedXPostCost({ postsPerDay: X_POST_SLOTS.length, days: 30 }),
         trackedSince: null,
       }
     }

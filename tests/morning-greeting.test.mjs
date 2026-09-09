@@ -208,8 +208,8 @@ test('LLM prompt includes current period, exact calendar date, weekday, and edit
   })
   assert.equal(messages.length, 2)
   assert.match(messages[0].content, /只输出最终文案/)
-  assert.match(messages[0].content, /自然点赞的理由/)
-  assert.match(messages[0].content, /内容视角、人格声线和文本结构/)
+  assert.match(messages[0].content, /互关交友问候/)
+  assert.match(messages[0].content, /以本轮主题为准/)
   assert.match(messages[1].content, /当前时段：午安/)
   assert.match(messages[0].content, /日期或星期.*严格使用.*当前日历信息/)
   assert.match(messages[1].content, /当前日历：2026年8月18日，星期二/)
@@ -248,7 +248,7 @@ test('greeting content, voice, and format pools create distinct randomized combi
 
 test('default greeting intent has a personal voice and the migration preserves custom settings', async () => {
   assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /TUARAN/)
-  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /真实的人/)
+  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /emoji/)
   assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /持续制造变化/)
 
   const migration = await readFile(new URL('../migrations/0086_richer_daily_greeting_intent.sql', import.meta.url), 'utf8')
@@ -324,28 +324,23 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   const clientSource = await readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8')
 
   assert.match(clientSource, /aria-label="每日自动发布横向时间轴"/)
-  assert.match(clientSource, /grid-cols-10/)
+  assert.match(clientSource, /grid-cols-5/)
   assert.match(clientSource, /按任务类型筛选/)
   assert.match(clientSource, /timeline-status-filter/)
   assert.match(clientSource, /08:00/)
-  assert.match(clientSource, /09:00/)
+  assert.match(clientSource, /09:30/)
   assert.match(clientSource, /朋友交流/)
-  assert.match(clientSource, /11:00/)
-  assert.match(clientSource, /17:00/)
   assert.match(clientSource, /加密观点/)
-  assert.match(clientSource, /次日 03:00/)
-  assert.match(clientSource, /次日 07:00/)
   assert.match(clientSource, /美区英文/)
   assert.match(clientSource, /visibleItems\.length} \/ {items\.length} 个节点/)
   assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)
 })
 
-test('daily posting times keep the ten focused baselines, vary by date, and stay within 30 minutes', async () => {
-  assert.equal(X_POST_SLOTS.length, 10)
+test('daily posting times keep the five community baselines, vary by date, and stay within 30 minutes', async () => {
+  assert.equal(X_POST_SLOTS.length, 5)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
   assert.deepEqual(day.map((task) => task.time), [
-    '08:00', '10:00', '20:00', '09:00', '15:00',
-    '11:00', '17:00', '23:00', '03:00', '07:00',
+    '08:00', '12:00', '09:30', '15:00', '19:00',
   ])
   assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
   const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))
@@ -365,7 +360,7 @@ test('schedule windows start at the target and reject expired or next-day trigge
     assert.equal(isXPostDue(task, new Date(task.scheduledAt)), true)
     assert.equal(isXPostDue(task, new Date(task.scheduledAt + 60 * 60_000 + 1)), false)
   }
-  const late = day.find((task) => task.id === 'us_morning')
+  const late = day.find((task) => task.id === 'community_growth')
   assert.equal(isXPostDue(late, new Date(Date.UTC(2026, 7, 29, 16))), false)
 })
 
@@ -383,7 +378,7 @@ test('scheduler calls only due tasks, carries their date, and isolates request f
       return Response.json({ ok: true }, { status: 201 })
     },
   })
-  assert.equal(requests.length, 2)
-  assert.deepEqual(results.map((result) => result.slot).sort(), ['community_friends', 'culture_morning'])
-  assert.equal(results.filter((result) => result.ok).length, 1)
+  assert.equal(requests.length, 1)
+  assert.deepEqual(results.map((result) => result.slot).sort(), ['community_friends'])
+  assert.equal(results.filter((result) => result.ok).length, 0)
 })

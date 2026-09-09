@@ -54,7 +54,7 @@ import { callOllama } from '../../../../../lib/ollama'
 import { getXCredentials, publishXPost, uploadXMedia } from '../../../../../lib/xDistribution'
 import { claimXAsset, releaseXAsset, updateXAsset, saveXPostDraft, prepareXImage, assetError, xAssetView } from '../../../../../lib/xPostAssets'
 import { recordXApiPostCost, xPostCreatePricing } from '../../../../../lib/xApiCost'
-import { xPostingSchedule, isXPostDue } from '../../../../../lib/xPostingSchedule'
+import { xPostingSchedule, isXPostDue, isXPostSlotActive } from '../../../../../lib/xPostingSchedule'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -163,11 +163,14 @@ export async function POST(req) {
     return Response.json({ ok: false, error: 'INVALID_PERIOD', detail: 'period 仅支持 morning、noon、evening。' }, { status: 400 })
   }
   const runSlot = storySlot || communitySlot || cryptoSlot || usSlot || period
+  if (!isXPostSlotActive(runSlot)) {
+    return Response.json({ ok: true, skipped: true, reason: 'slot_paused' })
+  }
   const scheduledDate = searchParams.get('scheduledDate')
   const schedule = scheduledDate
     ? (await xPostingSchedule(requestNow)).find((item) => item.id === runSlot)
     : null
-  if (scheduledDate && (scheduledDate !== schedule.date || !isXPostDue(schedule, requestNow))) {
+  if (scheduledDate && (!schedule || scheduledDate !== schedule.date || !isXPostDue(schedule, requestNow))) {
     return Response.json({ ok: true, skipped: true, reason: 'outside_schedule_window' })
   }
   const contentType = isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : isCryptoPost ? 'crypto-insight' : isUsPost ? 'us-english' : 'greeting'
@@ -442,7 +445,7 @@ export async function POST(req) {
     if (postFormat === 'image') {
       stage = 'image-selection'
       const image = await prepareXImage({
-        db, bucket: env.MEDIA, asset,
+        db, bucket: env.MEDIA, asset, memeOrigin: new URL(req.url).origin,
       })
       stage = 'media-upload'
       const upload = await uploadXMedia(image, { credentials })

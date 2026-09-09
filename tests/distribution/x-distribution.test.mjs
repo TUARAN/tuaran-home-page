@@ -150,7 +150,7 @@ async function assetFixture(t) {
   const objects = new Map()
   const bucket = {
     async put(key, bytes) { objects.set(key, bytes) },
-    async get(key) { const bytes = objects.get(key); return bytes ? { arrayBuffer: async () => bytes.buffer, body: bytes } : null },
+    async get(key) { const bytes = objects.get(key); return bytes ? { arrayBuffer: async () => bytes instanceof ArrayBuffer ? bytes : bytes.buffer, body: bytes } : null },
     async delete(key) { objects.delete(key) },
   }
   return { db, bucket, objects, sqlite }
@@ -222,8 +222,8 @@ async function cronFixture(t, overrides = {}) {
   const dependencies = {
     ...assetLibrary, ...greetings, ...greetingLlm, ...culture, ...community, ...usPosts, ...cryptoPosts,
     ...postingSchedule,
-    saveXPostDraft: (db, asset, options) => assetLibrary.saveXPostDraft(db, asset, { ...options, random: () => 0 }),
-    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, random: () => 0 }),
+    saveXPostDraft: (db, asset, options) => assetLibrary.saveXPostDraft(db, asset, { ...options, random: () => 0, fetchImpl: async () => new Response(Buffer.from(PNG, 'base64')) }),
+    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, random: () => 0, fetchImpl: async () => new Response(Buffer.from(PNG, 'base64')) }),
     getOptionalRequestContext: () => ({ env }),
     getXCredentials: () => ({ configured: true }),
     listEnabledMorningGreetingTexts: async () => [],
@@ -277,7 +277,7 @@ test('scheduled requests recheck time and date before generating or claiming', a
 
 test('all five task types select fixed pool images, publish them, then skip repeated triggers', async (t) => {
   const { invoke, calls, objects } = await cronFixture(t)
-  for (const query of ['period=morning', 'community=community_friends', 'story=culture_morning', 'crypto=crypto_knowledge', 'us=us_morning']) {
+  for (const query of ['period=morning', 'period=noon', 'community=community_friends', 'community=community_learning', 'community=community_growth']) {
     const response = await invoke(query)
     assert.equal(response.status, 201, JSON.stringify(await response.clone().json()))
     assert.match((await response.json()).imagePath, /\/assets\//)
@@ -286,7 +286,7 @@ test('all five task types select fixed pool images, publish them, then skip repe
     assert.equal((await repeated.json()).skipped, true)
   }
   assert.deepEqual(calls, { images: 0, copy: 5, upload: 5, publish: 5 })
-  assert.equal(objects.size, 5)
+  assert.equal(objects.size, 10)
 })
 
 test('automation uses its one selected Ollama model', async (t) => {
@@ -381,7 +381,7 @@ test('upload failure keeps the draft/image and retry does not regenerate either'
 })
 
 test('pool, storage, authentication and pause failures cannot send text-only posts', async (t) => {
-  const { invoke, calls, sqlite, bucket } = await cronFixture(t)
+  const { invoke, calls, sqlite, bucket } = await cronFixture(t, { prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, memeOrigin: undefined }) })
   assert.equal((await invoke('period=morning', 'wrong')).status, 401)
   sqlite.prepare('INSERT INTO site_settings (key, value) VALUES (?, ?)').run(greetings.MORNING_GREETING_SETTING_KEY, 'paused')
   assert.equal((await invoke()).status, 423)
@@ -535,7 +535,7 @@ test('direct pool selection skips missing objects but cannot commit after lease 
 test('direct pool failures never generate an image or send a text-only post', async (t) => {
   const fixture = await cronFixture(t, {
     seedPoolAssets: false,
-    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, random: () => 0.75 }),
+    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, memeOrigin: undefined, random: () => 0.75 }),
   })
   assert.equal((await fixture.invoke()).status, 502)
   assert.equal(fixture.sqlite.prepare('SELECT error FROM x_post_assets').get().error, 'X_IMAGE_POOL_UNAVAILABLE')
@@ -550,13 +550,13 @@ test('direct pool failures never generate an image or send a text-only post', as
 
 test('all five task types can publish directly from the pool without generating prompts or images', async (t) => {
   const fixture = await cronFixture(t, {
-    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, random: () => 0.75 }),
+    prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, memeOrigin: undefined, random: () => 0.75 }),
     callDeepSeek: async (args) => {
       assert.notEqual(args.task.taskType, 'image-prompt')
       return { content: 'Make a small thing today. Share what you learned.', model: 'test-model' }
     },
   })
-  for (const query of ['period=morning', 'community=community_friends', 'story=culture_morning', 'crypto=crypto_knowledge', 'us=us_morning']) {
+  for (const query of ['period=morning', 'period=noon', 'community=community_friends', 'community=community_learning', 'community=community_growth']) {
     const response = await fixture.invoke(query)
     assert.equal(response.status, 201, JSON.stringify(await response.clone().json()))
   }
@@ -569,7 +569,7 @@ test('all five task types can publish directly from the pool without generating 
 
 test('fixed pool selection ignores image-provider failures and reuses the chosen image on retry', async (t) => {
   let uploads = 0
-  const fixture = await cronFixture(t, { seedPoolAssets: false, uploadXMedia: async () => ++uploads === 1
+  const fixture = await cronFixture(t, { seedPoolAssets: false, prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, memeOrigin: undefined }), uploadXMedia: async () => ++uploads === 1
     ? { ok: false, status: 502, error: 'X_MEDIA_UNREACHABLE' }
     : { ok: true, mediaId: 'media-123' } })
   const key = await seedPool(fixture)
@@ -653,4 +653,36 @@ test('fallback ignores missing pool objects and never bypasses an expired lease'
   fixture.sqlite.exec('UPDATE x_post_assets SET lease_until = 0')
   asset.row.object_key = ''
   await assert.rejects(assetLibrary.prepareXImage(options), /LEASE_LOST/)
+})
+
+
+test('paused slots reject manual and old scheduled triggers before any generation', async (t) => {
+  const { invoke, calls, sqlite } = await cronFixture(t)
+  for (const slot of ['crypto=crypto_knowledge', 'crypto=crypto_market', 'crypto=crypto_people', 'story=culture_morning', 'us=us_morning', 'period=evening']) {
+    for (const suffix of ['', `&scheduledDate=${greetings.shanghaiDateKey()}`]) {
+      const response = await invoke(slot + suffix)
+      assert.equal(response.status, 200)
+      assert.equal((await response.json()).reason, 'slot_paused')
+    }
+  }
+  assert.equal(calls.copy + calls.upload + calls.publish, 0)
+  assert.equal(sqlite.prepare('SELECT COUNT(*) AS count FROM x_post_assets').get().count, 0)
+})
+
+test('meme assets match the slot, cache in R2, and never fall back to old photos', async (t) => {
+  const fixture = await assetFixture(t)
+  const asset = await assetLibrary.claimXAsset(fixture.db, { date: '2026-09-09', slot: 'noon', contentType: 'greeting' })
+  let fetches = 0
+  const options = { ...fixture, asset, memeOrigin: 'https://example.com', fetchImpl: async (url) => {
+    fetches++
+    assert.equal(url.pathname, '/images/x-memes/noon.png')
+    return new Response(Buffer.from(PNG, 'base64'))
+  } }
+  const first = await assetLibrary.prepareXImage(options)
+  assert.equal(first.type, 'image/png')
+  assert.match(asset.row.object_key, /memes\/cat-v1\/noon.png/)
+  assert.deepEqual(await (await assetLibrary.prepareXImage(options)).arrayBuffer(), await first.arrayBuffer())
+  assert.equal(fetches, 1)
+  fixture.objects.clear()
+  await assert.rejects(assetLibrary.prepareXImage({ ...options, fetchImpl: async () => new Response('<html>404</html>') }), /X_MEME_INVALID_PNG/)
 })

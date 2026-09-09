@@ -3,42 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import XImagePool from './XImagePool'
+import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
+import { X_MEME_ASSETS } from '../../../../lib/xMemeAssets'
 import AutomationModelSelector from './AutomationModelSelector'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
 
 const formatUsd = (microUsd, minimumFractionDigits = 3) => `$${(Math.max(0, Number(microUsd) || 0) / 1_000_000).toLocaleString('en-US', { minimumFractionDigits, maximumFractionDigits: 3 })}`
 
-const CULTURE_STORY_SLOTS = [
-  { id: 'culture_morning', label: '上午短故事', time: '10:00' },
-  { id: 'culture_evening', label: '晚间短故事', time: '20:00' },
-]
-const COMMUNITY_POST_SLOTS = [
-  { id: 'community_friends', label: '认识新朋友', time: '09:00' },
-  { id: 'community_learning', label: '寻找同好', time: '15:00' },
-]
-const US_AUDIENCE_SLOTS = [
-  { id: 'us_morning', label: 'US morning', time: '23:00' },
-  { id: 'us_midday', label: 'US midday', time: '次日 03:00' },
-  { id: 'us_evening', label: 'US afternoon', time: '次日 07:00' },
-]
-const CRYPTO_POST_SLOTS = [
-  { id: 'crypto_knowledge', label: '加密知识', time: '11:00' },
-  { id: 'crypto_market', label: '币与走势观点', time: '17:00' },
-]
-const CULTURE_CATEGORY_LABELS = {
-  guoxue: '国学哲思',
-  chinese_story: '中华寓言 / 历史',
-  foreign_fable: '国外童话 / 寓言',
-}
 const generationModeLabel = (mode) => ({ deepseek: 'DeepSeek Flash', ollama: 'Ollama Qwen', template: '模板库', llm: 'DeepSeek Flash' })[mode] || mode
 const TIMELINE_FILTERS = [
   { id: 'all', label: '全部任务' },
   { id: 'greeting', label: '问候' },
   { id: 'community', label: '朋友交流' },
-  { id: 'culture', label: '文化短故事' },
-  { id: 'crypto', label: '加密观点' },
-  { id: 'us', label: '美区英文' },
+
 ]
 const STATUS_FILTERS = [
   { id: 'all', label: '全部状态' },
@@ -69,7 +47,7 @@ function TimelineNode({ item }) {
   return (
     <article
       className="relative min-w-0 pt-12"
-      style={{ gridColumn: `${item.column} / span 1` }}
+
       aria-label={`${item.schedule} ${item.label}${item.hasImage ? '，带图片' : ''}，${item.state.label}`}
     >
       <time className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap text-[12px] font-semibold tabular-nums text-[#4f5148] dark:text-gray-300">
@@ -98,12 +76,12 @@ function TimelineNode({ item }) {
             </div>
             <h3 className="mt-0.5 truncate text-[13px] font-semibold text-[#2f302a] dark:text-gray-100" title={item.label}>{item.label}</h3>
           </div>
-          <StatusPill tone={item.state.tone} size="sm">{item.state.label}</StatusPill>
+          <span className="shrink-0 whitespace-nowrap"><StatusPill tone={item.state.tone} size="sm">{item.state.label}</StatusPill></span>
         </div>
         <p className="mb-0 text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">
           {item.recordedAt ? `执行 ${formatTime(item.recordedAt)}` : '尚无执行记录'}
         </p>
-        {item.imageUrl ? <a href={item.imageUrl} target="_blank" rel="noreferrer" aria-label={`预览${item.label}配图`} className="mt-2 block overflow-hidden rounded-lg"><img src={item.imageUrl} alt={`${item.label}配图`} loading="lazy" className="aspect-[4/3] w-full object-cover" /></a> : <p className="mb-0 mt-2 text-[11px] text-[#96988e]">{item.recordedAt ? (item.state.key === 'success' ? '纯文本' : '该次记录无配图') : '图文 / 纯文本随机'}</p>}
+        {item.imageUrl ? <a href={item.imageUrl} target="_blank" rel="noreferrer" aria-label={`预览${item.label}配图`} className="mt-2 block overflow-hidden rounded-lg"><img src={item.imageUrl} alt={`${item.label}配图`} loading="lazy" className="aspect-square w-full object-contain" /></a> : <p className="mb-0 mt-2 text-[11px] text-[#96988e]">{item.recordedAt ? (item.state.key === 'success' ? '纯文本' : '该次记录无配图') : '原创猫咪表情包'}</p>}
         {item.meta ? <p className="mb-0 mt-1 break-words text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">{item.meta}</p> : null}
         {item.costMicroUsd ? <p className="mb-0 mt-1 text-[11px] font-medium tabular-nums text-[#5f6257] dark:text-gray-300">X API {formatUsd(item.costMicroUsd)} / 次</p> : null}
         {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 内容 ↗</a> : null}
@@ -113,103 +91,25 @@ function TimelineNode({ item }) {
   )
 }
 
-function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns }) {
+function TaskTimeline({ lastRuns, communityRuns }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
 
   const items = useMemo(() => {
-    const greetingItems = [
-      { id: 'morning', label: '早安', schedule: '08:00', column: 1 },
-    ].map((item) => {
-      const run = lastRuns[item.id]
+    const labels = { morning: '☀️ 早安问候', noon: '🍚 午安问候', community_friends: '👋 认识新朋友', community_learning: '💙 蓝 V 交流', community_growth: '🐱 互关串门' }
+    return X_POST_SLOTS.map((slot) => {
+      const run = slot.query === 'period' ? lastRuns[slot.id] : communityRuns[slot.id]
       return {
-        ...item,
-        type: 'greeting',
-        typeLabel: '问候',
-        hasImage: Boolean(run?.imagePath),
-        imageUrl: run?.imagePath || '',
-        state: runState(run),
-        recordedAt: run?.at,
-        meta: [run?.mode && generationModeLabel(run.mode), run?.styleLabel, run?.model].filter(Boolean).join(' · '),
-        link: run?.postUrl,
-        detail: run?.error,
-        costMicroUsd: run?.xApiCostMicroUsd,
+        id: slot.id, label: labels[slot.id], schedule: slot.time,
+        type: slot.query === 'period' ? 'greeting' : 'community',
+        typeLabel: slot.query === 'period' ? '早午安' : '朋友交流',
+        hasImage: Boolean(run?.imagePath), imageUrl: run?.imagePath || '',
+        state: runState(run), recordedAt: run?.at,
+        meta: [run?.theme, run?.styleLabel, run?.model].filter(Boolean).join(' · '),
+        link: run?.postUrl, detail: run?.error, costMicroUsd: run?.xApiCostMicroUsd,
       }
-    })
-    const cultureItems = CULTURE_STORY_SLOTS.map((item, index) => {
-      const run = cultureRuns[item.id]
-      return {
-        ...item,
-        schedule: item.time,
-        column: [3, 7][index],
-        type: 'culture',
-        typeLabel: '文化短故事',
-        hasImage: Boolean(run?.imagePath),
-        imageUrl: run?.imagePath || '',
-        state: runState(run),
-        recordedAt: run?.at,
-        meta: run?.category ? CULTURE_CATEGORY_LABELS[run.category] || run.category : '',
-        link: run?.postUrl,
-        detail: run?.error,
-        costMicroUsd: run?.xApiCostMicroUsd,
-      }
-    })
-    const communityItems = COMMUNITY_POST_SLOTS.map((item, index) => {
-      const run = communityRuns[item.id]
-      return {
-        ...item,
-        schedule: item.time,
-        column: [2, 5][index],
-        type: 'community',
-        typeLabel: '朋友交流',
-        hasImage: Boolean(run?.imagePath),
-        imageUrl: run?.imagePath || '',
-        state: runState(run),
-        recordedAt: run?.at,
-        meta: [run?.theme, run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),
-        link: run?.postUrl,
-        detail: run?.error,
-        costMicroUsd: run?.xApiCostMicroUsd,
-      }
-    })
-    const cryptoItems = CRYPTO_POST_SLOTS.map((item, index) => {
-      const run = cryptoRuns[item.id]
-      return {
-        ...item,
-        schedule: item.time,
-        column: [4, 6][index],
-        type: 'crypto',
-        typeLabel: '加密观点',
-        hasImage: Boolean(run?.imagePath),
-        imageUrl: run?.imagePath || '',
-        state: runState(run),
-        recordedAt: run?.at,
-        meta: [run?.topic, run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),
-        link: run?.postUrl,
-        detail: run?.error,
-        costMicroUsd: run?.xApiCostMicroUsd,
-      }
-    })
-    const usItems = US_AUDIENCE_SLOTS.map((item, index) => {
-      const run = usRuns[item.id]
-      return {
-        ...item,
-        schedule: item.time,
-        column: [8, 9, 10][index],
-        type: 'us',
-        typeLabel: '美区英文',
-        hasImage: Boolean(run?.imagePath),
-        imageUrl: run?.imagePath || '',
-        state: runState(run),
-        recordedAt: run?.at,
-        meta: [run?.mode && generationModeLabel(run.mode), run?.model].filter(Boolean).join(' · '),
-        link: run?.postUrl,
-        detail: run?.error,
-        costMicroUsd: run?.xApiCostMicroUsd,
-      }
-    })
-    return [...greetingItems, ...communityItems, ...cultureItems, ...cryptoItems, ...usItems].sort((a, b) => a.column - b.column)
-  }, [communityRuns, cryptoRuns, cultureRuns, lastRuns, usRuns])
+    }).sort((a, b) => a.schedule.localeCompare(b.schedule))
+  }, [communityRuns, lastRuns])
 
   const visibleItems = items.filter((item) => (
     (typeFilter === 'all' || item.type === typeFilter)
@@ -247,11 +147,11 @@ function TaskTimeline({ lastRuns, cultureRuns, communityRuns, cryptoRuns, usRuns
       </div>
 
       <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
-        <div className="relative grid min-w-[1800px] grid-cols-10 gap-3 px-2 pb-1">
+        <div className="relative grid min-w-[1100px] grid-cols-5 gap-3 px-2 pb-1">
           <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
           {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
           {!visibleItems.length ? (
-            <div className="col-span-10 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
+            <div className="col-span-5 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
               当前筛选下没有任务节点。
             </div>
           ) : null}
@@ -293,7 +193,7 @@ function XApiCostPanel({ cost }) {
         <span>价格核对于 {cost.pricingCheckedAt}</span>
       </div>
       <p className="mb-0 mt-1 text-[10px] leading-5 text-[#96988e] dark:text-gray-500">
-        仅统计 X 发帖接口，不含图片生成、图片上传、R2 存储和 DeepSeek 文案及提示词生成成本；30 天预计按每天 10 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
+        仅统计 X 发帖接口，不含图片生成、图片上传、R2 存储和 DeepSeek 文案及提示词生成成本；30 天预计按每天 {X_POST_SLOTS.length} 条且不含 URL 计算。实际扣费以 X Developer Console 为准。
       </p>
       {!cost.available ? <p className="mb-0 mt-1 text-[10px] text-amber-700 dark:text-amber-300">成本流水表尚未启用；部署数据库迁移后开始累计实际金额。</p> : null}
     </section>
@@ -325,10 +225,7 @@ export default function MorningGreetingClient() {
   useEffect(() => { refresh() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const lastRuns = data?.lastRuns || {}
-  const cultureRuns = data?.cultureRuns || {}
   const communityRuns = data?.communityRuns || {}
-  const cryptoRuns = data?.cryptoRuns || {}
-  const usRuns = data?.usRuns || {}
 
   async function togglePause() {
     setSaving(true); setError(''); setNotice('')
@@ -347,7 +244,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="管理每日问候、朋友交流、文化短故事、加密观点和美区英文帖的全自动发布。"
+      description="每日 5 条：早午安、互关交友与蓝 V 交流。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -357,7 +254,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天全自动发布 10 条：一条晨间问候、两条朋友交流、两条文化短故事、两条加密观点和三条美区英文帖。每条用鲜明判断开场，以具体问题收尾；各时段前后 30 分钟随机浮动，图文和纯文本各 50% 概率；图文统一使用固定模板池，直接发布，不经人工审核。"
+          description="每天 5 条：08:00 早安、09:30 交朋友、12:00 午安、15:00 蓝 V 交流、19:00 互关串门。各时段前后 30 分钟浮动，短文案搭配 emoji，图文和纯文本各 50% 概率，图文使用对应主题的原创猫咪表情包。加密观点、文化短故事、美区英文已暂停。"
           className="mb-4"
           actions={
             <>
@@ -367,8 +264,13 @@ export default function MorningGreetingClient() {
           }
         >
         <div className="space-y-4">
-          <TaskTimeline lastRuns={lastRuns} cultureRuns={cultureRuns} communityRuns={communityRuns} cryptoRuns={cryptoRuns} usRuns={usRuns} />
-          <XImagePool />
+          <TaskTimeline lastRuns={lastRuns} communityRuns={communityRuns} />
+          <Section title="本轮表情包" description="按时段匹配配图；旧图库保留作历史资料。">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+              {Object.values(X_MEME_ASSETS).map((meme) => <figure key={meme.path} className="m-0"><img src={meme.path} alt={meme.label} className="aspect-square w-full rounded-xl object-contain" /><figcaption className="mt-2 text-center text-xs">{meme.label}</figcaption></figure>)}
+            </div>
+          </Section>
+          <details><summary className="cursor-pointer text-sm">历史素材库</summary><XImagePool /></details>
           <XApiCostPanel cost={data?.xApiCost} />
         </div>
         </Section>

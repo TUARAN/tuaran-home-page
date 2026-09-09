@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       period:
-        description: Greeting period, community slot, culture story slot, crypto slot, or US English slot
+        description: 早安、午安、互关交友时段
         required: true
         type: choice
         default: morning
-        options: [morning, noon, evening, community_friends, community_learning, community_growth, culture_morning, culture_afternoon, culture_evening, crypto_knowledge, crypto_market, crypto_people, us_morning, us_midday, us_evening]
+        options: [morning, noon, community_friends, community_learning, community_growth]
 
 permissions:
   contents: read
@@ -54,7 +54,7 @@ jobs:
               pass
           print(json.dumps({
               "workflow": "morning-greeting",
-              "taskName": "X 每日自动发布（问候 / 朋友交流 / 文化短故事 / 加密观点 / 美区英文）",
+              "taskName": "X 每日自动发布（早午安 / 互关交友 / 蓝 V 交流）",
               "runId": os.environ.get("GITHUB_RUN_ID", ""),
               "runUrl": os.environ.get("RUN_URL", ""),
               "status": "failed",

@@ -18,13 +18,13 @@ test('three community slots rotate through ten distinct image-and-copy variants'
     'community_learning',
     'community_growth',
   ])
-  assert.deepEqual(Object.values(X_COMMUNITY_SLOTS).map((item) => item.time), ['09:00', '15:00', '19:00'])
+  assert.deepEqual(Object.values(X_COMMUNITY_SLOTS).map((item) => item.time), ['09:30', '15:00', '19:00'])
   assert.equal(normalizeXCommunitySlot('community_learning'), 'community_learning')
   assert.equal(normalizeXCommunitySlot('unknown'), '')
   assert.notEqual(xCommunityLastRunKey('community_friends'), xCommunityLastRunKey('community_growth'))
   assert.equal(X_COMMUNITY_VARIANTS.length, 10)
   assert.equal(new Set(X_COMMUNITY_VARIANTS.map((item) => item.id)).size, 10)
-  assert.equal(new Set(X_COMMUNITY_VARIANTS.map((item) => item.imagePath)).size, 10)
+  assert.equal(new Set(X_COMMUNITY_VARIANTS.map((item) => item.imagePath)).size, 3)
   assert.deepEqual(
     Object.fromEntries(Object.keys(X_COMMUNITY_SLOTS).map((slot) => [slot, X_COMMUNITY_VARIANTS.filter((item) => item.slot === slot).length])),
     { community_friends: 4, community_learning: 3, community_growth: 3 },
@@ -65,9 +65,9 @@ test('community copy prompt requires a sharp opening and concrete invitation', (
     assert.match(messages[0].content, /互相关注/)
     assert.match(messages[0].content, /不要只写“互关”“求关注”/)
     assert.match(messages[0].content, /使用第一人称/)
-    assert.match(messages[0].content, /不要以“早安”/)
-    assert.match(messages[0].content, /鲜明偏好或判断/)
-    assert.match(messages[0].content, /自然点赞的理由/)
+    assert.match(messages[0].content, /emoji/)
+    assert.match(messages[0].content, /轻松的话题/)
+    assert.match(messages[0].content, /百分百回关/)
     assert.match(messages[0].content, /不要使用任何话题标签/)
     assert.match(messages[1].content, new RegExp(item.label))
     assert.match(messages[1].content, new RegExp(item.question.slice(0, 8)))

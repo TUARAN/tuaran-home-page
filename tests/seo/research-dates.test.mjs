@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { registerHooks } from 'node:module'
 import test from 'node:test'
 import { normalizeResearchDate, normalizeResearchUpdated, resolveResearchDates } from '../../lib/research/datetime.js'
 
@@ -74,11 +73,6 @@ test('real frontmatter loader exposes normalized dates through detail and list e
   })) {
     writeFileSync(path.join(fixture, `research/topics/2026-09-08-${slug}.md`), `---\ntitle: Date fixture\n${fields}\n---\n\nFixture body.\n`)
   }
-  const hooks = registerHooks({
-    resolve(specifier, context, nextResolve) {
-      return nextResolve(context.parentURL?.includes('/lib/research/') && /^\.\/[\w-]+$/.test(specifier) ? `${specifier}.js` : specifier, context)
-    },
-  })
   try {
     process.chdir(fixture)
     const { getResearchEntry, listResearch } = await import('../../lib/research/loader.js')
@@ -92,7 +86,6 @@ test('real frontmatter loader exposes normalized dates through detail and list e
     }
   } finally {
     process.chdir(originalCwd)
-    hooks.deregister()
     rmSync(fixture, { recursive: true, force: true })
   }
 })

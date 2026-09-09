@@ -70,7 +70,7 @@ export default function QuotesConsole() {
   }
 
   return (
-    <AdminPage title="名言生成" description="每天自动生成原创短句并留档，前台从名言池随机展示。">
+    <AdminPage title="名言生成" description="每天生成有明确观点的原创格言并留档，前台从名言池随机展示。">
       <div className="mx-auto max-w-3xl space-y-5">
         {!persistent ? <Notice tone="warning">当前环境没有可写入的 D1 数据库。</Notice> : null}
         {error ? <Notice tone="error">{error}</Notice> : null}
@@ -87,7 +87,7 @@ export default function QuotesConsole() {
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
               className="mt-2 w-full resize-y rounded-lg border border-[#d7d8ce] bg-white px-3 py-2 text-sm leading-6 text-[#292a24] outline-none transition focus:border-[#818472] dark:border-[#34404d] dark:bg-[#0c1118] dark:text-gray-100"
-              placeholder="写下这句名言想表达的内容"
+              placeholder="例如：为什么反复准备有时会变成拖延？"
             />
           </label>
           <AdminButton type="submit" variant="primary" disabled={generating || !persistent || !prompt.trim()} className="mt-4">

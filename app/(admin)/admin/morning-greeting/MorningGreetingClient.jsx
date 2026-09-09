@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import XImagePool from './XImagePool'
 import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
-import { X_MEME_ASSETS } from '../../../../lib/xMemeAssets'
+import { X_MEME_GROUPS } from '../../../../lib/xMemeAssets'
 import AutomationModelSelector from './AutomationModelSelector'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
@@ -81,7 +81,7 @@ function TimelineNode({ item }) {
         <p className="mb-0 text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">
           {item.recordedAt ? `执行 ${formatTime(item.recordedAt)}` : '尚无执行记录'}
         </p>
-        {item.imageUrl ? <a href={item.imageUrl} target="_blank" rel="noreferrer" aria-label={`预览${item.label}配图`} className="mt-2 block overflow-hidden rounded-lg"><img src={item.imageUrl} alt={`${item.label}配图`} loading="lazy" className="aspect-square w-full object-contain" /></a> : <p className="mb-0 mt-2 text-[11px] text-[#96988e]">{item.recordedAt ? (item.state.key === 'success' ? '纯文本' : '该次记录无配图') : '原创猫咪表情包'}</p>}
+        {item.imageUrl ? <a href={item.imageUrl} target="_blank" rel="noreferrer" aria-label={`预览${item.label}配图`} className="mt-2 block overflow-hidden rounded-lg"><img src={item.imageUrl} alt={`${item.label}配图`} loading="lazy" className="aspect-square w-full object-contain" /></a> : <p className="mb-0 mt-2 text-[11px] text-[#96988e]">{item.recordedAt ? (item.state.key === 'success' ? '纯文本' : '该次记录无配图') : '原创表情包'}</p>}
         {item.meta ? <p className="mb-0 mt-1 break-words text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">{item.meta}</p> : null}
         {item.costMicroUsd ? <p className="mb-0 mt-1 text-[11px] font-medium tabular-nums text-[#5f6257] dark:text-gray-300">X API {formatUsd(item.costMicroUsd)} / 次</p> : null}
         {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 内容 ↗</a> : null}
@@ -254,7 +254,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天 5 条：08:00 早安、09:30 交朋友、12:00 午安、15:00 蓝 V 交流、19:00 互关串门。各时段前后 30 分钟浮动，短文案搭配 emoji，图文和纯文本各 50% 概率，图文使用对应主题的原创猫咪表情包。加密观点、文化短故事、美区英文已暂停。"
+          description="每天 5 条：08:00 早安、09:30 交朋友、12:00 午安、15:00 蓝 V 交流、19:00 互关串门。各时段前后 30 分钟浮动，短文案搭配 emoji，图文和纯文本各 50% 概率，图文使用对应主题的原创表情包。加密观点、文化短故事、美区英文已暂停。"
           className="mb-4"
           actions={
             <>
@@ -265,9 +265,16 @@ export default function MorningGreetingClient() {
         >
         <div className="space-y-4">
           <TaskTimeline lastRuns={lastRuns} communityRuns={communityRuns} />
-          <Section title="本轮表情包" description="按时段匹配配图；旧图库保留作历史资料。">
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-              {Object.values(X_MEME_ASSETS).map((meme) => <figure key={meme.path} className="m-0"><img src={meme.path} alt={meme.label} className="aspect-square w-full rounded-xl object-contain" /><figcaption className="mt-2 text-center text-xs">{meme.label}</figcaption></figure>)}
+          <Section title="表情包模板 · 5 组 15 张" description="每组包含早安、午安、交友各 1 张。按日期和时段轮换风格，重试保留已选图片。">
+            <div className="space-y-5">
+              {X_MEME_GROUPS.map((group) => (
+                <section key={group.id} aria-label={group.label}>
+                  <h3 className="mb-2 text-sm font-semibold">{group.label}<span className="ml-2 text-xs font-normal text-gray-500">3 张</span></h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    {group.assets.map((meme) => <figure key={meme.id} className="m-0"><a href={meme.path} target="_blank" rel="noreferrer" aria-label={`预览${meme.label}`}><img src={meme.path} alt={meme.label} loading="lazy" className="aspect-square w-full rounded-xl object-contain" /></a><figcaption className="mt-2 text-center text-xs">{meme.label}</figcaption></figure>)}
+                  </div>
+                </section>
+              ))}
             </div>
           </Section>
           <details><summary className="cursor-pointer text-sm">历史素材库</summary><XImagePool /></details>

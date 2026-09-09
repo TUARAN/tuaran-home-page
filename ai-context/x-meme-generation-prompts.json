@@ -1,0 +1,78 @@
+{
+  "generatedWith": "Built-in image_gen tool",
+  "date": "2026-09-09",
+  "assets": [
+    {
+      "group": "pixel-frog",
+      "theme": "morning",
+      "path": "public/images/x-memes/pixel-frog/morning.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Authentic 16-bit pixel art with crisp visible square pixels, limited green and violet palette, original silly chubby green frog with wide spaced eyes. No smooth vector lines. Scene: sleepy character raising a coffee mug with a small rising sun. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"早安\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "pixel-frog",
+      "theme": "noon",
+      "path": "public/images/x-memes/pixel-frog/noon.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Authentic 16-bit pixel art with crisp visible square pixels, limited green and violet palette, original silly chubby green frog with wide spaced eyes. No smooth vector lines. Scene: happy hungry character hugging a bowl of rice, ready for lunch. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"午安\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "pixel-frog",
+      "theme": "friends",
+      "path": "public/images/x-memes/pixel-frog/friends.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Authentic 16-bit pixel art with crisp visible square pixels, limited green and violet palette, original silly chubby green frog with wide spaced eyes. No smooth vector lines. Scene: friendly character extending a small flower toward viewer, waving hello. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"交个朋友\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "clay-capybara",
+      "theme": "morning",
+      "path": "public/images/x-memes/clay-capybara/morning.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Handmade stop motion clay art, original relaxed tan capybara, visible clay fingerprints, tiny dot eyes, funny deadpan face. Soft studio lighting, tactile modeling clay props. Scene: sleepy character raising a coffee mug with a small rising sun. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"早安\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "clay-capybara",
+      "theme": "noon",
+      "path": "public/images/x-memes/clay-capybara/noon.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Handmade stop motion clay art, original relaxed tan capybara, visible clay fingerprints, tiny dot eyes, funny deadpan face. Soft studio lighting, tactile modeling clay props. Scene: happy hungry character hugging a bowl of rice, ready for lunch. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"午安\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "clay-capybara",
+      "theme": "friends",
+      "path": "public/images/x-memes/clay-capybara/friends.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Handmade stop motion clay art, original relaxed tan capybara, visible clay fingerprints, tiny dot eyes, funny deadpan face. Soft studio lighting, tactile modeling clay props. Scene: friendly character extending a small flower toward viewer, waving hello. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"交个朋友\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "crayon-duck",
+      "theme": "morning",
+      "path": "public/images/x-memes/crayon-duck/morning.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Childlike wax crayon drawing on cream paper, original fat yellow duck with orange beak, naive wonky lines, playful scribbles, rich crayon texture, funny animated gestures. Scene: sleepy character raising a coffee mug with a small rising sun. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"早安\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "crayon-duck",
+      "theme": "noon",
+      "path": "public/images/x-memes/crayon-duck/noon.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Childlike wax crayon drawing on cream paper, original fat yellow duck with orange beak, naive wonky lines, playful scribbles, rich crayon texture, funny animated gestures. Scene: happy hungry character hugging a bowl of rice, ready for lunch. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"午安\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "crayon-duck",
+      "theme": "friends",
+      "path": "public/images/x-memes/crayon-duck/friends.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Childlike wax crayon drawing on cream paper, original fat yellow duck with orange beak, naive wonky lines, playful scribbles, rich crayon texture, funny animated gestures. Scene: friendly character extending a small flower toward viewer, waving hello. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"交个朋友\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "ink-panda",
+      "theme": "morning",
+      "path": "public/images/x-memes/ink-panda/morning.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Original goofy chubby panda drawn in black ink, rough thick marker lines, expressive cartoon eyes and awkward cute smile, one small peach accent. NOT a famous meme face or human face collage, no recognizable IP. Scene: sleepy character raising a coffee mug with a small rising sun. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"早安\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "ink-panda",
+      "theme": "noon",
+      "path": "public/images/x-memes/ink-panda/noon.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Original goofy chubby panda drawn in black ink, rough thick marker lines, expressive cartoon eyes and awkward cute smile, one small peach accent. NOT a famous meme face or human face collage, no recognizable IP. Scene: happy hungry character hugging a bowl of rice, ready for lunch. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"午安\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    },
+    {
+      "group": "ink-panda",
+      "theme": "friends",
+      "path": "public/images/x-memes/ink-panda/friends.png",
+      "prompt": "Use case: stylized-concept. Create ONE standalone square Chinese internet reaction meme image for X social posts. Style: Original goofy chubby panda drawn in black ink, rough thick marker lines, expressive cartoon eyes and awkward cute smile, one small peach accent. NOT a famous meme face or human face collage, no recognizable IP. Scene: friendly character extending a small flower toward viewer, waving hello. Oversized expressive character, simple graphic composition, playful and genuinely funny, large accurate Chinese caption exactly \"交个朋友\" above character, no other text. Full square opaque pale cream background extending to every edge, all body areas filled, NO TRANSPARENCY, no cutout, no alpha, no checkerboard. No corporate template, no photo collage, no watermarks, no panels. 1024x1024 square."
+    }
+  ]
+}

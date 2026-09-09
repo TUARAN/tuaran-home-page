@@ -3,6 +3,7 @@ import test from 'node:test'
 import { readFile } from 'node:fs/promises'
 import { DatabaseSync } from 'node:sqlite'
 import * as assetLibrary from '../../lib/xPostAssets.js'
+import { pickXMemeAsset, X_MEME_VERSION } from '../../lib/xMemeAssets.js'
 import * as greetings from '../../lib/morningGreeting.js'
 import * as greetingLlm from '../../lib/dailyGreetingLlm.js'
 import * as culture from '../../lib/dailyCultureStory.js'
@@ -675,14 +676,31 @@ test('meme assets match the slot, cache in R2, and never fall back to old photos
   let fetches = 0
   const options = { ...fixture, asset, memeOrigin: 'https://example.com', fetchImpl: async (url) => {
     fetches++
-    assert.equal(url.pathname, '/images/x-memes/noon.png')
+    assert.equal(url.pathname, pickXMemeAsset({ slot: 'noon', date: '2026-09-09' }).path)
     return new Response(Buffer.from(PNG, 'base64'))
   } }
   const first = await assetLibrary.prepareXImage(options)
   assert.equal(first.type, 'image/png')
-  assert.match(asset.row.object_key, /memes\/cat-v1\/noon.png/)
+  assert.equal(asset.row.object_key, `images/x-posts/memes/${X_MEME_VERSION}/${pickXMemeAsset({ slot: 'noon', date: '2026-09-09' }).id}.png`)
   assert.deepEqual(await (await assetLibrary.prepareXImage(options)).arrayBuffer(), await first.arrayBuffer())
   assert.equal(fetches, 1)
   fixture.objects.clear()
+  await assert.rejects(assetLibrary.prepareXImage(options), /X_IMAGE_STORED_OBJECT_MISSING/)
+  asset.row.object_key = ''
   await assert.rejects(assetLibrary.prepareXImage({ ...options, fetchImpl: async () => new Response('<html>404</html>') }), /X_MEME_INVALID_PNG/)
+})
+
+
+test('a saved meme from a previous catalog survives style rotation on retry', async (t) => {
+  const fixture = await assetFixture(t)
+  const asset = await assetLibrary.claimXAsset(fixture.db, { date: '2026-09-09', slot: 'morning', contentType: 'greeting' })
+  const key = 'images/x-posts/memes/cat-v1/morning.png'
+  fixture.objects.set(key, Uint8Array.from(Buffer.from(PNG, 'base64')))
+  await assetLibrary.updateXAsset(fixture.db, asset, { object_key: key, mime_type: 'image/png', image_model: 'previous catalog' })
+  const image = await assetLibrary.prepareXImage({ ...fixture, asset, memeOrigin: 'https://example.com', fetchImpl: async () => { throw new Error('must reuse saved meme') } })
+  assert.ok(image.size)
+  assert.equal(asset.row.object_key, key)
+  assert.equal(asset.row.image_model, 'previous catalog')
+  fixture.sqlite.exec('UPDATE x_post_assets SET lease_until = 0')
+  await assert.rejects(assetLibrary.prepareXImage({ ...fixture, asset, memeOrigin: 'https://example.com' }), /LEASE_LOST/)
 })

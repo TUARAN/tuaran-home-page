@@ -12,18 +12,19 @@
 
 - 早午安围绕互关交友文化，三条社区帖分别覆盖认识新朋友、蓝 V 交流、互关串门。文案约 35—75 个汉字，自然使用 2—4 个 emoji，欢迎蓝 V 与非蓝 V。避免秒回关、百分百互关等承诺，以及虚构已经关注某人的说法。
 - 新草稿仍按 50% 图文、50% 纯文本选择形式；重试保持已保存的形式与文案。图文失败不改发纯文本。
-- 五张原创猫咪表情包位于 `public/images/x-memes/`，映射见 `lib/xMemeAssets.js`。图文按时段选择对应图片，脱离旧商务照片素材池，不调用在线生图服务。
-- 第一次使用时从当前发布服务同源的静态路径读取 PNG，检查文件签名与 5 MiB 大小上限，缓存到 R2 `MEDIA` 的 `images/x-posts/memes/cat-v1/<slot>.png`。之后复用 R2；换图需更新资源版本，避免旧缓存覆盖新图。
+- 正式模板共 15 张，分为涂鸦猫咪、像素青蛙、黏土水豚、蜡笔小鸭、黑白熊猫 5 组，每组包含早安、午安、交友各 1 张。猫咪组复用现有 3 张，另外 4 组新增 12 张。图片位于 `public/images/x-memes/`，分组与映射以 `lib/xMemeAssets.js` 为准；不调用在线生图服务。
+- 按上海日期和时段稳定轮换：五个时段分别使用不同风格，五天覆盖全部 15 张（某时段抽中纯文本时不上传图片）。早安、午安各自匹配主题，三个社区时段使用交友款。旧猫咪蓝 V、招手图保留作历史资源，不计入这 15 张正式模板。
+- 第一次使用时从当前发布服务同源的静态路径读取 PNG，检查文件签名与 5 MiB 大小上限，缓存到 R2 `MEDIA` 的 `images/x-posts/memes/styles-v2/<group>-<theme>.png`。之后复用 R2；换图需更新资源版本。已经保存到草稿的表情包对象键优先复用，包括旧版本，确保重试不换图；旧对象缺失时停止并报错。
 - 原图由 Codex imagegen 制作，仓库包含实际部署资源；无需另跑图库上传或数据库迁移。发布任务仍由配置的 DeepSeek/Ollama 模型生成文案。
 
 ## 状态与后台
 
 D1 `x_post_assets` 保留每日时段独立记录、租约、文案、R2 键、媒体 ID 和 X 发布结果。发布前写入意图，响应不明确时进入 `publish-unknown`，禁止自动重发。成功任务当日不重复发布。
 
-`/admin/morning-greeting` 展示五个当前时段、每个时段的最近执行记录、本轮表情包与成本。旧图库折叠为“历史素材库”，仍可查看记录。素材记录 API 保持站长鉴权；新表情包作为公开静态图片可直接访问。
+`/admin/morning-greeting` 展示五个当前时段、每个时段的最近执行记录、按风格分组的 15 张表情包与成本。旧图库折叠为“历史素材库”，仍可查看记录。素材记录 API 保持站长鉴权；新表情包作为公开静态图片可直接访问。
 
 ## 验证
 
-`node --experimental-sqlite --test tests/morning-greeting.test.mjs tests/x-community-posts.test.mjs tests/x-crypto-posts.test.mjs tests/distribution/x-distribution.test.mjs`
+`node --experimental-sqlite --test tests/morning-greeting.test.mjs tests/x-community-posts.test.mjs tests/x-meme-assets.test.mjs tests/x-crypto-posts.test.mjs tests/distribution/x-distribution.test.mjs`
 
-覆盖排期、手动/定时暂停拦截、幂等、防重复发布、图片匹配、R2 缓存、无效 PNG 拒绝以及图文失败不降级为纯文本。测试使用模拟 X 服务，不发送真实帖子。
+覆盖排期、手动/定时暂停拦截、幂等、防重复发布、15 张模板分组、五天轮换覆盖、图片匹配、跨版本草稿复用、R2 缓存、无效 PNG 拒绝以及图文失败不降级为纯文本。测试使用模拟 X 服务，不发送真实帖子。

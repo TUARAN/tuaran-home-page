@@ -3,9 +3,10 @@ import { Suspense } from 'react'
 import ArticleListItem from './ArticleListItem'
 import ArticlesHeaderClient from './ArticlesHeaderClient'
 import ArticlesIndexClient from './ArticlesIndexClient'
-import { buildKnowledgeItems } from './buildKnowledgeItems'
+import { readRuntimeKnowledgeItems } from '../../../lib/knowledgeRuntime'
 
-export const dynamic = 'force-static'
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '统一内容目录',
@@ -63,8 +64,8 @@ function ArticlesIndexFallback({ items }) {
   )
 }
 
-export default function ArticlesPage() {
-  const items = buildKnowledgeItems()
+export default async function ArticlesPage() {
+  const items = await readRuntimeKnowledgeItems()
 
   return (
     <main className="h5-articles-page mx-auto w-full max-w-[1120px] px-0 py-2 md:px-4 md:py-10">

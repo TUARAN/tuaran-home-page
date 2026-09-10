@@ -16,7 +16,16 @@ const nextConfig = {
   reactStrictMode: true,
   distDir: process.env.NEXT_DIST_DIR || '.next',
   transpilePackages: ['@huggingface/transformers'],
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, nextRuntime }) => {
+    // Static pages keep their build-time data. Edge functions load catalog data from ASSETS/D1.
+    if (nextRuntime === 'edge') {
+      // PPT export runs only after a browser click; its Node dependencies cannot enter Edge SSR.
+      config.resolve.alias = { ...config.resolve.alias, 'pptxgenjs$': false }
+      const webpack = require('webpack')
+      config.plugins.push(new webpack.NormalModuleReplacementPlugin(/(?:^|\/)contentPipeline(?:\.js)?$/, (resource) => {
+        resource.request = path.resolve(__dirname, 'lib/contentPipelineRuntime.js')
+      }))
+    }
     // 后台路线图直接读取文档正本，构建时内联，不依赖 Edge 文件系统。
     config.module.rules.push({
       test: /(?:seo-geo-growth-roadmap|ui-ux-audit-roadmap|site-design-language|loading-motion-system)\.md$/,

@@ -12,8 +12,8 @@ import { CONTENT_PIPELINE_TYPE_LABELS, getRelatedContent } from '../../../lib/co
  * 挂上这个组件即接入评论 + 相关阅读；解锁与 PV 由页面既有的
  * RanbiPaywall / ContentPvBeacon 负责，互不重复。
  */
-export default function ContentEngagement({ contentKey, width = 'narrow', relatedLimit = 4 }) {
-  const related = getRelatedContent(contentKey, { limit: relatedLimit })
+export default async function ContentEngagement({ contentKey, width = 'narrow', relatedLimit = 4 }) {
+  const related = await getRelatedContent(contentKey, { limit: relatedLimit })
 
   return (
     <PageContainer as="section" width={width} className="pb-12">

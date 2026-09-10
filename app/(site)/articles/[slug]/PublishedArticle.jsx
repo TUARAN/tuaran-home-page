@@ -10,7 +10,8 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
-import { renderMarkdown } from '../../../../lib/research/markdown'
+import { isMarkdownDocument } from '../../../../lib/articleDocument.mjs'
+import { renderMarkdown, extractToc } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/contentTaxonomy'
 
 function dateLabel(value) {
@@ -60,7 +61,7 @@ export default function PublishedArticle({ article, siteUrl }) {
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
   }
   const articleKey = `article:${article.slug}`
-  const tocItems = getArticlePostToc(article.content)
+  const tocItems = isMarkdownDocument(article.content) ? extractToc(article.content.markdown) : getArticlePostToc(article.content)
 
   return (
     <div className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-8">

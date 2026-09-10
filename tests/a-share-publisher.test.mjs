@@ -13,8 +13,8 @@ test('没有满 3 天的待复核稿时跳过自动发布', async () => {
           calls.push({ sql, values })
           return this
         },
-        async first() {
-          return null
+        async all() {
+          return { results: [] }
         },
       }
     },
@@ -23,6 +23,6 @@ test('没有满 3 天的待复核稿时跳过自动发布', async () => {
   const result = await autoPublishOldestDueDraft({ db, env: {}, now })
   assert.deepEqual(result, { ok: true, skipped: true, reason: 'none-due' })
   assert.match(calls[0].sql, /status = 'pending'/)
-  assert.match(calls[0].sql, /ORDER BY updated_at ASC LIMIT 1/)
+  assert.match(calls[0].sql, /ORDER BY updated_at ASC LIMIT 20/)
   assert.deepEqual(calls[0].values, [now - AUTO_PUBLISH_DELAY_MS])
 })

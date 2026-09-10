@@ -1,5 +1,5 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getHomeRecommendationCatalog } from '../../../../lib/homeRecommendationCatalog'
+import { getRuntimeHomeRecommendationCatalog } from '../../../../lib/homeRecommendationRuntime'
 import {
   getHomeRecommendationSettings,
   setHomeRecommendationSettings,
@@ -13,7 +13,7 @@ export async function GET(req) {
   if (!auth.ok) return auth.response
   const [settings, catalog] = await Promise.all([
     getHomeRecommendationSettings(),
-    Promise.resolve(getHomeRecommendationCatalog()),
+    getRuntimeHomeRecommendationCatalog(),
   ])
   return Response.json({ settings, catalog })
 }

@@ -19,6 +19,7 @@ const fixture = [
 const discoverySource = (await read('lib/articleDiscovery.js')).replace(/^import .*\n/gm, '')
 const discoveryUrl = moduleUrl(`const articles = [{slug:'static-post'}, {slug:'external-post', href:'https://example.com'}];
 const RESEARCH_ARTICLE_REDIRECTS = {'research-alias':'/articles/research/topics/example'};
+const readContentCatalog = async () => ({articles, researchRedirects:RESEARCH_ARTICLE_REDIRECTS});
 const listPublishedArticlePosts = async () => ${JSON.stringify(fixture)};
 ${discoverySource}`)
 const discovery = await import(discoveryUrl)
@@ -33,7 +34,9 @@ test('published records only, canonical detail precedence, and duplicate slugs',
 async function route(path, asset, postsModule = discoveryUrl) {
   const assetsUrl = moduleUrl(`export const readDiscoveryAsset = async () => ${JSON.stringify(asset)};
 export const DISCOVERY_HEADERS = {'Cache-Control':'no-store'};`)
+  const researchUrl = moduleUrl('export const researchDiscoverySnapshot = async () => []; export const applyResearchDiscovery = (xml) => xml;')
   const source = (await read(path))
+    .replace(/'[^']*researchDiscovery'/, JSON.stringify(researchUrl))
     .replace(/'[^']*articleDiscovery'/, JSON.stringify(postsModule))
     .replace(/'[^']*discoveryAssets'/, JSON.stringify(assetsUrl))
   return (await import(moduleUrl(source))).GET(new Request('https://preview.example/'))

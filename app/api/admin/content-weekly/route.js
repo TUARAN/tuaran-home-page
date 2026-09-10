@@ -1,3 +1,5 @@
+import { readContentCatalog } from '../../../../lib/contentCatalogRuntime'
+import { loadContentKeyMeta } from '../../../../lib/contentKeyLite'
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { resolveArticleKey, resolveContentKey } from '../../../../lib/articleLinks'
 import { getD1 } from '../../../../lib/d1'
@@ -53,9 +55,9 @@ function typeRows(rows) {
     .sort((a, b) => b.pv - a.pv)
 }
 
-function resolveReadRows(rows) {
+function resolveReadRows(rows, metadata) {
   return rows.map((row) => {
-    const resolved = resolveContentKey(row.category, row.slug)
+    const resolved = resolveContentKey(row.category, row.slug, metadata)
     const pv = Number(row.pv) || 0
     const previousPv = Number(row.previous_pv) || 0
     return {
@@ -240,6 +242,14 @@ export async function GET(req) {
       db.prepare("SELECT MIN(created_at) AS available_from, MAX(created_at) AS available_to FROM research_pv_hits WHERE quality = 'qualified'").first(),
     ])
 
+    const archived = await readContentCatalog()
+    const metadata = new Map(archived.entries.map((entry) => [entry.contentKey, { title: entry.title, href: entry.href }]))
+    const keys = [...contentRows, ...todayContentRows].map((row) => ['companies', 'topics', 'people'].includes(row.category) ? `research:${row.category}:${row.slug}` : `${row.category}:${row.slug}`)
+    keys.push(...likeRows.map((row) => row.article_key), ...commentRows.map((row) => row.article_key))
+    for (let offset = 0; offset < keys.length; offset += 100) {
+      for (const [key, value] of await loadContentKeyMeta(db, keys.slice(offset, offset + 100))) metadata.set(key, value)
+    }
+
     const pv = Number(overviewRow?.pv) || 0
     const uv = Number(overviewRow?.uv) || 0
     const returning = Number(returningRow?.returning_count) || 0
@@ -265,13 +275,13 @@ export async function GET(req) {
       }
     }
     const likes = likeRows.map((row) => {
-      const resolved = resolveArticleKey(row.article_key)
+      const resolved = resolveArticleKey(row.article_key, metadata)
       const total = Number(row.total) || 0
       const previousTotal = Number(row.previous_total) || 0
       return { key: row.article_key, title: resolved.title, href: resolved.href, total, previousTotal, delta: total - previousTotal }
     })
     const comments = commentRows.map((row) => {
-      const resolved = resolveArticleKey(row.article_key)
+      const resolved = resolveArticleKey(row.article_key, metadata)
       return {
         id: Number(row.id), articleKey: row.article_key || '', articleTitle: resolved.title,
         href: resolved.href ? `${resolved.href}#comments` : null,
@@ -298,7 +308,7 @@ export async function GET(req) {
         excludedLegacyPv: Number(overviewRow?.excluded_pv) || 0,
       },
       series: buildSeries(seriesRows, periodStart, days),
-      topContent: resolveReadRows(contentRows),
+      topContent: resolveReadRows(contentRows, metadata),
       byType: typeRows(categoryRows),
       sources: sourceRows.map(mapSource),
       audience: {
@@ -308,7 +318,7 @@ export async function GET(req) {
       today: {
         pv: Number(todayOverview?.pv) || 0,
         uv: Number(todayOverview?.uv) || 0,
-        topContent: resolveReadRows(todayContentRows),
+        topContent: resolveReadRows(todayContentRows, metadata),
         sources: todaySourceRows.map(mapSource),
         visitors: todayVisitorRows.map(mapVisitor),
       },

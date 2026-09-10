@@ -17,6 +17,7 @@ import {
 import AdminPage from '../../components/ui/AdminPage'
 import AdminButton from '../../components/ui/AdminButton'
 import ArticlePostBody from '../../../(site)/components/ArticlePostBody'
+import { isMarkdownDocument, markdownFileToDraft, MAX_MARKDOWN_BYTES } from '../../../../lib/articleDocument.mjs'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const EMPTY_DOC = { type: 'doc', content: [{ type: 'paragraph' }] }
@@ -49,6 +50,10 @@ export default function ArticleEditor({ articleId = '' }) {
   const [preview, setPreview] = useState(false)
   const [slugTouched, setSlugTouched] = useState(Boolean(articleId))
   const fileRef = useRef(null)
+  const markdownFileRef = useRef(null)
+  const markdownMode = isMarkdownDocument(content)
+  const contentRef = useRef(content)
+  contentRef.current = content
   const savingRef = useRef(false)
 
   const editor = useEditor({
@@ -82,7 +87,7 @@ export default function ArticleEditor({ articleId = '' }) {
         setTitle(article.title); setSlug(article.slug); setSummary(article.summary)
         setCoverUrl(article.coverUrl); setTags(article.tags.join(', ')); setStatus(article.status)
         setRevision(article.revision); setContent(article.content); setContentText(article.contentText)
-        editor.commands.setContent(article.content || EMPTY_DOC, { emitUpdate: false })
+        editor.commands.setContent(isMarkdownDocument(article.content) ? EMPTY_DOC : article.content || EMPTY_DOC, { emitUpdate: false })
         setLoaded(true); setDirty(false); setSaveLabel('已保存')
       })
       .catch((err) => { if (alive) { setError(err.message); setLoaded(true) } })
@@ -161,8 +166,25 @@ export default function ArticleEditor({ articleId = '' }) {
     const res = await fetch('/api/admin/articles/images', { method: 'POST', body: form })
     const data = await res.json()
     if (!res.ok) { setError(data?.error || '图片上传失败'); setSaveLabel('上传失败'); return }
-    editor?.chain().focus().setImage({ src: data.url, alt: file.name }).run()
+    if (isMarkdownDocument(contentRef.current)) {
+      const markdown = `${contentRef.current.markdown}\n\n![${file.name.replace(/[\[\]\n]/g, '')}](${data.url})\n`
+      setContent({ type: 'markdown', markdown }); setContentText(markdown); setDirty(true)
+    } else editor?.chain().focus().setImage({ src: data.url, alt: file.name }).run()
     setSaveLabel('图片已插入')
+  }
+
+  async function importMarkdown(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      if (contentText.trim()) throw new Error('请在空白文章中导入，避免覆盖已有正文。')
+      if (file.size > MAX_MARKDOWN_BYTES) throw new Error('Markdown 文件不能超过 256 KiB。')
+      const draft = markdownFileToDraft(await file.text(), file.name)
+      setContent(draft.content); setContentText(draft.contentText)
+      if (!title) { setTitle(draft.title); if (!slugTouched) setSlug(slugify(draft.title)) }
+      setDirty(true)
+    } catch (err) { setError(err.message) }
   }
 
   const toolbar = editor ? [
@@ -196,15 +218,21 @@ export default function ArticleEditor({ articleId = '' }) {
             </div>
             <div className="overflow-hidden rounded-xl border border-[#e2e3da] bg-white dark:border-[#1e2733] dark:bg-[#10161f]">
               <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 border-b border-[#eceee6] bg-white/95 px-2 py-2 backdrop-blur dark:border-[#1b2430] dark:bg-[#10161f]/95">
-                {toolbar.map(([label, active, action, icon]) => <ToolButton key={label} title={label} active={active} onClick={action}>{icon}</ToolButton>)}
+                {!markdownMode && toolbar.map(([label, active, action, icon]) => <ToolButton key={label} title={label} active={active} onClick={action}>{icon}</ToolButton>)}
+                {!contentText.trim() && <>
+                  <button type="button" onClick={() => markdownFileRef.current?.click()} className="px-2 text-sm">导入 Markdown</button>
+                  <button type="button" onClick={() => { setContent(markdownMode ? EMPTY_DOC : { type: 'markdown', markdown: '' }); setContentText(''); setDirty(true) }} className="px-2 text-sm">{markdownMode ? '使用富文本' : '使用 Markdown'}</button>
+                </>}
+                <input ref={markdownFileRef} type="file" accept=".md,text/markdown" className="hidden" onChange={importMarkdown} />
+                {markdownMode && <span className="px-2 text-xs">Markdown</span>}
                 <ToolButton title="上传图片" onClick={() => fileRef.current?.click()}><IconPhoto size={18} /></ToolButton>
                 <span className="mx-1 h-5 w-px bg-[#e2e3da] dark:bg-[#2d3744]" />
-                <ToolButton title="撤销" onClick={() => editor?.chain().focus().undo().run()}><IconArrowBackUp size={18} /></ToolButton>
-                <ToolButton title="重做" onClick={() => editor?.chain().focus().redo().run()}><IconArrowForwardUp size={18} /></ToolButton>
-                <span className="ml-auto px-2 font-mono text-[11px] text-[#8b8d82]">{editor?.storage.characterCount.characters() || 0} 字</span>
+                {!markdownMode && <ToolButton title="撤销" onClick={() => editor?.chain().focus().undo().run()}><IconArrowBackUp size={18} /></ToolButton>}
+                {!markdownMode && <ToolButton title="重做" onClick={() => editor?.chain().focus().redo().run()}><IconArrowForwardUp size={18} /></ToolButton>}
+                <span className="ml-auto px-2 font-mono text-[11px] text-[#8b8d82]">{markdownMode ? content.markdown.length : editor?.storage.characterCount.characters() || 0} 字</span>
                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" className="hidden" onChange={uploadImage} />
               </div>
-              <EditorContent editor={editor} className="article-editor min-h-[520px]" />
+              {markdownMode ? <textarea aria-label="Markdown 正文" value={content.markdown} onChange={(event) => { const markdown = event.target.value; setContent({ type: 'markdown', markdown }); setContentText(markdown); setDirty(true) }} className="min-h-[520px] w-full resize-y bg-transparent p-5 font-mono text-sm leading-7 outline-none" /> : <EditorContent editor={editor} className="article-editor min-h-[520px]" />}
             </div>
           </div>
           {preview ? <aside className="min-w-0 rounded-xl border border-[#e2e3da] bg-white p-5 dark:border-[#1e2733] dark:bg-[#10161f]"><p className="mb-4 border-b border-[#eceee6] pb-2 font-mono text-xs uppercase tracking-wider text-[#8b8d82] dark:border-[#1b2430]">实时预览</p><h1 className="font-serif text-3xl font-semibold text-[#333] dark:text-gray-100">{title || '未命名文章'}</h1>{summary ? <p className="mt-3 text-sm leading-7 text-[#666] dark:text-gray-400">{summary}</p> : null}<ArticlePostBody content={content} className="mt-8" /></aside> : null}

@@ -1,10 +1,10 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
+import { syncBuildContentToD1 } from '../../../../lib/contentIndexSync'
 import { getD1 } from '../../../../lib/d1'
 import {
   deleteContentEntry,
   listContentIndex,
   normalizeContentEntryInput,
-  syncBuildContentToD1,
   upsertContentEntry,
 } from '../../../../lib/contentIndex'
 
@@ -44,7 +44,10 @@ export async function POST(req) {
     if (body?.action === 'upsert') {
       const { entry, error } = normalizeContentEntryInput(body?.entry, { source: 'manual' })
       if (error) return Response.json({ error }, { status: 400 })
-      await upsertContentEntry(getD1(), entry)
+      const db = getD1()
+      const current = await db.prepare('SELECT source FROM content_index WHERE content_key = ?').bind(entry.contentKey).first()
+      if (current?.source === 'git') return Response.json({ error: 'GIT_DOCUMENT_USE_IMPORT' }, { status: 409 })
+      await upsertContentEntry(db, entry)
       return Response.json({ ok: true, entry })
     }
 
@@ -62,7 +65,7 @@ export async function DELETE(req) {
   if (!contentKey) return Response.json({ error: 'MISSING_CONTENT_KEY' }, { status: 400 })
   try {
     const result = await deleteContentEntry(contentKey)
-    return Response.json(result, { status: result.ok ? 200 : 500 })
+    return Response.json(result, { status: result.ok ? 200 : result.error === 'GIT_DOCUMENT_USE_IMPORT' ? 409 : 500 })
   } catch (err) {
     return Response.json({ error: 'DB_ERROR', message: String(err?.message || err) }, { status: 500 })
   }

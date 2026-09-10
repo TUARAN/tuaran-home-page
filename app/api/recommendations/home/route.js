@@ -1,11 +1,12 @@
+import { getRuntimeHomeRecommendationCatalog } from '../../../../lib/homeRecommendationRuntime'
 import { getHomeRecommendationSettings } from '../../../../lib/recommendationSettings'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const settings = await getHomeRecommendationSettings()
-  return Response.json({ settings }, {
-    headers: { 'Cache-Control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300' },
+  const [settings, catalog] = await Promise.all([getHomeRecommendationSettings(), getRuntimeHomeRecommendationCatalog()])
+  return Response.json({ settings, catalog }, {
+    headers: { 'Cache-Control': 'no-store' },
   })
 }

@@ -20,13 +20,15 @@ async function fixture(t) {
   const sqlite = new DatabaseSync(':memory:')
   t.after(() => sqlite.close())
   sqlite.exec(await readFile(new URL('../migrations/0081_crypto_research.sql', import.meta.url), 'utf8'))
-  const db = { prepare(sql) {
+  for (const migration of ['0024_article_posts.sql', '0035_content_index.sql', '0089_content_documents.sql']) sqlite.exec(await readFile(new URL('../migrations/' + migration, import.meta.url), 'utf8'))
+  const db = { async batch(statements) { sqlite.exec('BEGIN'); try { for (const statement of statements) await statement.run(); sqlite.exec('COMMIT') } catch (error) { sqlite.exec('ROLLBACK'); throw error } }, prepare(sql) {
     const statement = sqlite.prepare(sql)
     function bound(args = []) {
       return {
         bind: (...values) => bound(values),
         async run() { return { meta: { changes: Number(statement.run(...args).changes) } } },
         async all() { return { results: statement.all(...args) } },
+        async first() { return statement.get(...args) || null },
       }
     }
     return bound()
@@ -61,7 +63,12 @@ test('与 A 股使用相同 72 小时窗口，未到期不发布，到期自动�
   assert.equal(f.row('due').publish_commit, 'test-commit')
   const body = JSON.parse(f.requests.find((request) => request.method === 'PUT').body)
   assert.equal(body.branch, 'main')
-  assert.match(body.message, /auto-publish crypto observation/)
+  assert.match(body.message, /^\[CF-Pages-Skip\] content: auto-publish crypto observation/)
+  const document = f.sqlite.prepare("SELECT * FROM content_documents WHERE content_key='research:topics:crypto-bitcoin'").get()
+  assert.equal(document.status, 'published')
+  assert.match(JSON.parse(document.body_json).content, /测试内容/)
+  assert.equal(document.source_path, 'research/topics/2026-08-25-crypto-bitcoin.md')
+  assert.equal(f.sqlite.prepare("SELECT source FROM content_index WHERE content_key='research:topics:crypto-bitcoin'").get().source, 'git')
   const article = Buffer.from(body.content, 'base64').toString('utf8')
   assert.match(article, /^review_ready: false$/m)
   assert.match(article, /^ad_eligible: false$/m)

@@ -1,6 +1,6 @@
 import { getD1 } from '../../../lib/d1'
 import { RESEARCH_CATEGORIES } from '../../../lib/research/categories'
-import { RESEARCH_ENTRY_KEY_SET } from '../../../lib/research/catalog'
+import { readPublishedResearchKeys } from '../../../lib/researchRuntime'
 import {
   CONTENT_PV_CATEGORIES,
   CONTENT_PV_KEY_SET,
@@ -18,8 +18,8 @@ const CATEGORY_SET = new Set([...RESEARCH_CATEGORIES, ...CONTENT_PV_CATEGORIES])
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,120}$/i
 
 /** 这个 key 是否在可统计白名单（调研条目或登记过的内容页） */
-function isTrackableKey(key) {
-  return RESEARCH_ENTRY_KEY_SET.has(key)
+function isTrackableKey(key, researchKeys) {
+  return researchKeys.has(key)
     || CONTENT_PV_KEY_SET.has(key)
     || STATIC_ARTICLE_PV_KEY_SET.has(key)
 }
@@ -155,11 +155,14 @@ function dbUnavailable() {
 export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const rawKeys = searchParams.get('keys') || ''
+  let researchKeys
+  try { researchKeys = await readPublishedResearchKeys() }
+  catch { return Response.json({ error: 'CONTENT_CATALOG_UNAVAILABLE' }, { status: 503 }) }
   const keys = rawKeys
     .split(',')
     .map(parseKey)
     .filter(Boolean)
-    .filter((item) => isTrackableKey(item.key) || item.category === 'article')
+    .filter((item) => isTrackableKey(item.key, researchKeys) || item.category === 'article')
     .slice(0, MAX_KEYS)
 
   if (!keys.length) {
@@ -223,7 +226,11 @@ export async function POST(req) {
     return dbUnavailable()
   }
 
-  if (!isTrackableKey(entryKey) && !(category === 'article' && await isPublishedArticle(db, slug))) {
+  let researchKeys
+  try { researchKeys = await readPublishedResearchKeys() }
+  catch { return Response.json({ error: 'CONTENT_CATALOG_UNAVAILABLE' }, { status: 503 }) }
+
+  if (!isTrackableKey(entryKey, researchKeys) && !(category === 'article' && await isPublishedArticle(db, slug))) {
     return Response.json({ error: 'CONTENT_ENTRY_NOT_FOUND' }, { status: 404 })
   }
 

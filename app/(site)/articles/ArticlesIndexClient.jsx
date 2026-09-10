@@ -15,9 +15,7 @@ import {
   SUBJECT_KEYS,
   SUBJECT_META,
   getContentGroup,
-  taxonomyForManualEntry,
 } from '../../../lib/contentTaxonomy'
-import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
 
 const PAGE_SIZE = 24
@@ -101,48 +99,6 @@ function buildDirectoryUrl(filters) {
   return suffix ? `/articles?${suffix}` : '/articles'
 }
 
-function manualEntriesToItems(entries, existingItems) {
-  if (!Array.isArray(entries) || !entries.length) return []
-  const seenHrefs = new Set(existingItems.map((item) => item.href))
-  const items = []
-
-  for (const entry of entries) {
-    if (!entry?.href || !entry?.title || seenHrefs.has(entry.href)) continue
-    if (!['article', 'research', 'resource'].includes(entry.type)) continue
-    const kind =
-      entry.type === 'article'
-        ? 'posts'
-        : entry.type === 'resource'
-          ? 'resources'
-          : ['companies', 'people', 'topics'].includes(entry.category)
-            ? entry.category
-            : 'topics'
-    const pvKey =
-      entry.type === 'research' && entry.slug
-        ? `${entry.category || 'topics'}/${entry.slug}`
-        : entry.type === 'article' && entry.slug
-          ? `article/${entry.slug}`
-          : entry.type === 'resource' && entry.slug
-            ? `resource/${entry.slug}`
-            : ''
-    const taxonomy = taxonomyForManualEntry(entry)
-    items.push({
-      id: `content-db:${entry.contentKey}`,
-      kind,
-      tagLabel: CONTENT_GROUP_META[getContentGroup(taxonomy.contentKind)]?.label || '内容',
-      title: entry.title,
-      summary: entry.summary || '',
-      date: entry.date || '',
-      sortKey: researchSortKey(entry.date),
-      href: entry.href,
-      ...taxonomy,
-      ...(pvKey ? { pvKey, pv: null } : {}),
-    })
-  }
-
-  return items
-}
-
 function itemMatches(item, filters) {
   if (filters.group !== 'all' && getContentGroup(item.contentKind) !== filters.group) return false
   if (filters.subject !== 'all' && !item.subjects?.includes(filters.subject)) return false
@@ -184,26 +140,12 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   useEffect(() => {
     let alive = true
-    Promise.all([
-      fetch('/api/articles', { cache: 'no-store' })
-        .then((response) => (response.ok ? response.json() : null))
-        .catch(() => null),
-      fetch('/api/content?source=manual', { cache: 'no-store' })
-        .then((response) => (response.ok ? response.json() : null))
-        .catch(() => null),
-    ])
-      .then(([articlesData, contentData]) => {
-        if (!alive) return
-        const dbArticles = Array.isArray(articlesData?.articles) ? articlesData.articles : []
-        const base = [...new Map([...dbArticles, ...staticItems].map((item) => [item.href, item])).values()]
-        const manualItems = manualEntriesToItems(contentData?.entries, base)
-        if (!dbArticles.length && !manualItems.length) return
-        setItems(
-          [...base, ...manualItems].sort((a, b) =>
-            compareSortKeyDesc(a.sortKey, b.sortKey, a.id, b.id),
-          ),
-        )
+    fetch('/api/content?view=knowledge', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (alive && Array.isArray(data?.items)) setItems(data.items)
       })
+      .catch(() => {})
       .finally(() => {
         if (alive) setCatalogReady(true)
       })

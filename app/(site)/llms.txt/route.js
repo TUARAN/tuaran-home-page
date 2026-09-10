@@ -1,4 +1,4 @@
-import { CATEGORY_META, listResearch } from '../../../lib/research/loader'
+import { CATEGORY_META, listResearch } from '../../../lib/research/archive'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600

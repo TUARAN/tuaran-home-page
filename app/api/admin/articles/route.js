@@ -1,5 +1,7 @@
+import { isReservedArticleSlug } from '../../../../lib/articleReservedSlugs'
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { EMPTY_ARTICLE_DOC, normalizeSlug, normalizeTags, rowToArticlePost } from '../../../../lib/articlePosts'
+import { normalizeArticleDocument } from '../../../../lib/articleDocument.mjs'
 import { getD1 } from '../../../../lib/d1'
 
 export const runtime = 'edge'
@@ -34,7 +36,10 @@ export async function POST(req) {
   const now = Date.now()
   const title = String(body?.title || '').trim().slice(0, 200)
   const slug = normalizeSlug(body?.slug || title) || `draft-${id.slice(0, 8)}`
-  const content = body?.content && typeof body.content === 'object' ? body.content : EMPTY_ARTICLE_DOC
+  if (await isReservedArticleSlug(slug)) return Response.json({ error: 'RESERVED_SLUG' }, { status: 409 })
+  const document = normalizeArticleDocument(body?.content || EMPTY_ARTICLE_DOC, body?.contentText)
+  if (document.error) return Response.json({ error: document.error }, { status: 400 })
+  const { content, contentText } = document
   const tags = normalizeTags(body?.tags)
   try {
     await db.prepare(
@@ -44,12 +49,13 @@ export async function POST(req) {
     ).bind(
       id, slug, title, String(body?.summary || '').trim().slice(0, 500),
       String(body?.coverUrl || '').trim().slice(0, 1000), JSON.stringify(content),
-      String(body?.contentText || '').slice(0, 200000), JSON.stringify(tags), now, now
+      contentText, JSON.stringify(tags), now, now
     ).run()
     const row = await db.prepare('SELECT * FROM article_posts WHERE id = ?').bind(id).first()
     return Response.json({ ok: true, article: rowToArticlePost(row) }, { status: 201 })
   } catch (error) {
     const message = String(error?.message || error)
+    if (message.includes('CONTENT_ROUTE_CONFLICT')) return Response.json({ error: 'RESERVED_SLUG' }, { status: 409 })
     const status = message.includes('UNIQUE') ? 409 : 500
     return Response.json({ error: status === 409 ? 'SLUG_EXISTS' : 'ARTICLE_CREATE_FAILED', detail: message }, { status })
   }

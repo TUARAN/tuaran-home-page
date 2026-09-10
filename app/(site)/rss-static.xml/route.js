@@ -1,7 +1,7 @@
-import { articles } from '../articles/articlesData'
+import { articles } from '../../../lib/articleBuildArchive'
 import { getAllFeedItems } from '../feed/data'
 import { researchDateTimeIso } from '../../../lib/research/datetime'
-import { CATEGORY_META, getResearchEntry, listResearch } from '../../../lib/research/loader'
+import { CATEGORY_META, getResearchEntry, listResearch } from '../../../lib/research/archive'
 import { renderMarkdown } from '../../../lib/research/markdown'
 import { listResourceRssEntries, listRichPageRssEntries } from '../../../lib/rssContentEntries'
 

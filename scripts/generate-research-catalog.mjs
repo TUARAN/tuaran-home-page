@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const root = process.cwd()
+const archiveKeys = new Set(JSON.parse(fs.readFileSync(path.join(root, 'data/content-archive.json'), 'utf8')).researchKeys)
 const categories = ['companies', 'topics', 'people']
 const filenameDateRe = /^(\d{4}-\d{2}-\d{2})-(.+)\.md$/i
 
@@ -56,6 +57,7 @@ for (const category of categories) {
     const slug = match[2]
     const legacySlug = file.replace(/\.md$/i, '')
     const key = `${category}/${slug}`
+    if (!archiveKeys.has(key)) continue
     const canonicalPath = `/articles/research/${category}/${slug}`
     keys.push(key)
     articleRedirects[slug] = canonicalPath

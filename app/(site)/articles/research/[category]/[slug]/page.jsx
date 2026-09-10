@@ -2,15 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import Script from 'next/script'
 
-import {
-  CATEGORY_META,
-  COMPANY_TYPE_META,
-  RESEARCH_CATEGORIES,
-  getAllResearchParams,
-  getResearchEntry,
-  listResearch,
-  listResearchByCategory,
-} from '../../../../../../lib/research/loader'
+import { CATEGORY_META, COMPANY_TYPE_META, RESEARCH_CATEGORIES } from '../../../../../../lib/research/categories'
+import { getRuntimeResearchEntry, listRuntimeResearchByCategory } from '../../../../../../lib/researchRuntime'
+import { readContentAsset } from '../../../../../../lib/contentCatalogRuntime'
 import { avatarAbsoluteUrl } from '../../../../../../lib/avatar'
 import { buildArticleOgUrl } from '../../../../../../lib/articleOg'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
@@ -31,40 +25,18 @@ import RanbiPaywall from '../../../../components/RanbiPaywall'
 import LifeTrafficTest from './LifeTrafficTest'
 import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 import AShareCompanyList from './AShareCompanyList'
-import aShareSnapshot from '../../../../../../data/a-shares/companies.json'
 import { taxonomyForResearch } from '../../../../../../lib/contentTaxonomy'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 const A_SHARE_LIST_SLUG = 'a-share-company-list'
-const A_SHARE_PAGE_SIZE = 100
-
-export const dynamic = 'force-static'
-export const dynamicParams = false
-
-export function generateStaticParams() {
-  const params = getAllResearchParams()
-  for (const entry of listResearch()) {
-    const legacySlug = entry.filename?.replace(/\.md$/i, '')
-    if (legacySlug && legacySlug !== entry.slug) {
-      params.push({ category: entry.category, slug: legacySlug })
-    }
-  }
-  return params
-}
-
-function resolveResearchEntry(category, slug) {
-  const entry = getResearchEntry(category, slug)
-  if (entry) return entry
-  const legacySlug = String(slug || '').replace(/^\d{4}-\d{2}-\d{2}-/, '')
-  if (legacySlug && legacySlug !== slug) return getResearchEntry(category, legacySlug)
-  return null
-}
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }) {
   const { category, slug } = await params
-  const entry = resolveResearchEntry(category, slug)
+  const entry = await getRuntimeResearchEntry(category, slug)
   if (!entry) {
     return {
       title: `内容未找到 · ${SITE_TITLE}`,
@@ -117,7 +89,7 @@ export async function generateMetadata({ params }) {
 export default async function ResearchDetailPage({ params }) {
   const { category, slug } = await params
   if (!RESEARCH_CATEGORIES.includes(category)) notFound()
-  const entry = resolveResearchEntry(category, slug)
+  const entry = await getRuntimeResearchEntry(category, slug)
   if (!entry) notFound()
   if (entry.slug !== slug) redirect(`/articles/research/${entry.category}/${entry.slug}`)
 
@@ -183,17 +155,10 @@ export default async function ResearchDetailPage({ params }) {
     ? entry.content.slice(companyListFooterStart)
     : ''
   const initialCompanyPage = isAShareCompanyList
-    ? {
-        page: 1,
-        pageSize: A_SHARE_PAGE_SIZE,
-        total: aShareSnapshot.companies.length,
-        totalPages: Math.ceil(aShareSnapshot.companies.length / A_SHARE_PAGE_SIZE),
-        companies: aShareSnapshot.companies.slice(0, A_SHARE_PAGE_SIZE),
-      }
+    ? await readContentAsset('/generated/a-shares/page-1.json')
     : null
 
-  // 相关阅读：同 category 其它条目，最近 3 篇
-  const relatedPool = listResearchByCategory(entry.category).filter((e) => e.slug !== entry.slug)
+  const relatedPool = (await listRuntimeResearchByCategory(entry.category)).filter((e) => e.slug !== entry.slug)
   const related =
     isAShareResearch
       ? relatedPool.filter(isAShareCompanyObservation).slice(0, 3)

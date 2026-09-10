@@ -1,3 +1,6 @@
+import { isMarkdownDocument } from '../../../lib/articleDocument.mjs'
+import { renderMarkdown } from '../../../lib/research/markdown'
+
 function safeUrl(value, { image = false } = {}) {
   const url = String(value || '').trim()
   if (!url) return ''
@@ -85,6 +88,9 @@ function renderNode(node, key, context) {
 }
 
 export default function ArticlePostBody({ content, className = '' }) {
+  if (isMarkdownDocument(content)) {
+    return <article className={`prose-tuaran ${className}`} dangerouslySetInnerHTML={{ __html: renderMarkdown(content.markdown) }} />
+  }
   const doc = content && typeof content === 'object' ? content : { content: [] }
   return <article className={`prose-tuaran article-post-body ${className}`}>{renderNodes(doc.content)}</article>
 }

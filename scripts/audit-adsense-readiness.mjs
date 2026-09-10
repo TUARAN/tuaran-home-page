@@ -218,12 +218,12 @@ requireSource(
 )
 requireSource(
   'app/(site)/articles/page.jsx',
-  /const items = buildKnowledgeItems\(\)/,
+  /const items = await readRuntimeKnowledgeItems\(\)/,
   '全部公开内容必须进入文章页服务端数据载荷',
 )
 forbidSource(
   'app/(site)/articles/page.jsx',
-  /buildKnowledgeItems\(\)\.filter\(\(item\) => item\.reviewReady\)/,
+  /readRuntimeKnowledgeItems\(\)\.filter\(\(item\) => item\.reviewReady\)/,
   '文章页不得按 AdSense 复审状态收窄 SEO 内容',
 )
 requireSource(

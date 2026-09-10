@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { CONTENT_PIPELINE_TYPE_LABELS, getRelatedContent } from '../../../lib/contentPipeline'
 import ArticleLikeButton from './ArticleLikeButton'
 
-export default function ArticleEngagementPanel({ articleKey, related: relatedProp, relatedLimit = 4 }) {
-  const related = relatedProp || getRelatedContent(articleKey, { limit: relatedLimit })
+export default async function ArticleEngagementPanel({ articleKey, related: relatedProp, relatedLimit = 4 }) {
+  const related = relatedProp || await getRelatedContent(articleKey, { limit: relatedLimit })
 
   return (
     <aside className="space-y-4 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">

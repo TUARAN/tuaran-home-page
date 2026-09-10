@@ -1,6 +1,6 @@
-import { articles } from '../articles/articlesData'
+import { articles } from '../../../lib/articleMetadata'
 import { COMMUNITY_TOPICS } from '../../../lib/communityTopics'
-import { listResearch } from '../../../lib/research/loader'
+import { listResearch } from '../../../lib/research/archive'
 import { listRichPagePaths, listRichPageSitemapEntries } from '../../../lib/richPageSeo'
 
 const SITE_URL = 'https://2aran.com'

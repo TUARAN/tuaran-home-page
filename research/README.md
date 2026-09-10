@@ -1,7 +1,10 @@
 # 文章与分析（写作约定）
 
-本目录是 TUARAN 长文内容的存储源头。文章以 Markdown 文件落到这里，
-随主站仓库一起 `git push`，Cloudflare Pages 自动重新构建后即在 `2aran.com/articles` 上线。
+本目录是 TUARAN 长文内容的 Git 创作正本。新版内容存储改造上线后，新调研通过 D1 快照发布，不再依靠 `git push` 自动上线；代码改造目前尚未部署。
+
+发布流程：运行 `node scripts/export-research-content.mjs --output /tmp/research-content.json`，在站长后台 `/admin/articles/research-import` 导入，核对正文、版本、来源哈希后点击发布。修改或撤回也从该入口进行。须先应用 `migrations/0089_content_documents.sql` 并部署新版读取代码；本地导出不会写线上数据库。
+
+`data/content-archive.json` 固定迁移当日的历史归档范围。新文件不会自动加入静态目录、正文资产或旧 RSS；不要把扩充该清单当作日常发布方式。历史 URL 和评论/权益 key 保持不变。
 
 > 作者统一为 **TUARAN**。选题、判断、取舍、编排和最终发布责任都由作者承担。
 > Claude Code / Codex / 豆包 / Gemini 等只作为内部协助工具记录，默认不在前台逐篇展示。
@@ -190,11 +193,11 @@ npm run a-share:status
 
 ```bash
 git add research/
-git commit -m "research: add <slug>"
+git commit -m "[CF-Pages-Skip] research: add <slug>"
 git push
 ```
 
-Cloudflare Pages 自动重 build 后访问：
+上述跳过构建前缀仅用于纯内容提交；代码变更仍按正常流程部署。Git 提交用于保存创作正本。新版部署后，运行本地导出命令并在 `/admin/articles/research-import` 核对发布，无需等待 Pages 重建；已部署的 A 股/加密资产专用发布入口会同步写入 D1。发布成功后访问：
 
 - 列表页：<https://2aran.com/articles>（「文章与分析」入口）
 - 详情页：`https://2aran.com/articles/research/<category>/<slug>`

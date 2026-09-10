@@ -16,7 +16,7 @@ const stashRoot = path.join(root, '.admin-pages-build-excluded')
 // Admin pages import shared UI from app/(site)/components. Everything else in
 // the site route group is a public route and must not enter the Admin Worker.
 const KEPT_SITE_DIRECTORY_ENTRIES = new Map([
-  ['articles', new Set(['articlesData.js'])],
+  ['articles', new Set(['articlesData.js', 'buildKnowledgeItems.js'])],
   ['context-memory', new Set(['MemoryVault.jsx'])],
   // Admin recommendations builds its candidate catalog from the same feed data
   // as the public site. Keep the data module without shipping the /feed routes.

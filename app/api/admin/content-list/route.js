@@ -1,3 +1,4 @@
+import { listResearchOverrides } from '../../../../lib/researchRuntime'
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { rowToArticlePost } from '../../../../lib/articlePosts'
 import {
@@ -43,9 +44,10 @@ export async function GET(req) {
   }
 
   const merged = sortAdminContentItems(mergeAdminContentItems({
-    buildEntries: listAllContent(),
+    buildEntries: await listAllContent(),
     posts,
     manualEntries,
+    researchDocuments: await listResearchOverrides(),
   }))
   const filtered = filterAdminContentItems(merged, params)
   const page = paginateAdminContentItems(filtered, params.offset, params.limit)

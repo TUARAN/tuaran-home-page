@@ -1,7 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import Image from 'next/image'
 import Script from 'next/script'
-import { articles } from '../articlesData'
+import { readContentCatalog } from '../../../../lib/contentCatalogRuntime'
+import { getArchivedArticle } from '../../../../lib/articleArchive'
 import ArticleDetailHeader from '../../components/ArticleDetailHeader'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
 import ArticleComments from '../../components/ArticleComments'
@@ -11,7 +12,6 @@ import ArticleEngagementPanel from '../../components/ArticleEngagementPanel'
 import ArticleToc from '../../components/ArticleToc'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
-import { RESEARCH_ARTICLE_REDIRECTS } from '../../../../lib/research/catalog'
 import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
 import { buildArticleOgUrl } from '../../../../lib/articleOg'
 import { extractToc, renderMarkdown } from '../../../../lib/research/markdown'
@@ -106,8 +106,9 @@ function readingMinutes(text) {
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params
-  const article = articles.find((item) => item.slug === resolvedParams.slug)
-  const researchRedirect = !article ? RESEARCH_ARTICLE_REDIRECTS[resolvedParams.slug] : null
+  const catalog = await readContentCatalog()
+  const article = catalog.articles.find((item) => item.slug === resolvedParams.slug)
+  const researchRedirect = !article ? catalog.researchRedirects[resolvedParams.slug] : null
   const publishedArticle = !article && !researchRedirect
     ? await getPublishedArticlePostBySlug(resolvedParams.slug)
     : null
@@ -215,8 +216,9 @@ export async function generateMetadata({ params }) {
 
 export default async function ArticleDetailPage({ params }) {
   const resolvedParams = await params
-  const article = articles.find((item) => item.slug === resolvedParams.slug)
-  const researchRedirect = !article ? RESEARCH_ARTICLE_REDIRECTS[resolvedParams.slug] : null
+  const catalog = await readContentCatalog()
+  const article = await getArchivedArticle(resolvedParams.slug, catalog)
+  const researchRedirect = !article ? catalog.researchRedirects[resolvedParams.slug] : null
 
   if (researchRedirect) {
     redirect(researchRedirect)

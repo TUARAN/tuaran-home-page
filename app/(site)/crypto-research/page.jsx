@@ -1,6 +1,9 @@
 import CryptoResearchClient from './CryptoResearchClient'
 import { CRYPTO_RESEARCH_TEMPLATE_VERSION } from '../../../lib/cryptoResearchCore'
-import { listResearch } from '../../../lib/research/loader'
+import { listRuntimeResearchByCategory } from '../../../lib/researchRuntime'
+
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 import { isCryptoAssetObservation } from '../../../lib/research/shareTitle'
 import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
 
@@ -15,10 +18,10 @@ function identityOf(entry) {
   return { name: match?.[1]?.trim() || entry.title, symbol: match?.[2]?.trim() || '' }
 }
 
-export default function CryptoResearchPage() {
+export default async function CryptoResearchPage() {
   const activeStyle = RESEARCH_STYLE_TEMPLATES.find((template) => template.status === 'active')
     || RESEARCH_STYLE_TEMPLATES[0]
-  const items = listResearch().filter(isCryptoAssetObservation).map((entry) => {
+  const items = (await listRuntimeResearchByCategory('topics')).filter(isCryptoAssetObservation).map((entry) => {
     const identity = identityOf(entry)
     return {
       id: entry.slug, ...identity, symbol: entry.symbol || identity.symbol, rank: entry.marketCapRank,

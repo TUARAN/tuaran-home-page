@@ -160,6 +160,7 @@ export default function ArticlesConsole() {
           >
             <IconDatabase size={16} />索引与登记
           </AdminButton>
+          <AdminButton href="/admin/articles/research-import">导入调研</AdminButton>
           <AdminButton href="/admin/articles/new" variant="primary"><IconPlus size={16} />写文章</AdminButton>
         </>
       )}
@@ -251,7 +252,8 @@ export default function ArticlesConsole() {
               <div key={item.key} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    {isArticlePost ? (
+                    {item.entity === 'research-document' ? <AdminButton href="/admin/articles/research-import" size="sm">导入新版本 / 撤回</AdminButton> : null}
+                  {isArticlePost ? (
                       <Link
                         href={`/admin/articles/${item.article.id}/edit`}
                         className="truncate font-medium text-[#15140f] hover:underline dark:text-gray-100"
@@ -281,7 +283,7 @@ export default function ArticlesConsole() {
                       {STATUS_LABELS[item.status] || item.status}
                     </span>
                     <span className="text-[11px] text-[#94968b] dark:text-gray-500">
-                      {item.source === 'editor' ? '在线创作' : item.source === 'manual' ? '手工登记' : '构建同步'}
+                      {item.source === 'editor' ? '在线创作' : item.source === 'manual' ? '手工登记' : item.source === 'git' ? 'Git 调研' : '构建同步'}
                     </span>
                   </div>
                   <p className="mt-1 truncate font-mono text-xs text-[#898b80] dark:text-gray-500">
@@ -296,6 +298,7 @@ export default function ArticlesConsole() {
                       <IconExternalLink size={15} />查看
                     </AdminButton>
                   ) : null}
+                  {item.entity === 'research-document' ? <AdminButton href="/admin/articles/research-import" size="sm">导入新版本 / 撤回</AdminButton> : null}
                   {isArticlePost ? (
                     <>
                       <AdminButton href={`/admin/articles/${item.article.id}/edit`} size="sm">

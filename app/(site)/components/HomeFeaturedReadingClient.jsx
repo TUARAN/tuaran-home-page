@@ -58,7 +58,8 @@ function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false,
     : <Link href={item.href} className={className} {...analyticsProps}>{content}</Link>
 }
 
-export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
+export default function HomeFeaturedReadingClient({ onReadyChange }) {
+  const [catalog, setCatalog] = useState([])
   const router = useRouter()
   const searchInputRef = useRef(null)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
@@ -112,6 +113,7 @@ export default function HomeFeaturedReadingClient({ catalog, onReadyChange }) {
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
         if (!alive) return
+        if (Array.isArray(data?.catalog)) setCatalog(data.catalog)
         if (data?.settings) setSettings(mergeHomeRecommendationSettings(data.settings))
         setSettingsReady(true)
       })

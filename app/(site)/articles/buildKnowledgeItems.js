@@ -1,4 +1,5 @@
-import { articles } from './articlesData'
+import { researchKnowledgeItem } from '../../../lib/researchKnowledgeItem'
+import { articles } from '../../../lib/articleMetadata'
 import {
   ENGINEERING_WORK_CATEGORIES,
   ENGINEERING_WORKS,
@@ -10,7 +11,6 @@ import {
   assertCompleteContentTaxonomy,
   taxonomyForArticle,
   taxonomyForInteractive,
-  taxonomyForResearch,
   taxonomyForResource,
 } from '../../../lib/contentTaxonomy'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
@@ -21,14 +21,7 @@ import { isAShareResearchEntry } from '../../../lib/research/shareTitle'
 const RESOURCE_PV_KEY_BY_HREF = new Map(
   CONTENT_PV_ENTRIES.map((e) => [e.href, `${e.category}/${e.slug}`]),
 )
-import {
-  CATEGORY_META,
-  COMPANY_TYPE_META,
-  PEOPLE_TYPE_META,
-  TECH_TYPE_META,
-  TOPIC_TYPE_META,
-  listResearch,
-} from '../../../lib/research/loader'
+import { listResearch } from '../../../lib/research/archive'
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -118,39 +111,7 @@ export function buildKnowledgeItems({ includeOwner = false } = {}) {
     }
   })
 
-  const researchItems = listResearch().filter((entry) => !isAShareResearchEntry(entry)).map((entry) => {
-    const baseLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
-    const companyLabel = entry.companyType && COMPANY_TYPE_META[entry.companyType]?.label
-    const topicLabel = entry.topicType && TOPIC_TYPE_META[entry.topicType]?.label
-    const peopleLabel = entry.peopleType && PEOPLE_TYPE_META[entry.peopleType]?.label
-    const techLabel = entry.techType && TECH_TYPE_META[entry.techType]?.label
-    const subLabel = [companyLabel, techLabel, topicLabel, peopleLabel].find((label) => label && label !== baseLabel)
-    return {
-      id: `research:${entry.category}:${entry.slug}`,
-      kind: entry.category, // 'companies' | 'topics' | 'people'
-      tagLabel: subLabel ? `${baseLabel} · ${subLabel}` : baseLabel,
-      companyType: entry.companyType || '',
-      topicType: entry.topicType || '',
-      peopleType: entry.peopleType || '',
-      techType: entry.techType || '',
-      contentType: entry.contentType || 'analysis',
-      ...taxonomyForResearch(entry),
-      reviewReady: entry.reviewReady || false,
-      version: entry.version || '',
-      title: entry.title,
-      summary: entry.tldr || entry.summary,
-      date: entry.date,
-      dateLabel: entry.dateLabel || entry.date,
-      sortKey: entry.sortKey,
-      readingMinutes: entry.readingMinutes,
-      pv: entry.pv || 0,
-      pvKey: `${entry.category}/${entry.slug}`,
-      hasAssessment: entry.hasAssessment || false,
-      encrypted: entry.encrypted,
-      image: entry.images?.[0] || null,
-      href: `/articles/research/${entry.category}/${entry.slug}`,
-    }
-  })
+  const researchItems = listResearch().filter((entry) => !entry.encrypted && !isAShareResearchEntry(entry)).map(researchKnowledgeItem)
 
   const resourceItems = HOME_RESOURCE_ITEMS.map((p) => {
     const pvKey = RESOURCE_PV_KEY_BY_HREF.get(p.href) || ''

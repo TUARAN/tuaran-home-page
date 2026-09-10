@@ -1,6 +1,9 @@
 import AShareResearchClient from './AShareResearchClient'
 import { A_SHARE_RESEARCH_TEMPLATE_VERSION } from '../../../lib/aShareResearchCore'
-import { listResearch } from '../../../lib/research/loader'
+import { listRuntimeResearchByCategory } from '../../../lib/researchRuntime'
+
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 import { isAShareCompanyObservation } from '../../../lib/research/shareTitle'
 import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
 
@@ -33,10 +36,10 @@ function exchangeOf(code) {
   return 'A股'
 }
 
-export default function AShareResearchPage() {
+export default async function AShareResearchPage() {
   const activeStyle = RESEARCH_STYLE_TEMPLATES.find((template) => template.status === 'active')
     || RESEARCH_STYLE_TEMPLATES[0]
-  const items = listResearch()
+  const items = (await listRuntimeResearchByCategory('companies'))
     .filter(isAShareCompanyObservation)
     .map((entry) => {
       const stockCode = stockCodeOf(entry)

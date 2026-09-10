@@ -4,7 +4,7 @@
   "description": "TUARAN's personal blog homepage with modern design",
   "scripts": {
     "prepare": "node scripts/setup-hooks.mjs",
-    "prebuild": "node scripts/check-tailwind-opacity-classes.mjs && node scripts/generate-a-share-company-pages.mjs && node scripts/check-public-asset-size.mjs && node scripts/audit-research-style.mjs && node scripts/generate-research-catalog.mjs && node scripts/audit-adsense-readiness.mjs && npm run seo:audit",
+    "prebuild": "node scripts/check-tailwind-opacity-classes.mjs && node scripts/generate-a-share-company-pages.mjs && node scripts/check-public-asset-size.mjs && node scripts/audit-research-style.mjs && node scripts/generate-research-catalog.mjs && node scripts/generate-article-assets.mjs && node scripts/generate-content-catalog.mjs && node scripts/generate-research-assets.mjs && node scripts/audit-adsense-readiness.mjs && npm run seo:audit",
     "dev": "next dev -p 3000",
     "build": "next build",
     "build:check": "NEXT_DIST_DIR=.next-check next build",
@@ -67,7 +67,8 @@
     "workbuddy:package": "node scripts/build-workbuddy-marketplace.mjs",
     "workbuddy:validate": "node scripts/build-workbuddy-marketplace.mjs --check",
     "x-intelligence:check": "node scripts/test-x-platform-intelligence-model.mjs && node scripts/test-x-platform-intelligence-filters.mjs && node scripts/test-x-platform-intelligence-selectors.mjs",
-    "test:planning": "node --test tests/planning/*.test.mjs"
+    "test:planning": "node --test tests/planning/*.test.mjs",
+    "articles:assets": "node scripts/generate-article-assets.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.0",

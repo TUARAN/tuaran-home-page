@@ -5,7 +5,6 @@ import {
   mcpInitializeResult,
 } from '../../../../lib/mcpArticles'
 import { cleanupRateLimits, enforceRateLimits, getClientIp } from '../../../../lib/abuseControls'
-import { listContentIndex } from '../../../../lib/contentIndex'
 import { listAllContent } from '../../../../lib/contentPipeline'
 import { getD1 } from '../../../../lib/d1'
 import {
@@ -104,16 +103,6 @@ async function enforceMcpRateLimit(req) {
 }
 
 async function publicEntries() {
-  try {
-    const indexed = await listContentIndex({ status: 'published', limit: 1000 })
-    if (indexed.length) {
-      const byKey = new Map(listAllContent().map((entry) => [entry.contentKey, entry]))
-      indexed.forEach((entry) => byKey.set(entry.contentKey, entry))
-      return [...byKey.values()]
-    }
-  } catch {
-    // Fall through to the build-time catalog.
-  }
   return listAllContent()
 }
 

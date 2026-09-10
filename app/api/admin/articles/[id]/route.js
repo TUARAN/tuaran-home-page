@@ -1,3 +1,4 @@
+import { isReservedArticleSlug } from '../../../../../lib/articleReservedSlugs'
 import { getOwnerOrReject } from '../../../../../lib/adminAuth'
 import { articlePostToContentEntry } from '../../../../../lib/articleContentIndex.mjs'
 import {
@@ -9,6 +10,7 @@ import {
   prepareDeleteContentEntry,
   prepareUpsertContentEntry,
 } from '../../../../../lib/contentIndex'
+import { normalizeArticleDocument } from '../../../../../lib/articleDocument.mjs'
 import { getD1 } from '../../../../../lib/d1'
 
 export const runtime = 'edge'
@@ -44,24 +46,29 @@ export async function PUT(req, { params }) {
   const title = String(body?.title || '').trim().slice(0, 200)
   const slug = normalizeSlug(body?.slug)
   const status = body?.status === 'published' ? 'published' : 'draft'
-  const contentText = String(body?.contentText || '').trim().slice(0, 200000)
+  const document = normalizeArticleDocument(body?.content, body?.contentText)
+  if (document.error) return Response.json({ error: document.error }, { status: 400 })
+  const { contentText } = document
   if (status === 'published' && (!title || !slug || !contentText)) {
     return Response.json({ error: 'PUBLISH_FIELDS_REQUIRED' }, { status: 400 })
   }
   const now = Date.now()
-  const publishedAt = status === 'published' ? (current.published_at || now) : null
+  const publishedAt = current.published_at || (status === 'published' ? now : null)
   const nextSlug = slug || current.slug
+  if (await isReservedArticleSlug(nextSlug)) return Response.json({ error: 'RESERVED_SLUG' }, { status: 409 })
+  if (current.published_at && nextSlug !== current.slug) return Response.json({ error: 'PUBLISHED_SLUG_IMMUTABLE' }, { status: 409 })
   const tags = normalizeTags(body?.tags)
   try {
+    // revision is NOT NULL. A concurrent update aborts the entire batch, including its index writes.
     const statements = [db.prepare(
       `UPDATE article_posts SET
        slug = ?, title = ?, summary = ?, cover_url = ?, content_json = ?, content_text = ?, tags_json = ?,
-       status = ?, revision = revision + 1, updated_at = ?, published_at = ?
-       WHERE id = ? AND revision = ?`
+       status = ?, revision = CASE WHEN revision = ? THEN revision + 1 ELSE NULL END, updated_at = ?, published_at = ?
+       WHERE id = ?`
     ).bind(
       nextSlug, title, String(body?.summary || '').trim().slice(0, 500),
-      String(body?.coverUrl || '').trim().slice(0, 1000), JSON.stringify(body?.content || {}),
-      contentText, JSON.stringify(tags), status, now, publishedAt, id, current.revision
+      String(body?.coverUrl || '').trim().slice(0, 1000), JSON.stringify(document.content),
+      contentText, JSON.stringify(tags), status, current.revision, now, publishedAt, id
     )]
 
     if (current.slug !== nextSlug || status !== 'published') {
@@ -91,6 +98,11 @@ export async function PUT(req, { params }) {
     return Response.json({ ok: true, article: rowToArticlePost(row) })
   } catch (error) {
     const message = String(error?.message || error)
+    if (message.includes('NOT NULL constraint failed: article_posts.revision')) {
+      const row = await db.prepare('SELECT * FROM article_posts WHERE id = ?').bind(id).first()
+      return Response.json({ error: 'REVISION_CONFLICT', article: rowToArticlePost(row) }, { status: 409 })
+    }
+    if (message.includes('CONTENT_ROUTE_CONFLICT')) return Response.json({ error: 'RESERVED_SLUG' }, { status: 409 })
     const statusCode = message.includes('UNIQUE') ? 409 : 500
     return Response.json({ error: statusCode === 409 ? 'SLUG_EXISTS' : 'ARTICLE_UPDATE_FAILED', detail: message }, { status: statusCode })
   }

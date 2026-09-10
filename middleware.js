@@ -1,3 +1,4 @@
+import { gateArticleRequest } from './lib/articleRequestGate'
 import { NextResponse } from 'next/server'
 
 import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed } from './lib/adminRoutes'
@@ -147,6 +148,9 @@ export async function middleware(request) {
     }
     return NextResponse.redirect(url, 301)
   }
+
+  const articleRejection = await gateArticleRequest(pathname, request.nextUrl.search, request.nextUrl.origin)
+  if (articleRejection) return articleRejection
 
   const response = NextResponse.next()
   if (shouldNoindexPath(pathname)) {

@@ -1,4 +1,5 @@
 import { listContentIndex } from '../../../lib/contentIndex'
+import { readRuntimeKnowledgeItems } from '../../../lib/knowledgeRuntime'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -12,15 +13,23 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(req) {
   const url = new URL(req.url)
+  if (url.searchParams.get('view') === 'knowledge') {
+    try { return Response.json({ items: await readRuntimeKnowledgeItems() }, { headers: { 'Cache-Control': 'no-store' } }) }
+    catch { return Response.json({ error: 'CONTENT_UNAVAILABLE' }, { status: 503, headers: { 'Cache-Control': 'no-store' } }) }
+  }
   const source = url.searchParams.get('source') === 'manual' ? 'manual' : null
   let entries = []
   try {
-    entries = await listContentIndex({ status: 'published', source, limit: 500 })
+    for (let offset = 0; ; offset += 1000) {
+      const page = await listContentIndex({ status: 'published', source, limit: 1000, offset })
+      entries.push(...page)
+      if (page.length < 1000) break
+    }
   } catch {
     entries = []
   }
   return Response.json(
     { entries },
-    { headers: { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' } }
+    { headers: { 'cache-control': 'no-store' } }
   )
 }

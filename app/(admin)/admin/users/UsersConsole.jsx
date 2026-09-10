@@ -48,7 +48,8 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(initialTab)
   const [users, setUsers] = useState([])
-  const [status, setStatus] = useState('loading')
+  const [status, setStatus] = useState('idle')
+  const [tabReady, setTabReady] = useState(false)
   const [message, setMessage] = useState('')
   const [query, setQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
@@ -99,13 +100,15 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
   }, [])
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    if (tabReady && activeTab !== 'guests' && status === 'idle') refresh()
+  }, [tabReady, activeTab, status, refresh])
 
   useEffect(() => {
-    if (mode !== 'all') return
-    const requestedTab = new URLSearchParams(window.location.search).get('tab')
-    if (['users', 'guests', 'mcp'].includes(requestedTab)) setActiveTab(requestedTab)
+    if (mode === 'all') {
+      const requestedTab = new URLSearchParams(window.location.search).get('tab')
+      if (['users', 'guests', 'mcp'].includes(requestedTab)) setActiveTab(requestedTab)
+    }
+    setTabReady(true)
   }, [mode])
 
   const refreshMcpGrants = useCallback(async () => {
@@ -125,15 +128,16 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
   }, [])
 
   useEffect(() => {
-    if (activeTab === 'mcp' && mcpStatus === 'idle') refreshMcpGrants()
-  }, [activeTab, mcpStatus, refreshMcpGrants])
+    if (tabReady && activeTab === 'mcp' && mcpStatus === 'idle') refreshMcpGrants()
+  }, [tabReady, activeTab, mcpStatus, refreshMcpGrants])
 
-  const loadGuestPage = useCallback(async (cursor = '', history = []) => {
+  const loadGuestPage = useCallback(async (cursor = '', history = [], fresh = false) => {
     setGuestStatus('loading')
     setGuestMessage('')
     try {
       const params = new URLSearchParams({ limit: '30', status: guestFilter })
       if (cursor) params.set('cursor', cursor)
+      if (fresh) params.set('fresh', '1')
       const res = await fetch(`/api/admin/guests?${params}`, { cache: 'no-store', credentials: 'same-origin' })
       const data = await res.json().catch(() => null)
       if (res.ok && data?.status === 'ok' && Array.isArray(data.guests)) {
@@ -153,13 +157,13 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
     }
   }, [guestFilter])
 
-  const refreshGuests = useCallback(() => loadGuestPage('', []), [loadGuestPage])
+  const refreshGuests = useCallback(() => loadGuestPage('', [], true), [loadGuestPage])
 
   useEffect(() => {
-    if (activeTab === 'guests') {
-      refreshGuests()
+    if (tabReady && activeTab === 'guests') {
+      loadGuestPage('', [])
     }
-  }, [activeTab, refreshGuests])
+  }, [tabReady, activeTab, loadGuestPage])
 
   const stats = useMemo(() => {
     const counts = { total: users.length, member: 0, trusted: 0, blocked: 0, owner: 0, totalBalance: 0, totalUnlocks: 0 }

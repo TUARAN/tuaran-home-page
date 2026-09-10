@@ -1,9 +1,11 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
-import { getGuestDirectoryStats, listGuestDirectory } from '../../../../lib/guestDirectory'
+import { createGuestDirectoryCache } from '../../../../lib/guestDirectoryCache'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+
+const readGuestDirectory = createGuestDirectoryCache()
 
 function dbOrNull() {
   try {
@@ -28,15 +30,14 @@ export async function GET(req) {
 
   try {
     const url = new URL(req.url)
-    const [directory, stats] = await Promise.all([
-      listGuestDirectory(db, {
-        limit: url.searchParams.get('limit'),
-        status: url.searchParams.get('status'),
-        cursor: url.searchParams.get('cursor'),
-      }),
-      getGuestDirectoryStats(db),
-    ])
-    return Response.json({ status: 'ok', generatedAt: Date.now(), stats, ...directory })
+    const snapshot = await readGuestDirectory(db, {
+      limit: url.searchParams.get('limit'),
+      status: url.searchParams.get('status'),
+      cursor: url.searchParams.get('cursor'),
+    }, url.searchParams.get('fresh') === '1')
+    return Response.json({ status: 'ok', ...snapshot }, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    })
   } catch (error) {
     return Response.json(
       {

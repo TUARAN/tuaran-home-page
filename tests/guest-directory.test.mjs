@@ -136,3 +136,57 @@ test('0088 迁移回填目录，并通过触发器增量维护目录和全局统
 
   db.close()
 })
+
+// Cache tests measure database calls, including concurrent refreshes and retries.
+const { createGuestDirectoryCache } = await import('../lib/guestDirectoryCache.js')
+
+test('同页并发请求和一分钟内重复访问只读一次，过期后重新查询', async () => {
+  let time = 1000
+  const read = createGuestDirectoryCache({ now: () => time })
+  const db = fakeD1()
+  const [a, b] = await Promise.all([read(db), read(db)])
+  assert.equal(a, b)
+  assert.equal(db.calls.length, 2)
+  time += 59_999
+  assert.equal(await read(db), a)
+  assert.equal(db.calls.length, 2)
+  time += 1
+  assert.notEqual(await read(db), a)
+  assert.equal(db.calls.length, 4)
+})
+
+test('筛选、游标、数据库隔离；手动刷新使旧分页失效', async () => {
+  const read = createGuestDirectoryCache()
+  const db = fakeD1()
+  const active = { status: 'active' }
+  const next = { status: 'active', cursor: '971:guest%3A29' }
+  await read(db, active)
+  await read(db, next)
+  await read(db, { status: 'bound' })
+  await read(db, active)
+  assert.equal(db.calls.length, 6)
+  const other = fakeD1()
+  await read(other, active)
+  assert.equal(other.calls.length, 2)
+  await read(db, active, true)
+  await read(db, next)
+  assert.equal(db.calls.length, 10)
+})
+
+test('缓存数量有上限，被淘汰的页重新查询', async () => {
+  const read = createGuestDirectoryCache({ maxEntries: 2 })
+  const db = fakeD1()
+  for (const status of ['active', 'bound', 'all', 'active']) await read(db, { status })
+  assert.equal(db.calls.length, 8)
+})
+
+test('查询失败不缓存，下一次请求可以恢复', async () => {
+  const read = createGuestDirectoryCache()
+  const db = fakeD1()
+  const prepare = db.prepare
+  db.prepare = () => { throw new Error('D1 unavailable') }
+  await assert.rejects(read(db), /D1 unavailable/)
+  db.prepare = prepare
+  assert.equal((await read(db)).guests.length, 0)
+  assert.equal(db.calls.length, 2)
+})

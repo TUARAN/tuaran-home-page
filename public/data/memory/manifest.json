@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T06:21:09.034Z",
+  "generatedAt": "2026-09-09T06:41:26.456Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -308,6 +308,18 @@
               "hash": "2eef9361c3079a9cac692eea15ea44fdffc35c55aa40860c1bd8b358ac419f35",
               "path": "ai-context/README/2026-08-28T02-30-38-479Z.enc.json",
               "bytes": 1690
+            },
+            {
+              "ts": "2026-09-08T14:21:27.288Z",
+              "hash": "e3ab41504bacb10f1f7aa6f29b51b49c53e9ff0e8b30d297e4c4ca4e8802b4ef",
+              "path": "ai-context/README/2026-09-08T14-21-27-306Z.enc.json",
+              "bytes": 1834
+            },
+            {
+              "ts": "2026-09-08T15:03:34.604Z",
+              "hash": "705541cbbeda5613a7f899aeb22ab66a672b9ccd02dd8b99e2a5b3a0b84b77b6",
+              "path": "ai-context/README/2026-09-08T15-03-34-623Z.enc.json",
+              "bytes": 1983
             }
           ]
         },
@@ -458,6 +470,54 @@
               "hash": "7cff1634af89fbbab6563385910799555f34fb307f40969a0faf40f219615913",
               "path": "ai-context/x-post-images/2026-08-29T06-21-09-033Z.enc.json",
               "bytes": 4104
+            },
+            {
+              "ts": "2026-09-09T06:15:53.444Z",
+              "hash": "fd0c291301357ec822939544669dd2f74ca6b119d9a2f92a11b3ac535ae4982a",
+              "path": "ai-context/x-post-images/2026-09-09T06-15-53-463Z.enc.json",
+              "bytes": 1289
+            },
+            {
+              "ts": "2026-09-09T06:41:26.428Z",
+              "hash": "890060d208587ba5386a10d2446d07174955701b79660a505cb35136af650b0a",
+              "path": "ai-context/x-post-images/2026-09-09T06-41-26-453Z.enc.json",
+              "bytes": 1573
+            }
+          ]
+        },
+        "seo-geo-growth-roadmap": {
+          "title": "seo-geo-growth-roadmap",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-09-08T14:21:27.309Z",
+              "hash": "a319df2596c96faf3c53dcfea409f0e3264bfb8093fa1d0014d266c318ca6415",
+              "path": "ai-context/seo-geo-growth-roadmap/2026-09-08T14-21-27-326Z.enc.json",
+              "bytes": 7430
+            },
+            {
+              "ts": "2026-09-08T15:03:34.626Z",
+              "hash": "2eb8bd499e14b9faba102b73fb5fb5a14248118baec6def952b6faa8f636bdc8",
+              "path": "ai-context/seo-geo-growth-roadmap/2026-09-08T15-03-34-644Z.enc.json",
+              "bytes": 7766
+            },
+            {
+              "ts": "2026-09-09T00:36:20.481Z",
+              "hash": "5ea31f4305a5c6690ac0a47bf3d8a32a6761032dcd1de853a5ba386220bd75dd",
+              "path": "ai-context/seo-geo-growth-roadmap/2026-09-09T00-36-20-498Z.enc.json",
+              "bytes": 8106
+            }
+          ]
+        },
+        "ui-ux-audit-roadmap": {
+          "title": "ui-ux-audit-roadmap",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-09-08T15:03:34.645Z",
+              "hash": "05e29499773bb00317570701f419250d7748569ebfe79deccfa29b6f291997d0",
+              "path": "ai-context/ui-ux-audit-roadmap/2026-09-08T15-03-34-661Z.enc.json",
+              "bytes": 5813
             }
           ]
         }

@@ -1,0 +1,29 @@
+{
+  "name": "5g-msg-channel-macos",
+  "version": "3.0.0",
+  "private": true,
+  "description": "macOS 5G MaaP ↔ WorkBuddy 本地 ACP 连接器",
+  "main": "src/index.cjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/index.cjs --mock",
+    "start:production": "node src/index.cjs --production",
+    "doctor": "node scripts/doctor.cjs",
+    "configure": "node scripts/configure.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "test:live": "node scripts/test-live.cjs",
+    "mock:gateway": "node scripts/mock-gateway.cjs",
+    "service:install": "node scripts/production.cjs --install-service",
+    "channel:status": "node scripts/channel.cjs status",
+    "channel:send": "node scripts/channel.cjs send",
+    "configure:production": "node scripts/production.cjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "https-proxy-agent": "^7.0.5"
+  }
+}

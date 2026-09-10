@@ -1,0 +1,12 @@
+'use strict';
+const net=require('node:net'),os=require('node:os'),path=require('node:path');
+const command=process.argv[2]||'status';
+const value=flag=>process.argv[process.argv.indexOf(flag)+1];
+if(!['status','send'].includes(command))throw new Error('用法: channel.cjs status | send --to 号码 --text 内容');
+if(command==='send'&&(!process.argv.includes('--to')||!process.argv.includes('--text')))throw new Error('发送必须明确 --to 与 --text');
+const socket=net.connect(process.env.BRIDGE_SOCKET||path.join(os.homedir(),'.workbuddy/5g-macos.sock'));
+const timer=setTimeout(()=>{console.error('MCP 调用超时；发送结果未知，请勿自动重试');socket.destroy();process.exitCode=1;},15000);
+let buf='';socket.on('connect',()=>socket.write(JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:command==='status'?'bridge_status':'send_5g',arguments:command==='send'?{to:value('--to'),text:value('--text')}:{}}})+'\n'));
+socket.on('data',chunk=>{buf+=chunk;const i=buf.indexOf('\n');if(i<0)return;const res=JSON.parse(buf.slice(0,i));console.log(JSON.stringify(res,null,2));if(res.error||res.result?.isError)process.exitCode=1;clearTimeout(timer);socket.end();});
+socket.on('error',e=>{console.error(e.message);clearTimeout(timer);process.exitCode=1;});
+socket.on('close',()=>clearTimeout(timer));

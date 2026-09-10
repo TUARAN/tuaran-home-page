@@ -1,0 +1,2625 @@
+--- original/package.json
++++ macos/package.json
+@@ -1,16 +1,24 @@
+ {
+-  "name": "5g-msg-channel-connector",
+-  "version": "1.0.0",
++  "name": "5g-msg-channel-macos",
++  "version": "1.1.0",
+   "private": true,
+-  "description": "5G MaaP WS 连接器（对接真实 cmicmaap 网关或本地 8066 模拟器）",
++  "description": "macOS 5G MaaP ↔ WorkBuddy 本地 ACP 连接器",
+   "main": "src/index.cjs",
+   "engines": {
+-    "node": ">=16"
++    "node": ">=22"
+   },
+   "scripts": {
+-    "start": "node src/index.cjs",
+-    "start:mock": "node src/index.cjs --mock",
+-    "test:client": "node ../simulator/src/test-ws-client.cjs"
++    "start": "node src/index.cjs --mock",
++    "start:production": "node src/index.cjs --production",
++    "doctor": "node scripts/doctor.cjs",
++    "configure": "node scripts/configure.cjs",
++    "test": "node --test tests/*.test.cjs",
++    "test:live": "node scripts/test-live.cjs",
++    "mock:gateway": "node scripts/mock-gateway.cjs",
++    "service:install": "node scripts/production.cjs --install-service",
++    "channel:status": "node scripts/channel.cjs status",
++    "channel:send": "node scripts/channel.cjs send",
++    "configure:production": "node scripts/production.cjs"
+   },
+   "dependencies": {
+     "ws": "^8.18.0"
+--- original/scripts/channel.cjs
++++ macos/scripts/channel.cjs
+@@ -0,0 +1,12 @@
++'use strict';
++const net=require('node:net'),os=require('node:os'),path=require('node:path');
++const command=process.argv[2]||'status';
++const value=flag=>process.argv[process.argv.indexOf(flag)+1];
++if(!['status','send'].includes(command))throw new Error('用法: channel.cjs status | send --to 号码 --text 内容');
++if(command==='send'&&(!process.argv.includes('--to')||!process.argv.includes('--text')))throw new Error('发送必须明确 --to 与 --text');
++const socket=net.connect(process.env.BRIDGE_SOCKET||path.join(os.homedir(),'.workbuddy/5g-macos.sock'));
++const timer=setTimeout(()=>{console.error('MCP 调用超时；发送结果未知，请勿自动重试');socket.destroy();process.exitCode=1;},15000);
++let buf='';socket.on('connect',()=>socket.write(JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:command==='status'?'bridge_status':'send_5g',arguments:command==='send'?{to:value('--to'),text:value('--text')}:{}}})+'\n'));
++socket.on('data',chunk=>{buf+=chunk;const i=buf.indexOf('\n');if(i<0)return;const res=JSON.parse(buf.slice(0,i));console.log(JSON.stringify(res,null,2));if(res.error||res.result?.isError)process.exitCode=1;clearTimeout(timer);socket.end();});
++socket.on('error',e=>{console.error(e.message);clearTimeout(timer);process.exitCode=1;});
++socket.on('close',()=>clearTimeout(timer));
+--- original/scripts/configure.cjs
++++ macos/scripts/configure.cjs
+@@ -0,0 +1,39 @@
++'use strict';
++const fs = require('node:fs');
++const path = require('node:path');
++const os = require('node:os');
++const { spawnSync } = require('node:child_process');
++const ROOT = path.resolve(__dirname, '..');
++function configure({ target = path.join(os.homedir(), '.workbuddy/mcp.json'), apply = false } = {}) {
++  const before = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : '{}\n';
++  const data = JSON.parse(before);
++  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('mcp.json 根节点必须是对象');
++  if (data.mcpServers && (typeof data.mcpServers !== 'object' || Array.isArray(data.mcpServers))) throw new Error('mcpServers 必须是对象');
++  const entry = { type: 'stdio', command: process.execPath, args: [path.join(ROOT, 'src/index.cjs'), '--mock'], cwd: ROOT,
++    env: { ACP_CWD: path.join(ROOT, 'var/workspace'), ENFORCE_WHITELIST: 'true', ALLOWED_SENDERS: 'test-sender', BRIDGE_DRY: '1' } };
++  const name = '5g-msg-channel-macos';
++  if (data.mcpServers?.[name] && JSON.stringify(data.mcpServers[name]) !== JSON.stringify(entry)) throw new Error('已有同名配置且内容不同；请先人工核对，防止覆盖生产配置');
++  data.mcpServers ||= {}; data.mcpServers[name] = entry;
++  const after = JSON.stringify(data, null, 2) + '\n'; JSON.parse(after);
++  // Diff only this entry: never print credentials belonging to other connectors.
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), '5g-config-diff-'));
++  const oldEntry = JSON.parse(before).mcpServers?.[name];
++  fs.writeFileSync(path.join(dir, 'before.json'), JSON.stringify(oldEntry ? { [name]: oldEntry } : {}, null, 2) + '\n', { mode: 0o600 });
++  fs.writeFileSync(path.join(dir, 'after.json'), JSON.stringify({ [name]: entry }, null, 2) + '\n', { mode: 0o600 });
++  const diff = spawnSync('diff', ['-u', path.join(dir, 'before.json'), path.join(dir, 'after.json')], { encoding: 'utf8' }).stdout;
++  fs.rmSync(dir, { recursive: true });
++  if (apply && before !== after) {
++    fs.mkdirSync(path.dirname(target), { recursive: true, mode: 0o700 });
++    if (fs.existsSync(target)) fs.writeFileSync(target + '.bak-' + Date.now(), before, { mode: 0o600, flag: 'wx' });
++    const temp = target + '.tmp-' + process.pid;
++    fs.writeFileSync(temp, after, { mode: 0o600, flag: 'wx' });
++    JSON.parse(fs.readFileSync(temp, 'utf8'));
++    fs.renameSync(temp, target);
++  }
++  return { target, applied: apply, jsonValid: true, diff };
++}
++if (require.main === module) {
++  try { const result = configure({ apply: process.argv.includes('--apply') }); console.log(result.diff); console.log(JSON.stringify({ ...result, diff: undefined }, null, 2)); }
++  catch (e) { console.error(e.message); process.exitCode = 1; }
++}
++module.exports = { configure };
+--- original/scripts/doctor.cjs
++++ macos/scripts/doctor.cjs
+@@ -0,0 +1,15 @@
++'use strict';
++const AcpClient = require('../src/acp-client.cjs');
++(async () => {
++  const report = { platform: process.platform, arch: process.arch, node: process.version, dependency: false, acp: [] };
++  try { require('ws'); report.dependency = true; } catch {}
++  for (const port of AcpClient.ports()) {
++    const client = new AcpClient({ port, timeoutMs: 3000 });
++    try { const result = await client.connect(); report.acp.push({ port, handshake: true, initialize: result }); break; }
++    catch (e) { report.acp.push({ port, handshake: false, error: e.message }); }
++    finally { await client.close(); }
++  }
++  report.readyForLocalTest = report.dependency && report.acp.some(x => x.handshake);
++  console.log(JSON.stringify(report, null, 2));
++  if (!report.readyForLocalTest) process.exitCode = 1;
++})();
+--- original/scripts/mock-gateway.cjs
++++ macos/scripts/mock-gateway.cjs
+@@ -0,0 +1,19 @@
++'use strict';
++const readline = require('node:readline');
++const { WebSocketServer } = require('ws');
++const server = new WebSocketServer({ host: '127.0.0.1', port: Number(process.env.MOCK_PORT || 8066) });
++server.on('listening', () => console.log(`本地模拟网关 ws://127.0.0.1:${server.address().port}/ws。输入文本并回车可发送 test-sender 消息。`));
++server.on('error', e => { console.error(e.message); process.exitCode = 1; });
++server.on('connection', ws => {
++ ws.send(JSON.stringify({ type: 'connected' }));
++ ws.on('message', raw => {
++  const frame = JSON.parse(raw);
++  if (frame.type === 'auth') { ws.authed = frame.apiKey === 'test-api-key'; ws.send(JSON.stringify({ type: ws.authed ? 'auth_ok' : 'auth_failed' })); }
++  else if (frame.type === 'ping') ws.send(JSON.stringify({ type: 'pong' }));
++  else if (frame.type === 'send' && ws.authed) console.log('模拟下行：', JSON.stringify({ to: frame.to, text: frame.content }));
++ });
++});
++readline.createInterface({ input: process.stdin }).on('line', text => {
++ for (const ws of server.clients) if (ws.authed) ws.send(JSON.stringify({ type: 'text_message', messageId: 'mock-' + Date.now(), from: 'test-sender', content: text }));
++});
++process.on('SIGINT', () => { for (const ws of server.clients) ws.terminate(); server.close(); process.exit(0); });
+--- original/scripts/production.cjs
++++ macos/scripts/production.cjs
+@@ -0,0 +1,44 @@
++'use strict';
++const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
++const { spawnSync } = require('node:child_process');
++const root = path.resolve(__dirname, '..');
++function migrate({ home = os.homedir(), number, apply = false }) {
++ if (!/^\d{11,15}$/.test(number || '')) throw new Error('请用 --to 提供确认过的测试号码');
++ const file = path.join(home, '.workbuddy/mcp.json');
++ const before = fs.readFileSync(file,'utf8'), data = JSON.parse(before);
++ const old = data.mcpServers?.['5gmsg-channel'];
++ if (!old?.env?.MAAP_API_KEY) throw new Error('旧连接器缺少网关 Key');
++ const url=old.env.MAAP_WS_URL || 'wss://5gvas01.cmicmaap.com/gtw-ai/openclaw/ws/msg';
++ if (url !== 'wss://5gvas01.cmicmaap.com/gtw-ai/openclaw/ws/msg') throw new Error('旧网关地址不同，需要核对协议');
++ const keyFile=path.join(home,'.workbuddy/5g-macos-key');
++ const allowed=[...new Set([...(old.env.ALLOWED_SENDERS || '').split(',').map(x=>x.trim()).filter(Boolean),number])];
++ data.mcpServers['5gmsg-channel']={...old,disabled:true};
++ data.mcpServers['5g-msg-channel-macos']={type:'stdio',command:process.execPath,args:[path.join(root,'src/mcp-client.cjs')],cwd:root,disabled:false,env:{BRIDGE_MODE:'production',MAAP_WS_URL:url,MAAP_API_KEY_FILE:keyFile,ENFORCE_WHITELIST:'true',ALLOWED_SENDERS:allowed.join(','),BRIDGE_DRY:'0',ACP_CWD:path.join(root,'var/workspace')}};
++ const after=JSON.stringify(data,null,2)+'\n'; JSON.parse(after);
++ const redact = text => JSON.stringify(JSON.parse(text),(k,v)=>/KEY|SECRET|TOKEN/.test(k)&&k!=='MAAP_API_KEY_FILE'?'[redacted]':v,2)+'\n';
++ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'5g-production-'));
++ fs.writeFileSync(path.join(tmp,'before'),redact(before));fs.writeFileSync(path.join(tmp,'after'),redact(after));
++ const diff=spawnSync('diff',['-u',path.join(tmp,'before'),path.join(tmp,'after')],{encoding:'utf8'}).stdout;
++ fs.rmSync(tmp,{recursive:true});
++ let backup;
++ if(apply){
++  backup=file+'.bak-production-'+Date.now();fs.writeFileSync(backup,before,{mode:0o600,flag:'wx'});
++  fs.writeFileSync(keyFile,old.env.MAAP_API_KEY.trim(),{mode:0o600});fs.chmodSync(keyFile,0o600);
++  fs.writeFileSync(file+'.tmp',after,{mode:0o600});fs.renameSync(file+'.tmp',file);
++ }
++ return {applied:apply,backup,jsonValid:true,mode:'production',dry:false,allowedSenderCount:allowed.length,diff};
++}
++function installService(){
++ const dir=path.join(os.homedir(),'Library/LaunchAgents');fs.mkdirSync(dir,{recursive:true});
++ const label='com.tuaran.5g-msg-channel-macos',file=path.join(dir,label+'.plist');
++ const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
++ const logs=path.join(root,'var');fs.mkdirSync(logs,{recursive:true,mode:0o700});
++ const xml=`<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>Label</key><string>${label}</string><key>ProgramArguments</key><array><string>${escape(process.execPath)}</string><string>${escape(path.join(root,'scripts/service-launch.cjs'))}</string></array><key>WorkingDirectory</key><string>${escape(root)}</string><key>RunAtLoad</key><true/><key>KeepAlive</key><true/><key>ThrottleInterval</key><integer>10</integer><key>StandardOutPath</key><string>${escape(path.join(logs,'service.log'))}</string><key>StandardErrorPath</key><string>${escape(path.join(logs,'service.log'))}</string></dict></plist>`;
++ fs.writeFileSync(file,xml,{mode:0o600});
++ const lint=spawnSync('plutil',['-lint',file],{encoding:'utf8'});if(lint.status)throw new Error(lint.stderr||lint.stdout);
++ spawnSync('launchctl',['bootout',`gui/${process.getuid()}/${label}`]);
++ const r=spawnSync('launchctl',['bootstrap',`gui/${process.getuid()}`,file],{encoding:'utf8'});if(r.status)throw new Error(r.stderr||r.stdout);
++ return {label,plist:file};
++}
++if(require.main===module){try{if(process.argv.includes('--install-service'))console.log(JSON.stringify(installService()));else{const result=migrate({number:process.argv[process.argv.indexOf('--to')+1],apply:process.argv.includes('--apply')});console.log(result.diff);console.log(JSON.stringify({...result,diff:undefined},null,2));}}catch(e){console.error(e.message);process.exitCode=1;}}
++module.exports={migrate};
+--- original/scripts/service-launch.cjs
++++ macos/scripts/service-launch.cjs
+@@ -0,0 +1,8 @@
++'use strict';
++const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
++const config = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.workbuddy/mcp.json'), 'utf8'));
++const entry = config.mcpServers?.['5g-msg-channel-macos'];
++if (!entry || entry.disabled || entry.env?.BRIDGE_MODE !== 'production') throw new Error('生产连接器未配置或已禁用');
++Object.assign(process.env, entry.env);
++process.argv.push('--production', '--daemon');
++require('../src/index.cjs');
+--- original/scripts/test-fixture-actions.cjs
++++ macos/scripts/test-fixture-actions.cjs
+@@ -0,0 +1,47 @@
++'use strict';
++const fs = require('node:fs');
++const path = require('node:path');
++const os = require('node:os');
++const crypto = require('node:crypto');
++const Acp = require('../src/acp-client.cjs');
++(async () => {
++ const cwd = fs.mkdtempSync(path.join(os.tmpdir(), '5g-wb-fixtures-'));
++ const readPath = path.join(cwd, 'read.txt'), writePath = path.join(cwd, 'write.txt'), shellPath = path.join(cwd, 'shell.txt');
++ const nonce = crypto.randomBytes(12).toString('hex'); fs.writeFileSync(readPath, nonce);
++ const results = { cwd, date: new Date().toISOString(), mode: 'default', tests: {} };
++ const port = Acp.ports()[0];
++ for (const [name, prompt] of [
++  ['text', 'Reply exactly MACOS_ACP_OK. Do not use tools.'],
++  ['read', `User-authorized connector test. Read only the file at this exact absolute path: ${readPath}. Reply with its full content. Do not inspect other paths or run other tasks.`],
++  ['write', `User-authorized connector test. Write exactly WRITE_FIXTURE_OK to this absolute path: ${writePath}. Do not touch any other path. Use the Write tool; do not use a shell. This test has a scoped one-time approval handler.`],
++  ['shell', `User-authorized connector test. Run exactly this one command with Bash: printf 'SHELL_FIXTURE_OK' > '${shellPath}'. Do not run other commands or access other paths. This test has a scoped one-time approval handler.`],
++ ]) {
++  const eventCounts = {}, permissions = []; let text = '';
++  const client = new Acp({ port, cwd, timeoutMs: 10000,
++   onEvent(e) { const k=e.kind||e.type; eventCounts[k]=(eventCounts[k]||0)+1; },
++   async onPermission(params) {
++    // The test never enables an unrestricted WorkBuddy mode. Only a precise fixture operation can be approved.
++    const tool = params?.toolCall || {}, raw = tool.rawInput || {};
++    const title = tool.title || '';
++    let allowed = false;
++    if (name === 'write' && (raw.file_path === writePath || raw.path === writePath) && raw.content === 'WRITE_FIXTURE_OK') allowed = Object.keys(raw).every(k => ['file_path','path','content'].includes(k));
++    if (name === 'read' && (raw.file_path === readPath || raw.path === readPath)) allowed = Object.keys(raw).every(k => ['file_path','path','offset','limit'].includes(k));
++    if (name === 'shell' && raw.command === `printf 'SHELL_FIXTURE_OK' > '${shellPath}'`) allowed = Object.keys(raw).every(k => ['command','description','timeout'].includes(k));
++    permissions.push({ title, rawInput: raw, options: params?.options, allowed });
++    console.error(JSON.stringify({ test: name, permission: title, rawKeys: Object.keys(raw), allowed }));
++    return allowed ? params.options?.find(o => o.kind === 'allow_once')?.optionId : null;
++   }
++  });
++  try {
++   await client.ensureSession();
++   const result = await client.prompt(prompt, { timeoutMs: 90000, onText: t => text += t });
++   const proof = name === 'text' ? text.includes('MACOS_ACP_OK') : name === 'read' ? text.includes(nonce) : fs.existsSync(name === 'write' ? writePath : shellPath) && fs.readFileSync(name === 'write' ? writePath : shellPath, 'utf8') === (name === 'write' ? 'WRITE_FIXTURE_OK' : 'SHELL_FIXTURE_OK');
++   results.tests[name] = { stopReason: result.stopReason, outcome: result._meta?.['codebuddy.ai/outcome'], error: result._meta?.['codebuddy.ai/errorMessage'], proof, response: text.slice(0, 1000), eventCounts, permissions };
++  } catch(e) { results.tests[name]={error:e.message,eventCounts,permissions}; }
++  finally { await client.close(); }
++  console.error(JSON.stringify({test:name,proof:results.tests[name].proof,stopReason:results.tests[name].stopReason}));
++ }
++ fs.mkdirSync(path.join(__dirname,'../var'),{recursive:true,mode:0o700});
++ fs.writeFileSync(path.join(__dirname,'../var/fixture-permissions.json'),JSON.stringify(results,null,2),{mode:0o600});
++ console.log(JSON.stringify({cwd,tests:Object.fromEntries(Object.entries(results.tests).map(([k,v])=>[k,{proof:v.proof,stopReason:v.stopReason,error:v.error}]))},null,2));
++})();
+--- original/scripts/test-live-bridge.cjs
++++ macos/scripts/test-live-bridge.cjs
+@@ -0,0 +1,35 @@
++'use strict';
++const { WebSocketServer } = require('ws');
++const { spawn } = require('node:child_process');
++const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
++const Acp = require('../src/acp-client.cjs');
++(async () => {
++ const report = { date: new Date().toISOString(), gateway: 'loopback mock', acp: 'real local WorkBuddy', smsSent: false };
++ const cwd = fs.mkdtempSync(path.join(os.tmpdir(), '5g-live-bridge-'));
++ const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 });
++ await new Promise((resolve,reject)=>{wss.on('listening',resolve);wss.on('error',reject);});
++ let child, timer;
++ try {
++  const finished = new Promise((resolve,reject)=>{
++   timer=setTimeout(()=>reject(new Error('Bridge test timed out')),100000);
++   wss.on('connection',ws=>ws.on('message',raw=>{
++    const frame=JSON.parse(raw);
++    if(frame.type==='auth'){report.gatewayAuthenticated=true;ws.send('{"type":"auth_ok"}');ws.send(JSON.stringify({type:'text_message',from:'test-sender',messageId:'live-bridge-test',content:'Reply exactly MACOS_BRIDGE_OK. Do not use tools.'}));}
++    else if(frame.type==='ping')ws.send('{"type":"pong"}');
++    else if(frame.type==='send'){report.reply=frame.content;report.target=frame.to;resolve();}
++   }));
++  });
++  child=spawn(process.execPath,[path.join(__dirname,'../src/index.cjs'),'--mock'],{env:{...process.env,ACP_PORT:'',ACP_CWD:cwd,ALLOWED_SENDERS:'test-sender',MOCK_WS_URL:`ws://127.0.0.1:${wss.address().port}/ws`,BRIDGE_DRY:'0'},stdio:['pipe','pipe','pipe']});
++  let stdout='';child.stdout.on('data',c=>stdout+=c);child.stderr.on('data',c=>process.stderr.write(c));
++  child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2024-11-05'}})+'\n');
++  await finished;
++  // Finish the 2s business-error observation before stopping the test child.
++  await new Promise(resolve => setTimeout(resolve, 2200));
++  report.mcpHandshake=stdout.includes('5g-msg-channel-macos');report.proof=report.reply?.includes('MACOS_BRIDGE_OK');
++ }catch(e){report.error=e.message;process.exitCode=1;}
++ finally{
++  clearTimeout(timer);if(child){const exit=new Promise(r=>child.once('exit',r));child.stdin.end();await exit;}
++  for(const ws of wss.clients)ws.terminate();await new Promise(r=>wss.close(r));
++  const dir=path.join(__dirname,'../var');fs.mkdirSync(dir,{recursive:true,mode:0o700});fs.writeFileSync(path.join(dir,'live-bridge.json'),JSON.stringify(report,null,2),{mode:0o600});console.log(JSON.stringify(report,null,2));
++ }
++})();
+--- original/scripts/test-live.cjs
++++ macos/scripts/test-live.cjs
+@@ -0,0 +1,46 @@
++'use strict';
++// Explicitly invoked only. Creates a NEW WorkBuddy session; never resumes user sessions.
++// Reads/writes only synthetic fixtures under this script's dedicated temporary directory.
++const fs = require('node:fs');
++const os = require('node:os');
++const path = require('node:path');
++const crypto = require('node:crypto');
++const AcpClient = require('../src/acp-client.cjs');
++(async () => {
++ const cwd = fs.mkdtempSync(path.join(os.tmpdir(), '5g-wb-permission-test-'));
++ const nonce = crypto.randomBytes(12).toString('hex');
++ fs.writeFileSync(path.join(cwd, 'read-fixture.txt'), nonce + '\n', { mode: 0o600 });
++ const events = [], report = { date: new Date().toISOString(), cwd, gateway: 'not contacted', officialOAuth: 'not used', tests: {} };
++ let client;
++ try {
++  for (const port of AcpClient.ports()) {
++   client = new AcpClient({ port, cwd, timeoutMs: 8000, onEvent: event => { events.push(event); if(event.type !== 'update' || event.kind === 'tool_call') console.error(JSON.stringify(event)); } });
++   try { report.initialize = await client.connect(); break; } catch (e) { await client.close(); report.lastConnectError = e.message; }
++  }
++  if (!client?.connectionId) throw new Error('No ACP connection');
++  await client.ensureSession(); report.session = client.sessionId.slice(0, 8); report.sessionConfiguration = client.sessionResult;
++  for (const [name, prompt] of [
++   ['text', '这是用户授权的连接器测试。不要调用任何工具，仅回复 ACP_TEXT_OK。'],
++   ['read', `这是用户授权的测试。只读取当前目录的 read-fixture.txt（合成测试文件），回复该文件的完整内容。不得读取任何其他路径。`],
++   ['write', `这是用户授权的测试。只在当前目录创建 write-proof.txt，内容严格为 WRITE_PROOF_OK。不得修改其他文件；完成后回复完成。`],
++   ['shell', `这是用户授权的测试。只执行一次终端命令：printf 'SHELL_PROOF_OK\\n' > shell-proof.txt。工作目录为 ${cwd}。不要执行其他命令，不要访问网络或其他文件。`],
++  ]) {
++   let text = ''; const start = events.length;
++   try {
++    const result = await client.prompt(prompt, { timeoutMs: 90000, onText: t => { text += t; } });
++    const proof = name === 'text' ? text.includes('ACP_TEXT_OK') : name === 'read' ? text.includes(nonce) : fs.existsSync(path.join(cwd, name === 'write' ? 'write-proof.txt' : 'shell-proof.txt')) && fs.readFileSync(path.join(cwd, name === 'write' ? 'write-proof.txt' : 'shell-proof.txt'), 'utf8').trim() === (name === 'write' ? 'WRITE_PROOF_OK' : 'SHELL_PROOF_OK');
++    report.tests[name] = { result, proof, response: text.slice(0, 1200), eventCounts: events.slice(start).reduce((a,e) => { const k = e.kind || e.type; a[k]=(a[k]||0)+1; return a; }, {}), tools: events.slice(start).filter(e => e.tool) };
++   } catch (e) { report.tests[name] = { error: e.message, eventCounts: events.slice(start).reduce((a,e) => { const k=e.kind||e.type; a[k]=(a[k]||0)+1; return a; }, {}) }; break; }
++   console.error('TEST ' + name + ': ' + JSON.stringify({ proof: report.tests[name].proof }));
++  }
++  report.permissionsDenied = client.permissionsDenied;
++ } catch (e) { report.error = e.message; process.exitCode = 1; }
++ finally {
++  await client?.close();
++  // Session identifiers/tokens returned by local API are not included in the saved report.
++  if (report.sessionConfiguration) { const { sessionId, ...rest } = report.sessionConfiguration; report.sessionConfiguration = rest; }
++  const dir = path.join(__dirname, '../var'); fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
++  fs.writeFileSync(path.join(dir, 'live-permissions.json'), JSON.stringify(report, null, 2), { mode: 0o600 });
++  console.log(JSON.stringify(report, null, 2));
++ }
++})();
+--- original/scripts/test-permission-dialog.cjs
++++ macos/scripts/test-permission-dialog.cjs
+@@ -0,0 +1,7 @@
++'use strict';
++const {createPermissionPrompter}=require('../src/permission-dialog.cjs');
++(async()=>{
++ const ui=createPermissionPrompter();
++ const choice=await ui.request({toolCall:{rawInput:{说明:'仅测试确认窗口，不执行任何文件或终端操作',示例命令:'pwd'}},options:[{kind:'allow_once',optionId:'test-once'}]});
++ console.log(JSON.stringify({choice,actualOperationExecuted:false,...ui.status()},null,2));
++})();
+--- original/scripts/安装与检查.command
++++ macos/scripts/安装与检查.command
+@@ -0,0 +1,14 @@
++#!/bin/zsh
++set -euo pipefail
++cd "$(dirname "$0")/.."
++if ! command -v node >/dev/null; then
++  for candidate in "$HOME/.local/bin/node" /opt/homebrew/bin/node /usr/local/bin/node; do
++    if [[ -x "$candidate" ]]; then export PATH="$(dirname "$candidate"):$PATH"; break; fi
++  done
++fi
++node -e 'if(Number(process.versions.node.split(".")[0])<22)throw new Error("需要 Node.js 22 或更新版本")'
++npm ci --ignore-scripts --no-audit --no-fund
++npm test
++npm run doctor
++npm run configure
++echo '检查完成。上方为配置预览；运行 npm run configure -- --apply 可注册模拟/DRY 模式。'
+--- original/src/acp-client.cjs
++++ macos/src/acp-client.cjs
+@@ -1,334 +1,139 @@
+ 'use strict';
+-
+-/**
+- * acp-client.cjs — ACP 客户端（对接真实 WorkBuddy 引擎）
+- *
+- * 流程：connect → initialize → session(resume|new) → session/prompt(SSE 订阅)
+- * 参考：5g-acp-sim 已全量实测的 ACP 帧细节。
+- *
+- * 关键经验：
+- *  - connect 后所有请求需带请求头 acp-connection-id
+- *  - initialize 的 Accept 必须 "application/json, text/event-stream"（只写 SSE 会 406）
+- *  - sessionId 解析：--session-id > env CODEBUDDY_SESSION_ID > session/new(缓存复用)
+- *  - prompt 是 SSE 长流；活动事件 session/update；结束帧 id 匹配 result{stopReason}
+- */
+-
+-const http = require('http');
+-const fs = require('fs');
+-const os = require('os');
+-const path = require('path');
+-const sessionStore = require('./session-store.cjs');
+-const VERSION = require('./version.cjs');
+-
+-const H = { 'X-CodeBuddy-Request': '1', 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' };
+-
++const fs = require('node:fs');
++const os = require('node:os');
++const path = require('node:path');
++const HEADERS = { 'X-CodeBuddy-Request': '1', 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' };
+ class AcpClient {
+-  /**
+-   * @param {object} cfg {
+-   *   port, sessionIdHint?, cwd, logger,
+-   *   onActivity: (type, detail) => void,   // thought/tool/usage/chunk 活动回调
+-   *   onText: (delta) => void,               // 文本增量
+-   * }
+-   */
+-  constructor(cfg) {
+-    this.port = cfg.port;
+-    this.cwd = cfg.cwd;
+-    this.log = cfg.logger || console;
+-    this.onActivity = cfg.onActivity || null;
+-    this.onText = cfg.onText || null;
+-    this.connectionId = null;
+-    this.activeSessionId = cfg.sessionIdHint || '';
+-    this._sessionHintSource = cfg.sessionHintSource || 'auto';  // arg|env|auto
+-    this._sessionSourceResume = false;   // 当前会话是否来自 resume
+-    this._seq = 0;
+-    this._pending = new Map();
++  constructor({ port, discoverPorts, cwd, onEvent = () => {}, onPermission = async () => null, timeoutMs = 15000 }) {
++    this.port = port; this.discoverPorts = discoverPorts; this.cwd = cwd; this.onEvent = onEvent; this.onPermission = onPermission; this.timeoutMs = timeoutMs;
++    this.connectionId = null; this.sessionId = null; this.ready = false; this.seq = 0;
++    this.controllers = new Set(); this.permissionsDenied = 0; this.lastError = null;
+   }
+-
+-  /** 从日志/环境探测 ACP 端口（异步）：候选按可信度排序，返回第一个可连接的 */
+-  static detectPort(fallback = 16120) {
+-    return AcpClient.detectPortAsync(fallback);
++  static ports(env = process.env, home = os.homedir()) {
++    const found = [];
++    for (const key of ['ACP_PORT', 'WORKBUDDY_ACP_PORT', 'CODEBUDDY_ACP_PORT']) if (env[key]) found.push(Number(env[key]));
++    if (env.ACP_PORT) return found.slice(0, 1);
++    for (const name of ['daemon.log', 'daemon.old.log']) {
++      try { const text = fs.readFileSync(path.join(home, '.workbuddy/logs', name), 'utf8');
++        found.push(...[...text.matchAll(/acpEndpoint=http:\/\/127\.0\.0\.1:(\d+)\/api\/v1\/acp/g)].reverse().map(m => Number(m[1])));
++      } catch {}
++    }
++    return [...new Set(found)].filter(p => Number.isInteger(p) && p > 0 && p < 65536);
+   }
+-
+-  /**
+-   * @returns {Promise<number|null>} 可用端口；全部不通时返回 null（由上层输出 FATAL 日志并决定是否降级）
+-   */
+-  static async detectPortAsync(fallback = 16120) {
+-    const candidates = [];
+-    const seen = new Set();
+-    const push = (p) => { p = parseInt(p, 10); if (p > 0 && !seen.has(p)) { seen.add(p); candidates.push(p); } };
+-
+-    // 1) 环境变量显式指定（最高优先）
+-    if (process.env.ACP_PORT) push(process.env.ACP_PORT);
+-    if (process.env.CODEBUDDY_ACP_PORT) push(process.env.CODEBUDDY_ACP_PORT);
+-
+-    // 2) WorkBuddy 注入给当前子进程的活跃会话相关端口（MCP 子进程最可信的来源）
+-    if (process.env.WORKBUDDY_ACP_PORT) push(process.env.WORKBUDDY_ACP_PORT);
+-
+-    // 3) 日志：当前 daemon.log + 滚动 daemon.old.log（每条从新到旧）
+-    for (const logName of ['daemon.log', 'daemon.old.log']) {
+-      try {
+-        const s = fs.readFileSync(path.join(os.homedir(), '.workbuddy', 'logs', logName), 'utf-8');
+-        const m = [...s.matchAll(/acpEndpoint=http:\/\/127\.0\.0\.1:(\d+)\/api\/v1\/acp/g)];
+-        for (let i = m.length - 1; i >= 0; i--) push(m[i][1]);
+-      } catch (e) { /* 文件不存在则跳过 */ }
+-    }
+-
+-    // 4) 常见默认端口兜底
+-    [16120, 16162, 38818, 47185, 58960].forEach(push);
+-
+-    // 逐个 TCP 试连，返回第一个可用
+-    for (const port of candidates) {
+-      if (await AcpClient._portAlive(port)) return port;
+-    }
+-    // 最后 fallback 也做一遍 alive 检测：真的全不通就返回 null（上层做 FATAL）
+-    const fb = (parseInt(fallback, 10) > 0) ? parseInt(fallback, 10) : null;
+-    if (fb) {
+-      if (await AcpClient._portAlive(fb)) return fb;
+-    }
+-    return null;
+-  }
+-
+-  /** 端口存活检测（异步 TCP connect，300ms 超时） */
+-  static _portAlive(port, timeoutMs = 300) {
+-    return new Promise((resolve) => {
+-      const net = require('net');
+-      const s = net.connect({ host: '127.0.0.1', port });
+-      const done = (ok) => { try { s.destroy(); } catch (e) {} resolve(ok); };
+-      s.on('connect', () => done(true));
+-      s.on('timeout', () => done(false));
+-      s.on('error', () => done(false));
+-      s.setTimeout(timeoutMs);
+-    });
+-  }
+-
+-  static resolveSessionIdHint() {
+-    // 优先级：环境变量（引擎注入当前活跃桌面会话）> 持久化文件（上次成功 new 的）
+-    for (const k of ['CODEBUDDY_SESSION_ID', 'CLAUDE_SESSION_ID']) {
+-      if (process.env[k]) return process.env[k];
+-    }
+-    const stored = sessionStore.load();
+-    if (stored) return stored.sessionId;
+-    return '';
+-  }
+-
+-  _headers() { return { ...H, ...(this.connectionId ? { 'acp-connection-id': this.connectionId } : {}) }; }
+-
+-  _rawPost(p, body) {
+-    return new Promise((resolve, reject) => {
+-      const r = http.request({ hostname: '127.0.0.1', port: this.port, path: p, method: 'POST', headers: this._headers() }, (res) => {
+-        let d = ''; res.on('data', (c) => (d += c)); res.on('end', () => resolve({ status: res.statusCode, body: d }));
+-      });
+-      r.on('error', reject);
+-      r.setTimeout(8000, () => r.destroy(new Error('timeout')));
+-      r.write(JSON.stringify(body)); r.end();
+-    });
+-  }
+-
+-  _streamPost(body, onEvent) {
+-    return new Promise((resolve, reject) => {
+-      const r = http.request({ hostname: '127.0.0.1', port: this.port, path: '/api/v1/acp', method: 'POST', headers: this._headers() }, (res) => {
+-        let buf = '', ev = '', ld = null;
+-        const flushBuf = () => {
+-          if (buf) {
+-            const line = buf.replace(/\r$/, '');
+-            buf = '';
+-            if (line === '') {
+-              if (ev && ld) { try { onEvent(JSON.parse(ld)); } catch (e) {} }
+-              ev = ''; ld = null;
+-            } else if (!line.startsWith(':')) {
+-              if (line.startsWith('event:')) ev = line.slice(6).trim();
+-              else if (line.startsWith('data:')) ld = (ld || '') + line.slice(5).trim();
+-            }
+-            if (ev && ld) { try { onEvent(JSON.parse(ld)); } catch (e) {} }
+-          }
+-        };
+-        res.on('data', (chunk) => {
+-          buf += chunk.toString();
+-          let nl;
+-          while ((nl = buf.indexOf('\n')) >= 0) {
+-            const line = buf.slice(0, nl).replace(/\r$/, ''); buf = buf.slice(nl + 1);
+-            if (line === '') {
+-              if (ev && ld) { try { onEvent(JSON.parse(ld)); } catch (e) {} }
+-              ev = ''; ld = null;
+-            } else if (line.startsWith(':')) {}
+-            else if (line.startsWith('event:')) ev = line.slice(6).trim();
+-            else if (line.startsWith('data:')) ld = (ld || '') + line.slice(5).trim();
+-          }
+-        });
+-        res.on('end', () => { flushBuf(); resolve(); });
+-        res.on('error', reject);
+-      });
+-      r.on('error', reject);
+-      r.setTimeout(120000, () => r.destroy(new Error('stream timeout')));
+-      r.write(JSON.stringify(body)); r.end();
+-    });
+-  }
+-
+-  _request(method, params, timeoutMs = 30000) {
+-    const id = ++this._seq;
+-    return new Promise((resolve, reject) => {
+-      const timer = setTimeout(() => { this._pending.delete(id); reject(new Error(`timeout: ${method}`)); }, timeoutMs);
+-      this._pending.set(id, { resolve, reject, timer });
+-      this._streamPost({ jsonrpc: '2.0', id, method, params }, (msg) => {
+-        if (msg.id !== undefined) {
+-          const p = this._pending.get(msg.id);
+-          if (!p) return;
+-          clearTimeout(p.timer); this._pending.delete(msg.id);
+-          msg.error ? p.reject(new Error(`${method}: ${JSON.stringify(msg.error).slice(0, 200)}`)) : p.resolve(msg.result);
+-        }
+-      });
+-    });
+-  }
+-
+-  /** 完整握手一次：connect → initialize → 确保会话可用（幂等：已连接则跳过） */
+-  async ensureSession() {
+-    if (this.connectionId) return this.activeSessionId;   // 复用现有连接
+-    const c = await this._rawPost('/api/v1/acp/connect', {});
+-    if (c.status !== 200) throw new Error('ACP connect HTTP ' + c.status + ' ' + c.body.slice(0, 150));
+-    this.connectionId = JSON.parse(c.body).connectionId;
+-    this.log.info(`[acp] ① connect ✓ ${this.connectionId}`);
+-
+-    await this._request('initialize', {
+-      protocolVersion: 1, capabilities: {},
+-      clientInfo: { name: '5g-msg-channel', version: VERSION },
+-    });
+-    this.log.info('[acp] ② initialize ✓');
+-
+-    // 会话：优先 resume（hint 来自 --session-id > env > 持久化文件）；失败则 session/new 并持久化
+-    if (this.activeSessionId) {
+-      try {
+-        await this._request('session/resume', { cwd: this.cwd, sessionId: this.activeSessionId }, 30000);
+-        this._sessionSourceResume = true;    // 标记：当前会话来自 resume
+-        this.log.mark('✅', 'acp.session/resume', `${this.activeSessionId} (${this._sessionHintSource || 'auto'})`);
+-      } catch (e) {
+-        // 配置/持久化的会话不可用 → 自动新建（不会反复尝试坏 id；new 后持久化覆盖）
+-        this.log.warn(`[acp] session/resume 失败(${e.message.slice(0, 80)}) → 自动 session/new`);
+-        if (this._sessionHintSource !== 'auto') {
+-          // 显式配置(参数/env)的会话失效：提示用户可在日志确认后修改配置
+-          this.log.warn(`[acp] 注意: 显式配置的 sessionId(${this._sessionHintSource}) 已失效，本次改用新建会话并持久化`);
+-        }
+-        this.activeSessionId = '';
+-        this._sessionSourceResume = false;
++  headers() { return { ...HEADERS, ...(this.connectionId ? { 'acp-connection-id': this.connectionId } : {}) }; }
++  async connect() {
++    const ports = this.discoverPorts ? [...new Set(this.discoverPorts())].slice(0, 10) : [this.port];
++    const errors = [];
++    for (const port of ports) {
++      this.port = port;
++      try { return await this.connectAtPort(); }
++      catch (e) {
++        errors.push(`${port}: ${e.cause?.code || e.message}`);
++        await this.close();
+       }
+     }
+-    if (!this.activeSessionId) {
+-      const ns = await this._request('session/new', { cwd: this.cwd, mcpServers: [] }, 30000);
+-      this.activeSessionId = ns.sessionId;
+-      this._sessionSourceResume = false;     // 标记：当前会话来自 new
+-      // 持久化保存，重启后复用（新 id 覆盖旧的失效 id）
+-      sessionStore.save(this.activeSessionId, { cwd: this.cwd, source: 'new' });
+-      this.log.mark('✅', 'acp.session/new(已持久化)', `${this.activeSessionId} → ${sessionStore.STORE_FILE}`);
+-      const initWaitMs = parseInt(process.env.ACP_SESSION_NEW_WAIT_MS || '500', 10);
+-      if (initWaitMs > 0) await new Promise((r) => setTimeout(r, initWaitMs));
+-    }
+-    return this.activeSessionId;
++    throw new Error('ACP 连接失败: ' + (errors.join('; ') || '未发现候选端口'));
+   }
+-
+-  /** 强制释放连接（任务结束后调用，避免僵尸连接堆积） */
+-  forceReconnect() {
+-    this.disconnect();
++  async connectAtPort() {
++    const res = await fetch(`http://127.0.0.1:${this.port}/api/v1/acp/connect`, { method: 'POST', headers: this.headers(), body: '{}', signal: AbortSignal.timeout(this.timeoutMs) });
++    if (!res.ok) throw new Error(`ACP connect HTTP ${res.status}`);
++    const body = await res.json();
++    if (!body.connectionId) throw new Error('ACP 缺少 connectionId');
++    this.connectionId = body.connectionId;
++    // sessionToken is deliberately not logged or treated as an official OAuth token.
++    this.initializeResult = await this.request('initialize', {
++      protocolVersion: 1, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
++      capabilities: {}, clientInfo: { name: '5g-msg-channel-macos', version: '1.1.0' },
++    });
++    return this.initializeResult;
+   }
+-
+-  /**
+-   * 注入 prompt 并订阅活动事件。
+-   * resolve 时机：收到匹配 id 的 result（end_turn）或超时。
+-   * 超时自动降级：若当前会话是 resume 的（可能排队），自动 session/new 重试一次。
+-   * @returns {Promise<{stopReason, userMessageId, typeHist, textLength, sessionId}>}
+-   */
+-  async prompt(text, { timeoutMs = 90000, activity = true, allowNewRetry = true, onText, onActivity } = {}) {
+-    if (!this.connectionId) await this.ensureSession();
+-    const wasResumedSession = !!this._sessionSourceResume;
+-
+-    const result = await this._promptOnce(text, { timeoutMs, activity, onText, onActivity });
+-    // 超时 且 用的是 resume 会话 且 允许降级 → session/new 重试一次
+-    if (result.timedOut && allowNewRetry && wasResumedSession) {
+-      this.log.warn(`[acp] resume 会话 prompt 超时 → 降级 session/new 重试`);
+-      try {
+-        this.disconnect();               // 释放旧连接
+-        this.activeSessionId = '';       // 强制下次 new
+-        await this.ensureSession();      // session/new（内部持久化）
+-        const retry = await this._promptOnce(text, { timeoutMs: Math.min(timeoutMs, 60000), activity });
+-        retry.sessionId = this.activeSessionId;
+-        retry.retriedOnNewSession = true;
+-        return retry;
+-      } catch (e) {
+-        this.log.error('[acp] session/new 重试失败:', e.message);
++  async ensureSession() {
++    if (this.ready) return this.sessionId;
++    try {
++      if (!this.connectionId) await this.connect();
++      const result = await this.request('session/new', { cwd: this.cwd, mcpServers: [] });
++      if (!result.sessionId) throw new Error('ACP 缺少 sessionId');
++      if (result.modes?.currentModeId && result.modes.currentModeId !== 'default') throw new Error('ACP 会话必须处于 default 权限确认模式');
++      this.sessionId = result.sessionId; this.sessionResult = result; this.ready = true; this.lastError = null;
++      return this.sessionId;
++    } catch (e) { this.lastError = e.message; await this.close(); throw e; }
++  }
++  async request(method, params, { timeoutMs = this.timeoutMs, onText = () => {} } = {}) {
++    const id = ++this.seq;
++    const controller = new AbortController(); this.controllers.add(controller);
++    const timer = setTimeout(() => controller.abort(new Error(`ACP ${method} timeout`)), timeoutMs);
++    let result, seen = false;
++    const receive = async msg => {
++      if (msg.method && msg.id !== undefined) {
++        // No auto-approval or proxy file/shell implementation. Unsupported requests fail closed.
++        let response;
++        if (msg.method === 'session/request_permission') {
++          const choice = await this.onPermission(msg.params, { signal: controller.signal });
++          const option = msg.params?.options?.find(o => o.optionId === choice && o.kind === 'allow_once');
++          if (option) {
++            this.onEvent({ type: 'permission_allowed_once', method: msg.method });
++            response = { result: { outcome: { outcome: 'selected', optionId: option.optionId } } };
++          } else {
++            this.permissionsDenied++;
++            this.onEvent({ type: 'permission_denied', method: msg.method });
++            response = { result: { outcome: { outcome: 'cancelled' } } };
++          }
++        } else response = { error: { code: -32601, message: 'Client capability not supported' } };
++        await fetch(`http://127.0.0.1:${this.port}/api/v1/acp`, { method: 'POST', headers: this.headers(), body: JSON.stringify({ jsonrpc: '2.0', id: msg.id, ...response }), signal: controller.signal }).then(async r => { await r.body?.cancel(); if (!r.ok) throw new Error(`ACP response HTTP ${r.status}`); });
++        return;
+       }
+-    }
+-    result.sessionId = this.activeSessionId;
+-    return result;
++      if (msg.id === id && !msg.method) {
++        if (msg.error) throw new Error(`ACP ${method}: ${msg.error.message || 'RPC error'}`);
++        seen = true; result = msg.result; return;
++      }
++      if (msg.method === 'session/update' && (!msg.params.sessionId || msg.params.sessionId === this.sessionId)) {
++        const u = msg.params.update || {};
++        const kind = u.sessionUpdate || u.kind;
++        const history = msg.params._meta?.['codebuddy.ai']?.mode === 'history';
++        if (!history && kind === 'agent_message_chunk') {
++          const text = u.textDelta || u.text || (u.content?.type === 'text' ? u.content.text : '');
++          if (typeof text === 'string') onText(text);
++        }
++        this.onEvent({ type: 'update', kind, tool: kind === 'tool_call' ? u.title : undefined });
++      }
++    };
++    try {
++      const res = await fetch(`http://127.0.0.1:${this.port}/api/v1/acp`, { method: 'POST', headers: this.headers(), body: JSON.stringify({ jsonrpc: '2.0', id, method, params }), signal: controller.signal });
++      if (!res.ok) { await res.body?.cancel(); throw new Error(`ACP ${method} HTTP ${res.status}`); }
++      if ((res.headers.get('content-type') || '').includes('application/json')) await receive(await res.json());
++      else {
++        const reader = res.body.getReader(); const decoder = new TextDecoder(); let buf = '', data = [];
++        const dispatch = async () => { if (data.length) { const raw = data.join('\n'); data = []; await receive(JSON.parse(raw)); } };
++        try {
++          while (!seen) {
++            const { value, done } = await reader.read();
++            buf += done ? decoder.decode() : decoder.decode(value, { stream: true });
++            if (buf.length > 1024 * 1024) throw new Error('ACP SSE frame too large');
++            let end;
++            while ((end = buf.indexOf('\n')) >= 0) {
++              const line = buf.slice(0, end).replace(/\r$/, ''); buf = buf.slice(end + 1);
++              if (!line) await dispatch();
++              else if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /, ''));
++              if (seen) break;
++            }
++            if (done) { if (buf.startsWith('data:')) data.push(buf.slice(5).trim()); await dispatch(); break; }
++          }
++        } finally { await reader.cancel().catch(() => {}); }
++      }
++      if (!seen) throw new Error(`ACP ${method} stream ended without result`);
++      return result;
++    } finally { clearTimeout(timer); this.controllers.delete(controller); }
+   }
+-
+-  /** 单次 session/prompt 发送（内部） */
+-  _promptOnce(text, { timeoutMs = 90000, activity = true, onText, onActivity } = {}) {
+-    const sid = this.activeSessionId;
+-    const pid = ++this._seq;
+-    const typeHist = {};
+-    let textLength = 0;
+-    let stopReason = null;
+-    let userMessageId = null;
+-    const textCb = onText || this.onText || null;
+-    const actCb = onActivity || this.onActivity || null;
+-
+-    this.log.info(`[acp] ④ session/prompt 注入: "${String(text).slice(0, 80)}"`);
+-
+-    return new Promise((resolve, reject) => {
+-      let settled = false;
+-      const finish = (fn, val) => { if (!settled) { settled = true; clearTimeout(timer); fn(val); } };
+-      const timer = setTimeout(() => {
+-        this.log.warn('[acp] prompt 流超时（引擎可能异步处理中，按超时返回）');
+-        finish(resolve, { stopReason, userMessageId, typeHist, textLength, timedOut: true });
+-      }, timeoutMs);
+-
+-      this._streamPost(
+-        { jsonrpc: '2.0', id: pid, method: 'session/prompt', params: { sessionId: sid, prompt: [{ type: 'text', text }] } },
+-        (msg) => {
+-          if (msg.id === pid) {
+-            if (msg.result) {
+-              stopReason = msg.result.stopReason || null;
+-              userMessageId = msg.result.userMessageId || null;
+-              this.log.info(`[acp] ✅ prompt result: stopReason=${stopReason} msgId=${userMessageId || '-'}`);
+-              finish(resolve, { stopReason, userMessageId, typeHist, textLength });
+-            } else if (msg.error) {
+-              finish(reject, new Error('prompt error: ' + JSON.stringify(msg.error).slice(0, 200)));
+-            }
+-            return;
+-          }
+-          if (msg.method === 'session/update' && msg.params) {
+-            const u = msg.params.update || {};
+-            const t = u.sessionUpdate || u.kind || '?';
+-            typeHist[t] = (typeHist[t] || 0) + 1;
+-            // 文本提取：兼容多种形态 —— textDelta / text / content{type:'text',text} / content:'string'
+-            let cand = u.textDelta || u.text || '';
+-            if (!cand && u.content) {
+-              cand = typeof u.content === 'string' ? u.content
+-                   : (u.content.text || u.content.content || '');
+-            }
+-            const hist = msg.params && msg.params._meta && msg.params._meta['codebuddy.ai'] && msg.params._meta['codebuddy.ai'].mode === 'history';
+-            if (cand && String(cand).trim()) {
+-              textLength += String(cand).length;
+-              if (!hist && textCb) textCb(String(cand));
+-            }
+-            if (activity && actCb) actCb(t, u);
+-          }
+-        },
+-      ).catch((e) => finish(reject, e));
+-    });
++  async prompt(text, options = {}) {
++    await this.ensureSession();
++    try { return await this.request('session/prompt', { sessionId: this.sessionId, prompt: [{ type: 'text', text }] }, { timeoutMs: 120000, ...options }); }
++    catch (e) { this.lastError = e.message; await this.close(); throw e; } // Never replay a possibly executed task.
+   }
+-
+-  /** 断开 ACP 连接 */
+-  disconnect() {
+-    for (const [id, p] of this._pending.entries()) {
+-      try { clearTimeout(p.timer); } catch (e) {}
+-      try { p.reject(new Error('acp disconnected')); } catch (e) {}
+-    }
+-    this._pending.clear();
+-    if (!this.connectionId) return;
+-    const del = http.request({ hostname: '127.0.0.1', port: this.port, path: '/api/v1/acp', method: 'DELETE', headers: this._headers() });
+-    del.on('error', () => {});
+-    del.end();
+-    this.connectionId = null;
++  status() { return { ready: this.ready, port: this.port, session: this.sessionId?.slice(0, 8) || null, permissionsDenied: this.permissionsDenied, error: this.lastError }; }
++  async close() {
++    for (const c of this.controllers) c.abort(); this.controllers.clear();
++    const cid = this.connectionId; this.connectionId = null; this.ready = false; this.sessionId = null;
++    if (cid) await fetch(`http://127.0.0.1:${this.port}/api/v1/acp`, { method: 'DELETE', headers: { ...HEADERS, 'acp-connection-id': cid }, signal: AbortSignal.timeout(3000) }).then(r => r.body?.cancel()).catch(() => {});
+   }
+ }
+-
+ module.exports = AcpClient;
+--- original/src/bridge.cjs
++++ macos/src/bridge.cjs
+@@ -1,226 +1,62 @@
+ 'use strict';
+-
+-/**
+- * bridge.cjs — 消息路由核心
+- *
+- * 手机5G上行(text_message) → 归一化 → [串行队列] → ACP prompt(真实WorkBuddy)
+- *   → 活动订阅(进度回执) / 文本增量收集 / end_turn
+- *   → 回复组装 → maap.sendReply（WS send 帧）→ 回 5G
+- */
+-
+-const TASK_TIMEOUT_MS = 120000;
+-const MAX_QUEUE_DEFAULT = 500;
+-const IDLE_RECONNECT_MS_DEFAULT = 60000;
+-const PROGRESS_MAP_MAX = 200;    // progressMap 上限（长期运行多用户场景，200 足够展示最后 N 个会话的进度）
+-
++const AcpClient = require('./acp-client.cjs');
++const { assertAllowed, senderDirectory } = require('./policy.cjs');
+ class Bridge {
+-  /**
+-   * @param {object} deps { maap, acp, logger, options }
+-   */
+-  constructor(deps) {
+-    this.maap = deps.maap;
+-    this.acp = deps.acp;
+-    this.log = deps.logger || console;
+-    this.opts = deps.options || {};
+-    this.queue = [];
+-    this.active = null;
+-    this.progressMap = new Map();       // replyTarget -> { text, ts }
+-    this.processed = 0;
+-    this.failed = 0;
+-    this.maxQueue = (typeof this.opts.maxQueue === 'number' && this.opts.maxQueue > 0)
+-      ? this.opts.maxQueue
+-      : (parseInt(process.env.BRIDGE_MAX_QUEUE || String(MAX_QUEUE_DEFAULT), 10) || MAX_QUEUE_DEFAULT);
+-    this.idleReconnectMs = (typeof this.opts.idleReconnectMs === 'number' && this.opts.idleReconnectMs > 0)
+-      ? this.opts.idleReconnectMs
+-      : IDLE_RECONNECT_MS_DEFAULT;
+-    this.progressMax = PROGRESS_MAP_MAX;
+-    this._idleReconnectTimer = null;
++  constructor({ maap, config, port, makeClient, onEvent = () => {} }) {
++    Object.assign(this, { maap, config, port, onEvent });
++    this.makeClient = makeClient || (cwd => new AcpClient({ port, cwd, onEvent }));
++    this.clients = new Map(); this.seen = new Map(); this.queue = [];
++    this.lastTask = null; this.received = 0; this.active = null; this.processed = 0; this.failed = 0; this.stopped = false;
+   }
+-
+-  /** progressMap 增容：超过上限时删除最旧条目（Map 按插入顺序迭代） */
+-  _touchProgress(target, value) {
+-    if (this.progressMap.has(target)) this.progressMap.delete(target);   // 先删再插：插入顺序 = 最近活跃
+-    this.progressMap.set(target, value);
+-    if (this.progressMap.size > this.progressMax) {
+-      const delCount = this.progressMap.size - this.progressMax;
+-      const it = this.progressMap.keys();
+-      for (let i = 0; i < delCount; i++) { const k = it.next().value; if (k === undefined) break; this.progressMap.delete(k); }
+-    }
++  async send(target, text) {
++    assertAllowed(this.config.allowed, target);
++    if (typeof text !== 'string' || !text.trim() || text.length > 4000) throw new Error('消息必须为 1–4000 字符');
++    if (this.config.dry) return { status: 'dry_run', delivered: false };
++    return this.maap.sendReply(target, text);
+   }
+-
+-  status() {
+-    return {
+-      queueLength: this.queue.length,
+-      active: this.active ? { target: this.active.replyTarget, text: this.active.text.slice(0, 40), startedAt: this.active.startedAt } : null,
+-      processed: this.processed,
+-      failed: this.failed,
+-      progress: [...this.progressMap.entries()].slice(-5),
+-    };
++  enqueue(msg) {
++    assertAllowed(this.config.allowed, msg.replyTarget);
++    if (this.stopped) throw new Error('服务正在停止');
++    if (typeof msg.text !== 'string' || !msg.text.trim() || msg.text.length > 4000) throw new Error('上行消息长度不合法');
++    const key = msg.replyTarget + ':' + msg.id;
++    if (this.seen.has(key)) return false;
++    if (this.queue.length >= 100) throw new Error('队列已满');
++    this.seen.set(key, true); if (this.seen.size > 2000) this.seen.delete(this.seen.keys().next().value);
++    this.received++; this.onEvent({ type: 'message_received' }); this.queue.push(msg); this.pump(); return true;
+   }
+-
+-  /** 入队（由 maap.onMessage 调用） */
+-  enqueue(msg) {
+-    const task = {
+-      id: msg.id,
+-      replyTarget: msg.replyTarget,
+-      text: msg.text,
+-      type: msg.type,
+-      createdAt: Date.now(),
+-    };
+-    if (this.queue.length >= this.maxQueue) {
+-      this.log.warn(`[bridge] 🛑 队列满 MAX_QUEUE=${this.maxQueue}，丢弃新消息 #${task.id}`);
+-      this._safeSend(task.replyTarget, `[系统繁忙] 队列已满，请稍后重试`).catch(() => {});
+-      return;
+-    }
+-    if (this._idleReconnectTimer) { clearTimeout(this._idleReconnectTimer); this._idleReconnectTimer = null; }
+-    this.log.info(`[bridge] 📥 入队 #${task.id} target=${task.replyTarget}: "${task.text.slice(0, 60)}"`);
+-    this.queue.push(task);
+-    this._pump();
+-  }
+-
+-  _pump() {
+-    if (this.active) return;                 // 串行
+-    const task = this.queue.shift();
+-    if (!task) return;
++  async pump() {
++    if (this.active || this.stopped) return;
++    const task = this.queue.shift(); if (!task) return;
+     this.active = task;
+-    this._handle(task).finally(() => {
+-      this.active = null;
+-      this._pump();                          // 处理下一条
+-    });
+-  }
+-
+-  async _handle(task) {
+-    const started = Date.now();
+-    if (this._idleReconnectTimer) { clearTimeout(this._idleReconnectTimer); this._idleReconnectTimer = null; }
+-    let taskFailed = false;
+-    this.log.info(`[bridge] 🔄 处理 #${task.id} → ACP`);
+-    const watchdog = setTimeout(() => {
+-      if (!this.active || this.active.id !== task.id) return;
+-      this.log.error(`[bridge] ⏱ 看门狗触发 #${task.id} 超时 ${(this.opts.taskTimeoutMs || TASK_TIMEOUT_MS)}ms，强制释放`);
+-      task._watchdogTookOver = true;
+-      this.failed++;
+-      taskFailed = true;
+-      this.progressMap.delete(task.replyTarget);
+-      this._safeSend(task.replyTarget, '[处理超时] AI 未在时限内完成，请重试或换一个问题').catch(() => {});
+-      this.acp.forceReconnect();
+-      this.active = null;
+-      this._pump();
+-    }, (this.opts.taskTimeoutMs || TASK_TIMEOUT_MS) + 15000);
++    this.lastTask = { state: 'processing', startedAt: new Date().toISOString(), error: null };
++    let replyAttempted = false;
+     try {
+-      await this.acp.ensureSession();
+-
+-      this.progressMap.set(task.replyTarget, { text: 'AI 处理中…', ts: Date.now() });
+-      this._touchProgress(task.replyTarget, this.progressMap.get(task.replyTarget));
+-      if (!this.opts.noProgressReceipt) {
+-        this._safeSend(task.replyTarget, `[已收到] 你的消息已送达 AI，正在处理…`).catch(() => {});
++      let client = this.clients.get(task.replyTarget);
++      if (!client) {
++        client = this.makeClient(senderDirectory(this.config.workdir, task.replyTarget));
++        this.clients.set(task.replyTarget, client);
+       }
+-
+-      let replyText = '';
+-      const result = await this.acp.prompt(task.text, {
+-        timeoutMs: this.opts.taskTimeoutMs || TASK_TIMEOUT_MS,
+-        onText: (delta) => { replyText += delta; },
+-        onActivity: (type) => {
+-          const now = Date.now();
+-          if (type === 'tool_call') {
+-            this._maybeProgress(task, now, '🔧 AI 正在调用工具…');
+-          } else if (type === 'agent_thought_chunk') {
+-            this._maybeProgress(task, now, '💭 AI 思考中…');
+-          }
+-        },
+-      });
+-
+-      let out = replyText.trim();
+-      // 中文回复清洗：去掉 AI 复述指令/英文引导杂质，只保留中文正文
+-      // （如 "The user just said..." 前缀；开关 CLEAN_CHINESE_REPLY=0 关闭）
+-      if (out && process.env.CLEAN_CHINESE_REPLY !== '0') {
+-        out = Bridge.cleanChineseReply(out);
+-      }
+-      if (!out) {
+-        out = result.stopReason === 'end_turn'
+-          ? '[AI 已完成处理] 回复将通过 5G 通道下发。'
+-          : `[AI 处理中/超时] stopReason=${result.stopReason || 'unknown'}。请稍后重试或换一个问题。`;
+-      }
+-      this.log.info(`[bridge] ✍️ 回复组装(${out.length}字): "${out.slice(0, 80)}"`);
+-
+-      await this._safeSend(task.replyTarget, out);
+-      this.processed++;
+-      this.progressMap.delete(task.replyTarget);
+-      this.log.info(`[bridge] ✅ 完成 #${task.id} 耗时 ${Date.now() - started}ms`);
++      const deniedBefore = client.permissionsDenied || 0;
++      let reply = '';
++      const result = await client.prompt(task.text, { timeoutMs: this.config.taskTimeoutMs, onText: text => { reply = (reply + text).slice(0, 4000); } });
++      if (result.stopReason !== 'end_turn') { const error = new Error('ACP 任务未正常完成: ' + result.stopReason); error.permissionDenied = result._meta?.['codebuddy.ai/outcome'] === 'PERMISSION_DENIED' || client.permissionsDenied > deniedBefore; throw error; }
++      if (!reply.trim()) throw new Error('ACP 未返回可下发正文');
++      replyAttempted = true; await this.send(task.replyTarget, reply); this.processed++;
++      this.lastTask.state = 'completed';
++      this.onEvent({ type: 'task_done' });
+     } catch (e) {
+-      if (!task._watchdogTookOver) {
+-        this.failed++;
+-        taskFailed = true;
+-        this.progressMap.delete(task.replyTarget);
+-        this.log.error(`[bridge] ❌ 处理失败 #${task.id}:`, e.message);
+-        this._safeSend(task.replyTarget, `[处理失败] ${e.message.slice(0, 100)}`).catch(() => {});
+-      }
+-    } finally {
+-      clearTimeout(watchdog);
+-      if (!task._watchdogTookOver) {
+-        if (taskFailed) {
+-          this.acp.forceReconnect();
+-        } else {
+-          this._idleReconnectTimer = setTimeout(() => {
+-            this.log.debug(`[bridge] 空闲 ${Math.round(this.idleReconnectMs / 1000)}s 无新任务，释放 ACP 连接`);
+-            this.acp.forceReconnect();
+-            this._idleReconnectTimer = null;
+-          }, this.idleReconnectMs);
+-        }
++      this.failed++; this.lastTask.state = 'failed'; this.lastTask.error = e.message;
++      this.onEvent({ type: 'task_failed', error: e.message });
++      // A possibly delivered reply is never followed by an automatic duplicate.
++      if (!replyAttempted && !this.stopped) {
++        const notice = e.permissionDenied ? '操作未执行：本次电脑确认未获允许（已拒绝、超时或弹窗不可用）。请在 Mac 上准备好后重新发送；当前没有仍在等待的审批。' : /timeout|超时/i.test(e.message) ? '处理超时：尚未获得完整结果，请在电脑端检查任务状态；为避免重复执行，本次没有自动重试。' : '处理失败：WorkBuddy 暂时未能完成任务。请稍后重试，或在电脑端查看 bridge_status 的 lastTask。';
++        try { await this.send(task.replyTarget, notice); this.lastTask.failureNotice = 'ws_sent_or_dry'; }
++        catch (sendError) { this.lastTask.failureNotice = 'failed'; this.onEvent({ type: 'failure_notice_failed', error: sendError.message }); }
+       }
+     }
++    finally { this.lastTask.finishedAt = new Date().toISOString(); this.active = null; this.pump(); }
+   }
+-
+-  _maybeProgress(task, now, text) {
+-    if (!this.opts.progressReceipt) return;
+-    const last = this.progressMap.get(task.replyTarget);
+-    const lastTs = (last && last.ts) ? last.ts : 0;
+-    if (now - lastTs > 1500) {
+-      const v = { text, ts: now };
+-      this._touchProgress(task.replyTarget, v);
+-      this._safeSend(task.replyTarget, text).catch(() => {});
+-    }
+-  }
+-
+-  async _safeSend(target, text) {
+-    return this.maap.sendReply(target, text);
+-  }
+-
+-  /**
+-   * 中文回复清洗：剥离 AI 回复开头的英文引导/指令复述杂质，只保留中文正文。
+-   * 触发场景：ACP 回传文本混入 "The user just said ... Respond in Chinese." 类前缀。
+-   * 规则：按句子边界分句，取第一个"中文占优"的句子为正文起点；
+-   *       纯英文/纯代码/无明显中文句 → 原样返回（不误伤技术场景）。
+-   */
+-  static cleanChineseReply(s) {
+-    if (!s) return s;
+-    const text = String(s).trim();
+-    if (!text) return text;
+-    const zhCount = (t) => (t.match(/[\u4e00-\u9fff]/g) || []).length;
+-    if (zhCount(text) === 0) return text;   // 无中文 → 原样
+-    // 首字符即中文 → 直接返回（已是正文，省去分句开销）
+-    if (/^[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/.test(text)) return text;
+-    // 分句边界：ASCII 句读后(后面是空白或直接跟中文=粘连也要断) 或 换行
+-    const bounds = [0];
+-    for (let i = 1; i < text.length - 1; i++) {
+-      const c = text[i];
+-      if (/[.!?:;]/.test(c)) {
+-        const nxt = text[i + 1] || ' ';
+-        if (/\s/.test(nxt) || /[\u4e00-\u9fff]/.test(nxt)) bounds.push(i + 1);
+-      }
+-      if (c === '\n') bounds.push(i + 1);
+-    }
+-    bounds.push(text.length);
+-    const uniq = [...new Set(bounds)].sort((a, b) => a - b);
+-    for (let b = 0; b < uniq.length - 1; b++) {
+-      const seg = text.slice(uniq[b], uniq[b + 1]);
+-      const zh = zhCount(seg);
+-      if (zh >= 2 && zh / seg.length > 0.3) {
+-        const cut = text.slice(uniq[b]).trim();
+-        return cut || text;
+-      }
+-    }
+-    return text;
+-  }
++  status() { return { received: this.received, lastTask: this.lastTask, queueLength: this.queue.length, active: !!this.active, processed: this.processed, failed: this.failed, sessions: [...this.clients.values()].map(c => c.status()) }; }
++  async close() { this.stopped = true; this.queue = []; await Promise.all([...this.clients.values()].map(c => c.close())); }
+ }
+-
+ module.exports = Bridge;
+--- original/src/config.cjs
++++ macos/src/config.cjs
+@@ -1,55 +0,0 @@
+-'use strict';
+-
+-/**
+- * config.cjs — 环境变量集中读取（对齐 docs/REQUIREMENTS.md §6）
+- * index.cjs 已支持关键项；此文件供需要单独引用配置的模块使用。
+- */
+-const path = require('path');
+-
+-// 可选 .env 加载
+-try {
+-  const fs = require('fs');
+-  const envPath = path.join(__dirname, '..', '.env');
+-  if (fs.existsSync(envPath)) {
+-    for (const line of fs.readFileSync(envPath, 'utf-8').split('\n')) {
+-      const s = line.trim();
+-      if (!s || s.startsWith('#')) continue;
+-      const i = s.indexOf('=');
+-      if (i === -1) continue;
+-      const k = s.slice(0, i).trim();
+-      const v = s.slice(i + 1).trim().replace(/^["']|["']$/g, '');
+-      if (!process.env[k]) process.env[k] = v;
+-    }
+-  }
+-} catch (e) { /* ignore */ }
+-
+-module.exports = {
+-  maap: {
+-    wsUrl: process.env.MAAP_WS_URL || 'wss://5gvas01.cmicmaap.com/gtw-ai/openclaw/ws/msg',
+-    apiKey: process.env.MAAP_API_KEY || '',
+-    tls: {
+-      rejectUnauthorized: process.env.MAAP_TLS_REJECT_UNAUTHORIZED !== 'false',
+-      caFile: process.env.MAAP_TLS_CA_FILE || '',
+-      clientCertFile: process.env.MAAP_TLS_CLIENT_CERT || '',
+-      clientKeyFile: process.env.MAAP_TLS_CLIENT_KEY || '',
+-    },
+-  },
+-  acp: {
+-    port: parseInt(process.env.ACP_PORT || '0', 10),   // 0 = 自动探测
+-    sessionId: process.env.ACP_SESSION_ID || '',
+-    cwd: process.env.ACP_CWD || process.cwd(),
+-    sessionNewWaitMs: parseInt(process.env.ACP_SESSION_NEW_WAIT_MS || '500', 10),
+-  },
+-  bridge: {
+-    maxQueue: parseInt(process.env.BRIDGE_MAX_QUEUE || '500', 10),
+-    taskTimeoutMs: parseInt(process.env.TASK_TIMEOUT_MS || '120000', 10),
+-    idleReconnectMs: parseInt(process.env.BRIDGE_IDLE_RECONNECT_MS || '60000', 10),
+-    noProgressReceipt: process.env.NO_PROGRESS === '1',
+-    phoneProgress: process.env.PHONE_PROGRESS !== '0',
+-  },
+-  logging: {
+-    level: process.env.LOG_LEVEL || 'info',
+-    dir: path.join(__dirname, '..', 'logs'),
+-  },
+-  selftest: process.env.BRIDGE_SELFTEST_TEXT || '',
+-};
+--- original/src/heartbeat.cjs
++++ macos/src/heartbeat.cjs
+@@ -1,76 +0,0 @@
+-'use strict';
+-
+-/**
+- * heartbeat.cjs — 连接器心跳文件读写 v1.0
+- *
+- * 用途：watchdog 守护进程与连接器之间的探活通道。
+- *   - 连接器(daemon模式)每 5s 写一次 heartbeat.json（pid + ws 状态 + 时间戳）
+- *   - watchdog 读心跳文件：文件过期(>HEARTBEAT_STALE_MS) → 判定进程死 → 自动拉起
+- *   - 心跳文件里 wsConnected=false 持续超时 → watchdog 判定 WS 断 → 重启连接器
+- *
+- * 文件：connector/run/heartbeat.json（run/ 目录自动创建）
+- */
+-
+-const fs = require('fs');
+-const path = require('path');
+-
+-const HEARTBEAT_FILE = process.env.HEARTBEAT_FILE
+-  || path.join(__dirname, '..', 'run', 'heartbeat.json');
+-const DEFAULT_INTERVAL_MS = 5000;
+-
+-function writeHeartbeat({ pid = process.pid, wsConnected = false, wsAuthed = false, wsUrl = '', queueLength = 0, processed = 0, failed = 0, extra = {} }) {
+-  try {
+-    fs.mkdirSync(path.dirname(HEARTBEAT_FILE), { recursive: true });
+-    const data = {
+-      pid,
+-      ts: Date.now(),
+-      iso: new Date().toISOString(),
+-      wsConnected: !!wsConnected,
+-      wsAuthed: !!wsAuthed,
+-      wsUrl,
+-      queueLength,
+-      processed,
+-      failed,
+-      ...extra,
+-    };
+-    fs.writeFileSync(HEARTBEAT_FILE, JSON.stringify(data), 'utf-8');
+-    return data;
+-  } catch (e) { return null; }
+-}
+-
+-/** 读心跳：返回对象；文件不存在/损坏返回 null */
+-function readHeartbeat() {
+-  try {
+-    const raw = fs.readFileSync(HEARTBEAT_FILE, 'utf-8');
+-    return JSON.parse(raw);
+-  } catch (e) { return null; }
+-}
+-
+-/** 心跳是否新鲜（未过期） */
+-function isFresh(hb, staleMs = 15000) {
+-  return !!hb && typeof hb.ts === 'number' && (Date.now() - hb.ts) < staleMs;
+-}
+-
+-/** 启动周期写心跳；返回 stop 函数 */
+-function startHeartbeatLoop(getState, intervalMs = DEFAULT_INTERVAL_MS) {
+-  const timer = setInterval(() => {
+-    const state = typeof getState === 'function' ? getState() : {};
+-    writeHeartbeat(state);
+-  }, intervalMs);
+-  if (typeof timer.unref === 'function') timer.unref();   // 不阻塞进程退出
+-  return () => clearInterval(timer);
+-}
+-
+-/** 清理心跳文件（优雅退出时调用） */
+-function clearHeartbeat() {
+-  try { if (fs.existsSync(HEARTBEAT_FILE)) fs.unlinkSync(HEARTBEAT_FILE); } catch (e) {}
+-}
+-
+-module.exports = {
+-  HEARTBEAT_FILE,
+-  writeHeartbeat,
+-  readHeartbeat,
+-  isFresh,
+-  startHeartbeatLoop,
+-  clearHeartbeat,
+-};
+--- original/src/index.cjs
++++ macos/src/index.cjs
+@@ -1,250 +1,62 @@
+ 'use strict';
+-
+-/**
+- * index.cjs — 5g-msg-channel 连接器入口 v2.1
+- *
+- * 变更 (v2.1 WorkBuddy MCP 视角):
+- *   - MCP stdio 监听器在同步阶段立即 attach({ deferred: true })，
+- *     不会错过 WorkBuddy 第一时间发送的 initialize/tools/list 握手帧。
+- *   - ACP 端口探测失败（全部端口不通）时记 FATAL，不启动 MAAP WS，
+- *     MCP bridge_status 返回 runtimeReady=false + acpError 结构化说明，
+- *     避免无意义消耗网关连接配额。
+- *   - sessionId resume 失败：显式配置（arg/env）打 warn，auto（持久化/CODEBUDDY）打 info。
+- *   - 日志文件 banner 永远同步输出，方便用户找 "connector\logs\channel-YYYY-MM-DD.log"。
+- *
+- * 用法：
+- *   # 对接模拟器联调（本地验证闭环）
+- *   node index.cjs --mock
+- *
+- *   # 对接真实 cmicmaap 网关
+- *   MAAP_API_KEY=ak_xxx node index.cjs
+- *
+- * 环境变量（详见 config.cjs 或 docs）：
+- *   MAAP_WS_URL / MAAP_API_KEY
+- *   ACP_PORT (0 自动探测) / ACP_SESSION_ID / ACP_CWD / ACP_SESSION_NEW_WAIT_MS (默认 500)
+- *   BRIDGE_MAX_QUEUE / TASK_TIMEOUT_MS / BRIDGE_IDLE_RECONNECT_MS
+- *   LOG_LEVEL / LOG_DIR / CHANNEL_LOG_FILE
+- *   NO_PROGRESS=1 / PHONE_PROGRESS=0 / BRIDGE_SELFTEST_TEXT=xxx
+- *   HTTPS_PROXY（通过公司代理访问真实 wss 网关时）
+- *   MAAP_TLS_*（私签 CA / 双向 TLS）
+- */
+-
+-const config = require('./config.cjs');
++const { settings } = require('./policy.cjs');
++const AcpClient = require('./acp-client.cjs');
+ const MaapClient = require('./maap-client.cjs');
+-const AcpClient = require('./acp-client.cjs');
+ const Bridge = require('./bridge.cjs');
+-const McpServerLib = require('./mcp-server.cjs');
+-const heartbeat = require('./heartbeat.cjs');
+-const logger = require('./logger.cjs');
+-const VERSION = require('./version.cjs');
+-
+-// ============== 同步阶段（必须立即执行，不能包 async）：banner + MCP deferred attach ==============
+-
+-const MOCK = process.argv.includes('--mock');
+-const DAEMON = process.argv.includes('--daemon');   // daemon 守护模式：由 watchdog 拉起，stdin 关闭不自杀
+-const WS_URL = MOCK
+-  ? 'ws://127.0.0.1:8066/ws'
+-  : config.maap.wsUrl;
+-const API_KEY = process.env.MAAP_API_KEY || config.maap.apiKey || (MOCK ? 'test-api-key' : '');
+-const ALLOWED_SENDERS = (process.env.ALLOWED_SENDERS || '').split(',').map(s => s.trim()).filter(Boolean);
+-const ENFORCE_WHITELIST = process.env.ENFORCE_WHITELIST === 'true';
+-
+-function argValue(name) {
+-  const i = process.argv.indexOf(name);
+-  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : '';
+-}
+-const SESSION_ID = argValue('--session-id') || config.acp.sessionId || AcpClient.resolveSessionIdHint();
+-const SESSION_SOURCE = argValue('--session-id') ? 'arg' : (config.acp.sessionId ? 'env' : 'auto');
+-const ACP_CWD = config.acp.cwd;
+-const SELFTEST = config.selftest;
+-
+-// -------- 1) MCP stdio 同步阶段立即 attach（deferred 模式）————— WorkBuddy 握手帧绝不丢 --------
+-// daemon 模式：keepAliveOnStdinEnd=true，MCP stdin 关闭不影响桥接（由 watchdog 保活）
+-const mcpHandle = McpServerLib && typeof McpServerLib.attach === 'function'
+-  ? McpServerLib.attach({ logger, dry: process.env.BRIDGE_DRY === '1', version: VERSION, deferred: true, keepAliveOnStdinEnd: DAEMON })
+-  : null;
+-
+-// -------- 2) 启动 banner（永远同步输出，保证"只要进程没崩"就有第一笔可追踪日志）--------
+-logger.info('==================================================');
+-logger.mark('🚀', '5g-msg-channel', `v${VERSION} 连接器启动`);
+-logger.info(` 模式: ${MOCK ? '模拟器联调(8066)' : '真实网关'} | WS=${WS_URL}${DAEMON ? ' | 运行形态: daemon(守护)' : ''}`);
+-logger.info(` ACP: :${config.acp.port > 0 ? config.acp.port : '(自动探测中…)'} | session=${SESSION_ID ? (SESSION_SOURCE + ':' + SESSION_ID.slice(0, 8)) : '(自动 new + 持久化)'} | cwd=${ACP_CWD}`);
+-logger.info(` 日志文件: ${logger.LOG_FILE}`);
+-logger.info(` 白名单: ${ENFORCE_WHITELIST ? ('开启(' + (ALLOWED_SENDERS.join(',') || '空!') + ')') : '关闭(放行全部,仅建议联调)'}`);
+-if (mcpHandle) logger.info('[mcp] stdio 监听已挂起 (deferred)，等待 MAAP/ACP 装配完成');
+-logger.info('==================================================');
+-
+-// ============== 异步阶段：ACP 端口探测 → 装配 → setRuntime ==============
+-
+-let maap = null, acp = null, bridge = null;   // 模块级，供 graceful shutdown 访问
+-let _hbStop = null;                            // 心跳循环 stop 句柄
+-let acpStartupError = null;                    // ACP 无法使用时，MCP bridge_status 结构化返回
+-let acpStartupPort = null;                     // 实际探测到的 ACP 端口（含 null 表示未探测到）
+-
++const { attach } = require('./mcp-server.cjs');
++const { createPermissionPrompter } = require('./permission-dialog.cjs');
++const net = require('node:net'), fs = require('node:fs'), os = require('node:os'), path = require('node:path');
++const daemon = process.argv.includes('--daemon');
++const socketPath = process.env.BRIDGE_SOCKET || path.join(os.homedir(), '.workbuddy/5g-macos.sock');
++let ipc, lease, gatewayError = null;
++let config, maap, bridge, probe, startupError = null, stopping = false, acpHandshake = false;
++const log = event => { if (event.type === 'update') return; console.error(JSON.stringify({ at: new Date().toISOString(), ...event })); };
++const permissionUI = createPermissionPrompter({ onChange: state => { log({ type: 'permission_confirmation', ...state }); if (bridge?.lastTask) bridge.lastTask.state = state.state === 'awaiting_local_confirmation' ? 'awaiting_permission' : 'processing'; } });
++// The upstream client logs message bodies. Suppress these in the macOS adapter.
++const logger = { info() {}, debug() {}, warn() {}, error() {} };
++const shutdown = async () => {
++  if (stopping) return; stopping = true;
++  maap?.stop(); ipc?.close(); lease?.close(); if (daemon && ipc) { try { fs.unlinkSync(socketPath); } catch {} } await bridge?.close(); await probe?.close(); process.exit(0);
++};
++const handlers = { status: () => ({
++  permissions: permissionUI.status(), pid: process.pid, service: daemon ? 'shared-daemon' : 'stdio', gatewayError,
++  runtimeReady: !!bridge,
++  acpStartupHandshake: acpHandshake, acpError: startupError,
++  acpReady: !!bridge?.clients.size && [...bridge.clients.values()].every(c => c.ready),
++  wsConnected: !!maap?.connected, wsAuthed: !!maap?.authed, wsUrl: config?.wsUrl || null,
++  mode: config?.production ? 'production' : 'mock', dry: config?.dry ?? true,
++  allowedSenderCount: config?.allowed.length || 0, ...(bridge?.status() || {}),
++}), send: (to, text) => { if (!bridge) throw new Error('连接器未就绪'); return bridge.send(to, text); }, shutdown };
++if (!daemon) attach(handlers);
++process.on('SIGTERM', shutdown); process.on('SIGINT', shutdown);
+ (async () => {
+-  // ---- ACP 端口探测（env 显式指定直接走探测 + alive，否则走日志/默认列表）----
+-  let ACP_PORT = null;
+   try {
+-    ACP_PORT = config.acp.port > 0
+-      ? ((await AcpClient._portAlive(config.acp.port)) ? config.acp.port : null)
+-      : await AcpClient.detectPortAsync();
+-  } catch (e) {
+-    logger.error('[index] ACP 端口探测异常:', e.message);
+-  }
+-  acpStartupPort = ACP_PORT;
+-
+-  if (ACP_PORT == null) {
+-    acpStartupError = {
+-      code: 'ACP_PORT_DETECT_FAILED',
+-      message: 'WorkBuddy ACP 引擎不可达：所有候选端口（env 显式指定/daemon.log 解析/常见默认端口）均 TCP 不通。请确认 WorkBuddy 已登录且在运行；或在 mcp.json env 设置 ACP_PORT=<实际端口>。',
+-      hint: 'PowerShell 执行:  Get-Content ~/.workbuddy/logs/daemon.log | Select-String acpEndpoint  找最后一行端口号',
+-    };
+-    logger.error('[index] 💥 FATAL: ACP 端口探测全部失败，连接器将进入降级模式（MAAP WS 不启动，仅响应 MCP bridge_status / bridge_version 用于排障）。');
+-    logger.error('         ' + acpStartupError.message);
+-    if (mcpHandle) mcpHandle.setRuntime({
+-      maap: null, bridge: null, dry: process.env.BRIDGE_DRY === '1', version: VERSION, logger,
+-      // 注入：让 bridge_status runtimeReady=false 同时展示结构化错误
+-      _acpStatus_: acpStartupError,
+-    });
+-    // 仍然异步暴露全局，方便 SIGINT 正常 shutdown
+-    acp = null; bridge = null; maap = null;
+-    return;
+-  }
+-
+-  logger.info(` ACP 端口确认: :${ACP_PORT}`);
+-
+-  // ---- 实例化 ----
+-  maap = new MaapClient({
+-    wsUrl: WS_URL,
+-    apiKey: API_KEY,
+-    tls: MOCK ? {} : config.maap.tls,
+-    logger,
+-    mode: MOCK ? 'cmicmaap-mock' : 'cmicmaap',
+-  });
+-  acp = new AcpClient({
+-    port: ACP_PORT,
+-    cwd: ACP_CWD,
+-    sessionIdHint: SESSION_ID,
+-    sessionHintSource: SESSION_SOURCE,
+-    logger,
+-  });
+-  bridge = new Bridge({
+-    maap, acp, logger,
+-    options: {
+-      maxQueue: config.bridge.maxQueue,
+-      idleReconnectMs: config.bridge.idleReconnectMs,
+-      noProgressReceipt: config.bridge.noProgressReceipt,
+-      progressReceipt: config.bridge.phoneProgress,
+-      taskTimeoutMs: config.bridge.taskTimeoutMs,
+-    },
+-  });
+-
+-  // ---- MCP runtime 装配（deferred → ready）----
+-  if (mcpHandle) mcpHandle.setRuntime({ maap, bridge, dry: process.env.BRIDGE_DRY === '1', version: VERSION, logger });
+-
+-  // ---- 接线 ----
+-  maap.onConnect = () => { logger.info('✅ 5G WS 已连接(auth_ok)，开始接收消息'); };
+-  maap.onDisconnect = (r) => { logger.warn('⚠️ 5G WS 断开:', r); };
+-  maap.onMessage = (msg) => {
+-    if (!msg.replyTarget || !msg.text.trim()) {
+-      logger.debug('[index] 丢弃无目标/空消息');
+-      return;
++    config = settings();
++    if (daemon) {
++      lease = net.createServer(socket => socket.destroy());
++      await new Promise((resolve, reject) => { lease.once('error', reject); lease.listen(Number(process.env.BRIDGE_LEASE_PORT || 18567), '127.0.0.1', resolve); });
++      // The legacy guard shares this port: only the lease owner may connect to MaaP.
++      try { fs.unlinkSync(socketPath); } catch (e) { if (e.code !== 'ENOENT') throw e; }
++      ipc = net.createServer(socket => { socket.on('error', () => {}); attach({ ...handlers, input: socket, output: socket, shutdown() {} }); });
++      await new Promise((resolve, reject) => { ipc.once('error', reject); ipc.listen(socketPath, resolve); });
++      fs.chmodSync(socketPath, 0o600);
+     }
+-    if (ENFORCE_WHITELIST && ALLOWED_SENDERS.length && !ALLOWED_SENDERS.includes(msg.replyTarget)) {
+-      logger.warn(`[index] 拦截非白名单号码: ${msg.replyTarget}`);
+-      return;
++    const errors = [];
++    for (const port of AcpClient.ports()) {
++      probe = new AcpClient({ port, cwd: config.workdir, timeoutMs: 3000 });
++      try { await probe.connect(); acpHandshake = true; break; }
++      catch (e) { errors.push(e.message); await probe.close(); }
+     }
+-    bridge.enqueue(msg);
+-  };
+-  maap.onFrame = (j) => { if (MOCK && j.type) logger.debug('[ws帧]', j.type); };
+-
+-  // ---- ACP 预握手一次，暴露问题（如端口通但 connect/initialize 失败）----
+-  try {
+-    await acp.ensureSession();
+-    logger.info(`✅ ACP 会话就绪: ${acp.activeSessionId}`);
+-  } catch (e) {
+-    acpStartupError = {
+-      code: 'ACP_HANDSHAKE_FAILED',
+-      message: 'WorkBuddy ACP 端口可达但握手失败：' + String(e.message || e).slice(0, 200),
+-    };
+-    logger.error('⚠️ ACP 预握手失败（将按消息到达时重试）:', e.message);
+-    logger.error('   请确认 WorkBuddy 引擎在线；可用 ACP_PORT 环境变量指定正确端口。');
+-  }
+-
+-  // ---- MAAP WS 启动 ----
+-  maap.start();
+-
+-  if (SELFTEST) {
+-    setTimeout(() => {
+-      logger.info(`[selftest] 注入自测消息: "${SELFTEST}"`);
+-      bridge && bridge.enqueue({
+-        id: 'selftest-' + Date.now(),
+-        replyTarget: '13800138000',
+-        text: SELFTEST,
+-        createdAt: Date.now(),
+-      });
+-    }, 3000);
+-  }
+-
+-  // ---- 状态日志（MOCK 模式 + 非 MOCK 每 60s 也打一条轻量状态）----
+-  const statusIntervalMs = MOCK ? 5000 : 60000;
+-  setInterval(() => {
+-    if (!bridge) return;
+-    const s = bridge.status();
+-    logger.info(`[status] ws=${maap && maap.connected ? '已连接' : '断开'} 队列=${s.queueLength} 在途=${s.active ? s.active.target : '-'} 成功=${s.processed} 失败=${s.failed}`);
+-  }, statusIntervalMs);
+-
+-  // ---- 心跳文件（watchdog 探活通道）：daemon 模式 5s / 其他 10s ----
+-  const heartbeatState = () => {
+-    const s = bridge ? bridge.status() : {};
+-    return {
+-      pid: process.pid,
+-      wsConnected: !!(maap && maap.connected),
+-      wsAuthed: !!(maap && maap.authed),
+-      wsUrl: WS_URL,
+-      queueLength: s.queueLength || 0,
+-      processed: s.processed || 0,
+-      failed: s.failed || 0,
+-      mode: MOCK ? 'mock' : (DAEMON ? 'daemon' : 'mcp'),
+-    };
+-  };
+-  heartbeat.writeHeartbeat(heartbeatState());
+-  _hbStop = heartbeat.startHeartbeatLoop(heartbeatState, DAEMON ? 5000 : 10000);
+-  logger.info(`[heartbeat] 心跳已启动 → ${heartbeat.HEARTBEAT_FILE} (${DAEMON ? 'daemon 5s' : '10s'})`);
++    if (!acpHandshake) startupError = 'ACP 握手失败: ' + (errors.join('; ') || '未发现端口，请启动 WorkBuddy');
++    if (stopping) return;
++    const port = probe?.port; await probe?.close();
++    maap = new MaapClient({ wsUrl: config.wsUrl, apiKey: config.apiKey, tls: { rejectUnauthorized: true }, logger, mode: config.production ? 'cmicmaap' : 'mock' });
++    bridge = new Bridge({ maap, config, port, makeClient: cwd => new AcpClient({ port, discoverPorts: () => AcpClient.ports(), timeoutMs: 3000, cwd, onEvent: log, onPermission: permissionUI.request }), onEvent: log });
++    maap.onMessage = msg => { try { bridge.enqueue(msg); } catch (e) { log({ type: 'message_rejected', error: e.message }); } };
++    maap.onFrame = frame => { if (['error','auth_failed'].includes(frame.type)) { gatewayError = { type: frame.type, message: String(frame.message || frame.reason || '').replaceAll(config.apiKey, '[redacted]').slice(0,200), at: new Date().toISOString() }; log({ type: 'gateway_error', error: gatewayError }); } };
++    maap.onConnect = () => { gatewayError = null; log({ type: 'gateway_auth_ok', mode: config.production ? 'production' : 'mock' }); };
++    maap.onDisconnect = () => log({ type: 'gateway_disconnected' });
++    maap.start();
++    log({ type: 'ready', acpPort: port, dry: config.dry, mode: config.production ? 'production' : 'mock' });
++  } catch (e) { startupError = e.message; acpHandshake = false; log({ type: 'startup_failed', error: e.message }); }
+ })();
+-
+-// ============== 优雅退出：最多等 10s 排空当前任务 ==============
+-function gracefulShutdown(signal) {
+-  logger.info(`收到 ${signal}，开始优雅停机（最多等待 10s 排空任务）…`);
+-  try { if (maap && typeof maap.stop === 'function') maap.stop(); } catch (e) {}
+-  try { heartbeat.clearHeartbeat(); } catch (e) {}      // 正常停机清心跳 → watchdog 不再拉起
+-  if (_hbStop) { try { _hbStop(); } catch (e) {} }
+-  const startTs = Date.now();
+-  const waitFn = () => {
+-    const s = bridge ? bridge.status() : { active: null, queueLength: 0 };
+-    const waitMs = Date.now() - startTs;
+-    if ((!s.active && s.queueLength === 0) || waitMs > 10000) {
+-      logger.info(`[shutdown] 排空完成(active=${!!s.active}, queue=${s.queueLength}) 耗时 ${waitMs}ms`);
+-      try { if (acp && typeof acp.disconnect === 'function') acp.disconnect(); } catch (e) {}
+-      process.exit(0);
+-    }
+-    setTimeout(waitFn, 200);
+-  };
+-  setTimeout(waitFn, 0);
+-}
+-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+-
+-// 暴露 ACP 探测状态（调试用）
+-Object.defineProperty(module.exports || {}, '_diagnostic', {
+-  configurable: true, enumerable: true,
+-  value: () => ({
+-    MOCK, WS_URL, API_KEY_HAS_VALUE: !!API_KEY,
+-    SESSION_ID_HAS_VALUE: !!SESSION_ID, SESSION_SOURCE, ACP_CWD,
+-    ACP_PORT_CFG: config.acp.port, acpStartupPort,
+-    acpStartupError,
+-    hasMcpHandle: !!mcpHandle,
+-    instances: { maap: !!maap, acp: !!acp, bridge: !!bridge },
+-    logFile: logger.LOG_FILE,
+-  }),
+-});
+--- original/src/logger.cjs
++++ macos/src/logger.cjs
+@@ -1,88 +0,0 @@
+-'use strict';
+-
+-/**
+- * logger.cjs — 5g-msg-channel 连接器日志模块 v2.0
+- *
+- * 变更 v2.0:
+- *   - 日期切割：每天 0 点自动切换到 channel-YYYY-MM-DD.log（无需重启，
+- *     旧 stream 正常关闭，避免句柄泄漏）。
+- *   - 切换时额外切文件写（当每小时/跨月/跨日）时自动 append。
+- *   - getStream() 始终返回当前日期对应文件的 writeStream。
+- *   - 仍保持「stderr + 文件」双输出，不污染 stdout MCP 通道。
+- *
+- * 特性：
+- *  - 分级日志：debug < info < warn < error（LOG_LEVEL 控制）
+- *  - 会话级独立文件（LOG_FILE 可覆盖）
+- *  - 关键节点打点：md() 输出带 [✔/✖] 的醒目标记，方便问题核查
+- *  - 不污染 stdout（MCP stdio 协议独占 stdout）
+- */
+-
+-const fs = require('fs');
+-const path = require('path');
+-
+-require('./config.cjs');
+-
+-const LOG_DIR = process.env.LOG_DIR || path.join(__dirname, '..', 'logs');
+-try { fs.mkdirSync(LOG_DIR, { recursive: true }); } catch (e) {}
+-
+-const EXPLICIT_LOG_FILE = process.env.CHANNEL_LOG_FILE
+-  || (process.env.LOG_FILE && !/\.workbuddy/i.test(process.env.LOG_FILE) ? process.env.LOG_FILE : '');
+-
+-function dateKey(ts) { return new Date(ts).toISOString().slice(0, 10); }
+-function buildLogFile(ts) {
+-  return EXPLICIT_LOG_FILE || path.join(LOG_DIR, `channel-${dateKey(ts)}.log`);
+-}
+-
+-let _stream = null;
+-let _streamDateKey = dateKey(Date.now());
+-let _streamFile = buildLogFile(Date.now());
+-
+-function getStream() {
+-  const now = Date.now();
+-  const k = dateKey(now);
+-  if (k !== _streamDateKey && !EXPLICIT_LOG_FILE) {
+-    // 日期切换：关闭旧 stream，新建当天文件（open flag a 兼容 append）
+-    try { if (_stream) { try { _stream.end(); } catch (e) {} } } catch (e) {}
+-    _stream = null;
+-    _streamDateKey = k;
+-    _streamFile = buildLogFile(now);
+-  }
+-  if (_stream) return _stream;
+-  try {
+-    _stream = fs.createWriteStream(_streamFile, { flags: 'a' });
+-    _stream.on('error', () => { _stream = null; });  // 失败时 fallback appendFileSync
+-  } catch (e) { _stream = null; }
+-  return _stream;
+-}
+-
+-function ts() { return new Date().toISOString(); }
+-function fmtArg(a) { return typeof a === 'string' ? a : (a instanceof Error ? `Error: ${a.message}\n${a.stack || ''}` : JSON.stringify(a)); }
+-
+-const LEVELS = { debug: 10, info: 20, warn: 30, error: 40 };
+-const LEVEL = LEVELS[process.env.LOG_LEVEL || 'info'] ?? LEVELS.info;
+-
+-function write(level, args) {
+-  const line = `[${ts()}] [${level.toUpperCase()}] ${args.map(fmtArg).join(' ')}\n`;
+-  try { console.error(line.replace(/\n$/, '')); } catch (e) {}
+-  const s = getStream();
+-  if (s) {
+-    try { s.write(line); }
+-    catch (e) {
+-      try { fs.appendFileSync(_streamFile || buildLogFile(Date.now()), line); } catch (_) {}
+-    }
+-  } else {
+-    try { fs.appendFileSync(_streamFile || buildLogFile(Date.now()), line); } catch (_) {}
+-  }
+-}
+-
+-const logger = {
+-  get LOG_FILE() { return EXPLICIT_LOG_FILE || buildLogFile(Date.now()); },
+-  debug: (...a) => { if (LEVEL <= LEVELS.debug) write('debug', a); },
+-  info: (...a) => { if (LEVEL <= LEVELS.info) write('info', a); },
+-  warn: (...a) => { if (LEVEL <= LEVELS.warn) write('warn', a); },
+-  error: (...a) => { if (LEVEL <= LEVELS.error) write('error', a); },
+-  /** 醒目打点：logger.mark('✅','auth_ok','msg') → [MARK] ✅ auth_ok: msg */
+-  mark: (icon, tag, ...a) => write('mark', [`[${icon}] ${tag}`, ...a]),
+-};
+-
+-module.exports = logger;
+--- original/src/maap-client.cjs
++++ macos/src/maap-client.cjs
+@@ -40,6 +40,9 @@
+     this.pongWatchdog = null;
+     this._authBlocked = false;       // key 错误/无效时禁止无限重连
+     this._stopped = false;
++    this._sendChain = Promise.resolve();
++    this._sendQueued = 0;
++    this._pendingSendReject = null;
+ 
+     // 回调（由 bridge 设置）
+     this.onMessage = null;           // (msg) => void  归一化后的上行用户消息
+@@ -57,6 +60,7 @@
+ 
+   stop() {
+     this._stopped = true;
++    this._pendingSendReject?.(new Error('服务停止，发送结果未确认'));
+     this._clearTimers();
+     if (this.ws) { try { this.ws.close(1000, 'shutdown'); } catch (e) {} this.ws = null; }
+     this.connected = false;
+@@ -83,8 +87,7 @@
+       // 代理支持：HTTPS_PROXY / HTTP_PROXY / ALL_PROXY 环境变量（真实网关经代理/VPN访问时用）
+       // 用法示例：HTTPS_PROXY=http://127.0.0.1:7890 node index.cjs
+       let agent = undefined;
+-      const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy
+-        || process.env.ALL_PROXY || process.env.all_proxy;
++      const proxyUrl = this.wsUrl.startsWith('wss:') ? (process.env.HTTPS_PROXY || process.env.https_proxy || process.env.ALL_PROXY || process.env.all_proxy) : '';
+       if (proxyUrl) {
+         try {
+           const { HttpsProxyAgent } = require('https-proxy-agent');
+@@ -95,6 +98,8 @@
+         }
+       }
+       const wsOpts = {
++        maxPayload: 1024 * 1024,
++        handshakeTimeout: 15000,
+         headers: { 'X-API-Key': this.apiKey, 'Accept-Encoding': 'identity', 'Accept': 'application/json' },
+       };
+       if (agent) wsOpts.agent = agent;
+@@ -118,6 +123,7 @@
+     this.ws.on('message', (raw) => this._handleFrame(raw));
+ 
+     this.ws.on('close', (code, reason) => {
++      this._pendingSendReject?.(new Error('网关连接断开，发送结果未确认'));
+       this.connected = false;
+       this.authed = false;
+       this._clearHeartbeat();
+@@ -186,11 +192,13 @@
+         try { this.ws.close(4001, 'disconnected'); } catch (e) {}
+         return;
+       case 'error':
++        this._pendingSendReject?.(new Error('网关拒绝下发: ' + String(j.message || 'unknown').replaceAll(this.apiKey, '[redacted]').slice(0, 200)));
+         this.log.warn('[maap] error 帧:', j.message);
+         return;
+       default:
+         // 用户消息：*_message
+         if (typeof j.type === 'string' && j.type.endsWith('_message')) {
++          if (!this.authed) return;
+           const m = this._normalize(j);
+           if (!m) { this.log.warn('[maap] 无法解析消息帧', raw.toString().slice(0, 200)); return; }
+           if (this.onMessage) this.onMessage(m);
+@@ -235,17 +243,33 @@
+ 
+   /** 回复：WS send 帧（真实网关 send 无 ack，以 ws.send 回调结果为准） */
+   sendReply(recipient, text) {
++    if (this._sendQueued >= 100) return Promise.reject(new Error('下发队列已满'));
++    this._sendQueued++;
++    const result = this._sendChain.then(() => this._sendOne(recipient, text));
++    this._sendChain = result.catch(() => {});
++    return result.finally(() => { this._sendQueued--; });
++  }
++
++  _sendOne(recipient, text) {
+     return new Promise((resolve, reject) => {
+-      if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.authed) {
+-        return reject(new Error('5G WS 未连接/未认证'));
+-      }
+-      const payload = { type: 'send', apiKey: this.apiKey, content: text, to: recipient };
+-      const raw = JSON.stringify(payload);
+-      this.ws.send(raw, (err) => {
+-        if (err) return reject(err);
+-        this.log.info(`[maap] 📤 send → ${recipient}: ${String(text).slice(0, 60)}`);
+-        resolve({ status: 'ws_sent', to: recipient });
+-      });
++      if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.authed) return reject(new Error('5G WS 未连接/未认证'));
++      let timer, settled = false;
++      const finish = (error) => {
++        if (settled) return; settled = true; clearTimeout(timer); this._pendingSendReject = null;
++        if (error) reject(error);
++        else resolve({ status: 'ws_sent', to: recipient, gatewayAccepted: null, delivered: null, errorObservationMs: 2000 });
++      };
++      // TEXT has no positive business ACK. Serialise sends so an error can be
++      // associated with the sole observed send; later errors stay in bridge_status.
++      this._pendingSendReject = finish;
++      timer = setTimeout(() => finish(new Error('WebSocket 写入超时，结果未知')), 10000);
++      try {
++        this.ws.send(JSON.stringify({ type: 'send', apiKey: this.apiKey, content: text, to: recipient }), err => {
++          if (settled) return;
++          if (err) return finish(err);
++          clearTimeout(timer); timer = setTimeout(() => finish(), 2000);
++        });
++      } catch (e) { finish(e); }
+     });
+   }
+ 
+--- original/src/mcp-client.cjs
++++ macos/src/mcp-client.cjs
+@@ -0,0 +1,9 @@
++'use strict';
++// All WorkBuddy windows share one launchd-owned gateway connection.
++const net = require('node:net');
++const os = require('node:os');
++const path = require('node:path');
++const socket = net.connect(process.env.BRIDGE_SOCKET || path.join(os.homedir(), '.workbuddy/5g-macos.sock'));
++socket.on('connect', () => { process.stdin.pipe(socket); socket.pipe(process.stdout); });
++socket.on('error', e => { console.error('5G 后台服务不可达，请运行 npm run service:install：' + e.message); process.exitCode = 1; });
++socket.on('close', () => process.exit(process.exitCode || 0));
+--- original/src/mcp-server.cjs
++++ macos/src/mcp-server.cjs
+@@ -1,261 +1,41 @@
+ 'use strict';
+-
+-/**
+- * mcp-server.cjs — 5g-msg-channel 连接器 MCP stdio 层 v2.0
+- *
+- * 关键变更 (v2):
+- *   - 修复 WorkBuddy 握手丢 initialize 帧：attach() 必须在进程 require 同步阶段立即调用，
+- *     不再等 ACP 端口探测 + 握手等异步过程。通过 deferred 模式先挂载 stdin 监听器，
+- *     maap/bridge 准备好后再调用 setRuntime({maap,bridge,dry,version})。
+- *   - stdin buffer 上限 4MB，单帧 1MB，异常后保留残余 buffer 不破坏后续帧。
+- *   - bridge_status 返回标准 JSON 结构体（不是字符串），WorkBuddy 可以直接渲染。
+- *
+- * 协议：行式 JSON-RPC（与 wb-gateway / 参考包同款）
+- *   initialize / tools/list / tools/call / ping / notifications/initialized
+- */
+-
+-const SERVER_NAME = '5g-msg-channel';
+-const DEFAULT_PROTOCOL_VERSION = '2024-11-05';
+-const STDIN_BUF_MAX = 4 * 1024 * 1024;   // 4MB 总 buffer 上限（防御 OOM）
+-const LINE_MAX = 1024 * 1024;            // 1MB 单行上限
+-
+-function _safeJson(obj) {
+-  try { return JSON.stringify(obj); } catch (e) {
+-    return JSON.stringify({ error: 'serialize_failed', message: String(e && e.message || e).slice(0, 200) });
+-  }
++const readline = require('node:readline');
++const VERSION = '1.1.0';
++function attach({ status, send, shutdown, input = process.stdin, output = process.stdout }) {
++  const write = value => output.write(JSON.stringify(value) + '\n');
++  const lines = readline.createInterface({ input, crlfDelay: Infinity });
++  const handle = async msg => {
++    const { id, method, params } = msg;
++    if (id === undefined) return;
++    let result;
++    try {
++      if (method === 'initialize') result = { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: '5g-msg-channel-macos', version: VERSION } };
++      else if (method === 'ping') result = {};
++      else if (method === 'tools/list') result = { tools: [
++        { name: 'bridge_status', description: '分别查看网关认证、本地 ACP 握手和发送模式；不代表手机送达', inputSchema: { type: 'object', properties: {} } },
++        { name: 'bridge_version', description: '连接器版本', inputSchema: { type: 'object', properties: {} } },
++        { name: 'send_5g', description: '向白名单目标下发消息；ws_sent 仅代表本地 WebSocket 写出，不代表送达', inputSchema: { type: 'object', properties: { to: { type: 'string', minLength: 1, maxLength: 64 }, text: { type: 'string', minLength: 1, maxLength: 4000 } }, required: ['to', 'text'] } },
++      ] };
++      else if (method === 'tools/call') {
++        let value;
++        if (params?.name === 'bridge_status') value = status();
++        else if (params?.name === 'bridge_version') value = { version: VERSION };
++        else if (params?.name === 'send_5g') value = await send(params.arguments?.to, params.arguments?.text);
++        else throw new Error('未知工具');
++        result = { content: [{ type: 'text', text: JSON.stringify(value) }] };
++      } else { write({ jsonrpc: '2.0', id, error: { code: -32601, message: '未知方法' } }); return; }
++      write({ jsonrpc: '2.0', id, result });
++    } catch (e) {
++      if (method === 'tools/call') write({ jsonrpc: '2.0', id, result: { isError: true, content: [{ type: 'text', text: e.message }] } });
++      else write({ jsonrpc: '2.0', id, error: { code: -32603, message: e.message } });
++    }
++  };
++  lines.on('line', line => {
++    if (line.length > 1024 * 1024) { lines.close(); shutdown(); return; }
++    try { const msg = JSON.parse(line); if (!msg || typeof msg !== 'object') throw new Error(); void handle(msg); }
++    catch { write({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Invalid JSON' } }); }
++  });
++  lines.on('close', shutdown);
++  return { handle, close: () => lines.close() };
+ }
+-
+-function attach({ maap, bridge, logger, dry = false, version = '1.0.0', deferred = false, keepAliveOnStdinEnd = false } = {}) {
+-  let _maap = maap || null;
+-  let _bridge = bridge || null;
+-  let _dry = dry;
+-  let _version = version;
+-  let _logger = logger || console;
+-  let _keepAlive = keepAliveOnStdinEnd;   // daemon 守护模式：stdin 关闭不自杀
+-
+-  let pendingHandles = [];    // maap/bridge 未 ready 前到过的帧（存原始 msg 对象）
+-  let pendingMax = 64;        // 缓存上限：握手一般 2~4 帧 initialize / list / notif / ping
+-  let runtimeReady = !deferred;
+-
+-  function setRuntime(runtime) {
+-    if (!runtime) return;
+-    if (runtime.maap) _maap = runtime.maap;
+-    if (runtime.bridge) _bridge = runtime.bridge;
+-    if (typeof runtime.dry === 'boolean') _dry = runtime.dry;
+-    if (runtime.version) _version = runtime.version;
+-    if (runtime.logger) _logger = runtime.logger;
+-    runtimeReady = true;
+-    // 重放缓存里的握手帧
+-    if (pendingHandles.length) {
+-      const q = pendingHandles; pendingHandles = [];
+-      for (const msg of q) { try { handle(msg, true); } catch (e) {} }
+-    }
+-  }
+-
+-  function _stdoutSend(obj) { process.stdout.write(_safeJson(obj) + '\n'); }
+-
+-  function statusSnapshot() {
+-    const s = _bridge ? _bridge.status() : {};
+-    return {
+-      wsConnected: !!(_maap && _maap.connected),
+-      wsAuthed: !!(_maap && _maap.authed),
+-      wsMode: (_maap && _maap.mode) || 'unknown',
+-      wsUrl: (_maap && _maap.wsUrl) || '',
+-      queueLength: s.queueLength || 0,
+-      active: s.active || null,
+-      processed: s.processed || 0,
+-      failed: s.failed || 0,
+-      progress: s.progress || [],
+-      dry: _dry,
+-      version: _version,
+-      uptimeSec: Math.floor(process.uptime()),
+-      runtimeReady,
+-    };
+-  }
+-
+-  function handle(msg, fromPending = false) {
+-    const { id, method, params } = msg || {};
+-    if (method !== 'ping' && method !== 'initialize' && !runtimeReady && !fromPending) {
+-      // maap/bridge 还没装配好：暂存，最多 64 条（握手肯定够），超出丢最旧
+-      pendingHandles.push(msg);
+-      if (pendingHandles.length > pendingMax) pendingHandles.shift();
+-      return;
+-    }
+-    switch (method) {
+-      case 'initialize': {
+-        _stdoutSend({
+-          jsonrpc: '2.0',
+-          id,
+-          result: {
+-            protocolVersion: (params && params.protocolVersion) || DEFAULT_PROTOCOL_VERSION,
+-            capabilities: { tools: {} },
+-            serverInfo: { name: SERVER_NAME, version: _version },
+-            instructions:
+-              '5G 消息通道连接器：手机 5G 上行经 WS 接收 → ACP 注入真实 WorkBuddy 处理 → ' +
+-              '回复经 WS send 帧下发。可用工具：send_5g 主动下发；bridge_status 查看链路状态；' +
+-              'bridge_version 查看版本与运行态。',
+-          },
+-        });
+-        break;
+-      }
+-
+-      case 'tools/list': {
+-        _stdoutSend({
+-          jsonrpc: '2.0',
+-          id,
+-          result: {
+-            tools: [
+-              {
+-                name: 'send_5g',
+-                description:
+-                  '主动向 5G 用户发送一条文本消息（真实下发到对方手机）。' +
+-                  'to 使用对方上行消息携带的 sender（手机号或平台 userId），text 为内容，最多 4000 字。',
+-                inputSchema: {
+-                  type: 'object',
+-                  properties: {
+-                    to: { type: 'string', description: '接收方（手机号或平台 userId）', minLength: 1, maxLength: 64 },
+-                    text: { type: 'string', description: '消息文本（最多 4000 字）', minLength: 1, maxLength: 4000 },
+-                  },
+-                  required: ['to', 'text'],
+-                },
+-              },
+-              {
+-                name: 'bridge_status',
+-                description:
+-                  '查询 5G↔WorkBuddy 桥接链路结构化状态：WS 连接/认证、ACP、队列深度、在途任务、成功失败计数、运行时长。',
+-                inputSchema: { type: 'object', properties: {} },
+-              },
+-              {
+-                name: 'bridge_version',
+-                description: '返回连接器版本号、运行模式（mock/真实网关）、DRY 开关、运行秒数、runtime 是否装配完成。',
+-                inputSchema: { type: 'object', properties: {} },
+-              },
+-            ],
+-          },
+-        });
+-        break;
+-      }
+-
+-      case 'tools/call': {
+-        const name = params && params.name;
+-        const args = (params && params.arguments) || {};
+-        const okText = (text) => _stdoutSend({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: String(text) }] } });
+-        const okJson = (obj) => _stdoutSend({
+-          jsonrpc: '2.0', id,
+-          result: {
+-            content: [{ type: 'text', text: _safeJson(obj) }],
+-          },
+-        });
+-        const err = (text, code = -32000) => _stdoutSend({ jsonrpc: '2.0', id, error: { code, message: String(text) } });
+-
+-        if (name === 'send_5g') {
+-          const to = String(args.to || '').trim();
+-          const text = String(args.text || '');
+-          if (!to) return err('缺少参数 to');
+-          if (to.length > 64) return err('to 超过 64 字');
+-          // trimLeft 仅保留尾部空白（保留文本语义），长度限制 4000
+-          const trimmedText = text.replace(/^\s+/, '');
+-          if (!trimmedText) return err('缺少参数 text（去除头部空白后为空）');
+-          if (trimmedText.length > 4000) return err(`text 超过 4000 字（当前 ${trimmedText.length}）`);
+-          if (_dry) return okText('[DRY] 未真实发送: to=' + to + ' len=' + trimmedText.length);
+-          if (!runtimeReady) return err('连接器尚未完成初始化（ACP/MAAP 装配中），请稍后重试', -32001);
+-          if (!_maap || !_maap.authed) return err('5G WS 未连接或未认证（检查 MAAP_API_KEY 与网络出口连通性）', -32002);
+-          _maap.sendReply(to, trimmedText)
+-            .then((r) => okText('sent ' + _safeJson(r)))
+-            .catch((e) => err('发送失败: ' + (e && e.message ? e.message : String(e))));
+-          return;
+-        }
+-
+-        if (name === 'bridge_status') {
+-          if (!runtimeReady) {
+-            return okJson({
+-              runtimeReady: false,
+-              note: 'ACP/MAAP 装配中，可能尚未完成握手或 ACP 端口探测失败。请稍后重试或检查 ACP_PORT / WorkBuddy 引擎是否在线。',
+-              pendingQueue: pendingHandles.length,
+-              version: _version,
+-              dry: _dry,
+-              uptimeSec: Math.floor(process.uptime()),
+-            });
+-          }
+-          return okJson(statusSnapshot());
+-        }
+-
+-        if (name === 'bridge_version') {
+-          return okJson({
+-            version: _version,
+-            serverName: SERVER_NAME,
+-            protocol: DEFAULT_PROTOCOL_VERSION,
+-            dry: _dry,
+-            runtimeReady,
+-            pendingHandshakeFrames: pendingHandles.length,
+-            uptimeSec: Math.floor(process.uptime()),
+-            wsConnected: !!(_maap && _maap.connected),
+-            wsMode: (_maap && _maap.mode) || 'unknown',
+-          });
+-        }
+-
+-        return err('unknown tool: ' + name, -32601);
+-      }
+-
+-      case 'ping':
+-        if (id !== undefined) _stdoutSend({ jsonrpc: '2.0', id, result: {} });
+-        break;
+-
+-      case 'notifications/initialized':
+-        break;
+-
+-      default:
+-        if (id !== undefined) _stdoutSend({ jsonrpc: '2.0', id, result: {} });
+-        break;
+-    }
+-  }
+-
+-  // -------- stdin 行协议 --------
+-  let mcpBuf = '';
+-  let mcpHandshake = false;
+-  process.stdin.on('data', (chunk) => {
+-    mcpHandshake = true;
+-    mcpBuf += chunk.toString('utf8');
+-    // 缓冲区上限：超 4MB 截断最旧字节（保留尾部，更可能是未完整帧）
+-    if (mcpBuf.length > STDIN_BUF_MAX) mcpBuf = mcpBuf.slice(mcpBuf.length - (STDIN_BUF_MAX >> 1));
+-    let i;
+-    while ((i = mcpBuf.indexOf('\n')) >= 0) {
+-      const line = mcpBuf.slice(0, i).replace(/\r$/, '');
+-      mcpBuf = mcpBuf.slice(i + 1);
+-      if (!line) continue;
+-      if (line.length > LINE_MAX) {
+-        try { _logger.error && _logger.error('[mcp] 单帧超过 1MB，丢弃以避免 OOM: len=' + line.length); } catch (e) {}
+-        continue;
+-      }
+-      let msg;
+-      try { msg = JSON.parse(line); }
+-      catch (e) {
+-        try { _logger.error && _logger.error('[mcp] JSON 解析失败: ' + (e && e.message ? e.message : String(e)).slice(0, 200) + ' 行前64=' + line.slice(0, 64)); } catch (_) {}
+-        // **不丢 buffer**：parse 失败是该行本身的问题，不影响后续行；残余 buffer 已被切分
+-        continue;
+-      }
+-      try { handle(msg); } catch (e) {
+-        try { _logger.error && _logger.error('[mcp] handle 异常: ' + (e && e.message ? e.message : String(e)).slice(0, 300)); } catch (_) {}
+-      }
+-    }
+-  });
+-  process.stdin.on('end', () => {
+-    if (_keepAlive) {
+-      // daemon 守护模式：MCP stdin 只是可选的调试/管理通道，关闭不影响桥接服务
+-      try { _logger.info && _logger.info('[mcp] MCP stdin 关闭（daemon 守护模式，继续运行桥接服务）'); } catch (e) {}
+-      return;
+-    }
+-    if (mcpHandshake) {
+-      try { _logger.info && _logger.info('[mcp] MCP stdin 关闭，退出'); } catch (e) {}
+-      process.exit(0);
+-    } else {
+-      try { _logger.info && _logger.info('[mcp] stdin 立即 EOF（独立调试模式），继续运行桥接服务'); } catch (e) {}
+-    }
+-  });
+-
+-  try { _logger.info && _logger.info(`[mcp] MCP stdio 层已挂载（${SERVER_NAME} v${_version}）${deferred ? ' deferred 模式：等待 setRuntime() 装配 MAAP/Bridge' : ''}`); } catch (e) {}
+-
+-  return { handle, statusSnapshot, setRuntime };
+-}
+-
+ module.exports = { attach };
+--- original/src/permission-dialog.cjs
++++ macos/src/permission-dialog.cjs
+@@ -0,0 +1,41 @@
++'use strict';
++const { execFile } = require('node:child_process');
++const { promisify } = require('node:util');
++const runFile = promisify(execFile);
++// Untrusted tool parameters are argv data, never interpolated into AppleScript.
++const SCRIPT = `on run argv
++  try
++    set answer to display dialog (item 1 of argv) with title "5G 消息 · WorkBuddy 权限确认" buttons {"拒绝", "仅允许一次"} default button "拒绝" cancel button "拒绝" giving up after 45
++    if gave up of answer then return "timeout"
++    if button returned of answer is "仅允许一次" then return "allow_once"
++    return "deny"
++  on error number -128
++    return "deny"
++  end try
++end run`;
++function createPermissionPrompter({ run = runFile, platform = process.platform, onChange = () => {} } = {}) {
++  let current = null, last = null;
++  async function request(params, { signal } = {}) {
++    const once = params?.options?.find(o => o.kind === 'allow_once');
++    const raw = params?.toolCall?.rawInput;
++    if (platform !== 'darwin' || !once || !raw || signal?.aborted || current) return null;
++    const detail = JSON.stringify(raw, null, 2);
++    // Never approve a command/path hidden by truncation.
++    if (!detail || detail.length > 6000) { last = { state: 'denied', reason: 'details_too_large' }; return null; }
++    current = { state: 'awaiting_local_confirmation', startedAt: new Date().toISOString() };
++    onChange(current);
++    try {
++      const text = '手机消息请求在这台 Mac 上执行操作。请核对全部参数。\n仅允许一次不会更改全局权限，45 秒未确认将拒绝。\n\n' + detail;
++      const result = await run('/usr/bin/osascript', ['-e', SCRIPT, '--', text], { timeout: 48000, maxBuffer: 8192, signal });
++      const answer = result.stdout.trim();
++      const allowed = answer === 'allow_once' && !signal?.aborted;
++      last = { state: allowed ? 'allowed_once' : 'denied', reason: allowed ? 'user_allowed' : answer === 'timeout' ? 'timeout' : 'user_denied', finishedAt: new Date().toISOString() };
++      return allowed ? once.optionId : null;
++    } catch (e) {
++      last = { state: 'denied', reason: signal?.aborted ? 'task_cancelled' : 'dialog_unavailable', finishedAt: new Date().toISOString() };
++      return null;
++    } finally { current = null; onChange(last); }
++  }
++  return { request, status: () => ({ pending: current, last }) };
++}
++module.exports = { createPermissionPrompter };
+--- original/src/policy.cjs
++++ macos/src/policy.cjs
+@@ -0,0 +1,37 @@
++'use strict';
++const fs = require('node:fs');
++const path = require('node:path');
++const crypto = require('node:crypto');
++function settings(env = process.env, argv = process.argv.slice(2)) {
++  const production = argv.includes('--production');
++  if (production && argv.includes('--mock')) throw new Error('不能同时选择 --mock 和 --production');
++  const wsUrl = production ? (env.MAAP_WS_URL || 'wss://5gvas01.cmicmaap.com/gtw-ai/openclaw/ws/msg') : (env.MOCK_WS_URL || 'ws://127.0.0.1:8066/ws');
++  const url = new URL(wsUrl);
++  if (production && (url.protocol !== 'wss:' || url.hostname !== '5gvas01.cmicmaap.com')) throw new Error('生产网关必须使用已核对的 cmicmaap WSS 主机');
++  if (!production && (url.protocol !== 'ws:' || url.hostname !== '127.0.0.1')) throw new Error('模拟网关仅允许 ws://127.0.0.1');
++  if (url.username || url.password || url.search) throw new Error('网关 URL 不允许携带凭据/查询参数');
++  const allowed = (env.ALLOWED_SENDERS || (production ? '' : 'test-sender')).split(',').map(x => x.trim()).filter(Boolean);
++  if (!allowed.length) throw new Error('ALLOWED_SENDERS 不能为空：默认拒绝全部号码');
++  if (env.ENFORCE_WHITELIST === 'false') throw new Error('此版本不允许关闭白名单');
++  let apiKey = production ? (env.MAAP_API_KEY || '') : 'test-api-key';
++  if (production && env.MAAP_API_KEY_FILE) {
++    const stat = fs.statSync(env.MAAP_API_KEY_FILE);
++    if (stat.mode & 0o077) throw new Error('MAAP_API_KEY_FILE 必须仅当前用户可读写 (chmod 600)');
++    apiKey = fs.readFileSync(env.MAAP_API_KEY_FILE, 'utf8').trim();
++  }
++  if (production && (!apiKey.trim() || /<|你的|test-api-key/.test(apiKey))) throw new Error('生产模式需要有效 MAAP_API_KEY 或 MAAP_API_KEY_FILE');
++  const workdir = path.resolve(env.ACP_CWD || path.join(__dirname, '..', 'var', 'workspace'));
++  fs.mkdirSync(workdir, { recursive: true, mode: 0o700 });
++  const taskTimeoutMs = Number(env.TASK_TIMEOUT_MS || 120000);
++  if (!Number.isFinite(taskTimeoutMs) || taskTimeoutMs < 1000 || taskTimeoutMs > 600000) throw new Error('TASK_TIMEOUT_MS 必须为 1000–600000');
++  return { production, wsUrl, apiKey, allowed, workdir, dry: env.BRIDGE_DRY !== '0', taskTimeoutMs };
++}
++function assertAllowed(allowed, target) {
++  if (!allowed.includes(target)) throw new Error('目标/发送者不在白名单');
++}
++function senderDirectory(workdir, target) {
++  const dir = path.join(workdir, crypto.createHash('sha256').update(target).digest('hex').slice(0, 24));
++  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
++  return dir;
++}
++module.exports = { settings, assertAllowed, senderDirectory };
+--- original/src/session-store.cjs
++++ macos/src/session-store.cjs
+@@ -1,43 +0,0 @@
+-'use strict';
+-
+-/**
+- * session-store.cjs — sessionId 持久化存储 v1.0
+- *
+- * 作用：连接器重启后复用上次成功创建的 ACP sessionId，
+- *       避免每次都 session/new 造成会话上下文丢失；失效自动回退。
+- *
+- * 文件：connector/.session.json
+- * 结构：{ "version": 1, "sessionId": "...", "savedAt": "ISO", "cwd": "...", "source": "new|env|arg" }
+- */
+-
+-const fs = require('fs');
+-const path = require('path');
+-
+-const STORE_FILE = process.env.ACP_SESSION_FILE || path.join(__dirname, '..', '.session.json');
+-
+-function load() {
+-  try {
+-    const raw = fs.readFileSync(STORE_FILE, 'utf-8');
+-    const j = JSON.parse(raw);
+-    if (j && j.sessionId) return j;
+-  } catch (e) { /* 不存在或损坏 */ }
+-  return null;
+-}
+-
+-function save(sessionId, { cwd = '', source = 'new' } = {}) {
+-  try {
+-    const data = { version: 1, sessionId, savedAt: new Date().toISOString(), cwd, source };
+-    const tmp = STORE_FILE + '.tmp';
+-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
+-    fs.renameSync(tmp, STORE_FILE);
+-    return data;
+-  } catch (e) {
+-    return null;
+-  }
+-}
+-
+-function clear() {
+-  try { fs.unlinkSync(STORE_FILE); } catch (e) {}
+-}
+-
+-module.exports = { load, save, clear, STORE_FILE };
+--- original/src/version.cjs
++++ macos/src/version.cjs
+@@ -1,18 +0,0 @@
+-'use strict';
+-
+-/**
+- * version.cjs — 5g-msg-channel 连接器版本号（唯一来源）
+- *
+- * 升级流程：
+- *   1) 改这里的 VERSION（语义化版本 semver）
+- *   2) 同步更新 docs/CHANGELOG.md（如有）
+- *   3) 重新分发安装包/更新 README 里的版本引用
+- *
+- * 版本历史：
+- *   1.0.0  (2026-09-07) 初始版本：WS 复用参考包 cmicmaap 协议 + ACP 对接
+- *          真实 WorkBuddy；日志模块独立；sessionId 持久化；模拟器 8066 联调
+- */
+-
+-const VERSION = '1.0.0';
+-
+-module.exports = VERSION;
+--- original/src/watchdog.cjs
++++ macos/src/watchdog.cjs
+@@ -1,163 +0,0 @@
+-'use strict';
+-
+-/**
+- * watchdog.cjs — 5g-msg-channel 连接器守护进程 v1.0
+- *
+- * 问题背景：
+- *   连接器若由 WorkBuddy MCP 托管拉起，宿主关闭 stdin 会触发连接器进程退出
+- *   （MCP 惯例），导致 5G WS 断开且无人拉起 —— 服务端显示"WS 断开"。
+- *
+- * 解决方案：watchdog 以独立进程守护连接器（daemon 模式），三层防护：
+- *   ① 心跳过期检测：连接器每 5s 写 connector/run/heartbeat.json；
+- *      心跳 15s 未更新 → 判定进程死亡/卡死 → 强杀并重新拉起
+- *   ② WS 断开检测：心跳显示 wsConnected=false 且持续 > WS_RESTART_MS(60s)
+- *      → 判定 WS 连不上（网关/网络恢复后需重连）→ 重启连接器进程触发全新连接
+- *   ③ 启动补位：watchdog 启动时若发现连接器未运行 → 立即拉起
+- *
+- * 用法：
+- *   node watchdog.cjs [--mock] [--interval 5000]
+- *   或（推荐，配系统计划任务/开机自启）：
+- *   node watchdog.cjs
+- *
+- * 注意：
+- *   - daemon 模式的连接器应独立于 WorkBuddy 的 MCP 托管，避免双实例同 key 顶替
+- *     （mcp.json 中若注册了同 key 条目，两者会互相顶替；二选一使用）
+- *   - watchdog 自身只负责拉起/重启，被拉起的连接器生命周期由 watchdog 管理
+- */
+-
+-const { spawn } = require('child_process');
+-const path = require('path');
+-const fs = require('fs');
+-
+-const heartbeat = require('./heartbeat.cjs');
+-
+-// ---------- 配置 ----------
+-const MOCK = process.argv.includes('--mock');
+-const WATCH_INTERVAL_MS = parseInt(process.env.WATCHDOG_INTERVAL_MS || '5000', 10);  // 巡检周期
+-const HEARTBEAT_STALE_MS = parseInt(process.env.WATCHDOG_STALE_MS || '15000', 10);   // 心跳过期判定
+-const WS_RESTART_MS = parseInt(process.env.WATCHDOG_WS_RESTART_MS || '60000', 10);   // WS 持续断开后重启
+-const CONNECTOR_CWD = path.join(__dirname, '..');
+-
+-// ---------- 日志 ----------
+-function log(msg) {
+-  const line = `[${new Date().toISOString()}] [watchdog] ${msg}`;
+-  console.log(line);
+-  try {
+-    const logDir = path.join(CONNECTOR_CWD, 'logs');
+-    fs.mkdirSync(logDir, { recursive: true });
+-    fs.appendFileSync(path.join(logDir, 'watchdog.log'), line + '\n');
+-  } catch (e) {}
+-}
+-
+-// ---------- 状态 ----------
+-let child = null;           // 被守护的连接器子进程
+-let launchedAt = 0;
+-let wsDownSince = 0;        // wsConnected=false 持续起始时间（毫秒时间戳）
+-let restartCooldown = 0;    // 重启冷却（避免反复崩溃死循环）
+-
+-function buildArgs() {
+-  const args = [path.join(__dirname, 'index.cjs'), '--daemon'];
+-  if (MOCK) args.push('--mock');
+-  return args;
+-}
+-
+-function launch(reason) {
+-  const now = Date.now();
+-  if (now < restartCooldown) {
+-    log(`跳过拉起(${reason})：冷却中 ${Math.ceil((restartCooldown - now) / 1000)}s`);
+-    return;
+-  }
+-  // 冷却：正常拉起 3s 冷却；异常重启 30s（防崩溃死循环）
+-  restartCooldown = now + (reason === 'startup' ? 3000 : 30000);
+-
+-  // 若旧进程残留，先杀掉（防止同 key 双连）
+-  if (child && child.pid) {
+-    try { child.kill('SIGKILL'); } catch (e) {}
+-  }
+-
+-  const env = { ...process.env };
+-  child = spawn(process.execPath, buildArgs(), {
+-    cwd: CONNECTOR_CWD,
+-    env,
+-    stdio: ['pipe', 'inherit', 'inherit'],   // stdin 给管道(模拟 MCP,但 daemon 不自杀); 日志走父进程 stdout
+-    detached: false,
+-  });
+-  launchedAt = now;
+-  wsDownSince = 0;
+-
+-  child.on('exit', (code, signal) => {
+-    log(`连接器退出 code=${code} signal=${signal} → 3s 后自动拉起`);
+-    child = null;
+-    // 心跳文件可能残留，等超时后自然判定；这里也主动清一下
+-    try { heartbeat.clearHeartbeat(); } catch (e) {}
+-    setTimeout(() => launch('exit'), 3000);
+-  });
+-  child.on('error', (e) => {
+-    log(`连接器启动失败: ${e.message} → 10s 后重试`);
+-    child = null;
+-    setTimeout(() => launch('error'), 10000);
+-  });
+-  log(`🚀 拉起连接器 (${reason}) pid=${child.pid} args=${buildArgs().join(' ')}`);
+-}
+-
+-// ---------- 巡检 ----------
+-function check() {
+-  const hb = heartbeat.readHeartbeat();
+-  const hbFresh = heartbeat.isFresh(hb, HEARTBEAT_STALE_MS);
+-
+-  // 心跳新鲜：连接器活着
+-  if (hbFresh && hb.pid) {
+-    const procAlive = (() => {
+-      try { process.kill(hb.pid, 0); return true; } catch (e) { return false; }
+-    })();
+-    if (!procAlive) {
+-      // 心跳文件在但进程没了（异常退出后残留）
+-      log(`检测到进程 ${hb.pid} 已不存在但心跳残留 → 重启`);
+-      child = null;
+-      launch('pid-dead');
+-      return;
+-    }
+-
+-    // WS 状态检测
+-    if (!hb.wsConnected) {
+-      if (!wsDownSince) { wsDownSince = Date.now(); log(`⚠️ WS 断开（心跳 wsConnected=false），计时重启…`); }
+-      else if (Date.now() - wsDownSince > WS_RESTART_MS) {
+-        log(`WS 断开已持续 ${Math.round((Date.now() - wsDownSince) / 1000)}s > ${WS_RESTART_MS / 1000}s → 重启连接器`);
+-        wsDownSince = 0;
+-        if (child && child.pid) { try { child.kill('SIGTERM'); } catch (e) {} }
+-        launch('ws-restart');
+-      }
+-    } else {
+-      if (wsDownSince) { wsDownSince = 0; log('✅ WS 已恢复连接'); }
+-    }
+-    return;
+-  }
+-
+-  // 心跳过期/无心跳：进程未运行 → 拉起
+-  if (!child || !child.pid) {
+-    if (!hbFresh) log('心跳缺失/过期 → 判定连接器未运行');
+-    launch('startup');
+-  }
+-}
+-
+-// ---------- 启动 ----------
+-log(`==================================================`);
+-log(`watchdog 启动 v1.0 | mock=${MOCK} | 巡检=${WATCH_INTERVAL_MS}ms | 心跳过期=${HEARTBEAT_STALE_MS}ms | WS重启=${WS_RESTART_MS}ms`);
+-log(`心跳文件: ${heartbeat.HEARTBEAT_FILE}`);
+-log(`==================================================`);
+-
+-// 立即巡检一次（若已有连接器在跑且心跳新鲜，则 watchdog 只观察不重复拉起）
+-check();
+-setInterval(check, WATCH_INTERVAL_MS);
+-
+-// 优雅退出 watchdog 时带走连接器（可选；若保留连接器可注释）
+-process.on('SIGINT', () => {
+-  log('watchdog 退出(SIGINT)，同步终止连接器…');
+-  if (child && child.pid) { try { child.kill('SIGTERM'); } catch (e) {} }
+-  setTimeout(() => process.exit(0), 1000);
+-});
+-process.on('SIGTERM', () => {
+-  log('watchdog 退出(SIGTERM)，同步终止连接器…');
+-  if (child && child.pid) { try { child.kill('SIGTERM'); } catch (e) {} }
+-  setTimeout(() => process.exit(0), 1000);
+-});
+--- original/tests/core.test.cjs
++++ macos/tests/core.test.cjs
+@@ -0,0 +1,84 @@
++'use strict';
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const os = require('node:os');
++const path = require('node:path');
++const { PassThrough } = require('node:stream');
++const { settings, assertAllowed, senderDirectory } = require('../src/policy.cjs');
++const Bridge = require('../src/bridge.cjs');
++const { attach } = require('../src/mcp-server.cjs');
++const { configure } = require('../scripts/configure.cjs');
++function temp(t) { const dir = fs.mkdtempSync(path.join(os.tmpdir(), '5g-test-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true })); return dir; }
++test('默认模拟+DRY，空白名单/明文网关/混合模式拒绝', t => {
++ const cwd = temp(t), env = { ACP_CWD: cwd };
++ const config = settings(env, []); assert.equal(config.production, false); assert.equal(config.dry, true);
++ assert.throws(() => settings({ ...env, ALLOWED_SENDERS: ' ' }, []));
++ assert.throws(() => settings({ ...env, ENFORCE_WHITELIST: 'false' }, []));
++ assert.throws(() => settings({ ...env, MOCK_WS_URL: 'ws://example.com' }, []));
++ assert.throws(() => settings(env, ['--production', '--mock']));
++ assert.throws(() => settings({ ...env, MAAP_WS_URL: 'ws://5gvas01.cmicmaap.com', ALLOWED_SENDERS: 'a', MAAP_API_KEY: 'fake' }, ['--production']));
++});
++test('上行及主动下发都执行白名单，DRY 全路径不写网关', async t => {
++ const workdir = temp(t); let sent = 0;
++ const b = new Bridge({ config: { allowed: ['a'], dry: true, workdir }, maap: { sendReply() { sent++; } }, makeClient: () => ({ prompt: async (_, o) => { o.onText('hello'); return { stopReason: 'end_turn' }; }, status: () => ({}), close: async () => {} }) });
++ assert.throws(() => b.enqueue({ id: '1', replyTarget: 'outsider', text: 'hi' }));
++ await assert.rejects(() => b.send('outsider', 'hi'));
++ assert.equal((await b.send('a', 'hi')).status, 'dry_run');
++ b.enqueue({ id: '1', replyTarget: 'a', text: 'hi' });
++ await new Promise(r => setImmediate(r)); assert.equal(b.processed, 1); assert.equal(sent, 0);
++});
++test('不同号码不同目录和会话，同一消息去重', async t => {
++ const workdir = temp(t), dirs = [];
++ const b = new Bridge({ config: { allowed: ['a', 'b'], dry: true, workdir }, makeClient: dir => { dirs.push(dir); return { prompt: async (_, o) => { o.onText('ok'); return { stopReason: 'end_turn' }; }, status: () => ({}), close: async () => {} }; } });
++ const message = { id: 'same', replyTarget: 'a', text: 'hello' };
++ assert.equal(b.enqueue(message), true); assert.equal(b.enqueue(message), false);
++ b.enqueue({ ...message, replyTarget: 'b' }); await new Promise(r => setImmediate(r));
++ assert.equal(dirs.length, 2); assert.notEqual(dirs[0], dirs[1]);
++ assert.ok(senderDirectory(workdir, '../../outside').startsWith(workdir + '/'));
++});
++test('任务失败不自动重放，不伪报成功', async t => {
++ let calls = 0; const b = new Bridge({ config: { allowed: ['a'], workdir: temp(t), dry: true }, makeClient: () => ({ prompt: async () => { calls++; throw new Error('timeout'); }, status: () => ({}) }) });
++ b.enqueue({ id: 'x', replyTarget: 'a', text: 'hi' }); await new Promise(r => setImmediate(r));
++ assert.equal(calls, 1); assert.equal(b.failed, 1); assert.equal(b.processed, 0);
++});
++test('配置合并保留既有服务，预览不写入，应用生成合法 JSON 与备份', t => {
++ const dir = temp(t), target = path.join(dir, 'mcp.json');
++ const prior = { mcpServers: { existing: { env: { SECRET: 'do-not-print' } } }, other: true };
++ fs.writeFileSync(target, JSON.stringify(prior));
++ const preview = configure({ target }); assert.ok(!preview.diff.includes('do-not-print'));
++ assert.deepEqual(JSON.parse(fs.readFileSync(target)), prior);
++ const result = configure({ target, apply: true }); assert.equal(result.jsonValid, true);
++ const data = JSON.parse(fs.readFileSync(target)); assert.deepEqual(data.mcpServers.existing, prior.mcpServers.existing);
++ assert.ok(data.mcpServers['5g-msg-channel-macos'].args.includes('--mock'));
++ assert.ok(fs.readdirSync(dir).some(x => x.includes('.bak-')));
++ assert.equal(fs.statSync(target).mode & 0o777, 0o600);
++});
++test('MCP 状态保留 ACP 失败，不假报 ready；工具错误符合 MCP', async () => {
++ const input = new PassThrough(), output = new PassThrough(); let text = '';
++ output.on('data', x => text += x);
++ const m = attach({ input, output, shutdown() {}, status: () => ({ runtimeReady: false, acpError: 'offline' }), send: async () => { throw new Error('blocked'); } });
++ await m.handle({ id: 1, method: 'tools/call', params: { name: 'bridge_status' } });
++ await m.handle({ id: 2, method: 'tools/call', params: { name: 'send_5g' } });
++ const [status, error] = text.trim().split('\n').map(JSON.parse);
++ assert.equal(JSON.parse(status.result.content[0].text).runtimeReady, false); assert.equal(error.result.isError, true); m.close();
++});
++test('生产迁移复用凭据、加入确认号码、停用旧条目，diff 不泄漏 Key', t => {
++ const { migrate }=require('../scripts/production.cjs');const home=temp(t),dir=path.join(home,'.workbuddy');fs.mkdirSync(dir);
++ const file=path.join(dir,'mcp.json'),prior={mcpServers:{other:{command:'unchanged'},'5gmsg-channel':{env:{MAAP_API_KEY:'PRIVATE_TEST_KEY',ALLOWED_SENDERS:'11111111111'}}}};
++ fs.writeFileSync(file,JSON.stringify(prior));
++ const preview=migrate({home,number:'19802021453'});assert.ok(!preview.diff.includes('PRIVATE_TEST_KEY'));assert.deepEqual(JSON.parse(fs.readFileSync(file)),prior);
++ const result=migrate({home,number:'19802021453',apply:true});const data=JSON.parse(fs.readFileSync(file));
++ assert.equal(data.mcpServers['5gmsg-channel'].disabled,true);assert.deepEqual(data.mcpServers.other,prior.mcpServers.other);
++ assert.equal(data.mcpServers['5g-msg-channel-macos'].env.BRIDGE_DRY,'0');assert.ok(data.mcpServers['5g-msg-channel-macos'].env.ALLOWED_SENDERS.includes('19802021453'));
++ assert.equal(fs.statSync(path.join(dir,'5g-macos-key')).mode&0o777,0o600);assert.ok(fs.existsSync(result.backup));
++});
++test('ACP 失败给手机一次明确反馈，并记录失败阶段',async t=>{
++ const sent=[];const b=new Bridge({config:{allowed:['a'],workdir:temp(t),dry:false},maap:{sendReply:async(to,text)=>sent.push({to,text})},makeClient:()=>({prompt:async()=>{throw new Error('fetch failed');},status:()=>({ready:false})})});
++ b.enqueue({id:'one',replyTarget:'a',text:'hello'});await new Promise(r=>setImmediate(r));
++ assert.equal(b.received,1);assert.equal(b.failed,1);assert.equal(sent.length,1);assert.match(sent[0].text,/处理失败/);assert.equal(b.lastTask.state,'failed');
++});
++test('回复下发结果未知时不追加错误短信，防止重复发送',async t=>{
++ let sends=0;const b=new Bridge({config:{allowed:['a'],workdir:temp(t),dry:false},maap:{sendReply:async()=>{sends++;throw new Error('unknown delivery');}},makeClient:()=>({prompt:async(_,o)=>{o.onText('answer');return{stopReason:'end_turn'};},status:()=>({})})});
++ b.enqueue({id:'one',replyTarget:'a',text:'hello'});await new Promise(r=>setImmediate(r));assert.equal(sends,1);assert.equal(b.failed,1);
++});
+--- original/tests/network.test.cjs
++++ macos/tests/network.test.cjs
+@@ -0,0 +1,147 @@
++'use strict';
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const http = require('node:http');
++const { WebSocketServer, WebSocket } = require('ws');
++const AcpClient = require('../src/acp-client.cjs');
++const MaapClient = require('../src/maap-client.cjs');
++async function fixture(t, handler) {
++ const server = http.createServer(handler);
++ await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
++ t.after(() => { server.closeAllConnections(); server.close(); }); return server.address().port;
++}
++test('ACP SSE 中文分片、正文过滤、权限拒绝与连接清理', async t => {
++ let denied = false, deleted = false;
++ const port = await fixture(t, async (req, res) => {
++  if (req.method === 'DELETE') { deleted = true; res.end('{}'); return; }
++  if (req.url.endsWith('/connect')) { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ connectionId: 'test' })); return; }
++  let raw = ''; for await (const c of req) raw += c;
++  const msg = JSON.parse(raw);
++  res.setHeader('content-type', 'text/event-stream');
++  const emit = value => res.write('data: ' + JSON.stringify(value) + '\n\n');
++  if (msg.method === 'initialize') emit({ id: msg.id, result: { protocolVersion: 1 } });
++  else if (msg.method === 'session/new') emit({ id: msg.id, result: { sessionId: 'isolated' } });
++  else if (msg.id === 'permission-1') { denied = msg.result.outcome.outcome === 'cancelled'; }
++  else if (msg.method === 'session/prompt') {
++   emit({ id: 'permission-1', method: 'session/request_permission', params: { options: [{ optionId: 'allow', kind: 'allow_once' }] } });
++   emit({ method: 'session/update', params: { sessionId: 'isolated', update: { sessionUpdate: 'agent_thought_chunk', content: { type: 'text', text: 'SECRET_THOUGHT' } } } });
++   const data = Buffer.from('data: ' + JSON.stringify({ method: 'session/update', params: { sessionId: 'isolated', update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: '中文正文' } } } }) + '\n\n');
++   for (const byte of data) res.write(Buffer.from([byte]));
++   emit({ id: msg.id, result: { stopReason: 'end_turn' } });
++  }
++  res.end();
++ });
++ const client = new AcpClient({ port, cwd: '/private/tmp', timeoutMs: 2000 });
++ let text = ''; await client.prompt('test', { onText: value => text += value });
++ assert.equal(text, '中文正文'); assert.equal(denied, true); assert.equal(client.permissionsDenied, 1);
++ await client.close(); assert.equal(deleted, true);
++});
++test('ACP HTTP 失败清理连接、无结果流失败，不挂死或误报 ready', async t => {
++ const port = await fixture(t, (req, res) => {
++  if (req.url.endsWith('/connect')) { res.setHeader('content-type', 'application/json'); res.end('{"connectionId":"test"}'); }
++  else { res.statusCode = req.method === 'DELETE' ? 200 : 403; res.end(); }
++ });
++ const client = new AcpClient({ port, timeoutMs: 1000 });
++ await assert.rejects(() => client.ensureSession(), /403/); assert.equal(client.ready, false); assert.equal(client.connectionId, null);
++});
++test('真实 WS 协议：认证前拒收，认证后本地写出仅为 ws_sent', async t => {
++ const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 });
++ await new Promise((resolve, reject) => { wss.once('listening', resolve); wss.once('error', reject); });
++ t.after(() => { for (const ws of wss.clients) ws.terminate(); wss.close(); });
++ const log = { info() {}, warn() {}, error() {}, debug() {} }; let delivered, clientSocket, messages = [];
++ const received = new Promise(resolve => wss.on('connection', ws => {
++  clientSocket = ws; ws.send(JSON.stringify({ type: 'text_message', from: 'a', content: 'preauth' }));
++  ws.on('message', raw => {
++   const data = JSON.parse(raw);
++   if (data.type === 'auth') { ws.send(JSON.stringify({ type: 'auth_ok' })); ws.send(JSON.stringify({ type: 'text_message', from: 'a', content: 'postauth' })); }
++   if (data.type === 'send') { delivered = data; resolve(); }
++   if (data.type === 'ping') ws.send(JSON.stringify({ type: 'pong' }));
++  });
++ }));
++ const client = new MaapClient({ wsUrl: `ws://127.0.0.1:${wss.address().port}`, apiKey: 'test', logger: log });
++ t.after(() => client.stop()); client.onMessage = msg => messages.push(msg.text);
++ await new Promise(resolve => { client.onConnect = resolve; client.start(); });
++ const result = await client.sendReply('a', 'test'); await received;
++ assert.equal(result.status, 'ws_sent'); assert.equal(result.gatewayAccepted, null); assert.equal(result.delivered, null);
++ assert.deepEqual(messages, ['postauth']); assert.equal(delivered.content, 'test'); assert.equal(clientSocket.readyState, WebSocket.OPEN);
++});
++test('入口集成：MCP 握手 + 模拟上行 → ACP → 模拟下行，进程退出清理', async t => {
++ const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), { spawn } = require('node:child_process');
++ const dir = fs.mkdtempSync(path.join(os.tmpdir(), '5g-e2e-')); t.after(() => fs.rmSync(dir, {recursive:true,force:true}));
++ const port = await fixture(t, async (req,res) => {
++  if(req.method==='DELETE'){res.end('{}');return;}
++  res.setHeader('content-type','application/json');
++  if(req.url.endsWith('/connect')){res.end('{"connectionId":"e2e"}');return;}
++  let raw='';for await(const c of req)raw+=c;const msg=JSON.parse(raw);
++  if(msg.method==='session/prompt'){
++   res.setHeader('content-type','text/event-stream');
++   res.write('data: '+JSON.stringify({method:'session/update',params:{sessionId:'s1',update:{sessionUpdate:'agent_message_chunk',content:{type:'text',text:'E2E_OK'}}}})+'\n\n');
++   res.end('data: '+JSON.stringify({id:msg.id,result:{stopReason:'end_turn'}})+'\n\n');return;
++  }
++  res.end(JSON.stringify({id:msg.id,result:msg.method==='session/new'?{sessionId:'s1'}:{protocolVersion:1}}));
++ });
++ const wss=new WebSocketServer({host:'127.0.0.1',port:0});await new Promise(r=>wss.on('listening',r));
++ t.after(()=>{for(const ws of wss.clients)ws.terminate();wss.close();});
++ let received;
++ const delivery=new Promise(resolve=>wss.on('connection',ws=>ws.on('message',raw=>{
++  const f=JSON.parse(raw);
++  if(f.type==='auth'){ws.send('{"type":"auth_ok"}');ws.send(JSON.stringify({type:'text_message',from:'test-sender',messageId:'e2e',content:'reply'}));}
++  if(f.type==='ping')ws.send('{"type":"pong"}');
++  if(f.type==='send'){received=f;resolve();}
++ })));
++ const child=spawn(process.execPath,[path.join(__dirname,'../src/index.cjs'),'--mock'],{env:{...process.env,ACP_PORT:String(port),ACP_CWD:dir,MOCK_WS_URL:`ws://127.0.0.1:${wss.address().port}/ws`,BRIDGE_DRY:'0',ALLOWED_SENDERS:'test-sender'},stdio:['pipe','pipe','pipe']});
++ t.after(()=>child.kill('SIGTERM'));let stdout='';child.stdout.on('data',x=>stdout+=x);child.stderr.resume();
++ child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2024-11-05'}})+'\n');
++ const timeout=setTimeout(()=>child.kill('SIGTERM'),5000);t.after(()=>clearTimeout(timeout));
++ await Promise.race([delivery,new Promise((_,reject)=>child.on('exit',()=>reject(new Error('child exited before reply'))))]);
++ assert.equal(received.content,'E2E_OK');assert.equal(JSON.parse(stdout.trim().split('\n')[0]).result.serverInfo.name,'5g-msg-channel-macos');
++ const exit=new Promise(resolve=>child.on('exit',resolve));child.stdin.end();await exit;
++});
++test('ACP 拒绝继承绕过权限模式，空结果流与超时均报错', async t => {
++ let mode='bypassPermissions';
++ const port=await fixture(t,async(req,res)=>{
++  if(req.method==='DELETE'){res.end('{}');return;}
++  if(req.url.endsWith('/connect')){res.setHeader('content-type','application/json');res.end('{"connectionId":"x"}');return;}
++  let raw='';for await(const c of req)raw+=c;const msg=JSON.parse(raw);
++  if(msg.method==='timeout'){return;}
++  if(msg.method==='empty'){res.setHeader('content-type','text/event-stream');res.end(': keepalive\n\n');return;}
++  res.setHeader('content-type','application/json');res.end(JSON.stringify({id:msg.id,result:msg.method==='session/new'?{sessionId:'x',modes:{currentModeId:mode}}:{protocolVersion:1}}));
++ });
++ const client=new AcpClient({port,timeoutMs:1000});
++ await assert.rejects(()=>client.ensureSession(),/default/);assert.equal(client.ready,false);
++ mode='default';await client.ensureSession();
++ await assert.rejects(()=>client.request('empty',{}),/without result/);
++ await assert.rejects(()=>client.request('timeout',{}, {timeoutMs:30}),/timeout/);
++ await client.close();
++});
++test('业务 error 帧令下发失败，不能伪报 ws_sent', async t => {
++ const wss=new WebSocketServer({host:'127.0.0.1',port:0});await new Promise(r=>wss.once('listening',r));
++ t.after(()=>{for(const ws of wss.clients)ws.terminate();wss.close();});
++ wss.on('connection',ws=>ws.on('message',raw=>{const f=JSON.parse(raw);if(f.type==='auth')ws.send('{"type":"auth_ok"}');if(f.type==='ping')ws.send('{"type":"pong"}');if(f.type==='send')ws.send('{"type":"error","message":"recipient rejected"}');}));
++ const client=new MaapClient({wsUrl:`ws://127.0.0.1:${wss.address().port}`,apiKey:'test',logger:{info(){},warn(){},error(){},debug(){}}});t.after(()=>client.stop());
++ await new Promise(r=>{client.onConnect=r;client.start();});
++ await assert.rejects(()=>client.sendReply('a','test'),/recipient rejected/);
++});
++test('共享 daemon 两个 MCP 客户端共用同一 PID，断开客户端不停止服务',async t=>{
++ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net'),{spawn}=require('node:child_process');
++ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'5g-daemon-')),socketPath=path.join(dir,'bridge.sock');t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
++ const child=spawn(process.execPath,[path.join(__dirname,'../src/index.cjs'),'--mock','--daemon'],{env:{...process.env,ACP_PORT:'1',ACP_CWD:dir,BRIDGE_SOCKET:socketPath,BRIDGE_LEASE_PORT:'0'},stdio:['ignore','ignore','pipe']});child.stderr.resume();t.after(()=>child.kill('SIGTERM'));
++ const started=Date.now();while(!fs.existsSync(socketPath)){if(Date.now()-started>3000)throw new Error('daemon socket absent');await new Promise(r=>setTimeout(r,20));}
++ const call=()=>new Promise((resolve,reject)=>{const s=net.connect(socketPath);s.on('error',reject);s.on('connect',()=>s.write(JSON.stringify({id:1,method:'tools/call',params:{name:'bridge_status'}})+'\n'));s.once('data',raw=>{s.end();resolve(JSON.parse(JSON.parse(raw).result.content[0].text));});});
++ const a=await call(),b=await call();assert.equal(a.pid,b.pid);assert.equal(a.service,'shared-daemon');assert.equal(fs.statSync(socketPath).mode&0o777,0o600);
++ const done=new Promise(r=>child.once('exit',r));child.kill('SIGTERM');await done;
++});
++test('最新日志端口失效时探测下一端口，不重放 prompt',async t=>{
++ let prompts=0;
++ const good=await fixture(t,async(req,res)=>{
++  res.setHeader('content-type','application/json');
++  if(req.method==='DELETE'){res.end('{}');return;}
++  if(req.url.endsWith('/connect')){res.end('{"connectionId":"fallback"}');return;}
++  let raw='';for await(const c of req)raw+=c;const msg=JSON.parse(raw);
++  if(msg.method==='session/prompt')prompts++;
++  res.end(JSON.stringify({id:msg.id,result:msg.method==='session/new'?{sessionId:'fallback'}:msg.method==='session/prompt'?{stopReason:'end_turn'}:{protocolVersion:1}}));
++ });
++ const bad=await fixture(t,(req,res)=>{res.statusCode=503;res.end();});
++ const client=new AcpClient({port:bad,discoverPorts:()=>[bad,good],timeoutMs:500});
++ await client.prompt('hello');assert.equal(client.port,good);assert.equal(prompts,1);await client.close();
++});
+--- original/tests/permission-dialog.test.cjs
++++ macos/tests/permission-dialog.test.cjs
+@@ -0,0 +1,22 @@
++'use strict';
++const test=require('node:test'),assert=require('node:assert/strict');
++const {createPermissionPrompter}=require('../src/permission-dialog.cjs');
++const params={toolCall:{rawInput:{command:'pwd'}},options:[{kind:'allow_once',optionId:'once'},{kind:'allow_always',optionId:'always'}]};
++test('仅显式本机允许返回 allow_once，命令只作为 argv 数据',async()=>{
++ let seen;const ui=createPermissionPrompter({platform:'darwin',run:async(...args)=>{seen=args;return{stdout:'allow_once\n'};}});
++ assert.equal(await ui.request(params),'once');assert.equal(seen[0],'/usr/bin/osascript');assert.ok(!seen[1][1].includes('pwd'));assert.ok(seen[1].at(-1).includes('pwd'));assert.equal(ui.status().last.state,'allowed_once');
++});
++test('拒绝、超时、执行失败均不批准',async()=>{
++ for(const answer of ['deny','timeout','unexpected']){const ui=createPermissionPrompter({platform:'darwin',run:async()=>({stdout:answer})});assert.equal(await ui.request(params),null);assert.equal(ui.status().pending,null);}
++ const ui=createPermissionPrompter({platform:'darwin',run:async()=>{throw new Error('unavailable');}});assert.equal(await ui.request(params),null);assert.equal(ui.status().last.reason,'dialog_unavailable');
++});
++test('不显示截断操作，不接受永久许可或已经取消的任务',async()=>{
++ let calls=0;const ui=createPermissionPrompter({platform:'darwin',run:async()=>{calls++;return{stdout:'allow_once'};}});
++ assert.equal(await ui.request({...params,toolCall:{rawInput:{command:'x'.repeat(7000)}}}),null);
++ assert.equal(await ui.request({...params,options:[{kind:'allow_always',optionId:'always'}]}),null);
++ assert.equal(await ui.request(params,{signal:AbortSignal.abort()}),null);assert.equal(calls,0);
++});
++test('等待期间状态可查询，任务取消后拒绝迟到批准',async()=>{
++ let release;const ac=new AbortController();const ui=createPermissionPrompter({platform:'darwin',run:()=>new Promise(r=>release=r)});
++ const pending=ui.request(params,{signal:ac.signal});assert.equal(ui.status().pending.state,'awaiting_local_confirmation');ac.abort();release({stdout:'allow_once'});assert.equal(await pending,null);
++});

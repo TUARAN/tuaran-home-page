@@ -1,0 +1,239 @@
+--- before/src/acp-client.cjs
++++ after/src/acp-client.cjs
+@@ -8,7 +8,13 @@
+     this.port = port; this.discoverPorts = discoverPorts; this.cwd = cwd; this.onEvent = onEvent; this.onPermission = onPermission; this.timeoutMs = timeoutMs;
+     this.persona = persona; this.preferredSessionId = preferredSessionId; this.personaInjected = false;
+     this.connectionId = null; this.sessionId = null; this.ready = false; this.seq = 0;
++    this.phase = 'disconnected'; this.eventCounts = {}; this.lastEventAt = null; this.lastMethod = null;
+     this.controllers = new Set(); this.permissionsDenied = 0; this.lastError = null;
++  }
++  record(kind) {
++    this.eventCounts[kind] = (this.eventCounts[kind] || 0) + 1;
++    this.lastEventAt = new Date().toISOString();
++    if (this.eventCounts[kind] === 1) this.onEvent({ type: 'acp_event', kind });
+   }
+   static ports(env = process.env, home = os.homedir()) {
+     const found = [];
+@@ -36,6 +42,7 @@
+     throw new Error('ACP 连接失败: ' + (errors.join('; ') || '未发现候选端口'));
+   }
+   async connectAtPort() {
++    this.phase = 'connecting';
+     const res = await fetch(`http://127.0.0.1:${this.port}/api/v1/acp/connect`, { method: 'POST', headers: this.headers(), body: '{}', signal: AbortSignal.timeout(this.timeoutMs) });
+     if (!res.ok) throw new Error(`ACP connect HTTP ${res.status}`);
+     const body = await res.json();
+@@ -44,8 +51,9 @@
+     // sessionToken is deliberately not logged or treated as an official OAuth token.
+     this.initializeResult = await this.request('initialize', {
+       protocolVersion: 1, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
+-      capabilities: {}, clientInfo: { name: '5g-msg-channel-macos', version: '1.1.0' },
++      capabilities: {}, clientInfo: { name: '5g-msg-channel-macos', version: '2.0.0' },
+     });
++    this.phase = 'initialized'; this.record('initialized');
+     return this.initializeResult;
+   }
+   async ensureSession() {
+@@ -69,12 +77,18 @@
+         this.sessionId = result.sessionId;
+       }
+       if (!this.sessionId) throw new Error('ACP 缺少 sessionId');
+-      if (result.modes?.currentModeId && result.modes.currentModeId !== 'default') throw new Error('ACP 会话必须处于 default 权限确认模式');
+-      this.sessionResult = result; this.ready = true; this.personaInjected = false; this.lastError = null;
++      if (result.modes?.currentModeId && result.modes.currentModeId !== 'default') {
++        if (!result.modes.availableModes?.some(mode => mode.id === 'default')) throw new Error('ACP 会话必须处于 default 权限确认模式');
++        await this.request('session/set_mode', { sessionId: this.sessionId, modeId: 'default' });
++        result.modes.currentModeId = 'default'; this.record('permission_mode_default');
++      }
++      this.permissionMode = result.modes?.currentModeId || 'unreported';
++      this.sessionResult = result; this.ready = true; this.phase = 'session_ready'; this.record('session_ready'); this.personaInjected = false; this.lastError = null;
+       return this.sessionId;
+     } catch (e) { this.lastError = e.message; await this.close(); throw e; }
+   }
+   async request(method, params, { timeoutMs = this.timeoutMs, onText = () => {} } = {}) {
++    this.lastMethod = method; this.record(method);
+     const id = ++this.seq;
+     const controller = new AbortController(); this.controllers.add(controller);
+     const timer = setTimeout(() => controller.abort(new Error(`ACP ${method} timeout`)), timeoutMs);
+@@ -84,7 +98,9 @@
+         // No auto-approval or proxy file/shell implementation. Unsupported requests fail closed.
+         let response;
+         if (msg.method === 'session/request_permission') {
++          this.phase = 'awaiting_permission'; this.record('permission_requested');
+           const choice = await this.onPermission(msg.params, { signal: controller.signal });
++          this.phase = 'processing';
+           const option = msg.params?.options?.find(o => o.optionId === choice && o.kind === 'allow_once');
+           if (option) {
+             this.onEvent({ type: 'permission_allowed_once', method: msg.method });
+@@ -106,11 +122,19 @@
+         const u = msg.params.update || {};
+         const kind = u.sessionUpdate || u.kind;
+         const history = msg.params._meta?.['codebuddy.ai']?.mode === 'history';
+-        if (!history && kind === 'agent_message_chunk') {
++        if (history) return;
++        const safeKinds = ['agent_message_chunk', 'agent_thought_chunk', 'tool_call', 'tool_call_update', 'plan', 'current_mode_update', 'usage_update'];
++        if (safeKinds.includes(kind)) {
++          this.record(kind);
++          if (kind === 'agent_thought_chunk') this.phase = 'thinking';
++          else if (kind === 'agent_message_chunk') this.phase = 'responding';
++          else if (kind === 'tool_call' || kind === 'tool_call_update') this.phase = 'tool_activity';
++        }
++        if (kind === 'agent_message_chunk') {
+           const text = u.textDelta || u.text || (u.content?.type === 'text' ? u.content.text : '');
+           if (typeof text === 'string') onText(text);
+         }
+-        this.onEvent({ type: 'update', kind, tool: kind === 'tool_call' ? u.title : undefined });
++        // Never expose thought text, tool arguments, or history in diagnostics.
+       }
+     };
+     try {
+@@ -142,6 +166,7 @@
+   }
+   async prompt(text, options = {}) {
+     await this.ensureSession();
++    this.eventCounts = {}; this.phase = 'processing';
+     const prompt = [];
+     // 人格注入：仅会话内首次 prompt 前置一条（后续依赖会话历史自然保留）
+     if (this.persona && !this.personaInjected) {
+@@ -149,13 +174,17 @@
+       this.personaInjected = true;
+     }
+     prompt.push({ type: 'text', text });
+-    try { return await this.request('session/prompt', { sessionId: this.sessionId, prompt }, { timeoutMs: 120000, ...options }); }
++    try {
++      const result = await this.request('session/prompt', { sessionId: this.sessionId, prompt }, { timeoutMs: 120000, ...options });
++      this.phase = result.stopReason === 'end_turn' ? 'completed' : 'stopped'; this.record('prompt_result');
++      return result;
++    }
+     catch (e) { this.lastError = e.message; await this.close(); throw e; } // Never replay a possibly executed task.
+   }
+-  status() { return { ready: this.ready, port: this.port, session: this.sessionId?.slice(0, 8) || null, permissionsDenied: this.permissionsDenied, error: this.lastError }; }
++  status() { return { backend: 'workbuddy-local-acp', transport: 'http-sse', permissionMode: this.permissionMode || null, phase: this.phase, lastMethod: this.lastMethod, eventCounts: { ...this.eventCounts }, lastEventAt: this.lastEventAt, sessionBinding: 'channel-session', ready: this.ready, port: this.port, session: this.sessionId?.slice(0, 8) || null, permissionsDenied: this.permissionsDenied, error: this.lastError }; }
+   async close() {
+     for (const c of this.controllers) c.abort(); this.controllers.clear();
+-    const cid = this.connectionId; this.connectionId = null; this.ready = false; this.sessionId = null;
++    const cid = this.connectionId; this.connectionId = null; this.ready = false; this.sessionId = null; this.phase = this.lastError ? 'failed' : 'disconnected';
+     if (cid) await fetch(`http://127.0.0.1:${this.port}/api/v1/acp`, { method: 'DELETE', headers: { ...HEADERS, 'acp-connection-id': cid }, signal: AbortSignal.timeout(3000) }).then(r => r.body?.cancel()).catch(() => {});
+   }
+ }
+--- before/src/bridge.cjs
++++ after/src/bridge.cjs
+@@ -1,4 +1,5 @@
+ 'use strict';
++const { randomUUID } = require('node:crypto');
+ const fs = require('node:fs');
+ const path = require('node:path');
+ const AcpClient = require('./acp-client.cjs');
+@@ -21,11 +22,13 @@
+     this.clients = new Map(); this.seen = new Map(); this.queue = [];
+     this.lastTask = null; this.received = 0; this.active = null; this.processed = 0; this.failed = 0; this.stopped = false;
+   }
+-  async send(target, text) {
++  async send(target, text, origin = 'mcp-send', taskId = null) {
+     assertAllowed(this.config.allowed, target);
+     if (typeof text !== 'string' || !text.trim() || text.length > 4000) throw new Error('消息必须为 1–4000 字符');
+-    if (this.config.dry) return { status: 'dry_run', delivered: false };
+-    return this.maap.sendReply(target, text);
++    this.onEvent({ type: 'outbound_attempt', origin, taskId, characters: text.length, dry: this.config.dry });
++    const result = this.config.dry ? { status: 'dry_run', delivered: false } : await this.maap.sendReply(target, text);
++    this.onEvent({ type: 'outbound_result', origin, taskId, status: result.status });
++    return result;
+   }
+   enqueue(msg) {
+     assertAllowed(this.config.allowed, msg.replyTarget);
+@@ -41,7 +44,7 @@
+     if (this.active || this.stopped) return;
+     const task = this.queue.shift(); if (!task) return;
+     this.active = task;
+-    this.lastTask = { state: 'processing', startedAt: new Date().toISOString(), error: null };
++    this.lastTask = { id: randomUUID(), backend: 'workbuddy-local-acp', state: 'processing', startedAt: new Date().toISOString(), error: null };
+     let replyAttempted = false;
+     try {
+       let client = this.clients.get(task.replyTarget);
+@@ -57,16 +60,16 @@
+       if (client.sessionId) writeSessionId(senderDirectory(this.config.workdir, task.replyTarget), client.sessionId);
+       if (result.stopReason !== 'end_turn') { const error = new Error('ACP 任务未正常完成: ' + result.stopReason); error.permissionDenied = result._meta?.['codebuddy.ai/outcome'] === 'PERMISSION_DENIED' || client.permissionsDenied > deniedBefore; throw error; }
+       if (!reply.trim()) throw new Error('ACP 未返回可下发正文');
+-      replyAttempted = true; await this.send(task.replyTarget, reply); this.processed++;
++      replyAttempted = true; await this.send(task.replyTarget, reply, 'acp-response', this.lastTask.id); this.processed++;
+       this.lastTask.state = 'completed';
+-      this.onEvent({ type: 'task_done' });
++      this.onEvent({ type: 'task_done', taskId: this.lastTask.id });
+     } catch (e) {
+       this.failed++; this.lastTask.state = 'failed'; this.lastTask.error = e.message;
+       this.onEvent({ type: 'task_failed', error: e.message });
+       // A possibly delivered reply is never followed by an automatic duplicate.
+       if (!replyAttempted && !this.stopped) {
+         const notice = e.permissionDenied ? '操作未执行：本次电脑确认未获允许（已拒绝、超时或弹窗不可用）。请在 Mac 上准备好后重新发送；当前没有仍在等待的审批。' : /timeout|超时/i.test(e.message) ? '处理超时：尚未获得完整结果，请在电脑端检查任务状态；为避免重复执行，本次没有自动重试。' : '处理失败：WorkBuddy 暂时未能完成任务。请稍后重试，或在电脑端查看 bridge_status 的 lastTask。';
+-        try { await this.send(task.replyTarget, notice); this.lastTask.failureNotice = 'ws_sent_or_dry'; }
++        try { await this.send(task.replyTarget, notice, 'failure-notice', this.lastTask.id); this.lastTask.failureNotice = 'ws_sent_or_dry'; }
+         catch (sendError) { this.lastTask.failureNotice = 'failed'; this.onEvent({ type: 'failure_notice_failed', error: sendError.message }); }
+       }
+     }
+--- before/src/index.cjs
++++ after/src/index.cjs
+@@ -10,7 +10,12 @@
+ const socketPath = process.env.BRIDGE_SOCKET || path.join(os.homedir(), '.workbuddy/5g-macos.sock');
+ let ipc, lease, gatewayError = null;
+ let config, maap, bridge, probe, startupError = null, stopping = false, acpHandshake = false;
+-const log = event => { if (event.type === 'update') return; console.error(JSON.stringify({ at: new Date().toISOString(), ...event })); };
++const recentEvents = [];
++const log = event => {
++  const entry = { at: new Date().toISOString(), ...event };
++  recentEvents.push(entry); if (recentEvents.length > 100) recentEvents.shift();
++  console.error(JSON.stringify(entry));
++};
+ const permissionUI = createPermissionPrompter({ onChange: state => { log({ type: 'permission_confirmation', ...state }); if (bridge?.lastTask) bridge.lastTask.state = state.state === 'awaiting_local_confirmation' ? 'awaiting_permission' : 'processing'; } });
+ // The upstream client logs message bodies. Suppress these in the macOS adapter.
+ const logger = { info() {}, debug() {}, warn() {}, error() {} };
+@@ -19,6 +24,8 @@
+   maap?.stop(); ipc?.close(); lease?.close(); if (daemon && ipc) { try { fs.unlinkSync(socketPath); } catch {} } await bridge?.close(); await probe?.close(); process.exit(0);
+ };
+ const handlers = { status: () => ({
++  version: '2.0.0', backend: 'workbuddy-local-acp', transport: 'http-sse', spawnsCli: false, sessionBinding: 'channel-session',
++  progress: { connectorSendsThinkingNotice: false, source: 'acp-session-update-metadata', recentEvents: recentEvents.slice(-30) },
+   permissions: permissionUI.status(), pid: process.pid, service: daemon ? 'shared-daemon' : 'stdio', gatewayError,
+   runtimeReady: !!bridge,
+   acpStartupHandshake: acpHandshake, acpError: startupError,
+--- before/src/mcp-server.cjs
++++ after/src/mcp-server.cjs
+@@ -1,6 +1,6 @@
+ 'use strict';
+ const readline = require('node:readline');
+-const VERSION = '1.1.0';
++const VERSION = '2.0.0';
+ function attach({ status, send, shutdown, input = process.stdin, output = process.stdout }) {
+   const write = value => output.write(JSON.stringify(value) + '\n');
+   const lines = readline.createInterface({ input, crlfDelay: Infinity });
+--- before/src/persona.cjs
++++ after/src/persona.cjs
+@@ -2,8 +2,8 @@
+ /**
+  * persona.cjs — WorkBuddy 人格/记忆注入（供 5G ACP 会话使用）
+  *
+- * 复用原版 5g-cli-bridge 的 buildSystemPrompt 思路：
+- *   - 基础身份段（自称 WorkBuddy）与 5G 渠道约束恒注入，解决「身份」缺口；
++ * 渠道回复上下文：
++ *   - 真实 ACP 渠道身份与格式说明，不伪装成当前桌面对话；
+  *   - 人格档案段（IDENTITY/SOUL/USER/MEMORY.md）仅在文件有实质内容时注入，
+  *     空模板占位自动跳过（用户完成 bootstrap 填充后即自动生效）。
+  *
+@@ -49,15 +49,15 @@
+   return TEMPLATE_MARKERS.some(m => body.includes(m));
+ }
+ 
+-// 基础身份段：无论档案是否填写，都确保会话自称 WorkBuddy
++// 真实运行环境说明，避免以改名冒充另一调用路径
+ function buildHead() {
+-  return '【系统设定，非用户消息】你运行在 WorkBuddy 中，是主人的个人智能助手。\n' +
+-    '当用户问"你是谁 / 你叫什么名字"时，回答你是 WorkBuddy——绝不自称 CodeBuddy Code，也不要提及底层引擎名。\n';
++  return '【5G 渠道说明】你通过本地 ACP 为 5G 消息渠道提供服务，使用独立渠道会话。\n' +
++    '请如实说明自己的运行环境；不要声称正在使用桌面当前对话，也不要用名称替换掩盖底层身份。\n';
+ }
+ 
+ // 实时拼装人格注入文本；禁用或全部为空时返回 null（由调用方决定是否注入）
+ function buildPersona(env = process.env, home = os.homedir()) {
+-  if (env.PERSONA_ENABLED === '0') return null;
++  if (env.PERSONA_ENABLED !== '1') return null;
+ 
+   // 1) 显式文件优先（完全自定义场景）
+   if (env.PERSONA_PROMPT_FILE) {

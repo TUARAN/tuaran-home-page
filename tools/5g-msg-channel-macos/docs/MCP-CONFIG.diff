@@ -1,0 +1,34 @@
+--- before/mcp-entries.json
++++ production/mcp-entries.json
+@@ -19,22 +19,24 @@
+       "version": ">=20"
+     },
+     "timeout": 60000,
+-    "disabled": false
++    "disabled": true
+   },
+   "5g-msg-channel-macos": {
+     "type": "stdio",
+     "command": "/Users/tuaran/.hermes/node/bin/node",
+     "args": [
+-      "/Users/tuaran/Documents/GitHub/tuaran-home-page/tools/5g-msg-channel-macos/src/index.cjs",
+-      "--mock"
++      "/Users/tuaran/Documents/GitHub/tuaran-home-page/tools/5g-msg-channel-macos/src/mcp-client.cjs"
+     ],
+     "cwd": "/Users/tuaran/Documents/GitHub/tuaran-home-page/tools/5g-msg-channel-macos",
++    "disabled": false,
+     "env": {
+-      "ACP_CWD": "/Users/tuaran/Documents/GitHub/tuaran-home-page/tools/5g-msg-channel-macos/var/workspace",
++      "BRIDGE_MODE": "production",
++      "MAAP_WS_URL": "wss://5gvas01.cmicmaap.com/gtw-ai/openclaw/ws/msg",
++      "MAAP_API_KEY_FILE": "[redacted]",
+       "ENFORCE_WHITELIST": "true",
+       "ALLOWED_SENDERS": "[redacted]",
+-      "BRIDGE_DRY": "1"
+-    },
+-    "disabled": false
++      "BRIDGE_DRY": "0",
++      "ACP_CWD": "/Users/tuaran/Documents/GitHub/tuaran-home-page/tools/5g-msg-channel-macos/var/workspace"
++    }
+   }
+ }

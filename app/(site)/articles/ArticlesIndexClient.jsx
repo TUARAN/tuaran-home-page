@@ -195,7 +195,7 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       .then(([articlesData, contentData]) => {
         if (!alive) return
         const dbArticles = Array.isArray(articlesData?.articles) ? articlesData.articles : []
-        const base = [...staticItems, ...dbArticles]
+        const base = [...new Map([...dbArticles, ...staticItems].map((item) => [item.href, item])).values()]
         const manualItems = manualEntriesToItems(contentData?.entries, base)
         if (!dbArticles.length && !manualItems.length) return
         setItems(

@@ -9,7 +9,7 @@ const root = new URL('../', import.meta.url)
 const [worksSource, sitesSource, sitemapSource] = await Promise.all([
   readFile(new URL('app/(site)/works/page.jsx', root), 'utf8'),
   readFile(new URL('app/(site)/sites/page.jsx', root), 'utf8'),
-  readFile(new URL('app/(site)/sitemap.js', root), 'utf8'),
+  readFile(new URL('app/(site)/sitemap-static/sitemap.js', root), 'utf8'),
 ])
 
 test('portfolio distinguishes independent products, built-in tools, and works', () => {

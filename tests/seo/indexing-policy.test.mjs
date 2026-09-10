@@ -66,7 +66,7 @@ test('crawler discovery and sitemap rules do not recreate parameter duplicates o
   const [header, middleware, sitemap] = await Promise.all([
     readFile(new URL('app/(site)/components/SiteHeader.jsx', root), 'utf8'),
     readFile(new URL('middleware.js', root), 'utf8'),
-    readFile(new URL('app/(site)/sitemap.js', root), 'utf8'),
+    readFile(new URL('app/(site)/sitemap-static/sitemap.js', root), 'utf8'),
   ])
 
   assert.match(header, /href=\{loginHref\}[\s\S]{0,80}rel="nofollow"/)

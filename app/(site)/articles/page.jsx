@@ -72,6 +72,12 @@ export default function ArticlesPage() {
         <ArticlesHeaderClient />
       </Suspense>
 
+      <nav aria-label="文章发现" className="mb-4 px-4 text-sm">
+        {/* Plain HTML endpoint: use document navigation rather than the RSC router. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/articles/published" className="underline">最新发布文章</a>
+      </nav>
+
       <Suspense fallback={<ArticlesIndexFallback items={items} />}>
         <ArticlesIndexClient items={items} />
       </Suspense>

@@ -157,17 +157,17 @@ for (const work of reviewReadyRichPages) {
 }
 
 requireSource(
-  'app/(site)/sitemap.js',
+  'app/(site)/sitemap-static/sitemap.js',
   /\.filter\(\(entry\) => !entry\.encrypted\)/,
   'sitemap 必须保留全部未加密公开分析',
 )
 forbidSource(
-  'app/(site)/sitemap.js',
+  'app/(site)/sitemap-static/sitemap.js',
   /entry\.reviewReady|isAdsenseReviewPath|isPublicIndexablePath/,
   'sitemap 不得按 AdSense 复审状态收窄 SEO 收录',
 )
 forbidSource(
-  'app/(site)/rss.xml/route.js',
+  'app/(site)/rss-static.xml/route.js',
   /entry\.reviewReady|isAdsenseReviewPath|isPublicIndexablePath/,
   'RSS 不得按 AdSense 复审状态收窄内容发现',
 )

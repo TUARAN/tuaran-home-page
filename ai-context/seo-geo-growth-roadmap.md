@@ -116,11 +116,19 @@
 ### A：先修发现链路
 
 - [x] **A1｜高：真实修改日期。** 已实现，待部署（2026-09-09，GPT6-Astra）。frontmatter 契约见 `research/README.md`；loader 统一输出 `publishedTime` / `modifiedTime`，详情 metadata / JSON-LD 与 sitemap 复用。非法值安全回退或省略，不使用构建时间。已覆盖有更新、无更新、非法日期、时区与构建时钟变化样本。
-- [ ] **A2｜高：发现入口内容覆盖。** 盘点数据库公开文章与静态内容，复用现有数据访问封装，选择符合 Edge / Pages 的合并和缓存策略。验收：抽样公开动态文章进入 sitemap / RSS，重复 slug 去重，草稿和私域不会新增泄露；发布后无需依赖目录客户端 JS 才获得发现链接。
+- [x] **A2｜高：发现入口内容覆盖。** 已实现并通过本地 Pages + D1 验收，待部署及线上真实文章抽样（2026-09-10）。复用 `listPublishedArticlePosts({ metadataOnly: true })`，仅查询 published 元数据；按详情页优先级排除静态同名 slug、调研重定向和日记旧入口，重复 slug 去重。`/sitemap.xml`、`/rss.xml`、`/articles/published` 通过 rewrites 共用一个 Edge 函数；目录提供普通 HTML 链接，公开数据库文章无需客户端 JS 即可发现。
 - [ ] **A3｜高：直接输出结构化数据。** 调整抽检问题涉及的输出方式，正确转义 JSON，避免重复 Schema。验收：不执行 JS 的 HTML 解析可以读取合法 JSON-LD；内容与页面一致；再做浏览器及官方验证工具检查。
 - [ ] **A4｜中：首页基础元信息。** 增加适当 H1 和首页 canonical。验收：初始 HTML 可见语义主标题、canonical 正确，视觉和标题层级正常。
 - [ ] **A5｜高：真实爬虫访问核验。** 核对目标平台、robots、Cloudflare 拦截与真实日志。验收：记录验证身份、时间、URL、状态及挑战情况；不足以确认的项目继续标为待验证。
 - [ ] **A6｜中：IndexNow 增量通知。** 先核对外部是否已接入；仅在内容发布成功且 URL 可访问后通知实质变更。验收：密钥文件验证成功，去重、重试、响应记录齐全；提交成功与收录成功分开显示。
+
+### A2 验收记录（2026-09-10）
+
+- 静态盘点：公开站构建产物包含 331 条 sitemap URL、304 条 RSS 条目。保留原有静态文章、调研、富页面、资源等范围和过滤规则；静态 RSS 的全文、加密调研摘要边界及版本化 GUID 保持原样。动态发现只取 `article_posts`；不把 `content_index` 的手工登记记录视为公开正文凭据，不读取分享或私域数据。
+- 构建与运行时：`sitemap-static/sitemap.js`、`rss-static.xml/route.js` 在构建期调用原有 loader；Edge 经 Pages `env.ASSETS.fetch()` 读取同一部署的 XML，再合并数据库文章。实现入口是 `app/(site)/discovery/[format]/route.js`，策略在 `lib/articleDiscovery.js`。静态资源读取方式依据 [Cloudflare Pages API](https://developers.cloudflare.com/pages/functions/api-reference/)。
+- 缓存：静态 XML 使用 Pages 静态资源缓存，动态合并响应及 HTML 目录均 `Cache-Control: no-store`；不使用 Edge ISR 或 stale 缓存。数据库故障沿用现有访问封装的空列表降级，保留静态发现内容；静态产物无效不返回成功的空 feed。
+- 验证：46 项相关测试通过；完整公开站 Pages 构建通过，Worker gzip 2.743 MiB（仓库预算 2.750 MiB）。本地隔离 D1 插入公开文章、静态同名文章和草稿后，HTTP 实测 sitemap 332 条、RSS 305 条且 URL 无重复；HTML 目录直接输出公开文章链接。公开测试文章改回草稿后，三个入口的下一次请求均不再包含该链接。
+- 线上边界：本次未部署。线上 `/api/articles` 读取结果为空；该 API 在 D1 不可用时也会返回空列表，因此不能据此断言线上数据库没有公开文章。部署后仍需以真实公开文章抽样确认。
 
 ### B：先做一条连续阅读路径
 

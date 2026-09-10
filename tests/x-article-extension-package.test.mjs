@@ -98,7 +98,7 @@ test('插件已接入浏览器扩展集合、工具库和独立下载介绍页',
   const toolItems = await readFile(new URL('../lib/toolItems.js', import.meta.url), 'utf8')
   const catalog = await readFile(new URL('../lib/resourceCatalog.js', import.meta.url), 'utf8')
   const registry = await readFile(new URL('../lib/contentRegistry.js', import.meta.url), 'utf8')
-  const sitemap = await readFile(new URL('../app/(site)/sitemap.js', import.meta.url), 'utf8')
+  const sitemap = await readFile(new URL('../app/(site)/sitemap-static/sitemap.js', import.meta.url), 'utf8')
   const resourcePage = await readFile(
     new URL('../app/(site)/resources/x-article-autopublisher-extension/page.jsx', import.meta.url),
     'utf8',

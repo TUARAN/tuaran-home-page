@@ -5,7 +5,7 @@ import test from 'node:test'
 test('A股调研 is a content submenu and a sitemap route', async () => {
   const [nav, sitemap] = await Promise.all([
     readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
-    readFile(new URL('../../app/(site)/sitemap.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(site)/sitemap-static/sitemap.js', import.meta.url), 'utf8'),
   ])
 
   assert.match(nav, /href: '\/a-share-research', label: 'A股调研'/)

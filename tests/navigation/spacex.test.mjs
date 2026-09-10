@@ -9,7 +9,7 @@ test('SpaceX has a standalone header entry and remains a sitemap route', async (
     readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
     readFile(new URL('../../lib/siteMobileNav.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../app/(site)/sitemap.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(site)/sitemap-static/sitemap.js', import.meta.url), 'utf8'),
   ])
 
   assert.doesNotMatch(nav, /href: '\/spacex'.*label: 'SpaceX'/)

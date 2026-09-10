@@ -1,7 +1,7 @@
-import { articles } from './articles/articlesData'
-import { COMMUNITY_TOPICS } from '../../lib/communityTopics'
-import { listResearch } from '../../lib/research/loader'
-import { listRichPagePaths, listRichPageSitemapEntries } from '../../lib/richPageSeo'
+import { articles } from '../articles/articlesData'
+import { COMMUNITY_TOPICS } from '../../../lib/communityTopics'
+import { listResearch } from '../../../lib/research/loader'
+import { listRichPagePaths, listRichPageSitemapEntries } from '../../../lib/richPageSeo'
 
 const SITE_URL = 'https://2aran.com'
 
@@ -40,6 +40,7 @@ export default function sitemap() {
     '/publications',
     '/services',
     '/articles',
+    '/articles/published',
     '/frontend-weekly',
     '/a-share-research',
     '/crypto-research',

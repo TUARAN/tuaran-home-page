@@ -92,6 +92,13 @@ const nextConfig = {
       },
     ]
   },
+  async rewrites() {
+    return [
+      { source: '/sitemap.xml', destination: '/discovery/sitemap' },
+      { source: '/rss.xml', destination: '/discovery/rss' },
+      { source: '/articles/published', destination: '/discovery/articles' },
+    ]
+  },
   async redirects() {
     return [
       {

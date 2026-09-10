@@ -96,7 +96,7 @@ test('Open Graph, JSON-LD and sitemap consume the same loader fields', {
     : false,
 }, () => {
   const page = readFileSync(new URL('../../app/(site)/articles/research/[category]/[slug]/page.jsx', import.meta.url), 'utf8')
-  const sitemap = readFileSync(new URL('../../app/(site)/sitemap.js', import.meta.url), 'utf8')
+  const sitemap = readFileSync(new URL('../../app/(site)/sitemap-static/sitemap.js', import.meta.url), 'utf8')
   assert.match(page, /publishedTime: entry\.publishedTime/)
   assert.match(page, /modifiedTime: entry\.modifiedTime/)
   assert.match(page, /datePublished: entry\.publishedTime/)

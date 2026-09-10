@@ -53,7 +53,8 @@ async function readJson(response) {
 
 async function measurement({ url, locations, fetchImpl, sleep, signal }) {
   const created = await fetchImpl(API, {
-    method: 'POST', headers: HEADERS, redirect: 'error', signal,
+    // Workers rejects redirect: 'error'; manual returns 3xx for the !ok check below.
+    method: 'POST', headers: HEADERS, redirect: 'manual', signal,
     body: JSON.stringify({
       type: 'http', target: url.hostname, limit: 1, locations,
       measurementOptions: {
@@ -77,7 +78,7 @@ async function measurement({ url, locations, fetchImpl, sleep, signal }) {
     if (attempt) await sleep(1000)
     const response = await fetchImpl(`${API}/${data.id}`, {
       headers: { ...HEADERS, ...(etag ? { 'if-none-match': etag } : {}) },
-      redirect: 'error', signal,
+      redirect: 'manual', signal,
     })
     if (response.status === 304) { await response.body?.cancel().catch(() => {}); continue }
     if (!response.ok) {

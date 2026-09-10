@@ -14,6 +14,7 @@ const finished = (result = {}) => ({
 function mockFetch(responses) {
   const calls = []
   return { calls, fetchImpl: async (url, init) => {
+    assert.equal(init.redirect, 'manual', 'Workers 请求必须显式禁用自动重定向')
     calls.push({ url, ...init, body: init.body ? JSON.parse(init.body) : undefined })
     assert.ok(responses.length, 'unexpected extra request')
     const next = responses.shift()
@@ -37,6 +38,18 @@ test('免费节点请求首页，再复用同一探针获取来源 IP；不采�
   assert.equal(mock.calls[2].body.locations, 'home')
   assert.equal(mock.calls[2].body.measurementOptions.request.path, '/cdn-cgi/trace')
   assert.equal(Object.hasOwn(mock.calls[2].body.measurementOptions.request, 'query'), false)
+})
+
+test('Globalping 创建和查询遇到重定向均拒绝，不访问 Location', async () => {
+  for (const status of [301, 302, 303, 307, 308]) {
+    for (const polling of [false, true]) {
+      const responses = polling ? [{ id: 'home', probesCount: 1 }] : []
+      responses.push(new Response(null, { status, headers: { location: 'https://example.com/' } }))
+      const mock = mockFetch(responses)
+      await assert.rejects(checkViaGlobalping({ target: 'https://2aran.com', region, ...mock }), new RegExp(`HTTP ${status}`))
+      assert.equal(mock.calls.length, polling ? 2 : 1)
+    }
+  }
 })
 
 test('进度查询遵循 ETag 和轮询间隔', async () => {

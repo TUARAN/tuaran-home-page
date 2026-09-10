@@ -140,7 +140,7 @@ async function checkViaRunner({ runner, secret, target, fetchImpl }) {
   const startedAt = Date.now()
   const response = await fetchImpl(runner.url, {
     method: 'POST',
-    redirect: 'error',
+    redirect: 'manual',
     signal: AbortSignal.timeout(20_000),
     headers: {
       authorization: `Bearer ${secret}`,
@@ -150,6 +150,11 @@ async function checkViaRunner({ runner, secret, target, fetchImpl }) {
     },
     body: JSON.stringify({ url: target }),
   })
+  // Never forward the Runner secret to a redirect destination.
+  if (REDIRECT_STATUSES.has(response.status)) {
+    await cancelBody(response)
+    throw new Error(`Runner HTTP ${response.status}：不允许重定向`)
+  }
   const data = await readLimitedJson(response)
   if (!response.ok || data?.ok === false) throw new Error(data?.error || `Runner HTTP ${response.status}`)
   return {

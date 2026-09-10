@@ -60,10 +60,28 @@ test('存在 Runner 和共享密钥时只调用选中的一个节点', async () 
   })
   assert.equal(calls.length, 1)
   assert.equal(calls[0].url, runners[1].url)
+  assert.equal(calls[0].init.redirect, 'manual')
   assert.equal(calls[0].init.headers.authorization, 'Bearer shared-secret')
   assert.deepEqual(JSON.parse(calls[0].init.body), { url: 'https://2aran.com' })
   assert.equal(outcome.result.exitIp, '203.0.113.22')
   assert.equal(outcome.nextRunnerIndex, 0)
+})
+
+test('Runner 重定向被拒绝，不向 Location 转发共享密钥', async () => {
+  for (const status of [301, 302, 303, 307, 308]) {
+    const calls = []
+    await assert.rejects(performCheck({
+      target: 'https://2aran.com',
+      runners: [{ id: 'sin', label: '新加坡', url: 'https://sin.example.com/api/check' }],
+      runnerIndex: 0, runnerSecret: 'shared-secret',
+      fetchImpl: async (url, init) => {
+        assert.equal(init.redirect, 'manual')
+        calls.push(url)
+        return new Response('<html>Redirect</html>', { status, headers: { location: 'https://example.com/' } })
+      },
+    }), new RegExp(`Runner HTTP ${status}`))
+    assert.deepEqual(calls, ['https://sin.example.com/api/check'])
+  }
 })
 
 test('无 Runner 时使用 Cloudflare 直连并识别固定跨 Zone 地址', async () => {

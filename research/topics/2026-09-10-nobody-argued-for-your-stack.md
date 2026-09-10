@@ -1,5 +1,5 @@
 ---
-title: 当 AI 把技术栈推向同一个答案：Ryan Carniato 文章翻译与我的评论
+title: AI 更擅长 React，就该换掉 Solid 吗？
 category: topics
 date: 2026-09-10
 tags: [AI 编程, 技术选型, React, SolidJS, 开发者生态]
@@ -18,8 +18,6 @@ pv: 0
 >
 > ——Ryan Carniato，《Nobody Argued For Your Stack》，中文译文
 
-这段话让我在意的，是技术选型的依据正在发生什么变化。一个工具被反复生成、反复展示，久而久之，就可能省略掉“它适合什么问题”这一层讨论。
-
 ## 原文翻译：没有人为你的技术栈给出论证
 
 原作者：**Ryan Carniato**，发表于 Playful Programming / DEV Community。英文原文：[Nobody Argued For Your Stack](https://dev.to/playfulprogramming/nobody-argued-for-your-stack-51fj)。
@@ -28,7 +26,7 @@ pv: 0
 
 上周，Cursor 已经基本完成从 SolidJS 向 React 迁移的消息传开了。这次迁移大约发生在七个月前，但在 Solid 2.0 RC 发布之后，它成了讨论的焦点。又过了一周，也就是昨天，我注意到 Anthropic 文档里，用来演示大规模迁移功能的示例命令竟然是这样的：
 
-> 译注：原文此处为命令截图，文字缺失。
+![Anthropic 文档中的 /batch 大规模迁移示例：将 src/ 从 Solid 迁移到 React](/research/nobody-argued-for-your-stack/batch-solid-to-react.png)
 
 我承认，我的第一反应很不好。有那么多例子可以选，偏偏选了这个……就在我们发布项目有史以来最大一次更新的同一周，我多年的工作成了“你应该从它迁走”的标准示例。那种刺痛，我不会假装不存在。我的第二反应是，这大概和那一周看到的其他跟进文章一样，追着一周前的新闻跑。
 

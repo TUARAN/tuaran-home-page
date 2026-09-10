@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   chooseHomeRecommendationBatch,
@@ -16,13 +16,6 @@ import {
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
 import H5PullToRefresh from './H5PullToRefresh'
 import { T } from './LocaleProvider'
-
-const SKELETON_ITEMS = Array.from({ length: 14 }, (_, index) => ({
-  id: `recommendation-skeleton-${index}`,
-  titleWidth: `${72 + ((index * 11) % 24)}%`,
-  summaryWidth: `${58 + ((index * 17) % 34)}%`,
-  summaryTailWidth: `${36 + ((index * 13) % 28)}%`,
-}))
 
 const SECTION_BADGE_CLASS = {
   column: 'home-badge home-badge-column',
@@ -58,14 +51,12 @@ function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false,
     : <Link href={item.href} className={className} {...analyticsProps}>{content}</Link>
 }
 
-export default function HomeFeaturedReadingClient({ onReadyChange }) {
-  const [catalog, setCatalog] = useState([])
+export default function HomeFeaturedReadingClient({ catalog: initialCatalog = [] }) {
+  const [catalog, setCatalog] = useState(initialCatalog)
   const router = useRouter()
   const searchInputRef = useRef(null)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
-  const [settingsReady, setSettingsReady] = useState(false)
   const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
-  const [automaticBatchReady, setAutomaticBatchReady] = useState(false)
   const [batchOffset, setBatchOffset] = useState(0)
   const [changing, setChanging] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -100,13 +91,6 @@ export default function HomeFeaturedReadingClient({ onReadyChange }) {
   )
   const displayedItems = normalizedQuery ? searchResults : items
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
-  const recommendationsReady = settingsReady && automaticBatchReady
-
-  // 在浏览器绘制前同步推荐列表，避免配置读取完成前发生内容切换。
-  useLayoutEffect(() => {
-    onReadyChange?.(recommendationsReady)
-  }, [onReadyChange, recommendationsReady])
-
   useEffect(() => {
     let alive = true
     fetch('/api/recommendations/home', { cache: 'no-store' })
@@ -115,25 +99,22 @@ export default function HomeFeaturedReadingClient({ onReadyChange }) {
         if (!alive) return
         if (Array.isArray(data?.catalog)) setCatalog(data.catalog)
         if (data?.settings) setSettings(mergeHomeRecommendationSettings(data.settings))
-        setSettingsReady(true)
       })
-      .catch(() => { if (alive) setSettingsReady(true) })
+      .catch(() => { /* Keep the prerendered catalog when refresh fails. */ })
     return () => { alive = false }
   }, [])
 
   useEffect(() => {
-    if (!settingsReady) return undefined
     let timer
     const intervalMs = settings.autoRotateHours * 60 * 60 * 1000
     const syncAutomaticBatch = () => {
       setAutomaticBatchNumber(getHomeRecommendationBatchNumber(settings.autoRotateHours))
-      setAutomaticBatchReady(true)
       const remaining = intervalMs - (Date.now() % intervalMs)
       timer = window.setTimeout(syncAutomaticBatch, remaining + 100)
     }
     syncAutomaticBatch()
     return () => window.clearTimeout(timer)
-  }, [settings.autoRotateHours, settingsReady])
+  }, [settings.autoRotateHours])
 
   const changeBatch = useCallback(() => {
     setChanging(true)
@@ -208,7 +189,7 @@ export default function HomeFeaturedReadingClient({ onReadyChange }) {
   if (!settings.enabled || !items.length) return null
 
   return (
-    <H5PullToRefresh onRefresh={changeBatch} disabled={!recommendationsReady || changing || Boolean(normalizedQuery)}>
+    <H5PullToRefresh onRefresh={changeBatch} disabled={changing || Boolean(normalizedQuery)}>
     <section id="articles" className="home-featured-reading home-section scroll-mt-24">
       <div className="home-section-heading home-featured-heading hidden md:flex">
         <div>
@@ -235,7 +216,7 @@ export default function HomeFeaturedReadingClient({ onReadyChange }) {
               </button>
             </div>
           ) : (
-            <button type="button" onClick={openSearch} disabled={!recommendationsReady} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] disabled:cursor-wait disabled:opacity-45 dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white" aria-label="展开推荐搜索">
+            <button type="button" onClick={openSearch} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] disabled:cursor-wait disabled:opacity-45 dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white" aria-label="展开推荐搜索">
               <IconSearch size={15} aria-hidden="true" />
               <T zh="搜索" en="Search" />
             </button>
@@ -244,7 +225,7 @@ export default function HomeFeaturedReadingClient({ onReadyChange }) {
             <button
               type="button"
               onClick={changeBatch}
-              disabled={!recommendationsReady || changing}
+              disabled={changing}
               className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] disabled:cursor-wait disabled:opacity-45 dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white"
               aria-label="换一批首页推荐内容"
             >
@@ -254,10 +235,9 @@ export default function HomeFeaturedReadingClient({ onReadyChange }) {
           ) : null}
         </div>
       </div>
-      <div className="relative" aria-busy={!recommendationsReady}>
+      <div className="relative">
         <div
-          className={`home-reading-list transition-opacity duration-200 ${recommendationsReady ? (changing ? 'opacity-55' : 'opacity-100') : 'invisible opacity-0'}`}
-          aria-hidden={!recommendationsReady}
+          className={`home-reading-list transition-opacity duration-200 ${changing ? 'opacity-55' : 'opacity-100'}`}
           aria-live="polite"
         >
           {displayedItems.map((item, index) => (
@@ -276,28 +256,7 @@ export default function HomeFeaturedReadingClient({ onReadyChange }) {
             </div>
           ) : null}
         </div>
-        {!recommendationsReady ? (
-          <div className="home-reading-skeleton" role="status" aria-label="正在加载推荐内容">
-            {SKELETON_ITEMS.map((item, index) => (
-              <div
-                key={item.id}
-                className={`home-reading-skeleton-item ${index >= 10 ? 'hidden md:block' : ''}`}
-                style={{ '--skeleton-index': index }}
-                aria-hidden="true"
-              >
-                <div className="home-reading-skeleton-meta">
-                  <span className="home-skeleton-block loading-skeleton w-12" />
-                  <span className="home-skeleton-block loading-skeleton w-16" />
-                  <span className="home-skeleton-block loading-skeleton w-20" />
-                </div>
-                <span className="home-skeleton-block loading-skeleton home-skeleton-title" style={{ width: item.titleWidth }} />
-                <span className="home-skeleton-block loading-skeleton home-skeleton-summary" style={{ width: item.summaryWidth }} />
-                <span className="home-skeleton-block loading-skeleton home-skeleton-summary-tail" style={{ width: item.summaryTailWidth }} />
-              </div>
-            ))}
-            <span className="sr-only">正在加载推荐内容</span>
-          </div>
-        ) : null}
+
       </div>
       {!normalizedQuery && eligibleCount > items.length ? (
         <div className="h5-batch-more mt-6 hidden flex-col items-center gap-3 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540] md:flex">
@@ -307,7 +266,7 @@ export default function HomeFeaturedReadingClient({ onReadyChange }) {
           <button
             type="button"
             onClick={changeBatch}
-            disabled={!recommendationsReady || changing}
+            disabled={changing}
             className="group inline-flex h-10 items-center gap-2 rounded-full border border-[#cfc7b6] bg-[#fffaf0] px-5 text-[13px] font-semibold text-[#5f563f] shadow-[0_5px_18px_rgba(56,49,38,0.08)] transition hover:-translate-y-0.5 hover:border-[#9e8c68] hover:text-[#2c2a23] disabled:cursor-wait disabled:opacity-45 dark:border-[#3a4654] dark:bg-[#18212c] dark:text-[#c2ccd8] dark:shadow-[0_5px_18px_rgba(0,0,0,0.2)] dark:hover:border-[#69788a] dark:hover:text-white"
             aria-label="换一批首页推荐内容"
           >

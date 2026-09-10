@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { IconMessageCircle2 } from '@tabler/icons-react'
 import { selectHomeOpinionPosts } from '../../../lib/homeOpinionSignals'
@@ -66,7 +67,7 @@ export default function HomeOpinionSignals() {
   const status = failed
     ? { zh: '刷新失败', en: 'Refresh failed' }
     : !data
-      ? { zh: '加载中', en: 'Loading' }
+      ? { zh: '公开讨论', en: 'Discussions' }
       : !posts.length
         ? { zh: '暂无数据', en: 'No data' }
         : data.meta?.isStale
@@ -124,7 +125,7 @@ export default function HomeOpinionSignals() {
       ) : (
         <p className="py-6 text-sm text-[var(--site-faint)]">
           {!data && !failed
-            ? <T zh="正在读取公开讨论…" en="Loading public discussions…" />
+            ? <Link href="/public-opinion" className="home-section-more no-underline"><T zh="查看公开讨论与观点 →" en="Explore public discussions →" /></Link>
             : <T zh="暂时无法获取采集内容，请稍后重试。" en="Collected discussions are unavailable. Please try again later." />}
         </p>
       )}

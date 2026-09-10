@@ -1,18 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useState } from 'react'
 
 import HomeFeaturedReadingClient from './HomeFeaturedReadingClient'
 import { T } from './LocaleProvider'
-
-const INSPIRATION_SKELETON_ITEMS = Array.from({ length: 10 }, (_, index) => ({
-  id: `inspiration-skeleton-${index}`,
-  hasThumbnail: index % 3 !== 2,
-  titleWidth: `${62 + ((index * 13) % 31)}%`,
-  copyWidth: `${68 + ((index * 11) % 27)}%`,
-  copyTailWidth: `${42 + ((index * 17) % 30)}%`,
-}))
 
 function FeedThumbnail({ src }) {
   // 灵感源同时包含本地与远端媒体，原生图片避免为每个来源维护 Next Image 域名白名单。
@@ -52,32 +43,7 @@ function InspirationCard({ inspiration, isPinned = false }) {
   )
 }
 
-function InspirationSkeleton() {
-  return (
-    <div className="home-inspiration-skeleton" role="status" aria-label="正在加载灵感内容">
-      {INSPIRATION_SKELETON_ITEMS.map((item, index) => (
-        <div
-          key={item.id}
-          className="home-inspiration-skeleton-item"
-          style={{ '--skeleton-index': index }}
-          aria-hidden="true"
-        >
-          <div className={`home-inspiration-skeleton-body ${item.hasThumbnail ? 'has-thumbnail' : ''}`}>
-            {item.hasThumbnail ? <span className="home-skeleton-block loading-skeleton home-inspiration-skeleton-thumbnail" /> : null}
-            <div>
-              <span className="home-skeleton-block loading-skeleton home-inspiration-skeleton-title" style={{ width: item.titleWidth }} />
-              <span className="home-skeleton-block loading-skeleton home-inspiration-skeleton-copy" style={{ width: item.copyWidth }} />
-              <span className="home-skeleton-block loading-skeleton home-inspiration-skeleton-copy" style={{ width: item.copyTailWidth }} />
-            </div>
-          </div>
-        </div>
-      ))}
-      <span className="sr-only">正在加载灵感内容</span>
-    </div>
-  )
-}
-
-function HomeInspirations({ items, pinnedIds, ready }) {
+function HomeInspirations({ items, pinnedIds }) {
   const pinnedIdSet = new Set(pinnedIds)
 
   return (
@@ -95,11 +61,8 @@ function HomeInspirations({ items, pinnedIds, ready }) {
           <p className="home-section-description"><T zh="随手记下的发现、念头与启发" en="Quick discoveries, ideas, and sparks" /></p>
         </div>
       </div>
-      <div className="relative" aria-busy={!ready}>
-        <div
-          className={`home-inspiration-list transition-opacity duration-200 ${ready ? 'opacity-100' : 'invisible opacity-0'}`}
-          aria-hidden={!ready}
-        >
+      <div className="relative">
+        <div className="home-inspiration-list">
           {items.map((inspiration) => (
             <InspirationCard
               key={inspiration.id}
@@ -108,20 +71,16 @@ function HomeInspirations({ items, pinnedIds, ready }) {
             />
           ))}
         </div>
-        {!ready ? <InspirationSkeleton /> : null}
       </div>
     </section>
   )
 }
 
 export default function HomePrimaryColumnsClient({ catalog, inspirations, pinnedInspirationIds }) {
-  const [ready, setReady] = useState(false)
-  const handleReadyChange = useCallback((nextReady) => setReady(nextReady), [])
-
   return (
     <>
-      <HomeFeaturedReadingClient catalog={catalog} onReadyChange={handleReadyChange} />
-      <HomeInspirations items={inspirations} pinnedIds={pinnedInspirationIds} ready={ready} />
+      <HomeFeaturedReadingClient catalog={catalog} />
+      <HomeInspirations items={inspirations} pinnedIds={pinnedInspirationIds} />
     </>
   )
 }

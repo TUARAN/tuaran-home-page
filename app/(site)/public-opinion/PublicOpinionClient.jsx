@@ -349,16 +349,19 @@ function PostFeed({ posts, connectors, filters, onFilterChange }) {
   ]
 
   return (
-    <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923] lg:col-span-2">
-      <div className="mb-4 flex flex-col gap-3 border-b border-[#dfe1d6] pb-4 dark:border-[#303b4a] xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Evidence Feed</p>
-          <h2 className="mb-0 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">
-            样本观点与立场识别
-          </h2>
-          <p className="mb-0 mt-1 text-[12px] text-[#68706a] dark:text-[#98a5b6]">
-            当前 {numberFormat(posts.length)} 条样本
-          </p>
+    <section className="min-w-0 border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923] lg:col-span-2">
+      <div className="mb-4 flex flex-col gap-3 border-b border-[#dfe1d6] pb-4 dark:border-[#303b4a]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Evidence Feed</p>
+            <h2 className="mb-0 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">
+              样本观点与立场识别
+            </h2>
+            <p className="mb-0 mt-1 text-[12px] text-[#68706a] dark:text-[#98a5b6]">
+              当前 {numberFormat(posts.length)} 条样本
+            </p>
+          </div>
+          <IconMessageCircle2 className="h-5 w-5 shrink-0 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <FilterSelect
@@ -379,7 +382,6 @@ function PostFeed({ posts, connectors, filters, onFilterChange }) {
             options={stanceOptions}
             onChange={(value) => onFilterChange('stance', value)}
           />
-          <IconMessageCircle2 className="h-5 w-5 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
         </div>
       </div>
       <div className="max-h-[640px] space-y-3 overflow-auto pr-1">

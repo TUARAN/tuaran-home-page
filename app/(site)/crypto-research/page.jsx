@@ -37,7 +37,6 @@ export default async function CryptoResearchPage() {
         templateVersion: CRYPTO_RESEARCH_TEMPLATE_VERSION,
         styleLabel: activeStyle.label,
         styleSummary: activeStyle.summary,
-        principles: activeStyle.principles.slice(0, 3),
       }}
     />
   )

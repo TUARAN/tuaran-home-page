@@ -51,15 +51,10 @@ export default function CryptoResearchClient({ items, researchMethod }) {
           <p className={`mt-2 text-sm leading-6 ${muted}`}>
             从结论与发展时间线开始，继续核对技术、用途、代币经济、市场、治理、安全和监管，最后集中整理风险、外部研判、来源与未能验证事项。
           </p>
-          <div className="mt-5 border-t border-[#dde5e1] pt-4 dark:border-[#303b3a]">
-            <p className="text-xs font-semibold tracking-[0.12em] text-[#16745b] dark:text-[#65c8a9]">当前写作风格 · {researchMethod.styleLabel}</p>
-            <p className={`mt-2 text-sm leading-6 ${muted}`}>{researchMethod.styleSummary}</p>
-            <ul className={`mt-3 space-y-2 text-sm leading-6 ${muted}`}>
-              {researchMethod.principles.map((principle) => (
-                <li key={principle} className="flex gap-2"><span aria-hidden="true" className="text-[#16745b] dark:text-[#65c8a9]">—</span><span>{principle}</span></li>
-              ))}
-            </ul>
-          </div>
+          <p className="mt-3 text-xs leading-5">
+            <span className="font-semibold text-[#16745b] dark:text-[#65c8a9]">当前写作风格 · {researchMethod.styleLabel}</span>
+            <span className={muted}> · {researchMethod.styleSummary}</span>
+          </p>
         </article>
 
         <article className="bg-white p-5 dark:bg-[#0d131b] sm:p-6">

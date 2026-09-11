@@ -64,7 +64,6 @@ export default async function AShareResearchPage() {
         templateVersion: A_SHARE_RESEARCH_TEMPLATE_VERSION,
         styleLabel: activeStyle.label,
         styleSummary: activeStyle.summary,
-        principles: activeStyle.principles.slice(0, 3),
       }}
     />
   )

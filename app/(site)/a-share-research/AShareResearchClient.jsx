@@ -70,15 +70,10 @@ export default function AShareResearchClient({ items, researchMethod }) {
             <p className={`mt-2 text-sm leading-6 ${muted}`}>
               从结论、公司身份和业务结构开始，继续核对财务、治理、估值、催化与风险，最后单列外部研判、未能验证和信息来源。
             </p>
-            <div className="mt-5 border-t border-[#e3ded7] pt-4 dark:border-[#303844]">
-              <p className="text-xs font-semibold tracking-[0.12em] text-[#8d332c] dark:text-[#e58a80]">当前写作风格 · {researchMethod.styleLabel}</p>
-              <p className={`mt-2 text-sm leading-6 ${muted}`}>{researchMethod.styleSummary}</p>
-              <ul className={`mt-3 space-y-2 text-sm leading-6 ${muted}`}>
-                {researchMethod.principles.map((principle) => (
-                  <li key={principle} className="flex gap-2"><span aria-hidden="true" className="text-[#a33b32] dark:text-[#e58a80]">—</span><span>{principle}</span></li>
-                ))}
-              </ul>
-            </div>
+            <p className="mt-3 text-xs leading-5">
+              <span className="font-semibold text-[#8d332c] dark:text-[#e58a80]">当前写作风格 · {researchMethod.styleLabel}</span>
+              <span className={muted}> · {researchMethod.styleSummary}</span>
+            </p>
           </article>
 
           <article className="bg-white p-5 dark:bg-[#0d131b] sm:p-6">

@@ -1,5 +1,6 @@
 export { default as AdminPage } from './AdminPage'
 export { default as Section } from './Section'
+export { default as CollapsibleSection } from './CollapsibleSection'
 export { default as StatCard } from './StatCard'
 export { default as StatusPill } from './StatusPill'
 export { default as EmptyState } from './EmptyState'

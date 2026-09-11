@@ -37,19 +37,22 @@ function renderDocument(markdown) {
 
 function DocumentBody({ document }) {
   const [intro, ...sections] = document.markdown.replace(/^# .+\n/, '').split(/^## /m)
+  const lastIndex = sections.length - 1
   return (
     <div className="admin-document prose prose-sm max-w-none dark:prose-invert">
       <div dangerouslySetInnerHTML={{ __html: renderDocument(intro) }} />
-      {sections.map((section) => {
+      {sections.map((section, index) => {
         const split = section.indexOf('\n')
         const title = section.slice(0, split).trim()
         return (
-          <details key={title} className="my-2 rounded-lg border border-[var(--admin-line)]">
-            <summary className="cursor-pointer px-4 py-3 font-semibold text-[var(--admin-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
-              {title}
-            </summary>
-            <div className="overflow-x-auto border-t border-[var(--admin-line)] px-4 py-2" dangerouslySetInnerHTML={{ __html: renderDocument(section.slice(split + 1)) }} />
-          </details>
+          <CollapsibleSection
+            key={title}
+            id={`${document.id}-section-${index + 1}`}
+            title={title}
+            defaultOpen={index === lastIndex}
+          >
+            <div dangerouslySetInnerHTML={{ __html: renderDocument(section.slice(split + 1)) }} />
+          </CollapsibleSection>
         )
       })}
     </div>

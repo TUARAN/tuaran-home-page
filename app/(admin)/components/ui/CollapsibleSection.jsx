@@ -10,6 +10,7 @@ export default function CollapsibleSection({
   description,
   badge,
   badgeTone = 'info',
+  actions,
   children,
   defaultOpen = false,
   className = '',
@@ -68,7 +69,7 @@ export default function CollapsibleSection({
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {badge ? <StatusPill tone={badgeTone} size="sm">{badge}</StatusPill> : null}
+          {actions ? actions : badge ? <StatusPill tone={badgeTone} size="sm">{badge}</StatusPill> : null}
           <span className="text-xs font-medium text-[var(--admin-muted)]">
             <span className="group-open/collapsible-section:hidden">展开</span>
             <span className="hidden group-open/collapsible-section:inline">收起</span>

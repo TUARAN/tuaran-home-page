@@ -1047,7 +1047,66 @@
   }
 
   .home-profile-top {
-    @apply flex items-center gap-4;
+    @apply relative isolate flex items-center overflow-hidden;
+  }
+
+  .home-profile-spacex-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.15rem;
+  }
+
+  .home-profile-spacex-mark {
+    width: 54%;
+    max-width: 168px;
+    min-width: 96px;
+    height: auto;
+    transform: translateX(16%);
+    opacity: 0.13;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 160ms ease;
+  }
+
+  .home-profile-spacex-bg:hover .home-profile-spacex-mark,
+  .home-profile-spacex-bg:focus-visible .home-profile-spacex-mark {
+    opacity: 0.28;
+  }
+
+  .home-profile-spacex-bg:focus-visible {
+    outline: 2px solid var(--site-accent);
+    outline-offset: 2px;
+  }
+
+  .dark .home-profile-spacex-mark {
+    filter: invert(1);
+    opacity: 0.18;
+  }
+
+  .dark .home-profile-spacex-bg:hover .home-profile-spacex-mark,
+  .dark .home-profile-spacex-bg:focus-visible .home-profile-spacex-mark {
+    opacity: 0.34;
+  }
+
+  .home-profile-person {
+    @apply relative z-[1] flex min-w-0 items-center gap-4 no-underline;
+    width: max-content;
+    max-width: 72%;
+    color: inherit;
+  }
+
+  .home-profile-person:hover .home-profile-name {
+    color: var(--site-ink);
+  }
+
+  .home-profile-person:focus-visible {
+    outline: 2px solid var(--site-accent);
+    outline-offset: 3px;
+    border-radius: 0.75rem;
   }
 
   .home-avatar-wrap {
@@ -1312,7 +1371,19 @@
     }
 
     .home-side-stack .home-profile-top {
+      gap: 0;
+    }
+
+    .home-side-stack .home-profile-person {
       gap: 0.75rem;
+      max-width: 68%;
+    }
+
+    .home-side-stack .home-profile-spacex-mark {
+      width: 58%;
+      min-width: 88px;
+      max-width: 118px;
+      transform: translateX(22%);
     }
 
     .home-side-stack .home-avatar-wrap {

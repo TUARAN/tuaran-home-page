@@ -55,6 +55,22 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'stonkfly-fruit-fly-crypto',
+    type: 'image',
+    title: 'Coinbase 工程师 Alex 开始让果蝇炒币了',
+    summary:
+      '他把一套真实果蝇的神经连接组做成可运行的神经网络：16.67 万个神经元、2500 多万条连接，然后把 Coinbase BTC 行情画成图直接喂给它看。\n\n神经网络的放电结果决定买入、卖出或者持有，赚钱刺激奖励相关的多巴胺神经元，亏钱则触发负反馈，尝试让突触自己调整。\n\n目前给了这只果蝇 100u 来跑模拟盘。',
+    tags: ['StonkFly', '果蝇', '连接组', 'Coinbase', '加密货币', '神经网络'],
+    date: '2026-09-11',
+    time: '23:16',
+    src: '/feed/stonkfly-fruit-fly-crypto-2026-09-11.jpg',
+    aspect: '1024/563',
+    source: {
+      label: 'StonkFly',
+      href: 'https://stonkfly-three.vercel.app/',
+    },
+  },
+  {
     id: 'world-labs-atlas-world-model',
     type: 'video',
     title: '一张图，生成一个可以自由探索的 3D 世界',

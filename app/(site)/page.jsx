@@ -12,11 +12,11 @@ import {
   IconCodeCircle,
   IconEye,
   IconFileText,
-  IconRocket,
   IconUsers,
 } from '@tabler/icons-react'
 
 import DaysSince from './components/DaysSince'
+import HomeSpacexEgg from './components/HomeSpacexEgg'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
 import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
@@ -631,17 +631,7 @@ function ProfileCard() {
               </p>
             </div>
           </Link>
-          <Link
-            href="/spacex"
-            className="home-profile-spacex-launch"
-            aria-label="SpaceX"
-            data-analytics-event="entry_click"
-            data-analytics-surface="home_profile"
-            data-analytics-destination-kind="page"
-            data-analytics-destination-id="/spacex"
-          >
-            <IconRocket size={16} stroke={1.7} aria-hidden="true" />
-          </Link>
+          <HomeSpacexEgg />
         </div>
         <div className="home-profile-days">
           <DaysSince compact />

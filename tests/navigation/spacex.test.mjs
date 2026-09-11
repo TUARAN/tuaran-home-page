@@ -4,18 +4,27 @@ import test from 'node:test'
 
 import { getSpacexTimeline, normalizeLl2Launch } from '../../lib/spacexTimeline.js'
 
-test('SpaceX has a standalone header entry and remains a sitemap route', async () => {
-  const [nav, mobileNav, header, sitemap] = await Promise.all([
+test('SpaceX stays off primary nav and is a homepage easter egg', async () => {
+  const [nav, mobileNav, header, page, egg, styles, sitemap] = await Promise.all([
     readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
     readFile(new URL('../../lib/siteMobileNav.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(site)/components/HomeSpacexEgg.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/globals.css', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/sitemap-static/sitemap.js', import.meta.url), 'utf8'),
   ])
 
   assert.doesNotMatch(nav, /href: '\/spacex'.*label: 'SpaceX'/)
   assert.doesNotMatch(mobileNav, /key: 'spacex'/)
-  assert.match(header, /href="\/spacex"/)
-  assert.match(header, /spacex-logo\.webp/)
+  assert.doesNotMatch(header, /href="\/spacex"/)
+  assert.match(page, /<HomeSpacexEgg/)
+  assert.match(page, /spacex-logo\.webp/)
+  assert.match(egg, /href=\{SPACEX_HREF\}/)
+  assert.match(egg, /prefersReducedMotion/)
+  assert.match(egg, /home-spacex-flight/)
+  assert.match(styles, /home-spacex-liftoff/)
+  assert.match(styles, /\.home-profile-spacex-craft,[\s\S]{0,160}\.home-spacex-flight-craft,[\s\S]{0,80}animation: none !important;/)
   assert.match(sitemap, /'\/spacex'/)
 })
 

@@ -23,10 +23,6 @@ const centerSource = await readFile(
   new URL('../../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url),
   'utf8'
 )
-const contentIndexSource = await readFile(
-  new URL('../../app/(admin)/admin/content-index/ContentIndexConsole.jsx', import.meta.url),
-  'utf8'
-)
 const backfillMigration = await readFile(
   new URL('../../migrations/0054_backfill_article_posts_content_index.sql', import.meta.url),
   'utf8'
@@ -128,16 +124,14 @@ test('admin exposes one content management entry and one unified list', () => {
   assert.match(consoleSource, /fetch\(`\/api\/admin\/content-list/)
   assert.match(consoleSource, /AdminPagination/)
   assert.match(consoleSource, /写文章/)
-  assert.match(consoleSource, /索引与登记/)
+  assert.doesNotMatch(consoleSource, /索引与登记/)
   assert.doesNotMatch(consoleSource, />登记内容</)
   assert.doesNotMatch(consoleSource, />索引维护</)
   assert.match(consoleSource, /<ResearchStyleClient embedded \/>/)
-  assert.match(consoleSource, /<ContentIndexConsole embedded \/>/)
+  assert.doesNotMatch(consoleSource, /ContentIndexConsole/)
   assert.match(consoleSource, /panel === 'import'/)
   assert.doesNotMatch(consoleSource, /href="\/admin\/research-style"/)
   assert.doesNotMatch(consoleSource, /href="\/admin\/content-index/)
   assert.match(consoleSource, /审批调研/)
   assert.doesNotMatch(consoleSource, /导入调研/)
-  assert.match(contentIndexSource, /id="content-index-sync"/)
-  assert.match(contentIndexSource, /id="manual-registration"[\s\S]*?<form onSubmit=\{handleAdd\}/)
 })

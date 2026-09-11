@@ -61,7 +61,7 @@ test('merged admin tools redirect in middleware without dedicated edge pages', a
     Object.fromEntries(Object.entries(ADMIN_LEGACY_REDIRECTS).filter(([path]) => path.startsWith('/admin/'))),
     {
       '/admin/ai-workspace': '/admin/automation',
-      '/admin/content-index': '/admin/articles?panel=index',
+      '/admin/content-index': '/admin/articles',
       '/admin/model-dispatch': '/admin/planning?tab=dispatch',
       '/admin/person-strawberry': '/admin/soft-sticker?tab=strawberry',
       '/admin/self-regulation': '/admin/soft-sticker?tab=self-regulation',

@@ -4,7 +4,6 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
-  IconDatabase,
   IconEdit,
   IconExternalLink,
   IconCircleCheck,
@@ -15,7 +14,6 @@ import {
 } from '@tabler/icons-react'
 
 import { AdminButton, AdminPage, AdminPagination, Section } from '../../components/ui'
-import ContentIndexConsole from '../content-index/ContentIndexConsole'
 import ResearchStyleClient from '../research-style/ResearchStyleClient'
 import ResearchImportConsole from './research-import/ResearchImportConsole'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
@@ -43,7 +41,6 @@ const SOURCE_LABELS = {
 const PANELS = [
   { id: 'list', label: '全部内容', icon: IconList },
   { id: 'import', label: '审批调研', icon: IconCircleCheck },
-  { id: 'index', label: '索引与登记', icon: IconDatabase },
   { id: 'style', label: '写作规范', icon: IconTypography },
 ]
 
@@ -413,8 +410,6 @@ function ArticlesConsoleBody() {
       ) : null}
 
       {panel === 'import' ? <ResearchImportConsole embedded /> : null}
-
-      {panel === 'index' ? <ContentIndexConsole embedded /> : null}
 
       {panel === 'style' ? <ResearchStyleClient embedded /> : null}
     </AdminPage>

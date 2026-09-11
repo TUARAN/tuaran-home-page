@@ -75,15 +75,15 @@ function useContentPanel() {
 function PublishChannels({ onOpenImport }) {
   return (
     <Section
-      title="现在怎么上线"
-      description="公开站读 D1。Git 只保存调研正本；新调研不会因为 push 就出现在目录里。"
+      title="发布"
+      description="写文章、导入调研，或打开 A 股 / 加密观察发布器。"
     >
       <div className="grid gap-3 lg:grid-cols-3">
         <article className="flex flex-col rounded-lg border border-[#eceee6] p-4 dark:border-[#243041]">
           <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道一</p>
           <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">普通文章</h3>
           <p className="mt-2 flex-1 text-[13px] leading-6 text-[#55574f] dark:text-gray-400">
-            在后台编辑器写，点发布写入 <code>article_posts</code>。目录立刻可读，不经过 Git，也不重建站点。
+            打开编辑器写作，点发布后立刻出现在目录。
           </p>
           <div className="mt-3">
             <AdminButton href="/admin/articles/new" size="sm" variant="primary">
@@ -95,7 +95,7 @@ function PublishChannels({ onOpenImport }) {
           <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道二</p>
           <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">Git 调研</h3>
           <p className="mt-2 flex-1 text-[13px] leading-6 text-[#55574f] dark:text-gray-400">
-            正本在 <code>research/*.md</code>。commit 用 <code>[CF-Pages-Skip]</code> 只存仓库；导出 JSON 后切到「导入调研」，核对再写入 D1。读者这才看得到。
+            正本在 <code>research/*.md</code>。导出 JSON，打开「导入调研」核对后发布。commit 加上 <code>[CF-Pages-Skip]</code>。
           </p>
           <div className="mt-3">
             <AdminButton type="button" size="sm" onClick={onOpenImport}>
@@ -107,7 +107,7 @@ function PublishChannels({ onOpenImport }) {
           <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道三</p>
           <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">A 股 / 加密观察</h3>
           <p className="mt-2 flex-1 text-[13px] leading-6 text-[#55574f] dark:text-gray-400">
-            定时任务起草，专用发布器同时写 Git 正本和 D1 快照。复核、退回、自动发布都在自动化工作台，不走本页导入。
+            定时任务起草。复核、退回和自动发布都在自动化工作台。
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <AdminButton href="/admin/a-share-research" size="sm">A 股研究</AdminButton>
@@ -210,7 +210,7 @@ function ArticlesConsoleBody() {
   return (
     <AdminPage
       title="内容管理"
-      description="三条通道汇入同一份列表。页内切换列表、导入、索引和规范；写文章进入独立编辑器。"
+      description="查看、发布和导入内容。写文章进入独立编辑器。"
       stickyHeader
       actions={(
         <AdminButton href="/admin/articles/new" variant="primary">
@@ -248,7 +248,7 @@ function ArticlesConsoleBody() {
           <PublishChannels onOpenImport={() => setPanel('import')} />
           <Section
             title="全部内容"
-            description={`共 ${counts?.all ?? '…'} 条 · 已发布 ${counts?.published ?? '…'} · 草稿 ${counts?.draft ?? '…'} · 已下线 ${counts?.retired ?? '…'}。右侧按钮进入该条所属通道。`}
+            description={`共 ${counts?.all ?? '…'} 条 · 已发布 ${counts?.published ?? '…'} · 草稿 ${counts?.draft ?? '…'} · 已下线 ${counts?.retired ?? '…'}。`}
           >
             <div className="mb-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
               <input

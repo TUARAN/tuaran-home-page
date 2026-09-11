@@ -27,6 +27,7 @@ import { HOME_MOBILE_CHANNELS } from '../../lib/siteMobileNav'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
+import { HOME_RECOMMENDATION_MAX_BATCH_SIZE } from '../../lib/homeRecommendationEngine'
 import { getFeedItemsWithPinned } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/secondarySites'
 import HomeOpinionSignals from './components/HomeOpinionSignals'
@@ -959,7 +960,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
-  const inspirations = getFeedItemsWithPinned(HOME_PINNED_INSPIRATION_IDS, 10)
+  const inspirations = getFeedItemsWithPinned(HOME_PINNED_INSPIRATION_IDS, HOME_RECOMMENDATION_MAX_BATCH_SIZE)
 
   return <PolishedHomePage featuredPicks={featuredPicks} inspirations={inspirations} />
 }

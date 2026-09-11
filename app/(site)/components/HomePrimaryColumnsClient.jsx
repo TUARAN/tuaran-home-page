@@ -61,7 +61,7 @@ function HomeInspirations({ items, pinnedIds }) {
           <p className="home-section-description"><T zh="随手记下的发现、念头与启发" en="Quick discoveries, ideas, and sparks" /></p>
         </div>
       </div>
-      <div className="relative">
+      <div className="relative min-h-0 flex-1">
         <div className="home-inspiration-list">
           {items.map((inspiration) => (
             <InspirationCard

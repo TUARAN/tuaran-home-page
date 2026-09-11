@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
-import { access, stat } from 'node:fs/promises'
+import { access, readFile, stat } from 'node:fs/promises'
 import test from 'node:test'
 
 import {
   getAllFeedItems,
   getFeedItemsWithPinned,
 } from '../../app/(site)/feed/data.js'
+import { HOME_RECOMMENDATION_MAX_BATCH_SIZE } from '../../lib/homeRecommendationEngine.js'
 
 test('homepage feed selection puts configured inspirations first without duplicates', () => {
   const pinnedId = 'gemma-4-agent-vllm-challenge'
@@ -14,6 +15,13 @@ test('homepage feed selection puts configured inspirations first without duplica
   assert.equal(items.length, 10)
   assert.equal(items[0].id, pinnedId)
   assert.equal(items.filter((item) => item.id === pinnedId).length, 1)
+})
+
+test('homepage asks for enough inspirations to fill the article column', async () => {
+  const page = await readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8')
+  assert.match(page, /HOME_RECOMMENDATION_MAX_BATCH_SIZE/)
+  assert.doesNotMatch(page, /getFeedItemsWithPinned\([^)]+,\s*10\)/)
+  assert.ok(HOME_RECOMMENDATION_MAX_BATCH_SIZE >= getAllFeedItems().length)
 })
 
 test('pinning does not change the chronological all-feed order', () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { X_MEME_ASSETS, X_MEME_GROUPS, X_MEME_SLOT_THEMES, pickXMemeAsset } from '../lib/xMemeAssets.js'
+import { X_MEME_ASSETS, X_MEME_GROUPS, X_MEME_SLOT_THEMES, pickXMemeAsset, xMemeThumbPath } from '../lib/xMemeAssets.js'
 
 test('five styles contain exactly three unique, uploadable PNG templates each', async () => {
   assert.equal(X_MEME_GROUPS.length, 5)
@@ -14,6 +14,11 @@ test('five styles contain exactly three unique, uploadable PNG templates each', 
       const bytes = await readFile(new URL(`../public${asset.path}`, import.meta.url))
       assert.equal(bytes.subarray(0, 8).join(','), '137,80,78,71,13,10,26,10')
       assert.ok(bytes.length <= 5 * 1024 * 1024)
+      assert.match(asset.thumb, /\/images\/x-memes\/thumbs\/.+\.jpg$/)
+      const thumb = await readFile(new URL(`../public${asset.thumb}`, import.meta.url))
+      assert.equal(thumb.subarray(0, 2).toString('hex'), 'ffd8')
+      assert.ok(thumb.length < 80 * 1024)
+      assert.ok(thumb.length < bytes.length / 8)
     }
   }
 })
@@ -40,5 +45,16 @@ test('five-day rotation covers all 15 templates while matching every slot and ke
   assert.equal(pickXMemeAsset({ slot: 'crypto_market', date: '2026-09-09' }), null)
   for (const date of ['', 'bad', '2026-02-30']) {
     assert.throws(() => pickXMemeAsset({ slot: 'morning', date }), /X_MEME_INVALID_DATE/)
+  }
+})
+
+test('admin thumbs map originals to small JPEGs without changing the PNG catalog', async () => {
+  assert.equal(xMemeThumbPath('/images/x-memes/meme.png'), '/images/x-memes/thumbs/doodle-cat-friends.jpg')
+  assert.equal(xMemeThumbPath('/images/x-memes/blue.png'), '/images/x-memes/thumbs/blue.jpg')
+  assert.equal(xMemeThumbPath('/images/x-memes/evening.png'), '/images/x-memes/thumbs/evening.jpg')
+  for (const name of ['blue', 'evening']) {
+    const thumb = await readFile(new URL(`../public/images/x-memes/thumbs/${name}.jpg`, import.meta.url))
+    assert.equal(thumb.subarray(0, 2).toString('hex'), 'ffd8')
+    assert.ok(thumb.length < 80 * 1024)
   }
 })

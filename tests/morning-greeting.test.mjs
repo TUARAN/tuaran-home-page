@@ -336,6 +336,31 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)
 })
 
+test('配图素材用 tab 合并表情包、资源池和历史库，列表只加载小图', async () => {
+  const [clientSource, librarySource, thumbsSource, poolSource] = await Promise.all([
+    readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/admin/morning-greeting/XImageLibrary.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/admin/morning-greeting/XImageThumbs.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/admin/morning-greeting/XImagePool.jsx', import.meta.url), 'utf8'),
+  ])
+
+  assert.match(clientSource, /XImageLibrary/)
+  assert.doesNotMatch(clientSource, /表情包模板 · 5 组 15 张|历史素材库/)
+  assert.match(librarySource, /表情包模板/)
+  assert.match(librarySource, /图片资源池/)
+  assert.match(librarySource, /历史素材库/)
+  assert.match(librarySource, /role="tablist"/)
+  assert.match(librarySource, /meme\.thumb/)
+  assert.doesNotMatch(librarySource, /<img src=\{meme\.path/)
+  assert.match(thumbsSource, /sm:grid-cols-10/)
+  assert.match(thumbsSource, /查看原图/)
+  assert.match(thumbsSource, /item\.thumb/)
+  assert.match(poolSource, /查看原图/)
+  assert.doesNotMatch(poolSource, /<img src=\{item\.imageUrl/)
+  assert.match(poolSource, /固定模板池/)
+  assert.match(poolSource, /选图与发布记录/)
+})
+
 test('daily posting times keep the five community baselines, vary by date, and stay within 30 minutes', async () => {
   assert.equal(X_POST_SLOTS.length, 5)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))

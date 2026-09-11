@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import XImagePool from './XImagePool'
+import XImageLibrary from './XImageLibrary'
 import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
-import { X_MEME_GROUPS } from '../../../../lib/xMemeAssets'
 import AutomationModelSelector from './AutomationModelSelector'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
@@ -265,19 +264,7 @@ export default function MorningGreetingClient() {
         >
         <div className="space-y-4">
           <TaskTimeline lastRuns={lastRuns} communityRuns={communityRuns} />
-          <Section title="表情包模板 · 5 组 15 张" description="每组包含早安、午安、交友各 1 张。按日期和时段轮换风格，重试保留已选图片。">
-            <div className="space-y-5">
-              {X_MEME_GROUPS.map((group) => (
-                <section key={group.id} aria-label={group.label}>
-                  <h3 className="mb-2 text-sm font-semibold">{group.label}<span className="ml-2 text-xs font-normal text-gray-500">3 张</span></h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {group.assets.map((meme) => <figure key={meme.id} className="m-0"><a href={meme.path} target="_blank" rel="noreferrer" aria-label={`预览${meme.label}`}><img src={meme.path} alt={meme.label} loading="lazy" className="aspect-square w-full rounded-xl object-contain" /></a><figcaption className="mt-2 text-center text-xs">{meme.label}</figcaption></figure>)}
-                  </div>
-                </section>
-              ))}
-            </div>
-          </Section>
-          <details><summary className="cursor-pointer text-sm">历史素材库</summary><XImagePool /></details>
+          <XImageLibrary />
           <XApiCostPanel cost={data?.xApiCost} />
         </div>
         </Section>

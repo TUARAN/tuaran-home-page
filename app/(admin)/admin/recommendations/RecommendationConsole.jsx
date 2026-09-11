@@ -191,7 +191,7 @@ export default function RecommendationConsole() {
           </Panel>
         </div>
 
-        <Panel title="人工置顶" description={`最多置顶 12 条；置顶内容优先占用每批展示名额。已选 ${settings.pinnedIds.length} 条。`}>
+        <Panel title="人工置顶" description={`最多置顶 12 条；置顶内容始终排在每批最前，换一批只轮换其余条目。已选 ${settings.pinnedIds.length} 条。`}>
           <label className="relative block">
             <IconSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#929487]" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题、来源或标签" className={`${inputClass} pl-9`} />

@@ -16,7 +16,7 @@ const settings = {
   pinnedIds: ['item-5', 'item-9'],
 }
 
-test('home recommendation highlights appear only in the initial batch', () => {
+test('home recommendation keeps pinned items across batches and only drops latest after refresh', () => {
   const initial = chooseHomeRecommendationBatch(
     catalog,
     settings,
@@ -38,10 +38,11 @@ test('home recommendation highlights appear only in the initial batch', () => {
   )
 
   assert.equal(refreshed.length, settings.batchSize)
+  assert.deepEqual(refreshed.slice(0, 2).map((item) => item.id), settings.pinnedIds)
   assert.equal(refreshed.some((item) => item.isLatest), false)
   assert.deepEqual(
-    refreshed.filter((item) => initial.some((previous) => previous.id === item.id)),
-    [],
+    refreshed.filter((item) => initial.some((previous) => previous.id === item.id)).map((item) => item.id),
+    settings.pinnedIds,
   )
 })
 

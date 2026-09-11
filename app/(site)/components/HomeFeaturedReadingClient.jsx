@@ -244,7 +244,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
             <FeaturedLink
               key={item.id}
               item={item}
-              isPinned={batchOffset === 0 && pinnedIds.has(item.id)}
+              isPinned={pinnedIds.has(item.id)}
               desktopOnly={!normalizedQuery && index >= 10}
               fromSearch={Boolean(normalizedQuery)}
               position={index + 1}

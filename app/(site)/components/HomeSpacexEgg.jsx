@@ -51,7 +51,6 @@ export default function HomeSpacexEgg() {
     setFlight({
       x,
       y,
-      dx: Math.round(window.innerWidth * 0.5 - x),
       dy: Math.round(-window.innerHeight * 1.18),
     })
   }
@@ -76,7 +75,7 @@ export default function HomeSpacexEgg() {
         data-analytics-destination-id="/spacex"
       >
         <span ref={padRef} className="home-profile-spacex-craft" aria-hidden="true">
-          <IconRocket size={16} stroke={1.7} />
+          <IconRocket className="home-profile-spacex-icon" size={16} stroke={1.7} />
           <span className="home-profile-spacex-flame" />
         </span>
       </Link>
@@ -87,7 +86,6 @@ export default function HomeSpacexEgg() {
               style={{
                 '--pad-x': `${flight.x}px`,
                 '--pad-y': `${flight.y}px`,
-                '--dx': `${flight.dx}px`,
                 '--dy': `${flight.dy}px`,
               }}
               aria-hidden="true"
@@ -97,7 +95,7 @@ export default function HomeSpacexEgg() {
                 style={{ left: flight.x, top: flight.y }}
                 onAnimationEnd={handleFlightEnd}
               >
-                <IconRocket size={18} stroke={1.6} />
+                <IconRocket className="home-profile-spacex-icon" size={18} stroke={1.6} />
                 <span className="home-profile-spacex-flame is-boost" />
               </div>
             </div>,

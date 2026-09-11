@@ -570,80 +570,82 @@ function BuilderAndSignalsPanel() {
 function ProfileCard() {
   return (
     <section id="personal" className="home-profile scroll-mt-24" aria-label="Profile">
-      <div className="home-profile-spacex-bg" aria-hidden="true">
-        <Image
-          src="/images/brand/spacex-logo.webp"
-          alt=""
-          width={3840}
-          height={480}
-          className="home-profile-spacex-mark"
-        />
-      </div>
-      <div className="home-profile-heading">
-        <div>
-          <p className="home-kicker">03 · About</p>
-          <h2 className="home-section-title"><T zh="站长" en="Site owner" /></h2>
+      <div className="home-profile-inner">
+        <div className="home-profile-spacex-bg" aria-hidden="true">
+          <Image
+            src="/images/brand/spacex-logo.webp"
+            alt=""
+            width={3840}
+            height={480}
+            className="home-profile-spacex-mark"
+          />
         </div>
-        <Link href="/about" className="home-section-more no-underline">
-          <T zh="更多" en="More" /> <span aria-hidden="true">→</span>
-        </Link>
-      </div>
-      <div className="home-profile-top">
-        <Link
-          href="/about"
-          className="home-profile-person"
-          data-analytics-event="entry_click"
-          data-analytics-surface="home_profile"
-          data-analytics-destination-kind="page"
-          data-analytics-destination-id="/about"
-        >
-          <div className="home-avatar-wrap">
-            <Image
-              src={AVATAR_PATH}
-              alt="TUARAN"
-              width={160}
-              height={200}
-              priority
-              sizes="112px"
-              className="h-auto w-full object-cover"
-            />
+        <div className="home-profile-heading">
+          <div>
+            <p className="home-kicker">03 · About</p>
+            <h2 className="home-section-title"><T zh="站长" en="Site owner" /></h2>
           </div>
-          <div className="min-w-0">
-            <p className="home-profile-name"><T zh="涂阿燃" en="TUARAN" /></p>
-            <p className="home-profile-role">
-              <T
-                zh={
-                  <>
-                    <span className="home-profile-role-line">输入决定输出</span>
-                    <span className="home-profile-role-pause">，</span>
-                    <span className="home-profile-role-line home-profile-role-line-end">输出暴露输入</span>
-                  </>
-                }
-                en={
-                  <>
-                    <span className="home-profile-role-line">Input shapes output</span>
-                    <span className="home-profile-role-pause">;</span>{' '}
-                    <span className="home-profile-role-line home-profile-role-line-end">output reveals input</span>
-                  </>
-                }
+          <Link href="/about" className="home-section-more no-underline">
+            <T zh="更多" en="More" /> <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+        <div className="home-profile-top">
+          <Link
+            href="/about"
+            className="home-profile-person"
+            data-analytics-event="entry_click"
+            data-analytics-surface="home_profile"
+            data-analytics-destination-kind="page"
+            data-analytics-destination-id="/about"
+          >
+            <div className="home-avatar-wrap">
+              <Image
+                src={AVATAR_PATH}
+                alt="TUARAN"
+                width={160}
+                height={200}
+                priority
+                sizes="112px"
+                className="h-auto w-full object-cover"
               />
-            </p>
-          </div>
-        </Link>
-        <Link
-          href="/spacex"
-          className="home-profile-spacex-launch"
-          aria-label="SpaceX"
-          data-analytics-event="entry_click"
-          data-analytics-surface="home_profile"
-          data-analytics-destination-kind="page"
-          data-analytics-destination-id="/spacex"
-        >
-          <IconRocket size={16} stroke={1.7} aria-hidden="true" />
-        </Link>
-      </div>
-      <div className="home-profile-days">
-        <DaysSince compact />
+            </div>
+            <div className="min-w-0">
+              <p className="home-profile-name"><T zh="涂阿燃" en="TUARAN" /></p>
+              <p className="home-profile-role">
+                <T
+                  zh={
+                    <>
+                      <span className="home-profile-role-line">输入决定输出</span>
+                      <span className="home-profile-role-pause">，</span>
+                      <span className="home-profile-role-line home-profile-role-line-end">输出暴露输入</span>
+                    </>
+                  }
+                  en={
+                    <>
+                      <span className="home-profile-role-line">Input shapes output</span>
+                      <span className="home-profile-role-pause">;</span>{' '}
+                      <span className="home-profile-role-line home-profile-role-line-end">output reveals input</span>
+                    </>
+                  }
+                />
+              </p>
+            </div>
+          </Link>
+          <Link
+            href="/spacex"
+            className="home-profile-spacex-launch"
+            aria-label="SpaceX"
+            data-analytics-event="entry_click"
+            data-analytics-surface="home_profile"
+            data-analytics-destination-kind="page"
+            data-analytics-destination-id="/spacex"
+          >
+            <IconRocket size={16} stroke={1.7} aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="home-profile-days">
+          <DaysSince compact />
+        </div>
       </div>
     </section>
   )

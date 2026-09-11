@@ -51,7 +51,7 @@ test('project navigation preserves the planning entry and concise tool titles', 
 
 test('previously hidden admin routes have explicit child entries', () => {
   const hrefs = new Set(ADMIN_NAV_CHILD_ITEMS.map((item) => item.matchPath || item.href))
-  for (const href of ['/admin/content-index', '/admin/research-style', '/admin/share', '/admin/wallpapers', '/admin/personal-profile']) {
+  for (const href of ['/admin/research-style', '/admin/share', '/admin/wallpapers', '/admin/personal-profile']) {
     assert.ok(hrefs.has(href), `${href} should be present in the admin navigation registry`)
   }
 })
@@ -61,6 +61,7 @@ test('merged admin tools redirect in middleware without dedicated edge pages', a
     Object.fromEntries(Object.entries(ADMIN_LEGACY_REDIRECTS).filter(([path]) => path.startsWith('/admin/'))),
     {
       '/admin/ai-workspace': '/admin/automation',
+      '/admin/content-index': '/admin/articles?panel=index',
       '/admin/model-dispatch': '/admin/planning?tab=dispatch',
       '/admin/person-strawberry': '/admin/soft-sticker?tab=strawberry',
       '/admin/self-regulation': '/admin/soft-sticker?tab=self-regulation',

@@ -120,6 +120,7 @@ test('backfill migration projects existing published articles and skips drafts',
 
 test('admin exposes one content management entry and one unified list', () => {
   assert.match(centerSource, /title: '内容管理'/)
+  assert.doesNotMatch(centerSource, /title: '内容索引'/)
   assert.doesNotMatch(centerSource, /title: '写作规范'/)
   assert.doesNotMatch(centerSource, /title: '写作与编辑'/)
   assert.doesNotMatch(centerSource, /title: '内容库与发布'/)

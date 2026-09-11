@@ -21,7 +21,7 @@
 - 新增 0089_content_documents.sql：metadata_json / body_json 分列、源路径与 SHA-256、修订号、状态、持久别名。content_index 保持公共元数据投影。
 - 调研详情使用单个 Edge 动态路由，D1 优先于历史归档。草稿/撤回 tombstone 禁止归档回落；只有新增 schema 缺失允许历史兼容读取，数据库连接错误不回落。
 - 保留短 URL、带日期旧 URL、canonical、多版本 ?v=、密文解锁、测评、A 股清单、评论及权益 key。PPT 下载保留在浏览器执行，避免 Node 依赖进入 Edge。
-- Owner 导入入口 `/admin/articles/research-import` 展示源路径、哈希、版本和正文，显式发布/撤回。Git Markdown 为创作正本；导入包来自可信 Owner，源哈希用于追踪，并非服务器验签。
+- Owner 审批入口 `/admin/articles?panel=import` 从 GitHub main 读取调研正文，展示哈希、版本并显式发布/撤回。Git Markdown 为创作正本；源哈希用于追踪，并非服务器验签。
 - A 股/加密资产旧发布器改为：预检 D1 → 保存 Git 正本 → 发布 D1 快照 → 标记草稿发布成功。失败可重试，相同已发布源哈希不重复增加修订号。纯内容提交使用 Cloudflare 支持的 `[CF-Pages-Skip]` 前缀。
 - 主目录、A 股/加密系列页、推荐、MCP、PV 白名单、RSS/sitemap、后台统一列表/周报和权益标题使用运行时数据。公开缓存采用 no-store，避免撤回后继续推荐旧条目。
 - 目录按稳定顺序分页，不截断第 1,000 条之后的记录。旧 sync 同步不能覆盖 manual/git 状态；普通索引编辑不能修改 Git 文档的发布状态。

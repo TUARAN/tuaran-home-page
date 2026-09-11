@@ -18,7 +18,7 @@ function harness() {
   sql.exec(read('migrations/0035_content_index.sql'))
   sql.exec(read('migrations/0089_content_documents.sql'))
   let race
-  const db={prepare(query){let args=[];const statement={bind(...values){args=values;return statement},async first(){return sql.prepare(query).get(...args)||null},async run(){return sql.prepare(query).run(...args)}};return statement},
+  const db={prepare(query){let args=[];const statement={bind(...values){args=values;return statement},async first(){return sql.prepare(query).get(...args)||null},async run(){return sql.prepare(query).run(...args)},async all(){return {results:sql.prepare(query).all(...args)}}};return statement},
     async batch(statements){if(race){const callback=race;race=null;callback()};sql.exec('BEGIN');try{for(const statement of statements)await statement.run();sql.exec('COMMIT')}catch(error){sql.exec('ROLLBACK');throw error}}}
   const scope={getD1:()=>db,normalizeResearchSnapshot,researchSnapshotIndex}
   Object.assign(scope,load('lib/contentIndex.js',scope,['prepareUpsertContentEntry']))
@@ -166,5 +166,36 @@ test('Owner import API enforces authentication, reserved routes and revision che
   assert.equal(body.document.revision,1)
   assert.equal(body.document.body_json,undefined)
   assert.equal(response.headers.get('cache-control'),'no-store')
+  h.sql.close()
+})
+
+test('Owner approval API lists GitHub pending docs and publishes from sourcePath',async()=>{
+  const h=harness()
+  const queued={
+    repo:'TUARAN/tuaran-home-page',
+    files:[{category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath:'research/topics/2026-09-10-sample.md'}],
+    pending:[{category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath:'research/topics/2026-09-10-sample.md',reason:'new',revision:0}],
+    publishedCount:0,
+  }
+  const api=load('app/api/admin/research-documents/route.js',{
+    getOptionalRequestContext:()=>({env:{GITHUB_SYNC_TOKEN:'test'}}),
+    getOwnerOrReject:async()=>({ok:true}),
+    getD1:()=>h.db,
+    normalizeResearchSnapshot,
+    publishResearchSnapshot:h.publishResearchSnapshot,
+    resolveReservedArticleSlug:async()=>({reserved:false}),
+    ResearchGitHubError:class extends Error{constructor(code,message,status=500){super(message);this.code=code;this.status=status}},
+    buildResearchApprovalQueue:async()=>queued,
+    fetchGitHubResearchFile:async()=>({category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath:'research/topics/2026-09-10-sample.md',raw:'ignored'}),
+    parseResearchSourcePath:(sourcePath)=>sourcePath==='research/topics/2026-09-10-sample.md'?{category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath}:null,
+    publicationStatus:(value)=>value||'published',
+    prepareResearchSourcePublication:async(_db,{status='published'}={})=>({snapshot:{...sample(),status},expectedRevision:0,unchanged:false}),
+  },['GET','POST'])
+  const queue=await api.GET(new Request('https://example.com/api/admin/research-documents?queue=1'))
+  assert.equal(queue.status,200)
+  assert.deepEqual((await queue.json()).pending[0].reason,'new')
+  const published=await api.POST(new Request('https://example.com/api/admin/research-documents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sourcePath:'research/topics/2026-09-10-sample.md',status:'published',expectedRevision:0})}))
+  assert.equal(published.status,200)
+  assert.equal((await h.readResearchDocument(h.db,'topics','sample')).status,'published')
   h.sql.close()
 })

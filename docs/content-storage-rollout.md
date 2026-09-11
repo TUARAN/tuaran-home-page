@@ -18,13 +18,7 @@
 
 普通文章：后台 `/admin/articles/new` 支持富文本或 Markdown，可导入 `.md`、预览并发布。正文使用现有 `article_posts`；图片按钮继续使用现有 R2 上传。发布过的 slug 在撤回后仍保持不变，首次发布日期也保留。
 
-Git 调研：遵循 `research/README.md` 与现有风格约定，修改 Markdown 正本后导出：
-
-```sh
-node scripts/export-research-content.mjs --output /tmp/research-content.json
-```
-
-在 `/admin/articles/research-import` 选择导出包，核对源路径、SHA-256、正文/版本和当前修订号，逐篇保存草稿、发布或撤回。导出文件本身不会发布；源哈希用于追踪，不是服务器验签。加密内容只携带密文。冲突时刷新发布状态、核对差异，再决定是否发布。
+Git 调研：遵循 `research/README.md` 与现有风格约定，修改 Markdown 正本并 push 到 `main` 后，打开 `/admin/articles?panel=import` 审批发布。后台从 GitHub 读取正文，核对后写入 D1。源哈希用于追踪版本。加密内容只携带密文。冲突时刷新发布状态、核对差异，再决定是否发布。
 
 `data/content-archive.json` 固定迁移当日的 249 篇调研和 7 篇内置文章。不要日常扩充它。新增源文件不会因此自动进入静态正文、旧 RSS 或代码目录。历史文章的 D1 快照优先于归档；下线记录保留，避免归档复活。
 

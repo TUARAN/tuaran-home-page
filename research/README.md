@@ -2,7 +2,7 @@
 
 本目录是 TUARAN 长文内容的 Git 创作正本。新版内容存储改造上线后，新调研通过 D1 快照发布，不再依靠 `git push` 自动上线；代码改造目前尚未部署。
 
-发布流程：运行 `node scripts/export-research-content.mjs --output /tmp/research-content.json`，在站长后台 `/admin/articles/research-import` 导入，核对正文、版本、来源哈希后点击发布。修改或撤回也从该入口进行。须先应用 `migrations/0089_content_documents.sql` 并部署新版读取代码；本地导出不会写线上数据库。
+发布流程：把 Markdown 推到 `main`（纯内容提交用 `[CF-Pages-Skip]`），打开站长后台 `/admin/articles?panel=import`，在「审批调研」里核对正文后点发布。修改或撤回也从该入口进行。须先应用 `migrations/0089_content_documents.sql` 并部署新版读取代码；Git 提交只保存创作正本，不会自动写线上数据库。
 
 `data/content-archive.json` 固定迁移当日的历史归档范围。新文件不会自动加入静态目录、正文资产或旧 RSS；不要把扩充该清单当作日常发布方式。历史 URL 和评论/权益 key 保持不变。
 
@@ -197,7 +197,7 @@ git commit -m "[CF-Pages-Skip] research: add <slug>"
 git push
 ```
 
-上述跳过构建前缀仅用于纯内容提交；代码变更仍按正常流程部署。Git 提交用于保存创作正本。新版部署后，运行本地导出命令并在 `/admin/articles/research-import` 核对发布，无需等待 Pages 重建；已部署的 A 股/加密资产专用发布入口会同步写入 D1。发布成功后访问：
+上述跳过构建前缀仅用于纯内容提交；代码变更仍按正常流程部署。Git 提交用于保存创作正本。新版部署后，打开 `/admin/articles?panel=import` 审批发布，无需等待 Pages 重建，也不用再导出 JSON；已部署的 A 股/加密资产专用发布入口会同步写入 D1。发布成功后访问：
 
 - 列表页：<https://2aran.com/articles>（「文章与分析」入口）
 - 详情页：`https://2aran.com/articles/research/<category>/<slug>`

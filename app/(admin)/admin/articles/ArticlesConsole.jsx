@@ -7,7 +7,7 @@ import {
   IconDatabase,
   IconEdit,
   IconExternalLink,
-  IconFileImport,
+  IconCircleCheck,
   IconList,
   IconPlus,
   IconTrash,
@@ -42,7 +42,7 @@ const SOURCE_LABELS = {
 
 const PANELS = [
   { id: 'list', label: '全部内容', icon: IconList },
-  { id: 'import', label: '导入调研', icon: IconFileImport },
+  { id: 'import', label: '审批调研', icon: IconCircleCheck },
   { id: 'index', label: '索引与登记', icon: IconDatabase },
   { id: 'style', label: '写作规范', icon: IconTypography },
 ]
@@ -76,7 +76,7 @@ function PublishChannels({ onOpenImport }) {
   return (
     <Section
       title="发布"
-      description="写文章、导入调研，或打开 A 股 / 加密观察发布器。"
+      description="写文章、审批调研，或打开 A 股 / 加密观察发布器。"
     >
       <div className="grid gap-3 lg:grid-cols-3">
         <article className="flex flex-col rounded-lg border border-[#eceee6] p-4 dark:border-[#243041]">
@@ -95,11 +95,11 @@ function PublishChannels({ onOpenImport }) {
           <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道二</p>
           <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">Git 调研</h3>
           <p className="mt-2 flex-1 text-[13px] leading-6 text-[#55574f] dark:text-gray-400">
-            正本在 <code>research/*.md</code>。导出 JSON，打开「导入调研」核对后发布。commit 加上 <code>[CF-Pages-Skip]</code>。
+            正本在 GitHub 的 <code>research/*.md</code>。push 之后打开「审批调研」，核对正文再发布。commit 加上 <code>[CF-Pages-Skip]</code>。
           </p>
           <div className="mt-3">
             <AdminButton type="button" size="sm" onClick={onOpenImport}>
-              <IconFileImport size={15} />导入调研
+              <IconCircleCheck size={15} />审批调研
             </AdminButton>
           </div>
         </article>
@@ -120,6 +120,9 @@ function PublishChannels({ onOpenImport }) {
 }
 
 function ArticlesConsoleBody() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [panel, setPanel] = useContentPanel()
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
@@ -210,7 +213,7 @@ function ArticlesConsoleBody() {
   return (
     <AdminPage
       title="内容管理"
-      description="查看、发布和导入内容。写文章进入独立编辑器。"
+      description="查看、审批和发布内容。写文章进入独立编辑器。"
       stickyHeader
       actions={(
         <AdminButton href="/admin/articles/new" variant="primary">
@@ -345,8 +348,19 @@ function ArticlesConsoleBody() {
                         </AdminButton>
                       ) : null}
                       {isResearch ? (
-                        <AdminButton type="button" size="sm" onClick={() => setPanel('import')}>
-                          导入新版本 / 撤回
+                        <AdminButton
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('panel', 'import')
+                            if (item.sourcePath) params.set('path', item.sourcePath)
+                            else params.delete('path')
+                            const query = params.toString()
+                            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+                          }}
+                        >
+                          审批 / 撤回
                         </AdminButton>
                       ) : null}
                       {isArticlePost ? (

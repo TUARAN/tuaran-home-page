@@ -12,7 +12,7 @@ export default function ContentCenter() {
           title: '创作与发布',
           description: '在同一工作台完成创作、登记、发布与全站内容状态管理。',
           items: [
-            { href: '/admin/articles', title: '内容管理', description: '三条上线通道汇入同一份列表：普通文章走编辑器，Git 调研走导入，A 股/加密走自动化工作台。', icon: 'articles', note: '列表 + 导入 + 索引 + 规范' },
+            { href: '/admin/articles', title: '内容管理', description: '三条上线通道汇入同一份列表：普通文章走编辑器，Git 调研走审批，A 股/加密走自动化工作台。', icon: 'articles', note: '列表 + 审批 + 索引 + 规范' },
             { href: '/admin/wallpapers', title: '壁纸资源', description: '上传和维护公开壁纸画廊使用的 R2 资源。', icon: 'archive' },
             { href: '/admin/recommendations', title: '推荐管理', description: '配置首页推荐来源、内容权重、换一批策略与人工置顶。', icon: 'analytics', note: '规则保存后无需重新构建' },
           ],

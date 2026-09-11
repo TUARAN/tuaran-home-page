@@ -40,11 +40,11 @@ export default function ResearchImportConsole({ embedded = false }) {
   const query = filter.trim().toLowerCase()
   const visiblePending = useMemo(() => {
     if (!query) return pending
-    return pending.filter((item) => [item.slug, item.filename, item.sourcePath, item.reason].some((value) => String(value || '').toLowerCase().includes(query)))
+    return pending.filter((item) => [item.title, item.slug, item.filename, item.sourcePath, item.reason].some((value) => String(value || '').toLowerCase().includes(query)))
   }, [pending, query])
   const visibleFiles = useMemo(() => {
     if (!query) return files
-    return files.filter((item) => [item.slug, item.filename, item.sourcePath].some((value) => String(value || '').toLowerCase().includes(query)))
+    return files.filter((item) => [item.title, item.slug, item.filename, item.sourcePath].some((value) => String(value || '').toLowerCase().includes(query)))
   }, [files, query])
   const selectedMeta = pending.find((item) => item.sourcePath === sourcePath) || files.find((item) => item.sourcePath === sourcePath)
   const liveHref = snapshot ? `/articles/research/${snapshot.entry.category}/${snapshot.entry.slug}` : ''
@@ -148,7 +148,7 @@ export default function ResearchImportConsole({ embedded = false }) {
           <input
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="slug、文件名"
+            placeholder="标题、slug、文件名"
             className={fieldClass}
           />
         </label>
@@ -172,7 +172,7 @@ export default function ResearchImportConsole({ embedded = false }) {
                     className={`flex w-full items-center justify-between gap-3 px-1 py-3 text-left ${active ? 'text-[#15140f] dark:text-gray-100' : 'text-[#55574f] dark:text-gray-400'}`}
                   >
                     <span className="min-w-0">
-                      <span className="block truncate font-medium">{item.slug}</span>
+                      <span className="block truncate font-medium">{item.title || item.slug}</span>
                       <span className="block truncate font-mono text-[12px] text-[#8b8d82]">{item.filename}</span>
                     </span>
                     <StatusPill tone={item.reason === 'updated' ? 'info' : item.reason === 'retired' ? 'danger' : 'warning'} size="sm">
@@ -194,7 +194,7 @@ export default function ResearchImportConsole({ embedded = false }) {
               onChange={(event) => { setSourcePath(event.target.value); setMessage('') }}
             >
               {visibleFiles.map((item) => (
-                <option value={item.sourcePath} key={item.sourcePath}>{item.filename}</option>
+                <option value={item.sourcePath} key={item.sourcePath}>{item.title || item.filename}</option>
               ))}
             </select>
           </label>
@@ -239,7 +239,7 @@ export default function ResearchImportConsole({ embedded = false }) {
           <dl className="grid gap-3 sm:grid-cols-2">
             {[
               ['源文件', sourcePath],
-              ['标题', snapshot?.entry?.title || selectedMeta?.slug || '读取中'],
+              ['标题', snapshot?.entry?.title || selectedMeta?.title || selectedMeta?.slug || '读取中'],
               ['SHA-256', snapshot?.sourceHash || '读取中'],
               ['当前状态', ready ? (current ? `${labels[current.status]} · 版本 ${current.revision}` : '尚未写入 D1') : '读取中'],
             ].map(([label, value]) => (

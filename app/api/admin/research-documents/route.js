@@ -27,7 +27,7 @@ async function listStoredResearch(db) {
   const rows = []
   for (let offset = 0; ; offset += 500) {
     const result = await db.prepare(
-      'SELECT content_key, source_path, source_hash, status, revision FROM content_documents ORDER BY content_key LIMIT 500 OFFSET ?',
+      "SELECT content_key, source_path, source_hash, status, revision, json_extract(metadata_json, '$.title') AS title FROM content_documents ORDER BY content_key LIMIT 500 OFFSET ?",
     ).bind(offset).all()
     rows.push(...(result.results || []))
     if ((result.results || []).length < 500) break

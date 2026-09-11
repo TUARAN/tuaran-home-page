@@ -12,6 +12,7 @@ import {
   IconCodeCircle,
   IconEye,
   IconFileText,
+  IconRocket,
   IconUsers,
 } from '@tabler/icons-react'
 
@@ -569,6 +570,15 @@ function BuilderAndSignalsPanel() {
 function ProfileCard() {
   return (
     <section id="personal" className="home-profile scroll-mt-24" aria-label="Profile">
+      <div className="home-profile-spacex-bg" aria-hidden="true">
+        <Image
+          src="/images/brand/spacex-logo.webp"
+          alt=""
+          width={3840}
+          height={480}
+          className="home-profile-spacex-mark"
+        />
+      </div>
       <div className="home-profile-heading">
         <div>
           <p className="home-kicker">03 · About</p>
@@ -622,20 +632,14 @@ function ProfileCard() {
         </Link>
         <Link
           href="/spacex"
-          className="home-profile-spacex-bg"
+          className="home-profile-spacex-launch"
           aria-label="SpaceX"
           data-analytics-event="entry_click"
           data-analytics-surface="home_profile"
           data-analytics-destination-kind="page"
           data-analytics-destination-id="/spacex"
         >
-          <Image
-            src="/images/brand/spacex-logo.webp"
-            alt=""
-            width={3840}
-            height={480}
-            className="home-profile-spacex-mark"
-          />
+          <IconRocket size={16} stroke={1.7} aria-hidden="true" />
         </Link>
       </div>
       <div className="home-profile-days">

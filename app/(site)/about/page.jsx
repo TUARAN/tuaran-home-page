@@ -425,6 +425,7 @@ export default function AboutPage() {
               alt=""
               fill
               sizes="(max-width: 1120px) 100vw, 1120px"
+              unoptimized
               className="-z-20 object-cover object-center"
             />
             <div
@@ -519,6 +520,7 @@ export default function AboutPage() {
                     width={1080}
                     height={1080}
                     sizes="128px"
+                    unoptimized
                     className="h-32 w-32 shrink-0 rounded-xl border border-[#243549] bg-[#0d1622] object-contain sm:h-36 sm:w-36"
                   />
                 ) : (

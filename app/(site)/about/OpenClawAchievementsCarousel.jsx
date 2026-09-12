@@ -102,6 +102,7 @@ export default function OpenClawAchievementsCarousel({ achievements }) {
             width={activeItem.imageWidth}
             height={activeItem.imageHeight}
             sizes="(min-width: 1024px) 520px, 100vw"
+            unoptimized
             className="h-full min-h-[240px] w-full object-cover object-left-top opacity-95 transition duration-300 group-hover:scale-[1.012] group-hover:opacity-100"
             priority={activeIndex === 0}
           />

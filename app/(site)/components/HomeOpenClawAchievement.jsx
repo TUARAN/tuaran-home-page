@@ -50,6 +50,7 @@ export default function HomeOpenClawAchievement() {
             width={OPENCLAW_ACHIEVEMENTS[0].imageWidth}
             height={OPENCLAW_ACHIEVEMENTS[0].imageHeight}
             sizes="36px"
+            unoptimized
           />
         </span>
         <span className="home-achievement-copy min-w-0 flex-1">
@@ -99,6 +100,7 @@ export default function HomeOpenClawAchievement() {
                 width={activeAchievement.imageWidth}
                 height={activeAchievement.imageHeight}
                 sizes="min(92vw, 1120px)"
+                unoptimized
                 priority={false}
               />
             </a>

@@ -1,9 +1,15 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import ArticleListItem from './ArticleListItem'
+import {
+  buildDirectoryUrl,
+  EMPTY_DIRECTORY_FILTERS,
+  filtersFromParams,
+  sameDirectoryFilters,
+} from '../../../lib/articlesDirectoryFilters'
 import {
   CONTENT_GROUP_KEYS,
   CONTENT_GROUP_META,
@@ -12,7 +18,6 @@ import {
   DELIVERY_META,
   ENTITY_TYPE_META,
   SERIES_META,
-  SUBJECT_KEYS,
   SUBJECT_META,
   getContentGroup,
 } from '../../../lib/contentTaxonomy'
@@ -28,76 +33,6 @@ const SUBJECT_DISPLAY_GROUPS = [
   { label: '创作与工作', keys: ['content_creation', 'workplace_org'] },
   { label: '人文与生活', keys: ['humanities_history', 'life_family'] },
 ]
-
-const LEGACY_TAB_TO_GROUP = {
-  column: 'article',
-  posts: 'article',
-  research: 'analysis',
-  companies: 'analysis',
-  people: 'analysis',
-  topics: 'analysis',
-  tech: 'analysis',
-  business: 'analysis',
-  other: 'analysis',
-  'engineering-cases': 'practice',
-  'build-logs': 'practice',
-  works: 'interactive',
-  resources: 'resource',
-}
-
-const LEGACY_RESOURCE_TO_FACETS = {
-  'ai-dev': { subject: 'ai_dev' },
-  'ai-music': { subject: 'content_creation' },
-  'humanities-politics': { subject: 'humanities_history' },
-  workplace: { subject: 'workplace_org' },
-}
-
-function normalizeEnum(value, keys, fallback = 'all') {
-  return keys.includes(value) ? value : fallback
-}
-
-function filtersFromParams(params) {
-  const legacyTab = params?.get('tab') || ''
-  const legacyResource = LEGACY_RESOURCE_TO_FACETS[params?.get('resource_type')] || {}
-  const groupFromLegacy = LEGACY_TAB_TO_GROUP[legacyTab] || ''
-  const kind = params?.get('kind')
-  const entity = params?.get('entity') || params?.get('company_type') || params?.get('people_type')
-  const delivery = params?.get('delivery')
-  const inferredGroup =
-    kind
-      ? getContentGroup(kind)
-      : entity || params?.get('company_industry') || params?.get('company_role')
-        ? 'analysis'
-        : ['subscribe', 'download', 'watch_listen', 'external'].includes(delivery)
-          ? 'resource'
-          : delivery === 'interact'
-            ? 'interactive'
-            : params?.get('resource_type')
-              ? 'resource'
-              : ''
-  const group = normalizeEnum(
-    params?.get('group') || groupFromLegacy || inferredGroup,
-    CONTENT_GROUP_KEYS,
-  )
-  const subjectParam = params?.get('subject')
-  const subjectFromLegacy = subjectParam === 'product_business' ? 'business_market' : subjectParam
-
-  return {
-    group,
-    subject: normalizeEnum(subjectFromLegacy || legacyResource.subject, ['all', ...SUBJECT_KEYS]),
-    query: params?.get('q') || '',
-  }
-}
-
-function buildDirectoryUrl(filters) {
-  const params = new URLSearchParams()
-  if (filters.group !== 'all') params.set('group', filters.group)
-  if (filters.subject !== 'all') params.set('subject', filters.subject)
-  const query = String(filters.query || '').trim()
-  if (query) params.set('q', query)
-  const suffix = params.toString()
-  return suffix ? `/articles?${suffix}` : '/articles'
-}
 
 function itemMatches(item, filters) {
   if (filters.group !== 'all' && getContentGroup(item.contentKind) !== filters.group) return false
@@ -123,10 +58,23 @@ function itemMatches(item, filters) {
   return searchable.includes(query)
 }
 
-export default function ArticlesIndexClient({ items: staticItems }) {
-  const router = useRouter()
+function catalogSignature(list) {
+  return list.map((item) => `${item.id}:${item.href}:${item.title}:${item.date}`).join('|')
+}
+
+function DirectorySearchParamsSync({ onChange }) {
   const searchParams = useSearchParams()
-  const initialFilters = filtersFromParams(searchParams)
+  useEffect(() => {
+    onChange(filtersFromParams(searchParams))
+  }, [onChange, searchParams])
+  return null
+}
+
+export default function ArticlesIndexClient({
+  items: staticItems,
+  initialFilters = EMPTY_DIRECTORY_FILTERS,
+}) {
+  const router = useRouter()
   const [items, setItems] = useState(staticItems)
   const [catalogReady, setCatalogReady] = useState(false)
   const [filters, setFilters] = useState(initialFilters)
@@ -138,12 +86,20 @@ export default function ArticlesIndexClient({ items: staticItems }) {
   const [isPending, startTransition] = useTransition()
   const catalogItems = items
 
+  const syncFiltersFromUrl = useCallback((next) => {
+    setFilters((current) => (sameDirectoryFilters(current, next) ? current : next))
+    setQueryInput((current) => (current === next.query ? current : next.query))
+  }, [])
+
   useEffect(() => {
     let alive = true
     fetch('/api/content?view=knowledge', { cache: 'no-store' })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        if (alive && Array.isArray(data?.items)) setItems(data.items)
+        if (!alive || !Array.isArray(data?.items)) return
+        setItems((current) => (
+          catalogSignature(current) === catalogSignature(data.items) ? current : data.items
+        ))
       })
       .catch(() => {})
       .finally(() => {
@@ -153,12 +109,6 @@ export default function ArticlesIndexClient({ items: staticItems }) {
       alive = false
     }
   }, [staticItems])
-
-  useEffect(() => {
-    const next = filtersFromParams(searchParams)
-    setFilters(next)
-    setQueryInput(next.query)
-  }, [searchParams])
 
   const visible = useMemo(
     () => catalogItems.filter((item) => itemMatches(item, filters)),
@@ -376,6 +326,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
 
   return (
     <div className="articles-index-stone space-y-5">
+      <Suspense fallback={null}>
+        <DirectorySearchParamsSync onChange={syncFiltersFromUrl} />
+      </Suspense>
       <section className="hidden space-y-2.5 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-3 shadow-[0_8px_24px_rgba(76,58,96,0.08)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none md:block">
         <form onSubmit={submitSearch} className="flex items-center gap-2">
           <input
@@ -494,8 +447,9 @@ export default function ArticlesIndexClient({ items: staticItems }) {
                   const livePv = pvKey && Object.prototype.hasOwnProperty.call(pvCounts, pvKey)
                     ? pvCounts[pvKey]
                     : item.pv
+                  const hasNumericPv = Number.isFinite(Number(livePv))
                   const nextItem = 'pv' in item
-                    ? { ...item, pv: livePv, pvLoading: pvKey !== '' && !pvLoaded }
+                    ? { ...item, pv: livePv, pvLoading: pvKey !== '' && !pvLoaded && !hasNumericPv }
                     : item
                   return (
                     <ArticleListItem

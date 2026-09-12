@@ -4,11 +4,12 @@ import test from 'node:test'
 
 import { buildExamQuestions } from '../../lib/quizExam.js'
 
-const [clientSource, pageSource, worksSource, directorySource, quizPageSource, quizClientSource, questionBankSource, richPagesSource, builderSource, seoSource] = await Promise.all([
+const [clientSource, pageSource, worksSource, directorySource, directoryFiltersSource, quizPageSource, quizClientSource, questionBankSource, richPagesSource, builderSource, seoSource] = await Promise.all([
   readFile(new URL('../../app/(site)/adsense-content-check/AdSenseContentCheckClient.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/adsense-content-check/page.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../lib/engineeringWorks.js', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url), 'utf8'),
+  readFile(new URL('../../lib/articlesDirectoryFilters.js', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/quiz/page.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/quiz/QuizClient.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../lib/questionBank2026.js', import.meta.url), 'utf8'),
@@ -30,8 +31,8 @@ test('AdSense policy summary is implemented as a registered interactive page', (
 })
 
 test('legacy and delivery-based interactive links resolve to the independent group', () => {
-  assert.match(directorySource, /works: 'interactive'/)
-  assert.match(directorySource, /delivery === 'interact'[\s\S]*\? 'interactive'/)
+  assert.match(directoryFiltersSource, /works: 'interactive'/)
+  assert.match(directoryFiltersSource, /delivery === 'interact'[\s\S]*\? 'interactive'/)
 })
 
 test('2026 quiz is owner-only, tagged, gated, and hidden from public discovery', () => {

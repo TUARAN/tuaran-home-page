@@ -228,8 +228,13 @@ forbidSource(
 )
 requireSource(
   'app/(site)/articles/page.jsx',
-  /fallback=\{<ArticlesIndexFallback items=\{items\} \/>}/,
-  '文章索引的首次 HTML 必须提供可抓取的精选内容，不能只显示加载占位',
+  /<ArticlesIndexClient items=\{items\}/,
+  '文章索引的首次 HTML 必须直接渲染可抓取目录，不能先画简化列表再重绘',
+)
+forbidSource(
+  'app/(site)/articles/page.jsx',
+  /ArticlesIndexFallback|ArticlesIndexSkeleton/,
+  '文章索引首次 HTML 不得改用简化列表或骨架占位，避免刷新闪烁',
 )
 forbidSource(
   'lib/research/markdown.js',

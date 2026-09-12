@@ -11,6 +11,10 @@ const directorySource = await readFile(
   new URL('../../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url),
   'utf8',
 )
+const directoryFiltersSource = await readFile(
+  new URL('../../lib/articlesDirectoryFilters.js', import.meta.url),
+  'utf8',
+)
 const directoryItemSource = await readFile(
   new URL('../../app/(site)/articles/ArticleListItem.jsx', import.meta.url),
   'utf8',
@@ -61,7 +65,7 @@ test('directory exposes only topic and type filters, in that order', () => {
   assert.match(directorySource, /onReset=\{\(\) => applyFilters\(\{ group: 'all' \}/)
   assert.match(directorySource, /data-filter-reset/)
   assert.match(directorySource, /border-0 bg-transparent p-0/)
-  assert.match(directorySource, /subjectParam === 'product_business' \? 'business_market'/)
+  assert.match(directoryFiltersSource, /subjectParam === 'product_business' \? 'business_market'/)
   assert.match(directorySource, /aria-label="已选筛选条件"/)
   assert.doesNotMatch(directorySource, /<FilterChip[\s\S]{0,120}\bcount=/)
   assert.doesNotMatch(directorySource, /全部主题|全部对象|全部方式|多维筛选/)

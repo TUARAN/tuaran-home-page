@@ -1,8 +1,6 @@
-import { Suspense } from 'react'
-
-import ArticleListItem from './ArticleListItem'
 import ArticlesHeaderClient from './ArticlesHeaderClient'
 import ArticlesIndexClient from './ArticlesIndexClient'
+import { filtersFromParams, toUrlSearchParams } from '../../../lib/articlesDirectoryFilters'
 import { readRuntimeKnowledgeItems } from '../../../lib/knowledgeRuntime'
 
 export const runtime = 'edge'
@@ -26,52 +24,13 @@ export const metadata = {
   },
 }
 
-function ArticlesHeaderFallback() {
-  return (
-    <header className="mb-4 hidden md:block">
-      <div className="flex min-w-0 items-baseline gap-3">
-        <h1 className="shrink-0 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
-          内容导航
-        </h1>
-        <p className="min-w-0 flex-1 text-[12px] leading-5 text-[#85877d] dark:text-[#737f91] md:text-[13px]">
-          <q>千里之行，始于足下。</q>
-          <cite className="ml-1 not-italic">— 老子</cite>
-        </p>
-      </div>
-    </header>
-  )
-}
-
-function ArticlesIndexFallback({ items }) {
-  return (
-    <section
-      aria-label="全部内容"
-      className="h5-feed-list overflow-hidden border-y border-[var(--site-line)] bg-transparent md:bg-white/45 md:dark:bg-[#101721]/65"
-    >
-      {items.slice(0, 24).map((item, index) => {
-        const fallbackItem = { ...item }
-        delete fallbackItem.pv
-        delete fallbackItem.pvKey
-        return (
-          <ArticleListItem
-            key={item.id}
-            item={fallbackItem}
-            position={index + 1}
-          />
-        )
-      })}
-    </section>
-  )
-}
-
-export default async function ArticlesPage() {
+export default async function ArticlesPage({ searchParams }) {
   const items = await readRuntimeKnowledgeItems()
+  const initialFilters = filtersFromParams(toUrlSearchParams(await searchParams))
 
   return (
     <main className="h5-articles-page mx-auto w-full max-w-[1120px] px-0 py-2 md:px-4 md:py-10">
-      <Suspense fallback={<ArticlesHeaderFallback />}>
-        <ArticlesHeaderClient />
-      </Suspense>
+      <ArticlesHeaderClient />
 
       <nav aria-label="文章发现" className="mb-4 px-4 text-sm">
         {/* Plain HTML endpoint: use document navigation rather than the RSC router. */}
@@ -79,9 +38,7 @@ export default async function ArticlesPage() {
         <a href="/articles/published" className="underline">最新发布文章</a>
       </nav>
 
-      <Suspense fallback={<ArticlesIndexFallback items={items} />}>
-        <ArticlesIndexClient items={items} />
-      </Suspense>
+      <ArticlesIndexClient items={items} initialFilters={initialFilters} />
     </main>
   )
 }

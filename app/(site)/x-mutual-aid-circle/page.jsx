@@ -211,6 +211,7 @@ export default function XMutualAidCirclePage() {
                 height={956}
                 className="h-auto w-full"
                 priority
+                unoptimized
               />
               <figcaption className="border-t border-[#2f3336] px-4 py-3 text-xs leading-6 text-[#71767b]">
                 一周多跑下来，关注和粉丝数开始接近。数字只是表层，真正有意思的是时间线变宽了。

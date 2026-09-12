@@ -27,6 +27,7 @@ export default function ImageLightbox({ images, columns = 2 }) {
               alt={img.alt || ''}
               width={1600}
               height={900}
+              unoptimized
               className="w-full h-auto"
             />
           </button>

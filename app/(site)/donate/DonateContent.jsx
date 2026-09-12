@@ -97,6 +97,7 @@ export default function DonateContent() {
               width={1279}
               height={1743}
               sizes="(max-width: 768px) 100vw, 420px"
+              unoptimized
               className="h-auto w-full object-cover"
               priority
             />

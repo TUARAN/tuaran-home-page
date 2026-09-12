@@ -50,7 +50,7 @@ export default function HoverPreviewLink({ href, previewSrc, previewAlt, childre
         style={style}
       >
         <div className="relative" style={{ width: PREVIEW_W, height: PREVIEW_H }}>
-          <Image src={previewSrc} alt={previewAlt} fill className="object-cover" sizes="176px" />
+          <Image src={previewSrc} alt={previewAlt} fill className="object-cover" sizes="176px" unoptimized />
         </div>
       </div>
     </>

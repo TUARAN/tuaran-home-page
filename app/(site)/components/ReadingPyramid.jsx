@@ -240,6 +240,7 @@ export default function ReadingPyramid({ levels }) {
             width={240}
             height={320}
             sizes="240px"
+            unoptimized
             className="block w-auto h-auto max-w-[240px] max-h-[320px] object-contain"
             onLoad={() => {
               const el = tooltipRef.current

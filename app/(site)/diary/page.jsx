@@ -437,6 +437,7 @@ export default function DiaryPage() {
                 width={800}
                 height={533}
                 sizes="(max-width: 768px) 100vw, 768px"
+                unoptimized
                 className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
               />
             </div>

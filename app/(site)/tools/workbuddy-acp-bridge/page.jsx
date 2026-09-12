@@ -134,6 +134,7 @@ export default function WorkBuddyAcpBridgePage() {
             width={2360}
             height={1640}
             priority
+            unoptimized
             alt="ACP 短信桥接测试终端，左侧为短信模拟器，中间为消息窗口，右侧为 WorkBuddy 会话路由"
           />
           <figcaption><strong>真实桌面应用界面</strong><span>当前为 Mock 联调模式；切换真实模式后，由用户完成 WorkBuddy OAuth 授权。</span></figcaption>

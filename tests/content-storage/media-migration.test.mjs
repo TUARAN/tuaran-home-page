@@ -5,7 +5,10 @@ import path from 'node:path'
 import test from 'node:test'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
 import { sha256, prepareMediaPlan, verifyMedia, activateMedia, pruneMedia, rollbackMedia, mediaRouteExclusions } from '../../scripts/lib/content-media-migration.mjs'
+
+const require = createRequire(import.meta.url)
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(),'content-media-'))
@@ -90,4 +93,32 @@ test('upload CLI invokes the configured public bucket with immutable keys and ve
   assert.ok(args.includes('--remote'));assert.ok(args.includes('video/mp4'))
   const second=run();assert.equal(second.status,0,second.stderr)
   assert.equal(fs.readFileSync(calls,'utf8').trim().split('\n').length,1)
+})
+
+test('next/image stays unoptimized so R2 media redirects are followed by the browser', () => {
+  const config = require('../../next.config.js')
+  assert.equal(config.images.unoptimized, true)
+  const redirects = fs.readFileSync(new URL('../../public/_redirects', import.meta.url), 'utf8')
+  assert.match(redirects, /\/images\/margin-account-313m-loss\/screenshot\.png \S+ 302/)
+  assert.match(redirects, /\/images\/diary\/x-blue-v-mutual-profile-2026-07-09\.png \S+ 302/)
+
+  const appRoot = fileURLToPath(new URL('../../app', import.meta.url))
+  const missing = []
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const filename = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        walk(filename)
+        continue
+      }
+      if (!/\.(js|jsx)$/.test(entry.name)) continue
+      const source = fs.readFileSync(filename, 'utf8')
+      if (!source.includes("from 'next/image'") && !source.includes('from "next/image"')) continue
+      for (const tag of source.match(/<Image\b[\s\S]*?>/g) || []) {
+        if (!/\bunoptimized\b/.test(tag)) missing.push(`${path.relative(appRoot, filename)}: ${tag.replace(/\s+/g, ' ').slice(0, 120)}`)
+      }
+    }
+  }
+  walk(appRoot)
+  assert.deepEqual(missing, [])
 })

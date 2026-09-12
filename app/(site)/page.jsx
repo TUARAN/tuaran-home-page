@@ -481,7 +481,7 @@ function AchievementMiniCard({ item }) {
     <>
       {item.image ? (
         <span className="home-achievement-compact-media" aria-hidden="true">
-          <Image src={item.image} alt="" width={48} height={48} sizes="36px" />
+          <Image src={item.image} alt="" width={48} height={48} sizes="36px" unoptimized />
         </span>
       ) : null}
       <strong>{item.emoji ? `${item.emoji} ` : ''}{item.title}</strong>
@@ -491,7 +491,7 @@ function AchievementMiniCard({ item }) {
       {item.image ? (
         <span className="home-achievement-media-slot">
           <span className="home-achievement-card-cover">
-            <Image src={item.image} alt={item.imageAlt || ''} width={96} height={96} sizes="80px" />
+            <Image src={item.image} alt={item.imageAlt || ''} width={96} height={96} sizes="80px" unoptimized />
           </span>
         </span>
       ) : (
@@ -578,6 +578,7 @@ function ProfileCard() {
             alt=""
             width={3840}
             height={480}
+            unoptimized
             className="home-profile-spacex-mark"
           />
         </div>
@@ -606,6 +607,7 @@ function ProfileCard() {
                 width={160}
                 height={200}
                 priority
+                unoptimized
                 sizes="112px"
                 className="h-auto w-full object-cover"
               />
@@ -791,6 +793,7 @@ function ClassicHomePage({ featuredPicks }) {
                     width={220}
                     height={220}
                     priority
+                    unoptimized
                     sizes="(min-width: 1280px) 200px, 152px"
                     className="h-auto w-full object-cover shadow-none"
                   />
@@ -862,6 +865,7 @@ function ClassicHomePage({ featuredPicks }) {
                       alt="扫码加好友二维码"
                       width={80}
                       height={80}
+                      unoptimized
                       className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
                     />
                     <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]"><T zh="加好友" en="WeChat" /></span>
@@ -873,6 +877,7 @@ function ClassicHomePage({ featuredPicks }) {
                       alt="微信赞助收款码"
                       width={80}
                       height={109}
+                      unoptimized
                       className="h-[109px] w-20 rounded-sm border border-[#e5e5e5] bg-white object-contain dark:border-gray-800 dark:bg-gray-950"
                     />
                     <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]"><T zh="赞助本站" en="Support" /></span>
@@ -939,12 +944,12 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
             </div>
             <div className="home-qr-grid">
               <div>
-                <Image src="/qrcodewechat3.png" alt="扫码加好友二维码" width={88} height={88} />
+                <Image src="/qrcodewechat3.png" alt="扫码加好友二维码" width={88} height={88} unoptimized />
                 <span>atar24</span>
               </div>
               <div>
                 <Link href="/donate" className="no-external-arrow block no-underline">
-                  <Image className="home-donate-qr" src="/donate-wechat.jpg" alt="微信赞助收款码" width={88} height={120} />
+                  <Image className="home-donate-qr" src="/donate-wechat.jpg" alt="微信赞助收款码" width={88} height={120} unoptimized />
                   <span><T zh="请我喝咖啡" en="Buy me a coffee" /></span>
                 </Link>
               </div>

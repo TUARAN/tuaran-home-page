@@ -305,6 +305,7 @@ export default function AboutPage() {
                 width={240}
                 height={288}
                 priority
+                unoptimized
                 sizes="128px"
                 className="h-auto w-full object-cover"
               />

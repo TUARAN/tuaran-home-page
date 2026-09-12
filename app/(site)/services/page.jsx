@@ -337,6 +337,7 @@ export default function ServicesPage() {
                 alt="微信二维码"
                 width={96}
                 height={96}
+                unoptimized
                 className="h-24 w-24 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800"
               />
               <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">微信</span>
@@ -348,6 +349,7 @@ export default function ServicesPage() {
                   alt="微信赞助收款码"
                   width={96}
                   height={131}
+                  unoptimized
                   className="h-[131px] w-24 rounded-sm border border-[#e5e5e5] bg-white object-contain dark:border-gray-800"
                 />
                 <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">赞助本站 · 请我喝咖啡</span>

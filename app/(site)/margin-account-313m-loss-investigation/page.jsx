@@ -45,7 +45,7 @@ export default function MarginAccountInvestigationPage() {
 
         <section className={styles.leadGrid}>
           <figure className={styles.shotCard}>
-            <Image src="/images/margin-account-313m-loss/screenshot.png" width={552} height={1200} priority alt="2026年7月21日12时04分同花顺两融资产分析截图" />
+            <Image src="/images/margin-account-313m-loss/screenshot.png" width={552} height={1200} priority unoptimized alt="2026年7月21日12时04分同花顺两融资产分析截图" />
             <figcaption>原始来图，552×1200 PNG。文件不含可用于确认拍摄设备、生成时间或原始发布者的有效元数据。</figcaption>
           </figure>
           <article className={styles.lead}>

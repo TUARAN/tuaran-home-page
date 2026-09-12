@@ -82,6 +82,7 @@ export default function PublicationsPage() {
                       alt={`《${book.title}》封面`}
                       fill
                       sizes="(max-width: 768px) 56vw, 230px"
+                      unoptimized
                       className="object-contain"
                     />
                   </div>

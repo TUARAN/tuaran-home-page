@@ -74,6 +74,7 @@ export default function CommunityMembershipCard({ compact = false, id }) {
             width={1279}
             height={1743}
             sizes={compact ? '180px' : '240px'}
+            unoptimized
             className="h-full w-full object-contain"
           />
         </div>
@@ -110,6 +111,7 @@ export default function CommunityMembershipCard({ compact = false, id }) {
             width={1074}
             height={1455}
             sizes="(max-width: 900px) 136px, 176px"
+            unoptimized
             className="h-full w-full object-contain"
           />
         </a>

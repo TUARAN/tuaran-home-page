@@ -41,6 +41,7 @@ export default function ProjectManagerPage() {
             alt="PMP 证书"
             width={1280}
             height={905}
+            unoptimized
             className="h-auto w-full object-contain"
             priority
           />

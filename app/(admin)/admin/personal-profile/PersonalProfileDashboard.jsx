@@ -73,7 +73,7 @@ export default function PersonalProfileDashboard() {
               </div>
             </div>
             <div className="relative min-h-[22rem] border-t border-white/70 bg-[#d9ddce] dark:border-white/10 dark:bg-[#111820] lg:min-h-0 lg:border-l lg:border-t-0">
-              <Image src="/images/admin/infp-t-profile.png" alt="INFP-T 敏感的理想主义者画像参考图" fill sizes="(min-width: 1024px) 320px, 100vw" className="object-cover object-top" priority />
+              <Image src="/images/admin/infp-t-profile.png" alt="INFP-T 敏感的理想主义者画像参考图" fill sizes="(min-width: 1024px) 320px, 100vw" unoptimized className="object-cover object-top" priority />
             </div>
           </div>
           <p className="border-t border-[#d5d8cb] bg-white/45 px-5 py-3 text-xs leading-6 text-[#72766b] dark:border-[#2c3744] dark:bg-black/10 dark:text-gray-400">

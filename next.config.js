@@ -226,6 +226,9 @@ const nextConfig = {
     ]
   },
   images: {
+    // Migrated public media 302s to R2. `/_next/image` cannot follow those
+    // redirects, so keep the optimizer off and let the browser load the original URL.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

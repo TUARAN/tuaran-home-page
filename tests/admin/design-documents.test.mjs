@@ -8,6 +8,7 @@ async function loadDesignDocuments() {
 }
 
 const pageSource = await readFile(new URL('../../app/(admin)/admin/design/page.jsx', import.meta.url), 'utf8')
+const seoRoadmapSource = await readFile(new URL('../../app/(admin)/admin/seo/SeoGrowthRoadmap.jsx', import.meta.url), 'utf8')
 const collapsibleSource = await readFile(new URL('../../app/(admin)/components/ui/CollapsibleSection.jsx', import.meta.url), 'utf8')
 const auditSource = await readFile(new URL('../../ai-context/ui-ux-audit-roadmap.md', import.meta.url), 'utf8')
 
@@ -30,6 +31,13 @@ test('UI audit checklist progress is counted from markdown checkboxes', async ()
     { completed: 2, total: 3 },
   )
   assert.deepEqual(countAuditTasks(''), { completed: 0, total: 0 })
+})
+
+test('SEO growth roadmap stays collapsed until the user expands it', () => {
+  const [outerOpen] = seoRoadmapSource.match(/<CollapsibleSection\s+id="seo-growth-roadmap"[\s\S]*?>/) || []
+  assert.match(seoRoadmapSource, /id="seo-growth-roadmap"/)
+  assert.ok(outerOpen, 'expected the outer SEO roadmap CollapsibleSection')
+  assert.doesNotMatch(outerOpen, /defaultOpen/)
 })
 
 test('collapsible section stays closed unless a matching hash targets it', () => {

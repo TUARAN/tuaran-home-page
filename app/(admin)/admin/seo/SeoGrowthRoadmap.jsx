@@ -27,7 +27,6 @@ export default function SeoGrowthRoadmap() {
         title="SEO / GEO 审计与改造路线图"
         description="GPT6-Astra 分析与改造 · 2026-09-08 审计基线 · 仅站长可见"
         actions={<StatusPill tone="info" size="sm">{completed}/{tasks.length} 项完成</StatusPill>}
-        defaultOpen
       >
         <p className="mb-3 text-sm leading-7 text-[#55574f] dark:text-gray-300">
           围绕搜索发现、AI 引用、连续阅读与回访，记录已确认问题、待验证项和改造验收标准。

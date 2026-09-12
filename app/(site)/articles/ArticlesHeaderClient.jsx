@@ -3,7 +3,7 @@
 import { useTheme } from 'next-themes'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export default function ArticlesHeaderClient() {
+export default function ArticlesHeaderClient({ discovery = null }) {
   const { resolvedTheme } = useTheme()
   const [quote, setQuote] = useState(null)
   const requestRef = useRef(null)
@@ -40,8 +40,8 @@ export default function ArticlesHeaderClient() {
   }, [refreshQuote, resolvedTheme])
 
   return (
-    <header className="mb-4 hidden md:block">
-      <div className="flex min-w-0 items-baseline gap-3">
+    <header className="mb-5 hidden items-baseline justify-between gap-4 md:flex">
+      <div className="flex min-w-0 flex-1 items-baseline gap-3">
         <h1 className="shrink-0 font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
           内容导航
         </h1>
@@ -52,6 +52,7 @@ export default function ArticlesHeaderClient() {
           </p>
         </div> : null}
       </div>
+      {discovery}
     </header>
   )
 }

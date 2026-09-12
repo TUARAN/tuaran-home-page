@@ -30,13 +30,17 @@ export default async function ArticlesPage({ searchParams }) {
 
   return (
     <main className="h5-articles-page mx-auto w-full max-w-[1120px] px-0 py-2 md:px-4 md:py-10">
-      <ArticlesHeaderClient />
-
-      <nav aria-label="文章发现" className="mb-4 px-4 text-sm">
-        {/* Plain HTML endpoint: use document navigation rather than the RSC router. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/articles/published" className="underline">最新发布文章</a>
-      </nav>
+      <ArticlesHeaderClient
+        discovery={(
+          <nav aria-label="文章发现" className="shrink-0">
+            {/* Plain HTML endpoint: use document navigation rather than the RSC router. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a href="/articles/published" className="whitespace-nowrap text-[13px] text-[#958aa1] no-underline transition-colors hover:text-[#20172f] hover:underline hover:underline-offset-4 dark:text-gray-500 dark:hover:text-gray-200">
+              最新发布
+            </a>
+          </nav>
+        )}
+      />
 
       <ArticlesIndexClient items={items} initialFilters={initialFilters} />
     </main>

@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { researchPublicSummary } from '../lib/researchPublicSummary.js'
+
 const root = process.cwd()
 const archiveKeys = new Set(JSON.parse(fs.readFileSync(path.join(root, 'data/content-archive.json'), 'utf8')).researchKeys)
 const categories = ['companies', 'topics', 'people']
@@ -82,7 +84,7 @@ for (const category of categories) {
       date,
       ...(time ? { time } : {}),
       title: data.title || slug,
-      summary: data.tldr || data.summary || '',
+      summary: researchPublicSummary(data),
       ...(tags.length ? { tags } : {}),
       ...(hasAssessment ? { hasAssessment: true } : {}),
       ...(encrypted ? { encrypted: true } : {}),

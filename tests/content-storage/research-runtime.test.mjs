@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 
+import { researchPublicSummary } from '../../lib/researchPublicSummary.js'
+
 const read = (name) => fs.readFileSync(new URL(`../../${name}`, import.meta.url), 'utf8')
 function load(name, scope, exports) {
   const source = read(name).replace(/^import .*\n/gm, '').replace(/export /g, '')
@@ -55,7 +57,7 @@ test('research HTTP gate returns real 404/307 before streaming and keeps variant
 })
 
 test('RSS and sitemap remove withdrawn and encrypted research, add new runtime documents',()=>{
-  const {applyResearchDiscovery}=load('lib/researchDiscovery.js',{escapeDiscoveryXml:(s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')},['applyResearchDiscovery'])
+  const {applyResearchDiscovery}=load('lib/researchDiscovery.js',{escapeDiscoveryXml:(s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'),researchPublicSummary},['applyResearchDiscovery'])
   const entries=[{category:'topics',slug:'old',status:'retired'},{category:'topics',slug:'secret',status:'published',encrypted:true},{category:'topics',slug:'new',title:'New & safe',summary:'Summary',date:'2026-09-10',status:'published'}]
   const rss='<rss><channel><item><link>https://2aran.com/articles/research/topics/old?v=one</link><description>WITHDRAWN BODY</description></item><item><link>https://2aran.com/articles/research/topics/secret</link></item><item><link>https://2aran.com/articles/ordinary</link></item></channel></rss>'
   const output=applyResearchDiscovery(rss,entries,'rss')

@@ -9,9 +9,13 @@ import {
   chooseHomeRecommendationBatch,
   DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS,
   getHomeRecommendationBatchNumber,
+  getHomeRecommendationRotateDelayMs,
   HOME_RECOMMENDATION_MAX_BATCH_SIZE,
+  mergeHomeRecommendationCatalog,
   mergeHomeRecommendationSettings,
   searchHomeRecommendationCatalog,
+  selectHomeRecommendationItems,
+  sameHomeRecommendationSettings,
 } from '../../../lib/homeRecommendationEngine'
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
 import H5PullToRefresh from './H5PullToRefresh'
@@ -55,6 +59,8 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const [catalog, setCatalog] = useState(initialCatalog)
   const router = useRouter()
   const searchInputRef = useRef(null)
+  const firstBatchLockedRef = useRef(true)
+  const firstBatchItemsRef = useRef(null)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
   const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
   const [batchOffset, setBatchOffset] = useState(0)
@@ -63,18 +69,22 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const [query, setQuery] = useState('')
   const batchNumber = automaticBatchNumber + batchOffset
   const previousIds = useMemo(
-    () => batchNumber > 0
-      ? chooseHomeRecommendationBatch(
+    () => {
+      if (batchNumber <= 0) return []
+      if (batchOffset === 1 && firstBatchItemsRef.current) {
+        return firstBatchItemsRef.current.map((item) => item.id)
+      }
+      return chooseHomeRecommendationBatch(
         catalog,
         settings,
         batchNumber - 1,
         [],
         { includeHighlights: batchOffset === 1 },
       ).map((item) => item.id)
-      : [],
+    },
     [batchNumber, batchOffset, catalog, settings],
   )
-  const items = useMemo(
+  const computedItems = useMemo(
     () => chooseHomeRecommendationBatch(
       catalog,
       settings,
@@ -83,6 +93,14 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
       { includeHighlights: batchOffset === 0 },
     ),
     [batchNumber, batchOffset, catalog, previousIds, settings],
+  )
+  if (!firstBatchItemsRef.current && computedItems.length) {
+    firstBatchItemsRef.current = computedItems
+  }
+  const items = selectHomeRecommendationItems(
+    computedItems,
+    firstBatchItemsRef.current,
+    firstBatchLockedRef.current,
   )
   const normalizedQuery = query.trim()
   const searchResults = useMemo(
@@ -96,9 +114,14 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     fetch('/api/recommendations/home', { cache: 'no-store' })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        if (!alive) return
-        if (Array.isArray(data?.catalog)) setCatalog(data.catalog)
-        if (data?.settings) setSettings(mergeHomeRecommendationSettings(data.settings))
+        if (!alive || !data) return
+        if (Array.isArray(data.catalog)) {
+          setCatalog((current) => mergeHomeRecommendationCatalog(current, data.catalog))
+        }
+        if (data.settings) {
+          const next = mergeHomeRecommendationSettings(data.settings)
+          setSettings((current) => (sameHomeRecommendationSettings(current, next) ? current : next))
+        }
       })
       .catch(() => { /* Keep the prerendered catalog when refresh fails. */ })
     return () => { alive = false }
@@ -106,17 +129,19 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
 
   useEffect(() => {
     let timer
-    const intervalMs = settings.autoRotateHours * 60 * 60 * 1000
-    const syncAutomaticBatch = () => {
-      setAutomaticBatchNumber(getHomeRecommendationBatchNumber(settings.autoRotateHours))
-      const remaining = intervalMs - (Date.now() % intervalMs)
-      timer = window.setTimeout(syncAutomaticBatch, remaining + 100)
+    const scheduleRotate = () => {
+      timer = window.setTimeout(() => {
+        firstBatchLockedRef.current = false
+        setAutomaticBatchNumber(getHomeRecommendationBatchNumber(settings.autoRotateHours))
+        scheduleRotate()
+      }, getHomeRecommendationRotateDelayMs(settings.autoRotateHours))
     }
-    syncAutomaticBatch()
+    scheduleRotate()
     return () => window.clearTimeout(timer)
   }, [settings.autoRotateHours])
 
   const changeBatch = useCallback(() => {
+    firstBatchLockedRef.current = false
     setChanging(true)
     setBatchOffset((value) => value + 1)
     return new Promise((resolve) => {

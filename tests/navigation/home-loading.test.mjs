@@ -68,3 +68,19 @@ test('initial recommendations are deterministic for matching server and hydratio
   const second = renderToStaticMarkup(React.createElement(Reading, { catalog }))
   assert.equal(first, second)
 })
+
+test('home featured reading keeps the first painted batch after the recommendation API returns', async () => {
+  const [clientSource, catalogSource, knowledgeSource] = await Promise.all([
+    readFile(new URL('../../app/(site)/components/HomeFeaturedReadingClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/homeRecommendationCatalogCore.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/researchKnowledgeItem.js', import.meta.url), 'utf8'),
+  ])
+  assert.match(clientSource, /mergeHomeRecommendationCatalog/)
+  assert.match(clientSource, /selectHomeRecommendationItems/)
+  assert.match(clientSource, /firstBatchLockedRef/)
+  assert.match(clientSource, /getHomeRecommendationRotateDelayMs/)
+  assert.doesNotMatch(clientSource, /syncAutomaticBatch/)
+  assert.doesNotMatch(clientSource, /if \(Array\.isArray\(data\?\.catalog\)\) setCatalog\(data\.catalog\)/)
+  assert.match(catalogSource, /researchPublicSummary\(entry\)/)
+  assert.match(knowledgeSource, /researchPublicSummary\(entry\)/)
+})

@@ -1,11 +1,12 @@
 import CryptoResearchClient from './CryptoResearchClient'
 import { CRYPTO_RESEARCH_TEMPLATE_VERSION } from '../../../lib/cryptoResearchCore'
 import { listRuntimeResearchByCategory } from '../../../lib/researchRuntime'
+import { isCryptoAssetObservation } from '../../../lib/research/shareTitle'
+import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
+import { researchPublicSummary } from '../../../lib/researchPublicSummary'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
-import { isCryptoAssetObservation } from '../../../lib/research/shareTitle'
-import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
 
 export const metadata = {
   title: '加密调研 · 每天一个加密资产',
@@ -25,7 +26,7 @@ export default async function CryptoResearchPage() {
     const identity = identityOf(entry)
     return {
       id: entry.slug, ...identity, symbol: entry.symbol || identity.symbol, rank: entry.marketCapRank,
-      date: entry.date, dateLabel: entry.dateLabel || entry.date, summary: entry.tldr || entry.summary,
+      date: entry.date, dateLabel: entry.dateLabel || entry.date, summary: researchPublicSummary(entry),
       tags: entry.tags.filter((tag) => tag !== '加密资产' && tag !== identity.name && tag !== identity.symbol).slice(0, 3),
       readingMinutes: entry.readingMinutes, href: `/articles/research/topics/${entry.slug}`,
     }

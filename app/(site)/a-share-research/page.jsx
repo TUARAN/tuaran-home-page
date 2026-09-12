@@ -1,11 +1,12 @@
 import AShareResearchClient from './AShareResearchClient'
 import { A_SHARE_RESEARCH_TEMPLATE_VERSION } from '../../../lib/aShareResearchCore'
 import { listRuntimeResearchByCategory } from '../../../lib/researchRuntime'
+import { isAShareCompanyObservation } from '../../../lib/research/shareTitle'
+import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
+import { researchPublicSummary } from '../../../lib/researchPublicSummary'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
-import { isAShareCompanyObservation } from '../../../lib/research/shareTitle'
-import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
 
 export const metadata = {
   title: 'A股调研 · 每天一家上市公司',
@@ -50,7 +51,7 @@ export default async function AShareResearchPage() {
         exchange: exchangeOf(stockCode),
         date: entry.date,
         dateLabel: entry.dateLabel || entry.date,
-        summary: entry.tldr || entry.summary,
+        summary: researchPublicSummary(entry),
         tags: entry.tags.filter((tag) => tag !== 'A股').slice(0, 3),
         readingMinutes: entry.readingMinutes,
         href: `/articles/research/companies/${entry.slug}`,

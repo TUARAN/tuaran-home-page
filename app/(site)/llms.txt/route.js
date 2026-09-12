@@ -1,4 +1,5 @@
 import { CATEGORY_META, listResearch } from '../../../lib/research/archive'
+import { researchPublicSummary } from '../../../lib/researchPublicSummary'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600
@@ -11,7 +12,7 @@ const SITE_DESC =
 
 function line(entry) {
   const url = `${SITE_URL}/articles/research/${entry.category}/${entry.slug}`
-  const desc = entry.summary || entry.tldr || ''
+  const desc = researchPublicSummary(entry)
   return desc ? `- [${entry.title}](${url}): ${desc}` : `- [${entry.title}](${url})`
 }
 

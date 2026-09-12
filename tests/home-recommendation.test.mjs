@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { chooseHomeRecommendationBatch, mergeHomeRecommendationSettings } from '../lib/homeRecommendationEngine.js'
+import {
+  chooseHomeRecommendationBatch,
+  getHomeRecommendationRotateDelayMs,
+  mergeHomeRecommendationCatalog,
+  mergeHomeRecommendationSettings,
+  selectHomeRecommendationItems,
+} from '../lib/homeRecommendationEngine.js'
+import { buildHomeRecommendationCatalog } from '../lib/homeRecommendationCatalogCore.js'
+import { researchPublicSummary } from '../lib/researchPublicSummary.js'
 import { RESEARCH_ENTRY_META } from '../lib/research/catalog.js'
 
 const catalog = Array.from({ length: 40 }, (_, index) => ({
@@ -86,4 +94,45 @@ test('WorkBuddy is the default pin, while an explicit empty pin list remains res
   const initial = chooseHomeRecommendationBatch([...catalog, workbuddy], {}, 100)
   assert.equal(initial[0].id, workbuddy.id)
   assert.equal(initial.filter((item) => item.id === workbuddy.id).length, 1)
+})
+
+test('home recommendations and article lists use the same public summary', () => {
+  const entry = {
+    category: 'topics',
+    slug: 'workbuddy-tutorial-resources',
+    title: 'WorkBuddy',
+    summary: '腾讯 WorkBuddy 免费学习资源整理：10 份 PDF 共 308 页。',
+    tldr: '10 份 PDF、50 节视频，免费领取燃币即可解锁学习。',
+    date: '2026-08-28',
+    time: '11:18',
+  }
+  assert.equal(researchPublicSummary(entry), entry.tldr)
+  const catalog = buildHomeRecommendationCatalog([], [entry])
+  assert.equal(catalog[0].id, 'research:topics:workbuddy-tutorial-resources')
+  assert.equal(catalog[0].summary, entry.tldr)
+})
+
+test('runtime catalog replaces stale fields instead of keeping a second summary for the same article', () => {
+  const current = [
+    { id: 'research:topics:workbuddy-tutorial-resources', title: 'WorkBuddy', summary: '短摘要', href: '/a' },
+  ]
+  const incoming = [
+    { id: 'research:topics:workbuddy-tutorial-resources', title: 'WorkBuddy', summary: '短摘要', href: '/a' },
+    { id: 'research:topics:ming-dynasty-1566', title: '大明王朝', summary: '新文章', href: '/b' },
+  ]
+  const merged = mergeHomeRecommendationCatalog(current, incoming)
+  assert.equal(merged[0].summary, '短摘要')
+  assert.equal(merged[1].id, 'research:topics:ming-dynasty-1566')
+  assert.equal(
+    mergeHomeRecommendationCatalog(current, [{ id: 'research:topics:workbuddy-tutorial-resources', title: 'WorkBuddy', summary: '短摘要', href: '/a' }]),
+    current,
+  )
+})
+
+test('first painted recommendation batch stays on screen until the reader asks for another', () => {
+  const painted = [{ id: 'pinned' }, { id: 'latest' }]
+  const computed = [{ id: 'pinned' }, { id: 'newer' }]
+  assert.deepEqual(selectHomeRecommendationItems(computed, painted, true), painted)
+  assert.deepEqual(selectHomeRecommendationItems(computed, painted, false), computed)
+  assert.equal(getHomeRecommendationRotateDelayMs(12, 12 * 60 * 60 * 1000 * 10 + 1000) > 1000, true)
 })

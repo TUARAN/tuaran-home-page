@@ -28,6 +28,7 @@ test('private, authentication, API, and raw PDF routes are excluded from indexin
     '/',
     '/articles',
     '/articles/research/topics/example',
+    '/quiz',
     '/resources/report',
     '/resources/report/cover.png',
     '/sitemap.xml',

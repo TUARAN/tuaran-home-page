@@ -35,10 +35,16 @@ test('legacy and delivery-based interactive links resolve to the independent gro
   assert.match(directoryFiltersSource, /delivery === 'interact'[\s\S]*\? 'interactive'/)
 })
 
-test('2026 quiz is owner-only, tagged, gated, and hidden from public discovery', () => {
-  assert.match(worksSource, /id: 'quiz'[\s\S]*category: 'learning-tool'[\s\S]*audience: 'owner'[\s\S]*tags: \['党建知识', '题库', '学习模式', '考试模式', '仅站长'\]/)
-  assert.match(quizPageSource, /getOwnerPageState\(\)[\s\S]*state !== 'owner'/)
-  assert.match(quizPageSource, /PrivateVaultGate[\s\S]*returnTo="\/quiz"/)
+test('2026 quiz is public, tagged, and discoverable', () => {
+  const quizWork = worksSource.match(/\{\s*id: 'quiz',[\s\S]*?\n  \},/)?.[0] || ''
+  assert.match(quizWork, /category: 'learning-tool'/)
+  assert.match(quizWork, /tags: \['党建知识', '题库', '学习模式', '考试模式'\]/)
+  assert.doesNotMatch(quizWork, /audience: 'owner'/)
+  assert.doesNotMatch(quizWork, /仅站长/)
+  assert.match(quizPageSource, /createRichPageMetadata\('quiz'\)/)
+  assert.match(quizPageSource, /RichPageJsonLd pageId="quiz"/)
+  assert.doesNotMatch(quizPageSource, /PrivateVaultGate/)
+  assert.doesNotMatch(quizPageSource, /getOwnerPageState/)
   assert.doesNotMatch(quizPageSource, /\(admin\)/)
   assert.match(quizPageSource, /ContentPvBeacon category="rich-page" slug="quiz"/)
   assert.match(quizClientSource, /key=\{`\$\{currentQuestion\.id\}-\$\{optionIndex\}`\}/)
@@ -52,10 +58,7 @@ test('2026 quiz is owner-only, tagged, gated, and hidden from public discovery',
   assert.match(quizClientSource, /回答正确，已移出错题本/)
   assert.match(quizClientSource, /buildExamQuestions\(QUESTION_BANK_2026, examSize\)/)
   assert.match(quizClientSource, /随机抽题、随机打乱选项、限时作答/)
-  assert.match(quizPageSource, /robots:[\s\S]*index: false[\s\S]*follow: false/)
   assert.match(richPagesSource, /work\.audience !== 'owner' \|\| canViewOwnerContent/)
-  assert.match(richPagesSource, /label: '仅站长'/)
-  assert.match(richPagesSource, /work\.tags \|\| \[\][\s\S]*filter\(\(tag\) => tag !== '仅站长'\)/)
   assert.match(builderSource, /includeOwner = false[\s\S]*includeOwner \|\| p\.audience !== 'owner'/)
   assert.match(seoSource, /work\.audience === 'owner'[\s\S]*index: false, follow: false/)
 })

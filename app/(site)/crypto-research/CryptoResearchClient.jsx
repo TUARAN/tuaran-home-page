@@ -32,14 +32,19 @@ export default function CryptoResearchClient({ items, researchMethod }) {
         </dl>
       </div>
     </header>
-    <section className="mt-7 border-y border-[#d8ddd9] py-6 dark:border-[#303b3a]" aria-labelledby="research-method-title">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <details className="group mt-7 border-y border-[#d8ddd9] py-5 dark:border-[#303b3a]" aria-labelledby="research-method-title">
+      <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3 [&::-webkit-details-marker]:hidden">
         <div>
           <p className="text-xs font-semibold tracking-[0.16em] text-[#16745b] dark:text-[#65c8a9]">RESEARCH METHOD</p>
           <h2 id="research-method-title" className="mt-2 text-2xl font-semibold tracking-tight">当前调研模板与策略</h2>
         </div>
-        <p className={`max-w-xl text-sm leading-6 ${muted}`}>这里展示当前自动化实际采用的写作口径与执行流程，历史文章仍保留生成时的模板版本和市场数据截点。</p>
-      </div>
+        <span className={`flex items-center gap-2 text-sm ${muted}`}>
+          <span className="group-open:hidden">查看模板</span>
+          <span className="hidden group-open:inline">收起</span>
+          <span aria-hidden="true" className="transition-transform group-open:rotate-180">▾</span>
+        </span>
+      </summary>
+      <p className={`mt-3 max-w-xl text-sm leading-6 ${muted}`}>这里展示当前自动化实际采用的写作口径与执行流程，历史文章仍保留生成时的模板版本和市场数据截点。</p>
 
       <div className="mt-5 grid gap-px overflow-hidden rounded-xl border border-[#d8ddd9] bg-[#d8ddd9] dark:border-[#303b3a] dark:bg-[#303b3a] lg:grid-cols-[0.9fr_1.1fr]">
         <article className="bg-[#f7faf8] p-5 dark:bg-[#111923] sm:p-6">
@@ -72,7 +77,7 @@ export default function CryptoResearchClient({ items, researchMethod }) {
           </ol>
         </article>
       </div>
-    </section>
+    </details>
     <div className="mt-7 grid gap-6 lg:grid-cols-[252px_minmax(0,1fr)]">
       <aside className="h-fit border border-[#d8ddd9] bg-white/60 p-4 dark:border-[#303b3a] dark:bg-[#111923]">
         <label><span className="text-xs font-semibold tracking-[0.14em] text-[#16745b] dark:text-[#65c8a9]">检索币种</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="名称、符号或主题" className="mt-3 w-full rounded-lg border border-[#cfd8d3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#16745b] dark:border-[#354153] dark:bg-[#0d131b]" /></label>

@@ -37,7 +37,11 @@ class DesktopInbox {
     });
     if (signal?.aborted || this.stopped) throw new Error('接收任务已断开');
     item = this.items.find(x => x.state === 'pending' || x.state === 'claimed');
-    if (!item) return { status: 'waiting', instruction: '暂无消息；继续调用 receive_5g 等待。停止任务后不会自动唤醒。' };
+    if (!item) {
+      // 空闲（无待领取消息）时释放 owner 锁，允许其他接收者（守护进程 / WorkBuddy）无缝接管
+      if (this.owner === signal) this.owner = null;
+      return { status: 'waiting', instruction: '暂无消息；继续调用 receive_5g 等待。停止任务后不会自动唤醒。' };
+    }
     const resumed = item.state === 'claimed'; item.state = 'claimed'; this.save();
     return { status: 'message', messageId: item.id, from: item.from, text: item.text, receivedAt: item.receivedAt, resumed, testOnly: !!item.testOnly, instruction: '在本桌面任务中处理消息，用 reply_5g 回复。若 resumed=true，先检查本任务历史，避免重复执行已有副作用。' };
   }

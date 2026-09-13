@@ -16,6 +16,7 @@ import {
   searchHomeRecommendationCatalog,
   selectHomeRecommendationItems,
   sameHomeRecommendationSettings,
+  tagVisibleHomeRecommendationLatest,
 } from '../../../lib/homeRecommendationEngine'
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
 import H5PullToRefresh from './H5PullToRefresh'
@@ -63,6 +64,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const firstBatchLockedRef = useRef(true)
   const firstBatchItemsRef = useRef(null)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
+  const [runtimeCatalogReady, setRuntimeCatalogReady] = useState(false)
   const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
   const [batchOffset, setBatchOffset] = useState(0)
   const [changing, setChanging] = useState(false)
@@ -98,17 +100,25 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   if (!firstBatchItemsRef.current && computedItems.length) {
     firstBatchItemsRef.current = computedItems
   }
-  const items = selectHomeRecommendationItems(
+  const lockedItems = selectHomeRecommendationItems(
     computedItems,
     firstBatchItemsRef.current,
     firstBatchLockedRef.current,
+  )
+  const items = tagVisibleHomeRecommendationLatest(
+    lockedItems,
+    catalog,
+    settings,
+    runtimeCatalogReady,
   )
   const normalizedQuery = query.trim()
   const searchResults = useMemo(
     () => searchHomeRecommendationCatalog(catalog, normalizedQuery, HOME_RECOMMENDATION_MAX_BATCH_SIZE),
     [catalog, normalizedQuery],
   )
-  const displayedItems = normalizedQuery ? searchResults : items
+  const displayedItems = normalizedQuery
+    ? tagVisibleHomeRecommendationLatest(searchResults, catalog, settings, runtimeCatalogReady)
+    : items
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
   useEffect(() => {
     let alive = true
@@ -118,6 +128,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
         if (!alive || !data) return
         if (Array.isArray(data.catalog)) {
           setCatalog((current) => mergeHomeRecommendationCatalog(current, data.catalog))
+          setRuntimeCatalogReady(true)
         }
         if (data.settings) {
           const next = mergeHomeRecommendationSettings(data.settings)

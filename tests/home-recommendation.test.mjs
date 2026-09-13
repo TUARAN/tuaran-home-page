@@ -7,6 +7,7 @@ import {
   mergeHomeRecommendationCatalog,
   mergeHomeRecommendationSettings,
   selectHomeRecommendationItems,
+  tagVisibleHomeRecommendationLatest,
 } from '../lib/homeRecommendationEngine.js'
 import { buildHomeRecommendationCatalog } from '../lib/homeRecommendationCatalogCore.js'
 import { researchPublicSummary } from '../lib/researchPublicSummary.js'
@@ -135,4 +136,45 @@ test('first painted recommendation batch stays on screen until the reader asks f
   assert.deepEqual(selectHomeRecommendationItems(computed, painted, true), painted)
   assert.deepEqual(selectHomeRecommendationItems(computed, painted, false), computed)
   assert.equal(getHomeRecommendationRotateDelayMs(12, 12 * 60 * 60 * 1000 * 10 + 1000) > 1000, true)
+})
+
+test('latest badge stays off until the runtime catalog is confirmed', () => {
+  const pinned = { id: 'research:topics:workbuddy-tutorial-resources', section: 'research', sortKey: '2026-08-28T11:18:00' }
+  const staleLatest = {
+    id: 'research:topics:nobody-argued-for-your-stack',
+    section: 'research',
+    sortKey: '2026-09-10T00:00:00',
+    isLatest: true,
+  }
+  const filler = { id: 'column:old-post', section: 'column', sortKey: '2026-07-17T00:00:00' }
+  const painted = [pinned, staleLatest, filler]
+  const runtimeCatalog = [
+    pinned,
+    {
+      id: 'research:topics:cryptocurrency-exchanges',
+      section: 'research',
+      sortKey: '2026-09-13T14:40:00',
+    },
+    staleLatest,
+    filler,
+  ]
+
+  const beforeApi = tagVisibleHomeRecommendationLatest(painted, painted, { pinnedIds: [pinned.id] }, false)
+  assert.deepEqual(beforeApi.map((item) => item.id), painted.map((item) => item.id))
+  assert.equal(beforeApi.some((item) => item.isLatest), false)
+
+  const afterApi = tagVisibleHomeRecommendationLatest(painted, runtimeCatalog, { pinnedIds: [pinned.id] }, true)
+  assert.deepEqual(afterApi.map((item) => item.id), painted.map((item) => item.id))
+  assert.equal(afterApi.some((item) => item.isLatest), false)
+})
+
+test('latest badge only appears on the visible item that is actually latest', () => {
+  const pinned = { id: 'pin', section: 'research', sortKey: '2026-08-01T00:00:00' }
+  const staleLatest = { id: 'old-latest', section: 'research', sortKey: '2026-09-10T00:00:00', isLatest: true }
+  const alreadyShown = { id: 'new-latest', section: 'research', sortKey: '2026-09-13T14:40:00' }
+  const painted = [pinned, staleLatest, alreadyShown]
+  const tagged = tagVisibleHomeRecommendationLatest(painted, painted, { pinnedIds: [pinned.id] }, true)
+  assert.deepEqual(tagged.map((item) => item.id), ['pin', 'old-latest', 'new-latest'])
+  assert.equal(tagged[1].isLatest, false)
+  assert.equal(tagged[2].isLatest, true)
 })

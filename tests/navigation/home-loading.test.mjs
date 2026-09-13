@@ -69,6 +69,12 @@ test('initial recommendations are deterministic for matching server and hydratio
   assert.equal(first, second)
 })
 
+test('server HTML does not show a latest badge before the recommendation API returns', () => {
+  const html = renderToStaticMarkup(React.createElement(Reading, { catalog }))
+  assert.match(html, /首屏文章/)
+  assert.doesNotMatch(html, /最新/)
+})
+
 test('home featured reading keeps the first painted batch after the recommendation API returns', async () => {
   const [clientSource, catalogSource, knowledgeSource] = await Promise.all([
     readFile(new URL('../../app/(site)/components/HomeFeaturedReadingClient.jsx', import.meta.url), 'utf8'),
@@ -78,6 +84,8 @@ test('home featured reading keeps the first painted batch after the recommendati
   assert.match(clientSource, /mergeHomeRecommendationCatalog/)
   assert.match(clientSource, /selectHomeRecommendationItems/)
   assert.match(clientSource, /firstBatchLockedRef/)
+  assert.match(clientSource, /runtimeCatalogReady/)
+  assert.match(clientSource, /tagVisibleHomeRecommendationLatest/)
   assert.match(clientSource, /getHomeRecommendationRotateDelayMs/)
   assert.doesNotMatch(clientSource, /syncAutomaticBatch/)
   assert.doesNotMatch(clientSource, /if \(Array\.isArray\(data\?\.catalog\)\) setCatalog\(data\.catalog\)/)

@@ -1,0 +1,19 @@
+{
+  "assets": [],
+  "canonicalization": "2aran-content-json/v1",
+  "contentHash": {
+    "algorithm": "SHA-256",
+    "value": "dec45fa63b5bd7c235603a9b83506adf63cbebb443ed8d54f4a9ae030babac21"
+  },
+  "contentKey": "research:topics:content-proof-demo",
+  "previousProofId": null,
+  "publishedAt": "2026-09-14T00:00:00.000Z",
+  "schema": "https://2aran.com/schemas/content-proof/v1",
+  "version": 1,
+  "proofId": "168fd4950fb76d024f5be2adb52bb6b35b068da0fc4c95505393ed6f1c4ef1f4",
+  "siteSignature": {
+    "algorithm": "ECDSA-P256-SHA256",
+    "keyId": "q27wud_PPpZWa_fSLHtiVSYcZ263pUgUR_miQi7Rza8",
+    "value": "txbvyN7SEyLE6EvvQLDLAzv3CtjPyy3fKte3tl9QlEbDrBcO8JNJEAcrRGRELyem1ukuVVfQvMjigk7BG2OiyA"
+  }
+}

@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import ContentFingerprintPrototype from './ContentFingerprintPrototype'
+
 const DETAIL_HREF = '/articles/research/topics/2aran-onchain-content-site'
 
 export const dynamic = 'force-static'
@@ -41,7 +43,8 @@ const ROADMAP = [
   {
     range: '第 1—2 周',
     title: '内容指纹原型',
-    status: '待实施',
+    status: '已完成',
+    active: true,
     copy: '完成规范化、SHA-256、站点签名和 proof JSON，保证 Node 与浏览器计算结果一致。',
   },
   {
@@ -103,7 +106,7 @@ export default function OnchainBlogPage() {
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-full border border-[#aa8b59] bg-[#f7f0df] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#6f522b] dark:border-[#806a47] dark:bg-[#201c16] dark:text-[#d8b97f]">
-                  方案完成 · 工程待实施
+                  方案完成 · 指纹原型可用
                 </span>
                 <span className="font-mono text-[11px] tracking-[0.16em] text-[#857d71] dark:text-[#8f9aaa]">2ARAN CONTENT LEDGER</span>
               </div>
@@ -182,6 +185,12 @@ export default function OnchainBlogPage() {
         </div>
       </section>
 
+      <section className="border-y border-[#d8d0c2] bg-[#eae4d8] dark:border-[#2a313b] dark:bg-[#101720]">
+        <div className="mx-auto w-full max-w-[1180px] px-5 py-14 md:py-20">
+          <ContentFingerprintPrototype />
+        </div>
+      </section>
+
       <section className="border-y border-[#d8d0c2] bg-[#292722] text-[#f4eee4] dark:border-[#323b47] dark:bg-[#090d12]">
         <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-14 lg:grid-cols-[0.9fr_1.1fr] md:py-20">
           <div>
@@ -225,7 +234,7 @@ D1: content_proofs
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
             <p className="font-serif text-2xl font-semibold">详细技术方案包含技术选择、数据结构、验收条件与风险说明。</p>
-            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">资料日期：2026-09-08 · 当前状态：规划完成，尚未进行链上部署。</p>
+            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">资料日期：2026-09-08 · 当前状态：内容指纹原型完成，尚未进行链上部署。</p>
           </div>
           <Link href={DETAIL_HREF} className="shrink-0 rounded-full border border-[#9d835b] px-5 py-3 text-sm font-semibold text-[#5d4523] no-underline hover:bg-[#f8f3e9] dark:border-[#8d774f] dark:text-[#dbbd86] dark:hover:bg-white/[0.05]">
             打开完整计划与实现细节 →

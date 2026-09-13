@@ -148,6 +148,7 @@ temp/
 *.pem
 *.p12
 *.pfx
+*.private.jwk.json
 
 # 本地明文种子（长期罗盘导入用，永远不入库）
 private/

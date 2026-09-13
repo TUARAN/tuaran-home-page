@@ -85,6 +85,38 @@ test('knowledge directory overlays research tombstones, new taxonomy and ordinar
   assert.deepEqual(items.find((item)=>item.title==='new').subjects,['ai_dev'])
 })
 
+test('knowledge directory keeps the catalog when D1 is not bound', async () => {
+  const { readRuntimeKnowledgeItems } = load('lib/knowledgeRuntime.js', {
+    readContentCatalog: async () => ({ knowledgeItems: [{ id: 'resource', href: '/resources/existing', title: 'Existing' }] }),
+    listResearchOverrides: async () => { throw new Error('D1 binding DB is missing (Cloudflare Pages env.DB)') },
+    listDiscoverablePosts: async () => [],
+    researchKnowledgeItem: (entry) => entry,
+    isAShareResearchEntry: () => false,
+    articlePostToKnowledgeItem: (post) => post,
+    listContentIndex: async () => [],
+    taxonomyForManualEntry: () => ({}),
+    researchSortKey: (date) => date,
+    compareSortKeyDesc: () => 0,
+  }, ['readRuntimeKnowledgeItems'])
+  const items = await readRuntimeKnowledgeItems()
+  assert.deepEqual(items.map((item) => item.href), ['/resources/existing'])
+  await assert.rejects(
+    load('lib/knowledgeRuntime.js', {
+      readContentCatalog: async () => ({ knowledgeItems: [] }),
+      listResearchOverrides: async () => { throw new Error('D1 connection unavailable') },
+      listDiscoverablePosts: async () => [],
+      researchKnowledgeItem: (entry) => entry,
+      isAShareResearchEntry: () => false,
+      articlePostToKnowledgeItem: (post) => post,
+      listContentIndex: async () => [],
+      taxonomyForManualEntry: () => ({}),
+      researchSortKey: (date) => date,
+      compareSortKeyDesc: () => 0,
+    }, ['readRuntimeKnowledgeItems']).readRuntimeKnowledgeItems(),
+    /unavailable/,
+  )
+})
+
 test('admin list reports real Git document states, including unpublished and encrypted records',()=>{
   const {mergeAdminContentItems}=load('lib/adminContentList.js',{},['mergeAdminContentItems'])
   const researchDocuments=['draft','published','retired'].map((status)=>({content_key:`research:topics:${status}`,status,updated_at:100,metadata_json:JSON.stringify({category:'topics',slug:status,title:status,encrypted:status==='published'})}))

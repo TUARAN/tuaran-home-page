@@ -27,8 +27,8 @@
 .admin-shell {
   --loading-track: color-mix(in srgb, var(--admin-line) 82%, transparent);
   --loading-surface: color-mix(in srgb, var(--admin-surface-subtle) 82%, var(--admin-line));
-  --loading-highlight: color-mix(in srgb, white 66%, var(--admin-focus));
-  --loading-ink: var(--admin-focus);
+  --loading-highlight: color-mix(in srgb, white 66%, var(--admin-ink));
+  --loading-ink: var(--admin-ink);
 }
 
 .dark .admin-shell {

@@ -8,6 +8,7 @@ import {
   IconRefresh,
 } from '@tabler/icons-react'
 
+import { LoadingSpinner, LoadingState, Skeleton } from '../../../../components/loading/LoadingPrimitives'
 import { AdminButton, AdminPage, CollapsibleSection, EmptyState, Section, StatusPill } from '../../../components/ui'
 
 const labels = { draft: '草稿', published: '已发布', retired: '已撤回' }
@@ -24,6 +25,7 @@ export default function ResearchImportConsole({ embedded = false }) {
   const searchParams = useSearchParams()
   const requestedPath = searchParams.get('path') || ''
   const [queue, setQueue] = useState(null)
+  const [queueLoading, setQueueLoading] = useState(true)
   const [sourcePath, setSourcePath] = useState(requestedPath)
   const [filter, setFilter] = useState('')
   const [snapshot, setSnapshot] = useState(null)
@@ -52,6 +54,7 @@ export default function ResearchImportConsole({ embedded = false }) {
 
   useEffect(() => {
     let active = true
+    setQueueLoading(true)
     fetch('/api/admin/research-documents?queue=1', { cache: 'no-store' })
       .then(async (response) => {
         const data = await response.json()
@@ -68,6 +71,9 @@ export default function ResearchImportConsole({ embedded = false }) {
         if (!active) return
         setMessageTone('danger')
         setMessage(error.message)
+      })
+      .finally(() => {
+        if (active) setQueueLoading(false)
       })
     return () => { active = false }
   }, [reload, requestedPath])
@@ -131,8 +137,9 @@ export default function ResearchImportConsole({ embedded = false }) {
         title="待审批"
         description="push 到 GitHub main 之后，这里会列出尚未发布或刚改过的调研。点开核对，再发布。不必导出 JSON，也不必找本地路径。"
         actions={
-          <AdminButton type="button" variant="ghost" disabled={busy} onClick={() => setReload((value) => value + 1)}>
-            <IconRefresh size={15} />刷新列表
+          <AdminButton type="button" variant="ghost" disabled={busy || queueLoading} onClick={() => setReload((value) => value + 1)}>
+            {queueLoading ? <LoadingSpinner size="sm" /> : <IconRefresh size={15} />}
+            {queueLoading ? '读取中' : '刷新列表'}
           </AdminButton>
         }
       >
@@ -140,49 +147,73 @@ export default function ResearchImportConsole({ embedded = false }) {
           <p className="mb-3 text-[13px] text-[#7a7c70] dark:text-gray-500">
             {queue.repo} · 待处理 {pending.length} 篇 · 已发布 {queue.publishedCount} 篇
           </p>
-        ) : (
-          <p className="mb-3 text-[13px] text-[#7a7c70]">正在读取 GitHub main…</p>
-        )}
-        <label className="block text-xs text-[#67695d] dark:text-gray-400">
-          筛选
-          <input
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            placeholder="标题、slug、文件名"
-            className={fieldClass}
-          />
-        </label>
-        {queue && !pending.length ? (
-          <div className="mt-4">
-            <EmptyState
-              title="没有待审批的调研"
-              description="GitHub main 上的调研都已发布。若要撤回或重新发布某一篇，用下面的列表选中即可。"
+        ) : null}
+        {queueLoading && !queue ? (
+          <div className="rounded-xl border border-[#eceee6] dark:border-[#243041]" aria-busy="true">
+            <LoadingState
+              label="正在读取 GitHub main"
+              detail="正在拉取待审批调研列表"
+              size="lg"
             />
+            <ul className="divide-y divide-[#eceee6] px-4 pb-4 dark:divide-[#1b2430]">
+              {[0, 1, 2].map((index) => (
+                <li key={index} className="flex items-center justify-between gap-3 py-3" style={{ '--skeleton-index': index }}>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-2/5 rounded-full" />
+                    <Skeleton className="h-3 w-1/3 rounded-full" />
+                  </div>
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                </li>
+              ))}
+            </ul>
           </div>
         ) : (
-          <ul className="mt-3 divide-y divide-[#eceee6] dark:divide-[#1b2430]">
-            {visiblePending.map((item) => {
-              const active = item.sourcePath === sourcePath
-              return (
-                <li key={item.sourcePath}>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => { setSourcePath(item.sourcePath); setMessage('') }}
-                    className={`flex w-full items-center justify-between gap-3 px-1 py-3 text-left ${active ? 'text-[#15140f] dark:text-gray-100' : 'text-[#55574f] dark:text-gray-400'}`}
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{item.title || item.slug}</span>
-                      <span className="block truncate font-mono text-[12px] text-[#8b8d82]">{item.filename}</span>
-                    </span>
-                    <StatusPill tone={item.reason === 'updated' ? 'info' : item.reason === 'retired' ? 'danger' : 'warning'} size="sm">
-                      {reasonLabels[item.reason] || item.reason}
-                    </StatusPill>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+          <>
+            <label className="block text-xs text-[#67695d] dark:text-gray-400">
+              筛选
+              <input
+                value={filter}
+                onChange={(event) => setFilter(event.target.value)}
+                placeholder="标题、slug、文件名"
+                className={fieldClass}
+              />
+            </label>
+            {queueLoading ? (
+              <LoadingState className="my-3" compact label="正在重新读取 GitHub main" />
+            ) : null}
+            {queue && !pending.length ? (
+              <div className="mt-4">
+                <EmptyState
+                  title="没有待审批的调研"
+                  description="GitHub main 上的调研都已发布。若要撤回或重新发布某一篇，用下面的列表选中即可。"
+                />
+              </div>
+            ) : (
+              <ul className="mt-3 divide-y divide-[#eceee6] dark:divide-[#1b2430]">
+                {visiblePending.map((item) => {
+                  const active = item.sourcePath === sourcePath
+                  return (
+                    <li key={item.sourcePath}>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => { setSourcePath(item.sourcePath); setMessage('') }}
+                        className={`flex w-full items-center justify-between gap-3 px-1 py-3 text-left ${active ? 'text-[#15140f] dark:text-gray-100' : 'text-[#55574f] dark:text-gray-400'}`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{item.title || item.slug}</span>
+                          <span className="block truncate font-mono text-[12px] text-[#8b8d82]">{item.filename}</span>
+                        </span>
+                        <StatusPill tone={item.reason === 'updated' ? 'info' : item.reason === 'retired' ? 'danger' : 'warning'} size="sm">
+                          {reasonLabels[item.reason] || item.reason}
+                        </StatusPill>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </>
         )}
         {query && !visiblePending.length && visibleFiles.length ? (
           <label className="mt-4 block text-xs text-[#67695d] dark:text-gray-400">
@@ -217,9 +248,11 @@ export default function ResearchImportConsole({ embedded = false }) {
       ) : null}
 
       {!sourcePath ? (
-        <Section title="核对与发布">
-          <EmptyState title="先选一篇" description="待审批列表会在 push 之后自动出现。选中后可以直接发布或撤回。" />
-        </Section>
+        queueLoading ? null : (
+          <Section title="核对与发布">
+            <EmptyState title="先选一篇" description="待审批列表会在 push 之后自动出现。选中后可以直接发布或撤回。" />
+          </Section>
+        )
       ) : (
         <Section
           title="核对与发布"
@@ -232,47 +265,62 @@ export default function ResearchImportConsole({ embedded = false }) {
             ) : ready ? (
               <StatusPill tone="info" size="sm">尚未写入 D1</StatusPill>
             ) : (
-              <StatusPill tone="neutral" size="sm">读取中</StatusPill>
+              <span className="inline-flex items-center gap-1.5 text-xs text-[#67695d] dark:text-gray-400">
+                <LoadingSpinner size="sm" label="正在读取调研正文" />
+                读取中
+              </span>
             )
           }
         >
-          <dl className="grid gap-3 sm:grid-cols-2">
-            {[
-              ['源文件', sourcePath],
-              ['标题', snapshot?.entry?.title || selectedMeta?.title || selectedMeta?.slug || '读取中'],
-              ['SHA-256', snapshot?.sourceHash || '读取中'],
-              ['当前状态', ready ? (current ? `${labels[current.status]} · 版本 ${current.revision}` : '尚未写入 D1') : '读取中'],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-lg border border-[#eceee6] bg-[#fbfbf8] px-3 py-2.5 dark:border-[#243041] dark:bg-[#151c26]">
-                <dt className="text-[11px] tracking-wide text-[#8b8d82] dark:text-gray-500">{label}</dt>
-                <dd className="mb-0 mt-1 break-all font-mono text-[12.5px] leading-5 text-[#3f4039] dark:text-gray-200">{value}</dd>
-              </div>
-            ))}
-          </dl>
-          {unchanged ? (
-            <p className="mt-4 rounded-lg border border-[#e2e3da] px-3 py-2 text-sm text-[#67695d] dark:border-[#243041] dark:text-gray-400">
-              这篇已经按当前 GitHub 正文发布过。
-            </p>
-          ) : null}
-
-          {snapshot?.entry?.encrypted ? (
-            <p className="mt-4 rounded-lg border border-[#e2e3da] px-3 py-2 text-sm text-[#67695d] dark:border-[#243041] dark:text-gray-400">
-              加密调研：只发布密文，不在此展示正文。
-            </p>
-          ) : snapshot ? (
-            <div className="mt-4 space-y-3">
-              {(snapshot.entry.variants.length ? snapshot.entry.variants : [{ id: 'body', label: '正文', content: snapshot.entry.content }]).map((variant, index) => (
-                <CollapsibleSection
-                  key={variant.id}
-                  id={`research-review-variant-${variant.id}`}
-                  title={variant.label || variant.id}
-                  defaultOpen={index === 0}
-                >
-                  <pre className="max-h-96 overflow-auto whitespace-pre-wrap font-mono text-[13px] leading-6 text-[#3f4039] dark:text-gray-200">{variant.content}</pre>
-                </CollapsibleSection>
-              ))}
+          {!ready ? (
+            <div className="rounded-xl border border-[#eceee6] dark:border-[#243041]" aria-busy="true">
+              <LoadingState
+                label="正在读取调研正文"
+                detail={sourcePath}
+                size="lg"
+              />
             </div>
-          ) : null}
+          ) : (
+            <>
+              <dl className="grid gap-3 sm:grid-cols-2">
+                {[
+                  ['源文件', sourcePath],
+                  ['标题', snapshot?.entry?.title || selectedMeta?.title || selectedMeta?.slug || '—'],
+                  ['SHA-256', snapshot?.sourceHash || '—'],
+                  ['当前状态', current ? `${labels[current.status]} · 版本 ${current.revision}` : '尚未写入 D1'],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-lg border border-[#eceee6] bg-[#fbfbf8] px-3 py-2.5 dark:border-[#243041] dark:bg-[#151c26]">
+                    <dt className="text-[11px] tracking-wide text-[#8b8d82] dark:text-gray-500">{label}</dt>
+                    <dd className="mb-0 mt-1 break-all font-mono text-[12.5px] leading-5 text-[#3f4039] dark:text-gray-200">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {unchanged ? (
+                <p className="mt-4 rounded-lg border border-[#e2e3da] px-3 py-2 text-sm text-[#67695d] dark:border-[#243041] dark:text-gray-400">
+                  这篇已经按当前 GitHub 正文发布过。
+                </p>
+              ) : null}
+
+              {snapshot?.entry?.encrypted ? (
+                <p className="mt-4 rounded-lg border border-[#e2e3da] px-3 py-2 text-sm text-[#67695d] dark:border-[#243041] dark:text-gray-400">
+                  加密调研：只发布密文，不在此展示正文。
+                </p>
+              ) : snapshot ? (
+                <div className="mt-4 space-y-3">
+                  {(snapshot.entry.variants.length ? snapshot.entry.variants : [{ id: 'body', label: '正文', content: snapshot.entry.content }]).map((variant, index) => (
+                    <CollapsibleSection
+                      key={variant.id}
+                      id={`research-review-variant-${variant.id}`}
+                      title={variant.label || variant.id}
+                      defaultOpen={index === 0}
+                    >
+                      <pre className="max-h-96 overflow-auto whitespace-pre-wrap font-mono text-[13px] leading-6 text-[#3f4039] dark:text-gray-200">{variant.content}</pre>
+                    </CollapsibleSection>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {liveStatus === 'published' ? (

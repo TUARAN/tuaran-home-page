@@ -6,8 +6,11 @@ import SharePageButton from '../components/SharePageButton'
 import {
   CATEGORY_META,
   DATA_CAPABILITIES,
+  FOLK_STANCE_META,
+  SATOSHI_CLUSTER_NOTE,
   WHALE_WALLETS,
   attachLiveSnapshot,
+  folkHaystack,
   formatNative,
   formatPct,
   formatUsd,
@@ -31,6 +34,7 @@ const CHAIN_FILTERS = [
 ]
 
 const CATEGORIES = Object.keys(CATEGORY_META)
+const FOLK_PEOPLE = [...new Set(WHALE_WALLETS.map((wallet) => wallet.folk?.person).filter(Boolean))]
 
 function toneClass(value) {
   if (value == null || Number.isNaN(value) || value === 0) return 'text-[#51514a] dark:text-gray-400'
@@ -45,6 +49,7 @@ export default function WhaleWalletsClient() {
   const [chainFilter, setChainFilter] = useState('all')
   const [sortBy, setSortBy] = useState('usd')
   const [activeCategories, setActiveCategories] = useState([])
+  const [folkPerson, setFolkPerson] = useState('')
   const [openId, setOpenId] = useState(null)
   const [compareMode, setCompareMode] = useState(false)
   const [compareIds, setCompareIds] = useState([])
@@ -58,6 +63,7 @@ export default function WhaleWalletsClient() {
     const chain = params.get('chain')
     const s = params.get('sort')
     const c = params.get('cats')
+    const person = params.get('person')
     const o = params.get('open')
     const m = params.get('mode')
     const cmp = params.get('compare')
@@ -65,6 +71,7 @@ export default function WhaleWalletsClient() {
     if (chain && CHAIN_FILTERS.some((item) => item.id === chain)) setChainFilter(chain)
     if (s && SORT_OPTIONS.some((item) => item.id === s)) setSortBy(s)
     if (c) setActiveCategories(c.split(',').filter((cat) => CATEGORIES.includes(cat)))
+    if (person && FOLK_PEOPLE.includes(person)) setFolkPerson(person)
     if (o && WHALE_WALLETS.some((wallet) => wallet.id === o)) setOpenId(o)
     if (m === 'compare') setCompareMode(true)
     if (cmp) {
@@ -81,12 +88,13 @@ export default function WhaleWalletsClient() {
     if (chainFilter !== 'all') params.set('chain', chainFilter)
     if (sortBy !== 'usd') params.set('sort', sortBy)
     if (activeCategories.length) params.set('cats', activeCategories.join(','))
+    if (folkPerson) params.set('person', folkPerson)
     if (compareMode) params.set('mode', 'compare')
     if (compareMode && compareIds.length) params.set('compare', compareIds.join(','))
     if (!compareMode && openId) params.set('open', openId)
     const qs = params.toString()
     window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
-  }, [urlReady, query, chainFilter, sortBy, activeCategories, openId, compareMode, compareIds])
+  }, [urlReady, query, chainFilter, sortBy, activeCategories, folkPerson, openId, compareMode, compareIds])
 
   useEffect(() => {
     let cancelled = false
@@ -125,13 +133,14 @@ export default function WhaleWalletsClient() {
     return rows.filter((row) => {
       if (chainFilter !== 'all' && row.chain !== chainFilter) return false
       if (activeCategories.length && !activeCategories.includes(row.category)) return false
+      if (folkPerson && row.folk?.person !== folkPerson) return false
       if (q) {
-        const hay = `${row.nameZh} ${row.nameEn} ${row.address} ${row.note}`.toLowerCase()
+        const hay = `${row.nameZh} ${row.nameEn} ${row.address} ${row.note} ${folkHaystack(row)}`.toLowerCase()
         if (!hay.includes(q)) return false
       }
       return true
     })
-  }, [rows, query, chainFilter, activeCategories])
+  }, [rows, query, chainFilter, activeCategories, folkPerson])
 
   const sortAccessor = SORT_OPTIONS.find((item) => item.id === sortBy).accessor
   const sorted = useMemo(
@@ -149,7 +158,7 @@ export default function WhaleWalletsClient() {
   const focusIds = compareMode ? compareIds : openId ? [openId] : []
   const openWallet = !compareMode && openId ? filtered.find((row) => row.id === openId) : null
   const compareWallets = compareIds.map((id) => rows.find((row) => row.id === id)).filter(Boolean)
-  const filtersActive = query || chainFilter !== 'all' || activeCategories.length || sortBy !== 'usd'
+  const filtersActive = query || chainFilter !== 'all' || activeCategories.length || folkPerson || sortBy !== 'usd'
 
   const toggleCategory = useCallback((cat) => {
     setActiveCategories((prev) => (prev.includes(cat) ? prev.filter((item) => item !== cat) : [...prev, cat]))
@@ -178,17 +187,17 @@ export default function WhaleWalletsClient() {
             公开巨鲸钱包
           </h1>
           <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
-            {WHALE_WALLETS.length} 个带公开标签的 Bitcoin / Ethereum 大额地址。当前余额来自{' '}
+            {WHALE_WALLETS.length} 个 Bitcoin / Ethereum 大额地址，每条附带浏览器标签和公众看法：中本聪、赵长鹏、罗斯·乌布利希特、钱志敏、Vitalik 等。当前余额来自{' '}
             <a href="https://mempool.space/docs/api/rest" target="_blank" rel="noreferrer" className="underline decoration-[#a9ab96] underline-offset-2 hover:text-[#15140f] dark:hover:text-gray-200">
               mempool.space
             </a>
-            {' '}与公共 ETH RPC；近 24 小时变动由最近一页交易估算。完整每日余额历史没有稳定的免费批量接口。
-            <strong className="ml-1 text-[#a05a3c] dark:text-[#9e937a]">不构成投资建议。标签不是所有权证明。</strong>
+            {' '}与公共 ETH RPC；近 24 小时变动由最近一页交易估算。
+            <strong className="ml-1 text-[#a05a3c] dark:text-[#9e937a]">不构成投资建议。公开标签和传闻都不是密钥控制权证明。</strong>
           </p>
         </div>
         <SharePageButton
-          title="公开巨鲸钱包：当前余额与 24 小时变动"
-          text="带公开标签的 BTC / ETH 大额地址，链上现读余额，近期交易估算 24 小时变动。"
+          title="公开巨鲸钱包：余额、24 小时变动与公众归因"
+          text="BTC / ETH 大额地址的链上余额，以及中本聪、赵长鹏、Vitalik 等公众看法标记。"
           url={SHARE_URL}
           size="md"
         />
@@ -233,7 +242,7 @@ export default function WhaleWalletsClient() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="搜索名称 / 地址 / 备注"
+            placeholder="搜索名称 / 地址 / 中本聪 / 赵长鹏"
             className="h-8 w-full min-w-[180px] flex-1 rounded-md border border-[#c6cab8] bg-white px-2.5 text-[13px] outline-none focus:border-[#767869] dark:border-gray-700 dark:bg-gray-950 sm:max-w-xs"
           />
           {CATEGORIES.map((cat) => (
@@ -248,6 +257,20 @@ export default function WhaleWalletsClient() {
               }`}
             >
               {CATEGORY_META[cat].label}
+            </button>
+          ))}
+          {FOLK_PEOPLE.map((person) => (
+            <button
+              key={person}
+              type="button"
+              onClick={() => setFolkPerson((prev) => (prev === person ? '' : person))}
+              className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                folkPerson === person
+                  ? 'border-[#a05a3c] bg-[#a05a3c] text-white dark:border-[#9e937a] dark:bg-[#9e937a] dark:text-[#111]'
+                  : 'border-dashed border-[#c6cab8] text-[#585a4c] hover:bg-white dark:border-gray-700 dark:text-gray-400'
+              }`}
+            >
+              {person}
             </button>
           ))}
           {SORT_OPTIONS.map((option) => (
@@ -271,6 +294,7 @@ export default function WhaleWalletsClient() {
                 setQuery('')
                 setChainFilter('all')
                 setActiveCategories([])
+                setFolkPerson('')
                 setSortBy('usd')
               }}
               className="text-[11px] text-[#767869] underline underline-offset-2"
@@ -326,6 +350,7 @@ export default function WhaleWalletsClient() {
         <p>
           交易所冷钱包是客户托管，政府地址是扣押或追回资产，公司储备是发行商或基金会运营地址。同一主体通常拆成许多地址，这里按单地址展示，不等于实体总持仓。
         </p>
+        <p className="mt-2">{SATOSHI_CLUSTER_NOTE}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
             Bitcoin 余额与交易：
@@ -366,6 +391,21 @@ function PillGroup({ items, value, onChange }) {
         </button>
       ))}
     </div>
+  )
+}
+
+function FolkBadge({ wallet }) {
+  const folk = wallet?.folk
+  if (!folk?.label) return null
+  const stance = FOLK_STANCE_META[folk.stance] || FOLK_STANCE_META.rumor
+  return (
+    <span
+      className="rounded-full px-1.5 py-0.5 text-[10px] text-white"
+      style={{ backgroundColor: stance.color }}
+      title={folk.detail || folk.label}
+    >
+      {folk.label}
+    </span>
   )
 }
 
@@ -495,6 +535,7 @@ function ScatterChart({ wallets, focusIds, hoverId, onHover, onSelect }) {
             <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: CATEGORY_META[hovered.category].color }} />
             <strong className="text-[12px]">{hovered.nameZh}</strong>
           </div>
+          {hovered.folk?.label ? <p className="text-[11px] text-[#5c5d55] dark:text-gray-400">{hovered.folk.label}</p> : null}
           <p className="font-mono text-[10px] text-[#767869]">{shortAddress(hovered.address)}</p>
           <table className="mt-1 w-full tabular-nums">
             <tbody>
@@ -538,6 +579,7 @@ function RankingList({ wallets, sortBy, focusIds, hoverId, onHover, onSelect, co
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[13px] font-medium text-[#15140f] dark:text-gray-100">{wallet.nameZh}</span>
                 <span className="rounded-full bg-[#eceee6] px-1.5 py-0.5 text-[10px] text-[#5c5d55] dark:bg-gray-800 dark:text-gray-400">{CATEGORY_META[wallet.category].label}</span>
+                <FolkBadge wallet={wallet} />
                 <span className="font-mono text-[10px] text-[#767869]">{wallet.asset}</span>
                 {wallet.changeComplete === false ? <span className="text-[10px] text-[#a05a3c]">24h 不完整</span> : null}
                 {compareMode && isFocused ? <span className="text-[10px] text-[#3f6a3f]">已选</span> : null}
@@ -565,9 +607,21 @@ function DetailPanel({ wallet, onClose }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#767869]">{wallet.nameEn}</p>
           <h2 className="mt-1 text-[18px] font-semibold text-[#15140f] dark:text-gray-100">{wallet.nameZh}</h2>
           <p className="mt-1 break-all font-mono text-[11px] text-[#767869]">{wallet.address}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-[#eceee6] px-1.5 py-0.5 text-[10px] text-[#5c5d55] dark:bg-gray-800 dark:text-gray-400">{CATEGORY_META[wallet.category].label}</span>
+            <FolkBadge wallet={wallet} />
+          </div>
         </div>
         <button type="button" onClick={onClose} className="text-[12px] text-[#767869] underline">关闭</button>
       </div>
+      {wallet.folk?.detail ? (
+        <div className="mt-3 rounded-lg border border-[#eceee6] bg-[#f6f8f3]/80 px-3 py-2 dark:border-gray-800 dark:bg-gray-900/60">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#767869]">
+            公众看法 · {FOLK_STANCE_META[wallet.folk.stance]?.label || '传闻'}
+          </p>
+          <p className="mt-1 text-[13px] leading-6 text-[#333431] dark:text-gray-300">{wallet.folk.detail}</p>
+        </div>
+      ) : null}
       <p className="mt-2 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">{wallet.latestSignal}</p>
       <p className="mt-1 text-[12px] leading-6 text-[#767869]">{wallet.note}</p>
       <dl className="mt-4 grid gap-3 sm:grid-cols-4">
@@ -638,6 +692,7 @@ function CompareTable({ wallets, onRemove }) {
   }
   const rows = [
     { label: '类别', render: (wallet) => CATEGORY_META[wallet.category].label },
+    { label: '公众看法', render: (wallet) => wallet.folk?.label || '—' },
     { label: '链', render: (wallet) => wallet.asset },
     { label: '当前数量', render: (wallet) => formatNative(wallet.amount, wallet.asset) },
     { label: '折合美元', render: (wallet) => formatUsd(wallet.usd) },

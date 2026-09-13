@@ -4,9 +4,12 @@ import test from 'node:test'
 import {
   CATEGORY_META,
   DATA_CAPABILITIES,
+  FOLK_STANCE_META,
+  SATOSHI_CLUSTER_NOTE,
   WHALE_WALLETS,
   attachLiveSnapshot,
   dailyNetFromMempoolTxs,
+  folkHaystack,
   formatNative,
   formatUsd,
   isBitcoinAddress,
@@ -16,8 +19,8 @@ import {
   weiHexToEth,
 } from '../../lib/whaleWallets.js'
 
-test('catalog keeps 5–20 labeled wallets with unique addresses and sources', () => {
-  assert.ok(WHALE_WALLETS.length >= 5 && WHALE_WALLETS.length <= 20)
+test('catalog keeps 5–25 labeled wallets with unique addresses, sources and folk attribution', () => {
+  assert.ok(WHALE_WALLETS.length >= 5 && WHALE_WALLETS.length <= 25)
   const ids = WHALE_WALLETS.map((wallet) => wallet.id)
   const addresses = WHALE_WALLETS.map((wallet) => wallet.address)
   assert.equal(new Set(ids).size, ids.length)
@@ -27,9 +30,23 @@ test('catalog keeps 5–20 labeled wallets with unique addresses and sources', (
     assert.ok(CATEGORY_META[wallet.category], wallet.id)
     assert.ok(wallet.sources.length >= 1, wallet.id)
     assert.match(wallet.sources[0].href, /^https:\/\//)
+    assert.ok(wallet.folk?.label, wallet.id)
+    assert.ok(FOLK_STANCE_META[wallet.folk.stance], wallet.id)
+    assert.ok(wallet.folk.detail, wallet.id)
     if (wallet.chain === 'bitcoin') assert.equal(isBitcoinAddress(wallet.address), true, wallet.id)
     if (wallet.chain === 'ethereum') assert.equal(isEthereumAddress(wallet.address), true, wallet.id)
   }
+
+  const mtgox = WHALE_WALLETS.find((wallet) => wallet.id === 'mtgox-hack')
+  assert.equal(mtgox.folk.person, '中本聪')
+  assert.equal(mtgox.folk.stance, 'misread')
+  assert.match(folkHaystack(mtgox), /中本聪/)
+  const genesis = WHALE_WALLETS.find((wallet) => wallet.id === 'satoshi-genesis')
+  assert.equal(genesis.address, '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa')
+  assert.equal(genesis.folk.stance, 'named')
+  const early = WHALE_WALLETS.find((wallet) => wallet.id === 'early-12ib7')
+  assert.equal(early.folk.stance, 'rumor')
+  assert.match(SATOSHI_CLUSTER_NOTE, /Patoshi/)
 })
 
 test('public APIs can read current balance and estimate 24h flow, not a free daily series', () => {

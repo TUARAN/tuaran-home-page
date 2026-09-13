@@ -17,9 +17,9 @@ function InspirationCard({ inspiration, isPinned = false }) {
 
   return (
     <article className="h5-feed-row home-inspiration-item">
-      <header className="home-inspiration-meta hidden md:flex">
+      <header className={`home-inspiration-meta ${isPinned ? '' : 'hidden md:flex'}`}>
         {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
-        <time dateTime={inspiration.date}>{formattedDate}</time>
+        <time className={isPinned ? 'hidden md:inline' : undefined} dateTime={inspiration.date}>{formattedDate}</time>
       </header>
       <div className={`home-inspiration-body ${thumbnail ? 'has-thumbnail' : ''}`}>
         {thumbnail ? (

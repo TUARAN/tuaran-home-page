@@ -28,14 +28,15 @@ const SECTION_BADGE_CLASS = {
 }
 
 function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0 }) {
+  const hasStatusBadge = isPinned || item.isLatest
   const content = (
     <>
-      <div className="home-reading-meta hidden md:flex">
+      <div className={`home-reading-meta ${hasStatusBadge ? '' : 'hidden md:flex'}`}>
         {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
         {item.isLatest ? <span className="home-badge home-badge-latest"><T zh="最新" en="Latest" /></span> : null}
-        <span className={SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column}>{item.sectionLabel}</span>
-        {item.tagLabel ? <span className="home-badge home-badge-muted">{item.tagLabel}</span> : null}
-        {item.date ? <time className="home-item-date">{item.date}</time> : null}
+        <span className={`hidden md:inline-flex ${SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column}`}>{item.sectionLabel}</span>
+        {item.tagLabel ? <span className="home-badge home-badge-muted hidden md:inline-flex">{item.tagLabel}</span> : null}
+        {item.date ? <time className="home-item-date hidden md:inline">{item.date}</time> : null}
       </div>
       <p className="h5-feed-title mb-0 line-clamp-2 text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)] md:text-[20px] md:leading-7">{item.title}</p>
       {item.summary ? <p className="h5-feed-summary mb-0 mt-1 line-clamp-1 text-[13px] leading-5 text-[var(--site-muted)] md:mt-1.5 md:line-clamp-2 md:text-[15px] md:leading-6">{item.summary}</p> : null}

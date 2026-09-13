@@ -12,7 +12,7 @@ import { LoadingSpinner, LoadingState, Skeleton } from '../../../../components/l
 import { AdminButton, AdminPage, CollapsibleSection, EmptyState, Section, StatusPill } from '../../../components/ui'
 
 const labels = { draft: '草稿', published: '已发布', retired: '已撤回' }
-const reasonLabels = { new: '待审批', draft: '草稿', retired: '已撤回', updated: 'Git 有更新' }
+const reasonLabels = { new: '待审批', draft: '草稿', retired: '已撤回', updated: '正文已改' }
 const STATUS_TONE = { draft: 'warning', published: 'success', retired: 'danger' }
 const fieldClass =
   'mt-1 w-full rounded-lg border border-[#d9dbd0] bg-white px-3 py-2 text-sm text-[#33352f] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-200'
@@ -145,7 +145,7 @@ export default function ResearchImportConsole({ embedded = false }) {
       >
         {queue ? (
           <p className="mb-3 text-[13px] text-[#7a7c70] dark:text-gray-500">
-            {queue.repo} · 待处理 {pending.length} 篇 · 已发布 {queue.publishedCount} 篇
+            {queue.repo} · 待处理 {pending.length} 篇 · 已发布 {queue.publishedCount} 篇。已发布但 GitHub 正文与线上不一致时会回到待处理。
           </p>
         ) : null}
         {queueLoading && !queue ? (

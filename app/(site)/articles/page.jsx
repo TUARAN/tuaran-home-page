@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import ArticlesHeaderClient from './ArticlesHeaderClient'
 import ArticlesIndexClient from './ArticlesIndexClient'
 import { filtersFromParams, toUrlSearchParams } from '../../../lib/articlesDirectoryFilters'
@@ -33,11 +35,9 @@ export default async function ArticlesPage({ searchParams }) {
       <ArticlesHeaderClient
         discovery={(
           <nav aria-label="文章发现" className="shrink-0">
-            {/* Plain HTML endpoint: use document navigation rather than the RSC router. */}
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-            <a href="/articles/published" className="whitespace-nowrap text-[13px] text-[#958aa1] no-underline transition-colors hover:text-[#20172f] hover:underline hover:underline-offset-4 dark:text-gray-500 dark:hover:text-gray-200">
+            <Link href="/articles/published" className="whitespace-nowrap text-[13px] text-[#958aa1] no-underline transition-colors hover:text-[#20172f] hover:underline hover:underline-offset-4 dark:text-gray-500 dark:hover:text-gray-200">
               最新发布
-            </a>
+            </Link>
           </nav>
         )}
       />

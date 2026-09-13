@@ -105,7 +105,6 @@ const nextConfig = {
     return [
       { source: '/sitemap.xml', destination: '/discovery/sitemap' },
       { source: '/rss.xml', destination: '/discovery/rss' },
-      { source: '/articles/published', destination: '/discovery/articles' },
     ]
   },
   async redirects() {

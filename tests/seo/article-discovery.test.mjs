@@ -76,10 +76,16 @@ test('bad static artifact returns non-cacheable error instead of successful empt
 })
 
 test('directory has an unconditional server link and renders every published post', { skip: publicRoutesExcluded }, async () => {
-  const [directory, published, db] = await Promise.all([
-    read('app/(site)/articles/page.jsx'), read('lib/discoveryHtml.js'), read('lib/articlePosts.js'),
+  const [directory, archive, published, db] = await Promise.all([
+    read('app/(site)/articles/page.jsx'),
+    read('app/(site)/articles/published/page.jsx'),
+    read('lib/discoveryHtml.js'),
+    read('lib/articlePosts.js'),
   ])
-  assert.match(directory, /<a href="\/articles\/published"/)
+  assert.match(directory, /href="\/articles\/published"/)
+  assert.match(archive, /readRuntimeKnowledgeItems/)
+  assert.match(archive, /items\.map\(/)
+  assert.doesNotMatch(archive, /use client|useEffect|slice\(/)
   assert.match(published, /await listDiscoverablePosts\(\)/)
   assert.match(published, /posts\.map\(/)
   assert.doesNotMatch(published, /use client|useEffect|slice\(/)
@@ -137,9 +143,10 @@ export const listDiscoverablePosts = async () => ${JSON.stringify(posts)};`)
 
 test('stable public URLs share one Edge function and avoid ISR', { skip: publicRoutesExcluded }, async () => {
   const [config, dispatcher] = await Promise.all([read('next.config.js'), read('app/(site)/discovery/[format]/route.js')])
-  for (const [source, destination] of [['/sitemap.xml', '/discovery/sitemap'], ['/rss.xml', '/discovery/rss'], ['/articles/published', '/discovery/articles']]) {
+  for (const [source, destination] of [['/sitemap.xml', '/discovery/sitemap'], ['/rss.xml', '/discovery/rss']]) {
     assert.ok(config.includes(`source: '${source}', destination: '${destination}'`))
   }
+  assert.doesNotMatch(config, /source: '\/articles\/published'/)
   assert.match(dispatcher, /runtime = 'edge'/)
   assert.match(dispatcher, /dynamic = 'force-dynamic'/)
 })

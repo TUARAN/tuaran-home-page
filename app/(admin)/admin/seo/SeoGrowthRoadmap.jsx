@@ -32,16 +32,17 @@ export default function SeoGrowthRoadmap() {
           围绕搜索发现、AI 引用、连续阅读与回访，记录已确认问题、待验证项和改造验收标准。
           任务进度以归档文档为准，页面接入不计作 SEO 改造完成。
         </p>
-        <div className="space-y-4">
+        <div className="admin-document-sections -mx-4 mt-1 border-t border-[var(--admin-line-soft)] md:-mx-5">
           {sections.map((section, index) => (
             <CollapsibleSection
               key={section.id}
               id={section.id}
               title={section.title}
+              variant="nested"
               defaultOpen={index === lastSectionIndex}
             >
               <div
-                className="prose prose-sm max-w-none overflow-x-auto border-t border-[#e2e3da] px-4 py-3 dark:prose-invert dark:border-[#243040] [&_table]:min-w-[640px]"
+                className="prose prose-sm max-w-none overflow-x-auto dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0 [&_table]:min-w-[640px]"
                 dangerouslySetInnerHTML={{ __html: documentHtml(section.body) }}
                 data-roadmap-section={index + 1}
               />

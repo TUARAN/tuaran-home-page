@@ -48,3 +48,13 @@ test('collapsible section stays closed unless a matching hash targets it', () =>
   assert.match(collapsibleSource, /openFromSamePageLink/)
   assert.match(collapsibleSource, /展开/)
 })
+
+test('document subsections share one divider instead of stacked bordered cards', () => {
+  assert.match(pageSource, /variant="nested"/)
+  assert.match(pageSource, /admin-document-sections/)
+  assert.match(seoRoadmapSource, /variant="nested"/)
+  assert.match(collapsibleSource, /variant = 'card'/)
+  assert.match(collapsibleSource, /variant === 'nested'/)
+  assert.match(collapsibleSource, /border-b border-\[var\(--admin-line-soft\)\] last:border-b-0/)
+  assert.match(collapsibleSource, /admin-section__title m-0/)
+})

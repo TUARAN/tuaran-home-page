@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import StatusPill from './StatusPill'
 
-/** 可折叠分区卡。审计清单默认收起；带 id 时，对应锚点会自动展开。 */
+/** 可折叠分区卡。审计清单默认收起；带 id 时，对应锚点会自动展开。nested 用于卡片内目录，只用一行分隔，避免叠卡双线。 */
 export default function CollapsibleSection({
   id,
   title,
@@ -13,9 +13,12 @@ export default function CollapsibleSection({
   actions,
   children,
   defaultOpen = false,
+  variant = 'card',
   className = '',
 }) {
   const detailsRef = useRef(null)
+  const nested = variant === 'nested'
+  const Heading = nested ? 'h3' : 'h2'
 
   useEffect(() => {
     if (defaultOpen && detailsRef.current) detailsRef.current.open = true
@@ -53,14 +56,35 @@ export default function CollapsibleSection({
     <details
       ref={detailsRef}
       id={id}
-      className={`admin-section group/collapsible-section scroll-mt-24 rounded-xl border ${className}`}
+      className={[
+        'group/collapsible-section scroll-mt-24',
+        nested
+          ? 'border-b border-[var(--admin-line-soft)] last:border-b-0'
+          : 'admin-section rounded-xl border',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
-      <summary className="admin-section__header flex cursor-pointer list-none items-start justify-between gap-3 px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 md:px-5 group-open/collapsible-section:border-b [&::-webkit-details-marker]:hidden">
+      <summary
+        className={[
+          'flex cursor-pointer list-none justify-between gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 group-open/collapsible-section:border-b group-open/collapsible-section:border-[var(--admin-line-soft)] [&::-webkit-details-marker]:hidden',
+          nested
+            ? 'items-center px-4 py-2.5 md:px-5'
+            : 'admin-section__header items-start px-4 py-3.5 md:px-5',
+        ].join(' ')}
+      >
         <div className="min-w-0">
           {title ? (
-            <h2 className="admin-section__title font-serif text-[1.05rem] font-semibold">
+            <Heading
+              className={
+                nested
+                  ? 'admin-section__title m-0 text-sm font-semibold'
+                  : 'admin-section__title m-0 font-serif text-[1.05rem] font-semibold'
+              }
+            >
               {title}
-            </h2>
+            </Heading>
           ) : null}
           {description ? (
             <p className="admin-section__description mb-0 mt-0.5 text-[12.5px] leading-6">
@@ -76,7 +100,7 @@ export default function CollapsibleSection({
           </span>
         </div>
       </summary>
-      <div className="px-4 py-4 md:px-5">{children}</div>
+      <div className={nested ? 'px-4 pb-3 pt-1 md:px-5' : 'px-4 py-4 md:px-5'}>{children}</div>
     </details>
   )
 }

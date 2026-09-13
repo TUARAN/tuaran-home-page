@@ -288,6 +288,7 @@
 .admin-page__title,
 .admin-section__title {
   color: var(--admin-ink);
+  margin: 0;
 }
 
 .admin-page__description,

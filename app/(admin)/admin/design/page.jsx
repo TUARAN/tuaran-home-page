@@ -38,23 +38,41 @@ function renderDocument(markdown) {
 function DocumentBody({ document }) {
   const [intro, ...sections] = document.markdown.replace(/^# .+\n/, '').split(/^## /m)
   const lastIndex = sections.length - 1
+  const introMarkdown = intro.trim()
   return (
-    <div className="admin-document prose prose-sm max-w-none dark:prose-invert">
-      <div dangerouslySetInnerHTML={{ __html: renderDocument(intro) }} />
-      {sections.map((section, index) => {
-        const split = section.indexOf('\n')
-        const title = section.slice(0, split).trim()
-        return (
-          <CollapsibleSection
-            key={title}
-            id={`${document.id}-section-${index + 1}`}
-            title={title}
-            defaultOpen={index === lastIndex}
-          >
-            <div dangerouslySetInnerHTML={{ __html: renderDocument(section.slice(split + 1)) }} />
-          </CollapsibleSection>
-        )
-      })}
+    <div className="admin-document">
+      {introMarkdown ? (
+        <div
+          className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"
+          dangerouslySetInnerHTML={{ __html: renderDocument(introMarkdown) }}
+        />
+      ) : null}
+      {sections.length ? (
+        <div
+          className={`admin-document-sections -mx-4 -mb-4 md:-mx-5 ${
+            introMarkdown ? 'mt-3 border-t border-[var(--admin-line-soft)]' : '-mt-4'
+          }`}
+        >
+          {sections.map((section, index) => {
+            const split = section.indexOf('\n')
+            const title = section.slice(0, split).trim()
+            return (
+              <CollapsibleSection
+                key={title}
+                id={`${document.id}-section-${index + 1}`}
+                title={title}
+                variant="nested"
+                defaultOpen={index === lastIndex}
+              >
+                <div
+                  className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"
+                  dangerouslySetInnerHTML={{ __html: renderDocument(section.slice(split + 1)) }}
+                />
+              </CollapsibleSection>
+            )
+          })}
+        </div>
+      ) : null}
     </div>
   )
 }

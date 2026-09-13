@@ -37,7 +37,6 @@ function renderDocument(markdown) {
 
 function DocumentBody({ document }) {
   const [intro, ...sections] = document.markdown.replace(/^# .+\n/, '').split(/^## /m)
-  const lastIndex = sections.length - 1
   const introMarkdown = intro.trim()
   return (
     <div className="admin-document">
@@ -62,7 +61,6 @@ function DocumentBody({ document }) {
                 id={`${document.id}-section-${index + 1}`}
                 title={title}
                 variant="nested"
-                defaultOpen={index === lastIndex}
               >
                 <div
                   className="prose prose-sm max-w-none dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0"

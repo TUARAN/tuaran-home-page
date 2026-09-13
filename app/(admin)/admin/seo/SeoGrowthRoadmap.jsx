@@ -9,7 +9,6 @@ const sections = roadmap.split(/^## /m).slice(1).map((section, index) => {
 })
 const tasks = [...roadmap.matchAll(/^- \[([ xX])\] \*\*([ABC]\d+)｜/gm)]
 const completed = tasks.filter((task) => task[1].toLowerCase() === 'x').length
-const lastSectionIndex = sections.length - 1
 
 function documentHtml(markdown) {
   const withRepositoryReferences = markdown.replace(
@@ -39,7 +38,6 @@ export default function SeoGrowthRoadmap() {
               id={section.id}
               title={section.title}
               variant="nested"
-              defaultOpen={index === lastSectionIndex}
             >
               <div
                 className="prose prose-sm max-w-none overflow-x-auto dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0 [&_table]:min-w-[640px]"

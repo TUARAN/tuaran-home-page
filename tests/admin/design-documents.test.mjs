@@ -58,3 +58,11 @@ test('document subsections share one divider instead of stacked bordered cards',
   assert.match(collapsibleSource, /border-b border-\[var\(--admin-line-soft\)\] last:border-b-0/)
   assert.match(collapsibleSource, /admin-section__title m-0/)
 })
+
+test('nested document subsections stay closed and do not inherit the outer open label', () => {
+  assert.doesNotMatch(pageSource, /variant="nested"[\s\S]{0,160}defaultOpen/)
+  assert.doesNotMatch(seoRoadmapSource, /variant="nested"[\s\S]{0,160}defaultOpen/)
+  assert.match(collapsibleSource, /admin-collapsible__closed/)
+  assert.match(collapsibleSource, /admin-collapsible__open/)
+  assert.doesNotMatch(collapsibleSource, /group-open\/collapsible-section/)
+})

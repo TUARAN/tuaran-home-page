@@ -308,6 +308,23 @@
   box-shadow: none;
 }
 
+/* 只看当前 details 的 open，避免嵌套折叠把外层“收起”传给内层。 */
+.admin-collapsible > summary .admin-collapsible__open {
+  display: none;
+}
+
+.admin-collapsible[open] > summary .admin-collapsible__closed {
+  display: none;
+}
+
+.admin-collapsible[open] > summary .admin-collapsible__open {
+  display: inline;
+}
+
+.admin-collapsible[open] > summary {
+  border-bottom: 1px solid var(--admin-line-soft);
+}
+
 .admin-shell :where(input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea) {
   border-color: var(--admin-line);
   background-color: var(--admin-surface);

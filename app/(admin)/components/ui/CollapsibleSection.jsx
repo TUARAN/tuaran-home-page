@@ -57,7 +57,7 @@ export default function CollapsibleSection({
       ref={detailsRef}
       id={id}
       className={[
-        'group/collapsible-section scroll-mt-24',
+        'admin-collapsible scroll-mt-24',
         nested
           ? 'border-b border-[var(--admin-line-soft)] last:border-b-0'
           : 'admin-section rounded-xl border',
@@ -68,7 +68,7 @@ export default function CollapsibleSection({
     >
       <summary
         className={[
-          'flex cursor-pointer list-none justify-between gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 group-open/collapsible-section:border-b group-open/collapsible-section:border-[var(--admin-line-soft)] [&::-webkit-details-marker]:hidden',
+          'flex cursor-pointer list-none justify-between gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden',
           nested
             ? 'items-center px-4 py-2.5 md:px-5'
             : 'admin-section__header items-start px-4 py-3.5 md:px-5',
@@ -95,8 +95,8 @@ export default function CollapsibleSection({
         <div className="flex shrink-0 items-center gap-2">
           {actions ? actions : badge ? <StatusPill tone={badgeTone} size="sm">{badge}</StatusPill> : null}
           <span className="text-xs font-medium text-[var(--admin-muted)]">
-            <span className="group-open/collapsible-section:hidden">展开</span>
-            <span className="hidden group-open/collapsible-section:inline">收起</span>
+            <span className="admin-collapsible__closed">展开</span>
+            <span className="admin-collapsible__open">收起</span>
           </span>
         </div>
       </summary>

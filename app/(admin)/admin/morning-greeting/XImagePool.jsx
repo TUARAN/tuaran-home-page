@@ -46,7 +46,7 @@ export default function XImagePool() {
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="m-0 text-[11px] leading-6 text-[#77796e] dark:text-gray-400">固定模板：R2 / tuaran-media / images/x-posts/pool/ · 记录：D1。列表只显示占位，点查看原图才加载原图。</p>
+        <p className="m-0 text-[11px] leading-6 text-[#77796e] dark:text-gray-400">固定模板：R2 / tuaran-media / images/x-posts/pool/ · 记录：D1。列表懒加载配图预览，点查看原图打开大图。</p>
         <AdminButton size="sm" onClick={() => setRevision((value) => value + 1)} disabled={busy}>{busy ? '读取中…' : '刷新素材'}</AdminButton>
       </div>
       {data?.config && !data.config.storageConfigured ? <p role="alert" className="text-xs text-amber-700 dark:text-amber-300">当前环境缺少 MEDIA 绑定；请同时核对公开站发布环境的绑定。固定模板不可用时会停止该次图文发布；随机选中的纯文本任务不依赖此绑定。</p> : null}
@@ -69,7 +69,7 @@ export default function XImagePool() {
               item={{
                 id: item.id,
                 label: item.label || `${item.date} · ${item.slot}`,
-                thumb: '',
+                thumb: item.imageUrl,
                 original: item.imageUrl,
                 placeholder: TYPES.find(([value]) => value === item.contentType)?.[1] || '配图',
                 text: item.text,

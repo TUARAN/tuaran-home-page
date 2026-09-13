@@ -356,6 +356,8 @@ test('配图素材用 tab 合并表情包、资源池和历史库，列表只加
   assert.match(thumbsSource, /查看原图/)
   assert.match(thumbsSource, /item\.thumb/)
   assert.match(poolSource, /查看原图/)
+  assert.match(poolSource, /thumb: item\.imageUrl/)
+  assert.doesNotMatch(poolSource, /thumb: ''/)
   assert.doesNotMatch(poolSource, /<img src=\{item\.imageUrl/)
   assert.match(poolSource, /固定模板池/)
   assert.match(poolSource, /选图与发布记录/)

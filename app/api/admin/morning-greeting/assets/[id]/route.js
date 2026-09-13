@@ -21,7 +21,7 @@ export async function GET(req, { params }) {
     const download = new URL(req.url).searchParams.get('download') === '1'
     return new Response(object.body, { headers: {
       'Content-Type': row.mime_type,
-      'Cache-Control': 'private, no-store',
+      'Cache-Control': download ? 'private, no-store' : 'private, max-age=86400',
       'X-Content-Type-Options': 'nosniff',
       ...(download ? { 'Content-Disposition': `attachment; filename="x-post.${row.mime_type === 'image/png' ? 'png' : 'jpg'}"` } : {}),
     } })

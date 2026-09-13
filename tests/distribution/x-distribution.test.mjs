@@ -622,7 +622,7 @@ test('owner can list, preview and download the same R2 pool bytes; disabled asse
     const image = await original(new Request(url), params)
     assert.equal(image.status, 200)
     assert.equal(image.headers.get('Content-Type'), 'image/png')
-    assert.equal(image.headers.get('Cache-Control'), 'private, no-store')
+    assert.equal(image.headers.get('Cache-Control'), download ? 'private, no-store' : 'private, max-age=86400')
     assert.equal(image.headers.get('Content-Disposition'), download ? 'attachment; filename="x-post.png"' : null)
     assert.deepEqual(Buffer.from(await image.arrayBuffer()), Buffer.from(PNG, 'base64'))
   }

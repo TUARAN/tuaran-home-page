@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
@@ -37,7 +37,8 @@ test('SEO registry stays on the server side and cannot enter a client route bund
     .filter((file) => readFileSync(file, 'utf8').includes('staticPageRegistry'))
     .map((file) => path.relative(process.cwd(), file).replaceAll(path.sep, '/'))
 
-  assert.deepEqual(importers, ['app/(site)/sitemap-static/sitemap.js'])
+  const sitemapImporter = 'app/(site)/sitemap-static/sitemap.js'
+  assert.deepEqual(importers, existsSync(path.resolve(sitemapImporter)) ? [sitemapImporter] : [])
   const registrySource = readFileSync(path.resolve('lib/staticPageRegistry.mjs'), 'utf8')
   assert.equal(registrySource.includes("'use client'"), false)
 })

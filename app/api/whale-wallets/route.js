@@ -1,12 +1,12 @@
 import {
   DEFAULT_CHANGE_WINDOW_SEC,
-  WHALE_WALLETS,
+  WHALE_WALLET_LIVE_TARGETS,
   dailyNetFromMempoolTxs,
   netFlowFromMempoolTxs,
   parseMempoolAddress,
   weiHexToEth,
   whaleAsset,
-} from '../../../lib/whaleWallets'
+} from '../../../lib/whaleWalletLive'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -158,8 +158,8 @@ async function fetchEthereumBalances(wallets) {
 
 async function buildPayload() {
   const nowSec = Math.floor(Date.now() / 1000)
-  const bitcoinWallets = WHALE_WALLETS.filter((wallet) => wallet.chain === 'bitcoin')
-  const ethereumWallets = WHALE_WALLETS.filter((wallet) => wallet.chain === 'ethereum')
+  const bitcoinWallets = WHALE_WALLET_LIVE_TARGETS.filter((wallet) => wallet.chain === 'bitcoin')
+  const ethereumWallets = WHALE_WALLET_LIVE_TARGETS.filter((wallet) => wallet.chain === 'ethereum')
 
   const [priceResult, bitcoinRows, ethereumOutcome] = await Promise.all([
     fetchPrices().catch((error) => ({
@@ -201,7 +201,7 @@ async function buildPayload() {
     priceSource: priceResult.priceSource,
     priceError: priceResult.priceError || '',
     ethereumError,
-    wallets: WHALE_WALLETS.map((wallet) => ({
+    wallets: WHALE_WALLET_LIVE_TARGETS.map((wallet) => ({
       id: wallet.id,
       asset: whaleAsset(wallet),
       ...(liveById[wallet.id] || { error: 'missing' }),

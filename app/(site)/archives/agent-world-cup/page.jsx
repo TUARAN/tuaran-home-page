@@ -1,8 +1,6 @@
 import AgentWorldCupClient from '../../agent-world-cup/AgentWorldCupClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const dynamic = 'force-static'
 
 export const metadata = {
   title: 'Agent 世界杯 2026 · 活动存档',

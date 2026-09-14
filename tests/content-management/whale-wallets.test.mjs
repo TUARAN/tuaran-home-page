@@ -1,12 +1,15 @@
+import { readFile } from 'node:fs/promises'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
   CATEGORY_META,
+  CHAIN_META,
   DATA_CAPABILITIES,
   FOLK_STANCE_META,
   SATOSHI_CLUSTER_NOTE,
   WHALE_WALLETS,
+  WHALE_WALLET_LIVE_TARGETS,
   attachLiveSnapshot,
   dailyNetFromMempoolTxs,
   folkHaystack,
@@ -17,6 +20,7 @@ import {
   netFlowFromMempoolTxs,
   parseMempoolAddress,
   weiHexToEth,
+  whaleAsset,
 } from '../../lib/whaleWallets.js'
 
 test('catalog keeps 5–25 labeled wallets with unique addresses, sources and folk attribution', () => {
@@ -47,6 +51,20 @@ test('catalog keeps 5–25 labeled wallets with unique addresses, sources and fo
   const early = WHALE_WALLETS.find((wallet) => wallet.id === 'early-12ib7')
   assert.equal(early.folk.stance, 'rumor')
   assert.match(SATOSHI_CLUSTER_NOTE, /Patoshi/)
+})
+
+test('Edge live targets stay aligned with the public catalog without importing notes', async () => {
+  assert.deepEqual(
+    WHALE_WALLET_LIVE_TARGETS,
+    WHALE_WALLETS.map(({ id, chain, address }) => ({ id, chain, address })),
+  )
+  for (const wallet of WHALE_WALLETS) {
+    assert.equal(whaleAsset(wallet), CHAIN_META[wallet.chain].asset, wallet.id)
+  }
+
+  const routeSource = await readFile(new URL('../../app/api/whale-wallets/route.js', import.meta.url), 'utf8')
+  assert.match(routeSource, /from '\.\.\/\.\.\/\.\.\/lib\/whaleWalletLive'/)
+  assert.doesNotMatch(routeSource, /whaleWallets['"]/)
 })
 
 test('public APIs can read current balance and estimate 24h flow, not a free daily series', () => {

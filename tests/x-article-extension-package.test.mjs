@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
+import { STATIC_PAGE_REGISTRY } from '../lib/staticPageRegistry.mjs'
+
 const extensionRoot = new URL('../tools/x-article-autopublisher-extension/', import.meta.url)
 
 async function read(name) {
@@ -98,15 +100,15 @@ test('插件已接入浏览器扩展集合、工具库和独立下载介绍页',
   const toolItems = await readFile(new URL('../lib/toolItems.js', import.meta.url), 'utf8')
   const catalog = await readFile(new URL('../lib/resourceCatalog.js', import.meta.url), 'utf8')
   const registry = await readFile(new URL('../lib/contentRegistry.js', import.meta.url), 'utf8')
-  const sitemap = await readFile(new URL('../app/(site)/sitemap-static/sitemap.js', import.meta.url), 'utf8')
   const resourcePage = await readFile(
     new URL('../app/(site)/resources/x-article-autopublisher-extension/page.jsx', import.meta.url),
     'utf8',
   )
 
-  for (const source of [workItems, toolItems, catalog, registry, sitemap]) {
+  for (const source of [workItems, toolItems, catalog, registry]) {
     assert.match(source, /x-article-autopublisher-extension/)
   }
+  assert.ok(STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/resources/x-article-autopublisher-extension' && entry.sitemap))
   assert.match(catalog, new RegExp(`x-article-autopublisher-extension-v${manifest.version.replaceAll('.', '\\.')}\\.zip`))
   assert.ok(resourcePage.includes(`const VERSION = '${manifest.version}'`))
   assert.match(resourcePage, /领取密钥有什么用/)

@@ -3,13 +3,13 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import { SECONDARY_SITES } from '../lib/secondarySites.js'
+import { STATIC_PAGE_REGISTRY } from '../lib/staticPageRegistry.mjs'
 import { TOOL_ITEMS } from '../lib/toolItems.js'
 
 const root = new URL('../', import.meta.url)
-const [worksSource, sitesSource, sitemapSource] = await Promise.all([
+const [worksSource, sitesSource] = await Promise.all([
   readFile(new URL('app/(site)/works/page.jsx', root), 'utf8'),
   readFile(new URL('app/(site)/sites/page.jsx', root), 'utf8'),
-  readFile(new URL('app/(site)/sitemap-static/sitemap.js', root), 'utf8'),
 ])
 
 test('portfolio distinguishes independent products, built-in tools, and works', () => {
@@ -31,5 +31,5 @@ test('every public subsite and every internal tool can enter the unified portfol
 
 test('legacy sites directory redirects to works and is absent from the sitemap', () => {
   assert.match(sitesSource, /permanentRedirect\('\/works'\)/)
-  assert.doesNotMatch(sitemapSource, /['"]\/sites['"]/)
+  assert.ok(!STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/sites' && entry.sitemap))
 })

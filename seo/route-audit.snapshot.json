@@ -1,0 +1,3912 @@
+{
+  "schemaVersion": 1,
+  "summary": {
+    "routes": 178,
+    "redirects": 13,
+    "private": 52,
+    "registeredStatic": 83,
+    "indexable": 93,
+    "canonical": 109,
+    "openGraph": 49,
+    "jsonLd": 29,
+    "errors": 0,
+    "warnings": 122
+  },
+  "routes": [
+    {
+      "path": "/",
+      "file": "app/(site)/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/a-share-research",
+      "file": "app/(site)/a-share-research/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/a-share-research"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/about",
+      "file": "app/(site)/about/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/about"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/account",
+      "file": "app/(site)/account/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/account"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin",
+      "file": "app/(admin)/admin/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/a-share-research",
+      "file": "app/(admin)/admin/a-share-research/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/access",
+      "file": "app/(admin)/admin/access/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/access/grants",
+      "file": "app/(admin)/admin/access/grants/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/archives",
+      "file": "app/(admin)/admin/archives/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/article-distribution",
+      "file": "app/(admin)/admin/article-distribution/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/articles",
+      "file": "app/(admin)/admin/articles/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/articles/[id]/edit",
+      "file": "app/(admin)/admin/articles/[id]/edit/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/articles/new",
+      "file": "app/(admin)/admin/articles/new/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/articles/research-import",
+      "file": "app/(admin)/admin/articles/research-import/page.jsx",
+      "kind": "redirect",
+      "redirect": "/admin/articles?panel=import",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/automation",
+      "file": "app/(admin)/admin/automation/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/blogger-eye",
+      "file": "app/(admin)/admin/blogger-eye/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/cloudflare-personal-site-map",
+      "file": "app/(admin)/admin/cloudflare-personal-site-map/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/content",
+      "file": "app/(admin)/admin/content/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/content-taxonomy",
+      "file": "app/(admin)/admin/content-taxonomy/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/content-weekly",
+      "file": "app/(admin)/admin/content-weekly/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/context-memory",
+      "file": "app/(admin)/admin/context-memory/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/crypto-research",
+      "file": "app/(admin)/admin/crypto-research/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/db",
+      "file": "app/(admin)/admin/db/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/deepseek-tasks",
+      "file": "app/(admin)/admin/deepseek-tasks/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/design",
+      "file": "app/(admin)/admin/design/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/engagement-bots",
+      "file": "app/(admin)/admin/engagement-bots/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/information",
+      "file": "app/(admin)/admin/information/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/integrations",
+      "file": "app/(admin)/admin/integrations/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/morning-greeting",
+      "file": "app/(admin)/admin/morning-greeting/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/nav",
+      "file": "app/(admin)/admin/nav/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/nsfw",
+      "file": "app/(admin)/admin/nsfw/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/ops",
+      "file": "app/(admin)/admin/ops/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/personal-profile",
+      "file": "app/(admin)/admin/personal-profile/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/planning",
+      "file": "app/(admin)/admin/planning/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/points",
+      "file": "app/(admin)/admin/points/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/portfolio",
+      "file": "app/(admin)/admin/portfolio/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/private-data",
+      "file": "app/(admin)/admin/private-data/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/projects",
+      "file": "app/(admin)/admin/projects/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/quotes",
+      "file": "app/(admin)/admin/quotes/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/recommendations",
+      "file": "app/(admin)/admin/recommendations/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/research-style",
+      "file": "app/(admin)/admin/research-style/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/reverse-lab",
+      "file": "app/(admin)/admin/reverse-lab/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/rss-feeds",
+      "file": "app/(admin)/admin/rss-feeds/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/security-self-check",
+      "file": "app/(admin)/admin/security-self-check/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/seo",
+      "file": "app/(admin)/admin/seo/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/settings",
+      "file": "app/(admin)/admin/settings/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/share",
+      "file": "app/(admin)/admin/share/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/short-links",
+      "file": "app/(admin)/admin/short-links/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/site-dev",
+      "file": "app/(admin)/admin/site-dev/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/site-status",
+      "file": "app/(admin)/admin/site-status/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/soft-sticker",
+      "file": "app/(admin)/admin/soft-sticker/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/stock-analysis",
+      "file": "app/(admin)/admin/stock-analysis/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/stock-analysis/[slug]",
+      "file": "app/(admin)/admin/stock-analysis/[slug]/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/subsites",
+      "file": "app/(admin)/admin/subsites/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/system",
+      "file": "app/(admin)/admin/system/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/users",
+      "file": "app/(admin)/admin/users/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/wallpapers",
+      "file": "app/(admin)/admin/wallpapers/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/adsense-content-check",
+      "file": "app/(site)/adsense-content-check/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/agent-world-cup",
+      "file": "app/(site)/agent-world-cup/page.jsx",
+      "kind": "redirect",
+      "redirect": "/archives/agent-world-cup",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/ai-agent-communications-industry-report",
+      "file": "app/(site)/ai-agent-communications-industry-report/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/ai-projects",
+      "file": "app/(site)/ai-projects/page.jsx",
+      "kind": "redirect",
+      "redirect": "/works",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/ai-startup-survivor",
+      "file": "app/(site)/ai-startup-survivor/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/ai-token-usage-research",
+      "file": "app/(site)/ai-token-usage-research/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/archives/agent-world-cup",
+      "file": "app/(site)/archives/agent-world-cup/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/archives/agent-world-cup"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/articles",
+      "file": "app/(site)/articles/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/articles"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/articles/[slug]",
+      "file": "app/(site)/articles/[slug]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "${SITE_URL}${researchRedirect}"
+        ],
+        "noindex": "conditional-or-explicit",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/articles/creation-calendar",
+      "file": "app/(site)/articles/creation-calendar/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/articles/creation-calendar"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/articles/published",
+      "file": "app/(site)/articles/published/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/articles/published"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/articles/research/[category]/[slug]",
+      "file": "app/(site)/articles/research/[category]/[slug]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "conditional-or-explicit",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/articles/year-summary",
+      "file": "app/(site)/articles/year-summary/page.jsx",
+      "kind": "redirect",
+      "redirect": "/diary#year-summary",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/bookmark-nav",
+      "file": "app/(site)/bookmark-nav/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "https://bookmarks.2aran.com/"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/bookmarks",
+      "file": "app/(site)/bookmarks/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/bookmarks"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/bookmarks/ai-tools",
+      "file": "app/(site)/bookmarks/ai-tools/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/bookmarks/ai-tools"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/bookmarks/dev-resources",
+      "file": "app/(site)/bookmarks/dev-resources/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/bookmarks/dev-resources"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/bookmarks/llm-tutorials",
+      "file": "app/(site)/bookmarks/llm-tutorials/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/bookmarks/llm-tutorials"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/bookmarks/twitter",
+      "file": "app/(site)/bookmarks/twitter/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/bookmarks/twitter"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/bookmarks/youtube",
+      "file": "app/(site)/bookmarks/youtube/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/bookmarks/youtube"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/browser-extensions",
+      "file": "app/(site)/browser-extensions/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/browser-extensions"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/cancers-overview",
+      "file": "app/(site)/cancers-overview/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/changelog",
+      "file": "app/(site)/changelog/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/changelog"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/china-politics",
+      "file": "app/(site)/china-politics/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/china-politics"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/circles/[slug]",
+      "file": "app/(site)/circles/[slug]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/classical-masterpieces",
+      "file": "app/(site)/classical-masterpieces/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/classical-masterpieces"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/community",
+      "file": "app/(site)/community/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/community"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/context-memory",
+      "file": "app/(site)/context-memory/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/context-memory"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/crypto-research",
+      "file": "app/(site)/crypto-research/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/crypto-research"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/dad-stack",
+      "file": "app/(site)/dad-stack/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/dad-stack"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/desktop-apps",
+      "file": "app/(site)/desktop-apps/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/desktop-apps"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/diary",
+      "file": "app/(site)/diary/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/diary"
+        ],
+        "noindex": "conditional-or-explicit",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/donate",
+      "file": "app/(site)/donate/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/donate"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/eatwhat",
+      "file": "app/(site)/eatwhat/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/feed",
+      "file": "app/(site)/feed/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/feed"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "/feed"
+        ]
+      }
+    },
+    {
+      "path": "/feed/[id]",
+      "file": "app/(site)/feed/[id]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/frontend-weekly",
+      "file": "app/(site)/frontend-weekly/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/frontend-weekly"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/global-ai-governance",
+      "file": "app/(site)/global-ai-governance/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/guoqi-guodan",
+      "file": "app/(site)/guoqi-guodan/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/help",
+      "file": "app/(site)/help/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/help"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/history/ming-qing",
+      "file": "app/(site)/history/ming-qing/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/history/ming-qing"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/i/[id]",
+      "file": "app/(site)/i/[id]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "conditional-or-explicit",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/login",
+      "file": "app/(site)/login/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/login"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/long-compass",
+      "file": "app/(site)/long-compass/page.jsx",
+      "kind": "redirect",
+      "redirect": "https://admin.2aran.com/admin/soft-sticker?tab=long-compass",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/margin-account-313m-loss-investigation",
+      "file": "app/(site)/margin-account-313m-loss-investigation/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/mcp-center",
+      "file": "app/(site)/mcp-center/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/mcp-center"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/messages",
+      "file": "app/(site)/messages/page.jsx",
+      "kind": "redirect",
+      "redirect": "/community#message",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/network-access-guide",
+      "file": "app/(site)/network-access-guide/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/notifications",
+      "file": "app/(site)/notifications/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/notifications"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/oauth/authorize",
+      "file": "app/(site)/oauth/authorize/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/oauth/authorize/complete",
+      "file": "app/(site)/oauth/authorize/complete/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/onchain-blog",
+      "file": "app/(site)/onchain-blog/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/onchain-blog"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "/onchain-blog"
+        ]
+      }
+    },
+    {
+      "path": "/originals",
+      "file": "app/(site)/originals/page.jsx",
+      "kind": "redirect",
+      "redirect": "/articles",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/people/ai-pioneers",
+      "file": "app/(site)/people/ai-pioneers/page.jsx",
+      "kind": "redirect",
+      "redirect": "/articles/research/people/ai-pioneers",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/people/ai-pioneers"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/people/elon-musk",
+      "file": "app/(site)/people/elon-musk/page.jsx",
+      "kind": "redirect",
+      "redirect": "/articles/research/people/elon-musk",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/people/elon-musk"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/people/su-shi",
+      "file": "app/(site)/people/su-shi/page.jsx",
+      "kind": "redirect",
+      "redirect": "/articles/research/people/su-shi",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/people/su-shi"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/platform-framework-pairs",
+      "file": "app/(site)/platform-framework-pairs/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/project-manager",
+      "file": "app/(site)/project-manager/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/prompt-center",
+      "file": "app/(site)/prompt-center/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/prompt-center"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/public-opinion",
+      "file": "app/(site)/public-opinion/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/public-opinion"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/publications",
+      "file": "app/(site)/publications/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/quiz",
+      "file": "app/(site)/quiz/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/ranbi",
+      "file": "app/(site)/ranbi/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/ranbi"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/rank",
+      "file": "app/(rank)/rank/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "https://rank.2aran.com/"
+        ]
+      }
+    },
+    {
+      "path": "/reading",
+      "file": "app/(site)/reading/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/reading"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/register",
+      "file": "app/(site)/register/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/register"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/2aran-desktop",
+      "file": "app/(site)/resources/2aran-desktop/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/ai-learning-library",
+      "file": "app/(site)/resources/ai-learning-library/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/ai-music",
+      "file": "app/(site)/resources/ai-music/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/codex-learning-resource-map-yichen",
+      "file": "app/(site)/resources/codex-learning-resource-map-yichen/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/codex-model-switcher",
+      "file": "app/(site)/resources/codex-model-switcher/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/edge-agent-development",
+      "file": "app/(site)/resources/edge-agent-development/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/edge-agent-development"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/liang-wenfeng-investor-meeting",
+      "file": "app/(site)/resources/liang-wenfeng-investor-meeting/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/nano-banana-gallery",
+      "file": "app/(site)/resources/nano-banana-gallery/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/niu-lai-movie",
+      "file": "app/(site)/resources/niu-lai-movie/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/rss",
+      "file": "app/(site)/resources/rss/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/rss"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/shen-zhi-ding-nei",
+      "file": "app/(site)/resources/shen-zhi-ding-nei/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/shen-zhi-ding-nei"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "https://2aran.com/resources/shen-zhi-ding-nei"
+        ]
+      }
+    },
+    {
+      "path": "/resources/speedrun-investing",
+      "file": "app/(site)/resources/speedrun-investing/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/wallpapers",
+      "file": "app/(site)/resources/wallpapers/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/wallpapers"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "https://2aran.com/resources/wallpapers"
+        ]
+      }
+    },
+    {
+      "path": "/resources/wisdom-frontier",
+      "file": "app/(site)/resources/wisdom-frontier/page.jsx",
+      "kind": "redirect",
+      "redirect": "/wisdom-frontier",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/x-article-autopublisher-extension",
+      "file": "app/(site)/resources/x-article-autopublisher-extension/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/x-mutual-aid-circle",
+      "file": "app/(site)/resources/x-mutual-aid-circle/page.jsx",
+      "kind": "redirect",
+      "redirect": "/x-mutual-aid-circle",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/x-mutual-cleaner-extension",
+      "file": "app/(site)/resources/x-mutual-cleaner-extension/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/x-tweet-to-pdf-extension",
+      "file": "app/(site)/resources/x-tweet-to-pdf-extension/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/rich-pages",
+      "file": "app/(site)/rich-pages/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/rich-pages"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/ru-shi-dao",
+      "file": "app/(site)/ru-shi-dao/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/ru-shi-dao"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/services",
+      "file": "app/(site)/services/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/services"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/share/[slug]",
+      "file": "app/(site)/share/[slug]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/sites",
+      "file": "app/(site)/sites/page.jsx",
+      "kind": "redirect",
+      "redirect": "/works",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/skill-center",
+      "file": "app/(site)/skill-center/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/skill-center"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/skill-center/[skillId]",
+      "file": "app/(site)/skill-center/[skillId]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/skill-center/${skill.id}"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/skill-market-research",
+      "file": "app/(site)/skill-market-research/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/spacex",
+      "file": "app/(site)/spacex/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/spacex"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "/spacex"
+        ]
+      }
+    },
+    {
+      "path": "/sun-moon-motion",
+      "file": "app/(site)/sun-moon-motion/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tang-ping-map",
+      "file": "app/(site)/tang-ping-map/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools",
+      "file": "app/(site)/tools/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/auto-commit",
+      "file": "app/(site)/tools/auto-commit/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/auto-commit"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/code-miner",
+      "file": "app/(site)/tools/code-miner/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/code-miner"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/digital-human",
+      "file": "app/(site)/tools/digital-human/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/digital-human"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/github-follow",
+      "file": "app/(site)/tools/github-follow/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/github-follow"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/html-to-pdf",
+      "file": "app/(site)/tools/html-to-pdf/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/html-to-pdf"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/image-hosting",
+      "file": "app/(site)/tools/image-hosting/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/image-hosting"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/multi-ip",
+      "file": "app/(site)/tools/multi-ip/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/multi-ip"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/openclaw-pr-helper",
+      "file": "app/(site)/tools/openclaw-pr-helper/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/openclaw-pr-helper"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/short-link",
+      "file": "app/(site)/tools/short-link/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/short-link"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/syncblog-publisher",
+      "file": "app/(site)/tools/syncblog-publisher/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/syncblog-publisher"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/workbuddy-acp-bridge",
+      "file": "app/(site)/tools/workbuddy-acp-bridge/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/workbuddy-acp-bridge"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/traffic",
+      "file": "app/(site)/traffic/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/traffic"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/voice-tasks",
+      "file": "app/(site)/voice-tasks/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/voice-tasks"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/web-llm",
+      "file": "app/(web-llm)/web-llm/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/web-llm/embed",
+      "file": "app/(web-llm)/web-llm/embed/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/web-llm"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/whale-wallets",
+      "file": "app/(site)/whale-wallets/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/wisdom-frontier",
+      "file": "app/(site)/wisdom-frontier/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/workbuddy-harness",
+      "file": "app/(site)/workbuddy-harness/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/workbuddy-publish-center",
+      "file": "app/(site)/workbuddy-publish-center/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/workbuddy-publish-center"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/works",
+      "file": "app/(site)/works/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/works"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/writing-monetization-2026",
+      "file": "app/(site)/writing-monetization-2026/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/writing-monetization-2026"
+        ],
+        "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/x-mutual-aid-circle",
+      "file": "app/(site)/x-mutual-aid-circle/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/x-platform-intelligence",
+      "file": "app/(site)/x-platform-intelligence/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/xiaomoli-dad-todo",
+      "file": "app/(site)/xiaomoli-dad-todo/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "registry",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/zhang-juzheng-book",
+      "file": "app/(site)/zhang-juzheng-book/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    }
+  ],
+  "issues": [
+    {
+      "id": "canonical.missing:/",
+      "rule": "canonical.missing",
+      "route": "/",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/feed/[id]",
+      "rule": "canonical.missing",
+      "route": "/feed/[id]",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/oauth/authorize",
+      "rule": "canonical.missing",
+      "route": "/oauth/authorize",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/oauth/authorize/complete",
+      "rule": "canonical.missing",
+      "route": "/oauth/authorize/complete",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/project-manager",
+      "rule": "canonical.missing",
+      "route": "/project-manager",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/publications",
+      "rule": "canonical.missing",
+      "route": "/publications",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/share/[slug]",
+      "rule": "canonical.missing",
+      "route": "/share/[slug]",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "jsonld.missing:/",
+      "rule": "jsonld.missing",
+      "route": "/",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/a-share-research",
+      "rule": "jsonld.missing",
+      "route": "/a-share-research",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/articles",
+      "rule": "jsonld.missing",
+      "route": "/articles",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/articles/published",
+      "rule": "jsonld.missing",
+      "route": "/articles/published",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/bookmarks",
+      "rule": "jsonld.missing",
+      "route": "/bookmarks",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/bookmarks/ai-tools",
+      "rule": "jsonld.missing",
+      "route": "/bookmarks/ai-tools",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/bookmarks/dev-resources",
+      "rule": "jsonld.missing",
+      "route": "/bookmarks/dev-resources",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/bookmarks/llm-tutorials",
+      "rule": "jsonld.missing",
+      "route": "/bookmarks/llm-tutorials",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/bookmarks/twitter",
+      "rule": "jsonld.missing",
+      "route": "/bookmarks/twitter",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/bookmarks/youtube",
+      "rule": "jsonld.missing",
+      "route": "/bookmarks/youtube",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/browser-extensions",
+      "rule": "jsonld.missing",
+      "route": "/browser-extensions",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/china-politics",
+      "rule": "jsonld.missing",
+      "route": "/china-politics",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/circles/[slug]",
+      "rule": "jsonld.missing",
+      "route": "/circles/[slug]",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/classical-masterpieces",
+      "rule": "jsonld.missing",
+      "route": "/classical-masterpieces",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/community",
+      "rule": "jsonld.missing",
+      "route": "/community",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/crypto-research",
+      "rule": "jsonld.missing",
+      "route": "/crypto-research",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/dad-stack",
+      "rule": "jsonld.missing",
+      "route": "/dad-stack",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/desktop-apps",
+      "rule": "jsonld.missing",
+      "route": "/desktop-apps",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/donate",
+      "rule": "jsonld.missing",
+      "route": "/donate",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/feed",
+      "rule": "jsonld.missing",
+      "route": "/feed",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/feed/[id]",
+      "rule": "jsonld.missing",
+      "route": "/feed/[id]",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/frontend-weekly",
+      "rule": "jsonld.missing",
+      "route": "/frontend-weekly",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/help",
+      "rule": "jsonld.missing",
+      "route": "/help",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/history/ming-qing",
+      "rule": "jsonld.missing",
+      "route": "/history/ming-qing",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/mcp-center",
+      "rule": "jsonld.missing",
+      "route": "/mcp-center",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/onchain-blog",
+      "rule": "jsonld.missing",
+      "route": "/onchain-blog",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/project-manager",
+      "rule": "jsonld.missing",
+      "route": "/project-manager",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/prompt-center",
+      "rule": "jsonld.missing",
+      "route": "/prompt-center",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/publications",
+      "rule": "jsonld.missing",
+      "route": "/publications",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/ranbi",
+      "rule": "jsonld.missing",
+      "route": "/ranbi",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/rank",
+      "rule": "jsonld.missing",
+      "route": "/rank",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/reading",
+      "rule": "jsonld.missing",
+      "route": "/reading",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/2aran-desktop",
+      "rule": "jsonld.missing",
+      "route": "/resources/2aran-desktop",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/ai-learning-library",
+      "rule": "jsonld.missing",
+      "route": "/resources/ai-learning-library",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/ai-music",
+      "rule": "jsonld.missing",
+      "route": "/resources/ai-music",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/codex-learning-resource-map-yichen",
+      "rule": "jsonld.missing",
+      "route": "/resources/codex-learning-resource-map-yichen",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/codex-model-switcher",
+      "rule": "jsonld.missing",
+      "route": "/resources/codex-model-switcher",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/edge-agent-development",
+      "rule": "jsonld.missing",
+      "route": "/resources/edge-agent-development",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/liang-wenfeng-investor-meeting",
+      "rule": "jsonld.missing",
+      "route": "/resources/liang-wenfeng-investor-meeting",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/nano-banana-gallery",
+      "rule": "jsonld.missing",
+      "route": "/resources/nano-banana-gallery",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/rss",
+      "rule": "jsonld.missing",
+      "route": "/resources/rss",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/shen-zhi-ding-nei",
+      "rule": "jsonld.missing",
+      "route": "/resources/shen-zhi-ding-nei",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/speedrun-investing",
+      "rule": "jsonld.missing",
+      "route": "/resources/speedrun-investing",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/wallpapers",
+      "rule": "jsonld.missing",
+      "route": "/resources/wallpapers",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/x-article-autopublisher-extension",
+      "rule": "jsonld.missing",
+      "route": "/resources/x-article-autopublisher-extension",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/x-mutual-cleaner-extension",
+      "rule": "jsonld.missing",
+      "route": "/resources/x-mutual-cleaner-extension",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/x-tweet-to-pdf-extension",
+      "rule": "jsonld.missing",
+      "route": "/resources/x-tweet-to-pdf-extension",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/rich-pages",
+      "rule": "jsonld.missing",
+      "route": "/rich-pages",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/ru-shi-dao",
+      "rule": "jsonld.missing",
+      "route": "/ru-shi-dao",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/services",
+      "rule": "jsonld.missing",
+      "route": "/services",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/skill-center",
+      "rule": "jsonld.missing",
+      "route": "/skill-center",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/skill-center/[skillId]",
+      "rule": "jsonld.missing",
+      "route": "/skill-center/[skillId]",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/spacex",
+      "rule": "jsonld.missing",
+      "route": "/spacex",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools",
+      "rule": "jsonld.missing",
+      "route": "/tools",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/auto-commit",
+      "rule": "jsonld.missing",
+      "route": "/tools/auto-commit",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/code-miner",
+      "rule": "jsonld.missing",
+      "route": "/tools/code-miner",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/digital-human",
+      "rule": "jsonld.missing",
+      "route": "/tools/digital-human",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/github-follow",
+      "rule": "jsonld.missing",
+      "route": "/tools/github-follow",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/html-to-pdf",
+      "rule": "jsonld.missing",
+      "route": "/tools/html-to-pdf",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/image-hosting",
+      "rule": "jsonld.missing",
+      "route": "/tools/image-hosting",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/multi-ip",
+      "rule": "jsonld.missing",
+      "route": "/tools/multi-ip",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/openclaw-pr-helper",
+      "rule": "jsonld.missing",
+      "route": "/tools/openclaw-pr-helper",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/short-link",
+      "rule": "jsonld.missing",
+      "route": "/tools/short-link",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/tools/syncblog-publisher",
+      "rule": "jsonld.missing",
+      "route": "/tools/syncblog-publisher",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/workbuddy-publish-center",
+      "rule": "jsonld.missing",
+      "route": "/workbuddy-publish-center",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/works",
+      "rule": "jsonld.missing",
+      "route": "/works",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/writing-monetization-2026",
+      "rule": "jsonld.missing",
+      "route": "/writing-monetization-2026",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "og.missing:/",
+      "rule": "og.missing",
+      "route": "/",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/a-share-research",
+      "rule": "og.missing",
+      "route": "/a-share-research",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/about",
+      "rule": "og.missing",
+      "route": "/about",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/articles",
+      "rule": "og.missing",
+      "route": "/articles",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/articles/published",
+      "rule": "og.missing",
+      "route": "/articles/published",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/bookmarks",
+      "rule": "og.missing",
+      "route": "/bookmarks",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/bookmarks/ai-tools",
+      "rule": "og.missing",
+      "route": "/bookmarks/ai-tools",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/bookmarks/dev-resources",
+      "rule": "og.missing",
+      "route": "/bookmarks/dev-resources",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/bookmarks/llm-tutorials",
+      "rule": "og.missing",
+      "route": "/bookmarks/llm-tutorials",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/bookmarks/twitter",
+      "rule": "og.missing",
+      "route": "/bookmarks/twitter",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/bookmarks/youtube",
+      "rule": "og.missing",
+      "route": "/bookmarks/youtube",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/china-politics",
+      "rule": "og.missing",
+      "route": "/china-politics",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/classical-masterpieces",
+      "rule": "og.missing",
+      "route": "/classical-masterpieces",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/community",
+      "rule": "og.missing",
+      "route": "/community",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/crypto-research",
+      "rule": "og.missing",
+      "route": "/crypto-research",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/dad-stack",
+      "rule": "og.missing",
+      "route": "/dad-stack",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/donate",
+      "rule": "og.missing",
+      "route": "/donate",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/frontend-weekly",
+      "rule": "og.missing",
+      "route": "/frontend-weekly",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/help",
+      "rule": "og.missing",
+      "route": "/help",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/history/ming-qing",
+      "rule": "og.missing",
+      "route": "/history/ming-qing",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/mcp-center",
+      "rule": "og.missing",
+      "route": "/mcp-center",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/project-manager",
+      "rule": "og.missing",
+      "route": "/project-manager",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/prompt-center",
+      "rule": "og.missing",
+      "route": "/prompt-center",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/publications",
+      "rule": "og.missing",
+      "route": "/publications",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/ranbi",
+      "rule": "og.missing",
+      "route": "/ranbi",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/reading",
+      "rule": "og.missing",
+      "route": "/reading",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/resources/codex-learning-resource-map-yichen",
+      "rule": "og.missing",
+      "route": "/resources/codex-learning-resource-map-yichen",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/resources/edge-agent-development",
+      "rule": "og.missing",
+      "route": "/resources/edge-agent-development",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/resources/rss",
+      "rule": "og.missing",
+      "route": "/resources/rss",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/resources/speedrun-investing",
+      "rule": "og.missing",
+      "route": "/resources/speedrun-investing",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/ru-shi-dao",
+      "rule": "og.missing",
+      "route": "/ru-shi-dao",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/services",
+      "rule": "og.missing",
+      "route": "/services",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/skill-center",
+      "rule": "og.missing",
+      "route": "/skill-center",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/skill-center/[skillId]",
+      "rule": "og.missing",
+      "route": "/skill-center/[skillId]",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools",
+      "rule": "og.missing",
+      "route": "/tools",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/auto-commit",
+      "rule": "og.missing",
+      "route": "/tools/auto-commit",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/code-miner",
+      "rule": "og.missing",
+      "route": "/tools/code-miner",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/digital-human",
+      "rule": "og.missing",
+      "route": "/tools/digital-human",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/github-follow",
+      "rule": "og.missing",
+      "route": "/tools/github-follow",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/html-to-pdf",
+      "rule": "og.missing",
+      "route": "/tools/html-to-pdf",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/image-hosting",
+      "rule": "og.missing",
+      "route": "/tools/image-hosting",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/multi-ip",
+      "rule": "og.missing",
+      "route": "/tools/multi-ip",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/openclaw-pr-helper",
+      "rule": "og.missing",
+      "route": "/tools/openclaw-pr-helper",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/short-link",
+      "rule": "og.missing",
+      "route": "/tools/short-link",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/tools/syncblog-publisher",
+      "rule": "og.missing",
+      "route": "/tools/syncblog-publisher",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/workbuddy-publish-center",
+      "rule": "og.missing",
+      "route": "/workbuddy-publish-center",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/works",
+      "rule": "og.missing",
+      "route": "/works",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/writing-monetization-2026",
+      "rule": "og.missing",
+      "route": "/writing-monetization-2026",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    }
+  ]
+}

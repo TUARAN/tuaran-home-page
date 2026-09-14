@@ -41,6 +41,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Audit route SEO
+        run: npm run seo:audit && npm run seo:routes:audit
+
+      - name: Upload SEO audit snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-route-audit
+          path: tmp/seo-route-audit.current.json
+          if-no-files-found: ignore
+
       - name: Build
         run: npm run build
         env:

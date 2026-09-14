@@ -1,7 +1,8 @@
 import { articles } from '../../../lib/articleMetadata'
 import { COMMUNITY_TOPICS } from '../../../lib/communityTopics'
 import { listResearch } from '../../../lib/research/archive'
-import { listRichPagePaths, listRichPageSitemapEntries } from '../../../lib/richPageSeo'
+import { listRichPageSitemapEntries } from '../../../lib/richPageSeo'
+import { listStaticPageSitemapEntries } from '../../../lib/staticPageRegistry.mjs'
 
 const SITE_URL = 'https://2aran.com'
 
@@ -12,7 +13,6 @@ function isExternalHref(href) {
 export const revalidate = 3600
 
 export default function sitemap() {
-  const richPagePaths = new Set(listRichPagePaths())
   const articleEntries = articles
     .filter((article) => !isExternalHref(article.href) && article.slug !== 'diary-self-reflection')
     .map((article) => {
@@ -33,82 +33,9 @@ export default function sitemap() {
       }
     })
 
-  const staticRoutes = [
-    '',
-    '/about',
-    '/help',
-    '/publications',
-    '/services',
-    '/articles',
-    '/articles/published',
-    '/frontend-weekly',
-    '/a-share-research',
-    '/crypto-research',
-    '/spacex',
-    '/rich-pages',
-    '/onchain-blog',
-    '/works',
-    '/tools',
-    '/tools/auto-commit',
-    '/tools/github-follow',
-    '/tools/syncblog-publisher',
-    '/tools/openclaw-pr-helper',
-    '/tools/multi-ip',
-    '/tools/code-miner',
-    '/browser-extensions',
-    '/skill-center',
-    '/mcp-center',
-    '/prompt-center',
-    '/workbuddy-publish-center',
-    '/cancers-overview',
-    '/platform-framework-pairs',
-    '/global-ai-governance',
-    '/guoqi-guodan',
-    '/wisdom-frontier',
-    '/network-access-guide',
-    '/workbuddy-harness',
-    '/ai-token-usage-research',
-    '/skill-market-research',
-    '/sun-moon-motion',
-    '/tang-ping-map',
-    ...COMMUNITY_TOPICS.map((topic) => topic.href),
-    '/zhang-juzheng-book',
-    '/writing-monetization-2026',
-    '/bookmarks/twitter',
-    '/bookmarks/youtube',
-    '/bookmarks/llm-tutorials',
-    '/bookmarks/dev-resources',
-    '/bookmarks/ai-tools',
-    '/resources/rss',
-    '/resources/ai-music',
-    '/resources/niu-lai-movie',
-    '/resources/liang-wenfeng-investor-meeting',
-    '/resources/ai-learning-library',
-    '/resources/edge-agent-development',
-    '/resources/nano-banana-gallery',
-    '/resources/codex-learning-resource-map-yichen',
-    '/resources/shen-zhi-ding-nei',
-    '/resources/wallpapers',
-    '/resources/x-article-autopublisher-extension',
-    '/resources/x-mutual-cleaner-extension',
-    '/resources/x-tweet-to-pdf-extension',
-    '/community',
-    '/diary',
-    '/donate',
-    '/eatwhat',
-    '/history/ming-qing',
-    '/classical-masterpieces',
-    '/ru-shi-dao',
-    '/china-politics',
-    '/reading',
-    '/web-llm',
-    '/xiaomoli-dad-todo',
-  ]
-
   const entries = [
-    ...staticRoutes
-      .filter((path) => !richPagePaths.has(path))
-      .map((path) => ({ url: `${SITE_URL}${path}` })),
+    ...listStaticPageSitemapEntries(SITE_URL),
+    ...COMMUNITY_TOPICS.map((topic) => ({ url: `${SITE_URL}${topic.href}` })),
     ...articleEntries,
     ...researchEntries,
     ...listRichPageSitemapEntries(),

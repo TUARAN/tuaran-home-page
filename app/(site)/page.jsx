@@ -21,7 +21,7 @@ import { HomeHeroGoal } from './components/HomeHeroGoal'
 import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
-import HotTickerBar from './components/HotTickerBar'
+import HomeDiscoveryPanel from './components/HomeDiscoveryPanel'
 import HomePrimaryColumnsClient from './components/HomePrimaryColumnsClient'
 import { HOME_MOBILE_CHANNELS } from '../../lib/siteMobileNav'
 import { AVATAR_PATH } from '../../lib/avatar'
@@ -669,11 +669,6 @@ function FounderCompanyText() {
 function ClassicHomePage({ featuredPicks }) {
   return (
     <main className="home-classic-root mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-2 pb-9 sm:px-6 md:pt-3 md:pb-12 lg:px-10">
-      {/* Hot ticker marquee — sticky top bar, below nav above hero */}
-      <div className="mb-3">
-        <HotTickerBar />
-      </div>
-
       <section className="mb-14 flex-1">
         <header className="classic-home-hero relative mb-12 overflow-hidden rounded-[28px] border px-6 py-7 md:px-12 md:py-10">
           <div className="classic-home-hero-glow pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block" />
@@ -901,9 +896,6 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
   return (
     <main className="home-polished-root home-page">
       <div className="home-backdrop" aria-hidden="true" />
-      <div className="relative z-[1] mb-3 hidden px-4 sm:px-0 md:block">
-        <HotTickerBar />
-      </div>
       <HomeMobileChannels />
       <div className="home-main-grid">
         <HomePrimaryColumnsClient
@@ -930,6 +922,8 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
               ))}
             </div>
           </section>
+
+          <HomeDiscoveryPanel />
 
           <section className="home-contact-panel">
             <div>

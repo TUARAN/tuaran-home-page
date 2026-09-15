@@ -1,0 +1,24 @@
+{
+  "name": "5g-msg-channel-legacy-macos",
+  "version": "1.1.0",
+  "private": true,
+  "description": "旧版 5G MaaP 连接器的 macOS 安全适配版",
+  "main": "src/index.cjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/index.cjs --production",
+    "start:mock": "node src/index.cjs --mock",
+    "build:standalone": "node scripts/build-standalone-macos.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "service:install": "node scripts/install-service.cjs",
+    "channel:status": "node scripts/channel.cjs status"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "https-proxy-agent": "^7.0.5"
+  }
+}

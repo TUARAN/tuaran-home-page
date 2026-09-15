@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="新消息手机是传统短信业务升级的通信硬件载体，支持富媒体消息与 Chatbot 智能服务。">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>新消息手机｜消息即服务</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #10223d;
+      --muted: #607187;
+      --blue: #1769e0;
+      --cyan: #13b9cf;
+      --line: #dce6f0;
+      --paper: #f8fbff;
+      --panel: #fff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(29,81,140,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(29,81,140,.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 40px 40px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      overflow-x: hidden;
+    }
+    a { color: inherit; }
+    .shell { width: min(1120px, calc(100% - 40px)); margin: auto; }
+    .topbar { position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between; min-height: 70px; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; }
+    .brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid rgba(255,255,255,.48); border-radius: 12px; color: #fff; background: linear-gradient(145deg, var(--blue), var(--cyan)); box-shadow: 0 10px 24px rgba(23,105,224,.22), inset 0 1px rgba(255,255,255,.28); }
+    .brand-mark svg { width: 21px; height: 21px; filter: drop-shadow(0 2px 5px rgba(0,49,110,.22)); }
+    .topbar > span:last-child { color: #73859a; font-size: 13px; }
+    .hero { position: relative; display: grid; grid-template-columns: 1.06fr .94fr; gap: 70px; align-items: center; min-height: 690px; padding: 70px 0 96px; }
+    .hero::after { position: absolute; top: 12%; left: -18%; z-index: -1; width: 72%; height: 68%; border-radius: 50%; background: radial-gradient(circle, rgba(63,145,255,.13), transparent 68%); content: ''; filter: blur(14px); }
+    .eyebrow, .section-kicker { margin: 0; color: var(--blue); font: 700 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .13em; }
+    h1 { margin: 18px 0 10px; color: transparent; background: linear-gradient(115deg, #082d61 8%, #1769e0 48%, #08a9c5 72%, #0d3267 92%); background-clip: text; font-size: clamp(52px, 7vw, 82px); line-height: 1; letter-spacing: -.065em; filter: drop-shadow(0 12px 30px rgba(23,105,224,.14)); }
+    .headline { margin: 0; color: #153456; font-size: clamp(25px, 3vw, 38px); font-weight: 650; line-height: 1.35; letter-spacing: -.035em; }
+    .lead { max-width: 650px; margin: 25px 0 0; color: var(--muted); font-size: 16px; line-height: 1.95; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .button { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: 0 20px; border: 1px solid #cbd9e9; border-radius: 10px; color: #17406e; background: rgba(255,255,255,.8); font-size: 14px; font-weight: 750; text-decoration: none; box-shadow: 0 10px 26px rgba(29,72,123,.06); transition: transform .25s ease, box-shadow .25s ease; }
+    .button:hover { transform: translateY(-3px); box-shadow: 0 18px 34px rgba(29,72,123,.14); }
+    .button.primary { border-color: var(--blue); color: white; background: var(--blue); box-shadow: 0 13px 28px rgba(23,105,224,.2); }
+    .platform-note { margin: 11px 0 0; color: #7d8da1; font-size: 11px; line-height: 1.6; }
+    .quick-facts { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 42px; padding-top: 21px; border-top: 1px solid var(--line); }
+    .quick-facts div { padding: 13px 10px; border-radius: 12px; color: #294969; font-size: 13px; font-weight: 750; transition: transform .25s ease, background .25s ease; }
+    .quick-facts div:hover { background: rgba(255,255,255,.76); transform: translateY(-3px); }
+    .quick-facts small { display: block; margin-top: 5px; color: #8492a4; font-size: 10px; font-weight: 400; line-height: 1.45; }
+
+    .stage { position: relative; display: grid; min-height: 570px; place-items: center; perspective: 1200px; isolation: isolate; }
+    .stage::before { position: absolute; width: 430px; height: 430px; border-radius: 50%; background: radial-gradient(circle, rgba(42,144,255,.22), rgba(19,185,207,.09) 46%, transparent 68%); content: ""; }
+    .message-panel { position: relative; z-index: 2; width: min(100%, 400px); overflow: hidden; border: 1px solid rgba(32,98,174,.22); border-radius: 28px; background: rgba(255,255,255,.93); box-shadow: 0 42px 100px rgba(20,70,130,.23), 0 0 0 8px rgba(255,255,255,.32); backdrop-filter: blur(20px); animation: device-float 5.5s ease-in-out infinite; }
+    .message-panel::after { position: absolute; top: -25%; left: -60%; width: 34%; height: 150%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.72), transparent); content: ''; transform: rotate(18deg); animation: device-sheen 7s ease-in-out infinite; pointer-events: none; }
+    .stage-orbit { position: absolute; inset: 20px 0; z-index: -1; border: 1px dashed rgba(23,105,224,.18); border-radius: 50%; animation: orbit-spin 30s linear infinite; }
+    .stage-orbit::before, .stage-orbit::after { position: absolute; inset: 14%; border: 1px solid rgba(18,186,207,.13); border-radius: 50%; content: ''; }
+    .stage-orbit::after { inset: 29%; }
+    .stage-orbit i { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: #1cc8d7; box-shadow: 0 0 18px rgba(28,200,215,.9); }
+    .stage-orbit i:nth-child(1) { top: 8%; left: 24%; }.stage-orbit i:nth-child(2) { top: 48%; right: -4px; background: #287cff; }.stage-orbit i:nth-child(3) { bottom: 4%; left: 35%; width: 6px; height: 6px; }
+    .signal-pill { position: absolute; z-index: 3; padding: 8px 11px; border: 1px solid rgba(62,151,255,.2); border-radius: 999px; color: #2671c4; background: rgba(255,255,255,.76); box-shadow: 0 12px 35px rgba(23,78,139,.12); backdrop-filter: blur(14px); font: 700 9px/1 ui-monospace, monospace; letter-spacing: .08em; animation: signal-float 4s ease-in-out infinite; }
+    .signal-pill.top { top: 72px; right: 0; }.signal-pill.bottom { bottom: 105px; left: 0; animation-delay: 1.2s; }
+    .message-header { display: flex; align-items: center; gap: 11px; padding: 17px 18px; border-bottom: 1px solid #e9eff6; }
+    .bot-mark { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; color: white; background: linear-gradient(145deg, var(--blue), var(--cyan)); font-size: 21px; }
+    .message-header div { display: flex; flex: 1; flex-direction: column; }
+    .message-header strong { font-size: 14px; }
+    .message-header small { margin-top: 3px; color: #75859a; font-size: 11px; }
+    .native-tag { padding: 5px 8px; border: 1px solid #d7e7f8; border-radius: 999px; color: #3e6d9e; background: #f5faff; font-size: 10px; }
+    .conversation { min-height: 350px; padding: 18px; background: linear-gradient(180deg, #f8fbff, #f4f8fc); }
+    .time { margin: 0 0 14px; color: #9aa7b5; font-size: 10px; text-align: center; }
+    .notice { padding: 17px; border: 1px solid #dfe8f2; border-radius: 15px; background: white; box-shadow: 0 8px 25px rgba(28,72,121,.06); }
+    .notice > span { color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+    .notice strong { display: block; margin-top: 8px; font-size: 14px; }
+    .notice p { margin: 9px 0 14px; color: #738297; font-size: 11px; line-height: 1.65; }
+    .notice b { display: block; padding-top: 10px; border-top: 1px solid #edf1f6; color: var(--blue); font-size: 11px; }
+    .user-bubble { width: fit-content; margin: 15px 0 0 auto; padding: 10px 14px; border-radius: 14px 4px 14px 14px; color: white; background: var(--blue); font-size: 12px; }
+    .bot-bubble { width: 84%; margin-top: 11px; padding: 12px 14px; border: 1px solid #e0e7ef; border-radius: 4px 14px 14px; color: #455b73; background: white; font-size: 11px; line-height: 1.6; }
+    .bot-bubble small { display: block; margin-top: 8px; color: #1687a8; font-weight: 750; }
+    .message-input { display: flex; align-items: center; gap: 10px; padding: 14px 16px; color: #8b9aae; background: white; font-size: 16px; }
+    .message-input span { flex: 1; padding: 10px 12px; border-radius: 10px; background: #f2f6fa; font-size: 10px; }
+
+    section.content { position: relative; padding: 104px 0; border-top: 1px solid var(--line); }
+    section.content:not(.agent)::before { position: absolute; top: -1px; left: 0; width: 92px; height: 2px; background: linear-gradient(90deg, var(--blue), var(--cyan), transparent); box-shadow: 0 0 16px rgba(23,105,224,.35); content: ''; }
+    .section-heading { max-width: 740px; }
+    h2 { margin: 13px 0 14px; color: #133760; font-size: clamp(30px, 4vw, 46px); line-height: 1.16; letter-spacing: -.04em; }
+    .section-heading > p:last-child { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.8; }
+    .capabilities { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 40px; }
+    .card { position: relative; overflow: hidden; padding: 27px; border: 1px solid rgba(162,190,221,.5); border-radius: 21px; background: linear-gradient(145deg, rgba(255,255,255,.94), rgba(239,247,255,.68)); box-shadow: 0 16px 45px rgba(29,72,123,.07), inset 0 1px white; transition: transform .32s ease, box-shadow .32s ease, border-color .32s ease; }
+    .card::before { position: absolute; inset: auto -30% -62% 20%; height: 140px; border-radius: 50%; background: radial-gradient(circle, rgba(28,142,255,.14), transparent 68%); content: ''; transition: transform .35s ease; }
+    .card::after { position: absolute; top: 0; left: 27px; width: 38px; height: 2px; background: linear-gradient(90deg, #1769e0, #1bd3d6); box-shadow: 0 0 12px rgba(23,105,224,.55); content: ''; }
+    .card:hover { border-color: rgba(54,139,234,.48); box-shadow: 0 28px 60px rgba(25,83,150,.15); transform: translateY(-8px); }
+    .card:hover::before { transform: scale(1.35); }
+    .capabilities .card { min-height: 180px; }
+    .icon { color: var(--blue); font-size: 25px; }
+    .card h3 { margin: 34px 0 9px; font-size: 18px; }
+    .card p { margin: 0; color: #6c7b8f; font-size: 13px; line-height: 1.75; }
+    section.content.agent { overflow: hidden; padding: 58px; border: 1px solid rgba(91,193,255,.22); border-radius: 30px; color: white; background: radial-gradient(circle at 85% 10%, rgba(21,195,218,.2), transparent 28%), linear-gradient(135deg, #071a35, #0c315d 58%, #082342); box-shadow: 0 38px 85px rgba(8,42,83,.24); isolation: isolate; }
+    section.content.agent::before { position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(90deg, transparent 49.8%, rgba(101,205,255,.06) 50%, transparent 50.2%), linear-gradient(transparent 49.8%, rgba(101,205,255,.05) 50%, transparent 50.2%); background-size: 52px 52px; content: ''; }
+    section.content.agent::after { position: absolute; top: -40%; right: -15%; z-index: -1; width: 450px; height: 450px; border: 1px solid rgba(95,219,234,.16); border-radius: 50%; box-shadow: 0 0 0 55px rgba(95,219,234,.035), 0 0 0 110px rgba(95,219,234,.025); content: ''; animation: agent-pulse 7s ease-in-out infinite; }
+    .agent .section-kicker { color: #5eddeb; }
+    .agent h2 { color: white; }
+    .agent .section-heading > p:last-child { color: #b9c9dc; }
+    .workflow { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 44px; border-top: 1px solid rgba(255,255,255,.14); }
+    .workflow div { padding: 25px 24px 16px 0; transition: transform .25s ease; }
+    .workflow div:hover { transform: translateY(-5px); }
+    .workflow b { display: block; color: #55cddd; font: 700 11px ui-monospace, monospace; }
+    .workflow strong { display: block; margin-top: 18px; font-size: 16px; }
+    .workflow small { display: block; margin-top: 8px; color: #93a8c0; font-size: 11px; line-height: 1.6; }
+    .hardware-platform { position: relative; overflow: hidden; margin-bottom: 88px; padding: 50px 42px; border: 1px solid rgba(92,191,255,.3); border-radius: 30px; color: white; background: radial-gradient(circle at 82% 5%, rgba(35,203,255,.24), transparent 26%), radial-gradient(circle at 8% 100%, rgba(39,105,255,.27), transparent 34%), linear-gradient(145deg, #061a38, #0a2b57 52%, #071c3a); box-shadow: 0 38px 90px rgba(5,31,67,.26), inset 0 1px rgba(255,255,255,.08); isolation: isolate; }
+    .hardware-platform::before { position: absolute; inset: 0; z-index: -2; background-image: linear-gradient(rgba(111,201,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(111,201,255,.07) 1px, transparent 1px); background-size: 42px 42px; content: ''; mask-image: linear-gradient(to bottom, black, transparent 88%); }
+    .hardware-platform::after { position: absolute; top: -20%; bottom: -20%; left: -18%; z-index: -1; width: 18%; background: linear-gradient(90deg, transparent, rgba(78,216,255,.13), transparent); content: ''; transform: skewX(-18deg); animation: scan 8s ease-in-out infinite; }
+    .platform-heading { display: flex; align-items: end; justify-content: space-between; gap: 32px; }
+    .platform-heading > div { max-width: 680px; }
+    .platform-heading .section-kicker { color: #5ce2ef; text-shadow: 0 0 20px rgba(92,226,239,.35); }
+    .platform-heading h2 { margin-bottom: 0; color: white; }
+    .platform-summary { display: flex; max-width: 380px; gap: 10px; color: #b8cde4; font-size: 13px; line-height: 1.7; text-align: right; }
+    .platform-summary i { flex: 0 0 auto; width: 7px; height: 7px; margin-top: 8px; border-radius: 50%; background: #4ee0c1; box-shadow: 0 0 14px rgba(78,224,193,.8); }
+    .platform-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 32px; }
+    .platform { position: relative; overflow: hidden; padding: 21px; border: 1px solid rgba(137,204,255,.18); border-radius: 18px; background: linear-gradient(145deg, rgba(255,255,255,.1), rgba(255,255,255,.035)); box-shadow: inset 0 1px rgba(255,255,255,.08), 0 18px 38px rgba(0,9,30,.18); backdrop-filter: blur(14px); transition: transform .3s ease, border-color .3s ease; animation: card-in .65s both; animation-delay: calc(var(--i) * 90ms); }
+    .platform::before { position: absolute; top: 0; left: 18px; width: 42px; height: 2px; background: linear-gradient(90deg, #53b8ff, #5ce8d9); box-shadow: 0 0 14px rgba(83,184,255,.8); content: ''; }
+    .platform:hover { border-color: rgba(91,207,255,.55); transform: translateY(-8px); }
+    .platform-icon { display: flex; align-items: center; justify-content: space-between; color: #63ddea; font: 800 12px ui-monospace, monospace; }
+    .platform-icon::after { width: 7px; height: 7px; border-radius: 50%; background: #4ee0c1; box-shadow: 0 0 12px rgba(78,224,193,.9); content: ''; }
+    .platform h3 { margin: 22px 0 2px; color: white; font-size: 18px; }
+    .platform strong { color: #78c8ff; font-size: 12px; }
+    .platform p { min-height: 72px; margin: 8px 0 18px; color: #afc2d8; font-size: 11px; line-height: 1.65; }
+    .platform-tag { display: flex; min-height: 39px; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(93,193,255,.16); border-radius: 9px; color: #c4e7ff; background: rgba(38,132,218,.14); font-size: 10px; font-weight: 800; }
+    .platform-tag::before { width: 5px; height: 5px; border-radius: 50%; background: #5ce8d9; box-shadow: 0 0 9px rgba(92,232,217,.8); content: ''; }
+    .platform-flow { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 22px; padding: 14px 18px; border: 1px solid rgba(114,193,255,.14); border-radius: 14px; background: rgba(0,12,36,.25); }
+    .platform-flow div { display: flex; align-items: center; justify-content: space-between; color: #d7eaff; font-size: 10px; font-weight: 750; }
+    .platform-flow b { padding-right: 14px; color: #50cadf; font-size: 14px; font-weight: 400; text-shadow: 0 0 12px rgba(80,202,223,.7); }
+    @keyframes scan { 0%,15% { transform: translateX(0) skewX(-18deg); opacity: 0; } 35%,65% { opacity: 1; } 85%,100% { transform: translateX(760%) skewX(-18deg); opacity: 0; } }
+    @keyframes card-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    .scenarios { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 40px; }
+    .scenarios .card { min-height: 230px; }
+    .scenarios .number { color: #94adca; font: 700 12px ui-monospace, monospace; }
+    .scenarios h3 { margin-top: 33px; font-size: 21px; }
+    .scenarios small { display: block; margin-top: 24px; padding-top: 14px; border-top: 1px solid #edf1f5; color: #24729f; font-size: 11px; font-weight: 750; }
+    .facts { display: grid; grid-template-columns: .72fr 1.28fr; gap: 70px; margin: 28px 0; padding: 52px !important; border: 1px solid rgba(153,185,219,.42) !important; border-radius: 28px; background: linear-gradient(135deg, rgba(255,255,255,.88), rgba(235,246,255,.72)); box-shadow: 0 26px 70px rgba(28,72,123,.1), inset 0 1px white; }
+    .fact-list { margin: 0; }
+    .fact-list div { display: grid; grid-template-columns: 120px 1fr; gap: 20px; padding: 16px 12px; border-bottom: 1px solid var(--line); border-radius: 9px; font-size: 14px; transition: transform .2s ease, background .2s ease; }
+    .fact-list div:hover { background: rgba(255,255,255,.8); transform: translateX(5px); }
+    .fact-list dt { color: #8493a6; }
+    .fact-list dd { margin: 0; color: #274766; text-align: right; }
+    .ambient { position: fixed; inset: 0; z-index: -5; overflow: hidden; pointer-events: none; }
+    .ambient::before { position: absolute; inset: 0; background: radial-gradient(circle at 12% 14%, rgba(37,123,255,.12), transparent 24%), radial-gradient(circle at 88% 42%, rgba(13,202,218,.1), transparent 23%), linear-gradient(115deg, transparent 35%, rgba(255,255,255,.48) 50%, transparent 65%); background-size: auto, auto, 220% 100%; content: ''; animation: page-sheen 16s ease-in-out infinite; }
+    .ambient i { position: absolute; border: 1px solid rgba(26,112,225,.1); border-radius: 50%; }.ambient i:first-child { top: 90px; left: -220px; width: 520px; height: 520px; }.ambient i:last-child { top: 650px; right: -180px; width: 430px; height: 430px; }
+    @keyframes page-sheen { 0%,100% { background-position: 0 0,0 0,100% 0; } 50% { background-position: 0 0,0 0,0 0; } }
+    @keyframes device-float { 0%,100% { transform: translateY(0) rotateY(-1deg); } 50% { transform: translateY(-10px) rotateY(1deg); } }
+    @keyframes device-sheen { 0%,20% { transform: translateX(0) rotate(18deg); opacity: 0; } 38%,54% { opacity: .8; } 72%,100% { transform: translateX(560%) rotate(18deg); opacity: 0; } }
+    @keyframes orbit-spin { to { transform: rotate(360deg); } }
+    @keyframes signal-float { 50% { transform: translateY(-8px); box-shadow: 0 18px 42px rgba(23,78,139,.18); } }
+    @keyframes agent-pulse { 50% { transform: scale(1.08); opacity: .62; } }
+    footer.page-footer { padding: 25px 0 38px; border-top: 1px solid var(--line); color: #8391a2; font-size: 12px; text-align: center; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; gap: 10px; }
+      .stage { min-height: 570px; }
+      .capabilities, .workflow, .platform-grid { grid-template-columns: repeat(2, 1fr); }
+      .facts { grid-template-columns: 1fr; gap: 28px; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 28px, 1120px); }
+      .topbar span:last-child { display: none; }
+      .hero { padding: 50px 0 68px; }
+      h1 { font-size: clamp(46px, 15vw, 64px); }
+      .quick-facts, .capabilities, .workflow, .scenarios { grid-template-columns: 1fr; gap: 13px; }
+      .quick-facts { gap: 15px; }
+      .stage::before { width: 100%; height: 390px; }
+      section.content { padding: 68px 0; }
+      section.content.agent { padding: 30px 24px; border-radius: 22px; }
+      .hardware-platform { padding: 32px 20px; }
+      .platform-heading { align-items: flex-start; flex-direction: column; }
+      .platform-summary { text-align: left; }
+      .platform-grid { grid-template-columns: 1fr; }
+      .platform-flow { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .platform-flow b { display: none; }
+      .workflow div { padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,.12); }
+      .fact-list div { grid-template-columns: 94px 1fr; }
+      .facts { padding: 30px 22px !important; }
+    }
+    @media print {
+      body { background: white; }
+      .button { display: none; }
+      .hero { min-height: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ambient::before, .message-panel, .message-panel::after, .stage-orbit, .signal-pill, section.content.agent::after, .hardware-platform::after, .platform { animation: none; }
+      .platform { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"><i></i><i></i></div>
+  <header class="shell topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"></rect><path d="M10 5.5h4M10.5 18.5h3"></path><path d="M9 9.5h6v5H9z" opacity=".72"></path></svg></span>新消息手机</div>
+    <span>通信硬件 · 消息即服务</span>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">NATIVE MESSAGE · AI SERVICE</p>
+        <h1>新消息手机</h1>
+        <p class="headline">让每一条消息，<br>直接成为一项服务。</p>
+        <p class="lead">面向新消息手机硬件平台的原生消息应用。依托手机终端原生短信界面处理语音、图片、视频、位置等富媒体消息，集成 Chatbot 智能服务模块，在消息会话内完成智能体交互、任务控制与调度。</p>
+        <div class="actions">
+          <a class="button primary" href="#platform">查看硬件平台能力</a>
+          <a class="button" href="#scenarios">了解应用场景</a>
+        </div>
+        <p class="platform-note">应用由新消息手机硬件平台承载，依托终端原生消息入口提供服务。</p>
+        <div class="quick-facts">
+          <div>原生入口<small>无需安装 APP</small></div>
+          <div>富媒体消息<small>语音 · 图片 · 视频 · 位置</small></div>
+          <div>智能体服务<small>交互 · 控制 · 调度</small></div>
+        </div>
+      </div>
+
+      <div class="stage" aria-label="新消息手机会话能力示意">
+        <div class="stage-orbit" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="signal-pill top">RICH MEDIA · ONLINE</span>
+        <span class="signal-pill bottom">AI AGENT · READY</span>
+        <div class="message-panel">
+          <div class="message-header">
+            <span class="bot-mark">✦</span>
+            <div><strong>城市服务助手</strong><small>● 智能服务在线</small></div>
+            <span class="native-tag">原生消息</span>
+          </div>
+          <div class="conversation">
+            <p class="time">今天 09:30</p>
+            <div class="notice">
+              <span>服务通知</span>
+              <strong>您的业务已进入办理环节</strong>
+              <p>预计今日 17:00 前完成。可直接回复“查询进度”了解详情。</p>
+              <b>查询办理进度　›</b>
+            </div>
+            <div class="user-bubble">查询进度</div>
+            <div class="bot-bubble">当前进度：材料审核完成，正在进行结果确认。<small>⚙ 任务已自动调度</small></div>
+          </div>
+          <div class="message-input">◉　▣　⌖ <span>发送消息或下达指令</span> ➤</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hardware-platform" id="platform">
+      <div class="platform-heading">
+        <div><p class="section-kicker">HARDWARE PLATFORM APPLICATION</p><h2>面向新消息手机硬件平台的原生应用</h2></div>
+        <span class="platform-summary"><i></i>应用能力由硬件终端原生承载，随终端配置与业务系统接入提供服务。</span>
+      </div>
+      <div class="platform-grid">
+        <article class="platform" style="--i:0"><span class="platform-icon">01</span><h3>原生消息入口</h3><strong>终端系统级能力</strong><p>应用依托新消息手机的原生消息界面运行，用户从熟悉的会话入口直接使用服务。</p><span class="platform-tag">硬件平台原生能力</span></article>
+        <article class="platform" style="--i:1"><span class="platform-icon">02</span><h3>富媒体通信</h3><strong>多种消息形态</strong><p>在硬件平台内统一处理文字、语音、图片、视频与位置等富媒体消息。</p><span class="platform-tag">硬件平台原生能力</span></article>
+        <article class="platform" style="--i:2"><span class="platform-icon">03</span><h3>智能体服务</h3><strong>Chatbot 原生集成</strong><p>智能服务模块在消息会话中理解意图、连接业务，并持续反馈处理状态。</p><span class="platform-tag">硬件平台原生能力</span></article>
+        <article class="platform" style="--i:3"><span class="platform-icon">04</span><h3>任务协同</h3><strong>控制与调度闭环</strong><p>通过硬件平台完成业务查询、指令下发、任务调度和结果回传。</p><span class="platform-tag">硬件平台原生能力</span></article>
+      </div>
+      <div class="platform-flow"><div><span>新消息手机</span><b>→</b></div><div><span>原生消息</span><b>→</b></div><div><span>Chatbot</span><b>→</b></div><div><span>业务闭环</span></div></div>
+    </section>
+
+    <section class="content">
+      <div class="section-heading">
+        <p class="section-kicker">RICH MEDIA MESSAGING</p>
+        <h2>原生短信界面，承载更丰富的消息</h2>
+        <p>沿用用户熟悉的手机消息入口，将信息展示、即时交互和服务办理放进同一个会话。</p>
+      </div>
+      <div class="capabilities">
+        <article class="card"><span class="icon">◉</span><h3>语音</h3><p>在原生消息会话内接收与处理语音内容。</p></article>
+        <article class="card"><span class="icon">▣</span><h3>图片</h3><p>用图片呈现通知、凭证与业务信息。</p></article>
+        <article class="card"><span class="icon">▶</span><h3>视频</h3><p>承载更完整的产品演示与服务说明。</p></article>
+        <article class="card"><span class="icon">⌖</span><h3>位置</h3><p>在会话中完成地点分享与位置服务。</p></article>
+      </div>
+    </section>
+
+    <section class="content agent">
+      <div class="section-heading">
+        <p class="section-kicker">CHATBOT SERVICE</p>
+        <h2>消息窗口里的智能体服务</h2>
+        <p>Chatbot 智能服务模块理解用户意图，连接业务系统，将咨询、查询、指令和任务调度串成可持续的服务流程。</p>
+      </div>
+      <div class="workflow">
+        <div><b>01</b><strong>消息触达</strong><small>通知与服务进入原生会话</small></div>
+        <div><b>02</b><strong>智能交互</strong><small>识别意图并返回所需信息</small></div>
+        <div><b>03</b><strong>任务执行</strong><small>下发指令并调度业务任务</small></div>
+        <div><b>04</b><strong>结果闭环</strong><small>状态、结果与后续动作回到会话</small></div>
+      </div>
+    </section>
+
+    <section class="content" id="scenarios">
+      <div class="section-heading">
+        <p class="section-kicker">APPLICATION SCENARIOS</p>
+        <h2>覆盖通知、服务、触达与告警</h2>
+        <p>面向需要高触达、低使用门槛和连续任务处理的业务场景。</p>
+      </div>
+      <div class="scenarios">
+        <article class="card"><span class="number">01</span><h3>政务通知</h3><p>将政策提醒、办事通知和进度查询送达手机原生入口，居民可在同一会话继续查询。</p><small>通知送达 · 进度查询</small></article>
+        <article class="card"><span class="number">02</span><h3>企业服务</h3><p>把客户服务、业务查询和流程指令汇入消息窗口，减少在多个应用之间切换。</p><small>业务查询 · 指令下发</small></article>
+        <article class="card"><span class="number">03</span><h3>营销触达</h3><p>通过图文、视频与交互式消息呈现产品信息，让用户从触达到咨询都在会话内完成。</p><small>富媒体展示 · 即时咨询</small></article>
+        <article class="card"><span class="number">04</span><h3>设备告警</h3><p>将设备状态和异常告警发送到指定终端，并在会话中完成确认、处置和结果反馈。</p><small>告警确认 · 闭环处理</small></article>
+      </div>
+    </section>
+
+    <section class="content facts">
+      <div class="section-heading">
+        <p class="section-kicker">DEVICE SPECIFICATIONS</p>
+        <h2>样机配置</h2>
+        <p>NMP X1 新消息智能通信终端的核心能力配置。</p>
+      </div>
+      <dl class="fact-list">
+        <div><dt>产品型号</dt><dd>NMP X1</dd></div>
+        <div><dt>产品形态</dt><dd>新消息智能通信终端</dd></div>
+        <div><dt>通信能力</dt><dd>5G / 4G / Wi-Fi 6 / Bluetooth 5.3</dd></div>
+        <div><dt>消息引擎</dt><dd>富媒体消息 · Chatbot · 智能体任务</dd></div>
+        <div><dt>媒体能力</dt><dd>文字 · 语音 · 图片 · 视频 · 位置</dd></div>
+        <div><dt>安全能力</dt><dd>可信设备认证 · 会话加密 · 权限隔离</dd></div>
+        <div><dt>开放接口</dt><dd>消息 API · Agent API · 设备控制 API</dd></div>
+      </dl>
+    </section>
+  </main>
+
+  <footer class="page-footer">新消息手机 · 消息即服务的硬件化部署</footer>
+</body>
+</html>

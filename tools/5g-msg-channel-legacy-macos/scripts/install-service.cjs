@@ -1,0 +1,17 @@
+'use strict';
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { spawnSync } = require('child_process');
+const root = path.resolve(__dirname, '..');
+const label = 'com.tuaran.5g-msg-channel-legacy-macos';
+const plist = path.join(os.homedir(), 'Library', 'LaunchAgents', label + '.plist');
+const node = process.execPath;
+const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+const xml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>Label</key><string>${label}</string><key>ProgramArguments</key><array><string>${escape(node)}</string><string>${escape(path.join(root, 'scripts', 'service-launch.cjs'))}</string></array><key>WorkingDirectory</key><string>${escape(root)}</string><key>RunAtLoad</key><true/><key>KeepAlive</key><true/><key>ThrottleInterval</key><integer>10</integer><key>StandardOutPath</key><string>${escape(path.join(root, 'var', 'service.log'))}</string><key>StandardErrorPath</key><string>${escape(path.join(root, 'var', 'service.log'))}</string></dict></plist>`;
+fs.mkdirSync(path.dirname(plist), { recursive: true });
+fs.mkdirSync(path.join(root, 'var'), { recursive: true, mode: 0o700 });
+fs.writeFileSync(plist, xml, { mode: 0o600 });
+const lint = spawnSync('plutil', ['-lint', plist], { encoding: 'utf8' });
+if (lint.status) throw new Error(lint.stderr || lint.stdout);
+console.log(JSON.stringify({ label, plist, node }, null, 2));

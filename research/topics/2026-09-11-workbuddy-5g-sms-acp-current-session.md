@@ -3,13 +3,14 @@ title: 手机短信注入当前 WorkBuddy 对话：ACP 链路实测
 category: topics
 date: 2026-09-11
 time: 08:52
+updated: 2026-09-15T17:30:00+08:00
 tags: [WorkBuddy, ACP, 5G消息, 短信通道, Agent, session/prompt, macOS]
 summary: 在本机把 5G 消息通道切到 ACP 后端后，白名单手机发出的短信可以注入当前 WorkBuddy 会话并自动回复；SQLite 用量立刻上升，聊天界面要手动刷新才显示。
 tldr: 2026 年 9 月 11 日上午，本机 shared-daemon 以 ACP 模式连上 WorkBuddy 本机端点 127.0.0.1:50072，用 session/load 绑定既有会话后 session/prompt 注入短信。3 条测试短信 processed=3、failed=0，session_usage 从 128691 增至 132913 tokens。聊天列表不自动出现新 turn，临时用 Cmd+R 或在主对话发一条消息触发重拉。
 topic_type: tech
 tech_type: agents_automation
 subjects: [workbuddy]
-content_type: engineering_case
+content_type: practice
 assistance: cursor
 model: grok-4.6
 show_assistance: false
@@ -27,8 +28,25 @@ pv: 0
 3. **当前对话确实被用到了。** 绑定的 WorkBuddy session 前缀 `5098bb07`；`workbuddy.db` 里 `session_usage.used` 从 128691 跳到 132913 tokens，`updated_at` 落在 08:36:21；同一会话的 `last_activity_at` 同步更新。
 4. **桌面 MCP 收件不能满足这个目标。** `receive_5g` / `reply_5g` 能读到消息，但 turn 必须结束，跨 turn 会积压；外部队列、通知中心、`workbuddy://` 深链也写不进当前对话。
 5. **界面缺口还在。** SQLite 已写入，renderer 没有接到后续 push，聊天列表要 Cmd+R 或在主对话随便发一条才会重拉。
+6. **9 月 15 日整理出可提交的 macOS 安全修订版。** `tools/5g-msg-channel-legacy-macos` 保留 MaaP → ACP → WorkBuddy 主链路，增加 Key 文件权限校验、发送者白名单、按发送者隔离会话、消息去重、超时不重放和网关错误观察。模拟网关闭环与 6 项边界测试共 7 项全部通过；真实网关仍需使用方自己的 MaaP Key 和白名单号码联调。
 
 协议边界见[ACP 与 MCP 硬件接入审计](/articles/research/topics/workbuddy-acp-vs-mcp-hardware-bridge)；通道资质与产品定位见[短信操纵本地 WorkBuddy](/articles/research/topics/workbuddy-sms-personal-agent)和[SMS / 5G 消息可行性](/articles/research/topics/workbuddy-sms-rcs-channel)。
+
+## 9 月 15 日更新：legacy macOS 安全修订版
+
+这次整理没有改写已经跑通的协议主链路，重点是把早期原型收紧到可以审阅和复测的本地工具。代码与安装文档位于 `tools/5g-msg-channel-legacy-macos`，版本号为 1.1.0。
+
+| 风险点 | 修订后的处理 |
+|---|---|
+| MaaP Key 混进安装包或仓库 | 生产模式优先从 `MAAP_API_KEY_FILE` 读取，并要求文件权限为 `0600`；`.env`、日志、收件箱与运行目录均被忽略 |
+| 任意号码触发 Agent | 非模拟模式下 `ALLOWED_SENDERS` 不能为空；主动下发也经过同一白名单 |
+| 多个号码共享错误上下文 | 默认按发送者创建独立 ACP 客户端与会话；需要复用当前 UI 对话时才启用共享会话工厂 |
+| 重复帧造成重复执行 | 以发送者和消息 ID 组合去重，队列另设容量上限 |
+| ACP 超时后重复执行有副作用的任务 | 超时只返回一次失败结果，不自动重放 `session/prompt` |
+| 网关拒绝下发却被记为成功 | 唯一在途发送收到 `error` 帧时直接失败，状态由 MCP 的 `bridge_status` 暴露 |
+| 测试污染真实收件箱与记忆文件 | 测试强制写入系统临时目录，并关闭收件播报栏刷新 |
+
+本轮验证覆盖 7 项：生产空白名单拒绝、发送者隔离与去重、超时不重放、主动下发白名单、MCP 启动失败状态、网关错误帧，以及“模拟 MaaP 网关 → ACP → AI 文本 → 下行 send 帧”的完整入口闭环。最后一项使用本机回环服务验证，不能替代真实运营商网关的送达回执。
 
 ## 二、事实层
 

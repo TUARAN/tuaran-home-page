@@ -2614,34 +2614,13 @@
   }
 
   .home-contact-panel p {
-    @apply mb-5 text-[13px] leading-6;
+    @apply mb-0 text-[13px] leading-6;
     color: var(--site-muted);
   }
 
-  .home-qr-grid {
-    @apply grid grid-cols-2 gap-3;
-  }
-
-  .home-qr-grid div {
-    @apply rounded-xl border p-3 text-center;
-    border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 74%, transparent);
-  }
-
-  .home-qr-grid img {
-    @apply mx-auto h-[88px] w-[88px] rounded border bg-white;
-    border-color: var(--site-line);
-  }
-
-  .home-qr-grid img.home-donate-qr {
-    height: 120px;
-    width: 88px;
-    object-fit: contain;
-  }
-
-  .home-qr-grid span {
-    @apply mt-2 block font-mono text-[11px];
-    color: var(--site-muted);
+  .home-contact-panel p a {
+    color: inherit;
+    text-underline-offset: 0.2em;
   }
 
   :root[data-ui='classic'] .home-page {
@@ -2816,11 +2795,6 @@
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
       Roboto, Helvetica, Arial, sans-serif;
     font-size: 1.35rem;
-  }
-
-  :root[data-ui='classic'] .home-qr-grid div {
-    border-radius: 0.55rem;
-    background: transparent;
   }
 
   :root[data-ui='classic'] .home-polished-root {
@@ -5587,6 +5561,19 @@
   .community-membership.is-compact .community-membership-payment { padding: 0.9rem; }
   .community-membership.is-compact .community-membership-payment-qr { width: 10rem; }
   .community-membership.is-compact .community-membership-pay-head { width: 10rem; }
+
+  .community-membership.is-compact .community-membership-contact {
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    align-items: flex-start;
+  }
+
+  .community-membership.is-compact .community-membership-owner-qr {
+    width: 8.5rem;
+  }
+
+  .community-membership.is-compact .community-membership-contact-guide {
+    grid-column: 1 / -1;
+  }
 
   .community-join-panel > .community-membership.is-compact {
     margin-top: 1.25rem;

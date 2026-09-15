@@ -53,7 +53,7 @@ function IconCheck({ className }) {
   )
 }
 
-export default function CopyIntroButton({ text, className }) {
+export default function CopyIntroButton({ text, className, direct = false, label = '复制作者介绍' }) {
   const [open, setOpen] = useState(false)
   const [done, setDone] = useState(false)
   const wrapRef = useRef(null)
@@ -84,24 +84,26 @@ export default function CopyIntroButton({ text, className }) {
     }
   }
 
-  const triggerBase =
-    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#cacbc2] bg-white/90 text-[#53554d] shadow-sm transition hover:border-[#afb1a4] hover:bg-[#f5f5f2] dark:border-[#3a4757] dark:bg-[#151c25] dark:text-[#c8d0dc] dark:hover:border-[#4f5f73] dark:hover:bg-[#1a2430]'
+  const triggerBase = direct
+    ? 'inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#2d4d61] bg-[#102032] px-3 font-mono text-[11px] tracking-[0.08em] text-[#7fe6da] transition hover:border-[#34e0d0] hover:bg-[#13283d]'
+    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#cacbc2] bg-white/90 text-[#53554d] shadow-sm transition hover:border-[#afb1a4] hover:bg-[#f5f5f2] dark:border-[#3a4757] dark:bg-[#151c25] dark:text-[#c8d0dc] dark:hover:border-[#4f5f73] dark:hover:bg-[#1a2430]'
 
   return (
     <div ref={wrapRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={direct ? handleCopy : () => setOpen((v) => !v)}
         className={[triggerBase, className].filter(Boolean).join(' ')}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label="预览并复制完整自我介绍"
-        title="预览并复制完整自我介绍"
+        aria-haspopup={direct ? undefined : 'dialog'}
+        aria-expanded={direct ? undefined : open}
+        aria-label={direct ? label : '预览并复制完整自我介绍'}
+        title={direct ? label : '预览并复制完整自我介绍'}
       >
-        <IconCopy />
+        {done ? <IconCheck className="text-emerald-400" /> : <IconCopy />}
+        {direct ? <span>{done ? '已复制' : label}</span> : null}
       </button>
 
-      {open ? (
+      {open && !direct ? (
         <div
           role="dialog"
           aria-label="自我介绍预览"

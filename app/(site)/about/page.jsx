@@ -9,6 +9,7 @@ import {
 } from '../../../lib/openClawAchievements'
 import { SECONDARY_SITES } from '../../../lib/secondarySites'
 import SharePageButton from '../components/SharePageButton'
+import CopyIntroButton from '../components/CopyIntroButton'
 import OpenClawAchievementsCarousel from './OpenClawAchievementsCarousel'
 
 export const dynamic = 'force-static'
@@ -94,6 +95,9 @@ const introLines = [
     href: 'https://blogger-alliance.cn/',
   },
 ]
+
+const publisherAuthorBio =
+  '涂阿燃（TUARAN），AI 前沿部署工程师、技术作者、矩联科技创始人，曾任职于大型互联网企业与央企。长期从事前端工程化、大模型与 AI Agent 研究及产品实践，关注模型工具协议、上下文工程和智能体的工程化落地。自 2019 年开始技术写作，累计发布内容 1500 余篇，全网阅读量超过 600 万。著有《程序员成长手记》《AI Bots 通关指南》，同时也是开源项目 OpenClaw 贡献者，多项代码贡献已合并至主分支。擅长用清晰、易懂的方式讲解复杂技术，帮助读者建立对大模型的系统认知，并将其应用到真实工作与产品开发中。'
 
 const stats = [
   { value: '1500+', label: '公开内容/发帖' },
@@ -501,9 +505,12 @@ export default function AboutPage() {
       <section className="border-t border-[#1c2a3c]" aria-label="出版作品">
         <div className={`py-8 ${sectionInner}`}>
           <p className={kicker}>Publications · 出版与发布</p>
-          <h2 className="mt-2 border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">
-            两项已完成的技术写作作品
-          </h2>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">
+              两项已完成的技术写作作品
+            </h2>
+            <CopyIntroButton text={publisherAuthorBio} direct label="复制出版简介" />
+          </div>
           <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
             这里仅列入已出版或已发布的作品，并区分技术图书与电子小册；已交稿、出版中或撰写中的项目不计入这两项成果。
           </p>

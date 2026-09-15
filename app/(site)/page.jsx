@@ -50,60 +50,52 @@ const SECTION_BADGE_CLASS = {
   feed: 'home-badge home-badge-feed',
 }
 
-const START_PATHS = [
+const HOME_EXPLORE_GROUPS = [
   {
-    id: 'learn-ai',
-    href: '/articles?subject=ai_dev',
-    title: 'AI 与开发',
-    titleEn: 'AI & development',
-    desc: '模型、Agent、AI 编程与开发工具。',
-    descEn: 'Models, agents, AI coding and development tools.',
-    icon: IconCode,
+    id: 'read',
+    label: '内容与研究',
+    labelEn: 'Read & research',
+    tone: 'knowledge',
+    items: [
+      { id: 'learn-ai', href: '/articles?subject=ai_dev', title: 'AI 与开发', titleEn: 'AI & development', desc: '模型、Agent 与开发工具', descEn: 'Models, agents and developer tools', icon: IconCode },
+      { id: 'companies', href: '/articles?subject=company_research', title: '公司调研', titleEn: 'Company research', desc: '公司画像与商业分析', descEn: 'Companies and business analysis', icon: IconEye },
+      { id: 'practice', href: '/articles?group=practice', title: '工程实践', titleEn: 'Engineering practice', desc: '案例、实作与指南', descEn: 'Cases, build logs and guides', icon: IconCodeCircle },
+      { id: 'subscribe', href: '/frontend-weekly', title: '前端周看', titleEn: 'Frontend Weekly', desc: '前端与 AI 工程情报', descEn: 'Frontend and AI engineering briefings', icon: IconCloud },
+    ],
   },
   {
-    id: 'companies',
-    href: '/articles?subject=company_research',
-    title: '公司调研',
-    titleEn: 'Company research',
-    desc: '公司画像、业务模式与竞争位置。',
-    descEn: 'Company profiles, business models and competitive positions.',
-    icon: IconEye,
+    id: 'make',
+    label: '作品与资源',
+    labelEn: 'Works & resources',
+    tone: 'works',
+    items: [
+      { id: 'interactive', href: '/rich-pages', title: '互动专题', titleEn: 'Interactives', desc: '可筛选、可操作的内容', descEn: 'Filterable, interactive stories', icon: IconEye },
+      { id: 'works', href: '/works', title: '原创项目', titleEn: 'Original projects', desc: '产品、工具与实验作品', descEn: 'Products, tools and experiments', icon: IconCodeCircle },
+      { id: 'resources', href: '/articles?group=resource', title: '资源', titleEn: 'Resources', desc: '档案、下载与收藏', descEn: 'Archives, downloads and bookmarks', icon: IconFileText },
+      { id: 'workbuddy', href: 'https://workbuddy.2aran.com/', title: 'WorkBuddy 学习手册', titleEn: 'WorkBuddy guides', desc: '手册、案例与课程', descEn: 'Guides, cases and courses', icon: IconFileText, external: true, analyticsId: 'workbuddy' },
+    ],
   },
   {
-    id: 'practice',
-    href: '/articles?group=practice',
-    title: '工程实践',
-    titleEn: 'Engineering practice',
-    desc: '工程案例、实作记录与指南。',
-    descEn: 'Engineering cases, build logs and guides.',
-    icon: IconCodeCircle,
+    id: 'connect',
+    label: '关于与连接',
+    labelEn: 'About & connect',
+    tone: 'collaborate',
+    items: [
+      { id: 'about', href: '/about', title: '了解作者', titleEn: 'About the author', desc: '经历与长期方向', descEn: 'Background and long-term direction', icon: IconUsers },
+      { id: 'community', href: '/community', title: '交友进社群', titleEn: 'Join the community', desc: '认识同行、交流实践', descEn: 'Meet peers and share practice', icon: IconUsers },
+      { id: 'blogger-alliance', href: 'https://blogger-alliance.cn/', title: '合作推广', titleEn: 'Collaboration', desc: '博主联盟与项目合作', descEn: 'Blogger Alliance and partnerships', icon: IconUsers, external: true, analyticsId: 'blogger-alliance' },
+    ],
   },
   {
-    id: 'interactive',
-    href: '/rich-pages',
-    title: '互动专题',
-    titleEn: 'Interactives',
-    desc: '可阅读、可筛选、可操作的内容作品。',
-    descEn: 'Readable, filterable and interactive works.',
-    icon: IconEye,
-  },
-  {
-    id: 'resources',
-    href: '/articles?group=resource',
-    title: '资源',
-    titleEn: 'Resources',
-    desc: '档案、下载、订阅与收藏。',
-    descEn: 'Archives, downloads, subscriptions and bookmarks.',
-    icon: IconFileText,
-  },
-  {
-    id: 'subscribe',
-    href: '/frontend-weekly',
-    title: '前端周看',
-    titleEn: 'Frontend Weekly',
-    desc: '前端、AI Agent 与工程情报。',
-    descEn: 'Frontend, AI Agent and engineering intelligence.',
-    icon: IconCloud,
+    id: 'more',
+    label: '其他站点',
+    labelEn: 'More sites',
+    tone: 'external',
+    collapsed: true,
+    items: [
+      { id: 'poetry', href: 'https://poemcn.2aran.com/', title: '阿燃诗词', titleEn: 'Aran Poetry', desc: '古典诗词作品', descEn: 'Classical Chinese poetry', icon: IconFileText, external: true },
+      { id: 'codex-credit', href: 'https://gptplus.2aran.com', title: '低价 Codex 直充', titleEn: 'Codex credits', desc: '独立服务入口', descEn: 'Independent service', icon: IconCloud, external: true },
+    ],
   },
 ]
 
@@ -382,29 +374,6 @@ function ClassicFeaturedSection({ items }) {
         </div>
       </div>
     </section>
-  )
-}
-
-function StartPathCard({ item }) {
-  const Icon = item.icon
-  return (
-    <Link
-      href={item.href}
-      className="home-entry-link group no-underline"
-      data-analytics-event="entry_click"
-      data-analytics-surface="start_path"
-      data-analytics-destination-kind="content"
-      data-analytics-destination-id={item.id}
-    >
-      <span className={`home-entry-icon home-entry-icon-${item.id}`} aria-hidden="true">
-        <Icon size={18} stroke={1.8} />
-      </span>
-      <span className="home-entry-copy">
-        <strong><T zh={item.title} en={item.titleEn} /></strong>
-        <small><T zh={item.desc} en={item.descEn} /></small>
-      </span>
-      <ArrowIcon />
-    </Link>
   )
 }
 
@@ -890,21 +859,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
           <BuilderAndSignalsPanel />
 
-          <section id="start-here" className="home-section home-entry-panel scroll-mt-24">
-            <div className="home-section-heading compact">
-              <div>
-                <p className="home-kicker">Start Here</p>
-                <h2 className="home-section-title"><T zh="从这里开始" en="Start here" /></h2>
-              </div>
-            </div>
-            <div className="home-entry-list">
-              {START_PATHS.map((item) => (
-                <StartPathCard key={item.href} item={item} />
-              ))}
-            </div>
-          </section>
-
-          <HomeDiscoveryPanel />
+          <HomeDiscoveryPanel groups={HOME_EXPLORE_GROUPS} />
 
           <section className="home-contact-panel">
             <div>

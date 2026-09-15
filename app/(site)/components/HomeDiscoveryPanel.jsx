@@ -1,23 +1,19 @@
 import Link from 'next/link'
+import { T } from './LocaleProvider'
 
-const DISCOVERY_ITEMS = [
-  { icon: '📝', label: '工程实践与专题分析', hint: '文章', href: '/articles' },
-  { icon: '🧪', label: '原创项目与交互作品', hint: '作品', href: '/works' },
-  { icon: '📚', label: 'WorkBuddy 学习手册', hint: '资源', href: 'https://workbuddy.2aran.com/', external: true, analyticsId: 'workbuddy' },
-  { icon: '🤝', label: '合作推广与博主联盟', hint: '合作', href: 'https://blogger-alliance.cn/', external: true, analyticsId: 'blogger-alliance' },
-  { icon: '🧭', label: '了解作者与长期方向', hint: '关于', href: '/about' },
-  { icon: '💬', label: '交友进社群', hint: '圈子', href: '/community' },
-  { icon: '🏛️', label: '阿燃诗词', hint: '诗词', href: 'https://poemcn.2aran.com/', external: true },
-  { icon: '⚡', label: '低价 CodeX 直冲', hint: '充值', href: 'https://gptplus.2aran.com', external: true },
-]
-
-function DiscoveryLink({ item }) {
-  const className = 'home-discovery-link no-external-arrow'
+function DiscoveryLink({ item, tone }) {
+  const Icon = item.icon
+  const className = 'home-entry-link group no-external-arrow'
   const content = (
     <>
-      <span className="home-discovery-icon" aria-hidden="true">{item.icon}</span>
-      <span className="home-discovery-label">{item.label}</span>
-      <span className="home-discovery-hint">{item.hint} <span aria-hidden="true">→</span></span>
+      <span className={`home-entry-icon home-entry-icon-${tone}`} aria-hidden="true">
+        <Icon size={18} stroke={1.8} />
+      </span>
+      <span className="home-entry-copy">
+        <strong><T zh={item.title} en={item.titleEn} /></strong>
+        <small><T zh={item.desc} en={item.descEn} /></small>
+      </span>
+      <span className="home-explore-arrow" aria-hidden="true">{item.external ? '↗' : '→'}</span>
     </>
   )
 
@@ -29,38 +25,56 @@ function DiscoveryLink({ item }) {
         rel="noopener noreferrer"
         className={className}
         data-analytics-event={item.analyticsId ? 'entry_click' : undefined}
-        data-analytics-surface={item.analyticsId ? `home_${item.analyticsId}` : undefined}
-        data-analytics-destination-kind={item.analyticsId ? 'external' : undefined}
-        data-analytics-destination-id={item.analyticsId}
+        data-analytics-surface={item.analyticsId ? `home_${item.analyticsId}` : 'explore'}
+        data-analytics-destination-kind="external"
+        data-analytics-destination-id={item.analyticsId || item.id}
       >
         {content}
       </a>
     )
   }
 
-  return <Link href={item.href} className={className}>{content}</Link>
+  return (
+    <Link
+      href={item.href}
+      className={className}
+      data-analytics-event="entry_click"
+      data-analytics-surface="start_path"
+      data-analytics-destination-kind="content"
+      data-analytics-destination-id={item.id}
+    >
+      {content}
+    </Link>
+  )
 }
 
-export default function HomeDiscoveryPanel() {
-  const featuredItems = DISCOVERY_ITEMS.slice(0, 4)
-  const moreItems = DISCOVERY_ITEMS.slice(4)
-
+export default function HomeDiscoveryPanel({ groups }) {
   return (
-    <section className="home-section home-discovery-panel" aria-labelledby="home-discovery-title">
+    <section id="start-here" className="home-section home-discovery-panel scroll-mt-24" aria-labelledby="home-discovery-title">
       <div className="home-section-heading compact">
         <div>
           <p className="home-kicker">Explore</p>
-          <h2 id="home-discovery-title" className="home-section-title">发现更多</h2>
+          <h2 id="home-discovery-title" className="home-section-title"><T zh="探索" en="Explore" /></h2>
         </div>
       </div>
-      <nav className="home-discovery-list" aria-label="更多站点入口">
-        {featuredItems.map((item) => <DiscoveryLink key={item.href} item={item} />)}
-        <details className="home-discovery-more">
-          <summary>另外 {moreItems.length} 个入口</summary>
-          <div className="home-discovery-more-list">
-            {moreItems.map((item) => <DiscoveryLink key={item.href} item={item} />)}
-          </div>
-        </details>
+      <nav className="home-explore-groups" aria-label="站点内容与服务入口">
+        {groups.map((group) => group.collapsed ? (
+          <details className="home-explore-more" key={group.id}>
+            <summary>
+              <T zh={`${group.label} · ${group.items.length}`} en={`${group.labelEn} · ${group.items.length}`} />
+            </summary>
+            <div className="home-entry-list">
+              {group.items.map((item) => <DiscoveryLink key={item.href} item={item} tone={group.tone} />)}
+            </div>
+          </details>
+        ) : (
+          <section className="home-explore-group" aria-labelledby={`home-explore-${group.id}`} key={group.id}>
+            <h3 id={`home-explore-${group.id}`}><T zh={group.label} en={group.labelEn} /></h3>
+            <div className="home-entry-list">
+              {group.items.map((item) => <DiscoveryLink key={item.href} item={item} tone={group.tone} />)}
+            </div>
+          </section>
+        ))}
       </nav>
     </section>
   )

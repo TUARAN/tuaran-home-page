@@ -20,6 +20,10 @@ const directoryItemSource = await readFile(
   'utf8',
 )
 const homeSource = await readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8')
+const homeDiscoverySource = await readFile(
+  new URL('../../app/(site)/components/HomeDiscoveryPanel.jsx', import.meta.url),
+  'utf8',
+)
 
 test('new visitor start measurement has an explicit qualified behavior threshold', () => {
   assert.match(analyticsSource, /const ENGAGED_SECONDS = 30/)
@@ -82,6 +86,7 @@ test('home offers stable goal-based start paths and marks their surface', () => 
   assert.match(homeSource, /href: '\/articles\?group=resource'[\s\S]*title: '资源'/)
   assert.match(homeSource, /href: '\/frontend-weekly'[\s\S]*title: '前端周看'/)
   assert.doesNotMatch(homeSource, /\?entity=company|\?delivery=subscribe|按使用方式/)
-  assert.match(homeSource, /id="start-here"/)
-  assert.match(homeSource, /data-analytics-surface="start_path"/)
+  assert.match(homeSource, /<HomeDiscoveryPanel groups=\{HOME_EXPLORE_GROUPS\} \/>/)
+  assert.match(homeDiscoverySource, /id="start-here"/)
+  assert.match(homeDiscoverySource, /data-analytics-surface="start_path"/)
 })

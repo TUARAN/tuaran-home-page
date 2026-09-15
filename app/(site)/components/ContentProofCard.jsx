@@ -9,7 +9,28 @@ const STATUS = {
   pending: { label: '等待存证', dot: 'bg-amber-500' },
 }
 
-export default function ContentProofCard({ credential, contentKey = '', publishedAt = '', title = '', className = '' }) {
+export default function ContentProofCard({ credential, contentKey = '', publishedAt = '', title = '', className = '', inline = false }) {
+  if (inline) {
+    if (!credential) {
+      return (
+        <span className={`text-[10px] text-[#9a9388] dark:text-[#737d88] ${className}`} aria-label={`${title || contentKey}的内容凭证等待生成`}>
+          凭证待生成
+        </span>
+      )
+    }
+
+    const status = STATUS[credential.status] || STATUS.pending
+    return (
+      <Link
+        href={contentProofHref(credential.contentKey)}
+        className={`text-[10px] text-[#858077] underline decoration-dotted underline-offset-2 hover:text-[#4d4942] dark:text-[#818b96] dark:hover:text-[#b8c2cd] ${className}`}
+        aria-label={`${title || contentKey}的内容凭证：${status.label}`}
+      >
+        {status.label}
+      </Link>
+    )
+  }
+
   if (!credential) {
     return (
       <aside className={`flex flex-col gap-3 rounded-xl border border-dashed border-[#c8baa3] bg-[#f8f4eb] px-4 py-3 dark:border-[#344150] dark:bg-[#111820] sm:flex-row sm:items-center sm:justify-between ${className}`} aria-label={`${title || contentKey}的内容凭证`}>

@@ -290,6 +290,8 @@ export default async function ResearchDetailPage({ params }) {
               </Link>
             </>
           ) : null}
+          <span aria-hidden="true">·</span>
+          <ContentProofCard credential={proofCredential} contentKey={articleKey} title={entry.title} inline />
           </>
         )}
         ownerMeta={{
@@ -336,14 +338,6 @@ export default async function ResearchDetailPage({ params }) {
         summary={entry.tldr || entry.summary}
         summaryLabel={entry.tldr ? 'TL;DR' : ''}
         tags={entry.tags || []}
-      />
-
-      <ContentProofCard
-        credential={proofCredential}
-        contentKey={articleKey}
-        publishedAt={entry.dateLabel || entry.date}
-        title={entry.title}
-        className="mb-8"
       />
 
       {showRebuttalPersonalityTest && !isEncrypted ? <RebuttalPersonalityTest /> : null}

@@ -311,19 +311,25 @@ export default async function ArticleDetailPage({ params }) {
         readingMinutes={readingMinutes(articleMarkdown)}
         pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
         ownerMeta={{ author: 'TUARAN' }}
-        metaExtras={article.sourceUrl || isExternalHref(article.href) ? (
+        metaExtras={(
           <>
+            {article.sourceUrl || isExternalHref(article.href) ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <a
+                  href={article.sourceUrl || article.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-4"
+                >
+                  {article.sourceUrl ? '同步来源' : '原文'}
+                </a>
+              </>
+            ) : null}
             <span aria-hidden="true">·</span>
-            <a
-              href={article.sourceUrl || article.href}
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-4"
-            >
-              {article.sourceUrl ? '同步来源' : '原文'}
-            </a>
+            <ContentProofCard credential={proofCredential} contentKey={`article:${article.slug}`} title={article.title} inline />
           </>
-        ) : null}
+        )}
         actions={(
           <ArticleHeaderActions
             title={article.title}
@@ -351,14 +357,6 @@ export default async function ArticleDetailPage({ params }) {
         summary={article.summary}
         summaryLabel="TL;DR"
         tags={article.tags || []}
-      />
-
-      <ContentProofCard
-        credential={proofCredential}
-        contentKey={`article:${article.slug}`}
-        publishedAt={article.date}
-        title={article.title}
-        className="mb-8"
       />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">

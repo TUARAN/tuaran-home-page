@@ -79,6 +79,12 @@ export default function PublishedArticle({ article, siteUrl }) {
         dateTime={publishedTime}
         readingMinutes={readingMinutes(article.contentText)}
         pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
+        metaExtras={(
+          <>
+            <span aria-hidden="true">·</span>
+            <ContentProofCard credential={proofCredential} contentKey={articleKey} title={article.title} inline />
+          </>
+        )}
         ownerMeta={{ author: 'TUARAN' }}
         actions={(
           <ArticleHeaderActions
@@ -107,13 +113,6 @@ export default function PublishedArticle({ article, siteUrl }) {
         summary={article.summary}
         summaryLabel="TL;DR"
         tags={article.tags}
-      />
-      <ContentProofCard
-        credential={proofCredential}
-        contentKey={articleKey}
-        publishedAt={publishedTime}
-        title={article.title}
-        className="mb-8"
       />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <main className="min-w-0">

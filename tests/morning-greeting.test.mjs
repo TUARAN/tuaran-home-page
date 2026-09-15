@@ -362,6 +362,10 @@ test('配图素材用 tab 合并表情包和资源池，列表只加载小图', 
   assert.doesNotMatch(poolSource, /<img src=\{item\.imageUrl/)
   assert.match(poolSource, /固定模板池/)
   assert.match(poolSource, /选图与发布记录/)
+  assert.match(poolSource, /content-type/)
+  assert.match(poolSource, /接口返回异常/)
+  assert.match(poolSource, /登录状态已失效/)
+  assert.match(poolSource, /credentials: 'same-origin'/)
 })
 
 test('daily posting times keep the five community baselines, vary by date, and stay within 30 minutes', async () => {

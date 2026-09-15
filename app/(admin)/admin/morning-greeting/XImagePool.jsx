@@ -9,6 +9,19 @@ const TYPES = [['', '全部类型'], ['greeting', '问候'], ['community-image',
 const STATES = { pending: '待生成', generating: '生成中', ready: '待发布', failed: '失败待重试', publishing: '发布中 / 待核对', 'publish-unknown': '结果待核对', published: '已发布' }
 const selectClass = 'rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-xs dark:border-[#2d3744] dark:bg-[#10161f]'
 
+async function readPoolPayload(response) {
+  const contentType = response.headers.get('content-type')?.toLowerCase() || ''
+  if (!contentType.includes('application/json')) {
+    await response.text().catch(() => '')
+    throw new Error(`图片资源池接口返回异常（HTTP ${response.status}），请刷新页面；如仍失败请重新登录。`)
+  }
+  const payload = await response.json().catch(() => null)
+  if (!payload || typeof payload !== 'object') {
+    throw new Error(`图片资源池响应无法解析（HTTP ${response.status}），请稍后重试。`)
+  }
+  return payload
+}
+
 export default function XImagePool() {
   const [data, setData] = useState(null)
   const [type, setType] = useState('')
@@ -25,9 +38,16 @@ export default function XImagePool() {
     setError('')
     try {
       const query = new URLSearchParams({ type, status, before })
-      const response = await fetch(`/api/admin/morning-greeting/assets?${query}`, { cache: 'no-store' })
-      const payload = await response.json()
-      if (!response.ok) throw new Error(payload.error || '图片资源池读取失败')
+      const response = await fetch(`/api/admin/morning-greeting/assets?${query}`, { cache: 'no-store', credentials: 'same-origin' })
+      const payload = await readPoolPayload(response)
+      if (!response.ok) {
+        const message = payload.error === 'NOT_AUTHENTICATED'
+          ? '登录状态已失效，请重新登录。'
+          : payload.error === 'NOT_OWNER'
+            ? '当前账号没有权限读取图片资源池。'
+            : payload.error || `图片资源池读取失败（HTTP ${response.status}）`
+        throw new Error(message)
+      }
       if (version !== requestVersion.current) return
       setData((old) => ({ ...payload, items: before ? [...(old?.items || []), ...payload.items] : payload.items }))
     } catch (failure) {

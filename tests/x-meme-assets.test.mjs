@@ -3,18 +3,22 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { X_MEME_ASSETS, X_MEME_GROUPS, X_MEME_SLOT_THEMES, pickXMemeAsset, xMemeThumbPath } from '../lib/xMemeAssets.js'
 
-test('five styles contain exactly three unique, uploadable PNG templates each', async () => {
-  assert.equal(X_MEME_GROUPS.length, 5)
-  assert.equal(X_MEME_ASSETS.length, 15)
-  assert.equal(new Set(X_MEME_ASSETS.map((asset) => asset.path)).size, 15)
-  assert.equal(new Set(X_MEME_ASSETS.map((asset) => asset.id)).size, 15)
-  for (const group of X_MEME_GROUPS) {
-    assert.deepEqual(group.assets.map((asset) => asset.theme), ['morning', 'noon', 'friends'])
+test('nine styles contain 35 unique, uploadable PNG templates', async () => {
+  assert.equal(X_MEME_GROUPS.length, 9)
+  assert.equal(X_MEME_ASSETS.length, 35)
+  assert.equal(new Set(X_MEME_ASSETS.map((asset) => asset.path)).size, 35)
+  assert.equal(new Set(X_MEME_ASSETS.map((asset) => asset.id)).size, 35)
+  for (const [index, group] of X_MEME_GROUPS.entries()) {
+    if (index < 5) {
+      assert.deepEqual(group.assets.map((asset) => asset.theme), ['morning', 'noon', 'friends'])
+    } else {
+      assert.deepEqual(group.assets.map((asset) => asset.slot), Object.keys(X_MEME_SLOT_THEMES))
+    }
     for (const asset of group.assets) {
       const bytes = await readFile(new URL(`../public${asset.path}`, import.meta.url))
       assert.equal(bytes.subarray(0, 8).join(','), '137,80,78,71,13,10,26,10')
       assert.ok(bytes.length <= 5 * 1024 * 1024)
-      assert.match(asset.thumb, /\/images\/x-memes\/thumbs\/.+\.jpg$/)
+      assert.match(asset.thumb, /\/thumbs\/.+\.jpg$/)
       const thumb = await readFile(new URL(`../public${asset.thumb}`, import.meta.url))
       assert.equal(thumb.subarray(0, 2).toString('hex'), 'ffd8')
       assert.ok(thumb.length < 80 * 1024)
@@ -23,10 +27,10 @@ test('five styles contain exactly three unique, uploadable PNG templates each', 
   }
 })
 
-test('five-day rotation covers all 15 templates while matching every slot and keeping retries stable', () => {
+test('nine-day rotation covers all 35 templates while matching every slot and keeping retries stable', () => {
   const used = new Set()
   const perSlot = new Map()
-  for (let day = 9; day < 14; day++) {
+  for (let day = 9; day < 18; day++) {
     const date = `2026-09-${String(day).padStart(2, '0')}`
     const dailyGroups = new Set()
     for (const [slot, theme] of Object.entries(X_MEME_SLOT_THEMES)) {
@@ -40,8 +44,8 @@ test('five-day rotation covers all 15 templates while matching every slot and ke
     }
     assert.equal(dailyGroups.size, 5)
   }
-  assert.equal(used.size, 15)
-  for (const groups of perSlot.values()) assert.equal(groups.size, 5)
+  assert.equal(used.size, 35)
+  for (const groups of perSlot.values()) assert.equal(groups.size, 9)
   assert.equal(pickXMemeAsset({ slot: 'crypto_market', date: '2026-09-09' }), null)
   for (const date of ['', 'bad', '2026-02-30']) {
     assert.throws(() => pickXMemeAsset({ slot: 'morning', date }), /X_MEME_INVALID_DATE/)

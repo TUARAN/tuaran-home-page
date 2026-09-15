@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import ContentProofCard from '../components/ContentProofCard'
+import { getContentProofCredential } from '../../../lib/contentProofRegistry'
 import ContentFingerprintPrototype from './ContentFingerprintPrototype'
 
 const DETAIL_HREF = '/articles/research/topics/2aran-onchain-content-site'
@@ -52,13 +54,14 @@ const ROADMAP = [
     title: '测试网批次存证',
     status: '工程就绪',
     active: true,
-    copy: 'Merkle 批次、逐篇 Path、Base Sepolia EAS 写入脚本与 D1 证明索引已完成；等待测试网发布钱包签名首批交易。',
+    copy: 'Merkle 批次、逐篇 Path、D1 证明索引与首笔 Base Sepolia EAS 存证已完成。',
   },
   {
     range: '第 5—6 周',
     title: '读者验证界面',
-    status: '待实施',
-    copy: '上线文章凭证卡、验证过程、版本时间线和区块浏览器入口，全程不要求读者连接钱包。',
+    status: '已完成',
+    active: true,
+    copy: '文章凭证卡、本地验证过程、版本时间线和区块浏览器入口已上线，全程无需钱包。',
   },
   {
     range: '第 7—10 周',
@@ -93,6 +96,7 @@ function SectionHeading({ label, title, children }) {
 }
 
 export default function OnchainBlogPage() {
+  const demoCredential = getContentProofCredential('research:topics:content-proof-demo')
   return (
     <main className="min-h-screen bg-[#f3f0e8] text-[#292620] dark:bg-[#0d1117] dark:text-[#eee9df]">
       <section
@@ -196,7 +200,7 @@ export default function OnchainBlogPage() {
         </div>
       </section>
 
-      <section className="border-y border-[#d8d0c2] bg-[#eae4d8] dark:border-[#2a313b] dark:bg-[#101720]">
+      <section id="reader-verification" className="scroll-mt-24 border-y border-[#d8d0c2] bg-[#eae4d8] dark:border-[#2a313b] dark:bg-[#101720]">
         <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start md:py-20">
           <SectionHeading label="Reader Experience" title="读者最终能做什么">
             验证过程应直接、可解释、无需钱包，并允许外部工具独立完成复核。
@@ -232,7 +236,10 @@ export default function OnchainBlogPage() {
 
       <section className="border-y border-[#d8d0c2] bg-[#eae4d8] dark:border-[#2a313b] dark:bg-[#101720]">
         <div className="mx-auto w-full max-w-[1180px] px-5 py-14 md:py-20">
-          <ContentFingerprintPrototype />
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+            <ContentFingerprintPrototype />
+            <ContentProofCard credential={demoCredential} />
+          </div>
         </div>
       </section>
 
@@ -282,7 +289,7 @@ D1: content_proof_batches + content_proofs
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
             <p className="font-serif text-2xl font-semibold">详细技术方案包含技术选择、数据结构、验收条件与风险说明。</p>
-            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-15 · 当前状态：指纹与 Merkle 批次工程完成，等待发布钱包签名首笔 Base Sepolia 存证。</p>
+            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-15 · 当前状态：读者验证界面与首笔 Base Sepolia EAS 真实存证已上线。</p>
           </div>
           <Link href={DETAIL_HREF} className="shrink-0 rounded-full border border-[#9d835b] px-5 py-3 text-sm font-semibold text-[#5d4523] no-underline hover:bg-[#f8f3e9] dark:border-[#8d774f] dark:text-[#dbbd86] dark:hover:bg-white/[0.05]">
             打开完整计划与实现细节 →

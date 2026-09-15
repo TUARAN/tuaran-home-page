@@ -1,8 +1,12 @@
 # 内容指纹原型
 
-更新：2026-09-14
+更新：2026-09-15
 
 第 1—2 周原型由 `lib/contentProof.js`、`scripts/build-content-proof.mjs`、公开 proof JSON 和 `/onchain-blog` 上的浏览器验证器组成。它只完成内容规范化、SHA-256、站点签名与离线验证；不包含 Merkle Tree、测试网或主网交易。
+
+第 5—6 周的读者界面由 `ContentProofCard`、`/proofs/[contentKey]`、`contentProofRegistry.js` 和 `contentProofPresentation.js` 组成。已登记凭证可在文章页显示紧凑卡片，详情页在浏览器本地核对内容指纹、Proof ID 和站点签名，并展示 Merkle/链上状态、版本时间线和区块浏览器入口。读者全程无需连接钱包。
+
+首个 bootstrap 批次已于 2026-09-15 写入 Base Sepolia EAS。Merkle Root 为 `3c4a2b76a8b817924060e0c571797337cad09045b8d9e8f84fd0ec4595392f05`，attestation UID 为 `0xaf0c38c741b062f0097e88a3a7ff4563b10d19adfafc26b386ad160494085c3d`，交易为 `0xb8bee63535fef3e81bafeac38666ad3ab28ee725d852e5d07ed11236ec6742fd`。读者验证页会本地核对 Merkle Path，并直接链接该 EAS attestation。
 
 ## v1 规范化契约
 

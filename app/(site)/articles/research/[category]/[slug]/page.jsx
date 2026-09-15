@@ -16,6 +16,7 @@ import ContentPvBeacon from '../../../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
 import ArticleEngagementPanel from '../../../../components/ArticleEngagementPanel'
 import ArticleHeaderActions from '../../../../components/ArticleHeaderActions'
+import ContentProofCard from '../../../../components/ContentProofCard'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
 import DownloadPptButton from './DownloadPptButton'
@@ -26,6 +27,7 @@ import LifeTrafficTest from './LifeTrafficTest'
 import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 import AShareCompanyList from './AShareCompanyList'
 import { taxonomyForResearch } from '../../../../../../lib/contentTaxonomy'
+import { getContentProofCredential } from '../../../../../../lib/contentProofRegistry'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -142,6 +144,7 @@ export default async function ResearchDetailPage({ params }) {
     ? shareTitle
     : entry.summary || entry.tldr || entry.title
   const articleKey = `research:${entry.category}:${entry.slug}`
+  const proofCredential = getContentProofCredential(articleKey)
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
   const showRebuttalPersonalityTest = entry.category === 'topics' && entry.slug === 'rebuttal-personality-communication-pattern'
   const companyListHeading = '\n## 公司名单\n'
@@ -333,6 +336,14 @@ export default async function ResearchDetailPage({ params }) {
         summary={entry.tldr || entry.summary}
         summaryLabel={entry.tldr ? 'TL;DR' : ''}
         tags={entry.tags || []}
+      />
+
+      <ContentProofCard
+        credential={proofCredential}
+        contentKey={articleKey}
+        publishedAt={entry.dateLabel || entry.date}
+        title={entry.title}
+        className="mb-8"
       />
 
       {showRebuttalPersonalityTest && !isEncrypted ? <RebuttalPersonalityTest /> : null}

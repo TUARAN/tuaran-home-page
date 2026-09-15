@@ -11,10 +11,11 @@ function valueAfter(args, flag) {
 
 function usage() {
   return `Usage:
-  node scripts/build-content-proof-batch.mjs --input-dir public/proofs/batch-001 --output public/proofs/batches/batch-001.json --generated-at 2026-09-15T00:00:00.000Z [--previous-root 0x...] [--manifest-uri ipfs://...]
+  node scripts/build-content-proof-batch.mjs --input-dir public/proofs/batch-001 --output public/proofs/batches/batch-001.json --generated-at 2026-09-15T00:00:00.000Z [--previous-root 0x...] [--manifest-uri ipfs://...] [--bootstrap]
 
 The input directory must contain signed content proof JSON files. Output is
-created without overwriting an existing batch.`
+created without overwriting an existing batch. --bootstrap permits a one-item
+first testnet transaction; normal public batches require 10–20 proofs.`
 }
 
 const args = process.argv.slice(2)
@@ -33,7 +34,8 @@ if (!inputDir || !outputPath || !generatedAt) {
 
 const directory = resolve(inputDir)
 const filenames = (await readdir(directory)).filter((name) => name.endsWith('.json')).sort()
-if (filenames.length < 10 || filenames.length > 20) throw new Error(`a public testnet batch must contain 10–20 proofs; found ${filenames.length}`)
+const minimumItems = args.includes('--bootstrap') ? 1 : 10
+if (filenames.length < minimumItems || filenames.length > 20) throw new Error(`a public testnet batch must contain ${minimumItems}–20 proofs; found ${filenames.length}`)
 const proofs = await Promise.all(filenames.map(async (name) => JSON.parse(await readFile(resolve(directory, name), 'utf8'))))
 const batch = await buildContentMerkleBatch(proofs, {
   generatedAt,

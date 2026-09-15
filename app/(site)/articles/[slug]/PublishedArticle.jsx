@@ -5,6 +5,7 @@ import ArticleDetailHeader from '../../components/ArticleDetailHeader'
 import ArticleEngagementPanel from '../../components/ArticleEngagementPanel'
 import ArticleToc from '../../components/ArticleToc'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
+import ContentProofCard from '../../components/ContentProofCard'
 import ArticleComments from '../../components/ArticleComments'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
@@ -13,6 +14,7 @@ import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton
 import { isMarkdownDocument } from '../../../../lib/articleDocument.mjs'
 import { renderMarkdown, extractToc } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/contentTaxonomy'
+import { getContentProofCredential } from '../../../../lib/contentProofRegistry'
 
 function dateLabel(value) {
   if (!value) return ''
@@ -61,6 +63,7 @@ export default function PublishedArticle({ article, siteUrl }) {
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
   }
   const articleKey = `article:${article.slug}`
+  const proofCredential = getContentProofCredential(articleKey)
   const tocItems = isMarkdownDocument(article.content) ? extractToc(article.content.markdown) : getArticlePostToc(article.content)
 
   return (
@@ -104,6 +107,13 @@ export default function PublishedArticle({ article, siteUrl }) {
         summary={article.summary}
         summaryLabel="TL;DR"
         tags={article.tags}
+      />
+      <ContentProofCard
+        credential={proofCredential}
+        contentKey={articleKey}
+        publishedAt={publishedTime}
+        title={article.title}
+        className="mb-8"
       />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <main className="min-w-0">

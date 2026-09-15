@@ -30,6 +30,7 @@ function usage() {
   CONTENT_LEDGER_TESTNET_PRIVATE_KEY=0x... node scripts/anchor-content-proof-batch.mjs --batch batch.json --output anchored-batch.json --register-schema
 
 Options: --rpc-url URL  Override the public Base Sepolia RPC endpoint.
+         --wallet-file  Read a locally ignored JSON file containing privateKey.
          --prepare       Print the exact EAS schema and fields without network or wallet access.`
 }
 
@@ -61,8 +62,10 @@ if (args.includes('--prepare')) {
   process.exit(0)
 }
 
-const privateKey = process.env.CONTENT_LEDGER_TESTNET_PRIVATE_KEY
-if (!privateKey) throw new Error('CONTENT_LEDGER_TESTNET_PRIVATE_KEY is required; never put this key in the repository or batch JSON')
+const walletFile = valueAfter(args, '--wallet-file')
+const walletRecord = walletFile ? JSON.parse(await readFile(resolve(walletFile), 'utf8')) : null
+const privateKey = walletRecord?.privateKey || process.env.CONTENT_LEDGER_TESTNET_PRIVATE_KEY
+if (!privateKey) throw new Error('CONTENT_LEDGER_TESTNET_PRIVATE_KEY or --wallet-file is required; never put this key in the repository or batch JSON')
 const provider = new JsonRpcProvider(valueAfter(args, '--rpc-url') || CHAIN.rpcUrl, CHAIN.chainId)
 const signer = new Wallet(privateKey, provider)
 let schemaUid = valueAfter(args, '--schema-uid')

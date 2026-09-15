@@ -5,6 +5,7 @@ import { readContentCatalog } from '../../../../lib/contentCatalogRuntime'
 import { getArchivedArticle } from '../../../../lib/articleArchive'
 import ArticleDetailHeader from '../../components/ArticleDetailHeader'
 import ArticleHeaderActions from '../../components/ArticleHeaderActions'
+import ContentProofCard from '../../components/ContentProofCard'
 import ArticleComments from '../../components/ArticleComments'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
@@ -16,6 +17,7 @@ import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
 import { buildArticleOgUrl } from '../../../../lib/articleOg'
 import { extractToc, renderMarkdown } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/contentTaxonomy'
+import { getContentProofCredential } from '../../../../lib/contentProofRegistry'
 import PublishedArticle from './PublishedArticle'
 
 export const runtime = 'edge'
@@ -170,6 +172,7 @@ export async function generateMetadata({ params }) {
   const title = article.title
   const description = article.summary
   const publishedTime = toIsoDate(article.date)
+  const proofCredential = getContentProofCredential(`article:${article.slug}`)
   const ogImage = buildArticleOgUrl({
     title,
     description,
@@ -348,6 +351,14 @@ export default async function ArticleDetailPage({ params }) {
         summary={article.summary}
         summaryLabel="TL;DR"
         tags={article.tags || []}
+      />
+
+      <ContentProofCard
+        credential={proofCredential}
+        contentKey={`article:${article.slug}`}
+        publishedAt={article.date}
+        title={article.title}
+        className="mb-8"
       />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">

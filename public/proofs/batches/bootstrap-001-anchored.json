@@ -1,0 +1,27 @@
+{
+  "schema": "https://2aran.com/schemas/content-proof-batch/v1",
+  "algorithm": "SHA-256 domain-separated binary tree/v1",
+  "generatedAt": "2026-09-15T05:00:00.000Z",
+  "count": 1,
+  "merkleRoot": "3c4a2b76a8b817924060e0c571797337cad09045b8d9e8f84fd0ec4595392f05",
+  "manifestHash": "266958312e90b48c3577dc21ee187ea53889dd4e83bf627db2ba4aa39a57cd93",
+  "manifestUri": null,
+  "previousRoot": null,
+  "members": [
+    {
+      "contentKey": "research:topics:content-proof-demo",
+      "proofId": "168fd4950fb76d024f5be2adb52bb6b35b068da0fc4c95505393ed6f1c4ef1f4",
+      "version": 1,
+      "leaf": "3c4a2b76a8b817924060e0c571797337cad09045b8d9e8f84fd0ec4595392f05",
+      "merklePath": []
+    }
+  ],
+  "anchor": {
+    "attestationUid": "0xaf0c38c741b062f0097e88a3a7ff4563b10d19adfafc26b386ad160494085c3d",
+    "chainId": 84532,
+    "contract": "0x4200000000000000000000000000000000000021",
+    "explorerUrl": "https://base-sepolia.easscan.org/attestation/view/0xaf0c38c741b062f0097e88a3a7ff4563b10d19adfafc26b386ad160494085c3d",
+    "schemaUid": "0xebe456664eaf45e2dc95e03c8a1cf6b2480f197be1e28fbd0cd415f7220eef8f",
+    "transactionHash": "0xb8bee63535fef3e81bafeac38666ad3ab28ee725d852e5d07ed11236ec6742fd"
+  }
+}

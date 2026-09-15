@@ -1,0 +1,20 @@
+{
+  "schema": "https://2aran.com/schemas/content-proof-batch/v1",
+  "algorithm": "SHA-256 domain-separated binary tree/v1",
+  "generatedAt": "2026-09-15T05:00:00.000Z",
+  "count": 1,
+  "merkleRoot": "3c4a2b76a8b817924060e0c571797337cad09045b8d9e8f84fd0ec4595392f05",
+  "manifestHash": "266958312e90b48c3577dc21ee187ea53889dd4e83bf627db2ba4aa39a57cd93",
+  "manifestUri": null,
+  "previousRoot": null,
+  "members": [
+    {
+      "contentKey": "research:topics:content-proof-demo",
+      "proofId": "168fd4950fb76d024f5be2adb52bb6b35b068da0fc4c95505393ed6f1c4ef1f4",
+      "version": 1,
+      "leaf": "3c4a2b76a8b817924060e0c571797337cad09045b8d9e8f84fd0ec4595392f05",
+      "merklePath": []
+    }
+  ],
+  "anchor": null
+}

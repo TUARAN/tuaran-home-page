@@ -14,6 +14,8 @@ import {
   verifyContentProof,
 } from '../lib/contentProof.js'
 import { buildContentMerkleBatch, verifyContentMerkleBatch, verifyMerkleMembership } from '../lib/contentMerkle.js'
+import { describeProofStatus, isOlderVersion, shortDigest } from '../lib/contentProofPresentation.js'
+import { contentProofHref } from '../lib/contentProofRegistry.js'
 
 const ENTRY = {
   author: 'TUARAN',
@@ -148,4 +150,43 @@ test('Merkle batches reject duplicate content versions', async () => {
     buildContentMerkleBatch([proof, { ...proof, proofId: 'b'.repeat(64) }], { generatedAt: '2026-09-15T00:00:00.000Z' }),
     /duplicate contentKey \+ version/,
   )
+})
+
+test('reader status distinguishes signed, wrong-root, wrong-chain, and confirmed records', () => {
+  const proof = { proofId: 'a'.repeat(64) }
+  const verification = { valid: true }
+  assert.equal(describeProofStatus({ proof, verification }).level, 'signed')
+  assert.equal(describeProofStatus({ proof, verification, batch: { membershipValid: false } }).label, 'Merkle Root 不一致')
+  assert.equal(describeProofStatus({ proof, verification, batch: { membershipValid: true, anchor: { chainId: 1 } } }).label, '链网络不匹配')
+  assert.equal(describeProofStatus({ proof, verification, batch: { membershipValid: true, anchor: { chainId: 84532 } } }).level, 'batched')
+  assert.equal(describeProofStatus({ proof, verification, batch: { membershipValid: true, anchor: { chainId: 84532, transactionHash: '0x1', attestationUid: '0x2' } } }).level, 'confirmed')
+})
+
+test('reader helpers label old versions and abbreviate public digests', () => {
+  assert.equal(isOlderVersion(1, 2), true)
+  assert.equal(isOlderVersion(2, 2), false)
+  assert.equal(shortDigest('1234567890abcdef', 4, 4), '1234…cdef')
+  assert.equal(shortDigest('', 4, 4), '—')
+  assert.equal(contentProofHref('research:topics:demo'), '/proofs/research:topics:demo')
+})
+
+test('checked-in Base Sepolia bootstrap anchor contains a valid demo membership', async () => {
+  const batch = JSON.parse(await readFile(new URL('../public/proofs/batches/bootstrap-001-anchored.json', import.meta.url), 'utf8'))
+  assert.equal(batch.anchor.chainId, 84532)
+  assert.match(batch.anchor.transactionHash, /^0x[a-f0-9]{64}$/)
+  assert.match(batch.anchor.attestationUid, /^0x[a-f0-9]{64}$/)
+  assert.equal(batch.members[0].proofId, '168fd4950fb76d024f5be2adb52bb6b35b068da0fc4c95505393ed6f1c4ef1f4')
+  assert.equal(await verifyContentMerkleBatch(batch), true)
+})
+
+test('all public article renderers expose the credential entry point', async () => {
+  const renderers = await Promise.all([
+    readFile(new URL('../app/(site)/articles/[slug]/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/articles/[slug]/PublishedArticle.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/articles/research/[category]/[slug]/page.jsx', import.meta.url), 'utf8'),
+  ])
+  for (const source of renderers) {
+    assert.match(source, /<ContentProofCard/)
+    assert.match(source, /contentKey=/)
+  }
 })

@@ -190,3 +190,10 @@ test('all public article renderers expose the credential entry point', async () 
     assert.match(source, /contentKey=/)
   }
 })
+
+test('archived article renderer resolves its credential before rendering it', async () => {
+  const source = await readFile(new URL('../app/(site)/articles/[slug]/page.jsx', import.meta.url), 'utf8')
+  const pageFunction = source.slice(source.indexOf('export default async function ArticleDetailPage'))
+  assert.match(pageFunction, /const proofCredential = getContentProofCredential\(`article:\$\{article\.slug\}`\)/)
+  assert.match(pageFunction, /<ContentProofCard credential=\{proofCredential\}/)
+})

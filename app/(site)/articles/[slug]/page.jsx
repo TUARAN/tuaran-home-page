@@ -236,6 +236,7 @@ export default async function ArticleDetailPage({ params }) {
     notFound()
   }
 
+  const proofCredential = getContentProofCredential(`article:${article.slug}`)
   const articleUrl = `${SITE_URL}/articles/${article.slug}`
   const articleMarkdown = articleContentToMarkdown(article, articleUrl)
   const xArticleHtml = renderMarkdown(articleMarkdown, {

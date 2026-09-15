@@ -781,7 +781,7 @@ export default function ClassicalMasterpiecesClient() {
         </div>
       </section>
 
-      <section className="sticky top-[73px] z-20 border-y border-[#dee0db] bg-[#f0f1ee]/95 backdrop-blur dark:border-[#202938] dark:bg-[#0b1016]/95">
+      <section className="sticky top-[var(--site-header-height)] z-20 border-y border-[#dee0db] bg-[#f0f1ee]/95 backdrop-blur dark:border-[#202938] dark:bg-[#0b1016]/95">
         <div className="mx-auto max-w-[1120px] px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
             <button

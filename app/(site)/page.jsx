@@ -853,31 +853,12 @@ function ClassicHomePage({ featuredPicks }) {
                   ))}
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-[#d6d7cf] bg-white/70 p-3 dark:border-[#303947] dark:bg-[#151c25]">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <Image
-                      src="/qrcodewechat3.png"
-                      alt="扫码加好友二维码"
-                      width={80}
-                      height={80}
-                      unoptimized
-                      className="h-20 w-20 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800 dark:bg-gray-950"
-                    />
-                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]"><T zh="加好友" en="WeChat" /></span>
-                    <span className="font-mono text-[10px] text-[#262724] dark:text-gray-200">atar24</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5">
-                    <Image
-                      src="/donate-wechat.jpg"
-                      alt="微信赞助收款码"
-                      width={80}
-                      height={109}
-                      unoptimized
-                      className="h-[109px] w-20 rounded-sm border border-[#e5e5e5] bg-white object-contain dark:border-gray-800 dark:bg-gray-950"
-                    />
-                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]"><T zh="赞助本站" en="Support" /></span>
-                    <Link href="/donate" className="font-mono text-[10px] text-[#262724] underline-offset-2 hover:underline dark:text-gray-200"><T zh="请我喝咖啡" en="Buy me a coffee" /></Link>
-                  </div>
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-[#646655] dark:text-[#acaf9d]">
+                  <span><T zh="微信 atar24" en="WeChat atar24" /></span>
+                  <span aria-hidden="true">·</span>
+                  <Link href="/donate" className="text-inherit underline-offset-2 hover:underline">
+                    <T zh="请我喝咖啡" en="Buy me a coffee" />
+                  </Link>
                 </div>
               </div>
             </section>
@@ -931,22 +912,10 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
               <h2><T zh="保持联系" en="Keep in touch" /></h2>
               <p>
                 <T
-                  zh="项目合作、产品交流，添加微信；如果本站内容对你有帮助，也欢迎赞助本站，请我喝杯咖啡。"
-                  en="For collaboration and product talk, add me on WeChat. If this site has helped you, you can also support it by buying me a coffee."
+                  zh={<>项目合作、产品交流，可添加微信 <span className="font-mono">atar24</span>；如果本站内容对你有帮助，也欢迎<Link href="/donate">请我喝杯咖啡</Link>。</>}
+                  en={<>For collaboration and product talk, add <span className="font-mono">atar24</span> on WeChat. If this site has helped you, you can also <Link href="/donate">buy me a coffee</Link>.</>}
                 />
               </p>
-            </div>
-            <div className="home-qr-grid">
-              <div>
-                <Image src="/qrcodewechat3.png" alt="扫码加好友二维码" width={88} height={88} unoptimized />
-                <span>atar24</span>
-              </div>
-              <div>
-                <Link href="/donate" className="no-external-arrow block no-underline">
-                  <Image className="home-donate-qr" src="/donate-wechat.jpg" alt="微信赞助收款码" width={88} height={120} unoptimized />
-                  <span><T zh="请我喝咖啡" en="Buy me a coffee" /></span>
-                </Link>
-              </div>
             </div>
           </section>
         </aside>

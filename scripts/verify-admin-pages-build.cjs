@@ -2,12 +2,16 @@
 
 const fs = require('fs')
 const path = require('path')
-const { MIB, formatMiB, printWorkerSizeReport } = require('./worker-size.cjs')
+const { formatMiB, printWorkerSizeReport, writeWorkerSizeReport } = require('./worker-size.cjs')
+const {
+  REPOSITORY_RAW_LIMIT_BYTES,
+  evaluateWorkerSize,
+  loadWorkerSizeBaseline,
+} = require('./worker-size-policy.cjs')
 
 const root = path.resolve(__dirname, '..')
 const workerRoot = path.join(root, '.vercel', 'output', 'static', '_worker.js')
 const buildLogPath = path.join(workerRoot, 'nop-build-log.json')
-const ADMIN_WORKER_BUDGET = 2.5 * MIB
 
 const REQUIRED_EDGE_ROUTES = [
   '/admin/planning',
@@ -128,18 +132,22 @@ if (missingClientApis.length) {
   throw new Error(`Admin client references API routes missing from the build: ${missingClientApis.join(', ')}`)
 }
 
-const { gzipBytes } = printWorkerSizeReport({
+const measurement = printWorkerSizeReport({
   label: 'admin',
   workerRoot,
-  hardLimitBytes: ADMIN_WORKER_BUDGET,
+  hardLimitBytes: REPOSITORY_RAW_LIMIT_BYTES,
 })
+const evaluation = evaluateWorkerSize({
+  measurement,
+  baseline: loadWorkerSizeBaseline(root, 'admin'),
+})
+writeWorkerSizeReport({ label: 'admin', workerRoot, measurement, evaluation })
 
-if (gzipBytes >= ADMIN_WORKER_BUDGET) {
-  throw new Error(
-    `Admin Worker gzip estimate ${formatMiB(gzipBytes)} exceeds the repository budget ${formatMiB(ADMIN_WORKER_BUDGET)}`,
-  )
+for (const warning of evaluation.warnings) console.warn(`[worker-size] warning: ${warning}`)
+if (evaluation.errors.length) {
+  throw new Error(`Admin Worker size policy failed:\n- ${evaluation.errors.join('\n- ')}`)
 }
 
 console.log(
-  `[verify-admin-pages-build] ${routes.length} Edge routes; ${prerenderedRoutes.size} prerendered route aliases; ${clientApiReferences.size} client API references checked; budget headroom ${formatMiB(ADMIN_WORKER_BUDGET - gzipBytes)}`,
+  `[verify-admin-pages-build] ${routes.length} Edge routes; ${prerenderedRoutes.size} prerendered route aliases; ${clientApiReferences.size} client API references checked; raw budget headroom ${formatMiB(REPOSITORY_RAW_LIMIT_BYTES - measurement.rawBytes)}`,
 )

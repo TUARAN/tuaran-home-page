@@ -94,6 +94,7 @@ jspm_packages/
 # Next.js build output
 .next
 .next-check/
+.next-admin-preview/
 /public/generated/a-shares/
 
 # Vercel / next-on-pages build output
@@ -117,6 +118,7 @@ temp/
 .vscode/*
 !.vscode/extensions.json
 .idea
+*.bak-*
 *.suo
 *.ntvs*
 *.njsproj
@@ -167,9 +169,6 @@ private/
 
 # Superpowers brainstorming visual companion sessions
 .superpowers/
-
-# Isolated feature worktrees
-.worktrees/
 
 # Isolated feature worktrees
 .worktrees/

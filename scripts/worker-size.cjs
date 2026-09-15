@@ -34,11 +34,10 @@ function formatMiB(bytes) {
   return `${(bytes / MIB).toFixed(3)} MiB`
 }
 
-function printWorkerSizeReport({ label, workerRoot, hardLimitBytes, top = 10 }) {
+function printWorkerSizeReport({ label, workerRoot, hardLimitBytes, top = 20 }) {
   const measurement = measureWorker(workerRoot)
-  const headroom = hardLimitBytes - measurement.gzipBytes
   console.log(
-    `[worker-size] ${label}: gzip ${formatMiB(measurement.gzipBytes)}; raw ${formatMiB(measurement.rawBytes)}; headroom ${formatMiB(headroom)}`,
+    `[worker-size] ${label}: raw ${formatMiB(measurement.rawBytes)}; gzip ${formatMiB(measurement.gzipBytes)}; raw headroom ${formatMiB(hardLimitBytes - measurement.rawBytes)}`,
   )
   for (const file of measurement.files.slice(0, top)) {
     console.log(
@@ -48,10 +47,36 @@ function printWorkerSizeReport({ label, workerRoot, hardLimitBytes, top = 10 }) 
   return measurement
 }
 
+function writeWorkerSizeReport({ label, workerRoot, measurement, evaluation, top = 20 }) {
+  const outputPath = path.resolve(workerRoot, '..', '..', `worker-size-${label}.json`)
+  const report = {
+    generatedAt: new Date().toISOString(),
+    target: label,
+    totals: {
+      rawBytes: measurement.rawBytes,
+      gzipBytes: measurement.gzipBytes,
+    },
+    limits: evaluation.limits,
+    baseline: evaluation.baseline,
+    delta: evaluation.delta,
+    warnings: evaluation.warnings,
+    errors: evaluation.errors,
+    files: measurement.files.slice(0, top).map((file) => ({
+      path: path.relative(workerRoot, file.filePath),
+      rawBytes: file.rawBytes,
+      gzipBytes: file.gzipBytes,
+    })),
+  }
+  fs.writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`)
+  console.log(`[worker-size] wrote ${path.relative(path.resolve(workerRoot, '..', '..', '..'), outputPath)}`)
+  return outputPath
+}
+
 module.exports = {
   MIB,
   collectWorkerFiles,
   formatMiB,
   measureWorker,
   printWorkerSizeReport,
+  writeWorkerSizeReport,
 }

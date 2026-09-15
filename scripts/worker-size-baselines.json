@@ -1,0 +1,12 @@
+{
+  "public": {
+    "rawBytes": 11754005,
+    "gzipBytes": 2882587,
+    "recordedAt": "2026-09-15T01:57:49.415Z"
+  },
+  "admin": {
+    "rawBytes": 7368881,
+    "gzipBytes": 2070560,
+    "recordedAt": "2026-09-15T01:58:42.769Z"
+  }
+}

@@ -3,12 +3,16 @@
 const fs = require('fs')
 const path = require('path')
 
-const { MIB, formatMiB, printWorkerSizeReport } = require('./worker-size.cjs')
+const { formatMiB, printWorkerSizeReport, writeWorkerSizeReport } = require('./worker-size.cjs')
+const {
+  REPOSITORY_RAW_LIMIT_BYTES,
+  evaluateWorkerSize,
+  loadWorkerSizeBaseline,
+} = require('./worker-size-policy.cjs')
 
 const root = path.resolve(__dirname, '..')
 const workerRoot = path.join(root, '.vercel', 'output', 'static', '_worker.js')
 const buildLogPath = path.join(workerRoot, 'nop-build-log.json')
-const PUBLIC_WORKER_BUDGET = 2.75 * MIB
 
 if (!fs.existsSync(buildLogPath)) {
   throw new Error(`Public Pages build log not found: ${buildLogPath}`)
@@ -26,18 +30,22 @@ if (leakedAdminRoutes.length) {
   throw new Error(`Public Pages build unexpectedly contains Admin routes: ${leakedAdminRoutes.join(', ')}`)
 }
 
-const { gzipBytes } = printWorkerSizeReport({
+const measurement = printWorkerSizeReport({
   label: 'public',
   workerRoot,
-  hardLimitBytes: PUBLIC_WORKER_BUDGET,
+  hardLimitBytes: REPOSITORY_RAW_LIMIT_BYTES,
 })
+const evaluation = evaluateWorkerSize({
+  measurement,
+  baseline: loadWorkerSizeBaseline(root, 'public'),
+})
+writeWorkerSizeReport({ label: 'public', workerRoot, measurement, evaluation })
 
-if (gzipBytes >= PUBLIC_WORKER_BUDGET) {
-  throw new Error(
-    `Public Worker gzip estimate ${formatMiB(gzipBytes)} exceeds the repository budget ${formatMiB(PUBLIC_WORKER_BUDGET)}`,
-  )
+for (const warning of evaluation.warnings) console.warn(`[worker-size] warning: ${warning}`)
+if (evaluation.errors.length) {
+  throw new Error(`Public Worker size policy failed:\n- ${evaluation.errors.join('\n- ')}`)
 }
 
 console.log(
-  `[verify-public-pages-build] ${routes.length} Edge routes; budget headroom ${formatMiB(PUBLIC_WORKER_BUDGET - gzipBytes)}`,
+  `[verify-public-pages-build] ${routes.length} Edge routes; raw budget headroom ${formatMiB(REPOSITORY_RAW_LIMIT_BYTES - measurement.rawBytes)}`,
 )

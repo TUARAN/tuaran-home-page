@@ -4692,7 +4692,6 @@
     justify-content: flex-end;
     flex-direction: column;
     padding: 2rem;
-    border-left: 1px solid var(--site-line);
     background: linear-gradient(180deg, transparent 52%, color-mix(in srgb, var(--site-panel-strong) 78%, transparent) 100%);
   }
 
@@ -4705,7 +4704,6 @@
     display: grid;
     width: 100%;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    border-top: 1px solid var(--site-line);
     padding-top: 1.2rem;
   }
 
@@ -5553,12 +5551,10 @@
 
     .community-hero-side {
       display: block;
-      border-top: 1px solid var(--site-line);
-      border-left: 0;
       padding: 1.25rem;
     }
 
-    .community-stats { border-top: 0; padding-top: 0; }
+    .community-stats { padding-top: 0; }
     .community-topic-grid { grid-template-columns: 1fr; }
 
     .community-topic-card {

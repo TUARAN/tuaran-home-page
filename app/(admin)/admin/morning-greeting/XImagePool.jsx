@@ -22,11 +22,10 @@ async function readPoolPayload(response) {
   return payload
 }
 
-export default function XImagePool() {
+export default function XImagePool({ view = 'pool' }) {
   const [data, setData] = useState(null)
   const [type, setType] = useState('')
   const [status, setStatus] = useState('')
-  const [view, setView] = useState('pool')
   const [revision, setRevision] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -72,8 +71,6 @@ export default function XImagePool() {
       {data?.config && !data.config.storageConfigured ? <p role="alert" className="text-xs text-amber-700 dark:text-amber-300">当前环境缺少 MEDIA 绑定；请同时核对公开站发布环境的绑定。固定模板不可用时会停止该次图文发布；随机选中的纯文本任务不依赖此绑定。</p> : null}
       {data?.available === false ? <p role="alert" className="text-xs text-amber-700 dark:text-amber-300">{data.error}</p> : null}
       <div className="my-3 flex flex-wrap gap-2">
-        <AdminButton size="sm" variant={view === 'pool' ? 'primary' : 'ghost'} onClick={() => setView('pool')}>固定模板池（{data?.pool?.length || 0}）</AdminButton>
-        <AdminButton size="sm" variant={view === 'runs' ? 'primary' : 'ghost'} onClick={() => setView('runs')}>选图与发布记录</AdminButton>
         <select aria-label="素材类型" className={selectClass} value={type} onChange={(event) => setType(event.target.value)}>{TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         {view === 'runs' ? <select aria-label="素材状态" className={selectClass} value={status} onChange={(event) => setStatus(event.target.value)}><option value="">全部状态</option>{Object.entries(STATES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select> : null}
       </div>

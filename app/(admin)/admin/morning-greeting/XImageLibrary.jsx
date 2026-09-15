@@ -10,6 +10,7 @@ import { Section } from '../../components/ui'
 const TABS = [
   { id: 'memes', label: '表情包模板', description: '35 张原创表情包按早安、午安、交友、蓝 V 交流和互关串门匹配。按日期与时段轮换，重试保留已选图片。' },
   { id: 'pool', label: '图片资源池', description: '每条先随机选择图文或纯文本（各 50%）。图文从同主题固定模板池选取，不再在线生成新图；上传失败重试复用原图和文案。' },
+  { id: 'runs', label: '选图与发布记录', description: '按时间倒序查看每次发推的选图、文案、发布状态与原图。' },
 ]
 
 export default function XImageLibrary() {
@@ -20,7 +21,7 @@ export default function XImageLibrary() {
 
   function openTab(id) {
     setTab(id)
-    if (id === 'pool') setPoolReady(true)
+    if (id === 'pool' || id === 'runs') setPoolReady(true)
   }
 
   return (
@@ -28,7 +29,7 @@ export default function XImageLibrary() {
       <div
         role="tablist"
         aria-label="配图素材分类"
-        className="mb-4 grid grid-cols-2 overflow-hidden rounded-lg border border-[#d5d7cd] bg-[#f7f8f2] p-1 dark:border-[#2a3544] dark:bg-[#0d131b]"
+        className="mb-4 grid grid-cols-3 overflow-hidden rounded-lg border border-[#d5d7cd] bg-[#f7f8f2] p-1 dark:border-[#2a3544] dark:bg-[#0d131b]"
       >
         {TABS.map((item) => {
           const selected = tab === item.id
@@ -68,12 +69,12 @@ export default function XImageLibrary() {
       ) : null}
 
       <div
-        id="x-image-library-pool"
+        id={`x-image-library-${tab === 'runs' ? 'runs' : 'pool'}`}
         role="tabpanel"
-        aria-labelledby="x-image-library-tab-pool"
-        hidden={tab !== 'pool'}
+        aria-labelledby={`x-image-library-tab-${tab === 'runs' ? 'runs' : 'pool'}`}
+        hidden={tab !== 'pool' && tab !== 'runs'}
       >
-        {poolReady ? <XImagePool /> : null}
+        {poolReady ? <XImagePool view={tab === 'runs' ? 'runs' : 'pool'} /> : null}
       </div>
 
       <OriginalPreviewDialog preview={preview} onClose={() => setPreview(null)} />

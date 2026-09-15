@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   IconArrowDown, IconArrowUpRight, IconBuildingFactory2, IconCalendarEvent,
-  IconChevronRight, IconPlanet, IconQuote, IconRocket, IconSatellite, IconWorld,
+  IconChevronRight, IconQuote, IconRocket,
 } from '@tabler/icons-react'
 
 const KIND_META = {
@@ -66,21 +66,6 @@ function TimelineCard({ entry, index }) {
   )
 }
 
-function OrbitGraphic() {
-  return (
-    <div className="relative mx-auto aspect-square w-full max-w-[500px]" aria-label="SpaceX 从地球轨道通往火星的系统示意图">
-      <div className="absolute inset-[7%] rounded-full border border-white/[0.07]" />
-      <div className="absolute inset-[20%] rounded-full border border-dashed border-cyan-200/20" />
-      <div className="absolute inset-[35%] rounded-full border border-white/10" />
-      <div className="absolute left-1/2 top-1/2 flex h-28 w-28 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-200/20 bg-cyan-300/[0.07] shadow-[0_0_80px_rgba(34,211,238,0.12)]"><IconWorld size={42} stroke={1.1} className="text-cyan-100" /></div>
-      <div className="absolute left-[11%] top-[47%] flex items-center gap-2 rounded-full border border-white/10 bg-[#0a111b]/90 px-3 py-2 text-[10px] tracking-[0.12em] text-slate-300"><IconSatellite size={14} className="text-cyan-200" /> STARLINK</div>
-      <div className="absolute right-[5%] top-[22%] flex items-center gap-2 rounded-full border border-white/10 bg-[#0a111b]/90 px-3 py-2 text-[10px] tracking-[0.12em] text-slate-300"><IconRocket size={14} className="text-orange-200" /> STARSHIP</div>
-      <div className="absolute bottom-[8%] right-[22%] flex h-16 w-16 items-center justify-center rounded-full border border-red-300/20 bg-red-400/10 shadow-[0_0_50px_rgba(248,113,113,0.12)]"><IconPlanet size={27} stroke={1.2} className="text-red-200" /></div>
-      <div className="absolute bottom-[3%] right-[10%] text-[10px] tracking-[0.18em] text-red-200/70">MARS</div>
-    </div>
-  )
-}
-
 export default function SpaceXTimelineClient({ entries, launchSourceStatus }) {
   const [kind, setKind] = useState('all')
   const visibleEntries = useMemo(() => entries.filter((entry) => kind === 'all' || entry.kind === kind), [entries, kind])
@@ -107,18 +92,23 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus }) {
       </section>
 
       <section id="system" className="relative border-b border-white/10 px-5 py-24 md:px-10 md:py-32">
-        <div className="absolute right-0 top-0 h-[500px] w-[500px] rounded-full bg-cyan-500/[0.04] blur-3xl" />
+        <div
+          className="absolute inset-x-0 top-0 h-[820px] bg-cover bg-[position:72%_center] opacity-80 sm:bg-[position:65%_center] lg:bg-center"
+          style={{ backgroundImage: "url('/images/home/deep-space-transport-network-bg.webp')" }}
+          aria-hidden="true"
+        />
+        <div className="absolute inset-x-0 top-0 h-[820px] bg-[linear-gradient(180deg,rgba(5,8,13,0.96)_0%,rgba(5,8,13,0.78)_45%,rgba(5,8,13,0.18)_72%,#05080d_100%)] lg:bg-[linear-gradient(90deg,rgba(5,8,13,0.96)_0%,rgba(5,8,13,0.83)_42%,rgba(5,8,13,0.12)_72%,rgba(5,8,13,0.08)_100%)]" aria-hidden="true" />
         <div className="relative mx-auto max-w-7xl">
           <div className="grid gap-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200">Architecture / 体系</p>
-              <h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-6xl">四个系统，组成一条通往深空的运输链。</h2>
+              <h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-5xl 2xl:text-6xl">四个系统，组成一条通往深空的运输链。</h2>
               <p className="mt-6 max-w-xl text-base leading-8 text-slate-400">运载、连接、载人和深空运输并行演进。每一次复用减少发射成本，每一批卫星增加轨道网络密度，每一次载人任务验证可靠性，最终共同服务于规模化星际运输。</p>
               <div className="mt-10 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10">
                 {[[4, '核心系统'], [launchCount, '近期任务'], [upcomingCount, '待发任务']].map(([value, label]) => <div key={label} className="bg-[#080d14] px-4 py-5"><div className="text-2xl font-medium">{value}</div><div className="mt-1 text-[10px] tracking-wide text-slate-500">{label}</div></div>)}
               </div>
             </div>
-            <OrbitGraphic />
+            <div className="min-h-[300px] sm:min-h-[380px] lg:min-h-[500px]" aria-hidden="true" />
           </div>
           <div className="mt-20 grid border-y border-white/10 md:grid-cols-2 xl:grid-cols-4">
             {SYSTEMS.map((system) => <article key={system.index} className="group relative border-b border-white/10 px-1 py-8 md:px-7 md:[&:nth-child(odd)]:border-r xl:border-b-0 xl:border-r xl:first:pl-0 xl:last:border-r-0 xl:last:pr-0"><div className={`h-px w-12 bg-gradient-to-r ${system.accent}`} /><p className="mt-6 font-mono text-[10px] tracking-[0.2em] text-slate-600">SYSTEM {system.index}</p><h3 className="mt-5 text-xl font-medium">{system.name}</h3><p className="mt-1 text-xs tracking-wide text-slate-500">{system.product}</p><p className="mt-5 text-sm leading-7 text-slate-400">{system.description}</p></article>)}

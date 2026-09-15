@@ -4609,20 +4609,22 @@
     grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr);
     border: 1px solid var(--site-line);
     border-radius: 1.25rem;
-    background:
-      linear-gradient(115deg, color-mix(in srgb, var(--site-panel-strong) 94%, transparent), color-mix(in srgb, var(--site-panel) 76%, transparent));
+    background: var(--site-panel-strong);
     box-shadow: 0 30px 90px color-mix(in srgb, var(--site-shadow) 48%, transparent);
   }
 
   .community-hero::before {
     content: '';
     position: absolute;
-    width: 28rem;
-    height: 28rem;
-    right: -8rem;
-    top: -13rem;
-    border: 1px solid color-mix(in srgb, var(--community-warm) 22%, transparent);
-    border-radius: 999px;
+    z-index: 0;
+    inset: 0;
+    background:
+      linear-gradient(90deg,
+        color-mix(in srgb, var(--site-panel-strong) 98%, transparent) 0%,
+        color-mix(in srgb, var(--site-panel-strong) 88%, transparent) 40%,
+        color-mix(in srgb, var(--site-panel-strong) 18%, transparent) 69%,
+        transparent 100%),
+      url('/images/community/solar-system-hero.webp') 50% center / cover no-repeat;
     pointer-events: none;
   }
 
@@ -4697,69 +4699,20 @@
 
   .community-hero-side {
     position: relative;
+    z-index: 1;
     display: flex;
     min-width: 0;
-    align-items: center;
     justify-content: flex-end;
     flex-direction: column;
     padding: 2rem;
     border-left: 1px solid var(--site-line);
-    background:
-      radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--community-warm) 13%, transparent), transparent 44%);
+    background: linear-gradient(180deg, transparent 52%, color-mix(in srgb, var(--site-panel-strong) 78%, transparent) 100%);
   }
 
-  .community-hero-orbit {
-    position: relative;
-    width: min(15rem, 100%);
-    aspect-ratio: 1;
-    margin: auto;
-    border: 1px solid color-mix(in srgb, var(--site-line-strong) 70%, transparent);
-    border-radius: 999px;
+  .dark .community-hero::before {
+    filter: brightness(0.42) saturate(0.65);
+    opacity: 0.78;
   }
-
-  .community-hero-orbit::before,
-  .community-hero-orbit::after {
-    content: '';
-    position: absolute;
-    inset: 17%;
-    border: 1px solid var(--site-line);
-    border-radius: inherit;
-  }
-
-  .community-hero-orbit::after {
-    inset: 35%;
-  }
-
-  .orbit-center,
-  .orbit-dot {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-  }
-
-  .orbit-center {
-    inset: 50% auto auto 50%;
-    width: 4.5rem;
-    height: 4.5rem;
-    transform: translate(-50%, -50%);
-    border: 1px solid color-mix(in srgb, var(--community-warm) 45%, var(--site-line));
-    background: color-mix(in srgb, var(--community-warm) 12%, var(--site-panel-strong));
-    color: var(--community-warm);
-  }
-
-  .orbit-dot {
-    width: 0.7rem;
-    height: 0.7rem;
-    border: 2px solid var(--site-panel-strong);
-    background: var(--community-warm);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--community-warm) 46%, transparent);
-  }
-
-  .orbit-dot-one { left: 11%; top: 26%; }
-  .orbit-dot-two { right: 7%; top: 47%; }
-  .orbit-dot-three { left: 39%; bottom: -0.35rem; }
 
   .community-stats {
     display: grid;
@@ -5602,6 +5555,15 @@
       grid-template-columns: 1fr;
     }
 
+    .community-hero::before {
+      background:
+        linear-gradient(105deg,
+          color-mix(in srgb, var(--site-panel-strong) 98%, transparent) 0%,
+          color-mix(in srgb, var(--site-panel-strong) 86%, transparent) 52%,
+          color-mix(in srgb, var(--site-panel-strong) 34%, transparent) 100%),
+        url('/images/community/solar-system-hero.webp') 58% center / auto 100% no-repeat;
+    }
+
     .community-hero-side {
       display: block;
       border-top: 1px solid var(--site-line);
@@ -5609,7 +5571,6 @@
       padding: 1.25rem;
     }
 
-    .community-hero-orbit { display: none; }
     .community-stats { border-top: 0; padding-top: 0; }
     .community-topic-grid { grid-template-columns: 1fr; }
 
@@ -5640,6 +5601,15 @@
 
     .community-hero {
       border-radius: 0.85rem;
+    }
+
+    .community-hero::before {
+      background:
+        linear-gradient(105deg,
+          color-mix(in srgb, var(--site-panel-strong) 99%, transparent) 0%,
+          color-mix(in srgb, var(--site-panel-strong) 92%, transparent) 48%,
+          color-mix(in srgb, var(--site-panel-strong) 48%, transparent) 100%),
+        url('/images/community/solar-system-hero.webp') 61% top / auto 82% no-repeat;
     }
 
     .community-hero-copy { padding: 1.2rem 1rem 1.25rem; }

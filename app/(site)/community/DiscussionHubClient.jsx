@@ -7,7 +7,6 @@ import {
   IconMessageCircle2,
   IconQrcode,
   IconSparkles,
-  IconUsers,
   IconX,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -215,12 +214,6 @@ export default function DiscussionHubClient() {
             </div>
           </div>
           <div className="community-hero-side">
-            <div className="community-hero-orbit" aria-hidden="true">
-              <span className="orbit-center"><IconUsers size={28} /></span>
-              <span className="orbit-dot orbit-dot-one" />
-              <span className="orbit-dot orbit-dot-two" />
-              <span className="orbit-dot orbit-dot-three" />
-            </div>
             <div className="community-stats">
               <Stat value={stats.comments} label="公开评论" />
               <Stat value={stats.weekComments} label="近 7 天" />

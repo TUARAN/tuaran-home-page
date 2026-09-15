@@ -7,12 +7,12 @@ const DETAIL_HREF = '/articles/research/topics/2aran-onchain-content-site'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '中文上链博客计划｜2aran Content Ledger',
-  description: '2aran.com 的可验证内容发布计划：内容指纹、版本关系、Merkle 批次、L2 存证与去中心化副本。',
+  title: '万物上链｜2aran Content Ledger',
+  description: '所有内容生产都应该有价值：让知识、作品与创造拥有可确权、可验证、可流通的数字凭证。',
   alternates: { canonical: '/onchain-blog' },
   openGraph: {
-    title: '中文上链博客计划｜2aran Content Ledger',
-    description: '让公开内容拥有可独立核验的发布时间、版本关系与内容指纹。',
+    title: '万物上链｜2aran Content Ledger',
+    description: '让知识、作品与创造拥有可确权、可验证、可流通的数字凭证。',
     url: '/onchain-blog',
     type: 'website',
   },
@@ -50,8 +50,9 @@ const ROADMAP = [
   {
     range: '第 3—4 周',
     title: '测试网批次存证',
-    status: '待实施',
-    copy: '把 10—20 篇公开调研组成 Merkle 批次，接入测试网 EAS 或极简 Registry。',
+    status: '工程就绪',
+    active: true,
+    copy: 'Merkle 批次、逐篇 Path、Base Sepolia EAS 写入脚本与 D1 证明索引已完成；等待测试网发布钱包签名首批交易。',
   },
   {
     range: '第 5—6 周',
@@ -94,41 +95,85 @@ function SectionHeading({ label, title, children }) {
 export default function OnchainBlogPage() {
   return (
     <main className="min-h-screen bg-[#f3f0e8] text-[#292620] dark:bg-[#0d1117] dark:text-[#eee9df]">
-      <section className="border-b border-[#d8d0c2] bg-[#ebe5d9] dark:border-[#2a313b] dark:bg-[#111821]">
-        <div className="mx-auto w-full max-w-[1180px] px-5 py-12 md:py-20">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#776f63] dark:text-[#9da8b5]">
-            <Link href="/" className="no-underline hover:text-[#332a20] dark:hover:text-white">TUARAN</Link>
+      <section
+        className="relative isolate min-h-[680px] overflow-hidden border-b border-[#55452d] bg-[#05080c] text-white"
+        style={{ backgroundImage: "url('/images/onchain-blog/everything-onchain-hero.webp')", backgroundPosition: 'center', backgroundSize: 'cover' }}
+      >
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(3,6,9,0.97)_0%,rgba(3,6,9,0.9)_35%,rgba(3,6,9,0.48)_64%,rgba(3,6,9,0.18)_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-52 bg-gradient-to-t from-[#05080c] to-transparent" />
+        <div className="mx-auto flex min-h-[680px] w-full max-w-[1180px] flex-col px-5 py-10 md:py-14">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
+            <Link href="/" className="no-underline hover:text-white">TUARAN</Link>
             <span>/</span>
-            <span>中文上链博客计划</span>
+            <span>CONTENT LEDGER</span>
           </div>
 
-          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-end">
-            <div>
+          <div className="mt-auto grid gap-12 pb-6 pt-24 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-end">
+            <div className="max-w-4xl">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full border border-[#aa8b59] bg-[#f7f0df] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#6f522b] dark:border-[#806a47] dark:bg-[#201c16] dark:text-[#d8b97f]">
-                  方案完成 · 指纹原型可用
+                <span className="rounded-full border border-[#d9b66c]/55 bg-black/35 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#f0cd88] backdrop-blur-sm">
+                  MERKLE BATCH READY · BASE SEPOLIA
                 </span>
-                <span className="font-mono text-[11px] tracking-[0.16em] text-[#857d71] dark:text-[#8f9aaa]">2ARAN CONTENT LEDGER</span>
+                <span className="font-mono text-[11px] tracking-[0.16em] text-white/50">2ARAN CONTENT LEDGER</span>
               </div>
-              <h1 className="mt-6 max-w-4xl font-serif text-[36px] font-semibold leading-[1.12] tracking-[-0.025em] text-[#24211d] dark:text-[#f5f0e7] md:text-[54px]">
-                让每次公开发布，<br />都有可核验的内容凭证
+              <h1 className="mt-7 font-serif text-[60px] font-semibold leading-[0.94] tracking-[-0.045em] text-white drop-shadow-2xl md:text-[92px]">
+                万物上链
               </h1>
-              <p className="mt-6 max-w-3xl text-base leading-8 text-[#5b554d] dark:text-[#bbb3a8] md:text-lg">
-                2aran.com 提供阅读、搜索和互动；内容指纹、作者签名、版本关系和存储地址形成公开账本。
-                人与 AI 都能验证某个版本何时发布、后来是否改变，以及副本是否完整。
+              <p className="mt-7 max-w-3xl font-serif text-2xl font-semibold leading-snug text-[#f2d59a] md:text-4xl">
+                所有内容生产，都应该有价值。
+              </p>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-white/[0.72] md:text-lg">
+                让文字、影像、代码与每一次创造拥有可确权、可验证、可流通的数字凭证。
+                原创由此形成时间、版本、归属与价值的公共坐标，进入人与 AI 共同参与的新内容网络。
               </p>
             </div>
 
-            <aside className="rounded-2xl border border-[#cfc4b2] bg-white/55 p-5 dark:border-[#323c48] dark:bg-white/[0.035]">
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#877252] dark:text-[#c4a878]">首版原则</p>
-              <p className="mt-3 font-serif text-2xl font-semibold leading-snug">不上整站，不增加读者门槛。</p>
-              <p className="mt-3 text-sm leading-7 text-[#655f55] dark:text-[#aaa49b]">
-                区块链承担公开证明，Cloudflare 继续承担页面、搜索和互动；首个 MVP 只选择 10—20 篇公开调研。
+            <aside className="rounded-2xl border border-white/20 bg-black/40 p-5 shadow-2xl backdrop-blur-md">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#e5bf77]">第 3—4 周进展</p>
+              <div className="mt-4 grid grid-cols-3 gap-2 border-y border-white/15 py-4 text-center">
+                <div><strong className="block font-serif text-2xl text-white">10—20</strong><span className="text-[11px] text-white/50">篇 / 批</span></div>
+                <div><strong className="block font-serif text-2xl text-white">1</strong><span className="text-[11px] text-white/50">个 Root</span></div>
+                <div><strong className="block font-serif text-2xl text-white">0</strong><span className="text-[11px] text-white/50">读者门槛</span></div>
+              </div>
+              <p className="mt-4 text-sm leading-7 text-white/65">
+                批次生成、逐篇证明、EAS 测试网适配与 D1 索引已经就绪。发布钱包签名后，每篇内容都能独立核对到同一条链上记录。
               </p>
-              <Link href={DETAIL_HREF} className="mt-5 inline-flex rounded-full bg-[#2c2924] px-4 py-2.5 text-sm font-semibold text-white no-underline hover:bg-[#57472f] dark:bg-[#d5b77f] dark:text-[#16130e] dark:hover:bg-[#e3c892]">
+              <Link href={DETAIL_HREF} className="mt-5 inline-flex rounded-full bg-[#e0bb74] px-4 py-2.5 text-sm font-semibold text-[#171109] no-underline hover:bg-[#f1d397]">
                 阅读完整技术方案 →
               </Link>
             </aside>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[#d8d0c2] bg-[#171a1d] text-[#f4eee4] dark:border-[#2a313b]">
+        <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-14 lg:grid-cols-[0.85fr_1.15fr] lg:items-center md:py-20">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#d2ac70]">Testnet Batch</p>
+            <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight">十几份创造，一条公共价值坐标</h2>
+            <p className="mt-4 text-sm leading-7 text-[#c1b8aa]">
+              每篇公开调研先形成独立内容凭证，再汇入 Merkle Tree。Base Sepolia 上只登记批次 Root；任意作品都可以携带自己的 Path，证明它属于这次公开发布。
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/15 bg-black/25 p-5">
+            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2 text-center text-xs sm:gap-4">
+              <div className="space-y-2">
+                {['调研 #01', '文章 #02', '作品 #…'].map((item) => <div key={item} className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-white/65">{item}</div>)}
+              </div>
+              <span className="text-[#d2ac70]">→</span>
+              <div className="rounded-xl border border-[#d2ac70]/35 bg-[#d2ac70]/10 px-3 py-6">
+                <span className="block font-mono text-[10px] text-[#d2ac70]">MERKLE TREE</span>
+                <strong className="mt-2 block font-serif text-xl">逐层汇聚</strong>
+              </div>
+              <span className="text-[#d2ac70]">→</span>
+              <div className="rounded-xl border border-[#79b7cc]/35 bg-[#79b7cc]/10 px-3 py-6">
+                <span className="block font-mono text-[10px] text-[#8cc8dd]">BASE SEPOLIA · EAS</span>
+                <strong className="mt-2 block font-serif text-xl">唯一 Root</strong>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-white/10 pt-4 font-mono text-[10px] uppercase tracking-[0.1em] text-white/45">
+              <span>SHA-256 DOMAIN SEPARATION</span><span>INDEPENDENT PATH VERIFICATION</span><span>D1 INDEX</span>
+            </div>
           </div>
         </div>
       </section>
@@ -206,13 +251,16 @@ export default function OnchainBlogPage() {
   buildAssetManifest(entry)
   verifyContentProof(entry, proof)
 
-scripts/build-content-proof.mjs
-  public content → proof JSON → Merkle batch
+lib/contentMerkle.js
+  signed proofs → Merkle root + per-item paths
 
-D1: content_proofs
+scripts/anchor-content-proof-batch.mjs
+  batch root → Base Sepolia EAS attestation
+
+D1: content_proof_batches + content_proofs
   content_key / version / content_hash
   chain_id / tx_hash / merkle_root / merkle_path
-  storage_cid / status / previous_proof_id`}</code></pre>
+  attestation_uid / status / previous_proof_id`}</code></pre>
         </div>
       </section>
 
@@ -234,7 +282,7 @@ D1: content_proofs
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
             <p className="font-serif text-2xl font-semibold">详细技术方案包含技术选择、数据结构、验收条件与风险说明。</p>
-            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">资料日期：2026-09-08 · 当前状态：内容指纹原型完成，尚未进行链上部署。</p>
+            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-15 · 当前状态：指纹与 Merkle 批次工程完成，等待发布钱包签名首笔 Base Sepolia 存证。</p>
           </div>
           <Link href={DETAIL_HREF} className="shrink-0 rounded-full border border-[#9d835b] px-5 py-3 text-sm font-semibold text-[#5d4523] no-underline hover:bg-[#f8f3e9] dark:border-[#8d774f] dark:text-[#dbbd86] dark:hover:bg-white/[0.05]">
             打开完整计划与实现细节 →

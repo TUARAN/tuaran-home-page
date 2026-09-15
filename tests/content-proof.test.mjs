@@ -13,6 +13,7 @@ import {
   sha256,
   verifyContentProof,
 } from '../lib/contentProof.js'
+import { buildContentMerkleBatch, verifyContentMerkleBatch, verifyMerkleMembership } from '../lib/contentMerkle.js'
 
 const ENTRY = {
   author: 'TUARAN',
@@ -107,4 +108,44 @@ test('the shared implementation remains browser-safe', async () => {
   assert.doesNotMatch(source, /from ['"]node:/)
   assert.doesNotMatch(source, /\bBuffer\b/)
   assert.match(source, /globalThis\.crypto\.subtle/)
+})
+
+test('Merkle batches are deterministic and every proof verifies against one root', async () => {
+  const proofs = Array.from({ length: 12 }, (_, index) => ({
+    contentKey: `research:topics:batch-${String(index + 1).padStart(2, '0')}`,
+    version: 1,
+    proofId: index.toString(16).padStart(64, '0'),
+  }))
+  const options = { generatedAt: '2026-09-15T00:00:00.000Z' }
+  const batch = await buildContentMerkleBatch(proofs, options)
+  const shuffled = await buildContentMerkleBatch([...proofs].reverse(), options)
+
+  assert.equal(batch.count, 12)
+  assert.equal(batch.merkleRoot, shuffled.merkleRoot)
+  assert.equal(batch.manifestHash, shuffled.manifestHash)
+  assert.equal(await verifyContentMerkleBatch(batch), true)
+  assert.equal((await Promise.all(batch.members.map((member) => verifyMerkleMembership(member, batch.merkleRoot)))).every(Boolean), true)
+})
+
+test('Merkle verification detects a changed proof and supports odd batch sizes', async () => {
+  const proofs = Array.from({ length: 11 }, (_, index) => ({
+    contentKey: `article:odd-${index}`,
+    version: 1,
+    proofId: (index + 100).toString(16).padStart(64, '0'),
+  }))
+  const batch = await buildContentMerkleBatch(proofs, { generatedAt: '2026-09-15T00:00:00.000Z' })
+  assert.equal(await verifyContentMerkleBatch(batch), true)
+
+  const changed = structuredClone(batch)
+  changed.members[3].proofId = 'f'.repeat(64)
+  assert.equal(await verifyMerkleMembership(changed.members[3], batch.merkleRoot), false)
+  assert.equal(await verifyContentMerkleBatch(changed), false)
+})
+
+test('Merkle batches reject duplicate content versions', async () => {
+  const proof = { contentKey: 'article:duplicate', version: 1, proofId: 'a'.repeat(64) }
+  await assert.rejects(
+    buildContentMerkleBatch([proof, { ...proof, proofId: 'b'.repeat(64) }], { generatedAt: '2026-09-15T00:00:00.000Z' }),
+    /duplicate contentKey \+ version/,
+  )
 })

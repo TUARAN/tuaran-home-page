@@ -5544,6 +5544,19 @@
   .community-membership.is-compact .community-membership-payment-qr { width: 10rem; }
   .community-membership.is-compact .community-membership-pay-head { width: 10rem; }
 
+  .community-membership.is-compact .community-membership-contact {
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    align-items: flex-start;
+  }
+
+  .community-membership.is-compact .community-membership-owner-qr {
+    width: 8.5rem;
+  }
+
+  .community-membership.is-compact .community-membership-contact-guide {
+    grid-column: 1 / -1;
+  }
+
   .community-join-panel > .community-membership.is-compact {
     margin-top: 1.25rem;
     box-shadow: none;

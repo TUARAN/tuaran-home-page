@@ -1763,7 +1763,7 @@
   @media (min-width: 1280px) {
     .home-side-stack {
       position: sticky;
-      top: 5.5rem;
+      top: 1.25rem;
     }
   }
 

@@ -13,6 +13,7 @@ import {
   HOME_RECOMMENDATION_MAX_BATCH_SIZE,
   mergeHomeRecommendationCatalog,
   mergeHomeRecommendationSettings,
+  reconcilePaintedHomeRecommendationLatest,
   searchHomeRecommendationCatalog,
   selectHomeRecommendationItems,
   sameHomeRecommendationSettings,
@@ -99,6 +100,14 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   )
   if (!firstBatchItemsRef.current && computedItems.length) {
     firstBatchItemsRef.current = computedItems
+  }
+  if (firstBatchLockedRef.current && firstBatchItemsRef.current && runtimeCatalogReady) {
+    firstBatchItemsRef.current = reconcilePaintedHomeRecommendationLatest(
+      firstBatchItemsRef.current,
+      catalog,
+      settings,
+      runtimeCatalogReady,
+    )
   }
   const lockedItems = selectHomeRecommendationItems(
     computedItems,

@@ -7,11 +7,24 @@ import {
   IconBrandWeibo,
   IconBrandX,
   IconBrandZhihu,
+  IconArchive,
+  IconBuildingSkyscraper,
+  IconBulb,
   IconCloud,
   IconCode,
   IconCodeCircle,
+  IconCoin,
   IconEye,
+  IconFeather,
   IconFileText,
+  IconHeartHandshake,
+  IconMessages,
+  IconNews,
+  IconPointer,
+  IconRobot,
+  IconSchool,
+  IconTools,
+  IconUserCircle,
   IconUsers,
 } from '@tabler/icons-react'
 
@@ -57,10 +70,10 @@ const HOME_EXPLORE_GROUPS = [
     labelEn: 'Read & research',
     tone: 'knowledge',
     items: [
-      { id: 'learn-ai', href: '/articles?subject=ai_dev', title: 'AI 与开发', titleEn: 'AI & development', desc: '模型、Agent 与开发工具', descEn: 'Models, agents and developer tools', icon: IconCode },
-      { id: 'companies', href: '/articles?subject=company_research', title: '公司调研', titleEn: 'Company research', desc: '公司画像与商业分析', descEn: 'Companies and business analysis', icon: IconEye },
-      { id: 'practice', href: '/articles?group=practice', title: '工程实践', titleEn: 'Engineering practice', desc: '案例、实作与指南', descEn: 'Cases, build logs and guides', icon: IconCodeCircle },
-      { id: 'subscribe', href: '/frontend-weekly', title: '前端周看', titleEn: 'Frontend Weekly', desc: '前端与 AI 工程情报', descEn: 'Frontend and AI engineering briefings', icon: IconCloud },
+      { id: 'learn-ai', href: '/articles?subject=ai_dev', title: 'AI 与开发', titleEn: 'AI & development', desc: '模型、Agent 与开发工具', descEn: 'Models, agents and developer tools', icon: IconRobot },
+      { id: 'companies', href: '/articles?subject=company_research', title: '公司调研', titleEn: 'Company research', desc: '公司画像与商业分析', descEn: 'Companies and business analysis', icon: IconBuildingSkyscraper },
+      { id: 'practice', href: '/articles?group=practice', title: '工程实践', titleEn: 'Engineering practice', desc: '案例、实作与指南', descEn: 'Cases, build logs and guides', icon: IconTools },
+      { id: 'subscribe', href: '/frontend-weekly', title: '前端周看', titleEn: 'Frontend Weekly', desc: '前端与 AI 工程情报', descEn: 'Frontend and AI engineering briefings', icon: IconNews },
     ],
   },
   {
@@ -69,10 +82,10 @@ const HOME_EXPLORE_GROUPS = [
     labelEn: 'Works & resources',
     tone: 'works',
     items: [
-      { id: 'interactive', href: '/rich-pages', title: '互动专题', titleEn: 'Interactives', desc: '可筛选、可操作的内容', descEn: 'Filterable, interactive stories', icon: IconEye },
-      { id: 'works', href: '/works', title: '原创项目', titleEn: 'Original projects', desc: '产品、工具与实验作品', descEn: 'Products, tools and experiments', icon: IconCodeCircle },
-      { id: 'resources', href: '/articles?group=resource', title: '资源', titleEn: 'Resources', desc: '档案、下载与收藏', descEn: 'Archives, downloads and bookmarks', icon: IconFileText },
-      { id: 'workbuddy', href: 'https://workbuddy.2aran.com/', title: 'WorkBuddy 学习手册', titleEn: 'WorkBuddy guides', desc: '手册、案例与课程', descEn: 'Guides, cases and courses', icon: IconFileText, external: true, analyticsId: 'workbuddy' },
+      { id: 'interactive', href: '/rich-pages', title: '互动专题', titleEn: 'Interactives', desc: '可筛选、可操作的内容', descEn: 'Filterable, interactive stories', icon: IconPointer },
+      { id: 'works', href: '/works', title: '原创项目', titleEn: 'Original projects', desc: '产品、工具与实验作品', descEn: 'Products, tools and experiments', icon: IconBulb },
+      { id: 'resources', href: '/articles?group=resource', title: '资源', titleEn: 'Resources', desc: '档案、下载与收藏', descEn: 'Archives, downloads and bookmarks', icon: IconArchive },
+      { id: 'workbuddy', href: 'https://workbuddy.2aran.com/', title: 'WorkBuddy 学习手册', titleEn: 'WorkBuddy guides', desc: '手册、案例与课程', descEn: 'Guides, cases and courses', icon: IconSchool, external: true, analyticsId: 'workbuddy' },
     ],
   },
   {
@@ -81,9 +94,9 @@ const HOME_EXPLORE_GROUPS = [
     labelEn: 'About & connect',
     tone: 'collaborate',
     items: [
-      { id: 'about', href: '/about', title: '了解作者', titleEn: 'About the author', desc: '经历与长期方向', descEn: 'Background and long-term direction', icon: IconUsers },
-      { id: 'community', href: '/community', title: '交友进社群', titleEn: 'Join the community', desc: '认识同行、交流实践', descEn: 'Meet peers and share practice', icon: IconUsers },
-      { id: 'blogger-alliance', href: 'https://blogger-alliance.cn/', title: '合作推广', titleEn: 'Collaboration', desc: '博主联盟与项目合作', descEn: 'Blogger Alliance and partnerships', icon: IconUsers, external: true, analyticsId: 'blogger-alliance' },
+      { id: 'about', href: '/about', title: '了解作者', titleEn: 'About the author', desc: '经历与长期方向', descEn: 'Background and long-term direction', icon: IconUserCircle },
+      { id: 'community', href: '/community', title: '交友进社群', titleEn: 'Join the community', desc: '认识同行、交流实践', descEn: 'Meet peers and share practice', icon: IconMessages },
+      { id: 'blogger-alliance', href: 'https://blogger-alliance.cn/', title: '合作推广', titleEn: 'Collaboration', desc: '博主联盟与项目合作', descEn: 'Blogger Alliance and partnerships', icon: IconHeartHandshake, external: true, analyticsId: 'blogger-alliance' },
     ],
   },
   {
@@ -93,8 +106,8 @@ const HOME_EXPLORE_GROUPS = [
     tone: 'external',
     collapsed: true,
     items: [
-      { id: 'poetry', href: 'https://poemcn.2aran.com/', title: '阿燃诗词', titleEn: 'Aran Poetry', desc: '古典诗词作品', descEn: 'Classical Chinese poetry', icon: IconFileText, external: true },
-      { id: 'codex-credit', href: 'https://gptplus.2aran.com', title: '低价 Codex 直充', titleEn: 'Codex credits', desc: '独立服务入口', descEn: 'Independent service', icon: IconCloud, external: true },
+      { id: 'poetry', href: 'https://poemcn.2aran.com/', title: '阿燃诗词', titleEn: 'Aran Poetry', desc: '古典诗词作品', descEn: 'Classical Chinese poetry', icon: IconFeather, external: true },
+      { id: 'codex-credit', href: 'https://gptplus.2aran.com', title: '低价 Codex 直充', titleEn: 'Codex credits', desc: '独立服务入口', descEn: 'Independent service', icon: IconCoin, external: true },
     ],
   },
 ]

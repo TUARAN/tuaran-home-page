@@ -1,12 +1,10 @@
 import Link from 'next/link'
 import {
   IconBook2, IconCoin, IconEdit, IconFileText, IconHistory, IconHome,
-  IconLoader2, IconMail, IconMap2, IconMessageCircle, IconPalette, IconRocket,
+  IconMail, IconMap2, IconMessageCircle, IconRocket,
   IconShieldLock, IconUserCircle,
 } from '@tabler/icons-react'
 
-import { LoadingDots, LoadingSpinner, Skeleton } from '../../components/loading/LoadingPrimitives'
-import { ENGINEERING_CONVENTIONS } from '../../../lib/engineeringConventions'
 import { SITE_CHANNELS, isItemVisibleForAccount } from '../../../lib/siteNav'
 import PageContainer from '../components/PageContainer'
 
@@ -24,37 +22,6 @@ const SITE_MAP_GROUPS = SITE_CHANNELS.map((channel) => ({
     .filter((item) => isItemVisibleForAccount(item, null, null))
     .map((item) => ({ href: item.href, label: item.label, description: item.desc, external: item.external }))),
 }))
-
-const DESIGN_PRINCIPLES = [
-  {
-    title: 'Token 优先，组件不写死颜色',
-    body: '全站颜色走一套语义 token（--site-ink / muted / faint / line / panel / accent / green 等），浅、深、经典三套主题各定义一次。组件只引用 token，不再散落 hex；想调色只改根变量，全站跟随。',
-  },
-  {
-    title: '暖中性基底 + 克制点缀',
-    body: '以暖灰（浅色）、暖近黑（深色）作基底，鼠尾草绿与赭紫只做少量点缀。一个页面不堆多种强色，让信息层级而非颜色抢注意力。',
-  },
-  {
-    title: '一处定义，处处跟随',
-    body: '主题与阅读底色的切换只动根变量，不逐组件改写。阅读底色（reading-bg）仅在亮色主题生效，暗色恒用自身深色基底——切换主题不会把浅底卡死在暗色上。',
-  },
-  {
-    title: '内容优先，视觉克制',
-    body: '列表与卡片低饱和、弱投影、细边框，正文与标题是主角。装饰性渐变、光晕只在首页等少数门面出现，内容页保持安静。',
-  },
-  {
-    title: '资源页不用卡片网格',
-    body: '资料、书单、索引类页面优先使用长文、目录、表格、分隔线列表和紧凑链接组织信息；不要把每个条目都做成圆角卡片，也不要用大面积卡片堆叠替代内容结构。',
-  },
-  {
-    title: '三档宽度 + 三态主题',
-    body: '页面宽度收敛为 narrow / standard / wide 三档，主题统一为浅、深、经典三态。跨页沿用同一套度量与色板，避免每页各写一套。',
-  },
-  {
-    title: '可达性是底线',
-    body: '保证文字对比度、保留 focus-visible 键盘轮廓、尊重 prefers-reduced-motion。好看不能以牺牲可读、可操作为代价。',
-  },
-]
 
 const HELP_SECTIONS = [
   {
@@ -127,33 +94,6 @@ const HELP_SECTIONS = [
         ],
         note: '外部收藏会跳到第三方网站，其可用性和隐私规则由对应服务决定。',
         actions: [{ href: '#contact', label: '反馈问题' }],
-      },
-    ],
-  },
-  {
-    id: 'design', title: '界面与设计', items: [
-      {
-        id: 'design-language', title: '这个站点配色与样式的取舍', description: '用一套尽量小的规则，让浅色、深色、经典三套主题保持一致并便于维护。', icon: IconPalette,
-        steps: [],
-        rules: DESIGN_PRINCIPLES,
-        note: '专题页可以有独立气质，但导航、状态反馈和可访问性规则保持一致。',
-      },
-      {
-        id: 'loading-motion', title: '加载与等待反馈', description: '页面、区块、内联与按钮使用同一套克制的加载语言。', icon: IconLoader2,
-        steps: [
-          '页面切换使用接近最终结构的流体骨架，先稳定布局，再显示真实内容。',
-          '图表、列表和鉴权等独立区块使用平滑圆环与具体文案，让等待对象保持明确。',
-          '加载更多和窄区域使用三点节奏；提交、保存和刷新按钮使用小圆环并暂时禁用重复操作。',
-          '可获得真实进度时直接显示进度条；未知进度才使用循环动效。',
-          '减少动态模式下停止循环，屏幕阅读器仍能获得正在执行的任务名称。',
-        ],
-        demo: 'loading',
-        note: '动效参考 Amicro 的开源组件语言，并按本站色彩、性能与无障碍要求重新实现；站点不加载额外 Motion 运行时。',
-      },
-      {
-        id: 'engineering-conventions', title: '后台与自动化的统一规矩', description: '分页、通知、告警、样式与凭证使用同一套可执行约定。', icon: IconRocket,
-        steps: [],
-        rules: ENGINEERING_CONVENTIONS,
       },
     ],
   },
@@ -257,31 +197,7 @@ function DocumentationArticle({ item, index }) {
       <span className="font-mono text-[11px] text-[var(--site-faint)]">{String(stepIndex + 1).padStart(2, '0')}</span><span>{step}</span>
     </li>)}</ol> : null}
 
-    {item.rules?.length ? <ol className="ml-12 mt-5 grid max-w-3xl gap-3 sm:grid-cols-2">{item.rules.map((rule, ruleIndex) => <li key={rule.title} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4">
-      <p className="flex items-baseline gap-2 text-[14px] font-semibold leading-6 text-[var(--site-ink)]"><span className="font-mono text-[10px] text-[var(--site-accent)]">{String(ruleIndex + 1).padStart(2, '0')}</span>{rule.title}</p>
-      <p className="mt-1.5 text-[13px] leading-6 text-[var(--site-muted)]">{rule.body}</p>
-    </li>)}</ol> : null}
-
     {item.note ? <p className="ml-12 mt-5 max-w-3xl border-l-2 border-[var(--site-line-strong)] bg-[color-mix(in_srgb,var(--site-panel)_70%,transparent)] px-4 py-3 text-[13px] leading-6 text-[var(--site-muted)]"><strong className="mr-2 font-semibold text-[var(--site-ink)]">注意</strong>{item.note}</p> : null}
-
-    {item.demo === 'loading' ? <div className="ml-12 mt-5 grid max-w-3xl gap-3 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 sm:grid-cols-3">
-      <div className="rounded-lg border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">
-        <p className="mb-4 text-[11px] font-medium text-[var(--site-faint)]">结构骨架</p>
-        <div className="space-y-2" aria-label="骨架动效示例">
-          <Skeleton className="h-4 w-3/5 rounded-full" />
-          <Skeleton className="h-3 w-full rounded-full" />
-          <Skeleton className="h-3 w-4/5 rounded-full" />
-        </div>
-      </div>
-      <div className="flex min-h-28 flex-col rounded-lg border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">
-        <p className="mb-4 text-[11px] font-medium text-[var(--site-faint)]">区块等待</p>
-        <div className="flex flex-1 items-center gap-2 text-[13px] text-[var(--site-muted)]"><LoadingSpinner label="正在加载示例" />正在加载</div>
-      </div>
-      <div className="flex min-h-28 flex-col rounded-lg border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">
-        <p className="mb-4 text-[11px] font-medium text-[var(--site-faint)]">内联等待</p>
-        <div className="flex flex-1 items-center text-[var(--site-accent)]"><LoadingDots label="正在加载更多示例" /></div>
-      </div>
-    </div> : null}
 
     {item.linkGroups?.length ? <div className="ml-12 mt-6 grid gap-3 sm:grid-cols-2">{item.linkGroups.map((group) => <details key={group.title} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 open:sm:col-span-2">
       <summary className="cursor-pointer text-[14px] font-semibold text-[var(--site-ink)]">{group.title}<span className="ml-2 text-[11px] font-normal text-[var(--site-faint)]">{group.links.length} 个入口</span></summary>

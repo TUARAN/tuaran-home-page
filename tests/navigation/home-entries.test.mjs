@@ -38,3 +38,24 @@ test('homepage exploration uses one grouped sidebar panel instead of competing n
   assert.match(discovery, /group\.collapsed/)
   assert.doesNotMatch(discovery, /DISCOVERY_ITEMS/)
 })
+
+test('homepage exploration gives each destination a distinct semantic icon', () => {
+  const expectedIcons = {
+    'AI 与开发': 'IconRobot',
+    '公司调研': 'IconBuildingSkyscraper',
+    '工程实践': 'IconTools',
+    '前端周看': 'IconNews',
+    '互动专题': 'IconPointer',
+    '原创项目': 'IconBulb',
+    '资源': 'IconArchive',
+    'WorkBuddy 学习手册': 'IconSchool',
+    '了解作者': 'IconUserCircle',
+    '交友进社群': 'IconMessages',
+    '合作推广': 'IconHeartHandshake',
+  }
+
+  for (const [title, icon] of Object.entries(expectedIcons)) {
+    assert.match(page, new RegExp(`title: '${title}'[^\\n]+icon: ${icon}`))
+  }
+  assert.equal(new Set(Object.values(expectedIcons)).size, Object.keys(expectedIcons).length)
+})

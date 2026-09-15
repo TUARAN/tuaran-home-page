@@ -1,5 +1,6 @@
 import { articles } from '../../../lib/articleMetadata'
 import { COMMUNITY_TOPICS } from '../../../lib/communityTopics'
+import { CZ_MEMOIR_CHAPTERS, czMemoirChapterPath } from '../../../lib/czMemoirs'
 import { listResearch } from '../../../lib/research/archive'
 import { listRichPageSitemapEntries } from '../../../lib/richPageSeo'
 import { listStaticPageSitemapEntries } from '../../../lib/staticPageRegistry.mjs'
@@ -36,6 +37,10 @@ export default function sitemap() {
   const entries = [
     ...listStaticPageSitemapEntries(SITE_URL),
     ...COMMUNITY_TOPICS.map((topic) => ({ url: `${SITE_URL}${topic.href}` })),
+    ...CZ_MEMOIR_CHAPTERS.map((chapter) => ({
+      url: `${SITE_URL}${czMemoirChapterPath(chapter.slug)}`,
+      lastModified: new Date('2026-09-15T00:00:00+08:00'),
+    })),
     ...articleEntries,
     ...researchEntries,
     ...listRichPageSitemapEntries(),

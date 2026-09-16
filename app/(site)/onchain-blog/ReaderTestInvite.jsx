@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import { CONTENT_PROOF_CLAIMS } from '../../../lib/contentProofClaims'
 
 const GITHUB_VERIFIER = 'https://github.com/TUARAN/tuaran-home-page/tree/main/tools/content-proof-verifier'
@@ -13,9 +15,9 @@ export default function ReaderTestInvite() {
             用浏览器或本地脚本走一遍同一组检查。通过后，你应能说出验证了哪几项、跳过了哪几项。留言时请写清结果，无需连接钱包。
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <a href="/proofs/research:topics:content-proof-demo" className="rounded-full bg-[#2f4b3a] px-4 py-2.5 text-sm font-semibold text-white no-underline dark:bg-[#d5b475] dark:text-[#171109]">打开示例凭证</a>
+            <Link href="/proofs/research:topics:content-proof-demo" className="rounded-full bg-[#2f4b3a] px-4 py-2.5 text-sm font-semibold text-white no-underline dark:bg-[#d5b475] dark:text-[#171109]">打开示例凭证</Link>
             <a href={GITHUB_VERIFIER} className="rounded-full border border-[#9d835b] px-4 py-2.5 text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">离线验证器</a>
-            <a href="/verify.txt" className="rounded-full border border-[#9d835b] px-4 py-2.5 text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">Agent 说明</a>
+            <Link href="/verify.txt" className="rounded-full border border-[#9d835b] px-4 py-2.5 text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">Agent 说明</Link>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

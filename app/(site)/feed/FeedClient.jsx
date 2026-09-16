@@ -7,9 +7,10 @@ import ContentPvBeacon from '../components/ContentPvBeacon'
 import DistributeContentButton from '../components/DistributeContentButton'
 import SharePageButton from '../components/SharePageButton'
 import {
+  DEFAULT_FEED_CATEGORY,
+  FEED_CATEGORY_KEYS,
+  FEED_CATEGORY_META,
   FEED_TYPE_META,
-  HOME_INSPIRATION_SCOPE_KEYS,
-  HOME_INSPIRATION_SCOPE_META,
   feedCategoryHref,
   filterFeedItemsByCategory,
   normalizeFeedCategory,
@@ -581,7 +582,7 @@ function LoadMoreTrigger({ hasMore, onLoadMore, remainingCount }) {
 }
 
 function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode = false }) {
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState(DEFAULT_FEED_CATEGORY)
   const [typeFilter, setTypeFilter] = useState('all')
   const [hashFeaturedItemId, setHashFeaturedItemId] = useState('')
   const [visibleCount, setVisibleCount] = useState(INITIAL_RENDER_COUNT)
@@ -696,9 +697,9 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
     <div>
       <div className="mb-6 space-y-3">
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="按主题筛选灵感">
-          {HOME_INSPIRATION_SCOPE_KEYS.map((key) => {
+          {FEED_CATEGORY_KEYS.map((key) => {
             const active = categoryFilter === key
-            const meta = HOME_INSPIRATION_SCOPE_META[key]
+            const meta = FEED_CATEGORY_META[key]
             return (
               <button
                 key={key}

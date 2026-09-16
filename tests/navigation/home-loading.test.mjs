@@ -64,15 +64,16 @@ test('inspirations remain readable even when the recommendation catalog is empty
   assert.doesNotMatch(html, /skeleton|invisible|aria-busy="true"/)
 })
 
-test('home inspirations expose AI and Web3 tabs like the article scopes', () => {
+test('home inspirations default to the AI tab and keep Web3 as the other scope', () => {
   const html = renderToStaticMarkup(React.createElement(Columns, props))
   assert.match(html, /首页灵感范围/)
-  assert.match(html, /home-inspiration-scope-all/)
   assert.match(html, /home-inspiration-scope-ai/)
   assert.match(html, /home-inspiration-scope-web3/)
-  assert.match(html, />全部</)
+  assert.match(html, /aria-selected="true"[^>]*>AI</)
   assert.match(html, />AI</)
   assert.match(html, />Web3</)
+  assert.doesNotMatch(html, /home-inspiration-scope-all/)
+  assert.doesNotMatch(html, />全部</)
   assert.doesNotMatch(html, /置顶|home-badge-pinned/)
 })
 

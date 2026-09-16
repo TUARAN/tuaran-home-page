@@ -46,30 +46,24 @@ export const FEED_CATEGORY_META = {
 }
 
 export const FEED_CATEGORY_KEYS = Object.keys(FEED_CATEGORY_META)
-
-export const HOME_INSPIRATION_SCOPE_META = {
-  all: { label: '全部', labelEn: 'All' },
-  ...FEED_CATEGORY_META,
-}
-
-export const HOME_INSPIRATION_SCOPE_KEYS = Object.keys(HOME_INSPIRATION_SCOPE_META)
+export const DEFAULT_FEED_CATEGORY = 'ai'
 
 export function isFeedCategory(value) {
   return FEED_CATEGORY_KEYS.includes(value)
 }
 
-export function normalizeFeedCategory(value, fallback = 'all') {
+export function normalizeFeedCategory(value, fallback = DEFAULT_FEED_CATEGORY) {
   return isFeedCategory(value) ? value : fallback
 }
 
 export function filterFeedItemsByCategory(items, category) {
-  if (!category || category === 'all') return Array.isArray(items) ? items : []
-  return (Array.isArray(items) ? items : []).filter((item) => item.category === category)
+  const next = normalizeFeedCategory(category)
+  return (Array.isArray(items) ? items : []).filter((item) => item.category === next)
 }
 
 export function feedCategoryHref(category) {
   const next = normalizeFeedCategory(category)
-  return next === 'all' ? '/feed' : `/feed?category=${next}`
+  return next === DEFAULT_FEED_CATEGORY ? '/feed' : `/feed?category=${next}`
 }
 
 const DEFAULT_FEED_MEDIA_BASE = 'https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev'

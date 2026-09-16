@@ -6,10 +6,11 @@ import { useMemo, useState } from 'react'
 import HomeFeaturedReadingClient from './HomeFeaturedReadingClient'
 import { T } from './LocaleProvider'
 import {
+  DEFAULT_FEED_CATEGORY,
+  FEED_CATEGORY_KEYS,
+  FEED_CATEGORY_META,
   feedCategoryHref,
   filterFeedItemsByCategory,
-  HOME_INSPIRATION_SCOPE_KEYS,
-  HOME_INSPIRATION_SCOPE_META,
 } from '../feed/data'
 
 function FeedThumbnail({ src }) {
@@ -50,7 +51,7 @@ function InspirationCard({ inspiration }) {
 }
 
 function HomeInspirations({ items }) {
-  const [scope, setScope] = useState('all')
+  const [scope, setScope] = useState(DEFAULT_FEED_CATEGORY)
   const visibleItems = useMemo(
     () => filterFeedItemsByCategory(items, scope),
     [items, scope],
@@ -72,9 +73,9 @@ function HomeInspirations({ items }) {
       <div className="home-inspiration-scopes">
         <p className="h5-feed-label md:hidden">灵感</p>
         <nav className="home-section-tabs" role="tablist" aria-label="首页灵感范围">
-          {HOME_INSPIRATION_SCOPE_KEYS.map((key) => {
+          {FEED_CATEGORY_KEYS.map((key) => {
             const active = scope === key
-            const meta = HOME_INSPIRATION_SCOPE_META[key]
+            const meta = FEED_CATEGORY_META[key]
             return (
               <button
                 key={key}

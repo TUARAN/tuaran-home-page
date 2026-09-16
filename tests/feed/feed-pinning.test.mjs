@@ -50,9 +50,12 @@ test('every inspiration is classified as AI or Web3', () => {
   }
 })
 
-test('inspiration category filter keeps Web3 items out of the AI tab', () => {
+test('inspiration category filter defaults to AI and keeps Web3 items out of that tab', () => {
   const aiItems = filterFeedItemsByCategory(getAllFeedItems(), 'ai')
+  const defaultItems = filterFeedItemsByCategory(getAllFeedItems())
   const web3Items = filterFeedItemsByCategory(getAllFeedItems(), 'web3')
+
+  assert.deepEqual(defaultItems.map((item) => item.id), aiItems.map((item) => item.id))
 
   assert.ok(aiItems.length >= 1)
   assert.ok(web3Items.length >= 1)

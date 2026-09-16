@@ -99,6 +99,8 @@ const blockedPrefixes = [
   '.data/',
   '.next/',
   '.next-check/',
+  '.next-admin-preview/',
+  '.next-briefing/',
   '.vercel/',
   '.wrangler/',
   'desktop-dist/',

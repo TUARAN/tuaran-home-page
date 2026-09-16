@@ -95,6 +95,7 @@ jspm_packages/
 .next
 .next-check/
 .next-admin-preview/
+.next-briefing/
 /public/generated/a-shares/
 
 # Vercel / next-on-pages build output

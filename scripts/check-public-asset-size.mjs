@@ -2,7 +2,8 @@ import { readdir, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const MAX_BYTES = 25 * 1024 * 1024
+import { evaluatePublicAssets, formatMiB, MAX_FILE_BYTES } from './public-asset-policy.mjs'
+
 const PUBLIC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public')
 
 async function walk(dir) {
@@ -21,30 +22,26 @@ async function walk(dir) {
   return files
 }
 
-function formatMiB(bytes) {
-  return `${(bytes / 1024 / 1024).toFixed(2)} MiB`
-}
-
-const files = await walk(PUBLIC_DIR)
-const oversized = []
-
-for (const file of files) {
+const files = []
+for (const file of await walk(PUBLIC_DIR)) {
   const info = await stat(file)
-  if (info.size > MAX_BYTES) {
-    oversized.push({
-      file: path.relative(PUBLIC_DIR, file),
-      size: info.size,
-    })
-  }
+  files.push({
+    file: path.relative(PUBLIC_DIR, file),
+    size: info.size,
+  })
 }
 
-if (oversized.length) {
-  console.error('[asset-size] Cloudflare Pages only supports files up to 25 MiB.')
-  console.error('[asset-size] Move these files to R2 and reference them with R2_PUBLIC_BASE/feedMediaUrl:')
-  for (const item of oversized) {
-    console.error(`  - public/${item.file} (${formatMiB(item.size)})`)
+const result = evaluatePublicAssets(files)
+for (const warning of result.warnings) {
+  console.warn(`[asset-size] warning: ${warning}`)
+}
+if (result.errors.length) {
+  for (const error of result.errors) {
+    console.error(`[asset-size] ${error}`)
   }
   process.exit(1)
 }
 
-console.log(`[asset-size] public/ assets ok: every file is <= ${formatMiB(MAX_BYTES)}.`)
+console.log(
+  `[asset-size] public/ assets ok: ${result.fileCount} files, every file is <= ${formatMiB(MAX_FILE_BYTES)}.`,
+)

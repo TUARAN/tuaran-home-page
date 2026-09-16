@@ -9,8 +9,9 @@ export const dynamic = 'force-dynamic'
 const HEADER_SECRET = 'x-automation-alert-secret'
 
 /**
- * 自动化监控告警入口：GitHub Actions 定时任务失败时由工作流调用，
- * 向站长消息中心写入一条 automation_monitor 类型通知。
+ * 自动化监控告警入口：GitHub Actions 定时任务失败、以及 Cloudflare Pages
+ * 部署失败（pages-deploy-alert）时由工作流调用，向站长消息中心写入一条
+ * automation_monitor 类型通知。
  *
  * 鉴权复用现有 Secret 回退链：优先 AUTOMATION_ALERT_SECRET，
  * 未配置时 WEEKLY_SUMMARY_SECRET / PUBLIC_OPINION_COLLECT_SECRET 任一放行

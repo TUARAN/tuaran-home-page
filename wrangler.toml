@@ -4,6 +4,8 @@ compatibility_flags = ["nodejs_compat"]
 
 # Cloudflare Pages expects the built static assets here when using next-on-pages.
 pages_build_output_dir = ".vercel/output/static"
+# Pages Git 构建在校验静态资源时可能仍用 wrangler 3。付费计划请在 Pages 环境变量设置
+# PAGES_WRANGLER_MAJOR_VERSION=4，缩短 Validating asset output directory 耗时。
 
 # 2026 世界杯页面 (/agent-world-cup) 定时采集
 # 端点 app/api/wc/collect/route.js (Edge),数据源 openfootball/worldcup.json (无 key、无限流)。

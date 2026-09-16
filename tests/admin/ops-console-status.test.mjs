@@ -36,3 +36,11 @@ test('复制任务字段包含推导后的调度状态', () => {
 
   assert.equal(copied.status, 'active')
 })
+
+test('Pages 部署失败告警登记为已启用的云端自动任务', () => {
+  const item = AUTOMATION_REGISTRY.find((entry) => entry.id === 'pages-deploy-alert')
+  assert.ok(item)
+  assert.equal(item.autoRun, true)
+  assert.equal(automationScheduleStatus(item), 'active')
+  assert.match(item.entry, /pages-deploy-alert\.yml/)
+})

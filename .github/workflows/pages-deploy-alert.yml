@@ -1,0 +1,65 @@
+name: Pages deploy alert
+
+# Cloudflare Pages 构建不走 GitHub Actions，失败时站点仍停留在上一版，
+# 站点探活不会报警。这里监听 GitHub 收到的 Pages 部署状态，写入站长消息中心。
+on:
+  deployment_status:
+  check_run:
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      send_test_alert:
+        description: '写入一条测试告警到消息中心'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-deploy-alert
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Notify owner of Pages deploy failure
+    if: |
+      (github.event_name == 'workflow_dispatch' && inputs.send_test_alert == true) ||
+      (github.event_name == 'deployment_status' && (github.event.deployment_status.state == 'failure' || github.event.deployment_status.state == 'error')) ||
+      (github.event_name == 'check_run' && github.event.check_run.conclusion == 'failure' && (contains(github.event.check_run.name, 'Cloudflare') || github.event.check_run.app.slug == 'cloudflare-pages'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Notify owner of Pages deploy failure
+        env:
+          ALERT_SECRET: ${{ secrets.AUTOMATION_ALERT_SECRET || secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          ENV_NAME: ${{ github.event.deployment.environment || github.event.check_run.name || 'pages' }}
+          SHA: ${{ github.event.deployment.sha || github.event.check_run.head_sha || github.sha }}
+          LOG_URL: ${{ github.event.deployment_status.target_url || github.event.deployment_status.log_url || github.event.check_run.html_url || github.event.check_run.details_url }}
+          DESCRIPTION: ${{ github.event.deployment_status.description || github.event.check_run.output.title || github.event.check_run.output.summary || 'Cloudflare Pages 部署失败' }}
+        run: |
+          if [ -z "$ALERT_SECRET" ]; then
+            echo "::error::缺少 AUTOMATION_ALERT_SECRET（或 WEEKLY_SUMMARY_SECRET / PUBLIC_OPINION_COLLECT_SECRET）"
+            exit 1
+          fi
+          BODY=$(python3 - <<'PY'
+          import json, os
+          sha = (os.environ.get("SHA") or "").strip()
+          env_name = (os.environ.get("ENV_NAME") or "pages").strip() or "pages"
+          run_id = f"{env_name}-{sha[:12] or 'unknown'}"
+          print(json.dumps({
+              "workflow": "pages-deploy-alert",
+              "taskName": f"Cloudflare Pages ({env_name})"[:80],
+              "runId": run_id,
+              "runUrl": (os.environ.get("LOG_URL") or "").strip(),
+              "status": "failed",
+              "error": (os.environ.get("DESCRIPTION") or "").strip()[:300],
+          }, ensure_ascii=False))
+          PY
+          )
+          curl -sS --retry 2 --retry-delay 5 --fail-with-body \
+            -X POST \
+            -H "x-automation-alert-secret: $ALERT_SECRET" \
+            -H "content-type: application/json" \
+            -d "$BODY" \
+            https://2aran.com/api/automation/alert

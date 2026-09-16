@@ -383,7 +383,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
                 id={`home-article-scope-${key}`}
                 aria-selected={active}
                 aria-controls="home-article-list"
-                tabIndex={active ? 0 : -1}
                 className={`home-tab-link ${active ? 'is-active' : ''}`}
                 onClick={() => selectScope(key)}
               >

@@ -72,7 +72,10 @@ test('initial recommendations are deterministic for matching server and hydratio
 test('server HTML does not show a latest badge before the recommendation API returns', () => {
   const html = renderToStaticMarkup(React.createElement(Reading, { catalog }))
   assert.match(html, /首屏文章/)
-  assert.doesNotMatch(html, /最新/)
+  assert.match(html, /推荐/)
+  assert.match(html, /最新/)
+  assert.match(html, /资源/)
+  assert.doesNotMatch(html, /home-badge-latest/)
 })
 
 test('home featured reading keeps the first painted batch after the recommendation API returns', async () => {

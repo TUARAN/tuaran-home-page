@@ -6,7 +6,11 @@ import {
   chooseHomeRecommendationBatch,
   getHomeRecommendationNavigationType,
   getHomeRecommendationRotateDelayMs,
+  HOME_ARTICLE_SCOPE_PAGE_SIZE,
   HOME_RECOMMENDATION_BATCH_OFFSET_STORAGE_KEY,
+  homeArticleScopeSurface,
+  isHomeArticleScope,
+  listHomeArticleScopeCatalog,
   mergeHomeRecommendationCatalog,
   mergeHomeRecommendationSettings,
   nextHomeRecommendationBatchOffset,
@@ -14,6 +18,7 @@ import {
   readHomeRecommendationBatchOffset,
   reconcilePaintedHomeRecommendationLatest,
   selectHomeRecommendationItems,
+  sliceHomeArticleScopeItems,
   tagVisibleHomeRecommendationLatest,
   writeHomeRecommendationBatchOffset,
 } from '../lib/homeRecommendationEngine.js'
@@ -240,6 +245,29 @@ test('page reload advances the stored batch offset the same way as 换一批', (
   )
   assert.deepEqual(afterReload.map((item) => item.id), afterClick.map((item) => item.id))
   assert.notDeepEqual(afterReload.map((item) => item.id), first.map((item) => item.id))
+})
+
+test('home article latest scope lists enabled items by recency, resources stay in their own tab', () => {
+  const mixed = [
+    { id: 'column-old', section: 'column', sortKey: '2026-08-01T00:00:00' },
+    { id: 'resource-new', section: 'resources', sortKey: '2026-09-15T00:00:00' },
+    { id: 'research-mid', section: 'research', sortKey: '2026-09-10T12:00:00' },
+    { id: 'feed-skip', section: 'feed', sortKey: '2026-09-16T00:00:00' },
+  ]
+  const latest = listHomeArticleScopeCatalog(mixed, {}, 'latest')
+  const resources = listHomeArticleScopeCatalog(mixed, {}, 'resources')
+  const recommended = listHomeArticleScopeCatalog(mixed, {}, 'recommended')
+
+  assert.deepEqual(latest.map((item) => item.id), ['resource-new', 'research-mid', 'column-old'])
+  assert.deepEqual(resources.map((item) => item.id), ['resource-new'])
+  assert.deepEqual(recommended.map((item) => item.id).sort(), ['column-old', 'research-mid', 'resource-new'])
+  assert.deepEqual(sliceHomeArticleScopeItems(latest, 2).map((item) => item.id), ['resource-new', 'research-mid'])
+  assert.equal(sliceHomeArticleScopeItems(latest).length, Math.min(latest.length, HOME_ARTICLE_SCOPE_PAGE_SIZE))
+  assert.equal(isHomeArticleScope('latest'), true)
+  assert.equal(isHomeArticleScope('hot'), false)
+  assert.equal(homeArticleScopeSurface('latest'), 'home_latest')
+  assert.equal(homeArticleScopeSurface('resources'), 'home_resources')
+  assert.equal(homeArticleScopeSurface('recommended'), 'home_recommendation')
 })
 
 test('homepage reload uses the same batch change path as 换一批', async () => {

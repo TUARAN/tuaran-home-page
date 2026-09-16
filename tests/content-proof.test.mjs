@@ -207,6 +207,24 @@ test('archived article renderer resolves its credential before rendering it', as
   assert.match(pageFunction, /<ContentProofCard credential=\{proofCredential\}/)
 })
 
+test('weeks 11-12 open the offline verifier, agent guide, and reader test invite', async () => {
+  const [llms, blog, client, page, discovery] = await Promise.all([
+    readFile(new URL('../app/(site)/llms.txt/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/onchain-blog/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/proofs/[contentKey]/ProofVerificationClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/proofs/[contentKey]/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/contentProofDiscovery.js', import.meta.url), 'utf8'),
+  ])
+  assert.match(llms, /verify\.txt/)
+  assert.match(llms, /content-proof\.json/)
+  assert.match(blog, /第 11—12 周[\s\S]*已开放/)
+  assert.match(blog, /ReaderTestInvite/)
+  assert.match(blog, /application\/ld\+json/)
+  assert.match(client, /content-proof-verifier/)
+  assert.match(page, /CONTENT_PROOF_CLAIMS/)
+  assert.match(discovery, /renderContentProofAgentGuide/)
+})
+
 test('weeks 7-10 discovery surfaces expose proof and replica links', async () => {
   const [llms, rss, proofsRss, blog, card, client] = await Promise.all([
     readFile(new URL('../app/(site)/llms.txt/route.js', import.meta.url), 'utf8'),

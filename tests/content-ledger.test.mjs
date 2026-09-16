@@ -223,6 +223,8 @@ test('RSS, llms.txt and proofs.xml expose the demo proof JSON', async () => {
   const xml = await (await proofsRss()).text()
   assert.match(xml, /content-proof-demo/)
   assert.match(xml, /proofs\/research:topics:content-proof-demo/)
+  assert.match(renderContentProofLlmsSection(entries), /verify\.txt/)
+  assert.match(renderContentProofLlmsSection(entries), /content-proof-verifier/)
 })
 
 test('ops scripts keep publisher keys out of batch JSON and require mainnet confirmation', async () => {

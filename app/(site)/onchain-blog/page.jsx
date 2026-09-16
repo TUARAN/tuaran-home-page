@@ -1,8 +1,10 @@
 import Link from 'next/link'
 
+import ArticleComments from '../components/ArticleComments'
 import ContentProofCard from '../components/ContentProofCard'
 import { getContentProofCredential } from '../../../lib/contentProofRegistry'
 import ContentFingerprintPrototype from './ContentFingerprintPrototype'
+import ReaderTestInvite from './ReaderTestInvite'
 
 const DETAIL_HREF = '/articles/research/topics/2aran-onchain-content-site'
 
@@ -73,10 +75,32 @@ const ROADMAP = [
   {
     range: '第 11—12 周',
     title: '开放验证器',
-    status: '待实施',
-    copy: '邀请读者测试，发布 Agent 可读说明，并开源一个可脱离 2aran.com 使用的验证器。',
+    status: '已开放',
+    active: true,
+    copy: '读者测试入口、Agent 可读协议与可脱离 2aran.com 运行的开源验证器已发布。',
   },
 ]
+
+const STRUCTURED_DATA = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebPage',
+      name: '万物上链｜2aran Content Ledger',
+      url: 'https://2aran.com/onchain-blog',
+      description: '公开内容的指纹、站点签名与批次存证。读者无需钱包即可核对版本、时间和完整性。',
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: '2aran Content Proof Verifier',
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'Node.js',
+      url: 'https://github.com/TUARAN/tuaran-home-page/tree/main/tools/content-proof-verifier',
+      description: '离线验证 2aran 内容凭证的开源 CLI，运行时不访问 2aran.com。',
+      author: { '@type': 'Person', name: 'TUARAN', url: 'https://2aran.com' },
+    },
+  ],
+}
 
 const BOUNDARIES = [
   '不发币，不做 NFT、DAO 或收益承诺。',
@@ -100,6 +124,7 @@ export default function OnchainBlogPage() {
   const demoCredential = getContentProofCredential('research:topics:content-proof-demo')
   return (
     <main className="min-h-screen bg-[#f3f0e8] text-[#292620] dark:bg-[#0d1117] dark:text-[#eee9df]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA).replaceAll('<', '\\u003c') }} />
       <section
         className="relative isolate min-h-[680px] overflow-hidden border-b border-[#55452d] bg-[#05080c] text-white"
         style={{ backgroundImage: "url('/images/onchain-blog/everything-onchain-hero.webp')", backgroundPosition: 'center', backgroundSize: 'cover' }}
@@ -203,6 +228,8 @@ export default function OnchainBlogPage() {
         </div>
       </section>
 
+      <ReaderTestInvite />
+
       <section className="mx-auto w-full max-w-[1180px] px-5 py-14 md:py-20">
         <SectionHeading label="Implementation" title="90 天实施路线">
           方案与边界定义已经完成；每项工程能力通过对应验收条件后才进入上线状态。
@@ -254,6 +281,11 @@ lib/contentReplica.js
 scripts/anchor-content-proof-batch.mjs
   isolated publisher wallet → retry / idempotent EAS attest → cost ledger
 
+tools/content-proof-verifier/cli.mjs
+  local replica + pinned public key + optional batch → JSON report
+
+/.well-known/content-proof.json  /verify.txt  /schemas/content-proof/v1
+
 D1: content_proofs + content_replicas + cost events
   content_key / version / content_hash / cid
   chain_id / tx_hash / merkle_root / cost_wei`}</code></pre>
@@ -278,11 +310,19 @@ D1: content_proofs + content_replicas + cost events
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
             <p className="font-serif text-2xl font-semibold">详细技术方案包含技术选择、数据结构、验收条件与风险说明。</p>
-            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-16 · 当前状态：读者验证、IPFS 副本流水线与主网小批量发布控制已就绪。</p>
+            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-16 · 当前状态：开放验证器已发布，可用浏览器或离线脚本核对示例凭证。</p>
           </div>
           <Link href={DETAIL_HREF} className="shrink-0 rounded-full border border-[#9d835b] px-5 py-3 text-sm font-semibold text-[#5d4523] no-underline hover:bg-[#f8f3e9] dark:border-[#8d774f] dark:text-[#dbbd86] dark:hover:bg-white/[0.05]">
             打开完整计划与实现细节 →
           </Link>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-[1180px] px-5 pb-16">
+        <div id="comments" className="scroll-mt-24 rounded-2xl border border-[#d6cdbf] bg-[#faf8f2] px-5 py-6 dark:border-[#293441] dark:bg-[#121a23]">
+          <h2 className="font-serif text-2xl font-semibold">测试反馈</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-[#625d54] dark:text-[#aaa49a]">写下你核对了哪几项、是否通过、卡在哪一步。</p>
+          <ArticleComments articleKey="resource:onchain-blog" />
         </div>
       </section>
     </main>

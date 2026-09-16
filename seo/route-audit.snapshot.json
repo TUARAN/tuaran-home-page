@@ -6,11 +6,11 @@
     "private": 53,
     "registeredStatic": 84,
     "indexable": 97,
-    "canonical": 111,
-    "openGraph": 53,
-    "jsonLd": 33,
+    "canonical": 112,
+    "openGraph": 54,
+    "jsonLd": 35,
     "errors": 1,
-    "warnings": 124
+    "warnings": 122
   },
   "routes": [
     {
@@ -1827,7 +1827,7 @@
         ],
         "noindex": "inherited",
         "openGraph": true,
-        "jsonLd": false,
+        "jsonLd": true,
         "ogUrls": [
           "/onchain-blog"
         ]
@@ -1983,12 +1983,16 @@
       "indexable": false,
       "sitemap": false,
       "signals": {
-        "canonical": false,
-        "canonicalValues": [],
+        "canonical": true,
+        "canonicalValues": [
+          "/proofs/${credential.contentKey}"
+        ],
         "noindex": "conditional-or-explicit",
-        "openGraph": false,
-        "jsonLd": false,
-        "ogUrls": []
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com"
+        ]
       }
     },
     {
@@ -3170,13 +3174,6 @@
       "message": "页面没有声明 canonical。"
     },
     {
-      "id": "canonical.missing:/proofs/[contentKey]",
-      "rule": "canonical.missing",
-      "route": "/proofs/[contentKey]",
-      "severity": "warning",
-      "message": "页面没有声明 canonical。"
-    },
-    {
       "id": "canonical.missing:/publications",
       "rule": "canonical.missing",
       "route": "/publications",
@@ -3369,13 +3366,6 @@
       "id": "jsonld.missing:/mcp-center",
       "rule": "jsonld.missing",
       "route": "/mcp-center",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
-      "id": "jsonld.missing:/onchain-blog",
-      "rule": "jsonld.missing",
-      "route": "/onchain-blog",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },

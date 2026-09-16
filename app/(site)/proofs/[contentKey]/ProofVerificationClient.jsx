@@ -96,6 +96,8 @@ export default function ProofVerificationClient({ credential }) {
             <a href={state.batch?.anchor?.explorerUrl || credential.network.explorerUrl} target="_blank" rel="noreferrer" className="no-external-arrow mt-4 inline-flex text-sm font-semibold text-[#66502d] underline underline-offset-4 dark:text-[#d2ac70]">打开区块浏览器 ↗</a>
           </div>
           <a href={credential.proofUrl} className="block rounded-full border border-[#9d835b] px-4 py-2.5 text-center text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">查看 proof JSON</a>
+          <a href="https://github.com/TUARAN/tuaran-home-page/tree/main/tools/content-proof-verifier" className="block rounded-full border border-[#9d835b] px-4 py-2.5 text-center text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">离线验证器</a>
+          <a href="/verify.txt" className="block rounded-full border border-[#9d835b] px-4 py-2.5 text-center text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">Agent 说明</a>
           {credential.replica?.replicaUrl ? <a href={credential.replica.replicaUrl} className="block rounded-full border border-[#9d835b] px-4 py-2.5 text-center text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">下载归档副本</a> : null}
           {(credential.replica?.cid ? credential.replica.gateways || [] : []).map((gateway) => (
             <a key={gateway} href={`${gateway}${credential.replica.cid}`} target="_blank" rel="noreferrer" className="block rounded-full border border-[#9d835b] px-4 py-2.5 text-center text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">打开 {new URL(gateway).host} 副本 ↗</a>

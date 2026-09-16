@@ -8,6 +8,8 @@
 
 第 7—10 周接入 IPFS 副本和主网小批量控制。`lib/contentReplica.js` 生成规范化副本并要求两个独立网关回读同一 SHA-256；`scripts/pin-content-replica.mjs` 默认只写本地副本，`--pin` 才使用 `PINATA_JWT`。发布钱包必须是 `content_attestation` 角色，测试网与主网密钥隔离，主网还要 `--confirm-mainnet`。`scripts/anchor-content-proof-batch.mjs` 按 `chainId + merkleRoot + schemaUid` 幂等，瞬时错误重试，并把 gas / 延迟写入本地 ledger。RSS、`llms.txt` 和 `/proofs.xml` 暴露 proof 与副本链接。活 pinning 与主网交易仍需隔离钱包和 Pinata 凭据，不在构建机执行。
 
+第 11—12 周开放验证器。`tools/content-proof-verifier/cli.mjs` 只读本地 replica / proof / 公钥 / batch，运行时不访问 2aran.com。`/.well-known/content-proof.json`、`/verify.txt` 和 `/schemas/content-proof/v1` 提供 Agent 可读协议；`/onchain-blog#open-verifier` 邀请读者测试，并写清通过时核对了什么、仍未证明什么。50 名读者实测是开放后的运营目标，工程交付是可独立运行的验证器与可被说清的验证边界。
+
 首个 bootstrap 批次已于 2026-09-15 写入 Base Sepolia EAS。Merkle Root 为 `3c4a2b76a8b817924060e0c571797337cad09045b8d9e8f84fd0ec4595392f05`，attestation UID 为 `0xaf0c38c741b062f0097e88a3a7ff4563b10d19adfafc26b386ad160494085c3d`，交易为 `0xb8bee63535fef3e81bafeac38666ad3ab28ee725d852e5d07ed11236ec6742fd`。读者验证页会本地核对 Merkle Path，并直接链接该 EAS attestation。
 
 ## v1 规范化契约
@@ -85,7 +87,12 @@ node scripts/content-ledger-key-drill.mjs \
 
 ```bash
 npm run content-proof:test
+node tools/content-proof-verifier/cli.mjs \
+  --replica public/proofs/replicas/content-proof-demo-v1.json \
+  --public-key public/.well-known/content-proof-key.json \
+  --batch public/proofs/batches/bootstrap-001-anchored.json \
+  --expected-chain-id 84532
 npm run build:check
 ```
 
-测试覆盖固定 SHA-256 向量、换行与尾随空格归一、资源清单、签名验证、正文单字篡改、内容身份复用、已提交的公开 proof、IPFS 双网关回读、发布钱包隔离、失败重试、幂等和主网成本汇总。完整生产构建确认共享模块可进入浏览器 bundle。
+测试覆盖固定 SHA-256 向量、换行与尾随空格归一、资源清单、签名验证、正文单字篡改、内容身份复用、已提交的公开 proof、IPFS 双网关回读、发布钱包隔离、失败重试、幂等、主网成本汇总，以及可脱离 2aran.com 的离线验证器。完整生产构建确认共享模块可进入浏览器 bundle。

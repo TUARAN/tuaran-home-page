@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { CONTENT_PROOF_CLAIMS } from '../../../../lib/contentProofClaims'
 import { getContentProofCredential, listContentProofCredentials } from '../../../../lib/contentProofRegistry'
 import { isOlderVersion, shortDigest } from '../../../../lib/contentProofPresentation'
 import ProofVerificationClient from './ProofVerificationClient'
@@ -16,7 +17,14 @@ export async function generateMetadata({ params }) {
   if (!credential) return { title: '内容凭证未找到', robots: { index: false, follow: false } }
   return {
     title: `${credential.title}｜内容凭证`,
-    description: `在浏览器本地验证 ${credential.title} 的内容指纹、发布签名与版本记录。`,
+    description: `在浏览器本地验证 ${credential.title} 的内容指纹、发布签名与版本记录。通过只证明完整性、版本和时间，不证明观点正确。`,
+    alternates: { canonical: `/proofs/${credential.contentKey}` },
+    openGraph: {
+      title: `${credential.title}｜内容凭证`,
+      description: `核对 ${credential.title} 的内容指纹、站点签名与批次记录。无需钱包。`,
+      url: `/proofs/${credential.contentKey}`,
+      type: 'article',
+    },
   }
 }
 
@@ -25,8 +33,19 @@ export default async function ContentProofPage({ params }) {
   const credential = getContentProofCredential(contentKey)
   if (!credential) notFound()
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: credential.title,
+    identifier: credential.contentKey,
+    url: `https://2aran.com/proofs/${credential.contentKey}`,
+    author: { '@type': 'Person', name: 'TUARAN', url: 'https://2aran.com' },
+    description: '这份凭证可在浏览器或离线脚本中核对内容完整性、发布签名和批次成员关系。它不证明文章观点或数字为真。',
+  }
+
   return (
     <main className="min-h-screen bg-[#f3f0e8] text-[#292620] dark:bg-[#0d1117] dark:text-[#eee9df]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replaceAll('<', '\\u003c') }} />
       <header className="border-b border-[#d8d0c2] bg-[#171a1d] text-[#f4eee4] dark:border-[#2a313b]">
         <div className="mx-auto w-full max-w-[1080px] px-5 py-10 sm:py-14">
           <div className="flex flex-wrap items-center gap-2 text-xs text-white/50"><Link href="/onchain-blog" className="no-underline hover:text-white">2aran Content Ledger</Link><span>/</span><span>内容凭证</span></div>
@@ -60,9 +79,24 @@ export default async function ContentProofPage({ params }) {
           </div>
         </section>
 
-        <section className="mt-12 rounded-2xl border border-[#d5ccbd] bg-[#e9e1d3] p-6 dark:border-[#2f3b48] dark:bg-[#131b24]">
-          <h2 className="font-serif text-2xl font-semibold">验证的边界</h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[#625b51] dark:text-[#aeb6c0]">通过表明这份内容与 TUARAN 发布的对应版本一致，且后续更改可被发现。它不代表文章中的观点、数字或引用已被区块链证明为真。</p>
+        <section className="mt-12 grid gap-4 lg:grid-cols-2">
+          <article className="rounded-2xl border border-[#d5ccbd] bg-[#e9e1d3] p-6 dark:border-[#2f3b48] dark:bg-[#131b24]">
+            <h2 className="font-serif text-2xl font-semibold">通过时核对到了</h2>
+            <ul className="mt-4 space-y-3 text-sm leading-7 text-[#625b51] dark:text-[#aeb6c0]">
+              {CONTENT_PROOF_CLAIMS.verifies.map((claim) => (
+                <li key={claim.id}><strong className="text-[#403a32] dark:text-[#e6dfd3]">{claim.label}。</strong>{claim.detail}</li>
+              ))}
+            </ul>
+          </article>
+          <article className="rounded-2xl border border-[#d5ccbd] bg-[#fbf9f4] p-6 dark:border-[#2f3b48] dark:bg-[#121a23]">
+            <h2 className="font-serif text-2xl font-semibold">通过时仍未证明</h2>
+            <ul className="mt-4 space-y-3 text-sm leading-7 text-[#625b51] dark:text-[#aeb6c0]">
+              {CONTENT_PROOF_CLAIMS.doesNotVerify.map((claim) => (
+                <li key={claim.id}><strong className="text-[#403a32] dark:text-[#e6dfd3]">{claim.label}。</strong>{claim.detail}</li>
+              ))}
+            </ul>
+            <a href="/onchain-blog#open-verifier" className="mt-5 inline-block text-sm font-semibold text-[#66502d] underline underline-offset-4 dark:text-[#d2ac70]">参加开放测试 →</a>
+          </article>
         </section>
       </div>
     </main>

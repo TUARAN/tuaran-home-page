@@ -11,20 +11,26 @@ export async function GET(req, { params }) {
   if (!guard.ok) return guard.response
   const { id } = await params
   try {
-    const fromPool = new URL(req.url).searchParams.get('pool') === '1'
+    const url = new URL(req.url)
+    const fromPool = url.searchParams.get('pool') === '1'
+    const wantsThumb = fromPool && url.searchParams.get('thumb') === '1'
     const row = await getD1().prepare(fromPool
-      ? 'SELECT object_key, mime_type FROM x_image_pool WHERE id = ? AND enabled = 1'
+      ? 'SELECT object_key, thumbnail_object_key, mime_type FROM x_image_pool WHERE id = ? AND enabled = 1'
       : 'SELECT object_key, mime_type FROM x_post_assets WHERE id = ?').bind(id).first()
-    if (!row?.object_key?.startsWith(X_IMAGE_PREFIX)) return new Response('Not found', { status: 404 })
-    const object = await getR2().get(row.object_key)
+    const objectKey = wantsThumb ? row?.thumbnail_object_key : row?.object_key
+    if (!objectKey?.startsWith(X_IMAGE_PREFIX)) return new Response('Not found', { status: 404 })
+    const object = await getR2().get(objectKey)
     if (!object) return new Response('Not found', { status: 404 })
-    const download = new URL(req.url).searchParams.get('download') === '1'
-    return new Response(object.body, { headers: {
-      'Content-Type': row.mime_type,
+    const download = url.searchParams.get('download') === '1'
+    const headers = new Headers({
+      'Content-Type': wantsThumb ? 'image/webp' : row.mime_type,
       'Cache-Control': download ? 'private, no-store' : 'private, max-age=86400',
       'X-Content-Type-Options': 'nosniff',
       ...(download ? { 'Content-Disposition': `attachment; filename="x-post.${row.mime_type === 'image/png' ? 'png' : 'jpg'}"` } : {}),
-    } })
+    })
+    if (object.size != null) headers.set('Content-Length', String(object.size))
+    if (object.httpEtag) headers.set('ETag', object.httpEtag)
+    return new Response(object.body, { headers })
   } catch {
     return Response.json({ error: 'X_ASSET_STORAGE_UNAVAILABLE' }, { status: 503 })
   }

@@ -136,6 +136,7 @@ async function assetFixture(t) {
   const sqlite = new DatabaseSync(':memory:')
   t.after(() => sqlite.close())
   sqlite.exec(await readFile(new URL('../../migrations/0082_x_post_assets.sql', import.meta.url), 'utf8'))
+  sqlite.exec(await readFile(new URL('../../migrations/0091_x_image_pool_thumbnails.sql', import.meta.url), 'utf8'))
   sqlite.exec('CREATE TABLE site_settings (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER, updated_by TEXT)')
   const db = { prepare(sql) {
     const statement = sqlite.prepare(sql)
@@ -151,7 +152,7 @@ async function assetFixture(t) {
   const objects = new Map()
   const bucket = {
     async put(key, bytes) { objects.set(key, bytes) },
-    async get(key) { const bytes = objects.get(key); return bytes ? { arrayBuffer: async () => bytes instanceof ArrayBuffer ? bytes : bytes.buffer, body: bytes } : null },
+    async get(key) { const bytes = objects.get(key); return bytes ? { arrayBuffer: async () => bytes instanceof ArrayBuffer ? bytes : bytes.buffer, body: bytes, size: bytes.byteLength } : null },
     async delete(key) { objects.delete(key) },
   }
   return { db, bucket, objects, sqlite }
@@ -182,7 +183,7 @@ test('fixed pool images persist on the draft, retries reuse them, and list pagin
   const input = { db, bucket, asset, random: () => 0, ai: { run: async () => { generated++; return { image: PNG } } }, createPrompt: async () => 'Morning light on a coffee cup.' }
   const image = await assetLibrary.prepareXImage(input)
   assert.equal(image.type, 'image/png')
-  assert.equal(objects.size, 1)
+  assert.equal(objects.size, 2)
   assert.equal(asset.row.object_key, key)
   assert.equal(asset.row.asset_source, 'pool')
   assert.deepEqual(await (await assetLibrary.prepareXImage(input)).arrayBuffer(), await image.arrayBuffer())
@@ -287,7 +288,7 @@ test('all five task types select fixed pool images, publish them, then skip repe
     assert.equal((await repeated.json()).skipped, true)
   }
   assert.deepEqual(calls, { images: 0, copy: 5, upload: 5, publish: 5 })
-  assert.equal(objects.size, 10)
+  assert.equal(objects.size, 15)
 })
 
 test('automation uses its one selected Ollama model', async (t) => {
@@ -440,10 +441,12 @@ test('confirmed X rejection can retry, while an unreadable old run record fails 
 
 async function seedPool(fixture, type = 'greeting', id = 'pool-one') {
   const key = `images/x-posts/pool/${id}.png`
+  const thumbnailKey = `images/x-posts/pool/thumbs/${id}.webp`
   const bytes = Uint8Array.from(Buffer.from(PNG, 'base64'))
   fixture.objects.set(key, bytes)
-  fixture.sqlite.prepare(`INSERT INTO x_image_pool (id,content_type,title,object_key,mime_type,size_bytes,image_model,prompt,created_at)
-    VALUES (?,?,?,?,?,?,?,?,?)`).run(id, type, id, key, 'image/png', bytes.length, 'Codex imagegen', 'Quiet scene', Date.now())
+  fixture.objects.set(thumbnailKey, bytes)
+  fixture.sqlite.prepare(`INSERT INTO x_image_pool (id,content_type,title,object_key,thumbnail_object_key,mime_type,size_bytes,image_model,prompt,created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`).run(id, type, id, key, thumbnailKey, 'image/png', bytes.length, 'Codex imagegen', 'Quiet scene', Date.now())
   return key
 }
 
@@ -465,7 +468,7 @@ test('image strategy always uses the same-theme fixed pool and never invokes gen
     assert.equal(asset.row.object_key, key)
     assert.equal(asset.row.asset_source, 'pool')
     assert.equal(asset.row.fallback_error, '')
-    assert.equal(fixture.objects.size, 2)
+    assert.equal(fixture.objects.size, 4)
     const reused = await assetLibrary.prepareXImage({ ...fixture, asset,
       random: () => assert.fail('A saved image must be reused before drawing a new strategy'),
       createPrompt: () => assert.fail('Do not regenerate a saved image'),
@@ -563,7 +566,7 @@ test('all five task types can publish directly from the pool without generating 
   }
   assert.equal(fixture.calls.images, 0)
   assert.equal(fixture.calls.publish, 5)
-  assert.equal(fixture.objects.size, 5)
+  assert.equal(fixture.objects.size, 10)
   const rows = fixture.sqlite.prepare('SELECT asset_source, fallback_error FROM x_post_assets').all()
   assert.ok(rows.every((row) => row.asset_source === 'pool' && row.fallback_error === ''))
 })
@@ -614,6 +617,7 @@ test('owner can list, preview and download the same R2 pool bytes; disabled asse
   const data = await response.json()
   assert.equal(data.available, true)
   assert.deepEqual(data.pool.map((item) => item.id), ['pool-one'])
+  assert.match(data.pool[0].thumbUrl, /thumb=1/)
   assert.equal(response.headers.get('Cache-Control'), 'private, no-store')
   const url = new URL(data.pool[0].imageUrl, 'https://example.com')
   const params = { params: Promise.resolve({ id: 'pool-one' }) }
@@ -622,10 +626,16 @@ test('owner can list, preview and download the same R2 pool bytes; disabled asse
     const image = await original(new Request(url), params)
     assert.equal(image.status, 200)
     assert.equal(image.headers.get('Content-Type'), 'image/png')
+    assert.equal(image.headers.get('Content-Length'), String(Buffer.from(PNG, 'base64').length))
     assert.equal(image.headers.get('Cache-Control'), download ? 'private, no-store' : 'private, max-age=86400')
     assert.equal(image.headers.get('Content-Disposition'), download ? 'attachment; filename="x-post.png"' : null)
     assert.deepEqual(Buffer.from(await image.arrayBuffer()), Buffer.from(PNG, 'base64'))
   }
+  const thumbnail = await original(new Request(new URL(data.pool[0].thumbUrl, 'https://example.com')), params)
+  assert.equal(thumbnail.status, 200)
+  assert.equal(thumbnail.headers.get('Content-Type'), 'image/webp')
+  assert.equal(thumbnail.headers.get('Content-Length'), String(Buffer.from(PNG, 'base64').length))
+  assert.deepEqual(Buffer.from(await thumbnail.arrayBuffer()), Buffer.from(PNG, 'base64'))
   fixture.sqlite.exec('UPDATE x_image_pool SET enabled = 0')
   assert.equal((await original(new Request(url), params)).status, 404)
   assert.deepEqual((await (await list(new Request('https://example.com/api/admin/morning-greeting/assets'))).json()).pool, [])

@@ -358,7 +358,7 @@ test('配图素材用 tab 合并表情包和资源池，列表只加载小图', 
   assert.match(thumbsSource, /查看原图/)
   assert.match(thumbsSource, /item\.thumb/)
   assert.match(poolSource, /查看原图/)
-  assert.match(poolSource, /thumb: item\.imageUrl/)
+  assert.match(poolSource, /thumb: item\.thumbUrl/)
   assert.doesNotMatch(poolSource, /thumb: ''/)
   assert.doesNotMatch(poolSource, /<img src=\{item\.imageUrl/)
   assert.doesNotMatch(poolSource, /onClick=\{\(\) => setView/)

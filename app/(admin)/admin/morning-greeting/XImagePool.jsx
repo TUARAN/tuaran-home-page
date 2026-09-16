@@ -86,7 +86,7 @@ export default function XImagePool({ view = 'pool' }) {
               item={{
                 id: item.id,
                 label: item.label || `${item.date} · ${item.slot}`,
-                thumb: item.imageUrl,
+                thumb: item.thumbUrl,
                 original: item.imageUrl,
                 placeholder: TYPES.find(([value]) => value === item.contentType)?.[1] || '配图',
                 text: item.text,

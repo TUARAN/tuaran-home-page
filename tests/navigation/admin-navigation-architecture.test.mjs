@@ -6,6 +6,8 @@ import {
   ADMIN_CONSOLE_ITEMS,
   ADMIN_LEGACY_REDIRECTS,
   ADMIN_NAV_CHILD_ITEMS,
+  getWorkspaceHubProps,
+  listWorkspaceChildren,
   resolveAdminTrail,
 } from '../../lib/adminRoutes.js'
 
@@ -80,8 +82,25 @@ test('sidebar expands only the active workspace and restores the current item in
     new URL('../../app/(admin)/components/AdminSidebar.jsx', import.meta.url),
     'utf8'
   )
-  assert.match(source, /!collapsed && active && children\.length/)
+  assert.match(source, /!collapsed && active && sections\.length/)
   assert.match(source, /scrollIntoView\(\{ block: 'nearest' \}\)/)
+  assert.match(source, /sections\.length > 1/)
   assert.doesNotMatch(source, /expandableSectionIds/)
   assert.doesNotMatch(source, /openSections/)
+  assert.doesNotMatch(source, /sidebar !== false/)
+})
+
+test('content workspace hub and sidebar share the same grouped entries', () => {
+  const content = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/content')
+  const hub = getWorkspaceHubProps('/admin/content')
+
+  assert.deepEqual(
+    listWorkspaceChildren(content).map((item) => item.label),
+    ['内容管理', '壁纸资源', '推荐管理', '分类管理', '调研风格', '数据统计', 'RSS 与分发']
+  )
+  assert.deepEqual(
+    hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),
+    content.sections.map((section) => [section.label, section.items.map((item) => item.label)])
+  )
+  assert.ok(listWorkspaceChildren(content).every((item) => item.sidebar !== false))
 })

@@ -114,7 +114,6 @@ function WorkspaceCard({ item, index, onAdminHost }) {
   const href = externalHop ? `https://${CANONICAL_HOST}${item.href}` : item.href
   const quickLinks = (item.sections || [])
     .flatMap((section) => section.items || [])
-    .filter((entry) => entry.sidebar !== false)
     .slice(0, 3)
   const dividerClass = index === 0
     ? ''

@@ -13,10 +13,13 @@ function navItemClass(active) {
     : 'text-[#53554d] hover:bg-[#ecede5] hover:text-[#15140f] dark:text-gray-300 dark:hover:bg-[#151c26] dark:hover:text-gray-100'
 }
 
-function workspaceChildren(item, pathname) {
+function workspaceSections(item) {
   return (item.sections || [])
-    .flatMap((section) => section.items || [])
-    .filter((child) => child.sidebar !== false || isActiveAdminPath(pathname, child.matchPath || child.href))
+    .map((section) => ({
+      ...section,
+      items: section.items || [],
+    }))
+    .filter((section) => section.items.length)
 }
 
 function badgeFor(item, badges) {
@@ -145,7 +148,7 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
         <div className="space-y-1">
           {workspaces.map((item) => {
             const active = isActiveAdminPath(pathname, item.href, item.activePaths)
-            const children = workspaceChildren(item, pathname)
+            const sections = workspaceSections(item)
             return (
               <div key={item.href}>
                 <PrimaryNavItem
@@ -157,26 +160,35 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
                   onAdminHost={onAdminHost}
                 />
 
-                {!collapsed && active && children.length ? (
+                {!collapsed && active && sections.length ? (
                   <div className="ml-[18px] mt-1 border-l border-[#d9dccf] pb-1 pl-3 dark:border-[#2a3543]">
-                    {children.map((child) => {
-                      const childActive = isActiveAdminPath(pathname, child.matchPath || child.href)
-                      return (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={onNavigate}
-                          aria-current={childActive ? 'page' : undefined}
-                          title={child.label}
-                          className={`mb-0.5 flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] font-medium transition ${navItemClass(
-                            childActive
-                          )}`}
-                        >
-                          <AdminIcon name={child.icon} size={15} className="shrink-0 opacity-75" />
-                          <span className="truncate">{child.label}</span>
-                        </Link>
-                      )
-                    })}
+                    {sections.map((section) => (
+                      <div key={section.id || section.label} className="mb-1.5 last:mb-0">
+                        {sections.length > 1 ? (
+                          <p className="px-2 pb-0.5 pt-1.5 font-mono text-[9px] tracking-[0.08em] text-[#929487] dark:text-[#667286]">
+                            {section.label}
+                          </p>
+                        ) : null}
+                        {section.items.map((child) => {
+                          const childActive = isActiveAdminPath(pathname, child.matchPath || child.href)
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={onNavigate}
+                              aria-current={childActive ? 'page' : undefined}
+                              title={child.label}
+                              className={`mb-0.5 flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] font-medium transition ${navItemClass(
+                                childActive
+                              )}`}
+                            >
+                              <AdminIcon name={child.icon} size={15} className="shrink-0 opacity-75" />
+                              <span className="truncate">{child.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    ))}
                   </div>
                 ) : null}
               </div>

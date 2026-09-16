@@ -233,7 +233,7 @@ test('taxonomy manager is registered in the content center', async () => {
     readFile(new URL('../../lib/adminRoutes.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(admin)/admin/content-taxonomy/ContentTaxonomyClient.jsx', import.meta.url), 'utf8'),
   ])
-  assert.match(contentCenter, /\/admin\/content-taxonomy/)
+  assert.match(contentCenter, /getWorkspaceHubProps\('\/admin\/content'\)/)
   assert.match(adminRoutes, /\/admin\/content-taxonomy/)
   assert.match(adminPage, /存量内容审计/)
   assert.match(adminPage, /系统推断/)

@@ -1,33 +1,6 @@
 import WorkspaceHub from '../../components/WorkspaceHub'
+import { getWorkspaceHubProps } from '../../../../lib/adminRoutes'
 
 export default function ContentCenter() {
-  return (
-    <WorkspaceHub
-      title="内容"
-      description="从创作、入库到发布后的反馈，按同一条内容生命周期组织。"
-      eyebrow="内容生命周期"
-      flow={['内容管理', '数据与反馈', '持续校正']}
-      sections={[
-        {
-          title: '创作与发布',
-          description: '在同一工作台完成创作、发布与全站内容状态管理。',
-          items: [
-            { href: '/admin/articles', title: '内容管理', description: '统一查看三种文章来源：仓库历史文章、D1 后台文章和 research 调研文章，并按各自流程编辑或审批。', icon: 'articles', note: '来源说明 + 列表 + 审批' },
-            { href: '/admin/wallpapers', title: '壁纸资源', description: '上传和维护公开壁纸画廊使用的 R2 资源。', icon: 'archive' },
-            { href: '/admin/recommendations', title: '推荐管理', description: '配置首页推荐来源、内容权重、换一批策略与人工置顶。', icon: 'analytics', note: '规则保存后无需重新构建' },
-          ],
-        },
-        {
-          title: '规范与运营',
-          description: '发布前校正表达，发布后根据真实阅读与订阅行为继续调整。',
-          items: [
-            { href: '/admin/content-taxonomy', title: '分类管理', description: '维护分类定义，查看主题分布与待治理内容，持续校正分类边界。', icon: 'researchStyle', note: '稳定 ID + 主题定义 + 分类审计' },
-            { href: '/admin/research-style', title: '调研风格', description: '维护调研写作规则、生效版本、禁用措辞和校验边界。', icon: 'researchStyle' },
-            { href: '/admin/content-weekly', title: '数据与反馈', description: '阅读、点赞、月统计与评论跟进。', icon: 'analytics' },
-            { href: '/admin/rss-feeds', title: 'RSS 与分发', description: '维护公开 RSS 订阅墙，并查看 RSS 请求记录。', icon: 'rss' },
-          ],
-        },
-      ]}
-    />
-  )
+  return <WorkspaceHub {...getWorkspaceHubProps('/admin/content')} />
 }

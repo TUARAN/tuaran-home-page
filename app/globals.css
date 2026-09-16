@@ -2172,8 +2172,7 @@
     }
 
     .home-side-stack .home-profile,
-    .home-side-stack .home-section,
-    .home-side-stack .home-contact-panel {
+    .home-side-stack .home-section {
       padding: 1rem;
       background: color-mix(in srgb, var(--site-panel-strong) 52%, transparent);
       box-shadow: 0 8px 24px color-mix(in srgb, var(--site-shadow) 28%, transparent);
@@ -2185,8 +2184,7 @@
     }
 
     .home-side-stack .home-profile-heading .home-section-title,
-    .home-side-stack .home-section-title,
-    .home-side-stack .home-contact-panel h2 {
+    .home-side-stack .home-section-title {
       font-size: 1.25rem;
     }
 
@@ -3089,31 +3087,6 @@
     }
   }
 
-  .home-contact-panel {
-    @apply rounded-[22px] border p-5 md:p-6;
-    border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) var(--home-panel-opacity, 70%), transparent);
-    box-shadow: 0 14px 38px color-mix(in srgb, var(--site-shadow) 48%, transparent);
-    backdrop-filter: blur(var(--home-panel-backdrop-blur, 10px)) saturate(0.92);
-    -webkit-backdrop-filter: blur(var(--home-panel-backdrop-blur, 10px)) saturate(0.92);
-    transform: translateZ(0);
-  }
-
-  .home-contact-panel h2 {
-    @apply mb-2 border-b-0 pb-0 font-serif text-[1.45rem] font-semibold;
-    color: var(--site-ink);
-  }
-
-  .home-contact-panel p {
-    @apply mb-0 text-[13px] leading-6;
-    color: var(--site-muted);
-  }
-
-  .home-contact-panel p a {
-    color: inherit;
-    text-underline-offset: 0.2em;
-  }
-
   :root[data-ui='classic'] .home-page {
     max-width: 920px;
     padding-top: 1.25rem;
@@ -3267,8 +3240,7 @@
     margin-top: 1.5rem;
   }
 
-  :root[data-ui='classic'] .home-section,
-  :root[data-ui='classic'] .home-contact-panel {
+  :root[data-ui='classic'] .home-section {
     border-width: 0 0 1px;
     border-radius: 0;
     padding: 0 0 1.5rem;
@@ -3276,13 +3248,7 @@
     box-shadow: none;
   }
 
-  :root[data-ui='classic'] .home-section + .home-contact-panel,
-  :root[data-ui='classic'] .home-side-stack .home-contact-panel {
-    margin-top: 1.5rem;
-  }
-
-  :root[data-ui='classic'] .home-section-title,
-  :root[data-ui='classic'] .home-contact-panel h2 {
+  :root[data-ui='classic'] .home-section-title {
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
       Roboto, Helvetica, Arial, sans-serif;
     font-size: 1.35rem;
@@ -3307,8 +3273,7 @@
   }
 
   :root[data-ui='classic'] .home-profile,
-  :root[data-ui='classic'] .home-section,
-  :root[data-ui='classic'] .home-contact-panel {
+  :root[data-ui='classic'] .home-section {
     border-width: 1px;
     border-radius: 1.375rem;
     background: color-mix(in srgb, var(--site-panel-strong) 46%, transparent);
@@ -3333,18 +3298,11 @@
     display: grid;
   }
 
-  :root[data-ui='classic'] .home-section,
-  :root[data-ui='classic'] .home-contact-panel {
+  :root[data-ui='classic'] .home-section {
     padding: 1.5rem;
   }
 
-  :root[data-ui='classic'] .home-section + .home-contact-panel,
-  :root[data-ui='classic'] .home-side-stack .home-contact-panel {
-    margin-top: 0;
-  }
-
-  :root[data-ui='classic'] .home-section-title,
-  :root[data-ui='classic'] .home-contact-panel h2 {
+  :root[data-ui='classic'] .home-section-title {
     font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
   }
 
@@ -3355,8 +3313,7 @@
     }
 
     :root[data-ui='classic'] .home-side-stack .home-profile,
-    :root[data-ui='classic'] .home-side-stack .home-section,
-    :root[data-ui='classic'] .home-side-stack .home-contact-panel {
+    :root[data-ui='classic'] .home-side-stack .home-section {
       padding: 1rem;
       background: color-mix(in srgb, var(--site-panel-strong) 52%, transparent);
       box-shadow: 0 8px 24px color-mix(in srgb, var(--site-shadow) 28%, transparent);
@@ -3367,8 +3324,7 @@
     }
 
     :root[data-ui='classic'] .home-side-stack .home-profile-heading .home-section-title,
-    :root[data-ui='classic'] .home-side-stack .home-section-title,
-    :root[data-ui='classic'] .home-side-stack .home-contact-panel h2 {
+    :root[data-ui='classic'] .home-side-stack .home-section-title {
       font-size: 1.25rem;
     }
   }

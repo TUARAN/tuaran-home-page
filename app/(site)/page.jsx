@@ -929,13 +929,6 @@ function ClassicHomePage({ featuredPicks }) {
                   ))}
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-[#646655] dark:text-[#acaf9d]">
-                  <span><T zh="微信 atar24" en="WeChat atar24" /></span>
-                  <span aria-hidden="true">·</span>
-                  <Link href="/donate" className="text-inherit underline-offset-2 hover:underline">
-                    <T zh="请我喝咖啡" en="Buy me a coffee" />
-                  </Link>
-                </div>
               </div>
             </section>
           </aside>

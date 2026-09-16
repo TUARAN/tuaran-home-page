@@ -45,6 +45,7 @@ import { HOME_RECOMMENDATION_MAX_BATCH_SIZE } from '../../lib/homeRecommendation
 import { getFeedItemsWithPinned } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/secondarySites'
 import HomeOpinionSignals from './components/HomeOpinionSignals'
+import HomeStoryScroller from './components/HomeStoryScroller'
 
 const weeklySite = SECONDARY_SITES.find((site) => site.id === 'weekly')
 const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
@@ -944,7 +945,7 @@ function ClassicHomePage({ featuredPicks }) {
 
 function PolishedHomePage({ featuredPicks, inspirations }) {
   return (
-    <main className="home-polished-root home-page home-story-root">
+    <HomeStoryScroller className="home-polished-root home-page home-story-root">
       <div className="home-backdrop" aria-hidden="true" />
       <div className="home-story-slide home-story-banner">
         <DigitalCommonsHero />
@@ -959,7 +960,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         <p className="home-slide-index" aria-hidden="true">03 / 04</p>
       </section>
       <HomeOwnerStory />
-    </main>
+    </HomeStoryScroller>
   )
 }
 

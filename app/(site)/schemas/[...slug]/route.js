@@ -1,10 +1,7 @@
-import { getContentProofSchema, listContentProofSchemaPaths } from '../../../../lib/contentProofSchemas.js'
+import { getContentProofSchema } from '../../../../lib/contentProofSchemas.js'
 
-export const dynamic = 'force-static'
-
-export function generateStaticParams() {
-  return listContentProofSchemaPaths().map((path) => ({ slug: path.split('/') }))
-}
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export async function GET(_request, { params }) {
   const { slug } = await params

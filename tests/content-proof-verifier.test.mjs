@@ -97,6 +97,10 @@ test('well-known discovery, schemas and verify.txt describe offline verification
   const guideResponse = await agentGuide()
   assert.equal(await guideResponse.text(), guide)
 
+  const schemaRouteSource = await readFile(new URL('../app/(site)/schemas/[...slug]/route.js', import.meta.url), 'utf8')
+  assert.match(schemaRouteSource, /export const runtime = 'edge'/)
+  assert.match(schemaRouteSource, /export const dynamic = 'force-dynamic'/)
+
   for (const path of listContentProofSchemaPaths()) {
     assert.ok(getContentProofSchema(path).$id)
     const response = await schemaRoute(new Request('https://2aran.com'), { params: Promise.resolve({ slug: path.split('/') }) })

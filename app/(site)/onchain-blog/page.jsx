@@ -127,37 +127,34 @@ export default function OnchainBlogPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA).replaceAll('<', '\\u003c') }} />
       <section
         className="relative isolate min-h-[680px] overflow-hidden border-b border-[#55452d] bg-[#05080c] text-white"
-        style={{ backgroundImage: "url('/images/onchain-blog/everything-onchain-hero.webp')", backgroundPosition: 'center', backgroundSize: 'cover' }}
+        style={{ backgroundImage: "url('/images/onchain-blog/everything-onchain-hero.webp')", backgroundPosition: '72% 48%', backgroundSize: 'cover' }}
       >
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(3,6,9,0.97)_0%,rgba(3,6,9,0.9)_35%,rgba(3,6,9,0.48)_64%,rgba(3,6,9,0.18)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(3,6,9,0.94)_0%,rgba(3,6,9,0.8)_24%,rgba(3,6,9,0.42)_56%,rgba(3,6,9,0.12)_100%)]" />
         <div className="absolute inset-x-0 bottom-0 -z-10 h-52 bg-gradient-to-t from-[#05080c] to-transparent" />
-        <div className="mx-auto flex min-h-[680px] w-full max-w-[1180px] flex-col px-5 py-10 md:py-14">
+        <div className="flex min-h-[680px] w-full flex-col px-6 py-10 sm:px-10 md:px-12 md:py-14 lg:px-16 xl:px-20">
           <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
             <Link href="/" className="no-underline hover:text-white">TUARAN</Link>
             <span>/</span>
             <span>CONTENT LEDGER</span>
           </div>
 
-          <div className="mt-auto pb-6 pt-24">
-            <div className="max-w-4xl">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full border border-[#d9b66c]/55 bg-black/35 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#f0cd88] backdrop-blur-sm">
-                  MERKLE BATCH READY · BASE SEPOLIA
-                </span>
-                <span className="font-mono text-[11px] tracking-[0.16em] text-white/50">2ARAN CONTENT LEDGER</span>
-              </div>
-              <h1 className="mt-7 font-serif text-[60px] font-semibold leading-[0.94] tracking-[-0.045em] text-white drop-shadow-2xl md:text-[92px]">
-                万物上链
-              </h1>
-              <p className="mt-7 max-w-3xl font-serif text-2xl font-semibold leading-snug text-[#f2d59a] md:text-4xl">
-                所有内容生产，都应该有价值。
-              </p>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-white/[0.72] md:text-lg">
-                让文字、影像、代码与每一次创造拥有可确权、可验证、可流通的数字凭证。
-                原创由此形成时间、版本、归属与价值的公共坐标，进入人与 AI 共同参与的新内容网络。
-              </p>
+          <div className="mt-auto max-w-2xl pb-6 pt-24">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="rounded-full border border-[#d9b66c]/55 bg-black/35 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#f0cd88] backdrop-blur-sm">
+                MERKLE BATCH READY · BASE SEPOLIA
+              </span>
+              <span className="font-mono text-[11px] tracking-[0.16em] text-white/50">2ARAN CONTENT LEDGER</span>
             </div>
-
+            <h1 className="mt-7 font-serif text-[60px] font-semibold leading-[0.94] tracking-[-0.045em] text-white drop-shadow-2xl md:text-[92px]">
+              万物上链
+            </h1>
+            <p className="mt-7 font-serif text-2xl font-semibold leading-snug text-[#f2d59a] md:text-4xl">
+              所有内容生产，都应该有价值。
+            </p>
+            <p className="mt-5 max-w-xl text-base leading-8 text-white/[0.72] md:text-lg">
+              让文字、影像、代码与每一次创造拥有可确权、可验证、可流通的数字凭证。
+              原创由此形成时间、版本、归属与价值的公共坐标，进入人与 AI 共同参与的新内容网络。
+            </p>
           </div>
         </div>
       </section>

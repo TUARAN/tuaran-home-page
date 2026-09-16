@@ -3,25 +3,43 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import {
   chooseHomeRecommendationBatch,
   DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS,
   getHomeRecommendationBatchNumber,
+  getHomeRecommendationNavigationType,
   getHomeRecommendationRotateDelayMs,
+  HOME_ARTICLE_SCOPE_KEYS,
+  HOME_ARTICLE_SCOPE_META,
+  HOME_ARTICLE_SCOPE_PAGE_SIZE,
   HOME_RECOMMENDATION_MAX_BATCH_SIZE,
+  HOME_RECOMMENDATION_RELOAD_GUARD,
+  homeArticleScopeSurface,
+  listHomeArticleScopeCatalog,
   mergeHomeRecommendationCatalog,
   mergeHomeRecommendationSettings,
+  nextHomeRecommendationBatchOffset,
+  readHomeRecommendationBatchOffset,
   reconcilePaintedHomeRecommendationLatest,
   searchHomeRecommendationCatalog,
   selectHomeRecommendationItems,
   sameHomeRecommendationSettings,
+  sliceHomeArticleScopeItems,
   tagVisibleHomeRecommendationLatest,
+  writeHomeRecommendationBatchOffset,
 } from '../../../lib/homeRecommendationEngine'
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
 import H5PullToRefresh from './H5PullToRefresh'
 import { T } from './LocaleProvider'
+
+const CHANGE_BATCH_MS = 260
+
+function clearHomeBatchReloadHint() {
+  if (typeof document === 'undefined') return
+  delete document.documentElement.dataset.homeBatchReload
+}
 
 const SECTION_BADGE_CLASS = {
   column: 'home-badge home-badge-column',
@@ -29,7 +47,7 @@ const SECTION_BADGE_CLASS = {
   resources: 'home-badge home-badge-resource',
 }
 
-function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0 }) {
+function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0, surface = 'home_recommendation' }) {
   const hasStatusBadge = isPinned || item.isLatest
   const content = (
     <>
@@ -48,7 +66,7 @@ function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false,
   const className = `h5-feed-row home-reading-item group no-underline ${desktopOnly ? 'hidden md:block' : ''}`
   const analyticsProps = {
     'data-analytics-event': fromSearch ? 'search_result_click' : 'entry_click',
-    'data-analytics-surface': fromSearch ? 'home_search' : 'home_recommendation',
+    'data-analytics-surface': fromSearch ? 'home_search' : surface,
     'data-analytics-destination-kind': item.section || 'content',
     'data-analytics-destination-id': item.id,
     'data-analytics-position': position,
@@ -71,6 +89,8 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const [changing, setChanging] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [scope, setScope] = useState('recommended')
+  const [scopeVisibleCount, setScopeVisibleCount] = useState(HOME_ARTICLE_SCOPE_PAGE_SIZE)
   const batchNumber = automaticBatchNumber + batchOffset
   const previousIds = useMemo(
     () => {
@@ -125,9 +145,21 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     () => searchHomeRecommendationCatalog(catalog, normalizedQuery, HOME_RECOMMENDATION_MAX_BATCH_SIZE),
     [catalog, normalizedQuery],
   )
-  const displayedItems = normalizedQuery
-    ? tagVisibleHomeRecommendationLatest(searchResults, catalog, settings, runtimeCatalogReady)
-    : items
+  const scopeCatalog = useMemo(
+    () => listHomeArticleScopeCatalog(catalog, settings, scope),
+    [catalog, settings, scope],
+  )
+  const scopedItems = useMemo(
+    () => (scope === 'recommended' ? items : sliceHomeArticleScopeItems(scopeCatalog, scopeVisibleCount)),
+    [items, scope, scopeCatalog, scopeVisibleCount],
+  )
+  const displayedItems = tagVisibleHomeRecommendationLatest(
+    normalizedQuery ? searchResults : scopedItems,
+    catalog,
+    settings,
+    runtimeCatalogReady,
+  )
+  const analyticsSurface = homeArticleScopeSurface(scope)
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
   useEffect(() => {
     let alive = true
@@ -161,15 +193,53 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     return () => window.clearTimeout(timer)
   }, [settings.autoRotateHours])
 
+  useLayoutEffect(() => {
+    const stored = readHomeRecommendationBatchOffset(window.sessionStorage)
+    const navigationType = getHomeRecommendationNavigationType()
+    let next = stored
+    if (navigationType === 'reload') {
+      if (!window[HOME_RECOMMENDATION_RELOAD_GUARD]) {
+        window[HOME_RECOMMENDATION_RELOAD_GUARD] = true
+        next = nextHomeRecommendationBatchOffset(stored, navigationType)
+        writeHomeRecommendationBatchOffset(window.sessionStorage, next)
+      } else {
+        next = readHomeRecommendationBatchOffset(window.sessionStorage)
+      }
+    }
+
+    if (next <= 0) {
+      clearHomeBatchReloadHint()
+      return undefined
+    }
+
+    firstBatchLockedRef.current = false
+    setBatchOffset(next)
+    if (navigationType !== 'reload') {
+      clearHomeBatchReloadHint()
+      return undefined
+    }
+
+    setChanging(true)
+    const timer = window.setTimeout(() => {
+      setChanging(false)
+      clearHomeBatchReloadHint()
+    }, CHANGE_BATCH_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
+
   const changeBatch = useCallback(() => {
     firstBatchLockedRef.current = false
     setChanging(true)
-    setBatchOffset((value) => value + 1)
+    setBatchOffset((value) => {
+      const next = value + 1
+      writeHomeRecommendationBatchOffset(window.sessionStorage, next)
+      return next
+    })
     return new Promise((resolve) => {
       window.setTimeout(() => {
         setChanging(false)
         resolve()
-      }, 260)
+      }, CHANGE_BATCH_MS)
     })
   }, [])
 
@@ -181,6 +251,23 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const clearSearch = useCallback(() => {
     setQuery('')
     setSearchOpen(false)
+  }, [])
+
+  const selectScope = useCallback((next) => {
+    if (next === scope) return
+    setScope(next)
+    setScopeVisibleCount(HOME_ARTICLE_SCOPE_PAGE_SIZE)
+    trackSiteEvent('filter_apply', {
+      facet: 'home_scope',
+      value: next,
+      result_count: next === 'recommended'
+        ? items.length
+        : listHomeArticleScopeCatalog(catalog, settings, next).length,
+    })
+  }, [catalog, items.length, scope, settings])
+
+  const loadMoreScope = useCallback(() => {
+    setScopeVisibleCount((count) => count + HOME_ARTICLE_SCOPE_PAGE_SIZE)
   }, [])
 
   const viewAllResults = useCallback(() => {
@@ -205,6 +292,8 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   }, [clearSearch, normalizedQuery, viewAllResults])
 
   const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled === true).length
+  const canRotateRecommended = scope === 'recommended' && !normalizedQuery && eligibleCount > items.length
+  const canLoadMoreScope = (scope === 'latest' || scope === 'resources') && !normalizedQuery && scopeVisibleCount < scopeCatalog.length
 
   useEffect(() => {
     const handlePageKeyDown = (event) => {
@@ -216,9 +305,8 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
         || event.ctrlKey
         || event.altKey
         || event.shiftKey
-        || normalizedQuery
+        || !canRotateRecommended
         || changing
-        || eligibleCount <= items.length
       ) return
 
       const target = event.target
@@ -230,12 +318,12 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
 
     window.addEventListener('keydown', handlePageKeyDown)
     return () => window.removeEventListener('keydown', handlePageKeyDown)
-  }, [changeBatch, changing, eligibleCount, items.length, normalizedQuery])
+  }, [canRotateRecommended, changeBatch, changing])
 
-  if (!settings.enabled || !items.length) return null
+  if (!settings.enabled || (!catalog.length && !items.length)) return null
 
   return (
-    <H5PullToRefresh onRefresh={changeBatch} disabled={changing || Boolean(normalizedQuery)}>
+    <H5PullToRefresh onRefresh={changeBatch} disabled={changing || Boolean(normalizedQuery) || scope !== 'recommended'}>
     <section id="articles" className="home-featured-reading home-section scroll-mt-24">
       <div className="home-section-heading home-featured-heading hidden md:flex">
         <div>
@@ -267,7 +355,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
               <T zh="搜索" en="Search" />
             </button>
           )}
-          {!normalizedQuery && eligibleCount > items.length ? (
+          {canRotateRecommended ? (
             <button
               type="button"
               onClick={changeBatch}
@@ -281,19 +369,47 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
           ) : null}
         </div>
       </div>
+      <div className="home-article-scopes">
+        <p className="h5-feed-label md:hidden">文章</p>
+        <nav className="home-section-tabs" role="tablist" aria-label="首页文章范围">
+          {HOME_ARTICLE_SCOPE_KEYS.map((key) => {
+            const active = scope === key
+            const meta = HOME_ARTICLE_SCOPE_META[key]
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                id={`home-article-scope-${key}`}
+                aria-selected={active}
+                aria-controls="home-article-list"
+                tabIndex={active ? 0 : -1}
+                className={`home-tab-link ${active ? 'is-active' : ''}`}
+                onClick={() => selectScope(key)}
+              >
+                <T zh={meta.label} en={meta.labelEn} />
+              </button>
+            )
+          })}
+        </nav>
+      </div>
       <div className="relative">
         <div
-          className={`home-reading-list transition-opacity duration-200 ${changing ? 'opacity-55' : 'opacity-100'}`}
+          id="home-article-list"
+          role="tabpanel"
+          aria-labelledby={`home-article-scope-${scope}`}
+          className={`home-reading-list transition-opacity duration-200 ${changing && scope === 'recommended' ? 'opacity-55' : 'opacity-100'}`}
           aria-live="polite"
         >
           {displayedItems.map((item, index) => (
             <FeaturedLink
               key={item.id}
               item={item}
-              isPinned={pinnedIds.has(item.id)}
-              desktopOnly={!normalizedQuery && index >= 10}
+              isPinned={scope === 'recommended' && pinnedIds.has(item.id)}
+              desktopOnly={scope === 'recommended' && !normalizedQuery && index >= 10}
               fromSearch={Boolean(normalizedQuery)}
               position={index + 1}
+              surface={analyticsSurface}
             />
           ))}
           {normalizedQuery && !displayedItems.length ? (
@@ -301,10 +417,15 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
               没有找到与“{normalizedQuery}”匹配的内容
             </div>
           ) : null}
+          {!normalizedQuery && !displayedItems.length ? (
+            <div className="py-10 text-center text-[14px] text-[#77746a] dark:text-[#98a3b1]">
+              {scope === 'resources' ? '暂时没有可展示的资源' : '暂时没有可展示的内容'}
+            </div>
+          ) : null}
         </div>
 
       </div>
-      {!normalizedQuery && eligibleCount > items.length ? (
+      {canRotateRecommended ? (
         <div className="h5-batch-more mt-6 hidden flex-col items-center gap-3 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540] md:flex">
           <p className="mb-0 text-[12px] font-medium tracking-[0.08em] text-[#77746a] dark:text-[#98a3b1]">
             <T zh="已经看到这里了，再发现一些内容" en="You made it here. Discover something else" />
@@ -318,6 +439,17 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
           >
             <IconRefresh size={16} className={`transition-transform duration-300 ${changing ? 'rotate-180' : 'group-hover:rotate-45'}`} aria-hidden="true" />
             <T zh="换一批" en="Show me more" />
+          </button>
+        </div>
+      ) : null}
+      {canLoadMoreScope ? (
+        <div className="mt-6 flex flex-col items-center gap-3 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540]">
+          <button
+            type="button"
+            onClick={loadMoreScope}
+            className="inline-flex h-10 items-center rounded-full border border-[#cfc7b6] bg-[#fffaf0] px-5 text-[13px] font-semibold text-[#5f563f] shadow-[0_5px_18px_rgba(56,49,38,0.08)] transition hover:-translate-y-0.5 hover:border-[#9e8c68] hover:text-[#2c2a23] dark:border-[#3a4654] dark:bg-[#18212c] dark:text-[#c2ccd8] dark:shadow-[0_5px_18px_rgba(0,0,0,0.2)] dark:hover:border-[#69788a] dark:hover:text-white"
+          >
+            <T zh="加载更多" en="Load more" />
           </button>
         </div>
       ) : null}

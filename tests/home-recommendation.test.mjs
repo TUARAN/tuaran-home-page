@@ -1,14 +1,21 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import {
   chooseHomeRecommendationBatch,
+  getHomeRecommendationNavigationType,
   getHomeRecommendationRotateDelayMs,
+  HOME_RECOMMENDATION_BATCH_OFFSET_STORAGE_KEY,
   mergeHomeRecommendationCatalog,
   mergeHomeRecommendationSettings,
+  nextHomeRecommendationBatchOffset,
+  parseHomeRecommendationBatchOffset,
+  readHomeRecommendationBatchOffset,
   reconcilePaintedHomeRecommendationLatest,
   selectHomeRecommendationItems,
   tagVisibleHomeRecommendationLatest,
+  writeHomeRecommendationBatchOffset,
 } from '../lib/homeRecommendationEngine.js'
 import { buildHomeRecommendationCatalog } from '../lib/homeRecommendationCatalogCore.js'
 import { researchPublicSummary } from '../lib/researchPublicSummary.js'
@@ -193,4 +200,57 @@ test('latest badge only appears on the visible item that is actually latest', ()
   assert.deepEqual(tagged.map((item) => item.id), ['pin', 'old-latest', 'new-latest'])
   assert.equal(tagged[1].isLatest, false)
   assert.equal(tagged[2].isLatest, true)
+})
+
+test('page reload advances the stored batch offset the same way as 换一批', () => {
+  assert.equal(parseHomeRecommendationBatchOffset(undefined), 0)
+  assert.equal(parseHomeRecommendationBatchOffset('-2'), 0)
+  assert.equal(nextHomeRecommendationBatchOffset(0, 'navigate'), 0)
+  assert.equal(nextHomeRecommendationBatchOffset(0, 'reload'), 1)
+  assert.equal(nextHomeRecommendationBatchOffset(3, 'reload'), 4)
+  assert.equal(nextHomeRecommendationBatchOffset(3, 'back_forward'), 3)
+  assert.equal(getHomeRecommendationNavigationType({ getEntriesByType: () => [{ type: 'reload' }] }), 'reload')
+  assert.equal(getHomeRecommendationNavigationType({ navigation: { type: 1 } }), 'reload')
+  assert.equal(getHomeRecommendationNavigationType({ getEntriesByType: () => [{ type: 'navigate' }] }), 'navigate')
+
+  const memory = new Map()
+  const storage = {
+    getItem: (key) => (memory.has(key) ? memory.get(key) : null),
+    setItem: (key, value) => { memory.set(key, String(value)) },
+  }
+  assert.equal(readHomeRecommendationBatchOffset(storage), 0)
+  writeHomeRecommendationBatchOffset(storage, 2)
+  assert.equal(memory.get(HOME_RECOMMENDATION_BATCH_OFFSET_STORAGE_KEY), '2')
+  assert.equal(readHomeRecommendationBatchOffset(storage), 2)
+
+  const first = chooseHomeRecommendationBatch(catalog, settings, 0, [], { includeHighlights: true })
+  const afterReload = chooseHomeRecommendationBatch(
+    catalog,
+    settings,
+    nextHomeRecommendationBatchOffset(0, 'reload'),
+    first.map((item) => item.id),
+    { includeHighlights: false },
+  )
+  const afterClick = chooseHomeRecommendationBatch(
+    catalog,
+    settings,
+    1,
+    first.map((item) => item.id),
+    { includeHighlights: false },
+  )
+  assert.deepEqual(afterReload.map((item) => item.id), afterClick.map((item) => item.id))
+  assert.notDeepEqual(afterReload.map((item) => item.id), first.map((item) => item.id))
+})
+
+test('homepage reload uses the same batch change path as 换一批', async () => {
+  const [readingSource, pageSource, cssSource] = await Promise.all([
+    readFile(new URL('../app/(site)/components/HomeFeaturedReadingClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/globals.css', import.meta.url), 'utf8'),
+  ])
+  assert.match(readingSource, /nextHomeRecommendationBatchOffset/)
+  assert.match(readingSource, /navigationType === 'reload'/)
+  assert.match(readingSource, /writeHomeRecommendationBatchOffset\(window\.sessionStorage, next\)/)
+  assert.match(pageSource, /data-home-batch-reload/)
+  assert.match(cssSource, /html\[data-home-batch-reload\] \.home-reading-list/)
 })

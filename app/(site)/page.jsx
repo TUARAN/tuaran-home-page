@@ -858,6 +858,11 @@ function ClassicHomePage({ featuredPicks }) {
 function PolishedHomePage({ featuredPicks, inspirations }) {
   return (
     <main className="home-polished-root home-page">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{var t='';var e=performance.getEntriesByType&&performance.getEntriesByType('navigation');if(e&&e[0])t=e[0].type;else if(performance.navigation&&performance.navigation.type===1)t='reload';if(t==='reload')document.documentElement.setAttribute('data-home-batch-reload','1');}catch(err){}})();`,
+        }}
+      />
       <div className="home-backdrop" aria-hidden="true" />
       <HomeMobileChannels />
       <div className="home-main-grid">

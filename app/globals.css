@@ -1940,6 +1940,10 @@
     border-color: var(--site-line);
   }
 
+  html[data-home-batch-reload] .home-reading-list {
+    opacity: 0.55;
+  }
+
   .home-reading-item {
     @apply block px-0 py-3.5 first:pt-0 last:pb-0;
   }

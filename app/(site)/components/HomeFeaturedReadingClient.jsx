@@ -27,7 +27,6 @@ import {
   selectHomeRecommendationItems,
   sameHomeRecommendationSettings,
   sliceHomeArticleScopeItems,
-  tagVisibleHomeRecommendationLatest,
   writeHomeRecommendationBatchOffset,
 } from '../../../lib/homeRecommendationEngine'
 import { trackSiteEvent } from '../../../lib/siteAnalytics'
@@ -48,12 +47,10 @@ const SECTION_BADGE_CLASS = {
 }
 
 function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0, surface = 'home_recommendation' }) {
-  const hasStatusBadge = isPinned || item.isLatest
   const content = (
     <>
-      <div className={`home-reading-meta ${hasStatusBadge ? '' : 'hidden md:flex'}`}>
+      <div className={`home-reading-meta ${isPinned ? '' : 'hidden md:flex'}`}>
         {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
-        {item.isLatest ? <span className="home-badge home-badge-latest"><T zh="最新" en="Latest" /></span> : null}
         <span className={`hidden md:inline-flex ${SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column}`}>{item.sectionLabel}</span>
         {item.tagLabel ? <span className="home-badge home-badge-muted hidden md:inline-flex">{item.tagLabel}</span> : null}
         {item.date ? <time className="home-item-date hidden md:inline">{item.date}</time> : null}
@@ -129,16 +126,10 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
       runtimeCatalogReady,
     )
   }
-  const lockedItems = selectHomeRecommendationItems(
+  const items = selectHomeRecommendationItems(
     computedItems,
     firstBatchItemsRef.current,
     firstBatchLockedRef.current,
-  )
-  const items = tagVisibleHomeRecommendationLatest(
-    lockedItems,
-    catalog,
-    settings,
-    runtimeCatalogReady,
   )
   const normalizedQuery = query.trim()
   const searchResults = useMemo(
@@ -153,12 +144,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     () => (scope === 'recommended' ? items : sliceHomeArticleScopeItems(scopeCatalog, scopeVisibleCount)),
     [items, scope, scopeCatalog, scopeVisibleCount],
   )
-  const displayedItems = tagVisibleHomeRecommendationLatest(
-    normalizedQuery ? searchResults : scopedItems,
-    catalog,
-    settings,
-    runtimeCatalogReady,
-  )
+  const displayedItems = normalizedQuery ? searchResults : scopedItems
   const analyticsSurface = homeArticleScopeSurface(scope)
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
   useEffect(() => {

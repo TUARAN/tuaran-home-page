@@ -19,7 +19,6 @@ import {
   reconcilePaintedHomeRecommendationLatest,
   selectHomeRecommendationItems,
   sliceHomeArticleScopeItems,
-  tagVisibleHomeRecommendationLatest,
   writeHomeRecommendationBatchOffset,
 } from '../lib/homeRecommendationEngine.js'
 import { buildHomeRecommendationCatalog } from '../lib/homeRecommendationCatalogCore.js'
@@ -194,17 +193,6 @@ test('runtime catalog keeps the painted batch order when the actual latest item 
   assert.deepEqual(reconciled.map((item) => item.id), painted.map((item) => item.id))
   assert.equal(reconciled[1].isLatest, false)
   assert.equal(reconciled[2].isLatest, true)
-})
-
-test('latest badge only appears on the visible item that is actually latest', () => {
-  const pinned = { id: 'pin', section: 'research', sortKey: '2026-08-01T00:00:00' }
-  const staleLatest = { id: 'old-latest', section: 'research', sortKey: '2026-09-10T00:00:00', isLatest: true }
-  const alreadyShown = { id: 'new-latest', section: 'research', sortKey: '2026-09-13T14:40:00' }
-  const painted = [pinned, staleLatest, alreadyShown]
-  const tagged = tagVisibleHomeRecommendationLatest(painted, painted, { pinnedIds: [pinned.id] }, true)
-  assert.deepEqual(tagged.map((item) => item.id), ['pin', 'old-latest', 'new-latest'])
-  assert.equal(tagged[1].isLatest, false)
-  assert.equal(tagged[2].isLatest, true)
 })
 
 test('page reload advances the stored batch offset the same way as 换一批', () => {

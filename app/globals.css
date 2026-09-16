@@ -2027,7 +2027,6 @@
     @apply inline-flex max-w-full items-center rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em];
   }
 
-  .home-badge-latest,
   .home-badge-pinned {
     padding: 0 0.45rem;
     border-radius: 999px;
@@ -2035,23 +2034,6 @@
     line-height: 16px;
     font-weight: 700;
     letter-spacing: 0.06em;
-  }
-
-  .home-badge-latest {
-    border-color: #26734d;
-    background: #2f855a;
-    color: #f6fff9;
-    box-shadow: 0 3px 10px rgb(35 112 73 / 18%);
-  }
-
-  .dark .home-badge-latest {
-    border-color: #69c792;
-    background: #327b55;
-    color: #f4fff8;
-    box-shadow: 0 3px 12px rgb(0 0 0 / 28%);
-  }
-
-  .home-badge-pinned {
     border-color: #9f3b28;
     background: #a8442f;
     color: #fffaf2;

@@ -317,11 +317,6 @@ function ClassicFeaturedLinkItem({ item }) {
   const content = (
     <>
       <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-        {item.isLatest ? (
-          <span className="home-badge home-badge-latest shrink-0">
-            <T zh="最新" en="Latest" />
-          </span>
-        ) : null}
         <span
           className={[
             'min-w-0 shrink truncate',

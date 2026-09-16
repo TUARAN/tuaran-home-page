@@ -63,10 +63,9 @@ export async function middleware(request) {
     return NextResponse.rewrite(url)
   }
 
-  if (host === BOOKMARKS_HOST && pathname === '/') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/bookmark-nav'
-    return NextResponse.rewrite(url)
+  const isBookmarkNavPath = pathname === '/bookmark-nav' || pathname.startsWith('/bookmark-nav/')
+  if ((host === BOOKMARKS_HOST && pathname === '/') || isBookmarkNavPath) {
+    return NextResponse.redirect(new URL('/admin/bookmark-nav', `https://${ADMIN_HOST}`), 301)
   }
 
   if (pathname === '/ads.txt') {

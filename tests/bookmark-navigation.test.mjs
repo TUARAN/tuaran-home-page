@@ -68,3 +68,20 @@ test('D1 schema keeps one active import per owner and preserves versioned items'
   assert.equal(db.prepare('SELECT COUNT(*) AS count FROM bookmark_nav_items').get().count, 1)
   db.close()
 })
+
+test('bookmark navigation lives in admin private data instead of the public menu', async () => {
+  const [siteNav, adminRoutes, adminBuild, adminPage, publicPage] = await Promise.all([
+    readFile(new URL('../lib/siteNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/adminRoutes.js', import.meta.url), 'utf8'),
+    readFile(new URL('../scripts/build-admin-pages.cjs', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/admin/bookmark-nav/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/works/page.jsx', import.meta.url), 'utf8'),
+  ])
+  assert.doesNotMatch(siteNav, /href: '\/bookmark-nav'/)
+  assert.match(adminRoutes, /href: '\/admin\/bookmark-nav', label: '书签导航'/)
+  assert.match(adminRoutes, /'\/api\/bookmark-navigation'/)
+  assert.match(adminBuild, /'bookmark-navigation'/)
+  assert.match(adminPage, /BookmarkNavigationClient/)
+  assert.doesNotMatch(adminPage, /runtime = 'edge'|force-dynamic/)
+  assert.match(publicPage, /site\.audience !== 'owner'/)
+})

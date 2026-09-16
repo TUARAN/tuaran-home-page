@@ -17,6 +17,7 @@ test('admin build keeps the notifications API without its public scheduled child
   assert.match(adminBuildSource, /KEPT_API_DIRECTORY_ENTRIES/)
   assert.match(adminBuildSource, /\['notifications', new Set\(\['route\.js'\]\)\]/)
   assert.match(adminBuildSource, /for \(const \[directory, keptEntries\] of KEPT_API_DIRECTORY_ENTRIES\)/)
+  assert.match(adminBuildSource, /'bookmark-navigation'/)
 })
 
 test('admin page authorization runs in middleware for HTML and direct RSC requests', () => {

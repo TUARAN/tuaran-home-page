@@ -31,13 +31,14 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/self-regulation').map((item) => item.label), ['私密数据'])
   assert.deepEqual(resolveAdminTrail('/admin/person-strawberry').map((item) => item.label), ['私密数据'])
   assert.deepEqual(resolveAdminTrail('/admin/nsfw').map((item) => item.label), ['私密数据', '私密媒体'])
+  assert.deepEqual(resolveAdminTrail('/admin/bookmark-nav').map((item) => item.label), ['私密数据', '书签导航'])
 })
 
 test('private data navigation titles use four Chinese characters', () => {
   const privateData = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/private-data')
   const titles = privateData.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['个人画像', '信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体'])
+  assert.deepEqual(titles, ['个人画像', '信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体', '书签导航'])
   assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 

@@ -45,6 +45,7 @@ const KEPT_API_ENTRIES = new Set([
   'nav-config',
   ...KEPT_API_DIRECTORY_ENTRIES.keys(),
   'private-records',
+  'bookmark-navigation',
   'site-settings',
 ])
 

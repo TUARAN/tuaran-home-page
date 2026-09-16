@@ -19,6 +19,7 @@ test('public content navigation is organized by entry, topic and type', () => {
   assert.match(source, /title: '内容类型'[\s\S]*href: '\/articles\?group=article'[^}\n]*label: '精选'/)
   assert.match(source, /title: '内容类型'[\s\S]*href: '\/rich-pages'[^}\n]*label: '互动'/)
   assert.match(source, /title: '内容类型'[\s\S]*href: '\/articles\?group=resource'/)
+  assert.doesNotMatch(source, /href: '\/bookmark-nav'|label: '书签导航'/)
   assert.ok(topicIndex >= 0 && topicIndex < typeIndex)
   assert.doesNotMatch(source, /title: '按用途'/)
   assert.doesNotMatch(source, /label: '学习与入门'|label: '深度理解'|label: '获取资料'/)

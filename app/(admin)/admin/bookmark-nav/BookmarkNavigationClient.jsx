@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BOOKMARK_CATEGORIES } from '../../../lib/bookmarkNavigation.mjs'
+import { BOOKMARK_CATEGORIES } from '../../../../lib/bookmarkNavigation.mjs'
+import { AdminPage } from '../../components/ui'
 
 const INITIAL_VISIBLE = 120
 
@@ -90,16 +90,15 @@ export default function BookmarkNavigationClient() {
   const riskTotal = data.import ? Object.values(data.import.risks || {}).reduce((sum, count) => sum + count, 0) : 0
 
   return (
-    <main className="mx-auto min-h-[70vh] w-full max-w-[1880px] px-3 py-4 md:px-5 md:py-5">
-      <Link href="/" className="inline-flex items-center text-xs font-medium text-[#656c61] no-underline transition-colors hover:text-[#263022] hover:no-underline dark:text-gray-400 dark:hover:text-gray-100">
-        ← 返回首页
-      </Link>
-
-      {status === 'loading' ? <p className="mt-6 text-sm text-[#72786e] dark:text-gray-400">正在读取私有书签库…</p> : null}
-      {status === 'error' ? <p className="mt-6 text-sm text-red-700 dark:text-red-300">{error}</p> : null}
+    <AdminPage
+      title="书签导航"
+      description="Chrome 私有收藏索引。分类检索、重复记录和风险入口只在站长后台可见。"
+    >
+      {status === 'loading' ? <p className="text-sm text-[#72786e] dark:text-gray-400">正在读取私有书签库…</p> : null}
+      {status === 'error' ? <p className="text-sm text-red-700 dark:text-red-300">{error}</p> : null}
 
       {status === 'ready' && !data.import ? (
-        <section className="mt-8 rounded-2xl border border-dashed border-[#cfd5cb] px-6 py-12 text-center dark:border-gray-700">
+        <section className="rounded-2xl border border-dashed border-[#cfd5cb] px-6 py-12 text-center dark:border-gray-700">
           <h2 className="font-serif text-xl font-semibold text-[#262b24] dark:text-gray-100">书签库还是空的</h2>
           <p className="mt-2 text-sm text-[#70766c] dark:text-gray-400">当前没有可显示的书签。</p>
         </section>
@@ -107,7 +106,7 @@ export default function BookmarkNavigationClient() {
 
       {status === 'ready' && data.import ? (
         <>
-          <section aria-label="书签库概览" className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-y border-[#e1e4de] py-2 text-[11px] text-[#747a70] dark:border-gray-800 dark:text-gray-400">
+          <section aria-label="书签库概览" className="flex flex-wrap items-center gap-x-4 gap-y-1 border-y border-[#e1e4de] py-2 text-[11px] text-[#747a70] dark:border-gray-800 dark:text-gray-400">
             <p><strong className="mr-1.5 text-base font-semibold text-[#252a23] dark:text-gray-100">{data.import.total}</strong>条书签</p>
             <p><strong className="mr-1 font-medium text-[#444a41] dark:text-gray-200">{data.import.uniqueUrls}</strong>唯一链接</p>
             <p><strong className="mr-1 font-medium text-[#444a41] dark:text-gray-200">{data.import.sourceFolderCount}</strong>文件夹</p>
@@ -116,7 +115,7 @@ export default function BookmarkNavigationClient() {
             <p className="ml-auto hidden max-w-56 truncate text-[#989d94] dark:text-gray-600 md:block" title={data.import.sourceName}>{data.import.sourceName}</p>
           </section>
 
-          <section className="sticky top-2 z-10 -mx-1 mt-3 rounded-xl bg-[#f5f5f0]/95 p-1.5 backdrop-blur-md dark:bg-[#111510]/95">
+          <section className="sticky top-14 z-10 -mx-1 mt-3 rounded-xl bg-[#f5f5f0]/95 p-1.5 backdrop-blur-md dark:bg-[#111510]/95">
             <div className="flex overflow-hidden rounded-xl border border-[#d9ddd5] bg-white shadow-[0_1px_2px_rgba(28,33,25,0.04)] focus-within:border-[#9aa795] focus-within:ring-2 focus-within:ring-[#899982]/15 dark:border-gray-700 dark:bg-gray-950">
               <label className="flex min-w-0 flex-1 items-center gap-3 px-3.5 text-[#92988e] dark:text-gray-500">
                 <span className="sr-only">搜索书签</span>
@@ -175,6 +174,6 @@ export default function BookmarkNavigationClient() {
           ) : null}
         </>
       ) : null}
-    </main>
+    </AdminPage>
   )
 }

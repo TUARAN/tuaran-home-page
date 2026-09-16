@@ -45,8 +45,8 @@ test('site chrome mounts the mobile tab bar and add-to-home guide', () => {
   assert.match(manifestSource, /"short_name": "2aran"/)
 })
 
-test('standalone pages and the bookmarks subdomain hide the site header', () => {
-  assert.match(chromeSource, /HIDE_HEADER_PATHS = new Set\(\['\/spacex', '\/bookmark-nav', '\/tools\/workbuddy-acp-bridge', '\/onchain-blog'\]\)/)
-  assert.match(chromeSource, /BOOKMARKS_HOST = 'bookmarks\.2aran\.com'/)
-  assert.match(chromeSource, /HIDE_HEADER_PATHS\.has\(pathname\) \|\| isBookmarksHost/)
+test('standalone pages hide the site header', () => {
+  assert.match(chromeSource, /HIDE_HEADER_PATHS = new Set\(\['\/spacex', '\/tools\/workbuddy-acp-bridge', '\/onchain-blog'\]\)/)
+  assert.match(chromeSource, /HIDE_HEADER_PATHS\.has\(pathname\)/)
+  assert.doesNotMatch(chromeSource, /bookmark-nav|BOOKMARKS_HOST/)
 })

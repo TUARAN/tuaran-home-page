@@ -13,19 +13,14 @@ import SiteMobileTabBar from './SiteMobileTabBar'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
 
 const HIDE_CHROME_PATHS = new Set(['/about', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
-const HIDE_HEADER_PATHS = new Set(['/spacex', '/bookmark-nav', '/tools/workbuddy-acp-bridge', '/onchain-blog'])
-const BOOKMARKS_HOST = 'bookmarks.2aran.com'
+const HIDE_HEADER_PATHS = new Set(['/spacex', '/tools/workbuddy-acp-bridge', '/onchain-blog'])
 
 function useChromeVisibility() {
   const pathname = usePathname()
   const richPage = getRichPageByPath(pathname)
   const isFeaturePage = getRichPagePresentation(richPage).id === 'feature'
   const hideChrome = HIDE_CHROME_PATHS.has(pathname) || isFeaturePage
-  // The bookmarks subdomain keeps `/` in the address bar while middleware
-  // internally renders `/bookmark-nav`, so the client-side pathname alone is
-  // not enough after hydration.
-  const isBookmarksHost = typeof window !== 'undefined' && window.location.hostname === BOOKMARKS_HOST
-  const hideHeader = HIDE_HEADER_PATHS.has(pathname) || isBookmarksHost
+  const hideHeader = HIDE_HEADER_PATHS.has(pathname)
   const showHomeButton = isFeaturePage || pathname === '/archives/agent-world-cup' || pathname === '/spacex'
 
   return { hideChrome, hideHeader, showHomeButton, pathname }

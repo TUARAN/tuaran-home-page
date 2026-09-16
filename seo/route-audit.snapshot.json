@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 178,
+    "routes": 183,
     "redirects": 13,
-    "private": 52,
-    "registeredStatic": 83,
-    "indexable": 93,
-    "canonical": 109,
-    "openGraph": 49,
-    "jsonLd": 29,
-    "errors": 0,
-    "warnings": 122
+    "private": 53,
+    "registeredStatic": 84,
+    "indexable": 97,
+    "canonical": 111,
+    "openGraph": 53,
+    "jsonLd": 33,
+    "errors": 1,
+    "warnings": 124
   },
   "routes": [
     {
@@ -263,6 +263,22 @@
     {
       "path": "/admin/blogger-eye",
       "file": "app/(admin)/admin/blogger-eye/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/bookmark-nav",
+      "file": "app/(admin)/admin/bookmark-nav/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,
@@ -1154,24 +1170,6 @@
       }
     },
     {
-      "path": "/bookmark-nav",
-      "file": "app/(site)/bookmark-nav/page.jsx",
-      "kind": "static",
-      "registered": true,
-      "indexable": false,
-      "sitemap": false,
-      "signals": {
-        "canonical": true,
-        "canonicalValues": [
-          "https://bookmarks.2aran.com/"
-        ],
-        "noindex": "explicit",
-        "openGraph": false,
-        "jsonLd": false,
-        "ogUrls": []
-      }
-    },
-    {
       "path": "/bookmarks",
       "file": "app/(site)/bookmarks/page.jsx",
       "kind": "static",
@@ -1926,6 +1924,24 @@
       }
     },
     {
+      "path": "/products/new-message-phone",
+      "file": "app/(site)/products/new-message-phone/page.jsx",
+      "kind": "static",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/products/new-message-phone"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/project-manager",
       "file": "app/(site)/project-manager/page.jsx",
       "kind": "static",
@@ -1954,6 +1970,22 @@
           "/prompt-center"
         ],
         "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/proofs/[contentKey]",
+      "file": "app/(site)/proofs/[contentKey]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "conditional-or-explicit",
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
@@ -2174,6 +2206,38 @@
       }
     },
     {
+      "path": "/resources/cz-memoirs",
+      "file": "app/(site)/resources/cz-memoirs/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/cz-memoirs/[chapter]",
+      "file": "app/(site)/resources/cz-memoirs/[chapter]/page.jsx",
+      "kind": "dynamic",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/resources/edge-agent-development",
       "file": "app/(site)/resources/edge-agent-development/page.jsx",
       "kind": "static",
@@ -2188,6 +2252,22 @@
         "noindex": "inherited",
         "openGraph": false,
         "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/ethereum-whitepaper",
+      "file": "app/(site)/resources/ethereum-whitepaper/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
         "ogUrls": []
       }
     },
@@ -3090,9 +3170,23 @@
       "message": "页面没有声明 canonical。"
     },
     {
+      "id": "canonical.missing:/proofs/[contentKey]",
+      "rule": "canonical.missing",
+      "route": "/proofs/[contentKey]",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
       "id": "canonical.missing:/publications",
       "rule": "canonical.missing",
       "route": "/publications",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/resources/cz-memoirs/[chapter]",
+      "rule": "canonical.missing",
+      "route": "/resources/cz-memoirs/[chapter]",
       "severity": "warning",
       "message": "页面没有声明 canonical。"
     },
@@ -3907,6 +4001,13 @@
       "route": "/writing-monetization-2026",
       "severity": "warning",
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "registry.missing:/products/new-message-phone",
+      "rule": "registry.missing",
+      "route": "/products/new-message-phone",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
     }
   ]
 }

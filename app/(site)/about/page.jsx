@@ -197,7 +197,7 @@ const contactItems = [
 ]
 
 const siteLinks = [
-  ...SECONDARY_SITES,
+  ...SECONDARY_SITES.filter((site) => site.audience !== 'owner'),
   { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人主页、技术笔记与长期内容索引' },
 ]
 

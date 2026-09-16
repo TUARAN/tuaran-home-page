@@ -22,6 +22,7 @@ const REQUIRED_EDGE_ROUTES = [
   '/api/nav-config',
   '/api/notifications',
   '/api/private-records',
+  '/api/bookmark-navigation',
   '/api/site-settings',
 ]
 
@@ -61,7 +62,7 @@ function isAllowedRoute(route) {
     || route.startsWith('/admin')
     || route.startsWith('/api/admin')
     || route.startsWith('/api/auth')
-    || ['/api/me', '/api/nav-config', '/api/notifications', '/api/private-records', '/api/site-settings'].includes(route)
+    || ['/api/me', '/api/nav-config', '/api/notifications', '/api/private-records', '/api/bookmark-navigation', '/api/site-settings'].includes(route)
 }
 
 function collectClientApiReferences(directory, references = new Set()) {

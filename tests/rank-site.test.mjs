@@ -21,11 +21,12 @@ test('rank subdomain rewrites its root to the isolated rank route', async () => 
   assert.match(middleware, /NextResponse\.rewrite\(url\)/)
 })
 
-test('private bookmarks subdomain rewrites its root to the owner-only navigator', async () => {
+test('private bookmarks subdomain redirects to the owner-only admin navigator', async () => {
   const middleware = await readFile(new URL('../middleware.js', import.meta.url), 'utf8')
   assert.match(middleware, /BOOKMARKS_HOST = 'bookmarks\.2aran\.com'/)
   assert.match(middleware, /host === BOOKMARKS_HOST && pathname === '\/'/)
-  assert.match(middleware, /url\.pathname = '\/bookmark-nav'/)
+  assert.match(middleware, /\/admin\/bookmark-nav/)
+  assert.match(middleware, /NextResponse\.redirect\(new URL\('\/admin\/bookmark-nav', `https:\/\/\$\{ADMIN_HOST\}`\), 301\)/)
 })
 
 test('secondary sites explain their intentionally different deployment boundaries', () => {

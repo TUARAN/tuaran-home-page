@@ -108,7 +108,7 @@ function buildProductItems() {
     }
   })
   const secondaryProducts = SECONDARY_SITES
-    .filter((site) => !registeredIds.has(site.id))
+    .filter((site) => !registeredIds.has(site.id) && site.audience !== 'owner')
     .map((site) => ({
       id: site.id,
       title: site.label,

@@ -9,10 +9,10 @@ export default function ReaderTestInvite() {
     <section id="open-verifier" className="scroll-mt-24 border-y border-[#d8d0c2] bg-[#faf8f2] dark:border-[#2a313b] dark:bg-[#121a23]">
       <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start md:py-20">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8a6b3e] dark:text-[#d2ac70]">Open verifier</p>
-          <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight text-[#26231e] dark:text-[#f2ede4]">邀请核对这份示例凭证</h2>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8a6b3e] dark:text-[#d2ac70]">Verify now</p>
+          <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight text-[#26231e] dark:text-[#f2ede4]">核对这份示例凭证</h2>
           <p className="mt-3 max-w-xl text-sm leading-7 text-[#625d54] dark:text-[#b7b0a5]">
-            用浏览器或本地脚本走一遍同一组检查。通过后，你应能说出验证了哪几项、跳过了哪几项。留言时请写清结果，无需连接钱包。
+            用浏览器或本地脚本走同一组检查。通过后应能说出核对了哪几项、跳过了哪几项。留言时写清结果即可，无需连接钱包。
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/proofs/research:topics:content-proof-demo" className="rounded-full bg-[#2f4b3a] px-4 py-2.5 text-sm font-semibold text-white no-underline dark:bg-[#d5b475] dark:text-[#171109]">打开示例凭证</Link>

@@ -95,7 +95,7 @@ export default async function ContentProofPage({ params }) {
                 <li key={claim.id}><strong className="text-[#403a32] dark:text-[#e6dfd3]">{claim.label}。</strong>{claim.detail}</li>
               ))}
             </ul>
-            <Link href="/onchain-blog#open-verifier" className="mt-5 inline-block text-sm font-semibold text-[#66502d] underline underline-offset-4 dark:text-[#d2ac70]">参加开放测试 →</Link>
+            <Link href="/onchain-blog#open-verifier" className="mt-5 inline-block text-sm font-semibold text-[#66502d] underline underline-offset-4 dark:text-[#d2ac70]">如何核对 →</Link>
           </article>
         </section>
       </div>

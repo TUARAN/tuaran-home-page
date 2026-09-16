@@ -207,25 +207,30 @@ test('archived article renderer resolves its credential before rendering it', as
   assert.match(pageFunction, /<ContentProofCard credential=\{proofCredential\}/)
 })
 
-test('weeks 11-12 open the offline verifier, agent guide, and reader test invite', async () => {
-  const [llms, blog, client, page, discovery] = await Promise.all([
+test('the ledger page leads with live reader verification, not a 90-day plan', async () => {
+  const [llms, blog, invite, client, page, discovery] = await Promise.all([
     readFile(new URL('../app/(site)/llms.txt/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/onchain-blog/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/onchain-blog/ReaderTestInvite.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/proofs/[contentKey]/ProofVerificationClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/proofs/[contentKey]/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../lib/contentProofDiscovery.js', import.meta.url), 'utf8'),
   ])
   assert.match(llms, /verify\.txt/)
   assert.match(llms, /content-proof\.json/)
-  assert.match(blog, /第 11—12 周[\s\S]*已开放/)
   assert.match(blog, /ReaderTestInvite/)
   assert.match(blog, /application\/ld\+json/)
+  assert.match(blog, /核对示例凭证/)
+  assert.match(blog, /读者现在可以核对/)
+  assert.doesNotMatch(blog, /90 天实施路线/)
+  assert.doesNotMatch(blog, /读者最终能做什么/)
+  assert.match(invite, /核对这份示例凭证/)
   assert.match(client, /content-proof-verifier/)
   assert.match(page, /CONTENT_PROOF_CLAIMS/)
   assert.match(discovery, /renderContentProofAgentGuide/)
 })
 
-test('weeks 7-10 discovery surfaces expose proof and replica links', async () => {
+test('discovery surfaces expose proof and replica links', async () => {
   const [llms, rss, proofsRss, blog, card, client] = await Promise.all([
     readFile(new URL('../app/(site)/llms.txt/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/rss-static.xml/route.js', import.meta.url), 'utf8'),
@@ -237,7 +242,7 @@ test('weeks 7-10 discovery surfaces expose proof and replica links', async () =>
   assert.match(llms, /renderContentProofLlmsSection/)
   assert.match(rss, /listContentProofRssEntries/)
   assert.match(proofsRss, /listContentProofRssEntries/)
-  assert.match(blog, /第 7—10 周[\s\S]*工程就绪/)
+  assert.match(blog, /IPFS pinning/)
   assert.match(card, /credential\.replica/)
   assert.match(client, /expectedChainId: credential\.network\.chainId/)
   assert.match(client, /credential\.replica/)

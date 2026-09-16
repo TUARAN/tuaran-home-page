@@ -43,7 +43,7 @@ export default function ContentFingerprintPrototype() {
   return (
     <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8a6b3e] dark:text-[#d2ac70]">Browser Prototype</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8a6b3e] dark:text-[#d2ac70]">Live check</p>
         <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight">在浏览器里改一个字，立即重新验证</h2>
         <p className="mt-3 text-sm leading-7 text-[#625d54] dark:text-[#b7b0a5]">
           当前页面直接使用 Web Crypto 计算规范化正文的 SHA-256，并用公开 P-256 公钥核对 proof JSON 的站点签名。计算过程不上传正文，也不需要钱包。

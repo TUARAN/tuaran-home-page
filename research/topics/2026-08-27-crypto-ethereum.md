@@ -39,7 +39,7 @@ Ethereum 的起源可追溯至 2013 年。当时参与比特币生态的程序�
 | 时间 | 事件 |
 |------|------|
 | 2013 年 11 月 | Vitalik Buterin 发出白皮书草案（"Introducing Ethereum"） |
-| 2014 年 | 白皮书正式发布，预售募资，以太坊基金会成立 |
+| 2014 年 | 白皮书正式发布，预售募资，以太坊基金会成立；站内有 [中文全文](/resources/ethereum-whitepaper) |
 | 2015 年 7 月 30 日 | 主网 Frontier 上线，创世区块生成 |
 | 2016 年 3 月 | Homestead 版本发布 |
 | 2016 年 6 月 | The DAO 遭重入攻击，约 360 万 ETH 被转走 |
@@ -199,7 +199,7 @@ ETH 长期位居加密资产市值第二，仅次于比特币。CoinGecko 快照
 **CoinGecko markets 接口**：本报告市场数据以用户提供的 CoinGecko 快照为准。CoinGecko API 提供 `/coins/ethereum` 及 `/coins/{id}/market_chart` 等端点（见 docs.coingecko.com），但本报告未直接调用该接口，快照中价格、市值、成交额、涨跌、历史高低点等字段均为"—"，未能验证。
 
 **实际检索来源**：
-- ethereum.org（白皮书、路线图、PoS 文档）
+- ethereum.org（白皮书、路线图、PoS 文档）；站内 [以太坊白皮书中文全文](/resources/ethereum-whitepaper)
 - Ethereum Classic 官网（DAO 分叉记录）
 - Consensys 博客（历史时间线）
 - The Block、CoinDesk、Fortune、Nasdaq（市场与监管报道）

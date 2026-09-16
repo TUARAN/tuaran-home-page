@@ -13,7 +13,7 @@ function TocList({ items, className = '' }) {
             href={`#${item.id}`}
             className={[
               'block leading-snug opacity-90 hover:opacity-100 underline underline-offset-4',
-              item.kind === 'volume'
+              item.kind === 'volume' || item.kind === 'chapter'
                 ? 'font-semibold text-[#333] dark:text-gray-100'
                 : item.kind === 'preface'
                   ? 'font-medium text-[#444] dark:text-gray-200'
@@ -83,7 +83,7 @@ export default function ResourceLongformReader({ toc, html }) {
                       href={`#${group.heading.id}`}
                       className={[
                         'block text-sm underline underline-offset-4',
-                        group.heading.kind === 'volume'
+                        group.heading.kind === 'volume' || group.heading.kind === 'chapter'
                           ? 'font-semibold text-[#333] dark:text-gray-100'
                           : 'font-medium text-[#444] dark:text-gray-200',
                       ].join(' ')}

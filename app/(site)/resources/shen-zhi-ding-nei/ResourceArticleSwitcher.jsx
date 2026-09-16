@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-import ResourceLongformReader from './ResourceLongformReader'
+import ResourceLongformReader from '../ResourceLongformReader'
 
 /** 「置身 X 内」多文切换阅读：标签页 + 各自目录与原文，支持 hash 锚点直达。 */
 export default function ResourceArticleSwitcher({ articles }) {

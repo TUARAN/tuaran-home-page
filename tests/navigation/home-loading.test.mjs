@@ -48,7 +48,6 @@ const catalog = Array.from({ length: 24 }, (_, index) => ({
 const props = {
   catalog,
   inspirations: [{ id: 'first-spark', date: '2026-09-10', title: '首屏灵感', summary: '无需等待推荐接口', category: 'ai' }],
-  pinnedInspirationIds: ['first-spark'],
 }
 
 test('server HTML contains readable recommendations and inspirations before any network effects', () => {
@@ -74,6 +73,7 @@ test('home inspirations expose AI and Web3 tabs like the article scopes', () => 
   assert.match(html, />全部</)
   assert.match(html, />AI</)
   assert.match(html, />Web3</)
+  assert.doesNotMatch(html, /置顶|home-badge-pinned/)
 })
 
 test('initial recommendations are deterministic for matching server and hydration renders', () => {

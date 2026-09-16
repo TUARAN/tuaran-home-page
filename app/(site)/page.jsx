@@ -41,7 +41,7 @@ import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
 import { HOME_RECOMMENDATION_MAX_BATCH_SIZE } from '../../lib/homeRecommendationEngine'
-import { getFeedItemsWithPinned } from './feed/data'
+import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/secondarySites'
 import HomeOpinionSignals from './components/HomeOpinionSignals'
 
@@ -51,7 +51,6 @@ const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
 const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
 const MATRIXLINK_URL = 'https://matrixlink.tech/'
-const HOME_PINNED_INSPIRATION_IDS = ['gemma-4-agent-vllm-challenge']
 
 export const dynamic = 'force-static'
 
@@ -864,7 +863,6 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         <HomePrimaryColumnsClient
           catalog={featuredPicks}
           inspirations={inspirations}
-          pinnedInspirationIds={HOME_PINNED_INSPIRATION_IDS}
         />
 
         <aside className="home-side-stack hidden lg:block">
@@ -896,7 +894,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
-  const inspirations = getFeedItemsWithPinned(HOME_PINNED_INSPIRATION_IDS, HOME_RECOMMENDATION_MAX_BATCH_SIZE)
+  const inspirations = getLatestFeedItems(HOME_RECOMMENDATION_MAX_BATCH_SIZE)
 
   return <PolishedHomePage featuredPicks={featuredPicks} inspirations={inspirations} />
 }

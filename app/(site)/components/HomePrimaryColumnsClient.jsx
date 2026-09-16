@@ -18,15 +18,14 @@ function FeedThumbnail({ src }) {
   return <img src={src} alt="" loading="lazy" />
 }
 
-function InspirationCard({ inspiration, isPinned = false }) {
+function InspirationCard({ inspiration }) {
   const formattedDate = inspiration.date.replaceAll('-', '.')
   const thumbnail = inspiration.poster || inspiration.image || (inspiration.type === 'image' ? inspiration.src : '')
 
   return (
     <article className="h5-feed-row home-inspiration-item">
-      <header className={`home-inspiration-meta ${isPinned ? '' : 'hidden md:flex'}`}>
-        {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
-        <time className={isPinned ? 'hidden md:inline' : undefined} dateTime={inspiration.date}>{formattedDate}</time>
+      <header className="home-inspiration-meta hidden md:flex">
+        <time dateTime={inspiration.date}>{formattedDate}</time>
       </header>
       <div className={`home-inspiration-body ${thumbnail ? 'has-thumbnail' : ''}`}>
         {thumbnail ? (
@@ -50,9 +49,8 @@ function InspirationCard({ inspiration, isPinned = false }) {
   )
 }
 
-function HomeInspirations({ items, pinnedIds }) {
+function HomeInspirations({ items }) {
   const [scope, setScope] = useState('all')
-  const pinnedIdSet = new Set(pinnedIds)
   const visibleItems = useMemo(
     () => filterFeedItemsByCategory(items, scope),
     [items, scope],
@@ -107,7 +105,6 @@ function HomeInspirations({ items, pinnedIds }) {
             <InspirationCard
               key={inspiration.id}
               inspiration={inspiration}
-              isPinned={pinnedIdSet.has(inspiration.id)}
             />
           ))}
           {visibleItems.length === 0 ? (
@@ -121,11 +118,11 @@ function HomeInspirations({ items, pinnedIds }) {
   )
 }
 
-export default function HomePrimaryColumnsClient({ catalog, inspirations, pinnedInspirationIds }) {
+export default function HomePrimaryColumnsClient({ catalog, inspirations }) {
   return (
     <>
       <HomeFeaturedReadingClient catalog={catalog} />
-      <HomeInspirations items={inspirations} pinnedIds={pinnedInspirationIds} />
+      <HomeInspirations items={inspirations} />
     </>
   )
 }

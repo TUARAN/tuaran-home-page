@@ -224,7 +224,7 @@ export default function ContractRenewalClient() {
         {overtimeHint ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">{overtimeHint}</p> : null}
 
         {tab === 'rehearse' ? (
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
+          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
             <SlidePanel page={page} />
             <NotesPanel page={page} line={line} lines={displayLines} cut={Boolean(useCut)} onPickLine={setLine} />
           </div>
@@ -269,9 +269,9 @@ function ClockCard({ label, value, tone }) {
 
 function SlidePanel({ page }) {
   return (
-    <figure className="overflow-hidden rounded-2xl border border-[#d7d9cf] bg-[#111] dark:border-[#2c3744]">
-      <img key={page.slideSrc} src={page.slideSrc} alt={`PPT 第 ${page.id} 页：${page.title}`} className="block aspect-video w-full object-contain bg-[#111]" />
-      <figcaption className="flex items-center justify-between gap-3 bg-[#171717] px-3 py-2 text-[11px] text-[#c4c4c4]">
+    <figure className="overflow-hidden rounded-2xl border border-[#d7d9cf] bg-white dark:border-[#2c3744] dark:bg-[#10161f]">
+      <img key={page.slideSrc} src={page.slideSrc} alt={`PPT 第 ${page.id} 页：${page.title}`} className="block h-auto w-full bg-white dark:bg-[#10161f]" />
+      <figcaption className="flex items-center justify-between gap-3 border-t border-[#eceee6] bg-[#f7f7f2] px-3 py-2 text-[11px] text-[#5f6158] dark:border-[#303b48] dark:bg-[#161d27] dark:text-gray-400">
         <span>第 {page.id} / {CONTRACT_RENEWAL_PAGES.length} 页 · {page.title}</span>
         <span>{page.seconds} 秒</span>
       </figcaption>
@@ -395,7 +395,7 @@ function StageView({ page, line, lines, totalLabel, pageLabel, running, onClose,
         <p className="mb-0 font-mono">总 {totalLabel}　本页 {pageLabel}　{running ? '计时中' : '已暂停'}</p>
       </div>
       <div className="grid flex-1 gap-4 overflow-auto px-4 pb-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <img key={page.slideSrc} src={page.slideSrc} alt="" className="w-full rounded-xl object-contain bg-black aspect-video" />
+        <img key={page.slideSrc} src={page.slideSrc} alt="" className="w-full rounded-xl bg-white object-contain" />
         <div className="flex flex-col justify-center px-2">
           <p className="text-[13px] text-[#9a9c91]">{page.job}</p>
           <p className="mt-4 font-serif text-[clamp(1.8rem,4.4vw,3.4rem)] font-semibold leading-snug tracking-[-0.03em]">{current}</p>

@@ -1,9 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useMemo, useState } from 'react'
 
 import HomeFeaturedReadingClient from './HomeFeaturedReadingClient'
 import { T } from './LocaleProvider'
+import {
+  feedCategoryHref,
+  filterFeedItemsByCategory,
+  HOME_INSPIRATION_SCOPE_KEYS,
+  HOME_INSPIRATION_SCOPE_META,
+} from '../feed/data'
 
 function FeedThumbnail({ src }) {
   // 灵感源同时包含本地与远端媒体，原生图片避免为每个来源维护 Next Image 域名白名单。
@@ -44,32 +51,70 @@ function InspirationCard({ inspiration, isPinned = false }) {
 }
 
 function HomeInspirations({ items, pinnedIds }) {
+  const [scope, setScope] = useState('all')
   const pinnedIdSet = new Set(pinnedIds)
+  const visibleItems = useMemo(
+    () => filterFeedItemsByCategory(items, scope),
+    [items, scope],
+  )
+  const moreHref = feedCategoryHref(scope)
 
   return (
     <section id="inspirations" className="home-section home-inspirations scroll-mt-24">
-      <p className="h5-feed-label md:hidden">灵感</p>
       <div className="home-section-heading compact hidden md:flex">
         <div className="w-full">
           <p className="home-kicker">02 · Sparks</p>
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="home-section-title"><T zh="灵感" en="Inspiration" /></h2>
-            <Link href="/feed" className="home-section-more no-underline">
+            <Link href={moreHref} className="home-section-more no-underline">
               <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
             </Link>
           </div>
           <p className="home-section-description"><T zh="随手记下的发现、念头与启发" en="Quick discoveries, ideas, and sparks" /></p>
         </div>
       </div>
+      <div className="home-inspiration-scopes">
+        <p className="h5-feed-label md:hidden">灵感</p>
+        <nav className="home-section-tabs" role="tablist" aria-label="首页灵感范围">
+          {HOME_INSPIRATION_SCOPE_KEYS.map((key) => {
+            const active = scope === key
+            const meta = HOME_INSPIRATION_SCOPE_META[key]
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                id={`home-inspiration-scope-${key}`}
+                aria-selected={active}
+                aria-controls="home-inspiration-list"
+                className={`home-tab-link ${active ? 'is-active' : ''}`}
+                onClick={() => setScope(key)}
+              >
+                <T zh={meta.label} en={meta.labelEn} />
+              </button>
+            )
+          })}
+        </nav>
+      </div>
       <div className="relative min-h-0 flex-1">
-        <div className="home-inspiration-list">
-          {items.map((inspiration) => (
+        <div
+          id="home-inspiration-list"
+          role="tabpanel"
+          aria-labelledby={`home-inspiration-scope-${scope}`}
+          className="home-inspiration-list"
+        >
+          {visibleItems.map((inspiration) => (
             <InspirationCard
               key={inspiration.id}
               inspiration={inspiration}
               isPinned={pinnedIdSet.has(inspiration.id)}
             />
           ))}
+          {visibleItems.length === 0 ? (
+            <div className="py-10 text-center text-[14px] text-[#77746a] dark:text-[#98a3b1]">
+              这个分类下还没有灵感
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

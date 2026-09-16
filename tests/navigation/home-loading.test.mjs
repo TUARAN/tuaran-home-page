@@ -5,6 +5,7 @@ import test from 'node:test'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import * as engine from '../../lib/homeRecommendationEngine.js'
+import * as feedData from '../../app/(site)/feed/data.js'
 
 const require = createRequire(import.meta.url)
 const { transform } = require('next/dist/build/swc')
@@ -19,6 +20,7 @@ const dependencies = {
   '../../../lib/siteAnalytics': { trackSiteEvent() {} },
   './H5PullToRefresh': ({ children }) => children,
   './LocaleProvider': { T: ({ zh }) => zh },
+  '../feed/data': feedData,
 }
 
 async function loadComponent(name) {
@@ -45,7 +47,7 @@ const catalog = Array.from({ length: 24 }, (_, index) => ({
 }))
 const props = {
   catalog,
-  inspirations: [{ id: 'first-spark', date: '2026-09-10', title: '首屏灵感', summary: '无需等待推荐接口' }],
+  inspirations: [{ id: 'first-spark', date: '2026-09-10', title: '首屏灵感', summary: '无需等待推荐接口', category: 'ai' }],
   pinnedInspirationIds: ['first-spark'],
 }
 
@@ -61,6 +63,17 @@ test('inspirations remain readable even when the recommendation catalog is empty
   const html = renderToStaticMarkup(React.createElement(Columns, { ...props, catalog: [] }))
   assert.match(html, /首屏灵感/)
   assert.doesNotMatch(html, /skeleton|invisible|aria-busy="true"/)
+})
+
+test('home inspirations expose AI and Web3 tabs like the article scopes', () => {
+  const html = renderToStaticMarkup(React.createElement(Columns, props))
+  assert.match(html, /首页灵感范围/)
+  assert.match(html, /home-inspiration-scope-all/)
+  assert.match(html, /home-inspiration-scope-ai/)
+  assert.match(html, /home-inspiration-scope-web3/)
+  assert.match(html, />全部</)
+  assert.match(html, />AI</)
+  assert.match(html, />Web3</)
 })
 
 test('initial recommendations are deterministic for matching server and hydration renders', () => {

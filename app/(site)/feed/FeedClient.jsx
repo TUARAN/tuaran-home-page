@@ -6,7 +6,14 @@ import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import ContentPvBeacon from '../components/ContentPvBeacon'
 import DistributeContentButton from '../components/DistributeContentButton'
 import SharePageButton from '../components/SharePageButton'
-import { FEED_TYPE_META } from './data'
+import {
+  FEED_TYPE_META,
+  HOME_INSPIRATION_SCOPE_KEYS,
+  HOME_INSPIRATION_SCOPE_META,
+  feedCategoryHref,
+  filterFeedItemsByCategory,
+  normalizeFeedCategory,
+} from './data'
 
 function TypeBadge({ type }) {
   const meta = FEED_TYPE_META[type]
@@ -573,11 +580,17 @@ function LoadMoreTrigger({ hasMore, onLoadMore, remainingCount }) {
   )
 }
 
-export default function FeedClient({ items, typesPresent, featuredItemId = '', detailMode = false }) {
+function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode = false }) {
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [hashFeaturedItemId, setHashFeaturedItemId] = useState('')
   const [visibleCount, setVisibleCount] = useState(INITIAL_RENDER_COUNT)
   const activeFeaturedItemId = featuredItemId || hashFeaturedItemId
+
+  useEffect(() => {
+    if (detailMode || typeof window === 'undefined') return
+    setCategoryFilter(normalizeFeedCategory(new URLSearchParams(window.location.search).get('category')))
+  }, [detailMode])
 
   useEffect(() => {
     if (featuredItemId || typeof window === 'undefined') return
@@ -594,10 +607,11 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '', d
 
   const filtered = useMemo(
     () => {
-      const tabItems = typeFilter === 'all' ? items : items.filter((i) => i.type === typeFilter)
+      const categoryItems = filterFeedItemsByCategory(items, categoryFilter)
+      const tabItems = typeFilter === 'all' ? categoryItems : categoryItems.filter((i) => i.type === typeFilter)
       return prioritizeItem(tabItems, activeFeaturedItemId)
     },
-    [items, typeFilter, activeFeaturedItemId]
+    [items, categoryFilter, typeFilter, activeFeaturedItemId]
   )
   const visibleItems = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
@@ -605,13 +619,20 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '', d
 
   useEffect(() => {
     setVisibleCount(INITIAL_RENDER_COUNT)
-  }, [typeFilter, activeFeaturedItemId])
+  }, [categoryFilter, typeFilter, activeFeaturedItemId])
+
+  function selectCategory(next) {
+    const category = normalizeFeedCategory(next)
+    setCategoryFilter(category)
+    if (detailMode || typeof window === 'undefined') return
+    window.history.replaceState(null, '', feedCategoryHref(category))
+  }
 
   const loadMore = () => {
     setVisibleCount((count) => Math.min(count + RENDER_BATCH_SIZE, filtered.length))
   }
 
-  const chips = [{ key: 'all', label: '全部' }, ...typesPresent.map((t) => ({ key: t, label: FEED_TYPE_META[t]?.label || t }))]
+  const typeChips = [{ key: 'all', label: '全部' }, ...typesPresent.map((t) => ({ key: t, label: FEED_TYPE_META[t]?.label || t }))]
 
   if (detailMode) {
     const selectedIndex = items.findIndex((item) => item.id === featuredItemId)
@@ -620,8 +641,9 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '', d
     const newer = selectedIndex > 0 ? items[selectedIndex - 1] : null
     const older = selectedIndex < items.length - 1 ? items[selectedIndex + 1] : null
     const related = [
-      ...items.filter((item) => item.id !== selected.id && item.type === selected.type),
-      ...items.filter((item) => item.id !== selected.id && item.type !== selected.type),
+      ...items.filter((item) => item.id !== selected.id && item.category === selected.category && item.type === selected.type),
+      ...items.filter((item) => item.id !== selected.id && item.category === selected.category && item.type !== selected.type),
+      ...items.filter((item) => item.id !== selected.id && item.category !== selected.category),
     ].slice(0, 3)
 
     return (
@@ -672,28 +694,52 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '', d
 
   return (
     <div>
-      {/* 类型筛选 */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {chips.map((chip) => {
-          const active = typeFilter === chip.key
-          const accent = FEED_TYPE_META[chip.key]?.accent || ALL_FILTER_ACCENT
-          return (
-            <button
-              key={chip.key}
-              type="button"
-              onClick={() => setTypeFilter(chip.key)}
-              className={[
-                'rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors',
-                active
-                  ? ''
-                  : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]',
-              ].join(' ')}
-              style={active ? { borderColor: accent, color: accent, background: `${accent}14` } : undefined}
-            >
-              {chip.label}
-            </button>
-          )
-        })}
+      <div className="mb-6 space-y-3">
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="按主题筛选灵感">
+          {HOME_INSPIRATION_SCOPE_KEYS.map((key) => {
+            const active = categoryFilter === key
+            const meta = HOME_INSPIRATION_SCOPE_META[key]
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => selectCategory(key)}
+                className={[
+                  'rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors',
+                  active
+                    ? 'border-[var(--site-ink)] bg-[var(--site-panel-strong)] text-[var(--site-ink)]'
+                    : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]',
+                ].join(' ')}
+              >
+                {meta.label}
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex flex-wrap gap-2" aria-label="按类型筛选灵感">
+          {typeChips.map((chip) => {
+            const active = typeFilter === chip.key
+            const accent = FEED_TYPE_META[chip.key]?.accent || ALL_FILTER_ACCENT
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setTypeFilter(chip.key)}
+                className={[
+                  'rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors',
+                  active
+                    ? ''
+                    : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]',
+                ].join(' ')}
+                style={active ? { borderColor: accent, color: accent, background: `${accent}14` } : undefined}
+              >
+                {chip.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -724,4 +770,8 @@ export default function FeedClient({ items, typesPresent, featuredItemId = '', d
       )}
     </div>
   )
+}
+
+export default function FeedClient(props) {
+  return <FeedClientView {...props} />
 }

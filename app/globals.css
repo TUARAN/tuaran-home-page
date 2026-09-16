@@ -1968,7 +1968,8 @@
     background: var(--site-accent);
   }
 
-  .home-article-scopes {
+  .home-article-scopes,
+  .home-inspiration-scopes {
     @apply mb-1 flex flex-col gap-1;
   }
 
@@ -3527,15 +3528,18 @@
       font-weight: 600;
     }
 
-    .home-article-scopes {
+    .home-article-scopes,
+    .home-inspiration-scopes {
       margin: 0.05rem 0 0.15rem;
     }
 
-    .home-article-scopes .home-section-tabs {
+    .home-article-scopes .home-section-tabs,
+    .home-inspiration-scopes .home-section-tabs {
       margin: 0 -0.15rem;
     }
 
-    .home-article-scopes .home-tab-link {
+    .home-article-scopes .home-tab-link,
+    .home-inspiration-scopes .home-tab-link {
       min-height: 2.35rem;
       padding: 0 0.85rem;
       font-size: 15px;

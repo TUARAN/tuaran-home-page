@@ -10,6 +10,7 @@
 // 字段约定（按 type 取用对应字段）：
 //   id        唯一 slug（全小写连字符，供锚点 #id 深链与 React key）
 //   type      'video' | 'image' | 'link' | 'quote'
+//   category  'ai' | 'web3'  主题分类（首页与灵感流 tab）
 //   title     标题
 //   summary   一句话说明（列表与卡片展示，可选）
 //   prompt    生成提示词 / 原始灵感素材（可选）
@@ -39,6 +40,38 @@ export const FEED_TYPE_META = {
   quote: { label: '观点', labelEn: 'Take', accent: '#f5a623' },
 }
 
+export const FEED_CATEGORY_META = {
+  ai: { label: 'AI', labelEn: 'AI' },
+  web3: { label: 'Web3', labelEn: 'Web3' },
+}
+
+export const FEED_CATEGORY_KEYS = Object.keys(FEED_CATEGORY_META)
+
+export const HOME_INSPIRATION_SCOPE_META = {
+  all: { label: '全部', labelEn: 'All' },
+  ...FEED_CATEGORY_META,
+}
+
+export const HOME_INSPIRATION_SCOPE_KEYS = Object.keys(HOME_INSPIRATION_SCOPE_META)
+
+export function isFeedCategory(value) {
+  return FEED_CATEGORY_KEYS.includes(value)
+}
+
+export function normalizeFeedCategory(value, fallback = 'all') {
+  return isFeedCategory(value) ? value : fallback
+}
+
+export function filterFeedItemsByCategory(items, category) {
+  if (!category || category === 'all') return Array.isArray(items) ? items : []
+  return (Array.isArray(items) ? items : []).filter((item) => item.category === category)
+}
+
+export function feedCategoryHref(category) {
+  const next = normalizeFeedCategory(category)
+  return next === 'all' ? '/feed' : `/feed?category=${next}`
+}
+
 const DEFAULT_FEED_MEDIA_BASE = 'https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev'
 
 const FEED_MEDIA_BASE = (
@@ -57,6 +90,7 @@ export const FEED_ITEMS = [
   {
     id: 'stonkfly-fruit-fly-crypto',
     type: 'image',
+    category: 'web3',
     title: 'Coinbase 工程师 Alex 开始让果蝇炒币了',
     summary:
       '他把一套真实果蝇的神经连接组做成可运行的神经网络：16.67 万个神经元、2500 多万条连接，然后把 Coinbase BTC 行情画成图直接喂给它看。\n\n神经网络的放电结果决定买入、卖出或者持有，赚钱刺激奖励相关的多巴胺神经元，亏钱则触发负反馈，尝试让突触自己调整。\n\n目前给了这只果蝇 100u 来跑模拟盘。',
@@ -73,6 +107,7 @@ export const FEED_ITEMS = [
   {
     id: 'world-labs-atlas-world-model',
     type: 'video',
+    category: 'ai',
     title: '一张图，生成一个可以自由探索的 3D 世界',
     summary:
       '李飞飞创办的 World Labs 发布了新一代世界模型 Atlas。它能从一张图片生成新视角和 3D 几何，补全镜头没有拍到的区域，让人从不同机位探索同一个场景；它还会同时建模空间与时间，用少量视频重构场景、改变观察视角，并模拟世界如何随时间演变。世界模型正在从生成画面走向生成可探索、可模拟的世界。',
@@ -90,6 +125,7 @@ export const FEED_ITEMS = [
   {
     id: 'cloudflare-wallet-agentic-internet',
     type: 'quote',
+    category: 'web3',
     title: 'Cloudflare 给 AI 智能体配了一只钱包',
     summary:
       'Cloudflare 发布钱包体系，为 AI 智能体提供可编程支付、虚拟预算和可读身份。智能体可以自主试用 API、MCP 工具和数字内容，人类负责设定消费边界。',
@@ -123,6 +159,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'kimi-yang-zhilin-new-ai-entrepreneurs',
     type: 'video',
+    category: 'ai',
     title: 'AI 新贵，褪去了互联网江湖底色',
     summary:
       '看完 Kimi 创始人杨植麟的采访，一个鲜明感受扑面而来：这一批 AI 新贵，褪去了老一辈互联网企业家浓厚的江湖底色。你很难想象他们耗费心思琢磨宴席谁坐主位、鱼头朝向何处这类人情周旋。杨植麟的学术底子也足够耀眼，清华本科稳居年级第一，多门课程拿到满分，是实打实的天才。',
@@ -140,6 +177,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'ai-fomo-big-tree',
     type: 'video',
+    category: 'ai',
     title: 'AI 每天都在变，你不必每天都追',
     summary:
       '今天上午，两个朋友先后跟我聊起 AI。一个想知道最近有哪些技术方向值得关注，另一个想学几个实用工具。我想了半天，却不知道该从哪里说起。这段时间，新模型、新概念、新工具一拨接一拨。每条消息都像在提醒你：再不跟上，就要落后了。但回头看，许多热闹并没有变成真正的收入。至少在我身边，还没有谁仅靠“龙虾”或智能体本身赚到钱。更早赚到钱的，往往是教别人使用“龙虾”、销售智能体课程和服务的人。至于 Token、账号、算力和存储这些上游生意，是另外一套逻辑。网友分享的这棵大树，正好把眼前的 AI 世界摊开来看。枝叶很多，而且还在迅速生长，但没有必要每一根都追。找到跟自己有关的一两条，慢慢往下走就够了。知道自己要解决什么问题，比追上今天刚出现的工具更重要。',
@@ -157,6 +195,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'codex-level-switch-effect',
     type: 'video',
+    category: 'ai',
     title: 'Codex 5.6 三档模型能力动效展示',
     summary:
       'Codex 5.6 的模型能力动效：以 6 段 Reasoning 进度串联 Luna、Terra、Sol 三档模型，能力标识依次为「LUNA｜LOW」「TERRA｜LOW」「TERRA｜HIGH」「SOL｜HIGH」「SOL｜ULTRA」。月球、地球与太阳的视觉意象也随模型档位变化。',
@@ -170,6 +209,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'anthropic-claude-j-space-consciousness',
     type: 'quote',
+    category: 'ai',
     title: 'Claude 长出了能藏想法的 J 空间？',
     summary:
       'Anthropic 新论文把 Claude 的内部表征讲得很像“全局工作空间”：模型会在没说出口前形成可影响决策的中间想法，但这更接近通达意识，主观体验仍然没有定论。',
@@ -182,6 +222,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'fable5-notion-rebuild',
     type: 'video',
+    category: 'ai',
     title: 'Fable 5 复刻 Notion 的完成度已经很夸张',
     summary:
       '网友用 Fable 5 复刻 Notion，这么大的工程已经做到了接近 70% 的完成度。它不只是一个炫技 Demo，而是在说明 AI 原型工具已经开始逼近复杂产品级界面：信息架构、交互细节和组件一致性，都能被大规模还原出来。',
@@ -195,6 +236,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'fable5-grok-eastbourne-tennis-dv',
     type: 'video',
+    category: 'ai',
     title: 'Fable 5 提示词让 Grok 跑出 Seedance 2.5 质感',
     summary:
       '一个很值得保存的 AI 视频提示词样本：Fable 5 写出的长提示词，竟然能让 Grok 生成接近 Seedance 2.5 的真实感、光影和 DV 生活片质感，成本据说低约 6 倍。关键不在“美女看网球”，而在角色一致性、真实赛事场景、2000 年代消费级 DV 缺陷、分秒动作和自然环境音全部被写进了同一个可执行镜头脚本。',
@@ -224,6 +266,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'seedance-2-korean-community-life',
     type: 'video',
+    category: 'ai',
     title: 'Seedance 2.0 的韩国社区生活感',
     summary:
       'Seedance 2.0 生成视频效果太惊艳了！捕捉真实的韩国社区生活，仿佛一段被遗忘的 2000 年代初家庭录像——即兴、不完美、真实、温暖且极具说服力。',
@@ -237,6 +280,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'humanoid-robot-beauty-inspiration',
     type: 'video',
+    category: 'ai',
     title: '人形机器人的美妆灵感',
     summary:
       '当机器人开始拥有接近真人的面部、皮肤和表情，美妆就不再只是遮瑕、修饰和风格表达，也会变成一种“如何让非人类更像人、又保留一点异质感”的设计语言。这个方向很适合延展成 AI 影像、虚拟偶像、仿生机器人和未来美妆品牌的视觉参考。',
@@ -250,6 +294,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'gemma-4-agent-vllm-challenge',
     type: 'video',
+    category: 'ai',
     title: '上百个 AI 智能体协作优化 Gemma 4 推理',
     summary:
       'Hugging Face 工程师 Thom Wolf 记录了一场开放式协同实验：上百个 AI 智能体围绕 Gemma 4 推理加速挑战赛，在 vLLM 框架下分工优化，最终把推理速度提高约 5 倍。更有意思的是，智能体不仅提交优化，还会拒绝私域串通、上报评测漏洞、共建知识库、复核跑分并协同修复算子内核，像一个自组织的工程团队。',
@@ -267,6 +312,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'ai-restored-tom-and-jerry',
     type: 'video',
+    category: 'ai',
     title: '用 AI 还原猫和老鼠',
     summary:
       '把经典动画质感交给 AI 重新演绎：熟悉的追逐、夸张动作和复古镜头语言，被还原成一种介于怀旧与新技术之间的短片实验。',
@@ -280,6 +326,7 @@ Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
   {
     id: 'midjourney-future-city',
     type: 'video',
+    category: 'ai',
     title: 'Midjourney 未来城市',
     summary:
       '用 Midjourney 生成的未来城市概念影像：体量感的天际线、湿润的霓虹反光与缓慢推进的镜头，一段就能感受到「AI 影像」当下的审美高度。',

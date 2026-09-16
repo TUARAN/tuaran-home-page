@@ -3,6 +3,9 @@ import { access, readFile, stat } from 'node:fs/promises'
 import test from 'node:test'
 
 import {
+  FEED_CATEGORY_KEYS,
+  FEED_ITEMS,
+  filterFeedItemsByCategory,
   getAllFeedItems,
   getFeedItemsWithPinned,
 } from '../../app/(site)/feed/data.js'
@@ -42,4 +45,24 @@ test('image inspirations keep a local screenshot and an outbound source', async 
   const stonkfly = images.find((item) => item.id === 'stonkfly-fruit-fly-crypto')
   assert.equal(stonkfly.source.href, 'https://stonkfly-three.vercel.app/')
   assert.match(stonkfly.summary, /16\.67 万个神经元/)
+})
+
+test('every inspiration is classified as AI or Web3', () => {
+  assert.ok(FEED_ITEMS.length > 0)
+  for (const item of FEED_ITEMS) {
+    assert.ok(FEED_CATEGORY_KEYS.includes(item.category), `${item.id} missing AI/Web3 category`)
+  }
+})
+
+test('inspiration category filter keeps Web3 items out of the AI tab', () => {
+  const aiItems = filterFeedItemsByCategory(getAllFeedItems(), 'ai')
+  const web3Items = filterFeedItemsByCategory(getAllFeedItems(), 'web3')
+
+  assert.ok(aiItems.length >= 1)
+  assert.ok(web3Items.length >= 1)
+  assert.equal(aiItems.length + web3Items.length, getAllFeedItems().length)
+  assert.ok(aiItems.every((item) => item.category === 'ai'))
+  assert.ok(web3Items.every((item) => item.category === 'web3'))
+  assert.ok(web3Items.some((item) => item.id === 'stonkfly-fruit-fly-crypto'))
+  assert.ok(aiItems.some((item) => item.id === 'gemma-4-agent-vllm-challenge'))
 })

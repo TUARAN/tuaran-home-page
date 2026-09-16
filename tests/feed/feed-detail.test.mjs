@@ -29,3 +29,11 @@ test('each feed item gets its own reading-stat key', async () => {
   assert.match(registry, /\.\.\.getAllFeedItems\(\)\.map/)
   assert.match(registry, /slug: item\.id/)
 })
+
+test('feed list filters by AI and Web3 before media type', async () => {
+  const client = await readFile(FEED_CLIENT_PATH, 'utf8')
+  assert.match(client, /按主题筛选灵感/)
+  assert.match(client, /HOME_INSPIRATION_SCOPE_KEYS/)
+  assert.match(client, /filterFeedItemsByCategory/)
+  assert.match(client, /feedCategoryHref/)
+})

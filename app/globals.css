@@ -1005,20 +1005,28 @@
     font-style: normal;
   }
 
-  .home-story-root {
-    height: calc(100dvh - var(--site-header-height) - env(safe-area-inset-top, 0px));
-    overflow-x: hidden;
-    overflow-y: auto;
+  html:has(.home-story-root) {
     scroll-behavior: smooth;
     scroll-snap-type: y mandatory;
-    overscroll-behavior-y: contain;
+    scroll-padding-top: var(--site-header-height);
+  }
+
+  body:has(.home-story-root) {
+    overflow-x: hidden;
+    overscroll-behavior-y: auto;
+  }
+
+  .home-story-root {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
   }
 
   .home-story-slide {
     @apply relative flex w-full shrink-0 items-center;
     min-height: calc(100dvh - var(--site-header-height) - 1.25rem);
     scroll-snap-align: start;
-    scroll-snap-stop: always;
+    scroll-snap-stop: normal;
   }
 
   .home-story-banner .commons-hero {
@@ -1179,7 +1187,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-story-root {
+    html:has(.home-story-root) {
       scroll-behavior: auto;
     }
   }
@@ -1197,7 +1205,6 @@
 
   @media (max-width: 640px) {
     .home-story-root {
-      height: calc(100dvh - var(--site-header-height) - env(safe-area-inset-top, 0px));
       padding-bottom: calc(var(--site-tabbar-height) + env(safe-area-inset-bottom, 0px));
     }
 

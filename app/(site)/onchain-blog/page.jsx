@@ -112,7 +112,7 @@ export default function OnchainBlogPage() {
             <span>CONTENT LEDGER</span>
           </div>
 
-          <div className="mt-auto grid gap-12 pb-6 pt-24 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-end">
+          <div className="mt-auto pb-6 pt-24">
             <div className="max-w-4xl">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-full border border-[#d9b66c]/55 bg-black/35 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#f0cd88] backdrop-blur-sm">
@@ -132,20 +132,6 @@ export default function OnchainBlogPage() {
               </p>
             </div>
 
-            <aside className="rounded-2xl border border-white/20 bg-black/40 p-5 shadow-2xl backdrop-blur-md">
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#e5bf77]">第 3—4 周进展</p>
-              <div className="mt-4 grid grid-cols-3 gap-2 border-y border-white/15 py-4 text-center">
-                <div><strong className="block font-serif text-2xl text-white">10—20</strong><span className="text-[11px] text-white/50">篇 / 批</span></div>
-                <div><strong className="block font-serif text-2xl text-white">1</strong><span className="text-[11px] text-white/50">个 Root</span></div>
-                <div><strong className="block font-serif text-2xl text-white">0</strong><span className="text-[11px] text-white/50">读者门槛</span></div>
-              </div>
-              <p className="mt-4 text-sm leading-7 text-white/65">
-                批次生成、逐篇证明、EAS 测试网适配与 D1 索引已经就绪。发布钱包签名后，每篇内容都能独立核对到同一条链上记录。
-              </p>
-              <Link href={DETAIL_HREF} className="mt-5 inline-flex rounded-full bg-[#e0bb74] px-4 py-2.5 text-sm font-semibold text-[#171109] no-underline hover:bg-[#f1d397]">
-                阅读完整技术方案 →
-              </Link>
-            </aside>
           </div>
         </div>
       </section>

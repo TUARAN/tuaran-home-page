@@ -260,36 +260,39 @@ export default function EthereumWhitepaperPage() {
           <h2 id="toc-heading" className="mt-2 font-serif text-2xl font-semibold text-[#2b332d] dark:text-gray-100">
             章节目录
           </h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {groups.map((group, index) => (
-              <article
-                key={group.heading.id}
-                className="rounded-2xl border border-[#e1e4df] bg-[#fafbf9] p-5 dark:border-gray-800 dark:bg-gray-900/60"
-              >
-                <span className="font-mono text-xs text-[#8b7551] dark:text-amber-400">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <h3 className="mt-2 text-base font-semibold text-[#303a33] dark:text-gray-100">
-                  <a href={`#${group.heading.id}`} className="underline-offset-4 hover:underline">
-                    {group.heading.text}
+          <nav className="mt-5 border-t border-[#ddd8cc] pt-5 dark:border-gray-800" aria-label="章节目录">
+            <ol className="columns-1 gap-x-16 md:columns-2 md:[column-rule:1px_solid_#ece8de] dark:md:[column-rule-color:#1f2937]">
+              {groups.map((group, index) => (
+                <li key={group.heading.id} className="mb-5 break-inside-avoid last:mb-0">
+                  <a
+                    href={`#${group.heading.id}`}
+                    className="flex items-baseline gap-3 text-[#2b332d] dark:text-gray-100"
+                  >
+                    <span className="w-6 shrink-0 font-mono text-[11px] tabular-nums text-[#8b7551] dark:text-amber-400">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className="font-serif text-[17px] font-semibold leading-snug underline-offset-4 hover:underline">
+                      {group.heading.text}
+                    </span>
                   </a>
-                </h3>
-                {group.sections.length ? (
-                  <ul className="mt-3 space-y-1.5 text-sm leading-6 text-[#697169] dark:text-gray-400">
-                    {group.sections.map((section) => (
-                      <li key={section.id}>
-                        <a href={`#${section.id}`} className="underline-offset-4 hover:underline">
-                          {section.text}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-3 text-sm leading-6 text-[#697169] dark:text-gray-400">开篇总论，无小节。</p>
-                )}
-              </article>
-            ))}
-          </div>
+                  {group.sections.length ? (
+                    <ol className="mt-1.5 ml-9 space-y-0.5">
+                      {group.sections.map((section) => (
+                        <li key={section.id}>
+                          <a
+                            href={`#${section.id}`}
+                            className="text-[13.5px] leading-6 text-[#6a736a] underline-offset-4 hover:underline dark:text-gray-400"
+                          >
+                            {section.text}
+                          </a>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          </nav>
         </section>
 
         <section className="mt-10" aria-labelledby="paper-heading">

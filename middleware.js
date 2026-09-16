@@ -162,6 +162,7 @@ export async function middleware(request) {
 export const config = {
   matcher: [
     '/ads.txt',
+    '/admin/:path*',
     '/((?!_next/static|_next/image|favicon.ico|site.webmanifest|sw.js|robots.txt|.*\\.(?:png|jpg|jpeg|webp|svg|ico|mp3|mp4|webm|m4v|xml|txt)$).*)',
   ],
 }

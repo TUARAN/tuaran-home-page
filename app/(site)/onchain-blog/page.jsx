@@ -66,8 +66,9 @@ const ROADMAP = [
   {
     range: '第 7—10 周',
     title: '副本与主网小批量',
-    status: '待实施',
-    copy: '加入 IPFS pinning、双网关回读、发布钱包隔离、失败重试、幂等和主网成本记录。',
+    status: '工程就绪',
+    active: true,
+    copy: 'IPFS pinning、双网关回读、发布钱包隔离、失败重试、幂等和主网成本记录已接入；活 pinning 与主网交易仍由隔离钱包和 Pinata 凭据执行。',
   },
   {
     range: '第 11—12 周',
@@ -247,13 +248,15 @@ export default function OnchainBlogPage() {
 lib/contentMerkle.js
   signed proofs → Merkle root + per-item paths
 
-scripts/anchor-content-proof-batch.mjs
-  batch root → Base Sepolia EAS attestation
+lib/contentReplica.js
+  replica payload → pin → dual-gateway SHA-256 readback
 
-D1: content_proof_batches + content_proofs
-  content_key / version / content_hash
-  chain_id / tx_hash / merkle_root / merkle_path
-  attestation_uid / status / previous_proof_id`}</code></pre>
+scripts/anchor-content-proof-batch.mjs
+  isolated publisher wallet → retry / idempotent EAS attest → cost ledger
+
+D1: content_proofs + content_replicas + cost events
+  content_key / version / content_hash / cid
+  chain_id / tx_hash / merkle_root / cost_wei`}</code></pre>
         </div>
       </section>
 
@@ -275,7 +278,7 @@ D1: content_proof_batches + content_proofs
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
             <p className="font-serif text-2xl font-semibold">详细技术方案包含技术选择、数据结构、验收条件与风险说明。</p>
-            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-15 · 当前状态：读者验证界面与首笔 Base Sepolia EAS 真实存证已上线。</p>
+            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-16 · 当前状态：读者验证、IPFS 副本流水线与主网小批量发布控制已就绪。</p>
           </div>
           <Link href={DETAIL_HREF} className="shrink-0 rounded-full border border-[#9d835b] px-5 py-3 text-sm font-semibold text-[#5d4523] no-underline hover:bg-[#f8f3e9] dark:border-[#8d774f] dark:text-[#dbbd86] dark:hover:bg-white/[0.05]">
             打开完整计划与实现细节 →

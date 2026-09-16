@@ -46,6 +46,7 @@ const blockedExtensions = [
   '.pem',
   '.p12',
   '.pfx',
+  '.publisher.wallet.json',
 ]
 
 function trackedFiles() {

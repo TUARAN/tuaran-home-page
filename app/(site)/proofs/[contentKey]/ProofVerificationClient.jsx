@@ -57,7 +57,12 @@ export default function ProofVerificationClient({ credential }) {
 
   const summary = state.error
     ? { level: 'error', label: '验证器加载失败', detail: state.error }
-    : describeProofStatus({ proof: state.proof, verification: state.verification, batch: state.batch })
+    : describeProofStatus({
+      proof: state.proof,
+      verification: state.verification,
+      batch: state.batch,
+      expectedChainId: credential.network.chainId,
+    })
   const statusStyle = STATUS_STYLE[summary.level] || STATUS_STYLE.signed
 
   return (
@@ -76,7 +81,8 @@ export default function ProofVerificationClient({ credential }) {
             <CheckRow done={state.verification?.contentHashMatches} pending={!state.verification} title="1. 重算当前内容指纹" copy="使用规范化后的 UTF-8 内容在当前浏览器中计算 SHA-256。" value={state.localHash} />
             <CheckRow done={state.verification?.proofIdMatches} pending={!state.verification} title="2. 核对 Proof ID" copy="重算未签名凭证载荷，确认凭证本身没有被改写。" value={state.proof?.proofId} />
             <CheckRow done={state.verification?.signatureValid} pending={!state.verification} title="3. 验证站点签名" copy="用 2aran.com 公开的 P-256 公钥验证发布身份。" value={state.proof?.siteSignature?.keyId} />
-            <CheckRow done={state.batch?.membershipValid && state.batch?.anchor?.chainId === credential.network.chainId && Boolean(state.batch?.anchor?.transactionHash)} pending={!state.batch} title="4. 核对 Merkle 批次与链上记录" copy="使用逐篇 Merkle Path 重算 Root，再核对 chainId、EAS attestation 与 Base Sepolia 交易。" value={state.batch?.merkleRoot} />
+            <CheckRow done={state.batch?.membershipValid && state.batch?.anchor?.chainId === credential.network.chainId && Boolean(state.batch?.anchor?.transactionHash)} pending={!state.batch} title="4. 核对 Merkle 批次与链上记录" copy={`使用逐篇 Merkle Path 重算 Root，再核对 chainId、EAS attestation 与 ${credential.network.name} 交易。`} value={state.batch?.merkleRoot} />
+            <CheckRow done={Boolean(credential.replica?.replicaUrl)} pending={false} title="5. 打开独立副本入口" copy={credential.replica?.cid ? '同一 CID 可通过两个独立 IPFS 网关回读，哈希应与本地副本一致。' : '精选文章先提供站点副本；完成 pinning 后可从两个独立网关回读。'} value={credential.replica?.cid || credential.replica?.replicaUrl} />
           </ol>
         </div>
 
@@ -90,6 +96,10 @@ export default function ProofVerificationClient({ credential }) {
             <a href={state.batch?.anchor?.explorerUrl || credential.network.explorerUrl} target="_blank" rel="noreferrer" className="no-external-arrow mt-4 inline-flex text-sm font-semibold text-[#66502d] underline underline-offset-4 dark:text-[#d2ac70]">打开区块浏览器 ↗</a>
           </div>
           <a href={credential.proofUrl} className="block rounded-full border border-[#9d835b] px-4 py-2.5 text-center text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">查看 proof JSON</a>
+          {credential.replica?.replicaUrl ? <a href={credential.replica.replicaUrl} className="block rounded-full border border-[#9d835b] px-4 py-2.5 text-center text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">下载归档副本</a> : null}
+          {(credential.replica?.cid ? credential.replica.gateways || [] : []).map((gateway) => (
+            <a key={gateway} href={`${gateway}${credential.replica.cid}`} target="_blank" rel="noreferrer" className="block rounded-full border border-[#9d835b] px-4 py-2.5 text-center text-sm font-semibold text-[#654c29] no-underline dark:text-[#dbbd86]">打开 {new URL(gateway).host} 副本 ↗</a>
+          ))}
         </aside>
       </section>
     </>

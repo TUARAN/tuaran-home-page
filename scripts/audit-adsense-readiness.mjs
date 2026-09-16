@@ -176,6 +176,11 @@ forbidSource(
   /e\.reviewReady/,
   'llms.txt 不得按 AdSense 复审状态收窄内容发现',
 )
+forbidSource(
+  'app/(site)/proofs.xml/route.js',
+  /reviewReady|isAdsenseReviewPath|isPublicIndexablePath/,
+  '内容凭证 RSS 不得按 AdSense 复审状态收窄内容发现',
+)
 requireSource(
   'app/(site)/components/GoogleAdsenseScript.jsx',
   /isAdsenseReviewPath\(pathname\)/,

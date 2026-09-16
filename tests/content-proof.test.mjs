@@ -160,6 +160,15 @@ test('reader status distinguishes signed, wrong-root, wrong-chain, and confirmed
   assert.equal(describeProofStatus({ proof, verification, batch: { membershipValid: true, anchor: { chainId: 1 } } }).label, '链网络不匹配')
   assert.equal(describeProofStatus({ proof, verification, batch: { membershipValid: true, anchor: { chainId: 84532 } } }).level, 'batched')
   assert.equal(describeProofStatus({ proof, verification, batch: { membershipValid: true, anchor: { chainId: 84532, transactionHash: '0x1', attestationUid: '0x2' } } }).level, 'confirmed')
+  assert.equal(
+    describeProofStatus({
+      proof,
+      verification,
+      expectedChainId: 8453,
+      batch: { membershipValid: true, anchor: { chainId: 8453, transactionHash: '0x1', attestationUid: '0x2' } },
+    }).level,
+    'confirmed',
+  )
 })
 
 test('reader helpers label old versions and abbreviate public digests', () => {
@@ -196,4 +205,22 @@ test('archived article renderer resolves its credential before rendering it', as
   const pageFunction = source.slice(source.indexOf('export default async function ArticleDetailPage'))
   assert.match(pageFunction, /const proofCredential = getContentProofCredential\(`article:\$\{article\.slug\}`\)/)
   assert.match(pageFunction, /<ContentProofCard credential=\{proofCredential\}/)
+})
+
+test('weeks 7-10 discovery surfaces expose proof and replica links', async () => {
+  const [llms, rss, proofsRss, blog, card, client] = await Promise.all([
+    readFile(new URL('../app/(site)/llms.txt/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/rss-static.xml/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/proofs.xml/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/onchain-blog/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/components/ContentProofCard.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/proofs/[contentKey]/ProofVerificationClient.jsx', import.meta.url), 'utf8'),
+  ])
+  assert.match(llms, /renderContentProofLlmsSection/)
+  assert.match(rss, /listContentProofRssEntries/)
+  assert.match(proofsRss, /listContentProofRssEntries/)
+  assert.match(blog, /第 7—10 周[\s\S]*工程就绪/)
+  assert.match(card, /credential\.replica/)
+  assert.match(client, /expectedChainId: credential\.network\.chainId/)
+  assert.match(client, /credential\.replica/)
 })

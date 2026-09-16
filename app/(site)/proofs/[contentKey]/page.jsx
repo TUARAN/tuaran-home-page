@@ -53,6 +53,7 @@ export default async function ContentProofPage({ params }) {
                   <time className="mt-1 block text-xs text-[#81786c] dark:text-[#939eaa]" dateTime={version.publishedAt}>{new Date(version.publishedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}</time>
                   <p className="mt-2 text-sm leading-6 text-[#625b51] dark:text-[#aeb6c0]">{version.note}</p>
                   <a href={version.proofUrl} className="mt-2 inline-block font-mono text-[11px] text-[#755b34] underline underline-offset-4 dark:text-[#d2ac70]">proof {shortDigest(version.proofUrl, 24, 10)}</a>
+                  {version.replicaUrl ? <a href={version.replicaUrl} className="mt-2 ml-3 inline-block font-mono text-[11px] text-[#755b34] underline underline-offset-4 dark:text-[#d2ac70]">replica {shortDigest(version.replicaUrl, 24, 10)}</a> : null}
                 </article>
               )
             })}

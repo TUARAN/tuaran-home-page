@@ -65,6 +65,12 @@ export default function ContentProofCard({ credential, contentKey = '', publishe
       <dl className="mt-5 grid grid-cols-2 gap-x-5 gap-y-3 border-y border-[#ded5c6] py-4 text-xs dark:border-[#2d3946]">
         <div><dt className="text-[#8a8175] dark:text-[#8995a2]">发布时间</dt><dd className="mt-1 font-medium text-[#403a32] dark:text-[#d9dfe5]">{new Date(current.publishedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}</dd></div>
         <div><dt className="text-[#8a8175] dark:text-[#8995a2]">记录网络</dt><dd className="mt-1 font-medium text-[#403a32] dark:text-[#d9dfe5]">{credential.network.name} · {credential.network.chainId}</dd></div>
+        <div className="col-span-2">
+          <dt className="text-[#8a8175] dark:text-[#8995a2]">公开副本</dt>
+          <dd className="mt-1 font-medium text-[#403a32] dark:text-[#d9dfe5]">
+            {credential.replica?.cid ? `IPFS ${credential.replica.cid}` : credential.replica?.replicaUrl ? '站点副本已发布，等待 IPFS pinning' : '尚未生成副本'}
+          </dd>
+        </div>
       </dl>
       <p className="mt-4 text-xs leading-6 text-[#6b6358] dark:text-[#a8b0ba]">
         验证只读取公开记录并在浏览器本地计算，无需连接钱包。

@@ -4,6 +4,7 @@ import { CZ_MEMOIR_CHAPTERS, czMemoirChapterPath } from '../../../lib/czMemoirs'
 import { listResearch } from '../../../lib/research/archive'
 import { listRichPageSitemapEntries } from '../../../lib/richPageSeo'
 import { listStaticPageSitemapEntries } from '../../../lib/staticPageRegistry.mjs'
+import { contentProofHref, listContentProofCredentials } from '../../../lib/contentProofRegistry.js'
 
 const SITE_URL = 'https://2aran.com'
 
@@ -44,6 +45,9 @@ export default function sitemap() {
     ...articleEntries,
     ...researchEntries,
     ...listRichPageSitemapEntries(),
+    ...listContentProofCredentials().map((credential) => ({
+      url: `${SITE_URL}${contentProofHref(credential.contentKey)}`,
+    })),
   ]
 
   return Array.from(new Map(entries.map((entry) => [entry.url, entry])).values())

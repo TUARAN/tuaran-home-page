@@ -4,6 +4,7 @@ import { researchDateTimeIso } from '../../../lib/research/datetime'
 import { CATEGORY_META, getResearchEntry, listResearch } from '../../../lib/research/archive'
 import { renderMarkdown } from '../../../lib/research/markdown'
 import { listResourceRssEntries, listRichPageRssEntries } from '../../../lib/rssContentEntries'
+import { listContentProofRssEntries } from '../../../lib/contentProofDiscovery.js'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600
@@ -167,8 +168,14 @@ function buildItems() {
     contentHtml: pageNotificationContentHtml(item),
   }))
 
+  const proofItems = listContentProofRssEntries().map((item) => ({
+    ...item,
+    pubDate: toRfc822(item.publishedAt),
+    contentHtml: pageNotificationContentHtml(item),
+  }))
+
   const byLink = new Map()
-  for (const item of [...postItems, ...researchItems, ...feedItems, ...richPageItems, ...resourceItems]) {
+  for (const item of [...postItems, ...researchItems, ...feedItems, ...richPageItems, ...resourceItems, ...proofItems]) {
     if (!byLink.has(item.link)) byLink.set(item.link, item)
   }
 

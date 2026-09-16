@@ -1,5 +1,6 @@
 import { CATEGORY_META, listResearch } from '../../../lib/research/archive'
 import { researchPublicSummary } from '../../../lib/researchPublicSummary'
+import { renderContentProofLlmsSection } from '../../../lib/contentProofDiscovery.js'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600
@@ -42,6 +43,10 @@ export function GET() {
     `- [统一内容目录](${SITE_URL}/articles): 按内容主题和内容类型浏览`,
     `- [内容说明](${SITE_URL}/help#editorial): 作者责任、工具使用与更正机制`,
     `- [RSS](${SITE_URL}/rss.xml): 订阅源`,
+    `- [内容账本](${SITE_URL}/onchain-blog): 可验证内容发布`,
+    `- [内容凭证 RSS](${SITE_URL}/proofs.xml): 内容指纹、proof JSON 与副本入口`,
+    '',
+    renderContentProofLlmsSection(),
     '',
     `## ${CATEGORY_META.topics?.label || '专题'}`,
     ...(topics.length ? topics.map(line) : ['- （暂无）']),

@@ -27,6 +27,7 @@ const blockedExactNames = new Set([
 const allowedExactNames = new Set([
   '.env.example',
   'public/resources/liang-wenfeng-investor-meeting/liang-wenfeng-investor-meeting-transcript.pdf',
+  'public/resources/ethereum-whitepaper/Ethereum_Whitepaper_Buterin_2014.pdf',
 ])
 
 const blockedExtensions = [

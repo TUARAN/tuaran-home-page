@@ -5563,8 +5563,8 @@
   .community-membership.is-compact .community-membership-pay-head { width: 10rem; }
 
   .community-membership.is-compact .community-membership-contact {
-    grid-template-columns: 8.5rem minmax(0, 1fr);
-    align-items: flex-start;
+    grid-template-columns: 8.5rem minmax(10rem, 0.65fr) minmax(18rem, 1.35fr);
+    align-items: center;
   }
 
   .community-membership.is-compact .community-membership-owner-qr {
@@ -5572,6 +5572,15 @@
   }
 
   .community-membership.is-compact .community-membership-contact-guide {
+    grid-column: auto;
+  }
+
+  .community-join-panel > .community-membership.is-compact .community-membership-contact {
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    align-items: flex-start;
+  }
+
+  .community-join-panel > .community-membership.is-compact .community-membership-contact-guide {
     grid-column: 1 / -1;
   }
 
@@ -5757,7 +5766,8 @@
 
     .community-membership-steps li:last-child { border-bottom: 0; }
 
-    .community-membership-contact {
+    .community-membership-contact,
+    .community-membership.is-compact .community-membership-contact {
       grid-template-columns: 8.5rem minmax(0, 1fr);
       align-items: flex-start;
       gap: 1rem;
@@ -5768,7 +5778,8 @@
     .community-membership-contact strong { font-size: 16px; }
     .community-membership-contact p { font-size: 12px; }
 
-    .community-membership-contact-guide {
+    .community-membership-contact-guide,
+    .community-membership.is-compact .community-membership-contact-guide {
       grid-column: 1 / -1;
       padding: 1rem;
     }

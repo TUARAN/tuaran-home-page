@@ -58,7 +58,7 @@ function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false,
     : <Link href={item.href} className={className} {...analyticsProps}>{content}</Link>
 }
 
-export default function HomeFeaturedReadingClient({ catalog: initialCatalog = [] }) {
+export default function HomeFeaturedReadingClient({ catalog: initialCatalog = [], kicker = '01 · Writing' }) {
   const [catalog, setCatalog] = useState(initialCatalog)
   const router = useRouter()
   const searchInputRef = useRef(null)
@@ -239,7 +239,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     <section id="articles" className="home-featured-reading home-section scroll-mt-24">
       <div className="home-section-heading home-featured-heading hidden md:flex">
         <div>
-          <p className="home-kicker">01 · Writing</p>
+          <p className="home-kicker">{kicker}</p>
           <h2 className="home-section-title"><T zh="文章" en="Articles" /></h2>
           <p className="home-section-description"><T zh="完整的研究、实践记录与长期写作" en="Research, field notes, and long-form writing" /></p>
         </div>

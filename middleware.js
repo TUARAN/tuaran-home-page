@@ -27,6 +27,7 @@ function applyDefaultLocaleCookie(request, response) {
 }
 
 const CANONICAL_HOST = '2aran.com'
+const BETA_HOST = 'beta.2aran.com'
 const RANK_HOST = 'rank.2aran.com'
 const BOOKMARKS_HOST = 'bookmarks.2aran.com'
 const OPS_LEGACY_HOST = 'ops.2aran.com'
@@ -153,7 +154,7 @@ export async function middleware(request) {
   if (articleRejection) return articleRejection
 
   const response = NextResponse.next()
-  if (shouldNoindexPath(pathname)) {
+  if (host === BETA_HOST || shouldNoindexPath(pathname)) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow')
   }
   applyDefaultLocaleCookie(request, response)

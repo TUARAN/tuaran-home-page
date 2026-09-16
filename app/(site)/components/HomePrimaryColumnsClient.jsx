@@ -43,7 +43,7 @@ function InspirationCard({ inspiration, isPinned = false }) {
   )
 }
 
-function HomeInspirations({ items, pinnedIds }) {
+export function HomeInspirations({ items, pinnedIds, kicker = '02 · Sparks' }) {
   const pinnedIdSet = new Set(pinnedIds)
 
   return (
@@ -51,7 +51,7 @@ function HomeInspirations({ items, pinnedIds }) {
       <p className="h5-feed-label md:hidden">灵感</p>
       <div className="home-section-heading compact hidden md:flex">
         <div className="w-full">
-          <p className="home-kicker">02 · Sparks</p>
+          <p className="home-kicker">{kicker}</p>
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="home-section-title"><T zh="灵感" en="Inspiration" /></h2>
             <Link href="/feed" className="home-section-more no-underline">

@@ -35,7 +35,8 @@ import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
 import SiteFooter from './components/SiteFooter'
 import HomeDiscoveryPanel from './components/HomeDiscoveryPanel'
-import HomePrimaryColumnsClient from './components/HomePrimaryColumnsClient'
+import HomeFeaturedReadingClient from './components/HomeFeaturedReadingClient'
+import { HomeInspirations } from './components/HomePrimaryColumnsClient'
 import { HOME_MOBILE_CHANNELS } from '../../lib/siteMobileNav'
 import { AVATAR_PATH } from '../../lib/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/siteIntro'
@@ -648,6 +649,99 @@ function FounderCompanyText() {
   )
 }
 
+function DigitalCommonsHero() {
+  return (
+    <section className="commons-hero" aria-labelledby="commons-title">
+      <div className="commons-hero-image" aria-hidden="true" />
+      <div className="commons-hero-shade" aria-hidden="true" />
+      <a href="https://2aran.com" className="commons-stable-link">
+        <span>BETA</span>
+        <T zh="返回稳定版" en="Back to stable" />
+        <i aria-hidden="true">↗</i>
+      </a>
+
+      <div className="commons-hero-copy">
+        <p className="commons-eyebrow">
+          <span>2ARAN DIGITAL COMMONS</span>
+          <span>PUBLIC BUILD · 2026</span>
+        </p>
+        <h1 id="commons-title" className="commons-equation">
+          <span>AI</span>
+          <b>+</b>
+          <span>WEB3</span>
+          <b>==</b>
+          <em><T zh="共产" en="COMMONS" /></em>
+          <i aria-hidden="true">🔨</i>
+        </h1>
+        <p className="commons-lead">
+          <T
+            zh={<>机器扩大生产力，协议记录贡献，<strong>知识与工具由创造者共同建设。</strong></>}
+            en={<>Machines expand production, protocols record contribution, and <strong>creators build shared knowledge and tools.</strong></>}
+          />
+        </p>
+        <div className="commons-actions">
+          <Link href="/articles" className="commons-button commons-button-primary">
+            <T zh="进入数字公社" en="Enter the digital commons" />
+            <span aria-hidden="true">→</span>
+          </Link>
+          <Link href="/onchain-blog" className="commons-button commons-button-secondary">
+            <T zh="了解共建机制" en="How the commons works" />
+            <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </div>
+
+      <div className="commons-principle" aria-label="数字公社运行原则">
+        <span><b>AI</b><T zh="生产" en="Produce" /></span>
+        <i aria-hidden="true">×</i>
+        <span><b>WEB3</b><T zh="协作" en="Coordinate" /></span>
+        <i aria-hidden="true">→</i>
+        <span><b>COMMONS</b><T zh="共享" en="Share" /></span>
+      </div>
+
+    </section>
+  )
+}
+
+function HomeOwnerStory() {
+  return (
+    <section id="personal" className="home-story-slide home-owner-story" aria-labelledby="home-owner-title">
+      <div className="home-owner-portrait">
+        <Image
+          src={AVATAR_PATH}
+          alt="TUARAN"
+          width={720}
+          height={900}
+          priority
+          unoptimized
+          sizes="(min-width: 1024px) 38vw, 90vw"
+        />
+        <span>TUARAN · ANTHONY</span>
+      </div>
+      <div className="home-owner-copy">
+        <p className="home-kicker">04 · The Builder</p>
+        <h2 id="home-owner-title"><T zh="涂阿燃" en="TUARAN" /></h2>
+        <p className="home-owner-role"><T zh="前端工程师、Agent 工程师，也是一个孩子的爸爸。" en="Frontend engineer, agent engineer, and a dad." /></p>
+        <p className="home-owner-statement">
+          <T
+            zh="持续写作，持续创造，把个人经验整理成任何人都能使用的知识与工具。"
+            en="Writing and building in public, turning personal experience into knowledge and tools anyone can use."
+          />
+        </p>
+        <div className="home-owner-stats" aria-label="站长公开创作数据">
+          <span><strong>1,500+</strong><T zh="公开内容" en="Public works" /></span>
+          <span><strong>600w+</strong><T zh="全网阅读" en="Total reads" /></span>
+          <span><strong>20 年</strong><T zh="长期投入" en="Long horizon" /></span>
+        </div>
+        <Link href="/about" className="home-owner-link">
+          <T zh="认识站长" en="Meet the builder" /> <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+      <p className="home-slide-index" aria-hidden="true">04 / 04</p>
+    </section>
+  )
+}
+
 function ClassicHomePage({ featuredPicks }) {
   return (
     <main className="home-classic-root mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-2 pb-9 sm:px-6 md:pt-3 md:pb-12 lg:px-10">
@@ -857,39 +951,21 @@ function ClassicHomePage({ featuredPicks }) {
 
 function PolishedHomePage({ featuredPicks, inspirations }) {
   return (
-    <main className="home-polished-root home-page">
+    <main className="home-polished-root home-page home-story-root">
       <div className="home-backdrop" aria-hidden="true" />
-      <HomeMobileChannels />
-      <div className="home-main-grid">
-        <HomePrimaryColumnsClient
-          catalog={featuredPicks}
-          inspirations={inspirations}
-          pinnedInspirationIds={HOME_PINNED_INSPIRATION_IDS}
-        />
-
-        <aside className="home-side-stack hidden lg:block">
-          <ProfileCard />
-
-          <BuilderAndSignalsPanel />
-
-          <HomeDiscoveryPanel groups={HOME_EXPLORE_GROUPS} />
-
-          <section className="home-contact-panel">
-            <div>
-              <p className="home-kicker">Contact</p>
-              <h2><T zh="保持联系" en="Keep in touch" /></h2>
-              <p>
-                <T
-                  zh={<>项目合作、产品交流，可添加微信 <span className="font-mono">atar24</span>；如果本站内容对你有帮助，也欢迎<Link href="/donate">请我喝杯咖啡</Link>。</>}
-                  en={<>For collaboration and product talk, add <span className="font-mono">atar24</span> on WeChat. If this site has helped you, you can also <Link href="/donate">buy me a coffee</Link>.</>}
-                />
-              </p>
-            </div>
-          </section>
-        </aside>
+      <div className="home-story-slide home-story-banner">
+        <DigitalCommonsHero />
+        <p className="home-slide-index" aria-hidden="true">01 / 04</p>
       </div>
-
-      <SiteFooter className="home-footer hidden md:block" />
+      <section className="home-story-slide home-story-articles" aria-label="文章">
+        <HomeFeaturedReadingClient catalog={featuredPicks} kicker="02 · Writing" />
+        <p className="home-slide-index" aria-hidden="true">02 / 04</p>
+      </section>
+      <section className="home-story-slide home-story-inspirations" aria-label="灵感">
+        <HomeInspirations items={inspirations} pinnedIds={HOME_PINNED_INSPIRATION_IDS} kicker="03 · Sparks" />
+        <p className="home-slide-index" aria-hidden="true">03 / 04</p>
+      </section>
+      <HomeOwnerStory />
     </main>
   )
 }

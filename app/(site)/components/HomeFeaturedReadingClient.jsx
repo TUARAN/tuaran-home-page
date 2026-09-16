@@ -311,15 +311,12 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   return (
     <H5PullToRefresh onRefresh={changeBatch} disabled={changing || Boolean(normalizedQuery) || scope !== 'recommended'}>
     <section id="articles" className="home-featured-reading home-section scroll-mt-24">
-      <div className="home-section-heading home-featured-heading hidden md:flex">
-        <div>
-          <p className="home-kicker">01 · Writing</p>
-          <h2 className="home-section-title"><T zh="文章" en="Articles" /></h2>
-          <p className="home-section-description"><T zh="完整的研究、实践记录与长期写作" en="Research, field notes, and long-form writing" /></p>
-        </div>
-        <div className={`flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:translate-y-2 ${searchOpen ? 'sm:min-w-[22rem]' : ''}`}>
+      <div className="home-primary-heading hidden md:grid">
+        <p className="home-kicker">01 · Writing</p>
+        <h2 className="home-section-title"><T zh="文章" en="Articles" /></h2>
+        <div className={`home-primary-heading-actions ${searchOpen ? 'is-search-open' : ''}`}>
           {searchOpen ? (
-            <div className="relative order-3 w-full sm:order-none sm:flex-1">
+            <div className="relative w-full min-w-0 sm:flex-1">
               <IconSearch size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#858277] dark:text-[#8793a2]" aria-hidden="true" />
               <input
                 ref={searchInputRef}
@@ -354,6 +351,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
             </button>
           ) : null}
         </div>
+        <p className="home-section-description"><T zh="完整的研究、实践记录与长期写作" en="Research, field notes, and long-form writing" /></p>
       </div>
       <div className="home-article-scopes">
         <p className="h5-feed-label md:hidden">文章</p>

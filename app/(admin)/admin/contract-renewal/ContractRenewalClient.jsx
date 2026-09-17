@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  IconArrowBackUp,
   IconChevronLeft,
   IconChevronRight,
   IconClock,
@@ -28,23 +27,17 @@ import {
   CONTRACT_RENEWAL_MIN_MINUTES,
   CONTRACT_RENEWAL_WARN_SECONDS,
   defaultContractRenewalBriefing,
-  linesFromBriefingText,
   minutesToBriefingSeconds,
   serializeContractRenewalBriefing,
-  textFromBriefingLines,
 } from '../../../../lib/contractRenewalBriefing'
-import { AdminButton, AdminPage, CollapsibleSection, StatusPill } from '../../components/ui'
+import { AdminButton, AdminPage, StatusPill } from '../../components/ui'
 
 const TABS = [
   { id: 'rehearse', label: '对稿' },
   { id: 'prompt', label: '提词' },
-  { id: 'copy', label: '文案' },
   { id: 'qa', label: '答问' },
   { id: 'numbers', label: '数字' },
 ]
-
-const fieldClass = 'w-full rounded-lg border border-[#d4d6cc] bg-white px-3 py-2 text-[14px] text-[#15140f] outline-none focus:border-[#15140f] dark:border-[#2d3744] dark:bg-[#0d141c] dark:text-gray-100 dark:focus:border-gray-200'
-const textareaClass = `${fieldClass} min-h-[7.5rem] leading-7`
 
 function formatClock(ms) {
   const safe = Math.max(0, Math.round(ms / 1000))
@@ -131,12 +124,6 @@ export default function ContractRenewalClient() {
   const endingSoon = briefingEndingSoon(totalRemainingMs)
   const timedOut = briefingTimedOut(totalRemainingMs)
 
-  const markDirty = useCallback((next) => {
-    setBriefing(next)
-    setDirty(true)
-    setMessage('')
-  }, [])
-
   const updateBriefing = useCallback((patch) => {
     setBriefing((current) => ({ ...current, ...patch }))
     setDirty(true)
@@ -147,6 +134,19 @@ export default function ContractRenewalClient() {
     setBriefing((current) => ({
       ...current,
       pages: current.pages.map((item) => item.id === pageId ? { ...item, ...patch } : item),
+    }))
+    setDirty(true)
+    setMessage('')
+  }, [])
+
+  const updateLine = useCallback((pageId, lineIndex, value) => {
+    setBriefing((current) => ({
+      ...current,
+      pages: current.pages.map((item) => {
+        if (item.id !== pageId) return item
+        const lines = item.lines.map((line, index) => index === lineIndex ? value : line)
+        return { ...item, lines }
+      }),
     }))
     setDirty(true)
     setMessage('')
@@ -291,38 +291,6 @@ export default function ContractRenewalClient() {
     }
   }, [applyState, briefing])
 
-  const resetCopy = useCallback(async () => {
-    setSaving(true)
-    setError('')
-    setMessage('')
-    try {
-      const response = await fetch('/api/admin/contract-renewal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ reset: true }),
-      })
-      const data = await readJson(response)
-      if (response.ok && data?.briefing) {
-        applyState(data, 'default')
-        clearLocalBriefing()
-        setMessage('已恢复默认口播稿。')
-        return
-      }
-      if (response.status === 503) {
-        clearLocalBriefing()
-        applyState({ briefing: defaultContractRenewalBriefing(), persistent: false }, 'default')
-        setMessage('已恢复默认口播稿。')
-        return
-      }
-      throw new Error(data?.detail || data?.error || `HTTP_${response.status}`)
-    } catch (reason) {
-      setError(reason?.message || 'RESET_FAILED')
-    } finally {
-      setSaving(false)
-    }
-  }, [applyState])
-
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
@@ -452,27 +420,27 @@ export default function ContractRenewalClient() {
 
         {tab === 'rehearse' ? (
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-            <SlidePanel page={page} pageCount={pages.length} />
-            <NotesPanel page={page} line={line} lines={displayLines} cut={Boolean(useCut)} onPickLine={setLine} />
+            <div className="min-w-0 space-y-3">
+              <SlidePanel page={page} pageCount={pages.length} />
+              <Pager pages={pages} index={index} onChange={goTo} />
+            </div>
+            <NotesPanel
+              page={page}
+              line={line}
+              lines={page.lines}
+              cut={Boolean(useCut)}
+              onPickLine={setLine}
+              onChangeLine={(lineIndex, value) => updateLine(page.id, lineIndex, value)}
+              onChangePage={(patch) => updatePage(page.id, patch)}
+            />
           </div>
         ) : null}
 
         {tab === 'prompt' ? <PromptPanel page={page} line={line} lines={displayLines} onPickLine={setLine} /> : null}
-        {tab === 'copy' ? (
-          <CopyPanel
-            briefing={briefing}
-            saving={saving}
-            onBriefing={markDirty}
-            onPage={updatePage}
-            onReset={resetCopy}
-            onSave={save}
-            onExport={() => exportBriefingPdf(briefing)}
-          />
-        ) : null}
-        {tab === 'qa' ? <QuestionPanel questions={briefing.questions} /> : null}
-        {tab === 'numbers' ? <NumberPanel numbers={briefing.numbers} /> : null}
+        {tab === 'qa' ? <QuestionPanel questions={briefing.questions} onChange={(questions) => updateBriefing({ questions })} /> : null}
+        {tab === 'numbers' ? <NumberPanel numbers={briefing.numbers} onChange={(numbers) => updateBriefing({ numbers })} /> : null}
 
-        <Pager pages={pages} index={index} onChange={goTo} />
+        {tab !== 'rehearse' ? <Pager pages={pages} index={index} onChange={goTo} /> : null}
         <p className="text-[11px] leading-5 text-[#8b8d82]">键盘：左右翻页，上下换句，空格计时，F 提词全屏，R 复位。剩 {CONTRACT_RENEWAL_WARN_SECONDS} 秒会提醒收束。</p>
       </div>
 
@@ -520,34 +488,58 @@ function SlidePanel({ page, pageCount }) {
   )
 }
 
-function NotesPanel({ page, line, lines, cut, onPickLine }) {
+function NotesPanel({ page, line, lines, cut, onPickLine, onChangeLine, onChangePage }) {
   return (
-    <section className="rounded-2xl border border-[#d7d9cf] bg-white p-4 dark:border-[#2c3744] dark:bg-[#10161f]">
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusPill tone="info">{page.job}</StatusPill>
-        <span className="text-[12px] text-[#6a6c63]">{page.stance}</span>
+    <section className="flex max-h-[min(70vh,42rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-[#d7d9cf] bg-white p-4 dark:border-[#2c3744] dark:bg-[#10161f] xl:h-0 xl:max-h-none xl:min-h-full">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         {cut ? <StatusPill tone="warning">超时压缩</StatusPill> : null}
+        <input
+          value={page.job}
+          onChange={(event) => onChangePage({ job: event.target.value })}
+          className="min-w-[12rem] flex-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-blue-700 outline-none focus:border-blue-400 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300"
+        />
+        <input
+          value={page.stance}
+          onChange={(event) => onChangePage({ stance: event.target.value })}
+          className="min-w-[8rem] flex-1 rounded-md border-0 bg-transparent py-1 text-[12px] text-[#6a6c63] outline-none focus:bg-[#f4f5ef] dark:text-gray-400 dark:focus:bg-[#161d27]"
+        />
       </div>
-      <ol className="mt-4 space-y-2">
+      <ol className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1">
         {lines.map((item, itemIndex) => (
-          <li key={`${itemIndex}-${item}`}>
-            <button
-              type="button"
-              onClick={() => onPickLine(itemIndex)}
-              className={`block w-full rounded-xl px-3 py-2.5 text-left text-[15px] leading-7 ${
+          <li key={itemIndex}>
+            <textarea
+              value={item}
+              rows={Math.max(2, Math.ceil(String(item || '').length / 26))}
+              onFocus={() => onPickLine(itemIndex)}
+              onChange={(event) => onChangeLine(itemIndex, event.target.value)}
+              className={`block w-full resize-none rounded-xl px-3 py-2.5 text-left text-[15px] leading-7 outline-none ${
                 itemIndex === line
                   ? 'bg-[#15140f] text-white dark:bg-gray-100 dark:text-[#111827]'
-                  : 'text-[#2b2d26] hover:bg-[#f4f5ef] dark:text-gray-200 dark:hover:bg-[#161d27]'
+                  : 'bg-transparent text-[#2b2d26] hover:bg-[#f4f5ef] dark:text-gray-200 dark:hover:bg-[#161d27]'
               }`}
-            >
-              {item}
-            </button>
+            />
           </li>
         ))}
       </ol>
-      <dl className="mt-4 space-y-2 border-t border-dashed border-[#dcded4] pt-3 text-[12px] leading-6 text-[#5f6158] dark:border-[#303b48] dark:text-gray-400">
-        <div><dt className="font-semibold text-[#15140f] dark:text-gray-200">手指</dt><dd className="mb-0">{page.point}</dd></div>
-        <div><dt className="font-semibold text-[#15140f] dark:text-gray-200">别说</dt><dd className="mb-0">{page.avoid}</dd></div>
+      <dl className="mt-4 shrink-0 space-y-2 border-t border-dashed border-[#dcded4] pt-3 text-[12px] leading-6 text-[#5f6158] dark:border-[#303b48] dark:text-gray-400">
+        <label className="block">
+          <span className="font-semibold text-[#15140f] dark:text-gray-200">手指</span>
+          <textarea
+            value={page.point}
+            rows={2}
+            onChange={(event) => onChangePage({ point: event.target.value })}
+            className="mt-1 w-full resize-none rounded-lg border-0 bg-transparent p-0 leading-6 outline-none focus:bg-[#f4f5ef] dark:focus:bg-[#161d27]"
+          />
+        </label>
+        <label className="block">
+          <span className="font-semibold text-[#15140f] dark:text-gray-200">别说</span>
+          <textarea
+            value={page.avoid}
+            rows={2}
+            onChange={(event) => onChangePage({ avoid: event.target.value })}
+            className="mt-1 w-full resize-none rounded-lg border-0 bg-transparent p-0 leading-6 outline-none focus:bg-[#f4f5ef] dark:focus:bg-[#161d27]"
+          />
+        </label>
       </dl>
     </section>
   )
@@ -567,136 +559,50 @@ function PromptPanel({ page, line, lines, onPickLine }) {
   )
 }
 
-function CopyPanel({ briefing, saving, onBriefing, onPage, onReset, onSave, onExport }) {
-  return (
-    <div className="space-y-4">
-      <section className="rounded-2xl border border-[#d7d9cf] bg-white p-4 dark:border-[#2c3744] dark:bg-[#10161f]">
-        <div className="grid gap-3 md:grid-cols-2">
-          <label className="text-[12px] text-[#6a6c63]">标题
-            <input className={`${fieldClass} mt-1`} value={briefing.title} onChange={(event) => onBriefing({ ...briefing, title: event.target.value })} />
-          </label>
-          <label className="text-[12px] text-[#6a6c63]">版本
-            <input className={`${fieldClass} mt-1`} value={briefing.deck} onChange={(event) => onBriefing({ ...briefing, deck: event.target.value })} />
-          </label>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <AdminButton variant="primary" onClick={onSave} disabled={saving}><IconDeviceFloppy size={16} />保存文案</AdminButton>
-          <AdminButton onClick={onExport}><IconPrinter size={16} />导出 PDF</AdminButton>
-          <AdminButton onClick={onReset} disabled={saving}><IconArrowBackUp size={16} />恢复默认</AdminButton>
-        </div>
-      </section>
-
-      {briefing.pages.map((page) => (
-        <CollapsibleSection
-          key={page.id}
-          title={`第 ${page.id} 页 · ${page.title}`}
-          description={`${page.seconds} 秒 · ${page.lines.length} 句`}
-          defaultOpen={page.id === 1}
-        >
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="text-[12px] text-[#6a6c63]">页标题
-              <input className={`${fieldClass} mt-1`} value={page.title} onChange={(event) => onPage(page.id, { title: event.target.value })} />
-            </label>
-            <label className="text-[12px] text-[#6a6c63]">本页秒数
-              <input type="number" min="5" max="180" className={`${fieldClass} mt-1`} value={page.seconds} onChange={(event) => onPage(page.id, { seconds: Number(event.target.value) })} />
-            </label>
-            <label className="text-[12px] text-[#6a6c63]">任务
-              <input className={`${fieldClass} mt-1`} value={page.job} onChange={(event) => onPage(page.id, { job: event.target.value })} />
-            </label>
-            <label className="text-[12px] text-[#6a6c63]">姿态
-              <input className={`${fieldClass} mt-1`} value={page.stance} onChange={(event) => onPage(page.id, { stance: event.target.value })} />
-            </label>
-            <label className="text-[12px] text-[#6a6c63]">手指
-              <input className={`${fieldClass} mt-1`} value={page.point} onChange={(event) => onPage(page.id, { point: event.target.value })} />
-            </label>
-            <label className="text-[12px] text-[#6a6c63]">别说
-              <input className={`${fieldClass} mt-1`} value={page.avoid} onChange={(event) => onPage(page.id, { avoid: event.target.value })} />
-            </label>
-          </div>
-          <label className="mt-3 block text-[12px] text-[#6a6c63]">口播稿，一句一行
-            <textarea className={`${textareaClass} mt-1`} value={textFromBriefingLines(page.lines)} onChange={(event) => onPage(page.id, { lines: linesFromBriefingText(event.target.value) })} />
-          </label>
-          <label className="mt-3 block text-[12px] text-[#6a6c63]">压缩稿，可留空
-            <textarea className={`${textareaClass} mt-1`} value={textFromBriefingLines(page.cutLines || [])} onChange={(event) => onPage(page.id, { cutLines: linesFromBriefingText(event.target.value) })} />
-          </label>
-        </CollapsibleSection>
-      ))}
-
-      <CollapsibleSection title="答问" description={`${briefing.questions.length} 题`}>
-        <div className="space-y-4">
-          {briefing.questions.map((item, itemIndex) => (
-            <div key={item.id} className="grid gap-3">
-              <label className="text-[12px] text-[#6a6c63]">问题
-                <input className={`${fieldClass} mt-1`} value={item.q} onChange={(event) => {
-                  const questions = briefing.questions.map((question, index) => index === itemIndex ? { ...question, q: event.target.value } : question)
-                  onBriefing({ ...briefing, questions })
-                }} />
-              </label>
-              <label className="text-[12px] text-[#6a6c63]">答法
-                <textarea className={`${textareaClass} mt-1 min-h-[5rem]`} value={item.a} onChange={(event) => {
-                  const questions = briefing.questions.map((question, index) => index === itemIndex ? { ...question, a: event.target.value } : question)
-                  onBriefing({ ...briefing, questions })
-                }} />
-              </label>
-            </div>
-          ))}
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="数字" description={`${briefing.numbers.length} 项`}>
-        <div className="grid gap-3 md:grid-cols-2">
-          {briefing.numbers.map((item, itemIndex) => (
-            <div key={`${item.label}-${itemIndex}`} className="rounded-xl border border-[#eceee6] p-3 dark:border-[#303b48]">
-              <input className={`${fieldClass} mb-2`} value={item.label} onChange={(event) => {
-                const numbers = briefing.numbers.map((entry, index) => index === itemIndex ? { ...entry, label: event.target.value } : entry)
-                onBriefing({ ...briefing, numbers })
-              }} />
-              <input className={`${fieldClass} mb-2`} value={item.value} onChange={(event) => {
-                const numbers = briefing.numbers.map((entry, index) => index === itemIndex ? { ...entry, value: event.target.value } : entry)
-                onBriefing({ ...briefing, numbers })
-              }} />
-              <input className={fieldClass} value={item.note} onChange={(event) => {
-                const numbers = briefing.numbers.map((entry, index) => index === itemIndex ? { ...entry, note: event.target.value } : entry)
-                onBriefing({ ...briefing, numbers })
-              }} />
-            </div>
-          ))}
-        </div>
-      </CollapsibleSection>
-    </div>
-  )
-}
-
-function QuestionPanel({ questions }) {
-  const [openId, setOpenId] = useState(questions[0]?.id)
+function QuestionPanel({ questions, onChange }) {
   return (
     <div className="grid gap-3 lg:grid-cols-2">
-      {questions.map((item) => {
-        const open = item.id === openId
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setOpenId(item.id)}
-            className={`rounded-2xl border p-4 text-left ${open ? 'border-[#15140f] bg-white dark:border-gray-200 dark:bg-[#10161f]' : 'border-[#d7d9cf] bg-[#f7f7f2] dark:border-[#2c3744] dark:bg-[#0d141c]'}`}
-          >
-            <p className="text-[15px] font-semibold leading-6 text-[#15140f] dark:text-gray-100">{item.q}</p>
-            {open ? <p className="mb-0 mt-3 text-[14px] leading-7 text-[#3f4139] dark:text-gray-300">{item.a}</p> : <p className="mb-0 mt-2 text-[12px] text-[#8b8d82]">点开看答法</p>}
-          </button>
-        )
-      })}
+      {questions.map((item, itemIndex) => (
+        <article key={item.id} className="rounded-2xl border border-[#d7d9cf] bg-white p-4 dark:border-[#2c3744] dark:bg-[#10161f]">
+          <textarea
+            value={item.q}
+            rows={2}
+            onChange={(event) => onChange(questions.map((question, index) => index === itemIndex ? { ...question, q: event.target.value } : question))}
+            className="w-full resize-none rounded-lg border-0 bg-transparent p-0 text-[15px] font-semibold leading-6 text-[#15140f] outline-none focus:bg-[#f4f5ef] dark:text-gray-100 dark:focus:bg-[#161d27]"
+          />
+          <textarea
+            value={item.a}
+            rows={Math.max(3, Math.ceil(String(item.a || '').length / 28))}
+            onChange={(event) => onChange(questions.map((question, index) => index === itemIndex ? { ...question, a: event.target.value } : question))}
+            className="mt-3 w-full resize-none rounded-lg border-0 bg-transparent p-0 text-[14px] leading-7 text-[#3f4139] outline-none focus:bg-[#f4f5ef] dark:text-gray-300 dark:focus:bg-[#161d27]"
+          />
+        </article>
+      ))}
     </div>
   )
 }
 
-function NumberPanel({ numbers }) {
+function NumberPanel({ numbers, onChange }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      {numbers.map((item) => (
-        <article key={item.label} className="rounded-2xl border border-[#d7d9cf] bg-white p-4 dark:border-[#2c3744] dark:bg-[#10161f]">
-          <p className="text-[11px] text-[#8b8d82]">{item.label}</p>
-          <p className="mt-1 font-serif text-2xl font-semibold tracking-[-0.03em] text-[#15140f] dark:text-gray-100">{item.value}</p>
-          <p className="mb-0 mt-2 text-[12px] leading-5 text-[#6a6c63] dark:text-gray-400">{item.note}</p>
+      {numbers.map((item, itemIndex) => (
+        <article key={itemIndex} className="rounded-2xl border border-[#d7d9cf] bg-white p-4 dark:border-[#2c3744] dark:bg-[#10161f]">
+          <input
+            value={item.label}
+            onChange={(event) => onChange(numbers.map((entry, index) => index === itemIndex ? { ...entry, label: event.target.value } : entry))}
+            className="w-full border-0 bg-transparent p-0 text-[11px] text-[#8b8d82] outline-none"
+          />
+          <input
+            value={item.value}
+            onChange={(event) => onChange(numbers.map((entry, index) => index === itemIndex ? { ...entry, value: event.target.value } : entry))}
+            className="mt-1 w-full border-0 bg-transparent p-0 font-serif text-2xl font-semibold tracking-[-0.03em] text-[#15140f] outline-none dark:text-gray-100"
+          />
+          <textarea
+            value={item.note}
+            rows={2}
+            onChange={(event) => onChange(numbers.map((entry, index) => index === itemIndex ? { ...entry, note: event.target.value } : entry))}
+            className="mt-2 w-full resize-none border-0 bg-transparent p-0 text-[12px] leading-5 text-[#6a6c63] outline-none dark:text-gray-400"
+          />
         </article>
       ))}
     </div>

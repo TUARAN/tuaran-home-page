@@ -3,7 +3,7 @@ import ContractRenewalClient from './ContractRenewalClient'
 
 export const metadata = {
   title: '续签述职',
-  description: '劳动合同续签 8 分钟对稿：PPT 原页、口播稿、计时和答问。',
+  description: '劳动合同续签对稿：PPT 原页、口播稿、倒计时和答问。',
   robots: {
     index: false,
     follow: false,

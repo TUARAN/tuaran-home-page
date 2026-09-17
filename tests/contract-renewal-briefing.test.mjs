@@ -95,11 +95,16 @@ test('续签述职打印稿是 A4 文本，并转义 HTML', () => {
     pages: [{ id: 1, lines: ['<script>x</script>'] }],
   })
   assert.match(html, /续签述职/)
-  assert.match(html, /@page \{ size: A4/)
+  assert.match(html, /@page \{ size: A4; margin: 10mm 12mm/)
+  assert.match(html, /font-size: 10\.5pt/)
   assert.match(html, /倒计时 5 分钟/)
   assert.match(html, /请各位领导批评指正/)
   assert.match(html, /&lt;script&gt;x&lt;\/script&gt;/)
   assert.doesNotMatch(html, /<script>x<\/script>/)
+  assert.doesNotMatch(html, /答问/)
+  assert.doesNotMatch(html, /<h2>数字<\/h2>/)
+  assert.doesNotMatch(html, /这些智能体，你具体做了哪一层/)
+  assert.doesNotMatch(html, /下游结算是按合同给下游的/)
   assert.equal(escapeBriefingHtml('<b>'), '&lt;b&gt;')
 })
 

@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import ArticlesIndexClient from './ArticlesIndexClient'
 import { filtersFromParams, toUrlSearchParams } from '../../../lib/articlesDirectoryFilters'
 import { readRuntimeKnowledgeItems } from '../../../lib/knowledgeRuntime'
@@ -29,10 +31,18 @@ export default async function ArticlesPage({ searchParams }) {
 
   return (
     <main className="h5-articles-page mx-auto w-full max-w-[1120px] px-0 py-2 md:px-4 md:py-10">
-      <header className="mb-5 hidden md:block">
+      <header className="mb-5 hidden items-baseline justify-between gap-4 md:flex">
         <h1 className="font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
           内容导航
         </h1>
+        <nav aria-label="文章发现" className="shrink-0">
+          <Link
+            href="/articles/published"
+            className="whitespace-nowrap text-[13px] text-[#958aa1] no-underline transition-colors hover:text-[#20172f] hover:underline hover:underline-offset-4 dark:text-gray-500 dark:hover:text-gray-200"
+          >
+            最新发布
+          </Link>
+        </nav>
       </header>
 
       <ArticlesIndexClient items={items} initialFilters={initialFilters} />

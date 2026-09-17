@@ -17,7 +17,8 @@ test('quote API returns a random enabled generated quote and disables caching', 
   assert.match(routeSource, /'Cache-Control': 'no-store'/)
 })
 
-test('articles directory header does not show quotes or a latest-publish shortcut', () => {
+test('articles directory header does not fetch quotes', () => {
   assert.match(pageSource, /内容导航/)
-  assert.doesNotMatch(pageSource, /ArticlesHeaderClient|\/api\/quotes|最新发布|\/articles\/published/)
+  assert.match(pageSource, /href="\/articles\/published"/)
+  assert.doesNotMatch(pageSource, /ArticlesHeaderClient|\/api\/quotes/)
 })

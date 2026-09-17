@@ -29,7 +29,6 @@ function TypeBadge({ type }) {
   )
 }
 
-const ALL_FILTER_ACCENT = '#7352a2'
 const INITIAL_RENDER_COUNT = 7
 const RENDER_BATCH_SIZE = 6
 const VIDEO_PRELOAD_ROOT_MARGIN = '320px 0px'
@@ -695,8 +694,8 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
 
   return (
     <div>
-      <div className="mb-6 space-y-3">
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="按主题筛选灵感">
+      <div className="mb-6">
+        <div className="home-section-tabs" role="tablist" aria-label="按主题筛选灵感">
           {FEED_CATEGORY_KEYS.map((key) => {
             const active = categoryFilter === key
             const meta = FEED_CATEGORY_META[key]
@@ -707,34 +706,28 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
                 role="tab"
                 aria-selected={active}
                 onClick={() => selectCategory(key)}
-                className={[
-                  'rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors',
-                  active
-                    ? 'border-[var(--site-ink)] bg-[var(--site-panel-strong)] text-[var(--site-ink)]'
-                    : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]',
-                ].join(' ')}
+                className={`home-tab-link ${active ? 'is-active' : ''}`}
               >
                 {meta.label}
               </button>
             )
           })}
         </div>
-        <div className="flex flex-wrap gap-2" aria-label="按类型筛选灵感">
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1" aria-label="按类型筛选灵感">
           {typeChips.map((chip) => {
             const active = typeFilter === chip.key
-            const accent = FEED_TYPE_META[chip.key]?.accent || ALL_FILTER_ACCENT
             return (
               <button
                 key={chip.key}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setTypeFilter(chip.key)}
                 className={[
-                  'rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors',
+                  'relative min-h-9 border-0 bg-transparent px-0 py-1.5 text-[13px] transition-colors',
                   active
-                    ? ''
-                    : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]',
+                    ? 'font-semibold text-[var(--site-ink)] after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-[var(--site-ink)]'
+                    : 'font-normal text-[var(--site-muted)] hover:text-[var(--site-ink)]',
                 ].join(' ')}
-                style={active ? { borderColor: accent, color: accent, background: `${accent}14` } : undefined}
               >
                 {chip.label}
               </button>

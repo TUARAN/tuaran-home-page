@@ -1,58 +1,43 @@
-'use client'
-
-import { useId } from 'react'
-import { IconLock } from '@tabler/icons-react'
-
-import { useSessionAccount } from './SessionProvider'
+import { ownerAuthorValue } from '../../../lib/contentEditCount'
 
 /**
- * 文章头部的站长专属作者信息（内部记录）：
- * 平时只显示一个紧凑小徽标（作者），悬停 / 聚焦时弹出完整记录
- * （作者、协助工具、模型 ID、版本）；普通访客不渲染。
+ * 站长内部记录：作者、协助工具、模型 ID、版本。
+ * 由右侧「站长」菜单展开后展示，普通访客不渲染。
+ * 有过实质修订时，作者行附带「修改过X次」；从未修改则不写。
  */
-function shortAuthor(author) {
-  if (!author) return ''
-  const match = String(author).match(/[（(]([^）)]+)[）)]/)
-  return match ? match[1] : String(author)
-}
+export function getOwnerMetaParts(ownerMeta) {
+  if (!ownerMeta) return []
 
-export default function OwnerOnlyArticleMeta({
-  author = 'TUARAN',
-  assistance = '',
-  model = '',
-  assistanceLabel = '',
-  version = '',
-}) {
-  const popoverId = useId()
-  const { loading, isOwner } = useSessionAccount()
-  // loading 期间不渲染，避免非站长先看到再消失的闪烁
-  if (loading || !isOwner) return null
-
+  const {
+    author = 'TUARAN',
+    assistance = '',
+    model = '',
+    assistanceLabel = '',
+    version = '',
+    revision,
+    editCount,
+  } = ownerMeta
   const assistanceText = assistance || assistanceLabel
   const parts = []
-  if (author) parts.push(`作者：${author}`)
-  if (assistanceText) parts.push(`协助：${assistanceText}`)
-  if (model) parts.push(`模型：${model}`)
-  if (version) parts.push(`版本：${version}`)
+  if (author) parts.push({ label: '作者', value: ownerAuthorValue(author, revision, editCount) })
+  if (assistanceText) parts.push({ label: '协助', value: assistanceText })
+  if (model) parts.push({ label: '模型', value: model })
+  if (version) parts.push({ label: '版本', value: version })
+  return parts
+}
+
+export default function OwnerOnlyArticleMeta(props) {
+  const parts = Array.isArray(props.parts) ? props.parts : getOwnerMetaParts(props)
   if (!parts.length) return null
 
   return (
-    <>
-      <span aria-hidden="true">·</span>
-      <span
-        className="owner-only-pill"
-        tabIndex={0}
-        title="站长内部记录：作者、协助工具与模型 ID，仅本人可见"
-        aria-describedby={popoverId}
-      >
-        <IconLock size={10} strokeWidth={2.2} aria-hidden="true" />
-        <span>作者 {shortAuthor(author)}</span>
-        <span id={popoverId} role="tooltip" className="owner-only-popover">
-          {parts.map((part) => (
-            <span key={part}>{part}</span>
-          ))}
-        </span>
-      </span>
-    </>
+    <div className="article-owner-meta" aria-label="站长内部记录">
+      {parts.map((part) => (
+        <p key={part.label} className="article-owner-meta-row">
+          <span className="article-owner-meta-label">{part.label}</span>
+          {part.value}
+        </p>
+      ))}
+    </div>
   )
 }

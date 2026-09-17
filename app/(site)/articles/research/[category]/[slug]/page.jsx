@@ -294,19 +294,21 @@ export default async function ResearchDetailPage({ params }) {
           <ContentProofCard credential={proofCredential} contentKey={articleKey} title={entry.title} inline />
           </>
         )}
-        ownerMeta={{
-          author: 'TUARAN',
-          assistance: entry.assistance,
-          assistanceLabel: entry.assistanceLabel,
-          model: entry.model,
-          version: entry.version,
-        }}
         actions={(
           <ArticleHeaderActions
             title={shareTitle}
             text={shareText}
             url={url}
             actionsEnabled={!isEncrypted}
+            ownerMeta={{
+              author: 'TUARAN',
+              assistance: entry.assistance,
+              assistanceLabel: entry.assistanceLabel,
+              model: entry.model,
+              version: entry.version,
+              revision: entry.revision,
+              editCount: entry.editCount,
+            }}
             className="mt-2 sm:mt-0 sm:ml-auto lg:flex-nowrap"
           >
             {!isAShareCompanyList ? <>

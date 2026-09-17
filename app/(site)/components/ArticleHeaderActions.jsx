@@ -2,6 +2,7 @@
 
 import RssButton from './RssButton'
 import SharePageButton from './SharePageButton'
+import OwnerOnlyArticleMeta, { getOwnerMetaParts } from './OwnerOnlyArticleMeta'
 import { useSessionAccount } from './SessionProvider'
 
 export default function ArticleHeaderActions({
@@ -11,8 +12,13 @@ export default function ArticleHeaderActions({
   children,
   actionsEnabled = true,
   className = '',
+  ownerMeta,
 }) {
   const { loading, isOwner } = useSessionAccount()
+  const metaParts = getOwnerMetaParts(ownerMeta)
+  const hasMeta = metaParts.length > 0
+  const hasTools = Boolean(actionsEnabled && children)
+  const showOwnerMenu = !loading && isOwner && (hasMeta || hasTools)
 
   return (
     <div className={`article-header-actions ${className}`}>
@@ -20,7 +26,7 @@ export default function ArticleHeaderActions({
         {actionsEnabled ? <SharePageButton title={title} text={text} url={url} /> : null}
         <RssButton label="RSS" />
       </div>
-      {actionsEnabled && children && !loading && isOwner ? (
+      {showOwnerMenu ? (
         <details className="article-owner-actions">
           <summary className="article-owner-actions-trigger" aria-label="展开站长工具">
             <svg viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -33,7 +39,8 @@ export default function ArticleHeaderActions({
             </svg>
           </summary>
           <div className="article-owner-actions-popover" aria-label="站长工具">
-            <div className="article-owner-actions-tools">{children}</div>
+            {hasMeta ? <OwnerOnlyArticleMeta parts={metaParts} /> : null}
+            {hasTools ? <div className="article-owner-actions-tools">{children}</div> : null}
           </div>
         </details>
       ) : null}

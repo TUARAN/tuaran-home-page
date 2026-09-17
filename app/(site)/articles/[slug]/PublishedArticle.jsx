@@ -85,12 +85,12 @@ export default function PublishedArticle({ article, siteUrl }) {
             <ContentProofCard credential={proofCredential} contentKey={articleKey} title={article.title} inline />
           </>
         )}
-        ownerMeta={{ author: 'TUARAN' }}
         actions={(
           <ArticleHeaderActions
             title={article.title}
             text={article.summary || article.contentText.slice(0, 160)}
             url={url}
+            ownerMeta={{ author: 'TUARAN', revision: article.revision }}
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
           >
             <CopyMarkdownButton markdown={markdown} html={xArticleHtml} />

@@ -311,7 +311,6 @@ export default async function ArticleDetailPage({ params }) {
         dateTime={publishedTime || article.date}
         readingMinutes={readingMinutes(articleMarkdown)}
         pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
-        ownerMeta={{ author: 'TUARAN' }}
         metaExtras={(
           <>
             {article.sourceUrl || isExternalHref(article.href) ? (
@@ -336,6 +335,7 @@ export default async function ArticleDetailPage({ params }) {
             title={article.title}
             text={article.summary}
             url={articleUrl}
+            ownerMeta={{ author: 'TUARAN' }}
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
           >
             <CopyMarkdownButton markdown={articleMarkdown} html={xArticleHtml} />

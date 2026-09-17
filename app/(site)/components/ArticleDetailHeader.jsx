@@ -1,7 +1,6 @@
 import Link from 'next/link'
 
 import { AuthorByline } from './ArticleAuthorIntro'
-import OwnerOnlyArticleMeta from './OwnerOnlyArticleMeta'
 import { CONTENT_GROUP_META, SUBJECT_META, getContentGroup } from '../../../lib/contentTaxonomy'
 
 export default function ArticleDetailHeader({
@@ -12,7 +11,6 @@ export default function ArticleDetailHeader({
   readingMinutes,
   pvNode,
   metaExtras,
-  ownerMeta,
   actions,
   title,
   summary,
@@ -77,7 +75,6 @@ export default function ArticleDetailHeader({
             {pvNode}
           </>
         ) : null}
-        {ownerMeta ? <OwnerOnlyArticleMeta {...ownerMeta} /> : null}
         {actions}
       </div>
 

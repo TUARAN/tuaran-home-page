@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import { researchPublicSummary } from '../lib/researchPublicSummary.js'
+import { writeResearchEditCounts } from './generate-research-edit-counts.mjs'
 
 const root = process.cwd()
 const archiveKeys = new Set(JSON.parse(fs.readFileSync(path.join(root, 'data/content-archive.json'), 'utf8')).researchKeys)
@@ -131,3 +132,4 @@ ${metaEntries.map(([key, meta]) => `  '${key}': ${JSON.stringify(meta)},`).join(
 `
 
 fs.writeFileSync(path.join(root, 'lib', 'research', 'catalog.js'), content)
+writeResearchEditCounts(root)

@@ -17,17 +17,20 @@ function harness() {
     readContentCatalog:async()=>({researchKeys:['topics/existing'],researchMeta:{'topics/existing':entry},researchRedirects:{existing:'/articles/research/topics/existing'}}),
     readContentAsset:async()=>{assetReads++;return entry},
     readResearchRoute:async()=>{if(failure)throw failure;return state ? {found:true,status:state,href:'/articles/research/topics/existing'} : {found:false}},
-    readResearchDocument:async()=>{if(failure)throw failure;return state ? {found:true,status:state,entry:state==='published'?{...entry,content:'D1 body'}:null} : {found:false}},
+    readResearchDocument:async()=>{if(failure)throw failure;return state ? {found:true,status:state,revision:3,entry:state==='published'?{...entry,content:'D1 body'}:null} : {found:false}},
+    RESEARCH_EDIT_COUNTS:{'topics/existing':2},
   }, ['getRuntimeResearchEntry','resolveResearchPath'])
   return {...runtime,setState(value){state=value},setFailure(value){failure=value},get assetReads(){return assetReads}}
 }
 
 test('research details prefer D1, preserve variants, and never restore a tombstone from archive',async()=>{
   const h=harness()
-  assert.equal((await h.getRuntimeResearchEntry('topics','existing')).content,'Body')
+  const archived=await h.getRuntimeResearchEntry('topics','existing')
+  assert.equal(archived.content,'Body')
+  assert.equal(archived.editCount,2)
   h.setState('published')
   const entry=await h.getRuntimeResearchEntry('topics','existing')
-  assert.equal(entry.content,'D1 body');assert.equal(entry.variants.length,2)
+  assert.equal(entry.content,'D1 body');assert.equal(entry.variants.length,2);assert.equal(entry.revision,3);assert.equal(entry.editCount,2)
   for(const status of ['draft','retired']){
     h.setState(status)
     assert.equal(await h.getRuntimeResearchEntry('topics','existing'),null)

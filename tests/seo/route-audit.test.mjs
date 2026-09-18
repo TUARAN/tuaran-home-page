@@ -26,6 +26,7 @@ test('static registry has unique canonicals and keeps noindex routes out of site
   assert.ok(STATIC_PAGE_REGISTRY.every((page) => page.indexable || !page.sitemap))
   const sitemapUrls = new Set(listStaticPageSitemapEntries().map((entry) => entry.url))
   assert.ok(sitemapUrls.has('https://2aran.com/about'))
+  assert.ok(sitemapUrls.has('https://2aran.com/downloads'))
   assert.ok(!sitemapUrls.has('https://2aran.com/account'))
   assert.ok(!sitemapUrls.has('https://2aran.com/rank'))
 })

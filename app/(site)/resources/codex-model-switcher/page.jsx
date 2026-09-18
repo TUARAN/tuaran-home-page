@@ -40,6 +40,11 @@ export default function CodexModelSwitcherPage() {
   return (
     <PageContainer className="py-8 md:py-12">
       <article className="prose-tuaran mx-auto max-w-4xl">
+        <p className="not-prose mb-3 text-xs text-[#777] dark:text-gray-400">
+          <Link href="/tools" className="underline underline-offset-4 opacity-80 hover:opacity-100">工具库</Link>
+          <span aria-hidden="true"> · </span>
+          <Link href="/downloads#desktop" className="underline underline-offset-4 opacity-80 hover:opacity-100">桌面应用</Link>
+        </p>
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#a1ab76]">macOS · Codex · Universal</p>
         <h1>Codex 模型切换器</h1>
         <p className="lead">一个正常窗口加菜单栏入口，在 OpenAI GPT 和已经配置好的 DeepSeek Provider 之间切换。另附完整 Skill，可以直接交给 Codex 完成检查、安装、备份和配置。</p>

@@ -118,7 +118,7 @@ export default function XTweetToPdfResourcePage() {
             工具库
           </Link>
           <span aria-hidden="true">·</span>
-          <Link href="/browser-extensions" className="underline underline-offset-4 opacity-80 hover:opacity-100">
+          <Link href="/downloads#extensions" className="underline underline-offset-4 opacity-80 hover:opacity-100">
             浏览器扩展
           </Link>
           <span aria-hidden="true">·</span>

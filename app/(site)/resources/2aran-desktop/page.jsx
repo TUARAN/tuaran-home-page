@@ -87,7 +87,7 @@ export default function DesktopResourcePage() {
             工具库
           </Link>
           <span aria-hidden="true">·</span>
-          <Link href="/desktop-apps" className="underline underline-offset-4 opacity-80 hover:opacity-100">
+          <Link href="/downloads#desktop" className="underline underline-offset-4 opacity-80 hover:opacity-100">
             桌面应用
           </Link>
           <span aria-hidden="true">·</span>

@@ -176,6 +176,16 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/browser-extensions',
+        destination: '/downloads#extensions',
+        permanent: true,
+      },
+      {
+        source: '/desktop-apps',
+        destination: '/downloads#desktop',
+        permanent: true,
+      },
+      {
         // /bookmarks/people 已收敛为 /articles?tab=people 的人物调研
         source: '/bookmarks/people',
         destination: '/articles?tab=people',

@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 183,
-    "redirects": 13,
+    "routes": 185,
+    "redirects": 16,
     "private": 53,
-    "registeredStatic": 84,
-    "indexable": 97,
-    "canonical": 112,
-    "openGraph": 54,
-    "jsonLd": 35,
+    "registeredStatic": 83,
+    "indexable": 96,
+    "canonical": 111,
+    "openGraph": 53,
+    "jsonLd": 36,
     "errors": 1,
-    "warnings": 122
+    "warnings": 120
   },
   "routes": [
     {
@@ -373,6 +373,22 @@
       }
     },
     {
+      "path": "/admin/contract-renewal",
+      "file": "app/(admin)/admin/contract-renewal/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/admin/crypto-research",
       "file": "app/(admin)/admin/crypto-research/page.jsx",
       "kind": "private",
@@ -679,7 +695,8 @@
     {
       "path": "/admin/research-style",
       "file": "app/(admin)/admin/research-style/page.jsx",
-      "kind": "private",
+      "kind": "redirect",
+      "redirect": "/admin/articles?panel=research-style",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -1280,17 +1297,16 @@
     {
       "path": "/browser-extensions",
       "file": "app/(site)/browser-extensions/page.jsx",
-      "kind": "static",
-      "registered": true,
-      "indexable": true,
-      "sitemap": true,
+      "kind": "redirect",
+      "redirect": "/downloads#extensions",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
       "signals": {
-        "canonical": true,
-        "canonicalValues": [
-          "/browser-extensions"
-        ],
+        "canonical": false,
+        "canonicalValues": [],
         "noindex": "inherited",
-        "openGraph": true,
+        "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
       }
@@ -1456,17 +1472,16 @@
     {
       "path": "/desktop-apps",
       "file": "app/(site)/desktop-apps/page.jsx",
-      "kind": "static",
-      "registered": true,
-      "indexable": true,
-      "sitemap": true,
+      "kind": "redirect",
+      "redirect": "/downloads#desktop",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
       "signals": {
-        "canonical": true,
-        "canonicalValues": [
-          "/desktop-apps"
-        ],
+        "canonical": false,
+        "canonicalValues": [],
         "noindex": "inherited",
-        "openGraph": true,
+        "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
       }
@@ -1504,6 +1519,22 @@
         "noindex": "index",
         "openGraph": false,
         "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/downloads",
+      "file": "app/(site)/downloads/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
         "ogUrls": []
       }
     },
@@ -3265,13 +3296,6 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
-      "id": "jsonld.missing:/browser-extensions",
-      "rule": "jsonld.missing",
-      "route": "/browser-extensions",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
       "id": "jsonld.missing:/china-politics",
       "rule": "jsonld.missing",
       "route": "/china-politics",
@@ -3310,13 +3334,6 @@
       "id": "jsonld.missing:/dad-stack",
       "rule": "jsonld.missing",
       "route": "/dad-stack",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
-      "id": "jsonld.missing:/desktop-apps",
-      "rule": "jsonld.missing",
-      "route": "/desktop-apps",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },

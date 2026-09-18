@@ -89,7 +89,7 @@ export default function XArticleAutopublisherResourcePage() {
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
           <Link href="/tools" className="underline underline-offset-4 opacity-80 hover:opacity-100">工具库</Link>
           <span aria-hidden="true">·</span>
-          <Link href="/browser-extensions" className="underline underline-offset-4 opacity-80 hover:opacity-100">浏览器扩展</Link>
+          <Link href="/downloads#extensions" className="underline underline-offset-4 opacity-80 hover:opacity-100">浏览器扩展</Link>
           <span aria-hidden="true">·</span>
           <span>2026-08-24</span>
         </div>

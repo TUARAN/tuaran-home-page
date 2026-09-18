@@ -41,6 +41,8 @@ test('legacy reader routes resolve through real HTTP redirects', () => {
   assert.deepEqual(getLegacyPathRedirect('/weekly'), { pathname: '/diary' })
   assert.deepEqual(getLegacyPathRedirect('/articles/diary-self-reflection'), { pathname: '/diary' })
   assert.deepEqual(getLegacyPathRedirect('/messages'), { pathname: '/community', hash: '#message' })
+  assert.deepEqual(getLegacyPathRedirect('/browser-extensions'), { pathname: '/downloads', hash: '#extensions' })
+  assert.deepEqual(getLegacyPathRedirect('/desktop-apps'), { pathname: '/downloads', hash: '#desktop' })
   assert.equal(getLegacyPathRedirect('/community'), null)
 })
 

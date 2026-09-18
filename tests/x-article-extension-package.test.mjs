@@ -94,9 +94,9 @@ test('图片经后台下载后调用 X 自身上传处理器，并校验上传�
   assert.match(siteSource, /\/_next\/image/)
 })
 
-test('插件已接入浏览器扩展集合、工具库和独立下载介绍页', async () => {
+test('插件已接入下载中心、工具库和独立下载介绍页', async () => {
   const manifest = JSON.parse(await read('manifest.json'))
-  const workItems = await readFile(new URL('../lib/workItems.js', import.meta.url), 'utf8')
+  const workItems = await readFile(new URL('../lib/downloadItems.js', import.meta.url), 'utf8')
   const toolItems = await readFile(new URL('../lib/toolItems.js', import.meta.url), 'utf8')
   const catalog = await readFile(new URL('../lib/resourceCatalog.js', import.meta.url), 'utf8')
   const registry = await readFile(new URL('../lib/contentRegistry.js', import.meta.url), 'utf8')

@@ -12,7 +12,7 @@ import SiteHeader from './SiteHeader'
 import SiteMobileTabBar from './SiteMobileTabBar'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
 
-const HIDE_CHROME_PATHS = new Set(['/about', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
+const HIDE_CHROME_PATHS = new Set(['/about', '/about/resume', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
 const HIDE_HEADER_PATHS = new Set(['/spacex', '/tools/workbuddy-acp-bridge', '/onchain-blog'])
 
 function useChromeVisibility() {

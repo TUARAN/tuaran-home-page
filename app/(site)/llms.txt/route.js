@@ -34,6 +34,7 @@ export function GET() {
     `- [首页](${SITE_URL}/): 个人主页与网络日志`,
     `- [站点帮助](${SITE_URL}/help): 站点定位、使用方法、全站导航、内容规则、隐私政策与联系方式`,
     `- [关于站长](${SITE_URL}/about): 站长介绍与履历`,
+    `- [求职简历](${SITE_URL}/about/resume): 涂阿燃一页式求职履历，可打印或另存 PDF`,
     `- [下载中心](${SITE_URL}/downloads): 浏览器扩展与桌面客户端`,
     `- [产品集](${SITE_URL}/works): 2aran 的独立产品、站内工具与工程作品总览`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,

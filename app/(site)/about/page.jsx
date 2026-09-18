@@ -281,6 +281,9 @@ export default function AboutPage() {
             <Link href="/" aria-label="返回首页" className="article-action-button px-3.5 py-1.5 text-sm no-underline">
               返回
             </Link>
+            <Link href="/about/resume" className="article-action-button px-3.5 py-1.5 text-sm no-underline">
+              求职简历
+            </Link>
             <SharePageButton
               title="关于我 · 涂阿燃 TUARAN"
               text="涂阿燃（tuaran / 掘金安东尼）：FDE、社区 KOL、矩联科技创始人。"
@@ -350,7 +353,7 @@ export default function AboutPage() {
               ))}
             </ul>
 
-            <div className="mt-5 flex flex-wrap gap-1.5">
+            <div className="mt-5 flex flex-wrap items-center gap-1.5">
               {identityTags.map((tag) => (
                 <Link
                   key={tag.label}
@@ -362,6 +365,14 @@ export default function AboutPage() {
                 </Link>
               ))}
             </div>
+
+            <Link
+              href="/about/resume"
+              className="mt-5 inline-flex items-center gap-2 rounded-md border border-[#2d4d61] bg-[#102032] px-3.5 py-2 font-mono text-[12px] tracking-[0.08em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
+            >
+              求职简历
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
         </section>

@@ -16,6 +16,7 @@ function walk(directory) {
 test('route filenames normalize app groups without losing dynamic segments', () => {
   const root = '/repo'
   assert.equal(routeFromPageFile('/repo/app/(site)/about/page.jsx', root), '/about')
+  assert.equal(routeFromPageFile('/repo/app/(site)/about/resume/page.jsx', root), '/about/resume')
   assert.equal(routeFromPageFile('/repo/app/(site)/articles/[slug]/page.jsx', root), '/articles/[slug]')
   assert.equal(routeFromPageFile('/repo/app/(site)/page.jsx', root), '/')
   assert.equal(routeFromPageFile('/repo/.public-pages-build-excluded/app-admin-group/admin/seo/page.jsx', root), '/admin/seo')
@@ -26,6 +27,7 @@ test('static registry has unique canonicals and keeps noindex routes out of site
   assert.ok(STATIC_PAGE_REGISTRY.every((page) => page.indexable || !page.sitemap))
   const sitemapUrls = new Set(listStaticPageSitemapEntries().map((entry) => entry.url))
   assert.ok(sitemapUrls.has('https://2aran.com/about'))
+  assert.ok(sitemapUrls.has('https://2aran.com/about/resume'))
   assert.ok(sitemapUrls.has('https://2aran.com/downloads'))
   assert.ok(!sitemapUrls.has('https://2aran.com/account'))
   assert.ok(!sitemapUrls.has('https://2aran.com/rank'))

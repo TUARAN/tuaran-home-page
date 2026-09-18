@@ -28,6 +28,7 @@ export async function GET(req) {
 
   let posts = []
   let manualEntries = []
+  let researchDocuments = []
   try {
     const db = getD1()
     const [postResult, manualResult] = await Promise.all([
@@ -43,11 +44,17 @@ export async function GET(req) {
     // D1 不可用时仍展示构建期内容
   }
 
+  try {
+    researchDocuments = await listResearchOverrides()
+  } catch {
+    // D1 不可用时仍展示构建期调研目录
+  }
+
   const merged = sortAdminContentItems(mergeAdminContentItems({
     buildEntries: await listAllContent(),
     posts,
     manualEntries,
-    researchDocuments: await listResearchOverrides(),
+    researchDocuments,
   }))
   const filtered = filterAdminContentItems(merged, params)
   const page = paginateAdminContentItems(filtered, params.offset, params.limit)

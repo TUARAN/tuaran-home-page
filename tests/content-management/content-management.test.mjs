@@ -19,6 +19,10 @@ const consoleSource = await readFile(
   new URL('../../app/(admin)/admin/articles/ArticlesConsole.jsx', import.meta.url),
   'utf8'
 )
+const contentListRouteSource = await readFile(
+  new URL('../../app/api/admin/content-list/route.js', import.meta.url),
+  'utf8'
+)
 const researchStylePageSource = await readFile(
   new URL('../../app/(admin)/admin/research-style/page.jsx', import.meta.url),
   'utf8'
@@ -126,9 +130,19 @@ test('admin exposes one content management entry and one unified list', () => {
   assert.doesNotMatch(centerSource, /title: '内容库与发布'/)
   assert.match(consoleSource, /title="内容管理"/)
   assert.match(consoleSource, /fetch\(`\/api\/admin\/content-list/)
+  assert.match(contentListRouteSource, /countAdminContentItems\(merged\)/)
+  assert.match(contentListRouteSource, /researchDocuments = await listResearchOverrides\(\)/)
+  assert.match(contentListRouteSource, /D1 不可用时仍展示构建期调研目录/)
   assert.match(consoleSource, /AdminPagination/)
   assert.match(consoleSource, /写文章/)
   assert.match(consoleSource, /先看懂：站内有三种文章来源/)
+  assert.match(consoleSource, /ContentSourceGuide counts=\{counts\}/)
+  assert.match(consoleSource, /formatCount\(source\.count\)/)
+  assert.match(consoleSource, /label="资源"/)
+  assert.match(consoleSource, /label="灵感"/)
+  assert.match(consoleSource, /label="互动专题"/)
+  assert.match(consoleSource, /label="已发布"/)
+  assert.match(consoleSource, /label="全部内容"/)
   assert.match(consoleSource, /历史普通文章/)
   assert.match(consoleSource, /后台发布文章/)
   assert.match(consoleSource, /调研文章/)

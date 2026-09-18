@@ -69,7 +69,45 @@ test('sort descends by updatedAt then title, paginate slices and counts aggregat
     { status: 'retired' },
     { status: 'published' },
   ]
-  assert.deepEqual(countAdminContentItems(withStatus), { all: 4, published: 2, draft: 1, retired: 1 })
+  assert.equal(countAdminContentItems(withStatus).all, 4)
+  assert.equal(countAdminContentItems(withStatus).published, 2)
+  assert.equal(countAdminContentItems(withStatus).draft, 1)
+  assert.equal(countAdminContentItems(withStatus).retired, 1)
+})
+
+test('counts split article sources, research categories and related types', () => {
+  const items = [
+    { type: 'article', source: 'sync', status: 'published', contentKey: 'article:old' },
+    { type: 'article', source: 'sync', status: 'published', contentKey: 'article:older' },
+    { type: 'article', entity: 'article-post', source: 'editor', status: 'published', contentKey: 'article:online' },
+    { type: 'article', entity: 'article-post', source: 'editor', status: 'draft', contentKey: 'article:draft' },
+    { type: 'research', source: 'git', status: 'published', contentKey: 'research:companies:acme' },
+    { type: 'research', source: 'sync', status: 'published', contentKey: 'research:topics:gold' },
+    { type: 'research', source: 'git', status: 'draft', contentKey: 'research:people:alice' },
+    { type: 'resource', source: 'sync', status: 'published', contentKey: 'resource:kit' },
+    { type: 'feed', source: 'sync', status: 'published', contentKey: 'feed:note' },
+    { type: 'rich-page', source: 'sync', status: 'published', contentKey: 'rich-page:demo' },
+    { type: 'article', source: 'manual', status: 'published', contentKey: 'article:logged' },
+  ]
+  const counts = countAdminContentItems(items)
+  assert.equal(counts.all, 11)
+  assert.equal(counts.historical, 2)
+  assert.equal(counts.editor, 2)
+  assert.equal(counts.editorPublished, 1)
+  assert.equal(counts.editorDraft, 1)
+  assert.equal(counts.research, 3)
+  assert.equal(counts.researchCompanies, 1)
+  assert.equal(counts.researchTopics, 1)
+  assert.equal(counts.researchPeople, 1)
+  assert.equal(counts.researchPublished, 2)
+  assert.equal(counts.researchDraft, 1)
+  assert.equal(counts.resource, 1)
+  assert.equal(counts.feed, 1)
+  assert.equal(counts.richPage, 1)
+  assert.equal(counts.article, 5)
+  assert.equal(counts.manual, 1)
+  assert.equal(counts.published, 9)
+  assert.equal(counts.draft, 2)
 })
 
 test('params normalization clamps offset/limit and defaults type/status', () => {

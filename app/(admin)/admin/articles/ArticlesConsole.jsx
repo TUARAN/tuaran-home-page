@@ -14,7 +14,7 @@ import {
   IconTypography,
 } from '@tabler/icons-react'
 
-import { AdminButton, AdminPage, AdminPagination, Section } from '../../components/ui'
+import { AdminButton, AdminPage, AdminPagination, Section, StatCard } from '../../components/ui'
 import ResearchStyleClient from '../research-style/ResearchStyleClient'
 import ResearchImportConsole from './research-import/ResearchImportConsole'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
@@ -118,11 +118,18 @@ function PublishChannels({ onOpenImport }) {
   )
 }
 
-function ContentSourceGuide() {
+function formatCount(value) {
+  if (value == null) return '…'
+  return Number(value).toLocaleString('zh-CN')
+}
+
+function ContentSourceGuide({ counts }) {
   const sources = [
     {
       index: '01',
       title: '历史普通文章',
+      count: counts?.historical,
+      countSub: '构建期目录，不进入后台编辑器',
       storage: '仓库内容与构建期目录',
       route: '/articles/[slug]',
       editing: '在仓库中修改，不进入“写文章”编辑器。',
@@ -130,6 +137,10 @@ function ContentSourceGuide() {
     {
       index: '02',
       title: '后台发布文章',
+      count: counts?.editor,
+      countSub: counts
+        ? `已发布 ${formatCount(counts.editorPublished)} · 草稿 ${formatCount(counts.editorDraft)}`
+        : 'D1 article_posts',
       storage: 'D1 article_posts',
       route: '/articles/[slug]',
       editing: '使用右上角“写文章”创建，可在列表中继续编辑。',
@@ -137,6 +148,10 @@ function ContentSourceGuide() {
     {
       index: '03',
       title: '调研文章',
+      count: counts?.research,
+      countSub: counts
+        ? `公司 ${formatCount(counts.researchCompanies)} · 专题 ${formatCount(counts.researchTopics)} · 人物 ${formatCount(counts.researchPeople)}${counts.researchDraft ? ` · 草稿 ${formatCount(counts.researchDraft)}` : ''}`
+        : 'research/*.md + D1 发布覆盖',
       storage: 'research/*.md + D1 发布覆盖',
       route: '/articles/research/[category]/[slug]',
       editing: 'Git 调研在“审批调研”处核对；A 股和加密调研使用各自自动化工作台。',
@@ -146,7 +161,7 @@ function ContentSourceGuide() {
   return (
     <Section
       title="先看懂：站内有三种文章来源"
-      description="它们在前台都是文章，但正本位置、编辑方式和公开路径不同。下方“全部内容”会把它们合并展示。"
+      description={`它们在前台都是文章，但正本位置、编辑方式和公开路径不同。当前共 ${formatCount(counts?.all)} 条，下方“全部内容”会把它们合并展示。`}
     >
       <div className="grid gap-3 lg:grid-cols-3">
         {sources.map((source) => (
@@ -155,6 +170,11 @@ function ContentSourceGuide() {
               <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">{source.title}</h3>
               <span className="font-mono text-[11px] text-[#97998e] dark:text-gray-500">{source.index}</span>
             </div>
+            <p className="mt-3 font-serif text-[1.85rem] font-semibold leading-none tabular-nums text-[#15140f] dark:text-gray-100">
+              {formatCount(source.count)}
+              <span className="ml-1.5 font-sans text-[13px] font-normal text-[#8a8c82] dark:text-gray-500">篇</span>
+            </p>
+            <p className="mt-2 text-[12px] leading-5 text-[#6f7168] dark:text-gray-500">{source.countSub}</p>
             <dl className="mt-3 space-y-2 text-[12px] leading-5">
               <div><dt className="inline text-[#8a8c82] dark:text-gray-500">正本：</dt><dd className="inline text-[#494b44] dark:text-gray-300">{source.storage}</dd></div>
               <div><dt className="inline text-[#8a8c82] dark:text-gray-500">前台：</dt><dd className="inline font-mono text-[#494b44] dark:text-gray-300">{source.route}</dd></div>
@@ -162,6 +182,28 @@ function ContentSourceGuide() {
             <p className="mt-3 border-t border-[#e7e9e1] pt-3 text-[13px] leading-6 text-[#55574f] dark:border-[#26313e] dark:text-gray-400">{source.editing}</p>
           </article>
         ))}
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard label="资源" value={formatCount(counts?.resource)} sub="主题页、资料与工具" icon="bookmark" />
+        <StatCard label="灵感" value={formatCount(counts?.feed)} sub="灵感流条目" icon="rss" />
+        <StatCard label="互动专题" value={formatCount(counts?.richPage)} sub="工程作品与专题页" icon="briefing" />
+        <StatCard
+          label="已发布"
+          value={formatCount(counts?.published)}
+          sub={`草稿 ${formatCount(counts?.draft)} · 已下线 ${formatCount(counts?.retired)}`}
+          icon="articles"
+          tone="success"
+        />
+        <StatCard
+          label="全部内容"
+          value={formatCount(counts?.all)}
+          sub={[
+            counts?.manual ? `手工登记 ${formatCount(counts.manual)}` : '',
+            counts?.other ? `其他 ${formatCount(counts.other)}` : '',
+            '同一篇不重复计算',
+          ].filter(Boolean).join(' · ')}
+          icon="analytics"
+        />
       </div>
     </Section>
   )
@@ -270,7 +312,7 @@ function ArticlesConsoleBody() {
       )}
     >
       <div className="mb-5">
-        <ContentSourceGuide />
+        <ContentSourceGuide counts={counts} />
       </div>
 
       <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="内容管理工作区">

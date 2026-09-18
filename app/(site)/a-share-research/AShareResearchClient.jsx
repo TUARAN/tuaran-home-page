@@ -11,8 +11,8 @@ function yearMonth(date) {
 
 const strategySteps = [
   ['选题', '覆盖沪市、深市与北交所，经行情状态核验后，从尚未调研的公司中随机抽取；每天最多新增一家。'],
-  ['查证', '联网核对主营业务、最新业绩、控制权与近期公告；关键事实回到正式披露，无法确认的内容明确留空。'],
-  ['成稿', '按十段式公司观察模板整理业务、财务、治理、估值和风险，事实与外部研判分开书写。'],
+  ['查证', '联网核对主营业务、最新业绩、控制权与近期公告；关键事实回到正式披露，不影响判断的缺口不必逐条展览。'],
+  ['成稿', '按九段式公司观察模板整理业务、财务、治理、估值和风险，事实与外部研判分开书写。'],
   ['复核', '自动草稿保留 72 小时人工复核窗口；未被退回的到期稿件按顺序发布，每次最多一篇。'],
 ]
 
@@ -71,9 +71,9 @@ export default function AShareResearchClient({ items, researchMethod }) {
               <span className="rounded-full bg-[#a33b32] px-2.5 py-1 text-xs font-semibold text-white">模板 v{researchMethod.templateVersion}</span>
               <span className={`text-xs ${muted}`}>a-share-company-research</span>
             </div>
-            <h3 className="mt-4 text-lg font-semibold">十段式公司观察</h3>
+            <h3 className="mt-4 text-lg font-semibold">九段式公司观察</h3>
             <p className={`mt-2 text-sm leading-6 ${muted}`}>
-              从结论、公司身份和业务结构开始，继续核对财务、治理、估值、催化与风险，最后单列外部研判、未能验证和信息来源。
+              从结论、公司身份和业务结构开始，继续核对财务、治理、估值、催化与风险。关键处写透，其余收短；最后写外部研判，再以来源收口。只把会改变判断的缺口放进持续验证。
             </p>
             <p className="mt-3 text-xs leading-5">
               <span className="font-semibold text-[#8d332c] dark:text-[#e58a80]">当前写作风格 · {researchMethod.styleLabel}</span>

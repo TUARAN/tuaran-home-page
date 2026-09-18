@@ -12,7 +12,7 @@ const DUE = NOW - CRYPTO_AUTO_PUBLISH_DELAY_MS
 const sections = [
   '一、先给结论', '二、起源、背景与发展时间线', '三、技术机制与网络结构', '四、用途、生态与价值来源',
   '五、代币经济与供给结构', '六、市场位置与历史表现', '七、治理、安全与关键依赖', '八、监管与合规环境',
-  '九、催化因素、主要风险与外部研判', '十、信息来源与未能验证',
+  '九、催化因素、主要风险与外部研判', '十、信息来源与持续验证',
 ]
 const CONTENT = `---\ntitle: Bitcoin\ncategory: topics\ncrypto_type: asset\ncoin_id: bitcoin\nsymbol: BTC\nmarket_cap_rank: 1\nreview_ready: false\nad_eligible: false\n---\n\n${sections.map((section) => `## ${section}\n${'测试内容。'.repeat(12)}`).join('\n\n')}`
 

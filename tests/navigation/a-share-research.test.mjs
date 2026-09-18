@@ -10,7 +10,7 @@ test('A股调研模板与策略默认折叠', async () => {
   assert.match(client, /<details className="group mt-7/)
   assert.doesNotMatch(client, /<details[^>]*\sopen/)
   assert.match(client, /查看模板/)
-  assert.match(client, /十段式公司观察/)
+  assert.match(client, /九段式公司观察/)
 })
 
 test('A股调研 is a content submenu and a sitemap route', async () => {
@@ -32,7 +32,7 @@ test('A股调研 page aggregates existing company research', async () => {
   assert.match(page, /A_SHARE_RESEARCH_TEMPLATE_VERSION/)
   assert.match(page, /template\.status === 'active'/)
   assert.match(client, /当前调研模板与策略/)
-  assert.match(client, /十段式公司观察/)
+  assert.match(client, /九段式公司观察/)
   assert.match(client, /自动草稿保留 72 小时人工复核窗口/)
 })
 

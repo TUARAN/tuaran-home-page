@@ -106,6 +106,7 @@ test('prompt carries market rank, template and investment-safety constraints', (
   const text = prompt.map((item) => item.content).join('\n')
   assert.match(text, /市值排名：#1/)
   assert.match(text, /research_template: crypto-asset-research/)
+  assert.match(text, /## 十、信息来源与持续验证/)
   assert.match(text, /不得给出买卖/)
 })
 
@@ -113,7 +114,7 @@ test('validates complete crypto draft and rejects mismatched coin id', () => {
   const sections = [
     '一、先给结论', '二、起源、背景与发展时间线', '三、技术机制与网络结构', '四、用途、生态与价值来源',
     '五、代币经济与供给结构', '六、市场位置与历史表现', '七、治理、安全与关键依赖', '八、监管与合规环境',
-    '九、催化因素、主要风险与外部研判', '十、信息来源与未能验证',
+    '九、催化因素、主要风险与外部研判', '十、信息来源与持续验证',
   ]
   const content = `---\ntitle: Bitcoin\ncategory: topics\ncrypto_type: asset\ncoin_id: "bitcoin"\nsymbol: "BTC"\nmarket_cap_rank: 1\nreview_ready: false\nad_eligible: false\n---\n\n${sections.map((section) => `## ${section}\n${'有效内容。'.repeat(12)}`).join('\n\n')}`
   assert.equal(validateCryptoDraft(content, { id: 'bitcoin', name: 'Bitcoin' }), true)
@@ -124,9 +125,19 @@ test('accepts quoted topics category in valid YAML frontmatter', () => {
   const sections = [
     '一、先给结论', '二、起源、背景与发展时间线', '三、技术机制与网络结构', '四、用途、生态与价值来源',
     '五、代币经济与供给结构', '六、市场位置与历史表现', '七、治理、安全与关键依赖', '八、监管与合规环境',
-    '九、催化因素、主要风险与外部研判', '十、信息来源与未能验证',
+    '九、催化因素、主要风险与外部研判', '十、信息来源与持续验证',
   ]
   const content = `---\ntitle: Bitcoin\ncategory: "topics"\ncrypto_type: asset\ncoin_id: "bitcoin"\nsymbol: "BTC"\nmarket_cap_rank: 1\nreview_ready: false\nad_eligible: false\n---\n\n${sections.map((section) => `## ${section}\n${'有效内容。'.repeat(12)}`).join('\n\n')}`
+  assert.equal(validateCryptoDraft(content, { id: 'bitcoin', name: 'Bitcoin' }), true)
+})
+
+test('accepts legacy crypto source heading for in-flight drafts', () => {
+  const sections = [
+    '一、先给结论', '二、起源、背景与发展时间线', '三、技术机制与网络结构', '四、用途、生态与价值来源',
+    '五、代币经济与供给结构', '六、市场位置与历史表现', '七、治理、安全与关键依赖', '八、监管与合规环境',
+    '九、催化因素、主要风险与外部研判', '十、信息来源与未能验证',
+  ]
+  const content = `---\ntitle: Bitcoin\ncategory: topics\ncrypto_type: asset\ncoin_id: "bitcoin"\nsymbol: "BTC"\nmarket_cap_rank: 1\nreview_ready: false\nad_eligible: false\n---\n\n${sections.map((section) => `## ${section}\n${'有效内容。'.repeat(12)}`).join('\n\n')}`
   assert.equal(validateCryptoDraft(content, { id: 'bitcoin', name: 'Bitcoin' }), true)
 })
 

@@ -54,7 +54,7 @@ export default function CryptoResearchClient({ items, researchMethod }) {
           </div>
           <h3 className="mt-4 text-lg font-semibold">十段式资产观察</h3>
           <p className={`mt-2 text-sm leading-6 ${muted}`}>
-            从结论与发展时间线开始，继续核对技术、用途、代币经济、市场、治理、安全和监管，最后集中整理风险、外部研判、来源与未能验证事项。
+            从结论与发展时间线开始，继续核对技术、用途、代币经济、市场、治理、安全和监管。已经能确认的机制写清楚，缺项不抢戏；最后集中整理风险与外部研判，再以来源收口。只把会改变判断的缺口放进持续验证。
           </p>
           <p className="mt-3 text-xs leading-5">
             <span className="font-semibold text-[#16745b] dark:text-[#65c8a9]">当前写作风格 · {researchMethod.styleLabel}</span>

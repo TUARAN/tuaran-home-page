@@ -138,7 +138,7 @@ test('validateDraft 校验草稿安全边界', () => {
     '内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容',
     '内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容',
     '内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容',
-    '## 十、信息来源与说明',
+    '## 九、信息来源与持续验证',
     '来源：巨潮资讯、腾讯行情',
   ].join('\n')
   assert.doesNotThrow(() => validateDraft(good))
@@ -150,11 +150,11 @@ test('validateDraft 校验草稿安全边界', () => {
   )
   assert.throws(() => validateDraft(good.replace('review_ready: false', 'review_ready: true')), /review_ready/)
   assert.throws(() => validateDraft(good.replace('ad_eligible: false', 'ad_eligible: true')), /ad_eligible/)
-  assert.throws(() => validateDraft(good.replace('## 十、信息来源与说明', '## 十、随便写写')), /来源/)
+  assert.throws(() => validateDraft(good.replace('## 九、信息来源与持续验证', '## 十、随便写写')), /来源/)
   assert.throws(() => validateDraft(good.replace('## 一、先给结论', '## 一、先给结论 {{COMPANY_NAME}}')), /占位符/)
 })
 
-test('buildDraftPrompt 包含公司信息、十个小节与风格约束', () => {
+test('buildDraftPrompt 包含公司信息、九个小节与风格约束', () => {
   const messages = buildDraftPrompt({
     company: { name: '浦发银行', code: '600000', exchangeName: '上海证券交易所', boardName: '沪市主板' },
     quote: { price: 10.5, totalMarketCap: 3081.23 },
@@ -173,7 +173,9 @@ test('buildDraftPrompt 包含公司信息、十个小节与风格约束', () => 
   assert.match(system.content, /最多执行 2 次联网检索/)
   assert.match(user.content, /浦发银行/)
   assert.match(user.content, /600000/)
-  assert.match(user.content, /## 九、未能验证/)
+  assert.match(user.content, /## 九、信息来源与持续验证/)
+  assert.doesNotMatch(user.content, /## 九、未能验证/)
+  assert.doesNotMatch(user.content, /## 十、信息来源与说明/)
   assert.match(user.content, /review_ready: false/)
   assert.match(user.content, /两条 `---` 都不可省略/)
   assert.match(user.content, /不是 X，而是 Y/)
@@ -181,5 +183,7 @@ test('buildDraftPrompt 包含公司信息、十个小节与风格约束', () => 
   assert.match(user.content, /URL 只能来自本次检索结果/)
   assert.match(user.content, /逐层穿透至最终控制人/)
   assert.match(user.content, /省级、市级或区县级/)
-  assert.match(user.content, /research_template_version: 3/)
+  assert.match(user.content, /research_template_version: 5/)
+  assert.match(system.content, /会改变判断/)
+  assert.doesNotMatch(system.content, /一律写入文末/)
 })

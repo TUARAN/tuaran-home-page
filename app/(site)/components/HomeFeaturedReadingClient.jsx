@@ -279,7 +279,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
 
   const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled === true).length
   const canRotateRecommended = scope === 'recommended' && !normalizedQuery && eligibleCount > items.length
-  const canLoadMoreScope = (scope === 'latest' || scope === 'resources') && !normalizedQuery && scopeVisibleCount < scopeCatalog.length
+  const canLoadMoreScope = scope !== 'recommended' && !normalizedQuery && scopeVisibleCount < scopeCatalog.length
 
   useEffect(() => {
     const handlePageKeyDown = (event) => {

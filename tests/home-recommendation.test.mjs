@@ -6,6 +6,8 @@ import {
   chooseHomeRecommendationBatch,
   getHomeRecommendationNavigationType,
   getHomeRecommendationRotateDelayMs,
+  HOME_ARTICLE_SCOPE_KEYS,
+  HOME_ARTICLE_SCOPE_META,
   HOME_ARTICLE_SCOPE_PAGE_SIZE,
   HOME_RECOMMENDATION_BATCH_OFFSET_STORAGE_KEY,
   homeArticleScopeSurface,
@@ -21,6 +23,7 @@ import {
   sliceHomeArticleScopeItems,
   writeHomeRecommendationBatchOffset,
 } from '../lib/homeRecommendationEngine.js'
+import { SUBJECT_META } from '../lib/contentTaxonomy.js'
 import { buildHomeRecommendationCatalog } from '../lib/homeRecommendationCatalogCore.js'
 import { researchPublicSummary } from '../lib/researchPublicSummary.js'
 import { RESEARCH_ENTRY_META } from '../lib/research/catalog.js'
@@ -118,11 +121,13 @@ test('home recommendations and article lists use the same public summary', () =>
     tldr: '10 份 PDF、50 节视频，免费领取燃币即可解锁学习。',
     date: '2026-08-28',
     time: '11:18',
+    subjects: ['workbuddy'],
   }
   assert.equal(researchPublicSummary(entry), entry.tldr)
   const catalog = buildHomeRecommendationCatalog([], [entry])
   assert.equal(catalog[0].id, 'research:topics:workbuddy-tutorial-resources')
   assert.equal(catalog[0].summary, entry.tldr)
+  assert.deepEqual(catalog[0].subjects, ['workbuddy'])
 })
 
 test('runtime catalog replaces stale fields instead of keeping a second summary for the same article', () => {
@@ -256,6 +261,42 @@ test('home article latest scope lists enabled items by recency, resources stay i
   assert.equal(homeArticleScopeSurface('latest'), 'home_latest')
   assert.equal(homeArticleScopeSurface('resources'), 'home_resources')
   assert.equal(homeArticleScopeSurface('recommended'), 'home_recommendation')
+})
+
+test('home article scopes include WorkBuddy and Web3 tabs filtered by subject', () => {
+  const mixed = [
+    { id: 'wb-old', section: 'research', sortKey: '2026-08-01T00:00:00', subjects: ['workbuddy'] },
+    { id: 'wb-new', section: 'research', sortKey: '2026-09-18T00:00:00', subjects: ['workbuddy'] },
+    { id: 'web3-mid', section: 'research', sortKey: '2026-09-10T12:00:00', subjects: ['web3'] },
+    { id: 'web3-resource', section: 'resources', sortKey: '2026-09-16T00:00:00', subjects: ['web3'] },
+    { id: 'other', section: 'column', sortKey: '2026-09-17T00:00:00', subjects: ['ai_dev'] },
+  ]
+  const workbuddy = listHomeArticleScopeCatalog(mixed, {}, 'workbuddy')
+  const web3 = listHomeArticleScopeCatalog(mixed, {}, 'web3')
+
+  assert.deepEqual(HOME_ARTICLE_SCOPE_KEYS, ['recommended', 'latest', 'resources', 'workbuddy', 'web3'])
+  assert.equal(HOME_ARTICLE_SCOPE_META.workbuddy.label, SUBJECT_META.workbuddy.label)
+  assert.equal(HOME_ARTICLE_SCOPE_META.web3.label, SUBJECT_META.web3.label)
+  assert.deepEqual(workbuddy.map((item) => item.id), ['wb-new', 'wb-old'])
+  assert.deepEqual(web3.map((item) => item.id), ['web3-resource', 'web3-mid'])
+  assert.equal(isHomeArticleScope('workbuddy'), true)
+  assert.equal(isHomeArticleScope('web3'), true)
+  assert.equal(homeArticleScopeSurface('workbuddy'), 'home_workbuddy')
+  assert.equal(homeArticleScopeSurface('web3'), 'home_web3')
+})
+
+test('home recommendation catalog exposes WorkBuddy and Web3 articles for homepage tabs', () => {
+  const catalog = buildHomeRecommendationCatalog([], Object.values(RESEARCH_ENTRY_META))
+  const workbuddy = listHomeArticleScopeCatalog(catalog, {}, 'workbuddy')
+  const web3 = listHomeArticleScopeCatalog(catalog, {}, 'web3')
+
+  assert.ok(workbuddy.length >= 8)
+  assert.ok(web3.length >= 10)
+  assert.ok(workbuddy.every((item) => item.subjects.includes('workbuddy')))
+  assert.ok(web3.every((item) => item.subjects.includes('web3')))
+  assert.ok(workbuddy.some((item) => item.id === 'research:topics:workbuddy-beginner-guide'))
+  assert.ok(web3.some((item) => item.id === 'research:topics:crypto-bitcoin'))
+  assert.ok(!workbuddy.some((item) => item.id === 'research:topics:china-mobile-mobilework'))
 })
 
 test('homepage reload uses the same batch change path as 换一批', async () => {

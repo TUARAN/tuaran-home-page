@@ -9,7 +9,7 @@ market_cap_rank: 2
 date: "2026-08-27"
 time: "16:06"
 tags: [加密资产, "Ethereum", "ETH"]
-subjects: [business_market]
+subjects: [web3]
 summary: "Ethereum 是 2015 年上线的通用智能合约公链，ETH 为其原生代币，2022 年完成向权益证明的合并，现为市值排名第二的加密资产。"
 tldr: "Ethereum 以可编程智能合约开创了公链应用生态，ETH 兼具 gas 燃料、质押与价值存储功能，2024 年现货 ETF 获批后进入传统金融视野。"
 content_type: analysis

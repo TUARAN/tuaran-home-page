@@ -58,6 +58,7 @@ test('directory exposes only topic and type filters, in that order', () => {
   assert.doesNotMatch(directorySource, /label="系列"|label="细分类型"|label="分析对象"|label="获取方式"/)
   assert.match(directorySource, /const SUBJECT_DISPLAY_GROUPS = \[/)
   assert.match(directorySource, /技术与开发/)
+  assert.match(directorySource, /'web_cloud', 'web3'/)
   assert.match(directorySource, /产品与商业/)
   assert.match(directorySource, /创作与工作/)
   assert.match(directorySource, /人文与生活/)

@@ -3,7 +3,7 @@ title: 2aran.com 能不能上链：一个内容站的可验证发布方案
 category: topics
 topic_type: product
 content_type: analysis
-subjects: [ai_dev]
+subjects: [web3]
 date: 2026-09-08
 time: 14:15
 tags: [2aran.com, 内容上链, 区块链, 内容存证, IPFS, Arweave, EAS, 内容溯源]

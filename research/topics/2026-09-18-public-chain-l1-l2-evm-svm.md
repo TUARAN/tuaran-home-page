@@ -3,7 +3,7 @@ title: 一枚币到底运行在哪里？一条链为什么这样设计？交易�
 category: topics
 topic_type: tech
 content_type: analysis
-subjects: [web_cloud]
+subjects: [web3]
 entity_type: technology
 date: 2026-09-18
 time: "11:15"

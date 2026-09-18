@@ -3,7 +3,7 @@ title: 怎么判断一枚币在哪条链上
 category: topics
 topic_type: tech
 content_type: guide
-subjects: [web_cloud]
+subjects: [web3]
 entity_type: technology
 auto_images: false
 date: 2026-09-18

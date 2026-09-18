@@ -2,7 +2,7 @@
 title: CoinMarketCap 观察：零售默认行情板如何把成交量做成注意力
 category: topics
 topic_type: product
-subjects: [business_market]
+subjects: [web3]
 entity_type: product
 content_type: analysis
 date: 2026-09-18

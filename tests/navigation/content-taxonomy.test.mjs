@@ -44,6 +44,7 @@ test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.ok(SUBJECT_KEYS.includes('business_market'))
   assert.ok(SUBJECT_KEYS.includes('company_research'))
   assert.ok(SUBJECT_KEYS.includes('people_profiles'))
+  assert.ok(SUBJECT_KEYS.includes('web3'))
   assert.ok(!SUBJECT_KEYS.includes('product_business'))
   assert.ok(ENTITY_TYPE_KEYS.includes('company'))
   assert.ok(COMPANY_INDUSTRY_KEYS.includes('software_development'))
@@ -63,6 +64,18 @@ test('people research has a dedicated reader-facing subject', () => {
     validateTaxonomyRecord(taxonomyForResearch({ category: 'people' })).length,
     0,
   )
+})
+
+test('加密调研系列使用 Web3 主题，不占用商业市场主题', () => {
+  const taxonomy = taxonomyForResearch({
+    category: 'topics',
+    slug: 'crypto-bitcoin',
+    title: '阿燃调研：每天一个加密资产 —— Bitcoin（BTC）观察',
+    contentType: 'analysis',
+    topicType: 'market',
+  })
+  assert.deepEqual(taxonomy.subjects, ['web3'])
+  assert.equal(taxonomy.series, 'crypto_research')
 })
 
 test('A股系列使用商业市场主题，不占用公司调研主题', () => {
@@ -137,6 +150,10 @@ test('product and business subjects have separate inference rules', () => {
     taxonomyForInteractive({ title: '公司市场增长地图' }).subjects,
     ['business_market'],
   )
+  assert.deepEqual(
+    taxonomyForInteractive({ title: '公开巨鲸钱包 Bitcoin Ethereum 链上数据' }).subjects,
+    ['web3'],
+  )
 })
 
 test('explicit subjects override legacy inference and normalize to one theme', () => {
@@ -179,6 +196,7 @@ test('directory labels reflect the selected subject and suppress redundant entit
   assert.equal(isEntityTypeRedundant('person', ['people_profiles']), true)
   assert.equal(isEntityTypeRedundant('technology', ['ai_dev']), true)
   assert.equal(isEntityTypeRedundant('technology', ['web_cloud']), true)
+  assert.equal(isEntityTypeRedundant('technology', ['web3']), true)
   assert.equal(isEntityTypeRedundant('industry', ['business_market']), false)
 })
 

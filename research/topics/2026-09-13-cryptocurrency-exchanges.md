@@ -7,7 +7,7 @@ tags: [加密货币, 交易所, Binance, Coinbase, OKX, 监管]
 summary: 全球成交量仍由币安领先，美国现货以 Coinbase 为主，中国大陆没有合法中心化交易入口；日活几乎无人披露，公开能核验的是成交量、储备金和少数上市公司的月度交易用户。
 tldr: 看交易所先分三层：离岸综合盘（币安、OKX、Bybit）、持牌本地盘（Coinbase、Upbit、bitFlyer、HashKey）、以及几乎没有公开日活的注册用户口径。中国大陆按 2026 年 42 号文仍禁止相关业务；美国走 Coinbase / Kraken / Robinhood；韩国、日本、香港各自有本地持牌通道。
 topic_type: market
-subjects: [business_market]
+subjects: [web3]
 content_type: analysis
 assistance: cursor
 model: grok-4.6

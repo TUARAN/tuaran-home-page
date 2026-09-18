@@ -10,7 +10,7 @@ market_cap_rank: 4
 date: "2026-08-28"
 time: "04:48"
 tags: [加密资产, "BNB", "BNB"]
-subjects: [business_market]
+subjects: [web3]
 summary: "BNB 是币安生态与 BNB Chain 的原生代币，兼具交易所权益与公链燃料双重属性，当前市值排名第 4。"
 tldr: "BNB 从 2017 年币安 ICO 代币演变为 BNB Chain 多链生态的核心资产，通过持续销毁机制将总供应从 2 亿枚向 1 亿枚收敛。"
 content_type: analysis

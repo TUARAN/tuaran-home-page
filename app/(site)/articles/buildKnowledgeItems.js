@@ -73,7 +73,7 @@ export function buildKnowledgeItems({ includeOwner = false } = {}) {
       kind: 'topics',
       tagLabel: '固定系列',
       contentKind: 'analysis',
-      subjects: ['business_market'],
+      subjects: ['web3'],
       entityType: '',
       delivery: 'read',
       series: 'crypto_research',

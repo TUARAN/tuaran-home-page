@@ -9,7 +9,7 @@ market_cap_rank: 7
 date: "2026-09-04"
 time: "01:33"
 tags: [加密资产, "Solana", "SOL"]
-subjects: [business_market]
+subjects: [web3]
 summary: "Solana 是以高性能著称的 Layer-1 区块链，SOL 为其原生代币，2026 年 8 月通过 SGP-0002 将年度通缩率翻倍至 30%，并获 SEC/CFTC 归类为数字商品。"
 tldr: "Solana 定位高吞吐 Layer-1，靠 PoH+PoS 实现亚秒级最终性；2026 年 8 月治理通过加速通缩、SEC/CFTC 将其列为数字商品，但网络曾多次宕机、代币集中度与 FTX 关联构成主要风险。"
 content_type: analysis

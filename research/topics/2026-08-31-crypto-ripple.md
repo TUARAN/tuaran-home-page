@@ -9,7 +9,7 @@ market_cap_rank: 5
 date: "2026-08-31"
 time: "01:34"
 tags: [加密资产, "XRP", "XRP"]
-subjects: [business_market]
+subjects: [web3]
 summary: "XRP 是 XRP Ledger 的原生资产，以跨境支付为定位，2025 年 SEC 诉讼终结后监管不确定性大幅下降，但代币供给集中与治理依赖仍是核心观察点。"
 tldr: "XRP 依托 XRP Ledger 的快速低成本共识机制用于支付与流动性桥接，SEC 诉讼以 1.25 亿美元罚款和保留禁令收场，Ripple 公司仍持有巨额托管供给。"
 content_type: analysis

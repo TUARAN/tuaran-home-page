@@ -9,7 +9,7 @@ market_cap_rank: 6
 date: "2026-09-01"
 time: "01:34"
 tags: [加密资产, "USDC", "USDC"]
-subjects: [business_market]
+subjects: [web3]
 summary: "USDC 是 Circle 发行的美元稳定币，以 1:1 现金与短期美债储备支撑，2026 年随 Circle 纽交所上市、OCC 国家信托银行牌照及 GENIUS 法案落地而进入联邦监管框架。"
 tldr: "USDC 由 Circle 发行，储备以现金和短期美债为主，2026 年 Circle 完成 IPO 并获 OCC 国家信托银行牌照，GENIUS 法案为其提供联邦监管框架。"
 content_type: analysis

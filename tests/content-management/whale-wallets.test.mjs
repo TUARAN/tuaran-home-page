@@ -148,7 +148,7 @@ test('interactive page is registered as a rich-page work', async () => {
   const { ENGINEERING_WORKS } = await import('../../lib/engineeringWorks.js')
   const work = ENGINEERING_WORKS.find((item) => item.id === 'whale-wallets')
   assert.equal(work.href, '/whale-wallets')
-  assert.deepEqual(work.subjects, ['business_market'])
+  assert.deepEqual(work.subjects, ['web3'])
 })
 
 test('live snapshot converts native units into USD and percent change', () => {

@@ -3,7 +3,7 @@ title: Robinhood Chain 深度调研：券商自建 L2，怎样把股票代币接
 category: topics
 topic_type: industry
 content_type: analysis
-subjects: [business_market, ai_dev]
+subjects: [web3]
 date: 2026-09-15
 time: 15:10
 tags: [Robinhood Chain, 罗宾汉链, 以太坊L2, Arbitrum, 股票代币, RWA, DeFi, Stock Tokens]

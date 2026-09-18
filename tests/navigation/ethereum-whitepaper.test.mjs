@@ -25,7 +25,7 @@ test('ethereum whitepaper is registered as an indexable resource', () => {
   const resource = HOME_RESOURCE_ITEMS.find((item) => item.href === '/resources/ethereum-whitepaper')
   assert.ok(resource)
   assert.match(resource.title, /以太坊白皮书/)
-  assert.equal(resource.subjects[0], 'web_cloud')
+  assert.equal(resource.subjects[0], 'web3')
   assert.match(
     fs.readFileSync(path.join(ROOT, 'lib', 'contentRegistry.js'), 'utf8'),
     /slug: 'ethereum-whitepaper'/,

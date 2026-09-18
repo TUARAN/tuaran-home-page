@@ -10,7 +10,7 @@ market_cap_rank: 9
 date: "2026-09-08"
 time: "01:32"
 tags: [加密资产, "Figure Heloc", "FIGR_HELOC"]
-subjects: [business_market]
+subjects: [web3]
 summary: "Figure Heloc（FIGR_HELOC）是 Figure Technologies 在 Provenance 区块链上发行的代币化房屋净值信贷额度（HELOC）资产，其市值随底层贷款未偿还本金余额动态变化，2026 年升至全球加密资产市值第 9 位，同时因链上使用与流动性不足引发分类争议。"
 tldr: "FIGR_HELOC 每个代币对应 Figure 发放的 HELOC 贷款未偿还本金，供给随贷款发放与还款动态增减，无编码上限，主要交易于 Figure Markets，因被指缺乏链上使用与流动性而引发是否应计入加密资产排名的争议。"
 content_type: analysis

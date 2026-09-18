@@ -23,7 +23,7 @@ market_cap_rank: {{MARKET_CAP_RANK}}
 date: "{{DATE}}"
 time: "{{TIME}}"
 tags: [加密资产, "{{COIN_NAME}}", "{{SYMBOL}}"]
-subjects: [business_market]
+subjects: [web3]
 summary: "{{SUMMARY}}"
 tldr: "{{TLDR}}"
 content_type: analysis

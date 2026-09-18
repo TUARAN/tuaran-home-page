@@ -3,7 +3,7 @@ title: Robinhood Chain AI Agent 项目：先做无币产品，再决定是否发
 category: topics
 topic_type: product
 content_type: analysis
-subjects: [ai_dev]
+subjects: [web3]
 date: 2026-09-02
 time: 08:35
 tags: [Robinhood Chain, AI Agent, 链上金融, RWA, 智能合约, 产品验证, 代币设计, Web3安全]

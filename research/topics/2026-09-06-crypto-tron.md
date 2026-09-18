@@ -9,7 +9,7 @@ market_cap_rank: 8
 date: "2026-09-06"
 time: "01:31"
 tags: [加密资产, "TRON", "TRX"]
-subjects: [business_market]
+subjects: [web3]
 summary: "TRON 是孙宇晨于 2017 年发起、2018 年上线主网的高吞吐量 DPoS 公链，凭借低费 USDT 结算成为全球最大稳定币宿主之一，TRX 现居市值第 8 位。"
 tldr: "TRON 以低费高吞吐承接 USDT 结算成为稳定币基础设施，TRX 通过销毁与减半进入通缩，但高度依赖创始人孙宇晨个人与中心化治理。"
 content_type: analysis

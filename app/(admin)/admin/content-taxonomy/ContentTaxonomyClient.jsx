@@ -74,7 +74,7 @@ export default function ContentTaxonomyClient() {
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858779]">受控词表</p>
             <h2 className="mt-1 text-lg font-semibold text-[#15140f] dark:text-gray-100">内容主题的定义与边界</h2>
           </div>
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-[10px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">10 个启用主题</span>
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-[10px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">{SUBJECT_GOVERNANCE_LIST.length} 个启用主题</span>
         </div>
         <div className="mt-3 grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
           {SUBJECT_GOVERNANCE_LIST.map((item) => (

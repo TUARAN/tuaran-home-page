@@ -9,7 +9,7 @@ market_cap_rank: 3
 date: "2026-08-27"
 time: "16:09"
 tags: [加密资产, "Tether", "USDT"]
-subjects: [business_market]
+subjects: [web3]
 summary: "Tether（USDT）是全球市值最大的美元稳定币，由 Tether International 发行，以 1:1 美元储备背书，2026 年流通量约 1846 亿美元，占稳定币市场逾六成。"
 tldr: "USDT 是锚定美元的稳定币，储备以美国国债为主，2026 年完成首次 KPMG 全面审计，但面临 MiCA 下欧盟准入受限与储备透明度争议。"
 content_type: analysis

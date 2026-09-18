@@ -9,7 +9,7 @@ market_cap_rank: 1
 date: "2026-08-27"
 time: "16:04"
 tags: [加密资产, "Bitcoin", "BTC"]
-subjects: [business_market]
+subjects: [web3]
 summary: "Bitcoin 是首个基于工作量证明的去中心化数字资产，供应上限 2100 万枚，截至 2026 年 8 月市值排名第一，现货 ETF 与机构持仓推动其进入主流金融体系。"
 tldr: "Bitcoin 以固定 2100 万枚上限和四年减半机制构成其核心价值主张，2024 年现货 ETF 获批后机构化加速，但价格波动与监管不确定性仍是主要风险。"
 content_type: analysis

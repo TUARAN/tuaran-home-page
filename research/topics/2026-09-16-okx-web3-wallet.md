@@ -2,7 +2,7 @@
 title: OKX Web3 钱包观察：多链自托管入口绑在交易所流量上
 category: topics
 topic_type: product
-subjects: [product_experience]
+subjects: [web3]
 entity_type: product
 content_type: analysis
 date: 2026-09-16

@@ -7,9 +7,14 @@ import {
   dropUnchangedPublishedUpdates,
   extractResearchTitleFromMarkdown,
   fillMissingResearchTitles,
+  githubCompareRange,
   hashResearchSource,
+  listGitHubRecentResearchPaths,
   listResearchFilesFromTree,
+  loadGitHubResearchIndex,
   parseResearchSourcePath,
+  researchPathsFromChangedFiles,
+  resetResearchGitHubCaches,
   storedResearchTitle,
   withStoredResearchTitles,
 } from '../../lib/researchGitHubQueue.js'
@@ -109,4 +114,82 @@ test('approval console lists Chinese titles ahead of slugs', async () => {
   assert.match(source, /placeholder="标题、slug、文件名"/)
   assert.match(source, /updated: '正文已改'/)
   assert.match(source, /已发布但 GitHub 正文与线上不一致/)
+  assert.match(source, /阅览/)
+  assert.match(source, /renderMarkdown/)
+  assert.match(source, /prose-tuaran/)
+  assert.match(source, /refresh=1/)
+  assert.match(source, /lg:grid-cols-\[minmax\(17rem,22rem\)_minmax\(0,1fr\)\]/)
+  assert.doesNotMatch(source, /CollapsibleSection/)
 })
+
+function jsonResponse(data, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => data,
+  }
+}
+
+test('recent research paths come from a single compare range, not per-commit file lists', async () => {
+  assert.deepEqual(githubCompareRange([{ sha: 'aaa', parents: [{ sha: 'parent' }] }, { sha: 'bbb', parents: [{ sha: 'root' }] }]), {
+    head: 'aaa',
+    base: 'root',
+  })
+  assert.deepEqual(
+    researchPathsFromChangedFiles([
+      { filename: 'research/topics/2026-09-11-pi.md' },
+      { filename: 'README.md' },
+      { previous_filename: 'research/topics/2026-09-01-older.md' },
+    ]),
+    ['research/topics/2026-09-11-pi.md', 'research/topics/2026-09-01-older.md'],
+  )
+  const originalFetch = globalThis.fetch
+  const calls = []
+  globalThis.fetch = async (url) => {
+    calls.push(String(url))
+    if (String(url).includes('/commits?')) {
+      return jsonResponse([{ sha: 'aaa', parents: [{ sha: 'parent' }] }, { sha: 'bbb', parents: [{ sha: 'root' }] }])
+    }
+    if (String(url).includes('/compare/root...aaa')) {
+      return jsonResponse({ files: [{ filename: 'research/topics/2026-09-11-pi.md' }, { filename: 'package.json' }] })
+    }
+    throw new Error(String(url))
+  }
+  try {
+    const paths = await listGitHubRecentResearchPaths({ GITHUB_SYNC_TOKEN: 't', GITHUB_REPOSITORY: 'TUARAN/tuaran-home-page' })
+    assert.deepEqual(paths, ['research/topics/2026-09-11-pi.md'])
+    assert.equal(calls.filter((url) => /\/commits\/[a-f0-9]+$/i.test(url)).length, 0)
+    assert.equal(calls.filter((url) => url.includes('/compare/')).length, 1)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('GitHub research index is reused until an explicit refresh', async () => {
+  resetResearchGitHubCaches()
+  const originalFetch = globalThis.fetch
+  let trees = 0
+  globalThis.fetch = async (url) => {
+    const href = String(url)
+    if (href.includes('/git/trees/')) {
+      trees += 1
+      return jsonResponse({ tree: [{ path: 'research/topics/2026-09-11-pi.md', type: 'blob', sha: '3' }] })
+    }
+    if (href.includes('/commits?')) return jsonResponse([])
+    throw new Error(href)
+  }
+  try {
+    const env = { GITHUB_SYNC_TOKEN: 't', GITHUB_REPOSITORY: 'TUARAN/tuaran-home-page' }
+    const first = await loadGitHubResearchIndex(env)
+    const second = await loadGitHubResearchIndex(env)
+    assert.equal(trees, 1)
+    assert.equal(first.files[0].slug, 'pi')
+    assert.equal(second.files[0].slug, 'pi')
+    await loadGitHubResearchIndex(env, { refresh: true })
+    assert.equal(trees, 2)
+  } finally {
+    globalThis.fetch = originalFetch
+    resetResearchGitHubCaches()
+  }
+})
+

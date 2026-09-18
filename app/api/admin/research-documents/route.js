@@ -53,13 +53,17 @@ export async function GET(req) {
   const key = url.searchParams.get('key')
   try {
     if (url.searchParams.get('queue') === '1') {
-      const queue = await buildResearchApprovalQueue(requestEnv(), await listStoredResearch(getD1()))
+      const queue = await buildResearchApprovalQueue(
+        requestEnv(),
+        await listStoredResearch(getD1()),
+        { refresh: url.searchParams.get('refresh') === '1' },
+      )
       return Response.json(queue, { headers })
     }
     if (sourcePath) {
       const parsed = parseResearchSourcePath(sourcePath)
       if (!parsed) return Response.json({ error: 'INVALID_SOURCE_PATH' }, { status: 400, headers })
-      const file = await fetchGitHubResearchFile(requestEnv(), parsed.sourcePath)
+      const file = await fetchGitHubResearchFile(requestEnv(), parsed.sourcePath, { refresh: url.searchParams.get('refresh') === '1' })
       const prepared = await prepareResearchSourcePublication(getD1(), {
         category: file.category,
         filename: file.filename,

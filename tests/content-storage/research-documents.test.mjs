@@ -171,6 +171,7 @@ test('Owner import API enforces authentication, reserved routes and revision che
 
 test('Owner approval API lists GitHub pending docs and publishes from sourcePath',async()=>{
   const h=harness()
+  let seenRefresh
   const queued={
     repo:'TUARAN/tuaran-home-page',
     files:[{category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath:'research/topics/2026-09-10-sample.md'}],
@@ -185,7 +186,7 @@ test('Owner approval API lists GitHub pending docs and publishes from sourcePath
     publishResearchSnapshot:h.publishResearchSnapshot,
     resolveReservedArticleSlug:async()=>({reserved:false}),
     ResearchGitHubError:class extends Error{constructor(code,message,status=500){super(message);this.code=code;this.status=status}},
-    buildResearchApprovalQueue:async()=>queued,
+    buildResearchApprovalQueue:async(_env,_documents,options={})=>{seenRefresh=options;return queued},
     fetchGitHubResearchFile:async()=>({category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath:'research/topics/2026-09-10-sample.md',raw:'ignored'}),
     parseResearchSourcePath:(sourcePath)=>sourcePath==='research/topics/2026-09-10-sample.md'?{category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath}:null,
     publicationStatus:(value)=>value||'published',
@@ -194,6 +195,9 @@ test('Owner approval API lists GitHub pending docs and publishes from sourcePath
   const queue=await api.GET(new Request('https://example.com/api/admin/research-documents?queue=1'))
   assert.equal(queue.status,200)
   assert.deepEqual((await queue.json()).pending[0].reason,'new')
+  const refreshed=await api.GET(new Request('https://example.com/api/admin/research-documents?queue=1&refresh=1'))
+  assert.equal(refreshed.status,200)
+  assert.deepEqual(seenRefresh,{refresh:true})
   const published=await api.POST(new Request('https://example.com/api/admin/research-documents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sourcePath:'research/topics/2026-09-10-sample.md',status:'published',expectedRevision:0})}))
   assert.equal(published.status,200)
   assert.equal((await h.readResearchDocument(h.db,'topics','sample')).status,'published')

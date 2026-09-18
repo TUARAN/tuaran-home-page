@@ -110,6 +110,7 @@ test('GitHub file payloads decode UTF-8 markdown', () => {
 test('approval console lists Chinese titles ahead of slugs', async () => {
   const { readFile } = await import('node:fs/promises')
   const source = await readFile(new URL('../../app/(admin)/admin/articles/research-import/ResearchImportConsole.jsx', import.meta.url), 'utf8')
+  const pill = await readFile(new URL('../../app/(admin)/components/ui/StatusPill.jsx', import.meta.url), 'utf8')
   assert.match(source, /\{item\.title \|\| item\.slug\}/)
   assert.match(source, /placeholder="标题、slug、文件名"/)
   assert.match(source, /updated: '正文已改'/)
@@ -118,7 +119,12 @@ test('approval console lists Chinese titles ahead of slugs', async () => {
   assert.match(source, /renderMarkdown/)
   assert.match(source, /prose-tuaran/)
   assert.match(source, /refresh=1/)
-  assert.match(source, /lg:grid-cols-\[minmax\(17rem,22rem\)_minmax\(0,1fr\)\]/)
+  assert.match(source, /lg:grid-cols-\[minmax\(20rem,26rem\)_minmax\(0,1fr\)\]/)
+  assert.match(source, /全选当前列表/)
+  assert.match(source, /saveSelected\('published'\)/)
+  assert.match(source, /type="checkbox"/)
+  assert.match(pill, /whitespace-nowrap/)
+  assert.match(pill, /shrink-0/)
   assert.doesNotMatch(source, /CollapsibleSection/)
 })
 

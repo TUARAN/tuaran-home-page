@@ -11,6 +11,13 @@ import {
 import { LoadingSpinner, LoadingState, Skeleton } from '../../../../components/loading/LoadingPrimitives'
 import { renderMarkdown } from '../../../../../lib/research/markdown'
 import { AdminButton, AdminPage, EmptyState, Section, StatusPill } from '../../../components/ui'
+import {
+  applyVisibleSelection,
+  pruneSelectedPaths,
+  summarizeBatchPublish,
+  toggleSelectedPath,
+  visibleSelectionState,
+} from './researchApprovalSelection'
 
 const labels = { draft: '草稿', published: '已发布', retired: '已撤回' }
 const reasonLabels = { new: '待审批', draft: '草稿', retired: '已撤回', updated: '正文已改' }
@@ -146,6 +153,8 @@ export default function ResearchImportConsole({ embedded = false }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [messageTone, setMessageTone] = useState('info')
+  const [selectedPaths, setSelectedPaths] = useState(() => new Set())
+  const selectAllRef = useRef(null)
   const documentCacheRef = useRef(new Map())
   const forceRefreshRef = useRef(false)
   const forceDocumentRefreshRef = useRef(false)
@@ -165,6 +174,12 @@ export default function ResearchImportConsole({ embedded = false }) {
   const liveHref = snapshot ? `/articles/research/${snapshot.entry.category}/${snapshot.entry.slug}` : ''
   const liveStatus = ready ? (current ? current.status : null) : null
   const githubHref = queue?.repo && sourcePath ? `https://github.com/${queue.repo}/blob/main/${sourcePath}` : ''
+  const visiblePendingPaths = useMemo(() => visiblePending.map((item) => item.sourcePath), [visiblePending])
+  const selection = visibleSelectionState(selectedPaths, visiblePendingPaths)
+  const selectedItems = useMemo(
+    () => pending.filter((item) => selectedPaths.has(item.sourcePath)),
+    [pending, selectedPaths],
+  )
 
   const applyQueue = useCallback((data, nextPath = requestedPath) => {
     const nextQueue = { ...data, fetchedAt: Number(data.fetchedAt) || Date.now() }
@@ -249,6 +264,15 @@ export default function ResearchImportConsole({ embedded = false }) {
     return () => { active = false }
   }, [reload, sourcePath])
 
+  useEffect(() => {
+    const paths = (queue?.pending || []).map((item) => item.sourcePath)
+    setSelectedPaths((current) => pruneSelectedPaths(current, paths))
+  }, [queue?.pending])
+
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = selection.some
+  }, [selection.some])
+
   function refreshQueue() {
     documentCacheRef.current.clear()
     setReady(false)
@@ -259,23 +283,51 @@ export default function ResearchImportConsole({ embedded = false }) {
     setReload((value) => value + 1)
   }
 
-  function patchQueueAfterSave(status, revision) {
+  function patchQueueAfterSave(targetPath, status, revision, { wasPublished } = {}) {
     setQueue((currentQueue) => {
       if (!currentQueue) return currentQueue
-      const wasPublished = current?.status === 'published' || selectedMeta?.d1Status === 'published'
+      const target = currentQueue.pending.find((item) => item.sourcePath === targetPath)
+      const publishedBefore = wasPublished ?? target?.d1Status === 'published'
       let publishedCount = currentQueue.publishedCount
-      if (status === 'published' && !wasPublished) publishedCount += 1
-      if (status !== 'published' && wasPublished) publishedCount = Math.max(0, publishedCount - 1)
+      if (status === 'published' && !publishedBefore) publishedCount += 1
+      if (status !== 'published' && publishedBefore) publishedCount = Math.max(0, publishedCount - 1)
       const pendingItems = currentQueue.pending
         .map((item) => {
-          if (item.sourcePath !== sourcePath) return item
+          if (item.sourcePath !== targetPath) return item
           return { ...item, reason: status === 'published' ? 'updated' : status, d1Status: status, revision }
         })
-        .filter((item) => item.sourcePath !== sourcePath || status !== 'published')
+        .filter((item) => item.sourcePath !== targetPath || status !== 'published')
       const nextQueue = { ...currentQueue, pending: pendingItems, publishedCount }
       writeQueueCache(nextQueue)
       return nextQueue
     })
+  }
+
+  function applyPublishedDocument(targetPath, data, status) {
+    const nextStatus = data.status || status
+    if (targetPath === sourcePath && snapshot) {
+      const nextCurrent = { revision: data.revision, status: nextStatus, source_hash: snapshot.sourceHash }
+      const nextUnchanged = nextStatus === 'published'
+      setCurrent(nextCurrent)
+      setUnchanged(nextUnchanged)
+      documentCacheRef.current.set(targetPath, { snapshot, document: nextCurrent, unchanged: nextUnchanged })
+      return
+    }
+    documentCacheRef.current.delete(targetPath)
+  }
+
+  async function publishPath(targetPath, status, expectedRevision) {
+    const response = await fetch('/api/admin/research-documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourcePath: targetPath, status, expectedRevision }),
+    })
+    const data = await response.json()
+    if (!response.ok) {
+      if (data.error === 'REVISION_CONFLICT') throw new Error('其他页面已更新此调研。请刷新后再次审批。')
+      throw new Error(errorText(data, '保存失败'))
+    }
+    return data
   }
 
   async function save(status) {
@@ -283,22 +335,16 @@ export default function ResearchImportConsole({ embedded = false }) {
     setBusy(true)
     setMessage('')
     try {
-      const response = await fetch('/api/admin/research-documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourcePath, status, expectedRevision: current?.revision || 0 }),
+      const data = await publishPath(sourcePath, status, current?.revision || 0)
+      applyPublishedDocument(sourcePath, data, status)
+      patchQueueAfterSave(sourcePath, data.status || status, data.revision, {
+        wasPublished: current?.status === 'published' || selectedMeta?.d1Status === 'published',
       })
-      const data = await response.json()
-      if (!response.ok) {
-        if (data.error === 'REVISION_CONFLICT') throw new Error('其他页面已更新此调研。请刷新后再次审批。')
-        throw new Error(errorText(data, '保存失败'))
-      }
-      const nextCurrent = { revision: data.revision, status: data.status || status, source_hash: snapshot?.sourceHash }
-      const nextUnchanged = (data.status || status) === 'published'
-      setCurrent(nextCurrent)
-      setUnchanged(nextUnchanged)
-      documentCacheRef.current.set(sourcePath, { snapshot, document: nextCurrent, unchanged: nextUnchanged })
-      patchQueueAfterSave(data.status || status, data.revision)
+      setSelectedPaths((currentSelected) => {
+        const next = new Set(currentSelected)
+        next.delete(sourcePath)
+        return next
+      })
       setMessageTone(status === 'retired' ? 'warning' : 'success')
       setMessage(data.unchanged ? 'GitHub 正文与线上一致，没有新的修订。' : `${labels[status]}，版本 ${data.revision}。`)
     } catch (error) {
@@ -309,10 +355,51 @@ export default function ResearchImportConsole({ embedded = false }) {
     }
   }
 
+  async function saveSelected(status = 'published') {
+    if (!selectedItems.length || busy) return
+    setBusy(true)
+    setMessage('')
+    const results = []
+    try {
+      for (let index = 0; index < selectedItems.length; index += 1) {
+        const item = selectedItems[index]
+        const label = item.title || item.slug || item.filename
+        setMessageTone('info')
+        setMessage(`正在发布 ${index + 1}/${selectedItems.length}：${label}`)
+        try {
+          const expectedRevision = item.sourcePath === sourcePath ? (current?.revision || 0) : (item.revision || 0)
+          const data = await publishPath(item.sourcePath, status, expectedRevision)
+          applyPublishedDocument(item.sourcePath, data, status)
+          patchQueueAfterSave(item.sourcePath, data.status || status, data.revision, { wasPublished: item.d1Status === 'published' })
+          setSelectedPaths((currentSelected) => {
+            const next = new Set(currentSelected)
+            next.delete(item.sourcePath)
+            return next
+          })
+          results.push({ ok: true, label })
+        } catch (error) {
+          results.push({ ok: false, label, error: error.message })
+        }
+      }
+      const summary = summarizeBatchPublish(results)
+      setMessageTone(summary.tone)
+      setMessage(summary.text)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function noticeClass(tone) {
+    if (tone === 'danger') return 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200'
+    if (tone === 'warning') return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
+    if (tone === 'info') return 'border-[#d9dbd0] bg-[#f7f8f3] text-[#55574f] dark:border-[#243041] dark:bg-[#151c26] dark:text-gray-300'
+    return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200'
+  }
+
   const listPane = (
     <Section
       title="待审批"
-      description="push 到 GitHub main 之后会出现在这里。点开右侧核对，再发布。"
+      description="push 到 GitHub main 之后会出现在这里。点开右侧核对，也可以勾选后一次发布多篇。"
       actions={
         <AdminButton type="button" variant="ghost" disabled={busy || queueLoading} onClick={refreshQueue}>
           {queueLoading ? <LoadingSpinner size="sm" /> : <IconRefresh size={15} />}
@@ -367,33 +454,79 @@ export default function ResearchImportConsole({ embedded = false }) {
               />
             </div>
           ) : (
-            <ul className="mt-3 max-h-[min(56vh,36rem)] divide-y divide-[#eceee6] overflow-auto dark:divide-[#1b2430] lg:max-h-[calc(100vh-22rem)]">
-              {visiblePending.map((item) => {
-                const active = item.sourcePath === sourcePath
-                return (
-                  <li key={item.sourcePath}>
-                    <button
-                      type="button"
+            <>
+              {visiblePending.length ? (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <label className="flex min-w-0 items-center gap-2 text-[13px] text-[#55574f] dark:text-gray-400">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      checked={selection.all}
                       disabled={busy}
-                      onClick={() => { setSourcePath(item.sourcePath); setMessage('') }}
-                      className={`flex w-full items-center justify-between gap-3 rounded-lg px-2 py-3 text-left ${
-                        active
-                          ? 'bg-[#f3f4ee] text-[#15140f] dark:bg-[#151c26] dark:text-gray-100'
-                          : 'text-[#55574f] hover:bg-[#f7f8f3] dark:text-gray-400 dark:hover:bg-[#121820]'
-                      }`}
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{item.title || item.slug}</span>
-                        <span className="block truncate font-mono text-[12px] text-[#8b8d82]">{item.filename}</span>
-                      </span>
-                      <StatusPill tone={item.reason === 'updated' ? 'info' : item.reason === 'retired' ? 'danger' : 'warning'} size="sm">
-                        {reasonLabels[item.reason] || item.reason}
-                      </StatusPill>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+                      onChange={(event) => setSelectedPaths((current) => applyVisibleSelection(current, visiblePendingPaths, event.target.checked))}
+                      className="h-4 w-4 shrink-0 accent-[#15140f]"
+                      aria-label="全选当前列表"
+                    />
+                    <span>{selection.selectedCount ? `已选 ${selection.selectedCount} 篇` : '全选'}</span>
+                  </label>
+                  <AdminButton
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    disabled={busy || !selection.selectedCount}
+                    onClick={() => saveSelected('published')}
+                  >
+                    审批并发布
+                  </AdminButton>
+                </div>
+              ) : null}
+              {message && (busy || selection.selectedCount) ? (
+                <p role="status" className={`mt-3 rounded-lg border px-3 py-2 text-sm ${noticeClass(messageTone)}`}>
+                  {message}
+                </p>
+              ) : null}
+              <ul className="mt-2 max-h-[min(56vh,36rem)] divide-y divide-[#eceee6] overflow-auto dark:divide-[#1b2430] lg:max-h-[calc(100vh-22rem)]">
+                {visiblePending.map((item) => {
+                  const active = item.sourcePath === sourcePath
+                  const checked = selectedPaths.has(item.sourcePath)
+                  return (
+                    <li key={item.sourcePath}>
+                      <div
+                        className={`flex items-center gap-2 rounded-lg px-2 py-2.5 ${
+                          active
+                            ? 'bg-[#f3f4ee] text-[#15140f] dark:bg-[#151c26] dark:text-gray-100'
+                            : 'text-[#55574f] hover:bg-[#f7f8f3] dark:text-gray-400 dark:hover:bg-[#121820]'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={busy}
+                          onChange={() => setSelectedPaths((current) => toggleSelectedPath(current, item.sourcePath))}
+                          onClick={(event) => event.stopPropagation()}
+                          className="h-4 w-4 shrink-0 accent-[#15140f]"
+                          aria-label={`勾选 ${item.title || item.slug}`}
+                        />
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => { setSourcePath(item.sourcePath); setMessage('') }}
+                          className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{item.title || item.slug}</span>
+                            <span className="block truncate font-mono text-[12px] text-[#8b8d82]">{item.filename}</span>
+                          </span>
+                          <StatusPill tone={item.reason === 'updated' ? 'info' : item.reason === 'retired' ? 'danger' : 'warning'} size="sm">
+                            {reasonLabels[item.reason] || item.reason}
+                          </StatusPill>
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
           )}
         </>
       )}
@@ -467,16 +600,7 @@ export default function ResearchImportConsole({ embedded = false }) {
       )}
 
       {message ? (
-        <p
-          role="status"
-          className={`mt-4 rounded-lg border px-3 py-2 text-sm ${
-            messageTone === 'danger'
-              ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200'
-              : messageTone === 'warning'
-                ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
-                : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200'
-          }`}
-        >
+        <p role="status" className={`mt-4 rounded-lg border px-3 py-2 text-sm ${noticeClass(messageTone)}`}>
           {message}
         </p>
       ) : null}
@@ -500,7 +624,7 @@ export default function ResearchImportConsole({ embedded = false }) {
   )
 
   const body = (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)]">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(20rem,26rem)_minmax(0,1fr)]">
       <div className="min-w-0">{listPane}</div>
       <div className="min-w-0">{reviewPane}</div>
     </div>

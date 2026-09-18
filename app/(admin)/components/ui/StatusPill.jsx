@@ -34,7 +34,7 @@ export default function StatusPill({ tone = 'neutral', children, icon = true, si
   const t = TONES[tone] || TONES.neutral
   const pad = size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-[12px]'
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border font-medium ${pad} ${t.cls}`}>
+    <span className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border font-medium ${pad} ${t.cls}`}>
       {icon ? <t.Icon size={size === 'sm' ? 13 : 14} aria-hidden="true" /> : null}
       {children}
     </span>

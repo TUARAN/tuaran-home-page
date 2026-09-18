@@ -5,6 +5,7 @@ topic_type: tech
 content_type: guide
 subjects: [web_cloud]
 entity_type: technology
+auto_images: false
 date: 2026-09-18
 time: "14:50"
 tags: [公链, Chain ID, EIP-155, ERC-20, EIP-20, Ethereum, Solana, SPL Token, USDT, USDC]

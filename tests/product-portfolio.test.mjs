@@ -33,3 +33,16 @@ test('legacy sites directory redirects to works and is absent from the sitemap',
   assert.match(sitesSource, /permanentRedirect\('\/works'\)/)
   assert.ok(!STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/sites' && entry.sitemap))
 })
+
+test('tools directory uses compact catalog cards while the portfolio keeps gallery posters', async () => {
+  const [toolsSource, directorySource] = await Promise.all([
+    readFile(new URL('app/(site)/tools/page.jsx', root), 'utf8'),
+    readFile(new URL('app/(site)/components/ShowcaseDirectory.jsx', root), 'utf8'),
+  ])
+  assert.match(toolsSource, /layout: 'catalog'/)
+  assert.doesNotMatch(worksSource, /layout: 'catalog'/)
+  assert.match(directorySource, /layout === 'catalog'/)
+  assert.match(directorySource, /h-8 w-8/)
+  assert.match(directorySource, /xl:grid-cols-4/)
+  assert.match(directorySource, /sm:grid-cols-2 lg:grid-cols-3/)
+})

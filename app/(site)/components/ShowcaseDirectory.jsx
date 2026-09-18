@@ -65,35 +65,74 @@ function ItemLink({ item, className, children, config }) {
   return <Link href={item.href} className={className} {...analytics}>{children}</Link>
 }
 
-function Cover({ item, visuals, compact = false }) {
+function Cover({ item, visuals, compact = false, layout = 'gallery' }) {
   const visual = visuals[item.category] || visuals.default
   const Icon = ICONS[visual?.icon] || IconTools
+  const isCatalog = layout === 'catalog'
+  const iconSize = isCatalog ? (compact ? 16 : 18) : compact ? 22 : 26
 
   return (
-    <div className={`showcase-cover relative overflow-hidden bg-gradient-to-br ${visual?.cover || 'from-[#e8e4dc] to-[#f5f3ee] text-[#655e52] dark:from-[#24282c] dark:to-[#15191d] dark:text-[#c4c8cc]'} ${compact ? 'h-full min-h-[132px]' : 'aspect-[16/9]'}`}>
-      <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full border border-current opacity-10" />
-      <div className="absolute -bottom-14 -left-8 h-36 w-36 rounded-full bg-current opacity-[0.06] blur-2xl" />
-      <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(currentColor_1px,transparent_1px),linear-gradient(90deg,currentColor_1px,transparent_1px)] [background-size:28px_28px]" />
-      <div className="showcase-cover-inner relative flex h-full flex-col justify-between p-5">
-        <div className="flex items-center justify-between gap-3">
-          <span className="font-mono text-[10px] font-black tracking-[0.2em] opacity-70">{visual?.eyebrow || 'OPEN'}</span>
-          <Icon size={compact ? 22 : 26} stroke={1.6} aria-hidden="true" />
-        </div>
-        <div>
-          <p className={`mb-0 max-w-[88%] font-bold leading-tight ${compact ? 'line-clamp-2 text-[20px]' : 'line-clamp-2 text-[23px] md:text-[26px]'}`}>{item.title}</p>
-          <span className="mt-3 inline-block rounded-full border border-current px-2.5 py-1 text-[10px] font-semibold opacity-70">
-            {item.coverLabel || item.categoryLabel}
-          </span>
-        </div>
-      </div>
+    <div className={`showcase-cover relative overflow-hidden bg-gradient-to-br ${visual?.cover || 'from-[#e8e4dc] to-[#f5f3ee] text-[#655e52] dark:from-[#24282c] dark:to-[#15191d] dark:text-[#c4c8cc]'} ${isCatalog ? 'showcase-cover--catalog' : ''} ${compact ? (isCatalog ? 'h-full min-h-[108px]' : 'h-full min-h-[132px]') : (isCatalog ? 'h-[72px]' : 'aspect-[16/9]')}`}>
+      {isCatalog ? (
+        compact ? (
+          <>
+            <div className="absolute -right-8 -top-10 h-24 w-24 rounded-full border border-current opacity-10" />
+            <div className="showcase-cover-inner relative flex h-full flex-col items-center justify-center gap-3 px-3 py-4">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-current/10">
+                <Icon size={iconSize} stroke={1.7} aria-hidden="true" />
+              </span>
+              <span className="showcase-cover-chip line-clamp-2 max-w-full rounded-full border border-current px-2 py-0.5 text-center text-[10px] font-semibold leading-4 opacity-70">
+                {item.coverLabel || item.categoryLabel}
+              </span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="absolute -right-8 -top-10 h-24 w-24 rounded-full border border-current opacity-10" />
+            <div className="showcase-cover-inner relative flex h-full items-center justify-between gap-3 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-current/10">
+                  <Icon size={iconSize} stroke={1.7} aria-hidden="true" />
+                </span>
+                <span className="showcase-cover-kicker truncate font-mono text-[10px] font-black tracking-[0.18em] opacity-70">{visual?.eyebrow || 'OPEN'}</span>
+              </div>
+              <span className="showcase-cover-chip hidden shrink-0 rounded-full border border-current px-2 py-0.5 text-[10px] font-semibold opacity-70 sm:inline-block">
+                {item.coverLabel || item.categoryLabel}
+              </span>
+            </div>
+          </>
+        )
+      ) : (
+        <>
+          <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full border border-current opacity-10" />
+          <div className="absolute -bottom-14 -left-8 h-36 w-36 rounded-full bg-current opacity-[0.06] blur-2xl" />
+          <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(currentColor_1px,transparent_1px),linear-gradient(90deg,currentColor_1px,transparent_1px)] [background-size:28px_28px]" />
+          <div className="showcase-cover-inner relative flex h-full flex-col justify-between p-5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-[10px] font-black tracking-[0.2em] opacity-70">{visual?.eyebrow || 'OPEN'}</span>
+              <Icon size={iconSize} stroke={1.6} aria-hidden="true" />
+            </div>
+            <div>
+              <p className={`mb-0 max-w-[88%] font-bold leading-tight ${compact ? 'line-clamp-2 text-[20px]' : 'line-clamp-2 text-[23px] md:text-[26px]'}`}>{item.title}</p>
+              <span className="mt-3 inline-block rounded-full border border-current px-2.5 py-1 text-[10px] font-semibold opacity-70">
+                {item.coverLabel || item.categoryLabel}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
-function ItemMeta({ item }) {
+function ItemMeta({ item, hideDuplicateCategory = false }) {
+  const values = hideDuplicateCategory
+    ? (item.meta || []).filter((value) => value !== item.coverLabel && value !== item.categoryLabel)
+    : (item.meta || [])
+
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-[var(--site-faint)]">
-      {(item.meta || []).map((value, index) => (
+      {values.map((value, index) => (
         <span key={`${value}-${index}`} className="contents">
           {index ? <span>·</span> : null}
           <span>{value}</span>
@@ -113,20 +152,22 @@ function Metric({ item, pv }) {
   return item.metricLabel ? <span>{item.metricLabel}</span> : null
 }
 
-function Card({ item, pv, visuals, config }) {
+function Card({ item, pv, visuals, config, layout }) {
+  const isCatalog = layout === 'catalog'
+
   return (
-    <ItemLink item={item} config={config} className="showcase-card group overflow-hidden rounded-2xl border border-[#d8d9d5] bg-white/70 text-[var(--site-ink)] no-underline shadow-[0_1px_0_rgba(20,20,20,0.03)] transition duration-200 hover:-translate-y-1 hover:border-[#aeb1aa] hover:shadow-[0_14px_34px_rgba(34,31,25,0.10)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967]">
-      <Cover item={item} visuals={visuals} />
-      <div className="showcase-card-body p-5">
+    <ItemLink item={item} config={config} className={`showcase-card group overflow-hidden rounded-2xl border border-[#d8d9d5] bg-white/70 text-[var(--site-ink)] no-underline shadow-[0_1px_0_rgba(20,20,20,0.03)] transition duration-200 hover:border-[#aeb1aa] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967] ${isCatalog ? 'showcase-card--catalog hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(34,31,25,0.08)]' : 'hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(34,31,25,0.10)]'}`}>
+      <Cover item={item} visuals={visuals} layout={layout} />
+      <div className={`showcase-card-body ${isCatalog ? 'p-4' : 'p-5'}`}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <ItemMeta item={item} />
-            <h2 className="mb-0 line-clamp-2 text-[18px] font-bold leading-snug transition group-hover:text-[var(--site-accent-strong)]">{item.title}</h2>
+            <ItemMeta item={item} hideDuplicateCategory={isCatalog} />
+            <h2 className={`mb-0 line-clamp-2 font-bold leading-snug transition group-hover:text-[var(--site-accent-strong)] ${isCatalog ? 'text-[16px]' : 'text-[18px]'}`}>{item.title}</h2>
           </div>
-          <IconArrowUpRight className="mt-1 shrink-0 opacity-45 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" size={18} />
+          <IconArrowUpRight className="mt-1 shrink-0 opacity-45 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" size={isCatalog ? 16 : 18} />
         </div>
-        <p className="mb-0 mt-3 line-clamp-2 text-[13px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#e7e5df] pt-3 text-[11px] text-[var(--site-faint)] dark:border-[#2a333d]">
+        <p className={`mb-0 line-clamp-2 text-[13px] text-[var(--site-muted)] ${isCatalog ? 'mt-2 leading-5' : 'mt-3 leading-6'}`}>{item.summary}</p>
+        <div className={`flex items-center justify-between gap-3 border-t border-[#e7e5df] text-[11px] text-[var(--site-faint)] dark:border-[#2a333d] ${isCatalog ? 'mt-3 pt-2.5' : 'mt-4 pt-3'}`}>
           <span className="line-clamp-1">{item.footerLabel}</span>
           <Metric item={item} pv={pv} />
         </div>
@@ -135,14 +176,16 @@ function Card({ item, pv, visuals, config }) {
   )
 }
 
-function ListCard({ item, pv, visuals, config }) {
+function ListCard({ item, pv, visuals, config, layout }) {
+  const isCatalog = layout === 'catalog'
+
   return (
-    <ItemLink item={item} config={config} className="group grid overflow-hidden rounded-2xl border border-[#d8d9d5] bg-white/70 text-[var(--site-ink)] no-underline transition hover:border-[#aeb1aa] hover:shadow-[0_10px_28px_rgba(34,31,25,0.08)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967] md:grid-cols-[280px_minmax(0,1fr)]">
-      <Cover item={item} visuals={visuals} compact />
-      <div className="flex min-w-0 flex-col justify-between p-5 md:p-6">
+    <ItemLink item={item} config={config} className={`group grid overflow-hidden rounded-2xl border border-[#d8d9d5] bg-white/70 text-[var(--site-ink)] no-underline transition hover:border-[#aeb1aa] hover:shadow-[0_10px_28px_rgba(34,31,25,0.08)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967] ${isCatalog ? 'showcase-card showcase-card--catalog md:grid-cols-[168px_minmax(0,1fr)]' : 'md:grid-cols-[280px_minmax(0,1fr)]'}`}>
+      <Cover item={item} visuals={visuals} compact layout={layout} />
+      <div className={`flex min-w-0 flex-col justify-between ${isCatalog ? 'p-4 md:p-5' : 'p-5 md:p-6'}`}>
         <div>
-          <ItemMeta item={item} />
-          <h2 className="mb-0 text-[20px] font-bold leading-snug transition group-hover:text-[var(--site-accent-strong)]">{item.title}</h2>
+          <ItemMeta item={item} hideDuplicateCategory={isCatalog} />
+          <h2 className={`mb-0 font-bold leading-snug transition group-hover:text-[var(--site-accent-strong)] ${isCatalog ? 'text-[18px]' : 'text-[20px]'}`}>{item.title}</h2>
           <p className="mb-0 mt-2 line-clamp-2 text-[13px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
         </div>
         <div className="mt-4 flex items-center justify-between text-[11px] text-[var(--site-faint)]">
@@ -155,6 +198,8 @@ function ListCard({ item, pv, visuals, config }) {
 }
 
 export default function ShowcaseDirectory({ items, categories, visuals, config, secondaryFilter }) {
+  const layout = config.layout || 'gallery'
+  const isCatalog = layout === 'catalog'
   const [category, setCategory] = useState('all')
   const [secondary, setSecondary] = useState('all')
   const [query, setQuery] = useState('')
@@ -190,12 +235,12 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
   }
 
   return (
-    <main className="min-h-screen bg-[var(--page-bg)] text-[var(--site-ink)]">
-      <div className="mx-auto max-w-[1240px] px-3 pb-16 pt-5 sm:px-6 md:pt-12 lg:px-8">
-        <header className="flex flex-col gap-7 border-b border-[#d9d9d4] pb-8 dark:border-[#2b333e] md:flex-row md:items-end md:justify-between">
+    <main className={`min-h-screen bg-[var(--page-bg)] text-[var(--site-ink)] ${isCatalog ? 'showcase-directory--catalog' : 'showcase-directory--gallery'}`}>
+      <div className={`mx-auto max-w-[1240px] px-3 pb-16 sm:px-6 lg:px-8 ${isCatalog ? 'pt-5 md:pt-9' : 'pt-5 md:pt-12'}`}>
+        <header className={`flex flex-col border-b border-[#d9d9d4] dark:border-[#2b333e] md:flex-row md:items-end md:justify-between ${isCatalog ? 'gap-5 pb-6' : 'gap-7 pb-8'}`}>
           <div>
             <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#8a6422] dark:text-[#d4ae66]">{config.eyebrow}</p>
-            <h1 className="mb-2 text-[38px] font-black tracking-[-0.04em] text-[#17181c] dark:text-white md:text-[52px]">{config.title}</h1>
+            <h1 className={`mb-2 font-black tracking-[-0.04em] text-[#17181c] dark:text-white ${isCatalog ? 'text-[32px] md:text-[40px]' : 'text-[38px] md:text-[52px]'}`}>{config.title}</h1>
             <p className="mb-0 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)] md:text-[16px]">{config.description}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -236,10 +281,10 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
         </div>
 
         {filteredItems.length ? (
-          <div className={view === 'grid' ? 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-4'}>
+          <div className={view === 'grid' ? (isCatalog ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3') : 'space-y-4'}>
             {filteredItems.map((item) => view === 'grid'
-              ? <Card key={item.id} item={item} pv={pvCounts[item.pvKey]} visuals={visuals} config={config} />
-              : <ListCard key={item.id} item={item} pv={pvCounts[item.pvKey]} visuals={visuals} config={config} />)}
+              ? <Card key={item.id} item={item} pv={pvCounts[item.pvKey]} visuals={visuals} config={config} layout={layout} />
+              : <ListCard key={item.id} item={item} pv={pvCounts[item.pvKey]} visuals={visuals} config={config} layout={layout} />)}
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[#cfd1cb] px-6 py-20 text-center dark:border-[#37414c]">

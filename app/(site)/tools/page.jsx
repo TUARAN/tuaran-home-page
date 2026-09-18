@@ -68,6 +68,7 @@ const CONFIG = {
   searchPlaceholder: '搜索工具、用途或标签',
   resultTitle: '全部工具',
   actionLabel: '打开工具',
+  layout: 'catalog',
   analyticsSurface: 'tool_directory',
   analyticsEvent: 'tool_start',
   destinationKind: 'tool',

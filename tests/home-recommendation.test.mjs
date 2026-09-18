@@ -122,12 +122,39 @@ test('home recommendations and article lists use the same public summary', () =>
     date: '2026-08-28',
     time: '11:18',
     subjects: ['workbuddy'],
+    contentType: 'guide',
   }
   assert.equal(researchPublicSummary(entry), entry.tldr)
   const catalog = buildHomeRecommendationCatalog([], [entry])
   assert.equal(catalog[0].id, 'research:topics:workbuddy-tutorial-resources')
   assert.equal(catalog[0].summary, entry.tldr)
   assert.deepEqual(catalog[0].subjects, ['workbuddy'])
+})
+
+test('homepage cards use public type and subject, not research folder names', () => {
+  const catalog = buildHomeRecommendationCatalog(
+    [{ slug: 'diary-self-reflection', title: '日记', date: '2026-01-01', summary: 'x', homeCategory: '随笔' }],
+    [
+      RESEARCH_ENTRY_META['topics/workbuddy-tutorial-resources'],
+      RESEARCH_ENTRY_META['topics/crypto-bitcoin'],
+    ],
+  )
+  const diary = catalog.find((item) => item.id === 'column:diary-self-reflection')
+  const workbuddy = catalog.find((item) => item.id === 'research:topics:workbuddy-tutorial-resources')
+  const bitcoin = catalog.find((item) => item.id === 'research:topics:crypto-bitcoin')
+  const movie = catalog.find((item) => item.href === '/resources/niu-lai-movie')
+
+  assert.equal(diary.sectionLabel, '精选')
+  assert.equal(diary.tagLabel, '生活与家庭')
+  assert.equal(workbuddy.sectionLabel, '实践')
+  assert.equal(workbuddy.tagLabel, 'WorkBuddy')
+  assert.equal(bitcoin.sectionLabel, '分析')
+  assert.equal(bitcoin.tagLabel, 'Web3')
+  assert.equal(movie.sectionLabel, '资源')
+  assert.equal(movie.tagLabel, '人文与历史')
+  assert.equal(catalog.some((item) => item.tagLabel === '主题'), false)
+  assert.equal(catalog.some((item) => item.sectionLabel === '创作'), false)
+  assert.equal(catalog.some((item) => item.tagLabel === '公司观察' || item.tagLabel === '人物'), false)
 })
 
 test('runtime catalog replaces stale fields instead of keeping a second summary for the same article', () => {

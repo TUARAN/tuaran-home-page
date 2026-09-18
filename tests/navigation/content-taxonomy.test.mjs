@@ -14,6 +14,7 @@ import {
   assertCompleteContentTaxonomy,
   getDisplaySubject,
   getContentGroup,
+  publicTaxonomyLabels,
   isEntityTypeRedundant,
   taxonomyForArticle,
   taxonomyForInteractive,
@@ -29,6 +30,25 @@ import {
 import { ENGINEERING_WORKS } from '../../lib/engineeringWorks.js'
 import { HOME_RESOURCE_ITEMS } from '../../lib/homeResourceItems.js'
 import { RESEARCH_ENTRY_META } from '../../lib/research/catalog.js'
+
+test('public card labels use content group and subject, not research folders', () => {
+  assert.deepEqual(
+    publicTaxonomyLabels({ contentKind: 'analysis', subjects: ['web3'] }),
+    { group: 'analysis', groupLabel: '分析', subject: 'web3', subjectLabel: 'Web3' },
+  )
+  assert.deepEqual(
+    publicTaxonomyLabels({ contentKind: 'guide', subjects: ['workbuddy'] }),
+    { group: 'practice', groupLabel: '实践', subject: 'workbuddy', subjectLabel: 'WorkBuddy' },
+  )
+  assert.deepEqual(
+    publicTaxonomyLabels({ contentKind: 'article', subjects: ['life_family'] }),
+    { group: 'article', groupLabel: '精选', subject: 'life_family', subjectLabel: '生活与家庭' },
+  )
+  assert.deepEqual(
+    publicTaxonomyLabels({ contentKind: 'resource', subjects: ['humanities_history'] }),
+    { group: 'resource', groupLabel: '资源', subject: 'humanities_history', subjectLabel: '人文与历史' },
+  )
+})
 
 test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.deepEqual(CONTENT_GROUP_KEYS, ['all', 'article', 'analysis', 'practice', 'interactive', 'resource'])

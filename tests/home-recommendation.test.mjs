@@ -276,7 +276,7 @@ test('home article scopes include WorkBuddy, AI and Web3 tabs filtered by subjec
   const ai = listHomeArticleScopeCatalog(mixed, {}, 'ai_dev')
   const web3 = listHomeArticleScopeCatalog(mixed, {}, 'web3')
 
-  assert.deepEqual(HOME_ARTICLE_SCOPE_KEYS, ['recommended', 'latest', 'resources', 'workbuddy', 'ai_dev', 'web3'])
+  assert.deepEqual(HOME_ARTICLE_SCOPE_KEYS, ['recommended', 'latest', 'resources', 'ai_dev', 'web3', 'workbuddy'])
   assert.equal(HOME_ARTICLE_SCOPE_META.workbuddy.label, SUBJECT_META.workbuddy.label)
   assert.equal(HOME_ARTICLE_SCOPE_META.ai_dev.label, 'AI')
   assert.equal(HOME_ARTICLE_SCOPE_META.web3.label, SUBJECT_META.web3.label)

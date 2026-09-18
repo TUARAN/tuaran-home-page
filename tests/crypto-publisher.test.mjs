@@ -81,13 +81,15 @@ test('已复核、已退回、已发布及生成中或失败稿均不自动发�
   assert.equal(f.requests.length, 0)
 })
 
-test('积压稿每次只发布最早到期的一篇，已发布稿不会再次进入队列', async (t) => {
+test('到期积压稿一次发完，已发布稿不会再次进入队列', async (t) => {
   const f = await fixture(t)
   f.insert('newer')
   f.insert('oldest', 'pending', DUE - 1000)
-  assert.equal((await autoPublishOldestDueCryptoDraft(f.options)).id, 'oldest')
-  assert.equal(f.row('newer').status, 'pending')
-  assert.equal((await autoPublishOldestDueCryptoDraft(f.options)).id, 'newer')
+  const result = await autoPublishOldestDueCryptoDraft(f.options)
+  assert.equal(result.id, 'oldest')
+  assert.deepEqual(result.published.map((item) => item.id), ['oldest', 'newer'])
+  assert.equal(f.row('oldest').status, 'published')
+  assert.equal(f.row('newer').status, 'published')
   assert.equal((await autoPublishOldestDueCryptoDraft(f.options)).reason, 'none-due')
   assert.equal(f.requests.filter((request) => request.method === 'PUT').length, 2)
 })

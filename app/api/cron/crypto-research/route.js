@@ -14,8 +14,15 @@ function safeEqual(left, right) {
   return diff === 0
 }
 
+function withRequestPublishToken(env, request) {
+  const token = String(request.headers.get('x-github-publish-token') || '').trim()
+  if (!token) return env
+  return Object.assign(Object.create(env), { CRYPTO_PUBLISH_TOKEN: token })
+}
+
 async function handle(request) {
-  const env = getOptionalRequestContext()?.env || {}
+  const runtimeEnv = getOptionalRequestContext()?.env || {}
+  const env = withRequestPublishToken(runtimeEnv, request)
   const secrets = [env.CRYPTO_RESEARCH_SECRET, env.A_SHARE_COLLECT_SECRET, env.PUBLIC_OPINION_COLLECT_SECRET, process.env.CRYPTO_RESEARCH_SECRET].map((value) => String(value || '').trim()).filter(Boolean)
   if (!secrets.length) return Response.json({ ok: false, error: 'CRYPTO_RESEARCH_SECRET_NOT_CONFIGURED' }, { status: 503 })
   if (!secrets.some((secret) => safeEqual(request.headers.get('x-crypto-research-secret') || '', secret))) return Response.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 })

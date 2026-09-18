@@ -84,7 +84,7 @@ export default function CryptoResearchClient() {
       <StatCard label="待复核" value={stats.pending || 0} tone="warning" />
       <StatCard label="已发布" value={stats.published || 0} tone="success" />
     </div>
-    <Section title="自动生成草稿" description="请在草稿进入待复核后的 72 小时内发布或退回；到期仍待复核的草稿，在后续每日北京时间 01:30 调度时自动发布，每次最多一篇。退回可阻止自动发布，发布失败会保留原到期时间重试。">
+    <Section title="自动生成草稿" description="请在草稿进入待复核后的 72 小时内发布或退回；到期仍待复核的草稿，在后续每日北京时间 01:30 调度时按进入待复核的时间顺序自动发布。退回可阻止自动发布，发布失败会保留原到期时间重试。">
       <div className="mb-3 flex flex-wrap gap-2">
         {FILTERS.map(([id, label]) => <button key={id} type="button" onClick={() => setFilter(id)} className={`rounded-full border px-3 py-1.5 text-xs ${filter === id ? 'border-[#15140f] bg-[#15140f] text-white dark:border-gray-100 dark:bg-gray-100 dark:text-black' : 'border-[#d9dacd] dark:border-[#2d3744]'}`}>{label} · {id === 'all' ? total : stats[id] || 0}</button>)}
       </div>

@@ -1,6 +1,7 @@
 name: Crypto research daily
 
-# 每天北京时间 01:30，先自动发布最早一篇待复核满 72 小时的草稿，再按市值选择尚未完成的加密资产。
+# 每天北京时间 01:30，先自动发布已到期的待复核草稿，再按市值选择尚未完成的加密资产。
+# 发布使用本次 Actions 的 GITHUB_TOKEN，避免 Cloudflare 里过期的长期 PAT 把系列卡住。
 # 已复核、已退回和已发布稿不自动发布；发布失败保留原到期时间，后续调度重试。同步池后允许续跑同一选题。
 on:
   schedule:
@@ -16,12 +17,15 @@ jobs:
     name: POST /api/cron/crypto-research
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: write
     steps:
       - name: Trigger online automation
         env:
           CRYPTO_RESEARCH_SECRET: ${{ secrets.CRYPTO_RESEARCH_SECRET }}
           A_SHARE_COLLECT_SECRET: ${{ secrets.A_SHARE_COLLECT_SECRET }}
           PUBLIC_OPINION_COLLECT_SECRET: ${{ secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           TRIGGER_SECRET="${CRYPTO_RESEARCH_SECRET:-${A_SHARE_COLLECT_SECRET:-$PUBLIC_OPINION_COLLECT_SECRET}}"
           if [ -z "$TRIGGER_SECRET" ]; then
@@ -32,13 +36,21 @@ jobs:
             code=$(curl -sS \
               -o /tmp/crypto-research.json -w '%{http_code}' -X POST \
               -H "x-crypto-research-secret: $TRIGGER_SECRET" \
+              -H "x-github-publish-token: $GITHUB_TOKEN" \
               https://2aran.com/api/cron/crypto-research)
             echo "请求 $attempt/3 · HTTP $code"
             cat /tmp/crypto-research.json
             echo
             if [ "$code" = "200" ]; then
               phase=$(jq -r '.phase // ""' /tmp/crypto-research.json)
-              if [ "$phase" != "generation-locked" ] && [ "$phase" != "pool-synced" ]; then exit 0; fi
+              if [ "$phase" != "generation-locked" ] && [ "$phase" != "pool-synced" ]; then
+                auto_ok=$(jq -r '.autoPublish.ok // true' /tmp/crypto-research.json)
+                if [ "$auto_ok" != "true" ]; then
+                  echo "::error::自动发布失败：$(jq -r '.autoPublish.error // "unknown"' /tmp/crypto-research.json)"
+                  exit 1
+                fi
+                exit 0
+              fi
               if [ "$phase" = "generation-locked" ]; then
                 retry_ms=$(jq -r '.retryAfterMs // 600000' /tmp/crypto-research.json)
                 wait_seconds=$(( (retry_ms + 999) / 1000 ))

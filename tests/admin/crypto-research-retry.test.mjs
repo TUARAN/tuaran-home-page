@@ -14,6 +14,10 @@ const workflowSource = await readFile(
   new URL('../../.github/workflows/crypto-research.yml', import.meta.url),
   'utf8',
 )
+const cronSource = await readFile(
+  new URL('../../app/api/cron/crypto-research/route.js', import.meta.url),
+  'utf8',
+)
 
 test('失败草稿提供重新生成入口并仅重置 failed 草稿', () => {
   assert.match(clientSource, /draft\.status === 'failed'.*mutate\(draft, 'retry'\).*重新生成/)
@@ -31,4 +35,12 @@ test('CoinGecko 限流由外层循环退避，curl 不在短间隔内重复请�
   assert.doesNotMatch(workflowSource, /code=\$\(curl -sS --retry/)
   assert.match(workflowSource, /\[ "\$code" = "429" \]/)
   assert.match(workflowSource, /\.retryAfterMs \/\/ 60000/)
+})
+
+test('定时任务用本次 Actions 令牌发布，发布失败时不能静默成功', () => {
+  assert.match(cronSource, /x-github-publish-token/)
+  assert.match(cronSource, /CRYPTO_PUBLISH_TOKEN/)
+  assert.match(workflowSource, /contents:\s*write/)
+  assert.match(workflowSource, /x-github-publish-token: \$GITHUB_TOKEN/)
+  assert.match(workflowSource, /autoPublish\.ok/)
 })

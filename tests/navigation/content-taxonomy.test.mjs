@@ -78,6 +78,96 @@ test('加密调研系列使用 Web3 主题，不占用商业市场主题', () =>
   assert.equal(taxonomy.series, 'crypto_research')
 })
 
+test('链上与代币文章即使仍标着旧主题也会归到 Web3', () => {
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'topics',
+      slug: 'which-chain-is-this-token-on',
+      title: '怎么判断一枚币在哪条链上',
+      subjects: ['web_cloud'],
+      contentType: 'guide',
+      topicType: 'tech',
+      tags: ['公链', 'Chain ID', 'ERC-20'],
+    }).subjects,
+    ['web3'],
+  )
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'topics',
+      slug: 'public-chain-l1-l2-evm-svm',
+      title: '一枚币到底运行在哪里？',
+      subjects: ['web_cloud'],
+      contentType: 'analysis',
+      topicType: 'tech',
+    }).subjects,
+    ['web3'],
+  )
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'topics',
+      slug: 'what-is-web3',
+      title: 'Web3 到底指什么：密钥、共享状态与实际依赖',
+      subjects: ['web_cloud'],
+      topicType: 'thesis',
+    }).subjects,
+    ['web3'],
+  )
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'topics',
+      slug: 'okx-web3-wallet',
+      title: 'OKX Web3 钱包',
+      subjects: ['product_experience'],
+      topicType: 'product',
+    }).subjects,
+    ['web3'],
+  )
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'topics',
+      slug: 'cloudflare-d1-free-tier-limit-enforcement',
+      title: 'Cloudflare D1 免费层开始硬性限额',
+      subjects: ['web_cloud'],
+      topicType: 'tech',
+      techType: 'web_cloud',
+    }).subjects,
+    ['web_cloud'],
+  )
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'topics',
+      slug: 'china-mobile-token-office-ai-restructuring',
+      title: '中国移动「Token 办公室」与 AI 转型组织变革调研',
+      topicType: 'market',
+      tags: ['中国移动', 'Token经营', '大模型'],
+    }).subjects,
+    ['business_market'],
+  )
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'companies',
+      slug: 'v2ex',
+      title: 'V2EX 品牌与背后运营主体公司调研',
+      companyType: 'developer_community',
+      tags: ['V2EX', '技术社区', 'Solana'],
+    }).subjects,
+    ['company_research'],
+  )
+})
+
+test('废弃主题别名会归一到现行主题', () => {
+  assert.deepEqual(
+    taxonomyForResearch({
+      category: 'topics',
+      slug: '18-month-old-night-weaning-methods-principles',
+      title: '一岁半孩子怎样戒夜奶',
+      subjects: ['life_practice'],
+      topicType: 'thesis',
+    }).subjects,
+    ['life_family'],
+  )
+})
+
 test('A股系列使用商业市场主题，不占用公司调研主题', () => {
   const taxonomy = taxonomyForResearch({
     category: 'companies',

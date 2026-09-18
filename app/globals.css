@@ -4711,9 +4711,9 @@
     background:
       linear-gradient(90deg,
         color-mix(in srgb, var(--site-panel-strong) 98%, transparent) 0%,
-        color-mix(in srgb, var(--site-panel-strong) 88%, transparent) 40%,
-        color-mix(in srgb, var(--site-panel-strong) 18%, transparent) 69%,
-        transparent 100%),
+        color-mix(in srgb, var(--site-panel-strong) 88%, transparent) 38%,
+        color-mix(in srgb, var(--site-panel-strong) 18%, transparent) 56%,
+        transparent 66%),
       url('/images/community/solar-system-hero.webp') 50% center / cover no-repeat;
     pointer-events: none;
   }
@@ -4795,7 +4795,6 @@
     justify-content: flex-end;
     flex-direction: column;
     padding: 2rem;
-    background: linear-gradient(180deg, transparent 52%, color-mix(in srgb, var(--site-panel-strong) 78%, transparent) 100%);
   }
 
   .dark .community-hero::before {
@@ -6104,12 +6103,14 @@
 
   .article-action-button {
     @apply inline-flex shrink-0 items-center gap-1.5 rounded-full border;
+    appearance: none;
     min-height: 2rem;
     border-color: var(--site-line);
     background-color: transparent;
     color: var(--site-muted);
     line-height: 1;
     white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
     transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
   }
 
@@ -6276,6 +6277,10 @@
     color: var(--site-ink);
   }
 
+  .article-action-button:focus {
+    outline: none;
+  }
+
   .article-action-button:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--site-accent) 70%, transparent);
     outline-offset: 2px;
@@ -6285,6 +6290,24 @@
     position: relative;
     display: inline-flex;
     flex-shrink: 0;
+  }
+
+  .article-actions-dropdown:not(:has(.article-actions-dropdown-menu > *)) {
+    display: none;
+  }
+
+  .article-actions-dropdown[data-open='true'] > .article-action-button {
+    border-color: var(--site-line-strong);
+    background-color: color-mix(in srgb, var(--site-panel-strong) 72%, transparent);
+    color: var(--site-ink);
+  }
+
+  .article-actions-dropdown-chevron {
+    transition: transform 0.15s ease;
+  }
+
+  .article-actions-dropdown[data-open='true'] .article-actions-dropdown-chevron {
+    transform: rotate(180deg);
   }
 
   .article-actions-dropdown-menu {
@@ -6304,9 +6327,19 @@
     box-shadow: 0 18px 42px color-mix(in srgb, #000 18%, transparent);
   }
 
+  .article-actions-dropdown[data-open='false'] .article-actions-dropdown-menu,
+  .article-actions-dropdown-menu:empty {
+    display: none;
+  }
+
   .article-actions-dropdown-menu-top {
     top: auto;
     bottom: calc(100% + 0.45rem);
+  }
+
+  .article-actions-dropdown-menu-start {
+    right: auto;
+    left: 0;
   }
 
   .article-actions-dropdown-menu .article-action-button {

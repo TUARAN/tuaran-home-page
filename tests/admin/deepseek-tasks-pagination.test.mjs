@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const clientSource = await readFile(
-  new URL('../../app/(admin)/admin/deepseek-tasks/DeepSeekTasksClient.jsx', import.meta.url),
+  new URL('../../app/(admin)/admin/logs/ModelCallRecordsPanel.jsx', import.meta.url),
   'utf8',
 )
 const routeSource = await readFile(

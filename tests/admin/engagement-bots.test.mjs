@@ -46,7 +46,7 @@ test('engagement bot admin is owner-only and can run plus CRUD', () => {
   assert.match(consoleSource, /立即运行/)
   assert.match(consoleSource, /!adminDeepSeekConfigured/)
   assert.match(consoleSource, /“立即运行”已停用/)
-  assert.match(centerSource, /href: '\/admin\/engagement-bots'/)
+  assert.match(centerSource, /getWorkspaceHubProps\('\/admin\/automation'\)/)
 })
 
 test('cron uses shared secret header and DeepSeek comment source', () => {

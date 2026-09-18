@@ -36,7 +36,8 @@ test('后台自动化工作区和导航都登记文章一键分发', async () =>
     readFile(new URL('../app/(admin)/admin/article-distribution/ArticleDistributionClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/article-distribution/article/route.js', import.meta.url), 'utf8'),
   ])
-  for (const source of [workspace, routes]) assert.match(source, /\/admin\/article-distribution/)
+  assert.match(workspace, /getWorkspaceHubProps\('\/admin\/automation'\)/)
+  assert.match(routes, /\/admin\/article-distribution/)
   assert.match(page, /window\.\$cose\.addTask/)
   assert.match(page, /草稿模式/)
   assert.match(page, /2aran-article-distributor-extension-v1\.3\.6\.zip/)

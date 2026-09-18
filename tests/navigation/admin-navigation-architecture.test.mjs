@@ -22,6 +22,7 @@ test('admin navigation exposes seven stable workspaces without duplicate dashboa
 test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/content-taxonomy').map((item) => item.label), ['内容', '分类管理'])
   assert.deepEqual(resolveAdminTrail('/admin/deepseek-tasks').map((item) => item.label), ['自动化', '模型服务'])
+  assert.deepEqual(resolveAdminTrail('/admin/logs').map((item) => item.label), ['自动化', '日志记录'])
   assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['自动化', '名言生成'])
   assert.deepEqual(resolveAdminTrail('/admin/engagement-bots').map((item) => item.label), ['自动化', '路过互动'])
   assert.deepEqual(resolveAdminTrail('/admin/points').map((item) => item.label), ['用户与权限', '燃币与权益'])
@@ -108,4 +109,22 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
     content.sections.map((section) => [section.label, section.items.map((item) => item.label)])
   )
   assert.ok(listWorkspaceChildren(content).every((item) => item.sidebar !== false))
+})
+
+test('automation workspace hub and sidebar share registry, model, and log entries', () => {
+  const automation = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/automation')
+  const hub = getWorkspaceHubProps('/admin/automation')
+
+  assert.deepEqual(
+    listWorkspaceChildren(automation).map((item) => item.label),
+    ['自动化台账', '模型服务', '日志记录', 'A 股研究自动化', '加密调研自动化', 'X 发布任务', '文章一键分发', '名言生成', '路过互动']
+  )
+  assert.deepEqual(
+    hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),
+    automation.sections.map((section) => [section.label, section.items.map((item) => item.label)])
+  )
+  assert.deepEqual(
+    hub.sections[0].items.map((item) => item.href),
+    ['/admin/ops', '/admin/deepseek-tasks', '/admin/logs']
+  )
 })

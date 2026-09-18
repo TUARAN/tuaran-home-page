@@ -2,8 +2,8 @@ import AdminPageGate from '../../components/AdminPageGate'
 import OpsConsoleClient from './OpsConsole'
 
 export const metadata = {
-  title: '自动化控制台',
-  description: '站内自动化控制台，仅站长本人可访问。',
+  title: '自动化台账',
+  description: '云端与本地自动化列表，仅站长本人可访问。',
   robots: {
     index: false,
     follow: false,
@@ -14,9 +14,9 @@ export const metadata = {
 export default async function AdminOpsPage() {
   return (
     <AdminPageGate
-      label="自动化控制台"
+      label="自动化台账"
       returnTo="/admin/ops"
-      description="站内自动化控制台，仅站长本人可见。"
+      description="云端与本地自动化列表，仅站长本人可见。"
     >
       <OpsConsoleClient />
     </AdminPageGate>

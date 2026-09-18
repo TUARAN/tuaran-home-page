@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminButton, AdminPage, StatusPill } from '../../components/ui'
 
 const PAGE_SIZE = 10
-const RUNS_PAGE_SIZE = 8
 
 async function safeJson(res) {
   try {
@@ -13,25 +12,6 @@ async function safeJson(res) {
   } catch {
     return null
   }
-}
-
-function formatTime(value) {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function formatDuration(value) {
-  if (value == null) return '—'
-  if (value < 1000) return `${value} ms`
-  return `${(value / 1000).toFixed(1)} s`
 }
 
 function statusText(status) {
@@ -46,29 +26,6 @@ function statusText(status) {
       never_run: '未运行',
     }[status] || status || '状态未知'
   )
-}
-
-function reviewText(status) {
-  return (
-    {
-      approved: '已审核',
-      pending_review: '待审核',
-      not_required: '无需审核',
-    }[status] || status || '—'
-  )
-}
-
-function runTone(status) {
-  if (status === 'success') return 'success'
-  if (status === 'failed') return 'danger'
-  if (status === 'running') return 'info'
-  return 'neutral'
-}
-
-function reviewTone(status) {
-  if (status === 'approved') return 'success'
-  if (status === 'pending_review') return 'warning'
-  return 'neutral'
 }
 
 function riskTone(level) {
@@ -131,9 +88,7 @@ export default function OpsConsoleClient() {
   const [repositoryFilter, setRepositoryFilter] = useState('all')
   const [scopeFilter, setScopeFilter] = useState('all')
   const [openId, setOpenId] = useState('')
-  const [openRunId, setOpenRunId] = useState('')
   const [registryPage, setRegistryPage] = useState(1)
-  const [runsPage, setRunsPage] = useState(1)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -164,11 +119,6 @@ export default function OpsConsoleClient() {
     return scopeFilter === 'all' ? byRepo : byRepo.filter((item) => item.scope === scopeFilter)
   }, [registry, repositoryFilter, scopeFilter])
   const pagedRegistry = filteredRegistry.slice((registryPage - 1) * PAGE_SIZE, registryPage * PAGE_SIZE)
-  const allRuns = useMemo(
-    () => (status?.recentRuns || []).filter((run) => repositoryFilter === 'all' || run.repository === repositoryFilter),
-    [status?.recentRuns, repositoryFilter],
-  )
-  const pagedRuns = allRuns.slice((runsPage - 1) * RUNS_PAGE_SIZE, runsPage * RUNS_PAGE_SIZE)
   const stats = repositoryFilter === 'all'
     ? status?.stats || {}
     : {
@@ -239,7 +189,6 @@ export default function OpsConsoleClient() {
   function changeRepository(value) {
     setRepositoryFilter(value)
     setRegistryPage(1)
-    setRunsPage(1)
   }
 
   function changeScope(value) {
@@ -250,9 +199,10 @@ export default function OpsConsoleClient() {
   return (
     <AdminPage
       title="自动化台账"
-      description="云端与本地自动化统一登记；列表紧凑展示，点击任意一行查看详情。"
+      description="云端与本地自动化统一登记；列表紧凑展示，点击任意一行查看详情。运行记录已移到日志记录。"
       actions={
         <div className="flex flex-wrap gap-2">
+          <AdminButton href="/admin/logs">运行记录</AdminButton>
           <AdminButton href="/admin/a-share-research" variant="primary">A 股研究自动化</AdminButton>
           <AdminButton href={status?.localUrl || 'http://localhost:4179'} target="_blank" rel="noreferrer">本机控制台</AdminButton>
           <AdminButton href={status?.externalUrl || 'https://ops.2aran.com/'} target="_blank" rel="noreferrer">Tunnel 入口</AdminButton>
@@ -280,12 +230,11 @@ export default function OpsConsoleClient() {
         </div>
       ) : null}
 
-      <section className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="自动化总数" value={loading ? '—' : stats.totalTasks ?? '—'} />
         <Stat label="云端自动化" value={loading ? '—' : stats.cloudTasks ?? '—'} />
         <Stat label="本地自动化" value={loading ? '—' : stats.localTasks ?? '—'} />
         <Stat label="需人工审核" value={loading ? '—' : stats.reviewRequired ?? '—'} />
-        <Stat label="最近运行" value={loading ? '—' : allRuns.length ?? '—'} />
       </section>
 
       <section className="mb-4 rounded-xl border border-[#d5d7cd] bg-white/70 p-4 dark:border-[#252e39] dark:bg-[#10161f]">
@@ -362,36 +311,8 @@ export default function OpsConsoleClient() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-[#d5d7cd] bg-white/70 dark:border-[#252e39] dark:bg-[#10161f]">
-        <div className="flex items-center justify-between border-b border-[#e6e7df] px-4 py-2.5 dark:border-[#263142]">
-          <div>
-            <h2 className="text-sm font-semibold text-[#15140f] dark:text-gray-100">最近运行</h2>
-            <p className="text-[11px] text-[#858779] dark:text-gray-500">点击行查看详情；共 {allRuns.length} 条</p>
-          </div>
-        </div>
-        <div className="divide-y divide-[#e6e7df] dark:divide-[#1f2a37]">
-          {pagedRuns.map((run) => {
-            const open = openRunId === run.id
-            return (
-              <RunRow
-                key={run.id}
-                run={run}
-                open={open}
-                onOpen={() => setOpenRunId(open ? '' : run.id)}
-              />
-            )
-          })}
-          {!loading && !pagedRuns.length ? (
-            <p className="px-4 py-8 text-center text-sm text-[#77796d] dark:text-gray-400">暂无运行记录。</p>
-          ) : null}
-        </div>
-        <div className="px-4 pb-3">
-          <Pagination page={runsPage} total={allRuns.length} pageSize={RUNS_PAGE_SIZE} onChange={setRunsPage} />
-        </div>
-      </section>
-
       <p className="mt-4 text-[12px] leading-6 text-[#858779] dark:text-gray-500">
-        调度状态表示任务是否已启用：定时任务在两次触发之间仍显示“已启用”，仅有实时执行记录时才使用“运行中”；“按需运行”表示由人工触发。最近一次执行结果见“最近运行”。
+        调度状态表示任务是否已启用：定时任务在两次触发之间仍显示“已启用”，仅有实时执行记录时才使用“运行中”；“按需运行”表示由人工触发。最近一次执行结果见日志记录。
       </p>
     </AdminPage>
   )
@@ -464,33 +385,6 @@ function FragmentRow({ item, open, toggling, copied, onToggle, onCopy, onOpen })
         </tr>
       ) : null}
     </>
-  )
-}
-
-function RunRow({ run, open, onOpen }) {
-  return (
-    <div onClick={onOpen} className={`cursor-pointer px-4 py-2.5 transition ${open ? 'bg-[#f4f5ee] dark:bg-[#151d29]' : 'hover:bg-[#f8f9f3] dark:hover:bg-[#131b26]'}`}>
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-        <StatusPill tone={runTone(run.status)} size="sm">{statusText(run.status)}</StatusPill>
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#15140f] dark:text-gray-100">{run.taskName}</span>
-        <span className="font-mono text-[11px] text-[#858779] dark:text-gray-500">{run.repository || '未关联仓库'}</span>
-        <span className="text-[12px] text-[#686962] dark:text-gray-400">{formatTime(run.startedAt)}</span>
-        <span className="w-20 text-right text-[12px] text-[#686962] dark:text-gray-400">{formatDuration(run.durationMs)}</span>
-      </div>
-      {open ? (
-        <div className="mt-2 border-t border-[#e6e7df] pt-2 dark:border-[#263142]">
-          <div className="flex flex-wrap items-center gap-2 text-[12px] text-[#686962] dark:text-gray-400">
-            <StatusPill tone={reviewTone(run.reviewStatus)} size="sm">{reviewText(run.reviewStatus)}</StatusPill>
-            <span className="font-mono">{run.taskId}</span>
-            {(run.artifacts || []).map((artifact) => (
-              <span key={artifact} className="rounded border border-[#d9dbd1] px-2 py-0.5 font-mono text-[11px] text-[#6b6d61] dark:border-[#263142] dark:text-gray-400">
-                {artifact}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </div>
   )
 }
 

@@ -384,8 +384,8 @@ export default function EngagementBotsClient() {
               </Field>
               <p className="text-[12px] leading-5 text-[#858779]">
                 定时评论读取 2aran.com 的 DeepSeek 密钥，立即运行读取 admin.2aran.com 的密钥；调用统一记入
-                <Link className="mx-1 underline underline-offset-2" href="/admin/deepseek-tasks">模型任务</Link>
-                台账。
+                <Link className="mx-1 underline underline-offset-2" href="/admin/logs?tab=calls">日志记录</Link>
+                。
               </p>
               <AdminButton type="submit" variant="primary" disabled={saving || !persistent}>
                 <IconCheck size={15} />

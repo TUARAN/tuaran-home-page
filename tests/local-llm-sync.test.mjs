@@ -44,6 +44,10 @@ test('相同设备与本地记录生成稳定幂等任务 ID', async () => {
 })
 
 test('模型调用管理展示云调用、本地调用与 Mac 专用入口', async () => {
+  const records = await readFile(
+    new URL('../app/(admin)/admin/logs/ModelCallRecordsPanel.jsx', import.meta.url),
+    'utf8',
+  )
   const client = await readFile(
     new URL('../app/(admin)/admin/deepseek-tasks/DeepSeekTasksClient.jsx', import.meta.url),
     'utf8',
@@ -61,9 +65,9 @@ test('模型调用管理展示云调用、本地调用与 Mac 专用入口', asy
     'utf8',
   )
 
-  assert.match(client, /Mac 发起的 NAS Qwen/)
-  assert.match(client, /云调用/)
-  assert.match(client, /本地调用/)
+  assert.match(records, /Mac 发起的 NAS Qwen/)
+  assert.match(records, /云调用/)
+  assert.match(records, /本地调用/)
   assert.match(client, /DeepSeek 密钥/)
   assert.match(client, /NAS · Ollama/)
   assert.match(ollamaPanel, /NAS · Ollama 使用场景/)

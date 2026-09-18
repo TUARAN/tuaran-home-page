@@ -31,7 +31,7 @@ test('manual quote generation is owner-only and adds one prompt result to the po
   assert.match(consoleSource, /生成并入库/)
   assert.match(consoleSource, /JSON\.stringify\(\{ prompt: value \}\)/)
   assert.doesNotMatch(consoleSource, /候选|新增名言|编辑名言|核验来源/)
-  assert.match(automationCenterSource, /href: '\/admin\/quotes'/)
+  assert.match(automationCenterSource, /getWorkspaceHubProps\('\/admin\/automation'\)/)
   assert.doesNotMatch(contentCenterSource, /href: '\/admin\/quotes'/)
 })
 

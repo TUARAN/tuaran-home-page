@@ -22,7 +22,7 @@ async function safeJson(response) {
   try { return await response.json() } catch { return null }
 }
 
-export default function OllamaProvidersPanel({ onViewCalls }) {
+export default function OllamaProvidersPanel() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -364,7 +364,7 @@ export default function OllamaProvidersPanel({ onViewCalls }) {
                     {provider.lastCheckDetail ? <p className="mt-1.5 text-[12px] text-[#67695d] dark:text-gray-400">{provider.lastCheckDetail}</p> : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <AdminButton type="button" variant="ghost" onClick={() => onViewCalls(provider.id)}>查看调用</AdminButton>
+                    <AdminButton href={`/admin/logs?tab=calls&provider=ollama&providerId=${encodeURIComponent(provider.id)}&scope=cloud`} variant="ghost">查看调用</AdminButton>
                     <AdminButton type="button" variant="ghost" disabled={testingId === provider.id || provider.status !== 'active'} onClick={() => testProvider(provider)}>{testingId === provider.id ? '测试中…' : '测试调用'}</AdminButton>
                     <AdminButton type="button" variant="ghost" disabled={saving} onClick={() => startEdit(provider)}>编辑</AdminButton>
                     <AdminButton type="button" variant="ghost" disabled={saving} onClick={() => toggleProvider(provider)}>{provider.status === 'active' ? '停用' : '启用'}</AdminButton>

@@ -2,12 +2,14 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
+import {
+  ADMIN_CONSOLE_ITEMS,
+  getWorkspaceHubProps,
+  listWorkspaceChildren,
+} from '../../lib/adminRoutes.js'
+
 const projectWorkspace = await readFile(
   new URL('../../app/(admin)/admin/projects/ProjectWorkspace.jsx', import.meta.url),
-  'utf8'
-)
-const automationWorkspace = await readFile(
-  new URL('../../app/(admin)/admin/automation/AutomationWorkspace.jsx', import.meta.url),
   'utf8'
 )
 
@@ -24,6 +26,15 @@ test('AI planning is embedded in planning center instead of a separate project w
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/ops'/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/deepseek-tasks'/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/ai-workspace'/)
-  assert.match(automationWorkspace, /href: '\/admin\/ops', title: '自动化台账'/)
-  assert.match(automationWorkspace, /href: '\/admin\/deepseek-tasks', title: '模型服务'/)
+
+  const automation = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/automation')
+  assert.deepEqual(
+    listWorkspaceChildren(automation).slice(0, 3).map((item) => [item.href, item.label]),
+    [
+      ['/admin/ops', '自动化台账'],
+      ['/admin/deepseek-tasks', '模型服务'],
+      ['/admin/logs', '日志记录'],
+    ]
+  )
+  assert.equal(getWorkspaceHubProps('/admin/automation').title, '自动化')
 })

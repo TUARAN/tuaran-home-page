@@ -17,7 +17,7 @@ jobs:
   update:
     name: Read commits and update changelog
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout full history
         uses: actions/checkout@v4
@@ -51,13 +51,21 @@ jobs:
           git commit -m "chore(changelog): update $(date -u +%F)"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
-      - name: Notify owner of failure
-        if: failure()
+      - name: Record run status
+        if: always()
         env:
           ALERT_SECRET: ${{ secrets.AUTOMATION_ALERT_SECRET || secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           if [ -z "$ALERT_SECRET" ]; then exit 0; fi
+          if [ "$JOB_STATUS" = "success" ]; then
+            export STATUS=success
+            export ERROR=
+          else
+            export STATUS=failed
+            export ERROR='DeepSeek 空响应或更新日志写入失败'
+          fi
           BODY=$(python3 - <<'PY'
           import json, os
           print(json.dumps({
@@ -65,8 +73,8 @@ jobs:
               'taskName': 'DeepSeek 更新日志',
               'runId': os.environ.get('GITHUB_RUN_ID', ''),
               'runUrl': os.environ.get('RUN_URL', ''),
-              'status': 'failed',
-              'error': '读取提交、生成摘要、校验或推送失败',
+              'status': os.environ.get('STATUS', 'failed'),
+              'error': os.environ.get('ERROR', ''),
           }, ensure_ascii=False))
           PY
           )

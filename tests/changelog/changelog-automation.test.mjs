@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  buildChangelogPrompt,
+  compactCommitHistory,
   groupCommitsByIsoWeek,
   prependChangelogEntry,
   replaceLatestChangelogEntry,
@@ -69,4 +71,34 @@ test('generated DeepSeek JSON must contain complete weekly and period summaries'
   })
   assert.equal(generated.entry.done.length, 3)
   assert.throws(() => validateGeneratedSummary({ entry: {}, periods: {} }), /entry.title/)
+})
+
+test('commit history collapses auto-publish and research noise for the model prompt', () => {
+  const history = compactCommitHistory([
+    { date: '2026-09-08', subject: 'feat: add WorkBuddy ACP bridge and research' },
+    { date: '2026-09-08', subject: 'content: auto-publish A-share observation 国科恒泰 301370' },
+    { date: '2026-09-08', subject: 'content: auto-publish crypto observation TRON TRX' },
+    { date: '2026-09-11', subject: '[CF-Pages-Skip] research: add pi history, algorithms, and 314-trillion-digit record' },
+    { date: '2026-09-11', subject: '[CF-Pages-Skip] research: add WorkBuddy 5G SMS ACP session inject recap' },
+  ])
+  assert.match(history, /WorkBuddy ACP bridge/)
+  assert.match(history, /自动发布：A 股观察 1 篇、加密观察 1 篇/)
+  assert.match(history, /调研新增 2 篇/)
+  assert.doesNotMatch(history, /国科恒泰/)
+  assert.doesNotMatch(history, /TRON TRX/)
+})
+
+test('changelog prompt omits lastCommit and asks for compact JSON without chain-of-thought', () => {
+  const messages = buildChangelogPrompt({
+    group: {
+      week: '2026-W36',
+      commits: [{ date: '2026-09-02', subject: 'feat: automate changelog updates with DeepSeek' }],
+    },
+    currentEntry: { ...ENTRY, lastCommit: 'f'.repeat(40), commits: 85 },
+    keys: { month: '2026-09', quarter: '2026-Q3', year: '2026' },
+    existingPeriods: { month: PERIOD, quarter: PERIOD, year: PERIOD },
+  })
+  assert.match(messages[0].content, /不要思考过程/)
+  assert.doesNotMatch(messages[1].content, /ffffff/)
+  assert.match(messages[1].content, /automate changelog updates/)
 })

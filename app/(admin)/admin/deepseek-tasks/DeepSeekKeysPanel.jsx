@@ -14,6 +14,12 @@ const DEEPSEEK_SHARED_USES = [
 ]
 const DEEPSEEK_GITHUB_ACTIONS_USES = [
   {
+    name: '更新日志自动归纳',
+    schedule: '每周三、周六 · 北京时间 09:37',
+    workflow: 'changelog-update.yml',
+    taskType: 'changelog',
+  },
+  {
     name: '设计扫描',
     schedule: '每月 1 日 · 北京时间 09:17',
     workflow: 'design-scan.yml',

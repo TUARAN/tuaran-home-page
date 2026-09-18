@@ -44,3 +44,11 @@ test('Pages 部署失败告警登记为已启用的云端自动任务', () => {
   assert.equal(automationScheduleStatus(item), 'active')
   assert.match(item.entry, /pages-deploy-alert\.yml/)
 })
+
+test('更新日志自动归纳不再显示待首次运行', () => {
+  const item = AUTOMATION_REGISTRY.find((entry) => entry.id === 'changelog-deepseek-update')
+  assert.ok(item)
+  assert.equal(item.autoRun, true)
+  assert.doesNotMatch(item.lastRun, /待首次运行/)
+  assert.match(item.entry, /changelog-update\.yml/)
+})

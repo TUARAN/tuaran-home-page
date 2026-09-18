@@ -26,6 +26,15 @@ test('DeepSeek key panel records every GitHub Actions workflow that directly inj
   }
 })
 
+test('changelog workflow injects the shared DeepSeek secret and is listed as an Actions consumer', async () => {
+  const workflowSource = await readFile(new URL('../../.github/workflows/changelog-update.yml', import.meta.url), 'utf8')
+  assert.match(workflowSource, /DEEPSEEK_API_KEY: \$\{\{ secrets\.DEEPSEEK_API_KEY \}\}/)
+  assert.match(workflowSource, /update-changelog\.mjs/)
+  assert.match(workflowSource, /if: always\(\)/)
+  assert.match(panelSource, /changelog-update\.yml/)
+  assert.match(panelSource, /taskType: 'changelog'/)
+})
+
 test('GitHub-triggered site tasks are grouped with Actions while preserving the site execution boundary', () => {
   assert.match(panelSource, /DEEPSEEK_GITHUB_TRIGGERED_USES/)
   assert.match(panelSource, /Actions 定时触发，DeepSeek 在站点执行/)

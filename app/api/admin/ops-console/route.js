@@ -11,6 +11,12 @@ import {
   registryEntryText,
 } from '../../../../lib/adminOpsRegistry'
 import {
+  lastRunSettingKey,
+  pickLatestAlertByWorkflow,
+  resolveRegistryLastRun,
+  workflowIdFromEntry,
+} from '../../../../lib/automationLastRun'
+import {
   MORNING_GREETING_ID,
   MORNING_GREETING_LAST_RUN_KEY,
   MORNING_GREETING_SETTING_KEY,
@@ -58,6 +64,8 @@ export async function GET(req) {
   const db = getOptionalRequestContext()?.env?.DB || null
   let greetingState = null
   let greetingLastRun = null
+  let automationLastRuns = {}
+  let alertsByWorkflow = {}
   if (db) {
     try {
       greetingState = await readSetting(db, MORNING_GREETING_SETTING_KEY)
@@ -69,12 +77,41 @@ export async function GET(req) {
     } catch {
       greetingLastRun = null
     }
+    try {
+      const workflows = [...new Set(AUTOMATION_REGISTRY.map((item) => workflowIdFromEntry(item.entry)).filter(Boolean))]
+      for (const workflow of workflows) {
+        const raw = await readSetting(db, lastRunSettingKey(workflow))
+        if (!raw) continue
+        try {
+          automationLastRuns[workflow] = JSON.parse(raw)
+        } catch {
+          automationLastRuns[workflow] = null
+        }
+      }
+    } catch {
+      automationLastRuns = {}
+    }
+    try {
+      const { results } = await db
+        .prepare(
+          `SELECT article_key, message_excerpt, created_at
+           FROM comment_notifications
+           WHERE type = 'automation_monitor'
+           ORDER BY created_at DESC
+           LIMIT 80`,
+        )
+        .all()
+      alertsByWorkflow = pickLatestAlertByWorkflow(results)
+    } catch {
+      alertsByWorkflow = {}
+    }
   }
 
   const registry = AUTOMATION_REGISTRY.map((item) => {
     const resolved = {
       ...item,
       status: automationScheduleStatus(item),
+      lastRun: resolveRegistryLastRun(item, { lastRuns: automationLastRuns, alertsByWorkflow }) || item.lastRun,
       ...(item.id === MORNING_GREETING_ID
         ? {
             status: isAutomationPaused(greetingState) ? 'paused' : 'active',

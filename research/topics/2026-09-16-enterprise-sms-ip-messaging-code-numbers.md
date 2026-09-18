@@ -219,8 +219,6 @@ pv: 0
 
 将产业口语中的“IP 消息”对应到 74 号令第四十一条，是阅读法规后的归类，原文没有使用这个词。资质代办文案里常见“注册资本 1000 万、三名社保”等办理条件，属于申请实务口径，未在 74 号令正文中逐条写出；跨省 / 省内许可的注册资本等要求，以工信部行政许可实施办法和当时有效的申请指南为准。
 
-持续验证：74 号令第四十一条的执法细则和案例尚未公开，厂商推送、快应用、类短信 SDK 是否被管进去，仍要看通信管理局处罚决定。
-
 **站内交叉**
 
 - [IP 消息监管与 5G 消息合作僵局](/articles/research/topics/ip-messaging-rcs-standoff)
@@ -229,5 +227,7 @@ pv: 0
 - [梦网云通信公司调研](/articles/research/companies/montnets)
 - [WorkBuddy 的 SMS / 5G 消息通道](/articles/research/topics/workbuddy-sms-rcs-channel)
 - [中移互联网观察](/articles/research/companies/china-mobile-internet)
+
+持续验证：74 号令第四十一条的执法细则和案例尚未公开，厂商推送、快应用、类短信 SDK 是否被管进去，仍要看通信管理局处罚决定。
 
 资料截至 2026-09-16。

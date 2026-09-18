@@ -7,6 +7,7 @@ coin_id: "ripple"
 symbol: "XRP"
 market_cap_rank: 5
 date: "2026-08-31"
+updated: 2026-09-18
 time: "01:34"
 tags: [加密资产, "XRP", "XRP"]
 subjects: [web3]
@@ -169,9 +170,10 @@ XRP 是 XRP Ledger（XRPL）的原生资产，定位为跨境支付与流动性�
 - 有报道称少数受信任验证者若拒绝升级，可无限期阻碍网络升级。
 - Ripple 作为私人公司，2026 年 1 月确认无 IPO 计划，2026 年 3 月报道计划 7.5 亿美元回购（估值 500 亿美元）。
 
-## 十、信息来源与未能验证
 
-**CoinGecko markets 接口**：本报告的市场数据（价格、市值、FDV、成交额、流通量、总量、上限、历史高低点、排名）来自用户提供的 CoinGecko 快照，对应 CoinGecko markets 接口（coin_id: ripple，symbol: XRP），数据更新时间为 2026-08-29T17:29:30.000Z。
+## 十、信息来源与持续验证
+
+市场数据来自用户提供的 CoinGecko 快照（coin_id: ripple，更新时间 2026-08-29T17:29:30.000Z）。
 
 **实际检索来源**：
 - XRP Ledger 官方文档（xrpl.org）：History 页面、FAQ 页面（共识机制、验证者、UNL、XRP 用途、治理、安全）。
@@ -180,8 +182,4 @@ XRP 是 XRP Ledger（XRPL）的原生资产，定位为跨境支付与流动性�
 - 第三方报道：KuCoin、CoinMarketCap、MEXC、HTX、Bitget、Coinspeaker、Yahoo Finance（Ripple 融资、IPO、托管、RLUSD、机构测试、价格历史）。
 - SEC EDGAR 文件（ck0001683471）：XRP Ledger 治理风险披露。
 
-**未能验证**：
-- Ripple 2026 年 3 月 7.5 亿美元回购及 500 亿美元估值：仅见第三方报道，未获 Ripple 官方确认。
-- RLUSD 市值突破 10 亿美元：仅见第三方报道。
-- BlackRock、Mastercard、Franklin Templeton 在 XRPL 测试稳定币支付：仅见第三方报道，未获相关机构官方确认。
-- BRICS 连接支付系统与 XRPL 的关联：
+持续验证：Ripple 2026 年 3 月 7.5 亿美元回购及 500 亿美元估值仅见第三方报道，未获 Ripple 官方确认。

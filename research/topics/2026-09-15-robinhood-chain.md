@@ -5,6 +5,7 @@ topic_type: industry
 content_type: analysis
 subjects: [web3]
 date: 2026-09-15
+updated: 2026-09-18
 time: 15:10
 tags: [Robinhood Chain, 罗宾汉链, 以太坊L2, Arbitrum, 股票代币, RWA, DeFi, Stock Tokens]
 summary: Robinhood Chain 已从股票代币的专用结算层长成高交易量的开放 L2；它的优势来自 Robinhood 用户入口、发行主体和 DeFi 流动性的组合，真正考验则是股票代币规模、治理透明度与跨司法辖区合规。
@@ -215,16 +216,8 @@ Robinhood 及关联实体可能分别承担应用分发、钱包界面、链排�
 7. Robinhood 财报是否单独披露 Chain、Wallet、Stock Tokens 的收入和成本；
 8. 各司法辖区对 Stock Tokens、链上借贷和衍生品的新增限制。
 
-## 十二、未能验证
 
-- Robinhood 尚未按统一口径披露主网真实自然人用户、机器人比例和 Stock Tokens 用户留存；
-- 公开文档未完整说明排序器故障时用户交易进入链的实际操作体验、最大延迟和历史演练；
-- 暂未看到覆盖 Robinhood Chain 全部协议合约、升级权限和生产部署版本的单一公开审计索引；
-- 安全委员会成员之间的法律协议、赔偿责任、离任与替换机制没有完整公开；
-- RHJ 对每类 Stock Token 的底层对冲、资产保管、破产隔离和赎回瀑布需要逐份查阅基础招股书、补充文件与 Final Terms，不能从 ERC-20 合约推断；
-- DefiLlama 的链收入属于第三方估算，尚不能与 Robinhood 会计报表中的收入科目一一对应。
-
-## 十三、信息来源与说明
+## 十二、信息来源与持续验证
 
 ### 一手资料
 
@@ -245,4 +238,6 @@ Robinhood 及关联实体可能分别承担应用分发、钱包界面、链排�
 - [DefiLlama：Robinhood Chain](https://defillama.com/chain/Robinhood%20Chain)：TVL、稳定币、RWA、成交、费用和协议构成的实时数据。
 - [CoinDesk：主网上线两周后的活动结构](https://www.coindesk.com/tech/2026/07/13/robinhood-built-a-blockchain-for-tokenized-stocks-memecoins-took-over)：早期 Meme 币、RWA 占比和链上活动观察。
 
-市场数据为 2026 年 9 月 15 日页面快照，随资产价格、协议统计和链上活动持续变化。DefiLlama 与 CoinDesk 用于描述外部统计和市场结构；网络配置、治理、法律性质与公司风险优先采用 Robinhood 官方文档和监管披露。文中的竞争力、护城河与长期判断属于外部研判。
+市场数据为 2026 年 9 月 15 日页面快照。DefiLlama 与 CoinDesk 用于描述外部统计和市场结构；网络配置、治理、法律性质与公司风险优先采用 Robinhood 官方文档和监管披露。竞争力、护城河与长期判断属于外部研判。
+
+持续验证：主网真实自然人用户、机器人比例和 Stock Tokens 留存没有统一口径；RHJ 对每类 Stock Token 的底层对冲、资产保管、破产隔离和赎回瀑布需要逐份查阅基础招股书与 Final Terms，不能从 ERC-20 合约推断。

@@ -7,6 +7,7 @@ coin_id: "tron"
 symbol: "TRX"
 market_cap_rank: 8
 date: "2026-09-06"
+updated: 2026-09-18
 time: "01:31"
 tags: [加密资产, "TRON", "TRX"]
 subjects: [web3]
@@ -181,11 +182,12 @@ TRON（TRX）是一条 2018 年 5 月上线主网、采用委托权益证明（D
 - 有分析指出 TRON 在 2026 年 H1 清算额虽高，但 TRX 价格并未同步大幅上涨，显示"管道价值"向代币价值的传导存在折扣。
 - 市场对 TRX 的 2026 年价格预测区间分歧较大（约 0.24-0.60 美元），反映对其通缩叙事与稳定币依赖的权衡。
 
-## 十、信息来源与未能验证
 
-**CoinGecko markets 接口**：本报告市场数据（价格、市值、排名、供给、历史高低点）均来自用户提供的 CoinGecko 快照（CoinGecko ID: tron，数据更新时间 2026-09-05T17:28:20Z），未直接调用 CoinGecko markets API 接口。
+## 十、信息来源与持续验证
 
-**实际检索来源**（本次调研通过 web_search 检索）：
+市场数据来自用户提供的 CoinGecko 快照（CoinGecko ID: tron，更新时间 2026-09-05T17:28:20Z）。
+
+**实际检索来源**：
 - TRON 官方开发者文档（developers.tron.network）：经济模型、共识机制、DPoS 说明
 - TRON 官方白皮书（tron.network/static/doc/white_paper_v_2_1.pdf）
 - SEC.gov 诉讼文件与新闻稿（lr-25676、lr-26496、2023-59）
@@ -195,5 +197,4 @@ TRON（TRX）是一条 2018 年 5 月上线主网、采用委托权益证明（D
 - CourtListener（SEC v. Sun 案卷、FTX 破产案卷）
 - 维基百科、CoinLore、CoinMarketCap 等资料站
 
-**未能验证 / 信息冲突**：
-- **初始分配比例**：不同来源对 TRX 初始分配口径不一（ICO 40%、私募 25.7%、基金会 
+持续验证：不同来源对 TRX 初始分配口径不一，ICO、私募和基金会占比对不上同一张表。

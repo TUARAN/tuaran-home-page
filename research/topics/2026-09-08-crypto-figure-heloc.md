@@ -8,6 +8,7 @@ coin_id: "figure-heloc"
 symbol: "FIGR_HELOC"
 market_cap_rank: 9
 date: "2026-09-08"
+updated: 2026-09-18
 time: "01:32"
 tags: [加密资产, "Figure Heloc", "FIGR_HELOC"]
 subjects: [web3]
@@ -165,10 +166,13 @@ FIGR_HELOC 的价值来源与 Figure 的 HELOC 贷款业务直接挂钩。
 
 **外部研判**：RWA.xyz 联合创始人 Adam Lawrence 认为 Figure 是"合法的、机构导向的公司，最终将驱动加密领域的大部分交易量"，但将其归入"represented"类别。SevenX Ventures 分析认为 Figure 是少数通过区块链技术真实赋能商业场景的加密相关上市公司，但也指出其业务高度依赖 HELOC 市场、监管不确定性和创始人治理风险。市场对该资产的定价逻辑与传统加密资产不同——其市值主要反映贷款簿映射，而非二级市场活跃度。
 
-## 十、信息来源与未能验证
 
-**CoinGecko markets 接口**：用户提供的市场快照来自 CoinGecko 的 markets 数据接口（coin_id: figure-heloc，symbol: FIGR_HELOC）。CoinGecko 页面地址为 https://www.coingecko.com/en/coins/figure-heloc（直接访问被网络策略拦截，未能打开页面原文，数据以用户提供的快照为准）。
+## 十、信息来源与持续验证
 
 **实际检索来源**：
 - DL News：Figure Heloc becomes 10th biggest crypto — but critics say it shouldn't be there（https://www.dlnews.com/articles/defi/figure-heloc-becomes-tenth-biggest-crypto/）
-- IQ.wiki：Figure Heloc 
+- IQ.wiki：Figure Heloc
+
+市场快照来自用户提供的 CoinGecko markets 数据（coin_id: figure-heloc，symbol: FIGR_HELOC）。页面 https://www.coingecko.com/en/coins/figure-heloc 当时被网络策略拦截，未能打开原文。
+
+持续验证：市值排名能否把 FIGR_HELOC 算进「加密资产」前十，公开争议仍在；本次未能打开 CoinGecko 页面原文交叉核对。

@@ -7,6 +7,7 @@ coin_id: "solana"
 symbol: "SOL"
 market_cap_rank: 7
 date: "2026-09-04"
+updated: 2026-09-18
 time: "01:33"
 tags: [加密资产, "Solana", "SOL"]
 subjects: [web3]
@@ -150,12 +151,14 @@ SOL 初始铸造 5 亿枚，无固定总量上限，通过通胀机制持续增�
 
 **外部研判**：多家机构（MEXC、Superex、BlockEden）将 2026 年 Q1 的 SOL 大跌归因于宏观风险偏好收缩、比特币 ETF 净流出（约 27 亿美元）以及 FTX 解锁卖压，而非链上基本面恶化。Solana 官方生态报告强调稳定币交易量、SOL 计价 TVL 等链上指标创纪录，形成"活动强、价格弱"的背离格局。本报告不据此给出方向性判断。
 
-## 十、信息来源与未能验证
 
-**CoinGecko markets 接口**：本报告市场数据全部采用用户提供的 CoinGecko 快照（coin_id: solana，数据更新时间 2026-09-03T17:28:20Z），未另行调用 CoinGecko markets API 核实。
+## 十、信息来源与持续验证
 
-**实际检索来源**（本次调研通过 web_search 与 open_page 获取）：
+市场数据采用用户提供的 CoinGecko 快照（coin_id: solana，更新时间 2026-09-03T17:28:20Z）。
+
+**实际检索来源**：
 - solana.com 官方文档（白皮书、费用结构、Token Extensions、质押 FAQ）
 - docs.governance.solana.com（svmgov 治理框架）
 - solana.org（基金会与资助计划）
-- SEC EDG
+
+持续验证：市场数字未另行调用 CoinGecko markets API 复核。

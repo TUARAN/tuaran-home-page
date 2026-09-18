@@ -5,6 +5,7 @@ topic_type: product
 content_type: analysis
 subjects: [web3]
 date: 2026-09-02
+updated: 2026-09-18
 time: 08:35
 tags: [Robinhood Chain, AI Agent, 链上金融, RWA, 智能合约, 产品验证, 代币设计, Web3安全]
 summary: 把“跟随 FABLE 发一个 AI Agent 代币”改写成可验证的产品计划：先做用户确认交易的研究与执行助手，用 12 周验证安全、留存和收入，再设置是否发行代币的决策门槛。
@@ -292,20 +293,8 @@ Demo 验收需要同时通过以下场景：正常成交、报价过期、滑点
 
 一个精简团队至少需要产品/研究、前端与钱包、合约与安全、后端与数据四项能力。法律意见和独立审计应由外部专业团队完成，不能由开发团队自证。
 
-## 十二、未能验证与下一步输入
 
-目前仍缺少以下决定性信息：
-
-- 用户所指 FABLE 的完整合约地址或任意一笔链上交易；
-- 项目运营主体、团队所在地和目标用户地区；
-- 启动预算、现有工程团队和可承受的主网资金上限；
-- 产品更偏向严肃研究工具、自动化执行工具，还是社区文化项目；
-- 计划接入哪些 Stock Tokens、DEX、借贷协议和价格源；
-- Robinhood Chain 各生态组件在目标地区、目标资产和测试网的实际可用性。
-
-拿到 FABLE 的完整地址后，下一轮应先产出一份链上核验卡：创建者、源码、代理、管理员、供应量、前十持仓、交易池、流动性、费用、社交归属和风险事件。产品团队随后用两周 Demo 验证研究与受限执行链路，再决定是否进入 12 周计划。
-
-## 十三、信息来源与说明
+## 十二、信息来源与持续验证
 
 - [Robinhood Chain 官网](https://robinhood.com/chain)：网络定位、AI Agent、RWA、交易与借贷场景，以及 Stock Token 风险披露。
 - [Robinhood Chain 网络配置](https://docs.robinhood.com/chain/connecting/)：Arbitrum L2、ETH Gas、Chain ID、RPC、Alchemy 与 Gasless Transaction Infrastructure。
@@ -318,4 +307,8 @@ Demo 验收需要同时通过以下场景：正常成交、报价过期、滑点
 - [中国证监会转载的银发〔2026〕42号通知](https://www.csrc.gov.cn/csrc/c100028/c7614318/content.shtml?f_link_type=f_linkinlinenote)：中国大陆关于虚拟货币、RWA 代币化、境外发行、互联网展示及技术服务的现行监管边界。
 - [Pons 的 i am fable 页面](https://www.ponsfamily.com/launchpad/0x9fe1a89c2b5a702dd2f5eb9f783a08e3d6cec737)、[DexPaprika 的 USDG/FABLE 池](https://dexpaprika.com/robinhood/pool/0x17494cd7a3cd8cfd9b49e6c09147324e4fbf0c9b7ac0578147c4b2ad900700d6)、[HoodNexus](https://www.hoodnexus.com/)：仅用于说明第三方索引中存在多个 FABLE 相关条目；这些页面不证明项目归属、安全性或与用户提供的 X 搜索结果存在对应关系。
 
-资料截至 2026 年 9 月 2 日。预算、KPI 门槛、产品架构和代币比例属于项目规划建议；Robinhood Chain 网络参数、产品能力和监管事实以对应官方来源为准。
+预算、KPI 门槛、产品架构和代币比例属于项目规划建议；Robinhood Chain 网络参数、产品能力和监管事实以对应官方来源为准。
+
+持续验证：用户所指 FABLE 的完整合约地址或任意一笔链上交易仍缺；项目运营主体、团队所在地和目标用户地区未确认。拿到完整地址后，下一轮应先做链上核验卡，再用两周 Demo 验证研究与受限执行链路。
+
+资料截至 2026 年 9 月 2 日。

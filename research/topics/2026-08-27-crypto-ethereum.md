@@ -7,6 +7,7 @@ coin_id: "ethereum"
 symbol: "ETH"
 market_cap_rank: 2
 date: "2026-08-27"
+updated: 2026-09-18
 time: "16:06"
 tags: [加密资产, "Ethereum", "ETH"]
 subjects: [web3]
@@ -194,9 +195,8 @@ ETH 长期位居加密资产市值第二，仅次于比特币。CoinGecko 快照
 
 **外部研判**：市场观察者普遍认为 Ethereum 仍是 DeFi 与稳定币的核心结算层，但其主导地位正面临多链竞争。2026 年 DeFi TVL 整体下滑约 39%，Ethereum 自身 TVL 也出现回落，反映行业整体承压。上述为外部观察，非本报告结论。
 
-## 十、信息来源与未能验证
 
-**CoinGecko markets 接口**：本报告市场数据以用户提供的 CoinGecko 快照为准。CoinGecko API 提供 `/coins/ethereum` 及 `/coins/{id}/market_chart` 等端点（见 docs.coingecko.com），但本报告未直接调用该接口，快照中价格、市值、成交额、涨跌、历史高低点等字段均为"—"，未能验证。
+## 十、信息来源与持续验证
 
 **实际检索来源**：
 - ethereum.org（白皮书、路线图、PoS 文档）；站内 [以太坊白皮书中文全文](/resources/ethereum-whitepaper)
@@ -207,13 +207,7 @@ ETH 长期位居加密资产市值第二，仅次于比特币。CoinGecko 快照
 - Coinbase、KuCoin、BingX、HTX、Gate（市场数据与快讯）
 - Chainalysis 报告（安全事件统计）
 - CoinMarketCap 社区文章（TVL 数据）
-- CoinGecko API 文档
 
-**未能验证**：
-- CoinGecko 快照中的具体价格、流通市值、FDV、24 小时成交额、24 小时涨跌、历史高点/低点及对应日期（快照中均为"—"）
-- 精确的流通供应量（Coinbase 显示约 1.21 亿，MarketScreener 显示约 1.22 亿，存在口径差异）
-- 2026 年 8 月 27 日当日的实时质押量、TVL 与销毁量
-- 历史低点的具体数值与日期
-- 部分 2026 年升级（Glamsterdam、Hegotá）的确切上线日期与最终功能清单
+用户提供的 CoinGecko 快照市场字段为「—」，未直接调用 `/coins/ethereum` 接口。质押量、TVL、销毁量来自第三方报道，时间与口径不同。
 
-**数据口径说明**：市场数字仅采用用户提供的 CoinGecko 快照；其余链上数据（质押量、TVL、销毁量）来自第三方报道，存在时间与口径差异，均标注来源。
+持续验证：流通供应量 Coinbase 约 1.21 亿、MarketScreener 约 1.22 亿，口径未对齐。

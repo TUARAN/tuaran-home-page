@@ -7,6 +7,7 @@ coin_id: "bitcoin"
 symbol: "BTC"
 market_cap_rank: 1
 date: "2026-08-27"
+updated: 2026-09-18
 time: "16:04"
 tags: [加密资产, "Bitcoin", "BTC"]
 subjects: [web3]
@@ -142,9 +143,8 @@ BTC 在 CoinGecko 市值排名第 1。用户提供的 CoinGecko 快照中，价�
 
 **外部研判**：Fidelity Digital Assets 认为闪电网络可强化 BTC 的投资逻辑；Bernstein 分析师（Gautam Chhugani 团队）在 2026 年展望中给出 $150,000 的目标价。这些属于第三方观点，非本报告结论，也不构成投资建议。
 
-## 十、信息来源与未能验证
 
-**CoinGecko markets 接口**：用户提供的快照来自 CoinGecko（coin_id: bitcoin），数据更新时间 2026-08-27 09:04:13（Asia/Shanghai）。快照中价格、流通市值、FDV、24 小时成交额、24 小时涨跌、流通量/总量/上限、历史高低点等字段均为"—"，未提供具体数值。
+## 十、信息来源与持续验证
 
 **实际检索来源**：
 - The Block（白皮书发布 13 周年、闪电网络容量）
@@ -161,10 +161,6 @@ BTC 在 CoinGecko 市值排名第 1。用户提供的 CoinGecko 快照中，价�
 - TheStreet、Bitget、MetaTrader（Strategy 持仓）
 - Netcoins、Binance Academy、Crypto.com（Ordinals、Runes）
 
-**未能验证**：
-- CoinGecko 快照中的价格、市值、FDV、成交额、涨跌幅、流通量、历史高低点等具体数值（用户未提供，快照字段为"—"）。
-- 历史高点 $126,272 与历史低点的精确数值（来自第三方检索，与 CoinGecko 口径可能不同，未能在 CoinGecko 接口核实）。
-- 实际可流通 BTC 数量（因私钥丢失而永久锁定的部分无法精确统计）。
-- 闪电网络、Ordinals、Runes 的实时采用数据（检索来源时间点不同）。
-- 中本聪的真实身份（至今未确认）。
-- 未来价格走势与减半后的市场反应（无法从外部资料确认）。
+用户提供的 CoinGecko 快照（coin_id: bitcoin，2026-08-27 09:04:13）市场字段为「—」，价格与市值改用上述来源。
+
+持续验证：因私钥丢失而永久锁定的 BTC 无法精确统计，实际可流通量低于名义供给。

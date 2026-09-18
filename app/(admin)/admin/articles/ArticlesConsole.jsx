@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
+  IconBook2,
   IconEdit,
   IconExternalLink,
   IconCircleCheck,
@@ -42,6 +43,7 @@ const PANELS = [
   { id: 'list', label: '全部内容', icon: IconList },
   { id: 'import', label: '审批调研', icon: IconCircleCheck },
   { id: 'style', label: '写作规范', icon: IconTypography },
+  { id: 'research-style', label: '调研风格', icon: IconBook2 },
 ]
 
 const PANEL_IDS = PANELS.map((panel) => panel.id)
@@ -464,7 +466,9 @@ function ArticlesConsoleBody() {
 
       {panel === 'import' ? <ResearchImportConsole embedded /> : null}
 
-      {panel === 'style' ? <ResearchStyleClient embedded /> : null}
+      {panel === 'style' ? <ResearchStyleClient embedded view="rules" /> : null}
+
+      {panel === 'research-style' ? <ResearchStyleClient embedded view="styles" /> : null}
     </AdminPage>
   )
 }

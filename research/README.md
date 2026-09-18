@@ -107,7 +107,7 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 
 ## 写作风格与审计（必读）
 
-正文的唯一写作正本是 [`lib/researchStyleTemplates.js`](../lib/researchStyleTemplates.js)，在后台的 `/admin/research-style` 可查看。不要从本 README 或旧文章复述风格规则。
+正文的唯一写作正本是 [`lib/researchStyleTemplates.js`](../lib/researchStyleTemplates.js)，在后台内容管理的「调研风格」页签（`/admin/articles?panel=research-style`）可查看。不要从本 README 或旧文章复述风格规则。
 
 写作顺序固定为：**选风格 → 先列事实与来源 → 写结构分析 / 外部研判 → 跑措辞审计 → 人工复核。**
 

@@ -142,17 +142,13 @@ function TextList({ items, ordered = false }) {
   )
 }
 
-export default function ResearchStyleClient({ embedded = false }) {
-  const styles = useMemo(() => [...RESEARCH_STYLE_TEMPLATES], [])
-  const initial = styles.find((t) => t.status === 'active') || styles[0]
-  const [selectedId, setSelectedId] = useState(initial?.id)
-  const [showRules, setShowRules] = useState(false)
-  const selected = styles.find((t) => t.id === selectedId) || initial
+function RulesPanel({ defaultOpen = false }) {
+  const [showRules, setShowRules] = useState(defaultOpen)
   const auditById = useMemo(() => new Map(RESEARCH_STYLE_AUDIT.rules.map((rule) => [rule.id, rule])), [])
   const totalFindings = RESEARCH_STYLE_AUDIT.fixCount + RESEARCH_STYLE_AUDIT.reviewCount
 
   return (
-    <ResearchStyleFrame embedded={embedded}>
+    <>
       <section className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="rounded-2xl border border-[#caccc0] bg-white p-5 dark:border-[#2d3744] dark:bg-[#10161f]">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -208,35 +204,56 @@ export default function ResearchStyleClient({ embedded = false }) {
           <AxiomList items={UNIVERSAL_BAN_PHRASES} auditById={auditById} />
         </section>
       ) : null}
+    </>
+  )
+}
 
-      <div className="grid gap-6 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
-        <aside className="space-y-4 md:sticky md:top-[72px] md:self-start">
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <SectionTitle>选择写作风格</SectionTitle>
-              <span className="font-mono text-[10px] text-[#858779] dark:text-[#8e9ab0]">{styles.length} 种</span>
-            </div>
-            <ol className="space-y-2">
-              {styles.map((style) => (
-                <li key={style.id}>
-                  <StylePill style={style} active={style.id === selectedId} onClick={() => setSelectedId(style.id)} />
-                </li>
-              ))}
-            </ol>
+function StylesPanel() {
+  const styles = useMemo(() => [...RESEARCH_STYLE_TEMPLATES], [])
+  const initial = styles.find((t) => t.status === 'active') || styles[0]
+  const [selectedId, setSelectedId] = useState(initial?.id)
+  const selected = styles.find((t) => t.id === selectedId) || initial
+
+  return (
+    <div className="grid gap-6 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
+      <aside className="space-y-4 md:sticky md:top-[72px] md:self-start">
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <SectionTitle>选择写作风格</SectionTitle>
+            <span className="font-mono text-[10px] text-[#858779] dark:text-[#8e9ab0]">{styles.length} 种</span>
           </div>
+          <ol className="space-y-2">
+            {styles.map((style) => (
+              <li key={style.id}>
+                <StylePill style={style} active={style.id === selectedId} onClick={() => setSelectedId(style.id)} />
+              </li>
+            ))}
+          </ol>
+        </div>
 
-          <div className="rounded-xl border border-dashed border-[#caccc0] bg-transparent p-3 text-[11px] leading-relaxed text-[#73746a] dark:border-[#2d3744] dark:text-[#9aa3b3]">
-            <p className="mb-1 font-semibold text-[#51514a] dark:text-gray-300">写作顺序</p>
-            <p className="m-0">
-              选风格 → 先列事实 → 写判断 → 跑一次措辞审计。规则正本在 <code>researchStyleTemplates.js</code>。
-            </p>
-          </div>
-        </aside>
+        <div className="rounded-xl border border-dashed border-[#caccc0] bg-transparent p-3 text-[11px] leading-relaxed text-[#73746a] dark:border-[#2d3744] dark:text-[#9aa3b3]">
+          <p className="mb-1 font-semibold text-[#51514a] dark:text-gray-300">写作顺序</p>
+          <p className="m-0">
+            选风格 → 先列事实 → 写判断 → 跑一次措辞审计。规则正本在 <code>researchStyleTemplates.js</code>。
+          </p>
+        </div>
+      </aside>
 
-        <section>
-          <StyleCard style={selected} />
-        </section>
-      </div>
+      <section>
+        <StyleCard style={selected} />
+      </section>
+    </div>
+  )
+}
+
+export default function ResearchStyleClient({ embedded = false, view = 'all' }) {
+  const showRules = view === 'all' || view === 'rules'
+  const showStyles = view === 'all' || view === 'styles'
+
+  return (
+    <ResearchStyleFrame embedded={embedded}>
+      {showRules ? <RulesPanel defaultOpen={view === 'rules'} /> : null}
+      {showStyles ? <StylesPanel /> : null}
     </ResearchStyleFrame>
   )
 }

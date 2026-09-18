@@ -19,6 +19,10 @@ const consoleSource = await readFile(
   new URL('../../app/(admin)/admin/articles/ArticlesConsole.jsx', import.meta.url),
   'utf8'
 )
+const researchStylePageSource = await readFile(
+  new URL('../../app/(admin)/admin/research-style/page.jsx', import.meta.url),
+  'utf8'
+)
 const centerSource = await readFile(
   new URL('../../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url),
   'utf8'
@@ -135,11 +139,16 @@ test('admin exposes one content management entry and one unified list', () => {
   assert.doesNotMatch(consoleSource, /索引与登记/)
   assert.doesNotMatch(consoleSource, />登记内容</)
   assert.doesNotMatch(consoleSource, />索引维护</)
-  assert.match(consoleSource, /<ResearchStyleClient embedded \/>/)
+  assert.match(consoleSource, /<ResearchStyleClient embedded view="rules" \/>/)
+  assert.match(consoleSource, /<ResearchStyleClient embedded view="styles" \/>/)
+  assert.match(consoleSource, /label: '写作规范'/)
+  assert.match(consoleSource, /label: '调研风格'/)
   assert.doesNotMatch(consoleSource, /ContentIndexConsole/)
   assert.match(consoleSource, /panel === 'import'/)
+  assert.match(consoleSource, /panel === 'research-style'/)
   assert.doesNotMatch(consoleSource, /href="\/admin\/research-style"/)
   assert.doesNotMatch(consoleSource, /href="\/admin\/content-index/)
   assert.match(consoleSource, /审批调研/)
   assert.doesNotMatch(consoleSource, /导入调研/)
+  assert.match(researchStylePageSource, /redirect\('\/admin\/articles\?panel=research-style'\)/)
 })

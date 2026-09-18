@@ -55,9 +55,14 @@ test('project navigation preserves the planning entry and concise tool titles', 
 
 test('previously hidden admin routes have explicit child entries', () => {
   const hrefs = new Set(ADMIN_NAV_CHILD_ITEMS.map((item) => item.matchPath || item.href))
-  for (const href of ['/admin/research-style', '/admin/share', '/admin/wallpapers', '/admin/personal-profile', '/admin/contract-renewal']) {
+  for (const href of ['/admin/share', '/admin/wallpapers', '/admin/personal-profile', '/admin/contract-renewal']) {
     assert.ok(hrefs.has(href), `${href} should be present in the admin navigation registry`)
   }
+  assert.equal(hrefs.has('/admin/research-style'), false)
+  assert.doesNotMatch(
+    JSON.stringify(ADMIN_NAV_CHILD_ITEMS.map((item) => item.label)),
+    /调研风格/
+  )
 })
 
 test('merged admin tools redirect in middleware without dedicated edge pages', async () => {
@@ -96,7 +101,7 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
 
   assert.deepEqual(
     listWorkspaceChildren(content).map((item) => item.label),
-    ['内容管理', '壁纸资源', '推荐管理', '分类管理', '调研风格', '数据统计', 'RSS 与分发']
+    ['内容管理', '壁纸资源', '推荐管理', '分类管理', '数据统计', 'RSS 与分发']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

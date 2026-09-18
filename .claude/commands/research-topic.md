@@ -13,7 +13,7 @@ research/topics/<YYYY-MM-DD>-<slug>.md
 ## 风格正本（执行前必读）
 
 写作结构与措辞规则的**唯一正本**是 `lib/researchStyleTemplates.js` 中 `status === 'active'` 的版本
-（当前为 v3 · 全文范式版；站长可在 /admin/research-style 查看版本史）。
+（当前为 v3 · 全文范式版；站长可在内容管理「调研风格」页签查看）。
 
 **动笔前先读该文件的 active 版本**，全文按其 `principles`（七段骨架、事实研判分离、表格优先、
 先结论后展开）与 `howToApply`（frontmatter 分工、未能验证清单、收口三件套、措辞 grep 黑名单）执行。

@@ -6,6 +6,7 @@ subjects: [web3]
 entity_type: product
 content_type: analysis
 date: 2026-09-18
+updated: 2026-09-18
 time: "09:50"
 tags: [CoinMarketCap, CMC, 加密数据, 市值排名, DexScan, Binance, CoinGecko]
 summary: CoinMarketCap 不撮合交易，却决定大多数人看见的价格、市值和交易所座次；2020 年被币安收购后，数据口径与所有权冲突一直并存。
@@ -224,23 +225,8 @@ CMC 的核心输出就是美元价格和市值。浏览公开页面、做行业�
 
 当前判断：作为公开零售数据源，**跟进观察，置信度中等**；作为单一真相来源或投资信号，**不跟进**。对大陆居民的交易和定价用途，**不跟进**。
 
-## 五、未能验证
 
-- 收购对价的准确金额、现金/股权/BNB 比例、交割后的完整股权图。
-- CoinMarketCap Mgmt Limited、OpCo LLC 与币安各持牌/无牌实体之间的控制链和利润上缴。
-- 交易所座次和 Confidence 的模型权重、训练数据、是否对币安交易对使用同一套阈值。
-- 2019 年广告收入 2,000–3,000 万美元：Forbes 估算，其后没有公开年报。
-- 月活、注册用户、App 日活：只有 Semrush 类访问次数，没有审计口径。
-- DexScan「5,000 万+」是否去重、是否含已销毁/钓鱼合约、70 条链名单的完整表。
-- 首页 CMC20 Index DTF 的合约、托管、与指数 PDF 的跟踪误差。
-- Mai Lu 作为 CEO 的任命文件；LinkedIn 不是公司登记。
-- HEX 等相关诉讼的最新程序状态和实体责任。
-- API「一个产品 10 万用户」许可在实际执法中的边界。
-- CoinGecko「CMC 贵 24 倍」的测算是否用了 2026-09 的最新 credit 规则（官方已把部分接口从每 100 条改为每 250 条）。
-
-查证路径：帮助中心方法论页、Solactive/指数 PDF、CMCP 价目、API 定价页、The Block / Decrypt 对 2020-05 座次的原始报道、Bitwise 致 SEC 材料、PACER 上的 OpCo 诉讼、Semrush/Similarweb 月报、与 CoinGecko Trust Score 的同日截图对照。
-
-## 六、信息来源与说明
+## 五、信息来源与持续验证
 
 **一手 / 官方**
 
@@ -272,10 +258,6 @@ CMC 的核心输出就是美元价格和市值。浏览公开页面、做行业�
 - Semrush：2026-07 访问次数
 - CoinGecko Learn：API 比价（竞争对手）
 
-**未公开 / 推断**
-
-- 「独立运营」对算法结果的约束力：政策声明，无法外部复现
-- 把 CMC 当成加密市场的「官方市值」：媒体习惯，不是监管指定
-- 5,000 万资产 ≈ 可投资宇宙：把合约地址数误读成资产数
+持续验证：收购对价的现金/股权/BNB 比例与交割后股权图未公开；CoinMarketCap 各持牌实体与币安之间的控制链、利润上缴无法从年报还原；交易所座次和 Confidence 对币安交易对是否用同一套阈值，外部复现不了。
 
 资料截至 2026-09-18。价格、市值、流量和 API 标价都是快照。站内相关：[加密货币交易所观察](/articles/research/topics/cryptocurrency-exchanges)、[Pump.fun](/articles/research/topics/pump-fun)、[如何上链发币](/articles/research/topics/how-to-launch-token-onchain)、[什么是 Web3](/articles/research/topics/what-is-web3)。

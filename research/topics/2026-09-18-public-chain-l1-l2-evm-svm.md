@@ -6,6 +6,7 @@ content_type: analysis
 subjects: [web3]
 entity_type: technology
 date: 2026-09-18
+updated: 2026-09-18
 time: "11:15"
 tags: [公链, Layer1, Layer2, EVM, SVM, Token, 交易所, ERC-20, BEP-20, SPL Token, X Layer, BNB Chain, Solana, Circle Arc, Base]
 summary: 一枚币运行在哪条账本上，一条链为什么选 L1 或 L2、EVM 或 SVM。交易所、公链、虚拟机和 Token 的关系，可以按五层拆开：先分清币和链，再看层级、执行环境、代币标准，最后才是谁给它做市场。
@@ -295,16 +296,8 @@ EVM 是现成的开发者密度。SVM 是另一套并行模型和工具链。202
 3. **迷因币把分层问题放大了。** 用户先看见一个猫、一个卫星锅、一个行情数字，才会问它「在哪条链」。协议层能回答的只有：哪条账本、哪个标准、哪个地址。叙事、分红承诺、是否买了某只股票代币，要另找发行方文本和链上资金流，不能从名字反推。
 4. **对大陆读者：** 用这五层读公开文档、区块浏览器和白皮书，**跟进**。用 DEX 发币、做市、兑换、充值到境外交易所，**不跟进**。对 STARLINK 这类具体迷因，只保留「它是 X Layer 上的一枚 ERC-20」这一句事实，价格和「项目发展」**观望**，不当成可投资标的。
 
-## 六、未能验证
 
-- Circle 新闻稿确认 Arc 主网于 2026-09-16 上线；抓取 `docs.arc.io` 的连接页时，页面仍以测试网 Chain ID `5042002` 为主。主网 `5042` 来自开发者接入材料和索引器文档，未在本次抓取的 Circle 新闻稿正文中出现。
-- X Layer 从 Polygon CDK / zkEVM 迁到现行 OP Stack 文档的精确切换块高度、是否仍同时使用 AggLayer 悲观证明，缺少一份与开发者页逐句对应的独立审计。
-- STARLINK 名称与「猫趴在星链锅上」的梗来自社区传播，未见 SpaceX 或 Starlink 业务方承认该代币。链上是否用交易税去买股票代币、做慈善，未做逐笔核验。
-- 欧易停 OKTChain 的工程原因，公开文本只写「高度重叠」。内部成本、开发者数量、TVL 对比未披露。
-- 币安 2020 年做 BSC、没有做以太坊 L2，当时 Rollup 工具链尚未成为默认选项；这是时间线推断，不是公司会议纪要。
-- 各链实时 TPS、费用、TVL、STARLINK 持有人与流动性会变，文中不引用瞬时行情。
-
-## 七、信息来源与说明
+## 六、信息来源与持续验证
 
 - Ethereum：[What is layer 2](https://ethereum.org/layer-2/learn/)、[EVM](https://ethereum.org/developers/docs/evm/)、[Accounts](https://ethereum.org/developers/docs/accounts/)、[Optimistic rollups](https://ethereum.org/developers/docs/scaling/optimistic-rollups/)、[EIP-20](https://eips.ethereum.org/EIPS/eip-20)
 - Solana：[Assets on Solana](https://solana.com/docs/tokens)、[ERC-20 on Solana](https://solana.com/developers/evm-to-svm/erc20)
@@ -313,6 +306,7 @@ EVM 是现成的开发者密度。SVM 是另一套并行模型和工具链。202
 - Base：[Coinbase 帮助中心](https://help.coinbase.com/en/coinbase/other-topics/other/base)、[OP Stack 博文](https://blog.base.org/decentralizing-base-with-the-op-stack-and-optimism)
 - Arc：[Circle 新闻稿 2026-09-16](https://www.circle.com/pressroom/circle-launches-arc-mainnet-an-economic-operating-system-for-the-internet)、[稳定币原生模型](https://docs.arc.io/arc/concepts/stablecoin-native-model)、[EVM 差异](https://docs.arc.io/build/evm-differences)
 - 站内交叉：[怎么判断一枚币在哪条链上](/articles/research/topics/which-chain-is-this-token-on)、[Ethereum](/articles/research/topics/crypto-ethereum)、[Solana](/articles/research/topics/crypto-solana)、[BNB](/articles/research/topics/crypto-binancecoin)、[USDC](/articles/research/topics/crypto-usd-coin)、[交易所](/articles/research/topics/cryptocurrency-exchanges)、[OKX Wallet](/articles/research/topics/okx-web3-wallet)、[DApp](/articles/research/topics/dapp)、[Web3](/articles/research/topics/what-is-web3)、[Pump.fun](/articles/research/topics/pump-fun)、[Robinhood Chain](/articles/research/topics/robinhood-chain)
-- 未公开：各公司选 L1 / L2 的董事会材料、STARLINK 发行方身份与资金用途、Arc 主网验证者完整名单的独立核验
-- 推断：2020 年 BSC 路线与当时以太坊费用环境的关系；2023 年后零售入口更常选 L2
-- 资料截至 2026-09-18
+
+持续验证：Circle 新闻稿确认 Arc 主网于 2026-09-16 上线；抓取 `docs.arc.io` 连接页时仍以测试网 Chain ID `5042002` 为主。主网 `5042` 来自开发者接入材料和索引器，未出现在本次抓取的新闻稿正文里。
+
+资料截至 2026-09-18。

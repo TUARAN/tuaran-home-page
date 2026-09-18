@@ -6475,6 +6475,73 @@
     @apply [&_.mermaid-diagram[data-mermaid-error]]:bg-[#fff7f7] dark:[&_.mermaid-diagram[data-mermaid-error]]:bg-[#24191b];
   }
 
+  .prose-tuaran .research-risk-note {
+    margin: 0.65rem 0 1.1rem;
+    color: #8a8c86;
+    font-size: 12px;
+    font-weight: 450;
+    line-height: 1.55;
+  }
+
+  .dark .prose-tuaran .research-risk-note {
+    color: #8b9199;
+  }
+
+  .prose-tuaran .research-risk-note > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+
+  .prose-tuaran .research-risk-note > summary::-webkit-details-marker,
+  .prose-tuaran .research-risk-note > summary::marker {
+    display: none;
+    content: '';
+  }
+
+  .prose-tuaran .research-risk-note > summary::before {
+    flex: none;
+    width: 0.32rem;
+    height: 0.32rem;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.4;
+    content: '';
+  }
+
+  .prose-tuaran .research-risk-note__more {
+    font-size: 11px;
+    opacity: 0.72;
+  }
+
+  .prose-tuaran .research-risk-note[open] .research-risk-note__more {
+    display: none;
+  }
+
+  .prose-tuaran .research-risk-note__body {
+    margin-top: 0.4rem;
+    padding: 0 0 0.1rem 0.85rem;
+    border-left: 1px solid #e6e7e2;
+  }
+
+  .dark .prose-tuaran .research-risk-note__body {
+    border-left-color: #2c3138;
+  }
+
+  .prose-tuaran .research-risk-note__body :where(p) {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.65;
+    color: inherit;
+  }
+
+  .prose-tuaran .research-risk-note__body :where(strong) {
+    font-weight: 600;
+  }
+
   .prose-tuaran .mermaid-diagram__toolbar {
     display: flex;
     align-items: center;

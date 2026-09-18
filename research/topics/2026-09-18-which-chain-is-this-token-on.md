@@ -7,6 +7,7 @@ subjects: [web3]
 entity_type: technology
 auto_images: false
 date: 2026-09-18
+updated: 2026-09-18
 time: "14:50"
 tags: [公链, Chain ID, EIP-155, ERC-20, EIP-20, Ethereum, Solana, SPL Token, USDT, USDC]
 summary: 钱包里的 1、56、8453，一串 0x 地址，以及 USDT、ETH、SOL 这些名字，分别指向账本、合约和原生币。先认链，再认币。
@@ -191,16 +192,8 @@ EIP-20   → 这条账本上那份合约是不是标准同质代币
 2. **流通市值排行不适合当「这条链上头部代币」的名单。** 包装资产、跨链映射、全供给计价，都会把别条链的盘子算进以太坊。链上市值和持有人数更接近「谁真正住在这条账本上」。
 3. **对大陆读者：** 用 Chain ID、`eth_chainId`、合约地址和 Mint 读公开文档、[ChainList](https://chainlist.org/) 和区块浏览器，**跟进**。用这些知识去发币、做市、兑换、充值到境外交易所，**不跟进**。对某一枚迷因的价格和「项目发展」，**观望**，只保留「它是哪条链上的哪一份合约或 Mint」这一句事实。
 
-## 五、未能验证
 
-- Arc 主网 Chain ID `5042` 来自开发者接入材料和索引器；Circle 新闻稿确认 2026-09-16 上线，当时 `docs.arc.io` 连接页仍以测试网 `5042002` 为主。
-- Solana 上 SPL Mint 的全量个数没有一份与 Etherscan Token Tracker 对等的、可逐日引用的官方普查。发射台单日创建量波动很大。
-- Pump.fun 占 2026 年 8 月 Solana 应用收入约四成，来自二次报道，未核对平台自己的逐笔结算表。
-- Etherscan「信誉 OK / Neutral」的筛选规则、蓝标标准，未在本次逐条对照其知识库全文。
-- DefiLlama 的 TVL、DEX 量、活跃地址是瞬时快照，随价格和成交变化；文中数字只对 2026-09-18 抓取有效。
-- 各链实时费用、TPS、验证者集中度会变，不在这里引用瞬时行情当结论。
-
-## 六、信息来源与说明
+## 五、信息来源与持续验证
 
 - EIP：[EIP-155](https://eips.ethereum.org/EIPS/eip-155)、[EIP-20](https://eips.ethereum.org/EIPS/eip-20)、[ERC-7785](https://eips.ethereum.org/EIPS/eip-7785)
 - 账户与代币：[ethereum.org 账户](https://ethereum.org/developers/docs/accounts/)、[Solana Tokens](https://solana.com/docs/tokens)、[EVM→SVM 对照](https://solana.com/developers/evm-to-svm/erc20)、[BEP-20](https://github.com/bnb-chain/BEPs/blob/master/BEPs/BEP20.md)
@@ -209,6 +202,7 @@ EIP-20   → 这条账本上那份合约是不是标准同质代币
 - 合约地址核对：Lido [部署页](https://docs.lido.fi/deployed-contracts/)（stETH / wstETH）；USDT、USDC、WETH、WBTC、DAI、LINK、UNI、SHIB 为业内长期使用的主网地址，与 Etherscan 当日排行对应
 - 非投票交易：[Solana Compass，2026 年 7 月](https://solanacompass.com/news/solana-july-2026-monthly-transaction-record-42b-non-vote-txns-up-91-since-december)
 - 站内交叉：[分层与虚拟机](/articles/research/topics/public-chain-l1-l2-evm-svm)、[Ethereum](/articles/research/topics/crypto-ethereum)、[Solana](/articles/research/topics/crypto-solana)、[USDC](/articles/research/topics/crypto-usd-coin)、[Pump.fun](/articles/research/topics/pump-fun)、[如何上链发币](/articles/research/topics/how-to-launch-token-onchain)
-- 未公开：各钱包内置网络名单的审核标准、Etherscan 信誉算法细节、Pump.fun 内部收入分账
-- 推断：零售入口较少默认展示 Chain ID；流通市值排行会放大跨链映射
-- 资料截至 2026-09-18
+
+持续验证：Circle 新闻稿确认 Arc 主网 2026-09-16 上线，当时 `docs.arc.io` 连接页仍以测试网 `5042002` 为主；主网 Chain ID `5042` 来自开发者接入材料和索引器。
+
+资料截至 2026-09-18。

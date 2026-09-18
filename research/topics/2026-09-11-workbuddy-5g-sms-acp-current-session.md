@@ -3,7 +3,7 @@ title: 手机短信注入当前 WorkBuddy 对话：ACP 链路实测
 category: topics
 date: 2026-09-11
 time: 08:52
-updated: 2026-09-15T17:30:00+08:00
+updated: 2026-09-18
 tags: [WorkBuddy, ACP, 5G消息, 短信通道, Agent, session/prompt, macOS]
 summary: 在本机把 5G 消息通道切到 ACP 后端后，白名单手机发出的短信可以注入当前 WorkBuddy 会话并自动回复；SQLite 用量立刻上升，聊天界面要手动刷新才显示。
 tldr: 2026 年 9 月 11 日上午，本机 shared-daemon 以 ACP 模式连上 WorkBuddy 本机端点 127.0.0.1:50072，用 session/load 绑定既有会话后 session/prompt 注入短信。3 条测试短信 processed=3、failed=0，session_usage 从 128691 增至 132913 tokens。聊天列表不自动出现新 turn，临时用 Cmd+R 或在主对话发一条消息触发重拉。
@@ -187,23 +187,17 @@ ACP 端点在 Electron 主进程。turn 跑在沙箱子进程。聊天列表在 
 
 **`ws_sent` 和“手机已收到”仍要分开说。** 通道文档写明无业务 ACK。自动回复在本机写出 3/3，对方手机是否弹出、是否被运营商过滤，这轮没有独立回执。
 
-## 五、未能验证
 
-| 缺口 | 已知线索 | 可能的查证路径 |
-|---|---|---|
-| 手机端是否弹出回复 | gateway / delivered 为空 | 用测试机截图，或向网关要 MT 回执字段 |
-| renderer 漏订阅的具体事件名 | 库有记录、界面无 turn | WorkBuddy 源码或团队确认 `turn_added` / IPC 通道 |
-| launchd 安装 `daemon.cjs` 的 EIO | plist 已生成 | 在本机终端重跑 `node scripts/daemon-service.cjs install`；ACP 路径不依赖它 |
-| 新开对话后的自动重绑 | 代码有 `session/new` 回退 | 开一条新 WorkBuddy 任务，发测试短信，看 UI 落在哪条会话 |
-| 多发送者同时注入同一条桌面对话 | 目录按号码隔离 | 第二个白名单号码联调；当前只测了一个发送者 |
-| 沙箱子进程 cwd 与 `ACP_CWD` 是否一致 | 子进程使用独立工作目录 | 对照 `bridge.cjs` 传入的 cwd 与子进程实际文件访问 |
-
-## 六、信息来源与说明
+## 五、信息来源与持续验证
 
 - **一手：** 2026-09-11 本机联调记录。`tools/5g-msg-channel-macos` 源码（`desktop-inbox.cjs`、`acp-client.cjs`、`bridge.cjs`、`policy.cjs` 及 `scripts/daemon*.cjs`）、shared-daemon `service.log`、本机 `workbuddy.db` 的 `session_usage` / `sessions`、Electron 主进程与 50072 端口的 TCP 状态。
 - **配置改动：** `~/.workbuddy/mcp.json` 的 `BRIDGE_BACKEND`；发送者工作目录中的 `session.json`。备份文件留在本机，不入库。
 - **未公开：** 白名单手机号、网关 API Key、ACP `sessionToken`、完整 session UUID、WorkBuddy 内部 IPC 协议细节。
-- **推断：** “renderer 没接到 push event”依据库表与界面不同步，以及主进程 / 沙箱子进程 / renderer 的分工；未阅读 WorkBuddy 闭源 renderer 代码。
-- **资料截至：** 2026-09-11 08:52（北京时间）。此后若客户端修复了会话推送，或 `session.json` 改绑，结论中的 UI 缺口和硬绑定限制需要重测。
+
+“renderer 没接到 push event”依据库表与界面不同步，以及主进程 / 沙箱子进程 / renderer 的分工；未阅读 WorkBuddy 闭源 renderer 代码。
+
+持续验证：手机端是否弹出回复，gateway / delivered 仍为空；renderer 漏订阅的具体事件名，库有记录、界面无 turn，需要源码或团队确认。
+
+资料截至 2026-09-11 08:52（北京时间）。此后若客户端修复了会话推送，或 `session.json` 改绑，结论中的 UI 缺口和硬绑定限制需要重测。
 
 临时使用方式：Mac 开着 WorkBuddy，shared-daemon 保持 ACP 模式，`session.json` 指向要同步的那条对话。手机从白名单号码发短信。处理发生后如果聊天列表没动，Cmd+R 刷新窗口。

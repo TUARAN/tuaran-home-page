@@ -54,7 +54,10 @@ test('community copy removes hashtags and remains X-safe', () => {
   assert.ok([...text].reduce((weight, character) => weight + (character.codePointAt(0) <= 0x7f ? 1 : 2), 0) <= 280)
 })
 
-test('community copy prompt requires a sharp opening and concrete invitation', () => {
+test('community copy prompt sounds like a person hanging out, not a follow mill', () => {
+  const voices = new Set(X_COMMUNITY_VARIANTS.map((item) => item.voice))
+  assert.ok(voices.size >= 8)
+
   for (const item of X_COMMUNITY_VARIANTS) {
     const messages = buildXCommunityMessages({
       slot: item.slot,
@@ -64,12 +67,13 @@ test('community copy prompt requires a sharp opening and concrete invitation', (
     assert.equal(messages.length, 2)
     assert.match(messages[0].content, /互相关注/)
     assert.match(messages[0].content, /不要只写“互关”“求关注”/)
-    assert.match(messages[0].content, /使用第一人称/)
-    assert.match(messages[0].content, /emoji/)
-    assert.match(messages[0].content, /轻松的话题/)
+    assert.match(messages[0].content, /不像在发互关广告/)
+    assert.match(messages[0].content, /用第一人称/)
+    assert.match(messages[0].content, /emoji 可有可无/)
     assert.match(messages[0].content, /百分百回关/)
     assert.match(messages[0].content, /不要使用任何话题标签/)
     assert.match(messages[1].content, new RegExp(item.label))
     assert.match(messages[1].content, new RegExp(item.question.slice(0, 8)))
+    assert.match(messages[1].content, new RegExp(item.voice.slice(0, 8)))
   }
 })

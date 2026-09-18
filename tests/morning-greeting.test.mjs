@@ -70,11 +70,10 @@ test('shanghai date key uses Asia/Shanghai calendar day', () => {
 
 test('builds a morning greeting with today date injected', () => {
   const text = buildMorningGreeting({ now: new Date('2026-08-05T00:30:00.000Z') })
-  assert.ok(text.includes('今天是8月5号'))
+  assert.ok(text.includes('8月5号'))
   assert.ok(!text.includes('{date}'))
   assert.ok(!text.toLowerCase().includes('chovy'))
-  assert.match(text, /^(大家早上好|早上好|早安)！/)
-  assert.ok(text.split('\n').length >= 2)
+  assert.match(text, /^(大家早上好|早上好|早安)[！。]/)
 })
 
 test('normalizeGreetingNewlines turns literal \\n into real newlines', () => {
@@ -104,9 +103,9 @@ test('three editable daily greeting defaults cover morning, noon, and evening', 
     { morning: 1, noon: 1, evening: 1 },
   )
   for (const template of DAILY_GREETING_TEMPLATES) {
-    assert.match(template.text, /^(早安|午安|晚安)！/)
+    assert.match(template.text, /^(早安|午安|晚安)[！。]/)
     assert.ok(template.text.includes('{date}'))
-    assert.ok(['quote', 'story', 'reflection'].includes(template.contentKind))
+    assert.equal(template.contentKind, 'reflection')
     assert.ok(greetingWithinLimit(template.text.replace('{date}', '12月31号')), `模板超重：${template.text.slice(0, 20)}…`)
   }
 })
@@ -120,8 +119,8 @@ test('period is inferred in Asia/Shanghai and each period has its own idempotenc
 
 test('builds the requested greeting period', () => {
   const now = new Date('2026-08-05T04:00:00Z')
-  assert.match(buildDailyGreeting({ now, period: 'noon' }), /^午安！/)
-  assert.match(buildDailyGreeting({ now, period: 'evening' }), /^晚安！/)
+  assert.match(buildDailyGreeting({ now, period: 'noon' }), /^午安/)
+  assert.match(buildDailyGreeting({ now, period: 'evening' }), /^晚安/)
 })
 
 test('daily picker accepts a D1 text pool already filtered for noon or evening', () => {
@@ -208,8 +207,8 @@ test('LLM prompt includes current period, exact calendar date, weekday, and edit
   })
   assert.equal(messages.length, 2)
   assert.match(messages[0].content, /只输出最终文案/)
-  assert.match(messages[0].content, /互关交友问候/)
-  assert.match(messages[0].content, /以本轮主题为准/)
+  assert.match(messages[0].content, /问好 \+ 小场景 \+ 邀请互关/)
+  assert.match(messages[0].content, /不要再额外套一层互关交友主题/)
   assert.match(messages[1].content, /当前时段：午安/)
   assert.match(messages[0].content, /日期或星期.*严格使用.*当前日历信息/)
   assert.match(messages[1].content, /当前日历：2026年8月18日，星期二/)
@@ -248,13 +247,21 @@ test('greeting content, voice, and format pools create distinct randomized combi
 
 test('default greeting intent has a personal voice and the migration preserves custom settings', async () => {
   assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /TUARAN/)
-  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /emoji/)
-  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /持续制造变化/)
+  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /随手发的/)
+  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /不要每条都求互关/)
+  assert.match(DEFAULT_DAILY_GREETING_LLM_INTENT, /emoji 可有可无/)
 
-  const migration = await readFile(new URL('../migrations/0086_richer_daily_greeting_intent.sql', import.meta.url), 'utf8')
+  const previous = await readFile(new URL('../migrations/0086_richer_daily_greeting_intent.sql', import.meta.url), 'utf8')
+  assert.match(previous, /UPDATE site_settings/)
+  assert.match(previous, /WHERE key = 'automation\.x_morning_greeting\.llm_intent'/)
+  assert.match(previous, /AND value = '写一条自然、真诚的中文日常问候/)
+
+  const migration = await readFile(new URL('../migrations/0093_human_daily_greeting_intent.sql', import.meta.url), 'utf8')
   assert.match(migration, /UPDATE site_settings/)
   assert.match(migration, /WHERE key = 'automation\.x_morning_greeting\.llm_intent'/)
-  assert.match(migration, /AND value = '写一条自然、真诚的中文日常问候/)
+  assert.match(migration, /写得像随手发的/)
+  assert.match(migration, /写一条自然、真诚的中文日常问候/)
+  assert.match(migration, /为 TUARAN 的个人 X 账号写互关交友文化相关的早安、午安问候/)
 })
 
 test('generated greeting cleanup removes wrappers without rewriting copy', () => {

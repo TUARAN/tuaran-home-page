@@ -243,7 +243,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="每日 5 条：早午安、互关交友与蓝 V 交流。"
+      description="每日 5 条：早午安问候和交朋友帖，写得像随手发的短消息。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -253,7 +253,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天 5 条：08:00 早安、09:30 交朋友、12:00 午安、15:00 蓝 V 交流、19:00 互关串门。各时段前后 30 分钟浮动，短文案搭配 emoji，图文和纯文本各 50% 概率，图文使用对应主题的原创表情包。加密观点、文化短故事、美区英文已暂停。"
+          description="每天 5 条：08:00 早安、09:30 交朋友、12:00 午安、15:00 蓝 V 交流、19:00 互关串门。各时段前后 30 分钟浮动，文案按当下小事来写，emoji 可有可无。图文和纯文本各 50% 概率，图文使用对应主题的原创表情包。加密观点、文化短故事、美区英文已暂停。"
           className="mb-4"
           actions={
             <>

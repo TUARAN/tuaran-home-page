@@ -320,7 +320,7 @@ export async function POST(req) {
                 : isUsPost
                   ? buildXUsAudienceMessages({ slot: usSlot, now: requestNow })
                   : buildGreetingLlmMessages({ intent: llmIntent, period, now: requestNow, style: greetingStyle }),
-          temperature: 0.85,
+          temperature: 0.95,
           maxTokens: isCultureStory ? 384 : 256,
           task: {
             source: 'x-daily-greeting',

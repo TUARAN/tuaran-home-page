@@ -246,8 +246,6 @@ export default function DeepSeekTasksClient() {
     return '点开一条可看摘要、耗时和备注。'
   }
 
-  const resultTone = Number(stats.failed) > 0 ? 'danger' : 'success'
-
   return (
     <AdminPage
       title="模型管理"
@@ -317,7 +315,7 @@ export default function DeepSeekTasksClient() {
 
           <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="今日调用" value={loading ? '—' : stats.today || 0} sub={`累计 ${stats.total || 0}`} icon="deepseekTasks" />
-            <StatCard label="成功" value={loading ? '—' : stats.succeeded || 0} sub={`失败 ${stats.failed || 0} · 运行中 ${stats.running || 0}`} tone={loading ? 'neutral' : resultTone} />
+            <StatCard label="成功" value={loading ? '—' : stats.succeeded || 0} sub={`失败 ${stats.failed || 0} · 运行中 ${stats.running || 0}`} tone={loading ? 'neutral' : 'success'} />
             <StatCard label="云调用" value={loading ? '—' : stats.cloud || 0} sub={`本地调用 ${stats.local || 0}`} />
             <StatCard label="累计 Token" value={loading ? '—' : Number(stats.totalTokens || 0).toLocaleString()} />
           </div>

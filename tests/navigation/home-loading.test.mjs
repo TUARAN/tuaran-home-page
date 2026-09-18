@@ -89,6 +89,9 @@ test('home article list keeps the latest tab and does not render a latest badge'
   assert.match(html, /推荐/)
   assert.match(html, /最新/)
   assert.match(html, /资源/)
+  assert.match(html, /home-article-scope-ai_dev/)
+  assert.match(html, />AI</)
+  assert.match(html, /home-article-scope-web3/)
   assert.doesNotMatch(html, /home-badge-latest/)
 })
 

@@ -1,4 +1,3 @@
-import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
@@ -462,18 +461,17 @@ export default function LLMTutorialsPage() {
           title="大模型教程"
           description={`大语言模型（LLM）教程、官方文档与工程实践资源库。当前版本：${RESOURCE_VERSION}。`}
           tocItems={tocItems}
+          shareUrl="/bookmarks/llm-tutorials"
           actions={(
-            <ArticleActionsDropdown label="更多">
-              <DistributeContentButton
-                title="大模型教程"
-                summary={`大语言模型（LLM）教程、官方文档与工程实践资源库。当前版本：${RESOURCE_VERSION}。`}
-                url="/bookmarks/llm-tutorials"
-                category="resource"
-                slug="bookmarks-llm-tutorials"
-                tags={['LLM', '教程', '资源']}
-                kindLabel="资源"
-              />
-            </ArticleActionsDropdown>
+            <DistributeContentButton
+              title="大模型教程"
+              summary={`大语言模型（LLM）教程、官方文档与工程实践资源库。当前版本：${RESOURCE_VERSION}。`}
+              url="/bookmarks/llm-tutorials"
+              category="resource"
+              slug="bookmarks-llm-tutorials"
+              tags={['LLM', '教程', '资源']}
+              kindLabel="资源"
+            />
           )}
           footer={<p>当前收录 {total} 个入口。后续新增资源会继续按版本标记，避免资源库失去时间上下文。</p>}
         >

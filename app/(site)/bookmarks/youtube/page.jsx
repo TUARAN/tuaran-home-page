@@ -1,4 +1,3 @@
-import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
@@ -316,18 +315,17 @@ export default function YoutubeBookmarksPage() {
           title="YouTube 收藏"
           description="按主题整理的 YouTube / B 站 / 纪录片与延伸资料收藏。"
           tocItems={tocItems}
+          shareUrl="/bookmarks/youtube"
           actions={(
-            <ArticleActionsDropdown label="更多">
-              <DistributeContentButton
-                title="YouTube 收藏"
-                summary="按主题整理的 YouTube / B 站 / 纪录片与延伸资料收藏。"
-                url="/bookmarks/youtube"
-                category="resource"
-                slug="bookmarks-youtube"
-                tags={['YouTube', '影像', '资源']}
-                kindLabel="资源"
-              />
-            </ArticleActionsDropdown>
+            <DistributeContentButton
+              title="YouTube 收藏"
+              summary="按主题整理的 YouTube / B 站 / 纪录片与延伸资料收藏。"
+              url="/bookmarks/youtube"
+              category="resource"
+              slug="bookmarks-youtube"
+              tags={['YouTube', '影像', '资源']}
+              kindLabel="资源"
+            />
           )}
           footer={<p>这里收集值得回看的影像与资料，按主题归类，持续整理。</p>}
         >

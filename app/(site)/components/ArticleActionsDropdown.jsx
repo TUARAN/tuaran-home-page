@@ -6,6 +6,7 @@ export default function ArticleActionsDropdown({
   label = '更多',
   children,
   placement = 'bottom',
+  align = 'end',
   closeOnSelect = false,
   triggerClassName = '',
 }) {
@@ -33,7 +34,7 @@ export default function ArticleActionsDropdown({
   }, [open])
 
   return (
-    <div ref={rootRef} className="article-actions-dropdown">
+    <div ref={rootRef} className="article-actions-dropdown" data-open={open ? 'true' : 'false'}>
       <button
         type="button"
         className={`article-action-button px-3 py-1 text-xs ${triggerClassName}`}
@@ -45,7 +46,7 @@ export default function ArticleActionsDropdown({
         <svg
           viewBox="0 0 14 14"
           aria-hidden="true"
-          className="h-3.5 w-3.5"
+          className="article-actions-dropdown-chevron h-3.5 w-3.5"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.6"
@@ -56,18 +57,16 @@ export default function ArticleActionsDropdown({
         </svg>
         <span>{label}</span>
       </button>
-      {open ? (
-        <div
-          id={menuId}
-          role="menu"
-          className={`article-actions-dropdown-menu ${placement === 'top' ? 'article-actions-dropdown-menu-top' : ''}`}
-          onClick={closeOnSelect ? (event) => {
-            if (event.target.closest('button, a')) setOpen(false)
-          } : undefined}
-        >
-          {children}
-        </div>
-      ) : null}
+      <div
+        id={menuId}
+        role="menu"
+        className={`article-actions-dropdown-menu${placement === 'top' ? ' article-actions-dropdown-menu-top' : ''}${align === 'start' ? ' article-actions-dropdown-menu-start' : ''}`}
+        onClick={closeOnSelect ? (event) => {
+          if (event.target.closest('button, a')) setOpen(false)
+        } : undefined}
+      >
+        {children}
+      </div>
     </div>
   )
 }

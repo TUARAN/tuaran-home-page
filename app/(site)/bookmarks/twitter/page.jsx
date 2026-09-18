@@ -1,4 +1,3 @@
-import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import BookmarksTocLayout from '../../components/BookmarksTocLayout'
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
@@ -663,18 +662,17 @@ export default function TwitterBookmarksPage({ searchParams } = {}) {
           title="推特收藏"
           description="不为别的，只是为了更好的认识这个世界🌍"
           tocItems={tocItems}
+          shareUrl="/bookmarks/twitter"
           actions={(
-            <ArticleActionsDropdown label="更多">
-              <DistributeContentButton
-                title="推特收藏"
-                summary="Twitter/X 上值得关注的前沿动态、技术观点与行业洞察收藏。"
-                url="/bookmarks/twitter"
-                category="resource"
-                slug="bookmarks-twitter"
-                tags={['Twitter', '收藏', '资源']}
-                kindLabel="资源"
-              />
-            </ArticleActionsDropdown>
+            <DistributeContentButton
+              title="推特收藏"
+              summary="Twitter/X 上值得关注的前沿动态、技术观点与行业洞察收藏。"
+              url="/bookmarks/twitter"
+              category="resource"
+              slug="bookmarks-twitter"
+              tags={['Twitter', '收藏', '资源']}
+              kindLabel="资源"
+            />
           )}
           footer={<p>这里记录适合“收藏”的知识型推文/卡片，方便回看。</p>}
         >

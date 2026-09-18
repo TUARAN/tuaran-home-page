@@ -1,6 +1,8 @@
 import Link from 'next/link'
 
+import ArticleActionsDropdown from './ArticleActionsDropdown'
 import ArticleFooterCta from './ArticleFooterCta'
+import SharePageButton from './SharePageButton'
 
 export default function BookmarksTocLayout({
   title,
@@ -10,6 +12,7 @@ export default function BookmarksTocLayout({
   tocTitle = '目录',
   tocItems = [],
   actions = null,
+  shareUrl,
   children,
   footer,
 }) {
@@ -22,11 +25,14 @@ export default function BookmarksTocLayout({
             {description ? (
               <p className="text-sm text-[#666] dark:text-gray-300 mt-2">{description}</p>
             ) : null}
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-[#666] dark:text-gray-300">
               <Link href={backHref} className="opacity-80 hover:opacity-100 underline underline-offset-4">
                 {backText}
               </Link>
-              {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+              <ArticleActionsDropdown label="更多" align="start" closeOnSelect>
+                <SharePageButton title={title} text={description} url={shareUrl} />
+                {actions}
+              </ArticleActionsDropdown>
             </div>
           </div>
         </div>

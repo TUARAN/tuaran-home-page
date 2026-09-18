@@ -10,6 +10,7 @@ import {
 } from '../lib/codeMinerTools.mjs'
 
 const toolItemsSource = await readFile(new URL('../lib/toolItems.js', import.meta.url), 'utf8')
+const siteNavSource = await readFile(new URL('../lib/siteNav.js', import.meta.url), 'utf8')
 const apiSource = await readFile(new URL('../app/api/tools/gifs/route.js', import.meta.url), 'utf8')
 
 test('all migrated tools have stable unique ids', () => {
@@ -31,6 +32,12 @@ test('tool directory exposes the six migrated tools as internal entries', () => 
     assert.match(toolItemsSource, new RegExp(`id: '${id}'[\\s\\S]*href: '/tools/code-miner#`))
   }
   assert.doesNotMatch(toolItemsSource, /id: 'toolkit-hub'[\s\S]*https:\/\/toolkit-hub\.pages\.dev/)
+})
+
+test('site navigation points Code Miner to the in-site tools page', () => {
+  assert.match(siteNavSource, /href: '\/tools\/code-miner'[^}\n]*label: '代码矿工'/)
+  assert.doesNotMatch(siteNavSource, /https:\/\/toolkit-hub\.pages\.dev/)
+  assert.doesNotMatch(siteNavSource, /label: '代码矿工'[^}\n]*external: true/)
 })
 
 test('GIF proxy keeps the Tenor key on the server side', () => {

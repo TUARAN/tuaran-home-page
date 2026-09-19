@@ -144,6 +144,7 @@ flowchart LR
 主要来源：
 
 - 维基文库：[物质建设 / 第三计划](https://zh.wikisource.org/wiki/%E7%89%A9%E8%B3%AA%E5%BB%BA%E8%A8%AD/%E7%AC%AC%E4%B8%89%E8%A8%88%E5%8A%83)（钦州、西江、广州钦州线、株钦铁路、海州）
+- 站内原文：[《建国方略》全文](/resources/jianguo-fanglye)；全书结构见[《建国方略》解析](/articles/research/topics/jianguo-fanglye)
 - 辛亥革命网转载外语教学与研究出版社《实业计划》中文版：长江上游水闸原文
 - 中国水力发电工程学会、电力网转述：1924 年《民生主义》宜昌—万县水力演讲
 - 交通运输部、新华社：平陆运河 2026-09-16 通航；详见本站[平陆运河](/articles/research/topics/pinglu-canal)

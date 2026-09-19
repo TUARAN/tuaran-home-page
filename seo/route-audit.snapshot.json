@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 185,
+    "routes": 188,
     "redirects": 16,
-    "private": 53,
-    "registeredStatic": 83,
-    "indexable": 96,
-    "canonical": 111,
-    "openGraph": 53,
-    "jsonLd": 36,
+    "private": 54,
+    "registeredStatic": 85,
+    "indexable": 98,
+    "canonical": 113,
+    "openGraph": 55,
+    "jsonLd": 38,
     "errors": 1,
     "warnings": 120
   },
@@ -61,6 +61,22 @@
         ],
         "noindex": "index",
         "openGraph": false,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/about/resume",
+      "file": "app/(site)/about/resume/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "index",
+        "openGraph": true,
         "jsonLd": true,
         "ogUrls": []
       }
@@ -487,6 +503,22 @@
     {
       "path": "/admin/integrations",
       "file": "app/(admin)/admin/integrations/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/logs",
+      "file": "app/(admin)/admin/logs/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,
@@ -2293,6 +2325,22 @@
     {
       "path": "/resources/ethereum-whitepaper",
       "file": "app/(site)/resources/ethereum-whitepaper/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/jianguo-fanglye",
+      "file": "app/(site)/resources/jianguo-fanglye/page.jsx",
       "kind": "static",
       "registered": true,
       "indexable": true,

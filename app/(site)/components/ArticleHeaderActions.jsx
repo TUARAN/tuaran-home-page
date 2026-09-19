@@ -2,6 +2,7 @@
 
 import RssButton from './RssButton'
 import SharePageButton from './SharePageButton'
+import ReadAloudButton from './ReadAloudButton'
 import OwnerOnlyArticleMeta, { getOwnerMetaParts } from './OwnerOnlyArticleMeta'
 import { useSessionAccount } from './SessionProvider'
 
@@ -13,6 +14,7 @@ export default function ArticleHeaderActions({
   actionsEnabled = true,
   className = '',
   ownerMeta,
+  speechMarkdown,
 }) {
   const { loading, isOwner } = useSessionAccount()
   const metaParts = getOwnerMetaParts(ownerMeta)
@@ -24,6 +26,8 @@ export default function ArticleHeaderActions({
     <div className={`article-header-actions ${className}`}>
       <div className="article-reader-actions" aria-label="文章操作">
         {actionsEnabled ? <SharePageButton title={title} text={text} url={url} /> : null}
+        {actionsEnabled && speechMarkdown ? <ReadAloudButton markdown={speechMarkdown} /> : null}
+        <span data-article-read-aloud-slot="" className="inline-flex items-center empty:hidden" />
         <RssButton label="RSS" />
       </div>
       {showOwnerMenu ? (

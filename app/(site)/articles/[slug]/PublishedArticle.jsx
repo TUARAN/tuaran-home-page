@@ -90,6 +90,7 @@ export default function PublishedArticle({ article, siteUrl }) {
             title={article.title}
             text={article.summary || article.contentText.slice(0, 160)}
             url={url}
+            speechMarkdown={article.contentText}
             ownerMeta={{ author: 'TUARAN', revision: article.revision }}
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
           >

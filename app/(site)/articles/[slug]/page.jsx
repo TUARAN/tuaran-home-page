@@ -335,6 +335,7 @@ export default async function ArticleDetailPage({ params }) {
             title={article.title}
             text={article.summary}
             url={articleUrl}
+            speechMarkdown={articleMarkdown}
             ownerMeta={{ author: 'TUARAN' }}
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
           >

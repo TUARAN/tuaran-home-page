@@ -1,7 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { autoPublishLabel, isReviewPublishable } from '../../../../lib/aSharePublishCore'
+import {
+  applyVisibleSelection,
+  pruneSelectedPaths,
+  summarizeBatchPublish,
+  toggleSelectedPath,
+  visibleSelectionState,
+} from '../articles/research-import/researchApprovalSelection'
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
 import { LoadingDots, LoadingState } from '../../../components/loading/LoadingPrimitives'
 
@@ -28,6 +36,7 @@ const ACTION_LABELS = {
   'pool-sync': '公司池同步',
   draft: '选题起草',
   publish: '后台发布',
+  'auto-publish': '自动发布',
 }
 
 const TEMPLATE_VERSION_URLS = {
@@ -57,11 +66,15 @@ export default function AShareResearchClient() {
   const [openId, setOpenId] = useState('')
   const [copied, setCopied] = useState('')
   const [draftFilter, setDraftFilter] = useState('all')
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [notice, setNotice] = useState('')
+  const [publishProgress, setPublishProgress] = useState('')
   const [logs, setLogs] = useState([])
   const [logTotal, setLogTotal] = useState(0)
   const [logsLoading, setLogsLoading] = useState(true)
   const [logsLoadingMore, setLogsLoadingMore] = useState(false)
   const [logsError, setLogsError] = useState('')
+  const selectAllRef = useRef(null)
 
   const loadLogs = useCallback(async (offset, { append = false } = {}) => {
     if (append) setLogsLoadingMore(true)
@@ -103,9 +116,33 @@ export default function AShareResearchClient() {
     refresh()
   }, [refresh])
 
+  const drafts = data?.drafts || []
+  const draftStats = data?.draftStats || {}
+  const totalDrafts = Object.values(draftStats).reduce((total, count) => total + (Number(count) || 0), 0)
+  const activeFilterLabel = DRAFT_FILTERS.find((filter) => filter.id === draftFilter)?.label || '全部'
+  const hasMoreLogs = logs.length < logTotal
+  const publishableIds = useMemo(
+    () => (data?.drafts || []).filter(isReviewPublishable).map((draft) => draft.id),
+    [data?.drafts],
+  )
+  const selectedDrafts = useMemo(
+    () => (data?.drafts || []).filter((draft) => selectedIds.has(draft.id) && isReviewPublishable(draft)),
+    [data?.drafts, selectedIds],
+  )
+  const selection = visibleSelectionState(selectedIds, publishableIds)
+
+  useEffect(() => {
+    setSelectedIds((current) => pruneSelectedPaths(current, publishableIds))
+  }, [publishableIds])
+
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = selection.some
+  }, [selection.some])
+
   async function setDraftStatus(draft, status) {
     setSaving(true)
     setError('')
+    setNotice('')
     try {
       const response = await fetch('/api/admin/a-share-research', {
         method: 'PATCH',
@@ -122,6 +159,17 @@ export default function AShareResearchClient() {
     }
   }
 
+  async function requestPublish(draft) {
+    const response = await fetch('/api/admin/a-share-research/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: draft.id }),
+    })
+    const payload = await safeJson(response)
+    if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+    return payload
+  }
+
   async function publishDraft(draft) {
     const confirmed = window.confirm(
       `确认发布「${draft.title || draft.name}」？\n\n将把草稿写入 research/companies/ 并提交推送 main，触发线上构建。`,
@@ -129,19 +177,52 @@ export default function AShareResearchClient() {
     if (!confirmed) return
     setSaving(true)
     setError('')
+    setNotice('')
     try {
-      const response = await fetch('/api/admin/a-share-research/publish', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id: draft.id }),
-      })
-      const payload = await safeJson(response)
-      if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
+      await requestPublish(draft)
+      setNotice(`已发布「${draft.name}」。`)
       await refresh()
     } catch (publishError) {
       setError(publishError?.message || '发布失败，草稿已保留为已复核，可稍后重试。')
     } finally {
       setSaving(false)
+      setPublishProgress('')
+    }
+  }
+
+  async function publishSelected(draftsToPublish) {
+    if (!draftsToPublish.length) return
+    const confirmed = window.confirm(
+      `确认审核并发布已选的 ${draftsToPublish.length} 篇草稿？\n\n将依次写入 research/companies/ 并提交推送 main。失败的草稿会保留，可稍后重试。`,
+    )
+    if (!confirmed) return
+    setSaving(true)
+    setError('')
+    setNotice('')
+    const results = []
+    try {
+      for (let index = 0; index < draftsToPublish.length; index += 1) {
+        const draft = draftsToPublish[index]
+        setPublishProgress(`正在发布 ${index + 1}/${draftsToPublish.length}：${draft.name}（${draft.code}）`)
+        try {
+          await requestPublish(draft)
+          results.push({ ok: true, label: `${draft.name}（${draft.code}）` })
+        } catch (publishError) {
+          results.push({
+            ok: false,
+            label: `${draft.name}（${draft.code}）`,
+            error: publishError?.message || '发布失败',
+          })
+        }
+      }
+      const summary = summarizeBatchPublish(results)
+      await refresh()
+      if (summary.tone === 'danger' || summary.tone === 'warning') setError(summary.text)
+      else setNotice(summary.text)
+      setSelectedIds(new Set())
+    } finally {
+      setSaving(false)
+      setPublishProgress('')
     }
   }
 
@@ -155,12 +236,6 @@ export default function AShareResearchClient() {
     }
   }
 
-  const drafts = data?.drafts || []
-  const draftStats = data?.draftStats || {}
-  const totalDrafts = Object.values(draftStats).reduce((total, count) => total + (Number(count) || 0), 0)
-  const activeFilterLabel = DRAFT_FILTERS.find((filter) => filter.id === draftFilter)?.label || '全部'
-  const hasMoreLogs = logs.length < logTotal
-
   return (
     <AdminPage
       title="A 股研究自动化"
@@ -168,6 +243,8 @@ export default function AShareResearchClient() {
       actions={<AdminButton type="button" onClick={refresh} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
+      {notice ? <div role="status" className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
+      {publishProgress ? <p role="status" className="mb-4 text-sm text-[#51514a] dark:text-gray-300">{publishProgress}</p> : null}
       {data?.status === 'unavailable' ? (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           D1 不可用或迁移 0060 尚未部署，当前无法读取 A 股研究数据。
@@ -178,12 +255,17 @@ export default function AShareResearchClient() {
         <StatCard label="公司池" value={loading ? '—' : data?.pool ? data.pool.count.toLocaleString() : '—'} sub={data?.pool ? `快照 ${data.pool.snapshotDate}` : '未同步'} />
         <StatCard label="待完成选题" value={loading ? '—' : data?.pending ? 1 : 0} tone={data?.pending ? 'info' : 'neutral'} sub={data?.pending ? `${data.pending.name}（${data.pending.code}）` : '无'} />
         <StatCard label="待复核草稿" value={loading ? '—' : data?.draftStats?.pending || 0} tone="warning" />
-        <StatCard label="已复核草稿" value={loading ? '—' : data?.draftStats?.reviewed || 0} tone="success" />
+        <StatCard
+          label="到期待自动发布"
+          value={loading ? '—' : data?.autoPublishDueCount || 0}
+          tone={data?.autoPublishDueCount ? 'warning' : 'success'}
+          sub={data?.autoPublishDueCount ? '下次调度会全部发布' : '满 3 天仍待复核即自动发布'}
+        />
       </div>
 
       <Section
         title="自动生成草稿"
-        description="内容为 DeepSeek 依据公司池与实时行情生成的初稿。请在 3 天内复核发布或退回；到期仍为待复核状态时，系统会自动发布。"
+        description="内容为 DeepSeek 依据公司池与实时行情生成的初稿。请在 3 天内复核发布或退回；到期仍为待复核状态时，下次定时任务会自动发布全部到期稿。"
         actions={<span className="text-[12px] text-[#82847a]">{activeFilterLabel} · 显示 {drafts.length} 篇</span>}
       >
         <div className="mb-3 flex flex-wrap items-center gap-2" aria-label="草稿状态筛选">
@@ -212,6 +294,31 @@ export default function AShareResearchClient() {
             )
           })}
         </div>
+        {publishableIds.length ? (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#e6e7df] bg-[#fafbf6] px-3 py-2 dark:border-[#243041] dark:bg-[#0e141d]">
+            <label className="flex min-w-0 items-center gap-2 text-[13px] text-[#55574f] dark:text-gray-400">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                checked={selection.all}
+                disabled={saving}
+                onChange={(event) => setSelectedIds((current) => applyVisibleSelection(current, publishableIds, event.target.checked))}
+                className="h-4 w-4 shrink-0 accent-[#15140f]"
+                aria-label="全选当前可发布草稿"
+              />
+              <span>{selection.selectedCount ? `已选 ${selection.selectedCount} 篇` : '全选当前可发布稿'}</span>
+            </label>
+            <AdminButton
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={saving || !selectedDrafts.length}
+              onClick={() => publishSelected(selectedDrafts)}
+            >
+              一键审核发布
+            </AdminButton>
+          </div>
+        ) : null}
         {!loading && !drafts.length ? (
           <EmptyState title={`暂无${activeFilterLabel}草稿`} description={draftFilter === 'all' ? '线上定时任务首次选题后会出现在这里。' : '可以切换其它状态查看草稿。'} />
         ) : (
@@ -219,12 +326,32 @@ export default function AShareResearchClient() {
             {drafts.map((draft) => {
               const statusMeta = DRAFT_STATUS_META[draft.status] || { label: draft.status, tone: 'neutral' }
               const open = openId === draft.id
+              const publishable = isReviewPublishable(draft)
+              const checked = selectedIds.has(draft.id)
+              const autoPublish = draft.status === 'pending' ? autoPublishLabel(draft.autoPublishAt) : null
               return (
                 <article key={draft.id} className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+                    {publishable ? (
+                      <label className="flex h-9 w-9 shrink-0 items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={saving}
+                          onChange={() => setSelectedIds((current) => toggleSelectedPath(current, draft.id))}
+                          className="h-4 w-4 accent-[#15140f]"
+                          aria-label={`勾选 ${draft.title || draft.name}`}
+                        />
+                      </label>
+                    ) : (
+                      <span className="hidden h-9 w-9 shrink-0 lg:block" aria-hidden="true" />
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusPill tone={statusMeta.tone} size="sm">{statusMeta.label}</StatusPill>
+                        {autoPublish ? (
+                          <StatusPill tone={autoPublish.due ? 'warning' : 'info'} size="sm">{autoPublish.label}</StatusPill>
+                        ) : null}
                         <span className="text-[11px] text-[#82847a]">
                           {draft.draftDate} · {draft.code}
                           {draft.templateVersion ? (
@@ -252,22 +379,24 @@ export default function AShareResearchClient() {
                           {draft.status === 'failed'
                             ? `失败原因：${draft.generationError || '生成服务未返回可用草稿，将自动重试'}`
                             : draft.deepseekTaskId ? `DeepSeek 台账 ${draft.deepseekTaskId.slice(0, 8)}…` : '尚未完成生成'}
-                          {draft.status === 'pending' && draft.autoPublishAt ? ` · ${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })} 后自动发布` : ''}
+                          {autoPublish && draft.autoPublishAt
+                            ? ` · ${new Date(draft.autoPublishAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}（北京时间）${autoPublish.due ? '已到期，下次调度自动发布' : '到期后自动发布'}`
+                            : ''}
                         </p>
                       </button>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <AdminButton type="button" variant="ghost" onClick={() => copyDraft(draft)}>{copied === draft.id ? '已复制' : '复制全文'}</AdminButton>
+                    <div className="flex flex-wrap items-center gap-2 lg:max-w-[280px] lg:justify-end">
+                      <AdminButton type="button" variant="ghost" size="sm" onClick={() => copyDraft(draft)}>{copied === draft.id ? '已复制' : '复制全文'}</AdminButton>
                       {draft.status === 'pending' ? (
                         <>
-                          <AdminButton type="button" variant="primary" onClick={() => publishDraft(draft)} disabled={saving}>复核并发布</AdminButton>
-                          <AdminButton type="button" variant="ghost" onClick={() => setDraftStatus(draft, 'rejected')} disabled={saving}>退回</AdminButton>
+                          <AdminButton type="button" variant="primary" size="sm" onClick={() => publishDraft(draft)} disabled={saving}>复核并发布</AdminButton>
+                          <AdminButton type="button" variant="ghost" size="sm" onClick={() => setDraftStatus(draft, 'rejected')} disabled={saving}>退回</AdminButton>
                         </>
                       ) : null}
                       {draft.status === 'reviewed' ? (
                         <>
-                          <AdminButton type="button" variant="primary" onClick={() => publishDraft(draft)} disabled={saving}>发布</AdminButton>
-                          <AdminButton type="button" variant="ghost" onClick={() => setDraftStatus(draft, 'rejected')} disabled={saving}>退回</AdminButton>
+                          <AdminButton type="button" variant="primary" size="sm" onClick={() => publishDraft(draft)} disabled={saving}>发布</AdminButton>
+                          <AdminButton type="button" variant="ghost" size="sm" onClick={() => setDraftStatus(draft, 'rejected')} disabled={saving}>退回</AdminButton>
                         </>
                       ) : null}
                       {draft.status === 'published' ? (

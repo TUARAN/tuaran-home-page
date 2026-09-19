@@ -4,9 +4,11 @@ import assert from 'node:assert/strict'
 import {
   AUTO_PUBLISH_DELAY_MS,
   autoPublishAt,
+  autoPublishLabel,
   draftToArticleContent,
   hasSourceSection,
   isAutoPublishDue,
+  isReviewPublishable,
   publishFileName,
   publishSlug,
   repairUnclosedFrontmatter,
@@ -62,6 +64,16 @@ test('待复核满 3 天才允许自动发布', () => {
   assert.equal(isAutoPublishDue({ ...draft, status: 'reviewed' }, pendingAt + AUTO_PUBLISH_DELAY_MS), false)
   assert.equal(isAutoPublishDue({ ...draft, status: 'rejected' }, pendingAt + AUTO_PUBLISH_DELAY_MS), false)
   assert.equal(autoPublishAt({ status: 'pending', updated_at: null }), null)
+})
+
+test('后台展示 3 天后自动发布，到期后改为已到期待自动发布', () => {
+  const now = Date.UTC(2026, 8, 19, 7, 0, 0)
+  assert.deepEqual(autoPublishLabel(now + AUTO_PUBLISH_DELAY_MS, now), { due: false, daysLeft: 3, label: '3天后自动发布' })
+  assert.deepEqual(autoPublishLabel(now - 1, now), { due: true, daysLeft: 0, label: '已到期待自动发布' })
+  assert.equal(autoPublishLabel(null, now), null)
+  assert.equal(isReviewPublishable({ status: 'pending' }), true)
+  assert.equal(isReviewPublishable({ status: 'reviewed' }), true)
+  assert.equal(isReviewPublishable({ status: 'published' }), false)
 })
 
 test('draftToArticleContent 保持 review_ready: false 且保留其余内容', () => {
@@ -153,4 +165,41 @@ test('autoPublishOldestDueDraft 自动退回历史坏稿并解除队列阻塞', 
   assert.deepEqual(claimed, [])
   assert.equal(result.rejectedInvalidDrafts[0].code, invalidDraft.code)
   assert.equal(logs.length, 1)
+})
+
+test('到期积压的待复核稿一次调度全部自动退回坏稿，不再只处理最早一篇', async () => {
+  const now = Date.now()
+  const makeInvalid = (id, code) => ({
+    id,
+    code,
+    name: '坏稿公司',
+    draft_date: '2026-08-10',
+    status: 'pending',
+    updated_at: now - AUTO_PUBLISH_DELAY_MS - 1,
+    content: `---\nreview_ready: false\nad_eligible: false\n${'坏稿内容'.repeat(80)}\n## 十、信息来源与说明\n来源`,
+  })
+  const drafts = [makeInvalid('first', '688558'), makeInvalid('second', '301096')]
+  const rejected = []
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...values) {
+          return {
+            async all() {
+              return { results: drafts }
+            },
+            async run() {
+              if (sql.includes("SET status = 'rejected'")) rejected.push(values[1])
+              return { meta: { changes: 1 } }
+            },
+          }
+        },
+      }
+    },
+  }
+
+  const result = await autoPublishOldestDueDraft({ db, env: { A_SHARE_PUBLISH_TOKEN: 'test-token' }, now })
+  assert.equal(result.reason, 'invalid-content-rejected')
+  assert.deepEqual(rejected, ['first', 'second'])
+  assert.deepEqual(result.rejectedInvalidDrafts.map((item) => item.id), ['first', 'second'])
 })

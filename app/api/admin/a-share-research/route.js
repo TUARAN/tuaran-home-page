@@ -1,6 +1,6 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
-import { autoPublishAt } from '../../../../lib/aSharePublishCore'
+import { AUTO_PUBLISH_DELAY_MS, autoPublishAt, isAutoPublishDue } from '../../../../lib/aSharePublishCore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -35,7 +35,8 @@ export async function GET(req) {
     const draftsQuery = draftStatus
       ? db.prepare('SELECT * FROM a_share_drafts WHERE status = ? ORDER BY created_at DESC LIMIT 30').bind(draftStatus)
       : db.prepare('SELECT * FROM a_share_drafts ORDER BY created_at DESC LIMIT 30')
-    const [snapshot, pending, drafts, logs, draftStats] = await Promise.all([
+    const dueCutoff = Date.now() - AUTO_PUBLISH_DELAY_MS
+    const [snapshot, pending, drafts, logs, draftStats, dueDrafts] = await Promise.all([
       db.prepare('SELECT * FROM a_share_pool_snapshot WHERE id = 1').first(),
       db.prepare("SELECT * FROM a_share_selections WHERE status = 'selected' LIMIT 1").first(),
       draftsQuery.all(),
@@ -45,6 +46,7 @@ export async function GET(req) {
           `SELECT status, COUNT(*) AS count FROM a_share_drafts GROUP BY status`,
         )
         .all(),
+      db.prepare("SELECT COUNT(*) AS count FROM a_share_drafts WHERE status = 'pending' AND updated_at <= ?").bind(dueCutoff).first(),
     ])
     const countByStatus = Object.fromEntries((draftStats?.results || []).map((row) => [row.status, Number(row.count)]))
     return Response.json({
@@ -62,6 +64,7 @@ export async function GET(req) {
         published: countByStatus.published || 0,
         rejected: countByStatus.rejected || 0,
       },
+      autoPublishDueCount: Number(dueDrafts?.count) || 0,
       draftFilter: draftStatus || 'all',
       drafts: (drafts?.results || []).map((row) => ({
         id: row.id,
@@ -79,6 +82,7 @@ export async function GET(req) {
         publishCommit: row.publish_commit || '',
         publishAt: row.publish_at || null,
         autoPublishAt: row.status === 'pending' ? autoPublishAt(row) : null,
+        autoPublishDue: isAutoPublishDue(row),
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       })),

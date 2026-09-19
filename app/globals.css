@@ -6483,6 +6483,10 @@
     line-height: 1.55;
   }
 
+  .prose-tuaran .research-risk-note--end {
+    margin: 1.85rem 0 0.2rem;
+  }
+
   .dark .prose-tuaran .research-risk-note {
     color: #8b9199;
   }

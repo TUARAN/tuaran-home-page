@@ -343,9 +343,9 @@ export default function AShareResearchClient() {
                           aria-label={`勾选 ${draft.title || draft.name}`}
                         />
                       </label>
-                    ) : (
+                    ) : publishableIds.length ? (
                       <span className="hidden h-9 w-9 shrink-0 lg:block" aria-hidden="true" />
-                    )}
+                    ) : null}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusPill tone={statusMeta.tone} size="sm">{statusMeta.label}</StatusPill>

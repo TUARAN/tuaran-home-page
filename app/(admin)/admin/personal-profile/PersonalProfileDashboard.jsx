@@ -19,6 +19,7 @@ import {
   PERSONAL_GROWTH_PROFILE,
   WEEKLY_REVIEW,
 } from '../../../../lib/personalGrowthProfile'
+import FitAndWealthBoard from './FitAndWealthBoard'
 
 function DirectionCard({ item, index }) {
   return (
@@ -109,6 +110,8 @@ export default function PersonalProfileDashboard() {
             你的差异化可以落在“工程师的结构化能力 + 创作者的解释力 + 高敏感的共情力”。优先服务那些问题复杂、情绪成本高、又需要可执行方案的人群。
           </div>
         </Section>
+
+        <FitAndWealthBoard />
 
         <Section title="90 天演进路线" description="每 30 天只改变一个主要变量，并用可观察结果决定下一轮。">
           <div className="grid gap-3 lg:grid-cols-3">

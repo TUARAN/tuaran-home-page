@@ -48,6 +48,8 @@ test('archived world cup page stays prerendered so it does not enter the public 
 
 test('admin build verification follows the merged long compass entry point', () => {
   assert.match(adminVerifierSource, /ALLOWED_DYNAMIC_ADMIN_PAGES[\s\S]*['"]\/admin\/soft-sticker['"]/)
+  assert.match(adminVerifierSource, /ALLOWED_DYNAMIC_ADMIN_PAGES[\s\S]*['"]\/admin\/logs['"]/)
+  assert.match(adminVerifierSource, /REQUIRED_EDGE_ROUTES[\s\S]*['"]\/admin\/logs['"]/)
   assert.doesNotMatch(adminVerifierSource, /REQUIRED_PRERENDERED_ROUTES[\s\S]*['"]\/admin\/long-compass['"]/)
 })
 

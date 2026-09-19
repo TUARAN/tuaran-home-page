@@ -1,6 +1,8 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import LogsClient from './LogsClient'
 
+export const runtime = 'edge'
+
 export const metadata = {
   title: '日志记录',
   description: '自动化最近运行与模型调用记录。',

@@ -14,6 +14,7 @@ const workerRoot = path.join(root, '.vercel', 'output', 'static', '_worker.js')
 const buildLogPath = path.join(workerRoot, 'nop-build-log.json')
 
 const REQUIRED_EDGE_ROUTES = [
+  '/admin/logs',
   '/admin/planning',
   '/api/admin/deepseek-tasks/local-sync',
   '/api/admin/planning',
@@ -34,6 +35,7 @@ const REQUIRED_PRERENDERED_ROUTES = [
 const ALLOWED_DYNAMIC_ADMIN_PAGES = new Set([
   '/admin/article-distribution',
   '/admin/articles/[id]/edit',
+  '/admin/logs',
   '/admin/planning',
   '/admin/soft-sticker',
   '/admin/stock-analysis/[slug]',

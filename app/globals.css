@@ -6488,9 +6488,9 @@
   }
 
   .prose-tuaran .research-risk-note > summary {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.4rem;
     cursor: pointer;
     list-style: none;
     user-select: none;
@@ -6513,7 +6513,7 @@
   }
 
   .prose-tuaran .research-risk-note__toggle {
-    margin-left: auto;
+    margin-left: 0.15rem;
     flex: none;
     font-size: 11px;
     opacity: 0.72;

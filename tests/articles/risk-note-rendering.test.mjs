@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { renderMarkdown } from '../../lib/research/markdown.js'
+import { COLLAPSIBLE_NOTE_LABEL_RE, renderMarkdown } from '../../lib/research/markdown.js'
 
 test('risk and compliance tips collapse into a one-line details summary', () => {
   const html = renderMarkdown(
@@ -27,9 +27,32 @@ test('shorter risk and compliance labels also collapse', () => {
   assert.match(compliance, /research-risk-note__body"><p>境内代币发行融资属于非法金融活动。/)
 })
 
+test('scope notes collapse into the same one-line details summary', () => {
+  const html = renderMarkdown(
+    '> 适用范围：讨论的是健康成人在公开、被评价、结果不完全可控时的急性应激与表达表现。不构成医疗建议。',
+  )
+
+  assert.match(html, /<details class="research-risk-note">/)
+  assert.match(html, /<span class="research-risk-note__label">适用范围<\/span>/)
+  assert.match(html, /research-risk-note__more">展开/)
+  assert.match(html, /research-risk-note__body"><p>讨论的是健康成人在公开、被评价、结果不完全可控时的急性应激与表达表现。/)
+  assert.doesNotMatch(html, /research-risk-note__body">[\s\S]*?适用范围/)
+  assert.doesNotMatch(html, /<blockquote>/)
+})
+
 test('ordinary quotes stay as blockquotes', () => {
   const html = renderMarkdown('> **写在前面**：这不是医疗建议。')
 
   assert.match(html, /<blockquote>/)
   assert.doesNotMatch(html, /research-risk-note/)
+})
+
+test('collapsible note allowlist stays aligned with the research README contract', () => {
+  const labels = ['适用范围', '风险与合规提示', '风险提示', '合规提示', '合规提示（需自行核实最新法规）']
+  for (const label of labels) {
+    assert.match(`${label}：`, COLLAPSIBLE_NOTE_LABEL_RE)
+  }
+  assert.doesNotMatch('写在前面：', COLLAPSIBLE_NOTE_LABEL_RE)
+  assert.doesNotMatch('免责声明：', COLLAPSIBLE_NOTE_LABEL_RE)
+  assert.doesNotMatch('资料口径：', COLLAPSIBLE_NOTE_LABEL_RE)
 })

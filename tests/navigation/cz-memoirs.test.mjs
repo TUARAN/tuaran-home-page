@@ -16,9 +16,14 @@ test('CZ memoir catalog exposes 28 unique, locally stored chapters', () => {
   assert.equal(CZ_MEMOIR_CHAPTERS.length, 28)
   assert.equal(new Set(CZ_MEMOIR_CHAPTERS.map((chapter) => chapter.slug)).size, 28)
   assert.equal(CZ_MEMOIR_CHAPTER_GROUPS.length, 7)
+  assert.equal(czMemoirChapterPath('00-recommendations'), '/resources/cz-memoirs')
 
   for (const chapter of CZ_MEMOIR_CHAPTERS) {
-    assert.equal(czMemoirChapterPath(chapter.slug), `/resources/cz-memoirs/${chapter.slug}`)
+    const expected =
+      chapter.slug === '00-recommendations'
+        ? '/resources/cz-memoirs'
+        : `/resources/cz-memoirs/${chapter.slug}`
+    assert.equal(czMemoirChapterPath(chapter.slug), expected)
     assert.equal(
       fs.existsSync(path.join(ROOT, 'content', 'resources', 'cz-memoirs', 'chapters', `${chapter.slug}.md`)),
       true,
@@ -41,8 +46,13 @@ test('CZ memoir renderer keeps rich chapter HTML and rewrites every image to loc
 test('CZ memoir pages no longer depend on the external reading site', () => {
   const page = fs.readFileSync(path.join(ROOT, 'app', '(site)', 'resources', 'cz-memoirs', 'page.jsx'), 'utf8')
   const route = fs.readFileSync(path.join(ROOT, 'app', '(site)', 'resources', 'cz-memoirs', '[chapter]', 'page.jsx'), 'utf8')
+  const config = fs.readFileSync(path.join(ROOT, 'next.config.js'), 'utf8')
   assert.doesNotMatch(page, /cz\.fate\.red/)
   assert.doesNotMatch(route, /cz\.fate\.red/)
   assert.match(route, /generateStaticParams/)
   assert.match(route, /dynamicParams = false/)
+  assert.match(page, /CzMemoirChapterView/)
+  assert.doesNotMatch(page, /完整章节目录/)
+  assert.doesNotMatch(page, /查看完整目录/)
+  assert.match(config, /\/resources\/cz-memoirs\/00-recommendations/)
 })

@@ -59,18 +59,13 @@ test('ethereum whitepaper renders local images, PDF, and a complete table of con
   assert.doesNotMatch(article.html, /\]\(\/learn\/\)/)
 })
 
-test('ethereum whitepaper landing toc is a compact numbered list, not a card grid', () => {
+test('ethereum whitepaper landing page goes to the full text instead of a duplicate toc', () => {
   const source = fs.readFileSync(
     path.join(ROOT, 'app/(site)/resources/ethereum-whitepaper/page.jsx'),
     'utf8',
   )
-  const tocBlock = source.slice(
-    source.indexOf('aria-labelledby="toc-heading"'),
-    source.indexOf('aria-labelledby="paper-heading"'),
-  )
-  assert.match(tocBlock, /aria-label="章节目录"/)
-  assert.match(tocBlock, /columns-1 gap-x-16 md:columns-2/)
-  assert.doesNotMatch(tocBlock, /开篇总论，无小节/)
-  assert.doesNotMatch(tocBlock, /rounded-2xl/)
-  assert.doesNotMatch(tocBlock, /grid-cols-2/)
+  assert.doesNotMatch(source, /aria-labelledby="toc-heading"/)
+  assert.doesNotMatch(source, /章节目录/)
+  assert.doesNotMatch(source, /Table of Contents/)
+  assert.match(source, /ResourceLongformReader/)
 })

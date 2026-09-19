@@ -3,16 +3,12 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
+import { CZ_MEMOIR_BASE_PATH, czMemoirChapterPath } from '../../../../../lib/czMemoirs'
 import styles from './cz-memoir-reader.module.css'
 
-const CZ_MEMOIR_BASE_PATH = '/resources/cz-memoirs'
 const FONT_MIN = 16
 const FONT_MAX = 22
 const FONT_DEFAULT = 18
-
-function czMemoirChapterPath(slug) {
-  return `${CZ_MEMOIR_BASE_PATH}/${slug}`
-}
 
 export default function CzMemoirReader({ chapter, groups, outline, previous, next, children }) {
   const articleRef = useRef(null)
@@ -131,7 +127,7 @@ export default function CzMemoirReader({ chapter, groups, outline, previous, nex
             ) : (
               <Link href={CZ_MEMOIR_BASE_PATH}>
                 <span>阅读完成</span>
-                <strong>返回专题首页</strong>
+                <strong>回到开头</strong>
               </Link>
             )}
           </nav>

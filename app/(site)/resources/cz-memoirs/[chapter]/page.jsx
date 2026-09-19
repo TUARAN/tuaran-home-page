@@ -1,16 +1,14 @@
-import { notFound } from 'next/navigation'
+import { permanentRedirect } from 'next/navigation'
 
-import ContentPvBeacon from '../../../components/ContentPvBeacon'
 import {
   CZ_MEMOIR_BASE_PATH,
-  CZ_MEMOIR_CHAPTER_GROUPS,
   CZ_MEMOIR_CHAPTERS,
   CZ_MEMOIR_COVER,
+  CZ_MEMOIR_FIRST_CHAPTER_SLUG,
   czMemoirChapterPath,
   getCzMemoirChapter,
 } from '../../../../../lib/czMemoirs'
-import { readCzMemoirChapter } from '../../../../../lib/czMemoirsContent'
-import CzMemoirReader from './CzMemoirReader'
+import CzMemoirChapterView from '../CzMemoirChapterView'
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
@@ -28,7 +26,7 @@ export async function generateMetadata({ params }) {
 
   const canonical = czMemoirChapterPath(chapter.slug)
   const title = `${chapter.title}｜赵长鹏自传《币安人生》`
-  const description = `在线阅读赵长鹏（CZ）自传《币安人生》“${chapter.title}”，站内简体中文版，支持完整目录、篇内导航、字号调整和上一篇/下一篇。`
+  const description = `在线阅读赵长鹏（CZ）自传《币安人生》“${chapter.title}”，站内简体中文版，左侧可切换章节，并支持篇内导航、字号调整和上一篇/下一篇。`
 
   return {
     title,
@@ -55,17 +53,17 @@ export async function generateMetadata({ params }) {
 
 export default async function CzMemoirChapterPage({ params }) {
   const { chapter: slug } = await params
-  const content = readCzMemoirChapter(slug)
-  if (!content) notFound()
+  if (slug === CZ_MEMOIR_FIRST_CHAPTER_SLUG) {
+    permanentRedirect(CZ_MEMOIR_BASE_PATH)
+  }
 
-  const index = CZ_MEMOIR_CHAPTERS.findIndex((chapter) => chapter.slug === content.slug)
-  const previous = index > 0 ? CZ_MEMOIR_CHAPTERS[index - 1] : null
-  const next = index < CZ_MEMOIR_CHAPTERS.length - 1 ? CZ_MEMOIR_CHAPTERS[index + 1] : null
-  const canonical = `${SITE_URL}${czMemoirChapterPath(content.slug)}`
+  const chapter = getCzMemoirChapter(slug)
+  const index = CZ_MEMOIR_CHAPTERS.findIndex((item) => item.slug === slug)
+  const canonical = `${SITE_URL}${czMemoirChapterPath(slug)}`
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Chapter',
-    name: content.title,
+    name: chapter?.title,
     url: canonical,
     inLanguage: 'zh-CN',
     position: index + 1,
@@ -78,19 +76,5 @@ export default async function CzMemoirChapterPage({ params }) {
     },
   }
 
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <ContentPvBeacon category="resource" slug="cz-memoirs" />
-      <CzMemoirReader
-        chapter={content}
-        groups={CZ_MEMOIR_CHAPTER_GROUPS}
-        outline={content.outline}
-        previous={previous}
-        next={next}
-      >
-        <div dangerouslySetInnerHTML={{ __html: content.html }} />
-      </CzMemoirReader>
-    </>
-  )
+  return <CzMemoirChapterView slug={slug} jsonLd={jsonLd} />
 }

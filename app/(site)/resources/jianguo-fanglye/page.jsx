@@ -19,7 +19,7 @@ const RESOURCE_URL = `https://2aran.com${RESOURCE_PATH}`
 const SOURCE_URL = 'https://zh.wikisource.org/zh-hans/%E5%BB%BA%E5%9B%BD%E6%96%B9%E7%95%A5'
 const TITLE = '《建国方略》全文原文：孙文学说、实业计划、民权初步'
 const DESCRIPTION =
-  '孙文 1917–1921 年写成的《建国方略》简体全文：心理建设《孙文学说》、物质建设《实业计划》、社会建设《民权初步》。站内带三卷目录，并保留中国国家图书馆扫描件。'
+  '孙文 1917–1921 年写成的《建国方略》简体全文：心理建设《孙文学说》、物质建设《实业计划》、社会建设《民权初步》。站内可跳转三卷阅读，并保留中国国家图书馆扫描件。'
 
 const doc = getResourceDocument(RESOURCE_SLUG)
 const article = buildJianguoFanglyeArticle(loadResourceMarkdown(RESOURCE_SLUG))
@@ -76,7 +76,7 @@ const faqs = [
   {
     question: '站内这份全文和国图 PDF 是什么关系？',
     answer:
-      '在线阅读用的是维基文库公有领域整理本，已转成简体并做成可跳转目录。PDF 是中国国家图书馆数字资源 NLC416-01jh003731-18241 的 508 页扫描件，无文字层，用来对照版式。孙文 1925 年逝世，著作本身已进入公有领域。维基文库标注校对质量约 50%，关键引文请对照扫描件或通行校订本。',
+      '在线阅读用的是维基文库公有领域整理本，已转成简体，左侧目录可跳到各卷各章。PDF 是中国国家图书馆数字资源 NLC416-01jh003731-18241 的 508 页扫描件，无文字层，用来对照版式。孙文 1925 年逝世，著作本身已进入公有领域。维基文库标注校对质量约 50%，关键引文请对照扫描件或通行校订本。',
   },
   {
     question: '今天还该把它当施工图读吗？',
@@ -132,23 +132,7 @@ const jsonLd = {
   ],
 }
 
-function groupedToc(items) {
-  const groups = []
-  let current = null
-  for (const item of items) {
-    if (item.depth === 2) {
-      current = { heading: item, sections: [] }
-      groups.push(current)
-      continue
-    }
-    if (item.depth === 3 && current) current.sections.push(item)
-  }
-  return groups
-}
-
 export default function JianguoFanglyePage() {
-  const groups = groupedToc(toc)
-
   return (
     <>
       <PageContainer width="standard" className="py-8 md:py-10">
@@ -181,7 +165,7 @@ export default function JianguoFanglyePage() {
                 </span>
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-[#586258] dark:text-gray-300 md:text-base">
-                孙文把《孙文学说》《实业计划》《民权初步》合成一套建国说明书。站内提供简体全文、三卷目录和国图扫描 PDF；配套解析另页。
+                孙文把《孙文学说》《实业计划》《民权初步》合成一套建国说明书。站内提供简体全文和国图扫描 PDF；配套解析另页。
               </p>
             </div>
 
@@ -242,53 +226,11 @@ export default function JianguoFanglyePage() {
           NLC416-01jh003731-18241，508 页扫描、无文字层。资料用于阅读原书，不构成政治、投资或工程决策建议。
         </aside>
 
-        <section className="mt-9" aria-labelledby="toc-heading">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
-            Table of Contents
-          </p>
-          <h2 id="toc-heading" className="mt-2 font-serif text-2xl font-semibold text-[#2b332d] dark:text-gray-100">
-            章节目录
-          </h2>
-          <nav className="mt-5 border-t border-[#ddd8cc] pt-5 dark:border-gray-800" aria-label="章节目录">
-            <ol className="columns-1 gap-x-16 md:columns-2 md:[column-rule:1px_solid_#ece8de] dark:md:[column-rule-color:#1f2937]">
-              {groups.map((group, index) => (
-                <li key={group.heading.id} className="mb-5 break-inside-avoid last:mb-0">
-                  <a
-                    href={`#${group.heading.id}`}
-                    className="flex items-baseline gap-3 text-[#2b332d] dark:text-gray-100"
-                  >
-                    <span className="w-6 shrink-0 font-mono text-[11px] tabular-nums text-[#8b7551] dark:text-amber-400">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <span className="font-serif text-[17px] font-semibold leading-snug underline-offset-4 hover:underline">
-                      {group.heading.text}
-                    </span>
-                  </a>
-                  {group.sections.length ? (
-                    <ol className="mt-1.5 ml-9 space-y-0.5">
-                      {group.sections.map((section) => (
-                        <li key={section.id}>
-                          <a
-                            href={`#${section.id}`}
-                            className="text-[13.5px] leading-6 text-[#6a736a] underline-offset-4 hover:underline dark:text-gray-400"
-                          >
-                            {section.text}
-                          </a>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </section>
-
-        <section className="mt-10" aria-labelledby="paper-heading">
-          <h2 id="paper-heading" className="font-serif text-2xl font-semibold text-[#2b332d] dark:text-gray-100">
+        <section className="mt-8" aria-labelledby="paper-heading">
+          <h2 id="paper-heading" className="sr-only">
             全文
           </h2>
-          <p className="mt-2 mb-6 text-sm text-[#666] dark:text-gray-400">
+          <p className="mb-5 text-sm text-[#666] dark:text-gray-400">
             {doc.author} · {doc.wordCount} · 文本来源
             <a href={SOURCE_URL} target="_blank" rel="noreferrer" className="mx-1 underline underline-offset-4">
               {doc.sourceLabel}

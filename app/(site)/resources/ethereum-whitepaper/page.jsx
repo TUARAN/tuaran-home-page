@@ -21,7 +21,7 @@ const ENGLISH_URL = 'https://ethereum.org/en/whitepaper/'
 const LEARN_URL = 'https://ethereum.org/zh/learn/'
 const TITLE = '以太坊白皮书中文全文｜Ethereum White Paper（Vitalik Buterin, 2014）'
 const DESCRIPTION =
-  'Vitalik Buterin 2014 年发表的以太坊白皮书简体中文全文：用图灵完备区块链解释账户、Gas、智能合约和去中心化应用。站内带完整目录，可跳转章节，并保留 ethereum.org 原文与 2014 年 12 月 PDF。'
+  'Vitalik Buterin 2014 年发表的以太坊白皮书简体中文全文：用图灵完备区块链解释账户、Gas、智能合约和去中心化应用。站内可跳转章节阅读，并保留 ethereum.org 原文与 2014 年 12 月 PDF。'
 
 const doc = getResourceDocument(RESOURCE_SLUG)
 const article = buildEthereumWhitepaperArticle(loadResourceMarkdown(RESOURCE_SLUG))
@@ -60,7 +60,7 @@ export const metadata = {
   twitter: {
     card: 'summary',
     title: '以太坊白皮书中文全文｜Vitalik Buterin, 2014',
-    description: '带完整目录的简体中文全文：账户、Gas、智能合约与去中心化应用。',
+    description: '简体中文全文：账户、Gas、智能合约与去中心化应用。',
   },
   robots: { index: true, follow: true },
 }
@@ -81,7 +81,7 @@ const faqs = [
   {
     question: '站内这份中文全文和 ethereum.org 是什么关系？',
     answer:
-      '正文来自 ethereum.org 维护的简体中文译本，按 CC BY 4.0 转载。页面补了完整目录、脚注跳转和本地插图；协议后续变更请看 ethereum.org 的学习指南。需要 2014 年 12 月权威版本时，下载同页提供的 PDF。',
+      '正文来自 ethereum.org 维护的简体中文译本，按 CC BY 4.0 转载。页面补了脚注跳转、本地插图和左侧章节导航；协议后续变更请看 ethereum.org 的学习指南。需要 2014 年 12 月权威版本时，下载同页提供的 PDF。',
   },
   {
     question: '2014 年的白皮书还能用来理解现在的以太坊吗？',
@@ -140,23 +140,7 @@ const jsonLd = {
   ],
 }
 
-function groupedToc(items) {
-  const groups = []
-  let current = null
-  for (const item of items) {
-    if (item.depth === 2) {
-      current = { heading: item, sections: [] }
-      groups.push(current)
-      continue
-    }
-    if (item.depth === 3 && current) current.sections.push(item)
-  }
-  return groups
-}
-
 export default function EthereumWhitepaperPage() {
-  const groups = groupedToc(toc)
-
   return (
     <>
       <PageContainer width="standard" className="py-8 md:py-10">
@@ -189,7 +173,7 @@ export default function EthereumWhitepaperPage() {
                 </span>
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-[#586258] dark:text-gray-300 md:text-base">
-                Vitalik Buterin 在主网上线前写下的设计原文。站内提供简体中文全文、章节目录和 2014 年 12 月 PDF；协议后来的变更，以 ethereum.org 现行文档为准。
+                Vitalik Buterin 在主网上线前写下的设计原文。站内提供简体中文全文和 2014 年 12 月 PDF；协议后来的变更，以 ethereum.org 现行文档为准。
               </p>
             </div>
 
@@ -253,53 +237,11 @@ export default function EthereumWhitepaperPage() {
           。资料整理用于理解协议原文，不构成投资、开户或法律建议。
         </aside>
 
-        <section className="mt-9" aria-labelledby="toc-heading">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
-            Table of Contents
-          </p>
-          <h2 id="toc-heading" className="mt-2 font-serif text-2xl font-semibold text-[#2b332d] dark:text-gray-100">
-            章节目录
-          </h2>
-          <nav className="mt-5 border-t border-[#ddd8cc] pt-5 dark:border-gray-800" aria-label="章节目录">
-            <ol className="columns-1 gap-x-16 md:columns-2 md:[column-rule:1px_solid_#ece8de] dark:md:[column-rule-color:#1f2937]">
-              {groups.map((group, index) => (
-                <li key={group.heading.id} className="mb-5 break-inside-avoid last:mb-0">
-                  <a
-                    href={`#${group.heading.id}`}
-                    className="flex items-baseline gap-3 text-[#2b332d] dark:text-gray-100"
-                  >
-                    <span className="w-6 shrink-0 font-mono text-[11px] tabular-nums text-[#8b7551] dark:text-amber-400">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <span className="font-serif text-[17px] font-semibold leading-snug underline-offset-4 hover:underline">
-                      {group.heading.text}
-                    </span>
-                  </a>
-                  {group.sections.length ? (
-                    <ol className="mt-1.5 ml-9 space-y-0.5">
-                      {group.sections.map((section) => (
-                        <li key={section.id}>
-                          <a
-                            href={`#${section.id}`}
-                            className="text-[13.5px] leading-6 text-[#6a736a] underline-offset-4 hover:underline dark:text-gray-400"
-                          >
-                            {section.text}
-                          </a>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </section>
-
-        <section className="mt-10" aria-labelledby="paper-heading">
-          <h2 id="paper-heading" className="font-serif text-2xl font-semibold text-[#2b332d] dark:text-gray-100">
+        <section className="mt-8" aria-labelledby="paper-heading">
+          <h2 id="paper-heading" className="sr-only">
             全文
           </h2>
-          <p className="mt-2 mb-6 text-sm text-[#666] dark:text-gray-400">
+          <p className="mb-5 text-sm text-[#666] dark:text-gray-400">
             {doc.author} · {doc.wordCount} · 文本来源
             <a href={SOURCE_URL} target="_blank" rel="noreferrer" className="mx-1 underline underline-offset-4">
               {doc.sourceLabel}

@@ -71,7 +71,7 @@ export default function ResourceLongformReader({ toc, html }) {
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {hasToc ? (
-          <aside className="hidden shrink-0 lg:sticky lg:top-24 lg:block lg:w-56 xl:w-60">
+          <aside className="hidden shrink-0 md:sticky md:top-24 md:block md:w-56 xl:w-60">
             <nav className="toc-scroll-panel rounded-xl border border-[#eee] bg-[#fafaf8] p-4 dark:border-gray-800 dark:bg-[#121410]">
               <div className="border-b border-[#eee] pb-2 mb-3 text-sm font-bold text-[#333] dark:border-gray-800 dark:text-gray-200">
                 文章目录

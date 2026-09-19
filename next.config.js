@@ -141,6 +141,12 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // 《币安人生》入口直接进入第一篇正文，旧章节路径收口到资源页
+        source: '/resources/cz-memoirs/00-recommendations',
+        destination: '/resources/cz-memoirs',
+        permanent: true,
+      },
+      {
         // 《置身团内》原独立资料页已并入「置身 X 内」合集页
         source: '/resources/shen-zhi-tuan-nei',
         destination: '/resources/shen-zhi-ding-nei#tuan-nei',

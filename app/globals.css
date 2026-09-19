@@ -6512,13 +6512,23 @@
     content: '';
   }
 
-  .prose-tuaran .research-risk-note__more {
+  .prose-tuaran .research-risk-note__toggle {
+    margin-left: auto;
+    flex: none;
     font-size: 11px;
     opacity: 0.72;
   }
 
-  .prose-tuaran .research-risk-note[open] .research-risk-note__more {
+  .prose-tuaran .research-risk-note > summary .research-risk-note__less {
     display: none;
+  }
+
+  .prose-tuaran .research-risk-note[open] > summary .research-risk-note__more {
+    display: none;
+  }
+
+  .prose-tuaran .research-risk-note[open] > summary .research-risk-note__less {
+    display: inline;
   }
 
   .prose-tuaran .research-risk-note__body {

@@ -6410,6 +6410,8 @@
     @apply prose-headings:scroll-mt-24;
     @apply prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b-0 prose-h2:pb-0;
     @apply prose-h3:mt-8 prose-h3:mb-3;
+    /* @apply prose 复制的 :first-child 选择器仍指向 .prose 后代，自定义 class 接不住，标题会空出一截 */
+    @apply [&>:first-child]:mt-0 [&>:last-child]:mb-0;
     @apply prose-li:my-1;
     @apply prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-[#eee] dark:prose-blockquote:border-gray-800;
     @apply prose-blockquote:pl-4 prose-blockquote:text-[#666] dark:prose-blockquote:text-gray-300;

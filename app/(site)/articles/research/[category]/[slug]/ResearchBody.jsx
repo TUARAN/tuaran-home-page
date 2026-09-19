@@ -176,61 +176,58 @@ export default function ResearchBody({ variants }) {
   if (!active) return null
 
   return (
-    <>
-      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#666] dark:text-gray-400">
-        {list.length > 1 ? (
-          <>
-            <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[#999] dark:text-gray-500">
-              version
-            </span>
-            <div className="inline-flex overflow-hidden rounded-full border border-[#d1d3cb] bg-white/70 dark:border-[#2d3440] dark:bg-[#121821]">
-              {list.map((v) => {
-                const isActive = v.id === active.id
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => selectVariant(v.id)}
-                    className={[
-                      'px-3 py-1 text-[12px] transition',
-                      isActive
-                        ? 'bg-[#b7791f] text-white dark:bg-[#9ba475] dark:text-[#1a1a1a]'
-                        : 'text-[#53554d] hover:bg-[#ebede3] dark:text-gray-300 dark:hover:bg-[#1a2230]',
-                    ].join(' ')}
-                    aria-pressed={isActive}
-                  >
-                    {v.label}
-                  </button>
-                )
-              })}
-            </div>
-          </>
-        ) : null}
-        <button
-          type="button"
-          onClick={isSpeaking ? stopSpeech : startSpeech}
-          disabled={!speechSupported || !speechText}
-          className={[
-            'inline-flex items-center rounded-full border px-3 py-1 text-[12px] transition',
-            !speechSupported || !speechText
-              ? 'cursor-not-allowed border-[#d1d3cb] bg-white/70 text-[#a2a39a] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-600'
-              : isSpeaking
-                ? 'border-[#c9cbb8] bg-[#ebede3] text-[#8a5a14] hover:border-[#9b9f7d] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]'
-                : 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] hover:border-[#9fb7d8] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
-          ].join(' ')}
-          title={speechSupported ? '' : '当前浏览器不支持语音朗读'}
-        >
-          {isSpeaking ? '停止朗读' : '朗读正文'}
-        </button>
-      </div>
+    <div className="flex flex-col gap-6 md:flex-row md:items-start">
+      <ArticleToc items={active.toc} />
 
-      <div className="flex flex-col gap-6 md:flex-row">
-        <ArticleToc items={active.toc} />
-
-        <div className="flex-1 min-w-0">
-          <ZoomableResearchMedia contentKey={active.id} html={active.html} />
+      <div className="flex-1 min-w-0">
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#666] dark:text-gray-400">
+          {list.length > 1 ? (
+            <>
+              <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[#999] dark:text-gray-500">
+                version
+              </span>
+              <div className="inline-flex overflow-hidden rounded-full border border-[#d1d3cb] bg-white/70 dark:border-[#2d3440] dark:bg-[#121821]">
+                {list.map((v) => {
+                  const isActive = v.id === active.id
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => selectVariant(v.id)}
+                      className={[
+                        'px-3 py-1 text-[12px] transition',
+                        isActive
+                          ? 'bg-[#b7791f] text-white dark:bg-[#9ba475] dark:text-[#1a1a1a]'
+                          : 'text-[#53554d] hover:bg-[#ebede3] dark:text-gray-300 dark:hover:bg-[#1a2230]',
+                      ].join(' ')}
+                      aria-pressed={isActive}
+                    >
+                      {v.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          ) : null}
+          <button
+            type="button"
+            onClick={isSpeaking ? stopSpeech : startSpeech}
+            disabled={!speechSupported || !speechText}
+            className={[
+              'inline-flex items-center rounded-full border px-3 py-1 text-[12px] transition',
+              !speechSupported || !speechText
+                ? 'cursor-not-allowed border-[#d1d3cb] bg-white/70 text-[#a2a39a] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-600'
+                : isSpeaking
+                  ? 'border-[#c9cbb8] bg-[#ebede3] text-[#8a5a14] hover:border-[#9b9f7d] dark:border-[#26281c] dark:bg-[#1c1d15] dark:text-[#9ba475]'
+                  : 'border-[#cbd9ee] bg-[#eff4fc] text-[#3b5b8a] hover:border-[#9fb7d8] dark:border-[#2a3a55] dark:bg-[#152034] dark:text-[#9bb6df]',
+            ].join(' ')}
+            title={speechSupported ? '' : '当前浏览器不支持语音朗读'}
+          >
+            {isSpeaking ? '停止朗读' : '朗读正文'}
+          </button>
         </div>
+        <ZoomableResearchMedia contentKey={active.id} html={active.html} />
       </div>
-    </>
+    </div>
   )
 }

@@ -24,7 +24,7 @@ export default function ArticleDetailHeader({
   const typeLabel = CONTENT_GROUP_META[groupId]?.label
 
   return (
-    <header className="research-article-header mb-8 border-b pb-4">
+    <header className="research-article-header mb-4 border-b pb-4">
       <div className="research-article-meta flex flex-wrap items-center gap-2 text-xs">
         <Link href="/articles" className="opacity-80 underline underline-offset-4 hover:opacity-100">
           统一内容目录

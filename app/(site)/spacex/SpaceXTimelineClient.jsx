@@ -29,6 +29,41 @@ const SYSTEMS = [
   { index: '04', name: '深空运输', product: 'Mars Architecture', description: '通过在轨加注、完全复用与规模化运输，把火星目标拆成可验证的工程系统。', accent: 'from-rose-300 to-red-600' },
 ]
 
+const SYSTEM_DETAIL_ROWS = [
+  {
+    name: 'Falcon',
+    essence: '成熟运载火箭家族，主要包括 Falcon 9、Falcon Heavy。',
+    reach: 'Falcon 9 主攻地球轨道，也能执行深空任务；Falcon Heavy 可将更重载荷送往月球、火星等轨道。',
+    thrust: 'Falcon 9：约 7.6 MN；Falcon Heavy：约 22.8 MN。',
+    recovery: '部分复用：一级助推器垂直着陆，整流罩可回收；二级不回收。',
+    status: '主力已经高度常态化。截至 2026 年 3 月底，Falcon 9 约完成 620 次轨道发射；2026 年第一季度 Falcon 系列发射 40 次，其中 39 次使用飞行验证过的助推器。Falcon Heavy 累计发射 11 次，任务成功率 100%。',
+  },
+  {
+    name: 'Starlink',
+    essence: '低轨通信卫星星座，承担网络服务。',
+    reach: '运行在近地轨道，本身不负责运送其他载荷。',
+    thrust: '不适用；小型推进器仅用于升轨、避碰和离轨。',
+    recovery: '卫星不回收；寿命结束后主动离轨并在大气层烧毁。',
+    status: '持续由 Falcon 9 高频补网。截至 2026 年 3 月底约有 9,600 颗在轨卫星；2026 年 7 月，Starship 第十三次试飞首次部署 20 颗新一代 V3 卫星。',
+  },
+  {
+    name: 'Dragon',
+    essence: '载人及货运飞船，由 Falcon 9 发射。',
+    reach: '主要往返近地轨道和国际空间站，由运载火箭送入轨道。',
+    thrust: '16 台 Draco，每台约 400 N，只负责轨道机动，不作为火箭起飞推力比较。',
+    recovery: '返回舱可复用，通过降落伞海上溅落；非加压货舱通常不回收。',
+    status: '已进入成熟运营，累计访问空间站超过 50 次。截至 2026 年 9 月 20 日，Crew-12 仍停靠空间站；Crew-13 因推进系统氧化剂泄漏推迟，计划不早于 2026 年 10 月初发射；CRS-35 货运任务也计划不早于 10 月。',
+  },
+  {
+    name: 'Starship',
+    essence: '由 Starship 飞船与 Super Heavy 助推器组成的重型运输系统。',
+    reach: '设计目标覆盖地球轨道、月球、火星及更远空间；理论上四者中运得最重、最远。',
+    thrust: '约 80.8 MN，约为 Falcon 9 的十倍。',
+    recovery: '目标是两级完全、快速复用：助推器和飞船都由发射塔捕获；目前仍在逐步验证，尚未在所有飞行中实现完整回收。',
+    status: '仍处于试飞阶段，尚未进入 Falcon 9 式的常态化商业运营。2026 年 7 月 24 日完成第 13 次试飞，成功部署 V3 Starlink，飞船在印度洋完整软溅落；全系统快速复用仍待验证。',
+  },
+]
+
 const SECTION_LINKS = [
   { id: 'system', index: '01', label: '航天体系' },
   { id: 'dashboard', index: '02', label: '数据看板' },
@@ -137,12 +172,12 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
 
   return (
     <main className="min-h-screen overflow-x-clip bg-[#05080d] text-white">
-      <section className="relative min-h-[92svh] overflow-hidden border-b border-white/10">
+      <section className="relative min-h-[100svh] overflow-hidden border-b border-white/10">
         <video className="absolute inset-0 h-full w-full object-cover object-center" autoPlay muted loop playsInline preload="metadata" aria-label="SpaceX 航天影像"><source src="/videos/spacex-opening.mp4" type="video/mp4" /></video>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,6,10,0.94)_0%,rgba(3,6,10,0.68)_45%,rgba(3,6,10,0.12)_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(0deg,#05080d_0%,transparent_42%)]" />
         <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:72px_72px]" />
-        <div className="relative mx-auto flex min-h-[92svh] max-w-7xl flex-col px-5 pb-10 pt-24 md:px-10 md:pb-14 md:pt-32">
+        <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col px-5 pb-10 pt-24 md:px-10 md:pb-14 md:pt-32">
           <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-slate-300"><span className="h-px w-10 bg-cyan-200" />Space Transportation System</div>
           <div className="my-auto max-w-4xl py-16">
             <p className="mb-5 text-sm font-medium tracking-[0.2em] text-cyan-100/80">从地球轨道，到多行星文明</p>
@@ -214,6 +249,40 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
           </figure>
           <div className="mt-12 grid border-y border-white/10 md:grid-cols-2 xl:grid-cols-4">
             {SYSTEMS.map((system) => <article key={system.index} className="group relative border-b border-white/10 px-1 py-8 md:px-7 md:[&:nth-child(odd)]:border-r xl:border-b-0 xl:border-r xl:first:pl-0 xl:last:border-r-0 xl:last:pr-0"><div className={`h-px w-12 bg-gradient-to-r ${system.accent}`} /><p className="mt-6 font-mono text-[10px] tracking-[0.2em] text-slate-600">SYSTEM {system.index}</p><h3 className="mt-5 text-xl font-medium">{system.name}</h3><p className="mt-1 text-xs tracking-wide text-slate-500">{system.product}</p><p className="mt-5 text-sm leading-7 text-slate-400">{system.description}</p></article>)}
+          </div>
+          <div className="mt-16 overflow-hidden rounded-2xl border border-white/10 bg-[#080d14]">
+            <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-6 sm:flex-row sm:items-end sm:justify-between md:px-7">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-200">System comparison / 详细对比</p>
+                <h3 className="mt-3 text-2xl font-medium tracking-[-0.025em]">能力、推力、复用与任务近况</h3>
+              </div>
+              <p className="text-xs text-slate-600">数据口径截至 2026 年 9 月 20 日</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-[1480px] w-full border-collapse text-left text-xs leading-6">
+                <caption className="sr-only">Falcon、Starlink、Dragon 与 Starship 详细能力对比</caption>
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/[0.025] text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                    {['项目', '本质', '能到哪里', '推力', '可回收情况', '当前发射近况'].map((heading, index) => (
+                      <th key={heading} scope="col" className={`px-5 py-4 font-medium ${index === 0 ? 'sticky left-0 z-10 w-[130px] bg-[#0b111a]' : index === 5 ? 'w-[410px]' : 'w-[235px]'}`}>{heading}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {SYSTEM_DETAIL_ROWS.map((row) => (
+                    <tr key={row.name} className="border-b border-white/[0.07] align-top last:border-b-0">
+                      <th scope="row" className="sticky left-0 z-10 bg-[#080d14] px-5 py-5 text-base font-medium text-white shadow-[12px_0_20px_-20px_rgba(0,0,0,0.9)]">{row.name}</th>
+                      <td className="px-5 py-5 text-slate-300">{row.essence}</td>
+                      <td className="px-5 py-5 text-slate-400">{row.reach}</td>
+                      <td className="px-5 py-5 font-mono text-[11px] text-cyan-100">{row.thrust}</td>
+                      <td className="px-5 py-5 text-slate-400">{row.recovery}</td>
+                      <td className="px-5 py-5 text-slate-300">{row.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="border-t border-white/10 px-5 py-3 text-[11px] text-slate-600">表格较宽，可左右滑动查看完整对比</p>
           </div>
         </div>
       </section>

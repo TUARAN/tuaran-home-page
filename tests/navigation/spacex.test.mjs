@@ -87,6 +87,12 @@ test('archived launches keep exact mission facts and playable video', async () =
   assert.match(client, /id="research"/)
   assert.match(client, /href=\{`#\$\{section\.id\}`\}/)
   assert.match(client, /730 场发射/)
+  assert.match(client, /System comparison \/ 详细对比/)
+  assert.match(client, /SYSTEM_DETAIL_ROWS\.map/)
+  assert.match(client, /Falcon 9：约 7\.6 MN/)
+  assert.match(client, /Starship 第十三次试飞/)
+  assert.match(client, /min-h-\[100svh\]/)
+  assert.doesNotMatch(client, /min-h-\[92svh\]/)
 })
 
 test('SpaceX dashboard exposes source totals and archive progress', async () => {

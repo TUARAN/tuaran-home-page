@@ -86,7 +86,7 @@ test('archived launches keep exact mission facts and playable video', async () =
   assert.match(client, /aria-current=/)
   assert.match(client, /id="research"/)
   assert.match(client, /href=\{`#\$\{section\.id\}`\}/)
-  assert.match(client, /730 场任务/)
+  assert.match(client, /730 场发射/)
 })
 
 test('SpaceX dashboard exposes source totals and archive progress', async () => {

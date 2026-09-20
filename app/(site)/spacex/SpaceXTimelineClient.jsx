@@ -203,7 +203,7 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
         </div>
       </section>
 
-      <section id="dashboard" className="scroll-mt-20 border-b border-white/10 bg-[#05080d] px-5 py-24 md:px-10 md:py-28">
+      <section id="dashboard" className="border-b border-white/10 bg-[#05080d] px-5 py-20 md:px-10 md:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200">Launch Archive / 数据看板</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-5xl">从发射总量看到归档进度。</h2><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400">历史发射总量来自 Launch Library 2；视频归档数来自已经核验并写入时间线的本地记录。实时来源不可用时，总量显示为待同步。</p></div>
@@ -226,36 +226,36 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
         </div>
       </section>
 
-      <section id="research" className="scroll-mt-20 border-b border-white/10 bg-[#080d14] px-5 py-24 md:px-10 md:py-28">
+      <section id="research" className="border-b border-white/10 bg-[#080d14] px-5 py-24 md:px-10 md:py-28">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-orange-200">Research / 归档调研</p>
-              <h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-5xl">730 场任务，怎样变成一条可验证的视频时间线。</h2>
-              <p className="mt-6 text-sm leading-7 text-slate-400">发射影像只有与任务、时间、地点和官方来源稳定对应，才具备长期检索价值。完整回溯可以抵达 2006 年的 Falcon 1；工作量主要集中在 2020 年以后的高频发射阶段。</p>
+              <h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-5xl">730 场发射，按任务、时间与来源串成视频时间线。</h2>
+              <p className="mt-6 text-sm leading-7 text-slate-400">时间线覆盖 2006—2026 年的 SpaceX 发射记录。每段影像对应具体任务、发射时间、地点与官方来源，可按年代查找，也能回到原始记录复核。</p>
               <a href="#timeline" className="mt-7 inline-flex items-center gap-1.5 text-sm font-medium text-white transition hover:text-cyan-200">进入发射时间线 <IconArrowDown size={15} /></a>
             </div>
             <div className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2">
               {[
-                ['回溯范围', '2006—2026', '最早可追到 Falcon 1 / FalconSAT-2；越早的任务越依赖人工查档。'],
+                ['时间跨度', '2006—2026', '从 Falcon 1 / FalconSAT-2 到当前任务，早期公开视频和元数据相对稀少。'],
                 ['任务分布', '419 + 223 + 88', '2024 年至今 419 场，2020—2023 年 223 场，2006—2019 年 88 场。'],
-                ['人机工时', '约 100—250 小时', '按单场 8—20 分钟估算，包含视频寻找、任务匹配、剪辑、压缩和来源复核。'],
-                ['长期价值', '证据链', '每段视频保留任务记录、官方原帖、数据库来源和编辑说明，便于查证与持续补全。'],
+                ['检索字段', '任务 · 时间 · 地点', '影像与任务名称、发射时间和发射地点对应，避免脱离上下文的片段。'],
+                ['核验来源', '官方记录优先', '保留任务记录、官方原帖、数据库来源和必要说明，便于交叉查证。'],
               ].map(([label, value, description]) => <article key={label} className="bg-[#0b111a] p-6 md:p-7"><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-600">{label}</p><h3 className="mt-5 text-2xl font-medium text-white">{value}</h3><p className="mt-3 text-sm leading-7 text-slate-400">{description}</p></article>)}
             </div>
           </div>
           <div className="mt-8 grid gap-6 rounded-2xl border border-white/10 bg-[#05080d] p-6 md:grid-cols-3 md:p-8">
             {[
-              ['第一阶段', '先补近期任务', '从 2024 年以后开始，官方帖子、直播和任务数据通常最完整。'],
-              ['第二阶段', '回溯常规复用时代', '处理 2020—2023 年任务，建立直播剪辑与短视频选择标准。'],
-              ['第三阶段', '查档早期任务', '逐场核验 2006—2019 年的旧链接、历史直播和缺失元数据。'],
+              ['2024 年至今', '高频发射期 · 419 场', '任务数据、官方帖子和直播记录较完整，可集中查看 Starlink 与高频复用。'],
+              ['2020—2023', '常规复用期 · 223 场', 'Falcon 9 发射频率快速提升，直播与官方短视频共同构成影像来源。'],
+              ['2006—2019', '早期任务 · 88 场', '从 Falcon 1 到猎鹰重型早期任务，旧链接与缺失元数据需要逐项交叉核验。'],
             ].map(([step, title, description]) => <div key={step}><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-cyan-200">{step}</p><h3 className="mt-4 text-base font-medium">{title}</h3><p className="mt-3 text-sm leading-7 text-slate-500">{description}</p></div>)}
           </div>
-          <p className="mt-6 max-w-4xl text-xs leading-6 text-slate-600">数据口径截至 2026 年 9 月 20 日。发射总量来自 Launch Library 2 的 SpaceX 历史任务查询；视频优先采用 SpaceX 官方公开内容。著作权、平台条款与传播许可可能变化，归档时保留原帖和署名，并优先展示必要的短片段。</p>
+          <p className="mt-6 max-w-4xl text-xs leading-6 text-slate-600">数据口径截至 2026 年 9 月 20 日。发射总量来自 Launch Library 2 的 SpaceX 历史任务查询；影像优先采用 SpaceX 官方公开内容，并保留原帖链接与署名。著作权、平台条款与传播许可可能变化，页面仅展示理解任务所需的片段。</p>
         </div>
       </section>
 
-      <section id="mission" className="scroll-mt-20 border-b border-white/10 bg-[#080d14] px-5 py-24 md:px-10 md:py-32">
+      <section id="mission" className="border-b border-white/10 bg-[#080d14] px-5 py-24 md:px-10 md:py-32">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1fr_1.2fr]">
           <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-orange-200">Mission / 愿景</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-6xl">让生命成为多行星物种。</h2></div>
           <div className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
@@ -268,7 +268,7 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
         </div>
       </section>
 
-      <section id="timeline" className="scroll-mt-20 px-5 py-24 md:px-10 md:py-32">
+      <section id="timeline" className="px-5 py-24 md:px-10 md:py-32">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-8 border-b border-white/10 pb-9 lg:flex-row lg:items-end lg:justify-between">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200">Signal Timeline / 新闻事件线</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-6xl">追踪正在发生的航天进程。</h2><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400">官方进展、公开观点与发射任务汇入同一条时间线。近期任务由 Launch Library 2 同步；已核验的历史任务和视频会持续归档，不随近期列表滚动消失。</p></div>

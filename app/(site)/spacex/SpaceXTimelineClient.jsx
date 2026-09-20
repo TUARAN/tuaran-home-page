@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   IconArrowDown, IconArrowUpRight, IconBuildingFactory2, IconCalendarEvent,
@@ -197,7 +198,21 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
             </div>
             <div className="min-h-[300px] sm:min-h-[380px] lg:min-h-[500px]" aria-hidden="true" />
           </div>
-          <div className="mt-20 grid border-y border-white/10 md:grid-cols-2 xl:grid-cols-4">
+          <figure className="mt-16 overflow-hidden rounded-2xl border border-cyan-200/15 bg-[#07111c] shadow-[0_28px_80px_rgba(0,0,0,0.32)]">
+            <Image
+              src="/images/spacex/system-comparison.webp"
+              alt="Falcon、Starlink、Dragon 与 Starship 的职责对比：火箭负责发射，卫星提供网络，飞船承担往返，Starship 面向下一代深空运输"
+              width={1672}
+              height={941}
+              sizes="(min-width: 1280px) 1120px, 100vw"
+              className="h-auto w-full"
+              priority={false}
+            />
+            <figcaption className="border-t border-white/10 px-5 py-4 text-xs leading-6 text-slate-500">
+              Falcon、Starlink、Dragon 与 Starship 分别对应运载、轨道网络、载人货运和深空运输。
+            </figcaption>
+          </figure>
+          <div className="mt-12 grid border-y border-white/10 md:grid-cols-2 xl:grid-cols-4">
             {SYSTEMS.map((system) => <article key={system.index} className="group relative border-b border-white/10 px-1 py-8 md:px-7 md:[&:nth-child(odd)]:border-r xl:border-b-0 xl:border-r xl:first:pl-0 xl:last:border-r-0 xl:last:pr-0"><div className={`h-px w-12 bg-gradient-to-r ${system.accent}`} /><p className="mt-6 font-mono text-[10px] tracking-[0.2em] text-slate-600">SYSTEM {system.index}</p><h3 className="mt-5 text-xl font-medium">{system.name}</h3><p className="mt-1 text-xs tracking-wide text-slate-500">{system.product}</p><p className="mt-5 text-sm leading-7 text-slate-400">{system.description}</p></article>)}
           </div>
         </div>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
@@ -68,7 +69,9 @@ export default function RssResourcePage() {
         </div>
       </header>
 
-      <RssBlogroll fallback={RSS_FEEDS_SEED} />
+      <Suspense fallback={<p className="text-sm text-[#666] dark:text-gray-400">正在加载订阅墙…</p>}>
+        <RssBlogroll fallback={RSS_FEEDS_SEED} />
+      </Suspense>
       <ArticleFooterCta />
     </PageContainer>
   )

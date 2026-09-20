@@ -1,5 +1,6 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 
 /**
@@ -10,6 +11,8 @@ import { useCallback, useEffect, useState } from 'react'
  *   点标题去原站读全文。首个源默认自动展开，一进页面就能看到内容。
  */
 export default function RssBlogroll({ fallback = [] }) {
+  const searchParams = useSearchParams()
+  const focusFeedId = String(searchParams.get('feed') || '').trim()
   const [feeds, setFeeds] = useState(fallback)
   const [copiedId, setCopiedId] = useState('')
   // feedId -> { open, loading, error, entries }
@@ -53,12 +56,18 @@ export default function RssBlogroll({ fallback = [] }) {
     }
   }, [])
 
-  // 首个源自动展开，进页面即见内容
+  // 通知深链优先展开对应源；否则展开第一个源，进页面即见内容。
   useEffect(() => {
-    const first = feeds[0]
-    if (first && reader[first.id] === undefined) loadEntries(first.id)
+    const target = (focusFeedId && feeds.find((feed) => feed.id === focusFeedId)) || feeds[0]
+    if (target && reader[target.id] === undefined) loadEntries(target.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feeds, loadEntries])
+  }, [feeds, focusFeedId, loadEntries])
+
+  useEffect(() => {
+    if (!focusFeedId) return
+    const node = document.getElementById(`rss-feed-${focusFeedId}`)
+    if (node) node.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }, [focusFeedId, feeds])
 
   function toggle(feedId) {
     const state = reader[feedId]
@@ -87,8 +96,14 @@ export default function RssBlogroll({ fallback = [] }) {
         const state = reader[feed.id] || {}
         return (
           <section
+            id={`rss-feed-${feed.id}`}
             key={feed.id}
-            className="border border-[#eee] bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+            className={[
+              'border bg-white p-4 dark:bg-gray-900',
+              feed.id === focusFeedId
+                ? 'border-[#16745b] dark:border-[#65c8a9]'
+                : 'border-[#eee] dark:border-gray-800',
+            ].join(' ')}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-base font-semibold text-[#222] dark:text-gray-100">{feed.siteName}</h2>

@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
+import CryptoResearchSubnav from './CryptoResearchSubnav'
+
 const muted = 'text-[#66706c] dark:text-[#a9b5b0]'
 
 const strategySteps = [
@@ -23,6 +25,7 @@ export default function CryptoResearchClient({ items, researchMethod }) {
   const months = new Set(items.map((item) => item.date?.slice(0, 7)).filter(Boolean)).size
 
   return <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+    <CryptoResearchSubnav active="research" />
     <header className="border-b border-[#d8ddd9] pb-8 dark:border-[#303b3a]">
       <p className="text-xs font-semibold tracking-[0.22em] text-[#16745b] dark:text-[#65c8a9]">CRYPTO ASSET RESEARCH</p>
       <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">

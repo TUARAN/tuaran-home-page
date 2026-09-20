@@ -1,6 +1,7 @@
 import { loadContentKeyMeta, resolveContentKeyLite } from '../../../lib/contentKeyLite'
 import { getD1 } from '../../../lib/d1'
 import { getUserFromRequest } from '../../../lib/edgeSession'
+import { parseRssArticleKey, rssUpdateHref } from '../../../lib/rssUpdateCore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -8,6 +9,7 @@ export const dynamic = 'force-dynamic'
 function notificationHref(type, articleKey, commentId, metaMap) {
   if (type === 'weekly_summary') return '/admin/content-weekly?days=7'
   if (type === 'automation_monitor') return '/admin/ops'
+  if (type === 'rss_update') return rssUpdateHref(parseRssArticleKey(articleKey).feedId)
   const resolved = resolveContentKeyLite(articleKey, metaMap)
   if (!resolved.href) return null
   if (type === 'content_like') return resolved.href
@@ -19,6 +21,7 @@ function notificationTitle(type, actorName) {
   if (type === 'content_comment') return `${actorName || '有人'} 评论了你的内容`
   if (type === 'weekly_summary') return '上周站点总结已生成'
   if (type === 'automation_monitor') return `${actorName || '自动化任务'} 运行失败`
+  if (type === 'rss_update') return `${actorName || '订阅源'} 有新更新`
   return `${actorName || '有人'} 回复了你`
 }
 
@@ -34,7 +37,7 @@ function mapNotification(row, metaMap) {
     actorUserName: row.actor_user_name || '',
     actorUserImage: row.actor_user_image || '',
     articleKey: row.article_key || '',
-    articleTitle: type === 'weekly_summary' ? '内容数据与反馈' : type === 'automation_monitor' ? '' : article.title,
+    articleTitle: type === 'weekly_summary' ? '内容数据与反馈' : type === 'automation_monitor' ? '' : type === 'rss_update' ? (row.actor_user_name || 'RSS') : article.title,
     href: notificationHref(type, row.article_key, row.comment_id, metaMap),
     commentId: Number(row.comment_id) || null,
     replyToCommentId: Number(row.reply_to_comment_id) || null,
@@ -56,8 +59,10 @@ export async function GET(req) {
   const whereParams = [String(user.id)]
   if (type === 'automation') {
     where += " AND type = 'automation_monitor'"
+  } else if (type === 'rss') {
+    where += " AND type = 'rss_update'"
   } else if (type === 'interaction') {
-    where += " AND type != 'automation_monitor'"
+    where += " AND type != 'automation_monitor' AND type != 'rss_update'"
   }
 
   let db

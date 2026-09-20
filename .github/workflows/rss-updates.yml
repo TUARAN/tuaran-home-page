@@ -1,0 +1,76 @@
+name: RSS feed updates
+
+# 把后台收录的 RSS 源新条目写入站长通知中心。
+# GitHub Actions 使用 UTC；01/07/13/19:17 UTC = 上海时间 09:17 / 15:17 / 21:17 / 次日 03:17。
+on:
+  schedule:
+    - cron: '17 1,7,13,19 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: rss-updates
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    name: POST /api/cron/rss-updates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger RSS update poll
+        env:
+          RSS_UPDATES_SECRET: ${{ secrets.RSS_UPDATES_SECRET }}
+          WEEKLY_SUMMARY_SECRET: ${{ secrets.WEEKLY_SUMMARY_SECRET }}
+          PUBLIC_OPINION_COLLECT_SECRET: ${{ secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+        run: |
+          TRIGGER_SECRET="${RSS_UPDATES_SECRET:-${WEEKLY_SUMMARY_SECRET:-$PUBLIC_OPINION_COLLECT_SECRET}}"
+          if [ -z "$TRIGGER_SECRET" ]; then
+            echo "::error::缺少仓库 Secret RSS_UPDATES_SECRET（或 WEEKLY_SUMMARY_SECRET / PUBLIC_OPINION_COLLECT_SECRET）"
+            exit 1
+          fi
+
+          code=$(curl -sS --retry 2 --retry-delay 8 \
+            -o /tmp/rss-updates.json \
+            -w '%{http_code}' \
+            -X POST \
+            -H "x-rss-updates-secret: $TRIGGER_SECRET" \
+            https://2aran.com/api/cron/rss-updates)
+
+          echo "HTTP $code"
+          cat /tmp/rss-updates.json
+          echo
+
+          if [ "$code" != "200" ]; then
+            echo "::error::RSS 更新检查失败"
+            exit 1
+          fi
+
+      - name: Notify owner of failure
+        if: failure()
+        env:
+          ALERT_SECRET: ${{ secrets.AUTOMATION_ALERT_SECRET || secrets.WEEKLY_SUMMARY_SECRET || secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          BODY=$(python3 - <<'PY'
+          import json, os
+          detail = ""
+          try:
+              detail = open("/tmp/rss-updates.json").read().strip()[:300]
+          except OSError:
+              pass
+          print(json.dumps({
+              "workflow": "rss-updates",
+              "taskName": "RSS 订阅更新",
+              "runId": os.environ.get("GITHUB_RUN_ID", ""),
+              "runUrl": os.environ.get("RUN_URL", ""),
+              "status": "failed",
+              "error": detail,
+          }, ensure_ascii=False))
+          PY
+          )
+          curl -sS --retry 2 --retry-delay 5 --fail-with-body \
+            -X POST \
+            -H "x-automation-alert-secret: $ALERT_SECRET" \
+            -H "content-type: application/json" \
+            -d "$BODY" \
+            https://2aran.com/api/automation/alert || echo "alert delivery failed (non-fatal)"

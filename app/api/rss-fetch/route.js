@@ -1,13 +1,12 @@
 import { getD1 } from '../../../lib/d1'
+import { parseFeed } from '../../../lib/rssFeedParse'
 import { isPublishedRssRow } from '../../../lib/rssFeedVisibility'
 import { RSS_FEEDS_SEED } from '../../../lib/rssFeedsSeed'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-const FETCH_TIMEOUT_MS = 8000
-const MAX_ENTRIES = 8
-const SUMMARY_MAX = 180
+const FETCH_TIMEOUT_MS = 12000
 
 function dbOrNull() {
   try {
@@ -40,90 +39,6 @@ async function resolveFeed(id) {
   }
   const seed = RSS_FEEDS_SEED.find((f) => f.id === wanted)
   return seed ? { id: seed.id, siteName: seed.siteName, siteUrl: seed.siteUrl, rssUrl: seed.rssUrl } : null
-}
-
-function decodeEntities(input) {
-  return String(input || '')
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#0*39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => safeCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => safeCodePoint(parseInt(d, 10)))
-    .replace(/&amp;/g, '&')
-}
-
-function safeCodePoint(n) {
-  try {
-    return String.fromCodePoint(n)
-  } catch {
-    return ''
-  }
-}
-
-function stripTags(input) {
-  return String(input || '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function firstTag(block, tag) {
-  const m = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i').exec(block)
-  return m ? m[1] : ''
-}
-
-function atomLink(block) {
-  const links = [...block.matchAll(/<link\b([^>]*?)\/?>/gi)].map((m) => m[1])
-  let fallback = ''
-  for (const attrs of links) {
-    const href = (/href="([^"]+)"/i.exec(attrs) || [])[1]
-    if (!href) continue
-    if (!fallback) fallback = href
-    const rel = (/rel="([^"]+)"/i.exec(attrs) || [])[1] || 'alternate'
-    const type = (/type="([^"]+)"/i.exec(attrs) || [])[1] || ''
-    if (rel === 'alternate' && (!type || type.includes('html'))) return href
-  }
-  return fallback
-}
-
-function toDateLabel(raw) {
-  const s = String(raw || '').trim()
-  if (!s) return ''
-  const t = Date.parse(s)
-  if (Number.isNaN(t)) return ''
-  const d = new Date(t)
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${mm}-${dd}`
-}
-
-function parseFeed(xml) {
-  const text = String(xml || '')
-  const isAtom = /<entry[\s>]/i.test(text)
-  const blocks = isAtom
-    ? text.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || []
-    : text.match(/<item[\s>][\s\S]*?<\/item>/gi) || []
-
-  const entries = []
-  for (const block of blocks.slice(0, MAX_ENTRIES)) {
-    const title = decodeEntities(firstTag(block, 'title')).trim()
-    const link = isAtom ? atomLink(block) : decodeEntities(firstTag(block, 'link')).trim()
-    const dateRaw = isAtom
-      ? firstTag(block, 'updated') || firstTag(block, 'published')
-      : firstTag(block, 'pubDate')
-    // 优先用正文（content）截取真实开头，比很多源里千篇一律的 summary 模板更有信息量
-    const rawSummary = isAtom
-      ? firstTag(block, 'content') || firstTag(block, 'summary')
-      : firstTag(block, 'content:encoded') || firstTag(block, 'description')
-    let summary = stripTags(decodeEntities(rawSummary))
-    if (summary.length > SUMMARY_MAX) summary = `${summary.slice(0, SUMMARY_MAX)}…`
-    if (!title && !link) continue
-    entries.push({ title: title || '(无标题)', link, date: toDateLabel(dateRaw), summary })
-  }
-  return entries
 }
 
 export async function GET(req) {

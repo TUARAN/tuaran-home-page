@@ -20,6 +20,7 @@ export default function RssFeedConsole() {
   const [status, setStatus] = useState('loading')
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
+  const [polling, setPolling] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
 
   const load = useCallback(async () => {
@@ -49,6 +50,27 @@ export default function RssFeedConsole() {
   useEffect(() => {
     load()
   }, [load])
+
+  async function pollUpdates() {
+    setPolling(true)
+    setMessage('')
+    try {
+      const res = await fetch('/api/cron/rss-updates', {
+        method: 'POST',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => null)
+      if (res.ok && data?.ok) {
+        setMessage(`已检查 ${data.feedCount || 0} 个源，写入 ${data.notified || 0} 条更新通知`)
+      } else {
+        setMessage(data?.error || data?.detail || '检查更新失败')
+      }
+    } catch (err) {
+      setMessage(String(err?.message || err))
+    } finally {
+      setPolling(false)
+    }
+  }
 
   function setField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -129,10 +151,10 @@ export default function RssFeedConsole() {
       description={
         <>
           这里增删的订阅会展示在公开页{' '}
-          <a href="/resources/rss" target="_blank" rel="noreferrer" className="underline underline-offset-4">
-            /resources/rss
+          <a href="/crypto-research/rss" target="_blank" rel="noreferrer" className="underline underline-offset-4">
+            /crypto-research/rss
           </a>
-          。需先在 Cloudflare 跑迁移 0031 并绑定 D1。
+          。源有新条目时会写入站长通知，点击通知会跳回该页。需先在 Cloudflare 跑迁移 0031 / 0095 并绑定 D1。
         </>
       }
     >
@@ -209,6 +231,13 @@ export default function RssFeedConsole() {
             disabled={saving}
           >
             {saving ? '添加中…' : '添加订阅'}
+          </AdminButton>
+          <AdminButton
+            type="button"
+            onClick={pollUpdates}
+            disabled={polling || status !== 'ok'}
+          >
+            {polling ? '检查中…' : '检查更新并通知'}
           </AdminButton>
           {message ? (
             <span className="text-xs text-[#82847a] dark:text-gray-500">{message}</span>

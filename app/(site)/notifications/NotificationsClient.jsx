@@ -12,6 +12,7 @@ const LOGIN_HREF = '/login?returnTo=%2Fnotifications'
 const FILTER_TABS = [
   { id: 'all', label: '全部' },
   { id: 'interaction', label: '互动' },
+  { id: 'rss', label: '订阅' },
   { id: 'automation', label: '自动化监控' },
 ]
 
@@ -251,7 +252,7 @@ export default function NotificationsClient() {
         <p className="discussion-eyebrow mb-1">Notifications</p>
         <h1 className="mb-1 text-2xl font-bold text-[var(--site-ink)]">通知中心</h1>
         <p className="mb-0 text-sm leading-6 text-[var(--site-muted)]">
-          评论回复、点赞和站内提醒都会在这里汇总，点击任意一条即可跳回原内容。
+          评论回复、点赞、订阅更新和站内提醒都会在这里汇总，点击任意一条即可跳回对应页面。
         </p>
       </header>
 
@@ -333,7 +334,9 @@ export default function NotificationsClient() {
           <p className="mb-0 text-sm leading-6 text-[var(--site-muted)]">
             {filter === 'automation'
               ? '定时自动化任务运行失败时，监控提醒会出现在这里。'
-              : '有人在你的内容下评论、回复或点赞时，会出现在这里。'}
+              : filter === 'rss'
+                ? '收录的 RSS 源有新条目时，会出现在这里，点击可跳到订阅页。'
+                : '有人在你的内容下评论、回复或点赞时，会出现在这里。'}
           </p>
         </div>
       ) : (

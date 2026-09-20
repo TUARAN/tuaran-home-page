@@ -81,9 +81,11 @@ test('archived launches keep exact mission facts and playable video', async () =
   assert.match(client, /entry\.video\.postUrl/)
   assert.match(client, /controls playsInline preload="metadata"/)
   assert.match(client, /id="dashboard"/)
-  assert.match(client, /选择里程碑/)
+  assert.match(client, /SpaceX 章节与里程碑/)
+  assert.match(client, /sticky top-0 max-h-screen/)
+  assert.match(client, /aria-current=/)
   assert.match(client, /id="research"/)
-  assert.match(client, /value="#research"/)
+  assert.match(client, /href=\{`#\$\{section\.id\}`\}/)
   assert.match(client, /730 场任务/)
 })
 

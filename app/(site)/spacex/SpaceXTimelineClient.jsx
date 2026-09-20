@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   IconArrowDown, IconArrowUpRight, IconBuildingFactory2, IconCalendarEvent,
@@ -26,6 +26,14 @@ const SYSTEMS = [
   { index: '02', name: '轨道网络', product: 'Starlink', description: '用低轨卫星星座提供全球连接，同时形成稳定、持续的发射需求。', accent: 'from-cyan-200 to-sky-500' },
   { index: '03', name: '载人航天', product: 'Dragon', description: '承担往返近地轨道的人员与货物运输，连接地面、空间站与商业任务。', accent: 'from-violet-200 to-indigo-500' },
   { index: '04', name: '深空运输', product: 'Mars Architecture', description: '通过在轨加注、完全复用与规模化运输，把火星目标拆成可验证的工程系统。', accent: 'from-rose-300 to-red-600' },
+]
+
+const SECTION_LINKS = [
+  { id: 'system', index: '01', label: '航天体系' },
+  { id: 'dashboard', index: '02', label: '数据看板' },
+  { id: 'research', index: '03', label: '归档调研' },
+  { id: 'mission', index: '04', label: '多行星愿景' },
+  { id: 'timeline', index: '05', label: '任务时间线' },
 ]
 
 function formatDate(value) {
@@ -80,6 +88,7 @@ function TimelineCard({ entry, index }) {
 
 export default function SpaceXTimelineClient({ entries, launchSourceStatus, stats = {} }) {
   const [kind, setKind] = useState('all')
+  const [activeSection, setActiveSection] = useState('system')
   const [promptCopyState, setPromptCopyState] = useState('idle')
   const visibleEntries = useMemo(() => entries.filter((entry) => kind === 'all' || entry.kind === kind), [entries, kind])
   const launchCount = entries.filter((entry) => entry.kind === 'launch').length
@@ -93,11 +102,27 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
     .reduce((counts, entry) => ({ ...counts, [entry.topic]: (counts[entry.topic] || 0) + 1 }), {})
   const maxTopicCount = Math.max(1, ...Object.values(topicCounts))
 
-  function navigateTo(value) {
-    if (!value) return
-    if (value.startsWith('/')) window.location.assign(value)
-    else document.querySelector(value)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  useEffect(() => {
+    let frame = 0
+    function updateActiveSection() {
+      frame = 0
+      const threshold = window.innerHeight * 0.34
+      const current = SECTION_LINKS.reduce((selected, section) => {
+        const node = document.getElementById(section.id)
+        return node && node.getBoundingClientRect().top <= threshold ? section.id : selected
+      }, SECTION_LINKS[0].id)
+      setActiveSection(current)
+    }
+    function onScroll() {
+      if (!frame) frame = window.requestAnimationFrame(updateActiveSection)
+    }
+    updateActiveSection()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
 
   async function copyGrokArchivePrompt() {
     try {
@@ -110,7 +135,7 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#05080d] text-white">
+    <main className="min-h-screen overflow-x-clip bg-[#05080d] text-white">
       <section className="relative min-h-[92svh] overflow-hidden border-b border-white/10">
         <video className="absolute inset-0 h-full w-full object-cover object-center" autoPlay muted loop playsInline preload="metadata" aria-label="SpaceX 航天影像"><source src="/videos/spacex-opening.mp4" type="video/mp4" /></video>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,6,10,0.94)_0%,rgba(3,6,10,0.68)_45%,rgba(3,6,10,0.12)_100%)]" />
@@ -128,29 +153,30 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
         </div>
       </section>
 
-      <nav id="directory" aria-label="SpaceX 页面目录" className="border-b border-white/10 bg-[#080d14] px-5 py-5 md:px-10">
-        <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-[1fr_1fr_auto] md:items-center">
-          <label className="grid gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
-            选择目录
-            <select defaultValue="" onChange={(event) => navigateTo(event.target.value)} className="rounded-lg border border-white/10 bg-[#0b111a] px-3 py-2.5 font-sans text-xs normal-case tracking-normal text-slate-200 outline-none transition focus:border-cyan-200/50">
-              <option value="" disabled>跳转到页面章节</option>
-              <option value="#system">SpaceX 航天体系</option>
-              <option value="#dashboard">发射数据看板</option>
-              <option value="#mission">多行星愿景</option>
-              <option value="#timeline">发射与事件时间线</option>
-              <option value="#research">归档专题调研</option>
-            </select>
-          </label>
-          <label className="grid gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
-            选择里程碑
-            <select defaultValue="" onChange={(event) => navigateTo(event.target.value)} className="rounded-lg border border-white/10 bg-[#0b111a] px-3 py-2.5 font-sans text-xs normal-case tracking-normal text-slate-200 outline-none transition focus:border-cyan-200/50">
-              <option value="" disabled>直达已有视频或重要事件</option>
-              {milestoneEntries.map((entry) => <option key={entry.id} value={`#event-${entry.id}`}>{formatDate(entry.publishedAt)} · {entry.titleTranslated || entry.title}</option>)}
-            </select>
-          </label>
-          <a href="#research" className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-200/20 bg-cyan-200/10 px-4 py-2.5 text-xs font-medium text-cyan-100 transition hover:border-cyan-100/50 md:mt-5">阅读归档调研 <IconArrowDown size={14} /></a>
-        </div>
+      <nav id="directory" aria-label="SpaceX 页面目录" className="sticky top-0 z-30 flex gap-1 overflow-x-auto border-b border-white/10 bg-[#070b11]/95 px-4 py-2.5 backdrop-blur-xl xl:hidden">
+        {SECTION_LINKS.map((section) => <a key={section.id} href={`#${section.id}`} className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] transition ${activeSection === section.id ? 'bg-white text-slate-950' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>{section.label}</a>)}
       </nav>
+
+      <div className="relative xl:grid xl:grid-cols-[224px_minmax(0,1fr)]">
+        <aside aria-label="SpaceX 章节与里程碑" className="hidden border-r border-white/10 bg-[#070b11] xl:block">
+          <div className="sticky top-0 max-h-screen overflow-y-auto px-7 py-10">
+            <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.24em] text-slate-600"><span className="h-px w-6 bg-cyan-200/60" />Explore</div>
+            <nav className="mt-7" aria-label="章节目录">
+              {SECTION_LINKS.map((section) => {
+                const isActive = activeSection === section.id
+                return <a key={section.id} href={`#${section.id}`} aria-current={isActive ? 'location' : undefined} className={`group relative flex items-center gap-3 border-l py-2.5 pl-4 text-sm transition ${isActive ? 'border-cyan-200 text-white' : 'border-white/10 text-slate-500 hover:border-white/30 hover:text-slate-200'}`}><span className={`font-mono text-[9px] ${isActive ? 'text-cyan-200' : 'text-slate-700'}`}>{section.index}</span><span>{section.label}</span></a>
+              })}
+            </nav>
+            <div className="mt-10 border-t border-white/10 pt-7">
+              <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-slate-600">Milestones</p>
+              <div className="mt-4 space-y-1">
+                {milestoneEntries.slice(0, 6).map((entry) => <a key={entry.id} href={`#event-${entry.id}`} className="group block rounded-lg px-3 py-2.5 transition hover:bg-white/[0.04]"><span className="font-mono text-[9px] text-slate-700 transition group-hover:text-cyan-200">{formatDate(entry.publishedAt)}</span><span className="mt-1 block line-clamp-2 text-[11px] leading-5 text-slate-500 transition group-hover:text-slate-200">{entry.titleTranslated || entry.title}</span></a>)}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <div className="min-w-0">
 
       <section id="system" className="relative border-b border-white/10 px-5 py-24 md:px-10 md:py-32">
         <div
@@ -262,6 +288,8 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
           </aside>
         </div>
       </section>
+        </div>
+      </div>
     </main>
   )
 }

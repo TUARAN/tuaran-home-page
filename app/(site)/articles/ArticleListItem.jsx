@@ -63,9 +63,9 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
       <div className={`h5-feed-row-body grid items-start gap-3 px-[0.9rem] py-[0.7rem] md:gap-4 md:px-5 md:py-4 ${item.image ? 'grid-cols-[minmax(0,1fr)_72px] md:grid-cols-[minmax(0,1fr)_136px]' : ''}`}>
         <div className="min-w-0">
           <div className="mb-2 hidden min-w-0 flex-wrap items-center gap-x-2 gap-y-1 md:flex">
-            <span className="shrink-0 text-sm text-[#a39aac]">▪</span>
+            <span className="shrink-0 text-sm text-[var(--site-faint)]">▪</span>
             {item.dateLabel || item.date ? (
-              <span className="shrink-0 whitespace-nowrap text-xs text-[#958aa1] dark:text-gray-400">
+              <span className="shrink-0 whitespace-nowrap text-xs text-[var(--site-faint)] dark:text-gray-400">
                 {item.dateLabel || item.date}
               </span>
             ) : null}

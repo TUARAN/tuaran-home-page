@@ -38,7 +38,7 @@ export default async function ArticlesPage({ searchParams }) {
         <nav aria-label="文章发现" className="shrink-0">
           <Link
             href="/articles/published"
-            className="whitespace-nowrap text-[13px] text-[#958aa1] no-underline transition-colors hover:text-[#20172f] hover:underline hover:underline-offset-4 dark:text-gray-500 dark:hover:text-gray-200"
+            className="whitespace-nowrap text-[13px] text-[var(--site-faint)] no-underline transition-colors hover:text-[var(--site-ink)] hover:underline hover:underline-offset-4 dark:text-gray-500 dark:hover:text-gray-200"
           >
             最新发布
           </Link>

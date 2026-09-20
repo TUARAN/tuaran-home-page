@@ -33,14 +33,14 @@ export default async function PublishedArticlesPage() {
           <h1 className="font-serif text-2xl font-semibold tracking-wide text-[#222] dark:text-gray-100 md:text-3xl">
             最新发布
           </h1>
-          <p className="mt-1 mb-0 text-[13px] text-[#958aa1] dark:text-gray-500">
+          <p className="mt-1 mb-0 text-[13px] text-[var(--site-faint)] dark:text-gray-500">
             按发布时间排列的公开内容
           </p>
         </div>
         <nav aria-label="文章发现" className="shrink-0">
           <Link
             href="/articles"
-            className="whitespace-nowrap text-[13px] text-[#958aa1] no-underline transition-colors hover:text-[#20172f] hover:underline hover:underline-offset-4 dark:text-gray-500 dark:hover:text-gray-200"
+            className="whitespace-nowrap text-[13px] text-[var(--site-faint)] no-underline transition-colors hover:text-[var(--site-ink)] hover:underline hover:underline-offset-4 dark:text-gray-500 dark:hover:text-gray-200"
           >
             全部内容
           </Link>

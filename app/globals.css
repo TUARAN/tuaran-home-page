@@ -11,10 +11,10 @@
   --loading-duration-spinner: 0.9s;
   --loading-duration-dots: 1.2s;
   --loading-stagger: 120ms;
-  --loading-track: color-mix(in srgb, var(--site-line, #ded8e4) 78%, transparent);
-  --loading-surface: color-mix(in srgb, var(--site-panel-strong, #fff) 74%, var(--site-line, #ded8e4));
-  --loading-highlight: color-mix(in srgb, white 72%, var(--site-accent, #7352a2));
-  --loading-ink: var(--site-accent, #7352a2);
+  --loading-track: color-mix(in srgb, var(--site-line, #e2e2e2) 78%, transparent);
+  --loading-surface: color-mix(in srgb, var(--site-panel-strong, #fff) 74%, var(--site-line, #e2e2e2));
+  --loading-highlight: color-mix(in srgb, white 72%, var(--site-accent, #778087));
+  --loading-ink: var(--site-accent, #778087);
 }
 
 .dark {
@@ -348,52 +348,53 @@
 }
 
 :root {
-  --page-bg: #f1eef2;
-  --site-ink: #171611;
-  --site-muted: #68636f;
-  --site-faint: #706a78;
-  --site-line: #ded8e4;
-  --site-line-strong: #b9a6c9;
-  --site-panel: color-mix(in srgb, white 72%, var(--page-bg));
-  --site-panel-strong: color-mix(in srgb, white 90%, var(--page-bg));
-  --site-accent: #7352a2;
-  --site-accent-strong: #2f2146;
-  --site-blue: #2f668a;
-  --site-green: #4b6f7a;
-  --site-shadow: rgba(76, 58, 96, 0.13);
-  --home-focus-border: #b9a5bf;
-  --home-focus-border-hover: #8fafc2;
-  --home-focus-panel-start: rgba(255, 255, 255, 0.82);
-  --home-focus-panel-end: rgba(246, 241, 248, 0.86);
-  --home-focus-kicker: #8a6180;
-  --home-focus-action: #1f5266;
-  --home-focus-chip-bg: rgba(255, 255, 255, 0.76);
-  --home-focus-chip-border: #d7d3dd;
-  --home-focus-shadow: rgba(77, 66, 92, 0.15);
+  /* 浅色默认：冷灰底 + 白卡片，接近技术社区常见色系。 */
+  --page-bg: #e2e2e2;
+  --site-ink: #333333;
+  --site-muted: #778087;
+  --site-faint: #999999;
+  --site-line: #e2e2e2;
+  --site-line-strong: #cccccc;
+  --site-panel: #ffffff;
+  --site-panel-strong: #ffffff;
+  --site-accent: #778087;
+  --site-accent-strong: #333333;
+  --site-blue: #5b8fa3;
+  --site-green: #5b9aa8;
+  --site-shadow: rgba(0, 0, 0, 0.08);
+  --home-focus-border: #d4d4d4;
+  --home-focus-border-hover: #a8b4ba;
+  --home-focus-panel-start: rgba(255, 255, 255, 0.94);
+  --home-focus-panel-end: rgba(249, 249, 249, 0.92);
+  --home-focus-kicker: #778087;
+  --home-focus-action: #4d5256;
+  --home-focus-chip-bg: rgba(255, 255, 255, 0.88);
+  --home-focus-chip-border: #e2e2e2;
+  --home-focus-shadow: rgba(0, 0, 0, 0.08);
   --theme-accent: var(--site-accent);
-  --theme-accent-muted: #6f5c9a;
-  --theme-sage: #747fa8;
-  --hero-surface-start: color-mix(in srgb, white 96%, var(--page-bg));
-  --hero-surface-end: color-mix(in srgb, var(--page-bg) 92%, #f6f2fa);
-  --hero-border: color-mix(in srgb, var(--page-bg) 45%, #c8bfda);
-  --hero-shadow: color-mix(in srgb, var(--theme-accent-muted) 10%, transparent);
-  --hero-glow-core: color-mix(in srgb, var(--theme-accent) 18%, transparent);
-  --hero-glow-fade: color-mix(in srgb, var(--page-bg) 72%, #eee7f6);
-  --hero-cta-bg: #2f2146;
-  --hero-cta-hover: #241737;
-  --hero-cta-text: #f6f3fa;
-  --hero-cta-subtext: #bcb2cf;
+  --theme-accent-muted: #667079;
+  --theme-sage: #778087;
+  --hero-surface-start: #ffffff;
+  --hero-surface-end: color-mix(in srgb, var(--page-bg) 86%, white);
+  --hero-border: #e2e2e2;
+  --hero-shadow: rgba(0, 0, 0, 0.08);
+  --hero-glow-core: color-mix(in srgb, var(--theme-accent) 8%, transparent);
+  --hero-glow-fade: color-mix(in srgb, var(--page-bg) 78%, white);
+  --hero-cta-bg: #333333;
+  --hero-cta-hover: #1a1a1a;
+  --hero-cta-text: #ffffff;
+  --hero-cta-subtext: #c0c0c0;
   --hero-cta-icon-bg: color-mix(in srgb, var(--theme-sage) 15%, transparent);
   --hero-cta-icon-text: var(--theme-sage);
-  --hero-card-bg: color-mix(in srgb, white 75%, var(--page-bg));
-  --hero-card-border: color-mix(in srgb, var(--page-bg) 35%, #cbc4d8);
-  --hero-card-hover-bg: color-mix(in srgb, white 88%, var(--page-bg));
-  --hero-card-hover-border: color-mix(in srgb, var(--page-bg) 20%, #a99abc);
-  --hero-card-icon-bg: color-mix(in srgb, var(--page-bg) 55%, #ece7f3);
+  --hero-card-bg: #ffffff;
+  --hero-card-border: #e2e2e2;
+  --hero-card-hover-bg: #f9f9f9;
+  --hero-card-hover-border: #cccccc;
+  --hero-card-icon-bg: #f5f5f5;
   --hero-card-icon-text: var(--theme-accent-muted);
-  --hero-card-title: #1d1a16;
-  --hero-card-subtext: #6f6877;
-  --hero-surface-panel: color-mix(in srgb, var(--page-bg) 94%, white);
+  --hero-card-title: #333333;
+  --hero-card-subtext: #778087;
+  --hero-surface-panel: #f9f9f9;
   /* 知识库热力图色阶：更亮的琥珀橙，避免旧版褐黄发灰。 */
   --kb-heat-empty: #fff4d6;
   --kb-heat-1: #fde68a;
@@ -785,7 +786,7 @@
     background-position: center top;
     background-size: cover;
     background-repeat: no-repeat;
-    filter: saturate(0.64) contrast(0.92) brightness(1.04);
+    filter: saturate(0.48) contrast(0.92) brightness(1.04);
     transform: translateZ(0);
     will-change: transform;
   }
@@ -795,7 +796,12 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(250, 248, 243, 0.52), rgba(247, 244, 237, 0.66) 56%, rgba(243, 240, 233, 0.78));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--page-bg) 52%, transparent),
+      color-mix(in srgb, var(--page-bg) 66%, transparent) 56%,
+      color-mix(in srgb, var(--page-bg) 78%, transparent)
+    );
     opacity: var(--home-backdrop-overlay-opacity, 1);
   }
 
@@ -806,7 +812,7 @@
     pointer-events: none;
     background:
       radial-gradient(circle at 20% 7%, rgba(255, 255, 255, 0.48), transparent 36%),
-      linear-gradient(90deg, rgba(250, 247, 240, 0.22), rgba(255, 255, 255, 0.04) 46%, rgba(242, 237, 227, 0.28));
+      linear-gradient(90deg, color-mix(in srgb, var(--page-bg) 22%, transparent), rgba(255, 255, 255, 0.04) 46%, color-mix(in srgb, var(--page-bg) 28%, transparent));
     opacity: var(--home-backdrop-overlay-opacity, 1);
   }
 
@@ -3071,7 +3077,7 @@
 
   .site-header {
     border-color: var(--site-line);
-    background-color: color-mix(in srgb, var(--site-panel-strong) 68%, transparent);
+    background-color: color-mix(in srgb, var(--site-panel-strong) 94%, transparent);
     box-shadow: 0 1px 0 color-mix(in srgb, var(--site-line) 58%, transparent);
     min-height: var(--site-header-height);
     padding-top: env(safe-area-inset-top, 0px);
@@ -3084,7 +3090,7 @@
   }
 
   body:has(.home-page) .site-header {
-    background-color: color-mix(in srgb, var(--site-panel-strong) 82%, transparent);
+    background-color: color-mix(in srgb, var(--site-panel-strong) 96%, transparent);
     backdrop-filter: blur(10px) saturate(0.95);
     -webkit-backdrop-filter: blur(10px) saturate(0.95);
   }
@@ -3803,13 +3809,21 @@
 
   .site-nav-trigger-active,
   .site-nav-trigger-active:visited {
-    border-color: color-mix(in srgb, var(--site-accent) 40%, transparent);
-    background-color: color-mix(in srgb, var(--site-accent) 10%, transparent);
-    color: var(--site-accent-strong);
+    border-color: transparent;
+    background-color: var(--site-accent-strong);
+    color: #fff;
   }
 
   .site-nav-trigger-active:hover {
-    color: var(--site-accent-strong);
+    border-color: transparent;
+    background-color: var(--site-ink);
+    color: #fff;
+  }
+
+  .dark .site-nav-trigger-active,
+  .dark .site-nav-trigger-active:visited,
+  .dark .site-nav-trigger-active:hover {
+    color: var(--page-bg);
   }
 
   .site-account-button {

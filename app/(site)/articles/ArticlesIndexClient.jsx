@@ -240,7 +240,7 @@ export default function ArticlesIndexClient({
           <div className="w-full space-y-2.5">
             {SUBJECT_DISPLAY_GROUPS.map((group) => (
               <div key={group.label}>
-                <span className="mb-1 block px-1 text-[10px] font-medium tracking-[0.08em] text-[#aaa1ae] dark:text-[#69758a]">
+                <span className="mb-1 block px-1 text-[10px] font-medium tracking-[0.08em] text-[var(--site-faint)] dark:text-[#69758a]">
                   {group.label}
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -329,7 +329,7 @@ export default function ArticlesIndexClient({
       <Suspense fallback={null}>
         <DirectorySearchParamsSync onChange={syncFiltersFromUrl} />
       </Suspense>
-      <section className="hidden space-y-2.5 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-3 shadow-[0_8px_24px_rgba(76,58,96,0.08)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none md:block">
+      <section className="hidden space-y-2.5 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)]/95 p-3 shadow-[0_8px_24px_var(--site-shadow)] backdrop-blur-sm dark:border-gray-800 dark:bg-[#0f141b]/95 dark:shadow-none md:block">
         <form onSubmit={submitSearch} className="flex items-center gap-2">
           <input
             type="search"
@@ -337,11 +337,11 @@ export default function ArticlesIndexClient({
             onChange={(event) => setQueryInput(event.target.value)}
             placeholder="搜索标题、主题或对象"
             aria-label="搜索统一内容目录"
-            className="min-w-0 flex-1 rounded-lg border border-[#cfc6dc] bg-white px-3.5 py-2.5 text-sm text-[#20172f] outline-none transition-colors placeholder:text-[#9a93a3] focus:border-[var(--site-accent)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
+            className="min-w-0 flex-1 rounded-lg border border-[var(--site-line)] bg-white px-3.5 py-2.5 text-sm text-[var(--site-ink)] outline-none transition-colors placeholder:text-[var(--site-faint)] focus:border-[var(--site-accent)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-gray-500"
           />
           <button
             type="submit"
-            className="shrink-0 rounded-lg border border-[#cfc6dc] bg-[#f4f0f8] px-4 py-2.5 text-sm font-medium text-[#49345f] transition-colors hover:border-[var(--site-accent)] hover:text-[#20172f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
+            className="shrink-0 rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-2.5 text-sm font-medium text-[var(--site-accent-strong)] transition-colors hover:border-[var(--site-accent)] hover:text-[var(--site-ink)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:text-white"
           >
             搜索
           </button>
@@ -349,7 +349,7 @@ export default function ArticlesIndexClient({
             <button
               type="button"
               onClick={clearSearch}
-              className="hidden shrink-0 rounded-md border border-transparent px-2 py-2 text-sm text-[#817789] transition-colors hover:text-[#20172f] sm:block dark:text-gray-400 dark:hover:text-gray-200"
+              className="hidden shrink-0 rounded-md border border-transparent px-2 py-2 text-sm text-[var(--site-muted)] transition-colors hover:text-[var(--site-ink)] sm:block dark:text-gray-400 dark:hover:text-gray-200"
             >
               清空
             </button>
@@ -357,13 +357,13 @@ export default function ArticlesIndexClient({
         </form>
         {searchSuggestions.length ? (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-0.5 text-xs">
-            <span className="text-[#958aa1] dark:text-gray-500">推荐搜索</span>
+            <span className="text-[var(--site-faint)] dark:text-gray-500">推荐搜索</span>
             {searchSuggestions.map((query) => (
               <button
                 key={query}
                 type="button"
                 onClick={() => runSearch(query, 'suggested')}
-                className="rounded-full border border-transparent bg-[#f1edf5] px-2.5 py-1 text-[#675d72] transition-colors hover:border-[#cfc3e2] hover:bg-white hover:text-[#20172f] dark:bg-[#171d26] dark:text-gray-400 dark:hover:border-gray-700 dark:hover:text-gray-100"
+                className="rounded-full border border-transparent bg-[color-mix(in_srgb,var(--site-line)_55%,white)] px-2.5 py-1 text-[var(--site-muted)] transition-colors hover:border-[var(--site-line-strong)] hover:bg-white hover:text-[var(--site-ink)] dark:bg-[#171d26] dark:text-gray-400 dark:hover:border-gray-700 dark:hover:text-gray-100"
               >
                 {query}
               </button>
@@ -372,7 +372,7 @@ export default function ArticlesIndexClient({
               <button
                 type="button"
                 onClick={clearSearch}
-                className="text-[#817789] underline-offset-4 hover:text-[#20172f] hover:underline sm:hidden dark:text-gray-400 dark:hover:text-gray-200"
+                className="text-[var(--site-muted)] underline-offset-4 hover:text-[var(--site-ink)] hover:underline sm:hidden dark:text-gray-400 dark:hover:text-gray-200"
               >
                 清空搜索
               </button>
@@ -382,9 +382,9 @@ export default function ArticlesIndexClient({
       </section>
 
       <div className="lg:grid lg:grid-cols-[236px_minmax(0,1fr)] lg:items-start lg:gap-6">
-        <aside className="hidden self-start rounded-lg border border-[#e8e2ef] bg-white/80 p-3 lg:block lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto dark:border-gray-800 dark:bg-[#121821]">
-          <div className="mb-3 border-b border-[#eee6f1] pb-2 dark:border-gray-800">
-            <span className="block text-sm font-semibold text-[#20172f] dark:text-gray-100">
+        <aside className="hidden self-start rounded-lg border border-[var(--site-line)] bg-white/80 p-3 lg:block lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto dark:border-gray-800 dark:bg-[#121821]">
+          <div className="mb-3 border-b border-[var(--site-line)] pb-2 dark:border-gray-800">
+            <span className="block text-sm font-semibold text-[var(--site-ink)] dark:text-gray-100">
               筛选内容
             </span>
           </div>
@@ -393,9 +393,9 @@ export default function ArticlesIndexClient({
 
         <div className="min-w-0 space-y-4 md:mt-3 lg:mt-0">
           <MobileFilterStrip />
-          <section className="mt-3 hidden rounded-lg border border-[#e8e2ef] bg-white/80 text-xs md:block lg:hidden dark:border-gray-800 dark:bg-[#121821]">
-            <div className="border-b border-[#eee6f1] px-3 py-2 dark:border-gray-800">
-              <span className="font-medium text-[#20172f] dark:text-gray-100">筛选内容</span>
+          <section className="mt-3 hidden rounded-lg border border-[var(--site-line)] bg-white/80 text-xs md:block lg:hidden dark:border-gray-800 dark:bg-[#121821]">
+            <div className="border-b border-[var(--site-line)] px-3 py-2 dark:border-gray-800">
+              <span className="font-medium text-[var(--site-ink)] dark:text-gray-100">筛选内容</span>
             </div>
             <div className="px-3 py-3">
               <Filters />
@@ -405,15 +405,15 @@ export default function ArticlesIndexClient({
           {activeFilters.length ? (
             <div
               aria-label="已选筛选条件"
-              className="hidden flex-wrap items-center gap-2 rounded-lg border border-[#e8e2ef] bg-white/65 px-3 py-2 text-xs md:flex dark:border-gray-800 dark:bg-[#121821]/80"
+              className="hidden flex-wrap items-center gap-2 rounded-lg border border-[var(--site-line)] bg-white/65 px-3 py-2 text-xs md:flex dark:border-gray-800 dark:bg-[#121821]/80"
             >
-              <span className="text-[#958aa1] dark:text-gray-500">已选</span>
+              <span className="text-[var(--site-faint)] dark:text-gray-500">已选</span>
               {activeFilters.map((filter) => (
                 <button
                   key={filter.key}
                   type="button"
                   onClick={() => applyFilters(filter.patch, filter.key, 'clear')}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#f1edf5] px-2.5 py-1 text-[#49345f] transition-colors hover:bg-white dark:bg-[#1f1830] dark:text-[#d8c5f3] dark:hover:bg-[#292036]"
+                  className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--site-line)_55%,white)] px-2.5 py-1 text-[var(--site-accent-strong)] transition-colors hover:bg-white dark:bg-[#1f1830] dark:text-[#d8c5f3] dark:hover:bg-[#292036]"
                   aria-label={`移除筛选：${filter.label}`}
                 >
                   <span>{filter.label}</span>
@@ -423,7 +423,7 @@ export default function ArticlesIndexClient({
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="text-[#817789] underline-offset-4 hover:text-[#20172f] hover:underline dark:text-gray-400 dark:hover:text-gray-200"
+                className="text-[var(--site-muted)] underline-offset-4 hover:text-[var(--site-ink)] hover:underline dark:text-gray-400 dark:hover:text-gray-200"
               >
                 清除筛选
               </button>
@@ -435,7 +435,7 @@ export default function ArticlesIndexClient({
             aria-busy={isPending}
           >
             {visible.length === 0 ? (
-              <div className="rounded-lg border border-[#e8e2ef] bg-white/70 p-6 text-sm text-[#666] dark:border-gray-800 dark:bg-[#121821] dark:text-gray-400">
+              <div className="rounded-lg border border-[var(--site-line)] bg-white/70 p-6 text-sm text-[var(--site-muted)] dark:border-gray-800 dark:bg-[#121821] dark:text-gray-400">
                 {filters.query
                   ? '没有匹配内容。可以缩短关键词，或清除部分筛选条件。'
                   : '这个组合暂时没有内容，可以清除部分筛选条件。'}
@@ -461,15 +461,15 @@ export default function ArticlesIndexClient({
                     />
                   )
                 })}
-                <div className="flex flex-col items-center justify-between gap-3 border-t border-[#d9d2df] px-4 py-4 text-center dark:border-gray-800 sm:flex-row sm:text-left">
-                  <p className="mb-0 text-xs text-[#777184] dark:text-gray-400" aria-live="polite">
+                <div className="flex flex-col items-center justify-between gap-3 border-t border-[var(--site-line)] px-4 py-4 text-center dark:border-gray-800 sm:flex-row sm:text-left">
+                  <p className="mb-0 text-xs text-[var(--site-muted)] dark:text-gray-400" aria-live="polite">
                     已显示 {paginatedItems.length} / {visible.length} 条
                   </p>
                   {paginatedItems.length < visible.length ? (
                     <button
                       type="button"
                       onClick={() => setVisibleCount((count) => Math.min(count + PAGE_SIZE, visible.length))}
-                      className="min-h-10 rounded-full border border-[#cfc6dc] bg-[#f4f0f8] px-5 text-sm font-medium text-[#49345f] transition hover:border-[var(--site-accent)] hover:bg-white hover:text-[#20172f] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                      className="min-h-10 rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-5 text-sm font-medium text-[var(--site-accent-strong)] transition hover:border-[var(--site-accent)] hover:bg-white hover:text-[var(--site-ink)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                     >
                       加载更多
                     </button>
@@ -486,11 +486,11 @@ export default function ArticlesIndexClient({
 
 function FilterRow({ label, index, tone, ariaLabel, orientation = 'inline', active, onReset, children }) {
   const toneClass = tone === 'subject'
-    ? 'border-[#d8c7e8] bg-[#faf6ff] dark:border-[#47365c] dark:bg-[#1b1425]'
-    : 'border-[#bcdde0] bg-[#f2fbfb] dark:border-[#285158] dark:bg-[#102428]'
+    ? 'border-[var(--site-line)] bg-[var(--site-panel)] dark:border-[#47365c] dark:bg-[#1b1425]'
+    : 'border-[color-mix(in_srgb,var(--site-green)_28%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,white)] dark:border-[#285158] dark:bg-[#102428]'
   const indexClass = tone === 'subject'
-    ? 'bg-[#6f4d8f] text-white dark:bg-[#9a78bd] dark:text-[#160f20]'
-    : 'bg-[#26777d] text-white dark:bg-[#54aeb4] dark:text-[#071a1c]'
+    ? 'bg-[var(--site-accent-strong)] text-white dark:bg-[#9a78bd] dark:text-[#160f20]'
+    : 'bg-[var(--site-green)] text-white dark:bg-[#54aeb4] dark:text-[#071a1c]'
   const labelButton = (
     <button
       type="button"
@@ -500,10 +500,10 @@ function FilterRow({ label, index, tone, ariaLabel, orientation = 'inline', acti
       data-active={active ? 'true' : 'false'}
       title={`查看全部${label.replace('内容', '')}`}
       className={[
-        'border-0 bg-transparent p-0 text-left text-sm font-semibold transition-colors hover:underline hover:underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8c78a3] dark:hover:text-gray-100',
+        'border-0 bg-transparent p-0 text-left text-sm font-semibold transition-colors hover:underline hover:underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-accent)] dark:hover:text-gray-100',
         active
-          ? tone === 'subject' ? 'text-[#55346f] dark:text-[#d8c5f3]' : 'text-[#17636a] dark:text-[#9edfe3]'
-          : 'text-[#82788e] dark:text-[#7f8aa0]',
+          ? tone === 'subject' ? 'text-[var(--site-accent-strong)] dark:text-[#d8c5f3]' : 'text-[var(--site-green)] dark:text-[#9edfe3]'
+          : 'text-[var(--site-muted)] dark:text-[#7f8aa0]',
       ].join(' ')}
     >
       {label}
@@ -543,11 +543,11 @@ function FilterRow({ label, index, tone, ariaLabel, orientation = 'inline', acti
 function FilterChip({ label, tone, active, onClick }) {
   const stateClass = tone === 'subject'
     ? active
-      ? 'border-[#8a64a9] bg-[#6f4d8f] font-medium text-white dark:border-[#b89bd2] dark:bg-[#8a64a9]'
-      : 'border-[#dfd1ea] bg-white/70 text-[#664f77] hover:border-[#ad8fc5] hover:bg-white dark:border-[#3d304c] dark:bg-[#21192b] dark:text-[#cdbbdd]'
+      ? 'border-[var(--site-accent-strong)] bg-[var(--site-accent-strong)] font-medium text-white dark:border-[#b89bd2] dark:bg-[#8a64a9]'
+      : 'border-[var(--site-line)] bg-white/70 text-[var(--site-muted)] hover:border-[var(--site-line-strong)] hover:bg-white dark:border-[#3d304c] dark:bg-[#21192b] dark:text-[#cdbbdd]'
     : active
-      ? 'border-[#31858b] bg-[#26777d] font-medium text-white dark:border-[#70c2c7] dark:bg-[#31858b]'
-      : 'border-[#c9e3e5] bg-white/70 text-[#356b70] hover:border-[#74b4b9] hover:bg-white dark:border-[#27484d] dark:bg-[#142d31] dark:text-[#a9d8db]'
+      ? 'border-[var(--site-green)] bg-[var(--site-green)] font-medium text-white dark:border-[#70c2c7] dark:bg-[#31858b]'
+      : 'border-[color-mix(in_srgb,var(--site-green)_32%,var(--site-line))] bg-white/70 text-[var(--site-green)] hover:border-[var(--site-green)] hover:bg-white dark:border-[#27484d] dark:bg-[#142d31] dark:text-[#a9d8db]'
   return (
     <button
       type="button"

@@ -312,7 +312,7 @@ function ArrowIcon() {
 
 function ClassicFeaturedLinkItem({ item }) {
   const className =
-    'group block rounded-xl px-2 py-2 no-underline transition hover:bg-[#f4f0f8] dark:hover:bg-[#18202a]'
+    'group block rounded-xl px-2 py-2 no-underline transition hover:bg-[color-mix(in_srgb,var(--site-line)_42%,white)] dark:hover:bg-[#18202a]'
   const content = (
     <>
       <div className="mb-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -335,11 +335,11 @@ function ClassicFeaturedLinkItem({ item }) {
           </span>
         ) : null}
       </div>
-      <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[#1a1814] group-hover:text-[#49345f] dark:text-gray-100 dark:group-hover:text-[#d8c5f3]">
+      <p className="mb-0 line-clamp-2 text-[13.5px] font-medium leading-5 text-[var(--site-ink)] group-hover:text-[var(--site-accent-strong)] dark:text-gray-100 dark:group-hover:text-[#d8c5f3]">
         {item.title}
       </p>
       {item.summary ? (
-        <p className="mb-0 mt-0.5 line-clamp-1 text-[12px] leading-5 text-[#716779] dark:text-gray-400">
+        <p className="mb-0 mt-0.5 line-clamp-1 text-[12px] leading-5 text-[var(--site-muted)] dark:text-gray-400">
           {item.summary}
         </p>
       ) : null}
@@ -785,10 +785,10 @@ function ClassicHomePage({ featuredPicks }) {
                       en={<>Pick one thing worth <span className="font-semibold">20 years</span>,<span className="mt-0.5 block">compound daily, iterate fast.</span></>}
                     />
                   </p>
-                  <div className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#8e8798] dark:text-gray-500">
-                    <span aria-hidden="true" className="h-px flex-1 bg-[#d9d2e2] dark:bg-gray-700" />
+                  <div className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--site-muted)] dark:text-gray-500">
+                    <span aria-hidden="true" className="h-px flex-1 bg-[var(--site-line)] dark:bg-gray-700" />
                     <span>This time · with LLM</span>
-                    <span aria-hidden="true" className="h-px flex-1 bg-[#d9d2e2] dark:bg-gray-700" />
+                    <span aria-hidden="true" className="h-px flex-1 bg-[var(--site-line)] dark:bg-gray-700" />
                   </div>
                   <div className="mt-2.5 flex justify-center">
                     <DaysSince />
@@ -796,7 +796,7 @@ function ClassicHomePage({ featuredPicks }) {
                 </blockquote>
                 <Link
                   href="/articles"
-                  className="mt-2 inline-flex items-center rounded-full border border-[#d6d0df] bg-white/[0.78] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[#625d70] no-underline transition hover:border-[#b9a6c9] hover:text-[#20172f] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
+                  className="mt-2 inline-flex items-center rounded-full border border-[var(--site-line)] bg-white/[0.78] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--site-muted)] no-underline transition hover:border-[var(--site-line-strong)] hover:text-[var(--site-ink)] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-300 dark:hover:border-[#435062] dark:hover:text-gray-100"
                 >
                   <T zh="查看精选内容" en="Explore selected writing" />
                 </Link>

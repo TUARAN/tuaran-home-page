@@ -79,7 +79,7 @@ export default function ArticlesIndexSkeleton() {
               <Skeleton className="mb-3 h-4 w-20 rounded" />
               <FilterSkeleton />
             </section>
-            <section className="overflow-hidden border-y border-[#d9d2df] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65">
+            <section className="overflow-hidden border-y border-[var(--site-line)] bg-white/45 dark:border-gray-800 dark:bg-[#101721]/65">
               {SKELETON_ROWS.map((index) => <RowSkeleton key={index} index={index} />)}
             </section>
           </div>

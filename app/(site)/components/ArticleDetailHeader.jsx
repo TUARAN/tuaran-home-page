@@ -96,7 +96,7 @@ export default function ArticleDetailHeader({
 
       {tags.length ? (
         <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="内容标签">
-          <span className="text-[10px] text-[#958aa1] dark:text-gray-500">标签</span>
+          <span className="text-[10px] text-[var(--site-faint)] dark:text-gray-500">标签</span>
           {tags.map((tag) => (
             <span key={tag} className="research-pill px-2 py-0.5 text-[11px] opacity-70">
               #{tag}

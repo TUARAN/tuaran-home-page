@@ -8,7 +8,7 @@ import GoogleAdsenseScript from './(site)/components/GoogleAdsenseScript'
  * site-ui-mode / reading-bg），让新默认对老用户也立即生效；之后用户自己的设置再正常缓存，
  * 直到下次 bump。改默认却不 bump 的话，老用户会被旧缓存卡住、看不到新观感。
  */
-const THEME_SETTINGS_VERSION = '2026-06-30-eink-darkhome'
+const THEME_SETTINGS_VERSION = '2026-09-20-forum-gray'
 
 const SITE_URL = 'https://2aran.com'
 const SOCIAL_PREVIEW_URL = `${SITE_URL}/og.png`
@@ -90,7 +90,7 @@ export const viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f8f5f0' },
+    { media: '(prefers-color-scheme: light)', color: '#e2e2e2' },
     { media: '(prefers-color-scheme: dark)', color: '#11100e' },
   ],
 }
@@ -119,7 +119,7 @@ export default function RootLayout({ children }) {
         />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var root=document.documentElement;var SV='${THEME_SETTINGS_VERSION}';if(localStorage.getItem('theme-settings-version')!==SV){localStorage.removeItem('theme');localStorage.removeItem('reading-palette');localStorage.removeItem('site-ui-mode');localStorage.removeItem('reading-bg');localStorage.setItem('theme-settings-version',SV);}root.dataset.ui='polished';var rp=localStorage.getItem('reading-palette');var eink=rp!=='default';if(eink){root.dataset.reading='eink';}var th=localStorage.getItem('theme');var v=localStorage.getItem('reading-bg');if(v==='#f1f2ee'){localStorage.removeItem('reading-bg');v='';}if(v&&th==='light'&&!eink){root.style.setProperty('--page-bg',v);}var lm=document.cookie.match(/(?:^|; )site-lang=([^;]+)/);var lang=lm?decodeURIComponent(lm[1]):'';if(lang==='en'||lang==='zh'){root.dataset.lang=lang;root.lang=lang==='en'?'en':'zh-CN';}}catch(e){}})();`,
+            __html: `(function(){try{var root=document.documentElement;var SV='${THEME_SETTINGS_VERSION}';if(localStorage.getItem('theme-settings-version')!==SV){localStorage.removeItem('theme');localStorage.removeItem('reading-palette');localStorage.removeItem('site-ui-mode');localStorage.removeItem('reading-bg');localStorage.setItem('theme-settings-version',SV);}root.dataset.ui='polished';var rp=localStorage.getItem('reading-palette');var eink=rp==='eink';if(eink){root.dataset.reading='eink';}else{delete root.dataset.reading;}var th=localStorage.getItem('theme');var v=localStorage.getItem('reading-bg');if(v==='#f1f2ee'||v==='#f1eef2'){localStorage.removeItem('reading-bg');v='';}if(v&&th==='light'&&!eink){root.style.setProperty('--page-bg',v);}var lm=document.cookie.match(/(?:^|; )site-lang=([^;]+)/);var lang=lm?decodeURIComponent(lm[1]):'';if(lang==='en'||lang==='zh'){root.dataset.lang=lang;root.lang=lang==='en'?'en':'zh-CN';}}catch(e){}})();`,
           }}
         />
       </head>

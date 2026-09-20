@@ -8,7 +8,8 @@ import { useLocale } from './LocaleProvider'
 import { pick } from '../../../lib/i18n'
 
 const BG_PRESETS = [
-  { id: 'city',  label: '雾粉城景', labelEn: 'Misty Pink', hex: '#f1eef2', desc: '潮流默认，贴合首页横幅', descEn: 'Modern default, matches the hero' },
+  { id: 'forum', label: '社区灰', labelEn: 'Forum Gray', hex: '#e2e2e2', desc: '冷灰底白卡片，接近技术社区', descEn: 'Cool gray canvas, white cards' },
+  { id: 'city',  label: '雾粉城景', labelEn: 'Misty Pink', hex: '#f1eef2', desc: '浅紫雾面，贴合旧首页横幅', descEn: 'Misty pink, matches the old hero' },
   { id: 'cold',  label: '冷牙白', labelEn: 'Cool White', hex: '#f0f1ee', desc: '经典默认，编辑感、克制', descEn: 'Classic default, editorial & restrained' },
   { id: 'warm',  label: '暖米',   labelEn: 'Warm Cream', hex: '#f4ead5', desc: '书页感，适合长读', descEn: 'Paper-like, good for long reads' },
   { id: 'sand',  label: '沙石纸', labelEn: 'Sandstone', hex: '#f1ebde', desc: '砂纸质地，介于两者', descEn: 'Grainy, in between' },
@@ -20,7 +21,7 @@ const DEFAULT_BG_BY_UI_MODE = {
   polished: BG_PRESETS[0].hex,
   classic: BG_PRESETS[1].hex,
 }
-const LEGACY_DEFAULT_BG_HEXES = new Set(['#f1f2ee'])
+const LEGACY_DEFAULT_BG_HEXES = new Set(['#f1f2ee', '#f1eef2'])
 const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const READING_PALETTE_KEY = 'reading-palette'
@@ -50,7 +51,7 @@ export default function SettingsButton() {
   const [open, setOpen] = useState(false)
   const [bgHex, setBgHex] = useState(DEFAULT_BG_HEX)
   const [uiMode, setUiMode] = useState('polished')
-  const [readingPalette, setReadingPalette] = useState('eink')
+  const [readingPalette, setReadingPalette] = useState('default')
   const [homePanelOpacity, setHomePanelOpacity] = useState(DEFAULT_HOME_PANEL_OPACITY)
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
@@ -72,9 +73,9 @@ export default function SettingsButton() {
       } else {
         setBgHex(DEFAULT_BG_BY_UI_MODE[nextUi])
       }
-      // 默认开启墨水屏：仅当用户显式选择 'default'（标准）时才关闭
+      // 默认走标准色系；仅当用户显式选择 'eink' 时叠加墨水屏
       const rp = localStorage.getItem(READING_PALETTE_KEY)
-      setReadingPalette(rp === 'default' ? 'default' : 'eink')
+      setReadingPalette(rp === 'eink' ? 'eink' : 'default')
       const homeOpacity = localStorage.getItem(HOME_PANEL_OPACITY_KEY)
       if (homeOpacity !== null) setHomePanelOpacity(clampHomePanelOpacity(homeOpacity))
     } catch (e) {}

@@ -247,9 +247,9 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
           <div className="flex flex-col gap-8 border-b border-white/10 pb-9 lg:flex-row lg:items-end lg:justify-between">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200">Signal Timeline / 新闻事件线</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-6xl">追踪正在发生的航天进程。</h2><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400">官方进展、公开观点与发射任务汇入同一条时间线。近期任务由 Launch Library 2 同步；已核验的历史任务和视频会持续归档，不随近期列表滚动消失。</p></div>
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={copyGrokArchivePrompt} className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/25 bg-cyan-200/10 px-4 py-2 text-xs font-medium text-cyan-100 transition hover:border-cyan-100/50 hover:bg-cyan-200/15" title="复制后粘贴给正在查看 X 帖子的 Grok">
-                {promptCopyState === 'copied' ? <IconCheck size={14} /> : <IconCopy size={14} />}
-                {promptCopyState === 'copied' ? '已复制，去问 Grok' : promptCopyState === 'error' ? '复制失败' : '复制 Grok 归档提示词'}
+              <button type="button" onClick={copyGrokArchivePrompt} className="inline-flex items-center gap-1 rounded-md border border-cyan-200/20 bg-cyan-200/[0.07] px-2.5 py-1.5 text-[11px] font-medium text-cyan-100 transition hover:border-cyan-100/45 hover:bg-cyan-200/10" title="复制 Grok 归档提示词" aria-label="复制 Grok 归档提示词">
+                {promptCopyState === 'copied' ? <IconCheck size={12} /> : <IconCopy size={12} />}
+                {promptCopyState === 'copied' ? '已复制' : promptCopyState === 'error' ? '重试' : 'Grok'}
               </button>
               {KIND_FILTERS.map((filter) => <button key={filter.id} type="button" onClick={() => setKind(filter.id)} className={`rounded-full px-4 py-2 text-xs font-medium transition ${kind === filter.id ? 'bg-white text-slate-950' : 'border border-white/10 text-slate-400 hover:border-white/30 hover:text-white'}`}>{filter.label}</button>)}
             </div>

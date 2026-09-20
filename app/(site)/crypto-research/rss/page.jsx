@@ -5,6 +5,7 @@ import { RSS_FEEDS_SEED } from '../../../../lib/rssFeedsSeed'
 import CryptoResearchSubnav from '../CryptoResearchSubnav'
 import SiteRssSubscribeCard from '../SiteRssSubscribeCard'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {

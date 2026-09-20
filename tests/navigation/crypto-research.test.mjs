@@ -29,6 +29,7 @@ test('加密调研二级菜单提供 RSS 订阅页', async () => {
   ])
 
   assert.match(nav, /href: '\/crypto-research\/rss'/)
+  assert.match(rssPage, /export const runtime = 'edge'/)
   assert.match(rssPage, /SiteRssSubscribeCard/)
   assert.match(rssPage, /RssBlogroll/)
   assert.match(subnav, /\/crypto-research\/rss/)

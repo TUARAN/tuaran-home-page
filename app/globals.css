@@ -2051,8 +2051,8 @@
   }
 
   .home-badge-column {
-    border-color: var(--site-line);
-    color: var(--site-muted);
+    border-color: color-mix(in srgb, var(--site-blue) 36%, var(--site-line));
+    color: var(--site-blue);
   }
 
   .home-badge-research {

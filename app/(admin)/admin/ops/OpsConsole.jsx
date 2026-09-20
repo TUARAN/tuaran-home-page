@@ -203,7 +203,6 @@ export default function OpsConsoleClient() {
       actions={
         <div className="flex flex-wrap gap-2">
           <AdminButton href="/admin/logs">运行记录</AdminButton>
-          <AdminButton href="/admin/a-share-research" variant="primary">A 股研究自动化</AdminButton>
           <AdminButton href={status?.localUrl || 'http://localhost:4179'} target="_blank" rel="noreferrer">本机控制台</AdminButton>
           <AdminButton href={status?.externalUrl || 'https://ops.2aran.com/'} target="_blank" rel="noreferrer">Tunnel 入口</AdminButton>
           <AdminButton

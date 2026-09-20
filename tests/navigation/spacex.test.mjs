@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { getSpacexTimeline, normalizeLl2Launch } from '../../lib/spacexTimeline.js'
+import { getSpacexTimeline, normalizeLl2Launch, SPACEX_ARCHIVED_LAUNCHES } from '../../lib/spacexTimeline.js'
+import { SPACEX_GROK_ARCHIVE_PROMPT } from '../../lib/spacexArchivePrompt.js'
 import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
 
 test('SpaceX stays off primary nav and is a homepage easter egg', async () => {
@@ -58,6 +59,49 @@ test('Launch Library records normalize into source-backed timeline entries', () 
 test('SpaceX timeline keeps editorial entries when the live source fails', async () => {
   const result = await getSpacexTimeline(async () => ({ ok: false, status: 503 }))
   assert.equal(result.launchSourceStatus, 'unavailable')
-  assert.ok(result.entries.length >= 4)
-  assert.ok(result.entries.every((entry) => entry.kind !== 'launch'))
+  assert.ok(result.entries.length >= 5)
+  assert.ok(result.entries.some((entry) => entry.id === 'spacex-starlink-15-27-2026-09-20'))
+})
+
+test('archived launches keep exact mission facts and playable video', async () => {
+  const launch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-starlink-15-27-2026-09-20')
+  const client = await readFile(new URL('../../app/(site)/spacex/SpaceXTimelineClient.jsx', import.meta.url), 'utf8')
+
+  assert.equal(launch.publishedAt, '2026-09-20T01:47:00Z')
+  assert.match(launch.summaryTranslated, /B1093.*第 17 次飞行/)
+  assert.match(launch.summaryTranslated, /整流罩半体完成第 40 次飞行/)
+  assert.equal(launch.video.src, '/videos/starlink-15-27-fairing-separation-2026-09-20.mp4')
+  assert.match(client, /entry\.video\.src/)
+  assert.match(client, /controls playsInline preload="metadata"/)
+})
+
+test('archived launch replaces the matching recent live-source record', async () => {
+  const liveLaunch = {
+    id: 'd1471f9d-e9d0-4146-8e97-90863e48bfc8',
+    name: 'Falcon 9 Block 5 | Starlink Group 15-27',
+    net: '2026-09-20T01:47:00Z',
+    url: 'https://example.com/live-starlink-15-27',
+    status: { name: 'Launch Successful' },
+  }
+  const result = await getSpacexTimeline(async () => ({
+    ok: true,
+    json: async () => ({ results: [liveLaunch] }),
+  }))
+
+  const matchingEntries = result.entries.filter((entry) => entry.publishedAt === liveLaunch.net)
+  assert.equal(matchingEntries.length, 1)
+  assert.equal(matchingEntries[0].id, 'spacex-starlink-15-27-2026-09-20')
+  assert.ok(matchingEntries[0].video)
+})
+
+test('Grok archive prompt requests a strict, source-backed timeline record', async () => {
+  const client = await readFile(new URL('../../app/(site)/spacex/SpaceXTimelineClient.jsx', import.meta.url), 'utf8')
+
+  assert.match(SPACEX_GROK_ARCHIVE_PROMPT, /只输出一个 JSON 代码块/)
+  assert.match(SPACEX_GROK_ARCHIVE_PROMPT, /launchedAtUtc/)
+  assert.match(SPACEX_GROK_ARCHIVE_PROMPT, /needsVerification/)
+  assert.match(SPACEX_GROK_ARCHIVE_PROMPT, /timelineDraft/)
+  assert.match(SPACEX_GROK_ARCHIVE_PROMPT, /“首次”“纪录”“第 N 次”/)
+  assert.match(client, /navigator\.clipboard\.writeText\(SPACEX_GROK_ARCHIVE_PROMPT\)/)
+  assert.match(client, /复制 Grok 归档提示词/)
 })

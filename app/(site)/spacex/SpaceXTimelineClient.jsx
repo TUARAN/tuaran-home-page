@@ -4,8 +4,9 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   IconArrowDown, IconArrowUpRight, IconBuildingFactory2, IconCalendarEvent,
-  IconChevronRight, IconQuote, IconRocket,
+  IconCheck, IconChevronRight, IconCopy, IconQuote, IconRocket,
 } from '@tabler/icons-react'
+import { SPACEX_GROK_ARCHIVE_PROMPT } from '../../../lib/spacexArchivePrompt'
 
 const KIND_META = {
   musk: { label: '创始人观点', icon: IconQuote, dot: 'bg-amber-300', tone: 'border-amber-300/20 bg-amber-300/10 text-amber-100' },
@@ -56,6 +57,17 @@ function TimelineCard({ entry, index }) {
         </div>
         <h3 className="max-w-3xl text-xl font-medium leading-snug tracking-[-0.02em] text-white md:text-2xl">{title}</h3>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400 md:text-[15px]">{summary}</p>
+        {entry.video ? (
+          <figure className="mt-6 max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-black">
+            <video className="aspect-video w-full object-cover" controls playsInline preload="metadata" aria-label={entry.video.label || `${title} 发射影像`}>
+              <source src={entry.video.src} type="video/mp4" />
+            </video>
+            <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-4 py-3 text-[11px] text-slate-500">
+              <span>{entry.video.label}</span>
+              <span>{entry.video.credit}</span>
+            </figcaption>
+          </figure>
+        ) : null}
         <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
           <a href={entry.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium text-slate-300 transition hover:text-white">查看原始信号 <IconArrowUpRight size={14} /></a>
           {note ? <span>{note}</span> : null}
@@ -68,9 +80,20 @@ function TimelineCard({ entry, index }) {
 
 export default function SpaceXTimelineClient({ entries, launchSourceStatus }) {
   const [kind, setKind] = useState('all')
+  const [promptCopyState, setPromptCopyState] = useState('idle')
   const visibleEntries = useMemo(() => entries.filter((entry) => kind === 'all' || entry.kind === kind), [entries, kind])
   const launchCount = entries.filter((entry) => entry.kind === 'launch').length
   const upcomingCount = entries.filter((entry) => entry.phase === 'upcoming').length
+
+  async function copyGrokArchivePrompt() {
+    try {
+      await navigator.clipboard.writeText(SPACEX_GROK_ARCHIVE_PROMPT)
+      setPromptCopyState('copied')
+      window.setTimeout(() => setPromptCopyState('idle'), 2400)
+    } catch {
+      setPromptCopyState('error')
+    }
+  }
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#05080d] text-white">
@@ -132,10 +155,16 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus }) {
       <section id="timeline" className="px-5 py-24 md:px-10 md:py-32">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-8 border-b border-white/10 pb-9 lg:flex-row lg:items-end lg:justify-between">
-            <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200">Signal Timeline / 新闻事件线</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-6xl">追踪正在发生的航天进程。</h2><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400">官方进展、公开观点与近期发射任务汇入同一条时间线。任务时间来自 Launch Library 2，临近发射仍可能调整。</p></div>
-            <div className="flex flex-wrap gap-2">{KIND_FILTERS.map((filter) => <button key={filter.id} type="button" onClick={() => setKind(filter.id)} className={`rounded-full px-4 py-2 text-xs font-medium transition ${kind === filter.id ? 'bg-white text-slate-950' : 'border border-white/10 text-slate-400 hover:border-white/30 hover:text-white'}`}>{filter.label}</button>)}</div>
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200">Signal Timeline / 新闻事件线</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-6xl">追踪正在发生的航天进程。</h2><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400">官方进展、公开观点与发射任务汇入同一条时间线。近期任务由 Launch Library 2 同步；已核验的历史任务和视频会持续归档，不随近期列表滚动消失。</p></div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={copyGrokArchivePrompt} className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/25 bg-cyan-200/10 px-4 py-2 text-xs font-medium text-cyan-100 transition hover:border-cyan-100/50 hover:bg-cyan-200/15" title="复制后粘贴给正在查看 X 帖子的 Grok">
+                {promptCopyState === 'copied' ? <IconCheck size={14} /> : <IconCopy size={14} />}
+                {promptCopyState === 'copied' ? '已复制，去问 Grok' : promptCopyState === 'error' ? '复制失败' : '复制 Grok 归档提示词'}
+              </button>
+              {KIND_FILTERS.map((filter) => <button key={filter.id} type="button" onClick={() => setKind(filter.id)} className={`rounded-full px-4 py-2 text-xs font-medium transition ${kind === filter.id ? 'bg-white text-slate-950' : 'border border-white/10 text-slate-400 hover:border-white/30 hover:text-white'}`}>{filter.label}</button>)}
+            </div>
           </div>
-          {launchSourceStatus !== 'ok' ? <p className="mt-6 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">{launchSourceStatus === 'partial' ? '部分发射数据暂时未同步，当前保留已取得的任务。' : '发射数据源暂时不可用，当前展示已核验的官方进展与观点。'}</p> : null}
+          {launchSourceStatus !== 'ok' ? <p className="mt-6 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">{launchSourceStatus === 'partial' ? '部分发射数据暂时未同步，当前保留已取得的任务。' : '发射数据源暂时不可用，当前展示已归档任务、官方进展与观点。'}</p> : null}
           <div>{visibleEntries.length ? visibleEntries.map((entry, index) => <TimelineCard key={entry.id} entry={entry} index={index} />) : <p className="py-20 text-center text-sm text-slate-500">当前筛选条件下没有事件。</p>}</div>
           <aside className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-2">
             <div className="bg-[#080d14] p-7"><IconCalendarEvent size={20} stroke={1.5} className="text-cyan-200" /><h3 className="mt-5 text-base font-medium">信号收录标准</h3><p className="mt-3 text-sm leading-7 text-slate-400">只收录可回到官方页面、公开论文、任务页面或可靠事件数据库的内容。</p></div>

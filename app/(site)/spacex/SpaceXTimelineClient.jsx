@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   IconArrowDown, IconArrowUpRight, IconBuildingFactory2, IconCalendarEvent,
-  IconCheck, IconChevronRight, IconCopy, IconQuote, IconRocket,
+  IconChartBar, IconCheck, IconChevronRight, IconCopy, IconQuote, IconRocket,
 } from '@tabler/icons-react'
 import { SPACEX_GROK_ARCHIVE_PROMPT } from '../../../lib/spacexArchivePrompt'
 
@@ -42,7 +42,7 @@ function TimelineCard({ entry, index }) {
   const note = entry.noteTranslated || entry.note
 
   return (
-    <article className="group relative grid gap-5 border-t border-white/10 py-9 first:border-t-0 md:grid-cols-[150px_minmax(0,1fr)_36px] md:gap-8">
+    <article id={`event-${entry.id}`} className="group relative scroll-mt-24 grid gap-5 border-t border-white/10 py-9 first:border-t-0 md:grid-cols-[150px_minmax(0,1fr)_36px] md:gap-8">
       <div>
         <div className="flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] text-slate-500">
           <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} /> SIGNAL {String(index + 1).padStart(2, '0')}
@@ -64,7 +64,7 @@ function TimelineCard({ entry, index }) {
             </video>
             <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-4 py-3 text-[11px] text-slate-500">
               <span>{entry.video.label}</span>
-              <span>{entry.video.credit}</span>
+              {entry.video.postUrl ? <a href={entry.video.postUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-slate-400 transition hover:text-white">{entry.video.credit} · X 原帖 <IconArrowUpRight size={12} /></a> : <span>{entry.video.credit}</span>}
             </figcaption>
           </figure>
         ) : null}
@@ -78,12 +78,26 @@ function TimelineCard({ entry, index }) {
   )
 }
 
-export default function SpaceXTimelineClient({ entries, launchSourceStatus }) {
+export default function SpaceXTimelineClient({ entries, launchSourceStatus, stats = {} }) {
   const [kind, setKind] = useState('all')
   const [promptCopyState, setPromptCopyState] = useState('idle')
   const visibleEntries = useMemo(() => entries.filter((entry) => kind === 'all' || entry.kind === kind), [entries, kind])
   const launchCount = entries.filter((entry) => entry.kind === 'launch').length
   const upcomingCount = entries.filter((entry) => entry.phase === 'upcoming').length
+  const milestoneEntries = entries.filter((entry) => entry.video || entry.kind === 'spacex').slice(0, 12)
+  const historicalLaunchCount = stats.historicalLaunchCount || 0
+  const archivedVideoCount = stats.archivedVideoCount || 0
+  const archiveProgress = historicalLaunchCount ? (archivedVideoCount / historicalLaunchCount) * 100 : 0
+  const topicCounts = entries
+    .filter((entry) => entry.kind === 'launch')
+    .reduce((counts, entry) => ({ ...counts, [entry.topic]: (counts[entry.topic] || 0) + 1 }), {})
+  const maxTopicCount = Math.max(1, ...Object.values(topicCounts))
+
+  function navigateTo(value) {
+    if (!value) return
+    if (value.startsWith('/')) window.location.assign(value)
+    else document.querySelector(value)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   async function copyGrokArchivePrompt() {
     try {
@@ -114,6 +128,30 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus }) {
         </div>
       </section>
 
+      <nav id="directory" aria-label="SpaceX 页面目录" className="border-b border-white/10 bg-[#080d14] px-5 py-5 md:px-10">
+        <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-[1fr_1fr_auto] md:items-center">
+          <label className="grid gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
+            选择目录
+            <select defaultValue="" onChange={(event) => navigateTo(event.target.value)} className="rounded-lg border border-white/10 bg-[#0b111a] px-3 py-2.5 font-sans text-xs normal-case tracking-normal text-slate-200 outline-none transition focus:border-cyan-200/50">
+              <option value="" disabled>跳转到页面章节</option>
+              <option value="#system">SpaceX 航天体系</option>
+              <option value="#dashboard">发射数据看板</option>
+              <option value="#mission">多行星愿景</option>
+              <option value="#timeline">发射与事件时间线</option>
+              <option value="#research">归档专题调研</option>
+            </select>
+          </label>
+          <label className="grid gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
+            选择里程碑
+            <select defaultValue="" onChange={(event) => navigateTo(event.target.value)} className="rounded-lg border border-white/10 bg-[#0b111a] px-3 py-2.5 font-sans text-xs normal-case tracking-normal text-slate-200 outline-none transition focus:border-cyan-200/50">
+              <option value="" disabled>直达已有视频或重要事件</option>
+              {milestoneEntries.map((entry) => <option key={entry.id} value={`#event-${entry.id}`}>{formatDate(entry.publishedAt)} · {entry.titleTranslated || entry.title}</option>)}
+            </select>
+          </label>
+          <a href="#research" className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-200/20 bg-cyan-200/10 px-4 py-2.5 text-xs font-medium text-cyan-100 transition hover:border-cyan-100/50 md:mt-5">阅读归档调研 <IconArrowDown size={14} /></a>
+        </div>
+      </nav>
+
       <section id="system" className="relative border-b border-white/10 px-5 py-24 md:px-10 md:py-32">
         <div
           className="absolute inset-x-0 top-0 h-[820px] bg-cover bg-[position:72%_center] opacity-80 sm:bg-[position:65%_center] lg:bg-center"
@@ -139,7 +177,59 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus }) {
         </div>
       </section>
 
-      <section className="border-b border-white/10 bg-[#080d14] px-5 py-24 md:px-10 md:py-32">
+      <section id="dashboard" className="scroll-mt-20 border-b border-white/10 bg-[#05080d] px-5 py-24 md:px-10 md:py-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200">Launch Archive / 数据看板</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-5xl">从发射总量看到归档进度。</h2><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400">历史发射总量来自 Launch Library 2；视频归档数来自已经核验并写入时间线的本地记录。实时来源不可用时，总量显示为待同步。</p></div>
+            <a href="#research" className="inline-flex items-center gap-1.5 text-sm font-medium text-white transition hover:text-cyan-200">查看方法、规模与边界 <IconArrowDown size={15} /></a>
+          </div>
+          <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              [historicalLaunchCount || '—', '历史发射记录', 'Launch Library 2'],
+              [archivedVideoCount, '已归档视频', '均可回到来源'],
+              [historicalLaunchCount ? `${archiveProgress.toFixed(2)}%` : '—', '影像归档进度', '按一场一段计算'],
+              [stats.upcomingLaunchCount ?? upcomingCount, '近期待发任务', '计划可能调整'],
+            ].map(([value, label, note]) => <div key={label} className="bg-[#080d14] p-6 md:p-7"><div className="font-mono text-3xl text-white">{value}</div><div className="mt-4 text-sm font-medium text-slate-200">{label}</div><div className="mt-1 text-xs text-slate-600">{note}</div></div>)}
+          </div>
+          <div className="mt-6 grid gap-6 rounded-2xl border border-white/10 bg-[#080d14] p-6 lg:grid-cols-[0.65fr_1.35fr] md:p-8">
+            <div><IconChartBar size={20} stroke={1.5} className="text-orange-200" /><h3 className="mt-5 text-lg font-medium">当前窗口的任务构成</h3><p className="mt-3 text-sm leading-7 text-slate-500">统计近期同步任务和已经归档的历史任务。随着视频持续回溯，分布会逐步扩展。</p></div>
+            <div className="space-y-4">
+              {Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).map(([topic, count]) => <div key={topic}><div className="mb-2 flex items-center justify-between text-xs"><span className="text-slate-300">{topic}</span><span className="font-mono text-slate-500">{count}</span></div><div className="h-1.5 overflow-hidden rounded-full bg-white/5"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-blue-500" style={{ width: `${Math.max(8, (count / maxTopicCount) * 100)}%` }} /></div></div>)}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="research" className="scroll-mt-20 border-b border-white/10 bg-[#080d14] px-5 py-24 md:px-10 md:py-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-orange-200">Research / 归档调研</p>
+              <h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-5xl">730 场任务，怎样变成一条可验证的视频时间线。</h2>
+              <p className="mt-6 text-sm leading-7 text-slate-400">发射影像只有与任务、时间、地点和官方来源稳定对应，才具备长期检索价值。完整回溯可以抵达 2006 年的 Falcon 1；工作量主要集中在 2020 年以后的高频发射阶段。</p>
+              <a href="#timeline" className="mt-7 inline-flex items-center gap-1.5 text-sm font-medium text-white transition hover:text-cyan-200">进入发射时间线 <IconArrowDown size={15} /></a>
+            </div>
+            <div className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2">
+              {[
+                ['回溯范围', '2006—2026', '最早可追到 Falcon 1 / FalconSAT-2；越早的任务越依赖人工查档。'],
+                ['任务分布', '419 + 223 + 88', '2024 年至今 419 场，2020—2023 年 223 场，2006—2019 年 88 场。'],
+                ['人机工时', '约 100—250 小时', '按单场 8—20 分钟估算，包含视频寻找、任务匹配、剪辑、压缩和来源复核。'],
+                ['长期价值', '证据链', '每段视频保留任务记录、官方原帖、数据库来源和编辑说明，便于查证与持续补全。'],
+              ].map(([label, value, description]) => <article key={label} className="bg-[#0b111a] p-6 md:p-7"><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-600">{label}</p><h3 className="mt-5 text-2xl font-medium text-white">{value}</h3><p className="mt-3 text-sm leading-7 text-slate-400">{description}</p></article>)}
+            </div>
+          </div>
+          <div className="mt-8 grid gap-6 rounded-2xl border border-white/10 bg-[#05080d] p-6 md:grid-cols-3 md:p-8">
+            {[
+              ['第一阶段', '先补近期任务', '从 2024 年以后开始，官方帖子、直播和任务数据通常最完整。'],
+              ['第二阶段', '回溯常规复用时代', '处理 2020—2023 年任务，建立直播剪辑与短视频选择标准。'],
+              ['第三阶段', '查档早期任务', '逐场核验 2006—2019 年的旧链接、历史直播和缺失元数据。'],
+            ].map(([step, title, description]) => <div key={step}><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-cyan-200">{step}</p><h3 className="mt-4 text-base font-medium">{title}</h3><p className="mt-3 text-sm leading-7 text-slate-500">{description}</p></div>)}
+          </div>
+          <p className="mt-6 max-w-4xl text-xs leading-6 text-slate-600">数据口径截至 2026 年 9 月 20 日。发射总量来自 Launch Library 2 的 SpaceX 历史任务查询；视频优先采用 SpaceX 官方公开内容。著作权、平台条款与传播许可可能变化，归档时保留原帖和署名，并优先展示必要的短片段。</p>
+        </div>
+      </section>
+
+      <section id="mission" className="scroll-mt-20 border-b border-white/10 bg-[#080d14] px-5 py-24 md:px-10 md:py-32">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1fr_1.2fr]">
           <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-orange-200">Mission / 愿景</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-6xl">让生命成为多行星物种。</h2></div>
           <div className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
@@ -152,7 +242,7 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus }) {
         </div>
       </section>
 
-      <section id="timeline" className="px-5 py-24 md:px-10 md:py-32">
+      <section id="timeline" className="scroll-mt-20 px-5 py-24 md:px-10 md:py-32">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-8 border-b border-white/10 pb-9 lg:flex-row lg:items-end lg:justify-between">
             <div><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200">Signal Timeline / 新闻事件线</p><h2 className="mt-5 text-4xl font-medium tracking-[-0.045em] md:text-6xl">追踪正在发生的航天进程。</h2><p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400">官方进展、公开观点与发射任务汇入同一条时间线。近期任务由 Launch Library 2 同步；已核验的历史任务和视频会持续归档，不随近期列表滚动消失。</p></div>

@@ -76,8 +76,29 @@ test('archived launches keep exact mission facts and playable video', async () =
   assert.match(classifiedLaunch.summaryTranslated, /B1097.*第 13 次飞行/)
   assert.match(classifiedLaunch.summaryTranslated, /任务细节未公开/)
   assert.equal(classifiedLaunch.video.src, '/videos/ussf-259-liftoff-2026-09-17.mp4')
+  assert.match(classifiedLaunch.video.postUrl, /^https:\/\/x\.com\/SpaceX\/status\//)
   assert.match(client, /entry\.video\.src/)
+  assert.match(client, /entry\.video\.postUrl/)
   assert.match(client, /controls playsInline preload="metadata"/)
+  assert.match(client, /id="dashboard"/)
+  assert.match(client, /选择里程碑/)
+  assert.match(client, /id="research"/)
+  assert.match(client, /value="#research"/)
+  assert.match(client, /730 场任务/)
+})
+
+test('SpaceX dashboard exposes source totals and archive progress', async () => {
+  const result = await getSpacexTimeline(async (url) => ({
+    ok: true,
+    json: async () => ({
+      count: url.includes('/previous/') ? 730 : 12,
+      results: [],
+    }),
+  }))
+
+  assert.equal(result.stats.historicalLaunchCount, 730)
+  assert.equal(result.stats.archivedVideoCount, 2)
+  assert.equal(result.stats.upcomingLaunchCount, 0)
 })
 
 test('archived launch replaces the matching recent live-source record', async () => {

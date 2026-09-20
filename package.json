@@ -77,7 +77,9 @@
     "content-proof:batch": "node scripts/build-content-proof-batch.mjs",
     "content-proof:anchor": "node scripts/anchor-content-proof-batch.mjs",
     "content-proof:pin": "node scripts/pin-content-replica.mjs",
-    "content-proof:drill": "node scripts/content-ledger-key-drill.mjs"
+    "content-proof:drill": "node scripts/content-ledger-key-drill.mjs",
+    "spacex:video:match": "node scripts/archive-spacex-video.mjs match",
+    "spacex:video:archive": "node scripts/archive-spacex-video.mjs archive"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.0",

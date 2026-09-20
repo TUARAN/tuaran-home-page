@@ -65,12 +65,17 @@ test('SpaceX timeline keeps editorial entries when the live source fails', async
 
 test('archived launches keep exact mission facts and playable video', async () => {
   const launch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-starlink-15-27-2026-09-20')
+  const classifiedLaunch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-ussf-259-2026-09-17')
   const client = await readFile(new URL('../../app/(site)/spacex/SpaceXTimelineClient.jsx', import.meta.url), 'utf8')
 
   assert.equal(launch.publishedAt, '2026-09-20T01:47:00Z')
   assert.match(launch.summaryTranslated, /B1093.*第 17 次飞行/)
   assert.match(launch.summaryTranslated, /整流罩半体完成第 40 次飞行/)
   assert.equal(launch.video.src, '/videos/starlink-15-27-fairing-separation-2026-09-20.mp4')
+  assert.equal(classifiedLaunch.publishedAt, '2026-09-17T01:07:56Z')
+  assert.match(classifiedLaunch.summaryTranslated, /B1097.*第 13 次飞行/)
+  assert.match(classifiedLaunch.summaryTranslated, /任务细节未公开/)
+  assert.equal(classifiedLaunch.video.src, '/videos/ussf-259-liftoff-2026-09-17.mp4')
   assert.match(client, /entry\.video\.src/)
   assert.match(client, /controls playsInline preload="metadata"/)
 })

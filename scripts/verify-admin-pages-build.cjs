@@ -19,6 +19,7 @@ const REQUIRED_EDGE_ROUTES = [
   '/api/admin/deepseek-tasks/local-sync',
   '/api/admin/planning',
   '/api/admin/planning/import',
+  '/api/cron/rss-updates',
   '/api/me',
   '/api/nav-config',
   '/api/notifications',
@@ -64,7 +65,7 @@ function isAllowedRoute(route) {
     || route.startsWith('/admin')
     || route.startsWith('/api/admin')
     || route.startsWith('/api/auth')
-    || ['/api/me', '/api/nav-config', '/api/notifications', '/api/private-records', '/api/bookmark-navigation', '/api/site-settings'].includes(route)
+    || ['/api/cron/rss-updates', '/api/me', '/api/nav-config', '/api/notifications', '/api/private-records', '/api/bookmark-navigation', '/api/site-settings'].includes(route)
 }
 
 function collectClientApiReferences(directory, references = new Set()) {

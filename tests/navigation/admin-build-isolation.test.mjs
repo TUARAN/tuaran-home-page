@@ -13,11 +13,13 @@ const [middlewareSource, adminGateSource, adminVerifierSource, publicVerifierSou
   readFile(new URL('../../scripts/verify-public-pages-build.cjs', import.meta.url), 'utf8'),
 ])
 
-test('admin build keeps the notifications API without its public scheduled child route', () => {
+test('admin build keeps only APIs used at runtime by the admin client', () => {
   assert.match(adminBuildSource, /KEPT_API_DIRECTORY_ENTRIES/)
+  assert.match(adminBuildSource, /\['cron', new Set\(\['rss-updates'\]\)\]/)
   assert.match(adminBuildSource, /\['notifications', new Set\(\['route\.js'\]\)\]/)
   assert.match(adminBuildSource, /for \(const \[directory, keptEntries\] of KEPT_API_DIRECTORY_ENTRIES\)/)
   assert.match(adminBuildSource, /'bookmark-navigation'/)
+  assert.match(adminVerifierSource, /REQUIRED_EDGE_ROUTES[\s\S]*['"]\/api\/cron\/rss-updates['"]/)
 })
 
 test('admin page authorization runs in middleware for HTML and direct RSC requests', () => {

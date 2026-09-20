@@ -32,9 +32,10 @@ const KEPT_SITE_ENTRIES = new Set([
 // SessionProvider always calls me/nav-config and calls notifications for a
 // signed-in owner. Auth routes stay available so preview/custom-domain auth
 // flows keep working without depending on the public Pages project.
-// Keep only the interactive notifications endpoint; the weekly-summary child
-// is a public-site scheduled endpoint and must stay out of the Admin Worker.
+// Keep only endpoints used at runtime by Admin UI. Other scheduled and public
+// child routes must stay out of the Admin Worker.
 const KEPT_API_DIRECTORY_ENTRIES = new Map([
+  ['cron', new Set(['rss-updates'])],
   ['notifications', new Set(['route.js'])],
 ])
 

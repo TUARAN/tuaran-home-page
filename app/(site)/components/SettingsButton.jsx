@@ -7,22 +7,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocale } from './LocaleProvider'
 import { pick } from '../../../lib/i18n'
 
-const BG_PRESETS = [
-  { id: 'forum', label: '社区灰', labelEn: 'Forum Gray', hex: '#e2e2e2', desc: '冷灰底白卡片，接近技术社区', descEn: 'Cool gray canvas, white cards' },
-  { id: 'city',  label: '雾粉城景', labelEn: 'Misty Pink', hex: '#f1eef2', desc: '浅紫雾面，贴合旧首页横幅', descEn: 'Misty pink, matches the old hero' },
-  { id: 'cold',  label: '冷牙白', labelEn: 'Cool White', hex: '#f0f1ee', desc: '经典默认，编辑感、克制', descEn: 'Classic default, editorial & restrained' },
-  { id: 'warm',  label: '暖米',   labelEn: 'Warm Cream', hex: '#f4ead5', desc: '书页感，适合长读', descEn: 'Paper-like, good for long reads' },
-  { id: 'sand',  label: '沙石纸', labelEn: 'Sandstone', hex: '#f1ebde', desc: '砂纸质地，介于两者', descEn: 'Grainy, in between' },
-  { id: 'pure',  label: '纯白',   labelEn: 'Pure White', hex: '#ffffff', desc: '最克制，最现代', descEn: 'Most minimal, most modern' },
-]
-
-const DEFAULT_BG_HEX = BG_PRESETS[0].hex
-const DEFAULT_BG_BY_UI_MODE = {
-  polished: BG_PRESETS[0].hex,
-  classic: BG_PRESETS[1].hex,
-}
-const LEGACY_DEFAULT_BG_HEXES = new Set(['#f1f2ee', '#f1eef2'])
-const STORAGE_KEY = 'reading-bg'
 const UI_STORAGE_KEY = 'site-ui-mode'
 const READING_PALETTE_KEY = 'reading-palette'
 const HOME_PANEL_OPACITY_KEY = 'home:panel-opacity'
@@ -32,10 +16,6 @@ const MAX_HOME_PANEL_OPACITY = 100
 const UI_MODES = [
   { id: 'polished', label: '潮流', labelEn: 'Modern', desc: '横幅视觉、重点入口、随机推荐', descEn: 'Hero visual, key entries, random picks' },
 ]
-
-function findPresetByHex(hex) {
-  return BG_PRESETS.find((p) => p.hex.toLowerCase() === (hex || '').toLowerCase())
-}
 
 function clampHomePanelOpacity(value) {
   const next = Number(value)
@@ -49,7 +29,6 @@ export default function SettingsButton() {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
-  const [bgHex, setBgHex] = useState(DEFAULT_BG_HEX)
   const [uiMode, setUiMode] = useState('polished')
   const [readingPalette, setReadingPalette] = useState('default')
   const [homePanelOpacity, setHomePanelOpacity] = useState(DEFAULT_HOME_PANEL_OPACITY)
@@ -64,15 +43,8 @@ export default function SettingsButton() {
       const nextUi = 'polished'
       if (ui === 'classic') localStorage.setItem(UI_STORAGE_KEY, nextUi)
       setUiMode(nextUi)
-      const v = localStorage.getItem(STORAGE_KEY)
-      if (v && LEGACY_DEFAULT_BG_HEXES.has(v.toLowerCase())) {
-        localStorage.removeItem(STORAGE_KEY)
-        setBgHex(DEFAULT_BG_BY_UI_MODE[nextUi])
-      } else if (v) {
-        setBgHex(v)
-      } else {
-        setBgHex(DEFAULT_BG_BY_UI_MODE[nextUi])
-      }
+      localStorage.removeItem('reading-bg')
+      document.documentElement.style.removeProperty('--page-bg')
       // 默认走标准色系；仅当用户显式选择 'eink' 时叠加墨水屏
       const rp = localStorage.getItem(READING_PALETTE_KEY)
       setReadingPalette(rp === 'eink' ? 'eink' : 'default')
@@ -93,21 +65,6 @@ export default function SettingsButton() {
       localStorage.setItem(HOME_PANEL_OPACITY_KEY, String(homePanelOpacity))
     } catch (e) {}
   }, [mounted, homePanelOpacity])
-
-  // 阅读底色（reading-bg）的预设都是浅色，仅在亮色主题下生效。
-  // 暗色主题始终用自身的深色 --page-bg（来自 .dark token），避免切主题后浅底
-  // 卡死在暗色上导致整页配色错乱。这里是 --page-bg 的唯一权威同步点。
-  useEffect(() => {
-    if (!mounted) return
-    const root = document.documentElement
-    // 墨水屏开启时移除内联底色，让 :root[data-reading='eink'] 的纸感 --page-bg 接管；
-    // 深色主题始终用自身深色底；其余情况套用所选阅读底色。
-    if (theme === 'dark' || readingPalette === 'eink') {
-      root.style.removeProperty('--page-bg')
-    } else {
-      root.style.setProperty('--page-bg', bgHex)
-    }
-  }, [theme, bgHex, readingPalette, mounted])
 
   // 墨水屏开关：写到 data-reading，触发 globals.css 的 e-ink token 覆盖。
   useEffect(() => {
@@ -138,17 +95,7 @@ export default function SettingsButton() {
   if (!mounted) return null
 
   const isDark = theme === 'dark'
-  const activePreset = findPresetByHex(bgHex)?.id || 'custom'
   const isHome = pathname === '/'
-
-  // 仅更新状态与持久化；实际写入 --page-bg 交给上面的主题同步 effect，
-  // 这样在暗色主题下选底色不会污染暗色页面，切回亮色才套用。
-  const pickBg = (hex) => {
-    setBgHex(hex)
-    try {
-      localStorage.setItem(STORAGE_KEY, hex)
-    } catch (e) {}
-  }
 
   const pickReadingPalette = (val) => {
     const next = val === 'eink' ? 'eink' : 'default'
@@ -160,13 +107,10 @@ export default function SettingsButton() {
 
   const pickUiMode = (mode) => {
     const next = mode === 'classic' ? 'classic' : 'polished'
-    const nextBg = DEFAULT_BG_BY_UI_MODE[next]
     setUiMode(next)
-    setBgHex(nextBg)
     document.documentElement.dataset.ui = next
     try {
       localStorage.setItem(UI_STORAGE_KEY, next)
-      localStorage.setItem(STORAGE_KEY, nextBg)
     } catch (e) {}
   }
 
@@ -352,40 +296,6 @@ export default function SettingsButton() {
             </div>
           ) : null}
 
-          {/* 阅读底色：仅在浅色且非墨水屏时可用，其它情况不生效，干脆不展示 */}
-          {!isDark && readingPalette !== 'eink' ? (
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <div className="site-settings-label mb-0">{pick(locale, '阅读底色', 'Reading background')}</div>
-              </div>
-              <div className="grid grid-cols-1 gap-1.5">
-                {BG_PRESETS.map((p) => {
-                  const isActive = activePreset === p.id
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => pickBg(p.hex)}
-                      aria-pressed={isActive}
-                      className={`site-settings-option flex items-center gap-3 px-3 py-2 text-left ${
-                        isActive ? 'site-settings-option-active' : ''
-                      }`}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="site-settings-swatch inline-block h-6 w-6 shrink-0 rounded-full border"
-                        style={{ backgroundColor: p.hex }}
-                      />
-                      <span className="flex flex-col leading-tight">
-                        <span className="text-sm">{pick(locale, p.label, p.labelEn)}</span>
-                        <span className="site-settings-option-desc text-[11px]">{pick(locale, p.desc, p.descEn)}</span>
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ) : null}
         </div>
       )}
     </div>

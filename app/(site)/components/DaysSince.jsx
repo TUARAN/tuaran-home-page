@@ -50,7 +50,7 @@ export default function DaysSince({
 
   if (compact) {
     return (
-      <div className="group block w-full rounded-md px-1.5 py-1 transition-colors hover:bg-[#e1e3d7] dark:hover:bg-[#1a222c]">
+      <div className="group block w-full rounded-md px-1.5 py-1">
         <div className="days-since-row is-compact flex items-center justify-center whitespace-nowrap font-mono text-[#797b70] dark:text-[#8e9ab0]">
           <a
             href={href}
@@ -93,7 +93,7 @@ export default function DaysSince({
       target="_blank"
       rel="noreferrer"
       title={title}
-      className="no-external-arrow group block w-full rounded-md px-1.5 py-1 !no-underline transition-colors hover:bg-[#e1e3d7] hover:!no-underline dark:hover:bg-[#1a222c]"
+      className="no-external-arrow group block w-full rounded-md px-1.5 py-1 !no-underline hover:!no-underline"
     >
       <div className="days-since-row flex items-baseline justify-center gap-1.5 font-mono text-[11px] tracking-[0.08em] text-[#797b70] dark:text-[#8e9ab0]">
         <span className="font-semibold text-[#5a4725] dark:text-[#c6c9b4]">{daysFmt}</span>

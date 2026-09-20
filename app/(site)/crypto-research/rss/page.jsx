@@ -2,7 +2,6 @@ import { Suspense } from 'react'
 
 import RssBlogroll from '../../resources/rss/RssBlogroll'
 import { RSS_FEEDS_SEED } from '../../../../lib/rssFeedsSeed'
-import CryptoResearchSubnav from '../CryptoResearchSubnav'
 import SiteRssSubscribeCard from '../SiteRssSubscribeCard'
 
 export const runtime = 'edge'
@@ -17,7 +16,6 @@ export const metadata = {
 export default function CryptoResearchRssPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-      <CryptoResearchSubnav active="rss" />
       <header className="mb-8">
         <p className="text-xs font-semibold tracking-[0.22em] text-[#16745b] dark:text-[#65c8a9]">CRYPTO RSS</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">RSS 订阅</h1>

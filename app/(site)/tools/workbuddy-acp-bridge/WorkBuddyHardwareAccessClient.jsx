@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import {
@@ -126,9 +125,27 @@ export default function WorkBuddyHardwareAccessClient() {
           <div className={styles.flowTrack}>{flow.map(([step, title, copy], index) => <article key={step}><span>{step}</span><h3>{title}</h3><p>{copy}</p>{index < flow.length - 1 && <IconArrowRight className={styles.flowArrow} size={18} />}</article>)}</div>
         </section>
 
-        <figure className={styles.productShot}>
-          <Image src="/images/tools/workbuddy-acp-bridge/desktop-sms-bridge-v2.png" width={2360} height={1640} unoptimized alt="WorkBuddy 硬件接入助手短信式界面" />
-          <figcaption><strong>短信只是助理入口</strong><span>执行位置可在云端任务与 PC 本地助理之间切换。</span></figcaption>
+        <figure className={`${styles.productShot} ${styles.smsPreview}`}>
+          <div className={styles.smsWindow} aria-label="新消息 ClawBot 当前短信界面预览">
+            <header className={styles.smsHeader}>
+              <button type="button" aria-label="返回">‹</button>
+              <div className={styles.smsIdentity}><i>W</i><span><strong>新消息 ClawBot</strong><small><b /> 在线</small></span></div>
+              <button type="button" aria-label="更多">•••</button>
+            </header>
+            <div className={styles.smsConversation}>
+              <time>今天</time>
+              <div className={styles.receivedBubble}>您好，我是 WorkBuddy 助理。直接发送消息即可。</div>
+              <small>已连接 5G 新消息模拟通道</small>
+              <div className={styles.receivedBubble}>你好你好！有什么可以帮你的吗？</div>
+              <small>WorkBuddy · 正在回复</small>
+            </div>
+            <div className={styles.smsComposer}>
+              <button type="button" aria-label="添加附件">＋</button>
+              <span>信息 · RCS</span>
+              <button type="button" aria-label="发送">↑</button>
+            </div>
+          </div>
+          <figcaption><strong>当前 8080 短信界面</strong><span>单列消息窗口作为入口，执行位置可在云端任务与 PC 本地助理之间切换。</span></figcaption>
         </figure>
 
         <section className={styles.installSection} id="install">

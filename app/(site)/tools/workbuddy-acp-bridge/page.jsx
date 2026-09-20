@@ -3,7 +3,6 @@ import WorkBuddyHardwareAccessClient from './WorkBuddyHardwareAccessClient'
 export const dynamic = 'force-static'
 
 const PAGE_URL = 'https://2aran.com/tools/workbuddy-acp-bridge'
-const PREVIEW_URL = 'https://2aran.com/images/tools/workbuddy-acp-bridge/desktop-sms-bridge-v2.png'
 
 export const metadata = {
   title: 'WorkBuddy 硬件接入助手｜Open API 与本地助理联调',
@@ -15,13 +14,11 @@ export const metadata = {
     description: '授权、四项核心能力、桌面客户端和真实联调结论的互动专题。',
     url: PAGE_URL,
     type: 'website',
-    images: [{ url: PREVIEW_URL, width: 2360, height: 1640, alt: 'WorkBuddy 硬件接入助手桌面界面' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'WorkBuddy 硬件接入助手',
     description: '问云端、查云端、问本地、查本地，一页看懂 WorkBuddy 硬件 Open API 联调。',
-    images: [PREVIEW_URL],
   },
 }
 

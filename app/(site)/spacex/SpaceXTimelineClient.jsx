@@ -101,17 +101,17 @@ function TimelineCard({ entry, index }) {
         </div>
         <h3 className="max-w-3xl text-xl font-medium leading-snug tracking-[-0.02em] text-white md:text-2xl">{title}</h3>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400 md:text-[15px]">{summary}</p>
-        {entry.video ? (
-          <figure className="mt-6 max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-black">
-            <video className="aspect-video w-full object-cover" controls playsInline preload="metadata" aria-label={entry.video.label || `${title} 发射影像`}>
-              <source src={entry.video.src} type="video/mp4" />
+        {[...(entry.videos || []), ...(entry.video ? [entry.video] : [])].map((video) => (
+          <figure key={video.src} className="mt-6 max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-black">
+            <video className="aspect-video w-full object-cover" controls playsInline preload="metadata" aria-label={video.label || `${title} 发射影像`}>
+              <source src={video.src} type="video/mp4" />
             </video>
             <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-4 py-3 text-[11px] text-slate-500">
-              <span>{entry.video.label}</span>
-              {entry.video.postUrl ? <a href={entry.video.postUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-slate-400 transition hover:text-white">{entry.video.credit} · X 原帖 <IconArrowUpRight size={12} /></a> : <span>{entry.video.credit}</span>}
+              <span>{video.label}</span>
+              {video.postUrl ? <a href={video.postUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-slate-400 transition hover:text-white">{video.credit} · X 原帖 <IconArrowUpRight size={12} /></a> : <span>{video.credit}</span>}
             </figcaption>
           </figure>
-        ) : null}
+        ))}
         <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
           <a href={entry.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium text-slate-300 transition hover:text-white">查看原始信号 <IconArrowUpRight size={14} /></a>
           {note ? <span>{note}</span> : null}
@@ -129,7 +129,7 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
   const visibleEntries = useMemo(() => entries.filter((entry) => kind === 'all' || entry.kind === kind), [entries, kind])
   const launchCount = entries.filter((entry) => entry.kind === 'launch').length
   const upcomingCount = entries.filter((entry) => entry.phase === 'upcoming').length
-  const milestoneEntries = entries.filter((entry) => entry.video || entry.kind === 'spacex').slice(0, 12)
+  const milestoneEntries = entries.filter((entry) => entry.video || entry.videos?.length || entry.kind === 'spacex').slice(0, 12)
   const historicalLaunchCount = stats.historicalLaunchCount || 0
   const archivedVideoCount = stats.archivedVideoCount || 0
   const archiveProgress = historicalLaunchCount ? (archivedVideoCount / historicalLaunchCount) * 100 : 0

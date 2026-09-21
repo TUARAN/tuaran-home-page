@@ -66,6 +66,8 @@ test('SpaceX timeline keeps editorial entries when the live source fails', async
 test('archived launches keep exact mission facts and playable video', async () => {
   const launch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-starlink-15-27-2026-09-20')
   const classifiedLaunch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-ussf-259-2026-09-17')
+  const romanLaunch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-roman-space-telescope-2026-08-30')
+  const mpowerLaunch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-o3b-mpower-11-13-2026-09-13')
   const client = await readFile(new URL('../../app/(site)/spacex/SpaceXTimelineClient.jsx', import.meta.url), 'utf8')
 
   assert.equal(launch.publishedAt, '2026-09-20T01:47:00Z')
@@ -77,8 +79,13 @@ test('archived launches keep exact mission facts and playable video', async () =
   assert.match(classifiedLaunch.summaryTranslated, /任务细节未公开/)
   assert.equal(classifiedLaunch.video.src, '/videos/ussf-259-liftoff-2026-09-17.mp4')
   assert.match(classifiedLaunch.video.postUrl, /^https:\/\/x\.com\/SpaceX\/status\//)
-  assert.match(client, /entry\.video\.src/)
-  assert.match(client, /entry\.video\.postUrl/)
+  assert.equal(romanLaunch.video.src, '/videos/roman-space-telescope-liftoff-2026-08-30.mp4')
+  assert.match(romanLaunch.title, /第 13 次发射/)
+  assert.equal(mpowerLaunch.videos[0].src, '/videos/o3b-mpower-11-13-liftoff-2026-09-13.mp4')
+  assert.match(mpowerLaunch.summary, /第 700 次发射/)
+  assert.equal(mpowerLaunch.video.src, '/videos/o3b-mpower-11-13-2026-09-13.mp4')
+  assert.match(client, /video\.src/)
+  assert.match(client, /video\.postUrl/)
   assert.match(client, /controls playsInline preload="metadata"/)
   assert.match(client, /id="dashboard"/)
   assert.match(client, /SpaceX 章节与里程碑/)
@@ -105,7 +112,7 @@ test('SpaceX dashboard exposes source totals and archive progress', async () => 
   }))
 
   assert.equal(result.stats.historicalLaunchCount, 730)
-  assert.equal(result.stats.archivedVideoCount, 3)
+  assert.equal(result.stats.archivedVideoCount, 5)
   assert.equal(result.stats.upcomingLaunchCount, 0)
 })
 

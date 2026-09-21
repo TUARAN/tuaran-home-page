@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'">
+  <title>鹿鹿精灵</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="bar">
+      <div class="drag"><span class="sparkle">✦</span> 鹿鹿精灵 <span class="version">陪你慢慢来</span></div>
+      <button id="pin" class="icon" aria-label="取消置顶" title="置顶开关">⌁</button>
+      <button id="close" class="icon" aria-label="关闭桌宠" title="关闭">×</button>
+    </header>
+
+    <section class="scene" aria-label="桌宠">
+      <div class="orb orb-one"></div><div class="orb orb-two"></div>
+      <div class="speech" id="speech">嗨，我是鹿鹿。今天想先做什么？</div>
+      <button class="pet" id="pet" aria-label="摸摸鹿鹿" title="摸摸鹿鹿">
+        <img src="lulu-giraffe.png" alt="微笑的长颈鹿鹿鹿" draggable="false">
+      </button>
+      <div class="shadow"></div>
+      <span class="star star-a">✧</span><span class="star star-b">✦</span>
+    </section>
+
+    <section class="panel">
+      <div class="status"><span class="indicator" id="indicator"></span><strong id="connection">检测本机连接中</strong><button id="refresh" title="刷新连接">↻</button></div>
+      <p id="hint">摸摸鹿鹿打个招呼。连接 WorkBuddy 后，可以让鹿鹿传话给本地助理。</p>
+      <div class="conversation" id="conversation" aria-live="polite"></div>
+      <form id="form">
+        <label for="message" class="sr-only">告诉鹿鹿你的想法</label>
+        <input id="message" maxlength="2000" placeholder="告诉鹿鹿，你想做什么…" autocomplete="off">
+        <button type="submit" id="send" aria-label="发送">↑</button>
+      </form>
+      <div class="footer"><span>只在点击发送后调用 WorkBuddy</span><button id="bridge">打开桥接台 ↗</button></div>
+    </section>
+  </main>
+</body>
+</html>

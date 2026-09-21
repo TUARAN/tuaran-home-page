@@ -22,7 +22,7 @@ Install the bundled universal macOS app and configure only the provider settings
    /bin/sh scripts/install-switcher-macos.sh --check
    ```
 
-2. Inspect the output. Do not continue if the OS, Codex app, configuration, app asset, or model catalog check fails.
+2. Inspect the output. Do not continue if the OS, Codex app, configuration, or app asset check fails.
 3. Install the application for the current user:
 
    ```bash
@@ -30,14 +30,8 @@ Install the bundled universal macOS app and configure only the provider settings
    ```
 
 4. If the user only wants OpenAI/GPT switching, launch the app and stop. Their existing OpenAI login/config remains authoritative.
-5. If the user asks for DeepSeek, explain that the key stays in `~/.codex/config.toml`, then run the interactive configurator in a real terminal so the key can be entered without echo:
-
-   ```bash
-   /bin/sh scripts/configure-deepseek-macos.sh
-   ```
-
-   Never ask the user to paste the key into chat. Never pass it as a command-line argument. The script may also read `DEEPSEEK_API_KEY` only when the user has already set that environment variable themselves.
-6. Validate the resulting configuration:
+5. If the user asks for DeepSeek, have them enter their own API Key in the app's **DeepSeek 设置** window. The app passes it to the current login session through `launchd`; it does not save the key to disk or Keychain. Never ask the user to paste the key into chat or pass it as a command-line argument. The key must be entered again after a restart.
+6. Validate the local configuration:
 
    ```bash
    /bin/sh scripts/install-switcher-macos.sh --verify
@@ -56,12 +50,12 @@ To remove the app:
 /bin/sh scripts/install-switcher-macos.sh --uninstall
 ```
 
-Uninstalling leaves Codex configuration, `models.json`, and backups in place. Remove or restore provider configuration only when the user explicitly asks.
+Uninstalling leaves Codex configuration and backups in place. Remove or restore provider configuration only when the user explicitly asks.
 
 ## Safety rules
 
 - Never copy a maintainer's `~/.codex` directory or credentials into the package.
-- Back up `config.toml` and `models.json` before changing them; use atomic replacement and mode `600` for config files.
+- Back up `config.toml` before changing provider settings; never persist an API Key in that file.
 - Do not edit `/Applications/ChatGPT.app`, its signature, or its bundled resources.
 - Do not switch or restart Codex while a task is running unless the user explicitly authorizes the interruption.
 - Never claim a third-party provider is working merely because TOML parses. Verification proves local config parsing; a short user-approved model request is required to prove endpoint/account compatibility.

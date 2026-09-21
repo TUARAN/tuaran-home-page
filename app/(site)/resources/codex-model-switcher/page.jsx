@@ -47,23 +47,26 @@ export default function CodexModelSwitcherPage() {
         </p>
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#a1ab76]">macOS · Codex · Universal</p>
         <h1>Codex 模型切换器</h1>
-        <p className="lead">一个正常窗口加菜单栏入口，在 OpenAI GPT 和已经配置好的 DeepSeek Provider 之间切换。另附完整 Skill，可以直接交给 Codex 完成检查、安装、备份和配置。</p>
+        <p className="lead">在窗口或菜单栏切换 Codex 模型，查看本机会话用量，并选择同步会话或上传展示量到 Vibe Cafe。另附安装 Skill，可交给 Codex 检查与安装。</p>
 
         <div className="not-prose my-7 flex flex-wrap gap-3">
-          <DownloadLink href={APP_DOWNLOAD}>下载 macOS App v1.1.0</DownloadLink>
-          <DownloadLink href={SKILL_DOWNLOAD} secondary>下载完整安装 Skill v1.0.0</DownloadLink>
+          <DownloadLink href={APP_DOWNLOAD}>下载 macOS App v1.2.0</DownloadLink>
+          <DownloadLink href={SKILL_DOWNLOAD} secondary>下载完整安装 Skill v1.1.0</DownloadLink>
           <Link href="/skill-center/install-codex-model-switcher" className="inline-flex min-h-11 items-center justify-center px-2 text-sm font-medium text-[#8b5a1f] no-underline hover:underline dark:text-[#a1ab76]">查看 Skill 内容 →</Link>
         </div>
 
         <div className="not-prose my-8 grid gap-3 md:grid-cols-3">
           <Note title="GPT：复用现有登录">选择 GPT 会复用现有 OpenAI 登录，并应用包内的 GPT-5.6 Sol 预设；账号仍需有对应模型和服务层级权限。</Note>
-          <Note title="DeepSeek：先配置">需要使用者自己的 Key、Responses API 兼容端点和模型目录。推荐让配套 Skill 完成本机配置。</Note>
+          <Note title="DeepSeek：先设置">需要使用者自己的 Key 与 Responses API 兼容端点。Key 在应用内输入，仅用于当前登录会话。</Note>
           <Note title="Key 不进安装包">公开包不含维护者或下载者的 Key。Skill 也不会让你把 Key 粘贴到聊天里。</Note>
         </div>
 
         <h2>下载后能不能直接用？</h2>
         <p>应用本身可以运行在 Apple Silicon 和 Intel Mac，要求 macOS 13 或更高版本。GPT 模式依赖你已有的 OpenAI 登录和对应模型权限；DeepSeek 模式必须先配置自己的 Provider。</p>
         <p>当前社区版没有 Apple Developer ID 公证。首次启动请 <strong>Control 点按应用 → 打开 → 再确认打开</strong>。这是 macOS Gatekeeper 的正常提示，不需要关闭系统安全设置。拿到 Developer ID 并完成 notarization 后，才能做到所有用户普通双击无提示。</p>
+
+        <h2>用量与同步</h2>
+        <p>“用量中心”读取本机 Codex 会话。随机或自定展示值只影响应用中的图表，不会改写会话文件。“同步会话”使用已绑定的 Vibe Usage 账号同步会话记录；“上传展示量”会生成按时间分布的用量包，显示数量与目的地，确认后才上传到 Vibe Cafe。</p>
 
         <h2>直接安装</h2>
         <ol>
@@ -78,7 +81,7 @@ export default function CodexModelSwitcherPage() {
           <li>下载完整 Skill ZIP 并解压。</li>
           <li>把整个 <code>install-codex-model-switcher</code> 文件夹提供给 Codex，或放到 <code>~/.codex/skills/</code>。</li>
           <li>告诉 Codex：<code>请使用 $install-codex-model-switcher 安装并配置模型切换器。</code></li>
-          <li>Codex 会先做只读预检，再安装 App；需要 DeepSeek 时，由本机终端隐藏输入 Key，并生成配置备份。</li>
+          <li>Codex 会先做只读预检，再安装 App；需要 DeepSeek 时，在应用内输入 Key。切换模型前会备份配置。</li>
         </ol>
 
         <h2>边界</h2>

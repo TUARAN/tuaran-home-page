@@ -5,7 +5,6 @@ action="${1:---check}"
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 skill_dir=$(dirname "$script_dir")
 app_source="$skill_dir/assets/Codex 模型切换器.app"
-catalog_source="$skill_dir/assets/models.deepseek.json"
 install_dir="$HOME/Applications"
 app_target="$install_dir/Codex 模型切换器.app"
 config_path="${CODEX_HOME:-$HOME/.codex}/config.toml"
@@ -18,7 +17,6 @@ check() {
   [ -x "$codex_bin" ] || { echo "error: official Codex Desktop was not found at /Applications/ChatGPT.app" >&2; return 1; }
   [ -f "$config_path" ] || { echo "error: $config_path is missing; launch Codex once first" >&2; return 1; }
   [ -x "$app_source/Contents/MacOS/CodexProviderMenu" ] || { echo "error: bundled app asset is incomplete" >&2; return 1; }
-  [ -f "$catalog_source" ] || { echo "error: bundled DeepSeek model catalog is missing" >&2; return 1; }
   /usr/bin/plutil -lint "$app_source/Contents/Info.plist" >/dev/null
   echo "preflight=ok"
   echo "install_path=$app_target"

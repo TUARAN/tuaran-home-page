@@ -12,15 +12,14 @@ DeepSeek mode needs all of the following on the user's Mac:
 
 - a DeepSeek-compatible endpoint that implements the Responses API;
 - a valid API key owned by that user;
-- the bundled model catalog copied to `~/.codex/models.json`;
-- a `[model_providers.deepseek]` table in `~/.codex/config.toml`.
+- a `[model_providers.deepseek]` table written by the switcher when the user changes modes.
 
 The preset uses:
 
-- base URL `https://api.deepseek.com/`;
+- base URL `https://api.deepseek.com`;
 - wire API `responses`;
-- model `deepseek-v4-flash`;
-- model catalog supplied with this Skill.
+- model `deepseek-chat`;
+- API Key supplied through the current `launchd` login session, not saved in `config.toml` or Keychain.
 
 Provider and model APIs change. If the endpoint rejects Responses API requests or the named model, local installation can still verify while an actual request fails. Report that distinction clearly.
 
@@ -33,8 +32,6 @@ The public community build is ad-hoc signed, not Apple Developer ID notarized. O
 The installer owns only:
 
 - `~/Applications/Codex 模型切换器.app`;
-- the `[model_providers.deepseek]` table it creates;
-- `~/.codex/models.json` copied from the package;
-- top-level provider/model keys changed when the user clicks a switch button.
+- the `[model_providers.deepseek]` table and top-level provider/model keys changed when the user clicks a switch button.
 
 It preserves unrelated tables and creates timestamped backups before configuration changes.

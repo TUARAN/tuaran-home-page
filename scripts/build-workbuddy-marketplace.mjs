@@ -111,7 +111,6 @@ function buildSkill(skill, metadata, stagingRoot) {
     cpSync(join(sourceRoot, 'scripts'), join(root, 'scripts'), { recursive: true })
     cpSync(join(sourceRoot, 'references'), join(root, 'references'), { recursive: true })
     mkdirSync(join(root, 'assets'), { recursive: true })
-    cpSync(join(sourceRoot, 'assets/models.deepseek.json'), join(root, 'assets/models.deepseek.json'))
     cpSync(join(ROOT, 'tools/codex-model-switcher/build/Codex 模型切换器.app'), join(root, 'assets/Codex 模型切换器.app'), { recursive: true })
   }
   write(join(root, 'SKILL.md'), workbuddySkillMarkdown(packagedSkill, metadata))

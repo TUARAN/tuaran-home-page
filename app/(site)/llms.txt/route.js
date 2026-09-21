@@ -38,7 +38,7 @@ export function GET() {
     `- [下载中心](${SITE_URL}/downloads): 浏览器扩展与桌面客户端`,
     `- [工具集](${SITE_URL}/tools): 在线工具、扩展、应用与开发实验`,
     `- [产品集](${SITE_URL}/works): 2aran 的独立产品、站内工具与工程作品总览`,
-    `- [能力集](${SITE_URL}/capabilities): Skill、MCP、Prompt 与 WorkBuddy 能力包的统一入口`,
+    `- [Agent 能力集](${SITE_URL}/capabilities): Skill、MCP、Prompt 与 WorkBuddy 能力包的统一入口`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,
     `- [统一内容目录](${SITE_URL}/articles): 按内容主题和内容类型浏览`,
     `- [内容说明](${SITE_URL}/help#editorial): 作者责任、工具使用与更正机制`,

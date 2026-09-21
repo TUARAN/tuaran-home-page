@@ -57,3 +57,17 @@ test('legacy extension and desktop catalogs redirect into the download center', 
   assert.deepEqual(getLegacyPathRedirect('/browser-extensions'), { pathname: '/downloads', hash: '#extensions' })
   assert.deepEqual(getLegacyPathRedirect('/desktop-apps'), { pathname: '/downloads', hash: '#desktop' })
 })
+
+test('download categories switch as two accessible tabs while preserving legacy anchors', async () => {
+  const [page, tabs] = await Promise.all([
+    readFile(new URL('app/(site)/downloads/page.jsx', root), 'utf8'),
+    readFile(new URL('app/(site)/downloads/DownloadTabs.jsx', root), 'utf8'),
+  ])
+  assert.match(page, /<DownloadTabs groups=\{groups\}>/)
+  assert.match(tabs, /role="tablist"[^>]*grid-cols-2/)
+  assert.match(tabs, /role="tab"/)
+  assert.match(tabs, /role="tabpanel"/)
+  assert.match(tabs, /hidden=\{active !== group\.anchor\}/)
+  assert.match(tabs, /window\.addEventListener\('hashchange', syncHash\)/)
+  assert.match(tabs, /window\.history\.replaceState\(null, '', `#\$\{anchor\}`\)/)
+})

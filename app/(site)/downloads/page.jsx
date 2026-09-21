@@ -3,6 +3,7 @@ import Link from 'next/link'
 import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import DistributeContentButton from '../components/DistributeContentButton'
 import SharePageButton from '../components/SharePageButton'
+import DownloadTabs from './DownloadTabs'
 import {
   DOWNLOAD_ITEMS,
   DOWNLOAD_TYPE_META,
@@ -148,28 +149,15 @@ export default function DownloadsPage() {
             </div>
           </div>
         </div>
-
-        <nav aria-label="下载分类" className="mt-6 flex flex-wrap gap-2">
-          {groups.map((group) => (
-            <a
-              key={group.id}
-              href={`#${group.anchor}`}
-              className="inline-flex min-h-10 items-center rounded-full border border-[#d8d1c4] bg-white/70 px-3.5 text-[13px] font-medium text-[#4d493f] no-underline hover:border-[#171611] hover:text-[#171611] dark:border-[#26313d] dark:bg-[#101720]/70 dark:text-[#c4ccd8] dark:hover:border-white dark:hover:text-white"
-            >
-              {group.title}
-              <span className="ml-2 font-mono text-[11px] text-[#8a877d] dark:text-[#7e8a9b]">{group.items.length}</span>
-            </a>
-          ))}
-        </nav>
       </section>
 
-      {groups.map((group) => (
-        <section
-          key={group.id}
-          id={group.anchor}
-          aria-labelledby={`${group.anchor}-title`}
-          className="mx-auto max-w-[1080px] scroll-mt-24 px-4 py-7 sm:px-6 lg:px-8"
-        >
+      <DownloadTabs groups={groups}>
+        {groups.map((group) => (
+          <section
+            key={group.id}
+            aria-labelledby={`${group.anchor}-title`}
+            className="py-7"
+          >
           <div className="mb-5">
             <h2 id={`${group.anchor}-title`} className="mb-1 font-serif text-2xl font-semibold text-[#15130e] dark:text-white">
               {group.title}
@@ -224,8 +212,9 @@ export default function DownloadsPage() {
               )
             })}
           </div>
-        </section>
-      ))}
+          </section>
+        ))}
+      </DownloadTabs>
 
       <section className="mx-auto max-w-[1080px] px-4 pb-12 sm:px-6 lg:px-8" aria-labelledby="related-downloads-title">
         <h2 id="related-downloads-title" className="mb-3 font-serif text-xl font-semibold text-[#15130e] dark:text-white">

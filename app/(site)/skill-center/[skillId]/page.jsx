@@ -50,7 +50,7 @@ export default async function SkillDetailPage({ params }) {
       <header className="mb-6 border-b border-[#dee0db] pb-6 dark:border-[#202938]">
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
           <Link href="/capabilities" className="underline-offset-4 hover:underline">
-            能力集
+            Agent 能力集
           </Link>
           <span>/</span>
           <Link href="/skill-center" className="underline-offset-4 hover:underline">

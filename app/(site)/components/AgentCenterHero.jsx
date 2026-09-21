@@ -12,7 +12,7 @@ export default function AgentCenterHero({ current, eyebrow, title, description, 
       <div className="relative z-10 flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-white/65">
-            <Link href="/capabilities" className="text-white/75 no-underline hover:text-white hover:!no-underline">能力集</Link>
+            <Link href="/capabilities" className="text-white/75 no-underline hover:text-white hover:!no-underline">Agent 能力集</Link>
             <span>/</span>
             <span>{eyebrow}</span>
           </div>

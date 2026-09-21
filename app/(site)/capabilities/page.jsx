@@ -3,13 +3,13 @@ import ShowcaseDirectory from '../components/ShowcaseDirectory'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '能力集',
+  title: 'Agent 能力集',
   description: '集中查看可复用的 Skill、可连接的 MCP 服务、Prompt 模板与 WorkBuddy 能力包。',
-  keywords: ['能力集', 'Skill', 'MCP', 'Prompt', 'AI Agent', 'WorkBuddy'],
+  keywords: ['Agent 能力集', 'Skill', 'MCP', 'Prompt', 'AI Agent', 'WorkBuddy'],
   alternates: { canonical: '/capabilities' },
 }
 
-// 三个展示集合共用 ShowcaseDirectory；能力集沿用工具集的紧凑目录布局。
+// 三个展示集合共用 ShowcaseDirectory；Agent 能力集沿用工具集的紧凑目录布局。
 // 每张卡片指向现有完整内容页，保留详情、配置和旧链接。
 const CATEGORIES = [
   { id: 'skill', title: 'Skill', description: '可安装、可复用的任务方法与工作流。' },
@@ -61,9 +61,9 @@ const ITEMS = [
 ]
 
 const CONFIG = {
-  eyebrow: 'Capabilities', title: '能力集',
+  eyebrow: 'Agent Capabilities', title: 'Agent 能力集',
   description: '可复用的方法、可连接的服务和可复制的任务模板集中在这里。按能力类型查找，再进入对应页面使用或配置。',
-  countLabel: '个入口', filterAriaLabel: '筛选能力集', searchPlaceholder: '搜索能力、类型或用途',
+  countLabel: '个入口', filterAriaLabel: '筛选 Agent 能力集', searchPlaceholder: '搜索能力、类型或用途',
   resultTitle: '全部能力', actionLabel: '查看详情', layout: 'catalog',
   analyticsSurface: 'capability_directory', analyticsEvent: 'capability_open', destinationKind: 'capability',
 }

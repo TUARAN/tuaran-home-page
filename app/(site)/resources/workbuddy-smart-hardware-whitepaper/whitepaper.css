@@ -1,0 +1,234 @@
+/* Scoped styles from the supplied WorkBuddy whitepaper. */
+
+.workbuddy-hardware-document{
+  --blue:#1457ff; --blue-2:#0b3fc6; --purple:#6b4cf6; --ink:#172033; --muted:#637083;
+  --line:#dbe4f3; --bg:#f5f7fb; --card:#ffffff;
+  --green:#0b8f65; --orange:#c26a13; --red:#d5443a; --amber:#a76a0a;
+  --soft:#eef4ff; --softg:#eafaf3; --softp:#f3f0ff; --softo:#fff4e6; --softr:#fdecea;
+}
+.workbuddy-hardware-document, .workbuddy-hardware-document *{box-sizing:border-box}
+.workbuddy-hardware-document, .workbuddy-hardware-document{margin:0;padding:0}
+.workbuddy-hardware-document{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+  line-height:1.72; -webkit-font-smoothing:antialiased;
+}
+.workbuddy-hardware-document .wrap{display:grid;grid-template-columns:240px minmax(0,1fr);max-width:1240px;margin:0 auto;background:var(--card);min-height:100vh;box-shadow:0 12px 40px rgba(20,50,110,.08)}
+
+.workbuddy-hardware-document aside.toc{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;border-right:1px solid var(--line);padding:22px 16px 40px;background:linear-gradient(180deg,#fbfcff,#f5f7fb)}
+.workbuddy-hardware-document aside.toc .brand{font-size:12.5px;font-weight:800;color:var(--blue-2);letter-spacing:.06em;margin-bottom:2px}
+.workbuddy-hardware-document aside.toc .ver{font-size:11px;color:var(--muted);margin-bottom:14px}
+.workbuddy-hardware-document aside.toc h4{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 4px;font-weight:700}
+.workbuddy-hardware-document aside.toc ol{list-style:none;padding:0;margin:0}
+.workbuddy-hardware-document aside.toc li{margin:1px 0}
+.workbuddy-hardware-document aside.toc a{display:block;font-size:12.8px;color:#31415d;text-decoration:none;padding:4px 8px;border-radius:6px;line-height:1.4}
+.workbuddy-hardware-document aside.toc a:hover{background:#eaf2ff;color:var(--blue-2)}
+.workbuddy-hardware-document aside.toc .sub{padding-left:12px;font-size:12px;color:#526180}
+
+.workbuddy-hardware-document .workbuddy-main{padding:0 44px 80px;min-width:0}
+
+.workbuddy-hardware-document .cover{background:linear-gradient(150deg,#0b3fc6 0%,#1457ff 55%,#6b4cf6 100%);color:#fff;margin:0 -44px 36px;padding:64px 44px 52px;border-radius:0 0 24px 24px}
+.workbuddy-hardware-document .cover .eyebrow{font-size:12px;letter-spacing:.18em;opacity:.82;font-weight:700;text-transform:uppercase}
+.workbuddy-hardware-document .cover .brand-logo{display:inline-block;background:#fff;padding:10px 18px;border-radius:12px;margin-bottom:14px;box-shadow:0 4px 18px rgba(0,0,0,0.12);line-height:0}
+.workbuddy-hardware-document .cover .brand-logo svg{height:40px;width:auto;display:block}
+.workbuddy-hardware-document .cover h1{margin:12px 0 10px;font-size:34px;line-height:1.22;letter-spacing:-.01em;font-weight:800;max-width:760px}
+.workbuddy-hardware-document .cover .subtitle{font-size:15px;opacity:.94;max-width:880px;line-height:1.75}
+.workbuddy-hardware-document .cover .meta{margin-top:24px;font-size:12.5px;opacity:.85;display:flex;gap:22px;flex-wrap:wrap}
+.workbuddy-hardware-document .cover .meta span b{font-weight:700}
+
+.workbuddy-hardware-document h2.chap{font-size:22px;font-weight:800;color:var(--ink);margin:44px 0 10px;padding-bottom:10px;border-bottom:2px solid var(--line);letter-spacing:-.01em}
+.workbuddy-hardware-document h2.chap .num{color:var(--blue);font-weight:800;margin-right:8px;font-variant-numeric:tabular-nums}
+.workbuddy-hardware-document h3.sec{font-size:16.5px;font-weight:700;color:var(--ink);margin:24px 0 8px}
+.workbuddy-hardware-document h3.sec .num{color:var(--blue);font-weight:800;margin-right:6px}
+.workbuddy-hardware-document h4.sub{font-size:14.5px;font-weight:700;color:var(--ink);margin:16px 0 6px}
+.workbuddy-hardware-document p{margin:8px 0;color:#293450;font-size:13.8px}
+.workbuddy-hardware-document ul, .workbuddy-hardware-document ol{margin:6px 0 12px;padding-left:22px}
+.workbuddy-hardware-document li{margin:4px 0;font-size:13.8px;color:#293450}
+
+.workbuddy-hardware-document .part-banner{margin:44px 0 14px;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:.02em;background:linear-gradient(90deg,#eef4ff,#f3f0ff);color:#3a4874;border:1px solid #dfe6f4}
+.workbuddy-hardware-document .part-banner .cap{font-size:11px;letter-spacing:.14em;color:#6b7a99;font-weight:700;margin-bottom:2px;text-transform:uppercase}
+.workbuddy-hardware-document .part-banner .ttl{font-size:15px;color:#0b3fc6}
+
+.workbuddy-hardware-document code{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;background:#f2f5fb;color:#0f172a;padding:1px 6px;border-radius:4px}
+.workbuddy-hardware-document pre{background:#0f172a;color:#e6ecff;padding:16px 18px;border-radius:10px;overflow:auto;font-size:12.6px;line-height:1.6;font-family:"SF Mono",Menlo,Consolas,monospace;margin:10px 0}
+.workbuddy-hardware-document pre .s{color:#a5f4c8}
+.workbuddy-hardware-document pre .c{color:#8492b0}
+
+.workbuddy-hardware-document .grid{display:grid;gap:14px}
+.workbuddy-hardware-document .g2{grid-template-columns:1fr 1fr}
+.workbuddy-hardware-document .g3{grid-template-columns:repeat(3,1fr)}
+.workbuddy-hardware-document .g4{grid-template-columns:repeat(4,1fr)}
+.workbuddy-hardware-document .g5{grid-template-columns:repeat(5,1fr)}
+.workbuddy-hardware-document .g6{grid-template-columns:repeat(6,1fr)}
+
+.workbuddy-hardware-document .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px 17px}
+.workbuddy-hardware-document .card h3{margin:0 0 6px;font-size:15px;font-weight:700}
+.workbuddy-hardware-document .card p{margin:0;font-size:13.5px;line-height:1.65}
+.workbuddy-hardware-document .card ul{margin:6px 0 0;padding-left:18px}
+.workbuddy-hardware-document .card.t{border-top:3px solid var(--blue)}
+.workbuddy-hardware-document .card.g{border-top:3px solid var(--green)}
+.workbuddy-hardware-document .card.p{border-top:3px solid var(--purple)}
+.workbuddy-hardware-document .card.o{border-top:3px solid var(--orange)}
+.workbuddy-hardware-document .card.r{border-top:3px solid var(--red)}
+
+.workbuddy-hardware-document .touch{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 12px;text-align:center;position:relative}
+.workbuddy-hardware-document .touch .icon{width:44px;height:44px;border-radius:12px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;letter-spacing:.02em}
+.workbuddy-hardware-document .touch .name{font-size:16px;font-weight:800;color:var(--ink)}
+.workbuddy-hardware-document .touch .desc{font-size:12.5px;color:var(--muted);margin-top:4px}
+.workbuddy-hardware-document .touch.b .icon{background:#1457ff}
+.workbuddy-hardware-document .touch.p .icon{background:#6b4cf6}
+.workbuddy-hardware-document .touch.o .icon{background:#c26a13}
+.workbuddy-hardware-document .touch.r .icon{background:#d5443a}
+.workbuddy-hardware-document .touch.g .icon{background:#0b8f65}
+
+.workbuddy-hardware-document table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12.8px;margin:12px 0}
+.workbuddy-hardware-document th{background:#eaf2ff;color:#1f4a94;text-align:left;padding:9px 11px;font-weight:700}
+.workbuddy-hardware-document td{border-top:1px solid #e9eef7;padding:8px 11px;vertical-align:top;color:#2b3855}
+.workbuddy-hardware-document tr:nth-child(even) td{background:#fbfdff}
+.workbuddy-hardware-document td code{white-space:nowrap}
+.workbuddy-hardware-document .price{color:#0b5cad;font-weight:700}
+
+.workbuddy-hardware-document .callout{border:1px solid var(--line);border-left:4px solid var(--blue);background:#f9fbff;border-radius:0 10px 10px 0;padding:12px 16px;margin:14px 0}
+.workbuddy-hardware-document .callout p{margin:0;font-size:13.5px}
+.workbuddy-hardware-document .callout.tip{border-left-color:var(--green);background:#f4fbf7}
+
+.workbuddy-hardware-document .pain-solve{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.workbuddy-hardware-document .pain{background:#fff5f4;border:1px solid #f4d6d1;border-radius:8px;padding:12px 14px;font-size:13.3px;color:#7c2a20}
+.workbuddy-hardware-document .pain b{color:#a03325;display:block;margin-bottom:4px;font-size:13.5px}
+.workbuddy-hardware-document .solve{background:#f0f6ff;border:1px solid #d1e0f6;border-radius:8px;padding:12px 14px;font-size:13.3px;color:#1a3968}
+.workbuddy-hardware-document .solve b{color:#0b3fc6;display:block;margin-bottom:4px;font-size:13.5px}
+
+.workbuddy-hardware-document .mode{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.workbuddy-hardware-document .mode header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.workbuddy-hardware-document .mode header .idx{width:32px;height:32px;border-radius:8px;background:var(--blue);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.workbuddy-hardware-document .mode header .n{font-size:15.5px;font-weight:800}
+.workbuddy-hardware-document .mode .devs{font-size:12px;color:var(--muted);margin:2px 0 10px}
+.workbuddy-hardware-document .mode .row{font-size:13px;color:#31507a;padding:6px 0;border-top:1px dashed #e5ebf5;display:flex;gap:10px}
+.workbuddy-hardware-document .mode .row:first-of-type{border-top:0;padding-top:2px}
+.workbuddy-hardware-document .mode .row .k{color:var(--muted);flex:0 0 76px;font-weight:600}
+.workbuddy-hardware-document .mode .row .v{flex:1}
+.workbuddy-hardware-document .mode .row .v b{color:#0b3fc6}
+
+.workbuddy-hardware-document .api{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:6px 0;font-size:13px;display:flex;align-items:center;gap:10px;background:#fff}
+.workbuddy-hardware-document .api .m{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:800;color:#fff;min-width:56px;text-align:center}
+.workbuddy-hardware-document .api .m.get{background:var(--green)}
+.workbuddy-hardware-document .api .m.post{background:var(--blue)}
+.workbuddy-hardware-document .api .m.patch{background:var(--amber)}
+.workbuddy-hardware-document .api .m.delete{background:var(--red)}
+.workbuddy-hardware-document .api .p{font-family:"SF Mono",Menlo,Consolas,monospace;color:#0f172a}
+.workbuddy-hardware-document .api .d{color:var(--muted);font-size:12.5px;margin-left:auto}
+
+.workbuddy-hardware-document .seq{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.workbuddy-hardware-document .seq-header{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.workbuddy-hardware-document .seq-header div{text-align:center;font-size:12px;font-weight:700;color:#1f4a94;padding:6px 10px;background:#eaf2ff;border-radius:6px}
+.workbuddy-hardware-document .seq-row{display:grid;grid-template-columns:26px 1fr;gap:12px;padding:8px 0;border-top:1px dashed #e5ebf5;align-items:center;font-size:13px}
+.workbuddy-hardware-document .seq-row:first-of-type{border-top:0}
+.workbuddy-hardware-document .seq-row .n{width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+.workbuddy-hardware-document .steps{counter-reset:s;margin:12px 0}
+.workbuddy-hardware-document .step{display:grid;grid-template-columns:38px 1fr;gap:14px;padding:12px 0;border-top:1px solid #eef2f8}
+.workbuddy-hardware-document .step:first-child{border-top:0}
+.workbuddy-hardware-document .step .no{width:34px;height:34px;border-radius:8px;background:#eef4ff;color:#0b3fc6;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+.workbuddy-hardware-document .step .body h4{margin:0 0 4px;font-size:14.5px;font-weight:700}
+.workbuddy-hardware-document .step .body p{margin:0 0 4px;font-size:13.3px;color:#31507a}
+.workbuddy-hardware-document .step .body pre{margin:6px 0 0}
+
+.workbuddy-hardware-document .faq{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.workbuddy-hardware-document .faq h3{margin:0 0 4px;font-size:14.5px;font-weight:700}
+.workbuddy-hardware-document .faq p{margin:0;font-size:13.3px;color:#31507a}
+
+.workbuddy-hardware-document hr{border:0;border-top:1px solid var(--line);margin:36px 0}
+
+.workbuddy-hardware-document footer.doc{margin-top:56px;padding:18px 0;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;display:flex;justify-content:space-between}
+
+@media print{
+  .workbuddy-hardware-document{background:#fff}
+  .workbuddy-hardware-document .wrap{grid-template-columns:1fr;box-shadow:none;max-width:none}
+  .workbuddy-hardware-document aside.toc{display:none}
+  .workbuddy-hardware-document .workbuddy-main{padding:0 20mm}
+  .workbuddy-hardware-document .cover{border-radius:0;margin:0 -20mm 18mm}
+  .workbuddy-hardware-document h2.chap{page-break-before:always}
+  .workbuddy-hardware-document .card, .workbuddy-hardware-document pre, .workbuddy-hardware-document table, .workbuddy-hardware-document .seq, .workbuddy-hardware-document .mode, .workbuddy-hardware-document .step, .workbuddy-hardware-document .faq{page-break-inside:avoid}
+}
+@media (max-width:960px){
+  .workbuddy-hardware-document .wrap{grid-template-columns:1fr}
+  .workbuddy-hardware-document aside.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .workbuddy-hardware-document .workbuddy-main{padding:0 20px 60px}
+  .workbuddy-hardware-document .cover{margin:0 -20px 24px;padding:36px 20px}
+  .workbuddy-hardware-document .g2, .workbuddy-hardware-document .g3, .workbuddy-hardware-document .g4, .workbuddy-hardware-document .g5, .workbuddy-hardware-document .g6, .workbuddy-hardware-document .pain-solve{grid-template-columns:1fr}
+}
+/* ---- 意见反馈入口 ---- */
+.workbuddy-hardware-document .fb-fab{
+  position:fixed;right:28px;bottom:36px;z-index:9999;
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  color:#fff;border:none;border-radius:50px;
+  padding:10px 20px;font-size:13.5px;font-weight:700;
+  box-shadow:0 6px 24px rgba(20,87,255,.35);
+  cursor:pointer;text-decoration:none;transition:transform .2s,box-shadow .2s;
+  font-family:inherit;letter-spacing:.02em;
+}
+.workbuddy-hardware-document .fb-fab:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(20,87,255,.45)}
+.workbuddy-hardware-document .fb-fab svg{width:18px;height:18px;flex-shrink:0}
+.workbuddy-hardware-document .fb-section{margin:44px 0 16px;padding:32px;border-radius:16px;
+  background:linear-gradient(135deg,#eef4ff 0%,#f3f0ff 100%);
+  border:1px solid var(--line);text-align:center;}
+.workbuddy-hardware-document .fb-section h3{margin:0 0 8px;font-size:18px;color:var(--blue-2);font-weight:800}
+.workbuddy-hardware-document .fb-section p{margin:0 0 20px;color:var(--muted);font-size:14px}
+.workbuddy-hardware-document .fb-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  color:#fff;border:none;border-radius:50px;
+  padding:12px 28px;font-size:14.5px;font-weight:700;
+  cursor:pointer;text-decoration:none;
+  box-shadow:0 4px 16px rgba(20,87,255,.3);transition:transform .2s;
+  font-family:inherit;
+}
+.workbuddy-hardware-document .fb-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(20,87,255,.4)}
+@media(max-width:768px){
+  .workbuddy-hardware-document .fb-fab{right:16px;bottom:20px;padding:8px 16px;font-size:12.5px}
+  .workbuddy-hardware-document .fb-section{margin:32px 0 12px;padding:24px 16px}
+}
+.workbuddy-hardware-document .fb-actions{display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap}
+.workbuddy-hardware-document .fb-qr{display:flex;flex-direction:column;align-items:center;gap:6px}
+.workbuddy-hardware-document .fb-qr img{width:104px;height:104px;border-radius:8px;background:#fff;padding:6px;box-shadow:0 2px 10px rgba(20,50,110,.12)}
+.workbuddy-hardware-document .fb-qr span{font-size:11.5px;color:var(--muted);font-weight:600}
+@media print{
+  .workbuddy-hardware-document .fb-fab{display:none !important}
+  .workbuddy-hardware-document .fb-section{break-inside:avoid;page-break-inside:avoid}
+}
+
+
+.workbuddy-hardware-document .persona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px 0}
+.workbuddy-hardware-document .persona-card{background:#fff;border:1px solid #e6e8ee;border-radius:12px;padding:18px 18px 16px;position:relative;overflow:hidden}
+.workbuddy-hardware-document .persona-card .label{font-size:12px;color:#8a8f99;font-weight:600;letter-spacing:.02em;margin-bottom:8px}
+.workbuddy-hardware-document .persona-card .big{font-size:32px;font-weight:800;color:#1a1f2c;line-height:1.1;letter-spacing:-0.5px}
+.workbuddy-hardware-document .persona-card .big .u{font-size:16px;font-weight:700;color:#5a6070;margin-left:2px}
+.workbuddy-hardware-document .persona-card .desc{font-size:12px;color:#5a6070;margin-top:8px;line-height:1.5}
+.workbuddy-hardware-document .persona-card .accent{position:absolute;right:-20px;top:-20px;width:80px;height:80px;border-radius:50%;opacity:.08}
+.workbuddy-hardware-document .pc-1 .accent{background:#1457ff} .workbuddy-hardware-document .pc-2 .accent{background:#0b8f65} .workbuddy-hardware-document .pc-3 .accent{background:#c26a13}
+.workbuddy-hardware-document .pc-4 .accent{background:#6b4cf6} .workbuddy-hardware-document .pc-5 .accent{background:#e63946} .workbuddy-hardware-document .pc-6 .accent{background:#1a8fe3}
+.workbuddy-hardware-document .bar-row{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:10px;background:#f0f2f6}
+.workbuddy-hardware-document .bar-row .seg{height:100%}
+.workbuddy-hardware-document .bar-legend{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:#5a6070;margin-top:8px}
+.workbuddy-hardware-document .bar-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.workbuddy-hardware-document .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.workbuddy-hardware-document .tag-row .tag{background:#f0f4ff;color:#1457ff;font-size:11px;padding:3px 8px;border-radius:10px;font-weight:600}
+
+
+.workbuddy-hardware-document .tri-role{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:8px 0 4px}
+.workbuddy-hardware-document .tri-role .rc{background:#fff;border:1px solid #e6e8ee;border-radius:12px;padding:18px 18px 16px;position:relative;overflow:hidden}
+.workbuddy-hardware-document .tri-role .rc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
+.workbuddy-hardware-document .tri-role .rc.a::before{background:linear-gradient(90deg,#1457ff,#4d7dff)}
+.workbuddy-hardware-document .tri-role .rc.b::before{background:linear-gradient(90deg,#0b8f65,#3dbd93)}
+.workbuddy-hardware-document .tri-role .rc.c::before{background:linear-gradient(90deg,#c26a13,#e6a24a)}
+.workbuddy-hardware-document .tri-role .rc .role{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.workbuddy-hardware-document .tri-role .rc .role .dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.workbuddy-hardware-document .tri-role .rc.a .dot{background:#1457ff}
+.workbuddy-hardware-document .tri-role .rc.b .dot{background:#0b8f65}
+.workbuddy-hardware-document .tri-role .rc.c .dot{background:#c26a13}
+.workbuddy-hardware-document .tri-role .rc .role .name{font-weight:700;font-size:15px;color:#1a1d24}
+.workbuddy-hardware-document .tri-role .rc .block{margin-bottom:12px}
+.workbuddy-hardware-document .tri-role .rc .block:last-child{margin-bottom:0}
+.workbuddy-hardware-document .tri-role .rc .lbl{font-size:11px;letter-spacing:.12em;color:#8a8f99;font-weight:700;margin-bottom:6px;text-transform:uppercase}
+.workbuddy-hardware-document .tri-role .rc .txt{font-size:13.5px;color:#3a3f4a;line-height:1.65}

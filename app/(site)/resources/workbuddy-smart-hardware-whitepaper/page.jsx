@@ -5,6 +5,8 @@ import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
+import { loadWorkbuddyWhitepaper } from '../../../../lib/workbuddyWhitepapers'
+import './whitepaper.css'
 
 export const dynamic = 'force-static'
 
@@ -12,9 +14,9 @@ const slug = 'workbuddy-smart-hardware-whitepaper'
 const path = `/resources/${slug}`
 const url = `https://2aran.com${path}`
 const sourceUrl = 'https://www.workbuddy.link/p/JVM0gKdRyl8k9EgElw5TxA'
-const readerUrl = `${path}/whitepaper.html`
 const title = '智能硬件接入 WorkBuddy 白皮书全文｜合作模式、OAuth 2.0 与 API 接入指南'
 const description = '在线阅读 WorkBuddy 智能硬件接入白皮书：涵盖硬件接入价值、六类硬件触点、合作模式、产品能力、OAuth 2.0 授权、API 调用、端到端示例和联合运营。'
+const whitepaperHtml = loadWorkbuddyWhitepaper(slug)
 
 const sections = [
   '战略与商务：硬件接入价值、硬件触点与合作模式',
@@ -64,11 +66,10 @@ export default function WorkBuddySmartHardwareWhitepaperPage() {
             智能硬件接入 WorkBuddy 白皮书
           </h1>
           <p className="mt-5 max-w-3xl leading-8 text-gray-700 dark:text-gray-300">
-            汇集智能硬件与 WorkBuddy 对接所需的合作、产品和技术资料，包括 OAuth 2.0 授权、API 调用、接入示例以及合作落地流程。下方保留原版全文与章节目录。
+            汇集智能硬件与 WorkBuddy 对接所需的合作、产品和技术资料，包括 OAuth 2.0 授权、API 调用、接入示例以及合作落地流程。下方可直接阅读全文与章节目录。
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
             <a href="#read" className="rounded-lg bg-blue-700 px-4 py-2.5 font-medium text-white hover:bg-blue-800">在线阅读</a>
-            <a href={readerUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-blue-700 px-4 py-2.5 font-medium text-blue-900 hover:bg-blue-100 dark:text-blue-200 dark:hover:bg-blue-900">新窗口阅读</a>
             <SharePageButton title={title} text={description} url={url} size="md" idleLabel="分享页面" />
           </div>
         </header>
@@ -89,16 +90,10 @@ export default function WorkBuddySmartHardwareWhitepaperPage() {
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 id="read-heading" className="font-serif text-2xl font-semibold text-gray-900 dark:text-white">白皮书原文</h2>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">在阅读框内滚动并使用原文目录跳转章节，或在新窗口打开。</p>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">直接向下滚动阅读，并使用原文目录跳转章节。</p>
             </div>
-            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-700 underline underline-offset-4 dark:text-blue-400">查看 WorkBuddy 原始发布页 ↗</a>
           </div>
-          <iframe
-            title="智能硬件接入 WorkBuddy 白皮书全文"
-            src={readerUrl}
-            loading="lazy"
-            className="h-[75vh] min-h-[560px] w-full rounded-xl border border-gray-200 bg-white dark:border-gray-800"
-          />
+          <div className="workbuddy-hardware-document" dangerouslySetInnerHTML={{ __html: whitepaperHtml }} />
         </section>
 
         <ArticleFooterCta />

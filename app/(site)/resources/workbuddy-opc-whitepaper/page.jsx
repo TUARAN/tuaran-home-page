@@ -5,6 +5,8 @@ import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
+import { loadWorkbuddyWhitepaper } from '../../../../lib/workbuddyWhitepapers'
+import './whitepaper.css'
 
 export const dynamic = 'force-static'
 
@@ -12,9 +14,9 @@ const slug = 'workbuddy-opc-whitepaper'
 const path = `/resources/${slug}`
 const url = `https://2aran.com${path}`
 const sourceUrl = 'https://www.workbuddy.link/p/FVCdAodl3HBHMMPypCogBi'
-const readerUrl = `${path}/whitepaper.html`
 const title = 'WorkBuddy OPC 白皮书全文｜AI 一人公司商业模式、政策与实战案例'
 const description = '在线阅读 WorkBuddy OPC 白皮书：梳理 AI 时代一人公司（One Person Company）的商业模式、超级个体、国内扶持政策、AI 工作台与实际案例，保留原版分页排版。'
+const whitepaperHtml = loadWorkbuddyWhitepaper(slug)
 
 const chapters = [
   'OPC 正在重塑创业版图',
@@ -66,11 +68,10 @@ export default function WorkBuddyOpcWhitepaperPage() {
           </h1>
           <p className="mt-3 text-lg text-emerald-900 dark:text-emerald-200">AI 时代一人公司的商业与技术重构</p>
           <p className="mt-5 max-w-3xl leading-8 text-gray-700 dark:text-gray-300">
-            从超级个体和商业模式，到中国各地的 OPC 政策、WorkBuddy 产品架构与用户案例。原版白皮书按分页排版在下方完整呈现。
+            从超级个体和商业模式，到中国各地的 OPC 政策、WorkBuddy 产品架构与用户案例。白皮书全文按原版章节排版在下方呈现。
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
             <a href="#read" className="rounded-lg bg-emerald-800 px-4 py-2.5 font-medium text-white hover:bg-emerald-900">在线阅读</a>
-            <a href={readerUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-emerald-700 px-4 py-2.5 font-medium text-emerald-900 hover:bg-emerald-100 dark:text-emerald-200 dark:hover:bg-emerald-900">新窗口阅读</a>
             <SharePageButton title={title} text={description} url={url} size="md" idleLabel="分享页面" />
           </div>
         </header>
@@ -91,16 +92,10 @@ export default function WorkBuddyOpcWhitepaperPage() {
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 id="read-heading" className="font-serif text-2xl font-semibold text-gray-900 dark:text-white">白皮书原文</h2>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">在阅读框内滚动，或在新窗口打开完整页面。</p>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">直接向下滚动阅读完整正文。</p>
             </div>
-            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-700 underline underline-offset-4 dark:text-emerald-400">查看 WorkBuddy 原始发布页 ↗</a>
           </div>
-          <iframe
-            title="WorkBuddy OPC 白皮书全文"
-            src={readerUrl}
-            loading="lazy"
-            className="h-[75vh] min-h-[560px] w-full rounded-xl border border-gray-200 bg-white dark:border-gray-800"
-          />
+          <div className="workbuddy-opc-document" dangerouslySetInnerHTML={{ __html: whitepaperHtml }} />
         </section>
 
         <ArticleFooterCta />

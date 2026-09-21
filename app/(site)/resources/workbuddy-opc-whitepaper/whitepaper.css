@@ -1,0 +1,493 @@
+/* Scoped styles from the supplied WorkBuddy whitepaper. */
+
+
+
+.workbuddy-opc-document, .workbuddy-opc-document * { box-sizing: border-box; margin: 0; padding: 0; }
+.workbuddy-opc-document { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.workbuddy-opc-document {
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-size: 11pt;
+  line-height: 1.8;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+/* 每一页 */
+.workbuddy-opc-document .page {
+  width: 210mm;
+  height: 297mm;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  background: #fff;
+}
+.workbuddy-opc-document .page:last-child { page-break-after: auto; }
+
+/* ===== 封面 ===== */
+.workbuddy-opc-document .cover {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60mm 25mm 40mm 25mm;
+  background: linear-gradient(135deg, #E8FFF7 0%, #fff 40%, #fff 100%);
+  position: relative;
+}
+.workbuddy-opc-document .cover::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 120mm;
+  height: 100%;
+  background: linear-gradient(160deg, rgba(46,207,171,0.08) 0%, rgba(29,184,134,0.02) 100%);
+  clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
+}
+.workbuddy-opc-document .cover::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #1DB886, #2ECFAB);
+}
+.workbuddy-opc-document .cover h1 {
+  font-size: 32pt;
+  font-weight: 900;
+  line-height: 1.3;
+  color: #1a1a1a;
+  margin-bottom: 8mm;
+  position: relative;
+  z-index: 1;
+}
+.workbuddy-opc-document .cover h1 em {
+  font-style: normal;
+  color: #15A67A;
+  display: inline-block;
+  font-size: 25pt;
+  white-space: nowrap;
+}
+.workbuddy-opc-document .cover .subtitle {
+  font-size: 14pt;
+  color: #444;
+  font-weight: 400;
+  margin-bottom: 15mm;
+  position: relative;
+  z-index: 1;
+}
+.workbuddy-opc-document .cover .meta {
+  font-size: 9.5pt;
+  color: #888;
+  line-height: 2;
+  position: relative;
+  z-index: 1;
+}
+.workbuddy-opc-document .cover .meta b { color: #444; }
+.workbuddy-opc-document .cover-footer {
+  position: absolute;
+  bottom: 20mm;
+  left: 25mm;
+  right: 25mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 8.5pt;
+  color: #aaa;
+}
+.workbuddy-opc-document .cover-footer .url {
+  padding: 2mm 4mm;
+  background: #f5f5f5;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 8pt;
+  color: #666;
+}
+
+/* ===== 目录页 ===== */
+.workbuddy-opc-document .toc-page {
+  padding: 20mm 25mm 16mm 25mm;
+}
+.workbuddy-opc-document .toc-page .page-header {
+  position: absolute;
+  top: 15mm;
+  left: 25mm;
+  right: 25mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.workbuddy-opc-document .page-header .ch-label {
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #15A67A;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.workbuddy-opc-document .page-header .page-num {
+  font-size: 8.5pt;
+  color: #999;
+}
+.workbuddy-opc-document .toc-title {
+  font-size: 18pt;
+  font-weight: 900;
+  color: #1a1a1a;
+  margin-bottom: 5mm;
+  padding-bottom: 2.5mm;
+  border-bottom: 2px solid #15A67A;
+}
+.workbuddy-opc-document .toc-list { list-style: none; }
+.workbuddy-opc-document .toc-ch { margin-bottom: 3.5mm; }
+.workbuddy-opc-document .toc-ch:last-child { margin-bottom: 0; }
+.workbuddy-opc-document .toc-ch-head {
+  display: flex;
+  align-items: baseline;
+  gap: 4mm;
+  padding-bottom: 1.5mm;
+  border-bottom: 1px solid #dcdcdc;
+}
+.workbuddy-opc-document .toc-ch-label {
+  flex-shrink: 0;
+  font-size: 8.5pt;
+  font-weight: 800;
+  color: #15A67A;
+  letter-spacing: 0.04em;
+}
+.workbuddy-opc-document .toc-ch-title {
+  flex: 1;
+  font-size: 11.5pt;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+.workbuddy-opc-document .toc-ch-pg {
+  flex-shrink: 0;
+  font-size: 11.5pt;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+.workbuddy-opc-document .toc-subs {
+  margin: 1mm 0 0 7mm;
+  padding-left: 5mm;
+  border-left: 1px solid #e8e8e8;
+}
+.workbuddy-opc-document .toc-sub {
+  display: flex;
+  align-items: baseline;
+  font-size: 8.7pt;
+  line-height: 1.25;
+  color: #555;
+  padding: 0.7mm 0;
+}
+.workbuddy-opc-document .toc-sub .s-title { flex-shrink: 0; }
+.workbuddy-opc-document .toc-sub .s-dots {
+  flex: 1;
+  margin: 0 2mm;
+  border-bottom: 1px dotted #cfcfcf;
+  position: relative;
+  top: -3px;
+}
+.workbuddy-opc-document .toc-sub .s-pg { flex-shrink: 0; color: #888; }
+
+/* ===== 内页通用 ===== */
+.workbuddy-opc-document .content-page {
+  padding: 22mm 22mm 34mm 22mm;
+  position: relative;
+}
+.workbuddy-opc-document .content-page .page-body {
+  /* 内容区域：页眉下方到页脚上方 */
+  /* 可用高度 = 297mm - 22mm(top) - 22mm(bottom) = 253mm，减去页眉8mm和页脚8mm的避让 = 约237mm */
+  margin-top: 2mm;  /* 与页眉保持一点间距 */
+  margin-bottom: 2mm; /* 与页脚保持一点间距 */
+}
+.workbuddy-opc-document .content-page .page-header {
+  position: absolute;
+  top: 10mm;
+  left: 22mm;
+  right: 22mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.workbuddy-opc-document .content-page .page-footer {
+  position: absolute;
+  bottom: 12mm;
+  left: 22mm;
+  right: 22mm;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 7pt;
+  color: #bbb;
+}
+.workbuddy-opc-document .content-page h2 {
+  font-size: 20pt;
+  font-weight: 900;
+  color: #1a1a1a;
+  margin-bottom: 6mm;
+  line-height: 1.3;
+}
+.workbuddy-opc-document .content-page h3 {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #15A67A;
+  margin-top: 6mm;
+  margin-bottom: 2mm;
+  padding-bottom: 1.5mm;
+  border-bottom: 1px solid #e8e8e8;
+}
+.workbuddy-opc-document .content-page p {
+  margin-bottom: 3mm;
+  text-align: justify;
+}
+.workbuddy-opc-document .content-page .highlight-box {
+  background: #E8FFF7;
+  border-left: 3px solid #15A67A;
+  padding: 3mm 4mm;
+  margin: 3mm 0;
+  border-radius: 2px;
+}
+.workbuddy-opc-document .content-page .highlight-box p {
+  margin: 0;
+  font-size: 10pt;
+  color: #333;
+}
+.workbuddy-opc-document .content-page .highlight-box p + p {
+  margin-top: 2.2mm;
+}
+.workbuddy-opc-document .content-page .epilogue-box {
+  background: #E8FFF7;
+  border-left: 3px solid #15A67A;
+  padding: 5mm 6mm 5mm 6mm;
+  margin: 5mm 0 3mm 0;
+  border-radius: 2px;
+}
+.workbuddy-opc-document .content-page .epilogue-title {
+  font-size: 16pt;
+  font-weight: 700;
+  color: #0E7C5C;
+  margin: 0 0 4mm 0;
+  letter-spacing: 4px;
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+}
+.workbuddy-opc-document .content-page .epilogue-box p {
+  margin: 0;
+  font-size: 10.5pt;
+  line-height: 1.85;
+  color: #2a2a2a;
+  text-align: justify;
+}
+.workbuddy-opc-document .content-page .epilogue-box p + p {
+  margin-top: 3mm;
+}
+.workbuddy-opc-document .content-page .data-row {
+  display: flex;
+  gap: 3mm;
+  margin: 4mm 0;
+}
+.workbuddy-opc-document .content-page .data-card {
+  flex: 1;
+  background: #f8fafb;
+  border: 1px solid #e8ecef;
+  border-radius: 4px;
+  padding: 2.5mm 3mm;
+  text-align: center;
+}
+.workbuddy-opc-document .data-card .num {
+  font-size: 14pt;
+  font-weight: 900;
+  color: #15A67A;
+  line-height: 1.2;
+}
+.workbuddy-opc-document .data-card .label {
+  font-size: 7.5pt;
+  color: #888;
+  margin-top: 0.5mm;
+  line-height: 1.4;
+}
+
+/* 表格 */
+.workbuddy-opc-document .content-page table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 5mm 0;
+  font-size: 9.5pt;
+}
+.workbuddy-opc-document .content-page table th {
+  background: #15A67A;
+  color: #fff;
+  font-weight: 700;
+  padding: 3mm 4mm;
+  text-align: left;
+  font-size: 9pt;
+}
+.workbuddy-opc-document .content-page table td {
+  padding: 3mm 4mm;
+  border-bottom: 1px solid #e8ecef;
+  vertical-align: top;
+}
+.workbuddy-opc-document .content-page table tr:last-child td {
+  border-bottom: none;
+}
+.workbuddy-opc-document .content-page table tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+/* 案例卡片 */
+.workbuddy-opc-document .case-card {
+  background: #f8fafb;
+  border: 1px solid #e8ecef;
+  border-radius: 6px;
+  padding: 4mm 5mm;
+  margin: 4mm 0;
+}
+.workbuddy-opc-document .case-card .case-header {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin-bottom: 3mm;
+  padding-bottom: 2mm;
+  border-bottom: 1px solid #e8ecef;
+}
+.workbuddy-opc-document .case-card .case-icon {
+  font-size: 14pt;
+  flex-shrink: 0;
+}
+.workbuddy-opc-document .case-card .case-name {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.workbuddy-opc-document .case-card .case-sub {
+  font-size: 8pt;
+  color: #888;
+}
+.workbuddy-opc-document .case-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 9pt;
+  color: #444;
+  line-height: 1.9;
+}
+.workbuddy-opc-document .case-card ul li b {
+  color: #1a1a1a;
+}
+.workbuddy-opc-document .case-card .case-tags {
+  margin-top: 2.5mm;
+  padding-top: 2mm;
+  border-top: 1px dashed #e8ecef;
+  display: flex;
+  gap: 2mm;
+  flex-wrap: wrap;
+}
+.workbuddy-opc-document .case-card .case-tags span {
+  font-size: 7pt;
+  padding: 1mm 2.5mm;
+  border-radius: 3px;
+  font-weight: 600;
+}
+.workbuddy-opc-document .tag-green { background: #ebfbee; color: #2f9e44; }
+.workbuddy-opc-document .tag-blue { background: #e7f5ff; color: #1971c2; }
+.workbuddy-opc-document .tag-purple { background: #f3f0ff; color: #7048e8; }
+
+/* 陷阱卡片 */
+.workbuddy-opc-document .trap-card {
+  padding: 3mm 4mm;
+  border-radius: 4px;
+  margin: 3mm 0;
+  border-left: 3px solid;
+}
+.workbuddy-opc-document .trap-card.red { background: #fff5f5; border-color: #e03131; }
+.workbuddy-opc-document .trap-card.yellow { background: #fff9db; border-color: #e67700; }
+.workbuddy-opc-document .trap-card.purple { background: #f3f0ff; border-color: #7048e8; }
+.workbuddy-opc-document .trap-card h4 {
+  font-size: 10pt;
+  font-weight: 700;
+  margin-bottom: 1.5mm;
+}
+.workbuddy-opc-document .trap-card p {
+  font-size: 9.5pt;
+  margin: 0;
+  text-align: left;
+  line-height: 1.7;
+}
+
+/* 导读段 */
+.workbuddy-opc-document .lead {
+  font-size: 10pt;
+  color: #444;
+  border-left: 3px solid #15A67A;
+  padding-left: 4mm;
+  margin-bottom: 10mm;
+  line-height: 1.7;
+}
+
+/* 页脚脚注：位于页脚下方、贴近页面底边 */
+.workbuddy-opc-document .page-footnotes {
+  position: absolute;
+  bottom: 19mm;
+  left: 22mm;
+  right: 22mm;
+  border-top: 1px solid #ddd;
+  padding-top: 1.5mm;
+  font-size: 7pt;
+  color: #aaa;
+  line-height: 1.5;
+}
+.workbuddy-opc-document .page-footnotes p {
+  margin: 0.3mm 0;
+  text-align: left;
+}
+.workbuddy-opc-document .page-footnotes sup {
+  color: #15A67A;
+  font-weight: 700;
+}
+
+/* 水印 */
+.workbuddy-opc-document .watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 60pt;
+  font-weight: 900;
+  color: rgba(29,184,134,0.03);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 打印优化 */
+@media print {
+  .workbuddy-opc-document .page { margin: 0; box-shadow: none; }
+}
+/* 屏幕预览 - 响应式等比缩放 */
+/* 窄屏：去掉灰色背景，页面撑满屏幕宽度，像手机看 PDF */
+
+/* === 脚本补充样式 === */
+.workbuddy-opc-document .content-page h4 { font-size: 11pt; font-weight: 700; color:#333; margin: 4.5mm 0 2mm; }
+.workbuddy-opc-document .content-page .page-body ul, .workbuddy-opc-document .content-page .page-body ol { margin: 2mm 0 3mm 0; padding-left: 6mm; font-size: 10pt; line-height: 1.75; color:#333; }
+.workbuddy-opc-document .content-page .page-body ul li, .workbuddy-opc-document .content-page .page-body ol li { margin-bottom: 1.2mm; }
+.workbuddy-opc-document .content-page .page-body ul li strong, .workbuddy-opc-document .content-page .page-body ol li strong { color:#1a1a1a; }
+.workbuddy-opc-document .content-page blockquote { background:#E8FFF7; border-left:3px solid #15A67A; padding:3.5mm 5mm; margin:4mm 0; color:#222; font-size:10.5pt; font-weight:600; line-height:1.7; border-radius:2px; }
+.workbuddy-opc-document .content-page .small-table table { font-size: 8.4pt; }
+.workbuddy-opc-document .content-page .small-table table th { padding: 2.4mm 2.8mm; font-size: 8pt; }
+.workbuddy-opc-document .content-page .small-table table td { padding: 2.2mm 2.8mm; }
+.workbuddy-opc-document .content-page p strong { color:#1a1a1a; }
+.workbuddy-opc-document strong { font-weight:700; }
+.workbuddy-opc-document code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:0.9em; background:#f3f4f6; padding:0 1mm; border-radius:2px; }
+
+
+
+.workbuddy-opc-document { overflow: hidden; padding: 12px 0; }
+.workbuddy-opc-document .page { margin: 18px auto; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+@media (max-width: 840px) {
+  .workbuddy-opc-document { padding: 0; }
+  .workbuddy-opc-document .page { width: 100%; height: auto; min-height: 0; overflow: visible; margin: 0 auto 16px; box-shadow: none; }
+  .workbuddy-opc-document .cover { min-height: 500px; padding: 100px 22px 70px; }
+  .workbuddy-opc-document .cover::before { width: 50%; }
+  .workbuddy-opc-document .cover-footer { left: 22px; right: 22px; bottom: 20px; }
+  .workbuddy-opc-document .toc-page { padding: 55px 22px 26px; }
+  .workbuddy-opc-document .content-page { padding: 56px 22px 36px; }
+  .workbuddy-opc-document .page-header, .workbuddy-opc-document .content-page .page-header { top: 18px; left: 22px; right: 22px; }
+  .workbuddy-opc-document .content-page .page-footer { position: static; margin-top: 18px; }
+  .workbuddy-opc-document .content-page .small-table { overflow-x: auto; }
+}

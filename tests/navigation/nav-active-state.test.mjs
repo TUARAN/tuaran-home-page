@@ -14,6 +14,22 @@ const { SITE_CHANNELS, getChannelNavSections, getActiveNavHref } = vm.runInNewCo
 )
 const sectionsFor = (key) => getChannelNavSections(SITE_CHANNELS.find((channel) => channel.key === key), null)
 
+test('content dropdown shows four selected topics and three content types', () => {
+  const content = SITE_CHANNELS.find((channel) => channel.key === 'content')
+  const visible = sectionsFor('content')
+  const itemsIn = (sections, title) => sections.find((section) => section.title === title).items
+  assert.deepEqual(
+    Array.from(itemsIn(visible, '内容主题'), (item) => item.label),
+    ['AI 与开发', 'Web 与云', '产品与体验', '公司调研'],
+  )
+  assert.deepEqual(
+    Array.from(itemsIn(visible, '内容类型'), (item) => item.label),
+    ['互动', '资源', '精选'],
+  )
+  assert.ok(itemsIn(content.sections, '内容主题').length > 4)
+  assert.ok(itemsIn(content.sections, '内容类型').length > 3)
+})
+
 test('public opinion selects its own entry, never the featured tool library', () => {
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/public-opinion'), '/public-opinion')
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools'), '/tools')
@@ -28,7 +44,6 @@ test('legacy capability detail pages select the unified capability entry', () =>
 })
 
 test('all visible internal entries have exactly one owning channel and select themselves', () => {
-  let checked = 0
   for (const channel of SITE_CHANNELS) {
     const sections = sectionsFor(channel.key)
     for (const item of sections.flatMap((section) => section.items)) {
@@ -38,16 +53,15 @@ test('all visible internal entries have exactly one owning channel and select th
       assert.equal(owners.length, 1, item.href)
       assert.equal(owners[0].key, channel.key, item.href)
       assert.equal(getActiveNavHref(sections, url.pathname, url.searchParams), item.href)
-      checked++
     }
   }
-  assert.ok(checked >= 30)
 })
 
 test('query filters beat overview links and do not select unrelated filters', () => {
   const sections = sectionsFor('content')
   assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('subject=ai_dev&q=test')), '/articles?subject=ai_dev')
-  assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('group=analysis')), '/articles?group=analysis')
+  assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('group=resource')), '/articles?group=resource')
+  assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('group=analysis')), '/articles')
   assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('q=test')), '/articles')
   assert.equal(getActiveNavHref(sections, '/articles/example'), '/articles')
 })

@@ -7,6 +7,7 @@ import UserAvatar from './UserAvatar'
 import RanbiBalance from './RanbiBalance'
 import { commentProviderLabel } from '../../../lib/userDisplayName'
 import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/engagementBot'
+import { isInteractionNotification } from '../../../lib/siteNotificationsCore'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -50,10 +51,15 @@ export default function ArticleComments({ articleKey }) {
   const [error, setError] = useState('')
   const [replyTarget, setReplyTarget] = useState(null)
   const textareaRef = useRef(null)
+  const sectionRef = useRef(null)
 
   const remaining = useMemo(() => 1000 - message.trim().length, [message])
   const isAuthed = !!user
-  const unreadNotifications = (notifications?.items || []).filter((item) => !item.readAt)
+  const unreadNotifications = (notifications?.items || []).filter((item) => (
+    !item.readAt
+    && isInteractionNotification(item.type)
+    && (!articleKey || item.articleKey === articleKey)
+  ))
 
   const refresh = useCallback(async () => {
     if (!articleKey) return
@@ -72,6 +78,37 @@ export default function ArticleComments({ articleKey }) {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    if (!items.length || typeof window === 'undefined') return undefined
+
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    const behavior = prefersReduced ? 'auto' : 'smooth'
+
+    const revealHashComment = () => {
+      const hash = window.location.hash || ''
+      const match = hash.match(/^#comment-(\d+)$/)
+      if (!match) return
+      document.querySelectorAll('.discussion-comment-card.is-notification-target').forEach((node) => {
+        node.classList.remove('is-notification-target')
+      })
+      const target = document.getElementById(`comment-${match[1]}`)
+        || document.getElementById('comments')
+        || sectionRef.current
+      if (!target) return
+      if (target.id?.startsWith('comment-')) {
+        target.classList.add('is-notification-target')
+      }
+      target.scrollIntoView({ block: target.id?.startsWith('comment-') ? 'center' : 'start', behavior })
+    }
+
+    const timer = window.setTimeout(revealHashComment, 60)
+    window.addEventListener('hashchange', revealHashComment)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('hashchange', revealHashComment)
+    }
+  }, [items])
 
   function goToLogin() {
     const returnTo = `${window.location.pathname}${window.location.search || ''}`
@@ -131,7 +168,7 @@ export default function ArticleComments({ articleKey }) {
   }
 
   return (
-    <section className="discussion-comments mt-12 w-full">
+    <section ref={sectionRef} className="discussion-comments mt-12 w-full">
       <div className="discussion-comments-header flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="discussion-eyebrow mb-1">Discussion</p>
@@ -173,7 +210,7 @@ export default function ArticleComments({ articleKey }) {
       {isAuthed && unreadNotifications.length ? (
         <div className="discussion-notice mt-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-medium">你有 {unreadNotifications.length} 条新的评论回复</p>
+            <p className="font-medium">这篇内容有 {unreadNotifications.length} 条未读互动</p>
             <button
               type="button"
               onClick={markAllRepliesRead}
@@ -190,7 +227,7 @@ export default function ArticleComments({ articleKey }) {
                   onClick={() => markNotificationsRead?.({ id: item.id })}
                   className="font-medium text-[var(--site-accent-strong)] underline-offset-4 hover:underline"
                 >
-                  {item.actorUserName || '有人'} 回复了你
+                  {item.title || `${item.actorUserName || '有人'} 回复了你`}
                 </a>
                 <span className="text-[var(--site-muted)]">：{item.messageExcerpt}</span>
               </li>

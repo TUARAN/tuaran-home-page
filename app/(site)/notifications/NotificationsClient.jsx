@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useSessionAccount } from '../components/SessionProvider'
+import UserAvatar from '../components/UserAvatar'
 import { LoadingDots, LoadingState, Skeleton } from '../../components/loading/LoadingPrimitives'
 
 const PAGE_SIZE = 10
@@ -13,7 +14,7 @@ const FILTER_TABS = [
   { id: 'all', label: '全部' },
   { id: 'interaction', label: '互动' },
   { id: 'rss', label: '订阅' },
-  { id: 'automation', label: '自动化监控' },
+  { id: 'automation', label: '监控' },
 ]
 
 function relativeTime(ts) {
@@ -23,6 +24,7 @@ function relativeTime(ts) {
   if (diff < 60_000) return '刚刚'
   if (diff < 3_600_000) return `${Math.max(1, Math.floor(diff / 60_000))} 分钟前`
   if (diff < 86_400_000) return `${Math.max(1, Math.floor(diff / 3_600_000))} 小时前`
+  if (diff < 86_400_000 * 7) return `${Math.max(1, Math.floor(diff / 86_400_000))} 天前`
   return new Date(n).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
@@ -44,50 +46,44 @@ function absoluteTime(ts) {
 
 function NotificationCard({ item, onOpen }) {
   const unread = !item.readAt
+  const href = item.href || '/notifications'
+  const when = relativeTime(item.createdAt)
+  const exact = absoluteTime(item.createdAt)
+
   return (
     <Link
-      href={item.href || '/notifications'}
+      href={href}
       onClick={() => onOpen(item)}
+      aria-label={`${item.title}${item.destinationLabel ? `，${item.destinationLabel}` : ''}`}
       className={[
-        'group flex items-start gap-3 rounded-2xl border px-4 py-3 no-underline transition-colors',
-        unread
-          ? 'border-[color-mix(in_srgb,var(--site-accent)_28%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-accent)_7%,transparent)]'
-          : 'border-[var(--site-line)] hover:border-[var(--site-muted)] hover:bg-[var(--site-panel-strong)]',
-      ].join(' ')}
+        'notification-inbox-item',
+        unread ? 'is-unread' : '',
+      ].filter(Boolean).join(' ')}
     >
-      <span
-        aria-hidden="true"
-        className={[
-          'mt-1.5 h-2 w-2 shrink-0 rounded-full',
-          unread ? 'bg-[var(--site-accent)]' : 'bg-[color-mix(in_srgb,var(--site-line)_70%,transparent)]',
-        ].join(' ')}
-      />
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <span
-            className={[
-              'text-sm font-semibold text-[var(--site-ink)]',
-              unread ? '' : 'opacity-75',
-            ].join(' ')}
-          >
-            {item.title || '新的站内通知'}
-          </span>
-          <span className="shrink-0 font-mono text-[11px] text-[var(--site-faint)]">
-            {relativeTime(item.createdAt)}
-            {item.createdAt ? ` · ${absoluteTime(item.createdAt)}` : ''}
-          </span>
+      <span className="notification-inbox-aside">
+        <span className={unread ? 'notification-inbox-dot is-on' : 'notification-inbox-dot'} aria-hidden="true" />
+        <UserAvatar
+          seed={item.actorUserName || item.actorUserId || item.type}
+          size="md"
+          title={item.actorUserName || item.typeLabel || '通知'}
+        />
+      </span>
+      <span className="notification-inbox-body">
+        <span className="notification-inbox-top">
+          <span className="notification-inbox-kind">{item.typeLabel || '通知'}</span>
+          {when ? (
+            <time className="notification-inbox-time" dateTime={item.createdAt ? new Date(Number(item.createdAt)).toISOString() : undefined} title={exact}>
+              {when}
+            </time>
+          ) : null}
         </span>
+        <span className="notification-inbox-title">{item.title || '新的站内通知'}</span>
         {item.messageExcerpt ? (
-          <span className="mt-1 line-clamp-2 block text-[13px] leading-5 text-[var(--site-muted)]">
-            {item.messageExcerpt}
-          </span>
+          <span className="notification-inbox-excerpt">{item.messageExcerpt}</span>
         ) : null}
-        <span className="mt-1 block text-xs text-[var(--site-faint)]">
-          {item.articleTitle ? `${item.articleTitle} · ` : ''}
-          {item.actorUserName || '访客'}
-          <span className="ml-1 inline-block text-[var(--site-faint)] transition-transform group-hover:translate-x-0.5">
-            →
-          </span>
+        <span className="notification-inbox-go">
+          {item.destinationLabel || '查看详情'}
+          <span aria-hidden="true">→</span>
         </span>
       </span>
     </Link>
@@ -232,12 +228,10 @@ export default function NotificationsClient() {
 
   if (!user) {
     return (
-      <div className="rounded-2xl border border-[var(--site-line)] px-6 py-12 text-center">
-        <p className="mx-auto mb-2 max-w-md text-base font-semibold text-[var(--site-ink)]">
-          登录后查看站内通知
-        </p>
-        <p className="mx-auto mb-5 max-w-md text-sm leading-6 text-[var(--site-muted)]">
-          评论回复、点赞等与你相关的通知会集中出现在这里，并可直接跳回原内容位置。
+      <div className="notification-empty">
+        <p className="notification-empty-title">登录后查看站内通知</p>
+        <p className="notification-empty-copy">
+          回复、点赞、订阅和监控提醒会集中出现在这里。
         </p>
         <Link href={LOGIN_HREF} className="discussion-primary-link">
           登录查看通知
@@ -247,52 +241,38 @@ export default function NotificationsClient() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
-      <header className="mb-6">
-        <p className="discussion-eyebrow mb-1">Notifications</p>
-        <h1 className="mb-1 text-2xl font-bold text-[var(--site-ink)]">通知中心</h1>
-        <p className="mb-0 text-sm leading-6 text-[var(--site-muted)]">
-          评论回复、点赞、订阅更新和站内提醒都会在这里汇总，点击任意一条即可跳回对应页面。
-        </p>
+    <div className="notification-center">
+      <header className="notification-center-head">
+        <div>
+          <h1>通知</h1>
+          <p>回复、点赞、订阅和监控。点一条就去对应评论、内容、订阅源或运维台。</p>
+        </div>
       </header>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {FILTER_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setFilter(tab.id)}
-            disabled={status === 'loading'}
-            className={[
-              'rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50',
-              filter === tab.id
-                ? 'border-[var(--site-accent)] bg-[var(--site-accent)] text-[var(--site-panel)]'
-                : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-muted)] hover:bg-[var(--site-panel-strong)]',
-            ].join(' ')}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="mb-0 text-sm text-[var(--site-muted)]">
-          {total > 0 ? (
-            <>
-              共 <strong className="text-[var(--site-ink)]">{total}</strong> 条，
-              {unread > 0 ? (
-                <>
-                  其中 <strong className="text-[var(--site-accent)]">{unread}</strong> 条未读
-                </>
-              ) : (
-                '全部已读'
-              )}
-            </>
-          ) : (
-            '还没有站内通知'
-          )}
-        </p>
-        <div className="flex items-center gap-2">
+      <div className="notification-center-toolbar">
+        <div className="community-feed-filters" role="tablist" aria-label="通知分类">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={filter === tab.id}
+              onClick={() => setFilter(tab.id)}
+              disabled={status === 'loading'}
+              className={filter === tab.id ? 'is-active' : ''}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="notification-center-actions">
+          <p className="notification-center-meta">
+            {total > 0 ? (
+              unread > 0 ? `${total} 条 · ${unread} 未读` : `${total} 条 · 全部已读`
+            ) : (
+              '还没有通知'
+            )}
+          </p>
           <button
             type="button"
             onClick={refresh}
@@ -313,41 +293,41 @@ export default function NotificationsClient() {
       </div>
 
       {status === 'loading' ? (
-        <div className="space-y-3" role="status" aria-label="正在加载通知">
+        <div className="notification-inbox" role="status" aria-label="正在加载通知">
           {[0, 1, 2].map((index) => (
             <Skeleton
               key={index}
-              className="h-24 rounded-2xl border border-[var(--site-line)]"
+              className="h-[4.5rem] rounded-none border-0 border-b border-[var(--site-line)]"
             />
           ))}
         </div>
       ) : status === 'error' ? (
-        <div className="rounded-2xl border border-[var(--site-line)] px-6 py-10 text-center">
-          <p className="mb-3 text-sm text-[var(--site-muted)]">通知暂时加载失败。</p>
+        <div className="notification-empty">
+          <p className="notification-empty-copy">通知暂时加载失败。</p>
           <button type="button" onClick={refresh} className="discussion-text-link text-sm">
             重新加载
           </button>
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--site-line)] px-6 py-12 text-center">
-          <p className="mb-1 text-base font-semibold text-[var(--site-ink)]">还没有新的站内通知</p>
-          <p className="mb-0 text-sm leading-6 text-[var(--site-muted)]">
+        <div className="notification-empty is-dashed">
+          <p className="notification-empty-title">还没有新的站内通知</p>
+          <p className="notification-empty-copy">
             {filter === 'automation'
-              ? '定时自动化任务运行失败时，监控提醒会出现在这里。'
+              ? '定时任务失败时，监控提醒会出现在这里。'
               : filter === 'rss'
-                ? '收录的 RSS 源有新条目时，会出现在这里，点击可跳到订阅页。'
-                : '有人在你的内容下评论、回复或点赞时，会出现在这里。'}
+                ? '收录的 RSS 源有新条目时会出现在这里，点开对应订阅源。'
+                : '有人评论、回复或点赞时会出现在这里。'}
           </p>
         </div>
       ) : (
         <>
-          <div className="space-y-2.5">
+          <div className="notification-inbox">
             {items.map((item) => (
               <NotificationCard key={item.id} item={item} onOpen={openItem} />
             ))}
           </div>
           {items.length < total ? (
-            <div ref={sentinelRef} className="mt-5 flex min-h-10 items-center justify-center text-center">
+            <div ref={sentinelRef} className="notification-inbox-more">
               {loadingMore ? (
                 <LoadingDots label="正在加载更多通知" className="text-[var(--site-faint)]" />
               ) : typeof IntersectionObserver === 'undefined' ? (
@@ -363,7 +343,7 @@ export default function NotificationsClient() {
               )}
             </div>
           ) : total > 0 ? (
-            <p className="mt-5 text-center text-xs text-[var(--site-faint)]">
+            <p className="notification-inbox-more text-xs text-[var(--site-faint)]">
               已加载全部 {total} 条
             </p>
           ) : null}

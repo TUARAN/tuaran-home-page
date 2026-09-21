@@ -334,7 +334,7 @@ function NotificationList({ notifications, markNotificationsRead, onNavigate, em
         return (
           <Link
             key={item.id}
-            href={item.href || '/community'}
+            href={item.href || '/notifications'}
             onClick={() => {
               if (item.id) markNotificationsRead?.({ id: item.id })
               onNavigate?.()
@@ -343,10 +343,10 @@ function NotificationList({ notifications, markNotificationsRead, onNavigate, em
           >
             <span className="min-w-0 flex-1">
               <span className="site-notification-title">
-                {item.title || `${item.actorUserName || '有人'} 回复了你`}
+                {item.title || '新的站内通知'}
               </span>
               <span className="site-notification-body">
-                {item.articleTitle ? `${item.articleTitle} · ` : ''}{item.messageExcerpt || '查看详情'}
+                {item.messageExcerpt || item.destinationLabel || '查看详情'}
               </span>
             </span>
             <span className="site-notification-time">{formatNotificationTime(item.createdAt)}</span>
@@ -440,12 +440,12 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               notifications={notifications}
               markNotificationsRead={markNotificationsRead}
               onNavigate={onClose}
-              emptyLabel={pick(locale, '暂无新的评论回复。', 'No comment replies yet.')}
+              emptyLabel={pick(locale, '暂无新通知', 'No notifications yet.')}
             />
             <Link
               href="/notifications"
               onClick={onClose}
-              className="mt-1 flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium text-[var(--site-faint)] transition-colors hover:bg-[#2b2924] hover:text-[#f1f0ea]"
+              className="mt-1 flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium text-[var(--site-faint)] transition-colors hover:bg-[color-mix(in_srgb,var(--site-line)_52%,transparent)] hover:text-[var(--site-ink)]"
             >
               <span>{pick(locale, '查看全部通知', 'View all notifications')}</span>
               <span aria-hidden="true">→</span>
@@ -599,7 +599,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
               notifications={notifications}
               markNotificationsRead={markNotificationsRead}
               onNavigate={onNavigate}
-              emptyLabel={pick(locale, '暂无新的评论回复。', 'No comment replies yet.')}
+              emptyLabel={pick(locale, '暂无新通知', 'No notifications yet.')}
             />
           </div>
           <div className="px-1.5 py-1.5">

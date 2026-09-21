@@ -20,6 +20,10 @@ const headerSource = await readFile(
 )
 const navSource = await readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8')
 const mobileNavSource = await readFile(new URL('../../lib/siteMobileNav.js', import.meta.url), 'utf8')
+const commentsSource = await readFile(
+  new URL('../../app/(site)/components/ArticleComments.jsx', import.meta.url),
+  'utf8'
+)
 
 test('notification center page is noindex and renders the client', () => {
   assert.match(pageSource, /robots: \{ index: false, follow: false \}/)
@@ -31,6 +35,16 @@ test('notification center lists notifications with unread state and load more', 
   assert.match(clientSource, /加载更多/)
   assert.match(clientSource, /PAGE_SIZE = 10/)
   assert.match(clientSource, /item\.readAt/)
+  assert.match(clientSource, /notification-inbox-item/)
+  assert.match(clientSource, /destinationLabel/)
+  assert.match(clientSource, /typeLabel/)
+})
+
+test('notifications API maps titles, destinations, and never returns a null href', () => {
+  assert.match(apiSource, /presentNotification/)
+  assert.match(apiSource, /destinationLabel/)
+  assert.match(apiSource, /typeLabel/)
+  assert.doesNotMatch(apiSource, /href: null/)
 })
 
 test('notifications API supports pagination and returns total', () => {
@@ -42,6 +56,15 @@ test('notifications API supports pagination and returns total', () => {
 test('notification center is reachable without activating the community channel', () => {
   assert.match(headerSource, /href="\/notifications"/)
   assert.match(headerSource, /查看全部通知/)
+  assert.match(headerSource, /item\.href \|\| '\/notifications'/)
+  assert.doesNotMatch(headerSource, /item\.href \|\| '\/community'/)
   assert.doesNotMatch(navSource, /p\?\.startsWith\('\/notifications'\)/)
   assert.match(mobileNavSource, /pathname\?\.startsWith\('\/notifications'\)/)
+})
+
+test('article comments only surface this article’s interaction notices and scroll to the hash', () => {
+  assert.match(commentsSource, /isInteractionNotification/)
+  assert.match(commentsSource, /item\.articleKey === articleKey/)
+  assert.match(commentsSource, /is-notification-target/)
+  assert.match(commentsSource, /#comment-\(\\d\+\)/)
 })

@@ -1,47 +1,38 @@
 import { loadContentKeyMeta, resolveContentKeyLite } from '../../../lib/contentKeyLite'
 import { getD1 } from '../../../lib/d1'
 import { getUserFromRequest } from '../../../lib/edgeSession'
-import { parseRssArticleKey, rssUpdateHref } from '../../../lib/rssUpdateCore'
+import { presentNotification } from '../../../lib/siteNotificationsDisplay'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-function notificationHref(type, articleKey, commentId, metaMap) {
-  if (type === 'weekly_summary') return '/admin/content-weekly?days=7'
-  if (type === 'automation_monitor') return '/admin/ops'
-  if (type === 'rss_update') return rssUpdateHref(parseRssArticleKey(articleKey).feedId)
-  const resolved = resolveContentKeyLite(articleKey, metaMap)
-  if (!resolved.href) return null
-  if (type === 'content_like') return resolved.href
-  return commentId ? `${resolved.href}#comment-${commentId}` : `${resolved.href}#comments`
-}
-
-function notificationTitle(type, actorName) {
-  if (type === 'content_like') return `${actorName || '有人'} 点赞了你的内容`
-  if (type === 'content_comment') return `${actorName || '有人'} 评论了你的内容`
-  if (type === 'weekly_summary') return '上周站点总结已生成'
-  if (type === 'automation_monitor') return `${actorName || '自动化任务'} 运行失败`
-  if (type === 'rss_update') return `${actorName || '订阅源'} 有新更新`
-  return `${actorName || '有人'} 回复了你`
+function resolveNotificationContent(row, metaMap) {
+  const type = row.type || 'comment_reply'
+  if (type === 'weekly_summary' || type === 'automation_monitor' || type === 'rss_update') {
+    return { title: '', href: '' }
+  }
+  return resolveContentKeyLite(row.article_key, metaMap)
 }
 
 function mapNotification(row, metaMap) {
-  const type = row.type || 'comment_reply'
-  const article = resolveContentKeyLite(row.article_key, metaMap)
+  const presented = presentNotification(row, resolveNotificationContent(row, metaMap))
   return {
     id: Number(row.id),
-    type,
-    title: notificationTitle(type, row.actor_user_name),
+    type: presented.type,
+    category: presented.category,
+    typeLabel: presented.typeLabel,
+    title: presented.title,
     actorUserId: row.actor_user_id || '',
     actorUserProvider: row.actor_user_provider || '',
     actorUserName: row.actor_user_name || '',
     actorUserImage: row.actor_user_image || '',
     articleKey: row.article_key || '',
-    articleTitle: type === 'weekly_summary' ? '内容数据与反馈' : type === 'automation_monitor' ? '' : type === 'rss_update' ? (row.actor_user_name || 'RSS') : article.title,
-    href: notificationHref(type, row.article_key, row.comment_id, metaMap),
+    articleTitle: presented.articleTitle,
+    href: presented.href,
+    destinationLabel: presented.destinationLabel,
     commentId: Number(row.comment_id) || null,
     replyToCommentId: Number(row.reply_to_comment_id) || null,
-    messageExcerpt: row.message_excerpt || '',
+    messageExcerpt: presented.messageExcerpt,
     readAt: Number(row.read_at) || null,
     createdAt: Number(row.created_at) || 0,
   }

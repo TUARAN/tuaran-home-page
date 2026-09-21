@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { LoadingState } from '../../components/loading/LoadingPrimitives'
 import { JUEJIN_ACTIVITY_SNAPSHOT } from '../../../lib/juejin/activitySnapshot'
+import { articleSourceCountLabel } from '../../../lib/articleSourceCountLabel.mjs'
 
 const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -208,7 +209,7 @@ export default function KnowledgeHeatmapClient({
             <div className="rounded-md border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_72%,transparent)] p-3">
               <div className="mb-1 flex items-center justify-between gap-3">
                 <p className="text-xs text-[var(--site-muted)]">
-                  {heatmapData.total} 篇内容发布（站内 {heatmapData.localTotal} + 掘金 {heatmapData.juejinTotal}）
+                  {heatmapData.total} 篇内容发布（{articleSourceCountLabel(heatmapData.localTotal, heatmapData.juejinTotal)}）
                 </p>
                 <p className="text-[11px] text-[var(--site-faint)]">
                   少

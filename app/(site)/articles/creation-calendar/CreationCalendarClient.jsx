@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { JUEJIN_ACTIVITY_SNAPSHOT } from '../../../../lib/juejin/activitySnapshot'
+import { articleSourceCountLabel } from '../../../../lib/articleSourceCountLabel.mjs'
 
 const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -204,8 +205,8 @@ export default function CreationCalendarClient({ items }) {
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="总内容数" value={String(totalContentCount)} note={`站内 ${datedItems.length} + 掘金 ${juejinTotalAll}`} />
-        <StatCard label="当前年份" value={selectedYear || '-'} note={`${yearTotal} 篇（站内 ${localTotal} + 掘金 ${juejinTotal}）`} />
+        <StatCard label="总内容数" value={String(totalContentCount)} note={articleSourceCountLabel(datedItems.length, juejinTotalAll)} />
+        <StatCard label="当前年份" value={selectedYear || '-'} note={`${yearTotal} 篇（${articleSourceCountLabel(localTotal, juejinTotal)}）`} />
         <StatCard label="活跃天数" value={String(activeDays)} note="该年有内容的日期" />
         <StatCard
           label="掘金快照"
@@ -283,7 +284,7 @@ export default function CreationCalendarClient({ items }) {
           <div className="rounded-md border border-[#cfd0c7] bg-[#fafbf8] p-3 dark:border-gray-700 dark:bg-[#0f141b]">
             <div className="mb-2 flex items-center justify-between gap-3">
               <p className="text-xs text-[#626357] dark:text-gray-300">
-                {yearTotal} 篇内容发布（站内 {localTotal} + 掘金 {juejinTotal}）
+                {yearTotal} 篇内容发布（{articleSourceCountLabel(localTotal, juejinTotal)}）
               </p>
               <p className="text-[11px] text-[#898b7d] dark:text-gray-500">
                 少

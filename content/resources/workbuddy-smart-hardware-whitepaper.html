@@ -1,754 +1,390 @@
-<div class="wrap">
-
-<aside class="toc">
-  <div class="brand">WORKBUDDY WHITEPAPER</div>
-  <div class="ver">智能硬件接入白皮书</div>
-
-  <h4>摘要</h4>
-  <ol>
-    <li><a href="#ch0">0 摘要</a></li>
-  </ol>
-
-  <h4>第一部分 · 战略与商务</h4>
-  <ol>
-    <li><a href="#ch1">1 WorkBuddy 简介</a></li>
-    <li><a href="#ch2">2 硬件接入的价值</a></li>
-    <li><a href="#ch3">3 六类硬件触点</a></li>
-    <li><a href="#ch4">4 合作模式及范本</a>
-      <ol class="sub">
-        <li><a href="#ch4-1">4.1 三方协同</a></li>
-        <li><a href="#ch4-2">4.2 模式决策图</a></li>
-        <li><a href="#ch4-3">4.3 四种模式详解</a></li>
-        <li><a href="#ch4-4">4.4 合作范本</a></li>
-        <li><a href="#ch4-5">4.5 商业模式与结算</a></li>
-      </ol>
-    </li>
-  </ol>
-
-  <h4>第二部分 · 产品与能力</h4>
-  <ol>
-    <li><a href="#ch5">5 产品能力全景</a>
-      <ol class="sub">
-        <li><a href="#ch5-1">5.1 Agent 架构总览</a></li>
-        <li><a href="#ch5-2">5.2 云端 Agent 能力</a></li>
-        <li><a href="#ch5-3">5.3 端云协同机制</a></li>
-        <li><a href="#ch5-4">5.4 生态扩展体系</a></li>
-        <li><a href="#ch5-5">5.5 硬件专区产品逻辑</a></li>
-      </ol>
-    </li>
-    <li><a href="#ch6">6 场景能力矩阵</a></li>
-  </ol>
-
-  <h4>第三部分 · 技术接入</h4>
-  <ol>
-    <li><a href="#ch7">7 开放能力概述</a></li>
-    <li><a href="#ch8">8 授权登录（OAuth 2.0）</a></li>
-    <li><a href="#ch9">9 接口调用</a></li>
-    <li><a href="#ch10">10 端到端示例</a></li>
-    <li><a href="#ch11">11 常见问题</a></li>
-  </ol>
-
-  <h4>第四部分 · 落地与运营</h4>
-  <ol>
-    <li><a href="#ch12">12 合作落地流程</a></li>
-    <li><a href="#ch13">13 联合运营</a>
-      <ol class="sub">
-        <li><a href="#ch13-1">13.1 售后与技术支持</a></li>
-        <li><a href="#ch13-2">13.2 数据看板与洞察</a></li>
-        <li><a href="#ch13-3">13.3 联合宣发</a></li>
-        <li><a href="#ch13-4">13.4 版本迭代与共创</a></li>
-      </ol>
-    </li>
-  </ol>
-
-  <h4>附录</h4>
-  <ol>
-    <li><a href="#appA">A OpenAPI 完整规范</a></li>
-    <li><a href="#appB">B 术语表</a></li>
-  </ol>
-</aside>
-
-<div class="workbuddy-main">
-
-<section class="cover" id="top">
-  <div aria-label="WorkBuddy" class="brand-logo"><svg fill="none" viewBox="0 0 1620 560" xmlns="http://www.w3.org/2000/svg">
-<g clip-path="url(#clip0_10197_3)">
-<rect fill="url(#paint0_linear_10197_3)" height="560" rx="120.842" width="560"></rect>
-<g filter="url(#filter0_f_10197_3)">
-<circle cx="466.768" cy="610.657" fill="#FFE355" fill-opacity="0.49" r="180.186"></circle>
-</g>
-<path d="M428.302 43.7869C433.792 38.8624 434.121 38.6718 438.148 38.43C444.672 37.9533 450.647 41.0845 460.819 50.3453C484.581 71.938 517.668 116.33 538.239 154.24L546.186 168.954L557.413 174.534C568.252 180.011 586.031 191.24 593.455 197.262C596.813 200.038 597.284 200.096 600.777 198.738C616.534 192.601 639.106 200.734 659.017 219.835C676.939 237.012 694.103 266.362 700.68 290.858C701.64 294.8 702.915 303.276 703.379 309.588C704.879 331.751 697.772 349.453 684.084 357.466C681.288 359.08 681.102 359.517 681.18 366.49C681.811 399.683 672.863 432.812 654.889 465.122C634.601 501.4 598.475 538.927 549.581 574.284C523.326 593.39 461.207 629.584 433.121 642.29C365.84 672.581 311.905 684.2 265.054 678.46C237.109 675.074 205.479 664.165 186.763 651.503C181.836 648.097 181.057 647.888 177.292 648.965C157.256 654.72 131.017 642.892 108.725 618.148C99.8348 608.257 85.4856 583.972 80.8335 570.976C70.0726 540.561 72.2117 513.116 86.5455 496.725C90.249 492.503 90.3662 492.326 89.5572 485.227C88.2214 473.606 87.6151 456.41 88.2253 445.31L88.7086 434.942L73.1426 407.411C49.0385 364.522 33.7294 328.508 27.8229 300.993C24.7048 285.905 24.8986 279.213 28.7284 274.261C31.0593 271.27 38.7027 268.174 47.9186 266.472C71.1185 262.399 121.718 266.084 178.011 276.023L183.858 277.033L196.707 265.667C218.038 246.771 232.21 236.177 258.335 219.887C285.565 202.85 316.296 188.837 350.903 177.739L362.007 174.179L368.109 158.155C389.963 100.466 412.344 57.935 428.302 43.7869ZM245.249 339.404C220.55 353.664 208.2 360.794 199.126 368.784C162.379 401.142 148.645 452.396 164.29 498.792C168.153 510.249 175.283 522.599 189.543 547.298C203.803 571.996 210.933 584.346 218.923 593.421C251.282 630.167 302.536 643.901 348.932 628.256C360.389 624.393 372.739 617.263 397.438 603.003L539.52 520.972C564.219 506.712 576.568 499.582 585.643 491.591C622.389 459.233 636.122 407.979 620.478 361.583C616.614 350.126 609.484 337.776 595.224 313.077C580.964 288.379 573.834 276.029 565.844 266.955C533.486 230.208 482.233 216.475 435.837 232.119C424.379 235.983 412.03 243.113 387.331 257.373L245.249 339.404Z" fill="url(#paint1_linear_10197_3)"></path>
-<rect fill="white" height="116.57" rx="28.0633" transform="rotate(-30 258.943 438.681)" width="56.1265" x="258.943" y="438.681"></rect>
-<rect fill="white" height="116.57" rx="28.0633" transform="rotate(-30 410.373 351.252)" width="56.1265" x="410.373" y="351.252"></rect>
-</g>
-<path d="M880.654 170.039C880.654 177.128 881.802 183.665 884.098 189.65C886.394 195.636 889.5 200.834 893.417 205.245C897.334 209.655 901.859 213.12 906.991 215.641C912.259 218.004 917.796 219.185 923.604 219.185C929.412 219.185 934.882 218.004 940.015 215.641C945.282 213.12 949.874 209.655 953.791 205.245C957.843 200.834 961.017 195.636 963.313 189.65C965.609 183.665 966.757 177.128 966.757 170.039C966.757 162.951 965.609 156.414 963.313 150.429C961.017 144.443 957.843 139.245 953.791 134.834C949.874 130.424 945.282 127.037 940.015 124.674C934.882 122.154 929.412 120.894 923.604 120.894C917.796 120.894 912.259 122.154 906.991 124.674C901.859 127.037 897.334 130.424 893.417 134.834C889.5 139.245 886.394 144.443 884.098 150.429C881.802 156.414 880.654 162.951 880.654 170.039ZM839.121 170.039C839.121 156.808 841.215 144.522 845.402 133.18C849.589 121.682 855.396 111.679 862.825 103.173C870.254 94.6674 879.1 88.0517 889.365 83.3262C899.765 78.4431 911.178 76.0016 923.604 76.0016C935.895 76.0016 947.241 78.4431 957.641 83.3262C968.04 88.0517 976.955 94.6674 984.383 103.173C991.947 111.679 997.822 121.682 1002.01 133.18C1006.2 144.522 1008.29 156.808 1008.29 170.039C1008.29 183.271 1006.2 195.636 1002.01 207.135C997.822 218.476 991.947 228.4 984.383 236.906C976.955 245.412 968.04 252.106 957.641 256.989C947.241 261.715 935.895 264.077 923.604 264.077C911.178 264.077 899.765 261.715 889.365 256.989C879.1 252.106 870.254 245.412 862.825 236.906C855.396 228.4 849.589 218.476 845.402 207.135C841.215 195.636 839.121 183.271 839.121 170.039Z" fill="black"></path>
-<path d="M891.596 294.927V394.425C891.596 399.764 891.758 405.265 892.081 410.927C892.566 416.428 893.777 421.444 895.716 425.974C897.816 430.504 901.048 434.225 905.41 437.137C909.772 439.887 915.911 441.262 923.828 441.262C931.744 441.262 937.803 439.887 942.003 437.137C946.365 434.225 949.596 430.504 951.697 425.974C953.797 421.444 955.009 416.428 955.332 410.927C955.817 405.265 956.059 399.764 956.059 394.425V294.927H1003.32V400.978C1003.32 429.452 996.772 450.241 983.686 463.346C970.761 476.451 950.808 483.003 923.828 483.003C896.847 483.003 876.814 476.451 863.727 463.346C850.641 450.241 844.098 429.452 844.098 400.978V294.927H891.596Z" fill="black"></path>
-<path d="M1498.2 413.794L1400.99 483.005L1400.99 424.113L1452.08 388.878L1400.99 353.895L1400.99 295.003L1498.2 364.466L1528.09 389.13L1498.2 413.794Z" fill="black"></path>
-<rect fill="black" height="50.3353" width="93.002" x="1526.91" y="431.259"></rect>
-<path clip-rule="evenodd" d="M753.116 293.611C784.781 293.611 810.45 316.675 810.45 348.339C810.45 358.703 807.7 368.424 802.89 376.813C815.52 388.031 823.481 404.391 823.481 422.613C823.481 456.436 796.061 481.25 762.238 481.25H682.752V293.611H753.116ZM721.843 442.158H758.417C764.18 442.158 769.686 439.773 773.627 435.569C781.146 427.549 781.146 415.07 773.627 407.05C769.686 402.846 764.18 400.461 758.417 400.461H721.843V442.158ZM721.843 366.582H752.009C756.085 366.582 760.024 365.113 763.104 362.443C770.897 355.689 770.897 343.596 763.104 336.841C760.024 334.172 756.085 332.703 752.009 332.703H721.843V366.582Z" fill="black" fill-rule="evenodd"></path>
-<path d="M1034.58 294.914V479.946H1101.03C1152.13 479.946 1193.55 438.525 1193.55 387.43C1193.55 336.335 1152.13 294.914 1101.03 294.914H1034.58ZM1149.24 387.43C1149.24 414.057 1127.66 435.643 1101.03 435.643H1078.88V339.218H1101.03C1127.66 339.218 1149.24 360.803 1149.24 387.43Z" fill="black"></path>
-<path d="M1217 294.914V479.946H1283.46C1334.55 479.946 1375.97 438.525 1375.97 387.43C1375.97 336.335 1334.55 294.914 1283.46 294.914H1217ZM1331.67 387.43C1331.67 414.057 1310.08 435.643 1283.46 435.643H1261.3V339.218H1283.46C1310.08 339.218 1331.67 360.803 1331.67 387.43Z" fill="black"></path>
-<path d="M1261.64 153.633L1315.63 76H1370.3L1302.76 165.116L1376.63 264.218H1319.25L1261.64 182.59V264.218H1217.37V76H1261.64V153.633Z" fill="black"></path>
-<path d="M1083.76 160.294H1093.16C1102.98 160.294 1110.51 158.332 1115.76 154.406C1121.01 150.48 1123.64 144.837 1123.64 137.476C1123.64 130.115 1121.01 124.472 1115.76 120.546C1110.51 116.621 1102.98 114.658 1093.16 114.658H1083.76V160.294ZM1193.24 262.609H1131.26L1083.76 191.455V262.609H1033.97V77.6086H1111.45C1122.11 77.6086 1131.43 79.1626 1139.39 82.2704C1147.35 85.2147 1153.86 89.3041 1158.94 94.5384C1164.19 99.7727 1168.09 105.825 1170.63 112.695C1173.34 119.565 1174.69 126.926 1174.69 134.777C1174.69 148.844 1171.14 160.294 1164.03 169.127C1157.08 177.797 1146.75 183.685 1133.04 186.793L1193.24 262.609Z" fill="black"></path>
-<path d="M700.387 85.652L717.359 196.829L738.247 85.652H758.612L779.5 196.829L796.471 85.652H823.234L793.86 257.783H767.751L748.429 158.02L729.108 257.783H702.998L673.625 85.652H700.387Z" fill="black"></path>
-<path d="M705.916 79.2175L718.016 158.486L732.909 79.2175H763.951L778.844 158.486L790.945 79.2175H830.86L799.291 264.217H762.443L748.431 191.862L734.417 264.217H697.569L666 79.2175H705.916ZM708.43 251.347H723.802L742.113 156.797H754.748L773.06 251.347H788.432L815.609 92.0866H801.999L785.862 197.8L773.177 198.017L753.274 92.0866H743.586L723.684 198.017L710.999 197.8L694.861 92.0866H681.251L708.43 251.347Z" fill="black"></path>
-<defs>
-<filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="668.383" id="filter0_f_10197_3" width="668.384" x="132.577" y="276.465">
-<feflood flood-opacity="0" result="BackgroundImageFix"></feflood>
-<feblend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"></feblend>
-<fegaussianblur result="effect1_foregroundBlur_10197_3" stdDeviation="77.0026"></fegaussianblur>
-</filter>
-<lineargradient gradientUnits="userSpaceOnUse" id="paint0_linear_10197_3" x1="280" x2="280" y1="0" y2="560">
-<stop stop-color="#0EC8A9"></stop>
-<stop offset="1" stop-color="#01C886"></stop>
-</lineargradient>
-<lineargradient gradientUnits="userSpaceOnUse" id="paint1_linear_10197_3" x1="233.295" x2="495.264" y1="155.096" y2="608.839">
-<stop stop-color="white" stop-opacity="0.8"></stop>
-<stop offset="0.437689" stop-color="white"></stop>
-</lineargradient>
-<clippath id="clip0_10197_3">
-<rect fill="white" height="560" rx="120.842" width="560"></rect>
-</clippath>
-</defs>
-</svg></div>
-  <div class="eyebrow" style="margin-top:10px">智能硬件白皮书</div>
-  <h1>WorkBuddy 智能硬件接入白皮书</h1>
-  <div style="margin:20px 0 0; padding:18px 22px; background:rgba(255,255,255,0.10); border-left:3px solid rgba(255,255,255,0.85); border-radius:8px; backdrop-filter:blur(6px); max-width:820px">
-    <div style="font-size:19px; line-height:1.55; color:#fff; font-weight:600">让每一台硬件都拥有<span style="color:#ffe355">"听懂人话、能思考、可执行"</span>的 AI 灵魂。</div>
-  </div>
-</section>
-
-<!-- ============================================================
-    第 0 章 · 摘要（Executive Summary）
-============================================================= -->
-<h2 class="chap" id="ch0"><span class="num">0</span>摘要</h2>
-
-<!-- 行业趋势 · 极简一行流程条 -->
-<div style="margin:18px 0 10px">
-  <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
-    <div style="width:32px; height:2px; background:#1457ff"></div>
-    <div style="font-size:12px; letter-spacing:.15em; color:#1457ff; font-weight:700">AI 与硬件融合是下一站</div>
-  </div>
-  <div style="display:flex; align-items:center; gap:0; background:#f7f9fc; border:1px solid #e5e7ec; border-radius:10px; padding:14px 18px; flex-wrap:wrap">
-    <div style="display:flex; align-items:baseline; gap:6px">
-      <span style="font-size:11px; color:#8a8f99">阶段一</span>
-      <span style="font-size:14px; font-weight:600; color:#5c6270">生成内容</span>
-      <span style="font-size:11.5px; color:#8a8f99">（Chat / 写作 / 出图）</span>
-    </div>
-    <span style="margin:0 12px; color:#c8ccd4">→</span>
-    <div style="display:flex; align-items:baseline; gap:6px">
-      <span style="font-size:11px; color:#8a8f99">阶段二</span>
-      <span style="font-size:14px; font-weight:600; color:#5c6270">完成任务</span>
-      <span style="font-size:11.5px; color:#8a8f99">（Agent / 规划 / 执行）</span>
-    </div>
-    <span style="margin:0 12px; color:#1457ff; font-weight:700">→</span>
-    <div style="display:flex; align-items:baseline; gap:6px">
-      <span style="font-size:11px; color:#1457ff; font-weight:700">阶段三·当下</span>
-      <span style="font-size:14.5px; font-weight:700; color:#1457ff">走进硬件</span>
-      <span style="font-size:11.5px; color:#1457ff">（感知·执行·记忆）</span>
-    </div>
-  </div>
+<h2 class="resource-volume-heading" id="hardware-2-1"><span class="num">0</span>摘要</h2><p class="wb-intro-summary">AI 与硬件融合是下一站：从生成内容（Chat / 写作 / 出图），到完成任务（Agent / 规划 / 执行），再到走进硬件（感知、执行、记忆）。</p><div class="wb-intro-summary"><p><strong>WorkBuddy 的角色：</strong>不做硬件，专注 AI 底座，开放“听懂、思考、执行、记忆”的智能内核。</p><ul><li><strong>好卖：</strong>硬件伙伴通过 AI 体验跳出参数同质化，支撑品牌溢价。</li><li><strong>好用：</strong>主动服务与跨端记忆让 AI 随身待命，提升使用频率。</li></ul></div><h3 id="hardware-3-1">0.1 关键数据与市场表现</h3><div class="table-scroll"><table>
+<thead><tr><th>指标</th><th>说明</th><th>数据来源</th></tr></thead>
+<tbody>
+<tr><td><b>日活第一</b></td><td>中国使用最广的效率 AI 智能体</td><td>腾讯 2026 Q1 财报</td></tr>
+<tr><td><b>2097 万 / 月</b></td><td>PC 端月访问量，2026 年 3 月 885 万 → 6 月 2097 万，约为 TRAE 的 1.63 倍</td><td>易观分析</td></tr>
+<tr><td><b>2.2 万+ Skills</b></td><td>生态扩展能力，内置混元 / DeepSeek / GLM / Kimi / MiniMax 等多模型</td><td>WorkBuddy 平台</td></tr>
+</tbody>
+</table></div><p>注：以上数据用于说明 WorkBuddy 的市场表现与生态规模，部分数据引自第三方机构（易观分析）或已公开披露的腾讯财报；具体口径与更新时点以原始来源为准。</p><h3 id="hardware-3-2">0.2 白皮书如何使用</h3><div class="grid g4">
+<div class="card"><div class="k">Part 1</div><h3>战略与商务</h3><p>面向品牌方 / 商务负责人 / 产品负责人。回答"是什么、为什么合作、怎么合作、怎么结算"。</p></div>
+<div class="card"><div class="k">Part 2</div><h3>产品与能力</h3><p>面向产品负责人。回答"WorkBuddy 到底具备哪些产品能力、哪些场景怎么组合"。</p></div>
+<div class="card"><div class="k">Part 3</div><h3>技术接入</h3><p>面向技术负责人与开发者。回答"OAuth 授权、API、端到端、常见问题怎么落地"。</p></div>
+<div class="card"><div class="k">Part 4</div><h3>落地与运营</h3><p>面向 PMO / 运营 / 市场。回答"上线之后怎么持续经营、售后、看数、联合宣发"。</p></div>
+</div><div class="part-banner">
+<div class="cap">第一部分</div>
+<div class="ttl">战略与商务 —— 面向品牌方、商务负责人、产品负责人</div>
+</div><h2 class="resource-volume-heading" id="hardware-2-2"><span class="num">1</span>WorkBuddy 简介</h2><p>WorkBuddy 是 7×24 云端 AI 智能助理平台，能够听懂用户意图、进行规划思考并调度工具完成执行，可在手机、PC、浏览器、小程序、智能硬件等多端被调用，为用户提供一致的 AI 体验与跨端记忆。</p><h3 id="hardware-3-3">1.1 六大核心能力</h3><div class="grid g3">
+<div class="card t"><h3>智能规划执行</h3><p>拆分复杂任务、自主编排工具、串联多轮推理，把用户目标转化为可执行的动作序列。</p></div>
+<div class="card g"><h3>本地环境操作</h3><p>在用户 PC 上读取文件、调用桌面应用、生成产物落地，实现端云协同。</p></div>
+<div class="card p"><h3>多智能体协同</h3><p>多个子智能体并行分工、结果聚合，一人即拥有一个 AI 团队。</p></div>
+<div class="card o"><h3>跨端遥控</h3><p>手机、硬件、Web 唤起同一 thread，任务与产物在多端无缝续接。</p></div>
+<div class="card r"><h3>定时与主动服务</h3><p>7×24 定时任务，实现盯盘、日程、舆情、内容生产等主动能力。</p></div>
+<div class="card t"><h3>生态扩展</h3><p>7 万余 Skills、Connector 与 MCP 组件即插即用，能力随生态持续演进。</p></div>
+</div><h3 id="hardware-3-4">1.2 用户画像速览</h3><p>本节为定性画像示意 · 具体数据口径以官方 PR 披露为准。</p><div class="persona-grid">
+<div class="persona-card pc-1">
+<div class="accent"></div>
+<div class="label">主力人群</div>
+<div class="big">18–35 岁<br/>中青年</div>
+<div class="desc">女性占比略高<br/>大专及以上学历为主</div>
 </div>
-
-<!-- 角色 + 三重价值 · 左右合并卡片 -->
-<div style="display:grid; grid-template-columns:1.05fr 2fr; gap:14px; margin:14px 0 6px">
-  <!-- 左：WorkBuddy 的角色 -->
-  <div style="padding:18px; background:#fff; border:1.5px solid #1457ff; border-radius:10px; position:relative">
-    <div style="position:absolute; top:-11px; left:16px; background:#1457ff; color:#fff; padding:3px 10px; border-radius:12px; font-size:10.5px; letter-spacing:.08em; font-weight:700">WORKBUDDY 的角色</div>
-    <div style="display:flex; gap:10px; margin-top:6px; margin-bottom:10px">
-      <div style="flex:1; padding:8px 10px; background:#faf3f3; border-radius:6px; text-align:center">
-        <div style="font-size:11px; color:#8a8f99">不做</div>
-        <div style="font-size:15px; font-weight:700; color:#c94a4a">硬件</div>
-      </div>
-      <div style="flex:1; padding:8px 10px; background:#eef4ff; border-radius:6px; text-align:center">
-        <div style="font-size:11px; color:#1457ff">专注</div>
-        <div style="font-size:15px; font-weight:700; color:#1457ff">AI 底座</div>
-      </div>
-    </div>
-    <div style="font-size:12.5px; color:#5c6270; line-height:1.6">开放"听懂·思考·执行·记忆"的智能内核，<b style="color:#1a2033">让专业的人做专业的事</b>。</div>
-  </div>
-  <!-- 右：硬件方两问 · WB 两答 -->
-  <div style="padding:16px 14px 14px; background:linear-gradient(180deg,#fafbfd 0%,#f4f7ff 100%); border:1.5px dashed #1457ff; border-radius:12px; position:relative">
-    <div style="position:absolute; top:-11px; left:16px; background:#1457ff; color:#fff; padding:3px 12px; border-radius:12px; font-size:11px; letter-spacing:.1em; font-weight:700">FOR 硬件伙伴 · 两个关心的问题</div>
-    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:4px">
-      <div style="padding:14px; background:#fff; border:1px solid #e5e7ec; border-radius:10px; border-top:3px solid #1457ff">
-        <div style="font-size:10.5px; color:#1457ff; letter-spacing:.12em; font-weight:700; margin-bottom:4px">Q1 · 好卖</div>
-        <div style="font-size:14px; font-weight:700; color:#1a2033; margin-bottom:6px">跳出同质化</div>
-        <div style="font-size:12px; color:#5c6270; line-height:1.55">从参数比拼转向<b style="color:#1a2033">"AI 灵魂"叙事</b>，一次接入拉开体验层次、支撑品牌溢价。</div>
-      </div>
-      <div style="padding:14px; background:#fff; border:1px solid #e5e7ec; border-radius:10px; border-top:3px solid #0b8f65">
-        <div style="font-size:10.5px; color:#0b8f65; letter-spacing:.12em; font-weight:700; margin-bottom:4px">Q2 · 好用</div>
-        <div style="font-size:14px; font-weight:700; color:#1a2033; margin-bottom:6px">从摆设变高频</div>
-        <div style="font-size:12px; color:#5c6270; line-height:1.55">主动服务 + 跨端记忆让 AI <b style="color:#1a2033">随身待命</b>，日活与调用同步提升。</div>
-      </div>
-    </div>
-  </div>
+<div class="persona-card pc-2">
+<div class="accent"></div>
+<div class="label">城市分布</div>
+<div class="big">一线 /<br/>新一线为主</div>
+<div class="desc">多数用户位于高线级城市</div>
 </div>
-
-<h3 class="sec">0.1 关键数据与市场表现</h3>
-<table>
-  <thead><tr><th style="width:200px">指标</th><th>说明</th><th style="width:140px">数据来源</th></tr></thead>
-  <tbody>
-    <tr><td><b>日活第一</b></td><td>中国使用最广的效率 AI 智能体</td><td>腾讯 2026 Q1 财报</td></tr>
-    <tr><td><b>2097 万 / 月</b></td><td>PC 端月访问量，2026 年 3 月 885 万 → 6 月 2097 万，约为 TRAE 的 1.63 倍</td><td>易观分析</td></tr>
-    <tr><td><b>2.2 万+ Skills</b></td><td>生态扩展能力，内置混元 / DeepSeek / GLM / Kimi / MiniMax 等多模型</td><td>WorkBuddy 平台</td></tr>
-  </tbody>
-</table>
-<p style="font-size:12px; color:#8a8f99; margin-top:8px">注：以上数据用于说明 WorkBuddy 的市场表现与生态规模，部分数据引自第三方机构（易观分析）或已公开披露的腾讯财报；具体口径与更新时点以原始来源为准。</p>
-
-<h3 class="sec">0.2 白皮书如何使用</h3>
-<div class="grid g4">
-  <div class="card"><div class="k">Part 1</div><h3>战略与商务</h3><p>面向品牌方 / 商务负责人 / 产品负责人。回答"是什么、为什么合作、怎么合作、怎么结算"。</p></div>
-  <div class="card"><div class="k">Part 2</div><h3>产品与能力</h3><p>面向产品负责人。回答"WorkBuddy 到底具备哪些产品能力、哪些场景怎么组合"。</p></div>
-  <div class="card"><div class="k">Part 3</div><h3>技术接入</h3><p>面向技术负责人与开发者。回答"OAuth 授权、API、端到端、常见问题怎么落地"。</p></div>
-  <div class="card"><div class="k">Part 4</div><h3>落地与运营</h3><p>面向 PMO / 运营 / 市场。回答"上线之后怎么持续经营、售后、看数、联合宣发"。</p></div>
+<div class="persona-card pc-3">
+<div class="accent"></div>
+<div class="label">使用频次</div>
+<div class="big">高频<br/>使用</div>
+<div class="desc">活跃用户月内使用频次高<br/>付费用户频次更高</div>
 </div>
-
-<hr>
-
-<!-- ============================================================
-    第一部分 · 战略与商务
-============================================================= -->
-<div class="part-banner">
-  <div class="cap">第一部分</div>
-  <div class="ttl">战略与商务 —— 面向品牌方、商务负责人、产品负责人</div>
+<div class="persona-card pc-4">
+<div class="accent"></div>
+<div class="label">付费用户价值</div>
+<div class="big">深度<br/>使用</div>
+<div class="desc">付费用户工具调用显著<br/>高于免费用户</div>
 </div>
-
-
-<h2 class="chap" id="ch1"><span class="num">1</span>WorkBuddy 简介</h2>
-<p>WorkBuddy 是 7×24 云端 AI 智能助理平台，能够听懂用户意图、进行规划思考并调度工具完成执行，可在手机、PC、浏览器、小程序、智能硬件等多端被调用，为用户提供一致的 AI 体验与跨端记忆。</p>
-
-<h3 class="sec">1.1 六大核心能力</h3>
-<div class="grid g3">
-  <div class="card t"><h3>智能规划执行</h3><p>拆分复杂任务、自主编排工具、串联多轮推理，把用户目标转化为可执行的动作序列。</p></div>
-  <div class="card g"><h3>本地环境操作</h3><p>在用户 PC 上读取文件、调用桌面应用、生成产物落地，实现端云协同。</p></div>
-  <div class="card p"><h3>多智能体协同</h3><p>多个子智能体并行分工、结果聚合，一人即拥有一个 AI 团队。</p></div>
-  <div class="card o"><h3>跨端遥控</h3><p>手机、硬件、Web 唤起同一 thread，任务与产物在多端无缝续接。</p></div>
-  <div class="card r"><h3>定时与主动服务</h3><p>7×24 定时任务，实现盯盘、日程、舆情、内容生产等主动能力。</p></div>
-  <div class="card t"><h3>生态扩展</h3><p>7 万余 Skills、Connector 与 MCP 组件即插即用，能力随生态持续演进。</p></div>
+<div class="persona-card pc-5">
+<div class="accent"></div>
+<div class="label">任务结构</div>
+<div class="big">生产型<br/>任务为主</div>
+<div class="desc">以生产执行类任务为主<br/>资讯学习类为辅</div>
 </div>
-
-
-<h3 class="sec">1.2 用户画像速览</h3>
-<p style="font-size:12px; color:#8a8f99; margin-bottom:14px">本节为定性画像示意 · 具体数据口径以官方 PR 披露为准。</p>
-
-
-
-<div class="persona-grid">
-  <div class="persona-card pc-1">
-    <div class="accent"></div>
-    <div class="label">主力人群</div>
-    <div class="big" style="font-size:24px; line-height:1.25">18–35 岁<br>中青年</div>
-    <div class="desc">女性占比略高<br>大专及以上学历为主</div>
-  </div>
-  <div class="persona-card pc-2">
-    <div class="accent"></div>
-    <div class="label">城市分布</div>
-    <div class="big" style="font-size:24px; line-height:1.25">一线 /<br>新一线为主</div>
-    <div class="desc">多数用户位于高线级城市</div>
-  </div>
-  <div class="persona-card pc-3">
-    <div class="accent"></div>
-    <div class="label">使用频次</div>
-    <div class="big" style="font-size:24px; line-height:1.25">高频<br>使用</div>
-    <div class="desc">活跃用户月内使用频次高<br>付费用户频次更高</div>
-  </div>
-  <div class="persona-card pc-4">
-    <div class="accent"></div>
-    <div class="label">付费用户价值</div>
-    <div class="big" style="font-size:24px; line-height:1.25">深度<br>使用</div>
-    <div class="desc">付费用户工具调用显著<br>高于免费用户</div>
-  </div>
-  <div class="persona-card pc-5">
-    <div class="accent"></div>
-    <div class="label">任务结构</div>
-    <div class="big" style="font-size:24px; line-height:1.25">生产型<br>任务为主</div>
-    <div class="desc">以生产执行类任务为主<br>资讯学习类为辅</div>
-  </div>
-  <div class="persona-card pc-6">
-    <div class="accent"></div>
-    <div class="label">核心职业分布</div>
-    <div class="big" style="font-size:20px; line-height:1.3">软件 · 运营 · 分析</div>
-    <div class="desc">Top 5：软件工程师、运营、商业分析、内容创作者、研究人员</div>
-  </div>
+<div class="persona-card pc-6">
+<div class="accent"></div>
+<div class="label">核心职业分布</div>
+<div class="big">软件 · 运营 · 分析</div>
+<div class="desc">Top 5：软件工程师、运营、商业分析、内容创作者、研究人员</div>
 </div>
-
-<div class="callout" style="margin-top:16px"><p><b>硬件合作视角：</b>目标用户以 <b>一二线中青年、高学历、生产型任务导向</b> 为主，与 <b>AI PC / 平板、智能眼镜、便携录音笔、桌面陪伴设备</b> 的目标人群高度重合。</p></div>
-
-<hr>
-
-<h2 class="chap" id="ch2"><span class="num">2</span>硬件接入的价值</h2>
-<p>AI 行业的竞争阶段正在从"谁的模型强"转向"谁先进入真实场景"。在两百亿量级的智能设备成为新一代信息入口的过程中，硬件为 WorkBuddy 提供了眼睛、耳朵与执行末端，WorkBuddy 为硬件补上了云端大脑与决策能力。</p>
-
-<h3 class="sec">2.1 Agent 价值的三重放大</h3>
-<div class="grid g3">
-  <div class="card t"><h3>触点密度</h3><p>硬件的存在提高了 AI 被触达的频率与场景覆盖，使 AI 从"打开使用"变成"随身待命"。</p></div>
-  <div class="card g"><h3>上下文深度</h3><p>硬件的传感器能提供位置、时间、语音、画面等现场上下文，使 AI 的判断建立在真实世界之上。</p></div>
-  <div class="card p"><h3>执行半径</h3><p>硬件的显示、播报、录制与联动能力，让 AI 的决策能够落到物理世界，不再停留在屏幕之内。</p></div>
+</div><div class="callout"><p><b>硬件合作视角：</b>目标用户以 <b>一二线中青年、高学历、生产型任务导向</b> 为主，与 <b>AI PC / 平板、智能眼镜、便携录音笔、桌面陪伴设备</b> 的目标人群高度重合。</p></div><h2 class="resource-volume-heading" id="hardware-2-3"><span class="num">2</span>硬件接入的价值</h2><p>AI 行业的竞争阶段正在从"谁的模型强"转向"谁先进入真实场景"。在两百亿量级的智能设备成为新一代信息入口的过程中，硬件为 WorkBuddy 提供了眼睛、耳朵与执行末端，WorkBuddy 为硬件补上了云端大脑与决策能力。</p><h3 id="hardware-3-5">2.1 Agent 价值的三重放大</h3><div class="grid g3">
+<div class="card t"><h3>触点密度</h3><p>硬件的存在提高了 AI 被触达的频率与场景覆盖，使 AI 从"打开使用"变成"随身待命"。</p></div>
+<div class="card g"><h3>上下文深度</h3><p>硬件的传感器能提供位置、时间、语音、画面等现场上下文，使 AI 的判断建立在真实世界之上。</p></div>
+<div class="card p"><h3>执行半径</h3><p>硬件的显示、播报、录制与联动能力，让 AI 的决策能够落到物理世界，不再停留在屏幕之内。</p></div>
+</div><h3 id="hardware-3-6">2.2 硬件三痛点与解法</h3><div class="pain-solve">
+<div class="pain"><b>同质化严重</b>硬件参数持续拉满，缺少 AI 灵魂与差异化卖点，产品难以形成溢价。</div>
+<div class="solve"><b>注入 AI 灵魂</b>自研 Agent 内核开箱即用，用户体验立刻拉开层次。</div>
+</div><div class="pain-solve">
+<div class="pain"><b>AI 沦为摆设</b>功能堆叠但缺乏日常调用理由，用户使用频率低、粘性弱。</div>
+<div class="solve"><b>主动服务</b>定时任务与跨端记忆把 AI 变成高频刚需，日活与调用同步提升。</div>
+</div><div class="pain-solve">
+<div class="pain"><b>自建 AI 成本高</b>组建 AI 团队、追赶模型迭代的周期长、投入大、跟不上节奏。</div>
+<div class="solve"><b>标准 SDK 与 API</b>快速接入、零 AI 团队即可上线，随 WorkBuddy 同频升级。</div>
+</div><h2 class="resource-volume-heading" id="hardware-2-4"><span class="num">3</span>六类硬件触点</h2><p>按用户动作而非品类进行分类，让不同形态的硬件共享同一套 AI 能力包。</p><p>六类触点按<b>硬件为 WorkBuddy 提供的信息与能力</b>统一划分：<b>听 / 看 / 记 / 戴</b>是四类<b>信息入口</b>——分别接入声音、影像、对话记录、体感数据；<b>聊 / 协</b>是两类<b>能力出口</b>——让 AI 拥有可交互的实体与可调度的执行终端。</p><div class="grid g6">
+<div class="touch b"><div class="icon">听</div><div class="name">听</div><div class="desc">耳机 · 实时声音</div></div>
+<div class="touch b"><div class="icon">看</div><div class="name">看</div><div class="desc">眼镜 · 现场影像</div></div>
+<div class="touch p"><div class="icon">戴</div><div class="name">戴</div><div class="desc">手表手环 · 体感数据</div></div>
+<div class="touch o"><div class="icon">记</div><div class="name">记</div><div class="desc">录音设备 · 对话记录</div></div>
+<div class="touch r"><div class="icon">聊</div><div class="name">聊</div><div class="desc">陪伴硬件 · 对话交互</div></div>
+<div class="touch g"><div class="icon">协</div><div class="name">协</div><div class="desc">办公外设 · 任务执行</div></div>
+</div><h3 id="hardware-3-7">3.1 触点对应的硬件形态</h3><div class="table-scroll"><table>
+<thead><tr><th>触点</th><th>硬件形态</th><th>典型场景</th></tr></thead>
+<tbody>
+<tr><td>听</td><td>耳机、真无线耳机（TWS）</td><td>随身语音助理、会议摘要、翻译</td></tr>
+<tr><td>看</td><td>眼镜、头显</td><td>提词、临场信息核查、AR 提示</td></tr>
+<tr><td>戴</td><td>手表、手环</td><td>抬腕速览、健康与日程提醒、消息速答</td></tr>
+<tr><td>记</td><td>录音笔、智能麦克风</td><td>会议纪要、访谈整理、内容沉淀</td></tr>
+<tr><td>聊</td><td>桌宠、桌面机器人</td><td>桌面陪伴、语音问答、日程提醒</td></tr>
+<tr><td>协</td><td>工卡、便携终端、车机</td><td>差旅办公、行车助理、现场作业</td></tr>
+</tbody>
+</table></div><h2 class="resource-volume-heading" id="hardware-2-5"><span class="num">4</span>合作模式及范本</h2><p>本章解决品牌方在启动合作前最关心的三个问题：<b>该选哪种模式、这种模式长什么样、商业上怎么走</b>。章节安排：4.1 三方协同、4.2 模式决策图、4.3 四种模式详解、4.4 合作范本、4.5 商业模式与结算。</p><h3 id="hardware-3-8">4.1 三方协同</h3><p>硬件合作是 <b>WorkBuddy · 硬件伙伴 · 终端用户</b> 的三方共赢，每一方各司其职、各得其所。</p><div class="tri-role">
+<div class="rc a">
+<div class="role"><div class="dot">W</div><div class="name">WorkBuddy</div></div>
+<div class="block"><div class="lbl">带来什么</div><div class="txt">Agent 内核、标准 SDK 与 API、Skills 生态、品牌与技术背书、长期迭代与维保</div></div>
+<div class="block"><div class="lbl">得到什么</div><div class="txt">与硬件伙伴共建的场景与用户资产、生态影响力、合理的能力对价</div></div>
 </div>
-
-<h3 class="sec">2.2 硬件三痛点与解法</h3>
-<div class="pain-solve">
-  <div class="pain"><b>同质化严重</b>硬件参数持续拉满，缺少 AI 灵魂与差异化卖点，产品难以形成溢价。</div>
-  <div class="solve"><b>注入 AI 灵魂</b>自研 Agent 内核开箱即用，用户体验立刻拉开层次。</div>
+<div class="rc b">
+<div class="role"><div class="dot">H</div><div class="name">硬件伙伴</div></div>
+<div class="block"><div class="lbl">带来什么</div><div class="txt">硬件形态与工业设计、真实使用场景、渠道触达能力、用户与运营经验</div></div>
+<div class="block"><div class="lbl">得到什么</div><div class="txt">开箱即用的 AI 灵魂、差异化产品卖点、多元的商业增收路径、快速落地不重复造轮子</div></div>
 </div>
-<div class="pain-solve">
-  <div class="pain"><b>AI 沦为摆设</b>功能堆叠但缺乏日常调用理由，用户使用频率低、粘性弱。</div>
-  <div class="solve"><b>主动服务</b>定时任务与跨端记忆把 AI 变成高频刚需，日活与调用同步提升。</div>
+<div class="rc c">
+<div class="role"><div class="dot">U</div><div class="name">终端用户</div></div>
+<div class="block"><div class="lbl">得到什么</div><div class="txt">开箱即得的 AI 助理、跨端一致的记忆与工作节奏、数字员工级的日常协同</div></div>
+<div class="block"><div class="lbl">回馈什么</div><div class="txt">真实场景中的使用反馈，驱动硬件与 AI 能力共同持续迭代</div></div>
 </div>
-<div class="pain-solve">
-  <div class="pain"><b>自建 AI 成本高</b>组建 AI 团队、追赶模型迭代的周期长、投入大、跟不上节奏。</div>
-  <div class="solve"><b>标准 SDK 与 API</b>快速接入、零 AI 团队即可上线，随 WorkBuddy 同频升级。</div>
-</div>
-
-
-<h2 class="chap" id="ch3"><span class="num">3</span>六类硬件触点</h2>
-<p>按用户动作而非品类进行分类，让不同形态的硬件共享同一套 AI 能力包。</p>
-
-<p style="font-size:13px; color:#5b6270; line-height:1.7; margin:10px 0 12px">六类触点按<b style="color:#1a2033">硬件为 WorkBuddy 提供的信息与能力</b>统一划分：<b style="color:#1a2033">听 / 看 / 记 / 戴</b>是四类<b style="color:#1a2033">信息入口</b>——分别接入声音、影像、对话记录、体感数据；<b style="color:#1a2033">聊 / 协</b>是两类<b style="color:#1a2033">能力出口</b>——让 AI 拥有可交互的实体与可调度的执行终端。</p>
-<div class="grid g6">
-  <div class="touch b"><div class="icon">听</div><div class="name">听</div><div class="desc">耳机 · 实时声音</div></div>
-  <div class="touch b"><div class="icon">看</div><div class="name">看</div><div class="desc">眼镜 · 现场影像</div></div>
-  <div class="touch p"><div class="icon">戴</div><div class="name">戴</div><div class="desc">手表手环 · 体感数据</div></div>
-  <div class="touch o"><div class="icon">记</div><div class="name">记</div><div class="desc">录音设备 · 对话记录</div></div>
-  <div class="touch r"><div class="icon">聊</div><div class="name">聊</div><div class="desc">陪伴硬件 · 对话交互</div></div>
-  <div class="touch g"><div class="icon">协</div><div class="name">协</div><div class="desc">办公外设 · 任务执行</div></div>
-</div>
-
-<h3 class="sec">3.1 触点对应的硬件形态</h3>
-<table>
-  <thead><tr><th style="width:14%">触点</th><th>硬件形态</th><th>典型场景</th></tr></thead>
-  <tbody>
-    <tr><td>听</td><td>耳机、真无线耳机（TWS）</td><td>随身语音助理、会议摘要、翻译</td></tr>
-    <tr><td>看</td><td>眼镜、头显</td><td>提词、临场信息核查、AR 提示</td></tr>
-    <tr><td>戴</td><td>手表、手环</td><td>抬腕速览、健康与日程提醒、消息速答</td></tr>
-    <tr><td>记</td><td>录音笔、智能麦克风</td><td>会议纪要、访谈整理、内容沉淀</td></tr>
-    <tr><td>聊</td><td>桌宠、桌面机器人</td><td>桌面陪伴、语音问答、日程提醒</td></tr>
-    <tr><td>协</td><td>工卡、便携终端、车机</td><td>差旅办公、行车助理、现场作业</td></tr>
-  </tbody>
-</table>
-
-
-<h2 class="chap" id="ch4"><span class="num">4</span>合作模式及范本</h2>
-<p>本章解决品牌方在启动合作前最关心的三个问题：<b>该选哪种模式、这种模式长什么样、商业上怎么走</b>。章节安排：4.1 三方协同、4.2 模式决策图、4.3 四种模式详解、4.4 合作范本、4.5 商业模式与结算。</p>
-
-<h3 class="sec" id="ch4-1">4.1 三方协同</h3>
-<p style="color:#5b6270; margin-bottom:16px">硬件合作是 <b>WorkBuddy · 硬件伙伴 · 终端用户</b> 的三方共赢，每一方各司其职、各得其所。</p>
-
-
-
-<div class="tri-role">
-  <div class="rc a">
-    <div class="role"><div class="dot">W</div><div class="name">WorkBuddy</div></div>
-    <div class="block"><div class="lbl">带来什么</div><div class="txt">Agent 内核、标准 SDK 与 API、Skills 生态、品牌与技术背书、长期迭代与维保</div></div>
-    <div class="block"><div class="lbl">得到什么</div><div class="txt">与硬件伙伴共建的场景与用户资产、生态影响力、合理的能力对价</div></div>
-  </div>
-  <div class="rc b">
-    <div class="role"><div class="dot">H</div><div class="name">硬件伙伴</div></div>
-    <div class="block"><div class="lbl">带来什么</div><div class="txt">硬件形态与工业设计、真实使用场景、渠道触达能力、用户与运营经验</div></div>
-    <div class="block"><div class="lbl">得到什么</div><div class="txt">开箱即用的 AI 灵魂、差异化产品卖点、多元的商业增收路径、快速落地不重复造轮子</div></div>
-  </div>
-  <div class="rc c">
-    <div class="role"><div class="dot">U</div><div class="name">终端用户</div></div>
-    <div class="block"><div class="lbl">得到什么</div><div class="txt">开箱即得的 AI 助理、跨端一致的记忆与工作节奏、数字员工级的日常协同</div></div>
-    <div class="block"><div class="lbl">回馈什么</div><div class="txt">真实场景中的使用反馈，驱动硬件与 AI 能力共同持续迭代</div></div>
-  </div>
-</div>
-
-
-<h3 class="sec" id="ch4-2">4.2 模式决策图</h3>
-<p>合作归属由三个问题决定：<b>谁进谁</b>（硬件装进 WorkBuddy 还是 WorkBuddy 装进硬件）、<b>品牌与入口归谁</b>、<b>用户与数据分成归谁</b>。沿下图从左向右回答，即可落到对应模式。</p>
-
-<div class="callout" style="background:#f5f7fb; border-left:4px solid var(--brand); padding:18px 22px; margin:18px 0">
-<pre style="background:transparent; border:0; padding:0; margin:0; font-family:ui-monospace,monospace; font-size:13px; line-height:1.9; color:#0b2545">
+</div><h3 id="hardware-3-9">4.2 模式决策图</h3><p>合作归属由三个问题决定：<b>谁进谁</b>（硬件装进 WorkBuddy 还是 WorkBuddy 装进硬件）、<b>品牌与入口归谁</b>、<b>用户与数据分成归谁</b>。沿下图从左向右回答，即可落到对应模式。</p><div class="callout">
+<pre>
        ┌─ 品牌与入口归 WB ─────┬─ 客户端预装 ──────────→ ① 硬件预装
        │                      └─ 硬件作为 WB 外延 ────→ ③ 硬件连接到 WB
 硬件产品 ─┤
        └─ 品牌归合作方 ───────┬─ 常规集成 &amp; 品牌自有（双入口）→ ② 双向打通
                               └─ 能力集成 &amp; 品牌专区 ────────→ ④ Connector 集成
 </pre>
+</div><div class="table-scroll"><table>
+<thead><tr><th>维度</th><th>① 硬件预装</th><th>② 双向打通（主推）</th><th>③ 硬件连接到 WB</th><th>④ 能力集成+品牌专区</th></tr></thead>
+<tbody>
+<tr><td><b>装入方向</b></td><td>WB 装进硬件</td><td>WB ↔ App 双向互通</td><td>硬件装进 WB</td><td>能力 / 品牌装进 WB</td></tr>
+<tr><td><b>品牌 / 入口</b></td><td>WB 主导</td><td>合作方 + WB 双入口</td><td>WB</td><td>合作方品牌（WB 内品牌专区）</td></tr>
+<tr><td><b>集成深度</b></td><td>应用层预装</td><td>OpenAPI 双向调用</td><td>Claw / Connector / 蓝牙</td><td>Skill + Connector + 专家</td></tr>
+<tr><td><b>典型硬件</b></td><td>PC / 平板 / 云桌面 / 终端</td><td>有自有 App 的智能设备</td><td>键盘 / 鼠标 / 耳机等外设</td><td>SaaS / 工具 / 内容伙伴</td></tr>
+<tr><td><b>独家性</b></td><td>非独家</td><td>非独家</td><td>头部精选，收敛不铺量</td><td>非独家</td></tr>
+</tbody>
+</table></div><h3 id="hardware-3-10">4.3 四种模式详解</h3><div>
+<b>怎么选：</b>从已回收的伙伴意向看，近七成伙伴以「双向打通」起步——接入轻、双方各有入口、可快速验证效果；「硬件预装」适合有海量设备的大厂，通常涉及 WorkBuddy 侧付费或分成投入，门槛与周期相对较高。实践中两种组合最常见：<b>双向打通 + 能力集成/品牌专区</b>、<b>双向打通 + 硬件连接</b>，可同时推进、分阶段落地。
+</div><div class="grid g2">
+<div class="mode">
+<header><div class="idx">1</div><div class="n">硬件预装</div></header>
+<div class="row"><div class="k">谁适合</div><div class="v">有海量存量设备/用户、有系统级或应用商店分发入口的 PC / 平板 / 终端大厂</div></div>
+<div class="row"><div class="k">怎么做</div><div class="v">WB 预装到伙伴设备 + 应用市场分发；无自有算力 → WB 提供产品（可按行业场景做定制版）、厂商集采会员；有自有算力 → 算力分成或 license 结算</div></div>
+<div class="row"><div class="k">代表方向</div><div class="v">PC / 平板品牌预装合作、云桌面预装、传统终端定制</div></div>
+<div class="row"><div class="k">说明</div><div class="v">该模式涉及角色较多，决策周期长；建议设备体量有限的团队优先从模式②起步验证</div></div>
 </div>
-
-<table>
-  <thead><tr><th style="width:16%">维度</th><th>① 硬件预装</th><th>② 双向打通（主推）</th><th>③ 硬件连接到 WB</th><th>④ 能力集成+品牌专区</th></tr></thead>
-  <tbody>
-    <tr><td><b>装入方向</b></td><td>WB 装进硬件</td><td>WB ↔ App 双向互通</td><td>硬件装进 WB</td><td>能力 / 品牌装进 WB</td></tr>
-    <tr><td><b>品牌 / 入口</b></td><td>WB 主导</td><td>合作方 + WB 双入口</td><td>WB</td><td>合作方品牌（WB 内品牌专区）</td></tr>
-    <tr><td><b>集成深度</b></td><td>应用层预装</td><td>OpenAPI 双向调用</td><td>Claw / Connector / 蓝牙</td><td>Skill + Connector + 专家</td></tr>
-    <tr><td><b>典型硬件</b></td><td>PC / 平板 / 云桌面 / 终端</td><td>有自有 App 的智能设备</td><td>键盘 / 鼠标 / 耳机等外设</td><td>SaaS / 工具 / 内容伙伴</td></tr>
-    <tr><td><b>独家性</b></td><td>非独家</td><td>非独家</td><td>头部精选，收敛不铺量</td><td>非独家</td></tr>
-  </tbody>
-</table>
-
-<h3 class="sec" id="ch4-3">4.3 四种模式详解</h3>
-
-<div style="margin:8px 0 14px; padding:12px 16px; background:#f0fbf5; border-left:3px solid #0b8f65; border-radius:6px; font-size:13px; color:#2a4a3a; line-height:1.7">
-  <b style="color:#1a2033">怎么选：</b>从已回收的伙伴意向看，近七成伙伴以「双向打通」起步——接入轻、双方各有入口、可快速验证效果；「硬件预装」适合有海量设备的大厂，通常涉及 WorkBuddy 侧付费或分成投入，门槛与周期相对较高。实践中两种组合最常见：<b>双向打通 + 能力集成/品牌专区</b>、<b>双向打通 + 硬件连接</b>，可同时推进、分阶段落地。
+<div class="mode">
+<header><div class="idx">2</div><div class="n">双向打通（OpenAPI 双向调用）<span>主推</span></div></header>
+<div class="row"><div class="k">谁适合</div><div class="v">有自有 App、希望与 WB 双向能力互通、共同放大用户体验的伙伴</div></div>
+<p>怎么做（两条同步推进，共同构成"双向打通"）</p>
+<div>
+<div>
+<span>① 伙伴 App 调 WB</span>——伙伴通过 WorkBuddy Task OpenAPI 接入自有 App，用户在<span>伙伴 App 里调用 WB 能力</span>
 </div>
-
-<div class="grid g2">
-
-  <div class="mode">
-    <header><div class="idx" style="background:#0b8f65">1</div><div class="n">硬件预装</div></header>
-    <div class="row"><div class="k">谁适合</div><div class="v">有海量存量设备/用户、有系统级或应用商店分发入口的 PC / 平板 / 终端大厂</div></div>
-    <div class="row"><div class="k">怎么做</div><div class="v">WB 预装到伙伴设备 + 应用市场分发；无自有算力 → WB 提供产品（可按行业场景做定制版）、厂商集采会员；有自有算力 → 算力分成或 license 结算</div></div>
-    <div class="row"><div class="k">代表方向</div><div class="v">PC / 平板品牌预装合作、云桌面预装、传统终端定制</div></div>
-    <div class="row"><div class="k">说明</div><div class="v" style="color:#8a5a10">该模式涉及角色较多，决策周期长；建议设备体量有限的团队优先从模式②起步验证</div></div>
-  </div>
-
-  <div class="mode">
-    <header><div class="idx" style="background:#1457ff">2</div><div class="n">双向打通（OpenAPI 双向调用）<span style="font-size:11px; background:#1457ff; color:#fff; padding:1px 8px; border-radius:10px; margin-left:6px; vertical-align:middle">主推</span></div></header>
-    <div class="row"><div class="k">谁适合</div><div class="v">有自有 App、希望与 WB 双向能力互通、共同放大用户体验的伙伴</div></div>
-    <p style="margin:10px 0 6px; font-weight:600; color:#1a2033">怎么做（两条同步推进，共同构成"双向打通"）</p>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px">
-      <div style="padding:12px 14px; background:#f4f7ff; border:1px solid #dce4ff; border-radius:8px; font-size:12.5px; line-height:1.6; color:#333">
-        <span style="color:#1457ff; font-weight:700">① 伙伴 App 调 WB</span>——伙伴通过 WorkBuddy Task OpenAPI 接入自有 App，用户在<span style="font-weight:600">伙伴 App 里调用 WB 能力</span>
+<div>
+<span>② 用户在 WB 内使用伙伴 App 信息资产</span>——伙伴 App 通过自家 OpenAPI 向 WB 开放，用户可在 <span>WB 里访问和使用其在伙伴 App 中的信息资产</span>
+</div>
+</div>
+<p>💡 主推形态是两条都要做——两侧入口都能触达对方能力，用户体验和商业价值最大化。</p>
+</div>
+<div class="mode">
+<header><div class="idx">3</div><div class="n">硬件连接到 WB</div></header>
+<div class="row"><div class="k">谁适合</div><div class="v">具备 WiFi / 蓝牙能力的设备厂商，希望硬件连接到 WB，用户在 WB 上完成设备使用与管理</div></div>
+<div class="row"><div class="k">怎么做</div><div class="v">硬件主要通过 WB 给用户交付软件服务，绑定到 WB 账侧，成为可调度物理节点。<b>只和行业内头部重点伙伴合作。</b></div></div>
+<div class="row"><div class="k">代表方向</div><div class="v">键盘、鼠标、耳机等</div></div>
+</div>
+<div class="mode">
+<header><div class="idx">4</div><div class="n">能力集成 + 品牌专区</div></header>
+<div class="row"><div class="k">谁适合</div><div class="v">有软件能力 / 内容 / 服务的 SaaS、工具、内容伙伴，希望以更轻的方式融入 WB 生态并建立品牌入口</div></div>
+<p>怎么做</p>
+<div>
+<div>
+<span>能力集成（三种技术形态任选或组合）</span>：
+        <ul>
+<li><b>Skill</b>：伙伴写好的 agent skill 挂进 WB</li>
+<li><b>Connector</b>：伙伴数据/能力做成 connector（形态类似现有的飞书、TAPD、企业微信连接器）</li>
+<li><b>专家</b>：伙伴以"专家"或"专家团"身份入驻 WB 专家中心</li>
+</ul>
+</div>
+<div>
+<span>品牌专区</span>：可为伙伴配置独立的品牌落地页 / 专区，承载伙伴自有的一批专家 + skill + connector 组合，作为品牌方在 WB 内的独立入口。
       </div>
-      <div style="padding:12px 14px; background:#f4f7ff; border:1px solid #dce4ff; border-radius:8px; font-size:12.5px; line-height:1.6; color:#333">
-        <span style="color:#1457ff; font-weight:700">② 用户在 WB 内使用伙伴 App 信息资产</span>——伙伴 App 通过自家 OpenAPI 向 WB 开放，用户可在 <span style="font-weight:600">WB 里访问和使用其在伙伴 App 中的信息资产</span>
-      </div>
-    </div>
-    <p style="margin:0; font-size:12px; color:#666">💡 主推形态是两条都要做——两侧入口都能触达对方能力，用户体验和商业价值最大化。</p>
-  </div>
-
-  <div class="mode">
-    <header><div class="idx" style="background:#c26a13">3</div><div class="n">硬件连接到 WB</div></header>
-    <div class="row"><div class="k">谁适合</div><div class="v">具备 WiFi / 蓝牙能力的设备厂商，希望硬件连接到 WB，用户在 WB 上完成设备使用与管理</div></div>
-    <div class="row"><div class="k">怎么做</div><div class="v">硬件主要通过 WB 给用户交付软件服务，绑定到 WB 账侧，成为可调度物理节点。<b>只和行业内头部重点伙伴合作。</b></div></div>
-    <div class="row"><div class="k">代表方向</div><div class="v">键盘、鼠标、耳机等</div></div>
-  </div>
-
-  <div class="mode">
-    <header><div class="idx" style="background:#6b4cf6">4</div><div class="n">能力集成 + 品牌专区</div></header>
-    <div class="row"><div class="k">谁适合</div><div class="v">有软件能力 / 内容 / 服务的 SaaS、工具、内容伙伴，希望以更轻的方式融入 WB 生态并建立品牌入口</div></div>
-    <p style="margin:10px 0 6px; font-weight:600; color:#1a2033">怎么做</p>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px">
-      <div style="padding:12px 14px; background:#f7f5ff; border:1px solid #e8e0ff; border-radius:8px; font-size:12.5px; line-height:1.65; color:#333">
-        <span style="color:#6b4cf6; font-weight:700">能力集成（三种技术形态任选或组合）</span>：
-        <ul style="margin:6px 0 0; padding-left:16px">
-          <li><b>Skill</b>：伙伴写好的 agent skill 挂进 WB</li>
-          <li><b>Connector</b>：伙伴数据/能力做成 connector（形态类似现有的飞书、TAPD、企业微信连接器）</li>
-          <li><b>专家</b>：伙伴以"专家"或"专家团"身份入驻 WB 专家中心</li>
-        </ul>
-      </div>
-      <div style="padding:12px 14px; background:#f7f5ff; border:1px solid #e8e0ff; border-radius:8px; font-size:12.5px; line-height:1.65; color:#333">
-        <span style="color:#6b4cf6; font-weight:700">品牌专区</span>：可为伙伴配置独立的品牌落地页 / 专区，承载伙伴自有的一批专家 + skill + connector 组合，作为品牌方在 WB 内的独立入口。
-      </div>
-    </div>
-    <div class="row"><div class="k">代表方向</div><div class="v">SaaS / 工具 / 内容伙伴</div></div>
-  </div>
-
 </div>
-
-<h3 class="sec" id="ch4-4">4.4 合作范本</h3>
-<p>下列范本以品牌方视角描述一次合作从"识别自己"到"看见样子"的完整路径。<span style="color:#888; font-size:12.5px">（以下商务结构为框架性参考，具体金额与结算周期以双方协议为准。）</span></p>
-
-<div class="grid g2">
-  <div class="card g">
-    <h3>范本 A · 双向打通（模式②）</h3>
-    <p><b>合作方画像</b>：有自有 App 的智能设备品牌，希望用户在自家 App 里调用 WB 能力，同时让 WB 用户也能访问其 App 内的信息资产。</p>
-    <p><b>合作形态</b>：伙伴通过 Task OpenAPI 接入 WB 能力到自有 App；同时通过自家 OpenAPI 向 WB 开放数据能力。</p>
-    <p><b>产品长这样</b>：用户在伙伴 App 里直接用 WB AI 完成任务 → 同时在 WB 里也能查看和操作伙伴 App 的信息资产。</p>
-    <p><b>商务结构</b>：会员/积分采购 + 算力用量结算。</p>
-  </div>
-  <div class="card p">
-    <h3>范本 B · 外设接入 WB（模式③）</h3>
-    <p><b>合作方画像</b>：键盘、鼠标、耳机等外设厂商，具备蓝牙/WiFi 能力，希望设备成为 WB 生态的物理外延。</p>
-    <p><b>合作形态</b>：厂商提供 Claw / Connector 能力，用户在 WB 内联动硬件；支持蓝牙轻量化接入。</p>
-    <p><b>产品长这样</b>：用户在 WB 里直接操控外设（语音输入/快捷调用/状态查询）→ 硬件状态与 WB 账号绑定。</p>
-    <p><b>商务结构</b>：品牌授权 + 算力分成 + 联合投放。</p>
-  </div>
+<div class="row"><div class="k">代表方向</div><div class="v">SaaS / 工具 / 内容伙伴</div></div>
 </div>
-
-<h3 class="sec" id="ch4-5">4.5 商业模式与结算</h3>
-<div style="margin:10px 0 14px; padding:12px 16px; background:#f7f9fc; border-left:3px solid #1457ff; border-radius:6px; font-size:13px; color:#31415d; line-height:1.65">
-  <b style="color:#1a2033">开放生态：</b>WorkBuddy 对硬件伙伴开放自助接入——伙伴可通过开放平台（open.workbuddy.cn）自助申请并完成接入（目前已有多家伙伴接入成功），接入环节目前不收费；完成接入的企业即可对外说明「适配 WorkBuddy」「兼容 WorkBuddy」。<br><b style="color:#1a2033">基本原则：</b>硬件方卖硬件、WorkBuddy 卖 AI 能力，各自独立结算。针对不同类型的硬件方，WorkBuddy 开放以下三种商业路径，可单选或组合。
+</div><h3 id="hardware-3-11">4.4 合作范本</h3><p>下列范本以品牌方视角描述一次合作从"识别自己"到"看见样子"的完整路径。<span>（以下商务结构为框架性参考，具体金额与结算周期以双方协议为准。）</span></p><div class="grid g2">
+<div class="card g">
+<h3>范本 A · 双向打通（模式②）</h3>
+<p><b>合作方画像</b>：有自有 App 的智能设备品牌，希望用户在自家 App 里调用 WB 能力，同时让 WB 用户也能访问其 App 内的信息资产。</p>
+<p><b>合作形态</b>：伙伴通过 Task OpenAPI 接入 WB 能力到自有 App；同时通过自家 OpenAPI 向 WB 开放数据能力。</p>
+<p><b>产品长这样</b>：用户在伙伴 App 里直接用 WB AI 完成任务 → 同时在 WB 里也能查看和操作伙伴 App 的信息资产。</p>
+<p><b>商务结构</b>：会员/积分采购 + 算力用量结算。</p>
 </div>
-<div class="grid g2">
-  <div class="card">
-    <h3>三种可开放的商业路径</h3>
-    <ul>
-      <li><b>个人会员 / 积分采购</b>：硬件方预付采购 WorkBuddy 会员额度或积分，随硬件赠送 / 兑换给最终用户，按采购规模阶梯定价。<b>会员 / 积分仅限赠送给最终用户，不可转售、不可对外售卖</b></li>
-      <li><b>算力 / 能力分成</b>：硬件设备侧调用 WorkBuddy Agent 能力，按 Task 用量 / API 调用量 / 订阅席位分成</li>
-      <li><b>品牌授权费</b>：适用于「WorkBuddy 认证」标识授权、战略集成、定制专区，一次性授权费或年度授权费</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>结算基本口径</h3>
-    <ul>
-      <li>会员 / 积分采购为预付费模式，采购需卷入商务对接，企业需具备腾讯云 UIN</li>
-      <li><b>权益发放必须通过 API 直充至最终用户账号，不允许直接向用户发放兑换码</b></li>
-      <li>用户身份基于 OAuth 授权后颁发的 open_id 唯一标识</li>
-      <li>合作数据每月对账，看板实时可查 <span style="color:#888">（详见 §13.2）</span></li>
-      <li>具体阶梯价、分成比例、授权费通过商务窗口一事一议</li>
-      <li>商业化分级、二次付费规则与数据分账说明，以开放平台官网公示及双方商务协议为准</li>
-    </ul>
-  </div>
+<div class="card p">
+<h3>范本 B · 外设接入 WB（模式③）</h3>
+<p><b>合作方画像</b>：键盘、鼠标、耳机等外设厂商，具备蓝牙/WiFi 能力，希望设备成为 WB 生态的物理外延。</p>
+<p><b>合作形态</b>：厂商提供 Claw / Connector 能力，用户在 WB 内联动硬件；支持蓝牙轻量化接入。</p>
+<p><b>产品长这样</b>：用户在 WB 里直接操控外设（语音输入/快捷调用/状态查询）→ 硬件状态与 WB 账号绑定。</p>
+<p><b>商务结构</b>：品牌授权 + 算力分成 + 联合投放。</p>
 </div>
-<div class="grid g2">
-  <div class="card g">
-    <h3>合作分层（L1 / L2）</h3>
-    <ul>
-      <li><b>L1 接入级</b>：开放平台自助申请、完成接入即达，目前不收费；可对外使用「适配 WorkBuddy」「兼容 WorkBuddy」文字表述（不加 Logo、不做认证标识）</li>
-      <li><b>L2 认证级</b>：需通过 WorkBuddy 官方认证标准，通过后可在产品与包装上使用「WorkBuddy 认证」标识，并签署品牌授权合同</li>
-      <li>如需联合 PR，或在产品上打 Logo 等品牌合作，请联系商务进一步沟通</li>
-      <li style="color:#888; font-size:12.5px">品牌标识与对外表述细则详见 §12.5</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>合作边界</h3>
-    <ul>
-      <li><b>硬件售卖</b>：硬件的定价、渠道与销售由合作方自主运营，WorkBuddy 不干涉、不参与</li>
-      <li><b>软件保障</b>：软件相关部分（账号、权益、能力稳定性）由 WorkBuddy 做好保障</li>
-      <li><b>联合 PR / 市场宣推</b>：开放，需双方评估后执行</li>
-      <li><b>联名款</b>：不在常规分层内，如有诉求单独沟通</li>
-    </ul>
-  </div>
+</div><h3 id="hardware-3-12">4.5 商业模式与结算</h3><div>
+<b>开放生态：</b>WorkBuddy 对硬件伙伴开放自助接入——伙伴可通过开放平台（open.workbuddy.cn）自助申请并完成接入（目前已有多家伙伴接入成功），接入环节目前不收费；完成接入的企业即可对外说明「适配 WorkBuddy」「兼容 WorkBuddy」。<br/><b>基本原则：</b>硬件方卖硬件、WorkBuddy 卖 AI 能力，各自独立结算。针对不同类型的硬件方，WorkBuddy 开放以下三种商业路径，可单选或组合。
+</div><div class="grid g2">
+<div class="card">
+<h3>三种可开放的商业路径</h3>
+<ul>
+<li><b>个人会员 / 积分采购</b>：硬件方预付采购 WorkBuddy 会员额度或积分，随硬件赠送 / 兑换给最终用户，按采购规模阶梯定价。<b>会员 / 积分仅限赠送给最终用户，不可转售、不可对外售卖</b></li>
+<li><b>算力 / 能力分成</b>：硬件设备侧调用 WorkBuddy Agent 能力，按 Task 用量 / API 调用量 / 订阅席位分成</li>
+<li><b>品牌授权费</b>：适用于「WorkBuddy 认证」标识授权、战略集成、定制专区，一次性授权费或年度授权费</li>
+</ul>
 </div>
-
-<div class="callout"><p>本白皮书第三部分介绍的技术接入方案（OAuth 2.0 授权、Assistants 与 Tasks 接口、本机能力）主要服务于模式②与模式③，同样可用于模式① App 内的 AI 能力实现。模式④ Connector 有独立的接入文档。具体商务口径与计费方式，通过 WorkBuddy 开放平台商务窗口一事一议。</p></div>
-
-<hr>
-
-<!-- ============================================================
-    第二部分 · 产品与能力
-============================================================= -->
-<div class="part-banner">
-  <div class="cap">第二部分</div>
-  <div class="ttl">产品与能力 —— 面向产品负责人与解决方案</div>
+<div class="card">
+<h3>结算基本口径</h3>
+<ul>
+<li>会员 / 积分采购为预付费模式，采购需卷入商务对接，企业需具备腾讯云 UIN</li>
+<li><b>权益发放必须通过 API 直充至最终用户账号，不允许直接向用户发放兑换码</b></li>
+<li>用户身份基于 OAuth 授权后颁发的 open_id 唯一标识</li>
+<li>合作数据每月对账，看板实时可查 <span>（详见 §13.2）</span></li>
+<li>具体阶梯价、分成比例、授权费通过商务窗口一事一议</li>
+<li>商业化分级、二次付费规则与数据分账说明，以开放平台官网公示及双方商务协议为准</li>
+</ul>
 </div>
-
-<!-- Ch5 产品能力全景 -->
-<h2 class="chap" id="ch5"><span class="num">5</span>产品能力全景</h2>
-<p>本章从产品视角说明 WorkBuddy 到底能提供什么样的 AI 能力。硬件伙伴据此判断能与自身产品组合出什么样的用户体验、需要接入哪几层能力。</p>
-
-<h3 class="sec" id="ch5-1">5.1 Agent 架构总览</h3>
-<p>WorkBuddy 的核心是一个云端 Agent 引擎，遵循「理解 → 规划 → 记忆 → 执行 → 调度」五层结构，硬件伙伴只需通过标准 API 调用整个引擎，不必自研任何一层。</p>
-
-<div class="grid g5">
-  <div class="card t"><h3>理解</h3><p>多模态输入解析：文本 / 语音 / 图像 / 屏幕，结合硬件上下文识别意图。</p></div>
-  <div class="card g"><h3>规划</h3><p>目标拆解为多步任务，自主选择工具链与执行顺序。</p></div>
-  <div class="card p"><h3>记忆</h3><p>跨端长期记忆 + 会话短期记忆，Thread 在多端连续续接。</p></div>
-  <div class="card o"><h3>执行</h3><p>调用 Skills / Connector / MCP 完成实际动作，产出可交付物。</p></div>
-  <div class="card r"><h3>调度</h3><p>7×24 定时任务、事件触发、多智能体协同分工。</p></div>
+</div><div class="grid g2">
+<div class="card g">
+<h3>合作分层（L1 / L2）</h3>
+<ul>
+<li><b>L1 接入级</b>：开放平台自助申请、完成接入即达，目前不收费；可对外使用「适配 WorkBuddy」「兼容 WorkBuddy」文字表述（不加 Logo、不做认证标识）</li>
+<li><b>L2 认证级</b>：需通过 WorkBuddy 官方认证标准，通过后可在产品与包装上使用「WorkBuddy 认证」标识，并签署品牌授权合同</li>
+<li>如需联合 PR，或在产品上打 Logo 等品牌合作，请联系商务进一步沟通</li>
+<li>品牌标识与对外表述细则详见 §12.5</li>
+</ul>
 </div>
-
-<h3 class="sec" id="ch5-2">5.2 云端 Agent 能力</h3>
-<p>WorkBuddy 云端面向硬件伙伴开放的核心能力如下。硬件通过 OAuth 授权+API 调用即可拥有以下能力包：</p>
-<table>
-  <thead><tr><th style="width:22%">能力类别</th><th>典型能力</th><th>适用触点</th></tr></thead>
-  <tbody>
-    <tr><td><b>对话与问答</b></td><td>多轮对话、复杂推理、知识问答、翻译</td><td>听 · 看 · 聊</td></tr>
-    <tr><td><b>任务规划执行</b></td><td>目标拆解、工具调度、多步执行、产出物生成</td><td>协 · 记</td></tr>
-    <tr><td><b>信息处理</b></td><td>纪要生成、摘要、结构化提取、内容改写</td><td>听 · 记</td></tr>
-    <tr><td><b>主动服务</b></td><td>定时任务、日程提醒、盯盘、内容监控</td><td>聊 · 协</td></tr>
-    <tr><td><b>跨端记忆</b></td><td>用户偏好、历史 Thread、跨设备无缝续接</td><td>全部</td></tr>
-    <tr><td><b>本机联动</b></td><td>调用用户 PC 桌面能力、读取文件、执行本机任务</td><td>协</td></tr>
-  </tbody>
-</table>
-
-<h3 class="sec" id="ch5-3">5.3 端云协同机制</h3>
-<div class="grid g3">
-  <div class="card"><h3>端侧</h3><p>硬件负责传感（拾音/成像/位置）、唤起、播报、显示、快速反应。轻量能力可端侧完成，敏感数据可本地处理。</p></div>
-  <div class="card"><h3>云端</h3><p>WorkBuddy 云端负责理解、规划、记忆、复杂推理与工具调度，承担 AI 内核。</p></div>
-  <div class="card"><h3>协同</h3><p>端触发 → 云决策 → 端执行；跨端 Thread 无缝续接，用户从眼镜切到手机能继续同一件事。</p></div>
+<div class="card">
+<h3>合作边界</h3>
+<ul>
+<li><b>硬件售卖</b>：硬件的定价、渠道与销售由合作方自主运营，WorkBuddy 不干涉、不参与</li>
+<li><b>软件保障</b>：软件相关部分（账号、权益、能力稳定性）由 WorkBuddy 做好保障</li>
+<li><b>联合 PR / 市场宣推</b>：开放，需双方评估后执行</li>
+<li><b>联名款</b>：不在常规分层内，如有诉求单独沟通</li>
+</ul>
 </div>
-
-<h3 class="sec" id="ch5-4">5.4 生态扩展体系</h3>
-<p>WorkBuddy 的能力不是封闭黑盒，而是通过三层可扩展生态持续进化，硬件伙伴既能享受生态红利，也可以贡献自己的能力入生态。</p>
-<div class="grid g3">
-  <div class="card t"><h3>Skills</h3><p>7 万余个 Skills 即插即用，覆盖办公、内容、生活、行业垂直等场景。硬件用户直接受益。</p></div>
-  <div class="card g"><h3>专家 / 助理</h3><p>预置角色化助理与专家（写作/研究/数据/客服等），硬件可选定专家作为默认助理。</p></div>
-  <div class="card p"><h3>Connector / MCP</h3><p>连接外部系统与设备的标准协议，硬件能力可作为 Connector 融入生态，被其他用户和场景调用。</p></div>
+</div><div class="callout"><p>本白皮书第三部分介绍的技术接入方案（OAuth 2.0 授权、Assistants 与 Tasks 接口、本机能力）主要服务于模式②与模式③，同样可用于模式① App 内的 AI 能力实现。模式④ Connector 有独立的接入文档。具体商务口径与计费方式，通过 WorkBuddy 开放平台商务窗口一事一议。</p></div><div class="part-banner">
+<div class="cap">第二部分</div>
+<div class="ttl">产品与能力 —— 面向产品负责人与解决方案</div>
+</div><h2 class="resource-volume-heading" id="hardware-2-6"><span class="num">5</span>产品能力全景</h2><p>本章从产品视角说明 WorkBuddy 到底能提供什么样的 AI 能力。硬件伙伴据此判断能与自身产品组合出什么样的用户体验、需要接入哪几层能力。</p><h3 id="hardware-3-13">5.1 Agent 架构总览</h3><p>WorkBuddy 的核心是一个云端 Agent 引擎，遵循「理解 → 规划 → 记忆 → 执行 → 调度」五层结构，硬件伙伴只需通过标准 API 调用整个引擎，不必自研任何一层。</p><div class="grid g5">
+<div class="card t"><h3>理解</h3><p>多模态输入解析：文本 / 语音 / 图像 / 屏幕，结合硬件上下文识别意图。</p></div>
+<div class="card g"><h3>规划</h3><p>目标拆解为多步任务，自主选择工具链与执行顺序。</p></div>
+<div class="card p"><h3>记忆</h3><p>跨端长期记忆 + 会话短期记忆，Thread 在多端连续续接。</p></div>
+<div class="card o"><h3>执行</h3><p>调用 Skills / Connector / MCP 完成实际动作，产出可交付物。</p></div>
+<div class="card r"><h3>调度</h3><p>7×24 定时任务、事件触发、多智能体协同分工。</p></div>
+</div><h3 id="hardware-3-14">5.2 云端 Agent 能力</h3><p>WorkBuddy 云端面向硬件伙伴开放的核心能力如下。硬件通过 OAuth 授权+API 调用即可拥有以下能力包：</p><div class="table-scroll"><table>
+<thead><tr><th>能力类别</th><th>典型能力</th><th>适用触点</th></tr></thead>
+<tbody>
+<tr><td><b>对话与问答</b></td><td>多轮对话、复杂推理、知识问答、翻译</td><td>听 · 看 · 聊</td></tr>
+<tr><td><b>任务规划执行</b></td><td>目标拆解、工具调度、多步执行、产出物生成</td><td>协 · 记</td></tr>
+<tr><td><b>信息处理</b></td><td>纪要生成、摘要、结构化提取、内容改写</td><td>听 · 记</td></tr>
+<tr><td><b>主动服务</b></td><td>定时任务、日程提醒、盯盘、内容监控</td><td>聊 · 协</td></tr>
+<tr><td><b>跨端记忆</b></td><td>用户偏好、历史 Thread、跨设备无缝续接</td><td>全部</td></tr>
+<tr><td><b>本机联动</b></td><td>调用用户 PC 桌面能力、读取文件、执行本机任务</td><td>协</td></tr>
+</tbody>
+</table></div><h3 id="hardware-3-15">5.3 端云协同机制</h3><div class="grid g3">
+<div class="card"><h3>端侧</h3><p>硬件负责传感（拾音/成像/位置）、唤起、播报、显示、快速反应。轻量能力可端侧完成，敏感数据可本地处理。</p></div>
+<div class="card"><h3>云端</h3><p>WorkBuddy 云端负责理解、规划、记忆、复杂推理与工具调度，承担 AI 内核。</p></div>
+<div class="card"><h3>协同</h3><p>端触发 → 云决策 → 端执行；跨端 Thread 无缝续接，用户从眼镜切到手机能继续同一件事。</p></div>
+</div><h3 id="hardware-3-16">5.4 生态扩展体系</h3><p>WorkBuddy 的能力不是封闭黑盒，而是通过三层可扩展生态持续进化，硬件伙伴既能享受生态红利，也可以贡献自己的能力入生态。</p><div class="grid g3">
+<div class="card t"><h3>Skills</h3><p>7 万余个 Skills 即插即用，覆盖办公、内容、生活、行业垂直等场景。硬件用户直接受益。</p></div>
+<div class="card g"><h3>专家 / 助理</h3><p>预置角色化助理与专家（写作/研究/数据/客服等），硬件可选定专家作为默认助理。</p></div>
+<div class="card p"><h3>Connector / MCP</h3><p>连接外部系统与设备的标准协议，硬件能力可作为 Connector 融入生态，被其他用户和场景调用。</p></div>
+</div><h3 id="hardware-3-17">5.5 硬件专区产品逻辑</h3><p>WorkBuddy 在客户端与云端为合作硬件提供「硬件专区」承接，形成完整的产品-用户闭环。</p><div class="table-scroll"><table>
+<thead><tr><th>环节</th><th>产品形态</th><th>合作方受益</th></tr></thead>
+<tbody>
+<tr><td><b>设备绑定</b></td><td>扫码/OAuth 一键绑定用户账号与设备，支持多设备并存</td><td>用户资产沉淀在 WB 账号内，跨端可用</td></tr>
+<tr><td><b>专区入口</b></td><td>WorkBuddy 端内独立品牌专区，展示合作硬件、专属能力、场景玩法</td><td>获得高质量私域用户曝光</td></tr>
+<tr><td><b>官网展示</b></td><td>WorkBuddy 官网设硬件生态专区，集中展示合作硬件品类与代表机型</td><td>获得官网公域曝光与官方生态背书</td></tr>
+<tr><td><b>联动能力</b></td><td>专区可挂载合作方定制 Skills / 场景 / 内容</td><td>差异化用户体验；与其他生态能力联动</td></tr>
+<tr><td><b>管理后台</b></td><td>合作方专属管理后台：设备管理、用户绑定、能力配置、数据看板</td><td>自主运营、实时洞察</td></tr>
+</tbody>
+</table></div><p>官网硬件生态专区仅露出<b>已完成接入并通过 WorkBuddy 审核的深度合作客户</b>（认证级及以上，详见 §4.5 合作分层）；展示范围、排序与更新节奏以官网公示为准。</p><h2 class="resource-volume-heading" id="hardware-2-7"><span class="num">6</span>场景能力矩阵</h2><p>按第 3 章「听看戴记聊协」六触点，横向拆解每一触点下 WorkBuddy 能提供的 AI 能力组合，硬件伙伴据此选择自己需要拉起的能力包。</p><div class="table-scroll"><table>
+<thead>
+<tr><th>触点</th><th>典型硬件</th><th>核心场景</th><th>推荐能力组合</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><b>听</b></td><td>耳机、真无线耳机（TWS）</td>
+<td>随身语音助理、通话实时翻译、会议摘要播报</td>
+<td>对话问答 + 翻译 + 纪要摘要 + 主动提醒</td>
+</tr>
+<tr>
+<td><b>看</b></td><td>眼镜、头显</td>
+<td>提词、实时翻译、图像识别、临场问答、AR 提示</td>
+<td>多模态理解 + 对话问答 + 翻译 + 知识调用</td>
+</tr>
+<tr>
+<td><b>戴</b></td><td>手表、手环</td>
+<td>抬腕速览、健康与日程提醒、消息速答、运动中语音问答</td>
+<td>主动服务 + 对话问答 + 跨端记忆 + 本机联动</td>
+</tr>
+<tr>
+<td><b>记</b></td><td>录音笔、智能麦克风</td>
+<td>会议纪要、访谈整理、结构化沉淀、内容改写</td>
+<td>ASR + 纪要摘要 + 结构化提取 + 内容改写</td>
+</tr>
+<tr>
+<td><b>聊</b></td><td>桌宠、桌面机器人</td>
+<td>陪伴对话、语音问答、日程提醒、家庭助理</td>
+<td>对话问答 + 主动服务 + 跨端记忆 + 情感化 TTS</td>
+</tr>
+<tr>
+<td><b>协</b></td><td>工卡、便携终端、车机</td>
+<td>差旅办公、行车助理、现场作业、任务协同</td>
+<td>任务规划执行 + 本机联动 + 主动服务 + 跨端记忆</td>
+</tr>
+</tbody>
+</table></div><div>
+<b>办公与 ToB 场景同样在接入范围内：</b>会议空间与智能会议室（会议纪要、实时同传、待办跟进）、办公本与生产力终端（本机文档处理、日程协同）、企业工卡与服务台（任务分派、知识问答）等。此类场景通常走「双向打通」或「能力集成」；涉及企业数据的，建议同时参考第 11 章的数据安全说明。
+</div><h3 id="hardware-3-18">6.1 接入后能做什么：六个已跑通的真实场景</h3><p>下面六个场景均来自已完成接入或正在对接的伙伴实践，覆盖「看 / 聊 / 记 / 听」四类触点。为便于阅读，品牌与产品名做了匿名化处理。</p><div class="table-scroll"><table>
+<thead>
+<tr><th>伙伴类型</th><th>接入方式</th><th>接入前 → 接入后</th><th>用到的能力</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><b>某 AI 记忆眼镜品牌</b><br/><span>触点「看」</span></td>
+<td>模式②<br/>双向打通</td>
+<td><b>接入前：</b>戴镜开会，会后靠人工整理、分发决议<br/><b>接入后：</b>眼镜持续感知现场、自动提炼会议决议与待办并同步至 WorkBuddy；事后一句「调取上周 A 项目会议决议，生成方案」即产出草案</td>
+<td>多模态采集 + 纪要摘要 + 跨端记忆 + 任务规划执行</td>
+</tr>
+<tr>
+<td><b>某光波导 AR 眼镜品牌</b><br/><span>触点「看」</span></td>
+<td>模式②<br/>票据互换</td>
+<td><b>接入前：</b>眼镜只能看和听，复杂任务还得回到手机或电脑<br/><b>接入后：</b>眼镜端唤起，长任务交 WorkBuddy 云端执行，进度与结果直接回显在镜片上，当场确认、继续追问</td>
+<td>多模态理解 + 云端任务管理 + 产物回显</td>
+</tr>
+<tr>
+<td><b>某桌面陪伴硬件品牌</b><br/><span>触点「聊」</span></td>
+<td>模式②<br/>官方认证硬件</td>
+<td><b>接入前：</b>Agent 常驻后台，进度看不见、存在感弱<br/><b>接入后：</b>喊一声或轻触即派活，圆屏实时同步任务进度、当天完成情况与三项重点待办；需人工决策时主动推送建议，确认后继续执行</td>
+<td>对话问答 + 主动服务 + 任务状态回显 + 情感化语音</td>
+</tr>
+<tr>
+<td><b>某智能录音卡品牌</b><br/><span>触点「记」</span></td>
+<td>模式② + 模式④<br/>厂商官方 MCP 双向</td>
+<td><b>接入前：</b>录完只得到一份纪要，后续方案还要自己写<br/><b>接入后：</b>App 内直接调用 WorkBuddy 生成方案 / PPT / 报告；WorkBuddy 经授权检索历史录音与转写作为工作上下文，对话资产可反复复用</td>
+<td>语音转写 + 纪要摘要 + 结构化提取 + 内容生成 + 数据回调</td>
+</tr>
+<tr>
+<td><b>某无线麦克风品牌</b><br/><span>触点「听」</span></td>
+<td>轻量接入<br/>快捷键 / 语音映射</td>
+<td><b>接入前：</b>麦克风只做拾音，想法还得敲键盘落成任务<br/><b>接入后：</b>机身按键单击唤醒语音、双击发送，说一句即转成 WorkBuddy 任务，电脑端随即开工；连电脑后还可被调度为语音输入</td>
+<td>声学采集 + 语音识别 + 对话问答 + 本机联动</td>
+</tr>
+<tr>
+<td><b>某翻译耳机品牌</b><br/><span>触点「听」</span></td>
+<td>模式②<br/>双向打通</td>
+<td><b>接入前：</b>同传结束只解决「听懂」，纪要与跟进另做<br/><b>接入后：</b>耳机负责听、译、记，WorkBuddy 拆解汇总生成会谈总结、跟进邮件与待办；还可聚合多场会话产出周报 / 月报</td>
+<td>翻译 + 跨语言理解 + 纪要摘要 + 任务规划执行</td>
+</tr>
+</tbody>
+</table></div><p>同一伙伴可按能力叠加多条路径：先用最轻的快捷键 / 语音入口跑通，再按需叠加 App 植入（模式②）与数据回调（能力集成），逐步加深（选择方式见 §4.3）。</p><div class="part-banner">
+<div class="cap">第三部分</div>
+<div class="ttl">技术接入 —— 面向技术负责人与开发者</div>
+</div><h2 class="resource-volume-heading" id="hardware-2-8"><span class="num">7</span>开放能力概述</h2><p>WorkBuddy 开放平台以 REST API 形式暴露四类能力：助理管理、任务生命周期、本机执行、积分与签到。所有接口以用户身份调用，凭据是 OAuth 2.0 授权后颁发的个人票据（access_token）。</p><div>
+<div>
+<span>已正式上线</span>
+<b>WorkBuddy 开放平台已开放接入</b>
 </div>
-
-<h3 class="sec" id="ch5-5">5.5 硬件专区产品逻辑</h3>
-<p>WorkBuddy 在客户端与云端为合作硬件提供「硬件专区」承接，形成完整的产品-用户闭环。</p>
-<table>
-  <thead><tr><th style="width:22%">环节</th><th>产品形态</th><th>合作方受益</th></tr></thead>
-  <tbody>
-    <tr><td><b>设备绑定</b></td><td>扫码/OAuth 一键绑定用户账号与设备，支持多设备并存</td><td>用户资产沉淀在 WB 账号内，跨端可用</td></tr>
-    <tr><td><b>专区入口</b></td><td>WorkBuddy 端内独立品牌专区，展示合作硬件、专属能力、场景玩法</td><td>获得高质量私域用户曝光</td></tr>
-    <tr><td><b>官网展示</b></td><td>WorkBuddy 官网设硬件生态专区，集中展示合作硬件品类与代表机型</td><td>获得官网公域曝光与官方生态背书</td></tr>
-    <tr><td><b>联动能力</b></td><td>专区可挂载合作方定制 Skills / 场景 / 内容</td><td>差异化用户体验；与其他生态能力联动</td></tr>
-    <tr><td><b>管理后台</b></td><td>合作方专属管理后台：设备管理、用户绑定、能力配置、数据看板</td><td>自主运营、实时洞察</td></tr>
-  </tbody>
-</table>
-<p style="font-size:13px; color:#5b6270; line-height:1.7">官网硬件生态专区仅露出<b>已完成接入并通过 WorkBuddy 审核的深度合作客户</b>（认证级及以上，详见 §4.5 合作分层）；展示范围、排序与更新节奏以官网公示为准。</p>
-
-<!-- Ch6 场景能力矩阵 -->
-<h2 class="chap" id="ch6"><span class="num">6</span>场景能力矩阵</h2>
-<p>按第 3 章「听看戴记聊协」六触点，横向拆解每一触点下 WorkBuddy 能提供的 AI 能力组合，硬件伙伴据此选择自己需要拉起的能力包。</p>
-
-<table>
-  <thead>
-    <tr><th style="width:10%">触点</th><th style="width:22%">典型硬件</th><th>核心场景</th><th>推荐能力组合</th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><b>听</b></td><td>耳机、真无线耳机（TWS）</td>
-      <td>随身语音助理、通话实时翻译、会议摘要播报</td>
-      <td>对话问答 + 翻译 + 纪要摘要 + 主动提醒</td>
-    </tr>
-    <tr>
-      <td><b>看</b></td><td>眼镜、头显</td>
-      <td>提词、实时翻译、图像识别、临场问答、AR 提示</td>
-      <td>多模态理解 + 对话问答 + 翻译 + 知识调用</td>
-    </tr>
-    <tr>
-      <td><b>戴</b></td><td>手表、手环</td>
-      <td>抬腕速览、健康与日程提醒、消息速答、运动中语音问答</td>
-      <td>主动服务 + 对话问答 + 跨端记忆 + 本机联动</td>
-    </tr>
-    <tr>
-      <td><b>记</b></td><td>录音笔、智能麦克风</td>
-      <td>会议纪要、访谈整理、结构化沉淀、内容改写</td>
-      <td>ASR + 纪要摘要 + 结构化提取 + 内容改写</td>
-    </tr>
-    <tr>
-      <td><b>聊</b></td><td>桌宠、桌面机器人</td>
-      <td>陪伴对话、语音问答、日程提醒、家庭助理</td>
-      <td>对话问答 + 主动服务 + 跨端记忆 + 情感化 TTS</td>
-    </tr>
-    <tr>
-      <td><b>协</b></td><td>工卡、便携终端、车机</td>
-      <td>差旅办公、行车助理、现场作业、任务协同</td>
-      <td>任务规划执行 + 本机联动 + 主动服务 + 跨端记忆</td>
-    </tr>
-  </tbody>
-</table>
-
-<div style="margin:12px 0 4px; padding:12px 16px; background:#f7f9fc; border-left:3px solid #6b4cf6; border-radius:6px; font-size:13px; color:#31415d; line-height:1.7">
-  <b style="color:#1a2033">办公与 ToB 场景同样在接入范围内：</b>会议空间与智能会议室（会议纪要、实时同传、待办跟进）、办公本与生产力终端（本机文档处理、日程协同）、企业工卡与服务台（任务分派、知识问答）等。此类场景通常走「双向打通」或「能力集成」；涉及企业数据的，建议同时参考第 11 章的数据安全说明。
+<p>平台已于 2026 年 9 月 2 日正式发布，<b>即日起可申请接入，无需等待排期</b>。第 7–10 章所述全部接口清单、鉴权方式、示例代码与联调流程，均以官网开发者文档的最新版本为准。</p>
+<p><b>官网入口：</b><a href="https://open.workbuddy.cn/" rel="noopener noreferrer" target="_blank">https://open.workbuddy.cn/</a>　<b>在官网可完成：</b>注册应用、获取凭证、下载对接文档、提交硬件接入意向</p>
+</div><h3 id="hardware-3-19">7.1 能力构成</h3><div class="grid g3">
+<div class="card t"><h3>Assistant（助理）</h3><p>用户拥有的 AI 角色，支持 <code>local</code>（本机端）与 <code>cloud</code>（云端）两种部署位置，提供创建、查询、更新、删除与激活。</p></div>
+<div class="card g"><h3>Task（任务）</h3><p>对指定助理发起的一次执行，返回回复内容、工具链、产出物、状态。</p></div>
+<div class="card p"><h3>本机能力</h3><p>当用户 PC 上装有 WorkBuddy 客户端时，可通过任务接口读取桌面文件或运行本机任务。</p></div>
+</div><h3 id="hardware-3-20">7.2 核心概念</h3><div class="table-scroll"><table>
+<thead><tr><th>概念</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>access_token</code>（个人票据）</td><td>代表用户身份，用于调用所有开放接口</td></tr>
+<tr><td><code>openid</code></td><td>用户在合作方 App 下的唯一标识，用于数据隔离</td></tr>
+<tr><td><code>asst_id</code></td><td>助理 ID，创建 Assistant 后返回</td></tr>
+<tr><td><code>task_id</code></td><td>任务 ID，创建 Task 后返回</td></tr>
+<tr><td><code>execution_target</code>（任务执行位置）</td><td><code>cloud</code> 走云端执行环境，<code>local</code> 走用户本机客户端</td></tr>
+</tbody>
+</table></div><h2 class="resource-volume-heading" id="hardware-2-9"><span class="num">8</span>授权登录（OAuth 2.0）</h2><p>WorkBuddy 采用标准 OAuth 2.0 授权码流程并支持 PKCE。用户在 WorkBuddy 侧完成登录与权限确认，合作方应用后端通过 code 换取个人票据，全程不接触用户密码。</p><h3 id="hardware-3-21">8.1 前置准备</h3><ol>
+<li>在 WorkBuddy 开放平台注册应用，获取 <code>client_id</code> 与 <code>client_secret</code></li>
+<li>登记授权回调地址 <code>redirect_uri</code></li>
+<li>按业务需要勾选 scope：<code>assistant.read</code>、<code>assistant.write</code>、<code>task.read</code>、<code>task.write</code>；如需本机能力再勾选 <code>local.execute</code> 与 <code>local.file.read</code>；如需积分再勾选 <code>credit.read</code></li>
+</ol><h3 id="hardware-3-22">8.2 授权流程</h3><div class="seq">
+<div class="seq-header">
+<div>用户</div><div>合作方 App</div><div>WorkBuddy</div><div>WorkBuddy API</div>
 </div>
-
-<h3 class="sec" id="ch6-1">6.1 接入后能做什么：六个已跑通的真实场景</h3>
-<p>下面六个场景均来自已完成接入或正在对接的伙伴实践，覆盖「看 / 聊 / 记 / 听」四类触点。为便于阅读，品牌与产品名做了匿名化处理。</p>
-<table>
-  <thead>
-    <tr><th style="width:17%">伙伴类型</th><th style="width:13%">接入方式</th><th style="width:42%">接入前 → 接入后</th><th style="width:28%">用到的能力</th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><b>某 AI 记忆眼镜品牌</b><br><span style="color:#888; font-size:12px">触点「看」</span></td>
-      <td>模式②<br>双向打通</td>
-      <td><b>接入前：</b>戴镜开会，会后靠人工整理、分发决议<br><b>接入后：</b>眼镜持续感知现场、自动提炼会议决议与待办并同步至 WorkBuddy；事后一句「调取上周 A 项目会议决议，生成方案」即产出草案</td>
-      <td>多模态采集 + 纪要摘要 + 跨端记忆 + 任务规划执行</td>
-    </tr>
-    <tr>
-      <td><b>某光波导 AR 眼镜品牌</b><br><span style="color:#888; font-size:12px">触点「看」</span></td>
-      <td>模式②<br>票据互换</td>
-      <td><b>接入前：</b>眼镜只能看和听，复杂任务还得回到手机或电脑<br><b>接入后：</b>眼镜端唤起，长任务交 WorkBuddy 云端执行，进度与结果直接回显在镜片上，当场确认、继续追问</td>
-      <td>多模态理解 + 云端任务管理 + 产物回显</td>
-    </tr>
-    <tr>
-      <td><b>某桌面陪伴硬件品牌</b><br><span style="color:#888; font-size:12px">触点「聊」</span></td>
-      <td>模式②<br>官方认证硬件</td>
-      <td><b>接入前：</b>Agent 常驻后台，进度看不见、存在感弱<br><b>接入后：</b>喊一声或轻触即派活，圆屏实时同步任务进度、当天完成情况与三项重点待办；需人工决策时主动推送建议，确认后继续执行</td>
-      <td>对话问答 + 主动服务 + 任务状态回显 + 情感化语音</td>
-    </tr>
-    <tr>
-      <td><b>某智能录音卡品牌</b><br><span style="color:#888; font-size:12px">触点「记」</span></td>
-      <td>模式② + 模式④<br>厂商官方 MCP 双向</td>
-      <td><b>接入前：</b>录完只得到一份纪要，后续方案还要自己写<br><b>接入后：</b>App 内直接调用 WorkBuddy 生成方案 / PPT / 报告；WorkBuddy 经授权检索历史录音与转写作为工作上下文，对话资产可反复复用</td>
-      <td>语音转写 + 纪要摘要 + 结构化提取 + 内容生成 + 数据回调</td>
-    </tr>
-    <tr>
-      <td><b>某无线麦克风品牌</b><br><span style="color:#888; font-size:12px">触点「听」</span></td>
-      <td>轻量接入<br>快捷键 / 语音映射</td>
-      <td><b>接入前：</b>麦克风只做拾音，想法还得敲键盘落成任务<br><b>接入后：</b>机身按键单击唤醒语音、双击发送，说一句即转成 WorkBuddy 任务，电脑端随即开工；连电脑后还可被调度为语音输入</td>
-      <td>声学采集 + 语音识别 + 对话问答 + 本机联动</td>
-    </tr>
-    <tr>
-      <td><b>某翻译耳机品牌</b><br><span style="color:#888; font-size:12px">触点「听」</span></td>
-      <td>模式②<br>双向打通</td>
-      <td><b>接入前：</b>同传结束只解决「听懂」，纪要与跟进另做<br><b>接入后：</b>耳机负责听、译、记，WorkBuddy 拆解汇总生成会谈总结、跟进邮件与待办；还可聚合多场会话产出周报 / 月报</td>
-      <td>翻译 + 跨语言理解 + 纪要摘要 + 任务规划执行</td>
-    </tr>
-  </tbody>
-</table>
-<p style="color:#666; font-size:13px">同一伙伴可按能力叠加多条路径：先用最轻的快捷键 / 语音入口跑通，再按需叠加 App 植入（模式②）与数据回调（能力集成），逐步加深（选择方式见 §4.3）。</p>
-
-
-<hr>
-
-<!-- ============================================================
-    第三部分 · 技术接入
-============================================================= -->
-<div class="part-banner">
-  <div class="cap">第三部分</div>
-  <div class="ttl">技术接入 —— 面向技术负责人与开发者</div>
-</div>
-
-
-<h2 class="chap" id="ch7"><span class="num">7</span>开放能力概述</h2>
-<p>WorkBuddy 开放平台以 REST API 形式暴露四类能力：助理管理、任务生命周期、本机执行、积分与签到。所有接口以用户身份调用，凭据是 OAuth 2.0 授权后颁发的个人票据（access_token）。</p>
-
-<div style="margin:14px 0 18px; padding:16px 20px; background:#eef3ff; border:1px solid #c9d9ff; border-radius:10px">
-  <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap">
-    <span style="background:#0b8f65; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:10px">已正式上线</span>
-    <b style="color:#0f2a6b; font-size:15px">WorkBuddy 开放平台已开放接入</b>
-  </div>
-  <p style="margin:0 0 8px; font-size:13.5px; color:#31415d; line-height:1.7">平台已于 2026 年 9 月 2 日正式发布，<b>即日起可申请接入，无需等待排期</b>。第 7–10 章所述全部接口清单、鉴权方式、示例代码与联调流程，均以官网开发者文档的最新版本为准。</p>
-  <p style="margin:0; font-size:13.5px; color:#31415d"><b>官网入口：</b><a href="https://open.workbuddy.cn/" rel="noopener noreferrer" target="_blank" style="color:#1457ff; font-weight:700">https://open.workbuddy.cn/</a>　<b>在官网可完成：</b>注册应用、获取凭证、下载对接文档、提交硬件接入意向</p>
-</div>
-
-<h3 class="sec">7.1 能力构成</h3>
-<div class="grid g3">
-  <div class="card t"><h3>Assistant（助理）</h3><p>用户拥有的 AI 角色，支持 <code>local</code>（本机端）与 <code>cloud</code>（云端）两种部署位置，提供创建、查询、更新、删除与激活。</p></div>
-  <div class="card g"><h3>Task（任务）</h3><p>对指定助理发起的一次执行，返回回复内容、工具链、产出物、状态。</p></div>
-  <div class="card p"><h3>本机能力</h3><p>当用户 PC 上装有 WorkBuddy 客户端时，可通过任务接口读取桌面文件或运行本机任务。</p></div>
-</div>
-
-<h3 class="sec">7.2 核心概念</h3>
-<table>
-  <thead><tr><th style="width:26%">概念</th><th>作用</th></tr></thead>
-  <tbody>
-    <tr><td><code>access_token</code>（个人票据）</td><td>代表用户身份，用于调用所有开放接口</td></tr>
-    <tr><td><code>openid</code></td><td>用户在合作方 App 下的唯一标识，用于数据隔离</td></tr>
-    <tr><td><code>asst_id</code></td><td>助理 ID，创建 Assistant 后返回</td></tr>
-    <tr><td><code>task_id</code></td><td>任务 ID，创建 Task 后返回</td></tr>
-    <tr><td><code>execution_target</code>（任务执行位置）</td><td><code>cloud</code> 走云端执行环境，<code>local</code> 走用户本机客户端</td></tr>
-  </tbody>
-</table>
-
-<!-- Ch6 OAuth -->
-<h2 class="chap" id="ch8"><span class="num">8</span>授权登录（OAuth 2.0）</h2>
-<p>WorkBuddy 采用标准 OAuth 2.0 授权码流程并支持 PKCE。用户在 WorkBuddy 侧完成登录与权限确认，合作方应用后端通过 code 换取个人票据，全程不接触用户密码。</p>
-
-<h3 class="sec" id="ch8-1">8.1 前置准备</h3>
-<ol>
-  <li>在 WorkBuddy 开放平台注册应用，获取 <code>client_id</code> 与 <code>client_secret</code></li>
-  <li>登记授权回调地址 <code>redirect_uri</code></li>
-  <li>按业务需要勾选 scope：<code>assistant.read</code>、<code>assistant.write</code>、<code>task.read</code>、<code>task.write</code>；如需本机能力再勾选 <code>local.execute</code> 与 <code>local.file.read</code>；如需积分再勾选 <code>credit.read</code></li>
-</ol>
-
-<h3 class="sec" id="ch8-2">8.2 授权流程</h3>
-<div class="seq">
-  <div class="seq-header">
-    <div>用户</div><div>合作方 App</div><div>WorkBuddy</div><div>WorkBuddy API</div>
-  </div>
-  <div class="seq-row"><div class="n">1</div><div>合作方 App 引导用户跳转至 WorkBuddy 授权页，携带 <code>client_id</code>、<code>redirect_uri</code>、<code>scope</code>、<code>state</code>、<code>code_challenge</code></div></div>
-  <div class="seq-row"><div class="n">2</div><div>用户在 WorkBuddy 侧登录并确认权限范围</div></div>
-  <div class="seq-row"><div class="n">3</div><div>WorkBuddy 回调 <code>redirect_uri</code>，附带 <code>code</code> 与原始 <code>state</code></div></div>
-  <div class="seq-row"><div class="n">4</div><div>合作方 App 后端使用 <code>code</code>、<code>client_secret</code> 与 <code>code_verifier</code> 换取 <code>access_token</code>、<code>refresh_token</code> 与 <code>openid</code></div></div>
-  <div class="seq-row"><div class="n">5</div><div>合作方 App 携带 <code>access_token</code> 调用 WorkBuddy API，绑定完成</div></div>
-</div>
-
-<h3 class="sec" id="ch8-3">8.3 换取个人票据</h3>
-
-<h4 class="sub">授权页跳转链接</h4>
-<pre>GET https://open.workbuddy.cn/oauth/authorize
+<div class="seq-row"><div class="n">1</div><div>合作方 App 引导用户跳转至 WorkBuddy 授权页，携带 <code>client_id</code>、<code>redirect_uri</code>、<code>scope</code>、<code>state</code>、<code>code_challenge</code></div></div>
+<div class="seq-row"><div class="n">2</div><div>用户在 WorkBuddy 侧登录并确认权限范围</div></div>
+<div class="seq-row"><div class="n">3</div><div>WorkBuddy 回调 <code>redirect_uri</code>，附带 <code>code</code> 与原始 <code>state</code></div></div>
+<div class="seq-row"><div class="n">4</div><div>合作方 App 后端使用 <code>code</code>、<code>client_secret</code> 与 <code>code_verifier</code> 换取 <code>access_token</code>、<code>refresh_token</code> 与 <code>openid</code></div></div>
+<div class="seq-row"><div class="n">5</div><div>合作方 App 携带 <code>access_token</code> 调用 WorkBuddy API，绑定完成</div></div>
+</div><h3 id="hardware-3-23">8.3 换取个人票据</h3><h4 class="sub">授权页跳转链接</h4><pre>GET https://open.workbuddy.cn/oauth/authorize
   ?response_type=code
   &amp;client_id=YOUR_CLIENT_ID
   &amp;redirect_uri=https%3A%2F%2Fyourapp.com%2Fcallback
   &amp;scope=<span class="s">assistant.read assistant.write task.read task.write</span>
   &amp;state=RANDOM_STATE
   &amp;code_challenge=CODE_CHALLENGE
-  &amp;code_challenge_method=S256</pre>
-
-<h4 class="sub">使用授权码换取票据</h4>
-<pre>POST https://open.workbuddy.cn/oauth/token
+  &amp;code_challenge_method=S256</pre><h4 class="sub">使用授权码换取票据</h4><pre>POST https://open.workbuddy.cn/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
@@ -756,75 +392,37 @@ grant_type=authorization_code
 &amp;redirect_uri=https%3A%2F%2Fyourapp.com%2Fcallback
 &amp;client_id=YOUR_CLIENT_ID
 &amp;client_secret=YOUR_CLIENT_SECRET
-&amp;code_verifier=CODE_VERIFIER</pre>
-
-<h4 class="sub">返回结构</h4>
-<pre>{
+&amp;code_verifier=CODE_VERIFIER</pre><h4 class="sub">返回结构</h4><pre>{
   <span class="s">"access_token"</span>: <span class="s">"eyJhbGciOi..."</span>,
   <span class="s">"refresh_token"</span>: <span class="s">"rt_xxx"</span>,
   <span class="s">"token_type"</span>: <span class="s">"Bearer"</span>,
   <span class="s">"expires_in"</span>: 7200,
   <span class="s">"scope"</span>: <span class="s">"assistant.read assistant.write task.read task.write"</span>,
   <span class="s">"openid"</span>: <span class="s">"o_xxx"</span>
-}</pre>
-
-<div class="callout tip"><p>个人票据应保存在合作方 App 后端，不建议下发到硬件端或前端。硬件与前端通过合作方后端间接调用 WorkBuddy API。</p></div>
-
-<h3 class="sec" id="ch8-4">8.4 刷新与撤销</h3>
-<h4 class="sub">刷新票据</h4>
-<pre>POST /oauth/token
+}</pre><div class="callout tip"><p>个人票据应保存在合作方 App 后端，不建议下发到硬件端或前端。硬件与前端通过合作方后端间接调用 WorkBuddy API。</p></div><h3 id="hardware-3-24">8.4 刷新与撤销</h3><h4 class="sub">刷新票据</h4><pre>POST /oauth/token
 grant_type=refresh_token
 &amp;refresh_token=rt_xxx
 &amp;client_id=YOUR_CLIENT_ID
-&amp;client_secret=YOUR_CLIENT_SECRET</pre>
-
-<h4 class="sub">撤销授权</h4>
-<ul>
-  <li>用户可在 WorkBuddy 后台随时撤销合作方应用的授权，此后老票据立即作废</li>
-  <li>合作方应用主动撤销可调用 <code>POST /oauth/revoke</code></li>
-  <li>接口若返回 <code>401 invalid_token</code>，应引导用户重新完成授权</li>
-</ul>
-
-<h3 class="sec" id="ch8-5">8.5 用户标识</h3>
-<table>
-  <thead><tr><th>标识</th><th>含义</th><th>粒度</th><th>对开发者可见</th></tr></thead>
-  <tbody>
-    <tr><td><code>openid</code></td><td>用户在合作方 App 下的唯一标识</td><td>每个应用</td><td>是</td></tr>
-    <tr><td><code>unionid</code></td><td>同一开发者跨 App 的用户统一标识</td><td>每个开发者</td><td>是</td></tr>
-    <tr><td><code>uid</code></td><td>WorkBuddy 平台用户唯一标识</td><td>全局</td><td>否</td></tr>
-  </tbody>
-</table>
-
-<!-- Ch7 API -->
-<h2 class="chap" id="ch9"><span class="num">9</span>接口调用</h2>
-<p>获得个人票据后，所有请求在 HTTP Header 中携带 <code>Authorization: Bearer &lt;access_token&gt;</code>。接口均以用户身份操作，只返回该用户的资产。</p>
-
-<h3 class="sec" id="ch9-1">9.1 通用规范</h3>
-<ul>
-  <li>Base URL：<code>https://open.workbuddy.cn/openapi/v2</code></li>
-  <li>鉴权：<code>Authorization: Bearer &lt;access_token&gt;</code></li>
-  <li>数据格式：请求与响应均为 JSON</li>
-  <li>分页：<code>page</code> 与 <code>page_size</code>，最大 50</li>
-  <li>错误：HTTP 状态码 4xx 或 5xx，响应体包含 <code>errcode</code> 与 <code>errmsg</code></li>
-  <li>幂等：写接口支持 <code>Idempotency-Key</code> 请求头</li>
-  <li>限流：按 <code>openid</code> 主体限流</li>
-</ul>
-
-<h3 class="sec" id="ch9-2">9.2 助理接口</h3>
-<p>助理是用户拥有的 AI 角色。所有任务调用都需先获得 <code>asst_id</code>；<code>cloud</code> 类型助理还需完成一次激活。</p>
-
-<div class="api"><span class="m post">POST</span><span class="p">/assistants</span><span class="d">创建助理，支持 location = local / cloud</span></div>
-<div class="api"><span class="m get">GET</span><span class="p">/assistants</span><span class="d">分页列出当前用户可用助理</span></div>
-<div class="api"><span class="m get">GET</span><span class="p">/assistants/{asst_id}</span><span class="d">获取助理详情</span></div>
-<div class="api"><span class="m patch">PATCH</span><span class="p">/assistants/{asst_id}</span><span class="d">增量更新，未传字段保持原值</span></div>
-<div class="api"><span class="m delete">DELETE</span><span class="p">/assistants/{asst_id}</span><span class="d">删除助理</span></div>
-<div class="api"><span class="m post">POST</span><span class="p">/assistants/{asst_id}/allocate</span><span class="d">激活云端（cloud）助理，分配云端执行环境</span></div>
-
-<h4 class="sub">所需权限（Scope）</h4>
-<p><code>assistant.read</code> 用于读取；<code>assistant.write</code> 用于创建、更新、删除与激活。</p>
-
-<h4 class="sub">示例：创建云端翻译助理</h4>
-<pre>POST /assistants
+&amp;client_secret=YOUR_CLIENT_SECRET</pre><h4 class="sub">撤销授权</h4><ul>
+<li>用户可在 WorkBuddy 后台随时撤销合作方应用的授权，此后老票据立即作废</li>
+<li>合作方应用主动撤销可调用 <code>POST /oauth/revoke</code></li>
+<li>接口若返回 <code>401 invalid_token</code>，应引导用户重新完成授权</li>
+</ul><h3 id="hardware-3-25">8.5 用户标识</h3><div class="table-scroll"><table>
+<thead><tr><th>标识</th><th>含义</th><th>粒度</th><th>对开发者可见</th></tr></thead>
+<tbody>
+<tr><td><code>openid</code></td><td>用户在合作方 App 下的唯一标识</td><td>每个应用</td><td>是</td></tr>
+<tr><td><code>unionid</code></td><td>同一开发者跨 App 的用户统一标识</td><td>每个开发者</td><td>是</td></tr>
+<tr><td><code>uid</code></td><td>WorkBuddy 平台用户唯一标识</td><td>全局</td><td>否</td></tr>
+</tbody>
+</table></div><h2 class="resource-volume-heading" id="hardware-2-10"><span class="num">9</span>接口调用</h2><p>获得个人票据后，所有请求在 HTTP Header 中携带 <code>Authorization: Bearer &lt;access_token&gt;</code>。接口均以用户身份操作，只返回该用户的资产。</p><h3 id="hardware-3-26">9.1 通用规范</h3><ul>
+<li>Base URL：<code>https://open.workbuddy.cn/openapi/v2</code></li>
+<li>鉴权：<code>Authorization: Bearer &lt;access_token&gt;</code></li>
+<li>数据格式：请求与响应均为 JSON</li>
+<li>分页：<code>page</code> 与 <code>page_size</code>，最大 50</li>
+<li>错误：HTTP 状态码 4xx 或 5xx，响应体包含 <code>errcode</code> 与 <code>errmsg</code></li>
+<li>幂等：写接口支持 <code>Idempotency-Key</code> 请求头</li>
+<li>限流：按 <code>openid</code> 主体限流</li>
+</ul><h3 id="hardware-3-27">9.2 助理接口</h3><p>助理是用户拥有的 AI 角色。所有任务调用都需先获得 <code>asst_id</code>；<code>cloud</code> 类型助理还需完成一次激活。</p><div class="api"><span class="m post">POST</span><span class="p">/assistants</span><span class="d">创建助理，支持 location = local / cloud</span></div><div class="api"><span class="m get">GET</span><span class="p">/assistants</span><span class="d">分页列出当前用户可用助理</span></div><div class="api"><span class="m get">GET</span><span class="p">/assistants/{asst_id}</span><span class="d">获取助理详情</span></div><div class="api"><span class="m patch">PATCH</span><span class="p">/assistants/{asst_id}</span><span class="d">增量更新，未传字段保持原值</span></div><div class="api"><span class="m delete">DELETE</span><span class="p">/assistants/{asst_id}</span><span class="d">删除助理</span></div><div class="api"><span class="m post">POST</span><span class="p">/assistants/{asst_id}/allocate</span><span class="d">激活云端（cloud）助理，分配云端执行环境</span></div><h4 class="sub">所需权限（Scope）</h4><p><code>assistant.read</code> 用于读取；<code>assistant.write</code> 用于创建、更新、删除与激活。</p><h4 class="sub">示例：创建云端翻译助理</h4><pre>POST /assistants
 Authorization: Bearer &lt;access_token&gt;
 Content-Type: application/json
 
@@ -832,20 +430,7 @@ Content-Type: application/json
   <span class="s">"name"</span>: <span class="s">"翻译助理"</span>,
   <span class="s">"location"</span>: <span class="s">"cloud"</span>,
   <span class="s">"instruction"</span>: <span class="s">"作为简洁高效的中英互译助理，翻译并保持原意"</span>
-}</pre>
-
-<h3 class="sec" id="ch9-3">9.3 任务接口</h3>
-<p>任务表示一次针对助理的执行。<code>execution_target=cloud</code> 时走云端执行环境，<code>execution_target=local</code> 时走用户本机 WorkBuddy 客户端。</p>
-
-<div class="api"><span class="m post">POST</span><span class="p">/tasks</span><span class="d">创建或续接任务</span></div>
-<div class="api"><span class="m get">GET</span><span class="p">/tasks</span><span class="d">按 asst_id、时间等筛选任务列表</span></div>
-<div class="api"><span class="m get">GET</span><span class="p">/tasks/{task_id}</span><span class="d">获取任务完整回复、工具链与产出物</span></div>
-<div class="api"><span class="m delete">DELETE</span><span class="p">/tasks/{task_id}</span><span class="d">删除任务</span></div>
-
-<h4 class="sub">所需权限（Scope）</h4>
-<p><code>task.read</code> 用于读取；<code>task.write</code> 用于创建与删除。</p>
-
-<pre>POST /tasks
+}</pre><h3 id="hardware-3-28">9.3 任务接口</h3><p>任务表示一次针对助理的执行。<code>execution_target=cloud</code> 时走云端执行环境，<code>execution_target=local</code> 时走用户本机 WorkBuddy 客户端。</p><div class="api"><span class="m post">POST</span><span class="p">/tasks</span><span class="d">创建或续接任务</span></div><div class="api"><span class="m get">GET</span><span class="p">/tasks</span><span class="d">按 asst_id、时间等筛选任务列表</span></div><div class="api"><span class="m get">GET</span><span class="p">/tasks/{task_id}</span><span class="d">获取任务完整回复、工具链与产出物</span></div><div class="api"><span class="m delete">DELETE</span><span class="p">/tasks/{task_id}</span><span class="d">删除任务</span></div><h4 class="sub">所需权限（Scope）</h4><p><code>task.read</code> 用于读取；<code>task.write</code> 用于创建与删除。</p><pre>POST /tasks
 Authorization: Bearer &lt;access_token&gt;
 Content-Type: application/json
 
@@ -853,292 +438,182 @@ Content-Type: application/json
   <span class="s">"asst_id"</span>: <span class="s">"asst_xxx"</span>,
   <span class="s">"execution_target"</span>: <span class="s">"cloud"</span>,
   <span class="s">"input"</span>: <span class="s">"翻译：hello world"</span>
-}</pre>
-
-<h3 class="sec" id="ch9-4">9.4 本机能力</h3>
-<p>当用户 PC 上安装了 WorkBuddy 客户端，合作方 App 可通过任务接口驱动本机执行与文件读取。此能力属可选，仅在需要本机能力的场景启用。</p>
-<ul>
-  <li>额外权限（Scope）：<code>local.execute</code> 用于本机执行，<code>local.file.read</code> 用于本机文件读取</li>
-  <li>调用方式与云端任务一致，只需将 <code>execution_target</code> 设为 <code>local</code></li>
-  <li>本机客户端在首次访问时向用户弹窗确认（一次授权或记住授权），用户可在托盘随时退出授权</li>
-</ul>
-
-
-<h2 class="chap" id="ch10"><span class="num">10</span>端到端示例</h2>
-<p>下列步骤展示了一个用户从"绑定 WorkBuddy 账号"到"通过翻译助理完成任务"的完整流程。</p>
-
-<div class="steps">
-  <div class="step">
-    <div class="no">1</div>
-    <div class="body">
-      <h4>用户在合作方 App 中点击"绑定 WorkBuddy"</h4>
-      <p>合作方 App 按 6.3 节所述构造授权链接，引导浏览器跳转至 WorkBuddy 授权页。</p>
-    </div>
-  </div>
-  <div class="step">
-    <div class="no">2</div>
-    <div class="body">
-      <h4>用户完成授权，合作方后端换取个人票据</h4>
+}</pre><h3 id="hardware-3-29">9.4 本机能力</h3><p>当用户 PC 上安装了 WorkBuddy 客户端，合作方 App 可通过任务接口驱动本机执行与文件读取。此能力属可选，仅在需要本机能力的场景启用。</p><ul>
+<li>额外权限（Scope）：<code>local.execute</code> 用于本机执行，<code>local.file.read</code> 用于本机文件读取</li>
+<li>调用方式与云端任务一致，只需将 <code>execution_target</code> 设为 <code>local</code></li>
+<li>本机客户端在首次访问时向用户弹窗确认（一次授权或记住授权），用户可在托盘随时退出授权</li>
+</ul><h2 class="resource-volume-heading" id="hardware-2-11"><span class="num">10</span>端到端示例</h2><p>下列步骤展示了一个用户从"绑定 WorkBuddy 账号"到"通过翻译助理完成任务"的完整流程。</p><div class="steps">
+<div class="step">
+<div class="no">1</div>
+<div class="body">
+<h4>用户在合作方 App 中点击"绑定 WorkBuddy"</h4>
+<p>合作方 App 按 6.3 节所述构造授权链接，引导浏览器跳转至 WorkBuddy 授权页。</p>
+</div>
+</div>
+<div class="step">
+<div class="no">2</div>
+<div class="body">
+<h4>用户完成授权，合作方后端换取个人票据</h4>
 <pre>{ <span class="s">"access_token"</span>: <span class="s">"..."</span>, <span class="s">"openid"</span>: <span class="s">"o_xxx"</span>, <span class="s">"expires_in"</span>: 7200 }</pre>
-    </div>
-  </div>
-  <div class="step">
-    <div class="no">3</div>
-    <div class="body">
-      <h4>创建云端助理</h4>
+</div>
+</div>
+<div class="step">
+<div class="no">3</div>
+<div class="body">
+<h4>创建云端助理</h4>
 <pre>POST /assistants   → { <span class="s">"asst_id"</span>: <span class="s">"asst_xxx"</span> }</pre>
-    </div>
-  </div>
-  <div class="step">
-    <div class="no">4</div>
-    <div class="body">
-      <h4>激活云端助理</h4>
+</div>
+</div>
+<div class="step">
+<div class="no">4</div>
+<div class="body">
+<h4>激活云端助理</h4>
 <pre>POST /assistants/asst_xxx/allocate   → { <span class="s">"status"</span>: <span class="s">"ready"</span> }</pre>
-    </div>
-  </div>
-  <div class="step">
-    <div class="no">5</div>
-    <div class="body">
-      <h4>发起翻译任务</h4>
+</div>
+</div>
+<div class="step">
+<div class="no">5</div>
+<div class="body">
+<h4>发起翻译任务</h4>
 <pre>POST /tasks
 { <span class="s">"asst_id"</span>: <span class="s">"asst_xxx"</span>, <span class="s">"execution_target"</span>: <span class="s">"cloud"</span>, <span class="s">"input"</span>: <span class="s">"翻译：hello world"</span> }
 → { <span class="s">"task_id"</span>: <span class="s">"task_yyy"</span>, <span class="s">"reply"</span>: <span class="s">"你好，世界"</span> }</pre>
-    </div>
-  </div>
-  <div class="step">
-    <div class="no">6</div>
-    <div class="body">
-      <h4>读取任务详情或历史</h4>
+</div>
+</div>
+<div class="step">
+<div class="no">6</div>
+<div class="body">
+<h4>读取任务详情或历史</h4>
 <pre>GET /tasks/task_yyy                     <span class="c"># 单条任务详情</span>
 GET /tasks?asst_id=asst_xxx&amp;page=1      <span class="c"># 该助理下的历史任务</span></pre>
-    </div>
-  </div>
 </div>
-
-<div class="callout"><p>硬件端的接入姿势：眼镜、耳机、桌宠等硬件本体通过合作方后端间接调用 WorkBuddy API，个人票据不下发到端侧。硬件负责语音输入、卡片呈现与语音播报，业务编排由合作方后端完成。</p></div>
-
-<!-- Ch9 FAQ -->
-<h2 class="chap" id="ch11"><span class="num">11</span>常见问题</h2>
-<div class="grid g2">
-  <div class="faq"><h3>如何判断适合的合作模式？</h3><p>参照第 4 章的三个问题：谁进谁、品牌与入口归属、用户与数据归属，答完即可归入四种模式之一。</p></div>
-  <div class="faq"><h3>个人票据有效期是多久？</h3><p>由响应字段 <code>expires_in</code> 指定，默认 7200 秒。过期后使用 <code>refresh_token</code> 换新票，用户主动撤销后立即失效。</p></div>
-  <div class="faq"><h3>如何在合作方侧隔离多用户数据？</h3><p>使用响应中的 <code>openid</code> 作为用户维度的存储与查询主键，同一 <code>openid</code> 对应的所有 WorkBuddy 资产（助理、任务）归属该用户。</p></div>
-  <div class="faq"><h3>本机（Local）类型的助理是否需要激活？</h3><p>不需要。<code>allocate</code>（激活接口）仅适用于云端（cloud）助理。本机（local）助理依赖用户本机 WorkBuddy 客户端在线运行。</p></div>
-  <div class="faq"><h3>接口返回 401 应如何处理？</h3><p>先尝试通过 <code>refresh_token</code> 续期。仍然返回 401 说明用户已撤销授权或权限发生变化，应引导用户重新完成 OAuth 授权。</p></div>
-  <div class="faq"><h3>硬件端能否直接调用 WorkBuddy API？</h3><p>不建议。个人票据应保存在合作方后端，硬件通过合作方后端反向代理调用 API，以避免凭据泄露与合规风险。</p></div>
-  <div class="faq"><h3>本机能力的边界在哪里？</h3><p>任务执行以云端为主；本机能力需用户 PC 安装 WorkBuddy 桌面客户端（当前覆盖 Mac 与 Windows），可读取本机文件、运行本机任务。手机等移动设备暂不支持本机执行，以云端任务与轻量交互为主。</p></div>
-  <div class="faq"><h3>MCP / Connector 接入的数据安全如何保障？</h3><p>按权限范围（scope）逐项最小授权，票据由合作方后端保管，用户可随时撤销授权；合作方数据仅在用户授权的任务上下文中被调用，具体使用边界以授权协议与隐私政策为准。</p></div>
-  <div class="faq"><h3>支持哪些操作系统与平台？</h3><p>桌面客户端当前覆盖 Mac 与 Windows；Linux（含 Ubuntu）桌面版暂未覆盖，有需求的伙伴可在开放平台官网登记，平台按需求量评估排期。</p></div>
-  <div class="faq"><h3>推广与分佣机制是怎样的？</h3><p>合作涉及的推广、分佣与积分体现方式随商务协议约定，在开放平台提交合作意向后由商务团队一对一对接。</p></div>
 </div>
-
-<hr>
-
-<!-- ============================================================
-    第四部分 · 落地与运营
-============================================================= -->
-<div class="part-banner">
-  <div class="cap">第四部分</div>
-  <div class="ttl">落地与运营 —— 面向项目负责人、市场与用户运营</div>
-</div>
-
-<!-- Ch12 合作落地流程 -->
-<h2 class="chap" id="ch12"><span class="num">12</span>合作落地流程</h2>
-<p>WorkBuddy 与硬件伙伴的落地分两条路径：<b>自助接入</b>是默认路径，大多数伙伴可自行确认场景、按开放平台文档自助完成接入；<b>商务协作</b>面向希望深度合作、或现有文档与自身场景不匹配的伙伴，由商务一对一跟进。</p>
-
-<h3 class="sec" id="ch12-1">12.1 两条接入路径</h3>
-<div class="grid g2">
-  <div class="card t"><h3>路径 A · 自助接入（默认，大多数伙伴）</h3><ul>
-    <li>自行确认终端场景、用户价值与目标人群</li>
-    <li>对照第 4 章选定合作模式，按开放平台文档与第三部分技术方案自助完成接入与联调</li>
-    <li>完成后提交审核，通过后灰度上线、全量发布</li>
-  </ul></div>
-  <div class="card p"><h3>路径 B · 商务协作（深度合作 / 场景不匹配）</h3><ul>
-    <li>希望深度合作：联合 PR、「WorkBuddy 认证」标识、联名款、定制集成等</li>
-    <li>现有文档与自身场景不匹配，需要定制方案或能力扩展</li>
-    <li>通过开放平台提交合作意向，商务一对一评估并设计合作方案</li>
-    <li>双方各指定一名负责人（owner）对齐节奏与交付物</li>
-  </ul></div>
-</div>
-
-<h3 class="sec" id="ch12-2">12.2 样板节奏</h3>
-<table>
-  <thead><tr><th style="width:28%">阶段</th><th>关键交付</th></tr></thead>
-  <tbody>
-    <tr><td>概念验证（PoC）</td><td>核心场景 Demo、可行性结论、里程碑</td></tr>
-    <tr><td>最小可上线（MVP）</td><td>标准接入完成、闭环功能、内测灰度</td></tr>
-    <tr><td>正式上市（GA）</td><td>正式发布、专区上线；深度合作（认证级）伙伴可同步启动联合宣发</td></tr>
-  </tbody>
-</table>
-<p style="color:#666; font-size:14px">节奏视合作模式与团队规模而定，硬件连接模式（模式③）通常需 3 – 6 周。</p>
-
-<p style="margin:16px 0 8px; font-weight:600; color:#1a2033">接入后能做什么</p>
-<p>六个已跑通的真实场景（AI 记忆眼镜、AR 眼镜、桌面陪伴硬件、智能录音卡、无线麦克风、翻译耳机）已整理在 <a href="#ch6-1">§6.1</a>，可对照自身品类直接参考。希望成为样板工程、在官网硬件生态专区露出的伙伴，可在提交接入意向时注明。</p>
-
-<h3 class="sec" id="ch12-3">12.3 合作原则</h3>
+</div><div class="callout"><p>硬件端的接入姿势：眼镜、耳机、桌宠等硬件本体通过合作方后端间接调用 WorkBuddy API，个人票据不下发到端侧。硬件负责语音输入、卡片呈现与语音播报，业务编排由合作方后端完成。</p></div><h2 class="resource-volume-heading" id="hardware-2-12"><span class="num">11</span>常见问题</h2><div class="grid g2">
+<div class="faq"><h3>如何判断适合的合作模式？</h3><p>参照第 4 章的三个问题：谁进谁、品牌与入口归属、用户与数据归属，答完即可归入四种模式之一。</p></div>
+<div class="faq"><h3>个人票据有效期是多久？</h3><p>由响应字段 <code>expires_in</code> 指定，默认 7200 秒。过期后使用 <code>refresh_token</code> 换新票，用户主动撤销后立即失效。</p></div>
+<div class="faq"><h3>如何在合作方侧隔离多用户数据？</h3><p>使用响应中的 <code>openid</code> 作为用户维度的存储与查询主键，同一 <code>openid</code> 对应的所有 WorkBuddy 资产（助理、任务）归属该用户。</p></div>
+<div class="faq"><h3>本机（Local）类型的助理是否需要激活？</h3><p>不需要。<code>allocate</code>（激活接口）仅适用于云端（cloud）助理。本机（local）助理依赖用户本机 WorkBuddy 客户端在线运行。</p></div>
+<div class="faq"><h3>接口返回 401 应如何处理？</h3><p>先尝试通过 <code>refresh_token</code> 续期。仍然返回 401 说明用户已撤销授权或权限发生变化，应引导用户重新完成 OAuth 授权。</p></div>
+<div class="faq"><h3>硬件端能否直接调用 WorkBuddy API？</h3><p>不建议。个人票据应保存在合作方后端，硬件通过合作方后端反向代理调用 API，以避免凭据泄露与合规风险。</p></div>
+<div class="faq"><h3>本机能力的边界在哪里？</h3><p>任务执行以云端为主；本机能力需用户 PC 安装 WorkBuddy 桌面客户端（当前覆盖 Mac 与 Windows），可读取本机文件、运行本机任务。手机等移动设备暂不支持本机执行，以云端任务与轻量交互为主。</p></div>
+<div class="faq"><h3>MCP / Connector 接入的数据安全如何保障？</h3><p>按权限范围（scope）逐项最小授权，票据由合作方后端保管，用户可随时撤销授权；合作方数据仅在用户授权的任务上下文中被调用，具体使用边界以授权协议与隐私政策为准。</p></div>
+<div class="faq"><h3>支持哪些操作系统与平台？</h3><p>桌面客户端当前覆盖 Mac 与 Windows；Linux（含 Ubuntu）桌面版暂未覆盖，有需求的伙伴可在开放平台官网登记，平台按需求量评估排期。</p></div>
+<div class="faq"><h3>推广与分佣机制是怎样的？</h3><p>合作涉及的推广、分佣与积分体现方式随商务协议约定，在开放平台提交合作意向后由商务团队一对一对接。</p></div>
+</div><div class="part-banner">
+<div class="cap">第四部分</div>
+<div class="ttl">落地与运营 —— 面向项目负责人、市场与用户运营</div>
+</div><h2 class="resource-volume-heading" id="hardware-2-13"><span class="num">12</span>合作落地流程</h2><p>WorkBuddy 与硬件伙伴的落地分两条路径：<b>自助接入</b>是默认路径，大多数伙伴可自行确认场景、按开放平台文档自助完成接入；<b>商务协作</b>面向希望深度合作、或现有文档与自身场景不匹配的伙伴，由商务一对一跟进。</p><h3 id="hardware-3-30">12.1 两条接入路径</h3><div class="grid g2">
+<div class="card t"><h3>路径 A · 自助接入（默认，大多数伙伴）</h3><ul>
+<li>自行确认终端场景、用户价值与目标人群</li>
+<li>对照第 4 章选定合作模式，按开放平台文档与第三部分技术方案自助完成接入与联调</li>
+<li>完成后提交审核，通过后灰度上线、全量发布</li>
+</ul></div>
+<div class="card p"><h3>路径 B · 商务协作（深度合作 / 场景不匹配）</h3><ul>
+<li>希望深度合作：联合 PR、「WorkBuddy 认证」标识、联名款、定制集成等</li>
+<li>现有文档与自身场景不匹配，需要定制方案或能力扩展</li>
+<li>通过开放平台提交合作意向，商务一对一评估并设计合作方案</li>
+<li>双方各指定一名负责人（owner）对齐节奏与交付物</li>
+</ul></div>
+</div><h3 id="hardware-3-31">12.2 样板节奏</h3><div class="table-scroll"><table>
+<thead><tr><th>阶段</th><th>关键交付</th></tr></thead>
+<tbody>
+<tr><td>概念验证（PoC）</td><td>核心场景 Demo、可行性结论、里程碑</td></tr>
+<tr><td>最小可上线（MVP）</td><td>标准接入完成、闭环功能、内测灰度</td></tr>
+<tr><td>正式上市（GA）</td><td>正式发布、专区上线；深度合作（认证级）伙伴可同步启动联合宣发</td></tr>
+</tbody>
+</table></div><p>节奏视合作模式与团队规模而定，硬件连接模式（模式③）通常需 3 – 6 周。</p><p>接入后能做什么</p><p>六个已跑通的真实场景（AI 记忆眼镜、AR 眼镜、桌面陪伴硬件、智能录音卡、无线麦克风、翻译耳机）已整理在 <a href="#ch6-1">§6.1</a>，可对照自身品类直接参考。希望成为样板工程、在官网硬件生态专区露出的伙伴，可在提交接入意向时注明。</p><h3 id="hardware-3-32">12.3 合作原则</h3><ul>
+<li>合作场景需同时基于 WorkBuddy 的 AI 能力与合作方的用户场景</li>
+<li>能力互补、共创商业模式、小步快跑</li>
+<li>由浅入深：能力接入、产品集成、深度共创</li>
+</ul><h3 id="hardware-3-33">12.4 接入准入与审核</h3><p>为保障终端用户体验与数据安全，硬件应用接入 WorkBuddy 需通过准入审核。整体要求如下，细则以开放平台官网公示为准。</p><div class="grid g3">
+<div class="card t"><h3>准入条件</h3><ul>
+<li>完成企业实名认证：营业执照四要素核验；已有腾讯云 / 微信公众号企业实名的，可扫码快速认证</li>
+<li>硬件已量产，或有明确的量产计划，产品符合相关法律法规</li>
+<li>具备基本的数据安全与用户隐私保障能力，签署《开发者服务协议》《隐私保护指引》《数据处理协议》</li>
+</ul></div>
+<div class="card g"><h3>审核流程</h3><ul>
+<li>在开放平台注册入驻并完成企业认证，创建硬件应用、配置能力</li>
+<li>开放合作团队评估场景匹配度、体验与合规</li>
+<li>测试环境联调验证后提交审核，审核通过开通正式凭证</li>
+</ul></div>
+<div class="card p"><h3>上架与退出</h3><ul>
+<li>联调验收通过后先灰度上线，再全量发布</li>
+<li>体验或合规不达标的，限期整改</li>
+<li>严重违规的，中止接入并下线相关能力</li>
+</ul></div>
+</div><h3 id="hardware-3-34">12.5 品牌使用与授权</h3><p>品牌使用按合作深度分档管理。无论何种合作模式，未经 WorkBuddy 书面授权，不得在产品、包装及任何宣传物料中使用 WorkBuddy 商标与 Logo。</p><div class="grid g3">
+<div class="card t"><h3>接入即可用 · 兼容表述</h3><ul>
+<li>通过开放平台完成接入后，即可对外说明「兼容 WorkBuddy」「适配 WorkBuddy」</li>
+<li>该档不包含商标授权，不得在产品及外包装上使用 WorkBuddy Logo</li>
+</ul></div>
+<div class="card g"><h3>深度合作 · 认证标识</h3><ul>
+<li>深度合作产品需通过专门的认证流程（流程与标准单独说明），并签署品牌授权合同</li>
+<li>认证通过后，方可在合作产品与包装上使用「WorkBuddy 认证」标识</li>
+</ul></div>
+<div class="card p"><h3>市场宣发 · 先评估</h3><ul>
+<li>有 PR / 市场宣推需求的，需提前卷入 WorkBuddy 市场与公关团队评估</li>
+<li>评估通过后，按双方确认的口径与节奏执行</li>
+</ul></div>
+</div><h3 id="hardware-3-35">12.6 对接窗口</h3><p>行业引入 → 开放合作团队评估 → 产研落地。请通过 WorkBuddy 开放平台官网提交合作意向：<a href="https://open.workbuddy.cn/" rel="noopener noreferrer" target="_blank">https://open.workbuddy.cn/</a></p><h2 class="resource-volume-heading" id="hardware-2-14"><span class="num">13</span>联合运营</h2><p>上线不是终点。联合运营按合作分层供给（见 §4.5）：<b>自助接入的伙伴默认享有标准技术支持、SLA 保障与数据看板</b>；联合宣发、专项支持与共创机制则面向深度合作（认证级）伙伴。需要使用 WorkBuddy 品牌、Logo 的，须先取得授权；在产品上使用「WorkBuddy 认证」标识的，须通过官方认证（细则见 §12.5）。</p><h3 id="hardware-3-36">13.1 售后与技术支持</h3><div class="grid g3">
+<div class="card">
+<h3>三级支持体系</h3>
 <ul>
-  <li>合作场景需同时基于 WorkBuddy 的 AI 能力与合作方的用户场景</li>
-  <li>能力互补、共创商业模式、小步快跑</li>
-  <li>由浅入深：能力接入、产品集成、深度共创</li>
+<li><b>L1 · 常规支持</b>：文档、FAQ、开发者社区</li>
+<li><b>L2 · 技术支持</b>：企业微信/邮件工单，工作日 24h 内响应</li>
+<li><b>L3 · 专项支持（深度合作伙伴）</b>：专属技术对接人，重大问题小时级响应</li>
 </ul>
-
-<h3 class="sec" id="ch12-4">12.4 接入准入与审核</h3>
-<p>为保障终端用户体验与数据安全，硬件应用接入 WorkBuddy 需通过准入审核。整体要求如下，细则以开放平台官网公示为准。</p>
-<div class="grid g3">
-  <div class="card t"><h3>准入条件</h3><ul>
-    <li>完成企业实名认证：营业执照四要素核验；已有腾讯云 / 微信公众号企业实名的，可扫码快速认证</li>
-    <li>硬件已量产，或有明确的量产计划，产品符合相关法律法规</li>
-    <li>具备基本的数据安全与用户隐私保障能力，签署《开发者服务协议》《隐私保护指引》《数据处理协议》</li>
-  </ul></div>
-  <div class="card g"><h3>审核流程</h3><ul>
-    <li>在开放平台注册入驻并完成企业认证，创建硬件应用、配置能力</li>
-    <li>开放合作团队评估场景匹配度、体验与合规</li>
-    <li>测试环境联调验证后提交审核，审核通过开通正式凭证</li>
-  </ul></div>
-  <div class="card p"><h3>上架与退出</h3><ul>
-    <li>联调验收通过后先灰度上线，再全量发布</li>
-    <li>体验或合规不达标的，限期整改</li>
-    <li>严重违规的，中止接入并下线相关能力</li>
-  </ul></div>
 </div>
-
-<h3 class="sec" id="ch12-5">12.5 品牌使用与授权</h3>
-<p>品牌使用按合作深度分档管理。无论何种合作模式，未经 WorkBuddy 书面授权，不得在产品、包装及任何宣传物料中使用 WorkBuddy 商标与 Logo。</p>
-<div class="grid g3">
-  <div class="card t"><h3>接入即可用 · 兼容表述</h3><ul>
-    <li>通过开放平台完成接入后，即可对外说明「兼容 WorkBuddy」「适配 WorkBuddy」</li>
-    <li>该档不包含商标授权，不得在产品及外包装上使用 WorkBuddy Logo</li>
-  </ul></div>
-  <div class="card g"><h3>深度合作 · 认证标识</h3><ul>
-    <li>深度合作产品需通过专门的认证流程（流程与标准单独说明），并签署品牌授权合同</li>
-    <li>认证通过后，方可在合作产品与包装上使用「WorkBuddy 认证」标识</li>
-  </ul></div>
-  <div class="card p"><h3>市场宣发 · 先评估</h3><ul>
-    <li>有 PR / 市场宣推需求的，需提前卷入 WorkBuddy 市场与公关团队评估</li>
-    <li>评估通过后，按双方确认的口径与节奏执行</li>
-  </ul></div>
+<div class="card">
+<h3>SLA 承诺</h3>
+<ul>
+<li>核心 API 可用性：≥ 99.9%</li>
+<li>P0 故障响应：≤ 30 分钟</li>
+<li>P1 故障响应：≤ 2 小时</li>
+<li>版本变更通知：≥ 30 天预告</li>
+</ul>
 </div>
-
-<h3 class="sec" id="ch12-6">12.6 对接窗口</h3>
-<p>行业引入 → 开放合作团队评估 → 产研落地。请通过 WorkBuddy 开放平台官网提交合作意向：<a href="https://open.workbuddy.cn/" rel="noopener noreferrer" target="_blank" style="color:#1457ff; font-weight:600">https://open.workbuddy.cn/</a></p>
-
-<!-- Ch13 联合运营 -->
-<h2 class="chap" id="ch13"><span class="num">13</span>联合运营</h2>
-<p>上线不是终点。联合运营按合作分层供给（见 §4.5）：<b>自助接入的伙伴默认享有标准技术支持、SLA 保障与数据看板</b>；联合宣发、专项支持与共创机制则面向深度合作（认证级）伙伴。需要使用 WorkBuddy 品牌、Logo 的，须先取得授权；在产品上使用「WorkBuddy 认证」标识的，须通过官方认证（细则见 §12.5）。</p>
-
-<h3 class="sec" id="ch13-1">13.1 售后与技术支持</h3>
-<div class="grid g3">
-  <div class="card">
-    <h3>三级支持体系</h3>
-    <ul>
-      <li><b>L1 · 常规支持</b>：文档、FAQ、开发者社区</li>
-      <li><b>L2 · 技术支持</b>：企业微信/邮件工单，工作日 24h 内响应</li>
-      <li><b>L3 · 专项支持（深度合作伙伴）</b>：专属技术对接人，重大问题小时级响应</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>SLA 承诺</h3>
-    <ul>
-      <li>核心 API 可用性：≥ 99.9%</li>
-      <li>P0 故障响应：≤ 30 分钟</li>
-      <li>P1 故障响应：≤ 2 小时</li>
-      <li>版本变更通知：≥ 30 天预告</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>终端用户售后分工</h3>
-    <ul>
-      <li>硬件本身：合作方售后</li>
-      <li>WorkBuddy 账号 / 会员 / 云端能力：WorkBuddy 客服承接</li>
-      <li>联合问题：双方联合处理，通过共享工单系统流转</li>
-    </ul>
-  </div>
+<div class="card">
+<h3>终端用户售后分工</h3>
+<ul>
+<li>硬件本身：合作方售后</li>
+<li>WorkBuddy 账号 / 会员 / 云端能力：WorkBuddy 客服承接</li>
+<li>联合问题：双方联合处理，通过共享工单系统流转</li>
+</ul>
 </div>
-
-<h3 class="sec" id="ch13-2">13.2 数据看板与洞察</h3>
-<p>合作正式上线后，WorkBuddy 将向合作方提供专属数据看板与定期洞察报告，覆盖设备健康度、用户使用行为、商业化表现及反馈质量等维度，支撑合作方持续优化产品体验与运营策略。具体数据范围与交付形式在合作启动后由双方对齐确认。</p>
-
-<h3 class="sec" id="ch13-3">13.3 联合宣发</h3>
-<p>联合宣发<b>不属于自助接入的默认权益</b>：涉及 WorkBuddy 品牌与 Logo 的宣发物料，需先取得品牌授权；在产品与包装上使用「WorkBuddy 认证」标识，需先通过官方认证。相关诉求请通过商务对接，由双方市场团队评估后执行（分层口径见 §4.5，品牌细则见 §12.5）。以下为联合宣发的常见方向：</p>
-<div class="grid g4">
-  <div class="card t"><h3>发布节点</h3><p>新品发布联合站台、双方渠道同步发声。</p></div>
-  <div class="card g"><h3>内容共创</h3><p>联合场景视频、评测与用户故事等内容共建。</p></div>
-  <div class="card p"><h3>渠道曝光</h3><p>WB 生态内专区曝光、消息触达及会员活动联动。</p></div>
-  <div class="card o"><h3>共同预算</h3><p>关键节点联合投放，费用与效果按约定分摊。</p></div>
+</div><h3 id="hardware-3-37">13.2 数据看板与洞察</h3><p>合作正式上线后，WorkBuddy 将向合作方提供专属数据看板与定期洞察报告，覆盖设备健康度、用户使用行为、商业化表现及反馈质量等维度，支撑合作方持续优化产品体验与运营策略。具体数据范围与交付形式在合作启动后由双方对齐确认。</p><h3 id="hardware-3-38">13.3 联合宣发</h3><p>联合宣发<b>不属于自助接入的默认权益</b>：涉及 WorkBuddy 品牌与 Logo 的宣发物料，需先取得品牌授权；在产品与包装上使用「WorkBuddy 认证」标识，需先通过官方认证。相关诉求请通过商务对接，由双方市场团队评估后执行（分层口径见 §4.5，品牌细则见 §12.5）。以下为联合宣发的常见方向：</p><div class="grid g4">
+<div class="card t"><h3>发布节点</h3><p>新品发布联合站台、双方渠道同步发声。</p></div>
+<div class="card g"><h3>内容共创</h3><p>联合场景视频、评测与用户故事等内容共建。</p></div>
+<div class="card p"><h3>渠道曝光</h3><p>WB 生态内专区曝光、消息触达及会员活动联动。</p></div>
+<div class="card o"><h3>共同预算</h3><p>关键节点联合投放，费用与效果按约定分摊。</p></div>
+</div><p>以上方向均需双方商务与市场团队评估确认后执行，具体权益与节奏 case by case 对齐。</p><h3 id="hardware-3-39">13.4 版本迭代与共创</h3><div class="grid g2">
+<div class="card">
+<h3>WorkBuddy 侧节奏</h3>
+<ul>
+<li>能力版本：季度大版本 + 月度小版本</li>
+<li>Break Change：≥ 30 天预告 + 兼容期</li>
+<li>Beta 通道：核心合作伙伴优先试用新能力</li>
+</ul>
 </div>
-<p style="color:#888; font-size:12.5px">以上方向均需双方商务与市场团队评估确认后执行，具体权益与节奏 case by case 对齐。</p>
-
-<h3 class="sec" id="ch13-4">13.4 版本迭代与共创</h3>
-<div class="grid g2">
-  <div class="card">
-    <h3>WorkBuddy 侧节奏</h3>
-    <ul>
-      <li>能力版本：季度大版本 + 月度小版本</li>
-      <li>Break Change：≥ 30 天预告 + 兼容期</li>
-      <li>Beta 通道：核心合作伙伴优先试用新能力</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h3>合作方共创机制（深度合作伙伴）</h3>
-    <ul>
-      <li>季度对齐会：路线图共享、需求互通</li>
-      <li>共研专项：面向战略合作方，联合定义新能力</li>
-      <li>Case 复盘：每半年一次数据+体验联合复盘</li>
-    </ul>
-  </div>
+<div class="card">
+<h3>合作方共创机制（深度合作伙伴）</h3>
+<ul>
+<li>季度对齐会：路线图共享、需求互通</li>
+<li>共研专项：面向战略合作方，联合定义新能力</li>
+<li>Case 复盘：每半年一次数据+体验联合复盘</li>
+</ul>
 </div>
-
-<hr>
-
-<!-- ============================================================
-    附录
-============================================================= -->
-<h2 class="chap" id="appA">附录 A · OpenAPI 完整规范</h2>
-<p>完整字段、错误码与示例响应见随册文件 <code>assistant-openapi.html</code>（Swagger UI 交互版）。本白皮书所述接口与其保持一致。</p>
-
-<h2 class="chap" id="appB">附录 B · 术语表</h2>
-<table>
-  <thead><tr><th style="width:22%">术语</th><th>含义</th></tr></thead>
-  <tbody>
-    <tr><td>WorkBuddy</td><td>7×24 云端 AI 智能助理平台</td></tr>
-    <tr><td>Assistant（助理）</td><td>用户拥有的 AI 角色，包含名称、指令、能力标签，支持 local 或 cloud 部署</td></tr>
-    <tr><td>Task（任务）</td><td>用户对某个助理发起的一次执行，包含输入、工具链、产出物与状态</td></tr>
-    <tr><td>Runtime / Sandbox（云端执行环境）</td><td>云端安全存储与执行环境，cloud 助理激活后由平台分配</td></tr>
-    <tr><td>scope（权限范围）</td><td>授权时勾选的能力边界，如 assistant.read、task.write，用户可随时撤销</td></tr>
-    <tr><td>execution_target（任务执行位置）</td><td>cloud 表示任务在云端执行，local 表示在用户本机客户端执行</td></tr>
-    <tr><td>Skill</td><td>WorkBuddy 生态中的能力扩展模块，覆盖行业知识、工具与工作流</td></tr>
-    <tr><td>Connector</td><td>硬件或第三方系统接入 WorkBuddy 生态的能力桥接组件</td></tr>
-    <tr><td>个人票据（access_token）</td><td>OAuth 2.0 授权码流程颁发，代表终端用户身份，用于调用开放接口</td></tr>
-    <tr><td>openid / unionid / uid</td><td>用户在 App 内、开发者内、平台内的三级标识</td></tr>
-  </tbody>
-</table>
-
-<!-- ============================================================
-    意见反馈
-============================================================= -->
-<div class="fb-section" id="feedback">
-  <h3>征求意见和反馈收集</h3>
-  <p>欢迎提出您的疑问、建议或合作意向<br>我们将认真阅读每一条反馈</p>
-  <div class="fb-actions">
-    <a class="fb-btn" href="https://wj.qq.com/s2/27597326/9cj4" rel="noopener noreferrer" target="_blank">
-      <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      填写反馈问卷
-    </a>
-    <div class="fb-qr">
-      <img alt="反馈问卷二维码" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUoAAAFKCAIAAAD0S4FSAAAGMElEQVR4nO3dMW4jRxBAUcnYcC7kzEd35gsx56YbGAMY7d6u+Xwvl0gN+dEKCtXf7/f7Cyj64/QbAHaRN2TJG7LkDVnyhix5Q5a8IUvekCVvyJI3ZMkbsuQNWfKGLHlDlrwhS96QJW/IkjdkyRuyfqz88PXXP18tr7//3PQ07n/zys/O/ARnPsknWnmSTm/IkjdkyRuy5A1Z8oYseUOWvCFL3pAlb8hamlq7t2/WasXKVNO+2bJTk1gzJ8D2fXNeue/kPac3ZMkbsuQNWfKGLHlDlrwhS96QJW/IkjdkbZxae+KWr31WJt727WmbuePt1Cd45b6TTm/IkjdkyRuy5A1Z8oYseUOWvCFL3pAlb8g6NrXWs2/m6dN2vPF/cXpDlrwhS96QJW/IkjdkyRuy5A1Z8oYseUOWqbXH36e5YuU9r0yezdy11uP0hix5Q5a8IUvekCVvyJI3ZMkbsuQNWfKGrGNTayaT5j+rfa87897SV25azukNWfKGLHlDlrwhS96QJW/IkjdkyRuy5A1ZG6fWnrh77N7KNNXK09j3ujN/dp8r95285/SGLHlDlrwhS96QJW/IkjdkyRuy5A1Z8oaspam13m6qT7tddN/rnvp7fSd/5fSGLHlDlrwhS96QJW/IkjdkyRuy5A1Z8oaspam1mfu0Zr7nlTmtlXc18y86NfH2WngaT5y0c3pDlrwhS96QJW/IkjdkyRuy5A1Z8oYseUPWxl1r++bD9s0tPXESq/ecZ36+r5Hb8u45vSFL3pAlb8iSN2TJG7LkDVnyhix5Q5a8IevYrrWVn505ibXyujM3os38e2fOh71GbhZ0ekOWvCFL3pAlb8iSN2TJG7LkDVnyhix5Q9bS1NoKk2dPf84rk4WnZvhe2zbAmVoDfiv/nEOWvCFL3pAlb8iSN2TJG7LkDVnyhqzv9/v99Uk+7Y5It7jOny3bNw/n9IYseUOWvCFL3pAlb8iSN2TJG7LkDVnyhqyNu9ZO3R+672fvnfrNM818ztfI+1L3cXpDlrwhS96QJW/IkjdkyRuy5A1Z8oYseUPW0tTavlmcfXNaK+95342Z+153nyfeH/o6NHl26jNyekOWvCFL3pAlb8iSN2TJG7LkDVnyhix5Q9bSDaGnNkidmmn7tMmz3gTYNfLzdUMo8J/55xyy5A1Z8oYseUOWvCFL3pAlb8iSN2QNnVqbORE1c+bplCc+5xV2rQGD+OccsuQNWfKGLHlDlrwhS96QJW/IkjdkbZxamzl5tu91n/iuVsz8fE/tPLtGfnOc3pAlb8iSN2TJG7LkDVnyhix5Q5a8IUvekPVj36/eN9O2b37o1N2jK2bueDs1l/bEezyvbd8NpzdkyRuy5A1Z8oYseUOWvCFL3pAlb8iSN2Qd27V2an/YEzdmPXES697MT7/H6Q1Z8oYseUOWvCFL3pAlb8iSN2TJG7LkDVkbd63tM3O72D4zpwNn3lv6xA1w99wQCvwL/5xDlrwhS96QJW/IkjdkyRuy5A1Z8oaspV1rn2bmZrIn3pf6xOd8b+a8o9MbsuQNWfKGLHlDlrwhS96QJW/IkjdkyRuyNt4Q+kQz57RObZ6bad+dp9fIfWkrnN6QJW/IkjdkyRuy5A1Z8oYseUOWvCFL3pC18YbQmdunZt6YOXNP26nXnfkkXyOf1T2nN2TJG7LkDVnyhix5Q5a8IUvekCVvyJI3ZG2cWrvX22t179SWr5lW/t5Tz+oaucXtntMbsuQNWfKGLHlDlrwhS96QJW/IkjdkyRuyjk2t9axMy5269XLflq9Tf9GpjWjXyJk2pzdkyRuy5A1Z8oYseUOWvCFL3pAlb8iSN2SZWvtNZt56OfM9P3ET271Tk3ZOb8iSN2TJG7LkDVnyhix5Q5a8IUvekCVvyDo2tTbzHs8VT9yIdmry7NRvvg5tRDu1Pc7pDVnyhix5Q5a8IUvekCVvyJI3ZMkbsuQNWd/v9zu212pF717LffZ9+qf2tO1z6vN1ekOWvCFL3pAlb8iSN2TJG7LkDVnyhix5Q9bS1BowmdMbsuQNWfKGLHlDlrwhS96QJW/IkjdkyRuy5A1Z8oYseUOWvCFL3pAlb8iSN2TJG7LkDVnyhq+qnyXJPmk+dP+OAAAAAElFTkSuQmCC">
-      <span>微信扫码填写</span>
-    </div>
-  </div>
-</div>
-
-<footer class="doc">
-  <div>智能硬件接入 WorkBuddy 白皮书</div>
-  <div>© 2026 WorkBuddy 开放平台　·　发行日期 2026 年 08 月</div>
-</footer>
-
-</div>
-</div>
-<a class="fb-fab" href="#feedback">
-  <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-  意见反馈
-</a>
+</div><h2 class="resource-volume-heading" id="hardware-2-15">附录 A · OpenAPI 完整规范</h2><p>完整字段、错误码与示例响应见随册文件 <code>assistant-openapi.html</code>（Swagger UI 交互版）。本白皮书所述接口与其保持一致。</p><h2 class="resource-volume-heading" id="hardware-2-16">附录 B · 术语表</h2><div class="table-scroll"><table>
+<thead><tr><th>术语</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td>WorkBuddy</td><td>7×24 云端 AI 智能助理平台</td></tr>
+<tr><td>Assistant（助理）</td><td>用户拥有的 AI 角色，包含名称、指令、能力标签，支持 local 或 cloud 部署</td></tr>
+<tr><td>Task（任务）</td><td>用户对某个助理发起的一次执行，包含输入、工具链、产出物与状态</td></tr>
+<tr><td>Runtime / Sandbox（云端执行环境）</td><td>云端安全存储与执行环境，cloud 助理激活后由平台分配</td></tr>
+<tr><td>scope（权限范围）</td><td>授权时勾选的能力边界，如 assistant.read、task.write，用户可随时撤销</td></tr>
+<tr><td>execution_target（任务执行位置）</td><td>cloud 表示任务在云端执行，local 表示在用户本机客户端执行</td></tr>
+<tr><td>Skill</td><td>WorkBuddy 生态中的能力扩展模块，覆盖行业知识、工具与工作流</td></tr>
+<tr><td>Connector</td><td>硬件或第三方系统接入 WorkBuddy 生态的能力桥接组件</td></tr>
+<tr><td>个人票据（access_token）</td><td>OAuth 2.0 授权码流程颁发，代表终端用户身份，用于调用开放接口</td></tr>
+<tr><td>openid / unionid / uid</td><td>用户在 App 内、开发者内、平台内的三级标识</td></tr>
+</tbody>
+</table></div>

@@ -1,0 +1,224 @@
+[
+  {
+    "id": "opc-2-1",
+    "text": "第一章　OPC 正在重塑创业版图",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "opc-3-1",
+    "text": "1.1 规模数据：从边缘走向主流",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-2",
+    "text": "1.2 超级个体：从概念到定义",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-3",
+    "text": "1.3 效率革命：量化验证",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-4",
+    "text": "1.4 创业生命周期被重置",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-5",
+    "text": "1.5 极致实验：Polsia",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-6",
+    "text": "1.6 AI 原生创业的三个新陷阱",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-2-2",
+    "text": "第二章　从「雇人」到「调度算力」",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "opc-3-7",
+    "text": "2.1 硅基员工：从概念到现实",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-8",
+    "text": "2.2 「80% AI + 20% 品味」—— Polsia 的范式判断",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-9",
+    "text": "2.3 三层能力模型",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-10",
+    "text": "2.4 六大商业模式",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-11",
+    "text": "2.5 六条已验证 C 端赛道",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-12",
+    "text": "2.6 万能套利公式",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-13",
+    "text": "2.7 能力洗牌：不是人人平权，而是重新定价",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-2-3",
+    "text": "第三章　中国机遇：政策、产业园区与本地化生态",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "opc-3-14",
+    "text": "3.1 北京朝阳：全国首个 OPC 系统性扶持政策",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-15",
+    "text": "3.2 深圳：全国首个城市级 OPC 行动计划",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-16",
+    "text": "3.3 全国覆盖：20+ 省市密集出台",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-17",
+    "text": "3.4 政策落地的配套缺口",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-18",
+    "text": "3.5 园区与本地化生态",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-2-4",
+    "text": "第四章　WorkBuddy 解法：从一人公司到超级团队的 AI 操作系统",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "opc-3-19",
+    "text": "4.1 超级个体为什么还需要团队？",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-20",
+    "text": "4.2 组织竞争力公式",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-21",
+    "text": "4.3 三种超级团队形态",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-22",
+    "text": "4.4 WorkBuddy 的三层产品架构",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-23",
+    "text": "4.5 混合架构是当前最优解",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-2-5",
+    "text": "第五章　实战图鉴：OPC × WorkBuddy 的 N 种打开方式",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "opc-3-24",
+    "text": "5.1 WorkBuddy 为 OPC 提供的全流程解决方案",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-25",
+    "text": "5.2 OPC 用户案例",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-2-6",
+    "text": "第六章　共建生态：OPC 生产基础设施的建设路径",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "opc-3-26",
+    "text": "6.1 OPC 生态的四个建设维度",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-27",
+    "text": "6.2 各维度的核心需求",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-28",
+    "text": "6.3 WorkBuddy 在生态中的定位",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-29",
+    "text": "6.4 OPC 从业者认证体系",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-30",
+    "text": "6.5 合作形式",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "opc-3-31",
+    "text": "结语",
+    "depth": 3,
+    "kind": "section"
+  }
+]

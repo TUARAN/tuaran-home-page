@@ -1,0 +1,332 @@
+[
+  {
+    "id": "hardware-2-1",
+    "text": "0 摘要",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-1",
+    "text": "0.1 关键数据与市场表现",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-2",
+    "text": "0.2 白皮书如何使用",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-2",
+    "text": "1 WorkBuddy 简介",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-3",
+    "text": "1.1 六大核心能力",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-4",
+    "text": "1.2 用户画像速览",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-3",
+    "text": "2 硬件接入的价值",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-5",
+    "text": "2.1 Agent 价值的三重放大",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-6",
+    "text": "2.2 硬件三痛点与解法",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-4",
+    "text": "3 六类硬件触点",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-7",
+    "text": "3.1 触点对应的硬件形态",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-5",
+    "text": "4 合作模式及范本",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-8",
+    "text": "4.1 三方协同",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-9",
+    "text": "4.2 模式决策图",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-10",
+    "text": "4.3 四种模式详解",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-11",
+    "text": "4.4 合作范本",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-12",
+    "text": "4.5 商业模式与结算",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-6",
+    "text": "5 产品能力全景",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-13",
+    "text": "5.1 Agent 架构总览",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-14",
+    "text": "5.2 云端 Agent 能力",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-15",
+    "text": "5.3 端云协同机制",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-16",
+    "text": "5.4 生态扩展体系",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-17",
+    "text": "5.5 硬件专区产品逻辑",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-7",
+    "text": "6 场景能力矩阵",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-18",
+    "text": "6.1 接入后能做什么：六个已跑通的真实场景",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-8",
+    "text": "7 开放能力概述",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-19",
+    "text": "7.1 能力构成",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-20",
+    "text": "7.2 核心概念",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-9",
+    "text": "8 授权登录（OAuth 2.0）",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-21",
+    "text": "8.1 前置准备",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-22",
+    "text": "8.2 授权流程",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-23",
+    "text": "8.3 换取个人票据",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-24",
+    "text": "8.4 刷新与撤销",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-25",
+    "text": "8.5 用户标识",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-10",
+    "text": "9 接口调用",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-26",
+    "text": "9.1 通用规范",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-27",
+    "text": "9.2 助理接口",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-28",
+    "text": "9.3 任务接口",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-29",
+    "text": "9.4 本机能力",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-11",
+    "text": "10 端到端示例",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-2-12",
+    "text": "11 常见问题",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-2-13",
+    "text": "12 合作落地流程",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-30",
+    "text": "12.1 两条接入路径",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-31",
+    "text": "12.2 样板节奏",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-32",
+    "text": "12.3 合作原则",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-33",
+    "text": "12.4 接入准入与审核",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-34",
+    "text": "12.5 品牌使用与授权",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-35",
+    "text": "12.6 对接窗口",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-14",
+    "text": "13 联合运营",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-3-36",
+    "text": "13.1 售后与技术支持",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-37",
+    "text": "13.2 数据看板与洞察",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-38",
+    "text": "13.3 联合宣发",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-3-39",
+    "text": "13.4 版本迭代与共创",
+    "depth": 3,
+    "kind": "section"
+  },
+  {
+    "id": "hardware-2-15",
+    "text": "附录 A · OpenAPI 完整规范",
+    "depth": 2,
+    "kind": "chapter"
+  },
+  {
+    "id": "hardware-2-16",
+    "text": "附录 B · 术语表",
+    "depth": 2,
+    "kind": "chapter"
+  }
+]

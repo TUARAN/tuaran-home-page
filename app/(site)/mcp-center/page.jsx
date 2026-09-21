@@ -1,6 +1,7 @@
 import PageContainer from '../components/PageContainer'
 import AgentCenterHero from '../components/AgentCenterHero'
 import McpConfigActions from './McpConfigActions'
+import { IconPlugConnected } from '@tabler/icons-react'
 
 export const dynamic = 'force-static'
 
@@ -93,16 +94,9 @@ const SECURITY_ITEMS = [
   ['滥用控制', '按 IP 做分钟与每日限流，线上叠加 Cloudflare WAF。'],
 ]
 
-const MCP_GUIDE = [
-  { title: '选择传输', desc: '线上服务优先 Streamable HTTP，本地能力使用 stdio 子进程。', examples: ['HTTP', 'stdio', '端点'] },
-  { title: '只给所需权限', desc: '按服务设置 OAuth scope、文件范围与环境变量，不共享无关凭据。', examples: ['OAuth', 'scope', '密钥'] },
-  { title: '先看工具契约', desc: '确认工具名、参数、返回结构和错误语义，再交给 Agent 调用。', examples: ['tools', 'schema', '错误'] },
-  { title: '保留安全边界', desc: '远程内容可能携带注入指令；执行、写入和敏感操作必须额外确认。', examples: ['注入', '限流', '确认'] },
-]
-
 function Pill({ children }) {
   return (
-    <span className="inline-flex rounded-sm bg-[#eceae2] px-2 py-0.5 font-mono text-[10px] leading-5 text-[#666653] dark:bg-[#17212d] dark:text-[#c9d6e5]">
+    <span className="inline-flex rounded-full bg-[#eeefe9] px-2.5 py-1 text-[11px] leading-4 text-[#626653] dark:bg-[#25303a] dark:text-[#c9d6e5]">
       {children}
     </span>
   )
@@ -112,39 +106,24 @@ function McpServiceCard({ service }) {
   const prompts = service.prompts || [service.prompt]
 
   return (
-    <article id={service.name} className="flex min-w-0 scroll-mt-24 flex-col py-6">
+    <article id={service.name} className="flex min-w-0 scroll-mt-28 flex-col rounded-2xl border border-[#d8d9d5] bg-white/80 p-5 transition duration-200 hover:-translate-y-1 hover:border-[#aeb1aa] hover:shadow-[0_14px_34px_rgba(34,31,25,0.10)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967] sm:p-6">
       <header>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="mb-0.5 truncate font-mono text-[11px] text-[#8b5a1f] dark:text-[#a1ab76]">{service.name}</p>
-            <h2 className="mb-1.5 border-b-0 pb-0 font-serif text-xl font-semibold leading-tight text-[#1c1d18] dark:text-gray-100">{service.title}</h2>
-            <div className="flex flex-wrap gap-1">
-              <Pill>{service.transport}</Pill>
-              {service.tags.map((tag) => <Pill key={tag}>{tag}</Pill>)}
-            </div>
-          </div>
-          <McpConfigActions title={service.title} config={service.config} codexConfig={service.codexConfig} />
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#e6ecf0] text-[#42617a] dark:bg-[#20313e] dark:text-[#b9d0de]"><IconPlugConnected size={23} stroke={1.7} /></span>
+          <Pill>{service.transport}</Pill>
         </div>
-        <p className="mb-0 mt-2.5 text-sm leading-6 text-[#4c4c44] dark:text-gray-300">{service.desc}</p>
+        <p className="mb-1 truncate font-mono text-[11px] text-[var(--site-faint)]">{service.name}</p>
+        <h2 className="mb-2 border-b-0 pb-0 text-xl font-bold leading-snug text-[var(--site-ink)]">{service.title}</h2>
+        <p className="mb-4 text-sm leading-6 text-[var(--site-muted)]">{service.desc}</p>
+        <div className="flex flex-wrap gap-1.5">{service.tags.map((tag) => <Pill key={tag}>{tag}</Pill>)}</div>
       </header>
 
-      <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
-        <div className="grid min-w-0 grid-cols-[4.5rem_1fr] gap-2">
-          <dt className="text-[#6e7064] dark:text-gray-400">{service.transport.startsWith('stdio') ? '启动方式' : '端点'}</dt>
-          <dd className="mb-0 truncate font-mono text-[11px] text-[#34362e] dark:text-gray-200" title={service.endpoint}>{service.endpoint}</dd>
-        </div>
-        <div className="grid min-w-0 grid-cols-[4.5rem_1fr] gap-2">
-          <dt className="text-[#6e7064] dark:text-gray-400">工具</dt>
-          <dd className="mb-0 flex min-w-0 flex-wrap gap-1">
-            {service.tools.map((tool) => (
-              <code key={tool} className="rounded bg-[#eaebe3] px-1.5 py-0.5 font-mono text-[10px] text-[#555640] dark:bg-[#17212d] dark:text-gray-300">{tool}</code>
-            ))}
-          </dd>
-        </div>
-      </dl>
+      <div className="mt-5 flex flex-wrap gap-1.5">
+        {service.tools.map((tool) => <code key={tool} className="rounded-md bg-[#f3f4ef] px-2 py-1 font-mono text-[10px] text-[#555640] dark:bg-[#25303a] dark:text-gray-300">{tool}</code>)}
+      </div>
 
-      <div className="mt-5 border-l-2 border-[#c8b184] pl-3 dark:border-[#687348]">
-        <p className="mb-1 text-[10px] uppercase tracking-[0.1em] text-[#6e7064] dark:text-gray-400">{prompts.length > 1 ? '对应用法' : '试着这样问'}</p>
+      <div className="mt-5 rounded-xl bg-[#f5f3ee] p-4 dark:bg-[#1a2530]">
+        <p className="mb-1 text-[11px] font-semibold text-[var(--site-muted)]">试着这样问</p>
         {prompts.length > 1 ? (
           <ol className="mb-0 grid gap-1 pl-4 text-xs leading-5 text-[#34362e] dark:text-gray-200">
             {prompts.map((prompt) => <li key={prompt}>{prompt}</li>)}
@@ -152,11 +131,10 @@ function McpServiceCard({ service }) {
         ) : (
           <p className="mb-0 text-xs leading-5 text-[#34362e] dark:text-gray-200">{prompts[0]}</p>
         )}
-        {service.guide ? (
-          <p className="mb-0 mt-2 text-xs leading-5 text-[#4c4c44] dark:text-gray-300">
-            当前配置已在 WorkBuddy 5.2.5 验证为 3/3 个工具启用。其他电脑复制时，需要把 Node、脚本和密钥路径改成该设备的真实绝对路径；可先在仓库执行 <code>npm run mcp:stdio:check</code> 自测。
-          </p>
-        ) : null}
+      </div>
+      {service.guide ? <p className="mb-0 mt-3 text-xs leading-5 text-[var(--site-muted)]">本地 Demo 需要将配置中的 Node、脚本和密钥路径改为当前设备的真实路径。</p> : null}
+      <div className="mt-auto border-t border-[#e8e6e0] pt-4 dark:border-[#2a333d]">
+        <McpConfigActions title={service.title} config={service.config} codexConfig={service.codexConfig} />
       </div>
     </article>
   )
@@ -164,37 +142,33 @@ function McpServiceCard({ service }) {
 
 export default function McpCenterPage() {
   return (
-    <PageContainer className="py-6 md:py-8">
+    <PageContainer className="py-6 md:py-10">
       <AgentCenterHero
         current="/mcp-center"
-        eyebrow="MCP 中心"
-        title="把内容接入智能体的服务货架"
-        description="Skill 告诉智能体“怎么做”，MCP 让智能体“能连接什么”。选择服务、复制配置，即可开始调用。"
+        eyebrow="MCP · 连什么"
+        title="让智能体接入真实服务"
+        description="选择一个 MCP 服务，查看能调用的工具，复制配置后在支持 MCP 的客户端中使用。"
         shareText="面向 AI 智能体的 MCP 服务中心。"
+        count={SERVICES.length}
+        countLabel="个可连接服务"
+        actionLabel="浏览服务"
       />
 
-      <section className="grid grid-cols-2 gap-x-5 gap-y-7 lg:grid-cols-4">
-        {MCP_GUIDE.map((item, index) => (
-          <article key={item.title} className="min-w-0">
-            <span className="mb-3 block font-mono text-[10px] tracking-[0.16em] text-[#a06d2d] dark:text-[#a1ab76]">0{index + 1}</span>
-            <h2 className="mb-1 border-b-0 pb-0 text-sm font-semibold text-[#1c1d18] dark:text-gray-100">{item.title}</h2>
-            <p className="mb-2 text-xs leading-5 text-[#4c4c44] dark:text-gray-300">{item.desc}</p>
-            <div className="flex flex-wrap gap-1">{item.examples.map((example) => <Pill key={example}>{example}</Pill>)}</div>
-          </article>
-        ))}
+      <section id="items" className="scroll-mt-28">
+        <div className="mb-5">
+          <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a6b2f] dark:text-[#d1aa6c]">Explore services</p>
+          <h2 className="mb-0 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">选择要连接的服务</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {SERVICES.map((service) => <McpServiceCard key={service.name} service={service} />)}
+        </div>
       </section>
 
-      <div className="mb-3 mt-6 flex items-center justify-between gap-3">
-        <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">已上架 MCP</h2>
-        <Pill>{SERVICES.length} 个</Pill>
-      </div>
-      <section className="divide-y divide-[#d8d7cf] border-y border-[#d8d7cf] dark:divide-[#283443] dark:border-[#283443]">
-        {SERVICES.map((service) => <McpServiceCard key={service.name} service={service} />)}
-      </section>
-
-      <section className="mt-8 bg-[#efede5] px-5 py-6 dark:bg-[#111a24] md:px-6">
+      <details className="mt-10 rounded-2xl border border-[#d8d9d5] bg-white/60 p-5 dark:border-[#2b333e] dark:bg-[#111821]/70 sm:p-6">
+        <summary className="cursor-pointer text-base font-bold text-[var(--site-ink)]">连接与安全说明</summary>
+        <div className="mt-5">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="mb-0 border-b-0 pb-0 font-serif text-xl font-semibold text-[#1c1d18] dark:text-gray-100">安全边界</h2>
+          <h2 className="mb-0 border-b-0 pb-0 text-lg font-semibold text-[#1c1d18] dark:text-gray-100">使用前请确认</h2>
           <Pill>远程授权 + 本地进程</Pill>
         </div>
         <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -211,23 +185,8 @@ export default function McpCenterPage() {
             文章服务中的站点登录会话、OAuth 授权服务与 MCP Resource Server 分开运行：Cookie 只确认用户身份，文章 MCP 只接受面向自身 audience、包含 <code>articles:read</code> scope 的短期 Access Token。本地 stdio Demo 不开网络端口，密钥由本机进程读取；但工具入参与结果仍可能进入 WorkBuddy 和模型上下文。
           </p>
         </details>
-      </section>
-
-      <ol className="mt-6 grid gap-6 sm:grid-cols-3">
-        {[
-          ['1', '选择传输', 'HTTPS 配置 URL；stdio 配置本地 command。'],
-          ['2', '准备权限', '远程服务走 OAuth；本地服务只授予所需文件权限。'],
-          ['3', '先自测再联调', '先跑 stdio 自测，再在 WorkBuddy 发现和调用工具。'],
-        ].map(([number, title, desc]) => (
-          <li key={number} className="flex gap-3">
-            <span className="font-mono text-[11px] text-[#8b5a1f] dark:text-[#a1ab76]">0{number}</span>
-            <span>
-              <strong className="block text-xs text-[#25271f] dark:text-gray-100">{title}</strong>
-              <span className="text-xs leading-5 text-[#4c4c44] dark:text-gray-300">{desc}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
+        </div>
+      </details>
     </PageContainer>
   )
 }

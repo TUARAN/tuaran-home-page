@@ -46,3 +46,34 @@ test('tools directory uses compact catalog cards while the portfolio keeps galle
   assert.match(directorySource, /xl:grid-cols-4/)
   assert.match(directorySource, /sm:grid-cols-2 lg:grid-cols-3/)
 })
+
+test('capabilities reuse the compact directory and keep the four former centers reachable', async () => {
+  const [source, hero] = await Promise.all([
+    readFile(new URL('app/(site)/capabilities/page.jsx', root), 'utf8'),
+    readFile(new URL('app/(site)/components/AgentCenterHero.jsx', root), 'utf8'),
+  ])
+  assert.match(source, /layout: 'catalog'/)
+  for (const path of ['/skill-center', '/mcp-center', '/prompt-center', '/workbuddy-publish-center']) {
+    assert.ok(source.includes(`href: '${path}'`))
+  }
+  assert.match(hero, /href="\/capabilities"/)
+  assert.doesNotMatch(hero, /aria-label="Agent 能力中心"/)
+  assert.ok(STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/capabilities' && entry.sitemap))
+})
+
+test('capability pages use a public-facing product layout with direct actions', async () => {
+  const pages = await Promise.all([
+    'skill-center', 'mcp-center', 'prompt-center', 'workbuddy-publish-center',
+  ].map((name) => readFile(new URL(`app/(site)/${name}/page.jsx`, root), 'utf8')))
+  for (const page of pages) {
+    assert.match(page, /<AgentCenterHero/)
+    assert.match(page, /id="items"/)
+    assert.match(page, /rounded-2xl/)
+    assert.doesNotMatch(page, /divide-y divide-\[#d8d7cf\]/)
+  }
+  assert.match(pages[0], /查看详情/)
+  assert.match(pages[1], /McpConfigActions/)
+  assert.match(pages[2], /PromptCopyButton/)
+  assert.match(pages[3], /下载 ZIP/)
+  assert.doesNotMatch(pages[3], /readiness:\s*'\d+%'|标准上架流程|需要准备的材料/)
+})

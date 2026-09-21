@@ -1,6 +1,7 @@
 import AgentCenterHero from '../components/AgentCenterHero'
 import PageContainer from '../components/PageContainer'
 import PromptCopyButton, { PromptDetailButton } from './PromptCopyButton'
+import { IconMessage2Code } from '@tabler/icons-react'
 
 export const dynamic = 'force-static'
 
@@ -10,13 +11,6 @@ export const metadata = {
   keywords: ['Prompt', '提示词工程', 'AI Agent', '智能体', '上下文工程', 'Prompt 模板'],
   alternates: { canonical: '/prompt-center' },
 }
-
-const PRINCIPLES = [
-  { title: '任务说清楚', desc: '先写目标、受众与成功标准，再补语气；避免只丢一句“帮我优化”。', examples: ['目标', '受众', '验收'] },
-  { title: '上下文有边界', desc: '用标题或分隔符区分指令、资料与示例，明确哪些内容只作数据处理。', examples: ['背景', '资料', '边界'] },
-  { title: '输出可检查', desc: '约定字段、篇幅、格式和禁止项，让结果可以被人或程序直接验收。', examples: ['格式', '约束', '反例'] },
-  { title: '复杂任务分阶段', desc: '先分析再产出，关键节点暴露假设与风险，必要时让 Agent 使用工具验证。', examples: ['拆解', '工具', '复核'] },
-]
 
 const PROMPTS = [
   {
@@ -75,42 +69,26 @@ const PROMPTS = [
   },
 ]
 
-const REFERENCES = [
-  { title: 'Prompt Engineering Guide', source: 'GitHub · DAIR.AI', href: 'https://github.com/dair-ai/Prompt-Engineering-Guide', desc: '从基础提示、RAG 到 Agent 的系统化开放指南。' },
-  { title: 'Fabric', source: 'GitHub · danielmiessler', href: 'https://github.com/danielmiessler/fabric', desc: '把可复用 AI 工作模式组织成 patterns，强调真实任务与命令行调用。' },
-  { title: 'Awesome ChatGPT Prompts', source: 'GitHub · f', href: 'https://github.com/f/awesome-chatgpt-prompts', desc: '社区提示词集合，适合观察角色、任务和输出结构的表达方式。' },
-  { title: 'promptfoo', source: 'GitHub / npm', href: 'https://github.com/promptfoo/promptfoo', desc: '用测试用例、断言和模型对比，把 Prompt 从文案推进到可回归工程。' },
-  { title: '@prompt-template/core', source: 'npm', href: 'https://www.npmjs.com/package/@prompt-template/core', desc: '类型安全的变量与嵌套模板设计，适合 TypeScript 项目参考。' },
-  { title: '@llms-sdk/prompt', source: 'npm', href: 'https://www.npmjs.com/package/@llms-sdk/prompt', desc: '基于目录约定组织多步骤 Prompt 工作流的工程化示例。' },
-]
-
-const REVIEW_RULES = [
-  '模板必须有明确适用场景，不能只依赖“扮演专家”一类角色设定。',
-  '把资料视作数据而非指令，涉及外部内容时防范 Prompt Injection。',
-  '高风险结论要求来源、工具验证或人工确认，不让模型自己给自己背书。',
-  'Prompt、模型、参数与测试样例一起版本化；改动后回放代表性用例。',
-]
-
 function Pill({ children }) {
-  return <span className="inline-flex rounded-sm bg-[#eceae2] px-2 py-0.5 font-mono text-[10px] leading-5 text-[#666653] dark:bg-[#17212d] dark:text-[#c9d6e5]">{children}</span>
+  return <span className="inline-flex rounded-full bg-[#eeefe9] px-2.5 py-1 text-[11px] leading-4 text-[#626653] dark:bg-[#25303a] dark:text-[#c9d6e5]">{children}</span>
 }
 
 function PromptCard({ item }) {
   return (
-    <article id={item.id} className="flex min-w-0 flex-col py-6">
+    <article id={item.id} className="flex min-w-0 scroll-mt-28 flex-col rounded-2xl border border-[#d8d9d5] bg-white/80 p-5 transition duration-200 hover:-translate-y-1 hover:border-[#aeb1aa] hover:shadow-[0_14px_34px_rgba(34,31,25,0.10)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967] sm:p-6">
       <header>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="mb-0.5 truncate font-mono text-[11px] text-[#8b5a1f] dark:text-[#a1ab76]">{item.name}</p>
-            <h2 className="mb-1.5 border-b-0 pb-0 font-serif text-xl font-semibold leading-tight text-[#1c1d18] dark:text-gray-100">{item.title}</h2>
-            <div className="flex flex-wrap gap-1.5"><Pill>{item.category}</Pill><Pill>{item.level}</Pill><Pill>Agent 可用</Pill></div>
-          </div>
-          <PromptCopyButton prompt={item.prompt} />
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#f0e9d9] text-[#8b682c] dark:bg-[#332b1d] dark:text-[#e0cc94]"><IconMessage2Code size={23} stroke={1.7} /></span>
+          <Pill>{item.category}</Pill>
         </div>
-        <p className="mb-0 mt-3 text-sm leading-6 text-[#4c4c44] dark:text-gray-300">{item.desc}</p>
+        <p className="mb-1 truncate font-mono text-[11px] text-[var(--site-faint)]">{item.name}</p>
+        <h2 className="mb-2 border-b-0 pb-0 text-xl font-bold leading-snug text-[var(--site-ink)]">{item.title}</h2>
+        <p className="mb-4 text-sm leading-6 text-[var(--site-muted)]">{item.desc}</p>
+        <Pill>{item.level}</Pill>
       </header>
-      <footer className="mt-4">
+      <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[#e8e6e0] pt-4 dark:border-[#2a333d]">
         <PromptDetailButton id={item.id} title={item.title} description={item.desc} prompt={item.prompt} />
+        <PromptCopyButton prompt={item.prompt} />
       </footer>
     </article>
   )
@@ -118,63 +96,26 @@ function PromptCard({ item }) {
 
 export default function PromptCenterPage() {
   return (
-    <PageContainer className="py-6 md:py-8">
+    <PageContainer className="py-6 md:py-10">
       <AgentCenterHero
         current="/prompt-center"
-        eyebrow="Prompt 中心"
-        title="把模糊想法写成可执行指令"
-        description="Prompt 告诉智能体“这次具体要做什么”。这里不追求万能咒语，而是整理可复制、可验证、能和 Skill、MCP 一起工作的任务模板。"
+        eyebrow="Prompt · 怎么说"
+        title="把任务说清楚，结果才更可靠"
+        description="挑选一个适合当前任务的模板，复制后填入自己的目标和资料。每个模板都包含输入边界与可检查的输出要求。"
         shareText="面向 AI Agent 的 Prompt 经验、模板与工程参考。"
+        count={PROMPTS.length}
+        countLabel="个可复制模板"
+        actionLabel="挑选模板"
       />
 
-      <section className="grid grid-cols-2 gap-x-5 gap-y-7 lg:grid-cols-4">
-        {PRINCIPLES.map((item, index) => (
-          <article key={item.title} className="min-w-0">
-            <span className="mb-3 block font-mono text-[10px] tracking-[0.16em] text-[#a06d2d] dark:text-[#a1ab76]">0{index + 1}</span>
-            <h2 className="mb-1 border-b-0 pb-0 text-sm font-semibold text-[#1c1d18] dark:text-gray-100">{item.title}</h2>
-            <p className="mb-2 text-xs leading-5 text-[#4c4c44] dark:text-gray-300">{item.desc}</p>
-            <div className="flex flex-wrap gap-1">{item.examples.map((example) => <Pill key={example}>{example}</Pill>)}</div>
-          </article>
-        ))}
-      </section>
-
-      <div className="mb-3 mt-6 flex items-center justify-between gap-3">
-        <h2 className="mb-0 border-b-0 pb-0 font-serif text-2xl font-semibold text-[#1c1d18] dark:text-gray-100">实用 Prompt 模板</h2>
-        <Pill>{PROMPTS.length} 个</Pill>
-      </div>
-      <section className="divide-y divide-[#d8d7cf] border-y border-[#d8d7cf] dark:divide-[#283443] dark:border-[#283443]">
-        {PROMPTS.map((item) => <PromptCard key={item.id} item={item} />)}
-      </section>
-
-      <section className="mt-8 bg-[#efede5] px-5 py-6 dark:bg-[#111a24] md:px-6">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="mb-1 border-b-0 pb-0 font-serif text-xl font-semibold text-[#1c1d18] dark:text-gray-100">GitHub / npm 参考设计</h2>
-            <p className="mb-0 text-xs leading-5 text-[#4c4c44] dark:text-gray-300">学习组织方式、版本管理与评测思路；使用前仍需检查许可证、维护状态和数据边界。</p>
-          </div>
-          <Pill>开放项目</Pill>
+      <section id="items" className="scroll-mt-28">
+        <div className="mb-5">
+          <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a6b2f] dark:text-[#d1aa6c]">Explore prompts</p>
+          <h2 className="mb-0 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">选择一个任务模板</h2>
         </div>
-        <div className="mt-2 grid gap-x-8 md:grid-cols-2 xl:grid-cols-3">
-          {REFERENCES.map((item) => (
-            <a key={item.href} href={item.href} target="_blank" rel="noreferrer" className="group py-3 text-[#34362e] no-underline hover:!no-underline dark:text-gray-200">
-              <span className="block text-sm font-semibold">{item.title} ↗</span>
-              <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.08em] text-[#8b5a1f] dark:text-[#a1ab76]">{item.source}</span>
-              <span className="mt-2 block text-xs leading-5 text-[#4c4c44] dark:text-gray-300">{item.desc}</span>
-            </a>
-          ))}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {PROMPTS.map((item) => <PromptCard key={item.id} item={item} />)}
         </div>
-      </section>
-
-      <section className="mt-8 px-1 py-2">
-        <h2 className="mb-3 border-b-0 pb-0 font-serif text-xl font-semibold text-[#1c1d18] dark:text-gray-100">上架与使用标准</h2>
-        <ol className="grid gap-x-5 gap-y-2 md:grid-cols-2">
-          {REVIEW_RULES.map((rule, index) => (
-            <li key={rule} className="flex gap-2 text-xs leading-5 text-[#43433b] dark:text-gray-300">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#e1e2d8] font-mono text-[10px] text-[#545545] dark:bg-[#17212d] dark:text-gray-300">{index + 1}</span>
-              <span>{rule}</span>
-            </li>
-          ))}
-        </ol>
       </section>
     </PageContainer>
   )

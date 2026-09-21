@@ -20,6 +20,13 @@ test('public opinion selects its own entry, never the featured tool library', ()
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools/multi-ip'), '/tools')
 })
 
+test('legacy capability detail pages select the unified capability entry', () => {
+  const sections = sectionsFor('systems')
+  for (const path of ['/skill-center', '/skill-center/example', '/mcp-center', '/prompt-center', '/workbuddy-publish-center']) {
+    assert.equal(getActiveNavHref(sections, path), '/capabilities')
+  }
+})
+
 test('all visible internal entries have exactly one owning channel and select themselves', () => {
   let checked = 0
   for (const channel of SITE_CHANNELS) {

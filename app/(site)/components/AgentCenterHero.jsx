@@ -1,55 +1,37 @@
 import Link from 'next/link'
+import { IconArrowDownRight, IconArrowUpRight, IconSparkles } from '@tabler/icons-react'
 
 import SharePageButton from './SharePageButton'
 
-const CENTERS = [
-  { href: '/skill-center', label: 'Skill 中心', short: '怎么做' },
-  { href: '/mcp-center', label: 'MCP 中心', short: '连什么' },
-  { href: '/prompt-center', label: 'Prompt 中心', short: '怎么说' },
-  { href: '/workbuddy-publish-center', label: 'WorkBuddy 上架中心', short: '怎么上架' },
-]
-
-export default function AgentCenterHero({ current, eyebrow, title, description, shareText }) {
+export default function AgentCenterHero({ current, eyebrow, title, description, shareText, count, countLabel = '个条目', actionLabel = '浏览全部' }) {
   return (
-    <>
-      <header className="mb-5 pb-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#626358] dark:text-gray-400">
-              <Link href="/works" className="underline-offset-4 hover:underline">AI 项目</Link>
-              <span>/</span>
-              <span>{eyebrow}</span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#a1ab76]">[ Agent ]</span>
-            </div>
-            <h1 className="mb-2 font-serif text-3xl font-semibold tracking-normal text-[#191915] dark:text-gray-100 md:text-4xl">{title}</h1>
-            <p className="mb-0 max-w-3xl text-sm leading-6 text-[#43433b] dark:text-gray-300 md:text-base">{description}</p>
+    <header className="surface-inverse relative mb-10 overflow-hidden rounded-[28px] bg-[#171b21] px-6 py-7 text-white shadow-[0_24px_70px_rgba(20,24,30,0.16)] sm:px-9 sm:py-10 lg:px-12 lg:py-12">
+      <div className="pointer-events-none absolute -right-16 -top-32 h-80 w-80 rounded-full bg-[#d8b476]/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 right-20 h-80 w-80 rounded-full bg-[#7e9faa]/20 blur-3xl" />
+      <div className="pointer-events-none absolute right-10 top-12 hidden h-48 w-48 rotate-12 rounded-[40px] border border-white/10 lg:block" />
+      <div className="relative z-10 flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl">
+          <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-white/65">
+            <Link href="/capabilities" className="text-white/75 no-underline hover:text-white hover:!no-underline">能力集</Link>
+            <span>/</span>
+            <span>{eyebrow}</span>
           </div>
-          <div className="self-start">
-            <SharePageButton title={eyebrow} text={shareText} url={current} />
+          <p className="mb-3 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#d9ba83]"><IconSparkles size={15} /> {eyebrow}</p>
+          <h1 className="mb-4 max-w-3xl text-4xl font-black leading-[1.13] tracking-[-0.045em] text-white sm:text-5xl lg:text-[58px]">{title}</h1>
+          <p className="mb-0 max-w-2xl text-[15px] leading-7 text-white/75 sm:text-base">{description}</p>
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <a href="#items" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#e5c99d] px-5 text-sm font-bold text-[#24211c] no-underline transition hover:bg-white hover:!no-underline">{actionLabel}<IconArrowDownRight size={17} /></a>
+            <Link href="/capabilities" className="inline-flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-white/75 no-underline hover:text-white hover:!no-underline">全部能力 <IconArrowUpRight size={16} /></Link>
           </div>
         </div>
-      </header>
-
-      <nav aria-label="Agent 能力中心" className="mb-8 flex overflow-x-auto border-b border-[#d2d3c8] dark:border-[#283443]">
-        {CENTERS.map((center) => {
-          const active = center.href === current
-          return (
-            <Link
-              key={center.href}
-              href={center.href}
-              aria-current={active ? 'page' : undefined}
-              className={`relative min-w-28 flex-1 px-2 py-3 no-underline transition-colors hover:!no-underline sm:px-4 ${
-                active
-                  ? 'text-[#654115] after:absolute after:inset-x-2 after:bottom-[-1px] after:h-0.5 after:bg-[#8b5a1f] dark:text-[#d2d9a4] dark:after:bg-[#a1ab76] sm:after:inset-x-4'
-                  : 'text-[#6e7064] hover:text-[#34362e] dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-            >
-              <span className="block text-xs font-semibold sm:text-sm">{center.label}</span>
-              <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.08em] opacity-65 sm:text-[10px]">Agent · {center.short}</span>
-            </Link>
-          )
-        })}
-      </nav>
-    </>
+        <div className="flex items-end justify-between gap-5 border-t border-white/15 pt-5 lg:min-w-36 lg:flex-col lg:items-start lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
+          <div>
+            {count != null ? <strong className="block text-4xl font-black leading-none tracking-tight text-white">{count}</strong> : null}
+            <span className="mt-1 block text-xs text-white/55">{countLabel}</span>
+          </div>
+          <SharePageButton title={eyebrow} text={shareText} url={current} />
+        </div>
+      </div>
+    </header>
   )
 }

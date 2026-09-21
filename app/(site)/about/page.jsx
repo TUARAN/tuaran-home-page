@@ -365,14 +365,6 @@ export default function AboutPage() {
                 </Link>
               ))}
             </div>
-
-            <Link
-              href="/about/resume"
-              className="mt-5 inline-flex items-center gap-2 rounded-md border border-[#2d4d61] bg-[#102032] px-3.5 py-2 font-mono text-[12px] tracking-[0.08em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
-            >
-              求职简历
-              <span aria-hidden="true">→</span>
-            </Link>
           </div>
         </div>
         </section>

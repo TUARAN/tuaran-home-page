@@ -18,6 +18,8 @@ test('about page exposes a job resume entry that routes to the printable CV', as
   assert.equal(RESUME_PATH, '/about/resume')
   assert.match(about, /href="\/about\/resume"/)
   assert.match(about, /求职简历/)
+  assert.equal([...about.matchAll(/求职简历/g)].length, 1)
+  assert.doesNotMatch(about, /求职简历[\s\S]{0,80}→/)
   assert.match(resumePage, /求职简历/)
   assert.match(resumePage, /application\/ld\+json/)
   assert.match(resumePage, /canonical: RESUME_PATH/)

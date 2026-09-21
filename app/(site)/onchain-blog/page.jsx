@@ -7,6 +7,8 @@ import ContentFingerprintPrototype from './ContentFingerprintPrototype'
 import ReaderTestInvite from './ReaderTestInvite'
 
 const DETAIL_HREF = '/articles/research/topics/2aran-onchain-content-site'
+const WHITEPAPER_HREF = '/onchain-blog/whitepaper'
+const WHITEPAPER_DOWNLOAD = '/resources/cnt-whitepaper/CNT-content-token-economy-whitepaper.md'
 
 export const dynamic = 'force-static'
 
@@ -79,11 +81,25 @@ const STRUCTURED_DATA = {
 }
 
 const BOUNDARIES = [
-  '不发币，不做 NFT、DAO 或收益承诺。',
   '不要求普通读者连接钱包，钱包只服务于发布流程。',
   '评论、账号、燃币、草稿、后台和私密内容继续留在 D1 / R2。',
   '个人信息、客户资料、版权不明素材和可能需要删除的内容不进入永久存储。',
   '“已验证”只证明版本、时间和完整性，不证明文章观点或事实天然正确。',
+]
+
+const TOKEN_ALLOCATION = [
+  ['社区生态挖矿池', '50%', '5 亿', '10 年双因子衰减，池满即停'],
+  ['优质创作者激励池', '15%', '1.5 亿', '按月度内容质量投票释放'],
+  ['生态流动性储备', '10%', '1 亿', '上线锁仓，2 年线性解锁'],
+  ['DAO 生态财库', '10%', '1 亿', '多签托管，提案通过后动用'],
+  ['早期贡献 & 团队', '10%', '1 亿', '1 年悬崖 + 4 年线性解锁'],
+  ['早期私募额度', '5%', '0.5 亿', '6 个月线性解锁'],
+]
+
+const CONTENT_LINEAGE = [
+  ['12 + 3', '合成 123', '材料早已在路上', 'e90576c7a6500c494c469fbb91fcec3932a8a4c7bf5c484be77692e216c7c399'],
+  ['123', '哈希已有', '整段重复，这是引用', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3'],
+  ['123 + 4', '新哈希', '组合落账，这一步可记', '18ec36d229e478529640195045f6cf42ba55e3162f3518bcff2992e78a2a96af'],
 ]
 
 function SectionHeading({ label, title, children }) {
@@ -131,13 +147,97 @@ export default function OnchainBlogPage() {
               公开文章已有内容指纹、站点签名和测试网批次记录。读者可在浏览器或离线脚本中核对版本、时间和完整性。
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="#open-verifier" className="rounded-full bg-[#e0bb74] px-5 py-2.5 text-sm font-semibold text-[#171109] no-underline hover:bg-[#f1d397]">
-                核对示例凭证
-              </Link>
-              <Link href="#live-check" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white no-underline hover:bg-white/10">
-                当场改一个字
+              <Link href={WHITEPAPER_HREF} className="rounded-full bg-[#e0bb74] px-5 py-2.5 text-sm font-semibold text-[#171109] no-underline hover:bg-[#f1d397]">
+                白皮书
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="said-123" className="scroll-mt-24 border-b border-[#d8d0c2] bg-[#f3f0e8] dark:border-[#2a313b] dark:bg-[#0d1117]">
+        <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-14 lg:grid-cols-[1.15fr_0.85fr] lg:items-start md:py-20">
+          <div className="max-w-2xl">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8a6b3e] dark:text-[#d2ac70]">Origin</p>
+            <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight text-[#26231e] dark:text-[#f2ede4]">一个人说 123</h2>
+            <div className="mt-6 space-y-5 text-sm leading-8 text-[#514c44] dark:text-[#b9b2a7] md:text-[15px]">
+              <p>别人凭什么判断，这句话是他说的。</p>
+              <p>
+                通常会去查重。查重率 100%，这段已经存在，他在引用。他说 123+4，几乎找不到整段重复。这段内容就是他的吗？
+              </p>
+              <p>
+                每一份完整内容对应一个哈希。123 有自己的哈希，123+4 另有哈希。哈希对得上，同一份内容已经公开过。哈希对不上，先记录：这个版本、这个时间、这个人。
+              </p>
+              <p>
+                不必因为只多了一个 4，就去质疑原创太少。没有谁凭空产生 123。123 来自 12+3，或 122+1。大家都朝着一个方向演化：把所有内容组合都演进完。
+              </p>
+              <p>
+                真正独特的想法极少。关键是他能否恰当地表达，把已有材料有机地组合，把某件事往前推进一步。理论就是这样演进的。
+              </p>
+              <p>
+                哈希认出有没有这一份。认出之后，这一次组合才可以记成贡献。CNT 把创作、互动、确权、流通、治理写成同一套结算规则。
+              </p>
+            </div>
+            <Link href="#whitepaper" className="mt-8 inline-flex rounded-full bg-[#2f4b3a] px-5 py-2.5 text-sm font-semibold text-white no-underline hover:bg-[#3a5c47] dark:bg-[#d5b475] dark:text-[#171109] dark:hover:bg-[#e0c48a]">
+              CNT 白皮书
+            </Link>
+          </div>
+          <div className="rounded-2xl border border-[#d6cdbf] bg-[#faf8f2] p-5 dark:border-[#293441] dark:bg-[#121a23]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#9b7a48] dark:text-[#cfad73]">Hash lineage</p>
+            <ol className="mt-4 space-y-3">
+              {CONTENT_LINEAGE.map(([formula, status, note, hash], index) => (
+                <li key={formula} className="rounded-xl border border-[#e4ddd0] bg-white/70 px-4 py-3 dark:border-[#303a46] dark:bg-[#0f161e]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-mono text-xs text-[#9b7a48] dark:text-[#cfad73]">{String(index + 1).padStart(2, '0')}</span>
+                    <span className="font-mono text-[11px] text-[#8a6b3e] dark:text-[#d2ac70]">{status}</span>
+                  </div>
+                  <strong className="mt-2 block font-serif text-2xl text-[#26231e] dark:text-[#f2ede4]">{formula}</strong>
+                  <p className="mt-1 text-sm leading-6 text-[#625d54] dark:text-[#aaa49a]">{note}</p>
+                  <code className="mt-2 block break-all font-mono text-[11px] leading-5 text-[#806842] dark:text-[#d2ac70]">SHA-256 {hash}</code>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section id="whitepaper" className="scroll-mt-24 border-b border-[#d8d0c2] bg-[#171a1d] text-[#f4eee4] dark:border-[#2a313b]">
+        <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-14 lg:grid-cols-[0.85fr_1.15fr] lg:items-start md:py-20">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#d2ac70]">Whitepaper</p>
+            <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight">CNT内容生态代币经济白皮书</h2>
+            <p className="mt-4 text-sm leading-7 text-[#c1b8aa]">
+              新组合一旦有哈希、能落账，这次表达就可以进入贡献结算。CNT 最大总量 10 亿枚，合约硬封顶。行为挖矿按贡献分每周结算，四层反女巫抬高刷量成本，销毁、分红和 DAO 把持币、使用和治理收进同一闭环。附录给出 24 个智能合约模块与依赖关系。
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href={WHITEPAPER_HREF} className="rounded-full bg-[#e0bb74] px-5 py-2.5 text-sm font-semibold text-[#171109] no-underline hover:bg-[#f1d397]">
+                阅读全文
+              </Link>
+              <a
+                href={WHITEPAPER_DOWNLOAD}
+                download="CNT内容生态代币经济白皮书.md"
+                className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white no-underline hover:bg-white/10"
+              >
+                下载正式完整版
+              </a>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-white/15 bg-black/25">
+            <div className="grid grid-cols-[1.4fr_0.5fr_0.6fr] gap-px bg-white/10 font-mono text-[10px] uppercase tracking-[0.08em] text-white/45">
+              <div className="bg-[#171a1d] px-4 py-3">代币池</div>
+              <div className="bg-[#171a1d] px-4 py-3">占比</div>
+              <div className="bg-[#171a1d] px-4 py-3">数量</div>
+            </div>
+            {TOKEN_ALLOCATION.map(([pool, share, amount, rule]) => (
+              <article key={pool} className="grid grid-cols-[1.4fr_0.5fr_0.6fr] items-baseline border-t border-white/10 px-4 py-3">
+                <div>
+                  <h3 className="font-serif text-base font-semibold">{pool}</h3>
+                  <p className="mt-1 text-xs leading-5 text-white/45">{rule}</p>
+                </div>
+                <p className="font-mono text-sm text-[#f2d59a]">{share}</p>
+                <p className="text-sm text-white/75">{amount}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -289,11 +389,16 @@ D1: content_proofs + content_replicas + cost events
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
             <p className="font-serif text-2xl font-semibold">技术选择、数据结构和风险边界写在完整说明里。</p>
-            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-16 · 读者现在可用浏览器或离线脚本核对示例凭证。</p>
+            <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">更新日期：2026-09-21 · 读者现在可用浏览器或离线脚本核对示例凭证。</p>
           </div>
-          <Link href={DETAIL_HREF} className="shrink-0 rounded-full border border-[#9d835b] px-5 py-3 text-sm font-semibold text-[#5d4523] no-underline hover:bg-[#f8f3e9] dark:border-[#8d774f] dark:text-[#dbbd86] dark:hover:bg-white/[0.05]">
-            打开技术方案 →
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href={WHITEPAPER_HREF} className="shrink-0 rounded-full bg-[#e0bb74] px-5 py-3 text-sm font-semibold text-[#171109] no-underline hover:bg-[#f1d397]">
+              打开白皮书 →
+            </Link>
+            <Link href={DETAIL_HREF} className="shrink-0 rounded-full border border-[#9d835b] px-5 py-3 text-sm font-semibold text-[#5d4523] no-underline hover:bg-[#f8f3e9] dark:border-[#8d774f] dark:text-[#dbbd86] dark:hover:bg-white/[0.05]">
+              打开技术方案 →
+            </Link>
+          </div>
         </div>
       </section>
 

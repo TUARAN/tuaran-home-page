@@ -13,14 +13,18 @@ import SiteMobileTabBar from './SiteMobileTabBar'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
 
 const HIDE_CHROME_PATHS = new Set(['/about', '/about/resume', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
-const HIDE_HEADER_PATHS = new Set(['/spacex', '/tools/workbuddy-acp-bridge', '/onchain-blog'])
+const HIDE_HEADER_PATHS = new Set(['/spacex', '/tools/workbuddy-acp-bridge'])
+
+function isOnchainBlogPath(pathname) {
+  return pathname === '/onchain-blog' || pathname.startsWith('/onchain-blog/')
+}
 
 function useChromeVisibility() {
   const pathname = usePathname()
   const richPage = getRichPageByPath(pathname)
   const isFeaturePage = getRichPagePresentation(richPage).id === 'feature'
   const hideChrome = HIDE_CHROME_PATHS.has(pathname) || isFeaturePage
-  const hideHeader = HIDE_HEADER_PATHS.has(pathname)
+  const hideHeader = HIDE_HEADER_PATHS.has(pathname) || isOnchainBlogPath(pathname)
   const showHomeButton = isFeaturePage || pathname === '/archives/agent-world-cup' || pathname === '/spacex'
 
   return { hideChrome, hideHeader, showHomeButton, pathname }

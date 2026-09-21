@@ -46,7 +46,8 @@ test('site chrome mounts the mobile tab bar and add-to-home guide', () => {
 })
 
 test('standalone pages hide the site header', () => {
-  assert.match(chromeSource, /HIDE_HEADER_PATHS = new Set\(\['\/spacex', '\/tools\/workbuddy-acp-bridge', '\/onchain-blog'\]\)/)
-  assert.match(chromeSource, /HIDE_HEADER_PATHS\.has\(pathname\)/)
+  assert.match(chromeSource, /HIDE_HEADER_PATHS = new Set\(\['\/spacex', '\/tools\/workbuddy-acp-bridge'\]\)/)
+  assert.match(chromeSource, /isOnchainBlogPath/)
+  assert.match(chromeSource, /HIDE_HEADER_PATHS\.has\(pathname\) \|\| isOnchainBlogPath\(pathname\)/)
   assert.doesNotMatch(chromeSource, /bookmark-nav|BOOKMARKS_HOST/)
 })

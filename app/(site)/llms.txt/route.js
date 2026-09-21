@@ -46,6 +46,7 @@ export function GET() {
     `- [内容说明](${SITE_URL}/help#editorial): 作者责任、工具使用与更正机制`,
     `- [RSS](${SITE_URL}/rss.xml): 订阅源`,
     `- [内容账本](${SITE_URL}/onchain-blog): 可验证内容发布与开放测试`,
+    `- [CNT 白皮书](${SITE_URL}/onchain-blog/whitepaper): CNT 内容生态代币经济白皮书正式完整版`,
     `- [Agent 验证说明](${SITE_URL}/verify.txt): 内容凭证协议、信任边界与离线验证命令`,
     `- [内容凭证发现](${SITE_URL}/.well-known/content-proof.json): well-known 发现文档`,
     `- [内容凭证 RSS](${SITE_URL}/proofs.xml): 内容指纹、proof JSON 与副本入口`,

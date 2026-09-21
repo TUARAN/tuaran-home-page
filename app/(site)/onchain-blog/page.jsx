@@ -141,16 +141,14 @@ export default function OnchainBlogPage() {
               万物上链
             </h1>
             <p className="mt-7 font-serif text-2xl font-semibold leading-snug text-[#f2d59a] md:text-4xl">
-              所有内容生产，都应该有价值。
+              所有内容的生产与消费，都应该有价值。
             </p>
             <p className="mt-5 max-w-xl text-base leading-8 text-white/[0.72] md:text-lg">
               公开文章已有内容指纹、站点签名和测试网批次记录。读者可在浏览器或离线脚本中核对版本、时间和完整性。
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={WHITEPAPER_HREF} className="rounded-full bg-[#e0bb74] px-5 py-2.5 text-sm font-semibold text-[#171109] no-underline hover:bg-[#f1d397]">
+              <Link href={WHITEPAPER_HREF} className="ml-1 font-semibold text-[#f2d59a] no-underline hover:text-[#f8e4b8]">
                 白皮书
               </Link>
-            </div>
+            </p>
           </div>
         </div>
       </section>

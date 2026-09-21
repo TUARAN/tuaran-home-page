@@ -105,7 +105,7 @@ test('SpaceX dashboard exposes source totals and archive progress', async () => 
   }))
 
   assert.equal(result.stats.historicalLaunchCount, 730)
-  assert.equal(result.stats.archivedVideoCount, 2)
+  assert.equal(result.stats.archivedVideoCount, 3)
   assert.equal(result.stats.upcomingLaunchCount, 0)
 })
 

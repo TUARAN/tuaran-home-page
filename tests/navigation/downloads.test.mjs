@@ -65,7 +65,8 @@ test('download categories switch as two accessible tabs while preserving legacy 
     readFile(new URL('app/(site)/downloads/DownloadTabs.jsx', root), 'utf8'),
   ])
   assert.match(page, /<DownloadTabs groups=\{groups\}>/)
-  assert.match(tabs, /role="tablist"[^>]*grid-cols-2/)
+  assert.match(tabs, /role="tablist"[^>]*inline-flex/)
+  assert.doesNotMatch(tabs, /role="tablist"[^>]*grid-cols-2/)
   assert.match(tabs, /role="tab"/)
   assert.match(tabs, /role="tabpanel"/)
   assert.match(tabs, /hidden=\{active !== group\.anchor\}/)

@@ -38,7 +38,7 @@ export default function DownloadTabs({ groups, children }) {
 
   return (
     <div className="mx-auto max-w-[1080px] px-4 sm:px-6 lg:px-8">
-      <div role="tablist" aria-label="下载分类" className="grid grid-cols-2 gap-2 border-b border-[#d8d1c4] dark:border-[#27313d]">
+      <div role="tablist" aria-label="下载分类" className="inline-flex max-w-full gap-1 rounded-full border border-[#d8d1c4] bg-white/60 p-1 dark:border-[#27313d] dark:bg-[#101720]/70">
         {groups.map((group, index) => (
           <button
             key={group.id}
@@ -51,7 +51,7 @@ export default function DownloadTabs({ groups, children }) {
             tabIndex={active === group.anchor ? 0 : -1}
             onClick={() => select(group.anchor)}
             onKeyDown={(event) => handleKeyDown(event, index)}
-            className={`min-h-12 border-b-2 px-3 py-2 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-current ${active === group.anchor ? 'border-[#171611] text-[#171611] dark:border-white dark:text-white' : 'border-transparent text-[#777268] hover:text-[#171611] dark:text-[#8994a3] dark:hover:text-white'}`}
+            className={`min-h-10 whitespace-nowrap rounded-full px-5 py-2 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${active === group.anchor ? 'bg-[#171611] text-white shadow-sm dark:bg-white dark:text-[#0d0f12]' : 'text-[#777268] hover:bg-[#f2efe7] hover:text-[#171611] dark:text-[#8994a3] dark:hover:bg-[#26313d] dark:hover:text-white'}`}
           >
             {group.title}
             <span className="ml-2 font-mono text-xs opacity-65">{group.items.length}</span>

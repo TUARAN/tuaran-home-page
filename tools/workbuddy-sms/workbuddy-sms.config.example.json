@@ -4,12 +4,22 @@
     "port": 8789
   },
   "agent": {
-    "mode": "mock",
-    "baseUrl": "http://127.0.0.1:8080",
-    "timeoutMs": 120000
+    "mode": "local-acp",
+    "baseUrl": "http://127.0.0.1:50072",
+    "timeoutMs": 120000,
+    "deviceId": "sms-channel",
+    "bridgeBaseUrl": "http://127.0.0.1:8080",
+    "localAcpBaseUrl": "http://127.0.0.1:50072"
   },
   "channel": {
-    "provider": "mock",
+    "provider": "fiveg",
+    "fivegEnv": "production",
+    "socketPath": "~/.workbuddy/5g-legacy-macos.sock",
+    "callbackHost": "127.0.0.1",
+    "callbackPort": 8080,
+    "clawbotBaseUrl": "http://127.0.0.1:18789",
+    "senderMap": {},
+    "dry": false,
     "from": null,
     "relayBaseUrl": null,
     "pollIntervalMs": 2000

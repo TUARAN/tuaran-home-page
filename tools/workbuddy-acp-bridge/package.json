@@ -2,16 +2,18 @@
   "name": "@tuaran/workbuddy-acp-bridge",
   "version": "0.1.0",
   "private": true,
-  "description": "短信式硬件模拟器与 WorkBuddy ACP 本地桥接桌面应用",
+  "description": "连接硬件设备、本地助理与 WorkBuddy 云端任务的桌面应用",
   "main": "desktop/main.cjs",
   "author": "TUARAN",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env src/cli.mjs start",
     "doctor": "node --env-file-if-exists=.env src/cli.mjs doctor",
+    "probe": "node --env-file-if-exists=.env src/cli.mjs probe",
     "test": "node --test tests/*.test.mjs",
     "desktop": "electron desktop/main.cjs",
-    "build:mac": "electron-builder --mac dmg zip --publish=never",
+    "build:mac": "electron-builder --mac dmg zip --arm64 --x64 --publish=never",
+    "build:mac:intel": "electron-builder --mac dmg zip --x64 --publish=never",
     "build:win": "electron-builder --win nsis --x64 --publish=never"
   },
   "devDependencies": {
@@ -21,12 +23,13 @@
   "engines": { "node": ">=22.12.0 <23" },
   "build": {
     "appId": "com.tuaran.workbuddy-acp-bridge",
-    "productName": "ACP 短信桥接台",
+    "productName": "WorkBuddy 硬件接入助手",
     "electronVersion": "43.0.0",
     "asar": true,
     "directories": {
       "output": "release"
     },
+    "afterPack": "scripts/adhoc-sign-macos.cjs",
     "files": [
       "desktop/**/*",
       "public/**/*",
@@ -42,6 +45,7 @@
       ]
     },
     "win": {
+      "icon": "desktop/assets/icon.png",
       "target": [{ "target": "nsis", "arch": ["x64"] }]
     },
     "nsis": {

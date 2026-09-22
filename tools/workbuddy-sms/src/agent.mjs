@@ -1,3 +1,6 @@
+import { LocalAcpAgent } from './local-acp-agent.mjs';
+import { WorkBuddyAcpAgent } from './workbuddy-acp-agent.mjs';
+
 function headers(token, extra = {}) {
   return {
     'X-CodeBuddy-Request': '1',
@@ -101,5 +104,23 @@ export class MockAgent {
   async run({ eventId, text, onEvent }) {
     onEvent?.({ event: 'accepted', data: { runId: `mock-${eventId}` } });
     return { runId: `mock-${eventId}`, text: `模拟专家已处理：${text}` };
+  }
+}
+
+export function createAgent(config, fetchImpl = fetch) {
+  switch (config.mode) {
+    case 'mock':
+      return new MockAgent();
+    case 'codebuddy':
+      return new CodeBuddyAgent(config, fetchImpl);
+    case 'workbuddy-acp':
+      return new WorkBuddyAcpAgent(config, fetchImpl);
+    case 'local-acp':
+      return new LocalAcpAgent({
+        ...config,
+        baseUrl: config.localAcpBaseUrl || config.baseUrl || 'http://127.0.0.1:50072',
+      }, fetchImpl);
+    default:
+      throw new Error(`未知 agent.mode: ${config.mode}`);
   }
 }

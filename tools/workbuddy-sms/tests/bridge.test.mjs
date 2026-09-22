@@ -74,3 +74,21 @@ test('records failures and returns a safe failure notification', async () => {
   assert.equal(store.getEvent('event-010').status, 'failed');
   assert.equal(store.getEvent('event-010').error, undefined);
 });
+
+test('SMS entry can call an official ACP adapter and still send accepted/completed summaries', async () => {
+  const agent = {
+    async run({ text }) {
+      return { runId: 'cloud-task-1', text: `CLOUD:${text}` };
+    },
+  };
+  const { bridge, channel } = await setup({
+    agent,
+    policy: { maxOutboundChars: 80, maxEventsPerHour: 5 },
+  });
+  const result = await bridge.handle({ eventId: 'event-011', senderId: 'self-hash', text: '请只回复PING' });
+  assert.equal(result.ok, true);
+  assert.equal(result.runId, 'cloud-task-1');
+  assert.equal(channel.messages.length, 2);
+  assert.match(channel.messages[0].text, /已收到/);
+  assert.match(channel.messages[1].text, /CLOUD:/);
+});

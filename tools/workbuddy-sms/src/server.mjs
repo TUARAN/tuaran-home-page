@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { verifyRelayEvent } from './security.mjs';
+import { handleFiveGCallbackRequest, loadFiveGCallbackKey } from './workbuddy-5g-http.mjs';
 
 function json(response, status, body) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -39,18 +40,33 @@ async function readBody(request, maxBytes = 16_384) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export function createBridgeServer({ config, bridge, relaySecret = process.env.WORKBUDDY_SMS_RELAY_SECRET }) {
+export function createBridgeServer({
+  config,
+  bridge,
+  relaySecret = process.env.WORKBUDDY_SMS_RELAY_SECRET,
+  callbackKey = loadFiveGCallbackKey(),
+}) {
   return createServer(async (request, response) => {
     try {
       const rawBody = request.method === 'POST' ? await readBody(request) : '';
-      const result = await handleBridgeRequest({
-        method: request.method,
-        url: request.url,
-        headers: request.headers,
-        rawBody,
-        bridge,
-        relaySecret,
-      });
+      const path = new URL(request.url, `http://${request.headers.host ?? '127.0.0.1'}`).pathname;
+      const result = path.startsWith('/workbuddy/api')
+        ? await handleFiveGCallbackRequest({
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          rawBody,
+          bridge,
+          callbackKey,
+        })
+        : await handleBridgeRequest({
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          rawBody,
+          bridge,
+          relaySecret,
+        });
       return json(response, result.status, result.body);
     } catch (error) {
       return json(response, 400, { ok: false, error: error.message });

@@ -1,3 +1,8 @@
+import { homedir } from 'node:os';
+import { probeClawbot, DEFAULT_CLAWBOT_BASE_URL } from './clawbot.mjs';
+import { callFiveGMcp, DEFAULT_FIVEG_SOCKET } from './fiveg-mcp.mjs';
+import { probeAllFiveGHttp, WORKBUDDY_5G_HTTP } from './workbuddy-5g-http.mjs';
+
 export class MockChannel {
   constructor() { this.messages = []; }
   async health() { return { ok: true, provider: 'mock' }; }
@@ -5,6 +10,96 @@ export class MockChannel {
     const result = { ok: true, provider: 'mock', messageId: `mock-${this.messages.length + 1}`, ...message };
     this.messages.push(result);
     return result;
+  }
+}
+
+function loadSenderMap(config = {}) {
+  const fromConfig = config.senderMap && typeof config.senderMap === 'object' && !Array.isArray(config.senderMap)
+    ? config.senderMap
+    : {};
+  if (!process.env.WORKBUDDY_SMS_SENDER_MAP) return { ...fromConfig };
+  try {
+    return { ...fromConfig, ...JSON.parse(process.env.WORKBUDDY_SMS_SENDER_MAP) };
+  } catch {
+    throw new Error('WORKBUDDY_SMS_SENDER_MAP 不是有效 JSON 对象');
+  }
+}
+
+export class FiveGChannel {
+  constructor(config = {}, {
+    fetchImpl = fetch,
+    mcpCall = callFiveGMcp,
+    probeHttp = probeAllFiveGHttp,
+    probeGateway = probeClawbot,
+  } = {}) {
+    this.config = config;
+    this.fetch = fetchImpl;
+    this.mcpCall = mcpCall;
+    this.probeHttp = probeHttp;
+    this.probeGateway = probeGateway;
+    this.socketPath = String(config.socketPath || process.env.BRIDGE_SOCKET || DEFAULT_FIVEG_SOCKET)
+      .replace(/^~(?=\/|$)/, homedir());
+    this.fivegEnv = config.fivegEnv || 'production';
+    this.clawbotBaseUrl = config.clawbotBaseUrl || DEFAULT_CLAWBOT_BASE_URL;
+    this.senderMap = loadSenderMap(config);
+    this.dry = config.dry === true;
+  }
+
+  resolveRecipient(message = {}) {
+    const recipient = String(message.recipient || message.to || '').trim();
+    const mapped = this.senderMap[recipient];
+    const to = String(mapped || recipient).trim();
+    if (!to) throw new Error('缺少真实 5G 下发目标');
+    return to;
+  }
+
+  async health() {
+    let socket = { ok: false };
+    try {
+      const status = await this.mcpCall({ socketPath: this.socketPath, name: 'bridge_status' });
+      socket = {
+        ok: Boolean(status.wsAuthed && status.runtimeReady && status.dry === false),
+        wsConnected: Boolean(status.wsConnected),
+        wsAuthed: Boolean(status.wsAuthed),
+        dry: Boolean(status.dry),
+        wsMode: status.wsMode || null,
+        version: status.version || null,
+      };
+    } catch (error) {
+      socket = { ok: false, error: error.message };
+    }
+    const http = await this.probeHttp(this.fetch);
+    const clawbot = await this.probeGateway(this.clawbotBaseUrl, this.fetch);
+    const localCallback = http.find((item) => item.env === 'local') || null;
+    return {
+      ok: socket.ok,
+      provider: 'fiveg',
+      simulator: false,
+      fivegEnv: this.fivegEnv,
+      socketPath: this.socketPath.replace(homedir(), '~'),
+      socket,
+      http,
+      localCallback: {
+        ready: localCallback?.ok === true && localCallback?.serviceMatch === true,
+        conflict: localCallback?.reachable === true && localCallback?.serviceMatch === false,
+        service: localCallback?.service || null,
+      },
+      clawbot,
+      callback: WORKBUDDY_5G_HTTP,
+    };
+  }
+
+  async send(message) {
+    const to = this.resolveRecipient(message);
+    if (this.dry) {
+      return { ok: true, provider: 'fiveg', dry: true, to, text: message.text };
+    }
+    const result = await this.mcpCall({
+      socketPath: this.socketPath,
+      name: 'send_5g',
+      args: { to, text: message.text },
+    });
+    return { ok: true, provider: 'fiveg', to, result };
   }
 }
 
@@ -102,5 +197,6 @@ export class RelayChannel {
 export function createChannel(config, fetchImpl = fetch) {
   if (config.provider === 'twilio') return new TwilioChannel(config, fetchImpl);
   if (config.provider === 'relay') return new RelayChannel(config, fetchImpl);
+  if (config.provider === 'fiveg') return new FiveGChannel(config, { fetchImpl });
   return new MockChannel();
 }

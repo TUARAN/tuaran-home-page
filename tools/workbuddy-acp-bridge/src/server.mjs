@@ -2,7 +2,8 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
+import { normalizePathname } from './config.mjs';
 
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
 const TYPES = {
@@ -32,7 +33,7 @@ async function readBody(req, limit = 64 * 1024) {
 }
 
 export function createBridgeHandler({ config, bridge, workbuddy, tokenStore }) {
-  const states = new Map(); const clients = new Set();
+  const states = new Map(); const clients = new Set(); const exchangingCodes = new Set();
   bridge.on('event', (event) => {
     const line = 'data: ' + JSON.stringify(event) + '\n\n';
     for (const res of clients) res.write(line);
@@ -44,7 +45,10 @@ export function createBridgeHandler({ config, bridge, workbuddy, tokenStore }) {
         'http://' + config.host + ':' + config.port,
         'http://localhost:' + config.port,
         'http://127.0.0.1:' + config.port,
-      ];
+        config.oauthListen?.origin,
+        config.oauthListen ? 'http://127.0.0.1:' + config.oauthListen.listenPort : null,
+        config.oauthListen ? 'http://localhost:' + config.oauthListen.listenPort : null,
+      ].filter(Boolean);
       if (req.headers.origin && !allowedOrigins.includes(req.headers.origin)) {
         return json(res, 403, { ok: false, error: 'Origin 不允许' });
       }
@@ -59,18 +63,70 @@ export function createBridgeHandler({ config, bridge, workbuddy, tokenStore }) {
       }
       if (url.pathname === '/oauth/start') {
         if (config.mode === 'mock') { res.writeHead(302, { location: '/' }); return res.end(); }
-        const state = randomBytes(24).toString('base64url');
-        states.set(state, Date.now() + 10 * 60_000);
-        res.writeHead(302, { location: workbuddy.authorizationUrl(state), 'cache-control': 'no-store' });
+        if (!config.oauthListen) {
+          return json(res, 409, {
+            ok: false,
+            error: '当前入口是 5G 新消息 / Clawbot。OAuth 回调登记在云端网关，这台电脑收不到授权码。',
+            callback: config.redirectUri,
+          });
+        }
+        const request = workbuddy.createAuthorizationRequest();
+        states.set(request.state, { expires: Date.now() + 10 * 60_000 });
+        res.writeHead(302, { location: request.url, 'cache-control': 'no-store' });
         return res.end();
       }
-      if (url.pathname === '/oauth/callback') {
+      if (url.pathname === '/oauth/logout' && req.method === 'POST') {
+        await bridge.disconnect();
+        await tokenStore.clear();
+        states.clear();
+        return json(res, 200, { ok: true, authorized: false });
+      }
+      const oauthPath = config.oauthListen?.pathname || '/oauth/callback';
+      const isOauthPath = normalizePathname(url.pathname) === oauthPath
+        || normalizePathname(url.pathname) === '/oauth/callback';
+      if (req.method === 'GET' && isOauthPath && (url.searchParams.get('code') || url.searchParams.get('error') || url.searchParams.get('state'))) {
         const state = url.searchParams.get('state');
-        const expires = states.get(state); states.delete(state);
+        const code = url.searchParams.get('code');
+        const pending = states.get(state); states.delete(state);
+        const expires = typeof pending === 'number' ? pending : pending?.expires;
         if (!expires || expires < Date.now()) return json(res, 400, { ok: false, error: 'OAuth state 无效或已过期' });
         if (url.searchParams.get('error')) return json(res, 400, { ok: false, error: url.searchParams.get('error') });
-        await workbuddy.exchangeCode(url.searchParams.get('code'));
-        res.writeHead(302, { location: '/?authorized=1' }); return res.end();
+        if (!code) return json(res, 400, { ok: false, error: 'OAuth 回调缺少授权码' });
+        if (exchangingCodes.has(code)) {
+          return json(res, 409, { ok: false, error: '授权码正在处理，请不要刷新回调页' });
+        }
+        exchangingCodes.add(code);
+        try {
+          await workbuddy.exchangeCode(code);
+        } catch (error) {
+          if (error?.body?.error === 'invalid_grant') {
+            return json(res, 400, {
+              ok: false,
+              error: '授权码无效：已使用、过期，或与本次授权参数不一致。请回到本机界面重新点「连接 WorkBuddy」，不要刷新这个错误页。',
+              details: error.body,
+            });
+          }
+          if (error?.body?.error === 'unauthorized_client' || error?.body?.error === 'invalid_client') {
+            return json(res, 400, {
+              ok: false,
+              error: '开放平台拒绝用真授权码换 token。官方返回码表将 unauthorized_client / invalid_client 指向应用状态或凭据。请平台核对应用 active 状态、Client ID/Secret 与授权码所属应用是否一致；这不是通过修改回调端口或增加 OAuth 请求参数能够解决的错误。',
+              details: error.body,
+            });
+          }
+          throw error;
+        } finally {
+          exchangingCodes.delete(code);
+        }
+        res.writeHead(302, { location: 'http://localhost:' + config.port + '/?authorized=1' });
+        return res.end();
+      }
+      if (req.method === 'GET' && isOauthPath && normalizePathname(url.pathname) !== '/') {
+        const token = await tokenStore.read();
+        return json(res, 200, {
+          ok: true,
+          service: 'workbuddy-oauth-callback',
+          authorized: config.mode === 'mock' || Boolean(token?.access_token),
+        });
       }
       if (url.pathname === '/v1/events' && req.method === 'GET') {
         res.writeHead(200, {
@@ -99,6 +155,16 @@ export function createBridgeHandler({ config, bridge, workbuddy, tokenStore }) {
           return json(res, 401, { ok: false, error: 'X-Bridge-Key 无效' });
         }
         return json(res, 202, await bridge.handleDeviceEvent(await readBody(req)));
+      }
+      if (url.pathname === '/v1/ui/messages' && req.method === 'POST') {
+        return json(res, 202, await bridge.handleDeviceEvent(await readBody(req)));
+      }
+      const localJob = url.pathname.match(/^\/v1\/localassistant\/jobs\/([^/]+)$/);
+      if (localJob && req.method === 'GET') {
+        const job = bridge.getLocalAssistantJob(decodeURIComponent(localJob[1]));
+        return job
+          ? json(res, 200, job)
+          : json(res, 404, { ok: false, error: '本地助理请求不存在或已过期' });
       }
       if (url.pathname === '/v1/permissions/respond' && req.method === 'POST') {
         const input = await readBody(req);

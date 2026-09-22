@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CodeBuddyAgent, readSse } from '../src/agent.mjs';
+import { CodeBuddyAgent, createAgent, readSse } from '../src/agent.mjs';
 
 test('reads visible text from CodeBuddy SSE without exposing unrelated fields', async () => {
   const response = new Response([
@@ -32,4 +32,14 @@ test('uses the public Runs API and stable Gateway Protocol fields', async () => 
   assert.equal(body.source.platform, 'sms');
   assert.equal(body.source.sender.id, 'self-hash');
   assert.equal(requests[0].options.headers['X-CodeBuddy-Request'], '1');
+});
+
+test('createAgent selects official ACP and local ACP adapters', async () => {
+  assert.equal((await createAgent({ mode: 'mock' }).health()).data.mode, 'mock');
+  assert.equal(createAgent({ mode: 'workbuddy-acp', baseUrl: 'http://127.0.0.1:8799' }).deviceId, 'sms-channel');
+  assert.equal(createAgent({ mode: 'local-acp', baseUrl: 'http://127.0.0.1:50072' }).baseUrl, 'http://127.0.0.1:50072');
+  assert.equal(
+    createAgent({ mode: 'local-acp', baseUrl: 'http://127.0.0.1:8080', localAcpBaseUrl: 'http://127.0.0.1:50072' }).baseUrl,
+    'http://127.0.0.1:50072',
+  );
 });

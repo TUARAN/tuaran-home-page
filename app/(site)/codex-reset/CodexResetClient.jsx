@@ -31,16 +31,6 @@ import {
   yearMonthOf,
 } from '../../../lib/codexResets'
 
-function kindClass(kind) {
-  if (kind === 'preview') {
-    return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200'
-  }
-  if (kind === 'credit') {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200'
-  }
-  return 'border-[#cdd5c3] bg-[#eef3e6] text-[#3f5340] dark:border-[#2f3d31] dark:bg-[#152018] dark:text-[#c5d6b8]'
-}
-
 function cellKindClass(kind, selected) {
   if (kind === 'preview') {
     return selected
@@ -57,18 +47,10 @@ function cellKindClass(kind, selected) {
     : 'border-[#e4e2da] bg-white text-[#1d1a16] hover:border-[#c8c5b8] dark:border-[#2b3440] dark:bg-[#111923] dark:text-gray-200 dark:hover:border-[#435062]'
 }
 
-function KindBadge({ kind, children }) {
-  return (
-    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${kindClass(kind)}`}>
-      {children || KIND_META[kind].label}
-    </span>
-  )
-}
-
 function PostCard({ post, scheduleLabel }) {
   if (!post) return null
   return (
-    <article className="rounded-2xl border border-[#e4e2da] bg-white p-4 dark:border-[#2b3440] dark:bg-[#111923]">
+    <article className="codex-reset-post-card rounded-2xl border border-[#e4e2da] p-4 dark:border-[#2b3440]">
       <div className="flex items-start justify-between gap-3">
         <a href={TIBO_PROFILE_URL} target="_blank" rel="noreferrer" className="flex min-w-0 items-center gap-3 no-underline">
           <Image
@@ -103,25 +85,15 @@ function PostCard({ post, scheduleLabel }) {
 }
 
 function EventDetail({ event }) {
-  const kind = eventKind(event)
-  const date = calendarDateForEvent(event)
   return (
     <section className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <KindBadge kind={kind} />
-        {event.scope ? <span className="text-[12px] text-[#767869] dark:text-[#8e9ab0]">{event.scope}</span> : null}
-      </div>
-      <h3 className="font-serif text-[20px] font-semibold text-[#1d1a16] dark:text-gray-100">{event.title}</h3>
-      <div className="space-y-3">
-        {event.posts.map((post, index) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            scheduleLabel={index === 0 ? event.schedule?.label : ''}
-          />
-        ))}
-      </div>
-      {date ? <p className="text-[12px] text-[#8a8174] dark:text-[#8e9ab0]">日历日期 {date}</p> : null}
+      {event.posts.map((post, index) => (
+        <PostCard
+          key={post.id}
+          post={post}
+          scheduleLabel={index === 0 ? event.schedule?.label : ''}
+        />
+      ))}
     </section>
   )
 }

@@ -2546,6 +2546,15 @@
     min-height: 100%;
   }
 
+  .codex-reset-post-card {
+    background: color-mix(in srgb, #ffffff 82%, transparent);
+    backdrop-filter: blur(10px);
+  }
+
+  .dark .codex-reset-post-card {
+    background: color-mix(in srgb, #111923 84%, transparent);
+  }
+
   .home-achievement-card:hover {
     border-color: color-mix(in srgb, var(--site-ink) 18%, var(--site-line));
     background: color-mix(in srgb, var(--site-panel-strong) 46%, transparent);

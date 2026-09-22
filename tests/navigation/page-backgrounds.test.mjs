@@ -49,3 +49,9 @@ test('CSS module page canvases with former paper colors follow the site theme', 
     assert.ok(root?.includes('var(--page-bg)'), `${modulePath} should use the site background`)
   }
 })
+
+test('web-llm does not shadow the site background token', async () => {
+  const stylesheet = await readFile(new URL('../../app/(web-llm)/web-llm/webllm.css', import.meta.url), 'utf8')
+  assert.doesNotMatch(stylesheet, /--page-bg\s*:/)
+  assert.match(stylesheet, /#web-llm-app-shell\s*\{[^}]*background:\s*var\(--page-bg\)/)
+})

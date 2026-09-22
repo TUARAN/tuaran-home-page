@@ -28,7 +28,6 @@ export default function DesktopPetDemo() {
 
   return (
     <div className="rounded-[2rem] bg-[#213b35] p-5 text-[#35413c] shadow-2xl sm:p-7" aria-label="鹿鹿精灵网页演示">
-      <p className="mb-4 text-xs font-semibold tracking-wide text-[#d5e9de]">网页演示 · 不连接 WorkBuddy</p>
       <p className="min-h-[4.5rem] rounded-2xl bg-[#f6e9cd] px-4 py-3 text-sm leading-6" aria-live="polite">{speech}</p>
       <button type="button" onClick={petLulu} className="mx-auto flex h-72 w-full items-center justify-center rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f6e9cd]" aria-label="摸摸鹿鹿">
         <Image src="/images/workbuddy-desktop-pet/lulu-giraffe.png" alt="" width={280} height={280} className="h-64 w-64 object-contain drop-shadow-xl" priority />

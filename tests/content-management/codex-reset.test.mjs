@@ -11,6 +11,7 @@ import {
   homeStripHeadline,
   homeStripSubline,
   monthStats,
+  newestPostOnDate,
   parseCodexResetsPayload,
   pickFeaturedEvent,
   shiftYearMonth,
@@ -148,6 +149,40 @@ test('home strip copy dedupes date and keeps one time window', () => {
   assert.doesNotMatch(homeStripSubline(model), /9月22日/)
 })
 
+test('spotlight post prefers the newest post on the featured date', () => {
+  const events = [
+    {
+      id: 'credit-preview',
+      type: 'reset_credit',
+      status: 'announced',
+      schedule: { from: '2026-09-22T15:00:00.000+08:00' },
+      createdAt: '2026-09-20T00:48:38.000+08:00',
+      posts: [{
+        id: 'older',
+        publishedAt: '2026-09-20T00:48:38.000+08:00',
+        stage: '发卡预告',
+        text: '旧帖',
+        url: 'https://x.com/thsottiaux/status/older',
+      }],
+    },
+    {
+      id: 'reset-preview',
+      type: 'direct_reset',
+      status: 'announced',
+      schedule: { from: '2026-09-22T12:00:00.000+08:00' },
+      createdAt: '2026-09-22T12:31:00.000+08:00',
+      posts: [{
+        id: 'newer',
+        publishedAt: '2026-09-22T12:31:00.000+08:00',
+        stage: '预告',
+        text: '我承诺过周二重置。',
+        url: 'https://x.com/thsottiaux/status/newer',
+      }],
+    },
+  ]
+  assert.equal(newestPostOnDate(events, '2026-09-22').id, 'newer')
+})
+
 test('featured upcoming announcement beats an older confirmed reset', () => {
   const parsed = parseCodexResetsPayload(FIXTURE)
   const featured = pickFeaturedEvent(parsed.events, '2026-09-22')
@@ -178,10 +213,14 @@ test('page is registered as an analysis tool and a rich-page work', async () => 
   assert.match(client, /\/api\/codex-resets/)
   assert.match(client, /TIBO_AVATAR_PATH/)
   assert.match(client, /CODEX_RESET_HERO_BG_PATH/)
-  assert.match(client, /codex-reset-featured/)
-  assert.match(client, /codex-reset-issue-card/)
+  assert.match(client, /codex-reset-day-panel/)
+  assert.match(client, /codex-reset-day-panel-bg/)
+  assert.doesNotMatch(client, /codex-reset-day-panel-overlay/)
+  assert.doesNotMatch(client, /codex-reset-day-panel-art/)
+  assert.doesNotMatch(client, /codex-reset-spotlight/)
+  assert.doesNotMatch(client, /重置日历/)
+  assert.doesNotMatch(client, /codex-reset-issue-card/)
   assert.doesNotMatch(client, /codex-reset-featured-bg/)
-  assert.match(client, /CODEX_RESET_HERO_BG_PATH/)
   assert.doesNotMatch(client, /codex-reset-page-bg|codex-reset-figure/)
   assert.match(client, /不猜测下一次重置/)
   assert.match(home, /title: 'Codex 重置'/)

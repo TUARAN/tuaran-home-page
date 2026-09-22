@@ -20,13 +20,9 @@ import {
   calendarDateForEvent,
   eventKind,
   eventsOnDate,
-  featuredKicker,
   formatBeijingPostTime,
-  formatCompactDate,
   formatDayHeading,
   formatMonthTitle,
-  homeCardModel,
-  latestPost,
   monthStats,
   monthStatsLabel,
   pickFeaturedEvent,
@@ -165,8 +161,6 @@ export default function CodexResetClient() {
   const events = snapshot.events
   const featured = useMemo(() => pickFeaturedEvent(events, today), [events, today])
   const featuredDate = featured ? calendarDateForEvent(featured) : today
-  const featuredPost = latestPost(featured)
-  const featuredModel = useMemo(() => homeCardModel(snapshot, today), [snapshot, today])
 
   useEffect(() => {
     if (!featuredDate) return
@@ -197,19 +191,16 @@ export default function CodexResetClient() {
   return (
     <main className="codex-reset-page relative min-h-[calc(100vh-var(--site-header-height))]">
       <div className="codex-reset-page-content mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-10">
-        <header className="flex flex-col gap-4 border-b border-[#dee0db]/80 pb-5 dark:border-gray-800/80 sm:flex-row sm:items-start sm:justify-between">
+        <header className="flex flex-col gap-3 border-b border-[#dee0db]/80 pb-4 dark:border-gray-800/80 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
-                Codex Reset · 北京时间 UTC+8
-              </p>
-              <h1 className="mt-1 font-serif text-[26px] font-semibold leading-tight text-[#15140f] dark:text-gray-100 sm:text-[30px]">
-                Codex 重置监控
-              </h1>
-              <p className="mt-1 text-[12px] text-[#585a4c] dark:text-gray-400">
-                {TIBO_NAME} {TIBO_HANDLE}
-              </p>
-            <p className="mt-3 max-w-2xl text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
-              追踪 Tibo 公开的 Codex 额度重置、重置卡发放与原帖。
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#767869] dark:text-[#8e9ab0]">
+              Codex Reset · 北京时间 UTC+8
+            </p>
+            <h1 className="mt-1 font-serif text-[24px] font-semibold leading-tight text-[#15140f] dark:text-gray-100 sm:text-[26px]">
+              Codex 重置监控
+            </h1>
+            <p className="mt-1.5 max-w-2xl text-[13px] leading-6 text-[#51514a] dark:text-gray-400">
+              追踪 {TIBO_NAME} {TIBO_HANDLE} 公开的重置、发卡与原帖；选择日期查看记录。
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -229,49 +220,7 @@ export default function CodexResetClient() {
           </div>
         </header>
 
-      {featured ? (
-        <section className="codex-reset-featured mt-5 rounded-[24px] border border-[#e4e2da] dark:border-[#2b3440]">
-          <div className="codex-reset-featured-inner grid gap-4 p-4 lg:grid-cols-[minmax(0,0.85fr)_220px_minmax(0,1.05fr)] lg:p-5">
-            <div className="codex-reset-featured-copy">
-              <div className="flex flex-wrap items-center gap-2">
-                <KindBadge kind={featuredModel.kind}>{featuredModel.kicker}</KindBadge>
-                {featuredDate === today ? <span className="text-[11px] text-[#767869] dark:text-[#8e9ab0]">今天</span> : null}
-              </div>
-              <p className="mt-4 font-serif text-[34px] font-semibold leading-none text-[#1d1a16] dark:text-gray-100 sm:text-[40px]">
-                {formatCompactDate(featuredDate)}
-              </p>
-              {featured.schedule?.label ? (
-                <p className="mt-3 text-[13px] leading-6 text-[#51514a] dark:text-gray-400">{featured.schedule.label}</p>
-              ) : null}
-              <p className="mt-2 text-[12px] leading-6 text-[#8a8174] dark:text-[#8e9ab0]">
-                发卡不代表额度已恢复。没有完成帖时保留原预告，时间经过不会自动改成已确认。
-              </p>
-            </div>
-            <figure className="codex-reset-issue-card">
-              <Image
-                src={CODEX_RESET_HERO_BG_PATH}
-                alt="Saint Tibo 重置卡"
-                width={682}
-                height={1024}
-                unoptimized
-                className="codex-reset-issue-card-art"
-              />
-              <figcaption className="codex-reset-issue-card-caption">Saint Tibo · 重置卡</figcaption>
-            </figure>
-            <PostCard post={featuredPost} />
-          </div>
-        </section>
-      ) : null}
-
-      <section className="mt-8">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#767869] dark:text-[#8e9ab0]">Reset calendar</p>
-            <h2 className="mt-1 font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">重置日历</h2>
-            <p className="mt-1 text-[13px] text-[#51514a] dark:text-gray-400">选择日期，查看重置状态与原帖记录。</p>
-          </div>
-        </div>
-
+      <section className="mt-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
           <div className="rounded-[24px] border border-[#e4e2da] bg-white p-4 dark:border-[#2b3440] dark:bg-[#111923] sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -334,18 +283,25 @@ export default function CodexResetClient() {
             </p>
           </div>
 
-          <aside className="rounded-[24px] border border-[#e4e2da] bg-[#f7f5ef] p-4 dark:border-[#2b3440] dark:bg-[#10151d] sm:p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="font-serif text-[20px] font-semibold text-[#1d1a16] dark:text-gray-100">{formatDayHeading(selectedDate)}</h3>
-              {selectedDate === today ? <span className="text-[12px] text-[#767869] dark:text-[#8e9ab0]">今天</span> : null}
-            </div>
-            {selectedEvents.length ? (
-              <div className="space-y-6">
-                {selectedEvents.map((event) => <EventDetail key={event.id} event={event} />)}
+          <aside className="codex-reset-day-panel relative overflow-hidden rounded-[24px] border border-[#e4e2da] dark:border-[#2b3440]">
+            <div
+              className="codex-reset-day-panel-bg"
+              style={{ backgroundImage: `url('${CODEX_RESET_HERO_BG_PATH}')` }}
+              aria-hidden="true"
+            />
+            <div className="codex-reset-day-panel-content relative z-[1] p-4 sm:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="font-serif text-[20px] font-semibold text-[#1d1a16] dark:text-gray-100">{formatDayHeading(selectedDate)}</h2>
+                {selectedDate === today ? <span className="text-[12px] text-[#767869] dark:text-[#8e9ab0]">今天</span> : null}
               </div>
-            ) : (
-              <p className="text-[14px] leading-6 text-[#51514a] dark:text-gray-400">这一天没有公开的重置或发卡记录。</p>
-            )}
+              {selectedEvents.length ? (
+                <div className="space-y-6">
+                  {selectedEvents.map((event) => <EventDetail key={event.id} event={event} />)}
+                </div>
+              ) : (
+                <p className="text-[14px] leading-6 text-[#51514a] dark:text-gray-400">这一天没有公开的重置或发卡记录。</p>
+              )}
+            </div>
           </aside>
         </div>
       </section>

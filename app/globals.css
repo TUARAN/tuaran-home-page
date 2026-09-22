@@ -2525,41 +2525,25 @@
     background: var(--page-bg);
   }
 
-  .codex-reset-featured {
+  .codex-reset-day-panel {
     background: #f7f5ef;
   }
 
-  .dark .codex-reset-featured {
+  .dark .codex-reset-day-panel {
     background: #10151d;
   }
 
-  .codex-reset-featured-copy {
-    @apply min-w-0 py-1 lg:py-2;
+  .codex-reset-day-panel-bg {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    background-position: left top;
+    background-size: auto 100%;
+    pointer-events: none;
   }
 
-  .codex-reset-issue-card {
-    @apply mx-auto flex max-w-[220px] flex-col items-center gap-2 lg:max-w-none;
-  }
-
-  .codex-reset-issue-card-art {
-    @apply w-full rounded-[18px] border shadow-md;
-    border-color: color-mix(in srgb, #b8860b 24%, var(--site-line));
-    background: #f7f5ef;
-    box-shadow:
-      0 12px 28px color-mix(in srgb, #1d1a16 10%, transparent),
-      0 0 0 1px color-mix(in srgb, #b8860b 12%, transparent);
-  }
-
-  .dark .codex-reset-issue-card-art {
-    background: #151c25;
-    box-shadow:
-      0 14px 32px rgba(0, 0, 0, 0.34),
-      0 0 0 1px color-mix(in srgb, #d4a843 16%, transparent);
-  }
-
-  .codex-reset-issue-card-caption {
-    @apply text-center font-mono text-[10px] uppercase tracking-[0.16em];
-    color: var(--site-faint);
+  .codex-reset-day-panel-content {
+    min-height: 100%;
   }
 
   .home-achievement-card:hover {

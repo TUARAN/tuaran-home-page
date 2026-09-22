@@ -215,6 +215,8 @@ test('page is registered as an analysis tool and a rich-page work', async () => 
   assert.match(client, /CODEX_RESET_HERO_BG_PATH/)
   assert.match(client, /codex-reset-day-panel/)
   assert.match(client, /codex-reset-day-panel-bg/)
+  assert.match(client, /codex-reset-day-caption/)
+  assert.doesNotMatch(client, /codex-reset-day-surface/)
   assert.doesNotMatch(client, /codex-reset-day-panel-overlay/)
   assert.doesNotMatch(client, /codex-reset-day-panel-art/)
   assert.doesNotMatch(client, /codex-reset-spotlight/)

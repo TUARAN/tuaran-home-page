@@ -2546,6 +2546,20 @@
     min-height: 100%;
   }
 
+  .codex-reset-day-caption {
+    text-shadow:
+      0 2px 16px color-mix(in srgb, #ffffff 96%, transparent),
+      0 1px 3px color-mix(in srgb, #ffffff 88%, transparent),
+      0 0 1px color-mix(in srgb, #ffffff 92%, transparent);
+  }
+
+  .dark .codex-reset-day-caption {
+    text-shadow:
+      0 2px 18px color-mix(in srgb, #000000 78%, transparent),
+      0 1px 4px color-mix(in srgb, #000000 82%, transparent),
+      0 0 1px color-mix(in srgb, #000000 92%, transparent);
+  }
+
   .codex-reset-post-card {
     background: color-mix(in srgb, #ffffff 68%, transparent);
     backdrop-filter: blur(12px);

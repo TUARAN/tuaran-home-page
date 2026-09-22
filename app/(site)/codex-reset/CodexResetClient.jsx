@@ -262,16 +262,22 @@ export default function CodexResetClient() {
               aria-hidden="true"
             />
             <div className="codex-reset-day-panel-content relative z-[1] p-4 sm:p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="font-serif text-[20px] font-semibold text-[#1d1a16] dark:text-gray-100">{formatDayHeading(selectedDate)}</h2>
-                {selectedDate === today ? <span className="text-[12px] text-[#767869] dark:text-[#8e9ab0]">今天</span> : null}
+              <div className="codex-reset-day-caption mb-4 flex items-baseline justify-between gap-3">
+                <p className="font-serif text-[22px] font-semibold leading-none text-[#1d1a16] dark:text-gray-100 sm:text-[24px]">
+                  {formatDayHeading(selectedDate)}
+                </p>
+                {selectedDate === today ? (
+                  <span className="font-mono text-[12px] font-medium tracking-[0.06em] text-[#3f3f38] dark:text-[#d5dde8]">今天</span>
+                ) : null}
               </div>
               {selectedEvents.length ? (
                 <div className="space-y-6">
                   {selectedEvents.map((event) => <EventDetail key={event.id} event={event} />)}
                 </div>
               ) : (
-                <p className="text-[14px] leading-6 text-[#51514a] dark:text-gray-400">这一天没有公开的重置或发卡记录。</p>
+                <p className="codex-reset-post-card rounded-2xl border border-[#e4e2da] p-4 text-[14px] leading-6 text-[#1d1a16] dark:border-[#2b3440] dark:text-gray-100">
+                  这一天没有公开的重置或发卡记录。
+                </p>
               )}
             </div>
           </aside>

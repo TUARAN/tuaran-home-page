@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import DesktopPetDemo from './DesktopPetDemo'
 
 export const dynamic = 'force-static'
 
@@ -25,17 +26,21 @@ export default function DesktopPetPage() {
             <p className="mt-6 text-xl leading-relaxed">一只住在桌面角落的长颈鹿，陪你把今天的事慢慢做好。</p>
             <p className="mt-5 leading-8 text-[#5b6c62] dark:text-[#c5d1c7]">摸摸鹿鹿，它会回应你。输入文字并主动发送后，已授权的 WorkBuddy 本地助理才会处理请求。没有连接时，鹿鹿也能陪你进行本地互动。</p>
             <div className="mt-8 rounded-2xl border border-[#d9d1bd] bg-white/70 p-5 text-sm leading-7 dark:border-[#51675d] dark:bg-white/5">
-              <strong>当前进度</strong>：macOS / Windows Electron 原型已实现。WorkBuddy 真账号接入需要应用审核通过和用户授权；下载、付费与公开发行尚未开放。
+              <strong>当前进度</strong>：Electron 桌宠原型已实现，网页可体验摸摸鹿鹿与文字互动。桌面安装包尚未开放；WorkBuddy 真账号接入还需应用审核与用户授权。
             </div>
+            <a href="https://github.com/TUARAN/tuaran-home-page/tree/main/tools/workbuddy-desktop-pet" target="_blank" rel="noreferrer" className="mt-5 inline-flex rounded-full border border-[#263f39] px-5 py-2.5 text-sm font-semibold transition hover:bg-[#263f39] hover:text-white dark:border-[#f7edd8] dark:hover:bg-[#f7edd8] dark:hover:text-[#263f39]">查看原型源码 ↗</a>
           </div>
-          <div className="rounded-[2rem] bg-[#213b35] p-7 shadow-2xl" aria-label="鹿鹿精灵形象示意">
-            <div className="rounded-2xl bg-[#f6e9cd] px-4 py-3 text-sm text-[#35413c]">嗨，我是鹿鹿。今天想先做什么？</div>
-            <div className="flex h-72 items-center justify-center" aria-hidden="true">
-              <Image src="/images/workbuddy-desktop-pet/lulu-giraffe.png" alt="" width={280} height={280} className="h-64 w-64 object-contain drop-shadow-xl" priority />
-            </div>
-            <div className="rounded-xl bg-[#f4ebd9] p-4 text-sm text-[#35413c]"><span className="mr-2 text-[#54a58b]">●</span>鹿鹿在这里<div className="mt-3 rounded-lg bg-white px-4 py-3 text-[#8c9a91]">告诉鹿鹿，你想做什么… <span className="float-right">↑</span></div></div>
-          </div>
+          <DesktopPetDemo />
         </div>
+        <figure className="mt-16 rounded-2xl border border-[#d9d1bd] bg-white/70 p-5 dark:border-[#51675d] dark:bg-white/5">
+          <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_320px]">
+            <figcaption>
+              <h2 className="text-2xl font-semibold">桌面版实际界面</h2>
+              <p className="mt-3 leading-8 text-[#5b6c62] dark:text-[#c5d1c7]">Electron 预览版可悬浮、拖动和置顶。网页演示只在当前浏览器回应点击与文字输入，不会访问本机桥接器。</p>
+            </figcaption>
+            <Image src="/images/workbuddy-desktop-pet/screenshot.png" alt="鹿鹿精灵 Electron 桌面窗口截图" width={732} height={996} className="mx-auto w-full max-w-[260px] rounded-xl" />
+          </div>
+        </figure>
         <section className="mt-24 grid gap-5 md:grid-cols-3" aria-label="使用方式">
           {steps.map(([number, title, detail]) => <article key={number} className="rounded-2xl border border-[#d9d1bd] p-6 dark:border-[#50635a]"><span className="text-sm font-semibold text-[#b17e45]">{number}</span><h2 className="mt-3 text-xl font-semibold">{title}</h2><p className="mt-3 leading-7 opacity-75">{detail}</p></article>)}
         </section>

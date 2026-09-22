@@ -115,7 +115,7 @@ function SectionHeading({ label, title, children }) {
 export default function OnchainBlogPage() {
   const demoCredential = getContentProofCredential('research:topics:content-proof-demo')
   return (
-    <main className="min-h-screen bg-[#f3f0e8] text-[#292620] dark:bg-[#0d1117] dark:text-[#eee9df]">
+    <main className="min-h-screen bg-[var(--page-bg)] text-[#292620] dark:text-[#eee9df]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA).replaceAll('<', '\\u003c') }} />
       <section
         className="relative isolate min-h-[680px] overflow-hidden border-b border-[#55452d] bg-[#05080c] text-white"
@@ -153,7 +153,7 @@ export default function OnchainBlogPage() {
         </div>
       </section>
 
-      <section id="said-123" className="scroll-mt-24 border-b border-[#d8d0c2] bg-[#f3f0e8] dark:border-[#2a313b] dark:bg-[#0d1117]">
+      <section id="said-123" className="scroll-mt-24 border-b border-[#d8d0c2] bg-[var(--page-bg)] dark:border-[#2a313b]">
         <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-14 lg:grid-cols-[1.15fr_0.85fr] lg:items-start md:py-20">
           <div className="max-w-2xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8a6b3e] dark:text-[#d2ac70]">Origin</p>
@@ -240,7 +240,7 @@ export default function OnchainBlogPage() {
         </div>
       </section>
 
-      <section id="reader-verification" className="scroll-mt-24 border-b border-[#d8d0c2] bg-[#eae4d8] dark:border-[#2a313b] dark:bg-[#101720]">
+      <section id="reader-verification" className="scroll-mt-24 border-b border-[#d8d0c2] bg-[var(--site-panel)] dark:border-[#2a313b]">
         <div className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start md:py-20">
           <SectionHeading label="How to verify" title="读者现在可以核对">
             验证在当前浏览器本地完成，不上传正文，也不请求连接钱包。开源脚本可以脱离 2aran.com 做同一组检查。
@@ -258,7 +258,7 @@ export default function OnchainBlogPage() {
 
       <ReaderTestInvite />
 
-      <section id="live-check" className="scroll-mt-24 border-y border-[#d8d0c2] bg-[#eae4d8] dark:border-[#2a313b] dark:bg-[#101720]">
+      <section id="live-check" className="scroll-mt-24 border-y border-[#d8d0c2] bg-[var(--site-panel)] dark:border-[#2a313b]">
         <div className="mx-auto w-full max-w-[1180px] px-5 py-14 md:py-20">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
             <ContentFingerprintPrototype />
@@ -383,7 +383,7 @@ D1: content_proofs + content_replicas + cost events
         </ul>
       </section>
 
-      <section className="border-t border-[#d8d0c2] bg-[#eae4d8] dark:border-[#2a313b] dark:bg-[#101720]">
+      <section className="border-t border-[#d8d0c2] bg-[var(--site-panel)] dark:border-[#2a313b]">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
             <p className="font-serif text-2xl font-semibold">技术选择、数据结构和风险边界写在完整说明里。</p>

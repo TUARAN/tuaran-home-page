@@ -51,7 +51,7 @@ export default function DownloadTabs({ groups, children }) {
             tabIndex={active === group.anchor ? 0 : -1}
             onClick={() => select(group.anchor)}
             onKeyDown={(event) => handleKeyDown(event, index)}
-            className={`min-h-10 whitespace-nowrap rounded-full px-5 py-2 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${active === group.anchor ? 'bg-[#171611] text-white shadow-sm dark:bg-white dark:text-[#0d0f12]' : 'text-[#777268] hover:bg-[#f2efe7] hover:text-[#171611] dark:text-[#8994a3] dark:hover:bg-[#26313d] dark:hover:text-white'}`}
+            className={`min-h-10 whitespace-nowrap rounded-full px-5 py-2 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${active === group.anchor ? 'bg-[#171611] text-white shadow-sm dark:bg-white dark:text-[#0d0f12]' : 'text-[#777268] hover:bg-[var(--site-panel)] hover:text-[#171611] dark:text-[#8994a3] dark:hover:bg-[#26313d] dark:hover:text-white'}`}
           >
             {group.title}
             <span className="ml-2 font-mono text-xs opacity-65">{group.items.length}</span>

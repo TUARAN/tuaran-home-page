@@ -80,9 +80,9 @@ function MiniBar({ value }) {
 
 export default function SkillMarketResearchPage() {
   return (
-    <main className="min-h-screen bg-[#f2f3ef] text-[#1c1d18] dark:bg-[#0b1017] dark:text-gray-100">
+    <main className="min-h-screen bg-[var(--page-bg)] text-[#1c1d18] dark:text-gray-100">
       <RichPageJsonLd pageId="skill-market-research" />
-      <section className="border-b border-[#d7d8cf] bg-[#ebece6] dark:border-[#202938] dark:bg-[#101720]">
+      <section className="border-b border-[#d7d8cf] bg-[var(--site-panel)] dark:border-[#202938]">
         <div className="mx-auto grid w-full max-w-[1120px] gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_320px] md:py-14">
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#65665c] dark:text-gray-400">

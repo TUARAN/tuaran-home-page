@@ -102,7 +102,7 @@ export default function DownloadsPage() {
   }))
 
   return (
-    <main className="min-h-screen bg-[#f2efe7] text-[#171611] dark:bg-[#0d0f12] dark:text-gray-100">
+    <main className="min-h-screen bg-[var(--page-bg)] text-[#171611] dark:text-gray-100">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
@@ -175,7 +175,7 @@ export default function DownloadsPage() {
                 >
                   <div className="min-w-0">
                     <div className="mb-3 flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-[#d8d1c4] bg-[#fbf7ee] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6f6f40] dark:border-[#3a443a] dark:bg-[#1a2118] dark:text-[#d7d7a7]">
+                      <span className="rounded-full border border-[#d8d1c4] bg-[var(--site-panel)] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6f6f40] dark:border-[#3a443a] dark:text-[#d7d7a7]">
                         {getWorkStatusLabel(item.status)}
                       </span>
                       <span className="text-[12px] text-[#7a766b] dark:text-[#8f9aaa]">{item.role}</span>

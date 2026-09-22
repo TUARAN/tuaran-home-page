@@ -44,7 +44,7 @@ export default async function ContentProofPage({ params }) {
   }
 
   return (
-    <main className="min-h-screen bg-[#f3f0e8] text-[#292620] dark:bg-[#0d1117] dark:text-[#eee9df]">
+    <main className="min-h-screen bg-[var(--page-bg)] text-[#292620] dark:text-[#eee9df]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replaceAll('<', '\\u003c') }} />
       <header className="border-b border-[#d8d0c2] bg-[#171a1d] text-[#f4eee4] dark:border-[#2a313b]">
         <div className="mx-auto w-full max-w-[1080px] px-5 py-10 sm:py-14">

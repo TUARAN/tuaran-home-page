@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function GitHubFollowPage() {
   return (
-    <main className="min-h-screen bg-[#f3f5f7] px-4 py-9 text-slate-900 dark:bg-[#0d1117] dark:text-slate-100">
+    <main className="min-h-screen bg-[var(--page-bg)] px-4 py-9 text-slate-900 dark:text-slate-100">
       <div className="mx-auto w-full max-w-4xl">
         <header className="mb-7">
           <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">

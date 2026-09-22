@@ -78,7 +78,7 @@ const jsonLd = {
 
 export default function CntWhitepaperPage() {
   return (
-    <main className="min-h-screen bg-[#f3f0e8] text-[#292620] dark:bg-[#0d1117] dark:text-[#eee9df]">
+    <main className="min-h-screen bg-[var(--page-bg)] text-[#292620] dark:text-[#eee9df]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replaceAll('<', '\\u003c') }} />
       <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
 
@@ -153,7 +153,7 @@ export default function CntWhitepaperPage() {
         )}
       </section>
 
-      <section className="border-t border-[#d8d0c2] bg-[#eae4d8] dark:border-[#2a313b] dark:bg-[#101720]">
+      <section className="border-t border-[#d8d0c2] bg-[var(--site-panel)] dark:border-[#2a313b]">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
             <p className="font-serif text-2xl font-semibold">内容指纹与批次存证仍可在万物上链页核对。</p>

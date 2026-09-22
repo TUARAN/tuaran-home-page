@@ -13,7 +13,7 @@ export const metadata = {
 
 export default function MultiIpPage() {
   return (
-    <main className="min-h-screen bg-[#edf2f5] px-4 py-8 text-[#17212d] dark:bg-[#0c1218] dark:text-gray-100">
+    <main className="min-h-screen bg-[var(--page-bg)] px-4 py-8 text-[#17212d] dark:text-gray-100">
       <div className="mx-auto w-full max-w-6xl">
         <header className="mb-5 rounded-xl border border-[#d5dfe7] border-t-4 border-t-[#0b7668] bg-white p-5 shadow-sm dark:border-[#26323d] dark:border-t-emerald-600 dark:bg-[#111a22]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

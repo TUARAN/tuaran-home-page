@@ -32,9 +32,11 @@ test('admin page authorization runs in middleware for HTML and direct RSC reques
 })
 
 test('build verification keeps both Workers below repository safety budgets', () => {
-  assert.match(adminVerifierSource, /ADMIN_WORKER_BUDGET = 2\.5 \* MIB/)
+  assert.match(adminVerifierSource, /REPOSITORY_RAW_LIMIT_BYTES/)
+  assert.match(adminVerifierSource, /evaluateWorkerSize/)
   assert.match(adminVerifierSource, /unexpectedly entered the Worker/)
-  assert.match(publicVerifierSource, /PUBLIC_WORKER_BUDGET = 2\.75 \* MIB/)
+  assert.match(publicVerifierSource, /REPOSITORY_RAW_LIMIT_BYTES/)
+  assert.match(publicVerifierSource, /evaluateWorkerSize/)
   assert.match(publicVerifierSource, /unexpectedly contains Admin routes/)
 })
 

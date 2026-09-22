@@ -130,7 +130,7 @@ export default function OnchainBlogPage() {
             <span>CONTENT LEDGER</span>
           </div>
 
-          <div className="mt-auto max-w-2xl pb-6 pt-24">
+          <div className="mt-auto max-w-2xl pb-16 pt-16 md:pb-24">
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-[#d9b66c]/55 bg-black/35 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#f0cd88] backdrop-blur-sm">
                 无需钱包 · BASE SEPOLIA 已存证

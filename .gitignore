@@ -91,11 +91,9 @@ jspm_packages/
 .cache
 .parcel-cache
 
-# Next.js build output
-.next
-.next-check/
-.next-admin-preview/
-.next-briefing/
+# Next.js build output (default plus isolated distDir via NEXT_DIST_DIR)
+.next/
+.next-*/
 /public/generated/a-shares/
 
 # Vercel / next-on-pages build output
@@ -160,6 +158,7 @@ private/
 # WorkBuddy 本地记忆，可能包含调试日志、密钥片段或私人上下文
 .workbuddy/
 /tools/workbuddy-sms/var/
+/tools/workbuddy-sms/workbuddy-sms.config.json
 /tools/workbuddy-acp-bridge/var/
 /tools/workbuddy-acp-bridge/release/
 

@@ -2538,7 +2538,7 @@
     inset: 0;
     background-repeat: no-repeat;
     background-position: left top;
-    background-size: auto 100%;
+    background-size: cover;
     pointer-events: none;
   }
 
@@ -2547,12 +2547,12 @@
   }
 
   .codex-reset-post-card {
-    background: color-mix(in srgb, #ffffff 82%, transparent);
-    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, #ffffff 68%, transparent);
+    backdrop-filter: blur(12px);
   }
 
   .dark .codex-reset-post-card {
-    background: color-mix(in srgb, #111923 84%, transparent);
+    background: color-mix(in srgb, #111923 70%, transparent);
   }
 
   .home-achievement-card:hover {

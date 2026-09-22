@@ -343,7 +343,7 @@ export default function GlobalAiGovernanceClient() {
   }
 
   return (
-    <main className="bg-[#f2efe7] text-[#292b2f] dark:bg-[#0d1117] dark:text-gray-200">
+    <main className="bg-[var(--page-bg)] text-[#292b2f] dark:text-gray-200">
       <div className="mx-auto w-full max-w-[1180px] px-4 py-8 sm:px-6 sm:py-12">
         <header className="relative overflow-hidden border border-[#cfcabe] bg-[#fffdf8] p-5 dark:border-[#343943] dark:bg-[#12171e] sm:p-8">
           <GovernanceWorldMap />

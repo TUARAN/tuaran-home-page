@@ -11,7 +11,7 @@
   background:
     radial-gradient(circle at 92% 4%, rgba(212, 148, 39, 0.12), transparent 25rem),
     radial-gradient(circle at 8% 22%, rgba(46, 118, 99, 0.09), transparent 29rem),
-    #f5f2e9;
+    var(--page-bg);
 }
 
 .hero {
@@ -94,7 +94,7 @@
   background:
     radial-gradient(circle at 92% 4%, rgba(212, 148, 39, 0.1), transparent 25rem),
     radial-gradient(circle at 8% 22%, rgba(46, 118, 99, 0.08), transparent 29rem),
-    #0d131b;
+    var(--page-bg);
 }
 
 :global(.dark) .sourceCard:hover {

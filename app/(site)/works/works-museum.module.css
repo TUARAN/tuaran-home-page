@@ -1,5 +1,5 @@
 .root {
-  --paper: #eeece7;
+  --paper: var(--page-bg);
   --ink: #171816;
   --muted: #706e68;
   --faint: #96938c;
@@ -321,7 +321,6 @@
 }
 
 :global(.dark) .root {
-  --paper: #0d0f0f;
   --ink: #ecece7;
   --muted: #9a9c96;
   --faint: #696d68;

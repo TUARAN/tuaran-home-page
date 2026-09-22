@@ -268,7 +268,7 @@ export default function SunMoonMotionClient() {
   const focusedStatus = sun.visible ? '白昼' : '夜晚'
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f0f1ee] px-4 py-6 text-[#20211c] dark:bg-[#0b1016] dark:text-gray-100 md:py-9">
+    <main className="min-h-screen overflow-x-hidden bg-[var(--page-bg)] px-4 py-6 text-[#20211c] dark:text-gray-100 md:py-9">
       <div className="mx-auto w-full max-w-[1280px]">
         <header className="mb-6 grid gap-5 rounded-[28px] border border-[#d0d2c7] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(246,241,232,0.9))] p-5 shadow-[0_18px_60px_rgba(86,70,42,0.08)] dark:border-[#26313f] dark:bg-[linear-gradient(135deg,rgba(18,25,35,0.96),rgba(10,15,23,0.92))] md:grid-cols-[minmax(0,1fr)_320px] md:p-7">
           <div>

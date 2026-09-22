@@ -687,7 +687,7 @@ export default function ClassicalMasterpiecesClient() {
   const featuredWork = categorizedWorks[0]?.works[0]
 
   return (
-    <main className="min-h-screen bg-[#f0f1ee] text-[#272722] dark:bg-[#0b1016] dark:text-gray-100">
+    <main className="min-h-screen bg-[var(--page-bg)] text-[#272722] dark:text-gray-100">
       <section className="relative overflow-hidden border-b border-[#d4d6cb] bg-[#e6e7df] dark:border-[#202a37] dark:bg-[#0f151d]">
         <div className="absolute inset-0 opacity-[0.18] dark:opacity-[0.14]">
           <div className="h-full w-full bg-[linear-gradient(90deg,rgba(111,78,38,.16)_1px,transparent_1px),linear-gradient(180deg,rgba(111,78,38,.13)_1px,transparent_1px)] bg-[size:42px_42px]" />
@@ -781,7 +781,7 @@ export default function ClassicalMasterpiecesClient() {
         </div>
       </section>
 
-      <section className="sticky top-[var(--site-header-height)] z-20 border-y border-[#dee0db] bg-[#f0f1ee]/95 backdrop-blur dark:border-[#202938] dark:bg-[#0b1016]/95">
+      <section className="sticky top-[var(--site-header-height)] z-20 border-y border-[#dee0db] bg-[var(--page-bg)] dark:border-[#202938]">
         <div className="mx-auto max-w-[1120px] px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
             <button

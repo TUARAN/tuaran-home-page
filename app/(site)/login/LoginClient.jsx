@@ -55,7 +55,7 @@ function Divider({ children }) {
   return (
     <div className="my-5 flex items-center gap-2 text-xs text-[#74736d] dark:text-[#949b9d]">
       <span className="h-px flex-1 bg-[#d6d3cc] dark:bg-[#343c43]" aria-hidden="true" />
-      <span className="shrink-0 bg-[#fbfaf7] px-1 dark:bg-[#10161b]">{children}</span>
+      <span className="shrink-0 bg-[var(--page-bg)] px-1">{children}</span>
       <span className="h-px flex-1 bg-[#d6d3cc] dark:bg-[#343c43]" aria-hidden="true" />
     </div>
   )
@@ -143,7 +143,7 @@ export default function LoginClient() {
   const registerHref = `/register?returnTo=${encodeURIComponent(oauthReturnTo)}`
 
   return (
-    <main className="min-h-[calc(100svh-var(--site-header-height))] border-l border-[#dedbd4] bg-[#fbfaf7] px-5 py-8 dark:border-[#242d34] dark:bg-[#10161b] sm:px-8 sm:py-12">
+    <main className="min-h-[calc(100svh-var(--site-header-height))] border-l border-[#dedbd4] bg-[var(--page-bg)] px-5 py-8 dark:border-[#242d34] sm:px-8 sm:py-12">
       <section className="mx-auto w-full max-w-md">
         <div className="mb-6 h-1 w-12 bg-[#d5795f] dark:bg-[#c97861]" aria-hidden="true" />
 

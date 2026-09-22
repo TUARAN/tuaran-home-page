@@ -3,7 +3,7 @@
   --muted: #60706c;
   --green: #1f7a5a;
   --green-bright: #77f2b2;
-  --paper: #f2f0e8;
+  --paper: var(--page-bg);
   position: relative;
   overflow: hidden;
   background: var(--paper);
@@ -12,7 +12,7 @@
 
 .ambient { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 86% 5%, rgba(42, 171, 124, .14), transparent 24%), radial-gradient(circle at 8% 28%, rgba(214, 159, 65, .10), transparent 20%); }
 .shell { position: relative; width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
-.hero { position: relative; overflow: hidden; border-bottom: 1px solid rgba(34, 64, 56, .18); padding: 34px 0 28px; background: linear-gradient(155deg, #f6f4ec 0%, #edf4ec 58%, #e5eee8 100%); }
+.hero { position: relative; overflow: hidden; border-bottom: 1px solid rgba(34, 64, 56, .18); padding: 34px 0 28px; background: var(--site-panel); }
 .heroGrid { position: absolute; inset: 0; opacity: .48; background-image: linear-gradient(rgba(26, 83, 65, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(26, 83, 65, .07) 1px, transparent 1px); background-size: 44px 44px; mask-image: linear-gradient(to bottom, #000, transparent 88%); }
 .crumbs { display: flex; flex-wrap: wrap; gap: 8px; color: #68766f; font-size: 12px; }
 .crumbs a { color: inherit; text-decoration: none; }
@@ -164,7 +164,7 @@
   .dimensionCard, .faqItem button svg { transition: none; }.dimensionCard:hover { transform: none; }
 }
 
-:global(.dark) .page { --ink: #e7efeb; --muted: #9cafaa; --paper: #101815; background: var(--paper); }
+:global(.dark) .page { --ink: #e7efeb; --muted: #9cafaa; background: var(--paper); }
 :global(.dark) .hero { background: linear-gradient(155deg, #111b17, #14251f 62%, #102019); }
 :global(.dark) .hero h1, :global(.dark) .sectionHeading h2 { color: #edf4f0; }
 :global(.dark) .lead, :global(.dark) .crumbs { color: #a7b8b0; }

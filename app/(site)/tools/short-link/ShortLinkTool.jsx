@@ -145,7 +145,7 @@ export default function ShortLinkTool() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f2efe7] text-[#171611] dark:bg-[#0d0f12] dark:text-gray-100">
+    <main className="min-h-screen bg-[var(--page-bg)] text-[#171611] dark:text-gray-100">
       <section className="mx-auto max-w-[1180px] px-4 pb-4 pt-9 sm:px-6 lg:px-8">
         <div className="grid gap-4 border-b border-[#d8d1c4] pb-5 dark:border-[#27313d] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>

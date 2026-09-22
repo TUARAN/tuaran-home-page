@@ -3,7 +3,7 @@
   --quiz-red-dark: #741522;
   --quiz-ink: #191715;
   --quiz-muted: #6d6861;
-  --quiz-paper: #f5f1e9;
+  --quiz-paper: var(--page-bg);
   --quiz-line: #d7d0c4;
   min-height: 100vh;
   background: var(--quiz-paper);
@@ -896,7 +896,7 @@ button.modeCard:not(:disabled):hover .modeIcon {
 :global(.dark) .page {
   --quiz-ink: #f0ece4;
   --quiz-muted: #a9a198;
-  --quiz-paper: #151412;
+  --quiz-paper: var(--page-bg);
   --quiz-line: #3a3631;
   --quiz-red: #d95a68;
   --quiz-red-dark: #f28a94;

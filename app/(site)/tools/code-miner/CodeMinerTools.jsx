@@ -111,8 +111,8 @@ function GifTool() {
       {status ? <p className="mt-3 text-xs text-[#777166] dark:text-[#9da7b5]">{status}</p> : null}
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
-          <article key={item.id} className="overflow-hidden rounded-lg border border-[#ddd7cb] bg-[#f7f4ed] dark:border-[#303a46] dark:bg-[#0d141c]">
-            <img src={item.preview || item.url} alt={item.title || query} className="aspect-[4/3] w-full bg-[#ece8de] object-cover dark:bg-[#18212b]" loading="lazy" />
+          <article key={item.id} className="overflow-hidden rounded-lg border border-[#ddd7cb] bg-[var(--site-panel)] dark:border-[#303a46] dark:bg-[#0d141c]">
+            <img src={item.preview || item.url} alt={item.title || query} className="aspect-[4/3] w-full bg-[var(--page-bg)] object-cover dark:bg-[#18212b]" loading="lazy" />
             <div className="p-3">
               <div className="flex items-start justify-between gap-2"><strong className="line-clamp-1 text-sm">{item.title || 'GIF'}</strong><span className="shrink-0 text-[10px] text-[#888176]">{item.dimensions}</span></div>
               <button type="button" onClick={() => downloadGif(item)} className={`${secondaryButton} mt-3 w-full`}><IconDownload size={16} />下载 {item.size}</button>
@@ -199,7 +199,7 @@ function ImageTool() {
 }
 
 function ImagePreview({ title, src, meta, children }) {
-  return <div className="rounded-lg border border-[#ddd7cb] bg-[#f7f4ed] p-3 dark:border-[#303a46] dark:bg-[#0d141c]"><div className="mb-2 flex justify-between gap-2 text-xs"><strong>{title}</strong><span className="text-[#888176]">{meta}</span></div>{src ? <img src={src} alt={title} className="aspect-square w-full rounded-md bg-white object-contain" /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white/70 text-[#aaa398] dark:bg-[#141d27]"><IconPhoto size={42} /></div>}{children}</div>
+  return <div className="rounded-lg border border-[#ddd7cb] bg-[var(--site-panel)] p-3 dark:border-[#303a46] dark:bg-[#0d141c]"><div className="mb-2 flex justify-between gap-2 text-xs"><strong>{title}</strong><span className="text-[#888176]">{meta}</span></div>{src ? <img src={src} alt={title} className="aspect-square w-full rounded-md bg-white object-contain" /> : <div className="flex aspect-square items-center justify-center rounded-md bg-white/70 text-[#aaa398] dark:bg-[#141d27]"><IconPhoto size={42} /></div>}{children}</div>
 }
 
 function QrTool() {
@@ -229,7 +229,7 @@ function QrTool() {
           <div className="grid grid-cols-2 gap-3"><label className="text-xs font-semibold">容错级别<select value={level} onChange={(event) => setLevel(event.target.value)} className={`${inputClass} mt-2`}><option value="L">低（7%）</option><option value="M">中（15%）</option><option value="Q">高（25%）</option><option value="H">最高（30%）</option></select></label><label className="text-xs font-semibold">前景色<input type="color" value={color} onChange={(event) => setColor(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-[#d6d0c4] bg-white p-1" /></label></div>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
         </div>
-        <div className="flex flex-col items-center justify-center rounded-xl border border-[#ddd7cb] bg-[#f7f4ed] p-5 dark:border-[#303a46] dark:bg-[#0d141c]">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-[#ddd7cb] bg-[var(--site-panel)] p-5 dark:border-[#303a46] dark:bg-[#0d141c]">
           {url ? <img src={url} alt="生成的二维码" width={size} height={size} className="max-w-full rounded-md bg-white" /> : <IconQrcode size={80} className="text-[#aaa398]" />}
           <button type="button" disabled={!url} onClick={() => { const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'qrcode.png'; anchor.click() }} className={`${primaryButton} mt-4 w-full`}><IconDownload size={17} />下载二维码</button>
         </div>
@@ -261,7 +261,7 @@ function JsonTool() {
         <div><div className="mb-2 flex flex-wrap gap-2"><button type="button" onClick={() => transform(false)} className={primaryButton}>格式化</button><button type="button" onClick={() => transform(true)} className={secondaryButton}>压缩</button><button type="button" onClick={() => { setInput(''); setOutput(''); setError('') }} className={secondaryButton}>清空</button></div><textarea value={input} onChange={(event) => setInput(event.target.value)} rows={18} spellCheck={false} className={`${inputClass} font-mono leading-6`} />{error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}</div>
         <div><div className="mb-2 flex flex-wrap gap-2"><button type="button" onClick={() => copyText(output, setNotice)} className={secondaryButton}><IconCopy size={16} />复制</button><button type="button" disabled={!output} onClick={() => downloadBlob(new Blob([output], { type: 'application/json' }), 'formatted.json')} className={secondaryButton}><IconDownload size={16} />下载</button>{notice ? <span className="self-center text-xs text-emerald-700 dark:text-emerald-400">{notice}</span> : null}</div><pre className="min-h-[456px] max-h-[560px] overflow-auto rounded-lg bg-[#17191e] p-4 text-xs leading-6 text-[#d8e1ec]"><code>{output || '格式化结果显示在这里'}</code></pre></div>
       </div>
-      {stats ? <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries({ 字符数: stats.characters, 行数: stats.lines, 最大深度: stats.depth, 字节数: stats.bytes }).map(([label, value]) => <div key={label} className="rounded-lg bg-[#f2eee5] p-3 text-center dark:bg-[#19222c]"><strong className="block text-lg">{value}</strong><span className="text-[11px] text-[#817a6e]">{label}</span></div>)}</div> : null}
+      {stats ? <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries({ 字符数: stats.characters, 行数: stats.lines, 最大深度: stats.depth, 字节数: stats.bytes }).map(([label, value]) => <div key={label} className="rounded-lg bg-[var(--site-panel)] p-3 text-center dark:bg-[#19222c]"><strong className="block text-lg">{value}</strong><span className="text-[11px] text-[#817a6e]">{label}</span></div>)}</div> : null}
     </div>
   )
 }
@@ -344,7 +344,7 @@ export default function CodeMinerTools() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f1eee7] px-4 py-8 text-[#171611] dark:bg-[#0c1015] dark:text-gray-100 sm:px-6">
+    <main className="min-h-screen bg-[var(--page-bg)] px-4 py-8 text-[#171611] dark:text-gray-100 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <header className="mb-5 border-b border-[#d7d0c3] pb-5 dark:border-[#29323d]">
           <div className="mb-3 flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a8174]"><Link href="/tools" className="hover:text-[#8a6422]">工具库</Link><span>／</span><span>代码矿工</span></div>

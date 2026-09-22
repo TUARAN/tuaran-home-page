@@ -123,7 +123,7 @@ export default function XPlatformIntelligenceClient() {
   const closeEvidence = useCallback(() => setEvidenceRef(null), [])
 
   return (
-    <main className="overflow-hidden bg-[#f4f1e9] text-[#191917] dark:bg-[#111310] dark:text-gray-100">
+    <main className="overflow-hidden bg-[var(--page-bg)] text-[#191917] dark:text-gray-100">
       <div className="mx-auto w-full max-w-[1180px] px-5 pb-24 pt-8 sm:px-8 sm:pt-14">
         <header className="relative min-h-[540px] border-b border-black/15 pb-12 dark:border-white/15 lg:min-h-[610px]">
           <div className="flex items-start justify-between gap-5">
@@ -164,7 +164,7 @@ export default function XPlatformIntelligenceClient() {
           <div className="absolute bottom-0 right-0 hidden select-none font-sans text-[220px] font-black leading-[0.72] tracking-[-0.12em] text-black/[0.035] dark:text-white/[0.035] lg:block" aria-hidden="true">X</div>
         </header>
 
-        <nav className="sticky top-0 z-20 -mx-5 flex gap-6 overflow-x-auto border-b border-black/10 bg-[#f4f1e9]/95 px-5 py-4 backdrop-blur dark:border-white/10 dark:bg-[#111310]/95 sm:-mx-8 sm:px-8" aria-label="页面目录">
+        <nav className="sticky top-0 z-20 -mx-5 flex gap-6 overflow-x-auto border-b border-black/10 bg-[var(--page-bg)] px-5 py-4 dark:border-white/10 sm:-mx-8 sm:px-8" aria-label="页面目录">
           {[
             ['#decision', '经营判断'], ['#system', '经营系统'], ['#facts', '数据事实'], ['#portfolio', '渠道组合'], ['#risks', '风险与证据'],
           ].map(([href, label], index) => (

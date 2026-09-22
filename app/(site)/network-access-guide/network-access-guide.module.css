@@ -1,8 +1,7 @@
 .page {
   position: relative;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(238, 242, 233, 0.88), rgba(247, 248, 244, 0.96) 36%, var(--page-bg));
+  background: var(--page-bg);
   color: var(--site-ink);
 }
 
@@ -88,11 +87,6 @@
   }
 
   .providerMark { color: color-mix(in srgb, var(--tone) 76%, white); }
-}
-
-:global(.dark) .page {
-  background:
-    linear-gradient(180deg, rgba(10, 17, 14, 0.98), rgba(13, 20, 17, 0.98) 40%, var(--page-bg));
 }
 
 :global(.dark) .providerCard {

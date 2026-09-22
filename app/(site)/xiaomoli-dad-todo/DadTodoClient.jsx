@@ -314,7 +314,7 @@ export default function DadTodoClient() {
   ]
 
   return (
-    <main className="min-h-[100dvh] bg-[#f0f1ee] px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] dark:bg-[#0b1016]">
+    <main className="min-h-[100dvh] bg-[var(--page-bg)] px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <div className="mx-auto flex min-h-[100dvh] max-w-lg flex-col">
         <header className="pb-3 pt-4">
           <div className="flex items-center justify-between gap-3">

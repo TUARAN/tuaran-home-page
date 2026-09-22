@@ -44,7 +44,7 @@ function absoluteTime(ts) {
   }
 }
 
-function NotificationCard({ item, onOpen }) {
+function NotificationCard({ item }) {
   const unread = !item.readAt
   const href = item.href || '/notifications'
   const when = relativeTime(item.createdAt)
@@ -53,7 +53,6 @@ function NotificationCard({ item, onOpen }) {
   return (
     <Link
       href={href}
-      onClick={() => onOpen(item)}
       aria-label={`${item.title}${item.destinationLabel ? `，${item.destinationLabel}` : ''}`}
       className={[
         'notification-inbox-item',
@@ -213,15 +212,6 @@ export default function NotificationsClient() {
     }
   }
 
-  const openItem = (item) => {
-    if (item.readAt || !item.id) return
-    setItems((prev) =>
-      prev.map((entry) => (entry.id === item.id ? { ...entry, readAt: Date.now() } : entry))
-    )
-    setUnread((count) => Math.max(0, count - 1))
-    markNotificationsRead?.({ id: item.id })
-  }
-
   if (loading) {
     return <LoadingState label="正在检查登录状态" />
   }
@@ -323,7 +313,7 @@ export default function NotificationsClient() {
         <>
           <div className="notification-inbox">
             {items.map((item) => (
-              <NotificationCard key={item.id} item={item} onOpen={openItem} />
+              <NotificationCard key={item.id} item={item} />
             ))}
           </div>
           {items.length < total ? (

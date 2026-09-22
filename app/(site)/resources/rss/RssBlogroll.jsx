@@ -15,8 +15,37 @@ export default function RssBlogroll({ fallback = [] }) {
   const focusFeedId = String(searchParams.get('feed') || '').trim()
   const [feeds, setFeeds] = useState(fallback)
   const [copiedId, setCopiedId] = useState('')
+  const [unreadNotificationId, setUnreadNotificationId] = useState(null)
+  const [notificationChecked, setNotificationChecked] = useState(false)
   // feedId -> { open, loading, error, entries }
   const [reader, setReader] = useState({})
+
+  useEffect(() => {
+    const id = Number(searchParams.get('notification'))
+    if (!Number.isInteger(id) || id <= 0 || !focusFeedId) return undefined
+    let alive = true
+    fetch(`/api/notifications?id=${id}`, { cache: 'no-store', credentials: 'same-origin' })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        const item = data?.items?.[0]
+        if (alive) {
+          if (item?.type === 'rss_update' && !item.readAt && item.href?.endsWith(`#rss-feed-${focusFeedId}`)) {
+            setUnreadNotificationId(id)
+          }
+          setNotificationChecked(true)
+        }
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [searchParams, focusFeedId])
+
+  useEffect(() => {
+    function onRead(event) {
+      if (Number(event.detail?.id) === unreadNotificationId) setUnreadNotificationId(null)
+    }
+    window.addEventListener('tuaran:notification-read', onRead)
+    return () => window.removeEventListener('tuaran:notification-read', onRead)
+  }, [unreadNotificationId])
 
   const loadEntries = useCallback(async (feedId) => {
     setReader((prev) => ({ ...prev, [feedId]: { ...prev[feedId], open: true, loading: true, error: '' } }))
@@ -98,13 +127,15 @@ export default function RssBlogroll({ fallback = [] }) {
           <section
             id={`rss-feed-${feed.id}`}
             key={feed.id}
+            data-notification-ready={notificationChecked && state.open && !state.loading && state.entries?.length ? 'true' : 'false'}
             className={[
-              'border bg-white p-4 dark:bg-gray-900',
+              'relative border bg-white p-4 dark:bg-gray-900',
               feed.id === focusFeedId
                 ? 'border-[#16745b] dark:border-[#65c8a9]'
                 : 'border-[#eee] dark:border-gray-800',
             ].join(' ')}
           >
+            {feed.id === focusFeedId && unreadNotificationId ? <span className="discussion-notification-dot" aria-label="未读订阅更新" /> : null}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-base font-semibold text-[#222] dark:text-gray-100">{feed.siteName}</h2>
               {feed.category ? (

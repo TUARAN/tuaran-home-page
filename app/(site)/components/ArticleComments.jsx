@@ -41,31 +41,71 @@ export default function ArticleComments({ articleKey }) {
   const {
     user,
     loading: userLoading,
-    notifications,
     refreshNotifications,
-    markNotificationsRead,
   } = useSessionAccount()
   const [items, setItems] = useState([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [replyTarget, setReplyTarget] = useState(null)
+  const [articleNotifications, setArticleNotifications] = useState([])
+  const [notificationsLoaded, setNotificationsLoaded] = useState(false)
   const textareaRef = useRef(null)
   const sectionRef = useRef(null)
 
   const remaining = useMemo(() => 1000 - message.trim().length, [message])
   const isAuthed = !!user
-  const unreadNotifications = (notifications?.items || []).filter((item) => (
-    !item.readAt
-    && isInteractionNotification(item.type)
-    && (!articleKey || item.articleKey === articleKey)
-  ))
+  const unreadNotifications = useMemo(() => articleNotifications.filter((item) => (
+    !item.readAt && isInteractionNotification(item.type) && item.articleKey === articleKey
+  )), [articleNotifications, articleKey])
+
+  const refreshArticleNotifications = useCallback(async () => {
+    if (!user?.id || !articleKey) return
+    try {
+      const params = new URLSearchParams({ articleKey, limit: '100', unreadOnly: '1' })
+      const selectedId = Number(new URLSearchParams(window.location.search).get('notification'))
+      const requests = [fetch(`/api/notifications?${params}`, { cache: 'no-store', credentials: 'same-origin' })]
+      if (Number.isInteger(selectedId) && selectedId > 0) {
+        requests.push(fetch(`/api/notifications?id=${selectedId}`, { cache: 'no-store', credentials: 'same-origin' }))
+      }
+      const [res, selectedRes] = await Promise.all(requests)
+      if (res.ok) {
+        const data = await res.json()
+        const notices = Array.isArray(data.items) ? data.items : []
+        if (selectedRes?.ok) {
+          const selected = (await selectedRes.json())?.items?.[0]
+          if (selected?.articleKey === articleKey && !notices.some((item) => item.id === selected.id)) notices.push(selected)
+        }
+        setArticleNotifications(notices)
+        setNotificationsLoaded(true)
+      }
+    } catch {
+      // The discussion still works when notifications are unavailable.
+    }
+  }, [articleKey, user?.id])
+
+  useEffect(() => {
+    setArticleNotifications([])
+    setNotificationsLoaded(false)
+    refreshArticleNotifications()
+  }, [refreshArticleNotifications])
+
+  useEffect(() => {
+    function onRead(event) {
+      const id = Number(event.detail?.id)
+      setArticleNotifications((prev) => prev.map((item) => item.id === id ? { ...item, readAt: Date.now() } : item))
+    }
+    window.addEventListener('tuaran:notification-read', onRead)
+    return () => window.removeEventListener('tuaran:notification-read', onRead)
+  }, [])
 
   const refresh = useCallback(async () => {
     if (!articleKey) return
     setError('')
     try {
       const params = new URLSearchParams({ articleKey, limit: '50' })
+      const hashCommentId = window.location.hash.match(/^#comment-(\d+)$/)?.[1]
+      if (hashCommentId) params.set('commentId', hashCommentId)
       const res = await fetch(`/api/comments?${params.toString()}`, { cache: 'no-store' })
       const data = await safeJson(res)
       if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
@@ -77,6 +117,8 @@ export default function ArticleComments({ articleKey }) {
 
   useEffect(() => {
     refresh()
+    window.addEventListener('hashchange', refresh)
+    return () => window.removeEventListener('hashchange', refresh)
   }, [refresh])
 
   useEffect(() => {
@@ -89,16 +131,10 @@ export default function ArticleComments({ articleKey }) {
       const hash = window.location.hash || ''
       const match = hash.match(/^#comment-(\d+)$/)
       if (!match) return
-      document.querySelectorAll('.discussion-comment-card.is-notification-target').forEach((node) => {
-        node.classList.remove('is-notification-target')
-      })
       const target = document.getElementById(`comment-${match[1]}`)
         || document.getElementById('comments')
         || sectionRef.current
       if (!target) return
-      if (target.id?.startsWith('comment-')) {
-        target.classList.add('is-notification-target')
-      }
       target.scrollIntoView({ block: target.id?.startsWith('comment-') ? 'center' : 'start', behavior })
     }
 
@@ -139,7 +175,10 @@ export default function ArticleComments({ articleKey }) {
       setMessage('')
       setReplyTarget(null)
       await refresh()
-      if (isAuthed) await refreshNotifications?.()
+      if (isAuthed) {
+        await refreshNotifications?.()
+        await refreshArticleNotifications()
+      }
     } catch (e) {
       setError(e?.message || 'POST_FAILED')
     } finally {
@@ -161,10 +200,6 @@ export default function ArticleComments({ articleKey }) {
       textareaRef.current?.focus()
       textareaRef.current?.setSelectionRange?.(prefix.length, prefix.length)
     })
-  }
-
-  async function markAllRepliesRead() {
-    await markNotificationsRead?.({ all: true })
   }
 
   return (
@@ -206,35 +241,6 @@ export default function ArticleComments({ articleKey }) {
           )}
         </div>
       </div>
-
-      {isAuthed && unreadNotifications.length ? (
-        <div className="discussion-notice mt-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-medium">这篇内容有 {unreadNotifications.length} 条未读互动</p>
-            <button
-              type="button"
-              onClick={markAllRepliesRead}
-              className="discussion-ghost-button self-start"
-            >
-              全部已读
-            </button>
-          </div>
-          <ul className="mt-2 space-y-1.5">
-            {unreadNotifications.slice(0, 3).map((item) => (
-              <li key={item.id} className="leading-5">
-                <a
-                  href={item.href || '#comments'}
-                  onClick={() => markNotificationsRead?.({ id: item.id })}
-                  className="font-medium text-[var(--site-accent-strong)] underline-offset-4 hover:underline"
-                >
-                  {item.title || `${item.actorUserName || '有人'} 回复了你`}
-                </a>
-                <span className="text-[var(--site-muted)]">：{item.messageExcerpt}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       <form onSubmit={submit} className="discussion-composer mt-4 flex flex-col gap-3">
         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
@@ -289,8 +295,12 @@ export default function ArticleComments({ articleKey }) {
               <li
                 key={item.id}
                 id={`comment-${item.id}`}
-                className="discussion-comment-card"
+                data-notification-ready={notificationsLoaded ? 'true' : 'false'}
+                className={`discussion-comment-card ${unreadNotifications.some((notice) => notice.commentId === Number(item.id) && notice.type !== 'content_like') ? 'has-unread-notification' : ''}`}
               >
+                {unreadNotifications.some((notice) => notice.commentId === Number(item.id) && notice.type !== 'content_like') ? (
+                  <span className="discussion-notification-dot" aria-label="未读互动" />
+                ) : null}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
                     <UserAvatar

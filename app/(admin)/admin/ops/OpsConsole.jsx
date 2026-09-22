@@ -200,6 +200,7 @@ export default function OpsConsoleClient() {
     <AdminPage
       title="自动化台账"
       description="云端与本地自动化统一登记；列表紧凑展示，点击任意一行查看详情。运行记录已移到日志记录。"
+      notificationTargetReady={!loading && !error && !!status}
       actions={
         <div className="flex flex-wrap gap-2">
           <AdminButton href="/admin/logs">运行记录</AdminButton>

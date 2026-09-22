@@ -1,6 +1,8 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { Suspense } from 'react'
+import NotificationArrival from './NotificationArrival'
 
 const SessionContext = createContext({
   loading: true,
@@ -61,7 +63,7 @@ export function SessionProvider({ children }) {
     if (inFlightNotificationsRef.current) return inFlightNotificationsRef.current
     const p = (async () => {
       try {
-        const res = await fetch('/api/notifications', { cache: 'no-store', credentials: 'same-origin' })
+        const res = await fetch('/api/notifications?unreadOnly=1&limit=2', { cache: 'no-store', credentials: 'same-origin' })
         const data = await res.json().catch(() => null)
         setState((prev) => ({
           ...prev,
@@ -92,10 +94,15 @@ export function SessionProvider({ children }) {
         credentials: 'same-origin',
         body: JSON.stringify(payload),
       })
-      if (res.ok) await refreshNotifications()
+      if (res.ok) {
+        if (inFlightNotificationsRef.current) await inFlightNotificationsRef.current
+        await refreshNotifications()
+        return true
+      }
     } catch {
       // best-effort UI refresh only
     }
+    return false
   }, [refreshNotifications])
 
   const refreshNav = useCallback(async () => {
@@ -173,6 +180,7 @@ export function SessionProvider({ children }) {
 
   return (
     <SessionContext.Provider value={{ ...state, refresh, refreshNav, refreshNotifications, markNotificationsRead }}>
+      <Suspense fallback={null}><NotificationArrival /></Suspense>
       {children}
     </SessionContext.Provider>
   )

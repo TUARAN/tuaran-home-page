@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSessionAccount } from './SessionProvider'
 
 const VISITOR_KEY = 'tuaran:article-like-visitor'
 
@@ -53,6 +54,9 @@ function translateError(raw) {
 }
 
 export default function ArticleLikeButton({ articleKey, size = 'md' }) {
+  const { user } = useSessionAccount()
+  const [unreadLikes, setUnreadLikes] = useState([])
+  const [notificationsLoaded, setNotificationsLoaded] = useState(false)
   const [visitorKey, setVisitorKey] = useState('')
   const [count, setCount] = useState(0)
   const [liked, setLiked] = useState(false)
@@ -94,6 +98,43 @@ export default function ArticleLikeButton({ articleKey, size = 'md' }) {
     if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current)
   }, [])
 
+  useEffect(() => {
+    if (!user?.id || !articleKey) return undefined
+    let alive = true
+    const params = new URLSearchParams({ articleKey, limit: '100', unreadOnly: '1' })
+    const selectedId = Number(new URLSearchParams(window.location.search).get('notification'))
+    const requests = [fetch(`/api/notifications?${params}`, { cache: 'no-store', credentials: 'same-origin' })]
+    if (Number.isInteger(selectedId) && selectedId > 0) {
+      requests.push(fetch(`/api/notifications?id=${selectedId}`, { cache: 'no-store', credentials: 'same-origin' }))
+    }
+    Promise.all(requests)
+      .then(async ([res, selectedRes]) => {
+        const data = res.ok ? await res.json() : null
+        const notices = (data?.items || []).filter((item) => item.type === 'content_like' && !item.readAt)
+        if (selectedRes?.ok) {
+          const selected = (await selectedRes.json())?.items?.[0]
+          if (selected?.articleKey === articleKey && selected.type === 'content_like' && !selected.readAt && !notices.some((item) => item.id === selected.id)) notices.push(selected)
+        }
+        if (alive) {
+          setUnreadLikes(notices)
+          setNotificationsLoaded(true)
+        }
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [articleKey, user?.id])
+
+  useEffect(() => {
+    function onRead(event) {
+      const id = Number(event.detail?.id)
+      if (id) {
+        setUnreadLikes((prev) => prev.filter((item) => item.id !== id))
+      }
+    }
+    window.addEventListener('tuaran:notification-read', onRead)
+    return () => window.removeEventListener('tuaran:notification-read', onRead)
+  }, [])
+
   async function toggleLike() {
     if (!articleKey || !visitorKey || busy) return
     setBusy(true)
@@ -124,7 +165,8 @@ export default function ArticleLikeButton({ articleKey, size = 'md' }) {
   const iconSize = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
 
   return (
-    <div className="inline-flex flex-col items-stretch gap-1">
+    <div id="article-like" data-notification-ready={notificationsLoaded ? 'true' : 'false'} className="relative inline-flex scroll-mt-24 flex-col items-stretch gap-1">
+      {unreadLikes.length ? <span className="discussion-notification-dot" aria-label={`${unreadLikes.length} 条未读点赞`} /> : null}
       <button
         type="button"
         onClick={toggleLike}

@@ -2,6 +2,7 @@ import { loadContentKeyMeta, resolveContentKeyLite } from '../../../lib/contentK
 import { getD1 } from '../../../lib/d1'
 import { getUserFromRequest } from '../../../lib/edgeSession'
 import { presentNotification } from '../../../lib/siteNotificationsDisplay'
+import { notificationOpenHref } from '../../../lib/notificationNavigation'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -28,7 +29,7 @@ function mapNotification(row, metaMap) {
     actorUserImage: row.actor_user_image || '',
     articleKey: row.article_key || '',
     articleTitle: presented.articleTitle,
-    href: presented.href,
+    href: notificationOpenHref(presented.href, row.id),
     destinationLabel: presented.destinationLabel,
     commentId: Number(row.comment_id) || null,
     replyToCommentId: Number(row.reply_to_comment_id) || null,
@@ -46,8 +47,23 @@ export async function GET(req) {
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 20))
   const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0)
   const type = String(url.searchParams.get('type') || '')
-  let where = 'recipient_user_id = ?1'
+  const articleKey = String(url.searchParams.get('articleKey') || '').trim()
+  const notificationId = Number(url.searchParams.get('id'))
+  const unreadOnly = url.searchParams.get('unreadOnly') === '1'
+  let where = 'recipient_user_id = ?'
   const whereParams = [String(user.id)]
+  if (url.searchParams.has('id')) {
+    if (!Number.isInteger(notificationId) || notificationId <= 0) {
+      return Response.json({ error: 'INVALID_ID' }, { status: 400 })
+    }
+    where += ' AND id = ?'
+    whereParams.push(notificationId)
+  }
+  if (articleKey) {
+    if (articleKey.length > 180) return Response.json({ error: 'INVALID_ARTICLE_KEY' }, { status: 400 })
+    where += ' AND article_key = ?'
+    whereParams.push(articleKey)
+  }
   if (type === 'automation') {
     where += " AND type = 'automation_monitor'"
   } else if (type === 'rss') {
@@ -55,6 +71,7 @@ export async function GET(req) {
   } else if (type === 'interaction') {
     where += " AND type != 'automation_monitor' AND type != 'rss_update'"
   }
+  if (unreadOnly) where += ' AND read_at IS NULL'
 
   let db
   try {
@@ -72,7 +89,7 @@ export async function GET(req) {
            FROM comment_notifications
            WHERE ${where}
            ORDER BY created_at DESC
-           LIMIT ?2 OFFSET ?3`
+           LIMIT ? OFFSET ?`
         )
         .bind(...whereParams, limit, offset)
         .all(),
@@ -141,6 +158,19 @@ export async function PATCH(req) {
       return Response.json({ ok: true, changed: result?.meta?.changes || 0 })
     }
 
+    if (Array.isArray(body?.ids)) {
+      const ids = [...new Set(body.ids.map(Number))]
+      if (!ids.length || ids.length > 100 || ids.some((id) => !Number.isInteger(id) || id <= 0)) {
+        return Response.json({ error: 'INVALID_IDS' }, { status: 400 })
+      }
+      const placeholders = ids.map(() => '?').join(', ')
+      const result = await db.prepare(
+        `UPDATE comment_notifications SET read_at = ?
+         WHERE recipient_user_id = ? AND read_at IS NULL AND id IN (${placeholders})`
+      ).bind(now, String(user.id), ...ids).run()
+      return Response.json({ ok: true, changed: result?.meta?.changes || 0 })
+    }
+
     const id = Number(body?.id)
     if (!Number.isInteger(id) || id <= 0) {
       return Response.json({ error: 'INVALID_ID' }, { status: 400 })
@@ -149,7 +179,7 @@ export async function PATCH(req) {
       .prepare(
         `UPDATE comment_notifications
          SET read_at = ?1
-         WHERE id = ?2 AND recipient_user_id = ?3`
+         WHERE id = ?2 AND recipient_user_id = ?3 AND read_at IS NULL`
       )
       .bind(now, id, String(user.id))
       .run()

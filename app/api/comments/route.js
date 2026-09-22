@@ -59,7 +59,20 @@ export async function GET(req) {
       .bind(articleKey, limit)
       .all()
 
-    return Response.json({ items: result?.results || [] })
+    const items = result?.results || []
+    const targetId = normalizeReplyToId(searchParams.get('commentId'))
+    if (targetId && !items.some((item) => Number(item.id) === targetId)) {
+      const target = await db.prepare(
+        `SELECT c.id, c.article_key, c.user_id, c.user_provider, c.user_name, c.user_image,
+                c.message, c.reply_to_id, c.created_at,
+                r.user_id AS reply_to_user_id, r.user_name AS reply_to_user_name
+         FROM article_comments c
+         LEFT JOIN article_comments r ON c.reply_to_id = r.id
+         WHERE c.article_key = ?1 AND c.id = ?2`
+      ).bind(articleKey, targetId).first()
+      if (target) items.push(target)
+    }
+    return Response.json({ items })
   } catch {
     return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }

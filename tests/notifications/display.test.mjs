@@ -8,6 +8,15 @@ import {
   notificationTitle,
   presentNotification,
 } from '../../lib/siteNotificationsDisplay.js'
+import { notificationOpenHref } from '../../lib/notificationNavigation.js'
+
+test('notification links carry the notification id without losing query or anchor', () => {
+  assert.equal(
+    notificationOpenHref('/crypto-research/rss?feed=v2ex#rss-feed-v2ex', 42),
+    '/crypto-research/rss?feed=v2ex&notification=42#rss-feed-v2ex'
+  )
+  assert.equal(notificationOpenHref('/articles/hello#comment-9', 8), '/articles/hello?notification=8#comment-9')
+})
 
 test('interaction notifications jump to the content comment, not the inbox', () => {
   assert.equal(
@@ -31,15 +40,15 @@ test('interaction notifications jump to the content comment, not the inbox', () 
       type: 'content_like',
       contentHref: '/articles/hello',
     }),
-    '/articles/hello'
+    '/articles/hello#article-like'
   )
 })
 
 test('broken content keys still land on a real page per type', () => {
   assert.equal(notificationHref({ type: 'comment_reply' }), '/community')
   assert.equal(notificationHref({ type: 'content_like' }), '/')
-  assert.equal(notificationHref({ type: 'weekly_summary' }), '/admin/content-weekly?days=7')
-  assert.equal(notificationHref({ type: 'automation_monitor' }), '/admin/ops')
+  assert.equal(notificationHref({ type: 'weekly_summary' }), '/admin/content-weekly?days=7#notification-destination')
+  assert.equal(notificationHref({ type: 'automation_monitor' }), '/admin/ops#notification-destination')
   assert.equal(notificationHref({ type: 'rss_update' }), '/crypto-research/rss')
 })
 

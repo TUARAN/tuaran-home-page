@@ -321,8 +321,8 @@ function formatNotificationTime(ts) {
   }
 }
 
-function NotificationList({ notifications, markNotificationsRead, onNavigate, emptyLabel }) {
-  const items = Array.isArray(notifications?.items) ? notifications.items.slice(0, 2) : []
+function NotificationList({ notifications, onNavigate, emptyLabel }) {
+  const items = Array.isArray(notifications?.items) ? notifications.items.filter((item) => !item.readAt).slice(0, 2) : []
   if (!items.length) {
     return <p className="site-notification-empty">{emptyLabel}</p>
   }
@@ -335,12 +335,10 @@ function NotificationList({ notifications, markNotificationsRead, onNavigate, em
           <Link
             key={item.id}
             href={item.href || '/notifications'}
-            onClick={() => {
-              if (item.id) markNotificationsRead?.({ id: item.id })
-              onNavigate?.()
-            }}
+            onClick={onNavigate}
             className={`site-notification-item ${unread ? 'site-notification-item-unread' : ''}`}
           >
+            {unread ? <span className="site-notification-unread-dot" aria-label="未读" /> : null}
             <span className="min-w-0 flex-1">
               <span className="site-notification-title">
                 {item.title || '新的站内通知'}
@@ -364,7 +362,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  const { loading, user, isOwner, notifications, markNotificationsRead } = account
+  const { loading, user, isOwner, notifications } = account
   const unread = Number(notifications?.unread) || 0
   const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
 
@@ -438,7 +436,6 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
             </div>
             <NotificationList
               notifications={notifications}
-              markNotificationsRead={markNotificationsRead}
               onNavigate={onClose}
               emptyLabel={pick(locale, '暂无新通知', 'No notifications yet.')}
             />
@@ -552,7 +549,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  const { loading, user, isOwner, notifications, markNotificationsRead } = account
+  const { loading, user, isOwner, notifications } = account
   const unread = Number(notifications?.unread) || 0
   const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
 
@@ -597,7 +594,6 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             </div>
             <NotificationList
               notifications={notifications}
-              markNotificationsRead={markNotificationsRead}
               onNavigate={onNavigate}
               emptyLabel={pick(locale, '暂无新通知', 'No notifications yet.')}
             />

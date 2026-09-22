@@ -472,6 +472,7 @@ export default function ContentWeeklyClient() {
     <AdminPage
       title="数据统计"
       description="了解访问、阅读与互动，按问题查看对应数据。"
+      notificationTargetReady={!loading && !error && data?.status === 'ok'}
     >
       <nav aria-label="数据统计导航" className="mb-6 grid grid-cols-2 gap-1 rounded-2xl border border-[#dfe1d8] bg-[#f3f3ee] p-1.5 dark:border-[#273240] dark:bg-[#111821] sm:grid-cols-5">
         {VIEWS.map(({ id, label: name, icon: Icon }) => (

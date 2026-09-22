@@ -120,7 +120,9 @@ function HomeInspirations({ items }) {
 export default function HomePrimaryColumnsClient({ catalog, inspirations }) {
   return (
     <>
-      <HomeFeaturedReadingClient catalog={catalog} />
+      <div className="min-w-0">
+        <HomeFeaturedReadingClient catalog={catalog} />
+      </div>
       <HomeInspirations items={inspirations} />
     </>
   )

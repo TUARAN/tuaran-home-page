@@ -37,6 +37,7 @@ export function GET() {
     `- [求职简历](${SITE_URL}/about/resume): 涂阿燃一页式求职履历，可打印或另存 PDF`,
     `- [下载中心](${SITE_URL}/downloads): 浏览器扩展与桌面客户端`,
     `- [工具集](${SITE_URL}/tools): 在线工具、扩展、应用与开发实验`,
+    `- [Codex 重置监控](${SITE_URL}/codex-reset): Tibo 公开的 Codex 额度重置、重置卡发放与原帖日历`,
     `- [产品集](${SITE_URL}/works): 2aran 的独立产品、站内工具与工程作品总览`,
     `- [Agent 能力集](${SITE_URL}/capabilities): Skill、MCP、Prompt 与 WorkBuddy 能力包的统一入口`,
     `- [服务](${SITE_URL}/services): 可提供的合作与服务`,

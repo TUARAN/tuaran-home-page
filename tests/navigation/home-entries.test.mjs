@@ -46,6 +46,7 @@ test('homepage exploration gives each destination a distinct semantic icon', () 
     '工程实践': 'IconTools',
     '前端周看': 'IconNews',
     '互动专题': 'IconPointer',
+    'Codex 重置': 'IconCalendarEvent',
     '原创项目': 'IconBulb',
     '资源': 'IconArchive',
     'WorkBuddy 学习手册': 'IconSchool',

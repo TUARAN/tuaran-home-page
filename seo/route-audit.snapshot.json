@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 194,
+    "routes": 196,
     "redirects": 16,
     "private": 54,
-    "registeredStatic": 91,
-    "indexable": 104,
-    "canonical": 119,
-    "openGraph": 59,
-    "jsonLd": 38,
+    "registeredStatic": 92,
+    "indexable": 106,
+    "canonical": 121,
+    "openGraph": 61,
+    "jsonLd": 39,
     "errors": 1,
-    "warnings": 128
+    "warnings": 129
   },
   "routes": [
     {
@@ -1448,6 +1448,22 @@
       }
     },
     {
+      "path": "/codex-reset",
+      "file": "app/(site)/codex-reset/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/community",
       "file": "app/(site)/community/page.jsx",
       "kind": "static",
@@ -2514,6 +2530,26 @@
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/tapeout-protocol",
+      "file": "app/(site)/resources/tapeout-protocol/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/tapeout-protocol"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "https://2aran.com/resources/tapeout-protocol"
+        ]
       }
     },
     {
@@ -3684,6 +3720,13 @@
       "id": "jsonld.missing:/resources/speedrun-investing",
       "rule": "jsonld.missing",
       "route": "/resources/speedrun-investing",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/tapeout-protocol",
+      "rule": "jsonld.missing",
+      "route": "/resources/tapeout-protocol",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },

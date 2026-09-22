@@ -5,9 +5,7 @@ import { execFileSync } from 'node:child_process'
 const blockedPathPrefixes = [
   '.data/',
   '.next/',
-  '.next-check/',
-  '.next-admin-preview/',
-  '.next-briefing/',
+  '.next-',
   '.vercel/',
   '.wrangler/',
   'desktop-dist/',

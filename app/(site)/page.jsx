@@ -10,6 +10,7 @@ import {
   IconArchive,
   IconBuildingSkyscraper,
   IconBulb,
+  IconCalendarEvent,
   IconCloud,
   IconCode,
   IconCodeCircle,
@@ -43,6 +44,7 @@ import { getHomeRecommendationCatalog } from '../../lib/homeHighlights'
 import { HOME_RECOMMENDATION_MAX_BATCH_SIZE } from '../../lib/homeRecommendationEngine'
 import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/secondarySites'
+import HomeCodexResetCard from './components/HomeCodexResetCard'
 import HomeOpinionSignals from './components/HomeOpinionSignals'
 
 const weeklySite = SECONDARY_SITES.find((site) => site.id === 'weekly')
@@ -81,6 +83,7 @@ const HOME_EXPLORE_GROUPS = [
     labelEn: 'Works & resources',
     tone: 'works',
     items: [
+      { id: 'codex-reset', href: '/codex-reset', title: 'Codex 重置', titleEn: 'Codex reset', desc: '额度重置与发卡日历', descEn: 'Quota reset and credit calendar', icon: IconCalendarEvent },
       { id: 'interactive', href: '/rich-pages', title: '互动专题', titleEn: 'Interactives', desc: '可筛选、可操作的内容', descEn: 'Filterable, interactive stories', icon: IconPointer },
       { id: 'works', href: '/works', title: '原创项目', titleEn: 'Original projects', desc: '产品、工具与实验作品', descEn: 'Products, tools and experiments', icon: IconBulb },
       { id: 'resources', href: '/articles?group=resource', title: '资源', titleEn: 'Resources', desc: '档案、下载与收藏', descEn: 'Archives, downloads and bookmarks', icon: IconArchive },
@@ -867,6 +870,8 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
         <aside className="home-side-stack hidden lg:block">
           <ProfileCard />
+
+          <HomeCodexResetCard />
 
           <BuilderAndSignalsPanel />
 

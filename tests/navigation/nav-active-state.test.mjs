@@ -30,8 +30,9 @@ test('content dropdown shows four selected topics and three content types', () =
   assert.ok(itemsIn(content.sections, '内容类型').length > 3)
 })
 
-test('public opinion selects its own entry, never the featured tool library', () => {
+test('public opinion and Codex reset select their own analysis entries', () => {
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/public-opinion'), '/public-opinion')
+  assert.equal(getActiveNavHref(sectionsFor('tools'), '/codex-reset'), '/codex-reset')
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools'), '/tools')
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools/multi-ip'), '/tools')
 })
@@ -79,7 +80,7 @@ test('desktop and mobile render route state instead of featured styling', async 
   const header = await readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8')
   const css = await readFile(new URL('../../app/globals.css', import.meta.url), 'utf8')
   assert.doesNotMatch(header, /item\.featured|site-menu-item-featured/)
-  assert.equal((header.match(/active=\{item.href === activeHref\}/g) || []).length, 2)
+  assert.equal((header.match(/active=\{item\.href === activeHref\}/g) || []).length, 2)
   assert.match(header, /aria-current=\{active \? 'page' : undefined\}/)
   assert.match(css, /\.site-menu-item-active\s*\{/)
   assert.doesNotMatch(css, /site-menu-item-featured/)

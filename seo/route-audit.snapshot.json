@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 188,
+    "routes": 194,
     "redirects": 16,
     "private": 54,
-    "registeredStatic": 85,
-    "indexable": 98,
-    "canonical": 113,
-    "openGraph": 55,
+    "registeredStatic": 91,
+    "indexable": 104,
+    "canonical": 119,
+    "openGraph": 59,
     "jsonLd": 38,
     "errors": 1,
-    "warnings": 120
+    "warnings": 128
   },
   "routes": [
     {
@@ -1360,6 +1360,24 @@
       }
     },
     {
+      "path": "/capabilities",
+      "file": "app/(site)/capabilities/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/capabilities"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/changelog",
       "file": "app/(site)/changelog/page.jsx",
       "kind": "static",
@@ -1476,6 +1494,24 @@
         "canonical": true,
         "canonicalValues": [
           "/crypto-research"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/crypto-research/rss",
+      "file": "app/(site)/crypto-research/rss/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/crypto-research/rss"
         ],
         "noindex": "inherited",
         "openGraph": false,
@@ -1897,6 +1933,22 @@
       }
     },
     {
+      "path": "/onchain-blog/whitepaper",
+      "file": "app/(site)/onchain-blog/whitepaper/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/originals",
       "file": "app/(site)/originals/page.jsx",
       "kind": "redirect",
@@ -2284,7 +2336,7 @@
         "canonicalValues": [],
         "noindex": "inherited",
         "openGraph": true,
-        "jsonLd": true,
+        "jsonLd": false,
         "ogUrls": []
       }
     },
@@ -2300,7 +2352,7 @@
         "canonicalValues": [],
         "noindex": "inherited",
         "openGraph": true,
-        "jsonLd": true,
+        "jsonLd": false,
         "ogUrls": []
       }
     },
@@ -2497,6 +2549,42 @@
         "canonicalValues": [],
         "noindex": "inherited",
         "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/workbuddy-opc-whitepaper",
+      "file": "app/(site)/resources/workbuddy-opc-whitepaper/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${slug}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/workbuddy-smart-hardware-whitepaper",
+      "file": "app/(site)/resources/workbuddy-smart-hardware-whitepaper/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${slug}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
         "jsonLd": false,
         "ogUrls": []
       }
@@ -2980,6 +3068,24 @@
       }
     },
     {
+      "path": "/tools/workbuddy-desktop-pet",
+      "file": "app/(site)/tools/workbuddy-desktop-pet/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/workbuddy-desktop-pet"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/traffic",
       "file": "app/(site)/traffic/page.jsx",
       "kind": "static",
@@ -3344,6 +3450,13 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/capabilities",
+      "rule": "jsonld.missing",
+      "route": "/capabilities",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/china-politics",
       "rule": "jsonld.missing",
       "route": "/china-politics",
@@ -3375,6 +3488,13 @@
       "id": "jsonld.missing:/crypto-research",
       "rule": "jsonld.missing",
       "route": "/crypto-research",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/crypto-research/rss",
+      "rule": "jsonld.missing",
+      "route": "/crypto-research/rss",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
@@ -3512,6 +3632,20 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/resources/cz-memoirs",
+      "rule": "jsonld.missing",
+      "route": "/resources/cz-memoirs",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/cz-memoirs/[chapter]",
+      "rule": "jsonld.missing",
+      "route": "/resources/cz-memoirs/[chapter]",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/resources/edge-agent-development",
       "rule": "jsonld.missing",
       "route": "/resources/edge-agent-development",
@@ -3557,6 +3691,20 @@
       "id": "jsonld.missing:/resources/wallpapers",
       "rule": "jsonld.missing",
       "route": "/resources/wallpapers",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/workbuddy-opc-whitepaper",
+      "rule": "jsonld.missing",
+      "route": "/resources/workbuddy-opc-whitepaper",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/resources/workbuddy-smart-hardware-whitepaper",
+      "rule": "jsonld.missing",
+      "route": "/resources/workbuddy-smart-hardware-whitepaper",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
@@ -3799,6 +3947,13 @@
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },
     {
+      "id": "og.missing:/capabilities",
+      "rule": "og.missing",
+      "route": "/capabilities",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
       "id": "og.missing:/china-politics",
       "rule": "og.missing",
       "route": "/china-politics",
@@ -3823,6 +3978,13 @@
       "id": "og.missing:/crypto-research",
       "rule": "og.missing",
       "route": "/crypto-research",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/crypto-research/rss",
+      "rule": "og.missing",
+      "route": "/crypto-research/rss",
       "severity": "warning",
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },

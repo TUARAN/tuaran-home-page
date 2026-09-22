@@ -23,6 +23,8 @@ test('desktop pet page offers an interactive local preview and a real app screen
   assert.match(page, /<DesktopPetDemo \/>/)
   assert.match(page, /安装包尚未开放/)
   assert.match(page, /screenshot\.png/)
+  assert.match(page, /openGraph:/)
+  assert.match(page, /application\/ld\+json/)
   assert.match(demo, /onClick=\{petLulu\}/)
   assert.match(demo, /onSubmit=\{sendMessage\}/)
   assert.match(demo, /不连接 WorkBuddy/)

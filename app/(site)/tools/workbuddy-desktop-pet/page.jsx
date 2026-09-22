@@ -3,10 +3,24 @@ import DesktopPetDemo from './DesktopPetDemo'
 
 export const dynamic = 'force-static'
 
+const pageUrl = 'https://2aran.com/tools/workbuddy-desktop-pet'
+const title = '鹿鹿精灵｜长颈鹿桌宠与 WorkBuddy 本地助理入口'
+const description = '鹿鹿精灵是一只陪你工作的长颈鹿桌宠。站内体验点击与文字互动，查看 Electron 桌面原型。'
+
 export const metadata = {
-  title: '鹿鹿精灵｜长颈鹿桌宠与 WorkBuddy 本地助理入口',
-  description: '鹿鹿精灵是一只陪你工作的长颈鹿桌宠。点击鹿鹿互动，主动发送文字给已授权的 WorkBuddy 本地助理，并在桌宠里查看回复。',
+  title,
+  description,
   alternates: { canonical: '/tools/workbuddy-desktop-pet' },
+  openGraph: { title, description, url: pageUrl, type: 'website' },
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: title,
+  description,
+  url: pageUrl,
+  inLanguage: 'zh-CN',
 }
 
 const steps = [
@@ -18,13 +32,14 @@ const steps = [
 export default function DesktopPetPage() {
   return (
     <main className="min-h-screen bg-[#f7f2e9] px-5 py-16 text-[#263f39] dark:bg-[#132521] dark:text-[#f7edd8]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <div className="mx-auto max-w-5xl">
         <p className="mb-5 inline-flex rounded-full border border-[#d7b88c] px-4 py-2 text-xs font-semibold tracking-widest text-[#815d34] dark:text-[#e4c399]">桌面应用 · 预览版</p>
         <div className="grid items-center gap-12 md:grid-cols-2">
           <div>
             <h1 className="text-5xl font-semibold tracking-tight md:text-6xl">鹿鹿精灵</h1>
             <p className="mt-6 text-xl leading-relaxed">一只住在桌面角落的长颈鹿，陪你把今天的事慢慢做好。</p>
-            <p className="mt-5 leading-8 text-[#5b6c62] dark:text-[#c5d1c7]">摸摸鹿鹿，它会回应你。输入文字并主动发送后，已授权的 WorkBuddy 本地助理才会处理请求。没有连接时，鹿鹿也能陪你进行本地互动。</p>
+            <p className="mt-5 leading-8 text-[#5b6c62] dark:text-[#c5d1c7]">摸摸鹿鹿，它会回应你。网页演示只在浏览器里回应输入；桌面版在完成授权后，才会把你主动发送的文字交给 WorkBuddy 本地助理。</p>
             <div className="mt-8 rounded-2xl border border-[#d9d1bd] bg-white/70 p-5 text-sm leading-7 dark:border-[#51675d] dark:bg-white/5">
               <strong>当前进度</strong>：Electron 桌宠原型已实现，网页可体验摸摸鹿鹿与文字互动。桌面安装包尚未开放；WorkBuddy 真账号接入还需应用审核与用户授权。
             </div>

@@ -4,8 +4,10 @@ import test from 'node:test'
 
 import {
   isPublishedRssRow,
+  isSelfRssFeed,
   listPublishedRssFeeds,
 } from '../../lib/rssFeedVisibility.js'
+import { RSS_FEEDS_SEED } from '../../lib/rssFeedsSeed.js'
 
 const rows = [
   {
@@ -18,6 +20,15 @@ const rows = [
     published: 1,
     sort_order: 100,
     created_at: 10,
+  },
+  {
+    id: 'tuaran-home',
+    site_name: '涂阿燃的网络日志',
+    site_url: 'https://2aran.com/',
+    rss_url: 'https://2aran.com/rss.xml',
+    published: 1,
+    sort_order: 90,
+    created_at: 15,
   },
   {
     id: 'unpublished-seed',
@@ -35,6 +46,16 @@ test('only published D1 rows are exposed publicly', () => {
   assert.deepEqual(feeds.map((feed) => feed.id), ['published'])
   assert.equal(feeds[0].siteName, '已上架')
   assert.equal(feeds[0].sortOrder, 100)
+})
+
+test('self site feed is never listed among curated sources', () => {
+  assert.equal(isSelfRssFeed({ id: 'tuaran-home' }), true)
+  assert.equal(isSelfRssFeed({ siteUrl: 'https://2aran.com/', rssUrl: 'https://2aran.com/rss.xml' }), true)
+  assert.equal(
+    listPublishedRssFeeds(rows).some((feed) => feed.id === 'tuaran-home' || /2aran\.com/.test(feed.rssUrl)),
+    false,
+  )
+  assert.equal(RSS_FEEDS_SEED.some((feed) => feed.id === 'tuaran-home'), false)
 })
 
 test('an empty or fully unpublished database stays empty', () => {

@@ -230,15 +230,9 @@ export default function CodexResetClient() {
         </header>
 
       {featured ? (
-        <section className="codex-reset-featured mt-5 overflow-hidden rounded-[24px] border border-[#e4e2da] dark:border-[#2b3440]">
-          <div
-            className="codex-reset-featured-bg"
-            style={{ backgroundImage: `url('${CODEX_RESET_HERO_BG_PATH}')` }}
-            aria-hidden="true"
-          />
-          <div className="codex-reset-featured-overlay" aria-hidden="true" />
-          <div className="codex-reset-featured-inner grid gap-4 p-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:p-5">
-            <div className="rounded-2xl border border-[#e4e2da]/80 bg-white/[0.92] p-5 backdrop-blur-sm dark:border-[#2b3440]/80 dark:bg-[#151c25]/[0.92]">
+        <section className="codex-reset-featured mt-5 rounded-[24px] border border-[#e4e2da] dark:border-[#2b3440]">
+          <div className="codex-reset-featured-inner grid gap-4 p-4 lg:grid-cols-[minmax(0,0.85fr)_220px_minmax(0,1.05fr)] lg:p-5">
+            <div className="codex-reset-featured-copy">
               <div className="flex flex-wrap items-center gap-2">
                 <KindBadge kind={featuredModel.kind}>{featuredModel.kicker}</KindBadge>
                 {featuredDate === today ? <span className="text-[11px] text-[#767869] dark:text-[#8e9ab0]">今天</span> : null}
@@ -253,6 +247,17 @@ export default function CodexResetClient() {
                 发卡不代表额度已恢复。没有完成帖时保留原预告，时间经过不会自动改成已确认。
               </p>
             </div>
+            <figure className="codex-reset-issue-card">
+              <Image
+                src={CODEX_RESET_HERO_BG_PATH}
+                alt="Saint Tibo 重置卡"
+                width={682}
+                height={1024}
+                unoptimized
+                className="codex-reset-issue-card-art"
+              />
+              <figcaption className="codex-reset-issue-card-caption">Saint Tibo · 重置卡</figcaption>
+            </figure>
             <PostCard post={featuredPost} />
           </div>
         </section>

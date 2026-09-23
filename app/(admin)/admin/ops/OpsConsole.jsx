@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { countAutomationFacet, filterAutomationRegistry } from '../../../../lib/adminOpsRegistry'
 import { AdminButton, AdminPage, StatusPill } from '../../components/ui'
 
 const PAGE_SIZE = 10
@@ -78,6 +79,41 @@ function Pagination({ page, total, pageSize, onChange }) {
 
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 
+const EMPTY_FILTERS = {
+  repository: 'all',
+  scope: 'all',
+  schedule: 'all',
+  risk: 'all',
+  review: 'all',
+}
+
+const SCOPE_OPTIONS = [
+  { value: 'all', label: '全部' },
+  { value: 'cloud', label: '云端' },
+  { value: 'local', label: '本地' },
+]
+
+const SCHEDULE_OPTIONS = [
+  { value: 'all', label: '全部' },
+  { value: 'active', label: '已启用' },
+  { value: 'paused', label: '已暂停' },
+  { value: 'on_demand', label: '按需' },
+  { value: 'running', label: '运行中' },
+]
+
+const RISK_OPTIONS = [
+  { value: 'all', label: '全部' },
+  { value: 'high', label: '高风险' },
+  { value: 'medium', label: '中风险' },
+  { value: 'low', label: '低风险' },
+]
+
+const REVIEW_OPTIONS = [
+  { value: 'all', label: '全部' },
+  { value: 'required', label: '需审核' },
+  { value: 'open', label: '免审核' },
+]
+
 export default function OpsConsoleClient() {
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -85,8 +121,7 @@ export default function OpsConsoleClient() {
   const [copied, setCopied] = useState('')
   const [copyError, setCopyError] = useState('')
   const [togglingId, setTogglingId] = useState('')
-  const [repositoryFilter, setRepositoryFilter] = useState('all')
-  const [scopeFilter, setScopeFilter] = useState('all')
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [openId, setOpenId] = useState('')
   const [registryPage, setRegistryPage] = useState(1)
 
@@ -114,19 +149,22 @@ export default function OpsConsoleClient() {
     () => Array.from(new Set(registry.map((item) => item.repository).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
     [registry],
   )
-  const filteredRegistry = useMemo(() => {
-    const byRepo = repositoryFilter === 'all' ? registry : registry.filter((item) => item.repository === repositoryFilter)
-    return scopeFilter === 'all' ? byRepo : byRepo.filter((item) => item.scope === scopeFilter)
-  }, [registry, repositoryFilter, scopeFilter])
+  const filteredRegistry = useMemo(() => filterAutomationRegistry(registry, filters), [registry, filters])
   const pagedRegistry = filteredRegistry.slice((registryPage - 1) * PAGE_SIZE, registryPage * PAGE_SIZE)
-  const stats = repositoryFilter === 'all'
-    ? status?.stats || {}
-    : {
-        totalTasks: filteredRegistry.length,
-        cloudTasks: filteredRegistry.filter((item) => item.scope === 'cloud').length,
-        localTasks: filteredRegistry.filter((item) => item.scope === 'local').length,
-        reviewRequired: filteredRegistry.filter((item) => item.reviewRequired).length,
-      }
+  const filtersActive = Object.values(filters).some((value) => value !== 'all')
+  const facetCount = useCallback(
+    (skip, predicate) => countAutomationFacet(registry, filters, skip, predicate),
+    [registry, filters],
+  )
+  const visibleScheduleOptions = SCHEDULE_OPTIONS.filter(
+    (option) => option.value !== 'running' || filters.schedule === 'running' || facetCount('schedule', (item) => item.status === 'running') > 0,
+  )
+  const stats = {
+    totalTasks: filteredRegistry.length,
+    cloudTasks: filteredRegistry.filter((item) => item.scope === 'cloud').length,
+    localTasks: filteredRegistry.filter((item) => item.scope === 'local').length,
+    reviewRequired: filteredRegistry.filter((item) => item.reviewRequired).length,
+  }
 
   const copyText = useCallback(async (key, text) => {
     setCopyError('')
@@ -186,13 +224,8 @@ export default function OpsConsoleClient() {
     [refresh],
   )
 
-  function changeRepository(value) {
-    setRepositoryFilter(value)
-    setRegistryPage(1)
-  }
-
-  function changeScope(value) {
-    setScopeFilter(value)
+  function changeFilter(key, value) {
+    setFilters((current) => ({ ...current, [key]: value }))
     setRegistryPage(1)
   }
 
@@ -244,30 +277,91 @@ export default function OpsConsoleClient() {
             <h2 className="mt-0.5 text-base font-semibold text-[#15140f] dark:text-gray-100">{loading ? '检查中' : status?.label || '未知'}</h2>
             <p className="mt-0.5 truncate text-[12px] leading-5 text-[#686962] dark:text-gray-400">{status?.message || '正在检查自动化注册表。'}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select className={CONTROL_CLASS} value={repositoryFilter} onChange={(event) => changeRepository(event.target.value)} aria-label="按项目仓库筛选">
-              <option value="all">全部仓库（{registry.length}）</option>
-              {repositoryOptions.map((repository) => (
-                <option key={repository} value={repository}>
-                  {repository}（{registry.filter((item) => item.repository === repository).length}）
-                </option>
-              ))}
-            </select>
-            <select className={CONTROL_CLASS} value={scopeFilter} onChange={(event) => changeScope(event.target.value)} aria-label="按云端或本地筛选">
-              <option value="all">全部环境</option>
-              <option value="cloud">云端</option>
-              <option value="local">本地</option>
-            </select>
-          </div>
         </div>
       </section>
 
       <section className="mb-4 overflow-hidden rounded-xl border border-[#d5d7cd] bg-white/70 dark:border-[#252e39] dark:bg-[#10161f]">
-        <div className="flex items-center justify-between border-b border-[#e6e7df] px-4 py-2.5 dark:border-[#263142]">
+        <div className="flex flex-col gap-3 border-b border-[#e6e7df] px-4 py-3 dark:border-[#263142] sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-sm font-semibold text-[#15140f] dark:text-gray-100">自动化列表</h2>
-            <p className="text-[11px] text-[#858779] dark:text-gray-500">点击行查看详情；共 {filteredRegistry.length} 条</p>
+            <p className="text-[11px] text-[#858779] dark:text-gray-500">点击标签切换分类，点击行查看详情；共 {filteredRegistry.length} 条</p>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select className={CONTROL_CLASS} value={filters.repository} onChange={(event) => changeFilter('repository', event.target.value)} aria-label="按项目仓库筛选">
+              <option value="all">全部仓库（{facetCount('repository', () => true)}）</option>
+              {repositoryOptions.map((repository) => (
+                <option key={repository} value={repository}>
+                  {repository}（{facetCount('repository', (item) => item.repository === repository)}）
+                </option>
+              ))}
+            </select>
+            {filtersActive ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters(EMPTY_FILTERS)
+                  setRegistryPage(1)
+                }}
+                className="h-9 rounded-lg px-2.5 text-[12px] text-[#8a6b2e] transition hover:bg-[#e7eadc] dark:text-[#d7a85c] dark:hover:bg-[#1b1c13]"
+              >
+                清除筛选
+              </button>
+            ) : null}
+          </div>
+        </div>
+        <div className="space-y-2 border-b border-[#e6e7df] px-4 py-3 dark:border-[#263142]">
+          <FilterRow label="环境">
+            {SCOPE_OPTIONS.map((option) => (
+              <FilterChip
+                key={option.value}
+                current={filters.scope}
+                value={option.value}
+                count={facetCount('scope', (item) => option.value === 'all' || item.scope === option.value)}
+                onClick={(value) => changeFilter('scope', value)}
+              >
+                {option.label}
+              </FilterChip>
+            ))}
+          </FilterRow>
+          <FilterRow label="调度">
+            {visibleScheduleOptions.map((option) => (
+              <FilterChip
+                key={option.value}
+                current={filters.schedule}
+                value={option.value}
+                count={facetCount('schedule', (item) => option.value === 'all' || item.status === option.value)}
+                onClick={(value) => changeFilter('schedule', value)}
+              >
+                {option.label}
+              </FilterChip>
+            ))}
+          </FilterRow>
+          <FilterRow label="风险">
+            {RISK_OPTIONS.map((option) => (
+              <FilterChip
+                key={option.value}
+                current={filters.risk}
+                value={option.value}
+                count={facetCount('risk', (item) => option.value === 'all' || item.riskLevel === option.value)}
+                onClick={(value) => changeFilter('risk', value)}
+              >
+                {option.label}
+              </FilterChip>
+            ))}
+          </FilterRow>
+          <FilterRow label="审核">
+            {REVIEW_OPTIONS.map((option) => (
+              <FilterChip
+                key={option.value}
+                current={filters.review}
+                value={option.value}
+                count={facetCount('review', (item) => option.value === 'all' || (option.value === 'required' ? item.reviewRequired : !item.reviewRequired))}
+                onClick={(value) => changeFilter('review', value)}
+              >
+                {option.label}
+              </FilterChip>
+            ))}
+          </FilterRow>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] border-separate border-spacing-0 text-left text-[13px]">
@@ -385,6 +479,37 @@ function FragmentRow({ item, open, toggling, copied, onToggle, onCopy, onOpen })
         </tr>
       ) : null}
     </>
+  )
+}
+
+function FilterRow({ label, children }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="w-8 shrink-0 text-[11px] text-[#858779] dark:text-[#8e9ab0]">{label}</span>
+      <div role="group" aria-label={`按${label}筛选`} className="flex flex-wrap gap-1.5">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function FilterChip({ current, value, count, onClick, children }) {
+  const active = current === value
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={() => onClick(value)}
+      className={[
+        'rounded-full border px-2.5 py-1 text-xs transition',
+        active
+          ? 'border-[#8b5a1f] bg-[#e7eadc] text-[#8a6b2e] dark:border-[#d7a85c] dark:bg-[#1b1c13] dark:text-[#9aa27a]'
+          : 'border-[#caccc0] bg-white text-[#63645a] hover:bg-[#edefe7] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-[#9aa6b6] dark:hover:bg-[#151c25]',
+      ].join(' ')}
+    >
+      {children}
+      <span className="ml-1 font-mono text-[10px] opacity-70">{count}</span>
+    </button>
   )
 }
 

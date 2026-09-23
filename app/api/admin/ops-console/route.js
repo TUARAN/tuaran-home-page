@@ -16,6 +16,16 @@ import {
   resolveRegistryLastRun,
   workflowIdFromEntry,
 } from '../../../../lib/automationLastRun'
+import { githubResearchToken } from '../../../../lib/researchGitHubQueue'
+import {
+  AUTOMATION_GITHUB_WORKFLOWS,
+  fetchGitHubWorkflowRuns,
+  resolveAutomationStats,
+  runsFromDailyBriefs,
+  runsFromRecentLogs,
+  runsFromStatusRows,
+} from '../../../../lib/automationRunStats'
+import { FRONTEND_WEEKLY_KEYS, readR2Json } from '../../../../lib/frontendWeeklyData'
 import {
   MORNING_GREETING_ID,
   MORNING_GREETING_LAST_RUN_KEY,
@@ -42,18 +52,39 @@ async function writeSetting(db, key, value, updatedBy) {
     .run()
 }
 
-function formatLastRun(payload) {
-  if (!payload) return null
-  const at = Number(payload.at || 0)
-  const label = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(at || Date.now())
-  return payload.ok ? `${label} 成功` : `${label} 失败${payload.error ? `（${payload.error}）` : ''}`
+async function readRows(db, sql) {
+  if (!db) return []
+  try {
+    const { results } = await db.prepare(sql).all()
+    return results || []
+  } catch {
+    return []
+  }
+}
+
+async function readFrontendWeekly(env) {
+  const bucket = env?.CONTENT_FEED
+  if (bucket) {
+    try {
+      const [daily, live] = await Promise.all([
+        readR2Json(bucket, FRONTEND_WEEKLY_KEYS.dailyIndex, { latest: '', list: [] }),
+        readR2Json(bucket, FRONTEND_WEEKLY_KEYS.live, { updatedAt: null, items: [] }),
+      ])
+      return { daily, live }
+    } catch {
+      // 本地预览没有 R2 时改读线上周看数据。
+    }
+  }
+  try {
+    const response = await fetch('https://2aran.com/api/frontend-weekly', {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!response.ok) return null
+    return await response.json()
+  } catch {
+    return null
+  }
 }
 
 export async function GET(req) {
@@ -107,16 +138,50 @@ export async function GET(req) {
     }
   }
 
+  const env = getOptionalRequestContext()?.env || {}
+  const [githubRunsById, frontendWeekly, engagementRows, aShareStatRows, cryptoStatRows] = await Promise.all([
+    fetchGitHubWorkflowRuns(AUTOMATION_GITHUB_WORKFLOWS, { token: githubResearchToken(env) }),
+    readFrontendWeekly(env),
+    readRows(db, 'SELECT status, started_at, detail FROM engagement_bot_runs ORDER BY started_at DESC LIMIT 20'),
+    readRows(db, 'SELECT status, ran_at, error FROM a_share_run_log ORDER BY ran_at DESC LIMIT 20'),
+    readRows(db, 'SELECT status, ran_at, error FROM crypto_run_log ORDER BY ran_at DESC LIMIT 20'),
+  ])
+  const logRunsById = {
+    'engagement-bot': runsFromStatusRows(engagementRows, { atKey: 'started_at', errorKey: 'detail' }),
+    'a-share-research-daily': runsFromStatusRows(aShareStatRows),
+    'crypto-research-daily': runsFromStatusRows(cryptoStatRows),
+  }
+  const recordedRunsById = {}
+  for (const run of OPS_RECENT_RUNS) {
+    if (!recordedRunsById[run.taskId]) recordedRunsById[run.taskId] = []
+    recordedRunsById[run.taskId].push(...runsFromRecentLogs([run]))
+  }
+  const liveUpdatedAt = Date.parse(frontendWeekly?.live?.updatedAt || '')
+  if (liveUpdatedAt) {
+    recordedRunsById['frontendnext-hourly-ingest'] = [{ at: liveUpdatedAt, conclusion: 'success' }]
+  }
+  const dailyRuns = runsFromDailyBriefs(frontendWeekly?.daily?.list)
+  if (dailyRuns.length) recordedRunsById['frontendnext-daily-brief'] = dailyRuns
+
   const registry = AUTOMATION_REGISTRY.map((item) => {
+    const seededLastRun = resolveRegistryLastRun(item, { lastRuns: automationLastRuns, alertsByWorkflow }) || item.lastRun
+    const stats = resolveAutomationStats(
+      { ...item, lastRun: seededLastRun },
+      {
+        logRuns: logRunsById[item.id] || [],
+        githubRuns: githubRunsById[item.id] || [],
+        recordedRuns: recordedRunsById[item.id] || [],
+      },
+    )
     const resolved = {
       ...item,
       status: automationScheduleStatus(item),
-      lastRun: resolveRegistryLastRun(item, { lastRuns: automationLastRuns, alertsByWorkflow }) || item.lastRun,
+      lastRun: stats.lastRun,
+      successRate: stats.successRate,
       ...(item.id === MORNING_GREETING_ID
         ? {
             status: isAutomationPaused(greetingState) ? 'paused' : 'active',
             pausable: true,
-            lastRun: formatLastRun(greetingLastRun) || item.lastRun,
           }
         : {}),
       latestRun: OPS_RECENT_RUNS.find((run) => run.taskId === item.id) || null,

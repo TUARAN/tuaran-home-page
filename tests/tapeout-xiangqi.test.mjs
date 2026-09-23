@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import test from 'node:test'
 
 import {
   TAPEOUT_XIANGQI_PLAN,
+  TAPEOUT_XIANGQI_RELEASE,
   createInitialPieces,
   isInCheck,
   isLegalMove,
@@ -44,18 +45,38 @@ test('move result changes the turn and records notation', () => {
 })
 
 test('public dashboard keeps execution times and human authorization gates visible', () => {
-  assert.ok(TAPEOUT_XIANGQI_PLAN.some((step) => step.owner === 'human' && step.status === 'waiting'))
+  assert.ok(TAPEOUT_XIANGQI_PLAN.every((step) => step.status === 'done'))
+  assert.equal(TAPEOUT_XIANGQI_RELEASE.status, 'live')
+  assert.equal(TAPEOUT_XIANGQI_RELEASE.transactions.length, 5)
+  assert.equal(TAPEOUT_XIANGQI_RELEASE.costSummary.total, '约 0.012522635 BNB')
   assert.ok(TAPEOUT_XIANGQI_PLAN.every((step) => step.planned && step.actual))
   const source = readFileSync('app/(site)/tapeout-xiangqi/TapeoutXiangqiClient.jsx', 'utf8')
   assert.match(source, /下载 JSON 快照/)
   assert.match(source, /不要发私钥、助记词或钱包备份/)
-  assert.match(source, /立即试玩/)
+  assert.match(source, /打开链上象棋/)
+  assert.match(source, /我把中国象棋游戏上区块链了/)
+  assert.match(source, /@TapeOutWorld/)
+  assert.match(source, /@XLayerOfficial/)
+  assert.match(source, /@Blonskr/)
   assert.match(source, /https:\/\/tapeout\.net\/#containers/)
   assert.match(source, /Container Opener/)
   assert.match(source, /SiteRegistry/)
   assert.match(source, /DomainBinding/)
-  assert.match(source, /预计人工参与约 30–60 分钟/)
+  assert.match(source, /实际主网执行约 45 分钟/)
   assert.match(source, /viewBox="0 0 900 1000"/)
   assert.match(source, /M350 50 L550 250/)
   assert.match(source, /BOARD_MARKERS/)
+})
+
+test('on-chain game is a self-contained first-chunk site artifact', () => {
+  const path = 'public/tapeout-xiangqi-onchain/index.html'
+  const source = readFileSync(path, 'utf8')
+  const script = source.match(/<script>([\s\S]*)<\/script>/)?.[1]
+
+  assert.ok(statSync(path).size <= 24_000)
+  assert.doesNotMatch(source, /https?:\/\//)
+  assert.match(source, /122\.6\.tape/)
+  assert.match(source, /<svg/)
+  assert.ok(script)
+  assert.doesNotThrow(() => new Function(script))
 })

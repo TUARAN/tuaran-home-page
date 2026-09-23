@@ -1,16 +1,32 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
 import {
   TAPEOUT_XIANGQI_PLAN,
+  TAPEOUT_XIANGQI_RELEASE,
   TAPEOUT_XIANGQI_SNAPSHOTS,
   createInitialPieces,
   legalMovesForPiece,
   movePiece,
   pieceAt,
 } from '../../../lib/tapeoutXiangqi'
+
+const TWEET_DRAFT = `我把中国象棋游戏上区块链了。♟️
+
+这是一个完整可玩的链上静态游戏：棋盘、走子规则、将军判定、悔棋和着法记录，全部写入 BNB Chain 上的 TapeOut / TapeKit 容器。
+
+TapeID 122.6 · 122.6.tape
+
+我和 Codex 把从 NAND 铸造、Tapeout、ERC-6551 容器、putFile 到域名激活的过程都公开记录了下来。Codex 负责实现、压缩、哈希校验和链上验收，我负责每一笔钱包授权。
+
+现在就能玩：https://122-6.tapekit.org/
+
+感谢 @TapeOutWorld @XLayerOfficial @Blonskr
+
+#TapeOut #OnchainGaming #BNBChain #中国象棋`
 
 const TABS = [
   { id: 'game', label: '试玩' },
@@ -35,6 +51,7 @@ const AUTHORIZATION_STEPS = [
     action: '在 MetaMask、Trust Wallet 或你已使用的 EVM 钱包中切换到 BSC Mainnet。核对 Chain ID 56、原生币 BNB，并预留容器费、站点写入 Gas 和名字激活费。',
     walletPrompt: '只做网络切换；这一步不需要签名、授权代币或发送 BNB。',
     handoff: '只需告诉 Codex“BSC 主网已就绪”，不要发私钥、助记词或钱包备份。',
+    result: '已完成·使用持有人的 BSC 主网钱包。',
   },
   {
     id: 'circuit',
@@ -45,6 +62,7 @@ const AUTHORIZATION_STEPS = [
     action: '连接钱包后，从自己持有的电路中选一枚，记下处理器合约地址、处理器编号和电路 #ID。如果还没有电路，需先创建或从市场获取。',
     walletPrompt: '仅“连接钱包”可先确认；如果页面要求购买、铸造或流片，这将是一笔独立金融交易，先停下核对金额。',
     handoff: '把公开的处理器合约地址和 #ID 发给 Codex；钱包地址可选，私钥永远不发。',
+    result: '已完成·铸造 3 NAND 并流片为 TapeID 122.6。',
   },
   {
     id: 'container',
@@ -55,6 +73,7 @@ const AUTHORIZATION_STEPS = [
     action: '从 TapeOut 官方容器页进入目标电路，核对“当前持有人”确实是你的钱包，再点开启容器。官网当前文案提示容器开启费 0.012 BNB，以签名时页面和链上读值为准。',
     walletPrompt: '钱包应显示 BSC Mainnet、目标为 Container Opener、金额和 Gas。持有人、网络或金额任一不符就拒绝。',
     handoff: '完成后把交易哈希 TxID 发给 Codex，我会只读核对容器地址。',
+    result: '已完成·0.012 BNB·容器 0xFC74…DfD7。',
   },
   {
     id: 'publish',
@@ -68,6 +87,7 @@ const AUTHORIZATION_STEPS = [
     walletPrompt: '目标应是 SiteRegistry；方法应为 putFile / appendChunk / setFallback。不需要 ERC-20 无限 approve。若出现 setOperator，先核对被授权地址和可撤销方式。',
     handoff: '签名前将控制台 URL 或钱包请求截图给 Codex 复核；完成后提供交易哈希列表。',
     note: '当前 TapeKit 文档提到 HashPort 托管控制台，但未在规范中公布可稳定核验的固定 URL。因此本页不提供猜测链接，看到入口后再核对域名与合约。',
+    result: '已完成·index.html 8,920 bytes·SHA-256 74fe37…bc4d。',
   },
   {
     id: 'activate',
@@ -75,19 +95,21 @@ const AUTHORIZATION_STEPS = [
     estimate: '3–8 分钟·通常 1 笔交易',
     href: 'https://bscscan.com/address/0x861EE183de2BBE4a6ecf9D15812C123b566a3DB7',
     linkLabel: '在 BscScan 核对 DomainBinding',
-    action: '先用本地开发预览验收未激活站点，再调用 bind(链上名字, 容器地址, 月数)。规范当前记录 0.08 BNB / 30 天，但签名前必须重读 monthlyFee。',
+    action: '先用本地开发预览验收未激活站点，再调用 bind(链上名字, 容器地址, 月数)。签名前必须重读 monthlyFee，以当前合约状态为准。',
     walletPrompt: '钱包里的合约应为 DomainBinding，参数里的 `.tape` 名字和容器地址必须与已核对记录完全一致。',
     handoff: '把激活 TxID 发给 Codex，我会检查 isContainerLive、到期时间和链上名字。',
+    result: '已完成·122.6.tape·1 个月·合约费 0 BNB·Gas 0.0000113157102 BNB。',
   },
   {
     id: 'verify',
     title: '逐字节验证与对外分享',
     estimate: '5–10 分钟·无需钱包签名',
-    href: 'https://tapekit.org/',
-    linkLabel: 'TapeKit 官方网关',
+    href: 'https://122-6.tapekit.org/',
+    linkLabel: '打开链上象棋',
     action: 'Codex 使用 TapeKit 核对文件清单、大小和 SHA-256，检查链外请求，并生成 `https://<#ID>-<处理器编号>.tapekit.org/` 分享地址。',
     walletPrompt: '这是只读验证，不需要钱包连接、签名或付款。',
     handoff: '你打开最终地址做一次玩法验收；通过后即可分享。',
+    result: '已完成·红兵 1:7→1:6 实际走子验收通过。',
   },
 ]
 
@@ -278,7 +300,35 @@ function PlanPanel() {
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Metric value={`${finished}/${TAPEOUT_XIANGQI_PLAN.length}`} label="阶段完成" />
         <Metric value="4" label="Codex 已完成" />
-        <Metric value="2" label="等待人工授权" accent />
+        <Metric value="5" label="人工交易已确认" accent />
+      </div>
+      <div className="mb-6 rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.045] p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Mainnet release</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">TapeID {TAPEOUT_XIANGQI_RELEASE.tapeId} 已公开可玩</h2>
+            <p className="mt-3 font-mono text-xs leading-6 text-slate-400">{TAPEOUT_XIANGQI_RELEASE.container}<br />SHA-256 {TAPEOUT_XIANGQI_RELEASE.sha256}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href={TAPEOUT_XIANGQI_RELEASE.publicUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-emerald-300 px-4 py-2.5 text-sm font-semibold text-slate-950">打开链上游戏 ↗</a>
+            <a href={TAPEOUT_XIANGQI_RELEASE.statusUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white">网关状态 ↗</a>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl bg-black/20 p-3"><span className="block text-[10px] uppercase tracking-[0.15em] text-slate-600">协议支出</span><strong className="mt-1 block font-mono text-sm text-white">{TAPEOUT_XIANGQI_RELEASE.costSummary.protocol}</strong></div>
+          <div className="rounded-xl bg-black/20 p-3"><span className="block text-[10px] uppercase tracking-[0.15em] text-slate-600">Gas</span><strong className="mt-1 block font-mono text-sm text-white">{TAPEOUT_XIANGQI_RELEASE.costSummary.gas}</strong></div>
+          <div className="rounded-xl bg-black/20 p-3"><span className="block text-[10px] uppercase tracking-[0.15em] text-slate-600">合计</span><strong className="mt-1 block font-mono text-sm text-emerald-200">{TAPEOUT_XIANGQI_RELEASE.costSummary.total}</strong></div>
+        </div>
+        <p className="mt-2 text-[10px] leading-5 text-slate-600">{TAPEOUT_XIANGQI_RELEASE.costSummary.note}</p>
+        <div className="mt-5 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+          {TAPEOUT_XIANGQI_RELEASE.transactions.map((tx) => (
+            <a key={tx.hash} href={`https://bscscan.com/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-black/20 p-3 transition hover:bg-black/30">
+              <span className="block text-xs font-medium text-emerald-100">{tx.label}</span>
+              <span className="mt-1 block text-[11px] leading-5 text-slate-500">{tx.value}</span>
+              <span className="mt-1 block font-mono text-[10px] text-slate-600">{tx.hash.slice(0, 12)}… ↗</span>
+            </a>
+          ))}
+        </div>
       </div>
       <div className="overflow-hidden rounded-3xl border border-white/10">
         {TAPEOUT_XIANGQI_PLAN.map((item, index) => {
@@ -347,8 +397,8 @@ function AccessPanel() {
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">Authorization runbook</p>
-            <h2 className="mt-3 text-2xl font-semibold text-white">从钱包到分享，逐步确认</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">已持有可用电路时，预计人工参与约 30–60 分钟；需新获取电路时约 45–120+ 分钟。链上拥堵、文件分块数和钱包审核速度会改变实际用时。</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">从钱包到分享，六步已完成</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">实际主网执行约 45 分钟，共完成 5 笔由持有人最终确认的交易。下方保留授权方法、预估时间与实际结果，便于复盘。</p>
           </div>
           <div className="shrink-0 rounded-2xl border border-cyan-200/15 bg-black/20 px-4 py-3 text-sm text-cyan-100">预计主网签名 <strong className="ml-1 text-xl">3–N 笔</strong></div>
         </div>
@@ -374,6 +424,7 @@ function AccessPanel() {
                 <div className="rounded-xl bg-emerald-300/[0.04] p-4"><p className="text-[10px] uppercase tracking-[0.16em] text-emerald-200/55">完成后交给 Codex</p><p className="mt-2 text-sm leading-6 text-slate-300">{item.handoff}</p></div>
               </div>
               {item.note ? <p className="mt-4 rounded-xl border border-violet-300/10 bg-violet-300/[0.04] px-4 py-3 text-xs leading-5 text-violet-100/70">{item.note}</p> : null}
+              <p className="mt-4 rounded-xl border border-emerald-300/10 bg-emerald-300/[0.05] px-4 py-3 text-xs leading-5 text-emerald-100/80">{item.result}</p>
             </article>
           ))}
         </div>
@@ -399,18 +450,43 @@ function AccessPanel() {
   )
 }
 
+function AnnouncementCard({ copyLabel, onCopy }) {
+  return (
+    <section className="mt-6 overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-white/[0.04]">
+      <Image src="/images/tapeout-xiangqi-launch.png" alt="中国象棋上链 TapeOut 122.6.tape 发布配图" width={1672} height={941} priority className="h-auto w-full" />
+      <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[1fr_auto] lg:items-start">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">X announcement draft</p>
+          <h2 className="mt-2 text-xl font-semibold text-white">可直接发布的推文草稿</h2>
+          <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-300">{TWEET_DRAFT}</p>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2 lg:w-44 lg:flex-col">
+          <button type="button" onClick={onCopy} className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950">{copyLabel}</button>
+          <a href="/images/tapeout-xiangqi-launch.png" download className="rounded-xl border border-white/10 px-4 py-2.5 text-center text-sm text-white">下载发布配图</a>
+          <a href="https://x.com/TapeOutWorld" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-white/10 px-4 py-2.5 text-center text-xs text-cyan-100">@TapeOutWorld ↗</a>
+          <a href="https://x.com/XLayerOfficial" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-white/10 px-4 py-2.5 text-center text-xs text-cyan-100">@XLayerOfficial ↗</a>
+          <a href="https://x.com/Blonskr" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-white/10 px-4 py-2.5 text-center text-xs text-cyan-100">@Blonskr ↗</a>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function TapeoutXiangqiClient() {
   const [tab, setTab] = useState('game')
   const [copyLabel, setCopyLabel] = useState('复制页面链接')
+  const [tweetCopyLabel, setTweetCopyLabel] = useState('复制推文')
 
   function downloadSnapshot() {
     const snapshot = {
       project: 'TapeOut · 中国象棋上链',
-      schemaVersion: 1,
+      schemaVersion: 2,
       generatedAt: new Date().toISOString(),
       publicPage: window.location.href,
+      release: TAPEOUT_XIANGQI_RELEASE,
       plan: TAPEOUT_XIANGQI_PLAN,
       snapshots: TAPEOUT_XIANGQI_SNAPSHOTS,
+      tweetDraft: TWEET_DRAFT,
       boundaries: { codex: '代码、构建、只读验证、上传包', human: '钱包、资产选择、主网签名、费用确认' },
     }
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' })
@@ -432,6 +508,16 @@ export default function TapeoutXiangqiClient() {
     }
   }
 
+  async function copyTweet() {
+    try {
+      await navigator.clipboard.writeText(TWEET_DRAFT)
+      setTweetCopyLabel('已复制')
+      window.setTimeout(() => setTweetCopyLabel('复制推文'), 1800)
+    } catch {
+      setTweetCopyLabel('请手动复制')
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#07101c] text-slate-200 selection:bg-cyan-300 selection:text-slate-950">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_5%,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_86%_18%,rgba(168,85,247,0.10),transparent_24%)]" />
@@ -440,20 +526,23 @@ export default function TapeoutXiangqiClient() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link href="/resources/tapeout-protocol" className="text-sm text-slate-400 transition hover:text-cyan-200">← TapeOut Protocol</Link>
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-200 ring-1 ring-inset ring-emerald-200/20">原型已可玩</span>
-              <span className="rounded-full bg-amber-300/10 px-3 py-1.5 text-xs text-amber-200 ring-1 ring-inset ring-amber-200/20">主网待授权</span>
+              <span className="rounded-full bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-200 ring-1 ring-inset ring-emerald-200/20">主网已发布</span>
+              <span className="rounded-full bg-cyan-300/10 px-3 py-1.5 text-xs text-cyan-200 ring-1 ring-inset ring-cyan-200/20">TapeID 122.6</span>
             </div>
           </div>
           <div className="mt-12 max-w-4xl">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-cyan-200/70">Tapeout · build in public · snapshot 05</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em] text-white sm:text-6xl">中国象棋，<br /><span className="text-cyan-200">正在准备上链。</span></h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-400">这是可分享的项目驾驶舱：直接试玩、检查计划和实际用时、回看每次快照，也能看清 Codex 与钱包持有人各自负责什么。</p>
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-cyan-200/70">Tapeout · build in public · snapshot 09</p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em] text-white sm:text-6xl">中国象棋，<br /><span className="text-cyan-200">已经上链了。</span></h1>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-400">棋盘、规则、走子与对局记录已作为 8,920 bytes 静态文件写入 BNB Chain。这里保留完整的计划、实际耗时、消费、交易凭证与人机授权边界。</p>
           </div>
           <div className="mt-8 flex flex-wrap gap-3">
-            <button type="button" onClick={() => setTab('game')} className="rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200">立即试玩</button>
+            <a href={TAPEOUT_XIANGQI_RELEASE.publicUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200">打开链上象棋 ↗</a>
+            <button type="button" onClick={() => setTab('game')} className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white hover:bg-white/10">站内试玩</button>
             <button type="button" onClick={copyLink} className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white hover:bg-white/10">{copyLabel}</button>
           </div>
         </header>
+
+        <AnnouncementCard copyLabel={tweetCopyLabel} onCopy={copyTweet} />
 
         <nav className="sticky top-3 z-30 mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-[#0a1422]/90 p-1.5 shadow-xl backdrop-blur [scrollbar-width:none]">
           <div className="flex min-w-max gap-1">
@@ -471,8 +560,8 @@ export default function TapeoutXiangqiClient() {
         </div>
 
         <footer className="mt-16 flex flex-col justify-between gap-4 border-t border-white/10 pt-6 text-xs leading-5 text-slate-600 sm:flex-row">
-          <p>当前公开快照：2026-09-23 09:47 CST · 授权路线已展开</p>
-          <p>下一道门：电路 NFT 持有人授权</p>
+          <p>当前公开快照：2026-09-23 11:32 CST · 主网发布与实际走子验收完成</p>
+          <a href={TAPEOUT_XIANGQI_RELEASE.publicUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-200">122-6.tapekit.org ↗</a>
         </footer>
       </div>
     </main>

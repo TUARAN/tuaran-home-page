@@ -41,6 +41,7 @@ export default function TapeOutProtocolPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href={pdfHref} target="_blank" rel="noreferrer" className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-700 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200">阅读中文宣言 PDF ↗</a>
+            <Link href="/tapeout-xiangqi" className="rounded-xl border border-emerald-600 bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-900 hover:bg-emerald-100 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-950">试玩中国象棋上链原型 →</Link>
             <a href="https://tapeout.net/" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-slate-400 px-5 py-3 text-sm font-medium hover:bg-white/60 dark:border-slate-500 dark:hover:bg-white/10">前往 TapeOut 官网 ↗</a>
           </div>
         </header>

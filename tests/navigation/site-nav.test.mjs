@@ -46,6 +46,11 @@ test('every public channel defines one featured overview entry in its grid', () 
   assert.doesNotMatch(source, /href: '\/sites'[^}\n]*label: '二级站点'/)
 })
 
+test('x automation retrospective is grouped under content interactives, not about site menu', () => {
+  assert.match(source, /p\?\.startsWith\('\/x-automation-retrospective'\)/)
+  assert.doesNotMatch(source, /title: '站点'[\s\S]*href: '\/x-automation-retrospective'/)
+})
+
 test('about navigation shows changelog and writing calendar immediately after site help', () => {
   assert.match(
     source,

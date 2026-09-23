@@ -37,6 +37,10 @@ test('public opinion and Codex reset select their own analysis entries', () => {
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools/multi-ip'), '/tools')
 })
 
+test('x automation retrospective selects content interactives channel', () => {
+  assert.equal(getActiveNavHref(sectionsFor('content'), '/x-automation-retrospective'), '/rich-pages')
+})
+
 test('legacy capability detail pages select the unified capability entry', () => {
   const sections = sectionsFor('systems')
   for (const path of ['/skill-center', '/skill-center/example', '/mcp-center', '/prompt-center', '/workbuddy-publish-center']) {

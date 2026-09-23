@@ -4,6 +4,7 @@ import test from 'node:test'
 
 import { SECONDARY_SITES } from '../lib/secondarySites.js'
 import { STATIC_PAGE_REGISTRY } from '../lib/staticPageRegistry.mjs'
+import { INTERACTIVE_DIRECTORY_WORKS } from '../lib/engineeringWorks.js'
 import { TOOL_ITEMS } from '../lib/toolItems.js'
 
 const root = new URL('../', import.meta.url)
@@ -12,21 +13,30 @@ const [worksSource, sitesSource] = await Promise.all([
   readFile(new URL('app/(site)/sites/page.jsx', root), 'utf8'),
 ])
 
-test('portfolio distinguishes independent products, built-in tools, and works', () => {
+test('portfolio contains products and works without duplicating the tools directory', () => {
   assert.match(worksSource, /title: '独立产品'/)
-  assert.match(worksSource, /title: '站内工具'/)
   assert.match(worksSource, /title: '作品与实验'/)
   assert.match(worksSource, /PRODUCT_WORK_ITEMS/)
   assert.match(worksSource, /SECONDARY_SITES/)
-  assert.match(worksSource, /TOOL_ITEMS/)
+  assert.doesNotMatch(worksSource, /TOOL_ITEMS|title: '站内工具'/)
 })
 
-test('every public subsite and every internal tool can enter the unified portfolio', () => {
+test('every public subsite can enter the product portfolio', () => {
   assert.ok(SECONDARY_SITES.length > 0)
   assert.ok(SECONDARY_SITES.every((site) => site.domain.endsWith('.2aran.com')))
-  const internalTools = TOOL_ITEMS.filter((tool) => !/^https?:\/\//.test(tool.href))
-  assert.ok(internalTools.length > 0)
-  assert.ok(internalTools.every((tool) => tool.href.startsWith('/')))
+})
+
+test('interactive and tool directories have exclusive primary entries', () => {
+  const interactiveHrefs = new Set(INTERACTIVE_DIRECTORY_WORKS.map((item) => item.href))
+  const overlaps = TOOL_ITEMS.filter((tool) => interactiveHrefs.has(tool.href))
+  assert.deepEqual(overlaps, [])
+
+  for (const href of ['/skill-center', '/mcp-center', '/prompt-center', '/workbuddy-publish-center']) {
+    assert.ok(!TOOL_ITEMS.some((tool) => tool.href === href), `${href} belongs to products`)
+  }
+  for (const href of ['/resources/wallpapers', '/bookmarks/ai-tools', '/bookmarks/dev-resources']) {
+    assert.ok(!TOOL_ITEMS.some((tool) => tool.href === href), `${href} belongs to content`)
+  }
 })
 
 test('legacy sites directory redirects to works and is absent from the sitemap', () => {

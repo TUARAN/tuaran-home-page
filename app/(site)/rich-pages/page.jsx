@@ -1,7 +1,7 @@
 import RichPagesDirectory from './RichPagesDirectory'
 import {
   ENGINEERING_WORK_CATEGORIES,
-  ENGINEERING_WORKS,
+  INTERACTIVE_DIRECTORY_WORKS,
   getRichPagePresentation,
   getRichPagePvKey,
 } from '../../../lib/engineeringWorks'
@@ -40,7 +40,7 @@ export default async function RichPagesPage() {
   const { state } = await getOwnerPageState()
   const canViewOwnerContent = state === 'owner'
   const categoryLabels = Object.fromEntries(ENGINEERING_WORK_CATEGORIES.map((category) => [category.id, category.title]))
-  const works = ENGINEERING_WORKS
+  const works = INTERACTIVE_DIRECTORY_WORKS
     .filter((work) => work.audience !== 'owner' || canViewOwnerContent)
     .map((work) => {
       const presentation = getRichPagePresentation(work)

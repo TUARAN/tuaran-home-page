@@ -5,19 +5,14 @@ import {
   WORK_STATUS_META,
 } from '../../../lib/workItems'
 import { SECONDARY_SITES } from '../../../lib/secondarySites'
-import {
-  TOOL_ITEMS,
-  TOOL_STATUS_META,
-  TOOL_TYPE_META,
-} from '../../../lib/toolItems'
 
 export const dynamic = 'force-static'
 
 export const metadata = {
   title: '产品集',
   description:
-    '2aran 产品集：独立产品、站内工具、工程作品与实验集中在一处查看。',
-  keywords: ['2aran', '产品', '工具', '作品', '独立开发'],
+    '2aran 产品集：独立产品、工程作品与实验集中在一处查看。',
+  keywords: ['2aran', '产品', '作品', '独立开发'],
   alternates: {
     canonical: '/works',
   },
@@ -28,11 +23,6 @@ const PORTFOLIO_TYPE_META = [
     id: 'product',
     title: '独立产品',
     description: '拥有独立用户场景、业务流程、数据或运行节奏，保留自己的域名与产品边界。',
-  },
-  {
-    id: 'tool',
-    title: '站内工具',
-    description: '解决单一明确任务，直接在 2aran.com 使用，共享主站的入口与维护体系。',
   },
   {
     id: 'work',
@@ -60,10 +50,6 @@ const VISUALS = {
     eyebrow: 'INDEPENDENT PRODUCT', icon: 'world',
     cover: 'from-[#dcece8] via-[#edf4eb] to-[#f2e7cf] text-[#315c56] dark:from-[#14312f] dark:via-[#1e2c29] dark:to-[#332b1d] dark:text-[#b7d9d1]',
   },
-  tool: {
-    eyebrow: 'BUILT-IN TOOL', icon: 'tools',
-    cover: 'from-[#e2e6f2] via-[#f1f1f7] to-[#e8dff1] text-[#4f5876] dark:from-[#1a2438] dark:via-[#202535] dark:to-[#30243c] dark:text-[#c5cbea]',
-  },
   work: {
     eyebrow: 'WORK & EXPERIMENT', icon: 'cpu',
     cover: 'from-[#17191e] via-[#252a33] to-[#3d4654] text-white dark:from-black dark:via-[#10151d] dark:to-[#252e3a]',
@@ -73,10 +59,10 @@ const VISUALS = {
 const CONFIG = {
   eyebrow: '2aran Portfolio',
   title: '产品集',
-  description: '独立产品、站内工具、工程作品与实验集中在这里。产品保留必要的独立性，轻量工具默认在主站生长。',
+  description: '独立产品、工程作品与实验集中在这里；解决具体任务的站内工具统一放在工具集。',
   countLabel: '项',
   filterAriaLabel: '筛选产品集',
-  searchPlaceholder: '搜索产品、工具、作品或标签',
+  searchPlaceholder: '搜索产品、作品或标签',
   resultTitle: '全部作品',
   actionLabel: '打开',
   analyticsSurface: 'portfolio_directory',
@@ -129,23 +115,6 @@ function buildProductItems() {
   return [...primaryProducts, ...secondaryProducts]
 }
 
-function buildToolItems() {
-  const typeLabels = Object.fromEntries(TOOL_TYPE_META.map((type) => [type.id, type.title]))
-  return TOOL_ITEMS
-    .filter((item) => !/^https?:\/\//.test(item.href))
-    .map((item) => ({
-      ...item,
-      category: 'tool',
-      categoryLabel: '站内工具',
-      coverLabel: typeLabels[item.type] || '站内工具',
-      meta: ['站内工具', typeLabels[item.type]].filter(Boolean),
-      badgeLabel: TOOL_STATUS_META[item.status] || item.status,
-      badgeTone: statusTone(item.status),
-      footerLabel: item.tags?.slice(0, 2).join(' · ') || '2aran.com',
-      metricLabel: '站内使用',
-    }))
-}
-
 function buildWorkItems() {
   return AI_EXPERIMENT_WORK_ITEMS.map((item) => ({
     ...item,
@@ -163,7 +132,6 @@ function buildWorkItems() {
 export default function WorksPage() {
   const items = [
     ...buildProductItems(),
-    ...buildToolItems(),
     ...buildWorkItems(),
   ].sort((a, b) => (b.priority || 0) - (a.priority || 0))
 

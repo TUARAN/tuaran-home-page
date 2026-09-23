@@ -193,9 +193,10 @@ test('featured upcoming announcement beats an older confirmed reset', () => {
   assert.equal(confirmedOnly.id, 'reset-confirmed')
 })
 
-test('page is registered as an analysis tool and a rich-page work', async () => {
+test('page uses rich-page infrastructure but belongs only to the tools directory', async () => {
   const work = ENGINEERING_WORKS.find((item) => item.id === 'codex-reset')
   assert.equal(work.href, '/codex-reset')
+  assert.equal(work.primaryDirectory, 'tools')
   assert.deepEqual(work.subjects, ['ai_dev'])
   const tool = TOOL_ITEMS.find((item) => item.id === 'codex-reset')
   assert.equal(tool.type, 'analysis')

@@ -2,7 +2,7 @@ import { researchKnowledgeItem } from '../../../lib/researchKnowledgeItem'
 import { articles } from '../../../lib/articleMetadata'
 import {
   ENGINEERING_WORK_CATEGORIES,
-  ENGINEERING_WORKS,
+  INTERACTIVE_DIRECTORY_WORKS,
   getRichPagePvKey,
 } from '../../../lib/engineeringWorks'
 import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
@@ -131,7 +131,7 @@ export function buildKnowledgeItems({ includeOwner = false } = {}) {
     }
   })
 
-  const worksItems = ENGINEERING_WORKS
+  const worksItems = INTERACTIVE_DIRECTORY_WORKS
     .filter((p) => includeOwner || p.audience !== 'owner')
     .map((p) => ({
     id: `work:${p.href}`,

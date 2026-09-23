@@ -45,17 +45,9 @@ const VISUALS = {
     eyebrow: 'ANALYZE', icon: 'activity',
     cover: 'from-[#e8ddd2] via-[#f4ebe1] to-[#ead8ce] text-[#704a36] dark:from-[#38241c] dark:via-[#30251f] dark:to-[#3c2924] dark:text-[#e2bfa9]',
   },
-  'ai-system': {
-    eyebrow: 'CONNECT', icon: 'cpu',
-    cover: 'from-[#dce5f0] via-[#ecf0ee] to-[#e1eadc] text-[#405b6d] dark:from-[#172a3c] dark:via-[#1d2b2c] dark:to-[#263522] dark:text-[#b9d0de]',
-  },
   'ai-dev': {
     eyebrow: 'BUILD', icon: 'code',
     cover: 'from-[#17191e] via-[#252a33] to-[#3d4654] text-white dark:from-black dark:via-[#10151d] dark:to-[#252e3a]',
-  },
-  index: {
-    eyebrow: 'DISCOVER', icon: 'list',
-    cover: 'from-[#eee5ca] via-[#f6f1df] to-[#e5dcc5] text-[#69582f] dark:from-[#332b18] dark:via-[#292719] dark:to-[#38311f] dark:text-[#e0cc94]',
   },
 }
 

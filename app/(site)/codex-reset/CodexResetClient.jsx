@@ -275,7 +275,7 @@ export default function CodexResetClient() {
                 </div>
               ) : (
                 <p className="codex-reset-post-card rounded-2xl border border-[#e4e2da] p-4 text-[14px] leading-6 text-[#1d1a16] dark:border-[#2b3440] dark:text-gray-100">
-                  这一天没有公开的重置或发卡记录。
+                  许愿中 ✨🙏
                 </p>
               )}
             </div>

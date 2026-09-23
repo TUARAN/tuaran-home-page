@@ -84,6 +84,8 @@ test('merged admin tools redirect in middleware without dedicated edge pages', a
   const middlewareSource = await readFile(new URL('../../middleware.js', import.meta.url), 'utf8')
   assert.match(middlewareSource, /legacyAdminTarget\.split\('\?'\)/)
   assert.match(middlewareSource, /url\.search = targetSearch/)
+  assert.match(middlewareSource, /pathname === '\/admin\/articles' && request\.nextUrl\.searchParams\.get\('panel'\) === 'import'/)
+  assert.match(middlewareSource, /url\.pathname = '\/admin\/articles\/research-import'/)
 })
 
 test('sidebar expands only the active workspace and restores the current item into view', async () => {

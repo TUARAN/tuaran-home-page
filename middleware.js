@@ -86,6 +86,15 @@ export async function middleware(request) {
     return NextResponse.redirect(url, 301)
   }
 
+  if (pathname === '/admin/articles' && request.nextUrl.searchParams.get('panel') === 'import') {
+    const url = request.nextUrl.clone()
+    const rawPath = request.nextUrl.searchParams.get('path')
+    url.pathname = '/admin/articles/research-import'
+    url.search = ''
+    if (rawPath) url.searchParams.set('path', rawPath)
+    return NextResponse.redirect(url, 307)
+  }
+
   if (host === ADMIN_HOST) {
     if (pathname === '/') {
       const url = request.nextUrl.clone()

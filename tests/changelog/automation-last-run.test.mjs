@@ -2,9 +2,11 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  deploymentFailureStats,
   formatAutomationLastRun,
   lastRunSettingKey,
   pickLatestAlertByWorkflow,
+  resolveAutomationIncident,
   resolveRegistryLastRun,
   workflowIdFromAlertKey,
   workflowIdFromEntry,
@@ -64,4 +66,40 @@ test('registry lastRun prefers stored success over older failure alerts', () => 
   })
   assert.match(fromSetting, /成功/)
   assert.equal(formatAutomationLastRun({ ok: true, at: Date.parse('2026-09-16T01:52:11Z') }), '2026/09/16 09:52 成功')
+})
+
+test('pages deploy incident keeps the failure log separate from the alert workflow', () => {
+  const incident = resolveAutomationIncident('pages-deploy-alert', {
+    lastRuns: {
+      'pages-deploy-alert': {
+        ok: false,
+        at: Date.parse('2026-09-23T01:12:00Z'),
+        runId: 'Cloudflare-Pages-tuaran-abc',
+        runUrl: 'https://dash.cloudflare.com/pages/deployments/abc',
+        error: 'Building failed',
+        taskName: 'Cloudflare Pages (Cloudflare Pages: tuaran)',
+        status: 'failed',
+      },
+    },
+  })
+  assert.equal(incident.taskName, 'Cloudflare Pages (Cloudflare Pages: tuaran)')
+  assert.equal(incident.error, 'Building failed')
+  assert.equal(incident.runUrl, 'https://dash.cloudflare.com/pages/deployments/abc')
+  assert.match(deploymentFailureStats(incident).lastRun, /失败（Building failed）/)
+  assert.equal(deploymentFailureStats(null), null)
+})
+
+test('a later successful run clears the failure incident', () => {
+  const incident = resolveAutomationIncident('pages-deploy-alert', {
+    lastRuns: {
+      'pages-deploy-alert': { ok: true, at: Date.parse('2026-09-23T02:00:00Z'), status: 'success' },
+    },
+    alertsByWorkflow: {
+      'pages-deploy-alert': {
+        message_excerpt: 'Cloudflare Pages 运行失败\nhttps://example.com/log',
+        created_at: Date.parse('2026-09-23T01:12:00Z'),
+      },
+    },
+  })
+  assert.equal(incident, null)
 })

@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 
-import { countAutomationFacet, filterAutomationRegistry } from '../../../../lib/adminOpsRegistry'
+import { automationFocusTarget, countAutomationFacet, filterAutomationRegistry } from '../../../../lib/adminOpsRegistry'
 import { AdminButton, AdminPage, StatusPill } from '../../components/ui'
 
 const PAGE_SIZE = 10
@@ -114,7 +115,11 @@ const REVIEW_OPTIONS = [
   { value: 'open', label: '免审核' },
 ]
 
-export default function OpsConsoleClient() {
+function OpsConsoleClient() {
+  const searchParams = useSearchParams()
+  const focusTask = String(searchParams.get('task') || '').trim()
+  const appliedFocus = useRef('')
+  const scrolledFocus = useRef('')
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -145,6 +150,11 @@ export default function OpsConsoleClient() {
   }, [refresh])
 
   const registry = useMemo(() => status?.registry || [], [status?.registry])
+  const focus = useMemo(() => automationFocusTarget(registry, focusTask, PAGE_SIZE), [registry, focusTask])
+  const focusedItem = useMemo(
+    () => registry.find((item) => item.id === focusTask) || null,
+    [registry, focusTask],
+  )
   const repositoryOptions = useMemo(
     () => Array.from(new Set(registry.map((item) => item.repository).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
     [registry],
@@ -224,6 +234,25 @@ export default function OpsConsoleClient() {
     [refresh],
   )
 
+  useEffect(() => {
+    if (!focusTask || loading) return
+    if (appliedFocus.current === focusTask) return
+    appliedFocus.current = focusTask
+    if (!focus) return
+    setFilters(EMPTY_FILTERS)
+    setRegistryPage(focus.page)
+    setOpenId(focus.id)
+  }, [focusTask, loading, focus])
+
+  useEffect(() => {
+    if (!focusTask || loading) return
+    if (scrolledFocus.current === focusTask) return
+    const node = document.getElementById('ops-failure')
+    if (!node) return
+    scrolledFocus.current = focusTask
+    node.scrollIntoView({ block: 'center' })
+  }, [focusTask, loading, focusedItem])
+
   function changeFilter(key, value) {
     setFilters((current) => ({ ...current, [key]: value }))
     setRegistryPage(1)
@@ -262,6 +291,7 @@ export default function OpsConsoleClient() {
           复制失败：{copyError}
         </div>
       ) : null}
+      {focusTask && !loading && !error ? <FailureFocus item={focusedItem} taskId={focusTask} /> : null}
 
       <section className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="自动化总数" value={loading ? '—' : stats.totalTasks ?? '—'} />
@@ -384,6 +414,7 @@ export default function OpsConsoleClient() {
                     key={item.id}
                     item={item}
                     open={open}
+                    focused={item.id === focusTask}
                     toggling={togglingId === item.id}
                     copied={copied}
                     onToggle={togglePause}
@@ -412,12 +443,68 @@ export default function OpsConsoleClient() {
   )
 }
 
-function FragmentRow({ item, open, toggling, copied, onToggle, onCopy, onOpen }) {
+function FailureFocus({ item, taskId }) {
+  if (!item) {
+    return (
+      <section id="ops-failure" className="scroll-mt-24 mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+        台账里没有任务 <code className="font-mono">{taskId}</code>，所以这次通知对不上具体记录。
+      </section>
+    )
+  }
+  const incident = item.incident
+  const when = formatIncidentTime(incident?.at)
+  return (
+    <section id="ops-failure" className="scroll-mt-24 mb-4 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 dark:border-rose-900 dark:bg-rose-950/40">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-rose-700 dark:text-rose-300">这次失败</p>
+          <h2 className="mt-1 text-base font-semibold text-rose-950 dark:text-rose-50">{incident?.taskName || item.name}</h2>
+          <p className="mt-1 text-[13px] leading-6 text-rose-900 dark:text-rose-100">
+            {incident?.error || '最近没有读到这次失败的错误摘要。'}
+          </p>
+          <p className="mt-1 font-mono text-[12px] text-rose-800 dark:text-rose-200">{[when, item.id].filter(Boolean).join(' · ')}</p>
+          {incident && !incident.runUrl ? (
+            <p className="mt-1 text-[12px] text-rose-800 dark:text-rose-200">这次告警没有带上部署日志链接。</p>
+          ) : null}
+        </div>
+        {incident?.runUrl ? (
+          <AdminButton href={incident.runUrl} target="_blank" rel="noreferrer">打开部署日志</AdminButton>
+        ) : null}
+      </div>
+    </section>
+  )
+}
+
+function formatIncidentTime(at) {
+  const time = Number(at)
+  if (!time) return ''
+  try {
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(time)
+  } catch {
+    return ''
+  }
+}
+
+function FragmentRow({ item, open, focused, toggling, copied, onToggle, onCopy, onOpen }) {
   return (
     <>
       <tr
         onClick={onOpen}
-        className={`cursor-pointer transition ${open ? 'bg-[#f4f5ee] dark:bg-[#151d29]' : 'hover:bg-[#f8f9f3] dark:hover:bg-[#131b26]'}`}
+        className={`cursor-pointer transition ${
+          focused
+            ? 'bg-rose-50 dark:bg-rose-950/30'
+            : open
+              ? 'bg-[#f4f5ee] dark:bg-[#151d29]'
+              : 'hover:bg-[#f8f9f3] dark:hover:bg-[#131b26]'
+        }`}
       >
         <td className="border-b border-[#f0f1ea] px-3 py-2.5 dark:border-[#1c2632]">
           <StatusPill tone={item.status === 'paused' ? 'danger' : item.status === 'active' || item.status === 'running' ? 'success' : 'neutral'} size="sm">
@@ -510,6 +597,14 @@ function FilterChip({ current, value, count, onClick, children }) {
       {children}
       <span className="ml-1 font-mono text-[10px] opacity-70">{count}</span>
     </button>
+  )
+}
+
+export default function OpsConsole() {
+  return (
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-[#77796d] dark:text-gray-400">正在打开自动化台账</p>}>
+      <OpsConsoleClient />
+    </Suspense>
   )
 }
 

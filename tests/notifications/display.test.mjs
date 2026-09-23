@@ -48,8 +48,18 @@ test('broken content keys still land on a real page per type', () => {
   assert.equal(notificationHref({ type: 'comment_reply' }), '/community')
   assert.equal(notificationHref({ type: 'content_like' }), '/')
   assert.equal(notificationHref({ type: 'weekly_summary' }), '/admin/content-weekly?days=7#notification-destination')
-  assert.equal(notificationHref({ type: 'automation_monitor' }), '/admin/ops#notification-destination')
+  assert.equal(notificationHref({ type: 'automation_monitor' }), '/admin/ops')
   assert.equal(notificationHref({ type: 'rss_update' }), '/crypto-research/rss')
+})
+
+test('automation failures open the matching ops task', () => {
+  assert.equal(
+    notificationHref({
+      type: 'automation_monitor',
+      articleKey: 'system:automation:pages-deploy-alert:CloudflarePages-tuaran-abc123',
+    }),
+    '/admin/ops?task=pages-deploy-alert',
+  )
 })
 
 test('RSS updates open the matching feed card', () => {
@@ -69,7 +79,7 @@ test('titles and destinations stay distinct so the row is scannable', () => {
     '查看回复 · 一篇调研'
   )
   assert.equal(notificationDestinationLabel('weekly_summary', '站点周报'), '打开周报')
-  assert.equal(notificationDestinationLabel('automation_monitor', 'RSS 轮询'), '打开运维台')
+  assert.equal(notificationDestinationLabel('automation_monitor', 'RSS 轮询'), '查看这次失败')
 })
 
 test('presentNotification fills type label, href and destination together', () => {

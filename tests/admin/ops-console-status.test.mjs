@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   AUTOMATION_REGISTRY,
+  automationFocusTarget,
   automationItemMatches,
   automationScheduleStatus,
   countAutomationFacet,
@@ -38,6 +39,13 @@ test('复制任务字段包含推导后的调度状态', () => {
   const copied = JSON.parse(registryEntryText(item))
 
   assert.equal(copied.status, 'active')
+})
+
+test('通知里的任务 id 能定位到台账分页', () => {
+  const target = automationFocusTarget(AUTOMATION_REGISTRY, 'pages-deploy-alert', 10)
+  assert.equal(target.id, 'pages-deploy-alert')
+  assert.equal(target.page, 1)
+  assert.equal(automationFocusTarget(AUTOMATION_REGISTRY, 'missing-task', 10), null)
 })
 
 test('Pages 部署失败告警登记为已启用的云端自动任务', () => {

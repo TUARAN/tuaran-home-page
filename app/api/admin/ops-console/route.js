@@ -11,8 +11,10 @@ import {
   registryEntryText,
 } from '../../../../lib/adminOpsRegistry'
 import {
+  deploymentFailureStats,
   lastRunSettingKey,
   pickLatestAlertByWorkflow,
+  resolveAutomationIncident,
   resolveRegistryLastRun,
   workflowIdFromEntry,
 } from '../../../../lib/automationLastRun'
@@ -164,8 +166,12 @@ export async function GET(req) {
   if (dailyRuns.length) recordedRunsById['frontendnext-daily-brief'] = dailyRuns
 
   const registry = AUTOMATION_REGISTRY.map((item) => {
+    const workflow = workflowIdFromEntry(item.entry)
+    const incident = resolveAutomationIncident(workflow, { lastRuns: automationLastRuns, alertsByWorkflow })
     const seededLastRun = resolveRegistryLastRun(item, { lastRuns: automationLastRuns, alertsByWorkflow }) || item.lastRun
-    const stats = resolveAutomationStats(
+    // pages-deploy-alert 自己跑成功只说明告警发出了，最近运行要落到被监听的部署失败上。
+    const failureStats = item.id === 'pages-deploy-alert' ? deploymentFailureStats(incident) : null
+    const stats = failureStats || resolveAutomationStats(
       { ...item, lastRun: seededLastRun },
       {
         logRuns: logRunsById[item.id] || [],
@@ -178,6 +184,7 @@ export async function GET(req) {
       status: automationScheduleStatus(item),
       lastRun: stats.lastRun,
       successRate: stats.successRate,
+      incident,
       ...(item.id === MORNING_GREETING_ID
         ? {
             status: isAutomationPaused(greetingState) ? 'paused' : 'active',

@@ -6,7 +6,6 @@ import Link from 'next/link'
 
 import SharePageButton from '../components/SharePageButton'
 import {
-  AIHOT_CODEX_RESET_PAGE,
   CODEX_RESET_HERO_BG_PATH,
   CODEX_RESET_PAGE_URL,
   FALLBACK_SNAPSHOT,
@@ -290,12 +289,6 @@ export default function CodexResetClient() {
           统一使用北京时间。未写时区的预告按美国太平洋时间推定。核验水位以接口返回的 <code>checkedAt</code> 为准
           {snapshot.checkedAt ? `（最近 ${formatBeijingPostTime(snapshot.checkedAt)}）` : ''}
           {source === 'fallback' ? '；当前展示的是备用快照，待上游恢复后再同步。' : '。'}
-        </p>
-        <p>
-          原帖作者是 {TIBO_NAME}{' '}
-          <a href={TIBO_PROFILE_URL} target="_blank" rel="noreferrer">{TIBO_HANDLE}</a>
-          。日历整理来自 <a href={AIHOT_CODEX_RESET_PAGE} target="_blank" rel="noreferrer">AIHOT</a>
-          ，本页不猜测下一次重置时间。
         </p>
         <p>
           <Link href="/tools#analysis">返回分析工具</Link>

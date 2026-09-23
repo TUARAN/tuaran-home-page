@@ -23,6 +23,7 @@ import {
   nextHomeRecommendationBatchOffset,
   readHomeRecommendationBatchOffset,
   reconcilePaintedHomeRecommendationLatest,
+  reconcilePaintedHomeRecommendationPins,
   searchHomeRecommendationCatalog,
   selectHomeRecommendationItems,
   sameHomeRecommendationSettings,
@@ -117,6 +118,13 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   )
   if (!firstBatchItemsRef.current && computedItems.length) {
     firstBatchItemsRef.current = computedItems
+  }
+  if (firstBatchLockedRef.current && firstBatchItemsRef.current) {
+    firstBatchItemsRef.current = reconcilePaintedHomeRecommendationPins(
+      firstBatchItemsRef.current,
+      catalog,
+      settings,
+    )
   }
   if (firstBatchLockedRef.current && firstBatchItemsRef.current && runtimeCatalogReady) {
     firstBatchItemsRef.current = reconcilePaintedHomeRecommendationLatest(

@@ -83,6 +83,27 @@ test('initial recommendations are deterministic for matching server and hydratio
   assert.equal(first, second)
 })
 
+test('home article list does not paint a built-in pin before admin settings load', () => {
+  const html = renderToStaticMarkup(React.createElement(Reading, {
+    catalog: [
+      {
+        id: 'research:topics:workbuddy-tutorial-resources',
+        section: 'research',
+        sectionLabel: '实践',
+        tagLabel: 'WorkBuddy',
+        title: '腾讯 WorkBuddy 免费学习资源',
+        summary: '10 份 PDF、50 节视频',
+        href: '/articles/research/topics/workbuddy-tutorial-resources',
+        date: '2026-08-28',
+        sortKey: '2026-08-28T11:18:00',
+      },
+      ...catalog,
+    ],
+  }))
+  assert.match(html, /腾讯 WorkBuddy 免费学习资源/)
+  assert.doesNotMatch(html, /置顶|home-badge-pinned/)
+})
+
 test('home article list keeps the latest tab and does not render a latest badge', () => {
   const html = renderToStaticMarkup(React.createElement(Reading, { catalog }))
   assert.match(html, /首屏文章/)

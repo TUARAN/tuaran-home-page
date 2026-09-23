@@ -19,6 +19,7 @@ import {
   parseHomeRecommendationBatchOffset,
   readHomeRecommendationBatchOffset,
   reconcilePaintedHomeRecommendationLatest,
+  reconcilePaintedHomeRecommendationPins,
   selectHomeRecommendationItems,
   sliceHomeArticleScopeItems,
   writeHomeRecommendationBatchOffset,
@@ -97,19 +98,52 @@ test('home recommendation excludes inspiration items even when legacy input cont
   assert.equal(batch.some((item) => item.id === 'feed:legacy-inspiration'), false)
 })
 
-test('WorkBuddy is the default pin, while an explicit empty pin list remains respected', () => {
+test('recommendation pins come only from an explicit admin list', () => {
   const entry = RESEARCH_ENTRY_META['topics/workbuddy-tutorial-resources']
-  assert.ok(entry, 'the pinned article must exist in the generated catalog')
+  assert.ok(entry, 'the article must exist in the generated catalog')
   const workbuddy = {
     id: `research:${entry.category}:${entry.slug}`,
     section: 'research',
     sortKey: `${entry.date}T${entry.time}`,
   }
-  assert.deepEqual(mergeHomeRecommendationSettings({}).pinnedIds, [workbuddy.id])
+  assert.deepEqual(mergeHomeRecommendationSettings({}).pinnedIds, [])
   assert.deepEqual(mergeHomeRecommendationSettings({ pinnedIds: [] }).pinnedIds, [])
-  const initial = chooseHomeRecommendationBatch([...catalog, workbuddy], {}, 100)
-  assert.equal(initial[0].id, workbuddy.id)
-  assert.equal(initial.filter((item) => item.id === workbuddy.id).length, 1)
+  const unpinned = chooseHomeRecommendationBatch([...catalog, workbuddy], {}, 100)
+  const explicitlyEmpty = chooseHomeRecommendationBatch([...catalog, workbuddy], { pinnedIds: [] }, 100)
+  assert.deepEqual(unpinned.map((item) => item.id), explicitlyEmpty.map((item) => item.id))
+  const pinned = chooseHomeRecommendationBatch([...catalog, workbuddy], { pinnedIds: [workbuddy.id] }, 100)
+  assert.equal(pinned[0].id, workbuddy.id)
+  assert.equal(pinned.filter((item) => item.id === workbuddy.id).length, 1)
+})
+
+test('painted batch adopts admin pins without reshuffling the rest', () => {
+  const painted = [
+    { id: 'first', section: 'column' },
+    { id: 'second', section: 'research' },
+    { id: 'third', section: 'resources' },
+  ]
+  const catalog = [
+    ...painted,
+    { id: 'research:topics:workbuddy-tutorial-resources', section: 'research' },
+  ]
+  assert.equal(
+    reconcilePaintedHomeRecommendationPins(painted, catalog, { pinnedIds: [] }),
+    painted,
+  )
+  const pinned = reconcilePaintedHomeRecommendationPins(painted, catalog, {
+    pinnedIds: ['research:topics:workbuddy-tutorial-resources'],
+  })
+  assert.deepEqual(pinned.map((item) => item.id), [
+    'research:topics:workbuddy-tutorial-resources',
+    'first',
+    'second',
+  ])
+  assert.equal(
+    reconcilePaintedHomeRecommendationPins(pinned, catalog, {
+      pinnedIds: ['research:topics:workbuddy-tutorial-resources'],
+    }),
+    pinned,
+  )
 })
 
 test('home recommendations and article lists use the same public summary', () => {

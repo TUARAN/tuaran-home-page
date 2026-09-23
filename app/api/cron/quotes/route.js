@@ -1,6 +1,7 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { runQuoteAutomation } from '../../../../lib/quoteAutomation'
+import { QUOTE_GENERATION_PAUSED } from '../../../../lib/quoteGeneration'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -33,6 +34,14 @@ async function handle(request) {
   }
   if (!configuredSecrets.some((secret) => safeEqual(secret, suppliedSecret))) {
     return Response.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 })
+  }
+  if (QUOTE_GENERATION_PAUSED) {
+    return Response.json({
+      ok: false,
+      paused: true,
+      error: 'QUOTE_GENERATION_PAUSED',
+      detail: '名言生成自动化已由站长暂停。',
+    }, { status: 423 })
   }
   if (!env.DB) return Response.json({ ok: false, error: 'D1 binding DB is missing' }, { status: 500 })
 

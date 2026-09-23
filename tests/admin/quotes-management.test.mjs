@@ -21,15 +21,17 @@ const poolMigrationSource = await readFile(new URL('../../migrations/0080_quote_
 const cronSource = await readFile(new URL('../../app/api/cron/quotes/route.js', import.meta.url), 'utf8')
 const workflowSource = await readFile(new URL('../../.github/workflows/quote-generation.yml', import.meta.url), 'utf8')
 
-test('manual quote generation is owner-only and adds one prompt result to the pool', () => {
+test('manual quote generation remains owner-only but is paused', () => {
   assert.match(apiSource, /getOwnerOrReject/)
   for (const method of ['GET', 'POST']) {
     assert.match(apiSource, new RegExp(`export async function ${method}`))
   }
   assert.doesNotMatch(apiSource, /export async function (PATCH|DELETE)/)
   assert.match(consoleSource, /名言生成/)
-  assert.match(consoleSource, /生成并入库/)
+  assert.match(consoleSource, /生成已暂停/)
   assert.match(consoleSource, /JSON\.stringify\(\{ prompt: value \}\)/)
+  assert.match(apiSource, /QUOTE_GENERATION_PAUSED/)
+  assert.match(apiSource, /QUOTE_GENERATION_PAUSED'.*status: 423|QUOTE_GENERATION_PAUSED[\s\S]*status: 423/)
   assert.doesNotMatch(consoleSource, /候选|新增名言|编辑名言|核验来源/)
   assert.match(automationCenterSource, /getWorkspaceHubProps\('\/admin\/automation'\)/)
   assert.doesNotMatch(contentCenterSource, /href: '\/admin\/quotes'/)
@@ -58,9 +60,10 @@ test('quote generation has a finite local-first fallback chain', () => {
   assert.doesNotMatch(apiSource, /manualReviewRequired/)
 })
 
-test('quote automation is authenticated, scheduled, and daily-idempotent', () => {
+test('quote automation is authenticated and paused without a schedule', () => {
   assert.match(cronSource, /x-quote-generation-secret/)
   assert.match(cronSource, /runQuoteAutomation/)
-  assert.match(workflowSource, /cron: '17 0 \* \* \*'/)
+  assert.match(cronSource, /QUOTE_GENERATION_PAUSED/)
+  assert.doesNotMatch(workflowSource, /cron:/)
   assert.match(workflowSource, /POST \/api\/cron\/quotes/)
 })

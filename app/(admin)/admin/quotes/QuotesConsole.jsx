@@ -17,6 +17,7 @@ export default function QuotesConsole() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [persistent, setPersistent] = useState(true)
+  const [paused, setPaused] = useState(true)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -31,6 +32,7 @@ export default function QuotesConsole() {
       setQuotes(Array.isArray(data?.quotes) ? data.quotes : [])
       setQuoteCount(Number(data?.quoteCount) || 0)
       setPersistent(data?.persistent !== false)
+      setPaused(data?.paused === true)
     } catch (reason) {
       setError(reason?.message || 'FETCH_FAILED')
     } finally {
@@ -70,8 +72,9 @@ export default function QuotesConsole() {
   }
 
   return (
-    <AdminPage title="名言生成" description="每天生成有明确观点的原创格言并留档，前台从名言池随机展示。">
+    <AdminPage title="名言生成" description="生成已暂停；既有原创格言继续留档，前台仍从名言池随机展示。">
       <div className="mx-auto max-w-3xl space-y-5">
+        {paused ? <Notice tone="warning">名言生成已暂停。定时任务和手动生成均不会新增内容，现有名言池继续展示。</Notice> : null}
         {!persistent ? <Notice tone="warning">当前环境没有可写入的 D1 数据库。</Notice> : null}
         {error ? <Notice tone="error">{error}</Notice> : null}
         {message ? <Notice tone="success">{message}</Notice> : null}
@@ -86,12 +89,13 @@ export default function QuotesConsole() {
               rows={4}
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
+              disabled={paused}
               className="mt-2 w-full resize-y rounded-lg border border-[#d7d8ce] bg-white px-3 py-2 text-sm leading-6 text-[#292a24] outline-none transition focus:border-[#818472] dark:border-[#34404d] dark:bg-[#0c1118] dark:text-gray-100"
               placeholder="例如：为什么反复准备有时会变成拖延？"
             />
           </label>
-          <AdminButton type="submit" variant="primary" disabled={generating || !persistent || !prompt.trim()} className="mt-4">
-            <IconSparkles size={15} />{generating ? '生成中…' : '生成并入库'}
+          <AdminButton type="submit" variant="primary" disabled={paused || generating || !persistent || !prompt.trim()} className="mt-4">
+            <IconSparkles size={15} />{paused ? '生成已暂停' : generating ? '生成中…' : '生成并入库'}
           </AdminButton>
         </form>
 

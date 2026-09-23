@@ -1,9 +1,7 @@
 name: Daily quote generation
 
 on:
-  schedule:
-    # 每天北京时间 08:17 生成一条原创短句并加入名言池。
-    - cron: '17 0 * * *'
+  # 2026-09-23 站长暂停自动生成。保留手动入口，恢复时再加回 schedule。
   workflow_dispatch: {}
 
 concurrency:

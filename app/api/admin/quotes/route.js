@@ -4,6 +4,7 @@ import { callDeepSeek } from '../../../../lib/deepseek'
 import { callOllama, listOllamaModels } from '../../../../lib/ollama'
 import {
   QUOTE_GENERATION_MODELS,
+  QUOTE_GENERATION_PAUSED,
   buildQuoteGenerationMessages,
   parseGeneratedQuotes,
 } from '../../../../lib/quoteGeneration'
@@ -35,6 +36,7 @@ export async function GET(request) {
       quote: null,
       quotes: [],
       quoteCount: 0,
+      paused: QUOTE_GENERATION_PAUSED,
       generationModels: QUOTE_GENERATION_MODELS,
     })
   }
@@ -57,6 +59,7 @@ export async function GET(request) {
       quote: quotes[0] || null,
       quotes,
       quoteCount: Number(countRow?.count) || 0,
+      paused: QUOTE_GENERATION_PAUSED,
       generationModels: QUOTE_GENERATION_MODELS,
     })
   } catch (error) {
@@ -71,6 +74,14 @@ export async function GET(request) {
 export async function POST(request) {
   const guard = await getOwnerOrReject(request)
   if (!guard.ok) return guard.response
+  if (QUOTE_GENERATION_PAUSED) {
+    return Response.json({
+      ok: false,
+      paused: true,
+      error: 'QUOTE_GENERATION_PAUSED',
+      detail: '名言生成功能已由站长暂停，现有名言池继续保留。',
+    }, { status: 423 })
+  }
   const db = dbOrNull()
   if (!db) return Response.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
   const body = await readBody(request)

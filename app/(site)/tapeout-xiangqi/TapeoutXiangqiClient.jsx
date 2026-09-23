@@ -95,15 +95,57 @@ function colorLabel(color) {
   return color === 'red' ? '红方' : '黑方'
 }
 
+const BOARD_MARKERS = [
+  [2, 1], [2, 7], [3, 0], [3, 2], [3, 4], [3, 6], [3, 8],
+  [6, 0], [6, 2], [6, 4], [6, 6], [6, 8], [7, 1], [7, 7],
+]
+
+function markerPath(row, col) {
+  const x = 50 + col * 100
+  const y = 50 + row * 100
+  const left = col > 0 ? `M ${x - 12} ${y - 24} v 12 h -12 M ${x - 24} ${y + 12} h 12 v 12` : ''
+  const right = col < 8 ? `M ${x + 12} ${y - 24} v 12 h 12 M ${x + 24} ${y + 12} h -12 v 12` : ''
+  return `${left} ${right}`
+}
+
 function Board({ pieces, selectedId, legalMoves, onSquareClick, winner, turn }) {
   const legalKeys = new Set(legalMoves.map((move) => `${move.row}:${move.col}`))
 
   return (
-    <div className="relative mx-auto aspect-[9/10] w-full max-w-[520px] overflow-hidden rounded-[1.75rem] border border-amber-200/30 bg-[#d7ae68] p-3 shadow-[0_36px_100px_rgba(0,0,0,0.45)] sm:p-5">
-      <div className="pointer-events-none absolute inset-x-5 top-1/2 z-0 -translate-y-1/2 border-y border-[#5f3a1c]/35 bg-[#e1bd7b] py-1 text-center font-serif text-[10px] font-bold tracking-[0.6em] text-[#68411f]/65 sm:text-sm">
-        楚 河　　　　汉 界
-      </div>
-      <div className="relative z-10 grid h-full grid-cols-9 grid-rows-10 border-l border-t border-[#68411f]/55">
+    <div className="relative mx-auto aspect-[9/10] w-full max-w-[520px] overflow-hidden rounded-[1.75rem] border border-amber-200/30 bg-[#d7ae68] shadow-[inset_0_0_45px_rgba(117,66,20,0.2),0_36px_100px_rgba(0,0,0,0.45)]">
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        viewBox="0 0 900 1000"
+        preserveAspectRatio="none"
+      >
+        <g fill="none" stroke="#68411f" strokeLinecap="square">
+          <rect x="38" y="38" width="824" height="924" strokeWidth="3" opacity="0.48" />
+          {Array.from({ length: 10 }, (_, row) => (
+            <line key={`rank-${row}`} x1="50" y1={50 + row * 100} x2="850" y2={50 + row * 100} strokeWidth="2" opacity="0.62" />
+          ))}
+          <line x1="50" y1="50" x2="50" y2="950" strokeWidth="2" opacity="0.62" />
+          <line x1="850" y1="50" x2="850" y2="950" strokeWidth="2" opacity="0.62" />
+          {Array.from({ length: 7 }, (_, index) => {
+            const x = 150 + index * 100
+            return (
+              <g key={`file-${x}`} strokeWidth="2" opacity="0.62">
+                <line x1={x} y1="50" x2={x} y2="450" />
+                <line x1={x} y1="550" x2={x} y2="950" />
+              </g>
+            )
+          })}
+          <path d="M350 50 L550 250 M550 50 L350 250 M350 750 L550 950 M550 750 L350 950" strokeWidth="2" opacity="0.62" />
+          {BOARD_MARKERS.map(([row, col]) => (
+            <path key={`marker-${row}-${col}`} d={markerPath(row, col)} strokeWidth="3" opacity="0.58" />
+          ))}
+        </g>
+        <g fill="#68411f" fontFamily="serif" fontSize="42" fontWeight="700" opacity="0.66">
+          <text x="250" y="514" textAnchor="middle">楚 河</text>
+          <text x="650" y="514" textAnchor="middle">汉 界</text>
+        </g>
+      </svg>
+      <div className="relative z-10 grid h-full grid-cols-9 grid-rows-10">
         {Array.from({ length: 90 }, (_, index) => {
           const row = Math.floor(index / 9)
           const col = index % 9
@@ -116,13 +158,13 @@ function Board({ pieces, selectedId, legalMoves, onSquareClick, winner, turn }) 
               type="button"
               onClick={() => onSquareClick(row, col)}
               disabled={Boolean(winner)}
-              aria-label={current ? `${colorLabel(current.color)}${current.label}` : `${row + 1} 行 ${col + 1} 列`}
-              className="relative flex min-h-0 items-center justify-center border-b border-r border-[#68411f]/55 disabled:cursor-default"
+              aria-label={current ? `${colorLabel(current.color)}${current.label}` : `第 ${col + 1} 路第 ${row + 1} 行交点`}
+              className="relative flex min-h-0 items-center justify-center disabled:cursor-default"
             >
-              {legal ? <span className="absolute h-2.5 w-2.5 rounded-full bg-emerald-700/65 ring-4 ring-emerald-300/20" /> : null}
+              {legal ? <span className="absolute z-20 h-3 w-3 rounded-full bg-emerald-700/80 ring-4 ring-emerald-200/35" /> : null}
               {current ? (
                 <span
-                  className={`relative z-10 flex aspect-square w-[82%] items-center justify-center rounded-full border-2 bg-[#f5d99e] font-serif text-[clamp(0.75rem,4vw,1.65rem)] font-black shadow-[0_4px_0_#805126,0_6px_12px_rgba(55,30,10,0.38)] transition-transform ${
+                  className={`relative z-10 flex aspect-square w-[78%] items-center justify-center rounded-full border-2 bg-[#f5d99e] font-serif text-[clamp(0.75rem,4vw,1.65rem)] font-black shadow-[0_4px_0_#805126,0_6px_12px_rgba(55,30,10,0.38)] transition-transform ${
                     current.color === 'red' ? 'border-[#a6332c] text-[#a6332c]' : 'border-[#27231e] text-[#27231e]'
                   } ${selected ? '-translate-y-1 scale-110 ring-4 ring-cyan-300/75' : 'hover:-translate-y-0.5'}`}
                 >

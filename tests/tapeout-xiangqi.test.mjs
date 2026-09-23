@@ -55,4 +55,7 @@ test('public dashboard keeps execution times and human authorization gates visib
   assert.match(source, /SiteRegistry/)
   assert.match(source, /DomainBinding/)
   assert.match(source, /预计人工参与约 30–60 分钟/)
+  assert.match(source, /viewBox="0 0 900 1000"/)
+  assert.match(source, /M350 50 L550 250/)
+  assert.match(source, /BOARD_MARKERS/)
 })

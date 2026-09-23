@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+
 import AdminPageGate from '../../components/AdminPageGate'
 import ArticlesConsole from './ArticlesConsole'
 
@@ -7,7 +9,16 @@ export const metadata = {
   robots: { index: false, follow: false },
 }
 
-export default function AdminArticlesPage() {
+export default async function AdminArticlesPage({ searchParams }) {
+  const params = await searchParams
+  if (params?.panel === 'import') {
+    const rawPath = Array.isArray(params.path) ? params.path[0] : params.path
+    const path = typeof rawPath === 'string' ? rawPath : ''
+    redirect(path
+      ? `/admin/articles/research-import?path=${encodeURIComponent(path)}`
+      : '/admin/articles/research-import')
+  }
+
   return (
       <AdminPageGate label="内容管理" returnTo="/admin/articles" description="三条上线通道汇入同一份列表，仅站长本人可见。">
       <ArticlesConsole />

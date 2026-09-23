@@ -16,7 +16,6 @@ import {
 
 import { AdminButton, AdminPage, AdminPagination, Section, StatCard } from '../../components/ui'
 import ResearchStyleClient from '../research-style/ResearchStyleClient'
-import ResearchImportConsole from './research-import/ResearchImportConsole'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const TYPE_LABELS = {
@@ -41,7 +40,6 @@ const SOURCE_LABELS = {
 
 const PANELS = [
   { id: 'list', label: '全部内容', icon: IconList },
-  { id: 'import', label: '审批调研', icon: IconCircleCheck },
   { id: 'style', label: '写作规范', icon: IconTypography },
   { id: 'research-style', label: '调研风格', icon: IconBook2 },
 ]
@@ -71,7 +69,7 @@ function useContentPanel() {
   return [panel, setPanel]
 }
 
-function PublishChannels({ onOpenImport }) {
+function PublishChannels() {
   return (
     <Section
       title="新内容怎样上线"
@@ -97,7 +95,7 @@ function PublishChannels({ onOpenImport }) {
             正本在 GitHub 的 <code>research/*.md</code>。push 之后打开「审批调研」，核对正文再发布。commit 加上 <code>[CF-Pages-Skip]</code>。
           </p>
           <div className="mt-3">
-            <AdminButton type="button" size="sm" onClick={onOpenImport}>
+            <AdminButton href="/admin/articles/research-import" size="sm">
               <IconCircleCheck size={15} />审批调研
             </AdminButton>
           </div>
@@ -210,9 +208,6 @@ function ContentSourceGuide({ counts }) {
 }
 
 function ArticlesConsoleBody() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
   const [panel, setPanel] = useContentPanel()
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
@@ -342,7 +337,7 @@ function ArticlesConsoleBody() {
 
       {panel === 'list' ? (
         <div className="space-y-4">
-          <PublishChannels onOpenImport={() => setPanel('import')} />
+          <PublishChannels />
           <Section
             title="全部内容"
             description={`共 ${counts?.all ?? '…'} 条 · 已发布 ${counts?.published ?? '…'} · 草稿 ${counts?.draft ?? '…'} · 已下线 ${counts?.retired ?? '…'}。`}
@@ -443,16 +438,10 @@ function ArticlesConsoleBody() {
                       ) : null}
                       {isResearch ? (
                         <AdminButton
-                          type="button"
+                          href={item.sourcePath
+                            ? `/admin/articles/research-import?path=${encodeURIComponent(item.sourcePath)}`
+                            : '/admin/articles/research-import'}
                           size="sm"
-                          onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('panel', 'import')
-                            if (item.sourcePath) params.set('path', item.sourcePath)
-                            else params.delete('path')
-                            const query = params.toString()
-                            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-                          }}
                         >
                           审批 / 撤回
                         </AdminButton>
@@ -505,8 +494,6 @@ function ArticlesConsoleBody() {
           </Section>
         </div>
       ) : null}
-
-      {panel === 'import' ? <ResearchImportConsole embedded /> : null}
 
       {panel === 'style' ? <ResearchStyleClient embedded view="rules" /> : null}
 

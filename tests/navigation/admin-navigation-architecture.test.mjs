@@ -20,6 +20,9 @@ test('admin navigation exposes seven stable workspaces without duplicate dashboa
 })
 
 test('admin trails retain workspace context for deep routes', () => {
+  assert.deepEqual(resolveAdminTrail('/admin/articles').map((item) => item.label), ['内容', '内容管理'])
+  assert.deepEqual(resolveAdminTrail('/admin/articles/new').map((item) => item.label), ['内容', '内容管理'])
+  assert.deepEqual(resolveAdminTrail('/admin/articles/research-import').map((item) => item.label), ['内容', '审批调研'])
   assert.deepEqual(resolveAdminTrail('/admin/content-taxonomy').map((item) => item.label), ['内容', '分类管理'])
   assert.deepEqual(resolveAdminTrail('/admin/deepseek-tasks').map((item) => item.label), ['自动化', '模型服务'])
   assert.deepEqual(resolveAdminTrail('/admin/logs').map((item) => item.label), ['自动化', '日志记录'])
@@ -90,6 +93,8 @@ test('sidebar expands only the active workspace and restores the current item in
   )
   assert.match(source, /!collapsed && active && sections\.length/)
   assert.match(source, /scrollIntoView\(\{ block: 'nearest' \}\)/)
+  assert.match(source, /resolveActiveAdminChild\(pathname\)/)
+  assert.match(source, /child === activeChild/)
   assert.match(source, /sections\.length > 1/)
   assert.doesNotMatch(source, /expandableSectionIds/)
   assert.doesNotMatch(source, /openSections/)
@@ -102,7 +107,7 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
 
   assert.deepEqual(
     listWorkspaceChildren(content).map((item) => item.label),
-    ['内容管理', '壁纸资源', '推荐管理', '分类管理', '数据统计', 'RSS 与分发']
+    ['内容管理', '审批调研', '壁纸资源', '推荐管理', '分类管理', '数据统计', 'RSS 与分发']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

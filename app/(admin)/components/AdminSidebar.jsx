@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { IconX } from '@tabler/icons-react'
 
-import { ADMIN_NAV_GROUPS, ADMIN_HOST, CANONICAL_HOST, isActiveAdminPath } from '../../../lib/adminRoutes'
+import { ADMIN_NAV_GROUPS, ADMIN_HOST, CANONICAL_HOST, isActiveAdminPath, resolveActiveAdminChild } from '../../../lib/adminRoutes'
 import { AdminIcon } from '../../../lib/adminIcons'
 
 function navItemClass(active) {
@@ -98,6 +98,7 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
   const canonicalHomeHref = onAdminHost ? `https://${CANONICAL_HOST}/` : '/'
   const overview = ADMIN_NAV_GROUPS.find((group) => group.id === 'overview')?.items?.[0]
   const workspaces = ADMIN_NAV_GROUPS.find((group) => group.id === 'workspaces')?.items || []
+  const activeChild = resolveActiveAdminChild(pathname)
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-[#0f141c]">
@@ -170,7 +171,7 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
                           </p>
                         ) : null}
                         {section.items.map((child) => {
-                          const childActive = isActiveAdminPath(pathname, child.matchPath || child.href)
+                          const childActive = child === activeChild
                           return (
                             <Link
                               key={child.href}

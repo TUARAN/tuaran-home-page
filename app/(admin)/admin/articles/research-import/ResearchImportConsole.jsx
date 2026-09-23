@@ -636,7 +636,7 @@ export default function ResearchImportConsole({ embedded = false }) {
       title="审批调研"
       description="GitHub 里的 Markdown 是正本。push 之后在这里核对并发布，不用再找导出文件。"
       actions={(
-        <AdminButton href="/admin/articles?panel=import" variant="ghost">
+        <AdminButton href="/admin/articles" variant="ghost">
           <IconArrowLeft size={16} />打开内容管理
         </AdminButton>
       )}

@@ -278,23 +278,23 @@ export default function TapeoutXiangqiClient() {
     <main className="min-h-screen bg-[#07101c] text-slate-200 selection:bg-cyan-300 selection:text-slate-950">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_5%,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_86%_18%,rgba(168,85,247,0.10),transparent_24%)]" />
       <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-5 sm:px-6 lg:px-8">
-        <div className="mb-6 overflow-hidden rounded-[2rem] border border-cyan-300/15 shadow-[0_30px_100px_rgba(0,0,0,0.35)]">
-          <Image src="/images/tapeout-xiangqi-launch.png" alt="中国象棋上链 TapeOut 122.6.tape" width={1672} height={941} priority className="aspect-[16/9] w-full object-cover" />
-        </div>
-        <header className="rounded-[2rem] border border-white/10 bg-white/[0.045] px-5 py-6 shadow-[0_30px_100px_rgba(0,0,0,0.28)] backdrop-blur sm:px-8 sm:py-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <header className="relative min-h-[560px] overflow-hidden rounded-[2rem] border border-cyan-300/15 px-5 py-6 shadow-[0_30px_100px_rgba(0,0,0,0.38)] sm:px-8 sm:py-8">
+          <Image src="/images/tapeout-xiangqi-launch.png" alt="" fill priority sizes="(min-width: 1280px) 1216px, 100vw" className="object-cover object-center" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,13,24,0.96)_0%,rgba(5,13,24,0.86)_38%,rgba(5,13,24,0.34)_72%,rgba(5,13,24,0.18)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(5,13,24,0.72)_0%,transparent_48%,rgba(5,13,24,0.32)_100%)]" />
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
             <Link href="/resources/tapeout-protocol" className="text-sm text-slate-400 transition hover:text-cyan-200">← TapeOut Protocol</Link>
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-200 ring-1 ring-inset ring-emerald-200/20">主网已发布</span>
               <span className="rounded-full bg-cyan-300/10 px-3 py-1.5 text-xs text-cyan-200 ring-1 ring-inset ring-cyan-200/20">TapeID 122.6</span>
             </div>
           </div>
-          <div className="mt-12 max-w-4xl">
+          <div className="relative z-10 mt-16 max-w-3xl sm:mt-20">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-cyan-200/70">Tapeout · build in public · snapshot 09</p>
             <h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em] text-white sm:text-6xl">中国象棋，<br /><span className="text-cyan-200">已经上链了。</span></h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-400">棋盘、规则、走子与对局记录已作为 8,920 bytes 静态文件写入 BNB Chain。这里保留完整的计划、实际耗时、消费、交易凭证与人机授权边界。</p>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">棋盘、规则、走子与对局记录已作为 8,920 bytes 静态文件写入 BNB Chain。这里保留完整的计划、实际耗时、消费、交易凭证与人机授权边界。</p>
           </div>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="relative z-10 mt-8 flex flex-wrap gap-3">
             <a href={TAPEOUT_XIANGQI_RELEASE.publicUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200">打开链上象棋 ↗</a>
           </div>
         </header>

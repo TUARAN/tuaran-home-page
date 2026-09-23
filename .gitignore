@@ -137,6 +137,7 @@ temp/
 # Local exports and sensitive document artifacts.
 # If a public document is intentionally needed, review it first and force-add explicitly.
 *.pdf
+!public/resources/tapeout-protocol/TapeOut-Protocol.pdf
 *.doc
 *.docx
 *.xls
